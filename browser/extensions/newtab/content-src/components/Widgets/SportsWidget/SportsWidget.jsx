@@ -10,6 +10,7 @@ import { useIntersectionObserver } from "../../../lib/utils";
 import { SportsMatchRow } from "./SportsMatchRow";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 import { useLocalizedTeamNames } from "./useLocalizedTeamNames.jsx";
+import { MoveSubmenu } from "../MoveSubmenu";
 
 const WIDGET_STATES = {
   INTRO: "sports-intro",
@@ -56,7 +57,7 @@ const SPORTS_WIDGET_REGISTRY_ENTRY = WIDGET_REGISTRY.find(
   widget => widget.id === "sportsWidget"
 );
 
-function SportsWidget({ dispatch, handleUserInteraction }) {
+function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   const prefs = useSelector(state => state.Prefs.values);
   const sportsWidgetData = useSelector(state => state.SportsWidget);
 
@@ -512,6 +513,10 @@ function SportsWidget({ dispatch, handleUserInteraction }) {
                   </panel-list>
                 </panel-item>
               )}
+              <MoveSubmenu
+                widgetId="sportsWidget"
+                widgetEnabledMap={widgetEnabledMap}
+              />
               <panel-item
                 data-l10n-id="newtab-widget-menu-hide"
                 onClick={handleSportsWidgetHide}

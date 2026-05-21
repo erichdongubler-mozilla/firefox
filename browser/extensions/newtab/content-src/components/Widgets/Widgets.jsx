@@ -518,6 +518,7 @@ function Widgets() {
                     handleUserInteraction={handleUserInteraction}
                     isMaximized={isMaximized}
                     widgetsMayBeMaximized={widgetsMayBeMaximized}
+                    widgetEnabledMap={widgetEnabledMap}
                   />
                 </WidgetWrapper>
               );

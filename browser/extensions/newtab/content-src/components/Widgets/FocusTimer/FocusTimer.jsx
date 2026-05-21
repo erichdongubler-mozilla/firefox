@@ -9,6 +9,7 @@ import { useIntersectionObserver } from "../../../lib/utils";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 import { WidgetCelebration } from "../WidgetCelebration";
 import { useWidgetCelebration } from "../useWidgetCelebration";
+import { MoveSubmenu } from "../MoveSubmenu";
 
 const FOCUS_TIMER_CELEBRATION_GRADIENT_STOPS = [
   { offset: "0%", color: "var(--timer-celebration-leading)" },
@@ -141,6 +142,7 @@ export const FocusTimer = ({
   handleUserInteraction,
   isMaximized,
   widgetsMayBeMaximized,
+  widgetEnabledMap,
 }) => {
   const [timeLeft, setTimeLeft] = useState(0);
   // calculated value for the progress circle; 1 = 100%
@@ -1092,6 +1094,10 @@ export const FocusTimer = ({
                 </panel-item>
               )
             }
+            <MoveSubmenu
+              widgetId="focusTimer"
+              widgetEnabledMap={widgetEnabledMap}
+            />
             {
               // @nova-cleanup(remove-conditional): Remove the `novaEnabled &&` check; always render the divider.
               novaEnabled && <hr />

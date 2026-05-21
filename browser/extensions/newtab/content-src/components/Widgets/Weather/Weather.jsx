@@ -8,6 +8,7 @@ import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { PREF_WEATHER_SIZE } from "common/WidgetsRegistry.mjs";
 import { useIntersectionObserver } from "../../../lib/utils";
 import { LocationSearch } from "content-src/components/Weather/LocationSearch";
+import { MoveSubmenu } from "../MoveSubmenu";
 
 const USER_ACTION_TYPES = {
   CHANGE_LOCATION: "change_location",
@@ -19,7 +20,7 @@ const USER_ACTION_TYPES = {
   PROVIDER_LINK_CLICK: "provider_link_click",
 };
 
-function Weather({ dispatch, size }) {
+function Weather({ dispatch, size, widgetEnabledMap }) {
   const prefs = useSelector(state => state.Prefs.values);
   const weatherData = useSelector(state => state.Weather);
   const impressionFired = useRef(false);
@@ -411,6 +412,7 @@ function Weather({ dispatch, size }) {
               </panel-list>
             </panel-item>
           )}
+          <MoveSubmenu widgetId="weather" widgetEnabledMap={widgetEnabledMap} />
           <panel-item
             data-l10n-id="newtab-widget-menu-hide"
             onClick={handleHideWeather}

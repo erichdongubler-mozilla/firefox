@@ -19,6 +19,7 @@ import { useIntersectionObserver } from "../../../lib/utils";
 import { AddClockForm } from "./AddClockForm";
 import { ClocksRow } from "./ClocksRow";
 import { EditClocksPanel } from "./EditClocksPanel";
+import { MoveSubmenu } from "../MoveSubmenu";
 import {
   backfillClockLabelColors,
   buildNextClockZones,
@@ -78,7 +79,7 @@ function getClockWidgetDisplayState({ activePanel, hourFormatPref, size }) {
  * @param {Function} props.dispatch
  * @param {"small"|"medium"|"large"} [props.size] Defaults to "medium".
  */
-function Clocks({ dispatch, size }) {
+function Clocks({ dispatch, size, widgetEnabledMap }) {
   const clocksZonesPref = useSelector(
     state => state.Prefs.values[PREF_CLOCKS_ZONES]
   );
@@ -520,6 +521,7 @@ function Clocks({ dispatch, size }) {
               ))}
             </panel-list>
           </panel-item>
+          <MoveSubmenu widgetId="clocks" widgetEnabledMap={widgetEnabledMap} />
           <panel-item
             data-l10n-id="newtab-clock-widget-menu-edit"
             onClick={() => {

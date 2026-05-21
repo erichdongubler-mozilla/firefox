@@ -15,6 +15,7 @@ import { useIntersectionObserver } from "../../../lib/utils";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 import { WidgetCelebration } from "../WidgetCelebration";
 import { useWidgetCelebration } from "../useWidgetCelebration";
+import { MoveSubmenu } from "../MoveSubmenu";
 
 const TASK_TYPE = {
   IN_PROGRESS: "tasks",
@@ -158,6 +159,7 @@ function Lists({
   handleUserInteraction,
   isMaximized,
   widgetsMayBeMaximized,
+  widgetEnabledMap,
 }) {
   const prefs = useSelector(state => state.Prefs.values);
   const { selected, lists } = useSelector(state => state.ListsWidget);
@@ -1067,6 +1069,7 @@ function Lists({
               </panel-list>
             </panel-item>
           )}
+          <MoveSubmenu widgetId="lists" widgetEnabledMap={widgetEnabledMap} />
           <panel-item
             data-l10n-id="newtab-widget-menu-hide"
             onClick={() => handleHideLists()}
