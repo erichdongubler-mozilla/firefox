@@ -16707,7 +16707,13 @@ function SportsWidgetFollowTeams({
   const [selectedTeams, setSelectedTeams] = (0,external_React_namespaceObject.useState)(initialSelectedTeams);
   const [searchQuery, setSearchQuery] = (0,external_React_namespaceObject.useState)("");
   const localizedNames = useLocalizedTeamNames(teams);
-  const isMaxSelected = selectedTeams.length >= 3;
+  // Eliminated teams stay in the list (shown disabled with an "(eliminated)"
+  // badge) but don't count toward the 3-team cap and aren't persisted on save
+  // — otherwise the user could be stuck following a team they can no longer
+  // toggle off, or blocked from picking a replacement.
+  const eliminatedKeys = new Set(teams.filter(team => team.eliminated).map(team => team.key));
+  const activeSelectedTeams = selectedTeams.filter(key => !eliminatedKeys.has(key));
+  const isMaxSelected = activeSelectedTeams.length >= 3;
   function handleTeamToggle(teamKey, isChecked) {
     setSelectedTeams(prev => isChecked ? [...prev, teamKey] : prev.filter(key => key !== teamKey));
   }
@@ -16723,7 +16729,8 @@ function SportsWidgetFollowTeams({
     className: "sports-follow-teams-list"
   }, localizedNames && filteredTeams.map(team => {
     const isSelected = selectedTeams.includes(team.key);
-    const isRowDisabled = !isSelected && isMaxSelected;
+    const isEliminated = eliminatedKeys.has(team.key);
+    const isRowDisabled = isEliminated || !isSelected && isMaxSelected;
     const localizedName = localizedNames[team.key];
     return /*#__PURE__*/external_React_default().createElement("div", {
       key: team.key,
@@ -16748,7 +16755,13 @@ function SportsWidgetFollowTeams({
       src: team.icon_url,
       alt: "",
       title: localizedName
-    }), /*#__PURE__*/external_React_default().createElement("span", {
+    }), isEliminated ? /*#__PURE__*/external_React_default().createElement("span", {
+      className: "sports-team-name",
+      "data-l10n-id": "newtab-sports-widget-team-name-eliminated",
+      "data-l10n-args": JSON.stringify({
+        teamName: localizedName
+      })
+    }) : /*#__PURE__*/external_React_default().createElement("span", {
       className: "sports-team-name"
     }, localizedName));
   })), /*#__PURE__*/external_React_default().createElement("moz-button", {
@@ -16756,7 +16769,7 @@ function SportsWidgetFollowTeams({
     "data-l10n-id": "newtab-sports-widget-done-button",
     type: "primary",
     size: "small",
-    onClick: () => onSave(selectedTeams)
+    onClick: () => onSave(activeSelectedTeams)
   }));
 }
 function SportsMatchesView({

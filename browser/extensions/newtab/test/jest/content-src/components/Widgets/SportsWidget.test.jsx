@@ -493,6 +493,88 @@ describe("<SportsWidget> follow teams flow", () => {
     expect(names).toEqual(["Algeria", "Australia", "Canada", "England"]);
   });
 
+  it("shows eliminated teams as disabled rows with the eliminated l10n id", async () => {
+    const teamsWithEliminated = makeTeams().map(team =>
+      team.key === "AUS" || team.key === "ENG"
+        ? { ...team, eliminated: true }
+        : team
+    );
+    const { container } = await renderInFollowState([], {
+      teams: teamsWithEliminated,
+      matches: [],
+    });
+    const rows = Array.from(
+      container.querySelectorAll(".sports-follow-teams-row")
+    );
+    const resolvedNames = rows.map(r => {
+      const nameSpan = r.querySelector(".sports-team-name");
+      const args = nameSpan.getAttribute("data-l10n-args");
+      return args ? JSON.parse(args).teamName : nameSpan.textContent;
+    });
+    expect(resolvedNames).toEqual([
+      "Algeria",
+      "Australia",
+      "Canada",
+      "England",
+    ]);
+    const eliminatedRows = rows.filter(
+      r =>
+        r.querySelector(".sports-team-name").getAttribute("data-l10n-id") ===
+        "newtab-sports-widget-team-name-eliminated"
+    );
+    expect(eliminatedRows.length).toBe(2);
+    eliminatedRows.forEach(row => {
+      expect(row.classList.contains("is-disabled")).toBe(true);
+      expect(
+        row.querySelector("moz-checkbox").getAttribute("disabled")
+      ).not.toBeNull();
+      const nameSpan = row.querySelector(".sports-team-name");
+      expect(JSON.parse(nameSpan.getAttribute("data-l10n-args"))).toEqual({
+        teamName: expect.any(String),
+      });
+    });
+  });
+
+  it("excludes eliminated teams from the saved selection when Done is clicked", async () => {
+    // User previously followed CAN, AUS, ENG. AUS gets eliminated after the
+    // fact — the saved selection should drop AUS so the user isn't stuck
+    // following a team they can no longer toggle off.
+    const teamsWithEliminated = makeTeams().map(team =>
+      team.key === "AUS" ? { ...team, eliminated: true } : team
+    );
+    const { container } = await renderInFollowState(["CAN", "AUS", "ENG"], {
+      teams: teamsWithEliminated,
+      matches: [],
+    });
+    fireEvent.click(container.querySelector(".sports-done-button"));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_SPORTS_CHANGE_SELECTED_TEAMS,
+        data: ["CAN", "ENG"],
+      })
+    );
+  });
+
+  it("does not count eliminated teams toward the 3-team selection cap", async () => {
+    // User has 3 selected (ALG, AUS, CAN) but AUS is eliminated. Only 2 count
+    // toward the cap, so ENG (the unselected, non-eliminated team) stays
+    // enabled.
+    const teamsWithEliminated = makeTeams().map(team =>
+      team.key === "AUS" ? { ...team, eliminated: true } : team
+    );
+    const { container } = await renderInFollowState(["ALG", "AUS", "CAN"], {
+      teams: teamsWithEliminated,
+      matches: [],
+    });
+    const rows = Array.from(
+      container.querySelectorAll(".sports-follow-teams-row")
+    );
+    const engRow = rows.find(
+      r => r.querySelector(".sports-team-name").textContent === "England"
+    );
+    expect(engRow.classList.contains("is-disabled")).toBe(false);
+  });
+
   it("sorts follow-teams rows by the resolved localized name, not the Merino source name", async () => {
     document.l10n.formatMessages = jest.fn(async ids =>
       ids.map(({ id }) => ({

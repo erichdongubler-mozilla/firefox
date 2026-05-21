@@ -586,7 +586,17 @@ function SportsWidgetFollowTeams({ teams, initialSelectedTeams, onSave }) {
   const [selectedTeams, setSelectedTeams] = useState(initialSelectedTeams);
   const [searchQuery, setSearchQuery] = useState("");
   const localizedNames = useLocalizedTeamNames(teams);
-  const isMaxSelected = selectedTeams.length >= 3;
+  // Eliminated teams stay in the list (shown disabled with an "(eliminated)"
+  // badge) but don't count toward the 3-team cap and aren't persisted on save
+  // — otherwise the user could be stuck following a team they can no longer
+  // toggle off, or blocked from picking a replacement.
+  const eliminatedKeys = new Set(
+    teams.filter(team => team.eliminated).map(team => team.key)
+  );
+  const activeSelectedTeams = selectedTeams.filter(
+    key => !eliminatedKeys.has(key)
+  );
+  const isMaxSelected = activeSelectedTeams.length >= 3;
 
   function handleTeamToggle(teamKey, isChecked) {
     setSelectedTeams(prev =>
@@ -619,7 +629,9 @@ function SportsWidgetFollowTeams({ teams, initialSelectedTeams, onSave }) {
         {localizedNames &&
           filteredTeams.map(team => {
             const isSelected = selectedTeams.includes(team.key);
-            const isRowDisabled = !isSelected && isMaxSelected;
+            const isEliminated = eliminatedKeys.has(team.key);
+            const isRowDisabled =
+              isEliminated || (!isSelected && isMaxSelected);
             const localizedName = localizedNames[team.key];
             return (
               <div
@@ -648,7 +660,17 @@ function SportsWidgetFollowTeams({ teams, initialSelectedTeams, onSave }) {
                   alt=""
                   title={localizedName}
                 />
-                <span className="sports-team-name">{localizedName}</span>
+                {isEliminated ? (
+                  <span
+                    className="sports-team-name"
+                    data-l10n-id="newtab-sports-widget-team-name-eliminated"
+                    data-l10n-args={JSON.stringify({
+                      teamName: localizedName,
+                    })}
+                  />
+                ) : (
+                  <span className="sports-team-name">{localizedName}</span>
+                )}
               </div>
             );
           })}
@@ -658,7 +680,7 @@ function SportsWidgetFollowTeams({ teams, initialSelectedTeams, onSave }) {
         data-l10n-id="newtab-sports-widget-done-button"
         type="primary"
         size="small"
-        onClick={() => onSave(selectedTeams)}
+        onClick={() => onSave(activeSelectedTeams)}
       />
     </div>
   );

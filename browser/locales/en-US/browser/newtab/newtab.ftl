@@ -772,6 +772,10 @@ newtab-sports-widget-back-button =
     .aria-label = Back
 newtab-sports-widget-done-button =
     .label = Done
+# Shown in the follow-teams list for a team that has been knocked out of the tournament.
+# Variables:
+#   $teamName (string) - the localized team name (e.g. "Canada").
+newtab-sports-widget-team-name-eliminated = { $teamName } (eliminated)
 newtab-sports-widget-view-all =
     .label = View all
 newtab-sports-widget-show-less =
