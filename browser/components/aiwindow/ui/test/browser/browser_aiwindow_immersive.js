@@ -51,7 +51,7 @@ add_task(async function test_firstrun_immersive_view() {
     ],
   });
 
-  const win = await openAIWindow({ waitForTabURL: false });
+  const win = await openAIWindow({ waitForTabURL: "" });
   const chromeRoot = win.document.documentElement;
 
   await navigateAndWait(win, FIRSTRUN_URL);
@@ -93,7 +93,7 @@ add_task(async function test_open_sidebar_immersive_view() {
     ],
   });
 
-  const win = await openAIWindow({ waitForTabURL: false });
+  const win = await openAIWindow({ waitForTabURL: "" });
   const chromeRoot = win.document.documentElement;
   await navigateAndWait(win, FIRSTRUN_URL);
 

@@ -1124,7 +1124,7 @@ export var BrowserTestUtils = {
    *
    * @param {object} [options]
    *        Options to pass to OpenBrowserWindow. Additionally, supports:
-   * @param {bool} [options.waitForTabURL]
+   * @param {string} [options.waitForTabURL]
    *        Forces the initial browserLoaded check to wait for the tab to
    *        load the given URL (instead of about:blank)
    *
