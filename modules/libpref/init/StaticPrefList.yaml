@@ -17847,7 +17847,11 @@
 # Whether all chrome: documents will automatically get a baseline CSP
 - name: security.chrome_baseline_csp.enabled
   type: bool
+#if defined(MOZ_THUNDERBIRD)
+  value: false
+#else
   value: true
+#endif
   mirror: always
 
 # Allow unsafe eval usage with high privileges to. This should
