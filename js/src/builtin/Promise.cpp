@@ -15,6 +15,7 @@
 #include "js/experimental/JitInfo.h"  // JSJitGetterOp, JSJitInfo
 #include "js/ForOfIterator.h"         // JS::ForOfIterator
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
+#include "js/Prefs.h"                 // JS::Prefs
 #include "js/PropertySpec.h"
 #include "js/Stack.h"
 #include "vm/ArrayObject.h"
@@ -1199,6 +1200,13 @@ static JSFunction* GetResolveFunctionFromReject(JSFunction* reject);
 static JSFunction* GetRejectFunctionFromResolve(JSFunction* resolve);
 static JSFunction* GetResolveFunctionFromPromise(PromiseObject* promise);
 
+#ifdef NIGHTLY_BUILD
+[[nodiscard]] static bool RequiresDeferredPromiseResolution(
+    JSContext* cx, HandleValue value, bool* needsDeferral);
+[[nodiscard]] static bool EnqueueDeferredResolveJob(
+    JSContext* cx, Handle<PromiseObject*> promise, HandleValue resolution);
+#endif  // NIGHTLY_BUILD
+
 #ifdef DEBUG
 
 /**
@@ -1340,8 +1348,17 @@ void js::SetAlreadyResolvedPromiseWithDefaultResolvingFunction(
   //         ! CreateBuiltinFunction(stepsResolve, lengthResolve, "",
   //                                 « [[Promise]], [[AlreadyResolved]] »).
   Handle<PropertyName*> funName = cx->names().empty_;
-  resolveFn.set(NewNativeFunction(cx, ResolvePromiseFunction, 1, funName,
-                                  gc::AllocKind::FUNCTION_EXTENDED,
+#ifdef NIGHTLY_BUILD
+  // Thenable-curtailment proposal: the resolve function takes an optional
+  // `doSafeResolve` second parameter, so its length becomes 2 when the pref
+  // is enabled. Otherwise it remains 1, matching the current spec.
+  unsigned resolveLength =
+      JS::Prefs::experimental_promise_safe_resolve() ? 2 : 1;
+#else
+  unsigned resolveLength = 1;
+#endif
+  resolveFn.set(NewNativeFunction(cx, ResolvePromiseFunction, resolveLength,
+                                  funName, gc::AllocKind::FUNCTION_EXTENDED,
                                   GenericObject));
   if (!resolveFn) {
     return false;
@@ -1606,6 +1623,18 @@ static bool ResolvePromiseFunction(JSContext* cx, unsigned argc, Value* vp) {
   JSFunction* resolve = &args.callee().as<JSFunction>();
   HandleValue resolutionVal = args.get(0);
 
+#ifdef NIGHTLY_BUILD
+  // Thenable-curtailment proposal: the resolve function takes a second
+  // `doSafeResolve` parameter. When true (and the pref is enabled), and
+  // resolving would synchronously run user code, the user-code-running steps
+  // are deferred to a microtask.
+  //
+  // Here we are strict and do not coerce, but that's potentially an area
+  // for future feedback.
+  bool doSafeResolve = JS::Prefs::experimental_promise_safe_resolve() &&
+                       args.get(1).isBoolean() && args.get(1).toBoolean();
+#endif  // NIGHTLY_BUILD
+
   // Step 3. Let promise be F.[[Promise]].
   const Value& promiseVal =
       resolve->getExtendedSlot(ResolveFunctionSlot_Promise);
@@ -1633,6 +1662,27 @@ static bool ResolvePromiseFunction(JSContext* cx, unsigned argc, Value* vp) {
     args.rval().setUndefined();
     return true;
   }
+
+#ifdef NIGHTLY_BUILD
+  // Thenable-curtailment proposal: if the caller asked for safe resolution
+  // and the value would run user code, defer to a microtask. Subsequent
+  // resolve/reject is a no-op because SetAlreadyResolvedResolutionFunction has
+  // happened.
+  if (doSafeResolve) {
+    bool needsDeferral = false;
+    if (!RequiresDeferredPromiseResolution(cx, resolutionVal, &needsDeferral)) {
+      return false;
+    }
+    if (needsDeferral) {
+      Rooted<PromiseObject*> promiseObj(cx, &promise->as<PromiseObject>());
+      if (!EnqueueDeferredResolveJob(cx, promiseObj, resolutionVal)) {
+        return false;
+      }
+      args.rval().setUndefined();
+      return true;
+    }
+  }
+#endif  // NIGHTLY_BUILD
 
   // Steps 7-15.
   if (!ResolvePromiseInternal(cx, promise, resolutionVal)) {

@@ -9419,6 +9419,19 @@
   mirror: always
   set_spidermonkey_pref: startup
 
+  # Experimental support for the second parameter to Promise resolve functions
+  # from https://tc39.es/proposal-thenable-curtailment/
+  #
+  # When true, a resolve function created by `new Promise((resolve, _) => ...)`
+  # accepts an optional second boolean argument `doSafeResolve`; passing `true`
+  # causes the resolution steps that would run user code to be deferred
+  # to a microtask while the resolving functions are latched synchronously.
+- name: javascript.options.experimental.promise_safe_resolve
+  type: bool
+  value: false
+  mirror: always
+  set_spidermonkey_pref: startup
+
   # Experimental support for Iterator Chunking in JavaScript.
 - name: javascript.options.experimental.iterator_chunking
   type: bool
