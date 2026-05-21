@@ -133,7 +133,8 @@ Result<nsCString, nsresult> RemoteWorkerManager::GetRemoteType(
     return NOT_REMOTE_TYPE;
   }
 
-  nsCString preferredRemoteType = DEFAULT_REMOTE_TYPE;
+  nsCString preferredRemoteType =
+      SharedWebRemoteType(aPrincipal->OriginAttributesRef());
   if (aWorkerKind == WorkerKind::WorkerKindShared) {
     if (auto* contentChild = ContentChild::GetSingleton()) {
       // For a shared worker set the preferred remote type to the content
