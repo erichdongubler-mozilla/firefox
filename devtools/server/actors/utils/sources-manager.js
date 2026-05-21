@@ -378,7 +378,8 @@ class SourcesManager extends EventEmitter {
     // Fetch the sources with the same principal as the original document
     const win = this._thread.targetActor.window;
     let principal, cacheKey;
-    // On xpcshell, we don't have a window but a Sandbox
+    // On xpcshell, or when the source comes from a content process target actor,
+    // we don't have a window but a Sandbox
     if (!isWorker && win instanceof Ci.nsIDOMWindow && win.docShell) {
       const docShell = win.docShell;
       const channel = docShell.currentDocumentChannel;
@@ -397,6 +398,8 @@ class SourcesManager extends EventEmitter {
     let result;
     try {
       result = await fetch(url, {
+        // Pass the window, if available, to be flagged with the proper browsingContext/browserId.
+        window: !isWorker && win instanceof Ci.nsIDOMWindow ? win : null,
         principal,
         cacheKey,
         loadFromCache,
