@@ -6,7 +6,6 @@
 
 :host,
 :root {
-  --urlbar-background-shadow: 0 2px 14px rgba(0, 0, 0, 0.13);
   --urlbar-container-min-width: 310px;
 
   /* Usually we wouldn't need snapping border widths manually, but we use this
@@ -41,6 +40,52 @@
     @media (max-width: 550px) {
       --urlbar-container-min-width: 140px;
     }
+  }
+}
+
+/* Variables for Nova design tokens that don't exist yet and that are owned by
+   other teams. Each should be removed after its token has been imported. */
+.urlbar,
+#searchbar {
+  --chrome-box-shadow: rgba(89, 57, 168, 0.15);
+
+  @media (prefers-color-scheme: dark) {
+    --chrome-box-shadow: rgba(152, 113, 255, 0.15);
+  }
+
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media not -moz-pref("browser.nova.enabled") {
+    --chrome-box-shadow: rgba(0, 0, 0, 0.13);
+  }
+}
+
+/* Variables that make it easier to support both Nova and Proton. These can
+   optionally be removed when Proton is removed. */
+.urlbar,
+#searchbar {
+  --urlbar-background-background-color: var(--toolbar-field-background-color);
+  --urlbar-background-background-color-focused: var(--toolbar-field-background-color-focus);
+  --urlbar-background-border: none;
+  --urlbar-background-border-breakout: none;
+  --urlbar-background-border-radius: var(--urlbarview-border-radius);
+  --urlbar-background-box-shadow-breakout: 0 0 14px 0 var(--chrome-box-shadow);
+  --urlbar-background-outline-focused: none;
+  --urlbar-input-container-border: var(--urlbar-container-border-width) solid var(--toolbar-field-border-color);
+  --urlbar-searchmode-switcher-panel-list-min-width: 17em;
+  --urlbar-selection-border-radius: var(--border-radius-xsmall);
+
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media not -moz-pref("browser.nova.enabled") {
+    --urlbar-background-border: var(--urlbar-container-border-width) solid var(--toolbar-field-border-color);
+    --urlbar-background-border-breakout: var(--urlbar-container-border-width) solid var(--panel-border-color);
+    --urlbar-background-box-shadow-breakout: 0 2px 14px var(--chrome-box-shadow);
+    /* We want the focus outline with the theme's border-color when focused.
+       --toolbar-field-border-color-focus is set equal to --focus-outline-color
+       on :root, but LWT themes can override this value. */
+    --urlbar-background-outline-focused: var(--focus-outline-width) solid var(--toolbar-field-border-color-focus);
+    --urlbar-input-container-border: var(--urlbar-container-border-width) solid transparent;
+    --urlbar-searchmode-switcher-panel-list-min-width: auto;
+    --urlbar-selection-border-radius: 0;
   }
 }
 
@@ -81,6 +126,10 @@ toolbar[inactive="true"] .urlbar,
   :root[uidensity="touch"] & {
     padding-block: 5px;
   }
+
+  &[breakout] {
+    min-height: var(--urlbar-container-height);
+  }
 }
 
 .urlbar {
@@ -100,6 +149,15 @@ toolbar[inactive="true"] .urlbar,
   overflow: initial;
   color: initial;
   background-color: initial;
+
+  &[breakout] {
+    display: block;
+    /* This is technically not needed, because popover takes care of it, but
+     * helps for clarity. */
+    position: absolute;
+    height: var(--urlbar-height);
+    width: var(--urlbar-width);
+  }
 }
 
 .urlbar,
@@ -134,21 +192,72 @@ toolbar[inactive="true"] .urlbar,
   }
 }
 
-.urlbar-background,
-#searchbar {
-  background-color: var(--toolbar-field-background-color);
+.urlbar-background {
+  display: block;
+  position: absolute;
+  inset: 0;
+  background-color: var(--urlbar-background-background-color);
   background-clip: border-box;
-  border-radius: var(--urlbar-border-radius);
+  border-radius: var(--urlbar-background-border-radius);
+  border: var(--urlbar-background-border);
+
+  .urlbar:is([focused], [open]) > & {
+    background-color: var(--urlbar-background-background-color-focused);
+  }
+
+  .urlbar[focused]:not([suppress-focus-border]) > & {
+    outline: var(--urlbar-background-outline-focused);
+    border-color: transparent;
+  }
+
+  .urlbar[breakout-extend] > & {
+    border: var(--urlbar-background-border-breakout);
+    box-shadow: var(--urlbar-background-box-shadow-breakout);
+  }
+
+  .urlbar[open] > & {
+    @media (-moz-platform: macos) and (prefers-contrast) {
+      /* The "increase contrast" preference on macOS draws a 1px black line around
+         panels, including the separate search bar. Since the Urlbar is not
+         implemented as a panel, it does not get this outline. This outline rule
+         resembles the system outline, bringing the Urlbar in line with panels and
+         other Mac apps. */
+      outline: 1px solid var(--focus-outline-color);
+    }
+  }
 }
 
-#searchbar {
-  border: var(--urlbar-container-border-width) solid var(--toolbar-field-border-color);
-}
-
-.urlbar-input-container,
-#searchbar {
+.urlbar-input-container {
+  padding: var(--urlbar-container-padding);
+  min-width: 0;
+  display: flex;
+  flex: 1;
+  box-sizing: border-box;
+  border: var(--urlbar-input-container-border);
   border-radius: var(--urlbar-border-radius);
   overflow: clip;
+
+  .urlbar[breakout] > & {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.urlbar:not([open]) > .urlbarView,
+.urlbar:not([breakout]) > .urlbarView {
+  display: none;
+}
+
+#searchbar {
+  background-color: var(--urlbar-background-background-color);
+  background-clip: border-box;
+  border: var(--urlbar-input-container-border);
+  border-radius: var(--urlbar-border-radius);
+  overflow: clip;
+
+  &:focus-within {
+    background-color: var(--urlbar-background-background-color-focused);
+  }
 }
 
 .urlbar-input,
@@ -205,11 +314,8 @@ toolbar[inactive="true"] .urlbar,
     mask-image: linear-gradient(to right, transparent var(--urlbar-scheme-size), black calc(var(--urlbar-scheme-size) + 3ch));
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
-  @media -moz-pref("browser.nova.enabled") {
-    &::selection {
-      border-radius: var(--border-radius-xsmall);
-    }
+  &::selection {
+    border-radius: var(--urlbar-selection-border-radius);
   }
 }
 
@@ -238,53 +344,9 @@ toolbar[inactive="true"] .urlbar,
   border-color: transparent;
 }
 
-[open] > .urlbar-background {
-  box-shadow: var(--urlbar-background-shadow);
-
-  /* The border moves outwards in the open state, so increase the radius
-     accordingly. */
-  border-radius: var(--urlbarview-border-radius);
-
-  @media (-moz-platform: macos) and (prefers-contrast) {
-    /* The "increase contrast" preference on macOS draws a 1px black line around
-       panels, including the separate search bar. Since the Urlbar is not
-       implemented as a panel, it does not get this outline. This outline rule
-       resembles the system outline, bringing the Urlbar in line with panels and
-       other Mac apps. */
-    outline: 1px solid var(--focus-outline-color);
-  }
-}
-
-/* stylelint-disable-next-line media-query-no-invalid */
-@media not -moz-pref("browser.nova.enabled") {
-  .urlbar-background {
-    border: var(--urlbar-container-border-width) solid var(--toolbar-field-border-color);
-  }
-
-  [open] > .urlbar-background {
-    border-color: var(--panel-border-color);
-  }
-
-  [focused]:not([suppress-focus-border]) > .urlbar-background {
-    outline: var(--focus-outline);
-
-    /* We used --focus-outline above to inherit its width and style properties,
-       but we still want to use the theme's border-color.
-       --toolbar-field-border-color-focus is set equal to --focus-outline-color
-       on :root, but LWT themes can override this value. */
-    outline-color: var(--toolbar-field-border-color-focus);
-    border-color: transparent;
-  }
-}
-
 .urlbar:is([focused], [open]),
 #searchbar:focus-within {
   color: var(--toolbar-field-text-color-focus);
-}
-
-.urlbar:is([focused], [open]) > .urlbar-background,
-#searchbar:focus-within {
-  background-color: var(--toolbar-field-background-color-focus);
 }
 
 /* stylelint-disable-next-line media-query-no-invalid */
@@ -294,16 +356,9 @@ toolbar[inactive="true"] .urlbar,
     --urlbar-background-inset: calc(var(--urlbar-height) / 2 - var(--border-radius-xxlarge));
     --urlbar-container-border-width-breakout: calc(2 * var(--urlbar-container-border-width));
 
-    > .urlbar-background {
-      display: none;
-    }
-
     > .urlbar-input-container {
       height: var(--urlbar-height);
       margin-block-start: var(--urlbar-input-container-top);
-      background-color: var(--toolbar-field-background-color);
-      border: var(--urlbar-container-border-width) solid var(--toolbar-field-border-color);
-      border-radius: var(--border-radius-xlarge);
       padding: calc(var(--urlbar-container-border-width-breakout) - var(--urlbar-container-border-width));
     }
 
@@ -321,13 +376,9 @@ toolbar[inactive="true"] .urlbar,
     }
 
     &[breakout-extend] > .urlbar-background {
-      display: block;
       inset-inline: var(--urlbar-background-inset);
       inset-block-start: calc(var(--urlbar-background-inset) + var(--urlbar-input-container-top));
       inset-block-end: var(--urlbar-background-inset);
-      box-shadow: var(--urlbar-background-shadow);
-      background-color: var(--toolbar-field-background-color);
-      border-radius: var(--border-radius-xxlarge);
     }
 
     &[breakout-extend][open] > .urlbar-background {
@@ -376,44 +427,6 @@ toolbar[inactive="true"] .urlbar,
 .urlbar-input-container,
 .urlbarView {
   position: relative;
-}
-
-.urlbar-background {
-  display: block;
-  position: absolute;
-  inset: 0;
-}
-
-.urlbar-input-container {
-  border: var(--urlbar-container-border-width) solid transparent;
-  padding: var(--urlbar-container-padding);
-  min-width: 0;
-  display: flex;
-  flex: 1;
-  box-sizing: border-box;
-}
-
-.urlbar-container[breakout] {
-  min-height: var(--urlbar-container-height);
-}
-
-.urlbar[breakout] {
-  display: block;
-  /* This is technically not needed, because popover takes care of it, but
-   * helps for clarity. */
-  position: absolute;
-  height: var(--urlbar-height);
-  width: var(--urlbar-width);
-
-  > .urlbar-input-container {
-    width: 100%;
-    height: 100%;
-  }
-}
-
-.urlbar:not([open]) > .urlbarView,
-.urlbar:not([breakout]) > .urlbarView {
-  display: none;
 }
 
 /* stylelint-disable-next-line media-query-no-invalid */
@@ -1296,11 +1309,10 @@ toolbar[inactive="true"] .urlbar,
   }
 
   .urlbar:not(#searchbar-new) & {
-    /* stylelint-disable media-query-no-invalid */
+    /* stylelint-disable-next-line media-query-no-invalid */
     @media (not -moz-pref("browser.urlbar.searchModeSwitcher.featureGate")) and (not -moz-pref("browser.urlbar.scotchBonnet.enableOverride")) {
       display: none;
     }
-    /* stylelint-enable media-query-no-invalid */
   }
 }
 
@@ -1375,10 +1387,7 @@ toolbar[inactive="true"] .urlbar,
   --panel-list-border-radius: var(--panel-border-radius);
   padding: var(--panel-subview-body-padding);
 
-  /* stylelint-disable-next-line media-query-no-invalid */
-  @media -moz-pref("browser.nova.enabled") {
-    min-width: 17em;
-  }
+  min-width: var(--urlbar-searchmode-switcher-panel-list-min-width);
 
   > panel-item::part(button) {
     -moz-context-properties: fill;
@@ -1435,6 +1444,7 @@ toolbar[inactive="true"] .urlbar,
   #urlbar[searchmode] > .urlbar-input-container > #urlbar-search-mode-indicator {
     display: none;
   }
+
   /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
     #urlbar[pageproxystate="invalid"] {
