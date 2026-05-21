@@ -691,18 +691,6 @@ features:
         type: Int
         default: 300
 
-  menu-redesign:
-    description: Control the new menu redesign.
-    variables:
-      report-site-issue:
-        description: If true, report site issue menu item and preview is available.
-        type: Boolean
-        default: true
-      menu-banner:
-        description: If true, the menu banner is visible.
-        type: Boolean
-        default: true
-
   firefox-jp-guide-default-site:
     description: >
       This feature is for managing the visibility of the Firefox Japanese Guide default suggested site shortcut

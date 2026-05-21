@@ -520,7 +520,6 @@
       },
       "featureIds": [
         "composable-toolbar",
-        "menu-redesign",
         "tab-management-enhancements",
         "toolbar-redesign-option"
       ],
@@ -541,14 +540,6 @@
               "enabled": true,
               "value": {
                 "enabled": true
-              }
-            },
-            {
-              "featureId": "menu-redesign",
-              "enabled": true,
-              "value": {
-                "enabled": true,
-                "report-site-issue": false
               }
             },
             {

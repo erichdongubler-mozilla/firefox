@@ -434,8 +434,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                     val translateLanguageCode = selectedTab?.translationsState?.translationEngineState
                         ?.requestedTranslationPair?.toLanguage
                     val isExtensionsProcessDisabled = browserStore.state.extensionsProcessDisabled
-                    val isWebCompatReporterSupported =
-                        FxNimbus.features.menuRedesign.value().reportSiteIssue
                     val isDesktopMode by remember {
                         store.stateFlow.map { state -> state.isDesktopMode }
                     }.collectAsState(initial = false)
@@ -783,7 +781,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                                     webAppUseCases.isPinningSupported(),
                                             hasExternalApp = appLinksRedirect?.hasExternalApp() ?: false,
                                             externalAppName = appLinksRedirect?.appName ?: "",
-                                            isWebCompatReporterSupported = isWebCompatReporterSupported,
                                             isOpenInAppMenuHighlighted = isOpenInAppMenuHighlighted,
                                             translationInfo = translationInfo,
                                             showShortcuts = settings.showTopSitesFeature,

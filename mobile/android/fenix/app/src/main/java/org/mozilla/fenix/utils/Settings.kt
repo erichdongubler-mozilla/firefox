@@ -558,7 +558,7 @@ class Settings(
 
     var shouldShowMenuBanner by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_show_menu_banner),
-        default = { FxNimbus.features.menuRedesign.value().menuBanner },
+        default = true,
     )
 
     var defaultSearchEngineName by stringPreference(

@@ -46,7 +46,7 @@ Since version 136, telemetry pings can be tested via about:glean.
 Since version 132, telemetry pings can be tested via the Glean Debug Tools feature.
 
 1. Click on the 3 dot menu.
-2. Click on "Settings" / settings icon (if menu redesign is enabled).
+2. Click on "Settings" / settings icon.
 3. Scroll down and click on "About Firefox".
 4. Click on the Firefox logo 5 times to enable debug menu.
 5. Go back to settings.
