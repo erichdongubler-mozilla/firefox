@@ -245,8 +245,10 @@ const statsExpectedByType = {
       "port",
       "candidateType",
       "priority",
+      "usernameFragment",
+      "foundation",
     ],
-    optional: ["relayProtocol", "proxied"],
+    optional: ["relayProtocol", "proxied", "tcpType"],
     unimplemented: ["networkType", "url", "transportId"],
     deprecated: [
       "candidateId",
@@ -267,8 +269,9 @@ const statsExpectedByType = {
       "port",
       "candidateType",
       "priority",
+      "usernameFragment",
     ],
-    optional: ["relayProtocol", "proxied"],
+    optional: ["foundation", "relayProtocol", "proxied", "tcpType"],
     unimplemented: ["networkType", "url", "transportId"],
     deprecated: [
       "candidateId",
@@ -1633,6 +1636,33 @@ function pedanticChecks(report) {
         stat.protocol,
         `${stat.type} has protocol. value=${stat.protocol} ` + `(${stat.kind})`
       );
+
+      // tcpType
+      if (stat.protocol == "tcp") {
+        ok(
+          stat.tcpType == "active",
+          `${stat.type} TCP candidate has tcpType 'active'`
+        );
+      } else if (stat.protocol == "udp") {
+        ok(
+          stat.tcpType == undefined,
+          `${stat.type} UDP candidate has no tcpType`
+        );
+      }
+
+      // foundation
+      if (stat.candidateType == "prflx") {
+        ok(
+          stat.foundation == undefined,
+          `${stat.type} prflx candidate has no foundation`
+        );
+      } else {
+        ok(
+          stat.foundation != undefined,
+          `${stat.type} candidate has foundation. value=${stat.foundation} ` +
+            `(${stat.kind}}`
+        );
+      }
 
       // port
       ok(

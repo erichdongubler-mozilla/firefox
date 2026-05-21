@@ -80,6 +80,11 @@ struct ParamTraits<mozilla::dom::RTCBundlePolicy>
     : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::RTCBundlePolicy> {
 };
 
+template <>
+struct ParamTraits<mozilla::dom::RTCIceTcpCandidateType>
+    : public mozilla::dom::WebIDLEnumSerializer<
+          mozilla::dom::RTCIceTcpCandidateType> {};
+
 DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::RTCIceServerInternal, mUrls,
                                   mCredentialProvided, mUserNameProvided);
 
@@ -128,8 +133,8 @@ DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS_AND_FIELDS(
 
 DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS_AND_FIELDS(
     mozilla::dom::RTCIceCandidateStats, mozilla::dom::RTCStats, mCandidateType,
-    mPriority, mTransportId, mAddress, mRelayProtocol, mPort, mProtocol,
-    mProxied);
+    mPriority, mTransportId, mAddress, mRelayProtocol, mUsernameFragment,
+    mFoundation, mPort, mProtocol, mTcpType, mProxied);
 
 DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS_AND_FIELDS(
     mozilla::dom::RTCReceivedRtpStreamStats, mozilla::dom::RTCRtpStreamStats,

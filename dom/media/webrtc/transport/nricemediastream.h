@@ -80,6 +80,8 @@ struct NrIceCandidate {
   TcpType tcp_type;
   std::string codeword;
   std::string label;
+  std::string foundation;
+  std::string username_fragment;
   bool trickled;
   uint32_t priority;
   bool is_proxied = false;

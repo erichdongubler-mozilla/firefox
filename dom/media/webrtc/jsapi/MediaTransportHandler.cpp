@@ -1165,6 +1165,18 @@ static void ToRTCIceCandidateStats(
       cand.mRelayProtocol.Construct(
           NS_ConvertASCIItoUTF16(candidate.local_addr.transport.c_str()));
     }
+    cand.mUsernameFragment.Construct(
+        NS_ConvertASCIItoUTF16(candidate.username_fragment.c_str()));
+    // Foundation is not set for peer-reflexive candidates.
+    if (candidate.type != NrIceCandidate::ICE_PEER_REFLEXIVE) {
+      cand.mFoundation.Construct(
+          NS_ConvertASCIItoUTF16(candidate.foundation.c_str()));
+    }
+    if (candidate.tcp_type == NrIceCandidate::ICE_ACTIVE) {
+      cand.mTcpType.Construct(dom::RTCIceTcpCandidateType::Active);
+    } else if (candidate.tcp_type == NrIceCandidate::ICE_PASSIVE) {
+      cand.mTcpType.Construct(dom::RTCIceTcpCandidateType::Passive);
+    }
     cand.mProxied.Construct(NS_ConvertASCIItoUTF16(
         candidate.is_proxied ? "proxied" : "non-proxied"));
     if (!stats->mIceCandidateStats.AppendElement(cand, fallible)) {

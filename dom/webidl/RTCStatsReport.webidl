@@ -220,6 +220,9 @@ dictionary RTCIceCandidateStats : RTCStats {
   RTCIceCandidateType candidateType;
   long priority;
   DOMString relayProtocol;
+  DOMString foundation;
+  DOMString usernameFragment;
+  RTCIceTcpCandidateType tcpType;
   // Because we use this internally but don't support RTCIceCandidateStats,
   // we need to keep the field as ChromeOnly. Bug 1225723
   [ChromeOnly]
