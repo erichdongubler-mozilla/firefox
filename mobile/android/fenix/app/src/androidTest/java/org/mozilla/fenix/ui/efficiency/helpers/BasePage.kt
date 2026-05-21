@@ -538,36 +538,23 @@ abstract class BasePage(
         }
     }
 
-    fun mozVerifyElementHasSiblingWithText(selector: Selector, siblingText: String, applyPreconditions: Boolean = true): Boolean {
+    fun mozVerifyElementHasSiblingWithText(selector: Selector, siblingText: String, applyPreconditions: Boolean = true): BasePage {
         val element = mozGetElement(selector, applyPreconditions = applyPreconditions)
+            ?: throw AssertionError("Element not found for selector: ${selector.description} (${selector.strategy} -> ${selector.value})")
 
-        return when (element) {
-            is ViewInteraction -> {
-                try {
-                    element.check(matches(hasSibling(withText(siblingText))))
-                    true
-                } catch (_: Exception) {
-                    false
-                }
-            }
+        when (element) {
+            is ViewInteraction -> element.check(matches(hasSibling(withText(siblingText))))
             is UiObject -> {
-                try {
-                    val sibling = element.getFromParent(UiSelector().text(siblingText))
-                    sibling.exists()
-                } catch (_: Exception) {
-                    false
+                val sibling = element.getFromParent(UiSelector().text(siblingText))
+                if (!sibling.exists()) {
+                    throw AssertionError("'${selector.description}' has no sibling with text '$siblingText'")
                 }
             }
-            is SemanticsNodeInteraction -> {
-                try {
-                    element.assert(hasAnySibling(hasText(siblingText)))
-                    true
-                } catch (_: AssertionError) {
-                    false
-                }
-            }
-            else -> false
+            is SemanticsNodeInteraction -> element.assert(hasAnySibling(hasText(siblingText)))
+            else -> throw AssertionError("Unsupported element type for selector: ${selector.description}")
         }
+
+        return this
     }
 
     // ------------------------------------------------------------

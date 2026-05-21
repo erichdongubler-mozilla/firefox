@@ -154,6 +154,11 @@ class SettingsCustomizeTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3186731
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.SettingsCustomizeTest#verifyTheAppIconSelectionPageTest"],
+        bug = 2040906,
+        since = "2026-05",
+    )
     @SmokeTest
     @Test
     fun verifyTheAppIconSelectionPageTest() {
@@ -167,6 +172,11 @@ class SettingsCustomizeTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3186734
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.SettingsCustomizeTest#verifyTheChangeAppIconButtonTest"],
+        bug = 2040906,
+        since = "2026-05",
+    )
     @SmokeTest
     @Test
     fun verifyTheChangeAppIconButtonTest() {
@@ -190,6 +200,11 @@ class SettingsCustomizeTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3333174
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.SettingsCustomizeTest#verifyTheToolbarLayoutSectionTest"],
+        bug = 2040906,
+        since = "2026-05",
+    )
     @Test
     fun verifyTheToolbarLayoutSectionTest() {
         homeScreen(composeTestRule) {
