@@ -2570,37 +2570,6 @@ security.ui.tlserror:
       is_frame: If the error page is loaded in an iframe.
       channel_status: The status of the failed channel, as an nsresult.
 
-slow_script_warning:
-  shown:
-    bug_numbers:
-      - 1652613
-      - 1667245
-      - 1672572
-    description: >
-      Recorded when a slow script hang is resolved.
-    products:
-      - "firefox"
-    record_in_processes: ["main"]
-    release_channel_collection: opt-out
-    expiry_version: "never"
-    notification_emails:
-      - dothayer@mozilla.com
-      - esmyth@mozilla.com
-      - gkruitbosch@mozilla.com
-      - perf-telemetry-alerts@mozilla.com
-    # Whether the hung script was for a content or browser process.
-    objects: [
-      "browser",
-      "content",
-    ]
-    extra_keys:
-      end_reason: Why the warning was hidden (user action, the process becoming responsive again, the browser quitting, etc.)
-      wait_count: How many times the user elected to wait.
-      hang_duration: How long we believe the hang continued (ms).
-      n_tab_deselect: How many times the user switched away from a tab affected by this hang.
-      uri_type: The kind of script URL that hung.
-      uptime: How long the notification was up (ms).
-
 ysod:
   shown:
     bug_numbers:
@@ -2784,23 +2753,6 @@ installation:
       - application-update-telemetry-alerts@mozilla.com
       - rtestard@mozilla.com
     expiry_version: never
-
-memory_watcher:
-  on_high_memory:
-    description: >
-      This event is recorded when the memory situation is no longer low.
-      The "stats" object consists of three numbers comma-delimited:
-      1) how many times a tab was unloaded
-      2) how many memory-pressure events were dispatched
-      3) how long we were in the low-memory situation in seconds
-    objects: ["stats"]
-    release_channel_collection: opt-out
-    expiry_version: never
-    record_in_processes: ["main"]
-    products: ["firefox"]
-    bug_numbers: [1715858]
-    notification_emails:
-      - tkikuchi@mozilla.com
 
 service_request:
   bypass:

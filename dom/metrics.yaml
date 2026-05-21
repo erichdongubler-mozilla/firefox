@@ -23,7 +23,6 @@ perf:
     notification_emails:
       - perf-telemetry-alerts@mozilla.com
     expires: never
-    telemetry_mirror: PERF_LARGEST_CONTENTFUL_PAINT_MS
     metadata:
       monitor:
         alert: False
@@ -43,7 +42,6 @@ perf:
     notification_emails:
       - perf-telemetry-alerts@mozilla.com
     expires: never
-    telemetry_mirror: PERF_LARGEST_CONTENTFUL_PAINT_FROM_RESPONSE_START_MS
   page_load:
     type: event
     description: >
@@ -338,7 +336,6 @@ performance.pageload:
   load_time:
     type: timing_distribution
     time_unit: millisecond
-    telemetry_mirror: PERF_PAGE_LOAD_TIME_MS
     description: >
       Time in milliseconds from navigationStart to loadEventStart
       for the foreground http or https root content document.
@@ -362,7 +359,6 @@ performance.pageload:
   load_time_responsestart:
     type: timing_distribution
     time_unit: millisecond
-    telemetry_mirror: PERF_PAGE_LOAD_TIME_FROM_RESPONSESTART_MS
     description: >
       Time in milliseconds from responseStart to loadEventStart
       for the foreground http or https root content document.
@@ -380,7 +376,6 @@ performance.pageload:
   fcp:
     type: timing_distribution
     time_unit: millisecond
-    telemetry_mirror: PERF_FIRST_CONTENTFUL_PAINT_MS
     description: >
       The time between navigationStart and the first contentful paint
       of a foreground http or https root content document, in
@@ -407,7 +402,6 @@ performance.pageload:
   fcp_responsestart:
     type: timing_distribution
     time_unit: millisecond
-    telemetry_mirror: PERF_FIRST_CONTENTFUL_PAINT_FROM_RESPONSESTART_MS
     description: >
       The time between responseStart and the first contentful paint
       of a foreground http or https root content document, in
@@ -429,7 +423,6 @@ performance.time:
   dom_interactive:
     type: timing_distribution
     time_unit: millisecond
-    telemetry_mirror: TIME_TO_DOM_INTERACTIVE_MS
     description: >
       Time from navigationStart to domInteractive as per the W3C
       Performance Timing API.
@@ -449,7 +442,6 @@ performance.time:
   dom_content_loaded_start:
     type: timing_distribution
     time_unit: millisecond
-    telemetry_mirror: TIME_TO_DOM_CONTENT_LOADED_START_MS
     description: >
       Time from navigationStart to domContentLoadedEventStart as per
       the W3C Performance Timing API.
@@ -468,7 +460,6 @@ performance.time:
   dom_content_loaded_end:
     type: timing_distribution
     time_unit: millisecond
-    telemetry_mirror: TIME_TO_DOM_CONTENT_LOADED_END_MS
     description: >
       Time from navigationStart to domContentLoadedEventEnd as per
       the W3C Performance Timing API.
@@ -488,7 +479,6 @@ performance.time:
   dom_complete:
     type: timing_distribution
     time_unit: millisecond
-    telemetry_mirror: TIME_TO_DOM_COMPLETE_MS
     description: >
       Time from navigationStart to domComplete as per the W3C Performance
       Timing API.
@@ -508,7 +498,6 @@ performance.time:
   load_event_start:
     type: timing_distribution
     time_unit: millisecond
-    telemetry_mirror: TIME_TO_LOAD_EVENT_START_MS
     description: >
       Time from navigationStart to loadEventStart as per the W3C Performance
       Timing API.
@@ -527,7 +516,6 @@ performance.time:
   load_event_end:
     type: timing_distribution
     time_unit: millisecond
-    telemetry_mirror: TIME_TO_LOAD_EVENT_END_MS
     description: >
       Time from navigationStart to loadEventEnd as per the W3C Performance
       Timing API.
@@ -564,7 +552,6 @@ performance.time:
     notification_emails:
       - perf-telemetry-alerts@mozilla.com
     expires: never
-    telemetry_mirror: TIME_TO_FIRST_CONTENTFUL_PAINT_MS
 
   to_dom_loading:
     type: timing_distribution
@@ -587,7 +574,6 @@ performance.page:
   non_blank_paint:
     type: timing_distribution
     time_unit: millisecond
-    telemetry_mirror: TIME_TO_NON_BLANK_PAINT_MS
     description: >
       The time between navigationStart and the first non-blank paint of a
       foreground root content document, in milliseconds. This only records
@@ -1078,7 +1064,6 @@ dom:
     notification_emails:
       - perf-telemetry-alerts@mozilla.com
     expires: never
-    telemetry_mirror: h#SLOW_SCRIPT_NOTICE_COUNT
 
   slow_script_page_count:
     type: counter
@@ -1094,7 +1079,6 @@ dom:
     notification_emails:
       - perf-telemetry-alerts@mozilla.com
     expires: never
-    telemetry_mirror: h#SLOW_SCRIPT_PAGE_COUNT
 
   script_loading_source:
     type: labeled_counter
