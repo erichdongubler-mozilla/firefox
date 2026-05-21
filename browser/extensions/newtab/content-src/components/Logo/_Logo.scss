@@ -72,16 +72,6 @@
     @include wallpaper-contrast-fix;
   }
 
-  // @backward-compat { version 153 }
-  // The .logo-variation-small + variants blocks below can be removed after
-  // Firefox 153 hits Release (2026 World Cup logo variation sunset).
-  .logo-variation-small {
-    cursor: pointer;
-    display: inline-block;
-    height: $logo-size;
-    width: $logo-size;
-  }
-
   // @nova-cleanup(remove-conditional): Delete this entire .classic-enabled block and its contents
   .classic-enabled & {
     @media (max-width: $break-point-medium - 1) {
@@ -104,4 +94,3 @@
   }
 }
 
-@import './variants/SpinBallSmall';
