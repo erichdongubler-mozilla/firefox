@@ -554,6 +554,14 @@ class WeakMap : public WeakMapBase {
     }
   }
   void keyKindBarrier(JSObject* key) {
+    // Fast path for non-proxy objects.
+    if (!IsProxy(key)) {
+      MOZ_ASSERT(!ObjectMayBeSwapped(key));
+      return;
+    }
+    keyKindBarrierSlow(key);
+  }
+  void keyKindBarrierSlow(JSObject* key) {
     if (!mayHaveKeyDelegates) {
       JSObject* delegate = UncheckedUnwrapWithoutExpose(key);
       if (delegate != key || ObjectMayBeSwapped(key)) {
