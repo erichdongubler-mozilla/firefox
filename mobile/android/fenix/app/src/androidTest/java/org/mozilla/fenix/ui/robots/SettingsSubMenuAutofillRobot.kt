@@ -273,7 +273,6 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
         listOf(
             composeTestRule.saveButton(),
             composeTestRule.cancelButton(),
-            composeTestRule.deleteAddressButton(),
         ).forEach { it.assertIsDisplayed() }
         Log.i(TAG, "verifyEditAddressView: Verified that the \"Edit address\" items are displayed")
     }
@@ -741,7 +740,6 @@ private fun ComposeTestRule.emailTextInput() = onNodeWithTag(EditAddressTestTag.
 private fun ComposeTestRule.addressForm() = onNodeWithTag(EditAddressTestTag.FORM)
 private fun ComposeTestRule.saveButton() = onNodeWithTag(EditAddressTestTag.SAVE_BUTTON)
 private fun ComposeTestRule.cancelButton() = onNodeWithTag(EditAddressTestTag.CANCEL_BUTTON)
-private fun ComposeTestRule.deleteAddressButton() = onNodeWithTag(EditAddressTestTag.DELETE_BUTTON)
 private fun ComposeTestRule.toolbarDeleteAddressButton() = onNodeWithTag(EditAddressTestTag.TOPBAR_DELETE_BUTTON)
 private fun ComposeTestRule.cancelDeleteAddressButton() = onNodeWithTag(EditAddressTestTag.DIALOG_CANCEL_BUTTON)
 private fun ComposeTestRule.confirmDeleteAddressButton() = onNodeWithTag(EditAddressTestTag.DIALOG_DELETE_BUTTON)
