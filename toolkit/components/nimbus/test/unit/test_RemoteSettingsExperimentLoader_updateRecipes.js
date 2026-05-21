@@ -1629,10 +1629,6 @@ add_task(async function test_updateRecipesClearsOptIns() {
 
   await loader.updateRecipes();
 
-  // TODO: forceEnroll should be in the list but clearing the list of recipes by
-  // source is implemented in a further patch.
-  expectedLabs.splice(2, 1);
-
   Assert.deepEqual(
     manager.optIns.toSorted(orderByRecipePublishedDate),
     expectedLabs

@@ -422,7 +422,7 @@ export class RemoteSettingsExperimentLoader {
   ) {
     lazy.log.debug(`Updating recipes with trigger "${trigger ?? ""}"`);
 
-    this.manager._clearOptInRecipes({ onlyFeatureIds });
+    this.manager._clearOptIns(this.SOURCE, { onlyFeatureIds });
 
     // The targeting context metrics do not work in artifact builds.
     // See-also: https://bugzilla.mozilla.org/show_bug.cgi?id=1936317

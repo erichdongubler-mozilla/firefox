@@ -1871,6 +1871,8 @@ export class ExperimentManager {
   /**
    * Clear the opt-in list.
    *
+   * @param {string} source
+   * Only recipes from this source will be removed.
    * @param {object} options
    * @param {Set<string> | undefined} options.onlyFeatureIds
    * If provided, only recipes that contain at least one of the features in this
@@ -1878,28 +1880,14 @@ export class ExperimentManager {
    *
    * Otherwise, all recipes will be removed.
    */
-  _clearOptInRecipes({ onlyFeatureIds = undefined } = {}) {
-    if (onlyFeatureIds) {
-      this.optIns = this.optIns.filter(entry =>
-        entry.recipe.featureIds.some(
-          featureId => !onlyFeatureIds.has(featureId)
-        )
-      );
-    } else {
-      this.optIns = [];
-    }
-  }
-
-  /**
-   * Sort the opt-in list by recipe published date.
-   *
-   * This must be called at the end of each update cycle to ensure that
-   * presentation of the features in about:preferences#experimental is
-   * consistent.
-   */
-  _sortOptInRecipes() {
-    this.optIns.sort(
-      (a, b) => new Date(a.publishedDate ?? 0) - new Date(b.publishedDate ?? 0)
+  _clearOptIns(source, { onlyFeatureIds = undefined } = {}) {
+    this.optIns = this.optIns.filter(
+      entry =>
+        source !== entry.source ||
+        (typeof onlyFeatureIds !== "undefined" &&
+          entry.recipe.featureIds.every(
+            featureId => !onlyFeatureIds.has(featureId)
+          ))
     );
   }
 
