@@ -754,24 +754,6 @@ let JSWINDOWACTORS = {
     enablePreference: "screenshots.browser.component.enabled",
   },
 
-  SearchSERPTelemetry: {
-    parent: {
-      esModuleURI: "resource:///actors/SearchSERPTelemetryParent.sys.mjs",
-    },
-    child: {
-      esModuleURI: "resource:///actors/SearchSERPTelemetryChild.sys.mjs",
-      events: {
-        DOMContentLoaded: {},
-        pageshow: { mozSystemGroup: true },
-        // The 'pagehide' event is only used to clean up state, and should not
-        // force actor creation.
-        pagehide: { createActor: false },
-        load: { mozSystemGroup: true, capture: true },
-      },
-    },
-    matches: ["https://*/*"],
-  },
-
   ShieldFrame: {
     parent: {
       esModuleURI: "resource://normandy-content/ShieldFrameParent.sys.mjs",

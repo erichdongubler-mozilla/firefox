@@ -31,6 +31,8 @@ support-files = [
   "../../schema/search-telemetry-v2-ui-schema.json",
 ]
 
+["test_convert_provider_infos_to_match_patterns.js"]
+
 ["test_urlTelemetry.js"]
 
 ["test_urlTelemetry_generic.js"]
