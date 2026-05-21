@@ -359,7 +359,6 @@
     <ID>HardcodedPaddingUsage:SportsCountrySelector.kt$(bottom = 8.dp)</ID>
     <ID>HardcodedPaddingUsage:SportsWidgetErrorCard.kt$(16.dp)</ID>
     <ID>HardcodedPaddingUsage:StartupCrashScreen.kt$(horizontal = 16.dp)</ID>
-    <ID>HardcodedPaddingUsage:StatusBadge.kt$(horizontal = 8.dp)</ID>
     <ID>HardcodedPaddingUsage:StoryCard.kt$(16.dp)</ID>
     <ID>HardcodedPaddingUsage:StoryCard.kt$(all = 8.dp)</ID>
     <ID>HardcodedPaddingUsage:SubmenuHeader.kt$(start = 4.dp, end = 16.dp)</ID>

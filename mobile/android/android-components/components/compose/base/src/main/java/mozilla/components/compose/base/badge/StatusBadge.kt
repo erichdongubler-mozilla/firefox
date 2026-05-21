@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-package org.mozilla.fenix.compose
+package mozilla.components.compose.base.badge
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,14 +20,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import mozilla.components.compose.base.theme.AcornTheme
+import mozilla.components.compose.base.theme.acornPrivateColorScheme
 import mozilla.components.compose.base.theme.information
 import mozilla.components.compose.base.theme.success
-import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.PreviewThemeProvider
-import org.mozilla.fenix.theme.Theme
 
 /**
  * A badge component used to communicate status
@@ -48,7 +46,7 @@ fun StatusBadge(
     Box(
         modifier = modifier
             .background(color = containerColor, shape = shape)
-            .padding(horizontal = 8.dp),
+            .padding(horizontal = AcornTheme.layout.space.static100),
         contentAlignment = Alignment.Center,
     ) {
         ProvideTextStyle(AcornTheme.typography.subtitle2.merge(color = contentColor)) {
@@ -95,39 +93,66 @@ fun StatusBadge(
     }
 }
 
-@Preview
+@PreviewLightDark
 @Composable
-private fun PreviewStatusBadge(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) = FirefoxTheme(theme) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        StatusPreviewParameter.values().forEach { param ->
-            StatusBadge(
-                containerColor = param.containerColor,
-                contentColor = param.contentColor,
-                status = param.status,
-            )
+private fun StatusBadgePreview() {
+    AcornTheme {
+        Column(
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.background)
+                .padding(AcornTheme.layout.space.static200),
+            verticalArrangement = Arrangement.spacedBy(AcornTheme.layout.space.static100),
+        ) {
+            StatusPreviewParameter.values().forEach { param ->
+                StatusBadge(
+                    containerColor = param.containerColor,
+                    contentColor = param.contentColor,
+                    status = param.status,
+                )
+            }
         }
     }
 }
 
 @Preview
 @Composable
-private fun PreviewStatusBadgeWithCustomizations(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) = FirefoxTheme(theme) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        StatusPreviewParameter.values().forEach { param ->
-            StatusBadge(
-                containerColor = param.containerColor,
-                contentColor = param.contentColor,
-                shape = MaterialTheme.shapes.small,
+private fun StatusBadgePrivatePreview() {
+    AcornTheme(colorScheme = acornPrivateColorScheme()) {
+        Surface {
+            Column(
+                modifier = Modifier.padding(AcornTheme.layout.space.static200),
+                verticalArrangement = Arrangement.spacedBy(AcornTheme.layout.space.static100),
             ) {
-                Text(text = param.status)
+                StatusPreviewParameter.values().forEach { param ->
+                    StatusBadge(
+                        containerColor = param.containerColor,
+                        contentColor = param.contentColor,
+                        status = param.status,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun StatusBadgeWithCustomizationsPreview() {
+    AcornTheme {
+        Surface {
+            Column(
+                modifier = Modifier.padding(AcornTheme.layout.space.static200),
+                verticalArrangement = Arrangement.spacedBy(AcornTheme.layout.space.static100),
+            ) {
+                StatusPreviewParameter.values().forEach { param ->
+                    StatusBadge(
+                        containerColor = param.containerColor,
+                        contentColor = param.contentColor,
+                        shape = MaterialTheme.shapes.small,
+                    ) {
+                        Text(text = param.status)
+                    }
+                }
             }
         }
     }
