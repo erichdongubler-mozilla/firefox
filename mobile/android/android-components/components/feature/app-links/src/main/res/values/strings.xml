@@ -20,6 +20,8 @@
     <string name="mozac_feature_applinks_normal_confirm_dialog_message">Would you like to leave %s to view this content?</string>
     <!-- Opens the selected time -->
     <string name="mozac_feature_applinks_confirm_dialog_confirm">Open</string>
+    <!-- Opens the selected app link -->
+    <string name="mozac_feature_applinks_confirm_dialog_confirm_2">Open in App</string>
     <!-- Cancels the prompt -->
     <string name="mozac_feature_applinks_confirm_dialog_deny">Cancel</string>
     <!-- The label of the checkbox that, depending of user's choice, can change the Open links in apps setting -->

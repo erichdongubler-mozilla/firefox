@@ -275,6 +275,7 @@ private fun AppLinkRedirectBottomSheetContent(
         }
 
         AppLinkActionButtons(
+            appName = config.appName,
             onConfirm = { onConfirm(isCheckboxChecked) },
             onCancel = onCancel,
         )
@@ -441,6 +442,7 @@ private fun AppLinkCheckboxSection(
 
 @Composable
 private fun AppLinkActionButtons(
+    appName: String,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -451,7 +453,7 @@ private fun AppLinkActionButtons(
     ) {
         TextButton(onClick = onCancel) {
             Text(
-                text = stringResource(AppLinksR.string.mozac_feature_applinks_confirm_dialog_deny),
+                text = stringResource(R.string.applinks_prompt_negative_button, appName),
                 style = FirefoxTheme.typography.button,
                 color = MaterialTheme.colorScheme.secondary,
             )
@@ -466,7 +468,7 @@ private fun AppLinkActionButtons(
             ),
         ) {
             Text(
-                text = stringResource(AppLinksR.string.mozac_feature_applinks_confirm_dialog_confirm),
+                text = stringResource(AppLinksR.string.mozac_feature_applinks_confirm_dialog_confirm_2),
                 style = FirefoxTheme.typography.button,
                 color = MaterialTheme.colorScheme.onPrimary,
             )

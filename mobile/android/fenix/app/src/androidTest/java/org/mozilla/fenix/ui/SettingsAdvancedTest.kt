@@ -23,7 +23,6 @@ import org.mozilla.fenix.helpers.Constants
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
-import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
 import org.mozilla.fenix.helpers.OpenLinksInApp
 import org.mozilla.fenix.helpers.TestAssetHelper
 import org.mozilla.fenix.helpers.TestAssetHelper.appLinksRedirectAsset
@@ -153,7 +152,7 @@ class SettingsAdvancedTest {
         }.enterURLAndEnterToBrowser(externalLinksPage.url) {
             clickPageObject(composeTestRule, youtubeSchemaUrlLink)
             verifyOpenLinkInAnotherAppPrompt(appName = "YouTube")
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
             verifyUrl(externalLinksPage.url.toString())
         }
     }
@@ -172,7 +171,7 @@ class SettingsAdvancedTest {
             clickPageObject(composeTestRule, youtubeSchemaUrlLink)
             verifyOpenLinkInAnotherAppPrompt(appName = "YouTube")
             waitForAppWindowToBeUpdated()
-            clickPageObject(composeTestRule, itemWithText("Open"))
+            clickPageObject(composeTestRule, itemContainingText("Open in App"))
             mDevice.waitForIdle()
             assertYoutubeAppOpens()
         }
@@ -198,7 +197,7 @@ class SettingsAdvancedTest {
                 url = "youtube",
                 pageObject = youtubeSchemaUrlLink,
             )
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
             verifyUrl(externalLinksPage.url.toString())
         }
     }
@@ -225,7 +224,7 @@ class SettingsAdvancedTest {
                 pageObject = youtubeSchemaUrlLink,
             )
             waitForAppWindowToBeUpdated()
-            clickPageObject(composeTestRule, itemWithText("Open"))
+            clickPageObject(composeTestRule, itemContainingText("Open in App"))
             mDevice.waitForIdle()
             assertYoutubeAppOpens()
         }
@@ -360,7 +359,7 @@ class SettingsAdvancedTest {
         }.enterURLAndEnterToBrowser(externalLinksPage.url) {
             clickPageObject(composeTestRule, phoneUrlLink)
             verifyOpenLinkInAnotherAppPrompt(appName = "Phone")
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
             mDevice.waitForIdle()
             verifyUrl(externalLinksPage.url.toString())
         }
@@ -381,7 +380,7 @@ class SettingsAdvancedTest {
         }.enterURLAndEnterToBrowser(externalLinksPage.url) {
             clickPageObject(composeTestRule, phoneUrlLink)
             verifyOpenLinkInAnotherAppPrompt(appName = "Phone")
-            clickPageObject(composeTestRule, itemWithText("Open"))
+            clickPageObject(composeTestRule, itemContainingText("Open in App"))
             mDevice.waitForIdle()
             assertNativeAppOpens(composeTestRule, Constants.PackageName.PHONE_APP, phoneSchemaLink)
             mDevice.waitForIdle()
@@ -405,7 +404,7 @@ class SettingsAdvancedTest {
             clickPageObject(composeTestRule, phoneUrlLink)
             verifyOpenLinkInAnotherAppPrompt(appName = "Phone")
             verifyAppLinksPromptCheckbox(exists = true)
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
         }
     }
 
@@ -429,7 +428,7 @@ class SettingsAdvancedTest {
             clickPageObject(composeTestRule, youtubeSchemaUrlLink)
             verifyOpenLinkInAnotherAppPrompt(appName = "YouTube")
             verifyAppLinksPromptCheckbox(exists = false)
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
         }
     }
 
@@ -448,7 +447,7 @@ class SettingsAdvancedTest {
         }.enterURLAndEnterToBrowser(externalLinksPage.url) {
             clickPageObject(composeTestRule, youtubeSchemaUrlLink)
             verifyOpenLinkInAnotherAppPrompt(appName = "YouTube")
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
             mDevice.waitForIdle()
             verifyUrl(externalLinksPage.url.toString())
         }
@@ -469,7 +468,7 @@ class SettingsAdvancedTest {
         }.enterURLAndEnterToBrowser(externalLinksPage.url) {
             clickPageObject(composeTestRule, youtubeSchemaUrlLink)
             verifyOpenLinkInAnotherAppPrompt(appName = "YouTube")
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
             mDevice.waitForIdle()
             verifyUrl(externalLinksPage.url.toString())
             clickPageObject(composeTestRule, youtubeSchemaUrlLink)
@@ -497,7 +496,7 @@ class SettingsAdvancedTest {
         }.enterURLAndEnterToBrowser(externalLinksPage.url) {
             clickPageObject(composeTestRule, youtubeSchemaUrlLink)
             verifyOpenLinkInAnotherAppPrompt(appName = "YouTube")
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
             mDevice.waitForIdle()
             verifyUrl(externalLinksPage.url.toString())
         }.openTabDrawer(composeTestRule) {
@@ -505,7 +504,7 @@ class SettingsAdvancedTest {
         }.submitQuery(externalLinksPage.url.toString()) {
             clickPageObject(composeTestRule, youtubeSchemaUrlLink)
             verifyOpenLinkInAnotherAppPrompt(appName = "YouTube")
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
             mDevice.waitForIdle()
             verifyUrl(externalLinksPage.url.toString())
         }
@@ -530,7 +529,7 @@ class SettingsAdvancedTest {
         }.enterURLAndEnterToBrowser(externalLinksPage.url) {
             clickPageObject(composeTestRule, youtubeSchemaUrlLink)
             verifyOpenLinkInAnotherAppPrompt(appName = "YouTube")
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
             mDevice.waitForIdle()
             verifyUrl(externalLinksPage.url.toString())
         }
@@ -639,7 +638,7 @@ class SettingsAdvancedTest {
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(externalLinksPage.url) {
             clickPageObject(composeTestRule, intentSchemeWithExampleAppLink)
-            clickPageObject(composeTestRule, itemWithText("Open"))
+            clickPageObject(composeTestRule, itemContainingText("Open in App"))
             mDevice.waitForIdle()
             intended(hasAction(Intent.ACTION_VIEW))
             intended(hasDataString(equalTo("market://details?id=com.example.app")))
@@ -661,7 +660,7 @@ class SettingsAdvancedTest {
         }.enterURLAndEnterToBrowser(externalLinksPage.url) {
             clickPageObject(composeTestRule, phoneWithFallbackLink)
             verifyOpenLinkInAnotherAppPrompt(appName = "Phone")
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
             mDevice.waitForIdle()
             verifyUrl("mozilla.org")
         }
