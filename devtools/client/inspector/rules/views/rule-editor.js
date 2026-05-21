@@ -462,24 +462,6 @@ class RuleEditor extends EventEmitter {
    * @param {Array<object>} containerQueryData.conditions
    */
   #createAncestorContainerQuerySelector(selectorContainer, containerQueryData) {
-    // @backward-compat { version 151 } Before, we were receiving single
-    // containerName and containerQuery. Firefox 150 added the possibility to have
-    // multiple conditions in a container query, so we need to transform the "old"
-    // data to match the shape of the new one.
-    // This step can be removed once 151 hits release
-    if (!containerQueryData.conditions) {
-      containerQueryData.conditions = [
-        {
-          containerName: containerQueryData.containerName,
-          containerQuery: containerQueryData.containerQuery,
-          // in this case we only have one condition, so it's guaranteed to have a container,
-          // otherwise we wouldn't get this rule
-          hasContainer: true,
-          matched: true,
-        },
-      ];
-    }
-
     const containerQueryEl = createChild(selectorContainer, "span", {
       class: "container-query",
     });
