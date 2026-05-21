@@ -6,8 +6,10 @@
 #define LAYOUT_STYLE_TYPEDOM_CSSSKEWY_H_
 
 #include "js/TypeDecls.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/dom/CSSNumericValueBindingFwd.h"
 #include "mozilla/dom/CSSTransformComponent.h"
+#include "nsCycleCollectionParticipant.h"
 
 template <class T>
 struct already_AddRefed;
@@ -25,18 +27,23 @@ class GlobalObject;
 
 class CSSSkewY final : public CSSTransformComponent {
  public:
-  explicit CSSSkewY(nsCOMPtr<nsISupports> aParent);
+  CSSSkewY(nsCOMPtr<nsISupports> aParent, bool aIs2D,
+           RefPtr<CSSNumericValue> aAy);
+
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CSSSkewY, CSSTransformComponent)
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
   // start of CSSSkewY Web IDL declarations
 
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssskewy-cssskewy
   static already_AddRefed<CSSSkewY> Constructor(const GlobalObject& aGlobal,
                                                 CSSNumericValue& aAy,
                                                 ErrorResult& aRv);
 
-  CSSNumericValue* GetAy(ErrorResult& aRv) const;
+  CSSNumericValue* Ay() const;
 
   void SetAy(CSSNumericValue& aArg, ErrorResult& aRv);
 
@@ -47,6 +54,8 @@ class CSSSkewY final : public CSSTransformComponent {
 
  protected:
   virtual ~CSSSkewY() = default;
+
+  RefPtr<CSSNumericValue> mAy;
 };
 
 }  // namespace dom
