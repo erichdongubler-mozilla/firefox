@@ -6409,8 +6409,8 @@ button.arrow-button:dir(rtl) {
 }
 
 .sports-team-flag {
-  width: 37px;
-  height: 26px;
+  width: 30px;
+  height: var(--dimension-20);
   object-fit: cover;
   flex-shrink: 0;
 }
