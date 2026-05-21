@@ -6916,10 +6916,50 @@ dialog:dir(rtl)::after {
   margin-inline: auto;
 }
 
-.sports-matches-list {
+.sports-matches-list-section > ul {
   list-style: none;
   padding-inline-start: 0;
   margin-block: 0;
+}
+
+.sports-matches-list {
+  margin-block-start: var(--space-medium);
+}
+
+.sports-section-label {
+  color: var(--text-color-deemphasized);
+  font-size: var(--font-size-small);
+}
+
+.sports-matches-list-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-large);
+}
+
+@keyframes sports-section-label-live-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+.sports-section-label-live {
+  color: var(--text-color-error);
+  font-weight: var(--font-weight-heading);
+  animation: sports-section-label-live-pulse 1.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sports-section-label-live {
+    animation: none;
+  }
+}
+
+.sports-matches-list-section + .sports-matches-list-section {
+  border-block-start: 1px solid var(--border-color-deemphasized);
+  padding-block-start: calc(var(--space-large) + var(--space-xsmall));
+  margin-block-start: calc(var(--space-large) + var(--space-xsmall));
 }
 
 .sports-matches-tab-panel:not(:has(.match-highlight-view)) > moz-button {
@@ -6930,6 +6970,16 @@ dialog:dir(rtl)::after {
 .sports-matches-tab-panel:has(.match-highlight-view) {
   height: 100%;
   position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.sports-matches-tab-panel:has(.match-highlight-view) > .sports-section-label {
+  margin-block-start: var(--space-medium);
+}
+
+.sports-matches-tab-panel:has(.match-highlight-view) > .match-highlight-view {
+  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;

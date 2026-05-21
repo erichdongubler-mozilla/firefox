@@ -40,6 +40,32 @@ const mockMatch = {
   query: "ENG vs USA",
 };
 
+function makeGroupMatch(letter, overrides = {}) {
+  return {
+    ...mockMatch,
+    stage: "Group Stage",
+    home_team: { ...mockMatch.home_team, group: `Group ${letter}` },
+    away_team: { ...mockMatch.away_team, group: `Group ${letter}` },
+    ...overrides,
+  };
+}
+
+function makeKnockoutMatch(stage, overrides = {}) {
+  return {
+    ...mockMatch,
+    stage,
+    home_team: { ...mockMatch.home_team, group: "Group A" },
+    away_team: { ...mockMatch.away_team, group: "Group A" },
+    ...overrides,
+  };
+}
+
+function getVisibleTabPanel(container) {
+  return [...container.querySelectorAll(".sports-matches-tab-panel")].find(
+    panel => !panel.hasAttribute("hidden")
+  );
+}
+
 const PREF_NOVA_ENABLED = "nova.enabled";
 const PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
 
@@ -1396,5 +1422,267 @@ describe("<SportsWidget> telemetry", () => {
       })
     );
     expect(handleUserInteraction).toHaveBeenCalledWith("sportsWidget");
+  });
+});
+
+describe("<SportsWidget> stage section labels in highlight views", () => {
+  function renderInMatchesState({
+    matchesTab,
+    size = "large",
+    previous = [],
+    current = [],
+    next = [],
+  }) {
+    return render(
+      <WrapWithProvider
+        state={makeState(
+          { [PREF_SPORTS_WIDGET_SIZE]: size },
+          {
+            widgetState: "sports-matches",
+            matchesTab,
+            data: {
+              teams: [],
+              matches: { previous, current, next },
+            },
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+  }
+
+  it("renders the per-group Fluent ID above the Results highlight at large size", () => {
+    const { container } = renderInMatchesState({
+      matchesTab: "results",
+      previous: [makeGroupMatch("D")],
+    });
+    const label = getVisibleTabPanel(container).querySelector(
+      ".sports-section-label"
+    );
+    expect(label).not.toBeNull();
+    expect(
+      label.querySelector("[data-l10n-id]").getAttribute("data-l10n-id")
+    ).toBe("newtab-sports-widget-group-d");
+  });
+
+  it("renders the per-group Fluent ID above the Now highlight at large size", () => {
+    const { container } = renderInMatchesState({
+      matchesTab: "now",
+      current: [makeGroupMatch("F")],
+    });
+    const label = getVisibleTabPanel(container).querySelector(
+      ".sports-section-label"
+    );
+    expect(label).not.toBeNull();
+    const stageEl = label.querySelector(
+      "[data-l10n-id='newtab-sports-widget-group-f']"
+    );
+    expect(stageEl).not.toBeNull();
+  });
+
+  it("appends the LIVE badge to the Now highlight section label", () => {
+    const { container } = renderInMatchesState({
+      matchesTab: "now",
+      current: [makeGroupMatch("F")],
+    });
+    const panel = getVisibleTabPanel(container);
+    const liveBadge = panel.querySelector(".sports-section-label-live");
+    expect(liveBadge).not.toBeNull();
+    expect(
+      liveBadge.querySelector("[data-l10n-id='newtab-sports-widget-live']")
+    ).not.toBeNull();
+  });
+
+  it("appends the LIVE badge when the Now match is in a knockout stage", () => {
+    const { container } = renderInMatchesState({
+      matchesTab: "now",
+      current: [makeKnockoutMatch("Quarter-finals")],
+    });
+    const panel = getVisibleTabPanel(container);
+    expect(
+      panel.querySelector(
+        ".sports-section-label [data-l10n-id='newtab-sports-widget-quarter-finals']"
+      )
+    ).not.toBeNull();
+    expect(panel.querySelector(".sports-section-label-live")).not.toBeNull();
+  });
+
+  it("does NOT show the LIVE badge on Results or Upcoming highlights", () => {
+    const resultsRender = renderInMatchesState({
+      matchesTab: "results",
+      previous: [makeGroupMatch("A")],
+    });
+    expect(
+      getVisibleTabPanel(resultsRender.container).querySelector(
+        ".sports-section-label-live"
+      )
+    ).toBeNull();
+
+    const upcomingRender = renderInMatchesState({
+      matchesTab: "upcoming",
+      next: [makeGroupMatch("A")],
+    });
+    expect(
+      getVisibleTabPanel(upcomingRender.container).querySelector(
+        ".sports-section-label-live"
+      )
+    ).toBeNull();
+  });
+
+  it("renders the per-group Fluent ID above the Upcoming highlight at large size", () => {
+    const { container } = renderInMatchesState({
+      matchesTab: "upcoming",
+      next: [makeGroupMatch("L")],
+    });
+    const stageEl = getVisibleTabPanel(container).querySelector(
+      ".sports-section-label [data-l10n-id='newtab-sports-widget-group-l']"
+    );
+    expect(stageEl).not.toBeNull();
+  });
+
+  it("renders the knockout-stage Fluent ID for a Round of 16 match", () => {
+    const { container } = renderInMatchesState({
+      matchesTab: "upcoming",
+      next: [makeKnockoutMatch("Round of 16")],
+    });
+    const stageEl = getVisibleTabPanel(container).querySelector(
+      ".sports-section-label [data-l10n-id='newtab-sports-widget-round-16']"
+    );
+    expect(stageEl).not.toBeNull();
+  });
+
+  it("falls back to raw match.stage text when stage is unmapped", () => {
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const { container } = renderInMatchesState({
+      matchesTab: "upcoming",
+      next: [makeKnockoutMatch("Mystery Stage")],
+    });
+    const label = getVisibleTabPanel(container).querySelector(
+      ".sports-section-label"
+    );
+    expect(label.textContent).toContain("Mystery Stage");
+    expect(label.querySelector("[data-l10n-id]")).toBeNull();
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Mystery Stage")
+    );
+    warnSpy.mockRestore();
+  });
+
+  it("does NOT render a section label at medium widget size", () => {
+    const { container } = renderInMatchesState({
+      matchesTab: "results",
+      size: "medium",
+      previous: [makeGroupMatch("D")],
+    });
+    expect(
+      getVisibleTabPanel(container).querySelector(".sports-section-label")
+    ).toBeNull();
+  });
+});
+
+describe("<SportsWidget> list-view grouped sections", () => {
+  function renderListState({ matchesTab, previous = [], next = [] }) {
+    return render(
+      <WrapWithProvider
+        state={makeState(
+          {},
+          {
+            widgetState: "sports-matches",
+            matchesTab,
+            data: {
+              teams: [],
+              matches: { previous, current: [], next },
+            },
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+  }
+
+  function expandList(panel) {
+    fireEvent.click(
+      panel.querySelector("[data-l10n-id='newtab-sports-widget-view-all']")
+    );
+  }
+
+  it("renders one section per group with the right Fluent ID and match count", () => {
+    const previous = [
+      makeGroupMatch("A", { date: "2026-05-08T14:00:00+00:00" }),
+      makeGroupMatch("A", { date: "2026-05-08T16:00:00+00:00" }),
+      makeGroupMatch("B", { date: "2026-05-09T14:00:00+00:00" }),
+    ];
+    const { container } = renderListState({ matchesTab: "results", previous });
+    const panel = getVisibleTabPanel(container);
+    expandList(panel);
+    const sections = panel.querySelectorAll(".sports-matches-list-section");
+    expect(sections.length).toBe(2);
+    expect(
+      sections[0]
+        .querySelector(".sports-section-label [data-l10n-id]")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-sports-widget-group-a");
+    expect(sections[0].querySelectorAll("li").length).toBe(2);
+    expect(
+      sections[1]
+        .querySelector(".sports-section-label [data-l10n-id]")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-sports-widget-group-b");
+    expect(sections[1].querySelectorAll("li").length).toBe(1);
+  });
+
+  it("preserves Merino's order when the same key reappears later", () => {
+    const previous = [
+      makeGroupMatch("A", { date: "2026-05-08T14:00:00+00:00" }),
+      makeGroupMatch("B", { date: "2026-05-09T14:00:00+00:00" }),
+      makeGroupMatch("A", { date: "2026-05-10T14:00:00+00:00" }),
+    ];
+    const { container } = renderListState({ matchesTab: "results", previous });
+    const panel = getVisibleTabPanel(container);
+    expandList(panel);
+    const ids = [
+      ...panel.querySelectorAll(
+        ".sports-matches-list-section .sports-section-label [data-l10n-id]"
+      ),
+    ].map(el => el.getAttribute("data-l10n-id"));
+    expect(ids).toEqual([
+      "newtab-sports-widget-group-a",
+      "newtab-sports-widget-group-b",
+      "newtab-sports-widget-group-a",
+    ]);
+  });
+
+  it("groups Upcoming list-view matches the same way", () => {
+    const next = [
+      makeGroupMatch("C", { date: "2026-06-11T14:00:00+00:00" }),
+      makeKnockoutMatch("Round of 16", { date: "2026-07-04T14:00:00+00:00" }),
+      makeKnockoutMatch("Round of 16", { date: "2026-07-04T18:00:00+00:00" }),
+    ];
+    const { container } = renderListState({ matchesTab: "upcoming", next });
+    const panel = getVisibleTabPanel(container);
+    expandList(panel);
+    const sections = panel.querySelectorAll(".sports-matches-list-section");
+    expect(sections.length).toBe(2);
+    expect(
+      sections[0]
+        .querySelector(".sports-section-label [data-l10n-id]")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-sports-widget-group-c");
+    expect(
+      sections[1]
+        .querySelector(".sports-section-label [data-l10n-id]")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-sports-widget-round-16");
+    expect(sections[1].querySelectorAll("li").length).toBe(2);
+  });
+
+  it("does NOT add the LIVE badge to list-view section headers", () => {
+    const previous = [makeGroupMatch("A")];
+    const { container } = renderListState({ matchesTab: "results", previous });
+    const panel = getVisibleTabPanel(container);
+    expandList(panel);
+    expect(panel.querySelector(".sports-section-label-live")).toBeNull();
   });
 });

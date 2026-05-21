@@ -16258,12 +16258,100 @@ function useLocalizedTeamNames(teams) {
   // Only expose names that match the current `teams` reference.
   return resolved.teams === teams ? resolved.names : null;
 }
+;// CONCATENATED MODULE: ./content-src/components/Widgets/SportsWidget/stageLabels.mjs
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+// Merino sends the literal string "Group Stage" for matches in the
+// group phase; any other value signals a knockout stage.
+const GROUP_STAGE_LABEL = "Group Stage";
+
+// Map from the literal `match.stage` string Merino sends for each
+// knockout phase to the corresponding Fluent message ID. Expected
+// spellings, not yet observed in production (tournament hasn't reached
+// knockouts at time of writing).
+const KNOCKOUT_STAGE_L10N_IDS = {
+  "Round of 32": "newtab-sports-widget-round-32",
+  "Round of 16": "newtab-sports-widget-round-16",
+  "Quarter-finals": "newtab-sports-widget-quarter-finals",
+  "Semi-finals": "newtab-sports-widget-semi-finals",
+  "Bronze Final": "newtab-sports-widget-bronze-finals",
+  Final: "newtab-sports-widget-final",
+};
+
+/**
+ * Resolves a match to a Fluent ID for its section label.
+ *
+ * Group phase: derives the ID from the team's group letter, e.g.
+ * a match in "Group A" yields newtab-sports-widget-group-a.
+ *
+ * Knockout phase: looks up `match.stage` in KNOCKOUT_STAGE_L10N_IDS.
+ *
+ * Returns `null` when the input doesn't match any known shape so
+ * callers can fall back to raw `match.stage` text. Warns on each
+ * unmapped value so unexpected backend data is visible in the console.
+ */
+function getMatchSectionL10nId(match) {
+  if (match?.stage === GROUP_STAGE_LABEL) {
+    const groupString = match.home_team?.group || match.away_team?.group;
+    const lastChar = groupString?.trim().slice(-1).toLowerCase();
+    if (lastChar && lastChar >= "a" && lastChar <= "l") {
+      return `newtab-sports-widget-group-${lastChar}`;
+    }
+    console.warn(
+      `Sports widget: malformed team.group=${JSON.stringify(groupString)}; falling back to raw text.`
+    );
+    return null;
+  }
+  const id = KNOCKOUT_STAGE_L10N_IDS[match?.stage];
+  if (!id && match?.stage) {
+    console.warn(
+      `Sports widget: unmapped match.stage=${JSON.stringify(match.stage)}; falling back to raw text.`
+    );
+  }
+  return id ?? null;
+}
+
+/**
+ * Returns the key used to group consecutive matches into a single
+ * section: the full team group string ("Group A") for group stage,
+ * or the raw `match.stage` value otherwise.
+ */
+function getMatchSectionKey(match) {
+  if (match?.stage === GROUP_STAGE_LABEL) {
+    return match.home_team?.group || match.away_team?.group || match.stage;
+  }
+  return match?.stage;
+}
+
+/**
+ * Groups a flat list of matches into ordered sections, preserving the
+ * input order. Consecutive matches sharing the same section key go
+ * under one section; if the same key reappears later it gets a new
+ * section (we do not re-sort).
+ */
+function groupMatchesBySection(matches) {
+  const sections = [];
+  for (const match of matches) {
+    const key = getMatchSectionKey(match);
+    const last = sections[sections.length - 1];
+    if (last && last.key === key) {
+      last.matches.push(match);
+    } else {
+      sections.push({ key, matches: [match] });
+    }
+  }
+  return sections;
+}
+
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/SportsWidget/SportsWidget.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 // eslint-disable-next-line no-unused-vars
+
 
 
 
@@ -16772,6 +16860,29 @@ function SportsWidgetFollowTeams({
     onClick: () => onSave(activeSelectedTeams)
   }));
 }
+function SportsSectionLabel({
+  match,
+  withLiveBadge = false
+}) {
+  const l10nId = getMatchSectionL10nId(match);
+  const stageContent = l10nId ? /*#__PURE__*/external_React_default().createElement("span", {
+    "data-l10n-id": l10nId
+  }) : /*#__PURE__*/external_React_default().createElement("span", null, match.stage);
+  if (!withLiveBadge) {
+    return /*#__PURE__*/external_React_default().createElement("span", {
+      className: "sports-section-label"
+    }, stageContent);
+  }
+  return /*#__PURE__*/external_React_default().createElement("span", {
+    className: "sports-section-label"
+  }, stageContent, " ", /*#__PURE__*/external_React_default().createElement("span", {
+    className: "sports-section-label-live"
+  }, /*#__PURE__*/external_React_default().createElement("span", {
+    "aria-hidden": "true"
+  }, "• "), /*#__PURE__*/external_React_default().createElement("span", {
+    "data-l10n-id": "newtab-sports-widget-live"
+  })));
+}
 function SportsMatchesView({
   matchesTab,
   hasLiveGames,
@@ -16810,23 +16921,30 @@ function SportsMatchesView({
     className: "sports-matches-tab-panel",
     hidden: matchesTab !== MATCHES_TABS.RESULTS,
     ref: resultsPanelRef
-  }, showResultsList ? /*#__PURE__*/external_React_default().createElement("ul", {
+  }, showResultsList ? /*#__PURE__*/external_React_default().createElement("div", {
     className: "sports-matches-list"
-  }, previous.map(match => /*#__PURE__*/external_React_default().createElement("li", {
+  }, groupMatchesBySection(previous).map((section, idx) => /*#__PURE__*/external_React_default().createElement("div", {
+    key: `${section.key}-${idx}`,
+    className: "sports-matches-list-section"
+  }, /*#__PURE__*/external_React_default().createElement(SportsSectionLabel, {
+    match: section.matches[0]
+  }), /*#__PURE__*/external_React_default().createElement("ul", null, section.matches.map(match => /*#__PURE__*/external_React_default().createElement("li", {
     key: `${match.home_team.key}-${match.away_team.key}-${match.date}`
   }, /*#__PURE__*/external_React_default().createElement(SportsMatchRow, {
     match: match,
     variant: "results",
     size: "list",
     handleInteraction: handleInteraction
-  })))) : previous[0] && /*#__PURE__*/external_React_default().createElement("div", {
+  }))))))) : previous[0] && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, size === "large" && /*#__PURE__*/external_React_default().createElement(SportsSectionLabel, {
+    match: previous[0]
+  }), /*#__PURE__*/external_React_default().createElement("div", {
     className: "match-highlight-view"
   }, /*#__PURE__*/external_React_default().createElement(SportsMatchRow, {
     match: previous[0],
     variant: "results",
     size: size,
     handleInteraction: handleInteraction
-  })), !!previous.length && /*#__PURE__*/external_React_default().createElement("moz-button", {
+  }))), !!previous.length && /*#__PURE__*/external_React_default().createElement("moz-button", {
     type: "secondary",
     size: size === "medium" ? "small" : undefined,
     "data-l10n-id": showResultsList ? "newtab-sports-widget-show-less" : "newtab-sports-widget-view-all",
@@ -16834,7 +16952,10 @@ function SportsMatchesView({
   })), hasLiveGames && /*#__PURE__*/external_React_default().createElement("div", {
     className: "sports-matches-tab-panel",
     hidden: matchesTab !== MATCHES_TABS.NOW
-  }, current[0] && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("div", {
+  }, current[0] && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, size === "large" && /*#__PURE__*/external_React_default().createElement(SportsSectionLabel, {
+    match: current[0],
+    withLiveBadge: true
+  }), /*#__PURE__*/external_React_default().createElement("div", {
     className: "match-highlight-view"
   }, /*#__PURE__*/external_React_default().createElement(SportsMatchRow, {
     match: current[0],
@@ -16850,23 +16971,30 @@ function SportsMatchesView({
     className: "sports-matches-tab-panel",
     hidden: matchesTab !== MATCHES_TABS.UPCOMING,
     ref: upcomingPanelRef
-  }, showUpcomingList ? /*#__PURE__*/external_React_default().createElement("ul", {
+  }, showUpcomingList ? /*#__PURE__*/external_React_default().createElement("div", {
     className: "sports-matches-list"
-  }, next.map(match => /*#__PURE__*/external_React_default().createElement("li", {
+  }, groupMatchesBySection(next).map((section, idx) => /*#__PURE__*/external_React_default().createElement("div", {
+    key: `${section.key}-${idx}`,
+    className: "sports-matches-list-section"
+  }, /*#__PURE__*/external_React_default().createElement(SportsSectionLabel, {
+    match: section.matches[0]
+  }), /*#__PURE__*/external_React_default().createElement("ul", null, section.matches.map(match => /*#__PURE__*/external_React_default().createElement("li", {
     key: `${match.home_team.key}-${match.away_team.key}-${match.date}`
   }, /*#__PURE__*/external_React_default().createElement(SportsMatchRow, {
     match: match,
     variant: "upcoming",
     size: "list",
     handleInteraction: handleInteraction
-  })))) : next[0] && /*#__PURE__*/external_React_default().createElement("div", {
+  }))))))) : next[0] && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, size === "large" && /*#__PURE__*/external_React_default().createElement(SportsSectionLabel, {
+    match: next[0]
+  }), /*#__PURE__*/external_React_default().createElement("div", {
     className: "match-highlight-view"
   }, /*#__PURE__*/external_React_default().createElement(SportsMatchRow, {
     match: next[0],
     variant: "upcoming",
     size: size,
     handleInteraction: handleInteraction
-  })), !!next.length && /*#__PURE__*/external_React_default().createElement("moz-button", {
+  }))), !!next.length && /*#__PURE__*/external_React_default().createElement("moz-button", {
     type: "secondary",
     size: size === "medium" ? "small" : undefined,
     "data-l10n-id": showUpcomingList ? "newtab-sports-widget-show-less" : "newtab-sports-widget-view-all",

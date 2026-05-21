@@ -8,9 +8,13 @@ import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { useIntersectionObserver } from "../../../lib/utils";
 import { SportsMatchRow } from "./SportsMatchRow";
+import { MoveSubmenu } from "../MoveSubmenu";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 import { useLocalizedTeamNames } from "./useLocalizedTeamNames.jsx";
-import { MoveSubmenu } from "../MoveSubmenu";
+import {
+  getMatchSectionL10nId,
+  groupMatchesBySection,
+} from "./stageLabels.mjs";
 
 const WIDGET_STATES = {
   INTRO: "sports-intro",
@@ -686,6 +690,27 @@ function SportsWidgetFollowTeams({ teams, initialSelectedTeams, onSave }) {
   );
 }
 
+function SportsSectionLabel({ match, withLiveBadge = false }) {
+  const l10nId = getMatchSectionL10nId(match);
+  const stageContent = l10nId ? (
+    <span data-l10n-id={l10nId} />
+  ) : (
+    <span>{match.stage}</span>
+  );
+  if (!withLiveBadge) {
+    return <span className="sports-section-label">{stageContent}</span>;
+  }
+  return (
+    <span className="sports-section-label">
+      {stageContent}{" "}
+      <span className="sports-section-label-live">
+        <span aria-hidden="true">{"• "}</span>
+        <span data-l10n-id="newtab-sports-widget-live" />
+      </span>
+    </span>
+  );
+}
+
 function SportsMatchesView({
   matchesTab,
   hasLiveGames,
@@ -727,30 +752,43 @@ function SportsMatchesView({
         ref={resultsPanelRef}
       >
         {showResultsList ? (
-          <ul className="sports-matches-list">
-            {previous.map(match => (
-              <li
-                key={`${match.home_team.key}-${match.away_team.key}-${match.date}`}
+          <div className="sports-matches-list">
+            {groupMatchesBySection(previous).map((section, idx) => (
+              <div
+                key={`${section.key}-${idx}`}
+                className="sports-matches-list-section"
               >
-                <SportsMatchRow
-                  match={match}
-                  variant="results"
-                  size="list"
-                  handleInteraction={handleInteraction}
-                />
-              </li>
+                <SportsSectionLabel match={section.matches[0]} />
+                <ul>
+                  {section.matches.map(match => (
+                    <li
+                      key={`${match.home_team.key}-${match.away_team.key}-${match.date}`}
+                    >
+                      <SportsMatchRow
+                        match={match}
+                        variant="results"
+                        size="list"
+                        handleInteraction={handleInteraction}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
         ) : (
           previous[0] && (
-            <div className="match-highlight-view">
-              <SportsMatchRow
-                match={previous[0]}
-                variant="results"
-                size={size}
-                handleInteraction={handleInteraction}
-              />
-            </div>
+            <>
+              {size === "large" && <SportsSectionLabel match={previous[0]} />}
+              <div className="match-highlight-view">
+                <SportsMatchRow
+                  match={previous[0]}
+                  variant="results"
+                  size={size}
+                  handleInteraction={handleInteraction}
+                />
+              </div>
+            </>
           )
         )}
         {!!previous.length && (
@@ -773,6 +811,9 @@ function SportsMatchesView({
         >
           {current[0] && (
             <>
+              {size === "large" && (
+                <SportsSectionLabel match={current[0]} withLiveBadge={true} />
+              )}
               <div className="match-highlight-view">
                 <SportsMatchRow
                   match={current[0]}
@@ -802,30 +843,43 @@ function SportsMatchesView({
         ref={upcomingPanelRef}
       >
         {showUpcomingList ? (
-          <ul className="sports-matches-list">
-            {next.map(match => (
-              <li
-                key={`${match.home_team.key}-${match.away_team.key}-${match.date}`}
+          <div className="sports-matches-list">
+            {groupMatchesBySection(next).map((section, idx) => (
+              <div
+                key={`${section.key}-${idx}`}
+                className="sports-matches-list-section"
               >
-                <SportsMatchRow
-                  match={match}
-                  variant="upcoming"
-                  size="list"
-                  handleInteraction={handleInteraction}
-                />
-              </li>
+                <SportsSectionLabel match={section.matches[0]} />
+                <ul>
+                  {section.matches.map(match => (
+                    <li
+                      key={`${match.home_team.key}-${match.away_team.key}-${match.date}`}
+                    >
+                      <SportsMatchRow
+                        match={match}
+                        variant="upcoming"
+                        size="list"
+                        handleInteraction={handleInteraction}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
         ) : (
           next[0] && (
-            <div className="match-highlight-view">
-              <SportsMatchRow
-                match={next[0]}
-                variant="upcoming"
-                size={size}
-                handleInteraction={handleInteraction}
-              />
-            </div>
+            <>
+              {size === "large" && <SportsSectionLabel match={next[0]} />}
+              <div className="match-highlight-view">
+                <SportsMatchRow
+                  match={next[0]}
+                  variant="upcoming"
+                  size={size}
+                  handleInteraction={handleInteraction}
+                />
+              </div>
+            </>
           )
         )}
         {!!next.length && (
