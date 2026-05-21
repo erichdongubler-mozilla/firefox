@@ -39,6 +39,16 @@
     "dark": "color-mix(in srgb, {Theme$color/accent/primary} 20%, transparent)",
     "forcedColors": "{HCM Theme$SelectedItem}"
   },
+  "background/color/dimmed": {
+    "light": "color-mix(in srgb, currentColor 12%, transparent)",
+    "dark": "color-mix(in srgb, currentColor 17%, transparent)",
+    "forcedColors": "transparent"
+  },
+  "background/color/dimmed/further": {
+    "light": "color-mix(in srgb, currentColor 20%, transparent)",
+    "dark": "color-mix(in srgb, currentColor 14%, transparent)",
+    "forcedColors": "transparent"
+  },
   "border/color": {
     "light": "{Colors$color/gray/50}",
     "dark": "{Colors$color/gray/70}",
@@ -650,14 +660,14 @@
     "forcedColors": "transparent"
   },
   "panel/background/color/dimmed": {
-    "light": "color-mix(in srgb, currentColor 12%, transparent)",
-    "dark": "color-mix(in srgb, currentColor 17%, transparent)",
-    "forcedColors": "transparent"
+    "light": "{Theme$background/color/dimmed}",
+    "dark": "{Theme$background/color/dimmed}",
+    "forcedColors": "{Theme$background/color/dimmed}"
   },
   "panel/background/color/dimmed/further": {
-    "light": "color-mix(in srgb, currentColor 20%, transparent)",
-    "dark": "color-mix(in srgb, currentColor 14%, transparent)",
-    "forcedColors": "transparent"
+    "light": "{Theme$background/color/dimmed/further}",
+    "dark": "{Theme$background/color/dimmed/further}",
+    "forcedColors": "{Theme$background/color/dimmed/further}"
   },
   "panel/border/color": {
     "light": "rgb(240, 240, 244)",
@@ -1363,6 +1373,56 @@
   "tab/group/gray/invert": {
     "light": "{Colors$color/gray/05}",
     "dark": "{Colors$color/gray/55}",
+    "forcedColors": "transparent"
+  },
+  "urlbar/box/background/color": {
+    "light": "white",
+    "dark": "rgb(66, 65, 77)",
+    "forcedColors": "transparent"
+  },
+  "urlbar/box/background/color/hover": {
+    "light": "{Theme$button/background/color/hover}",
+    "dark": "color-mix(in srgb, currentColor 22%, transparent)",
+    "forcedColors": "transparent"
+  },
+  "urlbar/box/background/color/active": {
+    "light": "{Theme$button/background/color/active}",
+    "dark": "{Theme$button/background/color/active}",
+    "forcedColors": "{Theme$button/background/color/active}"
+  },
+  "urlbar/box/background/color/focus": {
+    "light": "{Theme$button/background/color}",
+    "dark": "color-mix(in srgb, currentColor 16%, transparent)",
+    "forcedColors": "transparent"
+  },
+  "urlbar/icon/fill/opacity": {
+    "light": 0.72,
+    "dark": 0.72,
+    "forcedColors": 1
+  },
+  "urlbarview/background/color/hover": {
+    "light": "rgb(240, 240, 244)",
+    "dark": "{Theme$background/color/dimmed}",
+    "forcedColors": "transparent"
+  },
+  "urlbarview/background/color/selected": {
+    "light": "#e0e0e6",
+    "dark": "rgb(43, 42, 51)",
+    "forcedColors": "transparent"
+  },
+  "urlbarview/separator/color": {
+    "light": "rgb(240, 240, 244)",
+    "dark": "rgb(82, 82, 94)",
+    "forcedColors": "color-mix(in srgb, currentColor 86%, transparent)"
+  },
+  "urlbarview/text/color/action": {
+    "light": "rgb(91, 91, 102)",
+    "dark": "rgb(191, 191, 201)",
+    "forcedColors": "transparent"
+  },
+  "urlbarview/text/color/selected": {
+    "light": "rgb(21, 20, 26)",
+    "dark": "rgb(251, 251, 254)",
     "forcedColors": "transparent"
   }
 }

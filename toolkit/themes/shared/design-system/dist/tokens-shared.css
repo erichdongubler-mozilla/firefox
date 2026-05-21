@@ -13,6 +13,8 @@
     /** background-color **/
     --background-color-box: light-dark(var(--color-white), var(--color-gray-80));
     --background-color-critical: light-dark(var(--color-red-0), var(--color-red-90));
+    --background-color-dimmed: color-mix(in srgb, currentColor 17%, transparent);
+    --background-color-dimmed-further: color-mix(in srgb, currentColor 30%, transparent);
     --background-color-information: light-dark(var(--color-blue-0), var(--color-blue-90));
     --background-color-overlay: var(--color-black-alpha-50);
     --background-color-success: light-dark(var(--color-green-0), var(--color-green-90));
@@ -378,8 +380,8 @@
 
     /** panel **/
     --panel-background-color: Field;
-    --panel-background-color-dimmed: color-mix(in srgb, currentColor 17%, transparent);
-    --panel-background-color-dimmed-further: color-mix(in srgb, currentColor 30%, transparent);
+    --panel-background-color-dimmed: var(--background-color-dimmed);
+    --panel-background-color-dimmed-further: var(--background-color-dimmed-further);
     --panel-border-color: ThreeDShadow;
     --panel-border-radius: var(--border-radius-medium);
     --panel-box-shadow: 0 0 var(--panel-box-shadow-margin) hsla(0, 0%, 0%, 0.2);
@@ -664,10 +666,12 @@
   @media not ((forced-colors) or (-moz-native-theme)) {
     :root:not([lwtheme]),
     :host(.anonymous-content-host) {
+      /** background-color **/
+      --background-color-dimmed: light-dark(color-mix(in srgb, currentColor 12%, transparent), color-mix(in srgb, currentColor 17%, transparent));
+      --background-color-dimmed-further: light-dark(color-mix(in srgb, currentColor 20%, transparent), color-mix(in srgb, currentColor 14%, transparent));
+
       /** panel **/
       --panel-background-color: light-dark(var(--color-white), rgb(66, 65, 77));
-      --panel-background-color-dimmed: light-dark(color-mix(in srgb, currentColor 12%, transparent), color-mix(in srgb, currentColor 17%, transparent));
-      --panel-background-color-dimmed-further: light-dark(color-mix(in srgb, currentColor 20%, transparent), color-mix(in srgb, currentColor 14%, transparent));
       --panel-border-color: light-dark(rgb(240, 240, 244), rgb(82, 82, 94));
       --panel-text-color: light-dark(var(--color-black), rgb(251, 251, 254));
 

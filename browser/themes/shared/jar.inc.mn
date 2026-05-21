@@ -48,6 +48,8 @@
   skin/classic/browser/urlbar/sports-hockey.svg                (../shared/urlbar/icons/sports-hockey.svg)
   skin/classic/browser/urlbar/sports-racing.svg                (../shared/urlbar/icons/sports-racing.svg)
   skin/classic/browser/urlbar/sports-soccer.svg                (../shared/urlbar/icons/sports-soccer.svg)
+  skin/classic/browser/urlbar/urlbar.tokens.css                (../shared/urlbar/urlbar.tokens.css)
+  skin/classic/browser/urlbar/urlbarview.tokens.css            (../shared/urlbar/urlbarview.tokens.css)
   skin/classic/browser/urlbar/tokens.css                       (../shared/urlbar/tokens.css)
   skin/classic/browser/urlbar/variables.css                    (../shared/urlbar/variables.css)
   skin/classic/browser/urlbar/view.css                         (../shared/urlbar/view.css)
