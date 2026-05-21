@@ -17,9 +17,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
     version = 2,
 )
 internal abstract class TabGroupDatabase : RoomDatabase() {
-    abstract val tabGroupDao: StoredTabGroupDao
 
-    abstract val tabGroupAssignmentDao: TabGroupAssignmentDao
+    abstract val tabGroupOperationsDao: TabGroupOperationsDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
