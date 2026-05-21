@@ -135,6 +135,7 @@ allowed_warnings:
     - "WARNING: duplicate label"
     - "WARNING: local id not found in doc"
     - "WARNING: 'myst' cross-reference target not found"
+    - "WARNING: Unknown source document"
     - "WARNING: Lexing literal_block"
     - "WARNING: dot command 'dot' cannot be run \\(needed for graphviz output\\)"
     # Specific warnings allowed when the allow list was created.
