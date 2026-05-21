@@ -109,7 +109,7 @@ export const CommonUtils = {
       if (data === "0") {
         Services.obs.removeObserver(observe, "a11y-init-or-shutdown");
         deferred.resolve();
-      } else {
+      } else if (!this._accServiceInitialized) {
         deferred.reject("Accessibility service is initialized unexpectedly.");
       }
     };

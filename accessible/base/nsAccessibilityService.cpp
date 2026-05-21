@@ -2134,8 +2134,12 @@ void MaybeShutdownAccService(uint32_t aFormerConsumer, bool aAsync) {
     return;
   }
 
-  // Still used by XPCOM
-  if (nsCoreUtils::AccEventObserversExist() ||
+  // Check if we're still being used by XPCOM. However, when running purely for
+  // PDF output, we ignore event observers so that tests can assert that
+  // unexpected events aren't fired without unintentionally preventing the
+  // service from shutting down.
+  if ((!nsAccessibilityService::IsOnlyForPdfOutput() &&
+       nsCoreUtils::AccEventObserversExist()) ||
       xpcAccessibilityService::IsInUse() || accService->HasXPCDocuments()) {
     // In case the XPCOM flag was unset (possibly because of the shutdown
     // timer in the xpcAccessibilityService) ensure it is still present. Note:
