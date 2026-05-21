@@ -86,6 +86,8 @@ skip-if = [
   "os == 'android'", #  Fx on android does not currently support DND
 ]
 
+["test_ime_state_contenteditable_false.html"]
+
 ["test_keypress_event_with_alt_on_mac.html"]
 run-if = [
   "os == 'mac'",
