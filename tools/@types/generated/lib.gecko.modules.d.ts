@@ -348,7 +348,6 @@ export interface Modules {
   "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs": typeof import("moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs"),
   "moz-src:///browser/components/urlbar/SmartbarMentionsPanelSearch.sys.mjs": typeof import("moz-src:///browser/components/urlbar/SmartbarMentionsPanelSearch.sys.mjs"),
   "moz-src:///browser/components/urlbar/UrlbarController.sys.mjs": typeof import("moz-src:///browser/components/urlbar/UrlbarController.sys.mjs"),
-  "moz-src:///browser/components/urlbar/UrlbarEventBufferer.sys.mjs": typeof import("moz-src:///browser/components/urlbar/UrlbarEventBufferer.sys.mjs"),
   "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs": typeof import("moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs"),
   "moz-src:///browser/components/urlbar/UrlbarProviderActionsSearchMode.sys.mjs": typeof import("moz-src:///browser/components/urlbar/UrlbarProviderActionsSearchMode.sys.mjs"),
   "moz-src:///browser/components/urlbar/UrlbarProviderAiChat.sys.mjs": typeof import("moz-src:///browser/components/urlbar/UrlbarProviderAiChat.sys.mjs"),

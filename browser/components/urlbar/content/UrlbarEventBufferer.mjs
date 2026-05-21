@@ -2,14 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
-
-const lazy = XPCOMUtils.declareLazy({
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
-  clearTimeout: "resource://gre/modules/Timer.sys.mjs",
-  setTimeout: "resource://gre/modules/Timer.sys.mjs",
-  logger: () => lazy.UrlbarUtils.getLogger({ prefix: "EventBufferer" }),
+const lazy = {};
+ChromeUtils.defineLazyGetter(lazy, "logger", () => {
+  const { UrlbarUtils } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs"
+  );
+  return UrlbarUtils.getLogger({ prefix: "EventBufferer" });
 });
 
 /**
@@ -93,7 +91,7 @@ export class UrlbarEventBufferer {
       context: queryContext,
     };
     if (this.#deferringTimeout) {
-      lazy.clearTimeout(this.#deferringTimeout);
+      clearTimeout(this.#deferringTimeout);
       this.#deferringTimeout = null;
     }
   }
@@ -135,7 +133,7 @@ export class UrlbarEventBufferer {
       // Clear the timeout and the queue.
       this.#eventsQueue.length = 0;
       if (this.#deferringTimeout) {
-        lazy.clearTimeout(this.#deferringTimeout);
+        clearTimeout(this.#deferringTimeout);
         this.#deferringTimeout = null;
       }
     }
@@ -185,7 +183,7 @@ export class UrlbarEventBufferer {
     if (!this.#deferringTimeout) {
       let elapsed = ChromeUtils.now() - this.#lastQuery.startDate;
       let remaining = UrlbarEventBufferer.DEFERRING_TIMEOUT_MS - elapsed;
-      this.#deferringTimeout = lazy.setTimeout(
+      this.#deferringTimeout = setTimeout(
         () => {
           this.replayDeferredEvents(false);
           this.#deferringTimeout = null;
@@ -244,7 +242,7 @@ export class UrlbarEventBufferer {
     // At this point, no events have been deferred for this search; we must
     // figure out if this event should be deferred.
     let isMacNavigation =
-      AppConstants.platform == "macosx" &&
+      this.input.controller.platform == "macosx" &&
       event.ctrlKey &&
       this.input.view.isOpen &&
       (event.key === "n" || event.key === "p");
@@ -348,7 +346,7 @@ export class UrlbarEventBufferer {
     }
 
     let isMacDownNavigation =
-      AppConstants.platform == "macosx" &&
+      this.input.controller.platform == "macosx" &&
       event.ctrlKey &&
       this.input.view.isOpen &&
       event.key === "n";

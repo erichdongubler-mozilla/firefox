@@ -110,6 +110,15 @@ export class UrlbarController {
   }
 
   /**
+   * The platform constant.
+   *
+   * @type {string}
+   */
+  get platform() {
+    return AppConstants.platform;
+  }
+
+  /**
    * Hooks up the controller with a view.
    *
    * @param {UrlbarView} view
