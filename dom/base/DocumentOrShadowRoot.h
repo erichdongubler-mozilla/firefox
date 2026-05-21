@@ -231,7 +231,6 @@ class DocumentOrShadowRoot {
 
   // https://dom.spec.whatwg.org/#dom-documentorshadowroot-customelementregistry
   CustomElementRegistry* GetCustomElementRegistry();
-  void SetCustomElementRegistry(CustomElementRegistry&);
 
  protected:
   // Cycle collection helper functions
