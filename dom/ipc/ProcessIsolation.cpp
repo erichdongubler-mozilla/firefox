@@ -259,23 +259,7 @@ static IsolationBehavior IsolationBehaviorForURI(nsIURI* aURI, bool aIsSubframe,
   MOZ_ALWAYS_SUCCEEDS(aURI->GetScheme(scheme));
 
   if (scheme == "chrome"_ns) {
-    // `chrome://` URIs are always loaded in the parent process, unless they
-    // have opted in to loading in a content process. This is currently only
-    // done in tests.
-    //
-    // FIXME: These flags should be removed from `chrome` URIs at some point.
-    nsCOMPtr<nsIXULChromeRegistry> chromeReg =
-        do_GetService("@mozilla.org/chrome/chrome-registry;1");
-    bool mustLoadRemotely = false;
-    if (NS_SUCCEEDED(chromeReg->MustLoadURLRemotely(aURI, &mustLoadRemotely)) &&
-        mustLoadRemotely) {
-      return IsolationBehavior::ForceWebRemoteType;
-    }
-    bool canLoadRemotely = false;
-    if (NS_SUCCEEDED(chromeReg->CanLoadURLRemotely(aURI, &canLoadRemotely)) &&
-        canLoadRemotely) {
-      return IsolationBehavior::Anywhere;
-    }
+    // `chrome://` URIs are always loaded in the parent process.
     return IsolationBehavior::Parent;
   }
 

@@ -548,23 +548,8 @@ export var E10SUtils = {
         return NOT_REMOTE;
       }
 
-      case "chrome": {
-        let chromeReg = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(
-          Ci.nsIXULChromeRegistry
-        );
-        if (chromeReg.mustLoadURLRemotely(aURI)) {
-          return DEFAULT_REMOTE_TYPE;
-        }
-
-        if (
-          chromeReg.canLoadURLRemotely(aURI) &&
-          preferredRemoteType != NOT_REMOTE
-        ) {
-          return DEFAULT_REMOTE_TYPE;
-        }
-
+      case "chrome":
         return NOT_REMOTE;
-      }
 
       case "moz-extension":
         // Extension iframes should load in the same process
