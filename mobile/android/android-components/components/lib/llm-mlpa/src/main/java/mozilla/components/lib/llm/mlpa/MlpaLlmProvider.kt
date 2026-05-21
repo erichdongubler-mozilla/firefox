@@ -16,9 +16,6 @@ import mozilla.components.lib.llm.mlpa.service.ChatService
 import mozilla.components.lib.llm.mlpa.service.ChatServiceError
 import mozilla.components.lib.llm.mlpa.service.MlpaService
 
-internal val LlmProvider.ModelID.Companion.mozSummarization
-    get() = LlmProvider.ModelID("moz-summarization")
-
 /**
  * [CloudLlmProvider] implementation backed by MLPA services.
  *
@@ -40,13 +37,7 @@ class MlpaLlmProvider(
     val storage: MlpaTokenStorage,
     val mlpaService: MlpaService,
 ) : CloudLlmProvider {
-    private val modelID = LlmProvider.ModelID.mozSummarization
-
-    override val info = LlmProvider.Info(
-        nameRes = R.string.mlpa_llm_provider_name,
-        iconRes = R.drawable.firefox_icon,
-        modelId = modelID,
-    )
+    override val info = LlmProvider.Info(nameRes = R.string.mlpa_llm_provider_name, iconRes = R.drawable.firefox_icon)
     private val _state = MutableStateFlow<State>(State.Available)
 
     /**
@@ -64,7 +55,7 @@ class MlpaLlmProvider(
      */
     override suspend fun prepare() {
         tokenProvider.fetchToken()
-            .onSuccess { _state.value = State.Ready(MlpaLlm(chatService, it, modelID)) }
+            .onSuccess { _state.value = State.Ready(MlpaLlm(chatService, it)) }
             .onFailure {
                 _state.value = State.Unavailable(
                 it as? Llm.Exception
