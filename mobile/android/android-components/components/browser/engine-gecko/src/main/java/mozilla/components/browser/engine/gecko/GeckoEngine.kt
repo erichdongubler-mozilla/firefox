@@ -154,6 +154,10 @@ class GeckoEngine(
         override fun onNewTab(webExtension: WebExtension, engineSession: EngineSession, active: Boolean, url: String) {
             webExtensionDelegate?.onNewTab(webExtension, engineSession, active, url)
         }
+
+        override fun onOpenOptionsPage(extension: WebExtension) {
+            webExtensionDelegate?.onOpenOptionsPage(extension)
+        }
     }
 
     private var webPushHandler: WebPushHandler? = null
