@@ -985,7 +985,7 @@ export default [
     "  ▶︎  styleSheetSets: DOMStringList []",
     "  ▶︎  styleSheets: StyleSheetList []",
     "  ├ textContent: null",
-    "  ▶︎  timeline: DocumentTimeline { currentTime: null }",
+    "  ▶︎  timeline: DocumentTimeline { currentTime: null, duration: null }",
     "  ├ title: \"\"",
     "  ├ visibilityState: \"hidden\"",
     "  ├ vlinkColor: \"\"",

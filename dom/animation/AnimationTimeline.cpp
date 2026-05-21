@@ -5,6 +5,7 @@
 #include "AnimationTimeline.h"
 
 #include "mozilla/dom/Animation.h"
+#include "mozilla/dom/CSSUnitValue.h"
 
 namespace mozilla::dom {
 
@@ -68,6 +69,32 @@ bool AnimationTimeline::Tick(TickState& aState) {
   }
 
   return needsTicks;
+}
+
+// https://drafts.csswg.org/web-animations-2/#timelines
+void AnimationTimeline::GetDuration(
+    Nullable<OwningDoubleOrCSSNumericValue>& aRetVal, ErrorResult& aRv) const {
+  // For a monotonic timeline, there is no upper bound on current time, and
+  // timeline duration is unresolved. So we use unresolved as the default.
+  if (IsMonotonicallyIncreasing()) {
+    aRetVal.SetNull();
+    return;
+  }
+
+  if (!StaticPrefs::layout_css_typed_om_enabled()) {
+    // We don't support CSSNumericValue, so throw for non-monotonicaly
+    // increasing timelines.
+    aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return;
+  }
+
+  // For a non-monotonic (e.g. scroll) timeline, the duration has a fixed upper
+  // bound. In this case, the timeline is a progress-based timeline, and its
+  // timeline duration is 100%.
+  OwningDoubleOrCSSNumericValue value;
+  value.SetAsCSSNumericValue() =
+      MakeRefPtr<CSSUnitValue>(GetParentObject(), 100.0, "percent"_ns);
+  aRetVal.SetValue(std::move(value));
 }
 
 void AnimationTimeline::NotifyAnimationUpdated(Animation& aAnimation) {
