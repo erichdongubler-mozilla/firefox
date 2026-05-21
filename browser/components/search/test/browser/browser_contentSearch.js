@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 ChromeUtils.defineESModuleGetters(this, {
+  ConfigSearchEngine: "resource://gre/modules/ConfigSearchEngine.sys.mjs",
   SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
 });
 
@@ -486,7 +487,7 @@ var currentStateObj = async function (hiddenEngine = "") {
       name: engine.name,
       iconData: await iconDataFromURI(uri),
       hidden: engine.name == hiddenEngine,
-      isConfigEngine: engine.isConfigEngine,
+      isConfigEngine: engine instanceof ConfigSearchEngine,
     });
   }
   return state;
@@ -497,7 +498,7 @@ async function constructEngineObj(engine) {
   return {
     name: engine.name,
     iconData: await iconDataFromURI(uriFavicon),
-    isConfigEngine: engine.isConfigEngine,
+    isConfigEngine: engine instanceof ConfigSearchEngine,
   };
 }
 
