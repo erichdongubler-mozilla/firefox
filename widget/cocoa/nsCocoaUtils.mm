@@ -25,6 +25,7 @@
 #include "nsIAppWindow.h"
 #include "nsIBaseWindow.h"
 #include "nsITransferable.h"
+#include "nsMenuPopupFrame.h"
 #include "nsMenuUtilsX.h"
 #include "nsNetUtil.h"
 #include "nsPrimitiveHelpers.h"
@@ -1834,4 +1835,23 @@ void nsCocoaUtils::SetTransferDataForTypeFromPasteboardItem(
   }
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
+
+NSRectEdge nsCocoaUtils::PopupPositionToNSRectEdge(int8_t aPosition) {
+  // XUL accepts many more anchor popup alignments than Cocoa. Map to the best
+  // approximate edge setting. Due to Cocoa's flipped Y-axis, NSRectEdgeMinY
+  // represents the bottom edge.
+  switch (aPosition) {
+    case POPUPPOSITION_BEFORESTART:
+    case POPUPPOSITION_BEFOREEND:
+      return NSRectEdgeMaxY;
+    case POPUPPOSITION_STARTBEFORE:
+    case POPUPPOSITION_STARTAFTER:
+      return NSRectEdgeMinX;
+    case POPUPPOSITION_ENDBEFORE:
+    case POPUPPOSITION_ENDAFTER:
+      return NSRectEdgeMaxX;
+    default:
+      return NSRectEdgeMinY;
+  }
 }

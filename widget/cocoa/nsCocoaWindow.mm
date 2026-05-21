@@ -5396,25 +5396,6 @@ void nsCocoaWindow::SetModal(bool aModal) {
 
 bool nsCocoaWindow::IsRunningAppModal() { return [NSApp _isRunningAppModal]; }
 
-static NSRectEdge AlignmentPositionToNSRectEdge(int8_t aPosition) {
-  switch (aPosition) {
-    case POPUPPOSITION_BEFORESTART:
-    case POPUPPOSITION_BEFOREEND:
-      return NSRectEdgeMaxY;
-    case POPUPPOSITION_AFTERSTART:
-    case POPUPPOSITION_AFTEREND:
-      return NSRectEdgeMinY;
-    case POPUPPOSITION_STARTBEFORE:
-    case POPUPPOSITION_STARTAFTER:
-      return NSRectEdgeMaxX;
-    case POPUPPOSITION_ENDBEFORE:
-    case POPUPPOSITION_ENDAFTER:
-      return NSRectEdgeMinX;
-    default:
-      return NSRectEdgeMinY;
-  }
-}
-
 static void SyncPopoverBounds(NSPopover* aPopover,
                               nsMenuPopupFrame* aPopupFrame) {
   if (!aPopover || !aPopover.shown || !aPopupFrame) {
@@ -5509,8 +5490,8 @@ void nsCocoaWindow::Show(bool aState) {
       NS_OBJC_END_TRY_IGNORE_BLOCK;
       if (ShouldShowAsNSPopover() && nativeParentWindow) {
         nsMenuPopupFrame* popupFrame = GetPopupFrame();
-        NSRectEdge preferredEdge =
-            AlignmentPositionToNSRectEdge(popupFrame->GetAlignmentPosition());
+        NSRectEdge preferredEdge = nsCocoaUtils::PopupPositionToNSRectEdge(
+            popupFrame->GetAlignmentPosition());
         nsRect anchorRectAppUnits = popupFrame->GetUntransformedAnchorRect();
         nsPresContext* pc = popupFrame->PresContext();
         int32_t appUnitsPerDevPixel = pc->AppUnitsPerDevPixel();

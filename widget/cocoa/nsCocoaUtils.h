@@ -518,6 +518,11 @@ class nsCocoaUtils {
       nsITransferable* aTransferable, const nsCString& aFlavor,
       NSPasteboardItem* aItem);
 
+  /**
+   * Converts a POPUPPOSITION value to the closest corresponding NSRectEdge.
+   */
+  static NSRectEdge PopupPositionToNSRectEdge(int8_t aPosition);
+
  private:
   /**
    * Completion handlers used as an argument to the macOS API to
