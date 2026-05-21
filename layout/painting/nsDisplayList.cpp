@@ -5862,7 +5862,7 @@ bool nsDisplayStickyPosition::CreateWebRenderCommands(
     const ActiveScrolledRoot* stickyAsr =
         ActiveScrolledRoot::GetStickyASRFromFrame(mFrame);
     MOZ_ASSERT(stickyAsr);
-    auto spatialId = aBuilder.GetSpatialIdForDefinedStickyLayer(stickyAsr);
+    auto spatialId = aBuilder.GetSpatialIdForDefinedLayer(stickyAsr);
     MOZ_ASSERT(spatialId.isSome());
     saccHelper.emplace(aBuilder, *spatialId);
   }

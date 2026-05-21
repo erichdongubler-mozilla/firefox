@@ -633,11 +633,11 @@ class DisplayListBuilder final {
                                     const wr::LayoutVector2D& aAppliedOffset,
                                     const WrAnimationProperty* aAnimation);
 
-  Maybe<wr::WrSpatialId> GetScrollIdForDefinedScrollLayer(
-      layers::ScrollableLayerGuid::ViewID aViewId) const;
-  Maybe<wr::WrSpatialId> GetSpatialIdForDefinedStickyLayer(
+  Maybe<wr::WrSpatialId> GetSpatialIdForDefinedLayer(
       const ActiveScrolledRoot* aASR) const;
+
   wr::WrSpatialId DefineScrollLayer(
+      const ActiveScrolledRoot* aAsr,
       const layers::ScrollableLayerGuid::ViewID& aViewId,
       const Maybe<wr::WrSpatialId>& aParent, const wr::LayoutRect& aContentRect,
       const wr::LayoutRect& aClipRect, const wr::LayoutVector2D& aScrollOffset,
@@ -887,16 +887,8 @@ class DisplayListBuilder final {
  protected:
   wr::WrState* mWrState;
 
-  // Track each scroll id that we encountered. We use this structure to
-  // ensure that we don't define a particular scroll layer multiple times,
-  // as that results in undefined behaviour in WR.
-  std::unordered_map<layers::ScrollableLayerGuid::ViewID, wr::WrSpatialId>
-      mScrollIds;
-
   // Track spatial ids that we've created corresponding to ActiveScrolledRoot
-  // objects. Currently only used for sticky ASRs.
-  // FIXME(follow-up to bug 1730749): Use this for scroll ASRs as well,
-  // replacing mScrollIds.
+  // objects. Used for both scroll and sticky ASRs
   std::unordered_map<const ActiveScrolledRoot*, wr::WrSpatialId>
       mASRToSpatialIdMap;
 

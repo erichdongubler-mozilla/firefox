@@ -280,23 +280,17 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayListBuilder* aBuilder,
 
 wr::WrSpatialId ClipManager::GetSpatialId(const ActiveScrolledRoot* aASR) {
   for (const ActiveScrolledRoot* asr = aASR; asr; asr = asr->mParent) {
-    Maybe<wr::WrSpatialId> space = Nothing();
-    if (asr->mKind == ActiveScrolledRoot::ASRKind::Sticky) {
-      space = mBuilder->GetSpatialIdForDefinedStickyLayer(asr);
-    } else {
-      space = mBuilder->GetScrollIdForDefinedScrollLayer(asr->GetViewId());
-    }
+    // The map handles both sticky and scroll ASRs
+    Maybe<wr::WrSpatialId> space = mBuilder->GetSpatialIdForDefinedLayer(asr);
+
     if (space) {
       return *space;
     }
-
-    // If this ASR doesn't have a scroll ID, then we should check its ancestor.
-    // There may not be one defined because the ASR may not be scrollable or we
-    // failed to get the scroll metadata.
   }
+  // If this ASR doesn't have a spatial ID, then we should check its ancestor.
+  // This can happen if e.g. we failed to get scroll metadata for a scroll ASR.
 
-  Maybe<wr::WrSpatialId> space = mBuilder->GetScrollIdForDefinedScrollLayer(
-      ScrollableLayerGuid::NULL_SCROLL_ID);
+  Maybe<wr::WrSpatialId> space = mBuilder->GetSpatialIdForDefinedLayer(nullptr);
   MOZ_ASSERT(space.isSome());
   return *space;
 }
@@ -373,7 +367,7 @@ Maybe<wr::WrSpatialId> ClipManager::DefineStickyNode(
   nsIFrame* stickyFrame = aASR->mFrame;
 
   if (Maybe<wr::WrSpatialId> space =
-          mBuilder->GetSpatialIdForDefinedStickyLayer(aASR)) {
+          mBuilder->GetSpatialIdForDefinedLayer(aASR)) {
     return space;
   }
 
@@ -565,8 +559,7 @@ Maybe<wr::WrSpatialId> ClipManager::DefineSpatialNodes(
   ScrollableLayerGuid::ViewID viewId = ScrollableLayerGuid::NULL_SCROLL_ID;
   if (aASR->mKind == ActiveScrolledRoot::ASRKind::Scroll) {
     viewId = aASR->GetViewId();
-    Maybe<wr::WrSpatialId> space =
-        mBuilder->GetScrollIdForDefinedScrollLayer(viewId);
+    Maybe<wr::WrSpatialId> space = mBuilder->GetSpatialIdForDefinedLayer(aASR);
     if (space) {
       // If we've already defined this scroll layer before, we can early-exit
       return space;
@@ -647,7 +640,7 @@ Maybe<wr::WrSpatialId> ClipManager::DefineSpatialNodes(
       presContext->Document()->HasScrollLinkedEffect();
 
   return Some(mBuilder->DefineScrollLayer(
-      viewId, parent, wr::ToLayoutRect(contentRect),
+      aASR, viewId, parent, wr::ToLayoutRect(contentRect),
       wr::ToLayoutRect(clipBounds), wr::ToLayoutVector2D(scrollOffset),
       wr::ToWrAPZScrollGeneration(
           scrollContainerFrame->ScrollGenerationOnApz()),

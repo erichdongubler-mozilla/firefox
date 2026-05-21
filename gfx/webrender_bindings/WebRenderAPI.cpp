@@ -1203,7 +1203,6 @@ void DisplayListBuilder::DumpSerializedDisplayList() {
 void DisplayListBuilder::Begin() {
   wr_api_begin_builder(mWrState);
 
-  mScrollIds.clear();
   mASRToSpatialIdMap.clear();
   mCurrentSpaceAndClipChain = wr::RootScrollNodeWithChain();
   mCachedTextDT = nullptr;
@@ -1354,23 +1353,12 @@ wr::WrSpatialId DisplayListBuilder::DefineStickyFrame(
   return spatialId;
 }
 
-Maybe<wr::WrSpatialId> DisplayListBuilder::GetScrollIdForDefinedScrollLayer(
-    layers::ScrollableLayerGuid::ViewID aViewId) const {
-  if (aViewId == layers::ScrollableLayerGuid::NULL_SCROLL_ID) {
+Maybe<wr::WrSpatialId> DisplayListBuilder::GetSpatialIdForDefinedLayer(
+    const ActiveScrolledRoot* aASR) const {
+  if (aASR == nullptr) {
     return Some(wr::RootScrollNode());
   }
 
-  auto it = mScrollIds.find(aViewId);
-  if (it == mScrollIds.end()) {
-    return Nothing();
-  }
-
-  return Some(it->second);
-}
-
-Maybe<wr::WrSpatialId> DisplayListBuilder::GetSpatialIdForDefinedStickyLayer(
-    const ActiveScrolledRoot* aASR) const {
-  MOZ_ASSERT(aASR->mKind == ActiveScrolledRoot::ASRKind::Sticky);
   auto it = mASRToSpatialIdMap.find(aASR);
   if (it == mASRToSpatialIdMap.end()) {
     return Nothing();
@@ -1380,13 +1368,14 @@ Maybe<wr::WrSpatialId> DisplayListBuilder::GetSpatialIdForDefinedStickyLayer(
 }
 
 wr::WrSpatialId DisplayListBuilder::DefineScrollLayer(
+    const ActiveScrolledRoot* aAsr,
     const layers::ScrollableLayerGuid::ViewID& aViewId,
     const Maybe<wr::WrSpatialId>& aParent, const wr::LayoutRect& aContentRect,
     const wr::LayoutRect& aClipRect, const wr::LayoutVector2D& aScrollOffset,
     wr::APZScrollGeneration aScrollOffsetGeneration,
     wr::HasScrollLinkedEffect aHasScrollLinkedEffect) {
-  auto it = mScrollIds.find(aViewId);
-  if (it != mScrollIds.end()) {
+  auto it = mASRToSpatialIdMap.find(aAsr);
+  if (it != mASRToSpatialIdMap.end()) {
     return it->second;
   }
 
@@ -1406,7 +1395,7 @@ wr::WrSpatialId DisplayListBuilder::DefineScrollLayer(
            ToString(aScrollOffsetGeneration).c_str(),
            ToString(aHasScrollLinkedEffect).c_str());
 
-  mScrollIds[aViewId] = space;
+  mASRToSpatialIdMap[aAsr] = space;
   return space;
 }
 
