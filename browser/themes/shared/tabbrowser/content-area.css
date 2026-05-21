@@ -368,6 +368,27 @@
   }
 }
 
+/* stylelint-disable-next-line media-query-no-invalid */
+@media -moz-pref("browser.nova.enabled") {
+  /* Match the corner radius and separator border of unsplit panels.
+   * Skip the border on the active panel so its focus outline can sit flush
+   * against the content without a visible gap. */
+  #tabbrowser-tabpanels[splitview] .split-view-panel > .browserContainer {
+    border-radius: var(--chrome-block-radius);
+  }
+
+  #tabbrowser-tabpanels[splitview] .split-view-panel:not(.deck-selected) > .browserContainer {
+    border: var(--border-width) solid var(--chrome-content-separator-color);
+  }
+
+  /* Align split-view panels with the sidebar's block edges. The surrounding
+   * #browser already supplies --chrome-window-gap of padding on the
+   * top/bottom, so the panel itself shouldn't add more. */
+  #tabbrowser-tabpanels[splitview] .split-view-panel.split-view-panel-active {
+    margin-block: 0;
+  }
+}
+
 /* Split view */
 
 split-view-footer {
