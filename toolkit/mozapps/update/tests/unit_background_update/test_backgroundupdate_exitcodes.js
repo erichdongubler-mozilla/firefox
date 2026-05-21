@@ -34,9 +34,9 @@ add_task(async function test_default_profile_does_not_exist() {
   if (exitCode == EXIT_CODE.OTHER_INSTANCE && AppConstants.platform === "win") {
     let lockPath = syncManager.getUpdateLockFilePath();
     try {
-      let windowsTestDebug = Cc[
-        "@mozilla.org/widget/windows-test-debug;1"
-      ].getService(Ci.nsIWindowsTestDebug);
+      let windowsTestDebug = Cc["@mozilla.org/win-test-debug;1"].getService(
+        Ci.nsIWindowsTestDebug
+      );
       let processes = windowsTestDebug.processesThatOpenedFile(lockPath);
       info(`Number of processes holding lock: ${processes.length}`);
       for (let proc of processes) {
