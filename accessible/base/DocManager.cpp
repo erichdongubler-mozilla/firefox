@@ -115,6 +115,29 @@ void DocManager::NotifyOfDocumentShutdown(DocAccessible* aDocument,
 
   RemoveFromXPCDocumentCache(aDocument);
   mDocAccessibleCache.Remove(aDOMDocument);
+
+  auto* shutdownBC = aDOMDocument->GetBrowsingContext();
+  if (shutdownBC && shutdownBC->Top()->GetIsPrinting()) {
+    // A print doc is shutting down. If it is the last print doc, the
+    // accessibility service is no longer needed for PDF output, so remove the
+    // ePdfOutput consumer. If ePdfOutput is the only remaining consumer, this
+    // will shut down the accessibility service completely.
+    bool anyPrintDocsRemain = false;
+    for (const auto& entry : mDocAccessibleCache) {
+      DocAccessible* doc = entry.GetWeak();
+      auto* docBC = doc && doc->DocumentNode()
+                        ? doc->DocumentNode()->GetBrowsingContext()
+                        : nullptr;
+      if (docBC && docBC->Top()->GetIsPrinting()) {
+        anyPrintDocsRemain = true;
+        break;
+      }
+    }
+    if (!anyPrintDocsRemain) {
+      MaybeShutdownAccService(nsAccessibilityService::ePdfOutput,
+                              /* aAsync */ true);
+    }
+  }
 }
 
 void DocManager::RemoveFromRemoteXPCDocumentCache(DocAccessibleParent* aDoc) {
