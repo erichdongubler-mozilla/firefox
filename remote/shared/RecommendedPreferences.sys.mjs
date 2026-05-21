@@ -91,6 +91,10 @@ const COMMON_PREFERENCES = new Map([
   // of Firefox aren't downloaded and applied, enforce its presence.
   ["app.update.disabledForTesting", true],
 
+  // Disable scroll axis lock, WebDriver should be able to scroll arbitrary
+  // directions.
+  ["apz.axis_lock.mode", 0],
+
   // Increase the APZ content response timeout in tests to 1 minute.
   // This is to accommodate the fact that test environments tends to be
   // slower than production environments (with the b2g emulator being

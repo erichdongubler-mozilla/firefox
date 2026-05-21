@@ -37,6 +37,9 @@ class GeckoInstance:
     required_prefs = {
         # Make sure Shield doesn't hit the network.
         "app.normandy.api_url": "",
+        # Disable scroll axis lock, WebDriver should be able to scroll arbitrary
+        # directions.
+        "apz.axis_lock.mode": 0,
         # Increase the APZ content response timeout in tests to 1 minute.
         # This is to accommodate the fact that test environments tends to be slower
         # than production environments (with the b2g emulator being the slowest of them
