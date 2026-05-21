@@ -20,7 +20,6 @@
 #include "mozilla/StaticPtr.h"
 #include "nsIAsyncShutdown.h"
 #include "nsIChannel.h"
-#include "nsIClassifiedChannel.h"
 #include "nsIStreamLoader.h"
 #include "nsIURI.h"
 #include "nsNetUtil.h"
@@ -35,60 +34,6 @@ StaticRefPtr<ContentClassifierService> ContentClassifierService::sInstance;
 bool ContentClassifierService::sEnabled = false;
 
 namespace {
-
-constexpr nsLiteralCString kTrackersListIds[] = {"disconnect-tracker-base"_ns};
-constexpr nsLiteralCString kTrackersContentListIds[] = {
-    "disconnect-tracker-content"_ns};
-constexpr nsLiteralCString kSocialTrackersListIds[] = {"mozilla-social"_ns};
-constexpr nsLiteralCString kFingerprintersListIds[] = {
-    "disconnect-fingerprinters-base"_ns};
-constexpr nsLiteralCString kEmailTrackersListIds[] = {
-    "disconnect-email-base"_ns};
-constexpr nsLiteralCString kCryptominersListIds[] = {
-    "disconnect-cryptominer-base"_ns};
-constexpr nsLiteralCString kMajorExceptionListIds[] = {
-    "mozilla-major-exceptions"_ns};
-constexpr nsLiteralCString kMinorExceptionListIds[] = {
-    "mozilla-minor-exceptions"_ns};
-
-constexpr ContentClassifierFeature kFeatures[] = {
-    {"trackers"_ns, Span<const nsLiteralCString>(kTrackersListIds),
-     nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_TRACKING,
-     nsIWebProgressListener::STATE_LOADED_LEVEL_1_TRACKING_CONTENT,
-     NS_ERROR_TRACKING_URI},
-    // The annotation variant adds content-track-digest256, which mirrors
-    // url-classifier's promotion to STATE_LOADED_LEVEL_2_TRACKING_CONTENT
-    // when a content-track-* table matches.
-    {"trackers-content"_ns,
-     Span<const nsLiteralCString>(kTrackersContentListIds),
-     nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_TRACKING,
-     nsIWebProgressListener::STATE_LOADED_LEVEL_2_TRACKING_CONTENT,
-     NS_ERROR_TRACKING_URI},
-    {"social-trackers"_ns, Span<const nsLiteralCString>(kSocialTrackersListIds),
-     nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_SOCIALTRACKING,
-     nsIWebProgressListener::STATE_LOADED_SOCIALTRACKING_CONTENT,
-     NS_ERROR_SOCIALTRACKING_URI},
-    {"fingerprinters"_ns, Span<const nsLiteralCString>(kFingerprintersListIds),
-     nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_FINGERPRINTING,
-     nsIWebProgressListener::STATE_LOADED_FINGERPRINTING_CONTENT,
-     NS_ERROR_FINGERPRINTING_URI},
-    {"email-trackers"_ns, Span<const nsLiteralCString>(kEmailTrackersListIds),
-     nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_EMAILTRACKING,
-     nsIWebProgressListener::STATE_LOADED_EMAILTRACKING_LEVEL_1_CONTENT,
-     NS_ERROR_EMAILTRACKING_URI},
-    {"cryptominers"_ns, Span<const nsLiteralCString>(kCryptominersListIds),
-     nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_CRYPTOMINING,
-     nsIWebProgressListener::STATE_LOADED_CRYPTOMINING_CONTENT,
-     NS_ERROR_CRYPTOMINING_URI},
-    {"minor-exceptions"_ns,
-     Span<const nsLiteralCString>(kMinorExceptionListIds),
-     nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_NONE, 0, NS_OK},
-    {"major-exceptions"_ns,
-     Span<const nsLiteralCString>(kMajorExceptionListIds),
-     nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_NONE, 0, NS_OK},
-};
-static_assert(std::size(kFeatures) > 0,
-              "Content classifier feature table must not be empty");
 
 bool HasAnyListNames() {
   nsAutoCString blockNames;
@@ -136,22 +81,6 @@ bool ContentClassifierService::IsEnabled() {
   }
 
   return sEnabled;
-}
-
-// static
-Span<const ContentClassifierFeature> ContentClassifierService::GetFeatures() {
-  return Span<const ContentClassifierFeature>(kFeatures);
-}
-
-// static
-const ContentClassifierFeature* ContentClassifierService::GetFeatureByName(
-    const nsACString& aName) {
-  for (const auto& feature : kFeatures) {
-    if (feature.mName.Equals(aName)) {
-      return &feature;
-    }
-  }
-  return nullptr;
 }
 
 // static
@@ -603,15 +532,6 @@ NS_IMETHODIMP ContentClassifierService::RemoveFilterList(
     return NS_ERROR_NOT_INITIALIZED;
   }
   mFilterListData.Remove(nsCString(aName));
-  return NS_OK;
-}
-
-NS_IMETHODIMP ContentClassifierService::GetFeatureNames(
-    nsTArray<nsCString>& aNames) {
-  aNames.Clear();
-  for (const auto& feature : GetFeatures()) {
-    aNames.AppendElement(feature.mName);
-  }
   return NS_OK;
 }
 

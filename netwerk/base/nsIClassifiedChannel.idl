@@ -101,11 +101,6 @@ interface nsIClassifiedChannel : nsISupports
 
   cenum ClassificationFlags : 32 {
     /**
-     * The resource has not been classified
-     */
-    CLASSIFIED_NONE = 0x00000000,
-
-    /**
      * The resource is on the fingerprinting list.
      */
     CLASSIFIED_FINGERPRINTING = 0x00000001,
