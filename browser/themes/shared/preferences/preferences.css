@@ -97,8 +97,10 @@
   width: 100%;
 }
 
-#policies-container-content:not([hidden]) + #searchInput {
-  margin-block-start: var(--space-small);
+@media (max-width: 950px) {
+  #search-container:has(#policies-container-content:not([hidden])) {
+    padding-top: var(--space-small);
+  }
 }
 
 .main-content {
