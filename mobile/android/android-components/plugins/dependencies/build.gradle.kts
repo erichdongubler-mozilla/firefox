@@ -4,10 +4,13 @@
 
 plugins {
     alias(libs.plugins.dependency.analysis)
-    alias(libs.plugins.kotlin.dsl)
+    `kotlin-dsl`
 }
 
-layout.buildDirectory.set(file("${gradle.mozconfig.topobjdir}/gradle/build/mobile/android/android-components/plugins/dependencies"))
+val mozconfig = gradle.extra["mozconfig"] as Map<*, *>
+val topobjdir = mozconfig["topobjdir"] as String
+
+layout.buildDirectory.set(file("$topobjdir/gradle/build/mobile/android/android-components/plugins/dependencies"))
 
 gradlePlugin {
     plugins.register("mozac.DependenciesPlugin") {
@@ -17,12 +20,12 @@ gradlePlugin {
 }
 
 dependencies {
-  testImplementation platform(libs.junit.bom)
-  testImplementation libs.junit.jupiter
-  testImplementation libs.mockito
-  testRuntimeOnly libs.junit.platform.launcher
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.mockito)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
-test {
-  useJUnitPlatform {}
+tasks.test {
+    useJUnitPlatform()
 }

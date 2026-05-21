@@ -4,25 +4,32 @@
 
 // Prevents gradle builds from looking for a root settings.gradle
 pluginManagement {
-    if (!gradle.root.hasProperty("mozconfig")){
-        apply from: file('../../../gradle/mozconfig.gradle')
+    if (gradle.parent?.extra?.has("mozconfig") == true) {
+        gradle.extra["mozconfig"] = gradle.parent!!.extra["mozconfig"]
+        gradle.extra["configureMavenRepositories"] = gradle.parent!!.extra["configureMavenRepositories"]
     } else {
-        gradle.ext.mozconfig = gradle.root.mozconfig
-        gradle.ext.configureMavenRepositories = gradle.root.ext.configureMavenRepositories
+        apply(from = file("../../../gradle/mozconfig.gradle"))
     }
 
+    @Suppress("UNCHECKED_CAST")
+    val configureMavenRepositories = gradle.extra["configureMavenRepositories"] as groovy.lang.Closure<*>
+
     repositories {
-        gradle.configureMavenRepositories(delegate)
+        configureMavenRepositories.call(this)
     }
 }
 
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+
+    @Suppress("UNCHECKED_CAST")
+    val configureMavenRepositories = gradle.extra["configureMavenRepositories"] as groovy.lang.Closure<*>
+
     repositories {
-        gradle.configureMavenRepositories(delegate)
+        configureMavenRepositories.call(this)
     }
     versionCatalogs {
-        libs {
+        create("libs") {
             from(files("../../../../../gradle/libs.versions.toml"))
         }
     }

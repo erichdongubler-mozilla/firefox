@@ -72,7 +72,6 @@ protobuf = "4.35.0" # Keep Protobuf in sync with the version used by AppServices
 dependency-analysis = "3.12.0"
 jacoco = "0.8.14"
 kaml = "0.104.0"
-kotlin-dsl = "6.5.7"
 protobuf-plugin = "0.10.0"
 python-envs-plugin = "0.0.31"
 semanticdb-javac = "0.12.0"
@@ -311,7 +310,6 @@ dependency-analysis = { id = "com.autonomousapps.dependency-analysis", version.r
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-kotlin-dsl = { id = "org.gradle.kotlin.kotlin-dsl", version.ref = "kotlin-dsl" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 protobuf-plugin = { id = "com.google.protobuf", version.ref = "protobuf-plugin" }

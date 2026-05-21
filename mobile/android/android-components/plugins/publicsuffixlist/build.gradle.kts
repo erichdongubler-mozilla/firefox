@@ -4,16 +4,19 @@
 
 plugins {
     alias(libs.plugins.dependency.analysis)
-    alias(libs.plugins.kotlin.dsl)
+    `kotlin-dsl`
 }
 
-layout.buildDirectory.set(file("${gradle.mozconfig.topobjdir}/gradle/build/mobile/android/android-components/plugins/publicsuffixlist"))
+val mozconfig = gradle.extra["mozconfig"] as Map<*, *>
+val topobjdir = mozconfig["topobjdir"] as String
+
+layout.buildDirectory.set(file("$topobjdir/gradle/build/mobile/android/android-components/plugins/publicsuffixlist"))
 
 dependencies {
-    implementation libs.okhttp
-    implementation libs.okio
+    implementation(libs.okhttp)
+    implementation(libs.okio)
 
-    compileOnly libs.android.gradle.plugin
+    compileOnly(libs.android.gradle.plugin)
 }
 
 gradlePlugin {
