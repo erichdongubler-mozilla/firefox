@@ -963,13 +963,11 @@ class RuleEditor extends EventEmitter {
 
     let selectorContainerTitle;
     if (
-      typeof this.rule.selector.selectorsSpecificity?.[selectorIndex] !==
-      "undefined"
+      typeof this.rule.selectorsSpecificity?.[selectorIndex] !== "undefined"
     ) {
       // The specificity that we get from the platform is a single number that we
       // need to format into the common `(x,y,z)` specificity string.
-      const specificity =
-        this.rule.selector.selectorsSpecificity?.[selectorIndex];
+      const specificity = this.rule.selectorsSpecificity?.[selectorIndex];
       const a = Math.floor(specificity / (1024 * 1024));
       const b = Math.floor((specificity % (1024 * 1024)) / 1024);
       const c = specificity % 1024;
