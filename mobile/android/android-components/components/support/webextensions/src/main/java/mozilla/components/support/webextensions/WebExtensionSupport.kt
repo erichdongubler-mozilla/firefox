@@ -42,7 +42,6 @@ import mozilla.components.support.ktx.kotlin.isExtensionUrl
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.filterChanged
 import mozilla.components.support.webextensions.WebExtensionSupport.initialize
 import mozilla.components.support.webextensions.facts.emitWebExtensionsInitializedFact
-import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -212,25 +211,6 @@ object WebExtensionSupport {
 
                 override fun onPageActionDefined(extension: WebExtension, action: Action) {
                     store.dispatch(WebExtensionAction.UpdatePageAction(extension.id, action))
-                }
-
-                override fun onOpenOptionsPage(
-                    extension: WebExtension,
-                ) {
-                    val metaData = extension.getMetadata() ?: return
-                    if (metaData.openOptionsPageInTab) {
-                        logger.error("The case where |open_in_tab| is true should be handled in the API script.")
-                    } else {
-                        val optionsPageUrl = metaData.optionsPageUrl ?: return
-                        store.dispatch(
-                            WebExtensionAction.UpdateOptionsPageSessionAction(
-                                extensionId = extension.id,
-                                optionsPageInstanceId = UUID.randomUUID().toString(),
-                                optionsPageUrl = optionsPageUrl,
-                                extensionTranslatedName = metaData.name ?: "",
-                            ),
-                        )
-                    }
                 }
 
                 override fun onToggleActionPopup(

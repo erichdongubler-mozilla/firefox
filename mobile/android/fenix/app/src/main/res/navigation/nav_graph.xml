@@ -92,9 +92,6 @@
         android:id="@+id/action_global_webExtensionActionPopupFragment"
         app:destination="@id/webExtensionActionPopupFragment" />
     <action
-        android:id="@+id/action_global_webExtensionActionOptionsPageFragment"
-        app:destination="@id/addonInternalSettingsFragment" />
-    <action
         android:id="@+id/action_global_settingsFragment"
         app:destination="@id/settingsFragment" />
     <action
@@ -1519,16 +1516,8 @@
         android:name="org.mozilla.fenix.addons.AddonInternalSettingsFragment"
         tools:layout="@layout/fragment_add_on_internal_settings">
         <argument
-            android:name="optionsPageUrl"
-            app:argType="string"
-            app:nullable="true" />
-        <argument
-            android:name="webExtensionName"
-            app:argType="string"
-            app:nullable="true" />
-        <argument
-            android:name="webExtensionId"
-            app:argType="string" />
+            android:name="addon"
+            app:argType="mozilla.components.feature.addons.Addon" />
     </fragment>
 
     <dialog

@@ -39,7 +39,6 @@ import androidx.core.text.layoutDirection
 import androidx.core.view.doOnLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
-import androidx.navigation.NavDirections
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
@@ -57,7 +56,6 @@ import mozilla.components.browser.state.action.SearchAction
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.selector.getNormalOrPrivateTabs
 import mozilla.components.browser.state.selector.selectedTab
-import mozilla.components.browser.state.state.ActiveOptionsPage
 import mozilla.components.browser.state.state.WebExtensionState
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.EngineView
@@ -85,7 +83,6 @@ import mozilla.components.support.utils.BrowsersCache
 import mozilla.components.support.utils.BuildManufacturerChecker
 import mozilla.components.support.utils.SafeIntent
 import mozilla.components.support.utils.toSafeIntent
-import mozilla.components.support.webextensions.WebExtensionOptionsPageObserver
 import mozilla.components.support.webextensions.WebExtensionPopupObserver
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.experiments.nimbus.initializeTooling
@@ -214,10 +211,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
 
     private val webExtensionPopupObserver by lazy {
         WebExtensionPopupObserver(components.core.store, ::openPopup)
-    }
-
-    private val webExtensionOptionsPageObserver by lazy {
-        WebExtensionOptionsPageObserver(components.core.store, ::openOptionsPage)
     }
 
     private val webExtensionPromptFeature by lazy {
@@ -592,7 +585,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
 
         lifecycle.addObservers(
             webExtensionPopupObserver,
-            webExtensionOptionsPageObserver,
             extensionsProcessDisabledForegroundController,
             extensionsProcessDisabledBackgroundController,
             serviceWorkerSupport,
@@ -1482,27 +1474,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             webExtensionTitle = webExtensionState.name,
         )
         navHost.navController.navigate(action)
-    }
-
-    private fun openOptionsPage(activeOptionsPage: ActiveOptionsPage) {
-        createOpenOptionsPageDirections(activeOptionsPage)?.let {
-            navHost.navController.navigate(it)
-        }
-    }
-
-    @VisibleForTesting
-    internal fun createOpenOptionsPageDirections(activeOptionsPage: ActiveOptionsPage): NavDirections? {
-        val extensionState = components.core.store.state.extensions.values.firstOrNull {
-            it.activeOptionsPage == activeOptionsPage
-        }
-
-        return extensionState?.let {
-            NavGraphDirections.actionGlobalWebExtensionActionOptionsPageFragment(
-                optionsPageUrl = activeOptionsPage.url,
-                webExtensionName = activeOptionsPage.name,
-                webExtensionId = it.id,
-            )
-        }
     }
 
     /**
