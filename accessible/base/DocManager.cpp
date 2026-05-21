@@ -176,8 +176,19 @@ bool DocManager::IsProcessingRefreshDriverNotification() const {
 #endif
 
 #ifdef MOZ_ENABLE_SKIA_PDF
+/* static */
 void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
   if (!StaticPrefs::accessibility_tagged_pdf_output_enabled()) {
+    return;
+  }
+  // Bring up the accessibility service if it isn't already running. Use the
+  // ePdfOutput consumer flag so that, if there is no other consumer, the
+  // service stays in PDF-only mode and doesn't create accessibles for
+  // unrelated documents. PDF output uses doc-specific cache domains rather
+  // than gCacheDomains, so there's no need to pass a specific domain set.
+  nsAccessibilityService* serv =
+      GetOrCreateAccService(nsAccessibilityService::ePdfOutput);
+  if (!serv) {
     return;
   }
   if (GetExistingDocAccessible(aDoc)) {
@@ -187,7 +198,7 @@ void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
   // Normally, we don't create DocAccessibles for static documents. Print
   // documents are static clones, so we force creation here.
   DocAccessible* topDocAcc =
-      CreateDocOrRootAccessible(aDoc, /* aAllowStatic */ true);
+      serv->CreateDocOrRootAccessible(aDoc, /* aAllowStatic */ true);
   if (!topDocAcc) {
     return;
   }
@@ -203,7 +214,7 @@ void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
       [](const dom::Document* aDescDoc) { return true; });
   for (dom::Document* descDoc : descendants) {
     if (DocAccessible* descDocAcc =
-            CreateDocOrRootAccessible(descDoc, /* aAllowStatic */ true)) {
+            serv->CreateDocOrRootAccessible(descDoc, /* aAllowStatic */ true)) {
       descDocAcc->DoInitialUpdate();
     }
   }

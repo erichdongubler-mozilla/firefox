@@ -4247,9 +4247,7 @@ void BrowserChild::OnPointerRawUpdateEventListenerRemoved(
 #if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
 mozilla::ipc::IPCResult BrowserChild::RecvRequestDocAccessibleForPrint() {
   if (RefPtr<Document> doc = GetTopLevelDocument()) {
-    if (nsAccessibilityService* serv = GetAccService()) {
-      serv->NotifyOfPrintDocument(doc);
-    }
+    a11y::DocManager::NotifyOfPrintDocument(doc);
   }
   return IPC_OK();
 }
