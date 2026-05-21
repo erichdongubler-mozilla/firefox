@@ -373,6 +373,8 @@ void InterpreterFrame::traceValues(JSTracer* trc, unsigned start,
 }
 
 void InterpreterActivation::trace(JSTracer* trc) {
+  traceCommon(trc);
+
   for (InterpreterFrameIterator frames(this); !frames.done(); ++frames) {
     InterpreterFrame* fp = frames.frame();
     fp->trace(trc, frames.sp(), frames.pc());

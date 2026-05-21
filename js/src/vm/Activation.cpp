@@ -41,3 +41,8 @@ void Activation::trace(JSTracer* trc) {
 
   asJit()->trace(trc);
 }
+
+void Activation::traceCommon(JSTracer* trc) {
+  frameCache_.trace(trc);
+  TraceRoot(trc, &asyncStack_, "Activation::asyncStack_");
+}
