@@ -452,6 +452,8 @@ class Activation {
   inline LiveSavedFrameCache* getLiveSavedFrameCache(JSContext* cx);
   void clearLiveSavedFrameCache() { frameCache_.get().clear(); }
 
+  void trace(JSTracer* trc);
+
   Activation(const Activation& other) = delete;
   void operator=(const Activation& other) = delete;
 };
@@ -511,6 +513,8 @@ class InterpreterActivation : public Activation {
     opMask_ = EnableInterruptsPseudoOpcode;
   }
   void clearInterruptsMask() { opMask_ = 0; }
+
+  void trace(JSTracer* trc);
 };
 
 // Iterates over a thread's activation list.

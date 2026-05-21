@@ -296,8 +296,10 @@ void js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc,
     JSContext* cx = rt->mainContextFromOwnThread();
 
     // Trace active interpreter and JIT stack roots.
-    TraceInterpreterActivations(cx, trc);
-    jit::TraceJitActivations(cx, trc);
+    TraceActivations(cx, trc);
+#ifdef ENABLE_WASM_JSPI
+    jit::TraceWasmSuspendedContStacks(cx, trc);
+#endif
 
     // Trace legacy C stack roots.
     cx->traceAllGCRooters(trc);

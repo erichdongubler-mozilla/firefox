@@ -63,6 +63,8 @@ js::jit::JitActivation::~JitActivation() {
 }
 
 void js::jit::JitActivation::trace(JSTracer* trc) {
+  TraceJitFrames(trc, this);
+
   if (rematerializedFrames_) {
     for (auto iter = rematerializedFrames_->iter(); !iter.done(); iter.next()) {
       iter.get().value().trace(trc);
