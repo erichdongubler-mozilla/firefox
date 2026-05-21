@@ -15,9 +15,11 @@ import mozilla.components.concept.fetch.MutableHeaders
 import mozilla.components.concept.fetch.Response
 import mozilla.components.concept.integrity.IntegrityToken
 import mozilla.components.concept.llm.ErrorCode
+import mozilla.components.concept.llm.LlmProvider
 import mozilla.components.lib.llm.mlpa.fakes.FakeClient
 import mozilla.components.lib.llm.mlpa.fakes.asBody
 import mozilla.components.lib.llm.mlpa.fakes.streamedResponseBody
+import mozilla.components.lib.llm.mlpa.mozSummarization
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
@@ -147,7 +149,7 @@ class FetchClientMlpaServiceTest {
             val response = mlpaService.completion(
                 authorizationToken = AuthorizationToken.Integrity("my-token"),
                 request = ChatService.Request(
-                    model = ChatService.Request.ModelID.mozSummarization,
+                    model = LlmProvider.ModelID.mozSummarization,
                     messages = listOf(ChatService.Request.Message.user("hello")),
                     stream = false,
                 ),
@@ -181,7 +183,7 @@ class FetchClientMlpaServiceTest {
             val response = mlpaService.completion(
                 authorizationToken = AuthorizationToken.Fxa("my-token"),
                 request = ChatService.Request(
-                    model = ChatService.Request.ModelID.mozSummarization,
+                    model = LlmProvider.ModelID.mozSummarization,
                     messages = listOf(ChatService.Request.Message.user("hello")),
                     stream = false,
                 ),
@@ -203,7 +205,7 @@ class FetchClientMlpaServiceTest {
             val response = mlpaService.completion(
                 authorizationToken = AuthorizationToken.Fxa("my-token"),
                 request = ChatService.Request(
-                    model = ChatService.Request.ModelID.mozSummarization,
+                    model = LlmProvider.ModelID.mozSummarization,
                     messages = listOf(ChatService.Request.Message.user("hello")),
                     stream = true,
                 ),
@@ -229,7 +231,7 @@ class FetchClientMlpaServiceTest {
             val response = mlpaService.completion(
                 authorizationToken = AuthorizationToken.Integrity("my-token"),
                 request = ChatService.Request(
-                    model = ChatService.Request.ModelID.mozSummarization,
+                    model = LlmProvider.ModelID.mozSummarization,
                     messages = listOf(ChatService.Request.Message.user("hello")),
                     stream = true,
                 ),
@@ -258,7 +260,7 @@ class FetchClientMlpaServiceTest {
             val response = mlpaService.completion(
                 authorizationToken = AuthorizationToken.Integrity("my-token"),
                 request = ChatService.Request(
-                    model = ChatService.Request.ModelID.mozSummarization,
+                    model = LlmProvider.ModelID.mozSummarization,
                     messages = listOf(ChatService.Request.Message.user("hello")),
                     stream = true,
                 ),
@@ -287,7 +289,7 @@ class FetchClientMlpaServiceTest {
             val response = mlpaService.completion(
                 authorizationToken = AuthorizationToken.Integrity("my-token"),
                 request = ChatService.Request(
-                    model = ChatService.Request.ModelID.mozSummarization,
+                    model = LlmProvider.ModelID.mozSummarization,
                     messages = listOf(ChatService.Request.Message.user("hello")),
                     stream = true,
                 ),
@@ -316,7 +318,7 @@ class FetchClientMlpaServiceTest {
             val response = mlpaService.completion(
                 authorizationToken = AuthorizationToken.Integrity("my-token"),
                 request = ChatService.Request(
-                    model = ChatService.Request.ModelID.mozSummarization,
+                    model = LlmProvider.ModelID.mozSummarization,
                     messages = listOf(ChatService.Request.Message.user("hello")),
                     stream = true,
                 ),
@@ -345,7 +347,7 @@ class FetchClientMlpaServiceTest {
             val response = mlpaService.completion(
                 authorizationToken = AuthorizationToken.Integrity("my-token"),
                 request = ChatService.Request(
-                    model = ChatService.Request.ModelID.mozSummarization,
+                    model = LlmProvider.ModelID.mozSummarization,
                     messages = listOf(ChatService.Request.Message.user("hello")),
                     stream = true,
                 ),
@@ -380,7 +382,7 @@ class FetchClientMlpaServiceTest {
             val response = mlpaService.completion(
                 authorizationToken = AuthorizationToken.Integrity("my-token"),
                 request = ChatService.Request(
-                    model = ChatService.Request.ModelID.mozSummarization,
+                    model = LlmProvider.ModelID.mozSummarization,
                     messages = listOf(ChatService.Request.Message.user("hello")),
                     stream = false,
                 ),
@@ -403,7 +405,7 @@ class FetchClientMlpaServiceTest {
             val response = mlpaService.completion(
                 authorizationToken = AuthorizationToken.Integrity("my-token"),
                 request = ChatService.Request(
-                    model = ChatService.Request.ModelID.mozSummarization,
+                    model = LlmProvider.ModelID.mozSummarization,
                     messages = listOf(ChatService.Request.Message.user("hello")),
                 ),
             )
@@ -428,7 +430,7 @@ class FetchClientMlpaServiceTest {
             val response = mlpaService.completion(
                 authorizationToken = AuthorizationToken.Integrity("my-token"),
                 request = ChatService.Request(
-                    model = ChatService.Request.ModelID.mozSummarization,
+                    model = LlmProvider.ModelID.mozSummarization,
                     messages = listOf(ChatService.Request.Message.user("hello")),
                 ),
             )
@@ -449,7 +451,7 @@ class FetchClientMlpaServiceTest {
             val response = mlpaService.completion(
                 authorizationToken = AuthorizationToken.Integrity("my-token"),
                 request = ChatService.Request(
-                    model = ChatService.Request.ModelID.mozSummarization,
+                    model = LlmProvider.ModelID.mozSummarization,
                     messages = listOf(ChatService.Request.Message.user("hello")),
                 ),
             )
@@ -498,7 +500,7 @@ class FetchClientMlpaServiceTest {
                 val response = service.completion(
                     authorizationToken = AuthorizationToken.Integrity("my-token"),
                     request = ChatService.Request(
-                        model = ChatService.Request.ModelID.mozSummarization,
+                        model = LlmProvider.ModelID.mozSummarization,
                         messages = listOf(ChatService.Request.Message.user("hello")),
                     ),
                 )
