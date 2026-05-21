@@ -527,7 +527,12 @@ NS_IMETHODIMP CacheEntry::OnFileReady(nsresult aResult, bool aIsNew) {
 }
 
 NS_IMETHODIMP CacheEntry::OnFileDoomed(nsresult aResult) {
-  if (mDoomCallback) {
+  bool doomCallback = false;
+  {
+    mozilla::MutexAutoLock lock(mLock);
+    doomCallback = bool(mDoomCallback);
+  }
+  if (doomCallback) {
     RefPtr<DoomCallbackRunnable> event =
         new DoomCallbackRunnable(this, aResult);
     NS_DispatchToMainThread(event);
@@ -1848,8 +1853,12 @@ void CacheEntry::DoomFile() {
     }
   }
 
-  // Always posts to the main thread.
-  OnFileDoomed(rv);
+  // mLock is already held; dispatch directly instead of calling
+  // OnFileDoomed() which would deadlock re-acquiring it.
+  if (mDoomCallback) {
+    RefPtr<DoomCallbackRunnable> event = new DoomCallbackRunnable(this, rv);
+    NS_DispatchToMainThread(event);
+  }
 }
 
 void CacheEntry::RemoveForcedValidity() {

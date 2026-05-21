@@ -332,7 +332,7 @@ class CacheEntry final : public nsIRunnable,
   ::mozilla::ThreadSafeAutoRefCnt mHandlesCount MOZ_GUARDED_BY(mLock);
 
   nsTArray<Callback> mCallbacks MOZ_GUARDED_BY(mLock);
-  nsCOMPtr<nsICacheEntryDoomCallback> mDoomCallback;
+  nsCOMPtr<nsICacheEntryDoomCallback> mDoomCallback MOZ_GUARDED_BY(mLock);
 
   // Set in CacheEntry::Load(), only - shouldn't need to be under lock
   // XXX FIX?  is this correct?
