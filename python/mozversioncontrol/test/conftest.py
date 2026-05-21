@@ -132,6 +132,17 @@ def repo(request):
         # Isolate jj tests from user's local config
         os.environ["JJ_CONFIG"] = ""
 
+    if request.param == "hg":
+        try:
+            subprocess.call(
+                ["hg", "--version"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except OSError:
+            if not os.environ.get("MOZ_AUTOMATION"):
+                pytest.skip("hg unavailable")
+
     vcs = request.param
     # Use tempfile since pytest's tempdir is too long for jj on Windows
     td = tempfile.TemporaryDirectory(prefix=f"{vcs}-repo")
