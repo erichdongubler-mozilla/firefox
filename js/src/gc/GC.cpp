@@ -5998,6 +5998,10 @@ JS_PUBLIC_API void js::gc::detail::AssertCellIsNotGray(const Cell* cell) {
     return;
   }
 
+  if (CurrentThreadIsTouchingGrayThings()) {
+    return;
+  }
+
   // TODO: I'd like to AssertHeapIsIdle() here, but this ends up getting
   // called during GC and while iterating the heap for memory reporting.
   MOZ_ASSERT(!JS::RuntimeHeapIsCycleCollecting());
