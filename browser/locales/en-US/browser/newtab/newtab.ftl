@@ -1107,6 +1107,19 @@ newtab-clock-widget-button-save = Save
 newtab-clock-widget-button-remove-clock =
     .title = Remove clock
     .aria-label = Remove clock
+# Accessible name for a clock row in the "Your clocks" management panel
+# when the row has no user-provided nickname. Read aloud by screen
+# readers when focus lands on the row.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+newtab-clock-widget-edit-item =
+    .aria-label = { $city }
+# Accessible name for a clock row when a user nickname has been set.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+#   $nickname (string) - The user-provided nickname for the row.
+newtab-clock-widget-edit-item-with-nickname =
+    .aria-label = { $city }, nickname: { $nickname }
 newtab-clock-widget-add-clock-form =
     .aria-label = Add clock
 newtab-clock-widget-edit-clock-form =
