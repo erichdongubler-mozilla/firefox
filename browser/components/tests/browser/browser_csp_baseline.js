@@ -27,7 +27,12 @@ add_task(async function test_baseline_blocks() {
     );
 
     contentDocument.documentElement.setAttribute("onclick", "on_click()");
+    // The document is not meant to be clicked.
+    AccessibilityUtils.setEnv({
+      mustHaveAccessibleRule: false,
+    });
     contentDocument.documentElement.dispatchEvent(new MouseEvent("click"));
+    AccessibilityUtils.resetEnv();
 
     is(ran, false, "Event handler should not run");
 
