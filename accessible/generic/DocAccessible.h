@@ -430,6 +430,12 @@ class DocAccessible : public HyperTextAccessible,
    */
   void QueueCacheUpdateForPopoverInvokers(dom::Element* aPopoverEl);
 
+  /**
+   * Return the cache domain set that should be used for accessibles in this
+   * document.
+   */
+  uint64_t EffectiveCacheDomains() const;
+
  protected:
   virtual ~DocAccessible();
 

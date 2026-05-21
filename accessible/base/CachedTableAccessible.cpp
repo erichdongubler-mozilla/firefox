@@ -6,6 +6,7 @@
 
 #include "AccIterator.h"
 #include "HTMLTableAccessible.h"
+#include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/UniquePtr.h"
@@ -290,7 +291,7 @@ TableAccessible* CachedTableCellAccessible::Table() const {
 
 uint32_t CachedTableCellAccessible::ColExtent() const {
   if (RemoteAccessible* remoteAcc = mAcc->AsRemote()) {
-    if (RequestDomainsIfInactive(CacheDomain::Table)) {
+    if (remoteAcc->Document()->RequestDomainsIfInactive(CacheDomain::Table)) {
       return 1;
     }
     if (remoteAcc->mCachedFields) {
@@ -316,7 +317,7 @@ uint32_t CachedTableCellAccessible::ColExtent() const {
 
 uint32_t CachedTableCellAccessible::RowExtent() const {
   if (RemoteAccessible* remoteAcc = mAcc->AsRemote()) {
-    if (RequestDomainsIfInactive(CacheDomain::Table)) {
+    if (remoteAcc->Document()->RequestDomainsIfInactive(CacheDomain::Table)) {
       return 1;
     }
     if (remoteAcc->mCachedFields) {
@@ -342,7 +343,7 @@ uint32_t CachedTableCellAccessible::RowExtent() const {
 
 UniquePtr<AccIterable> CachedTableCellAccessible::GetExplicitHeadersIterator() {
   if (RemoteAccessible* remoteAcc = mAcc->AsRemote()) {
-    if (RequestDomainsIfInactive(CacheDomain::Table)) {
+    if (remoteAcc->Document()->RequestDomainsIfInactive(CacheDomain::Table)) {
       return nullptr;
     }
     if (remoteAcc->mCachedFields) {
@@ -364,8 +365,10 @@ void CachedTableCellAccessible::ColHeaderCells(nsTArray<Accessible*>* aCells) {
   if (!table) {
     return;
   }
-  if (mAcc->IsRemote() && RequestDomainsIfInactive(CacheDomain::Table)) {
-    return;
+  if (RemoteAccessible* remoteAcc = mAcc->AsRemote()) {
+    if (remoteAcc->Document()->RequestDomainsIfInactive(CacheDomain::Table)) {
+      return;
+    }
   }
   if (auto iter = GetExplicitHeadersIterator()) {
     while (Accessible* header = iter->Next()) {

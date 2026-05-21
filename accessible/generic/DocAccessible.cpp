@@ -388,6 +388,10 @@ static uint64_t GetCacheDomainsQueueUpdateSuperset(uint64_t aCacheDomains) {
   return aCacheDomains;
 }
 
+uint64_t DocAccessible::EffectiveCacheDomains() const {
+  return nsAccessibilityService::GetActiveCacheDomains();
+}
+
 void DocAccessible::QueueCacheUpdate(LocalAccessible* aAcc, uint64_t aNewDomain,
                                      bool aBypassActiveDomains) {
   if (!mIPCDoc || !HasLoadState(eTreeConstructed)) {
@@ -430,8 +434,7 @@ void DocAccessible::QueueCacheUpdate(LocalAccessible* aAcc, uint64_t aNewDomain,
   const uint64_t newDomains = GetCacheDomainsQueueUpdateSuperset(aNewDomain);
 
   // Only queue cache updates for domains that are active.
-  const uint64_t domainsToUpdate =
-      nsAccessibilityService::GetActiveCacheDomains() & newDomains;
+  const uint64_t domainsToUpdate = EffectiveCacheDomains() & newDomains;
 
   // Avoid queueing cache updates if we have no domains to update.
   if (domainsToUpdate == CacheDomain::None) {
@@ -1899,8 +1902,7 @@ void DocAccessible::DoInitialUpdate() {
       // Send an initial update for this document and its attributes. Each acc
       // contained in this doc will have its initial update sent in
       // `InsertIntoIpcTree`.
-      SendCache(nsAccessibilityService::GetActiveCacheDomains(),
-                CacheUpdateType::Initial);
+      SendCache(EffectiveCacheDomains(), CacheUpdateType::Initial);
 
       for (auto idx = 0U; idx < mChildren.Length(); idx++) {
         ipcDoc->InsertIntoIpcTree(mChildren.ElementAt(idx), true);

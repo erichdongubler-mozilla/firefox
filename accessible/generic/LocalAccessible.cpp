@@ -3509,8 +3509,7 @@ void LocalAccessible::SendCache(uint64_t aCacheDomain,
   }
 
   // Only send cache updates for domains that are active.
-  const uint64_t domainsToSend =
-      nsAccessibilityService::GetActiveCacheDomains() & aCacheDomain;
+  const uint64_t domainsToSend = mDoc->EffectiveCacheDomains() & aCacheDomain;
 
   // Avoid sending cache updates if we have no domains to update.
   if (domainsToSend == CacheDomain::None) {

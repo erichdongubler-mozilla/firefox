@@ -288,18 +288,21 @@ class CacheKey {
   static constexpr nsStaticAtom* WritingMode = nsGkAtoms::writing_mode;
 };
 
-// Return true if the given cache domains are already active.
+// Return true if the given cache domains are already globally active. This
+// doesn't account for documents which use a specific set of cache domains that
+// is different to the global set. Core, cross-platform code should generally
+// use DocAccessibleParent::CacheDomainsAreActive instead.
 bool DomainsAreActive(uint64_t aRequiredCacheDomains);
 
-// Check whether the required cache domains are active. If they aren't, then
-// request the requisite cache domains and return true. This function returns
-// false if all required domains are already active.
-bool RequestDomainsIfInactive(uint64_t aRequiredCacheDomains);
+// Get the set of cache domains required by the given cache domains. The
+// returned value is always equal to or a superset of the input. Used by
+// DocAccessibleParent::RequestDomainsIfInactive when escalating.
+uint64_t GetCacheDomainSuperset(uint64_t aCacheDomains);
 
-#define ASSERT_DOMAINS_ACTIVE(aCacheDomains)                                 \
+#define ASSERT_DOMAINS_ACTIVE(aCacheDomains, aAcc)                           \
   MOZ_ASSERT(                                                                \
       (GetAccService() && !GetAccService()->ShouldAllowNewCacheDomains()) || \
-          DomainsAreActive(aCacheDomains),                                   \
+          (aAcc)->Document()->DomainsAreActive(aCacheDomains),               \
       "Required domain(s) are not currently active.")
 
 }  // namespace a11y

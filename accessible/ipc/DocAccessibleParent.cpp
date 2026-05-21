@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ARIAMap.h"
+#include "CacheConstants.h"
 #include "CachedTableAccessible.h"
 #include "DocAccessibleParent.h"
 #ifdef MOZ_ENABLE_SKIA_PDF
@@ -69,6 +70,44 @@ DocAccessibleParent::~DocAccessibleParent() {
   LiveDocs().Remove(mActorID);
   MOZ_ASSERT(mChildDocs.Length() == 0);
   MOZ_ASSERT(!ParentDoc());
+}
+
+uint64_t DocAccessibleParent::EffectiveCacheDomains() const {
+  return nsAccessibilityService::GetActiveCacheDomains();
+}
+
+bool DocAccessibleParent::RequestDomainsIfInactive(
+    uint64_t aRequiredCacheDomains) {
+  const uint64_t activeCacheDomains = EffectiveCacheDomains();
+  const bool isMissingRequiredCacheDomain =
+      (aRequiredCacheDomains & ~activeCacheDomains) != 0;
+  if (!isMissingRequiredCacheDomain) {
+    return false;
+  }
+  nsAccessibilityService* accService = GetAccService();
+  if (!accService) {
+    return true;
+  }
+  if (!accService->ShouldAllowNewCacheDomains()) {
+    // The fields aren't in the cache, but we've been told not to ask for
+    // more right now (e.g. we're inside a CacheDomainActivationBlocker).
+    return true;
+  }
+  aRequiredCacheDomains = GetCacheDomainSuperset(aRequiredCacheDomains);
+  const uint64_t cacheDomains = aRequiredCacheDomains | activeCacheDomains;
+#if defined(ANDROID)
+  // We might not be on the main Android thread, but we must be in order to
+  // send IPDL messages. Dispatch to the main thread to set cache domains.
+  NS_DispatchToMainThread(
+      NS_NewRunnableFunction("a11y::SetCacheDomains", [cacheDomains]() {
+        if (nsAccessibilityService* accService = GetAccService()) {
+          accService->SetCacheDomains(cacheDomains);
+        }
+      }));
+#else
+  accService->SetCacheDomains(cacheDomains);
+#endif
+  return true;
 }
 
 already_AddRefed<DocAccessibleParent> DocAccessibleParent::New() {
