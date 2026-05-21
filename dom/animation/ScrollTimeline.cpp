@@ -190,14 +190,12 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::MakeAnonymous(
 /* static*/
 already_AddRefed<ScrollTimeline> ScrollTimeline::MakeNamed(
     Document* aDocument, Element* aReferenceElement,
-    const PseudoStyleRequest& aPseudoRequest,
-    const StyleScrollTimeline& aStyleTimeline) {
+    const PseudoStyleRequest& aPseudoRequest, StyleScrollAxis aAxis) {
   MOZ_ASSERT(NS_IsMainThread());
 
   ScrollerInfo scroller =
       ScrollerInfo::Named(aReferenceElement, aPseudoRequest);
-  return MakeAndAddRef<ScrollTimeline>(aDocument, std::move(scroller),
-                                       aStyleTimeline.GetAxis());
+  return MakeAndAddRef<ScrollTimeline>(aDocument, std::move(scroller), aAxis);
 }
 
 Nullable<TimeDuration> ScrollTimeline::GetCurrentTimeAsDuration() const {
@@ -328,18 +326,18 @@ const ScrollContainerFrame* ScrollTimeline::State::GetScrollContainerFrame()
 
 void ScrollTimeline::ReplacePropertiesWith(
     const Element* aReferenceElement, const PseudoStyleRequest& aPseudoRequest,
-    const StyleScrollTimeline& aNew) {
+    nsAtom* aName, StyleScrollAxis aAxis) {
   MOZ_ASSERT(!mScrollerInfo.IsAnonymous());
   MOZ_ASSERT(aReferenceElement == mScrollerInfo.Source().mElement &&
              aPseudoRequest == mScrollerInfo.Source().mPseudoRequest);
-  mAxis = aNew.GetAxis();
+  mAxis = aAxis;
 
   for (auto* anim = mAnimationOrder.getFirst(); anim;
        anim = static_cast<LinkedListElement<Animation>*>(anim)->getNext()) {
     MOZ_ASSERT(anim->GetTimeline() == this);
-    MOZ_ASSERT(anim->GetTimelineName() == aNew.GetName());
+    MOZ_ASSERT(anim->GetTimelineName() == aName);
     // Set this so we just PostUpdate() for this animation.
-    anim->SetTimeline(this, aNew.GetName());
+    anim->SetTimeline(this, aName);
   }
 }
 

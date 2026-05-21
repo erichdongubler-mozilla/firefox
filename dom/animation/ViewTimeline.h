@@ -34,8 +34,8 @@ class ViewTimeline final : public ScrollTimeline {
   // property, and we use this subject to look up its nearest scroll container.
   static already_AddRefed<ViewTimeline> MakeNamed(
       Document* aDocument, Element* aSubject,
-      const PseudoStyleRequest& aPseudoRequest,
-      const StyleViewTimeline& aStyleTimeline);
+      const PseudoStyleRequest& aPseudoRequest, StyleScrollAxis aAxis,
+      const StyleViewTimelineInset& aInset);
 
   static already_AddRefed<ViewTimeline> MakeAnonymous(
       Document* aDocument, const NonOwningAnimationTarget& aTarget,
@@ -57,7 +57,8 @@ class ViewTimeline final : public ScrollTimeline {
 
   void ReplacePropertiesWith(Element* aSubjectElement,
                              const PseudoStyleRequest& aPseudoRequest,
-                             const StyleViewTimeline& aNew);
+                             nsAtom* aName, StyleScrollAxis aAxis,
+                             const StyleViewTimelineInset& aInset);
 
   bool UpdateCachedCurrentTime() override;
 

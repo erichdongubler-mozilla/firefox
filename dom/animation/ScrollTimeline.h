@@ -191,8 +191,7 @@ class ScrollTimeline : public AnimationTimeline,
   // scroll-timeline-name property.
   static already_AddRefed<ScrollTimeline> MakeNamed(
       Document* aDocument, Element* aReferenceElement,
-      const PseudoStyleRequest& aPseudoRequest,
-      const StyleScrollTimeline& aStyleTimeline);
+      const PseudoStyleRequest& aPseudoRequest, StyleScrollAxis aAxis);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ScrollTimeline, AnimationTimeline)
@@ -263,7 +262,7 @@ class ScrollTimeline : public AnimationTimeline,
 
   void ReplacePropertiesWith(const Element* aReferenceElement,
                              const PseudoStyleRequest& aPseudoRequest,
-                             const StyleScrollTimeline& aNew);
+                             nsAtom* aName, StyleScrollAxis aAxis);
 
   void NotifyAnimationUpdated(Animation& aAnimation) override;
 

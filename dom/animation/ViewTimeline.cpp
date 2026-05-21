@@ -20,8 +20,8 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(ViewTimeline, ScrollTimeline)
 /* static */
 already_AddRefed<ViewTimeline> ViewTimeline::MakeNamed(
     Document* aDocument, Element* aSubject,
-    const PseudoStyleRequest& aPseudoRequest,
-    const StyleViewTimeline& aStyleTimeline) {
+    const PseudoStyleRequest& aPseudoRequest, StyleScrollAxis aAxis,
+    const StyleViewTimelineInset& aInset) {
   MOZ_ASSERT(NS_IsMainThread());
 
   // 1. Create an anonymous scroller, as if `scroll(nearest)`.
@@ -30,9 +30,8 @@ already_AddRefed<ViewTimeline> ViewTimeline::MakeNamed(
       NonOwningAnimationTarget{aSubject, aPseudoRequest});
 
   // 2. Create timeline.
-  return MakeAndAddRef<ViewTimeline>(
-      aDocument, scroller, aStyleTimeline.GetAxis(), aSubject,
-      aPseudoRequest.mType, aStyleTimeline.GetInset());
+  return MakeAndAddRef<ViewTimeline>(aDocument, scroller, aAxis, aSubject,
+                                     aPseudoRequest.mType, aInset);
 }
 
 /* static */
@@ -73,19 +72,20 @@ Nullable<double> ViewTimeline::GetEndOffset() const {
 
 void ViewTimeline::ReplacePropertiesWith(
     Element* aSubjectElement, const PseudoStyleRequest& aPseudoRequest,
-    const StyleViewTimeline& aNew) {
+    nsAtom* aName, StyleScrollAxis aAxis,
+    const StyleViewTimelineInset& aInset) {
   mSubject = aSubjectElement;
   mSubjectPseudoType = aPseudoRequest.mType;
-  mAxis = aNew.GetAxis();
+  mAxis = aAxis;
   // FIXME: Bug 1817073. We assume it is a non-animatable value for now.
-  mInset = aNew.GetInset();
+  mInset = aInset;
 
   for (auto* anim = mAnimationOrder.getFirst(); anim;
        anim = static_cast<LinkedListElement<Animation>*>(anim)->getNext()) {
     MOZ_ASSERT(anim->GetTimeline() == this);
-    MOZ_ASSERT(anim->GetTimelineName() == aNew.GetName());
+    MOZ_ASSERT(anim->GetTimelineName() == aName);
     // Set this so we just PostUpdate() for this animation.
-    anim->SetTimeline(this, aNew.GetName());
+    anim->SetTimeline(this, aName);
   }
 }
 
