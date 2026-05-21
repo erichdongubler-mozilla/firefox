@@ -6,8 +6,8 @@
 #define MOZILLA_GFX_PATHRECORDING_H_
 
 #include "2D.h"
-#include <vector>
 
+#include "mozilla/Vector.h"
 #include "PathHelpers.h"
 #include "RecordingTypes.h"
 
@@ -32,7 +32,10 @@ class PathOps {
   template <class S>
   explicit PathOps(S& aStream);
 
-  PathOps(const PathOps& aOther) = default;
+  PathOps(const PathOps& aOther) {
+    MOZ_ALWAYS_TRUE(
+        mPathData.append(aOther.mPathData.begin(), aOther.mPathData.length()));
+  }
   PathOps& operator=(const PathOps&) = delete;  // assign using std::move()!
 
   PathOps(PathOps&& aOther) = default;
@@ -65,8 +68,8 @@ class PathOps {
 
   template <typename T>
   void AppendPathOp(const T& aOpData) {
-    mPathData.insert(mPathData.end(), (const uint8_t*)(&aOpData),
-                     (const uint8_t*)(&aOpData + 1));
+    MOZ_ALWAYS_TRUE(
+        mPathData.append((const uint8_t*)(&aOpData), sizeof(aOpData)));
   }
 
   template <typename T>
@@ -132,7 +135,7 @@ class PathOps {
   bool IsEmpty() const;
 
  private:
-  std::vector<uint8_t> mPathData;
+  mozilla::Vector<uint8_t> mPathData;
 };
 
 template <class S>

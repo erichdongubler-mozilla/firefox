@@ -6,8 +6,8 @@
 #define MOZILLA_GFX_RECORDINGTYPES_H_
 
 #include <type_traits>
-#include <vector>
 
+#include "mozilla/Vector.h"
 #include "Logging.h"
 
 namespace mozilla {
@@ -54,11 +54,11 @@ void WriteElement(S& aStream, const T& aElement) {
   ElementStreamFormat<S, T>::Write(aStream, aElement);
 }
 template <class S, class T>
-void WriteVector(S& aStream, const std::vector<T>& aVector) {
-  size_t size = aVector.size();
+void WriteVector(S& aStream, const mozilla::Vector<T>& aVector) {
+  size_t size = aVector.length();
   WriteElement(aStream, size);
   if (size) {
-    aStream.write(reinterpret_cast<const char*>(aVector.data()),
+    aStream.write(reinterpret_cast<const char*>(aVector.begin()),
                   sizeof(T) * size);
   }
 }
@@ -85,14 +85,17 @@ void ReadElementConstrained(S& aStream, T& aElement, const T& aMinValue,
   }
 }
 template <class S, class T>
-void ReadVector(S& aStream, std::vector<T>& aVector) {
+void ReadVector(S& aStream, mozilla::Vector<T>& aVector) {
   size_t size;
   ReadElement(aStream, size);
   if (size && aStream.good()) {
-    aVector.resize(size);
-    aStream.read(reinterpret_cast<char*>(aVector.data()), sizeof(T) * size);
+    if (!aVector.initLengthUninitialized(size)) {
+      aStream.SetIsBad();
+      return;
+    }
+    aStream.read(reinterpret_cast<char*>(aVector.begin()), sizeof(T) * size);
   } else {
-    aVector.clear();
+    aVector.clearAndFree();
   }
 }
 
