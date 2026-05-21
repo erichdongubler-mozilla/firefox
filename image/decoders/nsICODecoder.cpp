@@ -166,32 +166,9 @@ LexerTransition<ICOState> nsICODecoder::ReadDirEntry(const char* aData) {
   }
 
   if (mCurrIcon == mNumIcons) {
-    // If we detect anything that is likely not true in the dir entries sizes
-    // then we don't trust any of them and just try to get the size of each
-    // resource directly from the resource. This includes 0 sized entries, and
-    // two entries having the same size.
-    bool needsVerification = !mUnsizedDirEntries.IsEmpty();
-    for (size_t i = 0; !needsVerification && i + 1 < mDirEntries.Length();
-         ++i) {
-      for (size_t j = i + 1; j < mDirEntries.Length(); ++j) {
-        if (mDirEntries[i].mSize == mDirEntries[j].mSize) {
-          needsVerification = true;
-          break;
-        }
-      }
-    }
-
-    if (!needsVerification) {
+    if (mUnsizedDirEntries.IsEmpty()) {
       return Transition::To(ICOState::FINISHED_DIR_ENTRY, 0);
     }
-
-    // Move all entries into the verification queue which will overwrite the
-    // size in the dir entry with the size from the resource (or zeroes it on
-    // failure). And then they get put back in mDirEntries once that is done.
-    for (auto& e : mDirEntries) {
-      mUnsizedDirEntries.AppendElement(e);
-    }
-    mDirEntries.Clear();
     return Transition::To(ICOState::ITERATE_UNSIZED_DIR_ENTRY, 0);
   }
 
@@ -676,16 +653,11 @@ LexerTransition<ICOState> nsICODecoder::FinishResource() {
     return Transition::TerminateFailure();
   }
 
-  // If it is a metadata decode, we're verifying every dir entry's size
-  // against its resource (or filling in size info for entries that left it
-  // unspecified). We believe the resource over the dir entry so we overwrite
-  // the dir entry's size with the resource's reported size whether or not the
-  // dir entry claimed one.
+  // If it is a metadata decode, all we were trying to get was the size
+  // information missing from the dir entry.
   if (mContainedDecoder->IsMetadataDecode()) {
     if (mContainedDecoder->HasSize()) {
       mDirEntry->mSize = mContainedDecoder->Size();
-    } else {
-      mDirEntry->mSize = OrientedIntSize(0, 0);
     }
     return Transition::To(ICOState::ITERATE_UNSIZED_DIR_ENTRY, 0);
   }
