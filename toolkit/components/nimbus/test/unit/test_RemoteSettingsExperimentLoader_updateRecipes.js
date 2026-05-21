@@ -1583,22 +1583,12 @@ add_task(async function test_updateRecipesClearsOptIns() {
   const recipes = [
     NimbusTestUtils.factories.recipe("opt-in-1", {
       isFirefoxLabsOptIn: true,
-      firefoxLabsTitle: "opt-in-1-title",
-      firefoxLabsDescription: "opt-in-1-desc",
-      firefoxLabsDescriptionLinks: null,
-      firefoxLabsGroup: "group",
-      requiresRestart: false,
       isRollout: true,
       targeting: "true",
       publishedDate: new Date(now).toISOString(),
     }),
     NimbusTestUtils.factories.recipe("opt-in-2", {
       isFirefoxLabsOptIn: true,
-      firefoxLabsTitle: "opt-in-2-title",
-      firefoxLabsDescription: "opt-in-2-desc",
-      firefoxLabsDescriptionLinks: null,
-      firefoxLabsGroup: "group",
-      requiresRestart: false,
       isRollout: true,
       targeting: "false",
       publishedDate: new Date(now + 10000).toISOString(),
@@ -1618,11 +1608,7 @@ add_task(async function test_updateRecipesClearsOptIns() {
     publishedDate: new Date(now + 20000).toISOString(),
   });
 
-  // TODO properly enroll in forceEnroll recipe.
-  manager.optIns.push({
-    recipe: forceEnroll,
-    source: "force-enrollment",
-  });
+  Assert.ok(manager.registerOptIn(forceEnroll, "force-enrollment"));
   expectedLabs.push({ recipe: forceEnroll, source: "force-enrollment" });
 
   Assert.deepEqual(manager.optIns, expectedLabs);

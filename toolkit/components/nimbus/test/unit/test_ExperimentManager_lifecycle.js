@@ -771,3 +771,288 @@ add_task(async function testRestoreFirefoxLabsOptIns() {
   ]);
   await cleanup();
 });
+
+add_task(async function testRegisterOptIn() {
+  const { manager, cleanup } = await NimbusTestUtils.setupTest();
+
+  Assert.deepEqual(manager.optIns, []);
+
+  const recipes = [
+    NimbusTestUtils.factories.recipe.withFeatureConfig(
+      "foo",
+      { featureId: "no-feature-firefox-desktop" },
+      { isFirefoxLabsOptIn: true, isRollout: true }
+    ),
+    NimbusTestUtils.factories.recipe.withFeatureConfig(
+      "bar",
+      { featureId: "no-feature-firefox-desktop" },
+      { isFirefoxLabsOptIn: true, isRollout: true }
+    ),
+    NimbusTestUtils.factories.recipe.withFeatureConfig(
+      "baz",
+      { featureId: "no-feature-firefox-desktop" },
+      { isFirefoxLabsOptIn: true, isRollout: true }
+    ),
+  ];
+
+  for (const recipe of recipes) {
+    Assert.ok(
+      manager.registerOptIn(recipe, "nimbus-devtools"),
+      `Can register opt-in ${recipe.slug}`
+    );
+    const entry = manager.optIns.find(
+      entry => entry.recipe.slug === recipe.slug
+    );
+    Assert.notStrictEqual(
+      typeof entry,
+      "undefiend",
+      `Opt-in ${recipe.slug} available on ExperimentManager`
+    );
+  }
+
+  Assert.deepEqual(
+    manager.optIns.map(entry => [entry.recipe.slug, entry.source]),
+    [
+      ["foo", "nimbus-devtools"],
+      ["bar", "nimbus-devtools"],
+      ["baz", "nimbus-devtools"],
+    ]
+  );
+
+  for (const { slug } of recipes) {
+    Assert.ok(manager.unregisterOptIn(slug), `Can unregister opt-in ${slug}`);
+    Assert.ok(
+      !manager.optIns.find(entry => entry.recipe.slug === slug),
+      `Opt-in ${slug} no longer available`
+    );
+  }
+
+  Assert.deepEqual(manager.optIns, []);
+
+  Assert.ok(
+    !manager.unregisterOptIn("bogus"),
+    "Cannot unregister recipes that do not exist"
+  );
+
+  await cleanup();
+});
+
+add_task(async function testRegisterOptInConflicts() {
+  const recipes = Object.fromEntries([
+    ...[
+      "active-fxlab-devtools",
+      "inactive-fxlab-devtools",
+      "active-fxlab-rs",
+      "inactive-fxlab-rs",
+      "expired-fxlab-rs",
+    ].map(slug => [
+      slug,
+      NimbusTestUtils.factories.recipe.withFeatureConfig(
+        slug,
+        { featureId: "no-feature-firefox-desktop" },
+        { isFirefoxLabsOptIn: true, isRollout: true }
+      ),
+    ]),
+
+    ...[
+      "active-experiment-devtools",
+      "inactive-experiment-devtools",
+      "active-experiment-rs",
+      "inactive-experiment-rs",
+    ].map(slug => [
+      slug,
+      NimbusTestUtils.factories.recipe.withFeatureConfig(slug, {
+        featureId: "no-feature-firefox-desktop",
+      }),
+    ]),
+
+    ...[
+      "expired-rollout-rs",
+      "active-rollout-rs",
+      "inactive-rollout-rs",
+      "active-rollout-devtools",
+      "inactive-rollout-devtools",
+    ].map(slug => [
+      slug,
+      NimbusTestUtils.factories.recipe.withFeatureConfig(
+        slug,
+        { featureId: "no-feature-firefox-desktop" },
+        { isRollout: true }
+      ),
+    ]),
+  ]);
+
+  const { manager, cleanup } = await NimbusTestUtils.setupTest({
+    experiments: [
+      recipes["active-experiment-rs"],
+      recipes["active-fxlab-devtools"],
+      recipes["active-fxlab-rs"],
+      recipes["active-rollout-rs"],
+      recipes["inactive-experiment-rs"],
+      recipes["inactive-fxlab-devtools"],
+      recipes["inactive-fxlab-rs"],
+      recipes["inactive-rollout-rs"],
+    ],
+    migrationState: NimbusTestUtils.migrationState.LATEST,
+    storePath: await NimbusTestUtils.createStoreWith(store => {
+      NimbusTestUtils.addEnrollmentForRecipe(
+        recipes["active-experiment-devtools"],
+        { store, extra: { active: true, source: "nimbus-devtools" } }
+      );
+      NimbusTestUtils.addEnrollmentForRecipe(recipes["active-fxlab-devtools"], {
+        store,
+        extra: { active: true, source: "nimbus-devtools" },
+      });
+      NimbusTestUtils.addEnrollmentForRecipe(
+        recipes["active-rollout-devtools"],
+        { store, extra: { active: true, source: "nimbus-devtools" } }
+      );
+      NimbusTestUtils.addEnrollmentForRecipe(
+        recipes["inactive-experiment-devtools"],
+        {
+          store,
+          extra: {
+            active: false,
+            unenrollReason: "individual-opt-out",
+            source: "nimbus-devtools",
+          },
+        }
+      );
+      NimbusTestUtils.addEnrollmentForRecipe(
+        recipes["inactive-experiment-rs"],
+        {
+          store,
+          extra: { active: false, unenrollReason: "individual-opt-out" },
+        }
+      );
+      NimbusTestUtils.addEnrollmentForRecipe(
+        recipes["inactive-fxlab-devtools"],
+        {
+          store,
+          extra: {
+            active: false,
+            source: "nimbus-devtools",
+            unenrollReason: "labs-opt-out",
+          },
+        }
+      );
+      NimbusTestUtils.addEnrollmentForRecipe(recipes["inactive-fxlab-rs"], {
+        store,
+        extra: {
+          active: false,
+          source: "rs-loader",
+          unenrollReason: "labs-opt-out",
+        },
+      });
+      NimbusTestUtils.addEnrollmentForRecipe(
+        recipes["inactive-rollout-devtools"],
+        {
+          store,
+          extra: {
+            active: false,
+            unenrollReason: "individual-opt-out",
+            source: "nimbus-devtools",
+          },
+        }
+      );
+      NimbusTestUtils.addEnrollmentForRecipe(recipes["inactive-rollout-rs"], {
+        store,
+        extra: { active: false, unenrollReason: "individual-opt-out" },
+      });
+      NimbusTestUtils.addEnrollmentForRecipe(recipes["expired-fxlab-rs"], {
+        store,
+        extra: {
+          active: false,
+          source: "rs-loader",
+          unenrollReason: "recipe-not-seen",
+        },
+      });
+      NimbusTestUtils.addEnrollmentForRecipe(recipes["expired-rollout-rs"], {
+        store,
+        extra: {
+          active: false,
+          source: "rs-loader",
+          unenrollReason: "recipe-not-seen",
+        },
+      });
+    }),
+  });
+
+  const currentOptIns = manager.optIns
+    .toSorted((a, b) => a.recipe.slug.localeCompare(b.recipe.slug))
+    .map(entry => [entry.recipe.slug, entry.source]);
+
+  Assert.deepEqual(currentOptIns, [
+    ["active-fxlab-devtools", "nimbus-devtools"],
+    ["active-fxlab-rs", "rs-loader"],
+    ["inactive-fxlab-devtools", "nimbus-devtools"],
+    ["inactive-fxlab-rs", "rs-loader"],
+  ]);
+
+  function makeOptInRecipe(slug) {
+    return NimbusTestUtils.factories.recipe.withFeatureConfig(
+      slug,
+      { featureId: "no-feature-firefox-desktop" },
+      { isFirefoxLabsOptIn: true, isRollout: true }
+    );
+  }
+
+  for (const entry of manager.optIns) {
+    const recipe = makeOptInRecipe(entry.recipe.slug);
+
+    for (const source of ["nimbus-devtools", "rs-loader"]) {
+      Assert.ok(
+        !manager.registerOptIn(recipe, source),
+        `Cannot re-register opt-in with existing slug ${recipe.slug} with source=${source}`
+      );
+    }
+  }
+
+  Assert.ok(
+    !manager.registerOptIn(
+      makeOptInRecipe("active-experiment-devtools"),
+      "nimbus-devtools"
+    ),
+    "Cannot register an opt-in that conflicts with an existing enrollment (experiment)"
+  );
+  Assert.ok(
+    !manager.registerOptIn(
+      makeOptInRecipe("active-rollout-devtools"),
+      "nimbus-devtools"
+    ),
+    "Cannot register an opt-in that conflicts with an existing enrollment (rollout)"
+  );
+
+  Assert.ok(
+    !manager.optIns.find(entry => entry.recipe.slug === "expired-fxlab-rs")
+  );
+  Assert.ok(
+    !manager.registerOptIn(
+      makeOptInRecipe("expired-fxlab-rs"),
+      "nimbus-devtools"
+    ),
+    "Cannot register an opt-in with the same slug as a past labs enrollment with a different source"
+  );
+  Assert.ok(
+    !manager.registerOptIn(makeOptInRecipe("expired-rollout-rs"), "rs-loader"),
+    "Cannot register an opt-in with the same slug as a past non-enrollment enrollment with the same source"
+  );
+
+  Assert.deepEqual(
+    manager.optIns
+      .toSorted((a, b) => a.recipe.slug.localeCompare(b.recipe.slug))
+      .map(entry => [entry.recipe.slug, entry.source]),
+    currentOptIns,
+    "The list of opt-ins did not change"
+  );
+
+  await NimbusTestUtils.cleanupManager([
+    "active-experiment-devtools",
+    "active-rollout-rs",
+    "active-fxlab-devtools",
+    "active-rollout-devtools",
+    "active-experiment-rs",
+  ]);
+
+  await cleanup();
+});

@@ -432,8 +432,12 @@ export class ExperimentManager {
       recipe.isFirefoxLabsOptIn &&
       result.status !== lazy.MatchStatus.DISABLED
     ) {
-      // We do not enroll directly into Firefox Labs opt-ins.
-      this.optIns.push({ recipe, source });
+      if (!this.registerOptIn(recipe, source)) {
+        lazy.log.error(
+          `Could not register opt-in with slug ${recipe.slug}: an opt-in already exists with that slug`
+        );
+      }
+
       return;
     }
 
@@ -949,8 +953,23 @@ export class ExperimentManager {
         return;
       }
 
-      if (recipe?.isFirefoxLabsOptIn) {
-        this.optIns.push({ recipe, source });
+      if (recipe?.isFirefoxLabsOptIn && !this.registerOptIn(recipe, source)) {
+        // This *should* be unreachable because:
+        //
+        // * we have already returned if enrollment.source !== source;
+        // * this function is in practice only called with source = "rs-loader"
+        //   (either directly or indirectly from
+        //   RemoteSettingsExerimentLoader.updateRecipes())
+        // * we clear the opt-in list for "rs-loader" in updateRecipes(); and
+        // * slugs are unique across Remote Settings records.
+        //
+        // However, the user could be playing with devtools at precisely the
+        // wrong time, so we must make sure to handle this gracefully.
+
+        lazy.log.error(
+          `Unexpected error: could not register opt-in with slug ${recipe.slug}: an opt-in already exists with that slug`
+        );
+        return;
       }
     }
 
@@ -1909,6 +1928,53 @@ export class ExperimentManager {
             featureId => !onlyFeatureIds.has(featureId)
           ))
     );
+  }
+
+  /**
+   * Register an opt-in recipe from a source.
+   *
+   * @param {object} recipe The recipe.
+   * @param {string} source The source.
+   *
+   * @returns {boolean} True if the opt-in was registered or false if there was a conflict.
+   */
+  registerOptIn(recipe, source) {
+    if (this.optIns.find(entry => entry.recipe.slug === recipe.slug)) {
+      return false;
+    }
+
+    const enrollment = this.store.get(recipe.slug);
+    if (
+      enrollment &&
+      (enrollment.source !== source ||
+        !enrollment.isFirefoxLabsOptIn ||
+        (enrollment.active &&
+          source !== lazy.NimbusTelemetry.EnrollmentSource.RS_LOADER))
+    ) {
+      return false;
+    }
+
+    this.optIns.push({ recipe, source });
+    return true;
+  }
+
+  /**
+   * Unregister an opt-in recipe from a source.
+   *
+   * NB: This is only intended to be used by nimbus-devtools.
+   *
+   * @param {string} slug The slug of the recipe to remove.
+   *
+   * @returns {boolean} True if the opt-in was removed or false if it was not found.
+   */
+  unregisterOptIn(slug) {
+    const index = this.optIns.findIndex(entry => entry.recipe.slug === slug);
+    if (index >= 0) {
+      this.optIns.splice(index, 1);
+      return true;
+    }
+
+    return false;
   }
 
   /**
