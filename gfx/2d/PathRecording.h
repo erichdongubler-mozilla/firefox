@@ -135,7 +135,12 @@ class PathOps {
   bool IsEmpty() const;
 
  private:
-  mozilla::Vector<uint8_t> mPathData;
+  // PathOps are not really kept around so we choose 256 bytes
+  // to fit a reasonable number of ops. Subtract out the
+  // size of mozilla::Vector which is at most 4*8 bytes
+  // so that the total size of the allocation is 256.
+  static constexpr size_t kInlineStorage = 256 - 4 * 8;
+  mozilla::Vector<uint8_t, kInlineStorage> mPathData;
 };
 
 template <class S>

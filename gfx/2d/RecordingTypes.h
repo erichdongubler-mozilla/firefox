@@ -53,8 +53,8 @@ template <class S, class T>
 void WriteElement(S& aStream, const T& aElement) {
   ElementStreamFormat<S, T>::Write(aStream, aElement);
 }
-template <class S, class T>
-void WriteVector(S& aStream, const mozilla::Vector<T>& aVector) {
+template <class S, class T, size_t N>
+void WriteVector(S& aStream, const mozilla::Vector<T, N>& aVector) {
   size_t size = aVector.length();
   WriteElement(aStream, size);
   if (size) {
@@ -84,8 +84,8 @@ void ReadElementConstrained(S& aStream, T& aElement, const T& aMinValue,
     aElement = static_cast<T>(value);
   }
 }
-template <class S, class T>
-void ReadVector(S& aStream, mozilla::Vector<T>& aVector) {
+template <class S, class T, size_t N>
+void ReadVector(S& aStream, mozilla::Vector<T, N>& aVector) {
   size_t size;
   ReadElement(aStream, size);
   if (size && aStream.good()) {
