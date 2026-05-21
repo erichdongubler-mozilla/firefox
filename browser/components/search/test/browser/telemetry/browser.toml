@@ -11,11 +11,6 @@ skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1943499 - Frequent intermittent failure on Mac.
 ]
 
-["browser_search_telemetry_actor_registration.js"]
-support-files = [
-  "searchTelemetryAd.html",
-]
-
 ["browser_search_telemetry_abandonment.js"]
 support-files = [
   "searchTelemetry.html",

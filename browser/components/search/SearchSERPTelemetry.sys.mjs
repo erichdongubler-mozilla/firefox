@@ -10,8 +10,6 @@ const lazy = XPCOMUtils.declareLazy({
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
-  SearchStaticData:
-    "moz-src:///toolkit/components/search/SearchStaticData.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   SERPCategorization:
     "moz-src:///browser/components/search/SERPCategorization.sys.mjs",
@@ -33,7 +31,6 @@ const lazy = XPCOMUtils.declareLazy({
 
 // Exported for tests.
 export const ADLINK_CHECK_TIMEOUT_MS = 1000;
-export const HOST_PLACEHOLDER = "{host}";
 // Unlike the standard adlink check, the timeout for single page apps is not
 // based on a content event within the page, like DOMContentLoaded or load.
 // Thus, we aim for a longer timeout to account for when the server might be
@@ -275,109 +272,6 @@ const AD_COMPONENTS = [
  * @typedef {ChannelWrapper & ChannelClickMetadata} TrackedChannel
  */
 
-const SERP_TELEMETRY_ACTOR = "SearchSERPTelemetry";
-
-/**
- * Manages dynamic registration of the SearchSERPTelemetry window actor
- * based on computed match patterns from provider info.
- */
-class SERPTelemetryActorHelper {
-  #matchPatterns = null;
-
-  /**
-   * Registers the SearchSERPTelemetry window actor with match patterns derived
-   * from the given provider infos, or re-registers it if the resulting patterns
-   * have changed since the last registration. If the patterns are identical to
-   * the currently registered ones, this is a no-op. Provider infos that
-   * produce no patterns fall back to matching all https URLs (`https://*\/*`).
-   *
-   * @param {Array} providerInfos
-   *   Raw provider info array from Remote Settings.
-   */
-  maybeRegisterOrReplaceActor(providerInfos) {
-    let matchPatterns = this.extractMatchPatterns(providerInfos);
-    let patterns = matchPatterns.length ? matchPatterns : ["https://*/*"];
-
-    if (
-      this.#matchPatterns &&
-      patterns.length == this.#matchPatterns.length &&
-      patterns.every((p, i) => p === this.#matchPatterns[i])
-    ) {
-      return;
-    }
-
-    try {
-      ChromeUtils.unregisterWindowActor(SERP_TELEMETRY_ACTOR);
-    } catch (ex) {
-      // Actor may not be registered yet.
-    }
-
-    this.#matchPatterns = patterns;
-    ChromeUtils.registerWindowActor(SERP_TELEMETRY_ACTOR, {
-      parent: {
-        esModuleURI: "resource:///actors/SearchSERPTelemetryParent.sys.mjs",
-      },
-      child: {
-        esModuleURI: "resource:///actors/SearchSERPTelemetryChild.sys.mjs",
-        events: {
-          DOMContentLoaded: {},
-          pageshow: { mozSystemGroup: true },
-          pagehide: { createActor: false },
-          load: { mozSystemGroup: true, capture: true },
-        },
-      },
-      matches: patterns,
-    });
-  }
-
-  uninit() {
-    if (!this.#matchPatterns) {
-      return;
-    }
-    try {
-      ChromeUtils.unregisterWindowActor(SERP_TELEMETRY_ACTOR);
-    } catch (ex) {
-      lazy.logConsole.error(
-        "Failed to unregister SearchSERPTelemetry actor.",
-        ex
-      );
-    }
-    this.#matchPatterns = null;
-  }
-
-  /**
-   * Extracts match patterns from provider infos, expanding {host} placeholders
-   * using alternate domains from SearchStaticData.
-   *
-   * @param { { searchPageMatches: ?string[], telemetryId: string }[]} providerInfos
-   *   Raw provider info array from Remote Settings.
-   */
-  extractMatchPatterns(providerInfos) {
-    /** @type {string[]} */
-    let patterns = [];
-    for (let provider of providerInfos) {
-      if (!provider.searchPageMatches?.length) {
-        continue;
-      }
-      for (let pattern of provider.searchPageMatches) {
-        if (!pattern.includes(HOST_PLACEHOLDER)) {
-          patterns.push(pattern);
-        } else {
-          let domains = lazy.SearchStaticData.getAlternateDomainsForProvider(
-            provider.telemetryId
-          );
-          for (let domain of domains) {
-            patterns.push(pattern.replace(HOST_PLACEHOLDER, domain));
-          }
-        }
-      }
-    }
-    return patterns;
-  }
-}
-
-export { SERPTelemetryActorHelper };
-
 /**
  * TelemetryHandler is the main class handling Search Engine Result Page (SERP)
  * telemetry. It primarily deals with tracking of what pages are loaded into tabs.
@@ -402,9 +296,6 @@ class TelemetryHandler {
 
   // Callback used when syncing telemetry settings.
   #telemetrySettingsSync;
-
-  // Helper to manage dynamic registration of the window actor.
-  #actorHelper = new SERPTelemetryActorHelper();
 
   // _browserInfoByURL is a map of tracked search urls to objects containing:
   // * {object} info
@@ -500,8 +391,6 @@ class TelemetryHandler {
     // Now convert the regexps into RegExp objects
     this._setSearchProviderInfo(rawProviderInfo);
 
-    this.#actorHelper.maybeRegisterOrReplaceActor(rawProviderInfo);
-
     for (let win of Services.wm.getEnumerator("navigator:browser")) {
       this._registerWindow(win);
     }
@@ -518,7 +407,6 @@ class TelemetryHandler {
       );
       this._originalProviderInfo = current;
       this._setSearchProviderInfo(current);
-      this.#actorHelper.maybeRegisterOrReplaceActor(current);
       Services.ppmm.sharedData.set(
         SEARCH_TELEMETRY_SHARED.PROVIDER_INFO,
         current
@@ -541,7 +429,6 @@ class TelemetryHandler {
     }
 
     this._contentHandler.uninit();
-    this.#actorHelper.uninit();
 
     for (let win of Services.wm.getEnumerator("navigator:browser")) {
       this._unregisterWindow(win);
@@ -641,7 +528,6 @@ class TelemetryHandler {
     let info = providerInfo ? providerInfo : this._originalProviderInfo;
     this._contentHandler.overrideSearchTelemetryForTests(info);
     this._setSearchProviderInfo(info);
-    this.#actorHelper.maybeRegisterOrReplaceActor(info);
   }
 
   /**
