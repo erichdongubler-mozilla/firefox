@@ -1,5 +1,7 @@
 "use strict";
 
+/** @import {OptInEntry} from "../../lib/ExperimentManager.sys.mjs" */
+
 /* import-globals-from ../../../../../toolkit/profile/test/xpcshell/head.js */
 /* import-globals-from ../../../../../browser/components/profiles/tests/unit/head.js */
 
@@ -92,4 +94,19 @@ function removePrefObservers(manager) {
  */
 function promiseEnrollmentsUpdated() {
   return TestUtils.topicObserved("nimbus:enrollments-updated");
+}
+
+/**
+ * An ordering function for OptInEntries
+ *
+ * @param {OptInEntry} a The first entry to sort.
+ * @param {OptInEntry} b The second entry to sort.
+ *
+ * @returns {number}
+ */
+function orderByRecipePublishedDate(a, b) {
+  return (
+    new Date(a.recipe.publishedDate ?? 0) -
+    new Date(b.recipe.publishedDate ?? 0)
+  );
 }

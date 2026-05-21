@@ -511,8 +511,6 @@ export class RemoteSettingsExperimentLoader {
         Services.obs.notifyObservers(null, "nimbus:enrollments-updated");
       }
     } finally {
-      this.manager._sortOptInRecipes();
-
       // Submit targeting context ping after all enrollment status events should be generated
       GleanPings.nimbusTargetingContext.submit();
     }

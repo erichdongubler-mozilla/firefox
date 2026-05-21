@@ -267,14 +267,10 @@ add_task(async function test_onRecipe_isFirefoxLabsOptin_recipe() {
     status: MatchStatus.TARGETING_AND_BUCKETING,
   });
 
-  Assert.equal(
-    manager.optInRecipes.length,
-    1,
-    "should only have one opt-in recipe"
-  );
-  Assert.equal(
-    manager.optInRecipes[0],
-    optInRecipe,
+  Assert.equal(manager.optIns.length, 1, "should only have one opt-in recipe");
+  Assert.deepEqual(
+    manager.optIns[0],
+    { recipe: optInRecipe, source: "test" },
     "should add the recipe to OptInRecipes list if recipe is firefox labs opt-in"
   );
   Assert.equal(
