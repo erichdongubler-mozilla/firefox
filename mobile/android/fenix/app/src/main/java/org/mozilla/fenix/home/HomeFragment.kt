@@ -18,23 +18,25 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.getSystemService
-import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
@@ -101,7 +103,6 @@ import org.mozilla.fenix.components.toolbar.BottomToolbarContainerView
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.compose.snackbar.SnackbarState
 import org.mozilla.fenix.databinding.FragmentHomeBinding
-import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.application
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getBottomToolbarHeight
@@ -191,7 +192,7 @@ import org.mozilla.fenix.ipprotection.store.Surface as IPProtectionSurface
  * The home screen.
  */
 @Suppress("TooManyFunctions", "LargeClass")
-class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
+class HomeFragment : Fragment() {
     private val args by navArgs<HomeFragmentArgs>()
 
     @VisibleForTesting
@@ -706,27 +707,30 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
                             flow().distinctUntilChanged { old, new -> old.mode != new.mode }
                         }.collectAsState(state)
                     }
-                    val isInPortrait by remember {
-                        derivedStateOf {
-                            appState.value.orientation == OrientationMode.Portrait
-                        }
-                    }
                     val keyboardState by keyboardAsState()
                     val privacyNoticeBannerState = privacyNoticeBannerStore.flow().collectAsState(
                         initial = privacyNoticeBannerStore.state,
                     )
 
-                    LaunchedEffect(isInPortrait, keyboardState) {
-                        updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                            topMargin = getTopToolbarHeight()
-                            bottomMargin = getBottomToolbarHeight(
-                                includeNavBarIfEnabled = keyboardState == KeyboardState.Closed &&
-                                    settings.toolbarPosition == ToolbarPosition.BOTTOM,
-                            )
-                        }
+                    val density = LocalDensity.current
+                    val topPadding = with(density) { (getTopToolbarHeight()).toDp() }
+                    val bottomPadding = with(density) {
+                        getBottomToolbarHeight(
+                            includeNavBarIfEnabled = keyboardState == KeyboardState.Closed &&
+                                settings.toolbarPosition == ToolbarPosition.BOTTOM,
+                        ).toDp()
                     }
 
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(
+                                top = topPadding,
+                                bottom = bottomPadding,
+                            )
+                            .systemBarsPadding()
+                            .displayCutoutPadding(),
+                    ) {
                         if (!appState.value.mode.isPrivate) {
                             WallpaperBackground(
                                 wallpaper = appState.value.wallpaperState.currentWallpaper,
