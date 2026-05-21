@@ -172,6 +172,7 @@ class WakeLockTopic {
         {"audio-playing", "WakeLockAudioPlaying", "Playing audio"},
         {"screen", "WakeLockScreenLock", "Screen lock"},
         {"autoscroll", "WakeLockAutoscroll", "Autoscroll"},
+        {"download-in-progress", "WakeLockDownload", "Download in progress"},
     };
 
     for (auto& topic : kNiceTopics) {
@@ -1113,7 +1114,8 @@ nsresult WakeLockListener::Callback(const nsAString& topic,
                 NS_ConvertUTF16toUTF8(topic).get(),
                 NS_ConvertUTF16toUTF8(state).get());
   if (!topic.Equals(u"screen"_ns) && !topic.Equals(u"video-playing"_ns) &&
-      !topic.Equals(u"autoscroll"_ns) && !topic.Equals(u"audio-playing"_ns)) {
+      !topic.Equals(u"autoscroll"_ns) && !topic.Equals(u"audio-playing"_ns) &&
+      !topic.Equals(u"download-in-progress"_ns)) {
     return NS_OK;
   }
 
