@@ -138,10 +138,6 @@ export class ContentSharingModal extends MozLitElement {
   }
 
   handleViewPageClick() {
-    Glean.collectionShare.ctaClicked.record({
-      button: "view-page",
-      signed_in: true,
-    });
     this.close();
     this.documentGlobal.frameElement.documentGlobal.openWebLinkIn(
       this.shareResult.url,
@@ -150,10 +146,6 @@ export class ContentSharingModal extends MozLitElement {
   }
 
   handleCopyClick() {
-    Glean.collectionShare.ctaClicked.record({
-      button: "copy-button",
-      signed_in: true,
-    });
     window.navigator.clipboard.writeText(this.shareResult.url);
 
     this.copyButton.setAttribute("iconsrc", COPIED_COPY_ICON);
@@ -166,10 +158,6 @@ export class ContentSharingModal extends MozLitElement {
   }
 
   handleSignInClick() {
-    Glean.collectionShare.ctaClicked.record({
-      button: "sign-in",
-      signed_in: false,
-    });
     const accountSlug = lazy.CONTENT_SHARING_DEBUG
       ? "/accounts/dummy/login/"
       : "/accounts/fxa/login/";
@@ -222,9 +210,6 @@ export class ContentSharingModal extends MozLitElement {
   }
 
   buttonsTemplate() {
-    // Note: Avoid changing existing button IDs, because they are submitted
-    // with button click telemetry. If new buttons or added, or IDs change,
-    // be sure to update the list of buttons in metrics.yaml.
     if (this.shareResult.isSignedIn) {
       return html`<moz-button
           @click=${this.handleViewPageClick}
