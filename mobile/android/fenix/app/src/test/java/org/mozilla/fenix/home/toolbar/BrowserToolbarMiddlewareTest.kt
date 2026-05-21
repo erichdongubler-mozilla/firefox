@@ -4,7 +4,11 @@
 
 package org.mozilla.fenix.home.toolbar
 
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.speech.RecognizerIntent
 import androidx.navigation.NavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.every
@@ -70,6 +74,7 @@ import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.OrientationMode.Landscape
 import org.mozilla.fenix.components.appstate.OrientationMode.Portrait
 import org.mozilla.fenix.components.appstate.SupportedMenuNotifications
+import org.mozilla.fenix.components.appstate.VoiceSearchAction.VoiceInputRequested
 import org.mozilla.fenix.components.appstate.search.SearchState
 import org.mozilla.fenix.components.appstate.search.SelectedSearchEngine
 import org.mozilla.fenix.components.menu.MenuAccessPoint
@@ -81,6 +86,7 @@ import org.mozilla.fenix.home.toolbar.BrowserToolbarMiddleware.Companion.toHomeT
 import org.mozilla.fenix.home.toolbar.BrowserToolbarMiddleware.HomeToolbarAction
 import org.mozilla.fenix.home.toolbar.DisplayActions.FakeClicked
 import org.mozilla.fenix.home.toolbar.DisplayActions.MenuClicked
+import org.mozilla.fenix.home.toolbar.DisplayActions.VoiceSearchClicked
 import org.mozilla.fenix.home.toolbar.PageOriginInteractions.OriginClicked
 import org.mozilla.fenix.home.toolbar.TabCounterInteractions.AddNewPrivateTab
 import org.mozilla.fenix.home.toolbar.TabCounterInteractions.AddNewTab
@@ -91,6 +97,7 @@ import org.mozilla.fenix.search.fixtures.buildExpectedSearchSelector
 import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.utils.Settings
+import org.robolectric.Shadows.shadowOf
 import kotlin.test.assertNotNull
 import mozilla.components.ui.icons.R as iconsR
 import mozilla.components.ui.tabcounter.R as tabcounterR
@@ -113,6 +120,7 @@ class BrowserToolbarMiddlewareTest {
         every { testContext.settings().shouldUseExpandedToolbar } returns false
         every { testContext.settings().isTabStripEnabled } returns false
         every { testContext.settings().toolbarExpandedShortcutKey } returns ShortcutType.BOOKMARK.value
+        every { testContext.settings().showVoiceSearchInDisplayToolbar } returns false
     }
 
     @Test
@@ -272,6 +280,60 @@ class BrowserToolbarMiddlewareTest {
         toolbarStore.dispatch(toolbarStore.state.displayState.pageOrigin.onClick as BrowserToolbarAction)
 
         assertEquals("HOME", Events.searchBarTapped.testGetValue()?.last()?.extra?.get("source"))
+    }
+
+    @Test
+    fun `GIVEN voice search in display toolbar is disabled WHEN initializing the toolbar THEN no end page actions are shown and the long search hint is used`() {
+        every { testContext.settings().showVoiceSearchInDisplayToolbar } returns false
+
+        val (_, toolbarStore) = buildMiddlewareAndAddToStore()
+
+        assertTrue(toolbarStore.state.displayState.pageActionsEnd.isEmpty())
+        assertEquals(R.string.search_hint, toolbarStore.state.displayState.pageOrigin.hint)
+    }
+
+    @Test
+    fun `GIVEN voice search is enabled AND speech recognition is available WHEN initializing the toolbar THEN a voice search button is shown and the short search hint is used`() {
+        every { testContext.settings().showVoiceSearchInDisplayToolbar } returns true
+        registerSpeechRecognizer()
+
+        val (_, toolbarStore) = buildMiddlewareAndAddToStore()
+
+        val pageActionsEnd = toolbarStore.state.displayState.pageActionsEnd
+        assertEquals(1, pageActionsEnd.size)
+        val voiceSearchButton = pageActionsEnd[0] as ActionButtonRes
+        assertEquals(iconsR.drawable.mozac_ic_microphone_24, voiceSearchButton.drawableResId)
+        assertEquals(R.string.voice_search_content_description, voiceSearchButton.contentDescription)
+        assertEquals(VoiceSearchClicked, voiceSearchButton.onClick)
+        assertEquals(R.string.search_hint_short, toolbarStore.state.displayState.pageOrigin.hint)
+    }
+
+    @Test
+    fun `GIVEN voice search is enabled AND speech recognition is unavailable WHEN initializing the toolbar THEN no voice search button is shown`() {
+        every { testContext.settings().showVoiceSearchInDisplayToolbar } returns true
+
+        val (_, toolbarStore) = buildMiddlewareAndAddToStore()
+
+        assertTrue(toolbarStore.state.displayState.pageActionsEnd.isEmpty())
+        assertEquals(R.string.search_hint_short, toolbarStore.state.displayState.pageOrigin.hint)
+    }
+
+    @Test
+    fun `GIVEN voice search button is shown WHEN it is clicked THEN VoiceInputRequested is dispatched and SearchStarted is dispatched after the toolbar edit delay`() = runTest {
+        every { testContext.settings().showVoiceSearchInDisplayToolbar } returns true
+        registerSpeechRecognizer()
+        val (_, toolbarStore) = buildMiddlewareAndAddToStore()
+        val voiceSearchButton = toolbarStore.state.displayState.pageActionsEnd[0] as ActionButtonRes
+
+        toolbarStore.dispatch(voiceSearchButton.onClick as BrowserToolbarEvent)
+        testDispatcher.scheduler.runCurrent()
+
+        verify { appStore.dispatch(VoiceInputRequested) }
+        verify(exactly = 0) { appStore.dispatch(SearchStarted()) }
+
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        verify { appStore.dispatch(SearchStarted()) }
     }
 
     // Testing updated configuration
@@ -928,6 +990,19 @@ class BrowserToolbarMiddlewareTest {
         middleware = listOf(middleware),
     ).also {
         testDispatcher.scheduler.advanceUntilIdle() // to complete the initial setup happening in coroutines
+    }
+
+    private fun registerSpeechRecognizer() {
+        val component = ComponentName("com.test", "VoiceTest")
+        shadowOf(testContext.packageManager).apply {
+            addActivityIfNotPresent(component)
+            addIntentFilterForActivity(
+                component,
+                IntentFilter(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    addCategory(Intent.CATEGORY_DEFAULT)
+                },
+            )
+        }
     }
 
     private fun expectedSearchSelector(
