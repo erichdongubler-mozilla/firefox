@@ -44,6 +44,11 @@ automating it](https://bugzilla.mozilla.org/show_bug.cgi?id=1975513).
 In the meantime, developers using TypeScript must update the type definitions
 [manually using some scripts](updatingTypes.md).
 
+## Best Practices
+
+For working with TypeScript we have some [best practices](bestPractices.md)
+which will help to get the type definitions set up correctly.
+
 ## Frequently Asked Questions
 
 * Why does running TypeScript check and report errors in other files?

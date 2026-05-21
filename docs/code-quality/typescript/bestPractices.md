@@ -42,7 +42,7 @@ class Foo {
    *
    * @param {string} searchString
    *   Param documentation.
-   * @param {object} previousResult
+   * @param {string[]} previousResult
    *   Param documentation.
    * @param {nsIAutoCompleteObserver} listener
    *   Param documentation.
