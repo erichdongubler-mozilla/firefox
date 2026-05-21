@@ -4,6 +4,7 @@
 
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/ComputedStyleInlines.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StyleColorInlines.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "nsIFrame.h"
@@ -59,19 +60,52 @@ StyleAbsoluteColor StyleAbsoluteColor::ToColorSpace(
 }
 
 nscolor StyleAbsoluteColor::ToColor() const {
-  auto srgb = ToColorSpace(StyleColorSpace::Srgb);
+  constexpr StyleColorSpace DEST_COLOR_SPACE = StyleColorSpace::Srgb;
 
-  // TODO(tlouw): Needs gamut mapping here. Right now we just hard clip the
-  //              components to [0..1], which will yield invalid colors.
-  //              https://bugzilla.mozilla.org/show_bug.cgi?id=1626624
-  auto red = std::clamp(srgb.components._0, 0.0f, 1.0f);
-  auto green = std::clamp(srgb.components._1, 0.0f, 1.0f);
-  auto blue = std::clamp(srgb.components._2, 0.0f, 1.0f);
+  constexpr float MIN = 0.0f;
+  constexpr float MAX = 1.0f;
 
-  return NS_RGBA(nsStyleUtil::FloatToColorComponent(red),
-                 nsStyleUtil::FloatToColorComponent(green),
-                 nsStyleUtil::FloatToColorComponent(blue),
-                 nsStyleUtil::FloatToColorComponent(srgb.alpha));
+  auto translatedColor = ToColorSpace(DEST_COLOR_SPACE);
+
+  // We KNOW the values are in srgb so we can do a quick gamut limit check
+  // here and avoid calling into Servo_GamutMapColorUsing* and let it
+  // return early anyway.
+  auto isColorInGamut = translatedColor.components._0 >= MIN &&
+                        translatedColor.components._0 <= MAX &&
+                        translatedColor.components._1 >= MIN &&
+                        translatedColor.components._1 <= MAX &&
+                        translatedColor.components._2 >= MIN &&
+                        translatedColor.components._2 <= MAX;
+
+  if (!isColorInGamut) {
+    switch (StaticPrefs::layout_css_gamut_mapping_method()) {
+      case 1:
+        translatedColor =
+            Servo_GamutMapColorUsingBinarySearchMINDE(this, DEST_COLOR_SPACE);
+        break;
+      case 2:
+        translatedColor =
+            Servo_GamutMapColorUsingRaytrace(this, DEST_COLOR_SPACE);
+        break;
+      default:
+        // 0 (default), or any other value
+        // If gamut mapping is not enabled, we just naively clip the colors at
+        // sRGB gamut limits. This will go away completely when gamut mapping is
+        // enabled.
+        translatedColor.components._0 =
+            std::clamp(translatedColor.components._0, MIN, MAX);
+        translatedColor.components._1 =
+            std::clamp(translatedColor.components._1, MIN, MAX);
+        translatedColor.components._2 =
+            std::clamp(translatedColor.components._2, MIN, MAX);
+    }
+  }
+
+  return NS_RGBA(
+      nsStyleUtil::FloatToColorComponent(translatedColor.components._0),
+      nsStyleUtil::FloatToColorComponent(translatedColor.components._1),
+      nsStyleUtil::FloatToColorComponent(translatedColor.components._2),
+      nsStyleUtil::FloatToColorComponent(translatedColor.alpha));
 }
 
 }  // namespace mozilla

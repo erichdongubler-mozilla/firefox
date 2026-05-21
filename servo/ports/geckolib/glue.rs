@@ -9465,6 +9465,22 @@ pub extern "C" fn Servo_ConvertColorSpace(
 }
 
 #[no_mangle]
+pub extern "C" fn Servo_GamutMapColorUsingBinarySearchMINDE(
+    color: &AbsoluteColor,
+    destination_color_space: ColorSpace,
+) -> AbsoluteColor {
+    color.gamut_map_binary_search(destination_color_space)
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_GamutMapColorUsingRaytrace(
+    color: &AbsoluteColor,
+    destination_color_space: ColorSpace,
+) -> AbsoluteColor {
+    color.gamut_map_raytrace(destination_color_space)
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn Servo_IntersectionObserverMargin_Parse(
     value: &nsACString,
     result: *mut IntersectionObserverMargin,

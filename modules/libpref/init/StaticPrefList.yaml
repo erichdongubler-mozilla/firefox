@@ -10652,6 +10652,15 @@
   value: 3
   mirror: always
 
+# Select a method for mapping colors into sRGB gamut:
+#   0 = Clip (default),
+#   1 = CSS binary search
+#   2 = Raytrace
+- name: layout.css.gamut-mapping.method
+  type: RelaxedAtomicUint32
+  value: 0
+  mirror: always
+
 # Is support for GeometryUtils.getBoxQuads enabled?
 - name: layout.css.getBoxQuads.enabled
   type: bool
