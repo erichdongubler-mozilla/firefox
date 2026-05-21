@@ -12,6 +12,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   ExperimentStore: "resource://nimbus/lib/ExperimentStore.sys.mjs",
   FirstStartup: "resource://gre/modules/FirstStartup.sys.mjs",
+  NimbusEnrollments: "resource://nimbus/lib/Enrollments.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   NimbusTelemetry: "resource://nimbus/lib/Telemetry.sys.mjs",
   NormandyUtils: "resource://normandy/lib/NormandyUtils.sys.mjs",
@@ -346,6 +347,15 @@ export class ExperimentManager {
       if (await this._restoreEnrollmentPrefs(rollout)) {
         this._updatePrefObservers(rollout);
       }
+    }
+
+    if (
+      lazy.ExperimentAPI.labsEnabled &&
+      lazy.NimbusEnrollments.readFromDatabaseEnabled
+    ) {
+      // If labs are disabled, we will immediately clear the list of opt-in
+      // recipes after initialization.
+      this.optIns = await lazy.NimbusEnrollments.loadThirdPartyOptInRecipes();
     }
 
     this._prefFlips.init();

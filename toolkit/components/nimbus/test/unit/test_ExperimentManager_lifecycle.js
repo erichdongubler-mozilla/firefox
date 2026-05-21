@@ -19,6 +19,10 @@ const { ProfilesDatastoreService } = ChromeUtils.importESModule(
   "moz-src:///toolkit/profile/ProfilesDatastoreService.sys.mjs"
 );
 
+const { RemoteSettingsExperimentLoader } = ChromeUtils.importESModule(
+  "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs"
+);
+
 /**
  * onStartup()
  * - should set call setExperimentActive for each active experiment
@@ -601,5 +605,169 @@ add_task(async function testUpdateEnrollmentSourceMismatchInactive() {
   Assert.equal(enrollment.source, "nimbus-devtools");
   Assert.ok(!enrollment.active);
 
+  await cleanup();
+});
+
+add_task(async function testRestoreFirefoxLabsOptIns() {
+  const recipes = {};
+  let currentDate = new Date().getTime();
+
+  for (const slug of [
+    "live-active",
+    "live-inactive",
+    "live-activePaused",
+    "live-inactivePaused",
+    "optin-active",
+    "optin-inactive",
+    "optin-activePaused",
+    "optin-inactivePaused",
+  ]) {
+    recipes[slug] = NimbusTestUtils.factories.recipe(slug, {
+      isRollout: true,
+      isFirefoxLabsOptIn: true,
+      publishedDate: new Date(currentDate).toISOString(),
+      isEnrollmentPaused: slug.endsWith("Paused"),
+    });
+
+    currentDate += 10000;
+  }
+
+  const { sandbox, loader, manager, cleanup } = await NimbusTestUtils.setupTest(
+    {
+      experiments: [
+        recipes["live-active"],
+        recipes["live-inactive"],
+        recipes["live-activePaused"],
+        recipes["live-inactivePaused"],
+      ],
+      migrationState: NimbusTestUtils.migrationState.LATEST,
+      storePath: await NimbusTestUtils.createStoreWith(async store => {
+        // recipes.live-* are all provided by Remote Settings.
+        await NimbusTestUtils.addEnrollmentForRecipe(recipes["live-active"], {
+          store,
+          extra: {
+            source: "rs-loader",
+          },
+        });
+        await NimbusTestUtils.addEnrollmentForRecipe(recipes["live-inactive"], {
+          store,
+          extra: {
+            source: "rs-loader",
+            active: false,
+            unenrollReason: "labs-opt-out",
+          },
+        });
+        await NimbusTestUtils.addEnrollmentForRecipe(
+          recipes["live-activePaused"],
+          {
+            store,
+            extra: {
+              source: "rs-loader",
+            },
+          }
+        );
+        await NimbusTestUtils.addEnrollmentForRecipe(
+          recipes["live-inactivePaused"],
+          {
+            store,
+            extra: {
+              source: "rs-loader",
+              active: false,
+              unenrollReason: "labs-opt-out",
+            },
+          }
+        );
+
+        // The remainder are opted-in (e.g., via force enrollment or nimbus devtools).
+        await NimbusTestUtils.addEnrollmentForRecipe(recipes["optin-active"], {
+          store,
+          extra: {
+            source: "force-enrollment",
+          },
+        });
+        await NimbusTestUtils.addEnrollmentForRecipe(
+          recipes["optin-inactive"],
+          {
+            store,
+            extra: {
+              source: "force-enrollment",
+              active: false,
+              unenrollReason: "labs-opt-out",
+            },
+          }
+        );
+        await NimbusTestUtils.addEnrollmentForRecipe(
+          recipes["optin-activePaused"],
+          {
+            store,
+            extra: {
+              source: "nimbus-devtools",
+            },
+          }
+        );
+        await NimbusTestUtils.addEnrollmentForRecipe(
+          recipes["optin-inactivePaused"],
+          {
+            store,
+            extra: {
+              source: "nimbus-devtools",
+              active: false,
+              unenrollReason: "labs-opt-out",
+            },
+          }
+        );
+      }),
+      init: false,
+    }
+  );
+
+  // At this point, the ExperimentAPI has not been initialized. We are going to
+  // replace the the enable method on the RSEL instance with one that will
+  // assert that the correct set of opt-ins is restored from the database before
+  // dispatching to the real enable method.
+  //
+  // This stub will be called when we call ExperimentAPI.init() below.
+  sandbox.stub(loader, "enable").callsFake(async (...args) => {
+    // The only recipes that should be pre-loaded are those that:
+    //
+    // * are not sourced from rs-loader (e.g., they are force-enrollment or
+    //   nimbus-devtools); and
+    // * are either active (enrolled) or inactive but do not have paused
+    //   enrollment.
+    //
+    // Thus no live-* recipes are present, nor is optin-inactivePaused.
+    Assert.deepEqual(
+      manager.optIns.map(entry => entry.recipe.slug),
+      ["optin-active", "optin-activePaused", "optin-inactive"]
+    );
+
+    await RemoteSettingsExperimentLoader.prototype.enable.call(loader, ...args);
+  });
+
+  await ExperimentAPI.init();
+
+  // Assert that our stub was actually called.
+  Assert.ok(loader.enable.calledOnce, "loader enabled");
+
+  // live-inactivePaused is present in the list, but will be unavailable in Firefox Labs.
+  Assert.deepEqual(
+    manager.optIns.map(entry => entry.recipe.slug),
+    [
+      "optin-active",
+      "optin-activePaused",
+      "optin-inactive",
+      "live-active",
+      "live-activePaused",
+      "live-inactive",
+      "live-inactivePaused",
+    ]
+  );
+
+  await NimbusTestUtils.cleanupManager([
+    "live-active",
+    "live-activePaused",
+    "optin-active",
+    "optin-activePaused",
+  ]);
   await cleanup();
 });
