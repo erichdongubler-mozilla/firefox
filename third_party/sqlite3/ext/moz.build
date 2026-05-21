@@ -21,7 +21,10 @@ SOURCES += [
     "sqlite-vec/sqlite-vec.c",
 ]
 
-if CONFIG["TARGET_CPU"] == "aarch64":
+# gcc had issues with current Neon code:
+# https://bugzilla.mozilla.org/show_bug.cgi?id=2041214
+
+if CONFIG["TARGET_CPU"] == "aarch64" and CONFIG["CC_TYPE"] != "gcc":
     DEFINES["SQLITE_VEC_ENABLE_NEON"] = 1
 
 # In this release we're not using DISKANN so remove to save space
