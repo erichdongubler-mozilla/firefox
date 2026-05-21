@@ -55,6 +55,38 @@ class TerminatingFlowMarker
   static constexpr MS::ETWMarkerGroup Group = MS::ETWMarkerGroup::Generic;
 };
 
+class TerminatingFlowTextMarker
+    : public mozilla::BaseMarkerType<TerminatingFlowTextMarker> {
+ public:
+  static constexpr const char* Name = "TerminatingFlowTextMarker";
+  static constexpr const char* Description =
+      "Generic text marker with terminating flow";
+
+  using MS = mozilla::MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {
+          "name",
+          MS::InputType::CString,
+          "Details",
+          MS::Format::String,
+      },
+      {
+          "terminatingFlow",
+          MS::InputType::Flow,
+          "Terminating Flow",
+          MS::Format::TerminatingFlow,
+      }};
+
+  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable};
+  static constexpr const char* TableLabel =
+      ""
+      "{marker.data.name}(terminatingFlow={marker.data.terminatingFlow})";
+  static constexpr const char* ChartLabel = "{marker.name}";
+
+  static constexpr MS::ETWMarkerGroup Group = MS::ETWMarkerGroup::Generic;
+};
+
 }  // namespace geckoprofiler::markers
 namespace mozilla {
 class FlowStackMarker : public BaseMarkerType<FlowStackMarker> {
@@ -157,38 +189,6 @@ class FlowStackTextMarker : public BaseMarkerType<FlowStackTextMarker> {
   static constexpr const char* ChartLabel = "{marker.name}";
 
   static constexpr bool IsStackBased = true;
-
-  static constexpr MS::ETWMarkerGroup Group = MS::ETWMarkerGroup::Generic;
-};
-
-class TerminatingFlowTextMarker
-    : public BaseMarkerType<TerminatingFlowTextMarker> {
- public:
-  static constexpr const char* Name = "TerminatingFlowTextMarker";
-  static constexpr const char* Description =
-      "Generic text marker with terminating flow";
-
-  using MS = MarkerSchema;
-  static constexpr MS::PayloadField PayloadFields[] = {
-      {
-          "name",
-          MS::InputType::CString,
-          "Details",
-          MS::Format::String,
-      },
-      {
-          "terminatingFlow",
-          MS::InputType::Flow,
-          "Terminating Flow",
-          MS::Format::TerminatingFlow,
-      }};
-
-  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
-                                               MS::Location::MarkerTable};
-  static constexpr const char* TableLabel =
-      ""
-      "{marker.data.name}(terminatingFlow={marker.data.terminatingFlow})";
-  static constexpr const char* ChartLabel = "{marker.name}";
 
   static constexpr MS::ETWMarkerGroup Group = MS::ETWMarkerGroup::Generic;
 };
