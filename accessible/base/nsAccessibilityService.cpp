@@ -1697,7 +1697,7 @@ bool nsAccessibilityService::Init(uint64_t aCacheDomains) {
   }
 
   NS_ADDREF(gApplicationAccessible);  // will release in Shutdown()
-  gApplicationAccessible->Init();
+  gApplicationAccessible->CreateInitialDocs();
 
   CrashReporter::RecordAnnotationCString(
       CrashReporter::Annotation::Accessibility, "Active");
