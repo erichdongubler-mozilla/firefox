@@ -327,7 +327,8 @@ export class SearchSettings {
     // will be restored. This can happen if a user switches between regions.
     if (this.#settings?.engines) {
       for (let engine of this.#settings.engines) {
-        let included = settings.engines.some(e => e.id == engine.id);
+        // TODO: The line below should compare names instead of ids (bug 1973899).
+        let included = settings.engines.some(e => e._name == engine._name);
         // If a config engine is user-installed and not included, it was
         // explicitly removed by the user and we should not persist its metadata.
         let userInstalled = engine._metaData["user-installed"];
