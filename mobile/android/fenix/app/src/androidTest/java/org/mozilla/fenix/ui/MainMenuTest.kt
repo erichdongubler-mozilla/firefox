@@ -177,6 +177,11 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080138
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifyTheDownloadsMenuItemTest"],
+        bug = 2041282,
+        since = "2026-05",
+    )
     @SmokeTest
     @Test
     fun verifyTheDownloadsMenuItemTest() {
@@ -304,6 +309,11 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080129
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifyTheBookmarkPageMenuOptionTest"],
+        bug = 2041282,
+        since = "2026-05",
+    )
     @SmokeTest
     @Test
     fun verifyTheBookmarkPageMenuOptionTest() {

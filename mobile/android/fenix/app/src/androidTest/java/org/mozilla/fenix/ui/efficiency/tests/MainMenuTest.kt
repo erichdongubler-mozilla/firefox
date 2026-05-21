@@ -8,11 +8,17 @@ import org.junit.Ignore
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
+import org.mozilla.fenix.helpers.TestHelper.exitMenu
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 import org.mozilla.fenix.ui.efficiency.selectors.BookmarksSelectors
+import org.mozilla.fenix.ui.efficiency.selectors.BookmarksSelectors.DELETE_BOOKMARK_BUTTON
 import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
+import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors.BOOKMARK_THIS_PAGE_BUTTON
+import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors.EDIT_BOOKMARK_BUTTON
+import org.mozilla.fenix.ui.robots.browserScreen
+import org.mozilla.fenix.ui.robots.navigationToolbar
 
 class MainMenuTest : BaseTest() {
 
@@ -71,5 +77,38 @@ class MainMenuTest : BaseTest() {
             .mozClick(HomeSelectors.MAIN_MENU_BUTTON_UIAUTOMATOR)
         on.mainMenu
             .mozVerifyElementsByGroup("bookmarkActions")
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080138
+    @SmokeTest
+    @Test
+    fun verifyTheDownloadsMenuItemTest() {
+        val testPage = mockWebServer.getGenericAsset(1)
+
+        on.browserPage.navigateToPage(testPage.url.toString())
+        on.downloads.navigateToPage()
+            .mozVerifyElementsByGroup("emptyDownloads")
+        on.browserPage.navigateToPage()
+            .verifyPageContent(testPage.content)
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080129
+    @SmokeTest
+    @Test
+    fun verifyTheBookmarkPageMenuOptionTest() {
+        val testPage = mockWebServer.getGenericAsset(1)
+
+        on.browserPage.navigateToPage(testPage.url.toString())
+        on.mainMenu.navigateToPage()
+            .mozClick(BOOKMARK_THIS_PAGE_BUTTON)
+        on.browserPage.navigateToPage()
+        on.mainMenu.navigateToPage()
+            .mozClick(EDIT_BOOKMARK_BUTTON)
+        on.bookmarks
+            .mozVerifyElementsByGroup("editBookmarksView")
+            .mozClick(DELETE_BOOKMARK_BUTTON)
+        on.browserPage.navigateToPage()
+        on.mainMenu.navigateToPage()
+            .mozVerify(BOOKMARK_THIS_PAGE_BUTTON)
     }
 }

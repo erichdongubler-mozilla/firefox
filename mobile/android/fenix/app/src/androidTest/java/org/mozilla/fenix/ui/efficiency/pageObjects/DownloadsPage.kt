@@ -26,6 +26,14 @@ class DownloadsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRu
                 NavigationStep.Click(MainMenuSelectors.DOWNLOADS_BUTTON),
             ),
         )
+
+        NavigationRegistry.register(
+            from = pageName,
+            to = "BrowserPage",
+            steps = listOf(
+                NavigationStep.Click(DownloadsSelectors.NAVIGATE_BACK_TOOLBAR_BUTTON),
+            ),
+        )
     }
 
     override fun mozGetSelectorsByGroup(group: String): List<Selector> {
