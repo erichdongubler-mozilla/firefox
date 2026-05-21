@@ -7,6 +7,14 @@ explains how to test for performance in Firefox.
 The [profiler documentation](/tools/profiler/index.rst)
 explains how to use the Gecko profiler.
 
+```{toctree}
+:hidden:
+:glob:
+
+*
+memory/*
+```
+
 ## General Performance references
 * Tips on generating valid performance metrics by [benchmarking](Benchmarking.md)
 * [GPU Performance](GPU_performance.md) Tips for reducing impacts on browser performance in front-end code.
