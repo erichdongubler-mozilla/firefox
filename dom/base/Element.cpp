@@ -1458,25 +1458,7 @@ already_AddRefed<ShadowRoot> Element::AttachShadow(const ShadowRootInit& aInit,
   // 2. If init["customElementRegistry"] exists, then set registry to it.
   // 3. If registry is non-null, registry's is scoped is false, and registry is
   //    not this's node document's custom element registry, then throw.
-  Maybe<CustomElementRegistry*> registry;
-  if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
-    CustomElementRegistry* docRegistry = OwnerDoc()->GetCustomElementRegistry();
-    if (aInit.mCustomElementRegistry.WasPassed()) {
-      CustomElementRegistry* passedRegistry =
-          aInit.mCustomElementRegistry.Value();
-      if (passedRegistry && !passedRegistry->IsScoped() &&
-          passedRegistry != docRegistry) {
-        aError.ThrowNotSupportedError(
-            "Must use a scoped CustomElementRegistry or the document's "
-            "registry");
-        return nullptr;
-      }
-      registry = Some(passedRegistry);
-    } else {
-      registry = Some(docRegistry);
-    }
-  }
-
+  // TODO(keithamus): Scoped Registries
   // 4. Run attach a shadow root...
   //    XXX: Steps 1-3 performed by CanAttachShadowDOM:
   if (!CanAttachShadowDOM()) {
@@ -1511,14 +1493,13 @@ already_AddRefed<ShadowRoot> Element::AttachShadow(const ShadowRootInit& aInit,
 
   //    XXX: Steps 5-13 performed by AttachShadowWithoutNameChecks:
   // 5. Return this's shadow root.
-  return AttachShadowWithoutNameChecks(aInit, registry, CustomSlotDispatch::No,
-                                       true);
+  return AttachShadowWithoutNameChecks(aInit);
 }
 
 /* https://dom.spec.whatwg.org/#concept-attach-a-shadow-root */
 already_AddRefed<ShadowRoot> Element::AttachShadowWithoutNameChecks(
-    const ShadowRootInit& aInit, const Maybe<CustomElementRegistry*>& aRegistry,
-    CustomSlotDispatch aCustomSlotDispatch, bool aNotify) {
+    const ShadowRootInit& aInit, bool aNotify,
+    CustomSlotDispatch aCustomSlotDispatch) {
   nsAutoScriptBlocker scriptBlocker;
 
   auto* nim = NodeInfoManager();
@@ -1539,12 +1520,13 @@ already_AddRefed<ShadowRoot> Element::AttachShadowWithoutNameChecks(
   // 9. Set shadow's declarative to false.
   // 10. Set shadow's clonable to clonable.
   // 11. Set shadow's serializable to serializable.
-  // 12. Set shadow's custom element registry to registry.
   RefPtr<ShadowRoot> shadowRoot = new (nim) ShadowRoot(
       this, aInit.mMode, DelegatesFocus(aInit.mDelegatesFocus),
       aInit.mSlotAssignment, ShadowRootClonable(aInit.mClonable),
       ShadowRootSerializable(aInit.mSerializable), ShadowRootDeclarative::No,
-      aCustomSlotDispatch, aRegistry, nodeInfo.forget());
+      aCustomSlotDispatch, nodeInfo.forget());
+  // 12. Set shadow's custom element registry to registry.
+  // TODO(keithamus): Scoped Registries
   if (aInit.mReferenceTarget.WasPassed()) {
     shadowRoot->SetReferenceTarget(aInit.mReferenceTarget.Value());
   }
@@ -1606,8 +1588,8 @@ void Element::AttachAndSetUAShadowRoot(NotifyUAWidget aNotifyUAWidget,
     ShadowRootInit init;
     init.mMode = ShadowRootMode::Closed;
     init.mDelegatesFocus = aDelegatesFocus == DelegatesFocus::Yes;
-    RefPtr<ShadowRoot> shadowRoot = AttachShadowWithoutNameChecks(
-        init, Nothing(), aCustomSlotDispatch, aNotify);
+    RefPtr<ShadowRoot> shadowRoot =
+        AttachShadowWithoutNameChecks(init, aNotify, aCustomSlotDispatch);
     shadowRoot->SetIsUAWidget();
   }
 

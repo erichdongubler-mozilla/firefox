@@ -63,18 +63,8 @@ ShadowRoot::ShadowRoot(Element* aElement, ShadowRootMode aMode,
                        IsClonable aIsClonable, IsSerializable aIsSerializable,
                        Declarative aDeclarative,
                        CustomSlotDispatch aCustomSlotDispatch,
-                       const Maybe<CustomElementRegistry*>& aRegistry,
                        already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
     : DocumentFragment(std::move(aNodeInfo)), DocumentOrShadowRoot(this) {
-  if (StaticPrefs::dom_scoped_custom_element_registries_enabled() &&
-      aRegistry.isSome()) {
-    if (*aRegistry) {
-      SetCustomElementRegistry(*aRegistry);
-    } else {
-      SetKeepCustomElementRegistryNull();
-    }
-  }
-
   // nsINode.h relies on this.
   MOZ_ASSERT(static_cast<nsINode*>(this) == reinterpret_cast<nsINode*>(this));
   MOZ_ASSERT(static_cast<nsIContent*>(this) ==
@@ -1016,13 +1006,12 @@ void ShadowRoot::NotifyReferenceTargetChangedObservers() {
 
 void ShadowRoot::SetCustomElementRegistry(CustomElementRegistry* aRegistry) {
   MOZ_ASSERT(StaticPrefs::dom_scoped_custom_element_registries_enabled());
+  MOZ_ASSERT(!HasCustomElementRegistry(),
+             "We shouldn't set a custom element registry without clearing "
+             "first");
   MOZ_ASSERT(aRegistry,
              "We shouldn't be setting a null custom element "
              "registry via this method");
-  // If a scoped registry is already assigned, we can't override it.
-  MOZ_ASSERT(
-      GetCustomElementRegistryState() != CustomElementRegistryState::Scoped,
-      "We shouldn't override an already assigned scoped registry");
   if (aRegistry->IsScoped()) {
     SetCustomElementRegistryState(CustomElementRegistryState::Scoped);
     CustomElementRegistry::SetScopedRegistry(*this, *aRegistry);
