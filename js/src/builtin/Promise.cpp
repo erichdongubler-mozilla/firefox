@@ -1640,7 +1640,7 @@ static bool ResolvePromiseFunction(JSContext* cx, unsigned argc, Value* vp) {
 static bool EnqueueJob(JSContext* cx, JS::JSMicroTask* job) {
   MOZ_ASSERT(cx->realm());
   GeckoProfilerRuntime& profiler = cx->runtime()->geckoProfiler();
-  if (profiler.enabled()) {
+  if (MOZ_UNLIKELY(profiler.enabled())) {
     // Emit a flow start marker here.
     uint64_t uid = 0;
     if (JS::GetFlowIdFromJSMicroTask(job, &uid)) {
@@ -1649,15 +1649,18 @@ static bool EnqueueJob(JSContext* cx, JS::JSMicroTask* job) {
     }
   }
 
+  // Only check if we need to use the debug queue when we're not on main thread.
+  if (MOZ_LIKELY(cx->runtime()->isMainRuntime())) {
+    return cx->microTaskQueues->enqueueRegularMicroTask(cx, ObjectValue(*job));
+  }
+
   // We need to root this job because useDebugQueue can GC.
   Rooted<JS::JSMicroTask*> rootedJob(cx, job);
-
-  // Only check if we need to use the debug queue when we're not on main thread.
-  if (MOZ_UNLIKELY(!cx->runtime()->isMainRuntime() &&
-                   cx->jobQueue->useDebugQueue(cx->global()))) {
+  if (MOZ_UNLIKELY(cx->jobQueue->useDebugQueue(cx->global()))) {
     return cx->microTaskQueues->enqueueDebugMicroTask(cx,
                                                       ObjectValue(*rootedJob));
   }
+
   return cx->microTaskQueues->enqueueRegularMicroTask(cx,
                                                       ObjectValue(*rootedJob));
 }
