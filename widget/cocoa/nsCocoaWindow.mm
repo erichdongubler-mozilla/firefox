@@ -5207,36 +5207,6 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect,
     mWindow.collectionBehavior =
         mWindow.collectionBehavior | NSWindowCollectionBehaviorCanJoinAllSpaces;
   }
-
-  // Set an explicit fullscreen collection behavior before any display so
-  // that AppKit never needs to consult `_implicitlyAllowsFullScreenPrimary`
-  // while rendering. That internal heuristic has been observed to flip its
-  // return value mid-display on macOS 15.3 in background-only (LSUIElement)
-  // processes, which causes a `_NSThemeFullScreenButton` to be inserted
-  // into the titlebar while AppKit is enumerating the titlebar's subviews
-  // -- producing a "Collection was mutated while being enumerated" crash
-  // in `NSViewUpdateVibrancyForSubtree` (bug 2031249, bug 2038980).
-  //
-  // Default to FullScreenPrimary | FullScreenAllowsTiling for resizable
-  // titled top-level windows -- that matches what AppKit's heuristic
-  // returns for those windows today, so the green window-control button
-  // keeps its fullscreen-enter arrows. Non-resizable titled windows
-  // default to Auxiliary | DisallowsTiling, which gives them the "+"
-  // zoom glyph (they typically aren't fullscreen-capable anyway).
-  // SetSupportsNativeFullscreen() can later override based on the XUL
-  // `macnativefullscreen` attribute.
-  if ((mWindowType == WindowType::TopLevel ||
-       mWindowType == WindowType::Dialog) &&
-      (features & NSWindowStyleMaskTitled)) {
-    NSWindowCollectionBehavior fsBehavior =
-        (features & NSWindowStyleMaskResizable)
-            ? (NSWindowCollectionBehaviorFullScreenPrimary |
-               NSWindowCollectionBehaviorFullScreenAllowsTiling)
-            : (NSWindowCollectionBehaviorFullScreenAuxiliary |
-               NSWindowCollectionBehaviorFullScreenDisallowsTiling);
-    mWindow.collectionBehavior |= fsBehavior;
-  }
-
   mWindow.contentMinSize = NSMakeSize(60, 60);
 
   // Make the window use CoreAnimation from the start, so that we don't
@@ -7306,24 +7276,11 @@ void nsCocoaWindow::SetSupportsNativeFullscreen(
     // want to do this for primary application windows. We'll set the
     // relevant macnativefullscreen attribute on those, which will lead to us
     // being called with aSupportsNativeFullscreen set to `true` here.
-    //
-    // Always set both the Primary/Auxiliary and AllowsTiling/DisallowsTiling
-    // bits explicitly, even when the resulting state matches the window's
-    // creation-time default. Leaving any of the four bits unset would let
-    // AppKit fall back to `_implicitlyAllowsFullScreenPrimary`, which is
-    // non-deterministic in background-only processes and triggers the
-    // mid-display titlebar mutation that caused bug 2031249.
     NSWindowCollectionBehavior newBehavior = [mWindow collectionBehavior];
-    newBehavior &= ~(NSWindowCollectionBehaviorFullScreenPrimary |
-                     NSWindowCollectionBehaviorFullScreenAuxiliary |
-                     NSWindowCollectionBehaviorFullScreenAllowsTiling |
-                     NSWindowCollectionBehaviorFullScreenDisallowsTiling);
     if (aSupportsNativeFullscreen) {
-      newBehavior |= NSWindowCollectionBehaviorFullScreenPrimary |
-                     NSWindowCollectionBehaviorFullScreenAllowsTiling;
+      newBehavior |= NSWindowCollectionBehaviorFullScreenPrimary;
     } else {
-      newBehavior |= NSWindowCollectionBehaviorFullScreenAuxiliary |
-                     NSWindowCollectionBehaviorFullScreenDisallowsTiling;
+      newBehavior &= ~NSWindowCollectionBehaviorFullScreenPrimary;
     }
     [mWindow setCollectionBehavior:newBehavior];
   }

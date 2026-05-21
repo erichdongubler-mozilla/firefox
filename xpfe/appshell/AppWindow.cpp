@@ -1555,18 +1555,10 @@ void AppWindow::SyncAttributesToWidget() {
       windowElement->HasAttribute(u"toggletoolbar"_ns));
   NS_ENSURE_TRUE_VOID(mWindow);
 
-  // "macnativefullscreen" attribute. Only override the creation-time default
-  // when the attribute is actually present; absence means "use the
-  // window-creation default" (set in nsCocoaWindow::CreateNativeWindow), not
-  // "force off". Read the attribute value as a boolean so an explicit
-  // macnativefullscreen="false" correctly turns native fullscreen off, rather
-  // than just turning it on the way HasAttribute would (bug 2038980).
-  if (windowElement->HasAttribute(u"macnativefullscreen"_ns)) {
-    nsAutoString value;
-    windowElement->GetAttribute(u"macnativefullscreen"_ns, value);
-    mWindow->SetSupportsNativeFullscreen(!value.EqualsLiteral("false"));
-    NS_ENSURE_TRUE_VOID(mWindow);
-  }
+  // "macnativefullscreen" attribute
+  mWindow->SetSupportsNativeFullscreen(
+      windowElement->HasAttribute(u"macnativefullscreen"_ns));
+  NS_ENSURE_TRUE_VOID(mWindow);
 
   // "macanimationtype" attribute
   windowElement->GetAttribute(u"macanimationtype"_ns, attr);
