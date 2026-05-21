@@ -187,6 +187,11 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
         }
       }
       mTransaction->Close(aCloseReason);
+      // Null out mTransaction so that any subsequent path in this function
+      // (OnSucceeded, Abandon) does not try to re-add it to the pending queue
+      // and race with the Restart() or AddTransaction that Close just
+      // triggered.
+      mTransaction = nullptr;
     }
   };
 
@@ -356,18 +361,18 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
         RefPtr<HappyEyeballsConnectionAttempt> self(this);
         RefPtr<ConnectionEntry> entry(mEntry);
 
-        if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
-          if (entry) {
+        nsHttpTransaction* trans =
+            mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
+        if (entry) {
+          if (trans) {
             entry->RemoveTransFromPendingQ(trans);
           }
+          entry->RemoveConnectionAttempt(this, false);
         }
 
         CloseHttpTransaction(event.failed.reason);
 
         Abandon();
-        if (entry) {
-          entry->RemoveConnectionAttempt(this, false);
-        }
         return NS_OK;
       }
 
@@ -1111,29 +1116,35 @@ void HappyEyeballsConnectionAttempt::OnSucceeded() {
   nsHttpTransaction* trans =
       mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
   if (mZeroRttHandle->AnyStarted() && !mZeroRttHandle->HadWinner()) {
-    // AnyStarted() is set only after LockInRealTxnFromPendingQueue() succeeds,
-    // which requires QueryHttpTransaction() to return non-null. So trans is
-    // always non-null here.
-    MOZ_ASSERT(trans,
-               "AnyStarted implies a live real transaction; "
-               "QueryHttpTransaction() should not be null");
-    if (trans) {
-      trans->FinishAdopted0RTT(/*aRestart=*/true);
-      // LockInRealTxnFromPendingQueue removed the real txn from the pending
-      // queue when 0-RTT was entered. Re-queue it so the conn manager can
-      // dispatch it on the winning conn or open a new connection. Guard
-      // against double-queuing (which would trip CheckTransInPendingQueue's
-      // assertion in AddTransaction) by checking first.
-      RefPtr<PendingTransactionInfo> existing;
-      if (entry) {
-        existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
-            /*removeWhenFound=*/false, entry, trans);
+    if (!mTransaction) {
+      // closeTransaction() already restarted the real transaction via
+      // Restart().  The winning connection goes into the pool below and the
+      // CM will dispatch the restarted transaction on it.
+    } else {
+      // AnyStarted() is set only after LockInRealTxnFromPendingQueue()
+      // succeeds, which requires QueryHttpTransaction() to return non-null.
+      // So trans is always non-null here when mTransaction is non-null.
+      MOZ_ASSERT(trans,
+                 "AnyStarted implies a live real transaction; "
+                 "QueryHttpTransaction() should not be null");
+      if (trans) {
+        trans->FinishAdopted0RTT(/*aRestart=*/true);
+        // LockInRealTxnFromPendingQueue removed the real txn from the pending
+        // queue when 0-RTT was entered. Re-queue it so the conn manager can
+        // dispatch it on the winning conn or open a new connection. Guard
+        // against double-queuing (which would trip CheckTransInPendingQueue's
+        // assertion in AddTransaction) by checking first.
+        RefPtr<PendingTransactionInfo> existing;
+        if (entry) {
+          existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
+              /*removeWhenFound=*/false, entry, trans);
+        }
+        if (!existing) {
+          gHttpHandler->ConnMgr()->AddTransaction(trans, trans->Priority());
+        }
+        restartedFallback0Rtt = true;
+        mTransaction = nullptr;
       }
-      if (!existing) {
-        gHttpHandler->ConnMgr()->AddTransaction(trans, trans->Priority());
-      }
-      restartedFallback0Rtt = true;
-      mTransaction = nullptr;
     }
   }
 
