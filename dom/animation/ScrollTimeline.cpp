@@ -293,7 +293,7 @@ StyleOverflow ScrollTimeline::State::SourceScrollStyle() const {
 
 bool ScrollTimeline::State::APZIsActiveForSource() const {
   auto* e = mSource.mElement;
-  MOZ_ASSERT(e);
+  MOZ_ASSERT(e, "HasNonMinimalNonZeroDisplayPort requires a source element");
   return gfxPlatform::AsyncPanZoomEnabled() &&
          !nsLayoutUtils::ShouldDisableApzForElement(e) &&
          DisplayPortUtils::HasNonMinimalNonZeroDisplayPort(e);

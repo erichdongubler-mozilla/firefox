@@ -2021,12 +2021,16 @@ KeyframeEffect::MatchForCompositor KeyframeEffect::IsMatchForCompositor(
     const ScrollTimeline* scrollTimeline =
         mAnimation->GetTimeline()->AsScrollTimeline();
     const auto state = scrollTimeline->GetState();
-    // We don't send this animation to the compositor if
-    // 1. the APZ is disabled entirely or for the source, or
+    // We don't send this animation to the compositor if:
+    // 1. The timeline doesn't have a source, in which case we don't need to
+    //    run the compositor animations since we don't have its ViewID info for
+    //    APZ, or
     // 2. the associated scroll-timeline is inactive, or
-    // 3. the scrolling direction is not available (i.e. no scroll range).
-    // 4. the scroll style of the scroller is overflow:hidden.
-    if (!state.APZIsActiveForSource() || !state.IsActive() ||
+    // 3. the APZ is disabled entirely or for the source, or
+    // 4. the scrolling direction is not available (i.e. no scroll range).
+    // 5. the scroll style of the scroller is overflow:hidden.
+    if (!state.SourceElement() || !state.IsActive() ||
+        !state.APZIsActiveForSource() ||
         !state.ScrollingDirectionIsAvailable() ||
         state.SourceScrollStyle() == StyleOverflow::Hidden) {
       return KeyframeEffect::MatchForCompositor::No;
