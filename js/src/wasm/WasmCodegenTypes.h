@@ -459,11 +459,17 @@ class TrapSitesForKind {
               const TrapSiteDesc& desc) {
     MOZ_ASSERT(desc.bytecodeOffset.isValid());
 
+    // Reserve space in all collections to avoid being in an inconsistent state
+    // in case of failure.
 #ifdef DEBUG
-    if (!machineInsns_.append(insn)) {
+    if (!machineInsns_.reserve(machineInsns_.length() + 1)) {
       return false;
     }
 #endif
+    if (!pcOffsets_.reserve(pcOffsets_.length() + 1) ||
+        !bytecodeOffsets_.reserve(bytecodeOffsets_.length() + 1)) {
+      return false;
+    }
 
     uint32_t index = length();
 
@@ -474,8 +480,13 @@ class TrapSitesForKind {
       return false;
     }
 
-    return pcOffsets_.append(pcOffset) &&
-           bytecodeOffsets_.append(desc.bytecodeOffset);
+#ifdef DEBUG
+    machineInsns_.infallibleAppend(insn);
+#endif
+    pcOffsets_.infallibleAppend(pcOffset);
+    bytecodeOffsets_.infallibleAppend(desc.bytecodeOffset);
+
+    return true;
   }
 
   [[nodiscard]]
@@ -488,11 +499,22 @@ class TrapSitesForKind {
       return false;
     }
 
+    // Reserve space in all collections to avoid being in an inconsistent state
+    // in case of failure.
 #ifdef DEBUG
-    if (!machineInsns_.appendAll(other.machineInsns_)) {
+    if (!machineInsns_.reserve(newLength.value())) {
       return false;
     }
 #endif
+    if (!pcOffsets_.reserve(newLength.value()) ||
+        !bytecodeOffsets_.reserve(newLength.value())) {
+      return false;
+    }
+    if (!inlinedCallerOffsetsMap_.reserve(
+            inlinedCallerOffsetsMap_.count() +
+            other.inlinedCallerOffsetsMap_.count())) {
+      return false;
+    }
 
     // Copy over the map of `other`s inlined caller offsets. The keys are trap
     // site indices, and must be updated for the base index that `other` is
@@ -506,10 +528,8 @@ class TrapSitesForKind {
       uint32_t newInlinedCallerOffsetIndex =
           iter.get().value().value() + baseInlinedCallerOffsetIndex.value();
 
-      if (!inlinedCallerOffsetsMap_.putNew(newTrapSiteIndex,
-                                           newInlinedCallerOffsetIndex)) {
-        return false;
-      }
+      inlinedCallerOffsetsMap_.putNewInfallible(newTrapSiteIndex,
+                                                newInlinedCallerOffsetIndex);
     }
 
     // Add the baseCodeOffset to the pcOffsets that we are adding to ourselves.
@@ -517,8 +537,15 @@ class TrapSitesForKind {
       pcOffset += baseCodeOffset;
     }
 
-    return pcOffsets_.appendAll(other.pcOffsets_) &&
-           bytecodeOffsets_.appendAll(other.bytecodeOffsets_);
+#ifdef DEBUG
+    machineInsns_.infallibleAppend(other.machineInsns_.begin(),
+                                   other.machineInsns_.end());
+#endif
+    pcOffsets_.infallibleAppend(other.pcOffsets_.begin(),
+                                other.pcOffsets_.end());
+    bytecodeOffsets_.infallibleAppend(other.bytecodeOffsets_.begin(),
+                                      other.bytecodeOffsets_.end());
+    return true;
   }
 
   void clear() {
