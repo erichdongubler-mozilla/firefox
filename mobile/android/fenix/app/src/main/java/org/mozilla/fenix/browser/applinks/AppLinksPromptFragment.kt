@@ -15,6 +15,7 @@ import android.widget.FrameLayout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -263,12 +264,6 @@ private fun AppLinkRedirectBottomSheetContent(
                 ),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(
-                text = config.message,
-                style = FirefoxTheme.typography.subtitle1,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-
             AppLinkDetailsSection(config, initialExpanded = initialDetailsExpanded)
         }
 
@@ -325,7 +320,7 @@ private fun AppLinkDetailsSection(config: AppLinkRedirectConfig, initialExpanded
     var isExpanded by remember { mutableStateOf(initialExpanded) }
 
     Column(
-        modifier = Modifier.clip(shape = RoundedCornerShape(24.dp)),
+        modifier = Modifier.clip(shape = RoundedCornerShape(28.dp)),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         AppLinkItem(
@@ -492,24 +487,28 @@ private fun AppHeader(
             .semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (appIcon != null) {
-            Icon(
-                painter = rememberDrawablePainter(appIcon),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(40.dp)
-                    .padding(all = 4.dp),
-                tint = null,
-            )
-        } else {
-            Icon(
-                painter = painterResource(iconsR.drawable.mozac_ic_globe_24),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(40.dp)
-                    .padding(all = 4.dp),
-                tint = MaterialTheme.colorScheme.onSurface,
-            )
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (appIcon != null) {
+                Icon(
+                    painter = rememberDrawablePainter(appIcon),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    tint = null,
+                )
+            } else {
+                Icon(
+                    painter = painterResource(iconsR.drawable.mozac_ic_globe_24),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
         }
 
         Spacer(modifier = Modifier.size(8.dp))

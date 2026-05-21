@@ -971,13 +971,8 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
         assertUIObjectExists(
             itemContainingText(
                 getStringResource(
-                    applinksR.string.mozac_feature_applinks_normal_confirm_dialog_title_with_app_name,
+                    applinksR.string.mozac_feature_applinks_normal_confirm_dialog_title_with_app_name_2,
                     appName,
-                ),
-            ),
-            itemContainingText(
-                getStringResource(
-                    applinksR.string.mozac_feature_applinks_normal_confirm_dialog_message,
                 ),
             ),
             waitingTime = waitingTimeLong,
@@ -988,13 +983,8 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
         assertUIObjectIsGone(
             itemContainingText(
                 getStringResource(
-                    applinksR.string.mozac_feature_applinks_normal_confirm_dialog_title_with_app_name,
+                    applinksR.string.mozac_feature_applinks_normal_confirm_dialog_title_with_app_name_2,
                     appName,
-                ),
-            ),
-            itemContainingText(
-                getStringResource(
-                    applinksR.string.mozac_feature_applinks_normal_confirm_dialog_message,
                 ),
             ),
         )
@@ -1016,7 +1006,7 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
                 assertUIObjectExists(
                     itemContainingText(
                         getStringResource(
-                            applinksR.string.mozac_feature_applinks_normal_confirm_dialog_title_with_app_name,
+                            applinksR.string.mozac_feature_applinks_normal_confirm_dialog_title_with_app_name_2,
                             appName,
                         ),
                     ),
