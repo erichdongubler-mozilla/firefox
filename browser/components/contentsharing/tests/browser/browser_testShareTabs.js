@@ -33,6 +33,7 @@ add_task(async function test_handleShareTabs() {
       url: server.mockResponse.url,
       isSchemaValid: true,
       isSignedIn: true,
+      loadingPromise: null,
     });
 
     Assert.equal(body.type, "tabs", "Share type is 'tabs'");
