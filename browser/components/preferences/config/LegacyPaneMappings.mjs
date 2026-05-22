@@ -99,7 +99,6 @@ export const LEGACY_PANE_MAPPINGS = new Map([
     "privacy-address-autofill",
     { category: "passwordsAutofill", subcategory: "address-autofill" },
   ],
-  ["privacy-logins", { category: "passwordsAutofill", subcategory: "logins" }],
 ]);
 
 /**

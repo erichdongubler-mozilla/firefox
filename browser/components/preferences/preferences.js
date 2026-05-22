@@ -467,7 +467,7 @@ function register_module(categoryName, categoryObject) {
       }
       this._initted = true;
       let template = document.getElementById("template-" + categoryName);
-      if (template && !srdSectionPrefs.all) {
+      if (template) {
         // Replace the template element with the nodes inside of it.
         template.replaceWith(template.content);
 
