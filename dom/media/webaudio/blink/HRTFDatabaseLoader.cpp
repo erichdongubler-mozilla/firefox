@@ -40,6 +40,8 @@ namespace WebCore {
 nsTHashtable<HRTFDatabaseLoader::LoaderByRateEntry>*
     HRTFDatabaseLoader::s_loaderMap = nullptr;
 
+static bool sShutdownCalled = false;
+
 size_t HRTFDatabaseLoader::sizeOfLoaders(mozilla::MallocSizeOf aMallocSizeOf) {
   return s_loaderMap ? s_loaderMap->SizeOfIncludingThis(aMallocSizeOf) : 0;
 }
@@ -47,6 +49,11 @@ size_t HRTFDatabaseLoader::sizeOfLoaders(mozilla::MallocSizeOf aMallocSizeOf) {
 already_AddRefed<HRTFDatabaseLoader>
 HRTFDatabaseLoader::createAndLoadAsynchronouslyIfNecessary(float sampleRate) {
   MOZ_ASSERT(NS_IsMainThread());
+
+  if (sShutdownCalled) {
+    NS_ERROR("HRTFDatabaseLoader: script running after shutdown");
+    return nullptr;
+  }
 
   RefPtr<HRTFDatabaseLoader> loader;
 
@@ -130,9 +137,14 @@ void HRTFDatabaseLoader::ProxyRelease() {
     DebugOnly<nsresult> rv = mainTarget->Dispatch(event, NS_DISPATCH_NORMAL);
     MOZ_ASSERT(NS_SUCCEEDED(rv), "Failed to dispatch release event");
   } else {
-    // Should be in XPCOM shutdown.
-    MOZ_ASSERT(NS_IsMainThread(), "Main thread is not available for dispatch.");
-    MainThreadRelease();
+    // Likely during shutdown, but this can only be checked on the main thread.
+    if (NS_IsMainThread()) {
+      MainThreadRelease();
+    } else {
+      NS_ERROR(
+          "HRTFDatabaseLoader leaking: not on main thread and no main thread "
+          "dispatch available");
+    }
   }
 }
 
@@ -201,6 +213,7 @@ void HRTFDatabaseLoader::waitForLoaderThreadCompletion() {
 
 void HRTFDatabaseLoader::shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
+  sShutdownCalled = true;
   if (s_loaderMap) {
     // Set s_loaderMap to nullptr so that the hashtable is not modified on
     // reference release during enumeration.
