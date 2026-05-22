@@ -5404,10 +5404,27 @@ void MacroAssemblerRiscv64::ma_and(Register rd, Register rs, Operand rt) {
     if (is_int12(rt.immediate())) {
       andi(rd, rs, rt.immediate());
     } else {
-      UseScratchRegisterScope temps(this);
-      Register scratch = temps.Acquire();
-      ma_li(scratch, rt.immediate());
-      and_(rd, rs, scratch);
+      int shift = std::bit_width(uint64_t(rt.immediate()));
+      if (shift < 64 &&
+          (uint64_t(1) << shift) - 1 == uint64_t(rt.immediate())) {
+        // `x & ((1 << shift) - 1)` can be expressed as two shifts.
+        //  For example: `x & 0xffff` is `slli rd, rs, 48; srli rd, rd, 48`.
+        slli(rd, rs, 64 - shift);
+        srli(rd, rd, 64 - shift);
+      } else if (rt.immediate() == uint64_t(0x8000'0000)) {
+        // Int32 sign extraction can be expressed as two shifts.
+        srliw(rd, rs, 31);
+        slli(rd, rd, 31);
+      } else if (rt.immediate() == uint64_t(0x8000'0000'0000'0000)) {
+        // Int64 sign extraction can be expressed as two shifts.
+        srli(rd, rs, 63);
+        slli(rd, rd, 63);
+      } else {
+        UseScratchRegisterScope temps(this);
+        Register scratch = temps.Acquire();
+        ma_li(scratch, rt.immediate());
+        and_(rd, rs, scratch);
+      }
     }
   } else {
     MOZ_ASSERT(rt.is_reg());
