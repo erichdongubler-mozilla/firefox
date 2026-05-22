@@ -615,22 +615,6 @@ repackage-rpm-signing
 ---------------------
 Repackage-rpm-signing takes the repackaged RPMs and signs them.
 
-repackage-pkg-signing
----------------------
-Repackage-pkg-signing takes the repackaged macOS .pkg installers and signs them.
-
-repackage-pkg-notarization
---------------------------
-Notarization of signed macOS .pkg installers via Apple's notarization service.
-
-repackage-l10n-pkg-signing
---------------------------
-Repackage-l10n-pkg-signing takes the l10n repackaged macOS .pkg installers and signs them.
-
-repackage-l10n-pkg-notarization
--------------------------------
-Notarization of signed macOS .pkg installers via Apple's notarization service.
-
 repackage-flatpak
 -----------------
 These repackage tasks take signed Firefox Linux binaries and langpacks, and builds a flatpak.

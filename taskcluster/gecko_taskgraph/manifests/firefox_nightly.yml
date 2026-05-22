@@ -53,8 +53,6 @@ tasktype_map:
     repackage-signing: repackage
     repackage-signing-msi: repackage
     repackage-signing-shippable-l10n-msix: signing
-    repackage-pkg-notarization: signing
-    repackage-l10n-pkg-notarization: signing
     langpack-copy: signing
     attribution: build
     attribution-l10n: build
@@ -287,13 +285,7 @@ mapping:
         description: "Main package installer for Mac OS X platforms"
         all_locales: true
         from:
-            by-level:
-                "3":
-                    - repackage-pkg-notarization
-                    - repackage-l10n-pkg-notarization
-                default:
-                    - repackage
-                    - repackage-l10n
+            - signing
         only_for_platforms:
             - macosx64-shippable
         pretty_name: firefox-${version}.${locale}.${filename_platform}.pkg
