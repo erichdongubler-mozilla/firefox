@@ -627,6 +627,7 @@
     white-space:pre;
     cursor:text;
     transform-origin:0% 0%;
+    user-select:text;
   }
   --min-font-size:1;
   --text-scale-factor:calc(var(--total-scale-factor) * var(--min-font-size));
@@ -698,7 +699,7 @@
   }
 
   ::selection{
-    background:color-mix(in srgb, AccentColor, transparent 75%);
+    background:transparent;
   }
 
   .endOfContent{

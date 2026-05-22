@@ -44,6 +44,7 @@ pref("pdfjs.enableOptimizedPartialRendering", false);
 pref("pdfjs.enablePermissions", false);
 pref("pdfjs.enablePrintAutoRotate", true);
 pref("pdfjs.enableScripting", true);
+pref("pdfjs.enableSelectionRendering", true);
 pref("pdfjs.enableSignatureEditor", false);
 pref("pdfjs.enableSplitMerge", false);
 pref("pdfjs.enableUpdatedAddImage", false);
