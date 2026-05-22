@@ -13,6 +13,10 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
+import mozilla.components.browser.state.state.ActiveOptionsPage
+import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.WebExtensionState
+import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.utils.toSafeIntent
 import org.junit.Assert.assertEquals
@@ -252,5 +256,46 @@ class HomeActivityTest {
         activity.handleNewIntent(intent)
 
         assertNull(NativeShareSheet.qrCodeTapped.testGetValue())
+    }
+
+    @Test
+    fun `GIVEN active options page belongs to an extension WHEN creating open options page directions THEN return directions`() {
+        val activeOptionsPage = ActiveOptionsPage(
+            instanceId = "instanceId",
+            url = "moz-extension://extensionId/options.html",
+            name = "Test extension",
+        )
+        val extension = WebExtensionState(
+            id = "extensionId",
+            activeOptionsPage = activeOptionsPage,
+        )
+        val browserStore = BrowserStore(
+            BrowserState(
+                extensions = mapOf(extension.id to extension),
+            ),
+        )
+        every { activity.applicationContext } returns testContext
+        every { testContext.components.core.store } returns browserStore
+
+        val directions = activity.createOpenOptionsPageDirections(activeOptionsPage)
+
+        assertEquals(R.id.action_global_webExtensionActionOptionsPageFragment, directions?.actionId)
+        assertEquals(activeOptionsPage.url, directions?.arguments?.getString("optionsPageUrl"))
+        assertEquals(activeOptionsPage.name, directions?.arguments?.getString("webExtensionName"))
+        assertEquals(extension.id, directions?.arguments?.getString("webExtensionId"))
+    }
+
+    @Test
+    fun `GIVEN active options page does not belong to an extension WHEN creating open options page directions THEN return null`() {
+        val activeOptionsPage = ActiveOptionsPage(
+            instanceId = "instanceId",
+            url = "moz-extension://extensionId/options.html",
+            name = "Test extension",
+        )
+        val browserStore = BrowserStore(BrowserState())
+        every { activity.applicationContext } returns testContext
+        every { testContext.components.core.store } returns browserStore
+
+        assertNull(activity.createOpenOptionsPageDirections(activeOptionsPage))
     }
 }
