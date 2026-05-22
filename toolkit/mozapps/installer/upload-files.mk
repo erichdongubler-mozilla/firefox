@@ -62,31 +62,6 @@ endif
 
 TAR_CREATE_FLAGS := --exclude=.mkdir.done $(TAR_CREATE_FLAGS)
 
-ifeq ($(MOZ_PKG_FORMAT),XZ)
-  # For non-shippable builds, we would rather finish the build sooner than have optimal compression.
-  ifdef MOZ_PROFILE_USE
-    PACKAGE_EXTRA_ARGS += --strong-compression
-  endif
-endif
-
-ifeq ($(MOZ_PKG_FORMAT),BZ2)
-  ifeq (cocoa,$(MOZ_WIDGET_TOOLKIT))
-    PACKAGE_EXTRA_ARGS += --app-name '$(MOZ_MACBUNDLE_NAME)'
-  endif
-endif
-
-ifeq ($(MOZ_PKG_FORMAT),DMG)
-  PKG_DMG_SOURCE = $(MOZ_PKG_DIR)
-  MOZ_PKG_MAC_DSSTORE=$(topsrcdir)/$(MOZ_BRANDING_DIRECTORY)/dsstore
-  MOZ_PKG_MAC_BACKGROUND=$(topsrcdir)/$(MOZ_BRANDING_DIRECTORY)/background.png
-  MOZ_PKG_MAC_ICON=$(topsrcdir)/$(MOZ_BRANDING_DIRECTORY)/disk.icns
-  PACKAGE_EXTRA_ARGS += \
-    $(if $(MOZ_PKG_MAC_DSSTORE),--dsstore '$(MOZ_PKG_MAC_DSSTORE)') \
-    $(if $(MOZ_PKG_MAC_BACKGROUND),--background '$(MOZ_PKG_MAC_BACKGROUND)') \
-    $(if $(MOZ_PKG_MAC_ICON),--icon '$(MOZ_PKG_MAC_ICON)') \
-    --volume-name '$(MOZ_APP_DISPLAYNAME)'
-endif
-
 MAKE_PACKAGE = $(call py_action,package $(MOZ_PKG_FORMAT), \
   --format $(MOZ_PKG_FORMAT) \
   --cwd '$(1)' \
@@ -94,7 +69,7 @@ MAKE_PACKAGE = $(call py_action,package $(MOZ_PKG_FORMAT), \
   --output-dir '$(PKG_PATH)' \
   --basename '$(PKG_BASENAME)' \
   --tar '$(TAR)' \
-  $(PACKAGE_EXTRA_ARGS))
+  $(MOZ_PACKAGE_EXTRA_ARGS))
 
 ifeq ($(MOZ_PKG_FORMAT),APK)
 MAKE_PACKAGE = true
