@@ -201,12 +201,7 @@ add_task(async function test_legacy_name_routing_and_subcategory_attr() {
       "panePasswordsAutofill",
       "address-autofill",
     ],
-    [
-      "privacy-logins",
-      "#passwordsAutofill",
-      "panePasswordsAutofill",
-      "logins",
-    ],
+    ["privacy-logins", "#passwordsAutofill", "panePasswordsAutofill", "logins"],
   ]) {
     let prefs = await openPreferencesViaOpenPreferencesAPI(arg, {
       leaveOpen: true,
