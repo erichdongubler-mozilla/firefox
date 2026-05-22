@@ -6,8 +6,10 @@
 #define LAYOUT_STYLE_TYPEDOM_CSSPERSPECTIVE_H_
 
 #include "js/TypeDecls.h"
+#include "mozilla/dom/CSSPerspectiveBinding.h"
 #include "mozilla/dom/CSSPerspectiveBindingFwd.h"
 #include "mozilla/dom/CSSTransformComponent.h"
+#include "nsCycleCollectionParticipant.h"
 
 template <class T>
 struct already_AddRefed;
@@ -25,13 +27,19 @@ class GlobalObject;
 
 class CSSPerspective final : public CSSTransformComponent {
  public:
-  explicit CSSPerspective(nsCOMPtr<nsISupports> aParent);
+  CSSPerspective(nsCOMPtr<nsISupports> aParent, bool aIs2D,
+                 OwningCSSPerspectiveValue aLength);
+
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CSSPerspective,
+                                           CSSTransformComponent)
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
   // start of CSSPerspective Web IDL declarations
 
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssperspective-cssperspective
   static already_AddRefed<CSSPerspective> Constructor(
       const GlobalObject& aGlobal, const CSSPerspectiveValue& aLength,
       ErrorResult& aRv);
@@ -47,6 +55,8 @@ class CSSPerspective final : public CSSTransformComponent {
 
  protected:
   virtual ~CSSPerspective() = default;
+
+  OwningCSSPerspectiveValue mLength;
 };
 
 }  // namespace dom
