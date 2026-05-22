@@ -49,6 +49,7 @@
   }
 
   &[aria-checked="true"] {
+    background-color: var(--button-background-color-selected);
     .location-check {
       visibility: visible;
     }
@@ -91,7 +92,6 @@
 
 .location-description {
   font-size: var(--font-size-small);
-  color: var(--text-color-deemphasized);
 }
 
 #locations-subview-promo {
