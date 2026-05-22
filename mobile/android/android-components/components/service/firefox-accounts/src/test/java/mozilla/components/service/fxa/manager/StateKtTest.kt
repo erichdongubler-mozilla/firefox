@@ -35,6 +35,12 @@ class StateKtTest {
                     Event.Account.Logout -> State.Active(ProgressState.LoggingOut)
                     else -> null
                 }
+
+                // This is the old state machine that is no longer used so we don't need to implement
+                // new features into it. See Bug 2041509.
+                AccountState.Unknown -> {
+                    throw UnsupportedOperationException("We no longer use the kotlin state machine.")
+                }
             }
             is State.Active -> when (state.progressState) {
                 ProgressState.Initializing -> when (event) {
