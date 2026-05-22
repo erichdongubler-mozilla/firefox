@@ -114,18 +114,14 @@ if (false) {
 }
 
 // Inline exports.
-// TODO(wasm-cm): Inline exports not yet implemented. Enabled in Part 9 once
-// the alias section lands; the test needs to reach the second core instance
-// past an intervening alias section.
-if (false) {
-  wasmFailValidateText(`
-  (component
-    (core module
-      (func (export "f"))
-    )
-    (core instance (instantiate 0))
-    (alias core export 0 "f" (core func))
-    (core instance (export "f" (func 0)))
+// TODO(wasm-cm): Inline exports not yet implemented.
+wasmFailValidateText(`
+(component
+  (core module
+    (func (export "f"))
   )
-  `, /inline exports are not yet supported/);
-}
+  (core instance (instantiate 0))
+  (alias core export 0 "f" (core func))
+  (core instance (export "f" (func 0)))
+)
+`, /inline exports are not yet supported/);

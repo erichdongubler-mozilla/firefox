@@ -5538,6 +5538,139 @@ enum class CoreInstanceExprKind : uint8_t {
   return true;
 }
 
+enum class AliasKindRaw : uint8_t {
+  ComponentExport = 0x00,
+  CoreExport = 0x01,
+  Outer = 0x02,
+};
+
+[[nodiscard]] static bool DecodeComponentAlias(Decoder& d,
+                                               MutableComponent& c) {
+  ComponentSort sort;
+  if (!DecodeComponentSort(d, &sort, /*forExterndesc=*/false)) {
+    return false;
+  }
+
+  uint8_t targetType;
+  if (!d.readFixedU8(&targetType)) {
+    return d.fail("expected alias target");
+  }
+
+  switch (targetType) {
+    case uint8_t(AliasKindRaw::ComponentExport): {
+      // TODO(wasm-cm)
+      return d.fail("component export aliases are not yet supported");
+    } break;
+    case uint8_t(AliasKindRaw::CoreExport): {
+      uint32_t instanceIndex;
+      if (!d.readVarU32(&instanceIndex)) {
+        return d.fail("expected instance index");
+      }
+
+      CacheableName exportName;
+      if (!DecodeName(d, &exportName)) {
+        return d.fail("expected instance export name");
+      }
+
+      if (c->coreInstances.length() <= instanceIndex) {
+        return d.failf("invalid core instance index %d", instanceIndex);
+      }
+      SharedModule mod = c->moduleForCoreInstance(instanceIndex);
+      mozilla::Maybe<const Export&> exp =
+          mod->moduleMeta().getExport(exportName);
+      if (exp.isNothing()) {
+        return d.failf("core instance %d has no export \"%.*s\"", instanceIndex,
+                       ComponentName_Printf(exportName));
+      }
+
+      switch (sort) {
+        case ComponentSort::CoreFunction: {
+          if (c->coreFuncs.length() >= MaxComponentCoreFuncs) {
+            return d.failf("too many core funcs (max %d)",
+                           MaxComponentCoreFuncs);
+          }
+          if (exp->kind() != DefinitionKind::Function) {
+            return d.failf(
+                "export \"%.*s\" of core instance %d is not a function",
+                ComponentName_Printf(exportName), instanceIndex);
+          }
+          if (!c->coreFuncs.append(ComponentAlias::fromCoreExport(
+                  instanceIndex, exp->funcIndex(), sort))) {
+            return false;
+          }
+        } break;
+        case ComponentSort::CoreTable: {
+          if (c->coreTables.length() >= MaxComponentCoreTables) {
+            return d.failf("too many core tables (max %d)",
+                           MaxComponentCoreTables);
+          }
+          if (exp->kind() != DefinitionKind::Table) {
+            return d.failf("export \"%.*s\" of core instance %d is not a table",
+                           ComponentName_Printf(exportName), instanceIndex);
+          }
+          if (!c->coreTables.append(ComponentAlias::fromCoreExport(
+                  instanceIndex, exp->tableIndex(), sort))) {
+            return false;
+          }
+        } break;
+        case ComponentSort::CoreMemory: {
+          if (c->coreMemories.length() >= MaxComponentCoreMemories) {
+            return d.failf("too many core memories (max %d)",
+                           MaxComponentCoreMemories);
+          }
+          if (exp->kind() != DefinitionKind::Memory) {
+            return d.failf(
+                "export \"%.*s\" of core instance %d is not a memory",
+                ComponentName_Printf(exportName), instanceIndex);
+          }
+          if (!c->coreMemories.append(ComponentAlias::fromCoreExport(
+                  instanceIndex, exp->memoryIndex(), sort))) {
+            return false;
+          }
+        } break;
+        case ComponentSort::CoreGlobal: {
+          if (c->coreGlobals.length() >= MaxComponentCoreGlobals) {
+            return d.failf("too many core globals (max %d)",
+                           MaxComponentCoreGlobals);
+          }
+          if (exp->kind() != DefinitionKind::Global) {
+            return d.failf(
+                "export \"%.*s\" of core instance %d is not a global",
+                ComponentName_Printf(exportName), instanceIndex);
+          }
+          if (!c->coreGlobals.append(ComponentAlias::fromCoreExport(
+                  instanceIndex, exp->globalIndex(), sort))) {
+            return false;
+          }
+        } break;
+        case ComponentSort::CoreTag: {
+          if (c->coreTags.length() >= MaxComponentCoreTags) {
+            return d.failf("too many core tags (max %d)", MaxComponentCoreTags);
+          }
+          if (exp->kind() != DefinitionKind::Tag) {
+            return d.failf("export \"%.*s\" of core instance %d is not a tag",
+                           ComponentName_Printf(exportName), instanceIndex);
+          }
+          if (!c->coreTags.append(ComponentAlias::fromCoreExport(
+                  instanceIndex, exp->tagIndex(), sort))) {
+            return false;
+          }
+        } break;
+        default:
+          return d.failf("invalid alias sort 0x%02x", uint8_t(sort));
+      }
+    } break;
+    case uint8_t(AliasKindRaw::Outer): {
+      // TODO(wasm-cm)
+      return d.fail("outer aliases are not yet supported");
+    } break;
+    default:
+      return d.failf("unexpected alias target 0x%02x", targetType);
+  }
+
+  return true;
+}
+
 enum class ComponentImportFlagsRaw : uint8_t {
   // Strangely, the binary encoding currently allows either 0x00 or 0x01 for the
   // flags. Both do exactly the same thing. This is supposed to be cleaned up
@@ -5623,6 +5756,24 @@ static bool DecodeComponentImport(Decoder& d, MutableComponent& c,
 
   for (uint32_t i = 0; i < numInstances; i++) {
     if (!DecodeCoreInstance(d, c)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+[[nodiscard]] static bool DecodeComponentAliasSection(Decoder& d,
+                                                      MutableComponent& c) {
+  uint32_t numAliases;
+  if (!d.readVarU32(&numAliases)) {
+    return d.fail("expected number of aliases");
+  }
+  // We do not check an implementation limit here because each alias
+  // adds entries to a different index space with its own limit.
+
+  for (uint32_t i = 0; i < numAliases; i++) {
+    if (!DecodeComponentAlias(d, c)) {
       return false;
     }
   }
@@ -5720,6 +5871,11 @@ bool wasm::DecodeComponent(Decoder& d, MutableComponent c,
         } break;
         case uint8_t(ComponentSectionId::CoreInstance): {
           if (!DecodeComponentCoreInstanceSection(d, c)) {
+            return false;
+          }
+        } break;
+        case uint8_t(ComponentSectionId::Alias): {
+          if (!DecodeComponentAliasSection(d, c)) {
             return false;
           }
         } break;

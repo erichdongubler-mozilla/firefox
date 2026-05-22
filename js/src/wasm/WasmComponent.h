@@ -322,6 +322,71 @@ class StronglyUniqueNameSet {
   [[nodiscard]] bool add(mozilla::Span<const char> name, bool* duplicate);
 };
 
+// An alias to another item defined in the component model, usually in a core or
+// component instance, but also possibly an "outer" alias referring to an item
+// defined in a parent component.
+//
+// All three possible kinds of aliases (component export, core export, and
+// outer) boil down to two u32 indexes, the first referring to a component
+// instance or core instance, and the second referring to an item within some
+// index space on that instance.
+class ComponentAlias {
+  // For export aliases, the index of the component instance or core instance.
+  // For outer aliases, the number of enclosing components to jump out to.
+  uint32_t instanceIndex_;
+
+  // The index of the aliased item in its component instance or core instance.
+  uint32_t innerIndex_;
+
+  // Whether the alias is to be interpreted as an outer alias.
+  bool isOuter_;
+
+  // Whether `instanceIdx` refers to a core instance or component instance.
+  bool isCoreInstance_;
+
+  // The sort of item being aliased.
+  ComponentSort sort_;
+
+  explicit ComponentAlias(uint32_t instanceIdx, uint32_t innerIdx,
+                          ComponentSort sort, bool isOuter, bool isCoreInstance)
+      : instanceIndex_(instanceIdx),
+        innerIndex_(innerIdx),
+        isOuter_(isOuter),
+        isCoreInstance_(isCoreInstance),
+        sort_(sort) {}
+
+ public:
+  static ComponentAlias fromExport(uint32_t instanceIdx, uint32_t innerIdx,
+                                   ComponentSort sort) {
+    MOZ_ASSERT(!ComponentSortIsCoreSort(sort));
+    return ComponentAlias(instanceIdx, innerIdx, sort, /*isOuter=*/false,
+                          /*isCoreInstance=*/false);
+  }
+  static ComponentAlias fromCoreExport(uint32_t instanceIdx, uint32_t innerIdx,
+                                       ComponentSort sort) {
+    MOZ_ASSERT(ComponentSortIsCoreSort(sort));
+    return ComponentAlias(instanceIdx, innerIdx, sort, /*isOuter=*/false,
+                          /*isCoreInstance=*/true);
+  }
+  static ComponentAlias outer(uint32_t count, uint32_t index,
+                              ComponentSort sort) {
+    MOZ_ASSERT(!ComponentSortIsCoreSort(sort));
+    return ComponentAlias(count, index, sort, /*isOuter=*/true,
+                          /*isCoreInstance=*/false);
+  }
+
+  bool isExport() const { return !isOuter_ && !isCoreInstance_; }
+  bool isCoreExport() const { return !isOuter_ && isCoreInstance_; }
+  bool isOuter() const {
+    MOZ_ASSERT(!isCoreInstance_);
+    return isOuter_;
+  }
+
+  ComponentSort sort() const { return sort_; }
+  uint32_t instanceIndex() const { return instanceIndex_; }
+  uint32_t itemIndex() const { return innerIndex_; }
+};
+
 struct CoreInstanceInstantiateArg {
   CacheableName name;
   uint32_t instanceIndex;
@@ -413,6 +478,7 @@ class Component : public JS::WasmComponent {
       mozilla::Vector<CoreInstanceDesc, 0, SystemAllocPolicy>;
   using TypeVector = mozilla::Vector<ComponentDefType, 0, SystemAllocPolicy>;
   using ImportVector = Vector<ComponentImport, 0, SystemAllocPolicy>;
+  using AliasVector = Vector<ComponentAlias, 0, SystemAllocPolicy>;
 
   // JS API and JS::WasmComponent implementation:
   JSObject* createObject(JSContext* cx) const override;
@@ -422,6 +488,19 @@ class Component : public JS::WasmComponent {
   CoreInstanceVector coreInstances;
   TypeVector types;
   ImportVector imports;
+
+  AliasVector
+      coreFuncs;  // TODO(wasm-cm): This will have to accommodate lowered funcs
+  AliasVector coreTables;
+  AliasVector coreMemories;
+  AliasVector coreGlobals;
+  AliasVector coreTags;
+
+  const FuncType& typeForCoreFunc(uint32_t coreFuncIndex) {
+    const ComponentAlias& alias = coreFuncs[coreFuncIndex];
+    SharedModule mod = moduleForCoreInstance(alias.instanceIndex());
+    return mod->codeMeta().getFuncType(alias.itemIndex());
+  }
 
   SharedModule moduleForCoreInstance(uint32_t instanceIndex) {
     CoreInstanceDesc& instance = coreInstances[instanceIndex];

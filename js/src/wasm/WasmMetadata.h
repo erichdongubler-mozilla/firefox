@@ -488,6 +488,15 @@ struct ModuleMetadata : public ShareableBase<ModuleMetadata> {
   }
   bool isPreparedForCompile() const { return codeMeta->isPreparedForCompile(); }
 
+  mozilla::Maybe<const Export&> getExport(const CacheableName& name) const {
+    for (const Export& exp : exports) {
+      if (exp.fieldName().utf8Bytes() == name.utf8Bytes()) {
+        return mozilla::SomeRef(exp);
+      }
+    }
+    return mozilla::Nothing();
+  }
+
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };
 
