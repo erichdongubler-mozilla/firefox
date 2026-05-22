@@ -1100,7 +1100,11 @@ class Document : public nsINode,
     //   are completing the initial about:blank load
     // - and Document::EndLoad was already called, so the method is almost done
     //   (we're likely called from there right now).
-    return InitialAboutBlankLoadCompleting() && !IsExpectingEndLoad();
+    // - and we are the initial document that should load sync. Specifically,
+    //   we are not IsInitialButExplicitlyOpened (bug 2041104).
+    bool ret = InitialAboutBlankLoadCompleting() && !IsExpectingEndLoad() &&
+               IsInitialDocument();
+    return ret;
   }
 
   void SetLoadedAsData(bool aLoadedAsData, bool aConsiderForMemoryReporting);
