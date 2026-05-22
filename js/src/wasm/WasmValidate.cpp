@@ -4756,6 +4756,15 @@ bool wasm::DecodeComponent(Decoder& d, MutableComponent c) {
       Decoder& d = sectionDecoder;
 
       switch (sectionID) {
+        case uint8_t(ComponentSectionId::Custom): {
+          if (!d.readBytes(sectionLength)) {
+            return d.fail("expected custom section");
+          }
+
+          // TODO(wasm-cm): Parse custom section name, warn if it is "malformed"
+          // TODO(wasm-cm): Parse component name section
+        } break;
+
         default: {
           return d.failf("unexpected section ID %d", sectionID);
         }

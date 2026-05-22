@@ -48,6 +48,22 @@ enum class SectionId {
   Tag = 13,
 };
 
+#ifdef ENABLE_WASM_COMPONENTS
+enum class ComponentSectionId {
+  Custom = 0,
+  CoreModule = 1,
+  CoreInstance = 2,
+  CoreType = 3,
+  Component = 4,
+  Instance = 5,
+  Alias = 6,
+  Type = 7,
+  Canon = 8,
+  Import = 10,
+  Export = 11,
+};
+#endif
+
 // WebAssembly type encodings are all single-byte negative SLEB128s, hence:
 //  forall tc:TypeCode. ((tc & SLEB128SignMask) == SLEB128SignBit
 static const uint8_t SLEB128SignMask = 0xc0;
