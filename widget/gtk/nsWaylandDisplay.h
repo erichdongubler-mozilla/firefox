@@ -177,7 +177,6 @@ class nsWaylandDisplay {
   MonitorConfig* GetMonitorConfig(int x, int y);
   bool RemoveMonitorConfig(int aId);
 
-
   ~nsWaylandDisplay();
 
  private:
