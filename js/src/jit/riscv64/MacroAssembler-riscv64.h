@@ -178,54 +178,17 @@ class MacroAssemblerRiscv64 : public Assembler {
   void instr(Register rd, Imm32 imm) { instr(rd, rd, Operand(imm.value)); } \
   void instr(Register rd, Register rs) { instr(rd, rd, Operand(rs)); }
 
-#define DEFINE_INSTRUCTION2(instr)                                 \
-  void instr(Register rd, const Operand& rt);                      \
-  void instr(Register rd, Register rt) { instr(rd, Operand(rt)); } \
-  void instr(Register rd, Imm32 j) { instr(rd, Operand(j.value)); }
-
   DEFINE_INSTRUCTION(ma_and);
   DEFINE_INSTRUCTION(ma_or);
   DEFINE_INSTRUCTION(ma_xor);
-  DEFINE_INSTRUCTION(ma_nor);
   DEFINE_INSTRUCTION(ma_sub32)
   DEFINE_INSTRUCTION(ma_sub64)
   DEFINE_INSTRUCTION(ma_add32)
   DEFINE_INSTRUCTION(ma_add64)
-  DEFINE_INSTRUCTION(ma_div32)
-  DEFINE_INSTRUCTION(ma_divu32)
-  DEFINE_INSTRUCTION(ma_div64)
-  DEFINE_INSTRUCTION(ma_divu64)
-  DEFINE_INSTRUCTION(ma_mod32)
-  DEFINE_INSTRUCTION(ma_modu32)
-  DEFINE_INSTRUCTION(ma_mod64)
-  DEFINE_INSTRUCTION(ma_modu64)
   DEFINE_INSTRUCTION(ma_mul32)
-  DEFINE_INSTRUCTION(ma_mulh32)
   DEFINE_INSTRUCTION(ma_mulhu32)
   DEFINE_INSTRUCTION(ma_mul64)
-  DEFINE_INSTRUCTION(ma_mulh64)
-  DEFINE_INSTRUCTION(ma_sll64)
-  DEFINE_INSTRUCTION(ma_sra64)
-  DEFINE_INSTRUCTION(ma_srl64)
-  DEFINE_INSTRUCTION(ma_sll32)
-  DEFINE_INSTRUCTION(ma_sra32)
-  DEFINE_INSTRUCTION(ma_srl32)
-  DEFINE_INSTRUCTION(ma_slt)
-  DEFINE_INSTRUCTION(ma_sltu)
-  DEFINE_INSTRUCTION(ma_sle)
-  DEFINE_INSTRUCTION(ma_sleu)
-  DEFINE_INSTRUCTION(ma_sgt)
-  DEFINE_INSTRUCTION(ma_sgtu)
-  DEFINE_INSTRUCTION(ma_sge)
-  DEFINE_INSTRUCTION(ma_sgeu)
-  DEFINE_INSTRUCTION(ma_seq)
-  DEFINE_INSTRUCTION(ma_sne)
 
-  DEFINE_INSTRUCTION2(ma_seqz)
-  DEFINE_INSTRUCTION2(ma_snez)
-  DEFINE_INSTRUCTION2(ma_neg);
-
-#undef DEFINE_INSTRUCTION2
 #undef DEFINE_INSTRUCTION
   // arithmetic based ops
   void ma_add32TestOverflow(Register rd, Register rj, Register rk,
