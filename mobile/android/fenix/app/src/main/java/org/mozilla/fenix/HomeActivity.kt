@@ -64,7 +64,6 @@ import mozilla.components.feature.contextmenu.DefaultSelectionActionDelegate
 import mozilla.components.feature.customtabs.isCustomTabIntent
 import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow
 import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow.Companion.EntrypointConfig
-import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow.Companion.INTENT_ON_COMPLETE
 import mozilla.components.feature.media.ext.findActiveMediaTab
 import mozilla.components.feature.privatemode.notification.PrivateNotificationFeature
 import mozilla.components.feature.search.BrowserStoreSearchAdapter
@@ -350,7 +349,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             ),
             onAuthRequested = { url, onCompleteAction ->
                 val intent = SupportUtils.createAuthCustomTabIntent(this, url)
-                intent.putExtra(INTENT_ON_COMPLETE, onCompleteAction)
+                intent.putExtra("OnCompleteAction", onCompleteAction)
                 startActivity(intent)
             },
         )
@@ -608,13 +607,13 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             summarizeToolbarHighlightBinding,
             components.core.summarizationSettings,
             translationsAIControllableFeatureRegistrar,
+            ipProtectionFxaAccountAuthFlow, // FIXME(IPP) move this to each UI fragment with separate entry points.
             ipProtectionPrompter,
+            components.ipProtection.storageSynchronizer,
         )
 
         if (!isCustomTabIntent(intent)) {
             lifecycle.addObserver(webExtensionPromptFeature)
-            // FIXME(IPP) move this to each UI fragment with separate entry points.
-            lifecycle.addObserver(ipProtectionFxaAccountAuthFlow)
         }
 
         if (shouldAddToRecentsScreen(intent)) {
