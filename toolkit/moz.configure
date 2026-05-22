@@ -3759,16 +3759,9 @@ set_config("MOZ_PKG_FORMAT", moz_pkg_format)
 
 
 @depends(moz_pkg_format)
+@imports(_from="mozbuild.action.package", _import="FORMAT_SUFFIX")
 def pkg_suffix(pkg_format):
-    return {
-        "TAR": ".tar",
-        "TGZ": ".tar.gz",
-        "XZ": ".tar.xz",
-        "BZ2": ".tar.bz2",
-        "ZIP": ".zip",
-        "DMG": ".dmg",
-        "APK": "",
-    }[pkg_format]
+    return FORMAT_SUFFIX[pkg_format]
 
 
 set_config("PKG_SUFFIX", pkg_suffix)
