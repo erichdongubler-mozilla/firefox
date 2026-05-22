@@ -695,6 +695,24 @@ static inline void wl_fixes_ack_global_remove(struct wl_fixes* wl_fixes,
 }
 #endif
 
+#ifndef WL_OUTPUT_RELEASE_SINCE_VERSION
+#  define WL_OUTPUT_RELEASE_SINCE_VERSION 3
+
+#  define WL_OUTPUT_RELEASE 0
+
+/**
+ * @ingroup iface_wl_output
+ *
+ * Using this request a client can tell the server that it is not going to
+ * use the output object anymore.
+ */
+static inline void wl_output_release(struct wl_output* wl_output) {
+  wl_proxy_marshal_flags((struct wl_proxy*)wl_output, WL_OUTPUT_RELEASE, NULL,
+                         wl_proxy_get_version((struct wl_proxy*)wl_output),
+                         WL_MARSHAL_FLAG_DESTROY);
+}
+#endif
+
 #ifdef __cplusplus
 }
 #endif
