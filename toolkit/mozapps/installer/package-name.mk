@@ -10,46 +10,7 @@
 ifndef PACKAGE_NAME_MK_INCLUDED
 PACKAGE_NAME_MK_INCLUDED := 1
 
-ifndef MOZ_PKG_VERSION
-MOZ_PKG_VERSION = $(MOZ_APP_VERSION)
-endif
-
-ifndef MOZ_PKG_PLATFORM
-MOZ_PKG_PLATFORM := $(TARGET_RAW_OS)-$(TARGET_RAW_CPU)
-
-ifeq ($(MOZ_BUILD_APP),mobile/android)
-MOZ_PKG_PLATFORM := android-$(TARGET_RAW_CPU)
-endif
-
-# TARGET_RAW_OS/TARGET_RAW_CPU may be unintuitive, so we hardcode some special formats
-ifeq ($(OS_ARCH),WINNT)
-ifeq ($(TARGET_CPU),x86)
-MOZ_PKG_PLATFORM := win32
-else
-ifeq ($(TARGET_CPU),aarch64)
-MOZ_PKG_PLATFORM := win64-aarch64
-else
-MOZ_PKG_PLATFORM := win64
-endif
-endif
-endif
-ifeq ($(OS_ARCH),Darwin)
-MOZ_PKG_PLATFORM := mac
-endif
-ifeq ($(TARGET_RAW_OS),linux-gnu)
-MOZ_PKG_PLATFORM := linux-$(TARGET_RAW_CPU)
-endif
-endif #MOZ_PKG_PLATFORM
-
-ifdef MOZ_PKG_SPECIAL
-MOZ_PKG_PLATFORM := $(MOZ_PKG_PLATFORM)-$(MOZ_PKG_SPECIAL)
-endif
-
 MOZ_PKG_DIR ?= $(MOZ_APP_NAME)
-
-ifndef MOZ_PKG_APPNAME
-MOZ_PKG_APPNAME = $(MOZ_APP_NAME)
-endif
 
 ifdef MOZ_SIMPLE_PACKAGE_NAME
 PKG_BASENAME := $(MOZ_SIMPLE_PACKAGE_NAME)

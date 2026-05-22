@@ -2,22 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-ifndef MOZ_PKG_FORMAT
-    ifeq ($(MOZ_WIDGET_TOOLKIT),cocoa)
-        MOZ_PKG_FORMAT = DMG
-    else ifeq ($(OS_ARCH),WINNT)
-        MOZ_PKG_FORMAT = ZIP
-    else ifeq ($(OS_ARCH),SunOS)
-        MOZ_PKG_FORMAT = XZ
-    else ifeq ($(MOZ_WIDGET_TOOLKIT),gtk)
-        MOZ_PKG_FORMAT = XZ
-    else ifeq ($(MOZ_WIDGET_TOOLKIT),android)
-        MOZ_PKG_FORMAT = APK
-    else
-        MOZ_PKG_FORMAT = TGZ
-    endif
-endif # MOZ_PKG_FORMAT
-
 ifeq (cocoa,$(MOZ_WIDGET_TOOLKIT))
 ifndef _APPNAME
 _APPNAME = $(MOZ_MACBUNDLE_NAME)
@@ -94,23 +78,19 @@ CREATE_FINAL_TAR = $(TAR) -c --owner=0 --group=0 --numeric-owner \
   --mode=go-w --exclude=.mkdir.done -f
 
 ifeq ($(MOZ_PKG_FORMAT),TAR)
-  PKG_SUFFIX	= .tar
   INNER_MAKE_PACKAGE 	= cd $(1) && $(CREATE_FINAL_TAR) - $(MOZ_PKG_DIR) > $(PACKAGE)
 endif
 
 ifeq ($(MOZ_PKG_FORMAT),TGZ)
-  PKG_SUFFIX	= .tar.gz
   INNER_MAKE_PACKAGE 	= cd $(1) && $(CREATE_FINAL_TAR) - $(MOZ_PKG_DIR) | gzip -vf9 > $(PACKAGE)
 endif
 
 ifeq ($(MOZ_PKG_FORMAT),XZ)
-  PKG_SUFFIX = .tar.xz
   # For non-shippable builds, we would rather finish the build sooner than have optimal compression.
   INNER_MAKE_PACKAGE 	= cd $(1) && $(CREATE_FINAL_TAR) - $(MOZ_PKG_DIR) | xz --compress --stdout $(if $(MOZ_PROFILE_USE),-9 --extreme) > $(PACKAGE)
 endif
 
 ifeq ($(MOZ_PKG_FORMAT),BZ2)
-  PKG_SUFFIX	= .tar.bz2
   ifeq (cocoa,$(MOZ_WIDGET_TOOLKIT))
     INNER_MAKE_PACKAGE 	= cd $(1) && $(CREATE_FINAL_TAR) - -C $(MOZ_PKG_DIR) $(_APPNAME) | bzip2 -vf > $(PACKAGE)
   else
@@ -119,7 +99,6 @@ ifeq ($(MOZ_PKG_FORMAT),BZ2)
 endif
 
 ifeq ($(MOZ_PKG_FORMAT),ZIP)
-  PKG_SUFFIX	= .zip
   INNER_MAKE_PACKAGE = $(call py_action,zip,'$(PACKAGE)' '$(MOZ_PKG_DIR)' -x '**/.mkdir.done',$(1))
 endif
 
@@ -128,8 +107,6 @@ INNER_MAKE_PACKAGE = true
 endif
 
 ifeq ($(MOZ_PKG_FORMAT),DMG)
-  PKG_SUFFIX	= .dmg
-
   PKG_DMG_SOURCE = $(MOZ_PKG_DIR)
   MOZ_PKG_MAC_DSSTORE=$(topsrcdir)/$(MOZ_BRANDING_DIRECTORY)/dsstore
   MOZ_PKG_MAC_BACKGROUND=$(topsrcdir)/$(MOZ_BRANDING_DIRECTORY)/background.png

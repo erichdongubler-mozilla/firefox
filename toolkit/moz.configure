@@ -3665,6 +3665,125 @@ option(env="MOZ_PKG_SPECIAL", nargs=1, help="Name of special moz flavor")
 set_config("MOZ_PKG_SPECIAL", depends_if("MOZ_PKG_SPECIAL")(lambda x: x[0]))
 
 
+option(env="MOZ_PKG_PLATFORM", nargs=1, help="Override the package platform name")
+
+
+@depends(target, build_project, "MOZ_PKG_PLATFORM", "MOZ_PKG_SPECIAL")
+def moz_pkg_platform(target, build_project, override, special):
+    if override:
+        platform = override[0]
+    else:
+        # target.raw_os and target.raw_cpu can be unintuitive; hardcode
+        # the well-known platforms.
+        platform = f"{target.raw_os}-{target.raw_cpu}"
+        if build_project == "mobile/android":
+            platform = f"android-{target.raw_cpu}"
+        if target.kernel == "WINNT":
+            if target.cpu == "x86":
+                platform = "win32"
+            elif target.cpu == "aarch64":
+                platform = "win64-aarch64"
+            else:
+                platform = "win64"
+        if target.kernel == "Darwin":
+            platform = "mac"
+        if target.raw_os == "linux-gnu":
+            platform = f"linux-{target.raw_cpu}"
+    if special:
+        platform = f"{platform}-{special[0]}"
+    return platform
+
+
+set_config("MOZ_PKG_PLATFORM", moz_pkg_platform)
+
+
+option(
+    env="MOZ_PKG_APPNAME",
+    nargs=1,
+    help="Override the application name used in package file names",
+)
+
+
+@depends("MOZ_PKG_APPNAME", moz_app_name)
+def moz_pkg_appname(override, app_name):
+    if override:
+        return override[0]
+    return app_name
+
+
+set_config("MOZ_PKG_APPNAME", moz_pkg_appname)
+
+
+option(
+    env="MOZ_PKG_VERSION",
+    nargs=1,
+    help="Override the version used in package file names",
+)
+
+
+@depends("MOZ_PKG_VERSION", milestone.app_version)
+def moz_pkg_version(override, app_version):
+    if override:
+        return override[0]
+    return app_version
+
+
+set_config("MOZ_PKG_VERSION", moz_pkg_version)
+
+
+option(
+    env="MOZ_PKG_FORMAT",
+    nargs=1,
+    help="Override the package container format (TAR, TGZ, XZ, BZ2, ZIP, DMG, APK)",
+)
+
+
+@depends("MOZ_PKG_FORMAT", target, toolkit)
+def moz_pkg_format(override, target, toolkit):
+    if override:
+        return override[0]
+    if toolkit == "cocoa":
+        return "DMG"
+    if target.kernel == "WINNT":
+        return "ZIP"
+    if target.kernel == "SunOS":
+        return "XZ"
+    if toolkit == "gtk":
+        return "XZ"
+    if toolkit == "android":
+        return "APK"
+    return "TGZ"
+
+
+set_config("MOZ_PKG_FORMAT", moz_pkg_format)
+
+
+@depends(moz_pkg_format)
+def pkg_suffix(pkg_format):
+    return {
+        "TAR": ".tar",
+        "TGZ": ".tar.gz",
+        "XZ": ".tar.xz",
+        "BZ2": ".tar.bz2",
+        "ZIP": ".zip",
+        "DMG": ".dmg",
+        "APK": "",
+    }[pkg_format]
+
+
+set_config("PKG_SUFFIX", pkg_suffix)
+
+
+@depends("MOZ_DEV_EDITION")
+def moz_langpack_eid_host(dev_edition):
+    if dev_edition:
+        return "devedition.mozilla.org"
+    return "firefox.mozilla.org"
+
+
+set_config("MOZ_LANGPACK_EID_HOST", moz_langpack_eid_host)
+
+
 # Smart card support
 # ==============================================================
 @depends(target)
