@@ -72,7 +72,6 @@ import org.mozilla.fenix.helpers.SessionLoadedIdlingResource
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
-import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeVeryShort
 import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.helpers.TestHelper.appName
 import org.mozilla.fenix.helpers.TestHelper.mDevice
@@ -1398,6 +1397,31 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyETPShieldIconIsDisplayed: Verified that the \"Shield icon\" was displayed")
     }
 
+    fun verifyTheSummarizeCFR(shouldBeDisplayed: Boolean = true) {
+        if (shouldBeDisplayed) {
+            Log.i(TAG, "verifyTheSummarizeCFR: Trying to verify the \"Shake your device to summarize this page in seconds\" CFR message is displayed.")
+            composeTestRule.summarizeCFRMessage().assertIsDisplayed()
+            Log.i(TAG, "verifyTheSummarizeCFR: Verified the \"Shake your device to summarize this page in seconds\" CFR message is displayed.")
+            Log.i(TAG, "verifyTheSummarizeCFR: Trying to verify the \"Shake your device to summarize this page in seconds\" CFR dismiss button is displayed.")
+            composeTestRule.summarizeCFRButton().assertIsDisplayed()
+            Log.i(TAG, "verifyTheSummarizeCFR: Verified the \"Shake your device to summarize this page in seconds\" CFR dismiss button is displayed.")
+        } else {
+            Log.i(TAG, "verifyTheSummarizeCFR: Trying to verify the \"Shake your device to summarize this page in seconds\" CFR message is NOT displayed.")
+            composeTestRule.summarizeCFRMessage().assertDoesNotExist()
+            Log.i(TAG, "verifyTheSummarizeCFR: Verified the \"Shake your device to summarize this page in seconds\" CFR message is NOT displayed.")
+        }
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    fun clickTheDismissButtonOnSummarizeCFR() {
+        Log.i(TAG, "clickTheDismissButtonOnSummarizeCFR: Waiting for the summarize CFR dismiss button to exist")
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("cfr.dismiss"), waitingTime)
+        Log.i(TAG, "clickTheDismissButtonOnSummarizeCFR: Waited for the summarize CFR dismiss button to exist")
+        Log.i(TAG, "clickTheDismissButtonOnSummarizeCFR: Trying to click the \"X\" button on the summarize CFR")
+        composeTestRule.summarizeCFRButton().performClick()
+        Log.i(TAG, "clickTheDismissButtonOnSummarizeCFR: Clicked the \"X\" button on the summarize CFR")
+    }
+
     class Transition(private val composeTestRule: ComposeTestRule) {
         fun openThreeDotMenu(interact: ThreeDotMenuMainRobot.() -> Unit): ThreeDotMenuMainRobot.Transition {
             openMainMenuAndAwaitBottomSheet(composeTestRule)
@@ -1861,3 +1885,7 @@ private fun contextMenuShareLink() =
 // Open in external app option
 private fun contextMenuOpenInExternalApp() =
     itemContainingText(getStringResource(contextmenuR.string.mozac_feature_contextmenu_open_link_in_external_app))
+
+private fun ComposeTestRule.summarizeCFRMessage() = onNodeWithText(getStringResource(R.string.browser_toolbar_summarize_cfr_description))
+
+private fun ComposeTestRule.summarizeCFRButton() = onNodeWithTag("cfr.dismiss")

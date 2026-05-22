@@ -67,6 +67,7 @@ class HomeActivityTestRule(
         isTermsOfServiceAccepted: Boolean = true,
         openLinksInExternalApp: OpenLinksInApp = getOpenLinksInApp(settings),
         hasSeenShakeToSummarizeToolbarCfr: Boolean = true,
+        shakeToSummarizeFeatureFlagEnabled: Boolean = settings.shakeToSummarizeFeatureFlagEnabled,
         isPrivateModeAndStoriesEntryPointEnabled: Boolean = false,
         shouldUseExpandedToolbar: Boolean = false,
         nativeShareSheetEnabled: Boolean = false,
@@ -90,6 +91,7 @@ class HomeActivityTestRule(
         this.isTermsOfServiceAccepted = isTermsOfServiceAccepted
         this.openLinksInExternalApp = openLinksInExternalApp
         this.hasSeenShakeToSummarizeToolbarCfr = hasSeenShakeToSummarizeToolbarCfr
+        this.shakeToSummarizeFeatureFlagEnabled = shakeToSummarizeFeatureFlagEnabled
         this.isPrivateModeAndStoriesEntryPointEnabled = isPrivateModeAndStoriesEntryPointEnabled
         this.shouldUseExpandedToolbar = shouldUseExpandedToolbar
         this.nativeShareSheetEnabled = nativeShareSheetEnabled
@@ -202,6 +204,7 @@ class HomeActivityIntentTestRule internal constructor(
         openLinksInExternalApp: OpenLinksInApp = getOpenLinksInApp(settings),
         tabManagerOpeningAnimationEnabled: Boolean = false,
         hasSeenShakeToSummarizeToolbarCfr: Boolean = true,
+        shakeToSummarizeFeatureFlagEnabled: Boolean = settings.shakeToSummarizeFeatureFlagEnabled,
         isPrivateModeAndStoriesEntryPointEnabled: Boolean = false,
         shouldUseExpandedToolbar: Boolean = false,
         nativeShareSheetEnabled: Boolean = false,
@@ -226,6 +229,7 @@ class HomeActivityIntentTestRule internal constructor(
         this.openLinksInExternalApp = openLinksInExternalApp
         this.tabManagerOpeningAnimationEnabled = tabManagerOpeningAnimationEnabled
         this.hasSeenShakeToSummarizeToolbarCfr = hasSeenShakeToSummarizeToolbarCfr
+        this.shakeToSummarizeFeatureFlagEnabled = shakeToSummarizeFeatureFlagEnabled
         this.isPrivateModeAndStoriesEntryPointEnabled = isPrivateModeAndStoriesEntryPointEnabled
         this.shouldUseExpandedToolbar = shouldUseExpandedToolbar
         this.nativeShareSheetEnabled = nativeShareSheetEnabled

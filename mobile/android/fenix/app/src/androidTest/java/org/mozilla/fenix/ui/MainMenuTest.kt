@@ -28,6 +28,7 @@ import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MatcherHelper
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MockBrowserDataHelper
+import org.mozilla.fenix.helpers.TestAssetHelper.articleSummaryAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.firstForeignWebPageAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.pdfFormAsset
@@ -64,6 +65,8 @@ class MainMenuTest {
                 skipOnboarding = true,
                 isMenuRedesignCFREnabled = false,
                 isPageLoadTranslationsPromptEnabled = false,
+                shakeToSummarizeFeatureFlagEnabled = true,
+                hasSeenShakeToSummarizeToolbarCfr = false,
             ),
         ) { it.activity }
 
@@ -1373,6 +1376,39 @@ class MainMenuTest {
         }.openThreeDotMenu {
             clickTheMoreButton()
             verifyMoreMainMenuItems()
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4036009
+    @SmokeTest
+    @Test
+    fun verifyTheMoreMainMenuSummarizePageButtonTest() {
+        val articlePage = mockWebServer.articleSummaryAsset
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(articlePage.url) {
+            waitForPageToLoad()
+            clickTheDismissButtonOnSummarizeCFR()
+        }.openThreeDotMenu {
+            clickTheMoreButton()
+            verifySummarizePageButton()
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4036011
+    @SmokeTest
+    @Test
+    fun verifyTheMoreMainMenuSummarizePageButtonFunctionalityTest() {
+        val articlePage = mockWebServer.articleSummaryAsset
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(articlePage.url) {
+            waitForPageToLoad()
+            clickTheDismissButtonOnSummarizeCFR()
+        }.openThreeDotMenu {
+            clickTheMoreButton()
+            verifySummarizePageButton()
+        }.clickSummarizePageButton {
+            composeTestRule.waitForIdle()
+            verifyTheSummarizedBottomSheet()
         }
     }
 }

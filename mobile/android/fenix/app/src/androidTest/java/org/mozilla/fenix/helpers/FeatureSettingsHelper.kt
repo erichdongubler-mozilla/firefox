@@ -125,6 +125,11 @@ interface FeatureSettingsHelper {
     var hasSeenShakeToSummarizeToolbarCfr: Boolean
 
     /**
+     * Enable or disable the shake to summarize feature flag.
+     */
+    var shakeToSummarizeFeatureFlagEnabled: Boolean
+
+    /**
      * Enable or disable expanded toolbar layout.
      */
     var shouldUseExpandedToolbar: Boolean

@@ -70,6 +70,7 @@ class SettingsGeneralTest {
             verifyAutofillButton()
             verifyAccessibilityButton()
             verifyLanguageButton()
+            verifyPageSummariesButton()
             verifySetAsDefaultBrowserButton()
             verifyDefaultBrowserToggle(false)
         }
