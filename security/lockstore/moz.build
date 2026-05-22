@@ -5,26 +5,6 @@
 with Files("**"):
     BUG_COMPONENT = ("Core", "Security")
 
-XPIDL_SOURCES += [
-    "nsILockstore.idl",
-]
-
-XPIDL_MODULE = "lockstore"
-
-XPCOM_MANIFESTS += [
-    "components.conf",
-]
-
-EXPORTS += [
-    "LockstoreService.h",
-]
-
-UNIFIED_SOURCES += [
-    "LockstoreService.cpp",
-]
-
-FINAL_LIBRARY = "xul"
-
 if CONFIG["COMPILE_ENVIRONMENT"]:
     CbindgenHeader(
         "lockstore_ffi_generated.h", inputs=["/security/lockstore/lockstore_ffi"]
@@ -34,6 +14,4 @@ if CONFIG["COMPILE_ENVIRONMENT"]:
         "!lockstore_ffi_generated.h",
     ]
 
-TEST_DIRS += ["gtest", "tests/gtest"]
-
-XPCSHELL_TESTS_MANIFESTS += ["tests/unit/xpcshell.toml"]
+TEST_DIRS += ["gtest"]
