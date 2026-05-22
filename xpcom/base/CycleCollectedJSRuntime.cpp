@@ -162,21 +162,21 @@ struct NoteWeakMapChildrenTracer
 
  private:
   template <typename T>
-  void onEdge(T** aThingPtr, const char* aName);
+  bool onEdge(T** aThingPtr, const char* aName);
   friend class js::GenericTracerImpl<NoteWeakMapChildrenTracer>;
 };
 
 template <typename T>
-void NoteWeakMapChildrenTracer::onEdge(T** aThingPtr, const char* aName) {
+bool NoteWeakMapChildrenTracer::onEdge(T** aThingPtr, const char* aName) {
   if constexpr (std::is_same_v<T, JSString>) {
-    return;
+    return true;
   }
 
   T* thing = *aThingPtr;
   MOZ_ASSERT(thing);
   if (JS::GCThingIsMarkedGrayInCC(js::gc::ToCell(thing)) &&
       !mCb.WantAllTraces()) {
-    return;
+    return true;
   }
 
   JS::GCCellPtr cellPtr(thing);
@@ -186,6 +186,8 @@ void NoteWeakMapChildrenTracer::onEdge(T** aThingPtr, const char* aName) {
   } else {
     JS::TraceChildren(this, cellPtr);
   }
+
+  return true;
 }
 
 struct NoteWeakMapsTracer : public js::WeakMapTracer {
@@ -406,27 +408,27 @@ struct TraversalTracer : public js::GenericTracerImpl<TraversalTracer> {
 
  private:
   template <typename T>
-  void onEdge(T** aThingPtr, const char* aName);
+  bool onEdge(T** aThingPtr, const char* aName);
   friend class js::GenericTracerImpl<TraversalTracer>;
 };
 
 template <typename T>
-void TraversalTracer::onEdge(T** aThingPtr, const char* aName) {
+bool TraversalTracer::onEdge(T** aThingPtr, const char* aName) {
   // Strings can never be gray and don't participate in the CC graph.
   if constexpr (std::is_same_v<T, JSString>) {
-    return;
+    return true;
   }
 
   // Skip null edges.
   T* thing = *aThingPtr;
   if (!thing) {
-    return;
+    return true;
   }
 
   // Don't traverse non-gray objects, unless we want all traces.
   if (!JS::GCThingIsMarkedGrayInCC(js::gc::ToCell(thing)) &&
       !mCb.WantAllTraces()) {
-    return;
+    return true;
   }
 
   /*
@@ -443,7 +445,7 @@ void TraversalTracer::onEdge(T** aThingPtr, const char* aName) {
       mCb.NoteNextEdgeName(buffer);
     }
     mCb.NoteJSChild(JS::GCCellPtr(thing));
-    return;
+    return true;
   }
 
   // Allow re-use of this tracer inside trace callback.
@@ -456,6 +458,8 @@ void TraversalTracer::onEdge(T** aThingPtr, const char* aName) {
   } else {
     JS::TraceChildren(this, JS::GCCellPtr(thing));
   }
+
+  return true;
 }
 
 /*
