@@ -100,19 +100,20 @@ size_t TenuringTracer::getPromotedSize() const {
 
 size_t TenuringTracer::getPromotedCells() const { return promotedCells; }
 
-void TenuringTracer::onObjectEdge(JSObject** objp, const char* name) {
+bool TenuringTracer::onObjectEdge(JSObject** objp, const char* name) {
   JSObject* obj = *objp;
   if (!obj) {
-    return;
+    return true;
   }
 
   if (!nursery_.inCollectedRegion(obj)) {
     MOZ_ASSERT(!obj->isForwarded());
-    return;
+    return true;
   }
 
   *objp = promoteOrForward(obj);
   MOZ_ASSERT(!(*objp)->isForwarded());
+  return true;
 }
 
 JSObject* TenuringTracer::promoteOrForward(JSObject* obj) {
@@ -149,17 +150,18 @@ JSObject* TenuringTracer::promoteObject(JSObject* obj) {
   return promoteObjectSlow(obj);
 }
 
-void TenuringTracer::onStringEdge(JSString** strp, const char* name) {
+bool TenuringTracer::onStringEdge(JSString** strp, const char* name) {
   JSString* str = *strp;
   if (!str) {
-    return;
+    return true;
   }
 
   if (!str || !nursery_.inCollectedRegion(str)) {
-    return;
+    return true;
   }
 
   *strp = promoteOrForward(str);
+  return true;
 }
 
 JSString* TenuringTracer::promoteOrForward(JSString* str) {
@@ -177,13 +179,14 @@ JSString* TenuringTracer::promoteOrForward(JSString* str) {
   return promoteString(str);
 }
 
-void TenuringTracer::onBigIntEdge(JS::BigInt** bip, const char* name) {
+bool TenuringTracer::onBigIntEdge(JS::BigInt** bip, const char* name) {
   JS::BigInt* bi = *bip;
   if (!bi || !nursery_.inCollectedRegion(bi)) {
-    return;
+    return true;
   }
 
   *bip = promoteOrForward(bi);
+  return true;
 }
 
 JS::BigInt* TenuringTracer::promoteOrForward(JS::BigInt* bi) {
@@ -201,13 +204,14 @@ JS::BigInt* TenuringTracer::promoteOrForward(JS::BigInt* bi) {
   return promoteBigInt(bi);
 }
 
-void TenuringTracer::onGetterSetterEdge(GetterSetter** gsp, const char* name) {
+bool TenuringTracer::onGetterSetterEdge(GetterSetter** gsp, const char* name) {
   GetterSetter* gs = *gsp;
   if (!gs || !nursery_.inCollectedRegion(gs)) {
-    return;
+    return true;
   }
 
   *gsp = promoteOrForward(gs);
+  return true;
 }
 
 GetterSetter* TenuringTracer::promoteOrForward(GetterSetter* gs) {
@@ -226,15 +230,31 @@ GetterSetter* TenuringTracer::promoteOrForward(GetterSetter* gs) {
 }
 
 // Ignore edges to cell kinds that are not allocated in the nursery.
-void TenuringTracer::onSymbolEdge(JS::Symbol** symp, const char* name) {}
-void TenuringTracer::onScriptEdge(BaseScript** scriptp, const char* name) {}
-void TenuringTracer::onShapeEdge(Shape** shapep, const char* name) {}
-void TenuringTracer::onRegExpSharedEdge(RegExpShared** sharedp,
-                                        const char* name) {}
-void TenuringTracer::onBaseShapeEdge(BaseShape** basep, const char* name) {}
-void TenuringTracer::onPropMapEdge(PropMap** mapp, const char* name) {}
-void TenuringTracer::onJitCodeEdge(jit::JitCode** codep, const char* name) {}
-void TenuringTracer::onScopeEdge(Scope** scopep, const char* name) {}
+bool TenuringTracer::onSymbolEdge(JS::Symbol** symp, const char* name) {
+  return true;
+}
+bool TenuringTracer::onScriptEdge(BaseScript** scriptp, const char* name) {
+  return true;
+}
+bool TenuringTracer::onShapeEdge(Shape** shapep, const char* name) {
+  return true;
+}
+bool TenuringTracer::onRegExpSharedEdge(RegExpShared** sharedp,
+                                        const char* name) {
+  return true;
+}
+bool TenuringTracer::onBaseShapeEdge(BaseShape** basep, const char* name) {
+  return true;
+}
+bool TenuringTracer::onPropMapEdge(PropMap** mapp, const char* name) {
+  return true;
+}
+bool TenuringTracer::onJitCodeEdge(jit::JitCode** codep, const char* name) {
+  return true;
+}
+bool TenuringTracer::onScopeEdge(Scope** scopep, const char* name) {
+  return true;
+}
 
 void TenuringTracer::traverse(JS::Value* thingp) {
   MOZ_ASSERT(!nursery().inCollectedRegion(thingp));
@@ -1731,22 +1751,22 @@ MinorSweepingTracer::MinorSweepingTracer(JSRuntime* rt)
 }
 
 template <typename T>
-inline void MinorSweepingTracer::onEdge(T** thingp, const char* name) {
+inline bool MinorSweepingTracer::onEdge(T** thingp, const char* name) {
   T* thing = *thingp;
   if (!thing) {
-    return;
+    return true;
   }
 
   if (thing->isTenured()) {
     MOZ_ASSERT(!IsForwarded(thing));
-    return;
+    return true;
   }
 
   MOZ_ASSERT(runtime()->gc.nursery().inCollectedRegion(thing));
   if (IsForwarded(thing)) {
     *thingp = Forwarded(thing);
-    return;
+    return true;
   }
 
-  *thingp = nullptr;
+  return false;
 }

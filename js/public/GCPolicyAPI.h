@@ -24,17 +24,18 @@
 //
 //   static bool traceWeak(T* tp)
 //
-//     Update any GC edges if their target has been moved. Remove or clear any
-//     edges to GC things that are going to be collected by an incremental
-//     GC. Return false if this edge itself should be removed.
+//     Update any GC edges if their target has been moved. Return false if the
+//     target of the edge should be be removed.
 //
-//     For GC thing pointers, this will clear the edge and return false if the
-//     target is going to be collected. In general, for structures this should
-//     call |traceWeak| on internal GC edges and return whether the result was
-//     true for all of them.
+//     For edges to GC things, this will return false if the target will be
+//     collected in the current GC. In general, for structures this should call
+//     |traceWeak| on internal GC edges and return whether the result was true
+//     for all of them.
 //
 //     Containers can use this to remove entries containing GC things that are
 //     going to be collected (e.g. GCVector).
+//
+//     For non-GC thing edges (including nullptr edges) this will return true.
 //
 //   static bool isValid(const T& t)
 //
