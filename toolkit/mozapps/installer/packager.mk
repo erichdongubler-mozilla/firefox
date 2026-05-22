@@ -156,11 +156,7 @@ endif
 GARBAGE += make-package
 
 make-sourcestamp-file::
-	$(NSINSTALL) -D $(DIST)/$(PKG_PATH)
-	@awk '$$2 == "MOZ_BUILDID" {print $$3}' $(DEPTH)/buildid.h > $(MOZ_SOURCESTAMP_FILE)
-ifdef MOZ_INCLUDE_SOURCE_INFO
-	@awk '$$2 == "MOZ_SOURCE_URL" {print $$3}' $(DEPTH)/source-repo.h >> $(MOZ_SOURCESTAMP_FILE)
-endif
+	$(call py_action,make_sourcestamp_file,--output $(MOZ_SOURCESTAMP_FILE) --buildid-header $(DEPTH)/buildid.h $(if $(MOZ_INCLUDE_SOURCE_INFO),--source-repo-header $(DEPTH)/source-repo.h))
 
 # The install target will install the application to prefix/lib/appname-version
 install:: prepare-package
