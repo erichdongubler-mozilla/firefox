@@ -248,6 +248,7 @@ class ObjectFuse {
   // We should sweep ObjectFuseMap entries based on the key (the object) but
   // never based on the ObjectFuse. We do need to trace weak pointers in the
   // DependentIonScriptSets.
+  bool needsSweep(JSTracer* trc) const { return false; }
   bool traceWeak(JSTracer* trc) {
     dependencies_.traceWeak(trc);
     return true;

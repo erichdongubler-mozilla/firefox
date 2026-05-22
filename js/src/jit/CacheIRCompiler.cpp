@@ -1395,7 +1395,7 @@ bool jit::TraceWeakCacheIRStub(JSTracer* trc, T* stub,
 
   // Trace all fields before returning because this stub can be traced again
   // later through TraceBaselineStubFrame.
-  bool anyDead = false;
+  bool isDead = false;
 
   uint32_t field = 0;
   size_t offset = 0;
@@ -1405,46 +1405,42 @@ bool jit::TraceWeakCacheIRStub(JSTracer* trc, T* stub,
       case Type::WeakShape: {
         WeakHeapPtr<Shape*>& shapeField =
             stubInfo->getStubField<T, Type::WeakShape>(stub, offset);
-        bool isLive =
-            TraceOrClearWeakEdge(trc, &shapeField, "cacheir-weak-shape");
-        if (!isLive) {
-          anyDead = true;
+        auto r = TraceWeakEdge(trc, &shapeField, "cacheir-weak-shape");
+        if (r.isDead()) {
+          isDead = true;
         }
         break;
       }
       case Type::WeakObject: {
         WeakHeapPtr<JSObject*>& objectField =
             stubInfo->getStubField<T, Type::WeakObject>(stub, offset);
-        bool isLive =
-            TraceOrClearWeakEdge(trc, &objectField, "cacheir-weak-object");
-        if (!isLive) {
-          anyDead = true;
+        auto r = TraceWeakEdge(trc, &objectField, "cacheir-weak-object");
+        if (r.isDead()) {
+          isDead = true;
         }
         break;
       }
       case Type::WeakBaseScript: {
         WeakHeapPtr<BaseScript*>& scriptField =
             stubInfo->getStubField<T, Type::WeakBaseScript>(stub, offset);
-        bool isLive =
-            TraceOrClearWeakEdge(trc, &scriptField, "cacheir-weak-script");
-        if (!isLive) {
-          anyDead = true;
+        auto r = TraceWeakEdge(trc, &scriptField, "cacheir-weak-script");
+        if (r.isDead()) {
+          isDead = true;
         }
         break;
       }
       case Type::WeakValue: {
         WeakHeapPtr<Value>& valueField =
             stubInfo->getStubField<T, Type::WeakValue>(stub, offset);
-        bool isLive =
-            TraceOrClearWeakEdge(trc, &valueField, "cacheir-weak-value");
-        if (!isLive) {
-          anyDead = true;
+        auto r = TraceWeakEdge(trc, &valueField, "cacheir-weak-value");
+        if (r.isDead()) {
+          isDead = true;
         }
         break;
       }
       case Type::Limit:
         // Done.
-        return !anyDead;
+        return !isDead;
       case Type::RawInt32:
       case Type::RawPointer:
       case Type::ICScript:

@@ -1404,11 +1404,7 @@ JS_PUBLIC_API void JS_RemoveWeakPointerCompartmentCallback(
 
 JS_PUBLIC_API bool JS_UpdateWeakPointerAfterGC(JSTracer* trc,
                                                JS::Heap<JSObject*>* objp) {
-  bool result = TraceWeakEdge(trc, objp);
-  if (!result) {
-    objp->unbarrieredSet(nullptr);
-  }
-  return result;
+  return TraceWeakEdge(trc, objp);
 }
 
 JS_PUBLIC_API bool JS_UpdateWeakPointerAfterGCUnbarriered(JSTracer* trc,

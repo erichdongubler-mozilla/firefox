@@ -865,17 +865,17 @@ static inline void MaybeUnmarkGraySymbol(JSRuntime* runtime,
 
 template <uint32_t opts>
 template <typename T>
-bool MarkingTracerT<opts>::onEdge(T** thingp, const char* name) {
+void MarkingTracerT<opts>::onEdge(T** thingp, const char* name) {
   T* thing = *thingp;
   if (!thing) {
-    return true;
+    return;
   }
 
   // Do per-type marking precondition checks.
   if (!ShouldMark(markColor(), thing)) {
     MOZ_ASSERT(gc::detail::GetEffectiveColor(gcMarker(), thing) ==
                js::gc::CellColor::Black);
-    return true;
+    return;
   }
 
   MOZ_ASSERT_IF(IsOwnedByOtherRuntime(this->runtime(), thing),
@@ -899,17 +899,15 @@ bool MarkingTracerT<opts>::onEdge(T** thingp, const char* name) {
     // Mark the compartment as live.
     SetCompartmentHasMarkedCells(thing);
   }
-
-  return true;
 }
 
 #define INSTANTIATE_ONEDGE_METHOD(name, type, _1, _2)                 \
-  template bool MarkingTracerT<MarkingOptions::None>::onEdge<type>(   \
+  template void MarkingTracerT<MarkingOptions::None>::onEdge<type>(   \
       type * *thingp, const char* name);                              \
-  template bool                                                       \
+  template void                                                       \
   MarkingTracerT<MarkingOptions::MarkImplicitEdges>::onEdge<type>(    \
       type * *thingp, const char* name);                              \
-  template bool                                                       \
+  template void                                                       \
   MarkingTracerT<MarkingOptions::MarkRootCompartments>::onEdge<type>( \
       type * *thingp, const char* name);
 JS_FOR_EACH_TRACEKIND(INSTANTIATE_ONEDGE_METHOD)
@@ -3010,16 +3008,16 @@ SweepingTracer::SweepingTracer(JSRuntime* rt)
                         JS::WeakMapTraceAction::TraceKeysAndValues) {}
 
 template <typename T>
-inline bool SweepingTracer::onEdge(T** thingp, const char* name) {
+inline void SweepingTracer::onEdge(T** thingp, const char* name) {
   T* thing = *thingp;
   if (!thing) {
-    return true;
+    return;
   }
 
   CheckIsMarkedThing(thing);
 
   if (!thing->isTenured()) {
-    return true;
+    return;
   }
 
   TenuredCell* cell = &thing->asTenured();
@@ -3047,9 +3045,10 @@ inline bool SweepingTracer::onEdge(T** thingp, const char* name) {
   //  - atoms
   //  - the jitcode map
   //  - the mark queue
-  bool sweepZone =
-      zone->isGCSweeping() || (zone->isAtomsZone() && zone->isGCMarking());
-  return !(sweepZone && !cell->isMarkedAny());
+  if ((zone->isGCSweeping() || (zone->isAtomsZone() && zone->isGCMarking())) &&
+      !cell->isMarkedAny()) {
+    *thingp = nullptr;
+  }
 }
 
 namespace js::gc {
@@ -3187,11 +3186,10 @@ class js::gc::UnmarkGrayTracer final
   void onChild(T* thing);
 
   template <typename T>
-  bool onEdge(T** thingp, const char* name) {
+  void onEdge(T** thingp, const char* name) {
     if (T* thing = *thingp) {
       onChild(thing);
     }
-    return true;
   }
   friend class js::GenericTracerImpl<UnmarkGrayTracer<markingOptions>>;
 };

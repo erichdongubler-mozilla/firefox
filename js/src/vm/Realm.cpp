@@ -342,7 +342,6 @@ void Realm::traceWeakGlobalEdge(JSTracer* trc) {
   // If the global is dead, free its GlobalObjectData.
   auto result = TraceWeakEdge(trc, &global_, "Realm::global_");
   if (result.isDead()) {
-    global_ = nullptr;
     result.initialTarget()->releaseData(runtime_->gcContext());
   }
 }

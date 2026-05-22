@@ -169,7 +169,7 @@ class NonShrinkingValueVector
       if (value.isGCThing()) {
         Zone* zone = value.toGCThing()->zoneFromAnyThread();
         if (zone->isGCSweeping() || zone->isGCCompacting()) {
-          TraceOrClearWeakEdge(trc, &value, "NonShrinkingValueVector element");
+          TraceWeakEdge(trc, &value, "NonShrinkingValueVector element");
         }
       }
     }

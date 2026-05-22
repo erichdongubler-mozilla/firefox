@@ -508,16 +508,16 @@ void JitZone::traceWeak(JSTracer* trc, Zone* zone) {
   MOZ_ASSERT(this == zone->jitZone());
 
   for (WeakHeapPtr<JitCode*>& stub : stubs_) {
-    TraceOrClearWeakEdge(trc, &stub, "JitZone::stubs_");
+    TraceWeakEdge(trc, &stub, "JitZone::stubs_");
   }
 
   baselineCacheIRStubCodes_.traceWeak(trc);
   inlinedCompilations_.traceWeak(trc);
 
-  TraceOrClearWeakEdge(trc, &lastStubFoldingBailoutInner_,
-                       "JitZone::lastStubFoldingBailoutInner_");
-  TraceOrClearWeakEdge(trc, &lastStubFoldingBailoutOuter_,
-                       "JitZone::lastStubFoldingBailoutOuter_");
+  TraceWeakEdge(trc, &lastStubFoldingBailoutInner_,
+                "JitZone::lastStubFoldingBailoutInner_");
+  TraceWeakEdge(trc, &lastStubFoldingBailoutOuter_,
+                "JitZone::lastStubFoldingBailoutOuter_");
 }
 
 void JitZone::traceScriptTableRoots(JSTracer* trc) {

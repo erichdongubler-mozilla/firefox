@@ -106,7 +106,8 @@ typename PtrBaseGCType<T>::type* ConvertToBase(T* thingp) {
   MOZ_ALWAYS_INLINE bool TraceEdgeInternal(JSTracer* trc, type** thingp, \
                                            const char* name) {           \
     CheckTracedThing(trc, *thingp);                                      \
-    return trc->on##name##Edge(thingp, name);                            \
+    trc->on##name##Edge(thingp, name);                                   \
+    return *thingp;                                                      \
   }
 JS_FOR_EACH_TRACEKIND(DEFINE_TRACE_FUNCTION)
 #undef DEFINE_TRACE_FUNCTION
@@ -146,14 +147,14 @@ void AssertShouldMarkInZone(GCMarker* marker, T* thing) {}
 template <typename T>
 inline void TraceEdge(JSTracer* trc, const BarrieredBase<T>* thingp,
                       const char* name) {
-  auto* basep = gc::ConvertToBase(thingp->unbarrieredAddress());
-  MOZ_ALWAYS_TRUE(gc::TraceEdgeInternal(trc, basep, name));
+  gc::TraceEdgeInternal(trc, gc::ConvertToBase(thingp->unbarrieredAddress()),
+                        name);
 }
 
 template <typename T>
 inline void TraceEdge(JSTracer* trc, WeakHeapPtr<T>* thingp, const char* name) {
-  auto* basep = gc::ConvertToBase(thingp->unbarrieredAddress());
-  MOZ_ALWAYS_TRUE(gc::TraceEdgeInternal(trc, basep, name));
+  gc::TraceEdgeInternal(trc, gc::ConvertToBase(thingp->unbarrieredAddress()),
+                        name);
 }
 
 template <class BC, class T>
@@ -161,8 +162,7 @@ inline void TraceCellHeaderEdge(JSTracer* trc,
                                 gc::CellWithTenuredGCPointer<BC, T>* thingp,
                                 const char* name) {
   T* thing = thingp->headerPtr();
-  auto* basep = gc::ConvertToBase(&thing);
-  MOZ_ALWAYS_TRUE(gc::TraceEdgeInternal(trc, basep, name));
+  gc::TraceEdgeInternal(trc, gc::ConvertToBase(&thing), name);
   if (thing != thingp->headerPtr()) {
     thingp->unbarrieredSetHeaderPtr(thing);
   }
@@ -172,8 +172,7 @@ template <class T>
 inline void TraceCellHeaderEdge(JSTracer* trc, gc::CellWithGCPointer<T>* thingp,
                                 const char* name) {
   T* thing = thingp->headerPtr();
-  auto* basep = gc::ConvertToBase(&thing);
-  MOZ_ALWAYS_TRUE(gc::TraceEdgeInternal(trc, basep, name));
+  gc::TraceEdgeInternal(trc, gc::ConvertToBase(&thing), name);
   if (thing != thingp->headerPtr()) {
     thingp->unbarrieredSetHeaderPtr(thing);
   }
@@ -186,8 +185,7 @@ inline void TraceCellHeaderEdge(JSTracer* trc, gc::CellWithGCPointer<T>* thingp,
 template <typename T>
 inline void TraceRoot(JSTracer* trc, T* thingp, const char* name) {
   gc::AssertRootMarkingPhase(trc);
-  auto* basep = gc::ConvertToBase(thingp);
-  MOZ_ALWAYS_TRUE(gc::TraceEdgeInternal(trc, basep, name));
+  gc::TraceEdgeInternal(trc, gc::ConvertToBase(thingp), name);
 }
 
 template <typename T>
@@ -220,17 +218,16 @@ void BufferHolder<T>::trace(JSTracer* trc) {
 template <typename T>
 inline void TraceManuallyBarrieredEdge(JSTracer* trc, T* thingp,
                                        const char* name) {
-  auto* basep = gc::ConvertToBase(thingp);
-  MOZ_ALWAYS_TRUE(gc::TraceEdgeInternal(trc, basep, name));
+  gc::TraceEdgeInternal(trc, gc::ConvertToBase(thingp), name);
 }
 
 // The result of tracing a weak edge, which can be either:
 //
-//  - the target is a dead GC thing
-//  - the target is alive or not a GC thing (and the edge may have been updated)
+//  - the target is dead (and the edge has been cleared), or
+//  - the target is alive (and the edge may have been updated)
 //
-// This includes the initial and final values of the edge to allow cleanup if it
-// was updated.
+// This includes the initial and final values of the edge to allow cleanup if
+// the target is dead or access to the referent if it is alive.
 template <typename T>
 struct TraceWeakResult {
   const bool live_;
@@ -239,7 +236,7 @@ struct TraceWeakResult {
 
   bool isLive() const { return live_; }
   bool isDead() const { return !live_; }
-  bool wasMoved() const { return final_ != initial_; }
+  bool wasMoved() const { return isLive() && final_ != initial_; }
 
   MOZ_IMPLICIT operator bool() const { return isLive(); }
 
@@ -251,11 +248,11 @@ struct TraceWeakResult {
   }
 };
 
-// Trace through a weak edge. Returns a TraceWeakResult to describe what
-// happened and allow cleanup.
+// Trace through a weak edge. If *thingp is not marked at the end of marking, it
+// is replaced by nullptr. Returns a TraceWeakResult to describe what happened
+// and allow cleanup.
 template <typename T>
-inline TraceWeakResult<T> TraceWeakEdge(JSTracer* trc,
-                                        const BarrieredBase<T>* thingp,
+inline TraceWeakResult<T> TraceWeakEdge(JSTracer* trc, BarrieredBase<T>* thingp,
                                         const char* name) {
   T* addr = thingp->unbarrieredAddress();
   T initial = *addr;
@@ -271,22 +268,6 @@ inline TraceWeakResult<T> TraceManuallyBarrieredWeakEdge(JSTracer* trc,
   bool live = !InternalBarrierMethods<T>::isMarkable(initial) ||
               gc::TraceEdgeInternal(trc, gc::ConvertToBase(thingp), name);
   return TraceWeakResult<T>{live, initial, *thingp};
-}
-
-// Trace through a weak edge. If tracing returns false (indicating the target is
-// dying), clear the edge. Return false if that happened.
-template <typename T>
-inline bool TraceOrClearWeakEdge(JSTracer* trc, BarrieredBase<T>* thingp,
-                                 const char* name) {
-  T* addr = thingp->unbarrieredAddress();
-  T initial = *addr;
-  if (!InternalBarrierMethods<T>::isMarkable(initial) ||
-      gc::TraceEdgeInternal(trc, gc::ConvertToBase(addr), name)) {
-    return true;
-  }
-
-  *addr = JS::SafelyInitialized<T>::create();
-  return false;
 }
 
 // Trace all edges contained in the given array.

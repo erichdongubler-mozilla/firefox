@@ -341,7 +341,7 @@ class MarkingTracerT
   virtual ~MarkingTracerT() = default;
 
   template <typename T>
-  bool onEdge(T** thingp, const char* name);
+  void onEdge(T** thingp, const char* name);
   friend class GenericTracerImpl<MarkingTracerT<markingOptions>>;
 
   GCMarker* gcMarker();

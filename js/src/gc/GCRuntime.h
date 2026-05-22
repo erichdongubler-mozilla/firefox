@@ -215,7 +215,7 @@ struct SweepingTracer final : public GenericTracerImpl<SweepingTracer> {
 
  private:
   template <typename T>
-  bool onEdge(T** thingp, const char* name);
+  void onEdge(T** thingp, const char* name);
   friend class GenericTracerImpl<SweepingTracer>;
 
 #ifdef DEBUG

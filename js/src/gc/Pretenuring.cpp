@@ -386,6 +386,15 @@ bool AllocSite::traceWeak(JSTracer* trc) {
   return true;
 }
 
+bool AllocSite::needsSweep(JSTracer* trc) const {
+  if (hasScript()) {
+    JSScript* s = script();
+    return IsAboutToBeFinalizedUnbarriered(s);
+  }
+
+  return false;
+}
+
 bool PretenuringZone::calculateYoungTenuredSurvivalRate(double* rateOut) {
   MOZ_ASSERT(allocCountInNewlyCreatedArenas >=
              survivorCountInNewlyCreatedArenas);

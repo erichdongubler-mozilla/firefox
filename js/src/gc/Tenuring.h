@@ -122,7 +122,7 @@ class TenuringTracer final : public JSTracer {
 
  private:
 #define DEFINE_ON_EDGE_METHOD(name, type, _1, _2) \
-  bool on##name##Edge(type** thingp, const char* name) override;
+  void on##name##Edge(type** thingp, const char* name) override;
   JS_FOR_EACH_TRACEKIND(DEFINE_ON_EDGE_METHOD)
 #undef DEFINE_ON_EDGE_METHOD
 

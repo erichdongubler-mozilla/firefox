@@ -6036,10 +6036,10 @@ js::gc::ClearEdgesTracer::ClearEdgesTracer(JSRuntime* rt)
                         JS::WeakMapTraceAction::TraceKeysAndValues) {}
 
 template <typename T>
-bool js::gc::ClearEdgesTracer::onEdge(T** thingp, const char* name) {
+void js::gc::ClearEdgesTracer::onEdge(T** thingp, const char* name) {
   T* thing = *thingp;
   if (!thing) {
-    return true;
+    return;
   }
 
   // We don't handle removing pointers to nursery edges from the store buffer
@@ -6050,7 +6050,6 @@ bool js::gc::ClearEdgesTracer::onEdge(T** thingp, const char* name) {
   InternalBarrierMethods<T*>::preBarrier(thing);
 
   *thingp = nullptr;
-  return false;
 }
 
 void GCRuntime::setPerformanceHint(PerformanceHint hint) {
