@@ -636,19 +636,16 @@ tab-split-view-wrapper[dragtarget] {
       color-scheme: var(--tab-selected-color-scheme);
       border-radius: var(--border-radius-circle);
 
-      background-image: linear-gradient(var(--audio-overlay-extra-background)), linear-gradient(var(--toolbox-background-color));
+      background-image: image(var(--audio-overlay-extra-background)), image(var(--toolbox-background-color));
       &:-moz-window-inactive {
-        background-image: linear-gradient(var(--audio-overlay-extra-background)), linear-gradient(var(--toolbox-background-color-inactive));
+        background-image: image(var(--audio-overlay-extra-background)), image(var(--toolbox-background-color-inactive));
       }
       &[selected] {
-        background-image:
-          linear-gradient(var(--audio-overlay-extra-background)), linear-gradient(var(--tab-background-color-selected)),
-          linear-gradient(var(--toolbox-background-color));
+        background-image: image(var(--audio-overlay-extra-background)), image(var(--tab-background-color-selected)), image(var(--toolbox-background-color));
       }
       &[selected]:-moz-window-inactive {
         background-image:
-          linear-gradient(var(--audio-overlay-extra-background)), linear-gradient(var(--tab-background-color-selected)),
-          linear-gradient(var(--toolbox-background-color-inactive));
+          image(var(--audio-overlay-extra-background)), image(var(--tab-background-color-selected)), image(var(--toolbox-background-color-inactive));
       }
 
       &:hover {
@@ -703,26 +700,23 @@ tab-split-view-wrapper[dragtarget] {
          */
         --audio-overlay-extra-background: transparent;
         background-color: var(--lwt-accent-color);
-        background-image: linear-gradient(var(--audio-overlay-extra-background)), linear-gradient(var(--toolbox-background-color));
+        background-image: image(var(--audio-overlay-extra-background)), image(var(--toolbox-background-color));
         -moz-context-properties: fill;
         fill: var(--tab-selected-textcolor);
         color-scheme: var(--tab-selected-color-scheme);
         border-radius: var(--border-radius-circle);
 
         &:-moz-window-inactive {
-          background-image: linear-gradient(var(--audio-overlay-extra-background)), linear-gradient(var(--toolbox-background-color-inactive));
+          background-image: image(var(--audio-overlay-extra-background)), image(var(--toolbox-background-color-inactive));
         }
 
         &[selected] {
-          background-image:
-            linear-gradient(var(--audio-overlay-extra-background)), linear-gradient(var(--tab-background-color-selected)),
-            linear-gradient(var(--toolbox-background-color));
+          background-image: image(var(--audio-overlay-extra-background)), image(var(--tab-background-color-selected)), image(var(--toolbox-background-color));
         }
 
         &[selected]:-moz-window-inactive {
           background-image:
-            linear-gradient(var(--audio-overlay-extra-background)), linear-gradient(var(--tab-background-color-selected)),
-            linear-gradient(var(--toolbox-background-color-inactive));
+            image(var(--audio-overlay-extra-background)), image(var(--tab-background-color-selected)), image(var(--toolbox-background-color-inactive));
         }
 
         &:hover {
@@ -765,21 +759,21 @@ tab-split-view-wrapper[dragtarget] {
   list-style-image: url("chrome://global/skin/icons/tab-notes-12.svg");
 
   background-color: var(--lwt-accent-color);
-  background-image: linear-gradient(transparent), linear-gradient(var(--toolbox-background-color));
+  /* FIXME: What's the point of the image(transparent)? */
+  background-image: image(transparent), image(var(--toolbox-background-color));
   -moz-context-properties: fill;
   fill: var(--tab-selected-textcolor);
   color-scheme: var(--tab-selected-color-scheme);
   border-radius: var(--border-radius-circle);
 
   .tabbrowser-tab &:-moz-window-inactive {
-    background-image: linear-gradient(transparent), linear-gradient(var(--toolbox-background-color-inactive));
+    background-image: image(transparent), image(var(--toolbox-background-color-inactive));
   }
   .tabbrowser-tab[selected] & {
-    background-image: linear-gradient(transparent), linear-gradient(var(--tab-background-color-selected)), linear-gradient(var(--toolbox-background-color));
+    background-image: image(transparent), image(var(--tab-background-color-selected)), image(var(--toolbox-background-color));
   }
   .tabbrowser-tab[selected] &:-moz-window-inactive {
-    background-image:
-      linear-gradient(transparent), linear-gradient(var(--tab-background-color-selected)), linear-gradient(var(--toolbox-background-color-inactive));
+    background-image: image(transparent), image(var(--tab-background-color-selected)), image(var(--toolbox-background-color-inactive));
   }
 
   #tabbrowser-tabs[orient="vertical"] & {
@@ -944,7 +938,7 @@ tab-split-view-wrapper[dragtarget] {
     @media (not (prefers-contrast)) and (-moz-pref("browser.nova.enabled")) {
       :root:not([lwtheme]) & {
         background:
-          linear-gradient(var(--tab-background-color-selected)) padding-box,
+          image(var(--tab-background-color-selected)) padding-box,
           var(--tab-border-color-accent) border-box;
       }
     }
@@ -2641,9 +2635,7 @@ tab-group {
        */
       --close-button-extra-background: transparent;
       background-color: var(--lwt-accent-color);
-      background-image:
-        linear-gradient(var(--close-button-extra-background)), linear-gradient(var(--tab-background-color-selected)),
-        linear-gradient(var(--toolbox-background-color));
+      background-image: image(var(--close-button-extra-background)), image(var(--tab-background-color-selected)), image(var(--toolbox-background-color));
       color-scheme: var(--tab-selected-color-scheme);
       outline-color: var(--tab-selected-outline-color);
       box-shadow: var(--tab-selected-shadow);
@@ -2656,8 +2648,7 @@ tab-group {
 
       &:-moz-window-inactive {
         background-image:
-          linear-gradient(var(--close-button-extra-background)), linear-gradient(var(--tab-background-color-selected)),
-          linear-gradient(var(--toolbox-background-color-inactive));
+          image(var(--close-button-extra-background)), image(var(--tab-background-color-selected)), image(var(--toolbox-background-color-inactive));
       }
 
       &:hover {
@@ -2742,7 +2733,7 @@ tab-group {
     :root:not([lwtheme]) & {
       border: 1px solid transparent;
       background:
-        linear-gradient(var(--tab-background-color-selected)) padding-box,
+        image(var(--tab-background-color-selected)) padding-box,
         var(--tab-border-color-accent) border-box;
     }
   }

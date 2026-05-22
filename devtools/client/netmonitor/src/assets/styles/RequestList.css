@@ -272,7 +272,7 @@
 
 .requests-list-header-button[data-sorted],
 .requests-list-column[data-active] + .requests-list-column .requests-list-header-button {
-  border-image: linear-gradient(var(--theme-splitter-color), var(--theme-splitter-color)) 1 1;
+  border-image: image(var(--theme-splitter-color)) 1 1;
 }
 
 /* Requests list headers column-resizer */

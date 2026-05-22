@@ -2308,7 +2308,7 @@ export class FeatureCallout {
     "themed-content": {
       all: {
         background:
-          "var(--newtab-background-color, var(--background-color-canvas)) linear-gradient(var(--newtab-background-color-secondary), var(--newtab-background-color-secondary))",
+          "var(--newtab-background-color, var(--background-color-canvas)) image(var(--newtab-background-color-secondary))",
         color: "var(--newtab-text-primary-color, var(--text-color))",
         border:
           "color-mix(in srgb, var(--newtab-background-color-secondary) 80%, #000)",
@@ -2343,11 +2343,11 @@ export class FeatureCallout {
         "link-color-active": "ActiveText",
         "link-color-visited": "VisitedText",
         "dismiss-button-background":
-          "var(--newtab-background-color, var(--background-color-canvas)) linear-gradient(var(--newtab-background-color-secondary), var(--newtab-background-color-secondary))",
+          "var(--newtab-background-color, var(--background-color-canvas)) image(var(--newtab-background-color-secondary)",
         "dismiss-button-background-hover":
-          "var(--newtab-background-color, var(--background-color-canvas)) linear-gradient(color-mix(in srgb, currentColor 14%, var(--newtab-background-color-secondary)), color-mix(in srgb, currentColor 14%, var(--newtab-background-color-secondary)))",
+          "var(--newtab-background-color, var(--background-color-canvas)) image(color-mix(in srgb, currentColor 14%, var(--newtab-background-color-secondary)))",
         "dismiss-button-background-active":
-          "var(--newtab-background-color, var(--background-color-canvas)) linear-gradient(color-mix(in srgb, currentColor 21%, var(--newtab-background-color-secondary)), color-mix(in srgb, currentColor 21%, var(--newtab-background-color-secondary)))",
+          "var(--newtab-background-color, var(--background-color-canvas)) image(color-mix(in srgb, currentColor 21%, var(--newtab-background-color-secondary)))",
       },
       dark: {
         border:
@@ -2444,7 +2444,7 @@ export class FeatureCallout {
     newtab: {
       all: {
         background:
-          "var(--newtab-background-color, #F9F9FB) linear-gradient(var(--newtab-background-color-secondary, #FFF), var(--newtab-background-color-secondary, #FFF))",
+          "var(--newtab-background-color, #F9F9FB) image(var(--newtab-background-color-secondary, #FFF))",
         color: "var(--newtab-text-primary-color, WindowText)",
         border:
           "color-mix(in srgb, var(--newtab-background-color-secondary, #FFF) 80%, #000)",
@@ -2465,16 +2465,16 @@ export class FeatureCallout {
         "link-color-visited": "rgb(0, 97, 224)",
         "icon-success-color": "#2AC3A2",
         "dismiss-button-background":
-          "var(--newtab-background-color, #F9F9FB) linear-gradient(var(--newtab-background-color-secondary, #FFF), var(--newtab-background-color-secondary, #FFF))",
+          "var(--newtab-background-color, #F9F9FB) image(var(--newtab-background-color-secondary, #FFF))",
         "dismiss-button-background-hover":
-          "var(--newtab-background-color, #F9F9FB) linear-gradient(color-mix(in srgb, currentColor 14%, var(--newtab-background-color-secondary, #FFF)), color-mix(in srgb, currentColor 14%, var(--newtab-background-color-secondary, #FFF)))",
+          "var(--newtab-background-color, #F9F9FB) image(color-mix(in srgb, currentColor 14%, var(--newtab-background-color-secondary, #FFF)))",
         "dismiss-button-background-active":
-          "var(--newtab-background-color, #F9F9FB) linear-gradient(color-mix(in srgb, currentColor 21%, var(--newtab-background-color-secondary, #FFF)), color-mix(in srgb, currentColor 21%, var(--newtab-background-color-secondary, #FFF)))",
+          "var(--newtab-background-color, #F9F9FB) image(color-mix(in srgb, currentColor 21%, var(--newtab-background-color-secondary, #FFF)))",
       },
       dark: {
         "accent-color": "rgb(0, 221, 255)",
         background:
-          "var(--newtab-background-color, #2B2A33) linear-gradient(var(--newtab-background-color-secondary, #42414D), var(--newtab-background-color-secondary, #42414D))",
+          "var(--newtab-background-color, #2B2A33) image(var(--newtab-background-color-secondary, #42414D))",
         border:
           "color-mix(in srgb, var(--newtab-background-color-secondary, #42414D) 80%, #FFF)",
         "button-background": "color-mix(in srgb, transparent 80%, #000)",
@@ -2486,11 +2486,11 @@ export class FeatureCallout {
         "link-color-visited": "rgb(0, 221, 255)",
         "icon-success-color": "#54FFBD",
         "dismiss-button-background":
-          "var(--newtab-background-color, #2B2A33) linear-gradient(var(--newtab-background-color-secondary, #42414D), var(--newtab-background-color-secondary, #42414D))",
+          "var(--newtab-background-color, #2B2A33) image(var(--newtab-background-color-secondary, #42414D))",
         "dismiss-button-background-hover":
-          "var(--newtab-background-color, #2B2A33) linear-gradient(color-mix(in srgb, currentColor 14%, var(--newtab-background-color-secondary, #42414D)), color-mix(in srgb, currentColor 14%, var(--newtab-background-color-secondary, #42414D)))",
+          "var(--newtab-background-color, #2B2A33) image(color-mix(in srgb, currentColor 14%, var(--newtab-background-color-secondary, #42414D)))",
         "dismiss-button-background-active":
-          "var(--newtab-background-color, #2B2A33) linear-gradient(color-mix(in srgb, currentColor 21%, var(--newtab-background-color-secondary, #42414D), color-mix(in srgb, currentColor 21%, var(--newtab-background-color-secondary, #42414D)))",
+          "var(--newtab-background-color, #2B2A33) image(color-mix(in srgb, currentColor 21%, var(--newtab-background-color-secondary, #42414D)))",
       },
       hcm: {
         background: "-moz-dialog",
@@ -2523,12 +2523,11 @@ export class FeatureCallout {
     // stylesheets handle these variables' values.
     chrome: {
       all: {
-        // Use a gradient because it's possible (due to custom themes) that the
+        // Use image() because it's possible (due to custom themes) that the
         // panel-background will be semi-transparent, causing the arrow to
         // show through the callout background. Put the Menu color behind the
         // panel-background.
-        background:
-          "Menu linear-gradient(var(--panel-background-color), var(--panel-background-color))",
+        background: "Menu image(var(--panel-background-color))",
         color: "var(--panel-text-color)",
         border: "var(--panel-border-color)",
         "accent-color": "var(--focus-outline-color)",
@@ -2576,11 +2575,11 @@ export class FeatureCallout {
         "icon-success-color": "var(--color-accent-attention)",
         // Dismiss Button
         "dismiss-button-background":
-          "Menu linear-gradient(var(--panel-background-color), var(--panel-background-color))",
+          "Menu image(var(--panel-background-color))",
         "dismiss-button-background-hover":
-          "Menu linear-gradient(color-mix(in srgb, currentColor 14%, var(--panel-background-color)))",
+          "Menu image(color-mix(in srgb, currentColor 14%, var(--panel-background-color)))",
         "dismiss-button-background-active":
-          "Menu linear-gradient(color-mix(in srgb, currentColor 21%, var(--panel-background-color)))",
+          "Menu image(color-mix(in srgb, currentColor 21%, var(--panel-background-color)))",
       },
       hcm: {
         background: "var(--panel-background-color)",

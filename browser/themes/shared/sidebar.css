@@ -319,7 +319,7 @@ sidebar-main,
        * opaque. Make sure there's some opaque backdrop that matches our color
        * scheme. These colors match the "transparency effects disabled" mica
        * backdrop on Windows 11, which is as good as we can make it. */
-      background-image: linear-gradient(var(--toolbox-background-color));
+      background-image: image(var(--toolbox-background-color));
       background-color: light-dark(#e8e8e8, #202020);
 
       &:not([sidebar-positionend]) {
