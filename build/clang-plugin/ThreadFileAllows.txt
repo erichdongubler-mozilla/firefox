@@ -58,6 +58,7 @@ dom/media/doctor/test/gtest/TestMultiWriterQueue.cpp
 image/test/fuzzing/TestDecoders.cpp
 image/test/gtest/TestDecodeToSurface.cpp
 ipc/ipdl/test/gtest/IPDLUnitTest.cpp
+netwerk/test/gtest/TestThreadSafetyRaces.cpp
 security/sandbox/common/test/SandboxTestingThread.h
 storage/test/gtest/test_interruptSynchronousConnection.cpp
 storage/test/gtest/test_unlock_notify.cpp
