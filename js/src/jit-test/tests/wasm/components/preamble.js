@@ -53,17 +53,13 @@ assertErrorMessage(() => new WebAssembly.Component(new Uint8Array([
 ])), WebAssembly.CompileError, /unexpected section ID/);
 
 // Section parsing stops with bytes left over
-// TODO(wasm-cm): this test needs type section and custom section parsing;
-// enabled in Part 5 once the type section lands.
-if (false) {
-  assertErrorMessage(() => new WebAssembly.Component(new Uint8Array([
-    0, 0x61, 0x73, 0x6D,
-    0x0d, 0, 1, 0,
+assertErrorMessage(() => new WebAssembly.Component(new Uint8Array([
+  0, 0x61, 0x73, 0x6D,
+  0x0d, 0, 1, 0,
 
-    0x07, 0x04, // type section, data shorter than section length
-      0x00,
-    0x00, 0x06, // custom section to pad out the component
-      0x05,
-      0x64, 0x75, 0x6D, 0x6D, 0x79, // "dummy", no data
-  ])), WebAssembly.CompileError, /too many bytes in section/);
-}
+  0x07, 0x04, // type section, data shorter than section length
+    0x00,
+  0x00, 0x06, // custom section to pad out the component
+    0x05,
+    0x64, 0x75, 0x6D, 0x6D, 0x79, // "dummy", no data
+])), WebAssembly.CompileError, /too many bytes in section/);

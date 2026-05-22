@@ -4714,6 +4714,9 @@ bool wasm::DecodeModuleTail(Decoder& d, CodeMetadata* codeMeta,
 
 #ifdef ENABLE_WASM_COMPONENTS
 
+#  define ComponentName_Printf(n) \
+    (int)(n).utf8Bytes().Length(), (n).utf8Bytes().data()
+
 // In the component model, names consist primarily of
 // series-OF-possibly-UPPERCASE-fragments, where each fragment is all lowercase
 // or all uppercase. A lowercase fragment is called a "word"; an uppercase
@@ -4870,6 +4873,472 @@ bool wasm::DecodeModuleTail(Decoder& d, CodeMetadata* codeMeta,
   return true;
 }
 
+static mozilla::Maybe<ComponentValType> DecodeComponentValType(
+    Decoder& d, MutableComponent& c) {
+  // Types in the binary are organized so that negative numbers are
+  // primitives, while positive numbers are type indices.
+
+  uint8_t nextByte;
+  if (!d.peekByte(&nextByte)) {
+    d.fail("expected value type");
+    return mozilla::Nothing();
+  }
+
+  if ((nextByte & SLEB128SignMask) == SLEB128SignBit) {
+    uint8_t rawKind;
+    if (!d.readFixedU8(&rawKind)) {
+      return mozilla::Nothing();
+    }
+
+    ComponentTypeKind primKind = ComponentTypeKind(rawKind);
+    if (!ComponentTypeKindIsPrimitive(primKind)) {
+      d.failf("invalid value type 0x%02x", rawKind);
+      return mozilla::Nothing();
+    }
+    return mozilla::Some(ComponentValType::primitive(primKind));
+  }
+
+  int32_t typeIdx;
+  if (!d.readVarS32(&typeIdx) || typeIdx < 0 ||
+      c->types.length() <= size_t(typeIdx)) {
+    d.failf("invalid type index %d", typeIdx);
+    return mozilla::Nothing();
+  }
+  if (!ComponentTypeKindIsValueType(c->types[typeIdx].kind())) {
+    d.failf("type %d is not a value type", typeIdx);
+    return mozilla::Nothing();
+  }
+  return mozilla::Some(ComponentValType::typeIndex(typeIdx));
+}
+
+enum class ComponentTypeKindRaw : uint8_t {
+  Bool = 0x7f,
+  S8 = 0x7e,
+  U8 = 0x7d,
+  S16 = 0x7c,
+  U16 = 0x7b,
+  S32 = 0x7a,
+  U32 = 0x79,
+  S64 = 0x78,
+  U64 = 0x77,
+  F32 = 0x76,
+  F64 = 0x75,
+  Char = 0x74,
+  String = 0x73,
+
+  Record = 0x72,
+  Variant = 0x71,
+  List = 0x70,
+  Tuple = 0x6f,
+  Flags = 0x6e,
+  Enum = 0x6d,
+  Option = 0x6b,
+  Result = 0x6a,
+  Own = 0x69,
+  Borrow = 0x68,
+
+  Func = 0x40,
+  AsyncFunc = 0x43,
+
+  Component = 0x41,
+  Instance = 0x42,
+
+  Resource = 0x3f,
+};
+
+[[nodiscard]] static bool DecodeComponentType(Decoder& d, MutableComponent& c) {
+  uint8_t kind;
+  if (!d.readFixedU8(&kind)) {
+    return d.fail("expected type kind");
+  }
+
+  switch (kind) {
+    case uint8_t(ComponentTypeKindRaw::Bool):
+    case uint8_t(ComponentTypeKindRaw::S8):
+    case uint8_t(ComponentTypeKindRaw::U8):
+    case uint8_t(ComponentTypeKindRaw::S16):
+    case uint8_t(ComponentTypeKindRaw::U16):
+    case uint8_t(ComponentTypeKindRaw::S32):
+    case uint8_t(ComponentTypeKindRaw::U32):
+    case uint8_t(ComponentTypeKindRaw::S64):
+    case uint8_t(ComponentTypeKindRaw::U64):
+    case uint8_t(ComponentTypeKindRaw::F32):
+    case uint8_t(ComponentTypeKindRaw::F64):
+    case uint8_t(ComponentTypeKindRaw::Char):
+    case uint8_t(ComponentTypeKindRaw::String): {
+      if (!c->types.append(
+              ComponentDefType::primitive(ComponentTypeKind(kind)))) {
+        return false;
+      }
+    } break;
+
+    case uint8_t(ComponentTypeKindRaw::Record): {
+      ComponentRecordFieldVector fields;
+
+      // Record fields have the same name uniqueness requirement as imports.
+      StronglyUniqueNameSet fieldNameDedup;
+
+      uint32_t numFields;
+      if (!d.readVarU32(&numFields)) {
+        return d.fail("expected number of record fields");
+      }
+      if (numFields == 0) {
+        return d.fail("records must have at least one field");
+      }
+      if (numFields > MaxComponentRecordFields) {
+        return d.failf("too many record fields (max %d)",
+                       MaxComponentRecordFields);
+      }
+
+      if (!fields.reserve(numFields)) {
+        return false;
+      }
+
+      for (uint32_t i = 0; i < numFields; i++) {
+        CacheableName name;
+        if (!DecodeComponentName(d, "record field", &name,
+                                 /*allowMethods=*/false)) {
+          return false;
+        }
+        mozilla::Maybe<ComponentValType> type = DecodeComponentValType(d, c);
+        if (type.isNothing()) {
+          return false;
+        }
+
+        bool duplicate;
+        if (!fieldNameDedup.add(name.utf8Bytes(), &duplicate)) {
+          return false;
+        }
+        if (duplicate) {
+          return d.failf("record field name \"%.*s\" is not strongly-unique",
+                         ComponentName_Printf(name));
+        }
+        fields.infallibleAppend(ComponentRecordField(std::move(name), *type));
+      }
+
+      if (!c->types.append(ComponentDefType::record(std::move(fields)))) {
+        return false;
+      }
+    } break;
+
+    case uint8_t(ComponentTypeKindRaw::Variant): {
+      ComponentVariantCaseVector cases;
+
+      // Variant cases have the same name uniqueness requirement as imports.
+      StronglyUniqueNameSet caseNameDedup;
+
+      uint32_t numCases;
+      if (!d.readVarU32(&numCases)) {
+        return d.fail("expected number of variant cases");
+      }
+      if (numCases == 0) {
+        return d.fail("variants must have at least one case");
+      }
+      if (numCases > MaxComponentVariantCases) {
+        return d.failf("too many variant cases (max %d)",
+                       MaxComponentVariantCases);
+      }
+
+      if (!cases.reserve(numCases)) {
+        return false;
+      }
+
+      for (uint32_t i = 0; i < numCases; i++) {
+        CacheableName name;
+        bool duplicate;
+        if (!DecodeComponentName(d, "variant case", &name,
+                                 /*allowMethods=*/false)) {
+          return false;
+        }
+        if (!caseNameDedup.add(name.utf8Bytes(), &duplicate)) {
+          return false;
+        }
+        if (duplicate) {
+          return d.failf("variant case name \"%.*s\" is not strongly-unique",
+                         ComponentName_Printf(name));
+        }
+
+        mozilla::Maybe<ComponentValType> type;
+        bool hasType;
+        if (!d.readBool(&hasType)) {
+          return d.fail("expected optional variant case type");
+        }
+        if (hasType) {
+          type = DecodeComponentValType(d, c);
+          if (type.isNothing()) {
+            return false;
+          }
+        }
+
+        uint8_t dummy;
+        if (!d.readFixedU8(&dummy) || dummy != 0x00) {
+          return d.fail("expected trailing zero on variant case");
+        }
+
+        cases.infallibleAppend(ComponentVariantCase(std::move(name), type));
+      }
+
+      if (!c->types.append(ComponentDefType::variant(std::move(cases)))) {
+        return false;
+      }
+    } break;
+
+    case uint8_t(ComponentTypeKindRaw::List): {
+      mozilla::Maybe<ComponentValType> type = DecodeComponentValType(d, c);
+      if (type.isNothing()) {
+        return false;
+      }
+
+      if (!c->types.append(ComponentDefType::list(type.value()))) {
+        return false;
+      }
+    } break;
+
+    case uint8_t(ComponentTypeKindRaw::Tuple): {
+      uint32_t numTypes;
+      if (!d.readVarU32(&numTypes)) {
+        return d.fail("expected number of types in tuple");
+      }
+      if (numTypes == 0) {
+        return d.fail("tuples must have at least one type");
+      }
+      if (numTypes > MaxComponentTupleTypes) {
+        return d.failf("too many types in tuple (max %d)",
+                       MaxComponentTupleTypes);
+      }
+
+      ComponentValTypeVector types;
+      if (!types.reserve(numTypes)) {
+        return false;
+      }
+      for (uint32_t i = 0; i < numTypes; i++) {
+        mozilla::Maybe<ComponentValType> type = DecodeComponentValType(d, c);
+        if (type.isNothing()) {
+          return false;
+        }
+        types.infallibleAppend(type.value());
+      }
+
+      if (!c->types.append(ComponentDefType::tuple(std::move(types)))) {
+        return false;
+      }
+    } break;
+
+    case uint8_t(ComponentTypeKindRaw::Flags): {
+      uint32_t numLabels;
+      if (!d.readVarU32(&numLabels)) {
+        return false;
+      }
+      if (numLabels == 0) {
+        return d.fail("flag type must have at least one label");
+      }
+      if (numLabels > MaxComponentFlagLabels) {
+        return d.fail("too many labels for flag type");
+      }
+
+      CacheableNameVector labels;
+      StronglyUniqueNameSet labelDedup;
+      if (!labels.reserve(numLabels)) {
+        return false;
+      }
+      for (uint32_t i = 0; i < numLabels; i++) {
+        CacheableName name;
+        if (!DecodeComponentName(d, "flag label", &name,
+                                 /*allowMethods=*/false)) {
+          return false;
+        }
+        bool duplicate;
+        if (!labelDedup.add(name.utf8Bytes(), &duplicate)) {
+          return false;
+        }
+        if (duplicate) {
+          return d.failf("flag label \"%.*s\" is not strongly-unique",
+                         ComponentName_Printf(name));
+        }
+
+        labels.infallibleAppend(std::move(name));
+      }
+
+      if (!c->types.append(ComponentDefType::flags(std::move(labels)))) {
+        return false;
+      }
+    } break;
+
+    case uint8_t(ComponentTypeKindRaw::Enum): {
+      uint32_t numCases;
+      if (!d.readVarU32(&numCases)) {
+        return false;
+      }
+      if (numCases == 0) {
+        return d.fail("enum must have at least one case");
+      }
+      if (numCases > MaxComponentEnumCases) {
+        return d.failf("too many enum cases (max %d)", MaxComponentEnumCases);
+      }
+
+      CacheableNameVector labels;
+      StronglyUniqueNameSet caseLabelDedup;
+      if (!labels.reserve(numCases)) {
+        return false;
+      }
+      for (uint32_t i = 0; i < numCases; i++) {
+        CacheableName name;
+        if (!DecodeComponentName(d, "enum case", &name,
+                                 /*allowMethods=*/false)) {
+          return false;
+        }
+        bool duplicate;
+        if (!caseLabelDedup.add(name.utf8Bytes(), &duplicate)) {
+          return false;
+        }
+        if (duplicate) {
+          return d.failf("enum case label \"%.*s\" is not strongly-unique",
+                         ComponentName_Printf(name));
+        }
+
+        labels.infallibleAppend(std::move(name));
+      }
+
+      if (!c->types.append(ComponentDefType::enum_(std::move(labels)))) {
+        return false;
+      }
+    } break;
+
+    case uint8_t(ComponentTypeKindRaw::Option): {
+      mozilla::Maybe<ComponentValType> type = DecodeComponentValType(d, c);
+      if (type.isNothing()) {
+        return false;
+      }
+      if (!c->types.append(ComponentDefType::option(type.value()))) {
+        return false;
+      }
+    } break;
+
+    case uint8_t(ComponentTypeKindRaw::Result): {
+      mozilla::Maybe<ComponentValType> type;
+      mozilla::Maybe<ComponentValType> errorType;
+
+      bool hasType;
+      if (!d.readBool(&hasType)) {
+        return d.fail("expected optional result type");
+      }
+      if (hasType) {
+        type = DecodeComponentValType(d, c);
+        if (type.isNothing()) {
+          return false;
+        }
+      }
+
+      bool hasErrorType;
+      if (!d.readBool(&hasErrorType)) {
+        return d.fail("expected optional result error type");
+      }
+      if (hasErrorType) {
+        errorType = DecodeComponentValType(d, c);
+        if (errorType.isNothing()) {
+          return false;
+        }
+      }
+
+      if (!c->types.append(ComponentDefType::result(
+              ComponentResultType{.type = type, .errorType = errorType}))) {
+        return false;
+      }
+    } break;
+
+    case uint8_t(ComponentTypeKindRaw::Func):
+    case uint8_t(ComponentTypeKindRaw::AsyncFunc): {
+      ComponentFuncType ft;
+      ft.isAsync = (kind == uint8_t(ComponentTypeKindRaw::AsyncFunc));
+
+      uint32_t numParams;
+      StronglyUniqueNameSet paramDeduper;
+      if (!d.readVarU32(&numParams)) {
+        return d.fail("expected number of params");
+      }
+      if (numParams > MaxComponentParams) {
+        return d.failf("too many params (max %d)", MaxComponentParams);
+      }
+      if (!ft.paramTypes.reserve(numParams) ||
+          !ft.paramNames.reserve(numParams)) {
+        return false;
+      }
+
+      for (uint32_t i = 0; i < numParams; i++) {
+        CacheableName name;
+        if (!DecodeComponentName(d, "param", &name, /*allowMethods=*/false)) {
+          return false;
+        }
+        mozilla::Maybe<ComponentValType> type = DecodeComponentValType(d, c);
+        if (type.isNothing()) {
+          return false;
+        }
+
+        bool duplicate;
+        if (!paramDeduper.add(name.utf8Bytes(), &duplicate)) {
+          return false;
+        }
+        if (duplicate) {
+          return d.failf("param name \"%.*s\" is not strongly-unique",
+                         ComponentName_Printf(name));
+        }
+
+        ft.paramNames.infallibleAppend(std::move(name));
+        ft.paramTypes.infallibleAppend(std::move(*type));
+      }
+
+      // There is a result type if the byte is zero. It is not clear why this
+      // is, but we can only hope it is fixed when the binary format is
+      // eventually reshuffled.
+      bool hasNoResultType;
+      if (!d.readBool(&hasNoResultType)) {
+        return d.fail("expected result type");
+      }
+      if (hasNoResultType) {
+        uint8_t dummy;
+        if (!d.readFixedU8(&dummy) || dummy != 0) {
+          return d.fail("expected result type");
+        }
+      } else {
+        mozilla::Maybe<ComponentValType> resultType =
+            DecodeComponentValType(d, c);
+        if (resultType.isNothing()) {
+          return false;
+        }
+        ft.resultType = resultType;
+      }
+
+      if (!c->types.append(ComponentDefType::func(std::move(ft)))) {
+        return false;
+      }
+    } break;
+
+    default:
+      return d.failf("unexpected type 0x%02x", kind);
+  }
+
+  return true;
+}
+
+[[nodiscard]] static bool DecodeComponentTypeSection(Decoder& d,
+                                                     MutableComponent& c) {
+  uint32_t numTypes;
+  if (!d.readVarU32(&numTypes)) {
+    return d.fail("expected number of types");
+  }
+  if (c->types.length() + uint64_t(numTypes) > MaxComponentTypes) {
+    return d.failf("too many types (max %d)", MaxComponentTypes);
+  }
+
+  for (uint32_t i = 0; i < numTypes; i++) {
+    if (!DecodeComponentType(d, c)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 bool wasm::DecodeComponent(Decoder& d, MutableComponent c) {
   if (!DecodePreamble(d, EncodingVersionComponent)) {
     return false;
@@ -4908,6 +5377,12 @@ bool wasm::DecodeComponent(Decoder& d, MutableComponent c) {
 
           // TODO(wasm-cm): Parse custom section name, warn if it is "malformed"
           // TODO(wasm-cm): Parse component name section
+        } break;
+
+        case uint8_t(ComponentSectionId::Type): {
+          if (!DecodeComponentTypeSection(d, c)) {
+            return false;
+          }
         } break;
 
         default: {

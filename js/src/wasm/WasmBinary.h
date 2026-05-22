@@ -495,6 +495,17 @@ class Decoder {
   }
 #endif
 
+  // Utility for the common case where a single byte is used as a boolean value
+  // (0 = false, 1 = true, all other values invalid).
+  [[nodiscard]] bool readBool(bool* b) {
+    uint8_t byte;
+    if (!readFixedU8(&byte) || byte > 1) {
+      return false;
+    }
+    *b = (byte != 0);
+    return true;
+  }
+
   // Variable-length encodings that all use LEB128.
 
   [[nodiscard]] bool readVarU32(uint32_t* out) {

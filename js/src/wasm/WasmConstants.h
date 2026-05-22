@@ -1256,6 +1256,17 @@ static const unsigned MaxArrayPayloadBytes = 1987654321;
 static_assert(uint64_t(MaxArrayPayloadBytes) <
               (uint64_t(1) << (8 * sizeof(uint32_t))));
 
+#ifdef ENABLE_WASM_COMPONENTS
+// TODO(wasm-cm): These implementation limits are arbitrarily chosen.
+static const uint32_t MaxComponentTypes = 1000000;
+static const uint32_t MaxComponentRecordFields = 10000;
+static const uint32_t MaxComponentVariantCases = 10000;
+static const uint32_t MaxComponentTupleTypes = 10000;
+static const uint32_t MaxComponentFlagLabels = 32;
+static const uint32_t MaxComponentEnumCases = 10000;
+static const uint32_t MaxComponentParams = 1000;
+#endif
+
 // These limits pertain to our WebAssembly implementation only.
 
 static const unsigned MaxTryTableCatches = 10000;
