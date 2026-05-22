@@ -161,19 +161,22 @@ class nsWaylandDisplay {
   void RefreshScreens();
 
   struct MonitorConfig {
+    MonitorConfig(int aId, struct wl_output* aWlOutput);
+    ~MonitorConfig();
+
     int id = 0;
     int x = 0;
     int y = 0;
     int pixelWidth = 0;
     int pixelHeight = 0;
+    wl_output* wlOutput = nullptr;
     bool pendingChanges = true;
-    explicit MonitorConfig(int aId) : id(aId) {}
   };
 
-  MonitorConfig* AddMonitorConfig(int aId);
+  void AddMonitorConfig(int aId, wl_output* aWlOutput);
   MonitorConfig* GetMonitorConfig(int x, int y);
   bool RemoveMonitorConfig(int aId);
-  void AddWlOutput(wl_output* aWlOutput, int aId);
+
 
   ~nsWaylandDisplay();
 

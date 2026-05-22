@@ -708,26 +708,21 @@ static const struct wl_output_listener output_listener = {
     output_handle_scale,
 };
 
-void nsWaylandDisplay::RefreshScreens() {
-  LOG("nsWaylandDisplay::RefreshScreens()");
-  for (unsigned int i = 0; i < mMonitors.Length(); i++) {
-    if (mMonitors[i]->pendingChanges) {
-      LOG("  monitor ID %d is not complete", mMonitors[i]->id);
-      return;
-    }
-  }
-  ScreenHelperGTK::RequestRefreshScreens();
-}
-
-void nsWaylandDisplay::AddWlOutput(wl_output* aWlOutput, int aId) {
-  wl_output_add_listener(aWlOutput, &output_listener, AddMonitorConfig(aId));
-}
-
-nsWaylandDisplay::MonitorConfig* nsWaylandDisplay::AddMonitorConfig(int aId) {
+void nsWaylandDisplay::AddMonitorConfig(int aId, wl_output* aWlOutput) {
   LOG("nsWaylandDisplay add monitor ID %d num %zu", aId, mMonitors.Length());
-  UniquePtr<MonitorConfig> monitor = MakeUnique<MonitorConfig>(aId);
-  mMonitors.AppendElement(std::move(monitor));
-  return mMonitors.LastElement().get();
+  mMonitors.AppendElement(MakeUnique<MonitorConfig>(aId, aWlOutput));
+}
+
+nsWaylandDisplay::MonitorConfig::MonitorConfig(int aId,
+                                               struct wl_output* aWlOutput)
+    : id(aId), wlOutput(aWlOutput) {
+  LOG("MonitorConfig() add ID %d", id);
+  wl_output_add_listener(wlOutput, &output_listener, this);
+}
+
+nsWaylandDisplay::MonitorConfig::~MonitorConfig() {
+  LOG("~MonitorConfig() delete ID %d", id);
+  MozClearPointer(wlOutput, wl_output_release);
 }
 
 bool nsWaylandDisplay::RemoveMonitorConfig(int aId) {
@@ -751,6 +746,17 @@ nsWaylandDisplay::MonitorConfig* nsWaylandDisplay::GetMonitorConfig(int x,
   }
   LOG("nsWaylandDisplay::GetMonitorConfig() %d, %d missing!", x, y);
   return nullptr;
+}
+
+void nsWaylandDisplay::RefreshScreens() {
+  LOG("nsWaylandDisplay::RefreshScreens()");
+  for (unsigned int i = 0; i < mMonitors.Length(); i++) {
+    if (mMonitors[i]->pendingChanges) {
+      LOG("  monitor ID %d is not complete", mMonitors[i]->id);
+      return;
+    }
+  }
+  ScreenHelperGTK::RequestRefreshScreens();
 }
 
 static void global_registry_handler(void* data, wl_registry* registry,
@@ -856,10 +862,11 @@ static void global_registry_handler(void* data, wl_registry* registry,
     auto* xdgWm = WaylandRegistryBind<xdg_wm_base>(
         registry, id, &xdg_wm_base_interface, vers);
     display->SetXdgWm(xdgWm);
-  } else if (iface.EqualsLiteral("wl_output") && version > 1) {
-    auto* output =
-        WaylandRegistryBind<wl_output>(registry, id, &wl_output_interface, 2);
-    display->AddWlOutput(output, id);
+  } else if (iface.EqualsLiteral("wl_output") &&
+             version >= WL_OUTPUT_RELEASE_SINCE_VERSION) {
+    auto* output = WaylandRegistryBind<wl_output>(
+        registry, id, &wl_output_interface, WL_OUTPUT_RELEASE_SINCE_VERSION);
+    display->AddMonitorConfig(id, output);
   } else if (iface.EqualsLiteral("wl_fixes")) {
     // wl_fixes_interface was introduced in libwayland-client 1.24, but
     // Ubuntu 22.04 still ships 1.20.
