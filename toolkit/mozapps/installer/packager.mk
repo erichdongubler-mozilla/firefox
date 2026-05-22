@@ -35,7 +35,7 @@ stage-package: multilocale.txt locale-manifest.in $(MOZ_PKG_MANIFEST) $(MOZ_PKG_
 		$(if $(MOZ_PACKAGER_MINIFY_PDFJS),--minify-pdfjs) \
 		$(addprefix --jarlog ,$(wildcard $(JARLOG_FILE_AB_CD))) \
 		$(addprefix --compress ,$(JAR_COMPRESSION)) \
-		$(MOZ_PKG_MANIFEST) '$(DIST)' '$(DIST)'/$(MOZ_PKG_DIR)$(if $(MOZ_PKG_MANIFEST),,$(_BINPATH:%=/%)) \
+		$(MOZ_PKG_MANIFEST) '$(DIST)' '$(DIST)'/$(MOZ_PKG_DIR)$(if $(MOZ_PKG_MANIFEST),,$(if $(MOZ_MACBUNDLE_NAME),$(MOZ_PKG_BINPATH:%=/%))) \
 		$(if $(filter omni,$(MOZ_PACKAGER_FORMAT)),$(if $(NON_OMNIJAR_FILES),--non-resource $(NON_OMNIJAR_FILES)))
 
 prepare-package: stage-package
@@ -107,8 +107,8 @@ endif # MOZ_BUILD_APP == mobile/android
 endif
 ifeq (Darwin_cocoa, $(OS_ARCH)_$(MOZ_WIDGET_TOOLKIT))
 ifneq (,$(MOZ_ASAN)$(LIBFUZZER)$(MOZ_UBSAN))
-	@echo "Rewriting sanitizer runtime dylib paths for all binaries in $(DIST)/$(MOZ_PKG_DIR)/$(_BINPATH) ..."
-	$(PYTHON3) $(MOZILLA_DIR)/build/unix/rewrite_sanitizer_dylib.py '$(DIST)/$(MOZ_PKG_DIR)/$(_BINPATH)'
+	@echo "Rewriting sanitizer runtime dylib paths for all binaries in $(DIST)/$(MOZ_PKG_DIR)/$(MOZ_PKG_BINPATH) ..."
+	$(PYTHON3) $(MOZILLA_DIR)/build/unix/rewrite_sanitizer_dylib.py '$(DIST)/$(MOZ_PKG_DIR)/$(MOZ_PKG_BINPATH)'
 endif # MOZ_ASAN || LIBFUZZER || MOZ_UBSAN
 endif # Darwin_cocoa
 ifndef MOZ_ARTIFACT_BUILDS

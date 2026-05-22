@@ -2,19 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-ifeq (cocoa,$(MOZ_WIDGET_TOOLKIT))
-ifndef _APPNAME
-_APPNAME = $(MOZ_MACBUNDLE_NAME)
-endif
-ifndef _BINPATH
-_BINPATH = $(_APPNAME)/Contents/MacOS
-endif # _BINPATH
-ifndef _RESPATH
-# Resource path for the precomplete file
-_RESPATH = $(_APPNAME)/Contents/Resources
-endif
-endif
-
 PACKAGE       = $(PKG_PATH)$(PKG_BASENAME)$(PKG_SUFFIX)
 
 # JavaScript Shell packaging
@@ -84,7 +71,7 @@ endif
 
 ifeq ($(MOZ_PKG_FORMAT),BZ2)
   ifeq (cocoa,$(MOZ_WIDGET_TOOLKIT))
-    PACKAGE_EXTRA_ARGS += --app-name '$(_APPNAME)'
+    PACKAGE_EXTRA_ARGS += --app-name '$(MOZ_MACBUNDLE_NAME)'
   endif
 endif
 
