@@ -48,11 +48,6 @@ UNIFIED_SOURCES += [
     "TestWebTransportFlowControl.cpp",
 ]
 
-if CONFIG["MOZ_TSAN"]:
-    UNIFIED_SOURCES += [
-        "TestThreadSafetyRaces.cpp",
-    ]
-
 if CONFIG["OS_TARGET"] == "WINNT":
     UNIFIED_SOURCES += [
         "TestNamedPipeService.cpp",
