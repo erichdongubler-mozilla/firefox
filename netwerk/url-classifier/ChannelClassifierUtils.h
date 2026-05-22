@@ -35,6 +35,20 @@ class ChannelClassifierUtils final {
       const nsACString& aList, nsresult aErrorCode, uint32_t aReplacedEvent,
       uint32_t aAllowedEvent, bool* aShouldContinue);
 
+  // Returns true if this error is known as one of the blocking error codes.
+  static bool IsClassifierBlockingErrorCode(nsresult aError);
+
+  // Returns true if this event is a known blocking state from
+  // nsIWebProgressListener.
+  static bool IsClassifierBlockingEventCode(uint32_t aEventCode);
+
+  static uint32_t GetClassifierBlockingEventCode(nsresult aErrorCode);
+
+  // This can be called only if IsClassifierBlockingErrorCode(aError) returns
+  // true.
+  static const char* ClassifierBlockingErrorCodeToConsoleMessage(
+      nsresult aError, nsACString& aCategory);
+
   static bool IsPassiveContent(nsIChannel* aChannel);
 
   static bool IsTrackingClassificationFlag(uint32_t aFlag, bool aIsPrivate);

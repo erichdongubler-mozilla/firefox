@@ -13,7 +13,6 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/net/ChannelClassifierLog.h"
 #include "mozilla/net/HttpBaseChannel.h"
-#include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/StaticPrefs_channelclassifier.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_privacy.h"
@@ -31,6 +30,83 @@
 
 namespace mozilla {
 namespace net {
+
+namespace {
+
+struct BlockingErrorCode {
+  nsresult mErrorCode;
+  uint32_t mBlockingEventCode;
+  const char* mConsoleMessage;
+  nsLiteralCString mConsoleCategory;
+};
+
+static constexpr BlockingErrorCode sBlockingErrorCodes[] = {
+    {NS_ERROR_TRACKING_URI,
+     nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT,
+     "TrackerUriBlockedByETP", "Tracking Protection"_ns},
+    {NS_ERROR_FINGERPRINTING_URI,
+     nsIWebProgressListener::STATE_BLOCKED_FINGERPRINTING_CONTENT,
+     "TrackerUriBlockedByETP", "Tracking Protection"_ns},
+    {NS_ERROR_CRYPTOMINING_URI,
+     nsIWebProgressListener::STATE_BLOCKED_CRYPTOMINING_CONTENT,
+     "TrackerUriBlockedByETP", "Tracking Protection"_ns},
+    {NS_ERROR_SOCIALTRACKING_URI,
+     nsIWebProgressListener::STATE_BLOCKED_SOCIALTRACKING_CONTENT,
+     "TrackerUriBlockedByETP", "Tracking Protection"_ns},
+    {NS_ERROR_EMAILTRACKING_URI,
+     nsIWebProgressListener::STATE_BLOCKED_EMAILTRACKING_CONTENT,
+     "TrackerUriBlockedByETP", "Tracking Protection"_ns},
+};
+
+}  // namespace
+
+/* static */
+bool ChannelClassifierUtils::IsClassifierBlockingErrorCode(nsresult aError) {
+  // In theory we can iterate through the features, but at the moment, we can
+  // just have a simple check here.
+  for (const auto& blockingErrorCode : sBlockingErrorCodes) {
+    if (aError == blockingErrorCode.mErrorCode) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/* static */
+bool ChannelClassifierUtils::IsClassifierBlockingEventCode(
+    uint32_t aEventCode) {
+  for (const auto& blockingErrorCode : sBlockingErrorCodes) {
+    if (aEventCode == blockingErrorCode.mBlockingEventCode) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/* static */
+uint32_t ChannelClassifierUtils::GetClassifierBlockingEventCode(
+    nsresult aErrorCode) {
+  for (const auto& blockingErrorCode : sBlockingErrorCodes) {
+    if (aErrorCode == blockingErrorCode.mErrorCode) {
+      return blockingErrorCode.mBlockingEventCode;
+    }
+  }
+  return 0;
+}
+
+/* static */ const char*
+ChannelClassifierUtils::ClassifierBlockingErrorCodeToConsoleMessage(
+    nsresult aError, nsACString& aCategory) {
+  for (const auto& blockingErrorCode : sBlockingErrorCodes) {
+    if (aError == blockingErrorCode.mErrorCode) {
+      aCategory = blockingErrorCode.mConsoleCategory;
+      return blockingErrorCode.mConsoleMessage;
+    }
+  }
+
+  return nullptr;
+}
 
 /* static */
 nsresult ChannelClassifierUtils::SetBlockedContent(
@@ -111,8 +187,7 @@ nsresult ChannelClassifierUtils::SetBlockedContent(
       parentChannel->SetClassifierMatchedInfo(aList, aProvider, aFullHash);
     }
 
-    unsigned state =
-        UrlClassifierFeatureFactory::GetClassifierBlockingEventCode(aErrorCode);
+    unsigned state = GetClassifierBlockingEventCode(aErrorCode);
     if (!state) {
       state = nsIWebProgressListener::STATE_BLOCKED_UNSAFE_CONTENT;
     }
@@ -154,9 +229,8 @@ nsresult ChannelClassifierUtils::SetBlockedContent(
   const char* message;
   nsCString category;
 
-  if (UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(aErrorCode)) {
-    message = UrlClassifierFeatureFactory::
-        ClassifierBlockingErrorCodeToConsoleMessage(aErrorCode, category);
+  if (IsClassifierBlockingErrorCode(aErrorCode)) {
+    message = ClassifierBlockingErrorCodeToConsoleMessage(aErrorCode, category);
   } else {
     message = "UnsafeUriBlocked";
     category = "Safe Browsing"_ns;
@@ -436,8 +510,8 @@ bool ChannelClassifierUtils::IsSocialTrackingClassificationFlag(
 }
 
 // static
-bool ChannelClassifierUtils::IsCryptominingClassificationFlag(
-    uint32_t aFlag, bool aIsPrivate) {
+bool ChannelClassifierUtils::IsCryptominingClassificationFlag(uint32_t aFlag,
+                                                              bool aIsPrivate) {
   if (aFlag &
       nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_CRYPTOMINING) {
     return true;

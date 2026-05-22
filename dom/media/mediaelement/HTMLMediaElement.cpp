@@ -95,7 +95,7 @@
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/dom/power/PowerManagerService.h"
 #include "mozilla/glean/DomMediaMetrics.h"
-#include "mozilla/net/UrlClassifierFeatureFactory.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/nsVideoFrame.h"
 #include "nsAttrValueInlines.h"
 #include "nsAttrValueOrString.h"
@@ -1496,8 +1496,7 @@ HTMLMediaElement::MediaLoadListener::OnStartRequest(nsIRequest* aRequest) {
       // fingerprinting, cryptomining, etc).
       // We make a note of this media node by including it in a dedicated
       // array of blocked tracking nodes under its parent document.
-      if (net::UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(
-              status)) {
+      if (net::ChannelClassifierUtils::IsClassifierBlockingErrorCode(status)) {
         element->OwnerDoc()->AddBlockedNodeByClassifier(element);
       }
       element->NotifyLoadError(

@@ -49,7 +49,6 @@
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/net/OpaqueResponseUtils.h"
 #include "mozilla/net/ChannelClassifierUtils.h"
-#include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/StaticPrefs_javascript.h"
 #include "nsBufferedStreams.h"
 #include "nsCOMPtr.h"
@@ -6469,8 +6468,7 @@ HttpBaseChannel::GetNativeServerTiming(
 
 NS_IMETHODIMP
 HttpBaseChannel::CancelByURLClassifier(nsresult aErrorCode) {
-  MOZ_ASSERT(
-      UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(aErrorCode));
+  MOZ_ASSERT(ChannelClassifierUtils::IsClassifierBlockingErrorCode(aErrorCode));
   return Cancel(aErrorCode);
 }
 

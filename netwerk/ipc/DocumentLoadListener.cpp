@@ -68,7 +68,7 @@
 #include "mozilla/dom/nsHTTPSOnlyUtils.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/RemoteWebProgressRequest.h"
-#include "mozilla/net/UrlClassifierFeatureFactory.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/intl/Localization.h"
 #include "nsDocLoader.h"  // for FormatStatusMessage
@@ -2608,7 +2608,7 @@ void DocumentLoadListener::MaybeReportBlockedByURLClassifier(nsresult aStatus) {
     return;
   }
 
-  if (!UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(aStatus)) {
+  if (!ChannelClassifierUtils::IsClassifierBlockingErrorCode(aStatus)) {
     return;
   }
 

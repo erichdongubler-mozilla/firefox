@@ -22,7 +22,6 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/net/UrlClassifierCommon.h"
-#include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Services.h"
 
@@ -280,7 +279,7 @@ void nsChannelClassifier::MarkEntryClassified(nsresult status) {
   MOZ_ASSERT(XRE_IsParentProcess());
 
   // Don't cache tracking classifications because we support allowlisting.
-  if (UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(status) ||
+  if (ChannelClassifierUtils::IsClassifierBlockingErrorCode(status) ||
       mIsAllowListed) {
     return;
   }
@@ -390,7 +389,7 @@ nsChannelClassifier::OnClassifyComplete(nsresult aErrorCode,
   // Should only be called in the parent process.
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(
-      !UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(aErrorCode));
+      !ChannelClassifierUtils::IsClassifierBlockingErrorCode(aErrorCode));
 
   if (mSuspendedChannel) {
     MarkEntryClassified(aErrorCode);
