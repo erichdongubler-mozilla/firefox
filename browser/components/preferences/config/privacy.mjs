@@ -1215,6 +1215,8 @@ SettingGroupManager.registerGroups({
           ".imageAlignment": "end",
           ".imageSrc":
             "chrome://browser/content/preferences/etp-toggle-promo.svg",
+          imagewidth: "large",
+          imagedisplay: "cover",
         },
       },
       {
