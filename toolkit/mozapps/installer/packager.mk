@@ -210,13 +210,4 @@ multilocale.txt-%:
 
 locale-manifest.in: LOCALES?=$(MOZ_CHROME_MULTILOCALE)
 locale-manifest.in: $(GLOBAL_DEPS) FORCE
-	printf '\n[multilocale]\n' > $@
-	printf '$(BASE_PATH)/res/multilocale.txt\n' >> $@
-	for LOCALE in $(ALL_LOCALES) ;\
-	do \
-	  for ENTRY in $(MOZ_CHROME_LOCALE_ENTRIES) ;\
-		do \
-		  printf "$$ENTRY""$$LOCALE"'@JAREXT@\n' >> $@; \
-		  printf "$$ENTRY""$$LOCALE"'.manifest\n' >> $@; \
-	  done \
-	done
+	$(call py_action,locale_manifest,--output $@ --base-path $(BASE_PATH) --locales $(ALL_LOCALES) --locale-entries $(MOZ_CHROME_LOCALE_ENTRIES))
