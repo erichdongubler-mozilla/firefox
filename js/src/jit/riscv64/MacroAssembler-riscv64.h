@@ -170,26 +170,32 @@ class MacroAssemblerRiscv64 : public Assembler {
   CodeOffset BranchAndLinkLong(Label* L);
   void GenPCRelativeJumpAndLink(Register rd, int32_t imm32);
 
-#define DEFINE_INSTRUCTION(instr)                                           \
-  void instr(Register rd, Register rs, Operand rt);                         \
-  void instr(Register rd, Register rs, Imm32 imm) {                         \
-    instr(rd, rs, Operand(imm.value));                                      \
-  }                                                                         \
-  void instr(Register rd, Imm32 imm) { instr(rd, rd, Operand(imm.value)); } \
-  void instr(Register rd, Register rs) { instr(rd, rd, Operand(rs)); }
+#define DEFINE_INSTRUCTION(instr)                     \
+  void instr(Register rd, Register rs, Imm64 imm);    \
+  void instr(Register rd, Register rs, Imm32 imm) {   \
+    instr(rd, rs, Imm64(imm.value));                  \
+  }                                                   \
+  void instr(Register rd, Register rs, ImmWord imm) { \
+    instr(rd, rs, Imm64(imm.value));                  \
+  }
 
-  DEFINE_INSTRUCTION(ma_and);
-  DEFINE_INSTRUCTION(ma_or);
-  DEFINE_INSTRUCTION(ma_xor);
-  DEFINE_INSTRUCTION(ma_sub32)
+#define DEFINE_INSTRUCTION_I32(instr) \
+  void instr(Register rd, Register rs, Imm32 imm);
+
+  DEFINE_INSTRUCTION(ma_and)
+  DEFINE_INSTRUCTION(ma_or)
+  DEFINE_INSTRUCTION(ma_xor)
+  DEFINE_INSTRUCTION_I32(ma_sub32)
   DEFINE_INSTRUCTION(ma_sub64)
-  DEFINE_INSTRUCTION(ma_add32)
+  DEFINE_INSTRUCTION_I32(ma_add32)
   DEFINE_INSTRUCTION(ma_add64)
-  DEFINE_INSTRUCTION(ma_mul32)
-  DEFINE_INSTRUCTION(ma_mulhu32)
+  DEFINE_INSTRUCTION_I32(ma_mul32)
+  DEFINE_INSTRUCTION_I32(ma_mulhu32)
   DEFINE_INSTRUCTION(ma_mul64)
 
 #undef DEFINE_INSTRUCTION
+#undef DEFINE_INSTRUCTION_I32
+
   // arithmetic based ops
   void ma_add32TestOverflow(Register rd, Register rj, Register rk,
                             Label* overflow);

@@ -718,7 +718,7 @@ void CodeGenerator::visitAddIntPtr(LAddIntPtr* ins) {
   Register dest = ToRegister(ins->output());
 
   if (rhs->isConstant()) {
-    masm.ma_add64(dest, lhs, Operand(ToIntPtr(rhs)));
+    masm.ma_add64(dest, lhs, Imm64(ToIntPtr(rhs)));
   } else {
     masm.add(dest, lhs, ToRegister(rhs));
   }
@@ -730,7 +730,7 @@ void CodeGenerator::visitAddI64(LAddI64* ins) {
   Register dest = ToOutRegister64(ins).reg;
 
   if (IsConstant(rhs)) {
-    masm.ma_add64(dest, lhs, Operand(ToInt64(rhs)));
+    masm.ma_add64(dest, lhs, Imm64(ToInt64(rhs)));
   } else {
     masm.add(dest, lhs, ToRegister64(rhs).reg);
   }
@@ -772,7 +772,7 @@ void CodeGenerator::visitSubIntPtr(LSubIntPtr* ins) {
   Register dest = ToRegister(ins->output());
 
   if (rhs->isConstant()) {
-    masm.ma_sub64(dest, lhs, Operand(ToIntPtr(rhs)));
+    masm.ma_sub64(dest, lhs, Imm64(ToIntPtr(rhs)));
   } else {
     masm.sub(dest, lhs, ToRegister(rhs));
   }
@@ -784,7 +784,7 @@ void CodeGenerator::visitSubI64(LSubI64* ins) {
   Register dest = ToOutRegister64(ins).reg;
 
   if (IsConstant(rhs)) {
-    masm.ma_sub64(dest, lhs, Operand(ToInt64(rhs)));
+    masm.ma_sub64(dest, lhs, Imm64(ToInt64(rhs)));
   } else {
     masm.sub(dest, lhs, ToRegister64(rhs).reg);
   }
@@ -1290,21 +1290,21 @@ void CodeGenerator::visitBitOpI64(LBitOpI64* ins) {
   switch (ins->bitop()) {
     case JSOp::BitOr:
       if (IsConstant(rhs)) {
-        masm.ma_or(dest, lhs, Operand(ToInt64(rhs)));
+        masm.ma_or(dest, lhs, Imm64(ToInt64(rhs)));
       } else {
         masm.or_(dest, lhs, ToRegister64(rhs).reg);
       }
       break;
     case JSOp::BitXor:
       if (IsConstant(rhs)) {
-        masm.ma_xor(dest, lhs, Operand(ToInt64(rhs)));
+        masm.ma_xor(dest, lhs, Imm64(ToInt64(rhs)));
       } else {
         masm.xor_(dest, lhs, ToRegister64(rhs).reg);
       }
       break;
     case JSOp::BitAnd:
       if (IsConstant(rhs)) {
-        masm.ma_and(dest, lhs, Operand(ToInt64(rhs)));
+        masm.ma_and(dest, lhs, Imm64(ToInt64(rhs)));
       } else {
         masm.and_(dest, lhs, ToRegister64(rhs).reg);
       }
