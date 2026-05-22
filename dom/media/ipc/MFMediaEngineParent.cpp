@@ -229,6 +229,16 @@ void MFMediaEngineParent::InitializeDXGIDeviceManager() {
     } while (false)
 #endif
 
+static MF_MEDIA_ENGINE_ERR ToError(DWORD aError) {
+  MOZ_ASSERT(aError == MF_MEDIA_ENGINE_ERR_NOERROR ||
+             aError == MF_MEDIA_ENGINE_ERR_ABORTED ||
+             aError == MF_MEDIA_ENGINE_ERR_NETWORK ||
+             aError == MF_MEDIA_ENGINE_ERR_DECODE ||
+             aError == MF_MEDIA_ENGINE_ERR_SRC_NOT_SUPPORTED ||
+             aError == MF_MEDIA_ENGINE_ERR_ENCRYPTED);
+  return static_cast<MF_MEDIA_ENGINE_ERR>(aError);
+}
+
 void MFMediaEngineParent::HandleMediaEngineEvent(
     MFMediaEngineEventWrapper aEvent) {
   AssertOnManagerThread();
@@ -239,7 +249,7 @@ void MFMediaEngineParent::HandleMediaEngineEvent(
   switch (aEvent.mEvent) {
     case MF_MEDIA_ENGINE_EVENT_ERROR: {
       MOZ_ASSERT(aEvent.mParam1 && aEvent.mParam2);
-      auto error = static_cast<MF_MEDIA_ENGINE_ERR>(*aEvent.mParam1);
+      auto error = ToError(*aEvent.mParam1);
       auto result = static_cast<HRESULT>(*aEvent.mParam2);
       NotifyError(error, result);
       break;
