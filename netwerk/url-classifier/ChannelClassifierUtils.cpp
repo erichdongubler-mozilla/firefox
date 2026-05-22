@@ -4,6 +4,7 @@
 
 #include "mozilla/net/ChannelClassifierUtils.h"
 
+#include "ChannelClassifierService.h"
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Components.h"
@@ -295,6 +296,48 @@ void ChannelClassifierUtils::AnnotateChannelWithoutNotifying(
   }
 }
 
+/* static */
+nsresult ChannelClassifierUtils::MaybeBlockChannel(
+    nsIChannel* aChannel, const nsACString& aFeatureName,
+    const nsACString& aList, nsresult aErrorCode, uint32_t aReplacedEvent,
+    uint32_t aAllowedEvent, bool* aShouldContinue) {
+  MOZ_ASSERT(aChannel);
+  MOZ_ASSERT(aShouldContinue);
+
+  ChannelBlockDecision decision =
+      ChannelClassifierService::OnBeforeBlockChannel(aChannel, aFeatureName,
+                                                     aList);
+  if (decision != ChannelBlockDecision::Blocked) {
+    uint32_t event = decision == ChannelBlockDecision::Replaced ? aReplacedEvent
+                                                                : aAllowedEvent;
+
+    // Treat a Replaced decision (resource swapped for a shim) as a blocked
+    // event so consumers see it as a block.
+    bool blocked = decision == ChannelBlockDecision::Replaced;
+    ContentBlockingNotifier::OnEvent(aChannel, event, blocked);
+
+    *aShouldContinue = true;
+    return NS_OK;
+  }
+
+  SetBlockedContent(aChannel, aErrorCode, aList, ""_ns, ""_ns);
+
+  UC_LOG(
+      ("ChannelClassifierUtils::MaybeBlockChannel - feature=%s "
+       "cancelling channel %p",
+       PromiseFlatCString(aFeatureName).get(), aChannel));
+
+  nsCOMPtr<nsIHttpChannelInternal> httpChannel = do_QueryInterface(aChannel);
+  if (httpChannel) {
+    (void)httpChannel->CancelByURLClassifier(aErrorCode);
+  } else {
+    (void)aChannel->Cancel(aErrorCode);
+  }
+
+  *aShouldContinue = false;
+  return NS_OK;
+}
+
 // static
 bool ChannelClassifierUtils::IsAllowListed(nsIChannel* aChannel) {
   nsCOMPtr<nsIHttpChannelInternal> channel = do_QueryInterface(aChannel);
@@ -339,8 +382,9 @@ bool ChannelClassifierUtils::IsAllowListed(nsIChannel* aChannel) {
   }
 
   if (isAllowListed) {
-    UC_LOG(("ChannelClassifierUtils::IsAllowListed - user override on channel %p",
-            aChannel));
+    UC_LOG(
+        ("ChannelClassifierUtils::IsAllowListed - user override on channel %p",
+         aChannel));
   }
 
   return isAllowListed;

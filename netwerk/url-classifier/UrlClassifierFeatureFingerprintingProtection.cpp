@@ -7,12 +7,10 @@
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/net/UrlClassifierCommon.h"
-#include "ChannelClassifierService.h"
 #include "mozilla/ScopedPrefs.h"
 #include "nsNetUtil.h"
 #include "mozilla/StaticPtr.h"
 #include "nsIWebProgressListener.h"
-#include "nsIHttpChannelInternal.h"
 #include "nsIChannel.h"
 
 namespace mozilla {
@@ -165,43 +163,11 @@ UrlClassifierFeatureFingerprintingProtection::ProcessChannel(
   nsAutoCString list;
   UrlClassifierCommon::TablesToString(aList, list);
 
-  ChannelBlockDecision decision =
-      ChannelClassifierService::OnBeforeBlockChannel(aChannel, mName, list);
-  if (decision != ChannelBlockDecision::Blocked) {
-    uint32_t event =
-        decision == ChannelBlockDecision::Replaced
-            ? nsIWebProgressListener::STATE_REPLACED_FINGERPRINTING_CONTENT
-            : nsIWebProgressListener::STATE_ALLOWED_FINGERPRINTING_CONTENT;
-
-    // Need to set aBlocked to True if we replace the Fingerprinter with a shim,
-    //  since the shim is treated as a blocked event
-    if (event ==
-        nsIWebProgressListener::STATE_REPLACED_FINGERPRINTING_CONTENT) {
-      ContentBlockingNotifier::OnEvent(aChannel, event, true);
-    } else {
-      ContentBlockingNotifier::OnEvent(aChannel, event, false);
-    }
-
-    *aShouldContinue = true;
-    return NS_OK;
-  }
-
-  ChannelClassifierUtils::SetBlockedContent(
-      aChannel, NS_ERROR_FINGERPRINTING_URI, list, ""_ns, ""_ns);
-
-  UC_LOG(
-      ("UrlClassifierFeatureFingerprintingProtection::ProcessChannel - "
-       "cancelling channel %p",
-       aChannel));
-
-  nsCOMPtr<nsIHttpChannelInternal> httpChannel = do_QueryInterface(aChannel);
-  if (httpChannel) {
-    (void)httpChannel->CancelByURLClassifier(NS_ERROR_FINGERPRINTING_URI);
-  } else {
-    (void)aChannel->Cancel(NS_ERROR_FINGERPRINTING_URI);
-  }
-
-  return NS_OK;
+  return ChannelClassifierUtils::MaybeBlockChannel(
+      aChannel, mName, list, NS_ERROR_FINGERPRINTING_URI,
+      nsIWebProgressListener::STATE_REPLACED_FINGERPRINTING_CONTENT,
+      nsIWebProgressListener::STATE_ALLOWED_FINGERPRINTING_CONTENT,
+      aShouldContinue);
 }
 
 NS_IMETHODIMP
