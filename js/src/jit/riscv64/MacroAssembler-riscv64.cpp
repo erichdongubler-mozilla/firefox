@@ -6013,7 +6013,7 @@ FaultingCodeOffset MacroAssemblerRiscv64::ma_fst_s(FloatRegister ft,
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
     MOZ_ASSERT(base != scratch);
-    ma_add64(scratch, base,  Imm32(offset));
+    ma_add64(scratch, base, Imm32(offset));
     fco = FaultingCodeOffset(currentOffset());
     fsw(ft, scratch, 0);
   }
