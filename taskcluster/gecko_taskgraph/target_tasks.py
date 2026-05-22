@@ -472,18 +472,6 @@ def target_tasks_graphics(full_task_graph, parameters, graph_config):
 
 
 @register_target_task("mozilla_beta_tasks")
-def target_tasks_mozilla_beta(full_task_graph, parameters, graph_config):
-    """Select the set of tasks required for a promotable beta or release build
-    of desktop, plus android CI. The candidates build process involves a pipeline
-    of builds and signing, but does not include beetmover or balrog jobs."""
-
-    return [
-        l
-        for l, t in full_task_graph.tasks.items()
-        if filter_release_tasks(t, parameters) and standard_filter(t, parameters)
-    ]
-
-
 @register_target_task("mozilla_release_tasks")
 def target_tasks_mozilla_release(full_task_graph, parameters, graph_config):
     """Select the set of tasks required for a promotable beta or release build
