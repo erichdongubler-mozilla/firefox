@@ -774,6 +774,7 @@
   result_type: Object
   guard: true
   congruent_to: if_operands_equal
+  # The handler slot is cleared when the proxy is revoked.
   alias_set:
     load: ObjectFields
   generate_lir: true
@@ -2896,6 +2897,8 @@
   guard: true
   movable: true
   congruent_to: if_operands_and_arguments_equal
+  # The proxy handler can change when a proxy is swapped with another object or
+  # when nuking a cross-compartment wrapper.
   alias_set:
     load: ObjectFields
   generate_lir: true

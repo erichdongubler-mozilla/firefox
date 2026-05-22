@@ -8980,6 +8980,7 @@ class MHasClass : public MUnaryInstruction, public SingleObjectPolicy::Data {
 
   MDefinition* foldsTo(TempAllocator& alloc) override;
   AliasSet getAliasSet() const override {
+    // ProxyObject::swap can change the JSClass of certain proxy objects.
     return AliasSet::Load(AliasSet::ObjectFields);
   }
   bool congruentTo(const MDefinition* ins) const override {
@@ -9022,6 +9023,7 @@ class MGuardToClass : public MUnaryInstruction,
 
   MDefinition* foldsTo(TempAllocator& alloc) override;
   AliasSet getAliasSet() const override {
+    // ProxyObject::swap can change the JSClass of certain proxy objects.
     return AliasSet::Load(AliasSet::ObjectFields);
   }
   bool congruentTo(const MDefinition* ins) const override {
