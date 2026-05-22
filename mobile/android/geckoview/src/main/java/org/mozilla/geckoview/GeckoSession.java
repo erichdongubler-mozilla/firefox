@@ -413,7 +413,10 @@ public class GeckoSession {
     // be replaced with the new viewport information provided.
     @WrapForJNI(calledFrom = "ui")
     private void notifyCompositorScrollUpdate(
-        final float scrollX, final float scrollY, final float zoom, final int source) {
+        final float scrollX,
+        final float scrollY,
+        final float zoom,
+        final @ScrollPositionUpdate.SourceType int source) {
       GeckoSession.this.onCompositorScrollUpdate(scrollX, scrollY, zoom, source);
     }
 
@@ -6891,6 +6894,11 @@ public class GeckoSession {
      */
     @WrapForJNI public static final int SOURCE_OTHER = 1;
 
+    /** Valid source types for scroll position updates. */
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({SOURCE_USER_INTERACTION, SOURCE_OTHER})
+    public @interface SourceType {}
+
     /** The new horizontal scroll position in CSS pixels. */
     public float scrollX;
 
@@ -6903,8 +6911,11 @@ public class GeckoSession {
      */
     public float zoom;
 
-    /** The source of the scroll position change. One of SOURCE_USER_INTERACTION or SOURCE_OTHER. */
-    public int source;
+    /**
+     * The source of the scroll position change. One of {@link #SOURCE_USER_INTERACTION} or {@link
+     * #SOURCE_OTHER}.
+     */
+    public @SourceType int source;
   }
 
   /**
@@ -7982,7 +7993,10 @@ public class GeckoSession {
   }
 
   /* package */ void onCompositorScrollUpdate(
-      final float scrollX, final float scrollY, final float zoom, final int source) {
+      final float scrollX,
+      final float scrollY,
+      final float zoom,
+      final @ScrollPositionUpdate.SourceType int source) {
     if (DEBUG) {
       ThreadUtils.assertOnUiThread();
     }

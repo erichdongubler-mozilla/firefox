@@ -2052,6 +2052,9 @@ package org.mozilla.geckoview {
     field public float zoom;
   }
 
+  @Retention(value=RetentionPolicy.SOURCE) public static interface GeckoSession.ScrollPositionUpdate.SourceType {
+  }
+
   public static interface GeckoSession.SelectionActionDelegate {
     method @UiThread default public void onDismissClipboardPermissionRequest(@NonNull GeckoSession);
     method @UiThread default public void onHideAction(@NonNull GeckoSession, int);
