@@ -1618,11 +1618,6 @@ add_task(async function testGraduateFirefoxLabsAutoPip() {
     {
       isFirefoxLabsOptIn: true,
       isRollout: true,
-      firefoxLabsTitle: "experimental-features-auto-pip",
-      firefoxLabsDescription: "experimental-features-auto-pip-description",
-      firefoxLabsDescriptionLink: null,
-      firefoxLabsGroup: "experimental-features-group-productivity",
-      requiresRestart: false,
     }
   );
 
@@ -1660,7 +1655,7 @@ add_task(async function testGraduateFirefoxLabsAutoPip() {
           .map(event => event.extra),
         [
           {
-            slug: "firefox-labs-auto-pip",
+            slug: SLUG,
             branch: "control",
             status: "WasEnrolled",
             reason: "Migration",
@@ -1695,6 +1690,10 @@ add_task(async function testGraduateFirefoxLabsAutoPip() {
         migration_id: "graduate-firefox-labs-auto-pip",
         success: "true",
       },
+      {
+        migration_id: "graduate-firefox-labs-jpeg-xl",
+        success: "true",
+      },
     ]
   );
 
@@ -1704,7 +1703,7 @@ add_task(async function testGraduateFirefoxLabsAutoPip() {
       .map(event => event.extra),
     [
       {
-        experiment: "firefox-labs-auto-pip",
+        experiment: SLUG,
         branch: "control",
         reason: "migration",
         migration: "graduate-firefox-labs-auto-pip",
@@ -1751,6 +1750,10 @@ add_task(async function testSeparateRolloutOptOut() {
             migration_id: "separate-rollout-opt-out",
             success: "true",
           },
+          {
+            migration_id: "graduate-firefox-labs-jpeg-xl",
+            success: "true",
+          },
         ]
       );
 
@@ -1792,4 +1795,104 @@ add_task(async function testSeparateRolloutOptOut() {
     Services.prefs.clearUserPref(TELEMETRY_PREF);
     Services.prefs.clearUserPref(ROLLOUT_PREF);
   }
+});
+
+add_task(async function testGraduateFirefoxLabsJPEGXL() {
+  const SLUG = "firefox-labs-jpeg-xl";
+
+  const recipe = NimbusTestUtils.factories.recipe.withFeatureConfig(
+    SLUG,
+    {
+      featureId: "jpeg-xl",
+      value: { enabled: true },
+    },
+    {
+      isFirefoxLabsOptIn: true,
+      isRollout: true,
+    }
+  );
+
+  const ENABLED_PREF = getEnabledPrefForFeature("jpeg-xl");
+
+  Services.prefs.setBoolPref(ENABLED_PREF, true);
+
+  const { cleanup, manager } = await NimbusTestUtils.setupTest({
+    clearTelemetry: true,
+    init: false,
+    storePath: await NimbusTestUtils.createStoreWith(store => {
+      NimbusTestUtils.addEnrollmentForRecipe(recipe, {
+        store,
+        extra: {
+          prefs: [
+            {
+              name: ENABLED_PREF,
+              featureId: "jpeg-xl",
+              variable: "enabled",
+              branch: "user",
+              originalValue: false,
+            },
+          ],
+        },
+      });
+    }),
+    migrationState: NimbusTestUtils.migrationState.SEPARATE_ROLLOUT_OPT_OUT,
+  });
+
+  await GleanPings.nimbusTargetingContext.testSubmission(
+    () => {
+      Assert.deepEqual(
+        Glean.nimbusEvents.enrollmentStatus
+          .testGetValue("nimbus-targeting-context")
+          .map(event => event.extra),
+        [
+          {
+            slug: SLUG,
+            branch: "control",
+            status: "WasEnrolled",
+            reason: "Migration",
+            migration: "graduate-firefox-labs-jpeg-xl",
+          },
+        ]
+      );
+    },
+    () => ExperimentAPI.init()
+  );
+
+  const enrollment = manager.store.get(SLUG);
+
+  Assert.ok(!enrollment.active, "Enrollment is not active");
+  Assert.deepEqual(enrollment.featureIds, ["jpeg-xl"]);
+  Assert.equal(enrollment.unenrollReason, "migration");
+
+  Assert.equal(
+    Services.prefs.getBoolPref(ENABLED_PREF),
+    true,
+    "Pref is still set"
+  );
+
+  Assert.deepEqual(
+    Glean.nimbusEvents.migration.testGetValue().map(event => event.extra),
+    [
+      {
+        migration_id: "graduate-firefox-labs-jpeg-xl",
+        success: "true",
+      },
+    ]
+  );
+  Assert.deepEqual(
+    Glean.nimbusEvents.unenrollment
+      .testGetValue("events")
+      .map(event => event.extra),
+    [
+      {
+        experiment: SLUG,
+        branch: "control",
+        reason: "migration",
+        migration: "graduate-firefox-labs-jpeg-xl",
+      },
+    ]
+  );
+
+  Services.prefs.setBoolPref(ENABLED_PREF, false);
+  await cleanup();
 });

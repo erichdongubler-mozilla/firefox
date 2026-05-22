@@ -82,12 +82,6 @@ export const LABS_MIGRATION_FEATURE_MAP = (function () {
     "urlbar-ime-search": "firefox-labs-urlbar-ime-search",
   };
 
-  // The jpeg-xl feature is gated on MOZ_JXL; the relevant prefs do not exist
-  // when MOZ_JXL is not defined.
-  if (AppConstants.MOZ_JXL) {
-    featureMap["jpeg-xl"] = "firefox-labs-jpeg-xl";
-  }
-
   return Object.freeze(featureMap);
 })();
 
@@ -275,26 +269,23 @@ async function migrateEnrollmentsToSql() {
 }
 
 /**
- * Migrate enrollment from the firefox-labs-auto-pip rolloutl.
+ * Graduate a Firefox Labs opt-in! 🎓
  *
- * This feature is becoming a regular setting in about:preferences in Firefox
- * 147. We need to unenroll users without resetting the prefs controlled by the
- * feature.
+ * Migrations should use this function when features controlled by labs become
+ * default-enabled. The user will be unenrolled from the rollout while keeping
+ * the prefs set by the enrollment.
  *
- * This migration must run before the `ExperimentManager.onStartup` has run
- * because this feature might be removed and we cannot guarantee that users will
- * update to exactly 145.
+ * @param {string} migration The name of the migration.
+ * @param {string} slug The slug of the rollout.
  */
-function migrateGraduateFirefoxLabsAutoPip(migration) {
+function graduateLabs(migration, slug) {
   if (isBackgroundTaskMode()) {
     // This migration does not apply to background task mode.
     lazy.log.debug(`${migration}: skipping (is background task mode)`);
     return;
   }
 
-  const enrollment = lazy.ExperimentAPI.manager.store.get(
-    "firefox-labs-auto-pip"
-  );
+  const enrollment = lazy.ExperimentAPI.manager.store.get(slug);
   if (!enrollment?.active) {
     lazy.log.debug(`${migration}: skipping (no or inactive enrollment)`);
     return;
@@ -305,6 +296,37 @@ function migrateGraduateFirefoxLabsAutoPip(migration) {
     lazy.UnenrollmentCause.Migration(migration),
     { unsetEnrollmentPrefs: false }
   );
+}
+
+/**
+ * Migrate enrollment from the firefox-labs-auto-pip rollout.
+ *
+ * This feature is becoming a regular setting in about:preferences in Firefox
+ * 147. We need to unenroll users without resetting the prefs controlled by the
+ * feature.
+ *
+ * This migration must run before the `ExperimentManager.onStartup` has run
+ * because this feature might be removed and we cannot guarantee that users will
+ * update to exactly 145.
+ */
+function migrateGraduateFirefoxLabsAutoPip(migration) {
+  graduateLabs(migration, "firefox-labs-auto-pip");
+}
+
+/**
+ * Migrate enrollment from the firefox-labs-jpeg-xl rollout.
+ *
+ * This rollout was only available in Nightly and the feature is becoming on by
+ * default in Nightly. We need to unenroll users without resetting the prefs
+ * controlled by the feature.
+ */
+function migrateGraduateFirefoxLabsJPEGXL(migration) {
+  if (!AppConstants.MOZ_JXL) {
+    lazy.log.debug(`${migration}: skipping (MOZ_JXL disabled)`);
+    return;
+  }
+
+  graduateLabs(migration, "firefox-labs-jpeg-xl");
 }
 
 /**
@@ -513,6 +535,10 @@ export const NimbusMigrations = {
       migration(
         "graduate-firefox-labs-auto-pip",
         migrateGraduateFirefoxLabsAutoPip
+      ),
+      migration(
+        "graduate-firefox-labs-jpeg-xl",
+        migrateGraduateFirefoxLabsJPEGXL
       ),
     ],
 

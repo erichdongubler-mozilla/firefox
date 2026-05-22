@@ -580,13 +580,23 @@ export const NimbusTestUtils = {
       });
     },
 
+    get GRADUATED_FIREFOX_LABS_JPEG_XL() {
+      const { Phase } = lazy.NimbusMigrations;
+
+      return NimbusTestUtils.makeMigrationState({
+        [Phase.INIT_STARTED]: "separate-rollout-opt-out",
+        [Phase.AFTER_STORE_INITIALIZED]: "graduate-firefox-labs-jpeg-xl",
+        [Phase.AFTER_REMOTE_SETTINGS_UPDATE]: "firefox-labs-enrollments",
+      });
+    },
+
     /**
      * A migration state that represents all migrations applied.
      *
      * @type {Record<Phase, number>}
      */
     get LATEST() {
-      return NimbusTestUtils.migrationState.SEPARATE_ROLLOUT_OPT_OUT;
+      return NimbusTestUtils.migrationState.GRADUATED_FIREFOX_LABS_JPEG_XL;
     },
   },
 
