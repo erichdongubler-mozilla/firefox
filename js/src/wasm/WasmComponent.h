@@ -499,6 +499,21 @@ class ComponentImport {
   const ComponentExternDesc& externDesc() const { return externDesc_; }
 };
 
+class ComponentExport {
+  CacheableName name_;
+  ComponentSort sort_;
+  uint32_t index_;
+
+ public:
+  explicit ComponentExport(CacheableName&& name, ComponentSort sort,
+                           uint32_t index)
+      : name_(std::move(name)), sort_(sort), index_(index) {}
+
+  const CacheableName& name() const { return name_; }
+  ComponentSort sort() const { return sort_; }
+  uint32_t index() const { return index_; }
+};
+
 class Component : public JS::WasmComponent {
   using CoreModuleVector = mozilla::Vector<SharedModule, 0, SystemAllocPolicy>;
   using CoreInstanceVector =
@@ -507,6 +522,7 @@ class Component : public JS::WasmComponent {
   using FuncVector =
       mozilla::Vector<ComponentLiftedFuncDesc, 0, SystemAllocPolicy>;
   using ImportVector = Vector<ComponentImport, 0, SystemAllocPolicy>;
+  using ExportVector = Vector<ComponentExport, 0, SystemAllocPolicy>;
   using AliasVector = Vector<ComponentAlias, 0, SystemAllocPolicy>;
 
   // JS API and JS::WasmComponent implementation:
@@ -518,6 +534,7 @@ class Component : public JS::WasmComponent {
   TypeVector types;
   FuncVector funcs;
   ImportVector imports;
+  ExportVector exports;
 
   AliasVector
       coreFuncs;  // TODO(wasm-cm): This will have to accommodate lowered funcs

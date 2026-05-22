@@ -5815,6 +5815,112 @@ static bool DecodeComponentImport(Decoder& d, MutableComponent& c,
   return c->imports.emplaceBack(std::move(importName), externDesc);
 }
 
+enum class ComponentExportFlagsRaw : uint8_t {
+  // As with imports, 0x00 and 0x01 are equivalent flags For Now.
+  Plain1 = 0x00,
+  Plain2 = 0x01,
+  VersionSuffix = 0x02,
+};
+
+[[nodiscard]] static bool DecodeComponentExport(
+    Decoder& d, MutableComponent& c, StronglyUniqueNameSet& nameDedup) {
+  uint8_t exportFlags;
+  if (!d.readFixedU8(&exportFlags)) {
+    return d.fail("expected export flags");
+  }
+
+  switch (exportFlags) {
+    case uint8_t(ComponentImportFlagsRaw::Plain1):
+    case uint8_t(ComponentImportFlagsRaw::Plain2):
+      break;
+    case uint8_t(ComponentImportFlagsRaw::VersionSuffix):
+      // TODO(wasm-cm): Support semver?
+      return d.fail("version suffixes on exports are not allowed");
+    default:
+      return d.failf("invalid export flags %#x", exportFlags);
+  }
+
+  CacheableName exportName;
+  if (!DecodeComponentName(d, "export", &exportName, /*allowMethods=*/true)) {
+    return false;
+  }
+  bool duplicate;
+  if (!nameDedup.add(exportName.utf8Bytes(), &duplicate)) {
+    return false;
+  }
+  if (duplicate) {
+    return d.failf("export name \"%.*s\" is not strongly-unique",
+                   ComponentName_Printf(exportName));
+  }
+
+  ComponentSort exportSort;
+  if (!DecodeComponentSort(d, &exportSort, /*forExterndesc=*/true)) {
+    return false;
+  }
+
+  uint32_t exportIndex;
+  if (!d.readVarU32(&exportIndex)) {
+    return d.fail("expected export index");
+  }
+
+  // Validate that the index is in range
+  const char* kindStr = "";
+  uint32_t numItems = 0;
+  switch (exportSort) {
+    case ComponentSort::Func: {
+      kindStr = "function";
+      numItems = c->funcs.length();
+    } break;
+    case ComponentSort::Type: {
+      kindStr = "type";
+      numItems = c->types.length();
+    } break;
+    case ComponentSort::Component: {
+      // TODO(wasm-cm): Support all export sorts
+      return d.fail("exported components are not supported yet");
+    } break;
+    case ComponentSort::Instance: {
+      // TODO(wasm-cm): Support all export sorts
+      return d.fail("exported component instances are not supported yet");
+    } break;
+    case ComponentSort::CoreModule: {
+      kindStr = "core module";
+      numItems = c->coreModules.length();
+    } break;
+    default:
+      MOZ_CRASH("all cases from DecodeComponentSort should have been handled");
+  }
+  if (exportIndex >= numItems) {
+    return d.failf("invalid %s index %d for export", kindStr, exportIndex);
+  }
+
+  uint8_t hasExplicitExternDesc;
+  if (!d.readFixedU8(&hasExplicitExternDesc) || hasExplicitExternDesc > 0x01) {
+    return d.fail("expected possible explicit external type");
+  }
+  if (hasExplicitExternDesc) {
+    ComponentExternDesc explicitExternDesc;
+    if (!DecodeComponentExternDesc(d, &explicitExternDesc)) {
+      return false;
+    }
+
+    // TODO(wasm-cm): Validate that the exported thing matches the explicit
+    // externdesc
+  }
+
+  // TODO(wasm-cm): Validate that all resource types used (transitively!) in the
+  // exported thing's type came from a preceding import or were previously
+  // exported.
+
+  // TODO(wasm-cm): Validate all the naming-related conditions
+
+  if (!c->exports.emplaceBack(std::move(exportName), exportSort, exportIndex)) {
+    return false;
+  }
+
+  return true;
+}
+
 [[nodiscard]] static bool DecodeComponentCoreModuleSection(
     Decoder& d, MutableComponent& c, const BytecodeSpan& moduleBytes,
     const CompileArgs& args, JS::OptimizedEncodingListener* listener) {
@@ -5932,6 +6038,25 @@ static bool DecodeComponentImport(Decoder& d, MutableComponent& c,
   return true;
 }
 
+[[nodiscard]] static bool DecodeComponentExportSection(
+    Decoder& d, MutableComponent& c, StronglyUniqueNameSet& nameDedup) {
+  uint32_t numExports;
+  if (!d.readVarU32(&numExports)) {
+    return d.fail("expected number of exports");
+  }
+  if (c->exports.length() + uint64_t(numExports) > MaxComponentExports) {
+    return d.failf("too many exports (max %d)", MaxComponentExports);
+  }
+
+  for (uint32_t i = 0; i < numExports; i++) {
+    if (!DecodeComponentExport(d, c, nameDedup)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 bool wasm::DecodeComponent(Decoder& d, MutableComponent c,
                            const CompileArgs& args,
                            JS::OptimizedEncodingListener* listener) {
@@ -5940,6 +6065,7 @@ bool wasm::DecodeComponent(Decoder& d, MutableComponent c,
   }
 
   StronglyUniqueNameSet importNameDedup;
+  StronglyUniqueNameSet exportNameDedup;
 
   while (!d.done()) {
     uint8_t sectionID;
@@ -6004,6 +6130,11 @@ bool wasm::DecodeComponent(Decoder& d, MutableComponent c,
         } break;
         case uint8_t(ComponentSectionId::Import): {
           if (!DecodeComponentImportSection(d, c, importNameDedup)) {
+            return false;
+          }
+        } break;
+        case uint8_t(ComponentSectionId::Export): {
+          if (!DecodeComponentExportSection(d, c, exportNameDedup)) {
             return false;
           }
         } break;
