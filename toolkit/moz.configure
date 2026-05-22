@@ -3948,6 +3948,49 @@ with only_when(target_is_osx):
         set_config("MOZ_PKCS11_PROCESS_BUNDLEID", moz_pkcs11_process_bundle_id)
 
 
+# Per-format extra args passed to mozbuild.action.package
+# ==============================================================
+@depends(
+    moz_pkg_format,
+    toolkit,
+    enable_profile_use,
+    mac_bundle_name,
+    moz_branding_directory,
+    moz_app_displayname,
+    build_environment.topsrcdir,
+)
+@imports(_from="os.path", _import="join")
+@imports("shlex")
+def moz_package_extra_args(
+    pkg_format,
+    toolkit,
+    profile_use,
+    macbundle_name,
+    branding_dir,
+    app_displayname,
+    topsrcdir,
+):
+    args = []
+    # For non-shippable builds, we would rather finish the build sooner
+    # than have optimal compression.
+    if pkg_format == "XZ" and profile_use:
+        args.append("--strong-compression")
+    if pkg_format == "BZ2" and toolkit == "cocoa":
+        args += ["--app-name", macbundle_name]
+    if pkg_format == "DMG":
+        brand = join(topsrcdir, branding_dir)
+        args += [
+            "--dsstore", join(brand, "dsstore"),
+            "--background", join(brand, "background.png"),
+            "--icon", join(brand, "disk.icns"),
+            "--volume-name", app_displayname,
+        ]
+    return " ".join(shlex.quote(a) for a in args)
+
+
+set_config("MOZ_PACKAGE_EXTRA_ARGS", moz_package_extra_args)
+
+
 # JS Packaging
 # ==============================================================
 
