@@ -780,7 +780,7 @@ describe("<SportsWidget> follow teams flow", () => {
       expect.objectContaining({
         type: at.WIDGETS_USER_EVENT,
         data: expect.objectContaining({
-          widget_name: "sports_widget",
+          widget_name: "sports",
           widget_source: "widget",
           user_action: "save_teams",
           action_value: 1,
@@ -1034,6 +1034,96 @@ describe("<SportsWidget> matches view", () => {
       expect.objectContaining({
         type: at.WIDGETS_SPORTS_CHANGE_MATCHES_TAB,
         data: "upcoming",
+      })
+    );
+  });
+
+  it("dispatches change_tab telemetry when the upcoming tab is clicked", () => {
+    const { container } = renderInMatchesState({ matchesTab: "results" });
+    fireEvent.click(
+      container.querySelector("[data-l10n-id='newtab-sports-widget-upcoming']")
+    );
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_USER_EVENT,
+        data: expect.objectContaining({
+          widget_name: "sports",
+          widget_source: "widget",
+          user_action: "change_tab",
+          action_value: "upcoming",
+          widget_size: "medium",
+        }),
+      })
+    );
+  });
+
+  it("dispatches change_tab telemetry when the results tab is clicked", () => {
+    const { container } = renderInMatchesState({
+      matchesTab: "upcoming",
+      data: {
+        teams: [],
+        matches: { current: [], previous: [mockMatch], next: [] },
+      },
+    });
+    fireEvent.click(
+      container.querySelector("[data-l10n-id='newtab-sports-widget-results']")
+    );
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_USER_EVENT,
+        data: expect.objectContaining({
+          widget_name: "sports",
+          widget_source: "widget",
+          user_action: "change_tab",
+          action_value: "results",
+          widget_size: "medium",
+        }),
+      })
+    );
+  });
+
+  it("does not dispatch change_tab telemetry when clicking the already-active tab", () => {
+    const { container } = renderInMatchesState({
+      matchesTab: "upcoming",
+      data: {
+        teams: [],
+        matches: { current: [], previous: [mockMatch], next: [] },
+      },
+    });
+    fireEvent.click(
+      container.querySelector("[data-l10n-id='newtab-sports-widget-upcoming']")
+    );
+    expect(dispatch).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_USER_EVENT,
+        data: expect.objectContaining({ user_action: "change_tab" }),
+      })
+    );
+    expect(dispatch).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_SPORTS_CHANGE_MATCHES_TAB,
+      })
+    );
+  });
+
+  it("does not dispatch change_tab telemetry when clicking the auto-selected Now tab", () => {
+    // When live games are present and the user hasn't picked a tab yet, the
+    // widget auto-activates the Now tab regardless of the persisted matchesTab.
+    // Clicking Now in this state should also be a no-op for telemetry.
+    const { container } = renderInMatchesState({
+      matchesTab: "upcoming",
+      data: {
+        teams: [],
+        matches: { current: [mockMatch], previous: [], next: [] },
+      },
+    });
+    fireEvent.click(
+      container.querySelector("[data-l10n-id='newtab-sports-widget-now']")
+    );
+    expect(dispatch).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_USER_EVENT,
+        data: expect.objectContaining({ user_action: "change_tab" }),
       })
     );
   });
@@ -1576,7 +1666,7 @@ describe("<SportsWidget> followed teams matches view", () => {
       expect.objectContaining({
         type: at.WIDGETS_USER_EVENT,
         data: expect.objectContaining({
-          widget_name: "sports_widget",
+          widget_name: "sports",
           widget_source: "upcoming",
           user_action: "toggle_followed_only",
           action_value: false,
@@ -1634,7 +1724,7 @@ describe("<SportsWidget> followed teams matches view", () => {
       expect.objectContaining({
         type: at.WIDGETS_USER_EVENT,
         data: expect.objectContaining({
-          widget_name: "sports_widget",
+          widget_name: "sports",
           widget_source: "results",
           user_action: "toggle_followed_only",
           action_value: true,

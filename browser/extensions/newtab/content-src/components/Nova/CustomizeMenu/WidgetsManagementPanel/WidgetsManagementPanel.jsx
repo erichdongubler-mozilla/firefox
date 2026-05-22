@@ -65,7 +65,7 @@ function WidgetsManagementPanel({
           widgetName = "focus_timer";
           break;
         case "WIDGET_SPORTS":
-          widgetName = "sports_widget";
+          widgetName = "sports";
           break;
         case "WIDGET_CLOCKS":
           widgetName = "clocks";

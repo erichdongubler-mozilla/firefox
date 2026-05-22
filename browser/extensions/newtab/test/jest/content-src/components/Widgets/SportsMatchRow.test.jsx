@@ -340,7 +340,7 @@ describe("<SportsMatchRow> click handling", () => {
     expect(userEvent).toMatchObject({
       type: at.WIDGETS_USER_EVENT,
       data: {
-        widget_name: "sports_widget",
+        widget_name: "sports",
         widget_source: "upcoming",
         user_action: "open_match_search",
         widget_size: "medium",

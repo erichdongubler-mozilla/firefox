@@ -12120,7 +12120,7 @@ const WIDGET_REGISTRY = [
   },
   {
     id: "sportsWidget",
-    telemetryName: "sports_widget",
+    telemetryName: "sports",
     order: 3,
     enabledPref: PREF_WIDGETS_SPORTS_WIDGET_ENABLED,
     sizePref: PREF_SPORTS_WIDGET_SIZE,
@@ -16140,7 +16140,7 @@ function SportsMatchRow({
     dispatch(actionCreators.OnlyToMain({
       type: actionTypes.WIDGETS_USER_EVENT,
       data: {
-        widget_name: "sports_widget",
+        widget_name: "sports",
         widget_source: variant,
         user_action: "open_match_search",
         widget_size: widgetSize
@@ -16461,6 +16461,7 @@ const SportsWidget_USER_ACTION_TYPES = {
   VIEW_MATCHES: "view_matches",
   VIEW_KEY_DATES: "view_key_dates",
   CHANGE_SIZE: "change_size",
+  CHANGE_TAB: "change_tab",
   LEARN_MORE: "learn_more",
   TOGGLE_FOLLOWED_ONLY: "toggle_followed_only"
 };
@@ -16628,7 +16629,7 @@ function SportsWidget_SportsWidget({
     dispatch(actionCreators.AlsoToMain({
       type: actionTypes.WIDGETS_IMPRESSION,
       data: {
-        widget_name: "sports_widget",
+        widget_name: "sports",
         widget_size: widgetSize
       }
     }));
@@ -16639,7 +16640,7 @@ function SportsWidget_SportsWidget({
     dispatch(actionCreators.OnlyToMain({
       type: actionTypes.WIDGETS_USER_EVENT,
       data: {
-        widget_name: "sports_widget",
+        widget_name: "sports",
         widget_source: widgetSource,
         user_action: SportsWidget_USER_ACTION_TYPES.FOLLOW_TEAMS,
         widget_size: widgetSize
@@ -16657,7 +16658,7 @@ function SportsWidget_SportsWidget({
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.WIDGETS_USER_EVENT,
         data: {
-          widget_name: "sports_widget",
+          widget_name: "sports",
           widget_source: "context_menu",
           user_action: SportsWidget_USER_ACTION_TYPES.VIEW_UPCOMING,
           widget_size: widgetSize
@@ -16679,7 +16680,7 @@ function SportsWidget_SportsWidget({
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.WIDGETS_USER_EVENT,
         data: {
-          widget_name: "sports_widget",
+          widget_name: "sports",
           widget_source: "context_menu",
           user_action: SportsWidget_USER_ACTION_TYPES.VIEW_RESULTS,
           widget_size: widgetSize
@@ -16701,7 +16702,7 @@ function SportsWidget_SportsWidget({
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.WIDGETS_USER_EVENT,
         data: {
-          widget_name: "sports_widget",
+          widget_name: "sports",
           widget_source: widgetSource,
           user_action: SportsWidget_USER_ACTION_TYPES.VIEW_KEY_DATES,
           widget_size: widgetSize
@@ -16726,7 +16727,7 @@ function SportsWidget_SportsWidget({
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.WIDGETS_ENABLED,
         data: {
-          widget_name: "sports_widget",
+          widget_name: "sports",
           widget_source: "context_menu",
           enabled: false,
           widget_size: widgetSize
@@ -16747,7 +16748,7 @@ function SportsWidget_SportsWidget({
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.WIDGETS_USER_EVENT,
         data: {
-          widget_name: "sports_widget",
+          widget_name: "sports",
           widget_source: "context_menu",
           user_action: SportsWidget_USER_ACTION_TYPES.CHANGE_SIZE,
           action_value: size,
@@ -16775,7 +16776,7 @@ function SportsWidget_SportsWidget({
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.WIDGETS_USER_EVENT,
         data: {
-          widget_name: "sports_widget",
+          widget_name: "sports",
           widget_source: widgetSource,
           user_action: SportsWidget_USER_ACTION_TYPES.VIEW_MATCHES,
           widget_size: widgetSize
@@ -16797,7 +16798,7 @@ function SportsWidget_SportsWidget({
         }
       }));
       const telemetryData = {
-        widget_name: "sports_widget",
+        widget_name: "sports",
         widget_source: "context_menu",
         user_action: SportsWidget_USER_ACTION_TYPES.LEARN_MORE,
         widget_size: widgetSize
@@ -16819,7 +16820,7 @@ function SportsWidget_SportsWidget({
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.WIDGETS_USER_EVENT,
         data: {
-          widget_name: "sports_widget",
+          widget_name: "sports",
           widget_source: "widget",
           user_action: SportsWidget_USER_ACTION_TYPES.SAVE_TEAMS,
           action_value: newSelectedTeams.length,
@@ -16838,12 +16839,27 @@ function SportsWidget_SportsWidget({
     data: WIDGET_STATES.INTRO
   })), [dispatch]);
   const handleMatchesTabChange = (0,external_React_namespaceObject.useCallback)(tab => {
+    if (tab === activeTab) {
+      return;
+    }
     hasUserSelectedTab.current = true;
-    dispatch(actionCreators.AlsoToMain({
-      type: actionTypes.WIDGETS_SPORTS_CHANGE_MATCHES_TAB,
-      data: tab
-    }));
-  }, [dispatch]);
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "sports",
+          widget_source: "widget",
+          user_action: SportsWidget_USER_ACTION_TYPES.CHANGE_TAB,
+          action_value: tab,
+          widget_size: widgetSize
+        }
+      }));
+      dispatch(actionCreators.AlsoToMain({
+        type: actionTypes.WIDGETS_SPORTS_CHANGE_MATCHES_TAB,
+        data: tab
+      }));
+    });
+  }, [dispatch, widgetSize, activeTab]);
 
   // @nova-cleanup(remove-gate): Remove this guard and PREF_NOVA_ENABLED after Nova ships
   if (!prefs[SportsWidget_PREF_NOVA_ENABLED]) {
@@ -17120,7 +17136,7 @@ function SportsMatchesView({
     dispatch(actionCreators.OnlyToMain({
       type: actionTypes.WIDGETS_USER_EVENT,
       data: {
-        widget_name: "sports_widget",
+        widget_name: "sports",
         // `widget_source` carries the originating tab (results/upcoming)
         // since the toggle is rendered per-tab. `action_value` carries
         // the new pressed state.
@@ -20782,7 +20798,7 @@ function WidgetsManagementPanel({
           widgetName = "focus_timer";
           break;
         case "WIDGET_SPORTS":
-          widgetName = "sports_widget";
+          widgetName = "sports";
           break;
         case "WIDGET_CLOCKS":
           widgetName = "clocks";

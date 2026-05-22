@@ -56,6 +56,7 @@ const USER_ACTION_TYPES = {
   VIEW_MATCHES: "view_matches",
   VIEW_KEY_DATES: "view_key_dates",
   CHANGE_SIZE: "change_size",
+  CHANGE_TAB: "change_tab",
   LEARN_MORE: "learn_more",
   TOGGLE_FOLLOWED_ONLY: "toggle_followed_only",
 };
@@ -243,7 +244,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
       ac.AlsoToMain({
         type: at.WIDGETS_IMPRESSION,
         data: {
-          widget_name: "sports_widget",
+          widget_name: "sports",
           widget_size: widgetSize,
         },
       })
@@ -262,7 +263,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
       ac.OnlyToMain({
         type: at.WIDGETS_USER_EVENT,
         data: {
-          widget_name: "sports_widget",
+          widget_name: "sports",
           widget_source: widgetSource,
           user_action: USER_ACTION_TYPES.FOLLOW_TEAMS,
           widget_size: widgetSize,
@@ -285,7 +286,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
         ac.OnlyToMain({
           type: at.WIDGETS_USER_EVENT,
           data: {
-            widget_name: "sports_widget",
+            widget_name: "sports",
             widget_source: "context_menu",
             user_action: USER_ACTION_TYPES.VIEW_UPCOMING,
             widget_size: widgetSize,
@@ -314,7 +315,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
         ac.OnlyToMain({
           type: at.WIDGETS_USER_EVENT,
           data: {
-            widget_name: "sports_widget",
+            widget_name: "sports",
             widget_source: "context_menu",
             user_action: USER_ACTION_TYPES.VIEW_RESULTS,
             widget_size: widgetSize,
@@ -343,7 +344,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
         ac.OnlyToMain({
           type: at.WIDGETS_USER_EVENT,
           data: {
-            widget_name: "sports_widget",
+            widget_name: "sports",
             widget_source: widgetSource,
             user_action: USER_ACTION_TYPES.VIEW_KEY_DATES,
             widget_size: widgetSize,
@@ -372,7 +373,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
         ac.OnlyToMain({
           type: at.WIDGETS_ENABLED,
           data: {
-            widget_name: "sports_widget",
+            widget_name: "sports",
             widget_source: "context_menu",
             enabled: false,
             widget_size: widgetSize,
@@ -396,7 +397,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
           ac.OnlyToMain({
             type: at.WIDGETS_USER_EVENT,
             data: {
-              widget_name: "sports_widget",
+              widget_name: "sports",
               widget_source: "context_menu",
               user_action: USER_ACTION_TYPES.CHANGE_SIZE,
               action_value: size,
@@ -430,7 +431,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
         ac.OnlyToMain({
           type: at.WIDGETS_USER_EVENT,
           data: {
-            widget_name: "sports_widget",
+            widget_name: "sports",
             widget_source: widgetSource,
             user_action: USER_ACTION_TYPES.VIEW_MATCHES,
             widget_size: widgetSize,
@@ -458,7 +459,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
         })
       );
       const telemetryData = {
-        widget_name: "sports_widget",
+        widget_name: "sports",
         widget_source: "context_menu",
         user_action: USER_ACTION_TYPES.LEARN_MORE,
         widget_size: widgetSize,
@@ -491,7 +492,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
           ac.OnlyToMain({
             type: at.WIDGETS_USER_EVENT,
             data: {
-              widget_name: "sports_widget",
+              widget_name: "sports",
               widget_source: "widget",
               user_action: USER_ACTION_TYPES.SAVE_TEAMS,
               action_value: newSelectedTeams.length,
@@ -524,15 +525,32 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
 
   const handleMatchesTabChange = useCallback(
     tab => {
+      if (tab === activeTab) {
+        return;
+      }
       hasUserSelectedTab.current = true;
-      dispatch(
-        ac.AlsoToMain({
-          type: at.WIDGETS_SPORTS_CHANGE_MATCHES_TAB,
-          data: tab,
-        })
-      );
+      batch(() => {
+        dispatch(
+          ac.OnlyToMain({
+            type: at.WIDGETS_USER_EVENT,
+            data: {
+              widget_name: "sports",
+              widget_source: "widget",
+              user_action: USER_ACTION_TYPES.CHANGE_TAB,
+              action_value: tab,
+              widget_size: widgetSize,
+            },
+          })
+        );
+        dispatch(
+          ac.AlsoToMain({
+            type: at.WIDGETS_SPORTS_CHANGE_MATCHES_TAB,
+            data: tab,
+          })
+        );
+      });
     },
-    [dispatch]
+    [dispatch, widgetSize, activeTab]
   );
 
   // @nova-cleanup(remove-gate): Remove this guard and PREF_NOVA_ENABLED after Nova ships
@@ -900,7 +918,7 @@ function SportsMatchesView({
         ac.OnlyToMain({
           type: at.WIDGETS_USER_EVENT,
           data: {
-            widget_name: "sports_widget",
+            widget_name: "sports",
             // `widget_source` carries the originating tab (results/upcoming)
             // since the toggle is rendered per-tab. `action_value` carries
             // the new pressed state.

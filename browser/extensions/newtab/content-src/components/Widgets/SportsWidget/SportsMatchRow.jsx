@@ -212,7 +212,7 @@ function SportsMatchRow({
       ac.OnlyToMain({
         type: at.WIDGETS_USER_EVENT,
         data: {
-          widget_name: "sports_widget",
+          widget_name: "sports",
           widget_source: variant,
           user_action: "open_match_search",
           widget_size: widgetSize,

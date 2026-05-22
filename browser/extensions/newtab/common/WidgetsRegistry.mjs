@@ -156,7 +156,7 @@ export const WIDGET_REGISTRY = [
   },
   {
     id: "sportsWidget",
-    telemetryName: "sports_widget",
+    telemetryName: "sports",
     order: 3,
     enabledPref: PREF_WIDGETS_SPORTS_WIDGET_ENABLED,
     sizePref: PREF_SPORTS_WIDGET_SIZE,
