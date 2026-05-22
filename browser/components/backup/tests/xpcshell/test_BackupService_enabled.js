@@ -196,7 +196,6 @@ add_task(
 );
 
 async function archiveTemplate({ internalReason, disable, enable }) {
-  Services.telemetry.clearScalars();
   Services.fog.testResetFOG();
 
   let bs = new BackupService();
@@ -247,7 +246,6 @@ async function archiveTemplate({ internalReason, disable, enable }) {
 }
 
 async function restoreTemplate({ internalReason, disable, enable }) {
-  Services.telemetry.clearScalars();
   Services.fog.testResetFOG();
 
   let bs = new BackupService();
@@ -351,12 +349,6 @@ function assertStatus(kind, status, enabled, internalReason) {
     Glean.browserBackup[kind + "Enabled"].testGetValue(),
     enabled,
     `Glean ${kind}_enabled metric should be ${enabled}.`
-  );
-  TelemetryTestUtils.assertScalar(
-    TelemetryTestUtils.getProcessScalars("parent", false, true),
-    `browser.backup.${kind}_enabled`,
-    enabled,
-    `Legacy ${kind}_enabled metric should be ${enabled}.`
   );
 
   Assert.equal(
