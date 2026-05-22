@@ -291,6 +291,19 @@ class ComponentDefType {
   }
 };
 
+class Component;
+
+[[nodiscard]] bool FlattenTypes(const Component& c,
+                                const ComponentValTypeVector& types,
+                                ValTypeVector* result);
+[[nodiscard]] bool FlattenType(const Component& c, const ComponentValType& type,
+                               ValTypeVector* result);
+[[nodiscard]] bool FlattenRecord(const Component& c,
+                                 const ComponentRecordFieldVector& fields,
+                                 ValTypeVector* result);
+mozilla::Maybe<FuncType> FlattenFuncType(const Component& c,
+                                         const ComponentFuncType& funcType);
+
 // A hash policy for StronglyUniqueNameSet that hashes items based on their
 // trimmed, lowercased versions, but matches based on the full strongly-unique
 // rules.
@@ -320,6 +333,20 @@ class StronglyUniqueNameSet {
 
  public:
   [[nodiscard]] bool add(mozilla::Span<const char> name, bool* duplicate);
+};
+
+struct ComponentCanonOpt {
+  // TODO(wasm-cm)
+};
+
+using ComponentCanonOptVector =
+    mozilla::Vector<ComponentCanonOpt, 0, SystemAllocPolicy>;
+
+struct ComponentLiftedFuncDesc {
+  // TODO(wasm-cm): Actually store something useful here. I'm not sure at the
+  // moment if it makes sense to store the raw index, options, and dest type, or
+  // to store some kind of new value here. It will all depend on what
+  // instantiation actually looks like. So not touching it for now.
 };
 
 // An alias to another item defined in the component model, usually in a core or
@@ -477,6 +504,8 @@ class Component : public JS::WasmComponent {
   using CoreInstanceVector =
       mozilla::Vector<CoreInstanceDesc, 0, SystemAllocPolicy>;
   using TypeVector = mozilla::Vector<ComponentDefType, 0, SystemAllocPolicy>;
+  using FuncVector =
+      mozilla::Vector<ComponentLiftedFuncDesc, 0, SystemAllocPolicy>;
   using ImportVector = Vector<ComponentImport, 0, SystemAllocPolicy>;
   using AliasVector = Vector<ComponentAlias, 0, SystemAllocPolicy>;
 
@@ -487,6 +516,7 @@ class Component : public JS::WasmComponent {
   CoreModuleVector coreModules;
   CoreInstanceVector coreInstances;
   TypeVector types;
+  FuncVector funcs;
   ImportVector imports;
 
   AliasVector

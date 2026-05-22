@@ -129,6 +129,240 @@ bool StronglyUniqueNameSet::add(mozilla::Span<const char> name,
   return data_.add(p, std::move(name));
 }
 
+mozilla::Maybe<FuncType> wasm::FlattenFuncType(
+    const Component& c, const ComponentFuncType& funcType) {
+  ValTypeVector params;
+  ValTypeVector results;
+
+  // TODO(wasm-cm): Handle (and test) the case where params or results exceed
+  // the maximums set by the component model, at which point the ABI falls back
+  // to passing values in memory. (Or maybe this will all change with lazy
+  // lowering, who knows.)
+
+  if (!FlattenTypes(c, funcType.paramTypes, &params)) {
+    return mozilla::Nothing();
+  }
+  if (funcType.resultType.isSome()) {
+    if (!FlattenType(c, funcType.resultType.ref(), &results)) {
+      return mozilla::Nothing();
+    }
+  }
+
+  return mozilla::Some(FuncType(std::move(params), std::move(results)));
+}
+
+bool wasm::FlattenTypes(const Component& c, const ComponentValTypeVector& types,
+                        ValTypeVector* result) {
+  // Pre-reserve at least enough space for a bunch of primitives. We still may
+  // exceed the capacity reserved here but at least we can avoid a little bit of
+  // allocation. (Appends after this point are not to be considered infallible.)
+  if (!result->reserve(types.length())) {
+    return false;
+  }
+
+  for (const ComponentValType& t : types) {
+    if (!FlattenType(c, t, result)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+static ValType JoinVariantValType(ValType a, ValType b) {
+  MOZ_ASSERT(a.isNumber() && b.isNumber());
+  if (a == b) {
+    return a;
+  } else if ((a == ValType::i32() && b == ValType::f32()) ||
+             (a == ValType::f32() && b == ValType::i32())) {
+    return ValType::i32();
+  } else {
+    return ValType::i64();
+  }
+}
+
+bool wasm::FlattenType(const Component& c, const ComponentValType& type,
+                       ValTypeVector* result) {
+  ComponentTypeKind kind;
+  if (type.isTypeIndex()) {
+    kind = c.types[type.asTypeIndex()].kind();
+  } else {
+    kind = type.asPrimitive();
+  }
+
+  switch (kind) {
+    // Simple primitives
+    case ComponentTypeKind::Bool:
+    case ComponentTypeKind::U8:
+    case ComponentTypeKind::U16:
+    case ComponentTypeKind::U32:
+    case ComponentTypeKind::S8:
+    case ComponentTypeKind::S16:
+    case ComponentTypeKind::S32:
+    case ComponentTypeKind::Char:
+    case ComponentTypeKind::Flags:
+    case ComponentTypeKind::Enum:
+    case ComponentTypeKind::Own:
+    case ComponentTypeKind::Borrow: {
+      if (!result->append(ValType::i32())) {
+        return false;
+      }
+    } break;
+    case ComponentTypeKind::U64:
+    case ComponentTypeKind::S64: {
+      if (!result->append(ValType::i64())) {
+        return false;
+      }
+    } break;
+    case ComponentTypeKind::F32: {
+      if (!result->append(ValType::f32())) {
+        return false;
+      }
+    } break;
+    case ComponentTypeKind::F64: {
+      if (!result->append(ValType::f64())) {
+        return false;
+      }
+    } break;
+
+    // Strings are always two i32's
+    case ComponentTypeKind::String: {
+      if (!result->append(ValType::i32())) {
+        return false;
+      }
+      if (!result->append(ValType::i32())) {
+        return false;
+      }
+    } break;
+
+    // Compound types have dedicated logic. Note that our data storage for some
+    // types disagrees with the categories in the canonical ABI explainer, e.g.
+    // we represent tuples as a vector of value types, not a record.
+    case ComponentTypeKind::List: {
+      // This will have to change when support is added for fixed-length lists.
+      if (!result->append(ValType::i32())) {
+        return false;
+      }
+      if (!result->append(ValType::i32())) {
+        return false;
+      }
+    } break;
+    case ComponentTypeKind::Record: {
+      const ComponentRecordFieldVector& fields =
+          c.types[type.asTypeIndex()].asRecord();
+      if (!FlattenRecord(c, fields, result)) {
+        return false;
+      }
+    } break;
+    case ComponentTypeKind::Tuple: {
+      const ComponentValTypeVector& types =
+          c.types[type.asTypeIndex()].asTuple();
+      if (!FlattenTypes(c, types, result)) {
+        return false;
+      }
+    } break;
+    case ComponentTypeKind::Variant: {
+      // Flatten the discriminant
+      if (!result->append(ValType::i32())) {
+        return false;
+      }
+
+      // Flatten all the cases (overlapped, with joins)
+      const ComponentVariantCaseVector& cases =
+          c.types[type.asTypeIndex()].asVariant();
+      size_t startIndex = result->length();
+      for (const ComponentVariantCase& case_ : cases) {
+        if (!case_.type) {
+          continue;
+        }
+
+        ValTypeVector caseFlattened;
+        if (!FlattenType(c, *case_.type, &caseFlattened)) {
+          return false;
+        }
+        for (size_t i = 0; i < caseFlattened.length(); i++) {
+          size_t existingIndex = startIndex + i;
+          if (existingIndex < result->length()) {
+            // Join the new type with the existing one.
+            (*result)[existingIndex] =
+                JoinVariantValType((*result)[existingIndex], caseFlattened[i]);
+          } else {
+            // Append the new type to the overall list.
+            if (!result->append(caseFlattened[i])) {
+              return false;
+            }
+          }
+        }
+      }
+    } break;
+    case ComponentTypeKind::Option: {
+      ComponentValType inner = c.types[type.asTypeIndex()].asOption();
+      if (!result->append(ValType::i32())) {
+        return false;
+      }
+      if (!FlattenType(c, inner, result)) {
+        return false;
+      }
+    } break;
+    case ComponentTypeKind::Result: {
+      ComponentResultType inner = c.types[type.asTypeIndex()].asResult();
+      // Result types are encoded just like a variant with two cases, but each
+      // case may or may not have a type.
+
+      // Discriminant
+      if (!result->append(ValType::i32())) {
+        return false;
+      }
+
+      // Payload(s)
+      size_t startIndex = result->length();
+      if (inner.type.isSome()) {
+        if (!FlattenType(c, *inner.type, result)) {
+          return false;
+        }
+      }
+      if (inner.errorType.isSome()) {
+        ValTypeVector errorFlattened;
+        if (!FlattenType(c, *inner.errorType, &errorFlattened)) {
+          return false;
+        }
+        for (size_t i = 0; i < errorFlattened.length(); i++) {
+          size_t existingIndex = startIndex + i;
+          if (existingIndex < result->length()) {
+            (*result)[existingIndex] =
+                JoinVariantValType((*result)[existingIndex], errorFlattened[i]);
+          } else {
+            if (!result->append(errorFlattened[i])) {
+              return false;
+            }
+          }
+        }
+      }
+    } break;
+
+    case ComponentTypeKind::Component:
+    case ComponentTypeKind::Func:
+    case ComponentTypeKind::Instance:
+    case ComponentTypeKind::Resource: {
+      MOZ_CRASH("should have been rejected when the func type was validated");
+    } break;
+  }
+
+  return true;
+}
+
+bool wasm::FlattenRecord(const Component& c,
+                         const ComponentRecordFieldVector& fields,
+                         ValTypeVector* result) {
+  for (const ComponentRecordField& field : fields) {
+    if (!FlattenType(c, field.type, result)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 /* virtual */
 JSObject* Component::createObject(JSContext* cx) const {
   if (!GlobalObject::ensureConstructor(cx, cx->global(), JSProto_WebAssembly)) {

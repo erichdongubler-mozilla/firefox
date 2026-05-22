@@ -1268,12 +1268,14 @@ static const uint32_t MaxComponentCoreGlobals = MaxGlobals;
 static const uint32_t MaxComponentCoreTags = MaxTags;
 static const uint32_t MaxComponentTypes = 1000000;
 static const uint32_t MaxComponentImports = 1000000;
+static const uint32_t MaxComponentFuncs = 1000000;
 static const uint32_t MaxComponentRecordFields = 10000;
 static const uint32_t MaxComponentVariantCases = 10000;
 static const uint32_t MaxComponentTupleTypes = 10000;
 static const uint32_t MaxComponentFlagLabels = 32;
 static const uint32_t MaxComponentEnumCases = 10000;
 static const uint32_t MaxComponentParams = 1000;
+static const uint32_t MaxComponentCanonOpts = 1000;
 #endif
 
 // These limits pertain to our WebAssembly implementation only.

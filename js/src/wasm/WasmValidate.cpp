@@ -5671,6 +5671,102 @@ enum class AliasKindRaw : uint8_t {
   return true;
 }
 
+[[nodiscard]] static bool DecodeCanonOpts(Decoder& d,
+                                          ComponentCanonOptVector* opts) {
+  uint32_t count;
+  if (!d.readVarU32(&count)) {
+    return d.fail("expected number of canonopts");
+  }
+  if (count > MaxComponentCanonOpts) {
+    return d.failf("too many canonopts (max %d)", MaxComponentCanonOpts);
+  }
+
+  if (count > 0) {
+    // TODO(wasm-cm): Actually parse canonopts
+    return d.fail("canonopts are not yet supported");
+  }
+
+  return true;
+}
+
+enum class CanonDefKindRaw : uint8_t {
+  Lift = 0x00,
+  Lower = 0x01,
+};
+
+[[nodiscard]] static bool DecodeComponentCanonDef(Decoder& d,
+                                                  MutableComponent& c) {
+  uint8_t kind;
+  if (!d.readFixedU8(&kind)) {
+    return d.fail("expected canonical definition");
+  }
+
+  switch (kind) {
+    case uint8_t(CanonDefKindRaw::Lift): {
+      if (c->funcs.length() >= MaxComponentFuncs) {
+        return d.failf("too many funcs (max %d)", MaxComponentFuncs);
+      }
+
+      uint8_t dummy;
+      if (!d.readFixedU8(&dummy) || dummy != 0) {
+        return d.fail("expected canonical definition");
+      }
+
+      uint32_t coreFuncIndex;
+      if (!d.readVarU32(&coreFuncIndex)) {
+        return d.fail("expected core function index");
+      }
+      if (c->coreFuncs.length() <= coreFuncIndex) {
+        return d.failf("invalid core function index %d", coreFuncIndex);
+      }
+
+      ComponentCanonOptVector opts;
+      if (!DecodeCanonOpts(d, &opts)) {
+        return false;
+      }
+
+      uint32_t typeIndex;
+      if (!d.readVarU32(&typeIndex)) {
+        return d.fail("expected type index");
+      }
+      if (c->types.length() <= typeIndex) {
+        return d.failf("invalid type index %d", typeIndex);
+      }
+      if (c->types[typeIndex].kind() != ComponentTypeKind::Func) {
+        return d.fail("canon lift requires a func type");
+      }
+
+      const ComponentFuncType& funcType = c->types[typeIndex].asFunc();
+      mozilla::Maybe<FuncType> maybeFlattened = FlattenFuncType(*c, funcType);
+      if (maybeFlattened.isNothing()) {
+        return false;
+      }
+      const FuncType& flattened = maybeFlattened.ref();
+
+      // Because flattened func types use only primitive types, there will never
+      // be any type references and a strict comparison will suffice.
+      if (!FuncType::strictlyEquals(flattened,
+                                    c->typeForCoreFunc(coreFuncIndex))) {
+        return d.fail(
+            "could not lift core func (component func type did not match)");
+      }
+
+      // TODO(wasm-cm): Construct something useful here.
+      if (!c->funcs.emplaceBack()) {
+        return false;
+      }
+    } break;
+    case uint8_t(CanonDefKindRaw::Lower): {
+      // TODO(wasm-cm)
+      return d.fail("canon lower is not supported yet");
+    } break;
+    default:
+      return d.failf("unexpected canonical definition kind 0x%02x", kind);
+  }
+
+  return true;
+}
+
 enum class ComponentImportFlagsRaw : uint8_t {
   // Strangely, the binary encoding currently allows either 0x00 or 0x01 for the
   // flags. Both do exactly the same thing. This is supposed to be cleaned up
@@ -5800,6 +5896,23 @@ static bool DecodeComponentImport(Decoder& d, MutableComponent& c,
   return true;
 }
 
+[[nodiscard]] static bool DecodeComponentCanonSection(Decoder& d,
+                                                      MutableComponent& c) {
+  uint32_t numCanonDefs;
+  if (!d.readVarU32(&numCanonDefs)) {
+    return d.fail("expected number of canonical definitions");
+  }
+  // Implementation limits are checked in DecodeComponentCanonDef.
+
+  for (uint32_t i = 0; i < numCanonDefs; i++) {
+    if (!DecodeComponentCanonDef(d, c)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 [[nodiscard]] static bool DecodeComponentImportSection(
     Decoder& d, MutableComponent& c, StronglyUniqueNameSet& nameDedup) {
   uint32_t numImports;
@@ -5881,6 +5994,11 @@ bool wasm::DecodeComponent(Decoder& d, MutableComponent c,
         } break;
         case uint8_t(ComponentSectionId::Type): {
           if (!DecodeComponentTypeSection(d, c)) {
+            return false;
+          }
+        } break;
+        case uint8_t(ComponentSectionId::Canon): {
+          if (!DecodeComponentCanonSection(d, c)) {
             return false;
           }
         } break;
