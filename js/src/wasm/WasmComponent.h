@@ -365,6 +365,7 @@ class ComponentImport {
 };
 
 class Component : public JS::WasmComponent {
+  using CoreModuleVector = mozilla::Vector<SharedModule, 0, SystemAllocPolicy>;
   using TypeVector = mozilla::Vector<ComponentDefType, 0, SystemAllocPolicy>;
   using ImportVector = Vector<ComponentImport, 0, SystemAllocPolicy>;
 
@@ -372,14 +373,30 @@ class Component : public JS::WasmComponent {
   JSObject* createObject(JSContext* cx) const override;
 
  public:
+  CoreModuleVector coreModules;
   TypeVector types;
   ImportVector imports;
 
-  // TODO(wasm-cm): These functions are currently correct because components
-  // currently have no state, but will need to be updated as we flesh things
-  // out.
-  size_t gcMallocBytesExcludingCode() const { return 0; }
-  size_t tier1CodeMemoryUsed() const { return 0; }
+  size_t gcMallocBytesExcludingCode() const {
+    // TODO(wasm-cm): Right now, this only sums up the sizes of the inner
+    // modules, but this is not an accurate picture of a component's memory
+    // footprint.
+    size_t total = 0;
+    for (const SharedModule& module : coreModules) {
+      total += module->gcMallocBytesExcludingCode();
+    }
+    return total;
+  }
+
+  size_t tier1CodeMemoryUsed() const {
+    // TODO(wasm-cm): As above, this only sums up the memory for core modules,
+    // and does not account for other potential code memory.
+    size_t total = 0;
+    for (const SharedModule& module : coreModules) {
+      total += module->tier1CodeMemoryUsed();
+    }
+    return total;
+  }
 };
 
 using MutableComponent = RefPtr<Component>;

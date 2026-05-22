@@ -1258,6 +1258,7 @@ static_assert(uint64_t(MaxArrayPayloadBytes) <
 
 #ifdef ENABLE_WASM_COMPONENTS
 // TODO(wasm-cm): These implementation limits are arbitrarily chosen.
+static const uint32_t MaxComponentCoreModules = 100;
 static const uint32_t MaxComponentTypes = 1000000;
 static const uint32_t MaxComponentImports = 1000000;
 static const uint32_t MaxComponentRecordFields = 10000;

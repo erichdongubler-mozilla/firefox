@@ -24,6 +24,7 @@
 #include "js/String.h"  // JS::MaxStringLength
 #include "vm/JSContext.h"
 #include "vm/Realm.h"
+#include "wasm/WasmCompile.h"
 #include "wasm/WasmConstants.h"
 #include "wasm/WasmDump.h"
 #include "wasm/WasmInitExpr.h"
@@ -5493,6 +5494,29 @@ static bool DecodeComponentImport(Decoder& d, MutableComponent& c,
   return c->imports.emplaceBack(std::move(importName), externDesc);
 }
 
+[[nodiscard]] static bool DecodeComponentCoreModuleSection(
+    Decoder& d, MutableComponent& c, const BytecodeSpan& moduleBytes,
+    const CompileArgs& args, JS::OptimizedEncodingListener* listener) {
+  if (c->coreModules.length() >= MaxComponentCoreModules) {
+    return d.failf("too many core modules (max %d)", MaxComponentCoreModules);
+  }
+
+  BytecodeSource moduleSource(moduleBytes.data(), moduleBytes.size());
+  SharedModule module =
+      CompileModule(args, BytecodeBufferOrSource(moduleSource), d.error(),
+                    d.warnings(), listener);
+  if (!module) {
+    return false;
+  }
+  if (!c->coreModules.append(module)) {
+    return false;
+  }
+
+  MOZ_RELEASE_ASSERT(d.readBytes(moduleBytes.Length()));
+
+  return true;
+}
+
 [[nodiscard]] static bool DecodeComponentTypeSection(Decoder& d,
                                                      MutableComponent& c) {
   uint32_t numTypes;
@@ -5531,7 +5555,9 @@ static bool DecodeComponentImport(Decoder& d, MutableComponent& c,
   return true;
 }
 
-bool wasm::DecodeComponent(Decoder& d, MutableComponent c) {
+bool wasm::DecodeComponent(Decoder& d, MutableComponent c,
+                           const CompileArgs& args,
+                           JS::OptimizedEncodingListener* listener) {
   if (!DecodePreamble(d, EncodingVersionComponent)) {
     return false;
   }
@@ -5573,6 +5599,12 @@ bool wasm::DecodeComponent(Decoder& d, MutableComponent c) {
           // TODO(wasm-cm): Parse component name section
         } break;
 
+        case uint8_t(ComponentSectionId::CoreModule): {
+          if (!DecodeComponentCoreModuleSection(d, c, sectionBytes, args,
+                                                listener)) {
+            return false;
+          }
+        } break;
         case uint8_t(ComponentSectionId::Type): {
           if (!DecodeComponentTypeSection(d, c)) {
             return false;
@@ -5674,8 +5706,14 @@ bool wasm::DecodeComponent(Decoder& d, MutableComponent c) {
     return false;
   }
 
+  CompileArgsError compileArgsError;
+  SharedCompileArgs compileArgs =
+      CompileArgs::build(cx, ScriptedCaller(), options, &compileArgsError);
+  if (!compileArgs) {
+    return false;
+  }
   Decoder d(bytecode.envSpan(), bytecode.envRange().start, error);
-  if (!DecodeComponent(d, c)) {
+  if (!DecodeComponent(d, c, *compileArgs)) {
     return false;
   }
 

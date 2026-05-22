@@ -1070,7 +1070,7 @@ SharedComponent wasm::CompileComponent(
   Decoder d(bytecodeSource.envSpan(), bytecodeSource.envRange().start, error,
             warnings);
 
-  if (!DecodeComponent(d, c)) {
+  if (!DecodeComponent(d, c, args, listener)) {
     return nullptr;
   }
 

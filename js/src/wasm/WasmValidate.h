@@ -165,7 +165,9 @@ using ValidatingOpIter = OpIter<ValidatingPolicy>;
                                     ModuleMetadata* meta);
 
 #ifdef ENABLE_WASM_COMPONENTS
-[[nodiscard]] bool DecodeComponent(Decoder& d, MutableComponent c);
+[[nodiscard]] bool DecodeComponent(
+    Decoder& d, MutableComponent c, const CompileArgs& args,
+    JS::OptimizedEncodingListener* listener = nullptr);
 #endif
 
 // Validate an entire module, returning true if the module was validated
