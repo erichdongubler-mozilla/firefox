@@ -377,9 +377,7 @@ Happens when a page action appears in the location bar. The specific page action
 ```js
 {
   trigger: { id: "pageActionInUrlbar" },
-  targeting: "pageAction == 'reader-mode-button'",
-  params: ["example.com"],
-  patterns: ["https://www.example.com/*"]
+  targeting: "pageAction == 'reader-mode-button'"
 }
 ```
 

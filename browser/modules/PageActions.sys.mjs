@@ -446,10 +446,6 @@ export var PageActions = {
         browser: win.gBrowser.selectedBrowser,
         id: "pageActionInUrlbar",
         context: { pageAction: buttonNode.id },
-        param: {
-          url: win.gBrowser.selectedBrowser?.currentURI?.spec || "",
-          host: win.gBrowser.selectedBrowser?.currentURI?.host || "",
-        },
       });
     }, 500);
   },
