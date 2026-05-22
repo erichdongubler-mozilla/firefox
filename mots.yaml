@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-05-21T20:17:40.655043+00:00'
+updated_at: '2026-05-22T18:36:11.106125+00:00'
 export:
   path: ./docs/mots/index.rst
   format: rst
@@ -3711,6 +3711,7 @@ modules:
           - *Gijs
           - *emcminn
           - *charlie
+          - *aminomancer
         machine_name: normandy
 
       - machine_name: firefox_view
@@ -4761,5 +4762,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: d1d835dd6ab31ad8ace7653524cc11ba38a6cdaa
-  export: 6252fafda330165fb2ffa5308fcf75cac8ea013c
+  config: a62367011c85a471d59303209aee8f27ef627789
+  export: a8da8ed8eb8dee98c82bf230b64b7bd6f6dd93ea
