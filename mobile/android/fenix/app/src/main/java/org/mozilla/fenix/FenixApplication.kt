@@ -834,14 +834,14 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             WebExtensionSupport.initialize(
                 components.core.engine,
                 components.core.store,
-                onNewTabOverride = { _, engineSession, url ->
+                onNewTabOverride = { _, engineSession, url, selected ->
                     val shouldCreatePrivateSession =
                         components.core.store.state.selectedTab?.content?.private
                             ?: components.settings.openLinksInAPrivateTab
 
                     components.useCases.tabsUseCases.addTab(
                         url = url,
-                        selectTab = true,
+                        selectTab = selected,
                         engineSession = engineSession,
                         private = shouldCreatePrivateSession,
                     )
