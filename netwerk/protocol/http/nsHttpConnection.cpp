@@ -2079,8 +2079,9 @@ nsresult nsHttpConnection::MakeConnectString(nsAHttpTransaction* trans,
   } else {
     request->SetRequestURI(result);
   }
-  rv = request->SetHeader(nsHttp::User_Agent,
-                          gHttpHandler->UserAgent(aShouldResistFingerprinting));
+  nsAutoCString userAgent;
+  gHttpHandler->GetUserAgent(aShouldResistFingerprinting, userAgent);
+  rv = request->SetHeader(nsHttp::User_Agent, userAgent);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   // a CONNECT is always persistent

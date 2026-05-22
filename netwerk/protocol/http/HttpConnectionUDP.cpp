@@ -573,8 +573,9 @@ already_AddRefed<nsIInputStream> HttpConnectionUDP::CreateProxyConnectStream(
   request->SetVersion(gHttpHandler->HttpVersion());
 
   bool shouldResistFingerprinting = trans->Caps() & NS_HTTP_USE_RFP;
-  rv = request->SetHeader(nsHttp::User_Agent,
-                          gHttpHandler->UserAgent(shouldResistFingerprinting));
+  nsAutoCString userAgent;
+  gHttpHandler->GetUserAgent(shouldResistFingerprinting, userAgent);
+  rv = request->SetHeader(nsHttp::User_Agent, userAgent);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   rv = request->SetHeader(nsHttp::Host, host);

@@ -468,6 +468,8 @@ nsresult nsHttpHandler::Init() {
   mProductSub.AssignLiteral(LEGACY_UA_GECKO_TRAIL);
 #endif
 
+  RebuildUserAgent();
+
 #if DEBUG
   // dump user agent prefs
   LOG(("> legacy-app-name = %s\n", mLegacyAppName.get()));
@@ -726,9 +728,14 @@ nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
                   return rv;
                 }
               }
+              nsAutoCStringN<64> dictEncodings;
+              {
+                MutexAutoLock lock(self->mAcceptEncodingLock);
+                dictEncodings = self->mDictionaryAcceptEncodings;
+              }
               return aRequest->SetHeader(
-                  nsHttp::Accept_Encoding, self->mDictionaryAcceptEncodings,
-                  false, nsHttpHeaderArray::eVarietyRequestOverride);
+                  nsHttp::Accept_Encoding, dictEncodings, false,
+                  nsHttpHeaderArray::eVarietyRequestOverride);
             }  // else probably Prefetch failed
             return NS_OK;
           });
@@ -744,9 +751,11 @@ nsresult nsHttpHandler::AddStandardRequestHeaders(
     const nsCString& aLanguageOverride) {
   nsresult rv;
 
-  // Add the "User-Agent" header
-  rv = request->SetHeader(nsHttp::User_Agent,
-                          UserAgent(aShouldResistFingerprinting), false,
+  // Add the "User-Agent" header.  Use GetUserAgent() because TRR calls this
+  // from the socket thread via CreateTRRServiceChannel.
+  nsAutoCString userAgent;
+  GetUserAgent(aShouldResistFingerprinting, userAgent);
+  rv = request->SetHeader(nsHttp::User_Agent, userAgent, false,
                           nsHttpHeaderArray::eVarietyRequestDefault);
   if (NS_FAILED(rv)) return rv;
 
@@ -804,13 +813,17 @@ nsresult nsHttpHandler::AddStandardRequestHeaders(
     if (NS_FAILED(rv)) return rv;
   }
 
-  if (aIsHTTPS) {
-    rv = request->SetHeader(nsHttp::Accept_Encoding, mHttpsAcceptEncodings,
-                            false, nsHttpHeaderArray::eVarietyRequestDefault);
-  } else {
-    rv = request->SetHeader(nsHttp::Accept_Encoding, mHttpAcceptEncodings,
-                            false, nsHttpHeaderArray::eVarietyRequestDefault);
+  nsAutoCStringN<64> acceptEncodings;
+  {
+    MutexAutoLock lock(mAcceptEncodingLock);
+    if (aIsHTTPS) {
+      acceptEncodings = mHttpsAcceptEncodings;
+    } else {
+      acceptEncodings = mHttpAcceptEncodings;
+    }
   }
+  rv = request->SetHeader(nsHttp::Accept_Encoding, acceptEncodings, false,
+                          nsHttpHeaderArray::eVarietyRequestDefault);
   return NS_OK;
 }
 
@@ -838,14 +851,17 @@ bool nsHttpHandler::IsAcceptableEncoding(const char* enc, bool isSecure) {
   // we used to accept x-foo anytime foo was acceptable, but that's just
   // continuing bad behavior.. so limit it to known x-* patterns
   bool rv;
-  if (isSecure) {
-    // Should be a superset of mAcceptEncodings (unless someone messes with
-    // prefs)
-    rv = nsHttp::FindToken(mDictionaryAcceptEncodings.get(), enc,
-                           HTTP_LWS ",") != nullptr;
-  } else {
-    rv = nsHttp::FindToken(mHttpAcceptEncodings.get(), enc, HTTP_LWS ",") !=
-         nullptr;
+  {
+    MutexAutoLock lock(mAcceptEncodingLock);
+    if (isSecure) {
+      // Should be a superset of mAcceptEncodings (unless someone messes with
+      // prefs)
+      rv = nsHttp::FindToken(mDictionaryAcceptEncodings.get(), enc,
+                             HTTP_LWS ",") != nullptr;
+    } else {
+      rv = nsHttp::FindToken(mHttpAcceptEncodings.get(), enc, HTTP_LWS ",") !=
+           nullptr;
+    }
   }
   // gzip and deflate are inherently acceptable in modern HTTP - always
   // process them if a stream converter can also be found.
@@ -999,17 +1015,34 @@ const nsCString& nsHttpHandler::UserAgent(bool aShouldResistFingerprinting) {
     return mSpoofedUserAgent;
   }
 
+  // Main-thread only: no lock needed because PrefsChanged (the sole writer of
+  // mUserAgent/mUserAgentOverride) is also main-thread only.
+  AssertIsOnMainThread();
+  mUserAgentCap.NoteOnMainThread();
   if (!mUserAgentOverride.IsVoid()) {
     LOG(("using general.useragent.override : %s\n", mUserAgentOverride.get()));
     return mUserAgentOverride;
   }
+  return mUserAgent;
+}
 
-  if (mUserAgentIsDirty) {
-    BuildUserAgent();
-    mUserAgentIsDirty = false;
+void nsHttpHandler::GetUserAgent(bool aShouldResistFingerprinting,
+                                 nsCString& aOut) {
+  if (aShouldResistFingerprinting && !mSpoofedUserAgent.IsEmpty()) {
+    aOut = mSpoofedUserAgent;
+    return;
   }
 
-  return mUserAgent;
+  MutexAutoLock lock(mUserAgentCap.Lock());
+  mUserAgentCap.NoteLockHeld();
+  aOut = mUserAgentOverride.IsVoid() ? mUserAgent : mUserAgentOverride;
+}
+
+void nsHttpHandler::RebuildUserAgent() {
+  AssertIsOnMainThread();
+  MutexAutoLock lock(mUserAgentCap.Lock());
+  mUserAgentCap.NoteExclusiveAccess();
+  BuildUserAgent();
 }
 
 void nsHttpHandler::BuildUserAgent() {
@@ -1090,10 +1123,7 @@ void nsHttpHandler::BuildUserAgent() {
 #endif
 
 void nsHttpHandler::InitUserAgentComponents() {
-  // Don't build user agent components in socket process, since the system info
-  // is not available.
   if (XRE_IsSocketProcess()) {
-    mUserAgentIsDirty = true;
     return;
   }
 
@@ -1207,7 +1237,6 @@ void nsHttpHandler::InitUserAgentComponents() {
   mOscpu.AssignLiteral("Linux x86_64");
 #endif
 
-  mUserAgentIsDirty = true;
 }
 
 #ifdef XP_MACOSX
@@ -1256,6 +1285,7 @@ void nsHttpHandler::PrefsChanged(const char* pref, void* self) {
 }
 
 void nsHttpHandler::PrefsChanged(const char* pref) {
+  AssertIsOnMainThread();
   nsresult rv = NS_OK;
   int32_t val;
 
@@ -1299,13 +1329,15 @@ void nsHttpHandler::PrefsChanged(const char* pref) {
   if (PREF_CHANGED(UA_PREF("compatMode.firefox"))) {
     rv = Preferences::GetBool(UA_PREF("compatMode.firefox"), &cVar);
     mCompatFirefoxEnabled = (NS_SUCCEEDED(rv) && cVar);
-    mUserAgentIsDirty = true;
+    RebuildUserAgent();
   }
 
   // general.useragent.override
   if (PREF_CHANGED(UA_PREF("override"))) {
+    MutexAutoLock lock(mUserAgentCap.Lock());
+    mUserAgentCap.NoteExclusiveAccess();
     Preferences::GetCString(UA_PREF("override"), mUserAgentOverride);
-    mUserAgentIsDirty = true;
+    BuildUserAgent();
   }
 
 #ifdef ANDROID
@@ -1323,7 +1355,7 @@ void nsHttpHandler::PrefsChanged(const char* pref) {
     } else {
       mDeviceModelId.Truncate();
     }
-    mUserAgentIsDirty = true;
+    RebuildUserAgent();
   }
 #endif
 
@@ -2113,6 +2145,7 @@ nsresult nsHttpHandler::SetAcceptLanguages() {
 
 nsresult nsHttpHandler::SetAcceptEncodings(const char* aAcceptEncodings,
                                            bool isSecure, bool isDictionary) {
+  MutexAutoLock lock(mAcceptEncodingLock);
   if (isDictionary) {
     mDictionaryAcceptEncodings = aAcceptEncodings;
   } else if (isSecure) {
