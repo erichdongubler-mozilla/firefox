@@ -491,6 +491,10 @@ net::ChannelBlockDecision ContentClassifierService::MaybeCancelChannel(
             ("MaybeCancelChannel - url=%s", uri->GetSpecOrDefault().get()));
   }
 
+  if (net::ChannelClassifierUtils::IsAllowListed(aChannel)) {
+    return net::ChannelBlockDecision::Allowed;
+  }
+
   net::ChannelBlockDecision decision = net::ChannelBlockDecision::Allowed;
   net::ChannelClassifierUtils::MaybeBlockChannel(
       aChannel, "content-classifier"_ns, "content-classifier-block"_ns,
