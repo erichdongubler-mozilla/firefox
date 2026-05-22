@@ -938,7 +938,6 @@ class IscriptSchema(Schema, forbid_unknown_fields=False, kw_only=True):
             "apple_notarization",
             "apple_notarization_stacked",
             "mac_sign_and_pkg",
-            "mac_sign_pkg",
             "mac_sign_and_pkg_hardened",
             "mac_geckodriver",
             "mac_notarize_geckodriver",
