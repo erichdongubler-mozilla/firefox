@@ -994,7 +994,9 @@ export class BaseContent extends React.PureComponent {
         !topSitesEnabled && !pocketEnabled && !highlightsEnabled;
       const isPageEmpty =
         noContentSectionsEnabled && !prefs.showSearch && !hasAnyEnabledWidget;
-      const logoShouldBeCentered = !pocketEnabled && !hasContentWidgets;
+      const hasManyTopSitesRows = topSitesEnabled && prefs.topSitesRows > 2;
+      const logoShouldBeCentered =
+        !pocketEnabled && !hasContentWidgets && !hasManyTopSitesRows;
 
       return (
         <BaseContext.Provider value={baseContextValue}>

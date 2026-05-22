@@ -277,6 +277,65 @@ describe("<Base> Nova hides Logo when no sections are enabled", () => {
   });
 });
 
+describe("<Base> Nova logo placement with many topSitesRows", () => {
+  it("anchors the Logo to the sidebar when topSitesRows > 2 (3 rows)", () => {
+    const { container } = renderNova({
+      "feeds.topsites": true,
+      topSitesRows: 3,
+    });
+    expect(
+      container.querySelector(".container.nova-enabled.logo-in-content")
+    ).not.toBeInTheDocument();
+    expect(
+      container.querySelector(
+        ".sidebar-inline-start .logo-and-wordmark-wrapper"
+      )
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(".content .logo-and-wordmark-wrapper")
+    ).not.toBeInTheDocument();
+  });
+
+  it("anchors the Logo to the sidebar when topSitesRows > 2 (4 rows)", () => {
+    const { container } = renderNova({
+      "feeds.topsites": true,
+      topSitesRows: 4,
+    });
+    expect(
+      container.querySelector(
+        ".sidebar-inline-start .logo-and-wordmark-wrapper"
+      )
+    ).toBeInTheDocument();
+  });
+
+  it("centers the Logo when topSitesRows is 2", () => {
+    const { container } = renderNova({
+      "feeds.topsites": true,
+      topSitesRows: 2,
+    });
+    expect(
+      container.querySelector(".container.nova-enabled.logo-in-content")
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(".content .logo-and-wordmark-wrapper")
+    ).toBeInTheDocument();
+  });
+
+  it("centers the Logo when topSitesRows > 2 but topsites are disabled", () => {
+    const { container } = renderNova({
+      "feeds.topsites": false,
+      showSearch: true,
+      topSitesRows: 4,
+    });
+    expect(
+      container.querySelector(".container.nova-enabled.logo-in-content")
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(".content .logo-and-wordmark-wrapper")
+    ).toBeInTheDocument();
+  });
+});
+
 describe("<Base> Nova hideLogo pref", () => {
   it("renders the Logo by default (hideLogo unset, topsites enabled)", () => {
     const { container } = renderNova({ "feeds.topsites": true });
