@@ -36,8 +36,12 @@ describe("useLocalizedTeamNames", () => {
     // synchronously inside renderHook's act() and the initial null is
     // overwritten before the test can observe it.
     const teams = [{ key: "ENG", name: "England" }];
-    const { result } = renderHook(() => useLocalizedTeamNames(teams));
+    const { result, unmount } = renderHook(() => useLocalizedTeamNames(teams));
     expect(result.current).toBeNull();
+    // Unmount before the pending formatMessages promise resolves so the
+    // hook's cleanup sets `cancelled = true` and skips the setResolved
+    // setState that would otherwise fire outside act().
+    unmount();
   });
 
   it("resolves Intl.DisplayNames names for non-override FIFA keys", async () => {
