@@ -3786,8 +3786,8 @@ nsresult nsHttpChannel::ContinueProcessNormal2(nsresult rv) {
   // be created without the dictionary attached, causing decompression to fail.
   // The dictionary prefetch callback (in PrepareToConnect) will call Resume()
   // when ready, which will re-invoke ContinueProcessNormal2 via mCallOnResume.
-  if (mDictDecompress && mUsingDictionary && mShouldSuspendForDictionary &&
-      !mDictDecompress->DictionaryReady()) {
+  if (mIsDictionaryCompressed && mDictDecompress && mUsingDictionary &&
+      mShouldSuspendForDictionary && !mDictDecompress->DictionaryReady()) {
     LOG_DICTIONARIES(
         ("nsHttpChannel::ContinueProcessNormal2 [this=%p] Suspending before "
          "creating decompressor, waiting for dictionary",
@@ -3805,6 +3805,9 @@ nsresult nsHttpChannel::ContinueProcessNormal2(nsresult rv) {
 }
 
 nsresult nsHttpChannel::ContinueProcessNormal3() {
+  if (mCanceled) {
+    return mStatus;
+  }
   nsresult rv = NS_OK;
 
   // Finish post-ParseDictionary work, must be done after waiting if Suspended
@@ -7267,6 +7270,19 @@ nsresult nsHttpChannel::CancelInternal(nsresult status) {
     // to safe-browsing protection, we need to AsyncAbort the channel now.
     needAsyncAbort = false;
     (void)AsyncAbort(status);
+  }
+
+  // If suspended waiting for dictionary prefetch, unblock it so the channel
+  // can proceed to cleanup. The prefetch callback may never fire, so we must
+  // not rely on it to call Resume().
+  if (mSuspendedForDictionary) {
+    LOG(
+        ("nsHttpChannel::CancelInternal resuming dictionary-suspended channel "
+         "[this=%p]\n",
+         this));
+    mSuspendedForDictionary = false;
+    Resume();
+    return NS_OK;
   }
 
   // If we already have mCallOnResume, AsyncAbort will be called in

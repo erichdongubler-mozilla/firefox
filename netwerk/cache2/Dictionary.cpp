@@ -909,30 +909,31 @@ DictionaryCacheEntry::OnCacheEntryAvailable(nsICacheEntry* entry, bool isNew,
       return NS_OK;
     }
 
+    // nsInputStreamPump supports off-main-thread use: when constructed
+    // off-thread it sets mOffMainThread and targets the calling thread's
+    // serial event target, so callbacks fire on whatever thread calls
+    // AsyncRead.
     RefPtr<nsInputStreamPump> pump;
     nsresult rv = nsInputStreamPump::Create(getter_AddRefs(pump), stream);
     if (NS_FAILED(rv)) {
       DICTIONARY_LOG(("nsInputStreamPump::Create failed for %s", mURI.get()));
-      nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
+      NS_DispatchToMainThread(NS_NewRunnableFunction(
           "DictionaryCacheEntry::OnCacheEntryAvailable",
           [self = RefPtr{this}]() {
             self->CleanupOnCacheData(NS_ERROR_FAILURE);
             DictionaryCache::RemoveDictionary(self->mURI);
-          });
-      NS_DispatchToMainThread(runnable);
+          }));
       return NS_OK;
     }
-
     rv = pump->AsyncRead(this);
     if (NS_FAILED(rv)) {
       DICTIONARY_LOG(("AsyncRead failed for %s", mURI.get()));
-      nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
+      NS_DispatchToMainThread(NS_NewRunnableFunction(
           "DictionaryCacheEntry::OnCacheEntryAvailable",
           [self = RefPtr{this}]() {
             self->CleanupOnCacheData(NS_ERROR_FAILURE);
             DictionaryCache::RemoveDictionary(self->mURI);
-          });
-      NS_DispatchToMainThread(runnable);
+          }));
       return NS_OK;
     }
     DICTIONARY_LOG(("Waiting for data"));
