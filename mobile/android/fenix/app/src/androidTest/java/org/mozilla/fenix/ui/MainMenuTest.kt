@@ -126,6 +126,11 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080130
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.FindInPageTest#verifyTheFindInPageMenuItemTest"],
+        bug = 2030658,
+        since = "2026-04",
+    )
     @SmokeTest
     @Test
     fun verifyTheFindInPageMenuItemTest() {
@@ -993,6 +998,11 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080172
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifyTheExtensionsMenuOptionTest"],
+        bug = 2024907,
+        since = "2026-03",
+    )
     @SmokeTest
     @Test
     fun verifyTheExtensionsMenuOptionTest() {

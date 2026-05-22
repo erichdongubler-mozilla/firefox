@@ -25,6 +25,7 @@ class BookmarksTest : BaseTest() {
         on.bookmarks.navigateToPage()
     }
 
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833691
     @SmokeTest
     @Test
     fun editBookmarksNameAndUrlTest() {

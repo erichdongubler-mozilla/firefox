@@ -23,6 +23,7 @@ class HistoryTest : BaseTest() {
         on.history.navigateToPage()
     }
 
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/903590
     @SmokeTest
     @Test
     fun noHistoryInPrivateBrowsingTest() {
