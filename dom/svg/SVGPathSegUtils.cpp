@@ -251,7 +251,7 @@ Maybe<EdgeDir> GetDirection(Point v) {
 
   // We may be dealing with very small rects scaled up so make
   // adjust the threshold based on the magnitude of the sides.
-  float threshold = std::fmin((std::abs(v.x) + std::abs(v.y)) * 0.00001, 0.001);
+  float threshold = std::min((std::abs(v.x) + std::abs(v.y)) * 0.00001, 0.001);
 
   bool x = std::abs(v.x) > threshold;
   bool y = std::abs(v.y) > threshold;
@@ -325,10 +325,10 @@ struct IsRectHelper {
       currentDir = dir;
     }
 
-    min.x = fmin(min.x, to.x);
-    min.y = fmin(min.y, to.y);
-    max.x = fmax(max.x, to.x);
-    max.y = fmax(max.y, to.y);
+    min.x = std::min(min.x, to.x);
+    min.y = std::min(min.y, to.y);
+    max.x = std::max(max.x, to.x);
+    max.y = std::max(max.y, to.y);
 
     return true;
   }
