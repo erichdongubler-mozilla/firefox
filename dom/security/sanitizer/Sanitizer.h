@@ -89,13 +89,14 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
   bool RemoveAttributeCanonical(sanitizer::CanonicalAttribute&& aAttribute);
 
   template <bool IsDefaultConfig>
-  void SanitizeChildren(nsINode* aNode, bool aSafe);
-  void SanitizeAttributes(Element* aChild,
-                          const sanitizer::CanonicalElement& aElementName,
-                          bool aSafe);
-  void SanitizeDefaultConfigAttributes(Element* aChild,
-                                       StaticAtomSet* aElementAttributes,
-                                       bool aSafe);
+  void SanitizeChildren(nsINode* aNode, bool aSafe) const;
+
+  bool IsAttributeAllowed(StaticAtomSet* aElementAttributes,
+                          nsAtom* aAttrLocalName, int32_t aAttrNs,
+                          bool aSafe) const;
+  bool IsAttributeAllowed(
+      sanitizer::CanonicalElementAttributes* aElementAttributes,
+      nsAtom* aAttrLocalName, int32_t aAttrNs, bool aSafe) const;
 
   void AssertIsValid();
 
