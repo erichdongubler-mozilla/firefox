@@ -528,20 +528,19 @@ void DOMMatrixReadOnly::ToFloat64Array(JSContext* aCx,
   aResult.set(&value.toObject());
 }
 
-void DOMMatrixReadOnly::Stringify(nsAString& aResult, ErrorResult& aRv) {
+void DOMMatrixReadOnly::Stringify(nsACString& aResult, ErrorResult& aRv) {
   char cbuf[JS::MaximumNumberToStringLength];
-  nsAutoString matrixStr;
-  auto AppendDouble = [&aRv, &cbuf, &matrixStr](double d,
-                                                bool isLastItem = false) {
+  auto AppendDouble = [&aRv, &cbuf, &aResult](double d,
+                                              bool isLastItem = false) {
     if (!std::isfinite(d)) {
       aRv.ThrowInvalidStateError(
           "Matrix with a non-finite element cannot be stringified.");
       return false;
     }
     JS::NumberToString(d, cbuf);
-    matrixStr.AppendASCII(cbuf);
+    aResult.AppendASCII(cbuf);
     if (!isLastItem) {
-      matrixStr.AppendLiteral(", ");
+      aResult.AppendLiteral(", ");
     }
     return true;
   };
@@ -549,28 +548,28 @@ void DOMMatrixReadOnly::Stringify(nsAString& aResult, ErrorResult& aRv) {
   if (mMatrix3D) {
     // We can't use AppendPrintf here, because it does locale-specific
     // formatting of floating-point values.
-    matrixStr.AssignLiteral("matrix3d(");
+    aResult.AssignLiteral("matrix3d(");
     if (!AppendDouble(M11()) || !AppendDouble(M12()) || !AppendDouble(M13()) ||
         !AppendDouble(M14()) || !AppendDouble(M21()) || !AppendDouble(M22()) ||
         !AppendDouble(M23()) || !AppendDouble(M24()) || !AppendDouble(M31()) ||
         !AppendDouble(M32()) || !AppendDouble(M33()) || !AppendDouble(M34()) ||
         !AppendDouble(M41()) || !AppendDouble(M42()) || !AppendDouble(M43()) ||
         !AppendDouble(M44(), true)) {
+      aResult.Truncate();
       return;
     }
-    matrixStr.AppendLiteral(")");
+    aResult.AppendLiteral(")");
   } else {
     // We can't use AppendPrintf here, because it does locale-specific
     // formatting of floating-point values.
-    matrixStr.AssignLiteral("matrix(");
+    aResult.AssignLiteral("matrix(");
     if (!AppendDouble(A()) || !AppendDouble(B()) || !AppendDouble(C()) ||
         !AppendDouble(D()) || !AppendDouble(E()) || !AppendDouble(F(), true)) {
+      aResult.Truncate();
       return;
     }
-    matrixStr.AppendLiteral(")");
+    aResult.AppendLiteral(")");
   }
-
-  aResult = std::move(matrixStr);
 }
 
 // https://drafts.fxtf.org/geometry/#structured-serialization
