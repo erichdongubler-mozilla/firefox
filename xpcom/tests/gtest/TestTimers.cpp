@@ -225,7 +225,7 @@ constexpr unsigned AddCoalescingSlack(unsigned aMs) {
   return aMs + (aMs + 7) / 8;
 }
 
-constexpr unsigned kUpperToleranceMs = 10;
+constexpr unsigned kUpperToleranceMs = 40;
 constexpr unsigned kLowerToleranceMs = 5;
 constexpr unsigned kTightLowerToleranceMs = 1;
 // For REPEATING_PRECISE_CAN_SKIP timers, fires happen at absolute scheduled
