@@ -1025,6 +1025,11 @@ auto tbz(vixl::Register rt, unsigned bitPos, ptrdiff_t offset) {
          vixl::Assembler::ImmTestBranch(offset) | vixl::Assembler::Rt(rt);
 }
 
+auto tbnz(vixl::Register rt, unsigned bitPos, ptrdiff_t offset) {
+  return vixl::TBNZ | vixl::Assembler::ImmTestBranchBit(bitPos) |
+         vixl::Assembler::ImmTestBranch(offset) | vixl::Assembler::Rt(rt);
+}
+
 // "non-natural" pool header.
 auto poolheader(uint16_t size) {
   MOZ_ASSERT(size < (1 << 15));
@@ -1442,4 +1447,113 @@ BEGIN_TEST(
   return true;
 }
 END_TEST(testAssemblerBuffer_ARM64_ShortBranchSecondaryVeneerRegisterDeadline)
+
+BEGIN_TEST(testAssemblerBuffer_ARM64_BoundLabelBranchDeadline) {
+  using namespace js::jit;
+  using namespace AArch64;
+
+  js::LifoAlloc lifo(4096, js::MallocArena);
+  TempAllocator alloc(&lifo);
+  JitContext jc(cx);
+  StackMacroAssembler masm(cx, alloc);
+  AutoCreatedBy acb(masm, __func__);
+
+  auto rt = vixl::x1;
+
+  auto tbz = std::bind_front(AArch64::tbz, rt);
+  auto tbnz = std::bind_front(AArch64::tbnz, rt);
+
+  // Like vixl::MacroAssembler::LabelIsOutOfRange, except that currentOffset()
+  // instead of nextInstrOffset() is used. That ensures we don't accidentally
+  // flush the constant pool.
+  auto LabelIsOutOfRange = [&](Label* label, vixl::ImmBranchType branch_type) {
+    int32_t diff = int32_t(masm.currentOffset()) - label->offset();
+    return !Instruction::IsValidImmPCOffset(branch_type, diff / 4);
+  };
+
+  Label tbz_lbl1, tbz_lbl2, tbz_lbl3;
+
+  // Bind tbz_lbl3 to the start.
+  masm.bind(&tbz_lbl3);
+
+  BufferOffset tbz1(masm.currentOffset());
+  unsigned tbz1_bitpos = 12;
+  masm.Tbz(rt, tbz1_bitpos, &tbz_lbl1);
+
+  // Add some additional Tbz to ensure we have enough veneers to make the pool
+  // large enough that the last Tbz for |tbz_lbl3| gets out of range.
+  for (int32_t i = 0; i < 10; ++i) {
+    masm.Tbz(rt, 0, &tbz_lbl2);
+  }
+
+  // Compute deadline for |tbz1|.
+  BufferOffset tbz_deadline1(
+      tbz1.getOffset() +
+      vixl::Instruction::ImmBranchMaxForwardOffset(vixl::TestBranchRangeType));
+
+  // Instructions until deadline is reached.
+  int32_t current = int32_t(masm.currentOffset());
+  int32_t instr_until_deadline = (tbz_deadline1.getOffset() - current) / 4;
+
+  // Compute how many nops to insert until deadline is reached, excluding the
+  // pool guard and pool header.
+  int32_t nops = instr_until_deadline - 2;
+
+  // Insert nops.
+  for (int32_t i = 0; i < nops; ++i) {
+    masm.Nop();
+  }
+  int32_t pool_start_offset = masm.currentOffset();
+
+  // tbz1 is unbound.
+  CHECK_EQUAL(masm.getInstructionAt(tbz1)->InstructionBits(),
+              tbz(tbz1_bitpos, unbound));
+
+  // tbz_lbl3 is still in range.
+  CHECK_EQUAL(LabelIsOutOfRange(&tbz_lbl3, vixl::TestBranchType), false);
+
+  // Emit Tbz. This should trigger pool construction, because tbz1 is about to
+  // get out of range.
+  unsigned tbz3_bitpos = 15;
+  masm.Tbz(rt, tbz3_bitpos, &tbz_lbl3);
+  BufferOffset after_tbz3(masm.currentOffset());
+
+  // Unconditional branch to |tbz_lbl3|.
+  BufferOffset uncondBranch(after_tbz3.getOffset() - 4);
+  CHECK_EQUAL(masm.getInstructionAt(uncondBranch)->InstructionBits(),
+              b(label_offset(uncondBranch, &tbz_lbl3)));
+
+  // Tbz was inverted to Tbnz.
+  BufferOffset tbnz1(after_tbz3.getOffset() - 8);
+  CHECK_EQUAL(masm.getInstructionAt(tbnz1)->InstructionBits(),
+              tbnz(tbz3_bitpos, offset(tbnz1, after_tbz3)));
+
+  // Pool guard branch
+  BufferOffset guard(pool_start_offset);
+  CHECK_EQUAL(masm.getInstructionAt(guard)->InstructionBits(),
+              b(offset(guard, tbnz1)));
+
+  // Pool header
+  BufferOffset header(pool_start_offset + 4);
+  CHECK_EQUAL(masm.getInstructionAt(header)->InstructionBits(), poolheader(1));
+
+  // Veneer branches
+  BufferOffset veneer1(pool_start_offset + 8);
+  CHECK_EQUAL(masm.getInstructionAt(veneer1)->InstructionBits(), b(unbound));
+
+  // + 10 more veneer branches for |tbz_lbl2| (not checked).
+
+  // Finally bind all labels.
+  masm.bind(&tbz_lbl1);
+  masm.bind(&tbz_lbl2);
+
+  // Check veneer branch for |tbz_lbl1| is correctly bound.
+  CHECK_EQUAL(masm.getInstructionAt(tbz1)->InstructionBits(),
+              tbz(tbz1_bitpos, offset(tbz1, veneer1)));
+  CHECK_EQUAL(masm.getInstructionAt(veneer1)->InstructionBits(),
+              b(label_offset(veneer1, &tbz_lbl1)));
+
+  return true;
+}
+END_TEST(testAssemblerBuffer_ARM64_BoundLabelBranchDeadline)
 #endif /* JS_CODEGEN_ARM64 */
