@@ -504,6 +504,11 @@
     "dark": "rgba(251, 251, 254, 0.4)",
     "forcedColors": "{HCM Theme$CanvasText}"
   },
+  "tab/border/color/selected/trailing": {
+    "light": "{Colors$color/orange/30}",
+    "dark": "{Colors$color/violet/50}",
+    "forcedColors": "transparent"
+  },
   "tab/background/color/hover": {
     "light": "color-mix(in lch, var(--color-violet-desaturated-50) 25%, transparent)",
     "dark": "color-mix(in lch, var(--color-violet-desaturated-30) 40%, transparent)",

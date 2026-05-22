@@ -6,7 +6,10 @@
           "value": "{color.violet.30}"
         },
         "trailing": {
-          "value": "{color.orange.30}"
+          "value": {
+            "light": "{color.orange.30}",
+            "dark": "{color.violet.50}"
+          }
         }
       },
       "accent": {
