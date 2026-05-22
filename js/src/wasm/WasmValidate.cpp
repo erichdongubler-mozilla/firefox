@@ -5446,6 +5446,98 @@ enum class ComponentCoreSortRaw : uint8_t {
   return true;
 }
 
+enum class CoreInstanceExprKind : uint8_t {
+  InstantiateModule = 0x00,
+  InlineExports = 0x01,
+};
+
+[[nodiscard]] static bool DecodeCoreInstance(Decoder& d, MutableComponent& c) {
+  uint8_t exprType;
+  if (!d.readFixedU8(&exprType)) {
+    return false;
+  }
+
+  switch (exprType) {
+    case uint8_t(CoreInstanceExprKind::InstantiateModule): {
+      uint32_t moduleIndex;
+      if (!d.readVarU32(&moduleIndex)) {
+        return d.fail("expected core module index");
+      }
+      if (moduleIndex >= c->coreModules.length()) {
+        return d.failf("invalid core module index %d", moduleIndex);
+      }
+
+      uint32_t numArgs;
+      if (!d.readVarU32(&numArgs)) {
+        return d.fail("expected number of instantiate arguments");
+      }
+      if (numArgs > MaxComponentCoreInstantiateArgs) {
+        return d.failf("too many core instantiate args (max %d)",
+                       MaxComponentCoreInstantiateArgs);
+      }
+
+      CoreInstanceInstantiateArgVector args;
+      if (!args.reserve(numArgs)) {
+        return false;
+      }
+
+      for (uint32_t i = 0; i < numArgs; i++) {
+        CacheableName importName;
+        if (!DecodeName(d, &importName)) {
+          return d.fail("expected import name");
+        }
+        // TODO(wasm-cm): Validate that the name corresponds to an import on the
+        // module
+
+        uint8_t instanceIndicator;
+        if (!d.readFixedU8(&instanceIndicator) ||
+            instanceIndicator != uint8_t(ComponentCoreSortRaw::Instance)) {
+          return d.fail("expected core instance index");
+        }
+
+        uint32_t instanceIndex;
+        if (!d.readVarU32(&instanceIndex)) {
+          return d.fail("expected core instance index");
+        }
+        if (c->coreInstances.length() <= instanceIndex) {
+          return d.failf("invalid core instance index %d", instanceIndex);
+        }
+
+        // TODO(wasm-cm): Validate that the instance's exports satisfy the
+        // module's imports
+
+        args.infallibleAppend(CoreInstanceInstantiateArg{
+            .name = std::move(importName),
+            .instanceIndex = instanceIndex,
+        });
+      }
+
+      CoreInstanceDesc desc(CoreInstanceDescFromModule{
+          .moduleIndex = moduleIndex,
+          .args = std::move(args),
+      });
+      if (!c->coreInstances.append(std::move(desc))) {
+        return false;
+      }
+    } break;
+    case uint8_t(CoreInstanceExprKind::InlineExports): {
+      // TODO(wasm-cm): Core instances generated from inline exports are
+      // basically just a way of renaming exports to satisfy another component's
+      // imports. But even so, a reasonable first way to implement this would be
+      // to literally construct a new module with imports and exports, then
+      // instantiate that. (Note that this new module wouldn't take up space in
+      // the core module index space; we would have to track ownership a
+      // different way.)
+      return d.fail("core instances from inline exports are not yet supported");
+    } break;
+    default:
+      return d.failf("expected type of instance expression but got %d",
+                     exprType);
+  }
+
+  return true;
+}
+
 enum class ComponentImportFlagsRaw : uint8_t {
   // Strangely, the binary encoding currently allows either 0x00 or 0x01 for the
   // flags. Both do exactly the same thing. This is supposed to be cleaned up
@@ -5513,6 +5605,27 @@ static bool DecodeComponentImport(Decoder& d, MutableComponent& c,
   }
 
   MOZ_RELEASE_ASSERT(d.readBytes(moduleBytes.Length()));
+
+  return true;
+}
+
+[[nodiscard]] static bool DecodeComponentCoreInstanceSection(
+    Decoder& d, MutableComponent& c) {
+  uint32_t numInstances;
+  if (!d.readVarU32(&numInstances)) {
+    return d.fail("expected number of instances");
+  }
+  if (c->coreInstances.length() + uint64_t(numInstances) >
+      MaxComponentCoreInstances) {
+    return d.failf("too many core instances (max %d)",
+                   MaxComponentCoreInstances);
+  }
+
+  for (uint32_t i = 0; i < numInstances; i++) {
+    if (!DecodeCoreInstance(d, c)) {
+      return false;
+    }
+  }
 
   return true;
 }
@@ -5602,6 +5715,11 @@ bool wasm::DecodeComponent(Decoder& d, MutableComponent c,
         case uint8_t(ComponentSectionId::CoreModule): {
           if (!DecodeComponentCoreModuleSection(d, c, sectionBytes, args,
                                                 listener)) {
+            return false;
+          }
+        } break;
+        case uint8_t(ComponentSectionId::CoreInstance): {
+          if (!DecodeComponentCoreInstanceSection(d, c)) {
             return false;
           }
         } break;

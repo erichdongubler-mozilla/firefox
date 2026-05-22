@@ -322,6 +322,49 @@ class StronglyUniqueNameSet {
   [[nodiscard]] bool add(mozilla::Span<const char> name, bool* duplicate);
 };
 
+struct CoreInstanceInstantiateArg {
+  CacheableName name;
+  uint32_t instanceIndex;
+};
+
+using CoreInstanceInstantiateArgVector =
+    mozilla::Vector<CoreInstanceInstantiateArg, 0, SystemAllocPolicy>;
+
+// Instructions for instantiating a core instance from a core module,
+// corresponding to this text production:
+//
+//     (core instance (instantiate <modidx>) (with ...)*)`
+//
+struct CoreInstanceDescFromModule {
+  // The core module to instantiate.
+  uint32_t moduleIndex;
+
+  // The instance's "with" declarations. In the binary format there is no inline
+  // export form, only a form that uses the exports of another core instance.
+  CoreInstanceInstantiateArgVector args;
+};
+
+// Instructions for instantiating a core instance by re-exporting core items
+// already present in the component's index spaces. Corresponds to this text:
+//
+//     (core instance (export ...)*)
+//
+// This form of core instantiation semantically creates a new anonymous module
+// which imports the given definitions and re-exports them. Alternatively, you
+// can consider it a mere renaming of the items exported by other modules, but
+// creating an anonymous module simplifies our implementation. Note that the
+// module does not live in the component's core module index space.
+//
+// TODO(wasm-cm): Fill this out and figure out how to satisfy the module's
+// imports.
+struct CoreInstanceDescFromInlineExports {
+  SharedModule mod;
+};
+
+// Instructions for instantiating a core instance.
+using CoreInstanceDesc = mozilla::Variant<CoreInstanceDescFromModule,
+                                          CoreInstanceDescFromInlineExports>;
+
 // Describes an import or export from a wasm component.
 class ComponentExternDesc {
   ComponentSort sort_;
@@ -366,6 +409,8 @@ class ComponentImport {
 
 class Component : public JS::WasmComponent {
   using CoreModuleVector = mozilla::Vector<SharedModule, 0, SystemAllocPolicy>;
+  using CoreInstanceVector =
+      mozilla::Vector<CoreInstanceDesc, 0, SystemAllocPolicy>;
   using TypeVector = mozilla::Vector<ComponentDefType, 0, SystemAllocPolicy>;
   using ImportVector = Vector<ComponentImport, 0, SystemAllocPolicy>;
 
@@ -374,8 +419,19 @@ class Component : public JS::WasmComponent {
 
  public:
   CoreModuleVector coreModules;
+  CoreInstanceVector coreInstances;
   TypeVector types;
   ImportVector imports;
+
+  SharedModule moduleForCoreInstance(uint32_t instanceIndex) {
+    CoreInstanceDesc& instance = coreInstances[instanceIndex];
+
+    return instance.match(
+        [&coreModules = this->coreModules](CoreInstanceDescFromModule& desc) {
+          return coreModules[desc.moduleIndex];
+        },
+        [](CoreInstanceDescFromInlineExports& desc) { return desc.mod; });
+  }
 
   size_t gcMallocBytesExcludingCode() const {
     // TODO(wasm-cm): Right now, this only sums up the sizes of the inner
