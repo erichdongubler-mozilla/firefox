@@ -731,6 +731,58 @@ class TestRecursiveMakeBackend(BackendTester):
 
         self.assertTrue(os.path.isfile(mozpath.join(p, "Makefile")))
 
+    def test_webidl_build_writes_cppsrcs(self):
+        """Ensure _handle_webidl_build writes the unified variable into
+        webidlsrcs.mk and CPPSRCS lines into dom/bindings/backend.mk, so that
+        dom/bindings/Makefile.in no longer needs to declare them."""
+        env = self._get_environment("stub0")
+        backend = RecursiveMakeBackend(env)
+
+        bindings_dir = mozpath.join(env.topobjdir, "dom", "bindings")
+        os.makedirs(bindings_dir, exist_ok=True)
+
+        class FakeWebIDLCollection:
+            srcdir = mozpath.join(env.topsrcdir, "dom", "bindings")
+            objdir = bindings_dir
+            topsrcdir = env.topsrcdir
+            config = env
+
+            def all_non_static_basenames(self):
+                return ["GeneratedFooBinding.cpp"]
+
+            def all_test_stems(self):
+                return ["TestFoo"]
+
+            def all_preprocessed_sources(self):
+                return []
+
+        unified_source_mapping = [
+            ("UnifiedBindings0.cpp", ["FooBinding.cpp", "BarBinding.cpp"]),
+        ]
+        global_define_files = ["RegisterBindings.cpp"]
+
+        backend._handle_webidl_build(
+            bindings_dir,
+            unified_source_mapping,
+            FakeWebIDLCollection(),
+            expected_build_output_files=[],
+            global_define_files=global_define_files,
+        )
+
+        with open(mozpath.join(bindings_dir, "webidlsrcs.mk")) as fh:
+            webidlsrcs_contents = fh.read()
+        self.assertIn(
+            "unified_binding_cpp_files := UnifiedBindings0.cpp",
+            webidlsrcs_contents,
+        )
+        self.assertNotIn("CPPSRCS", webidlsrcs_contents)
+        self.assertNotIn("globalgen_sources", webidlsrcs_contents)
+
+        backend_file = backend._backend_files[bindings_dir]
+        backend_mk_contents = backend_file.fh.getvalue().decode("utf-8")
+        self.assertIn("CPPSRCS += RegisterBindings.cpp", backend_mk_contents)
+        self.assertIn("CPPSRCS += $(unified_binding_cpp_files)", backend_mk_contents)
+
     def test_test_support_files_tracked(self):
         env = self._consume("test-support-binaries-tracked", RecursiveMakeBackend)
         m = InstallManifest(

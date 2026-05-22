@@ -1932,9 +1932,6 @@ class RecursiveMakeBackend(MakeBackend):
             % " ".join(sorted(webidls.all_non_static_basenames()))
         )
         mk.add_statement(
-            "globalgen_sources := %s" % " ".join(sorted(global_define_files))
-        )
-        mk.add_statement(
             "test_sources := %s"
             % " ".join(sorted("%sBinding.cpp" % s for s in webidls.all_test_stems()))
         )
@@ -1972,6 +1969,11 @@ class RecursiveMakeBackend(MakeBackend):
         webidls_mk = mozpath.join(bindings_dir, "webidlsrcs.mk")
         with self._write_file(webidls_mk) as fh:
             mk.dump(fh, removal_guard=False)
+
+        backend_file = self._get_backend_file_for(webidls)
+        for f in sorted(global_define_files):
+            backend_file.write(f"CPPSRCS += {f}\n")
+        backend_file.write("CPPSRCS += $(unified_binding_cpp_files)\n")
 
         # Add the test directory to the compile graph.
         if self.environment.substs.get("ENABLE_TESTS"):
