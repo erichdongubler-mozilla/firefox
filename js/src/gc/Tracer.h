@@ -254,7 +254,8 @@ struct TraceWeakResult {
 // Trace through a weak edge. Returns a TraceWeakResult to describe what
 // happened and allow cleanup.
 template <typename T>
-inline TraceWeakResult<T> TraceWeakEdge(JSTracer* trc, BarrieredBase<T>* thingp,
+inline TraceWeakResult<T> TraceWeakEdge(JSTracer* trc,
+                                        const BarrieredBase<T>* thingp,
                                         const char* name) {
   T* addr = thingp->unbarrieredAddress();
   T initial = *addr;
