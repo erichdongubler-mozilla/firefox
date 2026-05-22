@@ -14,7 +14,6 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
-  UrlbarView: "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "l10n", () => {
@@ -92,12 +91,6 @@ export class UrlbarProviderCalculator extends UrlbarProvider {
   // of this provider.
   #sapName;
 
-  constructor() {
-    super();
-    lazy.UrlbarResult.addDynamicResultType(DYNAMIC_RESULT_TYPE);
-    lazy.UrlbarView.addDynamicViewTemplate(DYNAMIC_RESULT_TYPE, VIEW_TEMPLATE);
-  }
-
   /**
    * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
    */
@@ -149,6 +142,10 @@ export class UrlbarProviderCalculator extends UrlbarProvider {
       });
       addCallback(this, result);
     } catch (e) {}
+  }
+
+  getViewTemplate(_result) {
+    return VIEW_TEMPLATE;
   }
 
   getViewUpdate(result) {

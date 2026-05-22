@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
-
 /**
  * @import {ProvidersManager} from "UrlbarProvidersManager.sys.mjs"
  */
@@ -11,7 +9,6 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   ContextualIdentityService:
     "resource://gre/modules/ContextualIdentityService.sys.mjs",
   L10nCache: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
@@ -31,13 +28,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
-
-XPCOMUtils.defineLazyServiceGetter(
-  lazy,
-  "styleSheetService",
-  "@mozilla.org/content/style-sheet-service;1",
-  Ci.nsIStyleSheetService
-);
 
 // Query selector for selectable elements in results.
 const SELECTABLE_ELEMENT_SELECTOR = "[role=button], [selectable], a";
@@ -104,12 +94,6 @@ export class UrlbarView {
 
     // We cache l10n strings to avoid Fluent's async lookup.
     this.#l10nCache = new lazy.L10nCache(this.document.l10n);
-
-    for (let viewTemplate of UrlbarView.dynamicViewTemplatesByName.values()) {
-      if (viewTemplate.stylesheet) {
-        addDynamicStylesheet(this.window, viewTemplate.stylesheet);
-      }
-    }
 
     let contextMenu = this.document.querySelector("#urlbarView-context-menu");
     if (contextMenu) {
@@ -1060,106 +1044,6 @@ export class UrlbarView {
     }
   }
 
-  static dynamicViewTemplatesByName = new Map();
-
-  /**
-   * Registers the view template for a dynamic result type.  A view template is
-   * a plain object that describes the DOM subtree for a dynamic result type.
-   * When a dynamic result is shown in the urlbar view, its type's view template
-   * is used to construct the part of the view that represents the result.
-   *
-   * The specified view template will be available to the urlbars in all current
-   * and future browser windows until it is unregistered.  A given dynamic
-   * result type has at most one view template.  If this method is called for a
-   * dynamic result type more than once, the view template in the last call
-   * overrides those in previous calls.
-   *
-   * @param {string} name
-   *   The view template will be registered for the dynamic result type with
-   *   this name.
-   * @param {object} viewTemplate
-   *   This object describes the DOM subtree for the given dynamic result type.
-   *   It should be a tree-like nested structure with each object in the nesting
-   *   representing a DOM element to be created.  This tree-like structure is
-   *   achieved using the `children` property described below.  Each object in
-   *   the structure may include the following properties:
-   *
-   *   {string} tag
-   *     The tag name of the object.  It is required for all objects in the
-   *     structure except the root object and declares the kind of element that
-   *     will be created for the object: span, div, img, etc.
-   *   {string} [name]
-   *     The name of the object. This value is required if you need to update
-   *     the object's DOM element at query time. It's also helpful but not
-   *     required if you need to style the element. When defined, it serves two
-   *     important functions:
-   *
-   *     (1) The element created for the object will automatically have a class
-   *         named `urlbarView-dynamic-${dynamicType}-${name}`, where
-   *         `dynamicType` is the name of the dynamic result type.  The element
-   *         will also automatically have an attribute "name" whose value is
-   *         this name.  The class and attribute allow the element to be styled
-   *         in CSS.
-   *     (2) The name is used when updating the view.  See
-   *         UrlbarProvider.getViewUpdate().
-   *
-   *     Names must be unique within a view template, but they don't need to be
-   *     globally unique.  i.e., two different view templates can use the same
-   *     names, and other DOM elements can use the same names in their IDs and
-   *     classes.  The name also suffixes the dynamic element's ID: an element
-   *     with name `data` will get the ID `urlbarView-row-{unique number}-data`.
-   *     If there is no name provided for the root element, the root element
-   *     will not get an ID.
-   *   {object} [attributes]
-   *     An optional mapping from attribute names to values.  For each
-   *     name-value pair, an attribute is added to the element created for the
-   *     object. The `id` attribute is reserved and cannot be set by the
-   *     provider. Element IDs are passed back to the provider in getViewUpdate
-   *     if they are needed.
-   *   {array} [children]
-   *     An optional list of children.  Each item in the array must be an object
-   *     as described here.  For each item, a child element as described by the
-   *     item is created and added to the element created for the parent object.
-   *   {array} [classList]
-   *     An optional list of classes.  Each class will be added to the element
-   *     created for the object by calling element.classList.add().
-   *   {boolean} [overflowable]
-   *     If true, the element's overflow status will be tracked in order to
-   *     fade it out when needed.
-   *   {string} [stylesheet]
-   *     An optional stylesheet URL.  This property is valid only on the root
-   *     object in the structure.  The stylesheet will be loaded in all browser
-   *     windows so that the dynamic result type view may be styled.
-   */
-  static addDynamicViewTemplate(name, viewTemplate) {
-    this.dynamicViewTemplatesByName.set(name, viewTemplate);
-    if (viewTemplate.stylesheet) {
-      for (let window of lazy.BrowserWindowTracker.orderedWindows) {
-        addDynamicStylesheet(window, viewTemplate.stylesheet);
-      }
-    }
-  }
-
-  /**
-   * Unregisters the view template for a dynamic result type.
-   *
-   * @param {string} name
-   *   The view template will be unregistered for the dynamic result type with
-   *   this name.
-   */
-  static removeDynamicViewTemplate(name) {
-    let viewTemplate = this.dynamicViewTemplatesByName.get(name);
-    if (!viewTemplate) {
-      return;
-    }
-    this.dynamicViewTemplatesByName.delete(name);
-    if (viewTemplate.stylesheet) {
-      for (let window of lazy.BrowserWindowTracker.orderedWindows) {
-        removeDynamicStylesheet(window, viewTemplate.stylesheet);
-      }
-    }
-  }
-
   // Private properties and methods below.
   #announceTabToSearchOnSelection;
   #blobUrlsByResultUrl = null;
@@ -1657,9 +1541,7 @@ export class UrlbarView {
   #createRowContentForDynamicType(item, result) {
     let { dynamicType } = result.payload;
     let provider = this.#providersManager.getProvider(result.providerName);
-    let viewTemplate =
-      provider.getViewTemplate?.(result) ||
-      UrlbarView.dynamicViewTemplatesByName.get(dynamicType);
+    let viewTemplate = provider.getViewTemplate(result);
     if (!viewTemplate) {
       console.error(`No viewTemplate found for ${result.providerName}`);
       return;
@@ -2152,8 +2034,8 @@ export class UrlbarView {
       let provider = this.#providersManager.getProvider(newResult.providerName);
       if (
         !lazy.ObjectUtils.deepEqual(
-          provider.getViewTemplate?.(oldResult),
-          provider.getViewTemplate?.(newResult)
+          provider.getViewTemplate(oldResult),
+          provider.getViewTemplate(newResult)
         )
       ) {
         return true;
@@ -4405,50 +4287,5 @@ class QueryContextCache {
 
   get(searchString) {
     return this.#cache.find(e => e.searchString == searchString);
-  }
-}
-
-/**
- * Adds a dynamic result type stylesheet to a specified window.
- *
- * @param {Window} window
- *   The window to which to add the stylesheet.
- * @param {string} stylesheetURL
- *   The stylesheet's URL.
- */
-async function addDynamicStylesheet(window, stylesheetURL) {
-  // Try-catch all of these so that failing to load a stylesheet doesn't break
-  // callers and possibly the urlbar.  If a stylesheet does fail to load, the
-  // dynamic results that depend on it will appear broken, but at least we
-  // won't break the whole urlbar.
-  try {
-    let uri = Services.io.newURI(stylesheetURL);
-    let sheet = await lazy.styleSheetService.preloadSheetAsync(
-      uri,
-      Ci.nsIStyleSheetService.AGENT_SHEET
-    );
-    window.windowUtils.addSheet(sheet, Ci.nsIDOMWindowUtils.AGENT_SHEET);
-  } catch (ex) {
-    console.error("Error adding dynamic stylesheet:", ex);
-  }
-}
-
-/**
- * Removes a dynamic result type stylesheet from the view's window.
- *
- * @param {Window} window
- *   The window from which to remove the stylesheet.
- * @param {string} stylesheetURL
- *   The stylesheet's URL.
- */
-function removeDynamicStylesheet(window, stylesheetURL) {
-  // Try-catch for the same reason as desribed in addDynamicStylesheet.
-  try {
-    window.windowUtils.removeSheetUsingURIString(
-      stylesheetURL,
-      Ci.nsIDOMWindowUtils.AGENT_SHEET
-    );
-  } catch (ex) {
-    console.error("Error removing dynamic stylesheet:", ex);
   }
 }

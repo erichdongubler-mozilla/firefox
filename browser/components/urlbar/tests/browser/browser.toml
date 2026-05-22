@@ -147,10 +147,6 @@ https_first_disabled = true
 
 ["browser_dynamicResults.js"]
 https_first_disabled = true
-support-files = [
-  "dynamicResult0.css",
-  "dynamicResult1.css",
-]
 
 ["browser_editAndEnterWithSlowQuery.js"]
 
