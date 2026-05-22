@@ -1236,7 +1236,6 @@ void nsHttpHandler::InitUserAgentComponents() {
 #else
   mOscpu.AssignLiteral("Linux x86_64");
 #endif
-
 }
 
 #ifdef XP_MACOSX

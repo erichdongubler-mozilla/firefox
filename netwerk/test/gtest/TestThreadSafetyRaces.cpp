@@ -35,18 +35,18 @@ TEST(TestThreadSafetyRaces, nsHttpHandler_AcceptEncoding_Race)
     nsCOMPtr<nsIProtocolHandler> handler;
     ioService->GetProtocolHandler("http", getter_AddRefs(handler));
   }
-  ASSERT_TRUE(gHttpHandler) << "nsHttpHandler must be initialized";
+  ASSERT_TRUE(gHttpHandler)
+  << "nsHttpHandler must be initialized";
 
   nsCOMPtr<nsIThread> readerThread;
-  nsresult rv =
-      NS_NewNamedThread("RaceReader", getter_AddRefs(readerThread));
+  nsresult rv = NS_NewNamedThread("RaceReader", getter_AddRefs(readerThread));
   ASSERT_NS_SUCCEEDED(rv);
 
   Atomic<bool> done{false};
   Atomic<bool> readerRunning{false};
 
-  rv = readerThread->Dispatch(NS_NewRunnableFunction(
-      "AcceptEncodingReader", [&done, &readerRunning]() {
+  rv = readerThread->Dispatch(
+      NS_NewRunnableFunction("AcceptEncodingReader", [&done, &readerRunning]() {
         readerRunning = true;
         while (!done) {
           gHttpHandler->IsAcceptableEncoding("gzip", true);
@@ -84,18 +84,18 @@ TEST(TestThreadSafetyRaces, nsHttpHandler_AcceptEncoding_Race)
 
 TEST(TestThreadSafetyRaces, nsHttpHandler_UserAgent_Race)
 {
-  ASSERT_TRUE(gHttpHandler) << "nsHttpHandler must be initialized";
+  ASSERT_TRUE(gHttpHandler)
+  << "nsHttpHandler must be initialized";
 
   nsCOMPtr<nsIThread> readerThread;
-  nsresult rv =
-      NS_NewNamedThread("RaceReader", getter_AddRefs(readerThread));
+  nsresult rv = NS_NewNamedThread("RaceReader", getter_AddRefs(readerThread));
   ASSERT_NS_SUCCEEDED(rv);
 
   Atomic<bool> done{false};
   Atomic<bool> readerRunning{false};
 
-  rv = readerThread->Dispatch(NS_NewRunnableFunction(
-      "UserAgentReader", [&done, &readerRunning]() {
+  rv = readerThread->Dispatch(
+      NS_NewRunnableFunction("UserAgentReader", [&done, &readerRunning]() {
         readerRunning = true;
         while (!done) {
           const nsCString& ua = gHttpHandler->UserAgent(false);
@@ -108,8 +108,7 @@ TEST(TestThreadSafetyRaces, nsHttpHandler_UserAgent_Race)
 
   for (int i = 0; i < 5000; i++) {
     if (i % 2 == 0) {
-      Preferences::SetCString("general.useragent.override",
-                              "TestAgent/1.0"_ns);
+      Preferences::SetCString("general.useragent.override", "TestAgent/1.0"_ns);
     } else {
       Preferences::ClearUser("general.useragent.override");
     }
