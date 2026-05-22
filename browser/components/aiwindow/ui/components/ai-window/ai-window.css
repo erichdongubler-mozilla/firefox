@@ -180,10 +180,13 @@ smartwindow-prompts {
 moz-button.new-chat-icon-button,
 moz-button.close-sidebar-button {
   --button-border-radius: var(--border-radius-circle);
-  --button-background-color: light-dark(var(--color-white), var(--color-black-alpha-30));
-  --button-background-color-hover: light-dark(var(--color-violet-20), color-mix(in srgb, currentColor 11%, transparent));
-  --button-background-color-active: light-dark(var(--color-violet-30), color-mix(in srgb, currentColor 17%, transparent));
-  --button-text-color: light-dark(var(--color-violet-90), var(--color-violet-0));
+
+  @media not (forced-colors) {
+    --button-background-color-ghost: light-dark(var(--color-white), var(--color-black-alpha-30));
+    --button-background-color-ghost-hover: light-dark(var(--color-violet-20), color-mix(in srgb, currentColor 11%, transparent));
+    --button-background-color-ghost-active: light-dark(var(--color-violet-30), color-mix(in srgb, currentColor 17%, transparent));
+    --button-text-color-ghost: light-dark(var(--color-violet-90), var(--color-violet-0));
+  }
 }
 
 moz-button.new-chat-icon-button::part(button),

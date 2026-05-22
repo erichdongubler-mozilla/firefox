@@ -1000,6 +1000,7 @@ export class AIChatContent extends MozLitElement {
         data-l10n-attrs="aria-label,tooltiptext"
         iconsrc="chrome://global/skin/icons/shaft-arrow-down.svg"
         disabled
+        type="ghost icon"
       ></moz-button>
     `;
   }

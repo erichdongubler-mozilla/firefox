@@ -2355,7 +2355,7 @@ export class AIWindow extends MozLitElement {
               data-l10n-id="aiwindow-new-chat"
               data-l10n-attrs="tooltiptext,aria-label"
               class="new-chat-icon-button"
-              size="default"
+              type="ghost icon"
               iconsrc="chrome://browser/content/aiwindow/assets/new-chat.svg"
               @click=${this.onCreateNewChatClick}
             ></moz-button>
@@ -2363,7 +2363,7 @@ export class AIWindow extends MozLitElement {
               data-l10n-id="aiwindow-close-sidebar"
               data-l10n-attrs="tooltiptext,aria-label"
               class="close-sidebar-button"
-              size="default"
+              type="ghost icon"
               iconsrc="chrome://global/skin/icons/close.svg"
               @click=${this.#onCloseSidebarClick}
             ></moz-button>
@@ -2377,7 +2377,7 @@ export class AIWindow extends MozLitElement {
                 data-l10n-id="aiwindow-new-chat"
                 data-l10n-attrs="tooltiptext,aria-label"
                 class="new-chat-icon-button"
-                size="default"
+                type="ghost icon"
                 iconsrc="chrome://browser/content/aiwindow/assets/new-chat.svg"
                 @click=${this.onCreateNewChatClick}
               ></moz-button>

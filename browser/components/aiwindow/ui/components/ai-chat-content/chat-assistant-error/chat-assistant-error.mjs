@@ -173,6 +173,7 @@ export class ChatAssistantError extends MozLitElement {
               class="chat-assistant-error__button"
               data-l10n-id=${this.actionButton?.label}
               size="small"
+              type="ghost"
               @click=${this.actionButton?.action}
             ></moz-button>`
           : nothing}

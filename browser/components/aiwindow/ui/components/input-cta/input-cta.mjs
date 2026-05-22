@@ -217,7 +217,7 @@ export class InputCta extends MozLitElement {
         href="chrome://browser/content/aiwindow/components/input-cta.css"
       />
       <moz-button
-        type=${this.action && !isStop ? "split" : "default"}
+        type=${this.action && !isStop ? "split" : "ghost"}
         class="input-cta"
         .menuId=${this.action && !isStop ? this._menuId : undefined}
         .iconSrc=${this.buttonIconSrc}
