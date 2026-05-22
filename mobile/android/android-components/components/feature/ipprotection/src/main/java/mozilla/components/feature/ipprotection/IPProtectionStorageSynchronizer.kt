@@ -76,18 +76,12 @@ internal class FxaAccountStoreSync(
                 .distinctUntilChanged()
                 .collect { state ->
                     val mappedState = when (state) {
-                        AccountState.Authenticated -> {
-                            // TODO(jonalmeida) simplify this when you have thinking-time...
-                            if (ipProtectionStore.state.accountState.isFirstEnrollment) {
-                                AccountStatus.Ready
-                            } else {
-                                AccountStatus.NeedsAuthorization
-                            }
-                        }
-
-                        is AccountState.Authenticating -> AccountStatus.WarmingUp
+                        AccountState.Authenticated -> AccountStatus.Ready
                         AccountState.AuthenticationProblem -> AccountStatus.NeedsAuthentication
                         AccountState.NotAuthenticated -> AccountStatus.Uninitialized
+                        AccountState.Unknown,
+                        is AccountState.Authenticating,
+                            -> AccountStatus.WarmingUp
                     }
                     ipProtectionStore.dispatch(InternalAction.AccountManagerStateChanged(mappedState))
                 }
