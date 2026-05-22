@@ -185,10 +185,6 @@
     <!-- Description for the Google Lens AI feature toggle -->
     <string name="ai_controls_google_lens_description">Sends images and photos to Google for visual search.</string>
 
-    <!--  Voice Search in Display Mode toolbar strings  -->
-    <!-- Label for toggling voice search visibility in the display-mode toolbar -->
-    <string name="preferences_debug_settings_show_voice_search_in_display_toolbar" translatable="false">Show Voice Search in Display Toolbar</string>
-
     <!-- Label for toggling the Tab Groups feature -->
     <string name="preferences_tab_groups_feature" translatable="false">Enable Tab Groups</string>
     <string name="preferences_tab_groups_drag_and_drop" translatable="false">Enable Tab Groups Drag and Drop</string>
