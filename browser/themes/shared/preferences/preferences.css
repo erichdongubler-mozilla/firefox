@@ -1658,6 +1658,11 @@ setting-pane[onsearchpane] {
   --box-label-font-weight: var(--font-weight-heading);
 }
 
+#no-addresses-stored,
+#no-payments-stored {
+  color: var(--text-color-deemphasized);
+}
+
 .box-header-bold {
   --box-label-font-weight: var(--font-weight-heading);
 }
