@@ -137,6 +137,7 @@ export class SidebarBookmarkList extends SidebarTabList {
           tabindex="0"
           draggable="true"
           data-guid=${tabItem.guid}
+          @auxclick=${e => this.#onFolderAuxClick(e, tabItem.guid)}
           .guid=${tabItem.guid}
         >
           ${tabItem.title}
@@ -148,7 +149,12 @@ export class SidebarBookmarkList extends SidebarTabList {
           @toggle=${e => this.#onFolderToggle(e, tabItem.guid)}
           .guid=${tabItem.guid}
         >
-          <summary draggable="true" part="summary" data-guid=${tabItem.guid}>
+          <summary
+            draggable="true"
+            part="summary"
+            data-guid=${tabItem.guid}
+            @auxclick=${e => this.#onFolderAuxClick(e, tabItem.guid)}
+          >
             ${tabItem.title}
           </summary>
           <div id="content">
@@ -242,6 +248,20 @@ export class SidebarBookmarkList extends SidebarTabList {
         bubbles: true,
         composed: true,
         detail: { guid, open: e.target.open },
+      })
+    );
+  }
+
+  #onFolderAuxClick(e, guid) {
+    if (e.button !== 1) {
+      return;
+    }
+    e.preventDefault();
+    this.dispatchEvent(
+      new CustomEvent("bookmark-folder-middleclick", {
+        bubbles: true,
+        composed: true,
+        detail: { guid, isFolder: true },
       })
     );
   }

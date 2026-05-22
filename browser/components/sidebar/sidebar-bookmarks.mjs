@@ -1058,6 +1058,7 @@ export class SidebarBookmarks extends SidebarPage {
         .tabItems=${this.searchResults}
         @fxview-tab-list-primary-action=${this.onPrimaryAction}
         @fxview-tab-list-secondary-action=${this.onSecondaryAction}
+        @fxview-tab-list-middleclick-action=${this.onPrimaryAction}
       ></sidebar-bookmark-list>
     `;
   }
@@ -1096,7 +1097,10 @@ export class SidebarBookmarks extends SidebarPage {
                 .expandedFolderGuids=${this.#expandedFolderGuids}
                 @fxview-tab-list-primary-action=${this.onPrimaryAction}
                 @fxview-tab-list-secondary-action=${this.onSecondaryAction}
+                @fxview-tab-list-middleclick-action=${this.onPrimaryAction}
                 @bookmark-folder-toggle=${this.#onFolderToggle}
+                @bookmark-folder-middleclick=${({ detail }) =>
+                  this.#openBookmarks([detail])}
               ></sidebar-bookmark-list>`
           )}
         </div>
