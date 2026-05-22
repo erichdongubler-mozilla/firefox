@@ -366,10 +366,14 @@ button.month-year.active {
   border-radius: var(--border-radius);
   user-select: none;
   scroll-snap-align: start;
-}
 
-.spinner-container > .spinner > div.disabled {
-  opacity: var(--disabled-opacity);
+  &.disabled {
+    opacity: var(--disabled-opacity);
+  }
+
+  &.hidden {
+    visibility: hidden;
+  }
 }
 
 /* Used only in <input type="time"> */
