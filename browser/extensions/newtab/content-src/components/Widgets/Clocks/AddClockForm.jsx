@@ -109,6 +109,10 @@ export function AddClockForm({
     setSelectedTimeZone(timeZone);
   }, []);
 
+  const handleNicknameInput = useCallback(e => {
+    setNickname(e.target.value.slice(0, MAX_NICKNAME_LENGTH));
+  }, []);
+
   const handleSubmit = useCallback(() => {
     if (!canAddSelectedClock) {
       return;
@@ -237,7 +241,7 @@ export function AddClockForm({
         data-l10n-id="newtab-clock-widget-input-nickname"
         id="clocks-nickname-input"
         value={nickname}
-        onInput={e => setNickname(e.target.value.slice(0, MAX_NICKNAME_LENGTH))}
+        onInput={handleNicknameInput}
       />
       <moz-button-group className="clocks-add-actions">
         <moz-button

@@ -17888,6 +17888,9 @@ function AddClockForm({
     setSearchQuery(getCityFromTimeZone(timeZone));
     setSelectedTimeZone(timeZone);
   }, []);
+  const handleNicknameInput = (0,external_React_namespaceObject.useCallback)(e => {
+    setNickname(e.target.value.slice(0, MAX_NICKNAME_LENGTH));
+  }, []);
   const handleSubmit = (0,external_React_namespaceObject.useCallback)(() => {
     if (!canAddSelectedClock) {
       return;
@@ -17977,7 +17980,7 @@ function AddClockForm({
     "data-l10n-id": "newtab-clock-widget-input-nickname",
     id: "clocks-nickname-input",
     value: nickname,
-    onInput: e => setNickname(e.target.value.slice(0, MAX_NICKNAME_LENGTH))
+    onInput: handleNicknameInput
   }), /*#__PURE__*/external_React_default().createElement("moz-button-group", {
     className: "clocks-add-actions"
   }, /*#__PURE__*/external_React_default().createElement("moz-button", {
@@ -18049,15 +18052,15 @@ function ClocksRow({
   }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "clocks-meta",
     "aria-hidden": "true"
-  }, showLabel && !!clock.label && /*#__PURE__*/external_React_default().createElement("span", {
-    className: chipClassName
-  }, clock.label), /*#__PURE__*/external_React_default().createElement("div", {
+  }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "clocks-label"
   }, /*#__PURE__*/external_React_default().createElement("span", {
     className: "clocks-city"
   }, cityDisplay), /*#__PURE__*/external_React_default().createElement("span", {
     className: "clocks-timezone"
-  }, tzLabel))), /*#__PURE__*/external_React_default().createElement("time", {
+  }, tzLabel)), showLabel && !!clock.label && /*#__PURE__*/external_React_default().createElement("span", {
+    className: chipClassName
+  }, clock.label)), /*#__PURE__*/external_React_default().createElement("time", {
     className: "clocks-time",
     "aria-hidden": "true",
     dateTime: now ? formatDateTimeAttr(now, clock.timeZone) : undefined

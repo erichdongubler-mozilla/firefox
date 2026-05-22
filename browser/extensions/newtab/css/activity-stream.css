@@ -8187,12 +8187,37 @@ dialog:dir(rtl)::after {
   outline-offset: var(--focus-outline-inset);
   border-radius: var(--border-radius-small);
 }
+.nova-enabled .clocks-widget.large-widget .clocks-row.has-inline-actions.hides-time-on-inline-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+}
+.nova-enabled .clocks-widget.large-widget .clocks-row.has-inline-actions.hides-time-on-inline-actions .clocks-meta {
+  grid-column: 1;
+}
+.nova-enabled .clocks-widget.large-widget .clocks-row.has-inline-actions.hides-time-on-inline-actions .clocks-time,
+.nova-enabled .clocks-widget.large-widget .clocks-row.has-inline-actions.hides-time-on-inline-actions .clocks-row-actions {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+}
+.nova-enabled .clocks-widget.large-widget .clocks-row.has-inline-actions.hides-time-on-inline-actions .clocks-row-actions {
+  display: flex;
+  margin-inline-start: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.nova-enabled .clocks-widget.large-widget .clocks-row.has-inline-actions.hides-time-on-inline-actions:hover .clocks-row-actions, .nova-enabled .clocks-widget.large-widget .clocks-row.has-inline-actions.hides-time-on-inline-actions:focus-within .clocks-row-actions {
+  visibility: visible;
+  pointer-events: auto;
+}
+.nova-enabled .clocks-widget.large-widget .clocks-row.has-inline-actions.hides-time-on-inline-actions:hover .clocks-time, .nova-enabled .clocks-widget.large-widget .clocks-row.has-inline-actions.hides-time-on-inline-actions:focus-within .clocks-time {
+  visibility: hidden;
+}
 .nova-enabled .clocks-widget .clocks-row.has-inline-actions:hover .clocks-row-actions,
 .nova-enabled .clocks-widget .clocks-row.has-inline-actions:focus-within .clocks-row-actions {
   display: flex;
 }
-.nova-enabled .clocks-widget .clocks-row.has-inline-actions.hides-time-on-inline-actions:hover .clocks-time,
-.nova-enabled .clocks-widget .clocks-row.has-inline-actions.hides-time-on-inline-actions:focus-within .clocks-time {
+.nova-enabled .clocks-widget.medium-widget .clocks-row.has-inline-actions.hides-time-on-inline-actions:hover .clocks-time, .nova-enabled .clocks-widget.medium-widget .clocks-row.has-inline-actions.hides-time-on-inline-actions:focus-within .clocks-time {
   display: none;
 }
 .nova-enabled .clocks-widget .clocks-meta {
@@ -8211,15 +8236,17 @@ dialog:dir(rtl)::after {
   transition: gap var(--widget-size-transition-duration) var(--widget-size-transition-easing);
 }
 .nova-enabled .clocks-widget .clocks-label-chip {
-  display: inline-flex;
-  align-items: center;
+  display: inline-block;
   padding-block: var(--space-xsmall);
   padding-inline: var(--space-small);
   border-radius: var(--border-radius-large);
   font-size: var(--font-size-root);
   color: var(--text-color);
   white-space: nowrap;
-  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-inline-size: 0;
+  max-inline-size: 100%;
   /* stylelint-disable stylelint-plugin-mozilla/no-base-design-tokens, stylelint-plugin-mozilla/use-design-tokens */
   /* stylelint-enable stylelint-plugin-mozilla/no-base-design-tokens, stylelint-plugin-mozilla/use-design-tokens */
 }
@@ -8264,6 +8291,11 @@ dialog:dir(rtl)::after {
 }
 .nova-enabled .clocks-widget.large-widget[data-clock-count="3"] .clocks-label-chip, .nova-enabled .clocks-widget.large-widget[data-clock-count="4"] .clocks-label-chip {
   padding-block: 0.375rem;
+  justify-self: start;
+}
+.nova-enabled .clocks-widget.large-widget[data-clock-count="3"] .clocks-meta, .nova-enabled .clocks-widget.large-widget[data-clock-count="4"] .clocks-meta {
+  display: grid;
+  grid-template-columns: 7ch minmax(0, 1fr);
 }
 .nova-enabled .clocks-widget .clocks-city {
   font-size: var(--font-size-root);
@@ -8478,7 +8510,7 @@ dialog:dir(rtl)::after {
   justify-content: space-between;
   gap: var(--space-medium);
   padding-inline-start: var(--space-medium);
-  padding-inline-end: var(--space-xlarge);
+  padding-inline-end: var(--space-small);
   position: relative;
 }
 .nova-enabled .clocks-widget.large-widget .clocks-row + .clocks-row::before {
