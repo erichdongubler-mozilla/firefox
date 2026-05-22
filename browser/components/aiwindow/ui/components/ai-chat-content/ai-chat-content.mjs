@@ -766,6 +766,7 @@ export class AIChatContent extends MozLitElement {
       label,
       rows,
       summary,
+      canUndo: !!confirmedData.operationId,
       isExpanded: false,
     };
   }
@@ -795,6 +796,7 @@ export class AIChatContent extends MozLitElement {
       label: actionResultLabel,
       rows,
       summary,
+      canUndo: false,
       isExpanded: true,
     };
   }
@@ -833,14 +835,8 @@ export class AIChatContent extends MozLitElement {
           ? this.#getRestoreTabsData(confirmedData.originalClosedTabs || [])
           : this.#getCloseTabsData(confirmedData);
 
-        let canUndo = !wasRestored && !!confirmedData.operationId;
-        // Override can undo if explicitly dismissed
-        if (toolUIData.properties?.undoDismissed) {
-          canUndo = false;
-        }
-
         // Handle undo action if applicable
-        const onUndo = canUndo
+        const onUndo = actionResultData.canUndo
           ? () =>
               this.#dispatchToolUIUpdate({
                 messageId,
@@ -859,7 +855,7 @@ export class AIChatContent extends MozLitElement {
             .label=${actionResultData.label}
             .rows=${actionResultData.rows}
             .summary=${actionResultData.summary}
-            .canUndo=${canUndo}
+            .canUndo=${actionResultData.canUndo}
             .isExpanded=${actionResultData.isExpanded}
             @action-result-undo=${onUndo}
           ></ai-action-result>

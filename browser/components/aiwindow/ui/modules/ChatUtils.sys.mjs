@@ -94,7 +94,6 @@ export function parseMessageRows(rows) {
         row.getResultByName("web_search_queries")
       ),
       pageHistoryDeleted: !!row.getResultByName("page_history_deleted"),
-      toolUIData: parseJSONOrNull(row.getResultByName("tool_ui_data")),
     });
   });
 }
