@@ -5202,6 +5202,20 @@ button.arrow-button:dir(rtl) {
 .lists:hover .lists-header moz-button.lists-panel-button, .lists:focus-within .lists-header moz-button.lists-panel-button {
   visibility: visible;
 }
+.lists .edit-list-wrapper {
+  position: relative;
+  width: 100%;
+}
+.lists .edit-list-wrapper .edit-list {
+  padding-inline-end: var(--space-xxlarge);
+}
+.lists .edit-list-wrapper moz-button.edit-list-clear {
+  position: absolute;
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  inset-inline-end: var(--space-xxsmall);
+  --focus-outline-offset: var(--focus-outline-inset);
+}
 .lists .edit-list {
   background: none;
   border: none;

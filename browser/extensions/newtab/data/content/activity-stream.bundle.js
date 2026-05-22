@@ -13603,6 +13603,9 @@ function EditableText({
 }) {
   const [tempValue, setTempValue] = (0,external_React_namespaceObject.useState)(value);
   const inputRef = (0,external_React_namespaceObject.useRef)(null);
+  const wrapperRef = (0,external_React_namespaceObject.useRef)(null);
+  const previousFocusRef = (0,external_React_namespaceObject.useRef)(null);
+  const cancellingRef = (0,external_React_namespaceObject.useRef)(false);
 
   // True if tempValue is empty, null/undefined, or only whitespace
   const showPlaceholder = (tempValue ?? "").trim() === "";
@@ -13610,22 +13613,45 @@ function EditableText({
   const inputL10nAttrs = showPlaceholder && dataL10nId ? "placeholder,aria-label" : "aria-label";
   (0,external_React_namespaceObject.useEffect)(() => {
     if (isEditing) {
+      cancellingRef.current = false;
+      previousFocusRef.current = document.activeElement;
       inputRef.current?.focus();
-    } else {
+    }
+  }, [isEditing]);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!isEditing) {
       setTempValue(value);
     }
   }, [isEditing, value]);
+  const handleRestoreFocus = () => {
+    const target = previousFocusRef.current;
+    if (target && document.contains(target)) {
+      target.focus();
+    }
+  };
   function handleKeyDown(e) {
     if (e.key === "Enter") {
       onSave(tempValue.trim());
       setIsEditing(false);
     } else if (e.key === "Escape") {
+      cancellingRef.current = true;
       setIsEditing(false);
       setTempValue(value);
       onCancel?.();
+      handleRestoreFocus();
     }
   }
-  function handleOnBlur() {
+  function handleOnBlur(e) {
+    // Skip save when cancelling via Escape or the clear button — the
+    // restored focus would otherwise trip handleOnBlur into saving.
+    if (cancellingRef.current) {
+      cancellingRef.current = false;
+      return;
+    }
+    // Skip save when focus moved to the cancel button so its click handler can run.
+    if (e.relatedTarget && wrapperRef.current?.contains(e.relatedTarget)) {
+      return;
+    }
     if (!saveOnBlur) {
       if (tempValue.trim()) {
         return;
@@ -13637,7 +13663,14 @@ function EditableText({
     onSave(tempValue.trim());
     setIsEditing(false);
   }
-  return isEditing ? /*#__PURE__*/external_React_default().createElement("input", Lists_extends({
+  function handleClear() {
+    cancellingRef.current = true;
+    setIsEditing(false);
+    setTempValue(value);
+    onCancel?.();
+    handleRestoreFocus();
+  }
+  const input = /*#__PURE__*/external_React_default().createElement("input", Lists_extends({
     className: `edit-${type}`,
     ref: inputRef,
     type: "text",
@@ -13650,7 +13683,24 @@ function EditableText({
     "data-l10n-id": inputL10nId
   } : {}, inputL10nId ? {
     "data-l10n-attrs": inputL10nAttrs
-  } : {})) : [children];
+  } : {}));
+  if (!isEditing) {
+    return [children];
+  }
+  if (type === "list") {
+    return /*#__PURE__*/external_React_default().createElement("div", {
+      className: "edit-list-wrapper",
+      ref: wrapperRef
+    }, input, /*#__PURE__*/external_React_default().createElement("moz-button", {
+      className: "edit-list-clear",
+      type: "icon ghost",
+      size: "small",
+      iconSrc: "chrome://global/skin/icons/close.svg",
+      "data-l10n-id": "newtab-widget-lists-edit-clear",
+      onClick: handleClear
+    }));
+  }
+  return input;
 }
 
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/FocusTimer/FocusTimer.jsx

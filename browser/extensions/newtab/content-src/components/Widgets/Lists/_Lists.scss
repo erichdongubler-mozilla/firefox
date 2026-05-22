@@ -172,6 +172,23 @@
     }
   }
 
+  .edit-list-wrapper {
+    position: relative;
+    width: 100%;
+
+    .edit-list {
+      padding-inline-end: var(--space-xxlarge);
+    }
+
+    moz-button.edit-list-clear {
+      position: absolute;
+      inset-block-start: 50%;
+      transform: translateY(-50%);
+      inset-inline-end: var(--space-xxsmall);
+      --focus-outline-offset: var(--focus-outline-inset);
+    }
+  }
+
   .edit-list {
     background: none;
     border: none;

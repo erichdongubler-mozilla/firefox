@@ -711,6 +711,9 @@ newtab-widget-lists-input-menu-delete = Delete
 newtab-widget-lists-input-menu-edit = Edit
 newtab-widget-lists-input-menu-edit2 =
     .aria-label = Edit item
+newtab-widget-lists-edit-clear =
+    .aria-label = Cancel
+    .title = Cancel
 
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
