@@ -4,7 +4,7 @@
 
 #include "ParentChannelWrapper.h"
 #include "mozilla/net/HttpBaseChannel.h"
-#include "mozilla/net/UrlClassifierCommon.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/net/RedirectChannelRegistrar.h"
 #include "nsIViewSourceChannel.h"
 #include "nsNetUtil.h"
@@ -82,7 +82,7 @@ ParentChannelWrapper::SetClassifierMatchedTrackingInfo(
 NS_IMETHODIMP
 ParentChannelWrapper::NotifyClassificationFlags(uint32_t aClassificationFlags,
                                                 bool aIsThirdParty) {
-  UrlClassifierCommon::SetClassificationFlagsHelper(
+  ChannelClassifierUtils::SetClassificationFlagsHelper(
       mChannel, aClassificationFlags, aIsThirdParty);
   return NS_OK;
 }

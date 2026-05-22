@@ -5,6 +5,7 @@
 #include "UrlClassifierFeatureFingerprintingProtection.h"
 
 #include "mozilla/AntiTrackingUtils.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "ChannelClassifierService.h"
 #include "mozilla/ScopedPrefs.h"
@@ -104,7 +105,7 @@ UrlClassifierFeatureFingerprintingProtection::MaybeCreate(
     return nullptr;
   }
 
-  if (UrlClassifierCommon::IsPassiveContent(aChannel)) {
+  if (ChannelClassifierUtils::IsPassiveContent(aChannel)) {
     return nullptr;
   }
 
@@ -143,7 +144,7 @@ UrlClassifierFeatureFingerprintingProtection::ProcessChannel(
   NS_ENSURE_ARG_POINTER(aChannel);
   NS_ENSURE_ARG_POINTER(aShouldContinue);
 
-  bool isAllowListed = UrlClassifierCommon::IsAllowListed(aChannel);
+  bool isAllowListed = ChannelClassifierUtils::IsAllowListed(aChannel);
 
   // This is a blocking feature.
   *aShouldContinue = isAllowListed;
@@ -185,8 +186,8 @@ UrlClassifierFeatureFingerprintingProtection::ProcessChannel(
     return NS_OK;
   }
 
-  UrlClassifierCommon::SetBlockedContent(aChannel, NS_ERROR_FINGERPRINTING_URI,
-                                         list, ""_ns, ""_ns);
+  ChannelClassifierUtils::SetBlockedContent(
+      aChannel, NS_ERROR_FINGERPRINTING_URI, list, ""_ns, ""_ns);
 
   UC_LOG(
       ("UrlClassifierFeatureFingerprintingProtection::ProcessChannel - "

@@ -6,6 +6,7 @@
 
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/ScopedPrefs.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "ChannelClassifierService.h"
 #include "nsIChannel.h"
@@ -149,7 +150,7 @@ UrlClassifierFeatureTrackingProtection::ProcessChannel(
   NS_ENSURE_ARG_POINTER(aChannel);
   NS_ENSURE_ARG_POINTER(aShouldContinue);
 
-  bool isAllowListed = UrlClassifierCommon::IsAllowListed(aChannel);
+  bool isAllowListed = ChannelClassifierUtils::IsAllowListed(aChannel);
 
   // This is a blocking feature.
   *aShouldContinue = isAllowListed;
@@ -192,8 +193,8 @@ UrlClassifierFeatureTrackingProtection::ProcessChannel(
     return NS_OK;
   }
 
-  UrlClassifierCommon::SetBlockedContent(aChannel, NS_ERROR_TRACKING_URI, list,
-                                         ""_ns, ""_ns);
+  ChannelClassifierUtils::SetBlockedContent(aChannel, NS_ERROR_TRACKING_URI,
+                                            list, ""_ns, ""_ns);
 
   UC_LOG(
       ("UrlClassifierFeatureTrackingProtection::ProcessChannel - "

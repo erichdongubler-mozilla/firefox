@@ -30,6 +30,7 @@
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/net/ContentRange.h"
 #include "mozilla/net/InterceptionInfo.h"
 #include "mozilla/net/NeckoChannelParams.h"
@@ -339,7 +340,7 @@ FetchDriver::FetchDriver(SafeRefPtr<InternalRequest> aRequest,
   MOZ_ASSERT(aPrincipal);
   MOZ_ASSERT(aMainThreadEventTarget);
 
-  mIsTrackingFetch = net::UrlClassifierCommon::IsTrackingClassificationFlag(
+  mIsTrackingFetch = net::ChannelClassifierUtils::IsTrackingClassificationFlag(
       mTrackingFlags.thirdPartyFlags, false);
 }
 

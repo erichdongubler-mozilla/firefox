@@ -6,7 +6,7 @@
 
 #include "mozilla/Logging.h"
 #include "mozilla/net/HttpBaseChannel.h"
-#include "mozilla/net/UrlClassifierCommon.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "MainThreadUtils.h"
 #include "nsDebug.h"
 #include "mozilla/ContentClassifierEngine.h"
@@ -475,7 +475,7 @@ void ContentClassifierService::AnnotateChannel(nsIChannel* aChannel) {
             ("AnnotateChannel - url=%s", uri->GetSpecOrDefault().get()));
   }
 
-  net::UrlClassifierCommon::AnnotateChannel(
+  net::ChannelClassifierUtils::AnnotateChannel(
       aChannel, nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_TRACKING,
       nsIWebProgressListener::STATE_LOADED_LEVEL_2_TRACKING_CONTENT);
 }
@@ -490,9 +490,9 @@ void ContentClassifierService::CancelChannel(nsIChannel* aChannel) {
             ("CancelChannel - url=%s", uri->GetSpecOrDefault().get()));
   }
 
-  net::UrlClassifierCommon::SetBlockedContent(aChannel, NS_ERROR_TRACKING_URI,
-                                              "content-classifier-block"_ns,
-                                              "content-classifier"_ns, ""_ns);
+  net::ChannelClassifierUtils::SetBlockedContent(
+      aChannel, NS_ERROR_TRACKING_URI, "content-classifier-block"_ns,
+      "content-classifier"_ns, ""_ns);
 
   nsCOMPtr<nsIHttpChannelInternal> httpChannel = do_QueryInterface(aChannel);
 
