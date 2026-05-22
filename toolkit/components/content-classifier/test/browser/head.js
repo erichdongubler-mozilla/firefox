@@ -1,5 +1,9 @@
 "use strict";
 
+const { UrlClassifierTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/UrlClassifierTestUtils.sys.mjs"
+);
+
 const TEST_DOMAIN = "https://example.net/";
 const TEST_BLOCKED_3RD_PARTY_DOMAIN = "https://example.org/";
 const TEST_ANNOTATED_3RD_PARTY_DOMAIN = "https://example.com/";
