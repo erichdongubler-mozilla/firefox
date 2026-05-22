@@ -186,8 +186,7 @@ function WidgetsManagementPanel({
                     onToggle={onToggleWidget}
                     data-preference="widgets.sportsWidget.enabled"
                     data-event-source="WIDGET_SPORTS"
-                    //  TODO: add in widget title fluent string when product gets back to us*
-                    label="Sports"
+                    data-l10n-id="newtab-custom-widget-sports-toggle2"
                   />
                 </div>
               )}
