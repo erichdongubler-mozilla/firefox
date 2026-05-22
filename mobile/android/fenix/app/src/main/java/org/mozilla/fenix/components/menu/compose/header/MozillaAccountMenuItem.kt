@@ -44,6 +44,7 @@ import mozilla.components.service.fxa.manager.AccountState.Authenticated
 import mozilla.components.service.fxa.manager.AccountState.Authenticating
 import mozilla.components.service.fxa.manager.AccountState.AuthenticationProblem
 import mozilla.components.service.fxa.manager.AccountState.NotAuthenticated
+import mozilla.components.service.fxa.manager.AccountState.Unknown
 import mozilla.components.service.fxa.store.Account
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.Image
@@ -69,7 +70,7 @@ internal fun MozillaAccountMenuItem(
     val contentDescription: String
 
     when (accountState) {
-        NotAuthenticated -> {
+        NotAuthenticated, Unknown -> {
             label = stringResource(id = R.string.browser_menu_sign_in)
             description = stringResource(id = R.string.browser_menu_sign_in_caption_3)
         }
