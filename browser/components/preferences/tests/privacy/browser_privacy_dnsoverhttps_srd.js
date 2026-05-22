@@ -1,5 +1,7 @@
 "use strict";
 
+requestLongerTimeout(4);
+
 ChromeUtils.defineESModuleGetters(this, {
   DoHConfigController: "moz-src:///toolkit/components/doh/DoHConfig.sys.mjs",
   DoHController: "moz-src:///toolkit/components/doh/DoHController.sys.mjs",

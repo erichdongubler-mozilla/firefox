@@ -3,6 +3,8 @@
 
 "use strict";
 
+requestLongerTimeout(3);
+
 function checkForPrompt(prefVal) {
   return async function () {
     await SpecialPowers.pushPrefEnv({
