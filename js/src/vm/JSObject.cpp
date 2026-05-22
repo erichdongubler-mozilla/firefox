@@ -938,7 +938,12 @@ bool js::ObjectMayBeSwapped(const JSObject* obj) {
   // Only proxies may be swapped: WindowProxy, Wrapper, DeadProxyObject,
   // RemoteObjectProxy. We don't want to support a native object becoming a
   // proxy object or vice versa.
-  return obj->is<ProxyObject>();
+  if (!obj->is<ProxyObject>()) {
+    return false;
+  }
+  const auto* handler = obj->as<ProxyObject>().handler();
+  MOZ_ASSERT_IF(handler->isScripted(), !handler->mayBeSwapped());
+  return handler->mayBeSwapped();
 }
 
 static NativeObject* DefineConstructorAndPrototype(
