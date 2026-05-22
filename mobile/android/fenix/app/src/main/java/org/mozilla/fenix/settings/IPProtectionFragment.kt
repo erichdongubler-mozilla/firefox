@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.navArgs
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.feature.ipprotection.debug.IPProtectionStateDebugContent
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
@@ -36,6 +37,15 @@ import mozilla.components.ui.icons.R as iconsR
 class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
 
     private var showDebugDialog by mutableStateOf(false)
+    private val args: IPProtectionFragmentArgs by navArgs()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        if (args.startAuthFlow) {
+            requireComponents.ipProtection.store.dispatch(IPProtectionAction.Toggle)
+        }
+    }
 
     @OptIn(ExperimentalAndroidComponentsApi::class)
     override fun onCreateView(

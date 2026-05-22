@@ -345,6 +345,9 @@
     <dialog
         android:id="@+id/ipProtectionOnboardingDialogFragment"
         android:name="org.mozilla.fenix.ipprotection.ui.IPProtectionBottomSheetFragment">
+        <action
+           android:id="@+id/action_ipProtectionOnboardingDialogFragment_to_ipProtectionFragment"
+           app:destination="@id/ipProtectionFragment" />
         <argument
             android:name="surface"
             app:argType="org.mozilla.fenix.ipprotection.store.Surface"
@@ -872,7 +875,12 @@
     <fragment
         android:id="@+id/ipProtectionFragment"
         android:name="org.mozilla.fenix.settings.IPProtectionFragment"
-        android:label="@string/ip_protection_title" />
+        android:label="@string/ip_protection_title" >
+        <argument
+            android:name="start_auth_flow"
+            android:defaultValue="false"
+            app:argType="boolean" />
+    </fragment>
     <fragment
         android:id="@+id/aiControlsFragment"
         android:name="org.mozilla.fenix.settings.ai.AIControlsFragment"
