@@ -33,7 +33,6 @@ export const LEGACY_PANE_MAPPINGS = new Map([
     "general-cfrfeatures",
     { category: "tabsBrowsing", subcategory: "cfrfeatures" },
   ],
-  ["general-layout", { category: "tabsBrowsing", subcategory: "layout" }],
   [
     "general-link-preview",
     { category: "tabsBrowsing", subcategory: "link-preview" },
