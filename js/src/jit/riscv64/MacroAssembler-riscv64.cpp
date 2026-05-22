@@ -5305,12 +5305,19 @@ void MacroAssemblerRiscv64::ExtractBits(Register rd, Register rs, uint16_t pos,
   srli(rd, src, MaxBits - size);
 }
 
+// Return true if |n| is representable as the addition of two int12.
+static inline bool is_two_int12(int64_t n) {
+  // Note: The caller handles the case when |n| is exactly an int12. We don't
+  // exclude exact int12 values, because Clang/GCC generate slightly smaller
+  // code when testing for the complete range.
+  return -4096 <= n && n <= 4094;
+}
+
 void MacroAssemblerRiscv64::ma_add32(Register rd, Register rs, Operand rt) {
   if (rt.is_imm()) {
     if (is_int12(rt.immediate())) {
       addiw(rd, rs, static_cast<int32_t>(rt.immediate()));
-    } else if ((-4096 <= rt.immediate() && rt.immediate() <= -2049) ||
-               (2048 <= rt.immediate() && rt.immediate() <= 4094)) {
+    } else if (is_two_int12(rt.immediate())) {
       addiw(rd, rs, rt.immediate() / 2);
       addiw(rd, rd, rt.immediate() - (rt.immediate() / 2));
     } else {
@@ -5331,8 +5338,7 @@ void MacroAssemblerRiscv64::ma_add64(Register rd, Register rs, Operand rt) {
   if (rt.is_imm()) {
     if (is_int12(rt.immediate())) {
       addi(rd, rs, static_cast<int32_t>(rt.immediate()));
-    } else if ((-4096 <= rt.immediate() && rt.immediate() <= -2049) ||
-               (2048 <= rt.immediate() && rt.immediate() <= 4094)) {
+    } else if (is_two_int12(rt.immediate())) {
       addi(rd, rs, rt.immediate() / 2);
       addi(rd, rd, rt.immediate() - (rt.immediate() / 2));
     } else {
@@ -5355,8 +5361,7 @@ void MacroAssemblerRiscv64::ma_sub32(Register rd, Register rs, Operand rt) {
       addiw(rd, rs,
             static_cast<int32_t>(
                 -rt.immediate()));  // No subi instr, use addi(x, y, -imm).
-    } else if ((-4096 <= -rt.immediate() && -rt.immediate() <= -2049) ||
-               (2048 <= -rt.immediate() && -rt.immediate() <= 4094)) {
+    } else if (is_two_int12(rt.immediate())) {
       addiw(rd, rs, -rt.immediate() / 2);
       addiw(rd, rd, -rt.immediate() - (-rt.immediate() / 2));
     } else {
@@ -5378,8 +5383,7 @@ void MacroAssemblerRiscv64::ma_sub64(Register rd, Register rs, Operand rt) {
       addi(rd, rs,
            static_cast<int32_t>(
                -rt.immediate()));  // No subi instr, use addi(x, y, -imm).
-    } else if ((-4096 <= -rt.immediate() && -rt.immediate() <= -2049) ||
-               (2048 <= -rt.immediate() && -rt.immediate() <= 4094)) {
+    } else if (is_two_int12(rt.immediate())) {
       addi(rd, rs, -rt.immediate() / 2);
       addi(rd, rd, -rt.immediate() - (-rt.immediate() / 2));
     } else {
