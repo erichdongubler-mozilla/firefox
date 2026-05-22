@@ -460,6 +460,23 @@ class Decoder {
     return true;
   }
 
+  [[nodiscard]] bool peekLiteral(const char* lit) {
+    size_t nBytes = strlen(lit);
+    const uint8_t* actualBytes;
+    if (!peekBytes(nBytes, &actualBytes)) {
+      return false;
+    }
+    return memcmp(lit, actualBytes, nBytes) == 0;
+  }
+
+  [[nodiscard]] bool readLiteral(const char* lit) {
+    bool match = peekLiteral(lit);
+    if (match) {
+      cur_ += strlen(lit);
+    }
+    return match;
+  }
+
   // Fixed-size encoding operations simply copy the literal bytes (without
   // attempting to align).
 
@@ -561,6 +578,24 @@ class Decoder {
     if (offset) {
       *offset = offset_;
     }
+    return true;
+  }
+
+  bool readUTF8Bytes(uint32_t numBytes, UTF8Bytes* bytes) {
+    const uint8_t* rawBytes;
+    if (!readBytes(numBytes, &rawBytes)) {
+      return false;
+    }
+
+    if (!IsUtf8(AsChars(mozilla::Span(rawBytes, numBytes)))) {
+      return false;
+    }
+
+    if (!bytes->resizeUninitialized(numBytes)) {
+      return false;
+    }
+    memcpy(bytes->begin(), rawBytes, numBytes);
+
     return true;
   }
 
