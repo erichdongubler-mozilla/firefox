@@ -24,6 +24,7 @@
 #include "js/String.h"  // JS::MaxStringLength
 #include "vm/JSContext.h"
 #include "vm/Realm.h"
+#include "wasm/WasmConstants.h"
 #include "wasm/WasmDump.h"
 #include "wasm/WasmInitExpr.h"
 #include "wasm/WasmOpIter.h"
@@ -2544,20 +2545,24 @@ bool wasm::ValidateFunctionBody(const CodeMetadata& codeMeta,
 
 // Section macros.
 
-static bool DecodePreamble(Decoder& d) {
+static bool DecodePreamble(Decoder& d, uint32_t expectedVersion) {
   if (d.bytesRemain() > MaxModuleBytes) {
     return d.fail("module too big");
   }
 
-  uint32_t u32;
-  if (!d.readFixedU32(&u32) || u32 != MagicNumber) {
+  uint32_t magic;
+  if (!d.readFixedU32(&magic) || magic != MagicNumber) {
     return d.fail("failed to match magic number");
   }
 
-  if (!d.readFixedU32(&u32) || u32 != EncodingVersion) {
+  uint32_t version;
+  if (!d.readFixedU32(&version)) {
+    return d.fail("failed to read version");
+  }
+  if (version != expectedVersion) {
     return d.failf("binary version 0x%" PRIx32
                    " does not match expected version 0x%" PRIx32,
-                   u32, EncodingVersion);
+                   version, expectedVersion);
   }
 
   return true;
@@ -4209,7 +4214,7 @@ bool wasm::StartsCodeSection(const uint8_t* begin, const uint8_t* end,
   UniqueChars unused;
   Decoder d(begin, end, 0, &unused);
 
-  if (!DecodePreamble(d)) {
+  if (!DecodePreamble(d, EncodingVersionModule)) {
     return false;
   }
 
@@ -4327,9 +4332,25 @@ static bool DecodeBranchHintingSection(Decoder& d, CodeMetadata* codeMeta) {
 }
 #endif
 
+#ifdef ENABLE_WASM_COMPONENTS
+bool wasm::IsComponent(Decoder& d) {
+  uint32_t magic;
+  if (!d.readFixedU32(&magic) || magic != MagicNumber) {
+    return false;
+  }
+
+  uint32_t version;
+  if (!d.readFixedU32(&version)) {
+    return false;
+  }
+
+  return version == EncodingVersionComponent;
+}
+#endif
+
 bool wasm::DecodeModuleEnvironment(Decoder& d, CodeMetadata* codeMeta,
                                    ModuleMetadata* moduleMeta) {
-  if (!DecodePreamble(d)) {
+  if (!DecodePreamble(d, EncodingVersionModule)) {
     return false;
   }
 
@@ -4702,11 +4723,63 @@ bool wasm::DecodeModuleTail(Decoder& d, CodeMetadata* codeMeta,
   return true;
 }
 
+#ifdef ENABLE_WASM_COMPONENTS
+
+bool wasm::DecodeComponent(Decoder& d, MutableComponent c) {
+  if (!DecodePreamble(d, EncodingVersionComponent)) {
+    return false;
+  }
+
+  while (!d.done()) {
+    uint8_t sectionID;
+    if (!d.readFixedU8(&sectionID)) {
+      return d.fail("expected section ID");
+    }
+
+    uint32_t sectionLength;
+    if (!d.readVarU32(&sectionLength)) {
+      return d.fail("expected section length");
+    }
+
+    BytecodeSpan sectionBytes;
+    size_t sectionOffset;
+    if (!d.readBytesSpan(sectionLength, &sectionBytes, &sectionOffset)) {
+      return d.failf("invalid section length: expected %" PRIu64
+                     " bytes, but only %" PRIu64 " remain",
+                     uint64_t(sectionLength), uint64_t(d.bytesRemain()));
+    }
+
+    // Decode the section with its own decoder.
+    Decoder sectionDecoder(sectionBytes, sectionOffset, d.error(),
+                           d.warnings());
+    {
+      Decoder& d = sectionDecoder;
+
+      switch (sectionID) {
+        default: {
+          return d.failf("unexpected section ID %d", sectionID);
+        }
+      }
+
+      if (!d.done()) {
+        return d.failf("too many bytes in section (%zu extra)",
+                       d.bytesRemain());
+      }
+    }
+  }
+
+  return true;
+}
+
+#endif  // ENABLE_WASM_COMPONENTS
+
 // Validate algorithm.
 
-bool wasm::Validate(JSContext* cx, const BytecodeSource& bytecode,
-                    const FeatureOptions& options, UniqueChars* error) {
-  FeatureArgs features = FeatureArgs::build(cx, options);
+[[nodiscard]] static bool ValidateModule(JSContext* cx,
+                                         const BytecodeSource& bytecode,
+                                         const FeatureArgs& features,
+                                         const FeatureOptions& options,
+                                         UniqueChars* error) {
   SharedCompileArgs compileArgs = CompileArgs::buildForValidation(features);
   if (!compileArgs) {
     return false;
@@ -4761,4 +4834,40 @@ bool wasm::Validate(JSContext* cx, const BytecodeSource& bytecode,
 
   MOZ_ASSERT(!*error, "unreported error in decoding");
   return true;
+}
+
+#ifdef ENABLE_WASM_COMPONENTS
+[[nodiscard]] static bool ValidateComponent(JSContext* cx,
+                                            const BytecodeSource& bytecode,
+                                            const FeatureOptions& options,
+                                            UniqueChars* error) {
+  MutableComponent c = js_new<Component>();
+  if (!c) {
+    return false;
+  }
+
+  Decoder d(bytecode.envSpan(), bytecode.envRange().start, error);
+  if (!DecodeComponent(d, c)) {
+    return false;
+  }
+
+  MOZ_ASSERT(!*error, "unreported error in decoding");
+  return true;
+}
+#endif  // ENABLE_WASM_COMPONENTS
+
+bool wasm::Validate(JSContext* cx, const BytecodeSource& bytecode,
+                    const FeatureOptions& options, UniqueChars* error) {
+  FeatureArgs features = FeatureArgs::build(cx, options);
+
+#ifdef ENABLE_WASM_COMPONENTS
+  if (features.components) {
+    Decoder preambleDecoder(bytecode.envSpan(), bytecode.envRange().start,
+                            error);
+    if (IsComponent(preambleDecoder)) {
+      return ValidateComponent(cx, bytecode, options, error);
+    }
+  }
+#endif
+  return ValidateModule(cx, bytecode, features, options, error);
 }

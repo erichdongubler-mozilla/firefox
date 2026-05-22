@@ -425,6 +425,7 @@ class Decoder {
   bool fail(size_t errorOffset, const char* msg);
 
   UniqueChars* error() { return error_; }
+  UniqueCharsVector* warnings() { return warnings_; }
 
   void clearError() {
     if (error_) {
@@ -532,15 +533,34 @@ class Decoder {
 
   // See writeBytes comment.
 
-  [[nodiscard]] bool readBytes(uint32_t numBytes,
+  [[nodiscard]] bool peekBytes(uint32_t numBytes,
                                const uint8_t** bytes = nullptr) {
     if (bytes) {
       *bytes = cur_;
     }
-    if (bytesRemain() < numBytes) {
+    return bytesRemain() >= numBytes;
+  }
+
+  [[nodiscard]] bool readBytes(uint32_t numBytes,
+                               const uint8_t** bytes = nullptr) {
+    bool result = peekBytes(numBytes, bytes);
+    if (result) {
+      cur_ += numBytes;
+    }
+    return result;
+  }
+
+  [[nodiscard]] bool readBytesSpan(uint32_t numBytes, BytecodeSpan* bytes,
+                                   size_t* offset = nullptr) {
+    size_t offset_ = currentOffset();
+    const uint8_t* data;
+    if (!readBytes(numBytes, &data)) {
       return false;
     }
-    cur_ += numBytes;
+    *bytes = BytecodeSpan(data, numBytes);
+    if (offset) {
+      *offset = offset_;
+    }
     return true;
   }
 

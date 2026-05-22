@@ -51,6 +51,12 @@
 #  define IF_WASM_JSPI(REAL, IMAGINARY) IMAGINARY
 #endif
 
+#ifdef ENABLE_WASM_COMPONENTS
+#  define IF_WASM_COMPONENTS(REAL, IMAGINARY) REAL
+#else
+#  define IF_WASM_COMPONENTS(REAL, IMAGINARY) IMAGINARY
+#endif
+
 #ifdef NIGHTLY_BUILD
 #  define IF_NIGHTLY(REAL, IMAGINARY) REAL
 #else
@@ -58,8 +64,8 @@
 #endif
 
 #define JS_FOR_PROTOTYPES_(REAL, IMAGINARY, REAL_IF_INTL, REAL_IF_WASM_TYPE, \
-                           REAL_IF_WASM_JSPI, REAL_IF_NIGHTLY,               \
-                           REAL_IF_SOURCE_PHASE_IMPORTS)                     \
+                           REAL_IF_WASM_JSPI, REAL_IF_WASM_COMPONENTS,       \
+                           REAL_IF_NIGHTLY, REAL_IF_SOURCE_PHASE_IMPORTS)    \
   IMAGINARY(Null, dummy)                                                     \
   REAL(Object, OCLASP(Plain))                                                \
   REAL(Function, &FunctionClass)                                             \
@@ -131,6 +137,7 @@
   REAL(AsyncGeneratorFunction, CLASP(AsyncGeneratorFunction))                \
   REAL(WebAssembly, OCLASP(WasmNamespace))                                   \
   REAL(WasmModule, OCLASP(WasmModule))                                       \
+  REAL_IF_WASM_COMPONENTS(WasmComponent, OCLASP(WasmComponent))              \
   REAL(WasmInstance, OCLASP(WasmInstance))                                   \
   REAL(WasmMemory, OCLASP(WasmMemory))                                       \
   REAL(WasmTable, OCLASP(WasmTable))                                         \
@@ -169,11 +176,12 @@
 // list do not change depending on configuration settings of the same version of
 // the source.
 
-#define JS_FOR_PROTOTYPES(REAL, IMAGINARY)                          \
-  JS_FOR_PROTOTYPES_(                                               \
-      REAL, IMAGINARY, IF_INTL(REAL, IMAGINARY),                    \
-      IF_WASM_TYPE(REAL, IMAGINARY), IF_WASM_JSPI(REAL, IMAGINARY), \
-      IF_NIGHTLY(REAL, IMAGINARY), IF_SOURCE_PHASE_IMPORTS(REAL, IMAGINARY))
+#define JS_FOR_PROTOTYPES(REAL, IMAGINARY)                              \
+  JS_FOR_PROTOTYPES_(                                                   \
+      REAL, IMAGINARY, IF_INTL(REAL, IMAGINARY),                        \
+      IF_WASM_TYPE(REAL, IMAGINARY), IF_WASM_JSPI(REAL, IMAGINARY),     \
+      IF_WASM_COMPONENTS(REAL, IMAGINARY), IF_NIGHTLY(REAL, IMAGINARY), \
+      IF_SOURCE_PHASE_IMPORTS(REAL, IMAGINARY))
 
 #define JS_FOR_EACH_PROTOTYPE(MACRO) JS_FOR_PROTOTYPES(MACRO, MACRO)
 

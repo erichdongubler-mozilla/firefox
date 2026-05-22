@@ -136,6 +136,7 @@ enum class GCAbortReason {
   _(WasmGlobalCell)                        \
   _(WasmResolveResponseClosure)            \
   _(WasmModule)                            \
+  _(WasmComponent)                         \
   _(WasmTableTable)                        \
   _(WasmExceptionData)                     \
   _(WasmTagType)                           \

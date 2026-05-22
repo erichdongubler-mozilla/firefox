@@ -26,6 +26,8 @@ using BuiltinModuleFuncIdVector =
 
 enum class NameContext { Standalone, BeforeLocation };
 
+using ModuleHash = uint8_t[8];
+
 // wasm::CodeMetadata contains metadata whose lifetime ends at the same time
 // that the lifetime of wasm::Code ends.  This encompasses a wide variety of
 // uses.  In practice that means metadata needed for any and all aspects of
@@ -33,8 +35,6 @@ enum class NameContext { Standalone, BeforeLocation };
 // belongs to, and is kept alive by, wasm::Code.  Note also that wasm::Code is
 // in turn kept alive by wasm::Instance(s), hence this metadata will be kept
 // alive as long as any instance for it exists.
-
-using ModuleHash = uint8_t[8];
 
 struct CodeMetadata : public ShareableBase<CodeMetadata> {
   // NOTE: if you add, remove, rename or reorder fields here, be sure to

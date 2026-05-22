@@ -177,6 +177,9 @@ bool GlobalObject::skipDeselectedConstructor(JSContext* cx, JSProtoKey key) {
       return !wasm::HasSupport(cx);
 
     case JSProto_WasmModule:
+#ifdef ENABLE_WASM_COMPONENTS
+    case JSProto_WasmComponent:
+#endif
     case JSProto_WasmInstance:
     case JSProto_WasmMemory:
     case JSProto_WasmTable:

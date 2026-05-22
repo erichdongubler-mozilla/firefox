@@ -136,6 +136,33 @@ class WasmModuleObject : public NativeObject {
   const wasm::Module& module() const;
 };
 
+#ifdef ENABLE_WASM_COMPONENTS
+// The class of WebAssembly.Component.
+// TODO(wasm-cm): Leave a more descriptive comment. See WasmModuleObject for
+// comparison.
+
+class WasmComponentObject : public NativeObject {
+  static const unsigned COMPONENT_SLOT = 0;
+  static const JSClassOps classOps_;
+  static const ClassSpec classSpec_;
+  static void finalize(JS::GCContext* gcx, JSObject* obj);
+
+ public:
+  static const unsigned RESERVED_SLOTS = 1;
+  static const JSClass class_;
+  static const JSClass& protoClass_;
+  static const JSPropertySpec properties[];
+  static const JSFunctionSpec methods[];
+  static const JSFunctionSpec static_methods[];
+  static bool construct(JSContext*, unsigned, Value*);
+
+  static WasmComponentObject* create(JSContext* cx,
+                                     const wasm::Component& component,
+                                     HandleObject proto);
+  const wasm::Component& component() const;
+};
+#endif
+
 // The class of WebAssembly.Global.  This wraps a storage location, and there is
 // a per-agent one-to-one relationship between the WasmGlobalObject and the
 // storage location (the Cell) it wraps: if a module re-exports an imported

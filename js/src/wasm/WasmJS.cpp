@@ -471,7 +471,8 @@ bool wasm::Eval(JSContext* cx, Handle<TypedArrayObject*> code,
                         code->byteLength().valueOr(0));
   UniqueChars error;
   UniqueCharsVector warnings;
-  SharedModule module = CompileBuffer(
+  // TODO(wasm-cm): Support components
+  SharedModule module = CompileModule(
       *compileArgs, BytecodeBufferOrSource(source), &error, &warnings, nullptr);
   if (!module) {
     if (error) {
@@ -542,8 +543,9 @@ bool wasm::CompileAndSerialize(JSContext* cx,
 
   UniqueChars error;
   UniqueCharsVector warnings;
+  // TODO(wasm-cm): Support components
   SharedModule module =
-      CompileBuffer(*compileArgs, BytecodeBufferOrSource(bytecodeSource),
+      CompileModule(*compileArgs, BytecodeBufferOrSource(bytecodeSource),
                     &error, &warnings, &listener);
   if (!module) {
     fprintf(stderr, "Compilation error: %s\n", error ? error.get() : "oom");
@@ -632,7 +634,7 @@ bool js::wasm::CompileForESM(JSContext* cx,
   UniqueChars error;
   UniqueCharsVector warnings;
   SharedModule module =
-      CompileBuffer(*compileArgs, BytecodeBufferOrSource(bytecodeSource),
+      CompileModule(*compileArgs, BytecodeBufferOrSource(bytecodeSource),
                     &error, &warnings, nullptr);
 
   if (!ReportCompileWarnings(cx, warnings)) {
@@ -1965,7 +1967,7 @@ bool WasmModuleObject::construct(JSContext* cx, unsigned argc, Value* vp) {
     }
     AutoPinBufferSourceLength pin(cx, sourceObj.get());
 
-    module = CompileBuffer(*compileArgs, bytecode, &error, &warnings, nullptr);
+    module = CompileModule(*compileArgs, bytecode, &error, &warnings, nullptr);
   }
 
   if (!ReportCompileWarnings(cx, warnings)) {
@@ -2002,6 +2004,204 @@ const Module& WasmModuleObject::module() const {
   MOZ_ASSERT(is<WasmModuleObject>());
   return *(const Module*)getReservedSlot(MODULE_SLOT).toPrivate();
 }
+
+// ============================================================================
+// WebAssembly.Component class and methods
+
+#ifdef ENABLE_WASM_COMPONENTS
+
+const JSClassOps WasmComponentObject::classOps_ = {
+    nullptr,                        // addProperty
+    nullptr,                        // delProperty
+    nullptr,                        // enumerate
+    nullptr,                        // newEnumerate
+    nullptr,                        // resolve
+    nullptr,                        // mayResolve
+    WasmComponentObject::finalize,  // finalize
+    nullptr,                        // call
+    nullptr,                        // construct
+    nullptr,                        // trace
+};
+
+const JSClass WasmComponentObject::class_ = {
+    "WebAssembly.Component",
+    JSCLASS_DELAY_METADATA_BUILDER |
+        JSCLASS_HAS_RESERVED_SLOTS(WasmComponentObject::RESERVED_SLOTS) |
+        JSCLASS_FOREGROUND_FINALIZE,
+    &WasmComponentObject::classOps_,
+    &WasmComponentObject::classSpec_,
+};
+
+const JSClass& WasmComponentObject::protoClass_ = PlainObject::class_;
+
+static constexpr char WasmComponentName[] = "Component";
+
+const ClassSpec WasmComponentObject::classSpec_ = {
+    CreateWasmConstructor<WasmComponentObject, WasmComponentName>,
+    GenericCreatePrototype<WasmComponentObject>,
+    WasmComponentObject::static_methods,
+    nullptr,
+    WasmComponentObject::methods,
+    WasmComponentObject::properties,
+    nullptr,
+    ClassSpec::DontDefineConstructor,
+};
+
+const JSPropertySpec WasmComponentObject::properties[] = {
+    JS_STRING_SYM_PS(toStringTag, "WebAssembly.Component", JSPROP_READONLY),
+    JS_PS_END,
+};
+
+const JSFunctionSpec WasmComponentObject::methods[] = {
+    JS_FS_END,
+};
+
+const JSFunctionSpec WasmComponentObject::static_methods[] = {
+    JS_FS_END,
+};
+
+/* static */
+WasmComponentObject* WasmComponentObject::create(JSContext* cx,
+                                                 const Component& component,
+                                                 HandleObject proto) {
+  AutoSetNewObjectMetadata metadata(cx);
+  auto* obj = NewObjectWithGivenProto<WasmComponentObject>(cx, proto);
+  if (!obj) {
+    return nullptr;
+  }
+
+  // See comment in WasmModuleObject::create. Because we also compile code when
+  // creating components, we perform a flush here as well.
+  jit::FlushExecutionContext();
+
+  InitReservedSlot(obj, COMPONENT_SLOT, const_cast<Component*>(&component),
+                   component.gcMallocBytesExcludingCode(),
+                   MemoryUse::WasmComponent);
+  component.AddRef();
+
+  // TODO(wasm-cm): Not only is the amount being passed to incJitMemory probably
+  // wrong here (per the comment on tier1CodeMemoryUsed), but we may also need
+  // to separately account for any code memory allocated later, as bug 1569888
+  // alludes to.
+  size_t codeMemory = component.tier1CodeMemoryUsed();
+  if (codeMemory) {
+    cx->zone()->incJitMemory(codeMemory);
+  }
+
+  return obj;
+}
+
+/* static */
+void WasmComponentObject::finalize(JS::GCContext* gcx, JSObject* obj) {
+  const Component& component = obj->as<WasmComponentObject>().component();
+  size_t codeMemory = component.tier1CodeMemoryUsed();
+  if (codeMemory) {
+    obj->zone()->decJitMemory(codeMemory);
+  }
+  gcx->release(obj, &component, component.gcMallocBytesExcludingCode(),
+               MemoryUse::WasmComponent);
+}
+
+/* static */
+bool WasmComponentObject::construct(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs callArgs = CallArgsFromVp(argc, vp);
+
+  Log(cx, "sync new Component() started");
+
+  if (!ThrowIfNotConstructing(cx, callArgs, "Component")) {
+    return false;
+  }
+
+  JS::RootedVector<JSString*> parameterStrings(cx);
+  JS::RootedVector<Value> parameterArgs(cx);
+  bool canCompileStrings = false;
+  if (!cx->isRuntimeCodeGenEnabled(JS::RuntimeCode::WASM, nullptr,
+                                   JS::CompilationType::Undefined,
+                                   parameterStrings, nullptr, parameterArgs,
+                                   NullHandleValue, &canCompileStrings)) {
+    return false;
+  }
+  if (!canCompileStrings) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_CSP_BLOCKED_WASM, "WebAssembly.Component");
+    return false;
+  }
+
+  if (!callArgs.requireAtLeast(cx, "WebAssembly.Component", 1)) {
+    return false;
+  }
+
+  if (!callArgs[0].isObject()) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_BAD_BUF_ARG);
+    return false;
+  }
+
+  FeatureOptions options;
+  if (!options.init(cx, callArgs.get(1))) {
+    return false;
+  }
+
+  SharedCompileArgs compileArgs =
+      InitCompileArgs(cx, options, "WebAssembly.Component");
+  if (!compileArgs) {
+    return false;
+  }
+
+  BytecodeSource source;
+  Rooted<JSObject*> sourceObj(cx, &callArgs[0].toObject());
+  bool isShared;
+  if (!GetBytecodeSource(cx, sourceObj, JSMSG_WASM_BAD_BUF_ARG, &source,
+                         &isShared)) {
+    return false;
+  }
+
+  UniqueChars error;
+  UniqueCharsVector warnings;
+  SharedComponent component;
+  {
+    AutoPinBufferSourceLength pin(cx, sourceObj.get());
+    component = CompileComponent(*compileArgs, BytecodeBufferOrSource(source),
+                                 &error, &warnings, nullptr);
+  }
+
+  if (!ReportCompileWarnings(cx, warnings)) {
+    return false;
+  }
+  if (!component) {
+    if (error) {
+      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                               JSMSG_WASM_COMPILE_ERROR, error.get());
+      return false;
+    }
+    return ThrowCompileOutOfMemory(cx);
+  }
+
+  RootedObject proto(
+      cx, GetWasmConstructorPrototype(cx, callArgs, JSProto_WasmComponent));
+  if (!proto) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  RootedObject componentObj(cx,
+                            WasmComponentObject::create(cx, *component, proto));
+  if (!componentObj) {
+    return false;
+  }
+
+  Log(cx, "sync new Component() succeeded");
+
+  callArgs.rval().setObject(*componentObj);
+  return true;
+}
+
+const Component& WasmComponentObject::component() const {
+  MOZ_ASSERT(is<WasmComponentObject>());
+  return *(const Component*)getReservedSlot(COMPONENT_SLOT).toPrivate();
+}
+
+#endif  // ENABLE_WASM_COMPONENTS
 
 // ============================================================================
 // WebAssembly.Instance class and methods
@@ -4778,7 +4978,7 @@ struct CompileBufferTask : PromiseHelperTask {
 
   void execute() override {
     module =
-        CompileBuffer(*compileArgs, BytecodeBufferOrSource(std::move(bytecode)),
+        CompileModule(*compileArgs, BytecodeBufferOrSource(std::move(bytecode)),
                       &error, &warnings, nullptr);
   }
 
@@ -5245,7 +5445,7 @@ class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
     switch (streamState_.lock().get()) {
       case Env: {
         BytecodeBuffer bytecode(envBytes_, nullptr, nullptr);
-        module_ = CompileBuffer(*compileArgs_,
+        module_ = CompileModule(*compileArgs_,
                                 BytecodeBufferOrSource(std::move(bytecode)),
                                 &compileError_, &warnings_, nullptr);
         setClosedAndDestroyBeforeHelperThreadStarted();
@@ -5868,6 +6068,17 @@ static bool WebAssemblyClassFinish(JSContext* cx, HandleObject object,
                           JSPROP_READONLY | JSPROP_ENUMERATE)) {
     return false;
   }
+
+#ifdef ENABLE_WASM_COMPONENTS
+  if (ComponentsAvailable(cx)) {
+    constexpr NameAndProtoKey componentEntry = {"Component",
+                                                JSProto_WasmComponent};
+    if (!WebAssemblyDefineConstructor(cx, wasm, componentEntry, &ctorValue,
+                                      &id)) {
+      return false;
+    }
+  }
+#endif
 
 #ifdef ENABLE_WASM_JSPI
   constexpr NameAndProtoKey jspiEntries[] = {
