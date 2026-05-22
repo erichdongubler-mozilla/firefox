@@ -16,6 +16,7 @@
 #include "EventTokenBucket.h"
 
 #include "mozilla/DataMutex.h"
+#include "mozilla/EventTargetAndLockCapability.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"
@@ -132,7 +133,12 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   [[nodiscard]] nsresult AddConnectionHeader(nsHttpRequestHead*, uint32_t caps);
   bool IsAcceptableEncoding(const char* encoding, bool isSecure);
 
-  const nsCString& UserAgent(bool aShouldResistFingerprinting);
+  // Main-thread only; safe without the lock because PrefsChanged (the sole
+  // writer) also runs on the main thread.  Off-main-thread callers must use
+  // GetUserAgent() which acquires mUserAgentCap's lock.
+  const nsCString& UserAgent(bool aShouldResistFingerprinting)
+      MOZ_NO_THREAD_SAFETY_ANALYSIS;
+  void GetUserAgent(bool aShouldResistFingerprinting, nsCString& aOut);
 
   enum HttpVersion HttpVersion() { return mHttpVersion; }
   enum HttpVersion ProxyHttpVersion() { return mProxyHttpVersion; }
@@ -523,7 +529,8 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   //
   // Useragent/prefs helper methods
   //
-  void BuildUserAgent();
+  void BuildUserAgent() MOZ_REQUIRES(mUserAgentCap);
+  void RebuildUserAgent();
   void InitUserAgentComponents();
 #ifdef XP_MACOSX
   void InitMSAuthorities();
@@ -626,9 +633,10 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   nsCString mDocumentAcceptHeader;
 
   nsCString mAcceptLanguages;
-  nsCString mHttpAcceptEncodings;
-  nsCString mHttpsAcceptEncodings;
-  nsCString mDictionaryAcceptEncodings;
+  Mutex mAcceptEncodingLock{"nsHttpHandler::AcceptEncoding"};
+  nsCString mHttpAcceptEncodings MOZ_GUARDED_BY(mAcceptEncodingLock);
+  nsCString mHttpsAcceptEncodings MOZ_GUARDED_BY(mAcceptEncodingLock);
+  nsCString mDictionaryAcceptEncodings MOZ_GUARDED_BY(mAcceptEncodingLock);
 
   nsCString mDefaultSocketType;
 
@@ -653,10 +661,11 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   nsCString mCompatDevice;
   nsCString mDeviceModelId;
 
-  nsCString mUserAgent;
+  mozilla::MainThreadAndLockCapability<mozilla::Mutex> mUserAgentCap{
+      "nsHttpHandler::UserAgent"};
+  nsCString mUserAgent MOZ_GUARDED_BY(mUserAgentCap);
   nsCString mSpoofedUserAgent;
-  nsCString mUserAgentOverride;
-  bool mUserAgentIsDirty{true};  // true if mUserAgent should be rebuilt
+  nsCString mUserAgentOverride MOZ_GUARDED_BY(mUserAgentCap);
   bool mAcceptLanguagesIsDirty{true};
 
   bool mPromptTempRedirect{true};
