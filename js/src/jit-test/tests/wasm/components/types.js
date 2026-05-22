@@ -455,129 +455,125 @@ wasmFailValidateText(`
 //
 // [constructor], [method], and [static] are only valid on function names per
 // the component model spec, so we use function imports as the test vehicle.
-//
-// TODO(wasm-cm): these assertions depend on the import section; they are
-// enabled in Part 6.
-if (false) {
-  // [constructor] accepts a single label.
-  wasmValidateText(`
-  (component
-    (import "[constructor]foo" (func))
-  )
-  `);
 
-  // [constructor] with a multi-word label.
-  wasmValidateText(`
-  (component
-    (import "[constructor]my-resource" (func))
-  )
-  `);
+// [constructor] accepts a single label.
+wasmValidateText(`
+(component
+  (import "[constructor]foo" (func))
+)
+`);
 
-  // [constructor] does not accept a dotted name.
-  wasmFailValidateText(`
-  (component
-    (import "[constructor]foo.bar" (func))
-  )
-  `, /invalid character/);
+// [constructor] with a multi-word label.
+wasmValidateText(`
+(component
+  (import "[constructor]my-resource" (func))
+)
+`);
 
-  // [method] requires <label>.<label>.
-  wasmValidateText(`
-  (component
-    (import "[method]foo.bar" (func))
-  )
-  `);
+// [constructor] does not accept a dotted name.
+wasmFailValidateText(`
+(component
+  (import "[constructor]foo.bar" (func))
+)
+`, /invalid character/);
 
-  // [method] with multi-word labels on both sides.
-  wasmValidateText(`
-  (component
-    (import "[method]my-resource.my-method" (func))
-  )
-  `);
+// [method] requires <label>.<label>.
+wasmValidateText(`
+(component
+  (import "[method]foo.bar" (func))
+)
+`);
 
-  // [method] with acronym in second label.
-  wasmValidateText(`
-  (component
-    (import "[method]foo.BAR" (func))
-  )
-  `);
+// [method] with multi-word labels on both sides.
+wasmValidateText(`
+(component
+  (import "[method]my-resource.my-method" (func))
+)
+`);
 
-  // [method] without a dot is invalid.
-  wasmFailValidateText(`
-  (component
-    (import "[method]foo" (func))
-  )
-  `, /ended unexpectedly/);
+// [method] with acronym in second label.
+wasmValidateText(`
+(component
+  (import "[method]foo.BAR" (func))
+)
+`);
 
-  // [method] with empty second label.
-  wasmFailValidateText(`
-  (component
-    (import "[method]foo." (func))
-  )
-  `, /ended unexpectedly/);
+// [method] without a dot is invalid.
+wasmFailValidateText(`
+(component
+  (import "[method]foo" (func))
+)
+`, /ended unexpectedly/);
 
-  // [method] with empty first label.
-  wasmFailValidateText(`
-  (component
-    (import "[method].bar" (func))
-  )
-  `, /invalid character/);
+// [method] with empty second label.
+wasmFailValidateText(`
+(component
+  (import "[method]foo." (func))
+)
+`, /ended unexpectedly/);
 
-  // [method] may not contain more than one dot.
-  wasmFailValidateText(`
-  (component
-    (import "[method]foo.bar.baz" (func))
-  )
-  `, /invalid character/);
+// [method] with empty first label.
+wasmFailValidateText(`
+(component
+  (import "[method].bar" (func))
+)
+`, /invalid character/);
 
-  // [static] requires <label>.<label>.
-  wasmValidateText(`
-  (component
-    (import "[static]foo.bar" (func))
-  )
-  `);
+// [method] may not contain more than one dot.
+wasmFailValidateText(`
+(component
+  (import "[method]foo.bar.baz" (func))
+)
+`, /invalid character/);
 
-  // [static] with multi-word labels.
-  wasmValidateText(`
-  (component
-    (import "[static]my-res.my-meth" (func))
-  )
-  `);
+// [static] requires <label>.<label>.
+wasmValidateText(`
+(component
+  (import "[static]foo.bar" (func))
+)
+`);
 
-  // [static] without a dot is invalid.
-  wasmFailValidateText(`
-  (component
-    (import "[static]foo" (func))
-  )
-  `, /ended unexpectedly/);
+// [static] with multi-word labels.
+wasmValidateText(`
+(component
+  (import "[static]my-res.my-meth" (func))
+)
+`);
 
-  // [static] with empty second label.
-  wasmFailValidateText(`
-  (component
-    (import "[static]foo." (func))
-  )
-  `, /ended unexpectedly/);
+// [static] without a dot is invalid.
+wasmFailValidateText(`
+(component
+  (import "[static]foo" (func))
+)
+`, /ended unexpectedly/);
 
-  // Unrecognized annotations are rejected.
-  wasmFailValidateText(`
-  (component
-    (import "[unknown]foo" (func))
-  )
-  `, /invalid character/);
+// [static] with empty second label.
+wasmFailValidateText(`
+(component
+  (import "[static]foo." (func))
+)
+`, /ended unexpectedly/);
 
-  // Unclosed annotation bracket is rejected.
-  wasmFailValidateText(`
-  (component
-    (import "[methodfoo.bar" (func))
-  )
-  `, /invalid character/);
+// Unrecognized annotations are rejected.
+wasmFailValidateText(`
+(component
+  (import "[unknown]foo" (func))
+)
+`, /invalid character/);
 
-  // Invalid label after a valid annotation.
-  wasmFailValidateText(`
-  (component
-    (import "[constructor]0bad" (func))
-  )
-  `, /invalid character/);
-}
+// Unclosed annotation bracket is rejected.
+wasmFailValidateText(`
+(component
+  (import "[methodfoo.bar" (func))
+)
+`, /invalid character/);
+
+// Invalid label after a valid annotation.
+wasmFailValidateText(`
+(component
+  (import "[constructor]0bad" (func))
+)
+`, /invalid character/);
 
 // ----------------------------------------------------------------------------
 // Edge cases

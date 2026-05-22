@@ -20,15 +20,10 @@ const specOkExamples = [
   "[constructor]foo",
   "[method]foo.bar", "[method]foo.baz",
 ];
+assertAllStronglyUnique(specOkExamples);
 
-// TODO(wasm-cm): these assertions depend on the import section; they are
-// enabled in Part 6.
-if (false) {
-  assertAllStronglyUnique(specOkExamples);
-
-  assertNotStronglyUnique(specOkExamples, "foo");
-  assertNotStronglyUnique(specOkExamples, "foo-BAR");
-  assertNotStronglyUnique(specOkExamples, "[constructor]foo-BAR");
-  assertNotStronglyUnique(specOkExamples, "[method]foo.foo");
-  assertNotStronglyUnique(specOkExamples, "[method]foo.BAR");
-}
+assertNotStronglyUnique(specOkExamples, "foo");
+assertNotStronglyUnique(specOkExamples, "foo-BAR");
+assertNotStronglyUnique(specOkExamples, "[constructor]foo-BAR");
+assertNotStronglyUnique(specOkExamples, "[method]foo.foo");
+assertNotStronglyUnique(specOkExamples, "[method]foo.BAR");

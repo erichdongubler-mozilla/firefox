@@ -22,6 +22,51 @@
 namespace js {
 namespace wasm {
 
+// A "sort", or "kind", of item in the component model, used for all cases where
+// we must refer to a different item.
+//
+// This type is also used for the `externdesc` type, which describes what
+// components (not core modules) can import and export, and whose cases are a
+// subset of `sort`. Sorts that are valid for `externdesc` have the highest bit
+// set. Additionally, sorts that can be exported by core modules (core:sort)
+// have the second-highest bit set, and correspond to wasm::DefinitionKind.
+enum class ComponentSort : uint8_t {
+  Func = 0x80 | 0x01,
+  Type = 0x80 | 0x03,
+  Component = 0x80 | 0x04,
+  Instance = 0x80 | 0x05,
+
+  CoreFunction = 0x40 | int(DefinitionKind::Function),
+  CoreTable = 0x40 | int(DefinitionKind::Table),
+  CoreMemory = 0x40 | int(DefinitionKind::Memory),
+  CoreGlobal = 0x40 | int(DefinitionKind::Global),
+  CoreTag = 0x40 | int(DefinitionKind::Tag),
+
+  CoreType = 0x10,
+  CoreModule = 0x80 | 0x11,
+  CoreInstance = 0x12,
+};
+
+// Checks if the given sort is valid for a component import or export (the
+// component `externdesc` type).
+inline bool ComponentSortValidForExternDesc(ComponentSort sort) {
+  return (uint8_t(sort) & 0x80) != 0;
+}
+
+// Checks if the given sort is for a core item that can be imported or exported,
+// i.e. a DefinitionKind imported into the component model. To extract the
+// underlying DefinitionKind, use CoreSortFromComponentSort.
+inline bool ComponentSortIsCoreSort(ComponentSort sort) {
+  return (uint8_t(sort) & 0x40) != 0;
+}
+
+// Extracts the underlying DefinitionKind from a ComponentSort (if there is
+// one).
+inline DefinitionKind CoreSortFromComponentSort(ComponentSort sort) {
+  MOZ_ASSERT(ComponentSortIsCoreSort(sort));
+  return DefinitionKind(uint8_t(sort) & ~0xc0);
+}
+
 // Every kind of type that can be defined in the component model. Not all types
 // are valid in all contexts.
 enum class ComponentTypeKind : uint8_t {
@@ -277,14 +322,58 @@ class StronglyUniqueNameSet {
   [[nodiscard]] bool add(mozilla::Span<const char> name, bool* duplicate);
 };
 
+// Describes an import or export from a wasm component.
+class ComponentExternDesc {
+  ComponentSort sort_;
+
+  // Used for kinds CoreModule, Func, Component, Instance, and the `eq` case of
+  // Type.
+  uint32_t typeIndex_;
+
+  explicit ComponentExternDesc(ComponentSort sort) : sort_(sort) {
+    MOZ_ASSERT(ComponentSortValidForExternDesc(sort));
+  }
+
+ public:
+  ComponentExternDesc() = default;
+
+  static ComponentExternDesc func(uint32_t funcTypeIndex) {
+    ComponentExternDesc desc(ComponentSort::Func);
+    desc.typeIndex_ = funcTypeIndex;
+    return desc;
+  }
+  static ComponentExternDesc coreModule(uint32_t coreModuleTypeIndex) {
+    ComponentExternDesc desc(ComponentSort::CoreModule);
+    desc.typeIndex_ = coreModuleTypeIndex;
+    return desc;
+  }
+
+  ComponentSort sort() const { return sort_; }
+};
+
+class ComponentImport {
+  CacheableName name_;
+  ComponentExternDesc externDesc_;
+
+ public:
+  explicit ComponentImport(CacheableName&& name,
+                           const ComponentExternDesc& externDesc)
+      : name_(std::move(name)), externDesc_(externDesc) {}
+
+  const CacheableName& name() const { return name_; }
+  const ComponentExternDesc& externDesc() const { return externDesc_; }
+};
+
 class Component : public JS::WasmComponent {
   using TypeVector = mozilla::Vector<ComponentDefType, 0, SystemAllocPolicy>;
+  using ImportVector = Vector<ComponentImport, 0, SystemAllocPolicy>;
 
   // JS API and JS::WasmComponent implementation:
   JSObject* createObject(JSContext* cx) const override;
 
  public:
   TypeVector types;
+  ImportVector imports;
 
   // TODO(wasm-cm): These functions are currently correct because components
   // currently have no state, but will need to be updated as we flesh things

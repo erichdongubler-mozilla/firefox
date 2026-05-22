@@ -5320,6 +5320,179 @@ enum class ComponentTypeKindRaw : uint8_t {
   return true;
 }
 
+enum class ComponentSortRaw : uint8_t {
+  CoreSort = 0x00,
+  Function = 0x01,
+  Type = 0x03,
+  Component = 0x04,
+  Instance = 0x05,
+};
+
+enum class ComponentCoreSortRaw : uint8_t {
+  Function = 0x00,
+  Table = 0x01,
+  Memory = 0x02,
+  Global = 0x03,
+  Tag = 0x04,
+  Type = 0x10,
+  Module = 0x11,
+  Instance = 0x12,
+};
+
+[[nodiscard]] static bool DecodeComponentSort(Decoder& d, ComponentSort* sort,
+                                              bool forExterndesc) {
+  uint8_t kind;
+  if (!d.readFixedU8(&kind)) {
+    return d.fail("expected sort");
+  }
+
+  switch (kind) {
+    case uint8_t(ComponentSortRaw::CoreSort): {
+      uint8_t coreSort;
+      if (!d.readFixedU8(&coreSort)) {
+        return d.fail("expected core sort");
+      }
+
+      switch (coreSort) {
+        case uint8_t(ComponentCoreSortRaw::Function): {
+          *sort = ComponentSort::CoreFunction;
+        } break;
+        case uint8_t(ComponentCoreSortRaw::Table): {
+          *sort = ComponentSort::CoreTable;
+        } break;
+        case uint8_t(ComponentCoreSortRaw::Memory): {
+          *sort = ComponentSort::CoreMemory;
+        } break;
+        case uint8_t(ComponentCoreSortRaw::Global): {
+          *sort = ComponentSort::CoreGlobal;
+        } break;
+        case uint8_t(ComponentCoreSortRaw::Tag): {
+          *sort = ComponentSort::CoreTag;
+        } break;
+        case uint8_t(ComponentCoreSortRaw::Type): {
+          *sort = ComponentSort::CoreType;
+        } break;
+        case uint8_t(ComponentCoreSortRaw::Module): {
+          *sort = ComponentSort::CoreModule;
+        } break;
+        case uint8_t(ComponentCoreSortRaw::Instance): {
+          *sort = ComponentSort::CoreInstance;
+        } break;
+        default:
+          return d.failf("unexpected core externtype %d", coreSort);
+      }
+    } break;
+    case uint8_t(ComponentSortRaw::Function): {
+      *sort = ComponentSort::Func;
+    } break;
+    case uint8_t(ComponentSortRaw::Type): {
+      *sort = ComponentSort::Type;
+    } break;
+    case uint8_t(ComponentSortRaw::Component): {
+      *sort = ComponentSort::Component;
+    } break;
+    case uint8_t(ComponentSortRaw::Instance): {
+      *sort = ComponentSort::Instance;
+    } break;
+    default:
+      return d.failf("unexpected sort 0x%02x", kind);
+  }
+
+  if (forExterndesc && !ComponentSortValidForExternDesc(*sort)) {
+    return d.failf("unexpected sort 0x%02x", kind);
+  }
+
+  return true;
+}
+
+[[nodiscard]] static bool DecodeComponentExternDesc(Decoder& d,
+                                                    ComponentExternDesc* desc) {
+  ComponentSort kind;
+  if (!DecodeComponentSort(d, &kind, /*forExterndesc=*/true)) {
+    return false;
+  }
+
+  switch (kind) {
+    case ComponentSort::Func: {
+      uint32_t funcTypeIndex;
+      if (!d.readVarU32(&funcTypeIndex)) {
+        return d.fail("expected func type index");
+      }
+      // TODO(wasm-cm): Validate that the index exists and is a func type
+      *desc = ComponentExternDesc::func(funcTypeIndex);
+    } break;
+    case ComponentSort::Type: {
+      // TODO(wasm-cm): Add support for these
+      return d.fail("extern types are not supported yet");
+    } break;
+    case ComponentSort::Component: {
+      // TODO(wasm-cm): Add support for these
+      return d.fail("extern components are not supported yet");
+    } break;
+    case ComponentSort::Instance: {
+      // TODO(wasm-cm): Add support for these
+      return d.fail("extern instances are not supported yet");
+    } break;
+    case ComponentSort::CoreModule: {
+      // TODO(wasm-cm): Add support for these
+      return d.fail("extern core modules are not supported yet");
+    } break;
+    default:
+      MOZ_CRASH(
+          "all externdesc-compatible ComponentSorts should have been handled");
+  }
+
+  return true;
+}
+
+enum class ComponentImportFlagsRaw : uint8_t {
+  // Strangely, the binary encoding currently allows either 0x00 or 0x01 for the
+  // flags. Both do exactly the same thing. This is supposed to be cleaned up
+  // eventually.
+  Plain1 = 0x00,
+  Plain2 = 0x01,
+  VersionSuffix = 0x02,
+};
+
+static bool DecodeComponentImport(Decoder& d, MutableComponent& c,
+                                  StronglyUniqueNameSet& nameDedup) {
+  uint8_t importFlags;
+  if (!d.readFixedU8(&importFlags)) {
+    return d.fail("expected import flags");
+  }
+
+  switch (importFlags) {
+    case uint8_t(ComponentImportFlagsRaw::Plain1):
+    case uint8_t(ComponentImportFlagsRaw::Plain2):
+      break;
+    case uint8_t(ComponentImportFlagsRaw::VersionSuffix):
+      // TODO(wasm-cm): Support semver?
+      return d.fail("version suffixes on imports are not allowed");
+    default:
+      return d.failf("invalid import flags %#x", importFlags);
+  }
+
+  CacheableName importName;
+  if (!DecodeComponentName(d, "import", &importName, /*allowMethods=*/true)) {
+    return false;
+  }
+  bool duplicate;
+  if (!nameDedup.add(importName.utf8Bytes(), &duplicate)) {
+    return false;
+  }
+  if (duplicate) {
+    return d.failf("import name \"%.*s\" is not strongly-unique",
+                   ComponentName_Printf(importName));
+  }
+
+  ComponentExternDesc externDesc;
+  if (!DecodeComponentExternDesc(d, &externDesc)) {
+    return false;
+  }
+
+  return c->imports.emplaceBack(std::move(importName), externDesc);
+}
+
 [[nodiscard]] static bool DecodeComponentTypeSection(Decoder& d,
                                                      MutableComponent& c) {
   uint32_t numTypes;
@@ -5339,10 +5512,31 @@ enum class ComponentTypeKindRaw : uint8_t {
   return true;
 }
 
+[[nodiscard]] static bool DecodeComponentImportSection(
+    Decoder& d, MutableComponent& c, StronglyUniqueNameSet& nameDedup) {
+  uint32_t numImports;
+  if (!d.readVarU32(&numImports)) {
+    return d.fail("expected number of imports");
+  }
+  if (c->imports.length() + uint64_t(numImports) > MaxComponentImports) {
+    return d.failf("too many imports (max %d)", MaxComponentImports);
+  }
+
+  for (uint32_t i = 0; i < numImports; i++) {
+    if (!DecodeComponentImport(d, c, nameDedup)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 bool wasm::DecodeComponent(Decoder& d, MutableComponent c) {
   if (!DecodePreamble(d, EncodingVersionComponent)) {
     return false;
   }
+
+  StronglyUniqueNameSet importNameDedup;
 
   while (!d.done()) {
     uint8_t sectionID;
@@ -5381,6 +5575,11 @@ bool wasm::DecodeComponent(Decoder& d, MutableComponent c) {
 
         case uint8_t(ComponentSectionId::Type): {
           if (!DecodeComponentTypeSection(d, c)) {
+            return false;
+          }
+        } break;
+        case uint8_t(ComponentSectionId::Import): {
+          if (!DecodeComponentImportSection(d, c, importNameDedup)) {
             return false;
           }
         } break;
