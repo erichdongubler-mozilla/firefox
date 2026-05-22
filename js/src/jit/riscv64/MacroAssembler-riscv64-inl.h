@@ -1936,35 +1936,35 @@ void MacroAssembler::remainder64(Register lhs, Register rhs, Register dest,
 
 void MacroAssembler::rotateLeft64(Imm32 count, Register64 src, Register64 dest,
                                   Register temp) {
-  Drol(dest.reg, src.reg, Operand(count.value));
+  Drol(dest.reg, src.reg, count);
 }
 void MacroAssembler::rotateLeft64(Register count, Register64 src,
                                   Register64 dest, Register temp) {
-  Drol(dest.reg, src.reg, Operand(count));
+  Drol(dest.reg, src.reg, count);
 }
 
 void MacroAssembler::rotateLeft(Imm32 count, Register input, Register dest) {
-  Rol(dest, input, Operand(count.value));
+  Rol(dest, input, count);
 }
 void MacroAssembler::rotateLeft(Register count, Register input, Register dest) {
-  Rol(dest, input, Operand(count));
+  Rol(dest, input, count);
 }
 
 void MacroAssembler::rotateRight64(Imm32 count, Register64 src, Register64 dest,
                                    Register temp) {
-  Dror(dest.reg, src.reg, Operand(count.value));
+  Dror(dest.reg, src.reg, count);
 }
 void MacroAssembler::rotateRight64(Register count, Register64 src,
                                    Register64 dest, Register temp) {
-  Dror(dest.reg, src.reg, Operand(count));
+  Dror(dest.reg, src.reg, count);
 }
 
 void MacroAssembler::rotateRight(Imm32 count, Register input, Register dest) {
-  Ror(dest, input, Operand(count.value));
+  Ror(dest, input, count);
 }
 void MacroAssembler::rotateRight(Register count, Register input,
                                  Register dest) {
-  Ror(dest, input, Operand(count));
+  Ror(dest, input, count);
 }
 
 void MacroAssembler::rshift32Arithmetic(Register src, Register dest) {

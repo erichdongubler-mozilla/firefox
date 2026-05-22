@@ -6452,109 +6452,115 @@ void MacroAssemblerRiscv64::Float64Min(FPURegister dst, FPURegister src1,
   FloatMinMaxHelper<double>(dst, src1, src2, MaxMinKind::kMin);
 }
 
-void MacroAssemblerRiscv64::Rol(Register rd, Register rs, const Operand& rt) {
-  if (rt.is_reg()) {
-    if (HasZbbExtension()) {
-      rolw(rd, rs, rt.rm());
-      return;
-    }
-
-    UseScratchRegisterScope temps(this);
-    Register scratch = temps.Acquire();
-
-    negw(scratch, rt.rm());
-    srlw(scratch, rs, scratch);
-    sllw(rd, rs, rt.rm());
-    or_(rd, scratch, rd);
-    sext_w(rd, rd);
-  } else {
-    Ror(rd, rs, Operand(32 - (rt.immediate() & 0x1f)));
-  }
+void MacroAssemblerRiscv64::Rol(Register rd, Register rs, Imm32 rt) {
+  Ror(rd, rs, Imm32(32 - (rt.value & 0x1f)));
 }
 
-void MacroAssemblerRiscv64::Ror(Register rd, Register rs, const Operand& rt) {
+void MacroAssemblerRiscv64::Rol(Register rd, Register rs, Register rt) {
   if (HasZbbExtension()) {
-    if (rt.is_reg()) {
-      rorw(rd, rs, rt.rm());
-    } else {
-      int64_t ror_value = rt.immediate() % 32;
-      if (ror_value < 0) {
-        ror_value += 32;
-      }
-      roriw(rd, rs, ror_value);
-    }
+    rolw(rd, rs, rt);
     return;
   }
+
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
-  if (rt.is_reg()) {
-    negw(scratch, rt.rm());
-    sllw(scratch, rs, scratch);
-    srlw(rd, rs, rt.rm());
-    or_(rd, scratch, rd);
-    sext_w(rd, rd);
-  } else {
-    int64_t ror_value = rt.immediate() & 0x1f;
-    if (ror_value == 0) {
-      mv(rd, rs);
-      return;
-    }
-    srliw(scratch, rs, ror_value);
-    slliw(rd, rs, 32 - ror_value);
-    or_(rd, scratch, rd);
-    sext_w(rd, rd);
-  }
+
+  negw(scratch, rt);
+  srlw(scratch, rs, scratch);
+  sllw(rd, rs, rt);
+  or_(rd, scratch, rd);
+  sext_w(rd, rd);
 }
 
-void MacroAssemblerRiscv64::Drol(Register rd, Register rs, const Operand& rt) {
-  if (rt.is_reg()) {
-    if (HasZbbExtension()) {
-      rol(rd, rs, rt.rm());
-      return;
-    }
-
-    UseScratchRegisterScope temps(this);
-    Register scratch = temps.Acquire();
-
-    negw(scratch, rt.rm());
-    srl(scratch, rs, scratch);
-    sll(rd, rs, rt.rm());
-    or_(rd, scratch, rd);
-  } else {
-    Dror(rd, rs, Operand(64 - (rt.immediate() & 0x3f)));
-  }
-}
-
-void MacroAssemblerRiscv64::Dror(Register rd, Register rs, const Operand& rt) {
-  if (HasZbbExtension()) {
-    if (rt.is_reg()) {
-      ror(rd, rs, rt.rm());
-    } else {
-      int64_t dror_value = rt.immediate() % 64;
-      if (dror_value < 0) {
-        dror_value += 64;
-      }
-      rori(rd, rs, dror_value);
-    }
+void MacroAssemblerRiscv64::Ror(Register rd, Register rs, Imm32 rt) {
+  int32_t ror_value = rt.value & 0x1f;
+  if (ror_value == 0) {
+    mv(rd, rs);
     return;
   }
+
+  if (HasZbbExtension()) {
+    roriw(rd, rs, ror_value);
+    return;
+  }
+
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
-  if (rt.is_reg()) {
-    negw(scratch, rt.rm());
-    sll(scratch, rs, scratch);
-    srl(rd, rs, rt.rm());
-    or_(rd, scratch, rd);
-  } else {
-    int64_t dror_value = rt.immediate() & 0x3f;
-    if (dror_value == 0) {
-      mv(rd, rs);
-      return;
-    }
-    srli(scratch, rs, dror_value);
-    slli(rd, rs, 64 - dror_value);
-    or_(rd, scratch, rd);
+
+  srliw(scratch, rs, ror_value);
+  slliw(rd, rs, 32 - ror_value);
+  or_(rd, scratch, rd);
+  sext_w(rd, rd);
+}
+
+void MacroAssemblerRiscv64::Ror(Register rd, Register rs, Register rt) {
+  if (HasZbbExtension()) {
+    rorw(rd, rs, rt);
+    return;
   }
+
+  UseScratchRegisterScope temps(this);
+  Register scratch = temps.Acquire();
+
+  negw(scratch, rt);
+  sllw(scratch, rs, scratch);
+  srlw(rd, rs, rt);
+  or_(rd, scratch, rd);
+  sext_w(rd, rd);
+}
+
+void MacroAssemblerRiscv64::Drol(Register rd, Register rs, Imm32 rt) {
+  Dror(rd, rs, Imm32(64 - (rt.value & 0x3f)));
+}
+
+void MacroAssemblerRiscv64::Drol(Register rd, Register rs, Register rt) {
+  if (HasZbbExtension()) {
+    rol(rd, rs, rt);
+    return;
+  }
+
+  UseScratchRegisterScope temps(this);
+  Register scratch = temps.Acquire();
+
+  negw(scratch, rt);
+  srl(scratch, rs, scratch);
+  sll(rd, rs, rt);
+  or_(rd, scratch, rd);
+}
+
+void MacroAssemblerRiscv64::Dror(Register rd, Register rs, Imm32 rt) {
+  int32_t dror_value = rt.value & 0x3f;
+  if (dror_value == 0) {
+    mv(rd, rs);
+    return;
+  }
+
+  if (HasZbbExtension()) {
+    rori(rd, rs, dror_value);
+    return;
+  }
+
+  UseScratchRegisterScope temps(this);
+  Register scratch = temps.Acquire();
+
+  srli(scratch, rs, dror_value);
+  slli(rd, rs, 64 - dror_value);
+  or_(rd, scratch, rd);
+}
+
+void MacroAssemblerRiscv64::Dror(Register rd, Register rs, Register rt) {
+  if (HasZbbExtension()) {
+    ror(rd, rs, rt);
+    return;
+  }
+
+  UseScratchRegisterScope temps(this);
+  Register scratch = temps.Acquire();
+
+  negw(scratch, rt);
+  sll(scratch, rs, scratch);
+  srl(rd, rs, rt);
+  or_(rd, scratch, rd);
 }
 
 void MacroAssemblerRiscv64::wasmLoadImpl(const wasm::MemoryAccessDesc& access,
