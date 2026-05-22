@@ -36,6 +36,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"  // mozilla::Mutex
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -54,6 +55,7 @@
 #ifdef NIGHTLY_BUILD
 #  include "mozilla/dom/IntegrityPolicyWAICT.h"
 #endif
+#include "mozilla/FlowMarkers.h"
 #include "mozilla/dom/JSExecutionUtils.h"  // mozilla::dom::Compile, mozilla::dom::InstantiateStencil, mozilla::dom::EvaluationExceptionToNSResult
 #include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/RequestBinding.h"
@@ -1478,6 +1480,10 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
   RefPtr<ScriptLoadRequest> request =
       LookupPreloadRequest(aElement, aScriptKind, sriMetadata);
   if (request) {
+    PROFILER_MARKER("ScriptLoader::ProcessExternalScript PreloadRequest", JS,
+                    {mozilla::MarkerStack::Capture()}, FlowMarker,
+                    Flow::FromPointer(request.get()));
+
     if (NS_FAILED(CheckContentPolicy(aElement, nonce, request,
                                      request->FetchOptions(),
                                      request->URI()))) {
@@ -1531,6 +1537,11 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
         aScriptKind, scriptURI, aElement, VoidString(), principal, ourCORSMode,
         nonce, FetchPriorityToRequestPriority(fetchPriority), sriMetadata,
         referrerPolicy, parserMetadata, ScriptLoadRequestType::External);
+
+    PROFILER_MARKER("ScriptLoader::ProcessExternalScript CreateLoadRequest", JS,
+                    {mozilla::MarkerStack::Capture()}, FlowMarker,
+                    Flow::FromPointer(request.get()));
+
     request->GetScriptLoadContext()->mIsInline = false;
     request->GetScriptLoadContext()->SetScriptMode(
         aElement->GetScriptDeferred(), aElement->GetScriptAsync(), false);
@@ -2362,7 +2373,6 @@ class ScriptOrModuleCompileTask final : public CompileOrDecodeTask {
     if (IsCancelled(lock)) {
       return TaskResult::Complete;
     }
-
     RefPtr<JS::Stencil> stencil = Compile();
 
     DidRunTask(lock, std::move(stencil));
@@ -2536,6 +2546,10 @@ nsresult ScriptLoader::CreateOffThreadTask(
 nsresult ScriptLoader::ProcessOffThreadRequest(ScriptLoadRequest* aRequest) {
   MOZ_ASSERT(aRequest->IsCompiling());
   MOZ_ASSERT(!aRequest->GetScriptLoadContext()->mWasCompiledOMT);
+
+  PROFILER_MARKER("ScriptLoader::ProcessOffThreadRequest", JS,
+                  {mozilla::MarkerStack::Capture()}, FlowMarker,
+                  Flow::FromPointer(aRequest));
 
   if (aRequest->IsCanceled()) {
     return NS_OK;
@@ -3810,9 +3824,9 @@ nsresult ScriptLoader::EvaluateScript(nsIGlobalObject* aGlobalObject,
 
   if (!erv.Failed()) {
     LOG(("ScriptLoadRequest (%p): Evaluate Script", aRequest));
-    AUTO_PROFILER_MARKER_TEXT("ScriptExecution", JS,
-                              MarkerInnerWindowIdFromJSContext(cx),
-                              profilerLabelString);
+    AUTO_PROFILER_FLOW_MARKER_TEXT(
+        "ScriptExecution", JS, MarkerInnerWindowIdFromJSContext(cx),
+        profilerLabelString, Flow::FromPointer(aRequest));
 
     MOZ_ASSERT(options.noScriptRval);
     TRACE_FOR_TEST(aRequest, "evaluate:classic");
@@ -5031,6 +5045,10 @@ static bool MimeTypeMatchesExpectedModuleType(
 nsresult ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
                                             nsIChannel* aChannel,
                                             nsresult aStatus) {
+  PROFILER_MARKER("ScriptLoader::PrepareLoadedRequest", JS,
+                  {mozilla::MarkerStack::Capture()}, FlowMarker,
+                  Flow::FromPointer(aRequest));
+
   if (NS_FAILED(aStatus)) {
     return aStatus;
   }
