@@ -310,6 +310,8 @@ export class SidebarBookmarks extends SidebarPage {
             isEmpty,
             isRootFolder: lazy.PlacesUtils.isRootItem(folderEl.guid),
           };
+        } else if (this.findTriggerNode(e, "moz-input-search")) {
+          return;
         } else {
           e.preventDefault();
           return;

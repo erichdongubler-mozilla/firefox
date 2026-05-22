@@ -211,6 +211,30 @@ add_task(async function test_bookmarks_search_results_show_tab_list() {
   SidebarTestUtils.closePanel(window);
 });
 
+add_task(async function test_bookmarks_search_context_menu() {
+  const { component, contentWindow } = await showBookmarksSidebar();
+  const { searchInput } = component;
+
+  const promisePopupShown = BrowserTestUtils.waitForEvent(
+    contentWindow,
+    "popupshown"
+  );
+  EventUtils.synthesizeMouseAtCenter(
+    searchInput,
+    { type: "contextmenu", button: 2 },
+    contentWindow
+  );
+  const { target: menu } = await promisePopupShown;
+  Assert.equal(
+    menu.id,
+    "textbox-contextmenu",
+    "The edit context menu is shown for the search input."
+  );
+  menu.hidePopup();
+
+  SidebarController.hide();
+});
+
 add_task(async function test_bookmarks_folder_expand_collapse() {
   const folder = await addFolder("ExpandableFolder");
   await addBookmark({ title: "Inside Folder", parentGuid: folder.guid });
