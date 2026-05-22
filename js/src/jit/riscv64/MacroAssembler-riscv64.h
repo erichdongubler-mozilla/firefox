@@ -263,7 +263,7 @@ class MacroAssemblerRiscv64 : public Assembler {
                  JumpKind jumpKind = ShortJump);
 
   void ma_branch(Label* target, JumpKind jumpKind = ShortJump) {
-    ma_branch(target, Always, zero, zero, jumpKind);
+    ma_branch(target, Always, zero, Operand(zero), jumpKind);
   }
 
   // fp instructions
@@ -756,14 +756,14 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
 
   void moveIfZero(Register dst, Register src, Register cond) {
     Label done;
-    ma_branch(&done, NotEqual, cond, zero);
+    ma_branch(&done, NotEqual, cond, Operand(zero));
     mv(dst, src);
     bind(&done);
   }
 
   void moveIfNotZero(Register dst, Register src, Register cond) {
     Label done;
-    ma_branch(&done, Equal, cond, zero);
+    ma_branch(&done, Equal, cond, Operand(zero));
     mv(dst, src);
     bind(&done);
   }

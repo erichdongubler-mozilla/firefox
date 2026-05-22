@@ -5279,7 +5279,7 @@ void MacroAssemblerRiscv64::ma_b(Register lhs, Register rhs, Label* label,
       ma_branch(label, GreaterThanOrEqual, lhs, Operand(zero), jumpKind);
       break;
     default:
-      ma_branch(label, c, lhs, rhs, jumpKind);
+      ma_branch(label, c, lhs, Operand(rhs), jumpKind);
       break;
   }
 }

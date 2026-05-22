@@ -29,24 +29,6 @@ CodeGeneratorRiscv64::CodeGeneratorRiscv64(
     const wasm::CodeMetadata* wasmCodeMeta)
     : CodeGeneratorShared(gen, graph, masm, wasmCodeMeta) {}
 
-Operand CodeGeneratorRiscv64::ToOperand(const LAllocation& a) {
-  if (a.isGeneralReg()) {
-    return Operand(a.toGeneralReg()->reg());
-  }
-  if (a.isFloatReg()) {
-    return Operand(a.toFloatReg()->reg());
-  }
-  return Operand(ToAddress(a));
-}
-
-Operand CodeGeneratorRiscv64::ToOperand(const LAllocation* a) {
-  return ToOperand(*a);
-}
-
-Operand CodeGeneratorRiscv64::ToOperand(const LDefinition* def) {
-  return ToOperand(def->output());
-}
-
 void CodeGeneratorRiscv64::branchToBlock(FloatFormat fmt, FloatRegister lhs,
                                          FloatRegister rhs, MBasicBlock* mir,
                                          Assembler::DoubleCondition cond) {

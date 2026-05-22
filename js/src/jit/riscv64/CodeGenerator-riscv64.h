@@ -27,10 +27,6 @@ class CodeGeneratorRiscv64 : public CodeGeneratorShared {
 
   NonAssertingLabel deoptLabel_;
 
-  Operand ToOperand(const LAllocation& a);
-  Operand ToOperand(const LAllocation* a);
-  Operand ToOperand(const LDefinition* def);
-
   MoveOperand toMoveOperand(LAllocation a) const;
 
   template <typename T1, typename T2>
