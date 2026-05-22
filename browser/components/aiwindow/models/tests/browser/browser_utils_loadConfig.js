@@ -25,8 +25,8 @@ add_task(async function test_loadConfig_chat_feature() {
   Assert.equal(engine.feature, "chat", "Feature should be set to 'chat'");
   Assert.equal(
     engine.model,
-    "qwen3-235b-a22b-instruct-2507-maas",
-    "Model should be loaded from remote settings"
+    "generic",
+    "Model should be loaded from remote settings; generic for chat without a model choice ID pref set"
   );
   Assert.ok(config, "Config should not be null or undefined");
   Assert.notEqual(

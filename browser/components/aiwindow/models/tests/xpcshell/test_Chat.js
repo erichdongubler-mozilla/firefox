@@ -33,6 +33,7 @@ const { sinon } = ChromeUtils.importESModule(
 const PREF_API_KEY = "browser.smartwindow.apiKey";
 const PREF_ENDPOINT = "browser.smartwindow.endpoint";
 const PREF_MODEL = "browser.smartwindow.model";
+const PREF_MODEL_CHOICE = "browser.smartwindow.firstrun.modelChoice";
 
 // Clean prefs after all tests
 registerCleanupFunction(() => {
@@ -83,6 +84,7 @@ add_task(
     Services.prefs.setStringPref(PREF_API_KEY, "test-key-123");
     Services.prefs.setStringPref(PREF_ENDPOINT, "https://example.test/v1");
     Services.prefs.setStringPref(PREF_MODEL, "nonexistent-model");
+    Services.prefs.setStringPref(PREF_MODEL_CHOICE, "0");
 
     const sb = sinon.createSandbox();
     try {
@@ -619,6 +621,12 @@ add_task(async function test_Chat_fetchWithHistory_uses_modelId_from_pref() {
         version: getVersionForFeature(MODEL_FEATURES.CHAT),
         model: customModelId,
         is_default: true,
+      },
+      {
+        feature: MODEL_FEATURES.CHAT,
+        version: getVersionForFeature(MODEL_FEATURES.CHAT),
+        model: "generic",
+        is_default: false,
       },
     ];
 

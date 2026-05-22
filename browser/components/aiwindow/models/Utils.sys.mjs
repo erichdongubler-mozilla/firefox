@@ -222,39 +222,57 @@ function selectMainConfig(
     return null;
   }
 
-  // We only allow customization of main assistant model unless user is
-  //  using custom endpoint (which is handled by _applyCustomEndpointModel)
+  // We only allow customization of main assistant model ("chat" feature)
+  // We figure out which model the user wants and load prompts for that model
+  // If we can't find a config for the user selection, we load the generic one
   if (feature === MODEL_FEATURES.CHAT) {
-    // If user specified a model preference, find that model's config
-    if (userModel) {
-      const userModelConfig = sameMajor.find(
-        config => config.model === userModel
-      );
-      if (userModelConfig) {
-        return userModelConfig;
-      }
-      // User's model not found in this major version - fall through to defaults
-      console.warn(
-        `User model "${userModel}" not found for major version ${majorVersion} for feature '${feature}', using modelChoice ${modelChoiceId}`
-      );
-    }
+    if (modelChoiceId !== "0") {
+      // First check the choice ID. If it's not 0, use the model associated with that ID
 
-    // If user specified a model preference, find that model's config
-    if (modelChoiceId) {
+      // Look for config based on model choice ID
       const userModelConfig = sameMajor.find(
         config => config.model_choice_id == modelChoiceId
       );
+      // Return if we found it
       if (userModelConfig) {
         return userModelConfig;
       }
-      // User's model not found in this major version - fall through to defaults
+      // Config for user's model choice ID not found in this major version - fall through to generic
       console.warn(
-        `User model choice "${modelChoiceId}" not found for major version ${majorVersion} for feature '${feature}', using default`
+        `User model choice "${modelChoiceId}" not found for major version ${majorVersion} for feature '${feature}', using generic`
+      );
+    } else {
+      // If the choice ID is 0 or null, check the provided model name
+
+      // Look for config based on the user-provided model name
+      // This is the case where the user provides a model name for which we have a fine-tuned prompt
+      const userModelConfig = sameMajor.find(
+        config => config.model === userModel
+      );
+      // Return if we found it
+      if (userModelConfig) {
+        return userModelConfig;
+      }
+      // Config for user-provided model name not found in this major version - fall through to generic
+      console.warn(
+        `User model "${userModel}" not found for major version ${majorVersion} for feature '${feature}', using generic`
       );
     }
+
+    // If both cases above failed, load the generic config
+    const genericConfig = sameMajor.find(
+      config => config.model === GENERIC_MODEL_NAME
+    );
+    // Inject the user model if one was provided
+    // If one wasn't, we return the generic config plain, which will intentionally break inference
+    if (userModel) {
+      genericConfig.model = userModel;
+    }
+    return genericConfig;
   }
 
-  // No user model pref OR user's model not found: use default
+  // **For all features other than "chat"**
+  // If no user model pref OR user's model not found: use default
   const defaultConfig = sameMajor.find(config => config.is_default === true);
   if (defaultConfig) {
     return defaultConfig;
@@ -377,24 +395,6 @@ export class openAIEngine {
       );
       this.model = userModel;
     }
-  }
-
-  /**
-   * Overrides the model config with generic config
-   *
-   * @param {Array} featureConfigs - All configs for the feature from Remote Settings
-   * @param {number} majorVersion - Required major version for the feature
-   *
-   * @private
-   */
-  _loadGenericChatPrompt(featureConfigs, majorVersion) {
-    console.warn(`Custom endpoint detected. Using generic chat prompt`);
-    this.#configs[MODEL_FEATURES.CHAT] = selectMainConfig(featureConfigs, {
-      majorVersion,
-      userModel: GENERIC_MODEL_NAME,
-      modelChoiceId: "",
-      feature: MODEL_FEATURES.CHAT,
-    });
   }
 
   /**
@@ -530,13 +530,6 @@ export class openAIEngine {
       featureConfigs,
       majorVersion
     );
-
-    if (openAIEngine.hasCustomEndpoint()) {
-      if (feature === MODEL_FEATURES.CHAT) {
-        this._loadGenericChatPrompt(featureConfigs, majorVersion);
-      }
-      this._applyCustomEndpointModel();
-    }
   }
 
   /**
@@ -906,7 +899,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   openAIEngine,
   "endpoint",
   ENDPOINT_PREF,
-  ""
+  "https://mlpa-prod-prod-mozilla.global.ssl.fastly.net/v1"
 );
 
 XPCOMUtils.defineLazyPreferenceGetter(openAIEngine, "apiKey", APIKEY_PREF, "");

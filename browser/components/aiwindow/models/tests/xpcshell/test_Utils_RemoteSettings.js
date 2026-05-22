@@ -147,6 +147,7 @@ add_task(async function test_loadConfig_with_user_pref_model() {
   Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
   Services.prefs.clearUserPref(PREF_ENDPOINT);
   Services.prefs.setStringPref(PREF_MODEL, "gpt-oss-120b");
+  Services.prefs.setStringPref(PREF_MODEL_CHOICE, "0");
 
   const sb = sinon.createSandbox();
   try {
@@ -174,7 +175,10 @@ add_task(async function test_loadConfig_with_user_pref_model() {
     );
   } finally {
     sb.restore();
+    Services.prefs.clearUserPref(PREF_API_KEY);
+    Services.prefs.clearUserPref(PREF_ENDPOINT);
     Services.prefs.clearUserPref(PREF_MODEL);
+    Services.prefs.clearUserPref(PREF_MODEL_CHOICE);
   }
 });
 
@@ -182,6 +186,7 @@ add_task(async function test_loadConfig_with_custom_endpoint_and_model() {
   Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
   Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
   Services.prefs.setStringPref(PREF_MODEL, "custom_model_v123");
+  Services.prefs.setStringPref(PREF_MODEL_CHOICE, "0");
 
   const sb = sinon.createSandbox();
   try {
@@ -203,9 +208,82 @@ add_task(async function test_loadConfig_with_custom_endpoint_and_model() {
     );
   } finally {
     sb.restore();
+    Services.prefs.clearUserPref(PREF_API_KEY);
+    Services.prefs.clearUserPref(PREF_ENDPOINT);
     Services.prefs.clearUserPref(PREF_MODEL);
+    Services.prefs.clearUserPref(PREF_MODEL_CHOICE);
   }
 });
+
+add_task(
+  async function test_loadConfig_uses_known_model_with_custom_endpoint() {
+    Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
+    Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
+    Services.prefs.setStringPref(PREF_MODEL, "gpt-oss-120b");
+    Services.prefs.setStringPref(PREF_MODEL_CHOICE, "0");
+
+    const sb = sinon.createSandbox();
+
+    try {
+      const fakeEngine = {
+        runWithGenerator() {
+          throw new Error("not used");
+        },
+      };
+      sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
+
+      const engine = new openAIEngine();
+
+      await engine.loadConfig(MODEL_FEATURES.CHAT);
+      const engineConfig = engine.getConfig();
+      Assert.equal(
+        engineConfig.model,
+        "gpt-oss-120b",
+        'Selected model in the engine config should be the user\'s preferred model and not "generic"'
+      );
+    } finally {
+      sb.restore();
+      Services.prefs.clearUserPref(PREF_API_KEY);
+      Services.prefs.clearUserPref(PREF_ENDPOINT);
+      Services.prefs.clearUserPref(PREF_MODEL);
+      Services.prefs.clearUserPref(PREF_MODEL_CHOICE);
+    }
+  }
+);
+
+add_task(
+  async function test_loadConfig_uses_generic_model_with_modelChoiceId_zero() {
+    Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
+    Services.prefs.setStringPref(PREF_MODEL_CHOICE, "0");
+    Services.prefs.setStringPref(PREF_MODEL, "custom_model_v123");
+
+    const sb = sinon.createSandbox();
+
+    try {
+      const fakeEngine = {
+        runWithGenerator() {
+          throw new Error("not used");
+        },
+      };
+      sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
+
+      const engine = new openAIEngine();
+
+      await engine.loadConfig(MODEL_FEATURES.CHAT);
+      const engineConfig = engine.getConfig();
+      Assert.equal(
+        engineConfig.model,
+        "custom_model_v123",
+        'Selected model in the engine config should be the provided name "custom_model_v123"'
+      );
+    } finally {
+      sb.restore();
+      Services.prefs.clearUserPref(PREF_API_KEY);
+      Services.prefs.clearUserPref(PREF_MODEL_CHOICE);
+      Services.prefs.clearUserPref(PREF_MODEL);
+    }
+  }
+);
 
 add_task(async function test_loadConfig_filters_by_major_version() {
   Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
@@ -235,45 +313,10 @@ add_task(async function test_loadConfig_filters_by_major_version() {
   }
 });
 
-add_task(async function test_loadConfig_fallback_when_user_model_not_found() {
-  Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
-  Services.prefs.clearUserPref(PREF_ENDPOINT);
-  Services.prefs.setStringPref(PREF_MODEL, "nonexistent-model");
-
-  const sb = sinon.createSandbox();
-  try {
-    const fakeEngine = {
-      runWithGenerator() {
-        throw new Error("not used");
-      },
-    };
-    sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-
-    const engine = new openAIEngine();
-    await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
-
-    // Should fall back to default model
-    Assert.notEqual(
-      engine.model,
-      "nonexistent-model",
-      "Should not use invalid user model"
-    );
-    const config = engine.getConfig(MODEL_FEATURES.CHAT);
-    Assert.equal(config.is_default, true, "Should fall back to default config");
-    Assert.equal(
-      config.model,
-      engine.model,
-      "Engine model should match the default config's model"
-    );
-  } finally {
-    sb.restore();
-    Services.prefs.clearUserPref(PREF_MODEL);
-  }
-});
-
 add_task(async function test_loadConfig_custom_endpoint_with_custom_model() {
   Services.prefs.setStringPref(PREF_ENDPOINT, "http://localhost:11434/v1");
   Services.prefs.setStringPref(PREF_MODEL, "custom-model:7b");
+  Services.prefs.setStringPref(PREF_MODEL_CHOICE, "0");
 
   const sb = sinon.createSandbox();
   try {
@@ -284,6 +327,12 @@ add_task(async function test_loadConfig_custom_endpoint_with_custom_model() {
         version: getVersionForFeature(MODEL_FEATURES.CHAT),
         model: "some-other-model",
         is_default: true,
+      },
+      {
+        feature: MODEL_FEATURES.CHAT,
+        version: getVersionForFeature(MODEL_FEATURES.CHAT),
+        model: "generic",
+        is_default: false,
       },
     ];
 
@@ -299,19 +348,21 @@ add_task(async function test_loadConfig_custom_endpoint_with_custom_model() {
       "custom-model:7b",
       "Should use custom model with custom endpoint"
     );
+
+    const config = engine.getConfig();
+    Assert.ok(!config.is_default, "Should not have loaded the default config");
   } finally {
     sb.restore();
     Services.prefs.clearUserPref(PREF_ENDPOINT);
     Services.prefs.clearUserPref(PREF_MODEL);
+    Services.prefs.clearUserPref(PREF_MODEL_CHOICE);
   }
 });
 
 add_task(async function test_loadConfig_custom_endpoint_without_custom_model() {
-  Services.prefs.clearUserPref(PREF_MODEL);
-  Services.prefs.clearUserPref(PREF_ENDPOINT);
-
   Services.prefs.setStringPref(PREF_ENDPOINT, "http://localhost:11434/v1");
   Services.prefs.setStringPref(PREF_MODEL, "my_custom_model");
+  Services.prefs.setStringPref(PREF_MODEL_CHOICE, "0");
 
   const sb = sinon.createSandbox();
   try {
@@ -322,6 +373,12 @@ add_task(async function test_loadConfig_custom_endpoint_without_custom_model() {
         version: "2.0",
         model: "remote-default-model",
         is_default: true,
+      },
+      {
+        feature: MODEL_FEATURES.CHAT,
+        version: "2.0",
+        model: "generic",
+        is_default: false,
       },
     ];
 
@@ -337,10 +394,14 @@ add_task(async function test_loadConfig_custom_endpoint_without_custom_model() {
       "my_custom_model",
       "Should use custom_model from pref when both custom endpoint and custom model are set"
     );
+
+    const config = engine.getConfig();
+    Assert.ok(!config.is_default, "Should not have loaded the default config");
   } finally {
     sb.restore();
     Services.prefs.clearUserPref(PREF_ENDPOINT);
     Services.prefs.clearUserPref(PREF_MODEL);
+    Services.prefs.clearUserPref(PREF_MODEL_CHOICE);
   }
 });
 
@@ -393,6 +454,12 @@ add_task(async function test_build_with_feature() {
         model: "some-model",
         is_default: true,
       },
+      {
+        feature: MODEL_FEATURES.CHAT,
+        version: getVersionForFeature(MODEL_FEATURES.CHAT),
+        model: "generic",
+        is_default: false,
+      },
     ];
 
     sb.stub(openAIEngine, "getRemoteClient").returns({
@@ -441,6 +508,16 @@ add_task(async function test_inference_params_from_config() {
           max_tokens: 1024,
         },
       },
+      {
+        feature: MODEL_FEATURES.CHAT,
+        version: `${MAJOR_VERSION_2}.0`,
+        model: "generic",
+        is_default: false,
+        parameters: {
+          temperature: 0.7,
+          max_tokens: 1024,
+        },
+      },
     ];
     sb.stub(openAIEngine, "getRemoteClient").returns({
       get: sb.stub().resolves(fakeRecords),
@@ -471,6 +548,7 @@ add_task(async function test_inference_params_from_config() {
     );
   } finally {
     sb.restore();
+    Services.prefs.clearUserPref(PREF_API_KEY);
   }
 });
 
@@ -493,6 +571,16 @@ add_task(async function test_inference_string_params_from_config() {
         version: `${MAJOR_VERSION_2}.0`,
         model: "model",
         is_default: true,
+        parameters: JSON.stringify({
+          temperature: 0.7,
+          max_tokens: 1024,
+        }),
+      },
+      {
+        feature: MODEL_FEATURES.CHAT,
+        version: `${MAJOR_VERSION_2}.0`,
+        model: "generic",
+        is_default: false,
         parameters: JSON.stringify({
           temperature: 0.7,
           max_tokens: 1024,
@@ -528,78 +616,7 @@ add_task(async function test_inference_string_params_from_config() {
     );
   } finally {
     sb.restore();
-  }
-});
-
-add_task(async function test_loadConfig_with_model_choice_id_found() {
-  Services.prefs.clearUserPref(PREF_MODEL); // ensures model pref not set
-
-  Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
-  Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
-  Services.prefs.setStringPref(PREF_MODEL_CHOICE, "1");
-
-  const sb = sinon.createSandbox();
-  try {
-    const fakeEngine = {
-      runWithGenerator() {
-        throw new Error("not used");
-      },
-    };
-    sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-
-    const fakeRecords = [
-      {
-        feature: MODEL_FEATURES.CHAT,
-        version: "2.0",
-        model: "model-for-choice-123",
-        model_choice_id: "1",
-        prompts: "Test prompt",
-        is_default: false,
-      },
-      {
-        feature: MODEL_FEATURES.CHAT,
-        version: "2.0",
-        model: "my-other-model",
-        model_choice_id: "2",
-        prompts: "Test prompt",
-        is_default: false,
-      },
-      {
-        feature: MODEL_FEATURES.CHAT,
-        version: "2.0",
-        model: "default-model",
-        prompts: "Default prompt",
-        is_default: true,
-      },
-    ];
-
-    sb.stub(openAIEngine, "getRemoteClient").returns({
-      get: sb.stub().resolves(fakeRecords),
-    });
-
-    const engine = new openAIEngine();
-    await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
-
-    Assert.equal(
-      engine.model,
-      "model-for-choice-123",
-      "Should select model matching model_choice_id"
-    );
-
-    Services.prefs.setStringPref(PREF_MODEL, "my-other-model");
-
-    const engine2 = new openAIEngine();
-    await engine2.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
-
-    Assert.equal(
-      engine2.model,
-      "my-other-model",
-      "Should select model matching model; ignore over model-choice-id"
-    );
-  } finally {
-    sb.restore();
-    Services.prefs.clearUserPref(PREF_MODEL_CHOICE);
-    Services.prefs.clearUserPref(PREF_MODEL);
+    Services.prefs.clearUserPref(PREF_API_KEY);
   }
 });
 
@@ -649,12 +666,14 @@ add_task(async function test_loadConfig_with_model_choice_id_not_found() {
     );
   } finally {
     sb.restore();
+    Services.prefs.clearUserPref(PREF_API_KEY);
+    Services.prefs.clearUserPref(PREF_ENDPOINT);
     Services.prefs.clearUserPref(PREF_MODEL_CHOICE);
   }
 });
 
 add_task(
-  async function test_loadConfig_userModel_precedence_over_modelChoiceId() {
+  async function test_loadConfig_modelChoiceId_precedence_over_userModel() {
     Services.prefs.setStringPref(PREF_MODEL, "model-for-choice-2");
     Services.prefs.setStringPref(PREF_MODEL_CHOICE, "1");
 
@@ -702,70 +721,12 @@ add_task(
 
       Assert.equal(
         engine.model,
-        "model-for-choice-2",
-        "userModel pref should take precedence over modelChoiceId"
-      );
-    } finally {
-      sb.restore();
-      Services.prefs.clearUserPref(PREF_MODEL);
-      Services.prefs.clearUserPref(PREF_MODEL_CHOICE);
-    }
-  }
-);
-
-add_task(
-  async function test_loadConfig_userModel_precedence_over_modelChoiceId_fallback() {
-    Services.prefs.setStringPref(PREF_MODEL, "model-not-in-remote-settings");
-    Services.prefs.setStringPref(PREF_MODEL_CHOICE, "1");
-    Services.prefs.clearUserPref(PREF_ENDPOINT);
-
-    const sb = sinon.createSandbox();
-    try {
-      const fakeEngine = {
-        runWithGenerator() {
-          throw new Error("not used");
-        },
-      };
-      sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-
-      const fakeRecords = [
-        {
-          feature: MODEL_FEATURES.CHAT,
-          version: "2.0",
-          model: "model-for-choice-1",
-          model_choice_id: "1",
-          prompts: "Test prompt",
-          is_default: false,
-        },
-        {
-          feature: MODEL_FEATURES.CHAT,
-          version: "2.0",
-          model: "model-for-choice-2",
-          model_choice_id: "2",
-          prompts: "Test prompt",
-          is_default: false,
-        },
-        {
-          feature: MODEL_FEATURES.CHAT,
-          version: "2.0",
-          model: "default-model",
-          prompts: "Default prompt",
-          is_default: true,
-        },
-      ];
-
-      sb.stub(openAIEngine, "getRemoteClient").returns({
-        get: sb.stub().resolves(fakeRecords),
-      });
-
-      const engine = new openAIEngine();
-      await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
-
-      Assert.equal(
-        engine.model,
         "model-for-choice-1",
-        "modelChoiceId used when customModel not found on MLPA endpoint"
+        "modelChoiceId pref should take precedence over userModel"
       );
+
+      const config = engine.getConfig();
+      Assert.ok(!config.is_default, "Should not load the default config");
     } finally {
       sb.restore();
       Services.prefs.clearUserPref(PREF_MODEL);
@@ -866,6 +827,13 @@ add_task(async function test_loadConfig_no_feature_prefs_exist() {
         prompts: "Test prompt",
         is_default: true,
       },
+      {
+        feature: MODEL_FEATURES.CHAT,
+        version: "2.0",
+        model: "generic",
+        prompts: "Test prompt",
+        is_default: false,
+      },
     ];
 
     sb.stub(openAIEngine, "getRemoteClient").returns({
@@ -877,63 +845,128 @@ add_task(async function test_loadConfig_no_feature_prefs_exist() {
 
     Assert.equal(
       engine.model,
-      "default-model",
-      "Should use default when no prefs exists"
+      "generic",
+      "Should use generic config when no prefs exist"
     );
   } finally {
     sb.restore();
   }
 });
 
-add_task(async function test_custom_endpoint_override() {
-  Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
-  Services.prefs.setStringPref(PREF_MODEL_CHOICE, "1");
-  Services.prefs.setStringPref(PREF_MODEL, "my_custom_model");
+add_task(
+  async function test_custom_endpoint_override_with_nonzero_model_choice_id() {
+    Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
+    Services.prefs.setStringPref(PREF_MODEL_CHOICE, "1");
+    Services.prefs.setStringPref(PREF_MODEL, "my_custom_model");
 
-  const sb = sinon.createSandbox();
-  try {
-    const fakeEngine = {
-      runWithGenerator() {
-        throw new Error("not used");
-      },
-    };
-    sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
+    const sb = sinon.createSandbox();
+    try {
+      const fakeEngine = {
+        runWithGenerator() {
+          throw new Error("not used");
+        },
+      };
+      sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
 
-    const fakeRecords = [
-      {
-        feature: MODEL_FEATURES.CHAT,
-        version: getVersionForFeature(MODEL_FEATURES.CHAT),
-        model: "future-model",
-        model_choice_id: "1",
-        prompts: "Test prompt",
-        is_default: false,
-      },
-      {
-        feature: MODEL_FEATURES.CHAT,
-        version: "2.0",
-        model: "future-default",
-        prompts: "Default prompt",
-        is_default: true,
-      },
-    ];
+      const fakeRecords = [
+        {
+          feature: MODEL_FEATURES.CHAT,
+          version: getVersionForFeature(MODEL_FEATURES.CHAT),
+          model: "future-model",
+          model_choice_id: "1",
+          prompts: "Test prompt",
+          is_default: false,
+        },
+        {
+          feature: MODEL_FEATURES.CHAT,
+          version: "2.0",
+          model: "future-default",
+          prompts: "Default prompt",
+          is_default: true,
+        },
+      ];
 
-    sb.stub(openAIEngine, "getRemoteClient").returns({
-      get: sb.stub().resolves(fakeRecords),
-    });
+      sb.stub(openAIEngine, "getRemoteClient").returns({
+        get: sb.stub().resolves(fakeRecords),
+      });
 
-    const engine = new openAIEngine();
-    await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_4);
+      const engine = new openAIEngine();
+      await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_4);
 
-    Assert.equal(
-      engine.model,
-      "my_custom_model",
-      "Should use custom model when custom endpoint is set"
-    );
-  } finally {
-    sb.restore();
-    Services.prefs.clearUserPref(PREF_MODEL_CHOICE);
+      Assert.equal(
+        engine.model,
+        "future-model",
+        "Should still use modelChoiceId model when a custom endpoint is set and modelChoiceId != 0"
+      );
+    } finally {
+      sb.restore();
+      Services.prefs.clearUserPref(PREF_ENDPOINT);
+      Services.prefs.clearUserPref(PREF_MODEL_CHOICE);
+      Services.prefs.clearUserPref(PREF_MODEL);
+    }
   }
-});
+);
+
+add_task(
+  async function test_custom_endpoint_override_with_zero_model_choice_id() {
+    Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
+    Services.prefs.setStringPref(PREF_MODEL_CHOICE, "0");
+    Services.prefs.setStringPref(PREF_MODEL, "my_custom_model");
+
+    const sb = sinon.createSandbox();
+    try {
+      const fakeEngine = {
+        runWithGenerator() {
+          throw new Error("not used");
+        },
+      };
+      sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
+
+      const fakeRecords = [
+        {
+          feature: MODEL_FEATURES.CHAT,
+          version: getVersionForFeature(MODEL_FEATURES.CHAT),
+          model: "future-model",
+          model_choice_id: "1",
+          prompts: "Test prompt",
+          is_default: false,
+        },
+        {
+          feature: MODEL_FEATURES.CHAT,
+          version: "2.0",
+          model: "future-default",
+          prompts: "Default prompt",
+          is_default: true,
+        },
+        {
+          feature: MODEL_FEATURES.CHAT,
+          version: getVersionForFeature(MODEL_FEATURES.CHAT),
+          model: "my_custom_model",
+          prompts: "Another prompt",
+          is_default: false,
+        },
+      ];
+
+      sb.stub(openAIEngine, "getRemoteClient").returns({
+        get: sb.stub().resolves(fakeRecords),
+      });
+
+      const engine = new openAIEngine();
+      await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_4);
+
+      Assert.equal(
+        engine.model,
+        "my_custom_model",
+        "Should still use custom model when a custom endpoint is set and modelChoiceId == 0"
+      );
+    } finally {
+      sb.restore();
+      Services.prefs.clearUserPref(PREF_ENDPOINT);
+      Services.prefs.clearUserPref(PREF_MODEL_CHOICE);
+      Services.prefs.clearUserPref(PREF_MODEL);
+    }
+  }
+);
 
 add_task(async function test_loadConfig_with_additional_components() {
   Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
@@ -1309,7 +1342,7 @@ add_task(async function test_build_uses_service_type_and_purpose_from_config() {
 });
 
 add_task(
-  async function test_build_falls_back_to_defaults_when_config_fields_absent() {
+  async function test_build_falls_back_to_generic_when_config_fields_absent() {
     Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
     Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
 
@@ -1333,12 +1366,19 @@ add_task(
           prompts: "Test prompt",
           is_default: true,
         },
+        {
+          feature: MODEL_FEATURES.CHAT,
+          version: getVersionForFeature(MODEL_FEATURES.CHAT),
+          model: "generic",
+          prompts: "Generic prompt",
+          is_default: false,
+        },
       ];
       sb.stub(openAIEngine, "getRemoteClient").returns({
         get: sb.stub().resolves(fakeRecords),
       });
 
-      await openAIEngine.build(MODEL_FEATURES.CHAT);
+      const engine = await openAIEngine.build(MODEL_FEATURES.CHAT);
 
       const opts = createEngineStub.firstCall.args[0];
       Assert.equal(
@@ -1350,6 +1390,12 @@ add_task(
         opts.purpose,
         FEATURE_PURPOSES[MODEL_FEATURES.CHAT],
         "purpose should fall back to FEATURE_PURPOSES for the feature"
+      );
+
+      Assert.equal(
+        engine.model,
+        "generic",
+        "Engine should use generic model when falling back to generic and config fields are absent"
       );
     } finally {
       sb.restore();
@@ -1386,6 +1432,16 @@ add_task(async function test_custom_prompt_only_overrides_prompts_field() {
         service_type: SERVICE_TYPES.AI,
         purpose: PURPOSES.CHAT,
       },
+      {
+        feature: MODEL_FEATURES.CHAT,
+        version: "2.0",
+        model: "generic",
+        prompts: "Original remote settings generic prompt",
+        is_default: false,
+        parameters: JSON.stringify({ temperature: 0.7 }),
+        service_type: SERVICE_TYPES.AI,
+        purpose: PURPOSES.CHAT,
+      },
     ];
     sb.stub(openAIEngine, "getRemoteClient").returns({
       get: sb.stub().resolves(fakeRecords),
@@ -1402,8 +1458,8 @@ add_task(async function test_custom_prompt_only_overrides_prompts_field() {
     );
     Assert.equal(
       config.model,
-      "rs-model",
-      "model should not be affected by custom prompt pref"
+      "generic",
+      "model should not be affected by custom prompt pref and load the generic fallback"
     );
     Assert.equal(
       config.version,
