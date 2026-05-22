@@ -565,7 +565,7 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   MacroAssemblerRiscv64Compat() {}
 
   void convertBoolToInt32(Register src, Register dest) {
-    ma_and(dest, src, Imm32(0xff));
+    andi(dest, src, 0xff);
   };
   void convertInt32ToDouble(Register src, FloatRegister dest) {
     fcvt_d_w(dest, src);
@@ -831,18 +831,16 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   }
 
   void unboxWasmAnyRefGCThingForGCBarrier(const Address& src, Register dest) {
-    UseScratchRegisterScope temps(this);
-    Register scratch = temps.Acquire();
-    MOZ_ASSERT(scratch != dest);
-    movePtr(ImmWord(wasm::AnyRef::GCThingMask), scratch);
+    static_assert(is_int12(wasm::AnyRef::GCThingMask), "fits into andi");
+
     loadPtr(src, dest);
-    ma_and(dest, dest, scratch);
+    andi(dest, dest, int16_t(wasm::AnyRef::GCThingMask));
   }
 
   void getWasmAnyRefGCThingChunk(Register src, Register dest) {
     MOZ_ASSERT(src != dest);
     movePtr(ImmWord(wasm::AnyRef::GCThingChunkMask), dest);
-    ma_and(dest, dest, src);
+    and_(dest, dest, src);
   }
 
   // Like unboxGCThingForGCBarrier, but loads the GC thing's chunk base.

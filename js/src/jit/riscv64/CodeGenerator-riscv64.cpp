@@ -394,13 +394,13 @@ void CodeGenerator::visitUnbox(LUnbox* ins) {
 void CodeGeneratorRiscv64::emitBigIntPtrDiv(LBigIntPtrDiv* ins,
                                             Register dividend, Register divisor,
                                             Register output) {
-  masm.ma_div64(output, dividend, divisor);
+  masm.div(output, dividend, divisor);
 }
 
 void CodeGeneratorRiscv64::emitBigIntPtrMod(LBigIntPtrMod* ins,
                                             Register dividend, Register divisor,
                                             Register output) {
-  masm.ma_mod64(output, dividend, divisor);
+  masm.rem(output, dividend, divisor);
 }
 
 template <class LIR>
@@ -435,7 +435,7 @@ void CodeGenerator::visitDivI64(LDivI64* ins) {
     masm.bind(&notOverflow);
   }
 
-  masm.ma_div64(output, lhs, rhs);
+  masm.div(output, lhs, rhs);
 }
 
 void CodeGenerator::visitModI64(LModI64* ins) {
@@ -456,7 +456,7 @@ void CodeGenerator::visitModI64(LModI64* ins) {
   // Handle divide by zero.
   TrapIfDivideByZero(masm, ins, rhs);
 
-  masm.ma_mod64(output, lhs, rhs);
+  masm.rem(output, lhs, rhs);
 }
 
 void CodeGenerator::visitUDivI64(LUDivI64* ins) {
@@ -467,7 +467,7 @@ void CodeGenerator::visitUDivI64(LUDivI64* ins) {
   // Prevent divide by zero.
   TrapIfDivideByZero(masm, ins, rhs);
 
-  masm.ma_divu64(output, lhs, rhs);
+  masm.divu(output, lhs, rhs);
 }
 
 void CodeGenerator::visitUModI64(LUModI64* ins) {
@@ -478,7 +478,7 @@ void CodeGenerator::visitUModI64(LUModI64* ins) {
   // Prevent divide by zero.
   TrapIfDivideByZero(masm, ins, rhs);
 
-  masm.ma_modu64(output, lhs, rhs);
+  masm.remu(output, lhs, rhs);
 }
 
 void CodeGenerator::visitWasmLoadI64(LWasmLoadI64* ins) {
@@ -720,7 +720,7 @@ void CodeGenerator::visitAddIntPtr(LAddIntPtr* ins) {
   if (rhs->isConstant()) {
     masm.ma_add64(dest, lhs, Operand(ToIntPtr(rhs)));
   } else {
-    masm.ma_add64(dest, lhs, ToRegister(rhs));
+    masm.add(dest, lhs, ToRegister(rhs));
   }
 }
 
@@ -732,7 +732,7 @@ void CodeGenerator::visitAddI64(LAddI64* ins) {
   if (IsConstant(rhs)) {
     masm.ma_add64(dest, lhs, Operand(ToInt64(rhs)));
   } else {
-    masm.ma_add64(dest, lhs, ToRegister64(rhs).reg);
+    masm.add(dest, lhs, ToRegister64(rhs).reg);
   }
 }
 
@@ -749,7 +749,7 @@ void CodeGenerator::visitSubI(LSubI* ins) {
     if (rhs->isConstant()) {
       masm.ma_sub32(ToRegister(dest), ToRegister(lhs), Imm32(ToInt32(rhs)));
     } else {
-      masm.ma_sub32(ToRegister(dest), ToRegister(lhs), ToRegister(rhs));
+      masm.subw(ToRegister(dest), ToRegister(lhs), ToRegister(rhs));
     }
     return;
   }
@@ -774,7 +774,7 @@ void CodeGenerator::visitSubIntPtr(LSubIntPtr* ins) {
   if (rhs->isConstant()) {
     masm.ma_sub64(dest, lhs, Operand(ToIntPtr(rhs)));
   } else {
-    masm.ma_sub64(dest, lhs, ToRegister(rhs));
+    masm.sub(dest, lhs, ToRegister(rhs));
   }
 }
 
@@ -786,7 +786,7 @@ void CodeGenerator::visitSubI64(LSubI64* ins) {
   if (IsConstant(rhs)) {
     masm.ma_sub64(dest, lhs, Operand(ToInt64(rhs)));
   } else {
-    masm.ma_sub64(dest, lhs, ToRegister64(rhs).reg);
+    masm.sub(dest, lhs, ToRegister64(rhs).reg);
   }
 }
 
@@ -1071,7 +1071,7 @@ void CodeGenerator::visitDivI(LDivI* ins) {
 
   // All regular. Lets call div.
   if (mir->canTruncateRemainder()) {
-    masm.ma_div32(dest, lhs, rhs);
+    masm.divw(dest, lhs, rhs);
   } else {
     MOZ_ASSERT(mir->fallible());
     MOZ_ASSERT(lhs != dest && rhs != dest);
@@ -1081,8 +1081,8 @@ void CodeGenerator::visitDivI(LDivI* ins) {
 
     // The recommended code sequence to obtain both the quotient and remainder
     // is div[u] followed by mod[u].
-    masm.ma_div32(dest, lhs, rhs);
-    masm.ma_mod32(temp, lhs, rhs);
+    masm.divw(dest, lhs, rhs);
+    masm.remw(temp, lhs, rhs);
 
     // If the remainder is != 0, bailout since this must be a double.
     bailoutCmp32(Assembler::NonZero, temp, temp, ins->snapshot());
@@ -1169,7 +1169,7 @@ void CodeGenerator::visitModI(LModI* ins) {
     }
   }
 
-  masm.ma_mod32(dest, lhs, rhs);
+  masm.remw(dest, lhs, rhs);
 
   if (mir->canBeNegativeDividend() && !mir->isTruncated()) {
     MOZ_ASSERT(mir->fallible());
@@ -2082,7 +2082,7 @@ void CodeGenerator::visitUDiv(LUDiv* ins) {
 
   // If the remainder is > 0, bailout since this must be a double.
   if (mir->canTruncateRemainder()) {
-    masm.ma_divu32(output, lhs, rhs);
+    masm.divuw(output, lhs, rhs);
   } else {
     MOZ_ASSERT(lhs != output && rhs != output);
 
@@ -2091,8 +2091,8 @@ void CodeGenerator::visitUDiv(LUDiv* ins) {
 
     // The recommended code sequence to obtain both the quotient and remainder
     // is div[u] followed by mod[u].
-    masm.ma_divu32(output, lhs, rhs);
-    masm.ma_modu32(scratch, lhs, rhs);
+    masm.divuw(output, lhs, rhs);
+    masm.remuw(scratch, lhs, rhs);
 
     bailoutCmp32(Assembler::NonZero, scratch, scratch, ins->snapshot());
   }
@@ -2130,7 +2130,7 @@ void CodeGenerator::visitUMod(LUMod* ins) {
     }
   }
 
-  masm.ma_modu32(output, lhs, rhs);
+  masm.remuw(output, lhs, rhs);
 
   // Bail if the output would be negative.
   //

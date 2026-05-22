@@ -224,10 +224,10 @@ Assembler::Condition MacroAssemblerRiscv64::ma_cmp(Register rd, Register lhs,
   switch (c) {
     case Above:
     case BelowOrEqual:
-      if (imm.value != 0x7fffffff && is_intn(imm.value + 1, 12) &&
+      if (imm.value != 0x7fffffff && is_int12(imm.value + 1) &&
           imm.value != -1) {
         // lhs <= rhs via lhs < rhs + 1 if rhs + 1 does not overflow
-        ma_sltu(rd, lhs, Operand(imm.value + 1));
+        sltiu(rd, lhs, imm.value + 1);
 
         return (c == BelowOrEqual ? NotEqual : Equal);
       } else {
@@ -237,8 +237,8 @@ Assembler::Condition MacroAssemblerRiscv64::ma_cmp(Register rd, Register lhs,
       }
     case AboveOrEqual:
     case Below:
-      if (is_intn(imm.value, 12)) {
-        ma_sltu(rd, lhs, Operand(imm.value));
+      if (is_int12(imm.value)) {
+        sltiu(rd, lhs, imm.value);
       } else {
         ma_li(scratch, imm);
         sltu(rd, lhs, scratch);
@@ -246,9 +246,9 @@ Assembler::Condition MacroAssemblerRiscv64::ma_cmp(Register rd, Register lhs,
       return (c == AboveOrEqual ? Equal : NotEqual);
     case GreaterThan:
     case LessThanOrEqual:
-      if (imm.value != 0x7fffffff && is_intn(imm.value + 1, 12)) {
+      if (imm.value != 0x7fffffff && is_int12(imm.value + 1)) {
         // lhs <= rhs via lhs < rhs + 1.
-        ma_slt(rd, lhs, Operand(imm.value + 1));
+        slti(rd, lhs, imm.value + 1);
         return (c == LessThanOrEqual ? NotEqual : Equal);
       } else {
         ma_li(scratch, imm);
@@ -257,8 +257,8 @@ Assembler::Condition MacroAssemblerRiscv64::ma_cmp(Register rd, Register lhs,
       }
     case GreaterThanOrEqual:
     case LessThan:
-      if (is_intn(imm.value, 12)) {
-        ma_slt(rd, lhs, imm);
+      if (is_int12(imm.value)) {
+        slti(rd, lhs, imm.value);
       } else {
         ma_li(scratch, imm);
         slt(rd, lhs, scratch);
@@ -1161,14 +1161,14 @@ void MacroAssemblerRiscv64Compat::truncateFloat32ModUint32(FloatRegister src,
 
   // Unsigned subtraction of INT64_MAX returns 1 resp. 0 for INT64_{MIN,MAX}.
   ma_li(scratch, Imm64(0x7fff'ffff'ffff'ffff));
-  ma_sub64(scratch, dest, scratch);
+  sub(scratch, dest, scratch);
 
   // If scratch u< 2, then scratch = 0; else scratch = -1.
-  ma_sltu(scratch, scratch, Imm32(2));
-  ma_add32(scratch, scratch, Imm32(-1));
+  sltiu(scratch, scratch, 2);
+  addiw(scratch, scratch, -1);
 
   // Clear |dest| if the truncation result was saturated.
-  ma_and(dest, dest, scratch);
+  and_(dest, dest, scratch);
 
   // Clear upper 32 bits.
   SignExtendWord(dest, dest);
@@ -2129,7 +2129,7 @@ void MacroAssemblerRiscv64Compat::boxValue(Register type, Register src,
   Register scratch = temps.Acquire();
   ZeroExtendWord(scratch, src);
 
-  ma_or(dest, dest, scratch);
+  or_(dest, dest, scratch);
 }
 
 void MacroAssemblerRiscv64Compat::loadConstantFloat32(float f,
@@ -3685,11 +3685,11 @@ void MacroAssembler::flexibleDivMod32(Register lhs, Register rhs,
   // The recommended code sequence to obtain both the quotient and remainder
   // is div[u] followed by mod[u].
   if (isUnsigned) {
-    ma_divu32(divOutput, lhs, rhs);
-    ma_modu32(remOutput, lhs, rhs);
+    divuw(divOutput, lhs, rhs);
+    remuw(remOutput, lhs, rhs);
   } else {
-    ma_div32(divOutput, lhs, rhs);
-    ma_mod32(remOutput, lhs, rhs);
+    divw(divOutput, lhs, rhs);
+    remw(remOutput, lhs, rhs);
   }
 }
 
@@ -4953,11 +4953,11 @@ void MacroAssemblerRiscv64::ma_mulPtrTestOverflow(Register rd, Register rj,
   MOZ_ASSERT(rd != scratch);
 
   if (rd == rj) {
-    or_(scratch, rj, zero);
+    mv(scratch, rj);
     rj = scratch;
     rk = (rd == rk) ? rj : rk;
   } else if (rd == rk) {
-    or_(scratch, rk, zero);
+    mv(scratch, rk);
     rk = scratch;
   }
 
@@ -5885,7 +5885,7 @@ void MacroAssemblerRiscv64::ma_add32TestOverflow(Register rd, Register rj,
 void MacroAssemblerRiscv64::ma_add32TestOverflow(Register rd, Register rj,
                                                  Imm32 imm, Label* overflow) {
   // Check for signed range because of addi
-  if (is_intn(imm.value, 12)) {
+  if (is_int12(imm.value)) {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
     addi(scratch, rj, imm.value);
@@ -5912,7 +5912,7 @@ void MacroAssemblerRiscv64::ma_subPtrTestOverflow(Register rd, Register rj,
   Register rj_copy = rj;
 
   if (rj == rd) {
-    ma_or(scratch2, rj, zero);
+    mv(scratch2, rj);
     rj_copy = scratch2;
   }
 
@@ -5922,10 +5922,10 @@ void MacroAssemblerRiscv64::ma_subPtrTestOverflow(Register rd, Register rj,
 
     sub(rd, rj, rk);
     // If the sign of rj and rk are the same, no overflow
-    ma_xor(scratch, rj_copy, rk);
+    xor_(scratch, rj_copy, rk);
     // Check if the sign of rd and rj are the same
-    ma_xor(scratch2, rd, rj_copy);
-    ma_and(scratch2, scratch2, scratch);
+    xor_(scratch2, rd, rj_copy);
+    and_(scratch2, scratch2, scratch);
   }
 
   ma_b(scratch2, zero, overflow, Assembler::LessThan);
@@ -5940,12 +5940,12 @@ void MacroAssemblerRiscv64::ma_addPtrTestOverflow(Register rd, Register rj,
 
   if (rj == rk) {
     if (rj == rd) {
-      ma_or(scratch, rj, zero);
+      mv(scratch, rj);
       rj = scratch;
     }
 
     add(rd, rj, rj);
-    ma_xor(scratch, rj, rd);
+    xor_(scratch, rj, rd);
     ma_b(scratch, zero, overflow, Assembler::LessThan);
   } else {
     UseScratchRegisterScope temps(this);
@@ -5954,7 +5954,7 @@ void MacroAssemblerRiscv64::ma_addPtrTestOverflow(Register rd, Register rj,
     MOZ_ASSERT(rd != scratch2);
 
     if (rj == rd) {
-      ma_or(scratch2, rj, zero);
+      mv(scratch2, rj);
       rj = scratch2;
     }
 
@@ -6068,7 +6068,7 @@ void MacroAssemblerRiscv64::ma_addPtrTestCarry(Condition cond, Register rd,
   Register scratch2 = temps.Acquire();
 
   // Check for signed range because of addi
-  if (is_intn(imm.value, 12)) {
+  if (is_int12(imm.value)) {
     addi(rd, rj, imm.value);
     sltiu(scratch2, rd, imm.value);
     ma_b(scratch2, scratch2, overflow,
@@ -6086,10 +6086,10 @@ void MacroAssemblerRiscv64::ma_addPtrTestCarry(Condition cond, Register rd,
   Register scratch2 = temps.Acquire();
 
   // Check for signed range because of addi_d
-  if (is_intn(imm.value, 12)) {
+  if (is_int12(imm.value)) {
     uint32_t value = imm.value;
     addi(rd, rj, value);
-    ma_sltu(scratch2, rd, Operand(value));
+    sltiu(scratch2, rd, value);
     ma_b(scratch2, scratch2, overflow,
          cond == Assembler::CarrySet ? Assembler::NonZero : Assembler::Zero);
   } else {
@@ -6103,7 +6103,7 @@ void MacroAssemblerRiscv64::ma_addPtrTestSigned(Condition cond, Register rd,
                                                 Label* taken) {
   MOZ_ASSERT(cond == Assembler::Signed || cond == Assembler::NotSigned);
 
-  ma_add64(rd, rj, rk);
+  add(rd, rj, rk);
   ma_b(rd, rd, taken, cond);
 }
 
@@ -6288,7 +6288,7 @@ void MacroAssemblerRiscv64::CompareIsNotNanF32(Register rd, FPURegister cmp1,
     Register scratch = temps.Acquire();
 
     feq_s(scratch, cmp2, cmp2);  // scratch <- !isNaN(cmp2)
-    ma_and(rd, rd, scratch);     // rd <- !isNan(cmp1) && !isNan(cmp2)
+    and_(rd, rd, scratch);       // rd <- !isNan(cmp1) && !isNan(cmp2)
   }
 }
 
@@ -6300,20 +6300,20 @@ void MacroAssemblerRiscv64::CompareIsNotNanF64(Register rd, FPURegister cmp1,
     Register scratch = temps.Acquire();
 
     feq_d(scratch, cmp2, cmp2);  // scratch <- !isNaN(cmp2)
-    ma_and(rd, rd, scratch);     // rd <- !isNan(cmp1) && !isNan(cmp2)
+    and_(rd, rd, scratch);       // rd <- !isNan(cmp1) && !isNan(cmp2)
   }
 }
 
 void MacroAssemblerRiscv64::CompareIsNanF32(Register rd, FPURegister cmp1,
                                             FPURegister cmp2) {
   CompareIsNotNanF32(rd, cmp1, cmp2);  // rd <- !isNan(cmp1) && !isNan(cmp2)
-  ma_xor(rd, rd, Operand(1));          // rd <- isNan(cmp1) || isNan(cmp2)
+  NegateBool(rd, rd);                  // rd <- isNan(cmp1) || isNan(cmp2)
 }
 
 void MacroAssemblerRiscv64::CompareIsNanF64(Register rd, FPURegister cmp1,
                                             FPURegister cmp2) {
   CompareIsNotNanF64(rd, cmp1, cmp2);  // rd <- !isNan(cmp1) && !isNan(cmp2)
-  ma_xor(rd, rd, Operand(1));          // rd <- isNan(cmp1) || isNan(cmp2)
+  NegateBool(rd, rd);                  // rd <- isNan(cmp1) || isNan(cmp2)
 }
 
 void MacroAssemblerRiscv64::BranchFloat32(DoubleCondition cc,
@@ -6458,9 +6458,9 @@ void MacroAssemblerRiscv64::Ctz32(Register rd, Register rs) {
   {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
-    ma_add64(scratch, rs, Operand(-1));
-    ma_xor(rd, scratch, rs);
-    ma_and(rd, rd, scratch);
+    addi(scratch, rs, -1);
+    xor_(rd, scratch, rs);
+    and_(rd, rd, scratch);
     // Count number of leading zeroes.
   }
   Clz32(rd, rd);
@@ -6470,7 +6470,7 @@ void MacroAssemblerRiscv64::Ctz32(Register rd, Register rs) {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
     ma_li(scratch, Imm32(32));
-    ma_sub32(rd, scratch, rd);
+    subw(rd, scratch, rd);
   }
 }
 
@@ -6485,9 +6485,9 @@ void MacroAssemblerRiscv64::Ctz64(Register rd, Register rs) {
   {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
-    ma_add64(scratch, rs, Operand(-1));
-    ma_xor(rd, scratch, rs);
-    ma_and(rd, rd, scratch);
+    addi(scratch, rs, -1);
+    xor_(rd, scratch, rs);
+    and_(rd, rd, scratch);
     // Count number of leading zeroes.
   }
   Clz64(rd, rd);
@@ -6497,7 +6497,7 @@ void MacroAssemblerRiscv64::Ctz64(Register rd, Register rs) {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
     ma_li(scratch, 64);
-    ma_sub64(rd, scratch, rd);
+    sub(rd, scratch, rd);
   }
 }
 
@@ -6537,23 +6537,23 @@ void MacroAssemblerRiscv64::Popcnt32(Register rd, Register rs,
   MOZ_ASSERT((rd != value) && (rs != value));
   ma_li(value, 0x01010101);     // value = 0x01010101;
   ma_li(scratch2, 0x55555555);  // B0 = 0x55555555;
-  ma_srl32(scratch, rs, Operand(1));
-  ma_and(scratch, scratch, scratch2);
-  ma_sub32(scratch, rs, scratch);
+  srliw(scratch, rs, 1);
+  and_(scratch, scratch, scratch2);
+  subw(scratch, rs, scratch);
   ma_li(scratch2, 0x33333333);  // B1 = 0x33333333;
   slli(rd, scratch2, 4);
   or_(scratch2, scratch2, rd);
-  ma_and(rd, scratch, scratch2);
-  ma_srl32(scratch, scratch, Operand(2));
-  ma_and(scratch, scratch, scratch2);
-  ma_add32(scratch, rd, scratch);
-  ma_srl32(rd, scratch, Operand(4));
-  ma_add32(rd, rd, scratch);
+  and_(rd, scratch, scratch2);
+  srliw(scratch, scratch, 2);
+  and_(scratch, scratch, scratch2);
+  addw(scratch, rd, scratch);
+  srliw(rd, scratch, 4);
+  addw(rd, rd, scratch);
   ma_li(scratch2, 0xF);
-  ma_mul32(scratch2, value, scratch2);  // B2 = 0x0F0F0F0F;
-  ma_and(rd, rd, scratch2);
-  ma_mul32(rd, rd, value);
-  ma_srl32(rd, rd, Operand(shift));
+  mulw(scratch2, value, scratch2);  // B2 = 0x0F0F0F0F;
+  and_(rd, rd, scratch2);
+  mulw(rd, rd, value);
+  srliw(rd, rd, shift);
 }
 
 void MacroAssemblerRiscv64::Popcnt64(Register rd, Register rs,
@@ -6577,23 +6577,23 @@ void MacroAssemblerRiscv64::Popcnt64(Register rd, Register rs,
   MOZ_ASSERT((rd != value) && (rs != value));
   ma_li(value, 0x1111111111111111l);  // value = 0x1111111111111111l;
   ma_li(scratch2, 5);
-  ma_mul64(scratch2, value, scratch2);  // B0 = 0x5555555555555555l;
-  ma_srl64(scratch, rs, Operand(1));
-  ma_and(scratch, scratch, scratch2);
-  ma_sub64(scratch, rs, scratch);
+  mul(scratch2, value, scratch2);  // B0 = 0x5555555555555555l;
+  srli(scratch, rs, 1);
+  and_(scratch, scratch, scratch2);
+  sub(scratch, rs, scratch);
   ma_li(scratch2, 3);
-  ma_mul64(scratch2, value, scratch2);  // B1 = 0x3333333333333333l;
-  ma_and(rd, scratch, scratch2);
-  ma_srl64(scratch, scratch, Operand(2));
-  ma_and(scratch, scratch, scratch2);
-  ma_add64(scratch, rd, scratch);
-  ma_srl64(rd, scratch, Operand(4));
-  ma_add64(rd, rd, scratch);
+  mul(scratch2, value, scratch2);  // B1 = 0x3333333333333333l;
+  and_(rd, scratch, scratch2);
+  srli(scratch, scratch, 2);
+  and_(scratch, scratch, scratch2);
+  add(scratch, rd, scratch);
+  srli(rd, scratch, 4);
+  add(rd, rd, scratch);
   ma_li(scratch2, 0xF);
-  ma_li(value, 0x0101010101010101l);    // value = 0x0101010101010101l;
-  ma_mul64(scratch2, value, scratch2);  // B2 = 0x0F0F0F0F0F0F0F0Fl;
-  ma_and(rd, rd, scratch2);
-  ma_mul64(rd, rd, value);
+  ma_li(value, 0x0101010101010101l);  // value = 0x0101010101010101l;
+  mul(scratch2, value, scratch2);     // B2 = 0x0F0F0F0F0F0F0F0Fl;
+  and_(rd, rd, scratch2);
+  mul(rd, rd, value);
   srli(rd, rd, 32 + shift);
 }
 
@@ -6624,7 +6624,7 @@ void MacroAssemblerRiscv64::ma_mod_mask(Register src, Register dest,
   // the accumulator (and holds the final result)
 
   // move the whole value into the remain.
-  or_(remain, src, zero);
+  mv(remain, src);
   // Zero out the dest.
   ma_li(dest, Imm32(0));
   // Set the hold appropriately.
@@ -6650,7 +6650,7 @@ void MacroAssemblerRiscv64::ma_mod_mask(Register src, Register dest,
   // If (sum - C) > 0, store sum - C back into sum, thus performing a
   // modulus.
   ma_b(scratch2, Register(scratch2), &sumSigned, Signed, ShortJump);
-  or_(dest, scratch2, zero);
+  mv(dest, scratch2);
   bind(&sumSigned);
   // Get rid of the bits that we extracted before.
   srliw(remain, remain, shift);
