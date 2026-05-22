@@ -1935,15 +1935,20 @@ void nsContentSecurityUtils::AssertChromePageHasCSP(Document* aDocument) {
     static_cast<nsCSPContext*>(csp.get())->GetPolicyCount(&count);
   }
 
+  bool hasBaselineCSP = StaticPrefs::security_chrome_baseline_csp_enabled();
+
   // All chrome: pages should have exactly two CSPs (baseline + custom)
-  if (count != 2) {
+  if (count != (hasBaselineCSP ? 2 : 1)) {
     MOZ_CRASH_UNSAFE_PRINTF("Document (%s) does not have a custom CSP!",
                             spec.get());
   }
 
-  nsAutoString baselinePolicy;
-  static_cast<nsCSPContext*>(csp.get())->GetPolicy(0)->toString(baselinePolicy);
-  MOZ_ASSERT(baselinePolicy == kBaselineChromeCSP);
+  if (hasBaselineCSP) {
+    nsAutoString baselinePolicy;
+    static_cast<nsCSPContext*>(csp.get())->GetPolicy(0)->toString(
+        baselinePolicy);
+    MOZ_ASSERT(baselinePolicy == kBaselineChromeCSP);
+  }
 
   // Both of these have a known weaker policy that differs
   // from all other chrome: pages.
@@ -1954,7 +1959,7 @@ void nsContentSecurityUtils::AssertChromePageHasCSP(Document* aDocument) {
   }
 
   const nsCSPPolicy* policy =
-      static_cast<nsCSPContext*>(csp.get())->GetPolicy(1);
+      static_cast<nsCSPContext*>(csp.get())->GetPolicy(hasBaselineCSP ? 1 : 0);
   {
     AllowBuiltinSrcVisitor visitor(CSPDirective::DEFAULT_SRC_DIRECTIVE, spec);
     if (!visitor.visit(policy)) {
