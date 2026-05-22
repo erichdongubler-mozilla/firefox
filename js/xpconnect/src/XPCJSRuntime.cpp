@@ -2182,6 +2182,7 @@ class XPCJSRuntimeStats : public JS::RuntimeStats {
                                   const JS::AutoRequireNoGC& nogc) override {
     xpc::ZoneStatsExtras* extras = new xpc::ZoneStatsExtras;
     extras->pathPrefix.AssignLiteral("explicit/js-non-window/zones/");
+    extras->zoneName = nsPrintfCString("zone(0x%p)/", (void*)zone);
 
     // Get some global in this zone.
     Rooted<Realm*> realm(dom::RootingCx(), js::GetAnyRealmInZone(zone));
@@ -2199,7 +2200,7 @@ class XPCJSRuntimeStats : public JS::RuntimeStats {
       }
     }
 
-    extras->pathPrefix += nsPrintfCString("zone(0x%p)/", (void*)zone);
+    extras->pathPrefix += extras->zoneName;
 
     MOZ_ASSERT(StartsWithExplicit(extras->pathPrefix));
 
@@ -2511,17 +2512,32 @@ void JSReporter::CollectReports(WindowPaths* windowPaths,
 
   // Report totals from per-zone GC buffer allocators.
 
-  MREPORT_BYTES("js-main-runtime-gc-buffers/used"_ns, KIND_OTHER,
-                rtStats.zTotals.gcBuffers.usedBytes,
-                "Bookeeping information and padding within GC buffer memeory.");
+  for (const auto& zStats : rtStats.zoneStatsVector) {
+    const xpc::ZoneStatsExtras* extras =
+        static_cast<const xpc::ZoneStatsExtras*>(zStats.extra);
 
-  MREPORT_BYTES("js-main-runtime-gc-buffers/free"_ns, KIND_OTHER,
-                rtStats.zTotals.gcBuffers.freeBytes,
-                "Free space within GC buffer memeory.");
+    nsCString pathPrefix;
+    pathPrefix.AssignLiteral("js-main-runtime-gc-buffers/");
+    pathPrefix += extras->zoneName;
 
-  MREPORT_BYTES("js-main-runtime-gc-buffers/admin"_ns, KIND_OTHER,
-                rtStats.zTotals.gcBuffers.adminBytes,
-                "Bookeeping information and padding within GC buffer memeory.");
+    nsCString usedPath =
+        pathPrefix +
+        nsPrintfCString("used (in %zu chunks and %zu large allocs)",
+                        zStats.gcBuffers.totalChunks,
+                        zStats.gcBuffers.largeAllocs);
+    MREPORT_BYTES(usedPath, KIND_OTHER, zStats.gcBuffers.usedBytes,
+                  "Allocated memory within GC buffer memeory.");
+
+    nsCString freePath =
+        pathPrefix +
+        nsPrintfCString("free (in %zu regions)", zStats.gcBuffers.freeRegions);
+    MREPORT_BYTES(freePath, KIND_OTHER, zStats.gcBuffers.freeBytes,
+                  "Free space within GC buffer memeory.");
+
+    MREPORT_BYTES(
+        pathPrefix + "admin"_ns, KIND_OTHER, zStats.gcBuffers.adminBytes,
+        "Bookeeping information and padding within GC buffer memeory.");
+  }
 
   REPORT("js-main-runtime-zone-count"_ns, KIND_OTHER, UNITS_COUNT,
          rtStats.zoneStatsVector.length(), "Count of GC zones in the runtime.");
