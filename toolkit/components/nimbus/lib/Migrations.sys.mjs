@@ -78,7 +78,6 @@ export const NIMBUS_MIGRATION_PREFS = Object.fromEntries(
 
 export const LABS_MIGRATION_FEATURE_MAP = (function () {
   const featureMap = {
-    "auto-pip": "firefox-labs-auto-pip",
     "urlbar-ime-search": "firefox-labs-urlbar-ime-search",
   };
 
