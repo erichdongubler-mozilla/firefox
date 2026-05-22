@@ -1820,12 +1820,19 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) const {
       SanitizeChildren<IsDefaultConfig>(shadow, aSafe);
     }
 
-    if constexpr (IsDefaultConfig) {
-      if (CustomElementData* data = child->AsElement()->GetCustomElementData())
-          [[unlikely]] {
-        MOZ_ASSERT(data->GetIs(child->AsElement()),
-                   "Non is= custom elements should have already been removed");
-        (void)data;
+    // Step 1.6.7. If child’s is value is not null:
+    if (CustomElementData* data = child->AsElement()->GetCustomElementData();
+        data && data->GetIs(child->AsElement())) [[unlikely]] {
+      // Step 1.6.7.1. Let isAttrName be «[ "name" → "is", "namespace" → null
+      // ]».
+      // Step 1.6.7.2. If is attribute allowed for isAttrName given
+      // configuration, and elementName is blocked:
+      if (IsDefaultConfig ||
+          !IsAttributeAllowed(elementAttributes, nsGkAtoms::is,
+                              kNameSpaceID_None, aSafe)) {
+        // Step 1.6.7.2.1. Step Set child’s custom element state to "undefined".
+        // Step 1.6.7.2.2. Set child’s custom element definition to null.
+        // Step 1.6.7.2.3. Set child’s is value to null.
         child->AsElement()->ClearCustomElementData();
       }
     }
