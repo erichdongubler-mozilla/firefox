@@ -352,7 +352,7 @@ mingw-w64:
     fetch:
         type: git
         repo: https://git.code.sf.net/p/mingw-w64/mingw-w64
-        revision: cd1afb6649aafbd5b36e0cf71815d533ada461f8
+        revision: 0636d42e1a9ee944e51170bd84701ef114d418ff
 
 mingw-w64-trunk:
     description: mingw-w64 master branch source code
