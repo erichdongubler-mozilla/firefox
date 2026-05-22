@@ -374,13 +374,15 @@ void ChannelClassifierUtils::AnnotateChannelWithoutNotifying(
 nsresult ChannelClassifierUtils::MaybeBlockChannel(
     nsIChannel* aChannel, const nsACString& aFeatureName,
     const nsACString& aList, nsresult aErrorCode, uint32_t aReplacedEvent,
-    uint32_t aAllowedEvent, bool* aShouldContinue) {
+    uint32_t aAllowedEvent, ChannelBlockDecision* aOutDecision) {
   MOZ_ASSERT(aChannel);
-  MOZ_ASSERT(aShouldContinue);
+  MOZ_ASSERT(aOutDecision);
 
   ChannelBlockDecision decision =
       ChannelClassifierService::OnBeforeBlockChannel(aChannel, aFeatureName,
                                                      aList);
+  *aOutDecision = decision;
+
   if (decision != ChannelBlockDecision::Blocked) {
     uint32_t event = decision == ChannelBlockDecision::Replaced ? aReplacedEvent
                                                                 : aAllowedEvent;
@@ -390,7 +392,6 @@ nsresult ChannelClassifierUtils::MaybeBlockChannel(
     bool blocked = decision == ChannelBlockDecision::Replaced;
     ContentBlockingNotifier::OnEvent(aChannel, event, blocked);
 
-    *aShouldContinue = true;
     return NS_OK;
   }
 
@@ -408,7 +409,6 @@ nsresult ChannelClassifierUtils::MaybeBlockChannel(
     (void)aChannel->Cancel(aErrorCode);
   }
 
-  *aShouldContinue = false;
   return NS_OK;
 }
 

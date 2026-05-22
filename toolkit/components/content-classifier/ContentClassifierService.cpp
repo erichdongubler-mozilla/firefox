@@ -480,27 +480,24 @@ void ContentClassifierService::AnnotateChannel(nsIChannel* aChannel) {
       nsIWebProgressListener::STATE_LOADED_LEVEL_2_TRACKING_CONTENT);
 }
 
-void ContentClassifierService::CancelChannel(nsIChannel* aChannel) {
-  NS_ENSURE_TRUE_VOID(aChannel);
+net::ChannelBlockDecision ContentClassifierService::MaybeCancelChannel(
+    nsIChannel* aChannel) {
+  NS_ENSURE_TRUE(aChannel, net::ChannelBlockDecision::Allowed);
 
   nsCOMPtr<nsIURI> uri;
   aChannel->GetURI(getter_AddRefs(uri));
   if (uri) {
     MOZ_LOG(gContentClassifierLog, LogLevel::Debug,
-            ("CancelChannel - url=%s", uri->GetSpecOrDefault().get()));
+            ("MaybeCancelChannel - url=%s", uri->GetSpecOrDefault().get()));
   }
 
-  net::ChannelClassifierUtils::SetBlockedContent(
-      aChannel, NS_ERROR_TRACKING_URI, "content-classifier-block"_ns,
-      "content-classifier"_ns, ""_ns);
-
-  nsCOMPtr<nsIHttpChannelInternal> httpChannel = do_QueryInterface(aChannel);
-
-  if (httpChannel) {
-    (void)httpChannel->CancelByURLClassifier(NS_ERROR_TRACKING_URI);
-  } else {
-    (void)aChannel->Cancel(NS_ERROR_TRACKING_URI);
-  }
+  net::ChannelBlockDecision decision = net::ChannelBlockDecision::Allowed;
+  net::ChannelClassifierUtils::MaybeBlockChannel(
+      aChannel, "content-classifier"_ns, "content-classifier-block"_ns,
+      NS_ERROR_TRACKING_URI,
+      nsIWebProgressListener::STATE_REPLACED_TRACKING_CONTENT,
+      nsIWebProgressListener::STATE_ALLOWED_TRACKING_CONTENT, &decision);
+  return decision;
 }
 
 // nsIContentClassifierService

@@ -9,6 +9,7 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ThreadSafety.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "nsIAsyncShutdown.h"
 #include "nsIChannel.h"
 #include "nsIContentClassifierService.h"
@@ -48,7 +49,8 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   ContentClassifierResult ClassifyForAnnotate(
       const ContentClassifierRequest& aRequest);
 
-  void CancelChannel(nsIChannel* aChannel);
+  [[nodiscard]] net::ChannelBlockDecision MaybeCancelChannel(
+      nsIChannel* aChannel);
   void AnnotateChannel(nsIChannel* aChannel);
 
  private:

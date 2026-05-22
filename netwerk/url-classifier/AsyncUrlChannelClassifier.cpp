@@ -1068,7 +1068,7 @@ nsresult AntiTrackingChannelClassifierUtils::CheckChannelHelper(
                     contentClassifier->AnnotateChannel(channel);
                   }
                   if (shouldCancel) {
-                    contentClassifier->CancelChannel(channel);
+                    (void)contentClassifier->MaybeCancelChannel(channel);
                     callbackFromFeature();
                   } else if (task) {
                     task->CompleteClassification();

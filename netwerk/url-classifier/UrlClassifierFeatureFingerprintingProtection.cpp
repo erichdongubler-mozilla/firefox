@@ -163,11 +163,13 @@ UrlClassifierFeatureFingerprintingProtection::ProcessChannel(
   nsAutoCString list;
   UrlClassifierCommon::TablesToString(aList, list);
 
-  return ChannelClassifierUtils::MaybeBlockChannel(
+  ChannelBlockDecision decision;
+  nsresult rv = ChannelClassifierUtils::MaybeBlockChannel(
       aChannel, mName, list, NS_ERROR_FINGERPRINTING_URI,
       nsIWebProgressListener::STATE_REPLACED_FINGERPRINTING_CONTENT,
-      nsIWebProgressListener::STATE_ALLOWED_FINGERPRINTING_CONTENT,
-      aShouldContinue);
+      nsIWebProgressListener::STATE_ALLOWED_FINGERPRINTING_CONTENT, &decision);
+  *aShouldContinue = (decision != ChannelBlockDecision::Blocked);
+  return rv;
 }
 
 NS_IMETHODIMP
