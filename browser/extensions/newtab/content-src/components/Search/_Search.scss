@@ -38,7 +38,7 @@ $glyph-forward: url('chrome://browser/skin/forward.svg');
   .search-inner-wrapper {
     cursor: default;
     display: flex;
-    min-height: $search-height-new;
+    height: $search-height-new;
     margin: 0 auto;
     position: relative;
     width: 304px;

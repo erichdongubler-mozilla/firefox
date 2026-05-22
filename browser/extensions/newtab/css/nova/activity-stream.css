@@ -2271,7 +2271,7 @@ main.newtab-main section {
 .search-wrapper .search-inner-wrapper {
   cursor: default;
   display: flex;
-  min-height: 52px;
+  height: 52px;
   margin: 0 auto;
   position: relative;
   width: 304px;

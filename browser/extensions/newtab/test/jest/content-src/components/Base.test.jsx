@@ -117,44 +117,44 @@ describe("<Base> Nova startup layout stability", () => {
   });
 });
 
-describe("<Base> Nova hides Logo when no sections are enabled", () => {
-  function renderNova(overrides = {}) {
-    const store = createStore(combineReducers(reducers), {
-      ...INITIAL_STATE,
-      App: { ...INITIAL_STATE.App, initialized: true },
-      Prefs: {
-        ...INITIAL_STATE.Prefs,
-        values: {
-          ...INITIAL_STATE.Prefs.values,
-          "nova.enabled": true,
-          showSearch: false,
-          "feeds.topsites": false,
-          "feeds.section.topstories": false,
-          "feeds.system.topstories": false,
-          "feeds.section.highlights": false,
-          "widgets.enabled": false,
-          "widgets.system.enabled": false,
-          "widgets.system.weather.enabled": false,
-          "widgets.weather.enabled": false,
-          "widgets.system.lists.enabled": false,
-          "widgets.lists.enabled": false,
-          "widgets.system.focusTimer.enabled": false,
-          "widgets.focusTimer.enabled": false,
-          "widgets.system.clocks.enabled": false,
-          "widgets.clocks.enabled": false,
-          "widgets.system.sportsWidget.enabled": false,
-          "widgets.sportsWidget.enabled": false,
-          ...overrides,
-        },
+function renderNova(overrides = {}) {
+  const store = createStore(combineReducers(reducers), {
+    ...INITIAL_STATE,
+    App: { ...INITIAL_STATE.App, initialized: true },
+    Prefs: {
+      ...INITIAL_STATE.Prefs,
+      values: {
+        ...INITIAL_STATE.Prefs.values,
+        "nova.enabled": true,
+        showSearch: false,
+        "feeds.topsites": false,
+        "feeds.section.topstories": false,
+        "feeds.system.topstories": false,
+        "feeds.section.highlights": false,
+        "widgets.enabled": false,
+        "widgets.system.enabled": false,
+        "widgets.system.weather.enabled": false,
+        "widgets.weather.enabled": false,
+        "widgets.system.lists.enabled": false,
+        "widgets.lists.enabled": false,
+        "widgets.system.focusTimer.enabled": false,
+        "widgets.focusTimer.enabled": false,
+        "widgets.system.clocks.enabled": false,
+        "widgets.clocks.enabled": false,
+        "widgets.system.sportsWidget.enabled": false,
+        "widgets.sportsWidget.enabled": false,
+        ...overrides,
       },
-    });
-    return render(
-      <Provider store={store}>
-        <ConnectedBase />
-      </Provider>
-    );
-  }
+    },
+  });
+  return render(
+    <Provider store={store}>
+      <ConnectedBase />
+    </Provider>
+  );
+}
 
+describe("<Base> Nova hides Logo when no sections are enabled", () => {
   it("does not render the Logo when every section is disabled", () => {
     const { container } = renderNova();
     expect(
@@ -236,6 +236,33 @@ describe("<Base> Nova hides Logo when no sections are enabled", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("centers the Logo in .content when widgets.enabled is off and only search is on", () => {
+    const { container } = renderNova({
+      showSearch: true,
+      "widgets.enabled": false,
+      "widgets.system.enabled": true,
+      "widgets.system.lists.enabled": true,
+      "widgets.lists.enabled": true,
+      "widgets.system.clocks.enabled": true,
+      "widgets.clocks.enabled": true,
+      "widgets.system.focusTimer.enabled": true,
+      "widgets.focusTimer.enabled": true,
+      "widgets.system.sportsWidget.enabled": true,
+      "widgets.sportsWidget.enabled": true,
+    });
+    expect(
+      container.querySelector(".container.nova-enabled.logo-in-content")
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(".content .logo-and-wordmark-wrapper")
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(
+        ".sidebar-inline-start .logo-and-wordmark-wrapper"
+      )
+    ).not.toBeInTheDocument();
+  });
+
   it("renders the Logo when only the sidebar weather widget is enabled", () => {
     const { container } = renderNova({
       "widgets.enabled": true,
@@ -247,6 +274,32 @@ describe("<Base> Nova hides Logo when no sections are enabled", () => {
     expect(
       container.querySelector(".logo-and-wordmark-wrapper")
     ).toBeInTheDocument();
+  });
+});
+
+describe("<Base> Nova hideLogo pref", () => {
+  it("renders the Logo by default (hideLogo unset, topsites enabled)", () => {
+    const { container } = renderNova({ "feeds.topsites": true });
+    expect(
+      container.querySelector(".logo-and-wordmark-wrapper")
+    ).toBeInTheDocument();
+  });
+
+  it("hides the Logo when hideLogo is true (sidebar layout)", () => {
+    const { container } = renderNova({
+      "feeds.topsites": true,
+      hideLogo: true,
+    });
+    expect(
+      container.querySelector(".logo-and-wordmark-wrapper")
+    ).not.toBeInTheDocument();
+  });
+
+  it("hides the Logo when hideLogo is true (centered layout)", () => {
+    const { container } = renderNova({ showSearch: true, hideLogo: true });
+    expect(
+      container.querySelector(".logo-and-wordmark-wrapper")
+    ).not.toBeInTheDocument();
   });
 });
 

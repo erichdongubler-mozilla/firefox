@@ -855,10 +855,6 @@ export class BaseContent extends React.PureComponent {
       nimbusClocksEnabled ||
       nimbusClocksTrainhopEnabled;
 
-    const mayHaveWeatherWidget =
-      prefs["widgets.system.weather.enabled"] ||
-      prefs.trainhopConfig?.widgets?.weatherEnabled;
-
     const nimbusSportsWidgetEnabled = prefs.widgetsConfig?.sportsWidgetEnabled;
     const nimbusSportsWidgetTrainhopEnabled =
       prefs.trainhopConfig?.widgets?.sportsWidgetEnabled;
@@ -984,17 +980,14 @@ export class BaseContent extends React.PureComponent {
       const weatherGoesToSidebar =
         resolveWidgetHasSidebar(weatherWidget, prefs) &&
         resolveWidgetSize(weatherWidget, prefs) === "small";
-      const hasContentWidgets =
-        (mayHaveListsWidget && enabledWidgets.listsEnabled) ||
-        (mayHaveTimerWidget && enabledWidgets.timerEnabled) ||
-        (mayHaveClocksWidget && enabledWidgets.clocksEnabled) ||
-        (mayHaveWeatherWidget &&
-          enabledWidgets.weatherEnabled &&
-          !weatherGoesToSidebar) ||
-        (mayHaveSportsWidget && enabledWidgets.sportsWidgetEnabled);
       const widgetsEnabled = prefs["widgets.enabled"];
       const hasAnyEnabledWidget = WIDGET_REGISTRY.some(w =>
         isWidgetEnabled(w, prefs, widgetsEnabled)
+      );
+      const hasContentWidgets = WIDGET_REGISTRY.some(
+        w =>
+          isWidgetEnabled(w, prefs, widgetsEnabled) &&
+          !(w.id === "weather" && weatherGoesToSidebar)
       );
       const highlightsEnabled = prefs["feeds.section.highlights"];
       const noContentSectionsEnabled =
@@ -1010,7 +1003,7 @@ export class BaseContent extends React.PureComponent {
               className={`container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}`}
             >
               <aside className="sidebar-inline-start">
-                {!logoShouldBeCentered && !isPageEmpty && (
+                {!prefs.hideLogo && !logoShouldBeCentered && !isPageEmpty && (
                   <ErrorBoundary>
                     <Logo />
                   </ErrorBoundary>
@@ -1027,7 +1020,7 @@ export class BaseContent extends React.PureComponent {
                 )}
               </aside>
               <main className="content">
-                {logoShouldBeCentered && !isPageEmpty && (
+                {!prefs.hideLogo && logoShouldBeCentered && !isPageEmpty && (
                   <ErrorBoundary>
                     <Logo />
                   </ErrorBoundary>
