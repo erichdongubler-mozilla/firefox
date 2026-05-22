@@ -39,11 +39,6 @@ sealed class IPProtectionAction : Action {
     object Toggle : IPProtectionAction()
 
     /**
-     * Reports that the account is ready to be used.
-     */
-    data class AccountReady(val firstEnrollment: Boolean) : IPProtectionAction()
-
-    /**
      * Reports that the proxy-active status has been shown to the user.
      */
     data object ProxyActiveShown : IPProtectionAction()
@@ -59,6 +54,11 @@ internal sealed class InternalAction : IPProtectionAction() {
     data class AccountManagerStateChanged(val status: AccountStatus) : InternalAction()
 
     /**
+     * Reports that the account is ready to be used.
+     */
+    object AccountReadyForEnrollment : InternalAction()
+
+    /**
      * Reports when an enrollment has already happened to the IP protection engine.
      */
     data class FirstEnrollmentChanged(val isFirstEnrollment: Boolean) : InternalAction()
@@ -72,4 +72,9 @@ internal sealed class InternalAction : IPProtectionAction() {
      * Reports a change in new service state that happen from IP Protection.
      */
     data class UpdateServiceState(val serviceState: ServiceState) : InternalAction()
+
+    /**
+     * Puts the auth flow into an intermediary state while an incomplete authentication is occurring.
+     */
+    data class AwaitingAuth(val status: AccountStatus) : InternalAction()
 }

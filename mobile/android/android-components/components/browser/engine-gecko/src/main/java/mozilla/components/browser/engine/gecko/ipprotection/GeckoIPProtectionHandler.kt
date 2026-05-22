@@ -33,7 +33,9 @@ internal class GeckoIPProtectionHandler(
     override fun enroll(onResult: (IPProtectionHandler.EnrollResult) -> Unit) {
         runtime.ipProtectionController.enroll().then(
             { result ->
-                logger.info("Enrollment request success. Status: ${result?.isEnrolledAndEntitled}")
+                val logMessage =
+                    "Enrollment request success. Status: ${result?.isEnrolledAndEntitled}, error: ${result?.error}"
+                logger.info(logMessage)
                 onResult(
                     IPProtectionHandler.EnrollResult(
                         isEnrolledAndEntitled = result?.isEnrolledAndEntitled == true,

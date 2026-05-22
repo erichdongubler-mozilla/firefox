@@ -115,6 +115,8 @@ class IPProtectionFeature(
                         AccountStatus.RequestingAuthentication,
                         AccountStatus.NeedsAuthorization,
                         AccountStatus.RequestingAuthorization,
+                        AccountStatus.AwaitingAuth,
+                        AccountStatus.FinishingAuthFlow,
                             -> {
                             handler?.notifyAccountStatus(false)
                         }
