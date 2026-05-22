@@ -664,7 +664,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
 
     private fun maybeSetupIPProtection() {
         components.ipProtection.feature.initialize()
-//        components.ipProtection.storageSynchronizer.onResume(ProcessLifecycleOwner.get())
+        components.ipProtection.storageSynchronizer.initialize()
     }
 
     private fun setupCrashReporting(): CrashReporter {

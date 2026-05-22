@@ -4,10 +4,8 @@
 
 package mozilla.components.feature.ipprotection
 
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -36,14 +34,17 @@ class IPProtectionStorageSynchronizer(
     val store: IPProtectionStore,
     val syncStore: SyncStore,
     val lazyAccountManager: Lazy<FxaAccountManager>,
-) : DefaultLifecycleObserver {
+) {
     private val storageStoreSync by lazy { StorageStoreSync(storage, store) }
     private val fxaAccountStoreSync by lazy { FxaAccountStoreSync(syncStore, store) }
 
-    override fun onResume(owner: LifecycleOwner) {
-        storageStoreSync.onResume(owner)
-        fxaAccountStoreSync.onResume(owner)
-        lazyAccountManager.value.register(fxaAccountStoreSync, owner, false)
+    /**
+     * Initialize the sync.
+     */
+    fun initialize() {
+        storageStoreSync.initialize()
+        fxaAccountStoreSync.initialize()
+        lazyAccountManager.value.register(fxaAccountStoreSync)
     }
 }
 
@@ -51,9 +52,9 @@ internal class StorageStoreSync(
     private val storage: IPProtectionEligibilityStorage,
     private val store: IPProtectionStore,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
-) : DefaultLifecycleObserver {
-    override fun onResume(owner: LifecycleOwner) {
-        owner.lifecycleScope.launch(dispatcher) {
+) {
+    fun initialize() {
+        CoroutineScope(dispatcher).launch {
             storage
                 .eligibilityStatus
                 .distinctUntilChanged()
@@ -67,9 +68,9 @@ internal class FxaAccountStoreSync(
     private val syncStore: SyncStore,
     private val ipProtectionStore: IPProtectionStore,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
-) : DefaultLifecycleObserver, AccountObserver {
-    override fun onResume(owner: LifecycleOwner) {
-        owner.lifecycleScope.launch(dispatcher) {
+) : AccountObserver {
+    fun initialize() {
+        CoroutineScope(dispatcher).launch {
             syncStore.stateFlow
                 .map { it.accountState }
                 .distinctUntilChanged()

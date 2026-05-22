@@ -4,18 +4,17 @@
 
 package mozilla.components.feature.ipprotection
 
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import mozilla.components.concept.sync.FxAEntryPoint
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
+import mozilla.components.feature.ipprotection.store.InternalAction
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
-import mozilla.components.lib.state.ext.flowScoped
+import mozilla.components.feature.ipprotection.store.state.IPProtectionState
+import mozilla.components.lib.state.helpers.AbstractBinding
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.manager.SCOPE_PROFILE
 import mozilla.components.service.fxa.manager.SCOPE_SESSION
@@ -40,56 +39,51 @@ class IPProtectionFxaAuthFlow(
     private val entrypointConfig: EntrypointConfig,
     private val onAuthRequested: (String, AuthCompletionCallback) -> Unit,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Main,
-) : DefaultLifecycleObserver {
-    private var scope: CoroutineScope? = null
-    override fun onStart(owner: LifecycleOwner) {
-        scope = store.flowScoped(owner, dispatcher) { flow ->
-            flow.map { it.accountState.status }
-                .distinctUntilChanged()
-                .collect { status ->
-                    if (status == AccountStatus.RequestingAuthorization) {
-                        val url = accountManager.beginAuthentication(
-                            pairingUrl = null,
-                            entrypoint = entrypointConfig.authorization,
-                            authScopes = setOf(SCOPE_IPPROTECTION, SCOPE_PROFILE),
-                            service = "vpn", // This gives us the passwordless authorization flow.
-                        )
+) : AbstractBinding<IPProtectionState>(store, dispatcher) {
+    override suspend fun onState(flow: Flow<IPProtectionState>) {
+        flow.map { it.accountState.status }
+            .distinctUntilChanged()
+            .collect { status ->
+                if (status == AccountStatus.RequestingAuthorization) {
+                    val url = accountManager.beginAuthentication(
+                        pairingUrl = null,
+                        entrypoint = entrypointConfig.authorization,
+                        authScopes = setOf(SCOPE_IPPROTECTION, SCOPE_PROFILE),
+                        service = "vpn", // This gives us the passwordless authorization flow.
+                    )
 
-                        // FIXME(IPP) add some account auth failure notification here.
-                        if (url == null) {
-                            return@collect
-                        }
-
-                        val notifyOnComplete = true
-
-                        onAuthRequested(url, notifyOnComplete)
-                    } else if (status == AccountStatus.RequestingAuthentication) {
-                        // If we're the first service that needs to authenticate the account, we need to
-                        // request all the scopes needed for the device, which includes sync and session.
-                        //
-                        // After bug 1977876, there should be no distinction between authenticate/authorize.
-                        val url = accountManager.beginAuthentication(
-                            pairingUrl = null,
-                            entrypoint = entrypointConfig.authentication,
-                            authScopes = setOf(SCOPE_IPPROTECTION, SCOPE_PROFILE, SCOPE_SYNC, SCOPE_SESSION),
-                            service = "", // We want the full "generic" authentication flow.
-                        )
-
-                        // FIXME(IPP) add some account auth failure notification here.
-                        if (url == null) {
-                            return@collect
-                        }
-
-                        val notifyOnComplete = true
-
-                        onAuthRequested(url, notifyOnComplete)
+                    // FIXME(IPP) add some account auth failure notification here.
+                    if (url == null) {
+                        return@collect
                     }
-                }
-        }
-    }
 
-    override fun onStop(owner: LifecycleOwner) {
-        scope?.cancel()
+                    val notifyOnComplete = true
+
+                    onAuthRequested(url, notifyOnComplete)
+                    store.dispatch(InternalAction.AwaitingAuth(AccountStatus.AwaitingAuthorization))
+                } else if (status == AccountStatus.RequestingAuthentication) {
+                    // If we're the first service that needs to authenticate the account, we need to
+                    // request all the scopes needed for the device, which includes sync and session.
+                    //
+                    // After bug 1977876, there should be no distinction between authenticate/authorize.
+                    val url = accountManager.beginAuthentication(
+                        pairingUrl = null,
+                        entrypoint = entrypointConfig.authentication,
+                        authScopes = setOf(SCOPE_IPPROTECTION, SCOPE_PROFILE, SCOPE_SYNC, SCOPE_SESSION),
+                        service = "", // We want the full "generic" authentication flow.
+                    )
+
+                    // FIXME(IPP) add some account auth failure notification here.
+                    if (url == null) {
+                        return@collect
+                    }
+
+                    val notifyOnComplete = true
+
+                    onAuthRequested(url, notifyOnComplete)
+                    store.dispatch(InternalAction.AwaitingAuth(AccountStatus.AwaitingAuthentication))
+                }
+            }
     }
 
     companion object {
