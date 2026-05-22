@@ -71,6 +71,7 @@
   --urlbar-background-box-shadow-breakout: 0 0 14px 0 var(--chrome-box-shadow);
   --urlbar-background-outline-focused: none;
   --urlbar-input-container-border: var(--urlbar-container-border-width) solid var(--toolbar-field-border-color);
+  --urlbar-margin-block-start: calc((var(--urlbar-container-height) - var(--urlbar-height)) / 2);
   --urlbar-searchmode-switcher-panel-list-min-width: 17em;
   --urlbar-selection-border-radius: var(--border-radius-xsmall);
 
@@ -84,6 +85,7 @@
        on :root, but LWT themes can override this value. */
     --urlbar-background-outline-focused: var(--focus-outline-width) solid var(--toolbar-field-border-color-focus);
     --urlbar-input-container-border: var(--urlbar-container-border-width) solid transparent;
+    --urlbar-margin-block-start: 0px;
     --urlbar-searchmode-switcher-panel-list-min-width: auto;
     --urlbar-selection-border-radius: 0;
   }
@@ -157,6 +159,7 @@ toolbar[inactive="true"] .urlbar,
     position: absolute;
     height: var(--urlbar-height);
     width: var(--urlbar-width);
+    margin-block-start: var(--urlbar-margin-block-start);
   }
 }
 
@@ -352,13 +355,11 @@ toolbar[inactive="true"] .urlbar,
 /* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.nova.enabled") {
   .urlbar:not(moz-smartbar)[breakout] {
-    --urlbar-input-container-top: calc((var(--urlbar-container-height) - var(--urlbar-height)) / 2);
     --urlbar-background-inset: calc(var(--urlbar-height) / 2 - var(--border-radius-xxlarge));
     --urlbar-container-border-width-breakout: calc(2 * var(--urlbar-container-border-width));
 
     > .urlbar-input-container {
       height: var(--urlbar-height);
-      margin-block-start: var(--urlbar-input-container-top);
       padding: calc(var(--urlbar-container-border-width-breakout) - var(--urlbar-container-border-width));
     }
 
@@ -376,9 +377,7 @@ toolbar[inactive="true"] .urlbar,
     }
 
     &[breakout-extend] > .urlbar-background {
-      inset-inline: var(--urlbar-background-inset);
-      inset-block-start: calc(var(--urlbar-background-inset) + var(--urlbar-input-container-top));
-      inset-block-end: var(--urlbar-background-inset);
+      inset: var(--urlbar-background-inset);
     }
 
     &[breakout-extend][open] > .urlbar-background {
