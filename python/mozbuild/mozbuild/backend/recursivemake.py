@@ -886,6 +886,93 @@ class RecursiveMakeBackend(MakeBackend):
             category_dirs = [mozpath.dirname(target) for target in graphs.keys()]
             root_mk.add_statement("%s_dirs := %s" % (category, " ".join(category_dirs)))
 
+        # Root install-manifest rules.
+        is_hybrid = "FasterMake+RecursiveMake" in self.environment.substs.get(
+            "BUILD_BACKENDS", []
+        )
+        install_manifests = [
+            "dist/branding",
+            "dist/include",
+            "dist/public",
+            "dist/private",
+            "dist/xpi-stage",
+            "_tests",
+        ]
+        # Skip the dist/bin install manifest when using the hybrid
+        # FasterMake/RecursiveMake backend. This is a hack until bug 1241744 moves
+        # xpidl handling to FasterMake in that case, mechanically making the dist/bin
+        # install manifest non-existent (non-existent manifests being skipped)
+        if not is_hybrid:
+            install_manifests.append("dist/bin")
+
+        install_targets = [f"install-{m}" for m in install_manifests]
+        phony_targets = [
+            "install-manifests",
+            "install-manifests-binaries",
+            *install_targets,
+        ]
+        root_deps_mk.add_statement(".PHONY: " + " ".join(phony_targets))
+
+        agg = root_deps_mk.create_rule(["install-manifests"])
+        agg.add_dependencies(install_targets)
+        if is_hybrid:
+            agg.add_dependencies(["faster"])
+
+        binaries = root_deps_mk.create_rule(["install-manifests-binaries"])
+        binaries.add_dependencies(["install-dist/include"])
+        if is_hybrid:
+            binaries.add_dependencies(["faster"])
+
+        root_deps_mk.add_statement(".PHONY: install-tests install-test-files")
+        install_tests = root_deps_mk.create_rule(["install-tests"])
+        install_tests.add_dependencies(["install-test-files"])
+        test_files = root_deps_mk.create_rule(["install-test-files"])
+        test_files.add_commands([
+            "$(call py_action,process_install_manifest test/files,"
+            "$(if $(filter copy,$(NSDISTMODE)),--no-symlinks )"
+            "--track install__test_files.track _tests "
+            "_build_manifests/install/_test_files)"
+        ])
+
+        if is_hybrid:
+            root_deps_mk.add_statement(".PHONY: faster")
+            faster = root_deps_mk.create_rule(["faster"])
+            faster.add_commands(["$(MAKE) -C faster FASTER_RECURSIVE_MAKE=1"])
+
+        for manifest in install_manifests:
+            target = f"install-{manifest}"
+            underscored = manifest.replace("/", "_")
+            rule = root_deps_mk.create_rule([target])
+            rule.add_dependencies(["$(install_manifest_depends)"])
+            commands = []
+            if is_hybrid:
+                # If we're using the hybrid FasterMake/RecursiveMake backend, we want
+                # to ensure the FasterMake end doesn't have install manifests for the
+                # same directory, because that would blow up
+                commands.append(
+                    f"$(if $(wildcard _build_manifests/install/{underscored}),"
+                    f"$(if $(wildcard faster/install_{underscored}*),"
+                    f"$(error FasterMake and RecursiveMake ends of the "
+                    f"hybrid build system want to handle {manifest})))"
+                )
+            commands.append(
+                f"$(foreach manifest,"
+                f"$(wildcard _build_manifests/install/{underscored}),"
+                f"$(call py_action,process_install_manifest {manifest},"
+                f"$(if $(filter copy,$(NSDISTMODE)),--no-symlinks )"
+                f"--track install_{underscored}.track "
+                f"{manifest} $(manifest)))"
+            )
+            rule.add_commands(commands)
+
+        # Wrapper rules for the faster backend's underscored targets.
+        for manifest in install_manifests:
+            if not manifest.startswith("dist/"):
+                continue
+            underscored = manifest.replace("/", "_")
+            rule = root_deps_mk.create_rule([f"install-{underscored}"])
+            rule.add_dependencies([f"install-{manifest}"])
+
         root_mk.add_statement("include root-deps.mk")
 
         with self._write_file(
