@@ -250,7 +250,7 @@ private fun TabGroupColorPickerItem(
         targetValue = if (selected) {
             circularRadius
         } else {
-            AcornCorners.large
+            AcornCorners.small
         },
         animationSpec = colorPickerAnimationSpec(),
     )
