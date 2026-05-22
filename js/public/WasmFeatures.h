@@ -72,6 +72,11 @@
 #else
 #  define WASM_COMPACT_IMPORTS_ENABLED 0
 #endif
+#ifdef ENABLE_WASM_COMPONENTS
+#  define WASM_COMPONENTS_ENABLED 1
+#else
+#  define WASM_COMPONENTS_ENABLED 0
+#endif
 
 // clang-format off
 #define JS_FOR_WASM_FEATURES(FEATURE)                                   \
@@ -164,7 +169,16 @@
     /* flag predicate     */ true,                                      \
     /* flag force enable  */ false,                                     \
     /* flag fuzz enable   */ true,                                      \
-    /* preference name    */ wide_arithmetic)
+    /* preference name    */ wide_arithmetic)                           \
+  FEATURE(                                                              \
+    /* capitalized name   */ Components,                                \
+    /* lower case name    */ components,                                \
+    /* compile predicate  */ WASM_COMPONENTS_ENABLED,                   \
+    /* compiler predicate */ AnyCompilerAvailable(cx),                  \
+    /* flag predicate     */ true,                                      \
+    /* flag force enable  */ false,                                     \
+    /* flag fuzz enable   */ false,                                     \
+    /* preference name    */ components)
 
 // clang-format on
 
