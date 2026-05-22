@@ -77,28 +77,16 @@ internal fun iPProtectionReducer(
     }
 
     is IPProtectionAction.AccountStateChanged -> {
-        if (action.state == AccountStatus.FinishingAuthFlow) {
-            val newAccountStatus = when (state.accountState.status) {
-                AccountStatus.AwaitingAuthentication,
-                AccountStatus.WarmingUp,
-                AccountStatus.Uninitialized,
-                    -> {
-                    AccountStatus.NeedsAuthentication
-                }
+        state
+    }
 
-                AccountStatus.AwaitingAuthorization -> {
-                    AccountStatus.NeedsAuthorization
-                }
-
-                else -> action.state
-            }
-            return state.copy(
-                accountState = state.accountState.copy(
-                    status = newAccountStatus,
-                ),
-            )
-        }
-        state.copy(accountState = state.accountState.copy(status = action.state))
+    is IPProtectionAction.AccountReady -> {
+        state.copy(
+            accountState = state.accountState.copy(
+                status = AccountStatus.Ready,
+                isFirstEnrollment = action.firstEnrollment,
+            ),
+        )
     }
 
     is IPProtectionAction.Toggle -> {
@@ -134,8 +122,7 @@ internal fun iPProtectionReducer(
                 // We need to authenticate first because we haven't done so before or
                 // our account is in a wonky state.
                 if (status == AccountStatus.NeedsAuthentication ||
-                    status == AccountStatus.Uninitialized ||
-                    status == AccountStatus.WarmingUp
+                    status == AccountStatus.Uninitialized
                 ) {
                     return state.copy(
                         accountState = state.accountState.copy(
@@ -192,9 +179,6 @@ internal fun internalReducer(
             AccountStatus.RequestingAuthentication,
             AccountStatus.RequestingAuthorization,
             AccountStatus.TryAgain,
-            AccountStatus.AwaitingAuthentication,
-            AccountStatus.AwaitingAuthorization,
-            AccountStatus.FinishingAuthFlow,
                 -> state
 
             AccountStatus.Ready,
@@ -208,12 +192,10 @@ internal fun internalReducer(
                 )
             }
 
+            // FIXME(IPP) the loop here if we try to exit an incomplete auth.
+            //  When an auth flow failed, we go back to the state we came from.
             AccountStatus.AuthFailed -> {
-                state.copy(
-                    accountState = state.accountState.copy(
-                        status = AccountStatus.NeedsAuthentication,
-                    ),
-                )
+                state
             }
         }
     }
@@ -228,22 +210,8 @@ internal fun internalReducer(
         ),
     )
 
-    is InternalAction.AccountReadyForEnrollment -> {
-        state.copy(
-            accountState = state.accountState.copy(
-                status = AccountStatus.Ready,
-                isFirstEnrollment = true,
-            ),
-        )
-    }
-
     is InternalAction.UpdateServiceState -> state.copy(
         serviceStatus = action.serviceState,
-    )
-
-    // Do nothing while we wait for our pending authentication to change.
-    is InternalAction.AwaitingAuth -> state.copy(
-        accountState = state.accountState.copy(status = action.status),
     )
 }
 

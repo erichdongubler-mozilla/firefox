@@ -26,7 +26,6 @@ import mozilla.components.service.fxa.manager.AccountState.Authenticated
 import mozilla.components.service.fxa.manager.AccountState.Authenticating
 import mozilla.components.service.fxa.manager.AccountState.AuthenticationProblem
 import mozilla.components.service.fxa.manager.AccountState.NotAuthenticated
-import mozilla.components.service.fxa.manager.AccountState.Unknown
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.BrowserFragmentDirections
@@ -112,7 +111,7 @@ class MenuNavigationMiddleware(
                             ),
                         )
 
-                        is Authenticating, NotAuthenticated, Unknown -> navController.nav(
+                        is Authenticating, NotAuthenticated -> navController.nav(
                             R.id.menuDialogFragment,
                             MenuDialogFragmentDirections.actionGlobalTurnOnSync(
                                 entrypoint = action.accesspoint.toFenixFxAEntryPoint(),

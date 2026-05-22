@@ -4,8 +4,10 @@
 
 package mozilla.components.feature.ipprotection
 
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -34,17 +36,14 @@ class IPProtectionStorageSynchronizer(
     val store: IPProtectionStore,
     val syncStore: SyncStore,
     val lazyAccountManager: Lazy<FxaAccountManager>,
-) {
+) : DefaultLifecycleObserver {
     private val storageStoreSync by lazy { StorageStoreSync(storage, store) }
     private val fxaAccountStoreSync by lazy { FxaAccountStoreSync(syncStore, store) }
 
-    /**
-     * Initialize the sync.
-     */
-    fun initialize() {
-        storageStoreSync.initialize()
-        fxaAccountStoreSync.initialize()
-        lazyAccountManager.value.register(fxaAccountStoreSync)
+    override fun onResume(owner: LifecycleOwner) {
+        storageStoreSync.onResume(owner)
+        fxaAccountStoreSync.onResume(owner)
+        lazyAccountManager.value.register(fxaAccountStoreSync, owner, false)
     }
 }
 
@@ -52,9 +51,9 @@ internal class StorageStoreSync(
     private val storage: IPProtectionEligibilityStorage,
     private val store: IPProtectionStore,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
-) {
-    fun initialize() {
-        CoroutineScope(dispatcher).launch {
+) : DefaultLifecycleObserver {
+    override fun onResume(owner: LifecycleOwner) {
+        owner.lifecycleScope.launch(dispatcher) {
             storage
                 .eligibilityStatus
                 .distinctUntilChanged()
@@ -68,20 +67,26 @@ internal class FxaAccountStoreSync(
     private val syncStore: SyncStore,
     private val ipProtectionStore: IPProtectionStore,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
-) : AccountObserver {
-    fun initialize() {
-        CoroutineScope(dispatcher).launch {
+) : DefaultLifecycleObserver, AccountObserver {
+    override fun onResume(owner: LifecycleOwner) {
+        owner.lifecycleScope.launch(dispatcher) {
             syncStore.stateFlow
                 .map { it.accountState }
                 .distinctUntilChanged()
                 .collect { state ->
                     val mappedState = when (state) {
-                        AccountState.Authenticated -> AccountStatus.Ready
+                        AccountState.Authenticated -> {
+                            // TODO(jonalmeida) simplify this when you have thinking-time...
+                            if (ipProtectionStore.state.accountState.isFirstEnrollment) {
+                                AccountStatus.Ready
+                            } else {
+                                AccountStatus.NeedsAuthorization
+                            }
+                        }
+
+                        is AccountState.Authenticating -> AccountStatus.WarmingUp
                         AccountState.AuthenticationProblem -> AccountStatus.NeedsAuthentication
                         AccountState.NotAuthenticated -> AccountStatus.Uninitialized
-                        AccountState.Unknown,
-                        is AccountState.Authenticating,
-                            -> AccountStatus.WarmingUp
                     }
                     ipProtectionStore.dispatch(InternalAction.AccountManagerStateChanged(mappedState))
                 }

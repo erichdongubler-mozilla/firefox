@@ -65,77 +65,8 @@ data class AccountState(
 
 /**
  * Represents the lifecycle of the FxA account as it pertains to the IP protection service.
- *
- * We have a separation of authentication and authorization so that we can decide which scopes or services to use.
- * With FxA today, a device will have the VPN scope included in the authorization flow, where-as in current Android
- * code, we do not have Sync decoupled from FxA, so we need to authenticate with the VPN and Sync scopes. For this
- * reason, we have divergant flows.
- *
- * To avoid re-requesting an auth flow, we have the intermediary (UI) states `Needs*`, `Requesting*`, and `Awaiting*`:
- *
- * A user is prompted to auth with the [NeedsAuthorization] and [NeedsAuthentication]. We get here when the
- * [mozilla.components.feature.ipprotection.store.IPProtectionStore] deduces that our engine requires a
- * valid auth token to proceed.
- *
- * An observers use the [RequestingAuthorization] and [RequestingAuthentication] states to know we need to initiated an
- * auth flow. The observers are typically some form of UI driver that needs to trigger the flow.
- *
- * A user can leave an incomplete flow at any time in the UI, in which case we need to return to the top of the
- * previous branch. The [AwaitingAuthorization] and [AwaitingAuthorization] let us do this.
- *
- * Whether the flow is successful or not, we try to end with [FinishingAuthFlow]. If we received this event with a
- * result from the account manager, then we can move forward with [AuthFailed] or [Ready], otherwise, we go back into
- * the `Needs*` state for each branch.
- *
- * The optional [TryAgain] is typically used to re-notify the engine that we have an account in a valid auth state
- * and it's safe to re-request an access token, if needed.
- *
- * State transitions:
- *
- * ```
- *                    +---------------+
- *                    | Uninitialized |
- *                    +-------+-------+
- *                            |
- *                            v
- *                    +---------------+
- *                    |   WarmingUp   |
- *                    +---+-------+---+
- *                        |       |
- *              +---------+       +---------+
- *              v                           v
- *  +---------------------+      +----------------------+
- *  | NeedsAuthentication |      |  NeedsAuthorization  |
- *  +----------+----------+      +-----------+----------+
- *             |                             |
- *             v                             v
- *  +--------------------------+  +---------------------------+
- *  | RequestingAuthentication |  | RequestingAuthorization   |
- *  +-------------+------------+  +-------------+-------------+
- *                |                             |
- *                v                             v
- *  +--------------------------+  +---------------------------+
- *  |  AwaitingAuthentication  |  |   AwaitingAuthorization   |
- *  +-------------+------------+  +-------------+-------------+
- *                |                             |
- *                +--------------+--------------+
- *                               v
- *                     +-------------------+
- *                     | FinishingAuthFlow |
- *                     +---+-----------+---+
- *                         |           |
- *              +----------+           +----------+
- *              v                                 v
- *         +------------+                    +---------+
- *         | AuthFailed |                    |  Ready  |
- *         +------+-----+                    +----+----+
- *                |                               |
- *                +---------------+---------------+
- *                                v
- *                         +------------+
- *                         |  TryAgain  |
- *                         +------------+
- * ```
+ * States progress roughly as: [Uninitialized] → [WarmingUp] → [NeedsAuthentication] or
+ * [NeedsAuthorization] → [RequestingAuthentication] or [RequestingAuthorization] → [Ready].
  */
 enum class AccountStatus {
     /**
@@ -167,26 +98,6 @@ enum class AccountStatus {
      * Start authorization.
      */
     RequestingAuthorization,
-
-    /**
-     * An intermediary auth state that originates from [RequestingAuthentication] can lead to
-     * [AuthFailed], [Ready], or never completes.
-     */
-    AwaitingAuthentication,
-
-    /**
-     * An intermediary auth state that originates from [RequestingAuthorization] can lead to
-     * [AuthFailed], [Ready], or never completes.
-     */
-    AwaitingAuthorization,
-
-    /**
-     * An intermediary auth state that can start from [AwaitingAuthorization] or
-     * [AwaitingAuthentication] that tells us we are finishing an auth flow. This can be a
-     * successful or incomplete flow - this state is best evaluated against the previous
-     * state value.
-     */
-    FinishingAuthFlow,
 
     /**
      * An auth flow was exited abruptly.

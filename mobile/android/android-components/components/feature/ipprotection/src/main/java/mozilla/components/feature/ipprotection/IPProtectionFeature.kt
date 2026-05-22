@@ -72,10 +72,7 @@ class IPProtectionFeature(
         }
     }
 
-    private fun observeEligibilityAndService(
-        store: IPProtectionStore,
-        mainDispatcher: CoroutineDispatcher,
-    ) {
+    private fun observeEligibilityAndService(store: IPProtectionStore, mainDispatcher: CoroutineDispatcher) {
         store.flowScoped(dispatcher = mainDispatcher) { flow ->
             flow.map { it.eligibilityStatus to it.serviceStatus }
                 .distinctUntilChanged()
@@ -110,8 +107,14 @@ class IPProtectionFeature(
             flow.distinctUntilChangedBy { it.accountState.status }
                 .collect { state ->
                     when (state.accountState.status) {
+                        // FIXME(IPP) not all of these states need to invoke notifyAccountStatus.
                         AccountStatus.AuthFailed,
                         AccountStatus.Uninitialized,
+                        AccountStatus.WarmingUp,
+                        AccountStatus.NeedsAuthentication,
+                        AccountStatus.RequestingAuthentication,
+                        AccountStatus.NeedsAuthorization,
+                        AccountStatus.RequestingAuthorization,
                             -> {
                             handler?.notifyAccountStatus(false)
                         }
@@ -129,18 +132,6 @@ class IPProtectionFeature(
 
                         AccountStatus.TryAgain -> {
                             handler?.notifyAccountStatus(true)
-                        }
-
-                        AccountStatus.WarmingUp,
-                        AccountStatus.NeedsAuthentication,
-                        AccountStatus.RequestingAuthentication,
-                        AccountStatus.NeedsAuthorization,
-                        AccountStatus.RequestingAuthorization,
-                        AccountStatus.AwaitingAuthentication,
-                        AccountStatus.AwaitingAuthorization,
-                        AccountStatus.FinishingAuthFlow,
-                            -> {
-                            // no-op when we are in transient states.
                         }
                     }
                 }
@@ -177,9 +168,7 @@ class IPProtectionFeature(
                 },
             )
             // Initialization needs to be done ASAP whether we are using the service or not to avoid start-up delays.
-            // We do need to register our listeners first to avoid dropping a message because,
-            // as a side effect, the init call triggers `IPProtectionController#onServiceStateChanged`
-            // that can trigger the account manager that leads to `AuthProvider#getToken`.
+            // We do need to register our
             init()
         }
     }
