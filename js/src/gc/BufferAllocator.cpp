@@ -3563,9 +3563,9 @@ size_t BufferAllocator::getSizeOfNurseryBuffers() {
   return bytes;
 }
 
-void BufferAllocator::addSizeOfExcludingThis(size_t* usedBytesOut,
-                                             size_t* freeBytesOut,
-                                             size_t* adminBytesOut) {
+void BufferAllocator::addBufferSizesAndCounts(
+    size_t* usedBytesOut, size_t* freeBytesOut, size_t* adminBytesOut,
+    size_t* totalChunksOut, size_t* freeRegionsOut, size_t* largeAllocsOut) {
   checkMainThread();
 
   maybeMergeSweptData();
@@ -3579,6 +3579,10 @@ void BufferAllocator::addSizeOfExcludingThis(size_t* usedBytesOut,
   *usedBytesOut += stats.usedBytes;
   *freeBytesOut += stats.freeBytes;
   *adminBytesOut += stats.adminBytes;
+  *totalChunksOut += stats.mixedChunks + stats.tenuredChunks +
+                     stats.availableMixedChunks + stats.availableTenuredChunks;
+  *freeRegionsOut += stats.freeRegions;
+  *largeAllocsOut += stats.largeNurseryAllocs + stats.largeTenuredAllocs;
 }
 
 void BufferAllocator::getStats(Stats& stats) {
@@ -3630,6 +3634,7 @@ void BufferChunk::getStats(BufferAllocator::Stats& stats) {
     } else {
       stats.tenuredSmallRegions++;
     }
+    stats.usedBytes -= FirstSmallAllocOffset;
     stats.adminBytes += FirstSmallAllocOffset;
   }
 

@@ -234,9 +234,11 @@ static void StatsZoneCallback(JSRuntime* rt, void* data, Zone* zone,
       &zStats.shapeTables, &rtStats->runtime.atomsMarkBitmaps,
       &zStats.compartmentObjects, &zStats.crossCompartmentWrappersTables,
       &zStats.compartmentsPrivateData, &zStats.scriptCountsMap);
-  zone->bufferAllocator.addSizeOfExcludingThis(&zStats.gcBuffers.usedBytes,
-                                               &zStats.gcBuffers.freeBytes,
-                                               &zStats.gcBuffers.adminBytes);
+
+  zone->bufferAllocator.addBufferSizesAndCounts(
+      &zStats.gcBuffers.usedBytes, &zStats.gcBuffers.freeBytes,
+      &zStats.gcBuffers.adminBytes, &zStats.gcBuffers.totalChunks,
+      &zStats.gcBuffers.freeRegions, &zStats.gcBuffers.largeAllocs);
 }
 
 static void StatsRealmCallback(JSContext* cx, void* data, Realm* realm,

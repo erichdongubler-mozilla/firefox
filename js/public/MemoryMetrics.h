@@ -623,10 +623,13 @@ struct UnusedGCThingSizes {
 };
 
 struct GCBufferStats {
-#define FOR_EACH_SIZE(MACRO)          \
-  MACRO(Other, MallocHeap, usedBytes) \
-  MACRO(Other, MallocHeap, freeBytes) \
-  MACRO(Other, MallocHeap, adminBytes)
+#define FOR_EACH_SIZE(MACRO)           \
+  MACRO(Other, MallocHeap, usedBytes)  \
+  MACRO(Other, MallocHeap, freeBytes)  \
+  MACRO(Other, MallocHeap, adminBytes) \
+  MACRO(Other, Ignore, totalChunks)    \
+  MACRO(Other, Ignore, freeRegions)    \
+  MACRO(Other, Ignore, largeAllocs)
 
   GCBufferStats() = default;
   GCBufferStats(GCBufferStats&& other) = default;

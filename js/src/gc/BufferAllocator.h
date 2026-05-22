@@ -473,8 +473,9 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   size_t getSizeOfNurseryBuffers();
 
-  void addSizeOfExcludingThis(size_t* usedBytesOut, size_t* freeBytesOut,
-                              size_t* adminBytesOut);
+  void addBufferSizesAndCounts(size_t* usedBytesOut, size_t* freeBytesOut,
+                               size_t* adminBytesOut, size_t* totalChunksOut,
+                               size_t* freeRegionsOut, size_t* largeAllocsOut);
 
   static void printStatsHeader(FILE* file);
   static void printStats(GCRuntime* gc, mozilla::TimeStamp creationTime,
