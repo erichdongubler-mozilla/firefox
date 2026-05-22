@@ -97,7 +97,14 @@ export default class LocationsList extends MozLitElement {
                   >${countryName(aLocation.code)}</span
                 >`}
           </span>
-          <!--TODO: append an "unavailable" label if a location option is considered disabled-->
+          ${!aLocation.available
+            ? html`
+                <span
+                  class="location-unavailable-label"
+                  data-l10n-id="ipprotection-locations-unavailable-label"
+                ></span>
+              `
+            : null}
         </button>
       </li>
     `;

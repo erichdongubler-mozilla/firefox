@@ -59,7 +59,8 @@
 
   &[disabled] {
     .location-label,
-    .location-description {
+    .location-description,
+    .location-unavailable-label {
       color: var(--text-color-deemphasized);
     }
   }
