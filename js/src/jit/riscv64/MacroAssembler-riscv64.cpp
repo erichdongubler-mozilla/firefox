@@ -5422,6 +5422,81 @@ void MacroAssemblerRiscv64::ma_xor(Register rd, Register rs, Imm64 rt) {
 }
 
 void MacroAssemblerRiscv64::ma_mul32(Register rd, Register rs, Imm32 rt) {
+  switch (rt.value) {
+    case -1:
+      negw(rd, rs);
+      return;
+    case 0:
+      mv(rd, zero);
+      return;
+    case 1:
+      SignExtendWord(rd, rs);
+      return;
+    case 2:
+      addw(rd, rs, rs);
+      return;
+    default:
+      break;
+  }
+
+  if (rt.value > 0 && HasZbaExtension()) {
+    int ctz = std::countr_zero(uint32_t(rt.value));
+    if ((rt.value >> ctz) == 3) {
+      // rd = (rs * 2 + rs) << ctz
+      sh1add(rd, rs, rs);
+      if (ctz) {
+        slliw(rd, rd, ctz);
+      } else {
+        SignExtendWord(rd, rd);
+      }
+      return;
+    }
+    if ((rt.value >> ctz) == 5) {
+      // rd = (rs * 4 + rs) << ctz
+      sh2add(rd, rs, rs);
+      if (ctz) {
+        slliw(rd, rd, ctz);
+      } else {
+        SignExtendWord(rd, rd);
+      }
+      return;
+    }
+    if ((rt.value >> ctz) == 9) {
+      // rd = (rs * 8 + rs) << ctz
+      sh3add(rd, rs, rs);
+      if (ctz) {
+        slliw(rd, rd, ctz);
+      } else {
+        SignExtendWord(rd, rd);
+      }
+      return;
+    }
+  }
+
+  uint32_t shift = mozilla::FloorLog2(uint32_t(rt.value));
+
+  // If the constant has only one bit set, it can be encoded as a bit-shift.
+  if ((1 << shift) == rt.value) {
+    slliw(rd, rs, shift);
+    return;
+  }
+
+  // If the constant cannot be encoded as (1<<C1), see if it can be encoded
+  // as (1<<C1) | (1<<C2), which can be computed using an add and a shift.
+  uint32_t rest = rt.value - (1 << shift);
+  uint32_t shift_rest = mozilla::FloorLog2(rest);
+  if ((1u << shift_rest) == rest) {
+    UseScratchRegisterScope temps(this);
+    Register scratch = temps.Acquire();
+
+    slliw(scratch, rs, (shift - shift_rest));
+    addw(rd, scratch, rs);
+    if (shift_rest != 0) {
+      slliw(rd, rd, shift_rest);
+    }
+    return;
+  }
+
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   ma_li(scratch, rt);
@@ -5437,6 +5512,90 @@ void MacroAssemblerRiscv64::ma_mulhu32(Register rd, Register rs, Imm32 rt) {
 }
 
 void MacroAssemblerRiscv64::ma_mul64(Register rd, Register rs, Imm64 rt) {
+  switch (int64_t(rt.value)) {
+    case -1:
+      neg(rd, rs);
+      return;
+    case 0:
+      mv(rd, zero);
+      return;
+    case 1:
+      if (rd != rs) {
+        mv(rd, rs);
+      }
+      return;
+    case 2:
+      add(rd, rs, rs);
+      return;
+    default:
+      break;
+  }
+
+  if (int64_t(rt.value) > 0) {
+    if (HasZbaExtension()) {
+      int ctz = std::countr_zero(uint32_t(rt.value));
+      if ((rt.value >> ctz) == 3) {
+        // rd = (rs * 2 + rs) << ctz
+        sh1add(rd, rs, rs);
+        if (ctz) {
+          slli(rd, rd, ctz);
+        }
+        return;
+      }
+      if ((rt.value >> ctz) == 5) {
+        // rd = (rs * 4 + rs) << ctz
+        sh2add(rd, rs, rs);
+        if (ctz) {
+          slli(rd, rd, ctz);
+        }
+        return;
+      }
+      if ((rt.value >> ctz) == 9) {
+        // rd = (rs * 8 + rs) << ctz
+        sh3add(rd, rs, rs);
+        if (ctz) {
+          slli(rd, rd, ctz);
+        }
+        return;
+      }
+    }
+
+    if (std::has_single_bit(rt.value + 1)) {
+      int32_t shift = mozilla::FloorLog2(rt.value + 1);
+
+      UseScratchRegisterScope temps(this);
+      Register savedRs = rs;
+      if (rd == rs) {
+        savedRs = temps.Acquire();
+        mv(savedRs, rs);
+      }
+      slli(rd, rs, shift);
+      sub(rd, rd, savedRs);
+      return;
+    }
+
+    if (std::has_single_bit(rt.value - 1)) {
+      int32_t shift = mozilla::FloorLog2(rt.value - 1);
+
+      UseScratchRegisterScope temps(this);
+      Register savedRs = rs;
+      if (rd == rs) {
+        savedRs = temps.Acquire();
+        mv(savedRs, rs);
+      }
+      slli(rd, rs, shift);
+      add(rd, rd, savedRs);
+      return;
+    }
+
+    // Use shift if constant is power of 2.
+    uint8_t shift = mozilla::FloorLog2(rt.value);
+    if (uint64_t(1) << shift == rt.value) {
+      slli(rd, rs, shift);
+      return;
+    }
+  }
+
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   ma_li(scratch, rt);

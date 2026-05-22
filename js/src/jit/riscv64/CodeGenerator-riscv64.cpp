@@ -6,8 +6,6 @@
 
 #include "mozilla/MathAlgorithms.h"
 
-#include <bit>
-
 #include "jit/CodeGenerator.h"
 #include "jit/InlineScriptTree.h"
 #include "jit/JitRuntime.h"
@@ -791,89 +789,56 @@ void CodeGenerator::visitMulI(LMulI* ins) {
       bailoutCmp32(cond, lhs, Imm32(0), ins->snapshot());
     }
 
+    // If it cannot overflow, we can do lots of optimizations.
+    if (!mul->canOverflow()) {
+      masm.ma_mul32(dest, lhs, Imm32(constant));
+      return;
+    }
+
     switch (constant) {
       case -1:
-        if (mul->canOverflow()) {
-          bailoutCmp32(Assembler::Equal, lhs, Imm32(INT32_MIN),
-                       ins->snapshot());
-        }
+        bailoutCmp32(Assembler::Equal, lhs, Imm32(INT32_MIN), ins->snapshot());
 
         masm.negw(dest, lhs);
         return;
       case 0:
-        masm.move32(zero, dest);
+        masm.mov(zero, dest);
         return;
       case 1:
         masm.move32(lhs, dest);
         return;
       case 2:
-        if (mul->canOverflow()) {
-          Label mulTwoOverflow;
-          masm.ma_add32TestOverflow(dest, lhs, lhs, &mulTwoOverflow);
+        Label mulTwoOverflow;
+        masm.ma_add32TestOverflow(dest, lhs, lhs, &mulTwoOverflow);
 
-          bailoutFrom(&mulTwoOverflow, ins->snapshot());
-        } else {
-          masm.addw(dest, lhs, lhs);
-        }
+        bailoutFrom(&mulTwoOverflow, ins->snapshot());
         return;
     }
 
     if (constant > 0) {
       uint32_t shift = mozilla::FloorLog2(uint32_t(constant));
 
-      if (!mul->canOverflow()) {
-        // If it cannot overflow, we can do lots of optimizations.
+      // To stay on the safe side, only optimize things that are a power of 2.
+      if ((1 << shift) == constant) {
+        UseScratchRegisterScope temps(&masm);
+        Register scratch = temps.Acquire();
 
-        // See if the constant has one bit set, meaning it can be
-        // encoded as a bitshift.
-        if ((1 << shift) == constant) {
-          masm.slliw(dest, lhs, shift);
-          return;
-        }
+        // dest = lhs * pow(2, shift)
+        masm.slli(dest, lhs, shift);
 
-        // If the constant cannot be encoded as (1<<C1), see if it can
-        // be encoded as (1<<C1) | (1<<C2), which can be computed
-        // using an add and a shift.
-        uint32_t rest = constant - (1 << shift);
-        uint32_t shift_rest = mozilla::FloorLog2(rest);
-        if ((1u << shift_rest) == rest) {
-          UseScratchRegisterScope temps(masm);
-          Register scratch = temps.Acquire();
-
-          masm.slliw(scratch, lhs, (shift - shift_rest));
-          masm.addw(dest, scratch, lhs);
-          if (shift_rest != 0) {
-            masm.slliw(dest, dest, shift_rest);
-          }
-          return;
-        }
-      } else {
-        // To stay on the safe side, only optimize things that are a power of 2.
-        if ((1 << shift) == constant) {
-          UseScratchRegisterScope temps(&masm);
-          Register scratch = temps.Acquire();
-
-          // dest = lhs * pow(2, shift)
-          masm.slli(dest, lhs, shift);
-
-          // At runtime, check (dest >> shift == intptr_t(dest) >> shift), if
-          // this does not hold, some bits were lost due to overflow, and the
-          // computation should be resumed as a double.
-          masm.sext_w(scratch, dest);
-          bailoutCmp32(Assembler::NotEqual, dest, scratch, ins->snapshot());
-          return;
-        }
+        // At runtime, check (dest >> shift == intptr_t(dest) >> shift), if
+        // this does not hold, some bits were lost due to overflow, and the
+        // computation should be resumed as a double.
+        masm.sext_w(scratch, dest);
+        bailoutCmp32(Assembler::NotEqual, dest, scratch, ins->snapshot());
+        return;
       }
     }
 
-    if (mul->canOverflow()) {
-      Label mulConstOverflow;
-      masm.ma_mul32TestOverflow(dest, lhs, Imm32(constant), &mulConstOverflow);
+    Label mulConstOverflow;
+    masm.ma_mul32TestOverflow(dest, lhs, Imm32(constant), &mulConstOverflow);
 
-      bailoutFrom(&mulConstOverflow, ins->snapshot());
-    } else {
-      masm.ma_mul32(dest, lhs, Imm32(constant));
-    }
+    bailoutFrom(&mulConstOverflow, ins->snapshot());
   } else {
     if (mul->canOverflow()) {
       Label multRegOverflow;
@@ -900,75 +865,13 @@ void CodeGenerator::visitMulI(LMulI* ins) {
   }
 }
 
-void CodeGeneratorRiscv64::emitMulI64(Register lhs, int64_t rhs,
-                                      Register dest) {
-  switch (rhs) {
-    case -1:
-      masm.neg(dest, lhs);
-      return;
-    case 0:
-      masm.movePtr(zero, dest);
-      return;
-    case 1:
-      if (dest != lhs) {
-        masm.movePtr(lhs, dest);
-      }
-      return;
-    case 2:
-      masm.add(dest, lhs, lhs);
-      return;
-  }
-
-  if (rhs > 0) {
-    if (std::has_single_bit(static_cast<uint64_t>(rhs + 1))) {
-      int32_t shift = mozilla::FloorLog2(uint64_t(rhs + 1));
-
-      UseScratchRegisterScope temps(&masm);
-      Register savedLhs = lhs;
-      if (dest == lhs) {
-        savedLhs = temps.Acquire();
-        masm.mv(savedLhs, lhs);
-      }
-      masm.slli(dest, lhs, shift);
-      masm.sub(dest, dest, savedLhs);
-      return;
-    }
-
-    if (std::has_single_bit(static_cast<uint64_t>(rhs - 1))) {
-      int32_t shift = mozilla::FloorLog2(uint64_t(rhs - 1));
-
-      UseScratchRegisterScope temps(&masm);
-      Register savedLhs = lhs;
-      if (dest == lhs) {
-        savedLhs = temps.Acquire();
-        masm.mv(savedLhs, lhs);
-      }
-      masm.slli(dest, lhs, shift);
-      masm.add(dest, dest, savedLhs);
-      return;
-    }
-
-    // Use shift if constant is power of 2.
-    uint8_t shift = mozilla::FloorLog2(uint64_t(rhs));
-    if (int64_t(1) << shift == rhs) {
-      masm.slli(dest, lhs, shift);
-      return;
-    }
-  }
-
-  UseScratchRegisterScope temps(&masm);
-  Register scratch = temps.Acquire();
-  masm.ma_li(scratch, Imm64(rhs));
-  masm.mul(dest, lhs, scratch);
-}
-
 void CodeGenerator::visitMulIntPtr(LMulIntPtr* ins) {
   Register lhs = ToRegister(ins->lhs());
   const LAllocation* rhs = ins->rhs();
   Register dest = ToRegister(ins->output());
 
   if (rhs->isConstant()) {
-    emitMulI64(lhs, ToIntPtr(rhs), dest);
+    masm.ma_mul64(dest, lhs, Imm64(ToIntPtr(rhs)));
   } else {
     masm.mul(dest, lhs, ToRegister(rhs));
   }
@@ -980,7 +883,7 @@ void CodeGenerator::visitMulI64(LMulI64* ins) {
   Register dest = ToOutRegister64(ins).reg;
 
   if (IsConstant(rhs)) {
-    emitMulI64(lhs, ToInt64(rhs), dest);
+    masm.ma_mul64(dest, lhs, Imm64(ToInt64(rhs)));
   } else {
     masm.mul(dest, lhs, ToRegister64(rhs).reg);
   }
