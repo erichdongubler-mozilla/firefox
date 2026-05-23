@@ -152,10 +152,16 @@ function getNodeInfo(node, elementStyle) {
   } else if (node.classList.contains("ruleview-selector-warnings")) {
     type = VIEW_NODE_CSS_SELECTOR_WARNINGS;
     value = node.getAttribute("data-selector-warning-kind").split(",");
-  } else if (node.classList.contains("inspector-attr-name")) {
+  } else if (
+    // The attribute can be set either on different elements (.inspector-attr-param,
+    // .inspector-attr-name, …), so only check for the attribute existence
+    node.closest("[data-attribute]")
+  ) {
     type = VIEW_NODE_ATTR_TYPE;
     value = {
-      attribute: node.getAttribute("data-attribute"),
+      attribute: node
+        .closest("[data-attribute]")
+        .getAttribute("data-attribute"),
     };
   } else if (declaration && classList.contains("inspector-shapeswatch")) {
     type = VIEW_NODE_SHAPE_SWATCH;
