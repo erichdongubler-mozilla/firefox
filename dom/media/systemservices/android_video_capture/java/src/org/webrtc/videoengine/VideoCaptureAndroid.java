@@ -14,7 +14,10 @@ import java.io.IOException;
 import java.util.List;
 
 import android.content.Context;
+import android.hardware.display.DisplayManager;
+import android.os.Build;
 import android.util.Log;
+import android.view.Display;
 import android.view.Surface;
 import android.view.WindowManager;
 import androidx.annotation.NonNull;
@@ -50,11 +53,48 @@ public class VideoCaptureAndroid implements CameraVideoCapturer.CameraEventsHand
 
   @WebRTCJNITarget
   public static VideoCaptureAndroid create(@NonNull final String deviceName) {
-    final Context context = GetContext();
+    final Context context = GetRotationAwareContext();
     return new VideoCaptureAndroid(context, deviceName,
                                    Camera2Enumerator.isSupported(context)
                                        ? new Camera2Enumerator(context)
                                        : new Camera1Enumerator());
+  }
+
+  // libwebrtc reads the device rotation per-frame via
+  // applicationContext.getSystemService(WINDOW_SERVICE).getDefaultDisplay().getRotation()
+  // (see Camera{1,2}Session.getFrameOrientation). When the host app's Application
+  // context has had its base wrapped via Context.createConfigurationContext — as
+  // Fenix does for locale handling in FenixApplication.attachBaseContext — that
+  // WindowManager returns a Display whose rotation is latched to the value at
+  // process start, so the rotation stamped on every captured frame never updates as
+  // the device rotates. Build a window context bound to the default display so
+  // the WindowManager libwebrtc sees returns a live Display, mirroring the
+  // approach already used by GeckoAppShell.AndroidSScreenCompat for the same
+  // problem on the screen-orientation path.
+  // Pre-API 30 the createWindowContext API does not exist; the older behaviour
+  // also predates the strict latching, so we fall back to the application
+  // context unchanged.
+  private static Context GetRotationAwareContext() {
+    final Context appContext = GeckoAppShell.getApplicationContext();
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+      return appContext;
+    }
+    try {
+      final DisplayManager dm =
+          (DisplayManager) appContext.getSystemService(Context.DISPLAY_SERVICE);
+      if (dm == null) {
+        return appContext;
+      }
+      final Display display = dm.getDisplay(Display.DEFAULT_DISPLAY);
+      if (display == null) {
+        return appContext;
+      }
+      return appContext.createWindowContext(
+          display, WindowManager.LayoutParams.TYPE_APPLICATION, null);
+    } catch (Throwable t) {
+      Log.w(TAG, "GetRotationAwareContext: falling back to application context", t);
+      return appContext;
+    }
   }
 
   private VideoCaptureAndroid(@NonNull final Context context, @NonNull final String deviceName, @NonNull final CameraEnumerator enumerator) {
@@ -77,11 +117,6 @@ public class VideoCaptureAndroid implements CameraVideoCapturer.CameraEventsHand
       Log.e(TAG, "VideoCaptureAndroid: Exception while creating capturer: " + e);
       cameraVideoCapturer = null;
     }
-  }
-
-  // Return the global application context.
-  private static Context GetContext() {
-    return GeckoAppShell.getApplicationContext();
   }
 
   public boolean canCapture() {
