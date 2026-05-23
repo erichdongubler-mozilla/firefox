@@ -14,7 +14,6 @@ performance.page:
   total_content_page_load:
     type: timing_distribution
     time_unit: millisecond
-    telemetry_mirror: TOTAL_CONTENT_PAGE_LOAD_TIME
     description: >
       Time to load all of a page's resources and render.
       (Migrated from the geckoview metric of the same name.)
