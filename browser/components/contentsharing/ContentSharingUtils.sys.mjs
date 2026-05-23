@@ -204,7 +204,7 @@ class ContentSharingUtilsClass {
       }),
     };
     const result = this.buildShare(shareObject);
-    await this.#createLinkAndOpenModal(result, "tab group");
+    await this.#createLinkAndOpenModal(result, "tab_group");
   }
 
   /**
@@ -350,7 +350,7 @@ class ContentSharingUtilsClass {
    * open a new tab at the share URL.
    *
    * @param {ShareResult} shareResult An object containing the share object and any warnings
-   * @param {string} context Used in error logging (e.g. "tabs", "tab group")
+   * @param {string} context Used in error logging (e.g. "tabs", "tab_group")
    */
   async #createLinkAndOpenModal(shareResult, context) {
     let resolveLoading;
@@ -382,6 +382,11 @@ class ContentSharingUtilsClass {
         shareResult.error
       );
     }
+
+    Glean.collectionShare.dialogOpen.record({
+      signed_in: shareResult.isSignedIn,
+      share_type: context,
+    });
 
     // After the dialog box closes, attempt login if needed.
     if (shareResult.isSignedIn) {
@@ -482,6 +487,12 @@ class ContentSharingUtilsClass {
           },
           body: JSON.stringify(shareResult.share),
         });
+
+        if (!response.ok) {
+          Glean.collectionShare.error.record({
+            status_code: response.status,
+          });
+        }
 
         if (!response.ok && response.status >= 500) {
           canRetry = true;
