@@ -12,12 +12,6 @@ PromiseTestUtils.allowMatchingRejectionsGlobally(
   /Missing message.*smartwindow-messages-document-title/
 );
 
-// Toggling AI window flips BROWSER_NEW_TAB_URL, which can leave a preloaded
-// about:newtab browser dangling until shutdown if preload kicks in afterward.
-registerCleanupFunction(() => {
-  NewTabPagePreloading.removePreloadedBrowser(window);
-});
-
 // Ensure Window Switcher button is visible when AI Window is enabled in prefs
 add_task(async function test_window_switcher_button_visibility() {
   await SpecialPowers.pushPrefEnv({
@@ -362,106 +356,90 @@ add_task(async function test_switcher_button_appears_in_classic_mode() {
   await SpecialPowers.flushPrefEnv();
 });
 
-// add_task(
-//   async function test_hamburger_menu_position_depends_on_smartwindow_pref() {
-//     await SpecialPowers.pushPrefEnv({
-//       set: [
-//         ["sidebar.verticalTabs", false],
-//         ["browser.smartwindow.enabled", false],
-//       ],
-//     });
+add_task(async function test_hamburger_menu_position_depends_on_window_mode() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.verticalTabs", false]],
+  });
 
-//     const restoreSignIn = skipSignIn();
-//     const hamburgerMenu = document.getElementById("PanelUI-button");
-//     const modeSwitcherButton = document.getElementById("ai-window-toggle");
-//     const navBar = document.getElementById("nav-bar");
+  const restoreSignIn = skipSignIn();
+  const hamburgerMenu = document.getElementById("PanelUI-button");
+  const modeSwitcherButton = document.getElementById("ai-window-toggle");
+  const navBar = document.getElementById("nav-bar");
 
-//     // smartwindow.enabled is false, and is classic window
-//     Assert.ok(
-//       hamburgerMenu.closest("#nav-bar"),
-//       "Hamburger menu should remain in nav-bar when smartwindow.enabled pref is false with horizontal tabs"
-//     );
-//     Assert.notEqual(
-//       hamburgerMenu,
-//       modeSwitcherButton.nextElementSibling,
-//       "Hamburger menu should NOT be adjacent to Window Switcher when smartwindow.enabled pref is false with horizontal tabs"
-//     );
+  // In classic mode with horizontal tabs, hamburger should stay in nav-bar
+  if (document.documentElement.hasAttribute("ai-window")) {
+    AIWindow.toggleAIWindow(window, false);
+  }
 
-//     // Smartwindow.enabled is true
-//     await SpecialPowers.pushPrefEnv({
-//       set: [["browser.smartwindow.enabled", true]],
-//     });
+  Assert.ok(
+    hamburgerMenu.closest("#nav-bar"),
+    "Hamburger menu should remain in nav-bar in classic mode with horizontal tabs"
+  );
+  Assert.notEqual(
+    hamburgerMenu,
+    modeSwitcherButton.nextElementSibling,
+    "Hamburger menu should NOT be adjacent to Window Switcher in classic mode with horizontal tabs"
+  );
 
-//     // smartwindow.enabled is true, and is classic window
-//     Assert.equal(
-//       hamburgerMenu,
-//       modeSwitcherButton.nextElementSibling,
-//       "Hamburger menu should be positioned after Window Switcher when smartwindow.enabled pref is true with horizontal tabs in classic mode"
-//     );
+  // Switch to AI mode - hamburger should move beside the switcher
+  AIWindow.toggleAIWindow(window, true);
 
-//     AIWindow.toggleAIWindow(window, true);
+  Assert.equal(
+    hamburgerMenu,
+    modeSwitcherButton.nextElementSibling,
+    "Hamburger menu should be positioned after Window Switcher in AI mode with horizontal tabs"
+  );
 
-//     // smartwindow.enabled is true, and is smart window
-//     Assert.equal(
-//       hamburgerMenu,
-//       modeSwitcherButton.nextElementSibling,
-//       "Hamburger menu should be positioned after Window Switcher when smartwindow.enabled pref is true with horizontal tabs in smart/ai mode"
-//     );
+  // Switch to vertical tabs - hamburger should stay beside switcher
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.verticalTabs", true]],
+  });
 
-//     // Switch to vertical tabs - hamburger should stay beside switcher
-//     await SpecialPowers.pushPrefEnv({
-//       set: [["sidebar.verticalTabs", true]],
-//     });
+  await BrowserTestUtils.waitForMutationCondition(
+    navBar,
+    { childList: true, subtree: true },
+    () => hamburgerMenu === modeSwitcherButton.nextElementSibling
+  );
 
-//     await BrowserTestUtils.waitForMutationCondition(
-//       navBar,
-//       { childList: true, subtree: true },
-//       () => hamburgerMenu === modeSwitcherButton.nextElementSibling
-//     );
+  Assert.equal(
+    hamburgerMenu,
+    modeSwitcherButton.nextElementSibling,
+    "Hamburger menu should be positioned after Window Switcher with vertical tabs"
+  );
 
-//     // smartwindow.enabled is true, and is smart window, vertical tabs
-//     Assert.equal(
-//       hamburgerMenu,
-//       modeSwitcherButton.nextElementSibling,
-//       "Hamburger menu should be positioned after Window Switcher with vertical tabs"
-//     );
+  // Switch back to classic mode with vertical tabs - hamburger should still be beside switcher
+  AIWindow.toggleAIWindow(window, false);
 
-//     await SpecialPowers.pushPrefEnv({
-//       set: [["sidebar.verticalTabs", false]],
-//     });
+  Assert.equal(
+    hamburgerMenu,
+    modeSwitcherButton.nextElementSibling,
+    "Hamburger menu should remain beside Window Switcher with vertical tabs even in classic mode"
+  );
 
-//     AIWindow.toggleAIWindow(window, false);
+  // Switch back to horizontal tabs in classic mode - hamburger should return to nav-bar
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.verticalTabs", false]],
+  });
 
-//     // smartwindow.enabled is true, and switched back to classic window
-//     Assert.equal(
-//       hamburgerMenu,
-//       modeSwitcherButton.nextElementSibling,
-//       "Hamburger menu should be positioned after Window Switcher when smartwindow.enabled pref is true with horizontal tabs in classic mode"
-//     );
+  await BrowserTestUtils.waitForMutationCondition(
+    navBar,
+    { childList: true, subtree: true },
+    () => hamburgerMenu !== modeSwitcherButton.nextElementSibling
+  );
 
-//     await SpecialPowers.pushPrefEnv({
-//       set: [["browser.smartwindow.enabled", false]],
-//     });
+  Assert.ok(
+    hamburgerMenu.closest("#nav-bar"),
+    "Hamburger menu should return to nav-bar after switching back to horizontal tabs in classic mode"
+  );
+  Assert.notEqual(
+    hamburgerMenu,
+    modeSwitcherButton.nextElementSibling,
+    "Hamburger menu should NOT be adjacent to Window Switcher after returning to horizontal tabs in classic mode"
+  );
 
-//     // smartwindow.enabled is false, and is classic window
-//     Assert.ok(
-//       hamburgerMenu.closest("#nav-bar"),
-//       "Hamburger menu should return to nav-bar when smartwindow.enabled flips back to false"
-//     );
-
-//     /* cleanup to avoid window leaks */
-//     if (document.documentElement.hasAttribute("ai-window")) {
-//       AIWindow.toggleAIWindow(window, false);
-//       await TestUtils.waitForCondition(
-//         () => !document.documentElement.hasAttribute("ai-window"),
-//         "Window should return to classic mode"
-//       );
-//     }
-
-//     restoreSignIn();
-//     await SpecialPowers.flushPrefEnv();
-//   }
-// );
+  restoreSignIn();
+  await SpecialPowers.flushPrefEnv();
+});
 
 // Test that _onAccountLogout switches AI windows to classic mode
 add_task(async function test_onAccountLogout_switches_windows() {
