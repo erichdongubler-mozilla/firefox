@@ -47,6 +47,10 @@
 
 #include "base/eintr_wrapper.h"
 
+#ifdef XP_MACOSX
+#  include "mozilla/MacAutoreleasePool.h"
+#endif
+
 #include <numeric>
 
 using namespace mozilla;
@@ -269,6 +273,13 @@ PRThread* gfxPlatformFontList::sInitFontListThread = nullptr;
 static void InitFontListCallback(void* aFontList) {
   AUTO_PROFILER_REGISTER_THREAD("InitFontList");
   PR_SetCurrentThreadName("InitFontList");
+
+#ifdef XP_MACOSX
+  // InitFontList calls Apple font code that autoreleases many Objective-C
+  // objects. There needs to be an autorelease pool in place for these objects
+  // otherwise we'll leak them.
+  mozilla::MacAutoreleasePool pool;
+#endif
 
   if (!static_cast<gfxPlatformFontList*>(aFontList)->InitFontList()) {
     gfxPlatformFontList::Shutdown();
