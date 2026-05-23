@@ -87,7 +87,7 @@ add_task(async function test_smartbar_telemetry_navigate_submit_enter() {
   );
   Assert.equal(
     extra.model,
-    "gemini-3.1-flash-lite",
+    "gemini-2.5-flash-lite",
     "navigate_submit has correct model"
   );
   Assert.equal(extra.length, "20", "navigate_submit has correct length");
@@ -163,7 +163,7 @@ add_task(async function test_smartbar_telemetry_search_submit() {
   Assert.equal(extra.message_seq, "0", "search_submit has correct message_seq");
   Assert.equal(
     extra.model,
-    "gemini-3.1-flash-lite",
+    "gemini-2.5-flash-lite",
     "search_submit has correct model"
   );
   Assert.equal(
@@ -263,7 +263,7 @@ add_task(async function test_smartbar_telemetry_chat_submit_enter() {
   Assert.equal(extra.message_seq, "0", "chat_submit has correct message_seq");
   Assert.equal(
     extra.model,
-    "gemini-3.1-flash-lite",
+    "gemini-2.5-flash-lite",
     "chat_submit has correct model"
   );
   Assert.equal(extra.location, "fullpage", "chat_submit has correct location");
@@ -372,7 +372,7 @@ add_task(async function test_smartbar_telemetry_engagement_extra_keys() {
     Assert.equal(extra.location, "fullpage", "engagement has correct location");
     Assert.equal(
       extra.model,
-      "gemini-3.1-flash-lite",
+      "gemini-2.5-flash-lite",
       "engagement has correct model"
     );
 
@@ -410,7 +410,7 @@ add_task(async function test_smartbar_telemetry_abandonment_extra_keys() {
   Assert.equal(extra.location, "sidebar", "abandonment has correct location");
   Assert.equal(
     extra.model,
-    "gemini-3.1-flash-lite",
+    "gemini-2.5-flash-lite",
     "abandonment has correct model"
   );
 

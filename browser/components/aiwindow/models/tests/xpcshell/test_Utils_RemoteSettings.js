@@ -32,6 +32,7 @@ const CUSTOM_PROMPT = "Hello from custom prompt!";
 
 const API_KEY = "fake-key";
 const ENDPOINT = "https://api.fake-endpoint.com/v1";
+const MAJOR_VERSION_4 = 4;
 const MAJOR_VERSION_2 = 2;
 const MAJOR_VERSION_1 = 1;
 
@@ -340,7 +341,7 @@ add_task(async function test_loadConfig_custom_endpoint_with_custom_model() {
     };
     sb.stub(openAIEngine, "getRemoteClient").returns(fakeClient);
 
-    await engine.loadConfig(MODEL_FEATURES.CHAT);
+    await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_4);
 
     Assert.equal(
       engine.model,
@@ -716,7 +717,7 @@ add_task(
       });
 
       const engine = new openAIEngine();
-      await engine.loadConfig(MODEL_FEATURES.CHAT);
+      await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_4);
 
       Assert.equal(
         engine.model,
@@ -890,7 +891,7 @@ add_task(
       });
 
       const engine = new openAIEngine();
-      await engine.loadConfig(MODEL_FEATURES.CHAT);
+      await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_4);
 
       Assert.equal(
         engine.model,
@@ -951,7 +952,7 @@ add_task(
       });
 
       const engine = new openAIEngine();
-      await engine.loadConfig(MODEL_FEATURES.CHAT);
+      await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_4);
 
       Assert.equal(
         engine.model,
