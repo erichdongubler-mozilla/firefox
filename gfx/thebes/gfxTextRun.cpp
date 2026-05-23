@@ -11,7 +11,6 @@
 #include "gfxGlyphExtents.h"
 #include "gfxHarfBuzzShaper.h"
 #include "gfxPlatformFontList.h"
-#include "gfxScriptItemizer.h"
 #include "gfxUserFontSet.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/WorkerCommon.h"
@@ -2487,7 +2486,7 @@ already_AddRefed<gfxTextRun> gfxFontGroup::MakeTextRun(
     return MakeSpaceTextRun(aParams, aFlags, aFlags2);
   }
 
-  if (sizeof(T) == 1) {
+  if constexpr (sizeof(T) == sizeof(uint8_t)) {
     aFlags |= ShapedTextFlags::TEXT_IS_8BIT;
   }
 
@@ -2626,15 +2625,48 @@ static Script ResolveScriptForLang(const nsAtom* aLanguage, Script aDefault) {
   return script;
 }
 
+void gfxFontGroup::InitTextRunLog(LogModule* aLog, const uint8_t* aString,
+                                  const char16_t* aTextPtr,
+                                  const gfxScriptItemizer::Run& aRun) {
+  nsAutoCString lang;
+  mLanguage->ToUTF8String(lang);
+  nsAutoCString styleString;
+  mStyle.style.ToString(styleString);
+  auto defaultGeneric = GetDefaultGeneric(mLanguage);
+  MOZ_LOG(
+      aLog, LogLevel::Warning,
+      ("(%s) fontgroup: [%s] default: %s lang: %s script: %d "
+       "len %d weight: %g stretch: %g%% style: %s size: %6.2f "
+       "%d-byte TEXTRUN [%s] ENDTEXTRUN\n",
+       (mStyle.systemFont ? "textrunui" : "textrun"),
+       FamilyListToString(mFamilyList).get(),
+       (defaultGeneric == StyleGenericFontFamily::Serif
+            ? "serif"
+            : (defaultGeneric == StyleGenericFontFamily::SansSerif
+                   ? "sans-serif"
+                   : "none")),
+       lang.get(), static_cast<int>(aRun.mScript), aRun.mLength,
+       mStyle.weight.ToFloat(), mStyle.stretch.ToFloat(), styleString.get(),
+       mStyle.size, aString ? 1 : 2,
+       aTextPtr
+           ? NS_ConvertUTF16toUTF8(aTextPtr + aRun.mOffset, aRun.mLength).get()
+           : nsPromiseFlatCString(
+                 nsDependentCSubstring(
+                     reinterpret_cast<const char*>(aString) + aRun.mOffset,
+                     aRun.mLength))
+                 .get()));
+}
+
 template <typename T>
 void gfxFontGroup::InitTextRun(DrawTarget* aDrawTarget, gfxTextRun* aTextRun,
                                const T* aString, uint32_t aLength,
                                gfxMissingFontRecorder* aMFR) {
-  NS_ASSERTION(aLength > 0, "don't call InitTextRun for a zero-length run");
+  MOZ_DIAGNOSTIC_ASSERT(aLength > 0,
+                        "don't call InitTextRun for a zero-length run");
 
   // we need to do numeral processing even on 8-bit text,
   // in case we're converting Western to Hindi/Arabic digits
-  uint32_t numOption = gfxPlatform::GetPlatform()->GetBidiNumeralOption();
+  const uint32_t numOption = gfxPlatform::GetPlatform()->GetBidiNumeralOption();
   UniquePtr<char16_t[]> transformedString;
   if (numOption != IBMBIDI_NUMERAL_NOMINAL) {
     // scan the string for numerals that may need to be transformed;
@@ -2667,80 +2699,104 @@ void gfxFontGroup::InitTextRun(DrawTarget* aDrawTarget, gfxTextRun* aTextRun,
   LogModule* log = mStyle.systemFont ? gfxPlatform::GetLog(eGfxLog_textrunui)
                                      : gfxPlatform::GetLog(eGfxLog_textrun);
 
+  // If we have 16-bit text, either as the input string or a transformedString,
+  // set textPtr to point to it. If textPtr is null, we're using the original
+  // aString and it is 8-bit text.
+  const char16_t* const textPtr =
+      transformedString ? transformedString.get()
+      : sizeof(T) == sizeof(char16_t)
+          ? reinterpret_cast<const char16_t*>(aString)
+          : nullptr;
+
+  // Split into script runs so that script can potentially influence
+  // the font matching process below.
+
+  // Fast path for all-ASCII/Latin-extended text: try to skip ScriptItemizer
+  // entirely. Note that even if this is the 8-bit version of InitTextRun,
+  // it's possible that numeral transformation may have generated non-Latin
+  // codepoints and so we have a 16-bit string to consider.
+  bool allCommonOrLatin = true;
+  if (textPtr) {
+    for (uint32_t j = 0; j < aLength && allCommonOrLatin; j++) {
+      allCommonOrLatin = textPtr[j] < gfxScriptItemizer::kFirstNonCommonOrLatin;
+    }
+  }
+
+  Script script = Script::INVALID;
+  if (allCommonOrLatin) {
+    bool hasLetter = false;
+    if (!textPtr) {
+      for (uint32_t j = 0; !hasLetter && j < aLength; j++) {
+        const uint8_t c = aString[j] & ~0x20;
+        hasLetter = (c - 'A' <= 'Z' - 'A');
+      }
+    } else {
+      for (uint32_t j = 0; !hasLetter && j < aLength; j++) {
+        const char16_t c = textPtr[j];
+        hasLetter = gfxScriptItemizer::FastGetScriptCode(c) == Script::LATIN;
+      }
+    }
+    script = hasLetter ? Script::LATIN
+                       : ResolveScriptForLang(mLanguage, Script::COMMON);
+  }
+
+  // Either we have a valid textPtr, or we must have resolved script by now.
+  MOZ_DIAGNOSTIC_ASSERT(textPtr || script != Script::INVALID);
+
   // variant fallback handling may end up passing through this twice
   bool redo;
   do {
     redo = false;
 
-    // split into script runs so that script can potentially influence
-    // the font matching process below
-    gfxScriptItemizer scriptRuns;
-    const char16_t* textPtr = nullptr;
-
-    if (sizeof(T) == sizeof(uint8_t) && !transformedString) {
-      scriptRuns.SetText(aString, aLength);
-    } else {
-      if (transformedString) {
-        textPtr = transformedString.get();
-      } else {
-        // typecast to avoid compilation error for the 8-bit version,
-        // even though this is dead code in that case
-        textPtr = reinterpret_cast<const char16_t*>(aString);
-      }
-
-      scriptRuns.SetText(textPtr, aLength);
-    }
-
-    while (gfxScriptItemizer::Run run = scriptRuns.Next()) {
+    // If we resolved script already (for simple Latin-only runs), we don't
+    // need to use gfxScriptItemizer here.
+    if (script != Script::INVALID) {
       if (MOZ_UNLIKELY(MOZ_LOG_TEST(log, LogLevel::Warning))) {
-        nsAutoCString lang;
-        mLanguage->ToUTF8String(lang);
-        nsAutoCString styleString;
-        mStyle.style.ToString(styleString);
-        auto defaultLanguageGeneric = GetDefaultGeneric(mLanguage);
-        MOZ_LOG(
-            log, LogLevel::Warning,
-            ("(%s) fontgroup: [%s] default: %s lang: %s script: %d "
-             "len %d weight: %g stretch: %g%% style: %s size: %6.2f "
-             "%zu-byte TEXTRUN [%s] ENDTEXTRUN\n",
-             (mStyle.systemFont ? "textrunui" : "textrun"),
-             FamilyListToString(mFamilyList).get(),
-             (defaultLanguageGeneric == StyleGenericFontFamily::Serif
-                  ? "serif"
-                  : (defaultLanguageGeneric == StyleGenericFontFamily::SansSerif
-                         ? "sans-serif"
-                         : "none")),
-             lang.get(), static_cast<int>(run.mScript), run.mLength,
-             mStyle.weight.ToFloat(), mStyle.stretch.ToFloat(),
-             styleString.get(), mStyle.size, sizeof(T),
-             textPtr
-                 ? NS_ConvertUTF16toUTF8(textPtr + run.mOffset, run.mLength)
-                       .get()
-                 : nsPromiseFlatCString(
-                       nsDependentCSubstring(
-                           reinterpret_cast<const char*>(aString) + run.mOffset,
-                           run.mLength))
-                       .get()));
+        gfxScriptItemizer::Run run{0, aLength, script};
+        InitTextRunLog(log,
+                       sizeof(T) == sizeof(uint8_t)
+                           ? reinterpret_cast<const uint8_t*>(aString)
+                           : nullptr,
+                       textPtr, run);
       }
-
-      // If COMMON or INHERITED was not resolved, try to use the language code
-      // to guess a likely script.
-      if (run.mScript <= Script::INHERITED) {
-        // This assumes Script codes begin with COMMON and INHERITED, preceding
-        // codes for any "real" scripts.
-        MOZ_ASSERT(
-            run.mScript == Script::COMMON || run.mScript == Script::INHERITED,
-            "unexpected Script code!");
-        run.mScript = ResolveScriptForLang(mLanguage, run.mScript);
-      }
-
       if (textPtr) {
-        InitScriptRun(aDrawTarget, aTextRun, textPtr + run.mOffset, run.mOffset,
-                      run.mLength, run.mScript, aMFR);
+        InitScriptRun(aDrawTarget, aTextRun, textPtr, 0, aLength, script, aMFR);
       } else {
-        InitScriptRun(aDrawTarget, aTextRun, aString + run.mOffset, run.mOffset,
-                      run.mLength, run.mScript, aMFR);
+        InitScriptRun(aDrawTarget, aTextRun, aString, 0, aLength, script, aMFR);
       }
+    } else {
+      gfxScriptItemizer scriptRuns(textPtr, aLength);
+      MOZ_DIAGNOSTIC_ASSERT(!scriptRuns.Done(), "scriptRuns cannot be empty");
+
+      do {
+        gfxScriptItemizer::Run run = scriptRuns.Next();
+        if (MOZ_UNLIKELY(MOZ_LOG_TEST(log, LogLevel::Warning))) {
+          InitTextRunLog(log,
+                         sizeof(T) == sizeof(uint8_t)
+                             ? reinterpret_cast<const uint8_t*>(aString)
+                             : nullptr,
+                         textPtr, run);
+        }
+
+        // If COMMON or INHERITED was not resolved, try to use the language
+        // code to guess a likely script.
+        if (run.mScript <= Script::INHERITED) {
+          // This assumes Script codes begin with COMMON and INHERITED,
+          // preceding codes for any "real" scripts.
+          MOZ_ASSERT(
+              run.mScript == Script::COMMON || run.mScript == Script::INHERITED,
+              "unexpected Script code!");
+          run.mScript = ResolveScriptForLang(mLanguage, run.mScript);
+        }
+
+        if (textPtr) {
+          InitScriptRun(aDrawTarget, aTextRun, textPtr + run.mOffset,
+                        run.mOffset, run.mLength, run.mScript, aMFR);
+        } else {
+          InitScriptRun(aDrawTarget, aTextRun, aString + run.mOffset,
+                        run.mOffset, run.mLength, run.mScript, aMFR);
+        }
+      } while (!scriptRuns.Done());
     }
 
     // if shaping was aborted due to lack of feature support, clear out
@@ -2753,7 +2809,9 @@ void gfxFontGroup::InitTextRun(DrawTarget* aDrawTarget, gfxTextRun* aTextRun,
 
   } while (redo);
 
-  if (sizeof(T) == sizeof(char16_t) && aLength > 0) {
+  // Guard against text that starts with a combining mark (which cannot occur
+  // in 8-bit text, even after numeral processing).
+  if (sizeof(T) == sizeof(char16_t)) {
     gfxTextRun::CompressedGlyph* glyph = aTextRun->GetCharacterGlyphs();
     if (!glyph->IsSimpleGlyph()) {
       glyph->SetClusterStart(true);
@@ -2775,7 +2833,7 @@ void gfxFontGroup::InitTextRun(DrawTarget* aDrawTarget, gfxTextRun* aTextRun,
 static inline bool IsPUA(uint32_t aUSV) {
   // We could look up the General Category of the codepoint here,
   // but it's simpler to check PUA codepoint ranges.
-  return (aUSV >= 0xE000 && aUSV <= 0xF8FF) || (aUSV >= 0xF0000);
+  return (aUSV - 0xE000 <= 0xF8FF - 0xE000) || (aUSV >= 0xF0000);
 }
 
 template <typename T>

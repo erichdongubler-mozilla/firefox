@@ -14,6 +14,7 @@
 #include "gfxSkipChars.h"
 #include "gfxPlatform.h"
 #include "gfxPlatformFontList.h"
+#include "gfxScriptItemizer.h"
 #include "gfxUserFontSet.h"
 #include "gfxUtils.h"
 #include "mozilla/MemoryReporting.h"
@@ -42,6 +43,7 @@ class nsLanguageAtomService;
 class gfxMissingFontRecorder;
 
 namespace mozilla {
+class LogModule;
 class PostTraversalTask;
 class SVGContextPaint;
 enum class StyleHyphens : uint8_t;
@@ -1452,6 +1454,11 @@ class gfxFontGroup final : public gfxTextRunFactory {
   void InitTextRun(DrawTarget* aDrawTarget, gfxTextRun* aTextRun,
                    const T* aString, uint32_t aLength,
                    gfxMissingFontRecorder* aMFR);
+
+  // Internal logging helper for InitTextRun.
+  void InitTextRunLog(mozilla::LogModule* aLog, const uint8_t* aString,
+                      const char16_t* aTextPtr,
+                      const gfxScriptItemizer::Run& aRun);
 
   // InitTextRun helper to handle a single script run, by finding font ranges
   // and calling each font's InitTextRun() as appropriate
