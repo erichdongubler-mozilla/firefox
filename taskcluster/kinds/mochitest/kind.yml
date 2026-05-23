@@ -1086,6 +1086,8 @@ tasks:
             by-test-platform:
                 windows11.*/.*: win11-64-25h2-gpu
                 default: default
+        chunks: dynamic
+        default-chunks: 1
 
         loopback-video: true
         max-run-time: 1800
@@ -1121,6 +1123,7 @@ tasks:
         allow-software-gl-layers: false
         mozharness:
             mochitest-flavor: plain
+            chunked: true
 
     mochitest-webgl1-ext:
         description: "Mochitest webgl1-ext run"
@@ -1131,6 +1134,8 @@ tasks:
             by-test-platform:
                 windows11.*/.*: win11-64-25h2-gpu
                 default: default
+        chunks: dynamic
+        default-chunks: 1
 
         loopback-video: true
         max-run-time: 2700
@@ -1166,6 +1171,7 @@ tasks:
         allow-software-gl-layers: false
         mozharness:
             mochitest-flavor: plain
+            chunked: true
 
     mochitest-webgl2-core:
         description: "Mochitest webgl2-core run"
@@ -1176,7 +1182,8 @@ tasks:
             by-test-platform:
                 windows11.*/.*: win11-64-25h2-gpu
                 default: default
-        chunks:
+        chunks: dynamic
+        default-chunks:
             by-test-platform:
                 android.*: 2
                 default: 1
@@ -1252,7 +1259,8 @@ tasks:
                         android.*: []
                         .*-tsan.*: []
                         default: built-projects
-        chunks: 4
+        chunks: dynamic
+        default-chunks: 4
 
         loopback-video: true
         max-run-time: 2700
