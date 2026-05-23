@@ -156,7 +156,11 @@ endif
 GARBAGE += make-package
 
 make-sourcestamp-file::
-	$(call py_action,make_sourcestamp_file,--output $(MOZ_SOURCESTAMP_FILE) --buildid-header $(DEPTH)/buildid.h $(if $(MOZ_INCLUDE_SOURCE_INFO),--source-repo-header $(DEPTH)/source-repo.h))
+	$(NSINSTALL) -D $(DIST)/$(PKG_PATH)
+	@awk '$$2 == "MOZ_BUILDID" {print $$3}' $(DEPTH)/buildid.h > $(MOZ_SOURCESTAMP_FILE)
+ifdef MOZ_INCLUDE_SOURCE_INFO
+	@awk '$$2 == "MOZ_SOURCE_URL" {print $$3}' $(DEPTH)/source-repo.h >> $(MOZ_SOURCESTAMP_FILE)
+endif
 
 # The install target will install the application to prefix/lib/appname-version
 install:: prepare-package
@@ -210,4 +214,13 @@ multilocale.txt-%:
 
 locale-manifest.in: LOCALES?=$(MOZ_CHROME_MULTILOCALE)
 locale-manifest.in: $(GLOBAL_DEPS) FORCE
-	$(call py_action,locale_manifest,--output $@ --base-path $(BASE_PATH) --locales $(ALL_LOCALES) --locale-entries $(MOZ_CHROME_LOCALE_ENTRIES))
+	printf '\n[multilocale]\n' > $@
+	printf '$(BASE_PATH)/res/multilocale.txt\n' >> $@
+	for LOCALE in $(ALL_LOCALES) ;\
+	do \
+	  for ENTRY in $(MOZ_CHROME_LOCALE_ENTRIES) ;\
+		do \
+		  printf "$$ENTRY""$$LOCALE"'@JAREXT@\n' >> $@; \
+		  printf "$$ENTRY""$$LOCALE"'.manifest\n' >> $@; \
+	  done \
+	done
