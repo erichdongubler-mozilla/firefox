@@ -529,6 +529,11 @@ void DOMMatrixReadOnly::ToFloat64Array(JSContext* aCx,
 }
 
 void DOMMatrixReadOnly::Stringify(nsACString& aResult, ErrorResult& aRv) {
+  Stringify(/* aIs2D */ !mMatrix3D, aResult, aRv);
+}
+
+void DOMMatrixReadOnly::Stringify(bool aIs2D, nsACString& aResult,
+                                  ErrorResult& aRv) {
   char cbuf[JS::MaximumNumberToStringLength];
   auto AppendDouble = [&aRv, &cbuf, &aResult](double d,
                                               bool isLastItem = false) {
@@ -545,7 +550,7 @@ void DOMMatrixReadOnly::Stringify(nsACString& aResult, ErrorResult& aRv) {
     return true;
   };
 
-  if (mMatrix3D) {
+  if (!aIs2D) {
     // We can't use AppendPrintf here, because it does locale-specific
     // formatting of floating-point values.
     aResult.AssignLiteral("matrix3d(");

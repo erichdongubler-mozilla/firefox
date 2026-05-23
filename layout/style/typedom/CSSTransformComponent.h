@@ -45,10 +45,6 @@ class CSSTransformComponent : public nsISupports, public nsWrapperCache {
     MatrixComponent
   };
 
-  // TODO: Remove once the implementation is complete.
-  CSSTransformComponent(nsCOMPtr<nsISupports> aParent,
-                        TransformComponentType aTransformComponentType);
-
   CSSTransformComponent(nsCOMPtr<nsISupports> aParent, bool aIs2D,
                         TransformComponentType aTransformComponentType);
 

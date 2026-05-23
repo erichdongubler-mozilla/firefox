@@ -22,15 +22,6 @@
 namespace mozilla::dom {
 
 CSSTransformComponent::CSSTransformComponent(
-    nsCOMPtr<nsISupports> aParent,
-    TransformComponentType aTransformComponentType)
-    : mParent(std::move(aParent)),
-      mIs2D(false),
-      mTransformComponentType(aTransformComponentType) {
-  MOZ_ASSERT(mParent);
-}
-
-CSSTransformComponent::CSSTransformComponent(
     nsCOMPtr<nsISupports> aParent, bool aIs2D,
     TransformComponentType aTransformComponentType)
     : mParent(std::move(aParent)),
