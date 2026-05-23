@@ -7,6 +7,7 @@
 
 #include "mozilla/intl/UnicodeProperties.h"
 
+#include "mozilla/Assertions.h"
 #include "mozilla/Span.h"
 #include "nsBidiUtils.h"
 #include "nsUGenCategory.h"
@@ -116,6 +117,29 @@ inline bool IsDefaultIgnorable(uint32_t aCh) {
 }
 
 inline EmojiPresentation GetEmojiPresentation(uint32_t aCh) {
+  // The only characters below U+2000 with any emoji properties:
+  // 0023          ; Emoji                # E0.0   [1] hash sign
+  // 002A          ; Emoji                # E0.0   [1] asterisk
+  // 0030..0039    ; Emoji                # E0.0  [10] digit zero..digit nine
+  // 00A9          ; Emoji                # E0.6   [1] copyright
+  // 00AE          ; Emoji                # E0.6   [1] registered
+  if ((aCh & ~0x1fff) == 0) {
+    if (!((aCh - '0' <= '9' - '0') || aCh == '#' || aCh == '*' ||
+          aCh == 0x00A9 || aCh == 0x00AE)) {
+      MOZ_ASSERT(!intl::UnicodeProperties::HasBinaryProperty(
+          aCh, intl::UnicodeProperties::BinaryProperty::Emoji));
+      return TextOnly;
+    }
+  }
+
+  // There are no characters with emoji properties from the CJK Compatibility
+  // block at U+3300 until the Mah-Jong tiles at U+1F000.
+  if (aCh - 0x3300 < 0x1F000 - 0x3300) {
+    MOZ_ASSERT(!intl::UnicodeProperties::HasBinaryProperty(
+        aCh, intl::UnicodeProperties::BinaryProperty::Emoji));
+    return TextOnly;
+  }
+
   if (!intl::UnicodeProperties::HasBinaryProperty(
           aCh, intl::UnicodeProperties::BinaryProperty::Emoji)) {
     return TextOnly;
