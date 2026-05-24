@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.159
- * pdfjsBuild = 25c7d9eaa
+ * pdfjsVersion = 6.0.177
+ * pdfjsBuild = e6cb60089
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -18637,6 +18637,9 @@ class CFFParser {
       this.emptyPrivateDictionary(parentDict);
       return;
     }
+    if (offset + size > this.bytes.length) {
+      throw new FormatError("CFF Private DICT extends past end of font");
+    }
     const privateDictEnd = offset + size;
     const dictData = this.bytes.subarray(offset, privateDictEnd);
     const dict = this.parseDict(dictData);
@@ -25476,6 +25479,8 @@ class Type1Parser {
       }
     };
     let token, length, data, lenIV;
+    let subrsParsed = false;
+    let charStringsParsed = false;
     while ((token = this.getToken()) !== null) {
       if (token !== "/") {
         continue;
@@ -25483,6 +25488,10 @@ class Type1Parser {
       token = this.getToken();
       switch (token) {
         case "CharStrings":
+          if (charStringsParsed) {
+            break;
+          }
+          charStringsParsed = true;
           this.getToken();
           this.getToken();
           this.getToken();
@@ -25515,6 +25524,10 @@ class Type1Parser {
           }
           break;
         case "Subrs":
+          if (subrsParsed) {
+            break;
+          }
+          subrsParsed = true;
           this.readInt();
           this.getToken();
           while (this.getToken() === "dup") {
@@ -27897,8 +27910,14 @@ class Font {
       tables = readTables(font, header.numTables);
     }
     const isTrueType = !tables["CFF "];
+    let parsedCff = null;
     if (!isTrueType) {
-      if (header.version === "OTTO" && !properties.composite || !tables.head || !tables.hhea || !tables.maxp || !tables.post) {
+      try {
+        parsedCff = new CFFParser(new Stream(tables["CFF "].data), properties, SEAC_ANALYSIS_ENABLED).parse();
+      } catch {
+        warn("Failed to parse font " + properties.loadedName);
+      }
+      if (header.version === "OTTO" && (!properties.composite || properties.fontFileN === "FontFile3" && parsedCff?.isCIDFont) || !tables.head || !tables.hhea || !tables.maxp || !tables.post) {
         return this.convert(name, new CFFFont(new Stream(tables["CFF "].data), properties), properties);
       }
       delete tables.glyf;
@@ -27924,14 +27943,11 @@ class Font {
       throw new FormatError('Required "maxp" table is not found');
     }
     let numGlyphsFromCFF;
-    if (!isTrueType) {
+    if (parsedCff) {
       try {
-        const parser = new CFFParser(new Stream(tables["CFF "].data), properties, SEAC_ANALYSIS_ENABLED);
-        const cff = parser.parse();
-        cff.duplicateFirstGlyph();
-        const compiler = new CFFCompiler(cff);
-        tables["CFF "].data = compiler.compile();
-        numGlyphsFromCFF = cff.charStringCount;
+        parsedCff.duplicateFirstGlyph();
+        tables["CFF "].data = new CFFCompiler(parsedCff).compile();
+        numGlyphsFromCFF = parsedCff.charStringCount;
       } catch {
         warn("Failed to compile font " + properties.loadedName);
       }
@@ -32609,6 +32625,98 @@ class MurmurHash3_64 {
   }
 }
 
+;// ./src/core/evaluator_utils.js
+
+
+function _parseVisibilityExpression(xref, array, nestingCounter, currentResult) {
+  const MAX_NESTING = 10;
+  if (++nestingCounter > MAX_NESTING) {
+    warn("Visibility expression is too deeply nested");
+    return;
+  }
+  const length = array.length;
+  const operator = xref.fetchIfRef(array[0]);
+  if (length < 2 || !(operator instanceof Name)) {
+    warn("Invalid visibility expression");
+    return;
+  }
+  switch (operator.name) {
+    case "And":
+    case "Or":
+    case "Not":
+      currentResult.push(operator.name);
+      break;
+    default:
+      warn(`Invalid operator ${operator.name} in visibility expression`);
+      return;
+  }
+  for (let i = 1; i < length; i++) {
+    const raw = array[i];
+    const object = xref.fetchIfRef(raw);
+    if (Array.isArray(object)) {
+      const nestedResult = [];
+      currentResult.push(nestedResult);
+      _parseVisibilityExpression(xref, object, nestingCounter, nestedResult);
+    } else if (raw instanceof Ref) {
+      currentResult.push(raw.toString());
+    }
+  }
+}
+function parseMarkedContentProps(xref, contentProperties, resources) {
+  let optionalContent;
+  if (contentProperties instanceof Name) {
+    const properties = resources.get("Properties");
+    optionalContent = properties.get(contentProperties.name);
+  } else if (contentProperties instanceof Dict) {
+    optionalContent = contentProperties;
+  } else {
+    throw new FormatError("Optional content properties malformed.");
+  }
+  const optionalContentType = optionalContent.get("Type")?.name;
+  if (optionalContentType === "OCG") {
+    return {
+      type: optionalContentType,
+      id: optionalContent.objId
+    };
+  } else if (optionalContentType === "OCMD") {
+    const expression = optionalContent.get("VE");
+    if (Array.isArray(expression)) {
+      const result = [];
+      _parseVisibilityExpression(xref, expression, 0, result);
+      if (result.length > 0) {
+        return {
+          type: "OCMD",
+          expression: result
+        };
+      }
+    }
+    const optionalContentGroups = optionalContent.get("OCGs");
+    if (Array.isArray(optionalContentGroups) || optionalContentGroups instanceof Dict) {
+      const groupIds = [];
+      if (Array.isArray(optionalContentGroups)) {
+        for (const ocg of optionalContentGroups) {
+          groupIds.push(ocg.toString());
+        }
+      } else {
+        groupIds.push(optionalContentGroups.objId);
+      }
+      const p = optionalContent.get("P");
+      return {
+        type: optionalContentType,
+        ids: groupIds,
+        policy: p instanceof Name ? p.name : null,
+        expression: null
+      };
+    } else if (optionalContentGroups instanceof Ref) {
+      return {
+        type: optionalContentType,
+        id: optionalContentGroups.toString()
+      };
+    }
+  }
+  return null;
+}
+
 ;// ./src/core/image.js
 
 
@@ -33443,6 +33551,7 @@ class PDFImage {
 }
 
 ;// ./src/core/evaluator.js
+
 
 
 
@@ -34559,92 +34668,8 @@ class PartialEvaluator {
     }
     throw new FormatError(`Unknown PatternName: ${patternName}`);
   }
-  _parseVisibilityExpression(array, nestingCounter, currentResult) {
-    const MAX_NESTING = 10;
-    if (++nestingCounter > MAX_NESTING) {
-      warn("Visibility expression is too deeply nested");
-      return;
-    }
-    const length = array.length;
-    const operator = this.xref.fetchIfRef(array[0]);
-    if (length < 2 || !(operator instanceof Name)) {
-      warn("Invalid visibility expression");
-      return;
-    }
-    switch (operator.name) {
-      case "And":
-      case "Or":
-      case "Not":
-        currentResult.push(operator.name);
-        break;
-      default:
-        warn(`Invalid operator ${operator.name} in visibility expression`);
-        return;
-    }
-    for (let i = 1; i < length; i++) {
-      const raw = array[i];
-      const object = this.xref.fetchIfRef(raw);
-      if (Array.isArray(object)) {
-        const nestedResult = [];
-        currentResult.push(nestedResult);
-        this._parseVisibilityExpression(object, nestingCounter, nestedResult);
-      } else if (raw instanceof Ref) {
-        currentResult.push(raw.toString());
-      }
-    }
-  }
   async parseMarkedContentProps(contentProperties, resources) {
-    let optionalContent;
-    if (contentProperties instanceof Name) {
-      const properties = resources.get("Properties");
-      optionalContent = properties.get(contentProperties.name);
-    } else if (contentProperties instanceof Dict) {
-      optionalContent = contentProperties;
-    } else {
-      throw new FormatError("Optional content properties malformed.");
-    }
-    const optionalContentType = optionalContent.get("Type")?.name;
-    if (optionalContentType === "OCG") {
-      return {
-        type: optionalContentType,
-        id: optionalContent.objId
-      };
-    } else if (optionalContentType === "OCMD") {
-      const expression = optionalContent.get("VE");
-      if (Array.isArray(expression)) {
-        const result = [];
-        this._parseVisibilityExpression(expression, 0, result);
-        if (result.length > 0) {
-          return {
-            type: "OCMD",
-            expression: result
-          };
-        }
-      }
-      const optionalContentGroups = optionalContent.get("OCGs");
-      if (Array.isArray(optionalContentGroups) || optionalContentGroups instanceof Dict) {
-        const groupIds = [];
-        if (Array.isArray(optionalContentGroups)) {
-          for (const ocg of optionalContentGroups) {
-            groupIds.push(ocg.toString());
-          }
-        } else {
-          groupIds.push(optionalContentGroups.objId);
-        }
-        return {
-          type: optionalContentType,
-          ids: groupIds,
-          policy: optionalContent.get("P") instanceof Name ? optionalContent.get("P").name : null,
-          expression: null
-        };
-      } else if (optionalContentGroups instanceof Ref) {
-        return {
-          type: optionalContentType,
-          id: optionalContentGroups.toString()
-        };
-      }
-    }
-    return null;
+    return parseMarkedContentProps(this.xref, contentProperties, resources);
   }
   async getOperatorList({
     stream,
@@ -36715,9 +36740,15 @@ class PartialEvaluator {
     if (!(fontName instanceof Name)) {
       throw new FormatError("invalid font name");
     }
-    let fontFile, subtype, length1, length2, length3;
+    let fontFile, fontFileN, subtype, length1, length2, length3;
     try {
-      fontFile = descriptor.get("FontFile", "FontFile2", "FontFile3");
+      for (const n of ["FontFile", "FontFile2", "FontFile3"]) {
+        fontFile = descriptor.get(n);
+        if (fontFile) {
+          fontFileN = n;
+          break;
+        }
+      }
       if (fontFile) {
         if (!(fontFile instanceof BaseStream)) {
           throw new FormatError("FontFile should be a stream");
@@ -36805,6 +36836,7 @@ class PartialEvaluator {
       name: fontName.name,
       subtype,
       file: fontFile,
+      fontFileN,
       length1,
       length2,
       length3,
@@ -36843,7 +36875,19 @@ class PartialEvaluator {
     }
     const newProperties = await this.extractDataStructures(dict, properties);
     this.extractWidths(dict, descriptor, newProperties);
-    return new Font(fontName.name, fontFile, newProperties, this.options);
+    const font = new Font(fontName.name, fontFile, newProperties, this.options);
+    if (font.missingFile && !font.systemFontInfo && !isType3Font && this.options.useSystemFonts) {
+      const standardFontName = getStandardFontName(fontName.name);
+      const substitution = getFontSubstitution(this.systemFontCache, this.idFactory, this.options.standardFontDataUrl, fontName.name, standardFontName, type);
+      if (substitution) {
+        if (substitution.guessFallback) {
+          substitution.guessFallback = false;
+          substitution.css += `,${font.fallbackName}`;
+        }
+        font.systemFontInfo = substitution;
+      }
+    }
+    return font;
   }
   static buildFontPaths(font, glyphs, handler, evaluatorOptions) {
     function buildPath(fontChar) {
@@ -51936,6 +51980,7 @@ class XFAFactory {
 
 
 
+
 class AnnotationFactory {
   static createGlobals(pdfManager) {
     return Promise.all([pdfManager.ensureCatalog("acroForm"), pdfManager.ensureDoc("xfaDatasets"), pdfManager.ensureCatalog("structTreeRoot"), pdfManager.ensureCatalog("baseUrl"), pdfManager.ensureCatalog("attachments"), pdfManager.ensureCatalog("globalColorSpaceCache")]).then(([acroForm, xfaDatasets, structTreeRoot, baseUrl, attachments, globalColorSpaceCache]) => ({
@@ -52291,6 +52336,7 @@ function getTransformMatrix(rect, bbox, matrix) {
   return [xRatio, 0, 0, yRatio, rect[0] - minX * xRatio, rect[1] - minY * yRatio];
 }
 class Annotation {
+  _oc = undefined;
   constructor(params) {
     const {
       annotationGlobals,
@@ -52312,7 +52358,7 @@ class Annotation {
     this.setColor(dict.getArray("C"));
     this.setBorderStyle(dict);
     this.setAppearance(dict);
-    this.setOptionalContent(dict);
+    this.#setOptionalContent(xref, dict);
     const MK = dict.get("MK");
     this.setBorderAndBackgroundColors(MK);
     this.setRotation(MK, dict);
@@ -52335,6 +52381,7 @@ class Annotation {
       hasAppearance: !!this.appearance,
       id: params.id,
       modificationDate: this.modificationDate,
+      oc: this._oc,
       rect: this.rectangle,
       subtype,
       hasOwnCanvas: false,
@@ -52567,13 +52614,13 @@ class Annotation {
       this.appearance = appearance;
     }
   }
-  setOptionalContent(dict) {
-    this.oc = null;
-    const oc = dict.get("OC");
-    if (oc instanceof Name) {
-      warn("setOptionalContent: Support for /Name-entry is not implemented.");
-    } else if (oc instanceof Dict) {
-      this.oc = oc;
+  #setOptionalContent(xref, dict) {
+    if (dict.has("OC")) {
+      try {
+        this._oc = parseMarkedContentProps(xref, dict.get("OC"), null);
+      } catch (ex) {
+        warn(`#setOptionalContent: ${ex}`);
+      }
     }
   }
   async loadResources(keys, appearance) {
@@ -52616,10 +52663,7 @@ class Annotation {
     const matrix = lookupMatrix(appearanceDict.getArray("Matrix"), IDENTITY_MATRIX);
     const transform = getTransformMatrix(rect, bbox, matrix);
     const opList = new OperatorList();
-    let optionalContent;
-    if (this.oc) {
-      optionalContent = await evaluator.parseMarkedContentProps(this.oc, null);
-    }
+    const optionalContent = this._oc;
     if (optionalContent !== undefined) {
       opList.addOp(OPS.beginMarkedContentProps, ["OC", optionalContent]);
     }
@@ -53176,10 +53220,7 @@ class WidgetAnnotation extends Annotation {
     const matrix = [1, 0, 0, 1, 0, 0];
     const bbox = [0, 0, this.width, this.height];
     const transform = getTransformMatrix(this.data.rect, bbox, matrix);
-    let optionalContent;
-    if (this.oc) {
-      optionalContent = await evaluator.parseMarkedContentProps(this.oc, null);
-    }
+    const optionalContent = this._oc;
     if (optionalContent !== undefined) {
       opList.addOp(OPS.beginMarkedContentProps, ["OC", optionalContent]);
     }
@@ -60170,20 +60211,23 @@ class XRefWrapper {
     this.entries = entries;
     this._getNewRef = getNewRef;
   }
-  fetch(ref) {
-    return ref instanceof Ref ? this.entries[ref.num] : ref;
-  }
-  fetchIfRefAsync(ref) {
-    return Promise.resolve(this.fetch(ref));
-  }
-  fetchIfRef(ref) {
-    return this.fetch(ref);
-  }
-  fetchAsync(ref) {
-    return Promise.resolve(this.fetch(ref));
-  }
   getNewTemporaryRef() {
     return this._getNewRef();
+  }
+  fetchIfRef(obj) {
+    return obj instanceof Ref ? this.fetch(obj) : obj;
+  }
+  fetch(ref) {
+    if (!(ref instanceof Ref)) {
+      throw new Error("ref object is not a reference");
+    }
+    return this.entries[ref.num];
+  }
+  async fetchIfRefAsync(obj) {
+    return obj instanceof Ref ? this.fetchAsync(obj) : obj;
+  }
+  async fetchAsync(ref) {
+    return this.fetch(ref);
   }
 }
 class PDFEditor {
@@ -60232,8 +60276,7 @@ class PDFEditor {
     this.author = author;
   }
   get newRef() {
-    const ref = Ref.get(this.newRefCount++, 0);
-    return ref;
+    return Ref.get(this.newRefCount++, 0);
   }
   get newDict() {
     const ref = this.newRef;
@@ -60474,9 +60517,9 @@ class PDFEditor {
         attributes = [attributes];
       }
       for (let attr of attributes) {
-        attr = this.xrefWrapper.fetch(attr);
+        attr = this.xrefWrapper.fetchIfRef(attr);
         if (isName(attr.get("O"), "Table") && attr.has("Headers")) {
-          const headers = this.xrefWrapper.fetch(attr.getRaw("Headers"));
+          const headers = this.xrefWrapper.fetchIfRef(attr.getRaw("Headers"));
           if (Array.isArray(headers)) {
             for (let i = 0, ii = headers.length; i < ii; i++) {
               const newId = dedupIDs.get(stringToPDFString(headers[i], false));
@@ -62413,7 +62456,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "6.0.159";
+    const workerVersion = "6.0.177";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }
