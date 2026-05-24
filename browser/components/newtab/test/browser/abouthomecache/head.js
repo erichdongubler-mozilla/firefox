@@ -250,10 +250,10 @@ async function clearCache() {
  * @param cacheResultScalar (Number)
  *   One of the AboutHomeStartupCache.CACHE_RESULT_SCALARS values.
  */
-async function assertCacheResultScalar(cacheResultScalar) {
-  await Services.fog.testFlushAllChildren();
+function assertCacheResultScalar(cacheResultScalar) {
+  let parentScalars = Services.telemetry.getSnapshotForScalars("main").parent;
   Assert.equal(
-    Glean.browserStartup.abouthomeCacheResult.testGetValue(),
+    parentScalars["browser.startup.abouthome_cache_result"],
     cacheResultScalar,
     "Expected the right value set to browser.startup.abouthome_cache_result " +
       "scalar."
@@ -301,7 +301,7 @@ async function ensureCachedAboutHome(browser) {
       "Should have found the Discovery Stream top sites."
     );
   });
-  await assertCacheResultScalar(
+  assertCacheResultScalar(
     AboutHomeStartupCache.CACHE_RESULT_SCALARS.VALID_AND_USED
   );
 }
@@ -353,5 +353,5 @@ async function ensureDynamicAboutHome(browser, expectedResultScalar) {
     );
   });
 
-  await assertCacheResultScalar(expectedResultScalar);
+  assertCacheResultScalar(expectedResultScalar);
 }

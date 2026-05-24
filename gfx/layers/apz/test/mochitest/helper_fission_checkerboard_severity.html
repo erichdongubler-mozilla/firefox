@@ -67,7 +67,7 @@
 
     async function test() {
       await SpecialPowers.spawnChrome([], () => {
-        Services.fog.testResetFOG();
+        Services.telemetry.getHistogramById("CHECKERBOARD_SEVERITY").clear();
       });
 
       const iframe = document.getElementById("testframe");
@@ -116,10 +116,11 @@
         setTimeout(resolve, 100);
       });
 
-      const hasCheckerboardSeverity = await SpecialPowers.spawnChrome([], async () => {
-        await Services.fog.testFlushAllChildren();
-        const chromeWindow = this.browsingContext.topChromeWindow;
-        return chromeWindow.Glean.gfxCheckerboard.severity.testGetValue() !== null;
+      const hasCheckerboardSeverity = await SpecialPowers.spawnChrome([], () => {
+        const histograms = Services.telemetry.getSnapshotForHistograms(
+          "main",
+          true /* clear the histograms after taking this snapshot*/).parent;
+        return histograms.hasOwnProperty("CHECKERBOARD_SEVERITY");
       });
       ok(!hasCheckerboardSeverity, "there should be no checkerboard severity data");
     }

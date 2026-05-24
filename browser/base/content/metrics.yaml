@@ -486,6 +486,7 @@ browser.timings:
       - mconley@mozilla.com
       - perf-telemetry-alerts@mozilla.com
     expires: never
+    telemetry_mirror: FX_NEW_WINDOW_MS
     metadata:
       monitor:
         alert: False
@@ -513,6 +514,7 @@ browser.timings:
       - perf-telemetry-alerts@mozilla.com
       - product-metrics-telemetry-alerts@mozilla.com
     expires: never
+    telemetry_mirror: FX_PAGE_LOAD_MS_2
     metadata:
       monitor:
         alert: False
@@ -538,6 +540,7 @@ browser.timings:
       - perf-telemetry-alerts@mozilla.com
       - product-metrics-telemetry-alerts@mozilla.com
     expires: never
+    telemetry_mirror: FX_PAGE_RELOAD_NORMAL_MS
 
   page_reload_skip_cache:
     type: timing_distribution
@@ -556,6 +559,7 @@ browser.timings:
       - perf-telemetry-alerts@mozilla.com
       - product-metrics-telemetry-alerts@mozilla.com
     expires: never
+    telemetry_mirror: FX_PAGE_RELOAD_SKIP_CACHE_MS
 
   startup_timeline:
     type: labeled_quantity
