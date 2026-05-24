@@ -65,6 +65,7 @@ export class ChatConversation extends EventEmitter {
   createdDate;
   updatedDate;
   status;
+  /** @type {SecurityProperties} */
   securityProperties;
   /** @type {ChatMessage[]} */
   #messages;
