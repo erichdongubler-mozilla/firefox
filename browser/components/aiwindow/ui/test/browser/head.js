@@ -874,6 +874,10 @@ function readRequestBody(request) {
  */
 
 /**
+ *
+ * @deprecated - Please use MockEngineManager in AIWindowTestUtils.sys.mjs unless
+ * a test is explicitly needing to test the network layer of the OpenAI chat protocol.
+ *
  * Starts a local HTTP server that mimics the OpenAI chat completions API.
  *
  * Handles both streaming (SSE) and non-streaming (JSON) requests to

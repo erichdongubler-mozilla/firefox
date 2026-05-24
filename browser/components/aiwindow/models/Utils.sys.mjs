@@ -87,6 +87,8 @@ export const MODEL_FEATURES = Object.freeze({
   ENABLE_TABLE_INSTRUCTIONS: "enable-table-instructions",
 });
 
+/** @typedef {(typeof MODEL_FEATURES)[keyof typeof MODEL_FEATURES]} ModelFeature */
+
 /**
  * Service types for different AI Window features
  */
