@@ -478,6 +478,11 @@
   value: true
   mirror: always
 
+- name: apz.autoscroll.scroll_wheel_cooldown
+  type: RelaxedAtomicInt32
+  value: 500
+  mirror: always
+
 - name: apz.axis_lock.breakout_angle
   type: AtomicFloat
   value: float(M_PI / 8.0)    # 22.5 degrees
