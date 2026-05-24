@@ -17,11 +17,81 @@
  * @property {(reason: any) => void} reject
  */
 
+/**
+ * @import { PageExtractorParent } from "../../pageextractor/PageExtractorParent.sys.mjs"
+ */
+
+import { BrowserTestUtils } from "resource://testing-common/BrowserTestUtils.sys.mjs";
+import { HttpServer } from "resource://testing-common/httpd.sys.mjs";
+
+/**
+ * @param {TemplateStringsArray} strings
+ * @param {any[]} values
+ * @returns {string}
+ */
+function joinTemplate(strings, values) {
+  let result = "";
+  for (let i = 0; i < strings.length; i++) {
+    result += strings[i];
+    if (i < values.length) {
+      result += values[i];
+    }
+  }
+  return result;
+}
+
 const EXTRA_RESPONSE_ARGS = {
   metrics: [],
   resourcesBefore: { cpuTime: null, memory: null },
   resourcesAfter: { cpuTime: null, memory: null },
 };
+
+/**
+ * Create an HTTP server that serves HTML once.
+ *
+ * @param {string} markup - The HTML content to serve
+ * @param {number} code - HTTP status code
+ * @returns {{url: string, cleanup: () => Promise<void>}}
+ */
+function createServer(markup, code) {
+  const server = new HttpServer();
+
+  const { promise, resolve } = Promise.withResolvers();
+  const encoder = new TextEncoder();
+  const htmlUtf8 = encoder.encode(markup);
+
+  /** @type {nsIHttpRequestHandler} */
+  const pageHandler = (request, response) => {
+    response.setHeader("Content-Type", "text/html; charset=utf-8");
+    response.setStatusLine(request.httpVersion, code, "");
+
+    const binaryOutputStream = Cc[
+      "@mozilla.org/binaryoutputstream;1"
+    ].createInstance(Ci.nsIBinaryOutputStream);
+
+    binaryOutputStream.setOutputStream(response.bodyOutputStream);
+    binaryOutputStream.writeByteArray(
+      /**
+       * @type {any} - The type expects a number[], while we are passing a Uint8Array.
+       */ (htmlUtf8)
+    );
+
+    resolve(server.stop());
+  };
+
+  server.registerPathHandler("/page.html", pageHandler);
+
+  server.start(-1);
+
+  let { primaryHost, primaryPort } = server.identity;
+  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  const url = `http://${primaryHost}:${primaryPort}/page.html`;
+
+  return {
+    url,
+    cleanup: () => promise,
+  };
+}
 
 /**
  * Mock an LLM with artificial calls. This is useful for testing various user flows when
@@ -264,5 +334,107 @@ export const MLTestUtils = {
       dump(JSON.stringify(data, null, 2));
       dump("\n");
     }
+  },
+
+  /**
+   * Serve HTML content via HTTP server but do not load it in a tab.
+   *
+   * The server serves the content once and then stops. This is useful for enumerating
+   * multiple HTML test cases directly in a mochitest without relying on wiring in
+   * support files. The html`` tagged template literal can also be used as a way to
+   * provide syntax highlighting and linting support within your editor.
+   *
+   * Example usage:
+   *   const { html } = MLTestUtils.serveHTML({ code: 404 });
+   *   const { url, cleanup } = html`<h1>Test</h1>`;
+   *   // Use the URL...
+   *   await cleanup();
+   *
+   * @param {object} options - Server configuration
+   * @param {number} [options.code] - HTTP status code (default: 200)
+   * @returns {{html: Function}}
+   */
+  serveHTML(options = {}) {
+    const { code = 200 } = options;
+
+    /**
+     * Define the HTML and spin up a server.
+     *
+     * @param {TemplateStringsArray} strings - The literal string parts
+     * @param {...any} values - The interpolated expressions
+     * @returns {{url: string, cleanup: () => Promise<void>}}
+     */
+    function html(strings, ...values) {
+      const markup = `<!DOCTYPE html><body>${joinTemplate(strings, values)}</body>`;
+      return createServer(markup, code);
+    }
+
+    return { html };
+  },
+
+  /**
+   * Similar to serveHTML, but loads the HTML automatically in a tab.
+   *
+   * Example usage:
+   *   const { html } = MLTestUtils.serveHTMLInTab({ browser: gBrowser, code: 404 });
+   *   const { tab, getPageExtractor, cleanup } = await html`
+   *     <h1>Page Not Found</h1>
+   *   `;
+   *   // Use the tab
+   *   await cleanup();
+   *
+   * @param {object} options - Server configuration
+   * @param {object} options.browser - The gBrowser object from test scope
+   * @param {number} [options.code] - HTTP status code (default: 200)
+   */
+  serveHTMLInTab(options) {
+    const { browser, code = 200 } = options;
+
+    if (!browser) {
+      throw new Error(
+        "browser is required. Pass it via serveHTMLInTab({ browser: gBrowser })"
+      );
+    }
+
+    /**
+     * Use a tagged template literal to create an HTML test page. This spins
+     * up an HTTP server that serves the markup in a new tab.
+     *
+     * @param {TemplateStringsArray} strings - The literal string parts
+     * @param {...any} values - The interpolated expressions
+     */
+    async function html(strings, ...values) {
+      const markup = `<!DOCTYPE html><body>${joinTemplate(strings, values)}</body>`;
+      const { url, cleanup: serverCleanup } = createServer(markup, code);
+
+      const tab = await BrowserTestUtils.openNewForegroundTab(
+        browser,
+        url,
+        true // waitForLoad
+      );
+
+      /**
+       * Get a new page extractor, which can change when navigating pages.
+       *
+       * @returns {PageExtractorParent}
+       */
+      function getPageExtractor() {
+        return tab.linkedBrowser.browsingContext.currentWindowGlobal.getActor(
+          "PageExtractor"
+        );
+      }
+
+      return {
+        tab,
+        url,
+        getPageExtractor,
+        async cleanup() {
+          await serverCleanup();
+          BrowserTestUtils.removeTab(tab);
+        },
+      };
+    }
+
+    return { html };
   },
 };
