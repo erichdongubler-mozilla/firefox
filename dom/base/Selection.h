@@ -1316,6 +1316,26 @@ inline std::ostream& operator<<(
   }
 }
 
+/**
+ * Use this to detect unexpected selection changes. This is almost the same as
+ * nsMutationGuard. So, when you fix some bugs of this, you should change
+ * nsMutationGuard too.
+ */
+class SelectionChangeGuard {
+ public:
+  SelectionChangeGuard() : mStartingGeneration(sGeneration) {}
+
+  [[nodiscard]] bool Changed(uint32_t aIgnoreCount) const {
+    return (sGeneration - mStartingGeneration) > aIgnoreCount;
+  }
+
+  static void DidChange() { sGeneration++; }
+
+ private:
+  uint64_t mStartingGeneration;
+  static uint64_t sGeneration;
+};
+
 }  // namespace mozilla
 
 inline nsresult nsISelectionController::ScrollSelectionIntoView(

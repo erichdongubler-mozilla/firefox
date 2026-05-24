@@ -267,6 +267,10 @@ ASSERT_NODE_FLAGS_SPACE(NODE_TYPE_SPECIFIC_BITS_OFFSET);
  * nsMutationGuard on the stack before unexpected mutations could occur.
  * You can then at any time call Mutated to check if any unexpected mutations
  * have occurred.
+ *
+ * NOTE: There is SelectionChangeGuard which manages the generation of selection
+ * ranges. If you need to fix a bug of this class, you need to touch
+ * SelectionChangeGuard too.
  */
 class nsMutationGuard {
  public:
@@ -280,7 +284,7 @@ class nsMutationGuard {
    * finding the difference between two elements of the group Z < 2^64.  Once
    * we know the difference between two elements we only need to check that is
    * less than the given number of mutations to know less than that many
-   * mutations occured.  Assuming constant 1ns mutations it would take 584
+   * mutations occurred.  Assuming constant 1ns mutations it would take 584
    * years for sGeneration to fully wrap around so we can ignore a guard living
    * through a full wrap around.
    */

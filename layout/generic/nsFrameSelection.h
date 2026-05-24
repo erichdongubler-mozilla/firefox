@@ -1393,6 +1393,10 @@ struct LimitersAndCaretData {
   using Element = dom::Element;
 
   LimitersAndCaretData() = default;
+  MOZ_IMPLICIT LimitersAndCaretData(const LimitersAndCaretData&) = default;
+  LimitersAndCaretData(LimitersAndCaretData&&) = default;
+  LimitersAndCaretData& operator=(const LimitersAndCaretData&) = default;
+  LimitersAndCaretData& operator=(LimitersAndCaretData&&) = default;
   explicit LimitersAndCaretData(const nsFrameSelection& aFrameSelection)
       : mIndependentSelectionRootElement(
             aFrameSelection.GetIndependentSelectionRootElement()),

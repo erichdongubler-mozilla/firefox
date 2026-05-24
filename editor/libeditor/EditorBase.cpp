@@ -6853,6 +6853,15 @@ void EditorBase::AutoEditActionDataSetter::UpdateSelectionCache(
   }
 }
 
+LimitersAndCaretData
+EditorBase::AutoEditActionDataSetter::SelectionLimitersAndCaretData() const {
+  if (nsFrameSelection* const frameSelection =
+          SelectionRef().GetFrameSelection()) {
+    return LimitersAndCaretData{*frameSelection};
+  }
+  return {};
+}
+
 void EditorBase::AutoEditActionDataSetter::SetColorData(
     const nsAString& aData) {
   MOZ_ASSERT(!HasTriedToDispatchBeforeInputEvent(),
@@ -7661,4 +7670,10 @@ nsresult EditorBase::GetDataFromDataTransferOrClipboard(
   }
   return NS_OK;
 }
+
+LimitersAndCaretData EditorBase::SelectionLimitersAndCaretData() const {
+  MOZ_ASSERT(mEditActionData);
+  return mEditActionData->SelectionLimitersAndCaretData();
+}
+
 }  // namespace mozilla

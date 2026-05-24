@@ -243,6 +243,8 @@ static void printRange(nsRange* aDomRange);
 #  define DEBUG_OUT_RANGE(x)
 #endif  // PRINT_RANGE
 
+uint64_t SelectionChangeGuard::sGeneration = 0;
+
 static constexpr nsLiteralCString kNoDocumentTypeNodeError =
     "DocumentType nodes are not supported"_ns;
 static constexpr nsLiteralCString kNoRangeExistsError =
@@ -3907,6 +3909,7 @@ void Selection::NotifySelectionListeners() {
 
   MOZ_LOG(sSelectionLog, LogLevel::Debug,
           ("%s: selection=%p", __FUNCTION__, this));
+  SelectionChangeGuard::DidChange();
 
   mStyledRanges.mRangesMightHaveChanged = true;
 
