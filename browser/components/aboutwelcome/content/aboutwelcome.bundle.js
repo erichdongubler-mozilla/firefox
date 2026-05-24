@@ -222,7 +222,9 @@ const MultiStageAboutWelcome = props => {
       // blocking the thread.
       window.AWGetUnhandledCampaignAction?.().then(action => {
         if (typeof action === "string") {
-          _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.handleCampaignAction(action, props.message_id);
+          _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.handleCampaignAction(action, props.message_id, {
+            writeInMicrosurvey: props.writeInMicrosurvey
+          });
         }
       }).catch(error => {
         console.error("Failed to get unhandled campaign action:", error);
@@ -239,7 +241,8 @@ const MultiStageAboutWelcome = props => {
             screen_family: props.message_id,
             screen_index: order,
             screen_id: screen.id,
-            screen_initials: screenInitials
+            screen_initials: screenInitials,
+            writeInMicrosurvey: props.writeInMicrosurvey
           });
           window.AWAddScreenImpression?.(screen);
         }
@@ -468,6 +471,7 @@ const MultiStageAboutWelcome = props => {
       autoAdvance: currentScreen.auto_advance,
       advanceOnExperimentLoad: currentScreen.advance_on_experiment_load,
       messageId: `${props.message_id}_${order}_${currentScreen.id}`,
+      writeInMicrosurvey: props.writeInMicrosurvey,
       UTMTerm: props.utm_term,
       flowParams: flowParams,
       activeTheme: activeTheme,
@@ -726,20 +730,26 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
     source,
     props
   }) {
-    _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendActionTelemetry(props.messageId, source, event.name);
+    _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendActionTelemetry(props.messageId, source, event.name, {
+      writeInMicrosurvey: props.writeInMicrosurvey
+    });
 
     // Send additional telemetry if a messaging surface like feature callout is
     // dismissed via the dismiss button. Other causes of dismissal will be
     // handled separately by the messaging surface's own code.
     if (value === "dismiss_button" && !event.name) {
-      _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendDismissTelemetry(props.messageId, source);
+      _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendDismissTelemetry(props.messageId, source, {
+        writeInMicrosurvey: props.writeInMicrosurvey
+      });
     }
   }
   async handleMigrationIfNeeded(action, props) {
     const hasMigrate = a => a.type === "SHOW_MIGRATION_WIZARD" || a.type === "MULTI_ACTION" && a.data?.actions?.some(hasMigrate);
     if (hasMigrate(action)) {
       await window.AWWaitForMigrationClose();
-      _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendActionTelemetry(props.messageId, "migrate_close", "CLICK_BUTTON");
+      _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendActionTelemetry(props.messageId, "migrate_close", "CLICK_BUTTON", {
+        writeInMicrosurvey: props.writeInMicrosurvey
+      });
     }
   }
   applyThemeIfNeeded(action, event) {
@@ -829,7 +839,9 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
         actionResult = await actionPromise;
       }
       if (action.type === "FXA_SIGNIN_FLOW") {
-        _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendActionTelemetry(props.messageId, actionResult ? "sign_in" : "sign_in_cancel", "FXA_SIGNIN_FLOW");
+        _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendActionTelemetry(props.messageId, actionResult ? "sign_in" : "sign_in_cancel", "FXA_SIGNIN_FLOW", {
+          writeInMicrosurvey: props.writeInMicrosurvey
+        });
       }
       // Wait until migration closes to complete the action
       await this.handleMigrationIfNeeded(action, props);
@@ -938,7 +950,9 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
     action.data.actions.unshift(...multiSelectActions);
     for (const value of Object.values(props.activeMultiSelect)) {
       // Send telemetry with selected checkbox ids
-      _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendActionTelemetry(props.messageId, value.flat(), "SELECT_CHECKBOX");
+      _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendActionTelemetry(props.messageId, value.flat(), "SELECT_CHECKBOX", {
+        writeInMicrosurvey: props.writeInMicrosurvey
+      });
     }
   }
   setTextInputActions(action) {
@@ -983,7 +997,8 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
           collectedActions.push(tile.data.action);
         }
         _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendActionTelemetry(props.messageId, inputId, "TEXT_INPUT", {
-          value: truncateToByteSize(inputData.value, 8192)
+          value: truncateToByteSize(inputData.value, 8192),
+          writeInMicrosurvey: props.writeInMicrosurvey
         });
       }
     };
@@ -1020,6 +1035,7 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       langPackInstallPhase: this.props.langPackInstallPhase,
       handleAction: this.handleAction,
       messageId: this.props.messageId,
+      writeInMicrosurvey: this.props.writeInMicrosurvey,
       isFirstScreen: this.props.isFirstScreen,
       isLastScreen: this.props.isLastScreen,
       isSingleScreen: this.props.isSingleScreen,
@@ -1350,6 +1366,7 @@ const MultiStageProtonScreen = props => {
     addonIconURL: props.addonIconURL,
     themeScreenshots: props.themeScreenshots,
     messageId: props.messageId,
+    writeInMicrosurvey: props.writeInMicrosurvey,
     negotiatedLanguage: props.negotiatedLanguage,
     langPackInstallPhase: props.langPackInstallPhase,
     forceHideStepsIndicator: props.forceHideStepsIndicator,
@@ -1613,7 +1630,8 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       handleAction: this.props.handleAction,
       negotiatedLanguage: this.props.negotiatedLanguage,
       langPackInstallPhase: this.props.langPackInstallPhase,
-      messageId: this.props.messageId
+      messageId: this.props.messageId,
+      writeInMicrosurvey: this.props.writeInMicrosurvey
     }) : null;
   }
   renderDismissButton() {
@@ -2061,7 +2079,8 @@ function LanguageSwitcher(props) {
     handleAction,
     negotiatedLanguage,
     langPackInstallPhase,
-    messageId
+    messageId,
+    writeInMicrosurvey
   } = props;
   const [isAwaitingLangpack, setIsAwaitingLangpack] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
 
@@ -2157,7 +2176,9 @@ function LanguageSwitcher(props) {
     className: "primary",
     value: "primary_button",
     onClick: () => {
-      _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendActionTelemetry(messageId, "download_langpack", "CLICK_BUTTON");
+      _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendActionTelemetry(messageId, "download_langpack", "CLICK_BUTTON", {
+        writeInMicrosurvey
+      });
       setIsAwaitingLangpack(true);
     }
   }, content.languageSwitcher.switch ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
@@ -2799,7 +2820,9 @@ const ContentTiles = props => {
   }, []);
   const toggleTile = (index, tile) => {
     const tileId = `${tile.type}${tile.id ? "_" : ""}${tile.id ?? ""}_header`;
-    _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_12__.MultiStageUtils.sendActionTelemetry(props.messageId, tileId, "CLICK_BUTTON");
+    _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_12__.MultiStageUtils.sendActionTelemetry(props.messageId, tileId, "CLICK_BUTTON", {
+      writeInMicrosurvey: props.writeInMicrosurvey
+    });
     if (tile.type === "link" && tile.action) {
       props.handleAction({
         currentTarget: {
@@ -2812,7 +2835,9 @@ const ContentTiles = props => {
   };
   const toggleTiles = () => {
     setTilesHeaderExpanded(prev => !prev);
-    _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_12__.MultiStageUtils.sendActionTelemetry(props.messageId, "content_tiles_header", "CLICK_BUTTON");
+    _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_12__.MultiStageUtils.sendActionTelemetry(props.messageId, "content_tiles_header", "CLICK_BUTTON", {
+      writeInMicrosurvey: props.writeInMicrosurvey
+    });
   };
   function getTileMultiSelects(screenMultiSelects, index) {
     return screenMultiSelects?.[`tile-${index}`];
@@ -2876,7 +2901,8 @@ const ContentTiles = props => {
       installedAddons: props.installedAddons,
       message_id: props.messageId,
       handleAction: props.handleAction,
-      layout: content.position
+      layout: content.position,
+      writeInMicrosurvey: props.writeInMicrosurvey
     }), ["theme", "single-select"].includes(tile.type) && tile.data && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_SingleSelect__WEBPACK_IMPORTED_MODULE_3__.SingleSelect, {
       content: {
         tiles: tile
@@ -2912,7 +2938,8 @@ const ContentTiles = props => {
       }
     }), tile.type === "action_checklist" && tile.data && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_ActionChecklist__WEBPACK_IMPORTED_MODULE_9__.ActionChecklist, {
       content: content,
-      message_id: props.messageId
+      message_id: props.messageId,
+      writeInMicrosurvey: props.writeInMicrosurvey
     }), tile.type === "embedded_browser" && tile.data?.url && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedBrowser__WEBPACK_IMPORTED_MODULE_10__.EmbeddedBrowser, {
       url: tile.data.url,
       style: tile.data.style
@@ -3002,7 +3029,8 @@ const AddonsPicker = props => {
   }
   function handleInstallClick(event) {
     const {
-      message_id
+      message_id,
+      writeInMicrosurvey
     } = props;
     let {
       action,
@@ -3014,7 +3042,9 @@ const AddonsPicker = props => {
       }
     }
     handleAction(event, action);
-    _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_1__.MultiStageUtils.sendActionTelemetry(message_id, source_id, "CLICK_BUTTON");
+    _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_1__.MultiStageUtils.sendActionTelemetry(message_id, source_id, "CLICK_BUTTON", {
+      writeInMicrosurvey
+    });
   }
   function handleAuthorClick(event, authorId) {
     event.stopPropagation();
@@ -4078,7 +4108,8 @@ const ActionChecklistProgressBar = ({
 };
 const ActionChecklist = ({
   content,
-  message_id
+  message_id,
+  writeInMicrosurvey
 }) => {
   const tiles = content.tiles.data;
   const [progressValue, setProgressValue] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(0);
@@ -4122,7 +4153,9 @@ const ActionChecklist = ({
       type,
       data
     });
-    _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendActionTelemetry(message_id, source_id, "CLICK_BUTTON");
+    _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendActionTelemetry(message_id, source_id, "CLICK_BUTTON", {
+      writeInMicrosurvey
+    });
   }
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: "action-checklist"
@@ -4617,7 +4650,8 @@ class AboutWelcome extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
           domInteractive,
           mountStart: performance.getEntriesByName("mount").pop().startTime,
           domState,
-          source: this.props.UTMTerm
+          source: this.props.UTMTerm,
+          writeInMicrosurvey: this.props.write_in_microsurvey
         });
       };
       if (document.readyState === "complete") {
@@ -4648,6 +4682,7 @@ class AboutWelcome extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       addonIconURL: props.iconURL,
       themeScreenshots: props.screenshots,
       message_id: props.messageId,
+      writeInMicrosurvey: props.write_in_microsurvey,
       defaultScreens: props.screens,
       updateHistory: !props.disableHistoryUpdates,
       metricsFlowUri: this.state.metricsFlowUri,
