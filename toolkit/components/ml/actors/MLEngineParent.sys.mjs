@@ -669,7 +669,7 @@ export class MLEngineParent extends JSProcessActorParent {
 
     ChromeUtils.addProfilerMarker(
       "MLEngineParent",
-      null,
+      undefined,
       `Backend selected: ${bestBackend} (requested: ${backend})`
     );
 
