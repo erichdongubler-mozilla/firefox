@@ -802,6 +802,13 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
   MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
   MOZ_ASSERT(!aRangesToDelete.Ranges().IsEmpty());
 
+  // Don't modify Selection while computing the target ranges. Otherwise, only
+  // us would dispatch `selectionchange` event when the editing host is for
+  // EditContext.
+  SelectionChangeGuard guard;
+  const auto assertNoSelectionChange =
+      MakeScopeExit([&]() { MOZ_ASSERT(!guard.Changed(0)); });
+
   mOriginalDirectionAndAmount = aDirectionAndAmount;
   mOriginalStripWrappers = nsIEditor::eNoStrip;
 
@@ -936,17 +943,12 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
           if (NS_WARN_IF(!newCaretPosition.IsSet())) {
             return NS_ERROR_FAILURE;
           }
-          AutoHideSelectionChanges blockSelectionListeners(
-              aHTMLEditor.SelectionRef());
-          nsresult rv = aHTMLEditor.CollapseSelectionTo(newCaretPosition);
-          if (MOZ_UNLIKELY(NS_FAILED(rv))) {
-            NS_WARNING("EditorBase::CollapseSelectionTo() failed");
+          nsresult rv = aRangesToDelete.Collapse(newCaretPosition);
+          if (NS_FAILED(rv)) {
+            NS_WARNING("AutoClonedSelectionRangeArray::Collapse() failed");
             return NS_ERROR_FAILURE;
           }
-          if (NS_WARN_IF(!aHTMLEditor.SelectionRef().RangeCount())) {
-            return NS_ERROR_UNEXPECTED;
-          }
-          aRangesToDelete.Initialize(aHTMLEditor.SelectionRef());
+          MOZ_ASSERT(!aRangesToDelete.Ranges().IsEmpty());
           AutoDeleteRangesHandler anotherHandler(this);
           rv = anotherHandler.ComputeRangesToDelete(
               aHTMLEditor, aDirectionAndAmount, aRangesToDelete, aEditingHost);
@@ -954,17 +956,6 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
               NS_SUCCEEDED(rv),
               "Recursive AutoDeleteRangesHandler::ComputeRangesToDelete() "
               "failed");
-
-          rv = aHTMLEditor.CollapseSelectionTo(caretPoint);
-          if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
-            NS_WARNING(
-                "EditorBase::CollapseSelectionTo() caused destroying the "
-                "editor");
-            return NS_ERROR_EDITOR_DESTROYED;
-          }
-          NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                               "EditorBase::CollapseSelectionTo() failed to "
-                               "restore original selection, but ignored");
 
           MOZ_ASSERT(aRangesToDelete.Ranges().Length() == 1);
           // If the range is collapsed, there is no content which should
@@ -1361,11 +1352,6 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAroundCollapsedRanges(
   const auto MaybeComputeRangeBetweenCaretAndBlockBoundary =
       [&](const EditorRawDOMPoint& aAtBlockBoundary,
           const OwningNonNull<nsRange>& aOutRange) MOZ_NEVER_INLINE_DEBUG {
-        nsFrameSelection* const frameSelection =
-            aHTMLEditor.SelectionRef().GetFrameSelection();
-        if (NS_WARN_IF(!frameSelection)) {
-          return NS_ERROR_NOT_AVAILABLE;
-        }
         // If the range is collapsed, we don't need to delete anything.
         if (aAtBlockBoundary == aWSRunScannerAtCaret.ScanStartRef()) {
           return NS_SUCCESS_DOM_NO_OPERATION;
@@ -1392,7 +1378,7 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAroundCollapsedRanges(
                 : EditorRawDOMRange(aWSRunScannerAtCaret.ScanStartRef(),
                                     aAtBlockBoundary);
         AutoClonedSelectionRangeArray rangesToDelete(
-            rangeToDelete, LimitersAndCaretData(*frameSelection));
+            rangeToDelete, aHTMLEditor.SelectionLimitersAndCaretData());
         nsresult rv = ComputeRangesToDeleteNonCollapsedRanges(
             aHTMLEditor, aDirectionAndAmount, rangesToDelete,
             SelectionWasCollapsed::Yes, aEditingHost);
@@ -1594,11 +1580,6 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAroundCollapsedRanges(
       [&](const EditorRawDOMPoint& aAtBlockBoundary)
           MOZ_CAN_RUN_SCRIPT MOZ_NEVER_INLINE_DEBUG
       -> Result<EditActionResult, nsresult> {
-    nsFrameSelection* const frameSelection =
-        aHTMLEditor.SelectionRef().GetFrameSelection();
-    if (NS_WARN_IF(!frameSelection)) {
-      return Err(NS_ERROR_NOT_AVAILABLE);
-    }
     // If the range is collapsed, we don't need to delete anything.
     if (aAtBlockBoundary == aWSRunScannerAtCaret.ScanStartRef()) {
       return EditActionResult::IgnoredResult();
@@ -1625,7 +1606,7 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAroundCollapsedRanges(
             : EditorRawDOMRange(aWSRunScannerAtCaret.ScanStartRef(),
                                 aAtBlockBoundary);
     AutoClonedSelectionRangeArray rangesToDelete(
-        rangeToDelete, LimitersAndCaretData(*frameSelection));
+        rangeToDelete, aHTMLEditor.SelectionLimitersAndCaretData());
     Result<EditActionResult, nsresult> result = HandleDeleteNonCollapsedRanges(
         aHTMLEditor, aDirectionAndAmount, nsIEditor::eStrip, rangesToDelete,
         SelectionWasCollapsed::Yes, aEditingHost);
@@ -2524,7 +2505,6 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
     rangeArray.SetAncestorLimiter(aHTMLEditor.FindSelectionRoot(aEditingHost));
   }
   AutoDeleteRangesHandler anotherHandler(mDeleteRangesHandlerConst);
-  SelectionChangeGuard guard;
   nsresult rv = anotherHandler.ComputeRangesToDelete(
       aHTMLEditor, aDirectionAndAmount, rangeArray, aEditingHost);
   if (NS_SUCCEEDED(rv)) {
@@ -2542,7 +2522,6 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
     NS_WARNING(
         "Recursive AutoDeleteRangesHandler::ComputeRangesToDelete() failed");
   }
-  MOZ_ASSERT(!guard.Changed(0));
   return NS_SUCCEEDED(rv) ? NS_OK : NS_ERROR_FAILURE;
 }
 
