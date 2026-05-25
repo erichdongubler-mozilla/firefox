@@ -2864,6 +2864,7 @@ static void AtomicEffectOp(MacroAssembler& masm,
     masm.bind(&again);
 
     if (access) {
+      AutoForbidPoolsAndNops afp(&masm, /* number of insns = */ 1);
       masm.append(*access, wasm::TrapMachineInsn::Atomic,
                   FaultingCodeOffset(masm.currentOffset()));
     }
@@ -2911,6 +2912,7 @@ static void AtomicEffectOp(MacroAssembler& masm,
   masm.bind(&again);
 
   if (access) {
+    AutoForbidPoolsAndNops afp(&masm, /* number of insns = */ 1);
     masm.append(*access, wasm::TrapMachineInsn::Atomic,
                 FaultingCodeOffset(masm.currentOffset()));
   }
@@ -2996,6 +2998,7 @@ static void AtomicFetchOp(MacroAssembler& masm,
     masm.bind(&again);
 
     if (access) {
+      AutoForbidPoolsAndNops afp(&masm, /* number of insns = */ 1);
       masm.append(*access, wasm::TrapMachineInsn::Atomic,
                   FaultingCodeOffset(masm.currentOffset()));
     }
@@ -3043,6 +3046,7 @@ static void AtomicFetchOp(MacroAssembler& masm,
   masm.bind(&again);
 
   if (access) {
+    AutoForbidPoolsAndNops afp(&masm, /* number of insns = */ 1);
     masm.append(*access, wasm::TrapMachineInsn::Atomic,
                 FaultingCodeOffset(masm.currentOffset()));
   }
@@ -3505,6 +3509,7 @@ static void CompareExchange64(MacroAssembler& masm,
   masm.bind(&tryAgain);
 
   if (access) {
+    AutoForbidPoolsAndNops afp(&masm, /* number of insns = */ 1);
     masm.append(*access, wasm::TrapMachineInsn::Atomic,
                 FaultingCodeOffset(masm.currentOffset()));
   }
@@ -4468,6 +4473,7 @@ static void CompareExchange(MacroAssembler& masm,
     masm.bind(&again);
 
     if (access) {
+      AutoForbidPoolsAndNops afp(&masm, /* number of insns = */ 1);
       masm.append(*access, wasm::TrapMachineInsn::Atomic,
                   FaultingCodeOffset(masm.currentOffset()));
     }
@@ -4500,6 +4506,7 @@ static void CompareExchange(MacroAssembler& masm,
   masm.bind(&again);
 
   if (access) {
+    AutoForbidPoolsAndNops afp(&masm, /* number of insns = */ 1);
     masm.append(*access, wasm::TrapMachineInsn::Atomic,
                 FaultingCodeOffset(masm.currentOffset()));
   }
