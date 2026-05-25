@@ -415,12 +415,8 @@ class Assembler : public AssemblerShared,
   bool isNear(Label* L, OffsetSize bits);
   bool is_near_branch(Label* L);
 
-  void nopAlign(int m) {
-    MOZ_ASSERT(m >= 4 && (m & (m - 1)) == 0);
-    while ((currentOffset() & (m - 1)) != 0) {
-      nop();
-    }
-  }
+  void nopAlign(int m) { m_buffer.align(m); }
+
   virtual BufferOffset emit(Instr x) {
     MOZ_ASSERT(hasCreator());
     BufferOffset offset = m_buffer.putInt(x);
