@@ -4919,15 +4919,6 @@ void MacroAssemblerRiscv64::ma_mulPtrTestOverflow(Register rd, Register rj,
   ma_b(scratch, Register(scratch2), overflow, Assembler::NotEqual);
 }
 
-bool MacroAssemblerRiscv64::CalculateOffset(Label* L, OffsetSize bits,
-                                            int32_t* offset) {
-  if (L->bound() && !isNear(L, bits)) {
-    return false;
-  }
-  *offset = GetOffset(L, bits);
-  return true;
-}
-
 BufferOffset MacroAssemblerRiscv64::BranchShort(Label* L) {
   AutoForbidPoolsAndNops afp(this, 2, 1);
   int32_t offset = GetOffset(L, OffsetSize::kOffset21);
@@ -4951,10 +4942,11 @@ bool MacroAssemblerRiscv64::BranchShort(Label* L, Condition cond, Register rs,
       case AboveOrEqual:
       case BelowOrEqual: {
         AutoForbidPoolsAndNops afp(this, 2, 1);
-        int32_t offset;
-        if (!CalculateOffset(L, OffsetSize::kOffset21, &offset)) {
+        if (L->bound() && !isNear(L, OffsetSize::kOffset21)) {
           return false;
         }
+        int32_t offset = GetOffset(L, OffsetSize::kOffset21);
+
         Assembler::j(offset);
         break;
       }
@@ -4987,10 +4979,10 @@ bool MacroAssemblerRiscv64::BranchShort(Label* L, Condition cond, Register rs,
   }
 
   AutoForbidPoolsAndNops afp(this, 2, 1);
-  int32_t offset;
-  if (!CalculateOffset(L, OffsetSize::kOffset13, &offset)) {
+  if (L->bound() && !isNear(L, OffsetSize::kOffset13)) {
     return false;
   }
+  int32_t offset = GetOffset(L, OffsetSize::kOffset13);
 
   switch (cond) {
     case Equal:

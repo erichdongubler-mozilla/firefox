@@ -110,7 +110,6 @@ class MacroAssemblerRiscv64 : public Assembler {
     nopAlign(alignment);
   }
 
-  bool CalculateOffset(Label* L, OffsetSize bits, int32_t* offset);
   int32_t GetOffset(Label* L, OffsetSize bits) {
     return Assembler::branchOffsetHelper(L, bits);
   }
