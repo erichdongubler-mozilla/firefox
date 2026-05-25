@@ -37,7 +37,7 @@ add_task(async function test_getModelForChoice_with_remote_settings_data() {
       {
         feature: "chat",
         version: "2.13",
-        model: "gemini-2.5-flash-lite",
+        model: "gemini-3.1-flash-lite",
         model_choice_id: "1",
         owner_name: "Google",
       },
@@ -51,7 +51,7 @@ add_task(async function test_getModelForChoice_with_remote_settings_data() {
 
     Assert.deepEqual(
       result,
-      { model: "gemini-2.5-flash-lite", ownerName: "Google" },
+      { model: "gemini-3.1-flash-lite", ownerName: "Google" },
       "Should return correct model data for choice 1"
     );
   } finally {
@@ -70,7 +70,7 @@ add_task(async function test_getModelForChoice_fallback_when_not_found() {
 
     Assert.deepEqual(
       result,
-      { model: "gemini-2.5-flash-lite", ownerName: "Google" },
+      { model: "gemini-3.1-flash-lite", ownerName: "Google" },
       "Should return fallback data for choice 1"
     );
   } finally {
@@ -104,7 +104,7 @@ add_task(async function test_getAllModelsData_with_remote_settings() {
       {
         feature: "chat",
         version: "2.13",
-        model: "gemini-2.5-flash-lite",
+        model: "gemini-3.1-flash-lite",
         model_choice_id: "1",
         owner_name: "Google",
       },
@@ -126,7 +126,7 @@ add_task(async function test_getAllModelsData_with_remote_settings() {
       result,
       {
         0: { model: "custom-model", ownerName: "" },
-        1: { model: "gemini-2.5-flash-lite", ownerName: "Google" },
+        1: { model: "gemini-3.1-flash-lite", ownerName: "Google" },
         2: {
           model: "qwen3-235b-a22b-instruct-2507-maas",
           ownerName: "Alibaba",
@@ -240,7 +240,7 @@ add_task(async function test_getAllModelsData_with_fallbacks() {
       {
         feature: "chat",
         version: "2.19",
-        model: "gemini-2.5-flash-lite",
+        model: "gemini-3.1-flash-lite",
         model_choice_id: "1",
         owner_name: "Google",
       },
@@ -255,7 +255,7 @@ add_task(async function test_getAllModelsData_with_fallbacks() {
       result,
       {
         0: { model: "custom-model", ownerName: "" },
-        1: { model: "gemini-2.5-flash-lite", ownerName: "Google" },
+        1: { model: "gemini-3.1-flash-lite", ownerName: "Google" },
         2: {
           model: "qwen3-235b-a22b-instruct-2507-maas",
           ownerName: "Alibaba",

@@ -45,7 +45,7 @@ export const PREF_BRANCH = "browser.smartwindow.chatHistory";
 export const FALLBACK_MODELS = {
   0: { model: "custom-model", ownerName: "" },
   1: {
-    model: "gemini-2.5-flash-lite",
+    model: "gemini-3.1-flash-lite",
     ownerName: "Google",
   },
   2: {

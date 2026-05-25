@@ -339,7 +339,7 @@ describe("SmartWindowSwitcherTelemetry", () => {
       Assert.equal(events?.length, 1, "One uri_load event was recorded");
       Assert.equal(
         events[0].extra.model,
-        "gemini-2.5-flash-lite",
+        "gemini-3.1-flash-lite",
         "model is correct"
       );
     });
@@ -383,7 +383,7 @@ describe("SmartWindowSwitcherTelemetry", () => {
       Assert.equal(events?.length, 1, "One uri_load event was recorded");
       Assert.equal(
         events[0].extra.model,
-        "gemini-2.5-flash-lite",
+        "gemini-3.1-flash-lite",
         "model is correct"
       );
     });
