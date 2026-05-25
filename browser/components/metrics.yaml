@@ -216,7 +216,6 @@ browser.startup:
       - perf-telemetry-alerts@mozilla.com
     expires: never
     unit: CACHE_RESULT_SCALARS
-    telemetry_mirror: BROWSER_STARTUP_ABOUTHOME_CACHE_RESULT
     no_lint:
       - COMMON_PREFIX
 
@@ -251,7 +250,6 @@ browser.startup:
       - mconley@mozilla.com
       - perf-telemetry-alerts@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_STARTUP_ABOUTHOME_CACHE_SHUTDOWNWRITE
     no_lint:
       - COMMON_PREFIX
   kiosk_mode:
