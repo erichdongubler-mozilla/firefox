@@ -2469,9 +2469,8 @@ void MacroAssemblerRiscv64Compat::handleFailureWithHandlerTail(
 }
 
 CodeOffset MacroAssemblerRiscv64Compat::toggledJump(Label* label) {
-  CodeOffset ret(nextOffset().getOffset());
-  BranchShort(label);
-  return ret;
+  BufferOffset offset = BranchShort(label);
+  return CodeOffset(offset.getOffset());
 }
 
 CodeOffset MacroAssemblerRiscv64Compat::toggledCall(JitCode* target,
@@ -3336,9 +3335,8 @@ CodeOffset MacroAssembler::call(const Address& addr) {
 }
 
 void MacroAssembler::call(ImmPtr imm) {
-  BufferOffset bo = m_buffer.nextOffset();
+  BufferOffset bo = ma_call(imm);
   addPendingJump(bo, imm, RelocationKind::HARDCODED);
-  ma_call(imm);
 }
 
 void MacroAssembler::call(ImmWord imm) { call(ImmPtr((void*)imm.value)); }
@@ -4929,11 +4927,14 @@ bool MacroAssemblerRiscv64::CalculateOffset(Label* L, OffsetSize bits,
   return true;
 }
 
-void MacroAssemblerRiscv64::BranchShortHelper(int32_t offset, Label* L) {
+BufferOffset MacroAssemblerRiscv64::BranchShortHelper(int32_t offset,
+                                                      Label* L) {
   MOZ_ASSERT(L == nullptr || offset == 0);
   BlockTrampolinePoolScope block_trampoline_pool(this, 2, 1);
   offset = GetOffset(offset, L, OffsetSize::kOffset21);
+  BufferOffset bo = nextOffset();
   Assembler::j(offset);
+  return bo;
 }
 
 bool MacroAssemblerRiscv64::BranchShortHelper(int32_t offset, Label* L,
@@ -5085,7 +5086,9 @@ bool MacroAssemblerRiscv64::BranchShortCheck(int32_t offset, Label* L,
   return BranchShortHelper(0, L, cond, rs, rt);
 }
 
-void MacroAssemblerRiscv64::BranchShort(Label* L) { BranchShortHelper(0, L); }
+BufferOffset MacroAssemblerRiscv64::BranchShort(Label* L) {
+  return BranchShortHelper(0, L);
+}
 
 bool MacroAssemblerRiscv64::BranchShort(int32_t offset, Condition cond,
                                         Register rs, const Operand& rt) {
@@ -5547,14 +5550,14 @@ void MacroAssemblerRiscv64::ma_mul64(Register rd, Register rs, Imm64 rt) {
   mul(rd, rs, scratch);
 }
 
-void MacroAssemblerRiscv64::ma_jump(ImmPtr dest) {
-  DEBUG_PRINTF("[ %s\n", __FUNCTION__);
-  BlockTrampolinePoolScope block_trampoline_pool(this, 8);
+BufferOffset MacroAssemblerRiscv64::ma_jump(ImmPtr dest) {
+  AutoForbidPoolsAndNops afp(this, 8);
+  BufferOffset offset = nextOffset();
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   ma_liPatchable(scratch, dest);
   jr(scratch, 0);
-  DEBUG_PRINTF("]\n");
+  return offset;
 }
 
 // fp instructions
@@ -5889,14 +5892,16 @@ void MacroAssemblerRiscv64::ma_push(FloatRegister f) {
   }
 }
 
-void MacroAssemblerRiscv64::ma_call(ImmPtr dest) {
-  DEBUG_PRINTF("[ %s\n", __FUNCTION__);
+BufferOffset MacroAssemblerRiscv64::ma_call(ImmPtr dest) {
   BlockTrampolinePoolScope block_trampoline_pool(this, 8);
+
   UseScratchRegisterScope temps(this);
   temps.Exclude(GeneralRegisterSet(1 << CallReg.code()));
+
+  BufferOffset offset = nextOffset();
   ma_liPatchable(CallReg, dest);
   jalr(CallReg, 0);
-  DEBUG_PRINTF("]\n");
+  return offset;
 }
 
 void MacroAssemblerRiscv64::CompareIsNotNanF32(Register rd, FPURegister cmp1,

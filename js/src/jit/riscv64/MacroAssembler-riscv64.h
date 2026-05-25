@@ -337,9 +337,9 @@ class MacroAssemblerRiscv64 : public Assembler {
   void CompareIsNanF32(Register rd, FPURegister cmp1, FPURegister cmp2);
   void CompareIsNanF64(Register rd, FPURegister cmp1, FPURegister cmp2);
 
-  void ma_call(ImmPtr dest);
+  BufferOffset ma_call(ImmPtr dest);
 
-  void ma_jump(ImmPtr dest);
+  BufferOffset ma_jump(ImmPtr dest);
 
   void jump(Label* label) { ma_branch(label); }
   void jump(Register reg) { jr(reg); }
@@ -350,13 +350,13 @@ class MacroAssemblerRiscv64 : public Assembler {
   void computeScaledAddress(const BaseIndex& address, Register dest);
   void computeScaledAddress32(const BaseIndex& address, Register dest);
 
-  void BranchShort(Label* L);
+  BufferOffset BranchShort(Label* L);
 
   [[nodiscard]] bool BranchShort(int32_t offset, Condition cond, Register rs,
                                  const Operand& rt);
   [[nodiscard]] bool BranchShort(Label* L, Condition cond, Register rs,
                                  const Operand& rt);
-  void BranchShortHelper(int32_t offset, Label* L);
+  BufferOffset BranchShortHelper(int32_t offset, Label* L);
   bool BranchShortHelper(int32_t offset, Label* L, Condition cond, Register rs,
                          const Operand& rt);
   bool BranchShortCheck(int32_t offset, Label* L, Condition cond, Register rs,
@@ -727,9 +727,8 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   void jump(JitCode* code) { branch(code); }
 
   void jump(ImmPtr ptr) {
-    BufferOffset bo = m_buffer.nextOffset();
+    BufferOffset bo = ma_jump(ptr);
     addPendingJump(bo, ptr, RelocationKind::HARDCODED);
-    ma_jump(ptr);
   }
 
   void jump(TrampolinePtr code) { jump(ImmPtr(code.value)); }
