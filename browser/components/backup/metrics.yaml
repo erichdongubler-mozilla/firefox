@@ -27,6 +27,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_ENABLED
 
   archive_enabled:
     type: boolean
@@ -42,6 +43,7 @@ browser.backup:
     notification_emails:
       - drubino@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_ARCHIVE_ENABLED
 
   restore_enabled:
     type: boolean
@@ -57,6 +59,7 @@ browser.backup:
     notification_emails:
       - drubino@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_RESTORE_ENABLED
 
   scheduler_enabled:
     type: boolean
@@ -72,6 +75,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_SCHEDULER_ENABLED
 
   scheduler_toggle_source:
     type: string
@@ -109,6 +113,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_PSWD_ENCRYPTED
 
   location_on_device:
     type: quantity
@@ -124,6 +129,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_LOCATION_ON_DEVICE
 
   prof_d_disk_space:
     type: quantity
@@ -141,6 +147,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_PROF_D_DISK_SPACE
 
   total_backup_size:
     type: memory_distribution
@@ -158,6 +165,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_TOTAL_BACKUP_SIZE
 
   compressed_archive_size:
     type: memory_distribution
@@ -174,6 +182,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_COMPRESSED_ARCHIVE_SIZE
 
   total_backup_time:
     type: timing_distribution
@@ -190,6 +199,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_TOTAL_BACKUP_TIME_MS
 
   places_size:
     type: quantity
@@ -206,6 +216,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_PLACES_SIZE
 
   places_time:
     type: timing_distribution
@@ -222,6 +233,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_PLACES_TIME_MS
 
   favicons_size:
     type: quantity
@@ -236,6 +248,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_FAVICONS_SIZE
 
   favicons_time:
     type: timing_distribution
@@ -252,6 +265,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_FAVICONS_TIME_MS
 
   credentials_data_size:
     type: quantity
@@ -268,6 +282,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_CREDENTIALS_DATA_SIZE
 
   security_data_size:
     type: quantity
@@ -284,6 +299,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_SECURITY_DATA_SIZE
 
   preferences_size:
     type: quantity
@@ -300,6 +316,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_PREFERENCES_SIZE
 
   misc_data_size:
     type: quantity
@@ -319,6 +336,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_MISC_DATA_SIZE
 
   cookies_size:
     type: quantity
@@ -335,6 +353,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_COOKIES_SIZE
 
   form_history_size:
     type: quantity
@@ -351,6 +370,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_FORM_HISTORY_SIZE
 
   session_store_backups_directory_size:
     type: quantity
@@ -366,6 +386,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_SESSION_STORE_BACKUPS_DIRECTORY_SIZE
 
   session_store_size:
     type: quantity
@@ -381,6 +402,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_SESSION_STORE_SIZE
 
   extensions_json_size:
     type: quantity
@@ -402,6 +424,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_EXTENSIONS_JSON_SIZE
 
   extension_store_permissions_data_size:
     type: quantity
@@ -418,6 +441,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_EXTENSION_STORE_PERMISSIONS_DATA_SIZE
 
   storage_sync_size:
     type: quantity
@@ -434,6 +458,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_STORAGE_SYNC_SIZE
 
   browser_extension_data_size:
     type: quantity
@@ -450,6 +475,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_BROWSER_EXTENSION_DATA_SIZE
 
   extensions_xpi_directory_size:
     type: quantity
@@ -466,6 +492,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_EXTENSIONS_XPI_DIRECTORY_SIZE
 
   extensions_storage_size:
     type: quantity
@@ -482,6 +509,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BROWSER_BACKUP_EXTENSIONS_STORAGE_SIZE
 
   toggle_on:
     type: event
@@ -500,6 +528,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BrowserBackup_ToggleOn_Backupservice
     extra_keys:
       encrypted:
         type: boolean
@@ -527,6 +556,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BrowserBackup_ToggleOff_Backupservice
 
   created:
     type: event
@@ -545,6 +575,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BrowserBackup_Created_Backupservice
     extra_keys:
       encrypted:
         type: boolean
@@ -577,6 +608,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BrowserBackup_ChangeLocation_Backupservice
 
   password_changed:
     type: event
@@ -593,6 +625,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BrowserBackup_PasswordChanged_Backupservice
 
   password_added:
     type: event
@@ -609,6 +642,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BrowserBackup_PasswordAdded_Backupservice
 
   password_removed:
     type: event
@@ -625,6 +659,7 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
+    telemetry_mirror: BrowserBackup_PasswordRemoved_Backupservice
 
   error:
     type: event
@@ -651,6 +686,7 @@ browser.backup:
         description: >
           The string representation of the step that backup creation was in
           when the error occurred.
+    telemetry_mirror: BrowserBackup_Error_Backupservice
 
   backup_start:
     type: event
