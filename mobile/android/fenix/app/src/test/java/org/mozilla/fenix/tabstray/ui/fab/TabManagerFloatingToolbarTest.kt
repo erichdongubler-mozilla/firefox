@@ -133,6 +133,95 @@ class TabManagerFloatingToolbarTest {
     }
 
     @Test
+    fun `Clicking Select all tabs menu item selects all normal tabs`() {
+        val initialState = TabsTrayState(
+            normalTabsState = TabsTrayState.NormalTabsState(items = testTabs),
+        )
+        val tabsTrayStore = TabsTrayStore(initialState = initialState)
+
+        composeTestRule.setContent {
+            FirefoxTheme(theme = Theme.Light) {
+                TabManagerFloatingToolbar(
+                    tabsTrayStore = tabsTrayStore,
+                    isSignedIn = true,
+                    onOpenNewNormalTabClicked = {},
+                    onOpenNewPrivateTabClicked = {},
+                    onSyncedTabsFabClicked = {},
+                    onTabSettingsClick = {},
+                    onAccountSettingsClick = {},
+                    onDeleteAllTabsClick = {},
+                    onRecentlyClosedClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.THREE_DOT_BUTTON).performClick()
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.SELECT_ALL_TABS)
+            .assertExists()
+            .performClick()
+
+        val state = tabsTrayStore.state
+        assert(state.mode is TabsTrayState.Mode.Select)
+        assert(state.mode.selectedTabs == testTabs.toSet())
+    }
+
+    @Test
+    fun `Select all tabs menu item is not displayed on private tabs page`() {
+        val initialState = TabsTrayState(
+            selectedPage = Page.PrivateTabs,
+            privateBrowsing = TabsTrayState.PrivateBrowsingState(tabs = testTabs),
+        )
+        val tabsTrayStore = TabsTrayStore(initialState = initialState)
+
+        composeTestRule.setContent {
+            FirefoxTheme(theme = Theme.Light) {
+                TabManagerFloatingToolbar(
+                    tabsTrayStore = tabsTrayStore,
+                    isSignedIn = true,
+                    onOpenNewNormalTabClicked = {},
+                    onOpenNewPrivateTabClicked = {},
+                    onSyncedTabsFabClicked = {},
+                    onTabSettingsClick = {},
+                    onAccountSettingsClick = {},
+                    onDeleteAllTabsClick = {},
+                    onRecentlyClosedClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.THREE_DOT_BUTTON).performClick()
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.SELECT_ALL_TABS).assertDoesNotExist()
+    }
+
+    @Test
+    fun `Select all tabs menu item is not displayed on synced tabs page`() {
+        val initialState = TabsTrayState(
+            selectedPage = Page.SyncedTabs,
+            privateBrowsing = TabsTrayState.PrivateBrowsingState(tabs = testTabs),
+        )
+        val tabsTrayStore = TabsTrayStore(initialState = initialState)
+
+        composeTestRule.setContent {
+            FirefoxTheme(theme = Theme.Light) {
+                TabManagerFloatingToolbar(
+                    tabsTrayStore = tabsTrayStore,
+                    isSignedIn = true,
+                    onOpenNewNormalTabClicked = {},
+                    onOpenNewPrivateTabClicked = {},
+                    onSyncedTabsFabClicked = {},
+                    onTabSettingsClick = {},
+                    onAccountSettingsClick = {},
+                    onDeleteAllTabsClick = {},
+                    onRecentlyClosedClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.THREE_DOT_BUTTON).performClick()
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.SELECT_ALL_TABS).assertDoesNotExist()
+    }
+
+    @Test
     fun `GIVEN user is not signed in WHEN on synced tabs page THEN clicking FAB does not trigger sync`() {
         var clicked = false
         val state = TabsTrayState(

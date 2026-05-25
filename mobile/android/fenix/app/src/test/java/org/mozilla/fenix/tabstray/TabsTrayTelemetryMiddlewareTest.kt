@@ -126,6 +126,15 @@ class TabsTrayTelemetryMiddlewareTest {
     }
 
     @Test
+    fun `WHEN the select all normal tabs button is clicked THEN the metric is reported`() {
+        assertNull(TabsTray.selectAllNormalTabs.testGetValue())
+
+        store.dispatch(TabsTrayAction.SelectAllNormalTabs)
+
+        assertNotNull(TabsTray.selectAllNormalTabs.testGetValue())
+    }
+
+    @Test
     fun `WHEN the delete all normal tabs button is clicked THEN the metric is reported`() {
         assertNull(TabsTray.closeAllTabs.testGetValue())
 

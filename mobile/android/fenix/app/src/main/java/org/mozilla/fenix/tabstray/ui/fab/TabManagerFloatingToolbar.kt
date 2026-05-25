@@ -117,6 +117,9 @@ internal fun TabManagerFloatingToolbar(
                     onEnterMultiselectModeClick = {
                         tabsTrayStore.dispatch(TabsTrayAction.EnterSelectMode)
                     },
+                    onSelectAllTabsClick = {
+                        tabsTrayStore.dispatch(TabsTrayAction.SelectAllNormalTabs)
+                    },
                     onTabSettingsClick = onTabSettingsClick,
                     onRecentlyClosedClick = onRecentlyClosedClick,
                     onAccountSettingsClick = onAccountSettingsClick,
@@ -151,6 +154,7 @@ private fun FloatingToolbarActions(
     state: TabsTrayState,
     onMenuShown: () -> Unit,
     onEnterMultiselectModeClick: () -> Unit,
+    onSelectAllTabsClick: () -> Unit,
     onTabSettingsClick: () -> Unit,
     onRecentlyClosedClick: () -> Unit,
     onAccountSettingsClick: () -> Unit,
@@ -168,6 +172,7 @@ private fun FloatingToolbarActions(
         onTabSettingsClick = onTabSettingsClick,
         onRecentlyClosedClick = onRecentlyClosedClick,
         onEnterMultiselectModeClick = onEnterMultiselectModeClick,
+        onSelectAllTabsClick = onSelectAllTabsClick,
         onDeleteAllTabsClick = { showCloseAllTabsDialog = true },
     )
 
@@ -350,6 +355,7 @@ private fun generateMenuItems(
     onTabSettingsClick: () -> Unit,
     onRecentlyClosedClick: () -> Unit,
     onEnterMultiselectModeClick: () -> Unit,
+    onSelectAllTabsClick: () -> Unit,
     onDeleteAllTabsClick: () -> Unit,
     onAccountSettingsClick: () -> Unit,
 ): List<MenuItem> {
@@ -358,6 +364,12 @@ private fun generateMenuItems(
         drawableRes = iconsR.drawable.mozac_ic_checkmark_24,
         testTag = TabsTrayTestTag.SELECT_TABS,
         onClick = onEnterMultiselectModeClick,
+    )
+    val selectAllTabsItem = MenuItem.IconItem(
+        text = Text.Resource(R.string.tab_tray_menu_select_all_tabs),
+        drawableRes = iconsR.drawable.ic_select_all_24,
+        testTag = TabsTrayTestTag.SELECT_ALL_TABS,
+        onClick = onSelectAllTabsClick,
     )
     val recentlyClosedTabsItem = MenuItem.IconItem(
         text = Text.Resource(R.string.tab_tray_menu_recently_closed),
@@ -393,6 +405,7 @@ private fun generateMenuItems(
 
         selectedPage == Page.NormalTabs -> listOf(
             enterSelectModeItem,
+            selectAllTabsItem,
             recentlyClosedTabsItem,
             tabSettingsItem,
             deleteAllTabsItem,

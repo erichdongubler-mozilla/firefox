@@ -89,6 +89,9 @@ class TabsTrayTelemetryMiddleware(
                 -> {
                 TabsTray.shareAllTabs.record(NoExtras())
             }
+            is TabsTrayAction.SelectAllNormalTabs -> {
+                TabsTray.selectAllNormalTabs.record(NoExtras())
+            }
 
             is TabsTrayAction.CloseAllNormalTabs,
             is TabsTrayAction.CloseAllPrivateTabs,

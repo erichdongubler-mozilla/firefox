@@ -26,6 +26,7 @@ internal object TabsTrayTestTag {
     const val CLOSE_ALL_TABS = "$THREE_DOT_BUTTON.closeAllTabs"
     const val RECENTLY_CLOSED_TABS = "$THREE_DOT_BUTTON.recentlyClosedTabs"
     const val SELECT_TABS = "$THREE_DOT_BUTTON.selectTabs"
+    const val SELECT_ALL_TABS = "$THREE_DOT_BUTTON.selectAllTabs"
     const val SHARE_ALL_TABS = "$THREE_DOT_BUTTON.shareAllTabs"
     const val TAB_SETTINGS = "$THREE_DOT_BUTTON.tabSettings"
 
