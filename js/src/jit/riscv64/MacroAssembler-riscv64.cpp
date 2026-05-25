@@ -6680,16 +6680,10 @@ void MacroAssemblerRiscv64::GenPCRelativeJumpAndLink(Register rd,
   jalr(rd, Lo12);   // jump PC + Hi20 + Lo12
 }
 
-CodeOffset MacroAssemblerRiscv64::BranchAndLinkShortHelper(int32_t offset,
-                                                           Label* L) {
-  MOZ_ASSERT(L == nullptr || offset == 0);
-  AutoForbidPoolsAndNops afp(this, 2, 1);
-  offset = GetOffset(offset, L, OffsetSize::kOffset21);
-  return jal(offset);
-}
-
 CodeOffset MacroAssemblerRiscv64::BranchAndLinkShort(Label* L) {
-  return BranchAndLinkShortHelper(0, L);
+  AutoForbidPoolsAndNops afp(this, 2, 1);
+  int32_t offset = GetOffset(0, L, OffsetSize::kOffset21);
+  return jal(offset);
 }
 
 CodeOffset MacroAssemblerRiscv64::BranchAndLink(Label* L) {
