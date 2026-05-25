@@ -91,6 +91,7 @@ modules["ERRORRESULT"] = Mod(43)
 modules["WIN32"] = Mod(44)
 modules["WDBA"] = Mod(45)
 modules["DOM_QM"] = Mod(46)
+modules["CLIPBOARD"] = Mod(47)
 
 # NS_ERROR_MODULE_GENERAL should be used by modules that do not
 # care if return code values overlap. Callers of methods that
@@ -1252,6 +1253,12 @@ with modules["WDBA"]:
 # =======================================================================
 with modules["DOM_QM"]:
     errors["NS_ERROR_DOM_QM_CLIENT_INIT_ORIGIN_UNINITIALIZED"] = FAILURE(1)
+
+# =======================================================================
+# 47: NS_ERROR_MODULE_CLIPBOARD
+# =======================================================================
+with modules["CLIPBOARD"]:
+    errors["NS_ERROR_CLIPBOARD_TOO_BIG"] = FAILURE(1)
 
 # =======================================================================
 # 51: NS_ERROR_MODULE_GENERAL

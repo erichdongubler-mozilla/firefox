@@ -171,7 +171,8 @@ nsClipboard::SetNativeClipboardData(nsITransferable* aTransferable,
 
 mozilla::Result<nsCOMPtr<nsISupports>, nsresult>
 nsClipboard::GetDataFromPasteboard(const nsACString& aFlavor,
-                                   NSPasteboard* aPasteboard) {
+                                   NSPasteboard* aPasteboard,
+                                   uint64_t aThreshold) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   NSString* pboardType = nil;
@@ -179,6 +180,11 @@ nsClipboard::GetDataFromPasteboard(const nsACString& aFlavor,
     NSString* pString = [aPasteboard stringForType:pboardType];
     if (!pString) {
       return nsCOMPtr<nsISupports>{};
+    }
+
+    if (aThreshold && aFlavor.EqualsLiteral(kTextMime) &&
+        [pString length] * 2 > aThreshold) {
+      return mozilla::Err(NS_ERROR_CLIPBOARD_TOO_BIG);
     }
 
     NSData* stringData;
@@ -191,6 +197,7 @@ nsClipboard::GetDataFromPasteboard(const nsACString& aFlavor,
       stringData = [pString dataUsingEncoding:NSUnicodeStringEncoding
                          allowLossyConversion:YES];
     }
+
     unsigned int dataLength = [stringData length];
     void* clipboardDataPtr = malloc(dataLength);
     if (!clipboardDataPtr) {
@@ -418,7 +425,8 @@ nsClipboard::GetDataFromPasteboard(const nsACString& aFlavor,
 
 mozilla::Result<nsCOMPtr<nsISupports>, nsresult>
 nsClipboard::GetNativeClipboardData(const nsACString& aFlavor,
-                                    ClipboardType aWhichClipboard) {
+                                    ClipboardType aWhichClipboard,
+                                    uint64_t aThreshold) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   MOZ_DIAGNOSTIC_ASSERT(
@@ -445,7 +453,7 @@ nsClipboard::GetNativeClipboardData(const nsACString& aFlavor,
     return mozilla::Err(NS_ERROR_FAILURE);
   }
 
-  return GetDataFromPasteboard(aFlavor, cocoaPasteboard);
+  return GetDataFromPasteboard(aFlavor, cocoaPasteboard, aThreshold);
 
   NS_OBJC_END_TRY_BLOCK_RETURN(mozilla::Err(NS_ERROR_FAILURE));
 }

@@ -981,11 +981,25 @@ class ContentParent final : public PContentParent,
       const nsIClipboard::ClipboardType& aWhichClipboard,
       const MaybeDiscarded<WindowContext>& aRequestingWindowContext);
 
+  template <typename GetClipboardDataFunction>
+  nsresult GetClipboardDataInternal(
+      nsTArray<nsCString>&& aTypes,
+      const nsIClipboard::ClipboardType& aWhichClipboard,
+      const MaybeDiscarded<WindowContext>& aRequestingWindowContext,
+      IPCTransferableDataOrError* aResult,
+      GetClipboardDataFunction&& aFunction);
+
   mozilla::ipc::IPCResult RecvGetClipboard(
       nsTArray<nsCString>&& aTypes,
       const nsIClipboard::ClipboardType& aWhichClipboard,
       const MaybeDiscarded<WindowContext>& aRequestingWindowContext,
       IPCTransferableDataOrError* aTransferableDataOrError);
+
+  mozilla::ipc::IPCResult RecvGetClipboardDataIfSmallerThan(
+      nsTArray<nsCString>&& aTypes, uint64_t aThreshold,
+      const nsIClipboard::ClipboardType& aWhichClipboard,
+      const MaybeDiscarded<WindowContext>& aRequestingWindowContext,
+      GetClipboardDataIfSmallerThanResolver&& aResolver);
 
   mozilla::ipc::IPCResult RecvEmptyClipboard(
       const nsIClipboard::ClipboardType& aWhichClipboard);

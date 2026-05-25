@@ -456,7 +456,8 @@ static already_AddRefed<nsISupports> GetHTMLData(Span<const char> aData) {
 
 mozilla::Result<nsCOMPtr<nsISupports>, nsresult>
 nsClipboard::GetNativeClipboardData(const nsACString& aFlavor,
-                                    ClipboardType aWhichClipboard) {
+                                    ClipboardType aWhichClipboard,
+                                    uint64_t aThreshold) {
   MOZ_DIAGNOSTIC_ASSERT(
       nsIClipboard::IsClipboardTypeSupported(aWhichClipboard));
 
@@ -516,6 +517,10 @@ nsClipboard::GetNativeClipboardData(const nsACString& aFlavor,
       // text off the clipboard, run the next loop
       // iteration.
       return nsCOMPtr<nsISupports>{};
+    }
+
+    if (aThreshold && strlen(clipboardData.get()) * 2 > aThreshold) {
+      return mozilla::Err(NS_ERROR_CLIPBOARD_TOO_BIG);
     }
 
     // Convert utf-8 into our text format.

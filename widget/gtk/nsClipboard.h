@@ -118,7 +118,8 @@ class nsClipboard final : public nsBaseClipboard, public nsIObserver {
   NS_IMETHOD SetNativeClipboardData(nsITransferable* aTransferable,
                                     ClipboardType aWhichClipboard) override;
   mozilla::Result<nsCOMPtr<nsISupports>, nsresult> GetNativeClipboardData(
-      const nsACString& aFlavor, ClipboardType aWhichClipboard) override;
+      const nsACString& aFlavor, ClipboardType aWhichClipboard,
+      uint64_t aThreshold = 0) override;
   void AsyncGetNativeClipboardData(const nsACString& aFlavor,
                                    ClipboardType aWhichClipboard,
                                    GetNativeDataCallback&& aCallback) override;
