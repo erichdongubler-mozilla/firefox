@@ -156,12 +156,13 @@ class AutofillSettingFragment : BiometricPromptPreferenceFragment(), SystemInset
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             val buildStore = { _: NavHostController ->
 
+                val syncEnginesStatus = SyncEnginesStorage(requireContext()).getStatus()
                 val autofillStore by fragmentStore(
                     AutofillSettingsState.default.copy(
                         saveFillAddresses = requireContext().settings().shouldAutofillAddressDetails,
                         saveFillCards = requireContext().settings().shouldAutofillCreditCardDetails,
-                        syncAddresses = requireContext().settings().shouldSyncAddressesAcrossDevices,
-                        syncCreditCards = requireContext().settings().shouldSyncCreditCardsAcrossDevices,
+                        syncAddresses = syncEnginesStatus.getOrElse(SyncEngine.Addresses) { false },
+                        syncCreditCards = syncEnginesStatus.getOrElse(SyncEngine.CreditCards) { false },
                         accountAuthState = if (requireContext().settings().signedInFxaAccount) {
                             AccountAuthState.Authenticated
                         } else {
@@ -252,6 +253,7 @@ class AutofillSettingFragment : BiometricPromptPreferenceFragment(), SystemInset
         SyncPreferenceView(
             syncPreference = requirePreference(R.string.pref_key_credit_cards_sync_cards_across_devices),
             lifecycleOwner = viewLifecycleOwner,
+            coroutineScope = viewLifecycleOwner.lifecycleScope,
             accountManager = requireComponents.backgroundServices.accountManager,
             syncEngine = SyncEngine.CreditCards,
             loggedOffTitle = requireContext()
@@ -276,6 +278,7 @@ class AutofillSettingFragment : BiometricPromptPreferenceFragment(), SystemInset
             SyncPreferenceView(
                 syncPreference = requirePreference(R.string.pref_key_addresses_sync_cards_across_devices),
                 lifecycleOwner = viewLifecycleOwner,
+                coroutineScope = viewLifecycleOwner.lifecycleScope,
                 accountManager = requireComponents.backgroundServices.accountManager,
                 syncEngine = SyncEngine.Addresses,
                 loggedOffTitle = requireContext()
@@ -509,18 +512,13 @@ class AutofillSettingFragment : BiometricPromptPreferenceFragment(), SystemInset
     }
 
     private fun updateSyncStatusAcrossDevices(destination: String, newValue: Boolean) {
-        when (destination) {
-            AutofillScreenDestination.ADDRESS -> {
-                SyncEnginesStorage(requireContext()).setStatus(SyncEngine.Addresses, newValue)
-                requireContext().settings().shouldSyncAddressesAcrossDevices =
-                    newValue
-            }
-
-            AutofillScreenDestination.CREDIT_CARD -> {
-                SyncEnginesStorage(requireContext()).setStatus(SyncEngine.CreditCards, newValue)
-                requireContext().settings().shouldSyncCreditCardsAcrossDevices =
-                    newValue
-            }
+        val engine = when (destination) {
+            AutofillScreenDestination.ADDRESS -> SyncEngine.Addresses
+            AutofillScreenDestination.CREDIT_CARD -> SyncEngine.CreditCards
+            else -> return
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            requireComponents.backgroundServices.accountManager.setEngineEnabled(engine, newValue)
         }
     }
 

@@ -5,6 +5,7 @@
 package org.mozilla.fenix.settings.logins.fragment
 
 import android.os.Bundle
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -93,6 +94,7 @@ class SavedLoginsAuthFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
         SyncPreferenceView(
             syncPreference = requirePreference(R.string.pref_key_sync_logins),
             lifecycleOwner = viewLifecycleOwner,
+            coroutineScope = viewLifecycleOwner.lifecycleScope,
             accountManager = requireComponents.backgroundServices.accountManager,
             syncEngine = SyncEngine.Passwords,
             loggedOffTitle = requireContext()

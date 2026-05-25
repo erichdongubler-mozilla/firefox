@@ -2129,16 +2129,6 @@ class Settings(
     )
 
     /**
-     * Stores the user choice from the "Autofill" settings for whether
-     * credit cards should be synced across devices or not, when the user is authenticated.
-     * If set to `true`, then the credit cards will be synced across devices.
-     */
-    var shouldSyncCreditCardsAcrossDevices by booleanPreference(
-        appContext.getPreferenceKey(R.string.pref_key_credit_cards_sync_cards_across_devices),
-        default = false,
-    )
-
-    /**
      * Stores the user choice from the "Autofill Addresses" settings for whether
      * save and autofill addresses should be enabled or not.
      * If set to `true` when the user focuses on address fields in a webpage an Android prompt is shown,
@@ -2147,16 +2137,6 @@ class Settings(
     var shouldAutofillAddressDetails by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_addresses_save_and_autofill_addresses),
         default = true,
-    )
-
-    /**
-     * Stores the user choice from the "Autofill" settings for whether
-     * addresses should be synced across devices or not, when the user is authenticated.
-     * If set to `true`, then the addresses will be synced across devices.
-     */
-    var shouldSyncAddressesAcrossDevices by booleanPreference(
-        appContext.getPreferenceKey(R.string.pref_key_addresses_sync_cards_across_devices),
-        default = false,
     )
 
     /**
