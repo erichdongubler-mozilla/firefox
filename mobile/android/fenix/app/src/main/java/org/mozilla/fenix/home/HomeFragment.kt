@@ -63,7 +63,6 @@ import mozilla.components.concept.sync.OAuthAccount
 import mozilla.components.feature.accounts.push.SendTabUseCases
 import mozilla.components.feature.tab.collections.TabCollection
 import mozilla.components.feature.top.sites.presenter.DefaultTopSitesPresenter
-import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.service.nimbus.messaging.Message
@@ -498,16 +497,10 @@ class HomeFragment : Fragment() {
 
         toolbarView.build(requireComponents.core.store.state, requireContext().settings().enableHomepageSearchBar)
 
-        consumeFrom(requireComponents.core.store) {
-            toolbarView.updateTabCounter(it)
-        }
-
         requireComponents.appStore.state.wasLastTabClosedPrivate?.also {
             showUndoSnackbar(requireContext().tabClosedUndoMessage(it))
             requireComponents.appStore.dispatch(AppAction.TabStripAction.UpdateLastTabClosed(null))
         }
-
-        toolbarView.updateTabCounter(requireComponents.core.store.state)
 
         qrScanFenixFeature = QrScanFenixFeature.register(this, qrScanLauncher)
         voiceSearchFeature = VoiceSearchFeature.register(this, voiceSearchLauncher)

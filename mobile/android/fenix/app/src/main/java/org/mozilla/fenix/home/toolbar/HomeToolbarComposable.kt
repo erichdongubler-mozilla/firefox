@@ -197,10 +197,6 @@ internal class HomeToolbarComposable(
         // To be added later
     }
 
-    override fun updateTabCounter(browserState: BrowserState) {
-        // To be added later
-    }
-
     override fun updateAddressBarVisibility(isVisible: Boolean) {
         addressBarVisibility.value = isVisible
     }

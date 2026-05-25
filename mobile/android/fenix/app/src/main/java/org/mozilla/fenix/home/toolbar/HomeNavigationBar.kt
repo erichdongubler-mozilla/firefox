@@ -80,10 +80,6 @@ class HomeNavigationBar(
         // no-op
     }
 
-    override fun updateTabCounter(browserState: BrowserState) {
-        // no-op
-    }
-
     override fun build(browserState: BrowserState, middleSearchEnabled: Boolean) {
         // no-op
     }
