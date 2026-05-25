@@ -5117,6 +5117,12 @@ void MacroAssemblerRiscv64::BranchLong(Label* L) {
   GenPCRelativeJump(scratch, imm);
 }
 
+CodeOffset MacroAssemblerRiscv64::BranchAndLinkShort(Label* L) {
+  AutoForbidPoolsAndNops afp(this, 2, 1);
+  int32_t offset = GetOffset(0, L, OffsetSize::kOffset21);
+  return jal(offset);
+}
+
 CodeOffset MacroAssemblerRiscv64::BranchAndLinkLong(Label* L) {
   // Generate position independent long branch and link.
   int32_t imm = branchLongOffsetHelper(L);
@@ -5124,6 +5130,13 @@ CodeOffset MacroAssemblerRiscv64::BranchAndLinkLong(Label* L) {
   Register scratch = temps.Acquire();
   GenPCRelativeJumpAndLink(scratch, imm);
   return CodeOffset(currentOffset());
+}
+
+CodeOffset MacroAssemblerRiscv64::BranchAndLink(Label* L) {
+  if (L->bound() && !isNear(L)) {
+    return BranchAndLinkLong(L);
+  }
+  return BranchAndLinkShort(L);
 }
 
 void MacroAssemblerRiscv64::ma_branch(Label* target, Condition cond,
@@ -6678,19 +6691,6 @@ void MacroAssemblerRiscv64::GenPCRelativeJumpAndLink(Register rd,
   auto [Hi20, Lo12] = ToHigh20Low12(imm32);
   auipc(rd, Hi20);  // Read PC + Hi20 into scratch.
   jalr(rd, Lo12);   // jump PC + Hi20 + Lo12
-}
-
-CodeOffset MacroAssemblerRiscv64::BranchAndLinkShort(Label* L) {
-  AutoForbidPoolsAndNops afp(this, 2, 1);
-  int32_t offset = GetOffset(0, L, OffsetSize::kOffset21);
-  return jal(offset);
-}
-
-CodeOffset MacroAssemblerRiscv64::BranchAndLink(Label* L) {
-  if (L->bound() && !isNear(L)) {
-    return BranchAndLinkLong(L);
-  }
-  return BranchAndLinkShort(L);
 }
 
 void MacroAssemblerRiscv64::ma_fmv_d(FloatRegister src, ValueOperand dest) {
