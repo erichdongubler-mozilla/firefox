@@ -701,8 +701,11 @@ static void GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry) {
   }
 #elif defined(JS_CODEGEN_RISCV64)
   {
+    // 2 instructions for each ma_push.
+    // 1 instruction for moveStackPtrTo.
+    AutoForbidPoolsAndNops afp(&masm, 5);
+
     *entry = masm.currentOffset();
-    BlockTrampolinePoolScope block_trampoline_pool(&masm, 5);
     masm.ma_push(ra);
     MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
     masm.ma_push(FramePointer);
@@ -793,7 +796,10 @@ static void GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed,
 
 #elif defined(JS_CODEGEN_RISCV64)
   {
-    BlockTrampolinePoolScope block_trampoline_pool(&masm, 20);
+    // Actually emits less instructions (maybe 11?), but reserving 20
+    // instructions definitely ensures no pool is placed in this scope.
+    AutoForbidPoolsAndNops afp(&masm, 20);
+
     masm.loadPtr(Address(StackPointer, Frame::callerFPOffset()), FramePointer);
     poppedFP = masm.currentOffset();
     masm.loadPtr(Address(StackPointer, Frame::returnAddressOffset()), ra);
@@ -1480,7 +1486,9 @@ void wasm::GenerateJitEntryPrologue(MacroAssembler& masm,
     offsets->begin = masm.currentOffset();
     masm.push(ra);
 #elif defined(JS_CODEGEN_RISCV64)
-    BlockTrampolinePoolScope block_trampoline_pool(&masm, 10);
+    // Actually emits less instructions (maybe 5?), but reserving 10
+    // instructions definitely ensures no pool is placed in this scope.
+    AutoForbidPoolsAndNops afp(&masm, 10);
     offsets->begin = masm.currentOffset();
     masm.push(ra);
 #elif defined(JS_CODEGEN_ARM64)
@@ -1540,6 +1548,8 @@ void wasm::GenerateJitEntryEpilogue(MacroAssembler& masm,
   // Forbid pools for the same reason as described in GenerateCallablePrologue.
 #  if defined(JS_CODEGEN_ARM)
   AutoForbidPoolsAndNops afp(&masm, /* number of instructions in scope = */ 2);
+#  elif defined(JS_CODEGEN_RISCV64)
+  AutoForbidPoolsAndNops afp(&masm, /* number of instructions in scope = */ 5);
 #  endif
 
   masm.pop(FramePointer);

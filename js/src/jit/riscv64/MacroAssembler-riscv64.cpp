@@ -698,7 +698,10 @@ template <typename F>
 void MacroAssemblerRiscv64::RoundHelper(FPURegister dst, FPURegister src,
                                         FPURegister fpu_scratch,
                                         FPURoundingMode mode) {
-  BlockTrampolinePoolScope block_trampoline_pool(this, 20, 2);
+  // TODO: It's unclear why forbidding pools is necessary here. It should either
+  // be documented or pools should be allowed.
+  AutoForbidPoolsAndNops afp(this, 20, 2);
+
   UseScratchRegisterScope temps(this);
   Register scratch2 = temps.Acquire();
 
@@ -819,7 +822,10 @@ void MacroAssemblerRiscv64::RoundFloatingPointToInteger(Register rd,
                                                         bool Inexact) {
   // Save csr_fflags to scratch & clear exception flags
   if (result != Register::Invalid()) {
-    BlockTrampolinePoolScope block_trampoline_pool(this, 6);
+    // TODO: It's unclear why forbidding pools is necessary here. It should
+    // either be documented or pools should be allowed.
+    AutoForbidPoolsAndNops afp(this, 6);
+
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
 
@@ -2545,7 +2551,7 @@ CodeOffset MacroAssembler::nopPatchableToCall() {
   // Generate a seven instruction sequence:
   // - Six instructions for WriteLoad64Instructions.
   // - Plus one instruction for the final jalr.
-  BlockTrampolinePoolScope block_trampoline_pool(this, 7);
+  AutoForbidPoolsAndNops afp(this, 7);
   nop();  // lui(rd, (int32_t)high_20);
   nop();  // addi(rd, rd, low_12);  // 31 bits in rd.
   nop();  // slli(rd, rd, 11);      // Space for next 11 bis
@@ -2557,7 +2563,7 @@ CodeOffset MacroAssembler::nopPatchableToCall() {
 }
 
 FaultingCodeOffset MacroAssembler::wasmTrapInstruction() {
-  BlockTrampolinePoolScope block_trampoline_pool(this, 2);
+  AutoForbidPoolsAndNops afp(this, 2);
   FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
   illegal_trap(kWasmTrapCode);
   ebreak();
@@ -2666,9 +2672,14 @@ static void AtomicExchange(MacroAssembler& masm,
   if (nbytes == 4) {
     masm.memoryBarrierBefore(sync);
     masm.bind(&again);
-    BlockTrampolinePoolScope block_trampoline_pool(&masm,
-                                                   /* 1 + 1 + 1 + 4 + 1 = */ 8,
-                                                   1);
+
+    // Forbid pools to ensure all atomic instructions are placed next to each
+    // other. This is also needed to ensure |masm.currentOffset()| returns the
+    // correct offset for the "lr.w" instruction.
+    //
+    // TODO: It's unclear why the initial memoryBarrierBefore is excluded.
+    AutoForbidPoolsAndNops afp(&masm, /* 1 + 1 + 1 + 4 + 1 = */ 8, 1);
+
     if (access) {
       masm.append(*access, wasm::TrapMachineInsn::Atomic,
                   FaultingCodeOffset(masm.currentOffset()));
@@ -2705,8 +2716,14 @@ static void AtomicExchange(MacroAssembler& masm,
 
   masm.bind(&again);
 
-  BlockTrampolinePoolScope block_trampoline_pool(
-      &masm, /* 1 + 1 + 1 + 1 + 4 + 1 + 2 + 1 = */ 12, 1);
+  // Forbid pools to ensure all atomic instructions are placed next to each
+  // other. This is also needed to ensure |masm.currentOffset()| returns the
+  // correct offset for the "lr.w" instruction.
+  //
+  // TODO: It's unclear why the initial memoryBarrierBefore is excluded.
+  AutoForbidPoolsAndNops afp(&masm, /* 1 + 1 + 1 + 1 + 4 + 1 + 2 + 1 = */ 12,
+                             1);
+
   if (access) {
     masm.append(*access, wasm::TrapMachineInsn::Atomic,
                 FaultingCodeOffset(masm.currentOffset()));
@@ -2759,9 +2776,14 @@ static void AtomicExchange64(MacroAssembler& masm,
   masm.memoryBarrierBefore(sync);
 
   masm.bind(&tryAgain);
-  BlockTrampolinePoolScope block_trampoline_pool(&masm,
-                                                 /* 1 + 1 + 1 + 4 + 1 = */ 8,
-                                                 1);
+
+  // Forbid pools to ensure all atomic instructions are placed next to each
+  // other. This is also needed to ensure |masm.currentOffset()| returns the
+  // correct offset for the "lr.d" instruction.
+  //
+  // TODO: It's unclear why the initial memoryBarrierBefore is excluded.
+  AutoForbidPoolsAndNops afp(&masm,
+                             /* 1 + 1 + 1 + 4 + 1 = */ 8, 1);
   if (access) {
     masm.append(*access, js::wasm::TrapMachineInsn::Load64,
                 FaultingCodeOffset(masm.currentOffset()));
@@ -2791,9 +2813,14 @@ static void AtomicFetchOp64(MacroAssembler& masm,
   masm.memoryBarrierBefore(sync);
 
   masm.bind(&tryAgain);
-  BlockTrampolinePoolScope block_trampoline_pool(&masm,
-                                                 /* 1 + 1 + 1 + 4 + 1 = */ 8,
-                                                 1);
+
+  // Forbid pools to ensure all atomic instructions are placed next to each
+  // other. This is also needed to ensure |masm.currentOffset()| returns the
+  // correct offset for the "lr.d" instruction.
+  //
+  // TODO: It's unclear why the initial memoryBarrierBefore is excluded.
+  AutoForbidPoolsAndNops afp(&masm,
+                             /* 1 + 1 + 1 + 4 + 1 = */ 8, 1);
   if (access) {
     masm.append(*access, js::wasm::TrapMachineInsn::Load64,
                 FaultingCodeOffset(masm.currentOffset()));
@@ -3599,6 +3626,7 @@ CodeOffset MacroAssembler::sub32FromMemAndBranchIfNegativeWithPatch(
   MOZ_ASSERT(scratch != address.base);
   ma_load(scratch, address);
   addiw(scratch, scratch, 128);
+  // Points immediately after the instruction to patch.
   CodeOffset patchPoint = CodeOffset(currentOffset());
   ma_store(scratch, address);
   ma_b(scratch, scratch, label, Assembler::Signed);
@@ -3832,14 +3860,13 @@ void MacroAssembler::patchCallToNop(uint8_t* call) {
 }
 
 CodeOffset MacroAssembler::callWithPatch() {
-  BlockTrampolinePoolScope block_trampoline_pool(this, 2);
-  DEBUG_PRINTF("\tcallWithPatch\n");
+  AutoForbidPoolsAndNops afp(this, 2);
+
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   auto [Hi20, Lo12] = ToHigh20Low12(0);
   auipc(scratch, Hi20);  // Read PC + Hi20 into scratch.
   jalr(scratch, Lo12);   // jump PC + Hi20 + Lo12
-  DEBUG_PRINTF("\tret %d\n", currentOffset());
   return CodeOffset(currentOffset());
 }
 
@@ -4786,7 +4813,7 @@ void MacroAssembler::wasmCheckSlowCallsite(Register ra_, Label* notSlow,
 
 CodeOffset MacroAssembler::wasmMarkedSlowCall(const wasm::CallSiteDesc& desc,
                                               const Register reg) {
-  BlockTrampolinePoolScope block_trampoline_pool(this, 2);
+  AutoForbidPoolsAndNops afp(this, 2);
   CodeOffset offset = call(desc, reg);
   wasmMarkCallAsSlow();
   return offset;
@@ -4912,7 +4939,7 @@ bool MacroAssemblerRiscv64::CalculateOffset(Label* L, OffsetSize bits,
 BufferOffset MacroAssemblerRiscv64::BranchShortHelper(int32_t offset,
                                                       Label* L) {
   MOZ_ASSERT(L == nullptr || offset == 0);
-  BlockTrampolinePoolScope block_trampoline_pool(this, 2, 1);
+  AutoForbidPoolsAndNops afp(this, 2, 1);
   offset = GetOffset(offset, L, OffsetSize::kOffset21);
   BufferOffset bo = nextOffset();
   Assembler::j(offset);
@@ -4938,7 +4965,7 @@ bool MacroAssemblerRiscv64::BranchShortHelper(int32_t offset, Label* L,
     scratch = rt.rm();
   }
   {
-    BlockTrampolinePoolScope block_trampoline_pool(this, 2, 1);
+    AutoForbidPoolsAndNops afp(this, 2, 1);
     switch (cond) {
       case Always:
         if (!CalculateOffset(L, OffsetSize::kOffset21, &offset)) return false;
@@ -6305,11 +6332,14 @@ void MacroAssemblerRiscv64::ByteSwap(Register dest, Register src,
   MOZ_ASSERT(scratch != src);
   MOZ_ASSERT(scratch != dest);
   if (operand_size == 4) {
+    // TODO: It's unclear why forbidding pools is necessary here. It should
+    // either be documented or pools should be allowed.
+    AutoForbidPoolsAndNops afp(this, 17);
+
     // Uint32_t x1 = 0x00FF00FF;
     // x0 = (x0 << 16 | x0 >> 16);
     // x0 = (((x0 & x1) << 8)  | ((x0 & (x1 << 8)) >> 8));
     UseScratchRegisterScope temps(this);
-    BlockTrampolinePoolScope block_trampoline_pool(this, 17);
     MOZ_ASSERT((dest != t6) && (src != t6));
     Register x0 = temps.Acquire();
     Register x1 = temps.Acquire();
@@ -6325,13 +6355,16 @@ void MacroAssemblerRiscv64::ByteSwap(Register dest, Register src,
     srliw(dest, dest, 8);
     or_(dest, dest, x2);  // (((x0 & x1) << 8)  | ((x0 & (x1 << 8)) >> 8))
   } else {
+    // TODO: It's unclear why forbidding pools is necessary here. It should
+    // either be documented or pools should be allowed.
+    AutoForbidPoolsAndNops afp(this, 30);
+
     // uinx24_t x1 = 0x0000FFFF0000FFFFl;
     // uinx24_t x1 = 0x00FF00FF00FF00FFl;
     // x0 = (x0 << 32 | x0 >> 32);
     // x0 = (x0 & x1) << 16 | (x0 & (x1 << 16)) >> 16;
     // x0 = (x0 & x1) << 8  | (x0 & (x1 << 8)) >> 8;
     UseScratchRegisterScope temps(this);
-    BlockTrampolinePoolScope block_trampoline_pool(this, 30);
     MOZ_ASSERT((dest != t6) && (src != t6));
     Register x0 = temps.Acquire();
     Register x1 = temps.Acquire();
@@ -6650,7 +6683,7 @@ void MacroAssemblerRiscv64::GenPCRelativeJumpAndLink(Register rd,
 CodeOffset MacroAssemblerRiscv64::BranchAndLinkShortHelper(int32_t offset,
                                                            Label* L) {
   MOZ_ASSERT(L == nullptr || offset == 0);
-  BlockTrampolinePoolScope block_trampoline_pool(this, 2, 1);
+  AutoForbidPoolsAndNops afp(this, 2, 1);
   offset = GetOffset(offset, L, OffsetSize::kOffset21);
   return jal(offset);
 }

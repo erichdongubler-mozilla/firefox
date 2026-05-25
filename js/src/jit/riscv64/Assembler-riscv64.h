@@ -738,8 +738,6 @@ class AutoForbidPoolsAndNops : public AutoForbidNops {
   ~AutoForbidPoolsAndNops() { asm_->leaveNoPool(); }
 };
 
-using BlockTrampolinePoolScope = AutoForbidPoolsAndNops;
-
 }  // namespace jit
 }  // namespace js
 #endif /* jit_riscv64_Assembler_riscv64_h */
