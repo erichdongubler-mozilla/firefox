@@ -66,7 +66,6 @@ class MainMenuTest {
                 isMenuRedesignCFREnabled = false,
                 isPageLoadTranslationsPromptEnabled = false,
                 shakeToSummarizeFeatureFlagEnabled = true,
-                hasSeenShakeToSummarizeToolbarCfr = false,
             ),
         ) { it.activity }
 
@@ -1388,7 +1387,12 @@ class MainMenuTest {
     @SmokeTest
     @Test
     fun verifyTheMoreMainMenuSummarizePageButtonTest() {
+        composeTestRule.activityRule.applySettingsExceptions {
+            it.hasSeenShakeToSummarizeToolbarCfr = false
+        }
+
         val articlePage = mockWebServer.articleSummaryAsset
+
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(articlePage.url) {
             waitForPageToLoad()
@@ -1403,7 +1407,12 @@ class MainMenuTest {
     @SmokeTest
     @Test
     fun verifyTheMoreMainMenuSummarizePageButtonFunctionalityTest() {
+        composeTestRule.activityRule.applySettingsExceptions {
+            it.hasSeenShakeToSummarizeToolbarCfr = false
+        }
+
         val articlePage = mockWebServer.articleSummaryAsset
+
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(articlePage.url) {
             waitForPageToLoad()
