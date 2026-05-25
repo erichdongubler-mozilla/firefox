@@ -345,8 +345,6 @@ class MacroAssemblerRiscv64 : public Assembler {
 
   [[nodiscard]] bool BranchShort(Label* L, Condition cond, Register rs,
                                  const Operand& rt);
-  bool BranchShortHelper(int32_t offset, Label* L, Condition cond, Register rs,
-                         const Operand& rt);
   void BranchLong(Label* L);
 
   // Floating point branches
