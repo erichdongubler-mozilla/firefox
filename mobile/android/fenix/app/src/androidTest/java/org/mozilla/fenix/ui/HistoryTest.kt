@@ -89,7 +89,7 @@ class HistoryTest {
             registerAndCleanupIdlingResources(
                 RecyclerViewIdlingResource(composeTestRule.activity.findViewById(R.id.history_list), 1),
             ) {
-                verifyHistoryMenuView()
+                verifyHistoryMenuView(historyItemExists = true)
                 verifyVisitedTimeTitle()
                 verifyFirstTestPageTitle("Test_Page_1")
                 verifyTestPageUrl(firstWebPage.url)
@@ -175,7 +175,7 @@ class HistoryTest {
             verifyShareHistoryButton()
             verifyCloseToolbarButton()
         }.closeToolbarReturnToHistory {
-            verifyHistoryMenuView()
+            verifyHistoryMenuView(historyItemExists = true)
         }
     }
 
@@ -334,7 +334,7 @@ class HistoryTest {
             pressBack()
         }
         historyMenu(composeTestRule) {
-            verifyHistoryMenuView()
+            verifyHistoryMenuView(historyItemExists = true)
         }
     }
 

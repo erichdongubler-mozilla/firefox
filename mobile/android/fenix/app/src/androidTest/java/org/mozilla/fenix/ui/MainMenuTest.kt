@@ -169,6 +169,11 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080136
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifyTheHistoryMenuItemTest"],
+        bug = 2041634,
+        since = "2026-05",
+    )
     @SmokeTest
     @Test
     fun verifyTheHistoryMenuItemTest() {
@@ -178,7 +183,7 @@ class MainMenuTest {
         }.enterURLAndEnterToBrowser(testPage.url) {
         }.openThreeDotMenu {
         }.clickHistoryButton {
-            verifyHistoryMenuView()
+            verifyHistoryMenuView(historyItemExists = true)
         }.goBack {
             verifyPageContent(testPage.content)
         }

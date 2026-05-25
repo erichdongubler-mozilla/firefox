@@ -13,6 +13,7 @@ import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 import org.mozilla.fenix.ui.efficiency.selectors.BookmarksSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.BookmarksSelectors.DELETE_BOOKMARK_BUTTON
 import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
+import org.mozilla.fenix.ui.efficiency.selectors.HistorySelectors.NAVIGATE_BACK_BUTTON
 import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors.BOOKMARK_THIS_PAGE_BUTTON
@@ -110,5 +111,19 @@ class MainMenuTest : BaseTest() {
         on.browserPage.navigateToPage()
         on.mainMenu.navigateToPage()
             .mozVerify(BOOKMARK_THIS_PAGE_BUTTON)
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080136
+    @SmokeTest
+    @Test
+    fun verifyTheHistoryMenuItemTest() {
+        val testPage = mockWebServer.getGenericAsset(1)
+
+        on.browserPage.navigateToPage(testPage.url.toString())
+        on.history.navigateToPage()
+            .mozVerifyElementsByGroup("historyMenuViewWithHistoryItems")
+            .mozClick(NAVIGATE_BACK_BUTTON)
+        on.browserPage
+            .verifyPageContent(testPage.content)
     }
 }

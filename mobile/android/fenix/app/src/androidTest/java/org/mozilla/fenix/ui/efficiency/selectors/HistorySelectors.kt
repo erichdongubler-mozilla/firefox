@@ -4,6 +4,8 @@
 
 package org.mozilla.fenix.ui.efficiency.selectors
 
+import org.mozilla.fenix.R
+import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
@@ -12,63 +14,84 @@ object HistorySelectors {
         strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
         value = "History",
         description = "History Toolbar Title",
-        groups = listOf("requiredForPage"),
+        groups = listOf("requiredForPage", "historyMenuViewWithHistoryItems"),
+    )
+
+    val NAVIGATE_BACK_BUTTON = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_DESCRIPTION_CONTAINS,
+        value = getStringResource(R.string.action_bar_up_description),
+        description = "Navigate back toolbar button",
+        groups = listOf("requiredForPage", "historyMenuViewWithHistoryItems"),
+    )
+
+    val SEARCH_HISTORY_BUTTON = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
+        value = "history_search",
+        description = "Search history toolbar button",
+        groups = listOf("requiredForPage", "historyMenuViewWithHistoryItems"),
     )
 
     val RECENTLY_CLOSED_TABS_BUTTON = Selector(
         strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
         value = "recently_closed_tabs_header",
         description = "Recently closed tabs button",
-        groups = listOf("requiredForPage"),
+        groups = listOf("requiredForPage", "historyMenuViewWithHistoryItems"),
     )
 
-    val EMPTY_HISTORY_VIEW = Selector(
+    val RECENTLY_CLOSED_TABS_NUMBER_OF_TABS = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
+        value = "recently_closed_tabs_description",
+        description = "Number of recently closed tabs",
+        groups = listOf("requiredForPage", "historyMenuViewWithHistoryItems"),
+    )
+
+    val EMPTY_HISTORY_LIST = Selector(
         strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
         value = "history_empty_view",
         description = "Empty history view",
-        groups = listOf("emptyHistory"),
+        groups = listOf("emptyHistoryMenuView"),
     )
 
     val HISTORY_LIST = Selector(
         strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
         value = "history_list",
         description = "Browsing history list view",
-        groups = listOf("browsingHistory"),
+        groups = listOf("historyMenuViewWithHistoryItems"),
     )
 
     val VISITED_TIME_TITLE = Selector(
         strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
         value = "Today",
         description = "Today chronological timeline title",
-        groups = listOf("browsingHistory"),
+        groups = listOf("historyMenuViewWithHistoryItems"),
     )
 
     val HISTORY_ITEM_TITLE = Selector(
         strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
         value = "title",
         description = "History item title",
-        groups = listOf("browsingHistory"),
+        groups = listOf("historyMenuViewWithHistoryItems"),
     )
 
     val HISTORY_ITEM_URL = Selector(
         strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
         value = "url",
         description = "History item URL",
-        groups = listOf("browsingHistory"),
+        groups = listOf("historyMenuViewWithHistoryItems"),
     )
 
     val HISTORY_ITEM_DELETE_BUTTON = Selector(
         strategy = SelectorStrategy.UIAUTOMATOR_WITH_DESCRIPTION_CONTAINS,
         value = "Delete",
         description = "History item delete button",
-        groups = listOf("browsingHistory"),
+        groups = listOf("historyMenuViewWithHistoryItems"),
     )
 
     val DELETE_ALL_HISTORY_BUTTON = Selector(
         strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
         value = "history_delete",
         description = "Delete all history button",
-        groups = listOf("requiredForPage", "browsingHistory"),
+        groups = listOf("requiredForPage", "historyMenuViewWithHistoryItems"),
     )
 
     val DELETE_CONFIRMATION_DIALOG_TITLE = Selector(
@@ -108,8 +131,11 @@ object HistorySelectors {
 
     val all = listOf(
         TOOLBAR_TITLE,
+        NAVIGATE_BACK_BUTTON,
+        SEARCH_HISTORY_BUTTON,
         RECENTLY_CLOSED_TABS_BUTTON,
-        EMPTY_HISTORY_VIEW,
+        RECENTLY_CLOSED_TABS_NUMBER_OF_TABS,
+        EMPTY_HISTORY_LIST,
         HISTORY_LIST,
         VISITED_TIME_TITLE,
         HISTORY_ITEM_TITLE,
