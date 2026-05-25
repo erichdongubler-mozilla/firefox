@@ -1348,14 +1348,6 @@ static nscoord BSizeFromPhysicalSize(const nsSize& aSize,
 
 nsRect AnchorPositioningUtils::ReassembleAnchorRect(
     const nsIFrame* aAnchor, const nsIFrame* aContainingBlock) {
-  if (!aAnchor->PresContext()->FragmentainerAwarePositioningEnabled()) {
-    // We aren't fragmenting abspos elements, with containing block sizes
-    // not fit for proper reassembly. Given the context of this function (Anchor
-    // positioning), we can safely assume that the containing block contains at
-    // least one abspos frame (Anchor positioned frame), so skip reassembly.
-    return nsLayoutUtils::GetCombinedFragmentRects(aAnchor, nullptr).mRect +
-           aAnchor->GetOffsetToIgnoringScrolling(aContainingBlock);
-  }
   aContainingBlock = GetMatchingContainingBlock(aAnchor, aContainingBlock);
   if (!aContainingBlock) {
     MOZ_ASSERT_UNREACHABLE("No matching containing block?");

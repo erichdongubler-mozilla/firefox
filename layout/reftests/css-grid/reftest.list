@@ -182,7 +182,7 @@ test-pref(layout.css.serialize-grid-implicit-tracks,false) == grid-repeat-auto-f
 == grid-repeat-auto-fill-fit-013.html grid-repeat-auto-fill-fit-013-ref.html
 == grid-item-blockifying-001.html grid-item-blockifying-001-ref.html
 == grid-fragmentation-001.html grid-fragmentation-001-ref.html
-pref(layout.abspos.fragmentainer-aware-positioning.enabled,true) == grid-fragmentation-002.html grid-fragmentation-002-ref.html
+== grid-fragmentation-002.html grid-fragmentation-002-ref.html
 == grid-fragmentation-003.html grid-fragmentation-003-ref.html
 == grid-fragmentation-004.html grid-fragmentation-004-ref.html
 == grid-fragmentation-005.html grid-fragmentation-005-ref.html
@@ -222,8 +222,8 @@ fails == grid-fragmentation-034.html grid-fragmentation-034-ref.html
 # They should give the same result as the corresponding static test.
 == grid-fragmentation-dyn3-001.html grid-fragmentation-001-ref.html
 == grid-fragmentation-dyn4-001.html grid-fragmentation-001-ref.html
-pref(layout.abspos.fragmentainer-aware-positioning.enabled,true) == grid-fragmentation-dyn1-002.html grid-fragmentation-002-ref.html
-pref(layout.abspos.fragmentainer-aware-positioning.enabled,true) == grid-fragmentation-dyn3-002.html grid-fragmentation-002-ref.html
+== grid-fragmentation-dyn1-002.html grid-fragmentation-002-ref.html
+== grid-fragmentation-dyn3-002.html grid-fragmentation-002-ref.html
 == grid-fragmentation-dyn3-003.html grid-fragmentation-003-ref.html
 == grid-fragmentation-dyn4-004.html grid-fragmentation-004-ref.html
 == grid-fragmentation-dyn4-005.html grid-fragmentation-005-ref.html
