@@ -133,8 +133,8 @@
         <!-- Icon inverted (on color) -->
         <item name="iconOnColor">@color/fx_mobile_icon_color_oncolor</item>
 
-        <!-- Active thumb color & Active track color (30% transparency) -->
-        <item name="colorControlActivated">@color/accent_high_contrast_normal_theme</item>
+        <!-- Tint for activated controls (selected radio button, checked checkbox, switch thumb, seek bar, progress bar) -->
+        <item name="colorControlActivated">?attr/colorPrimary</item>
         <!-- Inactive thumb color -->
         <item name="colorSwitchThumbNormal">@color/toggle_off_knob_normal_theme</item>
         <!-- Inactive track color(30% transparency) -->
@@ -320,7 +320,7 @@
         <item name="android:windowBackground">@color/fx_mobile_private_surface</item>
         <item name="android:colorEdgeEffect">@color/accent_private_theme</item>
         <item name="android:colorAccent">@color/fx_mobile_private_on_surface</item>
-        <item name="colorControlActivated">@color/accent_high_contrast_private_theme</item>
+        <item name="colorControlActivated">?attr/colorPrimary</item>
         <item name="android:textColorPrimary">@color/state_list_text_color</item>
         <item name="android:textColorSecondary">@color/secondary_state_list_text_color</item>
         <item name="materialAlertDialogTheme">@style/BaseDialogStyle.Private</item>
