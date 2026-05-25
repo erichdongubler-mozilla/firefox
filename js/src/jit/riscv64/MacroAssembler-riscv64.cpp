@@ -2201,8 +2201,8 @@ void MacroAssemblerRiscv64Compat::storeValue(const Value& val, Address dest) {
   UseScratchRegisterScope temps(this);
   Register scratch2 = temps.Acquire();
   if (val.isGCThing()) {
-    writeDataRelocation(val);
-    movWithPatch(ImmWord(val.asRawBits()), scratch2);
+    CodeOffset offset = movWithPatch(ImmWord(val.asRawBits()), scratch2);
+    writeDataRelocation(val, offset);
   } else {
     ma_li(scratch2, ImmWord(val.asRawBits()));
   }
@@ -3722,8 +3722,8 @@ void MacroAssembler::moveValue(const Value& src, const ValueOperand& dest) {
     return;
   }
 
-  writeDataRelocation(src);
-  movWithPatch(ImmWord(src.asRawBits()), dest.valueReg());
+  CodeOffset offset = movWithPatch(ImmWord(src.asRawBits()), dest.valueReg());
+  writeDataRelocation(src, offset);
 }
 
 void MacroAssembler::nearbyIntDouble(RoundingMode mode, FloatRegister src,
@@ -4824,7 +4824,7 @@ void MacroAssemblerRiscv64::ma_liPatchable(Register dest, ImmWord imm,
 
 void MacroAssemblerRiscv64::ma_li(Register dest, ImmGCPtr ptr) {
   BlockTrampolinePoolScope block_trampoline_pool(this, 6);
-  writeDataRelocation(ptr);
+  writeDataRelocation(ptr, nextOffset());
   ma_liPatchable(dest, ImmPtr(ptr.value));
 }
 void MacroAssemblerRiscv64::ma_li(Register dest, Imm32 imm) {

@@ -615,7 +615,7 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   void mov(Register src, Address dest) { MOZ_CRASH("NYI-IC"); }
   void mov(Address src, Register dest) { MOZ_CRASH("NYI-IC"); }
 
-  void writeDataRelocation(const Value& val) {
+  void writeDataRelocation(const Value& val, CodeOffset offset) {
     MOZ_ASSERT(val.isGCThing(), "only called for gc-things");
 
     // Raw GC pointer relocations and Value relocations both end up in
@@ -624,7 +624,7 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
     if (cell && gc::IsInsideNursery(cell)) {
       embedsNurseryPointers_ = true;
     }
-    dataRelocations_.writeUnsigned(currentOffset());
+    dataRelocations_.writeUnsigned(offset.offset());
   }
 
   void branch(JitCode* c) {
@@ -966,8 +966,8 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
     if (val.isGCThing()) {
       UseScratchRegisterScope temps(this);
       Register scratch = temps.Acquire();
-      writeDataRelocation(val);
-      movWithPatch(ImmWord(val.asRawBits()), scratch);
+      CodeOffset offset = movWithPatch(ImmWord(val.asRawBits()), scratch);
+      writeDataRelocation(val, offset);
       push(scratch);
     } else {
       push(ImmWord(val.asRawBits()));

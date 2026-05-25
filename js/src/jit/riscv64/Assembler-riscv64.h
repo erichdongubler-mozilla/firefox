@@ -529,16 +529,14 @@ class Assembler : public AssemblerShared,
     return &scratch_register_list_;
   }
 
-  // As opposed to x86/x64 version, the data relocation has to be executed
-  // before to recover the pointer, and not after.
-  void writeDataRelocation(ImmGCPtr ptr) {
+  void writeDataRelocation(ImmGCPtr ptr, BufferOffset offset) {
     // Raw GC pointer relocations and Value relocations both end up in
     // TraceOneDataRelocation.
     if (ptr.value) {
       if (gc::IsInsideNursery(ptr.value)) {
         embedsNurseryPointers_ = true;
       }
-      dataRelocations_.writeUnsigned(nextOffset().getOffset());
+      dataRelocations_.writeUnsigned(offset.getOffset());
     }
   }
 
