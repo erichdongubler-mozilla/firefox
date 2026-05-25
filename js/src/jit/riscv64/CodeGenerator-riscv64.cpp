@@ -149,50 +149,6 @@ void CodeGeneratorRiscv64::emitTableSwitchDispatch(MTableSwitch* mir,
   masm.branchToComputedAddress(pointer);
 }
 
-template <typename T>
-void CodeGeneratorRiscv64::emitWasmLoad(T* ins) {
-  const MWasmLoad* mir = ins->mir();
-  UseScratchRegisterScope temps(&masm);
-  Register scratch2 = temps.Acquire();
-
-  Register memoryBase = ToRegister(ins->memoryBase());
-  Register ptr = ToRegister(ins->ptr());
-  Register ptrScratch = ToTempRegisterOrInvalid(ins->temp0());
-
-  if (mir->base()->type() == MIRType::Int32) {
-    masm.move32To64ZeroExtend(ptr, Register64(scratch2));
-    ptr = scratch2;
-    ptrScratch = ptrScratch != InvalidReg ? scratch2 : InvalidReg;
-  }
-
-  // ptr is a GPR and is either a 32-bit value zero-extended to 64-bit, or a
-  // true 64-bit value.
-  masm.wasmLoad(mir->access(), memoryBase, ptr, ptrScratch,
-                ToAnyRegister(ins->output()));
-}
-
-template <typename T>
-void CodeGeneratorRiscv64::emitWasmStore(T* ins) {
-  const MWasmStore* mir = ins->mir();
-  UseScratchRegisterScope temps(&masm);
-  Register scratch2 = temps.Acquire();
-
-  Register memoryBase = ToRegister(ins->memoryBase());
-  Register ptr = ToRegister(ins->ptr());
-  Register ptrScratch = ToTempRegisterOrInvalid(ins->temp0());
-
-  if (mir->base()->type() == MIRType::Int32) {
-    masm.move32To64ZeroExtend(ptr, Register64(scratch2));
-    ptr = scratch2;
-    ptrScratch = ptrScratch != InvalidReg ? scratch2 : InvalidReg;
-  }
-
-  // ptr is a GPR and is either a 32-bit value zero-extended to 64-bit, or a
-  // true 64-bit value.
-  masm.wasmStore(mir->access(), ToAnyRegister(ins->value()), memoryBase, ptr,
-                 ptrScratch);
-}
-
 void CodeGeneratorRiscv64::generateInvalidateEpilogue() {
   // Ensure that there is enough space in the buffer for the OsiPoint
   // patching to occur. Otherwise, we could overwrite the invalidation
@@ -467,32 +423,26 @@ void CodeGenerator::visitWasmLoadI64(LWasmLoadI64* ins) {
   const MWasmLoad* mir = ins->mir();
 
   Register memoryBase = ToRegister(ins->memoryBase());
-  Register ptrScratch = ToTempRegisterOrInvalid(ins->temp0());
+  Register ptr = ToRegister(ins->ptr());
 
-  Register ptrReg = ToRegister(ins->ptr());
+  // See comment in visitWasmLoad re the type of 'base'.
   if (mir->base()->type() == MIRType::Int32) {
-    // See comment in visitWasmLoad re the type of 'base'.
-    masm.move32ZeroExtendToPtr(ptrReg, ptrReg);
+    masm.move32ZeroExtendToPtr(ptr, ptr);
   }
-
-  masm.wasmLoadI64(mir->access(), memoryBase, ptrReg, ptrScratch,
-                   ToOutRegister64(ins));
+  masm.wasmLoadI64(mir->access(), memoryBase, ptr, ToOutRegister64(ins));
 }
 
 void CodeGenerator::visitWasmStoreI64(LWasmStoreI64* ins) {
   const MWasmStore* mir = ins->mir();
 
   Register memoryBase = ToRegister(ins->memoryBase());
-  Register ptrScratch = ToTempRegisterOrInvalid(ins->temp0());
+  Register ptr = ToRegister(ins->ptr());
 
-  Register ptrReg = ToRegister(ins->ptr());
+  // See comment in visitWasmLoad re the type of 'base'.
   if (mir->base()->type() == MIRType::Int32) {
-    // See comment in visitWasmLoad re the type of 'base'.
-    masm.move32ZeroExtendToPtr(ptrReg, ptrReg);
+    masm.move32ZeroExtendToPtr(ptr, ptr);
   }
-
-  masm.wasmStoreI64(mir->access(), ToRegister64(ins->value()), memoryBase,
-                    ptrReg, ptrScratch);
+  masm.wasmStoreI64(mir->access(), ToRegister64(ins->value()), memoryBase, ptr);
 }
 
 void CodeGenerator::visitWasmSelectI64(LWasmSelectI64* ins) {
@@ -1619,9 +1569,39 @@ void CodeGenerator::visitNotF(LNotF* ins) {
   masm.ma_compareF32(dest, Assembler::DoubleEqualOrUnordered, in, fpscratch);
 }
 
-void CodeGenerator::visitWasmLoad(LWasmLoad* ins) { emitWasmLoad(ins); }
+void CodeGenerator::visitWasmLoad(LWasmLoad* ins) {
+  const MWasmLoad* mir = ins->mir();
+  UseScratchRegisterScope temps(&masm);
+  Register scratch2 = temps.Acquire();
 
-void CodeGenerator::visitWasmStore(LWasmStore* ins) { emitWasmStore(ins); }
+  Register memoryBase = ToRegister(ins->memoryBase());
+  Register ptr = ToRegister(ins->ptr());
+
+  // ptr is a GPR and is either a 32-bit value zero-extended to 64-bit, or a
+  // true 64-bit value.
+  if (mir->base()->type() == MIRType::Int32) {
+    masm.move32ZeroExtendToPtr(ptr, scratch2);
+    ptr = scratch2;
+  }
+  masm.wasmLoad(mir->access(), memoryBase, ptr, ToAnyRegister(ins->output()));
+}
+
+void CodeGenerator::visitWasmStore(LWasmStore* ins) {
+  const MWasmStore* mir = ins->mir();
+  UseScratchRegisterScope temps(&masm);
+  Register scratch2 = temps.Acquire();
+
+  Register memoryBase = ToRegister(ins->memoryBase());
+  Register ptr = ToRegister(ins->ptr());
+
+  // ptr is a GPR and is either a 32-bit value zero-extended to 64-bit, or a
+  // true 64-bit value.
+  if (mir->base()->type() == MIRType::Int32) {
+    masm.move32ZeroExtendToPtr(ptr, scratch2);
+    ptr = scratch2;
+  }
+  masm.wasmStore(mir->access(), ToAnyRegister(ins->value()), memoryBase, ptr);
+}
 
 void CodeGenerator::visitAsmJSLoadHeap(LAsmJSLoadHeap* ins) {
   const MAsmJSLoadHeap* mir = ins->mir();

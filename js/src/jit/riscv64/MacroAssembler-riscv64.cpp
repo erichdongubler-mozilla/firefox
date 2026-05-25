@@ -1487,117 +1487,6 @@ void MacroAssemblerRiscv64::computeScaledAddress32(const BaseIndex& address,
   }
 }
 
-void MacroAssemblerRiscv64Compat::wasmLoadI64Impl(
-    const wasm::MemoryAccessDesc& access, Register memoryBase, Register ptr,
-    Register ptrScratch, Register64 output, Register tmp) {
-  access.assertOffsetInGuardPages();
-  uint32_t offset = access.offset32();
-  MOZ_ASSERT_IF(offset, ptrScratch != InvalidReg);
-
-  // Maybe add the offset.
-  if (offset) {
-    asMasm().addPtr(ImmWord(offset), ptrScratch);
-    ptr = ptrScratch;
-  }
-
-  asMasm().memoryBarrierBefore(access.sync());
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  FaultingCodeOffset fco;
-  switch (access.type()) {
-    case Scalar::Int8:
-      add(scratch, memoryBase, ptr);
-      fco = FaultingCodeOffset(currentOffset());
-      lb(output.reg, scratch, 0);
-      break;
-    case Scalar::Uint8:
-      add(scratch, memoryBase, ptr);
-      fco = FaultingCodeOffset(currentOffset());
-      lbu(output.reg, scratch, 0);
-      break;
-    case Scalar::Int16:
-      add(scratch, memoryBase, ptr);
-      fco = FaultingCodeOffset(currentOffset());
-      lh(output.reg, scratch, 0);
-      break;
-    case Scalar::Uint16:
-      add(scratch, memoryBase, ptr);
-      fco = FaultingCodeOffset(currentOffset());
-      lhu(output.reg, scratch, 0);
-      break;
-    case Scalar::Int32:
-      add(scratch, memoryBase, ptr);
-      fco = FaultingCodeOffset(currentOffset());
-      lw(output.reg, scratch, 0);
-      break;
-    case Scalar::Uint32:
-      // TODO(riscv): Why need zero-extension here?
-      add(scratch, memoryBase, ptr);
-      fco = FaultingCodeOffset(currentOffset());
-      lwu(output.reg, scratch, 0);
-      break;
-    case Scalar::Int64:
-      add(scratch, memoryBase, ptr);
-      fco = FaultingCodeOffset(currentOffset());
-      ld(output.reg, scratch, 0);
-      break;
-    default:
-      MOZ_CRASH("unexpected array type");
-  }
-
-  append(access, js::wasm::TrapMachineInsnForLoad(access.byteSize()), fco);
-  asMasm().memoryBarrierAfter(access.sync());
-}
-
-void MacroAssemblerRiscv64Compat::wasmStoreI64Impl(
-    const wasm::MemoryAccessDesc& access, Register64 value, Register memoryBase,
-    Register ptr, Register ptrScratch, Register tmp) {
-  access.assertOffsetInGuardPages();
-  uint32_t offset = access.offset32();
-  MOZ_ASSERT_IF(offset, ptrScratch != InvalidReg);
-
-  // Maybe add the offset.
-  if (offset) {
-    asMasm().addPtr(ImmWord(offset), ptrScratch);
-    ptr = ptrScratch;
-  }
-
-  asMasm().memoryBarrierBefore(access.sync());
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  FaultingCodeOffset fco;
-  switch (access.type()) {
-    case Scalar::Int8:
-    case Scalar::Uint8:
-      add(scratch, memoryBase, ptr);
-      fco = FaultingCodeOffset(currentOffset());
-      sb(value.reg, scratch, 0);
-      break;
-    case Scalar::Int16:
-    case Scalar::Uint16:
-      add(scratch, memoryBase, ptr);
-      fco = FaultingCodeOffset(currentOffset());
-      sh(value.reg, scratch, 0);
-      break;
-    case Scalar::Int32:
-    case Scalar::Uint32:
-      add(scratch, memoryBase, ptr);
-      fco = FaultingCodeOffset(currentOffset());
-      sw(value.reg, scratch, 0);
-      break;
-    case Scalar::Int64:
-      add(scratch, memoryBase, ptr);
-      fco = FaultingCodeOffset(currentOffset());
-      sd(value.reg, scratch, 0);
-      break;
-    default:
-      MOZ_CRASH("unexpected array type");
-  }
-
-  append(access, js::wasm::TrapMachineInsnForLoad(access.byteSize()), fco);
-  asMasm().memoryBarrierAfter(access.sync());
-}
-
 void MacroAssemblerRiscv64Compat::profilerEnterFrame(Register framePtr,
                                                      Register scratch) {
   asMasm().loadJSContext(scratch);
@@ -4695,26 +4584,26 @@ void MacroAssembler::wasmCompareExchange(
 
 void MacroAssembler::wasmLoad(const wasm::MemoryAccessDesc& access,
                               Register memoryBase, Register ptr,
-                              Register ptrScratch, AnyRegister output) {
-  wasmLoadImpl(access, memoryBase, ptr, ptrScratch, output, InvalidReg);
+                              AnyRegister output) {
+  wasmLoadImpl(access, memoryBase, ptr, output);
 }
 
 void MacroAssembler::wasmLoadI64(const wasm::MemoryAccessDesc& access,
                                  Register memoryBase, Register ptr,
-                                 Register ptrScratch, Register64 output) {
-  wasmLoadI64Impl(access, memoryBase, ptr, ptrScratch, output, InvalidReg);
+                                 Register64 output) {
+  wasmLoadImpl(access, memoryBase, ptr, AnyRegister(output.reg));
 }
 
 void MacroAssembler::wasmStore(const wasm::MemoryAccessDesc& access,
                                AnyRegister value, Register memoryBase,
-                               Register ptr, Register ptrScratch) {
-  wasmStoreImpl(access, value, memoryBase, ptr, ptrScratch, InvalidReg);
+                               Register ptr) {
+  wasmStoreImpl(access, value, memoryBase, ptr);
 }
 
 void MacroAssembler::wasmStoreI64(const wasm::MemoryAccessDesc& access,
                                   Register64 value, Register memoryBase,
-                                  Register ptr, Register ptrScratch) {
-  wasmStoreI64Impl(access, value, memoryBase, ptr, ptrScratch, InvalidReg);
+                                  Register ptr) {
+  wasmStoreImpl(access, AnyRegister(value.reg), memoryBase, ptr);
 }
 
 void MacroAssemblerRiscv64::Clear_if_nan_d(Register rd, FPURegister fs) {
@@ -6659,62 +6548,41 @@ void MacroAssemblerRiscv64::Dror(Register rd, Register rs, Register rt) {
 
 void MacroAssemblerRiscv64::wasmLoadImpl(const wasm::MemoryAccessDesc& access,
                                          Register memoryBase, Register ptr,
-                                         Register ptrScratch,
-                                         AnyRegister output, Register tmp) {
+                                         AnyRegister output) {
   access.assertOffsetInGuardPages();
-  uint32_t offset = access.offset32();
-  MOZ_ASSERT_IF(offset, ptrScratch != InvalidReg);
-
-  // Maybe add the offset.
-  if (offset) {
-    asMasm().addPtr(ImmWord(offset), ptrScratch);
-    ptr = ptrScratch;
-  }
 
   asMasm().memoryBarrierBefore(access.sync());
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
+
+  BaseIndex address(memoryBase, ptr, TimesOne, access.offset32());
+
   FaultingCodeOffset fco;
   switch (access.type()) {
     case Scalar::Int8:
-      add(scratch, memoryBase, ptr);
-      fco = FaultingCodeOffset(currentOffset());
-      lb(output.gpr(), scratch, 0);
+      fco = ma_load(output.gpr(), address, SizeByte, SignExtend);
       break;
     case Scalar::Uint8:
-      add(scratch, memoryBase, ptr);
-      fco = FaultingCodeOffset(currentOffset());
-      lbu(output.gpr(), scratch, 0);
+      fco = ma_load(output.gpr(), address, SizeByte, ZeroExtend);
       break;
     case Scalar::Int16:
-      add(scratch, memoryBase, ptr);
-      fco = FaultingCodeOffset(currentOffset());
-      lh(output.gpr(), scratch, 0);
+      fco = ma_load(output.gpr(), address, SizeHalfWord, SignExtend);
       break;
     case Scalar::Uint16:
-      add(scratch, memoryBase, ptr);
-      fco = FaultingCodeOffset(currentOffset());
-      lhu(output.gpr(), scratch, 0);
+      fco = ma_load(output.gpr(), address, SizeHalfWord, ZeroExtend);
       break;
     case Scalar::Int32:
-      add(scratch, memoryBase, ptr);
-      fco = FaultingCodeOffset(currentOffset());
-      lw(output.gpr(), scratch, 0);
+      fco = ma_load(output.gpr(), address, SizeWord, SignExtend);
       break;
     case Scalar::Uint32:
-      add(scratch, memoryBase, ptr);
-      fco = FaultingCodeOffset(currentOffset());
-      lwu(output.gpr(), scratch, 0);
+      fco = ma_load(output.gpr(), address, SizeWord, ZeroExtend);
       break;
-    case Scalar::Float64:
-      add(scratch, memoryBase, ptr);
-      fco = FaultingCodeOffset(currentOffset());
-      fld(output.fpu(), scratch, 0);
+    case Scalar::Int64:
+      fco = ma_load(output.gpr(), address, SizeDouble, SignExtend);
       break;
     case Scalar::Float32:
-      add(scratch, memoryBase, ptr);
-      fco = FaultingCodeOffset(currentOffset());
-      flw(output.fpu(), scratch, 0);
+      fco = ma_loadFloat(output.fpu(), address);
+      break;
+    case Scalar::Float64:
+      fco = ma_loadDouble(output.fpu(), address);
       break;
     default:
       MOZ_CRASH("unexpected array type");
@@ -6726,36 +6594,46 @@ void MacroAssemblerRiscv64::wasmLoadImpl(const wasm::MemoryAccessDesc& access,
 
 void MacroAssemblerRiscv64::wasmStoreImpl(const wasm::MemoryAccessDesc& access,
                                           AnyRegister value,
-                                          Register memoryBase, Register ptr,
-                                          Register ptrScratch, Register tmp) {
+                                          Register memoryBase, Register ptr) {
   access.assertOffsetInGuardPages();
-  uint32_t offset = access.offset32();
-  MOZ_ASSERT_IF(offset, ptrScratch != InvalidReg);
 
-  // Maybe add the offset.
-  if (offset) {
-    asMasm().addPtr(ImmWord(offset), ptrScratch);
-    ptr = ptrScratch;
-  }
-
-  unsigned byteSize = access.byteSize();
-  bool isSigned = Scalar::isSignedIntType(access.type());
-  bool isFloat = Scalar::isFloatingType(access.type());
-
-  BaseIndex address(memoryBase, ptr, TimesOne);
   asMasm().memoryBarrierBefore(access.sync());
+
+  BaseIndex address(memoryBase, ptr, TimesOne, access.offset32());
+
   FaultingCodeOffset fco;
-  if (isFloat) {
-    if (byteSize == 4) {
-      fco = ma_fst_s(value.fpu(), address);
-    } else {
-      fco = ma_fst_d(value.fpu(), address);
-    }
-  } else {
-    fco =
-        ma_store(value.gpr(), address, static_cast<LoadStoreSize>(8 * byteSize),
-                 isSigned ? SignExtend : ZeroExtend);
+  switch (access.type()) {
+    case Scalar::Int8:
+      fco = ma_store(value.gpr(), address, SizeByte, SignExtend);
+      break;
+    case Scalar::Uint8:
+      fco = ma_store(value.gpr(), address, SizeByte, ZeroExtend);
+      break;
+    case Scalar::Int16:
+      fco = ma_store(value.gpr(), address, SizeHalfWord, SignExtend);
+      break;
+    case Scalar::Uint16:
+      fco = ma_store(value.gpr(), address, SizeHalfWord, ZeroExtend);
+      break;
+    case Scalar::Int32:
+      fco = ma_store(value.gpr(), address, SizeWord, SignExtend);
+      break;
+    case Scalar::Uint32:
+      fco = ma_store(value.gpr(), address, SizeWord, ZeroExtend);
+      break;
+    case Scalar::Int64:
+      fco = ma_store(value.gpr(), address, SizeDouble, SignExtend);
+      break;
+    case Scalar::Float32:
+      fco = ma_storeFloat(value.fpu(), address);
+      break;
+    case Scalar::Float64:
+      fco = ma_storeDouble(value.fpu(), address);
+      break;
+    default:
+      MOZ_CRASH("unexpected array type");
   }
+
   // Only the last emitted instruction is a memory access.
   append(access, js::wasm::TrapMachineInsnForStore(access.byteSize()), fco);
   asMasm().memoryBarrierAfter(access.sync());

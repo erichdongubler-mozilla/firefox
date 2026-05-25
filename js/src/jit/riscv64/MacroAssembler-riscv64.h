@@ -519,11 +519,9 @@ class MacroAssemblerRiscv64 : public Assembler {
 
  protected:
   void wasmLoadImpl(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                    Register ptr, Register ptrScratch, AnyRegister output,
-                    Register tmp);
+                    Register ptr, AnyRegister output);
   void wasmStoreImpl(const wasm::MemoryAccessDesc& access, AnyRegister value,
-                     Register memoryBase, Register ptr, Register ptrScratch,
-                     Register tmp);
+                     Register memoryBase, Register ptr);
 };
 
 class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
@@ -1182,13 +1180,6 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
 
  protected:
   bool buildOOLFakeExitFrame(void* fakeReturnAddr);
-
-  void wasmLoadI64Impl(const wasm::MemoryAccessDesc& access,
-                       Register memoryBase, Register ptr, Register ptrScratch,
-                       Register64 output, Register tmp);
-  void wasmStoreI64Impl(const wasm::MemoryAccessDesc& access, Register64 value,
-                        Register memoryBase, Register ptr, Register ptrScratch,
-                        Register tmp);
 
  public:
   void abiret() { jr(ra); }
