@@ -129,6 +129,7 @@ use style::traversal::DomTraversal;
 use style::traversal_flags::{self, TraversalFlags};
 use style::typed_om::numeric_declaration::NumericDeclaration;
 use style::typed_om::sum_value::SumValue;
+use style::typed_om::{NumericValue, ToTyped, TypedValue, TypedValueList, UnitValue};
 use style::url;
 use style::use_counters::{CustomUseCounter, UseCounters};
 use style::values::animated::{Animate, Procedure, ToAnimatedZero};
@@ -155,10 +156,7 @@ use style::values::specified::source_size_list::SourceSizeList;
 use style::values::specified::svg_path::PathCommand;
 use style::values::specified::{LengthUnit, NoCalcLength};
 use style::values::{specified, AtomIdent, CustomIdent, KeyframesName};
-use style_traits::{
-    CssWriter, NumericValue, ParseError, ParsingMode, SpecifiedValueInfo, ToCss, ToTyped,
-    TypedValue, TypedValueList, UnitValue,
-};
+use style_traits::{CssWriter, ParseError, ParsingMode, SpecifiedValueInfo, ToCss};
 use thin_vec::ThinVec as nsTArray;
 use to_shmem::SharedMemoryBuilder;
 
