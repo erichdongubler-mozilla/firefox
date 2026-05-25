@@ -343,8 +343,6 @@ class MacroAssemblerRiscv64 : public Assembler {
 
   BufferOffset BranchShort(Label* L);
 
-  [[nodiscard]] bool BranchShort(int32_t offset, Condition cond, Register rs,
-                                 const Operand& rt);
   [[nodiscard]] bool BranchShort(Label* L, Condition cond, Register rs,
                                  const Operand& rt);
   BufferOffset BranchShortHelper(int32_t offset, Label* L);

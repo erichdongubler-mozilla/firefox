@@ -5099,11 +5099,6 @@ BufferOffset MacroAssemblerRiscv64::BranchShort(Label* L) {
   return BranchShortHelper(0, L);
 }
 
-bool MacroAssemblerRiscv64::BranchShort(int32_t offset, Condition cond,
-                                        Register rs, const Operand& rt) {
-  return BranchShortCheck(offset, nullptr, cond, rs, rt);
-}
-
 bool MacroAssemblerRiscv64::BranchShort(Label* L, Condition cond, Register rs,
                                         const Operand& rt) {
   return BranchShortCheck(0, L, cond, rs, rt);
