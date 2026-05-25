@@ -67,8 +67,7 @@ nsresult DNSPacket::FillBuffer(
 // static
 nsresult DNSPacket::ParseSvcParam(unsigned int svcbIndex, uint16_t key,
                                   SvcFieldValue& field, uint16_t length,
-                                  const unsigned char* aBuffer,
-                                  bool aAllowRFC1918) {
+                                  const unsigned char* aBuffer) {
   switch (key) {
     case SvcParamKeyMandatory: {
       if (length % 2 != 0) {
@@ -135,9 +134,7 @@ nsresult DNSPacket::ParseSvcParam(unsigned int svcbIndex, uint16_t key,
         addr.inet.family = AF_INET;
         addr.inet.port = 0;
         addr.inet.ip = ntohl(get32bit(aBuffer, svcbIndex));
-        if (aAllowRFC1918 || !addr.IsIPAddrLocal()) {
-          ipv4array.AppendElement(addr);
-        }
+        ipv4array.AppendElement(addr);
         length -= 4;
         svcbIndex += 4;
       }
@@ -165,9 +162,7 @@ nsresult DNSPacket::ParseSvcParam(unsigned int svcbIndex, uint16_t key,
         for (int i = 0; i < 16; i++, svcbIndex++) {
           addr.inet6.ip.u8[i] = aBuffer[svcbIndex];
         }
-        if (aAllowRFC1918 || !addr.IsIPAddrLocal()) {
-          ipv6array.AppendElement(addr);
-        }
+        ipv6array.AppendElement(addr);
         length -= 16;
         // no need to increase svcbIndex - we did it in the for above.
       }
@@ -503,8 +498,7 @@ nsresult DNSPacket::ParseHTTPS(uint16_t aRDLen, struct SVCB& aParsed,
                                unsigned int aIndex,
                                const unsigned char* aBuffer,
                                unsigned int aBodySize,
-                               const nsACString& aOriginHost,
-                               bool aAllowRFC1918) {
+                               const nsACString& aOriginHost) {
   int32_t lastSvcParamKey = -1;
   nsresult rv = NS_OK;
   unsigned int svcbIndex = aIndex;
@@ -568,7 +562,7 @@ nsresult DNSPacket::ParseHTTPS(uint16_t aRDLen, struct SVCB& aParsed,
       return NS_ERROR_UNEXPECTED;
     }
 
-    rv = ParseSvcParam(svcbIndex, key, value, len, aBuffer, aAllowRFC1918);
+    rv = ParseSvcParam(svcbIndex, key, value, len, aBuffer);
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -580,12 +574,8 @@ nsresult DNSPacket::ParseHTTPS(uint16_t aRDLen, struct SVCB& aParsed,
       continue;
     }
 
-    if (value.mValue.is<SvcParamIpv4Hint>() &&
-        !value.mValue.as<SvcParamIpv4Hint>().mValue.IsEmpty()) {
-      aParsed.mHasIPHints = true;
-    }
-    if (value.mValue.is<SvcParamIpv6Hint>() &&
-        !value.mValue.as<SvcParamIpv6Hint>().mValue.IsEmpty()) {
+    if (value.mValue.is<SvcParamIpv4Hint>() ||
+        value.mValue.is<SvcParamIpv6Hint>()) {
       aParsed.mHasIPHints = true;
     }
     if (value.mValue.is<SvcParamEchConfig>()) {
@@ -857,7 +847,7 @@ nsresult DNSPacket::DecodeInternal(
           }
 
           rv = ParseHTTPS(RDLENGTH, parsed, index, aBuffer, mBodySize,
-                          mOriginHost ? *mOriginHost : qname, aAllowRFC1918);
+                          mOriginHost ? *mOriginHost : qname);
           if (NS_FAILED(rv)) {
             return rv;
           }
