@@ -17,11 +17,6 @@ namespace jit {
 
 static Register CallReg = t6;
 
-enum LiFlags {
-  Li64 = 0,
-  Li48 = 1,
-};
-
 class CompactBufferReader;
 enum LoadStoreSize {
   SizeByte = 8,
@@ -154,9 +149,14 @@ class MacroAssemblerRiscv64 : public Assembler {
   FaultingCodeOffset ma_storeFloat(FloatRegister src, Address address);
   FaultingCodeOffset ma_storeFloat(FloatRegister src, const BaseIndex& dest);
 
-  void ma_liPatchable(Register dest, Imm32 imm);
-  void ma_liPatchable(Register dest, ImmPtr imm);
-  void ma_liPatchable(Register dest, ImmWord imm, LiFlags flags = Li48);
+  // immediates
+  BufferOffset ma_liPatchable(Register dest, Imm32 imm);
+  BufferOffset ma_liPatchable(Register dest, ImmPtr imm) {
+    return li_ptr(dest, uintptr_t(imm.value));
+  }
+  BufferOffset ma_liPatchable(Register dest, ImmWord imm) {
+    return li_constant(dest, imm.value);
+  }
   void ma_li(Register dest, ImmGCPtr ptr);
   void ma_li(Register dest, Imm32 imm);
   void ma_li(Register dest, Imm64 imm);
@@ -628,12 +628,14 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   }
 
   void branch(JitCode* c) {
-    BlockTrampolinePoolScope block_trampoline_pool(this, 7);
+    // 6 instruction to materialize the constant.
+    // + 1 instruction for jr.
+    AutoForbidPoolsAndNops afp(this, 7);
+
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
-    BufferOffset bo = m_buffer.nextOffset();
+    BufferOffset bo = ma_liPatchable(scratch, ImmPtr(c->raw()));
     addPendingJump(bo, ImmPtr(c->raw()), RelocationKind::JITCODE);
-    ma_liPatchable(scratch, ImmPtr(c->raw()));
     jr(scratch);
   }
   void branch(const Register reg) { jr(reg); }
@@ -681,7 +683,7 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   CodeOffset toggledCall(JitCode* target, bool enabled);
 
   static size_t ToggledCallSize(uint8_t* code) {
-    // Four instructions used in: MacroAssemblerRiscv64Compat::toggledCall
+    // Seven instructions used in: MacroAssemblerRiscv64Compat::toggledCall
     return 7 * kInstrSize;
   }
 
@@ -694,16 +696,12 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   }
 
   CodeOffset movWithPatch(ImmWord imm, Register dest) {
-    BlockTrampolinePoolScope block_trampoline_pool(this, 8);
-    CodeOffset offset = CodeOffset(currentOffset());
-    ma_liPatchable(dest, imm, Li64);
-    return offset;
+    BufferOffset offset = ma_liPatchable(dest, imm);
+    return CodeOffset(offset.getOffset());
   }
   CodeOffset movWithPatch(ImmPtr imm, Register dest) {
-    BlockTrampolinePoolScope block_trampoline_pool(this, 6);
-    CodeOffset offset = CodeOffset(currentOffset());
-    ma_liPatchable(dest, imm);
-    return offset;
+    BufferOffset offset = ma_liPatchable(dest, imm);
+    return CodeOffset(offset.getOffset());
   }
 
   void writeCodePointer(CodeLabel* label) {

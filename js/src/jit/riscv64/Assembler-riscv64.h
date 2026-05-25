@@ -563,10 +563,14 @@ class Assembler : public AssemblerShared,
   static int RecursiveLiImplCount(int64_t imm);
   // Returns the number of instructions required to load the immediate
   static int li_estimate(int64_t imm, bool is_get_temp_reg = false);
+
   // Loads an immediate, always using 8 instructions, regardless of the value,
   // so that it can be modified later.
-  void li_constant(Register rd, int64_t imm);
-  void li_ptr(Register rd, int64_t imm);
+  BufferOffset li_constant(Register rd, int64_t imm);
+
+  // Loads an immediate, always using 6 instructions, regardless of the value,
+  // so that it can be modified later.
+  BufferOffset li_ptr(Register rd, int64_t imm);
 
   void SignExtendByte(Register rd, Register rs) {
     if (HasZbbExtension()) {

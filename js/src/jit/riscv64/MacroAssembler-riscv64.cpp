@@ -508,11 +508,8 @@ void MacroAssemblerRiscv64Compat::movePtr(ImmPtr imm, Register dest) {
 }
 void MacroAssemblerRiscv64Compat::movePtr(wasm::SymbolicAddress imm,
                                           Register dest) {
-  DEBUG_PRINTF("[ %s\n", __FUNCTION__);
-  BlockTrampolinePoolScope block_trampoline_pool(this, 8);
-  append(wasm::SymbolicAccess(CodeOffset(nextOffset().getOffset()), imm));
-  ma_liPatchable(dest, ImmWord(-1), Li64);
-  DEBUG_PRINTF("]\n");
+  BufferOffset offset = ma_liPatchable(dest, ImmWord(-1));
+  append(wasm::SymbolicAccess(CodeOffset(offset.getOffset()), imm));
 }
 
 bool MacroAssemblerRiscv64Compat::buildOOLFakeExitFrame(void* fakeReturnAddr) {
@@ -2475,22 +2472,23 @@ CodeOffset MacroAssemblerRiscv64Compat::toggledJump(Label* label) {
 
 CodeOffset MacroAssemblerRiscv64Compat::toggledCall(JitCode* target,
                                                     bool enabled) {
-  DEBUG_PRINTF("\ttoggledCall\n");
+  // 6 instruction to materialize the constant.
+  // + 1 instruction for jalr/nop.
+  AutoForbidPoolsAndNops afp(this, 7);
+
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
-  BlockTrampolinePoolScope block_trampoline_pool(this, 8);
-  BufferOffset bo = nextOffset();
-  CodeOffset offset(bo.getOffset());
+
+  BufferOffset bo = ma_liPatchable(scratch, ImmPtr(target->raw()));
   addPendingJump(bo, ImmPtr(target->raw()), RelocationKind::JITCODE);
-  ma_liPatchable(scratch, ImmPtr(target->raw()));
   if (enabled) {
     jalr(scratch);
   } else {
     nop();
   }
-  MOZ_ASSERT_IF(!oom(), nextOffset().getOffset() - offset.offset() ==
-                            ToggledCallSize(nullptr));
-  return offset;
+  MOZ_ASSERT_IF(!oom(), nextOffset().getOffset() - bo.getOffset() ==
+                            int(ToggledCallSize(nullptr)));
+  return CodeOffset(bo.getOffset());
 }
 
 void MacroAssembler::subFromStackPtr(Imm32 imm32) {
@@ -3342,15 +3340,15 @@ void MacroAssembler::call(ImmPtr imm) {
 void MacroAssembler::call(ImmWord imm) { call(ImmPtr((void*)imm.value)); }
 
 void MacroAssembler::call(JitCode* c) {
-  DEBUG_PRINTF("[ %s\n", __FUNCTION__);
-  BlockTrampolinePoolScope block_trampoline_pool(this, 8);
+  // 6 instruction to materialize the constant.
+  // + 1 instructions for the call.
+  AutoForbidPoolsAndNops afp(this, 7);
+
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
-  BufferOffset bo = m_buffer.nextOffset();
+  BufferOffset bo = ma_liPatchable(scratch, ImmPtr(c->raw()));
   addPendingJump(bo, ImmPtr(c->raw()), RelocationKind::JITCODE);
-  ma_liPatchable(scratch, ImmPtr(c->raw()));
   callJitNoProfiler(scratch);
-  DEBUG_PRINTF("]\n");
 }
 
 void MacroAssembler::callWithABIPre(uint32_t* stackAdjust, bool callFromWasm) {
@@ -3972,9 +3970,8 @@ void MacroAssembler::PopRegsInMaskIgnore(LiveRegisterSet set,
 }
 
 CodeOffset MacroAssembler::move32WithPatch(Register dest) {
-  CodeOffset offs = CodeOffset(currentOffset());
-  ma_liPatchable(dest, Imm32(0));
-  return offs;
+  BufferOffset offset = ma_liPatchable(dest, Imm32(0));
+  return CodeOffset(offset.getOffset());
 }
 
 void MacroAssembler::patchMove32(CodeOffset offset, Imm32 n) {
@@ -4799,31 +4796,20 @@ CodeOffset MacroAssembler::wasmMarkedSlowCall(const wasm::CallSiteDesc& desc,
 // This method generates lui + addi instruction block that can be
 // modified by UpdateLoad64Value, either during compilation (eg.
 // Assembler::bind), or during execution (eg. jit::PatchJump).
-void MacroAssemblerRiscv64::ma_liPatchable(Register dest, Imm32 imm) {
-  m_buffer.ensureSpace(2 * kInstrSize);
+BufferOffset MacroAssemblerRiscv64::ma_liPatchable(Register dest, Imm32 imm) {
+  AutoForbidPoolsAndNops afp(this, 2);
+  BufferOffset offset = nextOffset();
+
   auto [high_20, low_12] = ToHigh20Low12(imm.value);
   lui(dest, high_20);
   addi(dest, dest, low_12);
-}
 
-void MacroAssemblerRiscv64::ma_liPatchable(Register dest, ImmPtr imm) {
-  return ma_liPatchable(dest, ImmWord(uintptr_t(imm.value)));
-}
-
-void MacroAssemblerRiscv64::ma_liPatchable(Register dest, ImmWord imm,
-                                           LiFlags flags) {
-  DEBUG_PRINTF("\tma_liPatchable\n");
-  if (Li64 == flags) {
-    li_constant(dest, imm.value);
-  } else {
-    li_ptr(dest, imm.value);
-  }
+  return offset;
 }
 
 void MacroAssemblerRiscv64::ma_li(Register dest, ImmGCPtr ptr) {
-  BlockTrampolinePoolScope block_trampoline_pool(this, 6);
-  writeDataRelocation(ptr, nextOffset());
-  ma_liPatchable(dest, ImmPtr(ptr.value));
+  BufferOffset offset = ma_liPatchable(dest, ImmPtr(ptr.value));
+  writeDataRelocation(ptr, offset);
 }
 void MacroAssemblerRiscv64::ma_li(Register dest, Imm32 imm) {
   RV_li(dest, imm.value);
@@ -4832,14 +4818,10 @@ void MacroAssemblerRiscv64::ma_li(Register dest, Imm64 imm) {
   RV_li(dest, imm.value);
 }
 void MacroAssemblerRiscv64::ma_li(Register dest, CodeLabel* label) {
-  DEBUG_PRINTF("[ %s\n", __FUNCTION__);
-  BlockTrampolinePoolScope block_trampoline_pool(this, 7);
-  BufferOffset bo = m_buffer.nextOffset();
   JitSpew(JitSpew_Codegen, ".load CodeLabel %p", label);
-  ma_liPatchable(dest, ImmWord(/* placeholder */ 0));
+  BufferOffset bo = ma_liPatchable(dest, ImmPtr(/* placeholder */ nullptr));
   label->patchAt()->bind(bo.getOffset());
   label->setLinkMode(CodeLabel::MoveImmediate);
-  DEBUG_PRINTF("]\n");
 }
 void MacroAssemblerRiscv64::ma_li(Register dest, ImmWord imm) {
   RV_li(dest, imm.value);
@@ -5551,11 +5533,13 @@ void MacroAssemblerRiscv64::ma_mul64(Register rd, Register rs, Imm64 rt) {
 }
 
 BufferOffset MacroAssemblerRiscv64::ma_jump(ImmPtr dest) {
-  AutoForbidPoolsAndNops afp(this, 8);
-  BufferOffset offset = nextOffset();
+  // 6 instruction to materialize the constant.
+  // + 1 instruction for jr.
+  AutoForbidPoolsAndNops afp(this, 7);
+
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
-  ma_liPatchable(scratch, dest);
+  BufferOffset offset = ma_liPatchable(scratch, dest);
   jr(scratch, 0);
   return offset;
 }
@@ -5893,13 +5877,14 @@ void MacroAssemblerRiscv64::ma_push(FloatRegister f) {
 }
 
 BufferOffset MacroAssemblerRiscv64::ma_call(ImmPtr dest) {
-  BlockTrampolinePoolScope block_trampoline_pool(this, 8);
+  // 6 instruction to materialize the constant.
+  // + 1 instruction for jalr.
+  AutoForbidPoolsAndNops afp(this, 7);
 
   UseScratchRegisterScope temps(this);
   temps.Exclude(GeneralRegisterSet(1 << CallReg.code()));
 
-  BufferOffset offset = nextOffset();
-  ma_liPatchable(CallReg, dest);
+  BufferOffset offset = ma_liPatchable(CallReg, dest);
   jalr(CallReg, 0);
   return offset;
 }

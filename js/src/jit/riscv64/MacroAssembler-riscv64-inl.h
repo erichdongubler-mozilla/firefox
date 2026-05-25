@@ -61,10 +61,13 @@ inline void MacroAssembler::cmp32Set(Assembler::Condition cond, Address lhs,
 
 //{{{ check_macroassembler_style
 CodeOffset MacroAssembler::sub32FromStackPtrWithPatch(Register dest) {
-  CodeOffset offset = CodeOffset(currentOffset());
-  MacroAssemblerRiscv64::ma_liPatchable(dest, Imm32(0));
+  // 2 instruction to materialize the constant.
+  // + 1 instruction for sub.
+  AutoForbidPoolsAndNops afp(this, 3);
+
+  BufferOffset offset = MacroAssemblerRiscv64::ma_liPatchable(dest, Imm32(0));
   sub(dest, StackPointer, dest);
-  return offset;
+  return CodeOffset(offset.getOffset());
 }
 
 void MacroAssembler::branchTest32(Condition cond, Register lhs, Imm32 rhs,
