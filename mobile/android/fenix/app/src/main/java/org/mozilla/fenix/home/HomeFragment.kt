@@ -601,7 +601,13 @@ class HomeFragment : Fragment() {
                                 AndroidView(factory = { navBar.layout })
                             }
                         } else {
-                            AndroidView(factory = { toolbarView.layout })
+                            Column {
+                                AndroidView(factory = { toolbarView.layout })
+
+                                homeNavigationBar?.let { navBar ->
+                                    AndroidView(factory = { navBar.layout })
+                                }
+                            }
                         }
                     },
                     containerColor = Color.Transparent,
