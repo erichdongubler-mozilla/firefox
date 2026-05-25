@@ -720,7 +720,7 @@ void KeymapWrapper::HandleKeymap(uint32_t format, int fd, uint32_t size) {
     return;
   }
 
-  char* mapString = (char*)mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
+  char* mapString = (char*)mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0);
   if (mapString == MAP_FAILED) {
     MOZ_LOG(gKeyLog, LogLevel::Info,
             ("KeymapWrapper::HandleKeymap(): failed to allocate shm!"));

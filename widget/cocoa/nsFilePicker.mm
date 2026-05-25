@@ -503,7 +503,7 @@ void nsFilePicker::PresentSavePanel(nsIFilePickerShownCallback* aCallback) {
     // There's another extension here. Get the UTI.
     CFStringRef type = UTTypeCreatePreferredIdentifierForTag(
         kUTTagClassFilenameExtension, static_cast<CFStringRef>(otherExtension),
-        NULL);
+        nullptr);
     if (type) {
       if (!CFStringHasPrefix(type, CFSTR("dyn."))) {
         // We have a UTI, otherwise the type would have a "dyn." prefix. Ensure

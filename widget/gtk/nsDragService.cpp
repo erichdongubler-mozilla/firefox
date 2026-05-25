@@ -656,7 +656,7 @@ nsDragSession::Observe(nsISupports* aSubject, const char* aTopic,
     LOGDRAGSERVICE("nsDragSession::Observe(\"quit-application\")");
     if (mHiddenWidget) {
       gtk_widget_destroy(mHiddenWidget);
-      mHiddenWidget = 0;
+      mHiddenWidget = nullptr;
     }
   } else {
     MOZ_ASSERT_UNREACHABLE("unexpected topic");
@@ -1671,7 +1671,7 @@ GtkTargetList* nsDragSession::GetSourceList(void) {
 
   nsTArray<GtkTargetEntry*> targetArray;
   GtkTargetEntry* targets;
-  GtkTargetList* targetList = 0;
+  GtkTargetList* targetList = nullptr;
   uint32_t targetCount = 0;
   unsigned int numDragItems = 0;
 

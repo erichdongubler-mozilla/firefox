@@ -157,7 +157,7 @@ nsClipboard::SetNativeClipboardData(nsITransferable* aTransferable,
                              stringFromPboardType:kPasteboardConcealedType]]) {
         // It's fine to set the data to null for this field - this field is an
         // addition to a value's other type and works like a flag.
-        [cocoaPasteboard setData:NULL forType:currentKey];
+        [cocoaPasteboard setData:nullptr forType:currentKey];
       } else {
         [cocoaPasteboard setData:currentValue forType:currentKey];
       }
@@ -329,7 +329,7 @@ nsClipboard::GetDataFromPasteboard(const nsACString& aFlavor,
     }
 
     // Figure out what type we're converting to
-    CFStringRef outputType = NULL;
+    CFStringRef outputType = nullptr;
     if (aFlavor.EqualsLiteral(kJPEGImageMime) ||
         aFlavor.EqualsLiteral(kJPGImageMime)) {
       outputType = CFSTR("public.jpeg");
@@ -379,12 +379,12 @@ nsClipboard::GetDataFromPasteboard(const nsACString& aFlavor,
 
     NSMutableData* encodedData = [NSMutableData data];
     CGImageDestinationRef dest = CGImageDestinationCreateWithData(
-        (CFMutableDataRef)encodedData, outputType, 1, NULL);
+        (CFMutableDataRef)encodedData, outputType, 1, nullptr);
     if (!dest) {
       CFRelease(source);
       return nsCOMPtr<nsISupports>{};
     }
-    CGImageRef cgImage = CGImageSourceCreateImageAtIndex(source, 0, NULL);
+    CGImageRef cgImage = CGImageSourceCreateImageAtIndex(source, 0, nullptr);
     if (!cgImage) {
       CFRelease(dest);
       CFRelease(source);
@@ -392,7 +392,7 @@ nsClipboard::GetDataFromPasteboard(const nsACString& aFlavor,
     }
     CGColorSpaceRef srgb = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
     CGImageRef srgbImage = CGImageCreateCopyWithColorSpace(cgImage, srgb);
-    CGImageDestinationAddImage(dest, srgbImage ? srgbImage : cgImage, NULL);
+    CGImageDestinationAddImage(dest, srgbImage ? srgbImage : cgImage, nullptr);
     CGColorSpaceRelease(srgb);
     if (srgbImage) {
       CGImageRelease(srgbImage);
@@ -710,7 +710,7 @@ NSDictionary* nsClipboard::PasteboardDictFromTransferable(
       if (!surface) {
         continue;
       }
-      CGImageRef imageRef = NULL;
+      CGImageRef imageRef = nullptr;
       rv = nsCocoaUtils::CreateCGImageFromSurface(surface, &imageRef);
       if (NS_FAILED(rv) || !imageRef) {
         continue;
@@ -720,11 +720,11 @@ NSDictionary* nsClipboard::PasteboardDictFromTransferable(
       CFMutableDataRef tiffData = CFDataCreateMutable(kCFAllocatorDefault, 0);
       CFMutableDataRef pngData = CFDataCreateMutable(kCFAllocatorDefault, 0);
       CGImageDestinationRef destRefTIFF = CGImageDestinationCreateWithData(
-          tiffData, CFSTR("public.tiff"), 1, NULL);
+          tiffData, CFSTR("public.tiff"), 1, nullptr);
       CGImageDestinationRef destRefPNG = CGImageDestinationCreateWithData(
-          pngData, CFSTR("public.png"), 1, NULL);
-      CGImageDestinationAddImage(destRefTIFF, imageRef, NULL);
-      CGImageDestinationAddImage(destRefPNG, imageRef, NULL);
+          pngData, CFSTR("public.png"), 1, nullptr);
+      CGImageDestinationAddImage(destRefTIFF, imageRef, nullptr);
+      CGImageDestinationAddImage(destRefPNG, imageRef, nullptr);
       const bool successfullyConvertedTIFF =
           CGImageDestinationFinalize(destRefTIFF);
       const bool successfullyConvertedPNG =

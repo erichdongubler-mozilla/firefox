@@ -137,8 +137,8 @@ static void DrawFocusRingForCellIfNeeded(NSCell* aCell, NSRect aWithFrame,
     // for the whole button. The transparency layer is a way to merge the
     // individual button parts together before the focus ring shape is
     // calculated.
-    CGContextBeginTransparencyLayerWithRect(cgContext,
-                                            NSRectToCGRect(aWithFrame), 0);
+    CGContextBeginTransparencyLayerWithRect(
+        cgContext, NSRectToCGRect(aWithFrame), nullptr);
     [aCell drawFocusRingMaskWithFrame:aWithFrame inView:aInView];
     CGContextEndTransparencyLayer(cgContext);
 
@@ -201,7 +201,7 @@ static void InflateControlRect(NSRect* rect, NSControlSize cocoaControlSize,
 }
 
 static NSWindow* NativeWindowForFrame(nsIFrame* aFrame,
-                                      nsIWidget** aTopLevelWidget = NULL) {
+                                      nsIWidget** aTopLevelWidget = nullptr) {
   if (!aFrame) return nil;
 
   nsIWidget* widget = aFrame->GetNearestWidget();
@@ -238,7 +238,7 @@ static NSSize WindowButtonsSize(nsIFrame* aFrame) {
 }
 
 static BOOL FrameIsInActiveWindow(nsIFrame* aFrame) {
-  nsIWidget* topLevelWidget = NULL;
+  nsIWidget* topLevelWidget = nullptr;
   NSWindow* win = NativeWindowForFrame(aFrame, &topLevelWidget);
   if (!topLevelWidget || !win) return YES;
 
@@ -413,7 +413,7 @@ static void DrawCellWithScaling(NSCell* cell, CGContextRef cgContext,
   int backingScaleFactor = GetBackingScaleFactorForRendering(cgContext);
   CGColorSpaceRef rgb = CGColorSpaceCreateDeviceRGB();
   CGContextRef ctx = CGBitmapContextCreate(
-      NULL, (int)w * backingScaleFactor, (int)h * backingScaleFactor, 8,
+      nullptr, (int)w * backingScaleFactor, (int)h * backingScaleFactor, 8,
       (int)w * backingScaleFactor * 4, rgb, kCGImageAlphaPremultipliedFirst);
   CGColorSpaceRelease(rgb);
 
@@ -973,7 +973,7 @@ static void RenderTransformedHIThemeControl(CGContextRef aCGContext,
     int backingScaleFactor = GetBackingScaleFactorForRendering(aCGContext);
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
     CGContextRef bitmapctx = CGBitmapContextCreate(
-        NULL, w * backingScaleFactor, h * backingScaleFactor, 8,
+        nullptr, w * backingScaleFactor, h * backingScaleFactor, 8,
         w * backingScaleFactor * 4, colorSpace,
         kCGImageAlphaPremultipliedFirst);
     CGColorSpaceRelease(colorSpace);
@@ -1024,7 +1024,7 @@ static void RenderButton(CGContextRef cgContext, const NSRect& aRenderRect,
                          void* aData) {
   HIThemeButtonDrawInfo* bdi = (HIThemeButtonDrawInfo*)aData;
   HIThemeDrawButton(&aRenderRect, bdi, cgContext, kHIThemeOrientationNormal,
-                    NULL);
+                    nullptr);
 }
 
 void nsNativeThemeCocoa::DrawHIThemeButton(

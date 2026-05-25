@@ -390,7 +390,7 @@ nsresult nsCocoaUtils::CreateCGImageFromSurface(SourceSurface* aSurface,
   *aResult = ::CGImageCreate(
       width, height, 8, 32, map.mStride, colorSpace,
       kCGBitmapByteOrder32Host | kCGImageAlphaPremultipliedFirst, dataProvider,
-      NULL, 0, kCGRenderingIntentDefault);
+      nullptr, 0, kCGRenderingIntentDefault);
   ::CGColorSpaceRelease(colorSpace);
   ::CGDataProviderRelease(dataProvider);
   return *aResult ? NS_OK : NS_ERROR_FAILURE;
@@ -420,7 +420,7 @@ nsresult nsCocoaUtils::CreateNSImageFromCGImage(CGImageRef aInputImage,
   NSRect imageRect = ::NSMakeRect(0.0, 0.0, width, height);
 
   NSBitmapImageRep* offscreenRep = [[NSBitmapImageRep alloc]
-      initWithBitmapDataPlanes:NULL
+      initWithBitmapDataPlanes:nullptr
                     pixelsWide:width
                     pixelsHigh:height
                  bitsPerSample:8
@@ -515,7 +515,7 @@ nsresult nsCocoaUtils::CreateNSImageFromImageContainer(
 
   NS_ENSURE_TRUE(surface, NS_ERROR_FAILURE);
 
-  CGImageRef imageRef = NULL;
+  CGImageRef imageRef = nullptr;
   nsresult rv = nsCocoaUtils::CreateCGImageFromSurface(surface, &imageRef,
                                                        aIsEntirelyBlack);
   if (NS_FAILED(rv) || !imageRef) {

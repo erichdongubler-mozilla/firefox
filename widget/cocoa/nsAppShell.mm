@@ -240,8 +240,8 @@ nsAppShell::ResumeNative(void) {
 nsAppShell::nsAppShell()
     : mAutoreleasePools(nullptr),
       mDelegate(nullptr),
-      mCFRunLoop(NULL),
-      mCFRunLoopSource(NULL),
+      mCFRunLoop(nullptr),
+      mCFRunLoopSource(nullptr),
       mRunningEventLoop(false),
       mStarted(false),
       mTerminated(false),
@@ -512,7 +512,7 @@ void nsAppShell::ProcessGeckoEvents(void* aInfo) {
                                    modifierFlags:0
                                        timestamp:0
                                     windowNumber:0
-                                         context:NULL
+                                         context:nullptr
                                          subtype:kEventSubtypeNone
                                            data1:0
                                            data2:0]
@@ -536,7 +536,7 @@ void nsAppShell::ProcessGeckoEvents(void* aInfo) {
                                    modifierFlags:0
                                        timestamp:0
                                     windowNumber:0
-                                         context:NULL
+                                         context:nullptr
                                          subtype:kEventSubtypeNone
                                            data1:0
                                            data2:0]
@@ -558,7 +558,7 @@ void nsAppShell::ProcessGeckoEvents(void* aInfo) {
                                    modifierFlags:0
                                        timestamp:0
                                     windowNumber:0
-                                         context:NULL
+                                         context:nullptr
                                          subtype:kEventSubtypeNone
                                            data1:0
                                            data2:0]
