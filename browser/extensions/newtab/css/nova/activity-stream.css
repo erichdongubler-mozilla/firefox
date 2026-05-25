@@ -6473,8 +6473,10 @@ button.arrow-button:dir(rtl) {
   pointer-events: auto;
 }
 
-.sports-context-menu-wrapper:focus-within {
+.sports-context-menu-wrapper:focus-within,
+.sports-context-menu-wrapper:has(panel-list[open]) {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .sports-body {

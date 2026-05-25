@@ -150,8 +150,10 @@
 }
 
 // Handles keyboard focus on moz-button, since :has(:focus-visible) doesn't include shadow DOM
-.sports-context-menu-wrapper:focus-within {
+.sports-context-menu-wrapper:focus-within,
+.sports-context-menu-wrapper:has(panel-list[open]) {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .sports-body {
