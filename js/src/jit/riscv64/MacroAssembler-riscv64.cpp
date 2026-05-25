@@ -5038,13 +5038,14 @@ void MacroAssemblerRiscv64::BranchLong(Label* L) {
   jr(scratch, Lo12);     // jump PC + Hi20 + Lo12
 }
 
-CodeOffset MacroAssemblerRiscv64::BranchAndLinkShort(Label* L) {
+CodeOffset MacroAssemblerRiscv64::BranchAndLink(Label* L) {
   AutoForbidPoolsAndNops afp(this, 2, 1);
-  int32_t offset = GetOffset(L, OffsetSize::kOffset21);
-  return jal(offset);
-}
 
-CodeOffset MacroAssemblerRiscv64::BranchAndLinkLong(Label* L) {
+  if (!L->bound() || isNear(L, OffsetSize::kOffset21)) {
+    int32_t offset = GetOffset(L, OffsetSize::kOffset21);
+    return jal(offset);
+  }
+
   // Generate position independent long branch and link.
   int32_t imm = branchLongOffsetHelper(L);
 
@@ -5056,13 +5057,6 @@ CodeOffset MacroAssemblerRiscv64::BranchAndLinkLong(Label* L) {
   jalr(scratch, Lo12);   // jump PC + Hi20 + Lo12
 
   return CodeOffset(currentOffset());
-}
-
-CodeOffset MacroAssemblerRiscv64::BranchAndLink(Label* L) {
-  if (L->bound() && !isNear(L, OffsetSize::kOffset21)) {
-    return BranchAndLinkLong(L);
-  }
-  return BranchAndLinkShort(L);
 }
 
 void MacroAssemblerRiscv64::ma_branch(Label* target, Condition cond,

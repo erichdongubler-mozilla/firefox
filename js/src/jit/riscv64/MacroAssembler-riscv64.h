@@ -164,9 +164,7 @@ class MacroAssemblerRiscv64 : public Assembler {
             JumpKind jumpKind = LongJump);
   void ma_b(Register lhs, Imm32 imm, Label* l, Condition c,
             JumpKind jumpKind = LongJump);
-  CodeOffset BranchAndLinkShort(Label* L);
   CodeOffset BranchAndLink(Label* label);
-  CodeOffset BranchAndLinkLong(Label* L);
 
 #define DEFINE_INSTRUCTION(instr)                     \
   void instr(Register rd, Register rs, Imm64 imm);    \
