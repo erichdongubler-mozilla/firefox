@@ -159,13 +159,6 @@ class MacroAssemblerRiscv64 : public Assembler {
   void ma_li(Register dest, CodeLabel* label);
   void ma_li(Register dest, ImmWord imm);
 
-  // branches when done from within la-specific code
-  void ma_b(Register lhs, Register rhs, Label* l, Condition c,
-            JumpKind jumpKind = LongJump);
-  void ma_b(Register lhs, Imm32 imm, Label* l, Condition c,
-            JumpKind jumpKind = LongJump);
-  CodeOffset BranchAndLink(Label* label);
-
 #define DEFINE_INSTRUCTION(instr)                     \
   void instr(Register rd, Register rs, Imm64 imm);    \
   void instr(Register rd, Register rs, Imm32 imm) {   \
@@ -229,30 +222,22 @@ class MacroAssemblerRiscv64 : public Assembler {
                              Label* overflow);
 
   // branches when done from within la-specific code
+  void ma_b(Register lhs, Register rhs, Label* l, Condition c,
+            JumpKind jumpKind = LongJump);
+  void ma_b(Register lhs, Imm32 imm, Label* l, Condition c,
+            JumpKind jumpKind = LongJump);
   void ma_b(Register lhs, ImmWord imm, Label* l, Condition c,
             JumpKind jumpKind = LongJump);
   void ma_b(Register lhs, ImmPtr imm, Label* l, Condition c,
-            JumpKind jumpKind = LongJump);
+            JumpKind jumpKind = LongJump) {
+    ma_b(lhs, ImmWord(uintptr_t(imm.value)), l, c, jumpKind);
+  }
   void ma_b(Register lhs, ImmGCPtr imm, Label* l, Condition c,
             JumpKind jumpKind = LongJump) {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
     ma_li(scratch, imm);
     ma_b(lhs, scratch, l, c, jumpKind);
-  }
-  void ma_b(Register lhs, Address addr, Label* l, Condition c,
-            JumpKind jumpKind = LongJump);
-  void ma_b(Address addr, Imm32 imm, Label* l, Condition c,
-            JumpKind jumpKind = LongJump);
-  void ma_b(Address addr, ImmGCPtr imm, Label* l, Condition c,
-            JumpKind jumpKind = LongJump);
-  void ma_b(Address addr, Register rhs, Label* l, Condition c,
-            JumpKind jumpKind = LongJump) {
-    UseScratchRegisterScope temps(this);
-    Register scratch = temps.Acquire();
-    MOZ_ASSERT(rhs != scratch);
-    ma_load(scratch, addr, SizeDouble);
-    ma_b(scratch, rhs, l, c, jumpKind);
   }
 
  private:
@@ -354,6 +339,7 @@ class MacroAssemblerRiscv64 : public Assembler {
 
  protected:
   BufferOffset BranchShort(Label* L);
+  CodeOffset BranchAndLink(Label* label);
 
  public:
   // Floating point branches

@@ -5099,21 +5099,6 @@ void MacroAssemblerRiscv64::ma_branch(Label* target, Condition cond,
 }
 
 // Branches when done from within riscv code.
-void MacroAssemblerRiscv64::ma_b(Register lhs, Address addr, Label* label,
-                                 Condition c, JumpKind jumpKind) {
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  MOZ_ASSERT(lhs != scratch);
-  ma_load(scratch, addr, SizeDouble);
-  ma_b(lhs, Register(scratch), label, c, jumpKind);
-}
-
-void MacroAssemblerRiscv64::ma_b(Register lhs, ImmPtr imm, Label* l,
-                                 Condition c, JumpKind jumpKind) {
-  ma_b(lhs, ImmWord(uintptr_t(imm.value)), l, c, jumpKind);
-}
-
-// Branches when done from within riscv code.
 void MacroAssemblerRiscv64::ma_b(Register lhs, ImmWord imm, Label* label,
                                  Condition c, JumpKind jumpKind) {
   switch (c) {
@@ -5150,14 +5135,6 @@ void MacroAssemblerRiscv64::ma_b(Register lhs, Imm32 imm, Label* label,
       ma_branch(label, c, lhs, Operand(imm.value), jumpKind);
       break;
   }
-}
-
-void MacroAssemblerRiscv64::ma_b(Address addr, Imm32 imm, Label* label,
-                                 Condition c, JumpKind jumpKind) {
-  UseScratchRegisterScope temps(this);
-  Register scratch2 = temps.Acquire();
-  ma_load(scratch2, addr);
-  ma_b(Register(scratch2), imm, label, c, jumpKind);
 }
 
 void MacroAssemblerRiscv64::ma_b(Register lhs, Register rhs, Label* label,
