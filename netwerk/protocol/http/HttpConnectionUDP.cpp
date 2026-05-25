@@ -764,7 +764,7 @@ nsresult HttpConnectionUDP::OnHeadersAvailable(nsAHttpTransaction* trans,
   uint16_t responseStatus = responseHead->Status();
   nsHttpTransaction* hTrans = trans->QueryHttpTransaction();
   if (mState == HttpConnectionState::SETTING_UP_TUNNEL) {
-    HandleTunnelResponse(hTrans, responseStatus, reset);
+    HandleTunnelResponse(hTrans, *responseHead, reset);
     return NS_OK;
   }
 
@@ -787,18 +787,20 @@ nsresult HttpConnectionUDP::OnHeadersAvailable(nsAHttpTransaction* trans,
 }
 
 void HttpConnectionUDP::HandleTunnelResponse(
-    nsHttpTransaction* aHttpTransaction, uint16_t responseStatus, bool* reset) {
+    nsHttpTransaction* aHttpTransaction, const nsHttpResponseHead& responseHead,
+    bool* reset) {
   LOG(("HttpConnectionUDP::HandleTunnelResponse mIsInTunnel=%d", mIsInTunnel));
   MOZ_ASSERT(TunnelSetupInProgress());
   MOZ_ASSERT(mIsInTunnel);
 
-  if (responseStatus == 200) {
+  mProxyConnectResponseHead = Some(responseHead);
+  if (responseHead.Status() == 200) {
     ChangeState(HttpConnectionState::REQUEST);
   }
 
   bool onlyConnect = mTransactionCaps & NS_HTTP_CONNECT_ONLY;
-  aHttpTransaction->OnProxyConnectComplete(responseStatus);
-  if (responseStatus == 200) {
+  aHttpTransaction->OnProxyConnectComplete(responseHead);
+  if (responseHead.Status() == 200) {
     LOG(("proxy CONNECT succeeded! onlyconnect=%d mIsInTunnel=%d\n",
          onlyConnect, mIsInTunnel));
     // If we're only connecting, we don't need to reset the transaction

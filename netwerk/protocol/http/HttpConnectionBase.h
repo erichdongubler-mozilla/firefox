@@ -10,6 +10,7 @@
 #include "nsCOMPtr.h"
 #include "nsProxyRelease.h"
 #include "prinrval.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "ARefBase.h"
 #include "TimingStruct.h"
@@ -17,6 +18,7 @@
 
 #include "mozilla/net/DNS.h"
 #include "mozilla/WeakPtr.h"
+#include "nsHttpResponseHead.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIAsyncOutputStream.h"
 #include "nsIInterfaceRequestor.h"
@@ -32,7 +34,6 @@ class ConnectionEntry;
 class nsHttpHandler;
 class ASpdySession;
 class WebTransportSessionBase;
-class nsHttpResponseHead;
 
 enum class ConnectionState : uint32_t {
   HALF_OPEN = 0,
@@ -195,6 +196,9 @@ class HttpConnectionBase : public nsSupportsWeakReference {
                                       HttpConnectionBase** aHttpConnection,
                                       bool aIsExtendedCONNECT = false) = 0;
   virtual void SetInTunnel() {};
+  const Maybe<nsHttpResponseHead>& GetProxyConnectResponseHead() const {
+    return mProxyConnectResponseHead;
+  }
 
   void SetOwner(ConnectionEntry* aEntry);
   ConnectionEntry* OwnerEntry() const;
@@ -239,7 +243,7 @@ class HttpConnectionBase : public nsSupportsWeakReference {
 
   bool mIsRacing{false};
 
-  // Tunnel retated functions:
+  // Tunnel related functions:
   enum HttpConnectionState {
     UNINITIALIZED,
     SETTING_UP_TUNNEL,
@@ -250,6 +254,7 @@ class HttpConnectionBase : public nsSupportsWeakReference {
   virtual void SetTunnelSetupDone() {}
   virtual nsresult SetupProxyConnectStream() { return NS_OK; }
   nsresult CheckTunnelIsNeeded(nsAHttpTransaction* aTransaction);
+  Maybe<nsHttpResponseHead> mProxyConnectResponseHead;
 };
 
 #define NS_DECL_HTTPCONNECTIONBASE                                             \

@@ -14,6 +14,7 @@
 #include "mozilla/net/SocketProcessChild.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "nsHttpResponseHead.h"
 #include "nsInputStreamPump.h"
 #include "nsISocketTransport.h"
 #include "nsITransportSecurityInfo.h"
@@ -464,8 +465,8 @@ HttpTransactionChild::OnStartRequest(nsIRequest* aRequest) {
     }
   }
 
-  int32_t proxyConnectResponseCode =
-      mTransaction->GetProxyConnectResponseCode();
+  Maybe<nsHttpResponseHead> proxyConnectResponseHead =
+      mTransaction->GetProxyConnectResponseHead();
 
   nsIRequest::TRRMode mode = nsIRequest::TRR_DEFAULT_MODE;
   TRRSkippedReason reason = nsITRRSkipReason::TRR_UNSET;
@@ -486,11 +487,12 @@ HttpTransactionChild::OnStartRequest(nsIRequest* aRequest) {
   (void)SendOnStartRequest(
       status, std::move(optionalHead), securityInfo,
       mTransaction->ProxyConnectFailed(),
-      ToTimingStructArgs(mTransaction->Timings()), proxyConnectResponseCode,
-      dataForSniffer, optionalAltSvcUsed, !!mDataBridgeParent,
-      mTransaction->TakeRestartedState(), mTransaction->HTTPSSVCReceivedStage(),
-      mTransaction->GetSupportsHTTP3(), mode, reason, mTransaction->Caps(),
-      TimeStamp::Now(), infoArgs, mTransaction->GetTargetIPAddressSpace());
+      ToTimingStructArgs(mTransaction->Timings()),
+      std::move(proxyConnectResponseHead), dataForSniffer, optionalAltSvcUsed,
+      !!mDataBridgeParent, mTransaction->TakeRestartedState(),
+      mTransaction->HTTPSSVCReceivedStage(), mTransaction->GetSupportsHTTP3(),
+      mode, reason, mTransaction->Caps(), TimeStamp::Now(), infoArgs,
+      mTransaction->GetTargetIPAddressSpace());
   return NS_OK;
 }
 

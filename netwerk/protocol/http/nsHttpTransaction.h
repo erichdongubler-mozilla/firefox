@@ -225,7 +225,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   bool IsWebsocketUpgrade();
 
-  void OnProxyConnectComplete(int32_t aResponseCode) override;
+  void OnProxyConnectComplete(const nsHttpResponseHead& aResponseHead) override;
   void SetFlat407Headers(const nsACString& aHeaders);
 
   void UpdateConnectionInfo(nsHttpConnectionInfo* aConnInfo);
@@ -646,7 +646,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   } mEarlyDataDisposition{EARLY_NONE};
 
   HttpTrafficCategory mTrafficCategory{HttpTrafficCategory::eInvalid};
-  Atomic<int32_t> mProxyConnectResponseCode{0};
+  Maybe<nsHttpResponseHead> mProxyConnectResponseHead MOZ_GUARDED_BY(mLock);
 
   nsCOMPtr<nsICancelable> mDNSRequest;
   Atomic<uint32_t, Relaxed> mHTTPSSVCReceivedStage{HTTPSSVC_NOT_USED};

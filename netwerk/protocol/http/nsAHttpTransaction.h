@@ -34,6 +34,7 @@ class nsAHttpSegmentReader;
 class nsAHttpSegmentWriter;
 class nsHttpTransaction;
 class nsHttpRequestHead;
+class nsHttpResponseHead;
 class nsHttpConnectionInfo;
 class NullHttpTransaction;
 
@@ -235,7 +236,8 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
     return 0;
   }
 
-  virtual void OnProxyConnectComplete(int32_t aResponseCode) {}
+  virtual void OnProxyConnectComplete(const nsHttpResponseHead& aResponseHead) {
+  }
 
   virtual nsresult FetchHTTPSRR() { return NS_ERROR_NOT_IMPLEMENTED; }
   virtual nsresult OnHTTPSRRAvailable(nsIDNSHTTPSSVCRecord* aHTTPSSVCRecord,

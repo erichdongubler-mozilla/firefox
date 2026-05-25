@@ -1468,6 +1468,11 @@ skip-if = [
   "socketprocess_networking", # Bug 1614708
 ]
 
+["test_proxyconnect_headers.js"]
+skip-if = [
+  "socketprocess_networking", # Bug 1614708
+]
+
 ["test_proxyconnect_https.js"]
 skip-if = [
   "socketprocess_networking", # Bug 1614708

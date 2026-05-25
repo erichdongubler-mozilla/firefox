@@ -547,6 +547,13 @@ void nsHttpTransaction::SetConnection(nsAHttpConnection* conn) {
         mTRRSkipReason = mConnection->TRRSkipReason();
         mEchConfigUsed = mConnection->GetEchConfigUsed();
       }
+
+      if (mConnInfo && mConnInfo->UsingConnect()) {
+        RefPtr<HttpConnectionBase> httpConn = mConnection->HttpConnection();
+        if (httpConn) {
+          mProxyConnectResponseHead = httpConn->GetProxyConnectResponseHead();
+        }
+      }
     }
   }
 }
@@ -3454,16 +3461,20 @@ bool nsHttpTransaction::IsWebsocketUpgrade() {
   return result;
 }
 
-void nsHttpTransaction::OnProxyConnectComplete(int32_t aResponseCode) {
+void nsHttpTransaction::OnProxyConnectComplete(
+    const nsHttpResponseHead& aResponseHead) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(mConnInfo->UsingConnect());
 
   LOG(("nsHttpTransaction::OnProxyConnectComplete %p aResponseCode=%d", this,
-       aResponseCode));
+       aResponseHead.Status()));
 
-  mProxyConnectResponseCode = aResponseCode;
+  {
+    MutexAutoLock lock(mLock);
+    mProxyConnectResponseHead = Some(aResponseHead);
+  }
 
-  if (mConnInfo->IsHttp3() && mProxyConnectResponseCode == 200 &&
+  if (mConnInfo->IsHttp3() && aResponseHead.Status() == 200 &&
       !mHttp3TunnelFallbackTimerCreated) {
     mHttp3TunnelFallbackTimerCreated = true;
     CreateAndStartTimer(mHttp3TunnelFallbackTimer, this,
@@ -3472,11 +3483,17 @@ void nsHttpTransaction::OnProxyConnectComplete(int32_t aResponseCode) {
 }
 
 int32_t nsHttpTransaction::GetProxyConnectResponseCode() {
-  return mProxyConnectResponseCode;
+  MutexAutoLock lock(mLock);
+  return mProxyConnectResponseHead ? mProxyConnectResponseHead->Status() : 0;
+}
+
+Maybe<nsHttpResponseHead> nsHttpTransaction::GetProxyConnectResponseHead() {
+  MutexAutoLock lock(mLock);
+  return mProxyConnectResponseHead;
 }
 
 void nsHttpTransaction::SetFlat407Headers(const nsACString& aHeaders) {
-  MOZ_ASSERT(mProxyConnectResponseCode == 407);
+  MOZ_ASSERT(GetProxyConnectResponseCode() == 407);
   MOZ_ASSERT(!mResponseHead);
 
   LOG(("nsHttpTransaction::SetFlat407Headers %p", this));

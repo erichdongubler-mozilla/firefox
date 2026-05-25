@@ -407,7 +407,11 @@ HttpTransactionParent* HttpTransactionParent::AsHttpTransactionParent() {
 }
 
 int32_t HttpTransactionParent::GetProxyConnectResponseCode() {
-  return mProxyConnectResponseCode;
+  return mProxyConnectResponseHead ? mProxyConnectResponseHead->Status() : 0;
+}
+
+Maybe<nsHttpResponseHead> HttpTransactionParent::GetProxyConnectResponseHead() {
+  return mProxyConnectResponseHead;
 }
 
 bool HttpTransactionParent::Http2Disabled() const {
@@ -432,7 +436,8 @@ already_AddRefed<nsIEventTarget> HttpTransactionParent::GetNeckoTarget() {
 mozilla::ipc::IPCResult HttpTransactionParent::RecvOnStartRequest(
     const nsresult& aStatus, Maybe<nsHttpResponseHead>&& aResponseHead,
     nsITransportSecurityInfo* aSecurityInfo, const bool& aProxyConnectFailed,
-    const TimingStructArgs& aTimings, const int32_t& aProxyConnectResponseCode,
+    const TimingStructArgs& aTimings,
+    Maybe<nsHttpResponseHead>&& aProxyConnectResponseHead,
     nsTArray<uint8_t>&& aDataForSniffer, const Maybe<nsCString>& aAltSvcUsed,
     const bool& aDataToChildProcess, const bool& aRestarted,
     const uint32_t& aHTTPSSVCReceivedStage, const bool& aSupportsHttp3,
@@ -447,14 +452,14 @@ mozilla::ipc::IPCResult HttpTransactionParent::RecvOnStartRequest(
       [self = UnsafePtr<HttpTransactionParent>(this), aStatus,
        aResponseHead = std::move(aResponseHead),
        securityInfo = nsCOMPtr{aSecurityInfo}, aProxyConnectFailed, aTimings,
-       aProxyConnectResponseCode,
+       aProxyConnectResponseHead = std::move(aProxyConnectResponseHead),
        aDataForSniffer = CopyableTArray{std::move(aDataForSniffer)},
        aAltSvcUsed, aDataToChildProcess, aRestarted, aHTTPSSVCReceivedStage,
        aSupportsHttp3, aMode, aTrrSkipReason, aCaps, aOnStartRequestStartTime,
        aTargetIPAddressSpace, cinfo{std::move(cinfo)}]() mutable {
         self->DoOnStartRequest(
             aStatus, std::move(aResponseHead), securityInfo,
-            aProxyConnectFailed, aTimings, aProxyConnectResponseCode,
+            aProxyConnectFailed, aTimings, std::move(aProxyConnectResponseHead),
             std::move(aDataForSniffer), aAltSvcUsed, aDataToChildProcess,
             aRestarted, aHTTPSSVCReceivedStage, aSupportsHttp3, aMode,
             aTrrSkipReason, aCaps, aOnStartRequestStartTime, cinfo,
@@ -485,7 +490,8 @@ static void TimingStructArgsToTimingsStruct(const TimingStructArgs& aArgs,
 void HttpTransactionParent::DoOnStartRequest(
     const nsresult& aStatus, Maybe<nsHttpResponseHead>&& aResponseHead,
     nsITransportSecurityInfo* aSecurityInfo, const bool& aProxyConnectFailed,
-    const TimingStructArgs& aTimings, const int32_t& aProxyConnectResponseCode,
+    const TimingStructArgs& aTimings,
+    Maybe<nsHttpResponseHead>&& aProxyConnectResponseHead,
     nsTArray<uint8_t>&& aDataForSniffer, const Maybe<nsCString>& aAltSvcUsed,
     const bool& aDataToChildProcess, const bool& aRestarted,
     const uint32_t& aHTTPSSVCReceivedStage, const bool& aSupportsHttp3,
@@ -522,7 +528,7 @@ void HttpTransactionParent::DoOnStartRequest(
   mProxyConnectFailed = aProxyConnectFailed;
   TimingStructArgsToTimingsStruct(aTimings, mTimings);
 
-  mProxyConnectResponseCode = aProxyConnectResponseCode;
+  mProxyConnectResponseHead = std::move(aProxyConnectResponseHead);
   mDataForSniffer = std::move(aDataForSniffer);
   mRestarted = aRestarted;
 

@@ -1113,7 +1113,7 @@ class HTTP2ProxyCode {
           global.socketCounts[socket.remotePort] =
             (global.socketCounts[socket.remotePort] || 0) + 1;
           try {
-            stream.respond({ ":status": 200 });
+            stream.respond({ ":status": 200, "Proxy-agent": "Node.js-Proxy" });
           } catch (e) {
             if (
               e.code !== "ERR_HTTP2_INVALID_STREAM" &&

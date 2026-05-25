@@ -9,6 +9,7 @@
 #include "AutoClose.h"
 #include "HttpBaseChannel.h"
 #include "HttpTransactionShell.h"
+#include "nsHttpResponseHead.h"
 #include "nsIReplacedHttpResponse.h"
 #include "TimingStruct.h"
 #include "mozilla/AtomicBitfields.h"
@@ -868,9 +869,9 @@ class nsHttpChannel final : public HttpBaseChannel,
   // here to resume DoConnect.
   RefPtr<DNSPromise> mDNSBlockingThenable;
 
-  // We update the value of mProxyConnectResponseCode when OnStartRequest is
+  // We update the value of mProxyConnectResponseHead when OnStartRequest is
   // called and reset the value when we switch to another failover proxy.
-  int32_t mProxyConnectResponseCode{0};
+  Maybe<nsHttpResponseHead> mProxyConnectResponseHead;
 
   // If mHTTPSSVCRecord has value, it means OnHTTPSRRAvailable() is called and
   // we got the result of HTTPS RR query. Otherwise, it means we are still

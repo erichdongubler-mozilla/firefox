@@ -218,7 +218,8 @@ class nsHttpConnection final : public HttpConnectionBase,
   nsresult SetupProxyConnectStream() override;
   nsresult SendConnectRequest(void* closure, uint32_t* transactionBytes);
 
-  void HandleTunnelResponse(uint16_t responseStatus, bool* reset);
+  void HandleTunnelResponse(const nsHttpResponseHead& responseHead,
+                            bool* reset);
   void HandleWebSocketResponse(nsHttpRequestHead* requestHead,
                                nsHttpResponseHead* responseHead,
                                uint16_t responseStatus);

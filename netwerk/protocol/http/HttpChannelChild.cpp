@@ -3098,6 +3098,11 @@ NS_IMETHODIMP HttpChannelChild::GetHttpProxyConnectResponseCode(
   DROP_DEAD();
 }
 
+NS_IMETHODIMP HttpChannelChild::GetHttpProxyResponseHeader(
+    const nsACString& aHeader, nsACString& aValue) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
 //-----------------------------------------------------------------------------
 // HttpChannelChild::nsIHttpChannelChild
 //-----------------------------------------------------------------------------
