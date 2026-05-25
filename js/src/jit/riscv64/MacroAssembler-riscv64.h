@@ -111,7 +111,7 @@ class MacroAssemblerRiscv64 : public Assembler {
   }
 
   bool CalculateOffset(Label* L, OffsetSize bits, int32_t* offset);
-  int32_t GetOffset(int32_t offset, Label* L, OffsetSize bits);
+  int32_t GetOffset(Label* L, OffsetSize bits);
 
   // load
   FaultingCodeOffset ma_load(Register dest, Address address,

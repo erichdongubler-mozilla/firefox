@@ -4919,14 +4919,8 @@ void MacroAssemblerRiscv64::ma_mulPtrTestOverflow(Register rd, Register rj,
   ma_b(scratch, Register(scratch2), overflow, Assembler::NotEqual);
 }
 
-int32_t MacroAssemblerRiscv64::GetOffset(int32_t offset, Label* L,
-                                         OffsetSize bits) {
-  if (L) {
-    offset = branchOffsetHelper(L, bits);
-  } else {
-    MOZ_ASSERT(is_intn(offset, bits));
-  }
-  return offset;
+int32_t MacroAssemblerRiscv64::GetOffset(Label* L, OffsetSize bits) {
+  return branchOffsetHelper(L, bits);
 }
 
 bool MacroAssemblerRiscv64::CalculateOffset(Label* L, OffsetSize bits,
@@ -4934,13 +4928,13 @@ bool MacroAssemblerRiscv64::CalculateOffset(Label* L, OffsetSize bits,
   if (!isNear(L, bits)) {
     return false;
   }
-  *offset = GetOffset(*offset, L, bits);
+  *offset = GetOffset(L, bits);
   return true;
 }
 
 BufferOffset MacroAssemblerRiscv64::BranchShort(Label* L) {
   AutoForbidPoolsAndNops afp(this, 2, 1);
-  int32_t offset = GetOffset(0, L, OffsetSize::kOffset21);
+  int32_t offset = GetOffset(L, OffsetSize::kOffset21);
   BufferOffset bo = nextOffset();
   Assembler::j(offset);
   return bo;
@@ -5152,7 +5146,7 @@ void MacroAssemblerRiscv64::BranchLong(Label* L) {
 
 CodeOffset MacroAssemblerRiscv64::BranchAndLinkShort(Label* L) {
   AutoForbidPoolsAndNops afp(this, 2, 1);
-  int32_t offset = GetOffset(0, L, OffsetSize::kOffset21);
+  int32_t offset = GetOffset(L, OffsetSize::kOffset21);
   return jal(offset);
 }
 
