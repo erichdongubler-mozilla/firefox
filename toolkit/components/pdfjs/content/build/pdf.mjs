@@ -21,31 +21,9 @@
  */
 
 /**
- * pdfjsVersion = 6.0.177
- * pdfjsBuild = e6cb60089
+ * pdfjsVersion = 6.0.195
+ * pdfjsBuild = e7661983f
  */
-/******/ // The require scope
-/******/ var __webpack_require__ = {};
-/******/ 
-/************************************************************************/
-/******/ /* webpack/runtime/define property getters */
-/******/ (() => {
-/******/ 	// define getter functions for harmony exports
-/******/ 	__webpack_require__.d = (exports, definition) => {
-/******/ 		for(var key in definition) {
-/******/ 			if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
-/******/ 				Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
-/******/ 			}
-/******/ 		}
-/******/ 	};
-/******/ })();
-/******/ 
-/******/ /* webpack/runtime/hasOwnProperty shorthand */
-/******/ (() => {
-/******/ 	__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
-/******/ })();
-/******/ 
-/************************************************************************/
 
 ;// ./src/shared/util.js
 const isNodeJS = false;
@@ -112,11 +90,11 @@ const PermissionFlag = {
   ASSEMBLE: 0x400,
   PRINT_HIGH_QUALITY: 0x800
 };
-const MeshFigureType = {
+const MeshFigureType = (/* unused pure expression or super */ null && ({
   TRIANGLES: 1,
   LATTICE: 2,
   PATCH: 3
-};
+}));
 const TextRenderingMode = {
   FILL: 0,
   STROKE: 1,
@@ -162,11 +140,11 @@ const AnnotationType = {
   THREED: 25,
   REDACT: 26
 };
-const AnnotationReplyType = {
+const AnnotationReplyType = (/* unused pure expression or super */ null && ({
   GROUP: "Group",
   REPLY: "R"
-};
-const AnnotationFlag = {
+}));
+const AnnotationFlag = (/* unused pure expression or super */ null && ({
   INVISIBLE: 0x01,
   HIDDEN: 0x02,
   PRINT: 0x04,
@@ -177,8 +155,8 @@ const AnnotationFlag = {
   LOCKED: 0x80,
   TOGGLENOVIEW: 0x100,
   LOCKEDCONTENTS: 0x200
-};
-const AnnotationFieldFlag = {
+}));
+const AnnotationFieldFlag = (/* unused pure expression or super */ null && ({
   READONLY: 0x0000001,
   REQUIRED: 0x0000002,
   NOEXPORT: 0x0000004,
@@ -198,7 +176,7 @@ const AnnotationFieldFlag = {
   RICHTEXT: 0x2000000,
   RADIOSINUNISON: 0x2000000,
   COMMITONSELCHANGE: 0x4000000
-};
+}));
 const AnnotationBorderStyleType = {
   SOLID: 1,
   DASHED: 2,
@@ -206,7 +184,7 @@ const AnnotationBorderStyleType = {
   INSET: 4,
   UNDERLINE: 5
 };
-const AnnotationActionEventType = {
+const AnnotationActionEventType = (/* unused pure expression or super */ null && ({
   E: "Mouse Enter",
   X: "Mouse Exit",
   D: "Mouse Down",
@@ -221,18 +199,18 @@ const AnnotationActionEventType = {
   F: "Format",
   V: "Validate",
   C: "Calculate"
-};
-const DocumentActionEventType = {
+}));
+const DocumentActionEventType = (/* unused pure expression or super */ null && ({
   WC: "WillClose",
   WS: "WillSave",
   DS: "DidSave",
   WP: "WillPrint",
   DP: "DidPrint"
-};
-const PageActionEventType = {
+}));
+const PageActionEventType = (/* unused pure expression or super */ null && ({
   O: "PageOpen",
   C: "PageClose"
-};
+}));
 const VerbosityLevel = {
   ERRORS: 0,
   WARNINGS: 1,
@@ -742,7 +720,7 @@ let NormalizeRegex = null;
 let NormalizationMap = null;
 function normalizeUnicode(str) {
   if (!NormalizeRegex) {
-    NormalizeRegex = /([\u00a0\u00b5\u037e\u0eb3\u2000-\u200a\u202f\u2126\ufb00-\ufb04\ufb06\ufb20-\ufb36\ufb38-\ufb3c\ufb3e\ufb40-\ufb41\ufb43-\ufb44\ufb46-\ufba1\ufba4-\ufba9\ufbae-\ufbb1\ufbd3-\ufbdc\ufbde-\ufbe7\ufbea-\ufbf8\ufbfc-\ufbfd\ufc00-\ufc5d\ufc64-\ufcf1\ufcf5-\ufd3d\ufd88\ufdf4\ufdfa-\ufdfb\ufe71\ufe77\ufe79\ufe7b\ufe7d]+)|(\ufb05+)/gu;
+    NormalizeRegex = /([\u00a0\u00b5\u037e\u0eb3\u2000-\u200a\u202f\u2126\ufb00-\ufb04\ufb06\ufb20-\ufb36\ufb38-\ufb3c\ufb3e\ufb40\ufb41\ufb43\ufb44\ufb46-\ufba1\ufba4-\ufba9\ufbae-\ufbb1\ufbd3-\ufbdc\ufbde-\ufbe7\ufbea-\ufbf8\ufbfc\ufbfd\ufc00-\ufc5d\ufc64-\ufcf1\ufcf5-\ufd3d\ufd88\ufdf4\ufdfa\ufdfb\ufe71\ufe77\ufe79\ufe7b\ufe7d]+)|(\ufb05+)/gu;
     NormalizationMap = new Map([["ﬅ", "ſt"]]);
   }
   return str.replaceAll(NormalizeRegex, (_, p1, p2) => p1 ? p1.normalize("NFKC") : NormalizationMap.get(p2));
@@ -1351,7 +1329,7 @@ class PDFDateString {
     if (!input || typeof input !== "string") {
       return null;
     }
-    this.#regex ||= new RegExp("^D:" + "(\\d{4})" + "(\\d{2})?" + "(\\d{2})?" + "(\\d{2})?" + "(\\d{2})?" + "(\\d{2})?" + "([Z|+|-])?" + "(\\d{2})?" + "'?" + "(\\d{2})?" + "'?");
+    this.#regex ||= new RegExp("^D:" + "(\\d{4})" + "(\\d{2})?" + "(\\d{2})?" + "(\\d{2})?" + "(\\d{2})?" + "(\\d{2})?" + "([Z|+\\-])?" + "(\\d{2})?" + "'?" + "(\\d{2})?" + "'?");
     const matches = this.#regex.exec(input);
     if (!matches) {
       return null;
@@ -1669,7 +1647,7 @@ function renderRichText({
   if (typeof html === "string") {
     const p = document.createElement("p");
     p.dir = dir || "auto";
-    const lines = html.split(/(?:\r\n?|\n)/);
+    const lines = html.split(/\r\n?|\n/);
     for (let i = 0, ii = lines.length; i < ii; ++i) {
       const line = lines[i];
       p.append(document.createTextNode(line));
@@ -12460,6 +12438,7 @@ class DOMFilterFactory extends BaseFilterFactory {
       const {
         style
       } = div;
+      style.colorScheme = "only light";
       style.visibility = "hidden";
       style.contain = "strict";
       style.width = style.height = 0;
@@ -13984,7 +13963,7 @@ class TextLayer {
     let ctx = this.#canvasContexts.get(lang ||= "");
     if (!ctx) {
       const canvas = document.createElement("canvas");
-      canvas.style.cssText = "position:absolute;top:0;left:0;width:0;height:0;display:none";
+      canvas.style.cssText = "position:absolute;top:0;left:0;width:0;height:0;display:none;" + "letter-spacing:normal;word-spacing:normal";
       canvas.lang = lang;
       document.body.append(canvas);
       ctx = canvas.getContext("2d", {
@@ -14142,7 +14121,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.0.177",
+    apiVersion: "6.0.195",
     data,
     password,
     disableAutoFetch,
@@ -15770,8 +15749,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.0.177";
-const build = "e6cb60089";
+const version = "6.0.195";
+const build = "e7661983f";
 
 ;// ./src/display/editor/color_picker.js
 
@@ -17642,7 +17621,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
             switch (event.inputType) {
               case "deleteWordBackward":
                 {
-                  const match = value.substring(0, selectionStart).match(/\w*[^\w]*$/);
+                  const match = value.substring(0, selectionStart).match(/\w*\W*$/);
                   if (match) {
                     selStart -= match[0].length;
                   }
@@ -17650,7 +17629,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
                 }
               case "deleteWordForward":
                 {
-                  const match = value.substring(selectionStart).match(/^[^\w]*\w*/);
+                  const match = value.substring(selectionStart).match(/^\W*\w*/);
                   if (match) {
                     selEnd += match[0].length;
                   }

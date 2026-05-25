@@ -21,31 +21,9 @@
  */
 
 /**
- * pdfjsVersion = 6.0.177
- * pdfjsBuild = e6cb60089
+ * pdfjsVersion = 6.0.195
+ * pdfjsBuild = e7661983f
  */
-/******/ // The require scope
-/******/ var __webpack_require__ = {};
-/******/ 
-/************************************************************************/
-/******/ /* webpack/runtime/define property getters */
-/******/ (() => {
-/******/ 	// define getter functions for harmony exports
-/******/ 	__webpack_require__.d = (exports, definition) => {
-/******/ 		for(var key in definition) {
-/******/ 			if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
-/******/ 				Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
-/******/ 			}
-/******/ 		}
-/******/ 	};
-/******/ })();
-/******/ 
-/******/ /* webpack/runtime/hasOwnProperty shorthand */
-/******/ (() => {
-/******/ 	__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
-/******/ })();
-/******/ 
-/************************************************************************/
 
 ;// ./src/shared/util.js
 const isNodeJS = false;
@@ -67,12 +45,12 @@ const RenderingIntentFlag = {
   IS_EDITING: 0x80,
   OPLIST: 0x100
 };
-const AnnotationMode = {
+const AnnotationMode = (/* unused pure expression or super */ null && ({
   DISABLE: 0,
   ENABLE: 1,
   ENABLE_FORMS: 2,
   ENABLE_STORAGE: 3
-};
+}));
 const AnnotationPrefix = "pdfjs_internal_id_";
 const AnnotationEditorPrefix = "pdfjs_internal_editor_";
 const AnnotationEditorType = {
@@ -86,7 +64,7 @@ const AnnotationEditorType = {
   SIGNATURE: 101,
   COMMENT: 102
 };
-const AnnotationEditorParamsType = {
+const AnnotationEditorParamsType = (/* unused pure expression or super */ null && ({
   RESIZE: 1,
   CREATE: 2,
   FREETEXT_SIZE: 11,
@@ -101,7 +79,7 @@ const AnnotationEditorParamsType = {
   HIGHLIGHT_FREE: 33,
   HIGHLIGHT_SHOW_ALL: 34,
   DRAW_STEP: 41
-};
+}));
 const PermissionFlag = {
   PRINT: 0x04,
   MODIFY_CONTENTS: 0x08,
@@ -733,7 +711,7 @@ let NormalizeRegex = null;
 let NormalizationMap = null;
 function normalizeUnicode(str) {
   if (!NormalizeRegex) {
-    NormalizeRegex = /([\u00a0\u00b5\u037e\u0eb3\u2000-\u200a\u202f\u2126\ufb00-\ufb04\ufb06\ufb20-\ufb36\ufb38-\ufb3c\ufb3e\ufb40-\ufb41\ufb43-\ufb44\ufb46-\ufba1\ufba4-\ufba9\ufbae-\ufbb1\ufbd3-\ufbdc\ufbde-\ufbe7\ufbea-\ufbf8\ufbfc-\ufbfd\ufc00-\ufc5d\ufc64-\ufcf1\ufcf5-\ufd3d\ufd88\ufdf4\ufdfa-\ufdfb\ufe71\ufe77\ufe79\ufe7b\ufe7d]+)|(\ufb05+)/gu;
+    NormalizeRegex = /([\u00a0\u00b5\u037e\u0eb3\u2000-\u200a\u202f\u2126\ufb00-\ufb04\ufb06\ufb20-\ufb36\ufb38-\ufb3c\ufb3e\ufb40\ufb41\ufb43\ufb44\ufb46-\ufba1\ufba4-\ufba9\ufbae-\ufbb1\ufbd3-\ufbdc\ufbde-\ufbe7\ufbea-\ufbf8\ufbfc\ufbfd\ufc00-\ufc5d\ufc64-\ufcf1\ufcf5-\ufd3d\ufd88\ufdf4\ufdfa\ufdfb\ufe71\ufe77\ufe79\ufe7b\ufe7d]+)|(\ufb05+)/gu;
     NormalizationMap = new Map([["ﬅ", "ſt"]]);
   }
   return str.replaceAll(NormalizeRegex, (_, p1, p2) => p1 ? p1.normalize("NFKC") : NormalizationMap.get(p2));
@@ -1610,7 +1588,7 @@ function validateFontName(fontFamily, mustWarn = false) {
     }
   } else {
     for (const ident of fontFamily.split(/[ \t]+/)) {
-      if (/^(\d|(-(\d|-)))/.test(ident) || !/^[\w-\\]+$/.test(ident)) {
+      if (/^(?:\d|-[\d-])/.test(ident) || !/^[\w\\-]+$/.test(ident)) {
         if (mustWarn) {
           warn(`FontFamily contains invalid <custom-ident>: ${fontFamily}.`);
         }
@@ -17623,7 +17601,7 @@ function getUnicodeRangeFor(value, lastPosition = -1) {
   }
   return -1;
 }
-const SpecialCharRegExp = new RegExp("^(\\s)|(\\p{Mn})|(\\p{Cf})$", "u");
+const SpecialCharRegExp = /^(\s)|(\p{Mn})|(\p{Cf})$/u;
 const CategoryCache = new Map();
 function getCharUnicodeCategory(char) {
   const cachedCategory = CategoryCache.get(char);
@@ -17981,6 +17959,12 @@ class DataBuilder {
 
 
 const MAX_SUBR_NESTING = 10;
+function looksLikeUnsigned16BitNegative(coord) {
+  return coord > 0x7fff && coord <= 0xffff;
+}
+function recoverSigned16BitBBox(bbox, onlyLowerLeft = false) {
+  return Util.normalizeRect(bbox.map((coord, i) => (!onlyLowerLeft || i < 2) && looksLikeUnsigned16BitNegative(coord) ? coord - 0x10000 : coord));
+}
 const CFFStandardStrings = [".notdef", "space", "exclam", "quotedbl", "numbersign", "dollar", "percent", "ampersand", "quoteright", "parenleft", "parenright", "asterisk", "plus", "comma", "hyphen", "period", "slash", "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "colon", "semicolon", "less", "equal", "greater", "question", "at", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "bracketleft", "backslash", "bracketright", "asciicircum", "underscore", "quoteleft", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "braceleft", "bar", "braceright", "asciitilde", "exclamdown", "cent", "sterling", "fraction", "yen", "florin", "section", "currency", "quotesingle", "quotedblleft", "guillemotleft", "guilsinglleft", "guilsinglright", "fi", "fl", "endash", "dagger", "daggerdbl", "periodcentered", "paragraph", "bullet", "quotesinglbase", "quotedblbase", "quotedblright", "guillemotright", "ellipsis", "perthousand", "questiondown", "grave", "acute", "circumflex", "tilde", "macron", "breve", "dotaccent", "dieresis", "ring", "cedilla", "hungarumlaut", "ogonek", "caron", "emdash", "AE", "ordfeminine", "Lslash", "Oslash", "OE", "ordmasculine", "ae", "dotlessi", "lslash", "oslash", "oe", "germandbls", "onesuperior", "logicalnot", "mu", "trademark", "Eth", "onehalf", "plusminus", "Thorn", "onequarter", "divide", "brokenbar", "degree", "thorn", "threequarters", "twosuperior", "registered", "minus", "eth", "multiply", "threesuperior", "copyright", "Aacute", "Acircumflex", "Adieresis", "Agrave", "Aring", "Atilde", "Ccedilla", "Eacute", "Ecircumflex", "Edieresis", "Egrave", "Iacute", "Icircumflex", "Idieresis", "Igrave", "Ntilde", "Oacute", "Ocircumflex", "Odieresis", "Ograve", "Otilde", "Scaron", "Uacute", "Ucircumflex", "Udieresis", "Ugrave", "Yacute", "Ydieresis", "Zcaron", "aacute", "acircumflex", "adieresis", "agrave", "aring", "atilde", "ccedilla", "eacute", "ecircumflex", "edieresis", "egrave", "iacute", "icircumflex", "idieresis", "igrave", "ntilde", "oacute", "ocircumflex", "odieresis", "ograve", "otilde", "scaron", "uacute", "ucircumflex", "udieresis", "ugrave", "yacute", "ydieresis", "zcaron", "exclamsmall", "Hungarumlautsmall", "dollaroldstyle", "dollarsuperior", "ampersandsmall", "Acutesmall", "parenleftsuperior", "parenrightsuperior", "twodotenleader", "onedotenleader", "zerooldstyle", "oneoldstyle", "twooldstyle", "threeoldstyle", "fouroldstyle", "fiveoldstyle", "sixoldstyle", "sevenoldstyle", "eightoldstyle", "nineoldstyle", "commasuperior", "threequartersemdash", "periodsuperior", "questionsmall", "asuperior", "bsuperior", "centsuperior", "dsuperior", "esuperior", "isuperior", "lsuperior", "msuperior", "nsuperior", "osuperior", "rsuperior", "ssuperior", "tsuperior", "ff", "ffi", "ffl", "parenleftinferior", "parenrightinferior", "Circumflexsmall", "hyphensuperior", "Gravesmall", "Asmall", "Bsmall", "Csmall", "Dsmall", "Esmall", "Fsmall", "Gsmall", "Hsmall", "Ismall", "Jsmall", "Ksmall", "Lsmall", "Msmall", "Nsmall", "Osmall", "Psmall", "Qsmall", "Rsmall", "Ssmall", "Tsmall", "Usmall", "Vsmall", "Wsmall", "Xsmall", "Ysmall", "Zsmall", "colonmonetary", "onefitted", "rupiah", "Tildesmall", "exclamdownsmall", "centoldstyle", "Lslashsmall", "Scaronsmall", "Zcaronsmall", "Dieresissmall", "Brevesmall", "Caronsmall", "Dotaccentsmall", "Macronsmall", "figuredash", "hypheninferior", "Ogoneksmall", "Ringsmall", "Cedillasmall", "questiondownsmall", "oneeighth", "threeeighths", "fiveeighths", "seveneighths", "onethird", "twothirds", "zerosuperior", "foursuperior", "fivesuperior", "sixsuperior", "sevensuperior", "eightsuperior", "ninesuperior", "zeroinferior", "oneinferior", "twoinferior", "threeinferior", "fourinferior", "fiveinferior", "sixinferior", "seveninferior", "eightinferior", "nineinferior", "centinferior", "dollarinferior", "periodinferior", "commainferior", "Agravesmall", "Aacutesmall", "Acircumflexsmall", "Atildesmall", "Adieresissmall", "Aringsmall", "AEsmall", "Ccedillasmall", "Egravesmall", "Eacutesmall", "Ecircumflexsmall", "Edieresissmall", "Igravesmall", "Iacutesmall", "Icircumflexsmall", "Idieresissmall", "Ethsmall", "Ntildesmall", "Ogravesmall", "Oacutesmall", "Ocircumflexsmall", "Otildesmall", "Odieresissmall", "OEsmall", "Oslashsmall", "Ugravesmall", "Uacutesmall", "Ucircumflexsmall", "Udieresissmall", "Yacutesmall", "Thornsmall", "Ydieresissmall", "001.000", "001.001", "001.002", "001.003", "Black", "Bold", "Book", "Light", "Medium", "Regular", "Roman", "Semibold"];
 const NUM_STANDARD_CFF_STRINGS = 391;
 const DEFAULT_BLUE_SCALE = 0.039625;
@@ -18225,9 +18209,19 @@ class CFFParser {
       properties.fontMatrix = fontMatrix;
     }
     let fontBBox = topDict.getByName("FontBBox");
-    if (fontBBox?.every(coord => coord === 0) && properties.bbox) {
-      fontBBox = Util.normalizeRect(properties.bbox.map(coord => coord > 0x7fff && coord <= 0xffff ? coord - 0x10000 : coord));
+    const descriptorBBox = properties.bbox?.some(coord => coord !== 0) ? recoverSigned16BitBBox(properties.bbox) : null;
+    const cffBBoxHasUnsignedLowerLeft = fontBBox?.slice(0, 2).some(looksLikeUnsigned16BitNegative);
+    const cffBBoxHasUnsignedCoords = fontBBox?.some(looksLikeUnsigned16BitNegative);
+    if (fontBBox?.every(coord => coord === 0) && descriptorBBox) {
+      fontBBox = descriptorBBox;
       topDict.setByName("FontBBox", fontBBox);
+    } else if (cffBBoxHasUnsignedCoords) {
+      const recoveredFontBBox = recoverSigned16BitBBox(fontBBox);
+      const descriptorCorroborates = descriptorBBox && properties.bbox.some(coord => coord < 0) && !properties.bbox.some(looksLikeUnsigned16BitNegative) && isArrayEqual(recoveredFontBBox, descriptorBBox);
+      if (descriptorCorroborates || cffBBoxHasUnsignedLowerLeft) {
+        fontBBox = descriptorCorroborates ? recoveredFontBBox : recoverSigned16BitBBox(fontBBox, true);
+        topDict.setByName("FontBBox", fontBBox);
+      }
     }
     if (fontBBox?.some(coord => coord !== 0)) {
       properties.ascent = Math.max(fontBBox[3], fontBBox[1]);
@@ -21187,13 +21181,10 @@ function getFloat214(view, offset) {
 }
 function getSubroutineBias(subrs) {
   const numSubrs = subrs.length;
-  let bias = 32768;
-  if (numSubrs < 1240) {
-    bias = 107;
-  } else if (numSubrs < 33900) {
-    bias = 1131;
+  if (numSubrs >= 33900) {
+    return 32768;
   }
-  return bias;
+  return numSubrs < 1240 ? 107 : 1131;
 }
 function parseCmap(data, start, end) {
   const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
@@ -26814,10 +26805,10 @@ class Font {
         this.capHeight = metrics.capHeight / PDF_GLYPH_SPACE_UNITS;
       }
     }
-    this.bold = /bold/gi.test(fontName);
-    this.italic = /oblique|italic/gi.test(fontName);
-    this.black = /Black/g.test(name);
-    const isNarrow = /Narrow/g.test(name);
+    this.bold = /bold/i.test(fontName);
+    this.italic = /oblique|italic/i.test(fontName);
+    this.black = /Black/.test(name);
+    const isNarrow = /Narrow/.test(name);
     this.remeasure = (!isStandardFont || isNarrow) && Object.keys(this.widths).length > 0;
     if ((isStandardFont || isMappedToStandardFont) && type === "CIDFontType2" && this.cidEncoding.startsWith("Identity-")) {
       const cidToGidMap = properties.cidToGidMap;
@@ -28982,7 +28973,7 @@ class lexer_Lexer {
     this.data = data;
     this.pos = 0;
     this.len = data.length;
-    this._numberPattern = /[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/y;
+    this._numberPattern = /[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?/iy;
     this._identifierPattern = /[a-z]+/y;
   }
   _skipComment() {
@@ -32249,6 +32240,10 @@ const NORMAL = {
   style: "normal",
   weight: "normal"
 };
+const MEDIUM = {
+  style: "normal",
+  weight: "500"
+};
 const BOLD = {
   style: "normal",
   weight: "bold"
@@ -32396,6 +32391,78 @@ const substitutionMap = new Map([["Times-Roman", {
   ultimate: "serif"
 }], ["\xD0\xC2\xCB\xCE", {
   alias: "\xCB\xCE\xCC\xE5"
+}], ["HeiseiMin-W3", {
+  local: ["Hiragino Mincho ProN", "Hiragino Mincho Pro", "Yu Mincho", "YuMincho", "Source Han Serif JP", "Noto Serif JP", "Noto Serif CJK JP", "IPAexMincho", "IPAMincho", "Takao Mincho", "MS Mincho", "MS PMincho"],
+  style: NORMAL,
+  ultimate: "serif"
+}], ["HeiseiKakuGo-W5", {
+  local: ["Hiragino Kaku Gothic ProN", "Hiragino Kaku Gothic Pro", "Hiragino Sans", "Yu Gothic", "YuGothic", "Source Han Sans JP", "Noto Sans JP", "Noto Sans CJK JP", "IPAexGothic", "IPAGothic", "Takao Gothic", "Meiryo", "MS Gothic", "MS PGothic"],
+  style: MEDIUM,
+  ultimate: "sans-serif"
+}], ["HeiseiMin-W3-Acro", {
+  alias: "HeiseiMin-W3"
+}], ["HeiseiKakuGo-W5-Acro", {
+  alias: "HeiseiKakuGo-W5"
+}], ["KozMinPro-Regular", {
+  alias: "HeiseiMin-W3"
+}], ["KozMinProVI-Regular", {
+  alias: "HeiseiMin-W3"
+}], ["KozMinPr6N-Regular", {
+  alias: "HeiseiMin-W3"
+}], ["KozGoPro-Regular", {
+  alias: "HeiseiKakuGo-W5"
+}], ["KozGoProVI-Regular", {
+  alias: "HeiseiKakuGo-W5"
+}], ["KozGoPr6N-Regular", {
+  alias: "HeiseiKakuGo-W5"
+}], ["STSong-Light", {
+  local: ["STSong", "Songti SC", "Source Han Serif SC", "Source Han Serif CN", "Noto Serif SC", "Noto Serif CJK SC", "AR PL UMing CN", "SimSun", "NSimSun"],
+  style: NORMAL,
+  ultimate: "serif"
+}], ["STHeiti-Regular", {
+  local: ["STHeiti", "Heiti SC", "PingFang SC", "Source Han Sans SC", "Source Han Sans CN", "Noto Sans SC", "Noto Sans CJK SC", "Microsoft YaHei", "SimHei", "WenQuanYi Zen Hei"],
+  style: NORMAL,
+  ultimate: "sans-serif"
+}], ["STSongStd-Light", {
+  alias: "STSong-Light"
+}], ["AdobeSongStd-Light", {
+  alias: "STSong-Light"
+}], ["AdobeHeitiStd-Regular", {
+  alias: "STHeiti-Regular"
+}], ["AdobeKaitiStd-Regular", {
+  alias: "\xBF\xAC\xCC\xE5"
+}], ["AdobeFangsongStd-Regular", {
+  alias: "\xB7\xC2\xCB\xCE"
+}], ["MSung-Light", {
+  local: ["Songti TC", "LiSong Pro", "Source Han Serif TC", "Source Han Serif TW", "Noto Serif TC", "Noto Serif CJK TC", "AR PL UMing TW", "PMingLiU", "MingLiU", "MingLiU_HKSCS"],
+  style: NORMAL,
+  ultimate: "serif"
+}], ["MHei-Medium", {
+  local: ["Heiti TC", "STHeiti", "Source Han Sans TC", "Source Han Sans TW", "Noto Sans TC", "Noto Sans CJK TC", "PingFang TC", "Microsoft JhengHei"],
+  style: MEDIUM,
+  ultimate: "sans-serif"
+}], ["MSungStd-Light", {
+  alias: "MSung-Light"
+}], ["AdobeMingStd-Light", {
+  alias: "MSung-Light"
+}], ["HYSMyeongJo-Medium", {
+  local: ["AppleMyungjo", "Source Han Serif KR", "Noto Serif KR", "Noto Serif CJK KR", "Nanum Myeongjo", "Batang"],
+  style: MEDIUM,
+  ultimate: "serif"
+}], ["HYGoThic-Medium", {
+  local: ["Apple SD Gothic Neo", "AppleGothic", "Source Han Sans KR", "Noto Sans KR", "Noto Sans CJK KR", "Nanum Gothic", "Malgun Gothic", "Dotum", "Gulim"],
+  style: MEDIUM,
+  ultimate: "sans-serif"
+}], ["HYSMyeongJoStd-Medium", {
+  alias: "HYSMyeongJo-Medium"
+}], ["AdobeMyungjoStd-Medium", {
+  alias: "HYSMyeongJo-Medium"
+}], ["HYGoThic-Bold", {
+  alias: "HYGoThic-Medium",
+  style: BOLD
+}], ["AdobeGothicStd-Bold", {
+  alias: "HYGoThic-Medium",
+  style: BOLD
 }]]);
 const fontAliases = new Map([["Arial-Black", "ArialBlack"]]);
 function getStyleToAppend(style) {
@@ -32496,8 +32563,8 @@ function getFontSubstitution(systemFontCache, idFactory, localFontPath, baseFont
       systemFontCache.set(key, null);
       return null;
     }
-    const bold = /bold/gi.test(baseFontName);
-    const italic = /oblique|italic/gi.test(baseFontName);
+    const bold = /bold/i.test(baseFontName);
+    const italic = /oblique|italic/i.test(baseFontName);
     const style = bold && italic && BOLDITALIC || bold && BOLD || italic && ITALIC || NORMAL;
     substitutionInfo = {
       css: `"${getFamilyName(baseFontName)}",${loadedName}`,
@@ -36479,7 +36546,7 @@ class PartialEvaluator {
   }
   isSerifFont(baseFontName) {
     const fontNameWoStyle = baseFontName.split("-", 1)[0];
-    return fontNameWoStyle in getSerifFonts() || /serif/gi.test(fontNameWoStyle);
+    return fontNameWoStyle in getSerifFonts() || /serif/i.test(fontNameWoStyle);
   }
   getBaseFontMetrics(name) {
     let defaultWidth = 0;
@@ -36661,6 +36728,8 @@ class PartialEvaluator {
     const isType3Font = type === "Type3";
     if (!descriptor) {
       if (isType3Font) {
+        descriptor = Dict.empty;
+      } else if (composite) {
         descriptor = Dict.empty;
       } else {
         let baseFontName = dict.get("BaseFont");
@@ -41723,7 +41792,7 @@ class FontFinder {
     if (font) {
       return font;
     }
-    const pattern = /,|-|_| |bolditalic|bold|italic|regular|it/gi;
+    const pattern = /[,\-_ ]|bolditalic|bold|italic|regular|it/gi;
     let name = fontName.replaceAll(pattern, "");
     font = this.fonts.get(name);
     if (font) {
@@ -49903,7 +49972,7 @@ class Rename extends ContentObject {
   }
   [$finalize]() {
     this[$content] = this[$content].trim();
-    if (this[$content].toLowerCase().startsWith("xml") || new RegExp("[\\p{L}_][\\p{L}\\d._\\p{M}-]*", "u").test(this[$content])) {
+    if (this[$content].toLowerCase().startsWith("xml") || /[\p{L}_][\p{L}\d._\p{M}-]*/u.test(this[$content])) {
       warn("XFA - Rename: invalid XFA name");
     }
   }
@@ -51133,7 +51202,7 @@ function mapStyle(styleStr, node, richText) {
     if (key.endsWith("scale")) {
       style.transform = style.transform ? `${style[key]} ${newValue}` : newValue;
     } else {
-      style[key.replaceAll(/-([a-zA-Z])/g, (_, x) => x.toUpperCase())] = newValue;
+      style[key.replaceAll(/-([a-z])/gi, (_, x) => x.toUpperCase())] = newValue;
     }
   }
   if (style.fontFamily) {
@@ -58690,7 +58759,7 @@ class PDFDocument {
         continue;
       }
       let fontFamily = descriptor.get("FontFamily");
-      fontFamily = fontFamily.replaceAll(/[ ]+(\d)/g, "$1");
+      fontFamily = fontFamily.replaceAll(/ +(\d)/g, "$1");
       const fontWeight = descriptor.get("FontWeight");
       const italicAngle = -descriptor.get("ItalicAngle");
       const cssFontInfo = {
@@ -62456,7 +62525,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "6.0.177";
+    const workerVersion = "6.0.195";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }
