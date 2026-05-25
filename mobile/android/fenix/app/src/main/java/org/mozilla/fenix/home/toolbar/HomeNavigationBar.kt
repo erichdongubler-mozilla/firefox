@@ -72,10 +72,6 @@ class HomeNavigationBar(
         }
     }
 
-    override fun updateDividerVisibility(isVisible: Boolean) {
-        // no-op
-    }
-
     override fun updateButtonVisibility(browserState: BrowserState) {
         // no-op
     }

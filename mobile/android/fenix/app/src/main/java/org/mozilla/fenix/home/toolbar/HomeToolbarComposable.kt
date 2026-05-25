@@ -191,11 +191,6 @@ internal class HomeToolbarComposable(
         updateAddressBarVisibility(!middleSearchEnabled)
     }
 
-    override fun updateDividerVisibility(isVisible: Boolean) {
-        // no-op
-        // For the toolbar redesign we will always show the toolbar divider
-    }
-
     override fun updateButtonVisibility(
         browserState: BrowserState,
     ) {

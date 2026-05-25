@@ -26,13 +26,6 @@ interface FenixHomeToolbar {
     fun build(browserState: BrowserState, middleSearchEnabled: Boolean)
 
     /**
-     * Configure the toolbar top/bottom divider
-     *
-     * @param isVisible Whether the divider should be visible or not.
-     */
-    fun updateDividerVisibility(isVisible: Boolean)
-
-    /**
      * Updates the visibility of the tab counter and menu buttons.
      *
      * @param browserState [BrowserState] is used to update tab counter's state.
