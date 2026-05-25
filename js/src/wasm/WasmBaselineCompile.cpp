@@ -320,7 +320,7 @@ void BaseCompiler::jumpTable(const LabelVector& labels, Label* theTable) {
   // constant pool entries.
   masm.flush();
 
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64)
+#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_RISCV64)
   // Prevent nop sequences to appear in the jump table.
   AutoForbidNops afn(&masm);
 #endif

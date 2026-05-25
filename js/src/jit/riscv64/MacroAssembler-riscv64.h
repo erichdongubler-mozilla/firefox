@@ -716,9 +716,10 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   }
 
   void writeCodePointer(CodeLabel* label) {
+    m_buffer.assertNoPoolAndNoNops();
+
     label->patchAt()->bind(currentOffset());
     label->setLinkMode(CodeLabel::RawPointer);
-    m_buffer.ensureSpace(sizeof(void*));
     emit(uint32_t(-1));
     emit(uint32_t(-1));
   }
