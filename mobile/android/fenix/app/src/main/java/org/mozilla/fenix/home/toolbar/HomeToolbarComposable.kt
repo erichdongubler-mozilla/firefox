@@ -186,7 +186,7 @@ internal class HomeToolbarComposable(
         translationZ = context.resources.getDimension(R.dimen.browser_fragment_above_toolbar_panels_elevation)
     }
 
-    override fun build(browserState: BrowserState, middleSearchEnabled: Boolean) {
+    override fun build(middleSearchEnabled: Boolean) {
         configureStartingInSearchMode()
         updateAddressBarVisibility(!middleSearchEnabled)
     }

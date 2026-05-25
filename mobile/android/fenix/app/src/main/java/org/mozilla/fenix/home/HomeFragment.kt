@@ -495,7 +495,7 @@ class HomeFragment : Fragment() {
             )
         }
 
-        toolbarView.build(requireComponents.core.store.state, requireContext().settings().enableHomepageSearchBar)
+        toolbarView.build(requireContext().settings().enableHomepageSearchBar)
 
         requireComponents.appStore.state.wasLastTabClosedPrivate?.also {
             showUndoSnackbar(requireContext().tabClosedUndoMessage(it))

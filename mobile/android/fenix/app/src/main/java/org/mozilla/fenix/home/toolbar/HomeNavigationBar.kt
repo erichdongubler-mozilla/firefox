@@ -80,7 +80,7 @@ class HomeNavigationBar(
         // no-op
     }
 
-    override fun build(browserState: BrowserState, middleSearchEnabled: Boolean) {
+    override fun build(middleSearchEnabled: Boolean) {
         // no-op
     }
 }
