@@ -4919,10 +4919,6 @@ void MacroAssemblerRiscv64::ma_mulPtrTestOverflow(Register rd, Register rj,
   ma_b(scratch, Register(scratch2), overflow, Assembler::NotEqual);
 }
 
-int32_t MacroAssemblerRiscv64::GetOffset(Label* L, OffsetSize bits) {
-  return branchOffsetHelper(L, bits);
-}
-
 bool MacroAssemblerRiscv64::CalculateOffset(Label* L, OffsetSize bits,
                                             int32_t* offset) {
   if (L->bound() && !isNear(L, bits)) {
