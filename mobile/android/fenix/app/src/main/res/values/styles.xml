@@ -311,7 +311,6 @@
         <item name="searchViewStyle">@style/SearchViewStyle</item>
         <item name="android:textColorLink">@color/fx_mobile_private_tertiary</item>
         <item name="preferenceTheme">@style/PreferenceTheme</item>
-        <item name="checkboxStyle">@style/App.Widget.CompoundButton.CheckBox</item>
         <item name="autoCompleteTextViewStyle">@style/AutoCompleteTextViewStyle</item>
         <item name="android:windowContentTransitions">true</item>
         <item name="android:windowAnimationStyle">@style/WindowAnimationTransition</item>
@@ -468,10 +467,6 @@
         <item name="mozac_ic_shield_slash_fill_critical">?attr/colorError</item>
 
         <item name="tabCounterTintColor">?attr/colorOnSurface</item>
-    </style>
-
-    <style name="App.Widget.CompoundButton.CheckBox" parent="Widget.Material3.CompoundButton.CheckBox">
-        <item name="buttonTint">@color/checkbox_tint</item>
     </style>
 
     <style name="Mozac.Browser.Menu" parent="" tools:ignore="UnusedResources">
