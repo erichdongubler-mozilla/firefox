@@ -870,7 +870,7 @@ void CodeGenerator::visitDivI(LDivI* ins) {
       Label notzero;
       masm.ma_b(rhs, rhs, &notzero, Assembler::NonZero, ShortJump);
       masm.move32(Imm32(0), dest);
-      masm.ma_branch(&done, ShortJump);
+      masm.jump(&done);
       masm.bind(&notzero);
     } else {
       MOZ_ASSERT(mir->fallible());
@@ -997,7 +997,7 @@ void CodeGenerator::visitModI(LModI* ins) {
       Label yNonZero;
       masm.ma_b(rhs, Imm32(0), &yNonZero, Assembler::NotEqual, ShortJump);
       masm.move32(Imm32(0), dest);
-      masm.ma_branch(&done, ShortJump);
+      masm.jump(&done);
       masm.bind(&yNonZero);
     } else {
       // Non-truncated division by zero produces a non-integer.
@@ -1032,7 +1032,7 @@ void CodeGenerator::visitModPowTwoI(LModPowTwoI* ins) {
   masm.ma_b(in, in, &negative, Assembler::Signed, ShortJump);
   {
     masm.ma_and(out, in, Imm32((1 << ins->shift()) - 1));
-    masm.ma_branch(&done, ShortJump);
+    masm.jump(&done);
   }
 
   // Negative numbers need a negate, bitmask, negate
@@ -1322,7 +1322,7 @@ void CodeGenerator::visitPowHalfD(LPowHalfD* ins) {
                      &skip, ShortJump);
   {
     masm.fneg_d(output, fpscratch);
-    masm.ma_branch(&done, ShortJump);
+    masm.jump(&done);
   }
   masm.bind(&skip);
 
@@ -1668,7 +1668,7 @@ void CodeGenerator::visitAsmJSLoadHeap(LAsmJSLoadHeap* ins) {
                  static_cast<LoadStoreSize>(size),
                  isSigned ? SignExtend : ZeroExtend);
   }
-  masm.ma_branch(&done, ShortJump);
+  masm.jump(&done);
   masm.bind(&outOfRange);
   // Offset is out of range. Load default values.
   if (isFloat) {
@@ -1940,7 +1940,7 @@ void CodeGenerator::visitUDiv(LUDiv* ins) {
       Label nonZero;
       masm.ma_b(rhs, rhs, &nonZero, Assembler::NonZero, ShortJump);
       masm.move32(Imm32(0), output);
-      masm.ma_branch(&done, ShortJump);
+      masm.jump(&done);
       masm.bind(&nonZero);
     } else {
       bailoutCmp32(Assembler::Equal, rhs, Imm32(0), ins->snapshot());
@@ -1990,7 +1990,7 @@ void CodeGenerator::visitUMod(LUMod* ins) {
       Label nonZero;
       masm.ma_b(rhs, rhs, &nonZero, Assembler::NonZero, ShortJump);
       masm.move32(Imm32(0), output);
-      masm.ma_branch(&done, ShortJump);
+      masm.jump(&done);
       masm.bind(&nonZero);
     } else {
       bailoutCmp32(Assembler::Equal, rhs, Imm32(0), ins->snapshot());

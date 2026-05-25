@@ -257,13 +257,15 @@ class MacroAssemblerRiscv64 : public Assembler {
     ma_b(scratch, rhs, l, c, jumpKind);
   }
 
+ private:
   void ma_branch(Label* target, Condition cond, Register r1, const Operand& r2,
-                 JumpKind jumpKind = ShortJump);
+                 JumpKind jumpKind);
 
-  void ma_branch(Label* target, JumpKind jumpKind = ShortJump) {
+  void ma_branch(Label* target, JumpKind jumpKind) {
     ma_branch(target, Always, zero, Operand(zero), jumpKind);
   }
 
+ public:
   // fp instructions
   void ma_lid(FloatRegister dest, double value);
   void ma_lis(FloatRegister dest, float value);
@@ -333,7 +335,7 @@ class MacroAssemblerRiscv64 : public Assembler {
 
   BufferOffset ma_jump(ImmPtr dest);
 
-  void jump(Label* label) { ma_branch(label); }
+  void jump(Label* label) { ma_branch(label, ShortJump); }
   void jump(Register reg) { jr(reg); }
 
   void ma_cmp_set(Register dst, Register lhs, Register rhs, Condition c);
@@ -589,7 +591,7 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
     }
   }
 
-  void j(Label* dest) { ma_branch(dest); }
+  void j(Label* dest) { jump(dest); }
 
   void mov(Register src, Register dest) { mv(dest, src); }
   void mov(ImmWord imm, Register dest) { ma_li(dest, imm); }
@@ -698,8 +700,8 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
     emit(uint32_t(-1));
   }
 
-  void jump(Label* label) { ma_branch(label); }
-  void jump(Register reg) { jr(reg); }
+  void jump(Label* label) { MacroAssemblerRiscv64::jump(label); }
+  void jump(Register reg) { MacroAssemblerRiscv64::jump(reg); }
   void jump(const Address& address) {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
@@ -730,17 +732,18 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
 
   void moveIfZero(Register dst, Register src, Register cond) {
     Label done;
-    ma_branch(&done, NotEqual, cond, Operand(zero));
+    ma_b(cond, cond, &done, NonZero, ShortJump);
     mv(dst, src);
     bind(&done);
   }
 
   void moveIfNotZero(Register dst, Register src, Register cond) {
     Label done;
-    ma_branch(&done, Equal, cond, Operand(zero));
+    ma_b(cond, cond, &done, Zero, ShortJump);
     mv(dst, src);
     bind(&done);
   }
+
   // unboxing code
   void unboxNonDouble(const ValueOperand& operand, Register dest,
                       JSValueType type) {

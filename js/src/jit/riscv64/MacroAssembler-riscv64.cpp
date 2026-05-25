@@ -770,8 +770,8 @@ void MacroAssemblerRiscv64::RoundHelper(FPURegister dst, FPURegister src,
   // they also satisfy (scratch2 - kFloatExponentBias >= kFloatMantissaBits),
   // and JS round semantics specify that rounding of NaN (Infinity) returns NaN
   // (Infinity), so NaN and Infinity are considered rounded value too.
-  ma_branch(&done, GreaterThanOrEqual, scratch2,
-            Operand(kFloatExponentBias + kFloatMantissaBits));
+  ma_b(scratch2, Imm32(kFloatExponentBias + kFloatMantissaBits), &done,
+       GreaterThanOrEqual, ShortJump);
 
   // Actual rounding is needed along this path
 
@@ -1902,7 +1902,7 @@ void MacroAssemblerRiscv64Compat::unboxValue(const ValueOperand& operand,
     Label notInt32, end;
     asMasm().branchTestInt32(Assembler::NotEqual, operand, &notInt32);
     convertInt32ToDouble(operand.valueReg(), dest.fpu());
-    ma_branch(&end);
+    jump(&end);
     bind(&notInt32);
     unboxDouble(operand, dest.fpu());
     bind(&end);
@@ -2094,7 +2094,7 @@ void MacroAssemblerRiscv64Compat::loadInt32OrDouble(const Address& src,
     // If it's an int, convert it to double.
     unboxInt32(src, scratch);
     convertInt32ToDouble(scratch, dest);
-    ma_branch(&end);
+    jump(&end);
   }
   bind(&notInt32);
   {
@@ -4105,7 +4105,7 @@ void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
   {
     // Round, ties away from zero.
     RoundMaxMag_l_s(dest, src);
-    ma_branch(&done);
+    jump(&done);
   }
 
   // Handle the complicated case of a negative input.
@@ -4167,7 +4167,7 @@ void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
   {
     // Round, ties away from zero.
     RoundMaxMag_l_d(dest, src);
-    ma_branch(&done);
+    jump(&done);
   }
 
   // Handle the complicated case of a negative input.
@@ -5937,28 +5937,28 @@ void MacroAssemblerRiscv64::Clz32(Register rd, Register rs) {
   mv(x, rs);
   ma_li(n, Imm32(32));
   srliw(y, x, 16);
-  ma_branch(&L0, Equal, y, Operand(zero_reg));
+  ma_b(y, y, &L0, Zero, ShortJump);
   mv(x, y);
   addiw(n, n, -16);
   bind(&L0);
   srliw(y, x, 8);
-  ma_branch(&L1, Equal, y, Operand(zero_reg));
+  ma_b(y, y, &L1, Zero, ShortJump);
   addiw(n, n, -8);
   mv(x, y);
   bind(&L1);
   srliw(y, x, 4);
-  ma_branch(&L2, Equal, y, Operand(zero_reg));
+  ma_b(y, y, &L2, Zero, ShortJump);
   addiw(n, n, -4);
   mv(x, y);
   bind(&L2);
   srliw(y, x, 2);
-  ma_branch(&L3, Equal, y, Operand(zero_reg));
+  ma_b(y, y, &L3, Zero, ShortJump);
   addiw(n, n, -2);
   mv(x, y);
   bind(&L3);
   srliw(y, x, 1);
   subw(rd, n, x);
-  ma_branch(&L4, Equal, y, Operand(zero_reg));
+  ma_b(y, y, &L4, Zero, ShortJump);
   addiw(rd, n, -2);
   bind(&L4);
 }
@@ -5990,33 +5990,33 @@ void MacroAssemblerRiscv64::Clz64(Register rd, Register rs) {
   mv(x, rs);
   ma_li(n, Imm32(64));
   srli(y, x, 32);
-  ma_branch(&L0, Equal, y, Operand(zero_reg));
+  ma_b(y, y, &L0, Zero, ShortJump);
   addiw(n, n, -32);
   mv(x, y);
   bind(&L0);
   srli(y, x, 16);
-  ma_branch(&L1, Equal, y, Operand(zero_reg));
+  ma_b(y, y, &L1, Zero, ShortJump);
   addiw(n, n, -16);
   mv(x, y);
   bind(&L1);
   srli(y, x, 8);
-  ma_branch(&L2, Equal, y, Operand(zero_reg));
+  ma_b(y, y, &L2, Zero, ShortJump);
   addiw(n, n, -8);
   mv(x, y);
   bind(&L2);
   srli(y, x, 4);
-  ma_branch(&L3, Equal, y, Operand(zero_reg));
+  ma_b(y, y, &L3, Zero, ShortJump);
   addiw(n, n, -4);
   mv(x, y);
   bind(&L3);
   srli(y, x, 2);
-  ma_branch(&L4, Equal, y, Operand(zero_reg));
+  ma_b(y, y, &L4, Zero, ShortJump);
   addiw(n, n, -2);
   mv(x, y);
   bind(&L4);
   srli(y, x, 1);
   subw(rd, n, x);
-  ma_branch(&L5, Equal, y, Operand(zero_reg));
+  ma_b(y, y, &L5, Zero, ShortJump);
   addiw(rd, n, -2);
   bind(&L5);
 }
@@ -6205,7 +6205,7 @@ void MacroAssemblerRiscv64::ma_mod_mask(Register src, Register dest,
   // Set the hold appropriately.
   ma_b(remain, remain, &negative, Signed, ShortJump);
   ma_li(hold, Imm32(1));
-  ma_branch(&head, ShortJump);
+  jump(&head);
 
   bind(&negative);
   ma_li(hold, Imm32(-1));
