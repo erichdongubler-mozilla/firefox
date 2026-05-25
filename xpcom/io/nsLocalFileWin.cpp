@@ -779,7 +779,7 @@ static nsresult ReadDir(nsDir* aDir, PRDirFlags aFlags, nsString& aName) {
       rv = ::FindNextFileW(aDir->handle, &(aDir->data));
     }
 
-    if (rv == 0) {
+    if (!rv) {
       break;
     }
 

@@ -267,7 +267,7 @@ nsresult nsGetProperty::operator()(const nsIID& aIID,
     rv = mPropBag->GetPropertyAsInterface(mPropName, aIID, aInstancePtr);
   } else {
     rv = NS_ERROR_NULL_POINTER;
-    *aInstancePtr = 0;
+    *aInstancePtr = nullptr;
   }
 
   if (mErrorPtr) {

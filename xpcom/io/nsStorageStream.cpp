@@ -130,8 +130,8 @@ nsStorageStream::Close() {
     mSegmentedBuffer->ReallocLastSegment(segmentOffset);
   }
 
-  mWriteCursor = 0;
-  mSegmentEnd = 0;
+  mWriteCursor = nullptr;
+  mSegmentEnd = nullptr;
 
   LOG(("nsStorageStream [%p] Close mWriteCursor=%p mSegmentEnd=%p\n", this,
        mWriteCursor, mSegmentEnd));
@@ -199,7 +199,7 @@ nsStorageStream::Write(const char* aBuffer, uint32_t aCount,
     if (!availableInSegment) {
       mWriteCursor = mSegmentedBuffer->AppendNewSegment();
       if (!mWriteCursor) {
-        mSegmentEnd = 0;
+        mSegmentEnd = nullptr;
         return NS_ERROR_OUT_OF_MEMORY;
       }
       mLastSegmentNum++;
@@ -326,8 +326,8 @@ nsresult nsStorageStream::Seek(int32_t aPosition) {
 
   // Special handling for seek to start-of-buffer
   if (aPosition == 0) {
-    mWriteCursor = 0;
-    mSegmentEnd = 0;
+    mWriteCursor = nullptr;
+    mSegmentEnd = nullptr;
     LOG(("nsStorageStream [%p] Seek mWriteCursor=%p mSegmentEnd=%p\n", this,
          mWriteCursor, mSegmentEnd));
     return NS_OK;
