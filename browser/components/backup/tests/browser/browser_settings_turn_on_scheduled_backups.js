@@ -79,15 +79,6 @@ add_task(async function test_turn_on_scheduled_backups_confirm() {
     );
     Assert.ok(scheduledPrefVal, "Scheduled backups pref should be true");
 
-    let legacyEvents = TelemetryTestUtils.getEvents(
-      {
-        category: "browser.backup",
-        method: "toggle_on",
-        object: "BackupService",
-      },
-      { process: "parent" }
-    );
-    Assert.equal(legacyEvents.length, 1, "Found the toggle_on legacy event.");
     let events = Glean.browserBackup.toggleOn.testGetValue();
     Assert.equal(events.length, 1, "Found the toggleOn Glean event.");
 
@@ -212,31 +203,9 @@ add_task(async function test_turn_on_custom_location_filepicker() {
       recursive: true,
     });
 
-    let legacyEvents = TelemetryTestUtils.getEvents(
-      {
-        category: "browser.backup",
-        method: "toggle_on",
-        object: "BackupService",
-      },
-      { process: "parent" }
-    );
-    Assert.equal(legacyEvents.length, 1, "Found the toggle_on legacy event.");
     let events = Glean.browserBackup.toggleOn.testGetValue();
     Assert.equal(events.length, 1, "Found the toggleOn Glean event.");
 
-    legacyEvents = TelemetryTestUtils.getEvents(
-      {
-        category: "browser.backup",
-        method: "change_location",
-        object: "BackupService",
-      },
-      { process: "parent" }
-    );
-    Assert.equal(
-      legacyEvents.length,
-      1,
-      "Found the change_location legacy event."
-    );
     events = Glean.browserBackup.changeLocation.testGetValue();
     Assert.equal(events.length, 1, "Found the changeLocation Glean event.");
 
@@ -321,31 +290,9 @@ add_task(async function test_turn_on_scheduled_backups_encryption() {
       "BackupService was called to enable encryption and received the expected argument"
     );
 
-    let legacyEvents = TelemetryTestUtils.getEvents(
-      {
-        category: "browser.backup",
-        method: "toggle_on",
-        object: "BackupService",
-      },
-      { process: "parent" }
-    );
-    Assert.equal(legacyEvents.length, 1, "Found the toggle_on legacy event.");
     let events = Glean.browserBackup.toggleOn.testGetValue();
     Assert.equal(events.length, 1, "Found the toggleOn Glean event.");
 
-    legacyEvents = TelemetryTestUtils.getEvents(
-      {
-        category: "browser.backup",
-        method: "password_added",
-        object: "BackupService",
-      },
-      { process: "parent" }
-    );
-    Assert.equal(
-      legacyEvents.length,
-      1,
-      "Found the password_added legacy event."
-    );
     events = Glean.browserBackup.passwordAdded.testGetValue();
     Assert.equal(events.length, 1, "Found the passwordAdded Glean event.");
 

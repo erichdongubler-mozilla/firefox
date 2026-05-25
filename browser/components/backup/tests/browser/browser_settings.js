@@ -175,19 +175,6 @@ add_task(async function test_disable_backup_encryption_confirm() {
       "Backup reason is set"
     );
 
-    let legacyEvents = TelemetryTestUtils.getEvents(
-      {
-        category: "browser.backup",
-        method: "password_removed",
-        object: "BackupService",
-      },
-      { process: "parent" }
-    );
-    Assert.equal(
-      legacyEvents.length,
-      1,
-      "Found the password_removed legacy event."
-    );
     let events = Glean.browserBackup.passwordRemoved.testGetValue();
     Assert.equal(events.length, 1, "Found the passwordRemoved Glean event.");
 
