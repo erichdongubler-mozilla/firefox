@@ -1,6 +1,6 @@
 "use strict";
 
-/** @import {OptInEntry} from "../../lib/ExperimentManager.sys.mjs" */
+/** @import {ExperimentManager, OptInEntry} from "../../lib/ExperimentManager.sys.mjs" */
 
 /* import-globals-from ../../../../../toolkit/profile/test/xpcshell/head.js */
 /* import-globals-from ../../../../../browser/components/profiles/tests/unit/head.js */
@@ -108,5 +108,28 @@ function orderByRecipePublishedDate(a, b) {
   return (
     new Date(a.recipe.publishedDate ?? 0) -
     new Date(b.recipe.publishedDate ?? 0)
+  );
+}
+
+/**
+ * Assert the contents of the ExperimentManager's opt-in list, based on slugs
+ * instead of entire recipe contents.
+ *
+ * @param {ExperimentManager} manager
+ * The manager to test.
+ *
+ * @param {[string, string][]} optIns
+ * An array containing 2-tuples of slugs and sources.
+ *
+ * @param {string} message
+ * An option message to include in the assertion.
+ */
+function assertOptInSlugs(manager, optIns, message = undefined) {
+  Assert.deepEqual(
+    manager.optIns
+      .map(entry => [entry.recipe.slug, entry.source])
+      .sort((a, b) => a[0].localeCompare(b[0])),
+    optIns.toSorted((a, b) => a[0].localeCompare(b[0])),
+    message
   );
 }

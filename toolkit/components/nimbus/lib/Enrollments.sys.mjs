@@ -101,7 +101,7 @@ export class PendingWrites {
     //
     // We explicitly check for the presence of the value, not the key, in case
     // this is a re-enrollment following an unenrollment.
-    if (!this.enrollments.get(slug)) {
+    if (!this.enrollments.has(slug) || recipe) {
       this.enrollments.set(slug, recipe);
     }
   }

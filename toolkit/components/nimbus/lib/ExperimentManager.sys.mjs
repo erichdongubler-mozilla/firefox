@@ -893,6 +893,7 @@ export class ExperimentManager {
               )
             );
           }
+          break;
       }
     }
 
@@ -900,11 +901,40 @@ export class ExperimentManager {
     optInRecipe.userFacingName = `${recipe.userFacingName} - Forced enrollment`;
     optInRecipe.slug = `optin-${recipe.slug}`;
 
+    // If there is an existing active enrollment with this slug, we must
+    // unenroll from it first, otherwise _enroll() will overwrite it without
+    // going through the appropriate flow (e.g., updating the enrollment store
+    // and triggering update callbacks).
+    const existingEnrollment = await this.store.get(optInRecipe.slug);
+    if (existingEnrollment?.active) {
+      // We need only unenroll -- when we call _enroll() below, we will
+      // overwrite the existing enrollment.
+      this.unenroll(
+        optInRecipe.slug,
+        UnenrollmentCause.fromReason(
+          lazy.NimbusTelemetry.UnenrollReason.FORCE_ENROLLMENT
+        )
+      );
+    }
+
+    // If there is an existing Firefox Labs entry for a recipe with this slug,
+    // we must remove it because we are replacing the enrollment.
+    this.unregisterOptIn(optInRecipe.slug);
+
     const enrollment = await this._enroll(
       optInRecipe,
       branch.slug,
       lazy.NimbusTelemetry.EnrollmentSource.FORCE_ENROLLMENT
     );
+
+    // The entry must be registered *after* enrollment so that the new
+    // enrollment lines up correctly with the recipe.
+    if (optInRecipe.isFirefoxLabsOptIn) {
+      this.registerOptIn(
+        optInRecipe,
+        lazy.NimbusTelemetry.EnrollmentSource.FORCE_ENROLLMENT
+      );
+    }
 
     Services.obs.notifyObservers(
       null,
@@ -1949,17 +1979,20 @@ export class ExperimentManager {
    * @returns {boolean} True if the opt-in was registered or false if there was a conflict.
    */
   registerOptIn(recipe, source) {
+    if (!recipe.isFirefoxLabsOptIn) {
+      return false;
+    }
+
     if (this.optIns.find(entry => entry.recipe.slug === recipe.slug)) {
       return false;
     }
 
+    // Prevent enrollment if there is an existing enrollment that either does
+    // not match the source or is not a Firefox Labs opt-in.
     const enrollment = this.store.get(recipe.slug);
     if (
       enrollment &&
-      (enrollment.source !== source ||
-        !enrollment.isFirefoxLabsOptIn ||
-        (enrollment.active &&
-          source !== lazy.NimbusTelemetry.EnrollmentSource.RS_LOADER))
+      (enrollment.source !== source || !enrollment.isFirefoxLabsOptIn)
     ) {
       return false;
     }
@@ -1971,7 +2004,8 @@ export class ExperimentManager {
   /**
    * Unregister an opt-in recipe from a source.
    *
-   * NB: This is only intended to be used by nimbus-devtools.
+   * NB: This is only intended to be used during force enrollment or by
+   * nimbus-devtools.
    *
    * @param {string} slug The slug of the recipe to remove.
    *
