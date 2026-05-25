@@ -1243,6 +1243,28 @@ browsertime-webcodecs:
             default: 3
     treeherder-symbol: Btime(webcodecs)
 
+browsertime-speculation-rules:
+    raptor:
+        apps: [firefox, chrome]
+        run-visual-metrics: true
+        subtests: [prefetch]
+    description: Raptor (browsertime) Speculation Rules prefetch pageload test
+    limit-platforms:
+        by-app:
+            chrome:
+                - linux.*shippable.*
+            default: []
+    max-run-time: 420
+    run-on-projects:
+        by-test-platform:
+            .*64.*shippable.*: [autoland]
+            default: []
+    tier:
+        by-app:
+            firefox: 2
+            default: 3
+    treeherder-symbol: Btime(specrules)
+
 browsertime-speculative:
     raptor:
         apps: [firefox]
