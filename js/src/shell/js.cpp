@@ -13026,7 +13026,7 @@ bool InitOptionParser(OptionParser& op) {
           '\0', "no-sse42",
           "Pretend CPU does not support SSE4.2 instructions "
           "to test JIT codegen (no-op on platforms other than x86 and x64).") ||
-#ifdef ENABLE_JIT_AVX
+#ifdef ENABLE_WASM_AVX
       !op.addBoolOption('\0', "enable-avx",
                         "No-op. AVX is enabled by default, if available.") ||
       !op.addBoolOption(

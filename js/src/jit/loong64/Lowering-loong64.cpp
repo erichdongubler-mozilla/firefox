@@ -933,7 +933,7 @@ void LIRGenerator::visitWasmBinarySimd128(MWasmBinarySimd128* ins) {
   MOZ_CRASH("binary SIMD NYI");
 }
 
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
 bool MWasmTernarySimd128::specializeBitselectConstantMaskAsShuffle(
     int8_t shuffle[16]) {
   return false;

@@ -539,7 +539,7 @@ class StorageTypeTraits {
       case TypeCode::I64:
       case TypeCode::F32:
       case TypeCode::F64:
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
       case TypeCode::V128:
 #endif
       case TypeCode::FuncRef:
@@ -589,7 +589,7 @@ class StorageTypeTraits {
 
   static bool isVectorTypeCode(TypeCode tc) {
     switch (tc) {
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
       case TypeCode::V128:
         return true;
 #endif
@@ -634,7 +634,7 @@ class ValTypeTraits {
       case TypeCode::I64:
       case TypeCode::F32:
       case TypeCode::F64:
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
       case TypeCode::V128:
 #endif
       case TypeCode::FuncRef:
@@ -676,7 +676,7 @@ class ValTypeTraits {
 
   static bool isVectorTypeCode(TypeCode tc) {
     switch (tc) {
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
       case TypeCode::V128:
         return true;
 #endif
@@ -851,7 +851,7 @@ class PackedType : public T {
 
   // Returns whether the type has a representation in JS.
   bool isExposable() const {
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
     if (kind() == Kind::V128) {
       return false;
     }

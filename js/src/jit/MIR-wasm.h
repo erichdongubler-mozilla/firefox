@@ -77,7 +77,7 @@ class MWasmFloatConstant : public MNullaryInstruction {
   union {
     float f32_;
     double f64_;
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
     int8_t s128_[16];
     uint64_t bits_[2];
 #else
@@ -87,7 +87,7 @@ class MWasmFloatConstant : public MNullaryInstruction {
 
   explicit MWasmFloatConstant(MIRType type) : MNullaryInstruction(classOpcode) {
     u.bits_[0] = 0;
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
     u.bits_[1] = 0;
 #endif
     setResultType(type);
@@ -108,7 +108,7 @@ class MWasmFloatConstant : public MNullaryInstruction {
     return ret;
   }
 
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
   static MWasmFloatConstant* NewSimd128(TempAllocator& alloc,
                                         const SimdConstant& s) {
     auto* ret = new (alloc) MWasmFloatConstant(MIRType::Simd128);
@@ -129,7 +129,7 @@ class MWasmFloatConstant : public MNullaryInstruction {
     MOZ_ASSERT(type() == MIRType::Float32);
     return u.f32_;
   }
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
   const SimdConstant toSimd128() const {
     MOZ_ASSERT(type() == MIRType::Simd128);
     return SimdConstant::CreateX16(u.s128_);
@@ -145,7 +145,7 @@ class MWasmFloatConstant : public MNullaryInstruction {
       case MIRType::Double:
         SprintfLiteral(buf, "f64{%e}", u.f64_);
         break;
-#  ifdef ENABLE_JIT_SIMD
+#  ifdef ENABLE_WASM_SIMD
       case MIRType::Simd128:
         SprintfLiteral(buf, "v128{[1]=%016llx:[0]=%016llx}",
                        (unsigned long long int)u.bits_[1],
@@ -2350,7 +2350,7 @@ class MWasmTernarySimd128 : public MTernaryInstruction,
     return congruentIfOperandsEqual(ins) &&
            simdOp() == ins->toWasmTernarySimd128()->simdOp();
   }
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
   MDefinition* foldsTo(TempAllocator& alloc) override;
 
   // If the control mask of a bitselect allows the operation to be specialized
@@ -2392,7 +2392,7 @@ class MWasmBinarySimd128 : public MBinaryInstruction,
     return congruentIfOperandsEqual(ins) &&
            ins->toWasmBinarySimd128()->simdOp() == simdOp_;
   }
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
   MDefinition* foldsTo(TempAllocator& alloc) override;
 
   // Checks if pmaddubsw operation is supported.
@@ -2490,7 +2490,7 @@ class MWasmScalarToSimd128 : public MUnaryInstruction,
     return congruentIfOperandsEqual(ins) &&
            ins->toWasmScalarToSimd128()->simdOp() == simdOp_;
   }
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
   MDefinition* foldsTo(TempAllocator& alloc) override;
 #endif
 
@@ -2521,7 +2521,7 @@ class MWasmReduceSimd128 : public MUnaryInstruction, public NoTypePolicy::Data {
            ins->toWasmReduceSimd128()->simdOp() == simdOp_ &&
            ins->toWasmReduceSimd128()->imm() == imm_;
   }
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
   MDefinition* foldsTo(TempAllocator& alloc) override;
 #endif
 
@@ -3576,12 +3576,12 @@ class MWasmMulI64WideHI64 : public MBinaryInstruction,
 
 #undef INSTRUCTION_HEADER
 
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
 MWasmShuffleSimd128* BuildWasmShuffleSimd128(TempAllocator& alloc,
                                              const int8_t* control,
                                              MDefinition* lhs,
                                              MDefinition* rhs);
-#endif  // ENABLE_JIT_SIMD
+#endif  // ENABLE_WASM_SIMD
 
 }  // namespace jit
 }  // namespace js

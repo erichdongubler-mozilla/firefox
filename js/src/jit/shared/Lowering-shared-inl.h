@@ -292,7 +292,7 @@ void LIRGeneratorShared::defineReturn(LInstruction* lir, MDefinition* mir) {
                                  LFloatReg(ReturnDoubleReg)));
       break;
     case MIRType::Simd128:
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
       lir->setDef(0, LDefinition(vreg, LDefinition::SIMD128,
                                  LFloatReg(ReturnSimd128Reg)));
       break;
@@ -653,7 +653,7 @@ LDefinition LIRGeneratorShared::tempDouble() {
   return temp(LDefinition::DOUBLE);
 }
 
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
 LDefinition LIRGeneratorShared::tempSimd128() {
   return temp(LDefinition::SIMD128);
 }

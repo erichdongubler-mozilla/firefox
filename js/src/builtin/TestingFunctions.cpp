@@ -1074,7 +1074,7 @@ static bool GetWasmSupportedFeatures(JSContext* cx, unsigned argc, Value* vp) {
   JS_FOR_WASM_FEATURES(WASM_FEATURE);
 #undef WASM_FEATURE
 
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
   value.setBoolean(true);
 #else
   value.setBoolean(false);
@@ -1239,7 +1239,7 @@ static bool WasmIonDisabledByFeatures(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
 #  ifdef DEBUG
 static char lastAnalysisResult[1024];
 
@@ -10861,7 +10861,7 @@ JS_FOR_WASM_FEATURES(WASM_FEATURE)
 "  Returns a boolean indicating whether WebAssembly SIMD proposal is\n"
 "  supported by the current device."),
 
-#if defined(ENABLE_JIT_SIMD) && defined(DEBUG)
+#if defined(ENABLE_WASM_SIMD) && defined(DEBUG)
     JS_FN_HELP("wasmSimdAnalysis", WasmSimdAnalysis, 1, 0,
 "wasmSimdAnalysis(...)",
 "  Unstable API for white-box testing.\n"),

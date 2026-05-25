@@ -774,7 +774,7 @@ bool LMoveGroup::add(LAllocation from, LAllocation to, LDefinition::Type type) {
 
   // Check that SIMD moves are aligned according to ABI requirements.
   // clang-format off
-# ifdef ENABLE_JIT_SIMD
+# ifdef ENABLE_WASM_SIMD
     // Alignment is not currently required for SIMD on x86/x64/arm64.  See also
     // CodeGeneratorShared::CodeGeneratorShared and in general everywhere
     // SimdMemoryAignment is used.  Likely, alignment requirements will return.

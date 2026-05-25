@@ -310,7 +310,7 @@ void MacroAssemblerX86Shared::minMaxFloat32(FloatRegister first,
   bind(&done);
 }
 
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
 bool MacroAssembler::MustMaskShiftCountSimd128(wasm::SimdOp op, int32_t* mask) {
   switch (op) {
     case wasm::SimdOp::I8x16Shl:

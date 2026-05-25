@@ -90,7 +90,7 @@ static constexpr Register64 ReturnReg64(ReturnReg);
 static constexpr FloatRegister ReturnFloat32Reg{FloatRegisters::fa0,
                                                 FloatRegisters::Single};
 static constexpr FloatRegister ReturnDoubleReg{FloatRegisters::fa0};
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
 static constexpr FloatRegister ReturnSimd128Reg{FloatRegisters::invalid_reg};
 static constexpr FloatRegister ScratchSimd128Reg{FloatRegisters::invalid_reg};
 #endif

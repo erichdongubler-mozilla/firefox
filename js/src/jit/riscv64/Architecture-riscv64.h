@@ -439,7 +439,7 @@ struct FloatRegister {
       const TypedRegisterSet<FloatRegister>& s);
 
   uint32_t getRegisterDumpOffsetInBytes() {
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
 #  error "Needs more careful logic if SIMD is enabled"
 #endif
 

@@ -1296,7 +1296,7 @@ bool wasm::ValidateOps(ValidatingOpIter& iter, T& dumper,
         break;
       }
 
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
       case uint16_t(Op::SimdPrefix): {
         if (!codeMeta.simdAvailable()) {
           return iter.unrecognizedOpcode(&op);
@@ -1908,7 +1908,7 @@ bool wasm::ValidateOps(ValidatingOpIter& iter, T& dumper,
         }
         break;
       }
-#endif  // ENABLE_JIT_SIMD
+#endif  // ENABLE_WASM_SIMD
 
       case uint16_t(Op::MiscPrefix): {
         switch (op.b1) {

@@ -149,9 +149,6 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
 
   void LoadCurrentCharacterUnchecked(int cp_offset, int characters);
 
-  void EmitSkipUntilBitInTableSimd(int cp_offset, ByteArrayData* nibble_table,
-                                   Label* on_match);
-
   void JumpOrBacktrack(Label* to);
 
   // MacroAssembler methods that take a Label can be called with a

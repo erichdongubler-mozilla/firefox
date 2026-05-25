@@ -391,7 +391,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void Push(RegisterOrSP reg);
 #endif
 
-#ifdef ENABLE_JIT_SIMD
+#ifdef ENABLE_WASM_SIMD
   // `op` should be a shift operation. Return true if a variable-width shift
   // operation on this architecture should pre-mask the shift count, and if so,
   // return the mask in `*mask`.
