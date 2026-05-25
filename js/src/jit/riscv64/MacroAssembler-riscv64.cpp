@@ -5077,31 +5077,16 @@ bool MacroAssemblerRiscv64::BranchShortHelper(int32_t offset, Label* L,
   return true;
 }
 
-// BRANCH_ARGS_CHECK checks that conditional jump arguments are correct.
-#define BRANCH_ARGS_CHECK(cond, rs, rt)                                 \
-  MOZ_ASSERT(((cond) == Always && (rs) == zero && (rt).rm() == zero) || \
-             ((cond) != Always && ((rs) != zero || (rt).rm() != zero)))
-
-bool MacroAssemblerRiscv64::BranchShortCheck(int32_t offset, Label* L,
-                                             Condition cond, Register rs,
-                                             const Operand& rt) {
-  BRANCH_ARGS_CHECK(cond, rs, rt);
-
-  if (!L) {
-    MOZ_ASSERT(is_int13(offset));
-    return BranchShortHelper(offset, nullptr, cond, rs, rt);
-  }
-  MOZ_ASSERT(offset == 0);
-  return BranchShortHelper(0, L, cond, rs, rt);
-}
-
 BufferOffset MacroAssemblerRiscv64::BranchShort(Label* L) {
   return BranchShortHelper(0, L);
 }
 
 bool MacroAssemblerRiscv64::BranchShort(Label* L, Condition cond, Register rs,
                                         const Operand& rt) {
-  return BranchShortCheck(0, L, cond, rs, rt);
+  MOZ_ASSERT((cond == Always && rs == zero && rt.rm() == zero) ||
+             (cond != Always && (rs != zero || rt.rm() != zero)));
+
+  return BranchShortHelper(0, L, cond, rs, rt);
 }
 
 void MacroAssemblerRiscv64::BranchLong(Label* L) {
