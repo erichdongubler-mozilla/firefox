@@ -342,12 +342,20 @@ class MacroAssemblerRiscv64 : public Assembler {
   void computeScaledAddress(const BaseIndex& address, Register dest);
   void computeScaledAddress32(const BaseIndex& address, Register dest);
 
-  BufferOffset BranchShort(Label* L);
+ private:
+  bool UseShortBranch(Label* L, JumpKind jumpKind, OffsetSize bits);
 
-  [[nodiscard]] bool BranchShort(Label* L, Condition cond, Register rs,
-                                 const Operand& rt);
+  void Branch(Label* L, JumpKind jumpKind);
+  void Branch(Label* L, Condition cond, Register rs, const Operand& rt,
+              JumpKind jumpKind);
+
+  void BranchShort(Label* L, Condition cond, Register rs, Register rt);
   void BranchLong(Label* L);
 
+ protected:
+  BufferOffset BranchShort(Label* L);
+
+ public:
   // Floating point branches
   void BranchFloat32(DoubleCondition cc, FloatRegister frs1, FloatRegister frs2,
                      Label* label, JumpKind jumpKind);

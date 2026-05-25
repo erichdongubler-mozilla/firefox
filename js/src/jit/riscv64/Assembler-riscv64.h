@@ -409,13 +409,6 @@ class Assembler : public AssemblerShared,
   int32_t branchOffsetHelper(Label* L, OffsetSize bits);
   int32_t branchLongOffsetHelper(Label* L);
 
-  // Determines if Label is bound and near enough so that branch instruction
-  // can be used to reach it, instead of jump instruction.
-  bool isNear(Label* L, OffsetSize bits) {
-    MOZ_ASSERT(L->bound());
-    return is_intn(currentOffset() - L->offset(), bits);
-  }
-
   void nopAlign(int m) { m_buffer.align(m); }
 
   virtual BufferOffset emit(Instr x) {

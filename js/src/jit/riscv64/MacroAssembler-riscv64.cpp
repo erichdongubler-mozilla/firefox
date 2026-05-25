@@ -4919,50 +4919,44 @@ void MacroAssemblerRiscv64::ma_mulPtrTestOverflow(Register rd, Register rj,
   ma_b(scratch, Register(scratch2), overflow, Assembler::NotEqual);
 }
 
+bool MacroAssemblerRiscv64::UseShortBranch(Label* L, JumpKind jumpKind,
+                                           OffsetSize bits) {
+  // If the label is already bound, we can directly determine which jump to use.
+  if (L->bound()) {
+    // Call |nextInstrOffset()| instead of just |nextOffset()| to ensure
+    // branches which are about to go out of range are also taken into account
+    // when computing the next instruction offset.
+    int32_t offset = nextInstrOffset(2, 1).getOffset();
+
+    // Use a short branch if the label is near enough.
+    return is_intn(offset - L->offset(), bits);
+  }
+
+  // Otherwise use a short branch if requested.
+  return jumpKind == ShortJump;
+}
+
+void MacroAssemblerRiscv64::Branch(Label* L, JumpKind jumpKind) {
+  if (UseShortBranch(L, jumpKind, OffsetSize::kOffset21)) {
+    BranchShort(L);
+  } else {
+    BranchLong(L);
+  }
+}
+
 BufferOffset MacroAssemblerRiscv64::BranchShort(Label* L) {
   AutoForbidPoolsAndNops afp(this, 2, 1);
+
   int32_t offset = GetOffset(L, OffsetSize::kOffset21);
   BufferOffset bo = nextOffset();
   Assembler::j(offset);
   return bo;
 }
 
-bool MacroAssemblerRiscv64::BranchShort(Label* L, Condition cond, Register rs,
-                                        const Operand& rt) {
-  MOZ_ASSERT(rt.is_reg() || rt.is_imm());
-  MOZ_ASSERT((cond == Always && rs == zero && rt.rm() == zero) ||
-             (cond != Always && (rs != zero || rt.rm() != zero)));
-
-  if (rt.is_reg() && rs == rt.rm()) {
-    switch (cond) {
-      case Always:
-      case Equal:
-      case GreaterThanOrEqual:
-      case LessThanOrEqual:
-      case AboveOrEqual:
-      case BelowOrEqual: {
-        AutoForbidPoolsAndNops afp(this, 2, 1);
-        if (L->bound() && !isNear(L, OffsetSize::kOffset21)) {
-          return false;
-        }
-        int32_t offset = GetOffset(L, OffsetSize::kOffset21);
-
-        Assembler::j(offset);
-        break;
-      }
-
-      case NotEqual:
-      case GreaterThan:
-      case LessThan:
-      case Above:
-      case Below:
-        break;  // No code needs to be emitted
-
-      default:
-        MOZ_CRASH("UNREACHABLE");
-    }
-    return true;
-  }
+void MacroAssemblerRiscv64::Branch(Label* L, Condition cond, Register rs,
+                                   const Operand& rt, JumpKind jumpKind) {
+  MOZ_ASSERT(cond != Always);
+  MOZ_ASSERT_IF(rt.is_reg(), rs != rt.rm());
 
   UseScratchRegisterScope temps(this);
   Register scratch;
@@ -4978,52 +4972,65 @@ bool MacroAssemblerRiscv64::BranchShort(Label* L, Condition cond, Register rs,
     scratch = rt.rm();
   }
 
-  AutoForbidPoolsAndNops afp(this, 2, 1);
-  if (L->bound() && !isNear(L, OffsetSize::kOffset13)) {
-    return false;
+  if (UseShortBranch(L, jumpKind, OffsetSize::kOffset13)) {
+    BranchShort(L, cond, rs, scratch);
+  } else {
+    Label skip;
+    Condition neg_cond = InvertCondition(cond);
+    BranchShort(&skip, neg_cond, rs, scratch);
+    BranchLong(L);
+    bind(&skip);
   }
+}
+
+void MacroAssemblerRiscv64::BranchShort(Label* L, Condition cond, Register rs,
+                                        Register rt) {
+  MOZ_ASSERT(cond != Always);
+  MOZ_ASSERT(rs != rt);
+
+  AutoForbidPoolsAndNops afp(this, 2, 1);
+
   int32_t offset = GetOffset(L, OffsetSize::kOffset13);
 
   switch (cond) {
     case Equal:
-      Assembler::beq(rs, scratch, offset);
+      Assembler::beq(rs, rt, offset);
       break;
     case NotEqual:
-      Assembler::bne(rs, scratch, offset);
+      Assembler::bne(rs, rt, offset);
       break;
 
     // Signed comparison.
     case GreaterThan:
-      Assembler::bgt(rs, scratch, offset);
+      Assembler::bgt(rs, rt, offset);
       break;
     case GreaterThanOrEqual:
-      Assembler::bge(rs, scratch, offset);
+      Assembler::bge(rs, rt, offset);
       break;
     case LessThan:
-      Assembler::blt(rs, scratch, offset);
+      Assembler::blt(rs, rt, offset);
       break;
     case LessThanOrEqual:
-      Assembler::ble(rs, scratch, offset);
+      Assembler::ble(rs, rt, offset);
       break;
 
     // Unsigned comparison.
     case Above:
-      Assembler::bgtu(rs, scratch, offset);
+      Assembler::bgtu(rs, rt, offset);
       break;
     case AboveOrEqual:
-      Assembler::bgeu(rs, scratch, offset);
+      Assembler::bgeu(rs, rt, offset);
       break;
     case Below:
-      Assembler::bltu(rs, scratch, offset);
+      Assembler::bltu(rs, rt, offset);
       break;
     case BelowOrEqual:
-      Assembler::bleu(rs, scratch, offset);
+      Assembler::bleu(rs, rt, offset);
       break;
 
     default:
       MOZ_CRASH("UNREACHABLE");
   }
-  return true;
 }
 
 void MacroAssemblerRiscv64::BranchLong(Label* L) {
@@ -5039,9 +5046,9 @@ void MacroAssemblerRiscv64::BranchLong(Label* L) {
 }
 
 CodeOffset MacroAssemblerRiscv64::BranchAndLink(Label* L) {
-  AutoForbidPoolsAndNops afp(this, 2, 1);
+  if (UseShortBranch(L, ShortJump, OffsetSize::kOffset21)) {
+    AutoForbidPoolsAndNops afp(this, 2, 1);
 
-  if (!L->bound() || isNear(L, OffsetSize::kOffset21)) {
     int32_t offset = GetOffset(L, OffsetSize::kOffset21);
     return jal(offset);
   }
@@ -5062,26 +5069,33 @@ CodeOffset MacroAssemblerRiscv64::BranchAndLink(Label* L) {
 void MacroAssemblerRiscv64::ma_branch(Label* target, Condition cond,
                                       Register r1, const Operand& r2,
                                       JumpKind jumpKind) {
-  // Always prefer short jumps when the label is already bound. (If the label is
-  // bound, BranchShort can cheaply determine if short jumps are possible.)
-  if (target->bound()) {
-    jumpKind = ShortJump;
+  MOZ_ASSERT((cond == Always && r1 == zero && r2.rm() == zero) ||
+             (cond != Always && (r1 != zero || r2.rm() != zero)));
+
+  if (r2.is_reg() && r1 == r2.rm()) {
+    switch (cond) {
+      case Always:
+      case Equal:
+      case GreaterThanOrEqual:
+      case LessThanOrEqual:
+      case AboveOrEqual:
+      case BelowOrEqual:
+        Branch(target, jumpKind);
+        return;
+
+      case NotEqual:
+      case GreaterThan:
+      case LessThan:
+      case Above:
+      case Below:
+        return;  // No code needs to be emitted
+
+      default:
+        MOZ_CRASH("UNREACHABLE");
+    }
   }
 
-  if (jumpKind == ShortJump && BranchShort(target, cond, r1, r2)) {
-    return;
-  }
-
-  if (cond != Always) {
-    Label skip;
-    Condition neg_cond = InvertCondition(cond);
-    MOZ_ALWAYS_TRUE(
-        BranchShort(&skip, neg_cond, r1, r2));  // Guaranteed to be short.
-    BranchLong(target);
-    bind(&skip);
-  } else {
-    BranchLong(target);
-  }
+  Branch(target, cond, r1, r2, jumpKind);
 }
 
 // Branches when done from within riscv code.
