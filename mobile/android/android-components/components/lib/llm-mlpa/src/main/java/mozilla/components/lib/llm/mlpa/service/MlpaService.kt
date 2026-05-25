@@ -16,6 +16,7 @@ import kotlinx.serialization.encoding.Encoder
 import mozilla.components.concept.integrity.IntegrityToken
 import mozilla.components.concept.llm.ErrorCode
 import mozilla.components.concept.llm.Llm
+import mozilla.components.concept.llm.LlmProvider
 
 private val INTEGRITY_HANDSHAKE_FAILURE = ErrorCode(1002)
 private val VERIFICATION_SERVICE_FAILED = ErrorCode(1003)
@@ -324,29 +325,12 @@ fun interface ChatService {
      */
     @Serializable
     data class Request(
-        val model: ModelID,
+        @Serializable(with = ModelIDSerializer::class) val model: LlmProvider.ModelID,
         val messages: List<Message>,
         val stream: Boolean = true,
         val temperature: Float = 0.1f,
         @SerialName("top_p") val topP: Float = 0.01f,
     ) {
-        /**
-         * Identifier of a model supported by MLPA.
-         *
-         * @property value The raw model identifier string.
-         */
-        @JvmInline
-        @Serializable
-        value class ModelID(val value: String) {
-            companion object {
-                /**
-                 * Predefined model identifier for the Mistral Small model hosted via Vertex AI.
-                 */
-                val mozSummarization: ModelID
-                    get() = ModelID("moz-summarization")
-            }
-        }
-
         /**
          * Represents a single message in the conversation.
          *
@@ -390,6 +374,18 @@ fun interface ChatService {
             }
         }
     }
+}
+
+private object ModelIDSerializer : KSerializer<LlmProvider.ModelID> {
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("model_id", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: LlmProvider.ModelID) {
+        encoder.encodeString(value.value)
+    }
+
+    override fun deserialize(decoder: Decoder): LlmProvider.ModelID =
+        LlmProvider.ModelID(decoder.decodeString())
 }
 
 private object IntegrityTokenSerializer : KSerializer<IntegrityToken> {
