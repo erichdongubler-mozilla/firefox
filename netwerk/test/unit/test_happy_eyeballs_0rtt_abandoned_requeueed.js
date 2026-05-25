@@ -49,6 +49,7 @@ const override = Cc["@mozilla.org/network/native-dns-override;1"].getService(
 );
 
 let callbackServer;
+let gServerStarted = false;
 
 add_setup(
   {
@@ -64,10 +65,14 @@ add_setup(
       callbackServer.identity.primaryPort
     );
     Services.env.set("MOZ_TLS_SERVER_0RTT", "1");
-    await asyncStartTLSTestServer(
+    const started = await asyncStartTLSTestServer(
       "ZeroRttAcceptServer",
       "../../../security/manager/ssl/tests/unit/test_faulty_server"
     );
+    if (!started) {
+      return;
+    }
+    gServerStarted = true;
 
     let nss = Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
     await nss.asyncClearSSLExternalAndInternalSessionCache();
@@ -199,6 +204,7 @@ add_task(
   {
     skip_if: () =>
       AppConstants.MOZ_SYSTEM_NSS ||
+      !gServerStarted ||
       mozinfo.os == "android" ||
       mozinfo.socketprocess_networking,
   },
