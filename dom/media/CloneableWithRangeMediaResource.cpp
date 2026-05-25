@@ -71,7 +71,7 @@ class InputStreamReader final : public nsIInputStreamCallback {
   ~InputStreamReader() = default;
 
   nsresult SyncRead(char* aBuffer, uint32_t aSize, uint32_t* aRead) {
-    while (1) {
+    while (true) {
       nsresult rv = mStream->Read(aBuffer, aSize, aRead);
       // All good.
       if (NS_SUCCEEDED(rv)) {

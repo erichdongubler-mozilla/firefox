@@ -4223,10 +4223,10 @@ nsIContent* nsFocusManager::GetNextTabbableContentInScope(
       aStartContent->IsInNativeAnonymousSubtree()
           ? aStartContent->FindFirstNonChromeOnlyAccessContent()
           : nullptr;
-  while (1) {
+  while (true) {
     // Iterate tab index to find corresponding contents in scope
 
-    while (1) {
+    while (true) {
       // Iterate remaining contents in scope to find next content to focus
 
       // Get next content

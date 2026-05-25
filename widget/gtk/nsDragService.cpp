@@ -2030,7 +2030,7 @@ nsresult nsDragSession::CreateTempFile(nsITransferable* aItem,
   char buffer[8192];
   uint32_t readCount = 0;
   uint32_t writeCount = 0;
-  while (1) {
+  while (true) {
     rv = inputStream->Read(buffer, sizeof(buffer), &readCount);
     if (NS_FAILED(rv)) {
       LOGDRAGSERVICE("  Failed to read data from source uri");

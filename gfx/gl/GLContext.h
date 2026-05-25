@@ -524,11 +524,11 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
 
  protected:
   void MarkExtensionUnsupported(GLExtensions aKnownExtension) {
-    mAvailableExtensions[aKnownExtension] = 0;
+    mAvailableExtensions[aKnownExtension] = false;
   }
 
   void MarkExtensionSupported(GLExtensions aKnownExtension) {
-    mAvailableExtensions[aKnownExtension] = 1;
+    mAvailableExtensions[aKnownExtension] = true;
   }
 
   std::bitset<Extensions_Max> mAvailableExtensions;

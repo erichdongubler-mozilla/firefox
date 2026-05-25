@@ -420,7 +420,7 @@ bool CookieServiceChild::HasExistingCookies(
   CookieKey key(aBaseDomain, aOriginAttributes);
   mCookiesMap.Get(key, &cookiesList);
 
-  return cookiesList ? cookiesList->Length() : 0;
+  return cookiesList ? cookiesList->Length() : false;
 }
 
 void CookieServiceChild::AddCookieFromDocument(

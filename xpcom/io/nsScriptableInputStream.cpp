@@ -88,7 +88,7 @@ nsScriptableInputStream::ReadBytes(uint32_t aCount, nsACString& aResult) {
 
 nsresult nsScriptableInputStream::ReadHelper(char* aBuffer, uint32_t aCount) {
   uint32_t totalBytesRead = 0;
-  while (1) {
+  while (true) {
     uint32_t bytesRead;
     nsresult rv = mInputStream->Read(aBuffer + totalBytesRead,
                                      aCount - totalBytesRead, &bytesRead);

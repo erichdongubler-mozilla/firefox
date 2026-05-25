@@ -2067,7 +2067,7 @@ bool XrayAppendPropertyKeys(JSContext* cx, JS::Handle<JSObject*> obj,
     if (!prefIsEnabled) {
       infos += pref->specs - (pref - 1)->specs - 1;
     }
-  } while (1);
+  } while (true);
 
   return true;
 }
@@ -2097,7 +2097,7 @@ bool XrayAppendPropertyKeys<ConstantSpec>(
     if (!prefIsEnabled) {
       infos += pref->specs - (pref - 1)->specs - 1;
     }
-  } while (1);
+  } while (true);
 
   return true;
 }

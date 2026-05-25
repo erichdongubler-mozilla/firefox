@@ -1595,7 +1595,7 @@ bool nsINode::IsEqualNode(nsINode* aOther) {
       }
 
       // Find next sibling, possibly walking parent chain.
-      while (1) {
+      while (true) {
         if (node1 == this) {
           NS_ASSERTION(node2 == aOther,
                        "Should have reached the start node "

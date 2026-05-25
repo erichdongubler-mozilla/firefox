@@ -223,7 +223,7 @@ static bool ToNicerStunStruct(const char* aAddrForFqdn,
   }
 
   if (isTls) {
-    aResult->addr.tls = 1;
+    aResult->addr.tls = true;
   }
 
   nr_transport_addr_fmt_addr_string(&(aResult->addr));

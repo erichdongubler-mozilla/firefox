@@ -1024,7 +1024,7 @@ EventListenerManager* nsGenericHTMLElement::GetEventListenerManagerForAttr(
   if ((mNodeInfo->Equals(nsGkAtoms::body) ||
        mNodeInfo->Equals(nsGkAtoms::frameset)) &&
       // We only forward some event attributes from body/frameset to window
-      (0
+      (false
 #define EVENT(name_, id_, type_, struct_) /* nothing */
 #define FORWARDED_EVENT(name_, id_, type_, struct_) \
   || nsGkAtoms::on##name_ == aAttrName

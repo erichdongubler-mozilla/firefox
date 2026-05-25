@@ -2008,7 +2008,7 @@ class nsINode : public mozilla::dom::EventTarget {
       return nullptr;
     }
     const nsINode* cur = this;
-    while (1) {
+    while (true) {
       nsIContent* next = cur->GetNextSibling();
       if (next) {
         return next;
