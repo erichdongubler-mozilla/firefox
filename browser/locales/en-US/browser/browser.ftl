@@ -1090,7 +1090,17 @@ qrcode-save-error =
     .message = Failed to save QR code.
 qrcode-save-title = Save QR Code
 qrcode-save-filter-png = PNG Image
-qrcode-save-filename = qrcode.png
+
+## Default filenames used when saving a QR code. The file extension (.png)
+## is added automatically.
+
+qrcode-save-filename-base = qrcode
+# Variables:
+#  $domain (String): The current page's domain used in the suggested filename.
+qrcode-save-filename-with-domain-base = qrcode-{ $domain }
+
+##
+
 qrcode-window-title = QR Code
 qrcode-dialog-title = QR Code
 qrcode-image =

@@ -4,6 +4,23 @@
 
 "use strict";
 
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+
+const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  DownloadPaths: "resource://gre/modules/DownloadPaths.sys.mjs",
+});
+
+XPCOMUtils.defineLazyServiceGetter(
+  lazy,
+  "IDNService",
+  "@mozilla.org/network/idn-service;1",
+  Ci.nsIIDNService
+);
+
 const QRCodeDialog = {
   _url: null,
   _qrCodeDataURI: null,
@@ -113,15 +130,31 @@ const QRCodeDialog = {
     const nsIFilePicker = Ci.nsIFilePicker;
     const fp = Cc["@mozilla.org/filepicker;1"].createInstance(nsIFilePicker);
 
+    let domain = "";
+    let uri;
+    try {
+      uri = Services.io.newURI(this._url);
+      domain = lazy.IDNService.domainToDisplay(
+        Services.eTLD.getSchemelessSite(uri)
+      );
+    } catch (e) {
+      if (uri) {
+        domain = uri.host;
+      }
+    }
+
+    const filenameMessage = domain
+      ? { id: "qrcode-save-filename-with-domain-base", args: { domain } }
+      : "qrcode-save-filename-base";
     const [title, pngFilterTitle, defaultFilename] =
       await document.l10n.formatValues([
         "qrcode-save-title",
         "qrcode-save-filter-png",
-        "qrcode-save-filename",
+        filenameMessage,
       ]);
     fp.init(window.browsingContext, title, nsIFilePicker.modeSave);
     fp.appendFilter(pngFilterTitle, "*.png");
-    fp.defaultString = defaultFilename;
+    fp.defaultString = lazy.DownloadPaths.sanitize(defaultFilename);
     fp.defaultExtension = "png";
 
     const result = await new Promise(resolve => fp.open(resolve));
@@ -141,6 +174,9 @@ const QRCodeDialog = {
     }
   },
 };
+
+// Exposed on `window` for browser-chrome tests.
+window.QRCodeDialog = QRCodeDialog;
 
 window.addEventListener("DOMContentLoaded", () => {
   QRCodeDialog.init();
