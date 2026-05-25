@@ -740,9 +740,6 @@ nscoord StyleCalcLengthPercentage::Resolve(nscoord aBasis,
   return aRounder(result * AppUnitsPerCSSPixel());
 }
 
-template <>
-void StyleCalcNode::ScaleLengthsBy(float);
-
 CSSCoord LengthPercentage::ResolveToCSSPixels(CSSCoord aPercentageBasis) const {
   if (IsLength()) {
     return AsLength().ToCSSPixels();
@@ -793,15 +790,6 @@ template <typename Rounder>
 nscoord LengthPercentage::Resolve(nscoord aPercentageBasis,
                                   Rounder aRounder) const {
   return Resolve([aPercentageBasis] { return aPercentageBasis; }, aRounder);
-}
-
-void LengthPercentage::ScaleLengthsBy(float aScale) {
-  if (IsLength()) {
-    AsLength().ScaleBy(aScale);
-  }
-  if (IsCalc()) {
-    AsCalc().node.ScaleLengthsBy(aScale);
-  }
 }
 
 #define IMPL_LENGTHPERCENTAGE_FORWARDS(ty_)                                 \
