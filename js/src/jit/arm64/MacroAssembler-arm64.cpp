@@ -179,7 +179,7 @@ void MacroAssemblerCompat::boxValue(Register type, Register src,
       Operand(ARMRegister(dest, 64), vixl::LSL, JSVAL_TAG_SHIFT));
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 bool MacroAssembler::MustMaskShiftCountSimd128(wasm::SimdOp op, int32_t* mask) {
   switch (op) {
     case wasm::SimdOp::I8x16Shl:

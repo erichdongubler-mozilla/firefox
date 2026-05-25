@@ -10818,7 +10818,7 @@ void CodeGenerator::visitWasmLoadSlot(LWasmLoadSlot* ins) {
   Address addr(container, ins->offset());
   AnyRegister dst = ToAnyRegister(ins->output());
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   if (type == MIRType::Simd128) {
     MOZ_ASSERT(wideningOp == MWideningOp::None);
     FaultingCodeOffset fco = masm.loadUnalignedSimd128(addr, dst.fpu());
@@ -10837,7 +10837,7 @@ void CodeGenerator::visitWasmLoadElement(LWasmLoadElement* ins) {
   Register index = ToRegister(ins->index());
   AnyRegister dst = ToAnyRegister(ins->output());
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   if (type == MIRType::Simd128) {
     MOZ_ASSERT(wideningOp == MWideningOp::None);
     FaultingCodeOffset fco;
@@ -10862,7 +10862,7 @@ void CodeGenerator::visitWasmStoreSlot(LWasmStoreSlot* ins) {
     MOZ_RELEASE_ASSERT(narrowingOp == MNarrowingOp::None);
   }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   if (type == MIRType::Simd128) {
     FaultingCodeOffset fco = masm.storeUnalignedSimd128(src.fpu(), addr);
     EmitSignalNullCheckTrapSite(masm, ins, fco,
@@ -10887,7 +10887,7 @@ void CodeGenerator::visitWasmStoreStackResult(LWasmStoreStackResult* ins) {
     case MIRType::Double:
       masm.storeDouble(ToFloatRegister(value), addr);
       break;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     case MIRType::Simd128:
       masm.storeUnalignedSimd128(ToFloatRegister(value), addr);
       break;
@@ -10917,7 +10917,7 @@ void CodeGenerator::visitWasmStoreElement(LWasmStoreElement* ins) {
     MOZ_RELEASE_ASSERT(narrowingOp == MNarrowingOp::None);
   }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   if (type == MIRType::Simd128) {
     Register temp = ToRegister(ins->temp0());
     masm.lshiftPtr(Imm32(4), index, temp);

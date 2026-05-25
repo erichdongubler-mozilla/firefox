@@ -1969,7 +1969,7 @@ void CodeGenerator::visitWasmStackArg(LWasmStackArg* ins) {
       case MIRType::Float32:
         masm.storeFloat32(ToFloatRegister(ins->arg()), dst);
         return;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       case MIRType::Simd128:
         masm.storeUnalignedSimd128(ToFloatRegister(ins->arg()), dst);
         return;
@@ -2547,7 +2547,7 @@ void CodeGenerator::visitWasmSelect(LWasmSelect* lir) {
           masm.Fcsel(ARMFPRegister(outReg, 64), ARMFPRegister(trueReg, 64),
                      ARMFPRegister(falseReg, 64), Assembler::NonZero);
           break;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
         case MIRType::Simd128: {
           MOZ_ASSERT(outReg == trueReg);
           Label done;
@@ -3006,7 +3006,7 @@ void CodeGenerator::visitUModI64(LUModI64* lir) {
 }
 
 void CodeGenerator::visitSimd128(LSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   const LDefinition* out = ins->output();
   masm.loadConstantSimd128(ins->simd128(), ToFloatRegister(out));
 #else
@@ -3015,7 +3015,7 @@ void CodeGenerator::visitSimd128(LSimd128* ins) {
 }
 
 void CodeGenerator::visitWasmTernarySimd128(LWasmTernarySimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   switch (ins->simdOp()) {
     case wasm::SimdOp::V128Bitselect: {
       FloatRegister lhs = ToFloatRegister(ins->v0());
@@ -3064,7 +3064,7 @@ void CodeGenerator::visitWasmTernarySimd128(LWasmTernarySimd128* ins) {
 }
 
 void CodeGenerator::visitWasmBinarySimd128(LWasmBinarySimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   FloatRegister lhs = ToFloatRegister(ins->lhs());
   FloatRegister rhs = ToFloatRegister(ins->rhs());
   FloatRegister dest = ToFloatRegister(ins->output());
@@ -3469,7 +3469,7 @@ void CodeGenerator::visitWasmBinarySimd128WithConstant(
 
 void CodeGenerator::visitWasmVariableShiftSimd128(
     LWasmVariableShiftSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   FloatRegister lhs = ToFloatRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
   FloatRegister dest = ToFloatRegister(ins->output());
@@ -3521,7 +3521,7 @@ void CodeGenerator::visitWasmVariableShiftSimd128(
 
 void CodeGenerator::visitWasmConstantShiftSimd128(
     LWasmConstantShiftSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   FloatRegister src = ToFloatRegister(ins->src());
   FloatRegister dest = ToFloatRegister(ins->output());
   int32_t shift = ins->shift();
@@ -3584,7 +3584,7 @@ void CodeGenerator::visitWasmSignReplicationSimd128(
 }
 
 void CodeGenerator::visitWasmShuffleSimd128(LWasmShuffleSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   FloatRegister lhs = ToFloatRegister(ins->lhs());
   FloatRegister rhs = ToFloatRegister(ins->rhs());
   FloatRegister dest = ToFloatRegister(ins->output());
@@ -3653,7 +3653,7 @@ void CodeGenerator::visitWasmShuffleSimd128(LWasmShuffleSimd128* ins) {
 }
 
 void CodeGenerator::visitWasmPermuteSimd128(LWasmPermuteSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   FloatRegister src = ToFloatRegister(ins->src());
   FloatRegister dest = ToFloatRegister(ins->output());
   SimdConstant control = ins->control();
@@ -3762,7 +3762,7 @@ void CodeGenerator::visitWasmPermuteSimd128(LWasmPermuteSimd128* ins) {
 }
 
 void CodeGenerator::visitWasmReplaceLaneSimd128(LWasmReplaceLaneSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MOZ_ASSERT(ToFloatRegister(ins->lhs()) == ToFloatRegister(ins->output()));
   FloatRegister lhsDest = ToFloatRegister(ins->lhs());
   const LAllocation* rhs = ins->rhs();
@@ -3816,7 +3816,7 @@ void CodeGenerator::visitWasmReplaceLaneSimd128(LWasmReplaceLaneSimd128* ins) {
 
 void CodeGenerator::visitWasmReplaceInt64LaneSimd128(
     LWasmReplaceInt64LaneSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MOZ_RELEASE_ASSERT(ins->mir()->simdOp() == wasm::SimdOp::I64x2ReplaceLane);
   MOZ_ASSERT(ToFloatRegister(ins->lhs()) == ToFloatRegister(ins->output()));
   masm.replaceLaneInt64x2(ins->mir()->laneIndex(), ToRegister64(ins->rhs()),
@@ -3827,7 +3827,7 @@ void CodeGenerator::visitWasmReplaceInt64LaneSimd128(
 }
 
 void CodeGenerator::visitWasmScalarToSimd128(LWasmScalarToSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   FloatRegister dest = ToFloatRegister(ins->output());
 
   switch (ins->mir()->simdOp()) {
@@ -3855,7 +3855,7 @@ void CodeGenerator::visitWasmScalarToSimd128(LWasmScalarToSimd128* ins) {
 }
 
 void CodeGenerator::visitWasmInt64ToSimd128(LWasmInt64ToSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   Register64 src = ToRegister64(ins->src());
   FloatRegister dest = ToFloatRegister(ins->output());
 
@@ -3896,7 +3896,7 @@ void CodeGenerator::visitWasmInt64ToSimd128(LWasmInt64ToSimd128* ins) {
 }
 
 void CodeGenerator::visitWasmUnarySimd128(LWasmUnarySimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   FloatRegister src = ToFloatRegister(ins->src());
   FloatRegister dest = ToFloatRegister(ins->output());
 
@@ -4073,7 +4073,7 @@ void CodeGenerator::visitWasmUnarySimd128(LWasmUnarySimd128* ins) {
 }
 
 void CodeGenerator::visitWasmReduceSimd128(LWasmReduceSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   FloatRegister src = ToFloatRegister(ins->src());
   const LDefinition* dest = ins->output();
   uint32_t imm = ins->mir()->imm();
@@ -4138,7 +4138,7 @@ void CodeGenerator::visitWasmReduceSimd128(LWasmReduceSimd128* ins) {
 
 void CodeGenerator::visitWasmReduceAndBranchSimd128(
     LWasmReduceAndBranchSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   FloatRegister src = ToFloatRegister(ins->src());
 
   ScratchSimd128Scope scratch(masm);
@@ -4191,7 +4191,7 @@ void CodeGenerator::visitWasmReduceAndBranchSimd128(
 
 void CodeGenerator::visitWasmReduceSimd128ToInt64(
     LWasmReduceSimd128ToInt64* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   FloatRegister src = ToFloatRegister(ins->src());
   Register64 dest = ToOutRegister64(ins);
   uint32_t imm = ins->mir()->imm();
@@ -4216,7 +4216,7 @@ static inline wasm::MemoryAccessDesc DeriveMemoryAccessDesc(
 }
 
 void CodeGenerator::visitWasmLoadLaneSimd128(LWasmLoadLaneSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   // Forward loading to wasmLoad, and use replaceLane after that.
   const MWasmLoadLaneSimd128* mir = ins->mir();
   Register memoryBase = ToRegister(ins->memoryBase());
@@ -4259,7 +4259,7 @@ void CodeGenerator::visitWasmLoadLaneSimd128(LWasmLoadLaneSimd128* ins) {
 }
 
 void CodeGenerator::visitWasmStoreLaneSimd128(LWasmStoreLaneSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   // Forward storing to wasmStore for the result of extractLane.
   const MWasmStoreLaneSimd128* mir = ins->mir();
   Register memoryBase = ToRegister(ins->memoryBase());

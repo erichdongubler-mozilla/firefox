@@ -79,7 +79,7 @@ void BaseLocalIter::settle() {
       case MIRType::Double:
       case MIRType::Float32:
       case MIRType::WasmAnyRef:
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       case MIRType::Simd128:
 #endif
         if (argsIter_->argInRegister()) {
@@ -109,7 +109,7 @@ void BaseLocalIter::settle() {
       case ValType::I64:
       case ValType::F32:
       case ValType::F64:
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       case ValType::V128:
 #endif
       case ValType::Ref:
@@ -309,7 +309,7 @@ bool StackMapGenerator::createStackMap(
       case Stk::ConstI64:
       case Stk::ConstF32:
       case Stk::ConstF64:
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
       case Stk::MemV128:
       case Stk::ConstV128:
 #  endif
@@ -319,7 +319,7 @@ bool StackMapGenerator::createStackMap(
       case Stk::LocalI64:
       case Stk::LocalF32:
       case Stk::LocalF64:
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
       case Stk::LocalV128:
 #  endif
         // These also have uninteresting type.  Check that they live in the
@@ -331,7 +331,7 @@ bool StackMapGenerator::createStackMap(
       case Stk::RegisterI64:
       case Stk::RegisterF32:
       case Stk::RegisterF64:
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
       case Stk::RegisterV128:
 #  endif
         // These also have uninteresting type, but more to the point: all

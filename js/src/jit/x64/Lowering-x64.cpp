@@ -374,7 +374,7 @@ void LIRGenerator::visitWasmStore(MWasmStore* ins) {
       valueAlloc = useRegisterAtStart(value);
       break;
     case Scalar::Simd128:
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       valueAlloc = useRegisterAtStart(value);
       break;
 #else

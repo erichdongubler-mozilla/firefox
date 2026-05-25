@@ -519,7 +519,7 @@ void LIRGeneratorARM64::lowerBigIntPtrMod(MBigIntPtrMod* ins) {
   define(lir, ins);
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 
 bool LIRGeneratorARM64::canFoldReduceSimd128AndBranch(wasm::SimdOp op) {
   switch (op) {
@@ -1041,7 +1041,7 @@ void LIRGenerator::visitSignExtendInt64(MSignExtendInt64* ins) {
 }
 
 void LIRGenerator::visitWasmTernarySimd128(MWasmTernarySimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MOZ_ASSERT(ins->v0()->type() == MIRType::Simd128);
   MOZ_ASSERT(ins->v1()->type() == MIRType::Simd128);
   MOZ_ASSERT(ins->v2()->type() == MIRType::Simd128);
@@ -1095,7 +1095,7 @@ void LIRGenerator::visitWasmTernarySimd128(MWasmTernarySimd128* ins) {
 }
 
 void LIRGenerator::visitWasmBinarySimd128(MWasmBinarySimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MDefinition* lhs = ins->lhs();
   MDefinition* rhs = ins->rhs();
   wasm::SimdOp op = ins->simdOp();
@@ -1120,7 +1120,7 @@ void LIRGenerator::visitWasmBinarySimd128(MWasmBinarySimd128* ins) {
 #endif
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 bool MWasmTernarySimd128::specializeBitselectConstantMaskAsShuffle(
     int8_t shuffle[16]) {
   return false;
@@ -1141,7 +1141,7 @@ void LIRGenerator::visitWasmBinarySimd128WithConstant(
 }
 
 void LIRGenerator::visitWasmShiftSimd128(MWasmShiftSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MDefinition* lhs = ins->lhs();
   MDefinition* rhs = ins->rhs();
 
@@ -1198,7 +1198,7 @@ void LIRGenerator::visitWasmShiftSimd128(MWasmShiftSimd128* ins) {
 }
 
 void LIRGenerator::visitWasmShuffleSimd128(MWasmShuffleSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MOZ_ASSERT(ins->lhs()->type() == MIRType::Simd128);
   MOZ_ASSERT(ins->rhs()->type() == MIRType::Simd128);
   MOZ_ASSERT(ins->type() == MIRType::Simd128);
@@ -1264,7 +1264,7 @@ void LIRGenerator::visitWasmShuffleSimd128(MWasmShuffleSimd128* ins) {
 }
 
 void LIRGenerator::visitWasmReplaceLaneSimd128(MWasmReplaceLaneSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MOZ_ASSERT(ins->lhs()->type() == MIRType::Simd128);
   MOZ_ASSERT(ins->type() == MIRType::Simd128);
 
@@ -1290,7 +1290,7 @@ void LIRGenerator::visitWasmReplaceLaneSimd128(MWasmReplaceLaneSimd128* ins) {
 }
 
 void LIRGenerator::visitWasmScalarToSimd128(MWasmScalarToSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MOZ_ASSERT(ins->type() == MIRType::Simd128);
 
   switch (ins->input()->type()) {
@@ -1324,7 +1324,7 @@ void LIRGenerator::visitWasmScalarToSimd128(MWasmScalarToSimd128* ins) {
 }
 
 void LIRGenerator::visitWasmUnarySimd128(MWasmUnarySimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MOZ_ASSERT(ins->input()->type() == MIRType::Simd128);
   MOZ_ASSERT(ins->type() == MIRType::Simd128);
 
@@ -1400,7 +1400,7 @@ void LIRGenerator::visitWasmUnarySimd128(MWasmUnarySimd128* ins) {
 }
 
 void LIRGenerator::visitWasmReduceSimd128(MWasmReduceSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   if (canEmitWasmReduceSimd128AtUses(ins)) {
     emitAtUses(ins);
     return;
@@ -1449,7 +1449,7 @@ void LIRGenerator::visitWasmReduceSimd128(MWasmReduceSimd128* ins) {
 }
 
 void LIRGenerator::visitWasmLoadLaneSimd128(MWasmLoadLaneSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   // On 64-bit systems, the base pointer can be 32 bits or 64 bits.  Either way,
   // it fits in a GPR so we can ignore the Register/Register64 distinction here.
 
@@ -1471,7 +1471,7 @@ void LIRGenerator::visitWasmLoadLaneSimd128(MWasmLoadLaneSimd128* ins) {
 }
 
 void LIRGenerator::visitWasmStoreLaneSimd128(MWasmStoreLaneSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   // See comment above about the base pointer.
 
   LUse base = useRegisterAtStart(ins->base());

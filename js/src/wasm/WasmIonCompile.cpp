@@ -622,7 +622,7 @@ class FunctionCompiler {
     for (size_t i = args.lengthWithoutStackResults(); i < locals_.length();
          i++) {
       ValType slotValType = locals_[i];
-#ifndef ENABLE_WASM_SIMD
+#ifndef ENABLE_JIT_SIMD
       if (slotValType == ValType::V128) {
         return iter().fail("Ion has no SIMD support yet");
       }
@@ -667,7 +667,7 @@ class FunctionCompiler {
     // Initialize all local slots to zero value
     for (size_t i = type.args().length(); i < locals_.length(); i++) {
       ValType slotValType = locals_[i];
-#ifndef ENABLE_WASM_SIMD
+#ifndef ENABLE_JIT_SIMD
       if (slotValType == ValType::V128) {
         return iter().fail("Ion has no SIMD support yet");
       }
@@ -777,7 +777,7 @@ class FunctionCompiler {
   template <typename T>
   MDefinition* constantTargetWord(T) = delete;
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MDefinition* constantV128(V128 v) {
     if (inDeadCode()) {
       return nullptr;
@@ -808,7 +808,7 @@ class FunctionCompiler {
         return constantI32(0);
       case ValType::I64:
         return constantI64(int64_t(0));
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       case ValType::V128:
         return constantV128(V128(0));
 #endif
@@ -1294,7 +1294,7 @@ class FunctionCompiler {
     return ins;
   }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   // About Wasm SIMD as supported by Ion:
   //
   // The expectation is that Ion will only ever support SIMD on x86 and x64,
@@ -1434,7 +1434,7 @@ class FunctionCompiler {
 
   // Also see below for SIMD memory references
 
-#endif  // ENABLE_WASM_SIMD
+#endif  // ENABLE_JIT_SIMD
 
   /************************************************ Linear memory accesses */
 
@@ -1927,7 +1927,7 @@ class FunctionCompiler {
     return binop;
   }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MDefinition* loadSplatSimd128(Scalar::Type viewType,
                                 const LinearMemoryAddress<MDefinition*>& addr,
                                 wasm::SimdOp splatOp) {
@@ -2041,7 +2041,7 @@ class FunctionCompiler {
     }
     curBlock_->add(store);
   }
-#endif  // ENABLE_WASM_SIMD
+#endif  // ENABLE_JIT_SIMD
 
   /************************************************ Global variable accesses */
 
@@ -2546,7 +2546,7 @@ class FunctionCompiler {
         }
         break;
       }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       case MIRType::Simd128:
         MOZ_CRASH("SIMD128 not supported in builtin ABI");
 #endif
@@ -2622,7 +2622,7 @@ class FunctionCompiler {
                                            result.type().toMaybeRefType());
             break;
           case wasm::ValType::V128:
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
             def = MWasmFloatRegisterResult::New(alloc(), MIRType::Simd128,
                                                 result.fpr());
 #else
@@ -6790,7 +6790,7 @@ bool FunctionCompiler::emitGetGlobal() {
       result = constantF64(value.f64());
       break;
     case ValType::V128:
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       result = constantV128(value.v128());
       break;
 #else
@@ -7594,7 +7594,7 @@ bool FunctionCompiler::emitMemCopyInline(uint32_t memoryIndex, MDefinition* dst,
 
   // Compute the number of copies of each width we will need to do
   size_t remainder = length;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   size_t numCopies16 = 0;
   if (MacroAssembler::SupportsFastUnalignedFPAccesses()) {
     numCopies16 = remainder / sizeof(V128);
@@ -7617,7 +7617,7 @@ bool FunctionCompiler::emitMemCopyInline(uint32_t memoryIndex, MDefinition* dst,
   size_t offset = 0;
   DefVector loadedValues;
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   for (uint32_t i = 0; i < numCopies16; i++) {
     MemoryAccessDesc access(memoryIndex, Scalar::Simd128, 1, offset,
                             trapSiteDesc(), hugeMemoryEnabled(memoryIndex));
@@ -7717,7 +7717,7 @@ bool FunctionCompiler::emitMemCopyInline(uint32_t memoryIndex, MDefinition* dst,
   }
 #endif
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   for (uint32_t i = 0; i < numCopies16; i++) {
     offset -= sizeof(V128);
 
@@ -7842,7 +7842,7 @@ bool FunctionCompiler::emitMemFillInline(uint32_t memoryIndex,
 
   // Compute the number of copies of each width we will need to do
   size_t remainder = length;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   size_t numCopies16 = 0;
   if (MacroAssembler::SupportsFastUnalignedFPAccesses()) {
     numCopies16 = remainder / sizeof(V128);
@@ -7860,7 +7860,7 @@ bool FunctionCompiler::emitMemFillInline(uint32_t memoryIndex,
   size_t numCopies1 = remainder;
 
   // Generate splatted definitions for wider fills as needed
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MDefinition* val16 = numCopies16 ? constantV128(V128(value)) : nullptr;
 #endif
 #ifdef JS_64BIT
@@ -7914,7 +7914,7 @@ bool FunctionCompiler::emitMemFillInline(uint32_t memoryIndex,
   }
 #endif
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   for (uint32_t i = 0; i < numCopies16; i++) {
     offset -= sizeof(V128);
 
@@ -8469,7 +8469,7 @@ bool FunctionCompiler::emitI64MulWide(bool isSigned) {
 //
 // SIMD support
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 bool FunctionCompiler::emitConstSimd128() {
   V128 v128;
   if (!iter().readV128Const(&v128)) {
@@ -8653,7 +8653,7 @@ bool FunctionCompiler::emitStoreLaneSimd128(uint32_t laneSize) {
   return true;
 }
 
-#endif  // ENABLE_WASM_SIMD
+#endif  // ENABLE_JIT_SIMD
 
 bool FunctionCompiler::emitRefAsNonNull() {
   MDefinition* ref;
@@ -10604,7 +10604,7 @@ bool FunctionCompiler::emitBodyExprs() {
       }
 
       // SIMD operations
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       case uint16_t(Op::SimdPrefix): {
         if (!codeMeta().simdAvailable()) {
           return iter().unrecognizedOpcode(&op);
