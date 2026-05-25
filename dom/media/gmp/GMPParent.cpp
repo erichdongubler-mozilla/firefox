@@ -397,7 +397,15 @@ nsresult GMPParent::LoadProcess() {
     mProcess->SetLaunchArchitecture(mChildLaunchArch);
 #endif
 
-    if (!mProcess->Launch(30 * 1000)) {
+    // Coverage builds instrument plugin-container.exe heavily enough that
+    // startup reliably exceeds the default 30s budget; give it headroom so we
+    // don't fail to launch on a fixed-timeout race.
+#if defined(MOZ_CODE_COVERAGE)
+    constexpr int32_t kLaunchTimeoutMs = 60 * 1000;
+#else
+    constexpr int32_t kLaunchTimeoutMs = 30 * 1000;
+#endif
+    if (!mProcess->Launch(kLaunchTimeoutMs)) {
       GMP_PARENT_LOG_DEBUG("%s: Failed to launch new child process",
                            __FUNCTION__);
       mProcess->Delete();
