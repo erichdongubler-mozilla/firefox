@@ -2337,27 +2337,6 @@ already_AddRefed<gfxFont> gfxFontGroup::GetFirstMathFont() {
   return nullptr;
 }
 
-bool gfxFontGroup::IsInvalidChar(uint8_t ch) {
-  return ((ch & 0x7f) < 0x20 || ch == 0x7f);
-}
-
-bool gfxFontGroup::IsInvalidChar(char16_t ch) {
-  // All printable 7-bit ASCII values are OK
-  if (ch >= ' ' && ch < 0x7f) {
-    return false;
-  }
-  // No point in sending non-printing control chars through font shaping
-  if (ch <= 0x9f) {
-    return true;
-  }
-  // Word-separating format/bidi control characters are not shaped as part
-  // of words.
-  return (((ch & 0xFF00) == 0x2000 /* Unicode control character */ &&
-           (ch == 0x200B /*ZWSP*/ || ch == 0x2028 /*LSEP*/ ||
-            ch == 0x2029 /*PSEP*/ || ch == 0x2060 /*WJ*/)) ||
-          ch == 0xfeff /*ZWNBSP*/ || IsBidiControl(ch));
-}
-
 already_AddRefed<gfxTextRun> gfxFontGroup::MakeEmptyTextRun(
     const Parameters* aParams, gfx::ShapedTextFlags aFlags,
     nsTextFrameUtils::Flags aFlags2) {

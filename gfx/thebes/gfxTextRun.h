@@ -958,8 +958,28 @@ class gfxFontGroup final : public gfxTextRunFactory {
    * The listed characters should be treated as invisible and zero-width
    * when creating textruns.
    */
-  static bool IsInvalidChar(uint8_t ch);
-  static bool IsInvalidChar(char16_t ch);
+  static inline bool IsInvalidChar(uint8_t ch) {
+    return (ch & 0x7f) < 0x20 || ch == 0x7f;
+  }
+
+  static inline bool IsInvalidChar(char16_t ch) {
+    // All printable 7-bit ASCII values are OK.
+    if (ch - 0x20u < 0x7fu - 0x20u) {
+      return false;
+    }
+    // No point in sending non-printing control chars through font shaping.
+    if (ch <= 0x9f) {
+      return true;
+    }
+    // Word-separating format/bidi control characters are not shaped as part
+    // of words.
+    return ((ch & 0xFF00) == 0x2000 &&
+            (ch == 0x200B /* zero-width space */ ||
+             ch == 0x2028 /* line separator */ ||
+             ch == 0x2029 /* paragraph separator */ ||
+             ch == 0x2060 /* word joiner */)) ||
+           ch == 0xfeff /* zero-width no-break space */ || IsBidiControl(ch);
+  }
 
   /**
    * Make a textrun for a given string.
