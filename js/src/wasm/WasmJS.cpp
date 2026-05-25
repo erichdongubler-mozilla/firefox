@@ -689,9 +689,14 @@ bool js::wasm::CompileForESM(JSContext* cx,
     // Step 8.1. If moduleName starts with the prefix "wasm-js:",
     if (CharsStartsWith(moduleName, MakeStringSpan("wasm-js:"))) {
       // Step 8.1.1. Throw a LinkError exception.
+      UniqueChars moduleNameQuoted = import.module.toQuotedString(cx);
+      if (!moduleNameQuoted) {
+        ReportOutOfMemory(cx);
+        return false;
+      }
       JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                                JSMSG_WASM_ESM_RESERVED_MODULE_NAME,
-                               moduleName.data());
+                               moduleNameQuoted.get());
       return false;
     }
 
@@ -699,8 +704,14 @@ bool js::wasm::CompileForESM(JSContext* cx,
     if (CharsStartsWith(name, MakeStringSpan("wasm:")) ||
         CharsStartsWith(name, MakeStringSpan("wasm-js:"))) {
       // Step 8.2.1. Throw a LinkError exception.
+      UniqueChars nameQuoted = import.field.toQuotedString(cx);
+      if (!nameQuoted) {
+        ReportOutOfMemory(cx);
+        return false;
+      }
       JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                               JSMSG_WASM_ESM_RESERVED_FIELD_NAME, name.data());
+                               JSMSG_WASM_ESM_RESERVED_FIELD_NAME,
+                               nameQuoted.get());
       return false;
     }
 
@@ -727,9 +738,14 @@ bool js::wasm::CompileForESM(JSContext* cx,
     if (CharsStartsWith(name, MakeStringSpan("wasm:")) ||
         CharsStartsWith(name, MakeStringSpan("wasm-js:"))) {
       // Step 9.1.1. Throw a LinkError exception.
+      UniqueChars nameQuoted = exp.fieldName().toQuotedString(cx);
+      if (!nameQuoted) {
+        ReportOutOfMemory(cx);
+        return false;
+      }
       JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                                JSMSG_WASM_ESM_RESERVED_EXPORT_NAME,
-                               name.data());
+                               nameQuoted.get());
       return false;
     }
   }
