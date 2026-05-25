@@ -72,13 +72,6 @@ class HomeNavigationBar(
         }
     }
 
-    /**
-     * Returns a [Composable] function that renders the default navigation bar content.
-     */
-    override fun asComposable(): @Composable () -> Unit = {
-        DefaultNavigationBarContent()
-    }
-
     override fun updateDividerVisibility(isVisible: Boolean) {
         // no-op
     }

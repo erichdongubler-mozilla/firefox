@@ -186,13 +186,6 @@ internal class HomeToolbarComposable(
         translationZ = context.resources.getDimension(R.dimen.browser_fragment_above_toolbar_panels_elevation)
     }
 
-    /**
-     * Returns a [Composable] function that renders the default home toolbar content.
-     */
-    override fun asComposable(): @Composable () -> Unit = {
-        DefaultToolbar()
-    }
-
     override fun build(browserState: BrowserState, middleSearchEnabled: Boolean) {
         configureStartingInSearchMode()
         updateAddressBarVisibility(!middleSearchEnabled)

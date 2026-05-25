@@ -5,7 +5,6 @@
 package org.mozilla.fenix.home.toolbar
 
 import android.view.View
-import androidx.compose.runtime.Composable
 import mozilla.components.browser.state.state.BrowserState
 
 /**
@@ -16,11 +15,6 @@ interface FenixHomeToolbar {
      * The root view of the toolbar.
      */
     val layout: View
-
-    /**
-     * Returns a [Composable] function that renders the toolbar content.
-     */
-    fun asComposable(): @Composable () -> Unit
 
     /**
      * Setups the home screen toolbar.
