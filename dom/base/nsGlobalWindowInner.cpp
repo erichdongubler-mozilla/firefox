@@ -3209,8 +3209,12 @@ void nsGlobalWindowInner::SetActiveLoadingState(bool aIsLoading) {
     (void)GetBrowsingContext()->SetLoading(aIsLoading);
   }
 
-  if (!nsGlobalWindowInner::Cast(this)->IsChromeWindow()) {
-    mTimeoutManager->SetLoading(aIsLoading);
+  if (StaticPrefs::dom_timeout_defer_during_load() && !IsChromeWindow()) {
+    nsIPrincipal* principal = GetPrincipal();
+    if (!principal || !principal->IsURIInPrefList(
+                          "dom.timeout.defer_during_load.force-disable")) {
+      mTimeoutManager->SetLoading(aIsLoading);
+    }
   }
 
   HintIsLoading(aIsLoading);
