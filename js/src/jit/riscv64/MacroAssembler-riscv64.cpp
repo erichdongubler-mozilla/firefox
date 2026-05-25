@@ -1254,6 +1254,8 @@ FaultingCodeOffset MacroAssemblerRiscv64::ma_load(
     encodedOffset = address.offset;
     base = address.base;
   }
+
+  AutoForbidPoolsAndNops afp(this, 1);
   FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
   switch (size) {
     case SizeByte:
@@ -1336,6 +1338,8 @@ FaultingCodeOffset MacroAssemblerRiscv64::ma_store(
     encodedOffset = address.offset;
     base = address.base;
   }
+
+  AutoForbidPoolsAndNops afp(this, 1);
   FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
   switch (size) {
     case SizeByte:
