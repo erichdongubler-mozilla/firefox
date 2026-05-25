@@ -48,7 +48,6 @@ import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEnded
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchStarted
 import org.mozilla.fenix.components.appstate.VoiceSearchAction.VoiceInputRequested
 import org.mozilla.fenix.components.metrics.MetricsUtils
-import org.mozilla.fenix.components.toolbar.ToolbarPosition.BOTTOM
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.wallpapers.Wallpaper
@@ -73,7 +72,6 @@ internal const val EDIT_TOOLBAR_DELAY_AFTER_VOICE_REQUEST = 1_000L
  * @param tabStripContent [Composable] as the tab strip content to be displayed together with this toolbar.
  * @param searchSuggestionsContent [Composable] as the search suggestions content to be displayed
  * together with this toolbar.
- * @param navigationBarContent Composable content for the navigation bar.
  */
 @Suppress("LongParameterList")
 internal class HomeToolbarComposable(
@@ -88,7 +86,6 @@ internal class HomeToolbarComposable(
     private val coroutineScope: CoroutineScope,
     private val tabStripContent: @Composable () -> Unit,
     private val searchSuggestionsContent: @Composable (Modifier) -> Unit,
-    private val navigationBarContent: (@Composable () -> Unit)?,
 ) : FenixHomeToolbar {
     private val addressBarVisibility = mutableStateOf(true)
 
@@ -172,10 +169,6 @@ internal class HomeToolbarComposable(
                 ) {
                     BrowserToolbar(store = toolbarStore)
                 }
-            }
-
-            if (settings.toolbarPosition == BOTTOM) {
-                navigationBarContent?.invoke()
             }
 
             if (!settings.shouldUseBottomToolbar) {

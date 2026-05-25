@@ -50,7 +50,6 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.appstate.setup.checklist.SetupChecklistState
 import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
 import org.mozilla.fenix.components.components
-import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.compose.MessageCard
 import org.mozilla.fenix.compose.home.HomeSectionHeader
 import org.mozilla.fenix.debugsettings.sportswidget.SportsWidgetDebugTool
@@ -86,7 +85,6 @@ import org.mozilla.fenix.home.store.HomepageState
 import org.mozilla.fenix.home.store.NimbusMessageState
 import org.mozilla.fenix.home.termsofuse.PrivacyNoticeBanner
 import org.mozilla.fenix.home.termsofuse.PrivacyNoticeBannerInteractor
-import org.mozilla.fenix.home.toolbar.HomeToolbarComposable
 import org.mozilla.fenix.home.topsites.TopSiteColors
 import org.mozilla.fenix.home.topsites.TopSites
 import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
@@ -105,9 +103,6 @@ import mozilla.components.ui.icons.R as iconsR
  * @param interactor [HomepageInteractor] for interactions with the homepage UI.
  * @param onTopSitesItemBound Invoked during the composition of a top site item.
  * @param modifier [Modifier] to be applied to the layout.
- * @param navigationBarContent Optional composable rendered at the bottom of the homepage when the
- * toolbar is positioned at the top. When the toolbar is at the bottom, the navigation bar is
- * rendered by [HomeToolbarComposable] instead and this content is not shown.
  */
 @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
 @Composable
@@ -116,7 +111,6 @@ internal fun Homepage(
     interactor: HomepageInteractor,
     onTopSitesItemBound: () -> Unit,
     modifier: Modifier = Modifier,
-    navigationBarContent: (@Composable () -> Unit)? = null,
 ) {
     val scrollState = rememberScrollState()
     val browsingModeChanged = interactor::onPrivateModeButtonClicked
@@ -349,14 +343,6 @@ internal fun Homepage(
                         }
                     }
                 }
-            }
-        }
-
-        if (navigationBarContent != null &&
-            components.settings.toolbarPosition == ToolbarPosition.TOP
-        ) {
-            Box(modifier = Modifier.align(Alignment.BottomCenter)) {
-                navigationBarContent()
             }
         }
     }

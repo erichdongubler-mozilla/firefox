@@ -440,7 +440,6 @@ class HomeFragment : Fragment() {
                 (awesomeBarComposable ?: initializeAwesomeBarComposable(toolbarStore, modifier))
                     ?.SearchSuggestions()
             },
-            navigationBarContent = null,
         )
     }
 
@@ -683,7 +682,6 @@ class HomeFragment : Fragment() {
                 onTopSitesItemBound = {
                     StartupTimeline.onTopSitesItemBound(activity = (requireActivity() as HomeActivity))
                 },
-                navigationBarContent = null,
             )
 
             if (microsurveyVisible) {
