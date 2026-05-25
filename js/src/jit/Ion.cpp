@@ -58,6 +58,7 @@
 #include "jit/WarpOracle.h"
 #include "jit/WasmBCE.h"
 #include "jit/WasmRefTypeAnalysis.h"
+#include "js/friend/UsageStatistics.h"  // JSUseCounter
 #include "js/Printf.h"
 #include "js/UniquePtr.h"
 #include "util/Memory.h"
@@ -1998,6 +1999,17 @@ static MethodStatus Compile(JSContext* cx, HandleScript script,
             script->filename(), script->lineno(),
             script->column().oneOriginValue());
     return Method_CantCompile;
+  }
+
+  // TODO(Bug 2039389): Remove generator use counters
+  if (script->isGenerator()) {
+    if (script->isAsync()) {
+      cx->runtime()->setUseCounter(
+          cx->global(), JSUseCounter::ASYNC_GENERATOR_FUNCTION_ION_ELIGIBLE);
+    } else {
+      cx->runtime()->setUseCounter(
+          cx->global(), JSUseCounter::GENERATOR_FUNCTION_ION_ELIGIBLE);
+    }
   }
 
   OptimizationLevel optimizationLevel =

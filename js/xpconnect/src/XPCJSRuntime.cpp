@@ -2933,6 +2933,19 @@ static void SetUseCounterCallback(JSObject* obj, JSUseCounter counter) {
     case JSUseCounter::DATEPARSE_IMPL_DEF:
       SetUseCounter(obj, eUseCounter_custom_JS_dateparse_impl_def);
       return;
+    case JSUseCounter::GENERATOR_FUNCTION_CREATED:
+      SetUseCounter(obj, eUseCounter_custom_JS_generatorFunctionCreated);
+      return;
+    case JSUseCounter::ASYNC_GENERATOR_FUNCTION_CREATED:
+      SetUseCounter(obj, eUseCounter_custom_JS_asyncGeneratorFunctionCreated);
+      return;
+    case JSUseCounter::GENERATOR_FUNCTION_ION_ELIGIBLE:
+      SetUseCounter(obj, eUseCounter_custom_JS_generatorFunctionIonEligible);
+      return;
+    case JSUseCounter::ASYNC_GENERATOR_FUNCTION_ION_ELIGIBLE:
+      SetUseCounter(obj,
+                    eUseCounter_custom_JS_asyncGeneratorFunctionIonEligible);
+      return;
     case JSUseCounter::COUNT:
       break;
   }
