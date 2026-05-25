@@ -6575,6 +6575,9 @@ button.arrow-button:dir(rtl) {
   grid-column: 1;
   justify-self: start;
 }
+.sports-back-button:dir(rtl) {
+  transform: scaleX(-1);
+}
 
 .sports-matches-tabs {
   display: flex;
@@ -6660,6 +6663,7 @@ button.arrow-button:dir(rtl) {
 }
 
 .sports-matches-tab-panel:has(.match-highlight-view) > .sports-section-label {
+  position: absolute;
   margin-block-start: var(--space-medium);
 }
 
@@ -6742,7 +6746,7 @@ button.arrow-button:dir(rtl) {
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 .sports-match-row {
-  --sports-flag-width: 63px;
+  --sports-flag-width: 60px;
   --sports-flag-height: 40px;
   display: grid;
   grid-template-columns: 3fr 4fr 3fr;
@@ -6769,8 +6773,8 @@ button.arrow-button:dir(rtl) {
   line-height: 0;
 }
 .sports-match-row .sports-match-team .sports-match-flag-wrapper.is-followed .sports-match-flag {
-  outline: 3px solid var(--color-accent-primary);
-  outline-offset: -3px;
+  outline: 2px solid var(--color-accent-primary);
+  outline-offset: -2px;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, declaration-property-value-disallowed-list */
   border-radius: 6px;
 }
@@ -6785,13 +6789,15 @@ button.arrow-button:dir(rtl) {
   position: absolute;
   inset-block-start: calc(var(--space-xsmall) * -1);
   inset-inline-end: calc(var(--space-xsmall) * -1);
-  width: var(--icon-size-medium);
-  height: var(--icon-size-medium);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  border: 2px solid var(--newtab-background-color-secondary);
+  width: 17px;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  height: 17px;
   border-radius: var(--border-radius-circle);
   background-color: var(--newtab-background-color-secondary);
   background-image: url("chrome://global/skin/icons/check-filled.svg");
+  background-repeat: no-repeat;
+  background-position: right top;
   -moz-context-properties: fill;
   fill: var(--color-accent-primary);
 }
@@ -6887,10 +6893,6 @@ button.arrow-button:dir(rtl) {
 }
 .sports-match-row.sports-match-row-list {
   margin-block: var(--space-xsmall);
-}
-.sports-match-row.sports-match-row-list .sports-match-flag-wrapper.is-followed .sports-match-flag {
-  outline-width: 2px;
-  outline-offset: -2px;
 }
 .sports-match-row.sports-match-row-list .sports-score-pill {
   font-size: var(--font-size-root);

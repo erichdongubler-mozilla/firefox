@@ -256,6 +256,10 @@
 .sports-back-button {
   grid-column: 1;
   justify-self: start;
+
+  &:dir(rtl) {
+    transform: scaleX(-1);
+  }
 }
 
 .sports-matches-tabs {
@@ -347,6 +351,7 @@
 }
 
 .sports-matches-tab-panel:has(.match-highlight-view) > .sports-section-label {
+  position: absolute;
   margin-block-start: var(--space-medium);
 }
 
