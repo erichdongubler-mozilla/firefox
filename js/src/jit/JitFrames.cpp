@@ -1471,7 +1471,7 @@ void TraceJitFrames(JSTracer* trc, JitActivation* activation) {
       gc::AssertRootMarkingPhase(trc);
       MOZ_ASSERT(frames.isWasm());
       uint8_t* nextPC = frames.resumePCinCurrentFrame();
-      MOZ_ASSERT(nextPC != 0);
+      MOZ_ASSERT(nextPC != nullptr);
       wasm::WasmFrameIter& wasmFrameIter = frames.asWasm();
 #ifdef ENABLE_WASM_JSPI
       if (wasmFrameIter.currentFrameStackSwitched()) {

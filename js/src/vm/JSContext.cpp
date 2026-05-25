@@ -517,7 +517,7 @@ static void PrintSingleError(FILE* file, JS::ConstUTF8CharsZ toStringResult,
 
   /* embedded newlines -- argh! */
   const char* ctmp;
-  while ((ctmp = strchr(message, '\n')) != 0) {
+  while ((ctmp = strchr(message, '\n')) != nullptr) {
     ctmp++;
     if (prefix) {
       fputs(prefix.get(), file);

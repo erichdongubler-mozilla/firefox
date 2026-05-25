@@ -138,7 +138,7 @@ const LInstruction* LBlock::firstInstructionWithId() const {
       return *i;
     }
   }
-  return 0;
+  return nullptr;
 }
 
 LMoveGroup* LBlock::getEntryMoveGroup(TempAllocator& alloc) {
