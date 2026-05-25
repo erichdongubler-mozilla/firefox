@@ -752,7 +752,7 @@ bool GLContext::InitImpl() {
 
     if (Renderer() == GLRenderer::AndroidEmulator) {
       // Bug 1665300
-      mSymbols.fGetGraphicsResetStatus = 0;
+      mSymbols.fGetGraphicsResetStatus = nullptr;
     }
 
     if (Vendor() == GLVendor::Vivante) {

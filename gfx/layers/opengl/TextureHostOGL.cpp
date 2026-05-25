@@ -329,7 +329,7 @@ DirectMapTextureSource::DirectMapTextureSource(gl::GLContext* aContext,
                                                gfx::DataSourceSurface* aSurface)
     : GLTextureSource(aContext, 0, LOCAL_GL_TEXTURE_RECTANGLE_ARB,
                       aSurface->GetSize(), aSurface->GetFormat()),
-      mSync(0) {
+      mSync(nullptr) {
   MOZ_ASSERT(aSurface);
 
   UpdateInternal(aSurface, nullptr, nullptr, true);
@@ -345,7 +345,7 @@ DirectMapTextureSource::~DirectMapTextureSource() {
   }
 
   gl()->fDeleteSync(mSync);
-  mSync = 0;
+  mSync = nullptr;
 }
 
 bool DirectMapTextureSource::Update(gfx::DataSourceSurface* aSurface,
@@ -433,7 +433,7 @@ bool DirectMapTextureSource::UpdateInternal(gfx::DataSourceSurface* aSurface,
 
   if (mSync) {
     gl()->fDeleteSync(mSync);
-    mSync = 0;
+    mSync = nullptr;
   }
 
   gl()->fPixelStorei(LOCAL_GL_UNPACK_CLIENT_STORAGE_APPLE, LOCAL_GL_FALSE);

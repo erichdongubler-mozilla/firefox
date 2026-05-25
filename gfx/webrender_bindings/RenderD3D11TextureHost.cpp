@@ -36,8 +36,8 @@ RenderDXGITextureHost::RenderDXGITextureHost(
     : mHandle(aHandle),
       mGpuProcessTextureId(aGpuProcessTextureId),
       mArrayIndex(aArrayIndex),
-      mSurface(0),
-      mStream(0),
+      mSurface(nullptr),
+      mStream(nullptr),
       mTextureHandle{0},
       mFormat(aFormat),
       mColorSpace(aColorSpace),
@@ -543,8 +543,8 @@ void RenderDXGITextureHost::DeleteTextureHandle() {
 
   mTexture = nullptr;
   mKeyedMutex = nullptr;
-  mSurface = 0;
-  mStream = 0;
+  mSurface = nullptr;
+  mStream = nullptr;
 }
 
 GLuint RenderDXGITextureHost::GetGLHandle(uint8_t aChannelIndex) const {
@@ -584,8 +584,8 @@ RenderDXGIYCbCrTextureHost::RenderDXGIYCbCrTextureHost(
     const gfx::IntSize aSizeCbCr,
     const layers::CompositeProcessFencesHolderId aFencesHolderId)
     : mHandles{aHandles[0], aHandles[1], aHandles[2]},
-      mSurfaces{0},
-      mStreams{0},
+      mSurfaces{nullptr},
+      mStreams{nullptr},
       mTextureHandles{0},
       mYUVColorSpace(aYUVColorSpace),
       mColorDepth(aColorDepth),
@@ -839,11 +839,11 @@ void RenderDXGIYCbCrTextureHost::DeleteTextureHandle() {
 
       if (mSurfaces[i]) {
         egl->fDestroySurface(mSurfaces[i]);
-        mSurfaces[i] = 0;
+        mSurfaces[i] = nullptr;
       }
       if (mStreams[i]) {
         egl->fDestroyStreamKHR(mStreams[i]);
-        mStreams[i] = 0;
+        mStreams[i] = nullptr;
       }
     }
   }

@@ -672,7 +672,7 @@ void DrawBlitProg::Draw(const BaseArgs& args,
 
     gl->fEnableVertexAttribArray(0);
     const ScopedBindArrayBuffer bindVBO(gl, mParent.mQuadVBO);
-    gl->fVertexAttribPointer(0, 2, LOCAL_GL_FLOAT, false, 0, 0);
+    gl->fVertexAttribPointer(0, 2, LOCAL_GL_FLOAT, false, 0, nullptr);
   }
 
   gl->fDrawArrays(LOCAL_GL_TRIANGLE_STRIP, 0, 4);
@@ -716,7 +716,7 @@ GLBlitHelper::GLBlitHelper(GLContext* const gl)
       mGL->fGenVertexArrays(1, &mQuadVAO);
       mGL->fBindVertexArray(mQuadVAO);
       mGL->fEnableVertexAttribArray(0);
-      mGL->fVertexAttribPointer(0, 2, LOCAL_GL_FLOAT, false, 0, 0);
+      mGL->fVertexAttribPointer(0, 2, LOCAL_GL_FLOAT, false, 0, nullptr);
 
       mGL->fBindVertexArray(prev);
     }

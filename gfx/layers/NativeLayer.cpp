@@ -58,7 +58,7 @@ void AsyncReadbackBufferNLRS::CopyFrom(
   const gl::ScopedBindFramebuffer bindFB(
       mGL, static_cast<RenderSourceNLRS*>(aSource)->FB().mFB);
   mGL->fReadPixels(0, 0, size.width, size.height, LOCAL_GL_RGBA,
-                   LOCAL_GL_UNSIGNED_BYTE, 0);
+                   LOCAL_GL_UNSIGNED_BYTE, nullptr);
 }
 
 bool AsyncReadbackBufferNLRS::MapAndCopyInto(gfx::DataSourceSurface* aSurface,

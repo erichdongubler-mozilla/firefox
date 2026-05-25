@@ -1227,8 +1227,8 @@ CGContextRef DrawTargetSkia::BorrowCGContext(const DrawOptions& aOptions) {
 
   mCG = CGBitmapContextCreateWithData(
       mCanvasData, mCGSize.width, mCGSize.height, 8, /* bits per component */
-      stride, mColorSpace, bitmapInfo, NULL, /* Callback when released */
-      NULL);
+      stride, mColorSpace, bitmapInfo, nullptr, /* Callback when released */
+      nullptr);
   if (!mCG) {
     if (mNeedLayer) {
       mCanvas->restore();

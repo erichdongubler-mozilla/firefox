@@ -2447,7 +2447,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   // Extension ARB_sync (GL)
  public:
   GLsync fFenceSync(GLenum condition, GLbitfield flags) {
-    GLsync ret = 0;
+    GLsync ret = nullptr;
     BEFORE_GL_CALL;
     ASSERT_SYMBOL_PRESENT(fFenceSync);
     ret = mSymbols.fFenceSync(condition, flags);

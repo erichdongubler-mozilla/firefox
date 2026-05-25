@@ -427,7 +427,7 @@ bool CTFontEntry::IsCFF() {
 CTFontEntry::CTFontEntry(const nsACString& aPostscriptName, WeightRange aWeight,
                          bool aIsStandardFace, double aSizeHint)
     : gfxFontEntry(aPostscriptName, aIsStandardFace),
-      mFontRef(NULL),
+      mFontRef(nullptr),
       mSizeHint(aSizeHint),
       mFontRefInitialized(false),
       mRequiresAAT(false),
@@ -446,7 +446,7 @@ CTFontEntry::CTFontEntry(const nsACString& aPostscriptName, CGFontRef aFontRef,
                          SlantStyleRange aStyle, bool aIsDataUserFont,
                          bool aIsLocalUserFont)
     : gfxFontEntry(aPostscriptName, false),
-      mFontRef(NULL),
+      mFontRef(nullptr),
       mSizeHint(0.0),
       mFontRefInitialized(false),
       mRequiresAAT(false),
@@ -1026,7 +1026,7 @@ CoreTextFontList::~CoreTextFontList() {
   if (XRE_IsParentProcess()) {
     CFNotificationCenterRemoveObserver(
         CFNotificationCenterGetLocalCenter(), this,
-        kCTFontManagerRegisteredFontsChangedNotification, 0);
+        kCTFontManagerRegisteredFontsChangedNotification, nullptr);
   }
 
   if (mDefaultFont) {
@@ -1168,7 +1168,7 @@ nsresult CoreTextFontList::InitFontListForPlatform() {
       CFNotificationCenterAddObserver(
           CFNotificationCenterGetLocalCenter(), this,
           RegisteredFontsChangedNotificationCallback,
-          kCTFontManagerRegisteredFontsChangedNotification, 0,
+          kCTFontManagerRegisteredFontsChangedNotification, nullptr,
           CFNotificationSuspensionBehaviorDeliverImmediately);
       firstTime = false;
     }
@@ -1238,7 +1238,7 @@ void CoreTextFontList::InitSharedFontListForPlatform() {
       CFNotificationCenterAddObserver(
           CFNotificationCenterGetLocalCenter(), this,
           RegisteredFontsChangedNotificationCallback,
-          kCTFontManagerRegisteredFontsChangedNotification, 0,
+          kCTFontManagerRegisteredFontsChangedNotification, nullptr,
           CFNotificationSuspensionBehaviorDeliverImmediately);
       firstTime = false;
     }
@@ -1343,7 +1343,7 @@ gfxFontEntry* CoreTextFontList::PlatformGlobalFontFallback(
   bool cantUseFallbackFont = false;
 
   if (!mDefaultFont) {
-    mDefaultFont = CTFontCreateWithName(CFSTR("LucidaGrande"), 12.f, NULL);
+    mDefaultFont = CTFontCreateWithName(CFSTR("LucidaGrande"), 12.f, nullptr);
   }
 
   AutoCFTypeRef<CTFontRef> fallback(
@@ -1587,13 +1587,13 @@ void CTFontInfo::LoadFontFamilyData(const nsACString& aFamilyName) {
   AutoCFTypeRef<CFStringRef> family(CreateCFStringForString(aFamilyName));
 
   AutoCFTypeRef<CFMutableDictionaryRef> attr(
-      CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks,
+      CFDictionaryCreateMutable(nullptr, 0, &kCFTypeDictionaryKeyCallBacks,
                                 &kCFTypeDictionaryValueCallBacks));
   CFDictionaryAddValue(attr, kCTFontFamilyNameAttribute, family);
   AutoCFTypeRef<CTFontDescriptorRef> fd(
       CTFontDescriptorCreateWithAttributes(attr));
   AutoCFTypeRef<CFArrayRef> matchingFonts(
-      CTFontDescriptorCreateMatchingFontDescriptors(fd, NULL));
+      CTFontDescriptorCreateMatchingFontDescriptors(fd, nullptr));
   if (!matchingFonts) {
     return;
   }

@@ -191,7 +191,7 @@ static EGLSurface CreateSurfaceFromNativeWindow(
   newSurface = egl.mLib->fCreateWindowSurface(display, config, nativeWindow, 0);
   ANativeWindow_release(nativeWindow);
 #else
-  newSurface = egl.fCreateWindowSurface(config, window, 0);
+  newSurface = egl.fCreateWindowSurface(config, window, nullptr);
 #endif
   if (!newSurface) {
     const auto err = egl.mLib->fGetError();
@@ -822,7 +822,7 @@ EGLSurface GLContextEGL::CreateWaylandOffscreenSurface(
   if (!eglwindow) return nullptr;
 
   const auto surface = egl.fCreateWindowSurface(
-      config, reinterpret_cast<EGLNativeWindowType>(eglwindow), 0);
+      config, reinterpret_cast<EGLNativeWindowType>(eglwindow), nullptr);
   if (surface) {
     MOZ_DIAGNOSTIC_ASSERT(!sWaylandOffscreenGLSurfaces.Contains(surface));
     sWaylandOffscreenGLSurfaces.LookupOrInsert(

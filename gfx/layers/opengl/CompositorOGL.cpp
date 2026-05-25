@@ -671,7 +671,7 @@ bool CompositorOGL::ReadbackRenderTarget(CompositingRenderTarget* aSource,
 
   mGLContext->fPixelStorei(LOCAL_GL_PACK_ALIGNMENT, 1);
   mGLContext->fReadPixels(0, 0, size.width, size.height, LOCAL_GL_RGBA,
-                          LOCAL_GL_UNSIGNED_BYTE, 0);
+                          LOCAL_GL_UNSIGNED_BYTE, nullptr);
 
   if (previousTarget != aSource) {
     SetRenderTarget(previousTarget);
