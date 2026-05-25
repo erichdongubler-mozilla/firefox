@@ -700,6 +700,7 @@ class MarkerSchema {
   // the marker and used in PayloadField. This type is the expected input type
   // to the marker data.
   enum class InputType {
+    Undefined,
     Uint64,
     Uint32,
     Uint8,
@@ -873,12 +874,16 @@ class MarkerSchema {
   // This is one field of payload to be used for additional marker data.
   struct PayloadField {
     // Key identifying the marker.
-    const char* Key;
+    // Must be set.
+    const char* Key = nullptr;
     // Input type, this represents the data type specified.
-    InputType InputTy;
+    // Must be set.
+    InputType InputTy = InputType::Undefined;
     // Label, additional description.
+    // Optional.
     const char* Label = nullptr;
     // Format as written to the JSON.
+    // Optional.
     Format Fmt = Format::String;
     // Optional PayloadFlags.
     PayloadFlags Flags = PayloadFlags::None;
@@ -1227,7 +1232,13 @@ struct BaseMarkerType {
     if constexpr (T::ColorField) {
       schema.SetColorField(T::ColorField);
     }
-    for (const MS::PayloadField field : T::PayloadFields) {
+    if constexpr (std::extent_v<decltype(T::PayloadFields)>) {
+      static_assert(
+          CheckPayloadFields(T::PayloadFields),
+          "PayloadField requires a non-null Key and an InputTy other than "
+          "Undefined");
+    }
+    for (const MS::PayloadField& field : T::PayloadFields) {
       if (field.Label) {
         schema.AddKeyLabelFormat(field.Key, field.Label, field.Fmt,
                                  field.Flags);
@@ -1268,6 +1279,21 @@ struct BaseMarkerType {
     StreamJSONMarkerDataImplHelper(
         aWriter, std::index_sequence_for<PayloadArguments...>{},
         aPayloadArguments...);
+  }
+
+ private:
+  template <std::size_t N>
+  static constexpr bool CheckPayloadFields(
+      const MarkerSchema::PayloadField (&aPayloadFields)[N]) {
+    for (const auto& field : aPayloadFields) {
+      if (field.Key == nullptr) {
+        return false;
+      }
+      if (field.InputTy == MarkerSchema::InputType::Undefined) {
+        return false;
+      }
+    }
+    return true;
   }
 };
 }  // namespace mozilla
