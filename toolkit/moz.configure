@@ -3697,6 +3697,16 @@ def moz_pkg_platform(target, build_project, override, special):
 set_config("MOZ_PKG_PLATFORM", moz_pkg_platform)
 
 
+@depends(moz_pkg_platform, "MOZ_SIMPLE_PACKAGE_NAME")
+def pkg_langpack_path(platform, simple_name):
+    if simple_name:
+        return ""
+    return f"{platform}/xpi/"
+
+
+set_config("PKG_LANGPACK_PATH", pkg_langpack_path)
+
+
 option(
     env="MOZ_PKG_APPNAME",
     nargs=1,
