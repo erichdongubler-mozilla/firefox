@@ -16666,6 +16666,9 @@ function SportsWidget_SportsWidget({
     handleInteraction();
   }
   function handleViewUpcoming() {
+    // Mark this as an explicit tab choice so the live-games auto-override
+    // doesn't pin activeTab back to NOW.
+    hasUserSelectedTab.current = true;
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.WIDGETS_USER_EVENT,
@@ -16688,6 +16691,9 @@ function SportsWidget_SportsWidget({
     handleInteraction();
   }
   function handleViewResults() {
+    // Mark this as an explicit tab choice so the live-games auto-override
+    // doesn't pin activeTab back to NOW.
+    hasUserSelectedTab.current = true;
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.WIDGETS_USER_EVENT,

@@ -293,6 +293,9 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   }
 
   function handleViewUpcoming() {
+    // Mark this as an explicit tab choice so the live-games auto-override
+    // doesn't pin activeTab back to NOW.
+    hasUserSelectedTab.current = true;
     batch(() => {
       dispatch(
         ac.OnlyToMain({
@@ -322,6 +325,9 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   }
 
   function handleViewResults() {
+    // Mark this as an explicit tab choice so the live-games auto-override
+    // doesn't pin activeTab back to NOW.
+    hasUserSelectedTab.current = true;
     batch(() => {
       dispatch(
         ac.OnlyToMain({

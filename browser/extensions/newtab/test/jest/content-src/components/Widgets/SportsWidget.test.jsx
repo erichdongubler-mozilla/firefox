@@ -2272,6 +2272,117 @@ describe("<SportsWidget> telemetry", () => {
     );
   });
 
+  it("switches to upcoming when the View upcoming context menu item is clicked even with live games present", () => {
+    const sportsWithLive = {
+      widgetState: "sports-matches",
+      matchesTab: "results",
+      data: {
+        teams: [],
+        matches: { current: [mockMatch], previous: [mockMatch], next: [] },
+      },
+    };
+    const { container, rerender } = render(
+      <WrapWithProvider state={makeState({}, sportsWithLive)}>
+        <SportsWidget
+          dispatch={dispatch}
+          handleUserInteraction={handleUserInteraction}
+        />
+      </WrapWithProvider>
+    );
+
+    // While live games are present, the widget auto-activates Now regardless
+    // of the persisted matchesTab.
+    expect(
+      container
+        .querySelector(".sports-matches-tab.is-active")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-sports-widget-now");
+
+    fireEvent.click(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-menu-view-upcoming']"
+      )
+    );
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_SPORTS_CHANGE_MATCHES_TAB,
+        data: "upcoming",
+      })
+    );
+
+    // Simulate the dispatch reaching redux. Without the auto-override being
+    // suppressed by the user's explicit menu choice, the active tab would
+    // remain pinned to Now here.
+    rerender(
+      <WrapWithProvider
+        state={makeState({}, { ...sportsWithLive, matchesTab: "upcoming" })}
+      >
+        <SportsWidget
+          dispatch={dispatch}
+          handleUserInteraction={handleUserInteraction}
+        />
+      </WrapWithProvider>
+    );
+    expect(
+      container
+        .querySelector(".sports-matches-tab.is-active")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-sports-widget-upcoming");
+  });
+
+  it("switches to results when the View results context menu item is clicked even with live games present", () => {
+    const sportsWithLive = {
+      widgetState: "sports-matches",
+      matchesTab: "upcoming",
+      data: {
+        teams: [],
+        matches: { current: [mockMatch], previous: [mockMatch], next: [] },
+      },
+    };
+    const { container, rerender } = render(
+      <WrapWithProvider state={makeState({}, sportsWithLive)}>
+        <SportsWidget
+          dispatch={dispatch}
+          handleUserInteraction={handleUserInteraction}
+        />
+      </WrapWithProvider>
+    );
+
+    expect(
+      container
+        .querySelector(".sports-matches-tab.is-active")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-sports-widget-now");
+
+    fireEvent.click(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-menu-view-results']"
+      )
+    );
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_SPORTS_CHANGE_MATCHES_TAB,
+        data: "results",
+      })
+    );
+
+    rerender(
+      <WrapWithProvider
+        state={makeState({}, { ...sportsWithLive, matchesTab: "results" })}
+      >
+        <SportsWidget
+          dispatch={dispatch}
+          handleUserInteraction={handleUserInteraction}
+        />
+      </WrapWithProvider>
+    );
+    expect(
+      container
+        .querySelector(".sports-matches-tab.is-active")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-sports-widget-results");
+  });
+
   it("should dispatch view_matches telemetry with key_dates_state source when View matches is clicked from key dates", () => {
     const { container } = render(
       <WrapWithProvider
