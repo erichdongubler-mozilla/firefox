@@ -4925,7 +4925,7 @@ int32_t MacroAssemblerRiscv64::GetOffset(Label* L, OffsetSize bits) {
 
 bool MacroAssemblerRiscv64::CalculateOffset(Label* L, OffsetSize bits,
                                             int32_t* offset) {
-  if (!isNear(L, bits)) {
+  if (L->bound() && !isNear(L, bits)) {
     return false;
   }
   *offset = GetOffset(L, bits);
@@ -5071,7 +5071,7 @@ CodeOffset MacroAssemblerRiscv64::BranchAndLinkLong(Label* L) {
 }
 
 CodeOffset MacroAssemblerRiscv64::BranchAndLink(Label* L) {
-  if (L->bound() && !isNear(L)) {
+  if (L->bound() && !isNear(L, OffsetSize::kOffset21)) {
     return BranchAndLinkLong(L);
   }
   return BranchAndLinkShort(L);

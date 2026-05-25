@@ -1149,21 +1149,6 @@ void Assembler::Bind(uint8_t* rawCode, const CodeLabel& label) {
   }
 }
 
-bool Assembler::isNear(Label* L) {
-  MOZ_ASSERT(L->bound());
-  return is_intn((currentOffset() - L->offset()), kJumpOffsetBits);
-}
-
-bool Assembler::isNear(Label* L, OffsetSize bits) {
-  if (L == nullptr || !L->bound()) return true;
-  return is_intn((currentOffset() - L->offset()), bits);
-}
-
-bool Assembler::is_near_branch(Label* L) {
-  MOZ_ASSERT(L->bound());
-  return is_intn((currentOffset() - L->offset()), kBranchOffsetBits);
-}
-
 int32_t Assembler::branchLongOffsetHelper(Label* L) {
   if (oom()) {
     return kEndOfJumpChain;
