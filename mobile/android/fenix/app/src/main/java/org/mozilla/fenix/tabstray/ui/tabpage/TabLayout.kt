@@ -116,6 +116,7 @@ import org.mozilla.fenix.tabstray.ui.tabitems.gridItemAspectRatio
 import org.mozilla.fenix.tabstray.ui.tabitems.tabItemListInteractionAnimation
 import org.mozilla.fenix.tabstray.ui.tabitems.tabListItemShapeStyling
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 import org.mozilla.fenix.theme.ThemedValue
 import org.mozilla.fenix.theme.ThemedValueProvider
 import org.mozilla.fenix.trackingprotection.TrackersBlockedCard
@@ -341,6 +342,7 @@ private fun TabGrid(
             header = header,
             contentPadding = contentPadding,
             trackersBlockedCount = trackersBlockedCount,
+            focusEnabled = focusEnabled,
         )
     }
 }
@@ -405,6 +407,7 @@ private fun ReorderableTabGrid(
     tabs: List<TabsTrayItem>,
     selectedItemIndex: Int,
     selectionMode: TabsTrayState.Mode,
+    focusEnabled: Boolean,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues,
     onTabClose: (TabsTrayItem.Tab) -> Unit,
@@ -480,6 +483,7 @@ private fun ReorderableTabGrid(
                     thumbnailSizePx = thumbnailSizePx,
                     hasHeader = header != null,
                     isInMultiSelectMode = isInMultiSelectMode,
+                    focusEnabled = focusEnabled,
                     isMultiSelected = selectionMode.contains(tab),
                     reorderState = reorderState,
                     gridState = gridState,
@@ -653,6 +657,7 @@ private fun LazyGridItemScope.ReorderableTabGridItemContent(
     thumbnailSizePx: Int,
     hasHeader: Boolean,
     isInMultiSelectMode: Boolean,
+    focusEnabled: Boolean,
     isMultiSelected: Boolean,
     reorderState: GridReorderState,
     gridState: LazyGridState,
@@ -687,6 +692,7 @@ private fun LazyGridItemScope.ReorderableTabGridItemContent(
             isFocused = tabsTrayItem.isFocused,
             isSelected = isMultiSelected,
             multiSelectEnabled = isInMultiSelectMode,
+            focusEnabled = focusEnabled,
         )
         when (tabsTrayItem) {
             is TabsTrayItem.Tab -> {
@@ -1319,7 +1325,7 @@ private class TabLayoutPreviewParameterProvider : ThemedValueProvider<TabLayoutP
     getDisplayName = { index, _ -> tabLayoutPreviewData[index].first },
 )
 
-@FlexibleWindowPreview
+@Preview
 @Composable
 private fun TabListPreview(
     @PreviewParameter(TabLayoutPreviewParameterProvider::class) previewModel: ThemedValue<TabLayoutPreviewModel>,
@@ -1328,6 +1334,8 @@ private fun TabListPreview(
         generateFakeTabsList(
             tabCount = previewModel.value.tabCount,
             tabGroupIndices = previewModel.value.tabGroupIndices,
+            selectedTabIndex = previewModel.value.selectedTabIndex,
+            isPrivate = previewModel.theme == Theme.Private,
         ).toMutableStateList()
     }
 
@@ -1352,7 +1360,7 @@ private fun TabListPreview(
     }
 }
 
-@FlexibleWindowPreview
+@Preview
 @Composable
 private fun TabGridPreview(
     @PreviewParameter(TabLayoutPreviewParameterProvider::class) previewModel: ThemedValue<TabLayoutPreviewModel>,
@@ -1361,6 +1369,8 @@ private fun TabGridPreview(
         generateFakeTabsList(
             tabCount = previewModel.value.tabCount,
             tabGroupIndices = previewModel.value.tabGroupIndices,
+            selectedTabIndex = previewModel.value.selectedTabIndex,
+            isPrivate = previewModel.theme == Theme.Private,
         ).toMutableStateList()
     }
 
@@ -1370,6 +1380,71 @@ private fun TabGridPreview(
             selectionMode = TabsTrayState.Mode.Normal,
             tabInteractionHandler = NoOpTabInteractionHandler,
             selectedItemIndex = previewModel.value.selectedTabIndex,
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+            displayTabsInGrid = true,
+            dragAndDropEnabled = false,
+            onTabClose = tabs::remove,
+            onItemClick = {},
+            onItemLongClick = {},
+            onDeleteTabGroupClick = {},
+            onEditTabGroupClick = {},
+            onCloseTabGroupClick = {},
+            focusEnabled = true,
+        )
+    }
+}
+
+@FlexibleWindowPreview
+@Composable
+private fun TabListWindowSizePreview() {
+    val previewModel = tabLayoutPreviewData[0].second
+    val tabs = remember {
+        generateFakeTabsList(
+            tabCount = previewModel.tabCount,
+            tabGroupIndices = previewModel.tabGroupIndices,
+            selectedTabIndex = previewModel.selectedTabIndex,
+        ).toMutableStateList()
+    }
+
+    FirefoxTheme(theme = Theme.Light) {
+        Box(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
+            TabLayout(
+                tabs = tabs,
+                selectedItemIndex = previewModel.selectedTabIndex,
+                selectionMode = TabsTrayState.Mode.Normal,
+                tabInteractionHandler = NoOpTabInteractionHandler,
+                displayTabsInGrid = false,
+                dragAndDropEnabled = false,
+                onTabClose = tabs::remove,
+                onItemClick = {},
+                onItemLongClick = {},
+                onDeleteTabGroupClick = {},
+                onEditTabGroupClick = {},
+                onCloseTabGroupClick = {},
+                focusEnabled = true,
+            )
+        }
+    }
+}
+
+@FlexibleWindowPreview
+@Composable
+private fun TabGridWindowSizePreview() {
+    val previewModel = tabLayoutPreviewData[0].second
+    val tabs = remember {
+        generateFakeTabsList(
+            tabCount = previewModel.tabCount,
+            tabGroupIndices = previewModel.tabGroupIndices,
+            selectedTabIndex = previewModel.selectedTabIndex,
+        ).toMutableStateList()
+    }
+
+    FirefoxTheme(theme = Theme.Light) {
+        TabLayout(
+            tabs = tabs,
+            selectionMode = TabsTrayState.Mode.Normal,
+            tabInteractionHandler = NoOpTabInteractionHandler,
+            selectedItemIndex = previewModel.selectedTabIndex,
             modifier = Modifier.background(MaterialTheme.colorScheme.surface),
             displayTabsInGrid = true,
             dragAndDropEnabled = false,
@@ -1416,6 +1491,8 @@ private fun MultiSelectPreview(
     val tabs = generateFakeTabsList(
         tabCount = previewModel.value.tabCount,
         tabGroupIndices = previewModel.value.tabGroupIndices,
+        selectedTabIndex = previewModel.value.selectedTabIndex,
+        isPrivate = previewModel.theme == Theme.Private,
     )
     val selectedTabs = remember {
         tabs.take(SELECTED_TAB_COUNT_PREVIEW).filterIsInstance<TabsTrayItem.Tab>().toMutableStateList()
@@ -1465,8 +1542,10 @@ private fun generateFakeTabsList(
     tabCount: Int = 10,
     isPrivate: Boolean = false,
     tabGroupIndices: List<Int> = emptyList(),
+    selectedTabIndex: Int = -1,
 ): List<TabsTrayItem> {
     return List(tabCount) { index ->
+        val isFocused = index == selectedTabIndex
         if (index in tabGroupIndices) {
             createTabGroup(
                 title = "Group $index",
@@ -1493,12 +1572,14 @@ private fun generateFakeTabsList(
                         private = isPrivate,
                     ),
                 ),
+                isFocused = isFocused,
             )
         } else {
             createTab(
                 id = "tabId$index-$isPrivate",
                 url = "www.mozilla.com",
                 private = isPrivate,
+                isFocused = isFocused,
             )
         }
     }
