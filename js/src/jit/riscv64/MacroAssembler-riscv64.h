@@ -171,7 +171,6 @@ class MacroAssemblerRiscv64 : public Assembler {
             JumpKind jumpKind = LongJump);
   CodeOffset BranchAndLinkShort(Label* L);
   CodeOffset BranchAndLink(Label* label);
-  CodeOffset BranchAndLinkShort(int32_t offset);
   CodeOffset BranchAndLinkShortHelper(int32_t offset, Label* L);
   CodeOffset BranchAndLinkLong(Label* L);
   void GenPCRelativeJumpAndLink(Register rd, int32_t imm32);

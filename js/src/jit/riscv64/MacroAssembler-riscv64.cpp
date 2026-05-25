@@ -6688,11 +6688,6 @@ CodeOffset MacroAssemblerRiscv64::BranchAndLinkShortHelper(int32_t offset,
   return jal(offset);
 }
 
-CodeOffset MacroAssemblerRiscv64::BranchAndLinkShort(int32_t offset) {
-  MOZ_ASSERT(is_int21(offset));
-  return BranchAndLinkShortHelper(offset, nullptr);
-}
-
 CodeOffset MacroAssemblerRiscv64::BranchAndLinkShort(Label* L) {
   return BranchAndLinkShortHelper(0, L);
 }
