@@ -4936,16 +4936,6 @@ bool MacroAssemblerRiscv64::CalculateOffset(Label* L, OffsetSize bits,
   return true;
 }
 
-BufferOffset MacroAssemblerRiscv64::BranchShortHelper(int32_t offset,
-                                                      Label* L) {
-  MOZ_ASSERT(L == nullptr || offset == 0);
-  AutoForbidPoolsAndNops afp(this, 2, 1);
-  offset = GetOffset(offset, L, OffsetSize::kOffset21);
-  BufferOffset bo = nextOffset();
-  Assembler::j(offset);
-  return bo;
-}
-
 bool MacroAssemblerRiscv64::BranchShortHelper(int32_t offset, Label* L,
                                               Condition cond, Register rs,
                                               const Operand& rt) {
@@ -5077,8 +5067,12 @@ bool MacroAssemblerRiscv64::BranchShortHelper(int32_t offset, Label* L,
   return true;
 }
 
-BufferOffset MacroAssemblerRiscv64::BranchShort(Label* L) {
-  return BranchShortHelper(0, L);
+BufferOffset MacroAssemblerRiscv64::BranchShortHelper(Label* L) {
+  AutoForbidPoolsAndNops afp(this, 2, 1);
+  int32_t offset = GetOffset(0, L, OffsetSize::kOffset21);
+  BufferOffset bo = nextOffset();
+  Assembler::j(offset);
+  return bo;
 }
 
 bool MacroAssemblerRiscv64::BranchShort(Label* L, Condition cond, Register rs,
