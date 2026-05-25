@@ -5111,10 +5111,14 @@ bool MacroAssemblerRiscv64::BranchShort(Label* L, Condition cond, Register rs,
 
 void MacroAssemblerRiscv64::BranchLong(Label* L) {
   // Generate position independent long branch.
+  int32_t imm = branchLongOffsetHelper(L);
+
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
-  int32_t imm = branchLongOffsetHelper(L);
-  GenPCRelativeJump(scratch, imm);
+
+  auto [Hi20, Lo12] = ToHigh20Low12(imm);
+  auipc(scratch, Hi20);  // Read PC + Hi20 into scratch.
+  jr(scratch, Lo12);     // jump PC + Hi20 + Lo12
 }
 
 CodeOffset MacroAssemblerRiscv64::BranchAndLinkShort(Label* L) {
@@ -5126,9 +5130,14 @@ CodeOffset MacroAssemblerRiscv64::BranchAndLinkShort(Label* L) {
 CodeOffset MacroAssemblerRiscv64::BranchAndLinkLong(Label* L) {
   // Generate position independent long branch and link.
   int32_t imm = branchLongOffsetHelper(L);
+
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
-  GenPCRelativeJumpAndLink(scratch, imm);
+
+  auto [Hi20, Lo12] = ToHigh20Low12(imm);
+  auipc(scratch, Hi20);  // Read PC + Hi20 into scratch.
+  jalr(scratch, Lo12);   // jump PC + Hi20 + Lo12
+
   return CodeOffset(currentOffset());
 }
 
@@ -6684,13 +6693,6 @@ void MacroAssemblerRiscv64::wasmStoreImpl(const wasm::MemoryAccessDesc& access,
   // Only the last emitted instruction is a memory access.
   append(access, js::wasm::TrapMachineInsnForStore(access.byteSize()), fco);
   asMasm().memoryBarrierAfter(access.sync());
-}
-
-void MacroAssemblerRiscv64::GenPCRelativeJumpAndLink(Register rd,
-                                                     int32_t imm32) {
-  auto [Hi20, Lo12] = ToHigh20Low12(imm32);
-  auipc(rd, Hi20);  // Read PC + Hi20 into scratch.
-  jalr(rd, Lo12);   // jump PC + Hi20 + Lo12
 }
 
 void MacroAssemblerRiscv64::ma_fmv_d(FloatRegister src, ValueOperand dest) {

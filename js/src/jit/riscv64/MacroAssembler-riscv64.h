@@ -113,12 +113,6 @@ class MacroAssemblerRiscv64 : public Assembler {
   bool CalculateOffset(Label* L, OffsetSize bits, int32_t* offset);
   int32_t GetOffset(int32_t offset, Label* L, OffsetSize bits);
 
-  inline void GenPCRelativeJump(Register rd, int32_t imm32) {
-    auto [Hi20, Lo12] = ToHigh20Low12(imm32);
-    auipc(rd, Hi20);  // Read PC + Hi20 into scratch.
-    jr(rd, Lo12);     // jump PC + Hi20 + Lo12
-  }
-
   // load
   FaultingCodeOffset ma_load(Register dest, Address address,
                              LoadStoreSize size = SizeWord,
@@ -172,7 +166,6 @@ class MacroAssemblerRiscv64 : public Assembler {
   CodeOffset BranchAndLinkShort(Label* L);
   CodeOffset BranchAndLink(Label* label);
   CodeOffset BranchAndLinkLong(Label* L);
-  void GenPCRelativeJumpAndLink(Register rd, int32_t imm32);
 
 #define DEFINE_INSTRUCTION(instr)                     \
   void instr(Register rd, Register rs, Imm64 imm);    \
