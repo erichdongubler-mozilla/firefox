@@ -7,10 +7,7 @@
 #include "mozilla/Components.h"
 
 #include "CertVerifier.h"
-#include "brotli/decode.h"
-#include "brotli/encode.h"
 #include "CommonSocketControl.h"
-#include "mozilla/EndianUtils.h"
 #include "TransportSecurityInfo.h"
 #include "mozilla/ArrayAlgorithm.h"
 #include "mozilla/glean/NetwerkMetrics.h"
@@ -55,6 +52,8 @@ class ExpirationComparator {
   }
 };
 
+// Deep-copies a flat cert chain (a list of DER-encoded certs).  Used by
+// SessionCacheInfo::Clone() and the FFI marshaling helpers below.
 static nsTArray<nsTArray<uint8_t>> CloneCertChain(
     const nsTArray<nsTArray<uint8_t>>& aSrc) {
   return TransformIntoNewArray(aSrc, [](const auto& c) { return c.Clone(); });
@@ -74,196 +73,50 @@ SessionCacheInfo SessionCacheInfo::Clone() const {
   return result;
 }
 
-// mCompressedDer layout: [4 bytes: mOriginalLen as uint32 LE][compressed
-// bytes]. Returns nullptr on failure.
-static already_AddRefed<CompressedCert> CompressDer(Span<const uint8_t> aDer) {
-  auto cert = MakeRefPtr<CompressedCert>();
-  size_t bound = BrotliEncoderMaxCompressedSize(aDer.Length());
-  if (!cert->mCompressedDer.SetLength(4 + bound, fallible)) {
-    return nullptr;
-  }
-  uint32_t originalLen = AssertedCast<uint32_t>(aDer.Length());
-  LittleEndian::writeUint32(cert->mCompressedDer.Elements(), originalLen);
-  size_t encodedSize = bound;
-  if (!BrotliEncoderCompress(5, BROTLI_DEFAULT_WINDOW, BROTLI_MODE_GENERIC,
-                             aDer.Length(), aDer.Elements(), &encodedSize,
-                             cert->mCompressedDer.Elements() + 4)) {
-    return nullptr;
-  }
-  cert->mCompressedDer.TruncateLength(4 + encodedSize);
-  return cert.forget();
-}
-
-// Reconstructs a CompressedCert from already-compressed bytes (e.g. loaded
-// from disk).  Recovers mOriginalLen from the 4-byte LE prefix.
-static already_AddRefed<CompressedCert> MakeCompressedCertFromBytes(
-    nsTArray<uint8_t>&& aCompressed) {
-  if (aCompressed.Length() < 4) {
-    return nullptr;
-  }
-  uint32_t originalLen = LittleEndian::readUint32(aCompressed.Elements());
-  // Reject implausible sizes — real X.509 DER certs are well under 64 KB.
-  if (originalLen > 64 * 1024) {
-    LOG(("SSLTokensCache: rejecting cert with implausible originalLen %" PRIu32
-         " bytes",
-         originalLen));
-    return nullptr;
-  }
-  auto cert = MakeRefPtr<CompressedCert>();
-  cert->mCompressedDer = std::move(aCompressed);
-  return cert.forget();
-}
-
-// Returns false on failure.
-static bool DecompressInto(const CompressedCert& aCert,
-                           nsTArray<uint8_t>& aOut) {
-  if (aCert.mCompressedDer.Length() < 4) {
-    return false;
-  }
-  uint32_t originalLen =
-      LittleEndian::readUint32(aCert.mCompressedDer.Elements());
-  // Reject implausible sizes — real X.509 DER certs are well under 64 KB.
-  if (originalLen > 64 * 1024) {
-    return false;
-  }
-  if (!aOut.SetLength(originalLen, fallible)) {
-    return false;
-  }
-  size_t decodedSize = originalLen;
-  BrotliDecoderResult result = BrotliDecoderDecompress(
-      aCert.mCompressedDer.Length() - 4, aCert.mCompressedDer.Elements() + 4,
-      &decodedSize, aOut.Elements());
-  return result == BROTLI_DECODER_RESULT_SUCCESS && decodedSize == originalLen;
-}
-
-// Expands a CompressedSessionCacheInfo back into the public SessionCacheInfo
-// shape.  Decompresses each unique blob at most once (memo by pointer).
-static SessionCacheInfo DecompressInfo(
-    const CompressedSessionCacheInfo& aInfo) {
-  AutoTArray<std::pair<const CompressedCert*, nsTArray<uint8_t>>, 8> memo;
-
-  auto decompress =
-      [&](const RefPtr<CompressedCert>& aCert) -> nsTArray<uint8_t> {
-    if (!aCert) {
-      return {};
-    }
-    for (auto& [key, val] : memo) {
-      if (key == aCert.get()) return val.Clone();
-    }
-    nsTArray<uint8_t> bytes;
-    if (!DecompressInto(*aCert, bytes)) {
-      bytes.Clear();
-    }
-    auto& entry = *memo.AppendElement(std::pair{aCert.get(), std::move(bytes)});
-    return entry.second.Clone();
-  };
-
-  SessionCacheInfo result;
-  result.mEVStatus = aInfo.mEVStatus;
-  result.mCertificateTransparencyStatus = aInfo.mCertificateTransparencyStatus;
-  result.mIsBuiltCertChainRootBuiltInRoot =
-      aInfo.mIsBuiltCertChainRootBuiltInRoot;
-  result.mOverridableErrorCategory = aInfo.mOverridableErrorCategory;
-
-  if (aInfo.mServerCert) {
-    result.mServerCertBytes = decompress(aInfo.mServerCert);
-  }
-  auto expandChain = [&](const Maybe<nsTArray<RefPtr<CompressedCert>>>& aSrc,
-                         Maybe<nsTArray<nsTArray<uint8_t>>>& aDest) {
-    if (aSrc.isSome()) {
-      aDest.emplace(TransformIntoNewArray(*aSrc, decompress));
-    }
-  };
-  expandChain(aInfo.mSucceededCertChain, result.mSucceededCertChainBytes);
-  expandChain(aInfo.mHandshakeCertificates, result.mHandshakeCertificatesBytes);
-  return result;
-}
-
-static nsTArray<nsTArray<uint8_t>> CompressedChainToFfi(
-    const Maybe<nsTArray<RefPtr<CompressedCert>>>& aSrc) {
-  if (aSrc.isNothing()) {
-    return {};
-  }
-  return TransformIntoNewArray(*aSrc, [](const auto& cert) {
-    return cert ? cert->mCompressedDer.Clone() : nsTArray<uint8_t>{};
-  });
-}
-
-using InternMap =
-    AutoTArray<std::pair<Span<const uint8_t>, RefPtr<CompressedCert>>, 8>;
-
-static RefPtr<CompressedCert> InternCompressedCert(
-    nsTArray<uint8_t>&& aCompressed, InternMap& aMap) {
-  for (auto& [key, cert] : aMap) {
-    if (key.Length() == aCompressed.Length() &&
-        memcmp(key.Elements(), aCompressed.Elements(), aCompressed.Length()) ==
-            0) {
-      return cert;
-    }
-  }
-  RefPtr<CompressedCert> cert =
-      MakeCompressedCertFromBytes(std::move(aCompressed));
-  if (!cert) {
-    LOG(("SSLTokensCache: failed to reconstruct CompressedCert from bytes"));
-    return nullptr;
-  }
-  aMap.AppendElement(std::pair{Span(cert->mCompressedDer), cert});
-  return cert;
-}
-
-static Maybe<nsTArray<RefPtr<CompressedCert>>> CompressedChainFromFfi(
-    const nsTArray<nsTArray<uint8_t>>& aSrc, InternMap& aMap) {
-  if (aSrc.IsEmpty()) {
-    return Nothing();
-  }
-  nsTArray<RefPtr<CompressedCert>> chain;
-  for (const auto& certBytes : aSrc) {
-    RefPtr<CompressedCert> c = InternCompressedCert(certBytes.Clone(), aMap);
-    if (!c) {
-      return Nothing();
-    }
-    chain.AppendElement(std::move(c));
-  }
-  return Some(std::move(chain));
-}
-
 StaticRefPtr<SSLTokensCache> SSLTokensCache::gInstance;
 StaticMutex SSLTokensCache::sLock;
 uint64_t SSLTokensCache::sRecordId = 0;
 
 SSLTokensCache::TokenCacheRecord::~TokenCacheRecord() {
-  if (!gInstance || mDetached) {
+  if (!gInstance) {
     return;
   }
+
   gInstance->OnRecordDestroyed(this);
 }
 
 uint32_t SSLTokensCache::TokenCacheRecord::Size() const {
   uint32_t size = mToken.Length() + sizeof(mSessionCacheInfo.mEVStatus) +
                   sizeof(mSessionCacheInfo.mCertificateTransparencyStatus) +
+                  mSessionCacheInfo.mServerCertBytes.Length() +
                   sizeof(mSessionCacheInfo.mIsBuiltCertChainRootBuiltInRoot) +
                   sizeof(mSessionCacheInfo.mOverridableErrorCategory);
-
-  // Count each unique CompressedCert blob only once (dedup within this record).
-  AutoTArray<const CompressedCert*, 8> seen;
-  auto countCert = [&](const RefPtr<CompressedCert>& aCert) {
-    if (!aCert || seen.Contains(aCert.get())) return;
-    seen.AppendElement(aCert.get());
-    size += aCert->mCompressedDer.Length();
-  };
-
-  countCert(mSessionCacheInfo.mServerCert);
-  if (mSessionCacheInfo.mSucceededCertChain) {
-    for (const auto& c : *mSessionCacheInfo.mSucceededCertChain) {
-      countCert(c);
+  if (mSessionCacheInfo.mSucceededCertChainBytes) {
+    for (const auto& cert : mSessionCacheInfo.mSucceededCertChainBytes.ref()) {
+      size += cert.Length();
     }
   }
-  if (mSessionCacheInfo.mHandshakeCertificates) {
-    for (const auto& c : *mSessionCacheInfo.mHandshakeCertificates) {
-      countCert(c);
+  if (mSessionCacheInfo.mHandshakeCertificatesBytes) {
+    for (const auto& cert :
+         mSessionCacheInfo.mHandshakeCertificatesBytes.ref()) {
+      size += cert.Length();
     }
   }
   return size;
+}
+
+void SSLTokensCache::TokenCacheRecord::Reset() {
+  mToken.Clear();
+  mExpirationTime = 0;
+  mSessionCacheInfo.mEVStatus = psm::EVStatus::NotEV;
+  mSessionCacheInfo.mCertificateTransparencyStatus =
+      nsITransportSecurityInfo::CERTIFICATE_TRANSPARENCY_NOT_APPLICABLE;
+  mSessionCacheInfo.mServerCertBytes.Clear();
+  mSessionCacheInfo.mSucceededCertChainBytes.reset();
+  mSessionCacheInfo.mIsBuiltCertChainRootBuiltInRoot.reset();
+  mSessionCacheInfo.mOverridableErrorCategory =
+      nsITransportSecurityInfo::OverridableErrorCategory::ERROR_UNSET;
+  mSessionCacheInfo.mHandshakeCertificatesBytes.reset();
 }
 
 uint32_t SSLTokensCache::TokenCacheEntry::Size() const {
@@ -546,6 +399,24 @@ SSLTokensCache::SSLTokensCache() { LOG(("SSLTokensCache::SSLTokensCache")); }
 
 SSLTokensCache::~SSLTokensCache() { LOG(("SSLTokensCache::~SSLTokensCache")); }
 
+// Helpers for marshaling cert chain data across the Rust FFI boundary.
+// The FFI representation uses nsTArray<nsTArray<uint8_t>> where an empty
+// array signals "absent" (i.e. Maybe::Nothing on the C++ side), and
+// nsTArray<bool> with 0 or 1 elements for optional booleans.
+
+static nsTArray<nsTArray<uint8_t>> ChainToFfi(
+    const Maybe<nsTArray<nsTArray<uint8_t>>>& aSrc) {
+  if (aSrc.isNothing()) {
+    return {};
+  }
+  return CloneCertChain(*aSrc);
+}
+
+static Maybe<nsTArray<nsTArray<uint8_t>>> ChainFromFfi(
+    const nsTArray<nsTArray<uint8_t>>& aSrc) {
+  return aSrc.IsEmpty() ? Nothing() : Some(CloneCertChain(aSrc));
+}
+
 static nsTArray<bool> BoolToFfi(const Maybe<bool>& aSrc) {
   if (aSrc.isNothing()) return {};
   return nsTArray<bool>{*aSrc};
@@ -576,14 +447,11 @@ nsTArray<SslTokensPersistedRecord> SSLTokensCache::CollectSnapshotLocked()
           rec->mSessionCacheInfo.mEVStatus == psm::EVStatus::EV ? 1 : 0;
       ffi.ct_status = rec->mSessionCacheInfo.mCertificateTransparencyStatus;
       ffi.overridable_error = overridable;
-      if (rec->mSessionCacheInfo.mServerCert) {
-        ffi.server_cert =
-            rec->mSessionCacheInfo.mServerCert->mCompressedDer.Clone();
-      }
+      ffi.server_cert = rec->mSessionCacheInfo.mServerCertBytes.Clone();
       ffi.succeeded_cert_chain =
-          CompressedChainToFfi(rec->mSessionCacheInfo.mSucceededCertChain);
+          ChainToFfi(rec->mSessionCacheInfo.mSucceededCertChainBytes);
       ffi.handshake_certs =
-          CompressedChainToFfi(rec->mSessionCacheInfo.mHandshakeCertificates);
+          ChainToFfi(rec->mSessionCacheInfo.mHandshakeCertificatesBytes);
       ffi.is_built_cert_chain_root_built_in_root =
           BoolToFfi(rec->mSessionCacheInfo.mIsBuiltCertChainRootBuiltInRoot);
     }
@@ -720,39 +588,6 @@ nsresult SSLTokensCache::Put(const nsACString& aKey, const uint8_t* aToken,
     handshakeCertificatesBytes.emplace(result.unwrap());
   }
 
-  // Spans in internMap borrow from the local DER arrays above; both outlive
-  // the lock scope.
-  AutoTArray<std::pair<Span<const uint8_t>, RefPtr<CompressedCert>>, 8>
-      internMap;
-  auto internDer = [&](Span<const uint8_t> aDer) -> RefPtr<CompressedCert> {
-    for (auto& [key, cert] : internMap) {
-      if (key.Length() == aDer.Length() &&
-          memcmp(key.Elements(), aDer.Elements(), aDer.Length()) == 0) {
-        return cert;
-      }
-    }
-    RefPtr<CompressedCert> cert = CompressDer(aDer);
-    if (!cert) {
-      LOG(("SSLTokensCache: compression failed for %zu-byte cert DER",
-           aDer.Length()));
-    } else {
-      internMap.AppendElement(std::pair{aDer, cert});
-    }
-    return cert;
-  };
-
-  auto internChain = [&](const Maybe<nsTArray<nsTArray<uint8_t>>>& aSrc)
-      -> Maybe<nsTArray<RefPtr<CompressedCert>>> {
-    if (aSrc.isNothing()) {
-      return Nothing();
-    }
-    return Some(TransformIntoNewArray(*aSrc, internDer));
-  };
-
-  auto serverCert = internDer(certBytes);
-  auto succeededChain = internChain(succeededCertChainBytes);
-  auto handshakeChain = internChain(handshakeCertificatesBytes);
-
   {
     StaticMutexAutoLock lock(sLock);
 
@@ -767,8 +602,9 @@ nsresult SSLTokensCache::Put(const nsACString& aKey, const uint8_t* aToken,
       rec->mExpirationTime = aExpirationTime;
       MOZ_ASSERT(rec->mToken.IsEmpty());
       rec->mToken.AppendElements(aToken, aTokenLen);
-      rec->mSessionCacheInfo.mServerCert = serverCert;
-      rec->mSessionCacheInfo.mSucceededCertChain = std::move(succeededChain);
+      rec->mSessionCacheInfo.mServerCertBytes = certBytes.Clone();
+      rec->mSessionCacheInfo.mSucceededCertChainBytes =
+          succeededCertChainBytes.map(CloneCertChain);
       if (isEV) {
         rec->mSessionCacheInfo.mEVStatus = psm::EVStatus::EV;
       }
@@ -778,7 +614,8 @@ nsresult SSLTokensCache::Put(const nsACString& aKey, const uint8_t* aToken,
           isBuiltCertChainRootBuiltInRoot;
       rec->mSessionCacheInfo.mOverridableErrorCategory =
           overridableErrorCategory;
-      rec->mSessionCacheInfo.mHandshakeCertificates = std::move(handshakeChain);
+      rec->mSessionCacheInfo.mHandshakeCertificatesBytes =
+          handshakeCertificatesBytes.map(CloneCertChain);
       return rec;
     };
 
@@ -791,34 +628,47 @@ nsresult SSLTokensCache::Put(const nsACString& aKey, const uint8_t* aToken,
 }
 
 // static
+// Retrieves a TLS session resumption token from the cache.
+//
+// Behavior:
+// - Searches for cached tokens matching aKey (typically a peer ID that includes
+//   hostname, port, and TLS flags)
+// - Multiple tokens may exist per key (stored in a pool); this method retrieves
+//   and removes the first non-expired token
+// - Expired tokens are automatically discarded during lookup
+// - Returns NS_ERROR_NOT_AVAILABLE if no valid token is found
+//
+// Parameters:
+// - aKey: Cache key identifying the connection (peer ID)
+// - aToken: [out] The TLS session resumption token bytes
+// - aResult: [out] Associated session info (certificates, EV status, CT status)
+// - aTokenId: [out, optional] Unique ID of the retrieved token (for later
+// removal)
+//
+// Note: This is a destructive read - the token is removed from the cache after
+// retrieval to prevent reuse, as TLS session tickets are typically single-use.
 nsresult SSLTokensCache::Get(const nsACString& aKey, nsTArray<uint8_t>& aToken,
                              SessionCacheInfo& aResult, uint64_t* aTokenId) {
+  StaticMutexAutoLock lock(sLock);
+
   LOG(("SSLTokensCache::Get [key=%s]", PromiseFlatCString(aKey).get()));
 
-  UniquePtr<TokenCacheRecord> owned;
-  {
-    StaticMutexAutoLock lock(sLock);
-    if (!gInstance) {
-      LOG(("  service not initialized"));
-      return NS_ERROR_NOT_INITIALIZED;
-    }
-    owned = gInstance->GetRecordLocked(aKey, aTokenId);
+  if (!gInstance) {
+    LOG(("  service not initialized"));
+    return NS_ERROR_NOT_INITIALIZED;
   }
-  if (!owned) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-  // Decompress outside sLock: needs no shared state after extraction.
-  aToken = std::move(owned->mToken);
-  aResult = DecompressInfo(owned->mSessionCacheInfo);
-  return NS_OK;
+
+  return gInstance->GetLocked(aKey, aToken, aResult, aTokenId);
 }
 
-UniquePtr<SSLTokensCache::TokenCacheRecord> SSLTokensCache::GetRecordLocked(
-    const nsACString& aKey, uint64_t* aTokenId) {
+nsresult SSLTokensCache::GetLocked(const nsACString& aKey,
+                                   nsTArray<uint8_t>& aToken,
+                                   SessionCacheInfo& aResult,
+                                   uint64_t* aTokenId) {
   sLock.AssertCurrentThreadOwns();
 
   if (!mLoadComplete && mBackingFile) {
-    LOG(("SSLTokensCache::GetRecordLocked: connection before load complete"));
+    LOG(("SSLTokensCache::GetLocked: connection before load complete"));
     mozilla::glean::network::ssl_token_cache_early_connections.Add(1);
   }
 
@@ -828,7 +678,7 @@ UniquePtr<SSLTokensCache::TokenCacheRecord> SSLTokensCache::GetRecordLocked(
     if (cacheEntry->RecordCount() == 0) {
       MOZ_ASSERT(false, "Found a cacheEntry with no records");
       mTokenCacheRecords.Remove(aKey);
-      return nullptr;
+      return NS_ERROR_NOT_AVAILABLE;
     }
 
     PRTime now = PR_Now();
@@ -840,6 +690,8 @@ UniquePtr<SSLTokensCache::TokenCacheRecord> SSLTokensCache::GetRecordLocked(
         uint64_t id = rec->mId;
         uint32_t size = rec->Size();
         UniquePtr<TokenCacheRecord> owned = cacheEntry->RemoveWithId(id);
+        aToken = std::move(owned->mToken);
+        aResult = std::move(owned->mSessionCacheInfo);
         if (aTokenId) {
           *aTokenId = id;
         }
@@ -847,15 +699,10 @@ UniquePtr<SSLTokensCache::TokenCacheRecord> SSLTokensCache::GetRecordLocked(
         if (cacheEntry->RecordCount() == 0) {
           mTokenCacheRecords.Remove(aKey);
         }
-        // Pre-remove from mExpirationArray so the record's destructor (which
-        // fires after sLock is released) safely skips OnRecordDestroyed.
-        mExpirationArray.RemoveElement(owned.get());
-        MOZ_ASSERT(!mExpirationArray.Contains(owned.get()));
-        owned->mDetached = true;
         mozilla::glean::network::ssl_token_cache_hits.Get("hit"_ns).Add(1);
-        LOG(("SSLTokensCache::GetRecordLocked: hit [key=%s, load_complete=%s]",
+        LOG(("SSLTokensCache::GetLocked: hit [key=%s, load_complete=%s]",
              PromiseFlatCString(aKey).get(), mLoadComplete ? "yes" : "no"));
-        return owned;
+        return NS_OK;
       }
 
       LOG(("  skipping expired token [expirationTime=%" PRId64 ", now=%" PRId64
@@ -872,7 +719,7 @@ UniquePtr<SSLTokensCache::TokenCacheRecord> SSLTokensCache::GetRecordLocked(
 
   LOG(("  token not found"));
   mozilla::glean::network::ssl_token_cache_hits.Get("miss"_ns).Add(1);
-  return nullptr;
+  return NS_ERROR_NOT_AVAILABLE;
 }
 
 // static
@@ -1212,10 +1059,6 @@ bool SSLTokensCache::PutFromPersisted(const SslTokensPersistedRecord* aRec,
     return false;
   }
 
-  // Intern identical blobs: leaf cert often appears in both mServerCert and
-  // mSucceededCertChain[0].
-  InternMap internMap;
-
   auto rec = MakeUnique<TokenCacheRecord>();
   rec->mKey = aRec->key;
   rec->mExpirationTime = static_cast<PRTime>(aRec->expiration_time);
@@ -1226,12 +1069,11 @@ bool SSLTokensCache::PutFromPersisted(const SslTokensPersistedRecord* aRec,
   rec->mSessionCacheInfo.mOverridableErrorCategory =
       static_cast<nsITransportSecurityInfo::OverridableErrorCategory>(
           aRec->overridable_error);
-  rec->mSessionCacheInfo.mServerCert =
-      InternCompressedCert(aRec->server_cert.Clone(), internMap);
-  rec->mSessionCacheInfo.mSucceededCertChain =
-      CompressedChainFromFfi(aRec->succeeded_cert_chain, internMap);
-  rec->mSessionCacheInfo.mHandshakeCertificates =
-      CompressedChainFromFfi(aRec->handshake_certs, internMap);
+  rec->mSessionCacheInfo.mServerCertBytes = aRec->server_cert.Clone();
+  rec->mSessionCacheInfo.mSucceededCertChainBytes =
+      ChainFromFfi(aRec->succeeded_cert_chain);
+  rec->mSessionCacheInfo.mHandshakeCertificatesBytes =
+      ChainFromFfi(aRec->handshake_certs);
   rec->mSessionCacheInfo.mIsBuiltCertChainRootBuiltInRoot =
       BoolFromFfi(aRec->is_built_cert_chain_root_built_in_root);
   gInstance->InsertRecordLocked(std::move(rec));
@@ -1351,12 +1193,6 @@ uint32_t SSLTokensCache::CountForTest() {
     return 0;
   }
   return gInstance->mTokenCacheRecords.Count();
-}
-
-// static
-uint32_t SSLTokensCache::CacheSizeForTest() {
-  StaticMutexAutoLock lock(sLock);
-  return gInstance ? gInstance->mCacheSize : 0;
 }
 
 // static
