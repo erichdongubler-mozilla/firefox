@@ -1322,6 +1322,259 @@ describe("<SportsWidget> Results tab View all button", () => {
   });
 });
 
+describe("<SportsWidget> match list view expands widget to large", () => {
+  // When the user clicks "View all" on the Results or Upcoming tab, the
+  // widget should switch to the large size — even if the user's chosen
+  // size pref is "medium" — and revert back to medium when they collapse
+  // the list. The pref itself must not change; this is a temporary visual
+  // override, mirroring how the FOLLOW_TEAMS state already forces large.
+  function renderResultsAtSize(widgetSize) {
+    return render(
+      <WrapWithProvider
+        state={makeState(
+          { [PREF_SPORTS_WIDGET_SIZE]: widgetSize },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "results",
+            data: {
+              teams: [],
+              matches: {
+                previous: [
+                  mockMatch,
+                  {
+                    ...mockMatch,
+                    date: "2026-05-09T14:00:00+00:00",
+                    home_score: 2,
+                  },
+                ],
+                current: [],
+                next: [],
+              },
+            },
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+  }
+
+  function renderUpcomingAtSize(widgetSize) {
+    return render(
+      <WrapWithProvider
+        state={makeState(
+          { [PREF_SPORTS_WIDGET_SIZE]: widgetSize },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "upcoming",
+            data: {
+              teams: [],
+              matches: {
+                // A `previous` entry keeps tournamentStarted truthy so the
+                // widget stays in the matches view.
+                previous: [mockMatch],
+                current: [],
+                next: [
+                  { ...mockMatch, status_type: "scheduled" },
+                  {
+                    ...mockMatch,
+                    date: "2026-05-10T14:00:00+00:00",
+                    status_type: "scheduled",
+                    home_score: null,
+                  },
+                ],
+              },
+            },
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+  }
+
+  function getVisibleViewAllButton(container) {
+    return getVisibleTabPanel(container)?.querySelector(
+      "[data-l10n-id='newtab-sports-widget-view-all']"
+    );
+  }
+
+  function getVisibleShowLessButton(container) {
+    return getVisibleTabPanel(container)?.querySelector(
+      "[data-l10n-id='newtab-sports-widget-show-less']"
+    );
+  }
+
+  it("switches the medium widget to large when View all is clicked on Results", () => {
+    const { container } = renderResultsAtSize("medium");
+    // Sanity check: starts as medium.
+    expect(
+      container.querySelector(".sports.medium-widget")
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(".sports.large-widget")
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(getVisibleViewAllButton(container));
+
+    expect(container.querySelector(".sports.large-widget")).toBeInTheDocument();
+    expect(
+      container.querySelector(".sports.medium-widget")
+    ).not.toBeInTheDocument();
+  });
+
+  it("reverts back to medium when Show less is clicked on Results", () => {
+    const { container } = renderResultsAtSize("medium");
+    fireEvent.click(getVisibleViewAllButton(container));
+    // Sanity check: now large after expanding.
+    expect(container.querySelector(".sports.large-widget")).toBeInTheDocument();
+
+    fireEvent.click(getVisibleShowLessButton(container));
+
+    expect(
+      container.querySelector(".sports.medium-widget")
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(".sports.large-widget")
+    ).not.toBeInTheDocument();
+  });
+
+  it("switches the medium widget to large when View all is clicked on Upcoming", () => {
+    const { container } = renderUpcomingAtSize("medium");
+    expect(
+      container.querySelector(".sports.medium-widget")
+    ).toBeInTheDocument();
+
+    fireEvent.click(getVisibleViewAllButton(container));
+
+    expect(container.querySelector(".sports.large-widget")).toBeInTheDocument();
+    expect(
+      container.querySelector(".sports.medium-widget")
+    ).not.toBeInTheDocument();
+  });
+
+  it("reverts back to medium when Show less is clicked on Upcoming", () => {
+    const { container } = renderUpcomingAtSize("medium");
+    fireEvent.click(getVisibleViewAllButton(container));
+    expect(container.querySelector(".sports.large-widget")).toBeInTheDocument();
+
+    fireEvent.click(getVisibleShowLessButton(container));
+
+    expect(
+      container.querySelector(".sports.medium-widget")
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(".sports.large-widget")
+    ).not.toBeInTheDocument();
+  });
+
+  it("stays large when View all is clicked on Results and the widget is already large", () => {
+    const { container } = renderResultsAtSize("large");
+    expect(container.querySelector(".sports.large-widget")).toBeInTheDocument();
+
+    fireEvent.click(getVisibleViewAllButton(container));
+
+    expect(container.querySelector(".sports.large-widget")).toBeInTheDocument();
+    expect(
+      container.querySelector(".sports.medium-widget")
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not dispatch SET_PREF when expanding the list view", () => {
+    // The widget size pref must be left untouched — the large size while
+    // the list is open is a temporary visual override only.
+    const dispatch = jest.fn();
+    const { container } = render(
+      <WrapWithProvider
+        state={makeState(
+          { [PREF_SPORTS_WIDGET_SIZE]: "medium" },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "results",
+            data: {
+              teams: [],
+              matches: {
+                previous: [mockMatch],
+                current: [],
+                next: [],
+              },
+            },
+          }
+        )}
+      >
+        <SportsWidget dispatch={dispatch} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+
+    fireEvent.click(getVisibleViewAllButton(container));
+
+    const setPrefCalls = dispatch.mock.calls.filter(
+      ([action]) =>
+        action?.type === at.SET_PREF &&
+        action?.data?.name === PREF_SPORTS_WIDGET_SIZE
+    );
+    expect(setPrefCalls).toHaveLength(0);
+  });
+
+  it("keeps medium when Results list is expanded but the Upcoming tab is active", () => {
+    // showResultsList persists across tab changes, but the widget should
+    // only render large while the *active* tab's list is the one expanded.
+    // The CHANGE_MATCHES_TAB action goes through the main process in real
+    // code, so to simulate the post-round-trip state here we rerender with
+    // a fresh store where matchesTab is "upcoming". React preserves the
+    // SportsWidget component instance across rerenders, which means the
+    // showResultsList local state remains true.
+    const matchesData = {
+      teams: [],
+      matches: {
+        previous: [mockMatch],
+        current: [],
+        next: [{ ...mockMatch, status_type: "scheduled" }],
+      },
+    };
+    const { container, rerender } = render(
+      <WrapWithProvider
+        state={makeState(
+          { [PREF_SPORTS_WIDGET_SIZE]: "medium" },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "results",
+            data: matchesData,
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+
+    // Expand Results -> widget becomes large.
+    fireEvent.click(getVisibleViewAllButton(container));
+    expect(container.querySelector(".sports.large-widget")).toBeInTheDocument();
+
+    rerender(
+      <WrapWithProvider
+        state={makeState(
+          { [PREF_SPORTS_WIDGET_SIZE]: "medium" },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "upcoming",
+            data: matchesData,
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+
+    expect(
+      container.querySelector(".sports.medium-widget")
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(".sports.large-widget")
+    ).not.toBeInTheDocument();
+  });
+});
+
 describe("<SportsWidget> Watch button (live tab)", () => {
   // The Watch button on the live tab swaps between an icon-only variant
   // (medium widget) and a labelled variant (large widget). The two cases

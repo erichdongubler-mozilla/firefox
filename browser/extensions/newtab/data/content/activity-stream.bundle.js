@@ -16556,7 +16556,6 @@ function SportsWidget_SportsWidget({
   const savedWidgetState = sportsWidgetData.widgetState || WIDGET_STATES.INTRO;
   // Once the tournament has started, skip the intro and open on the match schedule.
   const widgetState = tournamentStarted && savedWidgetState === WIDGET_STATES.INTRO ? WIDGET_STATES.MATCHES : savedWidgetState;
-  const displaySize = widgetState === WIDGET_STATES.FOLLOW_TEAMS ? "large" : widgetSize;
   const rawSelectedTeams = sportsWidgetData.selectedTeams;
   const rawTeams = sportsWidgetData?.data?.teams;
   const rawMatches = sportsWidgetData?.data?.matches;
@@ -16611,9 +16610,17 @@ function SportsWidget_SportsWidget({
 
   // List-view toggle states for the Results and Upcoming tabs are lifted up
   // here so we can tell whether a highlight match is currently visible (for
-  // applying the followed-team gradient on the article wrapper).
+  // applying the followed-team gradient on the article wrapper) and so we
+  // can force the widget into the large size while the list view is open.
   const [showResultsList, setShowResultsList] = (0,external_React_namespaceObject.useState)(false);
   const [showUpcomingList, setShowUpcomingList] = (0,external_React_namespaceObject.useState)(false);
+
+  // Expand the widget to the large size when the user opens the match list
+  // view ("View all") on either the Results or Upcoming tab, and restore the
+  // user's chosen size when they collapse back to the highlight view. The
+  // size pref itself is left untouched — this is purely a visual override.
+  const isMatchesListView = widgetState === WIDGET_STATES.MATCHES && (activeTab === MATCHES_TABS.RESULTS && showResultsList || activeTab === MATCHES_TABS.UPCOMING && showUpcomingList);
+  const displaySize = widgetState === WIDGET_STATES.FOLLOW_TEAMS || isMatchesListView ? "large" : widgetSize;
   const highlightMatch = getHighlightMatch({
     widgetState,
     activeTab,
@@ -16987,7 +16994,8 @@ function SportsWidget_SportsWidget({
     dispatch: dispatch,
     matchesTab: activeTab,
     hasLiveGames: hasLiveGames,
-    size: widgetSize,
+    size: displaySize,
+    widgetSize: widgetSize,
     previous: sortedPrevious,
     current: sortedCurrent,
     next: sortedNext,
@@ -17118,7 +17126,14 @@ function SportsMatchesView({
   dispatch,
   matchesTab,
   hasLiveGames,
+  // `size` is the *effective* display size — it may be forced to "large"
+  // when the user has expanded the match list view, even if the user's
+  // chosen pref is "medium". Use it for layout decisions inside the view.
   size,
+  // `widgetSize` is the user's chosen size pref, used for telemetry only so
+  // events keep reporting the user's actual chosen size regardless of any
+  // temporary list-view expansion.
+  widgetSize,
   previous,
   current,
   next,
@@ -17148,7 +17163,7 @@ function SportsMatchesView({
         widget_source: tab,
         user_action: SportsWidget_USER_ACTION_TYPES.TOGGLE_FOLLOWED_ONLY,
         action_value: value,
-        widget_size: size
+        widget_size: widgetSize
       }
     }));
     dispatch(actionCreators.AlsoToMain({
