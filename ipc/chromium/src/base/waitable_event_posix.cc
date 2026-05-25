@@ -76,7 +76,7 @@ bool WaitableEvent::IsSignaled() {
 class SyncWaiter : public WaitableEvent::Waiter {
  public:
   SyncWaiter(mozilla::CondVar* cv, mozilla::Mutex* lock)
-      : fired_(false), cv_(cv), lock_(lock), signaling_event_(NULL) {}
+      : fired_(false), cv_(cv), lock_(lock), signaling_event_(nullptr) {}
 
   bool Fire(WaitableEvent* signaling_event) override {
     mozilla::MutexAutoLock locked(*lock_);
