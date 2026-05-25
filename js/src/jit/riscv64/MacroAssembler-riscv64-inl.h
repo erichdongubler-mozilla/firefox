@@ -2099,21 +2099,22 @@ FaultingCodeOffset MacroAssembler::storeFloat16(FloatRegister src,
 
 FaultingCodeOffset MacroAssembler::storeFloat32(FloatRegister src,
                                                 const Address& addr) {
-  return ma_fst_s(src, addr);
+  return ma_storeFloat(src, addr);
 }
 FaultingCodeOffset MacroAssembler::storeFloat32(FloatRegister src,
                                                 const BaseIndex& addr) {
-  return ma_fst_s(src, addr);
+  return ma_storeFloat(src, addr);
 }
 
 FaultingCodeOffset MacroAssembler::storeDouble(FloatRegister src,
                                                const Address& addr) {
-  return ma_fst_d(src, addr);
+  return ma_storeDouble(src, addr);
 }
 FaultingCodeOffset MacroAssembler::storeDouble(FloatRegister src,
                                                const BaseIndex& addr) {
-  return ma_fst_d(src, addr);
+  return ma_storeDouble(src, addr);
 }
+
 void MacroAssembler::sub32(Register src, Register dest) {
   subw(dest, dest, src);
 }

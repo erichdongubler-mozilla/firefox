@@ -132,7 +132,10 @@ class MacroAssemblerRiscv64 : public Assembler {
                              LoadStoreSize size = SizeWord,
                              LoadStoreExtension extension = SignExtend);
   FaultingCodeOffset ma_loadDouble(FloatRegister dest, Address address);
+  FaultingCodeOffset ma_loadDouble(FloatRegister dest, const BaseIndex& src);
   FaultingCodeOffset ma_loadFloat(FloatRegister dest, Address address);
+  FaultingCodeOffset ma_loadFloat(FloatRegister dest, const BaseIndex& src);
+
   // store
   FaultingCodeOffset ma_store(Register data, Address address,
                               LoadStoreSize size = SizeWord,
@@ -146,8 +149,11 @@ class MacroAssemblerRiscv64 : public Assembler {
   FaultingCodeOffset ma_store(Imm32 imm, Address address,
                               LoadStoreSize size = SizeWord,
                               LoadStoreExtension extension = SignExtend);
-  void ma_storeDouble(FloatRegister dest, Address address);
-  void ma_storeFloat(FloatRegister dest, Address address);
+  FaultingCodeOffset ma_storeDouble(FloatRegister src, Address address);
+  FaultingCodeOffset ma_storeDouble(FloatRegister src, const BaseIndex& dest);
+  FaultingCodeOffset ma_storeFloat(FloatRegister src, Address address);
+  FaultingCodeOffset ma_storeFloat(FloatRegister src, const BaseIndex& dest);
+
   void ma_liPatchable(Register dest, Imm32 imm);
   void ma_liPatchable(Register dest, ImmPtr imm);
   void ma_liPatchable(Register dest, ImmWord imm, LiFlags flags = Li48);
@@ -268,26 +274,13 @@ class MacroAssemblerRiscv64 : public Assembler {
 
   // fp instructions
   void ma_lid(FloatRegister dest, double value);
-
-  // fp instructions
   void ma_lis(FloatRegister dest, float value);
-
-  FaultingCodeOffset ma_fst_d(FloatRegister src, BaseIndex address);
-  FaultingCodeOffset ma_fst_s(FloatRegister src, BaseIndex address);
-
-  void ma_fld_d(FloatRegister dest, const BaseIndex& src);
-  void ma_fld_s(FloatRegister dest, const BaseIndex& src);
 
   void ma_fmv_d(FloatRegister src, ValueOperand dest);
   void ma_fmv_d(ValueOperand src, FloatRegister dest);
 
   void ma_fmv_w(FloatRegister src, ValueOperand dest);
   void ma_fmv_w(ValueOperand src, FloatRegister dest);
-
-  FaultingCodeOffset ma_fld_s(FloatRegister ft, Address address);
-  FaultingCodeOffset ma_fld_d(FloatRegister ft, Address address);
-  FaultingCodeOffset ma_fst_d(FloatRegister ft, Address address);
-  FaultingCodeOffset ma_fst_s(FloatRegister ft, Address address);
 
   // stack
   void ma_pop(Register r);
@@ -1057,25 +1050,14 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
     return ma_loadDouble(dest, addr);
   }
   FaultingCodeOffset loadDouble(const BaseIndex& src, FloatRegister dest) {
-    UseScratchRegisterScope temps(this);
-    Register scratch = temps.Acquire();
-    computeEffectiveAddress(src, scratch);
-    FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
-    fld(dest, scratch, 0);
-    return fco;
+    return ma_loadDouble(dest, src);
   }
 
   FaultingCodeOffset loadFloat32(const Address& addr, FloatRegister dest) {
     return ma_loadFloat(dest, addr);
   }
-
   FaultingCodeOffset loadFloat32(const BaseIndex& src, FloatRegister dest) {
-    UseScratchRegisterScope temps(this);
-    Register scratch = temps.Acquire();
-    computeEffectiveAddress(src, scratch);
-    FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
-    flw(dest, scratch, 0);
-    return fco;
+    return ma_loadFloat(dest, src);
   }
 
   FaultingCodeOffset loadFloat16(const Address& addr, FloatRegister dest,
