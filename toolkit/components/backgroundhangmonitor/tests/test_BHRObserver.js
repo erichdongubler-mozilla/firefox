@@ -287,12 +287,16 @@ add_task(async function test_BHRObserver() {
   Assert.ok(pingSubmitted, "the glean 'hang-report' ping has been submitted");
 });
 
-// Wait for the next parent-process Gecko hang and resolve with its nsIHangDetails.
-function captureNextGeckoHang() {
+// Wait for the next parent-process Gecko hang matching matchFn (if given)
+// and resolve with its nsIHangDetails.
+function captureNextGeckoHang(matchFn) {
   return new Promise(resolve => {
     const onThreadHang = subject => {
       let hang = subject.QueryInterface(Ci.nsIHangDetails);
       if (hang.thread !== "Gecko") {
+        return;
+      }
+      if (matchFn && !matchFn(hang)) {
         return;
       }
       Services.obs.removeObserver(onThreadHang, "bhr-thread-hang");
@@ -333,7 +337,11 @@ add_task(async function test_StartupTrackingEnded_annotation() {
   } catch (x) {}
   Services.startup.trackStartupCrashEnd();
 
-  let hangPromise = captureNextGeckoHang();
+  // Skip any stale hang notifications from earlier tests that were captured
+  // before trackStartupCrashEnd() was called and still carry the annotation.
+  let hangPromise = captureNextGeckoHang(
+    hang => !annotationKeys(hang).has("BeforeStartupCrashAndHangTrackingEnded")
+  );
   induceMainThreadHang();
   let keys = annotationKeys(await hangPromise);
 
