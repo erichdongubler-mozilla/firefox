@@ -6,6 +6,7 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSNumericValue.h"
 #include "mozilla/dom/CSSSkewBinding.h"
@@ -19,6 +20,18 @@ CSSSkew::CSSSkew(nsCOMPtr<nsISupports> aParent, bool aIs2D,
                             TransformComponentType::Skew),
       mAx(std::move(aAx)),
       mAy(std::move(aAy)) {}
+
+// static
+RefPtr<CSSSkew> CSSSkew::Create(nsCOMPtr<nsISupports> aParent,
+                                const StyleSkewComponent& aSkewComponent) {
+  RefPtr<CSSNumericValue> ax =
+      CSSNumericValue::Create(aParent, aSkewComponent.ax);
+  RefPtr<CSSNumericValue> ay =
+      CSSNumericValue::Create(aParent, aSkewComponent.ay);
+
+  return MakeAndAddRef<CSSSkew>(std::move(aParent), /* aIs2Da */ true,
+                                std::move(ax), std::move(ay));
+}
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSSkew, CSSTransformComponent)
 NS_IMPL_CYCLE_COLLECTION_INHERITED(CSSSkew, CSSTransformComponent, mAx, mAy)

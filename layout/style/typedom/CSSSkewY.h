@@ -20,6 +20,8 @@ class nsISupports;
 namespace mozilla {
 
 class ErrorResult;
+struct StyleNumericValue;
+using StyleSkewYComponent = StyleNumericValue;
 
 namespace dom {
 
@@ -29,6 +31,9 @@ class CSSSkewY final : public CSSTransformComponent {
  public:
   CSSSkewY(nsCOMPtr<nsISupports> aParent, bool aIs2D,
            RefPtr<CSSNumericValue> aAy);
+
+  static RefPtr<CSSSkewY> Create(nsCOMPtr<nsISupports> aParent,
+                                 const StyleSkewYComponent& aSkewYComponent);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CSSSkewY, CSSTransformComponent)

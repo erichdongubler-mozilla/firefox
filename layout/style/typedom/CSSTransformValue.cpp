@@ -11,6 +11,9 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSRotate.h"
 #include "mozilla/dom/CSSScale.h"
+#include "mozilla/dom/CSSSkew.h"
+#include "mozilla/dom/CSSSkewX.h"
+#include "mozilla/dom/CSSSkewY.h"
 #include "mozilla/dom/CSSTransformComponent.h"
 #include "mozilla/dom/CSSTransformValueBinding.h"
 #include "mozilla/dom/CSSTranslate.h"
@@ -52,6 +55,27 @@ RefPtr<CSSTransformValue> CSSTransformValue::Create(
         const auto& scaleComponent = transformValue.AsScale();
 
         transformComponent = CSSScale::Create(aParent, scaleComponent);
+        break;
+      }
+
+      case StyleTransformComponent::Tag::Skew: {
+        const auto& skewComponent = transformValue.AsSkew();
+
+        transformComponent = CSSSkew::Create(aParent, skewComponent);
+        break;
+      }
+
+      case StyleTransformComponent::Tag::SkewX: {
+        const auto& skewXComponent = transformValue.AsSkewX();
+
+        transformComponent = CSSSkewX::Create(aParent, skewXComponent);
+        break;
+      }
+
+      case StyleTransformComponent::Tag::SkewY: {
+        const auto& skewYComponent = transformValue.AsSkewY();
+
+        transformComponent = CSSSkewY::Create(aParent, skewYComponent);
         break;
       }
     }
