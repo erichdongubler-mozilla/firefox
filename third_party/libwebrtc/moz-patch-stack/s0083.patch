@@ -11,10 +11,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/2185cab977988fd4a
  3 files changed, 16 insertions(+)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index e92dbbaf88..811c04d595 100644
+index 7b7032e12c..02d4ba5dfe 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -605,6 +605,7 @@ if (!build_with_chromium) {
+@@ -604,6 +604,7 @@ if (!build_with_chromium) {
          "api:frame_transformer_factory",
          "api/audio:builtin_audio_processing_builder",
          "api/video:builtin_video_bitrate_allocator_factory",

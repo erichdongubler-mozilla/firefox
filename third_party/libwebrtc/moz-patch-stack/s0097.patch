@@ -74,7 +74,7 @@ index a97e2f18b4..e03aab02cf 100644
  # The python interpreter to use by default. On Windows, this will look
  # for python3.exe and python3.bat.
 diff --git a/BUILD.gn b/BUILD.gn
-index 98ed7613db..5bcc8391e3 100644
+index 1dc60ce2c9..6bfd8518c9 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -21,15 +21,15 @@
@@ -97,7 +97,7 @@ index 98ed7613db..5bcc8391e3 100644
    import("//third_party/jni_zero/jni_zero.gni")
  }
  
-@@ -530,7 +530,7 @@ if (!build_with_chromium) {
+@@ -529,7 +529,7 @@ if (!build_with_chromium) {
      sources = []
  
      complete_static_lib = true
@@ -106,7 +106,7 @@ index 98ed7613db..5bcc8391e3 100644
      defines = []
  
      deps = [
-@@ -837,7 +837,7 @@ rtc_static_library("dcsctp") {
+@@ -836,7 +836,7 @@ rtc_static_library("dcsctp") {
    visibility = [ "//:default" ]
    sources = []
    complete_static_lib = true
@@ -115,7 +115,7 @@ index 98ed7613db..5bcc8391e3 100644
    defines = []
    deps = [
      "net/dcsctp/public:factory",
-@@ -875,7 +875,7 @@ group("poison_default_neural_residual_echo_estimator") {
+@@ -874,7 +874,7 @@ group("poison_default_neural_residual_echo_estimator") {
  if (!build_with_chromium) {
    # Write debug logs to gn_logs.txt.
    # This is also required for Siso builds.
@@ -742,7 +742,7 @@ index a3e9a49204..6bb07f9740 100644
  import("../webrtc.gni")
  
 diff --git a/test/BUILD.gn b/test/BUILD.gn
-index 450194ead2..f0e0d892ac 100644
+index 4fd594eb28..4dea9fb639 100644
 --- a/test/BUILD.gn
 +++ b/test/BUILD.gn
 @@ -6,10 +6,10 @@
