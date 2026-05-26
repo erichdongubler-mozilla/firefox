@@ -363,10 +363,12 @@ def process_gn_config(
             ext = mozpath.splitext(f)[-1]
             extensions.add(ext)
             src = f"{project_relsrcdir}/{f}"
-            if ext in {".h", ".inc"}:
+            if ext in {".h", ".hpp", ".inc"}:
                 continue
             elif ext == ".def":
-                context_attrs["SYMBOLS_FILE"] = src
+                context_attrs["DEFFILE"] = f"/{src}"
+            elif ext == ".rc":
+                context_attrs["RCFILE"] = f"/{src}"
             elif ext != ".S" and src not in non_unified_sources:
                 unified_sources.append(f"/{src}")
             else:
