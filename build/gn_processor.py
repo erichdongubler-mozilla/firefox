@@ -159,6 +159,22 @@ class MozbuildWriter:
         self.indent = self.indent[self._indent_increment :]
 
 
+def select_gn_target(gn_target_config, target_os):
+    if isinstance(gn_target_config, str):
+        return gn_target_config
+
+    if target_os in gn_target_config:
+        return gn_target_config[target_os]
+
+    if "*" in gn_target_config:
+        return gn_target_config["*"]
+
+    raise Exception(
+        f'No gn_target configured for target_os="{target_os}". '
+        'Expected a string or a dict containing "*" and target_os overrides.'
+    )
+
+
 def find_deps(all_targets, target):
     all_deps = set()
     queue = deque([target])
@@ -709,7 +725,7 @@ def generate_gn_config(
     gn_binary,
     input_variables,
     sandbox_variables,
-    gn_target,
+    gn_target_config,
     moz_build_flag,
     non_unified_sources,
     mozilla_flags,
@@ -722,6 +738,7 @@ def generate_gn_config(
 
     build_root_dir = topsrcdir / build_root_dir
     srcdir = build_root_dir / target_dir
+    gn_target = select_gn_target(gn_target_config, input_variables["target_os"])
 
     input_variables = input_variables.copy()
     input_variables.update({
