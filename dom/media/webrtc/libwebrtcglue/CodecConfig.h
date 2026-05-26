@@ -33,6 +33,7 @@ struct AudioCodecConfig {
   uint32_t mFrameSizeMs;
   uint32_t mMaxFrameSizeMs;
   uint32_t mMinFrameSizeMs;
+  bool mTransportCCFbSet;
 
   AudioEncodingConstraints mEncodingConstraints;
 
@@ -53,25 +54,13 @@ struct AudioCodecConfig {
         mFrameSizeMs(0),
         mMaxFrameSizeMs(0),
         mMinFrameSizeMs(0),
+        mTransportCCFbSet(false),
         mDTXEnabled(false),
         mMaxAverageBitrate(0),
         mMaxPlaybackRate(0),
         mCbrEnabled(false) {}
 
-  bool operator==(const AudioCodecConfig& aOther) const {
-    return mType == aOther.mType && mName == aOther.mName &&
-           mFreq == aOther.mFreq && mChannels == aOther.mChannels &&
-           mFECEnabled == aOther.mFECEnabled &&
-           mDtmfEnabled == aOther.mDtmfEnabled &&
-           mFrameSizeMs == aOther.mFrameSizeMs &&
-           mMaxFrameSizeMs == aOther.mMaxFrameSizeMs &&
-           mMinFrameSizeMs == aOther.mMinFrameSizeMs &&
-           mEncodingConstraints == aOther.mEncodingConstraints &&
-           mDTXEnabled == aOther.mDTXEnabled &&
-           mMaxAverageBitrate == aOther.mMaxAverageBitrate &&
-           mMaxPlaybackRate == aOther.mMaxPlaybackRate &&
-           mCbrEnabled == aOther.mCbrEnabled;
-  }
+  bool operator==(const AudioCodecConfig& aOther) const = default;
 
   std::string MimeType() {
     std::stringstream ss;
