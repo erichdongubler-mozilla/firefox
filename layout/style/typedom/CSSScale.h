@@ -20,6 +20,7 @@ class nsISupports;
 namespace mozilla {
 
 class ErrorResult;
+struct StyleScaleComponent;
 
 namespace dom {
 
@@ -32,6 +33,9 @@ class CSSScale final : public CSSTransformComponent {
   CSSScale(nsCOMPtr<nsISupports> aParent, bool aIs2D,
            RefPtr<CSSNumericValue> aX, RefPtr<CSSNumericValue> aY,
            RefPtr<CSSNumericValue> aZ);
+
+  static RefPtr<CSSScale> Create(nsCOMPtr<nsISupports> aParent,
+                                 const StyleScaleComponent& aScaleComponent);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CSSScale, CSSTransformComponent)

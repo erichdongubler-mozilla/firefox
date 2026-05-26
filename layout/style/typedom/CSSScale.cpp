@@ -6,6 +6,7 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSNumericValue.h"
 #include "mozilla/dom/CSSNumericValueBinding.h"
@@ -24,6 +25,20 @@ CSSScale::CSSScale(nsCOMPtr<nsISupports> aParent, bool aIs2D,
       mX(std::move(aX)),
       mY(std::move(aY)),
       mZ(std::move(aZ)) {}
+
+// static
+RefPtr<CSSScale> CSSScale::Create(nsCOMPtr<nsISupports> aParent,
+                                  const StyleScaleComponent& aScaleComponent) {
+  RefPtr<CSSNumericValue> x =
+      CSSNumericValue::Create(aParent, aScaleComponent.x);
+  RefPtr<CSSNumericValue> y =
+      CSSNumericValue::Create(aParent, aScaleComponent.y);
+  RefPtr<CSSNumericValue> z =
+      CSSNumericValue::Create(aParent, aScaleComponent.z);
+
+  return MakeAndAddRef<CSSScale>(std::move(aParent), aScaleComponent.is_2d,
+                                 std::move(x), std::move(y), std::move(z));
+}
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSScale, CSSTransformComponent)
 NS_IMPL_CYCLE_COLLECTION_INHERITED(CSSScale, CSSTransformComponent, mX, mY, mZ)
