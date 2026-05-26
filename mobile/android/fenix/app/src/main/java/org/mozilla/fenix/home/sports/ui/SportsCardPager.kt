@@ -97,9 +97,6 @@ internal fun pagerHeadingContentDescription(
  * @param championsPageIndices 0-based indices of pages for the Champion cards.
  * When the pager settles on one of these pages, the shared background, padding, and overflow menu
  * are suppressed so the page fills the full container.
- * @param errorPageIndices 0-based indices of pages that render an error card alone. When the
- * pager settles on one of these, the overflow menu is suppressed since "Change team" /
- * "Get custom wallpaper" aren't actionable while the widget is in a failure state.
  */
 @Composable
 fun SportsCardPager(
@@ -109,11 +106,9 @@ fun SportsCardPager(
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
     championsPageIndices: Set<Int> = emptySet(),
-    errorPageIndices: Set<Int> = emptySet(),
 ) {
     val pagerState = rememberPagerState { pages.size }
     val isChampionsPage = pagerState.currentPage in championsPageIndices
-    val isErrorPage = pagerState.currentPage in errorPageIndices
     val showIndicator = pages.size > 1 && !isChampionsPage
 
     Column(
@@ -137,7 +132,7 @@ fun SportsCardPager(
                 pages = pages,
                 isChampionsPage = isChampionsPage,
             )
-            if (!isChampionsPage && !isErrorPage) {
+            if (!isChampionsPage) {
                 SportsCardPagerOverflowMenu(
                     onChangeTeam = onChangeTeam,
                     onGetCustomWallpaper = onGetCustomWallpaper,

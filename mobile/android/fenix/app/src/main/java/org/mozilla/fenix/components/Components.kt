@@ -6,12 +6,10 @@ package org.mozilla.fenix.components
 
 import android.app.Application
 import android.content.Context
-import android.net.ConnectivityManager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.getSystemService
 import com.google.android.play.core.review.ReviewManagerFactory
 import mozilla.components.concept.ai.controls.AIFeatureBlock
 import mozilla.components.concept.ai.controls.AIFeatureRegistry
@@ -382,9 +380,6 @@ class Components(private val context: Context) {
                             },
                         ),
                     ),
-                    connectivityManager = requireNotNull(context.getSystemService<ConnectivityManager>()) {
-                        "ConnectivityManager unavailable"
-                    },
                 ),
             ),
         ).also {

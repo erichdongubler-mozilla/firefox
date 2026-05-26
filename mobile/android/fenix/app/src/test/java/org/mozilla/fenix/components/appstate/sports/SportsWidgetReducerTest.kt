@@ -7,7 +7,6 @@ package org.mozilla.fenix.components.appstate.sports
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mozilla.fenix.components.appstate.AppAction
@@ -300,7 +299,7 @@ class SportsWidgetReducerTest {
     }
 
     @Test
-    fun `GIVEN errorState is set WHEN MatchCardStateUpdated is dispatched THEN errorState is preserved`() {
+    fun `GIVEN errorState is set WHEN MatchCardStateUpdated is dispatched THEN errorState is cleared`() {
         val initialState = AppState(
             sportsWidgetState = SportsWidgetState(
                 matchCardStates = emptyList(),
@@ -315,58 +314,11 @@ class SportsWidgetReducerTest {
             ),
         )
 
-        assertEquals(SportCardErrorState.LoadFailed, finalState.sportsWidgetState.errorState)
-    }
-
-    @Test
-    fun `GIVEN errorState is set WHEN ErrorStateCleared is dispatched THEN errorState is cleared`() {
-        val initialState = AppState(
-            sportsWidgetState = SportsWidgetState(
-                errorState = SportCardErrorState.ConnectionInterrupted,
-            ),
-        )
-
-        val finalState = AppStoreReducer.reduce(
-            initialState,
-            AppAction.SportsWidgetAction.ErrorStateCleared,
-        )
-
         assertNull(finalState.sportsWidgetState.errorState)
     }
 
     @Test
-    fun `GIVEN errorState is set and matchCardStates populated WHEN ErrorStateCleared is dispatched THEN matchCardStates are preserved`() {
-        val cards = FakeMatchCardScenario.Live.build()
-        val initialState = AppState(
-            sportsWidgetState = SportsWidgetState(
-                matchCardStates = cards,
-                errorState = SportCardErrorState.LoadFailed,
-            ),
-        )
-
-        val finalState = AppStoreReducer.reduce(
-            initialState,
-            AppAction.SportsWidgetAction.ErrorStateCleared,
-        )
-
-        assertNull(finalState.sportsWidgetState.errorState)
-        assertEquals(cards, finalState.sportsWidgetState.matchCardStates)
-    }
-
-    @Test
-    fun `GIVEN errorState is already null WHEN ErrorStateCleared is dispatched THEN state is unchanged`() {
-        val initialState = AppState(sportsWidgetState = SportsWidgetState(errorState = null))
-
-        val finalState = AppStoreReducer.reduce(
-            initialState,
-            AppAction.SportsWidgetAction.ErrorStateCleared,
-        )
-
-        assertSame(initialState, finalState)
-    }
-
-    @Test
-    fun `GIVEN errorState is set WHEN MatchCardStateUpdated is dispatched with an empty list THEN errorState is preserved`() {
+    fun `GIVEN errorState is set WHEN MatchCardStateUpdated is dispatched with an empty list THEN errorState is still cleared`() {
         val initialState = AppState(
             sportsWidgetState = SportsWidgetState(
                 matchCardStates = FakeMatchCardScenario.Live.build(),
@@ -379,7 +331,7 @@ class SportsWidgetReducerTest {
             AppAction.SportsWidgetAction.MatchCardStateUpdated(matchCardStates = emptyList()),
         )
 
-        assertEquals(SportCardErrorState.ConnectionInterrupted, finalState.sportsWidgetState.errorState)
+        assertNull(finalState.sportsWidgetState.errorState)
     }
 
     @Test

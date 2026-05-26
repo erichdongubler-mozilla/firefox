@@ -39,6 +39,7 @@ internal object SportsWidgetReducer {
         is SportsWidgetAction.MatchCardStateUpdated -> state.copy(
             sportsWidgetState = state.sportsWidgetState.copy(
                 matchCardStates = action.matchCardStates,
+                errorState = null,
             ),
         )
 
@@ -82,12 +83,6 @@ internal object SportsWidgetReducer {
                 errorState = action.error,
             ),
         )
-
-        SportsWidgetAction.ErrorStateCleared -> if (state.sportsWidgetState.errorState == null) {
-            state
-        } else {
-            state.copy(sportsWidgetState = state.sportsWidgetState.copy(errorState = null))
-        }
 
         is SportsWidgetAction.OneWeekToWorldCupOverrideUpdated -> state.copy(
             sportsWidgetState = state.sportsWidgetState.copy(
