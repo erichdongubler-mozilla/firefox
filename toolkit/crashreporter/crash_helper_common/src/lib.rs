@@ -7,6 +7,7 @@ use std::ffi::OsString;
 pub mod errors;
 pub mod messages;
 
+mod appinfo;
 mod breakpad;
 mod ipc_channel;
 mod ipc_connector;
@@ -21,6 +22,7 @@ use messages::MessageError;
 pub type GeckoChildId = i32;
 
 // Re-export the platform-specific types and functions
+pub use crate::appinfo::ApplicationInfo;
 pub use crate::breakpad::{BreakpadChar, BreakpadData, BreakpadRawData, Pid};
 pub use crate::ipc_channel::{IPCChannel, IPCClientChannel};
 pub use crate::ipc_connector::{
