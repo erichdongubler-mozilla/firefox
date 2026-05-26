@@ -1037,9 +1037,6 @@ static uint32_t GetStackTraceLimit(JSContext* cx) {
                        &limitVal)) {
     return MAX_REPORTED_STACK_DEPTH;
   }
-  if (limitVal.isUndefined()) {
-    return MAX_REPORTED_STACK_DEPTH;
-  }
   if (!limitVal.isNumber()) {
     return 0;
   }
