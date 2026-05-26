@@ -765,6 +765,8 @@ bool Proxy::Init(WorkerPrivate* aWorkerPrivate) {
 
   mXHR->SetParameters(mMozAnon, mMozSystem);
   mXHR->SetClientInfoAndController(mClientInfo, mController);
+  mXHR->SetAssociatedBrowsingContextID(
+      aWorkerPrivate->AssociatedBrowsingContextID());
 
   ErrorResult rv;
   mXHRUpload = mXHR->GetUpload(rv);
