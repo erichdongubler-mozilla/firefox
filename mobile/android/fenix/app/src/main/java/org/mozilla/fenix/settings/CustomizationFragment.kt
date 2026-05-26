@@ -112,7 +112,6 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
             isSummarizationEnabled = isSummarizationEnabled,
             isSummarizationGestureEnabled = isSummarizationGestureEnabled,
         )
-        setupAppIconCategory()
     }
 
     private fun updateToolbarCategoryBasedOnTabStrip(
@@ -343,12 +342,6 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
                 }
                 true
             }
-        }
-    }
-
-    private fun setupAppIconCategory() {
-        requirePreference<PreferenceCategory>(R.string.pref_key_customization_category_app_icon).apply {
-           isVisible = context.settings().appIconSelection
         }
     }
 
