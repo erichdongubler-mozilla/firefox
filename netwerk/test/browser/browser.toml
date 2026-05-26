@@ -251,17 +251,6 @@ support-files = [
   "fetch_from_tracker.sjs",
 ]
 
-["browser_test_lna_worker.js"]
-support-files = [
-  "head_local_network_access.js",
-  "page_with_non_trackers.html",
-  "page_with_non_trackers.html^headers^",
-  "fetch_from_tracker.sjs",
-  "worker_lna.js",
-  "shared_worker_lna.js",
-  "service_worker_lna.sjs",
-]
-
 ["browser_test_local_network_access_feature_policy.js"]
 support-files = [
   "head_local_network_access.js",

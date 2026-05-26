@@ -384,10 +384,6 @@ void XMLHttpRequestMainThread::SetClientInfoAndController(
   mController = aController;
 }
 
-void XMLHttpRequestMainThread::SetAssociatedBrowsingContextID(uint64_t aId) {
-  mAssociatedBrowsingContextID = aId;
-}
-
 void XMLHttpRequestMainThread::ResetResponse() {
   mResponseXML = nullptr;
   mResponseBody.Truncate();
@@ -2640,12 +2636,6 @@ nsresult XMLHttpRequestMainThread::CreateChannel() {
                        loadFlags, nullptr, sandboxFlags);
   }
   NS_ENSURE_SUCCESS(rv, rv);
-
-  if (mAssociatedBrowsingContextID) {
-    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
-    rv = loadInfo->SetAssociatedBrowsingContextID(mAssociatedBrowsingContextID);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
 
   mAlreadyGotStopRequest = false;
 
