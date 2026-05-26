@@ -51,19 +51,6 @@ h2 {
   overflow: hidden auto;
 }
 
-@media (prefers-reduced-motion) {
-  /* Setting border-inline-end on #sidebar makes it a focusable element */
-  #sidebar::after {
-    content: "";
-    width: 1px;
-    height: 100%;
-    background-color: var(--border-color);
-    top: 0;
-    inset-inline-end: 0;
-    position: absolute;
-  }
-}
-
 .category-badge {
   min-width: var(--dimension-20);
   background-color: var(--color-accent-primary);
