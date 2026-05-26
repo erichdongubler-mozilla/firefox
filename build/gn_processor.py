@@ -37,8 +37,8 @@ class MozbuildWriter:
         self.indent = ""
         self._indent_increment = 4
 
-        # We need to correlate a small amount of state here to figure out
-        # which library template to use ("Library()" or "SharedLibrary()")
+        # We need to correlate a small amount of state here to figure out which
+        # library template to use ("Library()" or "GeckoSharedLibrary()")
         self._library_name = None
         self._shared_library = None
 
@@ -58,7 +58,9 @@ class MozbuildWriter:
         if self._library_name:
             self.write("\n")
             if self._shared_library:
-                self.write_ln(f"SharedLibrary({self.mb_serialize(self._library_name)})")
+                self.write_ln(
+                    f"GeckoSharedLibrary({self.mb_serialize(self._library_name)})"
+                )
             else:
                 self.write_ln(f"Library({self.mb_serialize(self._library_name)})")
 
