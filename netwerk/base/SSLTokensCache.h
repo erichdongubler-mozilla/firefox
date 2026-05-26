@@ -7,7 +7,6 @@
 
 #include "CertVerifier.h"  // For EVStatus
 #include "mozilla/Maybe.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/Span.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_network.h"
@@ -20,7 +19,6 @@
 #include "nsIAsyncShutdown.h"
 #include "nsIObserver.h"
 #include "nsISerialEventTarget.h"
-#include "nsISupportsImpl.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsTArray.h"
 #include "nsTHashMap.h"
@@ -49,36 +47,6 @@ struct SessionCacheInfo {
   Maybe<bool> mIsBuiltCertChainRootBuiltInRoot;
   nsITransportSecurityInfo::OverridableErrorCategory mOverridableErrorCategory;
   Maybe<nsTArray<nsTArray<uint8_t>>> mHandshakeCertificatesBytes;
-};
-
-// Holds a single compressed DER certificate blob.  Multiple
-// CompressedSessionCacheInfo fields may share the same CompressedCert
-// instance (per-record dedup).
-//
-// Fields are written once at construction and never mutated afterwards, so
-// they are safe to read from any thread without holding sLock (e.g. in
-// DecompressInfo after a record has been extracted from the cache).
-struct CompressedCert {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompressedCert)
-  nsTArray<uint8_t> mCompressedDer;
-
- private:
-  ~CompressedCert() = default;
-};
-
-// Internal compressed representation of SessionCacheInfo cert fields.
-// Non-cert fields are stored as-is; cert fields use RefPtr<CompressedCert>
-// so identical DER blobs within the same record share one allocation.
-struct CompressedSessionCacheInfo {
-  psm::EVStatus mEVStatus = psm::EVStatus::NotEV;
-  uint16_t mCertificateTransparencyStatus =
-      nsITransportSecurityInfo::CERTIFICATE_TRANSPARENCY_NOT_APPLICABLE;
-  RefPtr<CompressedCert> mServerCert;
-  Maybe<nsTArray<RefPtr<CompressedCert>>> mSucceededCertChain;
-  Maybe<bool> mIsBuiltCertChainRootBuiltInRoot;
-  nsITransportSecurityInfo::OverridableErrorCategory mOverridableErrorCategory =
-      nsITransportSecurityInfo::OverridableErrorCategory::ERROR_UNSET;
-  Maybe<nsTArray<RefPtr<CompressedCert>>> mHandshakeCertificates;
 };
 
 class SSLTokensCache : public nsIMemoryReporter,
@@ -126,23 +94,17 @@ class SSLTokensCache : public nsIMemoryReporter,
   static void LoadForTest(const nsACString& aPath);
   static uint32_t CountForTest();
   static void PutForTest(const nsACString& aKey);
-  static uint32_t CacheSizeForTest();
 #endif
 
  private:
-  class TokenCacheRecord;  // defined below
-
   SSLTokensCache();
   virtual ~SSLTokensCache();
 
   nsresult RemoveLocked(const nsACString& aKey, uint64_t aId)
       MOZ_REQUIRES(sLock);
   nsresult RemoveAllLocked(const nsACString& aKey) MOZ_REQUIRES(sLock);
-  // Extracts the first valid (non-expired) record for aKey, updating
-  // mCacheSize and mExpirationArray.  Sets *aTokenId if non-null.
-  // Returns the owned record on hit, nullptr on miss.
-  UniquePtr<TokenCacheRecord> GetRecordLocked(const nsACString& aKey,
-                                              uint64_t* aTokenId)
+  nsresult GetLocked(const nsACString& aKey, nsTArray<uint8_t>& aToken,
+                     SessionCacheInfo& aResult, uint64_t* aTokenId)
       MOZ_REQUIRES(sLock);
 
   void EvictIfNecessary() MOZ_REQUIRES(sLock);
@@ -221,20 +183,15 @@ class SSLTokensCache : public nsIMemoryReporter,
     ~TokenCacheRecord();
 
     uint32_t Size() const;
+    void Reset();
 
     nsCString mKey;
     PRTime mExpirationTime = 0;
     nsTArray<uint8_t> mToken;
-    CompressedSessionCacheInfo mSessionCacheInfo;
+    SessionCacheInfo mSessionCacheInfo;
     // An unique id to identify the record. Mostly used when we want to remove a
     // record from TokenCacheEntry.
     uint64_t mId = 0;
-    // Set (under sLock) by GetRecordLocked after pre-removing this record from
-    // mExpirationArray, allowing the destructor to fire outside sLock without
-    // calling OnRecordDestroyed.  Intentionally not annotated MOZ_GUARDED_BY:
-    // the write happens under sLock; the read in ~TokenCacheRecord is safe
-    // because the UniquePtr is owned exclusively by one thread at that point.
-    bool mDetached = false;
   };
 
   class TokenCacheEntry {

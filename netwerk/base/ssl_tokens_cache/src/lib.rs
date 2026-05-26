@@ -123,12 +123,9 @@ impl PersistedRecord {
 type PrTime = i64;
 
 const MAGIC: [u8; 4] = *b"STCF";
-const VERSION: u8 = 3;
+const VERSION: u8 = 2;
 /// Derived from the header layout: magic(4) + version(1).
-/// Integrity of the serialized records is provided by the Adler-32
-/// embedded in the outer zlib stream.
-/// VERSION 3: individual cert blobs within each record are compressed
-/// rather than raw DER.
+/// Integrity is provided by the Adler-32 embedded in the zlib stream.
 const HEADER_SIZE: usize = MAGIC.len() + size_of::<u8>();
 const_assert!(HEADER_SIZE == 5);
 /// Maximum allowed size for the compressed body and decompressed payload.
