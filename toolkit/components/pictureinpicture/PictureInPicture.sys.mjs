@@ -74,14 +74,17 @@ XPCOMUtils.defineLazyPreferenceGetter(
 let gNextWindowID = 0;
 
 export class PictureInPictureLauncherParent extends JSWindowActorParent {
-  receiveMessage(aMessage) {
+  async receiveMessage(aMessage) {
     switch (aMessage.name) {
       case "PictureInPicture:Request": {
         let videoData = aMessage.data;
-        PictureInPicture.handlePictureInPictureRequest(this.manager, videoData);
-        break;
+        return PictureInPicture.handlePictureInPictureRequest(
+          this.manager,
+          videoData
+        );
       }
     }
+    return undefined;
   }
 }
 
@@ -137,7 +140,7 @@ export class PictureInPictureToggleParent extends JSWindowActorParent {
  * a clone of a video element running in web content.
  */
 export class PictureInPictureParent extends JSWindowActorParent {
-  receiveMessage(aMessage) {
+  async receiveMessage(aMessage) {
     switch (aMessage.name) {
       case "PictureInPicture:Resize": {
         let videoData = aMessage.data;
@@ -149,8 +152,10 @@ export class PictureInPictureParent extends JSWindowActorParent {
          * Content has requested that its Picture in Picture window go away.
          */
         let reason = aMessage.data.reason;
-        PictureInPicture.closeSinglePipWindow({ reason, actorRef: this });
-        break;
+        return PictureInPicture.closeSinglePipWindow({
+          reason,
+          actorRef: this,
+        });
       }
       case "PictureInPicture:Playing": {
         let player = PictureInPicture.getWeakPipPlayer(this);
@@ -216,6 +221,7 @@ export class PictureInPictureParent extends JSWindowActorParent {
         break;
       }
     }
+    return undefined;
   }
 }
 
@@ -238,6 +244,9 @@ export var PictureInPicture = {
 
   // Maps a WindowGlobal to count of eligible PiP videos
   weakGlobalToEligiblePipCount: new WeakMap(),
+
+  // Tracks the 1 pip window we allow to exist from video.requestPictureInPicture()
+  apiPipWindow: null,
 
   // Tracks the number of open player windows for Telemetry tracking.
   currentPlayerCount: 0,
@@ -880,6 +889,48 @@ export var PictureInPicture = {
   },
 
   /**
+   * Set the window that was created from the Picture In Picture API.
+   * Used specifically to force-close if another PIP API request is made.
+   */
+  setApiWindow(window) {
+    if (this.apiPipWindow != null) {
+      console.error(`PIP API Window reference not properly cleared.`);
+    }
+    this.apiPipWindow = Cu.getWeakReference(window);
+    window.addEventListener("unload", () => {
+      this.clearApiWindow(window);
+    });
+  },
+
+  /**
+   * When a PIP Window (PIP API) unloads it clears the weak reference to itself.
+   */
+  clearApiWindow(window) {
+    let currentWindow = this.apiPipWindow?.get();
+    if (currentWindow == window) {
+      this.apiPipWindow = null;
+    } else {
+      console.error(`PIP API Window state not properly cleared.`);
+    }
+  },
+
+  /**
+   * Closes PIP window that was opened via the Picture-in-Picture API.
+   * Current PIP API implementation has chosen to only support 1 window at a time.
+   *
+   * @param {string} reason
+   *   The reason for closing these windows (for telemetry)
+   */
+  async closeApiPipWindowIfOpen(reason = "Api") {
+    const pipApiWindow = this.apiPipWindow?.get();
+    if (pipApiWindow) {
+      Glean.pictureinpicture["closedMethod" + reason].record();
+      await this.closePipWindow(pipApiWindow);
+      this.apiPipWindow = null;
+    }
+  },
+
+  /**
    * A request has come up from content to open a Picture in Picture
    * window.
    *
@@ -896,11 +947,26 @@ export var PictureInPicture = {
    *   videoWidth (int):
    *     The preferred width of the video.
    *
+   *   videoRef (ContentDOMReference)
+   *    A reference to the video element that a Picture-in-Picture window
+   *    is being created for
+   *
+   *   isPipApiRequest {boolean}
+   *    True when this request originated from HTMLVideoElement.requestPictureInPicture().
+   *    The PictureInPictureWindow instance itself is handed off to the player
+   *    actor via a same-process WeakMap in PictureInPictureChild.sys.mjs.
+   *
    * @returns {Promise}
    *   Resolves once the Picture in Picture window has been created, and
    *   the player component inside it has finished loading.
    */
   async handlePictureInPictureRequest(wgp, videoData) {
+    const isApiRequest = !!videoData.isPipApiRequest;
+
+    if (isApiRequest) {
+      await this.closeApiPipWindowIfOpen();
+    }
+
     this.currentPlayerCount += 1;
     this.maxConcurrentPlayerCount = Math.max(
       this.maxConcurrentPlayerCount,
@@ -926,10 +992,11 @@ export var PictureInPicture = {
     tab.addEventListener("TabSwapPictureInPicture", this);
 
     let pipId = gNextWindowID.toString();
-    let actorRef = win.setupPlayer(
+    const { actor: actorRef, setupPromise } = win.setupPlayer(
       pipId,
       wgp,
       videoData.videoRef,
+      isApiRequest,
       videoData.autoFocus
     );
     gNextWindowID++;
@@ -941,6 +1008,10 @@ export var PictureInPicture = {
       // The docshell would only not be active when the video was pip'd via auto toggle
       browser.docShellIsActive = true;
       this.weakAutoPipBrowserToParent.set(browser, actorRef);
+    }
+
+    if (isApiRequest) {
+      this.setApiWindow(win);
     }
 
     win.setScrubberPosition(videoData.scrubberPosition);
@@ -958,6 +1029,7 @@ export var PictureInPicture = {
       ccEnabled: videoData.ccEnabled,
       webVTTSubtitles: videoData.webVTTSubtitles,
     });
+    await setupPromise;
   },
 
   /**
