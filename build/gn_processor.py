@@ -240,6 +240,14 @@ def filter_gn_config(path, gn_result, sandbox_vars, input_vars, gn_target):
                         mozpath.relpath(d, path) for d in spec[spec_attr]
                     ]
             gn_out["targets"][target_fullname] = spec
+            continue
+
+        if raw_spec["type"] == "group":
+            gn_out["targets"][target_fullname] = {
+                "type": "group",
+                "deps": raw_spec.get("deps", []),
+            }
+            continue
 
         # TODO: 'executable' will need to be handled here at some point as well.
         if raw_spec["type"] not in ("static_library", "shared_library", "source_set"):
@@ -304,11 +312,47 @@ def process_gn_config(
     non_unified_sources = set([mozpath.normpath(s) for s in non_unified_sources])
 
     def target_info(fullname):
-        path, name = target_fullname.split(":")
+        path, name = fullname.split(":")
         # Stripping '//' gives us a path relative to the project root,
         # adding a suffix avoids name collisions with libraries already
         # in the tree (like "webrtc").
         return path.lstrip("//"), name + "_gn"
+
+    def get_lib_name(target_name):
+        if target_name.startswith("lib"):
+            return target_name[3:]
+        return target_name
+
+    # Return list of library dependencies for a target, recursing through any group's dependencies.
+    def find_lib_deps(fullname):
+        libs = []
+        seen_targets = set()
+
+        def visit(dep):
+            if dep in seen_targets:
+                return
+            seen_targets.add(dep)
+
+            dep_spec = targets.get(dep)
+            if not dep_spec:
+                return
+
+            dep_type = dep_spec["type"]
+
+            if dep_type in ("static_library", "shared_library", "source_set"):
+                _, name = target_info(dep)
+                libs.append(get_lib_name(name))
+                return
+
+            if dep_type == "group":
+                for child in dep_spec.get("deps", []):
+                    visit(child)
+
+        spec = targets[fullname]
+        for dep in spec.get("deps", []):
+            visit(dep)
+
+        return libs
 
     def resolve_path(path):
         # GN will have resolved all these paths relative to the root of the
@@ -324,13 +368,13 @@ def process_gn_config(
         target_path, target_name = target_info(target_fullname)
         context_attrs = {}
 
-        # Remove leading 'lib' from the target_name if any, and use as
-        # library name.
-        name = target_name
         if spec["type"] in ("static_library", "shared_library", "source_set", "action"):
-            if name.startswith("lib"):
-                name = name[3:]
-            context_attrs["LIBRARY_NAME"] = str(name)
+            # Remove leading 'lib' from the target_name if any, and use as
+            # library name.
+            context_attrs["LIBRARY_NAME"] = get_lib_name(target_name)
+        elif spec["type"] == "group":
+            # groups are only used to propagate deps, so should be skipped here.
+            continue
         else:
             raise Exception(
                 "The following GN target type is not currently "
@@ -432,6 +476,9 @@ def process_gn_config(
                     context_attrs.setdefault(var, []).append(f)
                 else:
                     context_attrs.setdefault(var, []).extend(f)
+
+        if "FINAL_LIBRARY" not in sandbox_vars:
+            context_attrs["USE_LIBS"] = find_lib_deps(target_fullname)
 
         context_attrs["OS_LIBS"] = []
         for lib in spec.get("libs", []):
