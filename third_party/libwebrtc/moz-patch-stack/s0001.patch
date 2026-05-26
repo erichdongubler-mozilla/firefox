@@ -521,7 +521,7 @@ index 72f2716e03..dc96455f99 100644
      x_display_->AddEventHandler(xfixes_event_base_ + XFixesCursorNotify, this);
  
 diff --git a/modules/desktop_capture/linux/x11/screen_capturer_x11.cc b/modules/desktop_capture/linux/x11/screen_capturer_x11.cc
-index c12bc76116..847ae1e784 100644
+index fb11c91342..c1a22e4049 100644
 --- a/modules/desktop_capture/linux/x11/screen_capturer_x11.cc
 +++ b/modules/desktop_capture/linux/x11/screen_capturer_x11.cc
 @@ -311,7 +311,7 @@ bool ScreenCapturerX11::GetSourceList(SourceList* sources) {
@@ -534,10 +534,10 @@ index c12bc76116..847ae1e784 100644
    }
  
 diff --git a/modules/desktop_capture/linux/x11/window_capturer_x11.cc b/modules/desktop_capture/linux/x11/window_capturer_x11.cc
-index fcc4113b42..58eb0616b2 100644
+index 1cd97d2158..1f488f1979 100644
 --- a/modules/desktop_capture/linux/x11/window_capturer_x11.cc
 +++ b/modules/desktop_capture/linux/x11/window_capturer_x11.cc
-@@ -66,6 +66,7 @@ bool WindowCapturerX11::GetSourceList(SourceList* sources) {
+@@ -71,6 +71,7 @@ bool WindowCapturerX11::GetSourceList(SourceList* sources) {
    return GetWindowList(&atom_cache_, [this, sources](::Window window) {
      Source w;
      w.id = window;
@@ -545,7 +545,7 @@ index fcc4113b42..58eb0616b2 100644
      if (this->GetWindowTitle(window, &w.title)) {
        sources->push_back(w);
      }
-@@ -246,6 +247,14 @@ bool WindowCapturerX11::GetWindowTitle(::Window window, std::string* title) {
+@@ -255,6 +256,14 @@ bool WindowCapturerX11::GetWindowTitle(::Window window, std::string* title) {
    return result;
  }
  
@@ -561,7 +561,7 @@ index fcc4113b42..58eb0616b2 100644
  std::unique_ptr<DesktopCapturer> WindowCapturerX11::CreateRawWindowCapturer(
      const DesktopCaptureOptions& options) {
 diff --git a/modules/desktop_capture/linux/x11/window_capturer_x11.h b/modules/desktop_capture/linux/x11/window_capturer_x11.h
-index 67d001f4a1..1b5f0d89c5 100644
+index 6635b181c8..d7a4643991 100644
 --- a/modules/desktop_capture/linux/x11/window_capturer_x11.h
 +++ b/modules/desktop_capture/linux/x11/window_capturer_x11.h
 @@ -26,6 +26,7 @@
@@ -572,7 +572,7 @@ index 67d001f4a1..1b5f0d89c5 100644
  #include "modules/desktop_capture/linux/x11/window_finder_x11.h"
  #include "modules/desktop_capture/linux/x11/x_atom_cache.h"
  #include "modules/desktop_capture/linux/x11/x_server_pixel_buffer.h"
-@@ -61,6 +62,9 @@ class WindowCapturerX11 : public DesktopCapturer,
+@@ -62,6 +63,9 @@ class WindowCapturerX11 : public DesktopCapturer,
    // Returns window title for the specified X `window`.
    bool GetWindowTitle(::Window window, std::string* title);
  
