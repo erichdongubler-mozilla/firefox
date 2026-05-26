@@ -753,6 +753,7 @@ def write_mozbuild_files(
         for attrs in (
             (),
             ("OS_TARGET",),
+            ("OS_TARGET", "MOZ_DEBUG"),
             ("OS_TARGET", "TARGET_CPU"),
             ("OS_TARGET", "TARGET_CPU", "MOZ_X11"),
         ):
