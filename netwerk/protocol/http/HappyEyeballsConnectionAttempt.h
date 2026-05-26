@@ -9,7 +9,6 @@
 #include "nsAHttpConnection.h"
 #include "nsICancelable.h"
 #include "nsIDNSListener.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "nsTHashSet.h"
 #include "happy_eyeballs_glue/HappyEyeballs.h"
@@ -87,10 +86,10 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
 
   // Called by ZeroRttHandle::Finish0RTT on the winning HT. Pulls the
   // real nsHttpTransaction out of the pending queue (so a reject-path
-  // realTransaction->Close → Restart doesn't trip the pending-queue assertion,
-  // and so EnterSucceeded won't re-dispatch it) and calls aWinner->Adopt().
-  // No-op if the HE race was started without a real transaction yet
-  // (speculative entry) or the transaction can't be queried.
+  // real_txn.Close → Restart doesn't trip the pending-queue assertion,
+  // and so OnSucceeded won't re-dispatch it) and calls
+  // aWinner->Adopt(). No-op if the HE race was started without a
+  // real txn yet (speculative entry) or the txn can't be queried.
   void AdoptWinner(HappyEyeballsTransaction* aWinner);
 
   // Remove the real nsHttpTransaction from this entry's pending queue
@@ -100,64 +99,10 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   // trans is already gone (returns false), Do0RTT must decline 0-RTT
   // so we don't put early-data bytes on the wire for a trans that is
   // already being served by a different connection.
-  bool LockInRealTransactionFromPendingQueue();
-
-  // Lifecycle state machine. IsTerminal() returns true from Succeeded
-  // onward.
-  //   Init                       : initial state; Init() not yet called.
-  //   Connecting                 : Rust state machine driving DNS and
-  //                                connection attempts.
-  //   ZeroRttRacing              : a racer has entered 0-RTT, no winner yet.
-  //   ProcessingConnectionResult : inside a TCP/UDP connect callback.
-  //   Succeeded                  : Rust state machine emitted Succeeded.
-  //   Failed                     : Rust state machine emitted Failed.
-  //   RestartTransaction         : restart real transaction.
-  //   AbortTransaction           : close real transaction.
-  //   TimedOut                   : OnTimeout fired.
-  //   Done                       : terminal; Abandon() released all refs.
-  enum class State : uint8_t {
-    Init,
-    Connecting,
-    ZeroRttRacing,
-    ProcessingConnectionResult,
-    Succeeded,
-    Failed,
-    RestartTransaction,
-    AbortTransaction,
-    TimedOut,
-    Done,
-  };
-
-  // Outcome of classifying a connection result.
-  enum class ConnResultOutcome : uint8_t {
-    ForwardAndContinue,  // forward to Rust state machine and continue
-    RestartTransaction,  // abort HE; restart real transaction
-    AbortTransaction,    // abort HE; close real transaction with status
-  };
-
-  // Payload for Transition; entry actions read only the fields they need.
-  struct TransitionPayload {
-    nsresult mCloseReason = NS_OK;
-    Maybe<happy_eyeballs::FailureReason> mFailureReason;
-  };
-
-  bool IsTerminal() const { return mState >= State::Succeeded; }
+  bool LockInRealTxnFromPendingQueue();
 
  private:
   ~HappyEyeballsConnectionAttempt();
-
-  // Single dispatcher for lifecycle transitions. Outcome entry actions
-  // do their teardown and end by calling Abandon() -> Done.
-  void Transition(State aNext);
-  void Transition(State aNext, TransitionPayload aPayload);
-
-  // Pure classifier over status + current 0-RTT flags. No side effects.
-  ConnResultOutcome ClassifyConnectionResult(nsresult aStatus) const;
-
-  // Remove the real transaction from the pending queue and Close() it, then
-  // null out mTransaction. No-op if the transaction has already been adopted
-  // onto a winning carrier (mTransactionAdopted), see bug 2040246.
-  void CloseRealTransaction(nsresult aCloseReason);
 
   nsresult CreateHappyEyeballs(ConnectionEntry* ent);
 
@@ -209,14 +154,7 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   // Timer
   void SetupTimer(uint64_t aTimeout);
 
-  // Entry actions for the terminal states; each ends by Transitioning to Done.
-  void EnterSucceeded();
-  void EnterFailed(happy_eyeballs::FailureReason aReason);
-  void EnterRestartTransaction(nsresult aCloseReason);
-  void EnterAbortTransaction(nsresult aCloseReason);
-  void EnterTimedOut();
-  void EnterDone();
-
+  void OnSucceeded();
   void ProcessTCPConn(nsHttpConnection* aConn, ConnectionEntry* aEntry,
                       bool aTransactionAlreadyOnConn);
   void ProcessUDPConn(HttpConnectionUDP* aConn, ConnectionEntry* aEntry,
@@ -241,7 +179,7 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
 
   nsCOMPtr<nsITimer> mTimer;
   WeakPtr<ConnectionEntry> mEntry;
-  State mState{State::Init};
+  bool mDone = false;
   nsresult mLastConnectionError = NS_OK;
   nsresult mLastDnsError = NS_OK;
   nsTHashSet<uint32_t> mSentTransportStatuses;
@@ -249,12 +187,6 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   // Shared 0-RTT coordinator. Created lazily (first time we hand out a
   // per-attempt HappyEyeballsTransaction) and passed to every racer.
   RefPtr<ZeroRttHandle> mZeroRttHandle;
-
-  // True once the real transaction has been handed to a winning carrier. After
-  // this, CloseRealTransaction must NOT Close()/Restart() the real transaction
-  // — doing so nulls mConnection while the carrier's stream still feeds bytes
-  // to it (bug 2040246).
-  bool mTransactionAdopted = false;
 
   DnsMetadata mDnsMetadata;
   bool mTRRInfoForwarded = false;
