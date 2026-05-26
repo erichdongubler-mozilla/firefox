@@ -28,6 +28,7 @@
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/dom/Client.h"
+#include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/dom/ClientIPCTypes.h"
 #include "mozilla/dom/ClientManager.h"
 #include "mozilla/dom/DOMTypes.h"
@@ -736,6 +737,11 @@ nsresult ServiceWorkerPrivate::Initialize() {
   mClientInfo->SetURL(mInfo->ScriptSpec());
   mClientInfo->SetFrameType(FrameType::None);
 
+  // Set the IP address space from the registration for LNA checks.
+  mozilla::ipc::PolicyContainerArgs policyContainerArgs;
+  policyContainerArgs.ipAddressSpace() =
+      static_cast<nsILoadInfo::IPAddressSpace>(regInfo->GetIPAddressSpace());
+  mClientInfo->SetPolicyContainerArgs(policyContainerArgs);
   WorkerOptions workerOptions;
   workerOptions.mCredentials = RequestCredentials::Omit;
   workerOptions.mType = mInfo->Type();
