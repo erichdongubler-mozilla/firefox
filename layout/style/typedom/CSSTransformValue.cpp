@@ -7,6 +7,7 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSTransformComponent.h"
 #include "mozilla/dom/CSSTransformValueBinding.h"
@@ -19,6 +20,28 @@ CSSTransformValue::CSSTransformValue(
     nsTArray<RefPtr<CSSTransformComponent>> aValues)
     : CSSStyleValue(std::move(aParent), StyleValueType::TransformValue),
       mValues(std::move(aValues)) {}
+
+// static
+RefPtr<CSSTransformValue> CSSTransformValue::Create(
+    nsCOMPtr<nsISupports> aParent, const StyleTransformValue& aTransformValue) {
+  nsTArray<RefPtr<CSSTransformComponent>> values;
+  values.SetCapacity(aTransformValue.Length());
+
+  for (const auto& transformValue : aTransformValue) {
+    RefPtr<CSSTransformComponent> transformComponent;
+
+    switch (transformValue.tag) {
+      case StyleTransformComponent::Tag::Placeholder: {
+        MOZ_CRASH("Not implemented because this should be unreachable.");
+      }
+    }
+
+    values.AppendElement(std::move(transformComponent));
+  }
+
+  return MakeAndAddRef<CSSTransformValue>(std::move(aParent),
+                                          std::move(values));
+}
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSTransformValue, CSSStyleValue)
 NS_IMPL_CYCLE_COLLECTION_INHERITED(CSSTransformValue, CSSStyleValue, mValues)

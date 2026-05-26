@@ -73,6 +73,14 @@ void CSSStyleValue::Create(nsCOMPtr<nsISupports> aParent,
 
             break;
           }
+
+          case StyleTypedValue::Tag::Transform: {
+            const auto& transformValue = typedValue.AsTransform();
+
+            styleValue = CSSTransformValue::Create(aParent, transformValue);
+
+            break;
+          }
         }
 
         aRetVal.AppendElement(std::move(styleValue));
