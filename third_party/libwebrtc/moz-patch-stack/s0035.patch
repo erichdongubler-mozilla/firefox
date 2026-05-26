@@ -262,7 +262,7 @@ index c133f44597..b9941ceb82 100644
  
      VideoBitrateAllocationObserver* bitrate_allocation_observer = nullptr;
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index bccc316619..8128e46ad6 100644
+index 6bf59fd0a7..5cd895e1dd 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
 @@ -127,7 +127,8 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
