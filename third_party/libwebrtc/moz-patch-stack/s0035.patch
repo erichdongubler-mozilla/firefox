@@ -169,10 +169,10 @@ index 2171f7419d..d2bc1b513e 100644
  
      // Transport for outgoing packets (RTCP).
 diff --git a/modules/rtp_rtcp/include/rtp_rtcp_defines.h b/modules/rtp_rtcp/include/rtp_rtcp_defines.h
-index a8b235401c..282808aeda 100644
+index fac8d06ea9..676b448587 100644
 --- a/modules/rtp_rtcp/include/rtp_rtcp_defines.h
 +++ b/modules/rtp_rtcp/include/rtp_rtcp_defines.h
-@@ -187,6 +187,14 @@ class NetworkLinkRtcpObserver {
+@@ -183,6 +183,14 @@ class NetworkLinkRtcpObserver {
    virtual void OnRttUpdate(Timestamp /* receive_time */, TimeDelta /* rtt */) {}
  };
  
