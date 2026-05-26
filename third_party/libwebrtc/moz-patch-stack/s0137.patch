@@ -1,63 +1,82 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Tue, 7 Apr 2026 19:06:00 -0500
-Subject: Bug 2030139 - (fix-15fd636394) disable perfetto usage to avoid new
- third_party library.
+From: Jan Grulich <jgrulich@redhat.com>
+Date: Mon, 27 Apr 2026 06:10:00 +0000
+Subject: Bug 2029447 - WebRTC backport: [Pipewire] Fix mouse cursor data race.
+ r=pehrsons
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/f1981bae2720ec8087be98eb7f5f323c1d233640
+This addresses a potential data race when the mouse cursor is updated
+on the Pipewire thread and read by the capture thread.
+
+This is a simple backport of an WebRTC upstream change.
+
+Upstream commit: 90b22181ec922900e26de71463b8e0ed47a5c2dd
+
+Differential Revision: https://phabricator.services.mozilla.com/D296092
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/822a3befaf10ad30afe99c936d47fee416823731
 ---
- video/video_stream_encoder.cc | 20 ++++++++------------
- 1 file changed, 8 insertions(+), 12 deletions(-)
+ .../linux/wayland/shared_screencast_stream.cc | 21 ++++++++++++++-----
+ 1 file changed, 16 insertions(+), 5 deletions(-)
 
-diff --git a/video/video_stream_encoder.cc b/video/video_stream_encoder.cc
-index 14b8e04c89..6e83701dc4 100644
---- a/video/video_stream_encoder.cc
-+++ b/video/video_stream_encoder.cc
-@@ -859,13 +859,11 @@ void VideoStreamEncoder::AddAdaptationResource(
-   // Map any externally added resources as kCpu for the sake of stats reporting.
-   // TODO(hbos): Make the manager map any unknown resources to kCpu and get rid
-   // of this MapResourceToReason() call.
--  TRACE_EVENT_BEGIN("webrtc",
--                    "VideoStreamEncoder::AddAdaptationResource(latency)",
--                    perfetto::Track::FromPointer(this));
-+  TRACE_EVENT_ASYNC_BEGIN0(
-+      "webrtc", "VideoStreamEncoder::AddAdaptationResource(latency)", this);
-   encoder_queue_->PostTask([this, resource = std::move(resource)] {
--    TRACE_EVENT_END("webrtc",
--                    /* VideoStreamEncoder::AddAdaptationResource(latency) */
--                    perfetto::Track::FromPointer(this));
-+    TRACE_EVENT_ASYNC_END0(
-+        "webrtc", "VideoStreamEncoder::AddAdaptationResource(latency)", this);
-     RTC_DCHECK_RUN_ON(encoder_queue_.get());
-     additional_resources_.push_back(resource);
-     stream_resource_manager_.AddResource(resource, VideoAdaptationReason::kCpu);
-@@ -1724,8 +1722,7 @@ void VideoStreamEncoder::TraceFrameDropStart() {
-   RTC_DCHECK_RUN_ON(encoder_queue_.get());
-   // Start trace event only on the first frame after encoder is paused.
-   if (!encoder_paused_and_dropped_frame_) {
--    TRACE_EVENT_BEGIN("webrtc", "EncoderPaused",
--                      perfetto::Track::FromPointer(this));
-+    TRACE_EVENT_ASYNC_BEGIN0("webrtc", "EncoderPaused", this);
-   }
-   encoder_paused_and_dropped_frame_ = true;
+diff --git a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
+index 193e37e335..e1ba7569e5 100644
+--- a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
++++ b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
+@@ -147,8 +147,9 @@ class SharedScreenCastStreamPrivate {
+   Mutex latest_frame_lock_ RTC_ACQUIRED_AFTER(queue_lock_);
+   SharedDesktopFrame* latest_available_frame_
+       RTC_GUARDED_BY(&latest_frame_lock_) = nullptr;
+-  std::unique_ptr<MouseCursor> mouse_cursor_;
+-  DesktopVector mouse_cursor_position_ = DesktopVector(-1, -1);
++  std::unique_ptr<MouseCursor> mouse_cursor_ RTC_GUARDED_BY(&latest_frame_lock_);
++  DesktopVector mouse_cursor_position_ RTC_GUARDED_BY(&latest_frame_lock_) =
++      DesktopVector(-1, -1);
+ 
+   int64_t modifier_;
+   std::unique_ptr<EglDmaBuf> egl_dmabuf_;
+@@ -714,6 +715,7 @@ SharedScreenCastStreamPrivate::CaptureFrame() {
  }
-@@ -1734,8 +1731,7 @@ void VideoStreamEncoder::TraceFrameDropEnd() {
-   RTC_DCHECK_RUN_ON(encoder_queue_.get());
-   // End trace event on first frame after encoder resumes, if frame was dropped.
-   if (encoder_paused_and_dropped_frame_) {
--    TRACE_EVENT_END("webrtc", /* EncoderPaused */
--                    perfetto::Track::FromPointer(this));
-+    TRACE_EVENT_ASYNC_END0("webrtc", "EncoderPaused", this);
+ 
+ std::unique_ptr<MouseCursor> SharedScreenCastStreamPrivate::CaptureCursor() {
++  MutexLock latest_frame_lock(&latest_frame_lock_);
+   if (!mouse_cursor_) {
+     return nullptr;
    }
-   encoder_paused_and_dropped_frame_ = false;
+@@ -722,6 +724,7 @@ std::unique_ptr<MouseCursor> SharedScreenCastStreamPrivate::CaptureCursor() {
  }
-@@ -2194,8 +2190,8 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
-   }
-   accumulated_update_rect_is_valid_ = true;
  
--  TRACE_EVENT_INSTANT("webrtc", "Encode", perfetto::Track::FromPointer(this),
--                      "render_time", video_frame.render_time_ms());
-+  TRACE_EVENT_ASYNC_STEP_INTO0("webrtc", "Video", video_frame.render_time_ms(),
-+                               "Encode");
+ DesktopVector SharedScreenCastStreamPrivate::CaptureCursorPosition() {
++  MutexLock latest_frame_lock(&latest_frame_lock_);
+   return mouse_cursor_position_;
+ }
  
-   stream_resource_manager_.OnEncodeStarted(out_frame, time_when_posted_us);
+@@ -793,20 +796,28 @@ void SharedScreenCastStreamPrivate::ProcessBuffer(pw_buffer* buffer) {
+           mouse_frame->CopyPixelsFrom(
+               bitmap_data, bitmap->stride,
+               DesktopRect::MakeWH(bitmap->size.width, bitmap->size.height));
+-          mouse_cursor_ = std::make_unique<MouseCursor>(
+-              mouse_frame, DesktopVector(cursor->hotspot.x, cursor->hotspot.y));
++          {
++            MutexLock latest_frame_lock(&latest_frame_lock_);
++            mouse_cursor_ = std::make_unique<MouseCursor>(
++                mouse_frame,
++                DesktopVector(cursor->hotspot.x, cursor->hotspot.y));
++          }
  
+           if (observer_) {
+             observer_->OnCursorShapeChanged();
+           }
+         }
+-        mouse_cursor_position_.set(cursor->position.x, cursor->position.y);
++        {
++          MutexLock latest_frame_lock(&latest_frame_lock_);
++          mouse_cursor_position_.set(cursor->position.x, cursor->position.y);
++        }
+ 
+         if (observer_) {
+           observer_->OnCursorPositionChanged();
+         }
+       } else {
+         // Indicate an invalid cursor
++        MutexLock latest_frame_lock(&latest_frame_lock_);
+         mouse_cursor_position_.set(-1, -1);
+       }
+     }
