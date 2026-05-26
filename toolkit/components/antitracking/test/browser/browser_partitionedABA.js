@@ -86,6 +86,38 @@ add_task(async function runTest() {
     "Partitioned cookie exists in A(B-fetch->A) request"
   );
 
+  info("Calling requestStorageAccess in the ABA iframe");
+  let granted = await SpecialPowers.spawn(ifrABABC, [], async () => {
+    SpecialPowers.wrap(content.document).notifyUserGestureActivation();
+    try {
+      await content.document.requestStorageAccess();
+    } catch {
+      return false;
+    }
+    return content.document.hasStorageAccess();
+  });
+
+  ok(granted, "requestStorageAccess resolved and hasStorageAccess is true");
+
+  info("Verifying no permission was written to the permission manager");
+  let topURI = Services.io.newURI(TEST_DOMAIN_HTTPS);
+  is(
+    PermissionTestUtils.testPermission(
+      topURI,
+      "3rdPartyFrameStorage^https://example.net"
+    ),
+    Services.perms.UNKNOWN_ACTION,
+    "No 3rdPartyFrameStorage permission was added for ABA iframe"
+  );
+  is(
+    PermissionTestUtils.testPermission(
+      topURI,
+      "3rdPartyStorage^https://example.net"
+    ),
+    Services.perms.UNKNOWN_ACTION,
+    "No 3rdPartyStorage permission was added for ABA iframe"
+  );
+
   info("Clean up");
   BrowserTestUtils.removeTab(tab);
   await new Promise(resolve => {
