@@ -20,6 +20,8 @@ class nsISupports;
 
 namespace mozilla {
 
+struct StyleMatrixComponent;
+
 namespace dom {
 
 class GlobalObject;
@@ -28,6 +30,10 @@ class CSSMatrixComponent final : public CSSTransformComponent {
  public:
   CSSMatrixComponent(nsCOMPtr<nsISupports> aParent, bool aIs2D,
                      RefPtr<DOMMatrix> aMatrix);
+
+  static RefPtr<CSSMatrixComponent> Create(
+      nsCOMPtr<nsISupports> aParent,
+      const StyleMatrixComponent& aMatrixComponent);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CSSMatrixComponent,

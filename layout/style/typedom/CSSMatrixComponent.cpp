@@ -5,6 +5,7 @@
 #include "mozilla/dom/CSSMatrixComponent.h"
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSMatrixComponentBinding.h"
 #include "mozilla/dom/DOMMatrix.h"
@@ -18,6 +19,35 @@ CSSMatrixComponent::CSSMatrixComponent(nsCOMPtr<nsISupports> aParent,
     : CSSTransformComponent(std::move(aParent), aIs2D,
                             TransformComponentType::MatrixComponent),
       mMatrix(std::move(aMatrix)) {}
+
+// static
+RefPtr<CSSMatrixComponent> CSSMatrixComponent::Create(
+    nsCOMPtr<nsISupports> aParent,
+    const StyleMatrixComponent& aMatrixComponent) {
+  const auto& styleMatrix = aMatrixComponent.matrix;
+
+  auto matrix = MakeRefPtr<DOMMatrix>(aParent);
+
+  matrix->SetM11(styleMatrix.m11);
+  matrix->SetM12(styleMatrix.m12);
+  matrix->SetM13(styleMatrix.m13);
+  matrix->SetM14(styleMatrix.m14);
+  matrix->SetM21(styleMatrix.m21);
+  matrix->SetM22(styleMatrix.m22);
+  matrix->SetM23(styleMatrix.m23);
+  matrix->SetM24(styleMatrix.m24);
+  matrix->SetM31(styleMatrix.m31);
+  matrix->SetM32(styleMatrix.m32);
+  matrix->SetM33(styleMatrix.m33);
+  matrix->SetM34(styleMatrix.m34);
+  matrix->SetM41(styleMatrix.m41);
+  matrix->SetM42(styleMatrix.m42);
+  matrix->SetM43(styleMatrix.m43);
+  matrix->SetM44(styleMatrix.m44);
+
+  return MakeAndAddRef<CSSMatrixComponent>(
+      std::move(aParent), aMatrixComponent.is_2d, std::move(matrix));
+}
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSMatrixComponent,
                                                CSSTransformComponent)

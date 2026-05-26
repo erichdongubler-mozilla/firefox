@@ -9,6 +9,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/CSSMatrixComponent.h"
 #include "mozilla/dom/CSSPerspective.h"
 #include "mozilla/dom/CSSRotate.h"
 #include "mozilla/dom/CSSScale.h"
@@ -85,6 +86,14 @@ RefPtr<CSSTransformValue> CSSTransformValue::Create(
 
         transformComponent =
             CSSPerspective::Create(aParent, perspectiveComponent);
+        break;
+      }
+
+      case StyleTransformComponent::Tag::Matrix: {
+        const auto& matrixComponent = transformValue.AsMatrix();
+
+        transformComponent =
+            CSSMatrixComponent::Create(aParent, matrixComponent);
         break;
       }
     }
