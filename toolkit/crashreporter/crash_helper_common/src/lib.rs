@@ -15,6 +15,10 @@ mod ipc_listener;
 mod ipc_queue;
 mod platform;
 
+pub mod crash_annotations {
+    include!(concat!(env!("OUT_DIR"), "/crash_annotations.rs"));
+}
+
 use bytes::Bytes;
 use messages::MessageError;
 
