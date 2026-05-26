@@ -120,9 +120,12 @@ impl CrashGenerator {
         extra_path.set_extension("extra");
 
         let annotations = retrieve_annotations(&process_id, origin);
-        let extra_file_written = annotations
-            .map(|annotations| write_extra_file(&annotations, &extra_path))
-            .is_ok();
+        let annotations = [
+            (annotations.ok(), c"MissingChildProcessAnnotations"),
+        ]
+        .into_iter()
+        .fold(HashMap::new(), fold_annotations);
+        let extra_file_written = write_extra_file(annotations, &extra_path).is_ok();
 
         let path = minidump_path.as_os_str();
         let error = if !extra_file_written {
@@ -265,15 +268,42 @@ fn retrieve_annotations(
     Ok(annotations)
 }
 
-fn write_extra_file(annotations: &Vec<CAnnotation>, path: &Path) -> Result<()> {
+/// Helper function to merge a vector of annotations retrieved from a process memory into
+/// a more malleable data format. This function is intended to be used through fold()ing, hence
+/// the peculiar form of its arguments.
+///
+/// Notably, the second member of the `to_merge` argument is the error message that should be recorded
+/// *as the `DumperError` annotation* should the source not be available.
+fn fold_annotations(
+    mut merged: HashMap<u32, AnnotationData>,
+    to_merge: (Option<Vec<CAnnotation>>, &CStr),
+) -> HashMap<u32, AnnotationData> {
+    match to_merge {
+        (Some(annotations), _) => annotations
+            .into_iter()
+            .filter(|annotation| !matches!(annotation.data, AnnotationData::Empty))
+            .for_each(|annotation| {
+                let _ = merged.insert(annotation.id, annotation.data);
+            }),
+        (None, err) => {
+            merged.insert(
+                CrashAnnotation::DumperError as u32,
+                AnnotationData::String(err.to_owned()),
+            );
+        }
+    }
+    merged
+}
+
+fn write_extra_file(annotations: HashMap<u32, AnnotationData>, path: &Path) -> Result<()> {
     let mut annotations_written: usize = 0;
     let mut file = File::create(path)?;
     write!(&mut file, "{{")?;
 
-    for annotation in annotations {
-        if let Some(annotation_id) = CrashAnnotation::from_u32(annotation.id) {
+    for (id, val) in annotations {
+        if let Some(annotation_id) = CrashAnnotation::from_u32(id) {
             if annotation_id == CrashAnnotation::PHCBaseAddress {
-                if let AnnotationData::ByteBuffer(buff) = &annotation.data {
+                if let AnnotationData::ByteBuffer(buff) = &val {
                     write_phc_annotations(&mut file, buff)?;
                 }
 
@@ -281,13 +311,13 @@ fn write_extra_file(annotations: &Vec<CAnnotation>, path: &Path) -> Result<()> {
             }
 
             let value = match type_of_annotation(annotation_id) {
-                CrashAnnotationType::String => match &annotation.data {
+                CrashAnnotationType::String => match &val {
                     AnnotationData::String(string) => Some(escape_value(string.as_bytes())),
                     AnnotationData::ByteBuffer(buffer) => Some(escape_value(buffer)),
                     _ => None,
                 },
                 CrashAnnotationType::Boolean => {
-                    if let AnnotationData::ByteBuffer(buff) = &annotation.data {
+                    if let AnnotationData::ByteBuffer(buff) = &val {
                         if buff.len() == 1 {
                             Some(vec![if buff[0] != 0 { b'1' } else { b'0' }])
                         } else {
@@ -298,13 +328,13 @@ fn write_extra_file(annotations: &Vec<CAnnotation>, path: &Path) -> Result<()> {
                     }
                 }
                 CrashAnnotationType::U32 => {
-                    read_numeric_annotation!(u32, &annotation.data)
+                    read_numeric_annotation!(u32, &val)
                 }
                 CrashAnnotationType::U64 => {
-                    read_numeric_annotation!(u64, &annotation.data)
+                    read_numeric_annotation!(u64, &val)
                 }
                 CrashAnnotationType::USize => {
-                    read_numeric_annotation!(usize, &annotation.data)
+                    read_numeric_annotation!(usize, &val)
                 }
                 CrashAnnotationType::Object => None, // This cannot be found in memory
             };
