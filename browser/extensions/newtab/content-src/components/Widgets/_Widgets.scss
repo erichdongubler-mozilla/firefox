@@ -288,6 +288,68 @@
   font-size: var(--font-size-small);
 }
 
+.nova-enabled .widgets-row-toggle {
+  display: none;
+  grid-column: 1 / -1;
+  justify-self: center;
+  margin-block-start: var(--space-medium);
+
+  @include wallpaper-contrast-fix;
+}
+
+// Reveal the toggle when the layout would overflow at the current
+// card-column count, and remove individual widgets from layout when
+// they'd be hidden by collapse. JS publishes:
+//   - `data-overflow-N` on .widgets-section-container — drives toggle
+//     visibility.
+//   - `data-hidden-N` on each .widget-wrapper that would be clipped at
+//     that viewport — combined with `data-row-collapsed`, drives
+//     `display: none` so the container shrinks naturally (no clip
+//     needed) and the widget tabs out of focus / a11y order.
+// One IAB card spans 4 grid columns, so the ranges below mirror 1-, 2-,
+// 3-, and 4-card viewports.
+.nova-enabled {
+  @include at-content-cols-range(0, 8) {
+    .widgets-section-container[data-overflow-1] .widgets-row-toggle {
+      display: block;
+    }
+
+    .widgets-container[data-row-collapsed] .widget-wrapper[data-hidden-1] {
+      display: none;
+    }
+  }
+
+  @include at-content-cols-range(8, 12) {
+    .widgets-section-container[data-overflow-2] .widgets-row-toggle {
+      display: block;
+    }
+
+    .widgets-container[data-row-collapsed] .widget-wrapper[data-hidden-2] {
+      display: none;
+    }
+  }
+
+  @include at-content-cols-range(12, 16) {
+    .widgets-section-container[data-overflow-3] .widgets-row-toggle {
+      display: block;
+    }
+
+    .widgets-container[data-row-collapsed] .widget-wrapper[data-hidden-3] {
+      display: none;
+    }
+  }
+
+  @include at-content-cols(16) {
+    .widgets-section-container[data-overflow-4] .widgets-row-toggle {
+      display: block;
+    }
+
+    .widgets-container[data-row-collapsed] .widget-wrapper[data-hidden-4] {
+      display: none;
+    }
+  }
+}
+
 .feature-highlight .feature-highlight-modal.widget-highlight-wrapper {
   width: auto;
   max-width: min-content;

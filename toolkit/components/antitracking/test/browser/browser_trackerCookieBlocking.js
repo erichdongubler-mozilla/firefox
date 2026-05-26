@@ -15,8 +15,8 @@ add_setup(async function () {
 });
 
 AntiTracking._createTask({
-  name: "Block tracker cookies with BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN when tracker cookie blocking is enabled",
-  cookieBehavior: BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+  name: "Block tracker cookies with BEHAVIOR_PARTITION_FOREIGN when tracker cookie blocking is enabled",
+  cookieBehavior: BEHAVIOR_PARTITION_FOREIGN,
   allowList: false,
   callback: async _ => {
     document.cookie = "name=value; SameSite=None; Secure; Partitioned";
@@ -52,8 +52,8 @@ AntiTracking._createTask({
 });
 
 AntiTracking._createTask({
-  name: "Block tracker storage with BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN when tracker cookie blocking is enabled",
-  cookieBehavior: BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+  name: "Block tracker storage with BEHAVIOR_PARTITION_FOREIGN when tracker cookie blocking is enabled",
+  cookieBehavior: BEHAVIOR_PARTITION_FOREIGN,
   allowList: false,
   callback: async _ => {
     try {
@@ -75,8 +75,8 @@ AntiTracking._createTask({
 });
 
 AntiTracking._createTask({
-  name: "Block tracker indexedDB with BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN when tracker cookie blocking is enabled",
-  cookieBehavior: BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+  name: "Block tracker indexedDB with BEHAVIOR_PARTITION_FOREIGN when tracker cookie blocking is enabled",
+  cookieBehavior: BEHAVIOR_PARTITION_FOREIGN,
   allowList: false,
   callback: async _ => {
     try {
@@ -98,8 +98,8 @@ AntiTracking._createTask({
 });
 
 AntiTracking._createTask({
-  name: "Allow tracker cookies with BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN when tracker cookie blocking is disabled",
-  cookieBehavior: BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+  name: "Allow tracker cookies with BEHAVIOR_PARTITION_FOREIGN when tracker cookie blocking is disabled",
+  cookieBehavior: BEHAVIOR_PARTITION_FOREIGN,
   allowList: false,
   callback: async _ => {
     await fetch("server.sjs?partitioned")
@@ -138,8 +138,8 @@ AntiTracking._createTask({
 });
 
 AntiTracking._createTask({
-  name: "Allow tracker storage with BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN when tracker cookie blocking is disabled",
-  cookieBehavior: BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+  name: "Allow tracker storage with BEHAVIOR_PARTITION_FOREIGN when tracker cookie blocking is disabled",
+  cookieBehavior: BEHAVIOR_PARTITION_FOREIGN,
   allowList: false,
   callback: async _ => {
     localStorage.foo = 42;
@@ -156,8 +156,8 @@ AntiTracking._createTask({
 });
 
 AntiTracking._createTask({
-  name: "Allow tracker indexedDB with BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN when tracker cookie blocking is disabled",
-  cookieBehavior: BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+  name: "Allow tracker indexedDB with BEHAVIOR_PARTITION_FOREIGN when tracker cookie blocking is disabled",
+  cookieBehavior: BEHAVIOR_PARTITION_FOREIGN,
   allowList: false,
   callback: async _ => {
     indexedDB.open("test", "1");

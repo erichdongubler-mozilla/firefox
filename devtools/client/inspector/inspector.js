@@ -462,7 +462,7 @@ class Inspector extends EventEmitter {
         })
       );
 
-      this.#markupFrame.setAttribute("src", "markup/markup.xhtml");
+      this.#markupFrame.setAttribute("src", "markup/markup.html");
 
       await onMarkupFrameLoaded;
     }

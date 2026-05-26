@@ -167,7 +167,6 @@ panel-item {
 }
 
 /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.nova.enabled") {
   @media not (forced-colors) {
     moz-button {

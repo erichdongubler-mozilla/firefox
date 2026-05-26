@@ -550,6 +550,48 @@ add_task(async function test_captureTab_inactive_tab() {
   await extension.unload();
 });
 
+add_task(async function test_captureTab_discarded_tab() {
+  if (navigator.userAgent.includes("Android")) {
+    // TODO bug 1402338: Remove skip if tabs.discard is supported.
+    todo(false, "tabs.discard not supported on Android (bug 1402338).");
+    return;
+  }
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: {
+      permissions: ["tabs", "activeTab", "<all_urls>"],
+    },
+
+    async background() {
+      const tab = await browser.tabs.create({
+        url: "https://example.com/?immediately_discarded",
+        discarded: true,
+      });
+
+      // Log message here is to help with discovering if it gets stuck.
+      browser.test.log("Calling captureTab and expecting it to reject");
+      await browser.test.assertRejects(
+        browser.tabs.captureTab(tab.id),
+        "Cannot capture invisible tab",
+        "captureTab should reject tab that starts out as discarded"
+      );
+
+      await browser.test.assertRejects(
+        browser.tabs.captureTab(tab.id),
+        "Cannot capture invisible tab",
+        "captureTab should reject tab that is still discarded, again"
+      );
+
+      await browser.tabs.remove(tab.id);
+
+      browser.test.sendMessage("done");
+    },
+  });
+
+  await extension.startup();
+  await extension.awaitMessage("done");
+  await extension.unload();
+});
+
 </script>
 </body>
 </html>

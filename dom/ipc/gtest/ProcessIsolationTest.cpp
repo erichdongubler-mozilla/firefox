@@ -297,16 +297,14 @@ TEST(ProcessIsolationTest, WorkerOptions)
                                 WEB_REMOTE_TYPE "=^userContextId=1"_ns},
        .mCurrentRemoteType = CoopCoepRemoteType(secureComPrincipal)},
 
-      // System principal shared workers can only load in the parent process or
-      // the privilegedabout remote type.
+      // System principal shared workers can only load in the parent process.
       {.mPrincipal = systemPrincipal,
        .mWorkerKind = WorkerKindShared,
        .mExpected = RemoteTypes{NOT_REMOTE_TYPE, NOT_REMOTE_TYPE},
        .mCurrentRemoteType = NOT_REMOTE_TYPE},
       {.mPrincipal = systemPrincipal,
        .mWorkerKind = WorkerKindShared,
-       .mExpected = RemoteTypes{PRIVILEGEDABOUT_REMOTE_TYPE,
-                                PRIVILEGEDABOUT_REMOTE_TYPE},
+       .mExpected = Err(NS_ERROR_UNEXPECTED),
        .mCurrentRemoteType = PRIVILEGEDABOUT_REMOTE_TYPE},
       {.mPrincipal = systemPrincipal,
        .mWorkerKind = WorkerKindShared,

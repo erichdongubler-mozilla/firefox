@@ -874,7 +874,6 @@ textarea:autofill {
   color: FieldText !important;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("layout.css.appearance-base.enabled") {
   /* https://drafts.csswg.org/css-forms/#basic-appearance-stylesheet */
   /* See https://github.com/w3c/csswg-drafts/pull/13658 for divergences.

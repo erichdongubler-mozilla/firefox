@@ -1754,7 +1754,7 @@ nsresult nsNSSComponent::GetNewPrompter(nsIPrompt** result) {
       do_GetService(NS_WINDOWWATCHER_CONTRACTID, &rv));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = wwatch->GetNewPrompter(0, result);
+  rv = wwatch->GetNewPrompter(nullptr, result);
   NS_ENSURE_SUCCESS(rv, rv);
 
   return rv;

@@ -497,11 +497,11 @@ CellData* nsTableCellMap::AppendCell(nsTableCellFrame& aCellFrame,
              "invalid call on continuing frame");
   nsIFrame* rgFrame = aCellFrame.GetParent();  // get the row
   if (!rgFrame) {
-    return 0;
+    return nullptr;
   }
   rgFrame = rgFrame->GetParent();  // get the row group
   if (!rgFrame) {
-    return 0;
+    return nullptr;
   }
 
   CellData* result = nullptr;

@@ -125,7 +125,6 @@
   margin: 0 calc(var(--tab-border-radius) / 2);
   position: relative;
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.nova.enabled") {
     margin: 0;
     /* 3px places the container line just above the selected border */
@@ -137,7 +136,6 @@
     width: 2px;
     margin: calc(var(--tab-border-radius) / 2) 0;
 
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media -moz-pref("browser.nova.enabled") {
       margin: 0;
       inset-inline-end: -3px;

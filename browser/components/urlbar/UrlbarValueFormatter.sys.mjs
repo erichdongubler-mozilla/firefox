@@ -192,7 +192,7 @@ export class UrlbarValueFormatter {
       if (
         !uriInfo ||
         !uriInfo.fixedURI ||
-        uriInfo.keywordProviderName ||
+        uriInfo.keywordProviderId ||
         !["http", "https"].includes(uriInfo.fixedURI.scheme)
       ) {
         return null;

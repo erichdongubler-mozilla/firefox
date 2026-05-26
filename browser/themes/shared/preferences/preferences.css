@@ -6,7 +6,6 @@
 
 /* Global rules */
 :root {
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.settings-redesign.enabled") {
     /**
      * Pre-SRD, headings are 1 level higher than they should be. These overrides
@@ -22,7 +21,6 @@
   --card-padding-inline: var(--space-xlarge);
   --card-padding-block: var(--card-padding-inline);
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.settings-redesign.enabled") {
     --background-color-canvas: light-dark(var(--color-gray-05), var(--color-gray-90));
   }
@@ -242,7 +240,6 @@ radio {
   margin: 4px 0;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media not -moz-pref("browser.settings-redesign.enabled") {
   .spotlight:not(setting-group:has(> moz-card)) {
     background-color: color-mix(in srgb, var(--color-accent-primary) 15%, transparent);
@@ -254,7 +251,6 @@ radio {
   }
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.settings-redesign.enabled") {
   .spotlight:not(setting-group:has(> moz-card)) {
     outline: var(--border-color-selected) 2px solid;
@@ -286,7 +282,6 @@ setting-group:has(> moz-card).spotlight {
   display: flex;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media not -moz-pref("browser.settings-redesign.enabled") {
   /* Subcategory title */
 
@@ -316,7 +311,6 @@ setting-group:has(> moz-card).spotlight {
   min-height: calc(64px + 2 * var(--border-width));
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media not -moz-pref("browser.migrate.preferences-entrypoint.enabled") {
   #dataMigrationGroup {
     display: none;

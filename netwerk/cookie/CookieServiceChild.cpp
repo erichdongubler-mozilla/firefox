@@ -306,8 +306,7 @@ IPCResult CookieServiceChild::RecvTrackCookiesLoad(
   return cookieBehavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN ||
          cookieBehavior == nsICookieService::BEHAVIOR_LIMIT_FOREIGN ||
          cookieBehavior == nsICookieService::BEHAVIOR_REJECT_TRACKER ||
-         cookieBehavior ==
-             nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN;
+         cookieBehavior == nsICookieService::BEHAVIOR_PARTITION_FOREIGN;
 }
 
 CookieServiceChild::CookieNotificationAction

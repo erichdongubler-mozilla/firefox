@@ -2,6 +2,7 @@
 tags = "condprof"
 support-files = [
   "chrome_cleanup_script.js",
+  "file_204_no_content.sjs",
   "file_WebNavigation_page1.html",
   "file_WebNavigation_page2.html",
   "file_WebNavigation_page3.html",
@@ -522,6 +523,8 @@ skip-if = [
 ]
 
 ["test_ext_tabs_splitViewId.html"]
+
+["test_ext_tabs_tabTracker_awaitTabReady.html"]
 
 ["test_ext_test.html"]
 skip-if = [

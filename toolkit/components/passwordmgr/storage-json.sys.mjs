@@ -52,6 +52,14 @@ function isFXAHost(login) {
 }
 
 export class LoginManagerStorage_json {
+  // Only the active backend fires storage-changed events to avoid duplicates
+  // when both JSON and Rust stores are initialized.
+  // Default is true (rust is inactive)
+  #isActive = true;
+  set isActive(v) {
+    this.#isActive = v;
+  }
+
   constructor() {
     this.__crypto = null; // nsILoginManagerCrypto service
     this.__decryptedPotentiallyVulnerablePasswords = null;
@@ -338,7 +346,9 @@ export class LoginManagerStorage_json {
       resultLogin.password = login.password;
 
       // Send a notification that a login was added.
-      lazy.LoginHelper.notifyStorageChanged("addLogin", resultLogin);
+      if (this.#isActive) {
+        lazy.LoginHelper.notifyStorageChanged("addLogin", resultLogin);
+      }
 
       resultLogins.push(resultLogin);
     }
@@ -381,7 +391,9 @@ export class LoginManagerStorage_json {
     }
 
     Glean.pwmgr.numSavedPasswords.set(this.countLogins("", "", ""));
-    lazy.LoginHelper.notifyStorageChanged("removeLogin", storedLogin);
+    if (this.#isActive) {
+      lazy.LoginHelper.notifyStorageChanged("removeLogin", storedLogin);
+    }
   }
 
   async removeLoginAsync(login, fromSync) {
@@ -412,7 +424,9 @@ export class LoginManagerStorage_json {
     }
 
     Glean.pwmgr.numSavedPasswords.set(await this.countLoginsAsync("", "", ""));
-    lazy.LoginHelper.notifyStorageChanged("removeLogin", storedLogin);
+    if (this.#isActive) {
+      lazy.LoginHelper.notifyStorageChanged("removeLogin", storedLogin);
+    }
   }
 
   /**
@@ -500,10 +514,12 @@ export class LoginManagerStorage_json {
       }
     }
 
-    lazy.LoginHelper.notifyStorageChanged("modifyLogin", [
-      oldStoredLogin,
-      newLogin,
-    ]);
+    if (this.#isActive) {
+      lazy.LoginHelper.notifyStorageChanged("modifyLogin", [
+        oldStoredLogin,
+        newLogin,
+      ]);
+    }
   }
 
   async modifyLoginAsync(oldLogin, newLoginData, fromSync) {
@@ -582,10 +598,12 @@ export class LoginManagerStorage_json {
       }
     }
 
-    lazy.LoginHelper.notifyStorageChanged("modifyLogin", [
-      oldStoredLogin,
-      newLogin,
-    ]);
+    if (this.#isActive) {
+      lazy.LoginHelper.notifyStorageChanged("modifyLogin", [
+        oldStoredLogin,
+        newLogin,
+      ]);
+    }
   }
 
   // Replace the login with a tombstone. It has a guid and sync-related properties,
@@ -938,7 +956,9 @@ export class LoginManagerStorage_json {
     this.__decryptedPotentiallyVulnerablePasswords = null;
     this._store.saveSoon();
 
-    lazy.LoginHelper.notifyStorageChanged("removeAllLogins", removedLogins);
+    if (this.#isActive) {
+      lazy.LoginHelper.notifyStorageChanged("removeAllLogins", removedLogins);
+    }
   }
 
   findLogins(origin, formActionOrigin, httpRealm) {
@@ -1133,10 +1153,12 @@ export class LoginManagerStorage_json {
     });
     this._store.saveSoon();
 
-    lazy.LoginHelper.notifyStorageChanged(
-      "addPotentiallyVulnerablePassword",
-      login
-    );
+    if (this.#isActive) {
+      lazy.LoginHelper.notifyStorageChanged(
+        "addPotentiallyVulnerablePassword",
+        login
+      );
+    }
   }
 
   async isPotentiallyVulnerablePassword(login) {
@@ -1163,9 +1185,11 @@ export class LoginManagerStorage_json {
     this._store.saveSoon();
     this.__decryptedPotentiallyVulnerablePasswords = null;
 
-    lazy.LoginHelper.notifyStorageChanged(
-      "clearAllPotentiallyVulnerablePasswords"
-    );
+    if (this.#isActive) {
+      lazy.LoginHelper.notifyStorageChanged(
+        "clearAllPotentiallyVulnerablePasswords"
+      );
+    }
   }
 
   get uiBusy() {

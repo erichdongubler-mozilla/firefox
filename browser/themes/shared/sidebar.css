@@ -14,7 +14,6 @@
     color-scheme: dark;
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("sidebar.revamp") {
     min-width: var(--size-layout-small);
     width: 340px;
@@ -37,7 +36,6 @@
   text-shadow: none;
   max-width: 75vw;
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("sidebar.revamp") {
     background-color: var(--sidebar-background-color);
     color: var(--sidebar-text-color);
@@ -67,7 +65,6 @@
 #sidebar {
   flex: 1;
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("sidebar.revamp") {
     border-radius: var(--border-radius-medium);
     box-shadow: var(--content-area-shadow);
@@ -83,11 +80,9 @@
   position: relative;
   z-index: var(--browser-area-z-index-sidebar-splitter);
   --splitter-width: 4px;
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media (-moz-overlay-scrollbars) and (not -moz-pref("browser.nova.enabled")) {
     --splitter-width: 2px;
   }
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.nova.enabled") {
     border-radius: var(--border-radius-large);
   }
@@ -99,7 +94,6 @@
   transition: background-color 0.5s ease-in-out;
   margin-inline: 0;
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("sidebar.revamp") {
     background-color: transparent;
     &:hover {
@@ -107,7 +101,6 @@
     }
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("sidebar.revamp") {
     border: 0 solid;
     border-color: var(--sidebar-border-color);
@@ -125,7 +118,6 @@
   &:focus-visible {
     outline: auto;
   }
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("sidebar.revamp") {
     width: var(--space-medium);
     border-inline: calc((var(--space-medium) - var(--splitter-width)) / 2) solid transparent;
@@ -134,7 +126,6 @@
     margin-block-end: var(--space-small);
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.nova.enabled") {
     width: var(--splitter-width);
     border-inline: none;
@@ -152,7 +143,6 @@
     }
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.nova.enabled") {
     /* Pull the splitter fully over sidebar-main so sidebar-main and sidebar-box
      * sit flush. The factor 2 absorbs both the flexbox gap (--chrome-window-gap)
@@ -164,12 +154,10 @@
     }
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("sidebar.verticalTabs") {
     display: none;
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.nova.enabled") {
     /* The splitter already has a negative margin-inline-start that makes it
      * overlap the sidebar (see above). Cancel the gap on the tabbox side too so
@@ -348,7 +336,6 @@ sidebar-main,
       inset-inline-end: 0;
     }
 
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media -moz-pref("browser.nova.enabled") {
       border-radius: var(--chrome-block-radius);
       background-color: var(--toolbar-background-color);
@@ -386,7 +373,6 @@ sidebar-main,
   The element next to it can be the sidebar box or the tabbox,
   depending on whether the sidebar box is expanded */
   #tabbrowser-tabbox {
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media not -moz-pref("browser.nova.enabled") {
       &:not([sidebar-positionend]) {
         &:not([sidebar-panel-open]) {
@@ -411,7 +397,6 @@ sidebar-main,
       }
     }
 
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media -moz-pref("browser.nova.enabled") {
       &:not([sidebar-positionend], [sidebar-panel-open]) {
         margin-inline-start: calc(var(--sidebar-launcher-collapsed-width) + var(--chrome-window-gap));
@@ -423,7 +408,6 @@ sidebar-main,
   }
 
   #sidebar-box {
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media not -moz-pref("browser.nova.enabled") {
       &:not([sidebar-positionend]) {
         &[sidebar-panel-open] {
@@ -448,7 +432,6 @@ sidebar-main,
       }
     }
 
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media -moz-pref("browser.nova.enabled") {
       &:not([sidebar-positionend])[sidebar-panel-open] {
         margin-inline-start: calc(var(--sidebar-launcher-collapsed-width) + var(--chrome-window-gap));
@@ -460,7 +443,6 @@ sidebar-main,
   }
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("sidebar.visibility", "expand-on-hover") {
   /* We need these rules to apply at all times when the sidebar.visibility
     pref is set to "expand-on-hover" as opposed to when the "sidebar-expand-on-hover" attribute
@@ -473,7 +455,6 @@ sidebar-main,
   }
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.nova.enabled") {
   #sidebar-box {
     background-color: var(--sidebar-background-color);

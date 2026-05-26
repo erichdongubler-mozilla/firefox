@@ -1221,6 +1221,14 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.row.expanded",
+    {
+      title:
+        "Whether the Nova widgets row is expanded beyond its first visual row. Persists the user's Show more / Show less choice across sessions.",
+      value: false,
+    },
+  ],
+  [
     "widgets.focusTimer.enabled",
     {
       title: "Enables the focus timer widget",

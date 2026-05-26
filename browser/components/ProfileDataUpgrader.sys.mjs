@@ -1034,6 +1034,25 @@ export let ProfileDataUpgrader = {
       this._migrateBackupProfilesPref();
     }
 
+    if (existingDataVersion < 174) {
+      // Remove same-site (ABA) 3rdPartyFrameStorage permissions that were
+      // unnecessarily saved when a same-site-to-top iframe called
+      // requestStorageAccess().
+      for (let perm of Services.perms.getAllWithTypePrefix(
+        "3rdPartyFrameStorage^"
+      )) {
+        let typeSite = perm.type.substring("3rdPartyFrameStorage^".length);
+        try {
+          let originSite = Services.eTLD.getSite(perm.principal.URI);
+          if (typeSite === originSite) {
+            Services.perms.removePermission(perm);
+          }
+        } catch (e) {
+          continue;
+        }
+      }
+    }
+
     // Update the migration version.
     Services.prefs.setIntPref("browser.migration.version", newVersion);
   },

@@ -327,7 +327,6 @@
   }
 
   /* The following badges are used for debugging purposes */
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.urlbar.showDebuggingIcons") {
     .urlbarView-row[type] > .urlbarView-row-inner > &::before {
       display: flex;

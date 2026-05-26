@@ -765,15 +765,6 @@ features:
         type: OpeningScreenOption
         default: homepage-four-hours
 
-  unified-trust-panel:
-    description: Enables the unified trust panel.
-    variables:
-      enabled:
-        description: >
-          Whether or not to enable the unified trust panel.
-        type: Boolean
-        default: true
-
   user-characteristics:
     description: A feature for control user characteristic data collection
     variables:

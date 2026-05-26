@@ -18760,6 +18760,7 @@ function WidgetWrapper({
   }), children);
 }
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/Widgets.jsx
+function Widgets_extends() { return Widgets_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, Widgets_extends.apply(null, arguments); }
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -18783,6 +18784,7 @@ function WidgetWrapper({
 const CONTAINER_ACTION_TYPES = {
   HIDE_ALL: "hide_all",
   CHANGE_SIZE_ALL: "change_size_all",
+  CHANGE_ROW_VISIBILITY: "change_row_visibility",
   FEEDBACK: "feedback"
 };
 const PREF_WIDGETS_ENABLED = "widgets.enabled";
@@ -18790,6 +18792,7 @@ const Widgets_PREF_NOVA_ENABLED = "nova.enabled";
 const PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED = "widgets.system.weatherForecast.enabled";
 const PREF_WIDGETS_MAXIMIZED = "widgets.maximized";
 const PREF_WIDGETS_SYSTEM_MAXIMIZED = "widgets.system.maximized";
+const PREF_WIDGETS_ROW_EXPANDED = "widgets.row.expanded";
 const PREF_WIDGETS_FEEDBACK_ENABLED = "widgets.feedback.enabled";
 const PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED = "widgets.hideAllToast.enabled";
 const WIDGETS_FEEDBACK_URL = "https://support.mozilla.org/kb/firefox-new-tab-widgets";
@@ -18861,6 +18864,7 @@ function Widgets() {
   } = (0,external_React_namespaceObject.useContext)(BaseContext);
   const novaEnabled = prefs[Widgets_PREF_NOVA_ENABLED];
   const isMaximized = prefs[PREF_WIDGETS_MAXIMIZED];
+  const rowExpanded = !!prefs[PREF_WIDGETS_ROW_EXPANDED];
   const nimbusMaximizedTrainhopEnabled = prefs.trainhopConfig?.widgets?.maximized;
   const feedbackEnabled = prefs.trainhopConfig?.widgets?.feedbackEnabled || prefs[PREF_WIDGETS_FEEDBACK_ENABLED];
   const hideAllToastEnabled = prefs.trainhopConfig?.widgets?.hideAllToastEnabled || prefs[PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED];
@@ -19040,6 +19044,24 @@ function Widgets() {
       event: "SHOW_PERSONALIZE"
     }));
   }
+  function toggleRowExpanded() {
+    const next = !rowExpanded;
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.SetPref(PREF_WIDGETS_ROW_EXPANDED, next));
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.WIDGETS_CONTAINER_ACTION,
+        data: {
+          action_type: CONTAINER_ACTION_TYPES.CHANGE_ROW_VISIBILITY,
+          action_value: next ? "expand_row" : "collapse_row",
+          widget_size: widgetSize
+        }
+      }));
+    });
+  }
+  function handleToggleRowExpandedClick(e) {
+    e.preventDefault();
+    toggleRowExpanded();
+  }
   function handleFeedbackClick(e) {
     e.preventDefault();
     (0,external_ReactRedux_namespaceObject.batch)(() => {
@@ -19133,11 +19155,84 @@ function Widgets() {
   if (!anyWidgetInRow) {
     return null;
   }
+
+  // CSS container queries on the widgets section decide whether the toggle
+  // button is shown — see _Widgets.scss. JS builds the ordered list of
+  // enabled widget sizes and, for each possible card-column count
+  // (1–4), checks whether the layout overflows: any large past the
+  // first N positions can't fit, and any medium past N needs a medium
+  // in the first N to pair with. The matching `data-overflow-N`
+  // attribute is read by the @container rules in CSS.
+  const sizes = [];
+  const enabledWidgetIds = [];
+  for (const id of widgetOrder) {
+    if (!WIDGET_ROW_COMPONENTS[id] || !widgetEnabledMap[id]) {
+      continue;
+    }
+    const entry = WIDGET_REGISTRY.find(w => w.id === id);
+    let size = entry ? resolveWidgetSize(entry, prefs) : null;
+    // Mirrors the size override applied in the render loop below — when
+    // the sports follow-teams panel is active it always renders large.
+    if (id === "sportsWidget" && sportsWidgetState === "sports-follow-state") {
+      size = "large";
+    }
+    sizes.push(size);
+    enabledWidgetIds.push(id);
+  }
+  const overflowsAt = cols => {
+    if (sizes.length <= cols) {
+      return false;
+    }
+    const rest = sizes.slice(cols);
+    if (rest.some(s => s === "large")) {
+      return true;
+    }
+    const partnersAvailable = sizes.slice(0, cols).filter(s => s !== "large").length;
+    return rest.length > partnersAvailable;
+  };
+  // For each viewport (cols 1–4), returns the set of widget render indices
+  // that would be clipped when the row is collapsed: any large past the
+  // first `cols` positions, plus mediums past `cols` whose pair-partner
+  // in the first `cols` is already taken. CSS keys off the matching
+  // `data-hidden-N` to make them tab-out and a11y-hide via
+  // `visibility: hidden` at that viewport.
+  const hiddenIndicesAt = cols => {
+    const set = new Set();
+    if (sizes.length <= cols) {
+      return set;
+    }
+    const partnersCount = sizes.slice(0, cols).filter(s => s !== "large").length;
+    let mediumOverflowSeen = 0;
+    for (let i = cols; i < sizes.length; i++) {
+      if (sizes[i] === "large") {
+        set.add(i);
+      } else {
+        if (mediumOverflowSeen >= partnersCount) {
+          set.add(i);
+        }
+        mediumOverflowSeen++;
+      }
+    }
+    return set;
+  };
+  const hiddenAtCols = {
+    1: hiddenIndicesAt(1),
+    2: hiddenIndicesAt(2),
+    3: hiddenIndicesAt(3),
+    4: hiddenIndicesAt(4)
+  };
+  const overflowAttrs = {
+    "data-overflow-1": overflowsAt(1) ? "" : undefined,
+    "data-overflow-2": overflowsAt(2) ? "" : undefined,
+    "data-overflow-3": overflowsAt(3) ? "" : undefined,
+    "data-overflow-4": overflowsAt(4) ? "" : undefined
+  };
+  const isCollapsed = novaEnabled && !rowExpanded;
   return /*#__PURE__*/external_React_default().createElement("div", {
     className: "widgets-wrapper"
-  }, /*#__PURE__*/external_React_default().createElement("div", {
+  }, /*#__PURE__*/external_React_default().createElement("div", Widgets_extends({
     className: "widgets-section-container"
-  }, /*#__PURE__*/external_React_default().createElement("div", {
+  }, overflowAttrs), /*#__PURE__*/external_React_default().createElement("div", {
     className: "widgets-title-container"
   }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "widgets-title-container-text"
@@ -19148,7 +19243,9 @@ function Widgets() {
   }))), /*#__PURE__*/external_React_default().createElement("div", {
     className: "widgets-title-actions"
   }, renderWidgetsActions())), /*#__PURE__*/external_React_default().createElement("div", {
-    className: `widgets-container${isMaximized ? " is-maximized" : ""}`
+    id: "widgets-container",
+    className: `widgets-container${isMaximized ? " is-maximized" : ""}`,
+    "data-row-collapsed": isCollapsed ? "" : undefined
   }, widgetOrder.map(id => {
     if (novaEnabled) {
       const Component = WIDGET_ROW_COMPONENTS[id];
@@ -19162,10 +19259,17 @@ function Widgets() {
       if (id === "sportsWidget" && sportsWidgetState === "sports-follow-state") {
         size = "large";
       }
-      return /*#__PURE__*/external_React_default().createElement(WidgetWrapper, {
+      const renderIdx = enabledWidgetIds.indexOf(id);
+      const hiddenAttrs = {
+        "data-hidden-1": hiddenAtCols[1].has(renderIdx) ? "" : undefined,
+        "data-hidden-2": hiddenAtCols[2].has(renderIdx) ? "" : undefined,
+        "data-hidden-3": hiddenAtCols[3].has(renderIdx) ? "" : undefined,
+        "data-hidden-4": hiddenAtCols[4].has(renderIdx) ? "" : undefined
+      };
+      return /*#__PURE__*/external_React_default().createElement(WidgetWrapper, Widgets_extends({
         key: id,
         className: size ? `${size}-widget` : ""
-      }, /*#__PURE__*/external_React_default().createElement(Component, {
+      }, hiddenAttrs), /*#__PURE__*/external_React_default().createElement(Component, {
         dispatch: dispatch,
         handleUserInteraction: handleUserInteraction,
         isMaximized: isMaximized,
@@ -19196,7 +19300,14 @@ function Widgets() {
       isMaximized,
       widgetsMayBeMaximized
     }));
-  })), messageData?.content?.messageType === "NovaWidgetMessage" && /*#__PURE__*/external_React_default().createElement("div", {
+  })), novaEnabled && /*#__PURE__*/external_React_default().createElement("moz-button", {
+    className: "widgets-row-toggle",
+    type: "default",
+    "aria-expanded": rowExpanded,
+    "aria-controls": "widgets-container",
+    onClick: handleToggleRowExpandedClick,
+    "data-l10n-id": rowExpanded ? "newtab-widget-section-show-less" : "newtab-widget-section-show-more"
+  }), messageData?.content?.messageType === "NovaWidgetMessage" && /*#__PURE__*/external_React_default().createElement("div", {
     className: "widgets-row-highlight-anchor"
   }, /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
     dispatch: dispatch

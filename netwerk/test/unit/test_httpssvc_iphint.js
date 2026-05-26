@@ -66,7 +66,7 @@ add_task(async function testStoreiphint() {
             { key: "alpn", value: ["h2", "h3"] },
             { key: "port", value: 8888 },
             { key: "ipv4hint", value: ["1.2.3.4", "5.6.7.8"] },
-            { key: "ipv6hint", value: ["::1", "fe80::794f:6d2c:3d5e:7836"] },
+            { key: "ipv6hint", value: ["::1", "2001:db8::1"] },
           ],
         },
       },
@@ -113,7 +113,7 @@ add_task(async function testStoreiphint() {
   Assert.equal(
     answer[0].values[3].QueryInterface(Ci.nsISVCParamIPv6Hint).ipv6Hint[1]
       .address,
-    "fe80::794f:6d2c:3d5e:7836",
+    "2001:db8::1",
     "got correct answer"
   );
 
@@ -137,13 +137,13 @@ add_task(async function testStoreiphint() {
     "1.2.3.4",
     "5.6.7.8",
     "::1",
-    "fe80::794f:6d2c:3d5e:7836",
+    "2001:db8::1",
   ]);
 
   await verifyAnswer(
     "test.iphint.com",
     Ci.nsIDNSService.RESOLVE_IP_HINT | Ci.nsIDNSService.RESOLVE_DISABLE_IPV4,
-    ["::1", "fe80::794f:6d2c:3d5e:7836"]
+    ["::1", "2001:db8::1"]
   );
 
   await verifyAnswer(
@@ -168,7 +168,7 @@ add_task(async function testStoreiphint() {
             { key: "alpn", value: ["h2", "h3"] },
             { key: "port", value: 8888 },
             { key: "ipv4hint", value: ["1.2.3.4", "5.6.7.8"] },
-            { key: "ipv6hint", value: ["::1", "fe80::794f:6d2c:3d5e:7836"] },
+            { key: "ipv6hint", value: ["::1", "2001:db8::1"] },
           ],
         },
       },

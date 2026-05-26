@@ -2169,15 +2169,6 @@ static nsresult GetOrInit(nsIFile* aDir, const nsACString& filename,
   return rv;
 }
 
-// Init the "install time" data.  We're taking an easy way out here
-// and just setting this to "the time when this version was first run".
-static nsresult InitInstallTime(nsACString& aInstallTime) {
-  time_t t = time(nullptr);
-  aInstallTime = nsPrintfCString("%" PRIu64, static_cast<uint64_t>(t));
-
-  return NS_OK;
-}
-
 // Ensure a directory exists and create it if missing.
 static nsresult EnsureDirectoryExists(nsIFile* dir) {
   nsresult rv = dir->Create(nsIFile::DIRECTORY_TYPE, 0700);
@@ -2229,8 +2220,7 @@ static nsresult SetupCrashReporterDirectory(nsIFile* aAppDataDirectory,
 // time since last crash, which must be calculated at
 // crash time.
 // If any piece of data doesn't exist, initialize it first.
-nsresult SetupExtraData(nsIFile* aAppDataDirectory,
-                        const nsACString& aBuildID) {
+nsresult SetupExtraData(nsIFile* aAppDataDirectory, nsIFile* aXreDirectory) {
   nsCOMPtr<nsIFile> dataDirectory;
   nsresult rv =
       SetupCrashReporterDirectory(aAppDataDirectory, "Crash Reports",
@@ -2248,10 +2238,17 @@ nsresult SetupExtraData(nsIFile* aAppDataDirectory,
     return rv;
   }
 
-  nsAutoCString data;
-  if (NS_SUCCEEDED(GetOrInit(dataDirectory, "InstallTime"_ns + aBuildID, data,
-                             InitInstallTime))) {
-    RecordAnnotationNSCString(Annotation::InstallTime, data);
+  nsAutoString xreDirPath;
+#if defined(MOZ_WIDGET_ANDROID)
+  aXreDirectory->GetPath(xreDirPath);
+#endif  // defined(MOZ_WIDGET_ANDROID)
+
+  uint64_t install_time = get_install_time(
+      xreDirPath.IsEmpty()
+          ? nullptr
+          : mozilla::BitwiseCast<const BreakpadChar*>(xreDirPath.get()));
+  if (install_time != 0) {
+    RecordAnnotationU64(Annotation::InstallTime, install_time);
   }
 
   // this is a little different, since we can't init it with anything,
@@ -2259,8 +2256,10 @@ nsresult SetupExtraData(nsIFile* aAppDataDirectory,
   // crash report with the stored value, since we really want
   // (now - LastCrash), so we just get a value if it exists,
   // and store it in a time_t value.
-  if (NS_SUCCEEDED(GetOrInit(dataDirectory, "LastCrash"_ns, data, nullptr))) {
-    lastCrashTime = (time_t)atol(data.get());
+  nsAutoCString last_crash_time;
+  if (NS_SUCCEEDED(
+          GetOrInit(dataDirectory, "LastCrash"_ns, last_crash_time, nullptr))) {
+    lastCrashTime = (time_t)atol(last_crash_time.get());
   }
 
   // not really the best place to init this, but I have the path I need here

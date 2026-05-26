@@ -155,7 +155,7 @@ PKCS11Token::GetTokenSerialNumber(/*out*/ nsACString& tokenSerialNum) {
 NS_IMETHODIMP
 PKCS11Token::IsLoggedIn(bool* _retval) {
   NS_ENSURE_ARG_POINTER(_retval);
-  *_retval = PK11_IsLoggedIn(mSlot.get(), 0);
+  *_retval = PK11_IsLoggedIn(mSlot.get(), nullptr);
   return NS_OK;
 }
 

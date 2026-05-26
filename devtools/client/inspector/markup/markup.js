@@ -243,7 +243,7 @@ class MarkupView extends EventEmitter {
    * @param  {Inspector} inspector
    *         The inspector we're watching.
    * @param  {iframe} frame
-   *         An iframe in which the caller has kindly loaded markup.xhtml.
+   *         An iframe in which the caller has kindly loaded markup.html.
    * @param  {XULWindow} controllerWindow
    *         Will enable the undo/redo feature from devtools/client/shared/undo.
    *         Should be a XUL window, will typically point to the toolbox window.

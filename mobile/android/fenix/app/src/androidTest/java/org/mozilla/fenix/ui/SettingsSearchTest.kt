@@ -8,6 +8,7 @@ import androidx.test.espresso.Espresso.pressBack
 import androidx.test.filters.SdkSuppress
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Converted
 import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.clickSystemHomeScreenShortcutAddButton
@@ -99,6 +100,11 @@ class SettingsSearchTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2203308
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.SettingsSearchTest#verifyTheDefaultSearchEngineCanBeChangedTest"],
+        bug = 2041713,
+        since = "2026-05",
+    )
     @SmokeTest
     @Test
     fun verifyTheDefaultSearchEngineCanBeChangedTest() {

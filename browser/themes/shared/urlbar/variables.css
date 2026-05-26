@@ -16,7 +16,6 @@
      close to the field edges. */
   --urlbar-inner-border-radius: calc(var(--urlbar-border-radius) - 1px);
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.nova.enabled") {
     --urlbar-inner-border-radius: calc(var(--urlbarview-border-radius) - var(--urlbarView-padding));
   }

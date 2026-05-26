@@ -31,7 +31,6 @@
      Vertical tab mode is more size-constrained due to window controls being in
      the nav bar, so we use the smaller not-yet-default value as if the trust
      panel was enabled. */
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("sidebar.verticalTabs") or -moz-pref("browser.urlbar.trustPanel.featureGate") {
     --urlbar-container-min-width: 275px;
     @media (max-width: 770px) {
@@ -53,7 +52,6 @@
     --chrome-box-shadow: rgba(152, 113, 255, 0.15);
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.nova.enabled") {
     --chrome-box-shadow: rgba(0, 0, 0, 0.13);
   }
@@ -75,7 +73,6 @@
   --urlbar-searchmode-switcher-panel-list-min-width: 17em;
   --urlbar-selection-border-radius: var(--border-radius-xsmall);
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.nova.enabled") {
     --urlbar-background-border: var(--urlbar-container-border-width) solid var(--toolbar-field-border-color);
     --urlbar-background-border-breakout: var(--urlbar-container-border-width) solid var(--panel-border-color);
@@ -114,7 +111,6 @@ toolbar[inactive="true"] .urlbar,
 
 /* When rich suggestions are enabled the urlbar identity icon is given extra padding to
  * align the results and urlbar text */
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.urlbar.richSuggestions.featureGate") {
   #identity-box[pageproxystate="invalid"] > .identity-box-button {
     padding-inline: calc(6px + var(--urlbar-icon-padding));
@@ -352,7 +348,6 @@ toolbar[inactive="true"] .urlbar,
   color: var(--toolbar-field-text-color-focus);
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.nova.enabled") {
   .urlbar:not(moz-smartbar)[breakout] {
     --urlbar-background-inset: calc(var(--urlbar-height) / 2 - var(--border-radius-xxlarge));
@@ -428,7 +423,6 @@ toolbar[inactive="true"] .urlbar,
   position: relative;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media not -moz-pref("browser.nova.enabled") {
   @keyframes urlbar-grow {
     0% {
@@ -690,7 +684,6 @@ toolbar[inactive="true"] .urlbar,
  * their SVG icons instead, see Bug 2001318 for additional context).
  *
  */
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("extensions.webextensions.pageActionIconDarkModeFilter.enabled") {
   .urlbar-addon-page-action[style*=".svg"] > .urlbar-icon {
     :root[lwt-toolbar-field="dark"] #urlbar:not([focused]) &,
@@ -1172,13 +1165,11 @@ toolbar[inactive="true"] .urlbar,
   }
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media not -moz-pref("browser.search.widget.new") {
   #searchbar-new {
     display: none;
   }
 }
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.search.widget.new") {
   #searchbar {
     display: none;
@@ -1277,7 +1268,6 @@ toolbar[inactive="true"] .urlbar,
   --button-background-color-selected: var(--button-background-color);
 
   --button-background-color: var(--urlbar-box-background-color);
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.urlbar.unifiedSearchButton.always") {
     .urlbar[pageproxystate="valid"] & {
       --button-icon-content: url("chrome://global/skin/icons/search-glass.svg");
@@ -1308,7 +1298,6 @@ toolbar[inactive="true"] .urlbar,
   }
 
   .urlbar:not(#searchbar-new) & {
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media (not -moz-pref("browser.urlbar.searchModeSwitcher.featureGate")) and (not -moz-pref("browser.urlbar.scotchBonnet.enableOverride")) {
       display: none;
     }
@@ -1323,7 +1312,6 @@ toolbar[inactive="true"] .urlbar,
   white-space: nowrap;
   max-width: var(--search-engine-name-max-width);
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
     .urlbar:not(#searchbar-new)[searchmode] & {
       display: block;
@@ -1336,7 +1324,6 @@ toolbar[inactive="true"] .urlbar,
   border: 0;
   align-self: center;
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
     .urlbar[searchmode] & {
       display: revert;
@@ -1358,13 +1345,11 @@ toolbar[inactive="true"] .urlbar,
     transition: 300ms transform ease-in-out;
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.urlbar.unifiedSearchButton.always") {
     margin-inline-start: calc(var(--space-xsmall) * -1);
   }
 
   .urlbar[searchmode] & {
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
       display: none;
     }
@@ -1438,13 +1423,11 @@ toolbar[inactive="true"] .urlbar,
   display: none;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.urlbar.searchModeSwitcher.featureGate") or -moz-pref("browser.urlbar.scotchBonnet.enableOverride") {
   #urlbar[searchmode] > .urlbar-input-container > #urlbar-search-mode-indicator {
     display: none;
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
     #urlbar[pageproxystate="invalid"] {
       #identity-box,
@@ -1455,7 +1438,6 @@ toolbar[inactive="true"] .urlbar,
   }
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
   .urlbar:not([unifiedsearchbutton-available]) > .urlbar-input-container > .searchmode-switcher {
     /* Display as off-screen to get focus */

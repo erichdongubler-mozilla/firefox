@@ -9463,13 +9463,6 @@
   mirror: always
   set_spidermonkey_pref: always
 
-  # Experimental support for Error.stackTraceLimit
-- name: javascript.options.experimental.error_stack_trace_limit
-  type: bool
-  value: false
-  mirror: always
-  set_spidermonkey_pref: startup
-
   # Experimental support for Intl Locale Info in JavaScript.
 - name: javascript.options.experimental.intl_locale_info
   type: bool
@@ -9529,6 +9522,12 @@
   value: true
   mirror: always
   set_spidermonkey_pref: always
+
+- name: javascript.options.experimental.error_stack_trace_limit
+  type: bool
+  value: true
+  mirror: always
+  set_spidermonkey_pref: startup
 
 # Whether the non-standard object.toSource() path is enabled in ValueToSource
 # for realms without the toSource/uneval builtins.

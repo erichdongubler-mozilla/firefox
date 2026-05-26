@@ -593,7 +593,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   //
   // FIXME(emilio): Given we store the parsed contents in the Inner, this should
   // probably also move there.
-  css::SheetParsingMode mParsingMode;
+  const css::SheetParsingMode mParsingMode;
 
   State mState;
 

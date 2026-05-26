@@ -7,6 +7,7 @@ use std::ffi::OsString;
 pub mod errors;
 pub mod messages;
 
+mod appinfo;
 mod breakpad;
 mod ipc_channel;
 mod ipc_connector;
@@ -14,13 +15,19 @@ mod ipc_listener;
 mod ipc_queue;
 mod platform;
 
+pub mod crash_annotations {
+    include!(concat!(env!("OUT_DIR"), "/crash_annotations.rs"));
+}
+
 use bytes::Bytes;
 use messages::MessageError;
+use mozannotation_server::CAnnotation;
 
 // Matches the same type in mozglue/misc/ProcessType.h
 pub type GeckoChildId = i32;
 
 // Re-export the platform-specific types and functions
+pub use crate::appinfo::ApplicationInfo;
 pub use crate::breakpad::{BreakpadChar, BreakpadData, BreakpadRawData, Pid};
 pub use crate::ipc_channel::{IPCChannel, IPCClientChannel};
 pub use crate::ipc_connector::{
@@ -73,3 +80,11 @@ pub trait BreakpadString {
 }
 
 pub const IO_TIMEOUT: u16 = 2 * 1000;
+
+/// Payload that can be passed through the minidump writer to the finalizing callback.
+/// It will typically be weaved through FFIs via opaque pointers.
+#[derive(Default)]
+pub struct ExtraCrashData {
+    pub error: Option<std::ffi::CString>,
+    pub annotations: Vec<CAnnotation>,
+}

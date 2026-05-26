@@ -1257,7 +1257,7 @@ nsresult Http3Session::ProcessOutputAndEvents(nsIUDPSocket* socket) {
     auto now = TimeStamp::Now();
     if (mTimerShouldTrigger > now) {
       // See bug 1935459
-      glean::http3::timer_delayed.AccumulateRawDuration(0);
+      glean::http3::timer_delayed.AccumulateRawDuration(nullptr);
     } else {
       glean::http3::timer_delayed.AccumulateRawDuration(now -
                                                         mTimerShouldTrigger);

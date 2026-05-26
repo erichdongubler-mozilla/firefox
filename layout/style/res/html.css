@@ -171,7 +171,6 @@ center {
   text-align: -moz-center;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media not (-moz-pref("dom.headingoffset.enabled")) {
   h1 {
     display: block;
@@ -216,7 +215,6 @@ center {
   }
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("dom.headingoffset.enabled") {
   /* stylelint-disable-next-line  selector-pseudo-class-no-unknown */
   :heading {
@@ -268,7 +266,6 @@ center {
 }
 
 /* properties from https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/renderer/core/css/fullscreen.css;l=68-83;drc=4670338ccf46aaf26aee2402b0f722106d55b003  */
-/* stylelint-disable-next-line media-query-no-invalid */
 @media (-moz-in-android-pip-mode) and -moz-pref("layout.css.android-pip.enabled") {
   video {
     position: fixed !important;
@@ -759,7 +756,6 @@ iframe {
   border: 2px inset;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("dom.image.sizes_auto.enabled") {
   /* https://html.spec.whatwg.org/#images-3 */
   img:is([sizes="auto" i], [sizes^="auto," i]) {

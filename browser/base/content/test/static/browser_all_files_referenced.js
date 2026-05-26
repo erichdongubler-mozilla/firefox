@@ -177,7 +177,7 @@ var allowlist = [
 
   // devtools/client/inspector/bin/dev-server.js
   {
-    file: "chrome://devtools/content/inspector/markup/markup.xhtml",
+    file: "chrome://devtools/content/inspector/markup/markup.html",
     isFromDevTools: true,
   },
 

@@ -110,13 +110,11 @@ static const JSFunctionSpec error_static_methods[] = {
     JS_FS_END,
 };
 
-#ifdef NIGHTLY_BUILD
 static const JSPropertySpec error_static_properties[] = {
     JS_INT32_PS("stackTraceLimit", int32_t(MAX_REPORTED_STACK_DEPTH),
                 JSPROP_ENUMERATE),
     JS_PS_END,
 };
-#endif
 
 // Error.prototype and NativeError.prototype have own .message and .name
 // properties.
@@ -175,13 +173,8 @@ IMPLEMENT_NATIVE_ERROR_PROPERTIES(SuspendError)
 
 const ClassSpec ErrorObject::classSpecs[JSEXN_ERROR_LIMIT] = {
     {ErrorObject::createConstructor, ErrorObject::createProto,
-     error_static_methods,
-#ifdef NIGHTLY_BUILD
-     error_static_properties,
-#else
-     nullptr,
-#endif
-     error_methods, error_properties},
+     error_static_methods, error_static_properties, error_methods,
+     error_properties},
 
     IMPLEMENT_NATIVE_ERROR_SPEC(InternalError),
     IMPLEMENT_NATIVE_ERROR_SPEC(AggregateError),
@@ -1024,7 +1017,6 @@ static bool exn_isError(JSContext* cx, unsigned argc, Value* vp) {
 // the current context; it has to be set explicitly for each context that
 // needs a different value.
 static uint32_t GetStackTraceLimit(JSContext* cx) {
-#ifdef NIGHTLY_BUILD
   if (!JS::Prefs::experimental_error_stack_trace_limit()) {
     return MAX_REPORTED_STACK_DEPTH;
   }
@@ -1037,9 +1029,6 @@ static uint32_t GetStackTraceLimit(JSContext* cx) {
                        &limitVal)) {
     return MAX_REPORTED_STACK_DEPTH;
   }
-  if (limitVal.isUndefined()) {
-    return MAX_REPORTED_STACK_DEPTH;
-  }
   if (!limitVal.isNumber()) {
     return 0;
   }
@@ -1048,9 +1037,6 @@ static uint32_t GetStackTraceLimit(JSContext* cx) {
     return 0;
   }
   return uint32_t(std::min(d, double(MAX_REPORTED_STACK_DEPTH)));
-#else
-  return MAX_REPORTED_STACK_DEPTH;
-#endif
 }
 
 // The below is the "documentation" from https://v8.dev/docs/stack-trace-api

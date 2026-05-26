@@ -709,7 +709,7 @@ add_task(async function () {
     Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN,
     Ci.nsICookieService.BEHAVIOR_LIMIT_FOREIGN,
     Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
-    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+    Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
   ];
 
   for (let cookieBehavior of cookieBehaviors) {

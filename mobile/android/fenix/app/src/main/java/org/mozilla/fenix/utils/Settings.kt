@@ -2451,7 +2451,7 @@ class Settings(
      */
     var enableUnifiedTrustPanel by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_unified_trust_panel),
-        default = { FxNimbus.features.unifiedTrustPanel.value().enabled },
+        default = true,
     )
 
     /**

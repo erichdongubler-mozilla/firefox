@@ -19661,18 +19661,6 @@ Document::CreatePermissionGrantPromise(nsPIDOMWindowInner* aInnerWindow,
         p = new StorageAccessAPIHelper::StorageAccessPermissionGrantPromise::
             Private(__func__);
 
-    // Before we prompt, see if we are same-site
-    if (aFrameOnly) {
-      nsIChannel* channel = self->GetChannel();
-      if (channel) {
-        nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
-        if (!loadInfo->GetIsThirdPartyContextToTopWindow()) {
-          p->Resolve(StorageAccessAPIHelper::eAllow, __func__);
-          return p;
-        }
-      }
-    }
-
     RefPtr<PWindowGlobalChild::GetStorageAccessPermissionPromise> promise;
     // Test the permission
     MOZ_ASSERT(XRE_IsContentProcess());
@@ -19940,6 +19928,25 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
     return promise.forget();
   }
   RefPtr<Document> self(this);
+
+  // ABA case: the document is in a third-party context chain but is same-site
+  // to the top window. No additional storage permission is needed, but we still
+  // set the in-memory UsingStorageAccess flag so hasStorageAccess() returns
+  // true after this call.
+  if (mChannel) {
+    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
+    if (!loadInfo->GetIsThirdPartyContextToTopWindow()) {
+      inner->SaveStorageAccessPermissionGranted()->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [promise] { promise->MaybeResolveWithUndefined(); },
+          [promise, self] {
+            self->ConsumeTransientUserGestureActivation();
+            promise->MaybeRejectWithNotAllowedError(
+                "requestStorageAccess not allowed"_ns);
+          });
+      return promise.forget();
+    }
+  }
 
   // Step 5. Start an async call to request storage access. This will either
   // perform an automatic decision or notify the user, then perform some follow

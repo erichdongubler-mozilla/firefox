@@ -5147,7 +5147,7 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
     }
   }
 
-  fc->SetDelayedCaretData(0);
+  fc->SetDelayedCaretData(nullptr);
 
   if (isPrimaryButtonDown) {
     // Check if any part of this frame is selected, and if the user clicked
@@ -5622,7 +5622,7 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult HandleFrameSelection(
         return rv;
       }
     }
-    aFrameSelection->SetDelayedCaretData(0);
+    aFrameSelection->SetDelayedCaretData(nullptr);
   }
 
   aFrameSelection->SetDragState(false);

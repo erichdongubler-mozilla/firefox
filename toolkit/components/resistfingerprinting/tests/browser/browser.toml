@@ -6,6 +6,7 @@ support-files = [
   "font-fingerprinter.html",
   "head-fpp-matrix.js",
   "head.js",
+  "srcset.html",
   "scriptExecPage.html",
   "serviceWorker.js",
   "serviceWorkerTester.js",
@@ -85,6 +86,8 @@ support-files = ["file_pdf.pdf"]
 ["browser_service_worker_overrides.js"]
 
 ["browser_service_worker_randomization_key_originattrs.js"]
+
+["browser_srcset.js"]
 
 ["browser_usercharacteristics.js"]
 

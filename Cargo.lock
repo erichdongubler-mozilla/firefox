@@ -1327,14 +1327,17 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "getrandom 0.3.3",
+ "linked-hash-map",
  "log",
  "mach2",
  "minidump-writer",
+ "mozannotation_server",
  "nix 0.30.1",
  "num-derive",
  "num-traits",
  "thiserror 2.0.12",
  "windows-sys",
+ "yaml-rust2",
 ]
 
 [[package]]
@@ -1348,21 +1351,18 @@ dependencies = [
  "crash_helper_common",
  "dirs",
  "env_logger",
- "linked-hash-map",
  "log",
  "minidump-writer",
  "mozannotation_server",
  "mozbuild",
  "mozilla-central-workspace-hack",
  "nix 0.30.1",
- "num-derive",
  "num-traits",
  "once_cell",
  "rust_minidump_writer_linux",
  "thiserror 2.0.12",
  "uuid",
  "windows-sys",
- "yaml-rust2",
 ]
 
 [[package]]
@@ -5252,6 +5252,7 @@ name = "mozwer_s"
 version = "0.1.0"
 dependencies = [
  "crash_helper_client",
+ "crash_helper_common",
  "libc",
  "mozilla-central-workspace-hack",
  "rust-ini",
@@ -6987,8 +6988,10 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "crash-context",
+ "crash_helper_common",
  "libc",
  "minidump-writer",
+ "mozannotation_server",
 ]
 
 [[package]]
@@ -9636,8 +9639,6 @@ dependencies = [
 [[package]]
 name = "zlib-rs"
 version = "0.6.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3be3d40e40a133f9c916ee3f9f4fa2d9d63435b5fbe1bfc6d9dae0aa0ada1513"
 
 [[package]]
 name = "zmij"

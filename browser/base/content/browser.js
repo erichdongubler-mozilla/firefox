@@ -1115,12 +1115,12 @@ const gStoragePressureObserver = {
 };
 
 var gKeywordURIFixup = {
-  check(browser, { fixedURI, keywordProviderName, preferredURI }) {
+  check(browser, { fixedURI, keywordProviderId, preferredURI }) {
     // We get called irrespective of whether we did a keyword search, or
     // whether the original input would be vaguely interpretable as a URL,
     // so figure that out first.
     if (
-      !keywordProviderName ||
+      !keywordProviderId ||
       !fixedURI ||
       !fixedURI.host ||
       UrlbarPrefs.get("browser.fixup.dns_first_for_single_words") ||

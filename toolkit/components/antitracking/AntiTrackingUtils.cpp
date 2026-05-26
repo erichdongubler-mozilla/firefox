@@ -427,7 +427,7 @@ AntiTrackingUtils::GetStoragePermissionStateInParent(nsIChannel* aChannel) {
   int32_t cookieBehavior = cookieJarSettings->GetCookieBehavior();
 
   // We only need to check the storage permission if the cookie behavior is
-  // BEHAVIOR_REJECT_TRACKER, BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN or
+  // BEHAVIOR_REJECT_TRACKER, BEHAVIOR_PARTITION_FOREIGN or
   // BEHAVIOR_REJECT_FOREIGN with exceptions. Because ContentBlocking wouldn't
   // update or check the storage permission if the cookie behavior is not
   // belongs to these three.
@@ -790,7 +790,7 @@ uint64_t AntiTrackingUtils::GetTopLevelAntiTrackingWindowId(
     return 0;
   }
 
-  // Do not check BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN her because when
+  // Do not check BEHAVIOR_PARTITION_FOREIGN her because when
   // a third-party subresource is inside the main frame, we need to return the
   // top-level window id to partition its cookies correctly.
   uint32_t behavior = *winContext->GetCookieBehavior();

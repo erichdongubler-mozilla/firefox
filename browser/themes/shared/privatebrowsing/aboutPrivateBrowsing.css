@@ -89,7 +89,6 @@ p {
   min-width: 70vw;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.privatebrowsing.felt-privacy-v1") {
   .search-inner-wrapper {
     height: 52px;
@@ -169,7 +168,6 @@ content-search-handoff-ui {
   --content-search-handoff-ui-fakefocus-box-shadow-inner: #0060df;
   --content-search-handoff-ui-fakefocus-box-shadow-outer: rgba(0, 96, 223, 0.3);
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.privatebrowsing.felt-privacy-v1") {
     --content-search-handoff-ui-background-color: #321c64;
     --content-search-handoff-ui-color: #fbfbfe;
@@ -263,7 +261,6 @@ content-search-handoff-ui {
   margin-top: 15px;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.privatebrowsing.felt-privacy-v1") {
   .info-border {
     border-radius: var(--border-radius-medium);
@@ -485,7 +482,6 @@ content-search-handoff-ui {
   margin: 0;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.privatebrowsing.felt-privacy-v1") {
   .promo.below-search.promo-visible {
     margin-block: 0 25px;

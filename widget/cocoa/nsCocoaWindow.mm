@@ -6243,13 +6243,6 @@ void nsCocoaWindow::CocoaWindowDidEnterFullscreen(bool aFullscreen) {
   mHasStartedNativeFullscreen = false;
   DispatchOcclusionEvent();
 
-  // The fullscreen window transition leaves the screen-displayed cursor
-  // out of sync with our cached state until the next mouse-moved event
-  // re-evaluates cursor rects. Re-push the cached cursor now so that
-  // e.g. an autohide-driven `cursor: none` stays hidden across the
-  // transition (bug 2031413).
-  [MOZDynamicCursor.sharedInstance reassertCurrentCursor];
-
   // Check if aFullscreen matches our expected fullscreen state. It might not if
   // there was a failure somewhere along the way, in which case we'll recover
   // from that.

@@ -1795,14 +1795,6 @@ autofill-addresses-manage-addresses-title =
 addresses-no-addresses-stored-message =
     .label = No addresses added
 
-# These values are displayed for each address record listed on the "Manage addresses and more" subpage.
-# Variables:
-#   $name (string) - The name associated with the address
-#   $address (string) - The address
-address-moz-box-item =
-  .label = { $name }
-  .description = { $address }
-
 pane-passwords-autofill-title2 = Passwords and autofill
   .title = Passwords and autofill
 preferences-passwords-autofill-header =

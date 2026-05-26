@@ -1034,14 +1034,15 @@ static void CreateObserversForAnimatedGlyphs(gfxTextRun* aTextRun) {
 
   ClearObserversFromTextRun(aTextRun);
 
-  nsTArray<gfxFont*> fontsWithAnimatedGlyphs;
+  AutoTArray<gfxFont*, 4> fontsWithAnimatedGlyphs;
   uint32_t numGlyphRuns;
-  const gfxTextRun::GlyphRun* glyphRuns = aTextRun->GetGlyphRuns(&numGlyphRuns);
-  for (uint32_t i = 0; i < numGlyphRuns; ++i) {
-    gfxFont* font = glyphRuns[i].mFont;
+  const gfxTextRun::GlyphRun* run = aTextRun->GetGlyphRuns(&numGlyphRuns);
+  while (numGlyphRuns--) {
+    gfxFont* font = run->mFont;
     if (font->GlyphsMayChange() && !fontsWithAnimatedGlyphs.Contains(font)) {
       fontsWithAnimatedGlyphs.AppendElement(font);
     }
+    run++;
   }
   if (fontsWithAnimatedGlyphs.IsEmpty()) {
     // NB: Theoretically, we should clear the MightHaveGlyphChanges
@@ -1124,6 +1125,9 @@ class BuildTextRunsScanner {
     ResetRunInfo();
   }
   ~BuildTextRunsScanner() {
+    for (auto& run : mCreatedTextRuns) {
+      CreateObserversForAnimatedGlyphs(run);
+    }
     NS_ASSERTION(mBreakSinks.IsEmpty(), "Should have been cleared");
     NS_ASSERTION(mLineBreakBeforeFrames.IsEmpty(), "Should have been cleared");
     NS_ASSERTION(mMappedFlows.IsEmpty(), "Should have been cleared");
@@ -1247,10 +1251,6 @@ class BuildTextRunsScanner {
             static_cast<nsTransformedTextRun*>(mTextRun.get());
         transformedTextRun->FinishSettingProperties(mDrawTarget, aMFR);
       }
-      // The way nsTransformedTextRun is implemented, its glyph runs aren't
-      // available until after nsTransformedTextRun::FinishSettingProperties()
-      // is called. So that's why we defer checking for animated glyphs to here.
-      CreateObserversForAnimatedGlyphs(mTextRun);
     }
 
     RefPtr<gfxTextRun> mTextRun;
@@ -1262,6 +1262,7 @@ class BuildTextRunsScanner {
   AutoTArray<MappedFlow, 10> mMappedFlows;
   AutoTArray<nsTextFrame*, 50> mLineBreakBeforeFrames;
   AutoTArray<UniquePtr<BreakSink>, 10> mBreakSinks;
+  AutoTArray<RefPtr<gfxTextRun>, 10> mCreatedTextRuns;
   nsLineBreaker mLineBreaker;
   RefPtr<gfxTextRun> mCurrentFramesAllSameTextRun;
   DrawTarget* mDrawTarget;
@@ -1812,14 +1813,18 @@ void BuildTextRunsScanner::FlushFrames(bool aFlushLineBreaks,
         return;
       }
       textRun = BuildTextRunForFrames(buffer.Elements());
+      if (textRun) {
+        if (gfxPlatform::GetPlatform()->OpenTypeSVGEnabled()) {
+          // Record the textrun for call to CreateObserversForAnimatedGlyphs,
+          // done after line-breaking etc is complete.
+          mCreatedTextRuns.AppendElement(textRun);
+        }
+      }
     }
   }
 
   if (aFlushLineBreaks) {
     FlushLineBreaks(aSuppressTrailingBreak ? nullptr : textRun.get());
-    if (!mDoLineBreaking && textRun) {
-      CreateObserversForAnimatedGlyphs(textRun.get());
-    }
   }
 
   mCanStopOnThisLine = true;

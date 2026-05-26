@@ -15,7 +15,6 @@
   --box-shadow-color-lighter-layer-2: color-mix(in srgb, var(--color-violet-50) 25%, transparent);
   --smartwindow-shadow: var(--box-shadow-level-2);
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.nova.enabled") {
     /* HCM Default */
     --smartwindow-text-color-accent-primary: var(--text-color);

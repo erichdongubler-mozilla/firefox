@@ -470,7 +470,7 @@ class Loader final {
   enum class UsePreload : bool { No, Yes };
   enum class UseLoadGroup : bool { No, Yes };
 
-  nsresult NewStyleSheetChannel(SheetLoadData& aLoadData, CORSMode aCorsMode,
+  nsresult NewStyleSheetChannel(SheetLoadData& aLoadData,
                                 UsePreload aUsePreload,
                                 UseLoadGroup aUseLoadGroup,
                                 nsIChannel** aOutChannel);

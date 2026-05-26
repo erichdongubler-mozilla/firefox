@@ -344,13 +344,15 @@ void PointerEventHandler::UpdatePointerActiveState(WidgetMouseEvent* aEvent,
         }
       }
 
-      // Do not update the last pointerId with eMouseEnterIntoWidget because it
-      // may be dispatched by widget when it receives a native event which is
-      // not required, e.g., when the pointer is not moved actually.  Let's
-      // update sLastPointerId with the following ePointerMove, etc which should
-      // be dispatched immediately. Note that anyway EventStateManager does not
-      // handle eMouseEnterIntoWidget directly, it expects that new event is
-      // coming.
+      // Update sLastPointerId so that the synthesized eMouseMove which
+      // PresShell schedules in response to eMouseEnterIntoWidget can pass the
+      // IsLastPointerId check in EventStateManager::UpdateCursor. Without this,
+      // a fullscreen window swap (or any other widget-level event that fires
+      // eMouseExitFromWidget followed by eMouseEnterIntoWidget while the
+      // pointer hasn't actually moved) clears sLastPointerId and never
+      // restores it, leaving the cursor stuck in whatever state it had before
+      // the swap until the next real pointer event (bug 2031413).
+      UpdateLastPointerId(aEvent->pointerId, aEvent->mMessage);
 
       // In this case we have to know information about available mouse pointers
       InsertOrUpdateActivePointer(
@@ -1561,8 +1563,6 @@ void PointerEventHandler::MaybeCacheSpoofedPointerID(uint16_t aInputSource,
 
 void PointerEventHandler::UpdateLastPointerId(uint32_t aPointerId,
                                               EventMessage aEventMessage) {
-  MOZ_ASSERT(aEventMessage != eMouseEnterIntoWidget);
-
   if (sLastPointerId && *sLastPointerId == aPointerId) {
     return;
   }
