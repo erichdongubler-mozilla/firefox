@@ -3982,13 +3982,6 @@
   value: 0
   mirror: always
 
-# Enable the Picture-in-Picture API
-- name: dom.media-pip.enabled
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-  rust: true
-
 # User pref to control whether Private Attribution
 # information should be collected / submitted.
 - name: dom.private-attribution.submission.enabled

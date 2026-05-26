@@ -35,9 +35,6 @@ interface mixin DocumentOrShadowRoot {
 
   [Pref="dom.scoped-custom-element-registries.enabled"]
   readonly attribute CustomElementRegistry? customElementRegistry;
-
-  [Pref="dom.media-pip.enabled"]
-  readonly attribute Element? pictureInPictureElement;
 };
 
 // https://drafts.csswg.org/web-animations-1/#extensions-to-the-documentorshadowroot-interface-mixin

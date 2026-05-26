@@ -49,7 +49,6 @@ static FeatureMap sSupportedFeatures[] = {
     {"loopback-network", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"local-network", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"aria-notify", FeaturePolicyUtils::FeaturePolicyValue::eAll},
-    {"picture-in-picture", FeaturePolicyUtils::FeaturePolicyValue::eAll},
 };
 
 /*
