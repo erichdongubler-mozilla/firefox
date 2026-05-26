@@ -393,3 +393,88 @@ describe("<LogoSpinSmooth>", () => {
     expect(animNode.beginElement).not.toHaveBeenCalled();
   });
 });
+
+// @backward-compat { version 153 }
+// Can be removed after Firefox 153 hits Release.
+describe("<RotatingBall>", () => {
+  let originalMatchMedia;
+
+  beforeEach(() => {
+    originalMatchMedia = globalThis.matchMedia;
+    setMatchMediaMock();
+  });
+
+  afterEach(() => {
+    globalThis.matchMedia = originalMatchMedia;
+  });
+
+  function renderRotatingBall() {
+    return renderWithPrefs(<Logo />, {
+      [PREF_LOGO_VARIATION]: "rotating-ball",
+    });
+  }
+
+  it("renders an aria-hidden SVG with the shared and variation classes", () => {
+    const { container } = renderRotatingBall();
+    const svg = container.querySelector("svg.rotating-ball");
+    expect(svg).toBeInTheDocument();
+    expect(svg.getAttribute("aria-hidden")).toBe("true");
+    expect(svg.classList.contains("logo-variation-small")).toBe(true);
+  });
+
+  it("renders an animateTransform with begin=indefinite (manual trigger)", () => {
+    const { container } = renderRotatingBall();
+    const anim = container.querySelector("animateTransform");
+    expect(anim).toBeInTheDocument();
+    expect(anim.getAttribute("begin")).toBe("indefinite");
+    expect(anim.getAttribute("dur")).toBe("2.9333s");
+    expect(anim.getAttribute("calcMode")).toBe("discrete");
+  });
+
+  it("calls beginElement() on the animation on click", () => {
+    const { container } = renderRotatingBall();
+    const svg = container.querySelector("svg.rotating-ball");
+    const animNode = container.querySelector("animateTransform");
+    animNode.beginElement = jest.fn();
+
+    fireEvent.click(svg);
+
+    expect(animNode.beginElement).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores clicks while the animation is running", () => {
+    const { container } = renderRotatingBall();
+    const svg = container.querySelector("svg.rotating-ball");
+    const animNode = container.querySelector("animateTransform");
+    animNode.beginElement = jest.fn();
+
+    animNode.dispatchEvent(new Event("beginEvent"));
+    fireEvent.click(svg);
+
+    expect(animNode.beginElement).not.toHaveBeenCalled();
+  });
+
+  it("allows replay after the animation finishes", () => {
+    const { container } = renderRotatingBall();
+    const svg = container.querySelector("svg.rotating-ball");
+    const animNode = container.querySelector("animateTransform");
+    animNode.beginElement = jest.fn();
+
+    animNode.dispatchEvent(new Event("beginEvent"));
+    animNode.dispatchEvent(new Event("endEvent"));
+    fireEvent.click(svg);
+
+    expect(animNode.beginElement).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not begin the animation when prefers-reduced-motion is set, but stays clickable", () => {
+    setMatchMediaMock({ reduceMotion: true });
+    const { container } = renderRotatingBall();
+    const svg = container.querySelector("svg.rotating-ball");
+    const animNode = container.querySelector("animateTransform");
+    animNode.beginElement = jest.fn();
+
+    expect(() => fireEvent.click(svg)).not.toThrow();
+    expect(animNode.beginElement).not.toHaveBeenCalled();
+  });
+});
