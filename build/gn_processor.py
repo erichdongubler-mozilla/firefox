@@ -266,6 +266,7 @@ def filter_gn_config(path, gn_result, sandbox_vars, input_vars, gn_target):
             "cflags_objcc",
             "deps",
             "libs",
+            "output_name",
         ):
             spec[spec_attr] = raw_spec.get(spec_attr, [])
             if spec_attr == "defines":
@@ -385,6 +386,20 @@ def process_gn_config(
 
         if spec["type"] == "shared_library":
             context_attrs["FORCE_SHARED_LIB"] = True
+
+            # Target names are suffixed with "_gn" to avoid collisions, and the
+            # target name by default gets used as the library name. For shared
+            # libraries we should instead use the `output_name` derived from GN
+            # so that consumers can load the expected library names.
+            output_name = spec.get("output_name")
+            if output_name:
+                # `output_name` may already be prefixed with "lib". Mozbuild,
+                # however, will add a "lib" prefix to `SHARED_LIBRARY_NAME` on
+                # non-Windows platforms. Remove the prefix here to avoid a
+                # resulting "liblibX" library name.
+                if gn_config["mozbuild_args"]["OS_TARGET"] != "WINNT":
+                    output_name = get_lib_name(output_name)
+                context_attrs["SHARED_LIBRARY_NAME"] = output_name
 
         if spec["type"] == "action" and "script" in spec:
             flags = [
