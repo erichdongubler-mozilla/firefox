@@ -74,7 +74,7 @@ index a97e2f18b4..e03aab02cf 100644
  # The python interpreter to use by default. On Windows, this will look
  # for python3.exe and python3.bat.
 diff --git a/BUILD.gn b/BUILD.gn
-index 79bb722808..d38bf041f5 100644
+index 82dd1efa6a..170c2bedfc 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -21,15 +21,15 @@
@@ -97,7 +97,7 @@ index 79bb722808..d38bf041f5 100644
    import("//third_party/jni_zero/jni_zero.gni")
  }
  
-@@ -528,7 +528,7 @@ if (!build_with_chromium) {
+@@ -530,7 +530,7 @@ if (!build_with_chromium) {
      sources = []
  
      complete_static_lib = true

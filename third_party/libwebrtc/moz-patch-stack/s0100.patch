@@ -9,10 +9,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/90a33b06e51017d25
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index d38bf041f5..8f756b2806 100644
+index 170c2bedfc..a13e449d38 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -556,6 +556,7 @@ if (!build_with_chromium) {
+@@ -558,6 +558,7 @@ if (!build_with_chromium) {
        "call",
        "common_audio",
        "common_video",
