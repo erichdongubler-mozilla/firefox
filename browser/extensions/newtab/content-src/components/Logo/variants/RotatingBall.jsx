@@ -11,7 +11,7 @@
  * `logo.variation` pref entry in `ActivityStream.sys.mjs`.
  */
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 const SPRITE_URL =
   "chrome://newtab/content/data/content/assets/rotating-ball.webp";
@@ -49,6 +49,7 @@ const TRANSFORM_VALUES =
 function RotatingBall() {
   const animRef = useRef(null);
   const isRunningRef = useRef(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
     const anim = animRef.current;
@@ -57,9 +58,11 @@ function RotatingBall() {
     }
     const onBegin = () => {
       isRunningRef.current = true;
+      setIsAnimating(true);
     };
     const onEnd = () => {
       isRunningRef.current = false;
+      setIsAnimating(false);
     };
     anim.addEventListener("beginEvent", onBegin);
     anim.addEventListener("endEvent", onEnd);
@@ -88,7 +91,7 @@ function RotatingBall() {
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 200 200"
-      className="logo-variation-small rotating-ball"
+      className={`logo-variation-small rotating-ball${isAnimating ? " is-animating" : ""}`}
       aria-hidden="true"
       onClick={handleClick}
     >

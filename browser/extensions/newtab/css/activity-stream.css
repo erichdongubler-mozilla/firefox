@@ -1073,6 +1073,17 @@ main.newtab-main section {
   height: 64px;
   width: 64px;
 }
+@media (prefers-reduced-motion: no-preference) {
+  .logo-and-wordmark .logo-variation-small {
+    transition: opacity 0.15s ease-out;
+  }
+  .logo-and-wordmark .logo-variation-small:hover {
+    opacity: 0.8;
+  }
+  .logo-and-wordmark .logo-variation-small.is-animating, .logo-and-wordmark .logo-variation-small.is-animating:hover {
+    opacity: 1;
+  }
+}
 @media (max-width: 609px) {
   .classic-enabled .logo-and-wordmark .logo {
     background-size: 64px;

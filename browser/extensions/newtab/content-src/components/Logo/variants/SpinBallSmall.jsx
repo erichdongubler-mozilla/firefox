@@ -12,7 +12,7 @@
  * `Logo.jsx` (Logo reverts to its original default-only rendering).
  */
 
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 /**
  * The "spin ball, small" logo variation. Renders the supplied animated
@@ -30,6 +30,36 @@ import React, { useRef } from "react";
  */
 function SpinBallSmall() {
   const svgRef = useRef(null);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  // Track whether any of the SVG's CSS animations are in flight. The SVG
+  // contains four parallel animations (spin, blur, classic-fade, nova-fade);
+  // count starts and ends so we only clear `isAnimating` once they're all
+  // done. CSS `animationstart`/`animationend` events bubble from the
+  // animated children up to the SVG ref.
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) {
+      return undefined;
+    }
+    let inflight = 0;
+    const onStart = () => {
+      inflight += 1;
+      setIsAnimating(true);
+    };
+    const onEnd = () => {
+      inflight = Math.max(0, inflight - 1);
+      if (inflight === 0) {
+        setIsAnimating(false);
+      }
+    };
+    svg.addEventListener("animationstart", onStart);
+    svg.addEventListener("animationend", onEnd);
+    return () => {
+      svg.removeEventListener("animationstart", onStart);
+      svg.removeEventListener("animationend", onEnd);
+    };
+  }, []);
 
   /**
    * Plays every CSS animation declared on the SVG (and its descendants),
@@ -69,7 +99,7 @@ function SpinBallSmall() {
       ref={svgRef}
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 1000 1000"
-      className="logo-variation-small spin-ball-small"
+      className={`logo-variation-small spin-ball-small${isAnimating ? " is-animating" : ""}`}
       aria-hidden="true"
       onClick={handleClick}
     >

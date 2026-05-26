@@ -21595,6 +21595,7 @@ const TRANSFORM_VALUES = "0 0;-200 0;-400 0;-600 0;-800 0;-1000 0;0 -200;-200 -2
 function SpinSmooth() {
   const animRef = (0,external_React_namespaceObject.useRef)(null);
   const isRunningRef = (0,external_React_namespaceObject.useRef)(false);
+  const [isAnimating, setIsAnimating] = (0,external_React_namespaceObject.useState)(false);
   (0,external_React_namespaceObject.useEffect)(() => {
     const anim = animRef.current;
     if (!anim) {
@@ -21602,9 +21603,11 @@ function SpinSmooth() {
     }
     const onBegin = () => {
       isRunningRef.current = true;
+      setIsAnimating(true);
     };
     const onEnd = () => {
       isRunningRef.current = false;
+      setIsAnimating(false);
     };
     anim.addEventListener("beginEvent", onBegin);
     anim.addEventListener("endEvent", onEnd);
@@ -21631,7 +21634,7 @@ function SpinSmooth() {
   return /*#__PURE__*/external_React_default().createElement("svg", {
     xmlns: "http://www.w3.org/2000/svg",
     viewBox: "0 0 200 200",
-    className: "logo-variation-small spin-smooth",
+    className: `logo-variation-small spin-smooth${isAnimating ? " is-animating" : ""}`,
     "aria-hidden": "true",
     onClick: handleClick
   }, /*#__PURE__*/external_React_default().createElement("defs", null, /*#__PURE__*/external_React_default().createElement("clipPath", {
@@ -21709,6 +21712,7 @@ const RotatingBall_TRANSFORM_VALUES = "0,0;-200,0;-400,0;-600,0;-800,0;-1000,0;-
 function RotatingBall() {
   const animRef = (0,external_React_namespaceObject.useRef)(null);
   const isRunningRef = (0,external_React_namespaceObject.useRef)(false);
+  const [isAnimating, setIsAnimating] = (0,external_React_namespaceObject.useState)(false);
   (0,external_React_namespaceObject.useEffect)(() => {
     const anim = animRef.current;
     if (!anim) {
@@ -21716,9 +21720,11 @@ function RotatingBall() {
     }
     const onBegin = () => {
       isRunningRef.current = true;
+      setIsAnimating(true);
     };
     const onEnd = () => {
       isRunningRef.current = false;
+      setIsAnimating(false);
     };
     anim.addEventListener("beginEvent", onBegin);
     anim.addEventListener("endEvent", onEnd);
@@ -21745,7 +21751,7 @@ function RotatingBall() {
   return /*#__PURE__*/external_React_default().createElement("svg", {
     xmlns: "http://www.w3.org/2000/svg",
     viewBox: "0 0 200 200",
-    className: "logo-variation-small rotating-ball",
+    className: `logo-variation-small rotating-ball${isAnimating ? " is-animating" : ""}`,
     "aria-hidden": "true",
     onClick: handleClick
   }, /*#__PURE__*/external_React_default().createElement("defs", null, /*#__PURE__*/external_React_default().createElement("clipPath", {
@@ -21806,6 +21812,36 @@ function RotatingBall() {
  */
 function SpinBallSmall() {
   const svgRef = (0,external_React_namespaceObject.useRef)(null);
+  const [isAnimating, setIsAnimating] = (0,external_React_namespaceObject.useState)(false);
+
+  // Track whether any of the SVG's CSS animations are in flight. The SVG
+  // contains four parallel animations (spin, blur, classic-fade, nova-fade);
+  // count starts and ends so we only clear `isAnimating` once they're all
+  // done. CSS `animationstart`/`animationend` events bubble from the
+  // animated children up to the SVG ref.
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const svg = svgRef.current;
+    if (!svg) {
+      return undefined;
+    }
+    let inflight = 0;
+    const onStart = () => {
+      inflight += 1;
+      setIsAnimating(true);
+    };
+    const onEnd = () => {
+      inflight = Math.max(0, inflight - 1);
+      if (inflight === 0) {
+        setIsAnimating(false);
+      }
+    };
+    svg.addEventListener("animationstart", onStart);
+    svg.addEventListener("animationend", onEnd);
+    return () => {
+      svg.removeEventListener("animationstart", onStart);
+      svg.removeEventListener("animationend", onEnd);
+    };
+  }, []);
 
   /**
    * Plays every CSS animation declared on the SVG (and its descendants),
@@ -21845,7 +21881,7 @@ function SpinBallSmall() {
     ref: svgRef,
     xmlns: "http://www.w3.org/2000/svg",
     viewBox: "0 0 1000 1000",
-    className: "logo-variation-small spin-ball-small",
+    className: `logo-variation-small spin-ball-small${isAnimating ? " is-animating" : ""}`,
     "aria-hidden": "true",
     onClick: handleClick
   }, /*#__PURE__*/external_React_default().createElement("defs", null, /*#__PURE__*/external_React_default().createElement("linearGradient", {

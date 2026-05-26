@@ -11,7 +11,7 @@
  * `logo.variation` pref entry in `ActivityStream.sys.mjs`.
  */
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 const SPRITE_URL =
   "chrome://newtab/content/data/content/assets/spin-smooth.webp";
@@ -51,6 +51,7 @@ const TRANSFORM_VALUES =
 function SpinSmooth() {
   const animRef = useRef(null);
   const isRunningRef = useRef(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
     const anim = animRef.current;
@@ -59,9 +60,11 @@ function SpinSmooth() {
     }
     const onBegin = () => {
       isRunningRef.current = true;
+      setIsAnimating(true);
     };
     const onEnd = () => {
       isRunningRef.current = false;
+      setIsAnimating(false);
     };
     anim.addEventListener("beginEvent", onBegin);
     anim.addEventListener("endEvent", onEnd);
@@ -90,7 +93,7 @@ function SpinSmooth() {
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 200 200"
-      className="logo-variation-small spin-smooth"
+      className={`logo-variation-small spin-smooth${isAnimating ? " is-animating" : ""}`}
       aria-hidden="true"
       onClick={handleClick}
     >

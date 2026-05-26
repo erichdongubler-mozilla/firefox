@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { fireEvent, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { combineReducers, createStore } from "redux";
 import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
@@ -305,6 +305,23 @@ describe("<SpinBallSmall>", () => {
     expect(() => fireEvent.click(svg)).not.toThrow();
     expect(anim.play).not.toHaveBeenCalled();
   });
+
+  it("applies .is-animating while CSS animations are running", () => {
+    const { container } = renderSpinBallSmall();
+    const svg = container.querySelector("svg.spin-ball-small");
+
+    expect(svg.classList.contains("is-animating")).toBe(false);
+
+    act(() => {
+      svg.dispatchEvent(new Event("animationstart", { bubbles: true }));
+    });
+    expect(svg.classList.contains("is-animating")).toBe(true);
+
+    act(() => {
+      svg.dispatchEvent(new Event("animationend", { bubbles: true }));
+    });
+    expect(svg.classList.contains("is-animating")).toBe(false);
+  });
 });
 
 // @backward-compat { version 153 }
@@ -390,6 +407,24 @@ describe("<SpinSmooth>", () => {
     expect(() => fireEvent.click(svg)).not.toThrow();
     expect(animNode.beginElement).not.toHaveBeenCalled();
   });
+
+  it("applies .is-animating while the SMIL animation is running", () => {
+    const { container } = renderSpinSmooth();
+    const svg = container.querySelector("svg.spin-smooth");
+    const animNode = container.querySelector("animateTransform");
+
+    expect(svg.classList.contains("is-animating")).toBe(false);
+
+    act(() => {
+      animNode.dispatchEvent(new Event("beginEvent"));
+    });
+    expect(svg.classList.contains("is-animating")).toBe(true);
+
+    act(() => {
+      animNode.dispatchEvent(new Event("endEvent"));
+    });
+    expect(svg.classList.contains("is-animating")).toBe(false);
+  });
 });
 
 // @backward-compat { version 153 }
@@ -474,5 +509,23 @@ describe("<RotatingBall>", () => {
 
     expect(() => fireEvent.click(svg)).not.toThrow();
     expect(animNode.beginElement).not.toHaveBeenCalled();
+  });
+
+  it("applies .is-animating while the SMIL animation is running", () => {
+    const { container } = renderRotatingBall();
+    const svg = container.querySelector("svg.rotating-ball");
+    const animNode = container.querySelector("animateTransform");
+
+    expect(svg.classList.contains("is-animating")).toBe(false);
+
+    act(() => {
+      animNode.dispatchEvent(new Event("beginEvent"));
+    });
+    expect(svg.classList.contains("is-animating")).toBe(true);
+
+    act(() => {
+      animNode.dispatchEvent(new Event("endEvent"));
+    });
+    expect(svg.classList.contains("is-animating")).toBe(false);
   });
 });
