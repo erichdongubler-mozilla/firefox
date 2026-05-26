@@ -298,8 +298,9 @@ export class LoginManagerPrompter {
       const passwordField = chromeDoc.getElementById(
         "password-notification-password"
       );
-      // Ensure the field is masked.
-      passwordField.inputEl.revealPassword = false;
+      // Ensure the type is reset so the field is masked.
+      passwordField.type = "password";
+      passwordField.revealPassword = false;
       passwordField.value = login.password;
 
       updateButtonLabel();
@@ -347,8 +348,10 @@ export class LoginManagerPrompter {
       }
     };
 
-    const onDropmarkerClick = event => {
-      event.currentTarget.inputEl.toggleHistoryPopup();
+    const togglePopup = event => {
+      event.target.parentElement
+        .getElementsByClassName("ac-has-end-icon")[0]
+        .toggleHistoryPopup();
     };
 
     const persistData = async () => {
@@ -625,23 +628,34 @@ export class LoginManagerPrompter {
                   .getElementById("password-notification-username")
                   .addEventListener("keyup", onKeyUp);
                 chromeDoc
-                  .getElementById("password-notification-username")
-                  .addEventListener("dropmarker-click", onDropmarkerClick);
-                chromeDoc
                   .getElementById("password-notification-password")
                   .addEventListener("keyup", onKeyUp);
                 chromeDoc
                   .getElementById("password-notification-password")
                   .addEventListener("input", onPasswordInput);
+                chromeDoc
+                  .getElementById("password-notification-username-dropmarker")
+                  .addEventListener("click", togglePopup);
+
                 LoginManagerPrompter._getUsernameSuggestions(
                   login,
                   possibleValues?.usernames
                 ).then(usernameSuggestions => {
+                  const dropmarker = chromeDoc?.getElementById(
+                    "password-notification-username-dropmarker"
+                  );
+                  if (dropmarker) {
+                    dropmarker.hidden = !usernameSuggestions.length;
+                  }
+
                   const usernameField = chromeDoc?.getElementById(
                     "password-notification-username"
                   );
                   if (usernameField) {
-                    usernameField.showDropmarker = !!usernameSuggestions.length;
+                    usernameField.classList.toggle(
+                      "ac-has-end-icon",
+                      !!usernameSuggestions.length
+                    );
                   }
                 });
 
@@ -680,16 +694,14 @@ export class LoginManagerPrompter {
               );
               usernameField.removeEventListener("input", onUsernameInput);
               usernameField.removeEventListener("keyup", onKeyUp);
-              usernameField.removeEventListener(
-                "dropmarker-click",
-                onDropmarkerClick
-              );
-              usernameField.inputEl?.detachController();
               const passwordField = chromeDoc.getElementById(
                 "password-notification-password"
               );
               passwordField.removeEventListener("input", onPasswordInput);
               passwordField.removeEventListener("keyup", onKeyUp);
+              chromeDoc
+                .getElementById("password-notification-username-dropmarker")
+                .removeEventListener("click", togglePopup);
               break;
             }
           }
@@ -1015,8 +1027,8 @@ export class LoginManagerPrompter {
       acceptDifferentSubdomains: true,
     });
 
-    const saved = baseDomainLogins.map(savedLogin => {
-      return { text: savedLogin.username, style: "login" };
+    const saved = baseDomainLogins.map(login => {
+      return { text: login.username, style: "login" };
     });
     const possible = [...possibleUsernames].map(username => {
       return { text: username, style: "possible-username" };
