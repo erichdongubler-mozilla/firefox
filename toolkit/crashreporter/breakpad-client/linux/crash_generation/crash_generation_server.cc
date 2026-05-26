@@ -287,6 +287,8 @@ CrashGenerationServer::ClientEvent(short revents)
   signalfd_si.ssi_signo = si.si_signo;
   signalfd_si.ssi_errno = si.si_errno;
   signalfd_si.ssi_code = si.si_code;
+  signalfd_si.ssi_pid = si.si_pid;
+  signalfd_si.ssi_uid = si.si_uid;
 
   switch (si.si_signo) {
     case SIGILL:
