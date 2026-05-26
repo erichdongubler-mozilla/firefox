@@ -328,49 +328,6 @@ class ScrollTimeline : public AnimationTimeline,
   Maybe<CurrentTimeData> mCachedCurrentTime;
 };
 
-// In both engines, inactive timelines seem to be a specialization of a scroll
-// timeline. Deriving from AnimationTimeline adds a lot of special handling,
-// unfortunately. Note that inactive timelines can be constructed through
-// JS, like `new ScrollTimeline({source: null})`, but this timeline handles
-// timelines referenced by name in particular.
-// TODO(dshin): Should this be given for JS-constructed inactive timelines as
-// well?
-// TODO(dshin): May be worth discussing this within spec.
-class InactiveTimeline final : public ScrollTimeline {
- public:
-  Nullable<TimeDuration> GetCurrentTimeAsDuration() const override {
-    // Inactive timeline, by definition.
-    return {};
-  }
-
-  TimeStamp ToTimeStamp(const TimeDuration& aTimelineTime) const override {
-    return {};
-  }
-  bool IsInactiveTimeline() const override { return true; }
-
-  JSObject* WrapObject(JSContext*, JS::Handle<JSObject*>) override {
-    // OM should return null for timeline, so this should be ok.
-    return nullptr;
-  }
-
-  Nullable<TimeDuration> TimelineDuration(
-      const AnimationRange&) const override {
-    return TimeDuration::FromMilliseconds(PROGRESS_TIMELINE_DURATION_MILLISEC);
-  }
-
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(InactiveTimeline, ScrollTimeline)
-
- private:
-  explicit InactiveTimeline(Document* aDocument);
-  ~InactiveTimeline() override = default;
-
-  // ctor is private because only dynamic allocation is permitted, so this is
-  // fine.
-  template <typename T, typename... Args>
-  friend already_AddRefed<T> mozilla::MakeAndAddRef(Args&&... aArgs);
-};
-
 }  // namespace dom
 }  // namespace mozilla
 

@@ -1129,14 +1129,6 @@ bool Animation::TryTriggerNow() {
   if (NS_WARN_IF(!mTimeline)) {
     return false;
   }
-
-  // Note(dshin): Don't try to trigger inactive timelines, since they won't
-  // tick in any meaningful way. This has implications on fulfilling the ready
-  // promise - See https://github.com/w3c/csswg-drafts/issues/9256
-  if (mTimeline->IsInactiveTimeline()) {
-    return false;
-  }
-
   // FIXME: Bug 2017448. Force to use timeline current time for finite
   // timelines. We may have to figure out a more suitable way to handle it.
   auto currentTime = (mPendingReadyTime.IsNull() || HasFiniteTimeline())
@@ -1621,15 +1613,6 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   // browsers, especially for a null timeline with the false auto-rewind flag.
   // [1] https://github.com/w3c/csswg-drafts/issues/7145
   if (!hasFiniteTimeline && prevCurrentTime.IsNull() && mHoldTime.IsNull()) {
-    mHoldTime = TimeDuration();
-  }
-
-  const bool hasInactiveTimeline = mTimeline && mTimeline->IsInactiveTimeline();
-  if (hasInactiveTimeline && mHoldTime.IsNull()) {
-    // Note(dshin): If we're inactive state and trying to play, hold at zero.
-    // This isn't part of the spec (Spec discusses inactive timelines very
-    // little), but this falls out of inactive timeline behing a finite timeline
-    // (See the class definition for why).
     mHoldTime = TimeDuration();
   }
 

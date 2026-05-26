@@ -38,7 +38,6 @@ using mozilla::dom::Animation;
 using mozilla::dom::AnimationPlayState;
 using mozilla::dom::CSSAnimation;
 using mozilla::dom::Element;
-using mozilla::dom::InactiveTimeline;
 using mozilla::dom::KeyframeEffect;
 using mozilla::dom::MutationObservers;
 using mozilla::dom::ScrollTimeline;
@@ -230,8 +229,7 @@ static void UpdateOldAnimationPropertiesWithNew(
   // Checking pointers should be enough. If both are scroll-timeline, we reuse
   // the scroll-timeline object if their scrollers and axes are the same.
   if (aOld.GetTimeline() != aTimeline) {
-    // See `UpdateNamedTimelineAnimation` as to why `SetTimeline` isn't used.
-    aOld.SetTimelineNoUpdate(aTimeline, aTimelineName);
+    aOld.SetTimeline(aTimeline, aTimelineName);
     animationChanged = true;
   }
 
@@ -305,19 +303,13 @@ static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
     }
 
     if (auto scopedTimeline = timelineManager->GetScopedTimeline(e, aName)) {
-      auto* result = scopedTimeline->take();
-      if (!result) {
-        // https://drafts.csswg.org/scroll-animations-1/#timeline-scoping
-        return MakeAndAddRef<InactiveTimeline>(aDocument);
-      }
-      return already_AddRefed{result};
+      return already_AddRefed{scopedTimeline->take()};
     }
   }
 
   // If we cannot find a matched scroll-timeline-name, this animation is not
   // associated with a timeline.
-  // TODO(dshin): This is actually not spec compliant.. See
-  // https://github.com/w3c/csswg-drafts/issues/13955
+  // https://drafts.csswg.org/css-animations-2/#valdef-animation-timeline-custom-ident
   return nullptr;
 }
 
@@ -328,11 +320,10 @@ static already_AddRefed<dom::AnimationTimeline> GetTimeline(
     case StyleAnimationTimeline::Tag::Timeline: {
       // Check scroll-timeline-name property or view-timeline-property.
       nsAtom* name = aStyleTimeline.AsTimeline().value.AsAtom();
-      if (name == nsGkAtoms::_empty) {
-        // `animation-timeline: none`.
-        return nullptr;
-      }
-      return GetNamedProgressTimeline(aPresContext->Document(), aTarget, name);
+      return name != nsGkAtoms::_empty
+                 ? GetNamedProgressTimeline(aPresContext->Document(), aTarget,
+                                            name)
+                 : nullptr;
     }
     case StyleAnimationTimeline::Tag::Scroll: {
       const auto& scroll = aStyleTimeline.AsScroll();
@@ -545,10 +536,7 @@ static void UpdateNamedTimelineAnimation(dom::Document* aDocument,
   if (oldTimeline == newTimeline) {
     return;
   }
-  // No need to call `SetTimeline` and force compositor animation update -
-  // timeline changing shouldn't cause change in animation state or playback
-  // rate.
-  aAnimation->SetTimelineNoUpdate(newTimeline, aTimelineName);
+  aAnimation->SetTimeline(newTimeline, aTimelineName);
 }
 
 #ifdef DEBUG

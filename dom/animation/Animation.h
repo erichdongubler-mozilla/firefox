@@ -121,18 +121,6 @@ class Animation : public DOMEventTargetHelper,
 
   void RemovedNamedTimelineReferenceFromJS(const nsAtom* aName);
 
-  AnimationTimeline* GetTimelineFromJS() const {
-    auto* timeline = GetTimeline();
-    if (timeline && timeline->IsInactiveTimeline()) {
-      // See:
-      // https://github.com/w3c/csswg-drafts/issues/13807#issuecomment-4390005560
-      return nullptr;
-    }
-    return timeline;
-  }
-  void SetTimelineFromJS(AnimationTimeline* aTimeline) {
-    return SetTimeline(aTimeline);
-  }
   AnimationTimeline* GetTimeline() const { return mTimeline; }
   void SetTimeline(AnimationTimeline* aTimeline, const nsAtom* aTimelineName);
   void SetTimelineNoUpdate(AnimationTimeline* aTimeline,
@@ -556,11 +544,6 @@ class Animation : public DOMEventTargetHelper,
 
   bool HasFiniteTimeline() const {
     return mTimeline && !mTimeline->IsMonotonicallyIncreasing();
-  }
-
-  bool HasFiniteActiveTimeline() const {
-    return mTimeline && !mTimeline->IsMonotonicallyIncreasing() &&
-           !mTimeline->IsInactiveTimeline();
   }
 
   RefPtr<AnimationTimeline> mTimeline;
