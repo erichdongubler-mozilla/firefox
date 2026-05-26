@@ -1374,6 +1374,8 @@ Object.assign(WindowBase, { WINDOW_ID_NONE, WINDOW_ID_CURRENT });
  * - "tab-removed" {@link TabRemovedEvent}
  */
 class TabTrackerBase extends EventEmitter {
+  #tabReadyBlockers = new WeakSet();
+
   on(...args) {
     if (!this.initialized) {
       this.init();
@@ -1448,6 +1450,124 @@ class TabTrackerBase extends EventEmitter {
    */
   get activeTab() {
     throw new Error("Not implemented");
+  }
+
+  /**
+   * Block awaitTabReady() calls until the pending load completes or aborts.
+   * Should only be called by extension API implementations immediately after
+   * triggering the initial navigation for a new tab, before load completion.
+   * If called too late, future calls to awaitTabReady() will block until the
+   * next navigation completes or is aborted (or when the tab is closed).
+   *
+   * @param {NativeTab} nativeTab
+   */
+  addTabReadyBlocker(nativeTab) {
+    const bc = nativeTab.linkedBrowser.browsingContext;
+    if (!bc) {
+      return; // Tab was discarded, no load to wait for.
+    }
+    const { currentURI } = bc;
+    if (currentURI && currentURI.spec !== "about:blank") {
+      // Already committed any URL, so no need to wait for readiness.
+      // In particular, on desktop, a new tab ("about:newtab") can be preloaded
+      // and is typically ready without further notifications.
+      return;
+    }
+    // bc may change through cross-group navigations, so using webProgress to
+    // identify the navigation instead of bc.
+    const { webProgress } = bc;
+    this.#tabReadyBlockers.add(webProgress);
+    this.#waitUntilBrowsingContextReady(bc, () => {
+      this.#tabReadyBlockers.delete(webProgress);
+    });
+  }
+
+  /**
+   * Returns a promise that resolves when the tab is ready.
+   * Tabs created via the `tabs.create` method are "ready" once the location
+   * changes to the requested URL. Other tabs are assumed to be ready once they
+   * have a window context (implies that an innerWindowID is set).
+   * Also resolves if the load is stopped prematurely.
+   *
+   * @param {NativeTab} nativeTab
+   * @returns {Promise}
+   *        Resolves when the tab is not waiting for the initial navigation to
+   *        complete. If the navigation was successful, the tab has switched to
+   *        the document for the pending load. The method also resolves if the
+   *        load was aborted, HTTP 204 was received, tab was closed/discarded.
+   */
+  async awaitTabReady(nativeTab) {
+    const bc = nativeTab.linkedBrowser.browsingContext;
+    if (!bc) {
+      return; // Tab already discarded.
+    }
+    const wgp = bc.currentWindowGlobal;
+    if (wgp && !this.#tabReadyBlockers.has(bc.webProgress)) {
+      return; // Common case - tab not created by extension API.
+    }
+    return new Promise(resolve => {
+      this.#waitUntilBrowsingContextReady(bc, resolve);
+    });
+  }
+
+  // Implementation for awaitTabReady and addTabReadyBlocker.
+  #waitUntilBrowsingContextReady(bc, callback) {
+    // When a cross-group navigation happens, bc may change but webProgress
+    // is constant (but is moved over to the new BC).
+    const webProgress = bc.webProgress;
+    function cleanup() {
+      Services.obs.removeObserver(onDiscarded, "browsing-context-discarded");
+      webProgress.removeProgressListener(listener);
+      callback();
+    }
+
+    const listener = {
+      QueryInterface: ChromeUtils.generateQI([
+        "nsIWebProgressListener",
+        "nsISupportsWeakReference",
+      ]),
+      onLocationChange(progress, request) {
+        // Note: request null-ness check is necessary to filter out location
+        // changes that are not tied to committed document loads, e.g. when
+        // a tab is duplicated.
+        if (progress.isTopLevel && request) {
+          // Most interesting (desired) case: document load was committed.
+          cleanup();
+        }
+      },
+      onStateChange(progress, request, flags) {
+        if (
+          progress.isTopLevel &&
+          flags & Ci.nsIWebProgressListener.STATE_STOP
+        ) {
+          // Stopped before onLocationChange, e.g. aborted, HTTP 204.
+          cleanup();
+        }
+      },
+    };
+
+    function onDiscarded(subject, topic, why) {
+      // Handle premature tab close, process crash, cross-group navigations.
+      if (subject === bc) {
+        if (why === "replace") {
+          // BC is constant for most loads, except cross-group loads such as
+          // moz-extension:-loads. Look up the BC after replacement:
+          bc = webProgress.browsingContext;
+          if (bc) {
+            // Continue following the new BC after cross-group navigation.
+            return;
+          }
+          // Weird - replaced but no replacement? Fall through to clean up.
+        }
+        cleanup();
+      }
+    }
+
+    webProgress.addProgressListener(
+      listener,
+      Ci.nsIWebProgress.NOTIFY_STATE_NETWORK | Ci.nsIWebProgress.NOTIFY_LOCATION
+    );
+    Services.obs.addObserver(onDiscarded, "browsing-context-discarded");
   }
 }
 
