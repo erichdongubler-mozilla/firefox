@@ -94,7 +94,7 @@ internal fun IPProtectionMenuItem(
 
                 if (state.status == IPProtectionMenuStatus.DataLimitReached) {
                     Text(
-                        text = stringResource(R.string.ip_protection_menu_limit_reached, state.dataLimitGb),
+                        text = stringResource(R.string.ip_protection_menu_limit_reached_2, state.dataLimitGb),
                         color = MaterialTheme.colorScheme.error,
                         style = FirefoxTheme.typography.caption,
                         overflow = TextOverflow.Ellipsis,
