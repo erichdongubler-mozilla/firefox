@@ -811,3 +811,7 @@ acorn-detekt-rules:
   active: true
   HardcodedPaddingUsage:
     active: true
+  AcornThemeUsage:
+    active: true
+    excludes: ['**/theme/FirefoxTheme.kt']
+    appThemeName: 'org.mozilla.fenix.theme.FirefoxTheme'

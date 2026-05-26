@@ -19,6 +19,7 @@ class AcornRuleSetProvider : RuleSetProvider {
         id = ruleSetId,
         rules = listOf(
             AcornPaddingRule(config),
+            AcornThemeUsageRule(config),
         ),
     )
 }
