@@ -9,10 +9,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/293f1877fead30723
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/rtc_base/ssl_stream_adapter.h b/rtc_base/ssl_stream_adapter.h
-index 16d424ed65..ac09e9198a 100644
+index 499c76e151..00fd5f2da9 100644
 --- a/rtc_base/ssl_stream_adapter.h
 +++ b/rtc_base/ssl_stream_adapter.h
-@@ -260,7 +260,7 @@ class SSLStreamAdapter : public StreamInterface {
+@@ -273,7 +273,7 @@ class SSLStreamAdapter : public StreamInterface {
    static std::set<uint16_t> GetSupportedEphemeralKeyExchangeCipherGroups()
        { return {}; }
    static std::optional<std::string> GetEphemeralKeyExchangeCipherGroupName(
