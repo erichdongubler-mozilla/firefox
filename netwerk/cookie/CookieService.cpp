@@ -1379,6 +1379,36 @@ CookieService::CountCookiesFromHost(const nsACString& aHost,
   return NS_OK;
 }
 
+NS_IMETHODIMP
+CookieService::HasCookiesForSite(const nsACString& aHost,
+                                 const nsAString& aPattern, bool* aResult) {
+  NS_ENSURE_ARG_POINTER(aResult);
+  *aResult = false;
+
+  OriginAttributesPattern pattern;
+  if (!pattern.Init(aPattern)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  nsAutoCString host(aHost);
+  nsresult rv = NormalizeHost(host);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsAutoCString baseDomain;
+  rv = CookieCommons::GetBaseDomainFromHost(mTLDService, host, baseDomain);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (!IsInitialized()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  CookieStorage* storage = PickStorage(pattern);
+  storage->EnsureInitialized();
+
+  *aResult = storage->HasCookiesForSite(baseDomain, pattern);
+  return NS_OK;
+}
+
 // get an enumerator of cookies stored by a particular host. this is provided by
 // the nsICookieManager interface.
 NS_IMETHODIMP
