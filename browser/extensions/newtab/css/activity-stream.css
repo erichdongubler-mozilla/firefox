@@ -13747,6 +13747,36 @@ hr {
   inset-inline-end: var(--space-xsmall);
   inset-block-start: var(--space-xsmall);
 }
+.nova-enabled .wallpaper-feature-highlight.world-cup-variant .feature-highlight .wallpaper-feature-highlight-modal {
+  min-height: 355px;
+}
+.nova-enabled .wallpaper-feature-highlight.world-cup-variant .feature-highlight .wallpaper-feature-highlight-modal .wallpaper-feature-highlight-content {
+  gap: var(--space-small);
+}
+.nova-enabled .wallpaper-feature-highlight.world-cup-variant .feature-highlight .wallpaper-feature-highlight-modal .wallpaper-feature-highlight-image {
+  --wallpaper-highlight-image-background: transparent;
+  background-image: none;
+  height: auto;
+  padding-block: 0;
+}
+.nova-enabled .wallpaper-feature-highlight.world-cup-variant .feature-highlight .wallpaper-feature-highlight-modal .wallpaper-feature-highlight-image img {
+  width: 100%;
+  height: auto;
+  max-width: 304px;
+  object-fit: contain;
+}
+.nova-enabled .wallpaper-feature-highlight.world-cup-variant .feature-highlight .wallpaper-feature-highlight-modal .title {
+  color: var(--text-color);
+  font-size: var(--font-size-small);
+}
+.nova-enabled .wallpaper-feature-highlight.world-cup-variant .feature-highlight .wallpaper-feature-highlight-modal .subtitle {
+  color: var(--text-color);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight);
+}
+.nova-enabled .wallpaper-feature-highlight.world-cup-variant .feature-highlight .wallpaper-feature-highlight-modal .button-wrapper {
+  margin-block-start: var(--space-medium);
+}
 @media (prefers-color-scheme: dark) {
   .nova-enabled .wallpaper-feature-highlight .feature-highlight .wallpaper-feature-highlight-modal {
     --wallpaper-highlight-tail-image: url("chrome://newtab/content/data/content/assets/highlights/feature-callout-tail-dark.svg");
