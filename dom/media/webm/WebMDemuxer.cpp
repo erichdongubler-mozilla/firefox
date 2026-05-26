@@ -323,9 +323,8 @@ nsresult WebMDemuxer::SetVideoCodecInfo(nestegg* aContext, int aTrackId) {
   return NS_OK;
 }
 
-nsresult WebMDemuxer::SetAudioCodecInfo(nestegg* aContext, int aTrackId,
-                                        const nestegg_audio_params& aParams) {
-  mAudioCodec = nestegg_track_codec_id(aContext, aTrackId);
+nsresult WebMDemuxer::SetContainerAudioCodecInfo(
+    nestegg* aContext, const nestegg_audio_params& aParams) {
   switch (mAudioCodec) {
     case NESTEGG_CODEC_VORBIS: {
       mInfo.mAudio.mCodecSpecificConfig =
@@ -349,10 +348,21 @@ nsresult WebMDemuxer::SetAudioCodecInfo(nestegg* aContext, int aTrackId,
       NS_WARNING("Unknown WebM audio codec");
       return NS_ERROR_DOM_MEDIA_METADATA_ERR;
   }
+  return NS_OK;
+}
+
+nsresult WebMDemuxer::SetAudioCodecInfo(nestegg* aContext, int aTrackId,
+                                        const nestegg_audio_params& aParams) {
+  mAudioCodec = nestegg_track_codec_id(aContext, aTrackId);
+
+  nsresult rv = SetContainerAudioCodecInfo(aContext, aParams);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
 
   AutoTArray<const unsigned char*, 4> headers;
   AutoTArray<size_t, 4> headerLens;
-  nsresult rv = GetCodecPrivateData(aContext, aTrackId, &headers, &headerLens);
+  rv = GetCodecPrivateData(aContext, aTrackId, &headers, &headerLens);
   if (NS_FAILED(rv)) {
     WEBM_DEBUG("GetCodecPrivateData error for WebM");
     return rv;

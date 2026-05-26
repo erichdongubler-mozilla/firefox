@@ -555,6 +555,7 @@ support-files = [
   "output_hevc.mkv",
   "output_mp3.mkv",
   "output_opus.mkv",
+  "output_opus_surround.mkv",
   "output_pcm.mkv",
   "output_vorbis.mkv",
   "output_vp8.mkv",

@@ -151,8 +151,10 @@ class WebMDemuxer : public MediaDataDemuxer,
 
  protected:
   virtual nsresult SetVideoCodecInfo(nestegg* aContext, int aTrackId);
-  virtual nsresult SetAudioCodecInfo(nestegg* aContext, int aTrackId,
-                                     const nestegg_audio_params& aParams);
+  virtual nsresult SetContainerAudioCodecInfo(
+      nestegg* aContext, const nestegg_audio_params& aParams);
+  nsresult SetAudioCodecInfo(nestegg* aContext, int aTrackId,
+                             const nestegg_audio_params& aParams);
   virtual nsresult GetCodecPrivateData(nestegg* aContext, int aTrackId,
                                        nsTArray<const unsigned char*>* aHeaders,
                                        nsTArray<size_t>* aHeaderLens);
