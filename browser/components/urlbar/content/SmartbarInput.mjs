@@ -5699,10 +5699,15 @@ ${
 
     // Respect the autohide preference for easier inspecting/debugging via
     // the browser toolbox. Keep the view open when focus moves to any
-    // action button so the user can Tab back to the result list.
+    // action button so the user can Tab back to the result list. The
+    // ancestor walk crosses shadow roots because the action buttons are
+    // custom elements with their own shadow trees.
     if (
       !lazy.UrlbarPrefs.get("ui.popup.disable_autohide") &&
-      !this.smartbarButtonContainer?.contains(event.relatedTarget)
+      !this.#isInsideContainer(
+        event.relatedTarget,
+        this.smartbarButtonContainer
+      )
     ) {
       this.view.close();
     }
@@ -5854,7 +5859,12 @@ ${
           event.composedTarget != this.inputField &&
           event.composedTarget != this._inputContainer
         ) {
-          if (this.smartbarButtonContainer?.contains(event.composedTarget)) {
+          if (
+            this.#isInsideContainer(
+              event.composedTarget,
+              this.smartbarButtonContainer
+            )
+          ) {
             event.preventDefault();
           }
           break;
