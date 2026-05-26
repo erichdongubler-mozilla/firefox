@@ -6,12 +6,17 @@ package org.mozilla.fenix.ui.efficiency.tests
 
 import android.Manifest
 import androidx.test.rule.GrantPermissionRule
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Until
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
+import org.mozilla.fenix.helpers.TestAssetHelper
 import org.mozilla.fenix.helpers.TestHelper.mDevice
+import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.TestHelper.restartApp
+import org.mozilla.fenix.helpers.ext.waitNotNull
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 import org.mozilla.fenix.ui.efficiency.selectors.DownloadsSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
@@ -40,11 +45,11 @@ class SettingsDeleteBrowsingDataOnQuitTest : BaseTest() {
         on.browserPage.navigateToPage(downloadTestPage)
             .clickPageContent("smallZip.zip")
             .mozClick(DownloadsSelectors.DOWNLOAD_DIALOG_CONFIRM_BUTTON)
-            .mozVerify(DownloadsSelectors.DOWNLOAD_COMPLETE_SNACKBAR)
+            .mozVerify(DownloadsSelectors.DOWNLOAD_COMPLETE_SNACKBAR, timeout = 15_000)
         on.home.navigateToPage()
         on.mainMenu.navigateToPage()
             .mozClick(MainMenuSelectors.QUIT_FIREFOX_BUTTON)
-        mDevice.waitForIdle()
+        mDevice.waitNotNull(Until.gone(By.pkg(packageName)), TestAssetHelper.waitingTime)
         restartApp(composeRule.activityRule)
         on.home.navigateToPage()
         on.downloads.navigateToPage()
@@ -70,7 +75,7 @@ class SettingsDeleteBrowsingDataOnQuitTest : BaseTest() {
         on.home.navigateToPage()
         on.mainMenu.navigateToPage()
             .mozClick(MainMenuSelectors.QUIT_FIREFOX_BUTTON)
-        mDevice.waitForIdle()
+        mDevice.waitNotNull(Until.gone(By.pkg(packageName)), TestAssetHelper.waitingTime)
         restartApp(composeRule.activityRule)
         on.home.navigateToPage()
         on.browserPage.navigateToPage(testPage)
