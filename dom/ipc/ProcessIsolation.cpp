@@ -1046,22 +1046,16 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
   } else if (resultOrPrecursor->IsSystemPrincipal()) {
     MOZ_ASSERT(aWorkerKind == WorkerKindShared);
 
-    // Allow system principal shared workers to load within either the
-    // parent process or privilegedabout process, depending on the
-    // responsible process.
+    // Only allow system principal shared workers to load within the parent
+    // process, and only if that process is responsible for the load.
     if (preferredRemoteType == NOT_REMOTE_TYPE) {
       MOZ_LOG(gProcessIsolationLog, LogLevel::Debug,
               ("Loading system principal shared worker in parent process"));
       behavior = IsolationBehavior::Parent;
-    } else if (preferredRemoteType == PRIVILEGEDABOUT_REMOTE_TYPE) {
-      MOZ_LOG(gProcessIsolationLog, LogLevel::Debug,
-              ("Loading system principal shared worker in privilegedabout "
-               "process"));
-      behavior = IsolationBehavior::PrivilegedAbout;
     } else {
-      MOZ_LOG(gProcessIsolationLog, LogLevel::Warning,
-              ("Cannot load system-principal shared worker in "
-               "non-privilegedabout content process"));
+      MOZ_LOG(
+          gProcessIsolationLog, LogLevel::Warning,
+          ("Cannot load system-principal shared worker in content process"));
       return Err(NS_ERROR_UNEXPECTED);
     }
   } else {
