@@ -74,7 +74,6 @@
   --menuitem-margin: var(--panel-menuitem-margin);
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("widget.macos.native-popovers") and (-moz-platform: macos) {
   panel:not([nonnative]) {
     background-color: transparent;

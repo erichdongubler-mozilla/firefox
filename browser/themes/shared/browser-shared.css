@@ -80,7 +80,6 @@ body {
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     min-height: 120px;
 
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media -moz-pref("sidebar.verticalTabs") {
       /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       min-width: calc(var(--window-min-width) + var(--window-min-width-increase-for-vertical-tabs));
@@ -158,7 +157,6 @@ body {
     color: var(--lwt-text-color);
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.nova.enabled") {
     background-color: var(--background-color-canvas);
 
@@ -229,7 +227,6 @@ body {
   contain: paint;
   position: relative;
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.nova.enabled") {
     background-color: var(--toolbox-background-color);
     color: var(--toolbox-text-color);
@@ -275,7 +272,6 @@ body {
   }
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.nova.enabled") {
   .chrome-block {
     background-color: var(--toolbox-background-color);
@@ -316,7 +312,6 @@ body {
   background-color: transparent;
   color: inherit;
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("sidebar.verticalTabs") {
     &:not(.browser-titlebar) {
       background-color: var(--toolbar-background-color);
@@ -402,7 +397,6 @@ body {
     }
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("sidebar.verticalTabs") {
     :root:not([taskbartab]) &:is([type="pre-tabs"], [type="post-tabs"]) {
       display: none;
@@ -528,7 +522,6 @@ body {
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   min-width: 20px;
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("sidebar.verticalTabs") {
     display: none;
   }
@@ -1520,14 +1513,12 @@ popupnotificationcontent {
   > .toolbarbutton-icon {
     padding: var(--space-small);
 
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media not -moz-pref("browser.nova.enabled") {
       /* The design system does not have any inset box-shadow tokens. */
       /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       box-shadow: 0 0 16px 4px var(--box-shadow-color-darker-layer-1) inset;
     }
 
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media -moz-pref("browser.nova.enabled") {
       --smart-window-toolbarbutton-color: color-mix(in srgb, var(--color-violet-desaturated-50) 15%, transparent);
       /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
@@ -1542,13 +1533,11 @@ popupnotificationcontent {
   :root[ai-window] & {
     list-style-image: url("chrome://browser/skin/smart-window-simplified.svg");
 
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media -moz-pref("browser.nova.enabled") {
       list-style-image: url("chrome://browser/skin/smart-window-nova.svg");
     }
 
     > .toolbarbutton-icon {
-      /* stylelint-disable-next-line media-query-no-invalid */
       @media not -moz-pref("browser.nova.enabled") {
         /* Smart Window icon has additional 2px padding per side, to be slightly smaller than Classic Window icon when used in Switcher */
         padding: var(--toolbarbutton-padding-inner);
@@ -1557,7 +1546,6 @@ popupnotificationcontent {
         box-shadow: 0 0 16px 4px var(--smartwindow-toggle-shadow-color) inset;
       }
 
-      /* stylelint-disable-next-line media-query-no-invalid */
       @media -moz-pref("browser.nova.enabled") {
         /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
         box-shadow: 0 0 16px 4px var(--background-color-box) inset;
@@ -1599,14 +1587,12 @@ popupnotificationcontent {
     margin-inline-start: auto;
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.nova.enabled") {
     .ai-window-switch-description {
       display: none;
     }
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.nova.enabled") {
     /* TODO: replace with token when available - Bug 2033070 */
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
@@ -1652,7 +1638,6 @@ popupnotificationcontent {
     display: none;
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.nova.enabled") {
     & > .toolbarbutton-icon {
       /* Smart Window icon has additional 0.125rem padding per side, to be slightly smaller than Classic Window icon when used in Switcher */
@@ -1715,7 +1700,6 @@ popupnotificationcontent {
       pointer-events: none;
     }
 
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media -moz-pref("sidebar.verticalTabs") {
       #sidebar-main {
         /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- to be addressed in 2033919 */
