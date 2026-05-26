@@ -200,14 +200,14 @@ export class FormAutofillPreferences {
           .filter(Boolean)
           .join(", ");
 
+        const label = record.name || record.organization || record.email;
         const config = {
           id: "address-item",
           control: "moz-box-item",
-          l10nId: "address-moz-box-item",
           iconSrc: "chrome://browser/skin/notification-icons/geo.svg",
-          l10nArgs: {
-            name: record.name || addressFormatted,
-            address: record.name ? addressFormatted : "",
+          controlAttrs: {
+            label: label || addressFormatted,
+            description: label ? addressFormatted : "",
           },
           options: [
             {
