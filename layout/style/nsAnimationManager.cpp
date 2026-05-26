@@ -229,7 +229,8 @@ static void UpdateOldAnimationPropertiesWithNew(
   // Checking pointers should be enough. If both are scroll-timeline, we reuse
   // the scroll-timeline object if their scrollers and axes are the same.
   if (aOld.GetTimeline() != aTimeline) {
-    aOld.SetTimeline(aTimeline, aTimelineName);
+    // See `UpdateNamedTimelineAnimation` as to why `SetTimeline` isn't used.
+    aOld.SetTimelineNoUpdate(aTimeline, aTimelineName);
     animationChanged = true;
   }
 
@@ -536,7 +537,10 @@ static void UpdateNamedTimelineAnimation(dom::Document* aDocument,
   if (oldTimeline == newTimeline) {
     return;
   }
-  aAnimation->SetTimeline(newTimeline, aTimelineName);
+  // No need to call `SetTimeline` and force compositor animation update -
+  // timeline changing shouldn't cause change in animation state or playback
+  // rate.
+  aAnimation->SetTimelineNoUpdate(newTimeline, aTimelineName);
 }
 
 #ifdef DEBUG
