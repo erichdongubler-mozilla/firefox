@@ -126,7 +126,7 @@ impl CrashGenerator {
 
         let path = minidump_path.as_os_str();
         let error = if !extra_file_written {
-            Some(CString::new("MissingAnnotations").unwrap())
+            Some(c"MissingAnnotations".to_owned())
         } else {
             error
         };
