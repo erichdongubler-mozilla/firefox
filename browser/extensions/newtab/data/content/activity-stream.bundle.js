@@ -20739,7 +20739,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
           const hex = activeWallpaper.split("solid-color-picker-")[1] || "";
           style.backgroundColor = hex;
         }
-        const isCategorySelected = activeWallpaperObj || isCustomSolidColor;
+        const isCategorySelected = wallpapersUserEnabled && (activeWallpaperObj || isCustomSolidColor);
         return /*#__PURE__*/external_React_default().createElement("div", {
           key: category
         }, /*#__PURE__*/external_React_default().createElement("button", WallpaperCategories_extends({

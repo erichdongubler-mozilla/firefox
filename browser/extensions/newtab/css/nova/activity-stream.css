@@ -2711,7 +2711,7 @@ main.newtab-main section {
   padding-inline: 0;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow-y: clip;
   overflow-x: hidden;
   min-height: calc(100% - var(--space-xsmall));
   inset-block: var(--space-xxsmall);
@@ -2774,22 +2774,29 @@ main.newtab-main section {
   outline: var(--focus-outline);
 }
 .customize-menu-content .manage-settings-footer {
-  padding: var(--space-xxlarge);
+  padding: var(--space-xlarge);
   display: flex;
   position: absolute;
   inset-block-end: 0;
-  background: var(--customize-menu-bg);
   inset-inline-start: 0;
   width: 100%;
+  background: linear-gradient(to right, var(--customize-menu-bg) calc(100% - var(--space-xxlarge)), transparent);
+}
+.customize-menu-content .manage-settings-footer:dir(rtl) {
+  background: linear-gradient(to left, var(--customize-menu-bg) calc(100% - var(--space-xxlarge)), transparent);
 }
 .customize-menu-content .manage-settings-footer::before {
   content: "";
+  pointer-events: none;
   position: absolute;
   inset-block-start: calc((var(--space-xlarge) + var(--space-large)) * -1);
-  inset-inline-start: 0;
-  width: 100%;
+  inset-inline: 0;
   height: calc(var(--space-xlarge) + var(--space-large));
   background: linear-gradient(to bottom, transparent, var(--customize-menu-bg));
+  mask-image: linear-gradient(to right, black calc(100% - var(--space-xxlarge)), transparent);
+}
+.customize-menu-content .manage-settings-footer:dir(rtl)::before {
+  mask-image: linear-gradient(to left, black calc(100% - var(--space-xxlarge)), transparent);
 }
 
 .grid-skip {
