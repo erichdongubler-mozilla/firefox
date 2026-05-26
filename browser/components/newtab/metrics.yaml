@@ -1303,7 +1303,8 @@ newtab:
       widget_size: *widget_size
       action_type:
         description: >
-          Type of container action. (hide_all, change_size_all, feedback)
+          Type of container action. (hide_all, change_size_all,
+          change_row_visibility, feedback)
         type: string
       action_value:
         description: >
