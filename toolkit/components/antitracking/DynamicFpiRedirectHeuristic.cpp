@@ -236,8 +236,7 @@ void DynamicFpiRedirectHeuristic(nsIChannel* aOldChannel, nsIURI* aOldURI,
   }
 
   int32_t behavior = cookieJarSettings->GetCookieBehavior();
-  if (behavior !=
-      nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN) {
+  if (behavior != nsICookieService::BEHAVIOR_PARTITION_FOREIGN) {
     LOG(
         ("Disabled by network.cookie.cookieBehavior pref (%d), bailing out "
          "early",

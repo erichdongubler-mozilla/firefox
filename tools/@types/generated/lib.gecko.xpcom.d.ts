@@ -7962,7 +7962,7 @@ interface nsICookieService extends nsISupports {
   readonly BEHAVIOR_REJECT?: 2;
   readonly BEHAVIOR_LIMIT_FOREIGN?: 3;
   readonly BEHAVIOR_REJECT_TRACKER?: 4;
-  readonly BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN?: 5;
+  readonly BEHAVIOR_PARTITION_FOREIGN?: 5;
   readonly BEHAVIOR_LAST?: 5;
 
   getCookieStringFromHttp(aURI: nsIURI, aChannel: nsIChannel): string;

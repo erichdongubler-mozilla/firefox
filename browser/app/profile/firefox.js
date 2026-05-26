@@ -2427,10 +2427,10 @@ pref("toolkit.telemetry.bhrPing.enabled", true);
 // Enable GMP support in the addon manager.
 pref("media.gmp-provider.enabled", true);
 
-// Enable Dynamic First-Party Isolation by default (BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN).
+// Enable Dynamic First-Party Isolation by default (BEHAVIOR_PARTITION_FOREIGN).
 pref("network.cookie.cookieBehavior", 5);
 
-// Enable Dynamic First-Party Isolation in the private browsing mode (BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN).
+// Enable Dynamic First-Party Isolation in the private browsing mode (BEHAVIOR_PARTITION_FOREIGN).
 pref("network.cookie.cookieBehavior.pbmode", 5);
 
 // Enable harmful addon URL blocking by default for all channels, only on desktop.
@@ -2452,7 +2452,7 @@ pref("privacy.query_stripping.strip_on_share.enabled", true);
 
 pref("browser.contentblocking.cryptomining.preferences.ui.enabled", true);
 pref("browser.contentblocking.fingerprinting.preferences.ui.enabled", true);
-// Enable cookieBehavior = BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN as an option in the custom category ui
+// Enable cookieBehavior = BEHAVIOR_PARTITION_FOREIGN as an option in the custom category ui
 pref("browser.contentblocking.reject-and-isolate-cookies.preferences.ui.enabled", true);
 
 // Possible values for browser.contentblocking.features.strict pref:
@@ -2510,14 +2510,14 @@ pref("browser.contentblocking.reject-and-isolate-cookies.preferences.ui.enabled"
 //     "cookieBehavior2": cookie behaviour BEHAVIOR_REJECT
 //     "cookieBehavior3": cookie behaviour BEHAVIOR_LIMIT_FOREIGN
 //     "cookieBehavior4": cookie behaviour BEHAVIOR_REJECT_TRACKER
-//     "cookieBehavior5": cookie behaviour BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN
+//     "cookieBehavior5": cookie behaviour BEHAVIOR_PARTITION_FOREIGN
 //   Cookie behavior for private windows:
 //     "cookieBehaviorPBM0": cookie behaviour BEHAVIOR_ACCEPT
 //     "cookieBehaviorPBM1": cookie behaviour BEHAVIOR_REJECT_FOREIGN
 //     "cookieBehaviorPBM2": cookie behaviour BEHAVIOR_REJECT
 //     "cookieBehaviorPBM3": cookie behaviour BEHAVIOR_LIMIT_FOREIGN
 //     "cookieBehaviorPBM4": cookie behaviour BEHAVIOR_REJECT_TRACKER
-//     "cookieBehaviorPBM5": cookie behaviour BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN
+//     "cookieBehaviorPBM5": cookie behaviour BEHAVIOR_PARTITION_FOREIGN
 //   Third-party cookie deprecation behavior:
 //     "3pcd": Third-party cookie deprecation enabled
 //     "-3pcd": Third-party cookie deprecation disabled

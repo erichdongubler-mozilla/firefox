@@ -1058,6 +1058,33 @@ const POLICIES_TESTS = [
 
   {
     policies: {
+      Cookies: {
+        Behavior: "reject-tracker",
+        BehaviorPrivateBrowsing: "partition-foreign",
+        Locked: true,
+      },
+    },
+    lockedPrefs: {
+      "network.cookie.cookieBehavior": 4,
+      "network.cookie.cookieBehavior.pbmode": 5,
+    },
+  },
+  {
+    policies: {
+      Cookies: {
+        Behavior: "partition-foreign",
+        BehaviorPrivateBrowsing: "accept",
+        Locked: true,
+      },
+    },
+    lockedPrefs: {
+      "network.cookie.cookieBehavior": 5,
+      "network.cookie.cookieBehavior.pbmode": 0,
+    },
+  },
+
+  {
+    policies: {
       UseSystemPrintDialog: true,
     },
     lockedPrefs: {

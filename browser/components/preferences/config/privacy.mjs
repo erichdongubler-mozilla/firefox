@@ -1300,7 +1300,7 @@ SettingGroupManager.registerGroups({
               },
               {
                 value:
-                  Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN.toString(),
+                  Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN.toString(),
                 l10nId:
                   "preferences-etp-custom-cookie-behavior-isolate-cross-site-cookies",
               },

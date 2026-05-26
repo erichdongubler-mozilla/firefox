@@ -47,8 +47,7 @@ uint32_t MakeCookieBehavior(uint32_t aCookieBehavior) {
   bool isFirstPartyIsolated = OriginAttributes::IsFirstPartyEnabled();
 
   if (isFirstPartyIsolated &&
-      aCookieBehavior ==
-          nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN) {
+      aCookieBehavior == nsICookieService::BEHAVIOR_PARTITION_FOREIGN) {
     return nsICookieService::BEHAVIOR_REJECT_TRACKER;
   }
   return aCookieBehavior;
@@ -570,7 +569,7 @@ CookieService::SetCookieStringFromHttp(nsIURI* aHostURI,
   bool mustBePartitioned =
       isForeignAndNotAddon &&
       cookieJarSettings->GetCookieBehavior() ==
-          nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN &&
+          nsICookieService::BEHAVIOR_PARTITION_FOREIGN &&
       !result.contains(ThirdPartyAnalysis::IsStorageAccessPermissionGranted);
 
   nsCString cookieHeader(aCookieHeader);

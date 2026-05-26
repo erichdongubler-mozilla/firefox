@@ -157,7 +157,7 @@ var testCases = [
     ],
   },
   {
-    behavior: BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN, // 5
+    behavior: BEHAVIOR_PARTITION_FOREIGN, // 5
     cases: [
       [true] /* same-origin non-tracker */,
       [false] /* 3rd-party non-tracker */,
@@ -187,7 +187,7 @@ var testCases = [
     );
 
     if (!isTrackerCookieBlocked) {
-      // Override for BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN.
+      // Override for BEHAVIOR_PARTITION_FOREIGN.
       testCases[5].cases[3] = [false]; /* 3rd-party tracker */
       testCases[5].cases[4] = [false]; /* 3rd-party tracker with permission */
       testCases[5].cases[7] = [false]; /* insecure tracker */

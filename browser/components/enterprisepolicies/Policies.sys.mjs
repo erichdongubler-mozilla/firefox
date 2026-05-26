@@ -841,7 +841,8 @@ export var Policies = {
           "limit-foreign": Ci.nsICookieService.BEHAVIOR_LIMIT_FOREIGN,
           "reject-tracker": Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
           "reject-tracker-and-partition-foreign":
-            Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+            Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
+          "partition-foreign": Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
         };
         if ("Behavior" in param) {
           newCookieBehavior = behaviors[param.Behavior];
