@@ -18,10 +18,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/0300b32b7de70fb89
  5 files changed, 10 insertions(+), 3 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index b54982018c..cd95602ee7 100644
+index 46eba90afb..f254e01ebb 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -243,6 +243,9 @@ config("common_inherited_config") {
+@@ -244,6 +244,9 @@ config("common_inherited_config") {
    if (is_linux || is_chromeos) {
      defines += [ "WEBRTC_LINUX" ]
    }

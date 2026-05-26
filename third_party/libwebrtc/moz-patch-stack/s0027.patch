@@ -116,7 +116,7 @@ index 4706638e3e..675807743a 100644
    # TODO(https://bugs.webrtc.org/14437):  Remove this section if general
    # Chromium fix resolves the problem.
 diff --git a/BUILD.gn b/BUILD.gn
-index 8b34ec3ed6..2b01e132a7 100644
+index 8325c4dff5..dd812886da 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -33,7 +33,7 @@ if (is_android) {
@@ -128,7 +128,7 @@ index 8b34ec3ed6..2b01e132a7 100644
    # This target should (transitively) cause everything to be built; if you run
    # 'ninja default' and then 'ninja all', the second build should do no work.
    group("default") {
-@@ -174,6 +174,10 @@ config("common_inherited_config") {
+@@ -175,6 +175,10 @@ config("common_inherited_config") {
      defines += [ "WEBRTC_ENABLE_OBJC_SYMBOL_EXPORT" ]
    }
  
@@ -139,7 +139,7 @@ index 8b34ec3ed6..2b01e132a7 100644
    if (!rtc_builtin_ssl_root_certificates) {
      defines += [ "WEBRTC_EXCLUDE_BUILT_IN_SSL_ROOT_CERTS" ]
    }
-@@ -489,9 +493,11 @@ config("common_config") {
+@@ -490,9 +494,11 @@ config("common_config") {
    }
  }
  
@@ -151,7 +151,7 @@ index 8b34ec3ed6..2b01e132a7 100644
  
  if (!rtc_build_ssl) {
    config("external_ssl_library") {
-@@ -553,6 +559,32 @@ if (!build_with_chromium) {
+@@ -554,6 +560,32 @@ if (!build_with_chromium) {
        "pc:rtc_pc",
        "video",
      ]
@@ -184,7 +184,7 @@ index 8b34ec3ed6..2b01e132a7 100644
  
      if (rtc_include_builtin_audio_codecs) {
        deps += [
-@@ -563,8 +595,22 @@ if (!build_with_chromium) {
+@@ -564,8 +596,22 @@ if (!build_with_chromium) {
  
      if (build_with_mozilla) {
        deps += [
@@ -1205,7 +1205,7 @@ index f74e951102..e15fa92c00 100644
      deps += [
        "..:logging",
 diff --git a/test/BUILD.gn b/test/BUILD.gn
-index 7869bb3fa2..a85b7a6c1a 100644
+index 7dd7f23c94..86f9cee6c0 100644
 --- a/test/BUILD.gn
 +++ b/test/BUILD.gn
 @@ -278,6 +278,7 @@ rtc_library("audio_test_common") {
@@ -1247,7 +1247,7 @@ index 7869bb3fa2..a85b7a6c1a 100644
      sources += [ "testsupport/jpeg_frame_writer.cc" ]
    } else {
      sources += [ "testsupport/jpeg_frame_writer_ios.cc" ]
-@@ -1391,6 +1399,7 @@ if (!build_with_chromium) {
+@@ -1625,6 +1633,7 @@ if (!build_with_chromium) {
    }
  }
  
@@ -1255,7 +1255,7 @@ index 7869bb3fa2..a85b7a6c1a 100644
  if (!build_with_chromium && is_android) {
    rtc_android_library("native_test_java") {
      testonly = true
-@@ -1433,6 +1442,7 @@ if (!build_with_chromium && is_android) {
+@@ -1667,6 +1676,7 @@ if (!build_with_chromium && is_android) {
      sources = [ "android/org/webrtc/native_test/NativeTestWebrtc.java" ]
    }
  }
