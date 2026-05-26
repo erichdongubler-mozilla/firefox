@@ -2272,7 +2272,7 @@ var gSync = {
   _appendSendTabVerify(fragment, createDeviceNodeFn) {
     const [notVerified, verifyAccount] = this.fluentStrings.formatValuesSync([
       "account-send-tab-to-device-verify-status",
-      "account-send-tab-to-device-verify",
+      "account-send-tab-to-device-verify2",
     ]);
     const actions = [
       { label: verifyAccount, command: () => this.openPrefs("sendtab") },
