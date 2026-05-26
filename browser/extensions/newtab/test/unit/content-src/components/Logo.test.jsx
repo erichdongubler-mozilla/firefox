@@ -13,6 +13,7 @@ import {
   PREF_LOGO_VARIATION,
   pickVariant,
 } from "content-src/components/Logo/Logo";
+import { LogoSpinSmooth } from "content-src/components/Logo/variants/LogoSpinSmooth";
 import { SpinBallSmall } from "content-src/components/Logo/variants/SpinBallSmall";
 
 function buildState(prefOverrides = {}) {
@@ -107,6 +108,18 @@ describe("<Logo>", () => {
         </WrapWithProvider>
       );
       assert.ok(wrapper.find(SpinBallSmall).exists());
+      assert.isFalse(wrapper.find("div.logo").exists());
+    });
+
+    it("renders LogoSpinSmooth when PREF_LOGO_VARIATION is 'logo-spin-smooth'", () => {
+      const wrapper = mount(
+        <WrapWithProvider
+          prefOverrides={{ [PREF_LOGO_VARIATION]: "logo-spin-smooth" }}
+        >
+          <Logo />
+        </WrapWithProvider>
+      );
+      assert.ok(wrapper.find(LogoSpinSmooth).exists());
       assert.isFalse(wrapper.find("div.logo").exists());
     });
 
@@ -353,5 +366,82 @@ describe("<SpinBallSmall>", () => {
 
     assert.doesNotThrow(() => wrapper.find("svg").simulate("click"));
     assert.notCalled(anim.play);
+  });
+});
+
+// @backward-compat { version 153 }
+// Can be removed after Firefox 153 hits Release.
+describe("<LogoSpinSmooth>", () => {
+  let originalMatchMedia;
+
+  beforeEach(() => {
+    originalMatchMedia = window.matchMedia;
+    window.matchMedia = makeMatchMediaMock();
+  });
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia;
+  });
+
+  it("renders an aria-hidden SVG with the shared and variant classes", () => {
+    const wrapper = mount(<LogoSpinSmooth />);
+    const svg = wrapper.find("svg");
+    assert.ok(svg.exists());
+    assert.equal(svg.prop("aria-hidden"), "true");
+    assert.include(svg.prop("className"), "logo-variation-small");
+    assert.include(svg.prop("className"), "logo-spin-smooth");
+  });
+
+  it("renders an <animateTransform> with begin=indefinite (manual trigger)", () => {
+    const wrapper = mount(<LogoSpinSmooth />);
+    const anim = wrapper.find("animateTransform");
+    assert.ok(anim.exists());
+    assert.equal(anim.prop("begin"), "indefinite");
+    assert.equal(anim.prop("dur"), "6.67s");
+    assert.equal(anim.prop("calcMode"), "discrete");
+  });
+
+  it("calls beginElement() on the animation on click", () => {
+    const wrapper = mount(<LogoSpinSmooth />);
+    const animNode = wrapper.find("animateTransform").getDOMNode();
+    animNode.beginElement = sinon.spy();
+
+    wrapper.find("svg").simulate("click");
+
+    assert.calledOnce(animNode.beginElement);
+  });
+
+  it("ignores clicks while the animation is running", () => {
+    const wrapper = mount(<LogoSpinSmooth />);
+    const animNode = wrapper.find("animateTransform").getDOMNode();
+    animNode.beginElement = sinon.spy();
+
+    // Simulate the SMIL beginEvent firing (the animation is now "running")
+    animNode.dispatchEvent(new Event("beginEvent"));
+    wrapper.find("svg").simulate("click");
+
+    assert.notCalled(animNode.beginElement);
+  });
+
+  it("allows replay after the animation finishes", () => {
+    const wrapper = mount(<LogoSpinSmooth />);
+    const animNode = wrapper.find("animateTransform").getDOMNode();
+    animNode.beginElement = sinon.spy();
+
+    animNode.dispatchEvent(new Event("beginEvent"));
+    animNode.dispatchEvent(new Event("endEvent"));
+    wrapper.find("svg").simulate("click");
+
+    assert.calledOnce(animNode.beginElement);
+  });
+
+  it("does not begin the animation when prefers-reduced-motion is set, but stays clickable", () => {
+    window.matchMedia = makeMatchMediaMock({ reduceMotion: true });
+    const wrapper = mount(<LogoSpinSmooth />);
+    const animNode = wrapper.find("animateTransform").getDOMNode();
+    animNode.beginElement = sinon.spy();
+
+    assert.doesNotThrow(() => wrapper.find("svg").simulate("click"));
+    assert.notCalled(animNode.beginElement);
   });
 });
