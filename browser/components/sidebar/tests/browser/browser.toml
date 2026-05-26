@@ -56,8 +56,6 @@ tags = "vertical-tabs"
 ["browser_launcher_splitter_visibility.js"]
 tags = "vertical-tabs"
 
-["browser_opentabs_sidebar.js"]
-
 ["browser_resize_sidebar.js"]
 skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1946263

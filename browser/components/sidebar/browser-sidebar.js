@@ -18,7 +18,6 @@ const toolsNameMap = {
   viewTabsSidebar: "syncedtabs",
   viewHistorySidebar: "history",
   viewBookmarksSidebar: "bookmarks",
-  viewOpenTabsSidebar: "opentabs",
   viewCPMSidebar: "passwords",
 };
 const EXPAND_ON_HOVER_DEBOUNCE_TIMEOUT_MS = 1000;
@@ -233,18 +232,6 @@ var SidebarController = {
         gleanEvent: Glean.contextualManager.sidebarToggle,
         gleanClickEvent: Glean.sidebar.passwordsIconClick,
         recordSidebarVersion: true,
-      }
-    );
-
-    this.registerPrefSidebar(
-      "sidebar.openTabsPanel.enabled",
-      "viewOpenTabsSidebar",
-      {
-        name: "opentabs",
-        elementId: "sidebar-switcher-opentabs",
-        url: "chrome://browser/content/sidebar/sidebar-opentabs.html",
-        revampL10nId: "sidebar-menu-open-tabs-label",
-        iconUrl: "chrome://browser/content/firefoxview/view-opentabs.svg",
       }
     );
 

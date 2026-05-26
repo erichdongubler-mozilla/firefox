@@ -2204,7 +2204,6 @@ pref("sidebar.old-sidebar.has-used", false);
 pref("sidebar.new-sidebar.has-used", false);
 pref("sidebar.history.sortOption", "date");
 pref("sidebar.updatedBookmarks.enabled", false);
-pref("sidebar.openTabsPanel.enabled", false);
 
 pref("sidebar.notification.badge.aichat", false);
 
