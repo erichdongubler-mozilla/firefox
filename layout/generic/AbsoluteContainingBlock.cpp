@@ -661,7 +661,6 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
     mCumulativeContainingBlockBSize = 0;
   }
 
-  nsReflowStatus reflowStatus;
   // Assume all the kids may need a reflow when they are in a fragmented
   // context. We'll perform more targeted check below. For example, skip reflow
   // them when they are positioned in a later fragment.
@@ -788,7 +787,7 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
           // continuations in order, append it to mPushedAbsoluteFrames.
           mPushedAbsoluteFrames.AppendFrame(aDelegatingFrame, nextFrame);
         }
-        reflowStatus.MergeCompletionStatusFrom(kidStatus);
+        aReflowStatus.MergeCompletionStatusFrom(kidStatus);
       } else if (nextFrame) {
         // kidFrame is fully-complete. Delete all its next-in-flows.
         FrameDestroyContext context(aPresContext->PresShell());
@@ -834,12 +833,10 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
 
   // Abspos frames can't cause their parent to be incomplete,
   // only overflow incomplete.
-  if (reflowStatus.IsIncomplete() || mPushedAbsoluteFrames.NotEmpty()) {
-    reflowStatus.SetOverflowIncomplete();
-    reflowStatus.SetNextInFlowNeedsReflow();
+  if (aReflowStatus.IsIncomplete() || mPushedAbsoluteFrames.NotEmpty()) {
+    aReflowStatus.SetOverflowIncomplete();
+    aReflowStatus.SetNextInFlowNeedsReflow();
   }
-
-  aReflowStatus.MergeCompletionStatusFrom(reflowStatus);
 }
 
 static inline bool IsFixedPaddingSize(const LengthPercentage& aCoord) {
