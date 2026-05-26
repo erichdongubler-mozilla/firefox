@@ -614,6 +614,9 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
                                      const nsRect& aContainingBlock,
                                      AbsPosReflowFlags aFlags,
                                      OverflowAreas* aOverflowAreas) {
+  MOZ_ASSERT(aReflowStatus.IsEmpty(),
+             "Caller should pass a fresh reflow status!");
+
   const auto scrollableContainingBlock = ComputeScrollableContainingBlock(
       aDelegatingFrame, aContainingBlock, aOverflowAreas);
   const ContainingBlockRects passedContainingBlock{aContainingBlock,

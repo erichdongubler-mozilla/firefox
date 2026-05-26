@@ -9364,8 +9364,11 @@ void nsGridContainerFrame::ReflowAbsoluteChildren(
   AbsPosReflowFlags flags{
       AbsPosReflowFlag::AllowFragmentation, AbsPosReflowFlag::CBWidthChanged,
       AbsPosReflowFlag::CBHeightChanged, AbsPosReflowFlag::IsGridContainerCB};
-  absoluteContainer->Reflow(this, PresContext(), *aGridRI.mReflowInput, aStatus,
-                            paddingRect, flags, &aDesiredSize.mOverflowAreas);
+  nsReflowStatus absposStatus;
+  absoluteContainer->Reflow(this, PresContext(), *aGridRI.mReflowInput,
+                            absposStatus, paddingRect, flags,
+                            &aDesiredSize.mOverflowAreas);
+  aStatus.MergeCompletionStatusFrom(absposStatus);
 }
 
 nscoord nsGridContainerFrame::ComputeBSizeForResolvingRowSizes(

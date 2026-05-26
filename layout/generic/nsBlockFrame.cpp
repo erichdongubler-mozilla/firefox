@@ -1886,10 +1886,12 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
       LogicalRect cbRect(wm, LogicalPoint(wm), aMetrics.Size(wm));
       cbRect.Deflate(wm, aReflowInput.ComputedLogicalBorder(wm).ApplySkipSides(
                              PreReflowBlockLevelLogicalSkipSides()));
+      nsReflowStatus absposStatus;
       absoluteContainer->Reflow(
-          this, aPresContext, aReflowInput, reflowStatus,
+          this, aPresContext, aReflowInput, absposStatus,
           cbRect.GetPhysicalRect(wm, aMetrics.PhysicalSize()), flags,
           &aMetrics.mOverflowAreas);
+      reflowStatus.MergeCompletionStatusFrom(absposStatus);
     }
   }
 
