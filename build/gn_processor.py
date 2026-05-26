@@ -838,6 +838,11 @@ def main():
                     "target_cpu": target_cpu,
                     "target_os": target_os,
                 }
+
+                config_args = config.get("gn_args", {})
+                vars.update(config_args.get("*", {}))
+                vars.update(config_args.get(target_os, {}))
+
                 if target_os == "linux":
                     for enable_x11 in (True, False):
                         vars["ozone_platform_x11"] = enable_x11
