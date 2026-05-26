@@ -1859,9 +1859,9 @@ class OutputParser {
     //     property it is used in.
     // > When this happens, the property is treated as if it has value unset
 
-    // TODO: When we're in a @starting-style rule, we shouldn't use the computed value (see Bug 2016778)
-    const varComputedOrSubstitutedValue =
-      varComputedValue ?? varSubstitutedValue;
+    const varComputedOrSubstitutedValue = options.inStartingStyleRule
+      ? varSubstitutedValue
+      : (varComputedValue ?? varSubstitutedValue);
 
     // Put the substitutedText in the entry so it can then be consumed in onCloseParenthesis
     stackEntry.substitutedText = varComputedOrSubstitutedValue;
