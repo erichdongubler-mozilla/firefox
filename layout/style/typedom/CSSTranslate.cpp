@@ -6,6 +6,7 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSNumericValue.h"
 #include "mozilla/dom/CSSTranslateBinding.h"
@@ -24,6 +25,22 @@ CSSTranslate::CSSTranslate(nsCOMPtr<nsISupports> aParent, bool aIs2D,
       mX(std::move(aX)),
       mY(std::move(aY)),
       mZ(std::move(aZ)) {}
+
+// static
+RefPtr<CSSTranslate> CSSTranslate::Create(
+    nsCOMPtr<nsISupports> aParent,
+    const StyleTranslateComponent& aTranslateComponent) {
+  RefPtr<CSSNumericValue> x =
+      CSSNumericValue::Create(aParent, aTranslateComponent.x);
+  RefPtr<CSSNumericValue> y =
+      CSSNumericValue::Create(aParent, aTranslateComponent.y);
+  RefPtr<CSSNumericValue> z =
+      CSSNumericValue::Create(aParent, aTranslateComponent.z);
+
+  return MakeAndAddRef<CSSTranslate>(std::move(aParent),
+                                     aTranslateComponent.is_2d, std::move(x),
+                                     std::move(y), std::move(z));
+}
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSTranslate,
                                                CSSTransformComponent)

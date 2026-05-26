@@ -11,6 +11,7 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSTransformComponent.h"
 #include "mozilla/dom/CSSTransformValueBinding.h"
+#include "mozilla/dom/CSSTranslate.h"
 #include "nsString.h"
 
 namespace mozilla::dom {
@@ -31,8 +32,11 @@ RefPtr<CSSTransformValue> CSSTransformValue::Create(
     RefPtr<CSSTransformComponent> transformComponent;
 
     switch (transformValue.tag) {
-      case StyleTransformComponent::Tag::Placeholder: {
-        MOZ_CRASH("Not implemented because this should be unreachable.");
+      case StyleTransformComponent::Tag::Translate: {
+        const auto& translateComponent = transformValue.AsTranslate();
+
+        transformComponent = CSSTranslate::Create(aParent, translateComponent);
+        break;
       }
     }
 

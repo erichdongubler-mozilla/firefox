@@ -20,6 +20,7 @@ class nsISupports;
 namespace mozilla {
 
 class ErrorResult;
+struct StyleTranslateComponent;
 
 namespace dom {
 
@@ -34,6 +35,10 @@ class CSSTranslate final : public CSSTransformComponent {
   CSSTranslate(nsCOMPtr<nsISupports> aParent, bool aIs2D,
                RefPtr<CSSNumericValue> aX, RefPtr<CSSNumericValue> aY,
                RefPtr<CSSNumericValue> aZ);
+
+  static RefPtr<CSSTranslate> Create(
+      nsCOMPtr<nsISupports> aParent,
+      const StyleTranslateComponent& aTranslateComponent);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CSSTranslate, CSSTransformComponent)
