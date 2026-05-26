@@ -641,6 +641,12 @@ export var PictureInPicture = {
       return;
     }
 
+    // The browser may already be gone (e.g. tab closed) by the time the
+    // async message that triggered this call is processed.
+    if (!browser) {
+      return;
+    }
+
     let win = browser.documentGlobal;
     if (win.closed || win.gBrowser?.selectedBrowser !== browser) {
       return;
