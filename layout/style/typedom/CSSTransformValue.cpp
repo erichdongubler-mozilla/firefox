@@ -9,6 +9,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/CSSPerspective.h"
 #include "mozilla/dom/CSSRotate.h"
 #include "mozilla/dom/CSSScale.h"
 #include "mozilla/dom/CSSSkew.h"
@@ -76,6 +77,14 @@ RefPtr<CSSTransformValue> CSSTransformValue::Create(
         const auto& skewYComponent = transformValue.AsSkewY();
 
         transformComponent = CSSSkewY::Create(aParent, skewYComponent);
+        break;
+      }
+
+      case StyleTransformComponent::Tag::Perspective: {
+        const auto& perspectiveComponent = transformValue.AsPerspective();
+
+        transformComponent =
+            CSSPerspective::Create(aParent, perspectiveComponent);
         break;
       }
     }

@@ -8,6 +8,7 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSKeywordValue.h"
 #include "mozilla/dom/CSSKeywordValueBinding.h"
@@ -23,6 +24,26 @@ CSSPerspective::CSSPerspective(nsCOMPtr<nsISupports> aParent, bool aIs2D,
     : CSSTransformComponent(std::move(aParent), aIs2D,
                             TransformComponentType::Perspective),
       mLength(std::move(aLength)) {}
+
+// static
+RefPtr<CSSPerspective> CSSPerspective::Create(
+    nsCOMPtr<nsISupports> aParent,
+    const StylePerspectiveComponent& aPerspectiveComponent) {
+  const auto& styleLength = aPerspectiveComponent.length;
+
+  OwningCSSPerspectiveValue length;
+
+  if (styleLength.IsNumeric()) {
+    length.SetAsCSSNumericValue() =
+        CSSNumericValue::Create(aParent, styleLength.AsNumeric());
+  } else {
+    length.SetAsCSSKeywordValue() =
+        CSSKeywordValue::Create(aParent, styleLength.AsKeyword());
+  }
+
+  return MakeAndAddRef<CSSPerspective>(std::move(aParent), /* aIs2Da */ false,
+                                       std::move(length));
+}
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSPerspective,
                                                CSSTransformComponent)
@@ -81,7 +102,6 @@ void CSSPerspective::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
   if (mLength.IsCSSNumericValue()) {
     mLength.GetAsCSSNumericValue()->ToCssTextWithProperty(aPropertyId, aDest);
   } else {
-    MOZ_DIAGNOSTIC_ASSERT(mLength.IsCSSKeywordValue());
     mLength.GetAsCSSKeywordValue()->ToCssTextWithProperty(aPropertyId, aDest);
   }
 

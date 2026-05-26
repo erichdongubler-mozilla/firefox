@@ -20,6 +20,7 @@ class nsISupports;
 namespace mozilla {
 
 class ErrorResult;
+struct StylePerspectiveComponent;
 
 namespace dom {
 
@@ -29,6 +30,10 @@ class CSSPerspective final : public CSSTransformComponent {
  public:
   CSSPerspective(nsCOMPtr<nsISupports> aParent, bool aIs2D,
                  OwningCSSPerspectiveValue aLength);
+
+  static RefPtr<CSSPerspective> Create(
+      nsCOMPtr<nsISupports> aParent,
+      const StylePerspectiveComponent& aPerspectiveComponent);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CSSPerspective,
