@@ -46,6 +46,7 @@
   --day-period-spacing-width: 1rem;
   --date-picker-item-height: 2.4rem;
   --date-picker-item-width: 3.3rem;
+  --outline-width: 0.2rem;
 
   /* We need to hide the scroll bar but maintain its scrolling
      capability, so using |overflow: hidden| is not an option. */
@@ -116,14 +117,12 @@ button:where(:hover.active) {
 }
 
 button:focus-visible {
-  outline: 0.2rem solid SelectedItem;
-  outline-offset: 0.2rem;
+  outline: var(--outline-width) solid SelectedItem;
+  outline-offset: var(--outline-width);
 }
 
 #date-picker {
   flex-grow: 1;
-  /* Add some padding so outlines would not overflow our viewport. */
-  padding: 0.4rem;
 }
 
 .month-year-nav {
@@ -396,6 +395,8 @@ button.month-year.active {
   display: flex;
   gap: 1em;
   justify-content: center;
+  /* Add some padding so outlines would not overflow our viewport. */
+  padding: calc(var(--outline-width) * 2);
 }
 
 #date-picker,
