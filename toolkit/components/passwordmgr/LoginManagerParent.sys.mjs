@@ -279,13 +279,30 @@ export class LoginManagerParent extends JSWindowActorParent {
       "scheme",
       "timePasswordChanged",
     ];
-    return lazy.LoginHelper.dedupeLogins(
+    const deduped = lazy.LoginHelper.dedupeLogins(
       logins,
       ["username", "password"],
       resolveBy,
       formOrigin,
       formActionOrigin
     );
+
+    // Sort so logins whose origin scheme matches the form origin come first,
+    // regardless of the order returned by the storage backend.
+    if (formOrigin) {
+      try {
+        const formScheme = new URL(formOrigin).protocol;
+        deduped.sort(
+          (a, b) =>
+            (a.origin.startsWith(formScheme) ? 0 : 1) -
+            (b.origin.startsWith(formScheme) ? 0 : 1)
+        );
+      } catch {
+        // Ignore invalid formOrigin.
+      }
+    }
+
+    return deduped;
   }
 
   async receiveMessage(msg) {
