@@ -5252,6 +5252,7 @@ name = "mozwer_s"
 version = "0.1.0"
 dependencies = [
  "crash_helper_client",
+ "crash_helper_common",
  "libc",
  "mozilla-central-workspace-hack",
  "rust-ini",

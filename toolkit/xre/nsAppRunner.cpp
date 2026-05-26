@@ -4389,8 +4389,7 @@ int XREMain::XRE_mainInit(bool* aExitFlag,
     nsCOMPtr<nsIFile> userAppDataDir;
     if (NS_SUCCEEDED(mDirProvider.GetUserAppDataDirectory(
             getter_AddRefs(userAppDataDir)))) {
-      CrashReporter::SetupExtraData(userAppDataDir,
-                                    nsDependentCString(mAppData->buildID));
+      CrashReporter::SetupExtraData(userAppDataDir, mAppData->xreDirectory);
     }
   } else {
     // We might have registered a runtime exception module very early in process

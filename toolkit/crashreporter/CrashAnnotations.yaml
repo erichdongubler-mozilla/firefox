@@ -646,7 +646,7 @@ HasDeviceTouchScreen:
 InstallTime:
   description: >
     The time when Firefox was installed expressed as seconds since the Epoch
-  type: string # This should be u64 but we currently handle it as a string
+  type: u64
   scope: report
 
 ipc_channel_error:

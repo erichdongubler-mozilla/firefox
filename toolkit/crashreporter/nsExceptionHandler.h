@@ -166,7 +166,7 @@ void ClearInactiveStateStart();
 void SetInactiveStateStart();
 
 nsresult SetRestartArgs(int argc, char** argv);
-nsresult SetupExtraData(nsIFile* aAppDataDirectory, const nsACString& aBuildID);
+nsresult SetupExtraData(nsIFile* aAppDataDirectory, nsIFile* aXreDirectory);
 // Registers an additional memory region to be included in the minidump
 nsresult RegisterAppMemory(void* ptr, size_t length);
 nsresult UnregisterAppMemory(void* ptr);

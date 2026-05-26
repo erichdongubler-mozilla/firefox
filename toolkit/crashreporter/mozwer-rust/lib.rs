@@ -9,7 +9,7 @@ use serde::Serialize;
 use serde_json::ser::to_writer;
 use std::convert::TryInto;
 use std::ffi::{c_void, OsString};
-use std::fs::{read_to_string, DirBuilder, File, OpenOptions};
+use std::fs::{DirBuilder, File};
 use std::io::{BufRead, BufReader, Write};
 use std::mem::{size_of, zeroed};
 use std::os::windows::ffi::{OsStrExt, OsStringExt};
@@ -416,8 +416,6 @@ impl ApplicationData {
             .ok_or(())?
             .to_owned();
 
-        // InstallTime<build_id>
-
         Ok(ApplicationData {
             vendor,
             name,
@@ -457,7 +455,7 @@ impl Annotations {
     fn from_application_data(
         application_data: &ApplicationData,
         release_channel: String,
-        install_time: String,
+        install_time: u64,
         crash_time: u64,
         startup_time: u64,
         ui_hang: bool,
@@ -465,7 +463,7 @@ impl Annotations {
         Annotations {
             BuildID: application_data.build_id.clone(),
             CrashTime: crash_time.to_string(),
-            InstallTime: install_time,
+            InstallTime: install_time.to_string(),
             Hang: ui_hang.then(|| "ui".to_string()),
             ProductID: application_data.product_id.clone(),
             ProductName: application_data.name.clone(),
@@ -486,20 +484,18 @@ struct ApplicationInformation {
     application_data: ApplicationData,
     release_channel: String,
     crash_reports_dir: PathBuf,
-    install_time: String,
+    install_time: u64,
 }
 
 impl ApplicationInformation {
     fn from_process(process: BorrowedHandle) -> Result<ApplicationInformation> {
-        let mut install_path = ApplicationInformation::get_application_path(process)?;
-        install_path.pop();
+        let exe_path = ApplicationInformation::get_application_path(process)?;
+        let install_path = exe_path.parent().ok_or(())?.to_path_buf();
         let application_data = ApplicationData::load_from_disk(install_path.as_ref())?;
         let release_channel = ApplicationInformation::get_release_channel(install_path.as_ref())?;
         let crash_reports_dir = ApplicationInformation::get_crash_reports_dir(&application_data)?;
-        let install_time = ApplicationInformation::get_install_time(
-            &crash_reports_dir,
-            &application_data.build_id,
-        );
+        let install_time =
+            crash_helper_common::ApplicationInfo::get_install_time(Some(exe_path)).unwrap_or(0);
 
         Ok(ApplicationInformation {
             install_path,
@@ -572,31 +568,6 @@ impl ApplicationInformation {
             }
         }
     }
-
-    fn get_install_time(crash_reports_path: &Path, build_id: &str) -> String {
-        let file_name = "InstallTime".to_owned() + build_id;
-        let file_path = crash_reports_path.join(file_name);
-
-        // If the file isn't present we'll attempt to atomically create it and
-        // populate it. This code essentially matches the corresponding code in
-        // nsExceptionHandler.cpp SetupExtraData().
-        if let Ok(mut file) = OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .open(&file_path)
-        {
-            // SAFETY: No risks in calling `time()` with a null pointer.
-            let _ = write!(&mut file, "{}", unsafe { time(null_mut()) });
-        }
-
-        // As a last resort, if we can't read the file we fall back to the
-        // current time. This might cause us to overstate the number of users
-        // affected by a crash, but given it's very unlikely to hit this particular
-        // path it won't be a problem.
-        //
-        // SAFETY: No risks in calling `time()` with a null pointer.
-        read_to_string(&file_path).unwrap_or(unsafe { time(null_mut()) }.to_string())
-    }
 }
 
 struct CrashReport {
@@ -623,7 +594,7 @@ impl CrashReport {
         let annotations = Annotations::from_application_data(
             &application_information.application_data,
             application_information.release_channel.clone(),
-            application_information.install_time.clone(),
+            application_information.install_time,
             crash_time,
             startup_time,
             ui_hang,
