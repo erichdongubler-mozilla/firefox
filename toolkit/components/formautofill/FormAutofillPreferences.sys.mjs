@@ -130,7 +130,7 @@ export class FormAutofillPreferences {
             iconSrc: "chrome://browser/skin/payment-methods-16.svg",
             l10nArgs: {
               cardNumber: record["cc-number"].replace(/^(\*+)(\d+)$/, "$1 $2"),
-              expDate: record["cc-exp"].replace(/^(\d{4})-\d{2}$/, "XX/$1"),
+              expDate: record["cc-exp"].replace(/^(\d{4})-(\d{2})$/, "$2/$1"),
             },
             options: [
               {
