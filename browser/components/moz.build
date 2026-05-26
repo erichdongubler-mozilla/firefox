@@ -52,6 +52,7 @@ DIRS += [
     "nova",
     "originattributes",
     "pagedata",
+    "passwordmgr",
     "permissions",
     "places",
     "preferences",
