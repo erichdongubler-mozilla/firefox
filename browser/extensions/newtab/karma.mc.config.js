@@ -175,6 +175,22 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
+            /**
+             * Logo.jsx and its variant components are tested via Jest
+             * (see test/jest/content-src/components/Logo.test.jsx).
+             */
+            "content-src/components/Logo/Logo.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/Logo/variants/*.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
             "content-src/components/DiscoveryStreamComponents/FeatureHighlight/FollowSectionButtonHighlight.jsx":
               {
                 statements: 88,
