@@ -9,6 +9,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/CSSRotate.h"
 #include "mozilla/dom/CSSTransformComponent.h"
 #include "mozilla/dom/CSSTransformValueBinding.h"
 #include "mozilla/dom/CSSTranslate.h"
@@ -36,6 +37,13 @@ RefPtr<CSSTransformValue> CSSTransformValue::Create(
         const auto& translateComponent = transformValue.AsTranslate();
 
         transformComponent = CSSTranslate::Create(aParent, translateComponent);
+        break;
+      }
+
+      case StyleTransformComponent::Tag::Rotate: {
+        const auto& rotateComponent = transformValue.AsRotate();
+
+        transformComponent = CSSRotate::Create(aParent, rotateComponent);
         break;
       }
     }

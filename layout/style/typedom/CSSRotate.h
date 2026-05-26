@@ -20,6 +20,7 @@ class nsISupports;
 namespace mozilla {
 
 class ErrorResult;
+struct StyleRotateComponent;
 
 namespace dom {
 
@@ -30,6 +31,9 @@ class CSSRotate final : public CSSTransformComponent {
   CSSRotate(nsCOMPtr<nsISupports> aParent, bool aIs2D,
             RefPtr<CSSNumericValue> aX, RefPtr<CSSNumericValue> aY,
             RefPtr<CSSNumericValue> aZ, RefPtr<CSSNumericValue> aAngle);
+
+  static RefPtr<CSSRotate> Create(nsCOMPtr<nsISupports> aParent,
+                                  const StyleRotateComponent& aRotateComponent);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CSSRotate, CSSTransformComponent)

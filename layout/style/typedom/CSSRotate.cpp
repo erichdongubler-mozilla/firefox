@@ -6,6 +6,7 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSNumericValue.h"
 #include "mozilla/dom/CSSNumericValueBinding.h"
@@ -25,6 +26,24 @@ CSSRotate::CSSRotate(nsCOMPtr<nsISupports> aParent, bool aIs2D,
       mY(std::move(aY)),
       mZ(std::move(aZ)),
       mAngle(std::move(aAngle)) {}
+
+// static
+RefPtr<CSSRotate> CSSRotate::Create(
+    nsCOMPtr<nsISupports> aParent,
+    const StyleRotateComponent& aRotateComponent) {
+  RefPtr<CSSNumericValue> x =
+      CSSNumericValue::Create(aParent, aRotateComponent.x);
+  RefPtr<CSSNumericValue> y =
+      CSSNumericValue::Create(aParent, aRotateComponent.y);
+  RefPtr<CSSNumericValue> z =
+      CSSNumericValue::Create(aParent, aRotateComponent.z);
+  RefPtr<CSSNumericValue> angle =
+      CSSNumericValue::Create(aParent, aRotateComponent.angle);
+
+  return MakeAndAddRef<CSSRotate>(std::move(aParent), aRotateComponent.is_2d,
+                                  std::move(x), std::move(y), std::move(z),
+                                  std::move(angle));
+}
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSRotate, CSSTransformComponent)
 NS_IMPL_CYCLE_COLLECTION_INHERITED(CSSRotate, CSSTransformComponent, mX, mY, mZ,
