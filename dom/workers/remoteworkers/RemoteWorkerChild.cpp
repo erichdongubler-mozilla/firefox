@@ -319,8 +319,8 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
     Maybe<mozilla::ipc::PolicyContainerArgs> policyContainerArgs =
         clientInfo.ref().GetPolicyContainerArgs();
     if (policyContainerArgs.isSome()) {
-      info.mIPAddressSpace = static_cast<uint16_t>(
-          policyContainerArgs->ipAddressSpace());
+      info.mIPAddressSpace =
+          static_cast<uint16_t>(policyContainerArgs->ipAddressSpace());
     }
   }
 
