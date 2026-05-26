@@ -156,7 +156,7 @@ def test_push_to_try(repo, monkeypatch):
                 "log",
                 "--no-graph",
                 "-r",
-                "trunk()..@ ~ description(exact:'')",
+                "heads(trunk() | (remote_bookmarks() & ancestors(@)))..@ ~ description(exact:'')",
                 "-T",
                 "'  ' ++ description.first_line() ++ '\n'",
             ),

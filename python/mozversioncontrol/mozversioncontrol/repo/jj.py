@@ -508,7 +508,7 @@ class JujutsuRepository(Repository):
                 "log",
                 "--no-graph",
                 "-r",
-                "trunk()..@ ~ description(exact:'')",
+                "heads(trunk() | (remote_bookmarks() & ancestors(@)))..@ ~ description(exact:'')",
                 "-T",
                 "'  ' ++ description.first_line() ++ '\n'",
             ),
