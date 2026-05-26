@@ -9,7 +9,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/f1981bae2720ec808
  1 file changed, 8 insertions(+), 12 deletions(-)
 
 diff --git a/video/video_stream_encoder.cc b/video/video_stream_encoder.cc
-index 9660908fbd..39992fdb4a 100644
+index 14b8e04c89..6e83701dc4 100644
 --- a/video/video_stream_encoder.cc
 +++ b/video/video_stream_encoder.cc
 @@ -859,13 +859,11 @@ void VideoStreamEncoder::AddAdaptationResource(
@@ -30,7 +30,7 @@ index 9660908fbd..39992fdb4a 100644
      RTC_DCHECK_RUN_ON(encoder_queue_.get());
      additional_resources_.push_back(resource);
      stream_resource_manager_.AddResource(resource, VideoAdaptationReason::kCpu);
-@@ -1723,8 +1721,7 @@ void VideoStreamEncoder::TraceFrameDropStart() {
+@@ -1724,8 +1722,7 @@ void VideoStreamEncoder::TraceFrameDropStart() {
    RTC_DCHECK_RUN_ON(encoder_queue_.get());
    // Start trace event only on the first frame after encoder is paused.
    if (!encoder_paused_and_dropped_frame_) {
@@ -40,7 +40,7 @@ index 9660908fbd..39992fdb4a 100644
    }
    encoder_paused_and_dropped_frame_ = true;
  }
-@@ -1733,8 +1730,7 @@ void VideoStreamEncoder::TraceFrameDropEnd() {
+@@ -1734,8 +1731,7 @@ void VideoStreamEncoder::TraceFrameDropEnd() {
    RTC_DCHECK_RUN_ON(encoder_queue_.get());
    // End trace event on first frame after encoder resumes, if frame was dropped.
    if (encoder_paused_and_dropped_frame_) {
@@ -50,7 +50,7 @@ index 9660908fbd..39992fdb4a 100644
    }
    encoder_paused_and_dropped_frame_ = false;
  }
-@@ -2193,8 +2189,8 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
+@@ -2194,8 +2190,8 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
    }
    accumulated_update_rect_is_valid_ = true;
  
