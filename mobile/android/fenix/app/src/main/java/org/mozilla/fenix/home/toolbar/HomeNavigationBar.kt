@@ -10,7 +10,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.ComposeView
-import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.compose.browser.toolbar.NavigationBar
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Bottom
@@ -70,10 +69,6 @@ class HomeNavigationBar(
         setContent {
             DefaultNavigationBarContent()
         }
-    }
-
-    override fun updateButtonVisibility(browserState: BrowserState) {
-        // no-op
     }
 
     override fun updateAddressBarVisibility(isVisible: Boolean) {

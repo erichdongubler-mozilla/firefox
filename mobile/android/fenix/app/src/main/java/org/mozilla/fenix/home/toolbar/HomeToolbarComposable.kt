@@ -28,7 +28,6 @@ import kotlinx.coroutines.launch
 import mozilla.components.browser.state.action.AwesomeBarAction
 import mozilla.components.browser.state.ext.getUrl
 import mozilla.components.browser.state.selector.findTab
-import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.utils.BackInvokedHandler
 import mozilla.components.compose.browser.toolbar.BrowserToolbar
@@ -189,12 +188,6 @@ internal class HomeToolbarComposable(
     override fun build(middleSearchEnabled: Boolean) {
         configureStartingInSearchMode()
         updateAddressBarVisibility(!middleSearchEnabled)
-    }
-
-    override fun updateButtonVisibility(
-        browserState: BrowserState,
-    ) {
-        // To be added later
     }
 
     override fun updateAddressBarVisibility(isVisible: Boolean) {
