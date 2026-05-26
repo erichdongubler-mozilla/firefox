@@ -1061,7 +1061,6 @@ void Loader::InsertChildSheet(StyleSheet& aSheet, StyleSheet& aParentSheet) {
 }
 
 nsresult Loader::NewStyleSheetChannel(SheetLoadData& aLoadData,
-                                      CORSMode aCorsMode,
                                       UsePreload aUsePreload,
                                       UseLoadGroup aUseLoadGroup,
                                       nsIChannel** aOutChannel) {
@@ -1085,7 +1084,8 @@ nsresult Loader::NewStyleSheetChannel(SheetLoadData& aLoadData,
     triggeringClassificationFlags = mDocument->GetScriptTrackingFlags();
   }
 
-  nsSecurityFlags securityFlags = ComputeSecurityFlags(aCorsMode);
+  nsSecurityFlags securityFlags =
+      ComputeSecurityFlags(aLoadData.mSheet->GetCORSMode());
 
   nsContentPolicyType contentPolicyType =
       ComputeContentPolicyType(aLoadData.mPreloadKind);
@@ -1146,12 +1146,9 @@ nsresult Loader::LoadSheetSyncInternal(SheetLoadData& aLoadData,
   // channel to make error recovery simpler.
   auto streamLoader = MakeRefPtr<StreamLoader>(aLoadData);
 
-  // Synchronous loads should only be used internally. Therefore no CORS
-  // policy is needed.
   nsCOMPtr<nsIChannel> channel;
-  nsresult rv =
-      NewStyleSheetChannel(aLoadData, CORSMode::CORS_NONE, UsePreload::Yes,
-                           UseLoadGroup::No, getter_AddRefs(channel));
+  nsresult rv = NewStyleSheetChannel(aLoadData, UsePreload::Yes,
+                                     UseLoadGroup::No, getter_AddRefs(channel));
   if (NS_FAILED(rv)) {
     LOG_ERROR(("  Failed to create channel"));
     streamLoader->ChannelOpenFailed(rv);
@@ -1367,9 +1364,8 @@ nsresult Loader::LoadSheetAsyncInternal(SheetLoadData& aLoadData,
 #endif
 
   nsCOMPtr<nsIChannel> channel;
-  nsresult rv = NewStyleSheetChannel(aLoadData, aLoadData.mSheet->GetCORSMode(),
-                                     UsePreload::No, UseLoadGroup::Yes,
-                                     getter_AddRefs(channel));
+  nsresult rv = NewStyleSheetChannel(
+      aLoadData, UsePreload::No, UseLoadGroup::Yes, getter_AddRefs(channel));
   if (NS_FAILED(rv)) {
     LOG_ERROR(("  Failed to create channel"));
     SheetComplete(aLoadData, rv);
@@ -2265,9 +2261,8 @@ void Loader::NotifyObserversForCachedSheet(SheetLoadData& aLoadData) {
   }
 
   nsCOMPtr<nsIChannel> channel;
-  nsresult rv = NewStyleSheetChannel(aLoadData, aLoadData.mSheet->GetCORSMode(),
-                                     UsePreload::No, UseLoadGroup::No,
-                                     getter_AddRefs(channel));
+  nsresult rv = NewStyleSheetChannel(aLoadData, UsePreload::No,
+                                     UseLoadGroup::No, getter_AddRefs(channel));
   if (NS_FAILED(rv)) {
     return;
   }
