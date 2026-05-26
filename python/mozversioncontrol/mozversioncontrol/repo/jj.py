@@ -142,9 +142,16 @@ class JujutsuRepository(Repository):
 
     @property
     def branch(self):
-        # jj does not have an "active branch" concept. The lone caller will fall
-        # back to self.head_ref.
-        return None
+        bookmark = self._run_read_only(
+            "log",
+            "--no-graph",
+            "-n1",
+            "-r",
+            self.HEAD_REVSET,
+            "-T",
+            'if(local_bookmarks, local_bookmarks.first(), "")',
+        ).strip()
+        return bookmark or None
 
     @property
     def has_git_cinnabar(self):
