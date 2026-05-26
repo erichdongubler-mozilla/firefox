@@ -9,6 +9,7 @@ import org.mozilla.fenix.R
 data class Selector(
     val strategy: SelectorStrategy,
     val value: String,
+    val secondaryValue: String? = null,
     val description: String,
     val groups: List<String> = listOf(),
 ) {
@@ -44,4 +45,5 @@ enum class SelectorStrategy {
     UIAUTOMATOR_WITH_COMPOSE_TAG,
     UIAUTOMATOR_WITH_TEXT,
     UIAUTOMATOR_WITH_DESCRIPTION_CONTAINS,
+    UIAUTOMATOR_WITH_RES_ID_AND_TEXT,
 }
