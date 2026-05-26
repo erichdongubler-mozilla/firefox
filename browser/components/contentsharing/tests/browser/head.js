@@ -75,6 +75,13 @@ async function withContentSharingMockServer(task) {
 async function assertContentSharingModal(window, expected, leaveOpen = false) {
   Assert.ok(window.gDialogBox.isOpen, "Content sharing modal should be open");
 
+  const args = window.gDialogBox.dialog.frameContentWindow.arguments[0];
+  Assert.deepEqual(
+    args.shareResult,
+    expected,
+    "The window has the expected arguments"
+  );
+
   // Wait for the modal to be fully rendered
   const modalEl = await TestUtils.waitForCondition(() =>
     window.gDialogBox.dialog.frameContentWindow.document.querySelector(
