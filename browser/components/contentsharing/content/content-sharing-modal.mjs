@@ -13,7 +13,6 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 );
 
 const MAX_PREVIEW_LINKS = 3;
-const WINDOW_BREAKPOINT_SIZE = 830;
 const lazy = {};
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -52,8 +51,9 @@ import "chrome://global/content/elements/moz-message-bar.mjs";
 export class ContentSharingModal extends MozLitElement {
   static properties = {
     shareResult: { type: Object },
-    size: { type: String, reflect: true },
-    loading: { type: Boolean },
+    share: { type: Object },
+    error: { type: String },
+    isSignedIn: { type: Boolean },
   };
 
   static queries = {
@@ -75,22 +75,15 @@ export class ContentSharingModal extends MozLitElement {
     await this.previewCard?.updateComplete;
   }
 
-  async connectedCallback() {
+  connectedCallback() {
     super.connectedCallback();
 
-    let { shareResult, loadingPromise, size } = window.arguments?.[0] ?? {};
-
-    this.shareResult = shareResult;
-    if (loadingPromise) {
-      this.loading = true;
-      this.shareResult = (await loadingPromise).shareResult;
-      this.loading = false;
+    this.shareResult = window.arguments?.[0];
+    if (this.shareResult?.loadingPromise) {
+      this.shareResult.loadingPromise.then(result => {
+        this.shareResult = result;
+      });
     }
-
-    // The modal does not resize with the window so when the modal is opened
-    // from ContentSharingUtils the current windows width is passed. If the
-    // window width is less than 830, the modal will open in the "small" state.
-    this.size = size < WINDOW_BREAKPOINT_SIZE ? "small" : null;
   }
 
   close() {
@@ -222,7 +215,7 @@ export class ContentSharingModal extends MozLitElement {
   }
 
   descriptionActionTemplate() {
-    if (this.loading) {
+    if (this.shareResult.loadingPromise) {
       return this.loadingTemplate();
     }
 
@@ -307,8 +300,8 @@ export class ContentSharingModal extends MozLitElement {
         rel="stylesheet"
         href="chrome://global/skin/in-content/common.css"
       />
-      <div id="background-image"></div>
-      <div id="plain-background"></div>
+      <div id="backgroud-image"></div>
+      <div id="plain-backgroud"></div>
       <div class="container">
         <div class="preview">
           <moz-card
