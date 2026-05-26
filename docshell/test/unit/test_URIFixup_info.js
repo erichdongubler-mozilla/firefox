@@ -1161,7 +1161,7 @@ async function do_single_test_run() {
       let couldDoKeywordLookup =
         flags & Services.uriFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
       Assert.equal(
-        !!URIInfo.keywordProviderName,
+        !!URIInfo.keywordProviderId,
         couldDoKeywordLookup && expectKeywordLookup,
         "keyword lookup as expected"
       );
@@ -1212,20 +1212,28 @@ async function do_single_test_run() {
             );
             let spec = URIInfo.preferredURI.spec.replace(/%27/g, "'");
             Assert.equal(spec, searchURL, "should get correct search URI");
-            let providerName = isPrivate ? privateEngine.name : engine.name;
+            let providerId = isPrivate ? privateEngine.id : engine.id;
             Assert.equal(
-              URIInfo.keywordProviderName,
-              providerName,
-              "should get correct provider name"
+              URIInfo.keywordProviderId,
+              providerId,
+              "should get correct provider id"
             );
             // Also check keywordToURI() uses the right engine.
             let kwInfo = Services.uriFixup.keywordToURI(
               urlparamInput,
               isPrivate
             );
-            Assert.equal(kwInfo.providerName, URIInfo.providerName);
+            Assert.equal(
+              kwInfo.keywordProviderId,
+              URIInfo.keywordProviderId,
+              "keywordToURI() uses the right engine"
+            );
+            let providerName = isPrivate ? privateEngine.name : engine.name;
             if (providerName == kPostSearchEngineName) {
-              Assert.ok(kwInfo.postData);
+              Assert.ok(
+                kwInfo.postData,
+                "Should have post data for the keyword"
+              );
               let submission = engine.getSubmission(urlparamInput);
               let enginePostData = NetUtil.readInputStreamToString(
                 submission.postData,

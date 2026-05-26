@@ -275,7 +275,7 @@ BrowserGlue.prototype = {
         // URI that it's been asked to load into a keyword search.
         let engine = null;
         try {
-          engine = lazy.SearchService.getEngineByName(
+          engine = lazy.SearchService.getEngineById(
             subject.QueryInterface(Ci.nsISupportsString).data
           );
         } catch (ex) {

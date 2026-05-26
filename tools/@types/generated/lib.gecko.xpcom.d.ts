@@ -1785,7 +1785,7 @@ interface nsIURIFixupInfo extends nsISupports {
   consumer: BrowsingContext;
   preferredURI: nsIURI;
   fixedURI: nsIURI;
-  keywordProviderName: string;
+  keywordProviderId: string;
   keywordAsSent: string;
   schemelessInput: nsILoadInfo.SchemelessInputType;
   fixupChangedProtocol: boolean;

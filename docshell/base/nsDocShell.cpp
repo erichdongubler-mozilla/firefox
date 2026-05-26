@@ -5923,7 +5923,7 @@ already_AddRefed<nsIURI> nsDocShell::AttemptURIFixup(
   //
   // First try keyword fixup
   //
-  nsAutoString keywordProviderName, keywordAsSent;
+  nsAutoString keywordProviderId, keywordAsSent;
   if (aStatus == NS_ERROR_UNKNOWN_HOST && aAllowKeywordFixup) {
     // we should only perform a keyword search under the following
     // conditions:
@@ -5980,7 +5980,7 @@ already_AddRefed<nsIURI> nsDocShell::AttemptURIFixup(
           info->GetSchemelessInput(outSchemelessInput);
           if (newURI) {
             info->GetKeywordAsSent(keywordAsSent);
-            info->GetKeywordProviderName(keywordProviderName);
+            info->GetKeywordProviderId(keywordProviderId);
             info->GetPostData(getter_AddRefs(newPostData));
           }
         }
@@ -6021,7 +6021,7 @@ already_AddRefed<nsIURI> nsDocShell::AttemptURIFixup(
     if (doCreateAlternate) {
       newURI = nullptr;
       newPostData = nullptr;
-      keywordProviderName.Truncate();
+      keywordProviderId.Truncate();
       keywordAsSent.Truncate();
       nsCOMPtr<nsIURIFixup> uriFixup = components::URIFixup::Service();
       if (uriFixup) {
@@ -6076,7 +6076,7 @@ already_AddRefed<nsIURI> nsDocShell::AttemptURIFixup(
       if (aNotifyKeywordSearchLoading) {
         // This notification is meant for Firefox Health Report so it
         // can increment counts from the search engine
-        MaybeNotifyKeywordSearchLoading(keywordProviderName, keywordAsSent);
+        MaybeNotifyKeywordSearchLoading(keywordProviderId, keywordAsSent);
       }
       return newURI.forget();
     }
@@ -12656,9 +12656,9 @@ bool nsDocShell::IsInvisible() { return mInvisible; }
 void nsDocShell::SetInvisible(bool aInvisible) { mInvisible = aInvisible; }
 
 /* static */
-void nsDocShell::MaybeNotifyKeywordSearchLoading(const nsString& aProvider,
+void nsDocShell::MaybeNotifyKeywordSearchLoading(const nsString& aProviderId,
                                                  const nsString& aKeyword) {
-  if (aProvider.IsEmpty()) {
+  if (aProviderId.IsEmpty()) {
     return;
   }
   nsresult rv;
@@ -12666,7 +12666,7 @@ void nsDocShell::MaybeNotifyKeywordSearchLoading(const nsString& aProvider,
       do_CreateInstance(NS_SUPPORTS_STRING_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS_VOID(rv);
 
-  rv = isupportsString->SetData(aProvider);
+  rv = isupportsString->SetData(aProviderId);
   NS_ENSURE_SUCCESS_VOID(rv);
 
   nsCOMPtr<nsIObserverService> obsSvc = services::GetObserverService();
