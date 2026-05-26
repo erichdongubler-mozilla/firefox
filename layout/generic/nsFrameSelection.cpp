@@ -1286,7 +1286,7 @@ void nsFrameSelection::HandleDrag(nsIFrame* aFrame, const nsPoint& aPoint) {
   }
 
   nsresult result;
-  nsIFrame* newFrame = 0;
+  nsIFrame* newFrame = nullptr;
   nsPoint newPoint;
 
   result = ConstrainFrameAndPointToAnchorSubtree(aFrame, aPoint, &newFrame,

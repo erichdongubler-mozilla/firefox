@@ -2638,7 +2638,7 @@ class nsLayoutUtils {
    */
   static bool InvalidationDebuggingIsEnabled() {
     return mozilla::StaticPrefs::nglayout_debug_invalidation() ||
-           getenv("MOZ_DUMP_INVALIDATION") != 0;
+           getenv("MOZ_DUMP_INVALIDATION") != nullptr;
   }
 
   static void Initialize();
