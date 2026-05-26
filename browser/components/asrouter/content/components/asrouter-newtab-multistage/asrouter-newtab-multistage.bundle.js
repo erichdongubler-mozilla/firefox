@@ -845,16 +845,68 @@ const AdditionalCTA = ({
 
 
 
+function renderSegment(segment, index, handleAction) {
+  if (typeof segment === "string") {
+    return segment;
+  }
+  if (segment?.href) {
+    const action = {
+      type: "OPEN_URL",
+      data: {
+        args: segment.href,
+        where: segment.where || "tab"
+      }
+    };
+    return /*#__PURE__*/external_React_default().createElement("a", {
+      key: index,
+      href: segment.href,
+      className: "text-link",
+      onClick: event => {
+        event.preventDefault();
+        handleAction(event, action);
+      }
+    }, /*#__PURE__*/external_React_default().createElement(Localized, {
+      text: segment
+    }, /*#__PURE__*/external_React_default().createElement("span", null)));
+  }
+  if (segment?.link_key) {
+    return (
+      /*#__PURE__*/
+      // eslint-disable-next-line jsx-a11y/anchor-is-valid
+      external_React_default().createElement("a", {
+        key: index,
+        value: segment.link_key,
+        role: "link",
+        className: "text-link",
+        tabIndex: "0",
+        onClick: handleAction,
+        onKeyPress: event => {
+          if (event.key === "Enter" && !event.repeat) {
+            handleAction(event);
+          }
+        }
+      }, /*#__PURE__*/external_React_default().createElement(Localized, {
+        text: segment
+      }, /*#__PURE__*/external_React_default().createElement("span", null)))
+    );
+  }
+  return /*#__PURE__*/external_React_default().createElement(Localized, {
+    key: index,
+    text: segment
+  }, /*#__PURE__*/external_React_default().createElement("span", null));
+}
 const LinkParagraph = props => {
   const {
     text_content,
     handleAction
   } = props;
+  const text = text_content?.text;
   const handleParagraphAction = (0,external_React_namespaceObject.useCallback)(event => {
-    if (event.target.closest("a")) {
+    const anchor = event.target.closest("a");
+    if (anchor) {
       handleAction({
         ...event,
-        currentTarget: event.target
+        currentTarget: anchor
       });
     }
   }, [handleAction]);
@@ -863,10 +915,23 @@ const LinkParagraph = props => {
       handleParagraphAction(event);
     }
   }, [handleParagraphAction]);
+  const paragraphClassName = text_content?.font_styles === "legal" ? "legal-paragraph" : "link-paragraph";
+  if (Array.isArray(text)) {
+    const style = {};
+    for (const styleProp of CONFIGURABLE_STYLES) {
+      if (text_content[styleProp] !== undefined) {
+        style[styleProp] = text_content[styleProp];
+      }
+    }
+    return /*#__PURE__*/external_React_default().createElement("p", {
+      className: paragraphClassName,
+      style: style
+    }, text.map((segment, index) => renderSegment(segment, index, handleAction)));
+  }
   return /*#__PURE__*/external_React_default().createElement(Localized, {
-    text: text_content.text
+    text: text
   }, /*#__PURE__*/external_React_default().createElement("p", {
-    className: text_content.font_styles === "legal" ? "legal-paragraph" : "link-paragraph",
+    className: paragraphClassName,
     onClick: handleParagraphAction,
     value: "link_paragraph",
     onKeyPress: onKeyPress
@@ -1949,7 +2014,6 @@ const EmbeddedBrowserInner = ({
     }
     const browserEl = document.createXULElement("browser");
     const remoteType = window.AWPredictRemoteType({
-      browserEl,
       url
     });
     const attributes = [["disableglobalhistory", "true"], ["type", "content"], ["remote", "true"], ["maychangeremoteness", "true"], ["nodefaultsrc", "true"], ["remoteType", remoteType]];
@@ -2188,7 +2252,7 @@ const PinnableSitesList = ({
   }));
 };
 ;// ./content-src/components/ContentTiles.jsx
-function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+function _extends() { _extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
