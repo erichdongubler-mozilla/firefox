@@ -365,6 +365,8 @@ class JujutsuRepository(Repository):
         if dest_branch and not ref:
             raise ValueError("Cannot specify dest_branch without specifying ref")
 
+        if ref and dest_branch:
+            ref = self._resolve_to_commit(ref)
         self._git.push(remote, ref=ref, dest_branch=dest_branch, force=force)
 
     def push_to_try(
