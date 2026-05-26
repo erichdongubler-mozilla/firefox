@@ -130,7 +130,10 @@ if (!build_with_chromium && !build_with_mozilla) {
 if (rtc_include_tests) {
   group("test_suites") {
     testonly = true
-    deps = [ ":webrtc_nonparallel_tests" ]
+    deps = [
+      ":webrtc_nonparallel_tests",
+      "//pc:peerconnection_unittests",
+    ]
   }
 }
 
