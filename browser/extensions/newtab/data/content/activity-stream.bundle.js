@@ -21545,7 +21545,7 @@ const CustomizeMenu = (0,external_ReactRedux_namespaceObject.connect)(state => (
   DiscoveryStream: state.DiscoveryStream,
   Prefs: state.Prefs
 }))(_CustomizeMenu);
-;// CONCATENATED MODULE: ./content-src/components/Logo/variants/LogoSpinSmooth.jsx
+;// CONCATENATED MODULE: ./content-src/components/Logo/variants/SpinSmooth.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -21554,20 +21554,20 @@ const CustomizeMenu = (0,external_ReactRedux_namespaceObject.connect)(state => (
  * @backward-compat { version 153 }
  * The entire logo-variation feature can be removed after Firefox 153 hits
  * Release, when the 2026 World Cup is over. Delete this file, the
- * `logo-spin-smooth` entry in `LOGO_VARIATIONS` (in `Logo.jsx`), the
- * `logo-spin-smooth.webp` asset under `data/content/assets/`, and the
+ * `spin-smooth` entry in `LOGO_VARIATIONS` (in `Logo.jsx`), the
+ * `spin-smooth.webp` asset under `data/content/assets/`, and the
  * `logo.variation` pref entry in `ActivityStream.sys.mjs`.
  */
 
 
-const SPRITE_URL = "chrome://newtab/content/data/content/assets/logo-spin-smooth.webp";
+const SPRITE_URL = "chrome://newtab/content/data/content/assets/spin-smooth.webp";
 const TRANSFORM_VALUES = "0 0;-200 0;-400 0;-600 0;-800 0;-1000 0;0 -200;-200 -200;-400 -200;-600 -200;-800 -200;-1000 -200;0 -400;-200 -400;-400 -400;-600 -400;-800 -400;-1000 -400;0 -600;-200 -600;-400 -600;-600 -600;-800 -600;-1000 -600;0 -800;-200 -800;-400 -800;-600 -800;-800 -800;-1000 -800;0 -1000;-200 -1000;-400 -1000;-600 -1000;-800 -1000;-1000 -1000;0 -1200;-200 -1200;-400 -1200;-600 -1200;-800 -1200;-1000 -1200;0 -1400;-200 -1400;-400 -1400;-600 -1400;-800 -1400;-1000 -1400;0 -1600;-200 -1600;-400 -1600;-600 -1600;-800 -1600;-1000 -1600;0 -1800;-200 -1800;-400 -1800;-600 -1800;-800 -1800;-1000 -1800";
 
 /**
  * The "logo spin smooth" logo variation. Renders a 200x200 SVG that
  * windows onto a 1200x2000 WebP sprite sheet (60 frames, 6 columns x
  * 10 rows). The WebP is served from
- * `chrome://newtab/content/data/content/assets/logo-spin-smooth.webp` —
+ * `chrome://newtab/content/data/content/assets/spin-smooth.webp` —
  * `chrome:` is permitted by the newtab CSP's `img-src` list. A SMIL
  * `<animateTransform>` element pans the image through all 60 cells in
  * 6.67 seconds. The animation runs **on click**, not automatically — it's
@@ -21592,7 +21592,7 @@ const TRANSFORM_VALUES = "0 0;-200 0;-400 0;-600 0;-800 0;-1000 0;0 -200;-200 -2
  * @returns {React.ReactElement} The SVG element wrapping the sprite +
  *   the indefinitely-begun SMIL animation.
  */
-function LogoSpinSmooth() {
+function SpinSmooth() {
   const animRef = (0,external_React_namespaceObject.useRef)(null);
   const isRunningRef = (0,external_React_namespaceObject.useRef)(false);
   (0,external_React_namespaceObject.useEffect)(() => {
@@ -21631,18 +21631,18 @@ function LogoSpinSmooth() {
   return /*#__PURE__*/external_React_default().createElement("svg", {
     xmlns: "http://www.w3.org/2000/svg",
     viewBox: "0 0 200 200",
-    className: "logo-variation-small logo-spin-smooth",
+    className: "logo-variation-small spin-smooth",
     "aria-hidden": "true",
     onClick: handleClick
   }, /*#__PURE__*/external_React_default().createElement("defs", null, /*#__PURE__*/external_React_default().createElement("clipPath", {
-    id: "logo-spin-smooth-clip"
+    id: "spin-smooth-clip"
   }, /*#__PURE__*/external_React_default().createElement("rect", {
     x: "0",
     y: "0",
     width: "200",
     height: "200"
   }))), /*#__PURE__*/external_React_default().createElement("g", {
-    clipPath: "url(#logo-spin-smooth-clip)"
+    clipPath: "url(#spin-smooth-clip)"
   }, /*#__PURE__*/external_React_default().createElement("g", null, /*#__PURE__*/external_React_default().createElement("image", {
     width: "1200",
     height: "2000",
@@ -21683,7 +21683,7 @@ const RotatingBall_TRANSFORM_VALUES = "0,0;-200,0;-400,0;-600,0;-800,0;-1000,0;-
 /**
  * The "rotating ball" logo variation. Renders a 200x200 SVG that windows
  * onto a 6000x200 WebP sprite sheet (30 frames in a single row, each
- * 200x200 to match `logo-spin-smooth.webp`). The WebP is served from
+ * 200x200 to match `spin-smooth.webp`). The WebP is served from
  * `chrome://newtab/content/data/content/assets/rotating-ball.webp` —
  * `chrome:` is permitted by the newtab CSP's `img-src` list. A SMIL
  * `<animateTransform>` element pans the image through all 30 frames in
@@ -22242,8 +22242,8 @@ const LOGO_VARIATIONS = {
     requiresLTR: false,
     fallback: null
   },
-  "logo-spin-smooth": {
-    component: LogoSpinSmooth,
+  "spin-smooth": {
+    component: SpinSmooth,
     minViewportWidth: 0,
     requiresLTR: false,
     fallback: null

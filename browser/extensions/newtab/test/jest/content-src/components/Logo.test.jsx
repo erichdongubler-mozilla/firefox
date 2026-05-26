@@ -69,9 +69,7 @@ describe("<Logo>", () => {
     const { container } = renderWithPrefs(<Logo />);
     expect(container.querySelector("div.logo")).toBeInTheDocument();
     expect(container.querySelector(".spin-ball-small")).not.toBeInTheDocument();
-    expect(
-      container.querySelector(".logo-spin-smooth")
-    ).not.toBeInTheDocument();
+    expect(container.querySelector(".spin-smooth")).not.toBeInTheDocument();
   });
 
   // @backward-compat { version 153 }
@@ -93,11 +91,11 @@ describe("<Logo>", () => {
       expect(container.querySelector("div.logo")).not.toBeInTheDocument();
     });
 
-    it("renders LogoSpinSmooth when PREF_LOGO_VARIATION is 'logo-spin-smooth'", () => {
+    it("renders SpinSmooth when PREF_LOGO_VARIATION is 'spin-smooth'", () => {
       const { container } = renderWithPrefs(<Logo />, {
-        [PREF_LOGO_VARIATION]: "logo-spin-smooth",
+        [PREF_LOGO_VARIATION]: "spin-smooth",
       });
-      expect(container.querySelector(".logo-spin-smooth")).toBeInTheDocument();
+      expect(container.querySelector(".spin-smooth")).toBeInTheDocument();
       expect(container.querySelector("div.logo")).not.toBeInTheDocument();
     });
 
@@ -311,7 +309,7 @@ describe("<SpinBallSmall>", () => {
 
 // @backward-compat { version 153 }
 // Can be removed after Firefox 153 hits Release.
-describe("<LogoSpinSmooth>", () => {
+describe("<SpinSmooth>", () => {
   let originalMatchMedia;
 
   beforeEach(() => {
@@ -323,22 +321,22 @@ describe("<LogoSpinSmooth>", () => {
     globalThis.matchMedia = originalMatchMedia;
   });
 
-  function renderLogoSpinSmooth() {
+  function renderSpinSmooth() {
     return renderWithPrefs(<Logo />, {
-      [PREF_LOGO_VARIATION]: "logo-spin-smooth",
+      [PREF_LOGO_VARIATION]: "spin-smooth",
     });
   }
 
   it("renders an aria-hidden SVG with the shared and variation classes", () => {
-    const { container } = renderLogoSpinSmooth();
-    const svg = container.querySelector("svg.logo-spin-smooth");
+    const { container } = renderSpinSmooth();
+    const svg = container.querySelector("svg.spin-smooth");
     expect(svg).toBeInTheDocument();
     expect(svg.getAttribute("aria-hidden")).toBe("true");
     expect(svg.classList.contains("logo-variation-small")).toBe(true);
   });
 
   it("renders an animateTransform with begin=indefinite (manual trigger)", () => {
-    const { container } = renderLogoSpinSmooth();
+    const { container } = renderSpinSmooth();
     const anim = container.querySelector("animateTransform");
     expect(anim).toBeInTheDocument();
     expect(anim.getAttribute("begin")).toBe("indefinite");
@@ -347,8 +345,8 @@ describe("<LogoSpinSmooth>", () => {
   });
 
   it("calls beginElement() on the animation on click", () => {
-    const { container } = renderLogoSpinSmooth();
-    const svg = container.querySelector("svg.logo-spin-smooth");
+    const { container } = renderSpinSmooth();
+    const svg = container.querySelector("svg.spin-smooth");
     const animNode = container.querySelector("animateTransform");
     animNode.beginElement = jest.fn();
 
@@ -358,8 +356,8 @@ describe("<LogoSpinSmooth>", () => {
   });
 
   it("ignores clicks while the animation is running", () => {
-    const { container } = renderLogoSpinSmooth();
-    const svg = container.querySelector("svg.logo-spin-smooth");
+    const { container } = renderSpinSmooth();
+    const svg = container.querySelector("svg.spin-smooth");
     const animNode = container.querySelector("animateTransform");
     animNode.beginElement = jest.fn();
 
@@ -370,8 +368,8 @@ describe("<LogoSpinSmooth>", () => {
   });
 
   it("allows replay after the animation finishes", () => {
-    const { container } = renderLogoSpinSmooth();
-    const svg = container.querySelector("svg.logo-spin-smooth");
+    const { container } = renderSpinSmooth();
+    const svg = container.querySelector("svg.spin-smooth");
     const animNode = container.querySelector("animateTransform");
     animNode.beginElement = jest.fn();
 
@@ -384,8 +382,8 @@ describe("<LogoSpinSmooth>", () => {
 
   it("does not begin the animation when prefers-reduced-motion is set, but stays clickable", () => {
     setMatchMediaMock({ reduceMotion: true });
-    const { container } = renderLogoSpinSmooth();
-    const svg = container.querySelector("svg.logo-spin-smooth");
+    const { container } = renderSpinSmooth();
+    const svg = container.querySelector("svg.spin-smooth");
     const animNode = container.querySelector("animateTransform");
     animNode.beginElement = jest.fn();
 

@@ -23,7 +23,7 @@ const TRANSFORM_VALUES =
 /**
  * The "rotating ball" logo variation. Renders a 200x200 SVG that windows
  * onto a 6000x200 WebP sprite sheet (30 frames in a single row, each
- * 200x200 to match `logo-spin-smooth.webp`). The WebP is served from
+ * 200x200 to match `spin-smooth.webp`). The WebP is served from
  * `chrome://newtab/content/data/content/assets/rotating-ball.webp` —
  * `chrome:` is permitted by the newtab CSP's `img-src` list. A SMIL
  * `<animateTransform>` element pans the image through all 30 frames in

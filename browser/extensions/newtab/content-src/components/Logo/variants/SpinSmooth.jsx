@@ -6,15 +6,15 @@
  * @backward-compat { version 153 }
  * The entire logo-variation feature can be removed after Firefox 153 hits
  * Release, when the 2026 World Cup is over. Delete this file, the
- * `logo-spin-smooth` entry in `LOGO_VARIATIONS` (in `Logo.jsx`), the
- * `logo-spin-smooth.webp` asset under `data/content/assets/`, and the
+ * `spin-smooth` entry in `LOGO_VARIATIONS` (in `Logo.jsx`), the
+ * `spin-smooth.webp` asset under `data/content/assets/`, and the
  * `logo.variation` pref entry in `ActivityStream.sys.mjs`.
  */
 
 import React, { useEffect, useRef } from "react";
 
 const SPRITE_URL =
-  "chrome://newtab/content/data/content/assets/logo-spin-smooth.webp";
+  "chrome://newtab/content/data/content/assets/spin-smooth.webp";
 
 const TRANSFORM_VALUES =
   "0 0;-200 0;-400 0;-600 0;-800 0;-1000 0;0 -200;-200 -200;-400 -200;-600 -200;-800 -200;-1000 -200;0 -400;-200 -400;-400 -400;-600 -400;-800 -400;-1000 -400;0 -600;-200 -600;-400 -600;-600 -600;-800 -600;-1000 -600;0 -800;-200 -800;-400 -800;-600 -800;-800 -800;-1000 -800;0 -1000;-200 -1000;-400 -1000;-600 -1000;-800 -1000;-1000 -1000;0 -1200;-200 -1200;-400 -1200;-600 -1200;-800 -1200;-1000 -1200;0 -1400;-200 -1400;-400 -1400;-600 -1400;-800 -1400;-1000 -1400;0 -1600;-200 -1600;-400 -1600;-600 -1600;-800 -1600;-1000 -1600;0 -1800;-200 -1800;-400 -1800;-600 -1800;-800 -1800;-1000 -1800";
@@ -23,7 +23,7 @@ const TRANSFORM_VALUES =
  * The "logo spin smooth" logo variation. Renders a 200x200 SVG that
  * windows onto a 1200x2000 WebP sprite sheet (60 frames, 6 columns x
  * 10 rows). The WebP is served from
- * `chrome://newtab/content/data/content/assets/logo-spin-smooth.webp` —
+ * `chrome://newtab/content/data/content/assets/spin-smooth.webp` —
  * `chrome:` is permitted by the newtab CSP's `img-src` list. A SMIL
  * `<animateTransform>` element pans the image through all 60 cells in
  * 6.67 seconds. The animation runs **on click**, not automatically — it's
@@ -48,7 +48,7 @@ const TRANSFORM_VALUES =
  * @returns {React.ReactElement} The SVG element wrapping the sprite +
  *   the indefinitely-begun SMIL animation.
  */
-function LogoSpinSmooth() {
+function SpinSmooth() {
   const animRef = useRef(null);
   const isRunningRef = useRef(false);
 
@@ -90,16 +90,16 @@ function LogoSpinSmooth() {
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 200 200"
-      className="logo-variation-small logo-spin-smooth"
+      className="logo-variation-small spin-smooth"
       aria-hidden="true"
       onClick={handleClick}
     >
       <defs>
-        <clipPath id="logo-spin-smooth-clip">
+        <clipPath id="spin-smooth-clip">
           <rect x="0" y="0" width="200" height="200" />
         </clipPath>
       </defs>
-      <g clipPath="url(#logo-spin-smooth-clip)">
+      <g clipPath="url(#spin-smooth-clip)">
         <g>
           <image width="1200" height="2000" x="0" y="0" href={SPRITE_URL} />
           <animateTransform
@@ -117,4 +117,4 @@ function LogoSpinSmooth() {
   );
 }
 
-export { LogoSpinSmooth };
+export { SpinSmooth };

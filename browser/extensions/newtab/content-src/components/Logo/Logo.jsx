@@ -12,7 +12,7 @@
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import { LogoSpinSmooth } from "./variants/LogoSpinSmooth";
+import { SpinSmooth } from "./variants/SpinSmooth";
 import { RotatingBall } from "./variants/RotatingBall";
 import { SpinBallSmall } from "./variants/SpinBallSmall";
 
@@ -53,8 +53,8 @@ export const LOGO_VARIATIONS = {
     requiresLTR: false,
     fallback: null,
   },
-  "logo-spin-smooth": {
-    component: LogoSpinSmooth,
+  "spin-smooth": {
+    component: SpinSmooth,
     minViewportWidth: 0,
     requiresLTR: false,
     fallback: null,
