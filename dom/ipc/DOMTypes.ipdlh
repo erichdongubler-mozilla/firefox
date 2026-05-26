@@ -74,6 +74,12 @@ struct MessagePortIdentifier
   bool neutered;
 };
 
+struct NavigationEntriesTruncation
+{
+  MaybeDiscardedBrowsingContext context;
+  uint32_t newLength;
+};
+
 struct ScreenDetails {
   LayoutDeviceIntRect rect;
   DesktopIntRect rectDisplayPix;

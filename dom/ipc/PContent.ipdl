@@ -1065,7 +1065,8 @@ child:
 
     async HistoryCommitIndexAndLength(MaybeDiscardedBrowsingContext aContext,
                                       uint32_t aIndex, uint32_t aLength,
-                                      nsID aChangeID);
+                                      nsID aChangeID,
+                                      NavigationEntriesTruncation[] aTruncations);
 
     async GetLayoutHistoryState(MaybeDiscardedBrowsingContext aContext)
         returns (nullable nsILayoutHistoryState aState, Wireframe? aWireframe);
