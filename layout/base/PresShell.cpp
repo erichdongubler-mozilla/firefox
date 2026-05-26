@@ -12145,6 +12145,16 @@ void PresShell::SetNeedsWindowPropertiesSync() {
   SchedulePaint();
 }
 
+nsSize PresShell::GetVisualViewportSize() const {
+  NS_ASSERTION(mVisualViewportSizeSet,
+               "asking for visual viewport size when its not set?");
+  DynamicToolbarState state = GetDynamicToolbarState();
+  return (state == DynamicToolbarState::InTransition ||
+          state == DynamicToolbarState::Collapsed)
+             ? GetVisualViewportSizeUpdatedByDynamicToolbar()
+             : mVisualViewportSize;
+}
+
 bool PresShell::SetVisualViewportOffset(const nsPoint& aScrollOffset,
                                         const nsPoint& aPrevLayoutScrollPos) {
   nsPoint newOffset = aScrollOffset;
