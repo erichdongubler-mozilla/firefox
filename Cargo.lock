@@ -1331,6 +1331,7 @@ dependencies = [
  "log",
  "mach2",
  "minidump-writer",
+ "mozannotation_server",
  "nix 0.30.1",
  "num-derive",
  "num-traits",
@@ -6987,6 +6988,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "crash-context",
+ "crash_helper_common",
  "libc",
  "minidump-writer",
 ]
