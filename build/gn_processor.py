@@ -52,7 +52,7 @@ class MozbuildWriter:
             return raw.replace("\n", "\n" + self.indent)
         if isinstance(v, bool):
             return repr(v)
-        return f'"{v}"'
+        return json.dumps(v)
 
     def finalize(self):
         if self._library_name:
