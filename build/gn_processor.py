@@ -649,6 +649,11 @@ def write_mozbuild(topsrcdir, write_mozbuild_variables, relsrcdir, configs):
                 mb.write('    CXXFLAGS += CONFIG["MOZ_SYSTEM_LIBAOM_CFLAGS"]\n')
         except KeyError:
             pass
+        try:
+            if relsrcdir in write_mozbuild_variables["INCLUDE_GECKO_ZLIB_HANDLING"]:
+                mb.write('USE_LIBS += [ "zlib" ]\n')
+        except KeyError:
+            pass
 
         all_args = [args for args, _ in configs]
 
