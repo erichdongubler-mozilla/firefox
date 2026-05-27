@@ -5,6 +5,8 @@
 #ifndef DOM_MEDIA_MEDIACONTROL_AUDIOSESSIONRECORD_H_
 #define DOM_MEDIA_MEDIACONTROL_AUDIOSESSIONRECORD_H_
 
+#include <cstdint>
+
 #include "mozilla/Maybe.h"
 #include "mozilla/dom/AudioSessionBinding.h"
 
@@ -23,6 +25,27 @@ inline constexpr AudioSessionType DefaultAudioSessionType() {
   return AudioSessionType::Ambient;
 }
 
+// https://w3c.github.io/audio-session/#exclusive-type
+inline constexpr AudioSessionType kExclusiveAudioSessionTypes[] = {
+    AudioSessionType::Play_and_record,
+    AudioSessionType::Playback,
+    AudioSessionType::Transient_solo,
+};
+
+inline constexpr AudioSessionType kNonExclusiveAudioSessionTypes[] = {
+    AudioSessionType::Transient,
+    AudioSessionType::Ambient,
+};
+
+inline bool IsExclusiveAudioSessionType(AudioSessionType aType) {
+  for (const AudioSessionType t : kExclusiveAudioSessionTypes) {
+    if (t == aType) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
  * Per-browsing-context AudioSession spec state held in the parent process by
  * MediaController. Lifetime is independent of ContextMediaInfo (the audibility
@@ -38,12 +61,23 @@ class AudioSessionRecord {
   // https://w3c.github.io/audio-session/#enumdef-audiosessiontype
   Maybe<AudioSessionType> GetTypeOverride() const { return mTypeOverride; }
 
+  // Milliseconds since process creation captured when the browsing context
+  // most recently became audible. `Nothing()` when the browsing context is
+  // currently silent.
+  Maybe<int64_t> GetAudibleAtMs() const { return mAudibleAtMs; }
+
+  bool IsEmpty() const {
+    return mTypeOverride.isNothing() && mAudibleAtMs.isNothing();
+  }
+
   void SetTypeOverride(uint64_t aBcId, Maybe<AudioSessionType> aTypeOverride);
+  void SetAudibleAtMs(uint64_t aBcId, Maybe<int64_t> aAudibleAtMs);
 
  private:
   void LogState(uint64_t aBcId) const;
 
   Maybe<AudioSessionType> mTypeOverride;
+  Maybe<int64_t> mAudibleAtMs;
 };
 
 }  // namespace mozilla::dom

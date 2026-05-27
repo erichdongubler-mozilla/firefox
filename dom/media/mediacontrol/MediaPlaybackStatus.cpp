@@ -121,7 +121,7 @@ bool MediaPlaybackStatus::IsAudible() const {
                      [](const auto& info) { return info->IsAudible(); });
 }
 
-bool MediaPlaybackStatus::IsBcAudibleForTesting(uint64_t aBcId) const {
+bool MediaPlaybackStatus::IsBcAudible(uint64_t aBcId) const {
   MOZ_ASSERT(NS_IsMainThread());
   auto entry = mContextInfoMap.Lookup(aBcId);
   return entry && entry.Data()->IsAudible();

@@ -99,16 +99,16 @@ TEST(MediaPlaybackStatus, IsBcAudible_ReflectsAudibleSources)
   for (auto controlType : kControlTypes) {
     for (auto sessionType : kSessionTypes) {
       MediaPlaybackStatus status;
-      EXPECT_FALSE(status.IsBcAudibleForTesting(kBcA));
+      EXPECT_FALSE(status.IsBcAudible(kBcA));
 
       status.UpdateMediaAudibleState(kBcA, MediaAudibleState::eAudible,
                                      controlType, sessionType);
-      EXPECT_TRUE(status.IsBcAudibleForTesting(kBcA));
-      EXPECT_FALSE(status.IsBcAudibleForTesting(kBcB));
+      EXPECT_TRUE(status.IsBcAudible(kBcA));
+      EXPECT_FALSE(status.IsBcAudible(kBcB));
 
       status.UpdateMediaAudibleState(kBcA, MediaAudibleState::eInaudible,
                                      controlType, sessionType);
-      EXPECT_FALSE(status.IsBcAudibleForTesting(kBcA));
+      EXPECT_FALSE(status.IsBcAudible(kBcA));
     }
   }
 }

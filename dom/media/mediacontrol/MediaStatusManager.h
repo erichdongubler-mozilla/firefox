@@ -198,6 +198,10 @@ class MediaStatusManager : public IMediaInfoUpdater {
   // no audible source.
   AudioSessionType EffectiveTypeForBc(uint64_t aBrowsingContextId) const;
 
+  // Whether the given browsing context currently has at least one audible
+  // source. Used by MediaController to detect audibility transitions.
+  bool IsBcAudible(uint64_t aBrowsingContextId) const;
+
   // These events would be notified when the active media session's certain
   // property changes.
   MediaEventSource<MediaMetadataBase>& MetadataChangedEvent() {

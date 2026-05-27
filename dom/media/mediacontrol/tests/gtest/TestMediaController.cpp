@@ -431,3 +431,185 @@ TEST(MediaController, EffectiveTypeForBc_OverrideWinsOverSource)
                                         ControlType::eControllable,
                                         AudioSessionType::Playback);
 }
+
+// Every non-Auto AudioSessionType, used by the iterating tests below.
+constexpr AudioSessionType kAllAudioSessionTypesExceptAuto[] = {
+    AudioSessionType::Ambient,         AudioSessionType::Transient,
+    AudioSessionType::Transient_solo,  AudioSessionType::Playback,
+    AudioSessionType::Play_and_record,
+};
+
+TEST(MediaController, GetEffectiveAudioSessionType_NoAudibleBcReturnsAuto)
+{
+  RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+  EXPECT_EQ(controller->GetEffectiveAudioSessionType(), AudioSessionType::Auto);
+}
+
+TEST(MediaController,
+     GetEffectiveAudioSessionType_SingleAudibleBcReportsSourceType)
+{
+  // Every audio-session source type, when carried by the only audible BC,
+  // resolves to that same type.
+  for (auto src : kAllAudioSessionTypesExceptAuto) {
+    RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+    constexpr uint64_t kBc = 1;
+    controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eAudible,
+                                          ControlType::eControllable, src);
+    EXPECT_EQ(controller->GetEffectiveAudioSessionType(), src)
+        << "src=" << static_cast<int>(src);
+  }
+}
+
+TEST(MediaController,
+     GetEffectiveAudioSessionType_OverrideWinsAndAutoResetFallsBack)
+{
+  // For every (source, override) pair, the override drives the surface and
+  // a subsequent Auto-reset falls back to the source-derived type.
+  for (auto src : kAllAudioSessionTypesExceptAuto) {
+    for (auto ovr : kAllAudioSessionTypesExceptAuto) {
+      RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+      constexpr uint64_t kBc = 1;
+      controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eAudible,
+                                            ControlType::eControllable, src);
+      EXPECT_EQ(controller->GetEffectiveAudioSessionType(), src);
+
+      controller->SetAudioSessionTypeOverride(kBc, ovr);
+      EXPECT_EQ(controller->GetEffectiveAudioSessionType(), ovr);
+
+      controller->SetAudioSessionTypeOverride(kBc, AudioSessionType::Auto);
+      EXPECT_EQ(controller->GetEffectiveAudioSessionType(), src);
+    }
+  }
+}
+
+TEST(MediaController,
+     GetEffectiveAudioSessionType_TwoExclusiveBcsPickMostRecent)
+{
+  // Two audible BCs, both exclusive types: the most recently audible wins
+  // regardless of the type ordering on each side.
+  for (auto first : kExclusiveAudioSessionTypes) {
+    for (auto second : kExclusiveAudioSessionTypes) {
+      RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+      constexpr uint64_t kBcA = 1;
+      constexpr uint64_t kBcB = 2;
+      controller->NotifyMediaAudibleChanged(kBcA, MediaAudibleState::eAudible,
+                                            ControlType::eControllable, first);
+      controller->NotifyMediaAudibleChanged(kBcB, MediaAudibleState::eAudible,
+                                            ControlType::eControllable, second);
+      EXPECT_EQ(controller->GetEffectiveAudioSessionType(), second);
+    }
+  }
+}
+
+TEST(MediaController,
+     GetEffectiveAudioSessionType_TwoNonExclusiveBcsPickHighestPriority)
+{
+  // Two audible BCs, only non-exclusive types: no audio session is selected
+  // per spec, so the chrome surface falls back to the highest-priority
+  // effective type.
+  for (auto first : kNonExclusiveAudioSessionTypes) {
+    for (auto second : kNonExclusiveAudioSessionTypes) {
+      RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+      constexpr uint64_t kBcA = 1;
+      constexpr uint64_t kBcB = 2;
+      controller->NotifyMediaAudibleChanged(kBcA, MediaAudibleState::eAudible,
+                                            ControlType::eControllable, first);
+      controller->NotifyMediaAudibleChanged(kBcB, MediaAudibleState::eAudible,
+                                            ControlType::eControllable, second);
+      const AudioSessionType expected =
+          AudioSessionTypePriorityRank(first) >=
+                  AudioSessionTypePriorityRank(second)
+              ? first
+              : second;
+      EXPECT_EQ(controller->GetEffectiveAudioSessionType(), expected);
+    }
+  }
+}
+
+TEST(MediaController, GetEffectiveAudioSessionType_ExclusiveBeatsNonExclusive)
+{
+  // For every (exclusive, non-exclusive) pair: the non-exclusive BC becomes
+  // audible LAST (so it is the most recent), yet spec selection ignores it
+  // and the exclusive type wins.
+  for (auto exclusive : kExclusiveAudioSessionTypes) {
+    for (auto nonExclusive : kNonExclusiveAudioSessionTypes) {
+      RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+      constexpr uint64_t kBcA = 1;
+      constexpr uint64_t kBcB = 2;
+      controller->NotifyMediaAudibleChanged(kBcA, MediaAudibleState::eAudible,
+                                            ControlType::eControllable,
+                                            exclusive);
+      controller->NotifyMediaAudibleChanged(kBcB, MediaAudibleState::eAudible,
+                                            ControlType::eControllable,
+                                            nonExclusive);
+      EXPECT_EQ(controller->GetEffectiveAudioSessionType(), exclusive);
+    }
+  }
+}
+
+TEST(MediaController,
+     GetEffectiveAudioSessionType_HandoffWhenSelectedBcGoesSilent)
+{
+  // For every (first, second) pair of exclusive types: BcA audible with
+  // `first` then BcB audible with `second`. BcB is selected (most recent).
+  // When BcB goes silent, selection falls back to BcA. When BcA also goes
+  // silent the surface returns Auto.
+  for (auto first : kExclusiveAudioSessionTypes) {
+    for (auto second : kExclusiveAudioSessionTypes) {
+      RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+      constexpr uint64_t kBcA = 1;
+      constexpr uint64_t kBcB = 2;
+
+      controller->NotifyMediaAudibleChanged(kBcA, MediaAudibleState::eAudible,
+                                            ControlType::eControllable, first);
+      controller->NotifyMediaAudibleChanged(kBcB, MediaAudibleState::eAudible,
+                                            ControlType::eControllable, second);
+      EXPECT_EQ(controller->GetEffectiveAudioSessionType(), second);
+
+      controller->NotifyMediaAudibleChanged(kBcB, MediaAudibleState::eInaudible,
+                                            ControlType::eControllable, second);
+      EXPECT_EQ(controller->GetEffectiveAudioSessionType(), first);
+
+      controller->NotifyMediaAudibleChanged(kBcA, MediaAudibleState::eInaudible,
+                                            ControlType::eControllable, first);
+      EXPECT_EQ(controller->GetEffectiveAudioSessionType(),
+                AudioSessionType::Auto);
+    }
+  }
+}
+
+TEST(MediaController, GetEffectiveAudioSessionType_OverrideSetBeforePlayApplies)
+{
+  // For every (override, source) pair: the override is set before any
+  // audibility transition; once the BC becomes audible with `source`, the
+  // surface reports the stored override.
+  for (auto override : kAllAudioSessionTypesExceptAuto) {
+    for (auto source : kAllAudioSessionTypesExceptAuto) {
+      RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+      constexpr uint64_t kBc = 1;
+
+      controller->SetAudioSessionTypeOverride(kBc, override);
+      EXPECT_EQ(controller->GetEffectiveAudioSessionType(),
+                AudioSessionType::Auto);
+
+      controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eAudible,
+                                            ControlType::eControllable, source);
+      EXPECT_EQ(controller->GetEffectiveAudioSessionType(), override);
+    }
+  }
+}
+
+TEST(MediaController,
+     GetEffectiveAudioSessionType_UncontrollableOnlyBcParticipates)
+{
+  // An uncontrollable-only audible BC drives the chrome surface for every
+  // source type.
+  for (auto src : kAllAudioSessionTypesExceptAuto) {
+    RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+    constexpr uint64_t kBc = 1;
+
+    controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eAudible,
+                                          ControlType::eUncontrollable, src);
+    EXPECT_EQ(controller->GetEffectiveAudioSessionType(), src);
+  }
+}

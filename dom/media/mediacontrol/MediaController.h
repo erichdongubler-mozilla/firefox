@@ -174,6 +174,10 @@ class MediaController final : public DOMEventTargetHelper,
   // browsing context's currently audible sources.
   AudioSessionType EffectiveTypeForBc(uint64_t aBrowsingContextId) const;
 
+  // The audio-session type the tab is currently exposing to chrome
+  // consumers. Returns Auto when the tab is producing no audio.
+  AudioSessionType GetEffectiveAudioSessionType() const;
+
   // Test-only accessor for the per-browsing-context AudioSession record.
   // Returns nullptr when no record exists.
   const AudioSessionRecord* GetAudioSessionRecordForTesting(
@@ -205,6 +209,16 @@ class MediaController final : public DOMEventTargetHelper,
 
   void DispatchAsyncEvent(const nsAString& aName);
   void DispatchAsyncEvent(already_AddRefed<Event> aEvent);
+
+  // The selected audio session for this tab per the spec algorithm:
+  // the audio session whose interruptions and focus changes the tab's
+  // audible browsing contexts would observe. Nothing() when no audio
+  // session is currently selected.
+  Maybe<AudioSessionType> GetSelectedAudioSessionType() const;
+
+  // Refresh the AudioSession record for the given browsing context after
+  // its audibility changed.
+  void UpdateAudibleForAudioSession(uint64_t aBrowsingContextId);
 
   bool IsMainController() const;
   void ForceToBecomeMainControllerIfNeeded();
