@@ -1412,97 +1412,6 @@
     "keyed": true,
     "description": "What content type did we upgrade, and did it load successfully?"
   },
-  "PLACES_PAGES_COUNT": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 1000,
-    "high": 150000,
-    "n_buckets": 20,
-    "releaseChannelCollection": "opt-out",
-    "description": "PLACES: Number of unique pages"
-  },
-  "PLACES_MOST_RECENT_EXPIRED_VISIT_DAYS": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox"],
-    "alert_emails": ["mbonardo@mozilla.com", "fx-search-telemetry@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "linear",
-    "low": 30,
-    "high": 730,
-    "n_buckets": 12,
-    "bug_numbers": [1822848],
-    "releaseChannelCollection": "opt-out",
-    "description": "PLACES: the most recent expired visit in days"
-  },
-  "PLACES_BOOKMARKS_COUNT": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 100,
-    "high": 8000,
-    "n_buckets": 15,
-    "releaseChannelCollection": "opt-out",
-    "description": "PLACES: Number of bookmarks"
-  },
-  "PLACES_TAGS_COUNT": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 200,
-    "n_buckets": 10,
-    "description": "PLACES: Number of tags"
-  },
-  "PLACES_KEYWORDS_COUNT": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 200,
-    "n_buckets": 10,
-    "description": "PLACES: Number of keywords"
-  },
-  "PLACES_BACKUPS_DAYSFROMLAST": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "enumerated",
-    "n_values": 15,
-    "description": "PLACES: Days from last backup"
-  },
-  "PLACES_BACKUPS_BOOKMARKSTREE_MS": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 50,
-    "high": 2000,
-    "n_buckets": 10,
-    "description": "PLACES: Time to build the bookmarks tree"
-  },
-  "PLACES_BACKUPS_TOJSON_MS": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "default",
-    "kind": "exponential",
-    "low": 50,
-    "high": 2000,
-    "n_buckets": 10,
-    "description": "PLACES: Time to convert and write the backup"
-  },
-  "PLACES_EXPORT_TOHTML_MS": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 50,
-    "high": 2000,
-    "n_buckets": 10,
-    "description": "PLACES: Time to convert and write bookmarks.html"
-  },
   "LINK_ICON_SIZES_ATTR_USAGE": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
@@ -1523,58 +1432,6 @@
     "alert_emails": ["fx-search-telemetry@mozilla.com"],
     "bug_numbers": [1053467],
     "description": "The width dimension of the 'sizes' attribute for <link rel=icon>."
-  },
-  "PLACES_SORTED_BOOKMARKS_PERC": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "expires_in_version": "never",
-    "kind": "linear",
-    "high": 100,
-    "n_buckets": 10,
-    "description": "PLACES: Percentage of bookmarks organized in folders"
-  },
-  "PLACES_TAGGED_BOOKMARKS_PERC": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "expires_in_version": "never",
-    "kind": "linear",
-    "high": 100,
-    "n_buckets": 10,
-    "description": "PLACES: Percentage of tagged bookmarks"
-  },
-  "PLACES_DATABASE_FILESIZE_MB": {
-    "record_in_processes": ["main", "content"],
-    "alert_emails": ["mbonardo@mozilla.com", "fx-search-telemetry@mozilla.com"],
-    "products": ["firefox"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 5,
-    "high": 200,
-    "n_buckets": 10,
-    "bug_numbers": [1822848],
-    "releaseChannelCollection": "opt-out",
-    "description": "PLACES: Database filesize (MB)"
-  },
-  "PLACES_DATABASE_FAVICONS_FILESIZE_MB": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": ["mbonardo@mozilla.com", "fx-search-telemetry@mozilla.com"],
-    "bug_numbers": [1346554, 1822848],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 5,
-    "high": 100,
-    "n_buckets": 10,
-    "releaseChannelCollection": "opt-out",
-    "description": "PLACES: Favicons database filesize (MB)"
-  },
-  "PLACES_EXPIRATION_STEPS_TO_CLEAN2": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "expires_in_version": "never",
-    "kind": "enumerated",
-    "n_values": 10,
-    "description": "PLACES: Expiration steps to cleanup the database"
   },
   "PLACES_AUTOCOMPLETE_1ST_RESULT_TIME_MS": {
     "record_in_processes": ["main"],
@@ -1610,16 +1467,6 @@
     "n_buckets": 30,
     "description": "PLACES: Time to load the sidebar history tree sorted by last visit (ms)"
   },
-  "PLACES_HISTORY_LIBRARY_SEARCH_TIME_MS": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 50,
-    "high": 1000,
-    "n_buckets": 30,
-    "description": "PLACES: Time to search the history library (ms)"
-  },
   "PLACES_LIBRARY_CUMULATIVE_HISTORY_SEARCHES": {
     "record_in_processes": ["main"],
     "products": ["firefox"],
@@ -1644,59 +1491,6 @@
     "kind": "enumerated",
     "n_values": 20,
     "description": "Cumulative no. of Bookmark-specific searches performed before selecting a bookmark link in Library."
-  },
-  "PLACES_IDLE_FRECENCY_DECAY_TIME_MS": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 50,
-    "high": 10000,
-    "n_buckets": 10,
-    "description": "PLACES: Time to decay all frecencies values on idle (ms)"
-  },
-  "PLACES_IDLE_MAINTENANCE_TIME_MS": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 1000,
-    "high": 30000,
-    "n_buckets": 10,
-    "description": "PLACES: Time to execute maintenance tasks on idle (ms)"
-  },
-  "PLACES_FRECENCY_RECALC_CHUNK_TIME_MS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": ["mbonardo@mozilla.com", "fx-search-telemetry@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 50,
-    "high": 10000,
-    "n_buckets": 10,
-    "bug_numbers": [1811209, 1822848],
-    "releaseChannelCollection": "opt-out",
-    "description": "PLACES: Time to recalculate frecency for a chunk of pages (ms)"
-  },
-  "PLACES_ANNOS_PAGES_COUNT": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 50,
-    "high": 5000,
-    "n_buckets": 10,
-    "description": "PLACES: Number of pages annotations"
-  },
-  "PLACES_MAINTENANCE_DAYSFROMLAST": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 7,
-    "high": 60,
-    "n_buckets": 10,
-    "description": "PLACES: Days from last maintenance"
   },
   "UPDATE_CHECK_NO_UPDATE_EXTERNAL": {
     "record_in_processes": ["main"],
@@ -2686,18 +2480,6 @@
     "releaseChannelCollection": "opt-out",
     "bug_numbers": [1656994],
     "description": "Update: How much longer langpacks took to download than the app update in seconds."
-  },
-  "FX_BOOKMARKS_TOOLBAR_INIT_MS": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "alert_emails": ["mak@mozilla.com"],
-    "kind": "exponential",
-    "low": 50,
-    "high": 5000,
-    "n_buckets": 10,
-    "bug_numbers": [723165],
-    "description": "Firefox: Time to initialize the bookmarks toolbar view (ms)"
   },
   "FX_TOTAL_TOP_VISITS": {
     "record_in_processes": ["main", "content"],
