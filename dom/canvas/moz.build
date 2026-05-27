@@ -47,6 +47,7 @@ EXPORTS += [
 ]
 
 EXPORTS.mozilla += [
+    "ParamTraits_STL.h",
     "ParamTraits_TiedFields.h",
     "TiedFields.h",
     "TupleUtils.h",

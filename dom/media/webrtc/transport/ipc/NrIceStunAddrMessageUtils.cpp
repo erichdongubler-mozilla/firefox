@@ -8,6 +8,7 @@
 
 #  include "ipc/IPCMessageUtilsSpecializations.h"
 #  include "local_addr.h"
+#  include "mozilla/ParamTraits_STL.h"
 
 namespace IPC {
 

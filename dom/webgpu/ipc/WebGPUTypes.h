@@ -9,6 +9,7 @@
 
 #include "mozilla/GfxMessageUtils.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/ParamTraits_STL.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/layers/LayersSurfaces.h"
 #include "nsString.h"

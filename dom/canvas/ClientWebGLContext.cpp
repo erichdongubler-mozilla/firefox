@@ -2766,12 +2766,12 @@ void ClientWebGLContext::GetUniform(JSContext* const cx,
       return;
 
     case LOCAL_GL_FLOAT: {
-      const auto ptr = reinterpret_cast<const float*>(res.data.data());
+      const auto ptr = reinterpret_cast<const float*>(res.data);
       MOZ_ALWAYS_TRUE(dom::ToJSValue(cx, *ptr, retval));
       return;
     }
     case LOCAL_GL_INT: {
-      const auto ptr = reinterpret_cast<const int32_t*>(res.data.data());
+      const auto ptr = reinterpret_cast<const int32_t*>(res.data);
       MOZ_ALWAYS_TRUE(dom::ToJSValue(cx, *ptr, retval));
       return;
     }
@@ -2791,7 +2791,7 @@ void ClientWebGLContext::GetUniform(JSContext* const cx,
     case LOCAL_GL_UNSIGNED_INT_SAMPLER_3D:
     case LOCAL_GL_UNSIGNED_INT_SAMPLER_CUBE:
     case LOCAL_GL_UNSIGNED_INT_SAMPLER_2D_ARRAY: {
-      const auto ptr = reinterpret_cast<const uint32_t*>(res.data.data());
+      const auto ptr = reinterpret_cast<const uint32_t*>(res.data);
       MOZ_ALWAYS_TRUE(dom::ToJSValue(cx, *ptr, retval));
       return;
     }
@@ -2801,7 +2801,7 @@ void ClientWebGLContext::GetUniform(JSContext* const cx,
     case LOCAL_GL_BOOL_VEC2:
     case LOCAL_GL_BOOL_VEC3:
     case LOCAL_GL_BOOL_VEC4: {
-      const auto intArr = reinterpret_cast<const int32_t*>(res.data.data());
+      const auto intArr = reinterpret_cast<const int32_t*>(res.data);
       bool boolArr[4] = {};
       for (const auto i : IntegerRange(elemCount)) {
         boolArr[i] = bool(intArr[i]);
@@ -2822,7 +2822,7 @@ void ClientWebGLContext::GetUniform(JSContext* const cx,
     case LOCAL_GL_FLOAT_MAT3x4:
     case LOCAL_GL_FLOAT_MAT4x2:
     case LOCAL_GL_FLOAT_MAT4x3: {
-      const auto ptr = reinterpret_cast<const float*>(res.data.data());
+      const auto ptr = reinterpret_cast<const float*>(res.data);
       IgnoredErrorResult error;
       JSObject* obj =
           dom::Float32Array::Create(cx, this, Span(ptr, elemCount), error);
@@ -2834,7 +2834,7 @@ void ClientWebGLContext::GetUniform(JSContext* const cx,
     case LOCAL_GL_INT_VEC2:
     case LOCAL_GL_INT_VEC3:
     case LOCAL_GL_INT_VEC4: {
-      const auto ptr = reinterpret_cast<const int32_t*>(res.data.data());
+      const auto ptr = reinterpret_cast<const int32_t*>(res.data);
       IgnoredErrorResult error;
       JSObject* obj =
           dom::Int32Array::Create(cx, this, Span(ptr, elemCount), error);
@@ -2846,7 +2846,7 @@ void ClientWebGLContext::GetUniform(JSContext* const cx,
     case LOCAL_GL_UNSIGNED_INT_VEC2:
     case LOCAL_GL_UNSIGNED_INT_VEC3:
     case LOCAL_GL_UNSIGNED_INT_VEC4: {
-      const auto ptr = reinterpret_cast<const uint32_t*>(res.data.data());
+      const auto ptr = reinterpret_cast<const uint32_t*>(res.data);
       IgnoredErrorResult error;
       JSObject* obj =
           dom::Uint32Array::Create(cx, this, Span(ptr, elemCount), error);
