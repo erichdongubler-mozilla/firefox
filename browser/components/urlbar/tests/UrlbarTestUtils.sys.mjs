@@ -1287,6 +1287,20 @@ class UrlbarInputTestUtils {
     { backspace, clickClose, waitForSearch = true } = {}
   ) {
     let urlbar = this.#urlbar(window);
+    // If the Urlbar is not extended, ignore the clickClose parameter. The close
+    // button is not clickable in this state. This state might be encountered on
+    // Linux, where prefers-reduced-motion is enabled in automation.
+    if (!urlbar.hasAttribute("breakout-extend") && clickClose) {
+      if (waitForSearch) {
+        let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
+        urlbar.searchMode = null;
+        await searchPromise;
+      } else {
+        urlbar.searchMode = null;
+      }
+      return;
+    }
+
     if (!backspace && !clickClose) {
       backspace = true;
     }

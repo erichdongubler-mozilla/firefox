@@ -479,7 +479,11 @@ ${
       return;
     }
 
-    this.updateLayoutExtend();
+    if (this.view.isOpen) {
+      this.startLayoutExtend();
+    } else {
+      this.endLayoutExtend();
+    }
   }
 
   connectedCallback() {
@@ -3510,14 +3514,6 @@ ${
 
     this.removeAttribute("breakout-extend");
     this.#updateTextboxPosition();
-  }
-
-  updateLayoutExtend() {
-    if (this.view.isOpen) {
-      this.startLayoutExtend();
-    } else {
-      this.endLayoutExtend();
-    }
   }
 
   /**
