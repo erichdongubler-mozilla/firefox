@@ -542,8 +542,9 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
 #  define CACHEOP_CASE(name) cacheop_##name : CACHEOP_TRACE(name)
 #  define CACHEOP_CASE_FALLTHROUGH(name) CACHEOP_CASE(name)
 
-#  define DISPATCH_CACHEOP()          \
-    cacheop = cacheIRReader.readOp(); \
+#  define DISPATCH_CACHEOP()                                                \
+    cacheop =                                                               \
+        cacheIRReader.more() ? cacheIRReader.readOp() : CacheOp::PblReturn; \
     goto* addresses[long(cacheop)];
 
 #else  // ENABLE_COMPUTED_GOTO_DISPATCH
@@ -555,8 +556,9 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
     [[fallthrough]];                     \
     CACHEOP_CASE(name)
 
-#  define DISPATCH_CACHEOP()          \
-    cacheop = cacheIRReader.readOp(); \
+#  define DISPATCH_CACHEOP()                                                \
+    cacheop =                                                               \
+        cacheIRReader.more() ? cacheIRReader.readOp() : CacheOp::PblReturn; \
     goto dispatch;
 
 #endif  // !ENABLE_COMPUTED_GOTO_DISPATCH
@@ -575,7 +577,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
     ctx.icregs.icTags[(index)] = 0;                   \
   } while (0)
 
-    DECLARE_CACHEOP_CASE(ReturnFromIC);
+    DECLARE_CACHEOP_CASE(PblReturn);
     DECLARE_CACHEOP_CASE(GuardToObject);
     DECLARE_CACHEOP_CASE(GuardIsNullOrUndefined);
     DECLARE_CACHEOP_CASE(GuardIsNull);
@@ -867,15 +869,16 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
 #define BOUNDSCHECK(resultId) \
   if (resultId.id() >= ICRegs::kMaxICVals) FAIL_IC();
 
-#define PREDICT_NEXT(name)                       \
-  if (cacheIRReader.peekOp() == CacheOp::name) { \
-    cacheIRReader.readOp();                      \
-    cacheop = CacheOp::name;                     \
-    goto cacheop_##name;                         \
+#define PREDICT_NEXT(name)                            \
+  static_assert(CacheOp::name != CacheOp::PblReturn); \
+  if (cacheIRReader.peekOp() == CacheOp::name) {      \
+    cacheIRReader.readOp();                           \
+    cacheop = CacheOp::name;                          \
+    goto cacheop_##name;                              \
   }
 
 #define PREDICT_RETURN()                                 \
-  if (cacheIRReader.peekOp() == CacheOp::ReturnFromIC) { \
+  if (!cacheIRReader.more()) {                           \
     TRACE_PRINTF("stub successful, predicted return\n"); \
     return retValue;                                     \
   }
@@ -898,7 +901,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
 #endif
     {
 
-      CACHEOP_CASE(ReturnFromIC) {
+      CACHEOP_CASE(PblReturn) {
         TRACE_PRINTF("stub successful!\n");
         return retValue;
       }
@@ -5048,7 +5051,8 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
       }
 
       CACHEOP_CASE(ObjectKeysResult) {
-        ObjOperandId objId = cacheIRReader.objOperandId();
+        auto args = cacheIRReader.argsForObjectKeysResult();
+        ObjOperandId objId = args.objId;
         JSObject* obj = reinterpret_cast<JSObject*>(READ_REG(objId.id()));
         {
           PUSH_IC_FRAME();

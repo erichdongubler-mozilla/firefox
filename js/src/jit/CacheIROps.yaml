@@ -3940,3 +3940,11 @@
   args:
     val: ValId
 #endif
+
+# This is a pseudo-op used by PBL to simplify dispatch. It is never generated,
+# but PBL will dispatch to it when the end of the CacheIR sequence is reached.
+- name: PblReturn
+  shared: true
+  transpile: false
+  cost_estimate: 1
+  args:

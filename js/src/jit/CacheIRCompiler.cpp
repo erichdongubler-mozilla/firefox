@@ -12095,6 +12095,8 @@ bool CacheIRCompiler::emitFuzzilliHashResult(ValOperandId valId) {
 }
 #endif
 
+bool CacheIRCompiler::emitPblReturn() { MOZ_CRASH("Unsupported pseudo-op"); }
+
 template <typename Fn, Fn fn>
 void CacheIRCompiler::callVM(MacroAssembler& masm) {
   VMFunctionId id = VMFunctionToId<Fn, fn>::id;
