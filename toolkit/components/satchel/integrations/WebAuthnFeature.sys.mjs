@@ -43,16 +43,7 @@ class WebAuthnSupport {
       // No pending transaction
       return;
     }
-    let credentials = await new Promise(resolve => {
-      let callback = {
-        QueryInterface: ChromeUtils.generateQI([
-          "nsIWebAuthnAutoFillEntriesCallback",
-        ]),
-        resolve,
-        reject: () => resolve([]),
-      };
-      lazy.webauthnService.getAutoFillEntries(transactionId, callback);
-    });
+    let credentials = lazy.webauthnService.getAutoFillEntries(transactionId);
 
     let labels = credentials.map(x => ({
       id: "webauthn-specific-passkey-label",

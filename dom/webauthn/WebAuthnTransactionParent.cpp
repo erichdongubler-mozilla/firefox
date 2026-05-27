@@ -190,7 +190,7 @@ void WebAuthnTransactionParent::CompleteTransaction() {
 }
 
 void WebAuthnTransactionParent::DisconnectTransaction() {
-  Maybe<uint64_t> transactionId = std::move(mTransactionId);
+  mTransactionId.reset();
   mRegisterPromiseRequest.DisconnectIfExists();
   mSignPromiseRequest.DisconnectIfExists();
   if (mRelatedOriginCheckHandler) {
@@ -207,8 +207,8 @@ void WebAuthnTransactionParent::DisconnectTransaction() {
     mPendingSignInfo.reset();
     resolver(NS_ERROR_DOM_ABORT_ERR);
   }
-  if (mWebAuthnService && transactionId.isSome()) {
-    mWebAuthnService->Cancel(transactionId.ref());
+  if (mWebAuthnService) {
+    mWebAuthnService->Reset();
   }
 }
 
