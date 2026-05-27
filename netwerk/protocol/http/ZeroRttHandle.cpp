@@ -83,7 +83,7 @@ bool ZeroRttHandle::Do0RTT(HappyEyeballsTransaction* aCaller,
   // leaving the HE race with nothing to adopt at Finish0RTT time.
   if (!mAny0RttStarted) {
     RefPtr<HappyEyeballsConnectionAttempt> attempt = do_QueryReferent(mHet);
-    if (!attempt || !attempt->LockInRealTxnFromPendingQueue()) {
+    if (!attempt || !attempt->LockInRealTransactionFromPendingQueue()) {
       LOG(
           ("ZeroRttHandle::Do0RTT %p caller=%p declining — real txn "
            "already dispatched elsewhere",
