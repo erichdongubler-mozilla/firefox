@@ -1,0 +1,494 @@
+From: Byron Campen <docfaraday@gmail.com>
+Date: Tue, 26 May 2026 19:11:10 -0500
+Subject: (tmp-cherry-pick) Revert "Remove stringstream fallback from MakeVal
+ in logging.h" (4631c1d542)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This reverts commit 4ccdad97fcb69489aa4c77593dbc382bbd532997.
+
+Reason for revert: In Android/iOS NDK environments std::string_view and
+absl::string_view are distinct types which can end up triggering
+dangling temporary pointers during conversions. StringBuilder needs to
+support std::string_view directly.
+
+Original change's description:
+> Remove stringstream fallback from MakeVal in logging.h
+>
+> This change removes the generic MakeVal fallback in logging.h that
+> relied on std::ostringstream. This hasn't been used in webrtc for years
+> but now known downstream dependencies have been removed in favor of more
+> efficient alternatives like StringBuilder and Abseil's string utilities.
+>
+> Existing call sites and related code in tests and tools have similarly
+> been migrated:
+>
+> * Replaced std::ostringstream and std::stringstream with StringBuilder
+>   in SDP, Opus, and OpenSSL unit tests.
+> * Refactored string parsing in neteq_quality_test and bwe_rtp to use
+>   absl::StrSplit and Abseil's numeric conversion functions.
+> * Updated RTC_LOG calls in cross_traffic_unittest to explicitly load
+>   atomic counters (and not rely on stringstream to do it).
+> * Updated BUILD.gn and DEPS to include required Abseil and string
+>   utility dependencies.
+>
+> Bug: webrtc:42234461
+> Change-Id: I7fbe4b68478fb1aca08c6126979ae577ef5418da
+> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/466441
+> Commit-Queue: Tomas Gunnarsson <tommi@webrtc.org>
+> Reviewed-by: Jakob Ivarsson‎ <jakobi@webrtc.org>
+> Cr-Commit-Position: refs/heads/main@{#47577}
+
+Bug: webrtc:42234461
+No-Presubmit: True
+Fixed: b/508020109, b/508067366
+Change-Id: I774c10cb094ce60e74729660d5a6b37060b86c45
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/468601
+Reviewed-by: Jakob Ivarsson‎ <jakobi@webrtc.org>
+Commit-Queue: Tomas Gunnarsson <tommi@webrtc.org>
+Bot-Commit: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
+Cr-Commit-Position: refs/heads/main@{#47591}
+---
+ api/webrtc_sdp_unittest.cc                    | 37 ++++++++++---------
+ modules/audio_coding/BUILD.gn                 |  1 -
+ modules/audio_coding/neteq/tools/DEPS         |  2 -
+ .../neteq/tools/neteq_quality_test.cc         | 22 +++++------
+ modules/audio_coding/test/opus_test.cc        | 21 ++++++-----
+ modules/remote_bitrate_estimator/BUILD.gn     |  1 -
+ modules/remote_bitrate_estimator/DEPS         |  2 -
+ .../remote_bitrate_estimator/tools/bwe_rtp.cc | 18 ++++-----
+ modules/video_capture/BUILD.gn                |  1 -
+ .../test/video_capture_unittest.cc            |  9 +++--
+ rtc_base/logging.h                            | 19 ++++++++++
+ rtc_base/openssl_adapter_unittest.cc          | 15 +++-----
+ test/network/cross_traffic_unittest.cc        |  8 ++--
+ 13 files changed, 86 insertions(+), 70 deletions(-)
+
+diff --git a/api/webrtc_sdp_unittest.cc b/api/webrtc_sdp_unittest.cc
+index b6b009db88..108b530768 100644
+--- a/api/webrtc_sdp_unittest.cc
++++ b/api/webrtc_sdp_unittest.cc
+@@ -14,6 +14,7 @@
+ #include <map>
+ #include <memory>
+ #include <optional>
++#include <sstream>
+ #include <string>
+ #include <utility>
+ #include <vector>
+@@ -1855,8 +1856,8 @@ class WebRtcSdpTest : public ::testing::Test {
+         "a=rtpmap:105 telephone-event/8000\r\n"
+         "a=fmtp:105 0-15,66,70\r\n"
+         "a=fmtp:111 ";
+-    StringBuilder sb;
+-    sb << "minptime=" << params.min_ptime << "; stereo=" << params.stereo
++    std::ostringstream os;
++    os << "minptime=" << params.min_ptime << "; stereo=" << params.stereo
+        << "; sprop-stereo=" << params.sprop_stereo
+        << "; useinbandfec=" << params.useinband
+        << "; maxaveragebitrate=" << params.maxaveragebitrate
+@@ -1866,15 +1867,17 @@ class WebRtcSdpTest : public ::testing::Test {
+        << "\r\n"
+           "a=maxptime:"
+        << params.max_ptime << "\r\n";
+-    sdp += sb.Release();
++    sdp += os.str();
+ 
++    os.clear();
++    os.str("");
+     // Pl type 100 preferred.
+-    sdp +=
+-        "m=video 9 RTP/SAVPF 99 95 96\r\n"
+-        "a=rtpmap:96 VP9/90000\r\n"  // out-of-order wrt the m= line.
+-        "a=rtpmap:99 VP8/90000\r\n"
+-        "a=rtpmap:95 RTX/90000\r\n"
+-        "a=fmtp:95 apt=99;\r\n";
++    os << "m=video 9 RTP/SAVPF 99 95 96\r\n"
++          "a=rtpmap:96 VP9/90000\r\n"  // out-of-order wrt the m= line.
++          "a=rtpmap:99 VP8/90000\r\n"
++          "a=rtpmap:95 RTX/90000\r\n"
++          "a=fmtp:95 apt=99;\r\n";
++    sdp += os.str();
+ 
+     // Deserialize
+     SdpParseError error;
+@@ -1946,18 +1949,18 @@ class WebRtcSdpTest : public ::testing::Test {
+         "a=rtcp-fb:101 nack\r\n"
+         "a=rtcp-fb:101 nack pli\r\n"
+         "a=rtcp-fb:101 goog-remb\r\n";
+-    StringBuilder sb;
+-    sb << sdp_session_and_audio;
+-    sb << "a=rtcp-fb:" << (use_wildcard ? "*" : "111") << " nack\r\n";
++    std::ostringstream os;
++    os << sdp_session_and_audio;
++    os << "a=rtcp-fb:" << (use_wildcard ? "*" : "111") << " nack\r\n";
+     if (use_ccfb) {
+-      sb << "a=rtcp-fb:" << (use_wildcard ? "*" : "111") << " ack ccfb\r\n";
++      os << "a=rtcp-fb:" << (use_wildcard ? "*" : "111") << " ack ccfb\r\n";
+     }
+-    sb << sdp_video;
+-    sb << "a=rtcp-fb:" << (use_wildcard ? "*" : "101") << " ccm fir\r\n";
++    os << sdp_video;
++    os << "a=rtcp-fb:" << (use_wildcard ? "*" : "101") << " ccm fir\r\n";
+     if (use_ccfb) {
+-      sb << "a=rtcp-fb:" << (use_wildcard ? "*" : "101") << " ack ccfb\r\n";
++      os << "a=rtcp-fb:" << (use_wildcard ? "*" : "101") << " ack ccfb\r\n";
+     }
+-    std::string sdp = sb.Release();
++    std::string sdp = os.str();
+     // Deserialize
+     SdpParseError error;
+     jdesc_output = SdpDeserialize(sdp, &error);
+diff --git a/modules/audio_coding/BUILD.gn b/modules/audio_coding/BUILD.gn
+index dd4e7bdebd..337f9b1c4f 100644
+--- a/modules/audio_coding/BUILD.gn
++++ b/modules/audio_coding/BUILD.gn
+@@ -1138,7 +1138,6 @@ if (rtc_include_tests) {
+         "../../test:test_support",
+         "//testing/gtest",
+         "//third_party/abseil-cpp/absl/flags:flag",
+-        "//third_party/abseil-cpp/absl/strings",
+         "//third_party/abseil-cpp/absl/strings:string_view",
+       ]
+     }
+diff --git a/modules/audio_coding/neteq/tools/DEPS b/modules/audio_coding/neteq/tools/DEPS
+index a196a5616e..4db1e1d6e5 100644
+--- a/modules/audio_coding/neteq/tools/DEPS
++++ b/modules/audio_coding/neteq/tools/DEPS
+@@ -1,5 +1,3 @@
+ include_rules = [
+-  "+absl/strings/numbers.h",
+-  "+absl/strings/str_split.h",
+   "+logging/rtc_event_log",
+ ]
+diff --git a/modules/audio_coding/neteq/tools/neteq_quality_test.cc b/modules/audio_coding/neteq/tools/neteq_quality_test.cc
+index 8246f8929c..666d2e993e 100644
+--- a/modules/audio_coding/neteq/tools/neteq_quality_test.cc
++++ b/modules/audio_coding/neteq/tools/neteq_quality_test.cc
+@@ -10,23 +10,24 @@
+ 
+ #include "modules/audio_coding/neteq/tools/neteq_quality_test.h"
+ 
++#include <algorithm>
+ #include <climits>
+ #include <cmath>
+ #include <cstdint>
+ #include <cstdio>
+ #include <cstdlib>
+ #include <fstream>
++#include <iterator>
+ #include <memory>
+ #include <ostream>
+ #include <set>
+ #include <span>
++#include <sstream>
+ #include <string>
+ #include <utility>
+ #include <vector>
+ 
+ #include "absl/flags/flag.h"
+-#include "absl/strings/numbers.h"
+-#include "absl/strings/str_split.h"
+ #include "absl/strings/string_view.h"
+ #include "api/audio_codecs/audio_decoder_factory.h"
+ #include "api/audio_codecs/audio_format.h"
+@@ -35,6 +36,7 @@
+ #include "api/neteq/neteq.h"
+ #include "api/scoped_refptr.h"
+ #include "api/units/timestamp.h"
++#include "modules/audio_coding/neteq/tools/neteq_quality_test.h"
+ #include "modules/audio_coding/neteq/tools/output_audio_file.h"
+ #include "modules/audio_coding/neteq/tools/output_wav_file.h"
+ #include "modules/audio_coding/neteq/tools/resample_input_audio_file.h"
+@@ -374,17 +376,15 @@ void NetEqQualityTest::SetUp() {
+       break;
+     }
+     case kFixedLoss: {
++      std::istringstream loss_events_stream(absl::GetFlag(FLAGS_loss_events));
++      std::string loss_event_string;
+       std::set<FixedLossEvent, FixedLossEventCmp> loss_events;
+-      for (absl::string_view loss_event_string : absl::StrSplit(
+-               absl::GetFlag(FLAGS_loss_events), ',', absl::SkipEmpty())) {
++      while (std::getline(loss_events_stream, loss_event_string, ',')) {
+         std::vector<int> loss_event_params;
+-        for (absl::string_view param :
+-             absl::StrSplit(loss_event_string, ' ', absl::SkipEmpty())) {
+-          int val;
+-          if (absl::SimpleAtoi(param, &val)) {
+-            loss_event_params.push_back(val);
+-          }
+-        }
++        std::istringstream loss_event_params_stream(loss_event_string);
++        std::copy(std::istream_iterator<int>(loss_event_params_stream),
++                  std::istream_iterator<int>(),
++                  std::back_inserter(loss_event_params));
+         RTC_CHECK_EQ(loss_event_params.size(), 2);
+         auto result = loss_events.insert(
+             FixedLossEvent(loss_event_params[0], loss_event_params[1]));
+diff --git a/modules/audio_coding/test/opus_test.cc b/modules/audio_coding/test/opus_test.cc
+index eaa5623d64..6b511c25f5 100644
+--- a/modules/audio_coding/test/opus_test.cc
++++ b/modules/audio_coding/test/opus_test.cc
+@@ -13,6 +13,7 @@
+ #include <cmath>
+ #include <cstddef>
+ #include <cstdint>
++#include <sstream>
+ #include <string>
+ 
+ #include "api/audio/audio_frame.h"
+@@ -25,7 +26,6 @@
+ #include "modules/audio_coding/codecs/opus/opus_interface.h"
+ #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
+ #include "modules/audio_coding/test/TestStereo.h"
+-#include "rtc_base/strings/string_builder.h"
+ #include "test/gtest.h"
+ #include "test/testsupport/file_utils.h"
+ 
+@@ -393,14 +393,17 @@ void OpusTest::Run(TestPackStereo* channel,
+ }
+ 
+ void OpusTest::OpenOutFile(int test_number) {
+-  StringBuilder sb;
+-  sb << test::OutputPath() << "opustest_out_" << test_number << ".pcm";
+-  out_file_.Open(sb.Release(), 48000, "wb");
+-
+-  StringBuilder sb_standalone;
+-  sb_standalone << test::OutputPath() << "opusstandalone_out_" << test_number
+-                << ".pcm";
+-  out_file_standalone_.Open(sb_standalone.Release(), 48000, "wb");
++  std::string file_name;
++  std::stringstream file_stream;
++  file_stream << test::OutputPath() << "opustest_out_" << test_number << ".pcm";
++  file_name = file_stream.str();
++  out_file_.Open(file_name, 48000, "wb");
++  file_stream.str("");
++  file_name = file_stream.str();
++  file_stream << test::OutputPath() << "opusstandalone_out_" << test_number
++              << ".pcm";
++  file_name = file_stream.str();
++  out_file_standalone_.Open(file_name, 48000, "wb");
+ }
+ 
+ }  // namespace webrtc
+diff --git a/modules/remote_bitrate_estimator/BUILD.gn b/modules/remote_bitrate_estimator/BUILD.gn
+index 765ebda396..f4a7acd452 100644
+--- a/modules/remote_bitrate_estimator/BUILD.gn
++++ b/modules/remote_bitrate_estimator/BUILD.gn
+@@ -134,7 +134,6 @@ if (!build_with_chromium) {
+       "../rtp_rtcp:rtp_rtcp_format",
+       "//third_party/abseil-cpp/absl/flags:flag",
+       "//third_party/abseil-cpp/absl/flags:parse",
+-      "//third_party/abseil-cpp/absl/strings",
+     ]
+   }
+ 
+diff --git a/modules/remote_bitrate_estimator/DEPS b/modules/remote_bitrate_estimator/DEPS
+index 2386e6fcde..35a62119e5 100644
+--- a/modules/remote_bitrate_estimator/DEPS
++++ b/modules/remote_bitrate_estimator/DEPS
+@@ -1,6 +1,4 @@
+ include_rules = [
+-  "+absl/strings/numbers.h",
+-  "+absl/strings/str_split.h",
+   "+logging/rtc_event_log",
+   "+system_wrappers",
+   # Avoid directly using field_trial. Instead use FieldTrialsView.
+diff --git a/modules/remote_bitrate_estimator/tools/bwe_rtp.cc b/modules/remote_bitrate_estimator/tools/bwe_rtp.cc
+index 7f05e17a31..c38f5101e6 100644
+--- a/modules/remote_bitrate_estimator/tools/bwe_rtp.cc
++++ b/modules/remote_bitrate_estimator/tools/bwe_rtp.cc
+@@ -12,15 +12,14 @@
+ 
+ #include <cstdint>
+ #include <cstdio>
++#include <ios>
+ #include <memory>
+ #include <set>
++#include <sstream>
+ #include <string>
+ 
+ #include "absl/flags/flag.h"
+ #include "absl/flags/parse.h"
+-#include "absl/strings/numbers.h"
+-#include "absl/strings/str_split.h"
+-#include "absl/strings/string_view.h"
+ #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
+ #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+ #include "test/rtp_file_reader.h"
+@@ -53,15 +52,16 @@ std::set<uint32_t> SsrcFilter() {
+   std::string ssrc_filter_string = absl::GetFlag(FLAGS_ssrc_filter);
+   if (ssrc_filter_string.empty())
+     return std::set<uint32_t>();
++  std::stringstream ss;
++  std::string ssrc_filter = ssrc_filter_string;
+   std::set<uint32_t> ssrcs;
+ 
+   // Parse the ssrcs in hexadecimal format.
+-  for (absl::string_view s :
+-       absl::StrSplit(ssrc_filter_string, ',', absl::SkipEmpty())) {
+-    uint32_t ssrc;
+-    if (absl::SimpleHexAtoi(s, &ssrc)) {
+-      ssrcs.insert(ssrc);
+-    }
++  ss << std::hex << ssrc_filter;
++  uint32_t ssrc;
++  while (ss >> ssrc) {
++    ssrcs.insert(ssrc);
++    ss.ignore(1, ',');
+   }
+   return ssrcs;
+ }
+diff --git a/modules/video_capture/BUILD.gn b/modules/video_capture/BUILD.gn
+index 5a6fab0b74..ef4c4ff848 100644
+--- a/modules/video_capture/BUILD.gn
++++ b/modules/video_capture/BUILD.gn
+@@ -194,7 +194,6 @@ if (!build_with_chromium || is_linux || is_chromeos) {
+         "../../common_video",
+         "../../rtc_base:checks",
+         "../../rtc_base:macromagic",
+-        "../../rtc_base:stringutils",
+         "../../rtc_base:timeutils",
+         "../../rtc_base/synchronization:mutex",
+         "../../system_wrappers",
+diff --git a/modules/video_capture/test/video_capture_unittest.cc b/modules/video_capture/test/video_capture_unittest.cc
+index 9cdbd9612e..01a47384fc 100644
+--- a/modules/video_capture/test/video_capture_unittest.cc
++++ b/modules/video_capture/test/video_capture_unittest.cc
+@@ -16,6 +16,7 @@
+ #include <cstring>
+ #include <map>
+ #include <memory>
++#include <sstream>
+ #include <string>
+ #include <utility>
+ #include <vector>
+@@ -31,7 +32,6 @@
+ #include "modules/video_capture/video_capture_defines.h"
+ #include "modules/video_capture/video_capture_factory.h"
+ #include "rtc_base/checks.h"
+-#include "rtc_base/strings/string_builder.h"
+ #include "rtc_base/synchronization/mutex.h"
+ #include "rtc_base/thread_annotations.h"
+ #include "system_wrappers/include/clock.h"
+@@ -357,9 +357,10 @@ TEST_F(VideoCaptureTest, MAYBE_Capabilities) {
+     VideoCaptureCapability capability;
+     EXPECT_EQ(0, device_info_->GetCapability(module->CurrentDeviceName(), i,
+                                              capability));
+-    StringBuilder sb;
+-    sb << capability.width << "x" << capability.height;
+-    std::string resolution = sb.Release();
++    std::ostringstream resolutionStream;
++    resolutionStream << capability.width << "x" << capability.height;
++    resolutionStream.flush();
++    std::string resolution = resolutionStream.str();
+     frame_rates_by_resolution[resolution].push_back(capability.maxFPS);
+ 
+     // Since Android presents so many resolution/FPS combinations and the test
+diff --git a/rtc_base/logging.h b/rtc_base/logging.h
+index 67c398af14..d7521b307c 100644
+--- a/rtc_base/logging.h
++++ b/rtc_base/logging.h
+@@ -54,6 +54,7 @@
+ #include <memory>
+ #include <optional>
+ #include <span>
++#include <sstream>  // no-presubmit-check TODO(webrtc:8982)
+ #include <string>
+ #include <type_traits>
+ #include <utility>
+@@ -416,6 +417,24 @@ ToStringVal MakeVal(const T& x) {
+   return {absl::StrCat(x)};
+ }
+ 
++// Handle arbitrary types other than the above by falling back to stringstream.
++// TODO(bugs.webrtc.org/9278): Get rid of this overload when callers don't need
++// it anymore. No in-tree caller does, but some external callers still do.
++template <typename T,
++          typename T1 = std::decay_t<T>,
++          std::enable_if_t<std::is_class<T1>::value &&               //
++                           !std::is_same<T1, std::string>::value &&  //
++                           !std::is_same<T1, LogMetadata>::value &&  //
++                           !absl::HasAbslStringify<T1>::value &&
++#ifdef WEBRTC_ANDROID
++                           !std::is_same<T1, LogMetadataTag>::value &&  //
++#endif
++                           !std::is_same<T1, LogMetadataErr>::value>* = nullptr>
++ToStringVal MakeVal(const T& x) {
++  std::ostringstream os;  // no-presubmit-check TODO(webrtc:8982)
++  os << x;
++  return {os.str()};
++}
+ 
+ #if RTC_LOG_ENABLED()
+ void Log(const LogArgType* fmt, ...);
+diff --git a/rtc_base/openssl_adapter_unittest.cc b/rtc_base/openssl_adapter_unittest.cc
+index 4a3dbb2e50..8d40fd8c6c 100644
+--- a/rtc_base/openssl_adapter_unittest.cc
++++ b/rtc_base/openssl_adapter_unittest.cc
+@@ -13,6 +13,7 @@
+ #include <cstddef>
+ #include <cstdint>
+ #include <memory>
++#include <sstream>
+ #include <string>
+ #include <vector>
+ 
+@@ -26,7 +27,6 @@
+ #include "rtc_base/socket_address.h"
+ #include "rtc_base/ssl_certificate.h"
+ #include "rtc_base/ssl_stream_adapter.h"  // IWYU pragma: keep
+-#include "rtc_base/strings/string_builder.h"
+ #include "test/gmock.h"
+ #include "test/gtest.h"
+ #include "test/run_loop.h"
+@@ -132,17 +132,14 @@ TEST(OpenSSLAdapterTest, TestTransformAlpnProtocols) {
+ 
+   // One protocol test.
+   std::vector<std::string> alpn_protos{"h2"};
+-  StringBuilder sb;
+-  sb << static_cast<char>(2) << "h2";
+-  std::string expected_response = sb.Release();
+-  EXPECT_EQ(expected_response, TransformAlpnProtocols(alpn_protos));
++  std::stringstream expected_response;
++  expected_response << static_cast<char>(2) << "h2";
++  EXPECT_EQ(expected_response.str(), TransformAlpnProtocols(alpn_protos));
+ 
+   // Standard protocols test (h2,http/1.1).
+   alpn_protos.push_back("http/1.1");
+-  StringBuilder sb2;
+-  sb2 << static_cast<char>(2) << "h2" << static_cast<char>(8) << "http/1.1";
+-  expected_response = sb2.Release();
+-  EXPECT_EQ(expected_response, TransformAlpnProtocols(alpn_protos));
++  expected_response << static_cast<char>(8) << "http/1.1";
++  EXPECT_EQ(expected_response.str(), TransformAlpnProtocols(alpn_protos));
+ }
+ 
+ // Verifies that SSLStart works when OpenSSLAdapter is started in standalone
+diff --git a/test/network/cross_traffic_unittest.cc b/test/network/cross_traffic_unittest.cc
+index 1224706377..592d0d9d98 100644
+--- a/test/network/cross_traffic_unittest.cc
++++ b/test/network/cross_traffic_unittest.cc
+@@ -91,8 +91,8 @@ TEST(CrossTrafficTest, PulsedPeaksCrossTraffic) {
+     fixture.clock.AdvanceTimeMilliseconds(1);
+   }
+ 
+-  RTC_LOG(LS_INFO) << fixture.counter.packets_count_.load() << " packets; "
+-                   << fixture.counter.total_packets_size_.load() << " bytes";
++  RTC_LOG(LS_INFO) << fixture.counter.packets_count_ << " packets; "
++                   << fixture.counter.total_packets_size_ << " bytes";
+   // Using 50% duty cycle.
+   const auto kExpectedDataSent = kRunTime * config.peak_rate * 0.5;
+   EXPECT_NEAR(fixture.counter.total_packets_size_, kExpectedDataSent.bytes(),
+@@ -119,8 +119,8 @@ TEST(CrossTrafficTest, RandomWalkCrossTraffic) {
+     fixture.clock.AdvanceTimeMilliseconds(1);
+   }
+ 
+-  RTC_LOG(LS_INFO) << fixture.counter.packets_count_.load() << " packets; "
+-                   << fixture.counter.total_packets_size_.load() << " bytes";
++  RTC_LOG(LS_INFO) << fixture.counter.packets_count_ << " packets; "
++                   << fixture.counter.total_packets_size_ << " bytes";
+   // Sending at peak rate since bias = 1.
+   const auto kExpectedDataSent = kRunTime * config.peak_rate;
+   EXPECT_NEAR(fixture.counter.total_packets_size_, kExpectedDataSent.bytes(),
