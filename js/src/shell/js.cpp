@@ -7442,6 +7442,11 @@ static bool NewGlobal(JSContext* cx, unsigned argc, Value* vp) {
         ReportAccessDenied(cx);
         return false;
       }
+      if (!js::IsWindowProxy(existingWindowProxy)) {
+        JS_ReportErrorASCII(
+            cx, "transplantWindowProxy: argument is not a WindowProxy");
+        return false;
+      }
       kind = ShellGlobalKind::WindowProxy;
     }
 
@@ -7530,14 +7535,6 @@ static bool NewGlobal(JSContext* cx, unsigned argc, Value* vp) {
       }
       behaviors.setLocaleOverride(locale.get());
     }
-  }
-
-  // Ensure existingWindowProxy is a WindowProxy. This must be checked after
-  // operations that can run JS and transplant the WindowProxy.
-  if (existingWindowProxy && !js::IsWindowProxy(existingWindowProxy)) {
-    JS_ReportErrorASCII(cx,
-                        "transplantWindowProxy: argument is not a WindowProxy");
-    return false;
   }
 
   if (!CheckRealmOptions(cx, options, principals.get())) {
@@ -11696,13 +11693,6 @@ static JSObject* NewGlobalObject(JSContext* cx, JS::RealmOptions& options,
                     JS_NewGlobalObject(cx, &global_class, principals,
                                        JS::DontFireOnNewGlobalHook, options));
   if (!glob) {
-    return nullptr;
-  }
-
-  if (existingWindowProxy &&
-      JS::GetCompartment(existingWindowProxy) != JS::GetCompartment(glob) &&
-      !AllowNewWrapper(JS::GetCompartment(existingWindowProxy), glob)) {
-    JS_ReportErrorASCII(cx, "Cannot transplant into nuked compartment");
     return nullptr;
   }
 
