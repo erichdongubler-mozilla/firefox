@@ -115,6 +115,10 @@ export class CustomKeysParent extends JSWindowActorParent {
     add(cat, "key_reload_skip_cache", "customkeys-nav-reload-skip-cache");
     add(cat, "key_reload_skip_cache2", "customkeys-nav-reload-skip-cache");
     add(cat, "key_stop", "customkeys-nav-stop");
+    for (let i = 1; i <= 8; i++) {
+      add(cat, `key_selectTab${i}`, `customkeys-nav-select-tab-${i}`);
+    }
+    add(cat, "key_selectLastTab", "customkeys-nav-select-last-tab");
 
     return keys;
   }

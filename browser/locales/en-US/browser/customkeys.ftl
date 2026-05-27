@@ -42,6 +42,16 @@ customkeys-nav-reload = Reload
 customkeys-nav-reload-skip-cache = Reload (Override Cache)
 customkeys-nav-stop = Stop
 
+customkeys-nav-select-tab-1 = Go to Tab 1
+customkeys-nav-select-tab-2 = Go to Tab 2
+customkeys-nav-select-tab-3 = Go to Tab 3
+customkeys-nav-select-tab-4 = Go to Tab 4
+customkeys-nav-select-tab-5 = Go to Tab 5
+customkeys-nav-select-tab-6 = Go to Tab 6
+customkeys-nav-select-tab-7 = Go to Tab 7
+customkeys-nav-select-tab-8 = Go to Tab 8
+customkeys-nav-select-last-tab = Go to Last Tab
+
 customkeys-caution-message = This feature is experimental and may not work as expected.
 
 # Displayed in the new key field when the key that was pressed isn't valid.
