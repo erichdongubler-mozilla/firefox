@@ -432,7 +432,6 @@ const createDesktopFormat =
       }
 
       contents += `
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("${pref}") {
 ${overrideContents}
 }
