@@ -29,6 +29,7 @@ projects:
     - components:concept-integrity
     - components:concept-llm
     - components:concept-menu
+    - components:concept-passwords-file
     - components:concept-push
     - components:concept-storage
     - components:concept-storage-bookmarks
@@ -51,6 +52,7 @@ projects:
     - components:feature-ipprotection
     - components:feature-logins
     - components:feature-media
+    - components:feature-password-importer
     - components:feature-privatemode
     - components:feature-prompts
     - components:feature-protection-dashboard

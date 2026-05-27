@@ -273,6 +273,7 @@ treeherder:
         'feature-findinpage': 'feature-findinpage'
         'feature-fxsuggest': 'feature-fxsuggest'
         'feature-importer': 'feature-importer'
+        'feature-password-importer': 'feature-password-importer'
         'feature-intent': 'feature-intent'
         'feature-ipprotection': 'feature-ipprotection'
         'feature-logins': 'feature-logins'
