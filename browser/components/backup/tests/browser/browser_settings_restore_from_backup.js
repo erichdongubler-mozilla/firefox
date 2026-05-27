@@ -65,7 +65,6 @@ async function initializedBackupWidgets(browser) {
     "Waiting for restore-from-backup element to show up"
   );
   let restoreFromBackup = settings.restoreFromBackupEl;
-
   await restoreFromBackup.initializedPromise;
   return {
     restoreFromBackup,
@@ -86,6 +85,14 @@ add_task(async function test_backup_failure() {
       Ci.nsIFile
     );
     mockBackupFile.initWithPath(mockBackupFilePath);
+    let sandbox = sinon.createSandbox();
+    let bs = getAndMaybeInitBackupService();
+
+    sandbox.stub(bs, "findBackupsInWellKnownLocations").resolves({
+      found: false,
+      backupFileToRestore: null,
+      multipleBackupsFound: false,
+    });
 
     MockFilePicker.showCallback = () => {
       Assert.ok(true, "Filepicker shown");
@@ -95,7 +102,6 @@ add_task(async function test_backup_failure() {
 
     let { restoreFromBackup } = await initializedBackupWidgets(browser);
     Services.fog.testResetFOG();
-
     let stateUpdatedPromise = TestUtils.topicObserved(
       "browser-backup-glean-sent"
     );
@@ -113,6 +119,7 @@ add_task(async function test_backup_failure() {
       { location: "other", valid: "false" },
       "Restore telemetry event should have the right data"
     );
+    sandbox.restore();
   });
 });
 
@@ -311,8 +318,6 @@ add_task(async function test_restore_uses_matching_initial_folder() {
     await filePickerShownPromise;
     await selectedFilePromise;
   });
-
-  BackupService.get().resetLastBackupInternalState();
 });
 
 /**
@@ -322,6 +327,7 @@ add_task(async function test_restore_in_progress() {
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     let sandbox = sinon.createSandbox();
     let bs = getAndMaybeInitBackupService();
+    bs.resetLastBackupInternalState();
 
     let { promise: recoverPromise, resolve: recoverResolve } =
       Promise.withResolvers();

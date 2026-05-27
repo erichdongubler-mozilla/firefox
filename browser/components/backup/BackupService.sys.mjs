@@ -5202,6 +5202,7 @@ export class BackupService extends EventTarget {
    */
   resetLastBackupInternalState() {
     this.#_state.backupFileToRestore = null;
+    this.#_state.backupFileInfo = null;
     this.#_state.lastBackupFileName = "";
     this.#_state.lastBackupDate = null;
     this.stateUpdate();
