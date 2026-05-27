@@ -731,6 +731,7 @@ toolbar[keyNav]:not([collapsed], [customizing]) toolbartabstop,
   &:not(:is([overflowedItem="true"], [cui-areatype="panel"])) {
     > .toolbarbutton-icon {
       width: calc(2 * var(--toolbarbutton-padding-inner) + var(--size-image-small));
+      max-width: var(--size-image-large);
       padding-block: 0;
     }
 
