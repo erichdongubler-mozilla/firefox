@@ -352,8 +352,6 @@
     <string name="firefox_labs_banner_title">Give our experimental features a try!</string>
     <!-- Description text displayed in the banner at the top of the Firefox Labs screen. %s is the name of the app (for example "Firefox"). -->
     <string name="firefox_labs_experimental_description">They’re in development and evolving, which could impact how %s works.</string>
-    <!-- Button text for restoring the default settings by turning off any experimental features in the Firefox Labs screen. -->
-    <string name="firefox_labs_restore_default_button_text">Restore Defaults</string>
     <!-- Text displayed when no experimental features are available in the Firefox Labs screen. -->
     <string name="firefox_labs_no_labs_available_description">No experimental features available</string>
     <!-- The name of an experimental feature displayed in theFirefox Labs screen. This features allows the user to open the homepage as a new tab. -->

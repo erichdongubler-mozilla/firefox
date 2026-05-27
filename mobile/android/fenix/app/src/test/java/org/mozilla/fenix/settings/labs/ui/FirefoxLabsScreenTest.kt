@@ -4,8 +4,11 @@
 
 package org.mozilla.fenix.settings.labs.ui
 
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Rule
@@ -24,6 +27,68 @@ import org.mozilla.fenix.theme.Theme
 class FirefoxLabsScreenTest {
     @get:Rule
     val composeTestRule = createComposeRule()
+
+    @Test
+    fun `WHEN all features are disabled THEN the restore defaults button is disabled`() {
+        val store = LabsStore(
+            initialState = LabsState(
+                labsFeatures = listOf(
+                    LabsFeature(
+                        key = FeatureKey.HOMEPAGE_AS_A_NEW_TAB,
+                        name = R.string.firefox_labs_homepage_as_a_new_tab,
+                        description = R.string.firefox_labs_homepage_as_a_new_tab_description,
+                        enabled = false,
+                    ),
+                ),
+                dialogState = DialogState.Closed,
+            ),
+        )
+
+        composeTestRule.setContent {
+            FirefoxTheme(theme = Theme.Light) {
+                FirefoxLabsScreen(
+                    store = store,
+                    onNavigationIconClick = {},
+                    onShareFeedbackClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(
+            testContext.getString(R.string.firefox_labs_restore_default_button_text),
+        ).assertIsNotEnabled()
+    }
+
+    @Test
+    fun `WHEN at least one feature is enabled THEN the restore defaults button is enabled`() {
+        val store = LabsStore(
+            initialState = LabsState(
+                labsFeatures = listOf(
+                    LabsFeature(
+                        key = FeatureKey.HOMEPAGE_AS_A_NEW_TAB,
+                        name = R.string.firefox_labs_homepage_as_a_new_tab,
+                        description = R.string.firefox_labs_homepage_as_a_new_tab_description,
+                        enabled = true,
+                    ),
+                ),
+                dialogState = DialogState.Closed,
+            ),
+        )
+
+        composeTestRule.setContent {
+            FirefoxTheme(theme = Theme.Light) {
+                FirefoxLabsScreen(
+                    store = store,
+                    onNavigationIconClick = {},
+                    onShareFeedbackClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(
+            testContext.getString(R.string.firefox_labs_restore_default_button_text),
+        ).assertIsEnabled()
+    }
 
     @Test
     fun `WHEN a feature has no feedback URL THEN the share feedback link is not displayed`() {

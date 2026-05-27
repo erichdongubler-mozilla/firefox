@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
@@ -43,6 +44,8 @@ import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.button.TextButton
+import mozilla.components.compose.base.modifier.thenConditional
+import mozilla.components.compose.base.theme.layout.AcornWindowSize
 import mozilla.components.compose.base.utils.BackInvokedHandler
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.SwitchListItem
@@ -129,11 +132,17 @@ private fun FirefoxLabsScreenContent(
         }
 
         item {
+            val isWideScreen = AcornWindowSize.getWindowSize().isNotSmall()
             FilledButton(
                 text = stringResource(R.string.firefox_labs_restore_default_button_text),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .thenConditional(
+                        modifier = Modifier.wrapContentWidth(Alignment.CenterHorizontally),
+                        predicate = { isWideScreen },
+                    )
                     .padding(horizontal = 16.dp, vertical = 24.dp),
+                enabled = labsFeatures.any { it.enabled },
                 onClick = onRestoreDefaultsButtonClick,
             )
         }
