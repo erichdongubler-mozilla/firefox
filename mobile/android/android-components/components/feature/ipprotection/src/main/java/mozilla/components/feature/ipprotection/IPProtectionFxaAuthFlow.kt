@@ -70,7 +70,9 @@ class IPProtectionFxaAuthFlow(
                         pairingUrl = null,
                         entrypoint = entrypointConfig.authentication,
                         authScopes = setOf(SCOPE_IPPROTECTION, SCOPE_PROFILE, SCOPE_SYNC, SCOPE_SESSION),
-                        service = "", // We want the full "generic" authentication flow.
+                        // We don't get passwordles-login here for authentication,
+                        // we send this for FxA consistency.
+                        service = "vpn",
                     )
 
                     // FIXME(IPP) add some account auth failure notification here.
