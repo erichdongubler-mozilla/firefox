@@ -208,10 +208,8 @@ private fun FirefoxLabsBanner() {
     PromoCard(
         modifier = Modifier
             .padding(
-                start = 16.dp,
-                end = 16.dp,
-                top = 8.dp,
-                bottom = 16.dp,
+                horizontal = FirefoxTheme.layout.space.dynamic200,
+                vertical = FirefoxTheme.layout.space.static100,
             )
             .height(IntrinsicSize.Min),
         title = { Text(text = stringResource(R.string.firefox_labs_banner_title)) },
