@@ -130,14 +130,6 @@
  */
 // #define SK_DNG_VERSION 0x01040000
 
-/*
- * By default, Skia uses SIMD operations for many internal calculations, especially
- * for the CPU backend. These defines can be set to disable SIMD in SkVx and
- * SkRasterPipeline, respectively.
- */
-// #define SKVX_DISABLE_SIMD
-// #define SKRP_CPU_SCALAR
-
 #define MOZ_SKIA
 
 // On all platforms we have this byte order

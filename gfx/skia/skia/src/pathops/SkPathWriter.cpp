@@ -6,7 +6,6 @@
  */
 #include "src/pathops/SkPathWriter.h"
 
-#include "include/core/SkPathBuilder.h"
 #include "include/core/SkTypes.h"
 #include "include/private/base/SkMath.h"
 #include "src/base/SkTSort.h"
@@ -31,9 +30,8 @@ void SkPathWriter::close() {
     SkDebugf("path.close();\n");
 #endif
     fCurrent.close();
-    if (auto raw = SkPathPriv::Raw(fCurrent, SkResolveConvexity::kNo)) {
-        fBuilder.addRaw(*raw, SkPathBuilder::Reserve::kExact);
-    }
+    fBuilder.addPath(fCurrent);
+    fCurrent.reset();
     init();
 }
 
@@ -251,19 +249,19 @@ void SkPathWriter::assemble() {
             *runsPtr = opPtT;
         } while (true);
         partWriter.finishContour();
-        const TArray<SkPathBuilder>& partPartials = partWriter.partials();
+        const TArray<SkPath>& partPartials = partWriter.partials();
         if (partPartials.empty()) {
             continue;
         }
         // if pIndex is even, reverse and prepend to fPartials; otherwise, append
-        SkPathBuilder& partial = const_cast<SkPathBuilder&>(fPartials[pIndex >> 1]);
-        const SkPath part = partPartials[0].snapshot();
+        SkPath& partial = const_cast<SkPath&>(fPartials[pIndex >> 1]);
+        const SkPath& part = partPartials[0];
         if (pIndex & 1) {
             partial.addPath(part, SkPath::kExtend_AddPathMode);
         } else {
-            SkPathBuilder reverse;
-            SkPathPriv::ReverseAddPath(&reverse, part);
-            reverse.addPath(partial.detach(), SkPath::kExtend_AddPathMode);
+            SkPath reverse;
+            reverse.reverseAddPath(part);
+            reverse.addPath(partial, SkPath::kExtend_AddPathMode);
             partial = reverse;
         }
     }
@@ -353,19 +351,19 @@ void SkPathWriter::assemble() {
                     eIndex < 0 ? ~eIndex : eIndex);
 #endif
         do {
-            SkPath contour = fPartials[rIndex].snapshot();
+            const SkPath& contour = fPartials[rIndex];
             if (!first) {
                 auto prior = fBuilder.getLastPt();
                 if (!prior) {
                     return;
                 }
-                SkSpan<const SkPoint> contourPts = contour.points();
                 SkPoint next;
                 if (forward) {
-                    next = contourPts.empty() ? SkPoint{0, 0} : contourPts.front();
+                    next = contour.getPoint(0);
                 } else {
-                    SkASSERT(!contourPts.empty());
-                    next = contourPts.back();
+                    auto lastPt = contour.getLastPt();
+                    SkASSERT(lastPt.has_value());
+                    next = *lastPt;
                 }
                 if (*prior != next) {
                     /* TODO: if there is a gap between open path written so far and path to come,

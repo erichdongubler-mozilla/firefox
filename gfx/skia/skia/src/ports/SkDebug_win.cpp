@@ -5,10 +5,8 @@
  * found in the LICENSE file.
  */
 
-#include <cstdarg>
 #include "include/private/base/SkDebug.h"
 #include "include/private/base/SkFeatures.h"
-#include "include/private/base/SkLog.h"
 
 #if defined(SK_BUILD_FOR_WIN)
 
@@ -19,16 +17,18 @@
 
 static const size_t kBufferSize = 2048;
 
-void SkLogVAList(SkLogPriority priority, const char format[], va_list args) {
-    char buffer[kBufferSize + 1];
-    va_list args_copy;
+void SkDebugf(const char format[], ...) {
+    char    buffer[kBufferSize + 1];
+    va_list args;
 
-    va_copy(args_copy, args);
-    vfprintf(stderr, format, args_copy);
-    va_end(args_copy);
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
     fflush(stderr);  // stderr seems to be buffered on Windows.
 
+    va_start(args, format);
     vsnprintf(buffer, kBufferSize, format, args);
+    va_end(args);
 
     OutputDebugStringA(buffer);
 }
