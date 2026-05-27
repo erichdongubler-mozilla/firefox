@@ -110,6 +110,11 @@ class SharingUtilsCls {
   }
 
   async #showQRCodePanel(win, browser, url) {
+    let tab = win.gBrowser.getTabForBrowser(browser);
+    if (tab && win.gBrowser.selectedTab !== tab) {
+      win.gBrowser.selectedTab = tab;
+    }
+
     let qrCodeDataURI = null;
     try {
       qrCodeDataURI = await lazy.QRCodeGenerator.generateQRCode(url);
