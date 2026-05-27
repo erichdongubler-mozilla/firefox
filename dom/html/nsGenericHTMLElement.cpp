@@ -2154,35 +2154,6 @@ void nsGenericHTMLFormElement::AfterSetAttr(
     const nsAttrValue* aOldValue, nsIPrincipal* aMaybeScriptedPrincipal,
     bool aNotify) {
   if (aNameSpaceID == kNameSpaceID_None && IsFormAssociatedElement()) {
-    HTMLFormElement* form = GetFormInternal();
-
-    // add the control to the hashtable as needed
-    if (form && (aName == nsGkAtoms::name || aName == nsGkAtoms::id) &&
-        aValue && !aValue->IsEmptyString()) {
-      MOZ_ASSERT(aValue->Type() == nsAttrValue::eAtom,
-                 "Expected atom value for name/id");
-      form->AddElementToTable(this,
-                              nsDependentAtomString(aValue->GetAtomValue()));
-    }
-
-    if (form && aName == nsGkAtoms::type) {
-      nsAutoString tmp;
-
-      GetAttr(nsGkAtoms::name, tmp);
-
-      if (!tmp.IsEmpty()) {
-        form->AddElementToTable(this, tmp);
-      }
-
-      GetAttr(nsGkAtoms::id, tmp);
-
-      if (!tmp.IsEmpty()) {
-        form->AddElementToTable(this, tmp);
-      }
-
-      form->AddElement(this, false, aNotify);
-    }
-
     if (aName == nsGkAtoms::form) {
       bool hadOldValue = aOldValue && !aOldValue->GetAtomValue()->IsEmpty();
       bool hasNewValue = aValue && !aValue->GetAtomValue()->IsEmpty();
@@ -2200,6 +2171,32 @@ void nsGenericHTMLFormElement::AfterSetAttr(
       } else if (aValue && aValue->GetAtomValue()->IsEmpty()) {
         // Ensure that empty @form value clears the form owner.
         ClearForm(true, false);
+      }
+    } else if (HTMLFormElement* form = GetFormInternal()) {
+      // add the control to the hashtable as needed
+      if (aName == nsGkAtoms::type) {
+        nsAutoString tmp;
+
+        GetAttr(nsGkAtoms::name, tmp);
+
+        if (!tmp.IsEmpty()) {
+          form->AddElementToTable(this, tmp);
+        }
+
+        GetAttr(nsGkAtoms::id, tmp);
+
+        if (!tmp.IsEmpty()) {
+          form->AddElementToTable(this, tmp);
+        }
+
+        form->AddElement(this, false, aNotify);
+      } else if (aName == nsGkAtoms::name || aName == nsGkAtoms::id) {
+        if (aValue && !aValue->IsEmptyString()) {
+          MOZ_ASSERT(aValue->Type() == nsAttrValue::eAtom,
+                     "Expected atom value for name/id");
+          form->AddElementToTable(
+              this, nsDependentAtomString(aValue->GetAtomValue()));
+        }
       }
     }
   }

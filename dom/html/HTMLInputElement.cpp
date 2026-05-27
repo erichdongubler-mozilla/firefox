@@ -1379,25 +1379,6 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                                     bool aNotify) {
   if (aNameSpaceID == kNameSpaceID_None) {
     bool needValidityUpdate = false;
-    if (aName == nsGkAtoms::src) {
-      nsAttrValueOrString value(aValue);
-      mSrcTriggeringPrincipal = nsContentUtils::GetAttrTriggeringPrincipal(
-          this, value.String(), aSubjectPrincipal);
-      if (aNotify && mType == FormControlType::InputImage) {
-        if (aValue) {
-          // Mark channel as urgent-start before load image if the image load is
-          // initiated by a user interaction.
-          mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
-
-          LoadImage(value.String(), true, aNotify, eImageLoadType_Normal,
-                    mSrcTriggeringPrincipal);
-        } else {
-          // Null value means the attr got unset; drop the image
-          CancelImageRequests(aNotify);
-        }
-      }
-    }
-
     if (aName == nsGkAtoms::value) {
       // If the element has a value in value mode, the value content attribute
       // is the default value. So if the elements value didn't change from the
@@ -1411,11 +1392,9 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       // even if the value doesn't change.
       UpdateStepMismatchValidityState();
       needValidityUpdate = true;
-    }
-
-    // Checked must be set no matter what type of control it is, since
-    // mChecked must reflect the new value
-    if (aName == nsGkAtoms::checked) {
+    } else if (aName == nsGkAtoms::checked) {
+      // Checked must be set no matter what type of control it is, since
+      // mChecked must reflect the new value
       if (IsRadioOrCheckbox()) {
         SetStates(ElementState::DEFAULT, !!aValue, aNotify);
       }
@@ -1429,9 +1408,7 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
         }
       }
       needValidityUpdate = true;
-    }
-
-    if (aName == nsGkAtoms::type) {
+    } else if (aName == nsGkAtoms::type) {
       FormControlType newType;
       if (!aValue) {
         // We're now a text input.
@@ -1443,19 +1420,8 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
         HandleTypeChange(newType, aNotify);
         needValidityUpdate = true;
       }
-    }
-
-    // When name or type changes, radio should be added to radio group.
-    // If we are not done creating the radio, we also should not do it.
-    if ((aName == nsGkAtoms::name || (aName == nsGkAtoms::type && !mForm)) &&
-        mType == FormControlType::InputRadio && (mForm || mDoneCreating)) {
-      AddToRadioGroup();
-      UpdateValueMissingValidityStateForRadio(false);
-      needValidityUpdate = true;
-    }
-
-    if (aName == nsGkAtoms::required || aName == nsGkAtoms::disabled ||
-        aName == nsGkAtoms::readonly) {
+    } else if (aName == nsGkAtoms::required || aName == nsGkAtoms::disabled ||
+               aName == nsGkAtoms::readonly) {
       if (aName == nsGkAtoms::disabled) {
         // This *has* to be called *before* validity state check because
         // UpdateBarredFromConstraintValidation and
@@ -1481,6 +1447,23 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
         UpdateBarredFromConstraintValidation();
       }
       needValidityUpdate = true;
+    } else if (aName == nsGkAtoms::src) {
+      nsAttrValueOrString value(aValue);
+      mSrcTriggeringPrincipal = nsContentUtils::GetAttrTriggeringPrincipal(
+          this, value.String(), aSubjectPrincipal);
+      if (aNotify && mType == FormControlType::InputImage) {
+        if (aValue) {
+          // Mark channel as urgent-start before load image if the image load is
+          // initiated by a user interaction.
+          mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
+
+          LoadImage(value.String(), true, aNotify, eImageLoadType_Normal,
+                    mSrcTriggeringPrincipal);
+        } else {
+          // Null value means the attr got unset; drop the image
+          CancelImageRequests(aNotify);
+        }
+      }
     } else if (aName == nsGkAtoms::maxlength) {
       UpdateTooLongValidityState();
       if (auto* editor = GetExtantTextEditor()) {
@@ -1556,7 +1539,16 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       UpdateColor();
     }
 
-    if (CreatesDateTimeWidget()) {
+    // When name or type changes, radio should be added to radio group.
+    // If we are not done creating the radio, we also should not do it.
+    if (mType == FormControlType::InputRadio) {
+      if ((aName == nsGkAtoms::name || (aName == nsGkAtoms::type && !mForm)) &&
+          (mForm || mDoneCreating)) {
+        AddToRadioGroup();
+        UpdateValueMissingValidityStateForRadio(false);
+        needValidityUpdate = true;
+      }
+    } else if (CreatesDateTimeWidget()) {
       if (aName == nsGkAtoms::value || aName == nsGkAtoms::readonly ||
           aName == nsGkAtoms::tabindex || aName == nsGkAtoms::required ||
           aName == nsGkAtoms::disabled) {
