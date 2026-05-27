@@ -656,6 +656,7 @@ SettingGroupManager.registerGroups({
     id: "passwordsGroup",
     l10nId: "forms-passwords-header",
     headingLevel: 2,
+    subcategory: "logins",
     items: [
       {
         id: "savePasswords",
