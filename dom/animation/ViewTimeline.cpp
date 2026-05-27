@@ -54,6 +54,69 @@ JSObject* ViewTimeline::WrapObject(JSContext* aCx,
   return ViewTimeline_Binding::Wrap(aCx, this, aGivenProto);
 }
 
+/* static */
+already_AddRefed<ViewTimeline> ViewTimeline::Constructor(
+    const GlobalObject& aGlobal, const ViewTimelineOptions& aOptions,
+    ErrorResult& aRv) {
+  RefPtr<Document> doc =
+      AnimationUtils::GetCurrentRealmDocument(aGlobal.Context());
+  if (!doc) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+
+  // The spec doesn't provide the default value for element, so we use null
+  // subject to align the behavior with other browsers.
+  Element* subject =
+      aOptions.mSubject.WasPassed() ? &aOptions.mSubject.Value() : nullptr;
+
+  StyleScrollAxis axis;
+  switch (aOptions.mAxis) {
+    case dom::ScrollAxis::Block:
+      axis = StyleScrollAxis::Block;
+      break;
+    case dom::ScrollAxis::Inline:
+      axis = StyleScrollAxis::Inline;
+      break;
+    case dom::ScrollAxis::X:
+      axis = StyleScrollAxis::X;
+      break;
+    case dom::ScrollAxis::Y:
+      axis = StyleScrollAxis::Y;
+      break;
+  }
+
+  StyleViewTimelineInset inset;
+  if (aOptions.mInset.IsString()) {
+    // If a DOMString value is provided as an inset, parse it as a
+    // <'view-timeline-inset'> value;
+    // FIXME: Add parser in the following patch.
+  } else {
+    if (!StaticPrefs::layout_css_typed_om_enabled()) {
+      // CSSKeywordValue and CSSNumericValue are disabled.
+      aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+      return nullptr;
+    }
+    // if a sequence is provided, the first value represents the start inset and
+    // the second value represents the end inset. If the sequence has only one
+    // value, it is duplicated. If it has zero values or more than two values,
+    // or if it contains a CSSKeywordValue whose value is not "auto", throw a
+    // TypeError.
+    // FIXME: Bug 2016880. Handle the sequence of CSSNumericValue and
+    // CSSKeywordValue.
+  }
+
+  // Set the source of timeline to the subject’s nearest ancestor scroll
+  // container element.
+  // Note: if subject is null, we use null source as well.
+  ScrollerInfo scroller = ScrollerInfo::Anonymous(
+      subject ? ScrollerInfo::Type::Nearest : ScrollerInfo::Type::Provided,
+      subject, PseudoStyleRequest::NotPseudo());
+
+  return MakeAndAddRef<ViewTimeline>(doc, scroller, axis, subject,
+                                     PseudoStyleType::NotPseudo, inset);
+}
+
 Nullable<double> ViewTimeline::GetStartOffset() const {
   auto data = ComputeTimelineData();
   if (!data) {
