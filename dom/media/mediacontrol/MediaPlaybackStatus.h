@@ -97,6 +97,12 @@ class MediaPlaybackStatus final {
 
   Maybe<uint64_t> GetActiveAudibleControllableContextId() const;
 
+  // Test-only accessors. Used by gtests to inspect per-browsing-context
+  // audibility state that is not otherwise observable through the public API.
+  bool IsBcAudibleForTesting(uint64_t aBcId) const;
+  const nsTArray<AudibleSource>* GetAudibleSourcesForTesting(
+      uint64_t aBcId) const;
+
  private:
   /**
    * This internal class stores per-browsing-context state used to decide the
@@ -151,6 +157,12 @@ class MediaPlaybackStatus final {
     Maybe<PositionState> GuessedPositionState() const;
     void UpdateGuessedPositionState(const nsID& aElementId,
                                     const Maybe<PositionState>& aState);
+
+    // Test-only: exposes the underlying audible-source records so gtests can
+    // assert the precise per-source state that no public API surfaces.
+    const nsTArray<AudibleSource>& AudibleSourcesForTesting() const {
+      return mAudibleSources;
+    }
 
    private:
     /**

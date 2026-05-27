@@ -8,6 +8,7 @@ UNIFIED_SOURCES += [
     "TestMediaController.cpp",
     "TestMediaControlService.cpp",
     "TestMediaKeysEvent.cpp",
+    "TestMediaPlaybackStatus.cpp",
 ]
 
 if CONFIG["MOZ_APPLEMEDIA"] and CONFIG["TARGET_OS"] == "OSX":
