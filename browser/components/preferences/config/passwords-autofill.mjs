@@ -144,29 +144,14 @@ export class PasswordSettingHelpers {
   static _initMasterPasswordUI() {
     var noMP = !LoginHelper.isPrimaryPasswordSet();
 
-    // Check if settings-redesign is enabled to determine which UI is active
-    const srdEnabled = Services.prefs.getBoolPref(
-      "browser.settings-redesign.enabled",
-      false
-    );
+    var button = document.getElementById("changeMasterPassword");
+    button.disabled = noMP;
 
-    const buttonId = srdEnabled
-      ? "changePrimaryPassword"
-      : "changeMasterPassword";
-    const checkboxId = srdEnabled ? "usePrimaryPassword" : "useMasterPassword";
-
-    var button = document.getElementById(buttonId);
-    if (button) {
-      button.disabled = noMP;
-    }
-
-    var checkbox = document.getElementById(checkboxId);
-    if (checkbox) {
-      checkbox.checked = !noMP;
-      checkbox.disabled =
-        (noMP && !Services.policies.isAllowed("createMasterPassword")) ||
-        (!noMP && !Services.policies.isAllowed("removeMasterPassword"));
-    }
+    var checkbox = document.getElementById("useMasterPassword");
+    checkbox.checked = !noMP;
+    checkbox.disabled =
+      (noMP && !Services.policies.isAllowed("createMasterPassword")) ||
+      (!noMP && !Services.policies.isAllowed("removeMasterPassword"));
   }
 }
 
@@ -667,9 +652,8 @@ Preferences.addSetting({
 
 SettingGroupManager.registerGroups({
   passwords: {
-    inProgress: false,
+    inProgress: true,
     id: "passwordsGroup",
-    subcategory: "logins",
     l10nId: "forms-passwords-header",
     headingLevel: 2,
     items: [

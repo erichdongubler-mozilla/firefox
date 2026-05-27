@@ -1,24 +1,25 @@
 add_task(async function test_openPreferences_spotlight() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-
   for (let [arg, expectedPane, expectedHash, expectedSubcategory] of [
-    ["privacy-reports", "panePermissionsData", "#permissionsData", "reports"],
+    ["privacy-reports", "panePrivacy", "#privacy", "reports"],
     [
       "privacy-address-autofill",
-      "panePasswordsAutofill",
-      "#passwordsAutofill",
+      "panePrivacy",
+      "#privacy",
       "addresses-autofill address-autofill",
     ],
     [
       "privacy-payment-methods-autofill",
-      "panePasswordsAutofill",
-      "#passwordsAutofill",
+      "panePrivacy",
+      "#privacy",
       "payment-methods-autofill credit-card-autofill",
     ],
-    ["privacy-logins", "panePasswordsAutofill", "#passwordsAutofill", "logins"],
-    ["privacy-trackingprotection", "panePrivacy", "#privacy", "etpStatus"],
+    ["privacy-logins", "panePrivacy", "#privacy", "logins"],
+    [
+      "privacy-trackingprotection",
+      "panePrivacy",
+      "#privacy",
+      "trackingprotection",
+    ],
   ]) {
     if (
       arg == "privacy-credit-card-autofill" &&
