@@ -328,13 +328,7 @@ addon-card[expanded] .update-postponed-bar,
 }
 
 .theme-enable-button {
-  min-width: auto;
-  font-size: var(--font-size-small);
-  min-height: auto;
-  height: 24px;
-  margin: 0;
-  padding: 0 8px;
-  font-weight: normal;
+  padding-inline: var(--space-small);
 }
 
 .addon-description {

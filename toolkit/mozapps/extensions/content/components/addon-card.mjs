@@ -99,11 +99,12 @@ export class AddonCard extends AboutAddonsHTMLElement {
                 >
                 </a>
                 <div class="spacer"></div>
-                <button
+                <moz-button
                   class="theme-enable-button"
+                  size="small"
                   action="toggle-disabled"
                   hidden
-                ></button>
+                ></moz-button>
                 <moz-toggle
                   class="extension-enable-button"
                   action="toggle-disabled"
