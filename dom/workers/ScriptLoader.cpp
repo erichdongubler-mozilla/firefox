@@ -837,7 +837,7 @@ void WorkerScriptLoader::MaybeMoveToLoadedList(ScriptLoadRequest* aRequest) {
   }
 }
 
-bool WorkerScriptLoader::StoreCSP() {
+bool WorkerScriptLoader::StorePolicyContainerArgs() {
   // We must be on the same worker as we started on.
   mWorkerRef->Private()->AssertIsOnWorkerThread();
 
@@ -847,9 +847,9 @@ bool WorkerScriptLoader::StoreCSP() {
 
   MOZ_ASSERT(!mRv.Failed());
 
-  // Move the CSP from the workerLoadInfo in the corresponding Client
-  // where the CSP code expects it!
-  mWorkerRef->Private()->StoreCSPOnClient();
+  // Store the policy container args (CSP, IP address space, etc.) from
+  // WorkerLoadInfo into the worker's ClientSource.
+  mWorkerRef->Private()->StorePolicyContainerArgsOnClient();
   return true;
 }
 
@@ -1704,7 +1704,7 @@ bool ScriptExecutorRunnable::PreRun(WorkerPrivate* aWorkerPrivate) {
     }
   }
 
-  return mScriptLoader->StoreCSP();
+  return mScriptLoader->StorePolicyContainerArgs();
 }
 
 bool ScriptExecutorRunnable::ProcessModuleScript(
