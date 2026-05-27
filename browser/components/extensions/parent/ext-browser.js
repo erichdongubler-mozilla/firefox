@@ -323,7 +323,6 @@ class TabTracker extends TabTrackerBase {
     super();
 
     this._tabs = new WeakMap();
-    this._browsers = new WeakMap();
     this._tabIds = new Map();
     this._nextId = 1;
     this._deferredTabOpenEvents = new WeakMap();
@@ -370,19 +369,18 @@ class TabTracker extends TabTrackerBase {
     return id;
   }
 
-  getBrowserTabId(browser) {
-    let id = this._browsers.get(browser);
-    if (id) {
-      return id;
+  getTabForBrowser(browser) {
+    let { gBrowser } = browser.documentGlobal;
+    if (!gBrowser) {
+      if (browser.id === "addon-inline-options") {
+        // When we're loaded into a <browser> inside about:addons, we need to
+        // go up one more level.
+        browser = browser.documentGlobal.docShell.chromeEventHandler;
+        return browser.documentGlobal.gBrowser.getTabForBrowser(browser);
+      }
+      return null;
     }
-
-    let tab = browser.documentGlobal.gBrowser.getTabForBrowser(browser);
-    if (tab) {
-      id = this.getId(tab);
-      this._browsers.set(browser, id);
-      return id;
-    }
-    return -1;
+    return gBrowser.getTabForBrowser(browser);
   }
 
   setId(nativeTab, id) {
@@ -394,9 +392,6 @@ class TabTracker extends TabTrackerBase {
     }
 
     this._tabs.set(nativeTab, id);
-    if (nativeTab.linkedBrowser) {
-      this._browsers.set(nativeTab.linkedBrowser, id);
-    }
     this._tabIds.set(id, nativeTab);
   }
 
@@ -752,41 +747,24 @@ class TabTracker extends TabTrackerBase {
         windowId: -1,
       };
     }
-    let { gBrowser } = window;
-    if (!gBrowser) {
-      if (window.top.document.documentURI === "about:addons") {
-        // When we're loaded into a <browser> inside about:addons, we need to go up
-        // one more level.
-        browser = window.docShell.chromeEventHandler;
-      } else {
-        return {
-          tabId: -1,
-          windowId: -1,
-        };
+
+    const nativeTab = this.getTabForBrowser(browser);
+    if (nativeTab) {
+      // If window was about:addons, use the browser window instead.
+      window = nativeTab.documentGlobal;
+    } else {
+      // Even without a tab we may have a windowId, e.g. with extension popups
+      // and sidebars. For sidebars in webext-panels.xhtml, look up the parent:
+      window = window.browsingContext.topChromeWindow;
+      if (!windowTracker.isBrowserWindow(window)) {
+        // E.g. an extension background page.
+        return { tabId: -1, windowId: -1 };
       }
     }
-
     return {
-      tabId: this.getBrowserTabId(browser),
-      windowId: windowTracker.getId(browser.documentGlobal),
+      tabId: nativeTab ? this.getId(nativeTab) : -1,
+      windowId: windowTracker.getId(window),
     };
-  }
-
-  getBrowserDataForContext(context) {
-    if (["tab", "background"].includes(context.viewType)) {
-      return this.getBrowserData(context.xulBrowser);
-    } else if (["popup", "sidebar"].includes(context.viewType)) {
-      // popups and sidebars are nested inside a browser element
-      // (with url "chrome://browser/content/webext-panels.xhtml")
-      // and so we look for the corresponding topChromeWindow to
-      // determine the windowId the panel belongs to.
-      const chromeWindow =
-        context.xulBrowser?.documentGlobal?.browsingContext?.topChromeWindow;
-      const windowId = chromeWindow ? windowTracker.getId(chromeWindow) : -1;
-      return { tabId: -1, windowId };
-    }
-
-    return { tabId: -1, windowId: -1 };
   }
 
   get activeTab() {

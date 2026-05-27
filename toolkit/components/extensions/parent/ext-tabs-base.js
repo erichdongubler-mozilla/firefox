@@ -1428,6 +1428,19 @@ class TabTrackerBase extends EventEmitter {
   }
 
   /**
+   * Returns the native tab associated with the given `<browser>`, if any.
+   *
+   * @param {XULElement} _browser
+   *        A `<browser>` element.
+   *
+   * @returns {NativeTab|null}
+   * @abstract
+   */
+  getTabForBrowser(_browser) {
+    throw new Error("Not implemented");
+  }
+
+  /**
    * Returns basic information about the tab and window that the given browser
    * belongs to.
    *

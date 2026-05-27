@@ -774,16 +774,18 @@ class ExtensionPageContextParent extends ProxyContextParent {
 
   get tabId() {
     let { tabTracker } = apiManager.global;
-    let data = tabTracker.getBrowserData(this.xulBrowser);
-    if (data.tabId >= 0) {
-      return data.tabId;
+    const xulBrowser = this.xulBrowser;
+    const tab = xulBrowser && tabTracker.getTabForBrowser(xulBrowser);
+    if (tab) {
+      return tabTracker.getId(tab);
     }
     return undefined;
   }
 
   toExtensionContext() {
     const { tabTracker } = apiManager.global;
-    const { tabId, windowId } = tabTracker.getBrowserDataForContext(this);
+    const xulBrowser = this.xulBrowser;
+    const browserData = xulBrowser && tabTracker.getBrowserData(xulBrowser);
     const windowContext = this.browsingContext?.currentWindowContext;
     return {
       // NOTE: the contextId property in the final set of properties returned to
@@ -803,8 +805,8 @@ class ExtensionPageContextParent extends ProxyContextParent {
       documentUrl: windowContext?.documentURI.spec,
       incognito: this.incognito,
       frameId: this.frameId,
-      tabId,
-      windowId,
+      tabId: browserData ? browserData.tabId : -1,
+      windowId: browserData ? browserData.windowId : -1,
       // TODO: File followup to also add a Firefox-only userContextId?
     };
   }

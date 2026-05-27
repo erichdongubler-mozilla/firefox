@@ -167,9 +167,10 @@ this.webNavigation = class extends ExtensionAPIPersistent {
         }
 
         if (data.sourceTabBrowser) {
-          data2.sourceTabId = tabTracker.getBrowserData(
-            data.sourceTabBrowser
-          ).tabId;
+          const sourceTab = tabTracker.getTabForBrowser(data.sourceTabBrowser);
+          if (sourceTab) {
+            data2.sourceTabId = tabTracker.getId(sourceTab);
+          }
         }
 
         fillTransitionProperties(event, data, data2);
