@@ -41,6 +41,13 @@ class MediaSharedKeysListener final : public ContentMediaControlKeyReceiver {
  public:
   NS_INLINE_DECL_REFCOUNTING(MediaSharedKeysListener, override)
 
+  // The W3C Audio Session API does not cover Web Speech / SpeechSynthesis;
+  // see https://github.com/w3c/audio-session/issues/28. We tag utterances as
+  // "transient" as an interim choice — short-lived TTS briefly takes focus
+  // and may duck concurrent audio for the utterance's duration. Revisit and
+  // align with the spec once it adds Web Speech support.
+  static constexpr AudioSessionType kSessionType = AudioSessionType::Transient;
+
   explicit MediaSharedKeysListener(nsSpeechTask& aTask) : mTask(aTask) {
     MOZ_ASSERT(NS_IsMainThread());
   }
@@ -64,9 +71,9 @@ class MediaSharedKeysListener final : public ContentMediaControlKeyReceiver {
     mAgent->AddReceiver(this, ControlType::eUncontrollable);
     // Speech is audible from the moment the platform starts speaking until
     // DispatchEnd; there is no separate audibility detection.
-    mAgent->NotifyMediaAudibleChanged(mBrowsingContextId,
-                                      MediaAudibleState::eAudible,
-                                      ControlType::eUncontrollable);
+    mAgent->NotifyMediaAudibleChanged(
+        mBrowsingContextId, MediaAudibleState::eAudible,
+        ControlType::eUncontrollable, kSessionType);
     mIsAudible = true;
     MEDIA_CONTROL_LOG(
         "MediaSharedKeysListener %p Start: registered as uncontrollable "
@@ -85,9 +92,9 @@ class MediaSharedKeysListener final : public ContentMediaControlKeyReceiver {
       return;
     }
     if (mIsAudible) {
-      mAgent->NotifyMediaAudibleChanged(mBrowsingContextId,
-                                        MediaAudibleState::eInaudible,
-                                        ControlType::eUncontrollable);
+      mAgent->NotifyMediaAudibleChanged(
+          mBrowsingContextId, MediaAudibleState::eInaudible,
+          ControlType::eUncontrollable, kSessionType);
       mIsAudible = false;
     }
     mAgent->RemoveReceiver(this, ControlType::eUncontrollable);

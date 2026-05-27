@@ -286,6 +286,10 @@ class AudioDestinationNode::MediaSharedKeysListener final
  public:
   NS_INLINE_DECL_REFCOUNTING(MediaSharedKeysListener, override)
 
+  // AudioContext defaults to the "ambient" audio session type per
+  // https://w3c.github.io/audio-session/#audiocontext-sink
+  static constexpr AudioSessionType kSessionType = AudioSessionType::Ambient;
+
   explicit MediaSharedKeysListener(AudioDestinationNode& aDestination)
       : mDestination(aDestination) {
     MOZ_ASSERT(NS_IsMainThread());
@@ -326,7 +330,7 @@ class AudioDestinationNode::MediaSharedKeysListener final
     mAgent->NotifyMediaAudibleChanged(
         mBrowsingContextId,
         aAudible ? MediaAudibleState::eAudible : MediaAudibleState::eInaudible,
-        ControlType::eUncontrollable);
+        ControlType::eUncontrollable, kSessionType);
     MEDIA_CONTROL_LOG("MediaSharedKeysListener %p Reported %s in BC %" PRIu64,
                       this, aAudible ? "audible" : "inaudible",
                       mBrowsingContextId);
@@ -343,9 +347,9 @@ class AudioDestinationNode::MediaSharedKeysListener final
       return;
     }
     if (mIsAudible) {
-      mAgent->NotifyMediaAudibleChanged(mBrowsingContextId,
-                                        MediaAudibleState::eInaudible,
-                                        ControlType::eUncontrollable);
+      mAgent->NotifyMediaAudibleChanged(
+          mBrowsingContextId, MediaAudibleState::eInaudible,
+          ControlType::eUncontrollable, kSessionType);
       mIsAudible = false;
     }
     mAgent->RemoveReceiver(this, ControlType::eUncontrollable);

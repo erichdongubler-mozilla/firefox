@@ -92,9 +92,9 @@ void ContentMediaAgent::NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
   }
 }
 
-void ContentMediaAgent::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
-                                                  MediaAudibleState aState,
-                                                  ControlType aType) {
+void ContentMediaAgent::NotifyMediaAudibleChanged(
+    uint64_t aBrowsingContextId, MediaAudibleState aState, ControlType aType,
+    AudioSessionType aSessionType) {
   MOZ_ASSERT(NS_IsMainThread());
   RefPtr<BrowsingContext> bc = GetBrowsingContextForAgent(aBrowsingContextId);
   if (!bc || bc->IsDiscarded()) {
@@ -106,13 +106,14 @@ void ContentMediaAgent::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
       bc->Id());
   if (XRE_IsContentProcess()) {
     ContentChild* contentChild = ContentChild::GetSingleton();
-    (void)contentChild->SendNotifyMediaAudibleChanged(bc, aState, aType);
+    (void)contentChild->SendNotifyMediaAudibleChanged(bc, aState, aType,
+                                                      aSessionType);
   } else {
     // Currently this only happen when we disable e10s, otherwise all controlled
     // media would be run in the content process.
     if (RefPtr<IMediaInfoUpdater> updater =
             bc->Canonical()->GetMediaController()) {
-      updater->NotifyMediaAudibleChanged(bc->Id(), aState, aType);
+      updater->NotifyMediaAudibleChanged(bc->Id(), aState, aType, aSessionType);
     }
   }
 }

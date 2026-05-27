@@ -6758,13 +6758,14 @@ mozilla::ipc::IPCResult ContentParent::RecvNotifyMediaPlaybackChanged(
 
 mozilla::ipc::IPCResult ContentParent::RecvNotifyMediaAudibleChanged(
     const MaybeDiscarded<BrowsingContext>& aContext, MediaAudibleState aState,
-    ControlType aType) {
+    ControlType aType, AudioSessionType aSessionType) {
   if (aContext.IsNullOrDiscarded()) {
     return IPC_OK();
   }
   if (RefPtr<IMediaInfoUpdater> updater =
           aContext.get_canonical()->GetMediaController()) {
-    updater->NotifyMediaAudibleChanged(aContext.ContextId(), aState, aType);
+    updater->NotifyMediaAudibleChanged(aContext.ContextId(), aState, aType,
+                                       aSessionType);
   }
   return IPC_OK();
 }

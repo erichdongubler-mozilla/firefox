@@ -612,7 +612,9 @@ class HTMLMediaElement::MediaControlKeyListener final
   void NotifyAudibleStateChanged(MediaAudibleState aState) {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT(IsStarted());
-    mControlAgent->NotifyMediaAudibleChanged(mOwnerBrowsingContextId, aState);
+    mControlAgent->NotifyMediaAudibleChanged(mOwnerBrowsingContextId, aState,
+                                             ControlType::eControllable,
+                                             AudioSessionType::Playback);
   }
 
   MediaPlaybackState mState = MediaPlaybackState::eStopped;

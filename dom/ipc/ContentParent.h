@@ -22,6 +22,7 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/AudioSessionBinding.h"
 #include "mozilla/dom/JSProcessActorParent.h"
 #include "mozilla/dom/MediaSessionBinding.h"
 #include "mozilla/dom/MessageManagerCallback.h"
@@ -1249,7 +1250,7 @@ class ContentParent final : public PContentParent,
 
   mozilla::ipc::IPCResult RecvNotifyMediaAudibleChanged(
       const MaybeDiscarded<BrowsingContext>& aContext, MediaAudibleState aState,
-      ControlType aType);
+      ControlType aType, AudioSessionType aSessionType);
 
   mozilla::ipc::IPCResult RecvNotifyPictureInPictureModeChanged(
       const MaybeDiscarded<BrowsingContext>& aContext, bool aEnabled);

@@ -356,7 +356,8 @@ NS_IMETHODIMP MediaController::GetName(nsACString& aName) {
 
 void MediaController::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
                                                 MediaAudibleState aState,
-                                                ControlType aType) {
+                                                ControlType aType,
+                                                AudioSessionType aSessionType) {
   if (mShutdown) {
     return;
   }

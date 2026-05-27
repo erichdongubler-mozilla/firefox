@@ -10,6 +10,7 @@
 #include "MediaStatusManager.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/LinkedList.h"
+#include "mozilla/dom/AudioSessionBinding.h"
 #include "mozilla/dom/MediaControllerBinding.h"
 #include "mozilla/dom/MediaSession.h"
 #include "nsISupportsImpl.h"
@@ -124,7 +125,8 @@ class MediaController final : public DOMEventTargetHelper,
                                   MediaPlaybackState aState) override;
   void NotifyMediaAudibleChanged(
       uint64_t aBrowsingContextId, MediaAudibleState aState,
-      ControlType aType = ControlType::eControllable) override;
+      ControlType aType = ControlType::eControllable,
+      AudioSessionType aSessionType = AudioSessionType::Playback) override;
   void SetIsInPictureInPictureMode(uint64_t aBrowsingContextId,
                                    bool aIsInPictureInPictureMode) override;
   void NotifyMediaFullScreenState(uint64_t aBrowsingContextId,

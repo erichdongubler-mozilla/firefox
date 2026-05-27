@@ -9,6 +9,7 @@
 #include "MediaEventSource.h"
 #include "MediaPlaybackStatus.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/dom/AudioSessionBinding.h"
 #include "mozilla/dom/MediaMetadata.h"
 #include "mozilla/dom/MediaSessionBinding.h"
 #include "nsISupportsImpl.h"
@@ -84,7 +85,8 @@ class IMediaInfoUpdater {
   //     (X) `audible` -> (media pauses) [forgot to notify `inaudible`]
   virtual void NotifyMediaAudibleChanged(
       uint64_t aBrowsingContextId, MediaAudibleState aState,
-      ControlType aType = ControlType::eControllable) = 0;
+      ControlType aType = ControlType::eControllable,
+      AudioSessionType aSessionType = AudioSessionType::Playback) = 0;
 
   // Use this method to update media session's declared playback state for the
   // specific media session.
@@ -160,7 +162,8 @@ class MediaStatusManager : public IMediaInfoUpdater {
                                   MediaPlaybackState aState) override;
   void NotifyMediaAudibleChanged(
       uint64_t aBrowsingContextId, MediaAudibleState aState,
-      ControlType aType = ControlType::eControllable) override;
+      ControlType aType = ControlType::eControllable,
+      AudioSessionType aSessionType = AudioSessionType::Playback) override;
   void SetDeclaredPlaybackState(uint64_t aSessionContextId,
                                 MediaSessionPlaybackState aState) override;
   void NotifySessionCreated(uint64_t aSessionContextId) override;

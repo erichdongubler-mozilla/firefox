@@ -154,6 +154,7 @@ using mozilla::dom::MediaControlAction from "mozilla/dom/MediaControlKeySource.h
 using mozilla::dom::MediaPlaybackState from "mozilla/dom/MediaPlaybackStatus.h";
 using mozilla::dom::MediaAudibleState from "mozilla/dom/MediaPlaybackStatus.h";
 using mozilla::dom::ControlType from "mozilla/dom/MediaPlaybackStatus.h";
+using mozilla::dom::AudioSessionType from "mozilla/dom/AudioSessionBinding.h";
 using mozilla::dom::MediaMetadataBase from "mozilla/dom/MediaMetadata.h";
 using mozilla::dom::MediaSessionAction from "mozilla/dom/MediaSessionBinding.h";
 using mozilla::dom::MediaSessionPlaybackState from "mozilla/dom/MediaSessionBinding.h";
@@ -1690,7 +1691,8 @@ parent:
     */
     async NotifyMediaAudibleChanged(MaybeDiscardedBrowsingContext aContext,
                                     MediaAudibleState aState,
-                                    ControlType aType);
+                                    ControlType aType,
+                                    AudioSessionType aSessionType);
 
    /**
     * When media enabled or disabled the Picture-in-Picture mode, we have to

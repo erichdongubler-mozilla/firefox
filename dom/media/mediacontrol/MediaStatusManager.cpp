@@ -49,9 +49,9 @@ MediaStatusManager::MediaStatusManager(uint64_t aBrowsingContextId)
                         "MediaStatusManager only runs on Chrome process!");
 }
 
-void MediaStatusManager::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
-                                                   MediaAudibleState aState,
-                                                   ControlType aType) {
+void MediaStatusManager::NotifyMediaAudibleChanged(
+    uint64_t aBrowsingContextId, MediaAudibleState aState, ControlType aType,
+    AudioSessionType aSessionType) {
   // MediaStatusManager only tracks controllable sources; uncontrollable
   // sources are handled by the derived MediaController override.
   MOZ_ASSERT(aType == ControlType::eControllable);
