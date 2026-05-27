@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-05-24T22:47:50.129291+00:00'
+updated_at: '2026-05-27T14:39:59.770906+00:00'
 export:
   path: ./docs/mots/index.rst
   format: rst
@@ -77,6 +77,10 @@ people:
     bmo_id: 339940
     name: André Bargull
     nick: anba
+  - &andhuang
+    bmo_id: 789204
+    name: Andy Huang
+    nick: andhuang
   - &andi
     bmo_id: 555858
     name: Andi
@@ -462,6 +466,10 @@ people:
     bmo_id: 506442
     name: David Parks
     nick: handyman
+  - &hannaa
+    bmo_id: 708282
+    name: Hanna Alemu
+    nick: hanna_a
   - &hiro
     bmo_id: 131213
     name: Hiroyuki Ikezoe
@@ -602,6 +610,10 @@ people:
     bmo_id: 621062
     name: Josh Groves
     nick: josh
+  - &jprickett
+    bmo_id: 708280
+    name: Jason Prickett
+    nick: jprickett
   - &jrmuizel
     bmo_id: 309398
     name: Jeff Muizelaar
@@ -989,6 +1001,10 @@ people:
     bmo_id: 75935
     name: Ryan VanderMeulen
     nick: RyanVM
+  - &sachung
+    bmo_id: 753877
+    name: Sarah Chung
+    nick: sachung
   - &saschanaz
     bmo_id: 473060
     name: Kagami Rosylight
@@ -3798,6 +3814,10 @@ modules:
           - *dmosedale
           - *emcminn
           - *mimi
+          - *hannaa
+          - *jprickett
+          - *sachung
+          - *andhuang
         machine_name: inproduct_messaging
 
       - name: Launcher Process
@@ -4766,5 +4786,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: 9fc88664ec5478b2ba31c1b310d3506c122e464f
-  export: 53b297b8f1d8ed1f07883ef9e50c2a6d04f424b1
+  config: ad1020575f289c481f804803e964ae8bafe2760a
+  export: 8b481dfc841ce341254d0929e6362b54a8bc344f
