@@ -147,10 +147,7 @@ export var PoliciesPrefTracker = {
       let defaults = new Preferences({ defaultBranch: true });
       let stored = {};
 
-      if (
-        Services.prefs.getDefaultBranch("").getPrefType(prefName) !=
-        Ci.nsIPrefBranch.PREF_INVALID
-      ) {
+      if (defaults.has(prefName)) {
         stored.originalDefaultValue = defaults.get(prefName);
       } else {
         stored.originalDefaultValue = undefined;
@@ -182,7 +179,7 @@ export var PoliciesPrefTracker = {
       // If a pref was used through setDefaultPref instead
       // of setAndLockPref, it wasn't locked, but calling
       // unlockPref is harmless
-      Services.prefs.unlockPref(prefName);
+      Preferences.unlock(prefName);
 
       if (stored.originalDefaultValue !== undefined) {
         defaults.set(prefName, stored.originalDefaultValue);

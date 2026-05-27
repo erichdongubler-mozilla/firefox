@@ -111,13 +111,13 @@ add_task(async function test_proxy_addresses() {
 
   // Make sure the FTPProxy setting did nothing
   Assert.equal(
-    Services.prefs.getPrefType("network.proxy.ftp"),
-    Ci.nsIPrefBranch.PREF_INVALID,
+    Preferences.has("network.proxy.ftp"),
+    false,
     "network.proxy.ftp should not be set"
   );
   Assert.equal(
-    Services.prefs.getPrefType("network.proxy.ftp_port"),
-    Ci.nsIPrefBranch.PREF_INVALID,
+    Preferences.has("network.proxy.ftp_port"),
+    false,
     "network.proxy.ftp_port should not be set"
   );
 });
