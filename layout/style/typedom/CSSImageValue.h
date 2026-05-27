@@ -7,12 +7,15 @@
 
 #include "js/TypeDecls.h"
 #include "mozilla/dom/CSSStyleValue.h"
+#include "nsStringFwd.h"
 
 template <class T>
 class nsCOMPtr;
 class nsISupports;
 
 namespace mozilla {
+
+struct CSSPropertyId;
 
 namespace dom {
 
@@ -26,6 +29,9 @@ class CSSImageValue final : public CSSStyleValue {
   // start of CSSImageValue Web IDL declarations
 
   // end of CSSImageValue Web IDL declarations
+
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                             nsACString& aDest) const;
 
  private:
   virtual ~CSSImageValue() = default;

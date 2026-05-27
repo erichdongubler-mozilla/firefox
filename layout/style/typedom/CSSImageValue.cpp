@@ -9,7 +9,7 @@
 namespace mozilla::dom {
 
 CSSImageValue::CSSImageValue(nsCOMPtr<nsISupports> aParent)
-    : CSSStyleValue(std::move(aParent)) {}
+    : CSSStyleValue(std::move(aParent), StyleValueType::ImageValue) {}
 
 JSObject* CSSImageValue::WrapObject(JSContext* aCx,
                                     JS::Handle<JSObject*> aGivenProto) {
@@ -19,5 +19,20 @@ JSObject* CSSImageValue::WrapObject(JSContext* aCx,
 // start of CSSImageValue Web IDL implementation
 
 // end of CSSImageValue Web IDL implementation
+
+void CSSImageValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                                          nsACString& aDest) const {}
+
+const CSSImageValue& CSSStyleValue::GetAsCSSImageValue() const {
+  MOZ_DIAGNOSTIC_ASSERT(mStyleValueType == StyleValueType::ImageValue);
+
+  return *static_cast<const CSSImageValue*>(this);
+}
+
+CSSImageValue& CSSStyleValue::GetAsCSSImageValue() {
+  MOZ_DIAGNOSTIC_ASSERT(mStyleValueType == StyleValueType::ImageValue);
+
+  return *static_cast<CSSImageValue*>(this);
+}
 
 }  // namespace mozilla::dom
