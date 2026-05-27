@@ -14,7 +14,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/a636ecdcb91afb1c5
  4 files changed, 11 insertions(+), 3 deletions(-)
 
 diff --git a/modules/video_capture/linux/device_info_v4l2.cc b/modules/video_capture/linux/device_info_v4l2.cc
-index 6452a3c235..9f7f3ea508 100644
+index 2ddda9c289..2c4a9a365a 100644
 --- a/modules/video_capture/linux/device_info_v4l2.cc
 +++ b/modules/video_capture/linux/device_info_v4l2.cc
 @@ -11,7 +11,13 @@

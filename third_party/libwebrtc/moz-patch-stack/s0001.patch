@@ -809,7 +809,7 @@ index c8d32179ed..86b19cbc22 100644
     * Fills the member variable _captureCapabilities with capabilities for the
     * given device name.
 diff --git a/modules/video_capture/linux/device_info_v4l2.cc b/modules/video_capture/linux/device_info_v4l2.cc
-index 289975b2e1..6452a3c235 100644
+index 6a5d2936e7..2ddda9c289 100644
 --- a/modules/video_capture/linux/device_info_v4l2.cc
 +++ b/modules/video_capture/linux/device_info_v4l2.cc
 @@ -45,15 +45,187 @@
