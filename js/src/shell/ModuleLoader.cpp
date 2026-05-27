@@ -423,18 +423,20 @@ bool ModuleLoader::doDynamicImport(JSContext* cx, JS::HandleScript referrer,
   // Exceptions during dynamic import are handled by calling
   // FinishLoadingImportedModule with a pending exception on the context.
 #ifdef ENABLE_SOURCE_PHASE_IMPORTS
-  if (JS::Prefs::experimental_source_phase_imports_test262_module_source()) {
-    js::ImportPhase phase = moduleRequest->as<ModuleRequestObject>().phase();
-    JSAtom* specifier = moduleRequest->as<ModuleRequestObject>().specifier();
-    if (phase == ImportPhase::Source &&
-        StringEquals(specifier, u"<module source>")) {
-      RootedObject module(cx, getOrCreateTest262ModuleSourceModule(cx));
-      if (!module) {
-        return JS::FinishLoadingImportedModuleFailedWithPendingException(
-            cx, payload);
+  js::ImportPhase phase = moduleRequest->as<ModuleRequestObject>().phase();
+  if (JS::Prefs::experimental_source_phase_imports() &&
+      phase == ImportPhase::Source) {
+    if (JS::Prefs::experimental_source_phase_imports_test262_module_source()) {
+      JSAtom* specifier = moduleRequest->as<ModuleRequestObject>().specifier();
+      if (StringEquals(specifier, u"<module source>")) {
+        RootedObject module(cx, getOrCreateTest262ModuleSourceModule(cx));
+        if (!module) {
+          return JS::FinishLoadingImportedModuleFailedWithPendingException(
+              cx, payload);
+        }
+        return JS::FinishLoadingImportedModule(cx, nullptr, moduleRequest,
+                                               payload, module, false);
       }
-      return JS::FinishLoadingImportedModule(cx, nullptr, moduleRequest,
-                                             payload, module, false);
     }
   }
 #endif
@@ -451,12 +453,18 @@ bool ModuleLoader::doDynamicImport(JSContext* cx, JS::HandleScript referrer,
                                                                      payload);
   }
 
-  RootedValue hostDefined(cx, ObjectValue(*module));
-  if (!JS::LoadRequestedModules(cx, module, hostDefined, LoadResolved,
-                                LoadRejected)) {
-    return JS::FinishLoadingImportedModuleFailedWithPendingException(cx,
-                                                                     payload);
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  if (phase != ImportPhase::Source) {
+#endif
+    RootedValue hostDefined(cx, ObjectValue(*module));
+    if (!JS::LoadRequestedModules(cx, module, hostDefined, LoadResolved,
+                                  LoadRejected)) {
+      return JS::FinishLoadingImportedModuleFailedWithPendingException(cx,
+                                                                       payload);
+    }
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   }
+#endif
 
   if (JS_IsExceptionPending(cx)) {
     return JS::FinishLoadingImportedModuleFailedWithPendingException(cx,

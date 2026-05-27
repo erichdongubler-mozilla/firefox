@@ -369,6 +369,10 @@ JS_PUBLIC_API JSObject* JS::CompileWasmModuleAsSource(
     return nullptr;
   }
 
+  if (!ModuleObject::Freeze(cx, moduleObject)) {
+    return nullptr;
+  }
+
   return moduleObject;
 #else
   JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
