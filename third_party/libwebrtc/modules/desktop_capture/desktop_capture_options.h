@@ -11,6 +11,7 @@
 #define MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURE_OPTIONS_H_
 
 #include <cstdint>
+#include <optional>
 
 #include "api/environment/environment.h"
 #include "api/scoped_refptr.h"
