@@ -403,6 +403,7 @@ void MediaController::UpdateAudibleForAudioSession(
     LOG("Removing empty AudioSessionRecord bc=%" PRIu64, aBrowsingContextId);
     mAudioSessions.Remove(aBrowsingContextId);
   }
+  MaybeFireEffectiveAudioSessionTypeChanged();
 }
 
 bool MediaController::ShouldActivateController() const {
@@ -603,7 +604,8 @@ void MediaController::DispatchAsyncEvent(already_AddRefed<Event> aEvent) {
   event->GetType(eventType);
   // A small set of events is allowed to fire even on inactive controllers.
   static constexpr nsLiteralString kAllowedWhileInactive[] = {
-      u"deactivated"_ns, u"audiblechange"_ns};
+      u"deactivated"_ns, u"audiblechange"_ns,
+      u"effectiveaudiosessiontypechange"_ns};
   if (!mIsActive) {
     bool allowed = false;
     for (const auto& allowedType : kAllowedWhileInactive) {
@@ -650,6 +652,7 @@ void MediaController::SetAudioSessionTypeOverride(uint64_t aBrowsingContextId,
       .SetTypeOverride(aBrowsingContextId, aType == AudioSessionType::Auto
                                                ? Nothing()
                                                : Some(aType));
+  MaybeFireEffectiveAudioSessionTypeChanged();
 }
 
 void MediaController::ClearAudioSessionFor(uint64_t aBrowsingContextId) {
@@ -658,6 +661,7 @@ void MediaController::ClearAudioSessionFor(uint64_t aBrowsingContextId) {
   }
   if (mAudioSessions.Remove(aBrowsingContextId)) {
     LOG("ClearAudioSessionFor bc=%" PRIu64, aBrowsingContextId);
+    MaybeFireEffectiveAudioSessionTypeChanged();
   }
 }
 
@@ -743,6 +747,18 @@ AudioSessionType MediaController::GetEffectiveAudioSessionType() const {
     }
   }
   return fallback.valueOr(AudioSessionType::Auto);
+}
+
+void MediaController::MaybeFireEffectiveAudioSessionTypeChanged() {
+  AudioSessionType newType = GetEffectiveAudioSessionType();
+  if (newType == mLastDispatchedEffectiveAudioSessionType) {
+    return;
+  }
+  LOG("EffectiveAudioSessionType change %s -> %s",
+      GetEnumString(mLastDispatchedEffectiveAudioSessionType).get(),
+      GetEnumString(newType).get());
+  mLastDispatchedEffectiveAudioSessionType = newType;
+  DispatchAsyncEvent(u"effectiveaudiosessiontypechange"_ns);
 }
 
 const AudioSessionRecord* MediaController::GetAudioSessionRecordForTesting(

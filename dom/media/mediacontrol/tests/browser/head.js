@@ -481,3 +481,37 @@ function logPositionStateChangeEvents(tab) {
       )
   );
 }
+
+/**
+ * Resolve when the controller's effectiveAudioSessionType reaches `expected`.
+ * Resolves immediately if it already matches.
+ */
+function waitForEffectiveAudioSessionType(controller, expected) {
+  return new Promise(resolve => {
+    if (controller.effectiveAudioSessionType === expected) {
+      resolve();
+      return;
+    }
+    controller.addEventListener(
+      "effectiveaudiosessiontypechange",
+      function listener() {
+        if (controller.effectiveAudioSessionType === expected) {
+          controller.removeEventListener(
+            "effectiveaudiosessiontypechange",
+            listener
+          );
+          resolve();
+        }
+      }
+    );
+  });
+}
+
+/**
+ * Set the content-side `navigator.audioSession.type` for `browser` to `type`.
+ */
+function setContentAudioSessionType(browser, type) {
+  return SpecialPowers.spawn(browser, [type], t => {
+    content.navigator.audioSession.type = t;
+  });
+}
