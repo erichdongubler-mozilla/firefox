@@ -74,6 +74,21 @@ object BookmarksSelectors {
         groups = listOf(),
     )
 
+    val SIGN_IN_TO_SYNC_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+        value = "Sign in to sync",
+        description = "Sign in to sync button",
+        groups = listOf(),
+        name = "SIGN_IN_TO_SYNC_BUTTON",
+    )
+
+    val SIGN_IN_WITH_CAMERA_TEXT = Selector(
+        strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+        value = "Sign in with your camera",
+        description = "Sign in with your camera text",
+        groups = listOf("resultOf:SIGN_IN_TO_SYNC_BUTTON"),
+    )
+
     val all = listOf(
         TOOLBAR_TITLE,
         OPEN_IN_NEW_TAB_BUTTON,
@@ -84,5 +99,7 @@ object BookmarksSelectors {
         DELETE_BOOKMARK_BUTTON,
         DEFAULT_BOOKMARKS_FOLDER_TITLE,
         BOOKMARK_TITLE_TEXT,
+        SIGN_IN_TO_SYNC_BUTTON,
+        SIGN_IN_WITH_CAMERA_TEXT,
     )
 }

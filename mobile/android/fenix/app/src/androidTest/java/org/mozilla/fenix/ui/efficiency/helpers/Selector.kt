@@ -11,7 +11,8 @@ data class Selector(
     val value: String,
     val secondaryValue: String? = null,
     val description: String,
-    val groups: List<String> = listOf(),
+    val groups: List<String> = emptyList(),
+    val name: String? = null,
 ) {
     fun toResourceId(): Int {
         return try {
