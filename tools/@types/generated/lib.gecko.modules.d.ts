@@ -375,7 +375,6 @@ export interface Modules {
   "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs": typeof import("moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs"),
   "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs": typeof import("moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs"),
   "moz-src:///browser/components/urlbar/UrlbarValueFormatter.sys.mjs": typeof import("moz-src:///browser/components/urlbar/UrlbarValueFormatter.sys.mjs"),
-  "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs": typeof import("moz-src:///browser/components/urlbar/UrlbarView.sys.mjs"),
   "moz-src:///browser/components/urlbar/private/AmpSuggestions.sys.mjs": typeof import("moz-src:///browser/components/urlbar/private/AmpSuggestions.sys.mjs"),
   "moz-src:///browser/components/urlbar/private/GeolocationUtils.sys.mjs": typeof import("moz-src:///browser/components/urlbar/private/GeolocationUtils.sys.mjs"),
   "moz-src:///browser/components/urlbar/private/MLSuggest.sys.mjs": typeof import("moz-src:///browser/components/urlbar/private/MLSuggest.sys.mjs"),

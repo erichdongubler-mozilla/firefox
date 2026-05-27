@@ -23,7 +23,6 @@ ChromeUtils.defineESModuleGetters(this, {
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
-  UrlbarView: "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 

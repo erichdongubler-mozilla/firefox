@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /**
- * @import {ProvidersManager} from "UrlbarProvidersManager.sys.mjs"
+ * @import {ProvidersManager} from "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs"
  */
 
 const lazy = {};
@@ -54,9 +54,6 @@ function getUniqueId(prefix) {
  * Receives and displays address bar autocomplete results.
  */
 export class UrlbarView {
-  // Stale rows are removed on a timer with this timeout.
-  static removeStaleRowsTimeout = 400;
-
   /**
    * @param {UrlbarInput} input
    *   The UrlbarInput instance belonging to this UrlbarView instance.
@@ -1076,8 +1073,8 @@ export class UrlbarView {
       : null;
   }
 
-  #createElement(name) {
-    return this.document.createElementNS("http://www.w3.org/1999/xhtml", name);
+  #createElement(tag) {
+    return this.document.createElementNS("http://www.w3.org/1999/xhtml", tag);
   }
 
   #openPanel() {
@@ -1488,8 +1485,8 @@ export class UrlbarView {
    */
   #updateElementForDynamicType(element, update, item, result = null) {
     if (update.attributes) {
-      for (let [name, value] of Object.entries(update.attributes)) {
-        if (name == "id") {
+      for (let [key, value] of Object.entries(update.attributes)) {
+        if (key == "id") {
           // IDs are managed externally to ensure they are unique.
           console.error(
             `Not setting id="${value}", as dynamic attributes may not include IDs.`
@@ -1500,21 +1497,21 @@ export class UrlbarView {
           continue;
         }
         if (value === null) {
-          element.removeAttribute(name);
+          element.removeAttribute(key);
         } else if (typeof value == "boolean") {
-          element.toggleAttribute(name, value);
+          element.toggleAttribute(key, value);
         } else if (Blob.isInstance(value) && result) {
-          element.setAttribute(name, this.#getBlobUrlForResult(result, value));
+          element.setAttribute(key, this.#getBlobUrlForResult(result, value));
         } else {
-          element.setAttribute(name, value);
+          element.setAttribute(key, value);
         }
       }
     }
 
     if (update.dataset) {
-      for (let [name, value] of Object.entries(update.dataset)) {
+      for (let [key, value] of Object.entries(update.dataset)) {
         if (value === null) {
-          delete element.dataset[name];
+          delete element.dataset[key];
         } else if (value !== undefined) {
           if (typeof value != "string") {
             console.error(
@@ -1522,7 +1519,7 @@ export class UrlbarView {
               { element, value }
             );
           } else {
-            element.dataset[name] = value;
+            element.dataset[key] = value;
           }
         }
       }
@@ -1639,13 +1636,13 @@ export class UrlbarView {
     body.className = "urlbarView-row-body";
     item._content.appendChild(body);
 
-    let top = this.#createElement("div");
-    top.className = "urlbarView-row-body-top";
-    body.appendChild(top);
+    let bodyTop = this.#createElement("div");
+    bodyTop.className = "urlbarView-row-body-top";
+    body.appendChild(bodyTop);
 
     let noWrap = this.#createElement("div");
     noWrap.className = "urlbarView-row-body-top-no-wrap";
-    top.appendChild(noWrap);
+    bodyTop.appendChild(noWrap);
     item._elements.set("noWrap", noWrap);
 
     let tailPrefix = this.#createElement("span");
@@ -1688,7 +1685,7 @@ export class UrlbarView {
 
     let url = this.#createElement("span");
     url.className = "urlbarView-url";
-    top.appendChild(url);
+    bodyTop.appendChild(url);
     item._elements.set("url", url);
 
     if (lazy.UrlbarPrefs.get("resultExplanationsFeatureGate")) {
@@ -1697,7 +1694,7 @@ export class UrlbarView {
         "urlbarView-explanation",
         "urlbarView-overflowable"
       );
-      top.appendChild(explanation);
+      bodyTop.appendChild(explanation);
       item._elements.set("explanation", explanation);
     }
 
@@ -1730,13 +1727,13 @@ export class UrlbarView {
     body.className = "urlbarView-row-body";
     item._content.appendChild(body);
 
-    let top = this.#createElement("div");
-    top.className = "urlbarView-row-body-top";
-    body.appendChild(top);
+    let bodyTop = this.#createElement("div");
+    bodyTop.className = "urlbarView-row-body-top";
+    body.appendChild(bodyTop);
 
     let noWrap = this.#createElement("div");
     noWrap.className = "urlbarView-row-body-top-no-wrap";
-    top.appendChild(noWrap);
+    bodyTop.appendChild(noWrap);
     item._elements.set("noWrap", noWrap);
 
     let title = this.#createElement("span");
@@ -1868,7 +1865,7 @@ export class UrlbarView {
   #addRowButton(
     item,
     {
-      name,
+      name: buttonName,
       command,
       l10n,
       url,
@@ -1889,10 +1886,10 @@ export class UrlbarView {
         classList: [
           ...classList,
           "urlbarView-button",
-          "urlbarView-button-" + name,
+          "urlbarView-button-" + buttonName,
         ],
         dataset: {
-          name,
+          name: buttonName,
           command,
           url,
           input,
@@ -1901,12 +1898,12 @@ export class UrlbarView {
       item
     );
 
-    button.id = `${item.id}-button-${name}`;
+    button.id = `${item.id}-button-${buttonName}`;
     if (l10n) {
       this.#l10nCache.setElementL10n(button, l10n);
     }
 
-    item._buttons.set(name, button);
+    item._buttons.set(buttonName, button);
 
     if (!menu) {
       item._elements.get("buttons").appendChild(button);
@@ -2552,9 +2549,9 @@ export class UrlbarView {
     item.setAttribute("dynamicType", result.payload.dynamicType);
 
     let idsByName = new Map();
-    for (let [name, node] of item._elements) {
-      node.id = `${item.id}-${name}`;
-      idsByName.set(name, node.id);
+    for (let [elementName, node] of item._elements) {
+      node.id = `${item.id}-${elementName}`;
+      idsByName.set(elementName, node.id);
     }
 
     // Get the view update from the result's provider.
@@ -3010,7 +3007,7 @@ export class UrlbarView {
     this.#removeStaleRowsTimer = this.window.setTimeout(() => {
       this.#removeStaleRowsTimer = null;
       this.#removeStaleRows();
-    }, UrlbarView.removeStaleRowsTimeout);
+    }, lazy.UrlbarPrefs.get("removeStaleRowsTimeout"));
   }
 
   #cancelRemoveStaleRowsTimer() {
@@ -3703,7 +3700,7 @@ export class UrlbarView {
 
     let { defaultEngine, defaultPrivateEngine } = lazy.SearchService;
     let engineNames = [defaultEngine?.name, defaultPrivateEngine?.name].filter(
-      name => name
+      engineName => engineName
     );
 
     if (defaultPrivateEngine) {
@@ -3719,14 +3716,19 @@ export class UrlbarView {
       "urlbar-result-action-search-w-engine",
     ];
     for (let id of engineStringIDs) {
-      idArgs.push(...engineNames.map(name => ({ id, args: { engine: name } })));
+      idArgs.push(
+        ...engineNames.map(engineName => ({
+          id,
+          args: { engine: engineName },
+        }))
+      );
     }
 
     if (lazy.UrlbarPrefs.get("groupLabels.enabled")) {
       idArgs.push(
-        ...engineNames.map(name => ({
+        ...engineNames.map(engineName => ({
           id: "urlbar-group-search-suggestions",
-          args: { engine: name },
+          args: { engine: engineName },
         }))
       );
     }
@@ -3932,12 +3934,14 @@ export class UrlbarView {
           history: "urlbar-result-action-search-history",
           tabs: "urlbar-result-action-search-tabs",
         };
-        let name = lazy.UrlbarUtils.getResultSourceName(localSearchMode.source);
+        let sourceName = lazy.UrlbarUtils.getResultSourceName(
+          localSearchMode.source
+        );
         this.#l10nCache.setElementL10n(action, {
-          id: messageIDs[name],
+          id: messageIDs[sourceName],
         });
         if (result.heuristic) {
-          item.setAttribute("source", name);
+          item.setAttribute("source", sourceName);
         }
       } else if (engine && !result.payload.inPrivateWindow) {
         // Update the result action text for an engine one-off.
@@ -4149,9 +4153,9 @@ export class UrlbarView {
       if (splitButton) {
         // Show the commands the are defined in its Split Button.
         let mainButton = splitButton.firstElementChild;
-        let name = mainButton.dataset.name;
+        let buttonName = mainButton.dataset.name;
         commands = this.#resultMenuResult.payload.buttons.find(
-          b => b.name == name
+          b => b.name == buttonName
         ).menu;
       } else {
         commands = this.#getResultMenuCommands(this.#resultMenuResult);
