@@ -33,6 +33,10 @@ const { EmbeddingsGenerator } = ChromeUtils.importESModule(
   "chrome://global/content/ml/EmbeddingsGenerator.sys.mjs"
 );
 
+const { _setLoadPromptForTesting } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs"
+);
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
@@ -828,46 +832,33 @@ add_task(async function test_returnsContent_ChatConversation_getRealTimeInfo() {
     timezone: "America/Los_Angeles",
     isoTimestamp: "2024-01-15T10:30:00",
   });
-  const mockEngineInstance = {
-    loadPrompt: lazy.sinon
-      .stub()
-      .resolves("Current date: {todayDate}\nLocale: {locale}"),
-  };
+  const loadPromptStub = lazy.sinon
+    .stub()
+    .resolves("Current date: {todayDate}\nLocale: {locale}");
+  _setLoadPromptForTesting(loadPromptStub);
 
-  const realTimeInfo = await ChatConversation.getRealTimeInfo(
-    mockEngineInstance,
-    {
-      getRealTimeMapping: mockGetRealTimeMapping,
-    }
-  );
+  const realTimeInfo = await ChatConversation.getRealTimeInfo({
+    getRealTimeMapping: mockGetRealTimeMapping,
+  });
 
   Assert.withSoftAssertions(function (soft) {
-    soft.ok(
-      mockEngineInstance.loadPrompt.called,
-      "loadPrompt should be called"
-    );
+    soft.ok(loadPromptStub.called, "loadPrompt should be called");
   });
   Assert.equal(
     realTimeInfo,
     "Current date: 2024-01-15\nLocale: en-US",
     "getRealTimeInfo returns the expected contexutal information"
   );
+  _setLoadPromptForTesting(null);
 });
 
 add_task(
   async function test_returnsNoContent_ChatConversation_getRealTimeInfo() {
-    const mockEngineInstance = {
-      loadPrompt: lazy.sinon.stub().resolves("prompt text"),
-    };
-
     const mockGetRealTimeMapping = lazy.sinon.stub().resolves(null);
 
-    const realTimeInfo = await ChatConversation.getRealTimeInfo(
-      mockEngineInstance,
-      {
-        getRealTimeMapping: mockGetRealTimeMapping,
-      }
-    );
+    const realTimeInfo = await ChatConversation.getRealTimeInfo({
+      getRealTimeMapping: mockGetRealTimeMapping,
+    });
 
     Assert.equal(
       realTimeInfo,
@@ -880,9 +871,6 @@ add_task(
 add_task(
   async function test_returnsContent_ChatConversation_getMemoriesContext() {
     console.log(Object.keys(lazy.sinon));
-    const mockEngineInstance = {
-      loadPrompt: lazy.sinon.stub().resolves("prompt text"),
-    };
     const constructMemories = lazy.sinon
       .stub()
       .resolves({ content: "memories data" });
@@ -890,15 +878,14 @@ add_task(
     const conversation = new ChatConversation({});
     const memoriesContext = await conversation.getMemoriesContext(
       "hello",
-      mockEngineInstance,
       constructMemories,
       new SecurityProperties()
     );
 
     Assert.withSoftAssertions(function (soft) {
       soft.ok(
-        constructMemories.calledWith("hello", mockEngineInstance),
-        "constructMemories should be called with message and engineInstance"
+        constructMemories.calledWith("hello"),
+        "constructMemories should be called with the message"
       );
     });
     Assert.equal(
@@ -917,7 +904,8 @@ add_task(
     const conversation = new ChatConversation({});
     const memoriesContext = await conversation.getMemoriesContext(
       "hello",
-      constructMemories
+      constructMemories,
+      new SecurityProperties()
     );
 
     Assert.equal(
@@ -1029,9 +1017,7 @@ add_task(async function test_addUserMessage_sets_memories_fields() {
 add_task(async function test_generatePrompt_emitsUserMessage() {
   const sandbox = lazy.sinon.createSandbox();
   const conversation = new ChatConversation({});
-  const mockEngineInstance = {
-    loadPrompt: lazy.sinon.stub().resolves("system prompt"),
-  };
+  _setLoadPromptForTesting(lazy.sinon.stub().resolves("system prompt"));
   sandbox.stub(ChatConversation, "getRealTimeInfo").resolves(null);
   sandbox.stub(conversation, "getMemoriesContext").resolves(null);
 
@@ -1040,20 +1026,19 @@ add_task(async function test_generatePrompt_emitsUserMessage() {
     emittedMessage = msg;
   });
 
-  await conversation.generatePrompt("hello", null, mockEngineInstance);
+  await conversation.generatePrompt("hello", null);
 
   Assert.ok(emittedMessage, "event should have been emitted");
   Assert.equal(emittedMessage.content.body, "hello");
   Assert.equal(emittedMessage.role, MESSAGE_ROLE.USER);
+  _setLoadPromptForTesting(null);
   sandbox.restore();
 });
 
 add_task(async function test_generatePrompt_skipUserDispatch() {
   const sandbox = lazy.sinon.createSandbox();
   const conversation = new ChatConversation({});
-  const mockEngineInstance = {
-    loadPrompt: lazy.sinon.stub().resolves("system prompt"),
-  };
+  _setLoadPromptForTesting(lazy.sinon.stub().resolves("system prompt"));
   sandbox.stub(ChatConversation, "getRealTimeInfo").resolves(null);
   sandbox.stub(conversation, "getMemoriesContext").resolves(null);
 
@@ -1062,18 +1047,13 @@ add_task(async function test_generatePrompt_skipUserDispatch() {
     emitted = true;
   });
 
-  await conversation.generatePrompt(
-    "hello",
-    null,
-    mockEngineInstance,
-    undefined,
-    true
-  );
+  await conversation.generatePrompt("hello", null, undefined, true);
 
   Assert.ok(
     !emitted,
     "event should not be emitted when skipUserDispatch is true"
   );
+  _setLoadPromptForTesting(null);
   sandbox.restore();
 });
 
@@ -1098,19 +1078,14 @@ add_task(async function test_generatePrompt_memoriesContextErrorDoesNotThrow() {
     .rejects(new Error("Failed to download embedding model"));
 
   const conversation = new ChatConversation({});
-  const mockEngineInstance = {
-    loadPrompt: sandbox.stub().resolves("system prompt"),
-  };
+  _setLoadPromptForTesting(lazy.sinon.stub().resolves("system prompt"));
   sandbox
     .stub(ChatConversation, "getRealTimeInfo")
     .resolves("real time context");
 
-  const result = await conversation.generatePrompt(
-    "hello",
-    null,
-    mockEngineInstance,
-    { memoriesEnabled: true }
-  );
+  const result = await conversation.generatePrompt("hello", null, {
+    memoriesEnabled: true,
+  });
 
   Assert.ok(result, "generatePrompt should resolve successfully");
 
@@ -1134,6 +1109,7 @@ add_task(async function test_generatePrompt_memoriesContextErrorDoesNotThrow() {
 
   await MemoryStore.hardDeleteMemory("memory-embed-fail", "other");
   MemoriesManager._clearEmbeddingsCache();
+  _setLoadPromptForTesting(null);
   sandbox.restore();
 });
 
@@ -1141,9 +1117,7 @@ add_task(
   async function test_generatePrompt_userContextPopulatedBeforeResolving() {
     const sandbox = lazy.sinon.createSandbox();
     const conversation = new ChatConversation({});
-    const mockEngineInstance = {
-      loadPrompt: lazy.sinon.stub().resolves("system prompt"),
-    };
+    _setLoadPromptForTesting(lazy.sinon.stub().resolves("system prompt"));
     sandbox
       .stub(ChatConversation, "getRealTimeInfo")
       .resolves("real time context");
@@ -1151,7 +1125,7 @@ add_task(
       .stub(conversation, "getMemoriesContext")
       .resolves("memories context");
 
-    await conversation.generatePrompt("hello", null, mockEngineInstance, {
+    await conversation.generatePrompt("hello", null, {
       memoriesEnabled: true,
     });
 
@@ -1171,6 +1145,7 @@ add_task(
         "memoriesContext should be set on userContext before generatePrompt resolves"
       );
     });
+    _setLoadPromptForTesting(null);
     sandbox.restore();
   }
 );
@@ -1186,11 +1161,9 @@ add_task(async function test_getRealTimeInfo_setsPrivateData_when_hasTabInfo() {
     timezone: "America/Los_Angeles",
     isoTimestamp: "2024-01-15T10:30:00",
   });
-  const mockEngineInstance = {
-    loadPrompt: lazy.sinon.stub().resolves("{todayDate}"),
-  };
+  _setLoadPromptForTesting(lazy.sinon.stub().resolves("{todayDate}"));
 
-  await ChatConversation.getRealTimeInfo(mockEngineInstance, {
+  await ChatConversation.getRealTimeInfo({
     getRealTimeMapping: mockGetRealTimeMapping,
     securityProperties,
   });
@@ -1200,6 +1173,7 @@ add_task(async function test_getRealTimeInfo_setsPrivateData_when_hasTabInfo() {
     securityProperties.privateData,
     "privateData should be true after commit when hasTabInfo is true"
   );
+  _setLoadPromptForTesting(null);
 });
 
 add_task(
@@ -1212,11 +1186,9 @@ add_task(
       timezone: "America/Los_Angeles",
       isoTimestamp: "2024-01-15T10:30:00",
     });
-    const mockEngineInstance = {
-      loadPrompt: lazy.sinon.stub().resolves("{todayDate}"),
-    };
+    _setLoadPromptForTesting(lazy.sinon.stub().resolves("{todayDate}"));
 
-    await ChatConversation.getRealTimeInfo(mockEngineInstance, {
+    await ChatConversation.getRealTimeInfo({
       getRealTimeMapping: mockGetRealTimeMapping,
       securityProperties,
     });
@@ -1226,6 +1198,7 @@ add_task(
       !securityProperties.privateData,
       "privateData should remain false when hasTabInfo is false"
     );
+    _setLoadPromptForTesting(null);
   }
 );
 
@@ -1235,12 +1208,10 @@ add_task(
     const constructMemories = lazy.sinon
       .stub()
       .resolves({ content: "some memory" });
-    const mockEngineInstance = {};
 
     const conversation = new ChatConversation({});
     await conversation.getMemoriesContext(
       "hello",
-      mockEngineInstance,
       constructMemories,
       securityProperties
     );
@@ -1257,12 +1228,10 @@ add_task(
   async function test_getMemoriesContext_doesNotSetPrivateData_when_noMemories() {
     const securityProperties = new SecurityProperties();
     const constructMemories = lazy.sinon.stub().resolves(null);
-    const mockEngineInstance = {};
 
     const conversation = new ChatConversation({});
     await conversation.getMemoriesContext(
       "hello",
-      mockEngineInstance,
       constructMemories,
       securityProperties
     );
@@ -1277,47 +1246,42 @@ add_task(
 
 add_task(
   async function test_generatePrompt_commitsPrivateData_when_hasTabInfo() {
-    const mockEngineInstance = {
-      loadPrompt: lazy.sinon.stub().resolves("system prompt"),
-    };
     const conversation = new ChatConversation({});
     const sandbox = lazy.sinon.createSandbox();
+    _setLoadPromptForTesting(lazy.sinon.stub().resolves("system prompt"));
 
-    sandbox
-      .stub(ChatConversation, "getRealTimeInfo")
-      .callsFake(async (_, opts) => {
-        opts.securityProperties?.setPrivateData();
-        return "real time info";
-      });
+    sandbox.stub(ChatConversation, "getRealTimeInfo").callsFake(async opts => {
+      opts.securityProperties?.setPrivateData();
+      return "real time info";
+    });
     sandbox.stub(conversation, "getMemoriesContext").resolves(null);
 
-    await conversation.generatePrompt("hello", null, mockEngineInstance);
+    await conversation.generatePrompt("hello", null);
 
     Assert.ok(
       conversation.securityProperties.privateData,
       "privateData should be committed true when getRealTimeInfo stages it"
     );
+    _setLoadPromptForTesting(null);
     sandbox.restore();
   }
 );
 
 add_task(
   async function test_generatePrompt_commitsPrivateData_when_memoriesEnabled() {
-    const mockEngineInstance = {
-      loadPrompt: lazy.sinon.stub().resolves("system prompt"),
-    };
     const conversation = new ChatConversation({});
     const sandbox = lazy.sinon.createSandbox();
+    _setLoadPromptForTesting(lazy.sinon.stub().resolves("system prompt"));
 
     sandbox.stub(ChatConversation, "getRealTimeInfo").resolves(null);
     sandbox
       .stub(conversation, "getMemoriesContext")
-      .callsFake(async (_, _engine, _construct, sp) => {
+      .callsFake(async (_message, _construct, sp) => {
         sp?.setPrivateData();
         return "some memories";
       });
 
-    await conversation.generatePrompt("hello", null, mockEngineInstance, {
+    await conversation.generatePrompt("hello", null, {
       memoriesEnabled: true,
     });
 
@@ -1325,27 +1289,27 @@ add_task(
       conversation.securityProperties.privateData,
       "privateData should be committed true when getMemoriesContext stages it"
     );
+    _setLoadPromptForTesting(null);
     sandbox.restore();
   }
 );
 
 add_task(
   async function test_generatePrompt_doesNotSetPrivateData_when_noTabOrMemories() {
-    const mockEngineInstance = {
-      loadPrompt: lazy.sinon.stub().resolves("system prompt"),
-    };
     const conversation = new ChatConversation({});
     const sandbox = lazy.sinon.createSandbox();
+    _setLoadPromptForTesting(lazy.sinon.stub().resolves("system prompt"));
 
     sandbox.stub(ChatConversation, "getRealTimeInfo").resolves(null);
     sandbox.stub(conversation, "getMemoriesContext").resolves(null);
 
-    await conversation.generatePrompt("hello", null, mockEngineInstance);
+    await conversation.generatePrompt("hello", null);
 
     Assert.ok(
       !conversation.securityProperties.privateData,
       "privateData should remain false when no private data was staged"
     );
+    _setLoadPromptForTesting(null);
     sandbox.restore();
   }
 );
@@ -1453,23 +1417,22 @@ add_task(async function test_generatePrompt_tableInstructions_pref_enabled() {
     Services.prefs.clearUserPref("browser.smartwindow.allowTables")
   );
 
-  const mockEngineInstance = {
-    loadPrompt: lazy.sinon
-      .stub()
-      .onFirstCall()
-      .resolves("system prompt {tableInstructions}")
-      .onSecondCall()
-      .resolves("table instructions content"),
-  };
+  const sandbox = lazy.sinon.createSandbox();
+  const loadPromptStub = lazy.sinon
+    .stub()
+    .onFirstCall()
+    .resolves("system prompt {tableInstructions}")
+    .onSecondCall()
+    .resolves("table instructions content");
+  _setLoadPromptForTesting(loadPromptStub);
   const conversation = new ChatConversation({});
-  const getRealTimeInfoStub = lazy.sinon
-    .stub(ChatConversation, "getRealTimeInfo")
-    .resolves(null);
-  lazy.sinon.stub(conversation, "getMemoriesContext").resolves(null);
+  sandbox.stub(ChatConversation, "getRealTimeInfo").resolves(null);
+  sandbox.stub(conversation, "getMemoriesContext").resolves(null);
 
-  await conversation.generatePrompt("hello", null, mockEngineInstance);
+  await conversation.generatePrompt("hello", null);
 
-  getRealTimeInfoStub.restore();
+  _setLoadPromptForTesting(null);
+  sandbox.restore();
 
   const systemMessage = conversation.messages.find(
     m => m.role === MESSAGE_ROLE.SYSTEM
@@ -1486,26 +1449,22 @@ add_task(async function test_generatePrompt_tableInstructions_pref_disabled() {
     Services.prefs.clearUserPref("browser.smartwindow.allowTables")
   );
 
-  const mockEngineInstance = {
-    loadPrompt: lazy.sinon
-      .stub()
-      .onFirstCall()
-      .resolves("system prompt {tableInstructions}")
-      .onSecondCall()
-      .resolves("do tables"),
-  };
+  const sandbox = lazy.sinon.createSandbox();
+  const loadPromptStub = lazy.sinon
+    .stub()
+    .onFirstCall()
+    .resolves("system prompt {tableInstructions}")
+    .onSecondCall()
+    .resolves("do tables");
+  _setLoadPromptForTesting(loadPromptStub);
   const conversation = new ChatConversation({});
-  const getRealTimeInfoStub = lazy.sinon
-    .stub(ChatConversation, "getRealTimeInfo")
-    .resolves(null);
-  lazy.sinon.stub(conversation, "getMemoriesContext").resolves(null);
+  sandbox.stub(ChatConversation, "getRealTimeInfo").resolves(null);
+  sandbox.stub(conversation, "getMemoriesContext").resolves(null);
 
-  await conversation.generatePrompt("hello", null, mockEngineInstance);
-
-  getRealTimeInfoStub.restore();
+  await conversation.generatePrompt("hello", null);
 
   Assert.equal(
-    mockEngineInstance.loadPrompt.callCount,
+    loadPromptStub.callCount,
     2,
     "loadPrompt should be called twice"
   );
@@ -1516,6 +1475,8 @@ add_task(async function test_generatePrompt_tableInstructions_pref_disabled() {
     !systemMessage.content.body.includes("table instructions"),
     "system prompt should not include table instructions when pref is false"
   );
+  _setLoadPromptForTesting(null);
+  sandbox.restore();
 });
 
 add_task(

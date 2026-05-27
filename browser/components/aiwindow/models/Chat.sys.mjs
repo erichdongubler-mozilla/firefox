@@ -244,6 +244,7 @@ Object.assign(Chat, {
    * @param {openAIEngine} options.engineInstance
    * @param {BrowsingContext} options.browsingContext - Omitted for tests only.
    * @param {"fullpage" | "sidebar" | "urlbar"} options.mode - See the MODE in ai-window.mjs
+   * @param {object} [options.callContext] - Inference parameters; falls back to {} if absent.
    * @param {AbortSignal} [options.signal]
    */
   async fetchWithHistory({
@@ -251,6 +252,7 @@ Object.assign(Chat, {
     engineInstance,
     browsingContext,
     mode,
+    callContext,
     signal,
   }) {
     if (!browsingContext && !Cu.isInAutomation) {
@@ -268,8 +270,7 @@ Object.assign(Chat, {
 
     const toolRoleOpts = new ToolRoleOpts(engineInstance.model);
     const currentTurn = conversation.currentTurnIndex();
-    const config = engineInstance.getConfig(engineInstance.feature);
-    const inferenceParams = config?.parameters || {};
+    const inferenceParams = callContext?.parameters ?? {};
 
     /**
      * For the first turn only, we use exactly what the user typed as the `run_search` search query.
