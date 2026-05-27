@@ -650,7 +650,7 @@ static void CheckTransplantObject(JSObject* obj) {
 JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
                                             HandleObject target) {
   AssertHeapIsIdle();
-  MOZ_ASSERT(origobj != target);
+  MOZ_RELEASE_ASSERT(origobj != target);
   CheckTransplantObject(origobj);
   CheckTransplantObject(target);
   ReleaseAssertObjectHasNoWrappers(cx, target);
@@ -719,7 +719,9 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
                          cx->isThrowingOverRecursed());
       oomUnsafe.crash("JS_TransplantObject");
     }
-    MOZ_ASSERT(Wrapper::wrappedObject(newIdentityWrapper) == newIdentity);
+    MOZ_RELEASE_ASSERT(newIdentityWrapper->is<WrapperObject>());
+    MOZ_RELEASE_ASSERT(Wrapper::wrappedObject(newIdentityWrapper) ==
+                       newIdentity);
     ProxyObject::swap(cx, origobj.as<ProxyObject>(),
                       newIdentityWrapper.as<ProxyObject>(), oomUnsafe);
     if (origobj->compartment()->lookupWrapper(newIdentity)) {
