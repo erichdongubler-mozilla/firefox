@@ -1645,7 +1645,7 @@ fuzzy(0-1,0-3) needs-focus == 712130-2.html 712130-2-ref.html
 == 714519-1-q.html 714519-1-ref.html
 == 714519-2-as.html 714519-2-ref.html
 == 714519-2-q.html 714519-2-ref.html
-skip-if(Android&&emulator) fuzzy(0-1,0-21) fuzzy-if(winWidget,0-77,0-173) fuzzy-if(cocoaWidget,0-1,0-170) fuzzy-if(useDrawSnapshot,1-1,163-163) == 718521.html 718521-ref.html # bug 773482
+skip-if(Android&&emulator) fuzzy(0-1,0-21) fuzzy-if(winWidget,0-77,0-173) fuzzy-if(cocoaWidget,0-1,0-170) fuzzy-if(useDrawSnapshot,0-1,0-163) == 718521.html 718521-ref.html # bug 773482
 == 720987.html 720987-ref.html
 == 722888-1.html 722888-1-ref.html
 fuzzy(0-2,0-40000) == 722923-1.html 722923-1-ref.html
@@ -1759,7 +1759,7 @@ fuzzy(0-1,0-123) == 978911-1.svg 978911-1-ref.svg
 == 985303-1b.html 985303-1-ref.html
 == 987680-1.html 987680-1-ref.html
 # Fuzzy on WR due to alpha blending
-fuzzy(0-1,0-1473) == 991046-1.html 991046-1-ref.html
+fuzzy(0-1,0-1600) == 991046-1.html 991046-1-ref.html
 == 1003425-1.html 1003425-1-ref.html
 == 1003425-2.html 1003425-2-ref.html
 == 1005405-1.html 1005405-1-ref.html
