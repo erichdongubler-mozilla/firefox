@@ -160,7 +160,7 @@ class MediaDecodeTask final : public Runnable {
   }
 
  private:
-  void UpdateMaxChannels(const AudioData& aData);
+  void UpdateFromPacket(const AudioData& aData);
 
   MediaContainerType mContainerType;
   uint8_t* mBuffer;
@@ -392,8 +392,12 @@ void MediaDecodeTask::DoDecode() {
   }
 }
 
-void MediaDecodeTask::UpdateMaxChannels(const AudioData& aData) {
+void MediaDecodeTask::UpdateFromPacket(const AudioData& aData) {
   MOZ_ASSERT(OnPSupervisorTaskQueue());
+  if (mMediaInfo.mAudio.mRate != 0 && mMediaInfo.mAudio.mRate != aData.mRate) {
+    LOGW("sample-rate drift %u -> %u", mMediaInfo.mAudio.mRate, aData.mRate);
+  }
+  mMediaInfo.mAudio.mRate = aData.mRate;
   if (aData.mChannels > mMaxChannels) {
     LOG("max channel count increased from %u to %u", mMaxChannels,
         aData.mChannels);
@@ -409,8 +413,7 @@ void MediaDecodeTask::OnAudioDecodeCompleted(
     MOZ_ASSERT(sample->mType == MediaData::Type::AUDIO_DATA);
     RefPtr<AudioData> audioData = sample->As<AudioData>();
 
-    mMediaInfo.mAudio.mRate = audioData->mRate;
-    UpdateMaxChannels(*audioData);
+    UpdateFromPacket(*audioData);
 
     mAudioQueue.Push(audioData.forget());
   }
@@ -447,7 +450,7 @@ void MediaDecodeTask::OnAudioDrainCompleted(
     MOZ_ASSERT(sample->mType == MediaData::Type::AUDIO_DATA);
     RefPtr<AudioData> audioData = sample->As<AudioData>();
 
-    UpdateMaxChannels(*audioData);
+    UpdateFromPacket(*audioData);
     mAudioQueue.Push(audioData.forget());
   }
   DoDrain();
