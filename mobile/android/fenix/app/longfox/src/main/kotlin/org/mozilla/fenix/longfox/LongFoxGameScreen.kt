@@ -66,6 +66,10 @@ fun LongFoxGameScreen() {
         }
         val restartGame = { gameState = GameState(numCells = numCells, size = Size(canvasSizePx, canvasSizePx)) }
         SideEffect {
+            // this is to satisfy the IDE.
+            // the warning seems to be a false positive with compose state
+            // https://youtrack.jetbrains.com/projects/KT/issues/KT-78881/K2-False-positive-Assigned-value-is-never-read-in-composable-function
+            @Suppress("AssignedValueIsNeverRead")
             if (gameState.shouldCelebrateScore && !celebrationShown) celebrationSeed = gameState.score
             celebrationShown = gameState.shouldCelebrateScore
         }
@@ -85,9 +89,11 @@ fun LongFoxGameScreen() {
         val context = LocalContext.current
         val coroutineScope = rememberCoroutineScope()
         val longFoxDataStore = remember(context) { LongFoxDataStore(context) }
+        val hiscore by longFoxDataStore.hiscoreFlow()
+            .collectAsState(initial = null, coroutineScope.coroutineContext)
         val soundOn by longFoxDataStore.soundOnFlow()
-            .collectAsState(initial = false, coroutineScope.coroutineContext)
-        val soundEffectsPlayer = remember(soundOn) { SoundEffectsPlayer(context, soundOn) }
+            .collectAsState(initial = null, coroutineScope.coroutineContext)
+        val soundEffectsPlayer = remember(soundOn) { SoundEffectsPlayer(context, soundOn == true) }
 
         DisposableEffect(soundEffectsPlayer) {
             onDispose { soundEffectsPlayer.release() }
@@ -148,9 +154,12 @@ fun LongFoxGameScreen() {
         ) {
             if (gameState.isGameOver) {
                 NewGameScreen(
-                    longFoxDataStore = longFoxDataStore,
                     initialGameState = gameState,
+                    hiscore = hiscore,
+                    soundOn = soundOn,
+                    onToggleSoundOn = { coroutineScope.launch { longFoxDataStore.toggleSoundOn() } },
                     startGame = restartGame,
+                    shareHiscore = { coroutineScope.launch { longFoxDataStore.shareHiscore(it) }}
                 )
             } else {
                 GameCanvas(gameState)
