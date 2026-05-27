@@ -6,6 +6,8 @@
 #define LAYOUT_STYLE_TYPEDOM_CSSIMAGEVALUE_H_
 
 #include "js/TypeDecls.h"
+#include "mozilla/NotNull.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/CSSStyleValue.h"
 #include "nsStringFwd.h"
 
@@ -16,12 +18,17 @@ class nsISupports;
 namespace mozilla {
 
 struct CSSPropertyId;
+struct StyleImageValue;
 
 namespace dom {
 
 class CSSImageValue final : public CSSStyleValue {
  public:
-  explicit CSSImageValue(nsCOMPtr<nsISupports> aParent);
+  explicit CSSImageValue(nsCOMPtr<nsISupports> aParent,
+                         const StyleImageValue& aImageValue);
+
+  static RefPtr<CSSImageValue> Create(nsCOMPtr<nsISupports> aParent,
+                                      const StyleImageValue& aImageValue);
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
@@ -35,6 +42,8 @@ class CSSImageValue final : public CSSStyleValue {
 
  private:
   virtual ~CSSImageValue() = default;
+
+  const NotNull<UniquePtr<StyleImageValue>> mImageValue;
 };
 
 }  // namespace dom

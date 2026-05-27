@@ -129,7 +129,7 @@ use style::traversal::DomTraversal;
 use style::traversal_flags::{self, TraversalFlags};
 use style::typed_om::numeric_declaration::NumericDeclaration;
 use style::typed_om::sum_value::SumValue;
-use style::typed_om::{NumericValue, ToTyped, TypedValue, TypedValueList, UnitValue};
+use style::typed_om::{ImageValue, NumericValue, ToTyped, TypedValue, TypedValueList, UnitValue};
 use style::url;
 use style::use_counters::{CustomUseCounter, UseCounters};
 use style::values::animated::{Animate, Procedure, ToAnimatedZero};
@@ -5894,6 +5894,11 @@ pub extern "C" fn Servo_SumValue_Create(numeric_value: &NumericValue) -> *mut Su
 #[no_mangle]
 pub unsafe extern "C" fn Servo_SumValue_Drop(sum_value: *mut SumValue) {
     let _ = Box::from_raw(sum_value);
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_ImageValue_ToCss(image_value: &ImageValue, value: &mut nsACString) {
+    image_value.to_css(&mut CssWriter::new(value)).unwrap();
 }
 
 /// A result of attempting to convert a sum value to a concrete unit.

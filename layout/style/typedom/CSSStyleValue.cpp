@@ -82,6 +82,14 @@ void CSSStyleValue::Create(nsCOMPtr<nsISupports> aParent,
 
             break;
           }
+
+          case StyleTypedValue::Tag::Image: {
+            const auto& imageValue = typedValue.AsImage();
+
+            styleValue = CSSImageValue::Create(aParent, imageValue);
+
+            break;
+          }
         }
 
         aRetVal.AppendElement(std::move(styleValue));
