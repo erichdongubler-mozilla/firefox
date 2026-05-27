@@ -953,7 +953,7 @@ class WorkerPrivate final
   nsresult SetCSPFromHeaderValues(const nsACString& aCSPHeaderValue,
                                   const nsACString& aCSPReportOnlyHeaderValue);
 
-  void StorePolicyContainerArgsOnClient();
+  void StoreCSPOnClient();
 
   const mozilla::ipc::CSPInfo& GetCSPInfo() const {
     return mLoadInfo.mCSPContext->CSPInfo();

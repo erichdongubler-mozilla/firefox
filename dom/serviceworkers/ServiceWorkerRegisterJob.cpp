@@ -13,13 +13,11 @@ namespace mozilla::dom {
 ServiceWorkerRegisterJob::ServiceWorkerRegisterJob(
     nsIPrincipal* aPrincipal, const nsACString& aScope, const WorkerType& aType,
     const nsACString& aScriptSpec, ServiceWorkerUpdateViaCache aUpdateViaCache,
-    const ServiceWorkerLifetimeExtension& aLifetimeExtension,
-    uint16_t aIPAddressSpace)
+    const ServiceWorkerLifetimeExtension& aLifetimeExtension)
     : ServiceWorkerUpdateJob(Type::Register, aPrincipal, aScope,
                              nsCString(aScriptSpec), aUpdateViaCache,
                              aLifetimeExtension),
-      mType(aType),
-      mIPAddressSpace(aIPAddressSpace) {}
+      mType(aType) {}
 
 void ServiceWorkerRegisterJob::AsyncExecute() {
   MOZ_ASSERT(NS_IsMainThread());
@@ -43,7 +41,7 @@ void ServiceWorkerRegisterJob::AsyncExecute() {
         mType == registration->Type();
 
     registration->SetOptions(GetUpdateViaCache(), mType);
-    registration->SetIPAddressSpace(mIPAddressSpace);
+
     RefPtr<ServiceWorkerInfo> newest = registration->Newest();
     if (newest && mScriptSpec.Equals(newest->ScriptSpec()) && sameOptions) {
       SetRegistration(registration);
@@ -57,7 +55,6 @@ void ServiceWorkerRegisterJob::AsyncExecute() {
       FailUpdateJob(NS_ERROR_DOM_ABORT_ERR);
       return;
     }
-    registration->SetIPAddressSpace(mIPAddressSpace);
   }
 
   SetRegistration(registration);

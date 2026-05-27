@@ -930,17 +930,9 @@ RefPtr<ServiceWorkerRegistrationPromise> ServiceWorkerManager::Register(
 
   auto lifetime = DetermineLifetimeForClient(aClientInfo);
 
-  uint16_t ipAddressSpace = 0;
-  auto policyContainerArgs = aClientInfo.GetPolicyContainerArgs();
-  if (policyContainerArgs.isSome()) {
-    ipAddressSpace =
-        static_cast<uint16_t>(policyContainerArgs->ipAddressSpace());
-  }
-
   RefPtr<ServiceWorkerRegisterJob> job = new ServiceWorkerRegisterJob(
       principal, aScopeURL, aType, aScriptURL,
-      static_cast<ServiceWorkerUpdateViaCache>(aUpdateViaCache), lifetime,
-      ipAddressSpace);
+      static_cast<ServiceWorkerUpdateViaCache>(aUpdateViaCache), lifetime);
 
   job->AppendResultCallback(cb);
   queue->ScheduleJob(job);
