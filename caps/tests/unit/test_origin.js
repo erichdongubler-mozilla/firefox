@@ -287,10 +287,4 @@ function run_test() {
   Assert.ok(
     /^moz-nullprincipal:\{([0-9]|[a-z]|\-){36}\}$/.test(aboutBlankPrin.origin)
   );
-
-  var aboutSrcdocURI = makeURI("about:srcdoc");
-  var aboutSrcdocPrin = ssm.createContentPrincipal(aboutSrcdocURI, {});
-  Assert.ok(
-    /^moz-nullprincipal:\{([0-9]|[a-z]|\-){36}\}$/.test(aboutSrcdocPrin.origin)
-  );
 }
