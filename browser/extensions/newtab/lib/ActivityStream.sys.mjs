@@ -562,6 +562,13 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "sports.worldCup.liveEndpoint",
+    {
+      title: "The Merino endpoint for fetching live World Cup match data",
+      value: "https://merino.services.mozilla.com/api/v1/wcs/live",
+    },
+  ],
+  [
     "images.smart",
     {
       title: "Smart crop images on newtab",

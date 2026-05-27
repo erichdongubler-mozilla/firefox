@@ -669,7 +669,12 @@ export class TemporaryMerinoClientShim {
     }
     try {
       const response = await fetch(url);
-
+      if (!response.ok) {
+        this.#lazy.logger.error(
+          `Sports teams fetch failed with status ${response.status}`
+        );
+        return null;
+      }
       // The `data` variable has the teams response we'll be reading
       const data = /** @type {any} */ (await response.json());
       this.#lazy.logger.debug("fetchSportsTeams response", data);
@@ -710,12 +715,61 @@ export class TemporaryMerinoClientShim {
     }
     try {
       const response = await fetch(url);
+      if (!response.ok) {
+        this.#lazy.logger.error(
+          `Sports matches fetch failed with status ${response.status}`
+        );
+        return null;
+      }
       // The `data` variable has the matches response we'll be reading
       const data = /** @type {any} */ (await response.json());
       this.#lazy.logger.debug("fetchSportsMatches response", data);
       return data;
     } catch (e) {
       this.#lazy.logger.error("Sports matches fetch error", e);
+      return null;
+    }
+  }
+
+  /**
+   * Fetch currently-live matches from the Merino WCS endpoint.
+   *
+   * @param {object} options
+   *   Options object
+   * @param {string} options.source
+   *   The source that is requesting this fetch.
+   * @param {string} options.endpointUrl
+   *   The live matches endpoint URL.
+   * @returns {Promise<object|null>}
+   *   The parsed response (`{ matches: [...] }`), or null if the endpoint is
+   *   not configured or an error occurs.
+   */
+  async fetchSportsLive({ source, endpointUrl }) {
+    if (!endpointUrl) {
+      return null;
+    }
+    let url = URL.parse(endpointUrl);
+    if (!url) {
+      this.#lazy.logger.error("Invalid sports live endpoint URL", endpointUrl);
+      return null;
+    }
+    if (source) {
+      url.searchParams.set("source", source);
+    }
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        this.#lazy.logger.error(
+          `Sports live fetch failed with status ${response.status}`
+        );
+        return null;
+      }
+      // The `data` variable has the live matches response we'll be reading
+      const data = /** @type {any} */ (await response.json());
+      this.#lazy.logger.debug("fetchSportsLive response", data);
+      return data;
+    } catch (e) {
+      this.#lazy.logger.error("Sports live fetch error", e);
       return null;
     }
   }

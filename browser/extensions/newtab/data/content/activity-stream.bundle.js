@@ -16550,7 +16550,7 @@ function SportsWidget_SportsWidget({
   const widgetSize = resolveWidgetSize(SPORTS_WIDGET_REGISTRY_ENTRY, prefs);
   const liveEnabled = prefs[PREF_SPORTS_WIDGET_LIVE_ENABLED];
   const widgetsMayBeMaximized = prefs["widgets.system.maximized"];
-  const hasLiveGames = sportsWidgetData?.data?.matches?.current?.length > 0;
+  const hasLiveGames = sportsWidgetData?.data?.live?.length > 0;
   const hasPreviousResults = sportsWidgetData?.data?.matches?.previous?.length > 0;
   const tournamentStarted = hasLiveGames || hasPreviousResults;
   const savedWidgetState = sportsWidgetData.widgetState || WIDGET_STATES.INTRO;
@@ -16559,6 +16559,7 @@ function SportsWidget_SportsWidget({
   const rawSelectedTeams = sportsWidgetData.selectedTeams;
   const rawTeams = sportsWidgetData?.data?.teams;
   const rawMatches = sportsWidgetData?.data?.matches;
+  const rawLive = sportsWidgetData?.data?.live;
   const selectedTeams = (0,external_React_namespaceObject.useMemo)(() => rawSelectedTeams || [], [rawSelectedTeams]);
   const teams = (0,external_React_namespaceObject.useMemo)(() => rawTeams ?? [], [rawTeams]);
   const {
@@ -16603,10 +16604,10 @@ function SportsWidget_SportsWidget({
   } = (0,external_React_namespaceObject.useMemo)(() => {
     return {
       sortedPrevious: sortFollowedFirst(rawMatches?.previous ?? [], selectedTeamsSet),
-      sortedCurrent: sortFollowedFirst(rawMatches?.current ?? [], selectedTeamsSet),
+      sortedCurrent: sortFollowedFirst(rawLive ?? [], selectedTeamsSet),
       sortedNext: sortFollowedFirst(rawMatches?.next ?? [], selectedTeamsSet)
     };
-  }, [rawMatches, selectedTeamsSet]);
+  }, [rawMatches, rawLive, selectedTeamsSet]);
 
   // List-view toggle states for the Results and Upcoming tabs are lifted up
   // here so we can tell whether a highlight match is currently visible (for

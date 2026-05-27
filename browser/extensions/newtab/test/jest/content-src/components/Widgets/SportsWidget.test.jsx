@@ -279,7 +279,8 @@ describe("<SportsWidget>", () => {
           {
             data: {
               teams: [],
-              matches: { current: [mockMatch], previous: [], next: [] },
+              matches: emptyMatches,
+              live: [mockMatch],
             },
           }
         )}
@@ -952,7 +953,8 @@ describe("<SportsWidget> matches view", () => {
     const { container } = renderInMatchesState({
       data: {
         teams: [],
-        matches: { current: [mockMatch], previous: [], next: [] },
+        matches: emptyMatches,
+        live: [mockMatch],
       },
     });
     expect(
@@ -969,12 +971,58 @@ describe("<SportsWidget> matches view", () => {
     const { container: withLive } = renderInMatchesState({
       data: {
         teams: [],
-        matches: { current: [mockMatch], previous: [], next: [] },
+        matches: emptyMatches,
+        live: [mockMatch],
       },
     });
     expect(
       withLive.querySelector("[data-l10n-id='newtab-sports-widget-now']")
     ).toBeInTheDocument();
+  });
+
+  it("ignores matches.current when deciding whether to show the Now tab", () => {
+    // Now-tab visibility must be driven by /live, not by /matches.current.
+    // The /matches `current[]` bucket is calendar-date-bucketed by the
+    // backend and includes live + final games for the requested day, so
+    // it's not a valid signal for "currently in progress".
+    const { container } = renderInMatchesState({
+      data: {
+        teams: [],
+        matches: { current: [mockMatch], previous: [], next: [] },
+        live: [],
+      },
+    });
+    expect(
+      container.querySelector("[data-l10n-id='newtab-sports-widget-now']")
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders the Now highlight from data.live, not from matches.current", () => {
+    // Verifies the Now tab reads from data.live by giving each source a
+    // distinguishable team key and asserting the live team renders.
+    const liveOnly = {
+      ...mockMatch,
+      home_team: { ...mockMatch.home_team, key: "GER", name: "Germany" },
+      away_team: { ...mockMatch.away_team, key: "FRA", name: "France" },
+    };
+    const matchesCurrentOnly = {
+      ...mockMatch,
+      home_team: { ...mockMatch.home_team, key: "BRA", name: "Brazil" },
+      away_team: { ...mockMatch.away_team, key: "ARG", name: "Argentina" },
+    };
+    const { container } = renderInMatchesState({
+      matchesTab: "now",
+      data: {
+        teams: [],
+        matches: { current: [matchesCurrentOnly], previous: [], next: [] },
+        live: [liveOnly],
+      },
+    });
+    const panel = getVisibleTabPanel(container);
+    const flags = panel.querySelectorAll(".sports-match-flag");
+    const titles = [...flags].map(f => f.getAttribute("title"));
+    expect(titles).toEqual(expect.arrayContaining(["Germany", "France"]));
+    expect(titles).not.toEqual(expect.arrayContaining(["Brazil"]));
   });
 
   it("marks the active tab based on matchesTab state", () => {
@@ -990,7 +1038,8 @@ describe("<SportsWidget> matches view", () => {
       matchesTab: "upcoming",
       data: {
         teams: [],
-        matches: { current: [mockMatch], previous: [], next: [] },
+        matches: emptyMatches,
+        live: [mockMatch],
       },
     });
     expect(
@@ -1114,7 +1163,8 @@ describe("<SportsWidget> matches view", () => {
       matchesTab: "upcoming",
       data: {
         teams: [],
-        matches: { current: [mockMatch], previous: [], next: [] },
+        matches: emptyMatches,
+        live: [mockMatch],
       },
     });
     fireEvent.click(
@@ -1591,7 +1641,8 @@ describe("<SportsWidget> Watch button (live tab)", () => {
             matchesTab: "now",
             data: {
               teams: [],
-              matches: { previous: [], current: [mockMatch], next: [] },
+              matches: emptyMatches,
+              live: [mockMatch],
             },
           }
         )}
@@ -2278,7 +2329,8 @@ describe("<SportsWidget> telemetry", () => {
       matchesTab: "results",
       data: {
         teams: [],
-        matches: { current: [mockMatch], previous: [mockMatch], next: [] },
+        matches: { current: [], previous: [mockMatch], next: [] },
+        live: [mockMatch],
       },
     };
     const { container, rerender } = render(
@@ -2336,7 +2388,8 @@ describe("<SportsWidget> telemetry", () => {
       matchesTab: "upcoming",
       data: {
         teams: [],
-        matches: { current: [mockMatch], previous: [mockMatch], next: [] },
+        matches: { current: [], previous: [mockMatch], next: [] },
+        live: [mockMatch],
       },
     };
     const { container, rerender } = render(
@@ -2428,6 +2481,10 @@ describe("<SportsWidget> telemetry", () => {
 });
 
 describe("<SportsWidget> stage section labels in highlight views", () => {
+  // `current` here is the conceptual "live" bucket — it's wired into
+  // `data.live` so the Now-tab section label tests below exercise the live
+  // feed instead of the /matches `current[]` bucket (which no longer drives
+  // the Now tab in production).
   function renderInMatchesState({
     matchesTab,
     size = "large",
@@ -2444,7 +2501,8 @@ describe("<SportsWidget> stage section labels in highlight views", () => {
             matchesTab,
             data: {
               teams: [],
-              matches: { previous, current, next },
+              matches: { previous, current: [], next },
+              live: current,
             },
           }
         )}

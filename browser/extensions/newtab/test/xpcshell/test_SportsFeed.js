@@ -201,11 +201,16 @@ add_task(async function test_syncState_broadcasts_cached_teams_and_matches() {
     current: [{ id: "match1", query: "team1 vs team2" }],
     next: [{ id: "match2", query: "team2 vs team3" }],
   };
+  const cachedLive = [{ id: "live1", status_type: "live", query: "a vs b" }];
   const getStub = sinon.stub(feed.cache, "get").resolves({
-    sportsData: { teams: cachedTeams, matches: cachedMatches },
+    sportsData: {
+      teams: cachedTeams,
+      matches: cachedMatches,
+      live: cachedLive,
+    },
   });
 
-  info("syncState should broadcast cached teams and matches to the UI");
+  info("syncState should broadcast cached teams, matches, and live to the UI");
   await feed.syncState();
 
   const [firstCall] = feed.store.dispatch.getCalls();
@@ -223,6 +228,37 @@ add_task(async function test_syncState_broadcasts_cached_teams_and_matches() {
     firstCall.args[0].data.matches,
     cachedMatches,
     "passes cached matches through unchanged"
+  );
+  Assert.deepEqual(
+    firstCall.args[0].data.live,
+    cachedLive,
+    "passes cached live array through unchanged"
+  );
+
+  getStub.restore();
+});
+
+add_task(async function test_syncState_dispatches_when_only_live_cached() {
+  // A user could land in a state where /matches returned nothing but /live
+  // did (e.g. between rounds). syncState should still hydrate the live data.
+  const feed = makeFeed();
+  const cachedLive = [{ id: "live1", status_type: "live", query: "a vs b" }];
+  const getStub = sinon.stub(feed.cache, "get").resolves({
+    sportsData: { live: cachedLive },
+  });
+
+  await feed.syncState();
+
+  const [firstCall] = feed.store.dispatch.getCalls();
+  Assert.equal(
+    firstCall.args[0].type,
+    actionTypes.WIDGETS_SPORTS_WIDGET_SET,
+    "dispatches WIDGETS_SPORTS_WIDGET_SET even with only live cached"
+  );
+  Assert.deepEqual(
+    firstCall.args[0].data.live,
+    cachedLive,
+    "broadcasts cached live array"
   );
 
   getStub.restore();
@@ -328,17 +364,23 @@ add_task(async function test_fetchSportsData_dispatches_teams_and_matches() {
       { id: "match1", teams: ["team1", "team2"], query: "team1 vs team2" },
     ],
   };
+  const mockLive = {
+    matches: [{ id: "live1", status_type: "live", query: "team3 vs team4" }],
+  };
 
   sinon.stub(feed.merino, "fetchSportsTeams").resolves(mockTeamsResponse);
   sinon.stub(feed.merino, "fetchSportsMatches").resolves(mockMatches);
+  sinon.stub(feed.merino, "fetchSportsLive").resolves(mockLive);
 
   feed.store.state.Prefs.values["sports.worldCup.teamsEndpoint"] =
     "https://merino.services.mozilla.com/api/v1/wcs/teams";
   feed.store.state.Prefs.values["sports.worldCup.matchesEndpoint"] =
     "https://merino.services.mozilla.com/api/v1/wcs/matches";
+  feed.store.state.Prefs.values["sports.worldCup.liveEndpoint"] =
+    "https://merino.services.mozilla.com/api/v1/wcs/live";
 
   info(
-    "fetchSportsData should dispatch WIDGETS_SPORTS_WIDGET_SET with teams and matches"
+    "fetchSportsData should dispatch WIDGETS_SPORTS_WIDGET_SET with teams, matches, and live"
   );
   await feed.fetchSportsData();
 
@@ -359,6 +401,11 @@ add_task(async function test_fetchSportsData_dispatches_teams_and_matches() {
     mockMatches,
     "matches are passed through unchanged"
   );
+  Assert.deepEqual(
+    dispatchedAction.data.live,
+    mockLive.matches,
+    "live matches surface as the `live` array on data"
+  );
 });
 
 add_task(async function test_fetchSportsData_reads_endpoint_prefs() {
@@ -366,16 +413,19 @@ add_task(async function test_fetchSportsData_reads_endpoint_prefs() {
   const teamsEndpoint = "https://merino.services.mozilla.com/api/v1/wcs/teams";
   const matchesEndpoint =
     "https://merino.services.mozilla.com/api/v1/wcs/matches";
+  const liveEndpoint = "https://merino.services.mozilla.com/api/v1/wcs/live";
 
   feed.store.state.Prefs.values["sports.worldCup.teamsEndpoint"] =
     teamsEndpoint;
   feed.store.state.Prefs.values["sports.worldCup.matchesEndpoint"] =
     matchesEndpoint;
+  feed.store.state.Prefs.values["sports.worldCup.liveEndpoint"] = liveEndpoint;
 
   const teamsStub = sinon.stub(feed.merino, "fetchSportsTeams").resolves([]);
   const matchesStub = sinon
     .stub(feed.merino, "fetchSportsMatches")
     .resolves([]);
+  const liveStub = sinon.stub(feed.merino, "fetchSportsLive").resolves(null);
 
   info("fetchSportsData should pass the endpoint prefs to the merino client");
   await feed.fetchSportsData();
@@ -393,6 +443,10 @@ add_task(async function test_fetchSportsData_reads_endpoint_prefs() {
     }),
     "fetchSportsMatches called with correct endpoint"
   );
+  Assert.ok(
+    liveStub.calledWith({ source: "newtab", endpointUrl: liveEndpoint }),
+    "fetchSportsLive called with correct endpoint"
+  );
 });
 
 add_task(
@@ -400,6 +454,7 @@ add_task(
     const feed = makeFeed();
     const trainhopTeamsEndpoint = "https://trainhop.example.com/teams";
     const trainhopMatchesEndpoint = "https://trainhop.example.com/matches";
+    const trainhopLiveEndpoint = "https://trainhop.example.com/live";
 
     feed.store.state.Prefs.values["discoverystream.endpoints"] =
       "https://merino.services.mozilla.com/,https://trainhop.example.com/";
@@ -407,10 +462,13 @@ add_task(
       "https://pref.example.com/teams";
     feed.store.state.Prefs.values["sports.worldCup.matchesEndpoint"] =
       "https://pref.example.com/matches";
+    feed.store.state.Prefs.values["sports.worldCup.liveEndpoint"] =
+      "https://pref.example.com/live";
     feed.store.state.Prefs.values.trainhopConfig = {
       sports: {
         teamsEndpoint: trainhopTeamsEndpoint,
         matchesEndpoint: trainhopMatchesEndpoint,
+        liveEndpoint: trainhopLiveEndpoint,
       },
     };
 
@@ -418,6 +476,7 @@ add_task(
     const matchesStub = sinon
       .stub(feed.merino, "fetchSportsMatches")
       .resolves([]);
+    const liveStub = sinon.stub(feed.merino, "fetchSportsLive").resolves(null);
 
     info(
       "fetchSportsData should prefer trainhopConfig endpoints over pref endpoints"
@@ -440,6 +499,13 @@ add_task(
       }),
       "fetchSportsMatches called with trainhopConfig endpoint"
     );
+    Assert.ok(
+      liveStub.calledWith({
+        source: "newtab",
+        endpointUrl: trainhopLiveEndpoint,
+      }),
+      "fetchSportsLive called with trainhopConfig endpoint"
+    );
   }
 );
 
@@ -448,6 +514,7 @@ add_task(async function test_fetchSportsData_handles_null_responses() {
 
   sinon.stub(feed.merino, "fetchSportsTeams").resolves(null);
   sinon.stub(feed.merino, "fetchSportsMatches").resolves(null);
+  sinon.stub(feed.merino, "fetchSportsLive").resolves(null);
 
   info(
     "fetchSportsData should dispatch empty fallbacks when endpoints return null"
@@ -465,6 +532,72 @@ add_task(async function test_fetchSportsData_handles_null_responses() {
     { previous: [], current: [], next: [] },
     "matches falls back to an object with empty previous/current/next arrays"
   );
+  Assert.deepEqual(
+    dispatchedAction.data.live,
+    [],
+    "live falls back to an empty array"
+  );
+});
+
+add_task(async function test_fetchSportsData_live_non_array_matches() {
+  // Defensive: if the /live response is malformed (e.g. `matches` is missing
+  // or not an array), the feed should fall back to an empty live array
+  // instead of letting the UI try to iterate a non-iterable.
+  const feed = makeFeed();
+
+  sinon.stub(feed.merino, "fetchSportsTeams").resolves(null);
+  sinon.stub(feed.merino, "fetchSportsMatches").resolves(null);
+  sinon
+    .stub(feed.merino, "fetchSportsLive")
+    .resolves({ matches: "not-an-array" });
+
+  await feed.fetchSportsData();
+
+  const [dispatchedAction] = feed.store.dispatch.firstCall.args;
+  Assert.deepEqual(
+    dispatchedAction.data.live,
+    [],
+    "live falls back to [] when /live.matches isn't an array"
+  );
+});
+
+add_task(async function test_fetchSportsData_blocks_disallowed_live_endpoint() {
+  // The live endpoint must be in the discoverystream allowlist just like
+  // teams/matches; otherwise the feed should bail out without dispatching.
+  const feed = makeFeed();
+  feed.store.state.Prefs.values["discoverystream.endpoints"] =
+    "https://merino.services.mozilla.com/";
+  feed.store.state.Prefs.values["sports.worldCup.teamsEndpoint"] =
+    "https://merino.services.mozilla.com/api/v1/wcs/teams";
+  feed.store.state.Prefs.values["sports.worldCup.matchesEndpoint"] =
+    "https://merino.services.mozilla.com/api/v1/wcs/matches";
+  feed.store.state.Prefs.values["sports.worldCup.liveEndpoint"] =
+    "https://evil.example.com/live";
+
+  const teamsStub = sinon.stub(feed.merino, "fetchSportsTeams").resolves([]);
+  const matchesStub = sinon
+    .stub(feed.merino, "fetchSportsMatches")
+    .resolves([]);
+  const liveStub = sinon.stub(feed.merino, "fetchSportsLive").resolves(null);
+
+  await feed.fetchSportsData();
+
+  Assert.ok(
+    teamsStub.notCalled,
+    "fetchSportsTeams not called when live endpoint is disallowed"
+  );
+  Assert.ok(
+    matchesStub.notCalled,
+    "fetchSportsMatches not called when live endpoint is disallowed"
+  );
+  Assert.ok(
+    liveStub.notCalled,
+    "fetchSportsLive not called when live endpoint is disallowed"
+  );
+  Assert.ok(
+    feed.store.dispatch.notCalled,
+    "no dispatch when live endpoint is disallowed"
+  );
 });
 
 add_task(async function test_fetchSportsData_caches_teams_and_matches() {
@@ -475,26 +608,35 @@ add_task(async function test_fetchSportsData_caches_teams_and_matches() {
     current: [],
     next: [{ id: "match1", query: "a vs b" }],
   };
+  const mockLive = {
+    matches: [{ id: "live1", status_type: "live", query: "x vs y" }],
+  };
 
   sinon.stub(feed.merino, "fetchSportsTeams").resolves(mockTeamsResponse);
   sinon.stub(feed.merino, "fetchSportsMatches").resolves(mockMatches);
+  sinon.stub(feed.merino, "fetchSportsLive").resolves(mockLive);
 
   feed.store.state.Prefs.values["sports.worldCup.teamsEndpoint"] =
     "https://merino.services.mozilla.com/api/v1/wcs/teams";
   feed.store.state.Prefs.values["sports.worldCup.matchesEndpoint"] =
     "https://merino.services.mozilla.com/api/v1/wcs/matches";
+  feed.store.state.Prefs.values["sports.worldCup.liveEndpoint"] =
+    "https://merino.services.mozilla.com/api/v1/wcs/live";
 
   const setStub = sinon.stub(feed.cache, "set").resolves();
 
-  info("fetchSportsData should save fetched teams and matches to cache");
+  info(
+    "fetchSportsData should save fetched teams, matches, and live games to cache"
+  );
   await feed.fetchSportsData();
 
   Assert.ok(
     setStub.calledWith("sportsData", {
       teams: mockTeamsResponse.teams,
       matches: mockMatches,
+      live: mockLive.matches,
     }),
-    "caches teams and matches together under sportsData key"
+    "caches teams, matches, and live together under sportsData key"
   );
 
   setStub.restore();

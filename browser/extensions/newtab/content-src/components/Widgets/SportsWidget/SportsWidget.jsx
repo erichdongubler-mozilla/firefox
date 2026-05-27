@@ -144,7 +144,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   const widgetSize = resolveWidgetSize(SPORTS_WIDGET_REGISTRY_ENTRY, prefs);
   const liveEnabled = prefs[PREF_SPORTS_WIDGET_LIVE_ENABLED];
   const widgetsMayBeMaximized = prefs["widgets.system.maximized"];
-  const hasLiveGames = sportsWidgetData?.data?.matches?.current?.length > 0;
+  const hasLiveGames = sportsWidgetData?.data?.live?.length > 0;
   const hasPreviousResults =
     sportsWidgetData?.data?.matches?.previous?.length > 0;
   const tournamentStarted = hasLiveGames || hasPreviousResults;
@@ -157,6 +157,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   const rawSelectedTeams = sportsWidgetData.selectedTeams;
   const rawTeams = sportsWidgetData?.data?.teams;
   const rawMatches = sportsWidgetData?.data?.matches;
+  const rawLive = sportsWidgetData?.data?.live;
   const selectedTeams = useMemo(
     () => rawSelectedTeams || [],
     [rawSelectedTeams]
@@ -202,13 +203,10 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
         rawMatches?.previous ?? [],
         selectedTeamsSet
       ),
-      sortedCurrent: sortFollowedFirst(
-        rawMatches?.current ?? [],
-        selectedTeamsSet
-      ),
+      sortedCurrent: sortFollowedFirst(rawLive ?? [], selectedTeamsSet),
       sortedNext: sortFollowedFirst(rawMatches?.next ?? [], selectedTeamsSet),
     };
-  }, [rawMatches, selectedTeamsSet]);
+  }, [rawMatches, rawLive, selectedTeamsSet]);
 
   // List-view toggle states for the Results and Upcoming tabs are lifted up
   // here so we can tell whether a highlight match is currently visible (for
