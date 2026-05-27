@@ -2307,7 +2307,7 @@ nsresult nsSHistory::GotoIndex(BrowsingContext* aSourceBrowsingContext,
 
 NS_IMETHODIMP_(bool)
 nsSHistory::HasUserInteractionAtIndex(int32_t aIndex) {
-  RefPtr<SessionHistoryEntry> entry = mEntries[aIndex];
+  RefPtr<SessionHistoryEntry> entry = mEntries.SafeElementAt(aIndex);
   if (!entry) {
     return false;
   }
