@@ -26,9 +26,6 @@ const MERINO_CLIENT_KEY = "HNT_SPORTS_FEED";
 // the generic newtab source; the search team may ask us to switch to a
 // widget-specific source later.
 const SEARCH_SAP_SOURCE = "about_newtab";
-// Temporary: backend requires a date parameter on the matches endpoint until
-// TODO: 10 days before kickoff (2026-06-11). Remove this and the appendDate logic once the backend no longer requires it.
-const SPORTS_MATCHES_PRE_KICKOFF_DATE = "2026-06-15";
 
 /**
  * Manages persistent state for the Sports widget (selected teams and widget
@@ -182,14 +179,6 @@ export class SportsFeed {
       return;
     }
 
-    // TODO: remove matchesEndpointWithDate variable and all references to it 10 days before kickoff (June 1st 2026)
-    let matchesEndpointWithDate = matchesEndpoint;
-    if (matchesEndpoint) {
-      const matchesUrl = new URL(matchesEndpoint);
-      matchesUrl.searchParams.set("date", SPORTS_MATCHES_PRE_KICKOFF_DATE);
-      matchesEndpointWithDate = matchesUrl.toString();
-    }
-
     const [teams, matches, live] = await Promise.all([
       this.merino.fetchSportsTeams({
         source: "newtab",
@@ -197,7 +186,7 @@ export class SportsFeed {
       }),
       this.merino.fetchSportsMatches({
         source: "newtab",
-        endpointUrl: matchesEndpointWithDate,
+        endpointUrl: matchesEndpoint,
       }),
       this.merino.fetchSportsLive({
         source: "newtab",
