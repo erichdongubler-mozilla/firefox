@@ -435,10 +435,10 @@ index 9795567e2d..9936c55a9c 100644
    deps = [
      ":audio_sender_interface",
 diff --git a/call/video_receive_stream.h b/call/video_receive_stream.h
-index ce19d8525e..322f167934 100644
+index a2278918de..fdeb0904b7 100644
 --- a/call/video_receive_stream.h
 +++ b/call/video_receive_stream.h
-@@ -236,6 +236,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
+@@ -237,6 +237,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
        // disabled.
        KeyFrameReqMethod keyframe_method = KeyFrameReqMethod::kPliRtcp;
  
