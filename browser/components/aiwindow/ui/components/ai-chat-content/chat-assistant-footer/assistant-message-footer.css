@@ -31,15 +31,3 @@ moz-button.footer-icon-button {
     }
   }
 }
-
-.thumbs-up-button,
-.thumbs-down-button {
-  display: none;
-}
-
-@media -moz-pref("browser.smartwindow.userFeedbackCollection") {
-  .thumbs-up-button,
-  .thumbs-down-button {
-    display: revert;
-  }
-}
