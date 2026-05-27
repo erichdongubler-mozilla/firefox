@@ -115,6 +115,7 @@ UNIFIED_SOURCES += [
     "testPromise.cpp",
     "testPropCache.cpp",
     "testPropertyKey.cpp",
+    "testRealmOptions.cpp",
     "testRegExp.cpp",
     "testResolveRecursion.cpp",
     "testResult.cpp",
