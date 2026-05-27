@@ -226,8 +226,9 @@ class MediaStatusManager : public IMediaInfoUpdater {
 
   uint64_t mTopLevelBrowsingContextId;
 
-  // Within a tab, the Id of the browsing context which has already created a
-  // media session and owns the audio focus within a tab.
+  // Within a tab, the Id of the browsing context whose registered media
+  // session is currently active for the tab. Derived from the active
+  // audible controllable context tracked on `mPlaybackStatusDelegate`.
   Maybe<uint64_t> mActiveMediaSessionContextId;
 
   void ClearActiveMediaSessionContextIdIfNeeded();
@@ -240,9 +241,9 @@ class MediaStatusManager : public IMediaInfoUpdater {
   bool IsInPrivateBrowsing() const;
   void FillMissingTitleAndArtworkIfNeeded(MediaMetadataBase& aMetadata) const;
 
-  bool IsSessionOwningAudioFocus(uint64_t aBrowsingContextId) const;
   void SetActiveMediaSessionContextId(uint64_t aBrowsingContextId);
-  void HandleAudioFocusOwnerChanged(Maybe<uint64_t>& aBrowsingContextId);
+  void HandleActiveAudibleControllableContextChanged(
+      Maybe<uint64_t>& aBrowsingContextId);
 
   void NotifySupportedKeysChangedIfNeeded(uint64_t aBrowsingContextId);
 

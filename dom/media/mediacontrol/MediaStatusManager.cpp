@@ -56,8 +56,8 @@ void MediaStatusManager::NotifyMediaAudibleChanged(
       aBrowsingContextId, aState, aType, aSessionType);
   if (ownerChanged) {
     Maybe<uint64_t> newOwner =
-        mPlaybackStatusDelegate.GetAudioFocusOwnerContextId();
-    HandleAudioFocusOwnerChanged(newOwner);
+        mPlaybackStatusDelegate.GetActiveAudibleControllableContextId();
+    HandleActiveAudibleControllableContextChanged(newOwner);
   }
 }
 
@@ -71,7 +71,9 @@ void MediaStatusManager::NotifySessionCreated(uint64_t aBrowsingContextId) {
         return true;
       });
 
-  if (created && IsSessionOwningAudioFocus(aBrowsingContextId)) {
+  if (created &&
+      mPlaybackStatusDelegate.GetActiveAudibleControllableContextId() ==
+          Some(aBrowsingContextId)) {
     // This can't be done from within the WithEntryHandle functor, since it
     // accesses mMediaSessionInfoMap.
     SetActiveMediaSessionContextId(aBrowsingContextId);
@@ -121,22 +123,23 @@ void MediaStatusManager::UpdateMetadata(
   }
 }
 
-void MediaStatusManager::HandleAudioFocusOwnerChanged(
+void MediaStatusManager::HandleActiveAudibleControllableContextChanged(
     Maybe<uint64_t>& aBrowsingContextId) {
-  // No one is holding the audio focus.
+  // No context currently qualifies; there is no active media session.
   if (!aBrowsingContextId) {
-    LOG("No one is owning audio focus");
+    LOG("No active audible controllable context");
     return ClearActiveMediaSessionContextIdIfNeeded();
   }
 
-  // This owner of audio focus doesn't have media session, so we should deactive
-  // the active session because the active session must own the audio focus.
+  // The qualifying context has no MediaSession registered; the active media
+  // session cannot be derived from it.
   if (!mMediaSessionInfoMap.Contains(*aBrowsingContextId)) {
-    LOG("The owner of audio focus doesn't have media session");
+    LOG("The active audible controllable context has no media session");
     return ClearActiveMediaSessionContextIdIfNeeded();
   }
 
-  // This owner has media session so it should become an active session context.
+  // The qualifying context has a MediaSession; promote it to the active
+  // media session.
   SetActiveMediaSessionContextId(*aBrowsingContextId);
 }
 
@@ -186,14 +189,6 @@ void MediaStatusManager::StoreMediaSessionContextIdOnWindowContext() {
     (void)bc->GetTopWindowContext()->SetActiveMediaSessionContextId(
         mActiveMediaSessionContextId);
   }
-}
-
-bool MediaStatusManager::IsSessionOwningAudioFocus(
-    uint64_t aBrowsingContextId) const {
-  Maybe<uint64_t> audioFocusContextId =
-      mPlaybackStatusDelegate.GetAudioFocusOwnerContextId();
-  return audioFocusContextId ? *audioFocusContextId == aBrowsingContextId
-                             : false;
 }
 
 MediaMetadataBase MediaStatusManager::CreateDefaultMetadata() const {

@@ -70,12 +70,12 @@ struct AudibleSource {
  * Use `UpdateMediaXXXState()` to update controlled media status, and use
  * `IsXXX()` methods to acquire the playback status of the tab.
  *
- * As we know each context's audible state, we can decide which context should
- * owns the audio focus when multiple contexts are all playing audible media at
- * the same time. In that cases, the latest context that plays media would own
- * the audio focus. When the context owning the audio focus is destroyed, we
- * would see if there is another other context still playing audible media, and
- * switch the audio focus to another context.
+ * As we know each context's audible state, we can decide which context is the
+ * active audible controllable context for the tab when multiple contexts are
+ * all playing audible media at the same time. In that case, the latest
+ * context that plays a controllable audible source qualifies. When that
+ * context is destroyed, we look for another context with a controllable
+ * audible source and hand off to it (or clear the value if none qualifies).
  */
 class MediaPlaybackStatus final {
  public:
@@ -95,7 +95,7 @@ class MediaPlaybackStatus final {
   Maybe<PositionState> GuessedMediaPositionState(
       Maybe<uint64_t> aPreferredContextId) const;
 
-  Maybe<uint64_t> GetAudioFocusOwnerContextId() const;
+  Maybe<uint64_t> GetActiveAudibleControllableContextId() const;
 
  private:
   /**
@@ -184,18 +184,18 @@ class MediaPlaybackStatus final {
   void MaybeDestroyContextInfo(uint64_t aContextId,
                                const ContextMediaInfo& aInfo);
 
-  void ChooseNewContextToOwnAudioFocus();
-  void SetOwningAudioFocusContextId(Maybe<uint64_t>&& aContextId);
-  bool IsContextOwningAudioFocus(uint64_t aContextId) const;
-  bool ShouldRequestAudioFocusForInfo(const ContextMediaInfo& aInfo,
-                                      ControlType aControlType) const;
-  bool ShouldAbandonAudioFocusForInfo(const ContextMediaInfo& aInfo,
-                                      ControlType aControlType) const;
+  void ChooseNewActiveAudibleControllableContext();
+  void SetActiveAudibleControllableContextId(Maybe<uint64_t>&& aContextId);
+  bool IsActiveAudibleControllableContext(uint64_t aContextId) const;
+  bool ShouldClaimActiveAudibleControllableContextForInfo(
+      const ContextMediaInfo& aInfo, ControlType aControlType) const;
+  bool ShouldHandOffActiveAudibleControllableContextForInfo(
+      const ContextMediaInfo& aInfo, ControlType aControlType) const;
   bool HasAnyControllableAudibleSource() const;
 
   // This contains all the media status of browsing contexts within a tab.
   nsTHashMap<uint64_t, UniquePtr<ContextMediaInfo>> mContextInfoMap;
-  Maybe<uint64_t> mOwningAudioFocusContextId;
+  Maybe<uint64_t> mActiveAudibleControllableContextId;
 };
 
 }  // namespace mozilla::dom
