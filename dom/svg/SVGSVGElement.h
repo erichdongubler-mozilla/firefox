@@ -19,9 +19,8 @@ nsresult NS_NewSVGSVGElement(
   {0x4b83982c, 0xe5e9, 0x4ca1, {0xab, 0xd4, 0x14, 0xd2, 0x7e, 0x8b, 0x35, 0x31}}
 
 namespace mozilla {
-class AutoSVGViewHandler;
+class AutoFragmentHandler;
 class SMILTimeContainer;
-class SVGFragmentIdentifier;
 class EventChainPreVisitor;
 
 namespace dom {
@@ -48,10 +47,9 @@ class SVGView {
 using SVGSVGElementBase = SVGViewportElement;
 
 class SVGSVGElement final : public SVGSVGElementBase {
-  friend class mozilla::SVGFragmentIdentifier;
   friend class mozilla::SVGOuterSVGFrame;
-  friend class mozilla::AutoSVGViewHandler;
   friend class mozilla::AutoPreserveAspectRatioOverride;
+  friend class mozilla::AutoFragmentHandler;
   friend class mozilla::dom::SVGView;
 
  protected:
@@ -154,6 +152,9 @@ class SVGSVGElement final : public SVGSVGElementBase {
   // SVG-as-an-image documents.)
   virtual void FlushImageTransformInvalidation();
 
+  void SetCurrentView(const nsAString& aCurrentViewID);
+  void SetViewSpec(std::unique_ptr<SVGView> aSVGView);
+
  private:
   // SVGViewportElement methods:
 
@@ -180,7 +181,6 @@ class SVGSVGElement final : public SVGSVGElementBase {
 
   // invalidate viewbox -> viewport xform & inform frames
   void InvalidateTransformNotifyFrame();
-  void DidChangeSVGView();
 
   // Methods for <image> elements to override my "PreserveAspectRatio" value.
   // These are private so that only our friends
