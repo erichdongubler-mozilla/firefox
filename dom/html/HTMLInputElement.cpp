@@ -3918,13 +3918,6 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
       }
 
       switch (aVisitor.mEvent->mMessage) {
-        case eFocus: {
-          if (IsSingleLineTextControl(false)) {
-            TextControlElement::OnFocus(*aVisitor.mEvent);
-          }
-          break;
-        }
-
         case eKeyDown: {
           // For compatibility with the other browsers, we should active this
           // element at least when a checkbox or a radio button.

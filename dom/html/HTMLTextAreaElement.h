@@ -111,7 +111,7 @@ class HTMLTextAreaElement final : public TextControlElement,
   NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
 
   void GetEventTargetParent(EventChainPreVisitor&) override;
-  nsresult PreHandleEvent(EventChainVisitor&) override;
+  MOZ_CAN_RUN_SCRIPT nsresult PreHandleEvent(EventChainVisitor&) override;
   MOZ_CAN_RUN_SCRIPT nsresult PostHandleEvent(EventChainPostVisitor&) override;
 
   bool IsHTMLFocusable(IsFocusableFlags, bool* aIsFocusable,
