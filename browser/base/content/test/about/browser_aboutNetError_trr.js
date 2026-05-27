@@ -17,28 +17,33 @@ add_task(async function exceptionButtonTRROnly() {
       "Should be showing error page"
     );
 
-    // Bug 2038887: TRR-only DNS failures always use the legacy page now,
-    // even with felt-privacy enabled.
-    is(
-      doc.querySelector("net-error-card"),
-      null,
-      "net-error-card must NOT be used for TRR-only DNS failures"
-    );
+    let titleEl;
+    let actualDataL10nID;
 
-    const trrExceptionButton = await ContentTaskUtils.waitForCondition(
-      () => doc.getElementById("trrExceptionButton"),
-      "Waiting for trrExceptionButton"
-    );
-    Assert.equal(
-      trrExceptionButton.hidden,
-      true,
-      "Exception button should be hidden for TRR service failures"
-    );
+    const netErrorCard = doc.querySelector("net-error-card");
+    if (netErrorCard) {
+      const card = netErrorCard.wrappedJSObject;
+      await card.getUpdateComplete();
 
-    const titleEl = doc.querySelector(".title-text");
+      titleEl = card.errorTitle;
+    } else {
+      titleEl = doc.querySelector(".title-text");
+
+      const trrExceptionButton = await ContentTaskUtils.waitForCondition(
+        () => doc.getElementById("trrExceptionButton"),
+        "Waiting for trrExceptionButton"
+      );
+      Assert.equal(
+        trrExceptionButton.hidden,
+        true,
+        "Exception button should be hidden for TRR service failures"
+      );
+    }
+
+    actualDataL10nID = titleEl.getAttribute("data-l10n-id");
     is(
-      titleEl.getAttribute("data-l10n-id"),
-      "dnsNotFound-title",
+      actualDataL10nID,
+      "neterror-dns-not-found-title",
       "Correct error page title is set"
     );
   });
@@ -47,11 +52,7 @@ add_task(async function exceptionButtonTRROnly() {
   resetTRRPrefs();
 });
 
-// Bug 2038887: even when the felt-privacy error page is enabled, a TRR-only
-// DNS failure must fall back to the legacy about:neterror page so that the
-// DoH-specific affordances (DoH domain, learn-more link, exclude-domain and
-// settings buttons) are still surfaced to the user.
-add_task(async function feltPrivacyFallsBackToLegacyForTRRMode3() {
+add_task(async function trrSettingsButtonShownInFeltPrivacyPath() {
   await SpecialPowers.pushPrefEnv({
     set: [["security.certerrors.felt-privacy-v1", true]],
   });
@@ -60,30 +61,15 @@ add_task(async function feltPrivacyFallsBackToLegacyForTRRMode3() {
 
   await SpecialPowers.spawn(browser, [], async function () {
     const doc = content.document;
-    ok(
-      doc.documentURI.startsWith("about:neterror"),
-      "Should be showing error page"
-    );
+    const netErrorCard = doc.querySelector("net-error-card");
+    ok(netErrorCard, "net-error-card element should be present");
 
-    const trrSettingsButton = await ContentTaskUtils.waitForCondition(
-      () => doc.getElementById("trrSettingsButton"),
-      "Waiting for legacy trrSettingsButton"
-    );
-    Assert.equal(
-      trrSettingsButton.hidden,
-      false,
-      "Legacy trrSettingsButton should be visible for TRR-only failure"
-    );
+    const card = netErrorCard.wrappedJSObject;
+    await card.getUpdateComplete();
 
-    // The legacy DoH-specific exception button is rendered on the page. It's
-    // hidden in this test scenario because the failure is a TRR service
-    // failure (see exceptionButtonTRROnly above); the important thing for
-    // bug 2038887 is that this element exists, proving the legacy page is
-    // being used rather than the felt-privacy net-error-card (which doesn't
-    // include it).
     ok(
-      doc.getElementById("trrExceptionButton"),
-      "Legacy trrExceptionButton element should exist on the page"
+      card.shadowRoot.getElementById("trrSettingsButton"),
+      "TRR settings button should be visible for TRR-only failure"
     );
   });
 

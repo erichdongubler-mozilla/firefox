@@ -91,26 +91,14 @@ export class NetErrorCard extends MozLitElement {
         : document.getNetErrorInfo();
     } catch {}
 
-    const resolvedErrorId = resolveErrorID({
-      errorCodeString: errorInfo.errorCodeString,
-      gErrorCode,
-      noConnectivity: gNoConnectivity,
-      vpnActive: VPN_ACTIVE,
-    });
-
-    // Bug 2038887: the felt privacy error page does not surface the DoH
-    // domain, learn-more link, exclude-domain button, or settings shortcut
-    // that the legacy page provides for TRR-only failures. Fall back to the
-    // legacy page until the felt privacy page supports this case.
-    if (
-      resolvedErrorId === "dnsNotFound" &&
-      !gNoConnectivity &&
-      RPMIsTRROnlyFailure()
-    ) {
-      return false;
-    }
-
-    return resolvedErrorId !== null;
+    return (
+      resolveErrorID({
+        errorCodeString: errorInfo.errorCodeString,
+        gErrorCode,
+        noConnectivity: gNoConnectivity,
+        vpnActive: VPN_ACTIVE,
+      }) !== null
+    );
   }
 
   constructor() {
