@@ -140,6 +140,11 @@ interface FeatureSettingsHelper {
     var nativeShareSheetEnabled: Boolean
 
     /**
+     * Whether the voice search entry point is shown in the display-mode browser toolbar.
+     */
+    var showVoiceSearchInDisplayToolbar: Boolean
+
+    /**
      * Enable or disable the translations prompt after a page that can be translated is loaded.
      */
     fun enableOrDisablePageLoadTranslationsPrompt(enableTranslationsPrompt: Boolean) {

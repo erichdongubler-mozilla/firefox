@@ -71,6 +71,7 @@ class HomeActivityTestRule(
         isPrivateModeAndStoriesEntryPointEnabled: Boolean = false,
         shouldUseExpandedToolbar: Boolean = false,
         nativeShareSheetEnabled: Boolean = false,
+        showVoiceSearchInDisplayToolbar: Boolean = false,
     ) : this(initialTouchMode, launchActivity, skipOnboarding) {
         this.isPocketEnabled = isPocketEnabled
         this.isRecentTabsFeatureEnabled = isRecentTabsFeatureEnabled
@@ -95,6 +96,7 @@ class HomeActivityTestRule(
         this.isPrivateModeAndStoriesEntryPointEnabled = isPrivateModeAndStoriesEntryPointEnabled
         this.shouldUseExpandedToolbar = shouldUseExpandedToolbar
         this.nativeShareSheetEnabled = nativeShareSheetEnabled
+        this.showVoiceSearchInDisplayToolbar = showVoiceSearchInDisplayToolbar
     }
 
     /**
@@ -208,6 +210,7 @@ class HomeActivityIntentTestRule internal constructor(
         isPrivateModeAndStoriesEntryPointEnabled: Boolean = false,
         shouldUseExpandedToolbar: Boolean = false,
         nativeShareSheetEnabled: Boolean = false,
+        showVoiceSearchInDisplayToolbar: Boolean = false,
     ) : this(initialTouchMode, launchActivity, skipOnboarding) {
         this.isPocketEnabled = isPocketEnabled
         this.isRecentTabsFeatureEnabled = isRecentTabsFeatureEnabled
@@ -233,6 +236,7 @@ class HomeActivityIntentTestRule internal constructor(
         this.isPrivateModeAndStoriesEntryPointEnabled = isPrivateModeAndStoriesEntryPointEnabled
         this.shouldUseExpandedToolbar = shouldUseExpandedToolbar
         this.nativeShareSheetEnabled = nativeShareSheetEnabled
+        this.showVoiceSearchInDisplayToolbar = showVoiceSearchInDisplayToolbar
     }
 
     private val longTapUserPreference = getLongPressTimeout()
