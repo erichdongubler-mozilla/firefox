@@ -16019,10 +16019,21 @@ const HighlightImage = ({
   }
   return null;
 };
+;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/FeatureHighlight/OMCHighlightSlots.mjs
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+const SLOTS = Object.freeze({
+  WIDGETS_ROW: "widgets-row",
+});
+
 ;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/FeatureHighlight/OMCHighlightRegistry.mjs
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
 
 const SHELLS = Object.freeze({
   POPOVER: "popover",
@@ -16032,7 +16043,24 @@ const DISMISS_MODES = Object.freeze({
   BLOCK: "block",
 });
 
-const OMC_HIGHLIGHT_REGISTRY = Object.freeze({});
+const OMC_HIGHLIGHT_REGISTRY = Object.freeze({
+  WorldCupWidgetsCallout: {
+    slot: SLOTS.WIDGETS_ROW,
+    shell: SHELLS.POPOVER,
+    chrome: {
+      position: "inset-block-start inset-inline-center",
+      modalClassName: "widgets-callout",
+    },
+    body: {
+      image: {
+        src: "chrome://newtab/content/data/content/assets/highlights/widget-worldcup.png",
+      },
+      title: { l10nId: "newtab-sports-widget-message-day-in-play-title" },
+      subtitle: { l10nId: "newtab-sports-widget-message-day-in-play-body" },
+    },
+    dismiss: DISMISS_MODES.BLOCK,
+  },
+});
 
 const getRegistryEntry = messageType => {
   if (!messageType) {
@@ -16171,15 +16199,6 @@ const OMCHighlightSlot = ({
   }
   return null;
 };
-;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/FeatureHighlight/OMCHighlightSlots.mjs
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-const SLOTS = Object.freeze({
-  WIDGETS_ROW: "widgets-row",
-});
-
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/SportsWidget/SportsMatchRow.jsx
 function SportsMatchRow_extends() { return SportsMatchRow_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, SportsMatchRow_extends.apply(null, arguments); }
 /* This Source Code Form is subject to the terms of the Mozilla Public

@@ -3,13 +3,24 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import {
+  OMC_HIGHLIGHT_REGISTRY,
+  SHELLS,
+  DISMISS_MODES,
   getRegistryEntry,
   resolveText,
   resolveImage,
 } from "content-src/components/DiscoveryStreamComponents/FeatureHighlight/OMCHighlightRegistry.mjs";
+import { SLOTS } from "content-src/components/DiscoveryStreamComponents/FeatureHighlight/OMCHighlightSlots.mjs";
 
 describe("OMCHighlightRegistry", () => {
   describe("getRegistryEntry", () => {
+    it("returns the entry for a known messageType", () => {
+      const entry = getRegistryEntry("WorldCupWidgetsCallout");
+      expect(entry).toBeTruthy();
+      expect(entry.slot).toBe(SLOTS.WIDGETS_ROW);
+      expect(entry.shell).toBe(SHELLS.POPOVER);
+    });
+
     it("returns null for unknown messageType", () => {
       expect(getRegistryEntry("NonexistentType")).toBeNull();
     });
@@ -96,6 +107,23 @@ describe("OMCHighlightRegistry", () => {
         defaults: { srcLight: "light.png", srcDark: "dark.png" },
       });
       expect(result).toEqual({ srcLight: "light.png", srcDark: "dark.png" });
+    });
+  });
+
+  describe("World Cup widgets popover entry", () => {
+    it("references the agreed-upon shared l10n ids", () => {
+      const entry = OMC_HIGHLIGHT_REGISTRY.WorldCupWidgetsCallout;
+      expect(entry.body.title.l10nId).toBe(
+        "newtab-sports-widget-message-day-in-play-title"
+      );
+      expect(entry.body.subtitle.l10nId).toBe(
+        "newtab-sports-widget-message-day-in-play-body"
+      );
+    });
+
+    it("uses BLOCK dismiss mode", () => {
+      const entry = OMC_HIGHLIGHT_REGISTRY.WorldCupWidgetsCallout;
+      expect(entry.dismiss).toBe(DISMISS_MODES.BLOCK);
     });
   });
 });

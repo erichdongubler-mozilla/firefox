@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { SLOTS } from "./OMCHighlightSlots.mjs";
+
 export const SHELLS = Object.freeze({
   POPOVER: "popover",
 });
@@ -10,7 +12,24 @@ export const DISMISS_MODES = Object.freeze({
   BLOCK: "block",
 });
 
-export const OMC_HIGHLIGHT_REGISTRY = Object.freeze({});
+export const OMC_HIGHLIGHT_REGISTRY = Object.freeze({
+  WorldCupWidgetsCallout: {
+    slot: SLOTS.WIDGETS_ROW,
+    shell: SHELLS.POPOVER,
+    chrome: {
+      position: "inset-block-start inset-inline-center",
+      modalClassName: "widgets-callout",
+    },
+    body: {
+      image: {
+        src: "chrome://newtab/content/data/content/assets/highlights/widget-worldcup.png",
+      },
+      title: { l10nId: "newtab-sports-widget-message-day-in-play-title" },
+      subtitle: { l10nId: "newtab-sports-widget-message-day-in-play-body" },
+    },
+    dismiss: DISMISS_MODES.BLOCK,
+  },
+});
 
 export const getRegistryEntry = messageType => {
   if (!messageType) {
