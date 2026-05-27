@@ -198,11 +198,6 @@ class MediaController final : public DOMEventTargetHelper,
   bool mIsInPictureInPictureMode = false;
   bool mIsInFullScreenMode = false;
 
-  // Maps browsing context ID to the count of audible uncontrollable sources
-  // (e.g. Web Audio, Web Speech) in that context. Used by IsAudible() so that
-  // audible uncontrollable sources count toward the tab's audibility.
-  nsTHashMap<nsUint64HashKey, uint32_t> mUncontrollableAudibleMap;
-
   // We would monitor the change of media session actions and convert them to
   // the media keys, then determine the supported media keys.
   MediaEventListener mSupportedActionsChangedListener;

@@ -196,9 +196,7 @@ void MediaController::Unmute() {
 
 uint64_t MediaController::Id() const { return mTopLevelBrowsingContextId; }
 
-bool MediaController::IsAudible() const {
-  return IsMediaAudible() || !mUncontrollableAudibleMap.IsEmpty();
-}
+bool MediaController::IsAudible() const { return IsMediaAudible(); }
 
 bool MediaController::IsPlaying() const { return IsMediaPlaying(); }
 
@@ -362,21 +360,9 @@ void MediaController::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
     return;
   }
 
-  bool oldAudible = IsAudible();
-  if (aType == ControlType::eControllable) {
-    MediaStatusManager::NotifyMediaAudibleChanged(aBrowsingContextId, aState);
-  } else {
-    // Uncontrollable source: track audible-source counts per browsing context
-    // directly here so that activation logic stays untouched.
-    if (aState == MediaAudibleState::eAudible) {
-      ++mUncontrollableAudibleMap.LookupOrInsert(aBrowsingContextId, 0u);
-    } else if (auto entry =
-                   mUncontrollableAudibleMap.Lookup(aBrowsingContextId)) {
-      if (--entry.Data() == 0) {
-        entry.Remove();
-      }
-    }
-  }
+  const bool oldAudible = IsAudible();
+  MediaStatusManager::NotifyMediaAudibleChanged(aBrowsingContextId, aState,
+                                                aType, aSessionType);
   if (IsAudible() == oldAudible) {
     return;
   }
