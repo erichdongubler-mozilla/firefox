@@ -1385,8 +1385,9 @@ RefPtr<DragData> nsDragSession::GetDragData(GdkAtom aRequestedFlavor) {
       mCachedDragData.Get(GDK_ATOM_TO_POINTER(aRequestedFlavor));
   if (!data) {
     NS_WARNING(nsPrintfCString(
-        "nsDragSession::GetDragData() %s failed to get from cache",
-        GUniquePtr<gchar>(gdk_atom_name(aRequestedFlavor)).get()).get());
+                   "nsDragSession::GetDragData() %s failed to get from cache",
+                   GUniquePtr<gchar>(gdk_atom_name(aRequestedFlavor)).get())
+                   .get());
     return nullptr;
   }
 
