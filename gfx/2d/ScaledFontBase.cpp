@@ -96,7 +96,7 @@ SkPath ScaledFontBase::GetSkiaPathForGlyphs(const GlyphBuffer& aBuffer) {
 
   struct Context {
     const Glyph* mGlyph;
-    SkPath mPath;
+    SkPathBuilder mPathBuilder;
   } ctx = {aBuffer.mGlyphs};
 
   font.getPaths(
@@ -107,13 +107,13 @@ SkPath ScaledFontBase::GetSkiaPathForGlyphs(const GlyphBuffer& aBuffer) {
           SkMatrix transMatrix(scaleMatrix);
           transMatrix.postTranslate(SkFloatToScalar(ctx.mGlyph->mPosition.x),
                                     SkFloatToScalar(ctx.mGlyph->mPosition.y));
-          ctx.mPath.addPath(*glyphPath, transMatrix);
+          ctx.mPathBuilder.addPath(*glyphPath, transMatrix);
         }
         ++ctx.mGlyph;
       },
       &ctx);
 
-  return ctx.mPath;
+  return ctx.mPathBuilder.detach();
 }
 
 already_AddRefed<Path> ScaledFontBase::GetPathForGlyphs(
