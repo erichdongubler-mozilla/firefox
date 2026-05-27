@@ -3021,10 +3021,12 @@ async function loadTestPage({
      * @param {number} count - Count of the language pairs expected.
      */
     async resolveDownloads(count) {
-      await remoteClients.translationsWasm.resolvePendingDownloads(1);
-      await remoteClients.translationModels.resolvePendingDownloads(
-        downloadedFilesPerLanguagePair() * count
-      );
+      await Promise.all([
+        remoteClients.translationsWasm.resolvePendingDownloads(1),
+        remoteClients.translationModels.resolvePendingDownloads(
+          downloadedFilesPerLanguagePair() * count
+        ),
+      ]);
     },
 
     /**
@@ -3036,10 +3038,12 @@ async function loadTestPage({
      * @param {number} count - Count of the language pairs expected.
      */
     async rejectDownloads(count) {
-      await remoteClients.translationsWasm.rejectPendingDownloads(1);
-      await remoteClients.translationModels.rejectPendingDownloads(
-        downloadedFilesPerLanguagePair() * count
-      );
+      await Promise.all([
+        remoteClients.translationsWasm.rejectPendingDownloads(1),
+        remoteClients.translationModels.rejectPendingDownloads(
+          downloadedFilesPerLanguagePair() * count
+        ),
+      ]);
     },
 
     /**
@@ -3057,12 +3061,14 @@ async function loadTestPage({
       expectedWasmDownloads,
       expectedLanguagePairDownloads,
     }) {
-      await remoteClients.translationsWasm.resolvePendingDownloads(
-        expectedWasmDownloads
-      );
-      await remoteClients.translationModels.resolvePendingDownloads(
-        downloadedFilesPerLanguagePair() * expectedLanguagePairDownloads
-      );
+      await Promise.all([
+        remoteClients.translationsWasm.resolvePendingDownloads(
+          expectedWasmDownloads
+        ),
+        remoteClients.translationModels.resolvePendingDownloads(
+          downloadedFilesPerLanguagePair() * expectedLanguagePairDownloads
+        ),
+      ]);
     },
 
     /**
@@ -3080,12 +3086,14 @@ async function loadTestPage({
       expectedWasmDownloads,
       expectedLanguagePairDownloads,
     }) {
-      await remoteClients.translationsWasm.rejectPendingDownloads(
-        expectedWasmDownloads
-      );
-      await remoteClients.translationModels.rejectPendingDownloads(
-        downloadedFilesPerLanguagePair() * expectedLanguagePairDownloads
-      );
+      await Promise.all([
+        remoteClients.translationsWasm.rejectPendingDownloads(
+          expectedWasmDownloads
+        ),
+        remoteClients.translationModels.rejectPendingDownloads(
+          downloadedFilesPerLanguagePair() * expectedLanguagePairDownloads
+        ),
+      ]);
     },
 
     /**
@@ -3329,15 +3337,19 @@ function createAttachmentMock(
 
   async function downloadHandler(expectedDownloadCount, action) {
     const names = [];
-    let maxTries = 100;
-    while (names.length < expectedDownloadCount && maxTries-- > 0) {
-      await new Promise(resolve => setTimeout(resolve, 0));
-      let download = pendingDownloads.shift();
-      if (!download) {
-        // Uncomment the following to debug download issues:
-        // console.log(`No pending download:`, client.collectionName, names.length);
-        continue;
+    while (names.length < expectedDownloadCount) {
+      if (!pendingDownloads.length) {
+        try {
+          await waitForPendingDownloads(1, {
+            interval: 10,
+            maxTries: 50,
+          });
+        } catch {
+          break;
+        }
       }
+
+      let download = pendingDownloads.shift();
       console.log(`Handling download:`, client.collectionName);
       action(download);
       names.push(download.record.name);
@@ -3365,12 +3377,15 @@ function createAttachmentMock(
     );
   }
 
-  function waitForPendingDownloads(expectedCount) {
+  function waitForPendingDownloads(
+    expectedCount,
+    { interval = 100, maxTries = 10 } = {}
+  ) {
     return waitForCondition(
       () => pendingDownloads.length >= expectedCount,
       `Waiting for ${expectedCount} pending downloads for "${client.collectionName}"`,
-      100,
-      10
+      interval,
+      maxTries
     );
   }
 
