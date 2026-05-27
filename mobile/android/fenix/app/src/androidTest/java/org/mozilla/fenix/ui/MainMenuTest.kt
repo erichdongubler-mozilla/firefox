@@ -216,6 +216,11 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080139
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifyThePasswordsMenuItemTest"],
+        bug = 2042398,
+        since = "2026-05",
+    )
     @SmokeTest
     @Test
     fun verifyThePasswordsMenuItemTest() {

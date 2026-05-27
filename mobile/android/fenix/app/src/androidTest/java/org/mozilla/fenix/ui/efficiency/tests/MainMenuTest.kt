@@ -9,7 +9,6 @@ import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.pdfFormAsset
-import org.mozilla.fenix.helpers.TestHelper.exitMenu
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 import org.mozilla.fenix.ui.efficiency.selectors.BookmarksSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.BookmarksSelectors.DELETE_BOOKMARK_BUTTON
@@ -19,8 +18,6 @@ import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors.BOOKMARK_THIS_PAGE_BUTTON
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors.EDIT_BOOKMARK_BUTTON
-import org.mozilla.fenix.ui.robots.browserScreen
-import org.mozilla.fenix.ui.robots.navigationToolbar
 
 class MainMenuTest : BaseTest() {
 
@@ -137,5 +134,18 @@ class MainMenuTest : BaseTest() {
         on.browserPage.navigateToPage(pdfPage.url.toString())
         on.mainMenu.navigateToPage()
             .mozVerifyElementIsNotEnabled(MainMenuSelectors.DESKTOP_SITE_BUTTON)
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080139
+    @SmokeTest
+    @Test
+    fun verifyThePasswordsMenuItemTest() {
+        val testPage = mockWebServer.getGenericAsset(1)
+
+        on.browserPage.navigateToPage(testPage.url.toString())
+        on.settingsSavedPasswords.navigateToPage()
+            .mozVerifyElementsByGroup("emptySavedPasswordsList")
+        on.browserPage.navigateToPage()
+            .verifyPageContent(testPage.content)
     }
 }
