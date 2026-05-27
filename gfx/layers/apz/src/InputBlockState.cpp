@@ -901,7 +901,20 @@ bool TouchBlockState::NeedsContentResponseAfterLongTap(
   if (IsTargetOriginallyConfirmed()) {
     return false;
   }
-  return !ShouldDropEvents();
+  // This function can run while the content response is still pending
+  // (mContentResponded=false, mContentResponseTimerExpired=false), e.g.
+  // when ReceiveTouchInput has just called ResetContentResponseTimerExpired
+  // to start a new wait for the first touch-move's content response. In
+  // that window, CancelableBlockState::ShouldDropEvents() would trip the
+  // assertion in IsDefaultPrevented() assertion. Call the base-class overload
+  // here so we only check the target-confirmation half of "should drop", and
+  // handle the IsDefaultPrevented() half below with a
+  // HasContentResponded() short-circuit so the assertion is never reached
+  // when the response is unsettled.
+  if (InputBlockState::ShouldDropEvents()) {
+    return false;
+  }
+  return !HasContentResponded() || !IsDefaultPrevented();
 }
 
 KeyboardBlockState::KeyboardBlockState(

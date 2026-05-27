@@ -177,6 +177,26 @@ APZEventResult InputQueue::ReceiveTouchInput(
 
     INPQ_LOG("received new touch event (type=%d) in block %p\n", aEvent.mType,
              block.get());
+
+    // If this is the first touch-move of the block and it needs to be
+    // dispatched to content (e.g. because a touch-start handler has just
+    // installed an APZ-aware touchmove listener), wait for a content
+    // response before processing it so that the new listener has a chance
+    // to preventDefault().
+    //
+    // The "!HasContentResponded() || !IsDefaultPrevented()" short-circuit
+    // also covers the case where the touch-start was not preventDefault-ed
+    // and content has already responded: we still want to wait again on
+    // the first touch-move. Note that IsDefaultPrevented() must not be
+    // called when HasContentResponded() is false; the short-circuit
+    // ordering guarantees that.
+    if (aInitialTouchMove == InitialTouchMove::Yes &&
+        aFlags.mDispatchToContent &&
+        (!block->HasContentResponded() || !block->IsDefaultPrevented())) {
+      block->ResetContentResponseTimerExpired();
+      ScheduleMainThreadTimeout(aTarget, block);
+      waitingForContentResponse = true;
+    }
   }
 
   result.mInputBlockId = block->GetBlockId();

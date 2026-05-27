@@ -2188,6 +2188,11 @@ void APZCTreeManager::ProcessTouchInput(InputHandlingState& aState,
     if (aInput.mType == MultiTouchInput::MULTITOUCH_MOVE &&
         !mTouchCounter.HasSeenFirstMove()) {
       initialTouchMove = InitialTouchMove::Yes;
+      if (ChainHasFastPathApzAwareListener(
+              mTouchBlockHitResult.mTargetApzc->GetGuid())) {
+        mTouchBlockHitResult.mHitResult +=
+            CompositorHitTestFlags::eApzAwareListeners;
+      }
     }
     aState.mHit = mHitTester->CloneHitTestResult(lock, mTouchBlockHitResult);
   }
