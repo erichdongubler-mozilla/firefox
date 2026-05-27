@@ -13,6 +13,7 @@
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoCSSRuleList.h"
 #include "mozilla/ServoStyleSet.h"
+#include "mozilla/SharedStyleSheetCache.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/css/ErrorReporter.h"
@@ -382,13 +383,20 @@ void StyleSheetInfo::RemoveSheet(StyleSheet* aSheet) {
     }
   }
 
-  if (1 == mSheets.Length()) {
+  if (mSheets.Length() == 1) {
     NS_ASSERTION(aSheet == mSheets.ElementAt(0), "bad parent");
     delete this;
     return;
   }
 
   mSheets.UnorderedRemoveElement(aSheet);
+  if (mSheets.Length() == 1 &&
+      !mSheets.ElementAt(0)->GetAssociatedDocumentOrShadowRoot()) {
+    // A stylesheet without an associated document just became unique (most
+    // likely from the stylesheet cache). Make sure the entry is evicted from
+    // the cache eventually.
+    SharedStyleSheetCache::ScheduleGC();
+  }
 }
 
 void StyleSheet::GetType(nsAString& aType) { aType.AssignLiteral("text/css"); }

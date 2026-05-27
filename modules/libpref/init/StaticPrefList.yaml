@@ -10461,6 +10461,12 @@
   value: true
   mirror: always
 
+# Expiration deadline for the stylesheet cache.
+- name: layout.css.stylesheet-cache.timeout_ms
+  type: uint32_t
+  value: 15000
+  mirror: always
+
 # Whether the `-moz-control-character-visibility` property is exposed to
 # content.
 #

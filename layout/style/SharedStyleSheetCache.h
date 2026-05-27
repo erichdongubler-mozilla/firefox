@@ -104,13 +104,25 @@ class SharedStyleSheetCache final
 
  protected:
   void InsertIfNeeded(css::SheetLoadData&);
+  bool ShouldIgnoreMemoryPressure() override { return false; }
+  void DoScheduleGC();
+  void GC();
+
   nsTHashMap<PrincipalHashKey,
              nsTHashMap<nsStringHashKey, InlineSheetCandidates>>
       mInlineSheets;
-
-  bool ShouldIgnoreMemoryPressure() override { return false; }
+  nsCOMPtr<nsITimer> mGCTimer;
+  bool mGCScheduled : 1 = false;
 
   ~SharedStyleSheetCache();
+
+ public:
+  static void ScheduleGC() {
+    if (!sSingleton || sSingleton->mGCScheduled) {
+      return;
+    }
+    sSingleton->DoScheduleGC();
+  }
 };
 
 }  // namespace mozilla
