@@ -979,10 +979,45 @@
     "dark": "{Theme$background/color/information}",
     "forcedColors": "{Theme$background/color/information}"
   },
+  "message-bar/background/color/warning": {
+    "light": "{Theme$background/color/warning}",
+    "dark": "{Theme$background/color/warning}",
+    "forcedColors": "{Theme$background/color/warning}"
+  },
+  "message-bar/background/color/success": {
+    "light": "{Theme$background/color/success}",
+    "dark": "{Theme$background/color/success}",
+    "forcedColors": "{Theme$background/color/success}"
+  },
+  "message-bar/background/color/critical": {
+    "light": "{Theme$background/color/critical}",
+    "dark": "{Theme$background/color/critical}",
+    "forcedColors": "{Theme$background/color/critical}"
+  },
   "message-bar/border/color": {
     "light": "oklch(from {Theme$message-bar/icon/color} l c h / 20%)",
     "dark": "oklch(from {Theme$message-bar/icon/color} l c h / 20%)",
     "forcedColors": "{Theme$border/color}"
+  },
+  "message-bar/icon/background/color": {
+    "light": "{Theme$background/color/information}",
+    "dark": "{Theme$background/color/information}",
+    "forcedColors": "{Theme$background/color/information}"
+  },
+  "message-bar/icon/background/color/warning": {
+    "light": "{Theme$background/color/warning}",
+    "dark": "{Theme$background/color/warning}",
+    "forcedColors": "{Theme$background/color/warning}"
+  },
+  "message-bar/icon/background/color/success": {
+    "light": "{Theme$background/color/success}",
+    "dark": "{Theme$background/color/success}",
+    "forcedColors": "{Theme$background/color/success}"
+  },
+  "message-bar/icon/background/color/critical": {
+    "light": "{Theme$background/color/critical}",
+    "dark": "{Theme$background/color/critical}",
+    "forcedColors": "{Theme$background/color/critical}"
   },
   "message-bar/icon/color": {
     "light": "{Theme$icon/color/information}",

@@ -414,6 +414,34 @@ export const tokensTable = {
       value: "var(--background-color-information)",
       name: "--message-bar-background-color",
     },
+    {
+      value: "var(--background-color-warning)",
+      name: "--message-bar-background-color-warning",
+    },
+    {
+      value: "var(--background-color-success)",
+      name: "--message-bar-background-color-success",
+    },
+    {
+      value: "var(--background-color-critical)",
+      name: "--message-bar-background-color-critical",
+    },
+    {
+      value: "var(--background-color-information)",
+      name: "--message-bar-icon-background-color",
+    },
+    {
+      value: "var(--background-color-warning)",
+      name: "--message-bar-icon-background-color-warning",
+    },
+    {
+      value: "var(--background-color-success)",
+      name: "--message-bar-icon-background-color-success",
+    },
+    {
+      value: "var(--background-color-critical)",
+      name: "--message-bar-icon-background-color-critical",
+    },
     { value: "var(--border-color)", name: "--page-nav-hr-background-color" },
     {
       value: {
@@ -869,6 +897,7 @@ export const tokensTable = {
       },
       name: "--message-bar-border-color",
     },
+    { value: "transparent", name: "--message-bar-icon-container-border-color" },
     {
       value: "var(--border-color-transparent)",
       name: "--page-nav-border-color",
@@ -935,6 +964,10 @@ export const tokensTable = {
     {
       value: "var(--border-radius-medium)",
       name: "--message-bar-border-radius",
+    },
+    {
+      value: "var(--border-radius-circle)",
+      name: "--message-bar-icon-container-border-radius",
     },
     { value: "var(--border-radius-medium)", name: "--promo-border-radius" },
     { value: "var(--button-border-radius)", name: "--select-border-radius" },
@@ -1478,6 +1511,7 @@ export const tokensTable = {
       value: "var(--size-item-large)",
       name: "--message-bar-container-min-height",
     },
+    { value: "min-content", name: "--message-bar-icon-container-height" },
     { value: "var(--icon-size-large)", name: "--page-nav-heading-logo-size" },
     { value: "var(--size-image-xlarge)", name: "--promo-image-size" },
     {
@@ -1551,6 +1585,46 @@ export const tokensTable = {
     { value: "9px", name: "--toolbarbutton-padding-inner-touch" },
     { value: "8px", name: "--toolbarbutton-padding-inner-touch-narrow" },
     { value: "var(--space-small)", name: "--breadcrumb-gap" },
+    {
+      value: "var(--space-xsmall) var(--space-large)",
+      name: "--message-bar-actions-button-padding",
+    },
+    { value: "var(--space-small)", name: "--message-bar-actions-gap" },
+    { value: "var(--space-small)", name: "--message-bar-container-gap" },
+    {
+      value: "var(--space-small)",
+      name: "--message-bar-container-padding-block",
+    },
+    {
+      value: "var(--space-medium) var(--space-small)",
+      name: "--message-bar-container-padding-inline",
+    },
+    {
+      value: "var(--space-small) var(--space-medium)",
+      name: "--message-bar-content-gap",
+    },
+    {
+      value: "calc(var(--space-small) + 2px)",
+      name: "--message-bar-icon-container-margin-block-start",
+    },
+    { value: "0px", name: "--message-bar-icon-container-padding" },
+    {
+      value: "var(--space-xsmall)",
+      name: "--message-bar-message-margin-inline-end",
+    },
+    {
+      value: "var(--space-xsmall) var(--space-small)",
+      name: "--message-bar-text-container-gap",
+    },
+    {
+      value:
+        "calc((var(--message-bar-container-min-height) - var(--message-bar-icon-size)) / 2)",
+      name: "--message-bar-text-container-padding-block",
+    },
+    {
+      value: "var(--space-xsmall) var(--space-small)",
+      name: "--message-bar-text-content-gap",
+    },
     { value: "var(--space-xsmall)", name: "--page-nav-button-gap" },
     { value: "var(--space-large)", name: "--page-nav-gap" },
     { value: "64px", name: "--page-nav-margin-block-start" },
@@ -2040,6 +2114,7 @@ export const tokensTable = {
       value: "var(--border-width) solid var(--input-text-border-color)",
       name: "--input-text-border",
     },
+    { value: "none", name: "--message-bar-icon-container-border" },
     {
       value: "var(--promo-border-width) solid var(--promo-border-color)",
       name: "--promo-border",
@@ -3731,17 +3806,47 @@ export const variableLookupTable = {
   "breadcrumb-link-color-hover": "var(--link-color-hover)",
   "breadcrumb-link-color-active": "var(--link-color-active)",
   "breadcrumb-link-color-visited": "var(--link-color-visited)",
+  "message-bar-actions-button-padding":
+    "var(--space-xsmall) var(--space-large)",
+  "message-bar-actions-gap": "var(--space-small)",
   "message-bar-background-color": "var(--background-color-information)",
+  "message-bar-background-color-warning": "var(--background-color-warning)",
+  "message-bar-background-color-success": "var(--background-color-success)",
+  "message-bar-background-color-critical": "var(--background-color-critical)",
   "message-bar-border-color": {
     default: "oklch(from var(--message-bar-icon-color) l c h / 20%)",
     prefersContrast: "var(--border-color)",
   },
   "message-bar-border-radius": "var(--border-radius-medium)",
   "message-bar-border-width": "var(--border-width)",
+  "message-bar-container-gap": "var(--space-small)",
   "message-bar-container-min-height": "var(--size-item-large)",
+  "message-bar-container-padding-block": "var(--space-small)",
+  "message-bar-container-padding-inline":
+    "var(--space-medium) var(--space-small)",
+  "message-bar-content-gap": "var(--space-small) var(--space-medium)",
+  "message-bar-icon-background-color": "var(--background-color-information)",
+  "message-bar-icon-background-color-warning":
+    "var(--background-color-warning)",
+  "message-bar-icon-background-color-success":
+    "var(--background-color-success)",
+  "message-bar-icon-background-color-critical":
+    "var(--background-color-critical)",
   "message-bar-icon-color": "var(--icon-color-information)",
+  "message-bar-icon-container-border": "none",
+  "message-bar-icon-container-border-color": "transparent",
+  "message-bar-icon-container-border-radius": "var(--border-radius-circle)",
+  "message-bar-icon-container-height": "min-content",
+  "message-bar-icon-container-margin-block-start":
+    "calc(var(--space-small) + 2px)",
+  "message-bar-icon-container-padding": "0px",
   "message-bar-icon-size": "var(--icon-size)",
+  "message-bar-message-margin-inline-end": "var(--space-xsmall)",
   "message-bar-text-color": "var(--text-color)",
+  "message-bar-text-container-gap": "var(--space-xsmall) var(--space-small)",
+  "message-bar-text-container-padding-block":
+    "calc((var(--message-bar-container-min-height) - var(--message-bar-icon-size)) / 2)",
+  "message-bar-text-content-gap": "var(--space-xsmall) var(--space-small)",
   "page-nav-border-color": "var(--border-color-transparent)",
   "page-nav-button-gap": "var(--space-xsmall)",
   "page-nav-focus-outline-inset": "var(--focus-outline-inset)",

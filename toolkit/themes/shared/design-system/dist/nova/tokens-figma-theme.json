@@ -504,6 +504,56 @@
     "dark": "rgba(251, 251, 254, 0.4)",
     "forcedColors": "{HCM Theme$CanvasText}"
   },
+  "message-bar/background/color": {
+    "light": "{Theme$background/color/box}",
+    "dark": "{Theme$background/color/box}",
+    "forcedColors": "{Theme$background/color/box}"
+  },
+  "message-bar/background/color/warning": {
+    "light": "{Theme$background/color/box}",
+    "dark": "{Theme$background/color/box}",
+    "forcedColors": "{Theme$background/color/box}"
+  },
+  "message-bar/background/color/success": {
+    "light": "{Theme$background/color/box}",
+    "dark": "{Theme$background/color/box}",
+    "forcedColors": "{Theme$background/color/box}"
+  },
+  "message-bar/background/color/critical": {
+    "light": "{Theme$background/color/box}",
+    "dark": "{Theme$background/color/box}",
+    "forcedColors": "{Theme$background/color/box}"
+  },
+  "message-bar/border/color": {
+    "light": "{Theme$border/color/deemphasized}",
+    "dark": "{Theme$border/color/deemphasized}",
+    "forcedColors": "{Theme$border/color/deemphasized}"
+  },
+  "message-bar/icon/background/color": {
+    "light": "{Theme$background/color/information}",
+    "dark": "{Theme$background/color/information}",
+    "forcedColors": "{Theme$background/color/information}"
+  },
+  "message-bar/icon/background/color/warning": {
+    "light": "{Theme$background/color/warning}",
+    "dark": "{Theme$background/color/warning}",
+    "forcedColors": "{Theme$background/color/warning}"
+  },
+  "message-bar/icon/background/color/success": {
+    "light": "{Theme$background/color/success}",
+    "dark": "{Theme$background/color/success}",
+    "forcedColors": "{Theme$background/color/success}"
+  },
+  "message-bar/icon/background/color/critical": {
+    "light": "{Theme$background/color/critical}",
+    "dark": "{Theme$background/color/critical}",
+    "forcedColors": "{Theme$background/color/critical}"
+  },
+  "message-bar/icon/container/border/color": {
+    "light": "transparent",
+    "dark": "transparent",
+    "forcedColors": "{Theme$message-bar/icon/color}"
+  },
   "tab/border/color/selected/trailing": {
     "light": "{Colors$color/orange/30}",
     "dark": "{Colors$color/violet/50}",
