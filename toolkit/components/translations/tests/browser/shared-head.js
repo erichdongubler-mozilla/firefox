@@ -2861,7 +2861,7 @@ async function ensureWindowSize(win, width, height) {
  * @returns {Promise<{
  *   tab: object,
  *   remoteClients: (Record<string, any> | null),
- *   cleanup: () => Promise<void>,
+ *   cleanup: (options?: { browser?: Browser }) => Promise<void>,
  *   resolveDownloads: (count: number) => Promise<void>,
  *   rejectDownloads: (count: number) => Promise<void>,
  *   resolveBulkDownloads: (expectations: { expectedWasmDownloads: number, expectedLanguagePairDownloads: number }) => Promise<void>,
@@ -3101,11 +3101,13 @@ async function loadTestPage({
     },
 
     /**
+     * @param {object} [options]
+     * @param {Browser} [options.browser] - Browser to load with the blank page before cleanup.
      * @returns {Promise<void>}
      */
-    async cleanup() {
+    async cleanup({ browser = tab.linkedBrowser } = {}) {
       await closeAllOpenPanelsAndMenus();
-      await loadBlankPage();
+      await loadBlankPage(browser);
       await EngineProcess.destroyTranslationsEngine();
       await removeMocks();
       if (cleanupLocales) {
@@ -4371,9 +4373,11 @@ function promiseLoadSubDialog(aURL) {
  * This is useful for resetting the state during cleanup, and also
  * before starting a test, to further help ensure that there is no
  * unintentional state left over from test case.
+ *
+ * @param {Browser} [browser] - Browser to load with the blank page.
  */
-async function loadBlankPage() {
-  await loadNewPage(gBrowser.selectedBrowser, BLANK_PAGE);
+async function loadBlankPage(browser) {
+  await loadNewPage(browser ?? gBrowser.selectedBrowser, BLANK_PAGE);
 }
 
 /**
