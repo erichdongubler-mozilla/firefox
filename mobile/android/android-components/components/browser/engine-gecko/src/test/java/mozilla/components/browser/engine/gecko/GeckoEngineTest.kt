@@ -5150,6 +5150,32 @@ class GeckoEngineTest {
         assertEquals(TrackingCategory.NONE, blockingData.getBlockedCategory())
     }
 
+    @Test
+    fun `GIVEN COOKIES_PARTITIONED_TRACKER WHEN hasBlockedCookies is called THEN it returns true`() {
+        val blockingData = createBlockingData(Event.COOKIES_PARTITIONED_TRACKER)
+
+        assertTrue(blockingData.hasBlockedCookies())
+    }
+
+    @Test
+    fun `GIVEN COOKIES_LOADED WHEN hasBlockedCookies is called THEN it returns false`() {
+        val blockingData = createBlockingData(Event.COOKIES_LOADED)
+
+        assertFalse(blockingData.hasBlockedCookies())
+    }
+
+    @Test
+    fun `GIVEN LOADED_LEVEL_1_TRACKING_CONTENT WHEN getLoadedCategory is called THEN it returns SCRIPTS_AND_SUB_RESOURCES`() {
+        val blockingData = createBlockingData(Event.LOADED_LEVEL_1_TRACKING_CONTENT)
+
+        with(GeckoEngine(context, runtime = runtime)) {
+            assertEquals(
+                TrackingCategory.SCRIPTS_AND_SUB_RESOURCES,
+                blockingData.getLoadedCategory(),
+            )
+        }
+    }
+
     private fun createSocialTrackersLogEntryList(): List<ContentBlockingController.LogEntry> {
         val blockedLogEntry = object : ContentBlockingController.LogEntry() {}
 
