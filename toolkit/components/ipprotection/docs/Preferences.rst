@@ -77,7 +77,7 @@ Networking and routing
   Selects which requests are proxied by ``IPPChannelFilter``:
   ``0`` routes all traffic (``MODE_FULL``), ``1`` only private browsing windows
   (``MODE_PB``), ``2`` only requests classified as tracking (``MODE_TRACKER``),
-  (``MODE_INCLUSION``), ``3`` routes no traffic unless matching ``browser.ipProtection.inclusion.match_patterns``. 
+  (``MODE_INCLUSION``), ``3`` routes no traffic unless matching ``browser.ipProtection.inclusion.match_patterns``.
 
 ``browser.ipProtection.inclusion.match_patterns`` (string, default: ``""``)
   JSON array of URL match patterns restricting which requests are proxied.
