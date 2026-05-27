@@ -97,6 +97,7 @@ class ReftestManifest:
         """Parse a reftest manifest file."""
 
         def add_test(file, annotations, referenced_test=None, skip_if=""):
+            self.manifests[normalized_path]["has_test_lines"] = True
             if RE_PROTOCOL.match(file):
                 test_cond = self.get_skip_if_for_mozinfo(skip_if, annotations)
                 info = self.manifests[normalized_path]
@@ -146,6 +147,7 @@ class ReftestManifest:
             self.manifests[normalized_path] = {
                 "include_skip_if": parent_skip_if,
                 "tests_skip_if": None,
+                "has_test_lines": False,
             }
         else:
             info = self.manifests[normalized_path]

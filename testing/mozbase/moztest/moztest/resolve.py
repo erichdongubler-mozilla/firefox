@@ -660,7 +660,11 @@ class TestManifestLoader(TestLoader):
             # needs no placeholder.
             if manifest_path == manifest.path:
                 continue
-            if manifest_path not in manifests_with_tests:
+            # has_test_lines excludes include-only manifests: manifest.sys.mjs
+            # skips include recursion when MOZHARNESS_TEST_PATHS is set, so
+            # they would run 0 tests if directly targeted. Their sub-manifests
+            # are already scheduled independently.
+            if manifest_path not in manifests_with_tests and info["has_test_lines"]:
                 relpath = manifest_path[len(self.topsrcdir) + 1 :]
                 placeholder = {
                     "path": manifest_path,
