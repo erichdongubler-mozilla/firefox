@@ -68,6 +68,9 @@ const JSWINDOWACTORS = {
     includeChrome: true,
   },
   GeckoViewPrompt: {
+    parent: {
+      esModuleURI: "resource:///actors/GeckoViewPromptParent.sys.mjs",
+    },
     child: {
       esModuleURI: "resource:///actors/GeckoViewPromptChild.sys.mjs",
       events: {
