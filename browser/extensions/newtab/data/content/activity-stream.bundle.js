@@ -18576,8 +18576,9 @@ function Clocks({
   }, [clockZones, currentSize, dispatch]);
   const isClockFormOpen = activePanel === CLOCKS_PANEL.FORM;
   const isEditingClocks = activePanel === CLOCKS_PANEL.EDIT;
+  const hasAnyLabel = clockZones.some(c => !!c.label);
   return /*#__PURE__*/external_React_default().createElement("article", {
-    className: `clocks-widget col-4 ${panelDisplaySize}-widget${clockZones.length === 1 ? " is-hero" : ""}${isDismissed ? " is-dismissed" : ""}${isClockFormOpen ? " is-clock-form-open" : ""}${isEditingClocks ? " is-editing-clocks" : ""}${activePanel ? " is-panel-open" : ""}`,
+    className: `clocks-widget col-4 ${panelDisplaySize}-widget${clockZones.length === 1 ? " is-hero" : ""}${isDismissed ? " is-dismissed" : ""}${isClockFormOpen ? " is-clock-form-open" : ""}${isEditingClocks ? " is-editing-clocks" : ""}${activePanel ? " is-panel-open" : ""}${hasAnyLabel ? "" : " has-no-labels"}`,
     "data-clock-count": clockZones.length,
     onMouseLeave: () => setIsDismissed(false),
     ref: el => {

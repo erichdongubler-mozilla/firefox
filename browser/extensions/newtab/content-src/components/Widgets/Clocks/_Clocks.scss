@@ -558,11 +558,21 @@
     justify-self: start;
   }
 
-  // Fixed city slot keeps rows aligned; the nickname uses remaining space.
+  // Shared city column keeps rows aligned. Wide enough to fit most major
+  // city names (e.g. "Los Angeles"); longer names ellipsize. Chip column
+  // (1fr) has a min size so an 11-char capitalized nickname fits without
+  // truncation.
   &.large-widget[data-clock-count='3'] .clocks-meta,
   &.large-widget[data-clock-count='4'] .clocks-meta {
     display: grid;
-    grid-template-columns: 7ch minmax(0, 1fr);
+    grid-template-columns: 9ch minmax(9ch, 1fr);
+  }
+
+  // No clock has a nickname: drop the chip column so the city can use the
+  // full row width instead of being capped at 9ch.
+  &.large-widget.has-no-labels[data-clock-count='3'] .clocks-meta,
+  &.large-widget.has-no-labels[data-clock-count='4'] .clocks-meta {
+    grid-template-columns: 1fr;
   }
 
   .clocks-city {

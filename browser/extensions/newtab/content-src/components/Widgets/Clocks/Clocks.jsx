@@ -464,6 +464,7 @@ function Clocks({ dispatch, size, widgetEnabledMap }) {
 
   const isClockFormOpen = activePanel === CLOCKS_PANEL.FORM;
   const isEditingClocks = activePanel === CLOCKS_PANEL.EDIT;
+  const hasAnyLabel = clockZones.some(c => !!c.label);
 
   return (
     <article
@@ -473,7 +474,7 @@ function Clocks({ dispatch, size, widgetEnabledMap }) {
         isClockFormOpen ? " is-clock-form-open" : ""
       }${isEditingClocks ? " is-editing-clocks" : ""}${
         activePanel ? " is-panel-open" : ""
-      }`}
+      }${hasAnyLabel ? "" : " has-no-labels"}`}
       data-clock-count={clockZones.length}
       onMouseLeave={() => setIsDismissed(false)}
       ref={el => {

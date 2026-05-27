@@ -8031,7 +8031,10 @@ button.arrow-button:dir(rtl) {
 }
 .nova-enabled .clocks-widget.large-widget[data-clock-count="3"] .clocks-meta, .nova-enabled .clocks-widget.large-widget[data-clock-count="4"] .clocks-meta {
   display: grid;
-  grid-template-columns: 7ch minmax(0, 1fr);
+  grid-template-columns: 9ch minmax(9ch, 1fr);
+}
+.nova-enabled .clocks-widget.large-widget.has-no-labels[data-clock-count="3"] .clocks-meta, .nova-enabled .clocks-widget.large-widget.has-no-labels[data-clock-count="4"] .clocks-meta {
+  grid-template-columns: 1fr;
 }
 .nova-enabled .clocks-widget .clocks-city {
   font-size: var(--font-size-root);
