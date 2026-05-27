@@ -519,6 +519,15 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void abortMajorSweeping(const AutoLock& lock);
   void clearAllocatedDuringCollectionState(const AutoLock& lock);
 
+  static constexpr size_t NumSweptChunkBuckets = 8;
+  using SweptChunkBucketTails =
+      mozilla::Array<BufferChunk*, NumSweptChunkBuckets>;
+
+  void pushSweptChunkBucketed(BufferChunkList& list,
+                              SweptChunkBucketTails& bucketTails,
+                              BufferChunk* chunk, const AutoLock& lock);
+  static size_t sweptChunkBucket(BufferChunk* chunk);
+
   // Small allocation methods:
 
   static inline bool IsSmallAllocSize(size_t bytes);

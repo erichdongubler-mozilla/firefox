@@ -395,6 +395,10 @@ struct BufferChunk
   MainThreadOrGCTaskData<BufferAllocator::FreeLists> freeLists;
   MainThreadOrGCTaskData<bool> ownsFreeLists;
 
+  // Total free bytes immediately after sweep, used to bucket swept chunks by
+  // fragmentation. Not maintained once the chunk is used for allocation.
+  MainThreadOrGCTaskData<size_t> freeBytesAfterSweep;
+
   using SmallRegionIter = BitmapToBlockIter<SmallRegionBitmap::Iter,
                                             SmallRegionSize, SmallBufferRegion>;
   SmallRegionIter smallRegionIter() { return {this, smallRegionBitmap.ref()}; }
