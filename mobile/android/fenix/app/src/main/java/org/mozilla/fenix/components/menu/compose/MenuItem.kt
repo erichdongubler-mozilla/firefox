@@ -45,6 +45,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collectionItemInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -140,6 +141,12 @@ internal fun MenuItem(
                 }
                 if (!enabled) {
                     disabled()
+                }
+                if (onClick != null && enabled) {
+                    onClick {
+                        onClick()
+                        true
+                    }
                 }
             }
             .wrapContentSize()
