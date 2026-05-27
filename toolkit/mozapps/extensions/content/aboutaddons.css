@@ -363,12 +363,6 @@ addon-card:not([expanded]) .addon-description {
   align-self: center;
 }
 
-.page-options-menu > .more-options-button {
-  background-image: url("chrome://global/skin/icons/settings.svg");
-  width: 32px;
-  height: 32px;
-}
-
 /* Recommended add-ons on list views */
 .recommended-heading {
   margin-bottom: 24px;
@@ -547,7 +541,7 @@ button.addon-detail-description-toggle {
   margin-inline-start: 8px;
 }
 
-.more-options-button {
+addon-card .more-options-button {
   min-width: auto;
   min-height: auto;
   width: 24px;
@@ -565,7 +559,7 @@ button.addon-detail-description-toggle {
   justify-content: flex-end;
 }
 
-.more-options-button-badged::after {
+addon-card .more-options-button-badged::after {
   content: "";
   display: block;
   width: 5px;

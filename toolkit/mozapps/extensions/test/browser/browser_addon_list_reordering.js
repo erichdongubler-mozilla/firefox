@@ -180,7 +180,7 @@ add_task(async function testReordering() {
   assertInSection(cardThree, "enabled", "cardThree is still in enabled");
 
   transitionsEnded = waitForTransitionEnd(cardOne, cardThree);
-  win.document.querySelector('[action="page-options"]').focus();
+  AboutAddonsTestUtils.getPageOptionsButton(win).focus();
   await transitionsEnded;
   assertInSection(
     cardOne,

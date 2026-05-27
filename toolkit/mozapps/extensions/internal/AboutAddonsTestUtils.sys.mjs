@@ -49,6 +49,19 @@ export const AboutAddonsTestUtils = {
     return win.document.querySelector(`addon-card[addon-id="${id}"]`);
   },
 
+  getPageOptionsButton(win) {
+    assertIsAboutAddonsWindow(win);
+    const pageOptionsBtn = win.document.querySelector(
+      ".page-options-menu .more-options-button"
+    );
+    if (!pageOptionsBtn) {
+      throw new Error("No page options button found");
+    }
+    return pageOptionsBtn;
+  },
+
+  // Sidebar helpers.
+
   getSidebarSelectedViewId(win) {
     return getCategoriesBox(win).currentViewId;
   },
