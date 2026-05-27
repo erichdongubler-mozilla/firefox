@@ -44,9 +44,28 @@ function getCategoriesBox(win) {
 }
 
 export const AboutAddonsTestUtils = {
-  getAddonCard(win, id) {
+  getAddonCard(win, addonId) {
     assertIsAboutAddonsWindow(win);
-    return win.document.querySelector(`addon-card[addon-id="${id}"]`);
+    return win.document.querySelector(`addon-card[addon-id="${addonId}"]`);
+  },
+
+  getAddonCardMoreOptionsButton(win, { addonCard }) {
+    assertIsAboutAddonsWindow(win);
+
+    if (
+      !win.HTMLElement.isInstance(addonCard) &&
+      addonCard.localName === "addon-card"
+    ) {
+      throw new Error("addonCard should be an addon-card instance");
+    }
+
+    let cardMoreOptionsBtn = addonCard.querySelector(".more-options-button");
+    if (!cardMoreOptionsBtn) {
+      throw new Error(
+        `No addon-card "more options" button found for addon-id ${addonCard.getAttribute("addon-id")}`
+      );
+    }
+    return cardMoreOptionsBtn;
   },
 
   getPageOptionsButton(win) {

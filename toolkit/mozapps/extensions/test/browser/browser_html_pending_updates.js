@@ -192,7 +192,7 @@ function expectCardOptionsButtonBadged({ id, win, hasBadge = true }) {
   const card = getAddonCard(win, id);
   const moreOptionsEl = card.querySelector(".more-options-button");
   is(
-    moreOptionsEl.classList.contains("more-options-button-badged"),
+    moreOptionsEl.hasAttribute("attention"),
     hasBadge,
     `The options button should${hasBadge || "n't"} have the update badge`
   );

@@ -111,13 +111,13 @@ export class AddonCard extends AboutAddonsHTMLElement {
                   hidden
                 ></moz-toggle>
                 <mlmodel-card-header-additions></mlmodel-card-header-additions>
-                <button
+                <moz-button
+                  type="ghost"
+                  size="small"
+                  iconsrc="chrome://global/skin/icons/more.svg"
                   class="more-options-button"
-                  action="more-options"
                   data-l10n-id="addon-options-button"
-                  aria-haspopup="menu"
-                  aria-expanded="false"
-                ></button>
+                ></moz-button>
               </div>
               <mlmodel-card-list-additions></mlmodel-card-list-additions>
               <span class="addon-description" tabindex="-1"></span>
@@ -348,12 +348,6 @@ export class AddonCard extends AboutAddonsHTMLElement {
           }
           gViewController.loadView(`detail/${this.addon.id}`);
           break;
-        case "more-options":
-          // Open panel on click from the keyboard.
-          if (e.inputSource == MouseEvent.MOZ_SOURCE_KEYBOARD) {
-            this.panel.toggle(e);
-          }
-          break;
         case "report":
           this.panel.hide();
           openAbuseReport({ addonId: addon.id, reportEntryPoint: "menu" });
@@ -370,7 +364,10 @@ export class AddonCard extends AboutAddonsHTMLElement {
           // Handle a click on the card itself.
           if (
             !this.expanded &&
-            (e.target === this.addonNameEl || !e.target.closest("a"))
+            (e.target === this.addonNameEl || !e.target.closest("a")) &&
+            // moz-button handles its own click/toggle; exclude it here to
+            // avoid navigating to the detail page when the menu is opened.
+            !e.target.classList.contains("more-options-button")
           ) {
             e.preventDefault();
             gViewController.loadView(`detail/${this.addon.id}`);
@@ -423,17 +420,11 @@ export class AddonCard extends AboutAddonsHTMLElement {
           break;
         }
       }
-    } else if (e.type == "mousedown") {
-      // Open panel on mousedown when the mouse is used.
-      if (action == "more-options" && e.button == 0) {
-        this.panel.toggle(e);
-      }
     } else if (e.type === "shown" || e.type === "hidden") {
       let panelOpen = e.type === "shown";
       // The card will be dimmed if it's disabled, but when the panel is open
       // that should be reverted so the menu items can be easily read.
       this.toggleAttribute("panelopen", panelOpen);
-      this.optionsButton.setAttribute("aria-expanded", panelOpen);
     }
   }
 
@@ -448,7 +439,6 @@ export class AddonCard extends AboutAddonsHTMLElement {
   registerListeners() {
     this.addEventListener("change", this);
     this.addEventListener("click", this);
-    this.addEventListener("mousedown", this);
     this.addEventListener("toggle", this);
     this.panel.addEventListener("shown", this);
     this.panel.addEventListener("hidden", this);
@@ -457,7 +447,6 @@ export class AddonCard extends AboutAddonsHTMLElement {
   removeListeners() {
     this.removeEventListener("change", this);
     this.removeEventListener("click", this);
-    this.removeEventListener("mousedown", this);
     this.removeEventListener("toggle", this);
     this.panel.removeEventListener("shown", this);
     this.panel.removeEventListener("hidden", this);
@@ -529,8 +518,8 @@ export class AddonCard extends AboutAddonsHTMLElement {
 
     // Badge the more options button if there's an update.
     let moreOptionsButton = card.querySelector(".more-options-button");
-    moreOptionsButton.classList.toggle(
-      "more-options-button-badged",
+    moreOptionsButton.toggleAttribute(
+      "attention",
       !!(this.updateInstall && isInState(this.updateInstall, "available"))
     );
 
@@ -703,9 +692,21 @@ export class AddonCard extends AboutAddonsHTMLElement {
 
     let panelType = addon.type == "plugin" ? "plugin-options" : "addon-options";
     this.options = document.createElement(panelType);
+
+    // Derive (from the add-on id) an id for the element wrapping the panel-list element
+    // to wire up to the addon-card more options moz-button (the addon-options / plugin-options
+    // components will derive the panel-list id from their own id set here and will return it
+    // from their panelListId getter.
+    this.options.id = `addon-card-options-${lazy.ExtensionCommon.makeWidgetId(addon.id)}`;
+
     this.options.render();
     this.card.appendChild(this.options);
     this.optionsButton = this.card.querySelector(".more-options-button");
+
+    // Wire up the addon-card more-options moz-button with the corresponding panel-list element.
+    customElements
+      .whenDefined("moz-button")
+      .then(() => (this.optionsButton.menuId = this.options.panelListId));
 
     // Set the contents.
     this.update();

@@ -130,7 +130,9 @@ add_task(async function testReordering() {
   info("Opening a more options menu");
   let panel = cardThree.querySelector("panel-list");
   EventUtils.synthesizeMouseAtCenter(
-    cardThree.querySelector('[action="more-options"]'),
+    AboutAddonsTestUtils.getAddonCardMoreOptionsButton(win, {
+      addonCard: cardThree,
+    }),
     {},
     win
   );

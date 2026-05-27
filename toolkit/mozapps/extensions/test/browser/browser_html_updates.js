@@ -315,7 +315,7 @@ function assertUpdateState({
 }) {
   let menuButton = card.querySelector(".more-options-button");
   Assert.equal(
-    menuButton.classList.contains("more-options-button-badged"),
+    menuButton.hasAttribute("attention"),
     shown,
     "The menu button is badged"
   );

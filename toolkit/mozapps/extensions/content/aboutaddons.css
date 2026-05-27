@@ -542,30 +542,10 @@ button.addon-detail-description-toggle {
 }
 
 addon-card .more-options-button {
-  min-width: auto;
-  min-height: auto;
-  width: 24px;
-  height: 24px;
-  margin: 0;
-  margin-inline-start: 8px;
-  -moz-context-properties: fill;
-  fill: currentColor;
-  background-image: url("chrome://global/skin/icons/more.svg");
-  background-repeat: no-repeat;
-  background-position: center center;
-  /* Get the -badged ::after element in the right spot. */
-  padding: 1px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-addon-card .more-options-button-badged::after {
-  content: "";
-  display: block;
-  width: 5px;
-  height: 5px;
-  border-radius: var(--border-radius-circle);
-  background-color: var(--color-accent-primary);
+  margin-inline-start: var(--space-small);
+  /* Override the attention badge color to match the one used by the
+   * "Available Updates" badge shown in the sidebar. */
+  --button-attention-dot-color: var(--color-accent-primary);
 }
 
 panel-item[action="remove"]::part(button) {
