@@ -3163,9 +3163,7 @@ Accessible* LocalAccessible::EmbeddedChildAt(uint32_t aIndex) {
     if (!mEmbeddedObjCollector) {
       mEmbeddedObjCollector.reset(new EmbeddedObjCollector(this));
     }
-    return mEmbeddedObjCollector.get()
-               ? mEmbeddedObjCollector->GetAccessibleAt(aIndex)
-               : nullptr;
+    return mEmbeddedObjCollector->GetAccessibleAt(aIndex);
   }
 
   return ChildAt(aIndex);
@@ -3177,9 +3175,7 @@ int32_t LocalAccessible::IndexOfEmbeddedChild(Accessible* aChild) {
     if (!mEmbeddedObjCollector) {
       mEmbeddedObjCollector.reset(new EmbeddedObjCollector(this));
     }
-    return mEmbeddedObjCollector.get()
-               ? mEmbeddedObjCollector->GetIndexAt(aChild->AsLocal())
-               : -1;
+    return mEmbeddedObjCollector->GetIndexAt(aChild->AsLocal());
   }
 
   return GetIndexOf(aChild->AsLocal());
