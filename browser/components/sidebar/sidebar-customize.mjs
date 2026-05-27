@@ -20,7 +20,6 @@ const l10nMap = new Map([
   ["viewHistorySidebar", "sidebar-menu-history-label"],
   ["viewTabsSidebar", "sidebar-menu-synced-tabs-label"],
   ["viewBookmarksSidebar", "sidebar-menu-bookmarks-label"],
-  ["viewOpenTabsSidebar", "sidebar-menu-open-tabs-label"],
   ["viewCPMSidebar", "sidebar-menu-contextual-password-manager-label"],
 ]);
 const VISIBILITY_SETTING_PREF = "sidebar.visibility";
