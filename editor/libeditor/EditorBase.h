@@ -594,7 +594,10 @@ class EditorBase : public nsIEditor,
   [[nodiscard]] virtual Element* FindSelectionRoot(const nsINode& aNode) const;
 
   /**
-   * OnFocus() is called when we get a focus event.
+   * Called before `eFocus` event is dispatched into the DOM. Any state of the
+   * DOM which can be referred by web content's script should be initialized
+   * during this call because `focus` event should be fired after the focus move
+   * finished.
    *
    * @param aOriginalEventTargetNode    The original event target node of the
    *                                    focus event.
@@ -603,7 +606,18 @@ class EditorBase : public nsIEditor,
       const nsINode& aOriginalEventTargetNode);
 
   /**
-   * OnBlur() is called when we're blurred.
+   * Called when `eFocus` event propagation ends in the web content. The focused
+   * element may be redirected by a `focus` event listener so this editor may
+   * not have focus anymore when this is called.
+   */
+  MOZ_CAN_RUN_SCRIPT virtual void PostHandleFocusEvent(
+      const nsINode& aFocusEventTargetNode);
+
+  /**
+   * Called before `eBlur` event is dispatched into the DOM. Any state of the
+   * DOM which can be referred by web content's script should be finalized
+   * during this call because `blur` event should be fired after the blur
+   * finished.
    *
    * @param aEventTarget        The event target of the blur event.
    */

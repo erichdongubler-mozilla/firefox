@@ -190,6 +190,10 @@ nsresult EditorEventListener::InstallToEditor() {
   eventListenerManager->AddEventListenerByType(
       this, u"compositionend"_ns, TrustedEventsAtSystemGroupBubble());
 
+  // Focus event doesn't bubble so adding the listener to capturing phase as
+  // in the system event group.
+  eventListenerManager->AddEventListenerByType(
+      this, u"focus"_ns, TrustedEventsAtSystemGroupCapture());
   return NS_OK;
 }
 
@@ -253,6 +257,9 @@ void EditorEventListener::UninstallFromEditor() {
       this, u"compositionstart"_ns, TrustedEventsAtSystemGroupBubble());
   eventListenerManager->RemoveEventListenerByType(
       this, u"compositionend"_ns, TrustedEventsAtSystemGroupBubble());
+
+  eventListenerManager->RemoveEventListenerByType(
+      this, u"focus"_ns, TrustedEventsAtSystemGroupCapture());
 }
 
 PresShell* EditorEventListener::GetPresShell() const {
@@ -449,6 +456,15 @@ NS_IMETHODIMP EditorEventListener::HandleEvent(Event* aEvent) {
     // compositionend
     case eCompositionEnd: {
       HandleEndComposition(internalEvent->AsCompositionEvent());
+      return NS_OK;
+    }
+    // focus
+    case eFocus: {
+      const InternalFocusEvent* focusEvent = internalEvent->AsFocusEvent();
+      if (NS_WARN_IF(!focusEvent)) {
+        return NS_ERROR_FAILURE;
+      }
+      DidFocus(*focusEvent);
       return NS_OK;
     }
     default:
@@ -1108,6 +1124,19 @@ void EditorEventListener::HandleEndComposition(
              "eCompositionEnd shouldn't be cancelable");
 
   editorBase->OnCompositionEnd(*aCompositionEndEvent);
+}
+
+void EditorEventListener::DidFocus(const InternalFocusEvent& aFocusEvent) {
+  if (DetachedFromEditor()) {
+    return;
+  }
+  const nsCOMPtr<nsINode> focusEventTargetNode =
+      nsINode::FromEventTargetOrNull(aFocusEvent.GetOriginalDOMEventTarget());
+  if (NS_WARN_IF(!focusEventTargetNode)) {
+    return;
+  }
+  const OwningNonNull<EditorBase> editorBase(*mEditorBase);
+  editorBase->PostHandleFocusEvent(*focusEventTargetNode);
 }
 
 bool EditorEventListener::IsFileControlTextBox() {

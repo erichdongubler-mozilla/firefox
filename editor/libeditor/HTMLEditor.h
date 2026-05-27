@@ -206,6 +206,8 @@ class HTMLEditor final : public EditorBase,
       const final;
   MOZ_CAN_RUN_SCRIPT nsresult
   OnFocus(const nsINode& aOriginalEventTargetNode) final;
+  MOZ_CAN_RUN_SCRIPT void PostHandleFocusEvent(
+      const nsINode& aFocusEventTargetNode) final;
   MOZ_CAN_RUN_SCRIPT nsresult
   OnBlur(const dom::EventTarget* aEventTarget) final;
 
