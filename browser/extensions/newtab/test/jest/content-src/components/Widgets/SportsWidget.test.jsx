@@ -217,6 +217,34 @@ describe("<SportsWidget>", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders the intro video pointing at the size-matched webm", () => {
+    const mediumResult = render(
+      <WrapWithProvider state={makeState()}>
+        <SportsWidget {...defaultProps} />
+      </WrapWithProvider>
+    );
+    expect(
+      mediumResult.container.querySelector(".sports-intro-video")
+    ).toHaveAttribute(
+      "src",
+      "chrome://newtab/content/data/content/assets/worldcup-medium.webm"
+    );
+
+    const largeResult = render(
+      <WrapWithProvider
+        state={makeState({ [PREF_SPORTS_WIDGET_SIZE]: "large" })}
+      >
+        <SportsWidget {...defaultProps} />
+      </WrapWithProvider>
+    );
+    expect(
+      largeResult.container.querySelector(".sports-intro-video")
+    ).toHaveAttribute(
+      "src",
+      "chrome://newtab/content/data/content/assets/worldcup-large.webm"
+    );
+  });
+
   it("should show the keep-tabs title", () => {
     const { container } = render(
       <WrapWithProvider state={makeState()}>

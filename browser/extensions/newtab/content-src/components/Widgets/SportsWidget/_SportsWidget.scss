@@ -81,27 +81,23 @@
   }
 
   &.sports-intro {
-    background-image: url('chrome://newtab/content/data/content/assets/worldcup-bg-large.png');
-    background-repeat: no-repeat;
-    background-size: cover;
+    position: relative;
+    overflow: hidden;
 
-    @media (prefers-reduced-motion: no-preference) {
-      &:hover,
-      &:focus-within {
-        background-image: url('chrome://newtab/content/data/content/assets/worldcup-gif-large.gif');
-      }
+    .sports-intro-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: bottom center;
+      pointer-events: none;
     }
 
-    &.medium-widget {
-      background-image: url('chrome://newtab/content/data/content/assets/worldcup-bg-medium.png');
-      background-position-y: 0;
-
-      @media (prefers-reduced-motion: no-preference) {
-        &:hover,
-        &:focus-within {
-          background-image: url('chrome://newtab/content/data/content/assets/worldcup-gif-medium.gif');
-        }
-      }
+    > .sports-title-wrapper,
+    > .sports-body {
+      position: relative;
+      z-index: 1;
     }
   }
 

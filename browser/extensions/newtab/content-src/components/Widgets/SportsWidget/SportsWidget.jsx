@@ -137,6 +137,7 @@ function getFollowedGradient(match, selectedTeamsSet, teamColorsByKey) {
   return `linear-gradient(to right, ${colors.join(", ")})`;
 }
 
+// eslint-disable-next-line max-statements
 function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   const prefs = useSelector(state => state.Prefs.values);
   const sportsWidgetData = useSelector(state => state.SportsWidget);
@@ -244,6 +245,23 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   );
   const impressionFired = useRef(false);
   const sizeSubmenuRef = useRef(null);
+  const introVideoRef = useRef(null);
+  const playIntroVideo = useMemo(() => {
+    const prefersReducedMotion =
+      globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ??
+      false;
+    return () => {
+      if (prefersReducedMotion) {
+        return;
+      }
+      const video = introVideoRef.current;
+      if (!video || !video.paused) {
+        return;
+      }
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    };
+  }, []);
 
   const handleIntersection = useCallback(() => {
     if (impressionFired.current) {
@@ -587,7 +605,26 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
       ref={el => {
         widgetRef.current = [el];
       }}
+      onMouseEnter={playIntroVideo}
+      onFocus={e => {
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+          playIntroVideo();
+        }
+      }}
     >
+      {widgetState === WIDGET_STATES.INTRO && (
+        <video
+          ref={introVideoRef}
+          className="sports-intro-video"
+          muted={true}
+          playsInline={true}
+          preload="auto"
+          aria-hidden="true"
+          tabIndex={-1}
+          poster={`chrome://newtab/content/data/content/assets/worldcup-${displaySize}.png`}
+          src={`chrome://newtab/content/data/content/assets/worldcup-${displaySize}.webm`}
+        />
+      )}
       <div className="sports-title-wrapper">
         {/* The empty self-closing div here is used to help center the title, since the context menu also takes up space. */}
         {widgetState === WIDGET_STATES.INTRO && <div />}

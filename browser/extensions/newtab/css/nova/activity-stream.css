@@ -6485,23 +6485,22 @@ button.arrow-button:dir(rtl) {
   margin-block-start: var(--space-large);
 }
 .sports.sports-intro {
-  background-image: url("chrome://newtab/content/data/content/assets/worldcup-bg-large.png");
-  background-repeat: no-repeat;
-  background-size: cover;
+  position: relative;
+  overflow: hidden;
 }
-@media (prefers-reduced-motion: no-preference) {
-  .sports.sports-intro:hover, .sports.sports-intro:focus-within {
-    background-image: url("chrome://newtab/content/data/content/assets/worldcup-gif-large.gif");
-  }
+.sports.sports-intro .sports-intro-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: bottom center;
+  pointer-events: none;
 }
-.sports.sports-intro.medium-widget {
-  background-image: url("chrome://newtab/content/data/content/assets/worldcup-bg-medium.png");
-  background-position-y: 0;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .sports.sports-intro.medium-widget:hover, .sports.sports-intro.medium-widget:focus-within {
-    background-image: url("chrome://newtab/content/data/content/assets/worldcup-gif-medium.gif");
-  }
+.sports.sports-intro > .sports-title-wrapper,
+.sports.sports-intro > .sports-body {
+  position: relative;
+  z-index: 1;
 }
 .sports.sports-follow-state .sports-title-wrapper {
   padding: var(--space-small);
