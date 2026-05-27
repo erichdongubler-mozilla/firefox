@@ -1,4 +1,4 @@
-// |reftest| shell-option(--enable-import-text) skip-if(!xulRuntime.shell) module -- requires shell-options
+// |reftest| module
 // Copyright (C) 2025 Mozilla Foundation. All rights reserved.
 // This code is governed by the BSD license found in the LICENSE file.
 /*---

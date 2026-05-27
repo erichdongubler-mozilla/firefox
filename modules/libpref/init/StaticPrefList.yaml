@@ -9382,7 +9382,7 @@
   # Experimental support for import text in JavaScript.
 - name: javascript.options.experimental.import_text
   type: bool
-  value: false
+  value: true
   mirror: always
   set_spidermonkey_pref: always
 
