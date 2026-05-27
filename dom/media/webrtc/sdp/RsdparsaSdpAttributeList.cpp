@@ -582,7 +582,10 @@ void RsdparsaSdpAttributeList::LoadSsrc(RustAttributeList* attributeList) {
     if (value.empty()) {
       ssrcs->PushEntry(ssrc.id, attribute);
     } else {
-      ssrcs->PushEntry(ssrc.id, attribute + ":" + value);
+      std::string entry{std::move(attribute)};
+      entry.push_back(':');
+      entry.append(value);
+      ssrcs->PushEntry(ssrc.id, entry);
     }
   }
   SetAttribute(ssrcs.release());

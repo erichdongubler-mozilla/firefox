@@ -53,6 +53,10 @@ clang_checkers:
     config:
       - key: AllowedTypes
         value: (mozilla::)?RefPtr
+  - name: performance-inefficient-string-concatenation
+    reliability: high
+  - name: performance-inefficient-vector-operation
+    reliability: high
 
 # clang_checkers:
 #   - name: -*

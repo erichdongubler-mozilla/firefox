@@ -222,6 +222,7 @@ std::wstring CommandLine::program() const { return program_; }
 #else
 std::vector<std::wstring> CommandLine::GetLooseValues() const {
   std::vector<std::wstring> values;
+  values.reserve(loose_values_.size());
   for (size_t i = 0; i < loose_values_.size(); ++i)
     values.push_back(ASCIIToWide(loose_values_[i]));
   return values;
