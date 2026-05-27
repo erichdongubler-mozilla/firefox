@@ -1,0 +1,9 @@
+.nova-enabled {
+  .omc-highlight-slot {
+    grid-column: 1 / -1;
+  }
+
+  .highlight-popover-body .title {
+    font-size: var(--font-size-root);
+  }
+}

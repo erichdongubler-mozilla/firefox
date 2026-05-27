@@ -13903,6 +13903,32 @@ hr {
   text-align: end;
 }
 
+.nova-enabled .highlight-popover-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+}
+.nova-enabled .highlight-popover-body .title {
+  font-weight: var(--font-weight-heading);
+  margin: 0;
+}
+.nova-enabled .highlight-popover-body .subtitle {
+  font-size: var(--font-size-root);
+  margin: 0;
+}
+.nova-enabled .highlight-popover-image {
+  width: 100%;
+  height: auto;
+  border-radius: var(--border-radius-small);
+}
+
+.nova-enabled .omc-highlight-slot {
+  grid-column: 1/-1;
+}
+.nova-enabled .highlight-popover-body .title {
+  font-size: var(--font-size-root);
+}
+
 /* stylelint-disable max-nesting-depth */
 .topic-selection-container {
   --transition: 0.6s opacity, 0.6s scale, 0.6s rotate, 0.6s translate;

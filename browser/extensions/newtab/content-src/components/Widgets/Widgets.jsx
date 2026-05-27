@@ -14,6 +14,8 @@ import { Weather as WeatherWidget } from "./Weather/Weather";
 import { MessageWrapper } from "content-src/components/MessageWrapper/MessageWrapper";
 import { WidgetsFeatureHighlight } from "../DiscoveryStreamComponents/FeatureHighlight/WidgetsFeatureHighlight";
 import { WidgetsRowFeatureHighlight } from "../DiscoveryStreamComponents/FeatureHighlight/WidgetsRowFeatureHighlight";
+import { OMCHighlightSlot } from "../DiscoveryStreamComponents/FeatureHighlight/OMCHighlightSlot";
+import { SLOTS } from "../DiscoveryStreamComponents/FeatureHighlight/OMCHighlightSlots.mjs";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import {
   WIDGET_REGISTRY,
@@ -591,6 +593,9 @@ function Widgets() {
 
           <div className="widgets-title-actions">{renderWidgetsActions()}</div>
         </div>
+        {novaEnabled && (
+          <OMCHighlightSlot slot={SLOTS.WIDGETS_ROW} dispatch={dispatch} />
+        )}
         <div
           id="widgets-container"
           className={`widgets-container${isMaximized ? " is-maximized" : ""}`}
