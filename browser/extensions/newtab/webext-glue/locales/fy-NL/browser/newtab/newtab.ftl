@@ -766,6 +766,9 @@ newtab-widget-lists-input-menu-delete = Fuortsmite
 newtab-widget-lists-input-menu-edit = Bewurkje
 newtab-widget-lists-input-menu-edit2 =
     .aria-label = Item bewurkje
+newtab-widget-lists-edit-clear =
+    .aria-label = Annulearje
+    .title = Annulearje
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
     .label = + In nije list oanmeitsje
@@ -907,7 +910,7 @@ newtab-widget-timer-celebration-message-focus = Skoft nedich?
 # Message shown inside the Timer widget after a break session ends.
 newtab-widget-timer-celebration-message-break = Klear om te fokusjen?
 
-## Sports widget
+##
 
 newtab-sports-widget-menu-follow-teams = Teams folgje
 newtab-sports-widget-menu-view-schedule = Tiidskema besjen
@@ -943,7 +946,53 @@ newtab-sports-widget-back-button =
     .aria-label = Tebek
 newtab-sports-widget-done-button =
     .label = Dien
+newtab-sports-widget-view-all =
+    .label = Alles besjen
+newtab-sports-widget-show-less =
+    .label = Minder toane
+# Toggle that filters the list of teams the user follows
+newtab-sports-widget-followed-only-toggle =
+    .label = Allinnich folge teams
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch =
+    .label = Besjen
+    .title = Live besjen
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch-icon =
+    .aria-label = Live besjen
+    .title = Live besjen
+newtab-sports-widget-watch-dialog-close =
+    .aria-label = Slute
+    .title = Slute
+# Tag: user can watch without paying (sign-in may still be required).
+newtab-sports-widget-watch-stream-free = Fergees
+# Tag: user can start watching via a trial; continued access may require payment after it ends.
+newtab-sports-widget-watch-stream-free-trial = Fergeze proefperioade
+# Tag: provider offers both a no-cost or trial path and a paid path.
+newtab-sports-widget-watch-stream-free-paid = Fergees en betelle
+# Tag: user must pay to watch (subscription, TV provider, premium plan, or add-on).
+newtab-sports-widget-watch-stream-paid = Betelle
+# Heading for the list of streaming services available in the user’s country/region.
+newtab-sports-widget-watch-available-region = Beskikber yn jo regio
+# Heading for the list of streaming services available outside the user’s country/region.
+newtab-sports-widget-watch-available-other-regions = Oare regio’s
+# Button that opens the provider’s stream page in a new tab.
+newtab-sports-widget-watch-play =
+    .aria-label = Stream iepenje
+    .title = Stream iepenje
 newtab-sports-widget-group-stage = Groepsfase
+newtab-sports-widget-group-a = Groep A
+newtab-sports-widget-group-b = Groep B
+newtab-sports-widget-group-c = Groep C
+newtab-sports-widget-group-d = Groep D
+newtab-sports-widget-group-e = Groep E
+newtab-sports-widget-group-f = Groep F
+newtab-sports-widget-group-g = Groep G
+newtab-sports-widget-group-h = Groep H
+newtab-sports-widget-group-i = Groep I
+newtab-sports-widget-group-j = Groep J
+newtab-sports-widget-group-k = Groep K
+newtab-sports-widget-group-l = Groep L
 newtab-sports-widget-round-32 = Ronde fan 32
 newtab-sports-widget-round-16 = Ronde fan 16
 newtab-sports-widget-quarter-finals = Kwartfinalen
@@ -981,6 +1030,83 @@ newtab-sports-widget-third-place = Tredde plak
 newtab-sports-widget-runner-up = Twadde plak
 newtab-sports-widget-champions = Kampioen
 newtab-sports-widget-world-cup-champions = Wrâldkampioen 2026
+# Variables:
+#   $date (Date) - The match start time
+newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
+newtab-sports-widget-match-full-time = Wedstriid ôfrûn
+newtab-sports-widget-match-penalties = Strafskoppen
+
+## Accessible labels for match rows in the sports widget. These are read by
+## screen readers to announce the match details and status.
+## Variables shared by all messages in this group:
+##   $homeTeam (String) - The full name of the home team (e.g. "Mexico")
+##   $awayTeam (String) - The full name of the away team (e.g. "Russia")
+
+# A finished match row (regular full-time result).
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+newtab-sports-widget-match-aria-label-results =
+    .aria-label = { $homeTeam }, { $homeScore } tsjin { $awayTeam }, { $awayScore }
+# A finished match row that went to a penalty shootout.
+# Parenthesized values are the shootout score.
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+#   $homePenalty (number) - The home team's penalty shootout score
+#   $awayPenalty (number) - The away team's penalty shootout score
+newtab-sports-widget-match-aria-label-results-penalties =
+    .aria-label = { $homeTeam }, { $homeScore } ({ $homePenalty }) tsjin { $awayTeam }, { $awayScore } ({ $awayPenalty })
+# A match that is currently in progress.
+# Variables:
+#   $homeScore (number) - The home team's current score
+#   $awayScore (number) - The away team's current score
+newtab-sports-widget-match-aria-label-now =
+    .aria-label = Live: { $homeTeam }, { $homeScore } tsjin { $awayTeam }, { $awayScore }
+# An upcoming scheduled match row. Announces kickoff time and date.
+# Variables:
+#   $date (Date) - The scheduled kickoff date/time
+newtab-sports-widget-match-aria-label-upcoming =
+    .aria-label = { $homeTeam } - { $awayTeam }, { DATETIME($date, hour: "numeric", minute: "numeric") }, { DATETIME($date, day: "numeric", month: "long") }
+# An upcoming match row whose status is "delayed".
+newtab-sports-widget-match-aria-label-upcoming-delayed =
+    .aria-label = { $homeTeam } - { $awayTeam }, fertrage
+# An upcoming match row whose status is "postponed".
+newtab-sports-widget-match-aria-label-upcoming-postponed =
+    .aria-label = { $homeTeam } - { $awayTeam }, útsteld
+# An upcoming match row whose status is "suspended".
+newtab-sports-widget-match-aria-label-upcoming-suspended =
+    .aria-label = { $homeTeam } - { $awayTeam }, ûnderbrutsen
+# An upcoming match row whose status is "cancelled".
+newtab-sports-widget-match-aria-label-upcoming-cancelled =
+    .aria-label = { $homeTeam } - { $awayTeam }, annulearre
+
+## Sports widget — team names (FIFA country codes)
+## Only includes names not adequately covered by standard country-code
+## internationalization tooling.
+
+newtab-sports-widget-team-name-label-bih =
+    .label = Bosnje en Herzgovina
+newtab-sports-widget-team-name-label-civ =
+    .label = Ivoarkust
+newtab-sports-widget-team-name-label-cod =
+    .label = DR Kongo
+newtab-sports-widget-team-name-label-eng =
+    .label = Ingelân
+newtab-sports-widget-team-name-label-sco =
+    .label = Skotlân
+
+## Sports widget OMC messages
+## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
+
+newtab-sports-widget-message-wallpapers-title = Begjin it WK mei nije eftergrûnen
+newtab-sports-widget-message-wallpapers-body = Bring wat wedstriiddei-enerzjy nei jo browser foar it toernoai.
+newtab-sports-widget-message-wallpapers-cta = Eftergrûn kieze
+newtab-sports-widget-message-add-widgets-cta =
+    .label = Widgets tafoegje
+newtab-sports-widget-message-day-in-play-body = Folgje it WK, bliuw by it wurk, hâld de tiid oer de hiele wrâld by, en mear.
+newtab-sports-widget-message-explore-widgets-cta =
+    .label = Widgets ferkenne
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
@@ -1042,6 +1168,19 @@ newtab-clock-widget-button-save = Bewarje
 newtab-clock-widget-button-remove-clock =
     .title = Klok fuortsmite
     .aria-label = Klok fuortsmite
+# Accessible name for a clock row in the "Your clocks" management panel
+# when the row has no user-provided nickname. Read aloud by screen
+# readers when focus lands on the row.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+newtab-clock-widget-edit-item =
+    .aria-label = { $city }
+# Accessible name for a clock row when a user nickname has been set.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+#   $nickname (string) - The user-provided nickname for the row.
+newtab-clock-widget-edit-item-with-nickname =
+    .aria-label = { $city }, bynamme: { $nickname }
 newtab-clock-widget-add-clock-form =
     .aria-label = Klok tafoegje
 newtab-clock-widget-edit-clock-form =

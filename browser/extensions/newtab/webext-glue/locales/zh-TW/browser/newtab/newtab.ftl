@@ -367,6 +367,8 @@ newtab-custom-widget-sports-toggle =
     .label = 世界盃足球賽
 newtab-custom-widget-clock-toggle =
     .label = 時鐘
+newtab-custom-widget-sports-toggle2 =
+    .label = 體育
 newtab-custom-widget-section-title = 小工具
 newtab-custom-widget-section-toggle =
     .label = 小工具
@@ -762,6 +764,9 @@ newtab-widget-lists-input-menu-delete = 刪除
 newtab-widget-lists-input-menu-edit = 編輯
 newtab-widget-lists-input-menu-edit2 =
     .aria-label = 編輯項目
+newtab-widget-lists-edit-clear =
+    .aria-label = 取消
+    .title = 取消
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
     .label = + 新增清單
@@ -848,6 +853,9 @@ newtab-daily-briefing-card-timestamp = { $minutes } 分鐘前更新
 newtab-widget-message-title = 使用清單與內建的計時器，讓您保持專注
 # to-dos stands for "things to do".
 newtab-widget-message-copy = 從快速提醒到每日待辦事項，或是在專注時間之後休息一下伸伸懶腰，讓您及時完成工作。
+# One spot refers to a dedicated section on new tab to manage and use widgets
+newtab-widget-message-focus-forecasts-title = 在同一個位置專注、獲得氣象預報與更多資訊
+newtab-widget-message-focus-forecasts-body = 使用 { -brand-product-name } 小工具讓您每天都能保持流暢。確認天氣、關注工作，或確認各地時間。
 # "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
 # is to customize the new tab page with a background image or color from
 # the built-in wallpaper collection or uploading your own image.
@@ -895,7 +903,7 @@ newtab-widget-timer-celebration-message-focus = 需要休息一下嗎？
 # Message shown inside the Timer widget after a break session ends.
 newtab-widget-timer-celebration-message-break = 準備好要專注了嗎？
 
-## Sports widget
+##
 
 newtab-sports-widget-menu-follow-teams = 關注球隊
 newtab-sports-widget-menu-view-schedule = 檢視賽程
@@ -927,7 +935,59 @@ newtab-sports-widget-back-button =
     .aria-label = 返回
 newtab-sports-widget-done-button =
     .label = 完成
+# Shown in the follow-teams list for a team that has been knocked out of the tournament.
+# Variables:
+#   $teamName (string) - the localized team name (e.g. "Canada").
+newtab-sports-widget-team-name-eliminated = { $teamName }（被淘汰）
+newtab-sports-widget-view-all =
+    .label = 檢視全部
+newtab-sports-widget-show-less =
+    .label = 顯示更少
+# Toggle that filters the list of teams the user follows
+newtab-sports-widget-followed-only-toggle =
+    .label = 僅關注中的隊伍
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch =
+    .label = 觀賞
+    .title = 觀賞賽事轉播
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch-icon =
+    .aria-label = 觀賞賽事轉播
+    .title = 觀賞賽事轉播
+newtab-sports-widget-watch-dialog-close =
+    .aria-label = 關閉
+    .title = 關閉
+# Tag: user can watch without paying (sign-in may still be required).
+newtab-sports-widget-watch-stream-free = 免費
+# Tag: user can start watching via a trial; continued access may require payment after it ends.
+newtab-sports-widget-watch-stream-free-trial = 免費試看
+# Tag: provider offers both a no-cost or trial path and a paid path.
+newtab-sports-widget-watch-stream-free-paid = 免費與付費
+# Tag: user must pay to watch (subscription, TV provider, premium plan, or add-on).
+newtab-sports-widget-watch-stream-paid = 付費
+# Note: provider only streams some matches, not the full tournament.
+newtab-sports-widget-watch-stream-select-games-only = 僅部分賽事
+# Heading for the list of streaming services available in the user’s country/region.
+newtab-sports-widget-watch-available-region = 於您的地區可使用
+# Heading for the list of streaming services available outside the user’s country/region.
+newtab-sports-widget-watch-available-other-regions = 其他地區
+# Button that opens the provider’s stream page in a new tab.
+newtab-sports-widget-watch-play =
+    .aria-label = 開啟串流
+    .title = 開啟串流
 newtab-sports-widget-group-stage = 小組賽
+newtab-sports-widget-group-a = A 組
+newtab-sports-widget-group-b = B 組
+newtab-sports-widget-group-c = C 組
+newtab-sports-widget-group-d = D 組
+newtab-sports-widget-group-e = E 組
+newtab-sports-widget-group-f = F 組
+newtab-sports-widget-group-g = G 組
+newtab-sports-widget-group-h = H 組
+newtab-sports-widget-group-i = I 組
+newtab-sports-widget-group-j = J 組
+newtab-sports-widget-group-k = K 組
+newtab-sports-widget-group-l = L 組
 newtab-sports-widget-round-32 = 32 強賽
 newtab-sports-widget-round-16 = 16 強賽
 newtab-sports-widget-quarter-finals = 8 強賽
@@ -965,6 +1025,84 @@ newtab-sports-widget-third-place = 季軍
 newtab-sports-widget-runner-up = 亞軍
 newtab-sports-widget-champions = 冠軍
 newtab-sports-widget-world-cup-champions = 2026 年世界盃足球賽冠軍
+# Variables:
+#   $date (Date) - The match start time
+newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
+newtab-sports-widget-match-full-time = 終場
+newtab-sports-widget-match-penalties = PK 大戰
+
+## Accessible labels for match rows in the sports widget. These are read by
+## screen readers to announce the match details and status.
+## Variables shared by all messages in this group:
+##   $homeTeam (String) - The full name of the home team (e.g. "Mexico")
+##   $awayTeam (String) - The full name of the away team (e.g. "Russia")
+
+# A finished match row (regular full-time result).
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+newtab-sports-widget-match-aria-label-results =
+    .aria-label = { $homeTeam }，{ $homeScore } 分，對上 { $awayTeam }，{ $awayScore } 分
+# A finished match row that went to a penalty shootout.
+# Parenthesized values are the shootout score.
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+#   $homePenalty (number) - The home team's penalty shootout score
+#   $awayPenalty (number) - The away team's penalty shootout score
+newtab-sports-widget-match-aria-label-results-penalties =
+    .aria-label = { $homeTeam }，{ $homeScore } 分（罰球得 { $homePenalty } 分），對上 { $awayTeam }，{ $awayScore } 分（罰球得 { $awayPenalty } 分）
+# A match that is currently in progress.
+# Variables:
+#   $homeScore (number) - The home team's current score
+#   $awayScore (number) - The away team's current score
+newtab-sports-widget-match-aria-label-now =
+    .aria-label = 進行中：{ $homeTeam }，{ $homeScore } 分，對上 { $awayTeam }，{ $awayScore } 分
+# An upcoming scheduled match row. Announces kickoff time and date.
+# Variables:
+#   $date (Date) - The scheduled kickoff date/time
+newtab-sports-widget-match-aria-label-upcoming =
+    .aria-label = { $homeTeam } vs. { $awayTeam }，{ DATETIME($date, day: "numeric", month: "long") } { DATETIME($date, hour: "numeric", minute: "numeric") }
+# An upcoming match row whose status is "delayed".
+newtab-sports-widget-match-aria-label-upcoming-delayed =
+    .aria-label = { $homeTeam } vs. { $awayTeam }，延後開賽
+# An upcoming match row whose status is "postponed".
+newtab-sports-widget-match-aria-label-upcoming-postponed =
+    .aria-label = { $homeTeam } vs. { $awayTeam }，延期
+# An upcoming match row whose status is "suspended".
+newtab-sports-widget-match-aria-label-upcoming-suspended =
+    .aria-label = { $homeTeam } vs. { $awayTeam }，比賽暫停
+# An upcoming match row whose status is "cancelled".
+newtab-sports-widget-match-aria-label-upcoming-cancelled =
+    .aria-label = { $homeTeam } vs. { $awayTeam }，取消
+
+## Sports widget — team names (FIFA country codes)
+## Only includes names not adequately covered by standard country-code
+## internationalization tooling.
+
+newtab-sports-widget-team-name-label-bih =
+    .label = 波士尼亞與赫塞哥維納
+newtab-sports-widget-team-name-label-civ =
+    .label = 象牙海岸
+newtab-sports-widget-team-name-label-cod =
+    .label = 剛果民主共和國
+newtab-sports-widget-team-name-label-eng =
+    .label = 英格蘭
+newtab-sports-widget-team-name-label-sco =
+    .label = 蘇格蘭
+
+## Sports widget OMC messages
+## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
+
+newtab-sports-widget-message-wallpapers-title = 使用新的背景圖片，為世足賽拉開序幕
+newtab-sports-widget-message-wallpapers-body = 將賽事的活力帶進您的瀏覽器。
+newtab-sports-widget-message-wallpapers-cta = 挑選背景圖
+newtab-sports-widget-message-add-widgets-cta =
+    .label = 新增小工具
+newtab-sports-widget-message-day-in-play-title = 使用 { -brand-product-name } 小工具隨時關注最新足球賽事
+newtab-sports-widget-message-day-in-play-body = 關注足球世界盃，同時專注工作、追蹤各地時間與更多功能。
+newtab-sports-widget-message-explore-widgets-cta =
+    .label = 探索小工具
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
@@ -1026,6 +1164,19 @@ newtab-clock-widget-button-save = 儲存
 newtab-clock-widget-button-remove-clock =
     .title = 移除時鐘
     .aria-label = 移除時鐘
+# Accessible name for a clock row in the "Your clocks" management panel
+# when the row has no user-provided nickname. Read aloud by screen
+# readers when focus lands on the row.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+newtab-clock-widget-edit-item =
+    .aria-label = { $city }
+# Accessible name for a clock row when a user nickname has been set.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+#   $nickname (string) - The user-provided nickname for the row.
+newtab-clock-widget-edit-item-with-nickname =
+    .aria-label = { $city }，暱稱：{ $nickname }
 newtab-clock-widget-add-clock-form =
     .aria-label = 新增時鐘
 newtab-clock-widget-edit-clock-form =

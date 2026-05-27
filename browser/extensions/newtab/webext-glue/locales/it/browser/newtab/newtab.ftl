@@ -373,6 +373,8 @@ newtab-custom-widget-sports-toggle =
     .label = Coppa del mondo
 newtab-custom-widget-clock-toggle =
     .label = Orologio
+newtab-custom-widget-sports-toggle2 =
+    .label = Sport
 newtab-custom-widget-section-title = Widget
 newtab-custom-widget-section-toggle =
     .label = Widget
@@ -768,6 +770,9 @@ newtab-widget-lists-input-menu-delete = Elimina
 newtab-widget-lists-input-menu-edit = Modifica
 newtab-widget-lists-input-menu-edit2 =
     .aria-label = Modifica elemento
+newtab-widget-lists-edit-clear =
+    .aria-label = Annulla
+    .title = Annulla
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
     .label = + Crea nuova lista
@@ -824,6 +829,14 @@ newtab-widget-section-menu-manage = Gestisci widget
 newtab-widget-section-menu-hide-all = Nascondi widget
 newtab-widget-section-menu-learn-more = Ulteriori informazioni
 newtab-widget-section-feedback = Dicci cosa ne pensi
+# Button shown when additional widgets are hidden beyond the
+# first row, allowing users to show them.
+newtab-widget-section-show-more =
+    .label = Mostra altri widget
+# Button shown when the widgets row is expanded to multiple rows,
+# allowing users to collapse it back to one row.
+newtab-widget-section-show-less =
+    .label = Mostra meno widget
 newtab-widget-lists-name-default = Lista di controllo
 
 ## Strings introduced by the Nova redesign of the Timer widget
@@ -854,6 +867,9 @@ newtab-daily-briefing-card-timestamp = Aggiornato { $minutes }m fa
 newtab-widget-message-title = Mantieni la concentrazione utilizzando le liste e il timer integrato
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Da promemoria veloci a liste di attività quotidiane, da sessioni di concentrazione a pause per rilassarsi: mantieni l’attenzione e rispetta i tempi.
+# One spot refers to a dedicated section on new tab to manage and use widgets
+newtab-widget-message-focus-forecasts-title = Un unico spazio per concentrarsi, consultare le previsioni meteo e molto altro
+newtab-widget-message-focus-forecasts-body = Rendi la tua giornata più fluida grazie ai widget di { -brand-product-name }. Consulta le previsioni meteo, resta concentrato sui tuoi impegni o tieni traccia dell’ora in tutto il mondo.
 # "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
 # is to customize the new tab page with a background image or color from
 # the built-in wallpaper collection or uploading your own image.
@@ -945,10 +961,17 @@ newtab-sports-widget-back-button =
     .aria-label = Indietro
 newtab-sports-widget-done-button =
     .label = Fatto
+# Shown in the follow-teams list for a team that has been knocked out of the tournament.
+# Variables:
+#   $teamName (string) - the localized team name (e.g. "Canada").
+newtab-sports-widget-team-name-eliminated = { $teamName } (eliminato)
 newtab-sports-widget-view-all =
     .label = Mostra tutto
 newtab-sports-widget-show-less =
     .label = Nascondi dettagli
+# Toggle that filters the list of teams the user follows
+newtab-sports-widget-followed-only-toggle =
+    .label = Solo squadre seguite
 # Watch is a verb (as in watch matches online).
 newtab-sports-widget-watch =
     .label = Guarda
@@ -1032,6 +1055,8 @@ newtab-sports-widget-world-cup-champions = Campioni della Coppa del Mondo 2026
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
 newtab-sports-widget-match-full-time = Fine partita
+newtab-sports-widget-match-halftime = Intervallo
+newtab-sports-widget-match-extra-time = Tempi supplementari
 newtab-sports-widget-match-penalties = Rigori
 
 ## Accessible labels for match rows in the sports widget. These are read by
@@ -1094,6 +1119,19 @@ newtab-sports-widget-team-name-label-eng =
 newtab-sports-widget-team-name-label-sco =
     .label = Scozia
 
+## Sports widget OMC messages
+## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
+
+newtab-sports-widget-message-wallpapers-title = Dai il via ai Mondiali con i nuovi sfondi
+newtab-sports-widget-message-wallpapers-body = Porta un po’ di atmosfera da stadio nel tuo browser durante il torneo.
+newtab-sports-widget-message-wallpapers-cta = Scegli sfondo
+newtab-sports-widget-message-add-widgets-cta =
+    .label = Aggiungi widget
+newtab-sports-widget-message-day-in-play-title = Rendi la tua giornata più dinamica con i widget di { -brand-product-name }
+newtab-sports-widget-message-day-in-play-body = Segui la Coppa del Mondo, resta concentrato, tieni traccia dell’ora in tutto il mondo e molto altro.
+newtab-sports-widget-message-explore-widgets-cta =
+    .label = Esplora i widget
+
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
 ## for the first 48 hours of a new profile's lifetime. Some messages include buttons with
@@ -1154,6 +1192,19 @@ newtab-clock-widget-button-save = Salva
 newtab-clock-widget-button-remove-clock =
     .title = Rimuovi orologio
     .aria-label = Rimuovi orologio
+# Accessible name for a clock row in the "Your clocks" management panel
+# when the row has no user-provided nickname. Read aloud by screen
+# readers when focus lands on the row.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+newtab-clock-widget-edit-item =
+    .aria-label = { $city }
+# Accessible name for a clock row when a user nickname has been set.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+#   $nickname (string) - The user-provided nickname for the row.
+newtab-clock-widget-edit-item-with-nickname =
+    .aria-label = { $city }, nome: { $nickname }
 newtab-clock-widget-add-clock-form =
     .aria-label = Aggiungi orologio
 newtab-clock-widget-edit-clock-form =

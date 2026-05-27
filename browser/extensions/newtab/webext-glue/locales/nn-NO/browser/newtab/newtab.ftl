@@ -370,6 +370,8 @@ newtab-custom-widget-sports-toggle =
     .label = VM
 newtab-custom-widget-clock-toggle =
     .label = Klokke
+newtab-custom-widget-sports-toggle2 =
+    .label = Sport
 newtab-custom-widget-section-title = Widgetar
 newtab-custom-widget-section-toggle =
     .label = Widgetar
@@ -765,6 +767,9 @@ newtab-widget-lists-input-menu-delete = Slett
 newtab-widget-lists-input-menu-edit = Rediger
 newtab-widget-lists-input-menu-edit2 =
     .aria-label = Rediger element
+newtab-widget-lists-edit-clear =
+    .aria-label = Avbryt
+    .title = Avbryt
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
     .label = + Lag ei ny liste
@@ -851,6 +856,9 @@ newtab-daily-briefing-card-timestamp = Oppdatert for { $minutes } minutt sidan
 newtab-widget-message-title = Hald fokus med lister og ein innebygd nedteljar
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Frå kjappe påminningar til daglege gjeremål, fokuserte arbeidsøkter til strekkpausar — hald deg til oppgåva og tidsplanen.
+# One spot refers to a dedicated section on new tab to manage and use widgets
+newtab-widget-message-focus-forecasts-title = Éin stad for fokus, vêrmeldingar og meir
+newtab-widget-message-focus-forecasts-body = Hald flyten gjennom dagen med widgetar i { -brand-product-name }. Sjekk vêrmeldinga, hald fokus på oppgåvene dine eller følg tida rundt om i verda.
 # "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
 # is to customize the new tab page with a background image or color from
 # the built-in wallpaper collection or uploading your own image.
@@ -905,7 +913,7 @@ newtab-widget-timer-celebration-message-focus = Treng du ein pause?
 # Message shown inside the Timer widget after a break session ends.
 newtab-widget-timer-celebration-message-break = Klar for å fokusere?
 
-## Sports widget
+##
 
 newtab-sports-widget-menu-follow-teams = Følg lag
 newtab-sports-widget-menu-view-schedule = Sjå kampoppsettet
@@ -940,7 +948,59 @@ newtab-sports-widget-back-button =
     .aria-label = Tilbake
 newtab-sports-widget-done-button =
     .label = Ferdig
+# Shown in the follow-teams list for a team that has been knocked out of the tournament.
+# Variables:
+#   $teamName (string) - the localized team name (e.g. "Canada").
+newtab-sports-widget-team-name-eliminated = { $teamName } (utslått)
+newtab-sports-widget-view-all =
+    .label = Vis alle
+newtab-sports-widget-show-less =
+    .label = Vis mindre
+# Toggle that filters the list of teams the user follows
+newtab-sports-widget-followed-only-toggle =
+    .label = Berre følgde lag
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch =
+    .label = Sjå
+    .title = Sjå direkte
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch-icon =
+    .aria-label = Sjå direkte
+    .title = Sjå direkte
+newtab-sports-widget-watch-dialog-close =
+    .aria-label = Lat att
+    .title = Lat att
+# Tag: user can watch without paying (sign-in may still be required).
+newtab-sports-widget-watch-stream-free = Gratis
+# Tag: user can start watching via a trial; continued access may require payment after it ends.
+newtab-sports-widget-watch-stream-free-trial = Gratis prøveperiode
+# Tag: provider offers both a no-cost or trial path and a paid path.
+newtab-sports-widget-watch-stream-free-paid = Gratis og betalt
+# Tag: user must pay to watch (subscription, TV provider, premium plan, or add-on).
+newtab-sports-widget-watch-stream-paid = Betalt
+# Note: provider only streams some matches, not the full tournament.
+newtab-sports-widget-watch-stream-select-games-only = Berre utvalde kampar
+# Heading for the list of streaming services available in the user’s country/region.
+newtab-sports-widget-watch-available-region = Tilgjengeleg i din region
+# Heading for the list of streaming services available outside the user’s country/region.
+newtab-sports-widget-watch-available-other-regions = Andre regionar
+# Button that opens the provider’s stream page in a new tab.
+newtab-sports-widget-watch-play =
+    .aria-label = Opne straum
+    .title = Opne straum
 newtab-sports-widget-group-stage = Gruppespel
+newtab-sports-widget-group-a = Gruppe A
+newtab-sports-widget-group-b = Gruppe B
+newtab-sports-widget-group-c = Gruppe C
+newtab-sports-widget-group-d = Gruppe D
+newtab-sports-widget-group-e = Gruppe E
+newtab-sports-widget-group-f = Gruppe F
+newtab-sports-widget-group-g = Gruppe G
+newtab-sports-widget-group-h = Gruppe H
+newtab-sports-widget-group-i = Gruppe I
+newtab-sports-widget-group-j = Gruppe J
+newtab-sports-widget-group-k = Gruppe K
+newtab-sports-widget-group-l = Gruppe L
 newtab-sports-widget-round-32 = Sekstandedelsfinale
 newtab-sports-widget-round-16 = Åttandedelsfinale
 newtab-sports-widget-quarter-finals = Kvartfinalar
@@ -978,6 +1038,84 @@ newtab-sports-widget-third-place = Tredjeplass
 newtab-sports-widget-runner-up = Andreplass
 newtab-sports-widget-champions = Meistrar
 newtab-sports-widget-world-cup-champions = VM 2026 – verds­meistrar
+# Variables:
+#   $date (Date) - The match start time
+newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
+newtab-sports-widget-match-full-time = Slutt
+newtab-sports-widget-match-penalties = Straffer
+
+## Accessible labels for match rows in the sports widget. These are read by
+## screen readers to announce the match details and status.
+## Variables shared by all messages in this group:
+##   $homeTeam (String) - The full name of the home team (e.g. "Mexico")
+##   $awayTeam (String) - The full name of the away team (e.g. "Russia")
+
+# A finished match row (regular full-time result).
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+newtab-sports-widget-match-aria-label-results =
+    .aria-label = { $homeTeam }, { $homeScore } mot { $awayTeam }, { $awayScore }
+# A finished match row that went to a penalty shootout.
+# Parenthesized values are the shootout score.
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+#   $homePenalty (number) - The home team's penalty shootout score
+#   $awayPenalty (number) - The away team's penalty shootout score
+newtab-sports-widget-match-aria-label-results-penalties =
+    .aria-label = { $homeTeam }, { $homeScore } ({ $homePenalty }) mot { $awayTeam }, { $awayScore } ({ $awayPenalty })
+# A match that is currently in progress.
+# Variables:
+#   $homeScore (number) - The home team's current score
+#   $awayScore (number) - The away team's current score
+newtab-sports-widget-match-aria-label-now =
+    .aria-label = Direkte: { $homeTeam }, { $homeScore } mot { $awayTeam }, { $awayScore }
+# An upcoming scheduled match row. Announces kickoff time and date.
+# Variables:
+#   $date (Date) - The scheduled kickoff date/time
+newtab-sports-widget-match-aria-label-upcoming =
+    .aria-label = { $homeTeam } mot { $awayTeam }, { DATETIME($date, hour: "numeric", minute: "numeric") }, { DATETIME($date, day: "numeric", month: "long") }
+# An upcoming match row whose status is "delayed".
+newtab-sports-widget-match-aria-label-upcoming-delayed =
+    .aria-label = { $homeTeam } mot { $awayTeam }, forseinka
+# An upcoming match row whose status is "postponed".
+newtab-sports-widget-match-aria-label-upcoming-postponed =
+    .aria-label = { $homeTeam } mot { $awayTeam }, utsett
+# An upcoming match row whose status is "suspended".
+newtab-sports-widget-match-aria-label-upcoming-suspended =
+    .aria-label = { $homeTeam } mot { $awayTeam }, avbroten
+# An upcoming match row whose status is "cancelled".
+newtab-sports-widget-match-aria-label-upcoming-cancelled =
+    .aria-label = { $homeTeam } mot { $awayTeam }, kansellert
+
+## Sports widget — team names (FIFA country codes)
+## Only includes names not adequately covered by standard country-code
+## internationalization tooling.
+
+newtab-sports-widget-team-name-label-bih =
+    .label = Bosnia og Herzegovina
+newtab-sports-widget-team-name-label-civ =
+    .label = Elfenbeinskysten
+newtab-sports-widget-team-name-label-cod =
+    .label = DR Congo
+newtab-sports-widget-team-name-label-eng =
+    .label = England
+newtab-sports-widget-team-name-label-sco =
+    .label = Skottland
+
+## Sports widget OMC messages
+## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
+
+newtab-sports-widget-message-wallpapers-title = Spark i gang VM med nye bakgrunnsbilde
+newtab-sports-widget-message-wallpapers-body = Gi nettlesaren litt kampstemning under turneringa.
+newtab-sports-widget-message-wallpapers-cta = Vel bakgrunnsbilde
+newtab-sports-widget-message-add-widgets-cta =
+    .label = Legg til widgetar
+newtab-sports-widget-message-day-in-play-title = Hald dagen i gang med widgetar i { -brand-product-name }
+newtab-sports-widget-message-day-in-play-body = Følg VM, hald fokus på oppgåvene dine, følg tida rundt om i verda, og meir.
+newtab-sports-widget-message-explore-widgets-cta =
+    .label = Utforsk widgetar
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
@@ -1039,6 +1177,19 @@ newtab-clock-widget-button-save = Lagre
 newtab-clock-widget-button-remove-clock =
     .title = Fjern klokke
     .aria-label = Fjern klokke
+# Accessible name for a clock row in the "Your clocks" management panel
+# when the row has no user-provided nickname. Read aloud by screen
+# readers when focus lands on the row.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+newtab-clock-widget-edit-item =
+    .aria-label = { $city }
+# Accessible name for a clock row when a user nickname has been set.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+#   $nickname (string) - The user-provided nickname for the row.
+newtab-clock-widget-edit-item-with-nickname =
+    .aria-label = { $city }, kallenamn: { $nickname }
 newtab-clock-widget-add-clock-form =
     .aria-label = Legg til klokke
 newtab-clock-widget-edit-clock-form =

@@ -365,6 +365,8 @@ newtab-custom-widget-sports-toggle =
     .label = מונדיאל
 newtab-custom-widget-clock-toggle =
     .label = שעון
+newtab-custom-widget-sports-toggle2 =
+    .label = ספורט
 newtab-custom-widget-section-title = ווידג’טים
 newtab-custom-widget-section-toggle =
     .label = ווידג’טים
@@ -760,6 +762,9 @@ newtab-widget-lists-input-menu-delete = מחיקה
 newtab-widget-lists-input-menu-edit = עריכה
 newtab-widget-lists-input-menu-edit2 =
     .aria-label = עריכת פריט
+newtab-widget-lists-edit-clear =
+    .aria-label = ביטול
+    .title = ביטול
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
     .label = + יצירת רשימה חדשה
@@ -850,6 +855,9 @@ newtab-daily-briefing-card-timestamp =
 newtab-widget-message-title = להישאר מרוכז בעזרת רשימות ושעון עצר מובנה
 # to-dos stands for "things to do".
 newtab-widget-message-copy = מתזכורות מהירות ועד למשימות יומיות, מזמני התמקדות ועד להפסקות להתמתחות - כך ניתן להספיק את המשימות בזמן.
+# One spot refers to a dedicated section on new tab to manage and use widgets
+newtab-widget-message-focus-forecasts-title = מקום אחד למיקוד, תחזיות ועוד
+newtab-widget-message-focus-forecasts-body = תנו ליום שלכם לזרום עם הווידג’טים של { -brand-product-name }. בדקו את התחזית, הישארו ממוקדים במשימות, או עקבו אחרי השעה ברחבי העולם.
 # "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
 # is to customize the new tab page with a background image or color from
 # the built-in wallpaper collection or uploading your own image.
@@ -905,7 +913,7 @@ newtab-widget-timer-celebration-message-focus = יש לך צורך בהפסקה?
 # Message shown inside the Timer widget after a break session ends.
 newtab-widget-timer-celebration-message-break = נחזור להתרכז?
 
-## Sports widget
+##
 
 newtab-sports-widget-menu-follow-teams = מעקב אחרי נבחרות
 newtab-sports-widget-menu-view-schedule = הצגת לוח זמנים
@@ -941,7 +949,59 @@ newtab-sports-widget-back-button =
     .aria-label = חזרה
 newtab-sports-widget-done-button =
     .label = סיום
+# Shown in the follow-teams list for a team that has been knocked out of the tournament.
+# Variables:
+#   $teamName (string) - the localized team name (e.g. "Canada").
+newtab-sports-widget-team-name-eliminated = { $teamName } (הודח)
+newtab-sports-widget-view-all =
+    .label = להציג הכל
+newtab-sports-widget-show-less =
+    .label = להציג פחות
+# Toggle that filters the list of teams the user follows
+newtab-sports-widget-followed-only-toggle =
+    .label = רק נבחרות במעקב
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch =
+    .label = צפייה
+    .title = צפייה בשידור חי
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch-icon =
+    .aria-label = צפייה בשידור חי
+    .title = צפייה בשידור חי
+newtab-sports-widget-watch-dialog-close =
+    .aria-label = סגירה
+    .title = סגירה
+# Tag: user can watch without paying (sign-in may still be required).
+newtab-sports-widget-watch-stream-free = חינמי
+# Tag: user can start watching via a trial; continued access may require payment after it ends.
+newtab-sports-widget-watch-stream-free-trial = תקופות ניסיון חינמית
+# Tag: provider offers both a no-cost or trial path and a paid path.
+newtab-sports-widget-watch-stream-free-paid = חינמי ובתשלום
+# Tag: user must pay to watch (subscription, TV provider, premium plan, or add-on).
+newtab-sports-widget-watch-stream-paid = בתשלום
+# Note: provider only streams some matches, not the full tournament.
+newtab-sports-widget-watch-stream-select-games-only = משחקים נבחרים בלבד
+# Heading for the list of streaming services available in the user’s country/region.
+newtab-sports-widget-watch-available-region = זמין באזור שלך
+# Heading for the list of streaming services available outside the user’s country/region.
+newtab-sports-widget-watch-available-other-regions = אזורים אחרים
+# Button that opens the provider’s stream page in a new tab.
+newtab-sports-widget-watch-play =
+    .aria-label = פתיחת השידור
+    .title = פתיחת השידור
 newtab-sports-widget-group-stage = שלב הבתים
+newtab-sports-widget-group-a = קבוצה A
+newtab-sports-widget-group-b = קבוצה B
+newtab-sports-widget-group-c = קבוצה C
+newtab-sports-widget-group-d = קבוצה D
+newtab-sports-widget-group-e = קבוצה E
+newtab-sports-widget-group-f = קבוצה F
+newtab-sports-widget-group-g = קבוצה G
+newtab-sports-widget-group-h = קבוצה H
+newtab-sports-widget-group-i = קבוצה I
+newtab-sports-widget-group-j = קבוצה J
+newtab-sports-widget-group-k = קבוצה K
+newtab-sports-widget-group-l = קבוצה L
 newtab-sports-widget-round-32 = סיבוב 32 האחרונות
 newtab-sports-widget-round-16 = שמינית הגמר
 newtab-sports-widget-quarter-finals = רבע גמר
@@ -979,6 +1039,84 @@ newtab-sports-widget-third-place = מקום שלישי
 newtab-sports-widget-runner-up = סגנית האלופה
 newtab-sports-widget-champions = אלופים
 newtab-sports-widget-world-cup-champions = אלופי המונדיאל 2026
+# Variables:
+#   $date (Date) - The match start time
+newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
+newtab-sports-widget-match-full-time = המשחק הסתיים
+newtab-sports-widget-match-penalties = פנדלים
+
+## Accessible labels for match rows in the sports widget. These are read by
+## screen readers to announce the match details and status.
+## Variables shared by all messages in this group:
+##   $homeTeam (String) - The full name of the home team (e.g. "Mexico")
+##   $awayTeam (String) - The full name of the away team (e.g. "Russia")
+
+# A finished match row (regular full-time result).
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+newtab-sports-widget-match-aria-label-results =
+    .aria-label = { $homeTeam }, { $homeScore } נגד { $awayTeam }, { $awayScore }
+# A finished match row that went to a penalty shootout.
+# Parenthesized values are the shootout score.
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+#   $homePenalty (number) - The home team's penalty shootout score
+#   $awayPenalty (number) - The away team's penalty shootout score
+newtab-sports-widget-match-aria-label-results-penalties =
+    .aria-label = { $homeTeam }, { $homeScore } ({ $homePenalty }) נגד { $awayTeam }, { $awayScore } ({ $awayPenalty })
+# A match that is currently in progress.
+# Variables:
+#   $homeScore (number) - The home team's current score
+#   $awayScore (number) - The away team's current score
+newtab-sports-widget-match-aria-label-now =
+    .aria-label = חי: { $homeTeam }, { $homeScore } נגד { $awayTeam }, { $awayScore }
+# An upcoming scheduled match row. Announces kickoff time and date.
+# Variables:
+#   $date (Date) - The scheduled kickoff date/time
+newtab-sports-widget-match-aria-label-upcoming =
+    .aria-label = { $homeTeam } נגד { $awayTeam }, { DATETIME($date, hour: "numeric", minute: "numeric") }, { DATETIME($date, day: "numeric", month: "long") }
+# An upcoming match row whose status is "delayed".
+newtab-sports-widget-match-aria-label-upcoming-delayed =
+    .aria-label = { $homeTeam } נגד { $awayTeam }, מתעכב
+# An upcoming match row whose status is "postponed".
+newtab-sports-widget-match-aria-label-upcoming-postponed =
+    .aria-label = { $homeTeam } נגד { $awayTeam }, נדחה
+# An upcoming match row whose status is "suspended".
+newtab-sports-widget-match-aria-label-upcoming-suspended =
+    .aria-label = { $homeTeam } נגד { $awayTeam }, מושהה
+# An upcoming match row whose status is "cancelled".
+newtab-sports-widget-match-aria-label-upcoming-cancelled =
+    .aria-label = { $homeTeam } נגד { $awayTeam }, בוטל
+
+## Sports widget — team names (FIFA country codes)
+## Only includes names not adequately covered by standard country-code
+## internationalization tooling.
+
+newtab-sports-widget-team-name-label-bih =
+    .label = בוסניה-הרצגובינה
+newtab-sports-widget-team-name-label-civ =
+    .label = חוף השנהב
+newtab-sports-widget-team-name-label-cod =
+    .label = הרפובליקה הדמוקרטית של קונגו
+newtab-sports-widget-team-name-label-eng =
+    .label = אנגליה
+newtab-sports-widget-team-name-label-sco =
+    .label = סקוטלנד
+
+## Sports widget OMC messages
+## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
+
+newtab-sports-widget-message-wallpapers-title = חגגו את פתיחת המונדיאל עם תמונות רקע חדשות
+newtab-sports-widget-message-wallpapers-body = הכניסו לדפדפן שלכם אווירת יום משחק לטורניר.
+newtab-sports-widget-message-wallpapers-cta = בחירת תמונת רקע
+newtab-sports-widget-message-add-widgets-cta =
+    .label = הוספת ווידג'טים
+newtab-sports-widget-message-day-in-play-title = להישאר במשחק עם הווידג’טים של { -brand-product-name }
+newtab-sports-widget-message-day-in-play-body = מעקב אחרי המונדיאל, להישאר ממוקד במשימות, מעקב אחרי השעה ברחבי העולם ועוד.
+newtab-sports-widget-message-explore-widgets-cta =
+    .label = צפייה בווידג’טים
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
@@ -1040,6 +1178,19 @@ newtab-clock-widget-button-save = שמירה
 newtab-clock-widget-button-remove-clock =
     .title = הסרת שעון
     .aria-label = הסרת שעון
+# Accessible name for a clock row in the "Your clocks" management panel
+# when the row has no user-provided nickname. Read aloud by screen
+# readers when focus lands on the row.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+newtab-clock-widget-edit-item =
+    .aria-label = { $city }
+# Accessible name for a clock row when a user nickname has been set.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+#   $nickname (string) - The user-provided nickname for the row.
+newtab-clock-widget-edit-item-with-nickname =
+    .aria-label = { $city }, כינוי: { $nickname }
 newtab-clock-widget-add-clock-form =
     .aria-label = הוספת שעון
 newtab-clock-widget-edit-clock-form =
