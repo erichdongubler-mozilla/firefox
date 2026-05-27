@@ -635,6 +635,8 @@ extensions.on("startup", (type, extension) => {
 
 /* eslint-disable mozilla/balanced-listeners */
 extensions.on("page-shutdown", (type, context) => {
+  // The logic here aims to close extension tabs when an extension unloads, but
+  // due to lazy context creation, this does not always happen (bug 1399655).
   if (context.viewType == "tab") {
     const window = context.xulBrowser.documentGlobal;
     if (!windowTracker.isBrowserWindow(window)) {

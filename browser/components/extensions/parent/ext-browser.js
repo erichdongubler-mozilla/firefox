@@ -30,8 +30,8 @@ function isPrivateTab(nativeTab) {
 /* eslint-disable mozilla/balanced-listeners */
 extensions.on("uninstalling", (msg, extension) => {
   if (extension.uninstallURL) {
-    let browser = windowTracker.topWindow.gBrowser;
-    browser.addTab(extension.uninstallURL, {
+    let gBrowser = windowTracker.topWindow.gBrowser;
+    gBrowser.addTab(extension.uninstallURL, {
       relatedToCurrent: true,
       triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
         {}
@@ -41,19 +41,25 @@ extensions.on("uninstalling", (msg, extension) => {
 });
 
 extensions.on("page-shutdown", (type, context) => {
+  // The logic here aims to close extension tabs when an extension unloads, but
+  // due to lazy context creation, this does not always happen (bug 1399655).
   if (context.viewType == "tab") {
+    // Extension pages default to viewType "tab" unless specified otherwise,
+    // including the context for embedded options pages in about:addons.
     if (context.extension.id !== context.xulBrowser.contentPrincipal.addonId) {
       // Only close extension tabs.
-      // This check prevents about:addons from closing when it contains a
-      // WebExtension as an embedded inline options page.
+      // This check prevents us from closing a web page that embeds a
+      // privileged extension page, if we ever implement that (bug 1443253).
+      // See also: https://bugzilla.mozilla.org/show_bug.cgi?id=1443253#c17
       return;
     }
     let { gBrowser } = context.xulBrowser.documentGlobal;
-    if (gBrowser && gBrowser.getTabForBrowser) {
-      let nativeTab = gBrowser.getTabForBrowser(context.xulBrowser);
-      if (nativeTab) {
-        gBrowser.removeTab(nativeTab);
-      }
+    // gBrowser is sometimes null, e.g. with <browser> of embedded options
+    // pages inside about:addons. We do not want to close the about:addons tab,
+    // even if it contains a WebExtension as an embedded inline options page.
+    let nativeTab = gBrowser?.getTabForBrowser(context.xulBrowser);
+    if (nativeTab) {
+      gBrowser.removeTab(nativeTab);
     }
   }
 });
@@ -747,14 +753,11 @@ class TabTracker extends TabTrackerBase {
       };
     }
     let { gBrowser } = window;
-    // Some non-browser windows have gBrowser but not getTabForBrowser!
-    if (!gBrowser || !gBrowser.getTabForBrowser) {
+    if (!gBrowser) {
       if (window.top.document.documentURI === "about:addons") {
         // When we're loaded into a <browser> inside about:addons, we need to go up
         // one more level.
         browser = window.docShell.chromeEventHandler;
-
-        ({ gBrowser } = browser.documentGlobal);
       } else {
         return {
           tabId: -1,
