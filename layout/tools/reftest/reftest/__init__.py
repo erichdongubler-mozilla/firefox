@@ -64,7 +64,7 @@ class ReftestManifest:
         self.path = None
         self.dirs = set()
         self.files = set()
-        self.manifests = set()
+        self.manifests = {}
         self.tests = []
         self.finder = finder
 
@@ -98,6 +98,16 @@ class ReftestManifest:
 
         def add_test(file, annotations, referenced_test=None, skip_if=""):
             if RE_PROTOCOL.match(file):
+                test_cond = self.get_skip_if_for_mozinfo(skip_if, annotations)
+                info = self.manifests[normalized_path]
+                if info["tests_skip_if"] is None:
+                    info["tests_skip_if"] = test_cond
+                elif info["tests_skip_if"] and test_cond:
+                    ex_expr = info["tests_skip_if"].replace("\n", " || ")
+                    new_expr = test_cond.replace("\n", " || ")
+                    info["tests_skip_if"] = f"({ex_expr}) && ({new_expr})"
+                else:
+                    info["tests_skip_if"] = ""
                 return
             test = os.path.normpath(os.path.join(mdir, urlprefix + file))
             if test in self.files:
@@ -132,7 +142,20 @@ class ReftestManifest:
             self.tests.append(test_dict)
 
         normalized_path = os.path.normpath(os.path.abspath(path))
-        self.manifests.add(normalized_path)
+        if normalized_path not in self.manifests:
+            self.manifests[normalized_path] = {
+                "include_skip_if": parent_skip_if,
+                "tests_skip_if": None,
+            }
+        else:
+            info = self.manifests[normalized_path]
+            existing = info["include_skip_if"]
+            if existing and parent_skip_if:
+                ex_expr = existing.replace("\n", " || ")
+                new_expr = parent_skip_if.replace("\n", " || ")
+                info["include_skip_if"] = f"({ex_expr}) && ({new_expr})"
+            else:
+                info["include_skip_if"] = ""
         if not self.path:
             self.path = normalized_path
 

@@ -1459,7 +1459,7 @@ class RecursiveMakeBackend(MakeBackend):
             if isinstance(obj.manifest, ReftestManifest):
                 # Mark included files as part of the build backend so changes
                 # result in re-config.
-                self.backend_input_files |= obj.manifest.manifests
+                self.backend_input_files |= obj.manifest.manifests.keys()
         except ImportError:
             # Ignore errors caused by the reftest module not being present.
             # This can happen when building SpiderMonkey standalone, for example.
