@@ -1264,7 +1264,7 @@ index 7869bb3fa2..a85b7a6c1a 100644
  rtc_library("call_config_utils") {
    testonly = true
 diff --git a/video/BUILD.gn b/video/BUILD.gn
-index 0746a9b4dd..ea23199ae1 100644
+index 073f5e91fd..ab246db18a 100644
 --- a/video/BUILD.gn
 +++ b/video/BUILD.gn
 @@ -16,7 +16,7 @@ rtc_library("video_stream_encoder_interface") {
@@ -1276,7 +1276,7 @@ index 0746a9b4dd..ea23199ae1 100644
      "../api:scoped_refptr",
      "../api/adaptation:resource_adaptation_api",
      "../api/units:data_rate",
-@@ -436,7 +436,7 @@ rtc_library("video_stream_encoder_impl") {
+@@ -437,7 +437,7 @@ rtc_library("video_stream_encoder_impl") {
      "../api:rtc_error",
      "../api:rtp_packet_info",
      "../api:rtp_parameters",
