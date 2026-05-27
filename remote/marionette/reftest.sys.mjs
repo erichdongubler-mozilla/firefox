@@ -110,7 +110,6 @@ reftest.Runner = class {
     this.cacheScreenshots = cacheScreenshots;
 
     ChromeUtils.registerWindowActor("MarionetteReftest", {
-      kind: "JSWindowActor",
       parent: {
         esModuleURI:
           "chrome://remote/content/marionette/actors/MarionetteReftestParent.sys.mjs",

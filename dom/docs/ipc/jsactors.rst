@@ -394,7 +394,6 @@ Here's an example ``JSWindowActor`` registration pulled from ``BrowserGlue.sys.m
 .. code-block:: javascript
 
    Plugin: {
-      kind: "JSWindowActor",
       parent: {
         esModuleURI: "resource:///actors/PluginParent.sys.mjs",
       },
