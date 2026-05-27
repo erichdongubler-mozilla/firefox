@@ -554,7 +554,7 @@ index 88890be798..c9aefc297b 100644
  #include "rtc_base/memory/aligned_malloc.h"
  
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index dcdb269995..7372dec8f6 100644
+index 785318b5a2..bb6348eb50 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -76,7 +76,7 @@ rtc_library("rtc_media_base") {
@@ -668,7 +668,7 @@ index dcdb269995..7372dec8f6 100644
  
  rtc_library("rtc_simulcast_encoder_adapter") {
    visibility = [ "*" ]
-@@ -555,6 +580,11 @@ rtc_library("rtc_internal_video_codecs") {
+@@ -556,6 +581,11 @@ rtc_library("rtc_internal_video_codecs") {
      "//third_party/abseil-cpp/absl/container:inlined_vector",
      "//third_party/abseil-cpp/absl/strings",
    ]
@@ -680,7 +680,7 @@ index dcdb269995..7372dec8f6 100644
  
    if (enable_libaom) {
      defines += [ "RTC_USE_LIBAOM_AV1_ENCODER" ]
-@@ -574,6 +604,13 @@ rtc_library("rtc_internal_video_codecs") {
+@@ -575,6 +605,13 @@ rtc_library("rtc_internal_video_codecs") {
      "engine/internal_encoder_factory.cc",
      "engine/internal_encoder_factory.h",
    ]
