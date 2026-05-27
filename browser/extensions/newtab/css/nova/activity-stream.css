@@ -6485,23 +6485,12 @@ button.arrow-button:dir(rtl) {
   margin-block-start: var(--space-large);
 }
 .sports.sports-intro {
-  background-image: url("chrome://newtab/content/data/content/assets/worldcup-bg-large.png");
+  background-image: url("chrome://newtab/content/data/content/assets/foxtail-goal.png");
   background-repeat: no-repeat;
   background-size: cover;
 }
-@media (prefers-reduced-motion: no-preference) {
-  .sports.sports-intro:hover, .sports.sports-intro:focus-within {
-    background-image: url("chrome://newtab/content/data/content/assets/worldcup-gif-large.gif");
-  }
-}
 .sports.sports-intro.medium-widget {
-  background-image: url("chrome://newtab/content/data/content/assets/worldcup-bg-medium.png");
   background-position-y: 0;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .sports.sports-intro.medium-widget:hover, .sports.sports-intro.medium-widget:focus-within {
-    background-image: url("chrome://newtab/content/data/content/assets/worldcup-gif-medium.gif");
-  }
 }
 .sports.sports-follow-state .sports-title-wrapper {
   padding: var(--space-small);
@@ -6589,10 +6578,6 @@ button.arrow-button:dir(rtl) {
 }
 .sports-buttons-wrapper .sports-view-matches {
   margin-block-end: var(--space-small);
-}
-.sports-buttons-wrapper .sports-follow-teams-btn {
-  background: var(--newtab-background-color-secondary);
-  border-radius: var(--border-radius-xlarge);
 }
 
 .sports-follow-teams {
