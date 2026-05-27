@@ -201,6 +201,9 @@ class ProviderContextualSearch extends ActionsProvider {
    *   Load flags. See nsIWebProgressListener.idl for possible values.
    */
   async onLocationChange(window, uri, _webProgress, _flags) {
+    if (!uri.scheme.startsWith("http")) {
+      return;
+    }
     try {
       if (this.#visitedEngineDomains.has(uri.host)) {
         this.#visitedEngineDomains.set(uri.host, true);

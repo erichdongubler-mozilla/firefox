@@ -3807,12 +3807,15 @@ export class TranslationsParent extends JSWindowActorParent {
   /**
    * Called when the browser's location changes. This is only invoked for location
    * changes in the currently selected browser, not for background tabs.
-   *
-   * @param {object} browser
    */
-  static onLocationChange(browser) {
+  static onLocationChange(_window, _locationURI, webProgress, _flags) {
     if (!TranslationsParent.AIFeature.isEnabled) {
       // The pref isn't enabled, so don't attempt to get the actor.
+      return;
+    }
+
+    const browser = webProgress.browsingContext.embedderElement;
+    if (!browser) {
       return;
     }
 

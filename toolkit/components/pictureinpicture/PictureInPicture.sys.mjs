@@ -621,6 +621,18 @@ export var PictureInPicture = {
   },
 
   /**
+   * Dispatch entry point used by the `browser-window-location-change`
+   * category.
+   */
+  onLocationChange(_window, _locationURI, webProgress, _flags) {
+    const browser = webProgress.browsingContext.embedderElement;
+    if (!browser) {
+      return;
+    }
+    this.updateUrlbarToggle(browser);
+  },
+
+  /**
    * Toggles the visibility of the PiP urlbar button. If the total video count
    * is 1, then we will show the button. If any eligible video has PiPDisabled,
    * then the button will show. Otherwise the button is hidden.
