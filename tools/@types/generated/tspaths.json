@@ -328,9 +328,6 @@
       "chrome://browser/content/urlbar/UrlbarInput.mjs": [
         "../../../browser/components/urlbar/content/UrlbarInput.mjs"
       ],
-      "chrome://browser/content/urlbar/UrlbarView.mjs": [
-        "../../../browser/components/urlbar/content/UrlbarView.mjs"
-      ],
       "chrome://browser/content/webrtc/webrtc-preview.mjs": [
         "../../../browser/components/webrtc/content/webrtc-preview/webrtc-preview.mjs"
       ],

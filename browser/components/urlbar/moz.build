@@ -59,6 +59,7 @@ MOZ_SRC_FILES += [
     "UrlbarTokenizer.sys.mjs",
     "UrlbarUtils.sys.mjs",
     "UrlbarValueFormatter.sys.mjs",
+    "UrlbarView.sys.mjs",
 ]
 
 MOZ_SRC_FILES += [

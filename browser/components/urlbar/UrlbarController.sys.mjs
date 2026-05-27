@@ -8,7 +8,7 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
  * @import {BrowserSearchTelemetry} from "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs"
  * @import {ProvidersManager} from "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs"
  * @import {SapLocation, SmartbarInput} from "moz-src:///browser/components/urlbar/content/SmartbarInput.mjs"
- * @import {UrlbarView} from "chrome://browser/content/urlbar/UrlbarView.mjs"
+ * @import {UrlbarView} from "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs"
  * @import {WindowMode} from "moz-src:///browser/components/urlbar/content/UrlbarInput.mjs"
  */
 
