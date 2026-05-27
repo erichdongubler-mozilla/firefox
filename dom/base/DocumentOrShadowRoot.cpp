@@ -333,42 +333,6 @@ Element* DocumentOrShadowRoot::GetFullscreenElement() const {
   return Element::FromNodeOrNull(Retarget(element));
 }
 
-// https://w3c.github.io/picture-in-picture/#dom-documentorshadowroot-pictureinpictureelement
-// See: https://github.com/w3c/picture-in-picture/issues/248
-Element* DocumentOrShadowRoot::GetPictureInPictureElement() const {
-  // 1. If this is a shadow root and its host is not connected, return null.
-  if (const auto* shadow = ShadowRoot::FromNode(AsNode())) {
-    const Element* host = shadow->GetHost();
-    if (!host || !host->IsInComposedDoc()) {
-      return nullptr;
-    }
-  }
-
-  // 2. Let candidate be the result of retargeting Picture-in-Picture element
-  //    against this.
-  Element* candidate = Element::FromNodeOrNull(nsContentUtils::Retarget(
-      AsNode().OwnerDoc()->GetPictureInPictureElementInternal(), mAsNode));
-
-  // 3. If candidate is null, return null.
-  if (!candidate) {
-    return nullptr;
-  }
-
-  // 4. If candidate and this are in the same tree, return candidate.
-  if (candidate->SubtreeRoot() == &AsNode()) {
-    return candidate;
-  }
-
-  // 5. If this is a Document and candidate's node document is this, return
-  //    candidate.
-  if (AsNode().IsDocument() && candidate->OwnerDoc() == AsNode().AsDocument()) {
-    return candidate;
-  }
-
-  // 6. Return null.
-  return nullptr;
-}
-
 namespace {
 
 using FrameForPointOption = nsLayoutUtils::FrameForPointOption;
