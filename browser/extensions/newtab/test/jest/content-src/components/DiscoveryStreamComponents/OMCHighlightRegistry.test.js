@@ -126,4 +126,27 @@ describe("OMCHighlightRegistry", () => {
       expect(entry.dismiss).toBe(DISMISS_MODES.BLOCK);
     });
   });
+
+  describe("Non-World-Cup widgets popover entry", () => {
+    it("references the focus-and-forecasts l10n ids", () => {
+      const entry = OMC_HIGHLIGHT_REGISTRY.WidgetsCallout;
+      expect(entry.body.title.l10nId).toBe(
+        "newtab-widget-message-focus-forecasts-title"
+      );
+      expect(entry.body.subtitle.l10nId).toBe(
+        "newtab-widget-message-focus-forecasts-body"
+      );
+    });
+
+    it("uses BLOCK dismiss mode", () => {
+      const entry = OMC_HIGHLIGHT_REGISTRY.WidgetsCallout;
+      expect(entry.dismiss).toBe(DISMISS_MODES.BLOCK);
+    });
+
+    it("shares the widgets-callout className with the World Cup popover", () => {
+      const wc = OMC_HIGHLIGHT_REGISTRY.WorldCupWidgetsCallout;
+      const nonWc = OMC_HIGHLIGHT_REGISTRY.WidgetsCallout;
+      expect(nonWc.chrome.modalClassName).toBe(wc.chrome.modalClassName);
+    });
+  });
 });

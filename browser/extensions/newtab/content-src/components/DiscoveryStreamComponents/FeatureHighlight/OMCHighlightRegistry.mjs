@@ -29,6 +29,22 @@ export const OMC_HIGHLIGHT_REGISTRY = Object.freeze({
     },
     dismiss: DISMISS_MODES.BLOCK,
   },
+  WidgetsCallout: {
+    slot: SLOTS.WIDGETS_ROW,
+    shell: SHELLS.POPOVER,
+    chrome: {
+      position: "inset-block-start inset-inline-center",
+      modalClassName: "widgets-callout",
+    },
+    body: {
+      image: {
+        src: "chrome://newtab/content/data/content/assets/highlights/widget-non-worldcup.png",
+      },
+      title: { l10nId: "newtab-widget-message-focus-forecasts-title" },
+      subtitle: { l10nId: "newtab-widget-message-focus-forecasts-body" },
+    },
+    dismiss: DISMISS_MODES.BLOCK,
+  },
 });
 
 export const getRegistryEntry = messageType => {
