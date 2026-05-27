@@ -6,7 +6,7 @@
 
 use firefox_on_glean::metrics::netwerk as glean;
 use std::collections::HashMap;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 struct DnsInfo {
     start: Instant,
@@ -18,8 +18,13 @@ struct ConnInfo {
 }
 
 enum Outcome {
-    Succeeded(ConnInfo),
-    Failed,
+    Succeeded {
+        info: ConnInfo,
+        elapsed: Duration,
+    },
+    Failed {
+        elapsed: Duration,
+    },
 }
 
 pub(crate) struct Metrics {
@@ -102,12 +107,17 @@ impl Metrics {
 
     pub(crate) fn connection_succeeded(&mut self, id: happy_eyeballs::Id) {
         if let Some(info) = self.conn_infos.remove(&id) {
-            self.outcome = Some(Outcome::Succeeded(info));
+            self.outcome = Some(Outcome::Succeeded {
+                info,
+                elapsed: self.start.elapsed(),
+            });
         }
     }
 
     pub(crate) fn failed(&mut self) {
-        self.outcome = Some(Outcome::Failed);
+        self.outcome = Some(Outcome::Failed {
+            elapsed: self.start.elapsed(),
+        });
     }
 }
 
@@ -117,7 +127,10 @@ impl Drop for Metrics {
             return;
         };
 
-        let elapsed_ms = self.start.elapsed().as_millis() as i64;
+        let elapsed = match outcome {
+            Outcome::Succeeded { elapsed, .. } | Outcome::Failed { elapsed } => *elapsed,
+        };
+        let elapsed_ms = elapsed.as_millis() as i64;
         glean::happy_eyeballs_connection_establishment_time
             .accumulate_single_sample_signed(elapsed_ms);
 
@@ -127,7 +140,7 @@ impl Drop for Metrics {
         glean::happy_eyeballs_cancelled_attempt_count
             .accumulate_single_sample_signed(self.cancelled_count.into());
 
-        if let Outcome::Succeeded(info) = outcome {
+        if let Outcome::Succeeded { info, .. } = outcome {
             glean::happy_eyeballs_winning_attempt_index
                 .accumulate_single_sample_signed(info.index.into());
         }
