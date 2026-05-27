@@ -248,6 +248,24 @@ def test_push_to_try(repo, monkeypatch):
     assert len(captured_inputs) == len(expected_inputs)
 
 
+def test_push_to_git_try(repo, mocker):
+    if repo.vcs not in ("git", "jj"):
+        pytest.skip("pushing to git try only applies to git/jj")
+
+    vcs = get_repository_object(repo.dir)
+    remote = "upstream"
+
+    mock_try_commit = mocker.patch.object(vcs, "try_commit")
+    mock_try_commit.return_value.__enter__.return_value = "fakehead"
+    mock_push = mocker.patch.object(vcs, "push")
+
+    vcs.push_to_try("msg", remote=remote)
+
+    mock_push.assert_called_once_with(
+        remote, ref="fakehead", dest_branch="master", force=True
+    )
+
+
 def test_push_to_try_missing_extensions(repo, monkeypatch):
     if repo.vcs not in ("git", "jj"):
         return

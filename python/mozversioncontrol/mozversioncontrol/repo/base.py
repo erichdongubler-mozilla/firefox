@@ -15,6 +15,8 @@ from mozfile import which
 
 from mozversioncontrol.errors import MissingVCSInfo, MissingVCSTool
 
+HG_TRY_URL = "ssh://hg.mozilla.org/try"
+
 
 def get_tool_path(tool: Optional[Union[str, Path]] = None):
     """Obtain the path of `tool`."""
@@ -309,6 +311,7 @@ class Repository(abc.ABC):
         self,
         message: str,
         changed_files: dict[str, str] = {},
+        remote: str = HG_TRY_URL,
         allow_log_capture: bool = False,
     ):
         """Create a temporary commit, push it to try and clean it up

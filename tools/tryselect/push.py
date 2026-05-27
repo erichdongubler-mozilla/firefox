@@ -246,17 +246,12 @@ def push_to_try(
     metrics.mach_try.commit_prep.stop()
     try:
         if push_to_vcs:
-            if _is_hg_try():
-                vcs.push_to_try(
-                    commit_message,
-                    changed_files=changed_files,
-                    allow_log_capture=allow_log_capture,
-                )
-            else:
-                with vcs.try_commit(commit_message, changed_files) as head:
-                    vcs.push(
-                        MACH_TRY_REMOTE, ref=head, dest_branch=vcs.branch, force=True
-                    )
+            vcs.push_to_try(
+                commit_message,
+                changed_files=changed_files,
+                allow_log_capture=allow_log_capture,
+                remote=MACH_TRY_REMOTE,
+            )
         else:
             push_data = push_to_lando_try(
                 vcs,
