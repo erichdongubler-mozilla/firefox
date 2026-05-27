@@ -42,7 +42,7 @@ SETUP = {
         echo "bar" > bar
         git init -b master
         git config user.name "Testing McTesterson"
-        git config user.email "<test@example.org>"
+        git config user.email "test@example.org"
         git add *
         git commit -am "Initial commit"
         """,
@@ -58,7 +58,7 @@ SETUP = {
         echo "bar" > bar
         git init -b master
         git config user.name "Testing McTesterson"
-        git config user.email "<test@example.org>"
+        git config user.email "test@example.org"
         git add *
         git commit -am "Initial commit"
         jj git init --colocate

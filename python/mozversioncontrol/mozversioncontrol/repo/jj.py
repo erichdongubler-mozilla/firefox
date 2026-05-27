@@ -392,6 +392,14 @@ class JujutsuRepository(Repository):
             ).strip()
             self._run("bookmark", "create", dest_branch, "-r", self.HEAD_REVSET)
 
+        email = self.get_user_email()
+        if not email:
+            raise ValueError(
+                "user.email is not configured; run 'jj config set user.email <email>'"
+            )
+        prefix = email.split("@", 1)[0]
+        if not dest_branch.startswith(prefix + "/"):
+            dest_branch = f"{prefix}/{dest_branch}"
         with self.try_commit(message, changed_files) as head:
             self.push(
                 remote,

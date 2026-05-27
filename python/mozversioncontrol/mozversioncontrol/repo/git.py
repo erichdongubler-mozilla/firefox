@@ -369,11 +369,24 @@ class GitRepository(Repository):
         subprocess.check_call(cmd, cwd=self.path, env=env)
 
     def _push_to_git_try(self, message, changed_files, remote):
+        dest_branch = self.branch
+        if not dest_branch:
+            raise ValueError(
+                "Cannot push to try from a detached HEAD; checkout a branch first."
+            )
+        email = self.get_user_email()
+        if not email:
+            raise ValueError(
+                "user.email is not configured; run 'git config user.email <email>'"
+            )
+        prefix = email.split("@", 1)[0]
+        if not dest_branch.startswith(prefix + "/"):
+            dest_branch = f"{prefix}/{dest_branch}"
         with self.try_commit(message, changed_files) as head:
             self.push(
                 remote,
                 ref=head,
-                dest_branch=self.branch,
+                dest_branch=dest_branch,
                 force=True,
             )
 

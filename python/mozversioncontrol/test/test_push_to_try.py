@@ -262,7 +262,7 @@ def test_push_to_git_try(repo, mocker):
     vcs.push_to_try("msg", remote=remote)
 
     mock_push.assert_called_once_with(
-        remote, ref="fakehead", dest_branch="master", force=True
+        remote, ref="fakehead", dest_branch="test/master", force=True
     )
 
 
@@ -278,6 +278,8 @@ def test_push_to_git_try_creates_bookmark(repo, mocker):
     )
 
     def fake_run_read_only(*args, **kwargs):
+        if args[:3] == ("config", "get", "user.email"):
+            return "test@example.org"
         if args[0] == "config":
             return ""
         if args[0] == "log":
@@ -296,7 +298,7 @@ def test_push_to_git_try_creates_bookmark(repo, mocker):
         "bookmark", "create", "push-abc123", "-r", vcs.HEAD_REVSET
     )
     mock_push.assert_called_once_with(
-        remote, ref="fakehead", dest_branch="push-abc123", force=True
+        remote, ref="fakehead", dest_branch="test/push-abc123", force=True
     )
 
 
