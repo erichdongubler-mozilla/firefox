@@ -236,12 +236,12 @@ static bool GetModuleType(JSContext* cx,
       else if (JS::Prefs::experimental_import_bytes() &&
                js::EqualStrings(typeStr, cx->names().bytes)) {
         moduleType = JS::ModuleType::Bytes;
-      } else if (JS::Prefs::experimental_import_text() &&
-                 js::EqualStrings(typeStr, cx->names().text)) {
-        moduleType = JS::ModuleType::Text;
       }
 #endif
-      else {
+      else if (JS::Prefs::experimental_import_text() &&
+               js::EqualStrings(typeStr, cx->names().text)) {
+        moduleType = JS::ModuleType::Text;
+      } else {
         moduleType = JS::ModuleType::Unknown;
       }
 

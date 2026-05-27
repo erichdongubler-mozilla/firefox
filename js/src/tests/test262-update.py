@@ -39,7 +39,6 @@ FEATURE_CHECK_NEEDED = {
 RELEASE_OR_BETA = set([
     "legacy-regexp",
     "import-bytes",
-    "import-text",
 ])
 SHELL_OPTIONS = {
     "symbols-as-weakmap-keys": "--enable-symbols-as-weakmap-keys",

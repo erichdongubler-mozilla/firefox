@@ -1071,12 +1071,10 @@ CompareNetwork::OnStreamComplete(nsIStreamLoader* aLoader,
     mRegistration->RefreshLastUpdateCheckTime();
   }
 
-#ifdef NIGHTLY_BUILD
   nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
   if (!JS::Prefs::experimental_import_text() ||
       (loadInfo->GetExternalContentPolicyType() !=
        ExtContentPolicyType::TYPE_TEXT)) {
-#endif
     nsAutoCString mimeType;
     rv = httpChannel->GetContentType(mimeType);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -1099,9 +1097,7 @@ CompareNetwork::OnStreamComplete(nsIStreamLoader* aLoader,
       rv = NS_ERROR_DOM_SECURITY_ERR;
       return rv;
     }
-#ifdef NIGHTLY_BUILD
   }
-#endif
 
   nsCOMPtr<nsIURI> channelURL;
   rv = httpChannel->GetURI(getter_AddRefs(channelURL));

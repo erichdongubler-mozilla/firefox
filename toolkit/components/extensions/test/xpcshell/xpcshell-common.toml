@@ -879,9 +879,6 @@ skip-if = [
 
 ["test_ext_webRequest_type_text.js"]
 prefs = ["javascript.options.experimental.import_text=true"]
-skip-if = [
-  "!nightly_build",
-]
 
 ["test_ext_webRequest_userContextId.js"]
 

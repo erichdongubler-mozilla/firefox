@@ -13313,6 +13313,9 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
   if (op.getBoolOption("enable-legacy-regexp")) {
     JS::Prefs::set_experimental_legacy_regexp(true);
   }
+  if (op.getBoolOption("enable-import-text")) {
+    JS::Prefs::set_experimental_import_text(true);
+  }
 #ifdef NIGHTLY_BUILD
   if (op.getBoolOption("enable-async-iterator-helpers")) {
     JS::Prefs::setAtStartup_experimental_async_iterator_helpers(true);
@@ -13328,9 +13331,6 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
   }
   if (op.getBoolOption("enable-import-bytes")) {
     JS::Prefs::setAtStartup_experimental_import_bytes(true);
-  }
-  if (op.getBoolOption("enable-import-text")) {
-    JS::Prefs::set_experimental_import_text(true);
   }
   if (op.getBoolOption("enable-promise-allkeyed")) {
     JS::Prefs::setAtStartup_experimental_promise_allkeyed(true);

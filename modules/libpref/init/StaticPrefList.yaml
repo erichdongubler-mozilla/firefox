@@ -9379,6 +9379,13 @@
   mirror: always
   set_spidermonkey_pref: always
 
+  # Experimental support for import text in JavaScript.
+- name: javascript.options.experimental.import_text
+  type: bool
+  value: false
+  mirror: always
+  set_spidermonkey_pref: always
+
 #ifdef NIGHTLY_BUILD
   # Experimental support for Async Iterator Helpers in JavaScript.
 -   name: javascript.options.experimental.async_iterator_helpers
@@ -9407,13 +9414,6 @@
   value: false
   mirror: always
   set_spidermonkey_pref: startup
-
-  # Experimental support for import text in JavaScript.
-- name: javascript.options.experimental.import_text
-  type: bool
-  value: false
-  mirror: always
-  set_spidermonkey_pref: always
 
   # Experimental support for Promise.allKeyed in JavaScript.
 - name: javascript.options.experimental.promise_allkeyed
