@@ -2122,10 +2122,7 @@ void PeerConnectionImpl::GetDefaultRtpExtensions(
   aRtpExtensions.push_back(std::move(playoutDelay));
 
   RtpExtensionHeader transportSequenceNumber = {
-      GetDefaultCodecPreferences().UseAudioTransportCC()
-          ? JsepMediaType::kAudioVideo
-          : JsepMediaType::kVideo,
-      SdpDirectionAttribute::Direction::kSendrecv,
+      JsepMediaType::kVideo, SdpDirectionAttribute::Direction::kSendrecv,
       webrtc::RtpExtension::kTransportSequenceNumberUri};
   aRtpExtensions.push_back(std::move(transportSequenceNumber));
 }

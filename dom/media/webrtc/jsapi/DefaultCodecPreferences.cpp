@@ -100,10 +100,6 @@ bool DefaultCodecPreferences::UseTransportCCStatic() {
   return StaticPrefs::media_navigator_video_use_transport_cc();
 }
 
-bool DefaultCodecPreferences::UseAudioTransportCCStatic() {
-  return StaticPrefs::media_navigator_audio_use_transport_cc();
-}
-
 bool DefaultCodecPreferences::UseAudioFecStatic() {
   return StaticPrefs::media_navigator_audio_use_fec();
 }
@@ -162,11 +158,11 @@ void EnumerateDefaultAudioCodecs(
   aSupportedCodecs.AppendElement(
       JsepAudioCodecDescription::CreateDefaultOpus(aPrefs));
   aSupportedCodecs.AppendElement(
-      JsepAudioCodecDescription::CreateDefaultG722(aPrefs));
+      JsepAudioCodecDescription::CreateDefaultG722());
   aSupportedCodecs.AppendElement(
-      JsepAudioCodecDescription::CreateDefaultPCMU(aPrefs));
+      JsepAudioCodecDescription::CreateDefaultPCMU());
   aSupportedCodecs.AppendElement(
-      JsepAudioCodecDescription::CreateDefaultPCMA(aPrefs));
+      JsepAudioCodecDescription::CreateDefaultPCMA());
   aSupportedCodecs.AppendElement(
       JsepAudioCodecDescription::CreateDefaultTelephoneEvent());
 }

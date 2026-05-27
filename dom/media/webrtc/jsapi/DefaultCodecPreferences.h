@@ -77,8 +77,6 @@ class DefaultCodecPreferences final : public JsepCodecPreferences {
 
   bool UseTransportCC() const override { return mUseTransportCC; }
 
-  bool UseAudioTransportCC() const override { return mUseAudioTransportCC; }
-
   bool UseAudioFec() const override { return mUseAudioFec; }
 
   bool RedUlpfecEnabled() const override { return mRedUlpfecEnabled; }
@@ -119,8 +117,6 @@ class DefaultCodecPreferences final : public JsepCodecPreferences {
 
   static bool UseTransportCCStatic();
 
-  static bool UseAudioTransportCCStatic();
-
   static bool UseAudioFecStatic();
 
   static bool RedUlpfecEnabledStatic();
@@ -149,7 +145,6 @@ class DefaultCodecPreferences final : public JsepCodecPreferences {
   const bool mUseRemb = UseRembStatic();
   const bool mUseRtx = UseRtxStatic();
   const bool mUseTransportCC = UseTransportCCStatic();
-  const bool mUseAudioTransportCC = UseAudioTransportCCStatic();
   const bool mUseAudioFec = UseAudioFecStatic();
   const bool mRedUlpfecEnabled = RedUlpfecEnabledStatic();
 };
