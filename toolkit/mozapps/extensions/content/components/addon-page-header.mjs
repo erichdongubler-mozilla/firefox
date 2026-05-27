@@ -18,12 +18,15 @@ class AddonPageHeader extends AboutAddonsHTMLElement {
             <search-addons></search-addons>
           </div>
           <div class="main-heading">
-            <button
+            <moz-button
+              type="ghost"
+              iconsrc="chrome://global/skin/icons/arrow-left.svg"
+              size="default"
               class="back-button"
               action="go-back"
               data-l10n-id="header-back-button"
               hidden
-            ></button>
+            ></moz-button>
             <h1 class="header-name"></h1>
             <div class="spacer"></div>
             <addon-updates-message
