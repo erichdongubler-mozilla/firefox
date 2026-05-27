@@ -7,9 +7,11 @@ skip-if = [
 support-files = [
   "file_autoplay.html",
   "file_audio_and_inaudible_media.html",
+  "file_audiocontext_iframe.html",
   "file_empty_title.html",
   "file_error_media.html",
   "file_iframe_media.html",
+  "file_named_media_session.html",
   "file_main_frame_with_multiple_child_session_frames.html",
   "file_multiple_audible_media.html",
   "file_muted_autoplay.html",
@@ -17,6 +19,7 @@ support-files = [
   "file_non_autoplay.html",
   "file_non_eligible_media.html",
   "file_non_looping_media.html",
+  "file_speech_iframe.html",
   "file_web_audio.html",
   "file_web_speech.html",
   "head.js",
@@ -98,3 +101,5 @@ skip-if = [
 ["browser_suspend_inactive_tab.js"]
 
 ["browser_uncontrollable_audio_focus.js"]
+
+["browser_uncontrollable_iframe_preserves_active_session.js"]
