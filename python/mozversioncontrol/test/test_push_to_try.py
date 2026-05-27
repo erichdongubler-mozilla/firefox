@@ -266,6 +266,70 @@ def test_push_to_git_try(repo, mocker):
     )
 
 
+def test_push_to_git_try_creates_bookmark(repo, mocker):
+    if repo.vcs != "jj":
+        pytest.skip("bookmark creation only applies to jj")
+
+    vcs = get_repository_object(repo.dir)
+    remote = "upstream"
+
+    mocker.patch.object(
+        type(vcs), "branch", new_callable=mocker.PropertyMock, return_value=None
+    )
+
+    def fake_run_read_only(*args, **kwargs):
+        if args[0] == "config":
+            return ""
+        if args[0] == "log":
+            return "push-abc123\n"
+        return ""
+
+    mocker.patch.object(vcs, "_run_read_only", side_effect=fake_run_read_only)
+    mock_run = mocker.patch.object(vcs, "_run")
+    mock_try_commit = mocker.patch.object(vcs, "try_commit")
+    mock_try_commit.return_value.__enter__.return_value = "fakehead"
+    mock_push = mocker.patch.object(vcs, "push")
+
+    vcs.push_to_try("msg", remote=remote)
+
+    mock_run.assert_called_once_with(
+        "bookmark", "create", "push-abc123", "-r", vcs.HEAD_REVSET
+    )
+    mock_push.assert_called_once_with(
+        remote, ref="fakehead", dest_branch="push-abc123", force=True
+    )
+
+
+def test_push_to_git_try_bookmark_persists(repo, mocker):
+    if repo.vcs != "jj":
+        pytest.skip("bookmark persistence only applies to jj")
+
+    subprocess.check_call(
+        ["jj", "new", "-m", "test commit"],
+        cwd=repo.dir,
+        env={**os.environ, "JJ_CONFIG": ""},
+    )
+
+    vcs = get_repository_object(repo.dir)
+    assert vcs.branch is None
+
+    mocker.patch.object(vcs, "push")
+
+    vcs._push_to_git_try("msg", {}, "upstream")
+
+    output = vcs._run_read_only(
+        "log",
+        "--no-graph",
+        "-n1",
+        "-r",
+        "@",
+        "-T",
+        'local_bookmarks.join("\n")',
+    )
+    bookmark = output.split("\n")[0].strip()
+    assert bookmark.startswith("push-")
+
+
 def test_push_to_try_missing_extensions(repo, monkeypatch):
     if repo.vcs not in ("git", "jj"):
         return

@@ -142,15 +142,16 @@ class JujutsuRepository(Repository):
 
     @property
     def branch(self):
-        bookmark = self._run_read_only(
+        output = self._run_read_only(
             "log",
             "--no-graph",
             "-n1",
             "-r",
             self.HEAD_REVSET,
             "-T",
-            'if(local_bookmarks, local_bookmarks.first(), "")',
-        ).strip()
+            'local_bookmarks.join("\n")',
+        )
+        bookmark = output.split("\n")[0].strip()
         return bookmark or None
 
     @property
@@ -378,6 +379,19 @@ class JujutsuRepository(Repository):
 
     def _push_to_git_try(self, message, changed_files, remote):
         dest_branch = self.branch
+        if not dest_branch:
+            # Replicate `jj git push -c` and create a new bookmark
+            template = (
+                self._run_read_only(
+                    "config", "get", "templates.git_push_bookmark", return_codes=[0, 1]
+                ).strip()
+                or '"push-" ++ change_id.short()'
+            )
+            dest_branch = self._run_read_only(
+                "log", "--no-graph", "-n1", "-r", self.HEAD_REVSET, "-T", template
+            ).strip()
+            self._run("bookmark", "create", dest_branch, "-r", self.HEAD_REVSET)
+
         with self.try_commit(message, changed_files) as head:
             self.push(
                 remote,
