@@ -1222,6 +1222,22 @@ features:
         value:
           enabled: false
 
+  voice-search-in-display-mode:
+    description: Controls whether the voice search entry point is shown in the display-mode browser toolbar.
+    variables:
+      enabled:
+        description: If true, voice search is shown in the display toolbar.
+        type: Boolean
+        default: false
+    defaults:
+      - channel: developer
+        value:
+          enabled: true
+      - channel: nightly
+        value:
+          enabled: true
+
+
   homepage-sports-widget:
     description: Feature to enable Homepage Sports Widget for users on Firefox on Android.
     variables:
