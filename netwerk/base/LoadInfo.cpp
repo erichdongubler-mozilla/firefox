@@ -2085,8 +2085,7 @@ void LoadInfo::UpdateParentAddressSpaceInfo() {
   if (!bc) {
     // For workers, read the IP address space from the policy container
     // which was propagated from the parent document.
-    if (mClientInfo.isSome() &&
-        mClientInfo->Type() != ClientType::Window) {
+    if (mClientInfo.isSome() && mClientInfo->Type() != ClientType::Window) {
       nsCOMPtr<nsIPolicyContainer> policyContainer = GetPolicyContainer();
       if (policyContainer) {
         mParentIpAddressSpace =
