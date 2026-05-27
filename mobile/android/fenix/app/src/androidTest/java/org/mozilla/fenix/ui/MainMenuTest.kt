@@ -113,6 +113,11 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080133
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifySwitchToDesktopSiteIsDisabledOnPDFsTest"],
+        bug = 2041624,
+        since = "2026-05",
+    )
     @SmokeTest
     @Test
     fun verifySwitchToDesktopSiteIsDisabledOnPDFsTest() {

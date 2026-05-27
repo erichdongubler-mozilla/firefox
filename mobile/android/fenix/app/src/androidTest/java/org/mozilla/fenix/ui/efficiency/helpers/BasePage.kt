@@ -8,6 +8,8 @@ import android.util.Log
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasAnySibling
@@ -30,6 +32,7 @@ import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.hasSibling
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.isEnabled
 import androidx.test.espresso.matcher.ViewMatchers.isNotSelected
 import androidx.test.espresso.matcher.ViewMatchers.isSelected
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
@@ -38,6 +41,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiObject
 import androidx.test.uiautomator.UiSelector
+import org.hamcrest.CoreMatchers.not
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
@@ -532,6 +536,52 @@ abstract class BasePage(
             is SemanticsNodeInteraction -> {
                 try {
                     element.assertExists(); element.assertIsNotSelected(); true
+                } catch (_: AssertionError) {
+                    false
+                }
+            }
+            else -> false
+        }
+    }
+
+    fun mozVerifyElementIsEnabled(selector: Selector, applyPreconditions: Boolean = true): Boolean {
+        val element = mozGetElement(selector, applyPreconditions = applyPreconditions)
+
+        return when (element) {
+            is ViewInteraction -> {
+                try {
+                    element.check(matches(isEnabled())); true
+                } catch (_: Exception) {
+                    false
+                }
+            }
+            is UiObject -> element.isEnabled
+            is SemanticsNodeInteraction -> {
+                try {
+                    element.assertExists(); element.assertIsEnabled(); true
+                } catch (_: AssertionError) {
+                    false
+                }
+            }
+            else -> false
+        }
+    }
+
+    fun mozVerifyElementIsNotEnabled(selector: Selector, applyPreconditions: Boolean = true): Boolean {
+        val element = mozGetElement(selector, applyPreconditions = applyPreconditions)
+
+        return when (element) {
+            is ViewInteraction -> {
+                try {
+                    element.check(matches(not(isEnabled()))); true
+                } catch (_: Exception) {
+                    false
+                }
+            }
+            is UiObject -> element.isEnabled.not()
+            is SemanticsNodeInteraction -> {
+                try {
+                    element.assertExists(); element.assertIsNotEnabled(); true
                 } catch (_: AssertionError) {
                     false
                 }

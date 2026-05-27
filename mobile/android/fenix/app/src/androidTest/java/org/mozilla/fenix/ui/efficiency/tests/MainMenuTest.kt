@@ -8,6 +8,7 @@ import org.junit.Ignore
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.pdfFormAsset
 import org.mozilla.fenix.helpers.TestHelper.exitMenu
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 import org.mozilla.fenix.ui.efficiency.selectors.BookmarksSelectors
@@ -125,5 +126,16 @@ class MainMenuTest : BaseTest() {
             .mozClick(NAVIGATE_BACK_BUTTON)
         on.browserPage
             .verifyPageContent(testPage.content)
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080133
+    @SmokeTest
+    @Test
+    fun verifySwitchToDesktopSiteIsDisabledOnPDFsTest() {
+        val pdfPage = mockWebServer.pdfFormAsset
+
+        on.browserPage.navigateToPage(pdfPage.url.toString())
+        on.mainMenu.navigateToPage()
+            .mozVerifyElementIsNotEnabled(MainMenuSelectors.DESKTOP_SITE_BUTTON)
     }
 }
