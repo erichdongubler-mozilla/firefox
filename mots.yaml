@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-05-22T18:36:11.106125+00:00'
+updated_at: '2026-05-24T22:47:50.129291+00:00'
 export:
   path: ./docs/mots/index.rst
   format: rst
@@ -3778,6 +3778,10 @@ modules:
           - browser/components/aboutwelcome/**/*
           - browser/components/uitour/**/*
           - toolkit/components/messaging-system/**/*
+          - browser/components/asrouter/docs/**/*
+          - browser/components/aboutwelcome/docs/**/*
+          - toolkit/components/messaging-system/schemas/**/*
+          - browser/components/uitour/docs/**/*
         meta:
           components:
             - Firefox::Messaging System
@@ -4762,5 +4766,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: a62367011c85a471d59303209aee8f27ef627789
-  export: a8da8ed8eb8dee98c82bf230b64b7bd6f6dd93ea
+  config: 9fc88664ec5478b2ba31c1b310d3506c122e464f
+  export: 53b297b8f1d8ed1f07883ef9e50c2a6d04f424b1
