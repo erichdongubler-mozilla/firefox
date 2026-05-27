@@ -36,7 +36,8 @@ InputQueue::~InputQueue() { mQueuedInputs.Clear(); }
 APZEventResult InputQueue::ReceiveInputEvent(
     const RefPtr<AsyncPanZoomController>& aTarget,
     TargetConfirmationFlags aFlags, InputData& aEvent,
-    const Maybe<nsTArray<TouchBehaviorFlags>>& aTouchBehaviors) {
+    const Maybe<nsTArray<TouchBehaviorFlags>>& aTouchBehaviors,
+    InitialTouchMove aInitialTouchMove) {
   APZThreadUtils::AssertOnControllerThread();
 
   AutoRunImmediateTimeout timeoutRunner{this};
@@ -44,7 +45,8 @@ APZEventResult InputQueue::ReceiveInputEvent(
   switch (aEvent.mInputType) {
     case MULTITOUCH_INPUT: {
       const MultiTouchInput& event = aEvent.AsMultiTouchInput();
-      return ReceiveTouchInput(aTarget, aFlags, event, aTouchBehaviors);
+      return ReceiveTouchInput(aTarget, aFlags, event, aTouchBehaviors,
+                               aInitialTouchMove);
     }
 
     case SCROLLWHEEL_INPUT: {
@@ -103,7 +105,8 @@ APZEventResult InputQueue::ReceiveInputEvent(
 APZEventResult InputQueue::ReceiveTouchInput(
     const RefPtr<AsyncPanZoomController>& aTarget,
     TargetConfirmationFlags aFlags, const MultiTouchInput& aEvent,
-    const Maybe<nsTArray<TouchBehaviorFlags>>& aTouchBehaviors) {
+    const Maybe<nsTArray<TouchBehaviorFlags>>& aTouchBehaviors,
+    InitialTouchMove aInitialTouchMove) {
   APZEventResult result(aTarget, aFlags);
 
   RefPtr<TouchBlockState> block;

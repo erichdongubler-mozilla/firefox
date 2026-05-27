@@ -2088,6 +2088,7 @@ void APZCTreeManager::ProcessTouchInput(InputHandlingState& aState,
   aInput.mHandledByAPZ = true;
   nsTArray<TouchBehaviorFlags> touchBehaviors;
   HitTestingTreeNodeAutoLock hitScrollbarNode;
+  InitialTouchMove initialTouchMove = InitialTouchMove::No;
   if (aInput.mType == MultiTouchInput::MULTITOUCH_START) {
     // If we are panned into overscroll and a second finger goes down,
     // ignore that second touch point completely. The touch-start for it is
@@ -2139,6 +2140,10 @@ void APZCTreeManager::ProcessTouchInput(InputHandlingState& aState,
     APZCTM_LOG("Re-using APZC %p as continuation of event block\n",
                mTouchBlockHitResult.mTargetApzc.get());
     RecursiveMutexAutoLock lock(mTreeLock);
+    if (aInput.mType == MultiTouchInput::MULTITOUCH_MOVE &&
+        !mTouchCounter.HasSeenFirstMove()) {
+      initialTouchMove = InitialTouchMove::Yes;
+    }
     aState.mHit = mHitTester->CloneHitTestResult(lock, mTouchBlockHitResult);
   }
 
@@ -2181,7 +2186,8 @@ void APZCTreeManager::ProcessTouchInput(InputHandlingState& aState,
           mTouchBlockHitResult.mTargetApzc,
           TargetConfirmationFlags{mTouchBlockHitResult.mHitResult}, aInput,
           touchBehaviors.IsEmpty() ? Nothing()
-                                   : Some(std::move(touchBehaviors)));
+                                   : Some(std::move(touchBehaviors)),
+          initialTouchMove);
 
       // For computing the event to pass back to Gecko, use up-to-date
       // transforms (i.e. not anything cached in an input block). This ensures
