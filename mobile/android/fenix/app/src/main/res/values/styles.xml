@@ -46,14 +46,13 @@
 
         <item name="mozacProtectionsDashboardBackground" tools:ignore="UnusedResources">@color/protections_dashboard_background</item>
         <item name="mozacProtectionsDashboardTextPrimary" tools:ignore="UnusedResources">@color/protections_dashboard_text_primary</item>
+        <item name="mozacProtectionsDashboardTextSecondary" tools:ignore="UnusedResources">@color/protections_dashboard_text_secondary</item>
         <item name="mozacProtectionsDashboardTextAccent" tools:ignore="UnusedResources">@color/protections_dashboard_text_accent</item>
         <item name="mozacProtectionsDashboardChipBackground" tools:ignore="UnusedResources">@color/protections_dashboard_chip_background</item>
         <item name="mozacProtectionsDashboardChipText" tools:ignore="UnusedResources">@color/protections_dashboard_chip_text</item>
-        <item name="mozacProtectionsDashboardWaveGradient1" tools:ignore="UnusedResources">@color/protections_dashboard_wave_gradient1</item>
-        <item name="mozacProtectionsDashboardWaveGradient2" tools:ignore="UnusedResources">@color/protections_dashboard_wave_gradient2</item>
-        <item name="mozacProtectionsDashboardWaveGradient3" tools:ignore="UnusedResources">@color/protections_dashboard_wave_gradient3</item>
-        <item name="mozacProtectionsDashboardWaveGradient4" tools:ignore="UnusedResources">@color/protections_dashboard_wave_gradient4</item>
         <item name="mozacProtectionsDashboardProgressBar" tools:ignore="UnusedResources">@color/protections_dashboard_progress_bar</item>
+        <item name="mozacProtectionsDashboardGradientStart" tools:ignore="UnusedResources">@color/protections_dashboard_gradient_start</item>
+        <item name="mozacProtectionsDashboardGradientEnd" tools:ignore="UnusedResources">@color/protections_dashboard_gradient_end</item>
 
         <!-- Material3 -->
         <item name="colorPrimary">@color/fx_mobile_primary</item>
@@ -337,14 +336,13 @@
 
         <item name="mozacProtectionsDashboardBackground" tools:ignore="UnusedResources">@color/protections_dashboard_background_private</item>
         <item name="mozacProtectionsDashboardTextPrimary" tools:ignore="UnusedResources">@color/protections_dashboard_text_primary_private</item>
+        <item name="mozacProtectionsDashboardTextSecondary" tools:ignore="UnusedResources">@color/protections_dashboard_text_secondary_private</item>
         <item name="mozacProtectionsDashboardTextAccent" tools:ignore="UnusedResources">@color/protections_dashboard_text_accent_private</item>
         <item name="mozacProtectionsDashboardChipBackground" tools:ignore="UnusedResources">@color/protections_dashboard_chip_background_private</item>
         <item name="mozacProtectionsDashboardChipText" tools:ignore="UnusedResources">@color/protections_dashboard_chip_text_private</item>
-        <item name="mozacProtectionsDashboardWaveGradient1" tools:ignore="UnusedResources">@color/protections_dashboard_wave_gradient1_private</item>
-        <item name="mozacProtectionsDashboardWaveGradient2" tools:ignore="UnusedResources">@color/protections_dashboard_wave_gradient2_private</item>
-        <item name="mozacProtectionsDashboardWaveGradient3" tools:ignore="UnusedResources">@color/protections_dashboard_wave_gradient3_private</item>
-        <item name="mozacProtectionsDashboardWaveGradient4" tools:ignore="UnusedResources">@color/protections_dashboard_wave_gradient4_private</item>
         <item name="mozacProtectionsDashboardProgressBar" tools:ignore="UnusedResources">@color/protections_dashboard_progress_bar_private</item>
+        <item name="mozacProtectionsDashboardGradientStart" tools:ignore="UnusedResources">@color/protections_dashboard_gradient_start_private</item>
+        <item name="mozacProtectionsDashboardGradientEnd" tools:ignore="UnusedResources">@color/protections_dashboard_gradient_end_private</item>
 
         <!-- Material3 -->
         <item name="colorPrimary">@color/fx_mobile_private_primary</item>
