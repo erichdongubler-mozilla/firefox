@@ -16,14 +16,14 @@
       "chrome://browser/content/aboutlogins/components/login-message-popup.mjs": [
         "../../../browser/components/aboutlogins/content/components/login-message-popup.mjs"
       ],
-      "chrome://browser/content/aiwindow/components/ai-action-result.mjs": [
-        "../../../browser/components/aiwindow/ui/components/ai-action-result/ai-action-result.mjs"
-      ],
       "chrome://browser/content/aiwindow/components/ai-chat-content.mjs": [
         "../../../browser/components/aiwindow/ui/components/ai-chat-content/ai-chat-content.mjs"
       ],
       "chrome://browser/content/aiwindow/components/ai-chat-message.mjs": [
         "../../../browser/components/aiwindow/ui/components/ai-chat-message/ai-chat-message.mjs"
+      ],
+      "chrome://browser/content/aiwindow/components/ai-chat-search-button.mjs": [
+        "../../../browser/components/aiwindow/ui/components/ai-chat-search-button/ai-chat-search-button.mjs"
       ],
       "chrome://browser/content/aiwindow/components/ai-chat-table.mjs": [
         "../../../browser/components/aiwindow/ui/components/ai-chat-table/ai-chat-table.mjs"
@@ -36,9 +36,6 @@
       ],
       "chrome://browser/content/aiwindow/components/ai-website-select.mjs": [
         "../../../browser/components/aiwindow/ui/components/ai-website-select/ai-website-select.mjs"
-      ],
-      "chrome://browser/content/aiwindow/components/ai-window/ai-window.mjs": [
-        "../../../browser/components/aiwindow/ui/components/ai-window/ai-window.mjs"
       ],
       "chrome://browser/content/aiwindow/components/applied-memories-button.mjs": [
         "../../../browser/components/aiwindow/ui/components/ai-chat-content/chat-assistant-footer/applied-memories-button.mjs"
@@ -211,20 +208,11 @@
       "chrome://browser/content/preferences/config/SettingPaneManager.mjs": [
         "../../../browser/components/preferences/config/SettingPaneManager.mjs"
       ],
-      "chrome://browser/content/preferences/config/about-firefox.mjs": [
-        "../../../browser/components/preferences/config/about-firefox.mjs"
-      ],
       "chrome://browser/content/preferences/config/accessibility.mjs": [
         "../../../browser/components/preferences/config/accessibility.mjs"
       ],
       "chrome://browser/content/preferences/config/account-sync.mjs": [
         "../../../browser/components/preferences/config/account-sync.mjs"
-      ],
-      "chrome://browser/content/preferences/config/appearance.mjs": [
-        "../../../browser/components/preferences/config/appearance.mjs"
-      ],
-      "chrome://browser/content/preferences/config/downloads.mjs": [
-        "../../../browser/components/preferences/config/downloads.mjs"
       ],
       "chrome://browser/content/preferences/config/home-startup.mjs": [
         "../../../browser/components/preferences/config/home-startup.mjs"
@@ -232,20 +220,11 @@
       "chrome://browser/content/preferences/config/languages.mjs": [
         "../../../browser/components/preferences/config/languages.mjs"
       ],
-      "chrome://browser/content/preferences/config/passwords-autofill.mjs": [
-        "../../../browser/components/preferences/config/passwords-autofill.mjs"
-      ],
-      "chrome://browser/content/preferences/config/permissions-data.mjs": [
-        "../../../browser/components/preferences/config/permissions-data.mjs"
-      ],
       "chrome://browser/content/preferences/config/privacy.mjs": [
         "../../../browser/components/preferences/config/privacy.mjs"
       ],
       "chrome://browser/content/preferences/config/search.mjs": [
         "../../../browser/components/preferences/config/search.mjs"
-      ],
-      "chrome://browser/content/preferences/config/tabs-browsing.mjs": [
-        "../../../browser/components/preferences/config/tabs-browsing.mjs"
       ],
       "chrome://browser/content/preferences/widgets/dialog-button.mjs": [
         "../../../browser/components/preferences/widgets/dialog-button/dialog-button.mjs"
@@ -349,9 +328,6 @@
       "chrome://browser/content/urlbar/UrlbarInput.mjs": [
         "../../../browser/components/urlbar/content/UrlbarInput.mjs"
       ],
-      "chrome://browser/content/urlbar/UrlbarResult.mjs": [
-        "../../../browser/components/urlbar/content/UrlbarResult.mjs"
-      ],
       "chrome://browser/content/urlbar/UrlbarView.mjs": [
         "../../../browser/components/urlbar/content/UrlbarView.mjs"
       ],
@@ -423,9 +399,6 @@
       ],
       "chrome://global/content/elements/moz-box-group.mjs": [
         "../../../toolkit/content/widgets/moz-box-group/moz-box-group.mjs"
-      ],
-      "chrome://global/content/elements/moz-box-item.mjs": [
-        "../../../toolkit/content/widgets/moz-box-item/moz-box-item.mjs"
       ],
       "chrome://global/content/elements/moz-button-group.mjs": [
         "../../../toolkit/content/widgets/moz-button-group/moz-button-group.mjs"
@@ -1399,6 +1372,9 @@
       "resource:///modules/ZoomUI.sys.mjs": [
         "../../../browser/modules/ZoomUI.sys.mjs"
       ],
+      "resource:///modules/aboutwelcome/AWScreenUtils.sys.mjs": [
+        "../../../browser/components/aboutwelcome/modules/AWScreenUtils.sys.mjs"
+      ],
       "resource:///modules/aboutwelcome/AWToolbarUtils.sys.mjs": [
         "../../../browser/components/aboutwelcome/modules/AWToolbarUtils.sys.mjs"
       ],
@@ -1425,9 +1401,6 @@
       ],
       "resource:///modules/asrouter/ASRouterPreferences.sys.mjs": [
         "../../../browser/components/asrouter/modules/ASRouterPreferences.sys.mjs"
-      ],
-      "resource:///modules/asrouter/ASRouterScreenUtils.sys.mjs": [
-        "../../../browser/components/asrouter/modules/ASRouterScreenUtils.sys.mjs"
       ],
       "resource:///modules/asrouter/ASRouterStorage.sys.mjs": [
         "../../../browser/components/asrouter/modules/ASRouterStorage.sys.mjs"
@@ -2172,9 +2145,6 @@
       ],
       "resource://devtools/client/application/src/components/session-history/SessionHistoryPage.js": [
         "../../../devtools/client/application/src/components/session-history/SessionHistoryPage.js"
-      ],
-      "resource://devtools/client/application/src/components/session-history/SessionHistoryUnavailable.js": [
-        "../../../devtools/client/application/src/components/session-history/SessionHistoryUnavailable.js"
       ],
       "resource://devtools/client/application/src/components/ui/UIButton.js": [
         "../../../devtools/client/application/src/components/ui/UIButton.js"
@@ -5572,9 +5542,6 @@
       "resource://gre/modules/Bookmarks.sys.mjs": [
         "../../../toolkit/components/places/Bookmarks.sys.mjs"
       ],
-      "resource://gre/modules/BreachAlertStore.sys.mjs": [
-        "../../../toolkit/components/passwordmgr/BreachAlertStore.sys.mjs"
-      ],
       "resource://gre/modules/BrowserTelemetryUtils.sys.mjs": [
         "../../../toolkit/modules/BrowserTelemetryUtils.sys.mjs"
       ],
@@ -5995,9 +5962,6 @@
       "resource://gre/modules/GeckoViewTestUtils.sys.mjs": [
         "../../../mobile/shared/modules/geckoview/GeckoViewTestUtils.sys.mjs"
       ],
-      "resource://gre/modules/GeckoViewTrackingDB.sys.mjs": [
-        "../../../mobile/shared/modules/geckoview/GeckoViewTrackingDB.sys.mjs"
-      ],
       "resource://gre/modules/GeckoViewUtils.sys.mjs": [
         "../../../mobile/shared/modules/geckoview/GeckoViewUtils.sys.mjs"
       ],
@@ -6048,9 +6012,6 @@
       ],
       "resource://gre/modules/JsonSchema.sys.mjs": [
         "../../../toolkit/modules/JsonSchema.sys.mjs"
-      ],
-      "resource://gre/modules/KeyboardLockUtils.sys.mjs": [
-        "../../../toolkit/modules/KeyboardLockUtils.sys.mjs"
       ],
       "resource://gre/modules/KeywordUtils.sys.mjs": [
         "../../../toolkit/modules/KeywordUtils.sys.mjs"
@@ -6673,9 +6634,6 @@
       "resource://gre/modules/shared/FormAutofillHeuristics.sys.mjs": [
         "../../../toolkit/components/formautofill/shared/FormAutofillHeuristics.sys.mjs"
       ],
-      "resource://gre/modules/shared/FormAutofillML.sys.mjs": [
-        "../../../toolkit/components/formautofill/shared/FormAutofillML.sys.mjs"
-      ],
       "resource://gre/modules/shared/FormAutofillNameUtils.sys.mjs": [
         "../../../toolkit/components/formautofill/shared/FormAutofillNameUtils.sys.mjs"
       ],
@@ -6771,9 +6729,6 @@
       ],
       "resource://newtab/common/Reducers.sys.mjs": [
         "../../../browser/extensions/newtab/common/Reducers.sys.mjs"
-      ],
-      "resource://newtab/common/WidgetsRegistry.mjs": [
-        "../../../browser/extensions/newtab/common/WidgetsRegistry.mjs"
       ],
       "resource://newtab/lib/AboutPreferences.sys.mjs": [
         "../../../browser/extensions/newtab/lib/AboutPreferences.sys.mjs"
@@ -6915,9 +6870,6 @@
       ],
       "resource://newtab/lib/Widgets/ListsFeed.sys.mjs": [
         "../../../browser/extensions/newtab/lib/Widgets/ListsFeed.sys.mjs"
-      ],
-      "resource://newtab/lib/Widgets/SportsFeed.sys.mjs": [
-        "../../../browser/extensions/newtab/lib/Widgets/SportsFeed.sys.mjs"
       ],
       "resource://newtab/lib/Widgets/TimerFeed.sys.mjs": [
         "../../../browser/extensions/newtab/lib/Widgets/TimerFeed.sys.mjs"
@@ -7363,9 +7315,6 @@
       "resource://test/import_attributes_css.mjs": [
         "../../../js/xpconnect/tests/unit/import_attributes_css.mjs"
       ],
-      "resource://test/import_attributes_text.mjs": [
-        "../../../js/xpconnect/tests/unit/import_attributes_text.mjs"
-      ],
       "resource://test/import_non_shared_1.mjs": [
         "../../../js/xpconnect/tests/unit/import_non_shared_1.mjs"
       ],
@@ -7680,9 +7629,6 @@
       ],
       "resource://testing-common/httpd.sys.mjs": [
         "../../../netwerk/test/httpserver/httpd.sys.mjs"
-      ],
-      "resource://testing-common/ipprotection/IPPGpiAuthProvider.sys.mjs": [
-        "../../../toolkit/components/ipprotection/gpi/IPPGpiAuthProvider.sys.mjs"
       ],
       "resource://testing-common/services/common/logging.sys.mjs": [
         "../../../services/common/modules-testing/logging.sys.mjs"

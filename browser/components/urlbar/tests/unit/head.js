@@ -29,7 +29,7 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/urlbar/UrlbarProviderSearchSuggestions.sys.mjs",
   ProvidersManager:
     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
-  UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
   UrlbarTokenizer:
     "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",

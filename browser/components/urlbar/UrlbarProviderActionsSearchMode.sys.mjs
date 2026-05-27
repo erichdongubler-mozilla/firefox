@@ -21,7 +21,7 @@ const DYNAMIC_TYPE_NAME = "actions";
 ChromeUtils.defineESModuleGetters(lazy, {
   ActionsProviderQuickActions:
     "moz-src:///browser/components/urlbar/ActionsProviderQuickActions.sys.mjs",
-  UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
 });
 
 /**
