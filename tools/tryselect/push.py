@@ -176,8 +176,7 @@ def get_sys_argv(injected_argv=None):
 
 
 @cache
-def _is_hg_try():
-    remote = MACH_TRY_REMOTE
+def _is_hg_try(remote):
     if not remote:
         return False
 
@@ -199,15 +198,16 @@ def push_to_try(
     push_to_vcs=False,
     force_old_lando=False,
 ):
+    remote = os.environ.get("MACH_TRY_REMOTE") or MACH_TRY_REMOTE
     metrics.mach_try.commit_prep.start()
     push = not stage_changes and not dry_run
 
-    if push and not MACH_TRY_REMOTE:
+    if push and not remote:
         print(NO_REMOTE_CONFIGURED)
         sys.exit(1)
 
     # Use direct push if explicitly requested or we aren't pushing to hg.mozilla.org/try.
-    push_to_vcs |= MACH_TRY_PUSH_TO_VCS or not _is_hg_try()
+    push_to_vcs |= MACH_TRY_PUSH_TO_VCS or not _is_hg_try(remote)
     check_working_directory(push)
 
     # Format the commit message
@@ -250,7 +250,7 @@ def push_to_try(
                 commit_message,
                 changed_files=changed_files,
                 allow_log_capture=allow_log_capture,
-                remote=MACH_TRY_REMOTE,
+                remote=remote,
             )
         else:
             push_data = push_to_lando_try(
