@@ -2,9 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "AudioSessionRecord.h"
 #include "MediaControlService.h"
 #include "MediaController.h"
 #include "gtest/gtest.h"
+#include "mozilla/dom/AudioSessionBinding.h"
 #include "mozilla/dom/MediaSessionBinding.h"
 
 using namespace mozilla::dom;
@@ -318,4 +320,77 @@ TEST(MediaController, MultipleUncontrollableSources)
     ASSERT_FALSE(controller->IsAudible());
   }
   ASSERT_FALSE(controller->IsAudible());
+}
+
+TEST(MediaController, AudioSessionOverride_StoresValueAndIsKeyedByBc)
+{
+  RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+  constexpr uint64_t kFrameA = 1;
+  constexpr uint64_t kFrameB = 2;
+
+  controller->SetAudioSessionTypeOverride(kFrameA,
+                                          AudioSessionType::Transient_solo);
+  const AudioSessionRecord* a =
+      controller->GetAudioSessionRecordForTesting(kFrameA);
+  ASSERT_NE(a, nullptr);
+  ASSERT_TRUE(a->GetTypeOverride());
+  EXPECT_EQ(*a->GetTypeOverride(), AudioSessionType::Transient_solo);
+
+  // Setting a different override on another BC must not disturb the first.
+  controller->SetAudioSessionTypeOverride(kFrameB, AudioSessionType::Playback);
+
+  a = controller->GetAudioSessionRecordForTesting(kFrameA);
+  const AudioSessionRecord* b =
+      controller->GetAudioSessionRecordForTesting(kFrameB);
+  ASSERT_NE(a, nullptr);
+  ASSERT_NE(b, nullptr);
+  EXPECT_EQ(*a->GetTypeOverride(), AudioSessionType::Transient_solo);
+  EXPECT_EQ(*b->GetTypeOverride(), AudioSessionType::Playback);
+}
+
+TEST(MediaController, AudioSessionOverride_AutoClearsTypeButKeepsRecord)
+{
+  constexpr AudioSessionType kOverrides[] = {
+      AudioSessionType::Ambient,         AudioSessionType::Transient,
+      AudioSessionType::Transient_solo,  AudioSessionType::Playback,
+      AudioSessionType::Play_and_record,
+  };
+  for (auto override : kOverrides) {
+    RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+    constexpr uint64_t kFrame = 42;
+
+    controller->SetAudioSessionTypeOverride(kFrame, override);
+    ASSERT_NE(controller->GetAudioSessionRecordForTesting(kFrame), nullptr);
+
+    // Auto normalises to "no override" but the record is kept so other
+    // per-AudioSession state stays intact.
+    controller->SetAudioSessionTypeOverride(kFrame, AudioSessionType::Auto);
+    const AudioSessionRecord* rec =
+        controller->GetAudioSessionRecordForTesting(kFrame);
+    ASSERT_NE(rec, nullptr);
+    EXPECT_TRUE(rec->GetTypeOverride().isNothing());
+  }
+}
+
+TEST(MediaController, AudioSessionOverride_ClearAudioSessionForDropsEntry)
+{
+  constexpr AudioSessionType kOverrides[] = {
+      AudioSessionType::Ambient,         AudioSessionType::Transient,
+      AudioSessionType::Transient_solo,  AudioSessionType::Playback,
+      AudioSessionType::Play_and_record,
+  };
+  for (auto override : kOverrides) {
+    RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+    constexpr uint64_t kFrame = 7;
+
+    controller->SetAudioSessionTypeOverride(kFrame, override);
+    ASSERT_NE(controller->GetAudioSessionRecordForTesting(kFrame), nullptr);
+
+    controller->ClearAudioSessionFor(kFrame);
+    EXPECT_EQ(controller->GetAudioSessionRecordForTesting(kFrame), nullptr);
+
+    // Clearing a BC that never had an override is a no-op.
+    controller->ClearAudioSessionFor(kFrame + 1);
+    EXPECT_EQ(controller->GetAudioSessionRecordForTesting(kFrame + 1), nullptr);
+  }
 }

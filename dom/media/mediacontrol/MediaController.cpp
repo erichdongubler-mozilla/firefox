@@ -608,4 +608,31 @@ void MediaController::Unselect() const {
   }
 }
 
+void MediaController::SetAudioSessionTypeOverride(uint64_t aBrowsingContextId,
+                                                  AudioSessionType aType) {
+  if (mShutdown) {
+    return;
+  }
+  // "auto" means no override.
+  mAudioSessions.LookupOrInsert(aBrowsingContextId)
+      .SetTypeOverride(aBrowsingContextId, aType == AudioSessionType::Auto
+                                               ? Nothing()
+                                               : Some(aType));
+}
+
+void MediaController::ClearAudioSessionFor(uint64_t aBrowsingContextId) {
+  if (mShutdown) {
+    return;
+  }
+  if (mAudioSessions.Remove(aBrowsingContextId)) {
+    LOG("ClearAudioSessionFor bc=%" PRIu64, aBrowsingContextId);
+  }
+}
+
+const AudioSessionRecord* MediaController::GetAudioSessionRecordForTesting(
+    uint64_t aBrowsingContextId) const {
+  auto entry = mAudioSessions.Lookup(aBrowsingContextId);
+  return entry ? &entry.Data() : nullptr;
+}
+
 }  // namespace mozilla::dom

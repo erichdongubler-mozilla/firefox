@@ -5,6 +5,7 @@
 #ifndef DOM_MEDIA_MEDIACONTROL_MEDIACONTROLLER_H_
 #define DOM_MEDIA_MEDIACONTROL_MEDIACONTROLLER_H_
 
+#include "AudioSessionRecord.h"
 #include "MediaEventSource.h"
 #include "MediaPlaybackStatus.h"
 #include "MediaStatusManager.h"
@@ -15,6 +16,7 @@
 #include "mozilla/dom/MediaSession.h"
 #include "nsISupportsImpl.h"
 #include "nsITimer.h"
+#include "nsTHashMap.h"
 
 namespace mozilla::dom {
 
@@ -159,6 +161,19 @@ class MediaController final : public DOMEventTargetHelper,
   void Select() const;
   void Unselect() const;
 
+  // Record the override the user set on the given browsing context.
+  // `Auto` means the user wants no explicit override.
+  void SetAudioSessionTypeOverride(uint64_t aBrowsingContextId,
+                                   AudioSessionType aType);
+
+  // Forget any per-AudioSession state stored for the given browsing context.
+  void ClearAudioSessionFor(uint64_t aBrowsingContextId);
+
+  // Test-only accessor for the per-browsing-context AudioSession record.
+  // Returns nullptr when no record exists.
+  const AudioSessionRecord* GetAudioSessionRecordForTesting(
+      uint64_t aBrowsingContextId) const;
+
  private:
   ~MediaController();
   void HandleActualPlaybackStateChanged();
@@ -215,6 +230,9 @@ class MediaController final : public DOMEventTargetHelper,
   // Timer to deactivate the controller if the time of being paused exceeds the
   // threshold of time.
   nsCOMPtr<nsITimer> mDeactivationTimer;
+
+  // Per-browsing-context AudioSession state.
+  nsTHashMap<nsUint64HashKey, AudioSessionRecord> mAudioSessions;
 };
 
 }  // namespace mozilla::dom

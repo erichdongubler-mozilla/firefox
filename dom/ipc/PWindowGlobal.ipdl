@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include "ipc/ErrorIPCUtils.h";
+include "ipc/MediaControlIPC.h";
 include "mozilla/dom/DocShellMessageUtils.h";
 include "mozilla/dom/IdentityCredentialSerializationHelpers.h";
 include "mozilla/dom/PermissionMessageUtils.h";
@@ -39,6 +40,7 @@ using mozilla::layers::LayersId from "mozilla/layers/LayersTypes.h";
 using mozilla::UseCounters from "mozilla/UseCounter.h";
 using mozilla::dom::MaybeDiscardedWindowContext from "mozilla/dom/WindowContext.h";
 [RefCounted] using mozilla::dom::SessionStoreRestoreData from "mozilla/dom/SessionStoreRestoreData.h";
+using mozilla::dom::AudioSessionType from "mozilla/dom/AudioSessionBinding.h";
 using mozilla::dom::CredentialMediationRequirement from "mozilla/dom/CredentialManagementBinding.h";
 using mozilla::dom::IdentityCredentialDisconnectOptions from "mozilla/dom/IdentityCredentialBinding.h";
 using mozilla::dom::IdentityCredentialRequestOptions from "mozilla/dom/IdentityCredentialBinding.h";
@@ -231,6 +233,10 @@ parent:
 
   // User interaction notification for permission expiry tracking.
   async RecordUserInteractionForPermissions();
+
+  // The content-side `navigator.audioSession.type` setter routes here so the
+  // parent's MediaController can record the per-browsing-context override.
+  async NotifyAudioSessionTypeOverride(AudioSessionType aType);
 
   async PDigitalCredential();
   async PSerialManager();

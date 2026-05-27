@@ -6,6 +6,8 @@
 
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/dom/MediaControlUtils.h"
+#include "mozilla/dom/WindowGlobalChild.h"
+#include "nsGlobalWindowInner.h"
 
 #undef LOG
 #define LOG(msg, ...)                        \
@@ -27,8 +29,16 @@ JSObject* AudioSession::WrapObject(JSContext* aCx,
 }
 
 void AudioSession::SetType(AudioSessionType aType) {
+  if (mType == aType) {
+    return;
+  }
   LOG("SetType %s", GetEnumString(aType).get());
   mType = aType;
+  if (nsPIDOMWindowInner* window = GetOwnerWindow()) {
+    if (WindowGlobalChild* wgc = window->GetWindowGlobalChild()) {
+      wgc->SendNotifyAudioSessionTypeOverride(aType);
+    }
+  }
 }
 
 void AudioSession::SetState(AudioSessionState aState) {

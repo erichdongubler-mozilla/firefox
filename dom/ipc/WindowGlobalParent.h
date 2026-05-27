@@ -366,6 +366,9 @@ class WindowGlobalParent final : public WindowContext,
 
   mozilla::ipc::IPCResult RecvRecordUserInteractionForPermissions();
 
+  mozilla::ipc::IPCResult RecvNotifyAudioSessionTypeOverride(
+      const dom::AudioSessionType& aType);
+
   already_AddRefed<dom::PSerialManagerParent> AllocPSerialManagerParent();
 
   mozilla::ipc::IPCResult RecvPSerialManagerConstructor(

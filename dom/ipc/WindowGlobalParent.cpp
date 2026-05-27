@@ -218,6 +218,15 @@ void WindowGlobalParent::Init() {
     }
   }
 
+  // A fresh document on a reused BC id must not inherit the previous
+  // document's AudioSession override. BFCache restore reuses the WGP so
+  // Init() does not run on restore — only new document loads trigger this
+  // path.
+  if (auto* top = BrowsingContext()->Top();
+      top && top->HasCreatedMediaController()) {
+    top->GetMediaController()->ClearAudioSessionFor(BrowsingContext()->Id());
+  }
+
   nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
   if (obs) {
     obs->NotifyObservers(ToSupports(this), "window-global-created", nullptr);
@@ -1932,6 +1941,20 @@ IPCResult WindowGlobalParent::RecvRecordUserInteractionForPermissions() {
       do_GetService(NS_PERMISSIONMANAGER_CONTRACTID);
   if (permMgr) {
     (void)permMgr->UpdateLastInteractionForPrincipal(principal);
+  }
+  return IPC_OK();
+}
+
+IPCResult WindowGlobalParent::RecvNotifyAudioSessionTypeOverride(
+    const dom::AudioSessionType& aType) {
+  // The MediaController lives on the top-level BC, but the override is
+  // keyed by the sender's BC id (which may be an iframe). The setter must
+  // be honoured even before any controllable media has started, so call
+  // GetMediaController() which creates the controller on demand.
+  if (auto* top = BrowsingContext()->Top()) {
+    if (RefPtr<MediaController> controller = top->GetMediaController()) {
+      controller->SetAudioSessionTypeOverride(BrowsingContext()->Id(), aType);
+    }
   }
   return IPC_OK();
 }

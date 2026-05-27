@@ -4,6 +4,7 @@
 
 EXPORTS.mozilla.dom += [
     "AudioFocusManager.h",
+    "AudioSessionRecord.h",
     "ContentMediaController.h",
     "ContentPlaybackController.h",
     "MediaControlKeyManager.h",
@@ -21,6 +22,7 @@ EXPORTS.ipc += [
 
 UNIFIED_SOURCES += [
     "AudioFocusManager.cpp",
+    "AudioSessionRecord.cpp",
     "ContentMediaController.cpp",
     "ContentPlaybackController.cpp",
     "MediaControlKeyManager.cpp",
