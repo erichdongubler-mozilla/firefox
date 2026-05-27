@@ -88,7 +88,9 @@ add_task(async function test_smartbar_submit_chat() {
   try {
     const fetchWithHistoryStub = sb.stub(this.Chat, "fetchWithHistory");
     // prevent title generation network requests
-    sb.stub(this.openAIEngine, "build").resolves({});
+    sb.stub(this.openAIEngine, "build").resolves({
+      loadPrompt: () => Promise.resolve("Mock system prompt"),
+    });
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
 
@@ -286,7 +288,9 @@ add_task(async function test_smartbar_can_submit_followup_prompts() {
   try {
     const fetchWithHistoryStub = sb.stub(this.Chat, "fetchWithHistory");
     // prevent title generation network requests
-    sb.stub(this.openAIEngine, "build").resolves({});
+    sb.stub(this.openAIEngine, "build").resolves({
+      loadPrompt: () => Promise.resolve("Mock system prompt"),
+    });
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
 
@@ -329,7 +333,9 @@ add_task(async function test_smartbar_cleared_after_chat_action() {
   try {
     sb.stub(this.Chat, "fetchWithHistory");
     // prevent title generation network requests
-    sb.stub(this.openAIEngine, "build").resolves({});
+    sb.stub(this.openAIEngine, "build").resolves({
+      loadPrompt: () => Promise.resolve("Mock system prompt"),
+    });
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
     const aiWindowElement =

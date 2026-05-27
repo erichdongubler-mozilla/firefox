@@ -11,14 +11,6 @@ import {
 } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
 import { sanitizeUntrustedContent } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
 
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
-  loadCallContext:
-    "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
-  loadPrompt:
-    "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
-});
-
 /**
  * Generate a default title from the first four words of a message.
  *
@@ -61,21 +53,16 @@ export async function generateChatTitle(
 ) {
   try {
     // Build the OpenAI engine
-    const [callContext, rawPrompt] = await Promise.all([
-      lazy.loadCallContext(MODEL_FEATURES.TITLE_GENERATION),
-      lazy.loadPrompt(MODEL_FEATURES.TITLE_GENERATION),
-    ]);
-    const engine = await openAIEngine.build({
-      model: callContext.model,
-      serviceType: callContext.serviceType,
-      purpose: callContext.purpose,
-      flowId,
-      feature: MODEL_FEATURES.TITLE_GENERATION,
-    });
+    const engine = await openAIEngine.build(
+      MODEL_FEATURES.TITLE_GENERATION,
+      flowId
+    );
 
     const tabInfo = current_tab || { url: "", title: "", description: "" };
     tabInfo.title = sanitizeUntrustedContent(tabInfo.title);
 
+    // Load and render the prompt with actual values
+    const rawPrompt = await engine.loadPrompt(MODEL_FEATURES.TITLE_GENERATION);
     const systemPrompt = renderPrompt(rawPrompt, {
       current_tab: JSON.stringify(tabInfo),
     });
@@ -90,10 +77,14 @@ export async function generateChatTitle(
       messages.push({ role: "assistant", content: assistantResponse });
     }
 
+    // Get config for inference parameters if exists
+    const config = engine.getConfig(engine.feature);
+    const inferenceParams = config?.parameters || {};
+
     const response = await engine.run({
       args: messages,
       fxAccountToken: await openAIEngine.getFxAccountToken(),
-      ...callContext.parameters,
+      ...inferenceParams,
     });
 
     // Extract the generated title from the response

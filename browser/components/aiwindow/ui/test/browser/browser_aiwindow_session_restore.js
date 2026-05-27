@@ -147,7 +147,9 @@ describe("AI Window session restore", () => {
       sb.stub(Chat, "fetchWithHistory").callsFake(async ({ conversation }) => {
         await ChatStore.updateConversation(conversation);
       });
-      sb.stub(openAIEngine, "build").resolves({});
+      sb.stub(openAIEngine, "build").resolves({
+        loadPrompt: () => Promise.resolve("Mock system prompt"),
+      });
 
       // Replace the outer stub with a spy so findConversationById still calls
       // through to the real implementation, which lets us assert on the actual

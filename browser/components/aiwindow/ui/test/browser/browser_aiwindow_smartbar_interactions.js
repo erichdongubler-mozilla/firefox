@@ -54,7 +54,9 @@ add_task(async function test_interaction_count_increments() {
     });
 
     sb.stub(this.Chat, "fetchWithHistory");
-    sb.stub(this.openAIEngine, "build").resolves({});
+    sb.stub(this.openAIEngine, "build").resolves({
+      loadPrompt: () => Promise.resolve("Mock system prompt"),
+    });
 
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
@@ -84,7 +86,9 @@ add_task(async function test_interaction_count_max_limit() {
     });
 
     sb.stub(this.Chat, "fetchWithHistory");
-    sb.stub(this.openAIEngine, "build").resolves({});
+    sb.stub(this.openAIEngine, "build").resolves({
+      loadPrompt: () => Promise.resolve("Mock system prompt"),
+    });
 
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;

@@ -404,7 +404,9 @@ add_task(async function test_starter_prompts_click_triggers_chat_on_new_tab() {
 
   try {
     const fetchWithHistoryStub = sb.stub(Chat, "fetchWithHistory");
-    sb.stub(openAIEngine, "build").resolves({});
+    sb.stub(openAIEngine, "build").resolves({
+      loadPrompt: () => Promise.resolve("Mock system prompt"),
+    });
 
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
@@ -439,7 +441,9 @@ add_task(async function test_starter_prompts_click_triggers_chat_in_sidebar() {
 
   try {
     const fetchWithHistoryStub = sb.stub(Chat, "fetchWithHistory");
-    sb.stub(openAIEngine, "build").resolves({});
+    sb.stub(openAIEngine, "build").resolves({
+      loadPrompt: () => Promise.resolve("Mock system prompt"),
+    });
 
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
@@ -482,7 +486,9 @@ add_task(
 
     try {
       sb.stub(Chat, "fetchWithHistory");
-      sb.stub(openAIEngine, "build").resolves({});
+      sb.stub(openAIEngine, "build").resolves({
+        loadPrompt: () => Promise.resolve("Mock system prompt"),
+      });
       const memoriesStub = sb
         .stub(this.ChatConversation.prototype, "getMemoriesContext")
         .resolves(null);
@@ -523,7 +529,9 @@ add_task(
 
     try {
       const fetchWithHistoryStub = sb.stub(Chat, "fetchWithHistory");
-      sb.stub(openAIEngine, "build").resolves({});
+      sb.stub(openAIEngine, "build").resolves({
+        loadPrompt: () => Promise.resolve("Mock system prompt"),
+      });
       const memoriesStub = sb
         .stub(this.ChatConversation.prototype, "getMemoriesContext")
         .resolves(null);
@@ -556,7 +564,9 @@ add_task(async function test_starter_prompts_hidden_after_click_on_new_tab() {
 
   try {
     sb.stub(Chat, "fetchWithHistory");
-    sb.stub(openAIEngine, "build").resolves({});
+    sb.stub(openAIEngine, "build").resolves({
+      loadPrompt: () => Promise.resolve("Mock system prompt"),
+    });
 
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
@@ -583,7 +593,9 @@ add_task(async function test_starter_prompts_hidden_after_click_in_sidebar() {
 
   try {
     sb.stub(Chat, "fetchWithHistory");
-    sb.stub(openAIEngine, "build").resolves({});
+    sb.stub(openAIEngine, "build").resolves({
+      loadPrompt: () => Promise.resolve("Mock system prompt"),
+    });
 
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;

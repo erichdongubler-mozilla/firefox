@@ -159,7 +159,9 @@ describe("Smartbar tab state input tracking", () => {
         .stub(ChatStore, "findConversationById")
         .resolves(mockConversation);
       sandbox.stub(Chat, "fetchWithHistory");
-      sandbox.stub(openAIEngine, "build").resolves({});
+      sandbox.stub(openAIEngine, "build").resolves({
+        loadPrompt: () => Promise.resolve("Mock system prompt"),
+      });
 
       win = await openAIWindow();
       browser = win.gBrowser.selectedBrowser;
@@ -272,7 +274,9 @@ describe("Smartbar tab state input tracking", () => {
         .stub(ChatStore, "findConversationById")
         .resolves(mockConversation);
       sandbox.stub(Chat, "fetchWithHistory");
-      sandbox.stub(openAIEngine, "build").resolves({});
+      sandbox.stub(openAIEngine, "build").resolves({
+        loadPrompt: () => Promise.resolve("Mock system prompt"),
+      });
 
       win = await openAIWindow();
       browser = win.gBrowser.selectedBrowser;
@@ -337,7 +341,9 @@ describe("Smartbar tab state input tracking", () => {
       findStub.withArgs("conv-b").resolves(conversationB);
 
       sandbox.stub(Chat, "fetchWithHistory");
-      sandbox.stub(openAIEngine, "build").resolves({});
+      sandbox.stub(openAIEngine, "build").resolves({
+        loadPrompt: () => Promise.resolve("Mock system prompt"),
+      });
 
       win = await openAIWindow();
       browserA = win.gBrowser.selectedBrowser;

@@ -292,16 +292,15 @@ describe("SmartWindowRequestResponseTelemetry", () => {
 
         const chatBuildCalls = buildSpy
           .getCalls()
-          .filter(call => call.args[0]?.feature === "chat");
+          .filter(call => call.args[0] === "chat");
         Assert.greaterOrEqual(
           chatBuildCalls.length,
           2,
           "At least two chat engine builds (one per turn)"
         );
         for (const call of chatBuildCalls) {
-          const flowId = call.args[0].flowId;
           Assert.equal(
-            flowId,
+            call.args[1],
             chatId,
             "Every chat engine build receives conversationId as flowId"
           );
@@ -377,14 +376,14 @@ describe("SmartWindowRequestResponseTelemetry", () => {
 
         const chatBuilds = buildSpy
           .getCalls()
-          .filter(call => call.args[0]?.feature === "chat");
+          .filter(call => call.args[0] === "chat");
         Assert.greaterOrEqual(
           chatBuilds.length,
           2,
           "At least two chat engine builds"
         );
 
-        const flowIds = new Set(chatBuilds.map(call => call.args[0].flowId));
+        const flowIds = new Set(chatBuilds.map(call => call.args[1]));
         Assert.ok(
           flowIds.has(chatIdA),
           "Engine build for conversation A used chatIdA as flowId"
@@ -623,6 +622,8 @@ describe("SmartWindowRequestResponseTelemetry", () => {
     return {
       feature: "chat",
       model: "custom-model",
+      loadPrompt: async () => "",
+      getConfig: () => ({}),
       runWithGenerator: runWithGenerator ?? async function* () {},
     };
   }

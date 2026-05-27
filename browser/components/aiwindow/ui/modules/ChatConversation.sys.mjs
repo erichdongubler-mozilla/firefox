@@ -42,8 +42,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs",
   MemoriesManager:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
-  loadPrompt:
-    "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "console", function () {
@@ -54,21 +52,6 @@ ChromeUtils.defineLazyGetter(lazy, "console", function () {
 
 const CHAT_ROLES = [MESSAGE_ROLE.USER, MESSAGE_ROLE.ASSISTANT];
 const TABLES_PREF = "browser.smartwindow.allowTables";
-
-let _savedLoadPromptDescriptor = null;
-export function _setLoadPromptForTesting(fn) {
-  if (fn !== null) {
-    _savedLoadPromptDescriptor = Object.getOwnPropertyDescriptor(
-      lazy,
-      "loadPrompt"
-    );
-    lazy.loadPrompt = fn;
-  } else if (_savedLoadPromptDescriptor) {
-    // eslint-disable-next-line mozilla/valid-lazy
-    Object.defineProperty(lazy, "loadPrompt", _savedLoadPromptDescriptor);
-    _savedLoadPromptDescriptor = null;
-  }
-}
 
 /**
  * A conversation containing messages.
@@ -648,6 +631,7 @@ export class ChatConversation extends EventEmitter {
    *
    * @param {string} prompt - new user prompt
    * @param {?URL} pageUrl - The URL of the page when prompt was submitted
+   * @param {openAIEngine} engineInstance
    * @param {UserRoleOpts} [userOpts]
    * @param {boolean} [skipUserDispatch=false] - If true, do not emit the
    *   message-update event after adding the user message (used for retries
@@ -656,6 +640,7 @@ export class ChatConversation extends EventEmitter {
   async generatePrompt(
     prompt,
     pageUrl,
+    engineInstance,
     userOpts = undefined,
     skipUserDispatch = false
   ) {
@@ -663,14 +648,16 @@ export class ChatConversation extends EventEmitter {
     this.removeSystemTimeMemoriesMessages();
 
     if (!this.messages.length) {
-      const _systemPrompt = await lazy.loadPrompt(MODEL_FEATURES.CHAT);
+      const _systemPrompt = await engineInstance.loadPrompt(
+        MODEL_FEATURES.CHAT
+      );
       let tableInstructions;
       if (Services.prefs.getBoolPref(TABLES_PREF, false)) {
-        tableInstructions = await lazy.loadPrompt(
+        tableInstructions = await engineInstance.loadPrompt(
           MODEL_FEATURES.ENABLE_TABLE_INSTRUCTIONS
         );
       } else {
-        tableInstructions = await lazy.loadPrompt(
+        tableInstructions = await engineInstance.loadPrompt(
           MODEL_FEATURES.DISABLE_TABLE_INSTRUCTIONS
         );
       }
@@ -689,10 +676,13 @@ export class ChatConversation extends EventEmitter {
       this.emit("chat-conversation:message-update", this.messages.at(-1));
     }
 
-    const realTimeContext = await ChatConversation.getRealTimeInfo({
-      contextMentions: userOpts?.contextMentions,
-      securityProperties: this.securityProperties,
-    });
+    const realTimeContext = await ChatConversation.getRealTimeInfo(
+      engineInstance,
+      {
+        contextMentions: userOpts?.contextMentions,
+        securityProperties: this.securityProperties,
+      }
+    );
     if (realTimeContext) {
       userContext.realTimeContext = realTimeContext;
     }
@@ -701,6 +691,7 @@ export class ChatConversation extends EventEmitter {
       try {
         const memoriesContext = await this.getMemoriesContext(
           prompt,
+          engineInstance,
           undefined,
           this.securityProperties
         );
@@ -794,6 +785,7 @@ export class ChatConversation extends EventEmitter {
    *   (contextMentions: Array<ContextWebsite>) => Promise<{url, title, description, locale, timezone, isoTimestamp, todayDate, hasTabInfo}>
    * } RealTimeApiFunction
    *
+   * @param {openAIEngine} engineInstance - The initialized engine instance
    * @param {object} [options]
    * @param {RealTimeApiFunction} [options.getRealTimeMapping=constructRealTimeInfoInjectionMessage]
    * @param {ContextWebsite[]} [options.contextMentions]
@@ -802,19 +794,22 @@ export class ChatConversation extends EventEmitter {
    *
    * @returns {Promise<string|null>} - Promise that resolves with real time info or null
    */
-  static async getRealTimeInfo({
-    getRealTimeMapping = constructRealTimeInfoInjectionMessage,
-    contextMentions,
-    securityProperties,
-  } = {}) {
+  static async getRealTimeInfo(
+    engineInstance,
+    {
+      getRealTimeMapping = constructRealTimeInfoInjectionMessage,
+      contextMentions,
+      securityProperties,
+    } = {}
+  ) {
     const realTimeInfoMapping = await getRealTimeMapping(contextMentions);
     if (realTimeInfoMapping) {
-      let realTimePromptRaw = await lazy.loadPrompt(
+      let realTimePromptRaw = await engineInstance.loadPrompt(
         MODEL_FEATURES.REAL_TIME_CONTEXT_DATE
       );
       if (realTimeInfoMapping.hasTabInfo) {
         securityProperties.setPrivateData();
-        const realTimeTabPromptRaw = await lazy.loadPrompt(
+        const realTimeTabPromptRaw = await engineInstance.loadPrompt(
           MODEL_FEATURES.REAL_TIME_CONTEXT_TAB
         );
         realTimePromptRaw += realTimeTabPromptRaw;
@@ -833,7 +828,7 @@ export class ChatConversation extends EventEmitter {
           )
           .join("\n");
         realTimeInfoMapping.contextUrls = contextUrls;
-        const contextMentionsPrompt = await lazy.loadPrompt(
+        const contextMentionsPrompt = await engineInstance.loadPrompt(
           MODEL_FEATURES.REAL_TIME_CONTEXT_MENTIONS
         );
         realTimePromptRaw += contextMentionsPrompt;
@@ -867,6 +862,7 @@ export class ChatConversation extends EventEmitter {
    *  } MemoriesApiFunction
    *
    * @param {message} message
+   * @param {openAIEngine} engineInstance
    * @param {MemoriesApiFunction} [constructMemories=constructRelevantMemoriesContextMessage]
    * @param {SecurityProperties} [securityProperties]
    *
@@ -874,10 +870,11 @@ export class ChatConversation extends EventEmitter {
    */
   async getMemoriesContext(
     message,
+    engineInstance,
     constructMemories = constructRelevantMemoriesContextMessage,
     securityProperties
   ) {
-    const memoriesContext = await constructMemories(message);
+    const memoriesContext = await constructMemories(message, engineInstance);
     if (memoriesContext != null) {
       securityProperties.setPrivateData();
       return memoriesContext.content;

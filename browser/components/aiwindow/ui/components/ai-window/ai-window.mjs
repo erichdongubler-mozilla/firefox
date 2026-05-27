@@ -22,8 +22,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   MODEL_FEATURES: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   openAIEngine: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
-  loadCallContext:
-    "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
   generateChatTitle:
     "moz-src:///browser/components/aiwindow/models/TitleGeneration.sys.mjs",
   AIWindow:
@@ -1624,19 +1622,16 @@ export class AIWindow extends MozLitElement {
     conversation.on("chat-conversation:message-update", onUpdate);
 
     try {
-      const callContext = await lazy.loadCallContext(lazy.MODEL_FEATURES.CHAT);
-      const engineInstance = await lazy.openAIEngine.build({
-        model: callContext.model,
-        serviceType: callContext.serviceType,
-        purpose: callContext.purpose,
-        flowId: this.conversationId,
-        feature: lazy.MODEL_FEATURES.CHAT,
-      });
+      const engineInstance = await lazy.openAIEngine.build(
+        lazy.MODEL_FEATURES.CHAT,
+        this.conversationId
+      );
 
       if (inputText) {
         await conversation.generatePrompt(
           inputText,
           pageUrl,
+          engineInstance,
           userOpts,
           skipUserDispatch
         );
@@ -1654,7 +1649,6 @@ export class AIWindow extends MozLitElement {
         engineInstance,
         browsingContext,
         mode: this.mode,
-        callContext,
         signal,
       });
 

@@ -17,14 +17,6 @@ import { MESSAGE_ROLE } from "moz-src:///browser/components/aiwindow/ui/modules/
 import { MemoriesManager } from "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs";
 import { sanitizeUntrustedContent } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
 
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
-  loadCallContext:
-    "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
-  loadPrompt:
-    "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
-});
-
 // Max number of memories to include in prompts
 const MAX_NUM_MEMORIES = 8;
 
@@ -215,28 +207,23 @@ export async function generateConversationStartersSidebar(
     // while awaiting inference.
     contextTabs = null;
 
-    const callContext = await lazy.loadCallContext(
+    // Build engine and load prompt
+    const engineInstance = await openAIEngine.build(
+      MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER,
+      flowId
+    );
+
+    const conversationStarterSystemPrompt = await engineInstance.loadPrompt(
+      MODEL_FEATURES.CONVERSATION_STARTERS_SIDEBAR_SYSTEM
+    );
+
+    const conversationStarterPrompt = await engineInstance.loadPrompt(
       MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER
     );
-    const [
-      conversationStarterSystemPrompt,
-      conversationStarterPrompt,
-      assistantLimitations,
-    ] = await Promise.all([
-      lazy.loadPrompt(MODEL_FEATURES.CONVERSATION_STARTERS_SIDEBAR_SYSTEM),
-      lazy.loadPrompt(MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER),
-      lazy.loadPrompt(
-        MODEL_FEATURES.CONVERSATION_SUGGESTIONS_ASSISTANT_LIMITATIONS
-      ),
-    ]);
-    const engineInstance = await openAIEngine.build({
-      model: callContext.model,
-      serviceType: callContext.serviceType,
-      purpose: callContext.purpose,
-      flowId,
-      feature: MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER,
-    });
-    const inferenceParams = callContext.parameters;
+
+    const assistantLimitations = await engineInstance.loadPrompt(
+      MODEL_FEATURES.CONVERSATION_SUGGESTIONS_ASSISTANT_LIMITATIONS
+    );
 
     // Base template
     const base = renderPrompt(conversationStarterPrompt, {
@@ -249,11 +236,15 @@ export async function generateConversationStartersSidebar(
 
     let filled = base;
     if (useMemories) {
-      const conversationMemoriesPrompt = await lazy.loadPrompt(
+      const conversationMemoriesPrompt = await engineInstance.loadPrompt(
         MODEL_FEATURES.CONVERSATION_SUGGESTIONS_MEMORIES
       );
       filled = await addMemoriesToPrompt(base, conversationMemoriesPrompt);
     }
+
+    // Get config for inference parameters
+    const config = engineInstance.getConfig(engineInstance.feature);
+    const inferenceParams = config?.parameters || {};
 
     const fxAccountToken = await openAIEngine.getFxAccountToken();
     signal.throwIfAborted();
@@ -325,24 +316,19 @@ export async function generateFollowupPrompts(
           })
         : "No tab";
 
-    const callContext = await lazy.loadCallContext(
+    // Build engine and load prompt
+    const engineInstance = await openAIEngine.build(
+      MODEL_FEATURES.CONVERSATION_SUGGESTIONS_FOLLOWUP,
+      flowId
+    );
+
+    const conversationFollowupPrompt = await engineInstance.loadPrompt(
       MODEL_FEATURES.CONVERSATION_SUGGESTIONS_FOLLOWUP
     );
-    const [conversationFollowupPrompt, assistantLimitationsFollowup] =
-      await Promise.all([
-        lazy.loadPrompt(MODEL_FEATURES.CONVERSATION_SUGGESTIONS_FOLLOWUP),
-        lazy.loadPrompt(
-          MODEL_FEATURES.CONVERSATION_SUGGESTIONS_ASSISTANT_LIMITATIONS
-        ),
-      ]);
-    const engineInstance = await openAIEngine.build({
-      model: callContext.model,
-      serviceType: callContext.serviceType,
-      purpose: callContext.purpose,
-      flowId,
-      feature: MODEL_FEATURES.CONVERSATION_SUGGESTIONS_FOLLOWUP,
-    });
-    const inferenceParams = callContext.parameters;
+
+    const assistantLimitationsFollowup = await engineInstance.loadPrompt(
+      MODEL_FEATURES.CONVERSATION_SUGGESTIONS_ASSISTANT_LIMITATIONS
+    );
 
     const base = renderPrompt(conversationFollowupPrompt, {
       current_tab: currentTabStr,
@@ -354,11 +340,17 @@ export async function generateFollowupPrompts(
 
     let filled = base;
     if (useMemories) {
-      const conversationMemoriesPrompt = await lazy.loadPrompt(
+      const conversationMemoriesPrompt = await engineInstance.loadPrompt(
         MODEL_FEATURES.CONVERSATION_SUGGESTIONS_MEMORIES
       );
       filled = await addMemoriesToPrompt(base, conversationMemoriesPrompt);
     }
+
+    // Get config for inference parameters
+    const config = engineInstance.getConfig(
+      MODEL_FEATURES.CONVERSATION_SUGGESTIONS_FOLLOWUP
+    );
+    const inferenceParams = config?.parameters || {};
 
     const result = await engineInstance.run({
       messages: [
