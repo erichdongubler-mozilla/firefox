@@ -7,9 +7,11 @@ package org.mozilla.fenix.settings.labs.ui
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
@@ -203,12 +206,14 @@ private fun LabsShareFeedbackLink(
 @Composable
 private fun FirefoxLabsBanner() {
     PromoCard(
-        modifier = Modifier.padding(
-            start = 16.dp,
-            end = 16.dp,
-            top = 8.dp,
-            bottom = 16.dp,
-        ),
+        modifier = Modifier
+            .padding(
+                start = 16.dp,
+                end = 16.dp,
+                top = 8.dp,
+                bottom = 16.dp,
+            )
+            .height(IntrinsicSize.Min),
         title = { Text(text = stringResource(R.string.firefox_labs_banner_title)) },
         message = {
             Text(
@@ -220,8 +225,12 @@ private fun FirefoxLabsBanner() {
         },
         illustration = {
             Image(
-                painter = painterResource(R.drawable.fox_ai_on_state),
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .padding(top = FirefoxTheme.layout.space.static150),
+                painter = painterResource(R.drawable.kit_expressive_full),
                 contentDescription = null,
+                contentScale = ContentScale.FillHeight,
             )
         },
     )

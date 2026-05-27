@@ -348,10 +348,6 @@
         The "Labs" portion can be localized, "Firefox" must be treated as a brand and kept
         in English. -->
     <string name="firefox_labs_title" tools:ignore="BrandUsage">Firefox Labs</string>
-    <!-- Title text displayed in the banner at the top of the Firefox Labs screen. -->
-    <string name="firefox_labs_banner_title">Give our experimental features a try!</string>
-    <!-- Description text displayed in the banner at the top of the Firefox Labs screen. %s is the name of the app (for example "Firefox"). -->
-    <string name="firefox_labs_experimental_description">They’re in development and evolving, which could impact how %s works.</string>
     <!-- Text displayed when no experimental features are available in the Firefox Labs screen. -->
     <string name="firefox_labs_no_labs_available_description">No experimental features available</string>
     <!-- The name of an experimental feature displayed in theFirefox Labs screen. This features allows the user to open the homepage as a new tab. -->
