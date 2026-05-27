@@ -50,11 +50,11 @@ PERFCOMPARE_BASE_URL = (
 )
 PERFCOMPARE_BASE_URL_LANDO = (
     "https://perf.compare/compare-lando-results?"
-    "baseLando=%s&newLando=%s&baseRepo=try&newRepo=try&framework=%s"
+    "landoInstance=%s&baseLando=%s&newLando=%s&baseRepo=try&newRepo=try&framework=%s"
 )
 TREEHERDER_TRY_BASE_URL = "https://treeherder.mozilla.org/jobs?repo=try&revision=%s"
 TREEHERDER_TRY_LANDO_BASE_URL = (
-    "https://treeherder.mozilla.org/jobs?repo=try&landoCommitID=%s"
+    "https://treeherder.mozilla.org/jobs?repo=try&landoInstance=%s&landoCommitID=%s"
 )
 TREEHERDER_ALERT_TASKS_URL = (
     "https://treeherder.mozilla.org/api/performance/alertsummary-tasks/?id=%s"
@@ -1040,6 +1040,10 @@ class PerfParser(CompareParser):
 
         selected_tasks |= set(mwu_task)
 
+    def determine_lando_instance(push_to_vcs=False):
+        """Determine the lando instance id that a push will use."""
+        return "" if push_to_vcs else os.getenv("LANDO_TRY_CONFIG", "lando-prod-2025")
+
     def check_cached_revision(selected_tasks, base_commit=None, push_to_vcs=True):
         """
         If the base_commit parameter does not exist, remove expired cache data.
@@ -1103,9 +1107,12 @@ class PerfParser(CompareParser):
             for push in cached_base_commit:
                 # Check to make sure that the cache entry uses the same push
                 # mechanism to avoid mixing them up
-                if push.get("lando", False) == (not push_to_vcs) and set(
-                    selected_tasks
-                ) <= set(push["tasks"]):
+                if (
+                    push.get("lando", False) == (not push_to_vcs)
+                    and set(selected_tasks) <= set(push["tasks"])
+                    and push.get("lando_instance", "")
+                    == PerfParser.determine_lando_instance(push_to_vcs)
+                ):
                     return push["base_revision_treeherder"]
 
     def save_revision_treeherder(selected_tasks, base_commit, push_to_vcs):
@@ -1128,6 +1135,9 @@ class PerfParser(CompareParser):
                 else PerfParser.push_info.base_revision
             ),
             "lando": not push_to_vcs,
+            "lando_instance": (
+                PerfParser.push_info.lando_instance if not push_to_vcs else ""
+            ),
         }
 
         cache_data = {}
@@ -1271,7 +1281,9 @@ class PerfParser(CompareParser):
                 if not push_to_vcs:
                     PerfParser.push_info.base_lando_commit_id = (
                         PerfParser.check_cached_revision(
-                            selected_tasks, compare_commit, push_to_vcs
+                            selected_tasks,
+                            compare_commit,
+                            push_to_vcs,
                         )
                     )
                     base_run_flag = PerfParser.push_info.base_lando_commit_id
@@ -1311,15 +1323,18 @@ class PerfParser(CompareParser):
                         closed_tree=False,
                         allow_log_capture=True,
                         push_to_vcs=False,
-                        force_old_lando=True,
                     )
 
                     if not push_data or "lando_job_id" not in push_data:
                         return
 
-                    PerfParser.push_info.base_lando_commit_id = push_data[
-                        "lando_job_id"
-                    ]
+                    lando_instance = push_data["lando_instance"]
+                    lando_commit_id = push_data["lando_job_id"]
+                    if not lando_instance or not lando_commit_id:
+                        return
+
+                    PerfParser.push_info.lando_instance = lando_instance
+                    PerfParser.push_info.base_lando_commit_id = lando_commit_id
                 else:
                     with redirect_stdout(log_processor):
                         push_to_try(
@@ -1367,12 +1382,17 @@ class PerfParser(CompareParser):
                     closed_tree=False,
                     allow_log_capture=True,
                     push_to_vcs=False,
-                    force_old_lando=True,
                 )
                 if not push_data or "lando_job_id" not in push_data:
                     return
 
-                PerfParser.push_info.new_lando_commit_id = push_data["lando_job_id"]
+                lando_instance = push_data["lando_instance"]
+                lando_commit_id = push_data["lando_job_id"]
+                if not lando_instance and not lando_commit_id:
+                    return
+
+                PerfParser.push_info.lando_instance = lando_instance
+                PerfParser.push_info.new_lando_commit_id = lando_commit_id
             else:
                 with redirect_stdout(log_processor):
                     push_to_try(
@@ -1758,12 +1778,13 @@ def run(**kwargs):
             TREEHERDER_TRY_BASE_URL % PerfParser.push_info.new_revision
         )
         if not kwargs.get("push_to_vcs"):
-            original_try_url = (
-                TREEHERDER_TRY_LANDO_BASE_URL
-                % PerfParser.push_info.base_lando_commit_id
+            original_try_url = TREEHERDER_TRY_LANDO_BASE_URL % (
+                PerfParser.push_info.lando_instance,
+                PerfParser.push_info.base_lando_commit_id,
             )
-            local_change_try_url = (
-                TREEHERDER_TRY_LANDO_BASE_URL % PerfParser.push_info.new_lando_commit_id
+            local_change_try_url = TREEHERDER_TRY_LANDO_BASE_URL % (
+                PerfParser.push_info.lando_instance,
+                PerfParser.push_info.new_lando_commit_id,
             )
         print(f"Base revision's try run: {original_try_url}")
         print(f"Local revision's try run: {local_change_try_url}\n")
