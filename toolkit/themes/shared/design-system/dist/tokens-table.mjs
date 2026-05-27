@@ -262,6 +262,10 @@ export const tokensTable = {
       name: "--button-background-color-menu-hover",
     },
     {
+      value: "var(--button-background-color-ghost-active)",
+      name: "--button-background-color-menu-selected",
+    },
+    {
       value: "var(--button-background-color-active)",
       name: "--button-background-color-selected",
     },
@@ -729,6 +733,26 @@ export const tokensTable = {
     {
       value: "var(--button-border-color-ghost-active)",
       name: "--button-border-color-ghost-selected",
+    },
+    {
+      value: { default: "var(--button-border-color-ghost)" },
+      name: "--button-border-color-menu",
+    },
+    {
+      value: { default: "var(--button-border-color-ghost-active)" },
+      name: "--button-border-color-menu-active",
+    },
+    {
+      value: { default: "var(--button-border-color-ghost-disabled)" },
+      name: "--button-border-color-menu-disabled",
+    },
+    {
+      value: { default: "var(--button-border-color-ghost-hover)" },
+      name: "--button-border-color-menu-hover",
+    },
+    {
+      value: "var(--button-border-color-menu-active)",
+      name: "--button-border-color-menu-selected",
     },
     {
       value: {
@@ -1738,6 +1762,10 @@ export const tokensTable = {
         forcedColors: "var(--button-text-color-primary)",
       },
       name: "--button-text-color-menu-hover",
+    },
+    {
+      value: "var(--button-text-color-ghost-active)",
+      name: "--button-text-color-menu-selected",
     },
     {
       value: {
@@ -3125,6 +3153,8 @@ export const variableLookupTable = {
     default: "var(--button-background-color-ghost-hover)",
     forcedColors: "var(--button-background-color-primary)",
   },
+  "button-background-color-menu-selected":
+    "var(--button-background-color-ghost-active)",
   "button-background-color-selected": "var(--button-background-color-active)",
   "button-background-color-toolbar": {
     default: "transparent",
@@ -3184,6 +3214,17 @@ export const variableLookupTable = {
   },
   "button-border-color-ghost-selected":
     "var(--button-border-color-ghost-active)",
+  "button-border-color-menu": { default: "var(--button-border-color-ghost)" },
+  "button-border-color-menu-active": {
+    default: "var(--button-border-color-ghost-active)",
+  },
+  "button-border-color-menu-disabled": {
+    default: "var(--button-border-color-ghost-disabled)",
+  },
+  "button-border-color-menu-hover": {
+    default: "var(--button-border-color-ghost-hover)",
+  },
+  "button-border-color-menu-selected": "var(--button-border-color-menu-active)",
   "button-border-color-hover": {
     default: "var(--button-border-color)",
     forcedColors: "var(--border-color-interactive-hover)",
@@ -3305,6 +3346,7 @@ export const variableLookupTable = {
     default: "var(--button-text-color-ghost-hover)",
     forcedColors: "var(--button-text-color-primary)",
   },
+  "button-text-color-menu-selected": "var(--button-text-color-ghost-active)",
   "button-text-color-primary": {
     forcedColors: "ButtonFace",
     brand: {

@@ -302,6 +302,11 @@
     "dark": "{Theme$button/background/color/ghost/hover}",
     "forcedColors": "{Theme$button/background/color/primary}"
   },
+  "button/background/color/menu/selected": {
+    "light": "{Theme$button/background/color/ghost/active}",
+    "dark": "{Theme$button/background/color/ghost/active}",
+    "forcedColors": "{Theme$button/background/color/ghost/active}"
+  },
   "button/background/color/selected": {
     "light": "{Theme$button/background/color/active}",
     "dark": "{Theme$button/background/color/active}",
@@ -391,6 +396,31 @@
     "light": "{Theme$button/border/color/ghost/active}",
     "dark": "{Theme$button/border/color/ghost/active}",
     "forcedColors": "{Theme$button/border/color/ghost/active}"
+  },
+  "button/border/color/menu": {
+    "light": "{Theme$button/border/color/ghost}",
+    "dark": "{Theme$button/border/color/ghost}",
+    "forcedColors": "{Theme$button/border/color/ghost}"
+  },
+  "button/border/color/menu/active": {
+    "light": "{Theme$button/border/color/ghost/active}",
+    "dark": "{Theme$button/border/color/ghost/active}",
+    "forcedColors": "{Theme$button/border/color/ghost/active}"
+  },
+  "button/border/color/menu/disabled": {
+    "light": "{Theme$button/border/color/ghost/disabled}",
+    "dark": "{Theme$button/border/color/ghost/disabled}",
+    "forcedColors": "{Theme$button/border/color/ghost/disabled}"
+  },
+  "button/border/color/menu/hover": {
+    "light": "{Theme$button/border/color/ghost/hover}",
+    "dark": "{Theme$button/border/color/ghost/hover}",
+    "forcedColors": "{Theme$button/border/color/ghost/hover}"
+  },
+  "button/border/color/menu/selected": {
+    "light": "{Theme$button/border/color/menu/active}",
+    "dark": "{Theme$button/border/color/menu/active}",
+    "forcedColors": "{Theme$button/border/color/menu/active}"
   },
   "button/border/color/hover": {
     "light": "{Theme$button/border/color}",
@@ -548,6 +578,11 @@
     "light": "{Theme$button/text/color/ghost/hover}",
     "dark": "{Theme$button/text/color/ghost/hover}",
     "forcedColors": "{Theme$button/text/color/primary}"
+  },
+  "button/text/color/menu/selected": {
+    "light": "{Theme$button/text/color/ghost/active}",
+    "dark": "{Theme$button/text/color/ghost/active}",
+    "forcedColors": "{Theme$button/text/color/ghost/active}"
   },
   "button/text/color/primary": {
     "light": "{Colors$color/white}",

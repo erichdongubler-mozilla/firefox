@@ -138,6 +138,9 @@
             "default": "{button.background.color.ghost.hover}",
             "forcedColors": "{button.background.color.primary.@base}"
           }
+        },
+        "selected": {
+          "value": "{button.background.color.ghost.active}"
         }
       },
       "selected": {
@@ -248,6 +251,31 @@
         },
         "selected": {
           "value": "{button.border.color.ghost.active}"
+        }
+      },
+      "menu": {
+        "@base": {
+          "value": {
+            "default": "{button.border.color.ghost.@base}"
+          }
+        },
+        "active": {
+          "value": {
+            "default": "{button.border.color.ghost.active}"
+          }
+        },
+        "disabled": {
+          "value": {
+            "default": "{button.border.color.ghost.disabled}"
+          }
+        },
+        "hover": {
+          "value": {
+            "default": "{button.border.color.ghost.hover}"
+          }
+        },
+        "selected": {
+          "value": "{button.border.color.menu.active}"
         }
       },
       "hover": {
@@ -487,6 +515,9 @@
             "default": "{button.text.color.ghost.hover}",
             "forcedColors": "{button.text.color.primary.@base}"
           }
+        },
+        "selected": {
+          "value": "{button.text.color.ghost.active}"
         }
       },
       "primary": {

@@ -124,6 +124,7 @@
         let [...buttons] = document.querySelectorAll("moz-button");
         let [one, two, three, four, five, six, seven] = buttons;
         let toolbar = document.querySelector(".toolbar");
+        let menuitem = document.querySelector(".menuitem");
 
         await Promise.all(buttons.map(btn => btn.updateComplete));
 
@@ -131,7 +132,7 @@
         is(two.buttonEl.textContent.trim(), "Test button", "Text is set");
         is(three.textContent, "Test button", "Text is set");
         is(seven.buttonEl.textContent.trim(), "Test button", "Text is set");
-        is(toolbar.buttonEl.textContent.trim(), "Test button", "Text is set");
+        is(menuitem.buttonEl.textContent.trim(), "Test button", "Text is set");
 
         assertButtonPropertiesMatch(one, {
           backgroundColor: "--button-background-color",
@@ -175,6 +176,13 @@
           backgroundColor: "--button-background-color-ghost",
           color: "--button-text-color-ghost",
           minHeight: "--button-min-height",
+        });
+        assertButtonPropertiesMatch(menuitem, {
+          backgroundColor: "--button-background-color-menu",
+          color: "--button-text-color-menu",
+          paddingBlock: "--panel-menuitem-padding-block",
+          paddingInline: "--panel-menuitem-padding-inline",
+          marginInline: "--panel-menuitem-margin-inline",
         });
 
         buttons.forEach(btn => (btn.size = "small"));
@@ -758,6 +766,11 @@
         <moz-button
           class="toolbar"
           type="toolbar"
+          label="Test button"
+        ></moz-button>
+        <moz-button
+          class="menuitem"
+          type="menuitem"
           label="Test button"
         ></moz-button>
       </div>
