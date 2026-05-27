@@ -2280,6 +2280,8 @@ export class FeatureCallout {
     "color",
     "border",
     "accent-color",
+    "step-color",
+    "current-step-color",
     "button-background",
     "button-color",
     "button-border",
@@ -2319,6 +2321,8 @@ export class FeatureCallout {
         border:
           "color-mix(in srgb, var(--newtab-background-color-secondary) 80%, #000)",
         "accent-color": "var(--button-background-color-primary)",
+        "step-color": "color-mix(in srgb, currentColor 50%, transparent)",
+        "current-step-color": "var(--button-background-color-primary)",
         "button-background": "color-mix(in srgb, transparent 93%, #000)",
         "button-color": "var(--newtab-text-primary-color, var(--text-color))",
         "button-border": "transparent",
@@ -2367,6 +2371,8 @@ export class FeatureCallout {
         color: "-moz-dialogtext",
         border: "-moz-dialogtext",
         "accent-color": "LinkText",
+        "step-color": "CanvasText",
+        "current-step-color": "CanvasText",
         "button-background": "ButtonFace",
         "button-color": "ButtonText",
         "button-border": "ButtonText",
@@ -2390,6 +2396,8 @@ export class FeatureCallout {
         color: "rgb(12, 12, 13)",
         border: "#CFCFD8",
         "accent-color": "#0A84FF",
+        "step-color": "color-mix(in srgb, currentColor 50%, transparent)",
+        "current-step-color": "#0A84FF",
         "button-background": "rgb(215, 215, 219)",
         "button-color": "rgb(12, 12, 13)",
         "button-border": "transparent",
@@ -2431,6 +2439,8 @@ export class FeatureCallout {
         color: "-moz-dialogtext",
         border: "CanvasText",
         "accent-color": "Highlight",
+        "step-color": "CanvasText",
+        "current-step-color": "CanvasText",
         "button-background": "ButtonFace",
         "button-color": "ButtonText",
         "button-border": "ButtonText",
@@ -2455,6 +2465,8 @@ export class FeatureCallout {
         border:
           "color-mix(in srgb, var(--newtab-background-color-secondary, #FFF) 80%, #000)",
         "accent-color": "#0061e0",
+        "step-color": "color-mix(in srgb, currentColor 50%, transparent)",
+        "current-step-color": "#0061e0",
         "button-background": "color-mix(in srgb, transparent 93%, #000)",
         "button-color": "var(--newtab-text-primary-color, WindowText)",
         "button-border": "transparent",
@@ -2479,6 +2491,8 @@ export class FeatureCallout {
       },
       dark: {
         "accent-color": "rgb(0, 221, 255)",
+        "step-color": "color-mix(in srgb, currentColor 50%, transparent)",
+        "current-step-color": "rgb(0, 211, 255)",
         background:
           "var(--newtab-background-color, #2B2A33) image(var(--newtab-background-color-secondary, #42414D))",
         border:
@@ -2503,6 +2517,8 @@ export class FeatureCallout {
         color: "-moz-dialogtext",
         border: "-moz-dialogtext",
         "accent-color": "SelectedItem",
+        "step-color": "CanvasText",
+        "current-step-color": "CanvasText",
         "button-background": "ButtonFace",
         "button-color": "ButtonText",
         "button-border": "ButtonText",
@@ -2537,6 +2553,8 @@ export class FeatureCallout {
         color: "var(--panel-text-color)",
         border: "var(--panel-border-color)",
         "accent-color": "var(--focus-outline-color)",
+        "step-color": "color-mix(in srgb, currentColor 50%, transparent)",
+        "current-step-color": "var(--button-background-color-primary)",
         // Button Background
         "button-background": "var(--button-background-color)",
         "button-background-hover": "var(--button-background-color-hover)",
@@ -2594,6 +2612,8 @@ export class FeatureCallout {
           "color-mix(in srgb, currentColor 14%, SelectedItem)",
         "dismiss-button-background-active":
           "color-mix(in srgb, currentColor 21%, SelectedItem)",
+        "step-color": "var(--text-color, CanvasText)",
+        "current-step-color": "var(--text-color, CanvasText)",
       },
     },
   };
