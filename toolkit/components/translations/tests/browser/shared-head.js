@@ -246,12 +246,11 @@ function serveOnce(html, statusCode = 200) {
  * @param {string} url
  */
 async function loadNewPage(browser, url) {
+  const loaded = BrowserTestUtils.browserLoaded(browser, {
+    wantLoad: url,
+  });
   BrowserTestUtils.startLoadingURIString(browser, url);
-  await BrowserTestUtils.browserLoaded(
-    browser,
-    /* includeSubFrames */ false,
-    url
-  );
+  await loaded;
 }
 
 /**
@@ -2969,12 +2968,17 @@ async function loadTestPage({
     });
   }
 
-  // Start the tab at a blank page.
+  const blankPageLoaded = BrowserTestUtils.waitForNewTab(
+    win.gBrowser,
+    BLANK_PAGE,
+    /* waitForLoad */ true
+  );
   const tab = await BrowserTestUtils.openNewForegroundTab(
     win.gBrowser,
     BLANK_PAGE,
-    true // waitForLoad
+    /* waitForLoad */ false
   );
+  await blankPageLoaded;
 
   if (contentEagerMode) {
     info("Triggering content-eager translations mode by opening the find bar.");
