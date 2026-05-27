@@ -917,6 +917,7 @@ void MediaCapabilities::CreateNonWebRTCDecodingInfo(
               MediaCapabilitiesDecodingInfo drmInfo;
               drmInfo.mSupported = true;
               drmInfo.mSmooth = true;
+              drmInfo.mPowerEfficient = false;
               drmInfo.mKeySystemAccess = aValue.ResolveValue();
               MOZ_ASSERT(drmInfo.mKeySystemAccess);
               MediaKeySystemConfiguration config;
