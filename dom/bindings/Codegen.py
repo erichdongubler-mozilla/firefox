@@ -2759,7 +2759,7 @@ def clearableCachedAttrs(descriptor):
     return (
         m
         for m in descriptor.interface.members
-        if m.isAttr() and
+        if m.isAttr() and not m.type.isObservableArray() and
         # Constants should never need clearing!
         m.dependsOn != "Nothing" and m.slotIndices is not None
     )
