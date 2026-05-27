@@ -208,6 +208,18 @@
     <ID>HardcodedPaddingUsage:TabCounterButton.kt$(16.dp)</ID>
     <ID>HardcodedPaddingUsage:TextField.kt$(8.dp)</ID>
     <ID>HardcodedPaddingUsage:TrailingIconScope.kt$(8.dp)</ID>
+    <ID>MaterialTypographyUsage:AcornColorGrid.kt$MaterialTheme.typography</ID>
+    <ID>MaterialTypographyUsage:AnimatedPillButton.kt$MaterialTheme.typography</ID>
+    <ID>MaterialTypographyUsage:AnimationLayer.kt$MaterialTheme.typography</ID>
+    <ID>MaterialTypographyUsage:BadgedIcon.kt$MaterialTheme.typography</ID>
+    <ID>MaterialTypographyUsage:CFRBox.kt$MaterialTheme.typography</ID>
+    <ID>MaterialTypographyUsage:IPProtectionStateDebug.kt$MaterialTheme.typography</ID>
+    <ID>MaterialTypographyUsage:ImporterDialog.kt$MaterialTheme.typography</ID>
+    <ID>MaterialTypographyUsage:LoginPickerView.kt$MaterialTheme.typography</ID>
+    <ID>MaterialTypographyUsage:PasswordGeneratorPrompt.kt$MaterialTheme.typography</ID>
+    <ID>MaterialTypographyUsage:SummarizeSettingsScreen.kt$MaterialTheme.typography</ID>
+    <ID>MaterialTypographyUsage:Tab.kt$MaterialTheme.typography</ID>
+    <ID>MaterialTypographyUsage:TrackerProtectionDashboard.kt$MaterialTheme.typography</ID>
     <ID>MaxLineLength:ContextCompatDetector.kt$ContextCompatDetector.Companion$explanation = "Using this method can lead to crashes in older Android versions as newer features might not be available"</ID>
     <ID>MaxLineLength:IconDirectoryEntry.kt$@Suppress("MagicNumber", "ReturnCount", "CognitiveComplexMethod", "NestedBlockDepth", "ComplexCondition", "CyclomaticComplexMethod")</ID>
     <ID>MayBeConst:ConstraintLayoutPerfDetector.kt$private val CUSTOM_VIEW_ISSUE_DESCRIPTION = "Caution regarding custom views extending `ConstraintLayout`"</ID>

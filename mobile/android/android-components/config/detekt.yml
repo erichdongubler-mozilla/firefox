@@ -798,3 +798,6 @@ acorn-detekt-rules:
     active: true
   AcornThemeUsage:
     active: false
+  MaterialTypographyUsage:
+    active: true
+    appTypographyName: 'mozilla.components.compose.base.theme.AcornTheme.typography'

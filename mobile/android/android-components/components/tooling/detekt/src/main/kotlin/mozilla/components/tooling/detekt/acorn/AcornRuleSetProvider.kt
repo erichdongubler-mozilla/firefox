@@ -20,6 +20,7 @@ class AcornRuleSetProvider : RuleSetProvider {
         rules = listOf(
             AcornPaddingRule(config),
             AcornThemeUsageRule(config),
+            MaterialTypographyUsageRule(config),
         ),
     )
 }

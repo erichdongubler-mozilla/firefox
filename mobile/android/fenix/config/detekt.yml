@@ -815,3 +815,6 @@ acorn-detekt-rules:
     active: true
     excludes: ['**/theme/FirefoxTheme.kt']
     appThemeName: 'org.mozilla.fenix.theme.FirefoxTheme'
+  MaterialTypographyUsage:
+    active: true
+    appTypographyName: 'org.mozilla.fenix.theme.FirefoxTheme.typography'
