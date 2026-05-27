@@ -2047,7 +2047,7 @@ arena_bin_t::arena_bin_t(SizeClass aSizeClass) : mSizeClass(aSizeClass.Size()) {
 
   MOZ_ASSERT(aSizeClass.Size() <= gMaxBinClass);
 
-  try_run_size = gPageSize;
+  try_run_size = gMinimumRunSize;
 
   // Run size expansion loop.
   while (true) {
