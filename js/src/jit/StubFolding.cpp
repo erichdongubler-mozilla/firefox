@@ -694,8 +694,8 @@ bool js::jit::AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
           return false;
         }
 
-        MOZ_ASSERT(stubReader.peekOp() == CacheOp::ReturnFromIC);
-        MOZ_ASSERT(newReader.peekOp() == CacheOp::ReturnFromIC);
+        MOZ_ASSERT(!stubReader.more());
+        MOZ_ASSERT(!newReader.more());
         break;
       }
       default: {

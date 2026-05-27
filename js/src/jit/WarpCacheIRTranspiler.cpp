@@ -7115,8 +7115,6 @@ bool WarpCacheIRTranspiler::emitMetaCreateThis(uint32_t numFixedSlots,
   return true;
 }
 
-bool WarpCacheIRTranspiler::emitReturnFromIC() { return true; }
-
 bool WarpCacheIRTranspiler::emitBailout() {
   auto* bail = MBail::New(alloc());
   add(bail);
