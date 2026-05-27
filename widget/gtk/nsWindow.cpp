@@ -223,22 +223,6 @@ static gboolean touch_event_cb(GtkWidget* aWidget, GdkEventTouch* aEvent);
 static gboolean generic_event_cb(GtkWidget* widget, GdkEvent* aEvent);
 static void widget_destroy_cb(GtkWidget* widget, gpointer user_data);
 
-static gboolean drag_motion_event_cb(GtkWidget* aWidget,
-                                     GdkDragContext* aDragContext, gint aX,
-                                     gint aY, guint aTime, gpointer aData);
-static void drag_leave_event_cb(GtkWidget* aWidget,
-                                GdkDragContext* aDragContext, guint aTime,
-                                gpointer aData);
-static gboolean drag_drop_event_cb(GtkWidget* aWidget,
-                                   GdkDragContext* aDragContext, gint aX,
-                                   gint aY, guint aTime, gpointer aData);
-static void drag_data_received_event_cb(GtkWidget* aWidget,
-                                        GdkDragContext* aDragContext, gint aX,
-                                        gint aY,
-                                        GtkSelectionData* aSelectionData,
-                                        guint aInfo, guint32 aTime,
-                                        gpointer aData);
-
 /* initialization static functions */
 static nsresult initialize_prefs(void);
 
@@ -3891,24 +3875,6 @@ void nsWindow::DispatchDragEvent(EventMessage aMsg,
   DispatchInputEvent(&event);
 }
 
-void nsWindow::OnDragDataReceivedEvent(GtkWidget* aWidget,
-                                       GdkDragContext* aDragContext, gint aX,
-                                       gint aY,
-                                       GtkSelectionData* aSelectionData,
-                                       guint aInfo, guint aTime,
-                                       gpointer aData) {
-  LOGDRAG("nsWindow::OnDragDataReceived");
-
-  RefPtr<nsDragService> dragService = nsDragService::GetInstance();
-  nsDragSession* dragSession =
-      static_cast<nsDragSession*>(dragService->GetCurrentSession(this));
-  if (dragSession) {
-    nsDragSession::AutoEventLoop loop(dragSession);
-    dragSession->TargetDataReceived(aWidget, aDragContext, aX, aY,
-                                    aSelectionData, aInfo, aTime);
-  }
-}
-
 nsWindow* nsWindow::GetTransientForWindowIfPopup() {
   if (mWindowType != WindowType::Popup) {
     return nullptr;
@@ -4532,17 +4498,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
     g_signal_connect(screen, "composited-changed",
                      G_CALLBACK(screen_composited_changed_cb), nullptr);
   }
-
-  gtk_drag_dest_set((GtkWidget*)mShell, (GtkDestDefaults)0, nullptr, 0,
-                    (GdkDragAction)0);
-  g_signal_connect(mShell, "drag_motion", G_CALLBACK(drag_motion_event_cb),
-                   nullptr);
-  g_signal_connect(mShell, "drag_leave", G_CALLBACK(drag_leave_event_cb),
-                   nullptr);
-  g_signal_connect(mShell, "drag_drop", G_CALLBACK(drag_drop_event_cb),
-                   nullptr);
-  g_signal_connect(mShell, "drag_data_received",
-                   G_CALLBACK(drag_data_received_event_cb), nullptr);
 
   GtkSettings* default_settings = gtk_settings_get_default();
   g_signal_connect_after(default_settings, "notify::gtk-xft-dpi",
@@ -5252,10 +5207,11 @@ void nsWindow::PerformFullscreenTransition(FullscreenTransitionStage aStage,
                      nullptr);
 }
 
-already_AddRefed<widget::Screen> nsWindow::GetWidgetScreen() {
+already_AddRefed<mozilla::widget::Screen> nsWindow::GetWidgetScreen() {
   // Wayland can read screen directly
   if (GdkIsWaylandDisplay()) {
-    if (RefPtr<Screen> screen = ScreenHelperGTK::GetScreenForWindow(this)) {
+    if (RefPtr<mozilla::widget::Screen> screen =
+            ScreenHelperGTK::GetScreenForWindow(this)) {
       return screen.forget();
     }
   }
@@ -6430,183 +6386,6 @@ void nsWindow::InitDragEvent(WidgetDragEvent& aEvent) {
   // set the keyboard modifiers
   guint modifierState = KeymapWrapper::GetCurrentModifierState();
   KeymapWrapper::InitInputEvent(aEvent, modifierState);
-}
-
-static LayoutDeviceIntPoint GetWindowDropPosition(nsWindow* aWindow, int aX,
-                                                  int aY) {
-  // Workaround for Bug 1710344
-  // Caused by Gtk issue https://gitlab.gnome.org/GNOME/gtk/-/issues/4437
-  if (aWindow->IsWaylandPopup()) {
-    int tx = 0, ty = 0;
-    gdk_window_get_position(aWindow->GetToplevelGdkWindow(), &tx, &ty);
-    aX += tx;
-    aY += ty;
-  }
-  LOGDRAG("WindowDropPosition [%d, %d]", aX, aY);
-  return aWindow->GdkPointToDevicePixels({aX, aY});
-}
-
-gboolean WindowDragMotionHandler(GtkWidget* aWidget,
-                                 GdkDragContext* aDragContext, gint aX, gint aY,
-                                 guint aTime) {
-  RefPtr<nsWindow> window = nsWindow::FromGtkWidget(aWidget);
-  if (!window || !window->GetGdkWindow()) {
-    LOGDRAG("WindowDragMotionHandler() can't get GdkWindow!");
-    return FALSE;
-  }
-
-  // We're getting aX,aY in mShell coordinates space.
-  // mContainer is shifted by CSD decorations so translate the coords
-  // to mContainer space where our content lives.
-  if (aWidget == window->GetGtkWidget()) {
-    int x, y;
-    gdk_window_get_geometry(window->GetGdkWindow(), &x, &y, nullptr, nullptr);
-    aX -= x;
-    aY -= y;
-  }
-
-  LOGDRAG("WindowDragMotionHandler target nsWindow [%p]", window.get());
-
-  RefPtr<nsDragService> dragService = nsDragService::GetInstance();
-  NS_ENSURE_TRUE(dragService, FALSE);
-  nsDragSession* dragSession =
-      static_cast<nsDragSession*>(dragService->GetCurrentSession(window));
-  if (!dragSession) {
-    LOGDRAG(
-        "WindowDragMotionHandler missing current session, creating a new one.");
-    // This may be the start of an external drag session.
-    nsIWidget* widget = window;
-    dragSession =
-        static_cast<nsDragSession*>(dragService->StartDragSession(widget));
-  }
-  NS_ENSURE_TRUE(dragSession, FALSE);
-
-  dragSession->MarkAsActive();
-
-  nsDragSession::AutoEventLoop loop(dragSession);
-  if (!dragSession->ScheduleMotionEvent(
-          window, aDragContext, GetWindowDropPosition(window, aX, aY), aTime)) {
-    return FALSE;
-  }
-  return TRUE;
-}
-
-static gboolean drag_motion_event_cb(GtkWidget* aWidget,
-                                     GdkDragContext* aDragContext, gint aX,
-                                     gint aY, guint aTime, gpointer aData) {
-  LOGDRAG("mShell::drag_motion");
-  bool result = WindowDragMotionHandler(aWidget, aDragContext, aX, aY, aTime);
-
-  // If we return true, we need to set D&D status by gdk_drag_status()
-  // at drag-data-received
-  LOGDRAG("mShell::drag_motion, returns %d", result);
-  return result;
-}
-
-void WindowDragLeaveHandler(GtkWidget* aWidget) {
-  LOGDRAG("WindowDragLeaveHandler()\n");
-
-  RefPtr<nsWindow> window = nsWindow::FromGtkWidget(aWidget);
-  if (!window) {
-    LOGDRAG("    Failed - can't find nsWindow!\n");
-    return;
-  }
-
-  RefPtr<nsDragService> dragService = nsDragService::GetInstance();
-  nsIWidget* widget = window;
-  nsDragSession* dragSession =
-      static_cast<nsDragSession*>(dragService->GetCurrentSession(widget));
-  if (!dragSession) {
-    LOGDRAG("    Received dragleave after drag had ended.\n");
-    return;
-  }
-
-  nsDragSession::AutoEventLoop loop(dragSession);
-
-  nsWindow* mostRecentDragWindow = dragSession->GetMostRecentDestWindow();
-  if (!mostRecentDragWindow) {
-    // This can happen when the target will not accept a drop.  A GTK drag
-    // source sends the leave message to the destination before the
-    // drag-failed signal on the source widget, but the leave message goes
-    // via the X server, and so doesn't get processed at least until the
-    // event loop runs again.
-    LOGDRAG("    Failed - GetMostRecentDestWindow()!\n");
-    return;
-  }
-
-  if (aWidget != window->GetGtkWidget()) {
-    // When the drag moves between widgets, GTK can send leave signal for
-    // the old widget after the motion or drop signal for the new widget.
-    // We'll send the leave event when the motion or drop event is run.
-    LOGDRAG("    Failed - GtkWidget mismatch!\n");
-    return;
-  }
-
-  LOGDRAG("WindowDragLeaveHandler nsWindow %p\n", (void*)mostRecentDragWindow);
-  dragSession->ScheduleLeaveEvent();
-}
-
-static void drag_leave_event_cb(GtkWidget* aWidget,
-                                GdkDragContext* aDragContext, guint aTime,
-                                gpointer aData) {
-  LOGDRAG("mShell::drag_leave");
-  WindowDragLeaveHandler(aWidget);
-}
-
-gboolean WindowDragDropHandler(GtkWidget* aWidget, GdkDragContext* aDragContext,
-                               gint aX, gint aY, guint aTime) {
-  RefPtr<nsWindow> window = nsWindow::FromGtkWidget(aWidget);
-  if (!window || !window->GetGdkWindow()) {
-    return FALSE;
-  }
-
-  // We're getting aX,aY in mShell coordinates space.
-  // mContainer is shifted by CSD decorations so translate the coords
-  // to mContainer space where our content lives.
-  if (aWidget == window->GetGtkWidget()) {
-    int x, y;
-    gdk_window_get_geometry(window->GetGdkWindow(), &x, &y, nullptr, nullptr);
-    aX -= x;
-    aY -= y;
-  }
-
-  LOGDRAG("WindowDragDropHandler nsWindow [%p]", window.get());
-  RefPtr<nsDragService> dragService = nsDragService::GetInstance();
-  nsDragSession* dragSession =
-      static_cast<nsDragSession*>(dragService->GetCurrentSession(window));
-  if (!dragSession) {
-    LOGDRAG("    Received dragdrop after drag end.\n");
-    return FALSE;
-  }
-  nsDragSession::AutoEventLoop loop(dragSession);
-  return dragSession->ScheduleDropEvent(
-      window, aDragContext, GetWindowDropPosition(window, aX, aY), aTime);
-}
-
-static gboolean drag_drop_event_cb(GtkWidget* aWidget,
-                                   GdkDragContext* aDragContext, gint aX,
-                                   gint aY, guint aTime, gpointer aData) {
-  LOGDRAG("mShell::drag_drop");
-  bool result = WindowDragDropHandler(aWidget, aDragContext, aX, aY, aTime);
-
-  // If drag-drop returns true, we need to terminate D&D by gtk_drag_finish().
-  LOGDRAG("mShell::drag_drop result %d", result);
-  return result;
-}
-
-static void drag_data_received_event_cb(GtkWidget* aWidget,
-                                        GdkDragContext* aDragContext, gint aX,
-                                        gint aY,
-                                        GtkSelectionData* aSelectionData,
-                                        guint aInfo, guint aTime,
-                                        gpointer aData) {
-  RefPtr<nsWindow> window = nsWindow::FromGtkWidget(aWidget);
-  if (!window) {
-    return;
-  }
-  LOGDRAG("mShell::drag_data_received");
-  window->OnDragDataReceivedEvent(aWidget, aDragContext, aX, aY, aSelectionData,
-                                  aInfo, aTime, aData);
 }
 
 static nsresult initialize_prefs(void) {
