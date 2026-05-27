@@ -103,7 +103,12 @@ add_task(async function test_extension_page_sameprocess_navigation() {
   const extPageURL2 = policy.extension.baseURI.resolve("extpage2.html");
 
   info("Opening extension page in a new tab");
-  const extPageTab = await BrowserTestUtils.addTab(gBrowser, extPageURL1);
+  const extPageTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    extPageURL1,
+    true,
+    true
+  );
   let browser = gBrowser.getBrowserForTab(extPageTab);
   info("Wait for the extension page to be loaded");
   await extension.awaitMessage("pageshow:extpage1");
@@ -175,7 +180,12 @@ add_task(async function test_extension_page_context_navigated_to_web_page() {
   const triggerWebRequestURL = "https://example.com/";
 
   info("Opening extension page in a new tab");
-  const extPageTab1 = await BrowserTestUtils.addTab(gBrowser, extPageURL);
+  const extPageTab1 = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    extPageURL,
+    true,
+    true
+  );
   let browserForTab1 = gBrowser.getBrowserForTab(extPageTab1);
   info("Wait for the extension page to be loaded");
   await extension.awaitMessage("pageshow:extpage");
