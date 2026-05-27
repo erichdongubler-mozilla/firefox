@@ -249,7 +249,6 @@ export class SettingControl extends SettingElement {
   getCommonPropertyMapping(config) {
     return {
       ...super.getCommonPropertyMapping(config),
-      "data-subcategory": config.subcategory,
       ".setting": this.setting,
       ".control": this,
     };

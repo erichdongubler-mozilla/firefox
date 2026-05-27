@@ -806,7 +806,6 @@ export class AboutPreferences {
       items: [
         {
           id: "homepageNewWindows",
-          subcategory: "homeOverride",
           control: "moz-select",
           l10nId: "home-homepage-new-windows",
           options: [
@@ -825,7 +824,6 @@ export class AboutPreferences {
         },
         {
           id: "homepageNewTabs",
-          subcategory: "newtabOverride",
           control: "moz-select",
           l10nId: "home-homepage-new-tabs",
           options: [
@@ -1429,7 +1427,6 @@ export class AboutPreferences {
       headingLevel: 2,
       l10nId: "home-prefs-content-header",
       iconSrc: "chrome://browser/skin/home.svg",
-      subcategory: "contents",
       items: [
         {
           id: "firefoxHomeDisabledNotice",
@@ -1441,13 +1438,11 @@ export class AboutPreferences {
         },
         {
           id: "webSearch",
-          subcategory: "web-search",
           l10nId: "home-prefs-search-header2",
           control: "moz-toggle",
         },
         {
           id: "weather",
-          subcategory: "weather",
           l10nId: "home-prefs-weather-header",
           control: "moz-toggle",
         },
@@ -1476,7 +1471,6 @@ export class AboutPreferences {
         },
         {
           id: "shortcuts",
-          subcategory: "topsites",
           l10nId: "home-prefs-shortcuts-header",
           control: "moz-toggle",
           items: [
@@ -1510,7 +1504,6 @@ export class AboutPreferences {
         },
         {
           id: "stories",
-          subcategory: "topstories",
           l10nId: "home-prefs-stories-header2",
           control: "moz-toggle",
           items: [
@@ -1526,7 +1519,6 @@ export class AboutPreferences {
         },
         {
           id: "supportFirefox",
-          subcategory: "support-firefox",
           l10nId: "home-prefs-support-firefox-header",
           control: "moz-toggle",
           items: [
@@ -1559,7 +1551,6 @@ export class AboutPreferences {
         },
         {
           id: "recentActivity",
-          subcategory: "highlights",
           l10nId: "home-prefs-recent-activity-header",
           control: "moz-toggle",
           items: [

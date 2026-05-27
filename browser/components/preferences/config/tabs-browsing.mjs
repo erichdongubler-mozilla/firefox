@@ -580,7 +580,6 @@ Preferences.addSetting({
 
 SettingGroupManager.registerGroups({
   browserLayout: {
-    subcategory: "layout",
     l10nId: "browser-layout-header2",
     iconSrc: "chrome://browser/skin/sidebar-expanded.svg",
     headingLevel: 2,
@@ -756,7 +755,6 @@ SettingGroupManager.registerGroups({
       },
       {
         id: "playDRMContent",
-        subcategory: "drm",
         l10nId: "play-drm-content",
         supportPage: "drm-content",
       },
