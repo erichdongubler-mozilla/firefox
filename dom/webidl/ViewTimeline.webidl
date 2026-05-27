@@ -15,9 +15,10 @@ dictionary ViewTimelineOptions {
   // The spec expects to use CSSKeywordValue. However, per the spec issue, Blink
   // and WebKit would like to support the string in the sequence as well, so we
   // follow the proposal in the spec issue to use CSSKeywordish instead of
-  // CSSKeywordValue.
+  // CSSKeywordValue. Also, we use CSSOMString instead of DOMString to avoid the
+  // extra conversion from UTF-16 to UTF-8.
   // https://github.com/w3c/csswg-drafts/issues/11477
-  (DOMString or sequence<(CSSKeywordish or CSSNumericValue)>) inset = "auto";
+  (UTF8String or sequence<(CSSKeywordish or CSSNumericValue)>) inset = "auto";
 };
 
 [Exposed=Window, Pref="layout.css.scroll-driven-animations.viewtimeline.enabled"]

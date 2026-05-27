@@ -5120,6 +5120,83 @@ pub extern "C" fn Servo_ParseProperty(
 }
 
 #[no_mangle]
+pub extern "C" fn Servo_ParseAndComputeViewTimelineInset(
+    inset: &nsACString,
+    // view timeline subject doesn't support pseudo element, so only element here.
+    subject: &RawGeckoElement,
+    style: Option<&ComputedValues>,
+    raw_data: &PerDocumentStyleData,
+    output: &mut computed::ViewTimelineInset,
+) -> bool {
+    use style::properties::longhands::view_timeline_inset;
+    use style::values::specified::length::LengthPercentageOrAuto;
+
+    let inset = unsafe { inset.as_str_unchecked() };
+    let mut input = ParserInput::new(&inset);
+    let mut parser = Parser::new(&mut input);
+    let context = ParserContext::new(
+        Origin::Author,
+        unsafe { dummy_url_data() },
+        Some(CssRuleType::Style),
+        ParsingMode::DEFAULT,
+        QuirksMode::NoQuirks,
+        /* namespaces = */ Default::default(),
+        None,
+        None,
+        /* attr_taint */ Default::default(),
+    );
+    let Ok(specified) =
+        parser.parse_entirely(|p| view_timeline_inset::single_value::parse(&context, p))
+    else {
+        return false;
+    };
+
+    // If the subject is detached from the document, we don't have the style so we cannot get the
+    // computed value. However, we still can convert the specified value into the computed value
+    // for some simple cases (as the fallback way), e.g. auto, px only, or percentage only. This is
+    // not spec'ed so we just follow Blink's behavior here.
+    let Some(style) = style else {
+        let to_computed_value_without_context = |lp: &LengthPercentageOrAuto| {
+            let LengthPercentageOrAuto::LengthPercentage(ref lp) = lp else {
+                return Some(computed::LengthPercentageOrAuto::Auto);
+            };
+            lp.compute_without_context()
+                .map(computed::LengthPercentageOrAuto::LengthPercentage)
+        };
+        let Some(start) = to_computed_value_without_context(&specified.start) else {
+            return false;
+        };
+        let Some(end) = to_computed_value_without_context(&specified.end) else {
+            return false;
+        };
+        output.start = start;
+        output.end = end;
+        return true;
+    };
+
+    let data = raw_data.borrow();
+    let element = GeckoElement(subject);
+    let parent_element = element.inheritance_parent();
+    let parent_data = parent_element.as_ref().and_then(|e| e.borrow_data());
+    let parent_style = parent_data
+        .as_ref()
+        .map(|d| d.styles.primary())
+        .map(|x| &**x);
+    let container_size_query =
+        ContainerSizeQuery::for_element(element, None, /* is_pseudo = */ false);
+    let mut conditions = Default::default();
+    let context = create_context_for_animation(
+        &data,
+        &style,
+        parent_style,
+        &mut conditions,
+        container_size_query,
+    );
+    *output = specified.to_computed_value(&context);
+    true
+}
+
+#[no_mangle]
 pub extern "C" fn Servo_ParseEasing(
     easing: &nsACString,
     output: &mut ComputedTimingFunction,

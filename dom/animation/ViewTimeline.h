@@ -46,6 +46,7 @@ class ViewTimeline final : public ScrollTimeline {
                        JS::Handle<JSObject*> aGivenProto) override;
 
   // ViewTimeline methods.
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   static already_AddRefed<ViewTimeline> Constructor(
       const GlobalObject& aGlobal, const ViewTimelineOptions& aOptions,
       ErrorResult& aRv);

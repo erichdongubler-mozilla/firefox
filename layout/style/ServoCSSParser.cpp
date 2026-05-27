@@ -77,6 +77,15 @@ bool ServoCSSParser::ParseEasing(const nsACString& aValue,
 }
 
 /* static */
+bool ServoCSSParser::ParseAndComputeViewTimelineInset(
+    const nsACString& aValue, const Element* aSubject,
+    const ComputedStyle* aStyle, const StylePerDocumentStyleData* aRawData,
+    StyleViewTimelineInset& aResult) {
+  return Servo_ParseAndComputeViewTimelineInset(&aValue, aSubject, aStyle,
+                                                aRawData, &aResult);
+}
+
+/* static */
 bool ServoCSSParser::ParseTransformIntoMatrix(const nsACString& aValue,
                                               bool& aContains3DTransform,
                                               gfx::Matrix4x4& aResult) {
