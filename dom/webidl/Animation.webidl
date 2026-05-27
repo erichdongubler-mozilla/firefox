@@ -22,6 +22,7 @@ interface Animation : EventTarget {
   attribute DOMString id;
   [Pure]
   attribute AnimationEffect? effect;
+  [BinaryName="timelineFromJS"]
   attribute AnimationTimeline? timeline;
 
   [BinaryName="startTimeAsDouble"]

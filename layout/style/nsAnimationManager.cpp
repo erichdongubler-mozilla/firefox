@@ -38,6 +38,7 @@ using mozilla::dom::Animation;
 using mozilla::dom::AnimationPlayState;
 using mozilla::dom::CSSAnimation;
 using mozilla::dom::Element;
+using mozilla::dom::InactiveTimeline;
 using mozilla::dom::KeyframeEffect;
 using mozilla::dom::MutationObservers;
 using mozilla::dom::ScrollTimeline;
@@ -304,13 +305,19 @@ static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
     }
 
     if (auto scopedTimeline = timelineManager->GetScopedTimeline(e, aName)) {
-      return already_AddRefed{scopedTimeline->take()};
+      auto* result = scopedTimeline->take();
+      if (!result) {
+        // https://drafts.csswg.org/scroll-animations-1/#timeline-scoping
+        return MakeAndAddRef<InactiveTimeline>(aDocument);
+      }
+      return already_AddRefed{result};
     }
   }
 
   // If we cannot find a matched scroll-timeline-name, this animation is not
   // associated with a timeline.
-  // https://drafts.csswg.org/css-animations-2/#valdef-animation-timeline-custom-ident
+  // TODO(dshin): This is actually not spec compliant.. See
+  // https://github.com/w3c/csswg-drafts/issues/13955
   return nullptr;
 }
 
@@ -321,10 +328,11 @@ static already_AddRefed<dom::AnimationTimeline> GetTimeline(
     case StyleAnimationTimeline::Tag::Timeline: {
       // Check scroll-timeline-name property or view-timeline-property.
       nsAtom* name = aStyleTimeline.AsTimeline().value.AsAtom();
-      return name != nsGkAtoms::_empty
-                 ? GetNamedProgressTimeline(aPresContext->Document(), aTarget,
-                                            name)
-                 : nullptr;
+      if (name == nsGkAtoms::_empty) {
+        // `animation-timeline: none`.
+        return nullptr;
+      }
+      return GetNamedProgressTimeline(aPresContext->Document(), aTarget, name);
     }
     case StyleAnimationTimeline::Tag::Scroll: {
       const auto& scroll = aStyleTimeline.AsScroll();

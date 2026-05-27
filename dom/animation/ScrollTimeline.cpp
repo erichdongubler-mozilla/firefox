@@ -487,4 +487,21 @@ NonOwningAnimationTarget ScrollTimeline::ScrollerInfo::Source() const {
           PseudoStyleRequest{}};
 }
 
+NS_IMPL_CYCLE_COLLECTION_CLASS(InactiveTimeline)
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(InactiveTimeline,
+                                                ScrollTimeline)
+NS_IMPL_CYCLE_COLLECTION_UNLINK_END
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(InactiveTimeline,
+                                                  ScrollTimeline)
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
+
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(InactiveTimeline,
+                                               AnimationTimeline)
+
+InactiveTimeline::InactiveTimeline(Document* aDocument)
+    : ScrollTimeline{
+          aDocument,
+          ScrollerInfo::Anonymous(ScrollerInfo::Type::Provided, nullptr, {}),
+          StyleScrollAxis::Y} {}
+
 }  // namespace mozilla::dom
