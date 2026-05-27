@@ -838,20 +838,6 @@ nsresult TextEditor::OnFocus(const nsINode& aOriginalEventTargetNode) {
           ("%p: OnFocus(aOriginalEventTargetNode=%s)", this,
            ToString(RefPtr{&aOriginalEventTargetNode}).c_str()));
 
-  RefPtr<PresShell> presShell = GetPresShell();
-  if (MOZ_UNLIKELY(!presShell)) {
-    LogOrWarn(this, gTextEditorLog, LogLevel::Error, "!presShell");
-    return NS_ERROR_FAILURE;
-  }
-  // Let's update the layout information right now because there are some
-  // pending notifications and flushing them may cause destroying the editor.
-  presShell->FlushPendingNotifications(FlushType::Layout);
-  if (MOZ_UNLIKELY(!CanKeepHandlingFocusEvent(aOriginalEventTargetNode))) {
-    MOZ_LOG(gTextEditorLog, LogLevel::Debug,
-            ("%p: CanKeepHandlingFocusEvent() returned false", this));
-    return NS_OK;
-  }
-
   AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
   if (MOZ_UNLIKELY(!editActionData.CanHandle())) {
     LogOrWarn(this, gTextEditorLog, LogLevel::Error,
