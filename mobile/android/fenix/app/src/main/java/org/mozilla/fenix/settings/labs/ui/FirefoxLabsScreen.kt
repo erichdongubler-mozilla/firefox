@@ -341,20 +341,23 @@ private fun ToggleFeatureDialog(
         },
         title = {
             Text(
-                text = if (featureEnabled) {
-                    stringResource(R.string.firefox_labs_disable_feature_dialog_title)
-                } else {
-                    stringResource(R.string.firefox_labs_enable_feature_dialog_title)
-                },
+                text = stringResource(R.string.firefox_labs_feature_dialog_title),
                 style = FirefoxTheme.typography.headline5,
             )
         },
         text = {
             Text(
-                text = String.format(
-                    stringResource(R.string.firefox_labs_enable_feature_dialog_message),
-                    stringResource(R.string.app_name),
-                ),
+                text = if (featureEnabled) {
+                    String.format(
+                        stringResource(R.string.firefox_labs_feature_disable_dialog_message),
+                        stringResource(R.string.app_name),
+                    )
+                } else {
+                    String.format(
+                        stringResource(R.string.firefox_labs_feature_enable_dialog_message),
+                        stringResource(R.string.app_name),
+                    )
+                },
                 style = FirefoxTheme.typography.body2,
             )
         },
