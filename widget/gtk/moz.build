@@ -69,7 +69,7 @@ EXPORTS.mozilla.widget += [
 ]
 
 UNIFIED_SOURCES += [
-    "AsyncClipboardRequest.cpp",
+    "AsyncGtkClipboardRequest.cpp",
     "CompositorWidgetChild.cpp",
     "CompositorWidgetParent.cpp",
     "DMABufDevice.cpp",
@@ -117,10 +117,8 @@ SOURCES += [
 
 if CONFIG["MOZ_WAYLAND"]:
     UNIFIED_SOURCES += [
-        "FileTransferPortal.cpp",
         "MozContainerWayland.cpp",
         "nsClipboardWayland.cpp",
-        "nsDragServiceWayland.cpp",
         "nsWaylandDisplay.cpp",
         "WaylandBuffer.cpp",
         "WaylandSurface.cpp",
@@ -141,7 +139,6 @@ if CONFIG["MOZ_WAYLAND"]:
 if CONFIG["MOZ_X11"]:
     UNIFIED_SOURCES += [
         "nsClipboardX11.cpp",
-        "nsDragServiceX11.cpp",
         "nsShmImage.cpp",
         "WindowSurfaceX11.cpp",
         "WindowSurfaceX11Image.cpp",
