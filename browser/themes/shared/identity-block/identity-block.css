@@ -10,24 +10,6 @@
   &[pageproxystate="invalid"] {
     pointer-events: none;
     -moz-user-focus: ignore;
-
-    #identity-icon-label {
-      display: none;
-    }
-
-    /* If the proxy state is invalid, but the urlbar is persisting search terms,
-       we still want the user to be able to interact with the identity box.
-       It will be visible. */
-    #urlbar[persistsearchterms] & {
-      pointer-events: auto;
-      -moz-user-focus: normal;
-
-      /* And don't show the identity icon box in this case,
-         just permissions indication */
-      > #identity-icon-box {
-        display: none;
-      }
-    }
   }
 }
 
@@ -40,15 +22,16 @@
   fill-opacity: var(--urlbar-icon-fill-opacity);
 }
 
-#urlbar:not([persistsearchterms]) #identity-box[pageproxystate="invalid"] {
+#identity-box[pageproxystate="invalid"] {
   > #identity-permission-box,
-  > #notification-popup-box {
+  > #notification-popup-box,
+  #identity-icon-label {
     display: none;
   }
 }
 
 @media -moz-pref("browser.urlbar.searchModeSwitcher.featureGate") or -moz-pref("browser.urlbar.scotchBonnet.enableOverride") {
-  #urlbar:not([persistsearchterms]) #identity-box[pageproxystate="invalid"] {
+  #identity-box[pageproxystate="invalid"] {
     display: none;
   }
 }
@@ -243,6 +226,7 @@
 }
 
 /* SHARING ICON */
+
 #webrtc-sharing-icon[sharing="camera"] {
   list-style-image: url("chrome://browser/skin/notification-icons/camera.svg");
 }
@@ -257,14 +241,12 @@
 
 #geo-sharing-icon[sharing] {
   list-style-image: url("chrome://browser/skin/notification-icons/geo.svg");
-  -moz-context-properties: fill;
-  fill: var(--icon-color-critical);
 }
 
 #serial-sharing-icon[sharing] {
   list-style-image: url("chrome://browser/skin/notification-icons/serial.svg");
   -moz-context-properties: fill;
-  fill: var(--icon-color-critical);
+  fill: rgb(224, 41, 29);
 }
 
 .sharing-icon:not([sharing]) {
@@ -273,7 +255,7 @@
 
 #webrtc-sharing-icon[sharing]:not([paused]) {
   -moz-context-properties: fill;
-  fill: var(--icon-color-critical);
+  fill: rgb(224, 41, 29);
 }
 
 /* TRACKING PROTECTION ICON */
