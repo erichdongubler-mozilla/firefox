@@ -628,11 +628,6 @@ support-files = [
 
 ["test_synthmousemove_after_dnd.html"]
 
-["test_synthmousemove_after_navigation.html"]
-support-files = [
-  "file_synthmousemove_after_navigation.html",
-]
-
 ["test_transformed_scrolling_repaints.html"]
 
 ["test_transformed_scrolling_repaints_2.html"]
