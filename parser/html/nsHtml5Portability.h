@@ -74,6 +74,8 @@ class nsHtml5Portability {
   static bool stringEqualsString(nsHtml5String one, nsHtml5String other);
   static void initializeStatics();
   static void releaseStatics();
+
+#include "nsHtml5PortabilityHSupplement.h"
 };
 
 #endif
