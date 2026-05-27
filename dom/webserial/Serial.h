@@ -72,8 +72,6 @@ class Serial final : public DOMEventTargetHelper, public SupportsWeakPtr {
   bool GetAutoselectPorts(ErrorResult& aRv) const;
   void SetAutoselectPorts(bool aAutoselect, ErrorResult& aRv);
 
-  bool AutoselectPorts() const { return mAutoselectPorts; }
-
   static bool IsValidBluetoothUUID(const nsAString& aString);
 
   // Returns whether the filter validated successfully. If this function
