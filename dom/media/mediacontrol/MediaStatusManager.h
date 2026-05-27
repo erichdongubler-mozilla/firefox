@@ -193,6 +193,11 @@ class MediaStatusManager : public IMediaInfoUpdater {
   bool IsMediaPlaying() const;
   bool IsAnyMediaBeingControlled() const;
 
+  // Resolve the audio-session type for the given browsing context from its
+  // currently audible sources. Returns Ambient when the browsing context has
+  // no audible source.
+  AudioSessionType EffectiveTypeForBc(uint64_t aBrowsingContextId) const;
+
   // These events would be notified when the active media session's certain
   // property changes.
   MediaEventSource<MediaMetadataBase>& MetadataChangedEvent() {

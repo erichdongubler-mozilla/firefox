@@ -629,6 +629,18 @@ void MediaController::ClearAudioSessionFor(uint64_t aBrowsingContextId) {
   }
 }
 
+AudioSessionType MediaController::EffectiveTypeForBc(
+    uint64_t aBrowsingContextId) const {
+  if (auto entry = mAudioSessions.Lookup(aBrowsingContextId)) {
+    if (Maybe<AudioSessionType> typeOverride = entry.Data().GetTypeOverride()) {
+      MOZ_ASSERT(*typeOverride != AudioSessionType::Auto,
+                 "auto must never be stored as a real override");
+      return *typeOverride;
+    }
+  }
+  return MediaStatusManager::EffectiveTypeForBc(aBrowsingContextId);
+}
+
 const AudioSessionRecord* MediaController::GetAudioSessionRecordForTesting(
     uint64_t aBrowsingContextId) const {
   auto entry = mAudioSessions.Lookup(aBrowsingContextId);

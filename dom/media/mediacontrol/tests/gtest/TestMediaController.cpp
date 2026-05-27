@@ -394,3 +394,40 @@ TEST(MediaController, AudioSessionOverride_ClearAudioSessionForDropsEntry)
     EXPECT_EQ(controller->GetAudioSessionRecordForTesting(kFrame + 1), nullptr);
   }
 }
+
+TEST(MediaController, EffectiveTypeForBc_UnknownBcReturnsDefault)
+{
+  RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+  EXPECT_EQ(controller->EffectiveTypeForBc(42), DefaultAudioSessionType());
+}
+
+TEST(MediaController, EffectiveTypeForBc_OverrideWinsOverSource)
+{
+  // Every user-settable override (i.e. every type except Auto, which
+  // normalises to "no override") must take precedence over the source-
+  // derived type, and clearing the override must fall back to the source.
+  RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+  constexpr uint64_t kBc = 5;
+  controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eAudible,
+                                        ControlType::eControllable,
+                                        AudioSessionType::Playback);
+  EXPECT_EQ(controller->EffectiveTypeForBc(kBc), AudioSessionType::Playback);
+
+  constexpr AudioSessionType kOverrides[] = {
+      AudioSessionType::Ambient,         AudioSessionType::Transient,
+      AudioSessionType::Transient_solo,  AudioSessionType::Playback,
+      AudioSessionType::Play_and_record,
+  };
+  for (auto override : kOverrides) {
+    controller->SetAudioSessionTypeOverride(kBc, override);
+    EXPECT_EQ(controller->EffectiveTypeForBc(kBc), override);
+
+    // Clearing the override falls back to the source-derived type.
+    controller->SetAudioSessionTypeOverride(kBc, AudioSessionType::Auto);
+    EXPECT_EQ(controller->EffectiveTypeForBc(kBc), AudioSessionType::Playback);
+  }
+
+  controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eInaudible,
+                                        ControlType::eControllable,
+                                        AudioSessionType::Playback);
+}

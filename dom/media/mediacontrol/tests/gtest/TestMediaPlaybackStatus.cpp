@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "AudioSessionRecord.h"
 #include "MediaPlaybackStatus.h"
 #include "gtest/gtest.h"
 #include "mozilla/Maybe.h"
@@ -201,4 +202,102 @@ TEST(MediaPlaybackStatus, UpdateMediaAudibleState_ReturnsOwnerChange)
   EXPECT_FALSE(status.UpdateMediaAudibleState(kBcA, MediaAudibleState::eAudible,
                                               ControlType::eUncontrollable,
                                               AudioSessionType::Playback));
+}
+
+TEST(MediaPlaybackStatus, EffectiveTypeForBc_UnknownOrSilentBcReturnsDefault)
+{
+  // A browsing context with no entry, or one that has an entry but no
+  // audible source (e.g. it has only controlled media), resolves to the
+  // spec default.
+  MediaPlaybackStatus status;
+  EXPECT_EQ(status.EffectiveTypeForBc(kBcA), DefaultAudioSessionType());
+  status.UpdateMediaPlaybackState(kBcA, MediaPlaybackState::eStarted);
+  EXPECT_EQ(status.EffectiveTypeForBc(kBcA), DefaultAudioSessionType());
+}
+
+TEST(MediaPlaybackStatus, EffectiveTypeForBc_SingleSourceReturnsItsType)
+{
+  constexpr AudioSessionType kTypes[] = {
+      AudioSessionType::Ambient,         AudioSessionType::Transient,
+      AudioSessionType::Transient_solo,  AudioSessionType::Playback,
+      AudioSessionType::Play_and_record,
+  };
+  for (auto sessionType : kTypes) {
+    for (auto controlType : kControlTypes) {
+      MediaPlaybackStatus status;
+      status.UpdateMediaAudibleState(kBcA, MediaAudibleState::eAudible,
+                                     controlType, sessionType);
+      EXPECT_EQ(status.EffectiveTypeForBc(kBcA), sessionType);
+      status.UpdateMediaAudibleState(kBcA, MediaAudibleState::eInaudible,
+                                     controlType, sessionType);
+    }
+  }
+}
+
+TEST(MediaPlaybackStatus, EffectiveTypeForBc_HigherPriorityBeatsLower)
+{
+  // Verify every pair across the priority lattice
+  // (Play_and_record > Playback > Transient_solo > Transient > Ambient).
+  // Sources are added in lower-then-higher order to ensure ordering does
+  // not affect the outcome; both control types contribute equally.
+  struct Pair {
+    AudioSessionType higher;
+    AudioSessionType lower;
+  };
+  constexpr Pair kPairs[] = {
+      {AudioSessionType::Play_and_record, AudioSessionType::Playback},
+      {AudioSessionType::Play_and_record, AudioSessionType::Transient_solo},
+      {AudioSessionType::Play_and_record, AudioSessionType::Transient},
+      {AudioSessionType::Play_and_record, AudioSessionType::Ambient},
+      {AudioSessionType::Playback, AudioSessionType::Transient_solo},
+      {AudioSessionType::Playback, AudioSessionType::Transient},
+      {AudioSessionType::Playback, AudioSessionType::Ambient},
+      {AudioSessionType::Transient_solo, AudioSessionType::Transient},
+      {AudioSessionType::Transient_solo, AudioSessionType::Ambient},
+      {AudioSessionType::Transient, AudioSessionType::Ambient},
+  };
+  for (const auto& pair : kPairs) {
+    MediaPlaybackStatus status;
+    status.UpdateMediaAudibleState(kBcA, MediaAudibleState::eAudible,
+                                   ControlType::eUncontrollable, pair.lower);
+    status.UpdateMediaAudibleState(kBcA, MediaAudibleState::eAudible,
+                                   ControlType::eControllable, pair.higher);
+    EXPECT_EQ(status.EffectiveTypeForBc(kBcA), pair.higher);
+
+    // When the higher-priority source goes inaudible, the lower one is left
+    // as the effective type.
+    status.UpdateMediaAudibleState(kBcA, MediaAudibleState::eInaudible,
+                                   ControlType::eControllable, pair.higher);
+    EXPECT_EQ(status.EffectiveTypeForBc(kBcA), pair.lower);
+
+    status.UpdateMediaAudibleState(kBcA, MediaAudibleState::eInaudible,
+                                   ControlType::eUncontrollable, pair.lower);
+  }
+}
+
+TEST(MediaPlaybackStatus, EffectiveTypeForBc_RemovingWinnerFallsBackToNextRank)
+{
+  // With three sources at different priorities, removing the winner falls
+  // back to the next-highest, and so on until only the lowest remains.
+  MediaPlaybackStatus status;
+  status.UpdateMediaAudibleState(kBcA, MediaAudibleState::eAudible,
+                                 ControlType::eControllable,
+                                 AudioSessionType::Ambient);
+  status.UpdateMediaAudibleState(kBcA, MediaAudibleState::eAudible,
+                                 ControlType::eControllable,
+                                 AudioSessionType::Transient);
+  status.UpdateMediaAudibleState(kBcA, MediaAudibleState::eAudible,
+                                 ControlType::eControllable,
+                                 AudioSessionType::Playback);
+  EXPECT_EQ(status.EffectiveTypeForBc(kBcA), AudioSessionType::Playback);
+
+  status.UpdateMediaAudibleState(kBcA, MediaAudibleState::eInaudible,
+                                 ControlType::eControllable,
+                                 AudioSessionType::Playback);
+  EXPECT_EQ(status.EffectiveTypeForBc(kBcA), AudioSessionType::Transient);
+
+  status.UpdateMediaAudibleState(kBcA, MediaAudibleState::eInaudible,
+                                 ControlType::eControllable,
+                                 AudioSessionType::Transient);
+  EXPECT_EQ(status.EffectiveTypeForBc(kBcA), AudioSessionType::Ambient);
 }

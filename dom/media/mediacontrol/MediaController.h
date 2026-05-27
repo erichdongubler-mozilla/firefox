@@ -169,6 +169,11 @@ class MediaController final : public DOMEventTargetHelper,
   // Forget any per-AudioSession state stored for the given browsing context.
   void ClearAudioSessionFor(uint64_t aBrowsingContextId);
 
+  // The audio-session type that applies to the given browsing context. The
+  // user override takes precedence; otherwise the type comes from the
+  // browsing context's currently audible sources.
+  AudioSessionType EffectiveTypeForBc(uint64_t aBrowsingContextId) const;
+
   // Test-only accessor for the per-browsing-context AudioSession record.
   // Returns nullptr when no record exists.
   const AudioSessionRecord* GetAudioSessionRecordForTesting(

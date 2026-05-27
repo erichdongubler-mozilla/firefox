@@ -15,12 +15,16 @@ interface AudioSession : EventTarget {
   attribute EventHandler onstatechange;
 };
 
+// Ordered so that the C++ enum value doubles as the priority rank used by
+// `compute the audio session type`. "auto" is the user request to let the
+// UA pick a type and is intentionally first (rank 0); the rest follow from
+// lowest to highest priority.
 enum AudioSessionType {
   "auto",
-  "playback",
+  "ambient",
   "transient",
   "transient-solo",
-  "ambient",
+  "playback",
   "play-and-record"
 };
 

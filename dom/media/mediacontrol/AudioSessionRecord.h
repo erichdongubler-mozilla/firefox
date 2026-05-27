@@ -10,6 +10,19 @@
 
 namespace mozilla::dom {
 
+// Priority rank of an audio-session type. Higher rank wins. The enum values
+// in AudioSession.webidl are ordered so that the integer is the rank
+// directly. `Auto` is rank 0 and never participates in selection.
+inline int AudioSessionTypePriorityRank(AudioSessionType aType) {
+  return static_cast<int>(aType);
+}
+
+// Default type when no source ranks (the spec fallback,
+// https://w3c.github.io/audio-session/#compute-the-audio-session-type step 6).
+inline constexpr AudioSessionType DefaultAudioSessionType() {
+  return AudioSessionType::Ambient;
+}
+
 /**
  * Per-browsing-context AudioSession spec state held in the parent process by
  * MediaController. Lifetime is independent of ContextMediaInfo (the audibility

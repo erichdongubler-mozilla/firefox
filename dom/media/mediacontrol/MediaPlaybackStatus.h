@@ -97,6 +97,10 @@ class MediaPlaybackStatus final {
 
   Maybe<uint64_t> GetActiveAudibleControllableContextId() const;
 
+  // The resolved audio-session type for the given browsing context.
+  // Returns the default audio-session type when no audible source applies.
+  AudioSessionType EffectiveTypeForBc(uint64_t aBcId) const;
+
   // Test-only accessors. Used by gtests to inspect per-browsing-context
   // audibility state that is not otherwise observable through the public API.
   bool IsBcAudibleForTesting(uint64_t aBcId) const;
@@ -163,6 +167,11 @@ class MediaPlaybackStatus final {
     const nsTArray<AudibleSource>& AudibleSourcesForTesting() const {
       return mAudibleSources;
     }
+
+    // The highest-priority audio-session type among this browsing context's
+    // audible sources. Returns the default audio-session type when no
+    // source applies.
+    AudioSessionType PriorityTypeFromAudibleSources() const;
 
    private:
     /**

@@ -531,6 +531,11 @@ bool MediaStatusManager::IsAnyMediaBeingControlled() const {
   return mPlaybackStatusDelegate.IsAnyMediaBeingControlled();
 }
 
+AudioSessionType MediaStatusManager::EffectiveTypeForBc(
+    uint64_t aBrowsingContextId) const {
+  return mPlaybackStatusDelegate.EffectiveTypeForBc(aBrowsingContextId);
+}
+
 void MediaStatusManager::NotifyPageTitleChanged() {
   // If active media session has set non-empty metadata, then we would use that
   // instead of using default metadata.
