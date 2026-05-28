@@ -843,6 +843,7 @@ SettingGroupManager.registerGroups({
     iconSrc: "chrome://devtools/skin/images/globe.svg",
     headingLevel: 1,
     supportPage: "prefs-connection-settings",
+    subcategory: "netsettings",
     items: [
       {
         id: "connectionSettings",
@@ -1388,7 +1389,6 @@ SettingGroupManager.registerGroups({
     ],
   },
   connectionLink: {
-    subcategory: "netsettings",
     l10nId: "preferences-connection-link-section",
     iconSrc: "chrome://devtools/skin/images/globe.svg",
     items: [
