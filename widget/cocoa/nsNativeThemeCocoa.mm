@@ -53,17 +53,6 @@ CG_EXTERN void CGContextSetCTM(CGContextRef, CGAffineTransform);
 CG_EXTERN void CGContextSetBaseCTM(CGContextRef, CGAffineTransform);
 }
 
-// Workaround for NSCell control tint drawing
-// Without this workaround, NSCells are always drawn with the clear control tint
-// as long as they're not attached to an NSControl which is a subview of an
-// active window.
-// XXXmstange Why doesn't Webkit need this?
-@implementation NSCell (ControlTintWorkaround)
-- (int)_realControlTint {
-  return [self controlTint];
-}
-@end
-
 // This is the window for our MOZCellDrawView. When an NSCell is drawn, some
 // NSCell implementations look at the draw view's window to determine whether
 // the cell should draw with the active look.
@@ -718,9 +707,6 @@ void nsNativeThemeCocoa::DrawCheckboxOrRadio(
   ApplyControlParamsToNSCell(aParams.controlParams, cell);
 
   [cell setState:CellStateForCheckboxOrRadioState(aParams.state)];
-  [cell setControlTint:(aParams.controlParams.insideActiveWindow
-                            ? [NSColor currentControlTint]
-                            : NSClearControlTint)];
 
   // Ensure that the control is square.
   float length = std::min(inBoxRect.size.width, inBoxRect.size.height);
@@ -1127,12 +1113,6 @@ void nsNativeThemeCocoa::DrawDropdown(CGContextRef cgContext,
       aParams.editable ? (NSCell*)mComboBoxCell : (NSCell*)mDropdownCell;
 
   ApplyControlParamsToNSCell(aParams.controlParams, cell);
-
-  if (aParams.controlParams.insideActiveWindow) {
-    [cell setControlTint:[NSColor currentControlTint]];
-  } else {
-    [cell setControlTint:NSClearControlTint];
-  }
 
   const CellRenderSettings& settings =
       aParams.editable ? editableMenulistSettings : dropdownSettings;
