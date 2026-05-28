@@ -2469,6 +2469,9 @@ class MacroAssembler : public js::jit::Assembler {
   bool LabelIsOutOfRange(Label* label, ImmBranchType branch_type) {
     VIXL_ASSERT(label->bound());
 
+    // Prevent nop sequences in branch instructions.
+    js::jit::AutoForbidNops afn(this);
+
     // Call |nextInstrOffset()| instead of just |nextOffset()| to ensure
     // branches which are about to go out of range are also taken into account
     // when computing the next instruction offset.
