@@ -1324,14 +1324,15 @@ static nscoord BSizeFromPhysicalSize(const nsSize& aSize,
 
 nsRect AnchorPositioningUtils::ReassembleAnchorRect(
     const nsIFrame* aAnchor, const nsIFrame* aContainingBlock) {
-  aContainingBlock = GetMatchingContainingBlock(aAnchor, aContainingBlock);
-  if (!aContainingBlock) {
+  const nsIFrame* matchingCB =
+      GetMatchingContainingBlock(aAnchor, aContainingBlock);
+  if (!matchingCB) {
     MOZ_ASSERT_UNREACHABLE("No matching containing block?");
     return nsRect{};
   }
   // Union fragments of the anchor within this containing block.
   const auto fragRect =
-      nsLayoutUtils::GetCombinedFragmentRects(aAnchor, aContainingBlock);
+      nsLayoutUtils::GetCombinedFragmentRects(aAnchor, matchingCB);
   // This anchor is contained within this CB fragment, or the containing block
   // is inline.
   // TODO(dshin, bug 2014554): Handle inline containing blocks properly. Inline
@@ -1340,19 +1341,22 @@ nsRect AnchorPositioningUtils::ReassembleAnchorRect(
   // into account.
   if ((!fragRect.mSkippedPrevContinuation &&
        !fragRect.mSkippedNextContinuation) ||
-      aContainingBlock->IsInlineOutside()) {
-    return fragRect.mRect;
+      matchingCB->IsInlineOutside()) {
+    // fragRect.mRect is in matching containing block's coordinate space.
+    // Translate the rect back to aContainingBlock's coordinate space.
+    return fragRect.mRect +
+           matchingCB->GetOffsetToIgnoringScrolling(aContainingBlock);
   }
   // Ok, we need to reassemble the unfragmented size and position of the anchor,
   // by stacking up the containing block in block direction.
-  const auto cbwm = aContainingBlock->GetWritingMode();
+  const auto cbwm = matchingCB->GetWritingMode();
   // Note the use of ink overflow, since the anchor may overflow it.
-  const auto cbSize = InkOverflowSize(aContainingBlock);
+  const auto cbSize = InkOverflowSize(matchingCB);
   LogicalRect unfragmentedAnchorRect{cbwm, fragRect.mRect, cbSize};
   LogicalSize relevantCbSize{cbwm, cbSize};
 
   const auto* prev = fragRect.mSkippedPrevContinuation;
-  const auto* prevCb = aContainingBlock->GetPrevContinuation();
+  const auto* prevCb = matchingCB->GetPrevContinuation();
   while (prev) {
     MOZ_ASSERT(unfragmentedAnchorRect.BStart(cbwm) == 0,
                "Prev continuation exists but this continuation didn't hit "
@@ -1394,7 +1398,7 @@ nsRect AnchorPositioningUtils::ReassembleAnchorRect(
 
   // Assemble fragments in the next block flow fragment.
   const auto* next = fragRect.mSkippedNextContinuation;
-  const auto* nextCb = aContainingBlock->GetNextContinuation();
+  const auto* nextCb = matchingCB->GetNextContinuation();
   while (next) {
     MOZ_ASSERT(
         unfragmentedAnchorRect.BEnd(cbwm) == relevantCbSize.BSize(cbwm),
