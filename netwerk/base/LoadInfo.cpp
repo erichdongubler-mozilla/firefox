@@ -2083,6 +2083,17 @@ void LoadInfo::UpdateParentAddressSpaceInfo() {
   RefPtr<mozilla::dom::BrowsingContext> bc;
   GetBrowsingContext(getter_AddRefs(bc));
   if (!bc) {
+    // For workers, read the IP address space from the policy container
+    // which was propagated from the parent document.
+    if (mClientInfo.isSome() &&
+        mClientInfo->Type() != ClientType::Window) {
+      nsCOMPtr<nsIPolicyContainer> policyContainer = GetPolicyContainer();
+      if (policyContainer) {
+        mParentIpAddressSpace =
+            PolicyContainer::Cast(policyContainer)->GetIPAddressSpace();
+        return;
+      }
+    }
     mParentIpAddressSpace = nsILoadInfo::Local;
     return;
   }
