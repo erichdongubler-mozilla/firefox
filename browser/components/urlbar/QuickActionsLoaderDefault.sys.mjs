@@ -98,6 +98,7 @@ const DEFAULT_ACTIONS = {
       "quickactions-cmd-clearrecenthistory",
       "quickactions-clearrecenthistory",
     ],
+    icon: "chrome://browser/skin/forget.svg",
     label: "quickactions-clearrecenthistory",
     onPick: (_queryContext, controller) => {
       controller.browserWindow.document
@@ -179,6 +180,7 @@ const DEFAULT_ACTIONS = {
   },
   logins: {
     l10nCommands: ["quickactions-cmd-logins"],
+    icon: "chrome://browser/skin/login.svg",
     label: "quickactions-logins2",
     onPick: openUrlFun("about:logins"),
   },
@@ -214,6 +216,7 @@ const DEFAULT_ACTIONS = {
   },
   refresh: {
     l10nCommands: ["quickactions-cmd-refresh"],
+    icon: "chrome://branding/content/icon32.png",
     label: "quickactions-refresh",
     isVisible: () => lazy.ResetProfile.resetSupported(),
     onPick: (_queryContext, controller) => {
@@ -222,6 +225,7 @@ const DEFAULT_ACTIONS = {
   },
   restart: {
     l10nCommands: ["quickactions-cmd-restart"],
+    icon: "chrome://global/skin/icons/reload.svg",
     label: "quickactions-restart",
     onPick: restartBrowser,
   },
@@ -271,7 +275,7 @@ const DEFAULT_ACTIONS = {
   },
   themes: {
     l10nCommands: ["quickactions-cmd-themes2"],
-    icon: "chrome://mozapps/skin/extensions/category-extensions.svg",
+    icon: "chrome://mozapps/skin/extensions/category-themes.svg",
     label: "quickactions-themes",
     onPick: openAddonsUrl("addons://list/theme"),
   },
@@ -299,6 +303,7 @@ const DEFAULT_ACTIONS = {
   },
   update: {
     l10nCommands: ["quickactions-cmd-update"],
+    icon: "chrome://global/skin/icons/update-icon.svg",
     label: "quickactions-update",
     isVisible: () => {
       if (!AppConstants.MOZ_UPDATER) {
@@ -312,7 +317,7 @@ const DEFAULT_ACTIONS = {
   },
   viewsource: {
     l10nCommands: ["quickactions-cmd-viewsource2"],
-    icon: "chrome://global/skin/icons/settings.svg",
+    icon: "chrome://browser/skin/reader-mode.svg",
     label: "quickactions-viewsource2",
     isVisible: () => currentBrowser().currentURI.scheme !== "view-source",
     onPick: (_queryContext, controller) =>
