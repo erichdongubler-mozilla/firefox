@@ -5,6 +5,7 @@
 #ifndef DOM_MEDIA_MEDIACONTROL_MEDIACONTROLLER_H_
 #define DOM_MEDIA_MEDIACONTROL_MEDIACONTROLLER_H_
 
+#include "AudioSessionManager.h"
 #include "AudioSessionRecord.h"
 #include "MediaEventSource.h"
 #include "MediaPlaybackStatus.h"
@@ -16,7 +17,6 @@
 #include "mozilla/dom/MediaSession.h"
 #include "nsISupportsImpl.h"
 #include "nsITimer.h"
-#include "nsTHashMap.h"
 
 namespace mozilla::dom {
 
@@ -170,11 +170,6 @@ class MediaController final : public DOMEventTargetHelper,
   // Forget any per-AudioSession state stored for the given browsing context.
   void ClearAudioSessionFor(uint64_t aBrowsingContextId);
 
-  // The audio-session type that applies to the given browsing context. The
-  // user override takes precedence; otherwise the type comes from the
-  // browsing context's currently audible sources.
-  AudioSessionType EffectiveTypeForBc(uint64_t aBrowsingContextId) const;
-
   // The audio-session type the tab is currently exposing to chrome
   // consumers. Returns Auto when the tab is producing no audio.
   AudioSessionType GetEffectiveAudioSessionType() const;
@@ -184,7 +179,13 @@ class MediaController final : public DOMEventTargetHelper,
   const AudioSessionRecord* GetAudioSessionRecordForTesting(
       uint64_t aBrowsingContextId) const;
 
+  // Test-only accessor for the AudioSessionManager that owns this tab's
+  // parent-side AudioSession spec state.
+  const AudioSessionManager* GetAudioSessionManagerForTesting() const;
+
  private:
+  friend class AudioSessionManager;
+
   ~MediaController();
   void HandleActualPlaybackStateChanged();
   void UpdateMediaControlActionToContentMediaIfNeeded(
@@ -210,19 +211,6 @@ class MediaController final : public DOMEventTargetHelper,
 
   void DispatchAsyncEvent(const nsAString& aName);
   void DispatchAsyncEvent(already_AddRefed<Event> aEvent);
-
-  // The selected audio session for this tab per the spec algorithm:
-  // the audio session whose interruptions and focus changes the tab's
-  // audible browsing contexts would observe. Nothing() when no audio
-  // session is currently selected.
-  Maybe<AudioSessionType> GetSelectedAudioSessionType() const;
-
-  // Refresh the AudioSession record for the given browsing context after
-  // its audibility changed.
-  void UpdateAudibleForAudioSession(uint64_t aBrowsingContextId);
-
-  // Fire the change event when the resolved effective type changed.
-  void MaybeFireEffectiveAudioSessionTypeChanged();
 
   bool IsMainController() const;
   void ForceToBecomeMainControllerIfNeeded();
@@ -254,12 +242,8 @@ class MediaController final : public DOMEventTargetHelper,
   // threshold of time.
   nsCOMPtr<nsITimer> mDeactivationTimer;
 
-  // Per-browsing-context AudioSession state.
-  nsTHashMap<nsUint64HashKey, AudioSessionRecord> mAudioSessions;
-
-  // Cached last value of GetEffectiveAudioSessionType().
-  AudioSessionType mLastDispatchedEffectiveAudioSessionType =
-      AudioSessionType::Auto;
+  // Owns parent-side AudioSession spec state and algorithms for this tab.
+  AudioSessionManager mAudioSessionManager;
 };
 
 }  // namespace mozilla::dom

@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "AudioSessionManager.h"
 #include "AudioSessionRecord.h"
 #include "MediaControlService.h"
 #include "MediaController.h"
@@ -398,7 +399,9 @@ TEST(MediaController, AudioSessionOverride_ClearAudioSessionForDropsEntry)
 TEST(MediaController, EffectiveTypeForBc_UnknownBcReturnsDefault)
 {
   RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
-  EXPECT_EQ(controller->EffectiveTypeForBc(42), DefaultAudioSessionType());
+  EXPECT_EQ(
+      controller->GetAudioSessionManagerForTesting()->EffectiveTypeForBc(42),
+      DefaultAudioSessionType());
 }
 
 TEST(MediaController, EffectiveTypeForBc_OverrideWinsOverSource)
@@ -411,7 +414,9 @@ TEST(MediaController, EffectiveTypeForBc_OverrideWinsOverSource)
   controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eAudible,
                                         ControlType::eControllable,
                                         AudioSessionType::Playback);
-  EXPECT_EQ(controller->EffectiveTypeForBc(kBc), AudioSessionType::Playback);
+  const AudioSessionManager* mgr =
+      controller->GetAudioSessionManagerForTesting();
+  EXPECT_EQ(mgr->EffectiveTypeForBc(kBc), AudioSessionType::Playback);
 
   constexpr AudioSessionType kOverrides[] = {
       AudioSessionType::Ambient,         AudioSessionType::Transient,
@@ -420,11 +425,11 @@ TEST(MediaController, EffectiveTypeForBc_OverrideWinsOverSource)
   };
   for (auto override : kOverrides) {
     controller->SetAudioSessionTypeOverride(kBc, override);
-    EXPECT_EQ(controller->EffectiveTypeForBc(kBc), override);
+    EXPECT_EQ(mgr->EffectiveTypeForBc(kBc), override);
 
     // Clearing the override falls back to the source-derived type.
     controller->SetAudioSessionTypeOverride(kBc, AudioSessionType::Auto);
-    EXPECT_EQ(controller->EffectiveTypeForBc(kBc), AudioSessionType::Playback);
+    EXPECT_EQ(mgr->EffectiveTypeForBc(kBc), AudioSessionType::Playback);
   }
 
   controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eInaudible,

@@ -4,12 +4,12 @@
 
 #include "MediaController.h"
 
+#include "AudioSessionManager.h"
 #include "MediaControlKeySource.h"
 #include "MediaControlService.h"
 #include "MediaControlUtils.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "mozilla/Uptime.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/MediaSession.h"
@@ -88,7 +88,7 @@ static void GetDefaultSupportedKeys(nsTArray<MediaControlKey>& aKeys) {
 }
 
 MediaController::MediaController(uint64_t aBrowsingContextId)
-    : MediaStatusManager(aBrowsingContextId) {
+    : MediaStatusManager(aBrowsingContextId), mAudioSessionManager(this) {
   MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess(),
                         "MediaController only runs on Chrome process!");
   LOG("Create controller %" PRId64, Id());
@@ -370,7 +370,7 @@ void MediaController::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
     DispatchAsyncEvent(u"audiblechange"_ns);
   }
 
-  UpdateAudibleForAudioSession(aBrowsingContextId);
+  mAudioSessionManager.NotifyAudibilityChanged(aBrowsingContextId);
 
   if (!audibleChanged) {
     return;
@@ -384,26 +384,6 @@ void MediaController::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
   } else {
     service->GetAudioFocusManager().RevokeAudioFocus(this);
   }
-}
-
-void MediaController::UpdateAudibleForAudioSession(
-    uint64_t aBrowsingContextId) {
-  AudioSessionRecord& record =
-      mAudioSessions.LookupOrInsert(aBrowsingContextId);
-  const bool bcWasAudible = record.GetAudibleAtMs().isSome();
-  const bool bcIsAudibleNow = IsBcAudible(aBrowsingContextId);
-  if (!bcWasAudible && bcIsAudibleNow) {
-    record.SetAudibleAtMs(
-        aBrowsingContextId,
-        Some(static_cast<int64_t>(mozilla::ProcessUptimeMs().valueOr(0))));
-  } else if (bcWasAudible && !bcIsAudibleNow) {
-    record.SetAudibleAtMs(aBrowsingContextId, Nothing());
-  }
-  if (record.IsEmpty()) {
-    LOG("Removing empty AudioSessionRecord bc=%" PRIu64, aBrowsingContextId);
-    mAudioSessions.Remove(aBrowsingContextId);
-  }
-  MaybeFireEffectiveAudioSessionTypeChanged();
 }
 
 bool MediaController::ShouldActivateController() const {
@@ -647,124 +627,28 @@ void MediaController::SetAudioSessionTypeOverride(uint64_t aBrowsingContextId,
   if (mShutdown) {
     return;
   }
-  // "auto" means no override.
-  mAudioSessions.LookupOrInsert(aBrowsingContextId)
-      .SetTypeOverride(aBrowsingContextId, aType == AudioSessionType::Auto
-                                               ? Nothing()
-                                               : Some(aType));
-  MaybeFireEffectiveAudioSessionTypeChanged();
+  mAudioSessionManager.SetTypeOverride(aBrowsingContextId, aType);
 }
 
 void MediaController::ClearAudioSessionFor(uint64_t aBrowsingContextId) {
   if (mShutdown) {
     return;
   }
-  if (mAudioSessions.Remove(aBrowsingContextId)) {
-    LOG("ClearAudioSessionFor bc=%" PRIu64, aBrowsingContextId);
-    MaybeFireEffectiveAudioSessionTypeChanged();
-  }
-}
-
-AudioSessionType MediaController::EffectiveTypeForBc(
-    uint64_t aBrowsingContextId) const {
-  if (auto entry = mAudioSessions.Lookup(aBrowsingContextId)) {
-    if (Maybe<AudioSessionType> typeOverride = entry.Data().GetTypeOverride()) {
-      MOZ_ASSERT(*typeOverride != AudioSessionType::Auto,
-                 "auto must never be stored as a real override");
-      return *typeOverride;
-    }
-  }
-  return MediaStatusManager::EffectiveTypeForBc(aBrowsingContextId);
-}
-
-Maybe<AudioSessionType> MediaController::GetSelectedAudioSessionType() const {
-  // Compute the selected audio session per the spec algorithm.
-  // https://w3c.github.io/audio-session/#audio-session-update-selected-audio-session-algorithm
-  //
-  // Step 1: let activeAudioSessions be the records whose browsing context is
-  // currently audible and whose effective type is exclusive.
-  // TODO(bug 2040798): tighten the state and type check to follow the spec
-  // more closely.
-  AutoTArray<const AudioSessionRecord*, 4> activeAudioSessions;
-  AutoTArray<AudioSessionType, 4> activeEffectiveTypes;
-  for (const auto& entry : mAudioSessions) {
-    const AudioSessionRecord& record = entry.GetData();
-    if (record.GetAudibleAtMs().isNothing()) {
-      continue;
-    }
-    const AudioSessionType type = EffectiveTypeForBc(entry.GetKey());
-    if (!IsExclusiveAudioSessionType(type)) {
-      continue;
-    }
-    activeAudioSessions.AppendElement(&record);
-    activeEffectiveTypes.AppendElement(type);
-  }
-
-  // Step 2: if activeAudioSessions is empty, no audio session is selected.
-  if (activeAudioSessions.IsEmpty()) {
-    return Nothing();
-  }
-
-  // Step 3: if there is only one audio session in activeAudioSessions, that
-  // is the selected audio session.
-  if (activeAudioSessions.Length() == 1) {
-    return Some(activeEffectiveTypes[0]);
-  }
-
-  // Step 5: the user agent MAY apply specific heuristics to reorder
-  // activeAudioSessions. We pick "most recently audible first" using the
-  // timestamp stored on each record.
-  size_t winner = 0;
-  for (size_t i = 1; i < activeAudioSessions.Length(); ++i) {
-    if (*activeAudioSessions[i]->GetAudibleAtMs() >
-        *activeAudioSessions[winner]->GetAudibleAtMs()) {
-      winner = i;
-    }
-  }
-
-  // Step 6: the selected audio session is the first audio session in
-  // activeAudioSessions.
-  return Some(activeEffectiveTypes[winner]);
+  mAudioSessionManager.NotifyBcDiscarded(aBrowsingContextId);
 }
 
 AudioSessionType MediaController::GetEffectiveAudioSessionType() const {
-  if (Maybe<AudioSessionType> selected = GetSelectedAudioSessionType()) {
-    return *selected;
-  }
-  // Fall back to the highest-priority effective type among any audible
-  // browsing context. This keeps the chrome surface informative when the
-  // tab is playing audio that does not qualify as a selected audio session
-  // per spec.
-  Maybe<AudioSessionType> fallback;
-  for (const auto& entry : mAudioSessions) {
-    if (entry.GetData().GetAudibleAtMs().isNothing()) {
-      continue;
-    }
-    const AudioSessionType type = EffectiveTypeForBc(entry.GetKey());
-    if (!fallback || AudioSessionTypePriorityRank(type) >
-                         AudioSessionTypePriorityRank(*fallback)) {
-      fallback = Some(type);
-    }
-  }
-  return fallback.valueOr(AudioSessionType::Auto);
-}
-
-void MediaController::MaybeFireEffectiveAudioSessionTypeChanged() {
-  AudioSessionType newType = GetEffectiveAudioSessionType();
-  if (newType == mLastDispatchedEffectiveAudioSessionType) {
-    return;
-  }
-  LOG("EffectiveAudioSessionType change %s -> %s",
-      GetEnumString(mLastDispatchedEffectiveAudioSessionType).get(),
-      GetEnumString(newType).get());
-  mLastDispatchedEffectiveAudioSessionType = newType;
-  DispatchAsyncEvent(u"effectiveaudiosessiontypechange"_ns);
+  return mAudioSessionManager.GetEffectiveType();
 }
 
 const AudioSessionRecord* MediaController::GetAudioSessionRecordForTesting(
     uint64_t aBrowsingContextId) const {
-  auto entry = mAudioSessions.Lookup(aBrowsingContextId);
-  return entry ? &entry.Data() : nullptr;
+  return mAudioSessionManager.GetRecordForTesting(aBrowsingContextId);
+}
+
+const AudioSessionManager* MediaController::GetAudioSessionManagerForTesting()
+    const {
+  return &mAudioSessionManager;
 }
 
 }  // namespace mozilla::dom
