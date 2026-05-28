@@ -23,7 +23,8 @@ namespace net {
 class ChannelEvent {
  public:
   MOZ_COUNTED_DEFAULT_CTOR(ChannelEvent)
-  MOZ_COUNTED_DTOR_VIRTUAL(ChannelEvent) virtual void Run() = 0;
+  MOZ_COUNTED_DTOR_VIRTUAL(ChannelEvent)
+  virtual void Run() = 0;
   virtual already_AddRefed<nsIEventTarget> GetEventTarget() = 0;
 };
 

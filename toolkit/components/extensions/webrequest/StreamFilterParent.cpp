@@ -45,9 +45,6 @@ class ChannelEventWrapper : public ChannelEvent {
     return do_AddRef(mTarget);
   }
 
- protected:
-  ~ChannelEventWrapper() override = default;
-
  private:
   nsCOMPtr<nsIEventTarget> mTarget;
 };
@@ -58,9 +55,6 @@ class ChannelEventFunction final : public ChannelEventWrapper {
       : ChannelEventWrapper(aTarget), mFunc(std::move(aFunc)) {}
 
   void Run() override { mFunc(); }
-
- protected:
-  ~ChannelEventFunction() override = default;
 
  private:
   std::function<void()> mFunc;
@@ -76,9 +70,6 @@ class ChannelEventRunnable final : public ChannelEventWrapper {
     nsresult rv = mRunnable->Run();
     (void)NS_WARN_IF(NS_FAILED(rv));
   }
-
- protected:
-  ~ChannelEventRunnable() override = default;
 
  private:
   RefPtr<Runnable> mRunnable;
