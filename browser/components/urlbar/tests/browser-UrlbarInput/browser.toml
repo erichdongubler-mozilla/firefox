@@ -29,6 +29,8 @@ skip-if = [
 
 ["browser_privateFeature.js"]
 
+["browser_registrableDomainInView.js"]
+
 ["browser_searchTerms.js"]
 tags = "persisted-search"
 skip-if = [
