@@ -240,24 +240,6 @@ class MochitestArguments(ArgumentContainer):
             },
         ],
         [
-            ["--total-chunks"],
-            {
-                "type": int,
-                "dest": "totalChunks",
-                "help": "Total number of chunks to split tests into.",
-                "default": None,
-            },
-        ],
-        [
-            ["--this-chunk"],
-            {
-                "type": int,
-                "dest": "thisChunk",
-                "help": "If running tests by chunks, the chunk number to run.",
-                "default": None,
-            },
-        ],
-        [
             ["--run-by-manifest"],
             {
                 "action": "store_true",
@@ -1031,9 +1013,6 @@ class MochitestArguments(ArgumentContainer):
                 os.path.join(build_obj.bindir, *p) for p in gmp_modules
             )
 
-        if options.totalChunks is not None and options.thisChunk is None:
-            parser.error("thisChunk must be specified when totalChunks is specified")
-
         if options.extra_mozinfo_json:
             if not os.path.isfile(options.extra_mozinfo_json):
                 parser.error(
@@ -1042,10 +1021,6 @@ class MochitestArguments(ArgumentContainer):
                 )
 
             options.extra_mozinfo_json = json.load(open(options.extra_mozinfo_json))
-
-        if options.totalChunks:
-            if not 1 <= options.thisChunk <= options.totalChunks:
-                parser.error("thisChunk must be between 1 and totalChunks")
 
         if options.xrePath is None:
             # default xrePath to the app path if not provided
