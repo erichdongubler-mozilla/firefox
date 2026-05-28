@@ -157,6 +157,8 @@ class CacheEntry final : public nsIRunnable,
   nsresult HashingKeyWithStorage(nsACString& aResult) const;
   nsresult HashingKey(nsACString& aResult) const;
 
+  void NoteNoVarySearchEntry(nsIURI* aURI);
+
   static nsresult HashingKey(const nsACString& aStorageID,
                              const nsACString& aEnhanceID, nsIURI* aURI,
                              nsACString& aResult);

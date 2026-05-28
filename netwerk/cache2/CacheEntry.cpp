@@ -12,6 +12,7 @@
 #include "CacheLog.h"
 #include "CacheObserver.h"
 #include "CacheStorageService.h"
+#include "mozilla/net/NoVarySearchUtils.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/psm/TransportSecurityInfo.h"
@@ -263,6 +264,20 @@ nsresult CacheEntry::HashingKeyWithStorage(nsACString& aResult) const {
 
 nsresult CacheEntry::HashingKey(nsACString& aResult) const {
   return HashingKey(""_ns, mEnhanceID, mURI, aResult);
+}
+
+void CacheEntry::NoteNoVarySearchEntry(nsIURI* aURI) {
+  nsAutoCString basePath;
+  if (NS_FAILED(ExtractNoVarySearchBasePath(aURI, basePath))) {
+    return;
+  }
+  nsAutoCString entryKey;
+  if (NS_FAILED(HashingKey(entryKey))) {
+    return;
+  }
+  if (auto* svc = CacheStorageService::Self()) {
+    svc->NoteNoVarySearchEntry(mStorageID, basePath, entryKey);
+  }
 }
 
 // static
