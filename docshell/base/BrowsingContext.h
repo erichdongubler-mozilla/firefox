@@ -1612,8 +1612,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   RefPtr<nsGeolocationService> mGeolocationServiceOverride;
 
-  JS::UniqueChars mDefaultLocale;
-
   // This is a weak reference. It will be updated automatically during sweeping
   // by SweepWindowProxies.
   JS::Heap<JSObject*> mWindowProxy;

@@ -16,7 +16,6 @@
 #    include "mozilla/a11y/nsWinUtils.h"
 #  endif
 #endif
-#include "js/LocaleSensitive.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/BindingIPCUtils.h"
@@ -3535,17 +3534,8 @@ void BrowsingContext::DidSet(FieldIndex<IDX_LanguageOverride>,
             nsGlobalWindowInner::Cast(window)->GetGlobalJSObject();
         JS::Realm* realm = JS::GetObjectRealmOrNull(global);
 
-        if (mDefaultLocale == nullptr) {
-          AutoJSAPI jsapi;
-          if (jsapi.Init(window)) {
-            JSContext* context = jsapi.cx();
-            mDefaultLocale = JS_GetDefaultLocale(context);
-          }
-        }
-
         if (languageOverride.IsEmpty()) {
-          JS::SetRealmLocaleOverride(realm, mDefaultLocale.get());
-          mDefaultLocale = nullptr;
+          JS::SetRealmLocaleOverride(realm, nullptr);
         } else {
           JS::SetRealmLocaleOverride(
               realm, PromiseFlatCString(languageOverride).get());
