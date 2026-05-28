@@ -1370,7 +1370,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   // content, or NS_ERROR_FAILURE if the document has no window.
   bool CanBeCaptured(StreamCaptureType aCaptureType, ErrorResult& aRv);
 
-  using nsGenericHTMLElement::DispatchEvent;
   // For nsAsyncEventRunner.
   // The event is blocked while the document is in B/F cache.
   MOZ_CAN_RUN_SCRIPT nsresult FireEvent(const nsAString& aName);

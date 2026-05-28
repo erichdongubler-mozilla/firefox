@@ -3266,6 +3266,54 @@ class GeckoEngineTest {
     }
 
     @Test
+    fun `GIVEN a request to clear tracking protection data WHEN successful THEN invoke the success callback`() {
+        val runtime: GeckoRuntime = mock()
+        val controller: ContentBlockingController = mock()
+        whenever(runtime.contentBlockingController).thenReturn(controller)
+        val engine = GeckoEngine(context, runtime = runtime)
+
+        val result = GeckoResult<Void>()
+        whenever(controller.clearTrackingDb()).thenReturn(result)
+
+        var onSuccessCalled = false
+        var onErrorCalled = false
+
+        engine.clearTrackingProtectionData(
+            onSuccess = { onSuccessCalled = true },
+            onError = { onErrorCalled = true },
+        )
+        result.complete(null)
+        shadowOf(getMainLooper()).idle()
+
+        assertTrue(onSuccessCalled)
+        assertFalse(onErrorCalled)
+    }
+
+    @Test
+    fun `GIVEN a request to clear tracking protection data WHEN an error is encountered THEN call the error callback`() {
+        val runtime: GeckoRuntime = mock()
+        val controller: ContentBlockingController = mock()
+        whenever(runtime.contentBlockingController).thenReturn(controller)
+        val engine = GeckoEngine(context, runtime = runtime)
+
+        val result = GeckoResult<Void>()
+        whenever(controller.clearTrackingDb()).thenReturn(result)
+
+        var onSuccessCalled = false
+        var onErrorCalled = false
+
+        engine.clearTrackingProtectionData(
+            onSuccess = { onSuccessCalled = true },
+            onError = { onErrorCalled = true },
+        )
+        result.completeExceptionally(Exception())
+        shadowOf(getMainLooper()).idle()
+
+        assertFalse(onSuccessCalled)
+        assertTrue(onErrorCalled)
+    }
+
+    @Test
     fun `fetch trackers logged of the level 2 list`() {
         val runtime = mock<GeckoRuntime>()
         val engine = GeckoEngine(context, runtime = runtime)

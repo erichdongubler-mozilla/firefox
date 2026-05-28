@@ -141,6 +141,7 @@ export class GeckoViewStartup {
             "GeckoView:TrackingDB:GetEventsByDateRange",
             "GeckoView:TrackingDB:SumAllEvents",
             "GeckoView:TrackingDB:GetEarliestRecordedDate",
+            "GeckoView:TrackingDB:ClearAll",
           ],
         });
 

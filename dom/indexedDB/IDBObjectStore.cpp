@@ -11,7 +11,7 @@
 #include "IDBDatabase.h"
 #include "IDBEvents.h"
 #include "IDBFactory.h"
-#include "IDBGetAllHelper.h"
+#include "IDBGetAllOptions.h"
 #include "IDBIndex.h"
 #include "IDBKeyRange.h"
 #include "IDBRequest.h"

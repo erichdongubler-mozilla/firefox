@@ -742,7 +742,7 @@ nsresult nsExternalHelperAppService::DoContentContentProcessHelper(
   // protocol will act as a listener on the child-side and create a "real"
   // helperAppService listener on the parent-side, via another call to
   // DoContent.
-  RefPtr<ExternalHelperAppChild> childListener = new ExternalHelperAppChild();
+  RefPtr childListener = MakeRefPtr<ExternalHelperAppChild>();
   MOZ_ALWAYS_TRUE(child->SendPExternalHelperAppConstructor(
       childListener, uri, loadInfoArgs, nsCString(aMimeContentType), disp,
       contentDisposition, fileName, aForceSave, contentLength, wasFileChannel,
@@ -755,12 +755,9 @@ nsresult nsExternalHelperAppService::DoContentContentProcessHelper(
 
   SanitizeFileName(fileName, 0);
 
-  RefPtr<nsExternalAppHandler> handler =
-      new nsExternalAppHandler(nullptr, u""_ns, aContentContext, aWindowContext,
-                               this, fileName, reason, aForceSave);
-  if (!handler) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
+  RefPtr handler = MakeRefPtr<nsExternalAppHandler>(
+      nullptr, u""_ns, aContentContext, aWindowContext, this, fileName, reason,
+      aForceSave);
 
   childListener->SetHandler(handler);
   return NS_OK;

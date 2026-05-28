@@ -64,6 +64,7 @@
 #include "mozilla/dom/MessageEventBinding.h"
 #include "mozilla/dom/MessagePort.h"
 #include "mozilla/dom/MessagePortBinding.h"
+#include "mozilla/dom/Navigator.h"
 #include "mozilla/dom/PRemoteWorkerDebuggerParent.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/PerformanceStorageWorker.h"
@@ -755,6 +756,26 @@ class UpdateLanguagesRunnable final : public WorkerThreadRunnable {
   virtual bool WorkerRun(JSContext* aCx,
                          WorkerPrivate* aWorkerPrivate) override {
     aWorkerPrivate->UpdateLanguagesInternal(mLanguages);
+    return true;
+  }
+};
+
+class UpdateLanguageOverrideRunnable final : public WorkerThreadRunnable {
+  nsCString mLanguageOverride;
+  CopyableTArray<nsString> mResolvedLanguages;
+
+ public:
+  UpdateLanguageOverrideRunnable(WorkerPrivate* aWorkerPrivate,
+                                 const nsACString& aLanguageOverride,
+                                 const nsTArray<nsString>& aResolvedLanguages)
+      : WorkerThreadRunnable("UpdateLanguageOverrideRunnable"),
+        mLanguageOverride(aLanguageOverride),
+        mResolvedLanguages(aResolvedLanguages) {}
+
+  virtual bool WorkerRun(JSContext* aCx,
+                         WorkerPrivate* aWorkerPrivate) override {
+    aWorkerPrivate->UpdateLanguageOverrideInternal(mLanguageOverride,
+                                                   mResolvedLanguages);
     return true;
   }
 };
@@ -2343,6 +2364,19 @@ void WorkerPrivate::UpdateLanguages(const nsTArray<nsString>& aLanguages) {
   }
 }
 
+void WorkerPrivate::UpdateLanguageOverride(
+    const nsACString& aLanguageOverride,
+    const nsTArray<nsString>& aResolvedLanguages) {
+  AssertIsOnParentThread();
+
+  RefPtr<UpdateLanguageOverrideRunnable> runnable =
+      new UpdateLanguageOverrideRunnable(this, aLanguageOverride,
+                                         aResolvedLanguages);
+  if (!runnable->Dispatch(this)) {
+    NS_WARNING("Failed to update worker language override!");
+  }
+}
+
 void WorkerPrivate::UpdateJSWorkerMemoryParameter(JSGCParamKey aKey,
                                                   Maybe<uint32_t> aValue) {
   AssertIsOnParentThread();
@@ -2853,16 +2887,20 @@ WorkerPrivate::WorkerPrivate(
       JS::RealmOptions& chromeRealmOptions = mJSSettings.chromeRealmOptions;
       JS::RealmOptions& contentRealmOptions = mJSSettings.contentRealmOptions;
 
+      const nsCString& languageOverride = mLoadInfo.mLanguageOverrideLocale;
+
       xpc::InitGlobalObjectOptions(
           chromeRealmOptions, UsesSystemPrincipal(), mIsSecureContext,
           ShouldResistFingerprinting(RFPTarget::JSDateTimeUTC),
           ShouldResistFingerprinting(RFPTarget::JSMathFdlibm),
-          ShouldResistFingerprinting(RFPTarget::JSLocale), ""_ns, u""_ns);
+          ShouldResistFingerprinting(RFPTarget::JSLocale), languageOverride,
+          u""_ns);
       xpc::InitGlobalObjectOptions(
           contentRealmOptions, UsesSystemPrincipal(), mIsSecureContext,
           ShouldResistFingerprinting(RFPTarget::JSDateTimeUTC),
           ShouldResistFingerprinting(RFPTarget::JSMathFdlibm),
-          ShouldResistFingerprinting(RFPTarget::JSLocale), ""_ns, u""_ns);
+          ShouldResistFingerprinting(RFPTarget::JSLocale), languageOverride,
+          u""_ns);
 
       // Check if it's a privileged addon executing in order to allow access
       // to SharedArrayBuffer
@@ -3318,6 +3356,8 @@ nsresult WorkerPrivate::GetLoadInfo(
     loadInfo.mWindowID = aParent->WindowID();
     loadInfo.mAssociatedBrowsingContextID =
         aParent->AssociatedBrowsingContextID();
+    loadInfo.mLanguageOverrideLocale = aParent->GetLanguageOverrideLocale();
+    loadInfo.mLanguageOverride = aParent->GetLanguageOverride().Clone();
     loadInfo.mStorageAccess = aParent->StorageAccess();
     loadInfo.mUseRegularPrincipal = aParent->UseRegularPrincipal();
     loadInfo.mUsingStorageAccess = aParent->UsingStorageAccess();
@@ -3476,6 +3516,13 @@ nsresult WorkerPrivate::GetLoadInfo(
       loadInfo.mWindowID = globalWindow->WindowID();
       loadInfo.mAssociatedBrowsingContextID =
           globalWindow->GetBrowsingContext()->Id();
+      const nsCString& languageOverride =
+          globalWindow->GetBrowsingContext()->Top()->GetLanguageOverride();
+      if (!languageOverride.IsEmpty()) {
+        loadInfo.mLanguageOverrideLocale = languageOverride;
+        Navigator::GetAcceptLanguages(loadInfo.mLanguageOverride,
+                                      &languageOverride);
+      }
       loadInfo.mStorageAccess = StorageAllowedForWindow(globalWindow);
       loadInfo.mUseRegularPrincipal = document->UseRegularPrincipal();
       loadInfo.mUsingStorageAccess = document->UsingStorageAccess();
@@ -6060,6 +6107,42 @@ void WorkerPrivate::UpdateContextOptionsInternal(
 
   for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
     data->mChildWorkers[index]->UpdateContextOptions(aContextOptions);
+  }
+}
+
+void WorkerPrivate::UpdateLanguageOverrideInternal(
+    const nsCString& aLanguageOverride,
+    const nsTArray<nsString>& aResolvedLanguages) {
+  mLoadInfo.mLanguageOverrideLocale = aLanguageOverride;
+  if (aLanguageOverride.IsEmpty()) {
+    mLoadInfo.mLanguageOverride.Clear();
+  } else {
+    mLoadInfo.mLanguageOverride = aResolvedLanguages.Clone();
+  }
+
+  WorkerGlobalScope* globalScope = GlobalScope();
+  if (globalScope) {
+    JSObject* global = globalScope->GetGlobalJSObject();
+    if (global) {
+      JS::Realm* realm = JS::GetObjectRealmOrNull(global);
+      if (realm) {
+        if (aLanguageOverride.IsEmpty()) {
+          JS::SetRealmLocaleOverride(realm, nullptr);
+        } else {
+          JS::SetRealmLocaleOverride(realm, aLanguageOverride.get());
+        }
+      }
+    }
+
+    if (RefPtr<WorkerNavigator> nav = globalScope->GetExistingNavigator()) {
+      nav->SetLanguages(aResolvedLanguages);
+    }
+  }
+
+  auto data = mWorkerThreadAccessible.Access();
+  for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+    data->mChildWorkers[index]->UpdateLanguageOverride(aLanguageOverride,
+                                                       aResolvedLanguages);
   }
 }
 

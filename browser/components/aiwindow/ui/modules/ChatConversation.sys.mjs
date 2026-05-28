@@ -725,7 +725,9 @@ export class ChatConversation extends EventEmitter {
    */
   async retryMessage(message) {
     if (message.role !== MESSAGE_ROLE.USER) {
-      throw new Error("Not a user message");
+      const err = new Error("Not a user message");
+      err.clientReason = "retryInvalidMessage";
+      throw err;
     }
 
     // Capture ephemeral system messages before removal so we can return them.
@@ -750,7 +752,9 @@ export class ChatConversation extends EventEmitter {
     );
 
     if (retryMessageIndex === -1) {
-      throw new Error("Unrelated message");
+      const err = new Error("Unrelated message");
+      err.clientReason = "retryInvalidMessage";
+      throw err;
     }
 
     const toDeleteMessages = this.#messages.splice(retryMessageIndex);

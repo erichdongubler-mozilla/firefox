@@ -290,6 +290,9 @@
         <action
             android:id="@+id/action_homeFragment_to_storiesFragment"
             app:destination="@id/storiesFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_global_protections_dashboard"
+            app:destination="@id/global_protections_dashboard" />
     </fragment>
 
     <fragment
@@ -1992,6 +1995,12 @@
                 app:destination="@id/ipProtectionFragment" />
         </dialog>
     </navigation>
+
+    <dialog
+      android:id="@+id/global_protections_dashboard"
+      android:name="org.mozilla.fenix.trackingprotection.ProtectionsDashboard">
+    </dialog>
+
     <dialog
         android:id="@+id/customReviewPromptDialogFragment"
         android:name="org.mozilla.fenix.reviewprompt.CustomReviewPromptBottomSheetFragment" />

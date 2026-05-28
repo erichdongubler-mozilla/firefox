@@ -29,6 +29,7 @@ UNIFIED_SOURCES += [
     "TestLocalNetworkAccess.cpp",
     "TestMIMEInputStream.cpp",
     "TestMozURL.cpp",
+    "TestNoVarySearchUtils.cpp",
     "TestPACMan.cpp",
     "TestParseHeaders.cpp",
     "TestPollableEvent.cpp",

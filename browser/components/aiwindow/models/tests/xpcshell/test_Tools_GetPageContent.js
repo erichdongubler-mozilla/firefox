@@ -478,3 +478,17 @@ add_task(async function test_getPageContent_allows_untrusted_input_only() {
     sb.restore();
   }
 });
+
+add_task(
+  async function test_getPageContent_returns_error_string_for_non_array_url_list() {
+    const result = await GetPageContent.getPageContent(
+      { url_list: "not-an-array" },
+      makeConversation()
+    );
+    Assert.equal(typeof result, "string", "Should return a string");
+    Assert.ok(
+      result.startsWith("Error:"),
+      "Should return an error string so the model can self-correct"
+    );
+  }
+);

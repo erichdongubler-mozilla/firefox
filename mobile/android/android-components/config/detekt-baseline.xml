@@ -224,6 +224,7 @@
     <ID>MaxLineLength:IconDirectoryEntry.kt$@Suppress("MagicNumber", "ReturnCount", "CognitiveComplexMethod", "NestedBlockDepth", "ComplexCondition", "CyclomaticComplexMethod")</ID>
     <ID>MayBeConst:ConstraintLayoutPerfDetector.kt$private val CUSTOM_VIEW_ISSUE_DESCRIPTION = "Caution regarding custom views extending `ConstraintLayout`"</ID>
     <ID>MayBeConst:ConstraintLayoutPerfDetector.kt$private val CUSTOM_VIEW_ISSUE_MESSAGE = "Custom views extending `ConstraintLayout` are less " + "efficient because they cannot share other `ConstraintLayout` defined in file."</ID>
+    <ID>TooManyFunctions:Engine.kt$Engine : WebExtensionRuntimeTranslationsRuntimeBrowserPreferencesRuntimeAddressStructureRuntimeDataCleanable</ID>
     <ID>UndocumentedPublicClass:AutoSave.kt$AutoSave</ID>
     <ID>UndocumentedPublicClass:AutoSave.kt$AutoSave$Storage</ID>
     <ID>UndocumentedPublicClass:Base64.kt$Base64</ID>

@@ -13,6 +13,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,26 +54,34 @@ import mozilla.components.compose.base.theme.surfaceDimVariant
  * Composable for the Tracker Protection Dashboard.
  *
  * @param modifier Modifier to be applied to the dashboard.
+ * @param appName Application name used in the dashboard header to promote the trackers blocking feature.
  * @param totalTrackersBlocked Total number of trackers blocked this week.
  * @param sitesCount Number of sites the trackers were blocked on.
  * @param dataSavedMB Approximate data saved in megabytes, or null if not available.
  * @param trackersBlocked Breakdown of trackers blocked by their category.
+ * @param contentPadding Inner padding for the weekly stats card content.
+ * Allows pushing the content down while leaving room for an overlay
+ * (e.g. a bottom sheet handle) above the title.
  */
 @Composable
 fun TrackerProtectionDashboard(
     modifier: Modifier = Modifier,
+    appName: String,
     totalTrackersBlocked: Int,
     sitesCount: Int,
     dataSavedMB: Int? = null,
     trackersBlocked: List<TrackersBlockedCategory> = emptyList(),
+    contentPadding: PaddingValues = PaddingValues(),
 ) {
     val colors = rememberProtectionsDashboardColors()
     Column(modifier = modifier) {
         WeeklyStatsCard(
+            appName = appName,
             totalTrackersBlocked = totalTrackersBlocked,
             sitesCount = sitesCount,
             dataSavedMB = dataSavedMB,
             colors = colors,
+            contentPadding = contentPadding,
         )
         if (trackersBlocked.isNotEmpty()) {
             TrackerBreakdownSection(
@@ -85,11 +95,13 @@ fun TrackerProtectionDashboard(
 
 @Composable
 private fun WeeklyStatsCard(
+    appName: String,
     totalTrackersBlocked: Int,
     sitesCount: Int,
     dataSavedMB: Int?,
     colors: ProtectionsDashboardColors,
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
 ) {
     val gradientBrush = Brush.horizontalGradient(
         colorStops = arrayOf(
@@ -106,13 +118,14 @@ private fun WeeklyStatsCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(contentPadding)
                 .padding(horizontal = AcornTheme.layout.space.dynamic200)
                 .padding(top = AcornTheme.layout.space.static150)
                 .padding(bottom = AcornTheme.layout.space.static100),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (totalTrackersBlocked == 0) {
-                WeeklyStatsEmptyContent(colors = colors)
+                WeeklyStatsEmptyContent(appName, colors)
             } else {
                 WeeklyStatsContent(
                     totalTrackersBlocked = totalTrackersBlocked,
@@ -126,7 +139,10 @@ private fun WeeklyStatsCard(
 }
 
 @Composable
-private fun WeeklyStatsEmptyContent(colors: ProtectionsDashboardColors) {
+private fun WeeklyStatsEmptyContent(
+    appName: String,
+    colors: ProtectionsDashboardColors,
+) {
     Image(
         painter = painterResource(R.drawable.firefox_pictorgram_shield_check_rgb_2),
         contentDescription = null,
@@ -136,7 +152,7 @@ private fun WeeklyStatsEmptyContent(colors: ProtectionsDashboardColors) {
     Spacer(modifier = Modifier.height(AcornTheme.layout.space.static100))
 
     Text(
-        text = stringResource(R.string.mozac_protections_dashboard_empty_title),
+        text = stringResource(R.string.mozac_protections_dashboard_empty_title, appName),
         modifier = Modifier.semantics { heading() },
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Medium,
@@ -363,33 +379,33 @@ private fun TrackerCategoryRow(
 @PreviewLightDark
 @Composable
 @Suppress("MagicNumber")
-private fun TrackerProtectionDashboardPreview() {
-    val isDark = isSystemInDarkTheme()
-    val colors = if (isDark) {
-        ProtectionsDashboardColors(
-            background = Color(0xFF4B3974),
-            textPrimary = Color(0xFFFBFBFE),
-            textSecondary = Color(0xFFFBFBFE),
-            textAccent = Color(0xFFD9BFFF),
-            chipBackground = Color(0xFF1C1B22).copy(alpha = 0.4f),
-            chipText = Color(0xFFD9BFFF),
-            progressBar = Color(0xFFD9BFFF),
-            gradientStart = Color(0xFFAB71FF).copy(alpha = 0.5f),
-            gradientEnd = Color(0xFFFF8A50).copy(alpha = 0.5f),
-        )
-    } else {
-        ProtectionsDashboardColors(
-            background = Color(0xFFE6E0F5),
-            textPrimary = Color(0xFF15141A),
-            textSecondary = Color(0xFF5B5B66),
-            textAccent = Color(0xFF312A64),
-            chipBackground = Color.White.copy(alpha = 0.4f),
-            chipText = Color(0xFF312A64),
-            progressBar = Color(0xFF592ACB),
-            gradientStart = Color(0xFFD9BFFF).copy(alpha = 0.5f),
-            gradientEnd = Color(0xFFFFD5B2).copy(alpha = 0.5f),
-        )
+private fun EmptyTrackerProtectionDashboardPreview() {
+    AcornTheme {
+        Column(
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(AcornTheme.layout.space.static200),
+        ) {
+            WeeklyStatsCard(
+                appName = "Firefox",
+                totalTrackersBlocked = 0,
+                sitesCount = 0,
+                dataSavedMB = 0,
+                colors = previewDashboardColors(),
+            )
+            TrackerBreakdownSection(
+                trackersBlocked = emptyList(),
+                maxCount = 1,
+                colors = previewDashboardColors(),
+            )
+        }
     }
+}
+
+@PreviewLightDark
+@Composable
+@Suppress("MagicNumber")
+private fun TrackerProtectionDashboardPreview() {
     val trackersBlocked = listOf(
         TrackersBlockedCategory(
             icon = mozilla.components.ui.icons.R.drawable.mozac_ic_cookies_24,
@@ -419,18 +435,47 @@ private fun TrackerProtectionDashboardPreview() {
                 .padding(AcornTheme.layout.space.static200),
         ) {
             WeeklyStatsCard(
+                appName = "Firefox",
                 totalTrackersBlocked = 754,
                 sitesCount = 0,
                 dataSavedMB = 0,
-                colors = colors,
+                colors = previewDashboardColors(),
             )
             TrackerBreakdownSection(
                 trackersBlocked = trackersBlocked,
                 maxCount = trackersBlocked.maxOfOrNull { it.count } ?: 1,
-                colors = colors,
+                colors = previewDashboardColors(),
             )
         }
     }
+}
+
+@Suppress("MagicNumber")
+@Composable
+@ReadOnlyComposable
+private fun previewDashboardColors() = when (isSystemInDarkTheme()) {
+    true -> ProtectionsDashboardColors(
+        background = Color(0xFF4B3974),
+        textPrimary = Color(0xFFFBFBFE),
+        textSecondary = Color(0xFFFBFBFE),
+        textAccent = Color(0xFFD9BFFF),
+        chipBackground = Color(0xFF1C1B22).copy(alpha = 0.4f),
+        chipText = Color(0xFFD9BFFF),
+        progressBar = Color(0xFFD9BFFF),
+        gradientStart = Color(0xFFAB71FF).copy(alpha = 0.5f),
+        gradientEnd = Color(0xFFFF8A50).copy(alpha = 0.5f),
+    )
+    else -> ProtectionsDashboardColors(
+        background = Color(0xFFE6E0F5),
+        textPrimary = Color(0xFF15141A),
+        textSecondary = Color(0xFF5B5B66),
+        textAccent = Color(0xFF312A64),
+        chipBackground = Color.White.copy(alpha = 0.4f),
+        chipText = Color(0xFF312A64),
+        progressBar = Color(0xFF592ACB),
+        gradientStart = Color(0xFFD9BFFF).copy(alpha = 0.5f),
+        gradientEnd = Color(0xFFFFD5B2).copy(alpha = 0.5f),
+    )
 }
 
 /**

@@ -1243,7 +1243,7 @@ nsresult gfxFontUtils::GetFullNameFromTable(hb_blob_t* aNameTable,
   nsresult rv = gfxFontUtils::ReadCanonicalName(
       aNameTable, gfxFontUtils::NAME_ID_FULL, name);
   if (NS_SUCCEEDED(rv) && !name.IsEmpty()) {
-    aFullName = name;
+    aFullName = std::move(name);
     return NS_OK;
   }
   rv = gfxFontUtils::ReadCanonicalName(aNameTable, gfxFontUtils::NAME_ID_FAMILY,
@@ -1255,7 +1255,7 @@ nsresult gfxFontUtils::GetFullNameFromTable(hb_blob_t* aNameTable,
     if (NS_SUCCEEDED(rv) && !styleName.IsEmpty()) {
       name.Append(' ');
       name.Append(styleName);
-      aFullName = name;
+      aFullName = std::move(name);
     }
     return NS_OK;
   }
@@ -1269,7 +1269,7 @@ nsresult gfxFontUtils::GetFamilyNameFromTable(hb_blob_t* aNameTable,
   nsresult rv = gfxFontUtils::ReadCanonicalName(
       aNameTable, gfxFontUtils::NAME_ID_FAMILY, name);
   if (NS_SUCCEEDED(rv) && !name.IsEmpty()) {
-    aFamilyName = name;
+    aFamilyName = std::move(name);
     return NS_OK;
   }
   return NS_ERROR_NOT_AVAILABLE;

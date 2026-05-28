@@ -80,9 +80,8 @@ WindowContext::GetOverriddenFingerprintingSettingsWebIDL() const {
     return nullptr;
   }
 
-  nsCOMPtr<nsIRFPTargetSetIDL> protections =
-      new nsRFPTargetSetIDL(overriddenFingerprintingSettings.ref());
-  return protections.forget();
+  return MakeAndAddRef<nsRFPTargetSetIDL>(
+      overriddenFingerprintingSettings.ref());
 }
 
 nsGlobalWindowInner* WindowContext::GetInnerWindow() const {

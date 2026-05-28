@@ -148,6 +148,9 @@ class RemoteWorkerController final {
 
   void Thaw();
 
+  void SetLocaleOverride(const nsACString& aLanguageOverride,
+                         const nsTArray<nsString>& aLanguages);
+
   RefPtr<ServiceWorkerOpPromise> ExecServiceWorkerOp(
       ServiceWorkerOpArgs&& aArgs);
 
@@ -250,12 +253,16 @@ class RemoteWorkerController final {
       ePortIdentifier,
       eAddWindowID,
       eRemoveWindowID,
+      eSetLocaleOverride,
     };
 
     explicit PendingSharedWorkerOp(Type aType, uint64_t aWindowID = 0);
 
     explicit PendingSharedWorkerOp(
         const MessagePortIdentifier& aPortIdentifier);
+
+    PendingSharedWorkerOp(const nsACString& aLanguageOverride,
+                          const nsTArray<nsString>& aLanguages);
 
     ~PendingSharedWorkerOp();
 
@@ -267,6 +274,8 @@ class RemoteWorkerController final {
     const Type mType;
     const MessagePortIdentifier mPortIdentifier;
     const uint64_t mWindowID = 0;
+    const nsCString mLanguageOverride;
+    const CopyableTArray<nsString> mLanguages;
     bool mCompleted = false;
   };
 

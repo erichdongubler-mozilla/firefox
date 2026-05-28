@@ -464,6 +464,7 @@ smart_window:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2021947
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2035241
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2040801
     data_reviews:
       - https://phabricator.services.mozilla.com/D287710
     data_sensitivity:
@@ -502,6 +503,11 @@ smart_window:
         description: >
           HTTP status from the inference back-end, or 0 if no response
       model: *model
+      is_retry:
+        type: boolean
+        description: >
+          True when this response (success or failure) was produced by a
+          user-initiated retry of a previous turn
 
   chat_storage:
     type: quantity

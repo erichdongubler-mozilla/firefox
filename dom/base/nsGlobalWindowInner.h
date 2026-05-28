@@ -686,6 +686,8 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   void ForgetSharedWorker(mozilla::dom::SharedWorker* aSharedWorker);
 
+  void UpdateSharedWorkersLanguageOverride(const nsCString& aLanguageOverride);
+
  public:
   void Alert(nsIPrincipal& aSubjectPrincipal, mozilla::ErrorResult& aError);
   void Alert(const nsAString& aMessage, nsIPrincipal& aSubjectPrincipal,

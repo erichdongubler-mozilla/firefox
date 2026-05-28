@@ -706,7 +706,7 @@ async function promiseRequestDevice(
           args.aType,
           args.aBadDevice
         );
-        await EventUtils.synthesizeMouseAtCenter(
+        EventUtils.synthesizeMouseAtCenter(
           global.document.getElementById("gum"),
           {},
           content

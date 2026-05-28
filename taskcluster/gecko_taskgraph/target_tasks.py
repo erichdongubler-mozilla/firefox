@@ -453,6 +453,102 @@ def target_tasks_mozilla_central(full_task_graph, parameters, graph_config):
     return [l for l in filtered_for_project if filter(full_task_graph[l])]
 
 
+@register_target_task("enterprise_firefox_tasks")
+def target_tasks_enterprise_firefox(full_task_graph, parameters, graph_config):
+    """
+    Filter to run Enterprise-specific builds, i.e., those allowed to run from
+    GitHub repos and that matches the "enterprise-firefox" project.
+    """
+    filtered_for_enterprise = target_tasks_enterprise_firefox_with_tests(
+        full_task_graph, parameters, graph_config
+    )
+
+    def filter(task):
+        if task.kind in TEST_KINDS:
+            return False
+
+        return True
+
+    return [l for l in filtered_for_enterprise if filter(full_task_graph[l])]
+
+
+@register_target_task("enterprise_firefox_with_tests_tasks")
+def target_tasks_enterprise_firefox_with_tests(
+    full_task_graph, parameters, graph_config
+):
+    """
+    Filter to run Enterprise-specific builds, i.e., those allowed to run from
+    GitHub repos and that matches the "enterprise-firefox" project.
+    """
+
+    filtered_for_project = target_tasks_default(
+        full_task_graph, parameters, graph_config
+    )
+
+    def filter(task):
+        test_platform = task.attributes.get("test_platform")
+        # Skip android-hw tests, windows11-aarch64: they require special hardware and credentials
+        if (
+            "test" in task.kind
+            and test_platform
+            and ("android-hw" in test_platform or "windows11-aarch64" in test_platform)
+        ):
+            return False
+
+        # Only keep builds that have been explicitely flagged
+        if task.kind == "build" and not "enterprise-firefox" in task.attributes.get(
+            "run_on_projects"
+        ):
+            return False
+
+        if task.attributes.get("shipping_product") not in (None, "firefox-enterprise"):
+            return False
+
+        build_platform = task.attributes.get("build_platform")
+        test_platform = task.attributes.get("test_platform")
+        build_type = task.attributes.get("build_type")
+        shippable = task.attributes.get("shippable", False)
+
+        level = int(parameters["level"])
+        if level < 3:
+            if "shippable" in task.label or shippable:
+                return False
+
+            if task.kind == "complete":
+                return False
+
+            if build_platform and "enterprise" not in build_platform:
+                return False
+
+            if test_platform and "enterprise" not in test_platform:
+                return False
+
+        if not build_platform or not build_type:
+            return True
+
+        if shippable and "enterprise" not in build_platform:
+            return False
+
+        family = platform_family(build_platform)
+        # We need to know whether this test is against a "regular" opt build
+        # (which is to say, not shippable, asan, tsan, or any other opt build
+        # with other properties). There's no positive test for this, so we have to
+        # do it somewhat hackily. Android doesn't have variants other than shippable
+        # so it is pretty straightforward to check for. Other platforms have many
+        # variants, but none of the regular opt builds we're looking for have a "-"
+        # in their platform name, so this works (for now).
+        is_regular_opt = (
+            family == "android" and not shippable
+        ) or "-" not in build_platform
+
+        if build_type != "opt" or not is_regular_opt:
+            return True
+
+        return False
+
+    return [l for l in filtered_for_project if filter(full_task_graph[l])]
+
+
 @register_target_task("graphics_tasks")
 def target_tasks_graphics(full_task_graph, parameters, graph_config):
     """In addition to doing the filtering by project that the 'default'

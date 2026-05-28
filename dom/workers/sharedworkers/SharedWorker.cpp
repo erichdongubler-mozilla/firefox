@@ -266,7 +266,8 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
       loadInfo.mIsOn3PCBExceptionList,
       OriginTrials::FromWindow(nsGlobalWindowInner::Cast(window)),
       void_t() /* OptionalServiceWorkerData */, agentClusterId,
-      DEFAULT_REMOTE_TYPE /* ignored */);
+      DEFAULT_REMOTE_TYPE /* ignored */, loadInfo.mLanguageOverrideLocale,
+      loadInfo.mLanguageOverride.Clone());
 
   PSharedWorkerChild* pActor = actorChild->SendPSharedWorkerConstructor(
       remoteWorkerData, loadInfo.mWindowID, portIdentifier.release());
@@ -379,6 +380,15 @@ void SharedWorker::Suspend() {
 void SharedWorker::Resume() {
   if (mActor) {
     mActor->SendResume();
+  }
+}
+
+void SharedWorker::UpdateLanguageOverride(
+    const nsACString& aLanguageOverride, const nsTArray<nsString>& aLanguages) {
+  AssertIsOnMainThread();
+
+  if (mActor) {
+    mActor->SendSetLocaleOverride(aLanguageOverride, aLanguages);
   }
 }
 

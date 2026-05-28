@@ -416,21 +416,12 @@ ${
       return;
     }
 
-    if (!Services.prefs.getBoolPref("browser.nova.enabled", false)) {
-      if (attribute == "open") {
-        if (this.view.isOpen && this.view.visibleRowCount) {
-          this.startLayoutExtend();
-        } else {
-          this.endLayoutExtend();
-        }
-      }
-      return;
-    }
-
-    if (this.focused || (this.view.isOpen && this.view.visibleRowCount)) {
-      this.startLayoutExtend();
-    } else {
-      this.endLayoutExtend();
+    if (
+      Services.prefs.getBoolPref("browser.nova.enabled", false) ||
+      attribute == "open"
+    ) {
+      // Update only if 'open' attribute is changed for not Nova.
+      this.updateLayoutExtend();
     }
   }
 
@@ -2984,6 +2975,7 @@ ${
 
     if (
       this.view.isOpen &&
+      this.view.visibleRowCount &&
       !Services.prefs.getBoolPref("browser.nova.enabled", false)
     ) {
       return;
@@ -2991,6 +2983,23 @@ ${
 
     this.toggleAttribute("breakout-extend", false);
     this.#updateTextboxPosition();
+  }
+
+  updateLayoutExtend() {
+    if (!Services.prefs.getBoolPref("browser.nova.enabled", false)) {
+      if (this.view.isOpen && this.view.visibleRowCount) {
+        this.startLayoutExtend();
+      } else {
+        this.endLayoutExtend();
+      }
+      return;
+    }
+
+    if (this.focused || (this.view.isOpen && this.view.visibleRowCount)) {
+      this.startLayoutExtend();
+    } else {
+      this.endLayoutExtend();
+    }
   }
 
   /**

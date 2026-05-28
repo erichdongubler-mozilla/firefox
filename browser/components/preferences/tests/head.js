@@ -327,7 +327,7 @@ async function selectHistoryMode(win, value) {
 
   let popupShownPromise = BrowserTestUtils.waitForSelectPopupShown(window);
 
-  await EventUtils.synthesizeMouseAtCenter(
+  EventUtils.synthesizeMouseAtCenter(
     historyMode,
     {},
     historyMode.documentGlobal
@@ -404,11 +404,7 @@ async function updateCheckBoxElement(checkbox, value) {
   checkbox.scrollIntoView();
 
   // Toggle the state.
-  await EventUtils.synthesizeMouseAtCenter(
-    checkbox,
-    {},
-    checkbox.documentGlobal
-  );
+  EventUtils.synthesizeMouseAtCenter(checkbox, {}, checkbox.documentGlobal);
 }
 
 async function updateCheckBox(win, id, value) {
@@ -425,11 +421,7 @@ async function updateCheckBox(win, id, value) {
   checkbox.scrollIntoView();
 
   // Toggle the state.
-  await EventUtils.synthesizeMouseAtCenter(
-    checkbox,
-    {},
-    checkbox.documentGlobal
-  );
+  EventUtils.synthesizeMouseAtCenter(checkbox, {}, checkbox.documentGlobal);
 }
 
 /**

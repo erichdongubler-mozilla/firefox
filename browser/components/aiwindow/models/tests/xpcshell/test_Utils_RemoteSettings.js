@@ -1480,3 +1480,60 @@ add_task(async function test_custom_prompt_only_overrides_prompts_field() {
     Services.prefs.clearUserPref(PREF_PROMPT);
   }
 });
+
+add_task(
+  async function test_loadConfig_remoteSettingsUnavailable_clientReason() {
+    const sb = sinon.createSandbox();
+    try {
+      sb.stub(openAIEngine, "getRemoteClient").returns({
+        get: sb.stub().resolves([]),
+      });
+
+      const engine = new openAIEngine();
+      await Assert.rejects(
+        engine.loadConfig(MODEL_FEATURES.CHAT),
+        err => err.clientReason === "remoteSettingsUnavailable",
+        "loadConfig should reject with clientReason remoteSettingsUnavailable"
+      );
+    } finally {
+      sb.restore();
+    }
+  }
+);
+
+add_task(async function test_loadConfig_modelConfigUnavailable_clientReason() {
+  const sb = sinon.createSandbox();
+  try {
+    // Records exist for the feature but not for the required major version,
+    // so selectMainConfig returns null and modelConfigUnavailable is reported.
+    const fakeRecords = [
+      {
+        feature: MODEL_FEATURES.CHAT,
+        version: "999.0",
+        model: "generic",
+        is_default: true,
+      },
+    ];
+    sb.stub(openAIEngine, "getRemoteClient").returns({
+      get: sb.stub().resolves(fakeRecords),
+    });
+
+    const engine = new openAIEngine();
+    await Assert.rejects(
+      engine.loadConfig(MODEL_FEATURES.CHAT),
+      err => err.clientReason === "modelConfigUnavailable",
+      "loadConfig should reject with clientReason modelConfigUnavailable"
+    );
+  } finally {
+    sb.restore();
+  }
+});
+
+add_task(async function test_loadPrompt_promptLoadFailure_clientReason() {
+  const engine = new openAIEngine();
+  await Assert.rejects(
+    engine.loadPrompt(MODEL_FEATURES.CHAT),
+    err => err.clientReason === "promptLoadFailure",
+    "loadPrompt should reject with clientReason promptLoadFailure"
+  );
+});

@@ -446,14 +446,13 @@ export class LoginManagerRustStorage {
   }
 
   async modifyLoginAsync(oldLogin, newLoginData, _fromSync) {
-    const oldStoredLogin =
-      await this.#storageAdapter.findLoginToUpdate(oldLogin);
+    const oldStoredLogin = await this.#storageAdapter.get(oldLogin.guid);
 
     if (!oldStoredLogin) {
       throw new Error("No matching logins");
     }
 
-    const idToModify = oldStoredLogin.guid;
+    const idToModify = oldLogin.guid;
 
     const newLogin = lazy.LoginHelper.buildModifiedLogin(
       oldStoredLogin,
@@ -704,16 +703,13 @@ export class LoginManagerRustStorage {
   }
 
   async removeLoginAsync(login, _fromSync) {
-    const storedLogin = await this.#storageAdapter.findLoginToUpdate(login);
-
-    if (!storedLogin) {
+    const deleted = await this.#storageAdapter.delete(login.guid);
+    if (!deleted) {
       throw new Error("No matching logins");
     }
 
-    await this.#storageAdapter.delete(storedLogin.guid);
-
     if (this.#isActive) {
-      lazy.LoginHelper.notifyStorageChanged("removeLogin", storedLogin);
+      lazy.LoginHelper.notifyStorageChanged("removeLogin", login);
     }
   }
 

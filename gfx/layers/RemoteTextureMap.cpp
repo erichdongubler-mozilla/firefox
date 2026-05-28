@@ -1445,7 +1445,7 @@ RemoteTextureMap::TextureDataHolder::TextureDataHolder(
 RemoteTextureMap::RenderingReadyCallbackHolder::RenderingReadyCallbackHolder(
     const RemoteTextureId aTextureId,
     std::function<void(const RemoteTextureInfo&)>&& aCallback)
-    : mTextureId(aTextureId), mCallback(aCallback) {}
+    : mTextureId(aTextureId), mCallback(std::move(aCallback)) {}
 
 RemoteTextureMap::RemoteTextureHostWrapperHolder::
     RemoteTextureHostWrapperHolder(

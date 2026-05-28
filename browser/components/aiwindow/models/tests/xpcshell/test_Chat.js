@@ -9,7 +9,7 @@ const { ChatConversation } = ChromeUtils.importESModule(
 const { SYSTEM_PROMPT_TYPE, MESSAGE_ROLE } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs"
 );
-const { Chat } = ChromeUtils.importESModule(
+const { Chat, executeToolByName } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Chat.sys.mjs"
 );
 const { RunSearch, GetPageContent, toolFns } = ChromeUtils.importESModule(
@@ -1096,5 +1096,24 @@ add_task(
     } finally {
       sb.restore();
     }
+  }
+);
+
+add_task(
+  async function test_Chat_executeToolByName_throws_unknownTool_clientReason() {
+    await Assert.rejects(
+      executeToolByName(
+        "no_such_tool",
+        {},
+        "tool-call-id",
+        /* conversation */ null,
+        /* browsingContext */ null,
+        "fullpage",
+        /* engineInstance */ null,
+        0
+      ),
+      err => err.clientReason === "unknownTool",
+      "executeToolByName should reject with clientReason unknownTool"
+    );
   }
 );

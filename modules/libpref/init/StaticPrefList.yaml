@@ -3989,6 +3989,13 @@
   value: 0
   mirror: always
 
+# Enable the Picture-in-Picture API
+- name: dom.media-pip.enabled
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+  rust: true
+
 # User pref to control whether Private Attribution
 # information should be collected / submitted.
 - name: dom.private-attribution.submission.enabled
@@ -15615,6 +15622,15 @@
   value: true
   mirror: always
 
+# If true, hosts matching the OS-provided DNS suffix list are excluded from
+# TRR even when in TRR-only mode (mode 3). When false (default), the DNS
+# suffix list is ignored in TRR-only mode so those names are still resolved
+# via TRR.
+- name: network.trr.exclude_dns_suffix_in_mode_trronly
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 # Explicitly disable ECS (EDNS Client Subnet, RFC 7871)
 - name: network.trr.disable-ECS
   type: RelaxedAtomicBool
@@ -16410,6 +16426,16 @@
 - name: network.trr.add_additional_records
   type: RelaxedAtomicBool
   value: true
+  mirror: always
+
+# When true, the HTTP cache uses the No-Vary-Search response header to match
+# URL variants against existing cache entries, implementing the "equivalent
+# modulo variation config" algorithm from the No-Vary-Search spec
+# (https://httpwg.org/http-extensions/draft-ietf-httpbis-no-vary-search.html).
+# Can be set to false to disable the feature if regressions are observed.
+- name: network.cache.no_vary_search
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # When this pref is true, AddStorageEntry will return an error if the

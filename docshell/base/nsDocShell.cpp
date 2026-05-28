@@ -497,12 +497,12 @@ already_AddRefed<nsDocShell> nsDocShell::Create(
   // Note: This check is duplicated in SharedWorkerInterfaceRequestor's
   // constructor.
   if (XRE_IsParentProcess()) {
-    ds->mInterceptController = new ServiceWorkerInterceptController();
+    ds->mInterceptController = MakeRefPtr<ServiceWorkerInterceptController>();
   }
 
   // We want to hold a strong ref to the loadgroup, so it better hold a weak
   // ref to us...  use an InterfaceRequestorProxy to do this.
-  nsCOMPtr<nsIInterfaceRequestor> proxy = new InterfaceRequestorProxy(ds);
+  RefPtr proxy = MakeRefPtr<InterfaceRequestorProxy>(ds);
   ds->mLoadGroup->SetNotificationCallbacks(proxy);
 
   // XXX(nika): We have our BrowsingContext, so we might be able to skip this.
@@ -1038,7 +1038,7 @@ bool nsDocShell::MaybeHandleSubframeHistory(
               mBrowsingContext->GetCurrentLoadIdentifier();
           RefPtr<nsDocShellLoadState> loadState = aLoadState;
           bool isNavigating = mIsNavigating;
-          RefPtr<StopDetector> stopDetector = new StopDetector();
+          RefPtr stopDetector = MakeRefPtr<StopDetector>();
           loadGroup->AddRequest(stopDetector, nullptr);
           // Need to set mCheckingSessionHistory so that
           // GetIsAttemptingToNavigate() returns true.
@@ -3817,7 +3817,7 @@ nsresult nsDocShell::LoadErrorPage(nsIURI* aErrorURI, nsIURI* aFailedURI,
   mFailedURI = aFailedURI;
   mFailedLoadType = mLoadType;
 
-  RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(aErrorURI);
+  RefPtr loadState = MakeRefPtr<nsDocShellLoadState>(aErrorURI);
   loadState->SetTriggeringPrincipal(nsContentUtils::GetSystemPrincipal());
   if (mBrowsingContext) {
     loadState->SetTriggeringSandboxFlags(mBrowsingContext->GetSandboxFlags());
@@ -3948,7 +3948,7 @@ nsresult nsDocShell::ReloadNavigable(
     RefPtr<BrowsingContext> browsingContext(mBrowsingContext);
     nsCOMPtr<nsIURI> currentURI(mCurrentURI);
     nsCOMPtr<nsIReferrerInfo> referrerInfo(mReferrerInfo);
-    RefPtr<StopDetector> stopDetector = new StopDetector();
+    RefPtr stopDetector = MakeRefPtr<StopDetector>();
     nsCOMPtr<nsILoadGroup> loadGroup;
     GetLoadGroup(getter_AddRefs(loadGroup));
     if (loadGroup) {
@@ -4108,7 +4108,7 @@ nsresult nsDocShell::ReloadDocument(nsDocShell* aDocShell, Document* aDocument,
   emplacedResultPrincipalURI.emplace(std::move(resultPrincipalURI));
 
   RefPtr<WindowContext> context = aBrowsingContext->GetCurrentWindowContext();
-  RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(currentURI);
+  RefPtr loadState = MakeRefPtr<nsDocShellLoadState>(currentURI);
   loadState->SetReferrerInfo(aReferrerInfo);
   loadState->SetOriginalURI(originalURI);
   loadState->SetMaybeResultPrincipalURI(emplacedResultPrincipalURI);
@@ -4263,7 +4263,7 @@ nsDocShell::LoadPageAsViewSource(nsIDocShell* aOtherDocShell,
   }
 
   auto* otherDocShell = nsDocShell::Cast(aOtherDocShell);
-  RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(newURI);
+  RefPtr loadState = MakeRefPtr<nsDocShellLoadState>(newURI);
   if (!otherDocShell->FillLoadStateFromCurrentEntry(*loadState)) {
     return NS_ERROR_INVALID_POINTER;
   }
@@ -4899,7 +4899,7 @@ nsDocShell::RefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
   }
 
   nsCOMPtr<nsITimerCallback> refreshTimer =
-      new nsRefreshTimer(this, aURI, aPrincipal, aDelay);
+      MakeRefPtr<nsRefreshTimer>(this, aURI, aPrincipal, aDelay);
 
   BusyFlags busyFlags = GetBusyFlags();
 
@@ -4955,7 +4955,7 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
                             uint32_t aDelay) {
   NS_ENSURE_ARG(aURI);
 
-  RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(aURI);
+  RefPtr loadState = MakeRefPtr<nsDocShellLoadState>(aURI);
   loadState->SetOriginalURI(mCurrentURI);
   loadState->SetResultPrincipalURI(aURI);
   loadState->SetResultPrincipalURIIsSome(true);
@@ -5006,8 +5006,7 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
   /* The document's referrer policy is needed instead of mReferrerInfo's
    * referrer policy.
    */
-  const nsCOMPtr<nsIReferrerInfo> referrerInfo =
-      new ReferrerInfo(*doc, sendReferrer);
+  const RefPtr referrerInfo = MakeRefPtr<ReferrerInfo>(*doc, sendReferrer);
   /* We mimic HTTP, which passes the original referrer. See step 3 of
    * <https://html.spec.whatwg.org/multipage/browsing-the-web.html#create-navigation-params-by-fetching>.
    */
@@ -5727,8 +5726,8 @@ already_AddRefed<nsIWebProgressListener> nsDocShell::BCWebProgressListener() {
       // notifications are otherwise filtered.
       // NOTE: Unlike other nsIWebProgress types, nsBrowserStatusFilter holds a
       // strong cycle-collected reference to the inner listener.
-      mBCWebProgressStatusFilter =
-          new nsBrowserStatusFilter(/* aDisableStateChangeFilters */ true);
+      mBCWebProgressStatusFilter = MakeRefPtr<nsBrowserStatusFilter>(
+          /* aDisableStateChangeFilters */ true);
       mBCWebProgressStatusFilter->AddProgressListener(
           innerListener, nsIWebProgress::NOTIFY_ALL);
     }
@@ -6621,17 +6620,14 @@ nsresult nsDocShell::CreateAboutBlankDocumentViewer(
       // appending a new policy to CSP) within the new document will be
       // incorrectly propagated to the opening doc.
       if (aPolicyContainer) {
-        RefPtr<PolicyContainer> policyContainerToInherit =
-            new PolicyContainer();
+        RefPtr policyContainerToInherit = MakeRefPtr<PolicyContainer>();
         policyContainerToInherit->InitFromOther(
             PolicyContainer::Cast(aPolicyContainer));
         blankDoc->SetPolicyContainer(policyContainerToInherit);
-        nsIContentSecurityPolicy* csp =
-            PolicyContainer::GetCSP(policyContainerToInherit);
-        if (!csp) {
-          csp = new nsCSPContext();
-          policyContainerToInherit->SetCSP(csp);
-          nsresult rv = csp->SetRequestContextWithDocument(blankDoc);
+        if (!PolicyContainer::GetCSP(policyContainerToInherit)) {
+          RefPtr newCsp = MakeRefPtr<nsCSPContext>();
+          policyContainerToInherit->SetCSP(newCsp);
+          nsresult rv = newCsp->SetRequestContextWithDocument(blankDoc);
           if (NS_WARN_IF(NS_FAILED(rv))) {
             return rv;
           }
@@ -7487,10 +7483,10 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
 
     // Ideally we should use the same loadinfo as within DoURILoad which
     // should match this one when both are applicable.
-    nsCOMPtr<nsILoadInfo> secCheckLoadInfo =
-        new LoadInfo(mScriptGlobal, aLoadState->URI(),
-                     aLoadState->TriggeringPrincipal(), requestingContext,
-                     nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK, 0);
+    RefPtr secCheckLoadInfo = MakeRefPtr<LoadInfo>(
+        mScriptGlobal, aLoadState->URI(), aLoadState->TriggeringPrincipal(),
+        requestingContext, nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
+        0);
 
     // Since Content Policy checks are performed within docShell as well as
     // the ContentSecurityManager we need a reliable way to let certain
@@ -7572,8 +7568,7 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
       MOZ_ASSERT(!aLoadState->LoadIsFromSessionHistory());
       MOZ_ASSERT(aLoadState->FirstParty());  // Windowwatcher will assume this.
 
-      RefPtr<nsDocShellLoadState> loadState =
-          new nsDocShellLoadState(aLoadState->URI());
+      RefPtr loadState = MakeRefPtr<nsDocShellLoadState>(aLoadState->URI());
 
       // Set up our loadinfo so it will do the load as much like we would have
       // as possible.
@@ -8516,7 +8511,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
       }
 
       // Do this asynchronously
-      nsCOMPtr<nsIRunnable> ev = new InternalLoadEvent(this, aLoadState);
+      RefPtr ev = MakeRefPtr<InternalLoadEvent>(this, aLoadState);
       return Dispatch(ev.forget());
     }
 
@@ -9374,7 +9369,7 @@ nsIPrincipal* nsDocShell::GetInheritedPrincipal(
     // same reference) otherwise modifications done (such as the meta CSP of the
     // new doc) in an opaque origin will incorrectly be propagated to the
     // embedding document.
-    RefPtr<PolicyContainer> policyContainerToInherit = new PolicyContainer();
+    RefPtr policyContainerToInherit = MakeRefPtr<PolicyContainer>();
     policyContainerToInherit->InitFromOther(
         PolicyContainer::Cast(policyContainer));
     aLoadInfo->SetPolicyContainerToInherit(policyContainerToInherit);
@@ -9862,9 +9857,9 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
       aLoadState->GetLoadIdentifier());
   RefPtr<LoadInfo> loadInfo;
   if (contentPolicyType == nsIContentPolicy::TYPE_DOCUMENT) {
-    loadInfo =
-        new LoadInfo(loadingWindow, uri, aLoadState->TriggeringPrincipal(),
-                     topLevelLoadingContext, securityFlags, sandboxFlags);
+    loadInfo = MakeRefPtr<LoadInfo>(
+        loadingWindow, uri, aLoadState->TriggeringPrincipal(),
+        topLevelLoadingContext, securityFlags, sandboxFlags);
   } else {
     loadInfo = MOZ_TRY(LoadInfo::Create(
         loadingPrincipal, aLoadState->TriggeringPrincipal(), loadingNode,
@@ -10373,8 +10368,8 @@ nsresult nsDocShell::OpenRedirectedChannel(nsDocShellLoadState* aLoadState) {
     documentOpenInfoFlags |= nsIURILoader::IS_OBJECT_EMBED;
   }
 
-  RefPtr<nsDocumentOpenInfo> loader =
-      new nsDocumentOpenInfo(this, documentOpenInfoFlags, nullptr);
+  RefPtr loader =
+      MakeRefPtr<nsDocumentOpenInfo>(this, documentOpenInfoFlags, nullptr);
   channel->SetLoadGroup(mLoadGroup);
 
   MOZ_ALWAYS_SUCCEEDS(loader->Prepare());
@@ -10388,8 +10383,7 @@ nsresult nsDocShell::OpenRedirectedChannel(nsDocShellLoadState* aLoadState) {
     // we create a wrapper around the channel and nsIStreamListener
     // that forwards functionality as needed, and then we register
     // it under the provided identifier.
-    RefPtr<ParentChannelWrapper> wrapper =
-        new ParentChannelWrapper(channel, loader);
+    RefPtr wrapper = MakeRefPtr<ParentChannelWrapper>(channel, loader);
     wrapper->Register(aLoadState->GetPendingRedirectChannelRegistrarId());
 
     mLoadGroup->AddRequest(channel, nullptr);
@@ -11711,7 +11705,7 @@ nsresult nsDocShell::EnsureEditorData() {
 
 nsresult nsDocShell::EnsureFind() {
   if (!mFind) {
-    mFind = new nsWebBrowserFind();
+    mFind = MakeRefPtr<nsWebBrowserFind>();
   }
 
   // we promise that the nsIWebBrowserFind that we return has been set
@@ -11959,7 +11953,7 @@ nsDocShell::DoCommandWithParams(const char* aCommand,
 nsresult nsDocShell::EnsureCommandHandler() {
   if (!mCommandManager) {
     if (nsCOMPtr<nsPIDOMWindowOuter> domWindow = GetWindow()) {
-      mCommandManager = new nsCommandManager(domWindow);
+      mCommandManager = MakeRefPtr<nsCommandManager>(domWindow);
     }
   }
   return mCommandManager ? NS_OK : NS_ERROR_FAILURE;
@@ -12077,7 +12071,7 @@ nsresult nsDocShell::OnLinkClick(
     }
   }
 
-  RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(aURI);
+  RefPtr loadState = MakeRefPtr<nsDocShellLoadState>(aURI);
   loadState->SetTarget(target);
   loadState->SetFileName(aFileName);
   loadState->SetPostDataStream(aPostDataStream);
@@ -12101,7 +12095,7 @@ nsresult nsDocShell::OnLinkClick(
       ownerDoc->GetScriptTrackingFlags());
   loadState->SetHistoryBehavior(NavigationHistoryBehavior::Auto);
 
-  nsCOMPtr<nsIRunnable> ev = new OnLinkClickEvent(
+  RefPtr ev = MakeRefPtr<OnLinkClickEvent>(
       this, aContent, loadState, noOpenerImplied, aTriggeringPrincipal);
   return Dispatch(ev.forget());
 }
@@ -12322,9 +12316,9 @@ nsresult nsDocShell::OnLinkClickSync(nsIContent* aContent,
     }
   }
 
-  nsCOMPtr<nsIReferrerInfo> referrerInfo =
-      elementCanHaveNoopener ? new ReferrerInfo(*aContent->AsElement())
-                             : new ReferrerInfo(*referrerDoc);
+  RefPtr referrerInfo = elementCanHaveNoopener
+                            ? MakeRefPtr<ReferrerInfo>(*aContent->AsElement())
+                            : MakeRefPtr<ReferrerInfo>(*referrerDoc);
 
   aLoadState->SetTriggeringSandboxFlags(triggeringSandboxFlags);
   aLoadState->SetTriggeringWindowId(triggeringWindowId);
@@ -12750,7 +12744,7 @@ nsresult nsIDocShell::SetHTMLEditor(HTMLEditor* aHTMLEditor) {
 NS_IMETHODIMP
 nsDocShell::SetColorMatrix(const nsTArray<float>& aMatrix) {
   if (aMatrix.Length() == MATRIX_LENGTH) {
-    mColorMatrix.reset(new gfx::Matrix5x4());
+    mColorMatrix = MakeUnique<gfx::Matrix5x4>();
     static_assert(
         MATRIX_LENGTH * sizeof(float) == sizeof(mColorMatrix->components),
         "Size mismatch for our memcpy");

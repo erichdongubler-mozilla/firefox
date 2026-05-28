@@ -745,7 +745,7 @@ export class GetPageContent {
 
     // Sanitize the inputs from the language model:
     if (!Array.isArray(url_list)) {
-      throw new Error("The url list must be an array of stirngs");
+      return "Error: the url_list argument must be an array of strings.";
     }
 
     // Collect these one time before the loop below since it must iterate through

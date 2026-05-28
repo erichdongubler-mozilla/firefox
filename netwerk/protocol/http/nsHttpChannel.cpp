@@ -125,7 +125,6 @@
 #include "HttpTransactionParent.h"
 #include "ThirdPartyUtil.h"
 #include "InterceptedHttpChannel.h"
-#include "../../cache2/CacheFileUtils.h"
 #include "nsINetworkLinkService.h"
 #include "mozilla/ContentBlockingAllowList.h"
 #include "mozilla/dom/ServiceWorkerUtils.h"
@@ -6206,6 +6205,25 @@ nsresult nsHttpChannel::UpdateCacheEntryHeaders(nsICacheEntry* entry,
   rv = entry->SetMetaDataElement("original-response-headers", head.get());
   if (NS_FAILED(rv)) return rv;
 
+  // Store No-Vary-Search header in cache metadata and notify the secondary
+  // index so variant URLs can match this entry on future cache lookups.
+  nsAutoCString noVarySearch;
+  if (StaticPrefs::network_cache_no_vary_search() &&
+      NS_SUCCEEDED(
+          mResponseHead->GetHeader(nsHttp::No_Vary_Search, noVarySearch)) &&
+      !noVarySearch.IsEmpty()) {
+    rv = entry->SetMetaDataElement("no-vary-search", noVarySearch.get());
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    if (mCacheEntryURI) {
+      if (auto* svc = CacheStorageService::Self()) {
+        svc->NoteNoVarySearchEntry(entry, mCacheEntryURI);
+      }
+    }
+  }
+
   // Indicate we have successfully finished setting metadata on the cache
   // entry.
   return entry->MetaDataReady();
@@ -8880,7 +8898,9 @@ nsHttpChannel::GetEssentialDomainCategory(nsCString& domain) {
   if (domain == "aus5.mozilla.org"_ns) {
     return EssentialDomainCategory::Aus5MozillaOrg;
   }
-  if (domain == "firefox.settings.services.mozilla.com"_ns) {
+  if (domain == "firefox.settings.services.mozilla.com"_ns ||
+      domain == "firefox-settings-attachments.cdn.mozilla.net"_ns ||
+      domain == "content-signature-2.cdn.mozilla.net"_ns) {
     return EssentialDomainCategory::RemoteSettings;
   }
   if (domain == "incoming.telemetry.mozilla.com"_ns) {

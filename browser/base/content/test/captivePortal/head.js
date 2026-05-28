@@ -256,7 +256,7 @@ async function openCaptivePortalLoginTab(
     let doc = content.document;
     let loginButton = doc.getElementById("openPortalLoginPageButton");
     info("Click on the login button on the captive portal error page");
-    await EventUtils.synthesizeMouseAtCenter(loginButton, {}, content);
+    EventUtils.synthesizeMouseAtCenter(loginButton, {}, content);
   });
 
   let portalTab = await portalTabPromise;

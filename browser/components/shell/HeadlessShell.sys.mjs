@@ -49,8 +49,11 @@ function loadContentWindow(browser, url) {
         if (flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT) {
           return;
         }
-        // Ignore the initial about:blank, unless about:blank is requested
-        if (location.spec == "about:blank" && uri.spec != "about:blank") {
+        // Ignore transient about:blank.
+        if (
+          progress.browsingContext.currentWindowGlobal
+            ?.isUncommittedInitialDocument
+        ) {
           return;
         }
 
@@ -93,6 +96,8 @@ async function takeScreenshot(
     browser.style.height = `${contentHeight}px`;
     browser.style.minHeight = `${contentHeight}px`;
     browser.setAttribute("maychangeremoteness", "true");
+    // Suppress initial about:blank so it can't race any explicit load below.
+    browser.setAttribute("nodefaultsrc", "true");
     doc.documentElement.appendChild(browser);
 
     await loadContentWindow(browser, url);

@@ -322,11 +322,7 @@ async function testSend(tab, menu, expectedOverrides = {}) {
         blockedTrackersToggle,
         "blocked trackers toggle should start off"
       );
-      await EventUtils.synthesizeMouseAtCenter(
-        blockedTrackersToggle,
-        {},
-        rbs.win
-      );
+      EventUtils.synthesizeMouseAtCenter(blockedTrackersToggle, {}, rbs.win);
       await isPressed(
         blockedTrackersToggle,
         "blocked trackers toggle should toggle"
@@ -339,7 +335,7 @@ async function testSend(tab, menu, expectedOverrides = {}) {
     const { top, left } = screenshotToggle.getBoundingClientRect();
     await isVisible(screenshotToggle, "screenshot toggle should be visible");
     await isPressed(screenshotToggle, "screenshot toggle should start off");
-    await EventUtils.synthesizeMouseAtPoint(left + 10, top + 10, {}, rbs.win);
+    EventUtils.synthesizeMouseAtPoint(left + 10, top + 10, {}, rbs.win);
     await isNotPressed(screenshotToggle, "screenshot toggle should toggle");
   }
 

@@ -2684,7 +2684,7 @@ void nsSHistory::InitiateLoad(BrowsingContext* aSourceBrowsingContext,
   loadResult->mBrowsingContext = aFrameBC;
 
   nsCOMPtr<nsIURI> newURI = aFrameEntry->GetURI();
-  RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(newURI);
+  RefPtr loadState = MakeRefPtr<nsDocShellLoadState>(newURI);
 
   loadState->SetSourceBrowsingContext(aSourceBrowsingContext);
 
@@ -2738,7 +2738,7 @@ NS_IMETHODIMP
 nsSHistory::CreateEntry(nsISHEntry** aEntry) {
   nsCOMPtr<nsISHEntry> entry;
   if (XRE_IsParentProcess()) {
-    entry = new SessionHistoryEntry();
+    entry = MakeRefPtr<SessionHistoryEntry>();
   }
   entry.forget(aEntry);
   return NS_OK;

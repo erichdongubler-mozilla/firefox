@@ -70,6 +70,8 @@ class SerialPlatformService {
   void NotifyPortDisconnected(const nsAString& aPortId);
 
  private:
+  static already_AddRefed<SerialPlatformService> GetInstanceImpl();
+
   virtual nsresult EnumeratePortsImpl(SerialPortList& aPorts) = 0;
   virtual nsresult OpenImpl(const nsString& aPortId,
                             const IPCSerialOptions& aOptions) = 0;

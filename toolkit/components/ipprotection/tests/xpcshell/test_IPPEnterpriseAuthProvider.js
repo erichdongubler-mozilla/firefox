@@ -79,6 +79,28 @@ add_task(function test_overrides_all_IPPAuthProvider_members() {
   }
 });
 
+add_task(async function test_initOnStartupCompleted_notifies_listeners() {
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(IPProtectionService, "updateState");
+
+  const provider = new IPPEnterpriseAuthProviderSingleton();
+
+  let eventFired = false;
+  provider.addEventListener("IPPAuthProvider:StateChanged", () => {
+    eventFired = true;
+  });
+
+  await provider.initOnStartupCompleted();
+
+  Assert.ok(eventFired, "IPPAuthProvider:StateChanged should be dispatched");
+  Assert.ok(
+    IPProtectionService.updateState.calledOnce,
+    "IPProtectionService.updateState() should be called"
+  );
+
+  sandbox.restore();
+});
+
 add_task(async function test_fetchProxyPass_success() {
   // eslint-disable-next-line no-unused-vars
   using _felt = installFakeFelt();

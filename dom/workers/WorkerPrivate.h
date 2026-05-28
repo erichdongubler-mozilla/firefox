@@ -462,6 +462,10 @@ class WorkerPrivate final
 
   void UpdateLanguagesInternal(const nsTArray<nsString>& aLanguages);
 
+  void UpdateLanguageOverrideInternal(
+      const nsCString& aLanguageOverride,
+      const nsTArray<nsString>& aResolvedLanguages);
+
   void UpdateJSWorkerMemoryParameterInternal(JSContext* aCx, JSGCParamKey key,
                                              Maybe<uint32_t> aValue);
 
@@ -826,6 +830,14 @@ class WorkerPrivate final
     return mLoadInfo.mAssociatedBrowsingContextID;
   }
 
+  const nsTArray<nsString>& GetLanguageOverride() const {
+    return mLoadInfo.mLanguageOverride;
+  }
+
+  const nsCString& GetLanguageOverrideLocale() const {
+    return mLoadInfo.mLanguageOverrideLocale;
+  }
+
   uint64_t ServiceWorkerID() const { return GetServiceWorkerDescriptor().Id(); }
 
   const nsCString& ServiceWorkerScope() const {
@@ -1112,6 +1124,9 @@ class WorkerPrivate final
   void UpdateContextOptions(const JS::ContextOptions& aContextOptions);
 
   void UpdateLanguages(const nsTArray<nsString>& aLanguages);
+
+  void UpdateLanguageOverride(const nsACString& aLanguageOverride,
+                              const nsTArray<nsString>& aResolvedLanguages);
 
   void UpdateJSWorkerMemoryParameter(JSGCParamKey key, Maybe<uint32_t> value);
 

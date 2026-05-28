@@ -237,16 +237,16 @@ class JS_PUBLIC_API CallbackTracer
 
   // Override this method to receive notification when a node in the GC
   // heap graph is visited.
-  virtual void onChild(JS::GCCellPtr thing, const char* name) = 0;
+  virtual bool onChild(JS::GCCellPtr thing, const char* name) = 0;
 
  private:
   template <typename T>
   bool onEdge(T** thingp, const char* name) {
     T* thing = *thingp;
-    if (thing) {
-      onChild(JS::GCCellPtr(thing), name);
+    if (!thing) {
+      return true;
     }
-    return true;
+    return onChild(JS::GCCellPtr(thing), name);
   }
   friend class js::GenericTracerImpl<CallbackTracer>;
 };

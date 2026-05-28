@@ -473,7 +473,10 @@ class DebuggerTransport {
     if (!this._incoming.done) {
       return;
     }
-    logger.debug("Got: " + this._incoming);
+    // `_incoming` is the RDP packet as a string, so it can be very large.
+    if (logger.shouldLog("Debug")) {
+      logger.debug("Got: ", this._incoming);
+    }
     this._destroyIncoming();
   }
 

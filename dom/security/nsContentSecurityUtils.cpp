@@ -767,20 +767,20 @@ void nsContentSecurityUtils::NotifyEvalUsage(bool aIsSystemPrincipal,
                                              uint32_t aColumnNumber) {
   FilenameTypeAndDetails fileNameTypeAndDetails =
       FilenameToFilenameType(aFileName, false);
-  auto fileinfo = fileNameTypeAndDetails.second;
-  auto value = Some(fileNameTypeAndDetails.first);
+  auto fileinfo = std::move(fileNameTypeAndDetails.second);
+  auto value = Some(std::move(fileNameTypeAndDetails.first));
   if (aIsSystemPrincipal) {
     glean::security::EvalUsageSystemContextExtra extra = {
-        .fileinfo = fileinfo,
-        .value = value,
+        .fileinfo = std::move(fileinfo),
+        .value = std::move(value),
     };
-    glean::security::eval_usage_system_context.Record(Some(extra));
+    glean::security::eval_usage_system_context.Record(Some(std::move(extra)));
   } else {
     glean::security::EvalUsageParentProcessExtra extra = {
-        .fileinfo = fileinfo,
-        .value = value,
+        .fileinfo = std::move(fileinfo),
+        .value = std::move(value),
     };
-    glean::security::eval_usage_parent_process.Record(Some(extra));
+    glean::security::eval_usage_parent_process.Record(Some(std::move(extra)));
   }
 
   // Report an error to console
@@ -807,7 +807,7 @@ void nsContentSecurityUtils::NotifyEvalUsage(bool aIsSystemPrincipal,
   }
   nsAutoString message;
   NS_ConvertUTF8toUTF16 fileNameA(aFileName);
-  AutoTArray<nsString, 1> formatStrings = {fileNameA};
+  AutoTArray<nsString, 1> formatStrings = {std::move(fileNameA)};
   nsresult rv = bundle->FormatStringFromName("RestrictBrowserEvalUsage",
                                              formatStrings, message);
   if (NS_FAILED(rv)) {

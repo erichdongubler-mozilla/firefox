@@ -176,6 +176,9 @@ class RuntimeService final : public nsIObserver {
   void UpdateWorkersPlaybackState(const nsPIDOMWindowInner& aWindow,
                                   bool aIsPlayingAudio);
 
+  void UpdateWorkersLanguageOverride(const nsPIDOMWindowInner& aWindow,
+                                     const nsCString& aLanguageOverride);
+
  private:
   RuntimeService();
   ~RuntimeService();

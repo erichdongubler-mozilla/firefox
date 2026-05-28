@@ -164,7 +164,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
             ),
             engine = requireComponents.core.engine,
             settings = requireComponents.settings,
-            coroutineContext = lifecycleScope.coroutineContext,
         )
     }
 

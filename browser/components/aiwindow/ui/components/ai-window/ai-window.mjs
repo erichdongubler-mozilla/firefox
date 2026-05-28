@@ -1583,10 +1583,12 @@ export class AIWindow extends MozLitElement {
    * memory injection; undefined falls back to use global/default behavior.
    * @param {URL|null} [options.pageUrl] - Page URL to associate with the
    * message, or null if the user removed page context.
+   * @param {boolean} [options.isRetry=false] - True when the call originated
+   * from a user-initiated retry; surfaced in model_response telemetry.
    */
   async #fetchAIResponse(
     inputText,
-    { skipUserDispatch = false, pageUrl, ...userOpts } = {}
+    { skipUserDispatch = false, pageUrl, isRetry = false, ...userOpts } = {}
   ) {
     // Capture conversation and browsingContext at call time so that a tab switch
     // mid-stream cannot redirect this request to the wrong target.
@@ -1660,14 +1662,16 @@ export class AIWindow extends MozLitElement {
 
       this.#sendModelResponseTelemetryEvent(
         null,
-        this.#getModelRequestLatencyAndDuration(requestStart, firstTokenTime)
+        this.#getModelRequestLatencyAndDuration(requestStart, firstTokenTime),
+        { isRetry }
       );
     } catch (e) {
       if (!signal.aborted) {
         this.showSearchingIndicator(false, null);
         this.#handleError(
           e,
-          this.#getModelRequestLatencyAndDuration(requestStart, firstTokenTime)
+          this.#getModelRequestLatencyAndDuration(requestStart, firstTokenTime),
+          { isRetry }
         );
       }
       this.requestUpdate?.();
@@ -1740,7 +1744,11 @@ export class AIWindow extends MozLitElement {
     return { lastMessage, messageCount: countAtLastMatch };
   }
 
-  #sendModelResponseTelemetryEvent(error, { duration, latency }) {
+  #sendModelResponseTelemetryEvent(
+    error,
+    { duration, latency },
+    { isRetry = false } = {}
+  ) {
     const { lastMessage: lastAssistantMessage, messageCount } =
       this.#getConversationLastMessageAndCount(lazy.MESSAGE_ROLE.ASSISTANT);
     const { name: errorName, httpStatus } = error
@@ -1760,6 +1768,7 @@ export class AIWindow extends MozLitElement {
       error: errorName,
       http_status: httpStatus,
       model: this.modelName,
+      is_retry: isRetry,
     });
   }
 
@@ -1788,7 +1797,7 @@ export class AIWindow extends MozLitElement {
       : window.browsingContext;
   }
 
-  #handleError(error, { latency, duration }) {
+  #handleError(error, { latency, duration }, { isRetry = false } = {}) {
     console.error(error);
     const newErrorMessage = {
       role: "",
@@ -1799,10 +1808,11 @@ export class AIWindow extends MozLitElement {
         clientReason: error.clientReason,
       },
     };
-    this.#sendModelResponseTelemetryEvent(error, {
-      latency,
-      duration,
-    });
+    this.#sendModelResponseTelemetryEvent(
+      error,
+      { latency, duration },
+      { isRetry }
+    );
     this.#dispatchMessageToChatContent(newErrorMessage);
   }
 
@@ -2261,7 +2271,7 @@ export class AIWindow extends MozLitElement {
     }
 
     this._isRetrying = true;
-    this.#fetchAIResponse()
+    this.#fetchAIResponse("", { isRetry: true })
       .catch(error => {
         console.error("Error retrying after error:", error);
       })
@@ -2282,6 +2292,7 @@ export class AIWindow extends MozLitElement {
     }
 
     this._isRetrying = true;
+    const retryStart = ChromeUtils.now();
     try {
       const actor = this.#getAIChatContentActor();
 
@@ -2298,9 +2309,21 @@ export class AIWindow extends MozLitElement {
           withMemories ?? this.#memoriesToggled ?? this.#memoriesIconShown,
         contextMentions: userMsg.content.contextMentions,
         pageUrl: userMsg.pageUrl,
+        isRetry: true,
       });
     } catch (e) {
-      console.error("ai-window: retry failed", e);
+      // Errors raised before #fetchAIResponse takes over (truncation,
+      // retryMessage validation, chat store deletion, conversation refresh)
+      // never reach the request-path catch, so route them here so they are
+      // observable in model_response with is_retry=true.
+      if (!e.clientReason) {
+        e.clientReason = "retryOrchestrationFailure";
+      }
+      this.#handleError(
+        e,
+        this.#getModelRequestLatencyAndDuration(retryStart, null),
+        { isRetry: true }
+      );
     } finally {
       this._isRetrying = false;
     }

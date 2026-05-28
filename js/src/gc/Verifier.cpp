@@ -84,7 +84,7 @@ using NodeMap =
 class js::VerifyPreTracer final : public JS::CallbackTracer {
   JS::AutoDisableGenerationalGC noggc;
 
-  void onChild(JS::GCCellPtr thing, const char* name) override;
+  bool onChild(JS::GCCellPtr thing, const char* name) override;
 
  public:
   /* The gcNumber when the verification began. */
@@ -131,17 +131,17 @@ inline bool IgnoreForPreBarrierVerifier(JSRuntime* runtime,
  * This function builds up the heap snapshot by adding edges to the current
  * node.
  */
-void VerifyPreTracer::onChild(JS::GCCellPtr thing, const char* name) {
+bool VerifyPreTracer::onChild(JS::GCCellPtr thing, const char* name) {
   MOZ_ASSERT(!IsInsideNursery(thing.asCell()));
 
   if (IgnoreForPreBarrierVerifier(runtime(), thing)) {
-    return;
+    return true;
   }
 
   edgeptr += sizeof(EdgeValue);
   if (edgeptr >= term) {
     edgeptr = term;
-    return;
+    return true;
   }
 
   VerifyNode* node = curnode;
@@ -150,6 +150,8 @@ void VerifyPreTracer::onChild(JS::GCCellPtr thing, const char* name) {
   node->edges[i].thing = thing;
   node->edges[i].label = name;
   node->count++;
+
+  return true;
 }
 
 static VerifyNode* MakeNode(VerifyPreTracer* trc, JS::GCCellPtr thing) {
@@ -292,7 +294,7 @@ struct CheckEdgeTracer final : public JS::CallbackTracer {
       : JS::CallbackTracer(rt, JS::TracerKind::Callback,
                            JS::WeakEdgeTraceAction::Skip),
         node(nullptr) {}
-  void onChild(JS::GCCellPtr thing, const char* name) override;
+  bool onChild(JS::GCCellPtr thing, const char* name) override;
 };
 
 static const uint32_t MAX_VERIFIER_EDGES = 1000;
@@ -304,22 +306,24 @@ static const uint32_t MAX_VERIFIER_EDGES = 1000;
  * non-nullptr edges (i.e., the ones from the original snapshot that must have
  * been modified) must point to marked objects.
  */
-void CheckEdgeTracer::onChild(JS::GCCellPtr thing, const char* name) {
+bool CheckEdgeTracer::onChild(JS::GCCellPtr thing, const char* name) {
   if (IgnoreForPreBarrierVerifier(runtime(), thing)) {
-    return;
+    return true;
   }
 
   /* Avoid n^2 behavior. */
   if (node->count > MAX_VERIFIER_EDGES) {
-    return;
+    return true;
   }
 
   for (uint32_t i = 0; i < node->count; i++) {
     if (node->edges[i].thing == thing) {
       node->edges[i].thing = JS::GCCellPtr();
-      return;
+      return true;
     }
   }
+
+  return true;
 }
 
 static bool IsMarkedOrAllocated(const EdgeValue& edge) {
@@ -859,7 +863,7 @@ class HeapCheckTracerBase : public JS::CallbackTracer {
   size_t failures;
 
  private:
-  void onChild(JS::GCCellPtr thing, const char* name) override;
+  bool onChild(JS::GCCellPtr thing, const char* name) override;
 
   struct WorkItem {
     WorkItem(JS::GCCellPtr thing, const char* name, int parentIndex)
@@ -889,31 +893,33 @@ HeapCheckTracerBase::HeapCheckTracerBase(JSRuntime* rt,
       oom(false),
       parentIndex(-1) {}
 
-void HeapCheckTracerBase::onChild(JS::GCCellPtr thing, const char* name) {
+bool HeapCheckTracerBase::onChild(JS::GCCellPtr thing, const char* name) {
   Cell* cell = thing.asCell();
   if (visited.lookup(cell)) {
-    return;
+    return true;
   }
 
   if (!visited.put(cell)) {
     oom = true;
-    return;
+    return true;
   }
 
   if (!checkCell(cell, name)) {
     // Don't trace through known bad cell.
-    return;
+    return true;
   }
 
   // Don't trace into GC things owned by another runtime.
   if (cell->runtimeFromAnyThread() != rt) {
-    return;
+    return true;
   }
 
   WorkItem item(thing, name, parentIndex);
   if (!stack.append(item)) {
     oom = true;
   }
+
+  return true;
 }
 
 bool HeapCheckTracerBase::traceHeap(AutoHeapSession& session) {

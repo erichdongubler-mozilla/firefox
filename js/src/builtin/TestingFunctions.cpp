@@ -3460,10 +3460,11 @@ class HasChildTracer final : public JS::CallbackTracer {
   RootedValue child_;
   bool found_;
 
-  void onChild(JS::GCCellPtr thing, const char* name) override {
+  bool onChild(JS::GCCellPtr thing, const char* name) override {
     if (thing.asCell() == child_.toGCThing()) {
       found_ = true;
     }
+    return true;
   }
 
  public:
@@ -3962,7 +3963,8 @@ static bool GetObjectFuseState(JSContext* cx, unsigned argc, Value* vp) {
   // definition order.
   Rooted<PropertyInfoWithKeyVector> propsVec(cx, PropertyInfoWithKeyVector(cx));
   for (ShapePropertyIter<CanGC> iter(cx, obj->shape()); !iter.done(); iter++) {
-    if (iter->hasSlot() && !propsVec.append(*iter)) {
+    if (iter->hasSlot() && ObjectFuse::tracksPropertyKey(iter->key()) &&
+        !propsVec.append(*iter)) {
       return false;
     }
   }

@@ -165,7 +165,8 @@ class MOZ_STACK_CLASS gfxOTSMessageContext : public gfxOTSContext {
       }
     }
 
-    mMessages.AppendElement(gfxUserFontEntry::OTSMessage{msg, level});
+    mMessages.AppendElement(
+        gfxUserFontEntry::OTSMessage{std::move(msg), level});
   }
 
   bool Process(ots::OTSStream* aOutput, const uint8_t* aInput, size_t aLength,
@@ -183,7 +184,7 @@ class MOZ_STACK_CLASS gfxOTSMessageContext : public gfxOTSContext {
         msg.AppendInt(gid);
       }
       msg.Append(")");
-      mMessages.AppendElement(gfxUserFontEntry::OTSMessage{msg, 1});
+      mMessages.AppendElement(gfxUserFontEntry::OTSMessage{std::move(msg), 1});
       mBadBBoxGlyphs.Clear();
     }
     return std::move(mMessages);

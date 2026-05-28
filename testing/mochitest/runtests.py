@@ -47,7 +47,6 @@ import mozprocess
 import mozrunner
 from manifestparser import TestManifest
 from manifestparser.filters import (
-    chunk_by_slice,
     failures,
     pathprefix,
     subsuite,
@@ -1850,9 +1849,6 @@ toolbar#nav-bar {
                 options.test_paths = self.normalize_paths(options.test_paths)
                 path_filter = pathprefix(options.test_paths)
                 filters.append(path_filter)
-
-            if options.totalChunks:
-                filters.append(chunk_by_slice(options.thisChunk, options.totalChunks))
 
             noDefaultFilters = False
             if options.runFailures:

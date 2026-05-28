@@ -25,7 +25,7 @@
 #define kMinUnwrittenChanges 300
 #define kMinDumpInterval 20000  // in milliseconds
 #define kMaxBufSize 16384
-#define kIndexVersion 0x0000000A
+#define kIndexVersion 0x0000000B
 #define kUpdateIndexStartDelay 50000  // in milliseconds
 #define kTelemetryReportBytesLimit (2U * 1024U * 1024U * 1024U)  // 2GB
 

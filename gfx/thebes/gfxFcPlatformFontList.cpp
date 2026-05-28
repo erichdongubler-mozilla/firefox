@@ -2643,7 +2643,7 @@ void gfxFcPlatformFontList::AddGenericFonts(
         usePrefFontList = true;
       } else {
         // serif, sans-serif, monospace or math was specified
-        genericToLookup = fontlistValue;
+        genericToLookup = std::move(fontlistValue);
       }
     }
   }

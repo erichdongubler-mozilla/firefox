@@ -280,6 +280,8 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
                                       getter_AddRefs(info.mCookieJarSettings));
   info.mCookieJarSettingsArgs = aData.cookieJarSettings();
   info.mIsOn3PCBExceptionList = aData.isOn3PCBExceptionList();
+  info.mLanguageOverrideLocale = aData.languageOverrideLocale();
+  info.mLanguageOverride = aData.languageOverride().Clone();
   info.mSecureContext = aData.isSecureContext()
                             ? WorkerLoadInfo::eSecureContext
                             : WorkerLoadInfo::eInsecureContext;

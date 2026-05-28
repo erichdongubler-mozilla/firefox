@@ -253,6 +253,14 @@ class CacheIndexEntry : public PLDHashEntryHdr {
     return !!(mRec->Get()->mFlags & kHasAltDataMask);
   }
 
+  void SetHasNoVarySearch(bool aVal) {
+    aVal ? mRec->Get()->mFlags |= kHasNoVarySearchMask
+         : mRec->Get()->mFlags &= ~kHasNoVarySearchMask;
+  }
+  bool HasNoVarySearch() const {
+    return !!(mRec->Get()->mFlags & kHasNoVarySearchMask);
+  }
+
   void SetOnStartTime(uint16_t aTime) { mRec->Get()->mOnStartTime = aTime; }
   uint16_t GetOnStartTime() const { return mRec->Get()->mOnStartTime; }
 
@@ -393,8 +401,12 @@ class CacheIndexEntry : public PLDHashEntryHdr {
   // Indicates that this entry is a dictionary
   static const uint32_t kDictionaryMask = 0x01000000;
 
-  // FileSize in kilobytes (max 16GB)
-  static const uint32_t kFileSizeMask = 0x00FFFFFF;
+  // Indicates that this entry has a No-Vary-Search response header stored
+  // in its metadata. Used to warm mNoVarySearchIndex on startup.
+  static const uint32_t kHasNoVarySearchMask = 0x00800000;
+
+  // FileSize in kilobytes (max 8GB)
+  static const uint32_t kFileSizeMask = 0x007FFFFF;
 
   RefPtr<CacheIndexRecordWrapper> mRec;
 };

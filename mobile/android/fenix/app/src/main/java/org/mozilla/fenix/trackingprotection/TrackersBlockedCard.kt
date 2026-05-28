@@ -57,6 +57,8 @@ import kotlin.math.roundToInt
 private const val FOX_ANIMATION_DURATION = 600
 private const val TYPING_DELAY_MS = 50L
 private const val CURSOR_BLINK_MS = 500L
+private const val DISPLAY_DURATION_MS = 3000L
+private const val TYPEWRITER_REVERSE_DELAY_MS = 1200L
 
 /**
  * A card that displays the number of trackers blocked with an animated fox.
@@ -74,11 +76,25 @@ fun TrackersBlockedCard(
     showLongfoxEntryPoint: Boolean = false,
 ) {
     val foxOffsetY = remember { Animatable(1f) }
+    var isReversing by remember { mutableStateOf(false) }
 
     LaunchedEffect(showLongfoxEntryPoint) {
         if (showLongfoxEntryPoint) {
+            isReversing = false
             foxOffsetY.animateTo(
                 targetValue = 0f,
+                animationSpec = tween(durationMillis = FOX_ANIMATION_DURATION, easing = Ease),
+            )
+            delay(DISPLAY_DURATION_MS)
+            isReversing = true
+        }
+    }
+
+    LaunchedEffect(isReversing) {
+        if (isReversing) {
+            delay(TYPEWRITER_REVERSE_DELAY_MS)
+            foxOffsetY.animateTo(
+                targetValue = 1f,
                 animationSpec = tween(durationMillis = FOX_ANIMATION_DURATION, easing = Ease),
             )
         }
@@ -113,14 +129,15 @@ fun TrackersBlockedCard(
             )
         }
 
-        if (showLongfoxEntryPoint) {
+        if (showLongfoxEntryPoint && foxOffsetY.value < 1f) {
             Spacer(modifier = Modifier.height(6.dp))
 
             TypewriterText(
-                text = stringResource(R.string.help_catch_trackers),
                 modifier = Modifier
                     .clickable { interactor?.onLongfoxEntryPointClicked() }
                     .padding(bottom = AcornTheme.layout.space.static300),
+                text = stringResource(R.string.help_catch_trackers),
+                isReversing = isReversing,
             )
         }
     }
@@ -171,8 +188,9 @@ private fun ProtectionStatusPill(
 
 @Composable
 private fun TypewriterText(
-    text: String,
     modifier: Modifier = Modifier,
+    text: String,
+    isReversing: Boolean = false,
 ) {
     val breakIterator = remember(text) { BreakIterator.getCharacterInstance() }
     var substringText by remember { mutableStateOf("") }
@@ -188,6 +206,20 @@ private fun TypewriterText(
             delay(TYPING_DELAY_MS)
         }
         isTypingComplete = true
+    }
+
+    LaunchedEffect(isReversing) {
+        if (isReversing && isTypingComplete) {
+            breakIterator.text = StringCharacterIterator(text)
+            breakIterator.last()
+            var prevIndex = breakIterator.previous()
+            while (prevIndex != BreakIterator.DONE) {
+                substringText = text.subSequence(0, prevIndex).toString()
+                prevIndex = breakIterator.previous()
+                delay(TYPING_DELAY_MS)
+            }
+            substringText = ""
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -229,7 +261,8 @@ private fun TrackersBlockedCardPreview() {
                 trackersBlockedCount = 754,
                 interactor = object : TrackingProtectionInteractor {
                     override fun onPrivacyReportTapped() = Unit
-                override fun onLongfoxEntryPointClicked() = Unit },
+                    override fun onLongfoxEntryPointClicked() = Unit
+                },
                 showLongfoxEntryPoint = true,
             )
         }
@@ -245,7 +278,8 @@ private fun TrackersBlockedCardEmptyPreview() {
                 trackersBlockedCount = 0,
                 interactor = object : TrackingProtectionInteractor {
                     override fun onPrivacyReportTapped() = Unit
-                override fun onLongfoxEntryPointClicked() = Unit },
+                    override fun onLongfoxEntryPointClicked() = Unit
+                },
                 showLongfoxEntryPoint = false,
             )
         }

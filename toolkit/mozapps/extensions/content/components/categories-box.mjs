@@ -27,12 +27,20 @@ const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
 
+// NOTE: The titleL10nId is making sure the sidebar entries are labelled
+// when the sidebar is in collapsed mode and their slotted elements
+// or text nodes are hidden.
+//
+// Each of the titleL10nId points to a fluent string that reference the
+// l10nId, and so they points to the same localized strings.
 const CATEGORIES = [
   {
     name: "discover",
     viewId: "addons://discover/",
     iconSrc: "chrome://global/skin/icons/trophy.svg",
     l10nId: "addon-category-discover",
+
+    titleL10nId: "addon-category-discover-title",
     defaultHidden: true,
   },
   {
@@ -40,6 +48,7 @@ const CATEGORIES = [
     viewId: "addons://list/extension",
     iconSrc: "chrome://mozapps/skin/extensions/category-extensions.svg",
     l10nId: "addon-category-extension",
+    titleL10nId: "addon-category-extension-title",
     defaultHidden: false,
   },
   {
@@ -47,6 +56,7 @@ const CATEGORIES = [
     viewId: "addons://list/theme",
     iconSrc: "chrome://mozapps/skin/extensions/category-themes.svg",
     l10nId: "addon-category-theme",
+    titleL10nId: "addon-category-theme-title",
     defaultHidden: false,
   },
   {
@@ -54,6 +64,7 @@ const CATEGORIES = [
     viewId: "addons://list/plugin",
     iconSrc: "chrome://mozapps/skin/extensions/category-plugins.svg",
     l10nId: "addon-category-plugin",
+    titleL10nId: "addon-category-plugin-title",
     defaultHidden: false,
   },
   {
@@ -61,6 +72,7 @@ const CATEGORIES = [
     viewId: "addons://list/dictionary",
     iconSrc: "chrome://mozapps/skin/extensions/category-dictionaries.svg",
     l10nId: "addon-category-dictionary",
+    titleL10nId: "addon-category-dictionary-title",
     defaultHidden: true,
   },
   {
@@ -68,6 +80,7 @@ const CATEGORIES = [
     viewId: "addons://list/locale",
     iconSrc: "chrome://mozapps/skin/extensions/category-languages.svg",
     l10nId: "addon-category-locale",
+    titleL10nId: "addon-category-locale-title",
     defaultHidden: true,
   },
   {
@@ -75,6 +88,7 @@ const CATEGORIES = [
     viewId: "addons://list/sitepermission",
     iconSrc: "chrome://mozapps/skin/extensions/category-sitepermission.svg",
     l10nId: "addon-category-sitepermission",
+    titleL10nId: "addon-category-sitepermission-title",
     defaultHidden: true,
   },
   {
@@ -82,6 +96,7 @@ const CATEGORIES = [
     viewId: "addons://list/mlmodel",
     iconSrc: "chrome://global/skin/icons/highlights.svg",
     l10nId: "addon-category-mlmodel",
+    titleL10nId: "addon-category-mlmodel-title",
     defaultHidden: true,
   },
   {
@@ -89,6 +104,7 @@ const CATEGORIES = [
     viewId: "addons://updates/available",
     iconSrc: "chrome://mozapps/skin/extensions/category-available.svg",
     l10nId: "addon-category-available-updates",
+    titleL10nId: "addon-category-available-updates-title",
     defaultHidden: true,
   },
   {
@@ -96,6 +112,7 @@ const CATEGORIES = [
     viewId: "addons://updates/recent",
     iconSrc: "chrome://mozapps/skin/extensions/category-recent.svg",
     l10nId: "addon-category-recent-updates",
+    titleL10nId: "addon-category-recent-updates-title",
     // AddonManager.hasAddonType returns false for this, so #updateHiddenCategories
     // never processes it. It is unhidden only via about:addons page gear-menu
     // "View Recent Updates" action or pref-restored last view).
@@ -240,15 +257,19 @@ class CategoriesBox extends MozLitElement {
           id="preferencesButton"
           href="about:preferences"
           iconsrc="chrome://global/skin/icons/settings.svg"
-          data-l10n-id="addons-settings-button"
+          data-l10n-id="sidebar-settings-button-title"
           @click=${this.#handlePreferencesButton}
-        ></moz-page-nav-button>
+        >
+          <span data-l10n-id="addons-settings-button"></span>
+        </moz-page-nav-button>
         <moz-page-nav-button
           slot="secondary-nav"
           support-page="addons-help"
           iconsrc="chrome://global/skin/icons/help.svg"
-          data-l10n-id="help-button"
-        ></moz-page-nav-button>
+          data-l10n-id="sidebar-help-button-title"
+        >
+          <span data-l10n-id="help-button"></span>
+        </moz-page-nav-button>
       </moz-page-nav>
     `;
   }
@@ -277,6 +298,7 @@ class CategoriesBox extends MozLitElement {
       ?badged-category=${this.#isBadgedCategory(category)}
       iconsrc=${category.iconSrc}
       @keydown=${this.#handleButtonKeyDown}
+      data-l10n-id=${category.titleL10nId}
     >
       <span data-l10n-id=${category.l10nId}></span>
       ${this.#categoryButtonBadgeTemplate(category)}

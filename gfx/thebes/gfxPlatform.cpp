@@ -254,9 +254,9 @@ bool CrashStatsLogForwarder::UpdateStringsVectorInternal(
   // just out of paranoia, but we know index <= mBuffer.size().
   LoggingRecordEntry newEntry(mIndex, aString, tStamp);
   if (index >= static_cast<int32_t>(mBuffer.size())) {
-    mBuffer.push_back(newEntry);
+    mBuffer.push_back(std::move(newEntry));
   } else {
-    mBuffer[index] = newEntry;
+    mBuffer[index] = std::move(newEntry);
   }
   return true;
 }
