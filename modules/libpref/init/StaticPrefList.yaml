@@ -15622,6 +15622,15 @@
   value: true
   mirror: always
 
+# If true, hosts matching the OS-provided DNS suffix list are excluded from
+# TRR even when in TRR-only mode (mode 3). When false (default), the DNS
+# suffix list is ignored in TRR-only mode so those names are still resolved
+# via TRR.
+- name: network.trr.exclude_dns_suffix_in_mode_trronly
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 # Explicitly disable ECS (EDNS Client Subnet, RFC 7871)
 - name: network.trr.disable-ECS
   type: RelaxedAtomicBool
