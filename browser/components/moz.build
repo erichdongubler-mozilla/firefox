@@ -53,6 +53,7 @@ DIRS += [
     "originattributes",
     "pagedata",
     "permissions",
+    "pictureinpicture",
     "places",
     "preferences",
     "privatebrowsing",
