@@ -52,7 +52,7 @@ mozilla::ipc::IPCResult APZInputBridgeParent::RecvReceiveMultiTouchInputEvent(
 
   *aOutResult = mTreeManager->InputBridge()->ReceiveInputEvent(
       event, std::move(callback));
-  *aOutEvent = event;
+  *aOutEvent = std::move(event);
 
   return IPC_OK();
 }
@@ -73,7 +73,7 @@ mozilla::ipc::IPCResult APZInputBridgeParent::RecvReceiveMouseInputEvent(
 
   *aOutResult = mTreeManager->InputBridge()->ReceiveInputEvent(
       event, std::move(callback));
-  *aOutEvent = event;
+  *aOutEvent = std::move(event);
 
   return IPC_OK();
 }
@@ -94,7 +94,7 @@ mozilla::ipc::IPCResult APZInputBridgeParent::RecvReceivePanGestureInputEvent(
 
   *aOutResult = mTreeManager->InputBridge()->ReceiveInputEvent(
       event, std::move(callback));
-  *aOutEvent = event;
+  *aOutEvent = std::move(event);
 
   return IPC_OK();
 }
@@ -115,7 +115,7 @@ mozilla::ipc::IPCResult APZInputBridgeParent::RecvReceivePinchGestureInputEvent(
 
   *aOutResult = mTreeManager->InputBridge()->ReceiveInputEvent(
       event, std::move(callback));
-  *aOutEvent = event;
+  *aOutEvent = std::move(event);
 
   return IPC_OK();
 }
@@ -136,7 +136,7 @@ mozilla::ipc::IPCResult APZInputBridgeParent::RecvReceiveTapGestureInputEvent(
 
   *aOutResult = mTreeManager->InputBridge()->ReceiveInputEvent(
       event, std::move(callback));
-  *aOutEvent = event;
+  *aOutEvent = std::move(event);
 
   return IPC_OK();
 }
@@ -157,7 +157,7 @@ mozilla::ipc::IPCResult APZInputBridgeParent::RecvReceiveScrollWheelInputEvent(
 
   *aOutResult = mTreeManager->InputBridge()->ReceiveInputEvent(
       event, std::move(callback));
-  *aOutEvent = event;
+  *aOutEvent = std::move(event);
 
   return IPC_OK();
 }
@@ -178,7 +178,7 @@ mozilla::ipc::IPCResult APZInputBridgeParent::RecvReceiveKeyboardInputEvent(
 
   *aOutResult = mTreeManager->InputBridge()->ReceiveInputEvent(
       event, std::move(callback));
-  *aOutEvent = event;
+  *aOutEvent = std::move(event);
 
   return IPC_OK();
 }

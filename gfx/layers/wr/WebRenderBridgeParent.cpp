@@ -360,7 +360,7 @@ WebRenderBridgeParent::WebRenderBridgeParent(
       mPipelineId(aPipelineId),
       mLateInit(Some(LateInit{
           .mApi = aApi,
-          .mAsyncImageManager = aImageMgr,
+          .mAsyncImageManager = std::move(aImageMgr),
           .mCompositorScheduler = aScheduler,
           .mIdNamespace = aApi->GetNamespace(),
       })),
@@ -388,7 +388,7 @@ WebRenderBridgeParent::WebRenderBridgeParent(const wr::PipelineId& aPipelineId,
           .mCompositorScheduler = nullptr,
           .mIdNamespace{0},
       })),
-      mInitError(aError),
+      mInitError(std::move(aError)),
       mDestroyed(true),
       mIsFirstPaint(false) {
   LOG("WebRenderBridgeParent::WebRenderBridgeParent() PipelineId %" PRIx64 "",
