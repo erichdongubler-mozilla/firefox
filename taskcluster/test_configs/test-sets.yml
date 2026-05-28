@@ -503,6 +503,7 @@ macosx1500-aarch64-vms-tests:
     - jittest
     - jsreftest
     - marionette-unittest
+    - mochitest-remote
     - telemetry-tests-client
     - xpcshell
 

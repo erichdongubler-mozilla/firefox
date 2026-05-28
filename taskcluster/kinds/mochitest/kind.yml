@@ -1346,6 +1346,10 @@ tasks:
                 default:
                     by-test-platform:
                         android.*: []
+                        # GPU process leak-detection failure on headless macOS
+                        # aarch64 VM workers (Bug 2039987 family); opt is green,
+                        # debug consistently misses the "total leaks" output line.
+                        macosx1500-aarch64-vms/debug: []
                         default: built-projects
         tier: default
         max-run-time: 5400
