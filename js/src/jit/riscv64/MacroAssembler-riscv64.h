@@ -8,6 +8,8 @@
 #ifndef jit_riscv64_MacroAssembler_riscv64_h
 #define jit_riscv64_MacroAssembler_riscv64_h
 
+#include "mozilla/Maybe.h"
+
 #include "jit/MoveResolver.h"
 #include "jit/riscv64/Assembler-riscv64.h"
 #include "wasm/WasmTypeDecls.h"
@@ -328,7 +330,8 @@ class MacroAssemblerRiscv64 : public Assembler {
   void computeScaledAddress32(const BaseIndex& address, Register dest);
 
  private:
-  bool UseShortBranch(Label* L, JumpKind jumpKind, OffsetSize bits);
+  bool UseShortBranch(Label* L, JumpKind jumpKind, OffsetSize bits,
+                      mozilla::Maybe<AutoForbidNops>& maybeAfn);
 
   void Branch(Label* L, JumpKind jumpKind);
   void Branch(Label* L, Condition cond, Register rs, const Operand& rt,
