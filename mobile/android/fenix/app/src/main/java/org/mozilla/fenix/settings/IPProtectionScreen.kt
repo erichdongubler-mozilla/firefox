@@ -154,7 +154,7 @@ private fun DataLimitSection(
             )
         } else {
             Text(
-                text = stringResource(R.string.ip_protection_data_limit_reached_description, state.maxDataGb),
+                text = stringResource(R.string.ip_protection_data_limit_reached_description, state.maxDataGb.toInt()),
                 style = FirefoxTheme.typography.body2,
                 color = MaterialTheme.colorScheme.error,
             )
