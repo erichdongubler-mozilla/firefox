@@ -1115,6 +1115,7 @@ RefPtr<IDBRequest> IDBObjectStore::GetAllInternal(
   // a key range") since already have that result.
   RefPtr<IDBKeyRange> keyRange;
   uint32_t limit = aLimit.WasPassed() ? aLimit.Value() : 0;
+  IDBCursorDirection direction = IDBCursorDirection::Next;
   auto keyRangeResult = IDBKeyRange::FromJSVal(aCx, aQueryOrOptions, &keyRange,
                                                mTransaction.unsafeGetRawPtr());
   if (keyRangeResult.isErr()) {
@@ -1144,6 +1145,7 @@ RefPtr<IDBRequest> IDBObjectStore::GetAllInternal(
     }
     // Use "count" from IDBGetAllOptions
     limit = options.mCount.WasPassed() ? options.mCount.Value() : 0;
+    direction = options.mDirection;
   }
 
   const int64_t id = Id();
@@ -1157,9 +1159,10 @@ RefPtr<IDBRequest> IDBObjectStore::GetAllInternal(
 
   RequestParams params;
   if (aKeysOnly) {
-    params = ObjectStoreGetAllKeysParams(id, optionalKeyRange, limit);
+    params =
+        ObjectStoreGetAllKeysParams(id, optionalKeyRange, limit, direction);
   } else {
-    params = ObjectStoreGetAllParams(id, optionalKeyRange, limit);
+    params = ObjectStoreGetAllParams(id, optionalKeyRange, limit, direction);
   }
 
   auto request = GenerateRequest(aCx, this).unwrap();

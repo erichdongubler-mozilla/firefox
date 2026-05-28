@@ -203,6 +203,7 @@ struct ObjectStoreGetAllParams
   int64_t objectStoreId;
   SerializedKeyRange? optionalKeyRange;
   uint32_t limit;
+  Direction direction;
 };
 
 struct ObjectStoreGetAllKeysParams
@@ -210,6 +211,7 @@ struct ObjectStoreGetAllKeysParams
   int64_t objectStoreId;
   SerializedKeyRange? optionalKeyRange;
   uint32_t limit;
+  Direction direction;
 };
 
 struct ObjectStoreDeleteParams

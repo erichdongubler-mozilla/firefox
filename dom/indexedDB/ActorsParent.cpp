@@ -4003,6 +4003,7 @@ class ObjectStoreGetRequestOp final : public NormalTransactionOp {
   PBackgroundParent* mBackgroundParent;
   uint32_t mPreprocessInfoCount;
   const uint32_t mLimit;
+  const IDBCursorDirection mDirection;
   const bool mGetAll;
 
  private:
@@ -4032,6 +4033,7 @@ class ObjectStoreGetKeyRequestOp final : public NormalTransactionOp {
   const IndexOrObjectStoreId mObjectStoreId;
   const Maybe<SerializedKeyRange> mOptionalKeyRange;
   const uint32_t mLimit;
+  const IDBCursorDirection mDirection;
   const bool mGetAll;
   nsTArray<Key> mResponse;
 
@@ -19493,6 +19495,8 @@ ObjectStoreGetRequestOp::ObjectStoreGetRequestOp(
       mBackgroundParent(Transaction().GetBackgroundParent()),
       mPreprocessInfoCount(0),
       mLimit(aGetAll ? aParams.get_ObjectStoreGetAllParams().limit() : 1),
+      mDirection(aGetAll ? aParams.get_ObjectStoreGetAllParams().direction()
+                         : IDBCursorDirection::Next),
       mGetAll(aGetAll) {
   MOZ_ASSERT(aParams.type() == RequestParams::TObjectStoreGetParams ||
              aParams.type() == RequestParams::TObjectStoreGetAllParams);
@@ -19537,7 +19541,7 @@ nsresult ObjectStoreGetRequestOp::DoDatabaseWork(
       "WHERE object_store_id = :"_ns +
       kStmtParamNameObjectStoreId +
       MaybeGetBindingClauseForKeyRange(mOptionalKeyRange, kColumnNameKey) +
-      " ORDER BY key ASC"_ns +
+      MakeDirectionClause(mDirection) +
       (mLimit ? kOpenLimit + IntToCString(mLimit) : EmptyCString());
 
   QM_TRY_INSPECT(const auto& stmt, aConnection->BorrowCachedStatement(query));
@@ -19662,6 +19666,8 @@ ObjectStoreGetKeyRequestOp::ObjectStoreGetKeyRequestOp(
           aGetAll ? aParams.get_ObjectStoreGetAllKeysParams().optionalKeyRange()
                   : Some(aParams.get_ObjectStoreGetKeyParams().keyRange())),
       mLimit(aGetAll ? aParams.get_ObjectStoreGetAllKeysParams().limit() : 1),
+      mDirection(aGetAll ? aParams.get_ObjectStoreGetAllKeysParams().direction()
+                         : IDBCursorDirection::Next),
       mGetAll(aGetAll) {
   MOZ_ASSERT(aParams.type() == RequestParams::TObjectStoreGetKeyParams ||
              aParams.type() == RequestParams::TObjectStoreGetAllKeysParams);
@@ -19682,7 +19688,7 @@ nsresult ObjectStoreGetKeyRequestOp::DoDatabaseWork(
       "WHERE object_store_id = :"_ns +
       kStmtParamNameObjectStoreId +
       MaybeGetBindingClauseForKeyRange(mOptionalKeyRange, kColumnNameKey) +
-      " ORDER BY key ASC"_ns +
+      MakeDirectionClause(mDirection) +
       (mLimit ? " LIMIT "_ns + IntToCString(mLimit) : EmptyCString());
 
   QM_TRY_INSPECT(const auto& stmt, aConnection->BorrowCachedStatement(query));
