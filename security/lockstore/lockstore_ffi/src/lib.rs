@@ -566,6 +566,51 @@ pub extern "C" fn lockstore_keystore_lock(handle: &KeystoreHandle) -> nsresult {
     result_to_nsresult(handle.keystore.lock())
 }
 
+/// Generic KEK-creation entry point. Dispatches on `kek_type`:
+///   - `"local"`     → no-op; returns the canonical LocalKey kek_ref.
+///   - `"primary_password"` → initialises PrP with `secret` (must be
+///     non-empty), returns the canonical PrP kek_ref.
+///   - `"pkcs11token"` → rejected (`NS_ERROR_INVALID_ARG`): PKCS#11
+///     tokens are provisioned outside Lockstore.
+///
+/// Additional KEK tiers may extend the dispatch in future commits.
+///
+/// Lockstore copies the secret bytes into its own buffer, consumes
+/// them, and zeroises the buffer before returning. On success
+/// `ret_kek_ref` is filled with the freshly-minted (or canonical)
+/// kek_ref the caller should hand to subsequent `createDek` /
+/// `encrypt` calls.
+#[no_mangle]
+pub extern "C" fn lockstore_keystore_create_kek(
+    handle: &KeystoreHandle,
+    kek_type: &nsACString,
+    secret: &nsACString,
+    cache_timeout_ms: u32,
+    ret_kek_ref: &mut nsCString,
+) -> nsresult {
+    let kek_type_str = kek_type.to_utf8();
+    let parsed = match lockstore_rs::KekType::parse(&kek_type_str) {
+        Some(t) => t,
+        None => return NS_ERROR_INVALID_ARG,
+    };
+
+    let mut secret_buf: Vec<u8> = secret[..].to_vec();
+    let result = handle.keystore.create_kek(
+        parsed,
+        &secret_buf,
+        Duration::from_millis(cache_timeout_ms as u64),
+    );
+    secret_buf.zeroize();
+
+    match result {
+        Ok(kek_ref) => {
+            ret_kek_ref.assign(&kek_ref);
+            NS_OK
+        }
+        Err(e) => error_to_nsresult(e),
+    }
+}
+
 // ============================================================================
 // Datastore FFI Functions
 // ============================================================================

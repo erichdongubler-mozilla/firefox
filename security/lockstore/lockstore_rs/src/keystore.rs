@@ -38,7 +38,7 @@
 use crate::crypto::{self, CipherSuite, DEFAULT_CIPHER_SUITE};
 use crate::pbkdf2;
 use crate::utils;
-use crate::{KekType, LockstoreError, KEK_REF_PREFIX, KEK_REF_PRP};
+use crate::{KekType, LockstoreError, KEK_REF_LOCAL, KEK_REF_PREFIX, KEK_REF_PRP};
 
 use kvstore::{Database, GetOptions, Key, Store, StorePath};
 use nss_rs::aead::Aead;
@@ -835,6 +835,52 @@ impl Keystore {
         }
 
         first_err.map_or(Ok(()), Err)
+    }
+
+    /// Generic KEK-creation dispatcher used by the FFI / nsILockstore
+    /// `createKek` entry point so JS / C++ consumers don't have to
+    /// special-case every KEK tier. Returns the freshly-minted (or, for
+    /// `LocalKey`, the always-existing canonical) `kek_ref`.
+    ///
+    /// Per `kek_type`:
+    ///   - `LocalKey`: no-op; returns [`KEK_REF_LOCAL`]. `secret` and
+    ///     `cache_timeout` are ignored.
+    ///   - `PrimaryPassword`: initialises the primary password to
+    ///     `secret` (must be non-empty). Refuses if one is already set.
+    ///     Returns [`KEK_REF_PRP`]. If `cache_timeout` is non-zero the
+    ///     just-derived KEK is also inserted into the auth cache with
+    ///     that expiry, so the caller does not need to immediately call
+    ///     `unlock_kek` against the kek_ref it just received.
+    ///   - `Pkcs11Token`: rejected with `InvalidConfiguration` — PKCS#11
+    ///     tokens are provisioned outside Lockstore and can only be
+    ///     unlocked, never created, through this API.
+    pub fn create_kek(
+        &self,
+        kek_type: KekType,
+        secret: &[u8],
+        cache_timeout: Duration,
+    ) -> Result<String, LockstoreError> {
+        match kek_type {
+            KekType::LocalKey => Ok(KEK_REF_LOCAL.to_string()),
+            KekType::PrimaryPassword => {
+                if secret.is_empty() {
+                    return Err(LockstoreError::InvalidConfiguration(
+                        "PrimaryPassword secret must not be empty".into(),
+                    ));
+                }
+                self.set_prp(None, secret)?;
+                if !cache_timeout.is_zero() {
+                    self.unlock_kek(KEK_REF_PRP, secret, cache_timeout)?;
+                }
+                Ok(KEK_REF_PRP.to_string())
+            }
+            KekType::Pkcs11Token => Err(LockstoreError::InvalidConfiguration(
+                "PKCS#11 token KEKs are externally provisioned; createKek does not support them"
+                    .into(),
+            )),
+            #[cfg(test)]
+            KekType::Test => Ok("lockstore::kek::test".to_string()),
+        }
     }
 
     /// Unlock `kek_ref` so subsequent DEK accesses under it succeed for at

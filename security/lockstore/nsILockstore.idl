@@ -267,4 +267,51 @@ interface nsILockstore : nsISupports
    */
   [implicit_jscontext]
   Promise getDek(in AUTF8String collection, in AUTF8String kekRef);
+
+  /* --- KEK creation --------------------------------------------------- */
+
+  /**
+   * Generic KEK-creation entry point. Dispatches on `kekType`:
+   *
+   *   "local"
+   *       No-op. Resolves with the canonical LocalKey kek_ref
+   *       (`lockstore::kek::local`). The LocalKey is always available;
+   *       `secret` and `cacheTimeoutMs` are ignored.
+   *
+   *   "primary_password"
+   *       Initialises the primary password to `secret`, which must be
+   *       non-empty. Resolves with the canonical PrP kek_ref
+   *       (`lockstore::kek::primary_password`). Rejects with
+   *       NS_ERROR_FAILURE if a primary password is already set —
+   *       callers wanting to change one should use
+   *       `setPrimaryPassword`. If `cacheTimeoutMs` is non-zero the
+   *       just-derived KEK is also inserted into the auth cache with
+   *       that expiry, so callers can use the returned kek_ref without
+   *       an immediate `unlockKek`.
+   *
+   *   "pkcs11token"
+   *       Rejected with NS_ERROR_INVALID_ARG. PKCS#11 tokens are
+   *       provisioned outside Lockstore; only the unlock path is
+   *       wired through `unlockKek`.
+   *
+   * `cacheTimeoutMs` is the duration (in milliseconds) that the
+   * just-derived KEK is kept in the in-memory auth cache. Only
+   * meaningful for the `"primary_password"` tier; ignored elsewhere.
+   *
+   * Lockstore copies the secret bytes into its own buffer, consumes
+   * them, and zeroises the buffer before resolving the Promise; the
+   * caller's `ACString` is never mutated.
+   *
+   * The returned Promise resolves with the freshly-minted (or
+   * canonical) `kek_ref` the caller should hand to subsequent
+   * `createDek` / `encrypt` calls, and rejects with:
+   *   - NS_ERROR_INVALID_ARG on an unknown `kekType` or an empty
+   *     PrimaryPassword `secret`.
+   *   - NS_ERROR_FAILURE on any other failure (SQLite write error,
+   *     crypto-layer error).
+   */
+  [implicit_jscontext]
+  Promise createKek(in ACString kekType,
+                    in ACString secret,
+                    in uint32_t cacheTimeoutMs);
 };
