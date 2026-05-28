@@ -1698,7 +1698,13 @@ impl Global {
             )
         };
         let (_, error) = unsafe {
-            self.create_texture_from_hal(Box::new(hal_texture), device_id, &desc, Some(texture_id))
+            self.create_texture_from_hal(
+                Box::new(hal_texture),
+                device_id,
+                &desc,
+                wgt::TextureUses::UNINITIALIZED,
+                Some(texture_id),
+            )
         };
         if let Some(err) = error {
             let msg = CString::new(format!("create_texture_from_hal() failed: {:?}", err)).unwrap();
@@ -1905,6 +1911,7 @@ impl Global {
                 Box::new(hal_texture),
                 device_id,
                 &desc,
+                wgt::TextureUses::UNINITIALIZED,
                 Some(texture_id),
             );
             if let Some(err) = error {
@@ -3251,8 +3258,13 @@ pub unsafe extern "C" fn wgpu_server_device_import_texture_from_shared_handle(
         desc.sample_count,
     );
 
-    let (_, error) =
-        global.create_texture_from_hal(Box::new(hal_texture), device_id, &desc, Some(id_in));
+    let (_, error) = global.create_texture_from_hal(
+        Box::new(hal_texture),
+        device_id,
+        &desc,
+        wgt::TextureUses::UNINITIALIZED,
+        Some(id_in),
+    );
     if let Some(err) = error {
         error_buf.init(err, device_id);
     }
@@ -3398,7 +3410,13 @@ mod macos {
         );
 
         let (_, error) = unsafe {
-            global.create_texture_from_hal(Box::new(hal_texture), device_id, &desc, Some(id_in))
+            global.create_texture_from_hal(
+                Box::new(hal_texture),
+                device_id,
+                &desc,
+                wgt::TextureUses::UNINITIALIZED,
+                Some(id_in),
+            )
         };
         if let Some(err) = error {
             error_buf.init(err, device_id);
@@ -3509,6 +3527,7 @@ mod macos {
                     Box::new(hal_texture),
                     device_id,
                     &desc,
+                    wgt::TextureUses::UNINITIALIZED,
                     Some(texture_id),
                 )
             };
