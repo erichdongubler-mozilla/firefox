@@ -2197,6 +2197,21 @@ void RuntimeService::UpdateWorkersPeerConnections(
   }
 }
 
+void RuntimeService::UpdateWorkersLanguageOverride(
+    const nsPIDOMWindowInner& aWindow, const nsCString& aLanguageOverride) {
+  AssertIsOnMainThread();
+
+  nsTArray<nsString> resolvedLanguages;
+  Navigator::GetAcceptLanguages(resolvedLanguages, aLanguageOverride.IsEmpty()
+                                                       ? nullptr
+                                                       : &aLanguageOverride);
+
+  for (WorkerPrivate* const worker : GetWorkersForWindow(aWindow)) {
+    MOZ_ASSERT(!worker->IsSharedWorker());
+    worker->UpdateLanguageOverride(aLanguageOverride, resolvedLanguages);
+  }
+}
+
 bool LogViolationDetailsRunnable::MainThreadRun() {
   AssertIsOnMainThread();
   MOZ_ASSERT(mWorkerRef);

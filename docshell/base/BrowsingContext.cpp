@@ -51,6 +51,7 @@
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/WindowProxyHolder.h"
+#include "mozilla/dom/workerinternals/RuntimeService.h"
 #include "mozilla/dom/SyncedContextInlines.h"
 #include "mozilla/dom/XULFrameElement.h"
 #include "mozilla/ipc/ProtocolUtils.h"
@@ -3522,6 +3523,9 @@ void BrowsingContext::DidSet(FieldIndex<IDX_LanguageOverride>,
 
   const nsCString& languageOverride = GetLanguageOverride();
 
+  workerinternals::RuntimeService* rts =
+      workerinternals::RuntimeService::GetService();
+
   PreOrderWalk([&](BrowsingContext* aBrowsingContext) {
     if (RefPtr<WindowContext> windowContext =
             aBrowsingContext->GetCurrentWindowContext()) {
@@ -3550,6 +3554,13 @@ void BrowsingContext::DidSet(FieldIndex<IDX_LanguageOverride>,
         if (Navigator* navigator = window->Navigator()) {
           navigator->ClearLanguageCache();
         }
+
+        if (rts) {
+          rts->UpdateWorkersLanguageOverride(*window, languageOverride);
+        }
+
+        nsGlobalWindowInner::Cast(window)->UpdateSharedWorkersLanguageOverride(
+            languageOverride);
       }
     }
   });

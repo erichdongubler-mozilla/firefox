@@ -236,6 +236,15 @@ void SharedWorkerManager::UpdateFrozen() {
   }
 }
 
+void SharedWorkerManager::SetLocaleOverride(
+    const nsACString& aLanguageOverride, const nsTArray<nsString>& aLanguages) {
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
+
+  if (mRemoteWorkerController) {
+    mRemoteWorkerController->SetLocaleOverride(aLanguageOverride, aLanguages);
+  }
+}
+
 bool SharedWorkerManager::IsSecureContext() const { return mIsSecureContext; }
 
 void SharedWorkerManager::CreationFailed() {

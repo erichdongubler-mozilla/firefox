@@ -7827,6 +7827,19 @@ void nsGlobalWindowInner::ForgetSharedWorker(SharedWorker* aSharedWorker) {
   mSharedWorkers.RemoveElement(aSharedWorker);
 }
 
+void nsGlobalWindowInner::UpdateSharedWorkersLanguageOverride(
+    const nsCString& aLanguageOverride) {
+  nsTArray<nsString> resolvedLanguages;
+  Navigator::GetAcceptLanguages(resolvedLanguages, aLanguageOverride.IsEmpty()
+                                                       ? nullptr
+                                                       : &aLanguageOverride);
+
+  for (RefPtr<mozilla::dom::SharedWorker> pinnedWorker :
+       mSharedWorkers.ForwardRange()) {
+    pinnedWorker->UpdateLanguageOverride(aLanguageOverride, resolvedLanguages);
+  }
+}
+
 RefPtr<GenericPromise> nsGlobalWindowInner::StorageAccessPermissionChanged(
     bool aGranted) {
   // Invalidate cached StorageAllowed field so that calls to GetLocalStorage
