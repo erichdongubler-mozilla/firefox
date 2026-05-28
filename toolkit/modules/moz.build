@@ -365,5 +365,4 @@ XPIDL_MODULE = "toolkit_modules"
 
 MOZ_SRC_FILES += [
     "PrefUtils.sys.mjs",
-    "WebAuthnPromptHelper.sys.mjs",
 ]
