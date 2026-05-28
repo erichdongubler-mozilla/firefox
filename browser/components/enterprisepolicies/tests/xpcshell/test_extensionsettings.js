@@ -267,6 +267,121 @@ add_task(async function test_addon_forceinstalled() {
   await addon.uninstall();
 });
 
+add_task(async function test_addon_uninstalled_by_allowed_types() {
+  let install = await AddonManager.getInstallForURL(
+    BASE_URL + "/policy_test.xpi"
+  );
+  await install.install();
+  notEqual(install.addon, null, "Addon should not be null");
+
+  await Promise.all([
+    AddonTestUtils.promiseAddonEvent("onUninstalled"),
+    setupPolicyEngineWithJson({
+      policies: {
+        ExtensionSettings: {
+          "*": {
+            allowed_types: ["theme"],
+          },
+        },
+      },
+    }),
+  ]);
+  let addon = await AddonManager.getAddonByID(addonID);
+  equal(
+    addon,
+    null,
+    "Addon should be uninstalled due to allowed_types restriction"
+  );
+});
+
+add_task(async function test_addon_allowed_exempted_from_allowed_types() {
+  let install = await AddonManager.getInstallForURL(
+    BASE_URL + "/policy_test.xpi"
+  );
+  await install.install();
+  notEqual(install.addon, null, "Addon should not be null");
+
+  await setupPolicyEngineWithJson({
+    policies: {
+      ExtensionSettings: {
+        [addonID]: {
+          installation_mode: "allowed",
+        },
+        "*": {
+          allowed_types: ["theme"],
+        },
+      },
+    },
+  });
+  let addon = await AddonManager.getAddonByID(addonID);
+  notEqual(
+    addon,
+    null,
+    "Explicitly allowed addon should survive allowed_types restriction"
+  );
+  await addon.uninstall();
+});
+
+add_task(async function test_allowed_types_blocks_new_install() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      ExtensionSettings: {
+        "*": {
+          allowed_types: ["theme"],
+        },
+      },
+    },
+  });
+  let install = await AddonManager.getInstallForURL(
+    BASE_URL + "/policy_test.xpi"
+  );
+  await install.install();
+  notEqual(install.addon, null, "Addon should not be null");
+  equal(
+    install.addon.appDisabled,
+    true,
+    "Addon should be disabled due to allowed_types restriction"
+  );
+  await install.addon.uninstall();
+});
+
+add_task(async function test_allowed_type_survives_allowed_types() {
+  let themeFile = AddonTestUtils.createTempWebExtensionFile({
+    manifest: {
+      browser_specific_settings: {
+        gecko: {
+          id: themeID,
+        },
+      },
+      theme: {},
+    },
+  });
+  server.registerFile("/data/policy_theme_survives.xpi", themeFile);
+
+  let install = await AddonManager.getInstallForURL(
+    BASE_URL + "/policy_theme_survives.xpi"
+  );
+  await install.install();
+  notEqual(install.addon, null, "Theme should be installed");
+
+  await setupPolicyEngineWithJson({
+    policies: {
+      ExtensionSettings: {
+        "*": {
+          allowed_types: ["theme"],
+        },
+      },
+    },
+  });
+  let addon = await AddonManager.getAddonByID(themeID);
+  notEqual(
+    addon,
+    null,
+    "Theme should survive allowed_types: ['theme'] restriction"
+  );
+  await addon.uninstall();
+});
+
 add_task(async function test_addon_normalinstalled() {
   await Promise.all([
     AddonTestUtils.promiseInstallEvent("onInstallEnded"),
