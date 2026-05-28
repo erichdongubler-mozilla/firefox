@@ -513,9 +513,9 @@ static const nsIFrame* GetAnchorOf(const nsIFrame* aPositioned,
 
 Maybe<nsRect> AnchorPositioningUtils::GetAnchorPosRect(
     const nsIFrame* aAbsoluteContainingBlock, const nsIFrame* aAnchor,
-    bool aCBRectIsvalid) {
+    bool aCBRectIsValid) {
   auto rect = [&]() -> Maybe<nsRect> {
-    if (aCBRectIsvalid) {
+    if (aCBRectIsValid) {
       return Some(ReassembleAnchorRect(aAnchor, aAbsoluteContainingBlock));
     }
 
@@ -556,7 +556,7 @@ Maybe<nsRect> AnchorPositioningUtils::GetAnchorPosRect(
 
 Maybe<AnchorPosInfo> AnchorPositioningUtils::ResolveAnchorPosRect(
     const nsIFrame* aPositioned, const nsIFrame* aAbsoluteContainingBlock,
-    const ScopedNameRef& aAnchorName, bool aCBRectIsvalid,
+    const ScopedNameRef& aAnchorName, bool aCBRectIsValid,
     AnchorPosResolutionCache* aResolutionCache) {
   if (!aPositioned) {
     return Nothing{};
@@ -598,7 +598,7 @@ Maybe<AnchorPosInfo> AnchorPositioningUtils::ResolveAnchorPosRect(
   }
 
   const auto result =
-      GetAnchorPosRect(aAbsoluteContainingBlock, anchor, aCBRectIsvalid);
+      GetAnchorPosRect(aAbsoluteContainingBlock, anchor, aCBRectIsValid);
   return result.map([&](const nsRect& aRect) {
     bool compensatesForScroll = false;
     DistanceToNearestScrollContainer distanceToNearestScrollContainer;
