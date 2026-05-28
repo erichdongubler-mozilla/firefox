@@ -447,7 +447,7 @@ mozilla::ipc::IPCResult HttpTransactionParent::RecvOnStartRequest(
     const nsILoadInfo::IPAddressSpace& aTargetIPAddressSpace) {
   RefPtr<nsHttpConnectionInfo> cinfo =
       nsHttpConnectionInfo::DeserializeHttpConnectionInfoCloneArgs(aArgs);
-  mEventQ->RunOrEnqueue(new NeckoTargetChannelFunctionEvent(
+  mEventQ->RunOrEnqueue(MakeUnique<NeckoTargetChannelFunctionEvent>(
       this,
       [self = UnsafePtr<HttpTransactionParent>(this), aStatus,
        aResponseHead = std::move(aResponseHead),
@@ -581,7 +581,7 @@ mozilla::ipc::IPCResult HttpTransactionParent::RecvOnDataAvailable(
     return IPC_OK();
   }
 
-  mEventQ->RunOrEnqueue(new ChannelFunctionEvent(
+  mEventQ->RunOrEnqueue(MakeUnique<ChannelFunctionEvent>(
       [self = UnsafePtr<HttpTransactionParent>(this)]() {
         return self->GetODATarget();
       },
@@ -655,7 +655,7 @@ mozilla::ipc::IPCResult HttpTransactionParent::RecvOnStopRequest(
     return IPC_OK();
   }
 
-  mEventQ->RunOrEnqueue(new NeckoTargetChannelFunctionEvent(
+  mEventQ->RunOrEnqueue(MakeUnique<NeckoTargetChannelFunctionEvent>(
       this, [self = UnsafePtr<HttpTransactionParent>(this), aStatus,
              aResponseIsComplete, aTransferSize, aTimings, aResponseTrailers,
              aTransactionObserverResult{std::move(aTransactionObserverResult)},
@@ -815,7 +815,7 @@ void HttpTransactionParent::DoNotifyListener() {
 
   // This is to make sure that ODA in the event queue can be processed before
   // OnStopRequest.
-  mEventQ->RunOrEnqueue(new NeckoTargetChannelFunctionEvent(
+  mEventQ->RunOrEnqueue(MakeUnique<NeckoTargetChannelFunctionEvent>(
       this, [self = UnsafePtr<HttpTransactionParent>(this)] {
         self->ContinueDoNotifyListener();
       }));

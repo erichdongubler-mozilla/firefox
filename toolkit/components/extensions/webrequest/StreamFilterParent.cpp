@@ -863,24 +863,24 @@ void StreamFilterParent::AssertIsIOThread() { MOZ_ASSERT(IsIOThread()); }
 
 template <typename Function>
 void StreamFilterParent::RunOnMainThread(const char* aName, Function&& aFunc) {
-  mQueue->RunOrEnqueue(
-      new ChannelEventFunction(mMainThread, std::forward<Function>(aFunc)));
+  mQueue->RunOrEnqueue(MakeUnique<ChannelEventFunction>(
+      mMainThread, std::forward<Function>(aFunc)));
 }
 
 void StreamFilterParent::RunOnMainThread(already_AddRefed<Runnable> aRunnable) {
   mQueue->RunOrEnqueue(
-      new ChannelEventRunnable(mMainThread, std::move(aRunnable)));
+      MakeUnique<ChannelEventRunnable>(mMainThread, std::move(aRunnable)));
 }
 
 template <typename Function>
 void StreamFilterParent::RunOnIOThread(const char* aName, Function&& aFunc) {
-  mQueue->RunOrEnqueue(
-      new ChannelEventFunction(mIOThread, std::forward<Function>(aFunc)));
+  mQueue->RunOrEnqueue(MakeUnique<ChannelEventFunction>(
+      mIOThread, std::forward<Function>(aFunc)));
 }
 
 void StreamFilterParent::RunOnIOThread(already_AddRefed<Runnable> aRunnable) {
   mQueue->RunOrEnqueue(
-      new ChannelEventRunnable(mIOThread, std::move(aRunnable)));
+      MakeUnique<ChannelEventRunnable>(mIOThread, std::move(aRunnable)));
 }
 
 template <typename Function>

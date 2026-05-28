@@ -124,7 +124,7 @@ class ChannelEventQueue final {
   // @param aCallback - the ChannelEvent
   // @param aAssertionWhenNotQueued - this optional param will be used in an
   //   assertion when the event is executed directly.
-  inline void RunOrEnqueue(ChannelEvent* aCallback,
+  inline void RunOrEnqueue(UniquePtr<ChannelEvent> aCallback,
                            bool aAssertionWhenNotQueued = false);
 
   // Append ChannelEvent in front of the event queue.
@@ -207,7 +207,7 @@ class ChannelEventQueue final {
   friend class AutoEventEnqueuer;
 };
 
-inline void ChannelEventQueue::RunOrEnqueue(ChannelEvent* aCallback,
+inline void ChannelEventQueue::RunOrEnqueue(UniquePtr<ChannelEvent> aCallback,
                                             bool aAssertionWhenNotQueued) {
   MOZ_ASSERT(aCallback);
   // Events execution could be a destruction of the channel (and our own
@@ -216,7 +216,9 @@ inline void ChannelEventQueue::RunOrEnqueue(ChannelEvent* aCallback,
   nsCOMPtr<nsISupports> kungFuDeathGrip;
 
   // To avoid leaks.
-  UniquePtr<ChannelEvent> event(aCallback);
+  UniquePtr<ChannelEvent> event = std::move(aCallback);
+  // TODO(dholbert) This^ local-variable isn't needed anymore; the next patch in
+  // this series will simplify this.
 
   // To guarantee that the running event and all the events generated within
   // it will be finished before events on other threads.
