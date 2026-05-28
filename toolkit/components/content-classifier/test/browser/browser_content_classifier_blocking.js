@@ -10,6 +10,7 @@ add_task(async function test_blocking() {
         "privacy.trackingprotection.content.protection.test_list_urls",
         BLOCK_LIST_URL,
       ],
+      ["privacy.trackingprotection.content.protection.engines", "test_block"],
       ["privacy.trackingprotection.content.annotation.enabled", false],
       ["privacy.trackingprotection.content.annotation.test_list_urls", ""],
     ],
@@ -253,6 +254,10 @@ add_task(async function test_annotation() {
         "privacy.trackingprotection.content.annotation.test_list_urls",
         ANNOTATE_LIST_URL,
       ],
+      [
+        "privacy.trackingprotection.content.annotation.engines",
+        "test_annotate",
+      ],
     ],
   });
 
@@ -287,8 +292,8 @@ add_task(async function test_annotation() {
   if (log[origin]) {
     is(
       log[origin][0][0],
-      Ci.nsIWebProgressListener.STATE_LOADED_LEVEL_2_TRACKING_CONTENT,
-      "Entry has the STATE_LOADED_LEVEL_2_TRACKING_CONTENT flag"
+      Ci.nsIWebProgressListener.STATE_LOADED_LEVEL_1_TRACKING_CONTENT,
+      "Entry has the STATE_LOADED_LEVEL_1_TRACKING_CONTENT flag"
     );
     is(log[origin][0][1], true, "Entry is marked as loaded");
   }
