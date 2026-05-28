@@ -790,6 +790,85 @@ add_task(async function test_bookmarks_drag_into_folder() {
   SidebarTestUtils.closePanel(window);
 });
 
+add_task(async function test_bookmarks_drag_hover_expands_folder() {
+  const folder = await addFolder("Hover Expand Folder");
+  await addBookmark({
+    title: "Inside Hover Folder",
+    parentGuid: folder.guid,
+  });
+  const bm = await addBookmark({
+    title: "Hover Drag Source",
+    url: "https://example.com/hover-drag",
+  });
+
+  const { component, contentWindow } = await showBookmarksSidebar();
+  const tabList = component.bookmarkList;
+
+  const toolbarDetails = await openToolbarFolder(tabList);
+  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
+  await BrowserTestUtils.waitForMutationCondition(
+    nestedList.shadowRoot,
+    { childList: true, subtree: true },
+    () =>
+      [...nestedList.rowEls].some(r => r.title === "Hover Drag Source") &&
+      [...nestedList.folderEls].some(
+        d =>
+          d.querySelector("summary")?.textContent.trim() ===
+          "Hover Expand Folder"
+      )
+  );
+
+  const bookmarkRow = [...nestedList.rowEls].find(
+    r => r.title === "Hover Drag Source"
+  );
+  const folderDetails = [...nestedList.folderEls].find(
+    d =>
+      d.querySelector("summary")?.textContent.trim() === "Hover Expand Folder"
+  );
+  const folderSummary = folderDetails.querySelector("summary");
+  ok(bookmarkRow && folderSummary, "Source row and target folder are found.");
+  ok(!folderDetails.open, "Target folder starts collapsed.");
+
+  EventUtils.startDragSession(contentWindow, "move");
+  try {
+    const rect = folderSummary.getBoundingClientRect();
+    EventUtils.synthesizeDragOver(
+      bookmarkRow,
+      folderSummary,
+      null,
+      "move",
+      contentWindow,
+      contentWindow,
+      {
+        clientX: rect.left + rect.width / 2,
+        clientY: rect.top + rect.height * 0.5,
+        _domDispatchOnly: true,
+      }
+    );
+
+    await BrowserTestUtils.waitForCondition(
+      () => folderDetails.open,
+      "Collapsed folder auto-expands while hovered during a drag."
+    );
+
+    const bmAfter = await PlacesUtils.bookmarks.fetch(bm.guid);
+    Assert.equal(
+      bmAfter.parentGuid,
+      PlacesUtils.bookmarks.toolbarGuid,
+      "Hovering must not move the dragged bookmark."
+    );
+  } finally {
+    const sess = contentWindow.windowUtils.dragSession;
+    if (sess) {
+      sess.endDragSession(true);
+    }
+  }
+
+  await PlacesUtils.bookmarks.remove({ guid: folder.guid });
+  await PlacesUtils.bookmarks.remove({ guid: bm.guid });
+  SidebarTestUtils.closePanel(window);
+});
+
 add_task(async function test_bookmarks_drag_url_to_panel() {
   const folder = await addFolder("URL Drop Target Folder");
   await addBookmark({

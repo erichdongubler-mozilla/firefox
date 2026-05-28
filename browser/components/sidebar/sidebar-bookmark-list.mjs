@@ -21,6 +21,10 @@ const DROP_BEFORE = -1;
 const DROP_ON = 0;
 const DROP_AFTER = 1;
 
+// Matches the legacy bookmarks sidebar tree's drag-hover-to-expand delay,
+// which uses LookAndFeel::IntID::TreeOpenDelay (1000ms on all platforms).
+const DRAG_HOVER_EXPAND_DELAY_MS = 1000;
+
 let activeDropList = null;
 
 export class SidebarBookmarkList extends SidebarTabList {
@@ -31,6 +35,8 @@ export class SidebarBookmarkList extends SidebarTabList {
 
   #draggedGuid = null;
   #dropTarget = null;
+  #hoverFolderGuid = null;
+  #hoverFolderTimer = null;
 
   constructor() {
     super();
@@ -70,6 +76,7 @@ export class SidebarBookmarkList extends SidebarTabList {
       this.#onContainingDetailsToggle
     );
     this.#containingDetails = null;
+    this.#clearHoverFolderExpand();
   }
 
   /**
@@ -364,8 +371,9 @@ export class SidebarBookmarkList extends SidebarTabList {
 
   #showDropIndicator(target) {
     if (activeDropList && activeDropList !== this) {
-      activeDropList.#cleanupIndicator();
-      activeDropList.#dropTarget = null;
+      const previousList = activeDropList;
+      previousList.#cleanupIndicator();
+      previousList.#dropTarget = null;
     }
     activeDropList = this;
     const listEl = this.shadowRoot?.querySelector("#fxview-tab-list");
@@ -400,6 +408,43 @@ export class SidebarBookmarkList extends SidebarTabList {
     if (activeDropList === this) {
       activeDropList = null;
     }
+    this.#clearHoverFolderExpand();
+  }
+
+  // Arms a timer that expands a collapsed folder when the user dwells over it
+  // during a drag, so they can drop into nested folders without first opening
+  // them by hand. Only non-empty folders (rendered as <details>) participate.
+  #scheduleHoverFolderExpand(target) {
+    const shouldArm =
+      target?.isFolder &&
+      target.orientation === DROP_ON &&
+      target.element.localName === "details" &&
+      !target.element.open;
+    if (!shouldArm) {
+      this.#clearHoverFolderExpand();
+      return;
+    }
+    if (this.#hoverFolderGuid === target.guid) {
+      return;
+    }
+    this.#clearHoverFolderExpand();
+    this.#hoverFolderGuid = target.guid;
+    const detailsEl = target.element;
+    this.#hoverFolderTimer = setTimeout(() => {
+      this.#hoverFolderTimer = null;
+      this.#hoverFolderGuid = null;
+      if (detailsEl.isConnected && !detailsEl.open) {
+        detailsEl.open = true;
+      }
+    }, DRAG_HOVER_EXPAND_DELAY_MS);
+  }
+
+  #clearHoverFolderExpand() {
+    if (this.#hoverFolderTimer) {
+      clearTimeout(this.#hoverFolderTimer);
+      this.#hoverFolderTimer = null;
+    }
+    this.#hoverFolderGuid = null;
   }
 
   #onDragStart(e) {
@@ -471,6 +516,7 @@ export class SidebarBookmarkList extends SidebarTabList {
     }
     this.#showDropIndicator(target);
     this.#dropTarget = target;
+    this.#scheduleHoverFolderExpand(target);
     e.dataTransfer.dropEffect = lazy.PlacesUIUtils.PLACES_FLAVORS.includes(
       flavor
     )
