@@ -84,10 +84,6 @@ class Serial final : public DOMEventTargetHelper, public SupportsWeakPtr {
  private:
   ~Serial() override;
 
-  // Returns the manager child if the testing preference is enabled, otherwise
-  // sets a NotSupportedError on aRv and returns nullptr.
-  SerialManagerChild* GetManagerChildForTesting(ErrorResult& aRv);
-
   // The single list of granted SerialPort objects for this context.
   nsTArray<RefPtr<SerialPort>> mPorts;
 
