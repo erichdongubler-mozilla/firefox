@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { css, html } from "chrome://global/content/vendor/lit.all.mjs";
+import { html } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import {
   Decoration,
@@ -23,44 +23,6 @@ import {
   redo as historyRedo,
   undo as historyUndo,
 } from "chrome://browser/content/multilineeditor/prosemirror.bundle.mjs";
-
-function generatePlaceholderKeyframeStyles(placeholderCount) {
-  const segmentDuration = 100 / placeholderCount;
-  const transitionDuration = segmentDuration * 0.2;
-  const exitStart = Math.round(segmentDuration - transitionDuration);
-  const exitEnd = Math.round(segmentDuration);
-  const enterStart = Math.round(100 - transitionDuration);
-
-  return css`
-    @keyframes multiline-editor-placeholder-animation {
-      0% {
-        opacity: 1;
-        transform: translateY(0);
-        visibility: visible;
-      }
-      ${exitStart}% {
-        opacity: 1;
-        transform: translateY(0);
-        visibility: visible;
-      }
-      ${exitEnd}% {
-        opacity: 0;
-        transform: translateY(-100%);
-        visibility: hidden;
-      }
-      ${enterStart}% {
-        opacity: 0;
-        transform: translateY(100%);
-        visibility: hidden;
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0);
-        visibility: visible;
-      }
-    }
-  `;
-}
 
 /**
  * @typedef {object} MultilineEditorPlugin
@@ -89,7 +51,6 @@ export class MultilineEditor extends MozLitElement {
 
   static properties = {
     placeholder: { type: String, reflect: true, fluent: true },
-    placeholderHints: { type: Array, attribute: false },
     readOnly: { type: Boolean, reflect: true, attribute: "readonly" },
     plugins: { type: Array, attribute: false },
     maxLength: { type: Number, attribute: "maxlength" },
@@ -108,11 +69,6 @@ export class MultilineEditor extends MozLitElement {
       reflect: false,
     },
     ariaHasPopup: { type: String, attribute: "aria-haspopup", reflect: false },
-    showPlaceholderAnimation: {
-      type: Boolean,
-      reflect: true,
-      attribute: "show-placeholder-animation",
-    },
   };
 
   static schema = new Schema({
@@ -136,9 +92,6 @@ export class MultilineEditor extends MozLitElement {
     { prop: "ariaHasPopup", attr: "aria-haspopup" },
   ];
 
-  #instanceId = crypto.randomUUID();
-  #placeholderVersion = 0;
-  #placeholderKeyframeStyles = null;
   #pendingValue = "";
   #placeholderPlugin;
   #plugins;
@@ -151,11 +104,9 @@ export class MultilineEditor extends MozLitElement {
     super();
 
     this.placeholder = "";
-    this.placeholderHints = [];
     this.plugins = [];
     this.readOnly = false;
     this.maxLength = 0;
-    this.showPlaceholderAnimation = true;
     this.#placeholderPlugin = this.#createPlaceholderPlugin();
     const plugins = [
       historyPlugin(),
@@ -427,7 +378,6 @@ export class MultilineEditor extends MozLitElement {
    * Called after the element’s DOM has been rendered for the first time.
    */
   firstUpdated() {
-    this.#updatePlaceholderKeyframeStyles();
     this.#createView();
   }
 
@@ -439,19 +389,11 @@ export class MultilineEditor extends MozLitElement {
   updated(changedProps) {
     if (
       changedProps.has("placeholder") ||
-      changedProps.has("placeholderHints") ||
       changedProps.has("plugins") ||
       changedProps.has("readOnly") ||
       MultilineEditor.FORWARDED_ARIA.some(({ prop }) => changedProps.has(prop))
     ) {
       this.#refreshView();
-    }
-    // Restart placeholder animation when re-enabling.
-    if (
-      changedProps.has("showPlaceholderAnimation") &&
-      this.showPlaceholderAnimation
-    ) {
-      this.#resetPlaceholderAnimation();
     }
   }
 
@@ -666,36 +608,6 @@ export class MultilineEditor extends MozLitElement {
     return true;
   }
 
-  #createPlaceholderHints() {
-    const placeholderCount = this.placeholderHints.length + 1;
-
-    const hints = document.createElement("ul");
-    hints.id = `placeholder-hints-${this.#instanceId}-${this.#placeholderVersion}`;
-    hints.className = "placeholder-hints";
-    hints.setAttribute("role", "presentation");
-    hints.style.setProperty(
-      "--multiline-editor-placeholder-count",
-      placeholderCount
-    );
-
-    const placeholder = document.createElement("li");
-    placeholder.textContent = this.placeholder;
-    placeholder.style.setProperty("--multiline-editor-placeholder-index", 0);
-    hints.appendChild(placeholder);
-
-    for (const [index, hint] of this.placeholderHints.entries()) {
-      const hintItem = document.createElement("li");
-      hintItem.textContent = hint;
-      hintItem.style.setProperty(
-        "--multiline-editor-placeholder-index",
-        index + 1
-      );
-      hints.appendChild(hintItem);
-    }
-
-    return hints;
-  }
-
   /**
    * Creates a plugin that shows a placeholder when the editor is empty.
    *
@@ -708,22 +620,9 @@ export class MultilineEditor extends MozLitElement {
           if (
             doc.childCount !== 1 ||
             !doc.firstChild.isTextblock ||
-            doc.firstChild.content.size !== 0
+            doc.firstChild.content.size !== 0 ||
+            !this.placeholder
           ) {
-            return null;
-          }
-
-          if (this.placeholderHints.length) {
-            return DecorationSet.create(doc, [
-              Decoration.widget(1, () => this.#createPlaceholderHints(), {
-                key: `placeholder-hints-${this.#instanceId}-${this.#placeholderVersion}`,
-                side: -1,
-                ignoreSelection: true,
-              }),
-            ]);
-          }
-
-          if (!this.placeholder) {
             return null;
           }
 
@@ -794,49 +693,11 @@ export class MultilineEditor extends MozLitElement {
       return;
     }
 
-    this.#placeholderVersion++;
-    this.#updatePlaceholderKeyframeStyles();
     this.#view.setProps({
       attributes: this.#viewAttributes(),
       editable: () => !this.readOnly,
     });
     this.#view.dispatch(this.#view.state.tr);
-  }
-
-  /**
-   * Resets placeholder animations to their starting position.
-   *
-   * When the placeholder animation is re-enabled the cached placeholder
-   * elements retain animation state and must be reset.
-   */
-  #resetPlaceholderAnimation() {
-    const placeholderHints =
-      this.#view?.dom.querySelector(".placeholder-hints");
-    if (!placeholderHints) {
-      return;
-    }
-    const animations = [...placeholderHints.querySelectorAll("li")].flatMap(
-      placeholderHint => placeholderHint.getAnimations()
-    );
-    Promise.all(animations.map(animation => animation.ready)).then(() => {
-      for (const animation of animations) {
-        animation.currentTime = 0;
-      }
-    });
-  }
-
-  #updatePlaceholderKeyframeStyles() {
-    if (!this.placeholderHints.length) {
-      return;
-    }
-    if (!this.#placeholderKeyframeStyles) {
-      this.#placeholderKeyframeStyles = new CSSStyleSheet();
-      this.renderRoot.adoptedStyleSheets.push(this.#placeholderKeyframeStyles);
-    }
-    const keyframeStyles = generatePlaceholderKeyframeStyles(
-      this.placeholderHints.length + 1
-    );
-    this.#placeholderKeyframeStyles.replaceSync(keyframeStyles.cssText);
   }
 
   #textToDoc(text, schema) {
@@ -934,10 +795,6 @@ export class MultilineEditor extends MozLitElement {
       }
     }
 
-    if (this.placeholderHints.length) {
-      attrs["aria-describedby"] =
-        `placeholder-hints-${this.#instanceId}-${this.#placeholderVersion}`;
-    }
     return attrs;
   }
 

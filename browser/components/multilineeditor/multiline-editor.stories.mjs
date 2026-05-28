@@ -22,11 +22,8 @@ export default {
   },
 };
 
-const Template = ({ placeholder, placeholderHints = [] }) => html`
-  <moz-multiline-editor
-    .placeholder=${placeholder}
-    .placeholderHints=${placeholderHints}
-  ></moz-multiline-editor>
+const Template = ({ placeholder }) => html`
+  <moz-multiline-editor .placeholder=${placeholder}></moz-multiline-editor>
 `;
 
 export const Default = Template.bind({});
@@ -149,10 +146,4 @@ WithMentionsCustomElement.args = {
     },
     node.attrs.label,
   ],
-};
-
-export const WithAnimatedPlaceholderHints = Template.bind({});
-WithAnimatedPlaceholderHints.args = {
-  placeholder: "Primary placeholder",
-  placeholderHints: ["Hint one", "Hint two"],
 };
