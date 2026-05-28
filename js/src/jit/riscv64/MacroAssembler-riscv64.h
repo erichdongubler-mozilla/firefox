@@ -29,7 +29,7 @@ enum LoadStoreSize {
 
 enum LoadStoreExtension { ZeroExtend = 0, SignExtend = 1 };
 enum JumpKind { LongJump = 0, ShortJump = 1 };
-enum FloatFormat { SingleFloat, DoubleFloat };
+
 class ScratchTagScope {
   UseScratchRegisterScope temps_;
   Register scratch_;
@@ -275,13 +275,6 @@ class MacroAssemblerRiscv64 : public Assembler {
   void ma_cmp_set(Register dst, Address address, Register rhs, Condition c);
   void ma_cmp_set(Register dst, Address address, Imm32 imm, Condition c);
   void ma_cmp_set(Register dst, Address address, ImmWord imm, Condition c);
-
-  void ma_rotr_w(Register rd, Register rj, Imm32 shift);
-
-  void ma_fmovz(FloatFormat fmt, FloatRegister fd, FloatRegister fj,
-                Register rk);
-  void ma_fmovn(FloatFormat fmt, FloatRegister fd, FloatRegister fj,
-                Register rk);
 
   // arithmetic based ops
   void ma_add32TestCarry(Condition cond, Register rd, Register rj, Register rk,

@@ -1874,18 +1874,17 @@ void CodeGenerator::visitWasmSelect(LWasmSelect* ins) {
   MOZ_ASSERT(ToFloatRegister(ins->trueExpr()) == out,
              "true expr input is reused for output");
 
+  Label done;
+  masm.ma_b(cond, cond, &done, Assembler::NonZero, ShortJump);
   if (falseExpr->isFloatReg()) {
     if (mirType == MIRType::Float32) {
-      masm.ma_fmovz(SingleFloat, out, ToFloatRegister(falseExpr), cond);
+      masm.moveFloat32(ToFloatRegister(falseExpr), out);
     } else if (mirType == MIRType::Double) {
-      masm.ma_fmovz(DoubleFloat, out, ToFloatRegister(falseExpr), cond);
+      masm.moveDouble(ToFloatRegister(falseExpr), out);
     } else {
       MOZ_CRASH("unhandled type in visitWasmSelect!");
     }
   } else {
-    Label done;
-    masm.ma_b(cond, cond, &done, Assembler::NonZero, ShortJump);
-
     if (mirType == MIRType::Float32) {
       masm.loadFloat32(ToAddress(falseExpr), out);
     } else if (mirType == MIRType::Double) {
@@ -1893,9 +1892,8 @@ void CodeGenerator::visitWasmSelect(LWasmSelect* ins) {
     } else {
       MOZ_CRASH("unhandled type in visitWasmSelect!");
     }
-
-    masm.bind(&done);
   }
+  masm.bind(&done);
 }
 
 // We expect to handle only the case where compare is {U,}Int32 and select is

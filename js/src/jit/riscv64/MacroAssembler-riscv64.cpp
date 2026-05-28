@@ -6250,18 +6250,6 @@ void MacroAssemblerRiscv64::ma_mod_mask(Register src, Register dest,
   bind(&done);
 }
 
-void MacroAssemblerRiscv64::ma_fmovz(FloatFormat fmt, FloatRegister fd,
-                                     FloatRegister fj, Register rk) {
-  Label done;
-  ma_b(rk, zero, &done, Assembler::NotEqual);
-  if (fmt == SingleFloat) {
-    fmv_s(fd, fj);
-  } else {
-    fmv_d(fd, fj);
-  }
-  bind(&done);
-}
-
 void MacroAssemblerRiscv64::ByteSwap(Register dest, Register src,
                                      int operand_size, Register scratch) {
   MOZ_ASSERT(operand_size == 4 || operand_size == 8);
