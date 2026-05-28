@@ -8,29 +8,21 @@ transforms:
     - taskgraph.transforms.from_deps
     - gecko_taskgraph.transforms.filter_notarization
     - gecko_taskgraph.transforms.name_sanity
+    - gecko_taskgraph.transforms.repackage_pkg_notarization
     - gecko_taskgraph.transforms.signing
     - gecko_taskgraph.transforms.task
 
 kind-dependencies:
-    - build-mac-signing
+    - repackage-pkg-signing
 
 only-for-attributes:
     - shippable
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 tasks:
-    build-mac-notarization:
+    repackage-pkg-notarization:
         from-deps:
             group-by: single-with-filters
             copy-attributes: true
         treeherder:
-            symbol: BMN
-        upstream-artifacts:
-            - taskType: signing
-              paths:
-                  - public/build/target.tar.gz
-              formats: ["apple_notarization_stacked"]
-              taskId:
-                  task-reference: <build-mac-signing>
+            symbol: N
+            group: pkg-Rpk

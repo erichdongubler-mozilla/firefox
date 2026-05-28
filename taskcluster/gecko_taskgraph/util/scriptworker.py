@@ -530,6 +530,7 @@ def generate_beetmover_upstream_artifacts(
                 "from",
                 f"beetmover filename {filename}",
                 platform=platform,
+                level=str(config.params.get("level", "1")),
             )
             if dep not in map_config["mapping"][filename]["from"]:
                 continue
@@ -692,7 +693,11 @@ def generate_beetmover_artifact_map(config, job, **kwargs):
         for filename in map_config["mapping"]:
             # Relevancy checks
             resolve_keyed_by(
-                map_config["mapping"][filename], "from", "blah", platform=platform
+                map_config["mapping"][filename],
+                "from",
+                "blah",
+                platform=platform,
+                level=str(config.params.get("level", "1")),
             )
             if dep not in map_config["mapping"][filename]["from"]:
                 # We don't get this file from this dependency.
