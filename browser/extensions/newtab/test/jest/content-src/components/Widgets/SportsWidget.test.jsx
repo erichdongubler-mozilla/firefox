@@ -8,6 +8,18 @@ import { actionTypes as at } from "common/Actions.mjs";
 import { WrapWithProvider } from "test/jest/test-utils";
 import { SportsWidget } from "content-src/components/Widgets/SportsWidget/SportsWidget";
 
+// Pin Date.now() to a post-kickoff timestamp for the entire suite so the
+// kickoff-date guard on /live data does not zero out the mock live matches
+// used by these tests.
+const POST_KICKOFF_MS = Date.UTC(2026, 5, 12, 0, 0, 0);
+let dateNowSpy;
+beforeAll(() => {
+  dateNowSpy = jest.spyOn(Date, "now").mockReturnValue(POST_KICKOFF_MS);
+});
+afterAll(() => {
+  dateNowSpy.mockRestore();
+});
+
 const mockTeams = [
   { key: "CAN", name: "Canada" },
   { key: "AUS", name: "Australia" },
@@ -322,6 +334,46 @@ describe("<SportsWidget>", () => {
     expect(
       container.querySelector(".sports-intro-wrapper")
     ).not.toBeInTheDocument();
+  });
+});
+
+describe("pre-kickoff /live data guard", () => {
+  // One second before WORLD_CUP_KICKOFF_MS (2026-06-11T19:00:00Z).
+  const PRE_KICKOFF_MS = Date.UTC(2026, 5, 11, 18, 59, 59);
+
+  beforeEach(() => {
+    dateNowSpy.mockReturnValue(PRE_KICKOFF_MS);
+  });
+
+  afterEach(() => {
+    dateNowSpy.mockReturnValue(POST_KICKOFF_MS);
+  });
+
+  it("ignores non-empty /live data and stays on the intro view", () => {
+    const { container } = render(
+      <WrapWithProvider
+        state={makeState(
+          {},
+          {
+            data: {
+              teams: [],
+              matches: emptyMatches,
+              live: [mockMatch],
+            },
+          }
+        )}
+      >
+        <SportsWidget {...defaultProps} />
+      </WrapWithProvider>
+    );
+    // Guard fires: hasLiveGames is false despite non-empty data.live,
+    // so tournamentStarted stays false and the widget stays on intro.
+    expect(
+      container.querySelector(".sports.sports-matches")
+    ).not.toBeInTheDocument();
+    expect(
+      container.querySelector(".sports-intro-wrapper")
+    ).toBeInTheDocument();
   });
 });
 

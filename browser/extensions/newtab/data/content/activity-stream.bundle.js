@@ -16742,6 +16742,11 @@ const SportsWidget_USER_ACTION_TYPES = {
 const SportsWidget_PREF_NOVA_ENABLED = "nova.enabled";
 const SportsWidget_PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
 const PREF_SPORTS_WIDGET_LIVE_ENABLED = "widgets.sportsWidget.live.enabled";
+
+// World Cup 2026 kickoff: June 11, 2026 at 19:00 UTC. Used as a temporary
+// guard to ignore /live data while the endpoint still serves mock matches
+// pre-kickoff. Remove this once the backend returns empty pre-kickoff.
+const WORLD_CUP_KICKOFF_MS = Date.UTC(2026, 5, 11, 19, 0, 0);
 const SPORTS_WIDGET_REGISTRY_ENTRY = WIDGET_REGISTRY.find(widget => widget.id === "sportsWidget");
 
 // Stable sort that bubbles matches involving a followed team to the front
@@ -16821,16 +16826,22 @@ function SportsWidget_SportsWidget({
   const widgetSize = resolveWidgetSize(SPORTS_WIDGET_REGISTRY_ENTRY, prefs);
   const liveEnabled = prefs[PREF_SPORTS_WIDGET_LIVE_ENABLED];
   const widgetsMayBeMaximized = prefs["widgets.system.maximized"];
-  const hasLiveGames = sportsWidgetData?.data?.live?.length > 0;
+  // /live currently serves mock data pre-kickoff, so ignore its contents
+  // until the kickoff timestamp. Drop this guard once the backend returns
+  // empty pre-kickoff.
+  const liveDataTrustable = Date.now() >= WORLD_CUP_KICKOFF_MS;
+  const hasLiveGames = liveDataTrustable && sportsWidgetData?.data?.live?.length > 0;
   const hasPreviousResults = sportsWidgetData?.data?.matches?.previous?.length > 0;
-  const tournamentStarted = hasLiveGames || hasPreviousResults;
+  const hasUpcomingMatches = sportsWidgetData?.data?.matches?.next?.length > 0;
+  const tournamentStarted = hasLiveGames || hasPreviousResults || hasUpcomingMatches;
   const savedWidgetState = sportsWidgetData.widgetState || WIDGET_STATES.INTRO;
-  // Once the tournament has started, skip the intro and open on the match schedule.
+  // Once the backend has any match data (upcoming, live, or completed), skip
+  // the intro and open on the match schedule.
   const widgetState = tournamentStarted && savedWidgetState === WIDGET_STATES.INTRO ? WIDGET_STATES.MATCHES : savedWidgetState;
   const rawSelectedTeams = sportsWidgetData.selectedTeams;
   const rawTeams = sportsWidgetData?.data?.teams;
   const rawMatches = sportsWidgetData?.data?.matches;
-  const rawLive = sportsWidgetData?.data?.live;
+  const rawLive = liveDataTrustable ? sportsWidgetData?.data?.live : null;
   const selectedTeams = (0,external_React_namespaceObject.useMemo)(() => rawSelectedTeams || [], [rawSelectedTeams]);
   const teams = (0,external_React_namespaceObject.useMemo)(() => rawTeams ?? [], [rawTeams]);
   const {
