@@ -1818,10 +1818,10 @@ pref("browser.partnerlink.campaign.topsites", "amzn_2020_a1");
 // Activates preloading of the new tab url.
 pref("browser.newtab.preload", true);
 
-// Preonboarding is disabled by default on Linux.
-// For official Mozilla distributions, enable at runtime through
-// Policy.isEligibleOnLinux() in TelemetryReportingPolicy.
-#ifdef XP_LINUX
+// Preonboarding is disabled by default on platforms other than Windows and
+// macOS. For official Mozilla distributions (only for Linux), enabled at
+// runtime in TelemetryReportingPolicy.
+#if !defined(XP_WIN) && !defined(XP_MACOSX)
   pref("browser.preonboarding.enabled", false);
 #endif
 
