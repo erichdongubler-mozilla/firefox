@@ -398,7 +398,7 @@ IncrementalProgress GCRuntime::traceEmbeddingGrayRoots(JSTracer* trc,
 
 #ifdef DEBUG
 class AssertNoRootsTracer final : public JS::CallbackTracer {
-  void onChild(JS::GCCellPtr thing, const char* name) override {
+  bool onChild(JS::GCCellPtr thing, const char* name) override {
     MOZ_CRASH("There should not be any roots during runtime shutdown");
   }
 

@@ -3141,8 +3141,9 @@ struct AssertNonGrayTracer final : public JS::CallbackTracer {
   // context without making this more generic.
   explicit AssertNonGrayTracer(JSRuntime* rt)
       : JS::CallbackTracer(rt, JS::TracerKind::UnmarkGray) {}
-  void onChild(JS::GCCellPtr thing, const char* name) override {
+  bool onChild(JS::GCCellPtr thing, const char* name) override {
     MOZ_ASSERT(!thing.asCell()->isMarkedGray());
+    return true;
   }
 };
 #endif
@@ -3184,12 +3185,12 @@ class js::gc::UnmarkGrayTracer final
   Vector<JS::GCCellPtr, 0, SystemAllocPolicy>& stack;
 
   template <typename T>
-  void onChild(T* thing);
+  bool onChild(T* thing);
 
   template <typename T>
   bool onEdge(T** thingp, const char* name) {
     if (T* thing = *thingp) {
-      onChild(thing);
+      return onChild(thing);
     }
     return true;
   }
@@ -3198,7 +3199,7 @@ class js::gc::UnmarkGrayTracer final
 
 template <uint32_t opts>
 template <typename T>
-void UnmarkGrayTracer<opts>::onChild(T* thing) {
+bool UnmarkGrayTracer<opts>::onChild(T* thing) {
   // Cells in the nursery cannot be gray, and nor can certain kinds of tenured
   // cells. These must necessarily point only to black edges.
   if (!TraceKindCanBeGray<T>::value || !thing->isTenured()) {
@@ -3207,7 +3208,7 @@ void UnmarkGrayTracer<opts>::onChild(T* thing) {
     AssertNonGrayTracer nongray(this->runtime());
     thing->traceChildren(&nongray);
 #endif
-    return;
+    return true;
   }
 
   TenuredCell& tenured = thing->asTenured();
@@ -3227,12 +3228,12 @@ void UnmarkGrayTracer<opts>::onChild(T* thing) {
   // If the cell is in a zone whose mark bits are being cleared, then it will
   // end up being marked black by GC marking.
   if (zone->isGCPreparing()) {
-    return;
+    return true;
   }
 
   // If the cell is already marked black then there's nothing more to do.
   if (tenured.isMarkedBlack()) {
-    return;
+    return true;
   }
 
   if (zone->isGCMarking()) {
@@ -3264,6 +3265,7 @@ void UnmarkGrayTracer<opts>::onChild(T* thing) {
   }
 
   unmarkedAny = true;
+  return true;
 }
 
 template <uint32_t opts>
