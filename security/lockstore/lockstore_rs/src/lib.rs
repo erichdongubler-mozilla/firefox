@@ -12,7 +12,6 @@ pub use crypto::CipherSuite;
 pub use crypto::DEFAULT_CIPHER_SUITE;
 pub use datastore::LockstoreDatastore;
 pub use keystore::{ConnectionHandle, Keystore};
-#[cfg(test)]
 pub use utils::{bytes_to_value, value_to_bytes};
 
 use kvstore::{DatabaseError, StoreError};
