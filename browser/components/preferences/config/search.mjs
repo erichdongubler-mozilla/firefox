@@ -926,6 +926,7 @@ Preferences.addSetting(
         maybeMakeSetting(EngineListItemSetting(settingId, engine));
         maybeMakeSetting({
           id: editId,
+          deps: [settingId],
           disabled: () => engine.hidden,
           onUserClick() {
             window.gSubDialog.open(
