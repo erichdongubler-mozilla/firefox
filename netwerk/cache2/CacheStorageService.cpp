@@ -1681,12 +1681,12 @@ nsresult CacheStorageService::AddStorageEntry(
     // under those NVS rules. The first matching candidate is used as the cache
     // hit. OPEN_TRUNCATE is excluded because truncation always creates a new
     // entry regardless of equivalence.
-    //
     // TODO (bug 2042810): NS_NewURI calls here are needed because the cache
     // stores URIs as strings (a legacy of bug 1271019, when nsIURI was not
     // thread-safe). Threading nsIURI through the cache APIs would eliminate
     // this reparsing.
-    if (!entryExists && !(aFlags & nsICacheStorage::OPEN_TRUNCATE)) {
+    if (StaticPrefs::network_cache_no_vary_search() && !entryExists &&
+        !(aFlags & nsICacheStorage::OPEN_TRUNCATE)) {
       nsCOMPtr<nsIURI> incomingURI;
       nsAutoCString basePath;
       if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(incomingURI), aURI)) &&
@@ -1715,8 +1715,8 @@ nsresult CacheStorageService::AddStorageEntry(
             }
 
             auto data = ParseNoVarySearchHeader(nvsVal);
-            if (URLsAreEquivalentModuloVariationConfig(incomingURI, candidateURI,
-                                                      data)) {
+            if (URLsAreEquivalentModuloVariationConfig(incomingURI,
+                                                       candidateURI, data)) {
               entry = candidate;
               entryExists = true;
               break;

@@ -6208,7 +6208,8 @@ nsresult nsHttpChannel::UpdateCacheEntryHeaders(nsICacheEntry* entry,
   // Store No-Vary-Search header in cache metadata and notify the secondary
   // index so variant URLs can match this entry on future cache lookups.
   nsAutoCString noVarySearch;
-  if (NS_SUCCEEDED(
+  if (StaticPrefs::network_cache_no_vary_search() &&
+      NS_SUCCEEDED(
           mResponseHead->GetHeader(nsHttp::No_Vary_Search, noVarySearch)) &&
       !noVarySearch.IsEmpty()) {
     rv = entry->SetMetaDataElement("no-vary-search", noVarySearch.get());

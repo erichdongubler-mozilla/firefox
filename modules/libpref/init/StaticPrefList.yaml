@@ -16428,6 +16428,16 @@
   value: true
   mirror: always
 
+# When true, the HTTP cache uses the No-Vary-Search response header to match
+# URL variants against existing cache entries, implementing the "equivalent
+# modulo variation config" algorithm from the No-Vary-Search spec
+# (https://httpwg.org/http-extensions/draft-ietf-httpbis-no-vary-search.html).
+# Can be set to false to disable the feature if regressions are observed.
+- name: network.cache.no_vary_search
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+
 # When this pref is true, AddStorageEntry will return an error if the
 # OPEN_READONLY & OPEN_SECRETLY flags are passed and no entry exists.
 # If no regressions occur this pref should be removed.

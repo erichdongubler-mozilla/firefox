@@ -27,6 +27,8 @@
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
 #include "nsProxyRelease.h"
+#include "mozilla/net/NoVarySearchUtils.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
@@ -543,8 +545,11 @@ NS_IMETHODIMP CacheEntry::OnFileReady(nsresult aResult, bool aIsNew) {
       mFrecency = INT2FRECENCY(frecency);
 
       // Check for No-Vary-Search metadata on existing entries loaded from disk.
-      if (!aIsNew) {
-        mFile->GetElement("no-vary-search", getter_Copies(nvsVal));
+      char* rawNvs = nullptr;
+      if (StaticPrefs::network_cache_no_vary_search() && !aIsNew &&
+          NS_SUCCEEDED(mFile->GetElement("no-vary-search", &rawNvs)) &&
+          rawNvs) {
+        nvsVal.Adopt(rawNvs);
       }
     }
 
