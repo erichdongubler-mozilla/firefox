@@ -186,7 +186,7 @@ private fun syncedTabsSectionContent(
             val itemModifier = Modifier
                 .padding(horizontal = 16.dp)
                 .clip(shape = itemShape)
-                .background(color = MaterialTheme.colorScheme.surfaceContainerLowest)
+                .background(color = MaterialTheme.colorScheme.surfaceBright)
                 .fillMaxWidth()
 
             Column(modifier = itemModifier) {
@@ -264,7 +264,7 @@ private fun SyncedTabsSectionHeader(
         ExpandableListHeader(
             headerText = headerText,
             headerTextStyle = MaterialTheme.typography.bodyMedium,
-            headerTextColor = MaterialTheme.colorScheme.secondary,
+            headerTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
             expanded = expanded,
             expandActionContentDescription = stringResource(R.string.synced_tabs_expand_group),
             collapseActionContentDescription = stringResource(R.string.synced_tabs_collapse_group),
@@ -332,7 +332,7 @@ private fun SyncedTabsNoTabsItem() {
             .padding(horizontal = 16.dp),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+            containerColor = MaterialTheme.colorScheme.surfaceBright,
         ),
     ) {
         Text(
