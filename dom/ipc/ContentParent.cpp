@@ -5926,11 +5926,6 @@ mozilla::ipc::IPCResult ContentParent::RecvStoreAndBroadcastBlobURLRegistration(
   if (!ValidatePrincipal(aPrincipal, {ValidatePrincipalOptions::AllowSystem})) {
     return PrincipalValidationIpcFail(aPrincipal, this, __func__);
   }
-
-  if (!BlobURLProtocolHandler::IsBlobURLValid(aPrincipal, aURI)) {
-    return IPC_FAIL(this, "Blob URL format is invalid.");
-  }
-
   RefPtr<BlobImpl> blobImpl = IPCBlobUtils::Deserialize(aBlob);
   if (NS_WARN_IF(!blobImpl)) {
     return IPC_FAIL(this, "Blob deserialization failed.");
