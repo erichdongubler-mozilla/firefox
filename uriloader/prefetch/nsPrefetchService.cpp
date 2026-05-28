@@ -437,7 +437,7 @@ void nsPrefetchService::DispatchEvent(nsPrefetchNode* node, bool aSuccess) {
       // We don't dispatch synchronously since |node| might be in a DocGroup
       // that we're not allowed to touch. (Our network request happens in the
       // DocGroup of one of the mSources nodes--not necessarily this one).
-      RefPtr<AsyncEventDispatcher> dispatcher = new AsyncEventDispatcher(
+      RefPtr dispatcher = MakeRefPtr<AsyncEventDispatcher>(
           domNode, aSuccess ? u"load"_ns : u"error"_ns, CanBubble::eNo);
       dispatcher->RequireNodeInDocument();
       dispatcher->PostDOMEvent();
@@ -466,8 +466,8 @@ nsresult nsPrefetchService::EnqueueURI(nsIURI* aURI,
                                        nsIReferrerInfo* aReferrerInfo,
                                        nsINode* aSource,
                                        nsPrefetchNode** aNode) {
-  RefPtr<nsPrefetchNode> node = new nsPrefetchNode(
-      this, aURI, aReferrerInfo, aSource, nsIContentPolicy::TYPE_OTHER, false);
+  RefPtr node = MakeRefPtr<nsPrefetchNode>(this, aURI, aReferrerInfo, aSource,
+                                           nsIContentPolicy::TYPE_OTHER, false);
   mPrefetchQueue.push_back(node);
   node.forget(aNode);
   return NS_OK;

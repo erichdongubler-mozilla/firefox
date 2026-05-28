@@ -114,7 +114,7 @@ nsresult nsDocLoader::SetDocLoaderParent(nsDocLoader* aParent) {
 }
 
 nsresult nsDocLoader::Init() {
-  RefPtr<net::nsLoadGroup> loadGroup = new net::nsLoadGroup();
+  RefPtr loadGroup = MakeRefPtr<net::nsLoadGroup>();
   nsresult rv = loadGroup->Init();
   if (NS_FAILED(rv)) return rv;
 
@@ -130,7 +130,7 @@ nsresult nsDocLoader::Init() {
 
 nsresult nsDocLoader::InitWithBrowsingContext(
     BrowsingContext* aBrowsingContext) {
-  RefPtr<net::nsLoadGroup> loadGroup = new net::nsLoadGroup();
+  RefPtr loadGroup = MakeRefPtr<net::nsLoadGroup>();
   if (!aBrowsingContext->GetRequestContextId()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
