@@ -226,11 +226,11 @@ pub extern "C" fn lockstore_keystore_delete_dek(
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_list_collections(
+pub extern "C" fn lockstore_keystore_list_deks(
     handle: &KeystoreHandle,
     ret_collections: &mut ThinVec<nsCString>,
 ) -> nsresult {
-    match handle.keystore.list_collections() {
+    match handle.keystore.list_deks() {
         Ok(collections) => {
             *ret_collections = collections
                 .into_iter()
@@ -242,18 +242,17 @@ pub extern "C" fn lockstore_keystore_list_collections(
     }
 }
 
-/// List the `kek_ref`s currently wrapping the DEK for `collection`.
-/// Unknown / empty `collection` surfaces as `NS_ERROR_NOT_AVAILABLE`
+/// List the `kek_ref`s currently wrapping the DEK named `dek_name`.
+/// An unknown or empty `dek_name` surfaces as `NS_ERROR_NOT_AVAILABLE`
 /// via `error_to_nsresult` (the keystore layer rejects with `NotFound`).
-/// Order of the returned list is unspecified.
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_list_collection_keks(
+pub extern "C" fn lockstore_keystore_list_keks(
     handle: &KeystoreHandle,
-    collection: &nsACString,
+    dek_name: &nsACString,
     ret_kek_refs: &mut ThinVec<nsCString>,
 ) -> nsresult {
-    let coll_str = collection.to_utf8();
-    match handle.keystore.list_collection_keks(&coll_str) {
+    let dek_name_str = dek_name.to_utf8();
+    match handle.keystore.list_keks(&dek_name_str) {
         Ok(refs) => {
             *ret_kek_refs = refs.into_iter().map(|s| nsCString::from(&s[..])).collect();
             NS_OK

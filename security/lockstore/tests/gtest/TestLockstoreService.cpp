@@ -90,7 +90,7 @@ TEST_F(LockstoreServiceTest, CreateAndDeleteDek) {
     EXPECT_NS_SUCCEEDED(
         mService->DoCreateDek(coll, KEK_LOCAL, /*extractable=*/false));
 
-    auto collectionsResult = mService->DoListCollections();
+    auto collectionsResult = mService->DoListDeks();
     ASSERT_TRUE(collectionsResult.isOk());
     auto collections = collectionsResult.unwrap();
     bool found = false;
@@ -143,7 +143,7 @@ TEST_F(LockstoreServiceTest, DeleteDek_RejectsEmptyArg) {
       [&]() { EXPECT_EQ(mService->DoDeleteDek(""_ns), NS_ERROR_INVALID_ARG); });
 }
 
-TEST_F(LockstoreServiceTest, ListCollections_ContainsCreated) {
+TEST_F(LockstoreServiceTest, ListDeks_ContainsCreated) {
   // Create three uniquely-named collections; listCollections must
   // include all three. The list may also include collections from
   // unrelated tests, so we only assert subset, not equality.
@@ -158,7 +158,7 @@ TEST_F(LockstoreServiceTest, ListCollections_ContainsCreated) {
     EXPECT_NS_SUCCEEDED(
         mService->DoCreateDek(c, KEK_LOCAL, /*extractable=*/false));
 
-    auto listResult = mService->DoListCollections();
+    auto listResult = mService->DoListDeks();
     ASSERT_TRUE(listResult.isOk());
     auto list = listResult.unwrap();
     std::set<nsCString> names;
@@ -541,7 +541,7 @@ TEST_F(LockstoreServiceTest, ConcurrentMixedOpsAllComplete) {
 
   // Verify listCollections no longer contains any of them.
   RunOnBackground([&]() {
-    auto remainingResult = mService->DoListCollections();
+    auto remainingResult = mService->DoListDeks();
     ASSERT_TRUE(remainingResult.isOk());
     auto remaining = remainingResult.unwrap();
     for (const auto& c : colls) {

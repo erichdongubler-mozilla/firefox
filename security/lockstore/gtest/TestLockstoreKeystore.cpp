@@ -24,7 +24,7 @@ using mozilla::security::lockstore::lockstore_keystore_has_prp;
 using mozilla::security::lockstore::lockstore_keystore_import_dek;
 using mozilla::security::lockstore::lockstore_keystore_is_dek_extractable;
 using mozilla::security::lockstore::lockstore_keystore_is_kek_unlocked;
-using mozilla::security::lockstore::lockstore_keystore_list_collections;
+using mozilla::security::lockstore::lockstore_keystore_list_deks;
 using mozilla::security::lockstore::lockstore_keystore_lock;
 using mozilla::security::lockstore::lockstore_keystore_lock_kek;
 using mozilla::security::lockstore::lockstore_keystore_open;
@@ -89,7 +89,7 @@ TEST_F(LockstoreKeystoreTest, CreateAndListDek) {
   ASSERT_NS_SUCCEEDED(rv);
 
   nsTArray<nsCString> collections;
-  rv = lockstore_keystore_list_collections(mKeystore, &collections);
+  rv = lockstore_keystore_list_deks(mKeystore, &collections);
   ASSERT_NS_SUCCEEDED(rv);
   ASSERT_EQ(collections.Length(), 1u);
   EXPECT_EQ(collections[0], coll);
@@ -175,7 +175,7 @@ TEST_F(LockstoreKeystoreTest, DeleteDek) {
   ASSERT_NS_SUCCEEDED(rv);
 
   nsTArray<nsCString> collections;
-  rv = lockstore_keystore_list_collections(mKeystore, &collections);
+  rv = lockstore_keystore_list_deks(mKeystore, &collections);
   ASSERT_NS_SUCCEEDED(rv);
   EXPECT_EQ(collections.Length(), 0u);
 }
@@ -203,7 +203,7 @@ TEST_F(LockstoreKeystoreTest, ListCollectionsEmpty) {
   ASSERT_NS_SUCCEEDED(rv);
 
   nsTArray<nsCString> collections;
-  rv = lockstore_keystore_list_collections(mKeystore, &collections);
+  rv = lockstore_keystore_list_deks(mKeystore, &collections);
   ASSERT_NS_SUCCEEDED(rv);
   EXPECT_EQ(collections.Length(), 0u);
 }
@@ -223,7 +223,7 @@ TEST_F(LockstoreKeystoreTest, ListMultipleCollections) {
   ASSERT_NS_SUCCEEDED(rv);
 
   nsTArray<nsCString> collections;
-  rv = lockstore_keystore_list_collections(mKeystore, &collections);
+  rv = lockstore_keystore_list_deks(mKeystore, &collections);
   ASSERT_NS_SUCCEEDED(rv);
   ASSERT_EQ(collections.Length(), 3u);
   EXPECT_TRUE(collections.Contains(alpha));
@@ -246,7 +246,7 @@ TEST_F(LockstoreKeystoreTest, PersistenceAcrossReopen) {
   ASSERT_NS_SUCCEEDED(rv);
 
   nsTArray<nsCString> collections;
-  rv = lockstore_keystore_list_collections(mKeystore, &collections);
+  rv = lockstore_keystore_list_deks(mKeystore, &collections);
   ASSERT_NS_SUCCEEDED(rv);
   ASSERT_EQ(collections.Length(), 1u);
   EXPECT_EQ(collections[0], coll);
