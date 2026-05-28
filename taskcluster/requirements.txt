@@ -423,6 +423,7 @@ markdown-it-py==3.0.0 \
     --hash=sha256:355216845c60bd96232cd8d8c40e8f9765cc86f46880e43a8fd22dc1a1a8cab1 \
     --hash=sha256:e3f60a94fa066dc52ec76661e37c851cb232d92f9886b15cb560aaada2df8feb
     # via
+    #   -c ../third_party/python/requirements.txt
     #   -r requirements.in
     #   rich
 markupsafe==3.0.2 \
@@ -493,7 +494,9 @@ markupsafe==3.0.2 \
 mdurl==0.1.2 \
     --hash=sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8 \
     --hash=sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba
-    # via markdown-it-py
+    # via
+    #   -c ../third_party/python/requirements.txt
+    #   markdown-it-py
 mohawk==1.1.0 \
     --hash=sha256:3ed296a30453d0b724679e0fd41e4e940497f8e461a9a9c3b7f36e43bab0fa09 \
     --hash=sha256:d2a0e3ab10a209cc79e95e28f2dd54bd4a73fd1998ffe27b7ba0f962b6be9723
@@ -506,9 +509,9 @@ mozilla-repo-urls==0.1.1 \
     # via
     #   -c ../third_party/python/requirements.txt
     #   taskcluster-taskgraph
-mozilla-taskgraph==4.1.1 \
-    --hash=sha256:43ef061caf80ad0dcb3c8a3e29fa6e547fe6f8a11b77a63f8cce2bede58e428f \
-    --hash=sha256:553935ba90b34476b2d190ba9857b067e8165b35bffbad8cb54e22504ab40f56
+mozilla-taskgraph==4.1.2 \
+    --hash=sha256:22d7d439cc35768d17f43197c71fe7aa5ffa974d486543450f4ab785e74c2008 \
+    --hash=sha256:5e79169bd83dfb0b10ae8d0d87523f534d70f79e2d64cf9534e4f061f25e7f3b
     # via -r requirements.in
 msgspec==0.20.0 \
     --hash=sha256:00648b1e19cf01b2be45444ba9dc961bd4c056ffb15706651e64e5d6ec6197b7 \
@@ -912,10 +915,12 @@ propcache==0.3.2 \
     #   -c ../third_party/python/requirements.txt
     #   aiohttp
     #   yarl
-pygments==2.19.1 \
-    --hash=sha256:61c16d2a8576dc0649d9f39e089b5f02bcd27fba10d8fb4dcc28173f7a45151f \
-    --hash=sha256:9ea1544ad55cecf4b8242fab6dd35a93bbce657034b0611ee383099054ab6d8c
-    # via rich
+pygments==2.20.0 \
+    --hash=sha256:6757cd03768053ff99f3039c1a36d6c0aa0b263438fcab17520b30a303a82b5f \
+    --hash=sha256:81a9e26dd42fd28a23a2d169d86d7ac03b46e2f8b59ed4698fb4785f946d0176
+    # via
+    #   -c ../third_party/python/requirements.txt
+    #   rich
 python-dateutil==2.9.0.post0 \
     --hash=sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3 \
     --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
@@ -1026,10 +1031,12 @@ requests-unixsocket==0.4.1 \
     # via
     #   -c ../third_party/python/requirements.txt
     #   -r requirements.in
-rich==14.0.0 \
-    --hash=sha256:1c9491e1951aac09caffd42f448ee3d04e58923ffe14993f6e83068dc395d7e0 \
-    --hash=sha256:82f1bc23a6a21ebca4ae0c45af9bdbc492ed20231dcb63f297d6d1021a9d5725
-    # via cookiecutter
+rich==15.0.0 \
+    --hash=sha256:33bd4ef74232fb73fe9279a257718407f169c09b78a87ad3d296f548e27de0bb \
+    --hash=sha256:edd07a4824c6b40189fb7ac9bc4c52536e9780fbbfbddf6f1e2502c31b068c36
+    # via
+    #   -c ../third_party/python/requirements.txt
+    #   cookiecutter
 rtoml==0.13.0 ; python_full_version >= '3.10' \
     --hash=sha256:020fe78f7e53b9fef1762cd3734374baa506b225dd72ee7603242b11f33602c3 \
     --hash=sha256:0434e3d196375b82cfa5dc155cad6c78fd96c2cc6692e1d887505e1d99900986 \
@@ -1117,9 +1124,9 @@ taskcluster==93.1.5 \
     # via
     #   -c ../third_party/python/requirements.txt
     #   taskcluster-taskgraph
-taskcluster-taskgraph==20.0.0 \
-    --hash=sha256:cbf0064f39d42303458bbd22ccf0b28597f07fd752254333584149eb0a255a10 \
-    --hash=sha256:ee4536a8f0c9f1668c6a11546361cf4539ff94a3a2e0bdd1fca7871c2a5b55c8
+taskcluster-taskgraph==23.1.0 \
+    --hash=sha256:035ebe32e8a91889d62b684a37965f9a6945fa5a0dec36f9020622c6a7f242eb \
+    --hash=sha256:4562f746837292f0e28e499215a1ae561add64671d1d6df391f51edc220b60c7
     # via
     #   -r requirements.in
     #   mozilla-taskgraph
@@ -1146,7 +1153,6 @@ typing-extensions==4.15.0 ; python_full_version < '3.13' \
     #   -c ../third_party/python/requirements.txt
     #   aiosignal
     #   multidict
-    #   rich
 urllib3==2.5.0 \
     --hash=sha256:3fc47733c7e419d4bc3f6b3dc2b4f890bb743906a30d56ba4a5bfa4bbff92760 \
     --hash=sha256:e6b01673c0fa6a13e374b50871808eb3bf7046c4b125b216f6bf1cc604cff0dc
