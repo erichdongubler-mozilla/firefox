@@ -9,8 +9,6 @@ import mozilla.components.feature.tab.collections.TabCollection
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.service.nimbus.messaging.Message
 import mozilla.components.service.pocket.PocketStory
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Homepage
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.setup.checklist.ChecklistItem
@@ -18,6 +16,7 @@ import org.mozilla.fenix.home.bookmarks.Bookmark
 import org.mozilla.fenix.home.bookmarks.controller.BookmarksController
 import org.mozilla.fenix.home.interactor.HomepageInteractor
 import org.mozilla.fenix.home.logo.LogoController
+import org.mozilla.fenix.home.logo.TrackingProtectionController
 import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesCategory
 import org.mozilla.fenix.home.pocket.controller.PocketStoriesController
 import org.mozilla.fenix.home.privatebrowsing.controller.PrivateBrowsingController
@@ -200,6 +199,7 @@ class SessionControlInteractor(
     private val homeSearchController: HomeSearchController,
     private val topSiteController: TopSiteController,
     private val privacyNoticeBannerController: PrivacyNoticeBannerController,
+    private val trackingProtectionController: TrackingProtectionController,
     private val logoController: LogoController,
     private val sportsController: SportsController,
 ) : HomepageInteractor {
@@ -443,7 +443,7 @@ class SessionControlInteractor(
     }
 
     override fun onPrivacyReportTapped() {
-        Homepage.privacyReportTapped.record(NoExtras())
+        trackingProtectionController.handleProtectionStatusPillClicked()
     }
 
     override fun onLongfoxEntryPointClicked() {

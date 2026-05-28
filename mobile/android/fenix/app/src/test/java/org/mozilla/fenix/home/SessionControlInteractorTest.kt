@@ -18,6 +18,7 @@ import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.home.bookmarks.Bookmark
 import org.mozilla.fenix.home.bookmarks.controller.BookmarksController
 import org.mozilla.fenix.home.logo.LogoController
+import org.mozilla.fenix.home.logo.TrackingProtectionController
 import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesCategory
 import org.mozilla.fenix.home.pocket.controller.PocketStoriesController
 import org.mozilla.fenix.home.privatebrowsing.controller.PrivateBrowsingController
@@ -45,6 +46,7 @@ class SessionControlInteractorTest {
     private val homeSearchController: HomeSearchController = mockk(relaxed = true)
     private val topSiteController: TopSiteController = mockk(relaxed = true)
     private val privacyNoticeBannerController: PrivacyNoticeBannerController = mockk(relaxed = true)
+    private val trackingProtectionController: TrackingProtectionController = mockk(relaxed = true)
     private val logoController: LogoController = mockk(relaxed = true)
     private val sportsController: SportsController = mockk(relaxed = true)
 
@@ -67,6 +69,7 @@ class SessionControlInteractorTest {
             homeSearchController,
             topSiteController,
             privacyNoticeBannerController,
+            trackingProtectionController,
             logoController,
             sportsController,
         )
@@ -304,5 +307,12 @@ class SessionControlInteractorTest {
     fun `WHEN the get custom wallpaper menu item is clicked THEN sports controller handles the navigation`() {
         interactor.onGetCustomWallpaperClicked()
         verify { sportsController.handleOnGetCustomWallpaperClicked() }
+    }
+
+    @Test
+    fun `WHEN the privacy report is tapped THEN tracking protection controller handles the action`() {
+        interactor.onPrivacyReportTapped()
+
+        verify { trackingProtectionController.handleProtectionStatusPillClicked() }
     }
 }
