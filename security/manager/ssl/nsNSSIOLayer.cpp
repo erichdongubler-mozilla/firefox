@@ -1217,7 +1217,7 @@ void nsSSLIOLayerHelpers::removeInsecureFallbackSite(const nsACString& hostname,
   if (!isPublic()) {
     return;
   }
-  RefPtr<Runnable> runnable = new FallbackPrefRemover(hostname);
+  RefPtr runnable = MakeRefPtr<FallbackPrefRemover>(hostname);
   if (NS_IsMainThread()) {
     runnable->Run();
   } else {

@@ -128,9 +128,7 @@ nsClientAuthRememberService::GetDecisions(
       if (NS_FAILED(rv)) {
         return rv;
       }
-      RefPtr<nsIClientAuthRememberRecord> tmp =
-          new nsClientAuthRemember(key, value);
-
+      RefPtr tmp = MakeRefPtr<nsClientAuthRemember>(key, value);
       results.AppendElement(tmp);
     }
   }
@@ -185,8 +183,7 @@ nsClientAuthRememberService::DeleteDecisionsByHost(
       if (NS_FAILED(rv)) {
         return rv;
       }
-      RefPtr<nsIClientAuthRememberRecord> tmp =
-          new nsClientAuthRemember(key, value);
+      RefPtr tmp = MakeRefPtr<nsClientAuthRemember>(key, value);
       nsAutoCString asciiHost;
       tmp->GetAsciiHost(asciiHost);
       if (asciiHost.Equals(aHostName)) {

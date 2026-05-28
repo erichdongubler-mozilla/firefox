@@ -161,8 +161,8 @@ bool VerifySSLServerCertParent::Dispatch(
     dcInfo->authKeyBits = aDcInfo->authKeyBits();
   }
 
-  RefPtr<IPCServerCertVerificationResult> resultTask =
-      new IPCServerCertVerificationResult(mBackgroundThread, this);
+  RefPtr resultTask =
+      MakeRefPtr<IPCServerCertVerificationResult>(mBackgroundThread, this);
 
   nsresult rv = sts->Dispatch(NS_NewRunnableFunction(
       "VerifySSLServerCertParent::Dispatch",

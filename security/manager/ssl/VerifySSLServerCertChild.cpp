@@ -138,7 +138,7 @@ SECStatus RemoteProcessCertVerification(
     return SECFailure;
   }
 
-  RefPtr<VerifySSLServerCertChild> authCert = new VerifySSLServerCertChild(
+  RefPtr authCert = MakeRefPtr<VerifySSLServerCertChild>(
       aResultTask, std::move(aPeerCertChain), aProviderFlags);
   if (!childEndpoint.Bind(authCert)) {
     PR_SetError(SEC_ERROR_LIBRARY_FAILURE, 0);

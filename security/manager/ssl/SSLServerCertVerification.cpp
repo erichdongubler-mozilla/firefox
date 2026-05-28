@@ -899,8 +899,8 @@ SECStatus AuthCertificateHookInternal(
   }
 
   uint64_t addr = reinterpret_cast<uintptr_t>(aPtrForLogging);
-  RefPtr<SSLServerCertVerificationResult> resultTask =
-      new SSLServerCertVerificationResult(socketControl);
+  RefPtr resultTask =
+      MakeRefPtr<SSLServerCertVerificationResult>(socketControl);
 
   if (XRE_IsSocketProcess()) {
     return RemoteProcessCertVerification(
