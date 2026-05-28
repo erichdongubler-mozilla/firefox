@@ -972,6 +972,8 @@ export default [
     "  ├ ownerDocument: null",
     "  ├ parentElement: null",
     "  ├ parentNode: null",
+    "  ├ pictureInPictureElement: null",
+    "  ├ pictureInPictureEnabled: true",
     "  ▶︎  plugins: HTMLCollection { length: 0 }",
     "  ├ pointerLockElement: null",
     "  ├ preferredStyleSheetSet: \"\"",
