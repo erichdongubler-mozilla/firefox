@@ -62,6 +62,8 @@ skip-if = [
 
 ["test_getAll.js"]
 
+["test_getAllRecords.js"]
+
 ["test_globalObjects_other.js"]
 skip-if = [
   "os == 'android'", # bug 1079278

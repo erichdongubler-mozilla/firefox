@@ -14,10 +14,15 @@
 namespace mozilla::dom {
 
 class IDBTransaction;
+struct IDBGetAllOptions;
 
 Result<indexedDB::GetAllOptions, ErrorResult> GetAllOptionsFromQueryOrOptions(
     JSContext* aCx, JS::Handle<JS::Value> aQueryOrOptions,
     const Optional<uint32_t>& aLimit, IDBTransaction* aTransaction);
+
+Result<indexedDB::GetAllOptions, ErrorResult> GetAllOptionsFromArg(
+    JSContext* aCx, const IDBGetAllOptions& aOptions,
+    IDBTransaction* aTransaction);
 
 }  // namespace mozilla::dom
 

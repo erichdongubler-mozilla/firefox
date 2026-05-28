@@ -262,6 +262,19 @@ struct IndexGetAllKeysParams
   GetAllOptions options;
 };
 
+struct ObjectStoreGetAllRecordsParams
+{
+  int64_t objectStoreId;
+  GetAllOptions options;
+};
+
+struct IndexGetAllRecordsParams
+{
+  int64_t objectStoreId;
+  int64_t indexId;
+  GetAllOptions options;
+};
+
 struct IndexCountParams
 {
   int64_t objectStoreId;
@@ -277,6 +290,7 @@ union RequestParams
   ObjectStoreGetKeyParams;
   ObjectStoreGetAllParams;
   ObjectStoreGetAllKeysParams;
+  ObjectStoreGetAllRecordsParams;
   ObjectStoreDeleteParams;
   ObjectStoreClearParams;
   ObjectStoreCountParams;
@@ -284,6 +298,7 @@ union RequestParams
   IndexGetKeyParams;
   IndexGetAllParams;
   IndexGetAllKeysParams;
+  IndexGetAllRecordsParams;
   IndexCountParams;
 };
 

@@ -407,6 +407,8 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   "IDBOpenDBRequest",
   // IMPORTANT: Do not change this list without review from a DOM peer!
+  "IDBRecord",
+  // IMPORTANT: Do not change this list without review from a DOM peer!
   "IDBRequest",
   // IMPORTANT: Do not change this list without review from a DOM peer!
   "IDBTransaction",

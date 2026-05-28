@@ -82,4 +82,27 @@ Result<indexedDB::GetAllOptions, ErrorResult> GetAllOptionsFromQueryOrOptions(
   return GetAllOptions{std::move(optionalKeyRange), limit, direction};
 }
 
+Result<indexedDB::GetAllOptions, ErrorResult> GetAllOptionsFromArg(
+    JSContext* aCx, const IDBGetAllOptions& aOptions,
+    IDBTransaction* aTransaction) {
+  RefPtr<IDBKeyRange> keyRange;
+  JS::Rooted<JS::Value> keyVal(aCx, aOptions.mQuery);
+  ErrorResult rv;
+  IDBKeyRange::FromJSVal(aCx, keyVal, &keyRange, rv, aTransaction);
+  if (NS_WARN_IF(rv.Failed())) {
+    return Err(std::move(rv));
+  }
+
+  Maybe<SerializedKeyRange> optionalKeyRange;
+  if (keyRange) {
+    SerializedKeyRange serializedKeyRange;
+    keyRange->ToSerialized(serializedKeyRange);
+    optionalKeyRange.emplace(serializedKeyRange);
+  }
+
+  const uint32_t limit =
+      aOptions.mCount.WasPassed() ? aOptions.mCount.Value() : 0;
+  return GetAllOptions{std::move(optionalKeyRange), limit, aOptions.mDirection};
+}
+
 }  // namespace mozilla::dom

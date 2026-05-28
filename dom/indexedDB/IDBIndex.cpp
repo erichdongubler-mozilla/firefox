@@ -110,12 +110,17 @@ RefPtr<IDBRequest> IDBIndex::GetKey(JSContext* aCx, JS::Handle<JS::Value> aKey,
   return GetInternal(/* aKeyOnly */ true, aCx, aKey, aRv);
 }
 
-RefPtr<IDBRequest> IDBIndex::GetAll(JSContext* aCx, JS::Handle<JS::Value> aKey,
+RefPtr<IDBRequest> IDBIndex::GetAll(JSContext* aCx,
+                                    JS::Handle<JS::Value> aQueryOrOptions,
                                     const Optional<uint32_t>& aLimit,
                                     ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  return GetAllInternal(/* aKeysOnly */ false, aCx, aKey, aLimit, aRv);
+  auto parseOptions = [&] {
+    return GetAllOptionsFromQueryOrOptions(
+        aCx, aQueryOrOptions, aLimit, &mObjectStore->MutableTransactionRef());
+  };
+  return GetAllInternal(GetRequestType::Value, aCx, parseOptions, aRv);
 }
 
 RefPtr<IDBRequest> IDBIndex::GetAllKeys(JSContext* aCx,
@@ -124,15 +129,23 @@ RefPtr<IDBRequest> IDBIndex::GetAllKeys(JSContext* aCx,
                                         ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  return GetAllInternal(/* aKeysOnly */ true, aCx, aKey, aLimit, aRv);
+  auto parseOptions = [&] {
+    return GetAllOptionsFromQueryOrOptions(
+        aCx, aKey, aLimit, &mObjectStore->MutableTransactionRef());
+  };
+  return GetAllInternal(GetRequestType::Key, aCx, parseOptions, aRv);
 }
 
 RefPtr<IDBRequest> IDBIndex::GetAllRecords(JSContext* aCx,
                                            const IDBGetAllOptions& aOptions,
                                            ErrorResult& aRv) {
   AssertIsOnOwningThread();
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+
+  auto parseOptions = [&] {
+    return GetAllOptionsFromArg(aCx, aOptions,
+                                &mObjectStore->MutableTransactionRef());
+  };
+  return GetAllInternal(GetRequestType::Record, aCx, parseOptions, aRv);
 }
 
 void IDBIndex::RefreshMetadata(bool aMayDelete) {
@@ -389,9 +402,26 @@ RefPtr<IDBRequest> IDBIndex::GetInternal(bool aKeyOnly, JSContext* aCx,
   return request;
 }
 
-RefPtr<IDBRequest> IDBIndex::GetAllInternal(
-    bool aKeysOnly, JSContext* aCx, JS::Handle<JS::Value> aQueryOrOptions,
-    const Optional<uint32_t>& aLimit, ErrorResult& aRv) {
+RequestParams IDBIndex::CreateRequestParams(
+    GetRequestType aType, const indexedDB::GetAllOptions& aOptions) {
+  const int64_t objectStoreId = mObjectStore->Id();
+  const int64_t indexId = Id();
+  switch (aType) {
+    case GetRequestType::Value:
+      return IndexGetAllParams(objectStoreId, indexId, aOptions);
+    case GetRequestType::Key:
+      return IndexGetAllKeysParams(objectStoreId, indexId, aOptions);
+    case GetRequestType::Record:
+      return IndexGetAllRecordsParams(objectStoreId, indexId, aOptions);
+  }
+  MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Unexpected GetRequestType");
+}
+
+template <typename ParseFn>
+RefPtr<IDBRequest> IDBIndex::GetAllInternal(GetRequestType aType,
+                                            JSContext* aCx,
+                                            const ParseFn& aParseOptionsFn,
+                                            ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
   if (mDeletedMetadata) {
@@ -405,47 +435,57 @@ RefPtr<IDBRequest> IDBIndex::GetAllInternal(
     return nullptr;
   }
 
-  auto optionsResult = GetAllOptionsFromQueryOrOptions(
-      aCx, aQueryOrOptions, aLimit, &mObjectStore->MutableTransactionRef());
+  auto optionsResult = aParseOptionsFn();
   if (NS_WARN_IF(optionsResult.isErr())) {
     aRv = optionsResult.unwrapErr();
     return nullptr;
   }
-  const auto options = optionsResult.unwrap();
 
-  const int64_t objectStoreId = mObjectStore->Id();
-  const int64_t indexId = Id();
-
-  const RequestParams params =
-      aKeysOnly
-          ? RequestParams{IndexGetAllKeysParams(objectStoreId, indexId,
-                                                options)}
-          : RequestParams{IndexGetAllParams(objectStoreId, indexId, options)};
+  const auto& options = optionsResult.inspect();
+  const RequestParams params = CreateRequestParams(aType, options);
 
   auto request = GenerateRequest(aCx, this).unwrap();
 
-  if (aKeysOnly) {
-    IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
-        "database(%s).transaction(%s).objectStore(%s).index(%s)."
-        "getAllKeys(%s, %s, %s)",
-        "IDBIndex.getAllKeys(%.0s%.0s%.0s%.0s%.0s%.0s%.0s)",
-        transaction.LoggingSerialNumber(), request->LoggingSerialNumber(),
-        IDB_LOG_STRINGIFY(transaction.Database()),
-        IDB_LOG_STRINGIFY(transaction), IDB_LOG_STRINGIFY(mObjectStore),
-        IDB_LOG_STRINGIFY(this), IDB_LOG_STRINGIFY(options.optionalKeyRange()),
-        IDB_LOG_STRINGIFY(options.limit()),
-        IDB_LOG_STRINGIFY(options.direction()));
-  } else {
-    IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
-        "database(%s).transaction(%s).objectStore(%s).index(%s)."
-        "getAll(%s, %s, %s)",
-        "IDBIndex.getAll(%.0s%.0s%.0s%.0s%.0s%.0s%.0s)",
-        transaction.LoggingSerialNumber(), request->LoggingSerialNumber(),
-        IDB_LOG_STRINGIFY(transaction.Database()),
-        IDB_LOG_STRINGIFY(transaction), IDB_LOG_STRINGIFY(mObjectStore),
-        IDB_LOG_STRINGIFY(this), IDB_LOG_STRINGIFY(options.optionalKeyRange()),
-        IDB_LOG_STRINGIFY(options.limit()),
-        IDB_LOG_STRINGIFY(options.direction()));
+  switch (aType) {
+    case GetRequestType::Value:
+      IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
+          "database(%s).transaction(%s).objectStore(%s).index(%s)."
+          "getAll(%s, %s, %s)",
+          "IDBIndex.getAll(%.0s%.0s%.0s%.0s%.0s%.0s%.0s)",
+          transaction.LoggingSerialNumber(), request->LoggingSerialNumber(),
+          IDB_LOG_STRINGIFY(transaction.Database()),
+          IDB_LOG_STRINGIFY(transaction), IDB_LOG_STRINGIFY(mObjectStore),
+          IDB_LOG_STRINGIFY(this),
+          IDB_LOG_STRINGIFY(options.optionalKeyRange()),
+          IDB_LOG_STRINGIFY(options.limit()),
+          IDB_LOG_STRINGIFY(options.direction()));
+      break;
+    case GetRequestType::Key:
+      IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
+          "database(%s).transaction(%s).objectStore(%s).index(%s)."
+          "getAllKeys(%s, %s, %s)",
+          "IDBIndex.getAllKeys(%.0s%.0s%.0s%.0s%.0s%.0s%.0s)",
+          transaction.LoggingSerialNumber(), request->LoggingSerialNumber(),
+          IDB_LOG_STRINGIFY(transaction.Database()),
+          IDB_LOG_STRINGIFY(transaction), IDB_LOG_STRINGIFY(mObjectStore),
+          IDB_LOG_STRINGIFY(this),
+          IDB_LOG_STRINGIFY(options.optionalKeyRange()),
+          IDB_LOG_STRINGIFY(options.limit()),
+          IDB_LOG_STRINGIFY(options.direction()));
+      break;
+    case GetRequestType::Record:
+      IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
+          "database(%s).transaction(%s).objectStore(%s).index(%s)."
+          "getAllRecords(%s, %s, %s)",
+          "IDBIndex.getAllRecords(%.0s%.0s%.0s%.0s%.0s%.0s%.0s)",
+          transaction.LoggingSerialNumber(), request->LoggingSerialNumber(),
+          IDB_LOG_STRINGIFY(transaction.Database()),
+          IDB_LOG_STRINGIFY(transaction), IDB_LOG_STRINGIFY(mObjectStore),
+          IDB_LOG_STRINGIFY(this),
+          IDB_LOG_STRINGIFY(options.optionalKeyRange()),
+          IDB_LOG_STRINGIFY(options.limit()),
+          IDB_LOG_STRINGIFY(options.direction()));
+      break;
   }
 
   auto& mutableTransaction = mObjectStore->MutableTransactionRef();

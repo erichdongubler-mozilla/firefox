@@ -755,6 +755,7 @@ WEBIDL_FILES = [
     "IDBKeyRange.webidl",
     "IDBObjectStore.webidl",
     "IDBOpenDBRequest.webidl",
+    "IDBRecord.webidl",
     "IDBRequest.webidl",
     "IDBTransaction.webidl",
     "IDBVersionChangeEvent.webidl",
