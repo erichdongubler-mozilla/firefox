@@ -16,8 +16,9 @@
  *
  * Methods that touch SQLite or run PBKDF2 return a `Promise` and execute
  * on a private background queue so they do not block the main thread.
- * The cheap in-memory state checks (`isKekUnlocked`, `lockKek`, `lock`,
- * `hasPrimaryPassword`) remain synchronous.
+ * The cheap in-memory state checks (`isKekUnlocked`, `hasPrimaryPassword`)
+ * remain synchronous; `lockKek` and `lock` are also cheap but return a
+ * Promise so the API shape is uniform.
  */
 [scriptable, uuid(a83f5d62-7b1c-4d2e-9f0a-3c5e8b6a1d4e)]
 interface nsILockstore : nsISupports
