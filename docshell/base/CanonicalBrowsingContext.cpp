@@ -3542,7 +3542,10 @@ nsresult CanonicalBrowsingContext::ClearBfcacheByPrincipal(
 
 void CanonicalBrowsingContext::SetIsActive(bool aIsActive, ErrorResult& aRv) {
 #ifdef DEBUG
-  if (MOZ_UNLIKELY(!ManuallyManagesActiveness())) {
+  if (MOZ_UNLIKELY(!GetEmbedderElement())) {
+    // Cannot check manualactiveness attribute, bug 2043216.
+    NS_WARNING("Setting activeness for browsingcontext without embedder");
+  } else if (MOZ_UNLIKELY(!ManuallyManagesActiveness())) {
     xpc_DumpJSStack(true, true, false);
     MOZ_ASSERT_UNREACHABLE(
         "Trying to manually manage activeness of a browsing context that isn't "
