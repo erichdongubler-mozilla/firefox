@@ -149,7 +149,7 @@ async function openPreferencesViaOpenPreferencesAPI(aPane, aOptions) {
   }
 
   let win = gBrowser.contentWindow;
-  let selectedPane = win.history.state;
+  let selectedPane = win.gLastCategory?.category;
   if (!aOptions || !aOptions.leaveOpen) {
     gBrowser.removeCurrentTab();
   }
