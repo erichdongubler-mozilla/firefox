@@ -51,6 +51,13 @@ XPCOMUtils.defineLazyServiceGetter(
   Ci.nsISecondaryTileService
 );
 
+XPCOMUtils.defineLazyServiceGetter(
+  lazy,
+  "gioService",
+  "@mozilla.org/gio-service;1",
+  Ci.nsIGIOService
+);
+
 ChromeUtils.defineLazyGetter(lazy, "log", () => {
   let { ConsoleAPI } = ChromeUtils.importESModule(
     "resource://gre/modules/Console.sys.mjs"
@@ -756,7 +763,13 @@ let ShellServiceInternal = {
    * @param {string} iconPath - Path to the icon that should be associated with
    * the desktop entry.
    */
-  async createLinuxDesktopEntry(appId, title, argv, iconPath) {
+  async createLinuxDesktopEntry(
+    appId,
+    title,
+    argv,
+    iconPath,
+    { window = null } = {}
+  ) {
     if (AppConstants.platform !== "linux") {
       throw new Error(
         "createLinuxDesktopEntry is only supported on Linux-like systems"
@@ -793,10 +806,17 @@ let ShellServiceInternal = {
       argv.map(arg => `"${escapeArg(arg)}"`).join(" ")
     );
 
-    await IOUtils.writeUTF8(
-      ShellService._getLinuxDesktopEntryPath(appId),
-      ini.writeToString()
-    );
+    if (
+      lazy.gioService.isRunningUnderFlatpak ||
+      lazy.gioService.isRunningUnderSnap
+    ) {
+      await ShellService.requestInstallDynamicLauncher(appId, ini, window);
+    } else {
+      await IOUtils.writeUTF8(
+        ShellService._getLinuxDesktopEntryPath(appId),
+        ini.writeToString()
+      );
+    }
   },
 
   /**
@@ -909,7 +929,14 @@ let ShellServiceInternal = {
       );
     }
 
-    await IOUtils.remove(ShellService._getLinuxDesktopEntryPath(appId));
+    if (
+      lazy.gioService.isRunningUnderFlatpak ||
+      lazy.gioService.isRunningUnderSnap
+    ) {
+      await ShellService.requestUninstallDynamicLauncher(appId);
+    } else {
+      await IOUtils.remove(ShellService._getLinuxDesktopEntryPath(appId));
+    }
   },
 
   /**
@@ -919,6 +946,15 @@ let ShellServiceInternal = {
    * @returns {string} The path to the desktop entry.
    */
   _getLinuxDesktopEntryPath(appId) {
+    if (
+      lazy.gioService.isRunningUnderFlatpak ||
+      lazy.gioService.isRunningUnderSnap
+    ) {
+      throw new Error(
+        "Use DynamicLauncher instead of _getLinuxDesktopEntryPath when sandboxed"
+      );
+    }
+
     // TODO is there any way to reuse existing logic for this?
     // Find the location of ~/.local/share/applications.
     let dataHome = Services.env.get("XDG_DATA_HOME");
