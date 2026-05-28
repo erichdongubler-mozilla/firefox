@@ -49,7 +49,7 @@ add_setup(async function () {
 
 async function clickToggle(toggle) {
   let changed = BrowserTestUtils.waitForEvent(toggle, "toggle");
-  await EventUtils.synthesizeMouseAtCenter(toggle.buttonEl, {});
+  EventUtils.synthesizeMouseAtCenter(toggle.buttonEl, {});
   await changed;
 }
 
@@ -314,7 +314,7 @@ add_task(async function testMiniPanelClick() {
   let buttonEl = document.getElementById(
     "protections-popup-toast-panel-tp-on-desc"
   );
-  await EventUtils.synthesizeMouseAtCenter(buttonEl, {});
+  EventUtils.synthesizeMouseAtCenter(buttonEl, {});
 
   info("Waiting for mini panel to close");
   await popuphiddenPromise;
@@ -390,7 +390,7 @@ add_task(async function testToggleSwitchFlow() {
   let buttonEl = document.getElementById(
     "protections-popup-toast-panel-tp-off-desc"
   );
-  await EventUtils.synthesizeMouseAtCenter(buttonEl, {});
+  EventUtils.synthesizeMouseAtCenter(buttonEl, {});
   await popuphiddenPromise;
   await popupShownPromise;
 

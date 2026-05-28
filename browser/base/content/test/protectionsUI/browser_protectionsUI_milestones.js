@@ -75,7 +75,7 @@ add_task(async function doTest() {
     );
 
     let newTabPromise = waitForAboutProtectionsTab();
-    await EventUtils.synthesizeMouseAtCenter(
+    EventUtils.synthesizeMouseAtCenter(
       document.getElementById("protections-popup-milestones-content"),
       {}
     );

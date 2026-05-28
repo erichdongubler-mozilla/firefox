@@ -161,7 +161,7 @@ function clickSecondaryAction(actionIndex) {
       popupNotification.menupopup,
       "popupshown"
     );
-    await EventUtils.synthesizeMouseAtCenter(popupNotification.menubutton, {});
+    EventUtils.synthesizeMouseAtCenter(popupNotification.menubutton, {});
     await dropdownPromise;
 
     // The menuitems in the dropdown are accessible as direct children of the panel,
@@ -173,7 +173,7 @@ function clickSecondaryAction(actionIndex) {
     if (popupNotification.menupopup.isNativeMenu) {
       popupNotification.menupopup.activateItem(actionMenuItem);
     } else {
-      await EventUtils.synthesizeMouseAtCenter(actionMenuItem, {});
+      EventUtils.synthesizeMouseAtCenter(actionMenuItem, {});
     }
     await removePromise;
   })();

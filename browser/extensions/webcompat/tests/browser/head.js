@@ -423,7 +423,7 @@ async function clickOnPagePlaceholder(tab) {
     ok(placeholderImage, "Placeholder image exists");
 
     // Click button to open protections panel
-    await EventUtils.synthesizeMouseAtCenter(placeholderButton, {}, content);
+    EventUtils.synthesizeMouseAtCenter(placeholderButton, {}, content);
   });
 
   // If this await finished, then protections panel is open

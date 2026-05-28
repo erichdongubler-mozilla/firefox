@@ -96,7 +96,7 @@ add_task(async function test_click_on_insecure_warning() {
         browser.autoCompletePopup,
         "hidden"
       );
-      await EventUtils.synthesizeMouseAtCenter(insecureItem, {});
+      EventUtils.synthesizeMouseAtCenter(insecureItem, {});
       // Check input's value after popup closed to ensure the completion of autofilling.
       await popupClosePromise;
 

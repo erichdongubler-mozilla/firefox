@@ -24,7 +24,7 @@ add_task(async function () {
   is(editor.friendlyName, "simple.css", "editor is the expected one");
 
   const stylesheetEl = editor.summary.querySelector(".stylesheet-name");
-  await EventUtils.synthesizeMouseAtCenter(
+  EventUtils.synthesizeMouseAtCenter(
     stylesheetEl,
     { button: 2, type: "contextmenu" },
     panel.panelWindow
@@ -57,7 +57,7 @@ add_task(async function () {
   await hidden;
 
   info("Right-click the second stylesheet editor.");
-  await EventUtils.synthesizeMouseAtCenter(
+  EventUtils.synthesizeMouseAtCenter(
     ui.editors[1].summary.querySelector(".stylesheet-name"),
     { button: 2, type: "contextmenu" },
     panel.panelWindow
