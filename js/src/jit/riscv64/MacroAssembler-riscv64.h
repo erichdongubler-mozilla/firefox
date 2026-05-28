@@ -627,16 +627,24 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   }
   inline void retn(Imm32 n);
   void push(Imm32 imm) {
-    UseScratchRegisterScope temps(this);
-    Register scratch = temps.Acquire();
-    ma_li(scratch, imm);
-    ma_push(scratch);
+    if (imm.value == 0) {
+      ma_push(zero_reg);
+    } else {
+      UseScratchRegisterScope temps(this);
+      Register scratch = temps.Acquire();
+      ma_li(scratch, imm);
+      ma_push(scratch);
+    }
   }
   void push(ImmWord imm) {
-    UseScratchRegisterScope temps(this);
-    Register scratch = temps.Acquire();
-    ma_li(scratch, imm);
-    ma_push(scratch);
+    if (imm.value == 0) {
+      ma_push(zero_reg);
+    } else {
+      UseScratchRegisterScope temps(this);
+      Register scratch = temps.Acquire();
+      ma_li(scratch, imm);
+      ma_push(scratch);
+    }
   }
   void push(ImmGCPtr imm) {
     UseScratchRegisterScope temps(this);

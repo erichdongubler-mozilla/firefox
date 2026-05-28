@@ -1308,19 +1308,21 @@ FaultingCodeOffset MacroAssemblerRiscv64::ma_store(
   Register address = temps.Acquire();
   computeScaledAddress(dest, address);
 
-  Register scratch = temps.Acquire();
-  ma_li(scratch, imm);
-
-  return ma_store(scratch, Address(address, dest.offset), size, extension);
+  return ma_store(imm, Address(address, dest.offset), size, extension);
 }
 
 FaultingCodeOffset MacroAssemblerRiscv64::ma_store(
     Imm32 imm, Address address, LoadStoreSize size,
     LoadStoreExtension extension) {
   UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  ma_li(scratch, imm);
-  return ma_store(scratch, address, size, extension);
+  Register src;
+  if (imm.value == 0) {
+    src = zero_reg;
+  } else {
+    src = temps.Acquire();
+    ma_li(src, imm);
+  }
+  return ma_store(src, address, size, extension);
 }
 
 FaultingCodeOffset MacroAssemblerRiscv64::ma_store(
@@ -1615,10 +1617,7 @@ FaultingCodeOffset MacroAssemblerRiscv64Compat::loadPrivate(
 
 FaultingCodeOffset MacroAssemblerRiscv64Compat::store8(Imm32 imm,
                                                        const Address& address) {
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  ma_li(scratch, imm);
-  return ma_store(scratch, address, SizeByte);
+  return ma_store(imm, address, SizeByte);
 }
 
 FaultingCodeOffset MacroAssemblerRiscv64Compat::store8(Register src,
@@ -1638,10 +1637,7 @@ FaultingCodeOffset MacroAssemblerRiscv64Compat::store8(
 
 FaultingCodeOffset MacroAssemblerRiscv64Compat::store16(
     Imm32 imm, const Address& address) {
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  ma_li(scratch, imm);
-  return ma_store(scratch, address, SizeHalfWord);
+  return ma_store(imm, address, SizeHalfWord);
 }
 
 FaultingCodeOffset MacroAssemblerRiscv64Compat::store16(
@@ -1674,10 +1670,7 @@ FaultingCodeOffset MacroAssemblerRiscv64Compat::store32(
 
 FaultingCodeOffset MacroAssemblerRiscv64Compat::store32(
     Imm32 src, const Address& address) {
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  move32(src, scratch);
-  return ma_store(scratch, address, SizeWord);
+  return ma_store(src, address, SizeWord);
 }
 
 FaultingCodeOffset MacroAssemblerRiscv64Compat::store32(
@@ -1694,9 +1687,14 @@ template <typename T>
 FaultingCodeOffset MacroAssemblerRiscv64Compat::storePtr(ImmWord imm,
                                                          T address) {
   UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  ma_li(scratch, imm);
-  return ma_store(scratch, address, SizeDouble);
+  Register src;
+  if (imm.value == 0) {
+    src = zero_reg;
+  } else {
+    src = temps.Acquire();
+    ma_li(src, imm);
+  }
+  return ma_store(src, address, SizeDouble);
 }
 
 template FaultingCodeOffset MacroAssemblerRiscv64Compat::storePtr<Address>(
