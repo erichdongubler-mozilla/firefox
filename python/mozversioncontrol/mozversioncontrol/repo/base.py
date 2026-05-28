@@ -317,9 +317,15 @@ class Repository(abc.ABC):
             raise ValueError(
                 "user.email is not configured; run 'git config user.email <email>'"
             )
-        prefix = email.split("@", 1)[0]
-        if not dest_branch.startswith(prefix + "/"):
-            dest_branch = f"{prefix}/{dest_branch}"
+
+        user_prefix = f"{email.split('@', 1)[0]}/"
+        if not dest_branch.startswith(user_prefix):
+            dest_branch = f"{user_prefix}{dest_branch}"
+
+        global_prefix = "user/"
+        if not dest_branch.startswith(global_prefix):
+            dest_branch = f"{global_prefix}{dest_branch}"
+
         with self.try_commit(message, changed_files) as head:
             self.push(
                 remote,
