@@ -540,6 +540,36 @@ describe("SmartWindowRequestResponseTelemetry", () => {
       expectedHttpStatus: 0,
     },
     {
+      errorProps: { clientReason: "remoteSettingsUnavailable" },
+      expectedName: "remoteSettingsUnavailable",
+      expectedHttpStatus: 0,
+    },
+    {
+      errorProps: { clientReason: "modelConfigUnavailable" },
+      expectedName: "modelConfigUnavailable",
+      expectedHttpStatus: 0,
+    },
+    {
+      errorProps: { clientReason: "promptLoadFailure" },
+      expectedName: "promptLoadFailure",
+      expectedHttpStatus: 0,
+    },
+    {
+      errorProps: { clientReason: "missingBrowsingContext" },
+      expectedName: "missingBrowsingContext",
+      expectedHttpStatus: 0,
+    },
+    {
+      errorProps: { clientReason: "offline" },
+      expectedName: "offline",
+      expectedHttpStatus: 0,
+    },
+    {
+      errorProps: { clientReason: "connectionFailure" },
+      expectedName: "connectionFailure",
+      expectedHttpStatus: 0,
+    },
+    {
       errorProps: { status: 401 },
       expectedName: "serverError",
       expectedHttpStatus: 401,
@@ -654,6 +684,88 @@ describe("SmartWindowRequestResponseTelemetry", () => {
       0,
       "model_response: http_status is 0"
     );
+  });
+
+  it("records connectionFailure when streaming fails with no status or error code", async () => {
+    sb.stub(openAIEngine, "build").resolves(
+      makeFakeEngine({
+        // eslint-disable-next-line require-yield
+        async *runWithGenerator() {
+          throw new Error("network request failed");
+        },
+      })
+    );
+    sb.stub(openAIEngine, "getFxAccountToken").resolves("mock-fxa-token");
+
+    const originalOffline = Services.io.offline;
+    Services.io.offline = false;
+    try {
+      win = await openAIWindow();
+      const browser = win.gBrowser.selectedBrowser;
+      await typeInSmartbar(browser, "trigger connection failure");
+      await submitSmartbar(browser);
+
+      await TestUtils.waitForCondition(
+        () => Glean.smartWindow.modelResponse.testGetValue()?.length > 0,
+        "Wait for model_response event with connectionFailure"
+      );
+
+      const events = Glean.smartWindow.modelResponse.testGetValue();
+      Assert.equal(events.length, 1, "One model_response event was recorded");
+      Assert.equal(
+        events[0].extra.error,
+        "connectionFailure",
+        "model_response: error is connectionFailure"
+      );
+      Assert.equal(
+        Number(events[0].extra.http_status),
+        0,
+        "model_response: http_status is 0"
+      );
+    } finally {
+      Services.io.offline = originalOffline;
+    }
+  });
+
+  it("records offline when streaming fails while the browser is offline", async () => {
+    sb.stub(openAIEngine, "build").resolves(
+      makeFakeEngine({
+        // eslint-disable-next-line require-yield
+        async *runWithGenerator() {
+          throw new Error("network request failed");
+        },
+      })
+    );
+    sb.stub(openAIEngine, "getFxAccountToken").resolves("mock-fxa-token");
+
+    const originalOffline = Services.io.offline;
+    Services.io.offline = true;
+    try {
+      win = await openAIWindow();
+      const browser = win.gBrowser.selectedBrowser;
+      await typeInSmartbar(browser, "trigger offline error");
+      await submitSmartbar(browser);
+
+      await TestUtils.waitForCondition(
+        () => Glean.smartWindow.modelResponse.testGetValue()?.length > 0,
+        "Wait for model_response event with offline"
+      );
+
+      const events = Glean.smartWindow.modelResponse.testGetValue();
+      Assert.equal(events.length, 1, "One model_response event was recorded");
+      Assert.equal(
+        events[0].extra.error,
+        "offline",
+        "model_response: error is offline"
+      );
+      Assert.equal(
+        Number(events[0].extra.http_status),
+        0,
+        "model_response: http_status is 0"
+      );
+    } finally {
+      Services.io.offline = originalOffline;
+    }
   });
 
   it("records invalidPageContent and http_status 406 on streaming 406", async () => {

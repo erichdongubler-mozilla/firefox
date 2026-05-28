@@ -107,8 +107,11 @@ export async function executeToolByName(
         uiType: "website-confirmation",
       });
       break;
-    default:
-      throw new Error(`No such tool: ${toolName}`);
+    default: {
+      const err = new Error(`No such tool: ${toolName}`);
+      err.clientReason = "unknownTool";
+      throw err;
+    }
   }
   return result;
 }
@@ -208,6 +211,26 @@ export const Chat = {};
  * @param {object | Array} [data]
  * @param {string} [extraText]
  */
+/**
+ * Attach a default clientReason to a streaming error if it doesn't already
+ * carry classification info we recognize downstream.
+ *
+ * @param {unknown} err
+ */
+function classifyStreamingError(err) {
+  if (!err || (typeof err !== "object" && typeof err !== "function")) {
+    return;
+  }
+  const hasClassification =
+    err.clientReason ||
+    "status" in err ||
+    err.error ||
+    err.metadata?.errorMessage;
+  if (!hasClassification) {
+    err.clientReason = Services.io.offline ? "offline" : "connectionFailure";
+  }
+}
+
 function logConversationStream(turn, action, data = null, extraText = "") {
   try {
     let prefix = `[Chat][Turn ${turn}][${action.padEnd(10)}]`;
@@ -254,9 +277,11 @@ Object.assign(Chat, {
     signal,
   }) {
     if (!browsingContext && !Cu.isInAutomation) {
-      throw new Error(
+      const err = new Error(
         "The browsingContext must exist for fetchWithHistory unless we're in automation."
       );
+      err.clientReason = "missingBrowsingContext";
+      throw err;
     }
     const fxAccountToken = await openAIEngine.getFxAccountToken();
     if (!fxAccountToken) {
@@ -344,6 +369,7 @@ Object.assign(Chat, {
         }
       } catch (err) {
         console.error("fetchWithHistory streaming error:", err);
+        classifyStreamingError(err);
         throw err;
       } finally {
         ChromeUtils.addProfilerMarker(

@@ -417,7 +417,9 @@ export class openAIEngine {
     if (!featureConfigs.length) {
       const msg = `No Remote Settings records found for feature: ${feature}`;
       console.error(msg);
-      throw new Error(msg);
+      const err = new Error(msg);
+      err.clientReason = "remoteSettingsUnavailable";
+      throw err;
     }
 
     const userModel = Services.prefs.getStringPref(MODEL_PREF, "");
@@ -434,7 +436,9 @@ export class openAIEngine {
     if (!mainConfig) {
       const msg = `No matching model config found for feature: ${feature} with major version ${majorVersion};`;
       console.error(msg);
-      throw new Error(msg);
+      const err = new Error(msg);
+      err.clientReason = "modelConfigUnavailable";
+      throw err;
     }
 
     this.feature = feature;
@@ -592,7 +596,9 @@ export class openAIEngine {
     }
 
     console.error(`Failed to load prompt for ${feature}`);
-    throw new Error(`Failed to load prompt for ${feature}`);
+    const err = new Error(`Failed to load prompt for ${feature}`);
+    err.clientReason = "promptLoadFailure";
+    throw err;
   }
 
   /**
