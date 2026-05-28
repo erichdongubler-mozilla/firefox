@@ -17,7 +17,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FilePickerCrashed: "resource:///modules/FilePickerCrashed.sys.mjs",
   PluginManager: "resource:///actors/PluginParent.sys.mjs",
   WebAuthnPromptHelper:
-    "moz-src:///browser/modules/WebAuthnPromptHelper.sys.mjs",
+    "moz-src:///toolkit/modules/WebAuthnPromptHelper.sys.mjs",
 });
 
 // Map from observer topic to a list of exported objects whose observe()

@@ -28,7 +28,7 @@ export let WebAuthnPromptHelper = {
 
   // Translation object
   _l10n: new Localization(
-    ["branding/brand.ftl", "browser/webauthnDialog.ftl"],
+    ["branding/brand.ftl", "toolkit/webauthnDialog.ftl"],
     true
   ),
 
