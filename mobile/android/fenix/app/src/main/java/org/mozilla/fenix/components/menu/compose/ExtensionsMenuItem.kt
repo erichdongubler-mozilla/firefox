@@ -182,7 +182,7 @@ private fun NumberedChevronBadge(
     Row(
         modifier = Modifier
             .background(
-                color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 shape = MaterialTheme.shapes.large,
             )
             .padding(

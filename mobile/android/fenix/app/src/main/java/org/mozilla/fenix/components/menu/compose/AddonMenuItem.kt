@@ -26,7 +26,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import mozilla.components.compose.base.modifier.animateRotation
-import mozilla.components.compose.base.theme.surfaceDimVariant
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.ui.displayName
 import mozilla.components.feature.addons.ui.summary
@@ -76,7 +75,7 @@ internal fun AddonMenuItem(
                 .testTag(RECOMMENDED_ADDON_ITEM)
                 .clip(shape = MaterialTheme.shapes.extraSmall)
                 .background(
-                    color = MaterialTheme.colorScheme.surfaceDimVariant,
+                    color = MaterialTheme.colorScheme.surfaceBright,
                 )
                 .semantics {
                     role = Role.Button

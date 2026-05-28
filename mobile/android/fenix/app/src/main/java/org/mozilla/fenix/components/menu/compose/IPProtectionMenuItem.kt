@@ -32,7 +32,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
-import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuState
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuStatus
@@ -63,7 +62,7 @@ internal fun IPProtectionMenuItem(
         modifier = Modifier
             .wrapContentSize()
             .clip(MaterialTheme.shapes.extraSmall)
-            .background(MaterialTheme.colorScheme.surfaceDimVariant)
+            .background(MaterialTheme.colorScheme.surfaceBright)
             .height(IntrinsicSize.Min)
             .defaultMinSize(minHeight = MENU_ITEM_MIN_HEIGHT),
         verticalAlignment = Alignment.CenterVertically,

@@ -32,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -52,7 +51,6 @@ import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem.CheckableItem
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.text.value
-import mozilla.components.compose.base.theme.surfaceDimVariant
 import mozilla.components.support.utils.CertificateUtils
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.compose.IPProtectionMenuItem
@@ -259,7 +257,7 @@ private fun ProtectionPanelBanner(
     isSecured: Boolean,
     isTrackingProtectionEnabled: Boolean,
 ) {
-    var backgroundColor: Color = MaterialTheme.colorScheme.surfaceDimVariant
+    var backgroundColor = MaterialTheme.colorScheme.surfaceBright
     val imageId: Int
     val title: String
     val description: String
@@ -269,7 +267,7 @@ private fun ProtectionPanelBanner(
         title = stringResource(id = R.string.protection_panel_banner_not_secure_title)
         description = stringResource(id = R.string.protection_panel_banner_not_secure_description)
     } else if (!isTrackingProtectionEnabled) {
-        backgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest
+        backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh
         imageId = R.drawable.protection_panel_not_protected
         title = stringResource(id = R.string.protection_panel_banner_not_protected_title)
         description = stringResource(

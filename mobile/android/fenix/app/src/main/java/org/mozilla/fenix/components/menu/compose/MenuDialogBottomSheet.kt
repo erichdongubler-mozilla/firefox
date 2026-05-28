@@ -107,7 +107,7 @@ private fun MenuBottomSheetHandle(
             .fillMaxWidth()
             .background(
                 color = if (isMenuDragBarDark) {
-                    MaterialTheme.colorScheme.surfaceContainerHighest
+                    MaterialTheme.colorScheme.surfaceContainerHigh
                 } else {
                     Color.Transparent
                 },

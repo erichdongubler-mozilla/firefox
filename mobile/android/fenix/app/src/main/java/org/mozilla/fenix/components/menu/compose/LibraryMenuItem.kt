@@ -43,7 +43,6 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.badge.BADGE_SIZE_SMALL
 import mozilla.components.compose.base.badge.BadgedIcon
 import mozilla.components.compose.base.theme.information
-import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
@@ -90,7 +89,7 @@ fun LibraryMenuItem(
                 this.contentDescription = contentDescription
                 role = Role.Button
             },
-        color = MaterialTheme.colorScheme.surfaceDimVariant,
+        color = MaterialTheme.colorScheme.surfaceBright,
         shape = shape,
     ) {
         Column(
