@@ -116,13 +116,6 @@ inline bool IsDefaultIgnorable(uint32_t aCh) {
       aCh, intl::UnicodeProperties::BinaryProperty::DefaultIgnorableCodePoint);
 }
 
-namespace detail {
-static inline bool Is8BitPotentialEmojiCodepoint(uint32_t aCh) {
-  return aCh - '0' <= '9' - '0' || aCh == '#' || aCh == '*' || aCh == 0x00A9 ||
-         aCh == 0x00AE;
-}
-}  // namespace detail
-
 inline EmojiPresentation GetEmojiPresentation(uint32_t aCh) {
   // The only characters below U+2000 with any emoji properties:
   // 0023          ; Emoji                # E0.0   [1] hash sign
@@ -130,16 +123,13 @@ inline EmojiPresentation GetEmojiPresentation(uint32_t aCh) {
   // 0030..0039    ; Emoji                # E0.0  [10] digit zero..digit nine
   // 00A9          ; Emoji                # E0.6   [1] copyright
   // 00AE          ; Emoji                # E0.6   [1] registered
-  if (detail::Is8BitPotentialEmojiCodepoint(aCh)) {
-    MOZ_ASSERT(intl::UnicodeProperties::HasBinaryProperty(
-        aCh, intl::UnicodeProperties::BinaryProperty::Emoji));
-    MOZ_ASSERT(!intl::UnicodeProperties::HasBinaryProperty(
-        aCh, intl::UnicodeProperties::BinaryProperty::EmojiPresentation));
-    return TextDefault;
-  }
-
-  if (aCh < 0x2000) {
-    return TextOnly;
+  if ((aCh & ~0x1fff) == 0) {
+    if (!((aCh - '0' <= '9' - '0') || aCh == '#' || aCh == '*' ||
+          aCh == 0x00A9 || aCh == 0x00AE)) {
+      MOZ_ASSERT(!intl::UnicodeProperties::HasBinaryProperty(
+          aCh, intl::UnicodeProperties::BinaryProperty::Emoji));
+      return TextOnly;
+    }
   }
 
   // There are no characters with emoji properties from the CJK Compatibility
@@ -160,17 +150,6 @@ inline EmojiPresentation GetEmojiPresentation(uint32_t aCh) {
     return EmojiDefault;
   }
   return TextDefault;
-}
-
-// For 16-bit callers who don't care about decoding surrogates first.
-inline EmojiPresentation GetEmojiPresentation(char16_t aCh) {
-  return IS_SURROGATE(aCh) ? TextOnly : GetEmojiPresentation((uint32_t)aCh);
-}
-
-// Reduced version of GetEmojiPresentation that handles only 8-bit character
-// codes, for use by 8-bit gfxFontGroup::ComputeRanges fast-path.
-inline EmojiPresentation GetEmojiPresentation(uint8_t aCh) {
-  return detail::Is8BitPotentialEmojiCodepoint(aCh) ? TextDefault : TextOnly;
 }
 
 // returns the simplified Gen Category as defined in nsUGenCategory
