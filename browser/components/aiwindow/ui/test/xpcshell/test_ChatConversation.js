@@ -658,7 +658,10 @@ add_task(async function test_unrelatedMessage_ChatConversation_retryMessage() {
 
   await Assert.rejects(
     conversation.retryMessage(unrelatedMessage),
-    /Unrelated message/
+    err =>
+      /Unrelated message/.test(err.message) &&
+      err.clientReason === "retryInvalidMessage",
+    "retryMessage should reject with clientReason retryInvalidMessage"
   );
 });
 
@@ -669,7 +672,10 @@ add_task(async function test_nonUserMessage_ChatConversation_retryMessage() {
 
   await Assert.rejects(
     conversation.retryMessage(conversation.messages[0]),
-    /Not a user message/
+    err =>
+      /Not a user message/.test(err.message) &&
+      err.clientReason === "retryInvalidMessage",
+    "retryMessage should reject with clientReason retryInvalidMessage"
   );
 });
 
