@@ -160,6 +160,23 @@ const DEFAULT_ACTIONS = {
       openInspector(controller.browserWindow);
     },
   },
+  colorpicker: {
+    l10nCommands: ["quickactions-cmd-colorpicker"],
+    icon: "chrome://devtools/skin/images/command-eyedropper.svg",
+    label: "quickactions-colorpicker",
+    isVisible: () => {
+      let win = lazy.BrowserWindowTracker.getTopWindow({
+        allowFromInactiveWorkspace: true,
+      });
+      return (
+        lazy.DevToolsShim.isEnabled() &&
+        !win.gBrowser.currentURI.spec.startsWith("about:devtools-toolbox")
+      );
+    },
+    onPick: (_queryContext, controller) => {
+      openColorPicker(controller.browserWindow);
+    },
+  },
   library: {
     l10nCommands: ["quickactions-cmd-library"],
     icon: "chrome://browser/skin/library.svg",
@@ -324,6 +341,14 @@ function openInspector(window) {
   lazy.DevToolsShim.showToolboxForTab(window.gBrowser.selectedTab, {
     toolId: "inspector",
   });
+}
+
+function openColorPicker(window) {
+  // The eyedropper menu item runs the standalone color picker without
+  // opening the toolbox (see devtools/client/menus.js). Initializing
+  // DevTools registers the menu item on every browser window.
+  lazy.DevToolsShim.initDevTools();
+  window.document.getElementById("menu_eyedropper")?.doCommand();
 }
 
 // TODO: We likely want a prompt to confirm with the user that they want to restart
