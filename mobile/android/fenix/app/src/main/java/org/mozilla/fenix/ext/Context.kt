@@ -219,6 +219,7 @@ fun Context.isToolbarAtBottom() =
  * @param resId Resource ID of the dimension.
  * @return The pixel size corresponding to the given dimension resource.
  */
+@Suppress("Resources.GetDimensionPixelSizeInsteadOfPixelSizeFor")
 fun Context.pixelSizeFor(
     @DimenRes resId: Int,
 ) = resources.getDimensionPixelSize(resId)

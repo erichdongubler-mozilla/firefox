@@ -91,6 +91,7 @@ fun View.getRectWithScreenLocation(): Rect {
  * @param resId Resource ID of the dimension.
  * @return The pixel size corresponding to the given dimension resource.
  */
+@Suppress("Resources.GetDimensionPixelSizeInsteadOfPixelSizeFor")
 fun View.pixelSizeFor(
     @DimenRes resId: Int,
 ) = resources.getDimensionPixelSize(resId)
