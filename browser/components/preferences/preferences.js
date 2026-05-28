@@ -206,16 +206,6 @@ let resolveLegacyCategory = ChromeUtils.importESModule(
   }
 ).resolveLegacyCategory;
 
-var { ScrollOffsets } = ChromeUtils.importESModule(
-  "chrome://global/content/ScrollOffsets.mjs",
-  {
-    global: "current",
-  }
-);
-
-/** @type {ScrollOffsets} */
-var scrollOffsets;
-
 /**
  * Register initial config-based setting panes here. If you need to register a
  * pane elsewhere, use {@link SettingPaneManager['registerPane']}.
@@ -507,10 +497,6 @@ function init_all() {
   // the entire document.
   Preferences.queueUpdateOfAllElements();
 
-  scrollOffsets = new ScrollOffsets(
-    /** @type {HTMLElement} */ (document.querySelector(".main-content"))
-  );
-
   let redesignEnabled = srdSectionPrefs.all;
 
   if (!redesignEnabled) {
@@ -736,25 +722,6 @@ async function gotoPref(
       document.location.hash = friendlyName;
     }
   }
-  // Treat back/forward navigations (aShowReason == "Hash") as visits to the
-  // existing history entry so we can restore the scroll position saved when
-  // leaving it. Everything else — initial load, sidebar click, openPreferences
-  // call — is a brand-new entry and gets a fresh id.
-  let historyEntryId =
-    (aShowReason == "Hash" && history.state?.historyEntryId) ||
-    scrollOffsets.newHistoryEntryId();
-
-  /**
-   * Capture the previous category before gLastCategory is reassigned below,
-   * so the sub-pane drill-down check can compare names.
-   */
-  let prevCategory = gLastCategory.category;
-
-  // Save the previous entry's scroll offset before switching, so that
-  // returning to it later restores the user's place.
-  scrollOffsets.save();
-  scrollOffsets.setView(historyEntryId);
-
   // Need to set the gLastCategory before setting categories.currentView since
   // the change-view event will re-enter the gotoPref codepath.
   gLastCategory.category = category;
@@ -777,28 +744,7 @@ async function gotoPref(
   }
 
   categories.currentView = currentView;
-
-  /**
-   * Record the current and previous category on the history entry. The
-   * previous category lets the sub-pane back arrow tell when the parent
-   * pane sits one entry back in history (and therefore its saved scroll
-   * position should be restored). Preserved across browser back/forward
-   * navigations.
-   */
-  let previousCategory = null;
-  if (aShowReason == "Hash") {
-    previousCategory = history.state?.previousCategory ?? null;
-  } else if (aShowReason == "Click" && prevCategory) {
-    previousCategory = internalPrefCategoryNameToFriendlyName(prevCategory);
-  }
-  window.history.replaceState(
-    {
-      historyEntryId,
-      category: internalPrefCategoryNameToFriendlyName(category),
-      previousCategory,
-    },
-    document.title
-  );
+  window.history.replaceState(category, document.title);
 
   let categoryInfo = gCategoryInits.get(category);
   if (!categoryInfo) {
@@ -827,7 +773,7 @@ async function gotoPref(
   search(category, "data-category");
 
   if (aShowReason != "Initial") {
-    scrollOffsets.restore();
+    document.querySelector(".main-content").scrollTop = 0;
   }
 
   // Check to see if the category module wants to do any special

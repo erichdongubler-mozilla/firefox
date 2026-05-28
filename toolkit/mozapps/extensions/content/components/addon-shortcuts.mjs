@@ -712,7 +712,7 @@ async function renderAddons(addons, focusedExtensionId) {
 }
 
 // focusExtension() is called from the view-loaded listener so that it doesn't
-// interfere with gViewController.scrollOffsets.restore() in view-controller.mjs.
+// interfere with ScrollOffsets.restore() in view-controller.js.
 function focusExtension() {
   document
     .querySelector(".shortcut.card.focused-extension")
