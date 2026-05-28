@@ -497,7 +497,9 @@ fun SwitchListItem(
             checked = checked,
             onCheckedChange = onClick,
             enabled = enabled,
-            colors = SwitchDefaults.colors(),
+            colors = SwitchDefaults.colors(
+                checkedTrackColor = MaterialTheme.colorScheme.tertiary,
+            ),
             modifier = Modifier
                 .clearAndSetSemantics {},
         )
