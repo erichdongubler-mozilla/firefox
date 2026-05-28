@@ -372,7 +372,7 @@
   "link/color/visited": {
     "light": "{Theme$link/color}",
     "dark": "{Theme$link/color}",
-    "forcedColors": "{HCM Theme$VisitedText}"
+    "forcedColors": "{Theme$link/color}"
   },
   "panel/background/color": {
     "light": "{Theme$background/color/box}",
@@ -473,6 +473,11 @@
     "light": "{Theme$toolbarbutton/outline/color/active}",
     "dark": "{Theme$toolbarbutton/outline/color/active}",
     "forcedColors": "{Theme$toolbarbutton/outline/color/active}"
+  },
+  "toolbox/background/color/inactive": {
+    "light": "transparent",
+    "dark": "transparent",
+    "forcedColors": "transparent"
   },
   "toolbox/text/color": {
     "light": "{Theme$text/color}",

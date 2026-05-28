@@ -798,6 +798,7 @@
       /** card **/
       --card-border-color: light-dark(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.06));
       --card-border-radius: var(--border-radius-xlarge);
+      --card-gap: var(--space-medium);
 
       /** color **/
       --color-accent-attention: light-dark(var(--color-green-40), var(--color-green-30));
@@ -940,6 +941,9 @@
       --icon-size-large: var(--size-item-medium);
       --icon-size-xlarge: var(--size-item-large);
 
+      /** input **/
+      --input-text-border-radius: var(--border-radius-large);
+
       /** link **/
       --link-color: var(--color-accent-primary);
       --link-color-hover: var(--color-accent-primary-hover);
@@ -950,12 +954,12 @@
       --page-main-content-width: 664px;
 
       /** panel **/
-      --panel-background-color: var(--background-color-box);
-      --panel-border-color: light-dark(var(--color-gray-10), var(--color-gray-60));
+      --panel-background-color: Field;
+      --panel-border-color: ThreeDShadow;
       --panel-border-radius: 16px;
       --panel-padding: var(--panel-padding-block);
       --panel-padding-block: 8px;
-      --panel-text-color: var(--text-color);
+      --panel-text-color: FieldText;
 
       /** size **/
       --size-item-xsmall: 12px;
@@ -977,20 +981,20 @@
       --text-color-error: light-dark(var(--color-red-50), var(--color-red-20));
 
       /** toolbar **/
-      --toolbar-background-color: var(--background-color-box);
+      --toolbar-background-color: color-mix(in srgb, -moz-dialog 85%, var(--color-white));
       --toolbar-field-background-color: var(--toolbar-background-color);
-      --toolbar-field-background-color-focus: var(--background-color-box);
+      --toolbar-field-background-color-focus: Field;
       --toolbar-field-border-color: light-dark(var(--color-gray-20), var(--color-gray-60));
       --toolbar-field-border-color-focus: #ffffff;
-      --toolbar-field-text-color: light-dark(var(--color-violet-desaturated-70), var(--color-violet-desaturated-10));
-      --toolbar-field-text-color-focus: var(--toolbar-field-text-color);
+      --toolbar-field-text-color: inherit;
+      --toolbar-field-text-color-focus: FieldText;
       --toolbar-padding-inline: 6px;
 
       /** toolbarbutton **/
       --toolbarbutton-background-color-hover: light-dark(rgba(117, 102, 159, 0.25), rgba(182, 170, 217, 0.25));
       --toolbarbutton-background-color-active: light-dark(rgba(117, 102, 159, 0.4), rgba(182, 170, 217, 0.4));
-      --toolbarbutton-icon-fill: light-dark(var(--color-violet-desaturated-50), var(--color-violet-desaturated-10));
-      --toolbarbutton-icon-fill-attention: var(--color-accent-primary);
+      --toolbarbutton-icon-fill: currentColor;
+      --toolbarbutton-icon-fill-attention: AccentColor;
       --toolbarbutton-opacity-disabled: 0.4;
       --toolbarbutton-outline-color: transparent;
       --toolbarbutton-outline-color-hover: transparent;
@@ -1003,9 +1007,9 @@
       --toolbarseparator-color: color-mix(in srgb, currentColor 60%, transparent);
 
       /** toolbox **/
-      --toolbox-background-color-inactive: transparent;
-      --toolbox-text-color: var(--text-color);
-      --toolbox-text-color-inactive: var(--text-color-deemphasized);
+      --toolbox-background-color-inactive: -moz-headerbarinactive;
+      --toolbox-text-color: -moz-headerbartext;
+      --toolbox-text-color-inactive: -moz-headerbarinactivetext;
     }
   }
 
@@ -1096,7 +1100,6 @@
         --link-color: LinkText;
         --link-color-hover: LinkText;
         --link-color-active: ActiveText;
-        --link-color-visited: VisitedText;
 
         /** panel **/
         --panel-border-color: var(--border-color);
@@ -1125,6 +1128,35 @@
         --toolbarbutton-outline-color: var(--button-border-color);
         --toolbarbutton-outline-color-hover: var(--button-border-color-hover);
         --toolbarbutton-outline-color-active: var(--button-border-color-active);
+      }
+    }
+  }
+
+  /* Bug 1879900: Can't nest media queries inside of :host, :root selector
+   until Bug 1879349 lands */
+  @layer tokens-browser-theme-nova {
+    @media not ((forced-colors) or (-moz-native-theme)) {
+      :root:not([lwtheme]),
+      :host(.anonymous-content-host) {
+        /** panel **/
+        --panel-background-color: var(--background-color-box);
+        --panel-border-color: light-dark(var(--color-gray-10), var(--color-gray-60));
+        --panel-text-color: var(--text-color);
+
+        /** toolbar **/
+        --toolbar-background-color: var(--background-color-box);
+        --toolbar-field-background-color-focus: var(--background-color-box);
+        --toolbar-field-text-color: light-dark(var(--color-violet-desaturated-70), var(--color-violet-desaturated-10));
+        --toolbar-field-text-color-focus: var(--toolbar-field-text-color);
+
+        /** toolbarbutton **/
+        --toolbarbutton-icon-fill: light-dark(var(--color-violet-desaturated-50), var(--color-violet-desaturated-10));
+        --toolbarbutton-icon-fill-attention: var(--color-accent-primary);
+
+        /** toolbox **/
+        --toolbox-background-color-inactive: transparent;
+        --toolbox-text-color: var(--text-color);
+        --toolbox-text-color-inactive: var(--text-color-deemphasized);
       }
     }
   }

@@ -200,6 +200,7 @@ function walkUpdateNovaTokens(tokens, vars, tokenNames, path = []) {
     if (tokenProp === "value") {
       let resolvedPath = path.filter(p => p !== "@base").join("/");
       let newValue = {};
+      let { nativeTheme } = tokens.value;
       for (const figmaVar in vars) {
         if (matchesFigmaVar(resolvedPath, figmaVar)) {
           const figmaName = figmaVar.slice(resolvedPath.length + 1);
@@ -223,6 +224,9 @@ function walkUpdateNovaTokens(tokens, vars, tokenNames, path = []) {
       if (Object.keys(newValue).length) {
         if (typeof newValue === "object") {
           let simplified = {};
+          if (nativeTheme) {
+            simplified.nativeTheme = nativeTheme;
+          }
           if (newValue.light && newValue.light === newValue.dark) {
             simplified.default = newValue.light;
           } else {

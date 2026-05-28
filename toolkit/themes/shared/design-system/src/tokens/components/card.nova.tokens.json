@@ -10,5 +10,10 @@
     "radius": {
       "value": "{border.radius.xlarge}"
     }
+  },
+  "gap": {
+    "@base": {
+      "value": "{space.medium}"
+    }
   }
 }
