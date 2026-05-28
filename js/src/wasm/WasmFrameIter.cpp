@@ -895,6 +895,12 @@ void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
   static_assert(WasmCheckedCallEntryOffset % CodeAlignment == 0,
                 "code aligned");
 
+#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
+    defined(JS_CODEGEN_RISCV64)
+  // Prevent nop sequences.
+  AutoForbidNops afn(&masm);
+#endif
+
   // Flush pending pools so they do not get dumped between the 'begin' and
   // 'uncheckedCallEntry' offsets since the difference must be less than
   // UINT8_MAX to be stored in CodeRange::funcbeginToUncheckedCallEntry_.
@@ -1492,16 +1498,14 @@ void wasm::GenerateJitEntryPrologue(MacroAssembler& masm,
     offsets->begin = masm.currentOffset();
     masm.push(ra);
 #elif defined(JS_CODEGEN_ARM64)
-    {
-      AutoForbidPoolsAndNops afp(&masm,
-                                 /* number of instructions in scope = */ 2);
-      offsets->begin = masm.currentOffset();
-      static_assert(BeforePushRetAddr == 0);
-      static_assert(JitFrameLayout::offsetOfCallerFramePtr() == 0);
-      static_assert(JitFrameLayout::offsetOfReturnAddress() == 8);
-      masm.Stp(ARMRegister(FramePointer, 64), ARMRegister(lr, 64),
-               MemOperand(sp, -16, vixl::PreIndex));
-    }
+    AutoForbidPoolsAndNops afp(&masm,
+                               /* number of instructions in scope = */ 3);
+    offsets->begin = masm.currentOffset();
+    static_assert(BeforePushRetAddr == 0);
+    static_assert(JitFrameLayout::offsetOfCallerFramePtr() == 0);
+    static_assert(JitFrameLayout::offsetOfReturnAddress() == 8);
+    masm.Stp(ARMRegister(FramePointer, 64), ARMRegister(lr, 64),
+             MemOperand(sp, -16, vixl::PreIndex));
 #else
     // The x86/x64 call instruction pushes the return address.
     offsets->begin = masm.currentOffset();
