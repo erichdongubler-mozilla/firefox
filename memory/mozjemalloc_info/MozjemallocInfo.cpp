@@ -31,6 +31,7 @@ int main() {
   printf("Quantum max:  %5zu\n", stats.quantum_max);
   printf("Sub-page max: %5zu\n", stats.page_size / 2);
   printf("Large max:    %5zuKiB\n", stats.large_max / 1024);
+  printf("Run header:   %5zu\n", stats.arena_run_header);
 
   printf("\n");
   printf("Run layout for each bin size\n");
