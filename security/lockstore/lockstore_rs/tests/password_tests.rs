@@ -381,3 +381,130 @@ fn delete_dek_leaves_password_record_intact() {
         .expect("password KEK still resolvable after delete_dek");
     assert!(ks.is_kek_unlocked(&pw).unwrap());
 }
+
+// ---------------------------------------------------------------------------
+// delete_kek
+// ---------------------------------------------------------------------------
+
+#[test]
+fn delete_kek_drops_unreferenced_password_kek() {
+    let ks = Keystore::new_in_memory().expect("new");
+    let pw = ks
+        .create_password_kek_test_only(PW)
+        .expect("create password");
+
+    // Just-minted, no wrapping yet — delete must succeed and the
+    // record must be gone.
+    ks.delete_kek(&pw).expect("delete unreferenced kek");
+
+    let err = ks.unlock_kek(&pw, PW, Duration::from_secs(60)).unwrap_err();
+    assert!(
+        matches!(err, LockstoreError::InvalidKekRef(_)),
+        "expected InvalidKekRef after delete_kek, got {:?}",
+        err
+    );
+}
+
+#[test]
+fn delete_kek_rejects_when_in_use() {
+    let ks = Keystore::new_in_memory().expect("new");
+    let pw = ks
+        .create_password_kek_test_only(PW)
+        .expect("create password");
+    ks.unlock_kek(&pw, PW, Duration::from_secs(60))
+        .expect("unlock");
+    ks.create_dek("col", &pw, false).expect("create_dek");
+
+    let err = ks.delete_kek(&pw).unwrap_err();
+    assert!(
+        matches!(err, LockstoreError::InvalidConfiguration(_)),
+        "expected InvalidConfiguration for in-use kek, got {:?}",
+        err
+    );
+
+    // Sanity: the record is still usable after the rejected delete.
+    let _ = ks.encrypt("col", &pw, b"still here").expect("encrypt");
+}
+
+#[test]
+fn delete_kek_unknown_kek_ref_reports_not_found() {
+    let ks = Keystore::new_in_memory().expect("new");
+    let bogus = "lockstore::kek::password:not-a-real-id";
+    let err = ks.delete_kek(bogus).unwrap_err();
+    assert!(
+        matches!(err, LockstoreError::NotFound(_)),
+        "expected NotFound for missing kek_ref, got {:?}",
+        err
+    );
+}
+
+#[test]
+fn delete_kek_invalid_kek_ref_format_reports_invalid_kek_ref() {
+    let ks = Keystore::new_in_memory().expect("new");
+    let err = ks.delete_kek("not-a-lockstore-kek-ref").unwrap_err();
+    assert!(
+        matches!(err, LockstoreError::InvalidKekRef(_)),
+        "expected InvalidKekRef for malformed kek_ref, got {:?}",
+        err
+    );
+}
+
+#[test]
+fn delete_kek_drops_unreferenced_local_kek() {
+    let ks = Keystore::new_in_memory().expect("new");
+    let local = mint_local(&ks);
+
+    ks.delete_kek(&local)
+        .expect("delete unreferenced local kek");
+
+    // A subsequent encrypt under the deleted local kek must fail
+    // because the record is gone — get_kek_symkey returns NotFound.
+    ks.create_dek(
+        "col",
+        // Re-use a different local kek_ref so the create_dek itself
+        // succeeds; the assertion is that the deleted ref no longer
+        // resolves.
+        &mint_local(&ks),
+        false,
+    )
+    .expect("create_dek under a fresh local");
+    let err = ks.encrypt("col", &local, b"x").unwrap_err();
+    assert!(
+        matches!(err, LockstoreError::NotFound(_)),
+        "expected NotFound after delete_kek on local, got {:?}",
+        err
+    );
+}
+
+#[test]
+fn delete_kek_after_switch_kek_succeeds() {
+    let ks = Keystore::new_in_memory().expect("new");
+    let pw = ks
+        .create_password_kek_test_only(PW)
+        .expect("create password");
+    ks.unlock_kek(&pw, PW, Duration::from_secs(60))
+        .expect("unlock");
+    ks.create_dek("col", &pw, false).expect("create_dek");
+
+    // Switch the collection's wrapping to a new password kek.
+    let pw2 = ks
+        .create_password_kek_test_only(PW_NEW)
+        .expect("create password 2");
+    ks.unlock_kek(&pw2, PW_NEW, Duration::from_secs(60))
+        .expect("unlock pw2");
+    ks.switch_kek("col", &pw, &pw2).expect("switch_kek");
+
+    // After switch_kek, `pw` no longer wraps any collection but its
+    // record is still on disk. delete_kek can drop it cleanly because
+    // no collection references it any more.
+    ks.delete_kek(&pw).expect("delete unreferenced pw");
+
+    // Subsequent unlock surfaces InvalidKekRef: the kek_ref parses,
+    // but no Password record exists at this id.
+    let err = ks.unlock_kek(&pw, PW, Duration::from_secs(60)).unwrap_err();
+    assert!(
+        matches!(err, LockstoreError::InvalidKekRef(_)),
+        "expected InvalidKekRef after delete_kek, got {:?}",
+        err
+    );
+}

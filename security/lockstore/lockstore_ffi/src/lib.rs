@@ -559,6 +559,25 @@ pub extern "C" fn lockstore_keystore_create_kek(
     }
 }
 
+/// Destroy the KEK referenced by `kek_ref`. The KEK must first be
+/// removed from every DEK that wraps under it (via `removeKek` /
+/// `switchKek`); otherwise the deletion is refused. An empty
+/// `kek_ref` is rejected at the boundary.
+#[no_mangle]
+pub extern "C" fn lockstore_keystore_delete_kek(
+    handle: &KeystoreHandle,
+    kek_ref: &nsACString,
+) -> nsresult {
+    if kek_ref.is_empty() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    let kek_ref_str = kek_ref.to_utf8();
+    match handle.keystore.delete_kek(&kek_ref_str) {
+        Ok(()) => NS_OK,
+        Err(e) => error_to_nsresult(e),
+    }
+}
+
 // ============================================================================
 // Datastore FFI Functions
 // ============================================================================

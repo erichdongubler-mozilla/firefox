@@ -300,4 +300,28 @@ interface nsILockstore : nsISupports
   Promise createKek(in ACString kekType,
                     in ACString secret,
                     in uint32_t cacheTimeoutMs);
+
+  /**
+   * Destroy the KEK referenced by `kekRef`. The persisted row is
+   * dropped along with the per-`kekRef` unlock-cache entry — the
+   * authenticated KEK bytes derived from a password / PIN that
+   * `unlockKek` cached and that `lockKek` would otherwise clear. No
+   * DEK material is touched: every DEK wrapping under `kekRef` must
+   * already be gone (via `removeKek` / `switchKek`) before this call
+   * succeeds. For a PKCS#11 KEK the slot is logged out via the same
+   * `PK11_Logout` path used by `lockKek`.
+   *
+   * Deletion is always explicit. `removeKek` and `deleteDek` drop
+   * wrappings only; the per-`kekRef` KEK record stays on disk until
+   * `deleteKek` is called for it.
+   *
+   * The returned Promise resolves with `undefined` on success and
+   * rejects with:
+   *   - NS_ERROR_INVALID_ARG on an empty `kekRef`.
+   *   - NS_ERROR_NOT_AVAILABLE if no record exists at `kekRef`.
+   *   - NS_ERROR_FAILURE if any DEK still wraps under `kekRef`, or
+   *     on SQLite / crypto-layer errors.
+   */
+  [implicit_jscontext]
+  Promise deleteKek(in AUTF8String kekRef);
 };

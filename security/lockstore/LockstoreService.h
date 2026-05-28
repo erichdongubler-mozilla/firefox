@@ -80,6 +80,7 @@ class LockstoreService final : public nsILockstore, public nsIObserver {
   Result<nsCString, nsresult> DoCreateKek(const nsACString& aKekType,
                                           const nsACString& aSecret,
                                           uint32_t aCacheTimeoutMs);
+  nsresult DoDeleteKek(const nsACString& aKekRef);
 
  private:
   ~LockstoreService();

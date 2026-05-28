@@ -345,6 +345,11 @@ Result<nsCString, nsresult> LockstoreService::DoCreateKek(
   return out;
 }
 
+nsresult LockstoreService::DoDeleteKek(const nsACString& aKekRef) {
+  LOCKSTORE_SYNC_PREAMBLE;
+  return lockstore_keystore_delete_kek(mKeystore, &aKekRef);
+}
+
 #undef LOCKSTORE_SYNC_PREAMBLE
 
 // ---------------------------------------------------------------------------
@@ -482,6 +487,13 @@ LockstoreService::CreateKek(const nsACString& aKekType,
   return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoCreateKek,
                          nsCString{aKekType}, nsCString{aSecret},
                          aCacheTimeoutMs);
+}
+
+NS_IMETHODIMP
+LockstoreService::DeleteKek(const nsACString& aKekRef, JSContext* aCx,
+                            Promise** aPromise) {
+  return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoDeleteKek,
+                         nsCString{aKekRef});
 }
 
 }  // namespace mozilla::security::lockstore
