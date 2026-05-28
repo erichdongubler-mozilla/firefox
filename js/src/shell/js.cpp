@@ -13575,9 +13575,23 @@ bool SetGlobalOptionsPostJSInit(const OptionParser& op) {
   }
 
   if (const char* xdr = op.getStringOption("selfhosted-xdr-path")) {
+    if (fuzzingSafe) {
+      fprintf(stderr,
+              "Error: --selfhosted-xdr-path is not compatible with "
+              "--fuzzing-safe\n");
+      return false;
+    }
+
     shell::selfHostedXDRPath = xdr;
   }
   if (const char* opt = op.getStringOption("selfhosted-xdr-mode")) {
+    if (fuzzingSafe) {
+      fprintf(stderr,
+              "Error: --selfhosted-xdr-mode is not compatible with "
+              "--fuzzing-safe\n");
+      return false;
+    }
+
     if (strcmp(opt, "encode") == 0) {
       shell::encodeSelfHostedCode = true;
     } else if (strcmp(opt, "decode") == 0) {
