@@ -1010,7 +1010,10 @@ nsresult AntiTrackingChannelClassifierUtils::CheckChannelHelper(
   PROFILER_MARKER("AntiTrackingChannelClassifier::CheckChannelHelper", NETWORK,
                   MarkerTiming::IntervalStart(), FlowMarker,
                   Flow::FromPointer(aChannel));
-  TimeStamp outerStartTime = TimeStamp::Now();
+  TimeStamp outerStartTime;
+  if (aPerformBlocking) {
+    outerStartTime = TimeStamp::Now();
+  }
 
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
       "AntiTrackingChannelClassifierUtils::CheckChannelHelper",
@@ -1025,7 +1028,10 @@ nsresult AntiTrackingChannelClassifierUtils::CheckChannelHelper(
             "AntiTrackingChannelClassifier::CheckChannelHelper lookup", NETWORK,
             MarkerTiming::IntervalStart(), FlowMarker,
             Flow::FromPointer(channel.get()));
-        TimeStamp workerStartTime = TimeStamp::Now();
+        TimeStamp workerStartTime;
+        if (aPerformBlocking) {
+          workerStartTime = TimeStamp::Now();
+        }
 
         ContentClassifierResult cancelResult;
         ContentClassifierResult annotateResult;
@@ -1046,8 +1052,10 @@ nsresult AntiTrackingChannelClassifierUtils::CheckChannelHelper(
           task->DoLookup(workerClassifier);
         }
 
-        glean::urlclassifier::check_channel_helper_worker_time
-            .AccumulateRawDuration(TimeStamp::Now() - workerStartTime);
+        if (aPerformBlocking) {
+          glean::urlclassifier::check_channel_helper_worker_time
+              .AccumulateRawDuration(TimeStamp::Now() - workerStartTime);
+        }
         PROFILER_MARKER(
             "AntiTrackingChannelClassifier::CheckChannelHelper lookup", NETWORK,
             MarkerTiming::IntervalEnd(), FlowMarker,
@@ -1057,7 +1065,7 @@ nsresult AntiTrackingChannelClassifierUtils::CheckChannelHelper(
             NS_NewRunnableFunction(
                 "AntiTrackingChannelClassifierUtils::CheckChannelHelper - "
                 "return",
-                [task, channel, outerStartTime,
+                [aPerformBlocking, task, channel, outerStartTime,
                  cancelResult = std::move(cancelResult),
                  annotateResult = std::move(annotateResult),
                  callbackFromFeature = std::move(callbackFromFeature),
@@ -1072,6 +1080,16 @@ nsresult AntiTrackingChannelClassifierUtils::CheckChannelHelper(
                                                               annotateResult);
                     }
                   }
+                  if (aPerformBlocking) {
+                    glean::urlclassifier::check_channel_helper_time
+                        .AccumulateRawDuration(TimeStamp::Now() -
+                                               outerStartTime);
+                  }
+                  PROFILER_MARKER(
+                      "AntiTrackingChannelClassifier::CheckChannelHelper",
+                      NETWORK, MarkerTiming::IntervalEnd(), FlowMarker,
+                      Flow::FromPointer(channel.get()));
+
                   // We must always call the callback. Either via the task or
                   // explicitly.
                   if (task) {
@@ -1079,13 +1097,6 @@ nsresult AntiTrackingChannelClassifierUtils::CheckChannelHelper(
                   } else {
                     callbackFromFeature();
                   }
-
-                  glean::urlclassifier::check_channel_helper_time
-                      .AccumulateRawDuration(TimeStamp::Now() - outerStartTime);
-                  PROFILER_MARKER(
-                      "AntiTrackingChannelClassifier::CheckChannelHelper",
-                      NETWORK, MarkerTiming::IntervalEnd(), FlowMarker,
-                      Flow::FromPointer(channel.get()));
                 }),
             eventPriority);
       });
