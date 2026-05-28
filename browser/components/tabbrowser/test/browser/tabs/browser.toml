@@ -678,6 +678,8 @@ support-files = ["file_withicon.html"]
 
 ["browser_tab_splitview_keyboard_focus.js"]
 
+["browser_tab_splitview_resize.js"]
+
 ["browser_tab_splitview_splitter_keyboard.js"]
 
 ["browser_tab_splitview_splitter_keyboard_boundary.js"]
