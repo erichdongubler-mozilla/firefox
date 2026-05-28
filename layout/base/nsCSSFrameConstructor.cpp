@@ -5398,8 +5398,10 @@ nsContainerFrame* nsCSSFrameConstructor::GetAbsoluteContainingBlock(
       }
       type = absPosCBCandidate->Type();
     }
-    // Only first continuations can be containing blocks.
-    absPosCBCandidate = absPosCBCandidate->FirstContinuation();
+    // Only first continuations or first IB-split siblings can be containing
+    // blocks.
+    absPosCBCandidate =
+        nsLayoutUtils::FirstContinuationOrIBSplitSibling(absPosCBCandidate);
     // Is the frame really an absolute container?
     if (!absPosCBCandidate->IsAbsoluteContainer()) {
       continue;
