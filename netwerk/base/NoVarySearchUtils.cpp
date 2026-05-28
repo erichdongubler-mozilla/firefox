@@ -48,7 +48,8 @@ NoVarySearchData ParseNoVarySearchHeader(const nsACString& aHeader) {
     data.varyOnKeyOrder = !keyOrder;
   }
 
-  // "params" may be a boolean item or an inner list of strings (§5.1 steps 5-6):
+  // "params" may be a boolean item or an inner list of strings (§5.1 steps
+  // 5-6):
   // https://www.ietf.org/archive/id/draft-ietf-httpbis-no-vary-search-05.html#section-5.1-6
   //   params=?1            → IgnoreAll (or Allowlist when except is present)
   //   params=(...)         → Blocklist
@@ -74,12 +75,14 @@ NoVarySearchData ParseNoVarySearchHeader(const nsACString& aHeader) {
     }
   } else if (paramsInnerList.IsValid()) {
     if (hasExcept) {
-      return NoVarySearchData{};  // params=(...) + except → invalid → ExactMatch
+      return NoVarySearchData{};  // params=(...) + except → invalid →
+                                  // ExactMatch
     }
     data.paramsRule = NoVarySearchData::ParamsRule::Blocklist;
     CollectInnerListStrings(paramsInnerList, data.paramNames);
   } else if (hasExcept) {
-    return NoVarySearchData{};  // except without valid params → invalid → ExactMatch
+    return NoVarySearchData{};  // except without valid params → invalid →
+                                // ExactMatch
   }
 
   return data;
