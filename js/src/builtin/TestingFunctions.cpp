@@ -3963,7 +3963,8 @@ static bool GetObjectFuseState(JSContext* cx, unsigned argc, Value* vp) {
   // definition order.
   Rooted<PropertyInfoWithKeyVector> propsVec(cx, PropertyInfoWithKeyVector(cx));
   for (ShapePropertyIter<CanGC> iter(cx, obj->shape()); !iter.done(); iter++) {
-    if (iter->hasSlot() && !propsVec.append(*iter)) {
+    if (iter->hasSlot() && ObjectFuse::tracksPropertyKey(iter->key()) &&
+        !propsVec.append(*iter)) {
       return false;
     }
   }

@@ -1075,7 +1075,7 @@ void IRGenerator::emitCallAccessorGuards(NativeObject* obj,
   if (mode_ == ICState::Mode::Specialized || IsWindow(obj)) {
     // Fast path for constant properties of objects with an ObjectFuse.
     ObjectFuse* objFuse = nullptr;
-    if (canOptimizeConstantAccessorProperty(holder, prop, &objFuse)) {
+    if (canOptimizeConstantAccessorProperty(holder, id, prop, &objFuse)) {
       ObjOperandId holderId =
           EmitGuardObjectFuseHolder(writer, obj, holder, objId);
       emitGuardConstantAccessorProperty(holder, holderId, id, prop, objFuse);
@@ -2219,6 +2219,7 @@ void IRGenerator::emitOptimisticClassGuard(ObjOperandId objId, JSObject* obj,
 }
 
 bool IRGenerator::canOptimizeConstantDataProperty(NativeObject* holder,
+                                                  PropertyKey key,
                                                   PropertyInfo prop,
                                                   ObjectFuse** objFuse) {
   MOZ_ASSERT(prop.isDataProperty());
@@ -2238,7 +2239,7 @@ bool IRGenerator::canOptimizeConstantDataProperty(NativeObject* holder,
     return false;
   }
 
-  if (!(*objFuse)->tryOptimizeConstantProperty(prop)) {
+  if (!(*objFuse)->tryOptimizeConstantProperty(key, prop)) {
     return false;
   }
 
@@ -2343,7 +2344,7 @@ void IRGenerator::emitLoadDataPropertyResult(NativeObject* obj,
                                              PropertyKey key, PropertyInfo prop,
                                              ObjOperandId objId) {
   ObjectFuse* objFuse = nullptr;
-  if (canOptimizeConstantDataProperty(holder, prop, &objFuse)) {
+  if (canOptimizeConstantDataProperty(holder, key, prop, &objFuse)) {
     ObjOperandId holderId =
         EmitGuardObjectFuseHolder(writer, obj, holder, objId);
     emitConstantDataPropertyResult(holder, holderId, key, prop, objFuse);
@@ -2354,6 +2355,7 @@ void IRGenerator::emitLoadDataPropertyResult(NativeObject* obj,
 }
 
 bool IRGenerator::canOptimizeConstantAccessorProperty(NativeObject* holder,
+                                                      PropertyKey key,
                                                       PropertyInfo prop,
                                                       ObjectFuse** objFuse) {
   MOZ_ASSERT(prop.isAccessorProperty());
@@ -2369,7 +2371,7 @@ bool IRGenerator::canOptimizeConstantAccessorProperty(NativeObject* holder,
     return false;
   }
 
-  return (*objFuse)->tryOptimizeConstantProperty(prop);
+  return (*objFuse)->tryOptimizeConstantProperty(key, prop);
 }
 
 void IRGenerator::emitGuardConstantAccessorProperty(NativeObject* holder,
@@ -3385,7 +3387,7 @@ AttachDecision GetNameIRGenerator::tryAttachGlobalNameValue(ObjOperandId objId,
     // There is no need to guard on the shape. Lexical bindings are
     // non-configurable, and this stub cannot be shared across globals.
     ObjectFuse* objFuse = nullptr;
-    if (canOptimizeConstantDataProperty(holder, *prop, &objFuse)) {
+    if (canOptimizeConstantDataProperty(holder, id, *prop, &objFuse)) {
       emitConstantDataPropertyResult(holder, objId, id, *prop, objFuse);
     } else {
       size_t dynamicSlotOffset =
@@ -3395,7 +3397,7 @@ AttachDecision GetNameIRGenerator::tryAttachGlobalNameValue(ObjOperandId objId,
   } else if (holder == &globalLexical->global()) {
     MOZ_ASSERT(globalLexical->global().isGenerationCountedGlobal());
     ObjectFuse* objFuse = nullptr;
-    if (canOptimizeConstantDataProperty(holder, *prop, &objFuse)) {
+    if (canOptimizeConstantDataProperty(holder, id, *prop, &objFuse)) {
       ObjOperandId holderId = writer.loadObject(holder);
       emitConstantDataPropertyResult(holder, holderId, id, *prop, objFuse);
     } else {
@@ -3470,7 +3472,7 @@ AttachDecision GetNameIRGenerator::tryAttachGlobalNameGetter(ObjOperandId objId,
   ObjOperandId globalId;
   ObjectFuse* objFuse = nullptr;
   if (holder == global &&
-      canOptimizeConstantAccessorProperty(global, *prop, &objFuse)) {
+      canOptimizeConstantAccessorProperty(global, id, *prop, &objFuse)) {
     globalId = writer.loadObject(global);
     emitGuardConstantAccessorProperty(global, globalId, id, *prop, objFuse);
   } else {
@@ -4436,7 +4438,8 @@ SetSlotOptimizable SetPropIRGenerator::canAttachNativeSetSlot(
     return SetSlotOptimizable::No;
   }
 
-  return Watchtower::canOptimizeSetSlot(cx_, &obj->as<NativeObject>(), **prop);
+  return Watchtower::canOptimizeSetSlot(cx_, &obj->as<NativeObject>(), id,
+                                        **prop);
 }
 
 // There is no need to guard on the shape. Global lexical bindings are
@@ -16369,7 +16372,7 @@ bool IRGenerator::canOptimizeConstantNativeFunctionProperty(
     return false;
   }
 
-  return canOptimizeConstantDataProperty(*holder, **prop, holderFuse);
+  return canOptimizeConstantDataProperty(*holder, propKey, **prop, holderFuse);
 }
 
 // Verify that we can use a fuse to validate that this object has

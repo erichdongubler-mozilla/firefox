@@ -171,6 +171,10 @@ class ObjectFuse {
   }
 
  public:
+  // Returns whether properties with the given property key are tracked. We
+  // currently don't track indexed properties.
+  static bool tracksPropertyKey(PropertyKey key) { return !key.isInt(); }
+
   uint32_t generationMaybeInvalid() const {
     return generation_.valueMaybeInvalid();
   }
@@ -178,7 +182,7 @@ class ObjectFuse {
     return invalidatedConstantProperty_;
   }
 
-  bool tryOptimizeConstantProperty(PropertyInfo prop);
+  bool tryOptimizeConstantProperty(PropertyKey key, PropertyInfo prop);
 
   // Data needed for guards in IC code. We use a bitmask to check the
   // PropertyState's upper bit isn't set.
