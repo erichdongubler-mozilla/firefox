@@ -76,28 +76,7 @@ internal fun iPProtectionReducer(
         )
     }
 
-    is IPProtectionAction.AccountStateChanged -> {
-        if (action.state == AccountStatus.FinishingAuthFlow) {
-            val newAccountStatus = when (state.accountState.status) {
-                AccountStatus.AwaitingAuthentication,
-                AccountStatus.WarmingUp,
-                AccountStatus.Uninitialized,
-                    -> {
-                    AccountStatus.NeedsAuthentication
-                }
-
-                AccountStatus.AwaitingAuthorization -> {
-                    AccountStatus.NeedsAuthorization
-                }
-
-                else -> action.state
-            }
-            return state.copy(
-                accountState = state.accountState.copy(
-                    status = newAccountStatus,
-                ),
-            )
-        }
+   is IPProtectionAction.AccountStateChanged -> {
         state.copy(accountState = state.accountState.copy(status = action.state))
     }
 
@@ -194,7 +173,7 @@ internal fun internalReducer(
             AccountStatus.TryAgain,
             AccountStatus.AwaitingAuthentication,
             AccountStatus.AwaitingAuthorization,
-            AccountStatus.FinishingAuthFlow,
+            AccountStatus.AwaitingEnrollment,
                 -> state
 
             AccountStatus.Ready,
@@ -222,17 +201,10 @@ internal fun internalReducer(
         eligibilityStatus = action.eligibility,
     )
 
-    is InternalAction.FirstEnrollmentChanged -> state.copy(
-        accountState = state.accountState.copy(
-            isFirstEnrollment = action.isFirstEnrollment,
-        ),
-    )
-
     is InternalAction.AccountReadyForEnrollment -> {
         state.copy(
             accountState = state.accountState.copy(
-                status = AccountStatus.Ready,
-                isFirstEnrollment = true,
+                status = AccountStatus.AwaitingEnrollment,
             ),
         )
     }
@@ -245,6 +217,31 @@ internal fun internalReducer(
     is InternalAction.AwaitingAuth -> state.copy(
         accountState = state.accountState.copy(status = action.status),
     )
+
+    // The auth UI flow has finished; if the status is still "awaiting", we roll back into
+    // the "requires auth" states. Otherwise, the status moved into enrollment phase, which
+    // is handled elsewhere.
+    is InternalAction.FinishingAuthFlow -> {
+        val newAccountStatus = when (state.accountState.status) {
+            AccountStatus.AwaitingAuthentication,
+            AccountStatus.WarmingUp,
+            AccountStatus.Uninitialized,
+                -> {
+                AccountStatus.NeedsAuthentication
+            }
+
+            AccountStatus.AwaitingAuthorization -> {
+                AccountStatus.NeedsAuthorization
+            }
+
+            else -> state.accountState.status
+        }
+        return state.copy(
+            accountState = state.accountState.copy(
+                status = newAccountStatus,
+            ),
+        )
+    }
 }
 
 private fun IPProtectionHandler.StateInfo.asProxyStatus(): ProxyStatus {

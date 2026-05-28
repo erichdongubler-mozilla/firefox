@@ -13,7 +13,9 @@ import mozilla.components.concept.engine.ipprotection.IPProtectionHandler.StateI
 import mozilla.components.concept.engine.ipprotection.IPProtectionHandler.StateInfo.Companion.PROXY_STATE_READY
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
+import mozilla.components.feature.ipprotection.store.InternalAction
 import mozilla.components.feature.ipprotection.store.iPProtectionReducer
+import mozilla.components.feature.ipprotection.store.state.AccountState
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.Authorized
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
@@ -181,6 +183,41 @@ class IPProtectionReducerTest {
                 accountState = defaultState.accountState.copy(status = AccountStatus.Ready),
             ),
             iPProtectionReducer(state, IPProtectionAction.EngineStateChanged(info)),
+        )
+    }
+
+    @Test
+    fun `GIVEN AccountStatus is AwaitingAuthentication WHEN FinishingAuthFlow is dispatched THEN AccountStatus is NeedsAuthentication`() {
+        val initialState = buildIPProtectionState(accountStatus = AccountStatus.AwaitingAuthentication)
+
+        val resultState = iPProtectionReducer(initialState, InternalAction.FinishingAuthFlow)
+
+        assertEquals(AccountStatus.NeedsAuthentication, resultState.accountState.status)
+    }
+
+    @Test
+    fun `GIVEN AccountStatus is AwaitingAuthorization WHEN FinishingAuthFlow is dispatched THEN AccountStatus is NeedsAuthorization`() {
+        val initialState = buildIPProtectionState(accountStatus = AccountStatus.AwaitingAuthorization)
+
+        val resultState = iPProtectionReducer(initialState, InternalAction.FinishingAuthFlow)
+
+        assertEquals(AccountStatus.NeedsAuthorization, resultState.accountState.status)
+    }
+
+    @Test
+    fun `GIVEN AccountStatus is AwaitingEnrollment WHEN FinishingAuthFlow is dispatched THEN AccountStatus does not change`() {
+        val initialState = buildIPProtectionState(accountStatus = AccountStatus.AwaitingEnrollment)
+
+        val resultState = iPProtectionReducer(initialState, InternalAction.FinishingAuthFlow)
+
+        assertEquals(AccountStatus.AwaitingEnrollment, resultState.accountState.status)
+    }
+
+    private fun buildIPProtectionState(
+        accountStatus: AccountStatus = AccountStatus.Uninitialized,
+    ): IPProtectionState {
+        return IPProtectionState(
+            accountState = AccountState(accountStatus),
         )
     }
 }

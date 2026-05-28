@@ -9,10 +9,8 @@ import androidx.lifecycle.LifecycleOwner
 import mozilla.components.concept.sync.AccountObserver
 import mozilla.components.concept.sync.AuthType
 import mozilla.components.concept.sync.OAuthAccount
-import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.ipprotection.store.InternalAction
-import mozilla.components.feature.ipprotection.store.state.AccountStatus
 
 /**
  * An [android.app.Activity] authentication observer for notifying if our auth flow was completed or interrupted.
@@ -38,7 +36,7 @@ class IPProtectionActivityAuthFlowObserver(
 
     override fun onDestroy(owner: LifecycleOwner) {
         if (shouldNotify.value) {
-            store.value.dispatch(IPProtectionAction.AccountStateChanged(AccountStatus.FinishingAuthFlow))
+            store.value.dispatch(InternalAction.FinishingAuthFlow)
         }
     }
 }

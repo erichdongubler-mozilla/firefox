@@ -25,7 +25,7 @@ import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow.Companion.SCOPE_IPPROTECTION
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
-import mozilla.components.feature.ipprotection.store.InternalAction.FirstEnrollmentChanged
+import mozilla.components.feature.ipprotection.store.InternalAction.AccountManagerStateChanged
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
 import mozilla.components.lib.state.ext.flow
@@ -117,14 +117,15 @@ class IPProtectionFeature(
                         }
 
                         AccountStatus.Ready -> {
-                            if (state.accountState.isFirstEnrollment) {
-                                handler?.enroll { enrollInfo ->
-                                    if (enrollInfo.isEnrolledAndEntitled) {
-                                        store.dispatch(FirstEnrollmentChanged(false))
-                                    }
+                            handler?.notifyAccountStatus(true)
+                        }
+
+                        AccountStatus.AwaitingEnrollment -> {
+                            handler?.enroll { enrollInfo ->
+                                if (enrollInfo.isEnrolledAndEntitled) {
+                                    store.dispatch(AccountManagerStateChanged(status = AccountStatus.Ready))
                                 }
                             }
-                            handler?.notifyAccountStatus(true)
                         }
 
                         AccountStatus.TryAgain -> {
@@ -138,7 +139,6 @@ class IPProtectionFeature(
                         AccountStatus.RequestingAuthorization,
                         AccountStatus.AwaitingAuthentication,
                         AccountStatus.AwaitingAuthorization,
-                        AccountStatus.FinishingAuthFlow,
                             -> {
                             // no-op when we are in transient states.
                         }

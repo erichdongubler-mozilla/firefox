@@ -7,6 +7,7 @@
 package mozilla.components.feature.ipprotection.store.state
 
 import mozilla.components.ExperimentalAndroidComponentsApi
+import mozilla.components.concept.engine.ipprotection.IPProtectionHandler
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.lib.state.State
 
@@ -55,11 +56,9 @@ val IPProtectionState.usedDataGb: Float
 /**
  * The combined state of an FxA account pertinent to IP Protection.
  *
- * @property isFirstEnrollment Whether the user needs to author their account first.
  * @property status The state of the authenticator being used.
  */
 data class AccountState(
-    val isFirstEnrollment: Boolean = false,
     val status: AccountStatus = AccountStatus.Uninitialized,
 )
 
@@ -83,7 +82,7 @@ data class AccountState(
  * A user can leave an incomplete flow at any time in the UI, in which case we need to return to the top of the
  * previous branch. The [AwaitingAuthorization] and [AwaitingAuthorization] let us do this.
  *
- * Whether the flow is successful or not, we try to end with [FinishingAuthFlow]. If we received this event with a
+ * Whether the flow is successful or not, we try to end with [AwaitingEnrollment]. If we received this event with a
  * result from the account manager, then we can move forward with [AuthFailed] or [Ready], otherwise, we go back into
  * the `Needs*` state for each branch.
  *
@@ -121,7 +120,7 @@ data class AccountState(
  *                +--------------+--------------+
  *                               v
  *                     +-------------------+
- *                     | FinishingAuthFlow |
+ *                     | AwaitingEnrollment |
  *                     +---+-----------+---+
  *                         |           |
  *              +----------+           +----------+
@@ -182,11 +181,10 @@ enum class AccountStatus {
 
     /**
      * An intermediary auth state that can start from [AwaitingAuthorization] or
-     * [AwaitingAuthentication] that tells us we are finishing an auth flow. This can be a
-     * successful or incomplete flow - this state is best evaluated against the previous
-     * state value.
+     * [AwaitingAuthentication] that tells us the user has successfully passed fxa auth
+     * and moved to enrolling with the [IPProtectionHandler].
      */
-    FinishingAuthFlow,
+    AwaitingEnrollment,
 
     /**
      * An auth flow was exited abruptly.

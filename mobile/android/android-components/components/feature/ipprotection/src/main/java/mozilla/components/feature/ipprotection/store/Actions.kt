@@ -59,9 +59,10 @@ internal sealed class InternalAction : IPProtectionAction() {
     object AccountReadyForEnrollment : InternalAction()
 
     /**
-     * Reports when an enrollment has already happened to the IP protection engine.
+     * Reports that the authentication flow has finished. It could have finished automatically via
+     * successful authentication/authorization, or it could have been interrupted (canceled).
      */
-    data class FirstEnrollmentChanged(val isFirstEnrollment: Boolean) : InternalAction()
+    object FinishingAuthFlow : InternalAction()
 
     /**
      * Reports a change in whether the user qualifies for IP Protection.
