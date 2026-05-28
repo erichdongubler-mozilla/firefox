@@ -91,7 +91,7 @@ import mozfile
 import mozinfo
 from manifestparser import TestManifest
 from manifestparser.expression import parse
-from manifestparser.filters import chunk_by_slice, failures, pathprefix, tags
+from manifestparser.filters import failures, pathprefix, tags
 from manifestparser.util import normsep
 from mozlog import commandline
 from mozprofile import Profile
@@ -1293,8 +1293,6 @@ class XPCShellTests:
             filters.append(failures(self.runFailures))
             noDefaultFilters = True
 
-        if self.totalChunks > 1:
-            filters.append(chunk_by_slice(self.thisChunk, self.totalChunks))
         try:
             self.alltests = list(
                 map(
@@ -1995,8 +1993,6 @@ class XPCShellTests:
         self.verboseIfFails = options.get("verboseIfFails")
         self.keepGoing = options.get("keepGoing")
         self.logfiles = options.get("logfiles")
-        self.totalChunks = options.get("totalChunks", 1)
-        self.thisChunk = options.get("thisChunk")
         self.profileName = options.get("profileName") or "xpcshell"
         self.mozInfo = options.get("mozInfo")
         self.testingModulesDir = testingModulesDir
