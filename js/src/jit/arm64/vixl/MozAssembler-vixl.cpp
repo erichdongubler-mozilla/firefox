@@ -217,9 +217,6 @@ void Assembler::b(Instruction* at, int imm19, Condition cond) {
 
 
 BufferOffset Assembler::b(Label* label) {
-  // Prevent nop sequences in branch instructions.
-  js::jit::AutoForbidNops afn(this);
-
   // Encode the relative offset from the inserted branch to the label.
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(UncondBranchRangeType);
@@ -230,9 +227,6 @@ BufferOffset Assembler::b(Label* label) {
 
 
 BufferOffset Assembler::b(Label* label, Condition cond) {
-  // Prevent nop sequences in branch instructions.
-  js::jit::AutoForbidNops afn(this);
-
   // Encode the relative offset from the inserted branch to the label.
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(CondBranchRangeType);
@@ -266,9 +260,6 @@ void Assembler::bl(Instruction* at, int imm26) {
 
 
 void Assembler::bl(Label* label) {
-  // Prevent nop sequences in branch instructions.
-  js::jit::AutoForbidNops afn(this);
-
   // Encode the relative offset from the inserted branch to the label.
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(UncondBranchRangeType);
@@ -289,9 +280,6 @@ void Assembler::cbz(Instruction* at, const Register& rt, int imm19) {
 
 
 void Assembler::cbz(const Register& rt, Label* label) {
-  // Prevent nop sequences in branch instructions.
-  js::jit::AutoForbidNops afn(this);
-
   // Encode the relative offset from the inserted branch to the label.
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(CondBranchRangeType);
@@ -312,9 +300,6 @@ void Assembler::cbnz(Instruction* at, const Register& rt, int imm19) {
 
 
 void Assembler::cbnz(const Register& rt, Label* label) {
-  // Prevent nop sequences in branch instructions.
-  js::jit::AutoForbidNops afn(this);
-
   // Encode the relative offset from the inserted branch to the label.
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(CondBranchRangeType);
@@ -337,9 +322,6 @@ void Assembler::tbz(Instruction* at, const Register& rt, unsigned bit_pos, int i
 
 
 void Assembler::tbz(const Register& rt, unsigned bit_pos, Label* label) {
-  // Prevent nop sequences in branch instructions.
-  js::jit::AutoForbidNops afn(this);
-
   // Encode the relative offset from the inserted branch to the label.
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(TestBranchRangeType);
@@ -362,9 +344,6 @@ void Assembler::tbnz(Instruction* at, const Register& rt, unsigned bit_pos, int 
 
 
 void Assembler::tbnz(const Register& rt, unsigned bit_pos, Label* label) {
-  // Prevent nop sequences in branch instructions.
-  js::jit::AutoForbidNops afn(this);
-
   // Encode the relative offset from the inserted branch to the label.
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(TestBranchRangeType);
@@ -387,9 +366,6 @@ void Assembler::adr(Instruction* at, const Register& rd, int imm21) {
 
 
 void Assembler::adr(const Register& rd, Label* label) {
-  // Prevent nop sequences in address instructions.
-  js::jit::AutoForbidNops afn(this);
-
   // Encode the relative offset from the inserted adr to the label.
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset();
@@ -412,9 +388,6 @@ void Assembler::adrp(Instruction* at, const Register& rd, int imm21) {
 
 
 void Assembler::adrp(const Register& rd, Label* label) {
-  // Prevent nop sequences in address instructions.
-  js::jit::AutoForbidNops afn(this);
-
   VIXL_ASSERT(AllowPageOffsetDependentCode());
   // Encode the relative offset from the inserted adr to the label.
   LabelDoc doc = refLabel(label);

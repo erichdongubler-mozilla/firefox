@@ -715,8 +715,9 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM {
   }
 
   CodeOffset movWithPatch(ImmWord imm, Register dest) {
-    BufferOffset offset = ma_movPatchable(Imm32(imm.value), dest, Always);
-    return CodeOffset(offset.getOffset());
+    CodeOffset label = CodeOffset(currentOffset());
+    ma_movPatchable(Imm32(imm.value), dest, Always);
+    return label;
   }
   CodeOffset movWithPatch(ImmPtr imm, Register dest) {
     return movWithPatch(ImmWord(uintptr_t(imm.value)), dest);

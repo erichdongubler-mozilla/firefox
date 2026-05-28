@@ -704,6 +704,7 @@ static inline bool GetTempRegForIntArg(uint32_t usedIntArgs,
 // Forbids nop filling for testing purposes. Nestable, but nested calls have
 // no effect on the no-nops status; it is only the top level one that counts.
 class AutoForbidNops {
+ protected:
   Assembler* asm_;
 
  public:
@@ -717,23 +718,14 @@ class AutoForbidNops {
 // Forbids pool generation during a specified interval. Nestable, but nested
 // calls must imply a no-pool area of the assembler buffer that is completely
 // contained within the area implied by the outermost level call.
-class AutoForbidPoolsAndNops {
-  Assembler* asm_;
-
+class AutoForbidPoolsAndNops : public AutoForbidNops {
  public:
   explicit AutoForbidPoolsAndNops(Assembler* assem, size_t margin,
                                   size_t maxBranches = 0)
-      : asm_(assem) {
+      : AutoForbidNops(assem) {
     asm_->enterNoPool(margin, maxBranches);
-    asm_->enterNoNops();
   }
-  ~AutoForbidPoolsAndNops() {
-    asm_->leaveNoNops();
-    asm_->leaveNoPool();
-  }
-
-  AutoForbidPoolsAndNops(const AutoForbidPoolsAndNops&) = delete;
-  AutoForbidPoolsAndNops& operator=(const AutoForbidPoolsAndNops&) = delete;
+  ~AutoForbidPoolsAndNops() { asm_->leaveNoPool(); }
 };
 
 }  // namespace jit

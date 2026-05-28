@@ -2529,14 +2529,11 @@ CodeOffset MacroAssembler::call(wasm::SymbolicAddress imm) {
 }
 
 CodeOffset MacroAssembler::farJumpWithPatch() {
-  // Allocate space which will be patched by patchFarJump().
-  AutoForbidPoolsAndNops afp(this, 5);
-
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   Register scratch2 = temps.Acquire();
-
-  CodeOffset farJump(nextOffset().getOffset());
+  // Allocate space which will be patched by patchFarJump().
+  CodeOffset farJump(nextInstrOffset(5, 0).getOffset());
   auipc(scratch, 0);
   lw(scratch2, scratch, 4 * kInstrSize);
   add(scratch, scratch, scratch2);
@@ -4922,29 +4919,17 @@ void MacroAssemblerRiscv64::ma_mulPtrTestOverflow(Register rd, Register rj,
   ma_b(scratch, Register(scratch2), overflow, Assembler::NotEqual);
 }
 
-bool MacroAssemblerRiscv64::UseShortBranch(
-    Label* L, JumpKind jumpKind, OffsetSize bits,
-    mozilla::Maybe<AutoForbidNops>& maybeAfn) {
+bool MacroAssemblerRiscv64::UseShortBranch(Label* L, JumpKind jumpKind,
+                                           OffsetSize bits) {
   // If the label is already bound, we can directly determine which jump to use.
   if (L->bound()) {
-    // Prevent nop sequences in branch instructions.
-    AutoForbidNops afn(this);
-
     // Call |nextInstrOffset()| instead of just |nextOffset()| to ensure
     // branches which are about to go out of range are also taken into account
     // when computing the next instruction offset.
     int32_t offset = nextInstrOffset(2, 1).getOffset();
 
     // Use a short branch if the label is near enough.
-    if (is_intn(offset - L->offset(), bits)) {
-      // Extend the AutoForbidNops scope to ensure AutoForbidPoolsAndNops used
-      // for short branches doesn't add emit nop sequences, because the nop
-      // sequences can move the label outside the reachable range for this
-      // branch.
-      maybeAfn.emplace(this);
-      return true;
-    }
-    return false;
+    return is_intn(offset - L->offset(), bits);
   }
 
   // Otherwise use a short branch if requested.
@@ -4952,8 +4937,7 @@ bool MacroAssemblerRiscv64::UseShortBranch(
 }
 
 void MacroAssemblerRiscv64::Branch(Label* L, JumpKind jumpKind) {
-  mozilla::Maybe<AutoForbidNops> afn;
-  if (UseShortBranch(L, jumpKind, OffsetSize::kOffset21, afn)) {
+  if (UseShortBranch(L, jumpKind, OffsetSize::kOffset21)) {
     BranchShort(L);
   } else {
     BranchLong(L);
@@ -4988,8 +4972,7 @@ void MacroAssemblerRiscv64::Branch(Label* L, Condition cond, Register rs,
     scratch = rt.rm();
   }
 
-  mozilla::Maybe<AutoForbidNops> afn;
-  if (UseShortBranch(L, jumpKind, OffsetSize::kOffset13, afn)) {
+  if (UseShortBranch(L, jumpKind, OffsetSize::kOffset13)) {
     BranchShort(L, cond, rs, scratch);
   } else {
     Label skip;
@@ -5051,8 +5034,6 @@ void MacroAssemblerRiscv64::BranchShort(Label* L, Condition cond, Register rs,
 }
 
 void MacroAssemblerRiscv64::BranchLong(Label* L) {
-  AutoForbidPoolsAndNops afp(this, 2);
-
   // Generate position independent long branch.
   int32_t imm = branchLongOffsetHelper(L);
 
@@ -5065,15 +5046,12 @@ void MacroAssemblerRiscv64::BranchLong(Label* L) {
 }
 
 CodeOffset MacroAssemblerRiscv64::BranchAndLink(Label* L) {
-  mozilla::Maybe<AutoForbidNops> afn;
-  if (UseShortBranch(L, ShortJump, OffsetSize::kOffset21, afn)) {
+  if (UseShortBranch(L, ShortJump, OffsetSize::kOffset21)) {
     AutoForbidPoolsAndNops afp(this, 2, 1);
 
     int32_t offset = GetOffset(L, OffsetSize::kOffset21);
     return jal(offset);
   }
-
-  AutoForbidPoolsAndNops afp(this, 2);
 
   // Generate position independent long branch and link.
   int32_t imm = branchLongOffsetHelper(L);

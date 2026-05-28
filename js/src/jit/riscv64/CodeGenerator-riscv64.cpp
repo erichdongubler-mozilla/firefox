@@ -175,13 +175,13 @@ void CodeGeneratorRiscv64::generateInvalidateEpilogue() {
 void CodeGeneratorRiscv64::visitOutOfLineTableSwitch(
     OutOfLineTableSwitch* ool) {
   MTableSwitch* mir = ool->mir();
-
-  // Prevent nop and pools sequences to appear in the jump table.
-  AutoForbidPoolsAndNops afp(&masm, 2 + mir->numCases() * 2);
   masm.nop();
   masm.haltingAlign(sizeof(void*));
   masm.bind(ool->jumpLabel());
   masm.addCodeLabel(*ool->jumpLabel());
+
+  // Prevent nop and pools sequences to appear in the jump table.
+  AutoForbidPoolsAndNops afp(&masm, mir->numCases() * 2);
 
   for (size_t i = 0; i < mir->numCases(); i++) {
     LBlock* caseblock = skipTrivialBlocks(mir->getCase(i))->lir();

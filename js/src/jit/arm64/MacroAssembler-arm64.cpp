@@ -1650,9 +1650,6 @@ CodeOffset MacroAssembler::call(const Address& addr) {
 }
 
 void MacroAssembler::call(JitCode* c) {
-  // CodeFromJump doesn't support nop sequences.
-  AutoForbidNops afn(this);
-
   vixl::UseScratchRegisterScope temps(this);
   const ARMRegister scratch64 = temps.AcquireX();
   // This sync has been observed (and is expected) to be necessary.

@@ -970,23 +970,6 @@ bool BaselineCompilerCodeGen::emitIsDebuggeeCheck() {
   return true;
 }
 
-// Prevent nop sequences for toggled jumps, because they're implemented as
-// short branches on some architectures (e.g. RISCV64) and the short branch
-// range can be exceeded when extra nops are inserted.
-class AutoForbidNopsForToggledJump {
-#if defined(JS_CODEGEN_RISCV64)
-  AutoForbidNops afn_;
-#endif
-
- public:
-  explicit AutoForbidNopsForToggledJump(MacroAssembler* masm)
-#if defined(JS_CODEGEN_RISCV64)
-      : afn_(masm)
-#endif
-  {
-  }
-};
-
 template <>
 bool BaselineInterpreterCodeGen::emitIsDebuggeeCheck() {
   // Use a toggled jump to call FrameIsDebuggeeCheck only if the debugger is
@@ -994,8 +977,6 @@ bool BaselineInterpreterCodeGen::emitIsDebuggeeCheck() {
   //
   // TODO(bug 1522394): consider having a cx->realm->isDebuggee guard before the
   // call. Consider moving the callWithABI out-of-line.
-
-  AutoForbidNopsForToggledJump afn(&masm);
 
   Label skipCheck;
   CodeOffset toggleOffset = masm.toggledJump(&skipCheck);
@@ -1042,8 +1023,6 @@ bool BaselineCompilerCodeGen::emitHandleCodeCoverageAtPrologue() {
 
 template <>
 bool BaselineInterpreterCodeGen::emitHandleCodeCoverageAtPrologue() {
-  AutoForbidNopsForToggledJump afn(&masm);
-
   Label skipCoverage;
   CodeOffset toggleOffset = masm.toggledJump(&skipCoverage);
   masm.call(handler.codeCoverageAtPrologueLabel());
@@ -2018,8 +1997,6 @@ bool BaselineCompiler::emitDebugTrap() {
 
 template <typename Handler>
 void BaselineCodeGen<Handler>::emitProfilerEnterFrame() {
-  AutoForbidNopsForToggledJump afn(&masm);
-
   // Store stack position to lastProfilingFrame variable, guarded by a toggled
   // jump. Starts off initially disabled.
   Label noInstrument;
@@ -2034,8 +2011,6 @@ void BaselineCodeGen<Handler>::emitProfilerEnterFrame() {
 
 template <typename Handler>
 void BaselineCodeGen<Handler>::emitProfilerExitFrame() {
-  AutoForbidNopsForToggledJump afn(&masm);
-
   // Store previous frame to lastProfilingFrame variable, guarded by a toggled
   // jump. Starts off initially disabled.
   Label noInstrument;
@@ -5148,8 +5123,6 @@ template <typename F1, typename F2>
   // paths, with a toggled jump followed by a branch on the frame's DEBUGGEE
   // flag.
 
-  AutoForbidNopsForToggledJump afn(&masm);
-
   Label isNotDebuggee, done;
 
   CodeOffset toggleOffset = masm.toggledJump(&isNotDebuggee);
@@ -6303,8 +6276,6 @@ bool BaselineInterpreterCodeGen::emitAfterYieldDebugInstrumentation(
   // Note that we can't use emitDebugInstrumentation here because the frame's
   // DEBUGGEE flag hasn't been initialized yet.
 
-  AutoForbidNopsForToggledJump afn(&masm);
-
   // If the current Realm is not a debuggee we're done.
   Label done;
   CodeOffset toggleOffset = masm.toggledJump(&done);
@@ -6752,8 +6723,6 @@ bool BaselineCompilerCodeGen::emit_JumpTarget() {
 
 template <>
 bool BaselineInterpreterCodeGen::emit_JumpTarget() {
-  AutoForbidNopsForToggledJump afn(&masm);
-
   Register scratch1 = R0.scratchReg();
   Register scratch2 = R1.scratchReg();
 
