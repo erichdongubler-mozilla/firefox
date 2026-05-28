@@ -908,4 +908,9 @@ void Win32SerialPlatformService::CheckForDeviceChanges() {
   *cachedPortList = std::move(newPortList);
 }
 
+already_AddRefed<SerialPlatformService>
+SerialPlatformService::GetInstanceImpl() {
+  return MakeAndAddRef<Win32SerialPlatformService>();
+}
+
 }  // namespace mozilla::dom

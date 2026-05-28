@@ -1550,4 +1550,9 @@ void PosixSerialPlatformService::OnDeviceRemoved(io_iterator_t iterator,
 }
 #endif
 
+already_AddRefed<SerialPlatformService>
+SerialPlatformService::GetInstanceImpl() {
+  return MakeAndAddRef<PosixSerialPlatformService>();
+}
+
 }  // namespace mozilla::dom
