@@ -17308,8 +17308,18 @@
   value: ""
   mirror: never
 
-# Comma-separated names of remote settings lists to use for content blocking.
-- name: privacy.trackingprotection.content.protection.list_names
+# Comma-separated content classifier feature names whose engines are used
+# for blocking in non-private browsing contexts.
+# Defined feature names are in ContentClassifierService.cpp, kFeatures.
+- name: privacy.trackingprotection.content.protection.engines
+  type: String
+  value: "test_block"
+  mirror: never
+
+# Comma-separated content classifier feature names whose engines are used
+# for blocking in private browsing contexts.
+# Defined feature names are in ContentClassifierService.cpp, kFeatures.
+- name: privacy.trackingprotection.content.protection.engines.pbmode
   type: String
   value: ""
   mirror: never
@@ -17328,8 +17338,18 @@
   value: ""
   mirror: never
 
-# Comma-separated names of remote settings lists to use for content annotation.
-- name: privacy.trackingprotection.content.annotation.list_names
+# Comma-separated content classifier feature names whose engines are used
+# for annotation in non-private browsing contexts.
+# Defined feature names are in ContentClassifierService.cpp, kFeatures.
+- name: privacy.trackingprotection.content.annotation.engines
+  type: String
+  value: "test_annotate"
+  mirror: never
+
+# Comma-separated content classifier feature names whose engines are used
+# for annotation in private browsing contexts.
+# Defined feature names are in ContentClassifierService.cpp, kFeatures.
+- name: privacy.trackingprotection.content.annotation.engines.pbmode
   type: String
   value: ""
   mirror: never

@@ -108,7 +108,11 @@ pub unsafe extern "C" fn content_classifier_engine_check_network_request_prepars
         third_party,
     );
 
-    let result = engine.check_network_request(&request);
+    // Bug 2041805: this is inefficient.
+    // We have to do it because of how exceptions are processed and how we group rules.
+    // Exceptions are (by default) only checked when they are already matched by the same engine.
+    // So our exceptions that are in separate lists would be useless without the last flag=true here.
+    let result = engine.check_network_request_subset(&request, false, true);
 
     *out_matched = result.matched;
     *out_important = result.important;

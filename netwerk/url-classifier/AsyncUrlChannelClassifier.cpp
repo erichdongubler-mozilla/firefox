@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "ChannelClassifierService.h"
 #include "Classifier.h"
 #include "ContentClassifierService.h"
 #include "HttpBaseChannel.h"
@@ -1026,27 +1027,22 @@ nsresult AntiTrackingChannelClassifierUtils::CheckChannelHelper(
             Flow::FromPointer(channel.get()));
         TimeStamp workerStartTime = TimeStamp::Now();
 
-        bool shouldCancel = false;
-        bool shouldAnnotate = false;
+        ContentClassifierResult cancelResult;
+        ContentClassifierResult annotateResult;
 
         if (contentClassifier && contentClassifier->IsInitialized() &&
             contentClassifierRequest.isSome()) {
           if (aPerformBlocking) {
-            ContentClassifierResult cancelResult =
+            cancelResult =
                 contentClassifier->ClassifyForCancel(*contentClassifierRequest);
-            shouldCancel = cancelResult.Hit();
           }
           if (aPerformAnnotations) {
-            ContentClassifierResult annotateResult =
-                contentClassifier->ClassifyForAnnotate(
-                    *contentClassifierRequest);
-            shouldAnnotate = annotateResult.Hit();
+            annotateResult = contentClassifier->ClassifyForAnnotate(
+                *contentClassifierRequest);
           }
         }
 
-        // If this is going to get cancelled anyway, then don't do all of the
-        // work of the url-classifier
-        if (task && !shouldCancel) {
+        if (task) {
           task->DoLookup(workerClassifier);
         }
 
@@ -1061,18 +1057,25 @@ nsresult AntiTrackingChannelClassifierUtils::CheckChannelHelper(
             NS_NewRunnableFunction(
                 "AntiTrackingChannelClassifierUtils::CheckChannelHelper - "
                 "return",
-                [task, channel, shouldCancel, shouldAnnotate, outerStartTime,
+                [task, channel, outerStartTime,
+                 cancelResult = std::move(cancelResult),
+                 annotateResult = std::move(annotateResult),
                  callbackFromFeature = std::move(callbackFromFeature),
                  contentClassifier]() -> void {
-                  if (shouldAnnotate) {
-                    contentClassifier->AnnotateChannel(channel);
+                  if (contentClassifier) {
+                    ChannelBlockDecision cancelAction =
+                        contentClassifier->MaybeCancelChannel(channel,
+                                                              cancelResult);
+                    // Only provide annotations if we didn't block the channel.
+                    if (cancelAction != ChannelBlockDecision::Blocked) {
+                      contentClassifier->MaybeAnnotateChannel(channel,
+                                                              annotateResult);
+                    }
                   }
-                  if (shouldCancel) {
-                    (void)contentClassifier->MaybeCancelChannel(channel);
-                    callbackFromFeature();
-                  } else if (task) {
+                  // We must always call the callback. Either via the task or
+                  // explicitly.
+                  if (task) {
                     task->CompleteClassification();
-                    // This calls the callbackFromFeature
                   } else {
                     callbackFromFeature();
                   }

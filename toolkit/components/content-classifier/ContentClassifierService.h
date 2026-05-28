@@ -5,11 +5,13 @@
 #ifndef mozilla_ContentClassifierService_h
 #define mozilla_ContentClassifierService_h
 
+#include <cstdint>
+#include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Span.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/ThreadSafety.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/net/ChannelClassifierUtils.h"
 #include "nsIAsyncShutdown.h"
 #include "nsIChannel.h"
@@ -75,6 +77,59 @@ enum class InitPhase {
   ShutdownEnded
 };
 
+// Aggregated status across all engines consulted for a single
+// classification. Ordering is significant: higher values supersede
+// lower ones in ContentClassifierResult::Accumulate, so any Exception
+// promotes the aggregate over a Hit, and an Important variant pins the
+// status against later non-Important results.
+enum class ContentClassifierResultStatus : uint8_t {
+  Miss = 0,
+  Hit = 1,
+  Exception = 2,
+  ImportantHit = 3,
+  ImportantException = 4,
+};
+
+// Aggregated outcome across the engines consulted for one classification.
+// Records every engine result that contributed (a match or an exception),
+// so the caller can attribute the channel-side annotation / block to the
+// right feature definitions.
+class ContentClassifierResult {
+ public:
+  using Status = ContentClassifierResultStatus;
+
+  ContentClassifierResult() = default;
+
+  ContentClassifierResult(ContentClassifierResult&&) = default;
+  ContentClassifierResult& operator=(ContentClassifierResult&&) = default;
+  ContentClassifierResult(const ContentClassifierResult&) = delete;
+  ContentClassifierResult& operator=(const ContentClassifierResult&) = delete;
+
+  Status GetStatus() const { return mStatus; }
+
+  bool Hit() const {
+    return mStatus == Status::Hit || mStatus == Status::ImportantHit;
+  }
+  bool Exception() const {
+    return mStatus == Status::Exception ||
+           mStatus == Status::ImportantException;
+  }
+  bool Important() const {
+    return mStatus == Status::ImportantHit ||
+           mStatus == Status::ImportantException;
+  }
+
+  const nsTArray<ContentClassifierEngineResult>& EngineResults() const {
+    return mEngineResults;
+  }
+
+  void Accumulate(ContentClassifierEngineResult aEngineResult);
+
+ private:
+  Status mStatus = Status::Miss;
+  nsTArray<ContentClassifierEngineResult> mEngineResults;
+};
+
 class ContentClassifierService final : public nsIAsyncShutdownBlocker,
                                        public nsIContentClassifierService {
  public:
@@ -92,9 +147,9 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   // into engines and how matches are reported.
   static Span<const ContentClassifierFeature> GetFeatures();
 
-  // Returns the feature with the given name, or nullptr if no such
+  // Returns the feature with the given name, or Nothing() if no such
   // feature exists in the static table.
-  static const ContentClassifierFeature* GetFeatureByName(
+  static Maybe<const ContentClassifierFeature&> GetFeatureByName(
       const nsACString& aName);
 
   ContentClassifierResult ClassifyForCancel(
@@ -103,8 +158,9 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
       const ContentClassifierRequest& aRequest);
 
   [[nodiscard]] net::ChannelBlockDecision MaybeCancelChannel(
-      nsIChannel* aChannel);
-  void AnnotateChannel(nsIChannel* aChannel);
+      nsIChannel* aChannel, const ContentClassifierResult& aResult);
+  void MaybeAnnotateChannel(nsIChannel* aChannel,
+                            const ContentClassifierResult& aResult);
 
  private:
   ContentClassifierService();
@@ -120,20 +176,53 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   already_AddRefed<nsIAsyncShutdownClient> GetAsyncShutdownBarrier() const;
 
   ContentClassifierResult ClassifyWithEngines(
-      const nsTArray<UniquePtr<ContentClassifierEngine>>& aEngines,
+      const nsTArray<RefPtr<ContentClassifierEngine>>& aEngines,
       const ContentClassifierRequest& aRequest);
+
+  // Feature names referenced by any of the new "engines" prefs. Used at
+  // engine-rebuild time to decide which feature engines to construct in
+  // mEngines. Reads prefs; main thread only.
+  static nsTArray<nsCString> ActiveFeatureNames();
+
+  // Repopulate the four per-mode engine pointer arrays from the current
+  // engines prefs and mEngines. Reads prefs; main thread only. Holds mLock.
+  void RefreshActiveEngineLists() MOZ_REQUIRES(mLock);
+
+  // Populate aOut with engines in mEngines named by the comma-separated
+  // feature names in aPref. Unknown / unbuilt features are skipped
+  // silently (they are already logged at engine-build time). Reads prefs;
+  // main thread only. Holds mLock.
+  void PopulateEngineListFromPref(
+      const char* aPref, nsTArray<RefPtr<ContentClassifierEngine>>& aOut)
+      MOZ_REQUIRES(mLock);
 
   static StaticRefPtr<ContentClassifierService> sInstance;
   static bool sEnabled;
 
   mozilla::Mutex mLock MOZ_UNANNOTATED;
   InitPhase mInitPhase MOZ_GUARDED_BY(mLock);
-  nsTArray<UniquePtr<ContentClassifierEngine>> mBlockEngines
-      MOZ_GUARDED_BY(mLock);
-  nsTArray<UniquePtr<ContentClassifierEngine>> mAnnotateEngines
+
+  // Feature-keyed engines built from the new engines/engines.pbmode prefs.
+  // Each feature's engine is constructed once from the union of rules in
+  // its mListIds.
+  nsTHashMap<nsCStringHashKey, RefPtr<ContentClassifierEngine>> mEngines
       MOZ_GUARDED_BY(mLock);
 
-  // Raw filter list data stored by list name, populated by the RS client.
+  // Engines to consult at classify time, split by phase (Cancel/Annotate)
+  // and PBM-ness. Refreshed alongside mEngines whenever the engines
+  // selection changes.
+  nsTArray<RefPtr<ContentClassifierEngine>> mCancelEngines
+      MOZ_GUARDED_BY(mLock);
+  nsTArray<RefPtr<ContentClassifierEngine>> mCancelEnginesPBM
+      MOZ_GUARDED_BY(mLock);
+  nsTArray<RefPtr<ContentClassifierEngine>> mAnnotateEngines
+      MOZ_GUARDED_BY(mLock);
+  nsTArray<RefPtr<ContentClassifierEngine>> mAnnotateEnginesPBM
+      MOZ_GUARDED_BY(mLock);
+
+  // Raw filter list data stored by list name. Populated by the RS client
+  // for normal features, and by the HTTP test loader for the synthetic
+  // "test_block" / "test_annotate" list IDs.
   nsTHashMap<nsCStringHashKey, nsTArray<uint8_t>> mFilterListData
       MOZ_GUARDED_BY(mLock);
 
