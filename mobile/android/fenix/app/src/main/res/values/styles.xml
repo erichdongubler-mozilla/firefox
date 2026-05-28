@@ -96,18 +96,6 @@
         <item name="colorSurfaceContainerHighest">@color/fx_mobile_surface_container_highest</item>
         <item name="colorSurfaceContainerLow">@color/fx_mobile_surface_container_low</item>
         <item name="colorSurfaceContainerLowest">@color/fx_mobile_surface_container_lowest</item>
-        <item name="colorPrimaryFixed">@color/photonViolet05</item>
-        <item name="colorPrimaryFixedDim">@color/fx_mobile_primary_fixed_dim</item>
-        <item name="colorOnPrimaryFixed">@color/photonDarkGrey90</item>
-        <item name="colorOnPrimaryFixedVariant">@color/fx_mobile_on_primary_fixed_variant</item>
-        <item name="colorSecondaryFixed">@color/fx_mobile_secondary_fixed</item>
-        <item name="colorSecondaryFixedDim">@color/fx_mobile_secondary_fixed_dim</item>
-        <item name="colorOnSecondaryFixed">@color/fx_mobile_on_secondary_fixed</item>
-        <item name="colorOnSecondaryFixedVariant">@color/fx_mobile_on_secondary_fixed_variant</item>
-        <item name="colorTertiaryFixed">@color/fx_mobile_tertiary_fixed</item>
-        <item name="colorTertiaryFixedDim">@color/fx_mobile_tertiary_fixed_dim</item>
-        <item name="colorOnTertiaryFixed">@color/fx_mobile_on_tertiary_fixed</item>
-        <item name="colorOnTertiaryFixedVariant">@color/fx_mobile_on_tertiary_fixed_variant</item>
 
         <!-- Design system color attributes -->
 
@@ -386,18 +374,6 @@
         <item name="colorSurfaceContainerHighest">@color/fx_mobile_private_surface_container_highest</item>
         <item name="colorSurfaceContainerLow">@color/fx_mobile_private_surface_container_low</item>
         <item name="colorSurfaceContainerLowest">@color/fx_mobile_private_surface_container_lowest</item>
-        <item name="colorPrimaryFixed">@color/photonViolet05</item>
-        <item name="colorPrimaryFixedDim">@color/fx_mobile_private_primary_fixed_dim</item>
-        <item name="colorOnPrimaryFixed">@color/photonDarkGrey90</item>
-        <item name="colorOnPrimaryFixedVariant">@color/fx_mobile_private_on_primary_fixed_variant</item>
-        <item name="colorSecondaryFixed">@color/fx_mobile_private_secondary_fixed</item>
-        <item name="colorSecondaryFixedDim">@color/fx_mobile_private_secondary_fixed_dim</item>
-        <item name="colorOnSecondaryFixed">@color/fx_mobile_private_on_secondary_fixed</item>
-        <item name="colorOnSecondaryFixedVariant">@color/fx_mobile_private_on_secondary_fixed_variant</item>
-        <item name="colorTertiaryFixed">@color/fx_mobile_private_tertiary_fixed</item>
-        <item name="colorTertiaryFixedDim">@color/fx_mobile_private_tertiary_fixed_dim</item>
-        <item name="colorOnTertiaryFixed">@color/fx_mobile_private_on_tertiary_fixed</item>
-        <item name="colorOnTertiaryFixedVariant">@color/fx_mobile_private_on_tertiary_fixed_variant</item>
 
         <!-- Design system color attributes -->
 
