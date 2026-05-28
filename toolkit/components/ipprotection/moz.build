@@ -20,6 +20,7 @@ if CONFIG["MOZ_ENTERPRISE"]:
 TESTING_JS_MODULES.ipprotection += [
     "enterprise/IPPEnterpriseAuthProvider.sys.mjs",
     "gpi/IPPGpiAuthProvider.sys.mjs",
+    "tests/IPPDummyAuthProvider.sys.mjs",
 ]
 
 MOZ_SRC_FILES += [
