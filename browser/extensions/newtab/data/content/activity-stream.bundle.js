@@ -306,6 +306,7 @@ for (const type of [
   "WIDGETS_LISTS_UPDATE",
   "WIDGETS_LISTS_USER_EVENT",
   "WIDGETS_LISTS_USER_IMPRESSION",
+  "WIDGETS_OPT_IN",
   "WIDGETS_SPORTS_CHANGE_FOLLOWED_ONLY",
   "WIDGETS_SPORTS_CHANGE_MATCHES_TAB",
   "WIDGETS_SPORTS_CHANGE_SELECTED_TEAMS",
@@ -8130,7 +8131,8 @@ function MessageWrapper({
     handleDismiss,
     handleClick,
     handleBlock,
-    handleClose
+    handleClose,
+    dispatch
   }));
 }
 
@@ -25631,6 +25633,35 @@ const messageMiddleware = () => next => action => {
   }
 };
 
+/**
+ * widgetsOptInMiddleware - expands a WIDGETS_OPT_IN action (dispatched by an
+ * OMC message via the asrouter-newtab-message component) into the underlying
+ * SetPref actions needed to enable the master widgets switch and each
+ * requested widget at its requested size. Flips both the `.system.` tier
+ * (the operator availability gate) and the user tier so a stale user-tier
+ * `false` (e.g. previously toggled off via the customize menu) can't silently
+ * suppress the opt-in. The original action is consumed here and not
+ * forwarded; routing for each SetPref is handled by messageMiddleware
+ * downstream.
+ */
+const widgetsOptInMiddleware =
+  ({ dispatch }) =>
+  next =>
+  action => {
+    if (action.type === actionTypes.WIDGETS_OPT_IN) {
+      dispatch(actionCreators.SetPref("widgets.system.enabled", true));
+      for (const { id, size } of action.data?.widgets ?? []) {
+        dispatch(actionCreators.SetPref(`widgets.system.${id}.enabled`, true));
+        dispatch(actionCreators.SetPref(`widgets.${id}.enabled`, true));
+        if (size) {
+          dispatch(actionCreators.SetPref(`widgets.${id}.size`, size));
+        }
+      }
+      return null;
+    }
+    return next(action);
+  };
+
 const rehydrationMiddleware = ({ getState }) => {
   // NB: The parameter here is MiddlewareAPI which looks like a Store and shares
   // the same getState, so attached properties are accessible from the store.
@@ -25695,7 +25726,11 @@ function initStore(reducers, initialState) {
     mergeStateReducer((0,external_Redux_namespaceObject.combineReducers)(reducers)),
     initialState,
     globalThis.RPMAddMessageListener &&
-      (0,external_Redux_namespaceObject.applyMiddleware)(rehydrationMiddleware, messageMiddleware)
+      (0,external_Redux_namespaceObject.applyMiddleware)(
+        rehydrationMiddleware,
+        widgetsOptInMiddleware,
+        messageMiddleware
+      )
   );
 
   if (globalThis.RPMAddMessageListener) {

@@ -143,6 +143,7 @@ function MessageWrapper({
         handleClick,
         handleBlock,
         handleClose,
+        dispatch,
       })}
     </div>
   );
