@@ -239,7 +239,7 @@ radio {
 }
 
 @media not -moz-pref("browser.settings-redesign.enabled") {
-  .spotlight:not(setting-group:has(> moz-card)) {
+  .spotlight {
     background-color: color-mix(in srgb, var(--color-accent-primary) 15%, transparent);
     outline: var(--border-color-selected) 1px dotted;
     animation: fade-out 0.5s ease-out 2s forwards;
@@ -247,21 +247,27 @@ radio {
     border: 1px solid transparent;
     border-radius: var(--border-radius-xsmall);
   }
-}
 
-@media -moz-pref("browser.settings-redesign.enabled") {
-  .spotlight:not(setting-group:has(> moz-card)) {
-    outline: var(--border-color-selected) 2px solid;
-    outline-offset: var(--space-small);
-    animation: fade-out 0.5s ease-out 2s forwards;
-    border-radius: var(--border-radius-large);
+  [data-subcategory] {
+    margin-inline: -4px;
+    padding-inline: 4px;
   }
 }
 
-setting-group:has(> moz-card).spotlight {
-  outline: 2px solid var(--border-color-selected);
-  border-radius: var(--border-radius-medium);
-  animation: fade-out 0.5s ease-out 2s forwards;
+@media -moz-pref("browser.settings-redesign.enabled") {
+  .spotlight {
+    outline: 2px solid var(--border-color-selected);
+    animation: fade-out 0.5s ease-out 2s forwards;
+
+    setting-group& {
+      border-radius: var(--card-border-radius);
+    }
+
+    &:not(setting-group) {
+      border-radius: var(--border-radius-medium);
+      outline-offset: var(--space-small);
+    }
+  }
 }
 
 @keyframes fade-out {
@@ -269,11 +275,6 @@ setting-group:has(> moz-card).spotlight {
     background-color: transparent;
     outline-color: transparent;
   }
-}
-
-[data-subcategory]:not(setting-group:has(> moz-card)) {
-  margin-inline: -4px;
-  padding-inline: 4px;
 }
 
 .ac-site-icon {
