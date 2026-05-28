@@ -408,7 +408,7 @@ nsresult nsNSSCertificateDB::ConstructCertArrayFromUniqueCertList(
   for (CERTCertListNode* node = CERT_LIST_HEAD(aCertListIn.get());
        !CERT_LIST_END(node, aCertListIn.get()); node = CERT_LIST_NEXT(node)) {
     RefPtr cert = MakeRefPtr<nsNSSCertificate>(node->cert);
-    aCertListOut.AppendElement(cert);
+    aCertListOut.AppendElement(std::move(cert));
   }
   return NS_OK;
 }
@@ -1269,7 +1269,7 @@ nsresult VerifyCertAtTime(nsIX509Cert* aCert, nsIX509CertDB::VerifyUsage aUsage,
   if (result == mozilla::pkix::Success) {
     for (auto& certDER : resultChain) {
       RefPtr cert = MakeRefPtr<nsNSSCertificate>(std::move(certDER));
-      aVerifiedChain.AppendElement(cert);
+      aVerifiedChain.AppendElement(std::move(cert));
     }
 
     if (evStatus == EVStatus::EV) {

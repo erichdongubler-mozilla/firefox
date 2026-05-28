@@ -129,7 +129,7 @@ nsClientAuthRememberService::GetDecisions(
         return rv;
       }
       RefPtr tmp = MakeRefPtr<nsClientAuthRemember>(key, value);
-      results.AppendElement(tmp);
+      results.AppendElement(std::move(tmp));
     }
   }
 

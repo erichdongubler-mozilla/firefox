@@ -64,7 +64,7 @@ static void CreateCertChain(nsTArray<RefPtr<nsIX509Cert>>& aOutput,
   aOutput.Clear();
   for (auto& certBytes : certList) {
     RefPtr cert = MakeRefPtr<nsNSSCertificate>(std::move(certBytes));
-    aOutput.AppendElement(cert);
+    aOutput.AppendElement(std::move(cert));
   }
 }
 
