@@ -89,8 +89,8 @@ internal fun AnimatedPillButton(
 
     // We use a single background color for both the pill and overlay background so that they match.
     val containerColor = lerp(
-        MaterialTheme.colorScheme.surfaceDim,
-        MaterialTheme.colorScheme.surfaceBright,
+        MaterialTheme.colorScheme.surfaceContainerHighest,
+        MaterialTheme.colorScheme.surfaceContainerLowest,
         contractionProgress.value,
     )
 

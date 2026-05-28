@@ -98,7 +98,7 @@ fun SearchSelector(
             },
         shape = CircleShape,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceBright,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
         ),
         elevation = CardDefaults.elevatedCardElevation(
             defaultElevation = 0.dp,
@@ -154,7 +154,7 @@ private fun SearchSelectorPreview() {
         SearchSelector(
             icon = null,
             contentDescription = "test",
-            modifier = Modifier.background(color = MaterialTheme.colorScheme.surfaceDim),
+            modifier = Modifier.background(color = MaterialTheme.colorScheme.surfaceContainerHighest),
             menu = object : BrowserToolbarMenu {
                 override fun items() = emptyList<BrowserToolbarMenuItem>()
             },

@@ -100,7 +100,7 @@ fun BrowserEditToolbar(
                     .padding(all = 8.dp)
                     .height(48.dp)
                     .clip(shape = CircleShape)
-                    .background(color = MaterialTheme.colorScheme.surfaceDim),
+                    .background(color = MaterialTheme.colorScheme.surfaceContainerHighest),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 ActionContainer(

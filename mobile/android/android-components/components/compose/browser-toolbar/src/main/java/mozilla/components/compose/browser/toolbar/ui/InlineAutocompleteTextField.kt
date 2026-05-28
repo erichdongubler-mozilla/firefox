@@ -594,7 +594,7 @@ private class PasteSanitizerTextToolbar(
 private fun InlineAutocompleteTextFieldWithSuggestion() {
     AcornTheme {
         Box(
-            Modifier.background(MaterialTheme.colorScheme.surfaceDim),
+            Modifier.background(MaterialTheme.colorScheme.surfaceContainerHighest),
         ) {
             InlineAutocompleteTextField(
                 query = "wiki",
@@ -618,7 +618,7 @@ private fun InlineAutocompleteTextFieldWithSuggestion() {
 private fun InlineAutocompleteTextFieldWithNoQuery() {
     AcornTheme {
         Box(
-            Modifier.background(MaterialTheme.colorScheme.surfaceDim),
+            Modifier.background(MaterialTheme.colorScheme.surfaceContainerHighest),
         ) {
             InlineAutocompleteTextField(
                 query = "",

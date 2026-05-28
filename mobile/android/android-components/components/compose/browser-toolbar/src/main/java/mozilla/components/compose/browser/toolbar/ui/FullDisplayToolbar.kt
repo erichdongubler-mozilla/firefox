@@ -117,7 +117,7 @@ internal fun FullDisplayToolbar(
                         )
                         .height(48.dp)
                         .background(
-                            color = MaterialTheme.colorScheme.surfaceDim,
+                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
                             shape = CircleShape,
                         )
                         .padding(
