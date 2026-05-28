@@ -41,7 +41,7 @@ LockstoreService::~LockstoreService() {
   // drops, so no other thread can be racing the in-flight FFI callbacks
   // (they each hold a `RefPtr<LockstoreService>`).
   if (mKeystore) {
-    keystore_close(mKeystore);
+    lockstore_keystore_close(mKeystore);
     mKeystore = nullptr;
   }
 }
@@ -91,7 +91,7 @@ nsresult LockstoreService::EnsureOpenLocked() {
   // `Init()` runs unconditionally as the component's `init_method`
   // before any FFI dispatch can reach this point.
   MOZ_ASSERT(!mProfilePath.IsEmpty(), "Init() must have run first");
-  return keystore_open(&mProfilePath, &mKeystore);
+  return lockstore_keystore_open(&mProfilePath, &mKeystore);
 }
 
 // ---------------------------------------------------------------------------
@@ -112,7 +112,7 @@ LockstoreService::Observe(nsISupports* aSubject, const char* aTopic,
   }
   mShutdown = true;
   if (mKeystore) {
-    keystore_close(mKeystore);
+    lockstore_keystore_close(mKeystore);
     mKeystore = nullptr;
   }
   return NS_OK;
@@ -201,10 +201,17 @@ nsresult ImplXpcomMethod(LockstoreService* aLockstore, JSContext* aCx,
 // ---------------------------------------------------------------------------
 
 NS_IMETHODIMP
+LockstoreService::GetHasPrimaryPassword(bool* aOut) {
+  MutexAutoLock lock(mMutex);
+  MOZ_TRY(EnsureOpenLocked());
+  return lockstore_keystore_has_prp(mKeystore, aOut);
+}
+
+NS_IMETHODIMP
 LockstoreService::IsKekUnlocked(const nsACString& aKekRef, bool* aOut) {
   MutexAutoLock lock(mMutex);
   MOZ_TRY(EnsureOpenLocked());
-  return keystore_is_kek_unlocked(mKeystore, &aKekRef, aOut);
+  return lockstore_keystore_is_kek_unlocked(mKeystore, &aKekRef, aOut);
 }
 
 // ---------------------------------------------------------------------------
@@ -219,28 +226,36 @@ LockstoreService::IsKekUnlocked(const nsACString& aKekRef, bool* aOut) {
   MutexAutoLock lock(mMutex);                                      \
   MOZ_TRY(EnsureOpenLocked())
 
+nsresult LockstoreService::DoSetPrimaryPassword(
+    const nsACString& aOldPassword, const nsACString& aNewPassword) {
+  LOCKSTORE_SYNC_PREAMBLE;
+  return lockstore_keystore_set_prp(mKeystore, &aOldPassword, &aNewPassword);
+}
+
 nsresult LockstoreService::DoUnlockKek(const nsACString& aKekRef,
                                        const nsACString& aSecret,
                                        uint32_t aTimeoutMs) {
   LOCKSTORE_SYNC_PREAMBLE;
-  return keystore_unlock_kek(mKeystore, &aKekRef, &aSecret, aTimeoutMs);
+  return lockstore_keystore_unlock_kek(mKeystore, &aKekRef, &aSecret,
+                                       aTimeoutMs);
 }
 
 nsresult LockstoreService::DoLockKek(const nsACString& aKekRef) {
   LOCKSTORE_SYNC_PREAMBLE;
-  return keystore_lock_kek(mKeystore, &aKekRef);
+  return lockstore_keystore_lock_kek(mKeystore, &aKekRef);
 }
 
 nsresult LockstoreService::DoLock() {
   LOCKSTORE_SYNC_PREAMBLE;
-  return keystore_lock(mKeystore);
+  return lockstore_keystore_lock(mKeystore);
 }
 
 nsresult LockstoreService::DoCreateDek(const nsACString& aCollection,
                                        const nsACString& aKekRef,
                                        bool aExtractable) {
   LOCKSTORE_SYNC_PREAMBLE;
-  return keystore_create_dek(mKeystore, &aCollection, &aKekRef, aExtractable);
+  return lockstore_keystore_create_dek(mKeystore, &aCollection, &aKekRef,
+                                       aExtractable);
 }
 
 nsresult LockstoreService::DoImportDek(const nsACString& aCollection,
@@ -248,56 +263,59 @@ nsresult LockstoreService::DoImportDek(const nsACString& aCollection,
                                        const nsTArray<uint8_t>& aDekBytes,
                                        bool aExtractable) {
   LOCKSTORE_SYNC_PREAMBLE;
-  return keystore_import_dek(mKeystore, &aCollection, &aKekRef,
-                             aDekBytes.Elements(), aDekBytes.Length(),
-                             aExtractable);
+  return lockstore_keystore_import_dek(mKeystore, &aCollection, &aKekRef,
+                                       aDekBytes.Elements(), aDekBytes.Length(),
+                                       aExtractable);
 }
 
 Result<bool, nsresult> LockstoreService::DoIsDekExtractable(
     const nsACString& aCollection) {
   LOCKSTORE_SYNC_PREAMBLE;
   bool out = false;
-  MOZ_TRY(keystore_is_dek_extractable(mKeystore, &aCollection, &out));
+  MOZ_TRY(lockstore_keystore_is_dek_extractable(mKeystore, &aCollection, &out));
   return out;
 }
 
 nsresult LockstoreService::DoDeleteDek(const nsACString& aCollection) {
   LOCKSTORE_SYNC_PREAMBLE;
-  return keystore_delete_dek(mKeystore, &aCollection);
+  return lockstore_keystore_delete_dek(mKeystore, &aCollection);
 }
 
 nsresult LockstoreService::DoAddKek(const nsACString& aCollection,
                                     const nsACString& aFromKekRef,
                                     const nsACString& aToKekRef) {
   LOCKSTORE_SYNC_PREAMBLE;
-  return keystore_add_kek(mKeystore, &aCollection, &aFromKekRef, &aToKekRef);
+  return lockstore_keystore_add_kek(mKeystore, &aCollection, &aFromKekRef,
+                                    &aToKekRef);
 }
 
 nsresult LockstoreService::DoRemoveKek(const nsACString& aCollection,
                                        const nsACString& aKekRef) {
   LOCKSTORE_SYNC_PREAMBLE;
-  return keystore_remove_kek(mKeystore, &aCollection, &aKekRef);
+  return lockstore_keystore_remove_kek(mKeystore, &aCollection, &aKekRef);
 }
 
 nsresult LockstoreService::DoSwitchKek(const nsACString& aCollection,
                                        const nsACString& aOldKekRef,
                                        const nsACString& aNewKekRef) {
   LOCKSTORE_SYNC_PREAMBLE;
-  return keystore_switch_kek(mKeystore, &aCollection, &aOldKekRef, &aNewKekRef);
+  return lockstore_keystore_switch_kek(mKeystore, &aCollection, &aOldKekRef,
+                                       &aNewKekRef);
 }
 
-Result<nsTArray<nsCString>, nsresult> LockstoreService::DoListDeks() {
+Result<nsTArray<nsCString>, nsresult> LockstoreService::DoListCollections() {
   LOCKSTORE_SYNC_PREAMBLE;
   nsTArray<nsCString> out;
-  MOZ_TRY(keystore_list_deks(mKeystore, &out));
+  MOZ_TRY(lockstore_keystore_list_collections(mKeystore, &out));
   return out;
 }
 
 Result<nsTArray<nsCString>, nsresult> LockstoreService::DoListKeks(
-    const nsACString& aDekName) {
+    const nsACString& aCollection) {
   LOCKSTORE_SYNC_PREAMBLE;
   nsTArray<nsCString> out;
-  MOZ_TRY(keystore_list_keks(mKeystore, &aDekName, &out));
+  MOZ_TRY(
+      lockstore_keystore_list_collection_keks(mKeystore, &aCollection, &out));
   return out;
 }
 
@@ -306,8 +324,9 @@ Result<nsTArray<uint8_t>, nsresult> LockstoreService::DoEncrypt(
     const nsTArray<uint8_t>& aPlaintext) {
   LOCKSTORE_SYNC_PREAMBLE;
   nsTArray<uint8_t> out;
-  MOZ_TRY(keystore_encrypt(mKeystore, &aCollection, &aKekRef,
-                           aPlaintext.Elements(), aPlaintext.Length(), &out));
+  MOZ_TRY(lockstore_keystore_encrypt(mKeystore, &aCollection, &aKekRef,
+                                     aPlaintext.Elements(), aPlaintext.Length(),
+                                     &out));
   return out;
 }
 
@@ -316,8 +335,9 @@ Result<nsTArray<uint8_t>, nsresult> LockstoreService::DoDecrypt(
     const nsTArray<uint8_t>& aCiphertext) {
   LOCKSTORE_SYNC_PREAMBLE;
   nsTArray<uint8_t> out;
-  MOZ_TRY(keystore_decrypt(mKeystore, &aCollection, &aKekRef,
-                           aCiphertext.Elements(), aCiphertext.Length(), &out));
+  MOZ_TRY(lockstore_keystore_decrypt(mKeystore, &aCollection, &aKekRef,
+                                     aCiphertext.Elements(),
+                                     aCiphertext.Length(), &out));
   return out;
 }
 
@@ -325,23 +345,8 @@ Result<nsTArray<uint8_t>, nsresult> LockstoreService::DoGetDek(
     const nsACString& aCollection, const nsACString& aKekRef) {
   LOCKSTORE_SYNC_PREAMBLE;
   nsTArray<uint8_t> out;
-  MOZ_TRY(keystore_get_dek(mKeystore, &aCollection, &aKekRef, &out));
+  MOZ_TRY(lockstore_keystore_get_dek(mKeystore, &aCollection, &aKekRef, &out));
   return out;
-}
-
-Result<nsCString, nsresult> LockstoreService::DoCreateKek(
-    const nsACString& aKekType, const nsACString& aSecret,
-    uint32_t aCacheTimeoutMs) {
-  LOCKSTORE_SYNC_PREAMBLE;
-  nsCString out;
-  MOZ_TRY(keystore_create_kek(mKeystore, &aKekType, &aSecret, aCacheTimeoutMs,
-                              &out));
-  return out;
-}
-
-nsresult LockstoreService::DoDeleteKek(const nsACString& aKekRef) {
-  LOCKSTORE_SYNC_PREAMBLE;
-  return keystore_delete_kek(mKeystore, &aKekRef);
 }
 
 #undef LOCKSTORE_SYNC_PREAMBLE
@@ -350,6 +355,15 @@ nsresult LockstoreService::DoDeleteKek(const nsACString& aKekRef) {
 // nsILockstore async tier — one-line adapters over the sync C++ tier
 // via `ImplXpcomMethod`.
 // ---------------------------------------------------------------------------
+
+NS_IMETHODIMP
+LockstoreService::SetPrimaryPassword(const nsACString& aOldPassword,
+                                     const nsACString& aNewPassword,
+                                     JSContext* aCx, Promise** aPromise) {
+  return ImplXpcomMethod(this, aCx, aPromise,
+                         &LockstoreService::DoSetPrimaryPassword,
+                         nsCString{aOldPassword}, nsCString{aNewPassword});
+}
 
 NS_IMETHODIMP
 LockstoreService::UnlockKek(const nsACString& aKekRef,
@@ -435,15 +449,16 @@ LockstoreService::SwitchKek(const nsACString& aCollection,
 }
 
 NS_IMETHODIMP
-LockstoreService::ListDeks(JSContext* aCx, Promise** aPromise) {
-  return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoListDeks);
+LockstoreService::ListCollections(JSContext* aCx, Promise** aPromise) {
+  return ImplXpcomMethod(this, aCx, aPromise,
+                         &LockstoreService::DoListCollections);
 }
 
 NS_IMETHODIMP
-LockstoreService::ListKeks(const nsACString& aDekName, JSContext* aCx,
+LockstoreService::ListKeks(const nsACString& aCollection, JSContext* aCx,
                            Promise** aPromise) {
   return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoListKeks,
-                         nsCString{aDekName});
+                         nsCString{aCollection});
 }
 
 NS_IMETHODIMP
@@ -472,22 +487,6 @@ LockstoreService::GetDek(const nsACString& aCollection,
                          Promise** aPromise) {
   return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoGetDek,
                          nsCString{aCollection}, nsCString{aKekRef});
-}
-
-NS_IMETHODIMP
-LockstoreService::CreateKek(const nsACString& aKekType,
-                            const nsACString& aSecret, uint32_t aCacheTimeoutMs,
-                            JSContext* aCx, Promise** aPromise) {
-  return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoCreateKek,
-                         nsCString{aKekType}, nsCString{aSecret},
-                         aCacheTimeoutMs);
-}
-
-NS_IMETHODIMP
-LockstoreService::DeleteKek(const nsACString& aKekRef, JSContext* aCx,
-                            Promise** aPromise) {
-  return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoDeleteKek,
-                         nsCString{aKekRef});
 }
 
 }  // namespace mozilla::security::lockstore

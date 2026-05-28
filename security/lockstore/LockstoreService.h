@@ -50,6 +50,8 @@ class LockstoreService final : public nsILockstore, public nsIObserver {
   // for JS callers.
   // ---------------------------------------------------------------------
 
+  nsresult DoSetPrimaryPassword(const nsACString& aOldPassword,
+                                const nsACString& aNewPassword);
   nsresult DoUnlockKek(const nsACString& aKekRef, const nsACString& aSecret,
                        uint32_t aTimeoutMs);
   nsresult DoLockKek(const nsACString& aKekRef);
@@ -67,8 +69,9 @@ class LockstoreService final : public nsILockstore, public nsIObserver {
   nsresult DoSwitchKek(const nsACString& aCollection,
                        const nsACString& aOldKekRef,
                        const nsACString& aNewKekRef);
-  Result<nsTArray<nsCString>, nsresult> DoListDeks();
-  Result<nsTArray<nsCString>, nsresult> DoListKeks(const nsACString& aDekName);
+  Result<nsTArray<nsCString>, nsresult> DoListCollections();
+  Result<nsTArray<nsCString>, nsresult> DoListKeks(
+      const nsACString& aCollection);
   Result<nsTArray<uint8_t>, nsresult> DoEncrypt(
       const nsACString& aCollection, const nsACString& aKekRef,
       const nsTArray<uint8_t>& aPlaintext);
@@ -77,10 +80,6 @@ class LockstoreService final : public nsILockstore, public nsIObserver {
       const nsTArray<uint8_t>& aCiphertext);
   Result<nsTArray<uint8_t>, nsresult> DoGetDek(const nsACString& aCollection,
                                                const nsACString& aKekRef);
-  Result<nsCString, nsresult> DoCreateKek(const nsACString& aKekType,
-                                          const nsACString& aSecret,
-                                          uint32_t aCacheTimeoutMs);
-  nsresult DoDeleteKek(const nsACString& aKekRef);
 
  private:
   ~LockstoreService();

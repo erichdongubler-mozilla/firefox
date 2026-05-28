@@ -12,10 +12,6 @@
 #include "nsString.h"
 #include "nsTArray.h"
 
-using mozilla::security::lockstore::keystore_close;
-using mozilla::security::lockstore::keystore_create_dek;
-using mozilla::security::lockstore::keystore_create_kek;
-using mozilla::security::lockstore::keystore_open;
 using mozilla::security::lockstore::KeystoreHandle;
 using mozilla::security::lockstore::lockstore_datastore_close;
 using mozilla::security::lockstore::lockstore_datastore_delete;
@@ -23,6 +19,9 @@ using mozilla::security::lockstore::lockstore_datastore_get;
 using mozilla::security::lockstore::lockstore_datastore_keys;
 using mozilla::security::lockstore::lockstore_datastore_open;
 using mozilla::security::lockstore::lockstore_datastore_put;
+using mozilla::security::lockstore::lockstore_keystore_close;
+using mozilla::security::lockstore::lockstore_keystore_create_dek;
+using mozilla::security::lockstore::lockstore_keystore_open;
 using mozilla::security::lockstore::LockstoreDatastore;
 
 class LockstoreDatastoreTest : public ::testing::Test {
@@ -30,7 +29,7 @@ class LockstoreDatastoreTest : public ::testing::Test {
   nsCOMPtr<nsIFile> mTmpDir;
   nsAutoCString mProfilePath;
   const nsCString mTestColl{"test"};
-  nsCString mLocalKekRef;
+  const nsCString mLocalKekRef{"lockstore::kek::local"_ns};
   KeystoreHandle* mKeystore = nullptr;
   LockstoreDatastore* mDatastore = nullptr;
 
@@ -47,16 +46,10 @@ class LockstoreDatastoreTest : public ::testing::Test {
     ASSERT_NS_SUCCEEDED(rv);
     mProfilePath = NS_ConvertUTF16toUTF8(profilePathWide);
 
-    rv = keystore_open(&mProfilePath, &mKeystore);
+    rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
     ASSERT_NS_SUCCEEDED(rv);
-
-    const nsCString kekType("local"_ns);
-    const nsCString empty;
-    rv = keystore_create_kek(mKeystore, &kekType, &empty,
-                             /* cache_timeout_ms */ 0, &mLocalKekRef);
-    ASSERT_NS_SUCCEEDED(rv);
-
-    rv = keystore_create_dek(mKeystore, &mTestColl, &mLocalKekRef, false);
+    rv = lockstore_keystore_create_dek(mKeystore, &mTestColl, &mLocalKekRef,
+                                       false);
     ASSERT_NS_SUCCEEDED(rv);
   }
 
@@ -66,7 +59,7 @@ class LockstoreDatastoreTest : public ::testing::Test {
       mDatastore = nullptr;
     }
     if (mKeystore) {
-      EXPECT_NS_SUCCEEDED(keystore_close(mKeystore));
+      EXPECT_NS_SUCCEEDED(lockstore_keystore_close(mKeystore));
       mKeystore = nullptr;
     }
     if (mTmpDir) {
@@ -305,7 +298,7 @@ TEST_F(LockstoreDatastoreTest, KeystoreCloseBeforeDatastore) {
   rv = lockstore_datastore_put(mDatastore, &entry, data, sizeof(data));
   ASSERT_NS_SUCCEEDED(rv);
 
-  nsresult rvClose = keystore_close(mKeystore);
+  nsresult rvClose = lockstore_keystore_close(mKeystore);
   mKeystore = nullptr;
   ASSERT_NS_SUCCEEDED(rvClose);
 

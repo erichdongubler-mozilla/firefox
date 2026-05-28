@@ -9,39 +9,61 @@
  * process is opened against the current profile's keystore file
  * (lockstore.keys.sqlite).
  *
- * KEK references are opaque strings of the form
- * `lockstore::kek::<type>:<base64url(random_id)>`, minted by
- * `createKek`. A collection is an arbitrary namespace under which a
- * single DEK (data encryption key) is wrapped by one or more KEKs;
- * see `createDek`.
+ * KEK references are opaque strings such as "lockstore::kek::local" or
+ * "lockstore::kek::primary_password". A collection is an arbitrary
+ * namespace under which a single DEK (data encryption key) is wrapped by
+ * one or more KEKs; see `createDek`.
  *
- * Methods that touch SQLite or run PBKDF2 return a `Promise` and
- * execute on a private background queue so they do not block the main
- * thread. The cheap in-memory state check (`isKekUnlocked`) remains
- * synchronous; `lockKek` and `lock` are also cheap but return a Promise
- * so the API shape is uniform.
+ * Methods that touch SQLite or run PBKDF2 return a `Promise` and execute
+ * on a private background queue so they do not block the main thread.
+ * The cheap in-memory state checks (`isKekUnlocked`, `lockKek`, `lock`,
+ * `hasPrimaryPassword`) remain synchronous.
  */
 [scriptable, uuid(a83f5d62-7b1c-4d2e-9f0a-3c5e8b6a1d4e)]
 interface nsILockstore : nsISupports
 {
+  /* --- Primary password init/change (PP-specific) ---------------------- */
+
+  /// True iff a primary password has been initialised on this keystore.
+  /// PrimaryPassword-specific: PKCS#11 tokens have no equivalent.
+  readonly attribute boolean hasPrimaryPassword;
+
+  /**
+   * Initialise (oldPassword == "") or change the primary password.
+   * PBKDF2 hashes the password as raw bytes; no normalisation or
+   * encoding conversion is performed. Callers passing non-ASCII text
+   * must normalise the encoding themselves before calling.
+   *
+   * Lockstore's internal copy of each password is zeroised after the
+   * background work consumes it; the caller's `ACString` arguments are
+   * left untouched.
+   *
+   * The returned Promise resolves with `undefined` on success and
+   * rejects with:
+   *   - NS_ERROR_ABORT if `oldPassword` does not authenticate.
+   *   - NS_ERROR_FAILURE on any other failure (e.g. SQLite write
+   *     errors, crypto-layer errors).
+   */
+  [implicit_jscontext]
+  Promise setPrimaryPassword(in ACString oldPassword, in ACString newPassword);
+
   /* --- Unified KEK lock / unlock --------------------------------------- */
   //
   // These work for any KEK type that might require user interaction:
   //
-  //   Password    → `secret` is the user's password, fed into PBKDF2
-  //                 to derive the wrapping key that AES-GCM-unwraps the
-  //                 stored KEK; the unwrapped KEK is cached in memory
-  //                 for `timeoutMs`. Required — must not be empty.
-  //   Pkcs11Token → `secret` is the PIN. When supplied, Lockstore
-  //                 authenticates the slot via
-  //                 `PK11_CheckUserPassword` (direct `C_Login`),
-  //                 bypassing the NSS password callback. When empty,
-  //                 Lockstore falls back to `slot.authenticate()`,
-  //                 which delegates to whatever password callback
-  //                 the embedding application registered (e.g. PSM
-  //                 in Firefox).
-  //   LocalKey    → no-op; `isKekUnlocked` always returns true,
-  //                 `lockKek`/`unlockKek` succeed without side effects.
+  //   PrimaryPassword → `secret` is the user's password, fed into PBKDF2
+  //                     to derive the KEK; cached in memory for
+  //                     `timeoutMs`. Required — must not be empty.
+  //   Pkcs11Token     → `secret` is the PIN. When supplied, Lockstore
+  //                     authenticates the slot via
+  //                     `PK11_CheckUserPassword` (direct `C_Login`),
+  //                     bypassing the NSS password callback. When empty,
+  //                     Lockstore falls back to `slot.authenticate()`,
+  //                     which delegates to whatever password callback
+  //                     the embedding application registered (e.g. PSM
+  //                     in Firefox).
+  //   LocalKey        → no-op; `isKekUnlocked` always returns true,
+  //                     `lockKek`/`unlockKek` succeed without side effects.
   //
   // The copy of `secret` handed to the FFI is zeroised once the FFI has
   // consumed it; callers should still follow their own hygiene rules for
@@ -55,7 +77,7 @@ interface nsILockstore : nsISupports
    * with:
    *   - NS_ERROR_ABORT on wrong secret / PIN.
    *   - NS_ERROR_NOT_INITIALIZED if the KEK requires initialisation that
-   *     hasn't been performed yet (e.g. no Password kek_ref minted).
+   *     hasn't been performed yet (e.g. no primary password set).
    *   - NS_ERROR_INVALID_ARG on an unrecognised `kekRef`.
    */
   [implicit_jscontext]
@@ -79,8 +101,8 @@ interface nsILockstore : nsISupports
   /// `kekRef` throws `NS_ERROR_INVALID_ARG`.
   boolean isKekUnlocked(in AUTF8String kekRef);
 
-  /// Lock every KEK that holds cached authentication: zeroises every
-  /// cached Password KEK in memory, clears every PKCS#11 unlock entry,
+  /// Lock every KEK that holds cached authentication: zeroises the
+  /// PrimaryPassword KEK in memory, clears every PKCS#11 unlock entry,
   /// and calls `PK11_Logout` on each previously-unlocked slot. Intended
   /// for shutdown / logout paths. The operation is cheap; the Promise
   /// shape matches the rest of the API.
@@ -131,8 +153,8 @@ interface nsILockstore : nsISupports
   /**
    * Resolves with `true` iff the DEK for `collection` was created
    * with `extractable = true`. Touches SQLite (loads the DEK metadata
-   * row), hence async — distinct from `isKekUnlocked`, which is an
-   * in-memory cache check.
+   * row), hence async — distinct from `isKekUnlocked` and the
+   * `hasPrimaryPassword` attribute, which are in-memory cache checks.
    *
    * Rejects with NS_ERROR_NOT_AVAILABLE if `collection` doesn't exist.
    */
@@ -151,19 +173,19 @@ interface nsILockstore : nsISupports
   /// Resolves with an Array<ACString> of every collection currently
   /// managed by this keystore.
   [implicit_jscontext]
-  Promise listDeks();
+  Promise listCollections();
 
   /// Resolves with an Array<AUTF8String> of every kekRef that
-  /// currently wraps the DEK named `dekName`. The array is non-empty
-  /// for any DEK that exists (the keystore enforces at least one KEK
-  /// wrapping); the Promise rejects with NS_ERROR_NOT_AVAILABLE if no
-  /// DEK by that name exists (including the empty string). Returns
-  /// only the kekRef strings, never the wrapped key bytes themselves
-  /// — useful for callers that need to discover the wrapping state
-  /// (e.g. login crypto deciding whether to encrypt under LocalKey or
-  /// Password for a given DEK).
+  /// currently wraps the DEK for `collection`. The array is non-empty
+  /// for any existing collection (the keystore enforces at least one
+  /// KEK wrapping); the Promise rejects with NS_ERROR_NOT_AVAILABLE
+  /// if no collection by that name exists (including the empty
+  /// string). Order of the returned list is unspecified. Useful for
+  /// callers that need to discover the wrapping state without owning
+  /// the wrapped bytes (e.g. login crypto deciding whether to encrypt
+  /// under LocalKey or PrimaryPassword for a given collection).
   [implicit_jscontext]
-  Promise listKeks(in AUTF8String dekName);
+  Promise listKeks(in AUTF8String collection);
 
   /// Wrap an existing collection's DEK under an additional `kekRef`.
   [implicit_jscontext]
@@ -244,84 +266,4 @@ interface nsILockstore : nsISupports
    */
   [implicit_jscontext]
   Promise getDek(in AUTF8String collection, in AUTF8String kekRef);
-
-  /* --- KEK creation --------------------------------------------------- */
-
-  /**
-   * Generic KEK-creation entry point. Always mints a fresh kek_ref of
-   * the form `lockstore::kek::<type>:<base64url(random_id)>`; a profile
-   * can host any number of KEKs per `KekType`. Dispatches on `kekType`:
-   *
-   *   "local"
-   *       Generates a fresh AES-256 KEK and persists it (verbatim) in
-   *       a `LocalKekRecord`. LocalKey has no unlock ceremony — its
-   *       confidentiality at rest is provided by the underlying SQLite
-   *       encryption layer. `secret` and `cacheTimeoutMs` are ignored.
-   *
-   *   "password"
-   *       Wraps a fresh AES-256 KEK under PBKDF2-HMAC-SHA256 of
-   *       `secret` (must be non-empty). Each kek_ref carries an
-   *       independent salt + iteration count + ciphertext, so multiple
-   *       password KEKs coexist without shared state. Rotation is
-   *       `createKek("password", new)` + `switchKek(oldKekRef, newKekRef)`
-   *       + `removeKek(oldKekRef)`. If `cacheTimeoutMs` is non-zero the
-   *       just-derived KEK is also inserted into the auth cache with
-   *       that expiry, so callers can use the returned kek_ref without
-   *       an immediate `unlockKek`.
-   *
-   *   "pkcs11"
-   *       Provisions a fresh PKCS#11-backed KEK against the slot
-   *       named by the PKCS#11 URI in `secret`. The slot is
-   *       authenticated via NSS's registered password callback (PSM
-   *       in Firefox); Lockstore then finds-or-creates a long-lived
-   *       AES wrapping key on the slot, generates a fresh software
-   *       KEK, wraps it under the wrapping key, and persists a
-   *       record. `cacheTimeoutMs` is ignored — PKCS#11 unlock is
-   *       mediated by NSS, not by the Lockstore cache.
-   *
-   * `cacheTimeoutMs` is the duration (in milliseconds) that the
-   * just-derived KEK is kept in the in-memory auth cache. Only
-   * meaningful for the `"password"` tier; ignored elsewhere.
-   *
-   * Lockstore copies the secret bytes into its own buffer, consumes
-   * them, and zeroises the buffer before resolving the Promise; the
-   * caller's `ACString` is never mutated.
-   *
-   * The returned Promise resolves with the freshly-minted `kek_ref`
-   * the caller should hand to subsequent `createDek` / `encrypt`
-   * calls, and rejects with:
-   *   - NS_ERROR_INVALID_ARG on an unknown `kekType`, an empty
-   *     Password `secret`, or a malformed PKCS#11 URI.
-   *   - NS_ERROR_ABORT if a PKCS#11 token unlock prompt is cancelled.
-   *   - NS_ERROR_FAILURE on any other failure (SQLite write error,
-   *     crypto-layer error).
-   */
-  [implicit_jscontext]
-  Promise createKek(in ACString kekType,
-                    in ACString secret,
-                    in uint32_t cacheTimeoutMs);
-
-  /**
-   * Destroy the KEK referenced by `kekRef`. The persisted row is
-   * dropped along with the per-`kekRef` unlock-cache entry — the
-   * authenticated KEK bytes derived from a password / PIN that
-   * `unlockKek` cached and that `lockKek` would otherwise clear. No
-   * DEK material is touched: every DEK wrapping under `kekRef` must
-   * already be gone (via `removeKek` / `switchKek`) before this call
-   * succeeds. For a PKCS#11 KEK the slot is logged out via the same
-   * `PK11_Logout` path used by `lockKek`.
-   *
-   * Deletion is always explicit. `removeKek` and `deleteDek` drop
-   * wrappings only; the per-`kekRef` KEK record stays on disk until
-   * `deleteKek` is called for it.
-   *
-   * The returned Promise resolves with `undefined` on success and
-   * rejects with:
-   *   - NS_ERROR_INVALID_ARG on an empty `kekRef`.
-   *   - NS_ERROR_NOT_AVAILABLE if no record exists at `kekRef`.
-   *   - NS_ERROR_FAILURE if any DEK still wraps under `kekRef`, or
-   *     on SQLite / crypto-layer errors.
-   */
-  [implicit_jscontext]
-  Promise deleteKek(in AUTF8String kekRef);
 };
