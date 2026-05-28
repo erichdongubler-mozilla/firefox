@@ -11,7 +11,8 @@
 class gfxContext;
 
 namespace mozilla {
-class AutoFragmentHandler;
+class AutoSVGViewHandler;
+class SVGFragmentIdentifier;
 class PresShell;
 }  // namespace mozilla
 
@@ -32,7 +33,8 @@ class SVGOuterSVGFrame final : public SVGDisplayContainerFrame,
   friend nsContainerFrame* ::NS_NewSVGOuterSVGFrame(
       mozilla::PresShell* aPresShell, ComputedStyle* aStyle);
   friend class AsyncSendIntrinsicSizeAndRatioToEmbedder;
-  friend class AutoFragmentHandler;
+  friend class AutoSVGViewHandler;
+  friend class SVGFragmentIdentifier;
 
  protected:
   explicit SVGOuterSVGFrame(ComputedStyle* aStyle, nsPresContext* aPresContext);
