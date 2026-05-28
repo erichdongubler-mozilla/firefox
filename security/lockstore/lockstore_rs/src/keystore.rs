@@ -238,7 +238,7 @@ impl Keystore {
     ///
     /// `path` is used as the cache key. Two `get` calls return the
     /// same `Arc` iff their `PathBuf`s compare equal; in practice every
-    /// in-tree caller routes through `lockstore_keystore_open` which
+    /// in-tree caller routes through `keystore_open` which
     /// constructs `<profile>/lockstore.keys.sqlite` deterministically,
     /// so this is automatic.
     ///
