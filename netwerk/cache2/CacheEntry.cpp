@@ -25,6 +25,7 @@
 #include "nsISeekableStream.h"
 #include "nsIURI.h"
 #include "nsNetCID.h"
+#include "nsNetUtil.h"
 #include "nsProxyRelease.h"
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
@@ -513,30 +514,55 @@ NS_IMETHODIMP CacheEntry::OnFileReady(nsresult aResult, bool aIsNew) {
   // Until this moment there is no consumer that could manipulate
   // the entry state.
 
-  mozilla::MutexAutoLock lock(mLock);
+  // Collect No-Vary-Search metadata before releasing mLock.
+  // NoteNoVarySearchEntry must be called outside mLock since it acquires sLock
+  // (lock ordering: sLock > mLock).
+  nsAutoCString nvsVal;
 
-  MOZ_ASSERT(mState == LOADING);
+  {
+    mozilla::MutexAutoLock lock(mLock);
 
-  mState = (aIsNew || NS_FAILED(aResult)) ? EMPTY : READY;
+    MOZ_ASSERT(mState == LOADING);
 
-  mFileStatus = aResult;
+    mState = (aIsNew || NS_FAILED(aResult)) ? EMPTY : READY;
 
-  mPinned = mFile->IsPinned();
+    mFileStatus = aResult;
 
-  mPinningKnown = true;
-  LOG(("  pinning=%d", (bool)mPinned));
+    mPinned = mFile->IsPinned();
 
-  if (mState == READY) {
-    mHasData = true;
+    mPinningKnown = true;
+    LOG(("  pinning=%d", (bool)mPinned));
 
-    uint32_t frecency;
-    mFile->GetFrecency(&frecency);
-    // mFrecency is held in a double to increase computance precision.
-    // It is ok to persist frecency only as a uint32 with some math involved.
-    mFrecency = INT2FRECENCY(frecency);
+    if (mState == READY) {
+      mHasData = true;
+
+      uint32_t frecency;
+      mFile->GetFrecency(&frecency);
+      // mFrecency is held in a double to increase computance precision.
+      // It is ok to persist frecency only as a uint32 with some math involved.
+      mFrecency = INT2FRECENCY(frecency);
+
+      // Check for No-Vary-Search metadata on existing entries loaded from disk.
+      if (!aIsNew) {
+        mFile->GetElement("no-vary-search", getter_Copies(nvsVal));
+      }
+    }
+
+    InvokeCallbacks();
+  }  // mLock released
+
+  // Populate mNoVarySearchIndex now that mLock is released.
+  if (!nvsVal.IsEmpty()) {
+    nsCOMPtr<nsIURI> uri;
+    nsAutoCString basePath, entryKey;
+    if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(uri), mURI)) &&
+        NS_SUCCEEDED(ExtractNoVarySearchBasePath(uri, basePath)) &&
+        NS_SUCCEEDED(HashingKey(""_ns, mEnhanceID, mURI, entryKey))) {
+      if (auto* svc = CacheStorageService::Self()) {
+        svc->NoteNoVarySearchEntry(mStorageID, basePath, entryKey);
+      }
+    }
   }
-
-  InvokeCallbacks();
 
   return NS_OK;
 }
