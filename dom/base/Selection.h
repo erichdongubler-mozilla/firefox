@@ -339,6 +339,12 @@ class Selection final : public nsSupportsWeakReference,
   // anchor and which end is focus.
   const nsRange* GetAnchorFocusRange() const { return mAnchorFocusRange; }
 
+  /**
+   * Set mAnchorFocusRange to mStyledRanges.mRanges[aIndex] if aIndex is a
+   * valid index.
+   */
+  void SetAnchorFocusRange(size_t aIndex);
+
   void GetDirection(nsAString& aDirection) const;
 
   nsDirection GetDirection() const { return mDirection; }
@@ -949,11 +955,6 @@ class Selection final : public nsSupportsWeakReference,
     ScrollFlags mFlags;
   };
 
-  /**
-   * Set mAnchorFocusRange to mStyledRanges.mRanges[aIndex] if aIndex is a valid
-   * index.
-   */
-  void SetAnchorFocusRange(size_t aIndex);
   void RemoveAnchorFocusRange() { mAnchorFocusRange = nullptr; }
   void SelectFramesOf(nsIContent* aContent, bool aSelected) const;
 
