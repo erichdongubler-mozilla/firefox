@@ -25,7 +25,6 @@ import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow.Companion.SCOPE_IPPROTECTION
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
-import mozilla.components.feature.ipprotection.store.InternalAction.AccountManagerStateChanged
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
 import mozilla.components.lib.state.ext.flow
@@ -93,7 +92,7 @@ class IPProtectionFeature(
                             // is likely to be ready faster than the service, so we should notify
                             // a ready account state after initializing the handler.
                             if (serviceStatus == ServiceState.Unauthenticated &&
-                                accountStatus == AccountStatus.Ready
+                                accountStatus == AccountStatus.Authenticated
                             ) {
                                 handler?.notifyAccountStatus(true)
                             }
@@ -125,14 +124,18 @@ class IPProtectionFeature(
                             handler?.notifyAccountStatus(false)
                         }
 
-                        AccountStatus.Ready -> {
+                        AccountStatus.Authenticated -> {
                             handler?.notifyAccountStatus(true)
                         }
 
                         AccountStatus.AwaitingEnrollment -> {
                             handler?.enroll { enrollInfo ->
                                 if (enrollInfo.isEnrolledAndEntitled) {
-                                    store.dispatch(AccountManagerStateChanged(status = AccountStatus.Ready))
+                                    store.dispatch(
+                                        IPProtectionAction.AccountStateChanged(
+                                            state = AccountStatus.EnrolledAndEntitled,
+                                        ),
+                                    )
                                 }
                             }
                         }
@@ -148,6 +151,7 @@ class IPProtectionFeature(
                         AccountStatus.RequestingAuthorization,
                         AccountStatus.AwaitingAuthentication,
                         AccountStatus.AwaitingAuthorization,
+                        AccountStatus.EnrolledAndEntitled,
                             -> {
                             // no-op when we are in transient states.
                         }

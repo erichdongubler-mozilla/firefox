@@ -169,13 +169,13 @@ enum class AccountStatus {
 
     /**
      * An intermediary auth state that originates from [RequestingAuthentication] can lead to
-     * [AuthFailed], [Ready], or never completes.
+     * [AuthFailed], [AwaitingEnrollment], or never completes.
      */
     AwaitingAuthentication,
 
     /**
      * An intermediary auth state that originates from [RequestingAuthorization] can lead to
-     * [AuthFailed], [Ready], or never completes.
+     * [AuthFailed], [AwaitingEnrollment], or never completes.
      */
     AwaitingAuthorization,
 
@@ -192,9 +192,14 @@ enum class AccountStatus {
     AuthFailed,
 
     /**
-     * The service should be notified the account is ready.
+     * The user is authenticated in the FXA, but we do not know yet if they are entitled to use vpn.
      */
-    Ready,
+    Authenticated,
+
+    /**
+     * The user is ready to use the service, and able to turn it on at any moment.
+     */
+    EnrolledAndEntitled,
 
     /**
      * An experimental API that tries to re-notify the IP Protection

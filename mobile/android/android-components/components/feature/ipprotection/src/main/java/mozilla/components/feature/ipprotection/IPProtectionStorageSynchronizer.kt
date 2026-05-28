@@ -76,7 +76,7 @@ internal class FxaAccountStoreSync(
                 .distinctUntilChanged()
                 .collect { state ->
                     val mappedState = when (state) {
-                        AccountState.Authenticated -> AccountStatus.Ready
+                        AccountState.Authenticated -> AccountStatus.Authenticated
                         AccountState.AuthenticationProblem -> AccountStatus.NeedsAuthentication
                         AccountState.NotAuthenticated -> AccountStatus.Uninitialized
                         AccountState.Unknown,

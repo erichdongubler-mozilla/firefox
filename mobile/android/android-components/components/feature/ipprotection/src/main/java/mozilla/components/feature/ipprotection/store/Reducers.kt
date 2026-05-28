@@ -48,7 +48,7 @@ internal fun iPProtectionReducer(
 
         // We can short-circuit the account-state if the service is ready.
         val newAccountStatus = if (action.info.serviceState == ServiceState.Ready) {
-            AccountStatus.Ready
+            AccountStatus.EnrolledAndEntitled
         } else {
             state.accountState.status
         }
@@ -134,12 +134,8 @@ internal fun iPProtectionReducer(
                     )
                 }
 
-                if (status == AccountStatus.Ready) {
-                    return state.copy(
-                        accountState = state.accountState.copy(
-                            status = AccountStatus.TryAgain,
-                        ),
-                    )
+                if (status == AccountStatus.Authenticated) {
+                    throw IllegalStateException("VPN state machine is in a bad state")
                 }
             }
         }
@@ -176,11 +172,12 @@ internal fun internalReducer(
             AccountStatus.AwaitingEnrollment,
                 -> state
 
-            AccountStatus.Ready,
             AccountStatus.Uninitialized,
             AccountStatus.WarmingUp,
             AccountStatus.NeedsAuthentication,
             AccountStatus.NeedsAuthorization,
+            AccountStatus.Authenticated,
+            AccountStatus.EnrolledAndEntitled,
                 -> {
                 state.copy(
                     accountState = state.accountState.copy(status = action.status),

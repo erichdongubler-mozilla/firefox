@@ -64,7 +64,7 @@ class IPProtectionReducerTest {
             defaultState.copy(
                 serviceStatus = ServiceState.Ready,
                 proxyStatus = Authorized.Idle,
-                accountState = defaultState.accountState.copy(status = AccountStatus.Ready),
+                accountState = defaultState.accountState.copy(status = AccountStatus.EnrolledAndEntitled),
             ),
             iPProtectionReducer(defaultState, IPProtectionAction.EngineStateChanged(info)),
         )
@@ -77,7 +77,7 @@ class IPProtectionReducerTest {
             defaultState.copy(
                 serviceStatus = ServiceState.Ready,
                 proxyStatus = Authorized.Activating,
-                accountState = defaultState.accountState.copy(status = AccountStatus.Ready),
+                accountState = defaultState.accountState.copy(status = AccountStatus.EnrolledAndEntitled),
             ),
             iPProtectionReducer(defaultState, IPProtectionAction.EngineStateChanged(info)),
         )
@@ -90,7 +90,7 @@ class IPProtectionReducerTest {
             defaultState.copy(
                 serviceStatus = ServiceState.Ready,
                 proxyStatus = Authorized.Active,
-                accountState = defaultState.accountState.copy(status = AccountStatus.Ready),
+                accountState = defaultState.accountState.copy(status = AccountStatus.EnrolledAndEntitled),
             ),
             iPProtectionReducer(defaultState, IPProtectionAction.EngineStateChanged(info)),
         )
@@ -103,7 +103,7 @@ class IPProtectionReducerTest {
             defaultState.copy(
                 serviceStatus = ServiceState.Ready,
                 proxyStatus = Authorized.DataLimitReached,
-                accountState = defaultState.accountState.copy(status = AccountStatus.Ready),
+                accountState = defaultState.accountState.copy(status = AccountStatus.EnrolledAndEntitled),
             ),
             iPProtectionReducer(defaultState, IPProtectionAction.EngineStateChanged(info)),
         )
@@ -116,7 +116,7 @@ class IPProtectionReducerTest {
             defaultState.copy(
                 serviceStatus = ServiceState.Ready,
                 proxyStatus = Authorized.ConnectionError,
-                accountState = defaultState.accountState.copy(status = AccountStatus.Ready),
+                accountState = defaultState.accountState.copy(status = AccountStatus.EnrolledAndEntitled),
             ),
             iPProtectionReducer(defaultState, IPProtectionAction.EngineStateChanged(info)),
         )
@@ -138,7 +138,7 @@ class IPProtectionReducerTest {
             state.copy(
                 serviceStatus = ServiceState.Ready,
                 proxyStatus = Authorized.Active,
-                accountState = defaultState.accountState.copy(status = AccountStatus.Ready),
+                accountState = defaultState.accountState.copy(status = AccountStatus.EnrolledAndEntitled),
             ),
             iPProtectionReducer(state, IPProtectionAction.EngineStateChanged(info)),
         )
@@ -152,7 +152,7 @@ class IPProtectionReducerTest {
             state.copy(
                 serviceStatus = ServiceState.Ready,
                 proxyStatus = Authorized.Activating,
-                accountState = defaultState.accountState.copy(status = AccountStatus.Ready),
+                accountState = defaultState.accountState.copy(status = AccountStatus.EnrolledAndEntitled),
             ),
             iPProtectionReducer(state, IPProtectionAction.EngineStateChanged(info)),
         )
@@ -166,7 +166,7 @@ class IPProtectionReducerTest {
             defaultState.copy(
                 serviceStatus = ServiceState.Ready,
                 proxyStatus = Authorized.Idle,
-                accountState = defaultState.accountState.copy(status = AccountStatus.Ready),
+                accountState = defaultState.accountState.copy(status = AccountStatus.EnrolledAndEntitled),
             ),
             iPProtectionReducer(state, IPProtectionAction.EngineStateChanged(info)),
         )
@@ -180,7 +180,7 @@ class IPProtectionReducerTest {
             defaultState.copy(
                 serviceStatus = ServiceState.Ready,
                 proxyStatus = Authorized.ConnectionError,
-                accountState = defaultState.accountState.copy(status = AccountStatus.Ready),
+                accountState = defaultState.accountState.copy(status = AccountStatus.EnrolledAndEntitled),
             ),
             iPProtectionReducer(state, IPProtectionAction.EngineStateChanged(info)),
         )
