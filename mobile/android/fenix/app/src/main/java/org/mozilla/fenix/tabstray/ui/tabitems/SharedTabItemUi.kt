@@ -373,9 +373,9 @@ fun Modifier.tabListItemShapeStyling(
 @Composable
 fun tabGridItemContainerColor(selectionState: TabsTrayItemSelectionState): Color {
     return if (selectionState.isSelected) {
-        MaterialTheme.colorScheme.primaryContainer
+        MaterialTheme.colorScheme.secondaryContainer
     } else {
-        MaterialTheme.colorScheme.surfaceContainerHighest
+        MaterialTheme.colorScheme.surfaceBright
     }
 }
 
