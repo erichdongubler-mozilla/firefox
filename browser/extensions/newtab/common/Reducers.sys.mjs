@@ -220,6 +220,10 @@ export const INITIAL_STATE = {
     // Per-tab "Only followed teams" filter toggle. Defaults to on so users
     // who follow teams see the filtered list right away.
     followedOnly: { results: true, upcoming: true },
+    watchLive: {
+      loaded: false,
+      data: null,
+    },
   },
 };
 
@@ -1222,6 +1226,16 @@ function SportsWidget(prevState = INITIAL_STATE.SportsWidget, action) {
       return {
         ...prevState,
         followedOnly: { ...prevState.followedOnly, ...action.data },
+      };
+    case at.WIDGETS_SPORTS_WATCH_LIVE_REQUEST:
+      return {
+        ...prevState,
+        watchLive: { loaded: false, data: null },
+      };
+    case at.WIDGETS_SPORTS_WATCH_LIVE_SET:
+      return {
+        ...prevState,
+        watchLive: { loaded: true, data: action.data },
       };
     default:
       return prevState;

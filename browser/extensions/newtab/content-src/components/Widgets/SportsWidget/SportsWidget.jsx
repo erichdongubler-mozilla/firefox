@@ -15,6 +15,7 @@ import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { useIntersectionObserver } from "../../../lib/utils";
 import { SportsMatchRow } from "./SportsMatchRow";
 import { MoveSubmenu } from "../MoveSubmenu";
+import { WatchLiveModal } from "./WatchLiveModal";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 import { useLocalizedTeamNames } from "./useLocalizedTeamNames.jsx";
 import {
@@ -64,6 +65,7 @@ const USER_ACTION_TYPES = {
 const PREF_NOVA_ENABLED = "nova.enabled";
 const PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
 const PREF_SPORTS_WIDGET_LIVE_ENABLED = "widgets.sportsWidget.live.enabled";
+const PREF_FORCE_LIVE_DATA_TRUSTABLE = "widgets.sports.forceLiveDataTrustable";
 
 // World Cup 2026 kickoff: June 11, 2026 at 19:00 UTC. Used as a temporary
 // guard to ignore /live data while the endpoint still serves mock matches
@@ -153,7 +155,8 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   // /live currently serves mock data pre-kickoff, so ignore its contents
   // until the kickoff timestamp. Drop this guard once the backend returns
   // empty pre-kickoff.
-  const liveDataTrustable = Date.now() >= WORLD_CUP_KICKOFF_MS;
+  const liveDataTrustable =
+    Date.now() >= WORLD_CUP_KICKOFF_MS || prefs[PREF_FORCE_LIVE_DATA_TRUSTABLE];
   const hasLiveGames =
     liveDataTrustable && sportsWidgetData?.data?.live?.length > 0;
   const hasPreviousResults =
@@ -275,6 +278,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
       video.play().catch(() => {});
     };
   }, []);
+  const [watchLiveOpen, setWatchLiveOpen] = useState(false);
 
   const handleIntersection = useCallback(() => {
     if (impressionFired.current) {
@@ -795,6 +799,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
             setShowResultsList={setShowResultsList}
             showUpcomingList={showUpcomingList}
             setShowUpcomingList={setShowUpcomingList}
+            onWatchClick={() => setWatchLiveOpen(true)}
           />
         )}
         {widgetState === WIDGET_STATES.KEY_DATES && (
@@ -826,6 +831,13 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
           </>
         )}
       </div>
+      {watchLiveOpen && (
+        <WatchLiveModal
+          onClose={() => setWatchLiveOpen(false)}
+          dispatch={dispatch}
+          widgetSize={widgetSize}
+        />
+      )}
     </article>
   );
 }
@@ -977,6 +989,7 @@ function SportsMatchesView({
   setShowResultsList,
   showUpcomingList,
   setShowUpcomingList,
+  onWatchClick,
 }) {
   const resultsPanelRef = useRef(null);
   const upcomingPanelRef = useRef(null);
@@ -1138,7 +1151,7 @@ function SportsMatchesView({
                   followedTeams={selectedTeamsSet}
                 />
               </div>
-              {/* TODO: Add onClick handler + play icon when we start implementing Watch dialog UI */}
+              {/* TODO: Replace play icon when finalized */}
               <moz-button
                 type={size === "medium" ? "icon" : "default"}
                 size={size === "medium" ? "small" : undefined}
@@ -1148,6 +1161,7 @@ function SportsMatchesView({
                     ? "newtab-sports-widget-watch-icon"
                     : "newtab-sports-widget-watch"
                 }
+                onClick={onWatchClick}
               ></moz-button>
             </>
           )}

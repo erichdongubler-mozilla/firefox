@@ -775,6 +775,59 @@ export class TemporaryMerinoClientShim {
   }
 
   /**
+   * Fetch watch-live broadcaster listings for the active sports event from
+   * the Merino WCS endpoint.
+   *
+   * @param {object} options
+   *   Options object
+   * @param {string} options.source
+   *   The source that is requesting this fetch.
+   * @param {string} options.endpointUrl
+   *   The watch-live endpoint URL.
+   * @param {string} [options.acceptLanguage]
+   *   Optional BCP-47 locale string sent as the Accept-Language header so
+   *   the backend can localize broadcaster/region copy.
+   * @returns {Promise<object|null>}
+   *   The watch-live payload, or null if the endpoint is not configured or
+   *   an error occurs. The caller is responsible for shape-validating the
+   *   payload before consuming it.
+   */
+  async fetchWatchLive({ source, endpointUrl, acceptLanguage }) {
+    if (!endpointUrl) {
+      return null;
+    }
+    let url = URL.parse(endpointUrl);
+    if (!url) {
+      this.#lazy.logger.error(
+        "Invalid sports watch-live endpoint URL",
+        endpointUrl
+      );
+      return null;
+    }
+    if (source) {
+      url.searchParams.set("source", source);
+    }
+    const fetchOptions = acceptLanguage
+      ? { headers: { "Accept-Language": acceptLanguage } }
+      : undefined;
+    try {
+      const response = await fetch(url, fetchOptions);
+      if (!response.ok) {
+        this.#lazy.logger.error(
+          `Sports watch-live fetch failed with status ${response.status}`
+        );
+        return null;
+      }
+      const data = /** @type {any} */ (await response.json());
+      this.#lazy.logger.debug("fetchWatchLive response", data);
+      return data;
+    } catch (e) {
+      this.#lazy.logger.error("Sports watch-live fetch error", e);
+      return null;
+    }
+  }
+
+  /**
    * Resets the Merino session ID and related state.
    */
   resetSession() {

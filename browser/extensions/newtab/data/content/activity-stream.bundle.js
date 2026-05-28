@@ -315,6 +315,8 @@ for (const type of [
   "WIDGETS_SPORTS_SET_MATCHES_TAB",
   "WIDGETS_SPORTS_SET_SELECTED_TEAMS",
   "WIDGETS_SPORTS_SET_WIDGET_STATE",
+  "WIDGETS_SPORTS_WATCH_LIVE_REQUEST",
+  "WIDGETS_SPORTS_WATCH_LIVE_SET",
   "WIDGETS_SPORTS_WIDGET_SET",
   "WIDGETS_TIMER_END",
   "WIDGETS_TIMER_PAUSE",
@@ -6755,6 +6757,10 @@ const INITIAL_STATE = {
     // Per-tab "Only followed teams" filter toggle. Defaults to on so users
     // who follow teams see the filtered list right away.
     followedOnly: { results: true, upcoming: true },
+    watchLive: {
+      loaded: false,
+      data: null,
+    },
   },
 };
 
@@ -7757,6 +7763,16 @@ function SportsWidget(prevState = INITIAL_STATE.SportsWidget, action) {
       return {
         ...prevState,
         followedOnly: { ...prevState.followedOnly, ...action.data },
+      };
+    case actionTypes.WIDGETS_SPORTS_WATCH_LIVE_REQUEST:
+      return {
+        ...prevState,
+        watchLive: { loaded: false, data: null },
+      };
+    case actionTypes.WIDGETS_SPORTS_WATCH_LIVE_SET:
+      return {
+        ...prevState,
+        watchLive: { loaded: true, data: action.data },
       };
     default:
       return prevState;
@@ -16483,6 +16499,186 @@ function SportsMatchRow({
   }, isAwayFollowed ? /*#__PURE__*/external_React_default().createElement("strong", null, away_team.key) : away_team.key)));
 }
 
+;// CONCATENATED MODULE: ./content-src/components/Widgets/SportsWidget/WatchLiveModal.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+// eslint-disable-next-line no-unused-vars
+
+
+
+
+
+// Map known backend entitlement strings to localized tag IDs. Anything not in
+// this map falls back to the raw string from `stream.entitlement`.
+const ENTITLEMENT_L10N_IDS = {
+  free: "newtab-sports-widget-watch-stream-free",
+  "free trial": "newtab-sports-widget-watch-stream-free-trial",
+  "free and paid": "newtab-sports-widget-watch-stream-free-paid",
+  paid: "newtab-sports-widget-watch-stream-paid",
+  "select games only": "newtab-sports-widget-watch-stream-select-games-only"
+};
+const WIDGET_NAME = "sports_livestream";
+const WIDGET_SOURCE = "watch_live_modal";
+const WatchLiveModal_USER_ACTION_TYPES = {
+  DISMISS: "dismiss",
+  STREAM_CLICK: "stream_click"
+};
+function StreamRow({
+  stream,
+  dispatch,
+  widgetSize
+}) {
+  const entitlementL10nId = ENTITLEMENT_L10N_IDS[stream.entitlement?.toLowerCase()];
+  const handleClick = () => {
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.WIDGETS_USER_EVENT,
+      data: {
+        widget_name: WIDGET_NAME,
+        widget_source: WIDGET_SOURCE,
+        user_action: WatchLiveModal_USER_ACTION_TYPES.STREAM_CLICK,
+        widget_size: widgetSize,
+        action_value: stream.product_name
+      }
+    }));
+  };
+  return /*#__PURE__*/external_React_default().createElement("li", {
+    className: "watch-live-modal-row"
+  }, /*#__PURE__*/external_React_default().createElement(SafeAnchor, {
+    className: "watch-live-modal-row-link",
+    url: stream.url,
+    onLinkClick: handleClick
+  }, /*#__PURE__*/external_React_default().createElement("span", {
+    className: "watch-live-modal-row-text"
+  }, /*#__PURE__*/external_React_default().createElement("span", {
+    className: "watch-live-modal-product"
+  }, stream.product_name), /*#__PURE__*/external_React_default().createElement("span", {
+    className: "watch-live-modal-entitlement",
+    "data-l10n-id": entitlementL10nId
+  }, stream.entitlement)), /*#__PURE__*/external_React_default().createElement("span", {
+    className: "watch-live-modal-play",
+    "aria-hidden": "true"
+  })));
+}
+function WatchLiveModal({
+  onClose,
+  dispatch,
+  widgetSize
+}) {
+  const dialogRef = (0,external_React_namespaceObject.useRef)(null);
+  const otherRegionsToggleRef = (0,external_React_namespaceObject.useRef)(null);
+  const watchLive = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.SportsWidget.watchLive);
+  const loaded = watchLive?.loaded ?? false;
+  const data = watchLive?.data ?? null;
+  const [otherRegionsExpanded, setOtherRegionsExpanded] = (0,external_React_namespaceObject.useState)(false);
+  const handleDismiss = () => {
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.WIDGETS_USER_EVENT,
+      data: {
+        widget_name: WIDGET_NAME,
+        widget_source: WIDGET_SOURCE,
+        user_action: WatchLiveModal_USER_ACTION_TYPES.DISMISS,
+        widget_size: widgetSize
+      }
+    }));
+    onClose();
+  };
+
+  // When the user expands Other regions, scroll the toggle to the top of the
+  // modal so the just-revealed content below it is visible without an extra
+  // manual scroll.
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (otherRegionsExpanded) {
+      otherRegionsToggleRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }
+  }, [otherRegionsExpanded]);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    dialogRef.current?.showModal();
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.WIDGETS_SPORTS_WATCH_LIVE_REQUEST
+    }));
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.WIDGETS_IMPRESSION,
+      data: {
+        widget_name: WIDGET_NAME,
+        widget_size: widgetSize
+      }
+    }));
+  }, [dispatch, widgetSize]);
+  return /*#__PURE__*/external_React_default().createElement("dialog", {
+    ref: dialogRef,
+    className: "watch-live-modal-dialog",
+    "aria-labelledby": "watch-live-modal-title",
+    onCancel: e => {
+      e.preventDefault();
+      handleDismiss();
+    },
+    onClick: e => {
+      if (e.target === dialogRef.current) {
+        handleDismiss();
+      }
+    }
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "watch-live-modal-content"
+  }, /*#__PURE__*/external_React_default().createElement("header", {
+    className: "watch-live-modal-header"
+  }, /*#__PURE__*/external_React_default().createElement("h2", {
+    id: "watch-live-modal-title",
+    className: "watch-live-modal-title",
+    "data-l10n-id": "newtab-sports-widget-watch-available-region"
+  }), /*#__PURE__*/external_React_default().createElement("moz-button", {
+    className: "watch-live-modal-close",
+    type: "icon ghost",
+    iconSrc: "chrome://global/skin/icons/close.svg",
+    onClick: handleDismiss,
+    "data-l10n-id": "newtab-sports-widget-watch-dialog-close"
+  })), /*#__PURE__*/external_React_default().createElement("div", {
+    className: "watch-live-modal-scroll"
+  }, !loaded && /*#__PURE__*/external_React_default().createElement("div", {
+    className: "watch-live-modal-loading",
+    "aria-busy": "true"
+  }), loaded && data && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("ul", {
+    className: "watch-live-modal-list"
+  }, data.your_region?.map(stream => /*#__PURE__*/external_React_default().createElement(StreamRow, {
+    key: stream.url,
+    stream: stream,
+    dispatch: dispatch,
+    widgetSize: widgetSize
+  }))), /*#__PURE__*/external_React_default().createElement("hr", {
+    className: "watch-live-modal-separator"
+  }), /*#__PURE__*/external_React_default().createElement("button", {
+    ref: otherRegionsToggleRef,
+    type: "button",
+    className: "watch-live-modal-other-regions-toggle",
+    "aria-expanded": otherRegionsExpanded,
+    onClick: () => setOtherRegionsExpanded(v => !v)
+  }, /*#__PURE__*/external_React_default().createElement("span", {
+    "data-l10n-id": "newtab-sports-widget-watch-available-other-regions"
+  }), /*#__PURE__*/external_React_default().createElement("img", {
+    className: "watch-live-modal-chevron",
+    src: `chrome://global/skin/icons/arrow-${otherRegionsExpanded ? "up" : "down"}.svg`,
+    alt: ""
+  })), otherRegionsExpanded && /*#__PURE__*/external_React_default().createElement("div", {
+    className: "watch-live-modal-other-regions"
+  }, data.other_regions?.map(region => /*#__PURE__*/external_React_default().createElement("section", {
+    key: region.country_code,
+    className: "watch-live-modal-region"
+  }, /*#__PURE__*/external_React_default().createElement("h3", {
+    className: "watch-live-modal-region-title"
+  }, region.country_code), /*#__PURE__*/external_React_default().createElement("ul", {
+    className: "watch-live-modal-list"
+  }, region.streams.map(stream => /*#__PURE__*/external_React_default().createElement(StreamRow, {
+    key: stream.url,
+    stream: stream,
+    dispatch: dispatch,
+    widgetSize: widgetSize
+  }))))))))));
+}
+
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/SportsWidget/teamRegions.mjs
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -16707,6 +16903,7 @@ function groupMatchesBySection(matches) {
 
 
 
+
 const WIDGET_STATES = {
   INTRO: "sports-intro",
   FOLLOW_TEAMS: "sports-follow-state",
@@ -16742,6 +16939,7 @@ const SportsWidget_USER_ACTION_TYPES = {
 const SportsWidget_PREF_NOVA_ENABLED = "nova.enabled";
 const SportsWidget_PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
 const PREF_SPORTS_WIDGET_LIVE_ENABLED = "widgets.sportsWidget.live.enabled";
+const PREF_FORCE_LIVE_DATA_TRUSTABLE = "widgets.sports.forceLiveDataTrustable";
 
 // World Cup 2026 kickoff: June 11, 2026 at 19:00 UTC. Used as a temporary
 // guard to ignore /live data while the endpoint still serves mock matches
@@ -16829,7 +17027,7 @@ function SportsWidget_SportsWidget({
   // /live currently serves mock data pre-kickoff, so ignore its contents
   // until the kickoff timestamp. Drop this guard once the backend returns
   // empty pre-kickoff.
-  const liveDataTrustable = Date.now() >= WORLD_CUP_KICKOFF_MS;
+  const liveDataTrustable = Date.now() >= WORLD_CUP_KICKOFF_MS || prefs[PREF_FORCE_LIVE_DATA_TRUSTABLE];
   const hasLiveGames = liveDataTrustable && sportsWidgetData?.data?.live?.length > 0;
   const hasPreviousResults = sportsWidgetData?.data?.matches?.previous?.length > 0;
   const hasUpcomingMatches = sportsWidgetData?.data?.matches?.next?.length > 0;
@@ -16931,6 +17129,7 @@ function SportsWidget_SportsWidget({
       video.play().catch(() => {});
     };
   }, []);
+  const [watchLiveOpen, setWatchLiveOpen] = (0,external_React_namespaceObject.useState)(false);
   const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
     if (impressionFired.current) {
       return;
@@ -17325,7 +17524,8 @@ function SportsWidget_SportsWidget({
     showResultsList: showResultsList,
     setShowResultsList: setShowResultsList,
     showUpcomingList: showUpcomingList,
-    setShowUpcomingList: setShowUpcomingList
+    setShowUpcomingList: setShowUpcomingList,
+    onWatchClick: () => setWatchLiveOpen(true)
   }), widgetState === WIDGET_STATES.KEY_DATES && /*#__PURE__*/external_React_default().createElement(SportsWidgetKeyDates, {
     handleViewMatches: handleViewMatches
   }), widgetState === WIDGET_STATES.INTRO && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("div", {
@@ -17344,7 +17544,11 @@ function SportsWidget_SportsWidget({
     onClick: () => handleFollowTeams("widget")
   })), liveEnabled && sportsWidgetData?.initialized && /*#__PURE__*/external_React_default().createElement("div", {
     className: "sports-live-scores"
-  }))));
+  }))), watchLiveOpen && /*#__PURE__*/external_React_default().createElement(WatchLiveModal, {
+    onClose: () => setWatchLiveOpen(false),
+    dispatch: dispatch,
+    widgetSize: widgetSize
+  }));
 }
 function SportsWidgetFollowTeams({
   teams,
@@ -17463,7 +17667,8 @@ function SportsMatchesView({
   showResultsList,
   setShowResultsList,
   showUpcomingList,
-  setShowUpcomingList
+  setShowUpcomingList,
+  onWatchClick
 }) {
   const resultsPanelRef = (0,external_React_namespaceObject.useRef)(null);
   const upcomingPanelRef = (0,external_React_namespaceObject.useRef)(null);
@@ -17580,7 +17785,8 @@ function SportsMatchesView({
     type: size === "medium" ? "icon" : "default",
     size: size === "medium" ? "small" : undefined,
     iconSrc: "chrome://browser/skin/device-tv.svg",
-    "data-l10n-id": size === "medium" ? "newtab-sports-widget-watch-icon" : "newtab-sports-widget-watch"
+    "data-l10n-id": size === "medium" ? "newtab-sports-widget-watch-icon" : "newtab-sports-widget-watch",
+    onClick: onWatchClick
   }))), /*#__PURE__*/external_React_default().createElement("div", {
     className: "sports-matches-tab-panel",
     hidden: matchesTab !== MATCHES_TABS.UPCOMING,

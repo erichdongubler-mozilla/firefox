@@ -569,6 +569,14 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "sports.worldCup.watchLiveEndpoint",
+    {
+      title:
+        "The Merino endpoint for fetching World Cup watch-live broadcaster data",
+      value: "https://merino.services.mozilla.com/api/v1/wcs/watch-links",
+    },
+  ],
+  [
     "images.smart",
     {
       title: "Smart crop images on newtab",
@@ -1367,6 +1375,14 @@ export const PREFS_CONFIG = new Map([
     "widgets.sportsWidget.live.enabled",
     {
       title: "Enables live scores in the sports widget",
+      value: false,
+    },
+  ],
+  [
+    "widgets.sports.forceLiveDataTrustable",
+    {
+      title:
+        "Dev/QA only: bypass the pre-kickoff guard and treat /live data as trustable",
       value: false,
     },
   ],

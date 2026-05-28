@@ -221,6 +221,41 @@ export class SportsFeed {
     );
   }
 
+  async fetchWatchLive() {
+    const prefs = this.store.getState()?.Prefs.values;
+    const watchLiveEndpoint =
+      prefs?.trainhopConfig?.sports?.watchLiveEndpoint ||
+      prefs?.["sports.worldCup.watchLiveEndpoint"];
+
+    const allowedEndpoints = (prefs?.["discoverystream.endpoints"] ?? "")
+      .split(",")
+      .map(item => item.trim())
+      .filter(item => item);
+
+    if (
+      watchLiveEndpoint &&
+      !allowedEndpoints.some(prefix => watchLiveEndpoint.startsWith(prefix))
+    ) {
+      console.error(
+        `Sports watch-live endpoint not in allowlist: ${watchLiveEndpoint}`
+      );
+      return;
+    }
+
+    const data = await this.merino.fetchWatchLive({
+      source: "newtab",
+      endpointUrl: watchLiveEndpoint,
+      acceptLanguage: Services.locale.appLocaleAsBCP47,
+    });
+
+    this.store.dispatch(
+      ac.BroadcastToContent({
+        type: at.WIDGETS_SPORTS_WATCH_LIVE_SET,
+        data,
+      })
+    );
+  }
+
   async onPrefChangedAction(action) {
     if (
       (action.data.name === PREF_SPORTS_ENABLED ||
@@ -294,6 +329,9 @@ export class SportsFeed {
         );
         break;
       }
+      case at.WIDGETS_SPORTS_WATCH_LIVE_REQUEST:
+        await this.fetchWatchLive();
+        break;
     }
   }
 }
