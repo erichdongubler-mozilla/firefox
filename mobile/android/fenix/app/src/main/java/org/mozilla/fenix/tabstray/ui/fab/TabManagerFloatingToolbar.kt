@@ -47,7 +47,6 @@ import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.modifier.animateRotation
 import mozilla.components.compose.base.text.Text
-import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.createTab
@@ -180,7 +179,7 @@ private fun FloatingToolbarActions(
         modifier = Modifier.height(56.dp),
         shape = CircleShape,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceDimVariant,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp),
