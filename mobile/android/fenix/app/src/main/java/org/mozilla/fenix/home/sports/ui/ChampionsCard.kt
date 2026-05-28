@@ -164,7 +164,7 @@ private fun ChampionBody(
         modifier = modifier
             .semantics { isTraversalGroup = true }
             .background(
-                color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                color = MaterialTheme.colorScheme.surfaceBright,
                 shape = RoundedCornerShape(AcornCorners.large),
             )
             .padding(

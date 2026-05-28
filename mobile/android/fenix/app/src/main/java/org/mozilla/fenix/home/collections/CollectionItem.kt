@@ -111,7 +111,7 @@ fun CollectionItem(
             modifier = clippingModifier
                 .fillMaxWidth(),
             shape = if (isLastInCollection) BOTTOM_TAB_SHAPE else MIDDLE_TAB_SHAPE,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceBright),
             elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
         ) {
             FaviconListItem(

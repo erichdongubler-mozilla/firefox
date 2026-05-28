@@ -55,7 +55,7 @@ fun MicrosurveyContent(
     question: String,
     answers: List<String>,
     @DrawableRes icon: Int = iconsR.drawable.mozac_ic_print_24,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceBright,
     selectedAnswer: String? = null,
     onSelectionChange: (String) -> Unit,
 ) {

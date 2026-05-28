@@ -225,7 +225,7 @@ private fun BookmarksPreview() {
             Bookmarks(
                 bookmarks = bookmarks(),
                 menuItems = listOf(),
-                backgroundColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                backgroundColor = MaterialTheme.colorScheme.surfaceBright,
             )
         }
     }

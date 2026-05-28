@@ -314,7 +314,7 @@ data class TopSiteColors(
         fun colors(
             titleTextColor: Color = MaterialTheme.colorScheme.onSurface,
             sponsoredTextColor: Color = MaterialTheme.colorScheme.onSurface,
-            faviconCardBackgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
+            faviconCardBackgroundColor: Color = MaterialTheme.colorScheme.surfaceBright,
         ) = TopSiteColors(
             titleTextColor = titleTextColor,
             sponsoredTextColor = sponsoredTextColor,
@@ -337,7 +337,7 @@ data class TopSiteColors(
             return TopSiteColors(
                 titleTextColor = titleTextColor,
                 sponsoredTextColor = sponsoredTextColor,
-                faviconCardBackgroundColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                faviconCardBackgroundColor = MaterialTheme.colorScheme.surfaceBright,
             )
         }
     }

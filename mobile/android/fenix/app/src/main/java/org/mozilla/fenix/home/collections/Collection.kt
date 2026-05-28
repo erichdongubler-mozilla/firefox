@@ -95,7 +95,7 @@ fun Collection(
             )
             .height(48.dp),
         shape = if (isExpanded) expandedCollectionShape else collapsedCollectionShape,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceBright),
         elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
     ) {
         Row(

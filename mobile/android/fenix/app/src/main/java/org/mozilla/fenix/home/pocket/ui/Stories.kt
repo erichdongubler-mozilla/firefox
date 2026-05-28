@@ -170,7 +170,7 @@ fun ContentRecommendationStory(
 fun Stories(
     @PreviewParameter(StoryProvider::class) stories: List<PocketStory>,
     contentPadding: Dp,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceBright,
     onStoryShown: (PocketStory, Triple<Int, Int, Int>) -> Unit,
     onStoryClicked: (PocketStory, Triple<Int, Int, Int>) -> Unit,
 ) {

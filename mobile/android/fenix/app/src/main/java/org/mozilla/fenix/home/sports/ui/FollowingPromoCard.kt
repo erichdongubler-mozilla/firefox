@@ -96,7 +96,7 @@ fun FollowingPromoCard(
         },
         contentSpacing = 0.dp,
         colors = PromoCardColors.promoCardColors(
-            backgroundColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+            backgroundColor = MaterialTheme.colorScheme.surfaceBright,
             messageTextColor = MaterialTheme.colorScheme.secondary,
             titleTextColor = MaterialTheme.colorScheme.onSurface,
         ),

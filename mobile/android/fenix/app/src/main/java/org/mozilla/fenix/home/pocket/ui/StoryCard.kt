@@ -64,7 +64,7 @@ internal fun StoryCard(
         modifier = modifier,
         shape = MaterialTheme.shapes.small,
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceBright),
     ) {
         Column(
             modifier = Modifier.padding(all = defaultCardContentPadding),

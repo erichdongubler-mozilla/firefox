@@ -64,7 +64,7 @@ fun MatchCard(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        color = MaterialTheme.colorScheme.surfaceBright,
     ) {
         Column(
             modifier = Modifier.padding(

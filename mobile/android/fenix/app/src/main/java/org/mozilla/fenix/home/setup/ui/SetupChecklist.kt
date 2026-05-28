@@ -52,7 +52,7 @@ fun SetupChecklist(setupChecklistState: SetupChecklistState, interactor: SetupCh
     Card(
         modifier = Modifier.padding(16.dp),
         shape = MaterialTheme.shapes.small,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceBright),
         elevation = CardDefaults.cardElevation(defaultElevation = elevation),
     ) {
         Column(
