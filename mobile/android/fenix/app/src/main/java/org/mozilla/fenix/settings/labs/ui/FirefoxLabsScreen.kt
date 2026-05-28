@@ -5,7 +5,6 @@
 package org.mozilla.fenix.settings.labs.ui
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,6 +15,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -35,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -264,25 +266,33 @@ private fun FirefoxLabsTopAppBar(onNavigationIconClick: () -> Unit) {
 
 @Composable
 private fun EmptyState(modifier: Modifier = Modifier) {
+    val isWideScreen = AcornWindowSize.getWindowSize().isNotSmall()
     Column(
-        modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
+        modifier = modifier
+            .fillMaxSize()
+            .wrapContentSize()
+            .thenConditional(
+                modifier = Modifier.width(IntrinsicSize.Min),
+                predicate = { !isWideScreen },
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Image(
-            painter = painterResource(R.drawable.ic_onboarding_marketing_redesign),
+            modifier = Modifier
+                .width(180.dp)
+                .height(103.dp),
+            painter = painterResource(R.drawable.kit_sleeping_under_laptop),
             contentDescription = null,
         )
 
-        Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Text(
             text = stringResource(id = R.string.firefox_labs_no_labs_available_description),
             color = MaterialTheme.colorScheme.onSurface,
             style = FirefoxTheme.typography.headline6,
+            textAlign = TextAlign.Center,
         )
-
-        Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static600))
     }
 }
 
@@ -452,6 +462,14 @@ private fun ToggleFeatureDialogPreview(
             onConfirm = {},
             onDismiss = {},
         )
+    }
+}
+
+@Preview
+@Composable
+private fun EmptyStatePreview() {
+    FirefoxTheme {
+        EmptyState()
     }
 }
 

@@ -4241,5 +4241,7 @@
     <string name="firefox_labs_restore_defaults_dialog_title">Restart required</string>
     <!-- The description used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. %s is the name of the app (for example "Firefox Nightly") -->
     <string name="firefox_labs_restore_defaults_dialog_message">To restore defaults, restart %s.</string>
+    <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
+    <string name="firefox_labs_no_labs_available_description">No experimental features to try right now</string>
 
 </resources>
