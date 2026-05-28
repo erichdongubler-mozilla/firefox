@@ -201,13 +201,6 @@ nsresult ImplXpcomMethod(LockstoreService* aLockstore, JSContext* aCx,
 // ---------------------------------------------------------------------------
 
 NS_IMETHODIMP
-LockstoreService::GetHasPrimaryPassword(bool* aOut) {
-  MutexAutoLock lock(mMutex);
-  MOZ_TRY(EnsureOpenLocked());
-  return lockstore_keystore_has_prp(mKeystore, aOut);
-}
-
-NS_IMETHODIMP
 LockstoreService::IsKekUnlocked(const nsACString& aKekRef, bool* aOut) {
   MutexAutoLock lock(mMutex);
   MOZ_TRY(EnsureOpenLocked());
@@ -225,12 +218,6 @@ LockstoreService::IsKekUnlocked(const nsACString& aKekRef, bool* aOut) {
              "thread; dispatch onto a background task instead.");  \
   MutexAutoLock lock(mMutex);                                      \
   MOZ_TRY(EnsureOpenLocked())
-
-nsresult LockstoreService::DoSetPrimaryPassword(
-    const nsACString& aOldPassword, const nsACString& aNewPassword) {
-  LOCKSTORE_SYNC_PREAMBLE;
-  return lockstore_keystore_set_prp(mKeystore, &aOldPassword, &aNewPassword);
-}
 
 nsresult LockstoreService::DoUnlockKek(const nsACString& aKekRef,
                                        const nsACString& aSecret,
@@ -366,15 +353,6 @@ Result<nsCString, nsresult> LockstoreService::DoCreateKek(
 // ---------------------------------------------------------------------------
 
 NS_IMETHODIMP
-LockstoreService::SetPrimaryPassword(const nsACString& aOldPassword,
-                                     const nsACString& aNewPassword,
-                                     JSContext* aCx, Promise** aPromise) {
-  return ImplXpcomMethod(this, aCx, aPromise,
-                         &LockstoreService::DoSetPrimaryPassword,
-                         nsCString{aOldPassword}, nsCString{aNewPassword});
-}
-
-NS_IMETHODIMP
 LockstoreService::UnlockKek(const nsACString& aKekRef,
                             const nsACString& aSecret, uint32_t aTimeoutMs,
                             JSContext* aCx, Promise** aPromise) {
@@ -499,9 +477,8 @@ LockstoreService::GetDek(const nsACString& aCollection,
 
 NS_IMETHODIMP
 LockstoreService::CreateKek(const nsACString& aKekType,
-                            const nsACString& aSecret,
-                            uint32_t aCacheTimeoutMs, JSContext* aCx,
-                            Promise** aPromise) {
+                            const nsACString& aSecret, uint32_t aCacheTimeoutMs,
+                            JSContext* aCx, Promise** aPromise) {
   return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoCreateKek,
                          nsCString{aKekType}, nsCString{aSecret},
                          aCacheTimeoutMs);
