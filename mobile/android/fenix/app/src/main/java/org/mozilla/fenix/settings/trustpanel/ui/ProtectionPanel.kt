@@ -337,7 +337,7 @@ private fun WebsitePermissionsMenuGroup(
         ) {
             Text(
                 text = stringResource(id = R.string.protection_panel_permissions_title),
-                color = MaterialTheme.colorScheme.tertiary,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = FirefoxTheme.typography.headline8,
             )
         }

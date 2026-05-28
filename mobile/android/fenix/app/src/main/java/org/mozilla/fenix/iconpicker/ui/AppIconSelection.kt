@@ -217,7 +217,7 @@ private fun AppIconGroupHeader(title: IconGroupTitle) {
             .wrapContentHeight(Alignment.CenterVertically)
             .semantics { heading() },
         style = FirefoxTheme.typography.headline8,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        color = MaterialTheme.colorScheme.onSurface,
     )
 }
 

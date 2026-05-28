@@ -58,7 +58,7 @@ internal fun TrackersBlockedPanel(
                         numberOfTrackersBlocked,
                     ),
                     modifier = Modifier.weight(1f),
-                    color = MaterialTheme.colorScheme.tertiary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = FirefoxTheme.typography.headline8,
                 )
             }

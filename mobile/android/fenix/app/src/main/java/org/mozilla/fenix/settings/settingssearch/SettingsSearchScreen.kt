@@ -211,7 +211,7 @@ private fun RecentSearchesContent(
             Text(
                 text = stringResource(R.string.settings_search_recent_searches_section_header),
                 style = FirefoxTheme.typography.headline8,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             TextButton(
                 onClick = {

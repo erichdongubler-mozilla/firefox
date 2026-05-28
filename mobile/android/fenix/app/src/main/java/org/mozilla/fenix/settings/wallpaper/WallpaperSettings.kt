@@ -125,7 +125,7 @@ private fun WallpaperGroupHeading(
     if (collection.name == Wallpaper.CLASSIC_FIREFOX_COLLECTION) {
         Text(
             text = stringResource(R.string.wallpaper_classic_title, stringResource(R.string.firefox)),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MaterialTheme.colorScheme.onSurface,
             style = FirefoxTheme.typography.subtitle2,
         )
     } else {
@@ -147,7 +147,7 @@ private fun WallpaperGroupHeading(
         ) {
             Text(
                 text = stringResource(R.string.wallpaper_artist_series_title),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = FirefoxTheme.typography.subtitle2,
             )
 

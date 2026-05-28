@@ -706,7 +706,7 @@
     </style>
 
     <style name="PreferenceSectionHeader" parent="AcornHeadline8">
-        <item name="android:textColor">?colorOnSurfaceVariant</item>
+        <item name="android:textColor">?colorOnSurface</item>
     </style>
 
     <style name="EngineTextField" parent="TextAppearance.AppCompat">

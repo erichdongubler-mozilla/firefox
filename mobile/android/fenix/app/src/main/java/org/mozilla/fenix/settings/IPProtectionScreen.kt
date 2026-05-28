@@ -201,7 +201,7 @@ private fun VpnLocationSection() {
     Text(
         text = stringResource(R.string.ip_protection_location_section),
         style = FirefoxTheme.typography.headline8,
-        color = MaterialTheme.colorScheme.tertiary,
+        color = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.padding(
             horizontal = FirefoxTheme.layout.space.dynamic200,
             vertical = FirefoxTheme.layout.space.static150,

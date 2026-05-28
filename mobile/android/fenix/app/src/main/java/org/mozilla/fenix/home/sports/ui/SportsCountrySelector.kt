@@ -163,7 +163,7 @@ private fun RegionSection(
     Text(
         text = stringResource(region.nameResId),
         style = FirefoxTheme.typography.headline8,
-        color = MaterialTheme.colorScheme.tertiary,
+        color = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.padding(bottom = 8.dp),
     )
 
