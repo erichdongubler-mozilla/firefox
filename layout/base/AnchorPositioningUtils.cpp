@@ -240,8 +240,9 @@ bool IsAnchorLaidOutStrictlyBeforeElement(
   // containing blocks and positioned el's containing block is an
   // ancestor of possible anchor's containing block in the containing
   // block chain, aka one of the following:
-  if (anchorContainingBlock->FirstContinuation() !=
-      positionedContainingBlock->FirstContinuation()) {
+  if (nsLayoutUtils::FirstContinuationOrIBSplitSibling(anchorContainingBlock) !=
+      nsLayoutUtils::FirstContinuationOrIBSplitSibling(
+          positionedContainingBlock)) {
     // 2.1 positioned el's containing block is the viewport, and
     // possible anchor's containing block isn't.
     if (positionedContainingBlock->IsViewportFrame() &&
@@ -260,8 +261,10 @@ bool IsAnchorLaidOutStrictlyBeforeElement(
           return false;
         }
 
-        if (parentContainingBlock->FirstContinuation() ==
-            positionedContainingBlock->FirstContinuation()) {
+        if (nsLayoutUtils::FirstContinuationOrIBSplitSibling(
+                parentContainingBlock) ==
+            nsLayoutUtils::FirstContinuationOrIBSplitSibling(
+                positionedContainingBlock)) {
           return !it->IsAbsolutelyPositioned() ||
                  nsLayoutUtils::CompareTreePosition(it, aPositionedFrame,
                                                     aPositionedFrameAncestors,
@@ -488,22 +491,6 @@ nsIFrame* AnchorPositioningUtils::FindFirstAcceptableAnchor(
   return nullptr;
 }
 
-// Find the aContainer's child that is the ancestor of aDescendant.
-static const nsIFrame* TraverseUpToContainerChild(const nsIFrame* aContainer,
-                                                  const nsIFrame* aDescendant) {
-  const auto* current = aDescendant;
-  while (true) {
-    const auto* parent = current->GetParent();
-    if (!parent) {
-      return nullptr;
-    }
-    if (parent == aContainer) {
-      return current;
-    }
-    current = parent;
-  }
-}
-
 static const nsIFrame* GetAnchorOf(const nsIFrame* aPositioned,
                                    const ScopedNameRef& aAnchorName) {
   const auto* presShell = aPositioned->PresShell();
@@ -519,28 +506,16 @@ Maybe<nsRect> AnchorPositioningUtils::GetAnchorPosRect(
       return Some(ReassembleAnchorRect(aAnchor, aAbsoluteContainingBlock));
     }
 
-    // Ok, containing block doesn't have its rect fully resolved. Figure out
-    // rect relative to the child of containing block that is also the ancestor
-    // of the anchor, and manually compute the offset.
+    // Ok, containing block doesn't have its rect fully resolved. Compute the
+    // anchor rect in aAbsoluteContainingBlock's coordinate space.
     // TODO(dshin): This wouldn't handle anchor in a previous top layer.
-    const auto* containerChild =
-        TraverseUpToContainerChild(aAbsoluteContainingBlock, aAnchor);
-    if (!containerChild) {
+    if (!nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
+            aAbsoluteContainingBlock, aAnchor)) {
       return Nothing{};
     }
-
-    if (aAnchor == containerChild) {
-      // Anchor is the direct child of anchor's CBWM.
-      return Some(nsLayoutUtils::GetCombinedFragmentRects(aAnchor).mRect +
-                  aAnchor->GetPositionIgnoringScrolling());
-    }
-
-    // TODO(dshin): Already traversed up to find `containerChild`, and we're
-    // going to do it again here, which feels a little wasteful.
-    const nsRect rectToContainerChild =
-        nsLayoutUtils::GetCombinedFragmentRects(aAnchor).mRect;
-    const auto offset = aAnchor->GetOffsetToIgnoringScrolling(containerChild);
-    return Some(rectToContainerChild + offset + containerChild->GetPosition());
+    return Some(
+        nsLayoutUtils::GetCombinedFragmentRects(aAnchor).mRect +
+        aAnchor->GetOffsetToIgnoringScrolling(aAbsoluteContainingBlock));
   }();
   return rect.map([&](const nsRect& aRect) {
     // We need to position the border box of the anchor within the abspos
@@ -1317,19 +1292,20 @@ static const nsIFrame* GetMatchingContainingBlock(
     const nsIFrame* aAnchor, const nsIFrame* aContainingBlock) {
   MOZ_ASSERT(nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
       aContainingBlock, aAnchor));
-  if ((!aContainingBlock->GetPrevContinuation() &&
-       !aContainingBlock->GetNextContinuation()) ||
+
+  const auto* firstCont =
+      nsLayoutUtils::FirstContinuationOrIBSplitSibling(aContainingBlock);
+  const auto* lastCont =
+      nsLayoutUtils::LastContinuationOrIBSplitSibling(aContainingBlock);
+  if (firstCont == lastCont ||
       nsLayoutUtils::IsProperAncestorFrame(aContainingBlock, aAnchor)) {
+    // aContainingBlock has no continuations nor IB-split siblings, or
+    // aContainingBlock itself is already a proper ancestor.
     return aContainingBlock;
   }
-  for (const auto* f = aContainingBlock->GetPrevContinuation(); f;
-       f = f->GetPrevContinuation()) {
-    if (nsLayoutUtils::IsProperAncestorFrame(f, aAnchor)) {
-      return f;
-    }
-  }
-  for (const auto* f = aContainingBlock->GetNextContinuation(); f;
-       f = f->GetNextContinuation()) {
+
+  for (const auto* f = firstCont; f;
+       f = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(f)) {
     if (nsLayoutUtils::IsProperAncestorFrame(f, aAnchor)) {
       return f;
     }

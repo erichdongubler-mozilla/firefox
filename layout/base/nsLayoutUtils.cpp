@@ -1154,16 +1154,18 @@ bool nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
     const nsIFrame* aCommonAncestor) {
   MOZ_ASSERT(aAncestorFrame);
   const nsIFrame* ancestorFirstContinuation =
-      aAncestorFrame->FirstContinuation();
-  if (!aFrame || aFrame->FirstContinuation() == ancestorFirstContinuation) {
+      FirstContinuationOrIBSplitSibling(aAncestorFrame);
+  if (!aFrame || FirstContinuationOrIBSplitSibling(aFrame) ==
+                     ancestorFirstContinuation) {
     return false;
   }
   const nsIFrame* commonFirstContinuation =
-      aCommonAncestor ? aCommonAncestor->FirstContinuation() : nullptr;
+      aCommonAncestor ? FirstContinuationOrIBSplitSibling(aCommonAncestor)
+                      : nullptr;
   const nsIFrame* f = aFrame;
-  for (; f && f->FirstContinuation() != commonFirstContinuation;
+  for (; f && FirstContinuationOrIBSplitSibling(f) != commonFirstContinuation;
        f = f->GetParent()) {
-    if (f->FirstContinuation() == ancestorFirstContinuation) {
+    if (FirstContinuationOrIBSplitSibling(f) == ancestorFirstContinuation) {
       return true;
     }
   }
