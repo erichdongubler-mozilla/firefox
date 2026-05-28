@@ -3214,7 +3214,9 @@ nsresult ScriptLoader::EvaluateScriptElement(ScriptLoadRequest* aRequest) {
       !aRequest->GetScriptLoadContext()->mIsInline ||
       aRequest->IsModuleRequest();
   if (ignoreDestructiveWrites) {
-    ownerDoc->IncrementIgnoreDestructiveWritesCounter();
+    if (mDocument) {
+      mDocument->IncrementIgnoreDestructiveWritesCounter();
+    }
   }
 
   auto afterScript = MakeScopeExit([&] {
@@ -3235,7 +3237,9 @@ nsresult ScriptLoader::EvaluateScriptElement(ScriptLoadRequest* aRequest) {
     // 7. Decrement the ignore-destructive-writes counter of document, if it was
     // incremented in the earlier step.
     if (ignoreDestructiveWrites) {
-      ownerDoc->DecrementIgnoreDestructiveWritesCounter();
+      if (mDocument) {
+        mDocument->DecrementIgnoreDestructiveWritesCounter();
+      }
     }
   });
 
