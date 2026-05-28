@@ -68,8 +68,6 @@ https_first_disabled = true
 
 ["browser_policy_disable_profile_reset.js"]
 
-["browser_policy_disable_remote_settings.js"]
-
 ["browser_policy_disable_safemode.js"]
 
 ["browser_policy_disable_shield.js"]

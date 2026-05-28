@@ -186,10 +186,6 @@ export class Downloader {
       return null;
     }
 
-    if (lazy.Utils.shouldSkipRemoteActivity) {
-      return null;
-    }
-
     // Do nothing if local cache has some data and force is not true
     if (!force && (await this.cacheImpl.hasData())) {
       return null;

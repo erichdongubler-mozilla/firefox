@@ -128,10 +128,6 @@ export class WallpaperFeed {
   }
 
   async updateWallpapers(isStartup = false) {
-    if (lazy.Utils.shouldSkipRemoteActivity) {
-      return;
-    }
-
     let uuid = Services.prefs.getStringPref(
       PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID,
       ""

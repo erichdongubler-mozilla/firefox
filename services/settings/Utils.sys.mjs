@@ -112,14 +112,11 @@ export var Utils = {
    */
   log,
 
-  get shouldSkipRemoteActivity() {
-    if (
+  get shouldSkipRemoteActivityDueToTests() {
+    return (
       (lazy.isRunningTests || Cu.isInAutomation) &&
       this.SERVER_URL == "data:,#remote-settings-dummy/v1"
-    ) {
-      return true;
-    }
-    return !Services.policies.isAllowed("remoteSettings");
+    );
   },
 
   get CERT_CHAIN_ROOT_IDENTIFIER() {
@@ -315,9 +312,6 @@ export var Utils = {
    * console.log(attachmentsURL);
    */
   async baseAttachmentsURL() {
-    if (Utils.shouldSkipRemoteActivity) {
-      throw new Error("Remote Settings activity is disabled.");
-    }
     if (!_cdnURLs[Utils.SERVER_URL]) {
       const resp = await Utils.fetch(`${Utils.SERVER_URL}/`);
       const serverInfo = await resp.json();

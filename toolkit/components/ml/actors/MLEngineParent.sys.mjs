@@ -775,12 +775,6 @@ export class MLEngineParent extends JSProcessActorParent {
    * @throws {Error} If the content hash of the downloaded file does not match the expected hash.
    */
   static async downloadRSAttachment({ wasmRecord, localRoot }) {
-    // Recoverable: callers already handle throws from this function (e.g. hash
-    // mismatch, baseAttachmentsURL failure). Cached models aren't affected
-    // because callers don't reach this path when the file is already on disk.
-    if (lazy.Utils.shouldSkipRemoteActivity) {
-      throw new Error("Remote Settings activity is disabled.");
-    }
     const { attachment, version } = wasmRecord;
     const { location, filename, hash, size } = attachment;
     let baseURL = RS_FALLBACK_BASE_URL;

@@ -1160,14 +1160,6 @@ export var Policies = {
     },
   },
 
-  DisableRemoteSettingsAndAcceptSecurityConsequences: {
-    onBeforeUIStartup(manager, param) {
-      if (param) {
-        manager.disallowFeature("remoteSettings");
-      }
-    },
-  },
-
   DisableSafeMode: {
     onBeforeUIStartup(manager, param) {
       if (param) {
