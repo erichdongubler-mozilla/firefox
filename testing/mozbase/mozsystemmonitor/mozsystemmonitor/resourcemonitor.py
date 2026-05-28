@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import atexit
 import json
 import multiprocessing
 import os
@@ -599,6 +600,14 @@ class SystemResourceMonitor:
         SystemResourceMonitor.instance = self
         self._schedule_drain_timer()
 
+        # Ensure that stop() is called even if the caller does not do so, to
+        # prevent the child from being kept alive forever in that scenario.
+        atexit.register(self._atexit_stop)
+
+    def _atexit_stop(self):
+        if self._running and not self._stopped:
+            self.stop()
+
     def stop(self, upload_dir=None):
         """Stop measuring system-wide CPU resource utilization.
 
@@ -610,6 +619,7 @@ class SystemResourceMonitor:
         Args:
             upload_dir: Optional path to upload directory for artifact markers.
         """
+        atexit.unregister(self._atexit_stop)
         if not self._process:
             self._stopped = True
             return
@@ -638,7 +648,7 @@ class SystemResourceMonitor:
                 self._process.join(10)
 
         self._running = False
-        SystemResourceUsage.instance = None
+        SystemResourceMonitor.instance = None
         self.end_time = time.monotonic()
 
         self._flush_leak_logs()
