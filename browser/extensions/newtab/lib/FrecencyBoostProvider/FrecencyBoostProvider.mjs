@@ -63,6 +63,9 @@ export class FrecencyBoostProvider {
    * We fetch all favicons regardless of whether the user has visited these sites.
    */
   async _importFrecencyBoostedSponsors() {
+    if (lazy.Utils.shouldSkipRemoteActivity) {
+      return;
+    }
     const records = await this._frecencyBoostRS?.get();
     if (!records) {
       return;
