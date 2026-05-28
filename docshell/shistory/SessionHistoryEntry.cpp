@@ -484,11 +484,12 @@ void SessionHistoryEntry::RemoveLoadId(uint64_t aLoadId) {
 }
 
 SessionHistoryEntry::SessionHistoryEntry()
-    : mInfo(new SessionHistoryInfo()), mID(++gEntryID) {}
+    : mInfo(MakeUnique<SessionHistoryInfo>()), mID(++gEntryID) {}
 
 SessionHistoryEntry::SessionHistoryEntry(nsDocShellLoadState* aLoadState,
                                          nsIChannel* aChannel)
-    : mInfo(new SessionHistoryInfo(aLoadState, aChannel)), mID(++gEntryID) {}
+    : mInfo(MakeUnique<SessionHistoryInfo>(aLoadState, aChannel)),
+      mID(++gEntryID) {}
 
 SessionHistoryEntry::SessionHistoryEntry(SessionHistoryInfo* aInfo)
     : mInfo(MakeUnique<SessionHistoryInfo>(*aInfo)), mID(++gEntryID) {}

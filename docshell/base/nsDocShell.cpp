@@ -12744,7 +12744,7 @@ nsresult nsIDocShell::SetHTMLEditor(HTMLEditor* aHTMLEditor) {
 NS_IMETHODIMP
 nsDocShell::SetColorMatrix(const nsTArray<float>& aMatrix) {
   if (aMatrix.Length() == MATRIX_LENGTH) {
-    mColorMatrix.reset(new gfx::Matrix5x4());
+    mColorMatrix = MakeUnique<gfx::Matrix5x4>();
     static_assert(
         MATRIX_LENGTH * sizeof(float) == sizeof(mColorMatrix->components),
         "Size mismatch for our memcpy");
