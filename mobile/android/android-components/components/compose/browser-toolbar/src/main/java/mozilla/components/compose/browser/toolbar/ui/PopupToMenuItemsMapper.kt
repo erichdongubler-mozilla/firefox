@@ -77,7 +77,7 @@ internal fun menuItemComposable(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                        .background(MaterialTheme.colorScheme.surfaceBright)
                         .thenConditional(
                             Modifier.clickable(
                                 role = Role.Button,

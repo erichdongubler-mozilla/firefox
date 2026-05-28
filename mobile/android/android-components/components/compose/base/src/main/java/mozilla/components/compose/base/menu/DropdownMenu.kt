@@ -90,7 +90,7 @@ fun DropdownMenu(
             .widthIn(MenuMinWidth, MenuMaxWidth),
         offset = offset,
         scrollState = scrollState,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+        containerColor = MaterialTheme.colorScheme.surfaceBright,
         shape = MaterialTheme.shapes.large,
     ) {
         Spacer(modifier = Modifier.height(height = AcornTheme.layout.space.static100))
@@ -453,7 +453,7 @@ private fun DropdownMenuPreview() {
             )
 
             Column(
-                modifier = Modifier.background(color = MaterialTheme.colorScheme.surfaceContainerLowest),
+                modifier = Modifier.background(color = MaterialTheme.colorScheme.surfaceBright),
             ) {
                 val menuItems: List<MenuItem> by remember {
                     mutableStateOf(menuPreviewParameters.map { it.menuItems.first() })
@@ -469,7 +469,7 @@ private fun DropdownMenuPreview() {
             )
 
             Column(
-                modifier = Modifier.background(color = MaterialTheme.colorScheme.surfaceContainerLowest),
+                modifier = Modifier.background(color = MaterialTheme.colorScheme.surfaceBright),
             ) {
                 val menuItems: List<MenuItem> = remember {
                     val dividerList = mutableListOf<MenuItem>()
@@ -490,7 +490,7 @@ private fun DropdownMenuPreview() {
             )
 
             Column(
-                modifier = Modifier.background(color = MaterialTheme.colorScheme.surfaceContainerLowest),
+                modifier = Modifier.background(color = MaterialTheme.colorScheme.surfaceBright),
             ) {
                 val disabledMenuItems: List<MenuItem> = remember {
                     menuPreviewParameters.map { it.menuItems.first() }.map { item ->
@@ -523,7 +523,7 @@ private fun DropdownMenuPreview() {
             )
 
             Column(
-                modifier = Modifier.background(color = MaterialTheme.colorScheme.surfaceContainerLowest),
+                modifier = Modifier.background(color = MaterialTheme.colorScheme.surfaceBright),
             ) {
                 var isChecked by remember { mutableStateOf(true) }
 

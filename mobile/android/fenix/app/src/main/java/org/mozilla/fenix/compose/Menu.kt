@@ -83,7 +83,7 @@ private fun Menu(
             offset = offset,
             scrollState = ScrollState(with(localDensity) { columnHeightDp.toPx() * selectedItemIndex }.toInt()),
             modifier = Modifier
-                .background(color = MaterialTheme.colorScheme.surfaceContainerLowest)
+                .background(color = MaterialTheme.colorScheme.surfaceBright)
                 .then(modifier),
         ) {
             val hasCheckedItems = menuItems.any { it.isChecked }
