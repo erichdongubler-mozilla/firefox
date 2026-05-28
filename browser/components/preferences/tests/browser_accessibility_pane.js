@@ -4,22 +4,47 @@
 "use strict";
 
 add_task(
+  async function test_accessibility_sidebar_hidden_when_redesign_disabled() {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.settings-redesign.enabled", false]],
+    });
+    await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
+    let doc = gBrowser.selectedBrowser.contentDocument;
+
+    ok(
+      !doc.getElementById("category-accessibility"),
+      "Accessibility category is removed from DOM when settings redesign is disabled"
+    );
+
+    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  }
+);
+
+add_task(
   async function test_accessibility_sidebar_visible_when_redesign_enabled() {
-    let tab = await openPrefsTab("accessibility");
-    let doc = tab.linkedBrowser.contentDocument;
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.settings-redesign.enabled", true]],
+    });
+    await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
+    let doc = gBrowser.selectedBrowser.contentDocument;
 
     is_element_visible(
       doc.getElementById("category-accessibility"),
       "Accessibility category is visible when settings redesign is enabled"
     );
 
-    await BrowserTestUtils.removeTab(tab);
+    BrowserTestUtils.removeTab(gBrowser.selectedTab);
   }
 );
 
 add_task(async function test_accessibility_pane_loads_setting_groups() {
-  let tab = await openPrefsTab("accessibility");
-  let doc = tab.linkedBrowser.contentDocument;
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.settings-redesign.enabled", true]],
+  });
+  await openPreferencesViaOpenPreferencesAPI("accessibility", {
+    leaveOpen: true,
+  });
+  let doc = gBrowser.selectedBrowser.contentDocument;
 
   await BrowserTestUtils.waitForMutationCondition(
     doc.getElementById("mainPrefPane"),
@@ -39,39 +64,37 @@ add_task(async function test_accessibility_pane_loads_setting_groups() {
     is_element_visible(group, `${groupId} setting-group is visible`);
   }
 
-  await BrowserTestUtils.removeTab(tab);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 add_task(async function test_accessibility_pane_click_sidebar() {
-  let tab = await openPrefsTab("");
-  let doc = tab.linkedBrowser.contentDocument;
-
-  let navButton = doc.getElementById("category-accessibility");
-  await BrowserTestUtils.waitForCondition(
-    () => navButton?.buttonEl,
-    "Wait for accessibility nav button to render"
-  );
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.settings-redesign.enabled", true]],
+  });
+  await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
+  let doc = gBrowser.selectedBrowser.contentDocument;
+  let win = doc.documentGlobal;
 
   let paneLoaded = waitForPaneChange("accessibility");
-  synthesizeClick(navButton);
+  let categoryBtn = doc.getElementById("category-accessibility");
+  categoryBtn.scrollIntoView();
+  EventUtils.synthesizeMouseAtCenter(categoryBtn, {}, win);
   await paneLoaded;
 
-  await BrowserTestUtils.waitForMutationCondition(
-    doc.getElementById("mainPrefPane"),
-    { childList: true, subtree: true },
-    () => doc.querySelector('setting-group[groupid="zoom"]')
-  );
-  ok(
-    doc.querySelector('setting-group[groupid="zoom"]'),
-    "Zoom setting-group is present after clicking accessibility nav button"
-  );
+  let zoomGroup = doc.querySelector('setting-group[groupid="zoom"]');
+  ok(zoomGroup, "Zoom setting-group is present after clicking accessibility");
 
-  await BrowserTestUtils.removeTab(tab);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 add_task(async function test_pane_registration_no_errors() {
-  let tab = await openPrefsTab("accessibility");
-  let doc = tab.linkedBrowser.contentDocument;
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.settings-redesign.enabled", true]],
+  });
+  await openPreferencesViaOpenPreferencesAPI("accessibility", {
+    leaveOpen: true,
+  });
+  let doc = gBrowser.selectedBrowser.contentDocument;
 
   await BrowserTestUtils.waitForMutationCondition(
     doc.getElementById("mainPrefPane"),
@@ -84,5 +107,5 @@ add_task(async function test_pane_registration_no_errors() {
     "Accessibility pane loaded with setting-groups (no registration errors)"
   );
 
-  await BrowserTestUtils.removeTab(tab);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
