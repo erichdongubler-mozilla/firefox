@@ -97,6 +97,7 @@ import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.ContentBlocking
 import org.mozilla.geckoview.ContentBlockingController
 import org.mozilla.geckoview.ContentBlockingController.Event
+import org.mozilla.geckoview.ContentBlockingController.LogEntry.BlockingData
 import org.mozilla.geckoview.ExperimentalGeckoViewApi
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoRuntime
@@ -265,6 +266,22 @@ class GeckoEngine(
         runtime.contentBlockingController.trackingDbEarliestRecordedDate.then(
             { date ->
                 onSuccess(if (date == 0L) null else date)
+                GeckoResult<Void>()
+            },
+            { throwable ->
+                onError(throwable)
+                GeckoResult<Void>()
+            },
+        )
+    }
+
+    override fun clearTrackingProtectionData(
+        onSuccess: () -> Unit,
+        onError: (Throwable) -> Unit,
+    ) {
+        runtime.contentBlockingController.clearTrackingDb().then(
+            {
+                onSuccess()
                 GeckoResult<Void>()
             },
             { throwable ->

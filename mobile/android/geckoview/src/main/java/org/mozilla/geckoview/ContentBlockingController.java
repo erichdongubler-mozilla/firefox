@@ -353,6 +353,18 @@ public class ContentBlockingController {
         .map(bundle -> bundle.getLong("date", 0L));
   }
 
+  /**
+   * Remove all entries from the content blocking database.
+   *
+   * @return A {@link GeckoResult} that completes when the database has been cleared.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<Void> clearTrackingDb() {
+    ThreadUtils.assertOnHandlerThread();
+
+    return EventDispatcher.getInstance().queryVoid("GeckoView:TrackingDB:ClearAll");
+  }
+
   private List<TrackingDbEvent> eventsFromBundle(final GeckoBundle value) {
     final GeckoBundle[] bundles = value.getBundleArray("events");
     if (bundles == null) {

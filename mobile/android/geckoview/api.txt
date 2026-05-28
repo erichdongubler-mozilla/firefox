@@ -734,6 +734,7 @@ package org.mozilla.geckoview {
 
   @AnyThread public class ContentBlockingController {
     ctor public ContentBlockingController();
+    method @HandlerThread @NonNull public GeckoResult<Void> clearTrackingDb();
     method @NonNull @UiThread public GeckoResult<List<ContentBlockingController.LogEntry>> getLog(@NonNull GeckoSession);
     method @HandlerThread @NonNull public GeckoResult<Long> getTrackingDbEarliestRecordedDate();
     method @HandlerThread @NonNull public GeckoResult<List<ContentBlockingController.TrackingDbEvent>> getTrackingDbEventsByDateRange(long, long);
