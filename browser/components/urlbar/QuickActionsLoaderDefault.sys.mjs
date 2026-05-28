@@ -52,11 +52,8 @@ let openAddonsUrl = url => {
   };
 };
 
-// bug 1983835 - should this only look for windows on the current
-// workspace?
-let currentBrowser = () =>
-  lazy.BrowserWindowTracker.getTopWindow({ allowFromInactiveWorkspace: true })
-    ?.gBrowser.selectedBrowser;
+let currentWindow = () => lazy.BrowserWindowTracker.getTopWindow();
+let currentBrowser = () => currentWindow().gBrowser.selectedBrowser;
 
 let unmutedAudioTabs = () =>
   lazy.BrowserWindowTracker.orderedWindows.flatMap(win =>
@@ -146,9 +143,7 @@ const DEFAULT_ACTIONS = {
       // 2. The user can be considered as a DevTools user.
       // 3. The url is not about:devtools-toolbox.
       // 4. The inspector is not opened yet on the page.
-      let win = lazy.BrowserWindowTracker.getTopWindow({
-        allowFromInactiveWorkspace: true,
-      });
+      let win = currentWindow();
       return (
         lazy.DevToolsShim.isEnabled() &&
         lazy.DevToolsShim.isDevToolsUser() &&
@@ -165,12 +160,9 @@ const DEFAULT_ACTIONS = {
     icon: "chrome://devtools/skin/images/command-eyedropper.svg",
     label: "quickactions-colorpicker",
     isVisible: () => {
-      let win = lazy.BrowserWindowTracker.getTopWindow({
-        allowFromInactiveWorkspace: true,
-      });
       return (
         lazy.DevToolsShim.isEnabled() &&
-        !win.gBrowser.currentURI.spec.startsWith("about:devtools-toolbox")
+        !currentBrowser().currentURI.spec.startsWith("about:devtools-toolbox")
       );
     },
     onPick: (_queryContext, controller) => {
@@ -322,7 +314,7 @@ const DEFAULT_ACTIONS = {
     l10nCommands: ["quickactions-cmd-viewsource2"],
     icon: "chrome://global/skin/icons/settings.svg",
     label: "quickactions-viewsource2",
-    isVisible: () => currentBrowser()?.currentURI.scheme !== "view-source",
+    isVisible: () => currentBrowser().currentURI.scheme !== "view-source",
     onPick: (_queryContext, controller) =>
       openUrl(
         "view-source:" + controller.browserWindow.gBrowser.currentURI.spec,

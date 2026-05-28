@@ -519,11 +519,7 @@ export class UrlbarProviderInterventions extends UrlbarProvider {
     if (topDocIDs.has("update")) {
       this._setCurrentTipFromAppUpdaterStatus();
     } else if (topDocIDs.has("clear")) {
-      // bug 1983835 - should this only look for windows on the current
-      // workspace?
-      let window = lazy.BrowserWindowTracker.getTopWindow({
-        allowFromInactiveWorkspace: true,
-      });
+      let window = lazy.BrowserWindowTracker.getTopWindow();
       if (!lazy.PrivateBrowsingUtils.isWindowPrivate(window)) {
         this.currentTip = TIPS.CLEAR;
       }
