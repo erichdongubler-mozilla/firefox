@@ -20,8 +20,8 @@ object FloatingActionButtonDefaults {
     @Composable
     @ReadOnlyComposable
     fun colorsPrimary(
-        containerColor: Color = MaterialTheme.colorScheme.primaryFixed,
-        contentColor: Color = MaterialTheme.colorScheme.onPrimaryFixed,
+        containerColor: Color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
     ) = FloatingActionButtonColors(
         containerColor = containerColor,
         contentColor = contentColor,
