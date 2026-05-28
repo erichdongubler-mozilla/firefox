@@ -2527,12 +2527,7 @@ mozilla::dom::SessionHistoryEntry* nsSHistory::FindAdjacentEntryFor(
 
   nextEntry = mEntries[i];
   if (ancestors.IsEmpty()) {
-    // This can happen if we somehow have duplicates in mEntries. This should
-    // ideally never happen, but since it does we need to protect against it.
-    // See bug 2042897.
-    return nextEntry != aEntry
-               ? static_cast<SessionHistoryEntry*>(nextEntry.get())
-               : nullptr;
+    return static_cast<SessionHistoryEntry*>(nextEntry.get());
   }
 
   foundParent =

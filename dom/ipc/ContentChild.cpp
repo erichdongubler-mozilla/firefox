@@ -4430,30 +4430,11 @@ mozilla::ipc::IPCResult ContentChild::RecvDisplayLoadError(
 
 mozilla::ipc::IPCResult ContentChild::RecvHistoryCommitIndexAndLength(
     const MaybeDiscarded<BrowsingContext>& aContext, const uint32_t& aIndex,
-    const uint32_t& aLength, const nsID& aChangeID,
-    nsTArray<NavigationEntriesTruncation>&& aTruncations) {
+    const uint32_t& aLength, const nsID& aChangeID) {
   if (!aContext.IsNullOrDiscarded()) {
     ChildSHistory* shistory = aContext.get()->GetChildSessionHistory();
     if (shistory) {
       shistory->SetIndexAndLength(aIndex, aLength, aChangeID);
-    }
-  }
-
-  for (const auto& truncation : aTruncations) {
-    if (truncation.context().IsNullOrDiscarded()) {
-      continue;
-    }
-    RefPtr<nsDocShell> docShell =
-        nsDocShell::Cast(truncation.context().get()->GetDocShell());
-    if (!docShell) {
-      continue;
-    }
-    RefPtr<nsPIDOMWindowInner> window = docShell->GetActiveWindow();
-    if (!window) {
-      continue;
-    }
-    if (RefPtr<Navigation> navigation = window->Navigation()) {
-      navigation->TruncateForwardEntries(truncation.newLength());
     }
   }
   return IPC_OK();

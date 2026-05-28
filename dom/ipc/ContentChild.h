@@ -778,11 +778,9 @@ class ContentChild final : public PContentChild,
                                         ErrorResult& aRv) override;
   mozilla::ipc::IProtocol* AsNativeActor() override { return this; }
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvHistoryCommitIndexAndLength(
       const MaybeDiscarded<BrowsingContext>& aContext, const uint32_t& aIndex,
-      const uint32_t& aLength, const nsID& aChangeID,
-      nsTArray<NavigationEntriesTruncation>&& aTruncations);
+      const uint32_t& aLength, const nsID& aChangeID);
 
   mozilla::ipc::IPCResult RecvConsumeHistoryActivation(
       const MaybeDiscarded<BrowsingContext>& aTop);
