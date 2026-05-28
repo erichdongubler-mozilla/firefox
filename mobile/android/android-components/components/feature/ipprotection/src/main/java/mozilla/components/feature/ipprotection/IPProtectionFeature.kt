@@ -25,6 +25,7 @@ import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow.Companion.SCOPE_IPPROTECTION
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
+import mozilla.components.feature.ipprotection.store.InternalAction
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
 import mozilla.components.lib.state.ext.flow
@@ -130,13 +131,11 @@ class IPProtectionFeature(
 
                         AccountStatus.AwaitingEnrollment -> {
                             handler?.enroll { enrollInfo ->
-                                if (enrollInfo.isEnrolledAndEntitled) {
-                                    store.dispatch(
-                                        IPProtectionAction.AccountStateChanged(
-                                            state = AccountStatus.EnrolledAndEntitled,
-                                        ),
-                                    )
-                                }
+                                store.dispatch(
+                                    InternalAction.FinishingEnrollment(
+                                        success = enrollInfo.isEnrolledAndEntitled,
+                                    ),
+                                )
                             }
                         }
 

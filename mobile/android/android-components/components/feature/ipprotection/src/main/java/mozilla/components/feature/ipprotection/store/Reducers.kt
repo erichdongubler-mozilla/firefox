@@ -239,6 +239,20 @@ internal fun internalReducer(
             ),
         )
     }
+
+    is InternalAction.FinishingEnrollment -> state.handleFinishingEnrollment(action)
+}
+
+private fun IPProtectionState.handleFinishingEnrollment(action: InternalAction.FinishingEnrollment): IPProtectionState {
+    return copy(
+        accountState = accountState.copy(
+            status = if (action.success) {
+                AccountStatus.EnrolledAndEntitled
+            } else {
+                AccountStatus.NeedsAuthorization
+            },
+        ),
+    )
 }
 
 private fun IPProtectionHandler.StateInfo.asProxyStatus(): ProxyStatus {

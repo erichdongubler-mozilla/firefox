@@ -213,6 +213,24 @@ class IPProtectionReducerTest {
         assertEquals(AccountStatus.AwaitingEnrollment, resultState.accountState.status)
     }
 
+    @Test
+    fun `GIVEN successful enrollment WHEN FinishingEnrollment is dispatched THEN user is ready to use the feature`() {
+        val initialState = buildIPProtectionState(accountStatus = AccountStatus.AwaitingEnrollment)
+
+        val resultState = iPProtectionReducer(initialState, InternalAction.FinishingEnrollment(true))
+
+        assertEquals(AccountStatus.EnrolledAndEntitled, resultState.accountState.status)
+    }
+
+    @Test
+    fun `GIVEN unsuccessful enrollment WHEN FinishingEnrollment is dispatched THEN user has to authorize again`() {
+        val initialState = buildIPProtectionState(accountStatus = AccountStatus.AwaitingEnrollment)
+
+        val resultState = iPProtectionReducer(initialState, InternalAction.FinishingEnrollment(false))
+
+        assertEquals(AccountStatus.NeedsAuthorization, resultState.accountState.status)
+    }
+
     private fun buildIPProtectionState(
         accountStatus: AccountStatus = AccountStatus.Uninitialized,
     ): IPProtectionState {
