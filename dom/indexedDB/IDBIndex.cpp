@@ -126,6 +126,14 @@ RefPtr<IDBRequest> IDBIndex::GetAllKeys(JSContext* aCx,
   return GetAllInternal(/* aKeysOnly */ true, aCx, aKey, aLimit, aRv);
 }
 
+RefPtr<IDBRequest> IDBIndex::GetAllRecords(JSContext* aCx,
+                                           const IDBGetAllOptions& aOptions,
+                                           ErrorResult& aRv) {
+  AssertIsOnOwningThread();
+  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  return nullptr;
+}
+
 void IDBIndex::RefreshMetadata(bool aMayDelete) {
   AssertIsOnOwningThread();
   MOZ_ASSERT_IF(mDeletedMetadata, mMetadata == mDeletedMetadata.get());

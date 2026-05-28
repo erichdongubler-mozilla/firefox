@@ -21,6 +21,7 @@ class ErrorResult;
 
 namespace dom {
 
+struct IDBGetAllOptions;
 class IDBObjectStore;
 class IDBRequest;
 template <typename>
@@ -122,6 +123,9 @@ class IDBIndex final : public nsISupports, public nsWrapperCache {
                                               JS::Handle<JS::Value> aKey,
                                               const Optional<uint32_t>& aLimit,
                                               ErrorResult& aRv);
+
+  [[nodiscard]] RefPtr<IDBRequest> GetAllRecords(
+      JSContext* aCx, const IDBGetAllOptions& aOptions, ErrorResult& aRv);
 
   void RefreshMetadata(bool aMayDelete);
 

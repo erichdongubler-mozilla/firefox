@@ -26,6 +26,7 @@ class ErrorResult;
 namespace dom {
 
 class DOMStringList;
+struct IDBGetAllOptions;
 class IDBRequest;
 class IDBTransaction;
 class StringOrStringSequence;
@@ -212,14 +213,16 @@ class IDBObjectStore final : public nsISupports, public nsWrapperCache {
                                          ErrorResult& aRv);
 
   [[nodiscard]] RefPtr<IDBRequest> GetAll(JSContext* aCx,
-                                          JS::Handle<JS::Value> aKey,
+                                          JS::Handle<JS::Value> aQueryOrOptions,
                                           const Optional<uint32_t>& aLimit,
                                           ErrorResult& aRv);
 
-  [[nodiscard]] RefPtr<IDBRequest> GetAllKeys(JSContext* aCx,
-                                              JS::Handle<JS::Value> aKey,
-                                              const Optional<uint32_t>& aLimit,
-                                              ErrorResult& aRv);
+  [[nodiscard]] RefPtr<IDBRequest> GetAllKeys(
+      JSContext* aCx, JS::Handle<JS::Value> aQueryOrOptions,
+      const Optional<uint32_t>& aLimit, ErrorResult& aRv);
+
+  [[nodiscard]] RefPtr<IDBRequest> GetAllRecords(
+      JSContext* aCx, const IDBGetAllOptions& aOptions, ErrorResult& aRv);
 
   [[nodiscard]] RefPtr<IDBRequest> OpenCursor(JSContext* aCx,
                                               JS::Handle<JS::Value> aRange,
@@ -282,7 +285,7 @@ class IDBObjectStore final : public nsISupports, public nsWrapperCache {
                                                ErrorResult& aRv);
 
   [[nodiscard]] RefPtr<IDBRequest> GetAllInternal(
-      bool aKeysOnly, JSContext* aCx, JS::Handle<JS::Value> aKey,
+      bool aKeysOnly, JSContext* aCx, JS::Handle<JS::Value> aQueryOrOptions,
       const Optional<uint32_t>& aLimit, ErrorResult& aRv);
 
   [[nodiscard]] RefPtr<IDBRequest> OpenCursorInternal(
