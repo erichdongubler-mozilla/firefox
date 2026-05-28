@@ -79,9 +79,10 @@ class PolicyContainer : public nsIPolicyContainer {
       const nsIPolicyContainer* aPolicyContainer);
 
   // == IP Address Space ==
-  // Stored per https://wicg.github.io/local-network-access/#integration-with-html
-  // to allow worker contexts (which have no browsing context) to perform
-  // Local Network Access checks against their parent document's address space.
+  // Stored per
+  // https://wicg.github.io/local-network-access/#integration-with-html to allow
+  // worker contexts (which have no browsing context) to perform Local Network
+  // Access checks against their parent document's address space.
   nsILoadInfo::IPAddressSpace GetIPAddressSpace() const;
   void SetIPAddressSpace(nsILoadInfo::IPAddressSpace aIPAddressSpace);
 
