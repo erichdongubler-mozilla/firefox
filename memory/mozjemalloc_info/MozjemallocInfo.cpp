@@ -36,15 +36,17 @@ int main() {
   printf("\n");
   printf("Run layout for each bin size\n");
   printf("----------------------------\n\n");
-  printf(" Size | Reg per run | Run size | Overhead\n");
-  printf("------|-------------|----------|----------\n");
+  printf(" Size | Reg per run | Run size | Overhead | Theoretical best \n");
+  printf("------|-------------|----------|----------|------------------\n");
   for (unsigned i = 0; i < num_bins; i++) {
     auto& bin = bin_stats[i];
     if (bin.size) {
-      printf("%5zu | %11zu | %5zuKiB | %7.2f%%\n", bin.size,
+      printf("%5zu | %11zu | %5zuKiB | %7.2f%% | %15.2f%%\n", bin.size,
              bin.regions_per_run, bin.bytes_per_run / 1024,
              float(bin.bytes_per_run - (bin.regions_per_run * bin.size)) *
-                 100.0f / float(bin.regions_per_run * bin.size));
+                 100.0f / float(bin.regions_per_run * bin.size),
+             // Each byte of overhead provides metadata for 8 regions.
+             100.0f / (8.0f * float(bin.size)));
     }
   }
 
