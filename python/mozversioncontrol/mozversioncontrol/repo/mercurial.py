@@ -18,7 +18,7 @@ from mozversioncontrol.errors import (
     CannotDeleteFromRootOfRepositoryException,
     MissingVCSExtension,
 )
-from mozversioncontrol.repo.base import HG_TRY_URL, Repository
+from mozversioncontrol.repo.base import Repository
 
 
 class HgRepository(Repository):
@@ -307,11 +307,16 @@ class HgRepository(Repository):
             args.extend(["-r", ref])
         self._run(*args)
 
-    def push_to_try(
+    def _resolve_try_branch(self):
+        return self.branch
+
+    def _push_to_git_try(self, *args, **kwargs):
+        raise ValueError("Unable to push to Git from a Mercurial repo")
+
+    def _push_to_hg_try(
         self,
         message: str,
         changed_files: dict[str, str] = {},
-        remote=HG_TRY_URL,
         allow_log_capture: bool = False,
     ):
         if changed_files:

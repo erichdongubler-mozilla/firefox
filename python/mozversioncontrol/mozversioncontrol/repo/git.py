@@ -28,7 +28,7 @@ from mozversioncontrol.errors import (
     CannotDeleteFromRootOfRepositoryException,
     MissingVCSExtension,
 )
-from mozversioncontrol.repo.base import HG_TRY_URL, Repository
+from mozversioncontrol.repo.base import Repository
 
 # The built-in fsmonitor Windows/macOS for git 2.37+ is better than using the watchman hook.
 # Linux users will still need watchman and to enable the hook.
@@ -368,27 +368,12 @@ class GitRepository(Repository):
         (cmd, _, env) = self._process_run_args(*args)
         subprocess.check_call(cmd, cwd=self.path, env=env)
 
-    def _push_to_git_try(self, message, changed_files, remote):
-        dest_branch = self.branch
-        if not dest_branch:
+    def _resolve_try_branch(self):
+        if not self.branch:
             raise ValueError(
                 "Cannot push to try from a detached HEAD; checkout a branch first."
             )
-        email = self.get_user_email()
-        if not email:
-            raise ValueError(
-                "user.email is not configured; run 'git config user.email <email>'"
-            )
-        prefix = email.split("@", 1)[0]
-        if not dest_branch.startswith(prefix + "/"):
-            dest_branch = f"{prefix}/{dest_branch}"
-        with self.try_commit(message, changed_files) as head:
-            self.push(
-                remote,
-                ref=head,
-                dest_branch=dest_branch,
-                force=True,
-            )
+        return self.branch
 
     def _push_to_hg_try(self, message, changed_files, allow_log_capture):
         if not self.has_git_cinnabar:
@@ -419,18 +404,6 @@ class GitRepository(Repository):
                 )
             else:
                 subprocess.check_call(cmd, cwd=self.path)
-
-    def push_to_try(
-        self,
-        message: str,
-        changed_files: dict[str, str] = {},
-        remote: str = HG_TRY_URL,
-        allow_log_capture: bool = False,
-    ):
-        if HG_TRY_URL in remote:
-            self._push_to_hg_try(message, changed_files, allow_log_capture)
-        else:
-            self._push_to_git_try(message, changed_files, remote)
 
     def add_note(
         self,
