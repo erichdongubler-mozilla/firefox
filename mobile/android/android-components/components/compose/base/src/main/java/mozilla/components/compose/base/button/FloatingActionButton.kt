@@ -105,25 +105,6 @@ private fun FloatingActionButtonPreview() {
 
 @PreviewLightDark
 @Composable
-private fun SurfaceFloatingActionButtonPreview() {
-    var label by remember { mutableStateOf<String?>("LABEL") }
-
-    AcornTheme {
-        Box(Modifier.wrapContentSize()) {
-            FloatingActionButton(
-                label = label,
-                icon = painterResource(iconsR.drawable.mozac_ic_plus_24),
-                colors = FloatingActionButtonDefaults.colorsSurface(),
-                onClick = {
-                    label = if (label == null) "LABEL" else null
-                },
-            )
-        }
-    }
-}
-
-@PreviewLightDark
-@Composable
 private fun CustomFloatingActionButtonPreview() {
     var label by remember { mutableStateOf<String?>("LABEL") }
 

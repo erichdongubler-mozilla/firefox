@@ -28,19 +28,6 @@ object FloatingActionButtonDefaults {
     )
 
     /**
-     * Returns the colors for a Surface FAB.
-     */
-    @Composable
-    @ReadOnlyComposable
-    fun colorsSurface(
-        containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        contentColor: Color = MaterialTheme.colorScheme.inverseSurface,
-    ) = FloatingActionButtonColors(
-        containerColor = containerColor,
-        contentColor = contentColor,
-    )
-
-    /**
      * Returns the colors for a FAB that is disabled.
      */
     @Composable
