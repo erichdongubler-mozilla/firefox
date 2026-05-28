@@ -22,11 +22,11 @@ fn on_disk_keystore() -> (std::sync::Arc<Keystore>, tempfile::TempDir) {
 fn has_and_init_prp() {
     let ks = Keystore::new_in_memory().expect("new");
     assert!(!ks.has_prp());
-    assert!(!ks.is_kek_unlocked(KEK_REF_PRP));
+    assert!(!ks.is_kek_unlocked(KEK_REF_PRP).unwrap());
 
     ks.set_prp_test_only(None, PW).expect("set");
     assert!(ks.has_prp());
-    assert!(!ks.is_kek_unlocked(KEK_REF_PRP));
+    assert!(!ks.is_kek_unlocked(KEK_REF_PRP).unwrap());
 }
 
 #[test]
@@ -43,7 +43,7 @@ fn unlock_then_get_dek_succeeds() {
     ks.set_prp_test_only(None, PW).expect("set");
     ks.unlock_kek(KEK_REF_PRP, PW, Duration::from_secs(60))
         .expect("unlock");
-    assert!(ks.is_kek_unlocked(KEK_REF_PRP));
+    assert!(ks.is_kek_unlocked(KEK_REF_PRP).unwrap());
 
     ks.create_dek("col", KEK_REF_PRP, true).expect("create_dek");
     let (dek, _cs) = ks.get_dek("col", KEK_REF_PRP).expect("get_dek");
@@ -58,8 +58,8 @@ fn get_dek_when_locked_fails() {
         .expect("unlock");
     ks.create_dek("col", KEK_REF_PRP, true).expect("create_dek");
 
-    ks.lock_kek(KEK_REF_PRP);
-    assert!(!ks.is_kek_unlocked(KEK_REF_PRP));
+    ks.lock_kek(KEK_REF_PRP).unwrap();
+    assert!(!ks.is_kek_unlocked(KEK_REF_PRP).unwrap());
     let err = ks.get_dek("col", KEK_REF_PRP).unwrap_err();
     assert!(matches!(err, LockstoreError::Locked), "got: {:?}", err);
 }
@@ -76,7 +76,7 @@ fn unlock_expires_after_timeout() {
         .expect("add PrP level");
 
     sleep(Duration::from_millis(200));
-    assert!(!ks.is_kek_unlocked(KEK_REF_PRP));
+    assert!(!ks.is_kek_unlocked(KEK_REF_PRP).unwrap());
     let err = ks.get_dek("col", KEK_REF_PRP).unwrap_err();
     assert!(matches!(err, LockstoreError::Locked), "got: {:?}", err);
 
@@ -92,7 +92,7 @@ fn wrong_password_returns_wrong_password_and_does_not_cache() {
         .unlock_kek(KEK_REF_PRP, PW_WRONG, Duration::from_secs(60))
         .unwrap_err();
     assert!(matches!(err, LockstoreError::WrongPassword));
-    assert!(!ks.is_kek_unlocked(KEK_REF_PRP));
+    assert!(!ks.is_kek_unlocked(KEK_REF_PRP).unwrap());
 }
 
 #[test]
@@ -115,7 +115,7 @@ fn change_prp_rewraps_deks() {
     let (dek_before, _) = ks.get_dek("c1", KEK_REF_PRP).expect("get c1");
 
     ks.set_prp_test_only(Some(PW), PW_NEW).expect("change");
-    assert!(!ks.is_kek_unlocked(KEK_REF_PRP));
+    assert!(!ks.is_kek_unlocked(KEK_REF_PRP).unwrap());
 
     // Old password no longer works.
     assert!(matches!(
@@ -157,7 +157,7 @@ fn add_then_remove_local_level_leaves_prp_only() {
 
     ks.get_dek("c", KEK_REF_PRP).expect("prp ok");
 
-    ks.lock_kek(KEK_REF_PRP);
+    ks.lock_kek(KEK_REF_PRP).unwrap();
     let err = ks.get_dek("c", KEK_REF_PRP).unwrap_err();
     assert!(matches!(err, LockstoreError::Locked));
 }
@@ -179,7 +179,7 @@ fn reopen_on_disk_keystore_requires_unlock() {
 
     let ks2 = Keystore::get(path).expect("reopen");
     assert!(ks2.has_prp());
-    assert!(!ks2.is_kek_unlocked(KEK_REF_PRP));
+    assert!(!ks2.is_kek_unlocked(KEK_REF_PRP).unwrap());
     let err = ks2.get_dek("persisted", KEK_REF_PRP).unwrap_err();
     assert!(matches!(err, LockstoreError::Locked));
 
@@ -195,7 +195,7 @@ fn close_locks_prp() {
     ks.set_prp_test_only(None, PW).expect("set");
     ks.unlock_kek(KEK_REF_PRP, PW, Duration::from_secs(3600))
         .expect("unlock");
-    assert!(ks.is_kek_unlocked(KEK_REF_PRP));
+    assert!(ks.is_kek_unlocked(KEK_REF_PRP).unwrap());
     ks.close();
     // A fresh keystore at the same path must not inherit the unlocked state
     // (covered by `reopen_on_disk_keystore_requires_unlock`).
@@ -226,7 +226,7 @@ fn encrypt_decrypt_roundtrip_prp() {
     let round = ks.decrypt("c", KEK_REF_PRP, &blob).expect("decrypt");
     assert_eq!(round, plaintext);
 
-    ks.lock_kek(KEK_REF_PRP);
+    ks.lock_kek(KEK_REF_PRP).unwrap();
     let err = ks.encrypt("c", KEK_REF_PRP, plaintext).unwrap_err();
     assert!(matches!(err, LockstoreError::Locked));
     let err = ks.decrypt("c", KEK_REF_PRP, &blob).unwrap_err();
@@ -276,26 +276,26 @@ fn prp_dek_supports_non_extractable() {
 #[test]
 fn local_key_is_always_unlocked() {
     let ks = Keystore::new_in_memory().expect("new");
-    assert!(ks.is_kek_unlocked(KEK_REF_LOCAL));
+    assert!(ks.is_kek_unlocked(KEK_REF_LOCAL).unwrap());
     // lock / unlock are no-ops for LocalKey.
-    ks.lock_kek(KEK_REF_LOCAL);
-    assert!(ks.is_kek_unlocked(KEK_REF_LOCAL));
+    ks.lock_kek(KEK_REF_LOCAL).unwrap();
+    assert!(ks.is_kek_unlocked(KEK_REF_LOCAL).unwrap());
     ks.unlock_kek(KEK_REF_LOCAL, b"", Duration::from_secs(1))
         .expect("unlock no-op");
-    assert!(ks.is_kek_unlocked(KEK_REF_LOCAL));
+    assert!(ks.is_kek_unlocked(KEK_REF_LOCAL).unwrap());
 }
 
 #[test]
 fn unknown_kek_ref_reports_locked() {
     let ks = Keystore::new_in_memory().expect("new");
-    assert!(!ks.is_kek_unlocked("lockstore::kek::bogus"));
+    assert!(!ks.is_kek_unlocked("lockstore::kek::bogus").unwrap());
     // Attempting to unlock an unrecognised ref surfaces InvalidKekRef.
     let err = ks
         .unlock_kek("lockstore::kek::bogus", b"x", Duration::from_secs(1))
         .unwrap_err();
     assert!(matches!(err, LockstoreError::InvalidKekRef(_)));
     // lock_kek on an unrecognised ref is a no-op (no panic).
-    ks.lock_kek("lockstore::kek::bogus");
+    ks.lock_kek("lockstore::kek::bogus").unwrap();
 }
 
 #[test]
@@ -304,8 +304,8 @@ fn lock_clears_prp_cache() {
     ks.set_prp_test_only(None, PW).expect("set");
     ks.unlock_kek(KEK_REF_PRP, PW, Duration::from_secs(60))
         .expect("unlock");
-    assert!(ks.is_kek_unlocked(KEK_REF_PRP));
+    assert!(ks.is_kek_unlocked(KEK_REF_PRP).unwrap());
 
-    ks.lock();
-    assert!(!ks.is_kek_unlocked(KEK_REF_PRP));
+    ks.lock().unwrap();
+    assert!(!ks.is_kek_unlocked(KEK_REF_PRP).unwrap());
 }
