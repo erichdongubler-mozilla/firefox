@@ -567,6 +567,8 @@ skip-if = [
   "os == 'android'", # Bug 1513544 (GeckoView is missing the windows API and ability to open private tabs)
 ]
 
+["test_ext_webnavigation_onCommitted.html"]
+
 ["test_ext_webrequest_and_proxy_filter.html"]
 skip-if = [
   "http2",

@@ -63,5 +63,3 @@ skip-if = [
 ["test_ext_tabs_sendMessage.html"]
 
 ["test_ext_tabs_update_url.html"]
-
-["test_ext_webNavigation_onCommitted.html"]
