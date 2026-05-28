@@ -4142,6 +4142,7 @@ class IndexGetRequestOp final : public IndexRequestOpBase {
   AutoTArray<StructuredCloneReadInfoParent, 1> mResponse;
   PBackgroundParent* mBackgroundParent;
   const uint32_t mLimit;
+  const IDBCursorDirection mDirection;
   const bool mGetAll;
 
  private:
@@ -4155,6 +4156,8 @@ class IndexGetRequestOp final : public IndexRequestOpBase {
   nsresult DoDatabaseWork(DatabaseConnection* aConnection) override;
 
   void GetResponse(RequestResponse& aResponse, size_t* aResponseSize) override;
+
+  nsCString MakeQuery() const;
 };
 
 class IndexGetKeyRequestOp final : public IndexRequestOpBase {
@@ -4163,6 +4166,7 @@ class IndexGetKeyRequestOp final : public IndexRequestOpBase {
   const Maybe<SerializedKeyRange> mOptionalKeyRange;
   AutoTArray<Key, 1> mResponse;
   const uint32_t mLimit;
+  const IDBCursorDirection mDirection;
   const bool mGetAll;
 
  private:
@@ -4176,6 +4180,8 @@ class IndexGetKeyRequestOp final : public IndexRequestOpBase {
   nsresult DoDatabaseWork(DatabaseConnection* aConnection) override;
 
   void GetResponse(RequestResponse& aResponse, size_t* aResponseSize) override;
+
+  nsCString MakeQuery() const;
 };
 
 class IndexCountRequestOp final : public IndexRequestOpBase {
@@ -6272,8 +6278,10 @@ constexpr bool IsUnique(const IDBCursorDirection aDirection) {
 
 // TODO: In principle, this could be constexpr, if operator+(nsLiteralCString,
 // nsLiteralCString) were constexpr and returned a literal type.
-nsAutoCString MakeDirectionClause(const IDBCursorDirection aDirection) {
-  return " ORDER BY "_ns + kColumnNameKey +
+nsAutoCString MakeDirectionClause(
+    const IDBCursorDirection aDirection,
+    const nsLiteralCString& column = kColumnNameKey) {
+  return " ORDER BY "_ns + column +
          (IsIncreasingOrder(aDirection) ? " ASC"_ns : " DESC"_ns);
 }
 
@@ -10160,7 +10168,8 @@ bool TransactionBase::VerifyRequestParams(const RequestParams& aParams) const {
       if (NS_AUUF_OR_WARN_IF(!objectStoreMetadata)) {
         return false;
       }
-      if (NS_AUUF_OR_WARN_IF(!VerifyRequestParams(params.optionalKeyRange()))) {
+      if (NS_AUUF_OR_WARN_IF(
+              !VerifyRequestParams(params.options().optionalKeyRange()))) {
         return false;
       }
       break;
@@ -10174,7 +10183,8 @@ bool TransactionBase::VerifyRequestParams(const RequestParams& aParams) const {
       if (NS_AUUF_OR_WARN_IF(!objectStoreMetadata)) {
         return false;
       }
-      if (NS_AUUF_OR_WARN_IF(!VerifyRequestParams(params.optionalKeyRange()))) {
+      if (NS_AUUF_OR_WARN_IF(
+              !VerifyRequestParams(params.options().optionalKeyRange()))) {
         return false;
       }
       break;
@@ -10281,7 +10291,8 @@ bool TransactionBase::VerifyRequestParams(const RequestParams& aParams) const {
       if (NS_AUUF_OR_WARN_IF(!indexMetadata)) {
         return false;
       }
-      if (NS_AUUF_OR_WARN_IF(!VerifyRequestParams(params.optionalKeyRange()))) {
+      if (NS_AUUF_OR_WARN_IF(
+              !VerifyRequestParams(params.options().optionalKeyRange()))) {
         return false;
       }
       break;
@@ -10299,7 +10310,8 @@ bool TransactionBase::VerifyRequestParams(const RequestParams& aParams) const {
       if (NS_AUUF_OR_WARN_IF(!indexMetadata)) {
         return false;
       }
-      if (NS_AUUF_OR_WARN_IF(!VerifyRequestParams(params.optionalKeyRange()))) {
+      if (NS_AUUF_OR_WARN_IF(
+              !VerifyRequestParams(params.options().optionalKeyRange()))) {
         return false;
       }
       break;
@@ -19490,13 +19502,17 @@ ObjectStoreGetRequestOp::ObjectStoreGetRequestOp(
                          : aParams.get_ObjectStoreGetParams().objectStoreId()),
       mDatabase(Transaction().GetDatabasePtr()),
       mOptionalKeyRange(
-          aGetAll ? aParams.get_ObjectStoreGetAllParams().optionalKeyRange()
+          aGetAll ? aParams.get_ObjectStoreGetAllParams()
+                        .options()
+                        .optionalKeyRange()
                   : Some(aParams.get_ObjectStoreGetParams().keyRange())),
       mBackgroundParent(Transaction().GetBackgroundParent()),
       mPreprocessInfoCount(0),
-      mLimit(aGetAll ? aParams.get_ObjectStoreGetAllParams().limit() : 1),
-      mDirection(aGetAll ? aParams.get_ObjectStoreGetAllParams().direction()
-                         : IDBCursorDirection::Next),
+      mLimit(aGetAll ? aParams.get_ObjectStoreGetAllParams().options().limit()
+                     : 1),
+      mDirection(
+          aGetAll ? aParams.get_ObjectStoreGetAllParams().options().direction()
+                  : IDBCursorDirection::Next),
       mGetAll(aGetAll) {
   MOZ_ASSERT(aParams.type() == RequestParams::TObjectStoreGetParams ||
              aParams.type() == RequestParams::TObjectStoreGetAllParams);
@@ -19532,6 +19548,7 @@ nsresult ObjectStoreGetRequestOp::DoDatabaseWork(
   aConnection->AssertIsOnConnectionThread();
   MOZ_ASSERT_IF(!mGetAll, mOptionalKeyRange.isSome());
   MOZ_ASSERT_IF(!mGetAll, mLimit == 1);
+  MOZ_ASSERT_IF(!mGetAll, mDirection == IDBCursorDirection::Next);
 
   AUTO_PROFILER_LABEL("ObjectStoreGetRequestOp::DoDatabaseWork", DOM);
 
@@ -19663,11 +19680,17 @@ ObjectStoreGetKeyRequestOp::ObjectStoreGetKeyRequestOp(
           aGetAll ? aParams.get_ObjectStoreGetAllKeysParams().objectStoreId()
                   : aParams.get_ObjectStoreGetKeyParams().objectStoreId()),
       mOptionalKeyRange(
-          aGetAll ? aParams.get_ObjectStoreGetAllKeysParams().optionalKeyRange()
+          aGetAll ? aParams.get_ObjectStoreGetAllKeysParams()
+                        .options()
+                        .optionalKeyRange()
                   : Some(aParams.get_ObjectStoreGetKeyParams().keyRange())),
-      mLimit(aGetAll ? aParams.get_ObjectStoreGetAllKeysParams().limit() : 1),
-      mDirection(aGetAll ? aParams.get_ObjectStoreGetAllKeysParams().direction()
-                         : IDBCursorDirection::Next),
+      mLimit(aGetAll
+                 ? aParams.get_ObjectStoreGetAllKeysParams().options().limit()
+                 : 1),
+      mDirection(
+          aGetAll
+              ? aParams.get_ObjectStoreGetAllKeysParams().options().direction()
+              : IDBCursorDirection::Next),
       mGetAll(aGetAll) {
   MOZ_ASSERT(aParams.type() == RequestParams::TObjectStoreGetKeyParams ||
              aParams.type() == RequestParams::TObjectStoreGetAllKeysParams);
@@ -19984,11 +20007,13 @@ IndexGetRequestOp::IndexGetRequestOp(SafeRefPtr<TransactionBase> aTransaction,
                                      const RequestParams& aParams, bool aGetAll)
     : IndexRequestOpBase(std::move(aTransaction), aRequestId, aParams),
       mDatabase(Transaction().GetDatabasePtr()),
-      mOptionalKeyRange(aGetAll
-                            ? aParams.get_IndexGetAllParams().optionalKeyRange()
-                            : Some(aParams.get_IndexGetParams().keyRange())),
+      mOptionalKeyRange(
+          aGetAll ? aParams.get_IndexGetAllParams().options().optionalKeyRange()
+                  : Some(aParams.get_IndexGetParams().keyRange())),
       mBackgroundParent(Transaction().GetBackgroundParent()),
-      mLimit(aGetAll ? aParams.get_IndexGetAllParams().limit() : 1),
+      mLimit(aGetAll ? aParams.get_IndexGetAllParams().options().limit() : 1),
+      mDirection(aGetAll ? aParams.get_IndexGetAllParams().options().direction()
+                         : IDBCursorDirection::Next),
       mGetAll(aGetAll) {
   MOZ_ASSERT(aParams.type() == RequestParams::TIndexGetParams ||
              aParams.type() == RequestParams::TIndexGetAllParams);
@@ -19997,35 +20022,67 @@ IndexGetRequestOp::IndexGetRequestOp(SafeRefPtr<TransactionBase> aTransaction,
   MOZ_ASSERT(mBackgroundParent);
 }
 
+nsCString IndexGetRequestOp::MakeQuery() const {
+  const auto indexTable = mMetadata->mCommonMetadata.unique()
+                              ? "unique_index_data "_ns
+                              : "index_data "_ns;
+  if (IsUnique(mDirection) && !mMetadata->mCommonMetadata.unique()) {
+    // For nextunique/prevunique on a non-unique index, deduplicate by index key
+    // by selecting only the record with the minimum primary key for each index
+    // key. unique_index_data (mMetadata->mCommonMetadata.unique()) already
+    // enforces one record per index key, so this is only needed for
+    // index_data.
+    // Note we always use MIN regarless of the direction because we always
+    // walk the items in the order: the difference is that prevunique prepend
+    // record while nextunique append it.
+    // See step 3 at
+    // https://w3c.github.io/IndexedDB/#retrieve-multiple-items-from-an-index
+    // nextunique: "append |rangeRecords[i]| to records."
+    // prevunique: "prepend |rangeRecords[i]| to records."
+    return "SELECT file_ids, data "
+           "FROM object_data "
+           "INNER JOIN ("
+           "SELECT object_store_id, MIN(object_data_key) AS object_data_key, "
+           "value "
+           "FROM "_ns +
+           indexTable + "WHERE index_id = :"_ns + kStmtParamNameIndexId +
+           MaybeGetBindingClauseForKeyRange(mOptionalKeyRange,
+                                            kColumnNameValue) +
+           " GROUP BY value, object_store_id) AS index_table "
+           "ON object_data.object_store_id = "
+           "index_table.object_store_id "
+           "AND object_data.key = "
+           "index_table.object_data_key"_ns +
+           MakeDirectionClause(mDirection, "index_table.value"_ns) +
+           (mLimit ? kOpenLimit + IntToCString(mLimit) : EmptyCString());
+  }
+  return "SELECT file_ids, data "
+         "FROM object_data "
+         "INNER JOIN "_ns +
+         indexTable +
+         "AS index_table "
+         "ON object_data.object_store_id = "
+         "index_table.object_store_id "
+         "AND object_data.key = "
+         "index_table.object_data_key "
+         "WHERE index_id = :"_ns +
+         kStmtParamNameIndexId +
+         MaybeGetBindingClauseForKeyRange(mOptionalKeyRange, kColumnNameValue) +
+         MakeDirectionClause(mDirection, "index_table.value"_ns) +
+         (mLimit ? kOpenLimit + IntToCString(mLimit) : EmptyCString());
+}
+
 nsresult IndexGetRequestOp::DoDatabaseWork(DatabaseConnection* aConnection) {
   MOZ_ASSERT(aConnection);
   aConnection->AssertIsOnConnectionThread();
   MOZ_ASSERT_IF(!mGetAll, mOptionalKeyRange.isSome());
   MOZ_ASSERT_IF(!mGetAll, mLimit == 1);
+  MOZ_ASSERT_IF(!mGetAll, mDirection == IDBCursorDirection::Next);
 
   AUTO_PROFILER_LABEL("IndexGetRequestOp::DoDatabaseWork", DOM);
 
-  const auto indexTable = mMetadata->mCommonMetadata.unique()
-                              ? "unique_index_data "_ns
-                              : "index_data "_ns;
-
-  QM_TRY_INSPECT(
-      const auto& stmt,
-      aConnection->BorrowCachedStatement(
-          "SELECT file_ids, data "
-          "FROM object_data "
-          "INNER JOIN "_ns +
-          indexTable +
-          "AS index_table "
-          "ON object_data.object_store_id = "
-          "index_table.object_store_id "
-          "AND object_data.key = "
-          "index_table.object_data_key "
-          "WHERE index_id = :"_ns +
-          kStmtParamNameIndexId +
-          MaybeGetBindingClauseForKeyRange(mOptionalKeyRange,
-                                           kColumnNameValue) +
-          (mLimit ? kOpenLimit + IntToCString(mLimit) : EmptyCString())));
+  QM_TRY_INSPECT(const auto& stmt,
+                 aConnection->BorrowCachedStatement(MakeQuery()));
 
   QM_TRY(MOZ_TO_RESULT(stmt->BindInt64ByName(kStmtParamNameIndexId,
                                              mMetadata->mCommonMetadata.id())));
@@ -20110,14 +20167,54 @@ void IndexGetRequestOp::GetResponse(RequestResponse& aResponse,
   }
 }
 
+nsCString IndexGetKeyRequestOp::MakeQuery() const {
+  const auto indexTable = mMetadata->mCommonMetadata.unique()
+                              ? "unique_index_data "_ns
+                              : "index_data "_ns;
+
+  if (IsUnique(mDirection) && !mMetadata->mCommonMetadata.unique()) {
+    // For nextunique/prevunique on a non-unique index, deduplicate by index key
+    // by selecting only the record with the minimum primary key for each index
+    // key. unique_index_data (mMetadata->mCommonMetadata.unique()) already
+    // enforces one record per index key, so this is only needed for
+    // index_data.
+    // Note we always use MIN regarless of the direction because we always
+    // walk the items in the order: the difference is that prevunique prepend
+    // record while nextunique append it.
+    // See step 3 at
+    // https://w3c.github.io/IndexedDB/#retrieve-multiple-items-from-an-index
+    // nextunique: "append |rangeRecords[i]| to records."
+    // prevunique: "prepend |rangeRecords[i]| to records."
+    return "SELECT MIN(object_data_key) "
+           "FROM "_ns +
+           indexTable + "WHERE index_id = :"_ns + kStmtParamNameIndexId +
+           MaybeGetBindingClauseForKeyRange(mOptionalKeyRange,
+                                            kColumnNameValue) +
+           " GROUP BY value"_ns +
+           MakeDirectionClause(mDirection, kColumnNameValue) +
+           (mLimit ? kOpenLimit + IntToCString(mLimit) : EmptyCString());
+  }
+  return "SELECT object_data_key "
+         "FROM "_ns +
+         indexTable + "WHERE index_id = :"_ns + kStmtParamNameIndexId +
+         MaybeGetBindingClauseForKeyRange(mOptionalKeyRange, kColumnNameValue) +
+         MakeDirectionClause(mDirection, kColumnNameValue) +
+         (mLimit ? kOpenLimit + IntToCString(mLimit) : EmptyCString());
+}
+
 IndexGetKeyRequestOp::IndexGetKeyRequestOp(
     SafeRefPtr<TransactionBase> aTransaction, const int64_t aRequestId,
     const RequestParams& aParams, bool aGetAll)
     : IndexRequestOpBase(std::move(aTransaction), aRequestId, aParams),
       mOptionalKeyRange(
-          aGetAll ? aParams.get_IndexGetAllKeysParams().optionalKeyRange()
-                  : Some(aParams.get_IndexGetKeyParams().keyRange())),
-      mLimit(aGetAll ? aParams.get_IndexGetAllKeysParams().limit() : 1),
+          aGetAll
+              ? aParams.get_IndexGetAllKeysParams().options().optionalKeyRange()
+              : Some(aParams.get_IndexGetKeyParams().keyRange())),
+      mLimit(aGetAll ? aParams.get_IndexGetAllKeysParams().options().limit()
+                     : 1),
+      mDirection(aGetAll
+                     ? aParams.get_IndexGetAllKeysParams().options().direction()
+                     : IDBCursorDirection::Next),
       mGetAll(aGetAll) {
   MOZ_ASSERT(aParams.type() == RequestParams::TIndexGetKeyParams ||
              aParams.type() == RequestParams::TIndexGetAllKeysParams);
@@ -20134,18 +20231,8 @@ nsresult IndexGetKeyRequestOp::DoDatabaseWork(DatabaseConnection* aConnection) {
 
   const bool hasKeyRange = mOptionalKeyRange.isSome();
 
-  const auto indexTable = mMetadata->mCommonMetadata.unique()
-                              ? "unique_index_data "_ns
-                              : "index_data "_ns;
-
-  const nsCString query =
-      "SELECT object_data_key "
-      "FROM "_ns +
-      indexTable + "WHERE index_id = :"_ns + kStmtParamNameIndexId +
-      MaybeGetBindingClauseForKeyRange(mOptionalKeyRange, kColumnNameValue) +
-      (mLimit ? kOpenLimit + IntToCString(mLimit) : EmptyCString());
-
-  QM_TRY_INSPECT(const auto& stmt, aConnection->BorrowCachedStatement(query));
+  QM_TRY_INSPECT(const auto& stmt,
+                 aConnection->BorrowCachedStatement(MakeQuery()));
 
   QM_TRY(MOZ_TO_RESULT(stmt->BindInt64ByName(kStmtParamNameIndexId,
                                              mMetadata->mCommonMetadata.id())));

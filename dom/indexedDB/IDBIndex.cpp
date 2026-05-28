@@ -7,6 +7,7 @@
 #include "IDBCursorType.h"
 #include "IDBDatabase.h"
 #include "IDBEvents.h"
+#include "IDBGetAllHelper.h"
 #include "IDBKeyRange.h"
 #include "IDBObjectStore.h"
 #include "IDBRequest.h"
@@ -388,10 +389,9 @@ RefPtr<IDBRequest> IDBIndex::GetInternal(bool aKeyOnly, JSContext* aCx,
   return request;
 }
 
-RefPtr<IDBRequest> IDBIndex::GetAllInternal(bool aKeysOnly, JSContext* aCx,
-                                            JS::Handle<JS::Value> aKey,
-                                            const Optional<uint32_t>& aLimit,
-                                            ErrorResult& aRv) {
+RefPtr<IDBRequest> IDBIndex::GetAllInternal(
+    bool aKeysOnly, JSContext* aCx, JS::Handle<JS::Value> aQueryOrOptions,
+    const Optional<uint32_t>& aLimit, ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
   if (mDeletedMetadata) {
@@ -405,53 +405,47 @@ RefPtr<IDBRequest> IDBIndex::GetAllInternal(bool aKeysOnly, JSContext* aCx,
     return nullptr;
   }
 
-  RefPtr<IDBKeyRange> keyRange;
-  IDBKeyRange::FromJSVal(aCx, aKey, &keyRange, aRv,
-                         &mObjectStore->MutableTransactionRef());
-  if (NS_WARN_IF(aRv.Failed())) {
+  auto optionsResult = GetAllOptionsFromQueryOrOptions(
+      aCx, aQueryOrOptions, aLimit, &mObjectStore->MutableTransactionRef());
+  if (NS_WARN_IF(optionsResult.isErr())) {
+    aRv = optionsResult.unwrapErr();
     return nullptr;
   }
+  const auto options = optionsResult.unwrap();
 
   const int64_t objectStoreId = mObjectStore->Id();
   const int64_t indexId = Id();
 
-  Maybe<SerializedKeyRange> optionalKeyRange;
-  if (keyRange) {
-    SerializedKeyRange serializedKeyRange;
-    keyRange->ToSerialized(serializedKeyRange);
-    optionalKeyRange.emplace(serializedKeyRange);
-  }
-
-  const uint32_t limit = aLimit.WasPassed() ? aLimit.Value() : 0;
-
-  const auto& params =
-      aKeysOnly ? RequestParams{IndexGetAllKeysParams(objectStoreId, indexId,
-                                                      optionalKeyRange, limit)}
-                : RequestParams{IndexGetAllParams(objectStoreId, indexId,
-                                                  optionalKeyRange, limit)};
+  const RequestParams params =
+      aKeysOnly
+          ? RequestParams{IndexGetAllKeysParams(objectStoreId, indexId,
+                                                options)}
+          : RequestParams{IndexGetAllParams(objectStoreId, indexId, options)};
 
   auto request = GenerateRequest(aCx, this).unwrap();
 
   if (aKeysOnly) {
     IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
         "database(%s).transaction(%s).objectStore(%s).index(%s)."
-        "getAllKeys(%s, %s)",
-        "IDBIndex.getAllKeys(%.0s%.0s%.0s%.0s%.0s%.0s)",
+        "getAllKeys(%s, %s, %s)",
+        "IDBIndex.getAllKeys(%.0s%.0s%.0s%.0s%.0s%.0s%.0s)",
         transaction.LoggingSerialNumber(), request->LoggingSerialNumber(),
         IDB_LOG_STRINGIFY(transaction.Database()),
         IDB_LOG_STRINGIFY(transaction), IDB_LOG_STRINGIFY(mObjectStore),
-        IDB_LOG_STRINGIFY(this), IDB_LOG_STRINGIFY(keyRange),
-        IDB_LOG_STRINGIFY(aLimit));
+        IDB_LOG_STRINGIFY(this), IDB_LOG_STRINGIFY(options.optionalKeyRange()),
+        IDB_LOG_STRINGIFY(options.limit()),
+        IDB_LOG_STRINGIFY(options.direction()));
   } else {
     IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
         "database(%s).transaction(%s).objectStore(%s).index(%s)."
-        "getAll(%s, %s)",
-        "IDBIndex.getAll(%.0s%.0s%.0s%.0s%.0s%.0s)",
+        "getAll(%s, %s, %s)",
+        "IDBIndex.getAll(%.0s%.0s%.0s%.0s%.0s%.0s%.0s)",
         transaction.LoggingSerialNumber(), request->LoggingSerialNumber(),
         IDB_LOG_STRINGIFY(transaction.Database()),
         IDB_LOG_STRINGIFY(transaction), IDB_LOG_STRINGIFY(mObjectStore),
-        IDB_LOG_STRINGIFY(this), IDB_LOG_STRINGIFY(keyRange),
-        IDB_LOG_STRINGIFY(aLimit));
+        IDB_LOG_STRINGIFY(this), IDB_LOG_STRINGIFY(options.optionalKeyRange()),
+        IDB_LOG_STRINGIFY(options.limit()),
+        IDB_LOG_STRINGIFY(options.direction()));
   }
 
   auto& mutableTransaction = mObjectStore->MutableTransactionRef();
