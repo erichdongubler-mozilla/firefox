@@ -72,7 +72,7 @@ UNIFIED_SOURCES += [
     "IDBDatabase.cpp",
     "IDBEvents.cpp",
     "IDBFactory.cpp",
-    "IDBGetAllHelper.cpp",
+    "IDBGetAllOptions.cpp",
     "IDBIndex.cpp",
     "IDBKeyRange.cpp",
     "IDBObjectStore.cpp",

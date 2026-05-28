@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef DOM_INDEXEDDB_IDBGETALLHELPER_H_
-#define DOM_INDEXEDDB_IDBGETALLHELPER_H_
+#ifndef DOM_INDEXEDDB_IDBGETALLOPTIONS_H_
+#define DOM_INDEXEDDB_IDBGETALLOPTIONS_H_
 
 #include "js/TypeDecls.h"
 #include "mozilla/ErrorResult.h"
@@ -26,4 +26,4 @@ Result<indexedDB::GetAllOptions, ErrorResult> GetAllOptionsFromArg(
 
 }  // namespace mozilla::dom
 
-#endif  //  DOM_INDEXEDDB_IDBGETALLHELPER_H_
+#endif  //  DOM_INDEXEDDB_IDBGETALLOPTIONS_H_
