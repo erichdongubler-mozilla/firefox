@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-05-27T14:39:59.770906+00:00'
+updated_at: '2026-05-28T12:18:25.446819+00:00'
 export:
   path: ./docs/mots/index.rst
   format: rst
@@ -1976,9 +1976,8 @@ modules:
       review_group: gfx-reviewers
     owners:
       - *jrmuizel
-    peers:
       - *nical
-      - *jgilbert
+    peers:
       - *mstange
       - *basschouten
       - *jfkthame
@@ -4786,5 +4785,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: ad1020575f289c481f804803e964ae8bafe2760a
-  export: 8b481dfc841ce341254d0929e6362b54a8bc344f
+  config: 8c51e4588c2d6a74ccf6004f3a2eaef626855de8
+  export: dc30a84e1d8578e63bbf52343b6516e9524f3504
