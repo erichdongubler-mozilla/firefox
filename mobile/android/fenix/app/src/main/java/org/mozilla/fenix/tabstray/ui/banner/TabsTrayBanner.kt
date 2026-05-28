@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Surface
@@ -238,7 +239,6 @@ private fun TabPageBanner(
     syncedTabCount: Int,
     onTabPageIndicatorClicked: (Page) -> Unit,
 ) {
-    val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant
     val selectedTabIndex = Page.pageToPosition(
         page = selectedPage,
         shouldShowTabGroupsPage = shouldShowTabGroupsPage,
@@ -263,6 +263,7 @@ private fun TabPageBanner(
                         topStartPercent = 50,
                         topEndPercent = 50,
                     ),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             },
             divider = {},
@@ -274,7 +275,6 @@ private fun TabPageBanner(
                 shouldShowTabGroupsPage = shouldShowTabGroupsPage,
                 tabGroupCount = tabGroupCount,
                 syncedTabCount = syncedTabCount,
-                inactiveColor = inactiveColor,
                 onTabPageIndicatorClicked = onTabPageIndicatorClicked,
             )
         }
@@ -290,7 +290,6 @@ private fun TabPageBannerTabs(
     shouldShowTabGroupsPage: Boolean,
     tabGroupCount: Int,
     syncedTabCount: Int,
-    inactiveColor: Color,
     onTabPageIndicatorClicked: (Page) -> Unit,
 ) {
     val privateTabDescription = stringResource(
@@ -315,7 +314,6 @@ private fun TabPageBannerTabs(
         selected = selectedPage == Page.PrivateTabs,
         testTag = TabsTrayTestTag.PRIVATE_TABS_PAGE_BUTTON,
         contentDescription = privateTabDescription,
-        inactiveColor = inactiveColor,
         onClick = { onTabPageIndicatorClicked(Page.PrivateTabs) },
     ) {
         Icon(painterResource(iconsR.drawable.mozac_ic_private_mode_24), null)
@@ -325,10 +323,9 @@ private fun TabPageBannerTabs(
         selected = selectedPage == Page.NormalTabs,
         testTag = TabsTrayTestTag.NORMAL_TABS_PAGE_BUTTON,
         contentDescription = normalTabDescription,
-        inactiveColor = inactiveColor,
         onClick = { onTabPageIndicatorClicked(Page.NormalTabs) },
     ) {
-        TabCounter(tabCount = normalTabCount)
+        TabCounter(tabCount = normalTabCount, contentColor = LocalContentColor.current)
     }
 
     if (shouldShowTabGroupsPage) {
@@ -336,7 +333,6 @@ private fun TabPageBannerTabs(
             selected = selectedPage == Page.TabGroups,
             testTag = TabsTrayTestTag.TAB_GROUPS_PAGE_BUTTON,
             contentDescription = tabGroupsDescription,
-            inactiveColor = inactiveColor,
             onClick = { onTabPageIndicatorClicked(Page.TabGroups) },
         ) {
             Icon(painterResource(iconsR.drawable.mozac_ic_tab_group_24), null)
@@ -347,7 +343,6 @@ private fun TabPageBannerTabs(
         selected = selectedPage == Page.SyncedTabs,
         testTag = TabsTrayTestTag.SYNCED_TABS_PAGE_BUTTON,
         contentDescription = syncedTabDescription,
-        inactiveColor = inactiveColor,
         onClick = { onTabPageIndicatorClicked(Page.SyncedTabs) },
     ) {
         Icon(painterResource(iconsR.drawable.mozac_ic_sync_tabs_24), null)
@@ -359,7 +354,6 @@ private fun BannerTab(
     selected: Boolean,
     testTag: String,
     contentDescription: String,
-    inactiveColor: Color,
     onClick: () -> Unit,
     content: @Composable () -> Unit,
 ) {
@@ -370,7 +364,8 @@ private fun BannerTab(
             .testTag(testTag)
             .semantics { this.contentDescription = contentDescription }
             .height(RowHeight),
-        unselectedContentColor = inactiveColor,
+        selectedContentColor = MaterialTheme.colorScheme.onSurface,
+        unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
     ) {
         content()
     }
