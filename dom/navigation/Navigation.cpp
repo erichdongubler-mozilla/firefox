@@ -462,6 +462,37 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
   }
 }
 
+void Navigation::TruncateForwardEntries(uint32_t aNewLength) {
+  if (HasEntriesAndEventsDisabled()) {
+    return;
+  }
+
+  if (aNewLength >= mEntries.Length()) {
+    return;
+  }
+
+  if (mCurrentEntryIndex && *mCurrentEntryIndex >= aNewLength) {
+    return;
+  }
+
+  nsTArray<RefPtr<NavigationHistoryEntry>> disposedEntries;
+  disposedEntries.AppendElements(Span(mEntries).From(aNewLength));
+  mEntries.TruncateLength(aNewLength);
+
+  for (auto& entry : disposedEntries) {
+    entry->ResetIndexForDisposal();
+  }
+
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "Navigation::TruncateForwardEntries",
+      [oldEntries =
+           std::move(disposedEntries)]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+        for (const RefPtr<NavigationHistoryEntry>& disposedNHE : oldEntries) {
+          MOZ_KnownLive(disposedNHE)->FireDisposeEvent();
+        }
+      }));
+}
+
 static bool Equals(nsIURI* aURI, nsIURI* aOtherURI) {
   bool equals = false;
   return aURI && aOtherURI && NS_SUCCEEDED(aURI->Equals(aOtherURI, &equals)) &&

@@ -2845,9 +2845,29 @@ void CanonicalBrowsingContext::HistoryCommitIndexAndLength(
 
   shistory->EvictOutOfRangeDocumentViewers(index);
 
+  nsTArray<NavigationEntriesTruncation> truncations;
+  if (Navigation::IsAPIEnabled()) {
+    PreOrderWalk([&truncations](BrowsingContext* aContext) {
+      RefPtr<SessionHistoryEntry> activeEntry =
+          aContext->Canonical()->GetActiveSessionHistoryEntry();
+      if (!activeEntry) {
+        return;
+      }
+      uint32_t count = 0;
+      nsSHistory::WalkContiguousEntriesInOrder(activeEntry,
+                                               [&count](SessionHistoryEntry*) {
+                                                 ++count;
+                                                 return true;
+                                               });
+      if (count) {
+        truncations.AppendElement(NavigationEntriesTruncation{aContext, count});
+      }
+    });
+  }
+
   Group()->EachParent([&](ContentParent* aParent) {
     (void)aParent->SendHistoryCommitIndexAndLength(this, index, length,
-                                                   aChangeID);
+                                                   aChangeID, truncations);
   });
 
   shistory->NotifyOnHistoryCommit();
