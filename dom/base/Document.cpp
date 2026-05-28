@@ -1954,11 +1954,10 @@ void Document::ConstructUbiNode(void* storage) {
 }
 
 void Document::LoadEventFired() {
-  // Collect page load timings
+  // Collect page load timings. The pageload event itself is now submitted from
+  // Document::Destroy() so it can include the final LCP value and any other
+  // metrics that aren't stable at load time.
   AccumulatePageLoadTelemetry();
-
-  // Record page load event
-  RecordPageLoadEventTelemetry();
 
   // Release the JS bytecode cache from its wait on the load event, and
   // potentially dispatch the encoding of the bytecode.
@@ -1967,9 +1966,9 @@ void Document::LoadEventFired() {
   }
 }
 
-void Document::RecordPageLoadEventTelemetry() {
+void Document::ReportPageLoadEvent() {
   // If the page load time is empty, then the content wasn't something we want
-  // to report (i.e. not a top level document).
+  // to report (i.e. not a top level document, or load never completed).
   if (!mPageloadEventData.HasLoadTime()) {
     return;
   }
@@ -1999,6 +1998,19 @@ void Document::RecordPageLoadEventTelemetry() {
   // Return if we are not sending an event for this pageload.
   if (pageloadEventType == mozilla::PageloadEventType::kNone) {
     return;
+  }
+
+  // Refresh metrics that can change between the load event and document
+  // destruction. LCP in particular keeps updating until first user interaction
+  // or page teardown, so the value captured in AccumulatePageLoadTelemetry is
+  // not necessarily final.
+  if (const nsDOMNavigationTiming* timing = GetNavigationTiming()) {
+    if (TimeStamp navigationStart = timing->GetNavigationStartTimeStamp()) {
+      if (TimeStamp lcpTime = timing->GetLargestContentfulRenderTimeStamp()) {
+        mPageloadEventData.set_lcpTime(static_cast<uint32_t>(
+            (lcpTime - navigationStart).ToMilliseconds()));
+      }
+    }
   }
 
 #ifdef ACCESSIBILITY
@@ -2255,14 +2267,6 @@ void Document::AccumulatePageLoadTelemetry() {
       mPageloadEventData.set_fcpTime(
           static_cast<uint32_t>(fcpTime.ToMilliseconds()));
     }
-  }
-
-  // Report the most up to date LCP time. For our histogram we actually report
-  // this on page unload.
-  if (TimeStamp lcpTime =
-          GetNavigationTiming()->GetLargestContentfulRenderTimeStamp()) {
-    mPageloadEventData.set_lcpTime(
-        static_cast<uint32_t>((lcpTime - navigationStart).ToMilliseconds()));
   }
 
   // Load event
@@ -12273,6 +12277,10 @@ void Document::Destroy() {
 
   ReportDocumentUseCounters();
   ReportShadowedProperties();
+  // ReportPageLoadEvent must run before ReportLCP: ReportLCP skips submitting
+  // its histogram when mPageloadEventData.HasDomain() is true, and HasDomain()
+  // is set inside ReportPageLoadEvent.
+  ReportPageLoadEvent();
   ReportLCP();
   SetDevToolsWatchingDOMMutations(false);
 

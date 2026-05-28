@@ -5865,8 +5865,8 @@ class Document : public nsINode,
   // Collection of data used by the pageload event.
   PageloadEventData mPageloadEventData;
 
-  // Record page load telemetry
-  void RecordPageLoadEventTelemetry();
+  // Submit the page load event at the end of the document's lifetime.
+  void ReportPageLoadEvent();
 
   // Accumulate JS telemetry collected
   void AccumulateJSTelemetry();
