@@ -77,16 +77,25 @@ class IPProtectionFeature(
         mainDispatcher: CoroutineDispatcher,
     ) {
         store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.map { it.eligibilityStatus to it.serviceStatus }
+            flow.map { Triple(it.eligibilityStatus, it.serviceStatus, it.accountState.status) }
                 .distinctUntilChanged()
                 // We use `collectLatest` only because of the nested `observeToggle` that
                 // should be canceled on new observation.
-                .collectLatest { (eligibilityStatus, serviceStatus) ->
+                .collectLatest { (eligibilityStatus, serviceStatus, accountStatus) ->
                     when (eligibilityStatus) {
                         EligibilityStatus.Eligible -> {
                             if (serviceStatus == ServiceState.Uninitialized) {
                                 logger.info("Registering and initializing with IPProtectionController.")
                                 registerAndInit()
+                            }
+
+                            // When the app starts with an already signed-in user, the account state
+                            // is likely to be ready faster than the service, so we should notify
+                            // a ready account state after initializing the handler.
+                            if (serviceStatus == ServiceState.Unauthenticated &&
+                                accountStatus == AccountStatus.Ready
+                            ) {
+                                handler?.notifyAccountStatus(true)
                             }
                             observeToggle()
                         }
