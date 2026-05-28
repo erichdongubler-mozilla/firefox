@@ -434,8 +434,7 @@ LoadingSessionHistoryInfo::LoadingSessionHistoryInfo(
 
 already_AddRefed<nsDocShellLoadState>
 LoadingSessionHistoryInfo::CreateLoadInfo() const {
-  RefPtr<nsDocShellLoadState> loadState(
-      new nsDocShellLoadState(mInfo.GetURI()));
+  RefPtr loadState = MakeRefPtr<nsDocShellLoadState>(mInfo.GetURI());
 
   mInfo.FillLoadInfo(*loadState);
 
@@ -1095,7 +1094,7 @@ SessionHistoryEntry::Create(
 
 NS_IMETHODIMP
 SessionHistoryEntry::Clone(nsISHEntry** aEntry) {
-  RefPtr<SessionHistoryEntry> entry = new SessionHistoryEntry(*this);
+  RefPtr entry = MakeRefPtr<SessionHistoryEntry>(*this);
 
   // These are not copied for some reason, we're not sure why.
   entry->mInfo->mLoadType = 0;

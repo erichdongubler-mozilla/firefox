@@ -354,6 +354,6 @@ nsAboutRedirector::GetChromeURI(nsIURI* aURI, nsIURI** chromeURI) {
 }
 
 nsresult nsAboutRedirector::Create(REFNSIID aIID, void** aResult) {
-  RefPtr<nsAboutRedirector> about = new nsAboutRedirector();
+  RefPtr about = mozilla::MakeRefPtr<nsAboutRedirector>();
   return about->QueryInterface(aIID, aResult);
 }

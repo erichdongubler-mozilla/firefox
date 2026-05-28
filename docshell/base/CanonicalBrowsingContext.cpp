@@ -171,7 +171,7 @@ CanonicalBrowsingContext::CanonicalBrowsingContext(WindowContext* aParentWindow,
   MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
 
   if (IsTop()) {
-    mScopedPrefs = new ScopedPrefs();
+    mScopedPrefs = MakeRefPtr<ScopedPrefs>();
   }
 
   // The initial URI in a BrowsingContext is always "about:blank".
@@ -261,7 +261,7 @@ nsISecureBrowserUI* CanonicalBrowsingContext::GetSecureBrowserUI() {
     return nullptr;
   }
   if (!mSecureBrowserUI) {
-    mSecureBrowserUI = new nsSecureBrowserUI(this);
+    mSecureBrowserUI = MakeRefPtr<nsSecureBrowserUI>(this);
   }
   return mSecureBrowserUI;
 }
@@ -506,7 +506,7 @@ nsISHistory* CanonicalBrowsingContext::GetSessionHistory() {
   // Check GetChildSessionHistory() to make sure that this BrowsingContext has
   // session history enabled.
   if (!mSessionHistory && GetChildSessionHistory()) {
-    mSessionHistory = new nsSHistory(this);
+    mSessionHistory = MakeRefPtr<nsSHistory>(this);
   }
 
   return mSessionHistory;
@@ -614,7 +614,7 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
              mActiveEntry) {
     entry = mActiveEntry;
   } else {
-    entry = new SessionHistoryEntry(aLoadState, aChannel);
+    entry = MakeRefPtr<SessionHistoryEntry>(aLoadState, aChannel);
     if (!IsTop() && (mActiveEntry || !mLoadingEntries.IsEmpty())) {
       entry->SetIsSubFrame(true);
     }
@@ -1367,7 +1367,7 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
 already_AddRefed<nsDocShellLoadState> CanonicalBrowsingContext::CreateLoadInfo(
     SessionHistoryEntry* aEntry, NavigationType aNavigationType) {
   const SessionHistoryInfo& info = aEntry->Info();
-  RefPtr<nsDocShellLoadState> loadState(new nsDocShellLoadState(info.GetURI()));
+  RefPtr loadState = MakeRefPtr<nsDocShellLoadState>(info.GetURI());
   info.FillLoadInfo(*loadState);
   UniquePtr<LoadingSessionHistoryInfo> loadingInfo;
   loadingInfo = MakeUnique<LoadingSessionHistoryInfo>(aEntry);
@@ -1440,7 +1440,7 @@ void CanonicalBrowsingContext::SetActiveSessionHistoryEntry(
     oldActiveEntry->SetScrollPosition(aPreviousScrollPos.ref().x,
                                       aPreviousScrollPos.ref().y);
   }
-  mActiveEntry = new SessionHistoryEntry(aInfo);
+  mActiveEntry = MakeRefPtr<SessionHistoryEntry>(aInfo);
   mActiveEntry->SetDocshellID(GetHistoryID());
   mActiveEntry->AdoptBFCacheEntry(oldActiveEntry);
   if (aUpdatedCacheKey != 0) {
@@ -2342,14 +2342,14 @@ nsresult CanonicalBrowsingContext::PendingRemotenessChange::FinishSubframe() {
 
   nsCOMPtr<nsIPrincipal> initialPrincipal =
       NullPrincipal::Create(target->OriginAttributesRef());
-  RefPtr<nsOpenWindowInfo> openWindowInfo = new nsOpenWindowInfo();
+  RefPtr openWindowInfo = MakeRefPtr<nsOpenWindowInfo>();
   openWindowInfo->mPrincipalToInheritForAboutBlank = initialPrincipal;
   WindowGlobalInit windowInit =
       WindowGlobalActor::AboutBlankInitializer(target, initialPrincipal);
 
   // Create and initialize our new BrowserBridgeParent.
   TabId tabId(nsContentUtils::GenerateTabId());
-  RefPtr<BrowserBridgeParent> bridge = new BrowserBridgeParent();
+  RefPtr bridge = MakeRefPtr<BrowserBridgeParent>();
   nsresult rv =
       bridge->InitWithProcess(embedderBrowser, mContentParentKeepAlive.get(),
                               windowInit, chromeFlags, tabId);
@@ -2530,8 +2530,8 @@ CanonicalBrowsingContext::ChangeRemoteness(
   auto promise = MakeRefPtr<RemotenessPromise::Private>(__func__);
   promise->UseDirectTaskDispatch(__func__);
 
-  RefPtr<PendingRemotenessChange> change =
-      new PendingRemotenessChange(this, promise, aPendingSwitchId, aOptions);
+  RefPtr change = MakeRefPtr<PendingRemotenessChange>(
+      this, promise, aPendingSwitchId, aOptions);
   mPendingRemotenessChange = change;
 
   // If we're replacing BrowsingContext, determine which BrowsingContextGroup
@@ -2684,7 +2684,7 @@ MediaController* CanonicalBrowsingContext::GetMediaController() {
   // Only content browsing context can create media controller, we won't create
   // controller for chrome document, such as the browser UI.
   if (!mTabMediaController && !IsDiscarded() && IsContent()) {
-    mTabMediaController = new MediaController(Id());
+    mTabMediaController = MakeRefPtr<MediaController>(Id());
   }
   return mTabMediaController;
 }
@@ -2986,7 +2986,7 @@ void CanonicalBrowsingContext::SetRestoreData(SessionStoreRestoreData* aData,
     return;
   }
 
-  mRestoreState = new RestoreState();
+  mRestoreState = MakeRefPtr<RestoreState>();
   mRestoreState->mData = aData;
   mRestoreState->mPromise = promise;
 }
