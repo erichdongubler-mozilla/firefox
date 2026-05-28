@@ -1301,6 +1301,9 @@ SettingGroupManager.registerGroups({
                 value: Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER.toString(),
                 l10nId:
                   "preferences-etp-custom-cookie-behavior-block-cross-site-cookies",
+                hidden:
+                  Services.prefs.getIntPref("network.cookie.cookieBehavior") !==
+                  Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
               },
               {
                 value:
@@ -1312,6 +1315,9 @@ SettingGroupManager.registerGroups({
                 value: Ci.nsICookieService.BEHAVIOR_LIMIT_FOREIGN.toString(),
                 l10nId:
                   "preferences-etp-custom-cookie-behavior-block-unvisited",
+                hidden:
+                  Services.prefs.getIntPref("network.cookie.cookieBehavior") !==
+                  Ci.nsICookieService.BEHAVIOR_LIMIT_FOREIGN,
               },
               {
                 value: Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN.toString(),
