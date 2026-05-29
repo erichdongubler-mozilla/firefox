@@ -50,8 +50,6 @@ class LockstoreService final : public nsILockstore, public nsIObserver {
   // for JS callers.
   // ---------------------------------------------------------------------
 
-  nsresult DoSetPrimaryPassword(const nsACString& aOldPassword,
-                                const nsACString& aNewPassword);
   nsresult DoUnlockKek(const nsACString& aKekRef, const nsACString& aSecret,
                        uint32_t aTimeoutMs);
   nsresult DoLockKek(const nsACString& aKekRef);
@@ -70,8 +68,7 @@ class LockstoreService final : public nsILockstore, public nsIObserver {
                        const nsACString& aOldKekRef,
                        const nsACString& aNewKekRef);
   Result<nsTArray<nsCString>, nsresult> DoListDeks();
-  Result<nsTArray<nsCString>, nsresult> DoListKeks(
-      const nsACString& aDekName);
+  Result<nsTArray<nsCString>, nsresult> DoListKeks(const nsACString& aDekName);
   Result<nsTArray<uint8_t>, nsresult> DoEncrypt(
       const nsACString& aCollection, const nsACString& aKekRef,
       const nsTArray<uint8_t>& aPlaintext);
