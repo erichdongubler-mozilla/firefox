@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { actionCreators as ac } from "common/Actions.mjs";
 import {
@@ -42,17 +42,29 @@ export function buildMoveProps(id, order, enabledMap, dispatch) {
 export function MoveSubmenu({ widgetId, widgetEnabledMap }) {
   const prefs = useSelector(state => state.Prefs.values);
   const dispatch = useDispatch();
-  const ref = useRef(null);
   const moveProps = buildMoveProps(
     widgetId,
     resolveWidgetOrder(prefs),
     widgetEnabledMap,
     dispatch
   );
+
+  // Read the latest moveProps via a ref so the ref callback stays stable and
+  // doesn't re-attach the listener every render.
+  const movePropsRef = useRef(moveProps);
   useEffect(() => {
-    const el = ref.current;
+    movePropsRef.current = moveProps;
+  }, [moveProps]);
+
+  // A ref callback is required because the submenu is gated
+  // behind an early return and only mounts once the widget is
+  // movable; the callback fires whenever the node attaches.
+  const cleanupRef = useRef(null);
+  const submenuRef = useCallback(el => {
+    cleanupRef.current?.();
+    cleanupRef.current = null;
     if (!el) {
-      return undefined;
+      return;
     }
     const listener = e => {
       const item = e.composedPath().find(n => n.dataset?.moveDir);
@@ -60,14 +72,14 @@ export function MoveSubmenu({ widgetId, widgetEnabledMap }) {
         return;
       }
       if (item.dataset.moveDir === "left") {
-        moveProps.onMoveLeft();
+        movePropsRef.current.onMoveLeft();
       } else if (item.dataset.moveDir === "right") {
-        moveProps.onMoveRight();
+        movePropsRef.current.onMoveRight();
       }
     };
     el.addEventListener("click", listener);
-    return () => el.removeEventListener("click", listener);
-  }, [moveProps]);
+    cleanupRef.current = () => el.removeEventListener("click", listener);
+  }, []);
 
   if (!moveProps.canMoveLeft && !moveProps.canMoveRight) {
     return null;
@@ -76,7 +88,7 @@ export function MoveSubmenu({ widgetId, widgetEnabledMap }) {
   return (
     <panel-item submenu={submenuId}>
       <span data-l10n-id="newtab-widget-menu-move"></span>
-      <panel-list ref={ref} slot="submenu" id={submenuId}>
+      <panel-list ref={submenuRef} slot="submenu" id={submenuId}>
         <panel-item
           data-l10n-id="newtab-widget-menu-move-left"
           data-move-dir="left"

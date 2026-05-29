@@ -11,7 +11,7 @@ import React, {
 } from "react";
 import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { useIntersectionObserver } from "../../../lib/utils";
+import { useIntersectionObserver, useSizeSubmenu } from "../../../lib/utils";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 import { WidgetCelebration } from "../WidgetCelebration";
 import { useWidgetCelebration } from "../useWidgetCelebration";
@@ -197,7 +197,6 @@ function Lists({
 
   const inputRef = useRef(null);
   const reorderListRef = useRef(null);
-  const sizeSubmenuRef = useRef(null);
   const widgetRef = useRef(null);
   const impressionFired = useRef(false);
   const {
@@ -826,22 +825,7 @@ function Lists({
     [dispatch]
   );
 
-  useEffect(() => {
-    const el = sizeSubmenuRef.current;
-    if (!el) {
-      return undefined;
-    }
-
-    const listener = e => {
-      const item = e.composedPath().find(node => node.dataset?.size);
-      if (item) {
-        handleChangeSize(item.dataset.size);
-      }
-    };
-
-    el.addEventListener("click", listener);
-    return () => el.removeEventListener("click", listener);
-  }, [handleChangeSize]);
+  const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
 
   useEffect(() => {
     setIsAddingTask(false);

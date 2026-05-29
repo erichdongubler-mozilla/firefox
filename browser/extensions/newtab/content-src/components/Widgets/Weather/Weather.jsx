@@ -6,7 +6,7 @@ import React, { useCallback, useEffect, useRef } from "react";
 import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { PREF_WEATHER_SIZE } from "common/WidgetsRegistry.mjs";
-import { useIntersectionObserver } from "../../../lib/utils";
+import { useIntersectionObserver, useSizeSubmenu } from "../../../lib/utils";
 import { LocationSearch } from "content-src/components/Weather/LocationSearch";
 import { MoveSubmenu } from "../MoveSubmenu";
 
@@ -26,7 +26,6 @@ function Weather({ dispatch, size, widgetEnabledMap }) {
   const impressionFired = useRef(false);
   const errorTelemetrySent = useRef(false);
   const errorRef = useRef(null);
-  const sizeSubmenuRef = useRef(null);
   const currentWeatherSize = prefs[PREF_WEATHER_SIZE] || "medium";
   const trainhopWidgetsEnabled = prefs.trainhopConfig?.widgets?.enabled;
   const widgetsSystemEnabled =
@@ -65,20 +64,7 @@ function Weather({ dispatch, size, widgetEnabledMap }) {
     [dispatch]
   );
 
-  useEffect(() => {
-    const el = sizeSubmenuRef.current;
-    if (!el) {
-      return undefined;
-    }
-    const listener = e => {
-      const item = e.composedPath().find(node => node.dataset?.size);
-      if (item) {
-        handleChangeSize(item.dataset.size);
-      }
-    };
-    el.addEventListener("click", listener);
-    return () => el.removeEventListener("click", listener);
-  }, [handleChangeSize, weatherData?.initialized]);
+  const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
 
   const handleIntersection = useCallback(() => {
     if (impressionFired.current) {

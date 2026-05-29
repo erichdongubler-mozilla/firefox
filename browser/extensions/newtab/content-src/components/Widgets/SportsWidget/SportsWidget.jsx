@@ -12,7 +12,7 @@ import React, {
 } from "react";
 import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { useIntersectionObserver } from "../../../lib/utils";
+import { useIntersectionObserver, useSizeSubmenu } from "../../../lib/utils";
 import { SportsMatchRow } from "./SportsMatchRow";
 import { MoveSubmenu } from "../MoveSubmenu";
 import { WatchLiveModal } from "./WatchLiveModal";
@@ -260,7 +260,6 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
     teamColorsByKey
   );
   const impressionFired = useRef(false);
-  const sizeSubmenuRef = useRef(null);
   const introVideoRef = useRef(null);
   const playIntroVideo = useMemo(() => {
     const prefersReducedMotion =
@@ -461,20 +460,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
     [dispatch]
   );
 
-  useEffect(() => {
-    const el = sizeSubmenuRef.current;
-    if (!el) {
-      return undefined;
-    }
-    const listener = e => {
-      const item = e.composedPath().find(node => node.dataset?.size);
-      if (item) {
-        handleChangeSize(item.dataset.size);
-      }
-    };
-    el.addEventListener("click", listener);
-    return () => el.removeEventListener("click", listener);
-  }, [handleChangeSize]);
+  const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
 
   function handleViewMatches(widgetSource) {
     batch(() => {

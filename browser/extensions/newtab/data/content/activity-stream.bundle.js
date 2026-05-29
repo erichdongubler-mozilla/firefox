@@ -2971,6 +2971,48 @@ function useConfetti(count = 80, spread = Math.PI / 3) {
   return [canvasRef, fireConfetti];
 }
 
+/**
+ * Wires a click listener onto a widget's "change size" submenu and returns a
+ * ref callback to attach to its <panel-list slot="submenu"> element.
+ *
+ * moz-panel-list moves the submenu into shadow DOM, so React synthetic events
+ * don't reach the inner <panel-item> elements; we listen on the submenu element
+ * directly and resolve the clicked item across the shadow boundary via
+ * composedPath() and its data-size attribute.
+ *
+ * A ref callback is required because several widgets gate their whole render on
+ * async data and only mount the submenu once that data loads. The ref callback
+ * fires whenever the node attaches, so the listener is wired up no matter when
+ * the menu first appears.
+ *
+ * @function useSizeSubmenu
+ * @param {function} onChangeSize - Called with the selected size string when a
+ *   submenu item is clicked.
+ * @returns {function} A ref callback for the submenu <panel-list> element.
+ */
+function useSizeSubmenu(onChangeSize) {
+  const onChangeSizeRef = (0,external_React_namespaceObject.useRef)(onChangeSize);
+  const cleanupRef = (0,external_React_namespaceObject.useRef)(null);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    onChangeSizeRef.current = onChangeSize;
+  }, [onChangeSize]);
+  return (0,external_React_namespaceObject.useCallback)(el => {
+    cleanupRef.current?.();
+    cleanupRef.current = null;
+    if (!el) {
+      return;
+    }
+    const listener = e => {
+      const item = e.composedPath().find(node => node.dataset?.size);
+      if (item) {
+        onChangeSizeRef.current(item.dataset.size);
+      }
+    };
+    el.addEventListener("click", listener);
+    cleanupRef.current = () => el.removeEventListener("click", listener);
+  }, []);
+}
+
 ;// CONCATENATED MODULE: ./content-src/components/TopSites/TopSitesConstants.mjs
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
@@ -12538,12 +12580,24 @@ function MoveSubmenu({
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
-  const ref = (0,external_React_namespaceObject.useRef)(null);
   const moveProps = buildMoveProps(widgetId, resolveWidgetOrder(prefs), widgetEnabledMap, dispatch);
+
+  // Read the latest moveProps via a ref so the ref callback stays stable and
+  // doesn't re-attach the listener every render.
+  const movePropsRef = (0,external_React_namespaceObject.useRef)(moveProps);
   (0,external_React_namespaceObject.useEffect)(() => {
-    const el = ref.current;
+    movePropsRef.current = moveProps;
+  }, [moveProps]);
+
+  // A ref callback is required because the submenu is gated
+  // behind an early return and only mounts once the widget is
+  // movable; the callback fires whenever the node attaches.
+  const cleanupRef = (0,external_React_namespaceObject.useRef)(null);
+  const submenuRef = (0,external_React_namespaceObject.useCallback)(el => {
+    cleanupRef.current?.();
+    cleanupRef.current = null;
     if (!el) {
-      return undefined;
+      return;
     }
     const listener = e => {
       const item = e.composedPath().find(n => n.dataset?.moveDir);
@@ -12551,14 +12605,14 @@ function MoveSubmenu({
         return;
       }
       if (item.dataset.moveDir === "left") {
-        moveProps.onMoveLeft();
+        movePropsRef.current.onMoveLeft();
       } else if (item.dataset.moveDir === "right") {
-        moveProps.onMoveRight();
+        movePropsRef.current.onMoveRight();
       }
     };
     el.addEventListener("click", listener);
-    return () => el.removeEventListener("click", listener);
-  }, [moveProps]);
+    cleanupRef.current = () => el.removeEventListener("click", listener);
+  }, []);
   if (!moveProps.canMoveLeft && !moveProps.canMoveRight) {
     return null;
   }
@@ -12568,7 +12622,7 @@ function MoveSubmenu({
   }, /*#__PURE__*/external_React_default().createElement("span", {
     "data-l10n-id": "newtab-widget-menu-move"
   }), /*#__PURE__*/external_React_default().createElement("panel-list", {
-    ref: ref,
+    ref: submenuRef,
     slot: "submenu",
     id: submenuId
   }, /*#__PURE__*/external_React_default().createElement("panel-item", MoveSubmenu_extends({
@@ -12732,7 +12786,6 @@ function Lists({
   const isMediumSize = widgetSize === "medium";
   const inputRef = (0,external_React_namespaceObject.useRef)(null);
   const reorderListRef = (0,external_React_namespaceObject.useRef)(null);
-  const sizeSubmenuRef = (0,external_React_namespaceObject.useRef)(null);
   const widgetRef = (0,external_React_namespaceObject.useRef)(null);
   const impressionFired = (0,external_React_namespaceObject.useRef)(false);
   const {
@@ -13258,20 +13311,7 @@ function Lists({
       }));
     });
   }, [dispatch]);
-  (0,external_React_namespaceObject.useEffect)(() => {
-    const el = sizeSubmenuRef.current;
-    if (!el) {
-      return undefined;
-    }
-    const listener = e => {
-      const item = e.composedPath().find(node => node.dataset?.size);
-      if (item) {
-        handleChangeSize(item.dataset.size);
-      }
-    };
-    el.addEventListener("click", listener);
-    return () => el.removeEventListener("click", listener);
-  }, [handleChangeSize]);
+  const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
   (0,external_React_namespaceObject.useEffect)(() => {
     setIsAddingTask(false);
   }, [selected]);
@@ -14564,25 +14604,7 @@ const FocusTimer = ({
     e.preventDefault();
     toggleType(timerType === "focus" ? "break" : "focus");
   };
-  const sizeSubmenuRef = (0,external_React_namespaceObject.useRef)(null);
-  (0,external_React_namespaceObject.useEffect)(() => {
-    const el = sizeSubmenuRef.current;
-    if (!el) {
-      return undefined;
-    }
-    // The size submenu panel-list is moved into the panel-item's shadow DOM by
-    // the panel-list custom element, so React's synthetic onClick doesn't reach
-    // inner items. We use composedPath() to find the clicked item across the
-    // shadow boundary via its data-size attribute.
-    const listener = e => {
-      const item = e.composedPath().find(node => node.dataset?.size);
-      if (item) {
-        handleChangeSize(item.dataset.size);
-      }
-    };
-    el.addEventListener("click", listener);
-    return () => el.removeEventListener("click", listener);
-  }, [handleChangeSize]);
+  const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
 
   // Keep the running-state body layout through the celebration so the ring
   // doesn't shift to a third position during the animation.
@@ -15450,7 +15472,6 @@ function Weather_Weather({
   const impressionFired = (0,external_React_namespaceObject.useRef)(false);
   const errorTelemetrySent = (0,external_React_namespaceObject.useRef)(false);
   const errorRef = (0,external_React_namespaceObject.useRef)(null);
-  const sizeSubmenuRef = (0,external_React_namespaceObject.useRef)(null);
   const currentWeatherSize = prefs[PREF_WEATHER_SIZE] || "medium";
   const trainhopWidgetsEnabled = prefs.trainhopConfig?.widgets?.enabled;
   const widgetsSystemEnabled = trainhopWidgetsEnabled || prefs["widgets.system.enabled"];
@@ -15477,20 +15498,7 @@ function Weather_Weather({
       }));
     });
   }, [dispatch]);
-  (0,external_React_namespaceObject.useEffect)(() => {
-    const el = sizeSubmenuRef.current;
-    if (!el) {
-      return undefined;
-    }
-    const listener = e => {
-      const item = e.composedPath().find(node => node.dataset?.size);
-      if (item) {
-        handleChangeSize(item.dataset.size);
-      }
-    };
-    el.addEventListener("click", listener);
-    return () => el.removeEventListener("click", listener);
-  }, [handleChangeSize, weatherData?.initialized]);
+  const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
   const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
     if (impressionFired.current) {
       return;
@@ -17130,7 +17138,6 @@ function SportsWidget_SportsWidget({
   });
   const followedGradient = getFollowedGradient(highlightMatch, selectedTeamsSet, teamColorsByKey);
   const impressionFired = (0,external_React_namespaceObject.useRef)(false);
-  const sizeSubmenuRef = (0,external_React_namespaceObject.useRef)(null);
   const introVideoRef = (0,external_React_namespaceObject.useRef)(null);
   const playIntroVideo = (0,external_React_namespaceObject.useMemo)(() => {
     const prefersReducedMotion = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
@@ -17289,20 +17296,7 @@ function SportsWidget_SportsWidget({
       }));
     });
   }, [dispatch]);
-  (0,external_React_namespaceObject.useEffect)(() => {
-    const el = sizeSubmenuRef.current;
-    if (!el) {
-      return undefined;
-    }
-    const listener = e => {
-      const item = e.composedPath().find(node => node.dataset?.size);
-      if (item) {
-        handleChangeSize(item.dataset.size);
-      }
-    };
-    el.addEventListener("click", listener);
-    return () => el.removeEventListener("click", listener);
-  }, [handleChangeSize]);
+  const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
   function handleViewMatches(widgetSource) {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
@@ -18812,7 +18806,6 @@ function Clocks({
   const hourFormatPref = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values[PREF_CLOCKS_HOUR_FORMAT]);
   const [now, setNow] = (0,external_React_namespaceObject.useState)(null);
   const impressionFired = (0,external_React_namespaceObject.useRef)(false);
-  const sizeSubmenuRef = (0,external_React_namespaceObject.useRef)(null);
   const contextMenuRef = (0,external_React_namespaceObject.useRef)(null);
   const contextMenuButtonRef = (0,external_React_namespaceObject.useRef)(null);
   // Suppress hover-reveal after a menu action; cleared on mouseleave.
@@ -18898,23 +18891,7 @@ function Clocks({
     });
     closeContextMenu();
   }, [dispatch, closeContextMenu]);
-
-  // moz-panel-list moves the submenu into shadow DOM, so React synthetic
-  // events don't reach inner items. Listen directly and use composedPath.
-  (0,external_React_namespaceObject.useEffect)(() => {
-    const el = sizeSubmenuRef.current;
-    if (!el) {
-      return undefined;
-    }
-    const listener = e => {
-      const item = e.composedPath().find(node => node.dataset?.size);
-      if (item) {
-        handleChangeSize(item.dataset.size);
-      }
-    };
-    el.addEventListener("click", listener);
-    return () => el.removeEventListener("click", listener);
-  }, [handleChangeSize]);
+  const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
   const handleToggleHourFormat = (0,external_React_namespaceObject.useCallback)(() => {
     const nextFormat = use12HourFormat ? "24" : "12";
     (0,external_ReactRedux_namespaceObject.batch)(() => {

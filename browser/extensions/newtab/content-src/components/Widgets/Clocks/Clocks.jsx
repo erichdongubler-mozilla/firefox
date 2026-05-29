@@ -15,7 +15,7 @@ import {
   PREF_CLOCKS_SIZE,
   PREF_WIDGETS_CLOCKS_ENABLED,
 } from "common/WidgetsRegistry.mjs";
-import { useIntersectionObserver } from "../../../lib/utils";
+import { useIntersectionObserver, useSizeSubmenu } from "../../../lib/utils";
 import { AddClockForm } from "./AddClockForm";
 import { ClocksRow } from "./ClocksRow";
 import { EditClocksPanel } from "./EditClocksPanel";
@@ -89,7 +89,6 @@ function Clocks({ dispatch, size, widgetEnabledMap }) {
 
   const [now, setNow] = useState(null);
   const impressionFired = useRef(false);
-  const sizeSubmenuRef = useRef(null);
   const contextMenuRef = useRef(null);
   const contextMenuButtonRef = useRef(null);
   // Suppress hover-reveal after a menu action; cleared on mouseleave.
@@ -183,22 +182,7 @@ function Clocks({ dispatch, size, widgetEnabledMap }) {
     [dispatch, closeContextMenu]
   );
 
-  // moz-panel-list moves the submenu into shadow DOM, so React synthetic
-  // events don't reach inner items. Listen directly and use composedPath.
-  useEffect(() => {
-    const el = sizeSubmenuRef.current;
-    if (!el) {
-      return undefined;
-    }
-    const listener = e => {
-      const item = e.composedPath().find(node => node.dataset?.size);
-      if (item) {
-        handleChangeSize(item.dataset.size);
-      }
-    };
-    el.addEventListener("click", listener);
-    return () => el.removeEventListener("click", listener);
-  }, [handleChangeSize]);
+  const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
 
   const handleToggleHourFormat = useCallback(() => {
     const nextFormat = use12HourFormat ? "24" : "12";
