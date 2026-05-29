@@ -1837,7 +1837,21 @@ bool ModuleBuilder::buildTables(frontend::StencilModuleMetadata& metadata) {
         }
       } else {
         // All names should have already been marked as used-by-stencil.
-        if (!importEntry->importName) {
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+        bool isSourcePhase =
+            metadata.moduleRequests[importEntry->moduleRequest.value()].phase ==
+            ImportPhase::Source;
+#else
+        bool isSourcePhase = false;
+#endif
+        if (isSourcePhase) {
+          // A source-phase import binds the module-source object as a local
+          // lexical, so re-exporting it is a local export.
+          if (!metadata.localExportEntries.append(exp)) {
+            js::ReportOutOfMemory(fc_);
+            return false;
+          }
+        } else if (!importEntry->importName) {
           // This is a re-export of an imported module namespace object.
           auto entry = frontend::StencilModuleEntry::exportNamespaceFromEntry(
               importEntry->moduleRequest, exp.exportName, exp.lineno,
