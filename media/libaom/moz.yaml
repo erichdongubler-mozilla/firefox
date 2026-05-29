@@ -57,4 +57,3 @@ vendoring:
 
   patches:
     - mmloadusi64.patch
-    - calloc_cdef.patch
