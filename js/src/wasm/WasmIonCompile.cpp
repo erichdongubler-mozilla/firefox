@@ -9656,6 +9656,9 @@ bool FunctionCompiler::emitStoreSuspendParams(
 
   // The rest are suspendTagParams, again in reverse order.
   for (uint32_t i = 0; i < suspendTagParams.length(); i++) {
+    if (!mirGen().ensureBallast()) {
+      return false;
+    }
     size_t reverseIndex = suspendTagParams.length() - i - 1;
 
     ValType handlerParam = suspendTagParams[reverseIndex];
@@ -9895,6 +9898,9 @@ bool FunctionCompiler::emitResume() {
     DefVector resultDefs;
     size_t suspendLabelParams = suspendTagParams.length() + 1;
     for (uint32_t i = 0; i < suspendLabelParams; i++) {
+      if (!mirGen().ensureBallast()) {
+        return false;
+      }
       size_t stackResultIndex = currentResultsAreaIndex - i - 1;
 
       MWasmStackResult* stackResult =
