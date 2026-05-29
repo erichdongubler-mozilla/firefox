@@ -423,7 +423,7 @@ RefPtr<DMABufFormats> CreateDMABufFeedbackFormats(
   if (!WaylandDisplayGet()->HasDMABufFeedback()) {
     return nullptr;
   }
-  RefPtr<DMABufFormats> formats = new DMABufFormats();
+  auto formats = MakeRefPtr<DMABufFormats>();
   formats->InitFeedback(WaylandDisplayGet()->GetDmabuf(), aFormatRefreshCB,
                         aSurface);
   return formats.forget();

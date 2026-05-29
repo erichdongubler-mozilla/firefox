@@ -1572,7 +1572,7 @@ gfx::SurfaceFormat DMABufSurfaceRGBA::GetFormat() {
 already_AddRefed<DMABufSurfaceRGBA> DMABufSurfaceRGBA::CreateDMABufSurface(
     mozilla::gl::GLContext* aGLContext, int aWidth, int aHeight,
     int aDMABufSurfaceFlags, RefPtr<mozilla::widget::DRMFormat> aFormat) {
-  RefPtr<DMABufSurfaceRGBA> surf = new DMABufSurfaceRGBA();
+  auto surf = MakeRefPtr<DMABufSurfaceRGBA>();
   if (!surf->Create(aGLContext, aWidth, aHeight, aDMABufSurfaceFlags,
                     aFormat)) {
     return nullptr;
@@ -1584,7 +1584,7 @@ already_AddRefed<DMABufSurface> DMABufSurfaceRGBA::CreateDMABufSurface(
     RefPtr<mozilla::gfx::FileHandleWrapper>&& aFd,
     const mozilla::webgpu::ffi::WGPUDMABufInfo& aDMABufInfo, int aWidth,
     int aHeight) {
-  RefPtr<DMABufSurfaceRGBA> surf = new DMABufSurfaceRGBA();
+  auto surf = MakeRefPtr<DMABufSurfaceRGBA>();
   if (!surf->Create(std::move(aFd), aDMABufInfo, aWidth, aHeight)) {
     return nullptr;
   }
@@ -1593,7 +1593,7 @@ already_AddRefed<DMABufSurface> DMABufSurfaceRGBA::CreateDMABufSurface(
 
 already_AddRefed<DMABufSurfaceYUV> DMABufSurfaceYUV::CreateYUVSurface(
     const VADRMPRIMESurfaceDescriptor& aDesc, int aWidth, int aHeight) {
-  RefPtr<DMABufSurfaceYUV> surf = new DMABufSurfaceYUV();
+  auto surf = MakeRefPtr<DMABufSurfaceYUV>();
   LOGDMABUFS("[%p] DMABufSurfaceYUV::CreateYUVSurface() UID %d from desc\n",
              surf.get(), surf->GetUID());
   if (!surf->UpdateYUVData(aDesc, aWidth, aHeight, /* aCopy */ false)) {
@@ -1604,7 +1604,7 @@ already_AddRefed<DMABufSurfaceYUV> DMABufSurfaceYUV::CreateYUVSurface(
 
 already_AddRefed<DMABufSurfaceYUV> DMABufSurfaceYUV::CopyYUVSurface(
     const VADRMPRIMESurfaceDescriptor& aDesc, int aWidth, int aHeight) {
-  RefPtr<DMABufSurfaceYUV> surf = new DMABufSurfaceYUV();
+  auto surf = MakeRefPtr<DMABufSurfaceYUV>();
   LOGDMABUFS("[%p] DMABufSurfaceYUV::CreateYUVSurfaceCopy() UID %d from desc\n",
              surf.get(), surf->GetUID());
   if (!surf->UpdateYUVData(aDesc, aWidth, aHeight, /* aCopy */ true)) {
