@@ -81,6 +81,7 @@ export class ProjectSearch extends Component {
       selectSpecificLocationOrSameUrl: PropTypes.func.isRequired,
       searchOptions: PropTypes.object.isRequired,
       setSearchOptions: PropTypes.func.isRequired,
+      navigateCounter: PropTypes.number,
     };
   }
 
