@@ -348,6 +348,16 @@ Result<nsTArray<uint8_t>, nsresult> LockstoreService::DoGetDek(
   return out;
 }
 
+Result<nsCString, nsresult> LockstoreService::DoCreateKek(
+    const nsACString& aKekType, const nsACString& aSecret,
+    uint32_t aCacheTimeoutMs) {
+  LOCKSTORE_SYNC_PREAMBLE;
+  nsCString out;
+  MOZ_TRY(lockstore_keystore_create_kek(mKeystore, &aKekType, &aSecret,
+                                        aCacheTimeoutMs, &out));
+  return out;
+}
+
 #undef LOCKSTORE_SYNC_PREAMBLE
 
 // ---------------------------------------------------------------------------
@@ -485,6 +495,16 @@ LockstoreService::GetDek(const nsACString& aCollection,
                          Promise** aPromise) {
   return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoGetDek,
                          nsCString{aCollection}, nsCString{aKekRef});
+}
+
+NS_IMETHODIMP
+LockstoreService::CreateKek(const nsACString& aKekType,
+                            const nsACString& aSecret,
+                            uint32_t aCacheTimeoutMs, JSContext* aCx,
+                            Promise** aPromise) {
+  return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoCreateKek,
+                         nsCString{aKekType}, nsCString{aSecret},
+                         aCacheTimeoutMs);
 }
 
 }  // namespace mozilla::security::lockstore
