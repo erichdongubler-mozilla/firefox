@@ -271,7 +271,7 @@ void WasmArrayObject::obj_trace(JSTracer* trc, JSObject* object) {
   if (!arrayObj.isDataInline()) {
     OOLDataHeader* oolHeader = oolDataHeaderFromDataPointer(arrayObj.data_);
     OOLDataHeader* prior = oolHeader;
-    TraceBufferEdge(trc, &arrayObj, &oolHeader, "WasmArrayObject storage");
+    TraceBufferEdge(trc, &oolHeader, "WasmArrayObject storage");
     if (oolHeader != prior) {
       arrayObj.data_ = oolDataHeaderToDataPointer(oolHeader);
     }
@@ -477,8 +477,7 @@ void WasmStructObject::obj_trace(JSTracer* trc, JSObject* object) {
     // *addressOfOOLPtr may be null if the struct was only partially initialized
     // due to OOM during createStructOOL.
     if (MOZ_LIKELY(*addressOfOOLPtr)) {
-      TraceBufferEdge(trc, &structObj, addressOfOOLPtr,
-                      "WasmStructObject outline data");
+      TraceBufferEdge(trc, addressOfOOLPtr, "WasmStructObject outline data");
       uint8_t* oolBase = *addressOfOOLPtr;
       for (uint32_t offset : structType.outlineTraceOffsets_) {
         AnyRef* fieldPtr = reinterpret_cast<AnyRef*>(oolBase + offset);

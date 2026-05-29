@@ -1986,7 +1986,7 @@ inline void TraceBufferSlot(JSTracer* trc, NativeObject* obj, uint32_t slot,
   }
 
   void* buffer = value.toPrivate();
-  TraceBufferEdge(trc, obj, &buffer, name);
+  TraceBufferEdge(trc, &buffer, name);
   if (buffer != value.toPrivate()) {
     obj->setSlot(slot, PrivateValue(buffer));
   }
