@@ -57,9 +57,9 @@ fn result_to_nsresult(r: Result<(), LockstoreError>) -> nsresult {
 /// # Safety
 /// `ret_handle` must be a writable location. On `NS_OK` the handle is
 /// owned by the caller and must be released via
-/// `lockstore_keystore_close`.
+/// `keystore_close`.
 #[no_mangle]
-pub unsafe extern "C" fn lockstore_keystore_open(
+pub unsafe extern "C" fn keystore_open(
     profile_path: &nsACString,
     ret_handle: &mut *mut KeystoreHandle,
 ) -> nsresult {
@@ -91,7 +91,7 @@ pub unsafe extern "C" fn lockstore_keystore_open(
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_create_dek(
+pub extern "C" fn keystore_create_dek(
     handle: &KeystoreHandle,
     collection: &nsACString,
     kek_ref: &nsACString,
@@ -127,7 +127,7 @@ pub extern "C" fn lockstore_keystore_create_dek(
 /// remains with the caller; Lockstore copies what it needs before
 /// returning.
 #[no_mangle]
-pub unsafe extern "C" fn lockstore_keystore_import_dek(
+pub unsafe extern "C" fn keystore_import_dek(
     handle: &KeystoreHandle,
     collection: &nsACString,
     kek_ref: &nsACString,
@@ -166,7 +166,7 @@ pub unsafe extern "C" fn lockstore_keystore_import_dek(
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_is_dek_extractable(
+pub extern "C" fn keystore_is_dek_extractable(
     handle: &KeystoreHandle,
     collection: &nsACString,
     out_extractable: &mut bool,
@@ -187,7 +187,7 @@ pub extern "C" fn lockstore_keystore_is_dek_extractable(
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_get_dek(
+pub extern "C" fn keystore_get_dek(
     handle: &KeystoreHandle,
     collection: &nsACString,
     kek_ref: &nsACString,
@@ -215,7 +215,7 @@ pub extern "C" fn lockstore_keystore_get_dek(
 /// ciphertext under this collection by other means before (or after)
 /// this call.
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_delete_dek(
+pub extern "C" fn keystore_delete_dek(
     handle: &KeystoreHandle,
     collection: &nsACString,
 ) -> nsresult {
@@ -233,7 +233,7 @@ pub extern "C" fn lockstore_keystore_delete_dek(
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_list_deks(
+pub extern "C" fn keystore_list_deks(
     handle: &KeystoreHandle,
     ret_collections: &mut ThinVec<nsCString>,
 ) -> nsresult {
@@ -253,7 +253,7 @@ pub extern "C" fn lockstore_keystore_list_deks(
 /// An unknown or empty `dek_name` surfaces as `NS_ERROR_NOT_AVAILABLE`
 /// via `error_to_nsresult` (the keystore layer rejects with `NotFound`).
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_list_keks(
+pub extern "C" fn keystore_list_keks(
     handle: &KeystoreHandle,
     dek_name: &nsACString,
     ret_kek_refs: &mut ThinVec<nsCString>,
@@ -269,7 +269,7 @@ pub extern "C" fn lockstore_keystore_list_keks(
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_add_kek(
+pub extern "C" fn keystore_add_kek(
     handle: &KeystoreHandle,
     collection: &nsACString,
     from_kek_ref: &nsACString,
@@ -289,7 +289,7 @@ pub extern "C" fn lockstore_keystore_add_kek(
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_remove_kek(
+pub extern "C" fn keystore_remove_kek(
     handle: &KeystoreHandle,
     collection: &nsACString,
     kek_ref: &nsACString,
@@ -311,7 +311,7 @@ pub extern "C" fn lockstore_keystore_remove_kek(
 /// valid. Equivalent in effect to `add_kek` + `remove_kek` but atomic
 /// at the kvstore-row level.
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_switch_kek(
+pub extern "C" fn keystore_switch_kek(
     handle: &KeystoreHandle,
     collection: &nsACString,
     old_kek_ref: &nsACString,
@@ -338,7 +338,7 @@ pub extern "C" fn lockstore_keystore_switch_kek(
 /// `nsTArray::Elements()` returns for empty arrays). Ownership remains
 /// with the caller; Lockstore copies what it needs before returning.
 #[no_mangle]
-pub unsafe extern "C" fn lockstore_keystore_encrypt(
+pub unsafe extern "C" fn keystore_encrypt(
     handle: &KeystoreHandle,
     collection: &nsACString,
     kek_ref: &nsACString,
@@ -379,7 +379,7 @@ pub unsafe extern "C" fn lockstore_keystore_encrypt(
 /// when `ciphertext_len > 0`. When `ciphertext_len == 0` the pointer
 /// is not dereferenced. Ownership remains with the caller.
 #[no_mangle]
-pub unsafe extern "C" fn lockstore_keystore_decrypt(
+pub unsafe extern "C" fn keystore_decrypt(
     handle: &KeystoreHandle,
     collection: &nsACString,
     kek_ref: &nsACString,
@@ -412,11 +412,11 @@ pub unsafe extern "C" fn lockstore_keystore_decrypt(
 
 /// # Safety
 /// `handle` must be a non-null pointer previously returned by
-/// `lockstore_keystore_open` that has not yet been passed to this
+/// `keystore_open` that has not yet been passed to this
 /// function. Consumes the handle and zeroises every cached KEK before
 /// returning.
 #[no_mangle]
-pub unsafe extern "C" fn lockstore_keystore_close(handle: *mut KeystoreHandle) -> nsresult {
+pub unsafe extern "C" fn keystore_close(handle: *mut KeystoreHandle) -> nsresult {
     // C++ can't trigger Rust's `Drop` directly, so this fn is the
     // C-callable entry point that consumes the boxed handle. The
     // explicit `lock()` call here is defensive: it zeroises every
@@ -450,7 +450,7 @@ pub unsafe extern "C" fn lockstore_keystore_close(handle: *mut KeystoreHandle) -
 /// uses them, and zeroises that buffer before returning; the caller's
 /// `nsACString` view is never mutated.
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_unlock_kek(
+pub extern "C" fn keystore_unlock_kek(
     handle: &KeystoreHandle,
     kek_ref: &nsACString,
     secret: &nsACString,
@@ -475,10 +475,7 @@ pub extern "C" fn lockstore_keystore_unlock_kek(
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_lock_kek(
-    handle: &KeystoreHandle,
-    kek_ref: &nsACString,
-) -> nsresult {
+pub extern "C" fn keystore_lock_kek(handle: &KeystoreHandle, kek_ref: &nsACString) -> nsresult {
     if kek_ref.is_empty() {
         return NS_ERROR_INVALID_ARG;
     }
@@ -487,7 +484,7 @@ pub extern "C" fn lockstore_keystore_lock_kek(
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_is_kek_unlocked(
+pub extern "C" fn keystore_is_kek_unlocked(
     handle: &KeystoreHandle,
     kek_ref: &nsACString,
     out_unlocked: &mut bool,
@@ -509,7 +506,7 @@ pub extern "C" fn lockstore_keystore_is_kek_unlocked(
 /// and every per-kek_ref PKCS#11 entry). Intended for shutdown / logout
 /// paths that should invalidate all unlocked state in a single call.
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_lock(handle: &KeystoreHandle) -> nsresult {
+pub extern "C" fn keystore_lock(handle: &KeystoreHandle) -> nsresult {
     result_to_nsresult(handle.keystore.lock())
 }
 
@@ -529,7 +526,7 @@ pub extern "C" fn lockstore_keystore_lock(handle: &KeystoreHandle) -> nsresult {
 /// kek_ref the caller should hand to subsequent `createDek` /
 /// `encrypt` calls.
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_create_kek(
+pub extern "C" fn keystore_create_kek(
     handle: &KeystoreHandle,
     kek_type: &nsACString,
     secret: &nsACString,
@@ -564,10 +561,7 @@ pub extern "C" fn lockstore_keystore_create_kek(
 /// `switchKek`); otherwise the deletion is refused. An empty
 /// `kek_ref` is rejected at the boundary.
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_delete_kek(
-    handle: &KeystoreHandle,
-    kek_ref: &nsACString,
-) -> nsresult {
+pub extern "C" fn keystore_delete_kek(handle: &KeystoreHandle, kek_ref: &nsACString) -> nsresult {
     if kek_ref.is_empty() {
         return NS_ERROR_INVALID_ARG;
     }

@@ -865,7 +865,7 @@ fn test_two_deks_under_same_kek_differ() {
 // ---------------------------------------------------------------------------
 
 #[test]
-fn test_lockstore_keystore_get_returns_same_arc() {
+fn test_keystore_get_returns_same_arc() {
     use std::sync::Arc;
 
     let dir = tempdir().expect("Failed to create temp dir");
@@ -880,7 +880,7 @@ fn test_lockstore_keystore_get_returns_same_arc() {
 }
 
 #[test]
-fn test_lockstore_keystore_get_distinct_paths() {
+fn test_keystore_get_distinct_paths() {
     use std::sync::Arc;
 
     let dir_a = tempdir().expect("Failed to create temp dir A");
@@ -897,7 +897,7 @@ fn test_lockstore_keystore_get_distinct_paths() {
 }
 
 #[test]
-fn test_lockstore_keystore_get_state_visible_across_handles() {
+fn test_keystore_get_state_visible_across_handles() {
     let dir = tempdir().expect("Failed to create temp dir");
     let path = dir.path().join("lockstore.keys.sqlite");
 
