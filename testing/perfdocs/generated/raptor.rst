@@ -8139,13 +8139,13 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ❌
         - ❌
       * - **browsertime-power-mobile-fenix-youtube-playback-h264-720p60**
-        - ✅
-        - ✅
+        - ❌
+        - ❌
         - ❌
         - ❌
       * - **browsertime-power-mobile-fenix-youtube-playback-h264-720p60-nofis**
-        - ✅
-        - ✅
+        - ❌
+        - ❌
         - ❌
         - ❌
       * - **browsertime-power-mobile-geckoview-youtube-playback-h264-720p60**
@@ -9874,13 +9874,13 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ❌
         - ❌
       * - **browsertime-power-mobile-fenix-youtube-playback-vp9-720p60**
-        - ✅
-        - ✅
+        - ❌
+        - ❌
         - ❌
         - ❌
       * - **browsertime-power-mobile-fenix-youtube-playback-vp9-720p60-nofis**
-        - ✅
-        - ✅
+        - ❌
+        - ❌
         - ❌
         - ❌
       * - **browsertime-power-mobile-geckoview-youtube-playback-vp9-720p60**
