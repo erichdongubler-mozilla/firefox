@@ -22,7 +22,7 @@ import {
   getSearchOptions,
 } from "../../selectors/index";
 
-import DebuggerImage from "../shared/DebuggerImage";
+import DebuggerImage from "devtools/client/shared/components/DebuggerImage";
 import SearchInput from "devtools/client/shared/components/SearchInput";
 
 const { PluralForm } = require("resource://devtools/shared/plural-form.js");

@@ -36,7 +36,7 @@ import Modal from "./shared/Modal";
 import ResultList from "./shared/ResultList";
 
 import SearchInput from "devtools/client/shared/components/SearchInput";
-import DebuggerImage from "./shared/DebuggerImage";
+import DebuggerImage from "devtools/client/shared/components/DebuggerImage";
 
 const maxResults = 100;
 

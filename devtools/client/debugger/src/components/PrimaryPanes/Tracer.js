@@ -34,7 +34,7 @@ import {
 import { NO_SEARCH_VALUE } from "../../reducers/tracer-frames";
 
 import SearchInput from "devtools/client/shared/components/SearchInput";
-import DebuggerImage from "../shared/DebuggerImage";
+import DebuggerImage from "devtools/client/shared/components/DebuggerImage";
 
 const { throttle } = require("resource://devtools/shared/throttle.js");
 const VirtualizedTree = require("resource://devtools/client/shared/components/VirtualizedTree.js");
