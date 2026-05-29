@@ -64,8 +64,6 @@ class APZCTreeManagerChild final : public IAPZCTreeManager,
 
   void SetLongTapEnabled(bool aTapGestureEnabled) override;
 
-  void NotifyApzAwareListenerAdded(const ScrollableLayerGuid& aGuid) override;
-
   APZInputBridge* InputBridge() override;
 
  protected:

@@ -848,9 +848,7 @@ bool TouchBlockState::UpdateSlopState(const MultiTouchInput& aInput,
   return mInSlop;
 }
 
-TouchBlockState::InSlop TouchBlockState::IsInSlop() const {
-  return mInSlop ? InSlop::Yes : InSlop::No;
-}
+bool TouchBlockState::IsInSlop() const { return mInSlop; }
 
 Maybe<ScrollDirection> TouchBlockState::GetBestGuessPanDirection(
     const MultiTouchInput& aInput) const {
@@ -885,36 +883,6 @@ uint32_t TouchBlockState::GetActiveTouchCount() const {
 
 bool TouchBlockState::IsTargetOriginallyConfirmed() const {
   return mOriginalTargetConfirmedState != TargetConfirmationState::eUnconfirmed;
-}
-
-bool TouchBlockState::NeedsContentResponseAfterLongTap(
-    const MultiTouchInput& aEvent, InSlop aWasInSlop) const {
-  if (aWasInSlop != InSlop::Yes) {
-    return false;
-  }
-  if (aEvent.mType != MultiTouchInput::MULTITOUCH_MOVE) {
-    return false;
-  }
-  if (!WasLongTapProcessed() && !IsWaitingLongTapResult()) {
-    return false;
-  }
-  if (IsTargetOriginallyConfirmed()) {
-    return false;
-  }
-  // This function can run while the content response is still pending
-  // (mContentResponded=false, mContentResponseTimerExpired=false), e.g.
-  // when ReceiveTouchInput has just called ResetContentResponseTimerExpired
-  // to start a new wait for the first touch-move's content response. In
-  // that window, CancelableBlockState::ShouldDropEvents() would trip the
-  // assertion in IsDefaultPrevented() assertion. Call the base-class overload
-  // here so we only check the target-confirmation half of "should drop", and
-  // handle the IsDefaultPrevented() half below with a
-  // HasContentResponded() short-circuit so the assertion is never reached
-  // when the response is unsettled.
-  if (InputBlockState::ShouldDropEvents()) {
-    return false;
-  }
-  return !HasContentResponded() || !IsDefaultPrevented();
 }
 
 KeyboardBlockState::KeyboardBlockState(

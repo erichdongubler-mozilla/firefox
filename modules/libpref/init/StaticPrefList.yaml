@@ -563,13 +563,6 @@
   value: @IS_ANDROID@
   mirror: always
 
-# Fast-path notify APZ on non-passive APZ-aware listener registration,
-# without waiting for the next paint.
-- name: apz.fastpath_apz_aware_listener.enabled
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-
 # Test only.
 - name: apz.fixed-margin-override.enabled
   type: RelaxedAtomicBool
