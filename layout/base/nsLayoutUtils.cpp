@@ -1155,8 +1155,8 @@ bool nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
   MOZ_ASSERT(aAncestorFrame);
   const nsIFrame* ancestorFirstContinuation =
       FirstContinuationOrIBSplitSibling(aAncestorFrame);
-  if (!aFrame || FirstContinuationOrIBSplitSibling(aFrame) ==
-                     ancestorFirstContinuation) {
+  if (!aFrame ||
+      FirstContinuationOrIBSplitSibling(aFrame) == ancestorFirstContinuation) {
     return false;
   }
   const nsIFrame* commonFirstContinuation =
