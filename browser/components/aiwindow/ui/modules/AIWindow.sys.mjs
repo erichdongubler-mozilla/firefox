@@ -58,6 +58,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesSchedulers.sys.mjs",
   SmartWindowTelemetry:
     "moz-src:///browser/components/aiwindow/ui/modules/SmartWindowTelemetry.sys.mjs",
+  TelemetryScheduler:
+    "moz-src:///browser/components/aiwindow/models/TelemetryManager.sys.mjs",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -134,6 +136,7 @@ export const AIWindow = {
     // AI window, we need to start the memories schedulers.
     if (this.isAIWindowActive(win)) {
       lazy.MemoriesSchedulers.maybeRunAndSchedule();
+      lazy.TelemetryScheduler.maybeInit();
     }
   },
 
@@ -713,6 +716,7 @@ export const AIWindow = {
         }
 
         lazy.MemoriesSchedulers.maybeRunAndSchedule();
+        lazy.TelemetryScheduler.maybeInit();
 
         this._markActiveStart(win);
         this.recordOpenWindowTelemetry(trigger, win);
