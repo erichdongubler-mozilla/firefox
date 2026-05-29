@@ -495,6 +495,7 @@ static void AddDataEntryInternal(
     const nsCString& aPartitionKey,
     Maybe<ContentParentId> aContentParentId = Nothing()) {
   MOZ_ASSERT(NS_IsMainThread(), "changing gDataTable is main-thread only");
+  MOZ_RELEASE_ASSERT(BlobURLProtocolHandler::IsBlobURLValid(aPrincipal, aURI));
   StaticMutexAutoLock lock(sMutex);
   if (!gDataTable) {
     gDataTable = new nsClassHashtable<nsCStringHashKey, mozilla::dom::DataInfo>;
@@ -728,6 +729,21 @@ nsresult BlobURLProtocolHandler::GenerateURIString(nsIPrincipal* aPrincipal,
     return rv;
   }
 
+  rv = GetURIPrefix(aPrincipal, aUri);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  aUri.Append(NSID_TrimBracketsASCII(id));
+
+  return NS_OK;
+}
+
+/* static */
+nsresult BlobURLProtocolHandler::GetURIPrefix(nsIPrincipal* aPrincipal,
+                                              nsACString& aUriPrefix) {
+  NS_ENSURE_ARG(aPrincipal);
+
   nsAutoCString origin;
   if (NS_FAILED(aPrincipal->GetWebExposedOriginSerialization(origin))) {
     // Special case the system principal to have a "system" origin part, so that
@@ -736,9 +752,21 @@ nsresult BlobURLProtocolHandler::GenerateURIString(nsIPrincipal* aPrincipal,
     origin = aPrincipal->IsSystemPrincipal() ? "system"_ns : "null"_ns;
   }
 
-  aUri = BLOBURI_SCHEME ":"_ns + origin + "/"_ns + NSID_TrimBracketsASCII(id);
+  aUriPrefix = BLOBURI_SCHEME ":"_ns + origin + "/"_ns;
 
   return NS_OK;
+}
+
+/* static */
+bool BlobURLProtocolHandler::IsBlobURLValid(nsIPrincipal* aPrincipal,
+                                            const nsACString& aSpec) {
+  nsAutoCString prefix;
+  nsresult rv = GetURIPrefix(aPrincipal, prefix);
+  if (NS_FAILED(rv)) {
+    return false;
+  }
+
+  return StringBeginsWith(aSpec, prefix);
 }
 
 /* static */
