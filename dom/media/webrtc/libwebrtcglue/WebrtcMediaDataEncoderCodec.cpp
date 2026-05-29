@@ -87,6 +87,50 @@ static const char* PacketModeStr(const webrtc::CodecSpecificInfo& aInfo) {
   }
 }
 
+static H264_LEVEL ConvertH264Level(webrtc::H264Level aLevel) {
+  switch (aLevel) {
+    // Upstream uses 0 as a sentinel for 1b; level_idc is actually 11.
+    case webrtc::H264Level::kLevel1_b:
+      return H264_LEVEL::H264_LEVEL_1_b;
+    case webrtc::H264Level::kLevel1:
+      return H264_LEVEL::H264_LEVEL_1;
+    case webrtc::H264Level::kLevel1_1:
+      return H264_LEVEL::H264_LEVEL_1_1;
+    case webrtc::H264Level::kLevel1_2:
+      return H264_LEVEL::H264_LEVEL_1_2;
+    case webrtc::H264Level::kLevel1_3:
+      return H264_LEVEL::H264_LEVEL_1_3;
+    case webrtc::H264Level::kLevel2:
+      return H264_LEVEL::H264_LEVEL_2;
+    case webrtc::H264Level::kLevel2_1:
+      return H264_LEVEL::H264_LEVEL_2_1;
+    case webrtc::H264Level::kLevel2_2:
+      return H264_LEVEL::H264_LEVEL_2_2;
+    case webrtc::H264Level::kLevel3:
+      return H264_LEVEL::H264_LEVEL_3;
+    case webrtc::H264Level::kLevel3_1:
+      return H264_LEVEL::H264_LEVEL_3_1;
+    case webrtc::H264Level::kLevel3_2:
+      return H264_LEVEL::H264_LEVEL_3_2;
+    case webrtc::H264Level::kLevel4:
+      return H264_LEVEL::H264_LEVEL_4;
+    case webrtc::H264Level::kLevel4_1:
+      return H264_LEVEL::H264_LEVEL_4_1;
+    case webrtc::H264Level::kLevel4_2:
+      return H264_LEVEL::H264_LEVEL_4_2;
+    case webrtc::H264Level::kLevel5:
+      return H264_LEVEL::H264_LEVEL_5;
+    case webrtc::H264Level::kLevel5_1:
+      return H264_LEVEL::H264_LEVEL_5_1;
+    case webrtc::H264Level::kLevel5_2:
+      return H264_LEVEL::H264_LEVEL_5_2;
+  }
+  MOZ_CRASH("Unsupported H264 level");
+  // Defensive fallback for release builds if upstream adds a level we don't
+  // map yet. 3.1 is libwebrtc's own default for an absent profile-level-id.
+  return H264_LEVEL::H264_LEVEL_3_1;
+}
+
 static std::pair<H264_PROFILE, H264_LEVEL> ConvertProfileLevel(
     const webrtc::CodecParameterMap& aParameters) {
   const std::optional<webrtc::H264ProfileLevelId> profileLevel =
@@ -104,14 +148,7 @@ static std::pair<H264_PROFILE, H264_LEVEL> ConvertProfileLevel(
            webrtc::H264Profile::kProfileConstrainedBaseline)
           ? H264_PROFILE::H264_PROFILE_BASE
           : H264_PROFILE::H264_PROFILE_MAIN;
-  // H264Level::kLevel1_b cannot be mapped to H264_LEVEL::H264_LEVEL_1_b by
-  // value directly since their values are different.
-  H264_LEVEL level =
-      profileLevel->level == webrtc::H264Level::kLevel1_b
-          ? H264_LEVEL::H264_LEVEL_1_b
-          : static_cast<H264_LEVEL>(static_cast<int>(profileLevel->level));
-
-  return std::make_pair(profile, level);
+  return std::make_pair(profile, ConvertH264Level(profileLevel->level));
 }
 
 static VPXComplexity MapComplexity(webrtc::VideoCodecComplexity aComplexity) {
