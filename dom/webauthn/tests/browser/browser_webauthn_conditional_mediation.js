@@ -213,15 +213,23 @@ add_task(async function test_promote_then_promote_in_other_tab() {
     await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL)
   );
 
-  // Promote A. Because credentials match, A would normally resolve, but we
-  // promote B before A's dispatch can complete, so A should be aborted with
-  // NotAllowedError rather than tripping the MozPromiseHolder destructor
-  // assertion on overwrite.
+  // Promote A, then promote B before A's dispatch can complete. A's
+  // authenticator callback runs on a background thread and races against B's
+  // promotion, which resets A's active transaction on the main thread. Both
+  // outcomes are correct: if B's reset wins the race, A is aborted with
+  // NotAllowedError; if A's callback wins, A resolves successfully. The point
+  // of this test is that the overwrite settles A's promise exactly once and
+  // does not trip the MozPromiseHolder destructor assertion.
   gWebAuthnService.resumeConditionalGet(a.tid);
   gWebAuthnService.resumeConditionalGet(b.tid);
 
   await a.promise;
-  Assert.equal(a.state.error?.name, "NotAllowedError", "A got NotAllowedError");
+  Assert.ok(
+    a.state.error === null || a.state.error?.name === "NotAllowedError",
+    `A resolved or was aborted with NotAllowedError (got ${
+      a.state.error?.name ?? "success"
+    })`
+  );
 
   await b.promise;
   Assert.equal(b.state.error, null, "B resolved successfully");
