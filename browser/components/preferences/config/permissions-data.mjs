@@ -663,6 +663,9 @@ SettingGroupManager.registerGroups({
             id: "preferencesPrivacyProfiles",
             control: "moz-message-bar",
             l10nId: "data-collection-preferences-across-profiles",
+            controlAttrs: {
+              role: "status",
+            },
             items: [
               {
                 id: "privacyProfilesLink",
@@ -682,6 +685,9 @@ SettingGroupManager.registerGroups({
             control: "moz-message-bar",
             l10nId: "data-collection-health-report-telemetry-disabled",
             supportPage: "telemetry-clientid",
+            controlAttrs: {
+              role: "status",
+            },
           },
           {
             id: "backup-multi-profile-warning-message-bar",
