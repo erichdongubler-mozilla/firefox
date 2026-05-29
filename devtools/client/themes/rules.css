@@ -82,6 +82,10 @@
   user-select: none;
   display: flex;
   align-items: center;
+
+  &:has(input:disabled) {
+    color: var(--theme-text-color-inactive);
+  }
 }
 
 #pseudo-class-panel,
