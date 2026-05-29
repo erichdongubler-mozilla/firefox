@@ -1370,6 +1370,9 @@ IPCResult BrowserParent::RecvNewWindowGlobal(
   if (!aInit.principal()) {
     return IPC_FAIL(this, "Cannot create without valid principal");
   }
+  if (!aInit.documentURI()) {
+    return IPC_FAIL(this, "Cannot create without valid documentURI");
+  }
 
   nsCOMPtr<nsIURI> docURI = aInit.documentURI();
   WindowGlobalParent* parentWgp = browsingContext->GetParentWindowContext();
