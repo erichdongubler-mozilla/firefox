@@ -149,6 +149,11 @@ tasks:
                     by-test-platform:
                         android.*: []
                         .*-wayland/debug.*: []
+                        # Compositor shutdown assertion in DisconnectApzcTreeManager
+                        # on headless macOS aarch64 VM workers (Bug 2039987 family);
+                        # same pattern excludes jsreftest, marionette-unittest, and
+                        # mochitest-remote on this platform.
+                        macosx1500-aarch64-vms/debug: []
                         default: built-projects
         max-run-time: 3600
         mozharness:

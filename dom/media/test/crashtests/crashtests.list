@@ -115,7 +115,7 @@ HTTP load media-element-source-seek-1.html
 load offline-buffer-source-ended-1.html
 skip-if(gtkWidget&&/^24\.04$/.test(os_version)) load oscillator-ended-1.html
 skip-if(gtkWidget&&/^24\.04$/.test(os_version)) load oscillator-ended-2.html
-load video-replay-after-audio-end.html # bug 1315125, bug 1358876
+skip-if(macosVm) load video-replay-after-audio-end.html # bug 1315125, bug 1358876, Bug 2037084 hangs on no-display macOS VMs
 # This needs to run at the end to avoid leaking busted state into other tests.
 skip-if(Android||ThreadSanitizer) load 691096-1.html # Bug 1365451
 load 1236639.html

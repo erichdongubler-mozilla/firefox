@@ -500,6 +500,7 @@ macosx1500-aarch64-tests:
 # Suites can be re-added as headless support improves.
 macosx1500-aarch64-vms-tests:
     - cppunittest
+    - crashtest
     - jittest
     - jsreftest
     - marionette-unittest
