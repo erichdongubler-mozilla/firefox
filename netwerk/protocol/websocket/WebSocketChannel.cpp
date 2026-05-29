@@ -3536,7 +3536,8 @@ WebSocketChannel::AsyncOpenNative(nsIURI* aURI, const nsACString& aOrigin,
     mWasOpened = 1;
     {
       MutexAutoLock lock(mMutex);
-      mListenerMT = new ListenerAndContextContainer(aListener, aContext);
+      mListenerMT =
+          MakeRefPtr<ListenerAndContextContainer>(aListener, aContext);
     }
     rv = mServerTransportProvider->SetListener(this);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
@@ -3645,7 +3646,7 @@ WebSocketChannel::AsyncOpenNative(nsIURI* aURI, const nsACString& aOrigin,
   mWasOpened = 1;
   {
     MutexAutoLock lock(mMutex);
-    mListenerMT = new ListenerAndContextContainer(aListener, aContext);
+    mListenerMT = MakeRefPtr<ListenerAndContextContainer>(aListener, aContext);
   }
   IncrementSessionCount();
 

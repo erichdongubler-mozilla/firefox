@@ -59,7 +59,8 @@ WebSocketChannelChild::WebSocketChannelChild(bool aEncrypted)
 
   LOG(("WebSocketChannelChild::WebSocketChannelChild() %p\n", this));
   mEncrypted = aEncrypted;
-  mEventQ = new ChannelEventQueue(static_cast<nsIWebSocketChannel*>(this));
+  mEventQ =
+      MakeRefPtr<ChannelEventQueue>(static_cast<nsIWebSocketChannel*>(this));
 }
 
 WebSocketChannelChild::~WebSocketChannelChild() {
@@ -540,7 +541,7 @@ WebSocketChannelChild::AsyncOpenNative(
   mURI = mOriginalURI;
   {
     MutexAutoLock lock(mListenerMutex);
-    mListenerMT = new ListenerAndContextContainer(aListener, aContext);
+    mListenerMT = MakeRefPtr<ListenerAndContextContainer>(aListener, aContext);
   }
   mOrigin = aOrigin;
   mWasOpened = 1;
