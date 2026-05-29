@@ -5582,6 +5582,7 @@ void nsCocoaWindow::Show(bool aState) {
       }
     } else {
       NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+      EnsureFrameIsOnScreen();
       if (mWindowType == WindowType::TopLevel &&
           [mWindow respondsToSelector:@selector(setAnimationBehavior:)]) {
         NSWindowAnimationBehavior behavior;
@@ -5774,6 +5775,40 @@ void nsCocoaWindow::ConstrainPosition(DesktopIntPoint& aPoint) {
   aPoint = ConstrainPositionToBounds(aPoint, {width, height}, screenRect);
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
+
+void nsCocoaWindow::EnsureFrameIsOnScreen() {
+  if (!mWindow || mWindowType != WindowType::TopLevel || mInFullScreenMode) {
+    return;
+  }
+
+  // If [NSWindow screen] is non-nil, the window's frame intersects an
+  // attached NSScreen and is reachable through normal user gestures, so
+  // there is nothing to do. When it is nil the frame doesn't intersect any
+  // attached screen: the window is still present in the NSApp window list
+  // (so it appears in the Window menu and Dock submenu) but cannot be
+  // brought forward, which is the case we defend against below.
+  if (mWindow.screen) {
+    return;
+  }
+
+  NSScreen* mainScreen = NSScreen.mainScreen;
+  if (!mainScreen) {
+    return;
+  }
+
+  NSRect screenFrame = mainScreen.visibleFrame;
+  NSRect frame = mWindow.frame;
+
+  frame.size.width = std::min(frame.size.width, screenFrame.size.width);
+  frame.size.height = std::min(frame.size.height, screenFrame.size.height);
+  frame.origin.x =
+      screenFrame.origin.x + (screenFrame.size.width - frame.size.width) / 2;
+  frame.origin.y =
+      screenFrame.origin.y + (screenFrame.size.height - frame.size.height) / 2;
+
+  [mWindow setFrame:frame display:NO];
+  UpdateBounds();
 }
 
 void nsCocoaWindow::SetSizeConstraints(const SizeConstraints& aConstraints) {

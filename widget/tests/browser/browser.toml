@@ -3,6 +3,11 @@ skip-if = [
   "os == 'android'",
 ]
 
+["browser_ensure_frame_is_on_screen.js"]
+run-if = [
+  "os == 'mac'",
+]
+
 ["browser_test_AZERTY_digit_shortcut.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Linux build has not implemented sendNativeKeyEvent yet
