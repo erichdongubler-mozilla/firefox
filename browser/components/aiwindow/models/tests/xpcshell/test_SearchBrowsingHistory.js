@@ -539,6 +539,7 @@ add_task(async function test_hybrid_search_path() {
 
   // Fake semantic SQL rows.
   sb.stub(semanticManager, "getConnection").resolves({
+    execute: async () => [],
     executeCached: async () => [
       {
         getResultByName(name) {
@@ -627,6 +628,7 @@ add_task(async function test_hybrid_search_rrf_ranking_prefers_shared_result() {
   });
 
   sb.stub(semanticManager, "getConnection").resolves({
+    execute: async () => [],
     executeCached: async () => [
       {
         getResultByName(name) {

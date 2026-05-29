@@ -10,8 +10,8 @@ origin:
     An extremely small, "fast enough" vector search SQLite extension that runs
     anywhere!
   url: https://github.com/asg017/sqlite-vec
-  release: v0.1.10-alpha.3 (2026-03-31T23:38:59-07:00).
-  revision: v0.1.10-alpha.3
+  release: v0.1.10-alpha.4 (2026-05-17T23:50:43-07:00).
+  revision: v0.1.10-alpha.4
   license: MIT
   license-file: LICENSE-MIT
   notes: >

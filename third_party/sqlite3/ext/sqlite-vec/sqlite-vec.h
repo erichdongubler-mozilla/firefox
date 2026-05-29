@@ -17,10 +17,10 @@
   #endif
 #endif
 
-#define SQLITE_VEC_VERSION "v0.1.10-alpha.3"
+#define SQLITE_VEC_VERSION "v0.1.10-alpha.4"
 // TODO rm
-#define SQLITE_VEC_DATE "2026-04-01T06:40:47Z+0000"
-#define SQLITE_VEC_SOURCE "4e2dfcb79dcb961bdbaca11dfc91b5bfb9de4fd3"
+#define SQLITE_VEC_DATE "2026-05-18T06:53:35Z+0000"
+#define SQLITE_VEC_SOURCE "04d28bd21773981e2d266bbf6aa4efbd011eb4f6"
 
 
 #define SQLITE_VEC_VERSION_MAJOR 0

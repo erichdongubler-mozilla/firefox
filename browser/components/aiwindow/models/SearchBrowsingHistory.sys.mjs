@@ -368,13 +368,12 @@ function extractVectorFromTensor(tensor) {
 /**
  * Semantic browsing history search using embeddings.
  *
- * This performs a two-stage retrieval for performance:
- * 1. Coarse search: over the quantized embeddings (`embedding_coarse`) to
- *    quickly select a dynamically sized candidate set (`coarseLimit`).
- *    This bounds the expensive cosine-distance computation.
- * 2. Refined search: computes the exact cosine distance for those candidates,
- *    applies the caller-provided `distanceThreshold`, and returns the best
- *    matches up to `historyLimit`.
+ * vec_history is rescore-indexed with a bit quantizer. vec0 internally does
+ * the coarse-then-refine pass: the bit-quantized index produces
+ * `k * oversample_search` candidates, then the exact cosine distance is
+ * computed on those candidates and the top `k` are returned. We keep the
+ * existing tuning intent (`coarseLimit = max(historyLimit * 15, 200)`) by
+ * deriving the oversample factor from it.
  *
  * @param {object} params
  * @param {string} params.searchTerm
@@ -399,27 +398,33 @@ async function searchBrowsingHistorySemantic({
   const vec = extractVectorFromTensor(tensor);
   const vector = lazy.PlacesUtils.tensorToSQLBindable(vec);
 
-  // Coarse-stage candidate pool (dynamic)
+  // Translate the legacy coarse-candidate pool size into vec0's oversample
+  // factor: candidates examined in the coarse pass = historyLimit * oversample.
+  // Clamp to vec0's accepted range (1..128).
   const coarseLimit = Math.max(historyLimit * 15, 200);
+  const oversample = Math.min(
+    128,
+    Math.max(1, Math.ceil(coarseLimit / historyLimit))
+  );
 
   let conn = await semanticManager.getConnection();
+
+  // Set the per-search oversample on the rescore column. This persists on
+  // the vec0 vtab until changed again.
+  await conn.execute(`INSERT INTO vec_history(vec_history) VALUES(:cmd)`, {
+    cmd: `oversample=${oversample}`,
+  });
+
   const results = await conn.executeCached(
     `
-    WITH coarse_matches AS (
-      SELECT rowid,
-             embedding
-      FROM vec_history
-      WHERE embedding_coarse match vec_quantize_binary(:vector)
-      ORDER BY distance
-      LIMIT :coarseLimit
-    ),
-    matches AS (
-      SELECT url_hash, vec_distance_cosine(embedding, :vector) AS distance
-      FROM vec_history_mapping
-      JOIN coarse_matches USING (rowid)
-      WHERE distance <= :distanceThreshold
-      ORDER BY distance
-      LIMIT :limit
+    WITH matches AS (
+      SELECT m.url_hash, v.distance AS distance
+      FROM vec_history v
+      JOIN vec_history_mapping m USING (rowid)
+      WHERE v.embedding MATCH :vector
+        AND k = :limit
+        AND v.distance <= :distanceThreshold
+      ORDER BY v.distance
     )
     SELECT id,
            title,
@@ -439,7 +444,6 @@ async function searchBrowsingHistorySemantic({
       vector,
       distanceThreshold,
       limit: historyLimit,
-      coarseLimit,
       startTs,
       endTs,
     }

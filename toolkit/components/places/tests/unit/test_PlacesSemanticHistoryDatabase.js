@@ -8,6 +8,8 @@ const { PlacesSemanticHistoryDatabase } = ChromeUtils.importESModule(
   "resource://gre/modules/PlacesSemanticHistoryDatabase.sys.mjs"
 );
 
+const SCHEMA_VERSION_BEFORE_NATIVE_BIT_INDEXING = 2;
+
 // Must be divisible by 8.
 const EMBEDDING_SIZE = 64;
 
@@ -18,6 +20,7 @@ add_setup(async function () {
     PlacesUtils.history.DATABASE_STATUS_CREATE,
     "Places initialized."
   );
+  Services.fog.initializeFOG();
 });
 
 add_task(async function test_check_schema() {
@@ -160,8 +163,6 @@ add_task(async function test_healthydb() {
 });
 
 add_task(async function test_defragmentation() {
-  Services.fog.initializeFOG();
-
   let db = new PlacesSemanticHistoryDatabase({
     embeddingSize: EMBEDDING_SIZE,
     fileName: "places_semantic.sqlite",
@@ -179,14 +180,18 @@ add_task(async function test_defragmentation() {
 
   info("insert tensors and cause fragementation");
   const HOW_MANY_TENSORS = 2000;
+  const FRACTION_TENSORS_REMAINING_RECIPROCAL = 100;
+  // vec0 reclaims a chunk as soon as it has no live rows. To exercise the
+  // defrag path we have to leave at least one row in every prior chunk —
+  // otherwise empty chunks vanish and the wasted-space metric (which skips
+  // the current chunk) reads 0%. Keep 1% spaced at regular intervals so
+  // each chunk retains a handful of rows but is mostly empty.
   await conn.executeTransaction(async () => {
-    // Generate an empty chunk.
     for (let i = 1; i <= HOW_MANY_TENSORS; i++) {
       await insertTensor(conn, i, Array(EMBEDDING_SIZE).fill(Number(`0.${i}`)));
     }
-    // Remove most of the tensors, but not all of them.
     for (let i = 1; i <= HOW_MANY_TENSORS; i++) {
-      if (i % 10) {
+      if (i % FRACTION_TENSORS_REMAINING_RECIPROCAL) {
         await removeTensor(conn, i);
       }
     }
@@ -213,7 +218,11 @@ add_task(async function test_defragmentation() {
   );
 
   info("Check rowids were preserved in defragmentation");
-  for (let i = 10; i <= HOW_MANY_TENSORS; i += 10) {
+  for (
+    let i = FRACTION_TENSORS_REMAINING_RECIPROCAL;
+    i <= HOW_MANY_TENSORS;
+    i += FRACTION_TENSORS_REMAINING_RECIPROCAL
+  ) {
     await checkTensor(conn, i, Array(EMBEDDING_SIZE).fill(Number(`0.${i}`)));
   }
   await db.closeConnection();
@@ -252,11 +261,83 @@ add_task(async function test_defragmentation() {
   await db.removeDatabaseFiles();
 });
 
+add_task(async function test_migate_to_native_bit_indexing() {
+  let db = new PlacesSemanticHistoryDatabase({
+    embeddingSize: EMBEDDING_SIZE,
+    fileName: "places_semantic.sqlite",
+  });
+  let conn = await db.getConnection();
+  await db.closeConnection();
+  conn = await db.getConnection();
+  info("insert tensors and cause fragementation");
+  const HOW_MANY_TENSORS = 2000;
+
+  await conn.executeTransaction(async () => {
+    for (let i = 1; i <= HOW_MANY_TENSORS; i++) {
+      await insertTensor(conn, i, Array(EMBEDDING_SIZE).fill(Number(`0.${i}`)));
+    }
+  });
+  // Go back one so it thinks it has older indexing
+  await db.setCurrentSchemaVersionForTests(
+    SCHEMA_VERSION_BEFORE_NATIVE_BIT_INDEXING
+  );
+  await db.closeConnection();
+
+  db = new PlacesSemanticHistoryDatabase({
+    embeddingSize: EMBEDDING_SIZE,
+    fileName: "places_semantic.sqlite",
+  });
+
+  info("Reindexing");
+  conn = await db.getConnection();
+  await db.closeConnection();
+
+  conn = await db.getConnection();
+  info("Check migration happened");
+  Assert.equal(
+    await conn.getSchemaVersion(),
+    db.currentSchemaVersion,
+    "Schema version should match."
+  );
+
+  Assert.greater(
+    db.currentSchemaVersion,
+    SCHEMA_VERSION_BEFORE_NATIVE_BIT_INDEXING,
+    "Schema version updated."
+  );
+
+  info("Check rowids were preserved in reindexing");
+  for (let i = 1; i <= HOW_MANY_TENSORS; i++) {
+    await checkTensor(conn, i, Array(EMBEDDING_SIZE).fill(Number(`0.${i}`)));
+  }
+  info("Check old tables were removed");
+  Assert.equal(
+    (
+      await conn.execute(
+        `SELECT count(*) FROM sqlite_master WHERE name LIKE :suffix`,
+        {
+          suffix: "%_old",
+        }
+      )
+    )[0].getResultByIndex(0),
+    0,
+    "There should not be 'old' tables"
+  );
+  await db.closeConnection();
+  await db.removeDatabaseFiles();
+
+  Assert.equal(
+    Glean.places.databaseSemanticHistoryReindexTime.testGetValue().count,
+    1,
+    "One reindex index run in glean"
+  );
+});
+
 async function insertTensor(conn, rowid, tensor) {
   await conn.execute(
     `
-    INSERT INTO vec_history (rowid, embedding, embedding_coarse)
-    VALUES (:rowid, :vector, vec_quantize_binary(:vector))
+    INSERT INTO vec_history (rowid, embedding)
+    VALUES (:rowid, :vector)
     `,
     {
       rowid,

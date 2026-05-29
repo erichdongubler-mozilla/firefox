@@ -565,8 +565,8 @@ add_task(async function test_rowid_conflict() {
   // rowid.
   await conn.execute(
     `
-    INSERT INTO vec_history (rowid, embedding, embedding_coarse)
-    VALUES (1, :vector, vec_quantize_binary(:vector))
+    INSERT INTO vec_history (rowid, embedding)
+    VALUES (1, :vector)
     `,
     {
       vector: PlacesUtils.tensorToSQLBindable(Array(EMBEDDING_SIZE).fill(0.1)),

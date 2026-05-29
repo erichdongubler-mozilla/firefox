@@ -321,6 +321,22 @@ places:
       - fx-search-telemetry@mozilla.com
     expires: never
 
+  database_semantic_history_reindex_time:
+    type: timing_distribution
+    description: >
+      PLACES: Time to reindex the semantic database during a migration (ms)
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039131
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039131
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - mak@mozilla.com
+      - fx-search-telemetry@mozilla.com
+    expires: never
+
   expiration_steps_to_clean:
     type: custom_distribution
     description: >

@@ -29,7 +29,7 @@ ChromeUtils.defineLazyGetter(lazy, "logger", function () {
 // user downgrades, the database will be deleted and recreated.
 // If a migration throws, the database will also be deleted and recreated.
 
-const CURRENT_SCHEMA_VERSION = 2;
+const CURRENT_SCHEMA_VERSION = 3;
 
 // Maximum percentage of wasted space before defragmenting the database.
 const MAX_WASTED_SPACE_PERC = 0.6;
@@ -196,6 +196,22 @@ export class PlacesSemanticHistoryDatabase {
         throw new Error("Replacing semantic history database");
       }
 
+      if (version == 2) {
+        lazy.logger.info(
+          "Migrating from v2 to v3 sqlite-vec database schema with native coarse (bit) embedding search"
+        );
+        await this.reindexDatabase();
+        lazy.logger.info("Database migration to v3 completed");
+      }
+
+      let healthy = await this.#checkDatabaseHealth();
+      if (!healthy) {
+        lazy.logger.error(
+          `sqlite-vec database schema is not healthy after v2 to v3 migration`
+        );
+        throw new Error("Database schema is not healthy after migration");
+      }
+
       await this.#conn.setSchemaVersion(CURRENT_SCHEMA_VERSION);
     });
   }
@@ -206,8 +222,12 @@ export class PlacesSemanticHistoryDatabase {
   get #createVirtualTableSQL() {
     return `
       CREATE VIRTUAL TABLE vec_history USING vec0(
-        embedding FLOAT[${this.#embeddingSize}],
-        embedding_coarse bit[${this.#embeddingSize}]
+        embedding FLOAT[${this.#embeddingSize}]
+        distance_metric=cosine
+            INDEXED BY rescore(
+          quantizer=bit,
+          oversample=50
+        )
       );
     `;
   }
@@ -258,6 +278,26 @@ export class PlacesSemanticHistoryDatabase {
     )[0].getResultByIndex(0);
     if (!embeddingSizeMatches) {
       lazy.logger.error(`Embeddings size doesn't match`);
+      return false;
+    }
+
+    // Verify the vec0 index is configured with cosine distance and a
+    // bit-quantized rescore index. If the create SQL is missing either, the
+    // table is not the one we expect and should be recreated.
+    let indexConfigMatches = (
+      await this.#conn.execute(
+        `SELECT INSTR(sql, :distance) > 0 AND INSTR(sql, :quantizer) > 0
+       FROM sqlite_master WHERE name = 'vec_history'`,
+        {
+          distance: "distance_metric=cosine",
+          quantizer: "quantizer=bit",
+        }
+      )
+    )[0].getResultByIndex(0);
+    if (!indexConfigMatches) {
+      lazy.logger.error(
+        `vec_history index config doesn't match (expected cosine + bit-quantized rescore)`
+      );
       return false;
     }
 
@@ -316,10 +356,9 @@ export class PlacesSemanticHistoryDatabase {
    *
    * This may be removed when Sqlite-vec merges this PR or similar:
    * https://github.com/asg017/sqlite-vec/pull/269
+   *
    */
   async #defragmentDatabase() {
-    lazy.logger.info("Defragmenting the database");
-
     let timer = Glean.places.databaseSemanticHistoryDefragmentTime.start();
     await this.#conn.executeTransaction(async () => {
       await this.#conn.execute(`
@@ -327,21 +366,44 @@ export class PlacesSemanticHistoryDatabase {
           `);
 
       await this.#conn.execute(this.#createVirtualTableSQL);
+
       await this.#conn.execute(`
-          INSERT INTO vec_history(rowid, embedding, embedding_coarse)
-          SELECT rowid, embedding, embedding_coarse FROM old_vec_history
-        `);
+            INSERT INTO vec_history(rowid, embedding)
+            SELECT rowid, embedding
+            FROM old_vec_history
+          `);
+
       await this.#conn.execute(`
           DROP TABLE old_vec_history
         `);
     });
-
-    // Cannot VACUUM from within a transaction.
     await this.#conn.execute(`
       VACUUM
     `);
-
     Glean.places.databaseSemanticHistoryDefragmentTime.stopAndAccumulate(timer);
+  }
+
+  /**
+   * Recreate the database contents. This is typically called inside a transaction
+   * during a migration.
+   *
+   * This is used in the V3 migration to create the internal bit index.
+   */
+  async reindexDatabase() {
+    let timer = Glean.places.databaseSemanticHistoryReindexTime.start();
+    await this.#conn.execute(`
+        ALTER TABLE vec_history RENAME TO old_vec_history
+        `);
+    await this.#conn.execute(this.#createVirtualTableSQL);
+    await this.#conn.execute(`
+          INSERT INTO vec_history(rowid, embedding)
+          SELECT rowid, embedding
+          FROM old_vec_history
+        `);
+    await this.#conn.execute(`
+        DROP TABLE old_vec_history
+      `);
+    Glean.places.databaseSemanticHistoryReindexTime.stopAndAccumulate(timer);
   }
 
   /**

@@ -94,6 +94,8 @@ const ONE_MiB = 1024 * 1024;
 // minimum title length threshold; Usage len(title || description) > MIN_TITLE_LENGTH
 const MIN_TITLE_LENGTH = 4;
 
+const DEFAULT_QUERY_OVERSAMPLE = 50;
+
 /**
  * PlacesSemanticHistoryManager manages the semantic.sqlite database and provides helper
  * methods for initializing, querying, and updating semantic data.
@@ -745,8 +747,8 @@ class PlacesSemanticHistoryManager {
           }
           await conn.executeCached(
             `
-            INSERT OR REPLACE INTO vec_history (rowid, embedding, embedding_coarse)
-            VALUES (:rowid, :vector, vec_quantize_binary(:vector))
+            INSERT OR REPLACE INTO vec_history (rowid, embedding)
+            VALUES (:rowid, :vector)
             `,
             {
               rowid,
@@ -854,23 +856,21 @@ class PlacesSemanticHistoryManager {
 
     let conn = await this.getConnection();
 
+    await conn.execute(`INSERT INTO vec_history(vec_history) VALUES(:cmd)`, {
+      cmd: `oversample=${DEFAULT_QUERY_OVERSAMPLE}`,
+    });
+
     let rows = await conn.executeCached(
       `
-      WITH coarse_matches AS (
-        SELECT rowid,
-               embedding
-        FROM vec_history
-        WHERE embedding_coarse match vec_quantize_binary(:vector)
-        ORDER BY distance
-        LIMIT 100
-      ),
+      WITH
       matches AS (
-        SELECT url_hash, vec_distance_cosine(embedding, :vector) AS distance
+        SELECT url_hash, distance
         FROM vec_history_mapping
-        JOIN coarse_matches USING (rowid)
-        WHERE distance <= :distanceThreshold
+        JOIN vec_history USING (rowid)
+        WHERE embedding MATCH (:vector)
+        AND k=2
+        AND distance <= :distanceThreshold
         ORDER BY distance
-        LIMIT 2
       )
       SELECT id,
              title,
