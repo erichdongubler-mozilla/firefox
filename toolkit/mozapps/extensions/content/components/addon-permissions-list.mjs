@@ -2,14 +2,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
-  Extension: "resource://gre/modules/Extension.sys.mjs",
-  ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.sys.mjs",
-});
-
 import { AboutAddonsHTMLElement } from "../aboutaddons-utils.mjs";
 import { AddonCard } from "./addon-card.mjs";
+
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+
+const lazy = XPCOMUtils.declareLazy({
+  Extension: "resource://gre/modules/Extension.sys.mjs",
+  ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.sys.mjs",
+
+  fileSchemeAccessRequiresOptIn: {
+    pref: "extensions.webextensions.fileSchemeAccess.requireOptIn",
+  },
+});
 
 function createPolicyPermissionsBanner() {
   let banner = document.createElement("moz-message-bar");
@@ -59,6 +66,9 @@ class AddonPermissionsList extends AboutAddonsHTMLElement {
     let requiredPerms = { ...(this.addon.userPermissions ?? empty) };
     let optionalPerms = { ...(this.addon.optionalPermissions ?? empty) };
     let grantedPerms = await lazy.ExtensionPermissions.get(this.addon.id);
+    let fileSchemeAllowed = grantedPerms.permissions.includes(
+      "internal:fileSchemeAllowed"
+    );
 
     // If optional permissions include <all_urls>, extension can request and
     // be granted permission for individual sites not listed in the manifest.
@@ -73,8 +83,12 @@ class AddonPermissionsList extends AboutAddonsHTMLElement {
       {
         permissions: requiredPerms,
         optionalPermissions: optionalPerms,
+        fileSchemeAllowed,
       },
-      { buildOptionalOrigins: true }
+      {
+        buildOptionalOrigins: true,
+        includeFileSchemeAccess: lazy.fileSchemeAccessRequiresOptIn,
+      }
     );
     let optionalEntries = [
       ...Object.entries(permissions.optionalPermissions),
@@ -146,7 +160,11 @@ class AddonPermissionsList extends AboutAddonsHTMLElement {
 
         let type = "permission";
         if (permissions.optionalOrigins[perm]) {
-          type = "origin";
+          if (perm === "internal:fileSchemeAllowed") {
+            type = "file_scheme_access";
+          } else {
+            type = "origin";
+          }
         } else if (permissions.optionalDataCollectionPermissions[perm]) {
           type = "data_collection";
         }

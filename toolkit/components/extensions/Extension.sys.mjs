@@ -2610,6 +2610,7 @@ export class ExtensionData {
   /**
    * @typedef {object} HostPermissions
    * @param {string} allUrls   permission used to obtain all urls access
+   * @param {boolean} fileUrl  Whether any permission matched file:.
    * @param {Set} wildcards    set contains permissions with wildcards
    * @param {Set} sites        set contains explicit host permissions
    * @param {Map} wildcardsMap mapping origin wildcards to labels
@@ -2628,6 +2629,7 @@ export class ExtensionData {
    */
   static classifyOriginPermissions(origins = [], ignoreNonWebSchemes = false) {
     let allUrls = null,
+      fileUrls = false,
       wildcards = new Set(),
       sites = new Set(),
       // TODO: use map.values() instead of these sets.  Note: account for two
@@ -2641,6 +2643,7 @@ export class ExtensionData {
     for (let permission of origins) {
       if (permission == "<all_urls>") {
         allUrls = permission;
+        fileUrls = true;
         continue;
       }
 
@@ -2654,6 +2657,9 @@ export class ExtensionData {
       // Note: the scheme is ignored in the permission warnings. If this ever
       // changes, update the comparePermissions method as needed.
       let [, scheme, host] = match;
+      if (scheme === "file") {
+        fileUrls = true;
+      }
       if (ignoreNonWebSchemes && !wildcardSchemes.includes(scheme)) {
         continue;
       }
@@ -2677,7 +2683,7 @@ export class ExtensionData {
         sitesMap.set(pat.pattern, `${scheme}://${host}`);
       }
     }
-    return { allUrls, wildcards, sites, wildcardsMap, sitesMap };
+    return { allUrls, fileUrls, wildcards, sites, wildcardsMap, sitesMap };
   }
 
   /**
@@ -2696,6 +2702,8 @@ export class ExtensionData {
    * @param {Permissions} [info.optionalPermissions]
    *                      Optional permissions listed in the manifest.
    * @param {Permissions} info.permissions Requested permissions.
+   * @param {boolean} [info.fileSchemeAllowed]
+   *                  Whether the extension was already granted file access.
    * @param {string} info.siteOrigin
    * @param {Array<string>} [info.sitePermissions]
    * @param {boolean} info.unsigned
@@ -2711,6 +2719,10 @@ export class ExtensionData {
    * @param {boolean} [options.fullDomainsList]
    *                  Wether to include the full domains set in the returned
    *                  results.  Defaults to false.
+   * @param {boolean} [options.includeFileSchemeAccess]
+   *                  Wether to include an entry for internal:fileSchemeAllowed in
+   *                  the returned optionalOrigins when needed. Defaults to false.
+   *                  This option does nothing when info.optionalPermissions is unset!
    *
    * @typedef {object} PermissionStrings
    * @property {Array<string>} msgs an array of localized strings describing
@@ -2750,12 +2762,17 @@ export class ExtensionData {
       addon,
       optionalPermissions,
       permissions,
+      fileSchemeAllowed,
       siteOrigin,
       sitePermissions,
       type,
       unsigned,
     },
-    { buildOptionalOrigins = false, fullDomainsList = false } = {}
+    {
+      buildOptionalOrigins = false,
+      fullDomainsList = false,
+      includeFileSchemeAccess = false,
+    } = {}
   ) {
     const l10n = lazy.PERMISSION_L10N;
 
@@ -2773,6 +2790,11 @@ export class ExtensionData {
       dataCollectionPermissions: {},
       optionalDataCollectionPermissions: {},
     };
+
+    // If the internal:fileSchemeAllowed permission was granted, assume true
+    // independently of what the (optional) permissions say, to enable the user
+    // to always turn it off if desired.
+    let hasAnyFileScheme = fileSchemeAllowed;
 
     // To keep the label & accesskey in sync for localizations,
     // they need to be stored as attributes of the same Fluent message.
@@ -2860,8 +2882,9 @@ export class ExtensionData {
 
     if (permissions) {
       // First classify our host permissions
-      let { allUrls, wildcards, sites } =
+      let { allUrls, fileUrls, wildcards, sites } =
         ExtensionData.classifyOriginPermissions(permissions.origins);
+      hasAnyFileScheme ||= fileUrls;
 
       // Format the host permissions.  If we have a wildcard for all urls,
       // a single string will suffice.  Otherwise, show domain wildcards
@@ -2961,16 +2984,22 @@ export class ExtensionData {
         }
       }
 
-      const { allUrls, sitesMap, wildcardsMap } =
+      const { allUrls, fileUrls, sitesMap, wildcardsMap } =
         ExtensionData.classifyOriginPermissions(
           optionalPermissions.origins,
           true
         );
+      hasAnyFileScheme ||= fileUrls;
       const ooKeys = [];
       const ooL10nIds = [];
       if (allUrls) {
         ooKeys.push(allUrls);
         ooL10nIds.push("webext-perms-host-description-all-urls");
+      }
+      // Intentionally render file access after the broad <all_urls> entry.
+      if (includeFileSchemeAccess && hasAnyFileScheme) {
+        ooKeys.push("internal:fileSchemeAllowed");
+        ooL10nIds.push("webext-perms-host-description-file-urls");
       }
 
       // Current UX controls are meant for developer testing with mv3.

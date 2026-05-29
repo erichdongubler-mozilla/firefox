@@ -273,19 +273,31 @@ export class AddonCard extends AboutAddonsHTMLElement {
       perms.permissions = [permission];
     } else if (type === "origin") {
       perms.origins = [permission];
+    } else if (type === "file_scheme_access") {
+      // Note: the visibility of this permission does not imply that the
+      // extension has declared file:-access. If an extension removes file
+      // access in an update, a previously granted internal permission is not
+      // removed. We show the permission UI to allow the user to remove it, but
+      // when the page is reloaded the control will disappear.
+      perms.permissions = ["internal:fileSchemeAllowed"];
+      // TODO: Consider also granting/revoking file: host permissions along
+      // with the internal permission. These permissions can currently not
+      // be controlled separately from <all_urls> in the UI (bug 1765828).
     } else if (type === "data_collection") {
       perms.data_collection = [permission];
     } else {
       throw new Error("unknown permission type changed");
     }
 
-    let normalized = lazy.ExtensionPermissions.normalizeOptional(
-      perms,
-      addon.optionalPermissions
-    );
+    if (type !== "file_scheme_access") {
+      perms = lazy.ExtensionPermissions.normalizeOptional(
+        perms,
+        addon.optionalPermissions
+      );
+    }
 
     let policy = WebExtensionPolicy.getByID(addon.id);
-    lazy.ExtensionPermissions[action](addon.id, normalized, policy?.extension);
+    lazy.ExtensionPermissions[action](addon.id, perms, policy?.extension);
   }
 
   async handleEvent(e) {
