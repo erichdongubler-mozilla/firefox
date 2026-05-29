@@ -5,8 +5,6 @@
 /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
 
 .sports {
-  @include newtab-card-style;
-
   border-radius: var(--border-radius-large);
   padding: var(--space-medium);
   display: flex;

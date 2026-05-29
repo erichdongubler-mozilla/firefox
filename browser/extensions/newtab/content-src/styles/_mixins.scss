@@ -170,8 +170,9 @@ $side-col-width-px: $col-width-px * 2;
   --widget-size-transition-duration: 180ms;
   --widget-size-transition-easing: ease;
 
+  @include newtab-card-style;
+
   padding: var(--space-medium);
-  background-color: var(--newtab-background-card);
   border-radius: var(--border-radius-large);
   box-shadow: var(--box-shadow-level-2);
   color: var(--text-color);

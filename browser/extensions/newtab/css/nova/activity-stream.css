@@ -5120,8 +5120,9 @@ button.arrow-button:dir(rtl) {
 .nova-enabled .lists {
   --widget-size-transition-duration: 180ms;
   --widget-size-transition-easing: ease;
+  background: var(--newtab-background-card);
+  transition: opacity 0.2s ease;
   padding: var(--space-medium);
-  background-color: var(--newtab-background-card);
   border-radius: var(--border-radius-large);
   box-shadow: var(--box-shadow-level-2);
   color: var(--text-color);
@@ -5129,6 +5130,9 @@ button.arrow-button:dir(rtl) {
   flex-direction: column;
   position: relative;
   transition: height var(--widget-size-transition-duration) var(--widget-size-transition-easing);
+}
+.nova-enabled .lists:hover {
+  background: var(--newtab-background-color-secondary);
 }
 .nova-enabled .lists.small-widget, .nova-enabled .lists.medium-widget {
   height: var(--newtab-card-height-small);
@@ -5827,8 +5831,9 @@ button.arrow-button:dir(rtl) {
 .nova-enabled .focus-timer {
   --widget-size-transition-duration: 180ms;
   --widget-size-transition-easing: ease;
+  background: var(--newtab-background-card);
+  transition: opacity 0.2s ease;
   padding: var(--space-medium);
-  background-color: var(--newtab-background-card);
   border-radius: var(--border-radius-large);
   box-shadow: var(--box-shadow-level-2);
   color: var(--text-color);
@@ -5836,6 +5841,9 @@ button.arrow-button:dir(rtl) {
   flex-direction: column;
   position: relative;
   transition: height var(--widget-size-transition-duration) var(--widget-size-transition-easing);
+}
+.nova-enabled .focus-timer:hover {
+  background: var(--newtab-background-color-secondary);
 }
 .nova-enabled .focus-timer.small-widget, .nova-enabled .focus-timer.medium-widget {
   height: var(--newtab-card-height-small);
@@ -6499,8 +6507,6 @@ button.arrow-button:dir(rtl) {
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
 .sports {
-  background: var(--newtab-background-card);
-  transition: opacity 0.2s ease;
   border-radius: var(--border-radius-large);
   padding: var(--space-medium);
   display: flex;
@@ -6510,8 +6516,9 @@ button.arrow-button:dir(rtl) {
   position: relative;
   --widget-size-transition-duration: 180ms;
   --widget-size-transition-easing: ease;
+  background: var(--newtab-background-card);
+  transition: opacity 0.2s ease;
   padding: var(--space-medium);
-  background-color: var(--newtab-background-card);
   border-radius: var(--border-radius-large);
   box-shadow: var(--box-shadow-level-2);
   color: var(--text-color);
@@ -7316,8 +7323,9 @@ button.arrow-button:dir(rtl) {
 .nova-enabled .weather-widget {
   --widget-size-transition-duration: 180ms;
   --widget-size-transition-easing: ease;
+  background: var(--newtab-background-card);
+  transition: opacity 0.2s ease;
   padding: var(--space-medium);
-  background-color: var(--newtab-background-card);
   border-radius: var(--border-radius-large);
   box-shadow: var(--box-shadow-level-2);
   color: var(--text-color);
@@ -7332,6 +7340,9 @@ button.arrow-button:dir(rtl) {
   --weather-rainy-background-color: light-dark(var(--color-blue-0), var(--color-blue-90));
   --weather-snowy-background-color: light-dark(var(--color-violet-0), var(--color-violet-90));
   --weather-hot-background-color: light-dark(var(--color-orange-0), var(--color-orange-90));
+}
+.nova-enabled .weather-widget:hover {
+  background: var(--newtab-background-color-secondary);
 }
 .nova-enabled .weather-widget.small-widget, .nova-enabled .weather-widget.medium-widget {
   height: var(--newtab-card-height-small);
@@ -7809,8 +7820,9 @@ button.arrow-button:dir(rtl) {
 .nova-enabled .clocks-widget {
   --widget-size-transition-duration: 180ms;
   --widget-size-transition-easing: ease;
+  background: var(--newtab-background-card);
+  transition: opacity 0.2s ease;
   padding: var(--space-medium);
-  background-color: var(--newtab-background-card);
   border-radius: var(--border-radius-large);
   box-shadow: var(--box-shadow-level-2);
   color: var(--text-color);
@@ -7820,6 +7832,9 @@ button.arrow-button:dir(rtl) {
   transition: height var(--widget-size-transition-duration) var(--widget-size-transition-easing);
   height: var(--newtab-card-height-small);
   transition: height var(--widget-size-transition-duration) var(--widget-size-transition-easing);
+}
+.nova-enabled .clocks-widget:hover {
+  background: var(--newtab-background-color-secondary);
 }
 .nova-enabled .clocks-widget.small-widget, .nova-enabled .clocks-widget.medium-widget {
   height: var(--newtab-card-height-small);
