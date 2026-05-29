@@ -211,8 +211,8 @@ TimelineType* TimelineManager::DoGetScopedTimeline(
 
   auto ScopeIsValid = [&](const Element* aTimelineCandidate,
                           const Element* aExpectedScope) {
-    const auto* e = aTimelineCandidate->GetParentElement();
-    for (; e && e != aExpectedScope; e = e->GetParentElement()) {
+    const auto* e = aTimelineCandidate->GetFlattenedTreeParentElement();
+    for (; e && e != aExpectedScope; e = e->GetFlattenedTreeParentElement()) {
       if (GetTimelineScope(e, aName)) {
         // This timeline-scope declaring element blocks this timeline from being
         // visible to aExpectedScope.
