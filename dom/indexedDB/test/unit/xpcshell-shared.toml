@@ -107,6 +107,10 @@ skip-if = [
 ["test_keys.js"]
 requesttimeoutfactor = 2  # Slow on Linux TSan
 
+["test_locale_aware_index_getAll.js"]
+
+["test_locale_aware_index_getAllObjects.js"]
+
 ["test_multientry.js"]
 
 ["test_multipleOpensInParallel.js"]
