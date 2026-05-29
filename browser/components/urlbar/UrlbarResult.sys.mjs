@@ -371,6 +371,11 @@ export class UrlbarResult {
 
     highlightType ??= this.#highlights?.[payloadName];
 
+    // If we are going to store the options in the map,
+    // create a clone to make sure the object is in the
+    // same global as the result itself to avoid leaks.
+    options = structuredClone(options);
+
     if (!options.tokens?.length || !highlightType) {
       let cached = { value, options };
       this.#displayValuesCache.set(payloadName, cached);

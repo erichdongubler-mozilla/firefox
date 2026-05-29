@@ -323,7 +323,7 @@ Implements an input box *View*, owns an *UrlbarView*.
     value;
   }
 
-:searchfox:`UrlbarView.sys.mjs <browser/components/urlbar/UrlbarView.sys.mjs>`
+:searchfox:`UrlbarView.mjs <browser/components/urlbar/content/UrlbarView.mjs>`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Represents the base *View* implementation, communicates with the *Controller*.
