@@ -5358,11 +5358,9 @@ nsContainerFrame* nsCSSFrameConstructor::GetAbsoluteContainingBlock(
     }
 
     // Look for the ICB.
-    if (aType == FIXED_POS) {
-      LayoutFrameType t = frame->Type();
-      if (t == LayoutFrameType::Viewport || t == LayoutFrameType::PageContent) {
-        return static_cast<nsContainerFrame*>(frame);
-      }
+    if (aType == FIXED_POS &&
+        (frame->IsViewportFrame() || frame->IsPageContentFrame())) {
+      return static_cast<nsContainerFrame*>(frame);
     }
 
     // If the frame is positioned, we will probably return it as the containing
@@ -5380,23 +5378,20 @@ nsContainerFrame* nsCSSFrameConstructor::GetAbsoluteContainingBlock(
       continue;
     }
     nsIFrame* absPosCBCandidate = frame;
-    LayoutFrameType type = absPosCBCandidate->Type();
-    if (type == LayoutFrameType::FieldSet) {
+    if (absPosCBCandidate->IsFieldSetFrame()) {
       absPosCBCandidate =
           static_cast<nsFieldSetFrame*>(absPosCBCandidate)->GetInner();
       if (!absPosCBCandidate) {
         continue;
       }
-      type = absPosCBCandidate->Type();
     }
-    if (type == LayoutFrameType::ScrollContainer) {
+    if (absPosCBCandidate->IsScrollContainerFrame()) {
       ScrollContainerFrame* scrollContainerFrame =
           do_QueryFrame(absPosCBCandidate);
       absPosCBCandidate = scrollContainerFrame->GetScrolledFrame();
       if (!absPosCBCandidate) {
         continue;
       }
-      type = absPosCBCandidate->Type();
     }
     // Only first continuations or first IB-split siblings can be containing
     // blocks.
@@ -5408,7 +5403,7 @@ nsContainerFrame* nsCSSFrameConstructor::GetAbsoluteContainingBlock(
     }
 
     // For tables, skip the inner frame and consider the table wrapper frame.
-    if (type == LayoutFrameType::Table) {
+    if (absPosCBCandidate->IsTableFrame()) {
       continue;
     }
     // For table wrapper frames, we can just return absPosCBCandidate.
