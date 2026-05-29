@@ -285,8 +285,12 @@
   display: flex;
 }
 
-.smartbar-button-container input-cta {
+.smartbar-button-container input-model-select {
   margin-inline-start: auto;
+}
+
+.smartbar-button-container input-cta {
+  margin-inline-start: var(--space-xsmall);
 }
 
 /* Context chips */

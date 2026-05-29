@@ -105,6 +105,9 @@ var gExceptionPaths = [
   // The profile avatars are directly referenced.
   "chrome://browser/content/profiles/assets/",
 
+  // The custom model choice icon is referenced programatically in input-model-select.mjs.
+  "chrome://browser/content/aiwindow/assets/model-choice-0.svg",
+
   // The picture-in-picture add-on.
   "resource://builtin-addons/pictureinpicture/",
 
