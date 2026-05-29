@@ -140,6 +140,7 @@ export class TelemetryScheduler {
 
     this.#running = true;
     this.#stopInterval();
+    const intervalStart = ChromeUtils.now();
 
     try {
       // run telemetry
@@ -198,6 +199,11 @@ export class TelemetryScheduler {
     } catch (error) {
       lazy.console.error("Failed to generate llm telemetry records", error);
     } finally {
+      ChromeUtils.addProfilerMarker(
+        "SmartWindow",
+        { startTime: intervalStart },
+        "LLMaJTelemetryManager"
+      );
       Services.prefs.setIntPref(LAST_RUN_PREF, Math.floor(Date.now() / 1000));
       if (!this.#destroyed) {
         this.#startInterval();

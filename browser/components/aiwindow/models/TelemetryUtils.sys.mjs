@@ -489,6 +489,7 @@ export async function runLLMaJTelemetry(conversation, engineInstance) {
 
   const telemetryEngine = new TelemetryEngine();
   const triggers = await telemetryEngine.getTriggers(conversation);
+  const telemetryStart = ChromeUtils.now();
   telemetryEngine
     .runTelemetry(triggers, conversation)
     .then(results => {
@@ -514,5 +515,12 @@ export async function runLLMaJTelemetry(conversation, engineInstance) {
         conversation._telemetryUniformProbability
       ).catch(e => console.error("Failed to update telemetry record:", e));
     })
-    .catch(e => console.error("Telemetry run failed:", e));
+    .catch(e => console.error("Telemetry run failed:", e))
+    .finally(() => {
+      ChromeUtils.addProfilerMarker(
+        "SmartWindow",
+        { startTime: telemetryStart },
+        "LLMaJTelemetry"
+      );
+    });
 }
