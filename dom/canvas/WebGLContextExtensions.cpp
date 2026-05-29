@@ -128,97 +128,99 @@ RefPtr<ClientWebGLExtensionBase> ClientWebGLContext::GetExtension(
       switch (ext) {
         // ANGLE_
         case WebGLExtensionID::ANGLE_instanced_arrays:
-          return new ClientWebGLExtensionInstancedArrays(*this);
+          return MakeRefPtr<ClientWebGLExtensionInstancedArrays>(*this);
 
         // EXT_
         case WebGLExtensionID::EXT_blend_minmax:
-          return new ClientWebGLExtensionBlendMinMax(*this);
+          return MakeRefPtr<ClientWebGLExtensionBlendMinMax>(*this);
         case WebGLExtensionID::EXT_color_buffer_float:
-          return new ClientWebGLExtensionEXTColorBufferFloat(*this);
+          return MakeRefPtr<ClientWebGLExtensionEXTColorBufferFloat>(*this);
         case WebGLExtensionID::EXT_color_buffer_half_float:
-          return new ClientWebGLExtensionColorBufferHalfFloat(*this);
+          return MakeRefPtr<ClientWebGLExtensionColorBufferHalfFloat>(*this);
         case WebGLExtensionID::EXT_depth_clamp:
-          return new ClientWebGLExtensionDepthClamp(*this);
+          return MakeRefPtr<ClientWebGLExtensionDepthClamp>(*this);
         case WebGLExtensionID::EXT_disjoint_timer_query:
-          return new ClientWebGLExtensionDisjointTimerQuery(*this);
+          return MakeRefPtr<ClientWebGLExtensionDisjointTimerQuery>(*this);
         case WebGLExtensionID::EXT_float_blend:
-          return new ClientWebGLExtensionFloatBlend(*this);
+          return MakeRefPtr<ClientWebGLExtensionFloatBlend>(*this);
         case WebGLExtensionID::EXT_frag_depth:
-          return new ClientWebGLExtensionFragDepth(*this);
+          return MakeRefPtr<ClientWebGLExtensionFragDepth>(*this);
         case WebGLExtensionID::EXT_shader_texture_lod:
-          return new ClientWebGLExtensionShaderTextureLod(*this);
+          return MakeRefPtr<ClientWebGLExtensionShaderTextureLod>(*this);
         case WebGLExtensionID::EXT_sRGB:
-          return new ClientWebGLExtensionSRGB(*this);
+          return MakeRefPtr<ClientWebGLExtensionSRGB>(*this);
         case WebGLExtensionID::EXT_texture_compression_bptc:
-          return new ClientWebGLExtensionCompressedTextureBPTC(*this);
+          return MakeRefPtr<ClientWebGLExtensionCompressedTextureBPTC>(*this);
         case WebGLExtensionID::EXT_texture_compression_rgtc:
-          return new ClientWebGLExtensionCompressedTextureRGTC(*this);
+          return MakeRefPtr<ClientWebGLExtensionCompressedTextureRGTC>(*this);
         case WebGLExtensionID::EXT_texture_filter_anisotropic:
-          return new ClientWebGLExtensionTextureFilterAnisotropic(*this);
+          return MakeRefPtr<ClientWebGLExtensionTextureFilterAnisotropic>(
+              *this);
         case WebGLExtensionID::EXT_texture_norm16:
-          return new ClientWebGLExtensionTextureNorm16(*this);
+          return MakeRefPtr<ClientWebGLExtensionTextureNorm16>(*this);
 
         // MOZ_
         case WebGLExtensionID::MOZ_debug:
-          return new ClientWebGLExtensionMOZDebug(*this);
+          return MakeRefPtr<ClientWebGLExtensionMOZDebug>(*this);
 
         // OES_
         case WebGLExtensionID::OES_draw_buffers_indexed:
-          return new ClientWebGLExtensionDrawBuffersIndexed(*this);
+          return MakeRefPtr<ClientWebGLExtensionDrawBuffersIndexed>(*this);
         case WebGLExtensionID::OES_element_index_uint:
-          return new ClientWebGLExtensionElementIndexUint(*this);
+          return MakeRefPtr<ClientWebGLExtensionElementIndexUint>(*this);
         case WebGLExtensionID::OES_fbo_render_mipmap:
-          return new ClientWebGLExtensionFBORenderMipmap(*this);
+          return MakeRefPtr<ClientWebGLExtensionFBORenderMipmap>(*this);
         case WebGLExtensionID::OES_standard_derivatives:
-          return new ClientWebGLExtensionStandardDerivatives(*this);
+          return MakeRefPtr<ClientWebGLExtensionStandardDerivatives>(*this);
         case WebGLExtensionID::OES_texture_float:
-          return new ClientWebGLExtensionTextureFloat(*this);
+          return MakeRefPtr<ClientWebGLExtensionTextureFloat>(*this);
         case WebGLExtensionID::OES_texture_float_linear:
-          return new ClientWebGLExtensionTextureFloatLinear(*this);
+          return MakeRefPtr<ClientWebGLExtensionTextureFloatLinear>(*this);
         case WebGLExtensionID::OES_texture_half_float:
-          return new ClientWebGLExtensionTextureHalfFloat(*this);
+          return MakeRefPtr<ClientWebGLExtensionTextureHalfFloat>(*this);
         case WebGLExtensionID::OES_texture_half_float_linear:
-          return new ClientWebGLExtensionTextureHalfFloatLinear(*this);
+          return MakeRefPtr<ClientWebGLExtensionTextureHalfFloatLinear>(*this);
         case WebGLExtensionID::OES_vertex_array_object:
-          return new ClientWebGLExtensionVertexArray(*this);
+          return MakeRefPtr<ClientWebGLExtensionVertexArray>(*this);
 
         // OVR_
         case WebGLExtensionID::OVR_multiview2:
-          return new ClientWebGLExtensionMultiview(*this);
+          return MakeRefPtr<ClientWebGLExtensionMultiview>(*this);
 
         // WEBGL_
         case WebGLExtensionID::WEBGL_color_buffer_float:
-          return new ClientWebGLExtensionColorBufferFloat(*this);
+          return MakeRefPtr<ClientWebGLExtensionColorBufferFloat>(*this);
         case WebGLExtensionID::WEBGL_compressed_texture_astc:
-          return new ClientWebGLExtensionCompressedTextureASTC(*this);
+          return MakeRefPtr<ClientWebGLExtensionCompressedTextureASTC>(*this);
         case WebGLExtensionID::WEBGL_compressed_texture_etc:
-          return new ClientWebGLExtensionCompressedTextureES3(*this);
+          return MakeRefPtr<ClientWebGLExtensionCompressedTextureES3>(*this);
         case WebGLExtensionID::WEBGL_compressed_texture_etc1:
-          return new ClientWebGLExtensionCompressedTextureETC1(*this);
+          return MakeRefPtr<ClientWebGLExtensionCompressedTextureETC1>(*this);
         case WebGLExtensionID::WEBGL_compressed_texture_pvrtc:
-          return new ClientWebGLExtensionCompressedTexturePVRTC(*this);
+          return MakeRefPtr<ClientWebGLExtensionCompressedTexturePVRTC>(*this);
         case WebGLExtensionID::WEBGL_compressed_texture_s3tc:
-          return new ClientWebGLExtensionCompressedTextureS3TC(*this);
+          return MakeRefPtr<ClientWebGLExtensionCompressedTextureS3TC>(*this);
         case WebGLExtensionID::WEBGL_compressed_texture_s3tc_srgb:
-          return new ClientWebGLExtensionCompressedTextureS3TC_SRGB(*this);
+          return MakeRefPtr<ClientWebGLExtensionCompressedTextureS3TC_SRGB>(
+              *this);
         case WebGLExtensionID::WEBGL_debug_renderer_info: {
           if (callerType != dom::CallerType::System) {
             JsWarning(
                 "WEBGL_debug_renderer_info is deprecated in Firefox and will "
                 "be removed. Please use RENDERER.");
           }
-          return new ClientWebGLExtensionDebugRendererInfo(*this);
+          return MakeRefPtr<ClientWebGLExtensionDebugRendererInfo>(*this);
         }
         case WebGLExtensionID::WEBGL_debug_shaders:
-          return new ClientWebGLExtensionDebugShaders(*this);
+          return MakeRefPtr<ClientWebGLExtensionDebugShaders>(*this);
         case WebGLExtensionID::WEBGL_depth_texture:
-          return new ClientWebGLExtensionDepthTexture(*this);
+          return MakeRefPtr<ClientWebGLExtensionDepthTexture>(*this);
         case WebGLExtensionID::WEBGL_draw_buffers:
-          return new ClientWebGLExtensionDrawBuffers(*this);
+          return MakeRefPtr<ClientWebGLExtensionDrawBuffers>(*this);
         case WebGLExtensionID::WEBGL_explicit_present:
-          return new ClientWebGLExtensionExplicitPresent(*this);
+          return MakeRefPtr<ClientWebGLExtensionExplicitPresent>(*this);
         case WebGLExtensionID::WEBGL_provoking_vertex:
-          return new ClientWebGLExtensionProvokingVertex(*this);
+          return MakeRefPtr<ClientWebGLExtensionProvokingVertex>(*this);
 
         case WebGLExtensionID::WEBGL_lose_context:
         case WebGLExtensionID::Max:
