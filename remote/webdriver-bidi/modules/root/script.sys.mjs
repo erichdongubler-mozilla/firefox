@@ -1125,12 +1125,15 @@ class ScriptModule extends RootBiDiModule {
   };
 
   #onContextDiscarded = (eventName, data) => {
-    const { browsingContext } = data;
+    const { browsingContext, why } = data;
 
-    const contextId =
-      lazy.NavigableManager.getIdForBrowsingContext(browsingContext);
-
-    this.#submittedContextsCreated.delete(contextId);
+    // Filter out top-level browsing contexts that are destroyed because of a
+    // cross-group navigation.
+    if (why !== "replace") {
+      const contextId =
+        lazy.NavigableManager.getIdForBrowsingContext(browsingContext);
+      this.#submittedContextsCreated.delete(contextId);
+    }
   };
 
   #onContextCreatedSubmitted = (eventName, { browsingContext }) => {

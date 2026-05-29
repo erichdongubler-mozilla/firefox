@@ -445,6 +445,13 @@ class BrowsingContextModule extends WindowGlobalBiDiModule {
             this.emitEvent("browsingContext.contextCreated", {
               context: this.messageHandler.context,
             });
+
+            // This is an internal event used by the script module
+            // to ensure that "script.realmCreated" event is emitted
+            // after "browsingContext.contextCreated".
+            this.emitEvent("browsingContext._contextCreatedEmitted", {
+              browsingContext: this.messageHandler.context,
+            });
           }
 
           this.#contextCreatedHandled = true;
