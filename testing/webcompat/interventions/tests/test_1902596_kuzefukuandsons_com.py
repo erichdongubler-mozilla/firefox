@@ -3,7 +3,7 @@ import pytest
 URL = "https://kuzefukuandsons.com/"
 
 UNSUPPORTED_ALERT = "Chrome"
-HERO_CSS = ".fa-cart-shopping"
+HERO_CSS = ".mp-account-link"
 
 
 @pytest.mark.asyncio
