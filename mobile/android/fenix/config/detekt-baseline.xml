@@ -2,9 +2,6 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>AcornThemeUsage:EliminatedBanner.kt$import mozilla.components.compose.base.theme.AcornTheme</ID>
-    <ID>AcornThemeUsage:SendToDevicesScreen.kt$import mozilla.components.compose.base.theme.AcornTheme</ID>
-    <ID>AcornThemeUsage:TrackersBlockedCard.kt$import mozilla.components.compose.base.theme.AcornTheme</ID>
     <ID>ForbiddenSuppress:AccountSettingsFragment.kt$AccountSettingsFragment$@Suppress("LongMethod", "CyclomaticComplexMethod")</ID>
     <ID>ForbiddenSuppress:AddonMenuItem.kt$@Suppress("LongMethod")</ID>
     <ID>ForbiddenSuppress:AddonPermissionsScreen.kt$@Suppress("LongParameterList", "LongMethod", "CognitiveComplexMethod")</ID>

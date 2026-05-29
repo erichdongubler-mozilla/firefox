@@ -46,7 +46,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import mozilla.components.compose.base.modifier.thenConditional
-import mozilla.components.compose.base.theme.AcornTheme
 import org.mozilla.fenix.R
 import org.mozilla.fenix.home.sessioncontrol.TrackingProtectionInteractor
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -135,7 +134,7 @@ fun TrackersBlockedCard(
             TypewriterText(
                 modifier = Modifier
                     .clickable { interactor?.onLongfoxEntryPointClicked() }
-                    .padding(bottom = AcornTheme.layout.space.static300),
+                    .padding(bottom = FirefoxTheme.layout.space.static300),
                 text = stringResource(R.string.help_catch_trackers),
                 isReversing = isReversing,
             )
