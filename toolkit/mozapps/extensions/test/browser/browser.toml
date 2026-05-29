@@ -96,6 +96,8 @@ skip-if = [
 
 ["browser_html_discover_view_prefs.js"]
 
+["browser_html_embedder_hook.js"]
+
 ["browser_html_forced_colors_notice.js"]
 run-if = [
   "os == 'win'", # Forced-colors is only supported on Windows
