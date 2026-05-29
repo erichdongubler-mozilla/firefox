@@ -12,6 +12,7 @@
 
 namespace mozilla {
 
+class EncoderConfig;
 class WebrtcVideoDecoder;
 class WebrtcVideoEncoder;
 class MediaDataCodec {
@@ -23,6 +24,13 @@ class MediaDataCodec {
       const webrtc::SdpVideoFormat& aFormat);
 
   /**
+   * Return whether the codec as described in the passed EncoderConfig
+   * is supported for encoding. Uses PEMFactory::Supports().
+   */
+  static media::EncodeSupportSet SupportsEncoderCodec(
+      const EncoderConfig& aConfig);
+
+  /**
    * Create encoder object for codec format |aFormat|. Return |nullptr| when
    * failed.
    */
@@ -30,7 +38,8 @@ class MediaDataCodec {
       const webrtc::SdpVideoFormat& aFormat);
 
   /**
-   * Return whether the given codec is supported for decoding.
+   * Mime-level support check. For the deeper check used by
+   * MediaCapabilities, see WebrtcMediaDataDecoder::Supports.
    */
   static media::DecodeSupportSet SupportsDecoderCodec(
       webrtc::VideoCodecType aCodecType);
