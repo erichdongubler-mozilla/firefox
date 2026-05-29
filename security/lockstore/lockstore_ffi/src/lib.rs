@@ -494,8 +494,8 @@ pub extern "C" fn lockstore_keystore_has_prp(
 //
 // Dispatches internally on the kek_ref's KekType. For PrimaryPassword
 // `secret` is the password used to derive the KEK; for Pkcs11Token
-// `secret` is typically unused (NSS prompts for the PIN). For LocalKey
-// these are no-ops.
+// `secret` is the PIN (or empty to defer to NSS's password callback).
+// For LocalKey these are no-ops.
 
 /// Unlock the KEK referenced by `kek_ref` using `secret` (a password
 /// for PrimaryPassword, a PIN for PKCS#11, or empty / ignored for

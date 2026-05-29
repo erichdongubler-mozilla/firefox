@@ -839,8 +839,8 @@ impl Keystore {
 
     /// Unlock `kek_ref` so subsequent DEK accesses under it succeed for at
     /// most `timeout`. `secret` carries the password (for PrimaryPassword) or
-    /// PIN (for a future PKCS#11 caller-supplied path) — it may be empty
-    /// when the KEK type has its own prompting mechanism.
+    /// PIN (for PKCS#11). For PKCS#11 it may be empty, in which case
+    /// Lockstore falls back to NSS's own password callback.
     pub fn unlock_kek(
         &self,
         kek_ref: &str,
