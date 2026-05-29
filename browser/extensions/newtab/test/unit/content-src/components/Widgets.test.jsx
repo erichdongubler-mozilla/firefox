@@ -1207,6 +1207,9 @@ describe("<Widgets>", () => {
             [PREF_WIDGETS_SYSTEM_LISTS_ENABLED]: true,
             [PREF_WIDGETS_TIMER_ENABLED]: true,
             [PREF_WIDGETS_SYSTEM_TIMER_ENABLED]: true,
+            "widgets.system.weather.enabled": true,
+            "widgets.system.sportsWidget.enabled": true,
+            "widgets.system.clocks.enabled": true,
             "widgets.system.weatherForecast.enabled": true,
             "weather.display": "detailed",
             showWeather: true,
@@ -1280,6 +1283,121 @@ describe("<Widgets>", () => {
         });
 
         assert.calledOnce(openWidgetsPanel);
+      });
+
+      it("should render the Add widgets button when at least one widget is not enabled", () => {
+        const novaWrapper = mount(
+          <WrapWithProvider state={NOVA_STATE}>
+            <Widgets />
+          </WrapWithProvider>
+        );
+        assert.ok(
+          novaWrapper.find(".widgets-add-button").exists(),
+          "should render the Add widgets placeholder card"
+        );
+      });
+
+      it("should not render the Add widgets button when every widget is enabled", () => {
+        const allEnabledState = {
+          ...NOVA_STATE,
+          Prefs: {
+            ...NOVA_STATE.Prefs,
+            values: {
+              ...NOVA_STATE.Prefs.values,
+              "widgets.weather.enabled": true,
+              "widgets.system.weather.enabled": true,
+              "widgets.sportsWidget.enabled": true,
+              "widgets.system.sportsWidget.enabled": true,
+              "widgets.clocks.enabled": true,
+              "widgets.system.clocks.enabled": true,
+            },
+          },
+        };
+        const novaWrapper = mount(
+          <WrapWithProvider state={allEnabledState}>
+            <Widgets />
+          </WrapWithProvider>
+        );
+        assert.ok(
+          !novaWrapper.find(".widgets-add-button").exists(),
+          "should not render the Add widgets placeholder card"
+        );
+      });
+
+      it("should not render the Add widgets button when Nova is disabled", () => {
+        const noNovaState = {
+          ...NOVA_STATE,
+          Prefs: {
+            ...NOVA_STATE.Prefs,
+            values: { ...NOVA_STATE.Prefs.values, "nova.enabled": false },
+          },
+        };
+        const novaWrapper = mount(
+          <WrapWithProvider state={noNovaState}>
+            <Widgets />
+          </WrapWithProvider>
+        );
+        assert.ok(
+          !novaWrapper.find(".widgets-add-button").exists(),
+          "should not render the Add widgets placeholder card outside Nova"
+        );
+      });
+
+      it("should call openWidgetsPanel when the Add widgets button is clicked", () => {
+        const openWidgetsPanel = sinon.stub();
+        const novaStore = createStore(combineReducers(reducers), NOVA_STATE);
+        sinon.spy(novaStore, "dispatch");
+        const novaWrapper = mount(
+          <BaseContext.Provider value={{ openWidgetsPanel }}>
+            <Provider store={novaStore}>
+              <Widgets />
+            </Provider>
+          </BaseContext.Provider>
+        );
+
+        novaWrapper.find(".widgets-add-button").prop("onClick")({
+          preventDefault: () => {},
+        });
+
+        assert.calledOnce(openWidgetsPanel);
+        const userEvent = novaStore.dispatch
+          .getCalls()
+          .map(c => c.args[0])
+          .find(
+            a =>
+              a.type === at.TELEMETRY_USER_EVENT &&
+              a.data?.event === "SHOW_PERSONALIZE"
+          );
+        assert.ok(
+          userEvent,
+          "should dispatch SHOW_PERSONALIZE telemetry event"
+        );
+        novaStore.dispatch.restore();
+      });
+
+      it("should match the largest current widget size on the Add widgets button", () => {
+        const maximizedState = {
+          ...NOVA_STATE,
+          Prefs: {
+            ...NOVA_STATE.Prefs,
+            values: {
+              ...NOVA_STATE.Prefs.values,
+              "widgets.maximized": true,
+              "widgets.lists.size": "large",
+              "widgets.focusTimer.size": "large",
+              "widgets.weather.size": "large",
+            },
+          },
+        };
+        const novaWrapper = mount(
+          <WrapWithProvider state={maximizedState}>
+            <Widgets />
+          </WrapWithProvider>
+        );
+        assert.ok(
+          novaWrapper.find(".widgets-add-button.large-widget").exists(),
+          "should size the Add widgets button to large when widgets are large"
+        );
       });
 
       it("should dispatch hide widget actions from the Nova header menu", () => {

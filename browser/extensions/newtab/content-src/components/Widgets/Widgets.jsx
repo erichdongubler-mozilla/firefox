@@ -19,6 +19,7 @@ import { SLOTS } from "../DiscoveryStreamComponents/FeatureHighlight/OMCHighligh
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import {
   WIDGET_REGISTRY,
+  isWidgetAddable,
   isWidgetEnabled,
   resolveWidgetSize,
   resolveWidgetOrder,
@@ -212,6 +213,17 @@ function Widgets() {
   const anyWidgetInRow =
     WIDGET_REGISTRY.some(w => widgetEnabledMap[w.id]) ||
     (!novaEnabled && weatherForecastEnabled);
+
+  const allWidgetsAdded = WIDGET_REGISTRY.filter(w =>
+    isWidgetAddable(w, prefs)
+  ).every(w => prefs[w.enabledPref]);
+
+  const renderedWidgetSizes = WIDGET_REGISTRY.filter(
+    w => widgetEnabledMap[w.id]
+  ).map(w => resolveWidgetSize(w, prefs));
+  const addButtonSize = renderedWidgetSizes.includes("large")
+    ? "large"
+    : "medium";
 
   // Widget size is "small" only when maximize feature is enabled and widgets
   // are currently minimized. Otherwise defaults to "medium".
@@ -681,6 +693,18 @@ function Widgets() {
               </React.Fragment>
             );
           })}
+          {novaEnabled && !allWidgetsAdded && (
+            <button
+              type="button"
+              className={`widgets-add-button col-4 ${addButtonSize}-widget`}
+              style={{ order: WIDGET_REGISTRY.length + 1 }}
+              data-l10n-id="newtab-widget-add-widgets-button"
+              onClick={handleManageWidgetsClick}
+              tabIndex={-1}
+            >
+              <span className="widgets-add-button-icon" />
+            </button>
+          )}
         </div>
         {novaEnabled && (
           <moz-button

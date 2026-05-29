@@ -5,6 +5,7 @@
 import {
   WIDGET_REGISTRY,
   getWidgetOrder,
+  isWidgetAddable,
   isWidgetEnabled,
   resolveWidgetSize,
   resolveWidgetOrder,
@@ -98,6 +99,46 @@ describe("resolveWidgetOrder", () => {
         trainhopConfig: { widgets: { order: "weather,lists,focusTimer" } },
       })
     ).toEqual(["lists", "focusTimer", "weather", "sportsWidget", "clocks"]);
+  });
+});
+
+describe("isWidgetAddable", () => {
+  const listsWidget = WIDGET_REGISTRY.find(w => w.id === "lists");
+
+  it("returns true when system pref is set", () => {
+    expect(
+      isWidgetAddable(listsWidget, {
+        [listsWidget.systemEnabledPref]: true,
+      })
+    ).toBe(true);
+  });
+
+  it("returns true when trainhop overrides the system gate", () => {
+    expect(
+      isWidgetAddable(listsWidget, {
+        [listsWidget.systemEnabledPref]: false,
+        trainhopConfig: {
+          widgets: { [listsWidget.trainhopEnabledKey]: true },
+        },
+      })
+    ).toBe(true);
+  });
+
+  it("returns false when neither system nor trainhop are set", () => {
+    expect(
+      isWidgetAddable(listsWidget, {
+        [listsWidget.systemEnabledPref]: false,
+      })
+    ).toBe(false);
+  });
+
+  it("does not consider the user's enabled pref", () => {
+    expect(
+      isWidgetAddable(listsWidget, {
+        [listsWidget.systemEnabledPref]: true,
+        [listsWidget.enabledPref]: false,
+      })
+    ).toBe(true);
   });
 });
 

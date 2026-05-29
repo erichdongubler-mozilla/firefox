@@ -4768,6 +4768,62 @@ button.arrow-button:dir(rtl) {
   }
 }
 
+@container content-grid (inline-size >= calc(8 * 75px + 7 * 0.75rem)) {
+  .nova-enabled .widgets-container:has(> :nth-child(2)):not(:has(> :nth-child(3))) > .widgets-add-button {
+    display: flex;
+  }
+}
+@container content-grid (inline-size >= calc(12 * 75px + 11 * 0.75rem)) {
+  .nova-enabled .widgets-container:has(> :nth-child(3)):not(:has(> :nth-child(4))) > .widgets-add-button {
+    display: flex;
+  }
+}
+@container content-grid (inline-size >= calc(16 * 75px + 15 * 0.75rem)) {
+  .nova-enabled .widgets-container:has(> :nth-child(4)):not(:has(> :nth-child(5))) > .widgets-add-button {
+    display: flex;
+  }
+}
+.nova-enabled .widgets-add-button {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  background: var(--newtab-background-card);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--border-radius-large);
+  color: var(--icon-color-accent-primary-desaturated, light-dark(var(--color-violet-desaturated-60), var(--color-violet-desaturated-50)));
+}
+@media (prefers-reduced-motion: reduce) {
+  .nova-enabled .widgets-add-button {
+    transition: none;
+  }
+}
+.nova-enabled .widgets-add-button.medium-widget {
+  grid-row: span 2;
+}
+.nova-enabled .widgets-add-button.large-widget {
+  grid-row: span 4;
+}
+.nova-enabled .widgets-add-button:hover, .nova-enabled .widgets-add-button:focus-within {
+  opacity: 1;
+  background: var(--newtab-background-color-secondary);
+  outline: 1px solid var(--border-color-deemphasized);
+  box-shadow: var(--card-box-shadow-hover);
+}
+.nova-enabled .widgets-add-button:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-outline-offset);
+}
+.nova-enabled .widgets-add-button .widgets-add-button-icon {
+  display: inline-block;
+  width: var(--icon-size-large);
+  height: var(--icon-size-large);
+  background-color: currentColor;
+  mask: url("chrome://global/skin/icons/plus.svg") center/contain no-repeat;
+}
+
 .feature-highlight .feature-highlight-modal.widget-highlight-wrapper {
   width: auto;
   max-width: min-content;

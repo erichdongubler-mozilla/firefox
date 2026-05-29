@@ -224,8 +224,24 @@ export function resolveWidgetOrder(prefs) {
 }
 
 /**
- * Returns true if the widget is enabled, based on the trainhop/system gate
- * and the user-facing enabled pref.
+ * Returns true if the widget is available to the user, based on the
+ * trainhop/system gate. Does not consider whether the user has turned the
+ * widget on, or whether the widgets container is enabled.
+ *
+ * @param {object} widget - a WIDGET_REGISTRY entry
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+export function isWidgetAddable(widget, prefs) {
+  return Boolean(
+    prefs.trainhopConfig?.widgets?.[widget.trainhopEnabledKey] ||
+    prefs[widget.systemEnabledPref]
+  );
+}
+
+/**
+ * Returns true if the widget is currently enabled: the widgets container is
+ * on, the widget is addable, and the user's enabled pref is set.
  *
  * @param {object} widget - a WIDGET_REGISTRY entry
  * @param {object} prefs - current pref values from the Redux store
@@ -233,12 +249,11 @@ export function resolveWidgetOrder(prefs) {
  * @returns {boolean}
  */
 export function isWidgetEnabled(widget, prefs, widgetsEnabled) {
-  if (!widgetsEnabled) {
-    return false;
-  }
-  const trainhop = prefs.trainhopConfig?.widgets?.[widget.trainhopEnabledKey];
-  const system = prefs[widget.systemEnabledPref];
-  return Boolean((trainhop || system) && prefs[widget.enabledPref]);
+  return Boolean(
+    widgetsEnabled &&
+    isWidgetAddable(widget, prefs) &&
+    prefs[widget.enabledPref]
+  );
 }
 
 /**
