@@ -1107,7 +1107,7 @@ add_task(async function testForceEnrollMultifeature() {
   Assert.equal(result.reason, "enrolled-in-feature");
   Assert.deepEqual(Array.from(result.conflictingEnrollments), ["recipe-1"]);
 
-  await manager.forceEnroll(recipe, "control");
+  manager.forceEnroll(recipe, "control");
 
   Assert.ok(
     !manager.store.get("recipe-1").active,

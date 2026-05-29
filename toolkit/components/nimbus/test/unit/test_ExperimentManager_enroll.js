@@ -686,7 +686,7 @@ add_task(async function test_forceEnroll_cleanup() {
   await manager.enroll(existingRecipe, "test_forceEnroll_cleanup");
 
   sandbox.spy(NimbusTelemetry, "setExperimentActive");
-  await manager.forceEnroll(forcedRecipe, forcedRecipe.branches[0].slug);
+  manager.forceEnroll(forcedRecipe, forcedRecipe.branches[0].slug);
 
   Assert.deepEqual(
     Glean.nimbusEvents.enrollmentStatus
@@ -764,7 +764,7 @@ add_task(async function testForceEnrollUnerollsSlugConflict() {
     },
   ]);
 
-  await manager.forceEnroll(secondRecipe, "control");
+  manager.forceEnroll(secondRecipe, "control");
 
   Assert.deepEqual(feature.getAllEnrollments(), [
     {
@@ -826,7 +826,7 @@ add_task(async function test_rollout_unenroll_conflict() {
   // We want to force a conflict
   await manager.enroll(conflictingRollout, "rs-loader");
 
-  await manager.forceEnroll(rollout, rollout.branches[0].slug);
+  manager.forceEnroll(rollout, rollout.branches[0].slug);
 
   Assert.ok(
     manager._unenroll.calledOnceWith(
@@ -889,7 +889,7 @@ add_task(async function test_forceEnroll() {
 
   for (const { enroll, expected } of TEST_CASES) {
     for (const recipe of enroll) {
-      await manager.forceEnroll(recipe, recipe.branches[0].slug);
+      manager.forceEnroll(recipe, recipe.branches[0].slug);
     }
 
     const activeSlugs = manager.store
@@ -969,7 +969,7 @@ add_task(async function testForceEnrollmentWithCoenrollment() {
   ];
 
   for (const recipe of recipes) {
-    await manager.forceEnroll(recipe, recipe.branches[0].slug);
+    manager.forceEnroll(recipe, recipe.branches[0].slug);
   }
 
   for (const recipe of recipes) {
@@ -1455,7 +1455,7 @@ add_task(async function testForceEnrollBranchObject() {
     featureId: "no-feature-firefox-desktop",
   });
 
-  await manager.forceEnroll(recipe, recipe.branches[0]);
+  manager.forceEnroll(recipe, recipe.branches[0]);
 
   Assert.ok(manager.store.get("optin-recipe")?.active, "Enrollment is active");
 
@@ -1474,7 +1474,7 @@ add_task(async function testForceEnrollLabs() {
 
   Assert.deepEqual(manager.optIns, []);
 
-  const enrollment = await manager.forceEnroll(recipe, recipe.branches[0].slug);
+  const enrollment = manager.forceEnroll(recipe, recipe.branches[0].slug);
 
   Assert.ok(enrollment.active, "Enrollment active");
   assertOptInSlugs(manager, [["optin-recipe", "force-enrollment"]]);
@@ -1497,7 +1497,7 @@ add_task(async function testForceEnrollRemovesLabsEntry() {
 
   assertOptInSlugs(manager, [["optin-recipe", "rs-loader"]]);
 
-  await manager.forceEnroll(
+  manager.forceEnroll(
     NimbusTestUtils.factories.recipe.withFeatureConfig("recipe", {
       featureId: "no-feature-firefox-desktop",
     }),
@@ -1532,7 +1532,7 @@ add_task(async function testForceEnrollReplacesLabsEntry() {
     "The expected feature value is present"
   );
 
-  await manager.forceEnroll(
+  manager.forceEnroll(
     NimbusTestUtils.factories.recipe.withFeatureConfig(
       "recipe",
       { featureId: "no-feature-firefox-desktop", value: { x: 2 } },

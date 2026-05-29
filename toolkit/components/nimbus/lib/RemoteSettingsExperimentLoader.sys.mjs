@@ -847,7 +847,7 @@ export class RemoteSettingsExperimentLoader {
       throw new Error(`Recipe ${recipe.slug} did not match targeting`);
     }
 
-    await this.manager.forceEnroll(recipe, branchSlug);
+    this.manager.forceEnroll(recipe, branchSlug);
   }
 
   /**

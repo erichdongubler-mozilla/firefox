@@ -765,7 +765,7 @@ export class ExperimentManager {
     return this._enroll(recipe, branch.slug, source);
   }
 
-  async _enroll(recipe, branchSlug, source) {
+  _enroll(recipe, branchSlug, source) {
     const {
       slug,
       userFacingName,
@@ -820,7 +820,7 @@ export class ExperimentManager {
       });
     }
 
-    await this._prefFlips._annotateEnrollment(enrollment);
+    this._prefFlips._annotateEnrollment(enrollment);
 
     this.store.addEnrollment(enrollment, recipe);
 
@@ -850,7 +850,7 @@ export class ExperimentManager {
    *
    * @returns {object} The resulting enrollment.
    */
-  async forceEnroll(recipe, branchOrBranchSlug) {
+  forceEnroll(recipe, branchOrBranchSlug) {
     let branch;
     if (typeof branchOrBranchSlug === "string") {
       branch = recipe.branches.find(b => b.slug === branchOrBranchSlug);
@@ -921,7 +921,7 @@ export class ExperimentManager {
     // we must remove it because we are replacing the enrollment.
     this.unregisterOptIn(optInRecipe.slug);
 
-    const enrollment = await this._enroll(
+    const enrollment = this._enroll(
       optInRecipe,
       branch.slug,
       lazy.NimbusTelemetry.EnrollmentSource.FORCE_ENROLLMENT
