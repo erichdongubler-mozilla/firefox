@@ -210,6 +210,7 @@ class ScrollTimeline : public AnimationTimeline,
   State GetState() const;
 
   // AnimationTimeline methods.
+  void GetCurrentTime(Nullable<OwningCSSNumberish>& aRetVal) const override;
   Nullable<TimeDuration> GetCurrentTimeAsDuration() const override;
   bool TracksWallclockTime() const override { return false; }
   Nullable<TimeDuration> ToTimelineTime(
