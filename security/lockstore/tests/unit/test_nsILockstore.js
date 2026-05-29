@@ -29,20 +29,12 @@ add_setup(async function () {
   do_get_profile();
 });
 
-// ---------------------------------------------------------------------------
-// Service surface
-// ---------------------------------------------------------------------------
-
 add_task(function test_service_accessible() {
   const ls = getService();
   Assert.ok(ls, "nsILockstore service must be obtainable");
   Assert.ok(!ls.hasPrimaryPassword, "fresh profile has no primary password");
   Assert.ok(!ls.isKekUnlocked(KEK_PP), "fresh profile has no unlocked cache");
 });
-
-// ---------------------------------------------------------------------------
-// LocalKey: createDek / encrypt / decrypt happy paths and invariants
-// ---------------------------------------------------------------------------
 
 add_task(async function test_local_key_encrypt_decrypt_roundtrip() {
   const ls = getService();
@@ -200,24 +192,20 @@ add_task(async function test_decrypt_with_wrong_kek_rejects() {
     /NS_ERROR_NOT_AVAILABLE/,
     "decrypt under a KEK that does not wrap the collection rejects"
   );
-  // Cleanup so listCollections in later tests stays bounded.
+  // Cleanup so listDeks in later tests stays bounded.
   await ls.deleteDek("local-only");
 });
 
-// ---------------------------------------------------------------------------
-// listCollections / deleteDek
-// ---------------------------------------------------------------------------
-
-add_task(async function test_list_collections_and_delete() {
+add_task(async function test_list_deks_and_delete() {
   const ls = getService();
   await ls.createDek("one", KEK_LOCAL, false);
   await ls.createDek("two", KEK_LOCAL, false);
-  const before = await ls.listCollections();
+  const before = await ls.listDeks();
   Assert.ok(before.includes("one"));
   Assert.ok(before.includes("two"));
 
   await ls.deleteDek("one");
-  const after = await ls.listCollections();
+  const after = await ls.listDeks();
   Assert.ok(!after.includes("one"), "deleted collection disappears");
   Assert.ok(after.includes("two"), "other collection remains");
 
@@ -312,10 +300,6 @@ add_task(async function test_delete_dek_empty_arg_rejected() {
   );
 });
 
-// ---------------------------------------------------------------------------
-// PrimaryPassword lifecycle
-// ---------------------------------------------------------------------------
-
 add_task(async function test_primary_password_lifecycle() {
   const ls = getService();
 
@@ -408,10 +392,6 @@ add_task(async function test_change_primary_password_lifecycle() {
   await ls.unlockKek(KEK_PP, PW, 60000);
   Assert.ok(ls.isKekUnlocked(KEK_PP), "PP restored to PW");
 });
-
-// ---------------------------------------------------------------------------
-// addKek / removeKek
-// ---------------------------------------------------------------------------
 
 add_task(async function test_add_remove_kek() {
   const ls = getService();
@@ -510,10 +490,6 @@ add_task(async function test_remove_kek_empty_args_rejected() {
   );
 });
 
-// ---------------------------------------------------------------------------
-// Sync-tier behaviour
-// ---------------------------------------------------------------------------
-
 add_task(async function test_local_key_is_always_unlocked() {
   const ls = getService();
   Assert.ok(ls.isKekUnlocked(KEK_LOCAL), "LocalKey always unlocked");
@@ -533,10 +509,6 @@ add_task(async function test_lock_all() {
   Assert.ok(!ls.isKekUnlocked(KEK_PP), "PP locked after lock()");
   Assert.ok(ls.isKekUnlocked(KEK_LOCAL), "LocalKey unaffected by lock()");
 });
-
-// ---------------------------------------------------------------------------
-// Argument validation on the unified KEK API
-// ---------------------------------------------------------------------------
 
 add_task(async function test_unknown_kek_ref_rejected() {
   const ls = getService();
@@ -585,11 +557,8 @@ add_task(async function test_pkcs11_malformed_uri_rejected() {
   );
 });
 
-// ---------------------------------------------------------------------------
-// Concurrency: the service serialises FFI on a private queue. Multiple
-// in-flight async ops must all complete and produce distinct ciphertexts.
-// ---------------------------------------------------------------------------
-
+// The service serialises FFI on a private queue. Multiple in-flight
+// async ops must all complete and produce distinct ciphertexts.
 add_task(async function test_concurrent_encrypts_serialised() {
   const ls = getService();
   await ls.createDek("concurrent", KEK_LOCAL, false);
@@ -625,11 +594,11 @@ add_task(async function test_concurrent_encrypts_serialised() {
 
 add_task(async function test_concurrent_mixed_ops() {
   const ls = getService();
-  // Mix createDek / encrypt / listCollections / deleteDek in flight.
+  // Mix createDek / encrypt / listDeks / deleteDek in flight.
   const colls = ["mix-a", "mix-b", "mix-c"];
   await Promise.all(colls.map(c => ls.createDek(c, KEK_LOCAL, false)));
 
-  const collsAfter = await ls.listCollections();
+  const collsAfter = await ls.listDeks();
   for (const c of colls) {
     Assert.ok(collsAfter.includes(c), `${c} present after concurrent create`);
   }
@@ -649,15 +618,11 @@ add_task(async function test_concurrent_mixed_ops() {
 
   // Cleanup in parallel.
   await Promise.all(colls.map(c => ls.deleteDek(c)));
-  const collsFinal = await ls.listCollections();
+  const collsFinal = await ls.listDeks();
   for (const c of colls) {
     Assert.ok(!collsFinal.includes(c), `${c} cleaned up`);
   }
 });
-
-// ---------------------------------------------------------------------------
-// importDek / isDekExtractable / switchKek
-// ---------------------------------------------------------------------------
 
 add_task(async function test_import_dek_roundtrip() {
   const ls = getService();

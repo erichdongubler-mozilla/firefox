@@ -173,19 +173,19 @@ interface nsILockstore : nsISupports
   /// Resolves with an Array<ACString> of every collection currently
   /// managed by this keystore.
   [implicit_jscontext]
-  Promise listCollections();
+  Promise listDeks();
 
   /// Resolves with an Array<AUTF8String> of every kekRef that
-  /// currently wraps the DEK for `collection`. The array is non-empty
-  /// for any existing collection (the keystore enforces at least one
-  /// KEK wrapping); the Promise rejects with NS_ERROR_NOT_AVAILABLE
-  /// if no collection by that name exists (including the empty
-  /// string). Order of the returned list is unspecified. Useful for
-  /// callers that need to discover the wrapping state without owning
-  /// the wrapped bytes (e.g. login crypto deciding whether to encrypt
-  /// under LocalKey or PrimaryPassword for a given collection).
+  /// currently wraps the DEK named `dekName`. The array is non-empty
+  /// for any DEK that exists (the keystore enforces at least one KEK
+  /// wrapping); the Promise rejects with NS_ERROR_NOT_AVAILABLE if no
+  /// DEK by that name exists (including the empty string). Returns
+  /// only the kekRef strings, never the wrapped key bytes themselves
+  /// — useful for callers that need to discover the wrapping state
+  /// (e.g. login crypto deciding whether to encrypt under LocalKey or
+  /// PrimaryPassword for a given DEK).
   [implicit_jscontext]
-  Promise listKeks(in AUTF8String collection);
+  Promise listKeks(in AUTF8String dekName);
 
   /// Wrap an existing collection's DEK under an additional `kekRef`.
   [implicit_jscontext]

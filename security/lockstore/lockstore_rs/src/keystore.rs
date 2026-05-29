@@ -88,7 +88,7 @@ struct PrimaryPasswordParams {
 /// Holding a `ConnectionHandle` is the witness that the caller has
 /// exclusive write access to DEK metadata: every operation that walks
 /// or mutates collection rows
-/// ([`list_collections`](Self::list_collections), `load_metadata`,
+/// ([`list_deks`](Self::list_deks), `load_metadata`,
 /// `save_metadata`) is a method on this type, so the compiler enforces
 /// that a thread cannot read the collection list and then load a row
 /// without holding the lock across both steps. Single-step mutations
@@ -108,7 +108,7 @@ pub struct ConnectionHandle<'a> {
 impl<'a> ConnectionHandle<'a> {
     /// Returns the names of every collection that currently has DEK
     /// metadata stored.
-    pub fn list_collections(&self) -> Result<Vec<String>, LockstoreError> {
+    pub fn list_deks(&self) -> Result<Vec<String>, LockstoreError> {
         use kvstore::DatabaseError;
 
         let reader = self.keystore.store.reader()?;
@@ -677,25 +677,21 @@ impl Keystore {
     /// stored. Internally acquires a short-lived connection; callers
     /// that need a stable view across multiple operations should call
     /// [`acquire_connection`](Self::acquire_connection) and use
-    /// [`ConnectionHandle::list_collections`] directly.
-    pub fn list_collections(&self) -> Result<Vec<String>, LockstoreError> {
-        self.acquire_connection()?.list_collections()
+    /// [`ConnectionHandle::list_deks`] directly.
+    pub fn list_deks(&self) -> Result<Vec<String>, LockstoreError> {
+        self.acquire_connection()?.list_deks()
     }
 
-    /// Return the list of `kek_ref`s currently wrapping the DEK for
-    /// `collection_name`. Always non-empty for an existing collection
-    /// (the keystore enforces at least one KEK wrapping); rejects with
-    /// `LockstoreError::NotFound` if no collection by that name exists.
-    /// Order of the returned list is unspecified. Useful for callers
-    /// that need to discover the wrapping state without owning the
-    /// wrapped bytes — see the `nsILockstore.listKeks` scriptable
-    /// wrapper for the JS-side API.
-    pub fn list_collection_keks(
-        &self,
-        collection_name: &str,
-    ) -> Result<Vec<String>, LockstoreError> {
+    /// Return the list of `kek_ref`s currently wrapping the DEK named
+    /// `dek_name`. Always non-empty for any DEK that exists (the
+    /// keystore enforces at least one KEK wrapping); rejects with
+    /// `LockstoreError::NotFound` when no DEK by that name exists.
+    /// Returns only the `kek_ref` strings, never the wrapped key bytes
+    /// themselves — see the `nsILockstore.listKeks` scriptable wrapper
+    /// for the JS-side API.
+    pub fn list_keks(&self, dek_name: &str) -> Result<Vec<String>, LockstoreError> {
         let conn = self.acquire_connection()?;
-        let metadata = conn.load_metadata(collection_name)?;
+        let metadata = conn.load_metadata(dek_name)?;
         Ok(metadata
             .wrapped_deks
             .iter()
@@ -1023,7 +1019,7 @@ impl Keystore {
         new_kek: &[u8],
         cipher_suite: CipherSuite,
     ) -> Result<(), LockstoreError> {
-        let collections = conn.list_collections()?;
+        let collections = conn.list_deks()?;
         for collection_name in collections {
             let mut metadata = match conn.load_metadata(&collection_name) {
                 Ok(m) => m,

@@ -69,9 +69,9 @@ class LockstoreService final : public nsILockstore, public nsIObserver {
   nsresult DoSwitchKek(const nsACString& aCollection,
                        const nsACString& aOldKekRef,
                        const nsACString& aNewKekRef);
-  Result<nsTArray<nsCString>, nsresult> DoListCollections();
+  Result<nsTArray<nsCString>, nsresult> DoListDeks();
   Result<nsTArray<nsCString>, nsresult> DoListKeks(
-      const nsACString& aCollection);
+      const nsACString& aDekName);
   Result<nsTArray<uint8_t>, nsresult> DoEncrypt(
       const nsACString& aCollection, const nsACString& aKekRef,
       const nsTArray<uint8_t>& aPlaintext);

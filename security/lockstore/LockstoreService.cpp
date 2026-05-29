@@ -303,19 +303,18 @@ nsresult LockstoreService::DoSwitchKek(const nsACString& aCollection,
                                        &aNewKekRef);
 }
 
-Result<nsTArray<nsCString>, nsresult> LockstoreService::DoListCollections() {
+Result<nsTArray<nsCString>, nsresult> LockstoreService::DoListDeks() {
   LOCKSTORE_SYNC_PREAMBLE;
   nsTArray<nsCString> out;
-  MOZ_TRY(lockstore_keystore_list_collections(mKeystore, &out));
+  MOZ_TRY(lockstore_keystore_list_deks(mKeystore, &out));
   return out;
 }
 
 Result<nsTArray<nsCString>, nsresult> LockstoreService::DoListKeks(
-    const nsACString& aCollection) {
+    const nsACString& aDekName) {
   LOCKSTORE_SYNC_PREAMBLE;
   nsTArray<nsCString> out;
-  MOZ_TRY(
-      lockstore_keystore_list_collection_keks(mKeystore, &aCollection, &out));
+  MOZ_TRY(lockstore_keystore_list_keks(mKeystore, &aDekName, &out));
   return out;
 }
 
@@ -449,16 +448,15 @@ LockstoreService::SwitchKek(const nsACString& aCollection,
 }
 
 NS_IMETHODIMP
-LockstoreService::ListCollections(JSContext* aCx, Promise** aPromise) {
-  return ImplXpcomMethod(this, aCx, aPromise,
-                         &LockstoreService::DoListCollections);
+LockstoreService::ListDeks(JSContext* aCx, Promise** aPromise) {
+  return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoListDeks);
 }
 
 NS_IMETHODIMP
-LockstoreService::ListKeks(const nsACString& aCollection, JSContext* aCx,
+LockstoreService::ListKeks(const nsACString& aDekName, JSContext* aCx,
                            Promise** aPromise) {
   return ImplXpcomMethod(this, aCx, aPromise, &LockstoreService::DoListKeks,
-                         nsCString{aCollection});
+                         nsCString{aDekName});
 }
 
 NS_IMETHODIMP
