@@ -765,49 +765,123 @@ export class ExperimentManager {
     return this._enroll(recipe, branch.slug, source);
   }
 
+  /**
+   * Enroll in a specific branch of a recipe.
+   *
+   * @param {object} recipe
+   * The experiment recipe.
+   *
+   * @param {string} branchSlug
+   * The slug of the branch to enroll in. This must exist in the recipe.
+   *
+   * @param {string} source
+   * The source associated with the enrollment.
+   *
+   * @returns {object} The computed enrollment.
+   */
   _enroll(recipe, branchSlug, source) {
-    const {
-      slug,
-      userFacingName,
-      userFacingDescription,
-      featureIds,
-      isRollout,
-      localizations,
-      isFirefoxLabsOptIn,
-      firefoxLabsTitle,
-      firefoxLabsDescription,
-      firefoxLabsDescriptionLinks = null,
-      firefoxLabsGroup,
-      requiresRestart = false,
-    } = recipe;
-
-    const branch = recipe.branches.find(b => b.slug === branchSlug);
-    const { prefs, prefsToSet } = this._getPrefsForBranch(branch, isRollout);
+    const { slug, isRollout } = recipe;
+    const { enrollment, prefsToSet } = this.createEnrollment(recipe, branchSlug, source);
 
     // Unenroll in any conflicting prefFlips enrollments.
     if (prefsToSet.length) {
       this._prefFlips._handleSetPrefConflict(
         slug,
-        prefs.map(p => p.name)
+        enrollment.prefs.map(p => p.name)
       );
+    }
+
+    this.store.addEnrollment(enrollment, recipe);
+
+    this._setEnrollmentPrefs(prefsToSet);
+    this._updatePrefObservers(enrollment);
+
+    lazy.NimbusTelemetry.recordEnrollment(enrollment);
+
+    lazy.log.debug(
+      `New ${isRollout ? "rollout" : "experiment"} started: ${slug}, ${
+        branchSlug
+      }`
+    );
+
+    return enrollment;
+  }
+
+
+  /**
+   * @typedef {object} CreateEnrollmentResult
+   *
+   * @property {object} enrollment
+   * The created enrollment.
+   *
+   * @property {PrefToSet[] | null} prefsToSet
+   * Prefs that should be set upon enrollment.
+   */
+
+  /**
+   * Create an enrollment
+   *
+   * @param {object} recipe
+   * The experiment recipe.
+   *
+   * @param {string} branchSlug
+   * The slug of the branch to enroll in. This must exist in the recipe.
+   *
+   * @param {string} source
+   * The source associated with the enrollment.
+   *
+   * @param {object} properties
+   * Additional properties to overwrite on the enrollment.
+   *
+   * @param {boolean} options.active
+   * Whether or not the enrollment should be active (enrolled).
+   *
+   * @returns {CreateEnrollmentResult}
+   *
+   * @throws If the branch does not exist.
+   */
+  createEnrollment(
+    recipe,
+    branchSlug,
+    source,
+    {
+      active = true,
+      ...extra
+    } = {}
+  ) {
+    const {
+      slug,
+      userFacingName,
+      userFacingDescription,
+      featureIds,
+      isRollout = false,
+      localizations = null,
+      isFirefoxLabsOptIn,
+      firefoxLabsTitle,
+      firefoxLabsDescription,
+      firefoxLabsDescriptionLinks,
+      firefoxLabsGroup,
+      requiresRestart,
+    } = recipe;
+
+    const branch = recipe.branches.find(b => b.slug === branchSlug);
+    if (typeof branch === "undefined") {
+      throw new Error(`${recipe.slug}: no such branch ${branchSlug}`);
     }
 
     const enrollment = {
       slug,
-      branch,
-      active: true,
       source,
       userFacingName,
       userFacingDescription,
       lastSeen: new Date().toJSON(),
       featureIds,
       isRollout,
-      prefs,
+      prefs: [],
+      active,
+      branch,
+      localizations,
     };
-
-    if (localizations) {
-      enrollment.localizations = localizations;
-    }
 
     if (typeof isFirefoxLabsOptIn !== "undefined") {
       Object.assign(enrollment, {
@@ -820,22 +894,19 @@ export class ExperimentManager {
       });
     }
 
-    this._prefFlips._annotateEnrollment(enrollment);
+    let prefsToSet = null;
+    if (active) {
+      this._prefFlips._annotateEnrollment(enrollment);
 
-    this.store.addEnrollment(enrollment, recipe);
+      const result = this._getPrefsForBranch(enrollment.branch, isRollout);
 
-    this._setEnrollmentPrefs(prefsToSet);
-    this._updatePrefObservers(enrollment);
+      enrollment.prefs = result.prefs;
+      prefsToSet = result.prefsToSet;
+    }
 
-    lazy.NimbusTelemetry.recordEnrollment(enrollment);
+    Object.assign(enrollment, extra);
 
-    lazy.log.debug(
-      `New ${isRollout ? "rollout" : "experiment"} started: ${slug}, ${
-        branch.slug
-      }`
-    );
-
-    return enrollment;
+    return { enrollment, prefsToSet };
   }
 
   /**
@@ -1345,23 +1416,65 @@ export class ExperimentManager {
   }
 
   /**
+   * An annotation generated for a setPref variable for an enrollment.
+   *
+   * @typedef {object} SetPrefAnnotation
+   *
+   * @property {string} name
+   * The name of the pref.
+   *
+   * @property {"user"|"default"}
+   * The branch the pref is to be set on.
+   *
+   * @property {string} featureId
+   * The featureId of the variable controlling this pref.
+   *
+   * @property {string} variable
+   * The variable controlling this pref.
+   *
+   * @property {string|number|boolean|null} originalvalue
+   * The original value of the pref.
+   */
+
+  /**
+   * Information about a pref that should be set upon enrollment in a recipe.
+   *
+   * @typedef {object} PrefToSet
+   *
+   * @property {string} name
+   * The name of the pref.
+   *
+   * @property {string|number|boolean} value
+   * The value of the pref.
+   *
+   * @property {"user"|"default"} prefBranch
+   * The branch on which the pref should be set.
+   */
+
+  /**
+   * Information about what prefs should be set as a result of enrollment in a
+   * specific branch.
+   *
+   * @typedef {object} PrefsForBranch
+   *
+   * @property {SetPrefAnnotation[]} prefs
+   * Pref annotations to be added to the enrollment.
+   *
+   * This list will include prefs that will not be set because the enrollment
+   * corresponds to a rollout and there is an active experiment controlling the
+   * same pref.
+   *
+   * @property {PrefToSet[]} prefsToSet
+   * Prefs that should be set upon enrollment.
+   */
+
+  /**
    * Generate the list of prefs a recipe will set.
    *
    * @param {object} branch The recipe branch that will be enrolled.
    * @param {boolean} isRollout Whether or not this recipe is a rollout.
    *
-   * @returns {object} An object with the following keys:
-   *
-   *                   `prefs`:
-   *                        The full list of prefs that this recipe would set,
-   *                        if there are no conflicts. This will include prefs
-   *                        that, for example, will not be set because this
-   *                        enrollment is a rollout and there is an active
-   *                        experiment that set the same pref.
-   *
-   *                   `prefsToSet`:
-   *                        Prefs that should be set once enrollment is
-   *                        complete.
+   * @returns {PrefsForBranch}
    */
   _getPrefsForBranch(branch, isRollout = false) {
     const prefs = [];
@@ -1455,14 +1568,8 @@ export class ExperimentManager {
    * pref so as not to accidentally unenroll an existing rollout that an
    * experiment would override.
    *
-   * @param {object[]} prefsToSet
-   *                   A list of objects containing the prefs to set.
-   *
-   *                   Each object has the following properties:
-   *
-   *                   * `name`: The name of the pref.
-   *                   * `value`: The value of the pref.
-   *                   * `prefBranch`: The branch to set the pref on (either "user" or "default").
+   * @param {PrefToSet[]} prefsToSet
+   * An array of the prefs that should be set.
    */
   _setEnrollmentPrefs(prefsToSet) {
     for (const { name, value, prefBranch } of prefsToSet) {
