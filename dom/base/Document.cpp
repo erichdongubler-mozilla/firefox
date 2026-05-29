@@ -3770,15 +3770,6 @@ nsresult Document::InitPolicyContainer(nsIChannel* aChannel) {
     mPolicyContainer = new PolicyContainer();
   }
 
-  // Propagate the document's IP address space to the policy container so that
-  // workers inheriting this container can perform Local Network Access checks
-  // (workers don't have a browsing context to read this from).
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  nsILoadInfo::IPAddressSpace ipAddressSpace = loadInfo->GetIpAddressSpace();
-  if (ipAddressSpace != nsILoadInfo::Unknown) {
-    mPolicyContainer->SetIPAddressSpace(ipAddressSpace);
-  }
-
   return NS_OK;
 }
 
