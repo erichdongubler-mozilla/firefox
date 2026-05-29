@@ -7,6 +7,7 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/EnumSet.h"
+#include "mozilla/HashTable.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
 
@@ -57,6 +58,7 @@ class AutoLockBufferAllocator;
 class AutoTraceSession;
 class BufferAllocator;
 class MarkingValidator;
+class MaybeLockBufferAllocator;
 struct MovingTracer;
 class ParallelMarkTask;
 enum class ShouldCheckThresholds;
@@ -224,6 +226,44 @@ struct SweepingTracer final : public GenericTracerImpl<SweepingTracer> {
 #endif
 };
 
+class BufferAllocatorRuntime {
+  friend class BufferAllocator;
+
+  using LargeAllocMap =
+      mozilla::HashMap<void*, LargeBuffer*, PointerHasher<void*>>;
+
+  using MaybeLock = MaybeLockBufferAllocator;
+
+  // Lock used by buffer allocators to synchronise data passed back to the main
+  // thread by background sweeping.
+  Mutex lock MOZ_UNANNOTATED;
+  friend class AutoLockBufferAllocator;
+
+  // Map from allocation pointer to buffer metadata for large buffers. Access
+  // may require holding the buffer allocator mutex if we are currently
+  // sweeping.
+  MainThreadOrGCTaskData<LargeAllocMap> largeAllocMap;
+
+  // Atomic count of buffer allocators whose minor state is sweeping plus those
+  // whose major state is sweeping. Used to decide whether the mutex is
+  // required.
+  mozilla::Atomic<size_t, mozilla::ReleaseAcquire> allocatorSweepCount;
+
+ public:
+  BufferAllocatorRuntime();
+
+  void checkGCStateNotInUse();
+
+ private:
+  void incSweepCount();
+  void decSweepCount();
+
+  bool needLockToAccessBufferMap() const;
+
+  // Lookup a large buffer by pointer in the map.
+  LargeBuffer* lookupLargeBuffer(void* alloc, MaybeLock& lock);
+};
+
 class GCRuntime {
  public:
   explicit GCRuntime(JSRuntime* rt);
@@ -388,8 +428,12 @@ class GCRuntime {
  public:
   // Internal public interface
   ZoneVector& zones() { return zones_.ref(); }
+
   gcstats::Statistics& stats() { return stats_.ref(); }
   const gcstats::Statistics& stats() const { return stats_.ref(); }
+
+  BufferAllocatorRuntime& bufferRuntime() { return bufferRuntime_.ref(); }
+
   State state() const { return incrementalState; }
   bool isHeapCompacting() const { return state() == State::Compact; }
   bool isForegroundSweeping() const { return state() == State::Sweep; }
@@ -1423,14 +1467,6 @@ class GCRuntime {
   /* Lock used to synchronise access to delayed marking state. */
   Mutex delayedMarkingLock MOZ_UNANNOTATED;
 
-  /*
-   * Lock used by buffer allocators to synchronise data passed back to the main
-   * thread by background sweeping.
-   */
-  Mutex bufferAllocatorLock MOZ_UNANNOTATED;
-  friend class BufferAllocator;
-  friend class AutoLockBufferAllocator;
-
   friend class BackgroundSweepTask;
   friend class BackgroundFreeTask;
 
@@ -1451,6 +1487,11 @@ class GCRuntime {
   // beginSweepingSweepGroup. Must come before testMarkQueue.
   MainThreadOrGCTaskData<mozilla::LinkedList<JS::detail::WeakCacheBase>>
       weakCaches_;
+
+  // Per-runtime buffer allocator data.
+  MainThreadOrGCTaskData<BufferAllocatorRuntime> bufferRuntime_;
+  friend class AutoLockBufferAllocator;
+  friend class BufferAllocator;
 
   mozilla::TimeStamp lastLastDitchTime;
 

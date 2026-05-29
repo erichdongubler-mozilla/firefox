@@ -39,6 +39,7 @@ class Nursery;
 namespace gc {
 
 class BufferAllocator;
+class BufferAllocatorRuntime;  // Defined in GCRuntime.h.
 struct BufferChunk;
 class Cell;
 class GCRuntime;
@@ -48,8 +49,7 @@ struct SmallBufferRegion;
 // An RAII guard to lock and unlock the buffer allocator lock.
 class AutoLockBufferAllocator : public LockGuard<Mutex> {
  public:
-  explicit AutoLockBufferAllocator(GCRuntime* gc);
-  explicit AutoLockBufferAllocator(BufferAllocator* allocator);
+  explicit AutoLockBufferAllocator(BufferAllocatorRuntime* runtime);
   friend class UnlockGuard<AutoLockBufferAllocator>;
 };
 
@@ -350,14 +350,14 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   using LargeAllocList = SlimLinkedList<LargeBuffer>;
 
-  using LargeAllocMap =
-      mozilla::HashMap<void*, LargeBuffer*, PointerHasher<void*>>;
-
   enum class State : uint8_t { NotCollecting, Marking, Sweeping };
 
   enum class SizeKind : uint8_t { Small, Medium };
 
   enum class SweepKind : uint8_t { Tenured = 0, Nursery };
+
+  // The main GC runtime.
+  MainThreadOrGCTaskData<GCRuntime*> gc;
 
   // The zone this allocator is associated with.
   MainThreadOrGCTaskData<JS::Zone*> zone;
@@ -396,10 +396,6 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   // List of large tenured-owned buffers.
   MainThreadOrGCTaskData<LargeAllocList> largeTenuredAllocs;
 
-  // Map from allocation pointer to buffer metadata for large buffers.
-  // Access requires holding the mutex during sweeping.
-  MainThreadOrGCTaskData<LargeAllocMap> largeAllocMap;
-
   // Large buffers waiting to be swept.
   MainThreadOrGCTaskData<LargeAllocList> largeNurseryAllocsToSweep;
   MainThreadOrGCTaskData<LargeAllocList> largeTenuredAllocsToSweep;
@@ -435,7 +431,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   Mutex* multiThreadedMutex = nullptr;
 
  public:
-  explicit BufferAllocator(JS::Zone* zone);
+  explicit BufferAllocator(GCRuntime* gc, JS::Zone* zone);
   ~BufferAllocator();
 
   static inline size_t GetGoodAllocSize(size_t requiredBytes);
@@ -479,8 +475,6 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   // being swept on another thread.
   bool isPointerWithinBuffer(void* ptr);
 
-  Mutex& lock() const;
-
   size_t getSizeOfNurseryBuffers();
 
   void addBufferSizesAndCounts(size_t* usedBytesOut, size_t* freeBytesOut,
@@ -518,6 +512,9 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void checkAccess() const;
   void checkMainThread() const;
   bool isUsedByMainThread() const;
+
+  BufferAllocatorRuntime* runtime() const;
+  friend class AutoLockBufferAllocator;
 
   void markNurseryOwnedAlloc(void* alloc, bool nurseryOwned);
   friend class js::Nursery;

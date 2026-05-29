@@ -570,7 +570,6 @@ GCRuntime::GCRuntime(JSRuntime* rt)
       lock(mutexid::GCLock),
       sweepingLock(mutexid::Sweeping),
       delayedMarkingLock(mutexid::GCDelayedMarkingLock),
-      bufferAllocatorLock(mutexid::BufferAllocator),
       allocTask(this, emptyChunks_.ref()),
       unmarkTask(this),
       markTask(this),
@@ -3873,6 +3872,10 @@ void GCRuntime::checkGCStateNotInUse() {
     WeakMapBase::checkZoneUnmarked(zone);
   }
 
+  if (nursery().sweepTaskIsIdle()) {
+    bufferRuntime().checkGCStateNotInUse();
+  }
+
   MOZ_ASSERT(zonesToMaybeCompact.ref().isEmpty());
 
   MOZ_ASSERT(!atomsUsedByUncollectedZones.ref());
@@ -4122,7 +4125,7 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
       nursery().joinSweepTask();
 
       {
-        BufferAllocator::AutoLock lock(this);
+        BufferAllocator::AutoLock lock(&bufferRuntime());
         for (GCZonesIter zone(this); !zone.done(); zone.next()) {
           zone->changeGCState(this, zone->initialMarkingState(), Zone::NoGC);
           zone->clearGCSliceThresholds();
@@ -4508,7 +4511,7 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
       }
 
       {
-        BufferAllocator::AutoLock lock(this);
+        BufferAllocator::AutoLock lock(&bufferRuntime());
         for (GCZonesIter zone(this); !zone.done(); zone.next()) {
           zone->bufferAllocator.finishMajorCollection(lock);
         }

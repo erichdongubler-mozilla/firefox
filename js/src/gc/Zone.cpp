@@ -159,7 +159,7 @@ MOZ_COLD void BufferAllocPolicy::reportAllocOverflow() const {
 JS::Zone::Zone(JSRuntime* rt, Kind kind)
     : ZoneAllocator(rt, kind),
       arenas(this),
-      bufferAllocator(this),
+      bufferAllocator(&rt->gc, this),
       data(nullptr),
       suppressAllocationMetadataBuilder(false),
       allocNurseryObjects_(true),
