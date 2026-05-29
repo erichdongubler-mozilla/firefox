@@ -14,6 +14,8 @@ import {
 const lazy = XPCOMUtils.declareLazy({
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
+  ChatStore:
+    "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "console", function () {
@@ -469,4 +471,48 @@ export function submitTelemetryResult(
       });
     }
   }
+}
+
+/**
+ * Marks conversations as unprocessed (since new turns have been added) and
+ *  runs LLM-as-judge-based telemetry
+ *
+ * @param {ChatConversation} conversation
+ * @param {openAIEngine} engineInstance
+ */
+
+export async function runLLMaJTelemetry(conversation, engineInstance) {
+  const turnIndex = conversation.currentTurnIndex();
+  await lazy.ChatStore.markLLMTelemetryUnprocessed(conversation.id).catch(e =>
+    console.error("Failed to mark telemetry unprocessed:", e)
+  );
+
+  const telemetryEngine = new TelemetryEngine();
+  const triggers = await telemetryEngine.getTriggers(conversation);
+  telemetryEngine
+    .runTelemetry(triggers, conversation)
+    .then(results => {
+      if (!results.length) {
+        return;
+      }
+      submitTelemetryResult(results, conversation, engineInstance.model, {
+        record_type: "midChat",
+        uniform_sampling_probability: conversation._telemetryUniformProbability,
+        triggers: triggers.map(t => t.name),
+        chat_version: engineInstance.getConfig(engineInstance.feature)?.version,
+      });
+      const prompts = Object.fromEntries(
+        results.map(r => [r.telemetry_name, turnIndex])
+      );
+      const probabilities = Object.fromEntries(
+        results.map(r => [r.telemetry_name, r.samplingProbability])
+      );
+      lazy.ChatStore.updateLLMTelemetryRecord(
+        conversation.id,
+        prompts,
+        probabilities,
+        conversation._telemetryUniformProbability
+      ).catch(e => console.error("Failed to update telemetry record:", e));
+    })
+    .catch(e => console.error("Telemetry run failed:", e));
 }

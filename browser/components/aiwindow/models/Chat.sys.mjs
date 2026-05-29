@@ -31,6 +31,7 @@ import {
   replaceUrlsWithTokens,
 } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
 import { compactMessages } from "moz-src:///browser/components/aiwindow/models/PromptOptimizer.sys.mjs";
+import { runLLMaJTelemetry } from "moz-src:///browser/components/aiwindow/models/TelemetryUtils.sys.mjs";
 
 /**
  * Execute a specific tool and return the result
@@ -383,6 +384,10 @@ Object.assign(Chat, {
         ChromeUtils.addProfilerMarker("SmartWindow", {}, "chat-no-tool-calls");
         // Debug logging: Mark the end of the streaming loop for this turn
         logConversationStream(currentTurn, "STREAM END");
+        if (!openAIEngine.hasCustomEndpoint()) {
+          // We only run telemetry on our own endpoints
+          runLLMaJTelemetry(conversation, engineInstance);
+        }
         return;
       }
 
