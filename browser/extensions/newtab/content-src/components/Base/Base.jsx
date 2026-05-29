@@ -130,6 +130,9 @@ export class BaseContent extends React.PureComponent {
     this.toggleWidgetsManagementPanel =
       this.toggleWidgetsManagementPanel.bind(this);
     this.openWidgetsPanel = this.openWidgetsPanel.bind(this);
+    this.attachSearchSentinel = this.attachSearchSentinel.bind(this);
+    this.onSearchSentinelIntersect = this.onSearchSentinelIntersect.bind(this);
+    this.searchStickyObserver = null;
     this.state = {
       fixedSearch: false,
       colorMode: "",
@@ -141,6 +144,30 @@ export class BaseContent extends React.PureComponent {
       showWidgetsManagementPanel: false,
     };
     this.spocPlaceholderStartTime = null;
+  }
+
+  attachSearchSentinel(el) {
+    if (this.searchStickyObserver) {
+      this.searchStickyObserver.disconnect();
+      this.searchStickyObserver = null;
+    }
+    if (el) {
+      this.searchStickyObserver = new IntersectionObserver(
+        this.onSearchSentinelIntersect,
+        { threshold: 0 }
+      );
+      this.searchStickyObserver.observe(el);
+    } else if (this.state.fixedSearch) {
+      this.setState({ fixedSearch: false });
+    }
+  }
+
+  onSearchSentinelIntersect(entries) {
+    const entry = entries[entries.length - 1];
+    const stuck = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+    if (stuck !== this.state.fixedSearch) {
+      this.setState({ fixedSearch: stuck });
+    }
   }
 
   onVisible() {
@@ -422,9 +449,19 @@ export class BaseContent extends React.PureComponent {
     if (this._onHashChange) {
       globalThis.removeEventListener("hashchange", this._onHashChange);
     }
+    if (this.searchStickyObserver) {
+      this.searchStickyObserver.disconnect();
+      this.searchStickyObserver = null;
+    }
   }
 
   onWindowScroll() {
+    if (this.props.Prefs.values[PREF_NOVA_ENABLED]) {
+      // Nova restores sticky search via IntersectionObserver
+      // (attachSearchSentinel); the scroll-based fixed-search math below
+      // is classic-only.
+      return;
+    }
     if (window.innerHeight <= 700) {
       // Bug 1937296: Only apply fixed-search logic
       // if the page is tall enough to support it.
@@ -1000,7 +1037,9 @@ export class BaseContent extends React.PureComponent {
 
       return (
         <BaseContext.Provider value={baseContextValue}>
-          <div className="nova-outer-wrapper">
+          <div
+            className={`nova-outer-wrapper${this.state.fixedSearch ? " stuck-search" : ""}`}
+          >
             <div
               className={`container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}`}
             >
@@ -1030,9 +1069,16 @@ export class BaseContent extends React.PureComponent {
 
                 {/* Search */}
                 {prefs.showSearch && (
-                  <ErrorBoundary>
-                    <Search showLogo={false} {...props.Search} />
-                  </ErrorBoundary>
+                  <>
+                    <div
+                      ref={this.attachSearchSentinel}
+                      className="sticky-search-sentinel"
+                      aria-hidden="true"
+                    />
+                    <ErrorBoundary>
+                      <Search showLogo={false} {...props.Search} />
+                    </ErrorBoundary>
+                  </>
                 )}
 
                 {/* ASRouterNewTabMessage (ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_TOPSITES) */}

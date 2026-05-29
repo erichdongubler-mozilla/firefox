@@ -1195,6 +1195,7 @@ main.newtab-main section {
   justify-content: center;
   grid-column: 2;
   grid-row: 2/span 2;
+  align-self: start;
 }
 
 .nova-enabled .sidebar-inline-end {
@@ -2452,7 +2453,35 @@ main.newtab-main section {
     width: calc(10 * var(--col-width) + 9 * var(--space-medium));
   }
 }
+.nova-enabled .sticky-search-sentinel {
+  grid-column: 1/-1;
+  block-size: 1px;
+  margin-block-end: -1px;
+  visibility: hidden;
+  pointer-events: none;
+}
+@media (height > 700px) {
+  .nova-enabled .search-wrapper {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 3;
+    padding-block: var(--space-xlarge);
+  }
+}
 
+@media (height > 700px) {
+  .nova-outer-wrapper.stuck-search::before {
+    content: "";
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline: 0;
+    block-size: calc(52px + 2 * var(--space-xlarge));
+    background-color: var(--newtab-overlay-color);
+    border-block-end: var(--border-width) solid var(--border-color);
+    z-index: 2;
+    pointer-events: none;
+  }
+}
 @media (height > 700px) {
   .activity-stream .fixed-search .search-wrapper {
     border-block-end: solid 1px var(--border-color);

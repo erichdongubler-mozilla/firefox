@@ -58,7 +58,10 @@
   justify-content: center;
   grid-column: 2;
   grid-row: 2 / span 2;
-
+  // Size to intrinsic content rather than stretching to the fixed-size
+  // grid track so descendants with position: sticky have a containing
+  // block that extends through the full document.
+  align-self: start;
 }
 
 .nova-enabled .sidebar-inline-end {
