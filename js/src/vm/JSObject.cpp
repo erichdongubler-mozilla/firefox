@@ -1789,6 +1789,18 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
       id == NameToId(cx->names().toTemporalInstant)) {
     return true;
   }
+  if (key == JSProto_Locale && !JS::Prefs::experimental_intl_locale_info()) {
+    if (id == NameToId(cx->names().firstDayOfWeek) ||
+        id == NameToId(cx->names().getTextInfo) ||
+        id == NameToId(cx->names().getNumberingSystems) ||
+        id == NameToId(cx->names().getCollations) ||
+        id == NameToId(cx->names().getCalendars) ||
+        id == NameToId(cx->names().getHourCycles) ||
+        id == NameToId(cx->names().getWeekInfo) ||
+        id == NameToId(cx->names().getTimeZones)) {
+      return true;
+    }
+  }
 #endif
 
 #ifdef NIGHTLY_BUILD
@@ -1826,18 +1838,6 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
     }
     if (!JS::Prefs::experimental_iterator_includes() &&
         id == NameToId(cx->names().includes)) {
-      return true;
-    }
-  }
-  if (key == JSProto_Locale && !JS::Prefs::experimental_intl_locale_info()) {
-    if (id == NameToId(cx->names().firstDayOfWeek) ||
-        id == NameToId(cx->names().getTextInfo) ||
-        id == NameToId(cx->names().getNumberingSystems) ||
-        id == NameToId(cx->names().getCollations) ||
-        id == NameToId(cx->names().getCalendars) ||
-        id == NameToId(cx->names().getHourCycles) ||
-        id == NameToId(cx->names().getWeekInfo) ||
-        id == NameToId(cx->names().getTimeZones)) {
       return true;
     }
   }
