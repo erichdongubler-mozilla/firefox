@@ -805,6 +805,62 @@ async function getSmartbarContextChips(browser) {
 }
 
 /**
+ * Gets the smartbar model select data.
+ *
+ * @param {MozBrowser} browser - The browser element
+ * @returns {Promise<object>} Returns model select data
+ */
+async function getSmartbarModelSelectData(browser) {
+  return SpecialPowers.spawn(browser, [], async () => {
+    const aiWindowElement = content.document.querySelector("ai-window");
+    const smartbar = aiWindowElement.shadowRoot.querySelector(
+      "#ai-window-smartbar"
+    );
+    const modelSelect = smartbar.querySelector("input-model-select");
+
+    return {
+      availableModels: modelSelect.availableModels,
+      selectedModelId: aiWindowElement.selectedModelId,
+    };
+  });
+}
+
+/**
+ * Switches to a different model in the smartbar.
+ *
+ * @param {MozBrowser} browser - The browser element
+ * @param {number} modelIndex - Model index to switch to
+ */
+async function switchSmartbarModel(browser, modelIndex) {
+  return SpecialPowers.spawn(browser, [modelIndex], async index => {
+    const aiWindowElement = content.document.querySelector("ai-window");
+    const smartbar = aiWindowElement.shadowRoot.querySelector(
+      "#ai-window-smartbar"
+    );
+    const modelSelect = smartbar.querySelector("input-model-select");
+    const triggerButton = modelSelect.shadowRoot.querySelector("moz-button");
+    triggerButton.click();
+
+    const panelList = modelSelect.shadowRoot.querySelector("panel-list");
+    await ContentTaskUtils.waitForMutationCondition(
+      panelList,
+      { attributes: true },
+      () => panelList.hasAttribute("open")
+    );
+
+    const modelKeys = Object.keys(modelSelect.availableModels);
+    const targetModelId = modelSelect.availableModels[modelKeys[index]].model;
+    panelList.querySelectorAll("button.model-item")[index].click();
+
+    await ContentTaskUtils.waitForMutationCondition(
+      aiWindowElement,
+      { attributes: true },
+      () => aiWindowElement.selectedModelId === targetModelId
+    );
+  });
+}
+
+/**
  * Returns the chat messages currently displayed in the sidebar.
  *
  * @param {MozBrowser} sidebarBrowser - The sidebar browser element

@@ -51,7 +51,7 @@ add_task(async function test_getModelForChoice_with_remote_settings_data() {
 
     Assert.deepEqual(
       result,
-      { model: "gemini-3.1-flash-lite", ownerName: "Google" },
+      { model: "gemini-3.1-flash-lite", ownerName: "Google", labelId: "fast" },
       "Should return correct model data for choice 1"
     );
   } finally {
@@ -70,7 +70,7 @@ add_task(async function test_getModelForChoice_fallback_when_not_found() {
 
     Assert.deepEqual(
       result,
-      { model: "gemini-3.1-flash-lite", ownerName: "Google" },
+      { model: "gemini-3.1-flash-lite", ownerName: "Google", labelId: "fast" },
       "Should return fallback data for choice 1"
     );
   } finally {
@@ -125,13 +125,18 @@ add_task(async function test_getAllModelsData_with_remote_settings() {
     Assert.deepEqual(
       result,
       {
-        0: { model: "custom-model", ownerName: "" },
-        1: { model: "gemini-3.1-flash-lite", ownerName: "Google" },
+        0: { model: "custom-model", ownerName: "", labelId: "custom" },
+        1: {
+          model: "gemini-3.1-flash-lite",
+          ownerName: "Google",
+          labelId: "fast",
+        },
         2: {
           model: "qwen3-235b-a22b-instruct-2507-maas",
           ownerName: "Alibaba",
+          labelId: "allpurpose",
         },
-        3: { model: "gpt-oss-120b", ownerName: "OpenAI" },
+        3: { model: "gpt-oss-120b", ownerName: "OpenAI", labelId: "personal" },
       },
       "Should return all model choices with correct data"
     );
@@ -254,13 +259,18 @@ add_task(async function test_getAllModelsData_with_fallbacks() {
     Assert.deepEqual(
       result,
       {
-        0: { model: "custom-model", ownerName: "" },
-        1: { model: "gemini-3.1-flash-lite", ownerName: "Google" },
+        0: { model: "custom-model", ownerName: "", labelId: "custom" },
+        1: {
+          model: "gemini-3.1-flash-lite",
+          ownerName: "Google",
+          labelId: "fast",
+        },
         2: {
           model: "qwen3-235b-a22b-instruct-2507-maas",
           ownerName: "Alibaba",
+          labelId: "allpurpose",
         },
-        3: { model: "gpt-oss-120b", ownerName: "OpenAI" },
+        3: { model: "gpt-oss-120b", ownerName: "OpenAI", labelId: "personal" },
       },
       "Should return all model choices with correct data"
     );
