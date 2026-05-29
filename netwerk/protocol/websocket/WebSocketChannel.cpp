@@ -191,17 +191,20 @@ class FailDelayManager {
   ~FailDelayManager() { MOZ_COUNT_DTOR(FailDelayManager); }
 
   void Add(nsCString& address, nsCString& path, int32_t port) {
-    if (mDelaysDisabled) return;
+    if (mDelaysDisabled) {
+      return;
+    }
 
-    UniquePtr<FailDelay> record(new FailDelay(address, path, port));
-    mEntries.AppendElement(std::move(record));
+    mEntries.AppendElement(MakeUnique<FailDelay>(address, path, port));
   }
 
   // Element returned may not be valid after next main thread event: don't keep
   // pointer to it around
   FailDelay* Lookup(nsCString& address, nsCString& path, int32_t port,
                     uint32_t* outIndex = nullptr) {
-    if (mDelaysDisabled) return nullptr;
+    if (mDelaysDisabled) {
+      return nullptr;
+    }
 
     FailDelay* result = nullptr;
     TimeStamp rightNow = TimeStamp::Now();
@@ -330,8 +333,8 @@ class nsWSAdmissionManager {
     bool existingFail = fail != nullptr;
 
     // Always add ourselves to queue, even if we'll connect immediately
-    UniquePtr<nsOpenConn> newdata(
-        new nsOpenConn(ws->mAddress, ws->mOriginSuffix, existingFail, ws));
+    auto newdata = MakeUnique<nsOpenConn>(ws->mAddress, ws->mOriginSuffix,
+                                          existingFail, ws);
 
     // If a connection has not previously failed then prioritize it over
     // connections that have
