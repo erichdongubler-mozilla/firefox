@@ -79,7 +79,7 @@ add_task(async function () {
   //   - the goal is to test on the existing tab and
   //   - using `openPreferencesViaOpenPreferencesAPI` would introduce more handling of additional about:blank and unneccessary event
   await openPreferences("privacy-reports");
-  let selectedPane = gBrowser.contentWindow.history.state;
+  let selectedPane = gBrowser.contentWindow.gLastCategory?.category;
   is(selectedPane, kPrivacyPane, "Privacy pane should be selected");
   is(
     doc.location.hash,
@@ -171,7 +171,7 @@ function openPreferencesViaHash(aPane) {
           "load",
           async function () {
             let win = gBrowser.contentWindow;
-            let selectedPane = win.history.state;
+            let selectedPane = win.gLastCategory?.category;
             await finalPrefPaneLoaded;
             gBrowser.removeCurrentTab();
             resolve({ selectedPane });
