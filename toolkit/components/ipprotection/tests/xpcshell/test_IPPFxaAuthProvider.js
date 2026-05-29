@@ -156,6 +156,89 @@ add_task(
 );
 
 /**
+ * Tests that updateEntitlement preserves a cached entitlement on failures.
+ */
+add_task(
+  async function test_updateEntitlement_preserves_entitlement_on_error() {
+    const sandbox = sinon.createSandbox();
+    useFxaAuthProvider(sandbox);
+
+    await IPProtectionService.init();
+
+    const cachedEntitlement = createTestEntitlement({ subscribed: true });
+    IPPFxaAuthProvider.getEntitlement.resolves({
+      entitlement: cachedEntitlement,
+    });
+    IPPFxaAuthProvider.resetEntitlement();
+    await IPPFxaAuthProvider.updateEntitlement(true);
+
+    Assert.equal(
+      IPPFxaAuthProvider.entitlement,
+      cachedEntitlement,
+      "Cached entitlement should be set before the failing refresh"
+    );
+
+    IPPFxaAuthProvider.getEntitlement.resolves({ error: "network_error" });
+
+    const result = await IPPFxaAuthProvider.updateEntitlement(true);
+
+    Assert.equal(
+      IPPFxaAuthProvider.entitlement,
+      cachedEntitlement,
+      "Cached entitlement should be preserved when refresh fails"
+    );
+    Assert.ok(
+      result.isEntitled,
+      "Result should still report isEntitled because the cache is valid"
+    );
+    Assert.equal(
+      result.error,
+      "network_error",
+      "Result should report the transient error"
+    );
+
+    IPProtectionService.uninit();
+    sandbox.restore();
+  }
+);
+
+/**
+ * Tests that updateEntitlement clears the cached entitlement when Guardian
+ * sends no entitlement.
+ */
+add_task(async function test_updateEntitlement_clears_cached_entitlement() {
+  const sandbox = sinon.createSandbox();
+  useFxaAuthProvider(sandbox);
+
+  await IPProtectionService.init();
+
+  const cachedEntitlement = createTestEntitlement({ subscribed: true });
+  IPPFxaAuthProvider.getEntitlement.resolves({
+    entitlement: cachedEntitlement,
+  });
+  IPPFxaAuthProvider.resetEntitlement();
+  await IPPFxaAuthProvider.updateEntitlement(true);
+
+  Assert.ok(
+    IPPFxaAuthProvider.entitlement,
+    "Cached entitlement should be set before the no-entitlement refresh"
+  );
+
+  IPPFxaAuthProvider.getEntitlement.resolves({ entitlement: null });
+
+  await IPPFxaAuthProvider.updateEntitlement(true);
+
+  Assert.equal(
+    IPPFxaAuthProvider.entitlement,
+    null,
+    "Cached entitlement should be cleared when the server confirms no entitlement"
+  );
+
+  IPProtectionService.uninit();
+  sandbox.restore();
+});
+
+/**
  * Tests that checkForUpgrade works as expected if a linked VPN is found and sends an event.
  */
 add_task(
@@ -207,6 +290,7 @@ add_task(
   async function test_IPProtectionService_checkForUpgrade_no_vpn_linked() {
     const sandbox = sinon.createSandbox();
     useFxaAuthProvider(sandbox);
+    IPPFxaAuthProvider.resetEntitlement();
 
     await IPProtectionService.init();
     await IPPFxaAuthProvider.enroll();
