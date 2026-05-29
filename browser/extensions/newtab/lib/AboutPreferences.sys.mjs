@@ -1169,6 +1169,13 @@ export class AboutPreferences {
     const firefoxHomeActive = ({ homepageNewWindows, homepageNewTabs }) =>
       homepageNewWindows.value === "home" || homepageNewTabs.value === "home";
 
+    const HOME_CUSTOMIZE_URL = "about:home#customize";
+    const HOME_CUSTOMIZE_TOPICS_URL = "about:home#customize-topics";
+
+    // Open in a new tab if "New tabs" is Firefox Home, else a new window.
+    const dispatchForHomeLink = ({ homepageNewTabs }) =>
+      homepageNewTabs.value === "home" ? "tab" : "window";
+
     Preferences.addSetting({
       id: "firefoxHomeDisabledNotice",
       deps: firefoxHomeDeps,
@@ -1352,6 +1359,13 @@ export class AboutPreferences {
           stories.value
         );
       },
+      onUserClick: (e, deps) => {
+        e.preventDefault();
+        window.openTrustedLinkIn(
+          HOME_CUSTOMIZE_TOPICS_URL,
+          dispatchForHomeLink(deps)
+        );
+      },
     });
 
     // Support Firefox: sponsored content
@@ -1420,6 +1434,10 @@ export class AboutPreferences {
       id: "chooseWallpaper",
       deps: firefoxHomeDeps,
       visible: deps => firefoxHomeActive(deps),
+      onUserClick: (e, deps) => {
+        e.preventDefault();
+        window.openTrustedLinkIn(HOME_CUSTOMIZE_URL, dispatchForHomeLink(deps));
+      },
     });
 
     return {
@@ -1512,7 +1530,7 @@ export class AboutPreferences {
               l10nId: "home-prefs-manage-topics-link2",
               control: "moz-box-link",
               controlAttrs: {
-                href: "about:newtab#customize-topics",
+                href: HOME_CUSTOMIZE_TOPICS_URL,
               },
             },
           ],
@@ -1599,7 +1617,7 @@ export class AboutPreferences {
           l10nId: "home-prefs-choose-wallpaper-link2",
           control: "moz-box-link",
           controlAttrs: {
-            href: "about:newtab#customize",
+            href: HOME_CUSTOMIZE_URL,
           },
           iconSrc: "chrome://browser/skin/customize.svg",
         },
