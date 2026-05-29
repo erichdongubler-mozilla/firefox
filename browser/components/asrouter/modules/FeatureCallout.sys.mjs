@@ -499,7 +499,7 @@ export class FeatureCallout {
 
       case "unload":
         try {
-          this.teardownFeatureTourProgress();
+          this.endTour();
         } catch (error) {}
         break;
 
