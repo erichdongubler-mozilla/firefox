@@ -107,34 +107,6 @@ TEST_SUITES = {
             "test-verify($|.*(-1|[^0-9])$)",
         ],
     },
-    "mochitest-browser-chrome-thunderbird": {
-        "aliases": ("bct"),
-        "build_flavor": "browser-chrome",
-        "mach_command": "mochitest",
-        "kwargs": {
-            "flavor": "browser-chrome",
-            "subsuite": "thunderbird",
-            "test_paths": None,
-        },
-        "task_regex": [
-            "mochitest-browser-chrome-thunderbird($|.*(-1|[^0-9])$)",
-            "test-verify($|.*(-1|[^0-9])$)",
-        ],
-    },
-    "mochitest-browser-chrome-thunderbird-a11y": {
-        "aliases": ("bct"),
-        "build_flavor": "browser-chrome",
-        "mach_command": "mochitest",
-        "kwargs": {
-            "flavor": "browser-chrome",
-            "subsuite": "thunderbird",
-            "test_paths": None,
-        },
-        "task_regex": [
-            "mochitest-browser-chrome-thunderbird-a11y($|.*(-1|[^0-9])$)",
-            "test-verify($|.*(-1|[^0-9])$)",
-        ],
-    },
     "mochitest-browser-screenshots": {
         "aliases": ("ss", "screenshots-chrome"),
         "build_flavor": "browser-chrome",
