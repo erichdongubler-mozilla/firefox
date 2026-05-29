@@ -34,10 +34,10 @@ describe("getWidgetOrder", () => {
   it("appends missing registry IDs after saved ones", () => {
     expect(getWidgetOrder("weather")).toEqual([
       "weather",
-      "lists",
-      "focusTimer",
       "sportsWidget",
       "clocks",
+      "lists",
+      "focusTimer",
     ]);
   });
 
@@ -45,9 +45,9 @@ describe("getWidgetOrder", () => {
     expect(getWidgetOrder("unknownWidget,lists,weather")).toEqual([
       "lists",
       "weather",
-      "focusTimer",
       "sportsWidget",
       "clocks",
+      "focusTimer",
     ]);
   });
 
@@ -62,9 +62,9 @@ describe("getWidgetOrder", () => {
     expect(result).toEqual([
       "focusTimer",
       "lists",
-      "weather",
       "sportsWidget",
       "clocks",
+      "weather",
     ]);
     expect(result.length).toBe(registryIds.length);
   });

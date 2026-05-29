@@ -246,11 +246,11 @@ describe("<Widgets> overflow detection", () => {
 
   it("flags overflow-4 when a large is in the 5th position (image #17 case)", () => {
     const state = makeNovaWidgetState([
+      ["sportsWidget", "medium"],
+      ["clocks", "medium"],
       ["lists", "medium"],
       ["focusTimer", "medium"],
-      ["weather", "medium"],
-      ["sportsWidget", "medium"],
-      ["clocks", "large"],
+      ["weather", "large"],
     ]);
     const { container } = renderWidgets(state);
     const section = getSectionContainer(container);

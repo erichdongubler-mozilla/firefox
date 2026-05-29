@@ -1333,7 +1333,7 @@ export const PREFS_CONFIG = new Map([
     "widgets.defaultSize",
     {
       title: "Default size for widgets (medium or large)",
-      value: "large",
+      value: "medium",
     },
   ],
   [
@@ -1398,7 +1398,7 @@ export const PREFS_CONFIG = new Map([
     "widgets.clocks.size",
     {
       title: "Size of the clock widget (small, medium, or large)",
-      getValue: getDefaultWidgetSize,
+      value: "",
     },
   ],
   [
