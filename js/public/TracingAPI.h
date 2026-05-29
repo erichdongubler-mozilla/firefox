@@ -25,7 +25,7 @@ JS_PUBLIC_API const char* GCTraceKindToAscii(JS::TraceKind kind);
 JS_PUBLIC_API size_t GCTraceKindSize(JS::TraceKind kind);
 
 // Kinds of JSTracer.
-enum class TracerKind {
+enum class TracerKind : uint8_t {
   // Generic tracers: Internal tracers that have a different virtual method
   // called for each edge kind.
   Marking,
@@ -49,7 +49,7 @@ enum class TracerKind {
   HeapCheck
 };
 
-enum class WeakMapTraceAction {
+enum class WeakMapTraceAction : uint8_t {
   /**
    * Do not trace into weak map keys or values during traversal. Users must
    * handle weak maps manually.
@@ -76,7 +76,7 @@ enum class WeakMapTraceAction {
 };
 
 // Whether a tracer should trace weak edges. GCMarker sets this to Skip.
-enum class WeakEdgeTraceAction { Skip, Trace };
+enum class WeakEdgeTraceAction : bool { Skip, Trace };
 
 struct TraceOptions {
   JS::WeakMapTraceAction weakMapAction = WeakMapTraceAction::TraceValues;
@@ -193,9 +193,9 @@ class JS_PUBLIC_API JSTracer {
 
  private:
   JSRuntime* const runtime_;
+  JS::TracingContext context_;
   const JS::TracerKind kind_;
   const JS::TraceOptions options_;
-  JS::TracingContext context_;
 };
 
 namespace js {
