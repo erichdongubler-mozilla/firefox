@@ -462,7 +462,9 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   bool isEmpty() const;
 
-  void traceEdge(JSTracer* trc, Cell* owner, void** bufferp, const char* name);
+  static void* TraceEdge(JSTracer* trc, Cell* owner, void** bufferp,
+                         const char* name);
+
   bool markTenuredAlloc(void* alloc);
   bool isMarkedBlack(void* alloc);
 
@@ -638,6 +640,8 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   static inline bool IsLargeAllocSize(size_t bytes);
   static bool IsLargeAlloc(void* alloc);
+  static void TraceLargeAlloc(JSTracer* trc, Cell* owner, void** allocp,
+                              const char* name);
 
   void* allocLarge(size_t bytes, bool nurseryOwned, bool inGC);
   bool isLargeTenuredMarked(LargeBuffer* buffer);
@@ -645,8 +649,8 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   bool shrinkLarge(LargeBuffer* buffer, size_t newBytes);
   void unmapLarge(LargeBuffer* buffer, bool isSweeping, MaybeLock& lock);
   void unregisterLarge(LargeBuffer* buffer, bool isSweeping, MaybeLock& lock);
-  void traceLargeAlloc(JSTracer* trc, Cell* owner, void** allocp,
-                       const char* name);
+  void traceLargeBuffer(JSTracer* trc, Cell* owner, LargeBuffer* buffer,
+                        const char* name);
   void markLargeNurseryOwnedBuffer(LargeBuffer* buffer, bool nurseryOwned);
   bool markLargeTenuredBuffer(LargeBuffer* buffer);
 

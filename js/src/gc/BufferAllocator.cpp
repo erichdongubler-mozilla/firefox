@@ -439,11 +439,8 @@ BufferAllocator::FreeRegion* AllocSpace<D, S, G>::findPrecedingFreeRegion(
 }
 
 BufferChunk::BufferChunk(Zone* zone)
-    : ChunkBase(zone->runtimeFromAnyThread(), ChunkKind::Buffers) {
-#ifdef DEBUG
-  this->zone = zone;
+    : ChunkBase(zone->runtimeFromAnyThread(), ChunkKind::Buffers), zone(zone) {
   MOZ_ASSERT(decommittedPages.ref().IsEmpty());
-#endif
 }
 
 BufferChunk::~BufferChunk() {
@@ -505,6 +502,11 @@ void BufferAllocatorRuntime::decSweepCount() {
 
 bool BufferAllocatorRuntime::needLockToAccessBufferMap() const {
   return allocatorSweepCount != 0;
+}
+
+LargeBuffer* BufferAllocatorRuntime::lookupLargeBuffer(void* alloc) {
+  MaybeLock lock;
+  return lookupLargeBuffer(alloc, lock);
 }
 
 LargeBuffer* BufferAllocatorRuntime::lookupLargeBuffer(void* alloc,
@@ -645,8 +647,6 @@ void* BufferAllocator::allocInGC(size_t bytes, bool nurseryOwned) {
   return result;
 }
 
-#ifdef DEBUG
-
 inline Zone* LargeBuffer::zone() {
   Zone* zone = zoneFromAnyThread();
   MOZ_ASSERT(CurrentThreadCanAccessZone(zone));
@@ -656,8 +656,6 @@ inline Zone* LargeBuffer::zone() {
 inline Zone* LargeBuffer::zoneFromAnyThread() {
   return BufferChunk::from(this)->zone;
 }
-
-#endif
 
 #ifdef XP_DARWIN
 static inline void VirtualCopyPages(void* dst, const void* src, size_t bytes) {
@@ -957,8 +955,9 @@ bool BufferAllocator::isMarkedBlack(void* alloc) {
   return region->isMarked(alloc);
 }
 
-void BufferAllocator::traceEdge(JSTracer* trc, Cell* owner, void** bufferp,
-                                const char* name) {
+/* static */
+void* BufferAllocator::TraceEdge(JSTracer* trc, Cell* owner, void** bufferp,
+                                 const char* name) {
   // Buffers are conceptually part of the owning cell and are not reported to
   // the tracer.
 
@@ -969,41 +968,37 @@ void BufferAllocator::traceEdge(JSTracer* trc, Cell* owner, void** bufferp,
   void* buffer = *bufferp;
   MOZ_ASSERT(buffer);
 
-  if (trc->isMarkingTracer() && !zone->isGCMarking()) {
-    return;
-  }
-
-  MOZ_ASSERT_IF(trc->isTenuringTracer(),
-                minorState.refNoCheck() == State::Marking);
-  MOZ_ASSERT_IF(trc->isMarkingTracer(),
-                majorState.refNoCheck() == State::Marking);
-
   if (!IsLargeAlloc(buffer) &&
       js::gc::detail::GetGCAddressChunkBase(buffer)->isNurseryChunk()) {
     // JSObject slots and elements can be allocated in the nursery and this is
     // handled separately.
-    return;
+    return buffer;
   }
 
   MOZ_ASSERT(IsBufferAlloc(buffer));
-  MOZ_ASSERT_IF(isNurseryOwned(buffer), owner);
 
-  if (IsLargeAlloc(buffer)) {
-    traceLargeAlloc(trc, owner, bufferp, name);
-    return;
+  if (MOZ_UNLIKELY(IsLargeAlloc(buffer))) {
+    TraceLargeAlloc(trc, owner, bufferp, name);
+    return buffer;
   }
+
+  BufferChunk* chunk = BufferChunk::from(buffer);
+  BufferAllocator& allocator = chunk->zone->bufferAllocator;
 
   if (IsSmallAlloc(buffer)) {
-    traceSmallAlloc(trc, owner, bufferp, name);
-    return;
+    allocator.traceSmallAlloc(trc, owner, bufferp, name);
+    return buffer;
   }
 
-  traceMediumAlloc(trc, owner, bufferp, name);
+  allocator.traceMediumAlloc(trc, owner, bufferp, name);
+  return buffer;
 }
 
 void BufferAllocator::traceSmallAlloc(JSTracer* trc, Cell* owner, void** allocp,
                                       const char* name) {
   void* alloc = *allocp;
+  MOZ_ASSERT_IF(isNurseryOwned(alloc), owner);
+
   auto* region = SmallBufferRegion::from(alloc);
 
   if (trc->isTenuringTracer()) {
@@ -1014,7 +1009,7 @@ void BufferAllocator::traceSmallAlloc(JSTracer* trc, Cell* owner, void** allocp,
   }
 
   if (trc->isMarkingTracer()) {
-    if (!region->isNurseryOwned(alloc)) {
+    if (zone->isGCMarking() && !region->isNurseryOwned(alloc)) {
       markSmallTenuredAlloc(alloc);
     }
     return;
@@ -1024,6 +1019,8 @@ void BufferAllocator::traceSmallAlloc(JSTracer* trc, Cell* owner, void** allocp,
 void BufferAllocator::traceMediumAlloc(JSTracer* trc, Cell* owner,
                                        void** allocp, const char* name) {
   void* alloc = *allocp;
+  MOZ_ASSERT_IF(isNurseryOwned(alloc), owner);
+
   BufferChunk* chunk = BufferChunk::from(alloc);
 
   if (trc->isTenuringTracer()) {
@@ -1034,18 +1031,26 @@ void BufferAllocator::traceMediumAlloc(JSTracer* trc, Cell* owner,
   }
 
   if (trc->isMarkingTracer()) {
-    if (!chunk->isNurseryOwned(alloc)) {
+    if (zone->isGCMarking() && !chunk->isNurseryOwned(alloc)) {
       markMediumTenuredAlloc(alloc);
     }
     return;
   }
 }
 
-void BufferAllocator::traceLargeAlloc(JSTracer* trc, Cell* owner, void** allocp,
+/* static */
+void BufferAllocator::TraceLargeAlloc(JSTracer* trc, Cell* owner, void** allocp,
                                       const char* name) {
   void* alloc = *allocp;
-  LargeBuffer* buffer = lookupLargeBuffer(alloc);
+  BufferAllocatorRuntime* runtime = &trc->runtime()->gc.bufferRuntime();
+  LargeBuffer* buffer = runtime->lookupLargeBuffer(alloc);
+  Zone* zone = buffer->zoneFromAnyThread();  // May be parallel marking here.
+  MOZ_ASSERT_IF(owner, owner->zone() == zone);
+  zone->bufferAllocator.traceLargeBuffer(trc, owner, buffer, name);
+}
 
+void BufferAllocator::traceLargeBuffer(JSTracer* trc, Cell* owner,
+                                       LargeBuffer* buffer, const char* name) {
   if (trc->isTenuringTracer()) {
     if (buffer->isNurseryOwned) {
       markLargeNurseryOwnedBuffer(buffer, !owner->isTenured());
@@ -1054,7 +1059,7 @@ void BufferAllocator::traceLargeAlloc(JSTracer* trc, Cell* owner, void** allocp,
   }
 
   if (trc->isMarkingTracer()) {
-    if (!buffer->isNurseryOwned) {
+    if (zone->isGCMarking() && !buffer->isNurseryOwned) {
       markLargeTenuredBuffer(buffer);
     }
     return;
