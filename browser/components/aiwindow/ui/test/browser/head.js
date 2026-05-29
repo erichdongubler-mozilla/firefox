@@ -32,6 +32,7 @@ async function modelFor(choiceId) {
 }
 
 const AIWINDOW_URL = "chrome://browser/content/aiwindow/aiWindow.html";
+const FIRSTRUN_URL = "chrome://browser/content/aiwindow/firstrun.html";
 
 let gIntentEngineStub;
 
