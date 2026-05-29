@@ -781,7 +781,11 @@ export class ExperimentManager {
    */
   _enroll(recipe, branchSlug, source) {
     const { slug, isRollout } = recipe;
-    const { enrollment, prefsToSet } = this.createEnrollment(recipe, branchSlug, source);
+    const { enrollment, prefsToSet } = this.createEnrollment(
+      recipe,
+      branchSlug,
+      source
+    );
 
     // Unenroll in any conflicting prefFlips enrollments.
     if (prefsToSet.length) {
@@ -806,7 +810,6 @@ export class ExperimentManager {
 
     return enrollment;
   }
-
 
   /**
    * @typedef {object} CreateEnrollmentResult
@@ -844,10 +847,7 @@ export class ExperimentManager {
     recipe,
     branchSlug,
     source,
-    {
-      active = true,
-      ...extra
-    } = {}
+    { active = true, ...extra } = {}
   ) {
     const {
       slug,
