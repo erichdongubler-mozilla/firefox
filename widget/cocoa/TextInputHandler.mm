@@ -3705,8 +3705,7 @@ already_AddRefed<mozilla::TextRangeArray> IMEInputHandler::CreateTextRangeArray(
     NSAttributedString* aAttrString, NSRange& aSelectedRange) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  RefPtr<mozilla::TextRangeArray> textRangeArray =
-      new mozilla::TextRangeArray();
+  auto textRangeArray = MakeRefPtr<mozilla::TextRangeArray>();
 
   // Note that we shouldn't append ranges when composition string
   // is empty because it may cause TextComposition confused.

@@ -938,8 +938,8 @@ void nsCocoaWindow::GetCompositorWidgetInitData(
   MOZ_RELEASE_ASSERT(childEndpoint.IsValid());
 
   // Create our mNativeLayerRootRemoteMacParent.
-  RefPtr<NativeLayerRootRemoteMacParent> nativeLayerRemoteParent =
-      new NativeLayerRootRemoteMacParent(mNativeLayerRoot);
+  auto nativeLayerRemoteParent =
+      MakeRefPtr<NativeLayerRootRemoteMacParent>(mNativeLayerRoot);
 
   // Bind the parent endpoint compositor thread.
   MOZ_ASSERT(CompositorThread());

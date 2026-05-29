@@ -43,7 +43,7 @@ extern bool gUserCancelledDrag;
 mozilla::StaticRefPtr<nsIArray> gDraggedTransferables;
 
 already_AddRefed<nsIDragSession> nsDragService::CreateDragSession() {
-  RefPtr<nsIDragSession> sess = new nsDragSession();
+  auto sess = MakeRefPtr<nsDragSession>();
   return sess.forget();
 }
 
