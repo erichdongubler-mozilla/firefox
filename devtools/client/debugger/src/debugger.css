@@ -5,6 +5,7 @@
 /* Shared imports */
 @import url("chrome://devtools/content/shared/components/AppErrorBoundary.css");
 @import url("chrome://devtools/content/shared/components/FileSearchBar.css");
+@import url("chrome://devtools/content/shared/components/SearchInput.css");
 @import url("chrome://devtools/content/shared/components/SearchModifiers.css");
 
 /* Devtools imports */
@@ -23,7 +24,6 @@
 @import url("chrome://devtools/content/debugger/src/components/shared/Popover.css");
 @import url("chrome://devtools/content/debugger/src/components/shared/PreviewFunction.css");
 @import url("chrome://devtools/content/debugger/src/components/shared/ResultList.css");
-@import url("chrome://devtools/content/debugger/src/components/shared/SearchInput.css");
 @import url("chrome://devtools/content/debugger/src/components/shared/SourceIcon.css");
 @import url("chrome://devtools/content/debugger/src/components/Editor/Breakpoints.css");
 @import url("chrome://devtools/content/debugger/src/components/Editor/ConditionalPanel.css");

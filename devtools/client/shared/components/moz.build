@@ -23,6 +23,7 @@ DevToolsModules(
     "NotificationBox.js",
     "SearchBox.js",
     "SearchBoxAutocompletePopup.js",
+    "SearchInput.js",
     "SearchModifiers.js",
     "Sidebar.js",
     "SidebarToggle.js",

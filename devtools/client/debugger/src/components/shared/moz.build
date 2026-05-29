@@ -17,7 +17,6 @@ CompiledModules(
     "Popover.js",
     "PreviewFunction.js",
     "ResultList.js",
-    "SearchInput.js",
     "SmartGap.js",
     "SourceIcon.js",
 )
