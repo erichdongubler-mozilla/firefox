@@ -321,21 +321,29 @@ bool SupportsInterface(nsISupports* aSupports) {
   return ptr;
 }
 
+static bool IsNonBlankAboutPage(Document* aDocument) {
+  return aDocument->IsAboutPage() &&
+         !NS_IsAboutBlankAllowQueryAndFragment(aDocument->GetDocumentURI());
+}
+
 // https://html.spec.whatwg.org/#has-entries-and-events-disabled
 bool Navigation::HasEntriesAndEventsDisabled() const {
   Document* doc = GetAssociatedDocument();
   return !doc || !doc->IsCurrentActiveDocument() ||
          doc->IsEverInitialDocument() ||
          doc->GetPrincipal()->GetIsNullPrincipal() ||
-         // We explicitly disallow documents loaded through multipart and script
-         // channels from having events or entries. See bug 1996218 and bug
-         // 1996221
+         // We explicitly disallow documents loaded through multipart and
+         // script channels from having events or entries. See bug 1996218
+         // and bug 1996221
          SupportsInterface<nsIMultiPartChannel>(doc->GetChannel()) ||
          SupportsInterface<nsIScriptChannel>(doc->GetChannel()) ||
          // We also disallow documents embedded using <object>/<embed>. See bug
          // 1996215.
          !doc->GetBrowsingContext() ||
-         doc->GetBrowsingContext()->IsEmbedderTypeObjectOrEmbed();
+         doc->GetBrowsingContext()->IsEmbedderTypeObjectOrEmbed() ||
+         // Furthermore we disallow all about: documents that aren't non-initial
+         // about:blank. See bug 2043508.
+         IsNonBlankAboutPage(doc);
 }
 
 // https://html.spec.whatwg.org/#initialize-the-navigation-api-entries-for-a-new-document

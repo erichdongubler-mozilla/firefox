@@ -4555,6 +4555,9 @@ class Document : public nsINode,
   static void GetAllInProcessDocuments(
       nsTArray<RefPtr<Document>>& aAllDocuments);
 
+  // Returns true if the document's principals's scheme is "about".
+  bool IsAboutPage() const;
+
  protected:
   // Returns the WindowContext for the document that we will contribute
   // page use counters to.
@@ -4568,9 +4571,6 @@ class Document : public nsINode,
   void EnsureOnloadBlocker();
 
   void SendToConsole(nsCOMArray<nsISecurityConsoleMessage>& aMessages);
-
-  // Returns true if the scheme for the url for this document is "about".
-  bool IsAboutPage() const;
 
   bool ContainsEMEContent();
   bool ContainsMSEContent();
