@@ -49,6 +49,8 @@ const lazy = XPCOMUtils.declareLazy({
     "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs",
   BrowserUIUtils: "resource:///modules/BrowserUIUtils.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
+  ConfigSearchEngine:
+    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   ExtensionSearchHandler:
@@ -5109,7 +5111,7 @@ ${
     }
 
     let engine = lazy.SearchService.getEngineByName(engineName);
-    if (engine.isConfigEngine) {
+    if (engine instanceof lazy.ConfigSearchEngine) {
       this._setPlaceholder(engineName);
     } else {
       // Display the default placeholder string.
