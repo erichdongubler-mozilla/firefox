@@ -4692,7 +4692,7 @@
 # Speculatively compile link preload scripts
 - name: dom.script_loader.external_scripts.speculate_link_preload.enabled
   type: bool
-  value: false
+  value: true
   mirror: always
 
 # For testing purposes only: Cache stencil across navigation
