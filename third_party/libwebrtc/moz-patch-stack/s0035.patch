@@ -20,19 +20,19 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d0b311007c033e838
  11 files changed, 58 insertions(+), 11 deletions(-)
 
 diff --git a/audio/audio_receive_stream.cc b/audio/audio_receive_stream.cc
-index 4f052c6a21..5f1f9601b7 100644
+index 02ee15227c..1e06c4fcf0 100644
 --- a/audio/audio_receive_stream.cc
 +++ b/audio/audio_receive_stream.cc
-@@ -60,6 +60,8 @@ std::string AudioReceiveStreamInterface::Config::Rtp::ToString() const {
+@@ -59,6 +59,8 @@ std::string AudioReceiveStreamInterface::Config::Rtp::ToString() const {
       << (rtcp_mode == RtcpMode::kCompound
               ? "compound"
               : (rtcp_mode == RtcpMode::kReducedSize ? "reducedSize" : "off"));
 +  ss << ", rtcp_event_observer: "
 +     << (rtcp_event_observer ? "(rtcp_event_observer)" : "nullptr");
    ss << '}';
-   return ss.str();
+   return ss.Release();
  }
-@@ -92,7 +94,8 @@ std::unique_ptr<voe::ChannelReceiveInterface> CreateChannelReceive(
+@@ -90,7 +92,8 @@ std::unique_ptr<voe::ChannelReceiveInterface> CreateChannelReceive(
        config.jitter_buffer_max_packets, config.jitter_buffer_fast_accelerate,
        config.jitter_buffer_min_delay_ms, config.enable_non_sender_rtt,
        config.decoder_factory, std::move(config.frame_decryptor),
@@ -43,7 +43,7 @@ index 4f052c6a21..5f1f9601b7 100644
  }  // namespace
  
 diff --git a/audio/channel_receive.cc b/audio/channel_receive.cc
-index dfd4cd4091..01f537fb2c 100644
+index a6866fa5fe..190824fc6f 100644
 --- a/audio/channel_receive.cc
 +++ b/audio/channel_receive.cc
 @@ -129,7 +129,8 @@ class ChannelReceive : public ChannelReceiveInterface,
@@ -74,7 +74,7 @@ index dfd4cd4091..01f537fb2c 100644
  
    if (frame_transformer)
      InitFrameTransformerDelegate(std::move(frame_transformer));
-@@ -1209,12 +1212,14 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
+@@ -1208,12 +1211,14 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
      scoped_refptr<AudioDecoderFactory> decoder_factory,
      scoped_refptr<FrameDecryptorInterface> frame_decryptor,
      const CryptoOptions& crypto_options,
@@ -135,7 +135,7 @@ index 88932020d7..0cbe4267cb 100644
  
      // Receive-side RTT.
 diff --git a/call/video_receive_stream.cc b/call/video_receive_stream.cc
-index 5a1c168f29..a6fdcc5430 100644
+index 959c5b47c3..9aea94509f 100644
 --- a/call/video_receive_stream.cc
 +++ b/call/video_receive_stream.cc
 @@ -164,6 +164,8 @@ std::string VideoReceiveStreamInterface::Config::Rtp::ToString() const {
@@ -145,7 +145,7 @@ index 5a1c168f29..a6fdcc5430 100644
 +  ss << ", rtcp_event_observer: "
 +     << (rtcp_event_observer ? "(rtcp_event_observer)" : "nullptr");
    ss << "}";
-   return ss.str();
+   return ss.Release();
  }
 diff --git a/call/video_receive_stream.h b/call/video_receive_stream.h
 index 2171f7419d..d2bc1b513e 100644

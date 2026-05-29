@@ -6,37 +6,12 @@ Subject: Bug 1973648 - move applicable libwebrtc changes to our new
 Differential Revision: https://phabricator.services.mozilla.com/D258499
 Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/19164e58323d59c1f66f7fcf671b8d0b6366f708
 ---
- call/call.cc                     | 13 -------------
- call/call.h                      | 16 ++--------------
- modules/desktop_capture/BUILD.gn |  5 +++++
- 3 files changed, 7 insertions(+), 27 deletions(-)
+ call/call.h                      | 5 +++--
+ modules/desktop_capture/BUILD.gn | 5 +++++
+ 2 files changed, 8 insertions(+), 2 deletions(-)
 
-diff --git a/call/call.cc b/call/call.cc
-index df8786c886..c23eeb3b54 100644
---- a/call/call.cc
-+++ b/call/call.cc
-@@ -482,19 +482,6 @@ class Call final : public webrtc::Call,
- };
- }  // namespace internal
- 
--std::string Call::Stats::ToString(int64_t time_ms) const {
--  char buf[1024];
--  SimpleStringBuilder ss(buf);
--  ss << "Call stats: " << time_ms << ", {";
--  ss << "send_bw_bps: " << send_bandwidth_bps << ", ";
--  ss << "recv_bw_bps: " << recv_bandwidth_bps << ", ";
--  ss << "max_pad_bps: " << max_padding_bitrate_bps << ", ";
--  ss << "pacer_delay_ms: " << pacer_delay_ms << ", ";
--  ss << "rtt_ms: " << rtt_ms;
--  ss << '}';
--  return ss.str();
--}
--
- std::unique_ptr<Call> Call::Create(CallConfig config) {
-   auto transport_send = std::make_unique<RtpTransportControllerSend>(
-       config.ExtractTransportConfig());
 diff --git a/call/call.h b/call/call.h
-index 636c0f9737..752dbfbfe5 100644
+index 636c0f9737..e64b878e22 100644
 --- a/call/call.h
 +++ b/call/call.h
 @@ -27,6 +27,7 @@
@@ -47,28 +22,18 @@ index 636c0f9737..752dbfbfe5 100644
  #include "call/call_config.h"
  #include "call/flexfec_receive_stream.h"
  #include "call/packet_receiver.h"
-@@ -52,20 +53,7 @@ namespace webrtc {
- 
- class Call {
-  public:
--  struct Stats {
--    std::string ToString(int64_t time_ms) const;
--
--    int send_bandwidth_bps = 0;       // Estimated available send bandwidth.
--    int max_padding_bitrate_bps = 0;  // Cumulative configured max padding.
--    int recv_bandwidth_bps = 0;       // Estimated available receive bandwidth.
--    int64_t pacer_delay_ms = 0;
--    int64_t rtt_ms = -1;
--    std::optional<int64_t> ccfb_messages_received = std::nullopt;
--    flat_map<uint32_t, SentCongestionControllerFeedbackStats>
+@@ -62,9 +63,9 @@ class Call {
+     int64_t rtt_ms = -1;
+     std::optional<int64_t> ccfb_messages_received = std::nullopt;
+     flat_map<uint32_t, SentCongestionControllerFeedbackStats>
 -        sent_ccfb_stats_per_ssrc;
--    flat_map<uint32_t, ReceivedCongestionControlFeedbackStats>
++      sent_ccfb_stats_per_ssrc;
+     flat_map<uint32_t, ReceivedCongestionControlFeedbackStats>
 -        received_ccfb_stats_per_ssrc;
--  };
-+  using Stats = CallBasicStats;
++      received_ccfb_stats_per_ssrc;
+   };
  
    static std::unique_ptr<Call> Create(CallConfig config);
- 
 diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
 index 6ca070fce7..82be9d5882 100644
 --- a/modules/desktop_capture/BUILD.gn
