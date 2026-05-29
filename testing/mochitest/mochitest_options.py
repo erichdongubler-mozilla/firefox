@@ -43,7 +43,7 @@ ALL_FLAVORS = {
     "chrome": {
         "suite": "chrome",
         "aliases": ("chrome", "mochitest-chrome"),
-        "enabled_apps": ("firefox"),
+        "enabled_apps": ("firefox",),
         "extra_args": {
             "flavor": "chrome",
         },

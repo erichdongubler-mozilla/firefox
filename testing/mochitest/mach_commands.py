@@ -328,7 +328,7 @@ def run_mochitest_general(
     if kwargs.get("android"):
         buildapp = "android"
 
-    flavors = None
+    flavors = []
     if flavor:
         for fname, fobj in ALL_FLAVORS.items():
             if flavor in fobj["aliases"]:
