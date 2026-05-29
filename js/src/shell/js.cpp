@@ -9078,6 +9078,10 @@ class TransplantableProxyHandler final : public ForwardingProxyHandler {
 
   bool mayBeSwapped() const override { return true; }
 
+  // For testing purposes allow these to be allocated in the nursery. This
+  // doesn't (currently) happen in the browser.
+  bool canNurseryAllocate() const override { return true; }
+
   static JSObject* GetAndClearExpandoObject(
       JSObject* obj, JS::MutableHandle<JS::Value> restoreToken) {
     MOZ_ASSERT(TransplantableProxyHandler::is(obj));

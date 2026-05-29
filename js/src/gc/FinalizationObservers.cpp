@@ -678,7 +678,7 @@ bool GCRuntime::relocateFinalizationObserverTarget(const Value& oldTarget,
   for (auto iter = weakRefList.iter(); !iter.done(); iter.next()) {
     auto* weakRef = &iter.get()->as<WeakRefObject>();
     MOZ_ASSERT(weakRef->target() == oldTarget);
-    weakRef->setTargetUnbarriered(newTarget);
+    weakRef->setTarget(newTarget);
   }
 
   Zone* newZone = GetWeakTargetZone(newTarget);
