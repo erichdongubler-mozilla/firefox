@@ -35,15 +35,26 @@ nsCString UniqueCollection(const char* aPrefix) {
 // gtest, which runs on the main thread.
 template <typename Fn>
 void RunOnBackground(Fn&& aFn) {
-  std::atomic<bool> done{false};
-  MOZ_ALWAYS_SUCCEEDS(NS_DispatchBackgroundTask(
-      NS_NewRunnableFunction("TestLockstoreService::RunOnBackground",
-                             [&done, fn = std::forward<Fn>(aFn)]() mutable {
-                               fn();
-                               done.store(true);
-                             })));
-  MOZ_ALWAYS_TRUE(SpinEventLoopUntil("RunOnBackground"_ns,
-                                     [&done]() { return done.load(); }));
+  // `done` is touched only on the main thread (set by the completion
+  // runnable, read by the predicate), so it needs no synchronization.
+  bool done = false;
+  MOZ_ALWAYS_SUCCEEDS(NS_DispatchBackgroundTask(NS_NewRunnableFunction(
+      "TestLockstoreService::RunOnBackground",
+      [&done, fn = std::forward<Fn>(aFn)]() mutable {
+        fn();
+        // The predicate is satisfied from this background task, so post
+        // completion back to the main thread. This wakes the blocked
+        // NS_ProcessNextEvent inside SpinEventLoopUntil; otherwise the spin
+        // only re-checks `done` when unrelated event-loop traffic happens to
+        // wake the main thread, and those incidental wakeups grow sparse as
+        // the process quiesces -- stretching each wait until it trips the
+        // gtest no-output watchdog.
+        NS_DispatchToMainThread(NS_NewRunnableFunction(
+            "TestLockstoreService::RunOnBackground::Done",
+            [&done] { done = true; }));
+      })));
+  MOZ_ALWAYS_TRUE(
+      SpinEventLoopUntil("RunOnBackground"_ns, [&done]() { return done; }));
 }
 
 nsTArray<uint8_t> Bytes(const char* aLiteral) {
@@ -494,7 +505,11 @@ TEST_F(LockstoreServiceTest, ConcurrentEncryptsAllResolveUnique) {
           if (r.isOk()) {
             results[i] = r.unwrap();
           }
-          ++doneCount;
+          // Record completion on the main thread so the spin loop is woken
+          // promptly (see RunOnBackground).
+          NS_DispatchToMainThread(
+              NS_NewRunnableFunction("ConcurrentEncryptsAllResolveUnique::done",
+                                     [&doneCount]() { ++doneCount; }));
         })));
   }
   MOZ_ALWAYS_TRUE(
@@ -535,7 +550,9 @@ TEST_F(LockstoreServiceTest, ConcurrentMixedOpsAllComplete) {
         "ConcurrentMixedOps::create", [this, &c, &createDone]() {
           EXPECT_NS_SUCCEEDED(
               mService->DoCreateDek(c, mLocalKek, /*extractable=*/false));
-          ++createDone;
+          NS_DispatchToMainThread(
+              NS_NewRunnableFunction("ConcurrentMixedOps::create-done",
+                                     [&createDone]() { ++createDone; }));
         })));
   }
   MOZ_ALWAYS_TRUE(
@@ -559,7 +576,9 @@ TEST_F(LockstoreServiceTest, ConcurrentMixedOpsAllComplete) {
               EXPECT_EQ(ptResult.unwrap().Length(), strlen("payload"));
             }
           }
-          ++roundtripDone;
+          NS_DispatchToMainThread(
+              NS_NewRunnableFunction("ConcurrentMixedOps::roundtrip-done",
+                                     [&roundtripDone]() { ++roundtripDone; }));
         })));
   }
   MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
@@ -573,7 +592,9 @@ TEST_F(LockstoreServiceTest, ConcurrentMixedOpsAllComplete) {
     MOZ_ALWAYS_SUCCEEDS(NS_DispatchBackgroundTask(NS_NewRunnableFunction(
         "ConcurrentMixedOps::delete", [this, &c, &deleteDone]() {
           EXPECT_NS_SUCCEEDED(mService->DoDeleteDek(c));
-          ++deleteDone;
+          NS_DispatchToMainThread(
+              NS_NewRunnableFunction("ConcurrentMixedOps::delete-done",
+                                     [&deleteDone]() { ++deleteDone; }));
         })));
   }
   MOZ_ALWAYS_TRUE(

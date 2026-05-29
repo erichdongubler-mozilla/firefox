@@ -700,8 +700,6 @@ impl Keystore {
             KekType::LocalKey => self.load_local_record(kek_ref)?.is_some(),
             KekType::Password => self.load_password_record(kek_ref)?.is_some(),
             KekType::Pkcs11Token => self.load_pkcs11_record(kek_ref)?.is_some(),
-            #[cfg(test)]
-            KekType::Test => true,
         };
         if !exists {
             return Err(LockstoreError::NotFound(format!(
@@ -721,8 +719,6 @@ impl Keystore {
             KekType::LocalKey => self.delete_local_record(kek_ref),
             KekType::Password => self.delete_password_record(kek_ref),
             KekType::Pkcs11Token => self.delete_pkcs11_record(kek_ref),
-            #[cfg(test)]
-            KekType::Test => Ok(()),
         }
     }
 
