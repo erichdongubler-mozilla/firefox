@@ -232,9 +232,10 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
     // There can be multiple previous frame types so just "unwrap" this frame
     // and try again.
     masm.loadPtr(Address(fpScratch, CallerFPOffset), fpScratch);
-    emitAssertPrevFrameType(fpScratch, scratch,
-                            {FrameType::IonJS, FrameType::BaselineStub,
-                             FrameType::CppToJSJit, FrameType::WasmToJSJit});
+    emitAssertPrevFrameType(
+        fpScratch, scratch,
+        {FrameType::IonJS, FrameType::BaselineStub, FrameType::IonICCall,
+         FrameType::CppToJSJit, FrameType::WasmToJSJit});
     masm.jump(&again);
   }
 
