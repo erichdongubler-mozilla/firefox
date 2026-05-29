@@ -87,6 +87,40 @@ add_task(async function test_no_op_without_selectable_profiles() {
   Services.prefs.clearUserPref(ENABLED_ON_PROFILES_PREF);
 });
 
+add_task(async function test_addToEnabledListPref_migrates_object() {
+  Services.prefs.setStringPref(
+    ENABLED_ON_PROFILES_PREF,
+    JSON.stringify({ "profile-1": true })
+  );
+
+  BackupService.addToEnabledListPref("profile-2");
+  let value = JSON.parse(
+    Services.prefs.getStringPref(ENABLED_ON_PROFILES_PREF, "[]")
+  );
+  Assert.ok(Array.isArray(value), "Pref should be an array after add");
+  Assert.ok(value.includes("profile-1"), "profile-1 should be migrated");
+  Assert.ok(value.includes("profile-2"), "profile-2 should be added");
+
+  Services.prefs.clearUserPref(ENABLED_ON_PROFILES_PREF);
+});
+
+add_task(async function test_removeFromEnabledListPref_migrates_object() {
+  Services.prefs.setStringPref(
+    ENABLED_ON_PROFILES_PREF,
+    JSON.stringify({ "profile-1": true, "profile-2": true })
+  );
+
+  await BackupService.removeFromEnabledListPref("profile-1");
+  let value = JSON.parse(
+    Services.prefs.getStringPref(ENABLED_ON_PROFILES_PREF, "[]")
+  );
+  Assert.ok(Array.isArray(value), "Pref should be an array after remove");
+  Assert.ok(!value.includes("profile-1"), "profile-1 should be removed");
+  Assert.ok(value.includes("profile-2"), "profile-2 should remain");
+
+  Services.prefs.clearUserPref(ENABLED_ON_PROFILES_PREF);
+});
+
 add_task(async function test_enabledListPref_shared_across_profiles() {
   Services.prefs.clearUserPref(ENABLED_ON_PROFILES_PREF);
 

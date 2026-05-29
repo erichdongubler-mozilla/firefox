@@ -196,6 +196,34 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
+  "enabledOnProfilesPref",
+  BACKUP_ENABLED_ON_PROFILES_PREF_NAME,
+  "[]",
+  null,
+  function transform(rawValue) {
+    let parsed;
+    try {
+      parsed = JSON.parse(rawValue);
+    } catch {
+      return [];
+    }
+
+    if (Array.isArray(parsed)) {
+      return parsed;
+    }
+
+    // Migrate from legacy object format {profileId: true, ...} to array.
+    let profilesArray = Object.keys(parsed);
+    Services.prefs.setStringPref(
+      BACKUP_ENABLED_ON_PROFILES_PREF_NAME,
+      JSON.stringify(profilesArray)
+    );
+    return profilesArray;
+  }
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
   "backupErrorCode",
   BACKUP_ERROR_CODE_PREF_NAME,
   0,
@@ -5564,9 +5592,7 @@ export class BackupService extends EventTarget {
       return;
     }
 
-    let profilesEnabledOn = JSON.parse(
-      Services.prefs.getStringPref(BACKUP_ENABLED_ON_PROFILES_PREF_NAME, "[]")
-    );
+    let profilesEnabledOn = [...lazy.enabledOnProfilesPref];
 
     if (!profilesEnabledOn.includes(profileID)) {
       profilesEnabledOn.push(profileID);
@@ -5586,10 +5612,9 @@ export class BackupService extends EventTarget {
       return;
     }
 
-    let profilesEnabledOn = JSON.parse(
-      Services.prefs.getStringPref(BACKUP_ENABLED_ON_PROFILES_PREF_NAME, "[]")
+    let profilesEnabledOn = lazy.enabledOnProfilesPref.filter(
+      id => id !== profileID
     );
-    profilesEnabledOn = profilesEnabledOn.filter(id => id !== profileID);
     Services.prefs.setStringPref(
       BACKUP_ENABLED_ON_PROFILES_PREF_NAME,
       JSON.stringify(profilesEnabledOn)
