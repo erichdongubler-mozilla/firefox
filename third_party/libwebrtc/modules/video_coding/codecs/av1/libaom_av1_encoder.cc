@@ -282,7 +282,7 @@ LibaomAv1Encoder::LibaomAv1Encoder(const Environment& env,
       drop_repeat_frames_on_enhancement_layers_(env.field_trials().IsEnabled(
           "WebRTC-LibaomAv1Encoder-DropRepeatFramesOnEnhancementLayers")),
       encoder_speed_experiment_(env.field_trials()),
-      realtime_clock_(Clock::GetRealTimeClockRaw()) {}
+      realtime_clock_(Clock::GetRealTimeClockOnlyUseForRelativeTime()) {}
 
 LibaomAv1Encoder::~LibaomAv1Encoder() {
   Release();

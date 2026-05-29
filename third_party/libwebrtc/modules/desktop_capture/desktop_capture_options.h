@@ -57,7 +57,7 @@ class RTC_EXPORT DesktopCaptureOptions {
   DesktopCaptureOptions& operator=(DesktopCaptureOptions&& options);
 
   Clock& clock() const {
-    return env_.has_value() ? env_->clock() : *Clock::GetRealTimeClock();
+    return env_.has_value() ? env_->clock() : *Clock::GetRealTimeClockOnlyUseForRelativeTime();
   }
 
 #if defined(WEBRTC_USE_X11)
