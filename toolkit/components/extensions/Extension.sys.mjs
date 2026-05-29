@@ -4365,6 +4365,8 @@ export class Extension extends ExtensionData {
     if (!this.cleanupFile) {
       return;
     }
+    // Note: This is test-only logic, only when the Extension is created via
+    // ExtensionTestCommon.generate in ExtensionTestCommon.sys.mjs
 
     let file = this.cleanupFile;
     this.cleanupFile = null;
@@ -4372,12 +4374,27 @@ export class Extension extends ExtensionData {
     Services.obs.removeObserver(this, "xpcom-shutdown");
 
     return this.broadcast("Extension:FlushJarCache", { path: file.path })
-      .then(() => {
+      .then(async () => {
         // We can't delete this file until everyone using it has
         // closed it (because Windows is dumb). So we wait for all the
         // child processes (including the parent) to flush their JAR
         // caches. These caches may keep the file open.
-        file.remove(false);
+
+        // Content processes pending shutdown may be unreachable by broadcast()
+        // above (see comment 2 and comment 3 of bug 1768532), but will release
+        // the file handle when they terminate. So, wait and retry a few times.
+        let retries = 10;
+        do {
+          try {
+            file.remove(false);
+            break;
+          } catch (e) {
+            if (e.result !== Cr.NS_ERROR_FILE_ACCESS_DENIED || --retries < 0) {
+              throw e;
+            }
+            await ExtensionUtils.promiseTimeout(100);
+          }
+        } while (!Services.startup.shuttingDown);
       })
       .catch(Cu.reportError);
   }
