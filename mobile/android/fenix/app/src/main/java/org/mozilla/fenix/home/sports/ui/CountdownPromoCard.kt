@@ -63,7 +63,7 @@ fun CountdownPromoCard(
 
     Box(
         modifier = modifier.background(
-            color = MaterialTheme.colorScheme.surfaceBright,
+            color = MaterialTheme.colorScheme.surfaceContainerLowest,
             shape = MaterialTheme.shapes.large,
         ),
     ) {

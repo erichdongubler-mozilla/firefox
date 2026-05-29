@@ -82,7 +82,7 @@ fun FollowTeamPromoCard(
         },
         contentSpacing = 0.dp,
         colors = PromoCardColors.promoCardColors(
-            backgroundColor = MaterialTheme.colorScheme.surfaceBright,
+            backgroundColor = MaterialTheme.colorScheme.surfaceContainerLowest,
         ),
     )
 }

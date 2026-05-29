@@ -64,7 +64,7 @@ fun MatchCard(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceBright,
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
     ) {
         Column(
             modifier = Modifier.padding(
@@ -136,7 +136,7 @@ internal fun MatchBody(
     if (errorState != null && match.matchStatus.isLive()) {
         SportsWidgetErrorCard(
             error = errorState,
-            onRefresh = { onRefresh(LiveMatchRefreshSource.LIVE_MATCH_ERROR_BUTTON) },
+            onRefresh = { onRefresh(LiveMatchRefreshSource.LIVE_MATCH_CARD_ERROR_BUTTON) },
         )
     } else {
         val rowContentDescription = matchBodyContentDescription(match = match, isTeamSelected = isTeamSelected)
