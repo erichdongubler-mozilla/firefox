@@ -5899,8 +5899,16 @@ bool WasmSuspendingObject::construct(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   RootedObject callable(cx, &args[0].toObject());
+
+  RootedObject proto(
+      cx, GetWasmConstructorPrototype(cx, args, JSProto_WasmSuspending));
+  if (!proto) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
   Rooted<WasmSuspendingObject*> suspending(
-      cx, NewBuiltinClassInstance<WasmSuspendingObject>(cx));
+      cx, NewObjectWithGivenProto<WasmSuspendingObject>(cx, proto));
   if (!suspending) {
     return false;
   }
