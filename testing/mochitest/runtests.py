@@ -3138,13 +3138,12 @@ toolbar#nav-bar {
             )
 
             expected = None
-            if crashAsPass or crash_count > 0:
+            if crashAsPass:
                 # self.message_logger.is_test_running indicates we need a test_end message
                 if self.message_logger.is_test_running:
                     # this works for browser-chrome, mochitest-plain has status=0
                     expected = "CRASH"
-                if crashAsPass:
-                    status = 0
+                status = 0
             elif crash_count or zombieProcesses:
                 if self.message_logger.is_test_running:
                     expected = "PASS"
