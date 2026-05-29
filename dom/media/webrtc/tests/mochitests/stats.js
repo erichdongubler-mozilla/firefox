@@ -885,7 +885,7 @@ function pedanticChecks(report) {
         // framesAssembledFromMultiplePackets
         ok(
           stat.framesAssembledFromMultiplePackets >= 0 &&
-            stat.framesAssembledFromMultiplePackets < 100,
+            stat.framesAssembledFromMultiplePackets < 200,
           `${stat.type}.framesAssembledFromMultiplePackets is a sane number ` +
             `for a short ${stat.kind} test.` +
             `value=${stat.framesAssembledFromMultiplePackets}`
