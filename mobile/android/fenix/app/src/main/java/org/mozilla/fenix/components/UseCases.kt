@@ -174,6 +174,7 @@ class UseCases(
         DefaultShareSheetLauncher(
             applicationContext = context.applicationContext,
             homeActivityClass = HomeActivity::class.java,
+            crashReporter = crashReporter.value,
         )
     }
 
