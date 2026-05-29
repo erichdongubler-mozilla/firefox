@@ -91,6 +91,7 @@ fun ExpandedTabGroup(
             tabs = group.tabs,
             displayTabsInGrid = true,
             dragAndDropEnabled = false,
+            displayTabGroupOnboarding = false,
             selectedItemIndex = group.initialScrollIndex,
             selectionMode = TabsTrayState.Mode.Normal,
             tabInteractionHandler = NoOpTabInteractionHandler, // todo Bug 2032255: Inject interaction handling

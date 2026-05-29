@@ -50,6 +50,7 @@ private val EmptyPageWidth = 170.dp
  * @param inactiveTabsExpanded Whether the Inactive Tabs section is expanded.
  * @param displayTabsInGrid Whether the normal and private tabs should be displayed in a grid.
  * @param dragAndDropEnabled Whether the grid supports dragging and dropping for tab groups.
+ * @param displayTabGroupOnboarding Whether onboarding for tab groups should be shown.
  * @param tabInteractionHandler Handles tab interactions, such as moves and drag and drop.
  * @param trackersBlockedCount The number of trackers blocked to display in the footer card.
  * @param focusEnabled Whether the focus indicator is enabled.
@@ -85,6 +86,7 @@ internal fun NormalTabsPage(
     inactiveTabsExpanded: Boolean,
     displayTabsInGrid: Boolean,
     dragAndDropEnabled: Boolean,
+    displayTabGroupOnboarding: Boolean,
     tabInteractionHandler: TabInteractionHandler,
     trackersBlockedCount: Int? = null,
     focusEnabled: Boolean,
@@ -146,6 +148,7 @@ internal fun NormalTabsPage(
             tabs = items,
             displayTabsInGrid = displayTabsInGrid,
             dragAndDropEnabled = dragAndDropEnabled,
+            displayTabGroupOnboarding = displayTabGroupOnboarding,
             selectedItemIndex = selectedItemIndex,
             selectionMode = selectionMode,
             trackersBlockedCount = trackersBlockedCount,

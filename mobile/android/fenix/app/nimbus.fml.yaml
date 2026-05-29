@@ -963,6 +963,24 @@ features:
       - channel: nightly
         value:
           enabled: true
+  tab-groups-onboarding:
+    description: Control the visibility of onboarding for tab groups.
+    variables:
+      enabled:
+        description: >
+          Whether or not to enable onboarding for tab groups.
+        type: Boolean
+        default: false
+    defaults:
+      - channel: release
+        value:
+          enabled: false
+      - channel: beta
+        value:
+          enabled: false
+      - channel: nightly
+        value:
+          enabled: false
 
   marketing-onboarding-card:
     description: A temporary feature to control the marketing onboarding card shown during the onboarding flow.

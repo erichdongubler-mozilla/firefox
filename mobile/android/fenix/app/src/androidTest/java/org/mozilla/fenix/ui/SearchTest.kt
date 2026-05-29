@@ -777,6 +777,8 @@ class SearchTest {
     @SmokeTest
     @Test
     fun verifyTabsSearchWithOpenTabsTest() {
+        TestHelper.appContext.settings().tabGroupsOnboardingEnabled = false
+
         val firstPageUrl = searchMockServerRule.server.getGenericAsset(1)
         val secondPageUrl = searchMockServerRule.server.getGenericAsset(2)
 

@@ -17,6 +17,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.controller.NoOpTabInteractionHandler
+import org.mozilla.fenix.tabstray.data.TabsTrayItem
+import org.mozilla.fenix.tabstray.data.createTab
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
+import org.mozilla.fenix.tabstray.ui.tabpage.TabLayout
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
 
@@ -110,5 +115,50 @@ class TabGroupOnboardingItemTest {
             .performClick()
 
         assertTrue(dismissed)
+    }
+
+    @Test
+    fun verifyOnboardingDisplayedWhenTrue() {
+        setTabLayoutContent(displayTabGroupOnboarding = true)
+
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_GROUP_ONBOARDING_ITEM)
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun verifyOnboardingHiddenWhenFalse() {
+        setTabLayoutContent(displayTabGroupOnboarding = false)
+
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_GROUP_ONBOARDING_ITEM)
+            .assertDoesNotExist()
+    }
+
+    private fun setTabLayoutContent(displayTabGroupOnboarding: Boolean) {
+        val tabs: List<TabsTrayItem> = listOf(
+            createTab(url = "www.mozilla.org"),
+            createTab(url = "www.example.com"),
+        )
+        composeTestRule.setContent {
+            FirefoxTheme(theme = Theme.Light) {
+                Surface {
+                    TabLayout(
+                        tabs = tabs,
+                        displayTabsInGrid = true,
+                        dragAndDropEnabled = true,
+                        displayTabGroupOnboarding = displayTabGroupOnboarding,
+                        selectedItemIndex = 0,
+                        selectionMode = TabsTrayState.Mode.Normal,
+                        focusEnabled = true,
+                        tabInteractionHandler = NoOpTabInteractionHandler,
+                        onTabClose = {},
+                        onItemClick = {},
+                        onItemLongClick = {},
+                        onDeleteTabGroupClick = {},
+                        onEditTabGroupClick = {},
+                        onCloseTabGroupClick = {},
+                    )
+                }
+            }
+        }
     }
 }

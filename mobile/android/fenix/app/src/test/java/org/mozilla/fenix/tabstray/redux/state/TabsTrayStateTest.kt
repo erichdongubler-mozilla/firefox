@@ -141,4 +141,85 @@ class TabsTrayStateTest {
         val initialState = TabsTrayState()
         assertTrue(initialState.normalTabsState.itemFocusIndicatorEnabled)
     }
+
+    @Test
+    fun `WHEN all onboarding conditions are met THEN shouldShowTabGroupOnboarding returns true`() {
+        val state = onboardingEligibleState()
+        assertTrue(state.shouldShowTabGroupOnboarding)
+    }
+
+    @Test
+    fun `WHEN the onboarding flag is off THEN shouldShowTabGroupOnboarding returns false`() {
+        val state = onboardingEligibleState().copy(
+            config = TabsTrayState.TabsTrayConfig(
+                tabGroupsDragAndDropEnabled = true,
+                tabGroupsOnboardingEnabled = false,
+            ),
+        )
+        assertFalse(state.shouldShowTabGroupOnboarding)
+    }
+
+    @Test
+    fun `WHEN drag and drop is disabled THEN shouldShowTabGroupOnboarding returns false`() {
+        val state = onboardingEligibleState().copy(
+            config = TabsTrayState.TabsTrayConfig(
+                tabGroupsDragAndDropEnabled = false,
+                tabGroupsOnboardingEnabled = true,
+            ),
+        )
+        assertFalse(state.shouldShowTabGroupOnboarding)
+    }
+
+    @Test
+    fun `WHEN the selected item index is out of range THEN shouldShowTabGroupOnboarding returns false`() {
+        val state = onboardingEligibleState().copy(
+            normalTabsState = TabsTrayState.NormalTabsState(
+                items = listOf(createTab(url = ""), createTab(url = "")),
+                selectedItemIndex = -1,
+            ),
+        )
+        assertFalse(state.shouldShowTabGroupOnboarding)
+    }
+
+    @Test
+    fun `WHEN the user already has tab groups THEN shouldShowTabGroupOnboarding returns false`() {
+        val state = onboardingEligibleState().copy(
+            tabGroupState = TabsTrayState.TabGroupState(groups = listOf(createTabGroup())),
+        )
+        assertFalse(state.shouldShowTabGroupOnboarding)
+    }
+
+    @Test
+    fun `WHEN fewer than two standalone tabs THEN shouldShowTabGroupOnboarding returns false`() {
+        val state = onboardingEligibleState().copy(
+            normalTabsState = TabsTrayState.NormalTabsState(
+                items = listOf(createTab(url = "")),
+                selectedItemIndex = 0,
+            ),
+        )
+        assertFalse(state.shouldShowTabGroupOnboarding)
+    }
+
+    @Test
+    fun `GIVEN a tab group is in the tab list WHEN evaluating shouldShowTabGroupOnboarding THEN groups do not count toward the minimum tab count`() {
+        val state = onboardingEligibleState().copy(
+            normalTabsState = TabsTrayState.NormalTabsState(
+                items = listOf(createTab(url = ""), createTabGroup()),
+                selectedItemIndex = 0,
+            ),
+        )
+        assertFalse(state.shouldShowTabGroupOnboarding)
+    }
+
+    private fun onboardingEligibleState(): TabsTrayState = TabsTrayState(
+        normalTabsState = TabsTrayState.NormalTabsState(
+            items = listOf(createTab(url = ""), createTab(url = "")),
+            selectedItemIndex = 0,
+        ),
+        tabGroupState = TabsTrayState.TabGroupState(groups = emptyList()),
+        config = TabsTrayState.TabsTrayConfig(
+            tabGroupsDragAndDropEnabled = true,
+            tabGroupsOnboardingEnabled = true,
+        ),
+    )
 }

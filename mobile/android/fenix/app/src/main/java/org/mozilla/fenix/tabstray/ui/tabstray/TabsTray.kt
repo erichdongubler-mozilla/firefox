@@ -251,6 +251,7 @@ fun TabsTray(
                         inactiveTabsExpanded = tabsTrayState.inactiveTabs.isExpanded,
                         displayTabsInGrid = tabsTrayState.config.displayTabsInGrid,
                         dragAndDropEnabled = tabsTrayState.config.tabGroupsDragAndDropEnabled,
+                        displayTabGroupOnboarding = tabsTrayState.shouldShowTabGroupOnboarding,
                         onTabClose = onTabClose,
                         shouldShowInactiveTabsAutoCloseDialog = tabsTrayState.inactiveTabs.showAutoCloseDialog,
                         onItemClick = onItemClick,

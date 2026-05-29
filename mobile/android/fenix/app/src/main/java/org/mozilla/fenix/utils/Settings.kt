@@ -3124,6 +3124,14 @@ class Settings(
     )
 
     /**
+     * Whether onboarding is enabled for the Tab Groups feature.
+     */
+    var tabGroupsOnboardingEnabled by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_tab_groups_onboarding),
+        default = { DefaultTabManagementFeatureHelper.tabGroupsOnboardingEnabled },
+    )
+
+    /**
      * Whether the Native Share Sheet feature is enabled.
      */
     var nativeShareSheetEnabled by booleanPreference(
