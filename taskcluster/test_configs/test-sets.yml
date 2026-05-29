@@ -512,11 +512,9 @@ macosx1470-64-tests:
     - crashtest
     - firefox-ui-functional
     - gtest
-    - web-platform-tests-canvas
     - web-platform-tests-eme
     - web-platform-tests-print-reftest
     - web-platform-tests-reftest
-    - web-platform-tests-webcodecs
 
 macosx1015-64-qr-tests:
     - cppunittest
