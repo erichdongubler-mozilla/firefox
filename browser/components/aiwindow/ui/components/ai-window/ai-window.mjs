@@ -50,6 +50,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs",
   MemoriesManager:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
+  getAllModelsData:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs",
+  getCurrentModelChoiceId:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs",
   getCurrentModelName:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs",
   ToolUI: "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
@@ -178,6 +182,8 @@ export class AIWindow extends MozLitElement {
     promoMessage: { type: Object, state: true },
     showDisclaimer: { type: Boolean, state: true },
     isGenerating: { type: Boolean, state: true },
+    availableModels: { type: Object, state: true },
+    selectedModelId: { type: String, state: true },
   };
 
   #browser;
@@ -378,6 +384,7 @@ export class AIWindow extends MozLitElement {
     this.promoMessage = null;
     this.showDisclaimer = this.mode !== MODE.FULLPAGE;
     this.isGenerating = false;
+    this.selectedModelId = lazy.getCurrentModelName();
 
     // Apply chat-active immediately if restoring a conversation
     if (this.#hostBrowser?.getAttribute("data-conversation-id")) {
@@ -474,6 +481,7 @@ export class AIWindow extends MozLitElement {
   connectedCallback() {
     super.connectedCallback();
     this.setAttribute("mode", this.mode);
+    this.#loadAvailableModels();
 
     this.ownerDocument.addEventListener("OpenConversation", this);
     this.ownerDocument.addEventListener(
@@ -484,6 +492,14 @@ export class AIWindow extends MozLitElement {
     this.ownerDocument.addEventListener(
       "smartbar-stop-generation",
       this.#handleStopGeneration
+    );
+    this.ownerDocument.addEventListener(
+      "aiwindow-input-model-select:model-change",
+      this.#handleModelChange
+    );
+    this.ownerDocument.addEventListener(
+      "aiwindow-input-model-select:open-settings",
+      this.#handleOpenModelSettings
     );
 
     this.#loadPendingConversation();
@@ -711,6 +727,14 @@ export class AIWindow extends MozLitElement {
       "smartbar-stop-generation",
       this.#handleStopGeneration
     );
+    this.ownerDocument.removeEventListener(
+      "aiwindow-input-model-select:model-change",
+      this.#handleModelChange
+    );
+    this.ownerDocument.removeEventListener(
+      "aiwindow-input-model-select:open-settings",
+      this.#handleOpenModelSettings
+    );
     if (this.#smartbar) {
       this.#smartbar.removeEventListener(
         "aiwindow-memories-toggle:on-change",
@@ -746,6 +770,44 @@ export class AIWindow extends MozLitElement {
 
     super.disconnectedCallback();
   }
+
+  /**
+   * Loads all available models.
+   */
+  async #loadAvailableModels() {
+    const allModels = await lazy.getAllModelsData();
+
+    // Only show custom model option if a custom endpoint has been configured
+    if (lazy.openAIEngine.hasCustomEndpoint()) {
+      this.availableModels = allModels;
+      return;
+    }
+    const { 0: _unusedCustom, ...presetModels } = allModels;
+    void _unusedCustom;
+    this.availableModels = presetModels;
+  }
+
+  /**
+   * Updates the smartbar model select with available models.
+   *
+   * @param {Element} smartbar - The smartbar element
+   */
+  #updateSmartbarModels(smartbar) {
+    const modelSelect = smartbar?.querySelector("input-model-select");
+    if (modelSelect && this.availableModels) {
+      modelSelect.availableModels = this.availableModels;
+      modelSelect.selectedModelId = this.selectedModelId;
+      modelSelect.defaultModelChoiceId = lazy.getCurrentModelChoiceId();
+    }
+  }
+
+  #handleModelChange = event => {
+    this.selectedModelId = event.detail.modelId;
+  };
+
+  #handleOpenModelSettings = () => {
+    this.#topChromeWindow?.openPreferences("personalizeSmartWindow");
+  };
 
   /**
    * Loads a conversation if one is set on the data-conversation-id attribute.
@@ -1043,6 +1105,7 @@ export class AIWindow extends MozLitElement {
           this.#resolveSmartbarReady();
           this.#setupSmartbarFocus(smartbar);
           this.#observeSmartbarHeight();
+          this.#updateSmartbarModels(smartbar);
         },
         { once: true }
       );
@@ -1692,6 +1755,9 @@ export class AIWindow extends MozLitElement {
       this.#getAIChatContentActor()?.setGeneratingOnChatContent(
         this.isGenerating
       );
+    }
+    if (changedProps.has("availableModels") && this.#smartbar) {
+      this.#updateSmartbarModels(this.#smartbar);
     }
   }
 
