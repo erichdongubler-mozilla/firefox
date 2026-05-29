@@ -4278,6 +4278,7 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
       // AbstractGeneratorObject::resume takes care of setting the frame's
       // debuggee flag.
       MOZ_ASSERT_IF(REGS.fp()->script()->isDebuggee(), REGS.fp()->isDebuggee());
+      INIT_COVERAGE();
       COUNT_COVERAGE();
     }
     END_CASE(AfterYield)
