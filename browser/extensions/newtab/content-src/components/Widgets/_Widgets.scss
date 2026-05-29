@@ -282,6 +282,13 @@
   }
 }
 
+// DnD visuals on the wrapper.
+.nova-enabled .widget-draggable {
+  &.is-dragging {
+    opacity: 0.5;
+  }
+}
+
 .widgets-feedback-link {
   display: inline-block;
   margin-block-start: var(--space-medium);

@@ -28,6 +28,7 @@ import {
 } from "common/WidgetsRegistry.mjs";
 import { WIDGET_ROW_COMPONENTS } from "./WidgetsComponentRegistry.jsx";
 import { WidgetWrapper } from "./WidgetWrapper";
+import { useWidgetDnD } from "./useWidgetDnD.jsx";
 
 const CONTAINER_ACTION_TYPES = {
   HIDE_ALL: "hide_all",
@@ -209,6 +210,21 @@ function Widgets() {
   };
 
   const widgetOrder = resolveWidgetOrder(prefs);
+
+  const {
+    effectiveOrder,
+    draggedId,
+    previewOrderMap,
+    handleDragStart,
+    handleDragOver,
+    handleDrop,
+    handleDragEnd,
+    handleMouseDown,
+  } = useWidgetDnD({
+    widgetOrder,
+    prefs,
+    dispatch,
+  });
 
   const anyWidgetInRow =
     WIDGET_REGISTRY.some(w => widgetEnabledMap[w.id]) ||
@@ -522,7 +538,8 @@ function Widgets() {
   // attribute is read by the @container rules in CSS.
   const sizes = [];
   const enabledWidgetIds = [];
-  for (const id of widgetOrder) {
+  // Use effectiveOrder (matches the render loop) so optimistic reorders aren't briefly mis-hidden.
+  for (const id of effectiveOrder) {
     if (!WIDGET_ROW_COMPONENTS[id] || !widgetEnabledMap[id]) {
       continue;
     }
@@ -613,7 +630,7 @@ function Widgets() {
           className={`widgets-container${isMaximized ? " is-maximized" : ""}`}
           data-row-collapsed={isCollapsed ? "" : undefined}
         >
-          {widgetOrder.map(id => {
+          {effectiveOrder.map(id => {
             if (novaEnabled) {
               const Component = WIDGET_ROW_COMPONENTS[id];
               if (!Component || !widgetEnabledMap[id]) {
@@ -644,11 +661,31 @@ function Widgets() {
                   ? ""
                   : undefined,
               };
+              const wrapperClassName = [
+                size && `${size}-widget`,
+                "widget-draggable",
+                draggedId === id && "is-dragging",
+              ]
+                .filter(Boolean)
+                .join(" ");
+              const dragProps = {
+                style: previewOrderMap
+                  ? { order: previewOrderMap[id] }
+                  : undefined,
+                draggable: true,
+                onDragStart: e => handleDragStart(e, id),
+                onDragOverCapture: handleDragOver,
+                onDrop: handleDrop,
+                onDragEnd: handleDragEnd,
+                onMouseDown: handleMouseDown,
+              };
               return (
                 <WidgetWrapper
                   key={id}
-                  className={size ? `${size}-widget` : ""}
+                  className={wrapperClassName}
+                  data-widget-id={id}
                   {...hiddenAttrs}
+                  {...dragProps}
                 >
                   <Component
                     dispatch={dispatch}
