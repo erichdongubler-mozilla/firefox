@@ -132,27 +132,34 @@ private fun BottomSheetContent(
 
     Column(
         modifier = Modifier
-            .verticalScroll(scrollState)
             .padding(bottom = 16.dp, start = 16.dp, end = 16.dp),
     ) {
-        PromoBannerCard()
+        Box(
+            modifier = Modifier.weight(1f, fill = false),
+        ) {
+            Column(
+                modifier = Modifier.verticalScroll(state = scrollState, reverseScrolling = true),
+            ) {
+                PromoBannerCard()
 
-        Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(32.dp))
 
-        Text(
-            text = stringResource(
-                R.string.ip_protection_onboarding_card_headline,
-                stringResource(R.string.firefox),
-            ),
-            style = MaterialTheme.typography.bodyLarge,
-        )
+                Text(
+                    text = stringResource(
+                        R.string.ip_protection_onboarding_card_headline,
+                        stringResource(R.string.firefox),
+                    ),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
 
-        Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(16.dp))
 
-        IPProtectionContent(
-            maxGib = maxGib,
-            onLearnMoreClicked = onLearnMoreClicked,
-        )
+                IPProtectionContent(
+                    maxGib = maxGib,
+                    onLearnMoreClicked = onLearnMoreClicked,
+                )
+            }
+        }
 
         Spacer(Modifier.height(16.dp))
 
