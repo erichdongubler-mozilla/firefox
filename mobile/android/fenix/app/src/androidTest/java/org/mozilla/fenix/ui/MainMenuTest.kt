@@ -1122,6 +1122,11 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080125
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifyTheMainMenuBackButtonTest"],
+        bug = 2043207,
+        since = "2026-05",
+    )
     @SmokeTest
     @Test
     fun verifyTheMainMenuBackButtonTest() {
@@ -1142,6 +1147,11 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080126
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifyTheMainMenuForwardButtonTest"],
+        bug = 2043207,
+        since = "2026-05",
+    )
     @SmokeTest
     @Test
     fun verifyTheMainMenuForwardButtonTest() {

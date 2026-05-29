@@ -88,12 +88,12 @@ abstract class BasePage(
     // Navigation (STEP)
     // ------------------------------------------------------------
 
-    open fun navigateToPage(url: String = ""): BasePage {
+    open fun navigateToPage(url: String = "", forceNavigation: Boolean = false): BasePage {
         val rep = rep()
         rep?.startStep("nav_$pageName", "Attempting to Navigate to $pageName", 0)
 
         try {
-            if (mozIsOnPageNow()) {
+            if (!forceNavigation && mozIsOnPageNow()) {
                 PageStateTracker.currentPageName = pageName
                 rep?.endStep(success = true, message = "'$pageName' already loaded")
                 return this

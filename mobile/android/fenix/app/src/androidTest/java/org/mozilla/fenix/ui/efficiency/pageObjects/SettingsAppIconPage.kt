@@ -32,8 +32,8 @@ class SettingsAppIconPage(composeRule: AndroidComposeTestRule<HomeActivityIntent
         )
     }
 
-    override fun navigateToPage(url: String): SettingsAppIconPage {
-        super.navigateToPage(url)
+    override fun navigateToPage(url: String, forceNavigation: Boolean): SettingsAppIconPage {
+        super.navigateToPage(url, forceNavigation)
         return this
     }
 

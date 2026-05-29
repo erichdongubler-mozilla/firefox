@@ -32,8 +32,8 @@ class SettingsCustomizePage(composeRule: AndroidComposeTestRule<HomeActivityInte
         )
     }
 
-    override fun navigateToPage(url: String): SettingsCustomizePage {
-        super.navigateToPage(url)
+    override fun navigateToPage(url: String, forceNavigation: Boolean): SettingsCustomizePage {
+        super.navigateToPage(url, forceNavigation)
         return this
     }
 

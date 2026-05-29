@@ -16,8 +16,10 @@ import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.HistorySelectors.NAVIGATE_BACK_BUTTON
 import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
+import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors.BACK_BUTTON
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors.BOOKMARK_THIS_PAGE_BUTTON
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors.EDIT_BOOKMARK_BUTTON
+import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors.FORWARD_BUTTON
 
 class MainMenuTest : BaseTest() {
 
@@ -147,5 +149,45 @@ class MainMenuTest : BaseTest() {
             .mozVerifyElementsByGroup("emptySavedPasswordsList")
         on.browserPage.navigateToPage()
             .verifyPageContent(testPage.content)
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080126
+    @SmokeTest
+    @Test
+    fun verifyTheMainMenuForwardButtonTest() {
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val nextWebPage = mockWebServer.getGenericAsset(2)
+
+        on.browserPage
+            .navigateToPage(firstWebPage.url.toString())
+            .verifyUrl(firstWebPage.url.toString())
+            .navigateToPage(nextWebPage.url.toString(), forceNavigation = true)
+            .verifyUrl(nextWebPage.url.toString())
+        on.mainMenu.navigateToPage()
+            .mozClick(BACK_BUTTON)
+        on.browserPage.navigateToPage()
+            .verifyUrl(firstWebPage.url.toString())
+        on.mainMenu.navigateToPage()
+            .mozClick(FORWARD_BUTTON)
+        on.browserPage.navigateToPage()
+            .verifyUrl(nextWebPage.url.toString())
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080125
+    @SmokeTest
+    @Test
+    fun verifyTheMainMenuBackButtonTest() {
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val nextWebPage = mockWebServer.getGenericAsset(2)
+
+        on.browserPage
+            .navigateToPage(firstWebPage.url.toString())
+            .verifyUrl(firstWebPage.url.toString())
+            .navigateToPage(nextWebPage.url.toString(), forceNavigation = true)
+            .verifyUrl(nextWebPage.url.toString())
+        on.mainMenu.navigateToPage()
+            .mozClick(BACK_BUTTON)
+        on.browserPage.navigateToPage()
+            .verifyUrl(firstWebPage.url.toString())
     }
 }

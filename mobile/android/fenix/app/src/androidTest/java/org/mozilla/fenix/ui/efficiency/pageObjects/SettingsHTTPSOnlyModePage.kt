@@ -49,8 +49,8 @@ class SettingsHTTPSOnlyModePage(composeRule: AndroidComposeTestRule<HomeActivity
         return SettingsHTTPSOnlyModeSelectors.all.filter { it.groups.contains(group) }
     }
 
-    override fun navigateToPage(url: String): SettingsHTTPSOnlyModePage {
-        super.navigateToPage(url)
+    override fun navigateToPage(url: String, forceNavigation: Boolean): SettingsHTTPSOnlyModePage {
+        super.navigateToPage(url, forceNavigation)
         return this
     }
 
