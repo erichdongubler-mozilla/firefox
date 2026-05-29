@@ -1988,10 +1988,9 @@ nsresult HTMLEditor::SlurpBlob(Blob* aBlob, nsIGlobalObject* aGlobal,
   MOZ_ASSERT(aBlobReader);
 
   RefPtr<WeakWorkerRef> workerRef;
-  RefPtr<FileReader> reader = new FileReader(aGlobal, workerRef);
+  RefPtr reader = MakeRefPtr<FileReader>(aGlobal, workerRef);
 
-  RefPtr<SlurpBlobEventListener> eventListener =
-      new SlurpBlobEventListener(aBlobReader);
+  RefPtr eventListener = MakeRefPtr<SlurpBlobEventListener>(aBlobReader);
 
   nsresult rv = reader->AddEventListener(u"load"_ns, eventListener, false);
   if (NS_FAILED(rv)) {

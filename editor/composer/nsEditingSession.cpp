@@ -304,8 +304,7 @@ nsresult nsEditingSession::SetupEditorOnWindow(nsPIDOMWindowOuter& aWindow) {
   }
 
   // make the UI state maintainer
-  RefPtr<ComposerCommandsUpdater> commandsUpdater =
-      new ComposerCommandsUpdater();
+  RefPtr commandsUpdater = MakeRefPtr<ComposerCommandsUpdater>();
   mComposerCommandsUpdater = commandsUpdater;
 
   // now init the state maintainer
