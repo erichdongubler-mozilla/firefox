@@ -3556,8 +3556,10 @@ template <typename T>
 void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
                                  uint32_t aLength, Script aRunScript,
                                  gfx::ShapedTextFlags aOrientation) {
-  NS_ASSERTION(aRanges.Length() == 0, "aRanges must be initially empty");
-  NS_ASSERTION(aLength > 0, "don't call ComputeRanges for zero-length text");
+  MOZ_ASSERT(aRanges.IsEmpty(), "aRanges must be initially empty");
+  MOZ_ASSERT(aLength > 0, "don't call ComputeRanges for zero-length text");
+
+  const uint32_t maxIndex = aLength - 1;  // max valid index into aString
 
   uint32_t prevCh = 0;
   uint32_t nextCh = aString[0];
@@ -3566,7 +3568,6 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
       nextCh = SURROGATE_TO_UCS4(nextCh, aString[1]);
     }
   }
-  int32_t lastRangeIndex = -1;
 
   // initialize prevFont to the group's primary font, so that this will be
   // used for string-initial control chars, etc rather than risk hitting font
@@ -3574,11 +3575,20 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
   StyleGenericFontFamily generic = StyleGenericFontFamily::None;
   RefPtr<gfxFont> prevFont = GetFirstValidFont(' ', &generic);
 
+  // The absolute first font in the list (which might not be the "first valid
+  // font" if it doesn't support <space>!) is the one we will consider for
+  // fast-path handling.
+  RefPtr<gfxFont> firstFont = GetFontAt(0);
+
   // if we use the initial value of prevFont, we treat this as a match from
   // the font group; fixes bug 978313
   FontMatchType matchType = {FontMatchType::Kind::kFontGroup, generic};
+  TextRange* currRange = nullptr;
 
   for (uint32_t i = 0; i < aLength; i++) {
+    // At the start of this loop, /i/ points to the beginning of a character,
+    // which might be a surrogate pair in the 16-bit case.
+
     const uint32_t origI = i;  // save off in case we increase for surrogate
 
     // set up current ch
@@ -3586,15 +3596,16 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
 
     // Get next char (if any) so that FindFontForChar can look ahead
     // for a possible variation selector.
-
     if constexpr (sizeof(T) == sizeof(char16_t)) {
       // In 16-bit case only, check for surrogate pairs.
       if (ch > 0xffffu) {
-        i++;
+        i++;  // increment /i/ to point to the trailing (low) surrogate of the
+              // current character.
       }
-      if (i < aLength - 1) {
+      // Get the next character, if any, decoding any surrogate pair.
+      if (i < maxIndex) {
         nextCh = aString[i + 1];
-        if (i + 2 < aLength && NS_IS_SURROGATE_PAIR(nextCh, aString[i + 2])) {
+        if (i + 2 <= maxIndex && NS_IS_SURROGATE_PAIR(nextCh, aString[i + 2])) {
           nextCh = SURROGATE_TO_UCS4(nextCh, aString[i + 2]);
         }
       } else {
@@ -3602,7 +3613,7 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
       }
     } else {
       // 8-bit case is trivial.
-      nextCh = i < aLength - 1 ? aString[i + 1] : 0;
+      nextCh = i < maxIndex ? aString[i + 1] : 0;
     }
 
     RefPtr<gfxFont> font;
@@ -3621,7 +3632,7 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
             // that would affect it.
             (sizeof(T) == sizeof(uint8_t) &&
              (mFontVariantEmoji == StyleFontVariantEmoji::Normal ||
-              GetEmojiPresentation(ch) == TextOnly)) ||
+              GetEmojiPresentation(uint8_t(ch)) == TextOnly)) ||
             // For 16-bit text, we need to consider cluster extenders etc.
             (sizeof(T) == sizeof(char16_t) &&
              (!IsClusterExtender(ch) && ch != NARROW_NO_BREAK_SPACE &&
@@ -3649,6 +3660,108 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
       }
     }
 #endif
+
+    // Fast path for a run of non-join-control, non-variation-selector chars
+    // that are all supported by the first font.
+    // On entry here, /i/ indicates the trailing code unit of the current char.
+    if (font && font == firstFont && font->HasCharacter(ch) &&
+        mFontVariantEmoji == StyleFontVariantEmoji::Normal &&
+        (sizeof(T) == sizeof(uint8_t) || !(gfxFontUtils::IsJoinControl(ch) ||
+                                           gfxFontUtils::IsVarSelector(ch))) &&
+        GetEmojiPresentation(ch) == TextOnly &&
+        aOrientation != ShapedTextFlags::TEXT_ORIENT_VERTICAL_MIXED) {
+      uint32_t safeI = i;
+      while (i < maxIndex) {
+        // Look at the next character in the text.
+        uint32_t c = aString[i + 1];
+        uint32_t charLen = 1;
+        if constexpr (sizeof(T) == sizeof(char16_t)) {
+          // Decode surrogate pair.
+          if (i + 2 <= maxIndex && NS_IS_SURROGATE_PAIR(c, aString[i + 2])) {
+            c = SURROGATE_TO_UCS4(c, aString[i + 2]);
+            charLen = 2;
+          }
+          // If we've found a join control or variation selector, back up to
+          // the last known /safeI/ position, because the previous character
+          // needs to use the full FindFontForChar process.
+          if (gfxFontUtils::IsJoinControl(c) ||
+              gfxFontUtils::IsVarSelector(c)) {
+            i = safeI;
+            break;
+          }
+        }
+        // Bail out if the first font doesn't support this codepoint...
+        if (!font->HasCharacter(c)) {
+          break;
+        }
+        // ...or if it might need to consider emoji presentation controls.
+        if constexpr (sizeof(T) == sizeof(char16_t)) {
+          if (GetEmojiPresentation(c) != TextOnly) {
+            break;
+          }
+          // We might still need to reject this character (if followed by VS
+          // or join-control), but it is safe to include everything up to here.
+          safeI = i;
+          i += charLen;
+        } else {
+          // Only the `emoji` value of StyleFontVariantEmoji could affect font
+          // selection for 8-bit text.
+          if (mFontVariantEmoji == StyleFontVariantEmoji::Emoji &&
+              GetEmojiPresentation(uint8_t(c)) != TextOnly) {
+            break;
+          }
+          i++;
+        }
+      }
+
+      // Record that all chars from /origI/ to /i/ (inclusive) use /font/.
+      if (!currRange) {
+        // first char ==> make a new range
+        currRange = aRanges.AppendElement(
+            TextRange(origI, i + 1, font, matchType, aOrientation));
+        prevFont = std::move(font);
+      } else {
+        // If font has changed, make a new range. (Orientation cannot have
+        // changed, since we don't apply the fast-path to VERTICAL_MIXED,
+        // so no need to check for cluster-extender characters.)
+        if (currRange->font != font) {
+          // Close out the previous range and start a new one.
+          currRange->end = origI;
+          currRange = aRanges.AppendElement(
+              TextRange(origI, i + 1, font, matchType, aOrientation));
+          prevFont = std::move(font);
+        } else {
+          currRange->matchType |= matchType;
+        }
+      }
+
+      if (i > origI) {
+        // Update prevCh and nextCh for the end of the fast-path run.
+        prevCh = aString[i];
+        if constexpr (sizeof(T) == sizeof(char16_t)) {
+          if (i > 0 && NS_IS_SURROGATE_PAIR(aString[i - 1], prevCh)) {
+            prevCh = SURROGATE_TO_UCS4(aString[i - 1], prevCh);
+          }
+          if (i < maxIndex) {
+            nextCh = aString[i + 1];
+            if (i + 2 <= maxIndex &&
+                NS_IS_SURROGATE_PAIR(nextCh, aString[i + 2])) {
+              nextCh = SURROGATE_TO_UCS4(nextCh, aString[i + 2]);
+            }
+          } else {
+            nextCh = 0;
+          }
+        } else {
+          nextCh = i < maxIndex ? aString[i + 1] : 0;
+        }
+      } else {
+        // We didn't find a run, just a single character.
+        prevCh = ch;
+      }
+
+      // Return to the beginning of the main loop.
+      continue;
+    }
 
     prevCh = ch;
 
@@ -3693,21 +3806,20 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
       }
     }
 
-    if (lastRangeIndex == -1) {
+    if (!currRange) {
       // first char ==> make a new range
-      aRanges.AppendElement(TextRange(0, 1, font, matchType, orient));
-      lastRangeIndex++;
+      currRange = aRanges.AppendElement(
+          TextRange(origI, i + 1, font, matchType, orient));
       prevFont = std::move(font);
     } else {
       // if font or orientation has changed, make a new range...
       // unless ch is a variation selector (bug 1248248)
-      TextRange& prevRange = aRanges[lastRangeIndex];
-      if (prevRange.font != font ||
-          (prevRange.orientation != orient && !IsClusterExtender(ch))) {
+      if (currRange->font != font ||
+          (currRange->orientation != orient && !IsClusterExtender(ch))) {
         // close out the previous range
-        prevRange.end = origI;
-        aRanges.AppendElement(TextRange(origI, i + 1, font, matchType, orient));
-        lastRangeIndex++;
+        currRange->end = origI;
+        currRange = aRanges.AppendElement(
+            TextRange(origI, i + 1, font, matchType, orient));
 
         // update prevFont for the next match, *unless* we switched
         // fonts on a ZWJ, in which case propagating the changed font
@@ -3716,12 +3828,13 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
           prevFont = std::move(font);
         }
       } else {
-        prevRange.matchType |= matchType;
+        currRange->matchType |= matchType;
       }
     }
   }
 
-  aRanges[lastRangeIndex].end = aLength;
+  MOZ_ASSERT(currRange, "no range created?");
+  currRange->end = aLength;
 
 #ifndef RELEASE_OR_BETA
   LogModule* log = mStyle.systemFont ? gfxPlatform::GetLog(eGfxLog_textrunui)
