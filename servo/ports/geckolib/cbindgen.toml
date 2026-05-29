@@ -219,6 +219,8 @@ include = [
   "BorderImageRepeatKeyword",
   "BorderSpacing",
   "BorderRadius",
+  "CornerShape",
+  "CornerShapeRect",
   "ColorScheme",
   "ColumnCount",
   "CssRuleRef",
