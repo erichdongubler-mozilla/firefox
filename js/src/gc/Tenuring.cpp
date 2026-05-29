@@ -83,6 +83,12 @@ class js::gc::PromotionStats {
 };
 #endif  // JS_GC_ZEAL
 
+/* static */
+TenuringTracer* TenuringTracer::From(JSTracer* trc) {
+  MOZ_ASSERT(trc->isTenuringTracer());
+  return static_cast<TenuringTracer*>(trc);
+}
+
 TenuringTracer::TenuringTracer(JSRuntime* rt, Nursery* nursery,
                                bool tenureEverything)
     : JSTracer(rt, JS::TracerKind::Tenuring,
@@ -349,6 +355,19 @@ class MOZ_RAII TenuringTracer::AutoPromotedAnyToNursery {
   explicit AutoPromotedAnyToNursery(TenuringTracer& trc) : trc_(trc) {
     trc.promotedToNursery = false;
   }
+  explicit operator bool() const { return trc_.promotedToNursery; }
+
+ private:
+  TenuringTracer& trc_;
+};
+
+class MOZ_RAII TenuringTracer::AutoSetSourceHeap {
+ public:
+  AutoSetSourceHeap(TenuringTracer& trc, Cell* cell) : trc_(trc) {
+    trc_.sourceIsInNursery.emplace(IsInsideNursery(cell));
+  }
+  ~AutoSetSourceHeap() { trc_.sourceIsInNursery.reset(); }
+
   explicit operator bool() const { return trc_.promotedToNursery; }
 
  private:
@@ -857,6 +876,7 @@ void js::gc::TenuringTracer::traceObject(JSObject* obj) {
   MOZ_ASSERT(clasp);
 
   if (clasp->hasTrace()) {
+    AutoSetSourceHeap setHeap(*this, obj);
     clasp->doTrace(this, obj);
   }
 
@@ -895,6 +915,7 @@ void js::gc::TenuringTracer::traceSlots(Value* vp, Value* end) {
 
 void js::gc::TenuringTracer::traceString(JSString* str) {
   AutoPromotedAnyToNursery promotedToNursery(*this);
+  AutoSetSourceHeap setHeap(*this, str);
   str->traceChildren(this);
   if (str->isTenured() && promotedToNursery) {
     runtime()->gc.storeBuffer().putWholeCell(str);
@@ -1349,6 +1370,7 @@ GetterSetter* js::gc::TenuringTracer::promoteGetterSetter(GetterSetter* src) {
   bool promotedToNurseryPrev = promotedToNursery;
   {
     AutoPromotedAnyToNursery promotedAnyToNursery(*this);
+    AutoSetSourceHeap setHeap(*this, src);
     dst->traceChildren(this);
     if (dst->isTenured() && promotedAnyToNursery) {
       runtime()->gc.storeBuffer().putWholeCell(dst);

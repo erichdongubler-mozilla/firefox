@@ -19,6 +19,7 @@
 #include "gc/GCInternals.h"
 #include "gc/GCLock.h"
 #include "gc/PublicIterators.h"
+#include "gc/Tenuring.h"
 #include "gc/Zone.h"
 #include "js/HeapAPI.h"
 #include "util/Poison.h"
@@ -956,7 +957,7 @@ bool BufferAllocator::isMarkedBlack(void* alloc) {
 }
 
 /* static */
-void* BufferAllocator::TraceEdge(JSTracer* trc, Cell* owner, void** bufferp,
+void* BufferAllocator::TraceEdge(JSTracer* trc, void** bufferp,
                                  const char* name) {
   // Buffers are conceptually part of the owning cell and are not reported to
   // the tracer.
@@ -978,7 +979,7 @@ void* BufferAllocator::TraceEdge(JSTracer* trc, Cell* owner, void** bufferp,
   MOZ_ASSERT(IsBufferAlloc(buffer));
 
   if (MOZ_UNLIKELY(IsLargeAlloc(buffer))) {
-    TraceLargeAlloc(trc, owner, bufferp, name);
+    TraceLargeAlloc(trc, bufferp, name);
     return buffer;
   }
 
@@ -986,24 +987,23 @@ void* BufferAllocator::TraceEdge(JSTracer* trc, Cell* owner, void** bufferp,
   BufferAllocator& allocator = chunk->zone->bufferAllocator;
 
   if (IsSmallAlloc(buffer)) {
-    allocator.traceSmallAlloc(trc, owner, bufferp, name);
+    allocator.traceSmallAlloc(trc, bufferp, name);
     return buffer;
   }
 
-  allocator.traceMediumAlloc(trc, owner, bufferp, name);
+  allocator.traceMediumAlloc(trc, bufferp, name);
   return buffer;
 }
 
-void BufferAllocator::traceSmallAlloc(JSTracer* trc, Cell* owner, void** allocp,
+void BufferAllocator::traceSmallAlloc(JSTracer* trc, void** allocp,
                                       const char* name) {
   void* alloc = *allocp;
-  MOZ_ASSERT_IF(isNurseryOwned(alloc), owner);
-
   auto* region = SmallBufferRegion::from(alloc);
 
   if (trc->isTenuringTracer()) {
     if (region->isNurseryOwned(alloc)) {
-      markSmallNurseryOwnedBuffer(alloc, !owner->isTenured());
+      bool nurseryOwned = TenuringTracer::From(trc)->sourceIsInNursery.value();
+      markSmallNurseryOwnedBuffer(alloc, nurseryOwned);
     }
     return;
   }
@@ -1016,16 +1016,15 @@ void BufferAllocator::traceSmallAlloc(JSTracer* trc, Cell* owner, void** allocp,
   }
 }
 
-void BufferAllocator::traceMediumAlloc(JSTracer* trc, Cell* owner,
-                                       void** allocp, const char* name) {
+void BufferAllocator::traceMediumAlloc(JSTracer* trc, void** allocp,
+                                       const char* name) {
   void* alloc = *allocp;
-  MOZ_ASSERT_IF(isNurseryOwned(alloc), owner);
-
   BufferChunk* chunk = BufferChunk::from(alloc);
 
   if (trc->isTenuringTracer()) {
     if (chunk->isNurseryOwned(alloc)) {
-      markMediumNurseryOwnedBuffer(alloc, !owner->isTenured());
+      bool nurseryOwned = TenuringTracer::From(trc)->sourceIsInNursery.value();
+      markMediumNurseryOwnedBuffer(alloc, nurseryOwned);
     }
     return;
   }
@@ -1039,21 +1038,21 @@ void BufferAllocator::traceMediumAlloc(JSTracer* trc, Cell* owner,
 }
 
 /* static */
-void BufferAllocator::TraceLargeAlloc(JSTracer* trc, Cell* owner, void** allocp,
+void BufferAllocator::TraceLargeAlloc(JSTracer* trc, void** allocp,
                                       const char* name) {
   void* alloc = *allocp;
   BufferAllocatorRuntime* runtime = &trc->runtime()->gc.bufferRuntime();
   LargeBuffer* buffer = runtime->lookupLargeBuffer(alloc);
   Zone* zone = buffer->zoneFromAnyThread();  // May be parallel marking here.
-  MOZ_ASSERT_IF(owner, owner->zone() == zone);
-  zone->bufferAllocator.traceLargeBuffer(trc, owner, buffer, name);
+  zone->bufferAllocator.traceLargeBuffer(trc, buffer, name);
 }
 
-void BufferAllocator::traceLargeBuffer(JSTracer* trc, Cell* owner,
-                                       LargeBuffer* buffer, const char* name) {
+void BufferAllocator::traceLargeBuffer(JSTracer* trc, LargeBuffer* buffer,
+                                       const char* name) {
   if (trc->isTenuringTracer()) {
     if (buffer->isNurseryOwned) {
-      markLargeNurseryOwnedBuffer(buffer, !owner->isTenured());
+      bool nurseryOwned = TenuringTracer::From(trc)->sourceIsInNursery.value();
+      markLargeNurseryOwnedBuffer(buffer, nurseryOwned);
     }
     return;
   }
