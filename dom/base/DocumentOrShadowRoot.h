@@ -125,7 +125,6 @@ class DocumentOrShadowRoot {
 
   Element* GetPointerLockElement();
   Element* GetFullscreenElement() const;
-  Element* GetPictureInPictureElement() const;
 
   Element* ElementFromPoint(float aX, float aY);
   nsINode* NodeFromPoint(float aX, float aY);
