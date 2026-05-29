@@ -1026,8 +1026,8 @@ void nsIWidget::PauseOrResumeCompositor(bool aPause) {
 
 already_AddRefed<GeckoContentController>
 nsIWidget::CreateRootContentController() {
-  RefPtr<GeckoContentController> controller =
-      new ChromeProcessController(this, mAPZEventState, mAPZC);
+  auto controller =
+      MakeRefPtr<ChromeProcessController>(this, mAPZEventState, mAPZC);
   return controller.forget();
 }
 
