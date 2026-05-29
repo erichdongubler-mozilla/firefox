@@ -45,6 +45,7 @@ import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemSelectionState
+import org.mozilla.fenix.tabstray.ui.tabitems.tablistItemThumbnailBorder
 import org.mozilla.fenix.theme.FirefoxTheme
 
 private val THUMBNAIL_WIDTH = 78.dp
@@ -173,6 +174,7 @@ private fun TabGroupListThumbnail(
 ) {
     Card(
         modifier = modifier,
+        border = tablistItemThumbnailBorder,
         shape = MaterialTheme.shapes.extraSmall,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,

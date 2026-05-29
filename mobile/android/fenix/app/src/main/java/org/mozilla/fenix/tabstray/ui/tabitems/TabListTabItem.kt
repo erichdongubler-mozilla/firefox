@@ -6,7 +6,6 @@ package org.mozilla.fenix.tabstray.ui.tabitems
 
 import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.rememberSplineBasedDecay
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -224,7 +223,7 @@ private fun Thumbnail(
             )
             .testTag(TabsTrayTestTag.TAB_ITEM_THUMBNAIL),
         shape = MaterialTheme.shapes.extraSmall,
-        border = BorderStroke(width = 1.dp, color = MaterialTheme.colorScheme.outlineVariant),
+        border = tablistItemThumbnailBorder,
         contentDescription = stringResource(id = tabstrayR.string.mozac_browser_tabstray_open_tab),
     )
 }
@@ -338,7 +337,7 @@ private class TabListItemParameterProvider : PreviewParameterProvider<TabListIte
                 ),
             ),
         ),
-        )
+    )
 
     override fun getDisplayName(index: Int): String? {
         return data[index].first
