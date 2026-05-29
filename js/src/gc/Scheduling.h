@@ -617,6 +617,7 @@ class GCSchedulingState {
   bool inHighFrequencyGCMode() const { return inHighFrequencyGCMode_; }
 
   void updateHighFrequencyModeOnGCStart(JS::GCOptions options,
+                                        JS::GCReason reason,
                                         const mozilla::TimeStamp& lastGCTime,
                                         const mozilla::TimeStamp& currentTime,
                                         const GCSchedulingTunables& tunables);

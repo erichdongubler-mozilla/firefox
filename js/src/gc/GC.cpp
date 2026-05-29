@@ -5012,7 +5012,7 @@ MOZ_NEVER_INLINE GCRuntime::IncrementalResult GCRuntime::gcCycle(
   TimeStamp now = TimeStamp::Now();
   if (firstSlice) {
     schedulingState.updateHighFrequencyModeOnGCStart(
-        gcOptions(), lastGCStartTime_, now, tunables);
+        gcOptions(), reason, lastGCStartTime_, now, tunables);
     lastGCStartTime_ = now;
   }
   schedulingState.updateHighFrequencyModeOnSliceStart(gcOptions(), reason);
