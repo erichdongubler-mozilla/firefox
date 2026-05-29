@@ -2643,8 +2643,7 @@ nsresult XMLHttpRequestMainThread::CreateChannel() {
 
   if (mAssociatedBrowsingContextID) {
     nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
-    rv = loadInfo->SetAssociatedBrowsingContextID(
-        mAssociatedBrowsingContextID);
+    rv = loadInfo->SetAssociatedBrowsingContextID(mAssociatedBrowsingContextID);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
