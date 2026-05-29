@@ -1210,12 +1210,13 @@ def target_tasks_build_linux64_clang_trunk_perf(
 ):
     """Select tasks required to run perf test on linux64 build with clang trunk"""
 
-    # Only keep tasks generated from platform `linux1804-64-clang-trunk-qr/opt`
+    # Only keep tasks generated from platform `linux2404-64-clang-trunk/opt`
     def filter(task_label):
         # Bug 1961141 - Disable unity webgl for linux1804-64-clang-trunk-qr
-        if "linux1804-64-clang-trunk-qr/opt" in task_label and "unity" in task_label:
+        # (changed to linux2404-64-clang-trunk since then)
+        if "linux2404-64-clang-trunk/opt" in task_label and "unity" in task_label:
             return False
-        if "linux1804-64-clang-trunk-qr/opt" in task_label and "live" not in task_label:
+        if "linux2404-64-clang-trunk/opt" in task_label and "live" not in task_label:
             return True
         return False
 
