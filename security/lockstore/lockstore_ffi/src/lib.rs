@@ -43,6 +43,13 @@ fn error_to_nsresult(err: LockstoreError) -> nsresult {
     }
 }
 
+fn result_to_nsresult(r: Result<(), LockstoreError>) -> nsresult {
+    match r {
+        Ok(()) => NS_OK,
+        Err(e) => error_to_nsresult(e),
+    }
+}
+
 // ============================================================================
 // Keystore FFI Functions
 // ============================================================================
@@ -420,11 +427,11 @@ pub unsafe extern "C" fn lockstore_keystore_close(handle: *mut KeystoreHandle) -
     //
     // SAFETY: caller's contract guarantees `handle` is a live, owned
     // `Box::into_raw` pointer that has not yet been passed to this fn.
-    if let Some(boxed) = unsafe { handle.as_mut() } {
-        boxed.keystore.lock();
-    }
-    // SAFETY: same as above; consumes the handle.
-    let _ = unsafe { Box::from_raw(handle) };
+    // Best-effort lock during close: if the call fails (e.g. mutex
+    // poisoning) we still drop the Box so the SQLite connection
+    // closes; future callers reopen against the on-disk state.
+    let boxed = unsafe { Box::from_raw(handle) };
+    let _ = boxed.keystore.lock();
     NS_OK
 }
 
@@ -529,8 +536,7 @@ pub extern "C" fn lockstore_keystore_lock_kek(
         return NS_ERROR_INVALID_ARG;
     }
     let kek_ref_str = kek_ref.to_utf8();
-    handle.keystore.lock_kek(&kek_ref_str);
-    NS_OK
+    result_to_nsresult(handle.keystore.lock_kek(&kek_ref_str))
 }
 
 #[no_mangle]
@@ -543,8 +549,13 @@ pub extern "C" fn lockstore_keystore_is_kek_unlocked(
         return NS_ERROR_INVALID_ARG;
     }
     let kek_ref_str = kek_ref.to_utf8();
-    *out_unlocked = handle.keystore.is_kek_unlocked(&kek_ref_str);
-    NS_OK
+    match handle.keystore.is_kek_unlocked(&kek_ref_str) {
+        Ok(b) => {
+            *out_unlocked = b;
+            NS_OK
+        }
+        Err(e) => error_to_nsresult(e),
+    }
 }
 
 /// Lock every KEK that holds cached authentication (PrimaryPassword KEK
@@ -552,8 +563,7 @@ pub extern "C" fn lockstore_keystore_is_kek_unlocked(
 /// paths that should invalidate all unlocked state in a single call.
 #[no_mangle]
 pub extern "C" fn lockstore_keystore_lock(handle: &KeystoreHandle) -> nsresult {
-    handle.keystore.lock();
-    NS_OK
+    result_to_nsresult(handle.keystore.lock())
 }
 
 // ============================================================================

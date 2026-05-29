@@ -706,7 +706,10 @@ impl Keystore {
     /// `Arc<Keystore>` goes away — but it gives callers a deterministic
     /// flush point (useful for tests and shutdown paths).
     pub fn close(&self) {
-        self.lock();
+        // Best-effort lock on close: if any cache mutex is poisoned we
+        // still want to fall through to the in-memory zeroise / SQLite
+        // close, since the caller has no way to retry close.
+        let _ = self.lock();
         if self.in_memory {
             let _ = crypto::zeroize(&self.store, DB_NAME, "lockstore::kek::local");
         }
@@ -744,35 +747,44 @@ impl Keystore {
     }
 
     /// Returns true if `kek_ref` is currently unlocked (KEK material available
-    /// without further user interaction).
-    pub fn is_kek_unlocked(&self, kek_ref: &str) -> bool {
-        let level = match KekType::from_kek_ref(kek_ref) {
-            Ok(l) => l,
-            Err(_) => return false,
-        };
-        match level {
-            KekType::LocalKey => true,
+    /// without further user interaction). Returns `InvalidKekRef` if
+    /// `kek_ref` cannot be parsed; mutex poisoning surfaces as
+    /// `LockingFailure`.
+    pub fn is_kek_unlocked(&self, kek_ref: &str) -> Result<bool, LockstoreError> {
+        let kek_type = KekType::from_kek_ref(kek_ref)?;
+        match kek_type {
+            KekType::LocalKey => Ok(true),
             KekType::PrimaryPassword => self.is_prp_unlocked_impl(),
             KekType::Pkcs11Token => self.is_pkcs11_unlocked_impl(kek_ref),
             #[cfg(test)]
-            KekType::Test => true,
+            KekType::Test => Ok(true),
         }
     }
 
     /// Drop any cached authentication for `kek_ref`. No-op for KEK types that
-    /// don't require interaction (LocalKey, Test). For PKCS#11, this
-    /// clears the Lockstore-side auth cache **and** calls `PK11_Logout` on
-    /// the slot so NSS's own authenticated-session state is also cleared.
-    pub fn lock_kek(&self, kek_ref: &str) {
-        let level = match KekType::from_kek_ref(kek_ref) {
-            Ok(l) => l,
-            Err(_) => return,
-        };
-        match level {
-            KekType::LocalKey => {}
+    /// don't require interaction (LocalKey). For PKCS#11, this clears the
+    /// Lockstore-side auth cache **and** calls `PK11_Logout` on the slot so
+    /// NSS's own authenticated-session state is also cleared. Returns
+    /// `InvalidKekRef` if `kek_ref` cannot be parsed.
+    pub fn lock_kek(&self, kek_ref: &str) -> Result<(), LockstoreError> {
+        let kek_type = KekType::from_kek_ref(kek_ref)?;
+        match kek_type {
+            KekType::LocalKey => Ok(()),
             KekType::PrimaryPassword => self.lock_prp_impl(),
             KekType::Pkcs11Token => {
-                self.pkcs11_auth_cache.lock().unwrap().remove(kek_ref);
+                // Recover poisoned mutex so the remove still happens;
+                // surface the poisoning after the security-relevant
+                // clear completes.
+                let poisoned = match self.pkcs11_auth_cache.lock() {
+                    Ok(mut g) => {
+                        g.remove(kek_ref);
+                        false
+                    }
+                    Err(p) => {
+                        p.into_inner().remove(kek_ref);
+                        true
+                    }
+                };
                 // Best-effort NSS logout. If the kek_ref is malformed or the
                 // slot isn't resolvable, we've still cleared our cache which
                 // is what callers observe.
@@ -783,9 +795,16 @@ impl Keystore {
                         }
                     }
                 }
+                if poisoned {
+                    Err(LockstoreError::LockingFailure(
+                        "pkcs11_auth_cache poisoned".into(),
+                    ))
+                } else {
+                    Ok(())
+                }
             }
             #[cfg(test)]
-            KekType::Test => {}
+            KekType::Test => Ok(()),
         }
     }
 
@@ -793,9 +812,29 @@ impl Keystore {
     /// PrimaryPassword KEK in memory and clears every per-kek_ref PKCS#11
     /// unlock entry. Called on `close()` and should also be wired to
     /// `xpcom-shutdown` by the XPCOM consumer.
-    pub fn lock(&self) {
-        self.lock_prp_impl();
-        self.pkcs11_auth_cache.lock().unwrap().clear();
+    ///
+    /// Each cache is cleared independently: a poisoned mutex on one
+    /// cache must not leave plaintext key material resident in another.
+    /// A poisoned mutex is recovered via `into_inner` and cleared anyway;
+    /// the first poisoning encountered is returned as `LockingFailure`,
+    /// subsequent poisonings are dropped.
+    pub fn lock(&self) -> Result<(), LockstoreError> {
+        let mut first_err: Option<LockstoreError> = None;
+
+        if let Err(e) = self.lock_prp_impl() {
+            first_err.get_or_insert(e);
+        }
+        match self.pkcs11_auth_cache.lock() {
+            Ok(mut g) => g.clear(),
+            Err(p) => {
+                p.into_inner().clear();
+                first_err.get_or_insert(LockstoreError::LockingFailure(
+                    "pkcs11_auth_cache poisoned".into(),
+                ));
+            }
+        }
+
+        first_err.map_or(Ok(()), Err)
     }
 
     /// Unlock `kek_ref` so subsequent DEK accesses under it succeed for at
@@ -808,8 +847,8 @@ impl Keystore {
         secret: &[u8],
         timeout: Duration,
     ) -> Result<(), LockstoreError> {
-        let level = KekType::from_kek_ref(kek_ref)?;
-        match level {
+        let kek_type = KekType::from_kek_ref(kek_ref)?;
+        match kek_type {
             KekType::LocalKey => Ok(()),
             KekType::PrimaryPassword => self.unlock_prp_impl(secret, timeout),
             KekType::Pkcs11Token => self.unlock_pkcs11_impl(kek_ref, secret, timeout),
@@ -822,21 +861,36 @@ impl Keystore {
     // PrimaryPassword-specific implementations
     // ------------------------------------------------------------------------
 
-    fn is_prp_unlocked_impl(&self) -> bool {
-        let mut guard = self.prp_cache.lock().unwrap();
-        match guard.as_ref() {
+    fn is_prp_unlocked_impl(&self) -> Result<bool, LockstoreError> {
+        let mut guard = self
+            .prp_cache
+            .lock()
+            .map_err(|_| LockstoreError::LockingFailure("prp_cache poisoned".into()))?;
+        Ok(match guard.as_ref() {
             Some(cached) if cached.expires_at > Instant::now() => true,
             Some(_) => {
                 *guard = None;
                 false
             }
             None => false,
-        }
+        })
     }
 
-    fn lock_prp_impl(&self) {
-        let mut guard = self.prp_cache.lock().unwrap();
+    fn lock_prp_impl(&self) -> Result<(), LockstoreError> {
+        // Recover poisoned mutex so the clear still happens; surface the
+        // poisoning after the security-relevant zeroise.
+        let (mut guard, poisoned) = match self.prp_cache.lock() {
+            Ok(g) => (g, false),
+            Err(p) => (p.into_inner(), true),
+        };
         *guard = None;
+        if poisoned {
+            Err(LockstoreError::LockingFailure(
+                "prp_cache poisoned".into(),
+            ))
+        } else {
+            Ok(())
+        }
     }
 
     fn unlock_prp_impl(&self, password: &[u8], timeout: Duration) -> Result<(), LockstoreError> {
@@ -859,7 +913,10 @@ impl Keystore {
             }
         }
 
-        let mut guard = self.prp_cache.lock().unwrap();
+        let mut guard = self
+            .prp_cache
+            .lock()
+            .map_err(|_| LockstoreError::LockingFailure("prp_cache poisoned".into()))?;
         *guard = Some(CachedKek {
             kek,
             expires_at: Instant::now() + timeout,
@@ -872,16 +929,19 @@ impl Keystore {
     // PKCS#11 token-specific implementations
     // ------------------------------------------------------------------------
 
-    fn is_pkcs11_unlocked_impl(&self, kek_ref: &str) -> bool {
-        let mut guard = self.pkcs11_auth_cache.lock().unwrap();
-        match guard.get(kek_ref) {
+    fn is_pkcs11_unlocked_impl(&self, kek_ref: &str) -> Result<bool, LockstoreError> {
+        let mut guard = self
+            .pkcs11_auth_cache
+            .lock()
+            .map_err(|_| LockstoreError::LockingFailure("pkcs11_auth_cache poisoned".into()))?;
+        Ok(match guard.get(kek_ref) {
             Some(&expires_at) if expires_at > Instant::now() => true,
             Some(_) => {
                 guard.remove(kek_ref);
                 false
             }
             None => false,
-        }
+        })
     }
 
     fn unlock_pkcs11_impl(
@@ -921,7 +981,10 @@ impl Keystore {
                 .map_err(|_| LockstoreError::AuthenticationCancelled)?;
         }
 
-        let mut guard = self.pkcs11_auth_cache.lock().unwrap();
+        let mut guard = self
+            .pkcs11_auth_cache
+            .lock()
+            .map_err(|_| LockstoreError::LockingFailure("pkcs11_auth_cache poisoned".into()))?;
         guard.insert(kek_ref.to_string(), Instant::now() + timeout);
         Ok(())
     }
@@ -1008,7 +1071,7 @@ impl Keystore {
             verifier,
             cipher_suite,
         })?;
-        self.lock_prp_impl();
+        self.lock_prp_impl()?;
         Ok(())
     }
 
@@ -1093,7 +1156,10 @@ impl Keystore {
     }
 
     fn get_kek_prp(&self, cipher_suite: CipherSuite) -> Result<SymKey, LockstoreError> {
-        let mut guard = self.prp_cache.lock().unwrap();
+        let mut guard = self
+            .prp_cache
+            .lock()
+            .map_err(|_| LockstoreError::LockingFailure("prp_cache poisoned".into()))?;
         match guard.as_ref() {
             Some(cached) if cached.expires_at > Instant::now() => {
                 Aead::import_key(cipher_suite.to_nss_algorithm(), &cached.kek)
@@ -1137,7 +1203,10 @@ impl Keystore {
         // the caller re-prompts instead of silently riding NSS's
         // already-authenticated-slot state.
         {
-            let mut guard = self.pkcs11_auth_cache.lock().unwrap();
+            let mut guard = self
+                .pkcs11_auth_cache
+                .lock()
+                .map_err(|_| LockstoreError::LockingFailure("pkcs11_auth_cache poisoned".into()))?;
             match guard.get(kek_ref) {
                 Some(&expires_at) if expires_at > Instant::now() => {}
                 Some(_) => {
@@ -1206,7 +1275,10 @@ impl Drop for Keystore {
     /// Manual `close()` callers see the same behaviour; this is the
     /// safety net for paths that just let the Arc fall out of scope.
     fn drop(&mut self) {
-        self.lock();
+        // `Drop` can't surface errors. A poisoned cache mutex still lets
+        // us close the SQLite handle and zeroise any in-memory KEK
+        // material, which is the security-relevant work.
+        let _ = self.lock();
         if self.in_memory {
             let _ = crypto::zeroize(&self.store, DB_NAME, "lockstore::kek::local");
         }
