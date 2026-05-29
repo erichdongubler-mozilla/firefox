@@ -57,6 +57,8 @@ clang_checkers:
     reliability: high
   - name: performance-inefficient-vector-operation
     reliability: high
+  - name: performance-trivially-destructible
+    reliability: high
 
 # clang_checkers:
 #   - name: -*

@@ -28,7 +28,7 @@ class nsGeoPositionCoords final : public nsIDOMGeoPositionCoords {
                       double aVError, double aHeading, double aSpeed);
 
  private:
-  ~nsGeoPositionCoords();
+  ~nsGeoPositionCoords() = default;
   const double mLat, mLong, mAlt, mHError, mVError, mHeading, mSpeed;
 };
 
