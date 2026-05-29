@@ -11,8 +11,6 @@ import "chrome://browser/content/aiwindow/components/ai-website-chip.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/input-cta.mjs";
 // eslint-disable-next-line import/no-unassigned-import
-import "chrome://browser/content/aiwindow/components/input-model-select.mjs";
-// eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/memories-icon-button.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/context-icon-button.mjs";
@@ -207,7 +205,6 @@ ${
       <html:div class="smartbar-button-container">
         <html:context-icon-button></html:context-icon-button>
         <html:memories-icon-button></html:memories-icon-button>
-        <html:input-model-select></html:input-model-select>
         <html:input-cta action=""></html:input-cta>
       </html:div>
     `;

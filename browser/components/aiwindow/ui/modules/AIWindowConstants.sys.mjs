@@ -43,21 +43,18 @@ export const PREF_BRANCH = "browser.smartwindow.chatHistory";
  * Used when Remote Settings lookup fails
  */
 export const FALLBACK_MODELS = {
-  0: { model: "custom-model", ownerName: "", labelId: "custom" },
+  0: { model: "custom-model", ownerName: "" },
   1: {
     model: "gemini-3.1-flash-lite",
     ownerName: "Google",
-    labelId: "fast",
   },
   2: {
     model: "qwen3-235b-a22b-instruct-2507-maas",
     ownerName: "Alibaba",
-    labelId: "allpurpose",
   },
   3: {
     model: "gpt-oss-120b",
     ownerName: "OpenAI",
-    labelId: "personal",
   },
 };
 
@@ -95,7 +92,7 @@ let _modelsDataCache = null;
 /**
  * Gets metadata for all models, with fallback. Result is cached after first call.
  *
- * @returns {Promise<{[key: string]: {model: string, ownerName: string, labelId: string}}>}
+ * @returns {Promise<{[key: string]: {model: string, ownerName: string}}>}
  */
 export async function getAllModelsData() {
   if (_modelsDataCache) {
@@ -108,8 +105,7 @@ export async function getAllModelsData() {
     ["1", "2", "3"].map(async id => [id, await getModelForChoice(id)])
   );
   for (const [id, data] of entries) {
-    // Preserve labelId from fallback when merging with RS data
-    modelData[id] = { ...data, labelId: FALLBACK_MODELS[id]?.labelId };
+    modelData[id] = data;
   }
   _modelsDataCache = modelData;
   return _modelsDataCache;
@@ -126,10 +122,6 @@ export function getCachedModelsData() {
 
 export function getCurrentModelName() {
   return getCachedModelsData()[lazy.modelChoice]?.model ?? "";
-}
-
-export function getCurrentModelChoiceId() {
-  return lazy.modelChoice;
 }
 
 /**

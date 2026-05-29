@@ -69,8 +69,8 @@ add_task(async function test_createOpenAIEngine_with_chat_feature() {
     Assert.equal(opts.baseURL, ENDPOINT, "baseURL should come from pref");
     Assert.equal(
       opts.engineId,
-      `${DEFAULT_ENGINE_ID}-${MODEL_FEATURES.CHAT}-${opts.modelId}`,
-      "engineId should be derived from the feature name and model"
+      `${DEFAULT_ENGINE_ID}-${MODEL_FEATURES.CHAT}`,
+      "engineId should be derived from the feature name"
     );
     Assert.ok(opts.modelId, "modelId should be set");
     Assert.equal(opts.modelRevision, "main", "modelRevision should be main");

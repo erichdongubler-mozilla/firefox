@@ -406,15 +406,13 @@ export class openAIEngine {
    * @param {Array} allRecords - All Remote Settings records
    * @param {Array} featureConfigs - Remote Settings configs for this feature
    * @param {number} majorVersion - Required major version
-   * @param {string} [modelChoiceIdOverride] - Optional model choice ID to override the global preference
    * @private
    */
   _applyRemoteSettingsConfig(
     feature,
     allRecords,
     featureConfigs,
-    majorVersion,
-    modelChoiceIdOverride = null
+    majorVersion
   ) {
     if (!featureConfigs.length) {
       const msg = `No Remote Settings records found for feature: ${feature}`;
@@ -426,9 +424,7 @@ export class openAIEngine {
 
     const userModel = Services.prefs.getStringPref(MODEL_PREF, "");
     const hasCustomModel = Services.prefs.prefHasUserValue(MODEL_PREF);
-    const modelChoiceId =
-      modelChoiceIdOverride ??
-      Services.prefs.getStringPref(MODEL_CHOICE_PREF, "");
+    const modelChoiceId = Services.prefs.getStringPref(MODEL_CHOICE_PREF, "");
 
     const mainConfig = selectMainConfig(featureConfigs, {
       majorVersion,
@@ -518,13 +514,12 @@ export class openAIEngine {
    *
    * @param {string} feature - The feature identifier from MODEL_FEATURES
    * @param {number} majorVersionOverride - Used to override hardcoded major version
-   * @param {string} [modelChoiceId] - Optional model choice ID to override the global preference
    * @returns {Promise<void>}
    *   Sets this.feature to the feature name
    *   Sets this.model to the selected model ID
    *   Sets this.#configs to contain feature's and additional_components' configs
    */
-  async loadConfig(feature, majorVersionOverride = null, modelChoiceId = null) {
+  async loadConfig(feature, majorVersionOverride = null) {
     const client = openAIEngine.getRemoteClient();
     const allRecords = await client.get();
 
@@ -539,8 +534,7 @@ export class openAIEngine {
       feature,
       allRecords,
       featureConfigs,
-      majorVersion,
-      modelChoiceId
+      majorVersion
     );
   }
 
@@ -614,18 +608,16 @@ export class openAIEngine {
    *   The feature name to use to retrieve remote settings for prompts.
    * @param {string | null} [flowId]
    *   Flow ID for correlating frontend and backend telemetry.
-   * @param {string} [modelChoiceId]
-   *   Model choice ID to override the global preference.
    * @returns {Promise<object>}
    *   Promise that will resolve to the configured engine instance.
    */
-  static async build(feature, flowId = null, modelChoiceId = null) {
+  static async build(feature, flowId = null) {
     const engine = new openAIEngine();
 
-    await engine.loadConfig(feature, null, modelChoiceId);
+    await engine.loadConfig(feature);
 
     const config = engine.getConfig(feature);
-    const engineId = `${DEFAULT_ENGINE_ID}-${feature}-${engine.model}`;
+    const engineId = `${DEFAULT_ENGINE_ID}-${feature}`;
     engine.#engineId = engineId;
     engine.#serviceType =
       config?.service_type ?? getDefaultServiceType(feature);
