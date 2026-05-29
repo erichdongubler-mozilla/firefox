@@ -206,6 +206,7 @@ export class AIWindow extends MozLitElement {
   #windowModeObserver = null;
   #swapDocShellsChromeWindow = null;
   #hasMemories = false;
+  #selectedModelChoiceId = null;
 
   get #kitMention() {
     return this.shadowRoot?.querySelector("kit-mention");
@@ -385,6 +386,7 @@ export class AIWindow extends MozLitElement {
     this.showDisclaimer = this.mode !== MODE.FULLPAGE;
     this.isGenerating = false;
     this.selectedModelId = lazy.getCurrentModelName();
+    this.#selectedModelChoiceId = lazy.getCurrentModelChoiceId();
 
     // Apply chat-active immediately if restoring a conversation
     if (this.#hostBrowser?.getAttribute("data-conversation-id")) {
@@ -801,8 +803,26 @@ export class AIWindow extends MozLitElement {
     }
   }
 
-  #handleModelChange = event => {
-    this.selectedModelId = event.detail.modelId;
+  #handleModelChange = async event => {
+    const { modelId, modelChoiceId } = event.detail;
+    this.selectedModelId = modelId;
+    this.#selectedModelChoiceId = modelChoiceId;
+
+    // Update the system prompt for the new model
+    if (this.#conversation?.messages.length) {
+      const engineInstance = await lazy.openAIEngine.build(
+        lazy.MODEL_FEATURES.CHAT,
+        this.conversationId,
+        modelChoiceId
+      );
+
+      // Model changed while building engine
+      if (this.#selectedModelChoiceId !== modelChoiceId) {
+        return;
+      }
+
+      await this.#conversation.updateSystemPromptForModel(engineInstance);
+    }
   };
 
   #handleOpenModelSettings = () => {
@@ -1689,7 +1709,8 @@ export class AIWindow extends MozLitElement {
     try {
       const engineInstance = await lazy.openAIEngine.build(
         lazy.MODEL_FEATURES.CHAT,
-        this.conversationId
+        this.conversationId,
+        this.#selectedModelChoiceId
       );
 
       if (inputText) {
