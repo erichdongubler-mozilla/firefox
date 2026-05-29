@@ -457,7 +457,7 @@ ToastNotification::ShowAlert(nsIAlertNotification* aAlert,
   }
 
   NS_ENSURE_TRUE(mAumid.isSome(), NS_ERROR_UNEXPECTED);
-  RefPtr<ToastNotificationHandler> handler = new ToastNotificationHandler(
+  auto handler = MakeRefPtr<ToastNotificationHandler>(
       this, mAumid.ref(), aAlert, aAlertListener, name, cookie, title, text,
       hostPort, textClickable, requireInteraction, actions, isSystemPrincipal,
       opaqueRelaunchData, inPrivateBrowsing, isSilent, imagePlacement,
@@ -526,7 +526,7 @@ ToastNotification::GetXmlStringForWindowsAlert(nsIAlertNotification* aAlert,
   bool isSystemPrincipal = principal && principal->IsSystemPrincipal();
 
   NS_ENSURE_TRUE(mAumid.isSome(), NS_ERROR_UNEXPECTED);
-  RefPtr<ToastNotificationHandler> handler = new ToastNotificationHandler(
+  auto handler = MakeRefPtr<ToastNotificationHandler>(
       this, mAumid.ref(), aAlert, nullptr /* aAlertListener */, name, cookie,
       title, text, hostPort, textClickable, requireInteraction, actions,
       isSystemPrincipal, opaqueRelaunchData, inPrivateBrowsing, isSilent);
@@ -576,8 +576,7 @@ RefPtr<ToastHandledPromise> ToastNotification::VerifyTagPresentOrFallback(
           ("External windowsTag '%s' is not handled",
            NS_ConvertUTF16toUTF8(aWindowsTag).get()));
 
-  RefPtr<ToastHandledPromise::Private> fallbackPromise =
-      new ToastHandledPromise::Private(__func__);
+  auto fallbackPromise = MakeRefPtr<ToastHandledPromise::Private>(__func__);
 
   // TODO: Bug 1806005 - At time of writing this function is called in a call
   // stack containing `WndProc` callback on an STA thread. As a result attempts

@@ -356,8 +356,7 @@ WinTaskbar::GetTaskbarWindowPreview(nsIDocShell* shell,
 
   nsCOMPtr<nsITaskbarWindowPreview> preview = window->GetTaskbarPreview();
   if (!preview) {
-    RefPtr<DefaultController> defaultController =
-        new DefaultController(toplevelHWND);
+    auto defaultController = MakeRefPtr<DefaultController>(toplevelHWND);
 
     TaskbarWindowPreview* previewRaw = new TaskbarWindowPreview(
         mTaskbar, defaultController, toplevelHWND, shell);

@@ -171,7 +171,7 @@ nsresult nsClipboard::CreateNativeDataObject(
   }
 
   // Create our native DataObject that implements the OLE IDataObject interface
-  RefPtr<nsDataObj> dataObj = new nsDataObj(aUri);
+  auto dataObj = mozilla::MakeRefPtr<nsDataObj>(aUri);
 
   // Now set it up with all the right data flavors & enums
   nsresult res =

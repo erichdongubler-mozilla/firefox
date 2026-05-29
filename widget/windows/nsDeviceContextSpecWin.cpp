@@ -572,8 +572,7 @@ nsPrinterListWin::InitPrintSettingsFromPrinter(
     return NS_OK;
   }
 
-  RefPtr<nsDeviceContextSpecWin> devSpecWin = new nsDeviceContextSpecWin();
-  if (!devSpecWin) return NS_ERROR_OUT_OF_MEMORY;
+  auto devSpecWin = MakeRefPtr<nsDeviceContextSpecWin>();
 
   // If the settings have already been initialized from prefs then pass these to
   // GetDataFromPrinter, so that they are saved to the printer.

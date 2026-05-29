@@ -134,8 +134,8 @@ void LoadImage(const char* aData, imgIContainer** aImage) {
                      nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
                      nsContentPolicyType::TYPE_IMAGE);
 
-  RefPtr<ImageLoadListener> listener = new ImageLoadListener();
-  RefPtr<ProgressTracker> tracker = new ProgressTracker();
+  auto listener = MakeRefPtr<ImageLoadListener>();
+  auto tracker = MakeRefPtr<ProgressTracker>();
   tracker->AddObserver(listener);
   RefPtr<Image> image = ImageFactory::CreateImage(
       channel, tracker, nsCString(IMAGE_SVG_XML), uri, false, 0);

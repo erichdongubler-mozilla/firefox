@@ -336,7 +336,7 @@ TaskbarPreviewCallback::Done(nsISupports* aCanvas, bool aDrawBorder) {
   if (!source) {
     return NS_ERROR_FAILURE;
   }
-  RefPtr<gfxWindowsSurface> target = new gfxWindowsSurface(
+  auto target = MakeRefPtr<gfxWindowsSurface>(
       source->GetSize(), gfx::SurfaceFormat::A8R8G8B8_UINT32);
   if (target->CairoStatus() != CAIRO_STATUS_SUCCESS) {
     return NS_ERROR_FAILURE;

@@ -201,8 +201,7 @@ void SerializedTaskDispatcher::PostDelayedTaskToCalculator(
   CALC_LOG(LogLevel::Debug,
            "SerializedTaskDispatcher::PostDelayedTaskToCalculator()");
 
-  RefPtr<DelayedTaskRunnable> runnable =
-      new DelayedTaskRunnable(this, std::move(aTask));
+  auto runnable = MakeRefPtr<DelayedTaskRunnable>(this, std::move(aTask));
   MessageLoop* targetLoop =
       WinWindowOcclusionTracker::OcclusionCalculatorLoop();
   targetLoop->PostDelayedTask(runnable.forget(), aDelayMs);
@@ -1103,7 +1102,7 @@ void WinWindowOcclusionTracker::WindowOcclusionCalculator::
 
   CALC_LOG(LogLevel::Debug, "ScheduleOcclusionCalculationIfNeeded()");
 
-  RefPtr<CancelableRunnable> task = new OcclusionUpdateRunnable(this);
+  auto task = MakeRefPtr<OcclusionUpdateRunnable>(this);
   mOcclusionUpdateRunnable = task;
   mSerializedTaskDispatcher->PostDelayedTaskToCalculator(
       task.forget(), kOcclusionUpdateRunnableDelayMs);
