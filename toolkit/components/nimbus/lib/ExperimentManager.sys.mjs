@@ -905,7 +905,7 @@ export class ExperimentManager {
     // unenroll from it first, otherwise _enroll() will overwrite it without
     // going through the appropriate flow (e.g., updating the enrollment store
     // and triggering update callbacks).
-    const existingEnrollment = await this.store.get(optInRecipe.slug);
+    const existingEnrollment = this.store.get(optInRecipe.slug);
     if (existingEnrollment?.active) {
       // We need only unenroll -- when we call _enroll() below, we will
       // overwrite the existing enrollment.
