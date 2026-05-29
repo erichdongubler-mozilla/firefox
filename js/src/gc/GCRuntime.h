@@ -53,6 +53,7 @@ class AutoCallGCCallbacks;
 class AutoUpdateBarriersForSweeping;
 class AutoGCSession;
 class AutoHeapSession;
+class AutoLockBufferAllocator;
 class AutoTraceSession;
 class BufferAllocator;
 class MarkingValidator;
@@ -1428,7 +1429,7 @@ class GCRuntime {
    */
   Mutex bufferAllocatorLock MOZ_UNANNOTATED;
   friend class BufferAllocator;
-  friend class AutoLock;
+  friend class AutoLockBufferAllocator;
 
   friend class BackgroundSweepTask;
   friend class BackgroundFreeTask;

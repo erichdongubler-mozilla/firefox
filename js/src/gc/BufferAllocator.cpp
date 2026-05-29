@@ -33,10 +33,10 @@ using mozilla::DebugOnly;
 
 namespace js::gc {
 
-BufferAllocator::AutoLock::AutoLock(GCRuntime* gc)
+AutoLockBufferAllocator::AutoLockBufferAllocator(GCRuntime* gc)
     : LockGuard(gc->bufferAllocatorLock) {}
 
-BufferAllocator::AutoLock::AutoLock(BufferAllocator* allocator)
+AutoLockBufferAllocator::AutoLockBufferAllocator(BufferAllocator* allocator)
     : LockGuard(allocator->lock()) {}
 
 static void CheckHighBitsOfPointer(void* ptr) {
