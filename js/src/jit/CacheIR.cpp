@@ -5687,35 +5687,24 @@ AttachDecision InstanceOfIRGenerator::tryAttachFunction() {
 
   MOZ_ASSERT(IsCacheableProtoChain(fun, hasInstanceHolder));
 
-  // Look up the function's .prototype property.
-  Maybe<PropertyInfo> prototypeProp = fun->lookupPure(cx_->names().prototype);
-  if (prototypeProp.isNothing()) {
-    if (!fun->needsPrototypeProperty()) {
-      return AttachDecision::NoAction;
-    }
-    // The function does not have a (lazily resolved) .prototype property yet.
-    // If the LHS is a primitive, the fallback code in OrdinaryHasInstance will
-    // return before resolving this property. Our CacheIR implementation expects
-    // a .prototype property so we resolve it now.
-    bool hasProp;
-    if (!HasProperty(cx_, fun, cx_->names().prototype, &hasProp)) {
-      cx_->clearPendingException();
-      return AttachDecision::NoAction;
-    }
-    MOZ_ASSERT(hasProp);
+  // For an object LHS we need a resolved .prototype data property holding an
+  // object. The fallback already resolved it before attaching this stub.
+  //
+  // If the LHS is a primitive, OrdinaryHasInstance returns false without
+  // reading .prototype.
+  bool lhsIsObject = lhsVal_.isObject();
+  Maybe<PropertyInfo> prototypeProp;
+  if (lhsIsObject) {
     prototypeProp = fun->lookupPure(cx_->names().prototype);
-    MOZ_ASSERT(prototypeProp);
-  }
-  if (!prototypeProp->isDataProperty()) {
-    return AttachDecision::NoAction;
-  }
-
-  // Ensure the .prototype value is an object.
-  uint32_t prototypeSlot = prototypeProp->slot();
-  MOZ_ASSERT(prototypeSlot >= fun->numFixedSlots(),
-             "LoadDynamicSlot expects a dynamic slot");
-  if (!fun->getSlot(prototypeSlot).isObject()) {
-    return AttachDecision::NoAction;
+    if (prototypeProp.isNothing()) {
+      return AttachDecision::NoAction;
+    }
+    if (!prototypeProp->isDataProperty()) {
+      return AttachDecision::NoAction;
+    }
+    if (!fun->getSlot(prototypeProp->slot()).isObject()) {
+      return AttachDecision::NoAction;
+    }
   }
 
   // Abstract Objects
@@ -5734,15 +5723,25 @@ AttachDecision InstanceOfIRGenerator::tryAttachFunction() {
     TestMatchingHolder(writer, hasInstanceHolder, holderId);
   }
 
-  // Load the .prototype value and ensure it's an object.
-  ValOperandId protoValId =
-      writer.loadDynamicSlot(rhsId, prototypeSlot - fun->numFixedSlots());
-  ObjOperandId protoId = writer.guardToObject(protoValId);
+  if (lhsIsObject) {
+    // Load the .prototype value and ensure it's an object.
+    uint32_t prototypeSlot = prototypeProp->slot();
+    MOZ_RELEASE_ASSERT(prototypeSlot >= fun->numFixedSlots(),
+                       "LoadDynamicSlot expects a dynamic slot");
+    ValOperandId protoValId =
+        writer.loadDynamicSlot(rhsId, prototypeSlot - fun->numFixedSlots());
+    ObjOperandId protoId = writer.guardToObject(protoValId);
 
-  // Needn't guard LHS is object, because the actual stub can handle that
-  // and correctly return false.
-  writer.loadInstanceOfObjectResult(lhs, protoId);
-  trackAttached("InstanceOf");
+    // Needn't guard LHS is object, because the actual stub can handle that
+    // and correctly return false.
+    writer.loadInstanceOfObjectResult(lhs, protoId);
+    trackAttached("InstanceOf");
+  } else {
+    writer.guardIsNotObject(lhs);
+    writer.loadBooleanResult(false);
+    trackAttached("InstanceOfPrimitive");
+  }
+
   return AttachDecision::Attach;
 }
 

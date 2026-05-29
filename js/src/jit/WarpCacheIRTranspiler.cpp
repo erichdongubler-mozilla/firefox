@@ -1379,6 +1379,15 @@ bool WarpCacheIRTranspiler::emitGuardNonDoubleType(ValOperandId inputId,
   MOZ_CRASH("unexpected type");
 }
 
+bool WarpCacheIRTranspiler::emitGuardIsNotObject(ValOperandId inputId) {
+  MDefinition* input = getOperand(inputId);
+
+  auto* ins = MGuardIsNotObject::New(alloc(), input);
+  add(ins);
+  setOperand(inputId, ins);
+  return true;
+}
+
 bool WarpCacheIRTranspiler::emitGuardTo(ValOperandId inputId, MIRType type) {
   MDefinition* def = getOperand(inputId);
   if (def->type() == type) {

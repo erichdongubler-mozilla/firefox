@@ -1801,6 +1801,25 @@ bool CacheIRCompiler::emitGuardIsUndefined(ValOperandId inputId) {
   return true;
 }
 
+bool CacheIRCompiler::emitGuardIsNotObject(ValOperandId inputId) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+
+  JSValueType knownType = allocator.knownType(inputId);
+  if (knownType != JSVAL_TYPE_UNKNOWN && knownType != JSVAL_TYPE_OBJECT) {
+    return true;
+  }
+
+  ValueOperand input = allocator.useValueRegister(masm, inputId);
+
+  FailurePath* failure;
+  if (!addFailurePath(&failure)) {
+    return false;
+  }
+
+  masm.branchTestObject(Assembler::Equal, input, failure->label());
+  return true;
+}
+
 bool CacheIRCompiler::emitGuardIsNotUninitializedLexical(ValOperandId valId) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
 

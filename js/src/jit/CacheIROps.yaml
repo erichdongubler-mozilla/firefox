@@ -111,6 +111,13 @@
   args:
     input: ValId
 
+- name: GuardIsNotObject
+  shared: true
+  transpile: true
+  cost_estimate: 1
+  args:
+    input: ValId
+
 - name: GuardIsNotUninitializedLexical
   shared: true
   transpile: true
