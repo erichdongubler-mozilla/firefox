@@ -2598,6 +2598,11 @@ nsresult ScriptLoader::ProcessOffThreadRequest(ScriptLoadRequest* aRequest) {
           "request should not run synchronously but added to some queue.");
       return ProcessRequest(aRequest);
     }
+  } else if (aRequest->GetScriptLoadContext()->mInAsyncList) {
+    // This async request may already be in mLoadingAsyncRequests while its
+    // off-thread compilation finishes. Now that it is ready, move it to
+    // mLoadedAsyncRequests so ProcessPendingRequests can execute it.
+    MaybeMoveToLoadedList(aRequest);
   }
 
   // Process other scripts in the proper order.
