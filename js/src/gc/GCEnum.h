@@ -166,6 +166,10 @@ enum class MemoryUse : uint8_t {
 #undef DEFINE_MEMORY_USE
 };
 
+// We sometimes use pointers to hold special values. The GC treats these as
+// nullptr.
+static constexpr uintptr_t MaxTaggedPointer = 0x5;
+
 } /* namespace js */
 
 #endif /* gc_GCEnum_h */

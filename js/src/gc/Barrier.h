@@ -753,9 +753,6 @@ DEFINE_BARRIERED_PTR(HeapPtr, gc::BarrierOption_PreWriteBarrier |
 template <class T>
 class GCStructPtr : public BarrieredBase<T> {
  public:
-  // This is sometimes used to hold tagged pointers.
-  static constexpr uintptr_t MaxTaggedPointer = 0x5;
-
   GCStructPtr() : BarrieredBase<T>(JS::SafelyInitialized<T>::create()) {}
 
   explicit GCStructPtr(const T& v) : BarrieredBase<T>(v) {}
@@ -789,6 +786,59 @@ class GCStructPtr : public BarrieredBase<T> {
   void pre(JS::Zone* zone) {
     if (isTraceable()) {
       PreWriteBarrier(zone, get());
+    }
+  }
+};
+
+// Like GCStructPtr but for memory allocated with the buffer allocator.
+template <class T>
+class GCBuffer : public BarrieredBase<T> {
+  static_assert(std::is_pointer_v<T>);
+
+  using Base = BarrieredBase<T>;
+
+ public:
+  GCBuffer() : Base(nullptr) {}
+
+  explicit GCBuffer(T ptr) : Base(ptr) {}
+
+  GCBuffer(const GCBuffer<T>& other) : Base(other) {}
+
+  ~GCBuffer() {
+    // No barriers are necessary as this only happens when the GC is sweeping.
+    MOZ_ASSERT_IF(isTraceable(),
+                  CurrentThreadIsGCSweeping() || CurrentThreadIsGCFinalizing());
+  }
+
+  void init(T ptr) {
+    MOZ_ASSERT(this->get() == JS::SafelyInitialized<T>());
+    AssertTargetIsNotGray(ptr);
+    this->unbarrieredSet(ptr);
+  }
+
+  void set(JS::Zone* zone, T ptr) {
+    pre(zone);
+    this->unbarrieredSet(ptr);
+  }
+
+  using Base::unbarrieredSet;
+
+  T get() const { return this->unbarrieredGet(); }
+  operator T() const { return get(); }
+  T operator->() const { return get(); }
+
+ protected:
+  bool isTraceable() const { return uintptr_t(get()) > MaxTaggedPointer; }
+
+  void pre(JS::Zone* zone) {
+    if (isTraceable()) {
+      auto* shadowZone = JS::shadow::Zone::from(zone);
+      if (!shadowZone->needsMarkingBarrier()) {
+        return;
+      }
+
+      JSTracer* trc = shadowZone->barrierTracer();
+      TraceEdgeAndBuffer(trc, this, "GCBuffer::pre");
     }
   }
 };

@@ -141,13 +141,7 @@ js::Scope* js::BaseScript::releaseEnclosingScope() {
 void js::BaseScript::swapData(MutableHandleBuffer<PrivateScriptData> other) {
   PrivateScriptData* old = data_;
 
-  // Write barrier for the buffer allocation.
-  if (data_ && zone()->needsMarkingBarrier()) {
-    JSTracer* trc = zone()->barrierTracer();
-    TraceBufferEdge(trc, &data_, "BaseScript::swapData barrier");
-  }
-
-  // GCStructPtr performs write barrier for the data.
+  // GCBuffer performs write barrier for the buffer and the data.
   data_.set(zone(), other);
 
   other.set(old);
@@ -156,7 +150,7 @@ void js::BaseScript::swapData(MutableHandleBuffer<PrivateScriptData> other) {
 void js::BaseScript::freeData() {
   PrivateScriptData* old = data_;
 
-  // GCStructPtr performs write barrier for the data.
+  // GCBuffer performs write barrier for the buffer and the data.
   data_.set(zone(), nullptr);
 
   gc::FreeBuffer(zone(), old);

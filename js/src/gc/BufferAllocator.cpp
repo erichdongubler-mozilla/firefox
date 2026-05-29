@@ -967,7 +967,9 @@ void* BufferAllocator::TraceEdge(JSTracer* trc, void** bufferp,
   MOZ_ASSERT(bufferp);
 
   void* buffer = *bufferp;
-  MOZ_ASSERT(buffer);
+  if (!buffer) {
+    return nullptr;
+  }
 
   if (!IsLargeAlloc(buffer) &&
       js::gc::detail::GetGCAddressChunkBase(buffer)->isNurseryChunk()) {

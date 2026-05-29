@@ -37,12 +37,7 @@
 inline void js::BaseScript::traceChildren(JSTracer* trc) {
   TraceEdge(trc, &function_, "function");
   TraceEdge(trc, &sourceObject_, "sourceObject");
-
-  if (data_) {
-    TraceBufferEdge(trc, &data_, "PrivateScriptData");
-    data_->trace(trc);
-  }
-
+  TraceEdgeAndBuffer(trc, &data_, "PrivateScriptData");
   warmUpData_.trace(trc);
 }
 
