@@ -679,6 +679,71 @@ impl Keystore {
         Ok(())
     }
 
+    /// Destroy the KEK referenced by `kek_ref` and any cached
+    /// plaintext bytes derived from it. Returns `InvalidConfiguration`
+    /// if any DEK is still wrapped under `kek_ref`; callers must
+    /// remove or rotate those wrappings (via `remove_kek` /
+    /// `switch_kek`) before deletion. Returns `NotFound` if the
+    /// kek_ref is well-formed but no record exists.
+    ///
+    /// Deletion is always explicit: `remove_kek` and `delete_dek`
+    /// drop wrappings only, never the per-tier KEK record. Callers
+    /// that want the record gone must call `delete_kek` themselves.
+    pub fn delete_kek(&self, kek_ref: &str) -> Result<(), LockstoreError> {
+        let kek_type = KekType::from_kek_ref(kek_ref)?;
+        let conn = self.acquire_connection()?;
+
+        // Existence check before the in-use scan: a NotFound result
+        // informs the caller of the wrong kek_ref rather than a
+        // dangling reference.
+        let exists = match kek_type {
+            KekType::LocalKey => self.load_local_record(kek_ref)?.is_some(),
+            KekType::Password => self.load_password_record(kek_ref)?.is_some(),
+            KekType::Pkcs11Token => self.load_pkcs11_record(kek_ref)?.is_some(),
+            #[cfg(test)]
+            KekType::Test => true,
+        };
+        if !exists {
+            return Err(LockstoreError::NotFound(format!(
+                "No KEK record for kek_ref: {}",
+                kek_ref
+            )));
+        }
+
+        if let Some(coll) = self.kek_ref_referenced_by_collection(&conn, kek_ref)? {
+            return Err(LockstoreError::InvalidConfiguration(format!(
+                "kek_ref '{}' is still in use to wrap DEK '{}'; remove the wrapping before deleting the KEK",
+                kek_ref, coll
+            )));
+        }
+
+        match kek_type {
+            KekType::LocalKey => self.delete_local_record(kek_ref),
+            KekType::Password => self.delete_password_record(kek_ref),
+            KekType::Pkcs11Token => self.delete_pkcs11_record(kek_ref),
+            #[cfg(test)]
+            KekType::Test => Ok(()),
+        }
+    }
+
+    /// If any collection wraps a DEK under `kek_ref`, return the name
+    /// of the first such collection (used for error messages on
+    /// `delete_kek`). Returns `None` if no collection references
+    /// `kek_ref`.
+    fn kek_ref_referenced_by_collection(
+        &self,
+        conn: &ConnectionHandle<'_>,
+        kek_ref: &str,
+    ) -> Result<Option<String>, LockstoreError> {
+        for collection in conn.list_deks()? {
+            let metadata = conn.load_metadata(&collection)?;
+            if metadata.wrapped_deks.iter().any(|w| w.kek_ref == kek_ref) {
+                return Ok(Some(collection));
+            }
+        }
+        Ok(None)
+    }
+
     /// Acquire exclusive DEK-ops access on this keystore. Single-step
     /// public methods (`create_dek`, `add_kek`, `remove_kek`,
     /// `delete_dek`, `create_kek`) acquire one internally; multi-step

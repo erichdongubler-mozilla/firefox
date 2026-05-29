@@ -802,3 +802,63 @@ add_task(async function test_switch_kek_missing_collection_rejected() {
     "switchKek on a missing collection rejects"
   );
 });
+
+// ---------------------------------------------------------------------------
+// deleteKek
+// ---------------------------------------------------------------------------
+
+add_task(async function test_delete_kek_drops_unreferenced_local() {
+  const ls = getService();
+  const ephemeral = await mintLocalKek();
+  await ls.deleteKek(ephemeral);
+  await Assert.rejects(
+    ls.createDek("dk-after-delete", ephemeral, false),
+    /NS_ERROR/,
+    "createDek under a deleted local kek_ref fails"
+  );
+});
+
+add_task(async function test_delete_kek_drops_unreferenced_password() {
+  const ls = getService();
+  const ephemeral = await mintPasswordKek(PW);
+  await ls.deleteKek(ephemeral);
+  await Assert.rejects(
+    ls.unlockKek(ephemeral, PW, /*timeoutMs*/ 60_000),
+    /NS_ERROR/,
+    "unlockKek on a deleted password kek_ref fails"
+  );
+});
+
+add_task(async function test_delete_kek_rejects_when_in_use() {
+  const ls = getService();
+  const ephemeral = await mintLocalKek();
+  await ls.createDek("dk-in-use", ephemeral, false);
+  await Assert.rejects(
+    ls.deleteKek(ephemeral),
+    /NS_ERROR_FAILURE/,
+    "deleteKek of a kek_ref that still wraps a DEK is rejected"
+  );
+});
+
+add_task(async function test_delete_kek_unknown_ref_rejects() {
+  const ls = getService();
+  await Assert.rejects(
+    ls.deleteKek("lockstore::kek::local:AAAAAAAAAAAAAAAAAAAAAA"),
+    /NS_ERROR_NOT_AVAILABLE/,
+    "deleteKek on an unknown kek_ref rejects with NOT_AVAILABLE"
+  );
+});
+
+add_task(async function test_delete_kek_invalid_arg_rejected() {
+  const ls = getService();
+  await Assert.rejects(
+    ls.deleteKek(""),
+    INVALID_ARG_RE,
+    "deleteKek with empty kek_ref is rejected"
+  );
+  await Assert.rejects(
+    ls.deleteKek("not-a-valid-kek-ref"),
+    /NS_ERROR/,
+    "deleteKek with malformed kek_ref is rejected"
+  );
+});
