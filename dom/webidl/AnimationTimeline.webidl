@@ -12,8 +12,7 @@
 
 [Exposed=Window]
 interface AnimationTimeline {
-  [BinaryName="currentTimeAsDouble"]
-  readonly attribute double? currentTime;
+  readonly attribute CSSNumberish? currentTime;
 
   [GetterThrows, Pref="layout.css.scroll-driven-animations.enabled"]
   readonly attribute CSSNumberish? duration;
