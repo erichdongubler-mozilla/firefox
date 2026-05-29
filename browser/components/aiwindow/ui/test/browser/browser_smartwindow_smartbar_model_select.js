@@ -233,3 +233,54 @@ add_task(
     }
   }
 );
+
+add_task(async function test_model_choice_pref_change_updates_selected_model() {
+  const { restore } = await stubEngineNetworkBoundaries({
+    serverOptions: null,
+  });
+
+  try {
+    const win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+
+    const { selectedModelId: initialModelId } =
+      await getSmartbarModelSelectData(browser);
+    Assert.equal(
+      initialModelId,
+      FALLBACK_MODELS[DEFAULT_MODEL_CHOICE_ID].model,
+      "Should be the initial default model"
+    );
+
+    const newModelChoiceId = "1";
+    const expectedNewModel = FALLBACK_MODELS[newModelChoiceId].model;
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.smartwindow.firstrun.modelChoice", newModelChoiceId]],
+    });
+
+    await SpecialPowers.spawn(
+      browser,
+      [expectedNewModel],
+      async expectedModel => {
+        const aiWindowElement = content.document.querySelector("ai-window");
+        await ContentTaskUtils.waitForMutationCondition(
+          aiWindowElement,
+          { attributes: true },
+          () => aiWindowElement.selectedModelId === expectedModel
+        );
+      }
+    );
+
+    const { selectedModelId: updatedModelId } =
+      await getSmartbarModelSelectData(browser);
+    Assert.equal(
+      updatedModelId,
+      expectedNewModel,
+      "Selected model should update when pref changes"
+    );
+
+    await BrowserTestUtils.closeWindow(win);
+  } finally {
+    await restore();
+    await SpecialPowers.popPrefEnv();
+  }
+});
