@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.195
- * pdfjsBuild = e7661983f
+ * pdfjsVersion = 6.0.213
+ * pdfjsBuild = 389853d47
  */
 
 ;// ./src/shared/util.js
@@ -14121,7 +14121,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.0.195",
+    apiVersion: "6.0.213",
     data,
     password,
     disableAutoFetch,
@@ -15749,8 +15749,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.0.195";
-const build = "e7661983f";
+const version = "6.0.213";
+const build = "389853d47";
 
 ;// ./src/display/editor/color_picker.js
 

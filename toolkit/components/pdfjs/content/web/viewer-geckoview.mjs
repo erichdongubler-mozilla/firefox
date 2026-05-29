@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.195
- * pdfjsBuild = e7661983f
+ * pdfjsVersion = 6.0.213
+ * pdfjsBuild = 389853d47
  */
 
 ;// ./web/ui_utils.js
@@ -8634,7 +8634,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.0.195";
+    const viewerVersion = "6.0.213";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }

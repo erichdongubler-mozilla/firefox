@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.195
- * pdfjsBuild = e7661983f
+ * pdfjsVersion = 6.0.213
+ * pdfjsBuild = 389853d47
  */
 
 ;// ./src/shared/util.js
@@ -11554,12 +11554,12 @@ class Parser {
     if (lexer.beginInlineImagePos !== -1) {
       dictLength = stream.pos - lexer.beginInlineImagePos;
     }
-    const filter = this.xref.fetchIfRef(dictMap.F || dictMap.Filter);
+    const filter = this.#fetchIfRef(dictMap.F || dictMap.Filter);
     let filterName;
     if (filter instanceof Name) {
       filterName = filter.name;
     } else if (Array.isArray(filter)) {
-      const filterZero = this.xref.fetchIfRef(filter[0]);
+      const filterZero = this.#fetchIfRef(filter[0]);
       if (filterZero instanceof Name) {
         filterName = filterZero.name;
       }
@@ -11601,10 +11601,10 @@ class Parser {
       dict.set(key, dictMap[key]);
     }
     let imageStream = stream.makeSubStream(startPos, length, dict);
-    if (cipherTransform) {
+    if (cipherTransform && !this.#hasCryptFilter(filter)) {
       imageStream = cipherTransform.createStream(imageStream, length);
     }
-    imageStream = this.filter(imageStream, dict, length);
+    imageStream = this.filter(imageStream, dict, length, cipherTransform);
     imageStream.dict = dict;
     if (cacheKey !== undefined) {
       imageStream.cacheKey = `inline_img_${++this._imageId}`;
@@ -11613,6 +11613,20 @@ class Parser {
     this.buf2 = Cmd.get("EI");
     this.shift();
     return imageStream;
+  }
+  #fetchIfRef(obj) {
+    return this.xref ? this.xref.fetchIfRef(obj) : obj;
+  }
+  #hasCryptFilter(filter) {
+    if (!Array.isArray(filter)) {
+      return isName(filter, "Crypt");
+    }
+    for (const f of filter) {
+      if (isName(this.#fetchIfRef(f), "Crypt")) {
+        return true;
+      }
+    }
+    return false;
   }
   #findStreamLength(startPos) {
     const {
@@ -11694,42 +11708,43 @@ class Parser {
     }
     this.shift();
     stream = stream.makeSubStream(startPos, length, dict);
-    if (cipherTransform) {
+    const filter = dict.get("F", "Filter");
+    if (cipherTransform && !this.#hasCryptFilter(filter)) {
       stream = cipherTransform.createStream(stream, length);
     }
-    stream = this.filter(stream, dict, length);
+    stream = this.filter(stream, dict, length, cipherTransform);
     stream.dict = dict;
     return stream;
   }
-  filter(stream, dict, length) {
+  filter(stream, dict, length, cipherTransform = null) {
     let filter = dict.get("F", "Filter");
     let params = dict.get("DP", "DecodeParms");
     if (filter instanceof Name) {
       if (Array.isArray(params)) {
         warn("/DecodeParms should not be an Array, when /Filter is a Name.");
       }
-      return this.makeFilter(stream, filter.name, length, params);
+      return this.makeFilter(stream, filter.name, length, params, cipherTransform);
     }
     let maybeLength = length;
     if (Array.isArray(filter)) {
       const filterArray = filter;
       const paramsArray = params;
       for (let i = 0, ii = filterArray.length; i < ii; ++i) {
-        filter = this.xref.fetchIfRef(filterArray[i]);
+        filter = this.#fetchIfRef(filterArray[i]);
         if (!(filter instanceof Name)) {
           throw new FormatError(`Bad filter name "${filter}"`);
         }
         params = null;
         if (Array.isArray(paramsArray) && i in paramsArray) {
-          params = this.xref.fetchIfRef(paramsArray[i]);
+          params = this.#fetchIfRef(paramsArray[i]);
         }
-        stream = this.makeFilter(stream, filter.name, maybeLength, params);
+        stream = this.makeFilter(stream, filter.name, maybeLength, params, cipherTransform);
         maybeLength = null;
       }
     }
     return stream;
   }
-  makeFilter(stream, name, maybeLength, params) {
+  makeFilter(stream, name, maybeLength, params, cipherTransform = null) {
     if (maybeLength === 0) {
       warn(`Empty "${name}" stream.`);
       return new NullStream();
@@ -11774,6 +11789,16 @@ class Parser {
           return new Jbig2Stream(stream, maybeLength, params);
         case "BrotliDecode":
           return new BrotliStream(stream, maybeLength);
+        case "Crypt":
+          {
+            if (!cipherTransform) {
+              warn('Filter "Crypt" is missing a cipher transform.');
+              return stream;
+            }
+            const param = params instanceof Dict ? params.get("Name") : null;
+            const cryptName = param instanceof Name ? param : Name.get("Identity");
+            return cipherTransform.createStream(stream, maybeLength, cryptName);
+          }
       }
       warn(`Filter "${name}" is not supported.`);
       return stream;
@@ -25599,6 +25624,214 @@ class Type1Parser {
     }
     return program;
   }
+  extractCidKeyedFontProgram(properties) {
+    const stream = this.stream;
+    const privateData = new Map([["lenIV", 4]]);
+    const program = {
+      subrs: [],
+      charstrings: [],
+      properties: {
+        privateData
+      }
+    };
+    let cidCount = 0;
+    let cidMapOffset = -1;
+    let fdBytes = 1;
+    let gdBytes = 0;
+    let subrMapOffset = -1;
+    let sdBytes = 0;
+    let subrCount = 0;
+    let startDataLength = 0;
+    let startDataIsHex = false;
+    let foundStartData = false;
+    const previousTokens = [];
+    function rememberToken(value) {
+      previousTokens.push(value);
+      if (previousTokens.length > 4) {
+        previousTokens.shift();
+      }
+    }
+    let token;
+    while ((token = this.getToken()) !== null) {
+      if (token === "StartData") {
+        const dataType = previousTokens.at(-3);
+        const dataLength = previousTokens.at(-1);
+        if (previousTokens.at(-4) !== "(" || previousTokens.at(-2) !== ")" || dataType !== "Binary" && dataType !== "Hex" || !/^\d+$/.test(dataLength)) {
+          return null;
+        }
+        startDataLength = parseInt(dataLength, 10);
+        if (startDataLength <= 0) {
+          return null;
+        }
+        startDataIsHex = dataType === "Hex";
+        foundStartData = true;
+        break;
+      }
+      rememberToken(token);
+      if (token !== "/") {
+        continue;
+      }
+      token = this.getToken();
+      rememberToken(token);
+      switch (token) {
+        case "FontMatrix":
+          properties.fontMatrix = this.readNumberArray();
+          break;
+        case "FontBBox":
+          const fontBBox = this.readNumberArray();
+          properties.ascent = Math.max(fontBBox[3], fontBBox[1]);
+          properties.descent = Math.min(fontBBox[1], fontBBox[3]);
+          properties.ascentScaled = true;
+          break;
+        case "CIDCount":
+          cidCount = this.readInt();
+          break;
+        case "CIDMapOffset":
+          cidMapOffset = this.readInt();
+          break;
+        case "FDBytes":
+          fdBytes = this.readInt();
+          break;
+        case "GDBytes":
+          gdBytes = this.readInt();
+          break;
+        case "SubrMapOffset":
+          subrMapOffset = this.readInt();
+          break;
+        case "SDBytes":
+          sdBytes = this.readInt();
+          break;
+        case "SubrCount":
+          subrCount = this.readInt();
+          break;
+        case "BlueValues":
+        case "OtherBlues":
+        case "FamilyBlues":
+        case "FamilyOtherBlues":
+          this.readNumberArray();
+          break;
+        case "StemSnapH":
+        case "StemSnapV":
+          privateData.set(token, this.readNumberArray());
+          break;
+        case "StdHW":
+        case "StdVW":
+          privateData.set(token, this.readNumberArray()[0]);
+          break;
+        case "BlueShift":
+        case "lenIV":
+        case "BlueFuzz":
+        case "BlueScale":
+        case "LanguageGroup":
+          privateData.set(token, this.readNumber());
+          break;
+        case "ExpansionFactor":
+          privateData.set(token, this.readNumber() || 0.06);
+          break;
+        case "ForceBold":
+          privateData.set(token, this.readBoolean());
+          break;
+      }
+    }
+    if (!foundStartData || cidCount <= 0 || cidMapOffset < 0 || fdBytes < 0 || fdBytes > 4 || gdBytes < 1 || gdBytes > 4) {
+      return null;
+    }
+    const maxLength = stream.end - stream.pos;
+    if (startDataLength > maxLength) {
+      if (!startDataIsHex) {
+        startDataLength = maxLength;
+      } else if (startDataLength > 2 * maxLength) {
+        return null;
+      }
+    }
+    let binary = stream.getBytes(startDataIsHex ? undefined : startDataLength);
+    if (startDataIsHex) {
+      const decoded = new Uint8Array(startDataLength);
+      let digit1 = -1,
+        j = 0;
+      for (let i = 0, ii = binary.length; i < ii && j < startDataLength; i++) {
+        const digit = binary[i];
+        if (!isHexDigit(digit)) {
+          continue;
+        }
+        if (digit1 < 0) {
+          digit1 = digit;
+          continue;
+        }
+        decoded[j++] = parseInt(String.fromCharCode(digit1, digit), 16);
+        digit1 = -1;
+      }
+      if (j !== startDataLength) {
+        return null;
+      }
+      binary = decoded;
+    }
+    const lenIV = privateData.get("lenIV");
+    const cidEntrySize = fdBytes + gdBytes;
+    const subrs = [];
+    function readUint(offset, byteCount) {
+      let n = 0;
+      for (let i = 0; i < byteCount; i++) {
+        n = n << 8 | binary[offset + i];
+      }
+      return n >>> 0;
+    }
+    if (cidMapOffset + (cidCount + 1) * cidEntrySize > binary.length || subrCount > 0 && (subrMapOffset < 0 || sdBytes < 1 || sdBytes > 4 || subrMapOffset + (subrCount + 1) * sdBytes > binary.length)) {
+      return null;
+    }
+    if (fdBytes > 0) {
+      for (let cid = 0; cid < cidCount; cid++) {
+        if (readUint(cidMapOffset + cid * cidEntrySize, fdBytes) !== 0) {
+          return null;
+        }
+      }
+    }
+    if (subrCount > 0) {
+      const subrOffsets = new Array(subrCount + 1);
+      for (let i = 0; i <= subrCount; i++) {
+        subrOffsets[i] = readUint(subrMapOffset + i * sdBytes, sdBytes);
+      }
+      for (let i = 0; i < subrCount; i++) {
+        const start = subrOffsets[i];
+        const end = subrOffsets[i + 1];
+        if (end > binary.length || end < start) {
+          subrs[i] = new Uint8Array(0);
+          continue;
+        }
+        subrs[i] = this.readCharStrings(binary.subarray(start, end), lenIV);
+      }
+    }
+    const charstrings = [];
+    let prevOffset = readUint(cidMapOffset + fdBytes, gdBytes);
+    for (let cid = 0; cid < cidCount; cid++) {
+      const nextOffset = readUint(cidMapOffset + (cid + 1) * cidEntrySize + fdBytes, gdBytes);
+      const glyphName = cid === 0 ? ".notdef" : `cid${cid}`;
+      if (nextOffset > prevOffset && nextOffset <= binary.length) {
+        const encoded = this.readCharStrings(binary.subarray(prevOffset, nextOffset), lenIV);
+        const charString = new Type1CharString();
+        const error = charString.convert(encoded, subrs, this.seacAnalysisEnabled);
+        charstrings.push({
+          glyphName,
+          charstring: error ? [14] : charString.output,
+          width: charString.width,
+          lsb: charString.lsb,
+          seac: charString.seac
+        });
+      } else {
+        const notDef = charstrings[0];
+        charstrings.push({
+          glyphName,
+          charstring: notDef?.charstring.slice() || [0x8b, 0x0e],
+          width: notDef?.width || 0,
+          lsb: notDef?.lsb || 0
+        });
+      }
+      prevOffset = nextOffset;
+    }
+    program.subrs = subrs;
+    program.charstrings = charstrings;
+    return program;
+  }
   extractFontHeader(properties) {
     let token;
     while ((token = this.getToken()) !== null) {
@@ -25740,9 +25973,33 @@ function getEexecBlock(stream, suggestedLength) {
     length: eexecBytes.length
   };
 }
+function isCidKeyedType1File(file) {
+  const sample = file.peekBytes(2048);
+  if (sample.length < 2 || sample[0] !== 0x25 || sample[1] !== 0x21) {
+    return false;
+  }
+  const text = bytesToString(sample);
+  return text.includes("Resource-CIDFont") || /\/CIDFontType\s+0\b/.test(text);
+}
 class Type1Font {
   #rawFileLength;
   constructor(name, file, properties) {
+    let data;
+    if (properties.composite && isCidKeyedType1File(file)) {
+      data = this.#parseCidKeyedType1(file, properties);
+    }
+    data ||= this.#parseType1(file, properties);
+    for (const key in data.properties) {
+      properties[key] = data.properties[key];
+    }
+    const charstrings = data.charstrings;
+    const type2Charstrings = this.getType2Charstrings(charstrings);
+    const subrs = this.getType2Subrs(data.subrs);
+    this.charstrings = charstrings;
+    this.data = this.wrap(name, type2Charstrings, this.charstrings, subrs, properties);
+    this.seacs = this.getSeacs(data.charstrings);
+  }
+  #parseType1(file, properties) {
     const PFB_HEADER_SIZE = 6;
     let headerBlockLength = properties.length1;
     let eexecBlockLength = properties.length2;
@@ -25762,16 +26019,21 @@ class Type1Font {
     const eexecBlock = getEexecBlock(file, eexecBlockLength);
     const eexecBlockParser = new Type1Parser(eexecBlock.stream, true, SEAC_ANALYSIS_ENABLED);
     const data = eexecBlockParser.extractFontProgram(properties);
-    for (const key in data.properties) {
-      properties[key] = data.properties[key];
-    }
     this.#rawFileLength = headerBlock.length + eexecBlock.length;
-    const charstrings = data.charstrings;
-    const type2Charstrings = this.getType2Charstrings(charstrings);
-    const subrs = this.getType2Subrs(data.subrs);
-    this.charstrings = charstrings;
-    this.data = this.wrap(name, type2Charstrings, this.charstrings, subrs, properties);
-    this.seacs = this.getSeacs(data.charstrings);
+    return data;
+  }
+  #parseCidKeyedType1(file, properties) {
+    const fileStart = file.pos;
+    const length = file.end - fileStart;
+    const parser = new Type1Parser(file, false, SEAC_ANALYSIS_ENABLED);
+    const data = parser.extractCidKeyedFontProgram(properties);
+    if (!data) {
+      file.pos = fileStart;
+      warn("Type1Font: unable to parse CID-keyed Type 1 font.");
+      return null;
+    }
+    this.#rawFileLength = length;
+    return data;
   }
   get numGlyphs() {
     return this.charstrings.length + 1;
@@ -33982,6 +34244,8 @@ class PartialEvaluator {
       if (smask?.backdrop) {
         colorSpace ||= ColorSpaceUtils.rgb;
         smask.backdrop = colorSpace.getRgbHex(smask.backdrop, 0);
+      } else if (smask?.subtype === "Luminosity") {
+        smask.backdrop = "#000000";
       }
       newOpList = new CheckedOperatorList();
     } else {
@@ -56763,24 +57027,33 @@ class PDF20 extends PDFBase {
   }
 }
 class CipherTransform {
-  constructor(stringCipherConstructor, streamCipherConstructor) {
-    this.StringCipherConstructor = stringCipherConstructor;
-    this.StreamCipherConstructor = streamCipherConstructor;
+  #cipherCache = new Map();
+  constructor(resolveCipher, stringFilterName = null, streamFilterName = null) {
+    this.resolveCipher = resolveCipher;
+    this.streamFilterName = streamFilterName;
+    this.stringFilterName = stringFilterName;
   }
-  createStream(stream, length) {
-    const cipher = new this.StreamCipherConstructor();
+  #getCipher(filterName = null) {
+    const key = filterName instanceof Name ? filterName.name : "__default__";
+    return this.#cipherCache.getOrInsertComputed(key, () => this.resolveCipher(filterName));
+  }
+  createStream(stream, length, cryptFilterName = null) {
+    const Cipher = this.#getCipher(cryptFilterName || this.streamFilterName);
+    const cipher = new Cipher();
     return new DecryptStream(stream, length, function cipherTransformDecryptStream(data, finalize) {
       return cipher.decryptBlock(data, finalize);
     });
   }
   decryptString(s) {
-    const cipher = new this.StringCipherConstructor();
+    const Cipher = this.#getCipher(this.stringFilterName);
+    const cipher = new Cipher();
     let data = stringToBytes(s);
     data = cipher.decryptBlock(data, true);
     return bytesToString(data);
   }
   encryptString(s) {
-    const cipher = new this.StringCipherConstructor();
+    const Cipher = this.#getCipher(this.stringFilterName);
+    const cipher = new Cipher();
     if (cipher instanceof AESBaseCipher) {
       const strLen = s.length;
       const pad = 16 - strLen % 16;
@@ -56932,35 +57205,6 @@ class CipherTransformFactory {
     const hash = calculateMD5(key, 0, i);
     return hash.subarray(0, Math.min(n + 5, 16));
   }
-  #buildCipherConstructor(cf, name, num, gen, key) {
-    if (!(name instanceof Name)) {
-      throw new FormatError("Invalid crypt filter name.");
-    }
-    const self = this;
-    const cryptFilter = cf.get(name.name);
-    const cfm = cryptFilter?.get("CFM");
-    if (!cfm || cfm.name === "None") {
-      return function () {
-        return new NullCipher();
-      };
-    }
-    if (cfm.name === "V2") {
-      return function () {
-        return new ARCFourCipher(self.#buildObjectKey(num, gen, key, false));
-      };
-    }
-    if (cfm.name === "AESV2") {
-      return function () {
-        return new AES128Cipher(self.#buildObjectKey(num, gen, key, true));
-      };
-    }
-    if (cfm.name === "AESV3") {
-      return function () {
-        return new AES256Cipher(key);
-      };
-    }
-    throw new FormatError("Unknown crypto method");
-  }
   constructor(dict, fileId, password) {
     const filter = dict.get("Filter");
     if (!isName(filter, "Standard")) {
@@ -57056,13 +57300,30 @@ class CipherTransformFactory {
   }
   createCipherTransform(num, gen) {
     if (this.algorithm === 4 || this.algorithm === 5) {
-      return new CipherTransform(this.#buildCipherConstructor(this.cf, this.strf, num, gen, this.encryptionKey), this.#buildCipherConstructor(this.cf, this.stmf, num, gen, this.encryptionKey));
+      const resolveCipher = filterName => {
+        if (!(filterName instanceof Name)) {
+          throw new FormatError("Invalid crypt filter name.");
+        }
+        const cryptFilter = this.cf.get(filterName.name);
+        const cfm = cryptFilter?.get("CFM");
+        if (!cfm || cfm.name === "None") {
+          return NullCipher;
+        }
+        if (cfm.name === "V2") {
+          return ARCFourCipher.bind(null, this.#buildObjectKey(num, gen, this.encryptionKey, false));
+        }
+        if (cfm.name === "AESV2") {
+          return AES128Cipher.bind(null, this.#buildObjectKey(num, gen, this.encryptionKey, true));
+        }
+        if (cfm.name === "AESV3") {
+          return AES256Cipher.bind(null, this.encryptionKey);
+        }
+        throw new FormatError("Unknown crypto method");
+      };
+      return new CipherTransform(resolveCipher, this.strf, this.stmf);
     }
-    const key = this.#buildObjectKey(num, gen, this.encryptionKey, false);
-    const cipherConstructor = function () {
-      return new ARCFourCipher(key);
-    };
-    return new CipherTransform(cipherConstructor, cipherConstructor);
+    const resolveCipher = () => ARCFourCipher.bind(null, this.#buildObjectKey(num, gen, this.encryptionKey, false));
+    return new CipherTransform(resolveCipher);
   }
 }
 
@@ -62525,7 +62786,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "6.0.195";
+    const workerVersion = "6.0.213";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }

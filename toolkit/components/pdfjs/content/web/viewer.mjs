@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.195
- * pdfjsBuild = e7661983f
+ * pdfjsVersion = 6.0.213
+ * pdfjsBuild = 389853d47
  */
 
 ;// ./web/ui_utils.js
@@ -9096,9 +9096,9 @@ class PDFThumbnailViewer {
           button
         } = addFileComponent;
         picker.addEventListener("change", () => {
-          const file = picker.files?.[0];
-          if (file) {
-            this.#mergeFile(file, this._currentPageNumber - 1);
+          const files = Array.from(picker.files ?? []);
+          if (files.length) {
+            this.#mergeFiles(files, this._currentPageNumber - 1);
           }
         });
         button.addEventListener("click", () => {
@@ -9119,23 +9119,32 @@ class PDFThumbnailViewer {
   #scrollUpdated() {
     this.renderingQueue.renderHighestPriority();
   }
-  async #mergeFile(file, insertAfter) {
-    if (file.type !== "application/pdf") {
-      const magic = await file.slice(0, 5).text();
-      if (magic !== "%PDF-") {
-        return;
-      }
-    }
+  async #mergeFiles(files, insertAfter) {
     this.#toggleBar("waiting", "pdfjs-views-manager-waiting-for-file");
-    const buffer = await file.bytes();
+    const buffers = [];
+    for (const file of files) {
+      if (file.type !== "application/pdf") {
+        const magic = await file.slice(0, 5).text();
+        if (magic !== "%PDF-") {
+          continue;
+        }
+      }
+      buffers.push(await file.bytes());
+    }
+    if (buffers.length === 0) {
+      this.#toggleBar("status");
+      return;
+    }
     const pagesCount = this.#pagesMapper.pagesNumber;
     const data = this.hasStructuralChanges() ? this.getStructuralChanges() : [{
       document: null
     }];
-    data.push({
-      document: buffer,
-      insertAfter
-    });
+    for (const buffer of buffers) {
+      data.push({
+        document: buffer,
+        insertAfter
+      });
+    }
     this.eventBus._on("pagesloaded", () => {
       this.#selectedPages = null;
       this.#updateMenuEntries();
@@ -10204,15 +10213,15 @@ class PDFThumbnailViewer {
       }
       e.preventDefault();
       e.stopPropagation();
-      const file = e.dataTransfer.files?.[0];
+      const files = Array.from(e.dataTransfer.files ?? []);
       if (isNaN(this.#lastDraggedOverIndex) && this.#thumbnailsPositions) {
         const rect = container.getBoundingClientRect();
         this.#findClosestThumbnail(e.clientX - rect.left, e.clientY - rect.top);
       }
       const insertAfter = isNaN(this.#lastDraggedOverIndex) ? -1 : this.#lastDraggedOverIndex;
       this.#endExternalFileDrag();
-      if (file) {
-        this.#mergeFile(file, insertAfter);
+      if (files.length) {
+        this.#mergeFiles(files, insertAfter);
       }
     }, {
       signal
@@ -13023,7 +13032,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.0.195";
+    const viewerVersion = "6.0.213";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
