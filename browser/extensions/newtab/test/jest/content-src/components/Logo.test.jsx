@@ -529,3 +529,122 @@ describe("<RotatingBall>", () => {
     expect(svg.classList.contains("is-animating")).toBe(false);
   });
 });
+
+// @backward-compat { version 153 }
+// Can be removed after Firefox 153 hits Release.
+describe("<FootballBounce>", () => {
+  let originalMatchMedia;
+  let originalDir;
+
+  beforeEach(() => {
+    originalMatchMedia = globalThis.matchMedia;
+    originalDir = document.dir;
+    setMatchMediaMock();
+    document.dir = "ltr";
+  });
+
+  afterEach(() => {
+    globalThis.matchMedia = originalMatchMedia;
+    document.dir = originalDir;
+  });
+
+  function renderFootballBounce() {
+    return renderWithPrefs(<Logo />, {
+      [PREF_LOGO_VARIATION]: "football-bounce",
+    });
+  }
+
+  it("renders a 64x64 container wrapping an aria-hidden sprite SVG", () => {
+    const { container } = renderFootballBounce();
+    const wrapper = container.querySelector("div.football-bounce");
+    expect(wrapper).toBeInTheDocument();
+    expect(wrapper.classList.contains("logo-variation-small")).toBe(true);
+    const svg = wrapper.querySelector("svg.football-bounce__sprite");
+    expect(svg).toBeInTheDocument();
+    expect(svg.getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("renders an animateTransform with begin=indefinite and fill=freeze", () => {
+    const { container } = renderFootballBounce();
+    const anim = container.querySelector("animateTransform");
+    expect(anim).toBeInTheDocument();
+    expect(anim.getAttribute("begin")).toBe("indefinite");
+    expect(anim.getAttribute("dur")).toBe("3.752s");
+    expect(anim.getAttribute("calcMode")).toBe("discrete");
+    expect(anim.getAttribute("fill")).toBe("freeze");
+  });
+
+  it("calls beginElement() on the animation when the container is clicked", () => {
+    const { container } = renderFootballBounce();
+    const wrapper = container.querySelector("div.football-bounce");
+    const animNode = container.querySelector("animateTransform");
+    animNode.beginElement = jest.fn();
+
+    fireEvent.click(wrapper);
+
+    expect(animNode.beginElement).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores clicks while the animation is running", () => {
+    const { container } = renderFootballBounce();
+    const wrapper = container.querySelector("div.football-bounce");
+    const animNode = container.querySelector("animateTransform");
+    animNode.beginElement = jest.fn();
+
+    animNode.dispatchEvent(new Event("beginEvent"));
+    fireEvent.click(wrapper);
+
+    expect(animNode.beginElement).not.toHaveBeenCalled();
+  });
+
+  it("allows replay after the animation finishes", () => {
+    const { container } = renderFootballBounce();
+    const wrapper = container.querySelector("div.football-bounce");
+    const animNode = container.querySelector("animateTransform");
+    animNode.beginElement = jest.fn();
+
+    animNode.dispatchEvent(new Event("beginEvent"));
+    animNode.dispatchEvent(new Event("endEvent"));
+    fireEvent.click(wrapper);
+
+    expect(animNode.beginElement).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not begin the animation when prefers-reduced-motion is set, but stays clickable", () => {
+    setMatchMediaMock({ reduceMotion: true });
+    const { container } = renderFootballBounce();
+    const wrapper = container.querySelector("div.football-bounce");
+    const animNode = container.querySelector("animateTransform");
+    animNode.beginElement = jest.fn();
+
+    expect(() => fireEvent.click(wrapper)).not.toThrow();
+    expect(animNode.beginElement).not.toHaveBeenCalled();
+  });
+
+  it("applies .is-animating on the container while the SMIL animation is running", () => {
+    const { container } = renderFootballBounce();
+    const wrapper = container.querySelector("div.football-bounce");
+    const animNode = container.querySelector("animateTransform");
+
+    expect(wrapper.classList.contains("is-animating")).toBe(false);
+
+    act(() => {
+      animNode.dispatchEvent(new Event("beginEvent"));
+    });
+    expect(wrapper.classList.contains("is-animating")).toBe(true);
+
+    act(() => {
+      animNode.dispatchEvent(new Event("endEvent"));
+    });
+    expect(wrapper.classList.contains("is-animating")).toBe(false);
+  });
+
+  it("falls back to SpinSmooth in RTL locales", () => {
+    document.dir = "rtl";
+    const { container } = renderWithPrefs(<Logo />, {
+      [PREF_LOGO_VARIATION]: "football-bounce",
+    });
+    expect(container.querySelector(".football-bounce")).not.toBeInTheDocument();
+    expect(container.querySelector(".spin-smooth")).toBeInTheDocument();
+  });
+});

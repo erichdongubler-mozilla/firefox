@@ -12,9 +12,10 @@
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import { SpinSmooth } from "./variants/SpinSmooth";
+import { FootballBounce } from "./variants/FootballBounce";
 import { RotatingBall } from "./variants/RotatingBall";
 import { SpinBallSmall } from "./variants/SpinBallSmall";
+import { SpinSmooth } from "./variants/SpinSmooth";
 
 /**
  * @backward-compat { version 153 }
@@ -64,6 +65,12 @@ export const LOGO_VARIATIONS = {
     minViewportWidth: 0,
     requiresLTR: false,
     fallback: null,
+  },
+  "football-bounce": {
+    component: FootballBounce,
+    minViewportWidth: 0,
+    requiresLTR: true,
+    fallback: "spin-smooth",
   },
 };
 

@@ -1271,6 +1271,16 @@ main.newtab-main section {
   text-decoration: underline;
 }
 
+.logo-and-wordmark .football-bounce {
+  overflow: visible;
+  position: relative;
+}
+.logo-and-wordmark .football-bounce .football-bounce__sprite {
+  position: absolute;
+  pointer-events: none;
+  transform: translate(-208px, -103px);
+}
+
 .logo-and-wordmark .spin-ball-small .spin-ball-small__spin {
   animation: 5.03s linear both spin-ball-small-spin, 5.03s linear both spin-ball-small-blur;
   animation-play-state: paused;

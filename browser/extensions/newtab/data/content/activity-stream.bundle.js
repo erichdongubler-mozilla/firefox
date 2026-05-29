@@ -22213,7 +22213,7 @@ const CustomizeMenu = (0,external_ReactRedux_namespaceObject.connect)(state => (
   DiscoveryStream: state.DiscoveryStream,
   Prefs: state.Prefs
 }))(_CustomizeMenu);
-;// CONCATENATED MODULE: ./content-src/components/Logo/variants/SpinSmooth.jsx
+;// CONCATENATED MODULE: ./content-src/components/Logo/variants/FootballBounce.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -22222,45 +22222,61 @@ const CustomizeMenu = (0,external_ReactRedux_namespaceObject.connect)(state => (
  * @backward-compat { version 153 }
  * The entire logo-variation feature can be removed after Firefox 153 hits
  * Release, when the 2026 World Cup is over. Delete this file, the
- * `spin-smooth` entry in `LOGO_VARIATIONS` (in `Logo.jsx`), the
- * `spin-smooth.webp` asset under `data/content/assets/`, and the
+ * `football-bounce` entry in `LOGO_VARIATIONS` (in `Logo.jsx`), the
+ * `football-bounce.webp` asset under `data/content/assets/`, and the
  * `logo.variation` pref entry in `ActivityStream.sys.mjs`.
  */
 
 
-const SPRITE_URL = "chrome://newtab/content/data/content/assets/spin-smooth.webp";
-const TRANSFORM_VALUES = "0 0;-200 0;-400 0;-600 0;-800 0;-1000 0;0 -200;-200 -200;-400 -200;-600 -200;-800 -200;-1000 -200;0 -400;-200 -400;-400 -400;-600 -400;-800 -400;-1000 -400;0 -600;-200 -600;-400 -600;-600 -600;-800 -600;-1000 -600;0 -800;-200 -800;-400 -800;-600 -800;-800 -800;-1000 -800;0 -1000;-200 -1000;-400 -1000;-600 -1000;-800 -1000;-1000 -1000;0 -1200;-200 -1200;-400 -1200;-600 -1200;-800 -1200;-1000 -1200;0 -1400;-200 -1400;-400 -1400;-600 -1400;-800 -1400;-1000 -1400;0 -1600;-200 -1600;-400 -1600;-600 -1600;-800 -1600;-1000 -1600;0 -1800;-200 -1800;-400 -1800;-600 -1800;-800 -1800;-1000 -1800";
+const SPRITE_URL = "chrome://newtab/content/data/content/assets/football-bounce.webp";
+
+// 56 frames laid out as an 8-column x 7-row grid of 480x270 cells inside a
+// 3840x1890 sprite sheet. Each value is "<x> <y>" in source-image pixels.
+// Read in scanline order: top-left across to top-right, then row by row down
+// to bottom-right.
+const TRANSFORM_VALUES = "0 0;-480 0;-960 0;-1440 0;-1920 0;-2400 0;-2880 0;-3360 0;0 -270;-480 -270;-960 -270;-1440 -270;-1920 -270;-2400 -270;-2880 -270;-3360 -270;0 -540;-480 -540;-960 -540;-1440 -540;-1920 -540;-2400 -540;-2880 -540;-3360 -540;0 -810;-480 -810;-960 -810;-1440 -810;-1920 -810;-2400 -810;-2880 -810;-3360 -810;0 -1080;-480 -1080;-960 -1080;-1440 -1080;-1920 -1080;-2400 -1080;-2880 -1080;-3360 -1080;0 -1350;-480 -1350;-960 -1350;-1440 -1350;-1920 -1350;-2400 -1350;-2880 -1350;-3360 -1350;0 -1620;-480 -1620;-960 -1620;-1440 -1620;-1920 -1620;-2400 -1620;-2880 -1620;-3360 -1620";
 
 /**
- * The "logo spin smooth" logo variation. Renders a 200x200 SVG that
- * windows onto a 1200x2000 WebP sprite sheet (60 frames, 6 columns x
- * 10 rows). The WebP is served from
- * `chrome://newtab/content/data/content/assets/spin-smooth.webp` —
- * `chrome:` is permitted by the newtab CSP's `img-src` list. A SMIL
- * `<animateTransform>` element pans the image through all 60 cells in
- * 6.67 seconds. The animation runs **on click**, not automatically — it's
- * authored with `begin="indefinite"` and triggered via `beginElement()`
- * from the click handler below. Default `fill="remove"` means the sprite
- * snaps back to frame 0 once the animation completes, ready for the next
- * click.
+ * The "football bounce" logo variation. Windows onto a 3840x1890 WebP
+ * sprite sheet (56 frames, 8 columns x 7 rows of 480x270 cells). Unlike
+ * the square logo variations, each cell is 16:9 — the animation is
+ * deliberately wider and taller than the logo slot. To avoid disturbing
+ * the surrounding layout the outer element is a fixed-size container
+ * matching the standard logo slot, and the SVG inside it renders at the
+ * sprite's natural cell size (480x270) and overflows the container so
+ * the football's bounce trajectory can extend beyond the standard logo
+ * bounds. The container's `overflow: visible` plus the SVG's absolute
+ * positioning are defined in `_FootballBounce.scss`; aligning the
+ * sprite's "rest" cell to the standard logo position is a job for those
+ * CSS offsets.
  *
- * Click semantics match `<SpinBallSmall>`:
+ * LTR only: the football bounces left-to-right, which would read
+ * incorrectly when mirrored for RTL. The variation registry sets
+ * `requiresLTR: true` and falls back to `spin-smooth` in RTL locales.
+ *
+ * The WebP is served from
+ * `chrome://newtab/content/data/content/assets/football-bounce.webp` —
+ * `chrome:` is permitted by the newtab CSP's `img-src` list. A single
+ * SMIL `<animateTransform>` element pans the image through all 56 cells
+ * in 3.752 seconds. `fill="freeze"` keeps the final cell (bottom-right
+ * of the sprite — the "rest" pose) visible after the animation ends,
+ * unlike the other variations which return to frame 0 via the default
+ * `fill="remove"`.
+ *
+ * Click semantics match the other click-triggered variations:
  *  - First click plays the animation.
- *  - Clicks while the animation is in flight are ignored (so the sprite
- *    doesn't jump back mid-spin).
- *  - Clicks after the animation finishes replay it cleanly.
- *  - Clicks under `prefers-reduced-motion: reduce` are a no-op; the SVG
- *    stays at frame 0 (top-left cell of the sprite). This preserves the
- *    visual presence and click affordance for reduced-motion users
- *    without forcing them through the spin.
+ *  - Clicks while the animation is in flight are ignored.
+ *  - Clicks after the animation finishes replay it cleanly (SMIL
+ *    `restart="always"` default means `beginElement()` rewinds to t=0).
+ *  - Clicks under `prefers-reduced-motion: reduce` are a no-op.
  *
- * The variation has no script: the only JS involvement is in the React
- * click handler. The animation itself is SMIL-declarative.
+ * The click target is the 64x64 container, not the wider SVG — so only
+ * the logo-slot area triggers replay, not the airborne football itself.
  *
- * @returns {React.ReactElement} The SVG element wrapping the sprite +
- *   the indefinitely-begun SMIL animation.
+ * @returns {React.ReactElement} The container div wrapping the
+ *   sprite-window SVG and its indefinitely-begun SMIL animation.
  */
-function SpinSmooth() {
+function FootballBounce() {
   const animRef = (0,external_React_namespaceObject.useRef)(null);
   const isRunningRef = (0,external_React_namespaceObject.useRef)(false);
   const [isAnimating, setIsAnimating] = (0,external_React_namespaceObject.useState)(false);
@@ -22287,8 +22303,7 @@ function SpinSmooth() {
 
   /**
    * Plays the SMIL animation once, unless the user has reduced motion
-   * enabled or the animation is already running. `beginElement()` is the
-   * SMIL equivalent of `Animation.play()` for the Web Animations API.
+   * enabled or the animation is already running.
    */
   const handleClick = () => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -22299,34 +22314,33 @@ function SpinSmooth() {
     }
     animRef.current.beginElement();
   };
-  return /*#__PURE__*/external_React_default().createElement("svg", {
-    xmlns: "http://www.w3.org/2000/svg",
-    viewBox: "0 0 200 200",
-    className: `logo-variation-small spin-smooth${isAnimating ? " is-animating" : ""}`,
-    "aria-hidden": "true",
+  return /*#__PURE__*/external_React_default().createElement("div", {
+    className: `logo-variation-small football-bounce${isAnimating ? " is-animating" : ""}`,
     onClick: handleClick
-  }, /*#__PURE__*/external_React_default().createElement("defs", null, /*#__PURE__*/external_React_default().createElement("clipPath", {
-    id: "spin-smooth-clip"
-  }, /*#__PURE__*/external_React_default().createElement("rect", {
+  }, /*#__PURE__*/external_React_default().createElement("svg", {
+    xmlns: "http://www.w3.org/2000/svg",
+    viewBox: "0 0 480 270",
+    width: "480",
+    height: "270",
+    className: "football-bounce__sprite",
+    "aria-hidden": "true"
+  }, /*#__PURE__*/external_React_default().createElement("g", {
+    transform: "translate(-3360 -1620)"
+  }, /*#__PURE__*/external_React_default().createElement("image", {
+    width: "3840",
+    height: "1890",
     x: "0",
     y: "0",
-    width: "200",
-    height: "200"
-  }))), /*#__PURE__*/external_React_default().createElement("g", {
-    clipPath: "url(#spin-smooth-clip)"
-  }, /*#__PURE__*/external_React_default().createElement("g", null, /*#__PURE__*/external_React_default().createElement("image", {
-    width: "1200",
-    height: "2000",
-    x: "0",
-    y: "0",
+    imageRendering: "optimizeQuality",
     href: SPRITE_URL
   }), /*#__PURE__*/external_React_default().createElement("animateTransform", {
     ref: animRef,
     attributeName: "transform",
     type: "translate",
     calcMode: "discrete",
-    dur: "6.67s",
+    dur: "3.752s",
     begin: "indefinite",
+    fill: "freeze",
     values: TRANSFORM_VALUES
   }))));
 }
@@ -22890,6 +22904,124 @@ function SpinBallSmall() {
   })));
 }
 
+;// CONCATENATED MODULE: ./content-src/components/Logo/variants/SpinSmooth.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/**
+ * @backward-compat { version 153 }
+ * The entire logo-variation feature can be removed after Firefox 153 hits
+ * Release, when the 2026 World Cup is over. Delete this file, the
+ * `spin-smooth` entry in `LOGO_VARIATIONS` (in `Logo.jsx`), the
+ * `spin-smooth.webp` asset under `data/content/assets/`, and the
+ * `logo.variation` pref entry in `ActivityStream.sys.mjs`.
+ */
+
+
+const SpinSmooth_SPRITE_URL = "chrome://newtab/content/data/content/assets/spin-smooth.webp";
+const SpinSmooth_TRANSFORM_VALUES = "0 0;-200 0;-400 0;-600 0;-800 0;-1000 0;0 -200;-200 -200;-400 -200;-600 -200;-800 -200;-1000 -200;0 -400;-200 -400;-400 -400;-600 -400;-800 -400;-1000 -400;0 -600;-200 -600;-400 -600;-600 -600;-800 -600;-1000 -600;0 -800;-200 -800;-400 -800;-600 -800;-800 -800;-1000 -800;0 -1000;-200 -1000;-400 -1000;-600 -1000;-800 -1000;-1000 -1000;0 -1200;-200 -1200;-400 -1200;-600 -1200;-800 -1200;-1000 -1200;0 -1400;-200 -1400;-400 -1400;-600 -1400;-800 -1400;-1000 -1400;0 -1600;-200 -1600;-400 -1600;-600 -1600;-800 -1600;-1000 -1600;0 -1800;-200 -1800;-400 -1800;-600 -1800;-800 -1800;-1000 -1800";
+
+/**
+ * The "logo spin smooth" logo variation. Renders a 200x200 SVG that
+ * windows onto a 1200x2000 WebP sprite sheet (60 frames, 6 columns x
+ * 10 rows). The WebP is served from
+ * `chrome://newtab/content/data/content/assets/spin-smooth.webp` —
+ * `chrome:` is permitted by the newtab CSP's `img-src` list. A SMIL
+ * `<animateTransform>` element pans the image through all 60 cells in
+ * 6.67 seconds. The animation runs **on click**, not automatically — it's
+ * authored with `begin="indefinite"` and triggered via `beginElement()`
+ * from the click handler below. Default `fill="remove"` means the sprite
+ * snaps back to frame 0 once the animation completes, ready for the next
+ * click.
+ *
+ * Click semantics match `<SpinBallSmall>`:
+ *  - First click plays the animation.
+ *  - Clicks while the animation is in flight are ignored (so the sprite
+ *    doesn't jump back mid-spin).
+ *  - Clicks after the animation finishes replay it cleanly.
+ *  - Clicks under `prefers-reduced-motion: reduce` are a no-op; the SVG
+ *    stays at frame 0 (top-left cell of the sprite). This preserves the
+ *    visual presence and click affordance for reduced-motion users
+ *    without forcing them through the spin.
+ *
+ * The variation has no script: the only JS involvement is in the React
+ * click handler. The animation itself is SMIL-declarative.
+ *
+ * @returns {React.ReactElement} The SVG element wrapping the sprite +
+ *   the indefinitely-begun SMIL animation.
+ */
+function SpinSmooth() {
+  const animRef = (0,external_React_namespaceObject.useRef)(null);
+  const isRunningRef = (0,external_React_namespaceObject.useRef)(false);
+  const [isAnimating, setIsAnimating] = (0,external_React_namespaceObject.useState)(false);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const anim = animRef.current;
+    if (!anim) {
+      return undefined;
+    }
+    const onBegin = () => {
+      isRunningRef.current = true;
+      setIsAnimating(true);
+    };
+    const onEnd = () => {
+      isRunningRef.current = false;
+      setIsAnimating(false);
+    };
+    anim.addEventListener("beginEvent", onBegin);
+    anim.addEventListener("endEvent", onEnd);
+    return () => {
+      anim.removeEventListener("beginEvent", onBegin);
+      anim.removeEventListener("endEvent", onEnd);
+    };
+  }, []);
+
+  /**
+   * Plays the SMIL animation once, unless the user has reduced motion
+   * enabled or the animation is already running. `beginElement()` is the
+   * SMIL equivalent of `Animation.play()` for the Web Animations API.
+   */
+  const handleClick = () => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+    if (!animRef.current || isRunningRef.current) {
+      return;
+    }
+    animRef.current.beginElement();
+  };
+  return /*#__PURE__*/external_React_default().createElement("svg", {
+    xmlns: "http://www.w3.org/2000/svg",
+    viewBox: "0 0 200 200",
+    className: `logo-variation-small spin-smooth${isAnimating ? " is-animating" : ""}`,
+    "aria-hidden": "true",
+    onClick: handleClick
+  }, /*#__PURE__*/external_React_default().createElement("defs", null, /*#__PURE__*/external_React_default().createElement("clipPath", {
+    id: "spin-smooth-clip"
+  }, /*#__PURE__*/external_React_default().createElement("rect", {
+    x: "0",
+    y: "0",
+    width: "200",
+    height: "200"
+  }))), /*#__PURE__*/external_React_default().createElement("g", {
+    clipPath: "url(#spin-smooth-clip)"
+  }, /*#__PURE__*/external_React_default().createElement("g", null, /*#__PURE__*/external_React_default().createElement("image", {
+    width: "1200",
+    height: "2000",
+    x: "0",
+    y: "0",
+    href: SpinSmooth_SPRITE_URL
+  }), /*#__PURE__*/external_React_default().createElement("animateTransform", {
+    ref: animRef,
+    attributeName: "transform",
+    type: "translate",
+    calcMode: "discrete",
+    dur: "6.67s",
+    begin: "indefinite",
+    values: SpinSmooth_TRANSFORM_VALUES
+  }))));
+}
+
 ;// CONCATENATED MODULE: ./content-src/components/Logo/Logo.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
@@ -22903,6 +23035,7 @@ function SpinBallSmall() {
  * the 2026 World Cup is over. After cleanup, `Logo()` reverts to its
  * original shape: just the wrapper + `.logo` div + `.wordmark`.
  */
+
 
 
 
@@ -22957,6 +23090,12 @@ const LOGO_VARIATIONS = {
     minViewportWidth: 0,
     requiresLTR: false,
     fallback: null
+  },
+  "football-bounce": {
+    component: FootballBounce,
+    minViewportWidth: 0,
+    requiresLTR: true,
+    fallback: "spin-smooth"
   }
 };
 const VARIANT_THRESHOLDS = Object.values(LOGO_VARIATIONS).map(v => v.minViewportWidth);
