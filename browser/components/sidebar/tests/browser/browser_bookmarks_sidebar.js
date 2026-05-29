@@ -211,9 +211,16 @@ add_task(async function test_bookmarks_search_results_show_tab_list() {
   SidebarTestUtils.closePanel(window);
 });
 
-add_task(async function test_bookmarks_search_context_menu() {
+add_task(async function test_bookmarks_searchbox_focus_and_context_menu() {
   const { component, contentWindow } = await showBookmarksSidebar();
   const { searchInput } = component;
+
+  ok(component.shadowRoot.activeElement, "check activeElement is present");
+  Assert.equal(
+    component.shadowRoot.activeElement,
+    searchInput,
+    "Check search box is focused"
+  );
 
   const promisePopupShown = BrowserTestUtils.waitForEvent(
     contentWindow,

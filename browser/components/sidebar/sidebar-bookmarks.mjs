@@ -155,6 +155,7 @@ export class SidebarBookmarks extends SidebarPage {
       this.#onPlacesEvents
     );
     this.addContextMenuListeners();
+    this.addSidebarFocusedListeners();
   }
 
   disconnectedCallback() {
@@ -164,6 +165,7 @@ export class SidebarBookmarks extends SidebarPage {
       this.#onPlacesEvents
     );
     this.removeContextMenuListeners();
+    this.removeSidebarFocusedListeners();
   }
 
   async firstUpdated() {
@@ -172,6 +174,10 @@ export class SidebarBookmarks extends SidebarPage {
     }
     this.bookmarks = await this.getBookmarksList();
     this.requestUpdate();
+  }
+
+  handleSidebarFocusedEvent() {
+    this.searchInput?.focus();
   }
 
   getNodesInOrder() {
