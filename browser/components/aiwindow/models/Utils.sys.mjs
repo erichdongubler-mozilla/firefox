@@ -192,6 +192,18 @@ export function parseVersion(versionString) {
 }
 
 /**
+ * Verifies that the RS record matches the current Fx build
+ *
+ * @param {string} recordVersion {majorVersion}.{minorVersion}
+ * @param {string} comparisonVersion major version supported by this build
+ * @returns {boolean} whether or not major version in recordVersion matches comparisonVersion
+ */
+export function checkMajorVersion(recordVersion, comparisonVersion) {
+  const parsed = parseVersion(recordVersion);
+  return parsed && parsed.major == comparisonVersion;
+}
+
+/**
  * Selects the main configuration for a feature based on version and model preferences.
  *
  * Remote Settings maintains only the latest minor version for each (feature, model, major_version) combination.
@@ -214,10 +226,9 @@ function selectMainConfig(
   { majorVersion, userModel, modelChoiceId, feature }
 ) {
   // Filter to configs matching the required major version
-  const sameMajor = featureConfigs.filter(config => {
-    const parsed = parseVersion(config.version);
-    return parsed && parsed.major === majorVersion;
-  });
+  const sameMajor = featureConfigs.filter(config =>
+    checkMajorVersion(config.version, majorVersion)
+  );
 
   if (sameMajor.length === 0) {
     console.warn(`Missing featureConfigs for major version ${majorVersion}`);
