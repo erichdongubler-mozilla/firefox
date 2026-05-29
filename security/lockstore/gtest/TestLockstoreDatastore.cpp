@@ -21,6 +21,7 @@ using mozilla::security::lockstore::lockstore_datastore_open;
 using mozilla::security::lockstore::lockstore_datastore_put;
 using mozilla::security::lockstore::lockstore_keystore_close;
 using mozilla::security::lockstore::lockstore_keystore_create_dek;
+using mozilla::security::lockstore::lockstore_keystore_create_kek;
 using mozilla::security::lockstore::lockstore_keystore_open;
 using mozilla::security::lockstore::LockstoreDatastore;
 
@@ -29,7 +30,7 @@ class LockstoreDatastoreTest : public ::testing::Test {
   nsCOMPtr<nsIFile> mTmpDir;
   nsAutoCString mProfilePath;
   const nsCString mTestColl{"test"};
-  const nsCString mLocalKekRef{"lockstore::kek::local"_ns};
+  nsCString mLocalKekRef;
   KeystoreHandle* mKeystore = nullptr;
   LockstoreDatastore* mDatastore = nullptr;
 
@@ -48,6 +49,13 @@ class LockstoreDatastoreTest : public ::testing::Test {
 
     rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
     ASSERT_NS_SUCCEEDED(rv);
+
+    const nsCString kekType("local"_ns);
+    const nsCString empty;
+    rv = lockstore_keystore_create_kek(mKeystore, &kekType, &empty,
+                                       /* cache_timeout_ms */ 0, &mLocalKekRef);
+    ASSERT_NS_SUCCEEDED(rv);
+
     rv = lockstore_keystore_create_dek(mKeystore, &mTestColl, &mLocalKekRef,
                                        false);
     ASSERT_NS_SUCCEEDED(rv);
