@@ -409,7 +409,11 @@ impl HappyEyeballs {
                 };
                 *ret_event = Output::Timer { duration_ms };
             }
-            Some(happy_eyeballs::Output::AttemptConnection { id, endpoint }) => {
+            Some(happy_eyeballs::Output::AttemptConnection {
+                id,
+                endpoint,
+                is_ech_retry,
+            }) => {
                 self.profiler.connection_attempt_started(id, &endpoint);
                 self.metrics.connection_attempt_started(id);
                 if let Some(ref ech) = endpoint.ech_config {
@@ -420,6 +424,7 @@ impl HappyEyeballs {
                     http_version: endpoint.http_version.into(),
                     addr: endpoint.address.ip().into(),
                     port: endpoint.address.port(),
+                    is_ech_retry,
                 };
             }
             Some(happy_eyeballs::Output::CancelConnection { id }) => {
@@ -592,6 +597,7 @@ pub enum Output {
         http_version: ConnectionAttemptHttpVersions,
         addr: IpAddr,
         port: u16,
+        is_ech_retry: bool,
     },
     CancelConnection {
         id: u64,
