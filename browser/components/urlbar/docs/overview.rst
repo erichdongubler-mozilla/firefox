@@ -353,7 +353,7 @@ Represents the base *View* implementation, communicates with the *Controller*.
 UrlbarResult
 ------------
 
-An :searchfox:`UrlbarResult <browser/components/urlbar/UrlbarResult.sys.mjs>`
+An :searchfox:`UrlbarResult <browser/components/urlbar/content/UrlbarResult.mjs>`
 instance represents a single search result with a result type, that
 identifies specific kind of results.
 Each kind has its own properties, that the *View* may support, and a few common

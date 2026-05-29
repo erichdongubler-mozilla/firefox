@@ -8,6 +8,9 @@
  * the controller. It is mainly defined by a result type, and a payload,
  * containing the data. A few getters allow to retrieve information common to all
  * the result types.
+ *
+ * This module can be imported into system and content realms. For this reason,
+ * it is not possible to rely on instanceof checks or global state.
  */
 
 const lazy = {};
