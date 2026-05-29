@@ -4,6 +4,8 @@
 
 #include "mozilla/EventDispatcher.h"
 
+#include <fmt/format.h>
+
 #include <new>
 
 #include "AnimationEvent.h"
@@ -873,7 +875,15 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
                                    nsTArray<EventTarget*>* aTargets) {
   AUTO_PROFILER_LABEL_HOT("EventDispatcher::Dispatch", OTHER);
 
-  NS_ASSERTION(aEvent, "Trying to dispatch without WidgetEvent!");
+  MOZ_ASSERT(aEvent, "Trying to dispatch without WidgetEvent!");
+  NS_WARNING_ASSERTION(
+      !aEvent->IsTrusted() || aEvent->IsAllowedToDispatchDOMEvent(),
+      fmt::format("aEvent={{ IsTrusted()={}, mMessage={}, mClass={} }}",
+                  TrueOrFalse(aEvent->IsTrusted()), ToChar(aEvent->mMessage),
+                  ToChar(aEvent->mClass))
+          .c_str());
+  MOZ_ASSERT_IF(aEvent->IsTrusted(), aEvent->IsAllowedToDispatchDOMEvent());
+
   NS_ENSURE_TRUE(!aEvent->mFlags.mIsBeingDispatched,
                  NS_ERROR_DOM_INVALID_STATE_ERR);
   NS_ASSERTION(!aTargets || !aEvent->mMessage, "Wrong parameters!");
