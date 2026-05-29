@@ -59,6 +59,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.components.menu.IPProtectionMenuBinding
 import org.mozilla.fenix.components.menu.compose.MenuDialogBottomSheet
+import org.mozilla.fenix.components.menu.store.IPProtectionMenuStatus
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.settings.PhoneFeature
@@ -315,7 +316,11 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                                     store.dispatch(TrustPanelAction.Navigate.QWAC)
                                 },
                                 onIPProtectionToggle = {
-                                    requireComponents.ipProtection.store.dispatch(IPProtectionAction.Toggle)
+                                    if (ipProtectionMenuState.status == IPProtectionMenuStatus.AuthRequired) {
+                                        store.dispatch(TrustPanelAction.Navigate.IPProtectionSettings)
+                                    } else {
+                                        components.ipProtection.store.dispatch(IPProtectionAction.Toggle)
+                                    }
                                 },
                                 onIPProtectionNavigate = {
                                     store.dispatch(TrustPanelAction.Navigate.IPProtectionSettings)
