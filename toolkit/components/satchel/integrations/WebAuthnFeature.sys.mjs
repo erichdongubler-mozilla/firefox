@@ -21,7 +21,7 @@ XPCOMUtils.defineLazyServiceGetter(
 ChromeUtils.defineLazyGetter(
   lazy,
   "strings",
-  () => new Localization(["browser/webauthnDialog.ftl"])
+  () => new Localization(["toolkit/webauthnDialog.ftl"])
 );
 ChromeUtils.defineLazyGetter(lazy, "log", () =>
   LoginHelper.createLogger("WebAuthnFeature")
