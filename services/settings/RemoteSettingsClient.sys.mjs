@@ -651,8 +651,8 @@ export class RemoteSettingsClient extends EventEmitter {
    * @param {object} options See #maybeSync() options.
    */
   async sync(options) {
-    if (lazy.Utils.shouldSkipRemoteActivityDueToTests) {
-      lazy.console.debug(`${this.identifier} Skip sync() due to tests.`);
+    if (lazy.Utils.shouldSkipRemoteActivity) {
+      lazy.console.debug(`${this.identifier} Skip remote sync.`);
       return;
     }
 

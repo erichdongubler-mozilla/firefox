@@ -256,7 +256,7 @@ function remoteSettingsFunction() {
    * @throws {Error} If the signature of any bundled changeset is invalid.
    */
   remoteSettings.pullStartupBundle = async () => {
-    if (lazy.Utils.shouldSkipRemoteActivityDueToTests) {
+    if (lazy.Utils.shouldSkipRemoteActivity) {
       return [];
     }
 
@@ -351,7 +351,7 @@ function remoteSettingsFunction() {
     trigger = "manual",
     full = false,
   } = {}) => {
-    if (lazy.Utils.shouldSkipRemoteActivityDueToTests) {
+    if (lazy.Utils.shouldSkipRemoteActivity) {
       return;
     }
     // When running in full mode, we ignore last polling status.

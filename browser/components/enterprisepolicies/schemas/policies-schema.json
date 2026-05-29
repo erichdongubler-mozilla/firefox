@@ -660,6 +660,10 @@
       "type": "boolean"
     },
 
+    "DisableRemoteSettingsAndAcceptSecurityConsequences": {
+      "type": "boolean"
+    },
+
     "DisableSafeMode": {
       "type": "boolean"
     },
