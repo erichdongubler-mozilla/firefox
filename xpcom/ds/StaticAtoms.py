@@ -2071,6 +2071,7 @@ STATIC_ATOMS = [
     Atom("moz", "moz"),
     Atom("moz_icon", "moz-icon"),
     Atom("proxy", "proxy"),
+    Atom("fileSchemeAllowedPermission", "internal:fileSchemeAllowed"),
     Atom("privateBrowsingAllowedPermission", "internal:privateBrowsingAllowed"),
     Atom("svgContextPropertiesAllowedPermission", "internal:svgContextPropertiesAllowed"),
     Atom("theme", "theme"),

@@ -6443,6 +6443,15 @@
   value: false
   mirror: always
 
+# Whether file:-access requires another opt-in besides host permissions.
+# When false, file access is granted together with the "<all_urls>" permission
+# ("Access your data for all websites"). When true, access to file:-schemes
+# requires an additional opt-in by the user, on top of the host permission.
+- name: extensions.webextensions.fileSchemeAccess.requireOptIn
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+
 # Prior to bug 2013389 and bug 2017797, calling structuredClone within a
 # content script would clone most objects within the content script's realm,
 # however a subset of DOM objects would be cloned into the underlying content
