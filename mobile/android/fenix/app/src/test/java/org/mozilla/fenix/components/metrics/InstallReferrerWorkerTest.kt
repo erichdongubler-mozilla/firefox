@@ -139,6 +139,13 @@ class InstallReferrerWorkerTest {
     }
 
     @Test
+    fun `WHEN receiving a null or empty attribution THEN it should return null`() {
+        assertNull(MetaParams.extractMetaAttribution(null))
+        assertNull(MetaParams.extractMetaAttribution(""))
+        assertNull(MetaParams.extractMetaAttribution("    "))
+    }
+
+    @Test
     fun `WHEN parsing referrer response with meta attribution THEN both UTM and Meta params should match expected`() {
         val utmParams = UTMParams.parseUTMParameters("""utm_content={"app":12345, "t":1234567890,"source":{"data":"DATA","nonce":"NONCE"}}""")
         val expectedUtmParams = UTMParams(source = "", medium = "", campaign = "", content = """{"app":12345, "t":1234567890,"source":{"data":"DATA","nonce":"NONCE"}}""", term = "")

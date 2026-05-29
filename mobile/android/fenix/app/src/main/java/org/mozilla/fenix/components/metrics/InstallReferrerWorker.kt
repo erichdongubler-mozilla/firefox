@@ -321,7 +321,7 @@ data class MetaParams(
 
         @Suppress("ReturnCount")
         internal fun extractMetaAttribution(contentString: String?): MetaParams? {
-            if (contentString == null) {
+            if (contentString.isNullOrBlank()) {
                 return null
             }
             val decodedContentString = try {
