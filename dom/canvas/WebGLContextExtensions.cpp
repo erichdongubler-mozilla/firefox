@@ -408,131 +408,131 @@ void WebGLContext::RequestExtension(const WebGLExtensionID ext,
   switch (ext) {
     // ANGLE_
     case WebGLExtensionID::ANGLE_instanced_arrays:
-      slot.reset(new WebGLExtensionInstancedArrays(this));
+      slot = std::make_unique<WebGLExtensionInstancedArrays>(this);
       break;
 
     // EXT_
     case WebGLExtensionID::EXT_blend_minmax:
-      slot.reset(new WebGLExtensionBlendMinMax(this));
+      slot = std::make_unique<WebGLExtensionBlendMinMax>(this);
       break;
     case WebGLExtensionID::EXT_color_buffer_float:
-      slot.reset(new WebGLExtensionEXTColorBufferFloat(this));
+      slot = std::make_unique<WebGLExtensionEXTColorBufferFloat>(this);
       break;
     case WebGLExtensionID::EXT_color_buffer_half_float:
-      slot.reset(new WebGLExtensionColorBufferHalfFloat(this));
+      slot = std::make_unique<WebGLExtensionColorBufferHalfFloat>(this);
       break;
     case WebGLExtensionID::EXT_depth_clamp:
-      slot.reset(new WebGLExtensionDepthClamp(this));
+      slot = std::make_unique<WebGLExtensionDepthClamp>(this);
       break;
     case WebGLExtensionID::EXT_disjoint_timer_query:
-      slot.reset(new WebGLExtensionDisjointTimerQuery(this));
+      slot = std::make_unique<WebGLExtensionDisjointTimerQuery>(this);
       break;
     case WebGLExtensionID::EXT_float_blend:
-      slot.reset(new WebGLExtensionFloatBlend(this));
+      slot = std::make_unique<WebGLExtensionFloatBlend>(this);
       break;
     case WebGLExtensionID::EXT_frag_depth:
-      slot.reset(new WebGLExtensionFragDepth(this));
+      slot = std::make_unique<WebGLExtensionFragDepth>(this);
       break;
     case WebGLExtensionID::EXT_shader_texture_lod:
-      slot.reset(new WebGLExtensionShaderTextureLod(this));
+      slot = std::make_unique<WebGLExtensionShaderTextureLod>(this);
       break;
     case WebGLExtensionID::EXT_sRGB:
-      slot.reset(new WebGLExtensionSRGB(this));
+      slot = std::make_unique<WebGLExtensionSRGB>(this);
       break;
     case WebGLExtensionID::EXT_texture_compression_bptc:
-      slot.reset(new WebGLExtensionCompressedTextureBPTC(this));
+      slot = std::make_unique<WebGLExtensionCompressedTextureBPTC>(this);
       break;
     case WebGLExtensionID::EXT_texture_compression_rgtc:
-      slot.reset(new WebGLExtensionCompressedTextureRGTC(this));
+      slot = std::make_unique<WebGLExtensionCompressedTextureRGTC>(this);
       break;
     case WebGLExtensionID::EXT_texture_filter_anisotropic:
-      slot.reset(new WebGLExtensionTextureFilterAnisotropic(this));
+      slot = std::make_unique<WebGLExtensionTextureFilterAnisotropic>(this);
       break;
     case WebGLExtensionID::EXT_texture_norm16:
-      slot.reset(new WebGLExtensionTextureNorm16(this));
+      slot = std::make_unique<WebGLExtensionTextureNorm16>(this);
       break;
 
     // MOZ_
     case WebGLExtensionID::MOZ_debug:
-      slot.reset(new WebGLExtensionMOZDebug(this));
+      slot = std::make_unique<WebGLExtensionMOZDebug>(this);
       break;
 
     // OES_
     case WebGLExtensionID::OES_draw_buffers_indexed:
-      slot.reset(new WebGLExtensionDrawBuffersIndexed(this));
+      slot = std::make_unique<WebGLExtensionDrawBuffersIndexed>(this);
       break;
     case WebGLExtensionID::OES_element_index_uint:
-      slot.reset(new WebGLExtensionElementIndexUint(this));
+      slot = std::make_unique<WebGLExtensionElementIndexUint>(this);
       break;
     case WebGLExtensionID::OES_fbo_render_mipmap:
-      slot.reset(new WebGLExtensionFBORenderMipmap(this));
+      slot = std::make_unique<WebGLExtensionFBORenderMipmap>(this);
       break;
     case WebGLExtensionID::OES_standard_derivatives:
-      slot.reset(new WebGLExtensionStandardDerivatives(this));
+      slot = std::make_unique<WebGLExtensionStandardDerivatives>(this);
       break;
     case WebGLExtensionID::OES_texture_float:
-      slot.reset(new WebGLExtensionTextureFloat(this));
+      slot = std::make_unique<WebGLExtensionTextureFloat>(this);
       break;
     case WebGLExtensionID::OES_texture_float_linear:
-      slot.reset(new WebGLExtensionTextureFloatLinear(this));
+      slot = std::make_unique<WebGLExtensionTextureFloatLinear>(this);
       break;
     case WebGLExtensionID::OES_texture_half_float:
-      slot.reset(new WebGLExtensionTextureHalfFloat(this));
+      slot = std::make_unique<WebGLExtensionTextureHalfFloat>(this);
       break;
     case WebGLExtensionID::OES_texture_half_float_linear:
-      slot.reset(new WebGLExtensionTextureHalfFloatLinear(this));
+      slot = std::make_unique<WebGLExtensionTextureHalfFloatLinear>(this);
       break;
     case WebGLExtensionID::OES_vertex_array_object:
-      slot.reset(new WebGLExtensionVertexArray(this));
+      slot = std::make_unique<WebGLExtensionVertexArray>(this);
       break;
 
     // WEBGL_
     case WebGLExtensionID::OVR_multiview2:
-      slot.reset(new WebGLExtensionMultiview(this));
+      slot = std::make_unique<WebGLExtensionMultiview>(this);
       break;
 
     // WEBGL_
     case WebGLExtensionID::WEBGL_color_buffer_float:
-      slot.reset(new WebGLExtensionColorBufferFloat(this));
+      slot = std::make_unique<WebGLExtensionColorBufferFloat>(this);
       break;
     case WebGLExtensionID::WEBGL_compressed_texture_astc:
-      slot.reset(new WebGLExtensionCompressedTextureASTC(this));
+      slot = std::make_unique<WebGLExtensionCompressedTextureASTC>(this);
       break;
     case WebGLExtensionID::WEBGL_compressed_texture_etc:
-      slot.reset(new WebGLExtensionCompressedTextureES3(this));
+      slot = std::make_unique<WebGLExtensionCompressedTextureES3>(this);
       break;
     case WebGLExtensionID::WEBGL_compressed_texture_etc1:
-      slot.reset(new WebGLExtensionCompressedTextureETC1(this));
+      slot = std::make_unique<WebGLExtensionCompressedTextureETC1>(this);
       break;
     case WebGLExtensionID::WEBGL_compressed_texture_pvrtc:
-      slot.reset(new WebGLExtensionCompressedTexturePVRTC(this));
+      slot = std::make_unique<WebGLExtensionCompressedTexturePVRTC>(this);
       break;
     case WebGLExtensionID::WEBGL_compressed_texture_s3tc:
-      slot.reset(new WebGLExtensionCompressedTextureS3TC(this));
+      slot = std::make_unique<WebGLExtensionCompressedTextureS3TC>(this);
       break;
     case WebGLExtensionID::WEBGL_compressed_texture_s3tc_srgb:
-      slot.reset(new WebGLExtensionCompressedTextureS3TC_SRGB(this));
+      slot = std::make_unique<WebGLExtensionCompressedTextureS3TC_SRGB>(this);
       break;
     case WebGLExtensionID::WEBGL_debug_renderer_info:
-      slot.reset(new WebGLExtensionDebugRendererInfo(this));
+      slot = std::make_unique<WebGLExtensionDebugRendererInfo>(this);
       break;
     case WebGLExtensionID::WEBGL_debug_shaders:
-      slot.reset(new WebGLExtensionDebugShaders(this));
+      slot = std::make_unique<WebGLExtensionDebugShaders>(this);
       break;
     case WebGLExtensionID::WEBGL_depth_texture:
-      slot.reset(new WebGLExtensionDepthTexture(this));
+      slot = std::make_unique<WebGLExtensionDepthTexture>(this);
       break;
     case WebGLExtensionID::WEBGL_draw_buffers:
-      slot.reset(new WebGLExtensionDrawBuffers(this));
+      slot = std::make_unique<WebGLExtensionDrawBuffers>(this);
       break;
     case WebGLExtensionID::WEBGL_explicit_present:
-      slot.reset(new WebGLExtensionExplicitPresent(this));
+      slot = std::make_unique<WebGLExtensionExplicitPresent>(this);
       break;
     case WebGLExtensionID::WEBGL_lose_context:
-      slot.reset(new WebGLExtensionLoseContext(this));
+      slot = std::make_unique<WebGLExtensionLoseContext>(this);
       break;
     case WebGLExtensionID::WEBGL_provoking_vertex:
-      slot.reset(new WebGLExtensionProvokingVertex(this));
+      slot = std::make_unique<WebGLExtensionProvokingVertex>(this);
       break;
 
     case WebGLExtensionID::Max:
