@@ -741,7 +741,7 @@ bool GeckoChildProcessHost::AsyncLaunch(
 #endif
 
   RefPtr<BaseProcessLauncher> launcher =
-      new ProcessLauncher(this, std::move(aExtraOpts));
+      MakeRefPtr<ProcessLauncher>(this, std::move(aExtraOpts));
   TimeStamp startTimeStamp = TimeStamp::Now();
 #ifdef ALLOW_GECKO_CHILD_PROCESS_ARCH
   launcher->SetLaunchArchitecture(mLaunchArch);

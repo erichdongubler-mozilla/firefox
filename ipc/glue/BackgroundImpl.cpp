@@ -354,8 +354,8 @@ class ChildImpl final : public BackgroundChildImpl {
       MOZ_ALWAYS_SUCCEEDS(NS_CreateBackgroundTaskQueue(
           "PBackgroundStarter Queue", getter_AddRefs(taskQueue)));
 
-      RefPtr<BackgroundStarterChild> starter =
-          new BackgroundStarterChild(otherProcInfo, taskQueue);
+      RefPtr starter =
+          MakeRefPtr<BackgroundStarterChild>(otherProcInfo, taskQueue);
 
       taskQueue->Dispatch(NS_NewRunnableFunction(
           "PBackgroundStarterChild Init",
@@ -460,7 +460,7 @@ class ChildImpl final : public BackgroundChildImpl {
         return nullptr;
       }
 
-      RefPtr<ChildImpl> strongActor = new ChildImpl();
+      RefPtr strongActor = MakeRefPtr<ChildImpl>();
       if (!child.Bind(strongActor)) {
         CRASH_IN_CHILD_PROCESS("Failed to bind ChildImpl!");
         return nullptr;
@@ -824,7 +824,7 @@ bool ParentImpl::AllocStarter(ContentParent* aContent,
 
   sLiveActorCount++;
 
-  RefPtr<BackgroundStarterParent> actor = new BackgroundStarterParent(
+  RefPtr actor = MakeRefPtr<BackgroundStarterParent>(
       aContent ? aContent->ThreadsafeHandle() : nullptr, aCrossProcess);
 
   if (NS_FAILED(sBackgroundThread->Dispatch(NS_NewRunnableFunction(
