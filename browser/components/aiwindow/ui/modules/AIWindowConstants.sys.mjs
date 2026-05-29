@@ -21,7 +21,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 /**
  * The current SQLite database schema version
  */
-export const CURRENT_SCHEMA_VERSION = 8;
+export const CURRENT_SCHEMA_VERSION = 9;
 
 /**
  * The directory that the SQLite database lives in
