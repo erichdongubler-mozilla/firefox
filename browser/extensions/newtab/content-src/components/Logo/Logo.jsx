@@ -16,6 +16,7 @@ import { FootballBounce } from "./variants/FootballBounce";
 import { RotatingBall } from "./variants/RotatingBall";
 import { SpinBallSmall } from "./variants/SpinBallSmall";
 import { SpinSmooth } from "./variants/SpinSmooth";
+import { WIDGET_REGISTRY, isWidgetEnabled } from "common/WidgetsRegistry.mjs";
 
 /**
  * @backward-compat { version 153 }
@@ -24,6 +25,7 @@ import { SpinSmooth } from "./variants/SpinSmooth";
  * `about:config` to preview a variation without an experiment.
  */
 export const PREF_LOGO_VARIATION = "logo.variation";
+const PREF_WIDGETS_ENABLED = "widgets.enabled";
 
 /**
  * @backward-compat { version 153 }
@@ -206,9 +208,22 @@ function Logo() {
   const prefVariant = prefs[PREF_LOGO_VARIATION];
   const variantId = trainhopVariant || prefVariant || null;
 
-  const variant = variantId
-    ? pickVariant(variantId, { viewportWidth, isLTR })
-    : null;
+  // All logo variations are gated on the Sports Widget being enabled —
+  // when the widget is off, the variations are conceptually
+  // inapplicable and the standard logo is shown regardless of any
+  // trainhopConfig/pref selection.
+  const widgetsEnabled = prefs[PREF_WIDGETS_ENABLED];
+  const sportsWidget = WIDGET_REGISTRY.find(w => w.id === "sportsWidget");
+  const sportsWidgetEnabled = isWidgetEnabled(
+    sportsWidget,
+    prefs,
+    widgetsEnabled
+  );
+
+  const variant =
+    sportsWidgetEnabled && variantId
+      ? pickVariant(variantId, { viewportWidth, isLTR })
+      : null;
   const VariantComponent = variant?.component;
 
   return (

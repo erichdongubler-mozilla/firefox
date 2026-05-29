@@ -23042,6 +23042,7 @@ function SpinSmooth() {
 
 
 
+
 /**
  * @backward-compat { version 153 }
  * Pref consulted (after `trainhopConfig.logo.variation`) to choose a logo
@@ -23049,6 +23050,7 @@ function SpinSmooth() {
  * `about:config` to preview a variation without an experiment.
  */
 const PREF_LOGO_VARIATION = "logo.variation";
+const Logo_PREF_WIDGETS_ENABLED = "widgets.enabled";
 
 /**
  * @backward-compat { version 153 }
@@ -23232,7 +23234,15 @@ function Logo() {
   const trainhopVariant = prefs.trainhopConfig?.logo?.variation;
   const prefVariant = prefs[PREF_LOGO_VARIATION];
   const variantId = trainhopVariant || prefVariant || null;
-  const variant = variantId ? pickVariant(variantId, {
+
+  // All logo variations are gated on the Sports Widget being enabled —
+  // when the widget is off, the variations are conceptually
+  // inapplicable and the standard logo is shown regardless of any
+  // trainhopConfig/pref selection.
+  const widgetsEnabled = prefs[Logo_PREF_WIDGETS_ENABLED];
+  const sportsWidget = WIDGET_REGISTRY.find(w => w.id === "sportsWidget");
+  const sportsWidgetEnabled = isWidgetEnabled(sportsWidget, prefs, widgetsEnabled);
+  const variant = sportsWidgetEnabled && variantId ? pickVariant(variantId, {
     viewportWidth,
     isLTR
   }) : null;

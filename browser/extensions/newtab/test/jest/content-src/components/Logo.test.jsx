@@ -20,6 +20,15 @@ function renderWithPrefs(node, prefOverrides = {}) {
       ...INITIAL_STATE.Prefs,
       values: {
         ...INITIAL_STATE.Prefs.values,
+        // All variation tests assume the Sports Widget is enabled; the
+        // logo variations are gated on it in Logo.jsx via
+        // `isWidgetEnabled(sportsWidget, prefs, widgetsEnabled)`, which
+        // requires the widgets master toggle, the system-side enabled
+        // pref, and the per-widget user pref all to be truthy.
+        // Individual tests can override via `prefOverrides`.
+        "widgets.enabled": true,
+        "widgets.system.sportsWidget.enabled": true,
+        "widgets.sportsWidget.enabled": true,
         ...prefOverrides,
       },
     },
@@ -118,6 +127,17 @@ describe("<Logo>", () => {
     it("falls back to default logo when variation ID is unknown", () => {
       const { container } = renderWithPrefs(<Logo />, {
         [PREF_LOGO_VARIATION]: "this-id-does-not-exist",
+      });
+      expect(container.querySelector("div.logo")).toBeInTheDocument();
+      expect(
+        container.querySelector(".spin-ball-small")
+      ).not.toBeInTheDocument();
+    });
+
+    it("falls back to default logo when the Sports Widget is disabled, regardless of variation", () => {
+      const { container } = renderWithPrefs(<Logo />, {
+        trainhopConfig: { logo: { variation: "spin-ball-small" } },
+        "widgets.sportsWidget.enabled": false,
       });
       expect(container.querySelector("div.logo")).toBeInTheDocument();
       expect(
