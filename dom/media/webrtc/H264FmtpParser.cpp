@@ -5,6 +5,7 @@
 #include "H264FmtpParser.h"
 
 #include "api/video_codecs/h264_profile_level_id.h"
+#include "mozilla/CheckedInt.h"
 #include "nsContentTypeParser.h"
 
 namespace mozilla {
@@ -100,6 +101,53 @@ H264FmtpParams ParseH264Fmtp(const nsACString& aMimeString) {
   }
 
   return out;
+}
+
+bool H264LevelFits(H264_LEVEL aLevel, uint32_t aWidth, uint32_t aHeight,
+                   double aFramerate) {
+  struct H264LevelConstraint {
+    H264_LEVEL mLevel;
+    uint32_t mMaxMacroblocksPerFrame;
+    uint32_t mMaxMacroblocksPerSecond;
+  };
+  // H.264 Annex A Table A-1. Mirrors libwebrtc's kLevelConstraints.
+  static constexpr H264LevelConstraint kH264LevelConstraints[] = {
+      {H264_LEVEL::H264_LEVEL_1, 99, 1485},
+      {H264_LEVEL::H264_LEVEL_1_b, 99, 1485},
+      {H264_LEVEL::H264_LEVEL_1_1, 396, 3000},
+      {H264_LEVEL::H264_LEVEL_1_2, 396, 6000},
+      {H264_LEVEL::H264_LEVEL_1_3, 396, 11880},
+      {H264_LEVEL::H264_LEVEL_2, 396, 11880},
+      {H264_LEVEL::H264_LEVEL_2_1, 792, 19800},
+      {H264_LEVEL::H264_LEVEL_2_2, 1620, 20250},
+      {H264_LEVEL::H264_LEVEL_3, 1620, 40500},
+      {H264_LEVEL::H264_LEVEL_3_1, 3600, 108000},
+      {H264_LEVEL::H264_LEVEL_3_2, 5120, 216000},
+      {H264_LEVEL::H264_LEVEL_4, 8192, 245760},
+      {H264_LEVEL::H264_LEVEL_4_1, 8192, 245760},
+      {H264_LEVEL::H264_LEVEL_4_2, 8704, 522240},
+      {H264_LEVEL::H264_LEVEL_5, 22080, 589824},
+      {H264_LEVEL::H264_LEVEL_5_1, 36864, 983040},
+      {H264_LEVEL::H264_LEVEL_5_2, 36864, 2073600},
+  };
+  for (const auto& c : kH264LevelConstraints) {
+    if (c.mLevel != aLevel) {
+      continue;
+    }
+    // Calculate macroblocks per frame
+    const CheckedInt<uint32_t> mbs =
+        ((CheckedInt<uint32_t>(aWidth) + 15) / 16) *
+        ((CheckedInt<uint32_t>(aHeight) + 15) / 16);
+    if (!mbs.isValid() || mbs.value() > c.mMaxMacroblocksPerFrame) {
+      return false;
+    }
+    if (static_cast<double>(mbs.value()) * aFramerate >
+        static_cast<double>(c.mMaxMacroblocksPerSecond)) {
+      return false;
+    }
+    return true;
+  }
+  return false;
 }
 
 }  // namespace mozilla

@@ -59,8 +59,8 @@ promise_test(async () => {
       contentType: 'video/H264;profile-level-id=42c00a',
     },
   });
-  assert_true(info.supported);
-}, 'decodingInfo: H.264 CB / level 1.0 at 640x480 is invalid but supported');
+  assert_false(info.supported);
+}, 'decodingInfo: H.264 CB / level 1.0 at 640x480 exceeds level cap and is unsupported');
 
 promise_test(async () => {
   const info = await navigator.mediaCapabilities.decodingInfo({
