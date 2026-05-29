@@ -136,8 +136,9 @@ void IdleTaskRunner::Run() {
   }
 }
 
-static void TimedOut(nsITimer* aTimer, void* aClosure) {
+void IdleTaskRunner::TimedOut(nsITimer* aTimer, void* aClosure) {
   RefPtr<IdleTaskRunner> runner = static_cast<IdleTaskRunner*>(aClosure);
+  runner->mTimerActive = false;
   runner->Run();
 }
 
