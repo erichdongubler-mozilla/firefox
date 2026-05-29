@@ -54,8 +54,7 @@ LNAPermissionRequest::LNAPermissionRequest(PermissionPromptCallback&& aCallback,
   // worker's parent document's BC.
   if (!mBrowsingContext) {
     Maybe<dom::ClientInfo> clientInfo = aLoadInfo->GetClientInfo();
-    if (clientInfo.isSome() &&
-        clientInfo->Type() != dom::ClientType::Window) {
+    if (clientInfo.isSome() && clientInfo->Type() != dom::ClientType::Window) {
       aLoadInfo->GetAssociatedBrowsingContext(getter_AddRefs(mBrowsingContext));
     }
   }
@@ -231,8 +230,7 @@ nsresult LNAPermissionRequest::RequestPermission() {
     uint32_t permission = nsIPermissionManager::UNKNOWN_ACTION;
     nsresult rv =
         permMgr->TestPermissionFromPrincipal(mPrincipal, mType, &permission);
-    if (NS_SUCCEEDED(rv) &&
-        permission == nsIPermissionManager::ALLOW_ACTION) {
+    if (NS_SUCCEEDED(rv) && permission == nsIPermissionManager::ALLOW_ACTION) {
       return Allow(JS::UndefinedHandleValue);
     }
     // Log the denial to the browser console so developers can diagnose why
@@ -243,13 +241,11 @@ nsresult LNAPermissionRequest::RequestPermission() {
       nsAutoCString origin;
       mPrincipal->GetOrigin(origin);
       nsAutoString msg;
-      msg.AppendLiteral(
-          "Local Network Access blocked: worker from origin ");
+      msg.AppendLiteral("Local Network Access blocked: worker from origin ");
       msg.Append(NS_ConvertUTF8toUTF16(origin));
       msg.AppendLiteral(" attempted ");
       msg.Append(NS_ConvertUTF8toUTF16(mType));
-      msg.AppendLiteral(
-          " access but no persistent permission was granted.");
+      msg.AppendLiteral(" access but no persistent permission was granted.");
       console->LogStringMessage(msg.get());
     }
     return Cancel();
