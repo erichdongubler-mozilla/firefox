@@ -34,6 +34,7 @@
 #include "mozilla/layers/KnowsCompositor.h"
 #include "mozilla/media/MediaUtils.h"
 #include "mozilla/media/webrtc/CodecInfo.h"
+#include "mozilla/media/webrtc/H264FmtpParser.h"
 #include "nsContentUtils.h"
 #include "nsIPrincipal.h"
 
@@ -265,13 +266,17 @@ static EncoderConfig BuildEncoderConfig(const MediaExtendedMIMEType& aMime,
 
   EncoderConfig::CodecSpecific specific(void_t{});
   if (codec == CodecType::H264) {
-    // Bug 2024767 will derive H264 profile/level from fmtp parameters.
-    // H.264 Constrained Baseline cannot be expressed with the current
-    // media profile enums (Bug 2040726), so we use use permissive defaults.
-    // here until then, 0x42e01f without 0xe1.
-    specific = AsVariant(H264Specific(H264_PROFILE::H264_PROFILE_BASE,
-                                      H264_LEVEL::H264_LEVEL_3_1,
-                                      H264BitStreamFormat::ANNEXB));
+    // Default to Baseline / level 3.1 (the closest we can get to WebRTC's
+    // default 0x42e01f Constrained Baseline; bug 2040726).
+
+    const auto fmtp = ParseH264Fmtp(aMime.OriginalString());
+    const H264ProfileLevel pl =
+        fmtp.mProfileLevel.isOk()
+            ? fmtp.mProfileLevel.inspect()
+            : H264ProfileLevel{H264_PROFILE::H264_PROFILE_BASE,
+                               H264_LEVEL::H264_LEVEL_3_1};
+    specific = AsVariant(
+        H264Specific(pl.mProfile, pl.mLevel, H264BitStreamFormat::ANNEXB));
   }
   const float framerate = static_cast<float>(aConfig.mFramerate);
   const uint32_t fr =
@@ -676,6 +681,20 @@ void MediaCapabilities::CreateWebRTCDecodingInfo(
 
         if (videoContainer) {
           const auto& v = aConfiguration.mVideo.Value();
+          const auto& mime = videoContainer->ExtendedType();
+          if (WebrtcMimeToCodecType(mime) == CodecType::H264) {
+            const auto fmtp = ParseH264Fmtp(mime.OriginalString());
+            if (fmtp.mProfileLevel.isErr() && fmtp.mProfileLevel.inspectErr() ==
+                                                  H264FmtpParseError::Invalid) {
+              MediaCapabilitiesDecodingInfo unsupported;
+              unsupported.mSupported = false;
+              unsupported.mSmooth = false;
+              unsupported.mPowerEfficient = false;
+              LOG("{} -> {}", aConfiguration, unsupported);
+              return PromiseType::CreateAndResolve(
+                  std::move(unsupported), "MediaCapabilities::DecodingInfo");
+            }
+          }
           const CheckedInt<uint32_t> pixels =
               CheckedInt<uint32_t>(v.mWidth) * CheckedInt<uint32_t>(v.mHeight);
           const bool lowResolution =
@@ -697,7 +716,6 @@ void MediaCapabilities::CreateWebRTCDecodingInfo(
             return PromiseType::CreateAndResolve(
                 std::move(unsupported), "MediaCapabilities::DecodingInfo");
           }
-          // TODO(Bug 2024767): Handle fmtp parameters
           SupportDecoderParams videoParameters(
               *trackInfo,
               media::VideoFrameRate(static_cast<float>(v.mFramerate)));
@@ -1383,9 +1401,21 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
 
         bool lowResolution = false;
         if (videoSupported == CodecSupport::Supported) {
-          // TODO(Bug 2024767): Handle fmtp parameters
           MOZ_ASSERT(aConfiguration.mVideo.WasPassed());
           const auto& v = aConfiguration.mVideo.Value();
+          if (WebrtcMimeToCodecType(*videoMime) == CodecType::H264) {
+            const auto fmtp = ParseH264Fmtp(videoMime->OriginalString());
+            if (fmtp.mProfileLevel.isErr() && fmtp.mProfileLevel.inspectErr() ==
+                                                  H264FmtpParseError::Invalid) {
+              MediaCapabilitiesInfo unsupported;
+              unsupported.mSupported = false;
+              unsupported.mSmooth = false;
+              unsupported.mPowerEfficient = false;
+              LOG("{} -> {}", aConfiguration, unsupported);
+              return PromiseType::CreateAndResolve(
+                  std::move(unsupported), "MediaCapabilities::EncodingInfo");
+            }
+          }
           auto encoderConfig = BuildEncoderConfig(*videoMime, v);
           const auto videoSupport = SupportsVideoEncodeForWebrtc(encoderConfig);
           if (videoSupport.isEmpty()) {
