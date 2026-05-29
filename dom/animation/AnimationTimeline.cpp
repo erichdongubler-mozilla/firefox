@@ -5,7 +5,6 @@
 #include "AnimationTimeline.h"
 
 #include "mozilla/dom/Animation.h"
-#include "mozilla/dom/CSSNumericValueBinding.h"
 #include "mozilla/dom/CSSUnitValue.h"
 
 namespace mozilla::dom {
@@ -37,16 +36,6 @@ AnimationTimeline::AnimationTimeline(nsIGlobalObject* aWindow,
 }
 
 AnimationTimeline::~AnimationTimeline() { mAnimationOrder.clear(); }
-
-void AnimationTimeline::GetCurrentTime(
-    Nullable<OwningCSSNumberish>& aRetVal) const {
-  Nullable<double> ms = GetCurrentTimeAsDouble();
-  if (ms.IsNull()) {
-    aRetVal.SetNull();
-    return;
-  }
-  aRetVal.SetValue().SetAsDouble() = ms.Value();
-}
 
 bool AnimationTimeline::Tick(TickState& aState) {
   bool needsTicks = false;

@@ -6,7 +6,7 @@
 #define mozilla_dom_AnimationTimeline_h
 
 #include "mozilla/AnimationUtils.h"
-#include "mozilla/dom/CSSNumericValueBindingFwd.h"
+#include "mozilla/dom/CSSNumericValueBinding.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsHashKeys.h"
 #include "nsIGlobalObject.h"
@@ -46,18 +46,16 @@ class AnimationTimeline : public nsISupports, public nsWrapperCache {
   nsIGlobalObject* GetParentObject() const { return mWindow; }
 
   // AnimationTimeline methods
-  // This base implementation returns a plain double in milliseconds.
-  // The ScrollTimeline override returns a CSSUnitValue percent.
-  virtual void GetCurrentTime(Nullable<OwningCSSNumberish>& aRetVal) const;
-  void GetDuration(Nullable<OwningDoubleOrCSSNumericValue>& aRetVal,
-                   ErrorResult& aRv) const;
-
   virtual Nullable<TimeDuration> GetCurrentTimeAsDuration() const = 0;
 
+  // Wrapper functions for AnimationTimeline DOM methods when called from
+  // script.
   Nullable<double> GetCurrentTimeAsDouble() const {
     return AnimationUtils::TimeDurationToDouble(GetCurrentTimeAsDuration(),
                                                 mRTPCallerType);
   }
+  void GetDuration(Nullable<OwningDoubleOrCSSNumericValue>& aRetVal,
+                   ErrorResult& aRv) const;
 
   TimeStamp GetCurrentTimeAsTimeStamp() const {
     Nullable<TimeDuration> currentTime = GetCurrentTimeAsDuration();
