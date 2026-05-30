@@ -26,6 +26,8 @@ import androidx.compose.foundation.text.input.TextFieldBuffer
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.selection.LocalTextSelectionColors
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -76,17 +78,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.sp
-import androidx.core.graphics.toColorInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import mozilla.components.compose.base.theme.AcornTheme
+import mozilla.components.compose.base.theme.autofillText
+import mozilla.components.compose.base.theme.selectedText
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_SEARCH_BOX
 import mozilla.components.concept.toolbar.AutocompleteResult
 import mozilla.components.support.utils.SafeUrl
 
 private const val TEXT_SIZE = 15f
-private const val TEXT_HIGHLIGHT_COLOR = "#5C592ACB"
 private const val MAX_TEXT_LENGTH_TO_PASTE = 2_000
 
 /**
@@ -133,7 +135,14 @@ internal fun InlineAutocompleteTextField(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     val suggestionTextColor = MaterialTheme.colorScheme.onSurface
-    val highlightBackgroundColor = Color(TEXT_HIGHLIGHT_COLOR.toColorInt())
+    val highlightBackgroundColor = MaterialTheme.colorScheme.autofillText
+
+    // Set the text field selection colors locally so that the colors will not be overridden when
+    // nested in `MaterialTheme`.
+    val textSelectionColors = TextSelectionColors(
+        handleColor = MaterialTheme.colorScheme.primary,
+        backgroundColor = MaterialTheme.colorScheme.selectedText,
+    )
 
     var suggestionBounds by remember { mutableStateOf<Rect?>(null) }
     val deviceLayoutDirection = LocalLayoutDirection.current
@@ -188,6 +197,7 @@ internal fun InlineAutocompleteTextField(
     CompositionLocalProvider(
         LocalLayoutDirection provides LayoutDirection.Ltr,
         LocalTextToolbar provides pasteInterceptorToolbar,
+        LocalTextSelectionColors provides textSelectionColors,
     ) {
         // Set incognito mode for the keyboard when needed.
         InterceptPlatformTextInput(

@@ -41,6 +41,8 @@ class AcornColors(
     warningContainer: Color,
     onWarningContainer: Color,
     surfaceDimVariant: Color,
+    autofillText: Color,
+    selectedText: Color,
 ) {
     // Layers
 
@@ -136,6 +138,18 @@ class AcornColors(
         private set
 
     /**
+     * Highlighted autofill text color.
+     */
+    internal var autofillText by mutableStateOf(autofillText)
+        private set
+
+    /**
+     * Highlighted selected text color.
+     */
+    internal var selectedText by mutableStateOf(selectedText)
+        private set
+
+    /**
      * Updates the existing colors with the provided [AcornColors].
      */
     fun update(other: AcornColors) {
@@ -155,6 +169,8 @@ class AcornColors(
         warningContainer = other.warningContainer
         onWarningContainer = other.onWarningContainer
         surfaceDimVariant = other.surfaceDimVariant
+        autofillText = other.autofillText
+        selectedText = other.selectedText
     }
 
     /**
@@ -177,6 +193,8 @@ class AcornColors(
         warningContainer: Color = this.warningContainer,
         onWarningContainer: Color = this.onWarningContainer,
         surfaceDimVariant: Color = this.surfaceDimVariant,
+        autofillText: Color = this.autofillText,
+        selectedText: Color = this.selectedText,
     ): AcornColors = AcornColors(
         layer3 = layer3,
         layerGradientStart = layerGradientStart,
@@ -194,6 +212,8 @@ class AcornColors(
         warningContainer = warningContainer,
         onWarningContainer = onWarningContainer,
         surfaceDimVariant = surfaceDimVariant,
+        autofillText = autofillText,
+        selectedText = selectedText,
     )
 }
 
@@ -214,6 +234,8 @@ val darkColorPalette = AcornColors(
     warningContainer = NovaColors.Yellow70,
     onWarningContainer = NovaColors.VioletDesaturated0,
     surfaceDimVariant = NovaColors.Gray85,
+    autofillText = NovaColors.VioletDesaturated30A55,
+    selectedText = NovaColors.Gray45A80,
 )
 
 val lightColorPalette = AcornColors(
@@ -233,6 +255,8 @@ val lightColorPalette = AcornColors(
     warningContainer = NovaColors.Yellow10,
     onWarningContainer = NovaColors.VioletDesaturated90,
     surfaceDimVariant = NovaColors.Gray10,
+    autofillText = NovaColors.VioletDesaturated30,
+    selectedText = NovaColors.Gray35,
 )
 
 val privateColorPalette = darkColorPalette.copy(
@@ -240,6 +264,7 @@ val privateColorPalette = darkColorPalette.copy(
     tabActive = PhotonColors.Purple60,
     tabInactive = PhotonColors.Ink90,
     surfaceDimVariant = Color(0xFF11042B),
+    selectedText = NovaColors.Gray45A81,
 )
 
 /**
@@ -433,3 +458,19 @@ val ColorScheme.surfaceDimVariant: Color
     @Composable
     @ReadOnlyComposable
     get() = AcornTheme.colors.surfaceDimVariant
+
+/**
+ * @see AcornColors.autofillText
+ */
+val ColorScheme.autofillText: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = AcornTheme.colors.autofillText
+
+/**
+ * @see AcornColors.selectedText
+ */
+val ColorScheme.selectedText: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = AcornTheme.colors.selectedText

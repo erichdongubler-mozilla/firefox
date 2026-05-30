@@ -19,6 +19,8 @@
     <color name="novaGray35">#ffa6a4a9</color>
     <color name="novaGray40">#ff949297</color>
     <color name="novaGray45">#ff817f84</color>
+    <color name="novaGray45A80">#cc817f84</color>
+    <color name="novaGray45A81">#cf817f84</color>
     <color name="novaGray50">#ff67666a</color>
     <color name="novaGray55">#ff515054</color>
     <color name="novaGray60">#ff3f3e42</color>
@@ -35,6 +37,7 @@
     <color name="novaVioletDesaturated10">#ffe2dcf2</color>
     <color name="novaVioletDesaturated20">#ffcac1e4</color>
     <color name="novaVioletDesaturated30">#ffb0a3d2</color>
+    <color name="novaVioletDesaturated30A55">#8cb0a3d2</color>
     <color name="novaVioletDesaturated40">#ff9484bd</color>
     <color name="novaVioletDesaturated50">#ff75669f</color>
     <color name="novaVioletDesaturated60">#ff584a7d</color>

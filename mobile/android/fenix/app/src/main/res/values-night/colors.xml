@@ -45,6 +45,8 @@
     <color name="fx_mobile_surface_container_highest">@color/novaGray70</color>
     <color name="fx_mobile_surface_container_low">@color/novaGray85</color>
     <color name="fx_mobile_surface_container_lowest">@color/novaGray90</color>
+    <color name="fx_mobile_autofill_text">@color/novaVioletDesaturated30A55</color>
+    <color name="fx_mobile_selected_text">@color/novaGray45A80</color>
 
     <color name="fx_mobile_splashscreen_background">#210340</color>
 

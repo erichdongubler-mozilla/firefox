@@ -37,7 +37,7 @@ private class ColorParameterProvider : PreviewParameterProvider<Pair<AcornColors
 }
 
 @Suppress("LongMethod", "MagicNumber")
-@Preview(widthDp = CONTAINER_STACK_WIDTH * 4 + CONTAINER_GUTTER * 3 + 16, heightDp = 1200)
+@Preview(widthDp = CONTAINER_STACK_WIDTH * 4 + CONTAINER_GUTTER * 3 + 16, heightDp = 1600)
 @Composable
 private fun AcornColorGrid(
     @PreviewParameter(ColorParameterProvider::class) colors: Pair<AcornColors, ColorScheme>,
@@ -331,6 +331,18 @@ private fun AcornColorGrid(
                         text = "surfaceDimVariant",
                         modifier = Modifier.colorGridItemShort(color = colorScheme.surfaceDimVariant),
                         color = colorScheme.onSurface,
+                    )
+
+                    Text(
+                        text = "autofillText",
+                        modifier = Modifier.colorGridItemShort(color = colorScheme.autofillText),
+                        color = colorScheme.onPrimary,
+                    )
+
+                    Text(
+                        text = "selectedText",
+                        modifier = Modifier.colorGridItemShort(color = colorScheme.selectedText),
+                        color = colorScheme.onPrimary,
                     )
                 }
             }

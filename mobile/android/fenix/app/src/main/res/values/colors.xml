@@ -45,6 +45,8 @@
     <color name="fx_mobile_surface_container_highest">@color/novaGray15</color>
     <color name="fx_mobile_surface_container_low">@color/novaGray0</color>
     <color name="fx_mobile_surface_container_lowest">@color/novaWhite</color>
+    <color name="fx_mobile_autofill_text">@color/novaVioletDesaturated30</color>
+    <color name="fx_mobile_selected_text">@color/novaGray35</color>
 
     <color name="fx_mobile_splashscreen_background">#FCF3EE</color>
 
@@ -136,6 +138,8 @@
     <color name="fx_mobile_private_surface_container_highest">@color/novaVioletDesaturated80</color>
     <color name="fx_mobile_private_surface_container_low">#FF11042B</color>
     <color name="fx_mobile_private_surface_container_lowest">#FF0D0321</color>
+    <color name="fx_mobile_private_autofill_text">@color/novaVioletDesaturated30A55</color>
+    <color name="fx_mobile_private_selected_text">@color/novaGray45A81</color>
 
     <!-- Layers -->
     <!-- Card background, Menu background, Dialog, Banner -->

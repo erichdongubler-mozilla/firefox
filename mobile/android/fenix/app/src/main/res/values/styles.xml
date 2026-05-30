@@ -96,6 +96,8 @@
         <item name="colorSurfaceContainerHighest">@color/fx_mobile_surface_container_highest</item>
         <item name="colorSurfaceContainerLow">@color/fx_mobile_surface_container_low</item>
         <item name="colorSurfaceContainerLowest">@color/fx_mobile_surface_container_lowest</item>
+        <item name="colorAutofillText">@color/fx_mobile_autofill_text</item>
+        <item name="colorSelectedText">@color/fx_mobile_selected_text</item>
 
         <!-- Design system color attributes -->
 
@@ -374,6 +376,8 @@
         <item name="colorSurfaceContainerHighest">@color/fx_mobile_private_surface_container_highest</item>
         <item name="colorSurfaceContainerLow">@color/fx_mobile_private_surface_container_low</item>
         <item name="colorSurfaceContainerLowest">@color/fx_mobile_private_surface_container_lowest</item>
+        <item name="colorAutofillText">@color/fx_mobile_private_autofill_text</item>
+        <item name="colorSelectedText">@color/fx_mobile_private_selected_text</item>
 
         <!-- Design system color attributes -->
 

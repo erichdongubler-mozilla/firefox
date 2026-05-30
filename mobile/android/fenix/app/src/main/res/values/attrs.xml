@@ -35,6 +35,8 @@
     <attr name="colorWarningContainer" format="reference" />
     <attr name="colorOnWarningContainer" format="reference" />
     <attr name="colorSurfaceDimVariant" format="reference" />
+    <attr name="colorAutofillText" format="reference" />
+    <attr name="colorSelectedText" format="reference" />
 
     <!-- Color palette attributes -->
     <attr name="accent" format="reference" />
