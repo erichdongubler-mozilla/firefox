@@ -1419,6 +1419,8 @@ class nsINode : public mozilla::dom::EventTarget {
    *                            nodeinfos for aNode and its attributes and
    *                            descendants. May be null if the nodeinfos
    *                            shouldn't be changed.
+   * @param aNewScope The destination global. A node's wrapper is preserved
+   *                  unless it already lives in it. Unused when cloning.
    * @param aParent If aClone is true the cloned node will be appended to
    *                aParent's children. May be null. If not null then aNode
    *                must be an nsIContent.
@@ -1430,8 +1432,8 @@ class nsINode : public mozilla::dom::EventTarget {
    */
   static already_AddRefed<nsINode> CloneAndAdopt(
       nsINode* aNode, bool aClone, bool aDeep,
-      nsNodeInfoManager* aNewNodeInfoManager, nsINode* aParent,
-      mozilla::ErrorResult& aError);
+      nsNodeInfoManager* aNewNodeInfoManager, nsIGlobalObject* aNewScope,
+      nsINode* aParent, mozilla::ErrorResult& aError);
 
  public:
   /**
