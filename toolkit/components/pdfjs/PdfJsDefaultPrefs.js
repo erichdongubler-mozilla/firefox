@@ -59,6 +59,7 @@ pref("pdfjs.imagesRightClickMinSize", 16);
 pref("pdfjs.pageColorsBackground", "Canvas");
 pref("pdfjs.pageColorsForeground", "CanvasText");
 pref("pdfjs.pdfBugEnabled", false);
+pref("pdfjs.postMessageAfterPrintCallback", false);
 pref("pdfjs.scrollModeOnLoad", -1);
 pref("pdfjs.sidebarViewOnLoad", -1);
 pref("pdfjs.spreadModeOnLoad", -1);

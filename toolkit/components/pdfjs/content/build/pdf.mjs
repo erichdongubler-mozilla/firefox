@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.213
- * pdfjsBuild = 389853d47
+ * pdfjsVersion = 6.0.229
+ * pdfjsBuild = 145feeaa3
  */
 
 ;// ./src/shared/util.js
@@ -1996,7 +1996,14 @@ class FloatingToolbar {
   }
 }
 
+;// ./src/shared/internal_evt.js
+const INTERNAL_EVT = "1684dd60-3936-4889-b86a-7f7f4e3a1938";
+const internalOpt = Object.freeze({
+  internal: INTERNAL_EVT
+});
+
 ;// ./src/display/editor/tools.js
+
 
 
 
@@ -2558,24 +2565,16 @@ class AnnotationEditorUIManager {
     this.#signatureManager = signatureManager;
     this.#pdfDocument = pdfDocument;
     this._eventBus = eventBus;
-    eventBus._on("editingaction", this.onEditingAction.bind(this), {
-      signal
-    });
-    eventBus._on("pagechanging", this.onPageChanging.bind(this), {
-      signal
-    });
-    eventBus._on("scalechanging", this.onScaleChanging.bind(this), {
-      signal
-    });
-    eventBus._on("rotationchanging", this.onRotationChanging.bind(this), {
-      signal
-    });
-    eventBus._on("setpreference", this.onSetPreference.bind(this), {
-      signal
-    });
-    eventBus._on("switchannotationeditorparams", evt => this.updateParams(evt.type, evt.value), {
-      signal
-    });
+    const evtOpts = {
+      signal,
+      ...internalOpt
+    };
+    eventBus.on("editingaction", this.onEditingAction.bind(this), evtOpts);
+    eventBus.on("pagechanging", this.onPageChanging.bind(this), evtOpts);
+    eventBus.on("scalechanging", this.onScaleChanging.bind(this), evtOpts);
+    eventBus.on("rotationchanging", this.onRotationChanging.bind(this), evtOpts);
+    eventBus.on("setpreference", this.onSetPreference.bind(this), evtOpts);
+    eventBus.on("switchannotationeditorparams", evt => this.updateParams(evt.type, evt.value), evtOpts);
     window.addEventListener("pointerdown", () => {
       this.#isPointerDown = true;
     }, {
@@ -2775,7 +2774,7 @@ class AnnotationEditorUIManager {
     } = Promise.withResolvers();
     const onEditorsRendered = evt => {
       if (evt.pageNumber === pageNumber) {
-        this._eventBus._off("editorsrendered", onEditorsRendered);
+        this._eventBus.off("editorsrendered", onEditorsRendered);
         resolve();
       }
     };
@@ -14121,7 +14120,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.0.213",
+    apiVersion: "6.0.229",
     data,
     password,
     disableAutoFetch,
@@ -15373,12 +15372,27 @@ class WorkerTransport {
       pageInfos
     };
     let transfer;
+    const ImageBitmapCtor = globalThis.ImageBitmap;
+    if (typeof ImageBitmapCtor === "function") {
+      const infos = Array.isArray(pageInfos) ? pageInfos : [pageInfos];
+      for (const pageInfo of infos) {
+        if (pageInfo?.image instanceof ImageBitmapCtor) {
+          (transfer ||= []).push(pageInfo.image);
+        }
+      }
+    }
     if (this.annotationStorage.size > 0) {
       const serialized = this.annotationStorage.serializable;
       let {
         map
       } = serialized;
-      transfer = serialized.transfer;
+      if (serialized.transfer?.length) {
+        if (transfer) {
+          transfer.push(...serialized.transfer);
+        } else {
+          transfer = serialized.transfer;
+        }
+      }
       const mapping = this.pagesMapper.getMapping();
       if (mapping) {
         const remapped = new Map();
@@ -15749,8 +15763,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.0.213";
-const build = "389853d47";
+const version = "6.0.229";
+const build = "145feeaa3";
 
 ;// ./src/display/editor/color_picker.js
 

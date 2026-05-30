@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.213
- * pdfjsBuild = 389853d47
+ * pdfjsVersion = 6.0.229
+ * pdfjsBuild = 145feeaa3
  */
 
 ;// ./web/ui_utils.js
@@ -740,6 +740,10 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
+  postMessageAfterPrintCallback: {
+    value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE
+  },
   printResolution: {
     value: 150,
     kind: OptionKind.VIEWER
@@ -911,6 +915,12 @@ class AppOptions {
   }
 }
 
+;// ./web/internal_evt.js
+const INTERNAL_EVT = "1684dd60-3936-4889-b86a-7f7f4e3a1938";
+const internalOpt = Object.freeze({
+  internal: INTERNAL_EVT
+});
+
 ;// ./web/pdfjs.js
 const {
   AbortException,
@@ -976,6 +986,7 @@ const {
 } = globalThis.pdfjsLib;
 
 ;// ./web/pdf_link_service.js
+
 
 
 const DEFAULT_LINK_REL = "noopener noreferrer nofollow";
@@ -1083,13 +1094,14 @@ class PDFLinkService {
       ignoreDestinationZoom: this._ignoreDestinationZoom
     });
     const ac = new AbortController();
-    this.eventBus._on("textlayerrendered", evt => {
+    this.eventBus.on("textlayerrendered", evt => {
       if (evt.pageNumber === pageNumber) {
         evt.source.textLayer.div.focus();
         ac.abort();
       }
     }, {
-      signal: ac.signal
+      signal: ac.signal,
+      ...internalOpt
     });
   }
   goToPage(val) {
@@ -1306,6 +1318,7 @@ class SimpleLinkService extends PDFLinkService {
 }
 
 ;// ./web/event_utils.js
+
 const WaitOnType = {
   EVENT: "event",
   TIMEOUT: "timeout"
@@ -1328,53 +1341,20 @@ async function waitOnEventOrTimeout({
     clearTimeout(timeout);
     resolve(type);
   }
-  const evtMethod = target instanceof EventBus ? "_on" : "addEventListener";
-  target[evtMethod](name, handler.bind(null, WaitOnType.EVENT), {
+  const evtMethod = target instanceof EventBus ? "on" : "addEventListener";
+  const evtOpts = target instanceof EventBus ? {
+    signal: ac.signal,
+    ...internalOpt
+  } : {
     signal: ac.signal
-  });
+  };
+  target[evtMethod](name, handler.bind(null, WaitOnType.EVENT), evtOpts);
   const timeout = setTimeout(handler.bind(null, WaitOnType.TIMEOUT), delay);
   return promise;
 }
 class EventBus {
   #listeners = Object.create(null);
   on(eventName, listener, options = null) {
-    this._on(eventName, listener, {
-      external: true,
-      once: options?.once,
-      signal: options?.signal
-    });
-  }
-  off(eventName, listener, options = null) {
-    this._off(eventName, listener);
-  }
-  dispatch(eventName, data) {
-    const eventListeners = this.#listeners[eventName];
-    if (!eventListeners || eventListeners.length === 0) {
-      return;
-    }
-    let externalListeners;
-    for (const {
-      listener,
-      external,
-      once
-    } of eventListeners.slice(0)) {
-      if (once) {
-        this._off(eventName, listener);
-      }
-      if (external) {
-        (externalListeners ||= []).push(listener);
-        continue;
-      }
-      listener(data);
-    }
-    if (externalListeners) {
-      for (const listener of externalListeners) {
-        listener(data);
-      }
-      externalListeners = null;
-    }
-  }
-  _on(eventName, listener, options = null) {
     let rmAbort = null;
     if (options?.signal instanceof AbortSignal) {
       const {
@@ -1384,19 +1364,19 @@ class EventBus {
         console.error("Cannot use an `aborted` signal.");
         return;
       }
-      const onAbort = () => this._off(eventName, listener);
+      const onAbort = () => this.off(eventName, listener);
       rmAbort = () => signal.removeEventListener("abort", onAbort);
       signal.addEventListener("abort", onAbort);
     }
-    const eventListeners = this.#listeners[eventName] ||= [];
+    const eventListeners = this.#listeners[eventName] ??= [];
     eventListeners.push({
       listener,
-      external: options?.external === true,
+      internal: options?.internal === INTERNAL_EVT,
       once: options?.once === true,
       rmAbort
     });
   }
-  _off(eventName, listener, options = null) {
+  off(eventName, listener, options = null) {
     const eventListeners = this.#listeners[eventName];
     if (!eventListeners) {
       return;
@@ -1407,6 +1387,32 @@ class EventBus {
         evt.rmAbort?.();
         eventListeners.splice(i, 1);
         return;
+      }
+    }
+  }
+  dispatch(eventName, data) {
+    const eventListeners = this.#listeners[eventName];
+    if (!eventListeners?.length) {
+      return;
+    }
+    let extListeners;
+    for (const {
+      listener,
+      internal,
+      once
+    } of eventListeners.slice(0)) {
+      if (once) {
+        this.off(eventName, listener);
+      }
+      if (!internal) {
+        (extListeners ??= []).push(listener);
+        continue;
+      }
+      listener(data);
+    }
+    if (extListeners) {
+      for (const listener of extListeners) {
+        listener(data);
       }
     }
   }
@@ -1677,6 +1683,7 @@ const GenericL10n = null;
 
 
 
+
 let viewerApp = {
   initialized: false
 };
@@ -1897,7 +1904,11 @@ class MLManager {
   setEventBus(eventBus, abortSignal) {
     this.#eventBus = eventBus;
     this.#abortSignal = abortSignal;
-    eventBus._on("enablealttextmodeldownload", ({
+    const evtOpts = {
+      signal: abortSignal,
+      ...internalOpt
+    };
+    eventBus.on("enablealttextmodeldownload", ({
       value
     }) => {
       if (this.enableAltTextModelDownload === value) {
@@ -1908,16 +1919,12 @@ class MLManager {
       } else {
         this.deleteModel("altText");
       }
-    }, {
-      signal: abortSignal
-    });
-    eventBus._on("enableguessalttext", ({
+    }, evtOpts);
+    eventBus.on("enableguessalttext", ({
       value
     }) => {
       this.toggleService("altText", value);
-    }, {
-      signal: abortSignal
-    });
+    }, evtOpts);
   }
   async isEnabledFor(name) {
     return this.enableGuessAltText && !!(await this.#enabled?.get(name));
@@ -3544,6 +3551,7 @@ class CommentPopup {
 
 ;// ./web/editor_undo_bar.js
 
+
 class EditorUndoBar {
   #closeButton = null;
   #container;
@@ -3583,14 +3591,18 @@ class EditorUndoBar {
   show(undoAction, messageData) {
     if (!this.#initController) {
       this.#initController = new AbortController();
-      const opts = {
+      const domOpts = {
         signal: this.#initController.signal
       };
+      const evtOpts = {
+        signal: this.#initController.signal,
+        ...internalOpt
+      };
       const boundHide = this.hide.bind(this);
-      this.#container.addEventListener("contextmenu", noContextMenu, opts);
-      this.#closeButton.addEventListener("click", boundHide, opts);
-      this.#eventBus._on("beforeprint", boundHide, opts);
-      this.#eventBus._on("download", boundHide, opts);
+      this.#container.addEventListener("contextmenu", noContextMenu, domOpts);
+      this.#closeButton.addEventListener("click", boundHide, domOpts);
+      this.#eventBus.on("beforeprint", boundHide, evtOpts);
+      this.#eventBus.on("download", boundHide, evtOpts);
     }
     this.hide();
     if (typeof messageData === "string") {
@@ -3837,6 +3849,7 @@ function getNormalizeWithNFKC() {
 ;// ./web/pdf_find_controller.js
 
 
+
 const FindState = {
   FOUND: 0,
   NOT_FOUND: 1,
@@ -4071,9 +4084,9 @@ class PDFFindController {
     this.#delay = delay;
     this.onIsPageVisible = null;
     this.#reset();
-    eventBus._on("find", this.#onFind.bind(this));
-    eventBus._on("findbarclose", this.#onFindBarClose.bind(this));
-    eventBus._on("pagesedited", this.#onPagesEdited.bind(this));
+    eventBus.on("find", this.#onFind.bind(this), internalOpt);
+    eventBus.on("findbarclose", this.#onFindBarClose.bind(this), internalOpt);
+    eventBus.on("pagesedited", this.#onPagesEdited.bind(this), internalOpt);
   }
   get highlightMatches() {
     return this._highlightMatches;
@@ -4704,6 +4717,7 @@ class PDFFindController {
 
 
 
+
 const HASH_CHANGE_TIMEOUT = 1000;
 const POSITION_UPDATED_THRESHOLD = 50;
 const UPDATE_VIEWAREA_TIMEOUT = 1000;
@@ -4711,7 +4725,7 @@ function getCurrentHash() {
   return document.location.hash;
 }
 class PDFHistory {
-  #eventAbortController = null;
+  #eventAC = null;
   constructor({
     linkService,
     eventBus
@@ -4721,14 +4735,15 @@ class PDFHistory {
     this._initialized = false;
     this._fingerprint = "";
     this.reset();
-    this.eventBus._on("pagesinit", () => {
+    this.eventBus.on("pagesinit", () => {
       this._isPagesLoaded = false;
-      this.eventBus._on("pagesloaded", evt => {
+      this.eventBus.on("pagesloaded", evt => {
         this._isPagesLoaded = !!evt.pagesCount;
       }, {
-        once: true
+        once: true,
+        ...internalOpt
       });
-    });
+    }, internalOpt);
   }
   initialize({
     fingerprint,
@@ -5101,15 +5116,16 @@ class PDFHistory {
     }
   }
   #bindEvents() {
-    if (this.#eventAbortController) {
+    if (this.#eventAC) {
       return;
     }
-    this.#eventAbortController = new AbortController();
+    this.#eventAC = new AbortController();
     const {
       signal
-    } = this.#eventAbortController;
-    this.eventBus._on("updateviewarea", this.#updateViewarea.bind(this), {
-      signal
+    } = this.#eventAC;
+    this.eventBus.on("updateviewarea", this.#updateViewarea.bind(this), {
+      signal,
+      ...internalOpt
     });
     window.addEventListener("popstate", this.#popState.bind(this), {
       signal
@@ -5119,8 +5135,8 @@ class PDFHistory {
     });
   }
   #unbindEvents() {
-    this.#eventAbortController?.abort();
-    this.#eventAbortController = null;
+    this.#eventAC?.abort();
+    this.#eventAC = null;
   }
 }
 function isDestHashesEqual(destHash, pushHash) {
@@ -5267,7 +5283,8 @@ function getXfaHtmlForPrinting(printContainer, pdfDocument) {
 ;// ./web/firefox_print_service.js
 
 
-function composePage(pdfDocument, pageNumber, size, printContainer, printResolution, optionalContentConfigPromise, printAnnotationStoragePromise) {
+
+function composePage(pdfDocument, pageNumber, size, printContainer, printResolution, shouldPostMessageAfterPrintCallback, optionalContentConfigPromise, printAnnotationStoragePromise) {
   const canvas = document.createElement("canvas");
   const PRINT_UNITS = printResolution / PixelsPerInch.PDF;
   canvas.width = Math.floor(size.width * PRINT_UNITS);
@@ -5309,6 +5326,9 @@ function composePage(pdfDocument, pageNumber, size, printContainer, printResolut
         currentRenderTask = null;
       }
       obj.done();
+      if (shouldPostMessageAfterPrintCallback) {
+        window.postMessage("ready", "*");
+      }
     }, function (reason) {
       if (!(reason instanceof RenderingCancelledException)) {
         console.error(reason);
@@ -5321,6 +5341,9 @@ function composePage(pdfDocument, pageNumber, size, printContainer, printResolut
         obj.abort();
       } else {
         obj.done();
+      }
+      if (shouldPostMessageAfterPrintCallback) {
+        window.postMessage("error", "*");
       }
     });
   };
@@ -5368,8 +5391,9 @@ class FirefoxPrintService {
       getXfaHtmlForPrinting(printContainer, pdfDocument);
       return;
     }
+    const shouldPostMessageAfterPrintCallback = AppOptions.get("postMessageAfterPrintCallback");
     for (let i = 0, ii = pagesOverview.length; i < ii; ++i) {
-      composePage(pdfDocument, i + 1, pagesOverview[i], printContainer, _printResolution, _optionalContentConfigPromise, _printAnnotationStoragePromise);
+      composePage(pdfDocument, i + 1, pagesOverview[i], printContainer, _printResolution, shouldPostMessageAfterPrintCallback, _optionalContentConfigPromise, _printAnnotationStoragePromise);
     }
   }
   destroy() {
@@ -5538,11 +5562,12 @@ class PDFRenderingQueue {
 
 
 
+
 class PDFScriptingManager {
   #closeCapability = null;
   #destroyCapability = null;
   #docProperties = null;
-  #eventAbortController = null;
+  #eventAC = null;
   #eventBus = null;
   #externalServices = null;
   #pdfDocument = null;
@@ -5586,23 +5611,20 @@ class PDFScriptingManager {
       return;
     }
     const eventBus = this.#eventBus;
-    this.#eventAbortController = new AbortController();
-    const {
-      signal
-    } = this.#eventAbortController;
-    eventBus._on("updatefromsandbox", event => {
+    this.#eventAC = new AbortController();
+    const evtOpts = {
+      signal: this.#eventAC.signal,
+      ...internalOpt
+    };
+    eventBus.on("updatefromsandbox", event => {
       if (event?.source === window) {
         this.#updateFromSandbox(event.detail);
       }
-    }, {
-      signal
-    });
-    eventBus._on("dispatcheventinsandbox", event => {
+    }, evtOpts);
+    eventBus.on("dispatcheventinsandbox", event => {
       this.#scripting?.dispatchEventInSandbox(event.detail);
-    }, {
-      signal
-    });
-    eventBus._on("pagechanging", ({
+    }, evtOpts);
+    eventBus.on("pagechanging", ({
       pageNumber,
       previous
     }) => {
@@ -5611,10 +5633,8 @@ class PDFScriptingManager {
       }
       this.#dispatchPageClose(previous);
       this.#dispatchPageOpen(pageNumber);
-    }, {
-      signal
-    });
-    eventBus._on("pagerendered", ({
+    }, evtOpts);
+    eventBus.on("pagerendered", ({
       pageNumber
     }) => {
       if (!this._pageOpenPending.has(pageNumber)) {
@@ -5624,19 +5644,15 @@ class PDFScriptingManager {
         return;
       }
       this.#dispatchPageOpen(pageNumber);
-    }, {
-      signal
-    });
-    eventBus._on("pagesdestroy", async () => {
+    }, evtOpts);
+    eventBus.on("pagesdestroy", async () => {
       await this.#dispatchPageClose(this.#pdfViewer.currentPageNumber);
       await this.#scripting?.dispatchEventInSandbox({
         id: "doc",
         name: "WillClose"
       });
       this.#closeCapability?.resolve();
-    }, {
-      signal
-    });
+    }, evtOpts);
     try {
       const docProperties = await this.#docProperties(pdfDocument);
       if (pdfDocument !== this.#pdfDocument) {
@@ -5890,8 +5906,8 @@ class PDFScriptingManager {
     } catch {}
     this.#willPrintCapability?.reject(new Error("Scripting destroyed."));
     this.#willPrintCapability = null;
-    this.#eventAbortController?.abort();
-    this.#eventAbortController = null;
+    this.#eventAC?.abort();
+    this.#eventAC = null;
     this._pageOpenPending.clear();
     this._visitedPages.clear();
     this.#scripting = null;
@@ -5901,20 +5917,21 @@ class PDFScriptingManager {
 }
 
 ;// ./web/pdf_text_extractor.js
+
 class PdfTextExtractor {
   #externalServices;
   #textPromise;
   #capability = Promise.withResolvers();
   constructor(externalServices, pdfViewer, eventBus) {
     this.#externalServices = externalServices;
-    eventBus._on("pagesinit", () => {
+    eventBus.on("pagesinit", () => {
       this.#capability.resolve(pdfViewer);
-    });
-    eventBus._on("pagesdestroy", () => {
+    }, internalOpt);
+    eventBus.on("pagesdestroy", () => {
       this.#capability.reject(new Error("pagesdestroy"));
       this.#textPromise = null;
       this.#capability = Promise.withResolvers();
-    });
+    }, internalOpt);
     window.addEventListener("requestTextContent", ({
       detail
     }) => {
@@ -6039,12 +6056,13 @@ class AnnotationEditorLayerBuilder {
 ;// ./web/annotation_layer_builder.js
 
 
+
 class AnnotationLayerBuilder {
   #annotations = null;
   #commentManager = null;
   #externalHide = false;
   #onAppend = null;
-  #eventAbortController = null;
+  #eventAC = null;
   #linksInjected = false;
   constructor({
     pdfPage,
@@ -6132,12 +6150,13 @@ class AnnotationLayerBuilder {
     if (this.linkService.isInPresentationMode) {
       this.#updatePresentationModeState(PresentationModeState.FULLSCREEN);
     }
-    if (!this.#eventAbortController) {
-      this.#eventAbortController = new AbortController();
-      this._eventBus?._on("presentationmodechanged", evt => {
+    if (!this.#eventAC) {
+      this.#eventAC = new AbortController();
+      this._eventBus?.on("presentationmodechanged", evt => {
         this.#updatePresentationModeState(evt.state);
       }, {
-        signal: this.#eventAbortController.signal
+        signal: this.#eventAC.signal,
+        ...internalOpt
       });
     }
   }
@@ -6159,8 +6178,8 @@ class AnnotationLayerBuilder {
   }
   cancel() {
     this._cancelled = true;
-    this.#eventAbortController?.abort();
-    this.#eventAbortController = null;
+    this.#eventAC?.abort();
+    this.#eventAC = null;
   }
   hide(internal = false) {
     this.#externalHide = !internal;
@@ -7305,8 +7324,9 @@ class TextAccessibilityManager {
 }
 
 ;// ./web/text_highlighter.js
+
 class TextHighlighter {
-  #eventAbortController = null;
+  #eventAC = null;
   constructor({
     findController,
     eventBus,
@@ -7332,14 +7352,15 @@ class TextHighlighter {
       throw new Error("TextHighlighter is already enabled.");
     }
     this.enabled = true;
-    if (!this.#eventAbortController) {
-      this.#eventAbortController = new AbortController();
-      this.eventBus._on("updatetextlayermatches", evt => {
+    if (!this.#eventAC) {
+      this.#eventAC = new AbortController();
+      this.eventBus.on("updatetextlayermatches", evt => {
         if (evt.pageIndex === this.pageIdx || evt.pageIndex === -1) {
           this._updateMatches();
         }
       }, {
-        signal: this.#eventAbortController.signal
+        signal: this.#eventAC.signal,
+        ...internalOpt
       });
     }
     this._updateMatches();
@@ -7349,8 +7370,8 @@ class TextHighlighter {
       return;
     }
     this.enabled = false;
-    this.#eventAbortController?.abort();
-    this.#eventAbortController = null;
+    this.#eventAC?.abort();
+    this.#eventAC = null;
     this._updateMatches(true);
   }
   _convertMatches(matches, matchesLength) {
@@ -7536,7 +7557,7 @@ class TextLayerBuilder {
   #renderingDone = false;
   #textLayer = null;
   static #textLayers = new Map();
-  static #selectionChangeAbortController = null;
+  static #selectionChangeAC = null;
   constructor({
     pdfPage,
     highlighter = null,
@@ -7639,16 +7660,16 @@ class TextLayerBuilder {
   static #removeGlobalSelectionListener(textLayerDiv) {
     this.#textLayers.delete(textLayerDiv);
     if (this.#textLayers.size === 0) {
-      this.#selectionChangeAbortController?.abort();
-      this.#selectionChangeAbortController = null;
+      this.#selectionChangeAC?.abort();
+      this.#selectionChangeAC = null;
     }
   }
   static #enableGlobalSelectionListener(globalAbortSignal) {
-    if (this.#selectionChangeAbortController) {
+    if (this.#selectionChangeAC) {
       return;
     }
-    this.#selectionChangeAbortController = new AbortController();
-    const signal = globalAbortSignal ? AbortSignal.any([this.#selectionChangeAbortController.signal, globalAbortSignal]) : this.#selectionChangeAbortController.signal;
+    this.#selectionChangeAC = new AbortController();
+    const signal = globalAbortSignal ? AbortSignal.any([this.#selectionChangeAC.signal, globalAbortSignal]) : this.#selectionChangeAC.signal;
     const reset = (end, textLayer) => {
       textLayer.classList.remove("selecting");
     };
@@ -8540,6 +8561,7 @@ class PDFPageView extends BasePDFPageView {
 
 
 
+
 const DEFAULT_CACHE_SIZE = 10;
 const PagesCountLimit = {
   FORCE_SCROLL_MODE_PAGE: 10000,
@@ -8613,7 +8635,7 @@ class PDFViewer {
   #enableNewAltTextWhenAddingImage = false;
   #enableAutoLinking = true;
   #abortSignal = null;
-  #eventAbortController = null;
+  #eventAC = null;
   #minDurationToUpdateCanvas = 0;
   #mlManager = null;
   #printingAllowed = true;
@@ -8634,7 +8656,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.0.213";
+    const viewerVersion = "6.0.229";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -8693,7 +8715,7 @@ class PDFViewer {
     this.presentationModeState = PresentationModeState.UNKNOWN;
     this._resetView();
     this.#updateContainerHeightCss();
-    this.eventBus._on("thumbnailrendered", ({
+    this.eventBus.on("thumbnailrendered", ({
       pageNumber,
       pdfPage
     }) => {
@@ -8701,7 +8723,7 @@ class PDFViewer {
       if (!this.#buffer.has(pageView)) {
         pdfPage?.cleanup();
       }
-    });
+    }, internalOpt);
   }
   get printingAllowed() {
     return this.#printingAllowed;
@@ -9039,10 +9061,14 @@ class PDFViewer {
       pageColors,
       viewer
     } = this;
-    this.#eventAbortController = new AbortController();
+    this.#eventAC = new AbortController();
     const {
       signal
-    } = this.#eventAbortController;
+    } = this.#eventAC;
+    const evtOpts = {
+      signal,
+      ...internalOpt
+    };
     if (pagesCount > PagesCountLimit.FORCE_SCROLL_MODE_PAGE) {
       console.warn("Forcing PAGE-scrolling for performance reasons, given the length of the document.");
       const mode = this._scrollMode = ScrollMode.PAGE;
@@ -9064,9 +9090,7 @@ class PDFViewer {
       }
       this.#buffer.push(pageView);
     };
-    eventBus._on("pagerender", onBeforeDraw, {
-      signal
-    });
+    eventBus.on("pagerender", onBeforeDraw, evtOpts);
     const onAfterDraw = evt => {
       if (evt.cssTransform || evt.isDetailView) {
         return;
@@ -9074,11 +9098,9 @@ class PDFViewer {
       this._onePageRenderedCapability.resolve({
         timestamp: evt.timestamp
       });
-      eventBus._off("pagerendered", onAfterDraw);
+      eventBus.off("pagerendered", onAfterDraw);
     };
-    eventBus._on("pagerendered", onAfterDraw, {
-      signal
-    });
+    eventBus.on("pagerendered", onAfterDraw, evtOpts);
     Promise.all([firstPagePromise, permissionsPromise]).then(([firstPdfPage, permissions]) => {
       if (pdfDocument !== this.pdfDocument) {
         return;
@@ -9162,7 +9184,7 @@ class PDFViewer {
       } else if (this._spreadMode !== SpreadMode.NONE) {
         this._updateSpreadMode();
       }
-      eventBus._on("annotationeditorlayerrendered", evt => {
+      eventBus.on("annotationeditorlayerrendered", evt => {
         if (this.#annotationEditorUIManager) {
           eventBus.dispatch("annotationeditormodechanged", {
             source: this,
@@ -9171,7 +9193,8 @@ class PDFViewer {
         }
       }, {
         once: true,
-        signal
+        signal,
+        ...internalOpt
       });
       this.#onePageRenderedOrForceFetch(signal).then(async () => {
         if (pdfDocument !== this.pdfDocument) {
@@ -9365,8 +9388,8 @@ class PDFViewer {
       scrollDown: true,
       pages: []
     };
-    this.#eventAbortController?.abort();
-    this.#eventAbortController = null;
+    this.#eventAC?.abort();
+    this.#eventAC = null;
     this.viewer.textContent = "";
     this._updateScrollMode();
     this.viewer.removeAttribute("lang");
@@ -10275,8 +10298,8 @@ class PDFViewer {
       if (isEditing && idsToRefresh) {
         this.#cleanupSwitchAnnotationEditorMode();
         this.#switchAnnotationEditorModeAC = new AbortController();
-        const signal = AbortSignal.any([this.#eventAbortController.signal, this.#switchAnnotationEditorModeAC.signal]);
-        eventBus._on("pagerendered", ({
+        const signal = AbortSignal.any([this.#eventAC.signal, this.#switchAnnotationEditorModeAC.signal]);
+        eventBus.on("pagerendered", ({
           pageNumber
         }) => {
           idsToRefresh.delete(pageNumber);
@@ -10284,7 +10307,8 @@ class PDFViewer {
             this.#switchAnnotationEditorModeTimeoutId = setTimeout(updater, 0);
           }
         }, {
-          signal
+          signal,
+          ...internalOpt
         });
         return;
       }
@@ -10474,6 +10498,7 @@ class ViewHistory {
 
 
 
+
 const FORCE_PAGES_LOADED_TIMEOUT = 10000;
 const ViewOnLoad = {
   UNKNOWN: -1,
@@ -10520,8 +10545,8 @@ const PDFViewerApplication = {
   baseUrl: "",
   mlManager: null,
   _downloadUrl: "",
-  _eventBusAbortController: null,
-  _windowAbortController: null,
+  _eventBusAC: null,
+  _windowAC: null,
   _globalAbortController: new AbortController(),
   documentInfo: null,
   metadata: null,
@@ -11422,8 +11447,9 @@ const PDFViewerApplication = {
   async _scriptingDocProperties(pdfDocument) {
     if (!this.documentInfo) {
       await new Promise(resolve => {
-        this.eventBus._on("metadataloaded", resolve, {
-          once: true
+        this.eventBus.on("metadataloaded", resolve, {
+          once: true,
+          ...internalOpt
         });
       });
       if (pdfDocument !== this.pdfDocument) {
@@ -11432,8 +11458,9 @@ const PDFViewerApplication = {
     }
     if (!this._contentLength) {
       await new Promise(resolve => {
-        this.eventBus._on("documentloaded", resolve, {
-          once: true
+        this.eventBus.on("documentloaded", resolve, {
+          once: true,
+          ...internalOpt
         });
       });
       if (pdfDocument !== this.pdfDocument) {
@@ -11675,12 +11702,13 @@ const PDFViewerApplication = {
     }
   },
   bindEvents() {
-    if (this._eventBusAbortController) {
+    if (this._eventBusAC) {
       return;
     }
-    const ac = this._eventBusAbortController = new AbortController();
+    const ac = this._eventBusAC = new AbortController();
     const opts = {
-      signal: ac.signal
+      signal: ac.signal,
+      ...internalOpt
     };
     const {
       eventBus,
@@ -11689,64 +11717,64 @@ const PDFViewerApplication = {
       pdfViewer,
       preferences
     } = this;
-    eventBus._on("resize", onResize.bind(this), opts);
-    eventBus._on("hashchange", onHashchange.bind(this), opts);
-    eventBus._on("beforeprint", this.beforePrint.bind(this), opts);
-    eventBus._on("afterprint", this.afterPrint.bind(this), opts);
-    eventBus._on("pagerender", onPageRender.bind(this), opts);
-    eventBus._on("pagerendered", onPageRendered.bind(this), opts);
-    eventBus._on("updateviewarea", onUpdateViewarea.bind(this), opts);
-    eventBus._on("pagechanging", onPageChanging.bind(this), opts);
-    eventBus._on("scalechanging", onScaleChanging.bind(this), opts);
-    eventBus._on("rotationchanging", onRotationChanging.bind(this), opts);
-    eventBus._on("sidebarviewchanged", onSidebarViewChanged.bind(this), opts);
-    eventBus._on("pagemode", onPageMode.bind(this), opts);
-    eventBus._on("namedaction", onNamedAction.bind(this), opts);
-    eventBus._on("presentationmodechanged", evt => pdfViewer.presentationModeState = evt.state, opts);
-    eventBus._on("presentationmode", this.requestPresentationMode.bind(this), opts);
-    eventBus._on("switchannotationeditormode", evt => pdfViewer.annotationEditorMode = evt, opts);
-    eventBus._on("print", this.triggerPrinting.bind(this), opts);
-    eventBus._on("download", this.downloadOrSave.bind(this), opts);
-    eventBus._on("firstpage", () => this.page = 1, opts);
-    eventBus._on("lastpage", () => this.page = this.pagesCount, opts);
-    eventBus._on("nextpage", () => pdfViewer.nextPage(), opts);
-    eventBus._on("previouspage", () => pdfViewer.previousPage(), opts);
-    eventBus._on("zoomin", this.zoomIn.bind(this), opts);
-    eventBus._on("zoomout", this.zoomOut.bind(this), opts);
-    eventBus._on("zoomreset", this.zoomReset.bind(this), opts);
-    eventBus._on("pagenumberchanged", onPageNumberChanged.bind(this), opts);
-    eventBus._on("scalechanged", evt => pdfViewer.currentScaleValue = evt.value, opts);
-    eventBus._on("rotatecw", this.rotatePages.bind(this, 90), opts);
-    eventBus._on("rotateccw", this.rotatePages.bind(this, -90), opts);
-    eventBus._on("optionalcontentconfig", evt => pdfViewer.optionalContentConfigPromise = evt.promise, opts);
-    eventBus._on("switchscrollmode", evt => pdfViewer.scrollMode = evt.mode, opts);
-    eventBus._on("scrollmodechanged", onViewerModesChanged.bind(this, "scrollMode"), opts);
-    eventBus._on("switchspreadmode", evt => pdfViewer.spreadMode = evt.mode, opts);
-    eventBus._on("spreadmodechanged", onViewerModesChanged.bind(this, "spreadMode"), opts);
-    eventBus._on("imagealttextsettings", onImageAltTextSettings.bind(this), opts);
-    eventBus._on("documentproperties", () => pdfDocumentProperties?.open(), opts);
-    eventBus._on("findfromurlhash", onFindFromUrlHash.bind(this), opts);
-    eventBus._on("updatefindmatchescount", onUpdateFindMatchesCount.bind(this), opts);
-    eventBus._on("updatefindcontrolstate", onUpdateFindControlState.bind(this), opts);
-    eventBus._on("editingstateschanged", evt => externalServices.updateEditorStates(evt), opts);
-    eventBus._on("reporttelemetry", evt => externalServices.reportTelemetry(evt.details), opts);
-    eventBus._on("setpreference", evt => preferences.set(evt.name, evt.value), opts);
-    eventBus._on("pagesedited", this.onPagesEdited.bind(this), opts);
-    eventBus._on("saveextractedpages", this.onSavePages.bind(this), opts);
-    eventBus._on("saveandload", this.onSaveAndLoad.bind(this), opts);
+    eventBus.on("resize", onResize.bind(this), opts);
+    eventBus.on("hashchange", onHashchange.bind(this), opts);
+    eventBus.on("beforeprint", this.beforePrint.bind(this), opts);
+    eventBus.on("afterprint", this.afterPrint.bind(this), opts);
+    eventBus.on("pagerender", onPageRender.bind(this), opts);
+    eventBus.on("pagerendered", onPageRendered.bind(this), opts);
+    eventBus.on("updateviewarea", onUpdateViewarea.bind(this), opts);
+    eventBus.on("pagechanging", onPageChanging.bind(this), opts);
+    eventBus.on("scalechanging", onScaleChanging.bind(this), opts);
+    eventBus.on("rotationchanging", onRotationChanging.bind(this), opts);
+    eventBus.on("sidebarviewchanged", onSidebarViewChanged.bind(this), opts);
+    eventBus.on("pagemode", onPageMode.bind(this), opts);
+    eventBus.on("namedaction", onNamedAction.bind(this), opts);
+    eventBus.on("presentationmodechanged", evt => pdfViewer.presentationModeState = evt.state, opts);
+    eventBus.on("presentationmode", this.requestPresentationMode.bind(this), opts);
+    eventBus.on("switchannotationeditormode", evt => pdfViewer.annotationEditorMode = evt, opts);
+    eventBus.on("print", this.triggerPrinting.bind(this), opts);
+    eventBus.on("download", this.downloadOrSave.bind(this), opts);
+    eventBus.on("firstpage", () => this.page = 1, opts);
+    eventBus.on("lastpage", () => this.page = this.pagesCount, opts);
+    eventBus.on("nextpage", () => pdfViewer.nextPage(), opts);
+    eventBus.on("previouspage", () => pdfViewer.previousPage(), opts);
+    eventBus.on("zoomin", this.zoomIn.bind(this), opts);
+    eventBus.on("zoomout", this.zoomOut.bind(this), opts);
+    eventBus.on("zoomreset", this.zoomReset.bind(this), opts);
+    eventBus.on("pagenumberchanged", onPageNumberChanged.bind(this), opts);
+    eventBus.on("scalechanged", evt => pdfViewer.currentScaleValue = evt.value, opts);
+    eventBus.on("rotatecw", this.rotatePages.bind(this, 90), opts);
+    eventBus.on("rotateccw", this.rotatePages.bind(this, -90), opts);
+    eventBus.on("optionalcontentconfig", evt => pdfViewer.optionalContentConfigPromise = evt.promise, opts);
+    eventBus.on("switchscrollmode", evt => pdfViewer.scrollMode = evt.mode, opts);
+    eventBus.on("scrollmodechanged", onViewerModesChanged.bind(this, "scrollMode"), opts);
+    eventBus.on("switchspreadmode", evt => pdfViewer.spreadMode = evt.mode, opts);
+    eventBus.on("spreadmodechanged", onViewerModesChanged.bind(this, "spreadMode"), opts);
+    eventBus.on("imagealttextsettings", onImageAltTextSettings.bind(this), opts);
+    eventBus.on("documentproperties", () => pdfDocumentProperties?.open(), opts);
+    eventBus.on("findfromurlhash", onFindFromUrlHash.bind(this), opts);
+    eventBus.on("updatefindmatchescount", onUpdateFindMatchesCount.bind(this), opts);
+    eventBus.on("updatefindcontrolstate", onUpdateFindControlState.bind(this), opts);
+    eventBus.on("editingstateschanged", evt => externalServices.updateEditorStates(evt), opts);
+    eventBus.on("reporttelemetry", evt => externalServices.reportTelemetry(evt.details), opts);
+    eventBus.on("setpreference", evt => preferences.set(evt.name, evt.value), opts);
+    eventBus.on("pagesedited", this.onPagesEdited.bind(this), opts);
+    eventBus.on("saveextractedpages", this.onSavePages.bind(this), opts);
+    eventBus.on("saveandload", this.onSaveAndLoad.bind(this), opts);
   },
   bindWindowEvents() {
-    if (this._windowAbortController) {
+    if (this._windowAC) {
       return;
     }
-    this._windowAbortController = new AbortController();
+    this._windowAC = new AbortController();
     const {
       eventBus,
       appConfig: {
         mainContainer
       },
       pdfViewer,
-      _windowAbortController: {
+      _windowAC: {
         signal
       }
     } = this;
@@ -11849,12 +11877,12 @@ const PDFViewerApplication = {
     });
   },
   unbindEvents() {
-    this._eventBusAbortController?.abort();
-    this._eventBusAbortController = null;
+    this._eventBusAC?.abort();
+    this._eventBusAC = null;
   },
   unbindWindowEvents() {
-    this._windowAbortController?.abort();
-    this._windowAbortController = null;
+    this._windowAC?.abort();
+    this._windowAC = null;
     this._touchManager = null;
   },
   async testingClose() {
