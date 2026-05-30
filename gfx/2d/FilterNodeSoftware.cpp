@@ -441,96 +441,96 @@ already_AddRefed<FilterNode> FilterNodeSoftware::Create(FilterType aType) {
   RefPtr<FilterNodeSoftware> filter;
   switch (aType) {
     case FilterType::BLEND:
-      filter = new FilterNodeBlendSoftware();
+      filter = MakeRefPtr<FilterNodeBlendSoftware>();
       break;
     case FilterType::TRANSFORM:
-      filter = new FilterNodeTransformSoftware();
+      filter = MakeRefPtr<FilterNodeTransformSoftware>();
       break;
     case FilterType::MORPHOLOGY:
-      filter = new FilterNodeMorphologySoftware();
+      filter = MakeRefPtr<FilterNodeMorphologySoftware>();
       break;
     case FilterType::COLOR_MATRIX:
-      filter = new FilterNodeColorMatrixSoftware();
+      filter = MakeRefPtr<FilterNodeColorMatrixSoftware>();
       break;
     case FilterType::FLOOD:
-      filter = new FilterNodeFloodSoftware();
+      filter = MakeRefPtr<FilterNodeFloodSoftware>();
       break;
     case FilterType::TILE:
-      filter = new FilterNodeTileSoftware();
+      filter = MakeRefPtr<FilterNodeTileSoftware>();
       break;
     case FilterType::TABLE_TRANSFER:
-      filter = new FilterNodeTableTransferSoftware();
+      filter = MakeRefPtr<FilterNodeTableTransferSoftware>();
       break;
     case FilterType::DISCRETE_TRANSFER:
-      filter = new FilterNodeDiscreteTransferSoftware();
+      filter = MakeRefPtr<FilterNodeDiscreteTransferSoftware>();
       break;
     case FilterType::LINEAR_TRANSFER:
-      filter = new FilterNodeLinearTransferSoftware();
+      filter = MakeRefPtr<FilterNodeLinearTransferSoftware>();
       break;
     case FilterType::GAMMA_TRANSFER:
-      filter = new FilterNodeGammaTransferSoftware();
+      filter = MakeRefPtr<FilterNodeGammaTransferSoftware>();
       break;
     case FilterType::CONVOLVE_MATRIX:
-      filter = new FilterNodeConvolveMatrixSoftware();
+      filter = MakeRefPtr<FilterNodeConvolveMatrixSoftware>();
       break;
     case FilterType::DISPLACEMENT_MAP:
-      filter = new FilterNodeDisplacementMapSoftware();
+      filter = MakeRefPtr<FilterNodeDisplacementMapSoftware>();
       break;
     case FilterType::TURBULENCE:
-      filter = new FilterNodeTurbulenceSoftware();
+      filter = MakeRefPtr<FilterNodeTurbulenceSoftware>();
       break;
     case FilterType::ARITHMETIC_COMBINE:
-      filter = new FilterNodeArithmeticCombineSoftware();
+      filter = MakeRefPtr<FilterNodeArithmeticCombineSoftware>();
       break;
     case FilterType::COMPOSITE:
-      filter = new FilterNodeCompositeSoftware();
+      filter = MakeRefPtr<FilterNodeCompositeSoftware>();
       break;
     case FilterType::GAUSSIAN_BLUR:
-      filter = new FilterNodeGaussianBlurSoftware();
+      filter = MakeRefPtr<FilterNodeGaussianBlurSoftware>();
       break;
     case FilterType::DIRECTIONAL_BLUR:
-      filter = new FilterNodeDirectionalBlurSoftware();
+      filter = MakeRefPtr<FilterNodeDirectionalBlurSoftware>();
       break;
     case FilterType::CROP:
-      filter = new FilterNodeCropSoftware();
+      filter = MakeRefPtr<FilterNodeCropSoftware>();
       break;
     case FilterType::PREMULTIPLY:
-      filter = new FilterNodePremultiplySoftware();
+      filter = MakeRefPtr<FilterNodePremultiplySoftware>();
       break;
     case FilterType::UNPREMULTIPLY:
-      filter = new FilterNodeUnpremultiplySoftware();
+      filter = MakeRefPtr<FilterNodeUnpremultiplySoftware>();
       break;
     case FilterType::OPACITY:
-      filter = new FilterNodeOpacitySoftware();
+      filter = MakeRefPtr<FilterNodeOpacitySoftware>();
       break;
     case FilterType::POINT_DIFFUSE:
-      filter = new FilterNodeLightingSoftware<PointLightSoftware,
-                                              DiffuseLightingSoftware>(
+      filter = MakeRefPtr<FilterNodeLightingSoftware<PointLightSoftware,
+                                                     DiffuseLightingSoftware>>(
           "FilterNodeLightingSoftware<PointLight, DiffuseLighting>");
       break;
     case FilterType::POINT_SPECULAR:
-      filter = new FilterNodeLightingSoftware<PointLightSoftware,
-                                              SpecularLightingSoftware>(
+      filter = MakeRefPtr<FilterNodeLightingSoftware<PointLightSoftware,
+                                                     SpecularLightingSoftware>>(
           "FilterNodeLightingSoftware<PointLight, SpecularLighting>");
       break;
     case FilterType::SPOT_DIFFUSE:
-      filter = new FilterNodeLightingSoftware<SpotLightSoftware,
-                                              DiffuseLightingSoftware>(
+      filter = MakeRefPtr<FilterNodeLightingSoftware<SpotLightSoftware,
+                                                     DiffuseLightingSoftware>>(
           "FilterNodeLightingSoftware<SpotLight, DiffuseLighting>");
       break;
     case FilterType::SPOT_SPECULAR:
-      filter = new FilterNodeLightingSoftware<SpotLightSoftware,
-                                              SpecularLightingSoftware>(
+      filter = MakeRefPtr<FilterNodeLightingSoftware<SpotLightSoftware,
+                                                     SpecularLightingSoftware>>(
           "FilterNodeLightingSoftware<SpotLight, SpecularLighting>");
       break;
     case FilterType::DISTANT_DIFFUSE:
-      filter = new FilterNodeLightingSoftware<DistantLightSoftware,
-                                              DiffuseLightingSoftware>(
+      filter = MakeRefPtr<FilterNodeLightingSoftware<DistantLightSoftware,
+                                                     DiffuseLightingSoftware>>(
           "FilterNodeLightingSoftware<DistantLight, DiffuseLighting>");
       break;
     case FilterType::DISTANT_SPECULAR:
-      filter = new FilterNodeLightingSoftware<DistantLightSoftware,
-                                              SpecularLightingSoftware>(
+      filter = MakeRefPtr<FilterNodeLightingSoftware<DistantLightSoftware,
+                                                     SpecularLightingSoftware>>(
           "FilterNodeLightingSoftware<DistantLight, SpecularLighting>");
       break;
   }
@@ -908,7 +908,7 @@ FilterNodeSoftware::~FilterNodeSoftware() {
       mInvalidationListeners.empty(),
       "All invalidation listeners should have unsubscribed themselves by now!");
 
-  for (std::vector<RefPtr<FilterNodeSoftware> >::iterator it =
+  for (std::vector<RefPtr<FilterNodeSoftware>>::iterator it =
            mInputFilters.begin();
        it != mInputFilters.end(); it++) {
     if (*it) {
