@@ -191,6 +191,12 @@ void PEMFactory::InitUtilityPEMs() {
     }
   }
 #endif
+
+#ifdef MOZ_WIDGET_ANDROID
+  if (StaticPrefs::media_utility_android_media_codec_enabled()) {
+    mCurrentPEMs.AppendElement(new AndroidEncoderModule());
+  }
+#endif
 }
 
 void PEMFactory::InitContentPEMs() {
