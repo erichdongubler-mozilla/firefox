@@ -13,29 +13,16 @@
 namespace mozilla {
 
 #ifdef MOZ_WEBRTC
-static nsDependentCSubstring MimeTypeToPayloadString(
-    const MediaExtendedMIMEType& aMime) {
-  const nsCString& norm = aMime.Type().AsString();
-  const int32_t slash = norm.FindChar('/');
-  if (slash < 0) {
-    return {};
-  }
-  return Substring(norm, slash + 1);
-}
-
 // Query the webrtc encoder factory whether aMime is supported in SW and/or HW.
-media::EncodeSupportSet SupportsVideoMimeEncodeForWebrtc(
-    const MediaExtendedMIMEType& aMime) {
-  return WebrtcVideoEncoderFactory::SupportsCodec(webrtc::SdpVideoFormat(
-      std::string(MimeTypeToPayloadString(aMime).View())));
+media::EncodeSupportSet SupportsVideoEncodeForWebrtc(
+    const EncoderConfig& aConfig) {
+  return WebrtcVideoEncoderFactory::SupportsCodec(aConfig);
 }
 
 // Query the webrtc decoder factory whether aMime is supported in SW and/or HW.
-media::DecodeSupportSet SupportsVideoMimeDecodeForWebrtc(
-    const MediaExtendedMIMEType& aMime) {
-  return WebrtcVideoDecoderFactory::SupportsCodec(
-      webrtc::PayloadStringToCodecType(
-          std::string(MimeTypeToPayloadString(aMime).View())));
+media::DecodeSupportSet SupportsVideoDecodeForWebrtc(
+    const MediaExtendedMIMEType& aMime, const SupportDecoderParams& aParams) {
+  return WebrtcVideoDecoderFactory::SupportsCodec(aMime, aParams);
 }
 
 // Implementation class that samples codec preferences once at construction.
@@ -79,7 +66,7 @@ class CodecInfoImpl final : public WebrtcCodecInfo {
       return {};
     }
 
-    auto payloadString = MimeTypeToPayloadString(aMime);
+    auto payloadString = aMime.Subtype();
 
     // Codecs that are not standalone media codecs and not supported by WebRTC
     if (payloadString.EqualsIgnoreCase(webrtc::kRtxCodecName) ||
@@ -111,12 +98,11 @@ std::unique_ptr<WebrtcCodecInfo> WebrtcCodecInfo::Create() {
   return std::make_unique<CodecInfoImpl>();
 }
 #else
-media::EncodeSupportSet SupportsVideoMimeEncodeForWebrtc(
-    const MediaExtendedMIMEType& aMime) {
+media::EncodeSupportSet SupportsVideoEncodeForWebrtc(const EncoderConfig&) {
   return {};
 }
-media::DecodeSupportSet SupportsVideoMimeDecodeForWebrtc(
-    const MediaExtendedMIMEType& aMime) {
+media::DecodeSupportSet SupportsVideoDecodeForWebrtc(
+    const MediaExtendedMIMEType&, const SupportDecoderParams&) {
   return {};
 }
 

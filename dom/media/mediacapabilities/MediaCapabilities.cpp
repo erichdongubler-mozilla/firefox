@@ -232,6 +232,61 @@ namespace mozilla::dom {
 using mediacaps::IsValidMediaDecodingConfiguration;
 using mediacaps::IsValidMediaEncodingConfiguration;
 
+static gfx::IntSize ClampedIntSize(uint32_t aWidth, uint32_t aHeight) {
+  return gfx::IntSize(
+      static_cast<int32_t>(std::min<uint32_t>(aWidth, INT32_MAX)),
+      static_cast<int32_t>(std::min<uint32_t>(aHeight, INT32_MAX)));
+}
+
+static CodecType WebrtcMimeToCodecType(const MediaExtendedMIMEType& aMime) {
+  const nsCString& mime = aMime.Type().AsString();
+  if (mime.EqualsLiteral("video/h264")) {
+    return CodecType::H264;
+  }
+  if (mime.EqualsLiteral("video/vp8")) {
+    return CodecType::VP8;
+  }
+  if (mime.EqualsLiteral("video/vp9")) {
+    return CodecType::VP9;
+  }
+  if (mime.EqualsLiteral("video/av1")) {
+    return CodecType::AV1;
+  }
+  return CodecType::Unknown;
+}
+
+// Returns an EncoderConfig for use with PEMFactory::Supports.
+static EncoderConfig BuildEncoderConfig(const MediaExtendedMIMEType& aMime,
+                                        const VideoConfiguration& aConfig) {
+  const auto codec = WebrtcMimeToCodecType(aMime);
+  MOZ_ASSERT(codec != CodecType::Unknown);
+  const gfx::IntSize size = ClampedIntSize(aConfig.mWidth, aConfig.mHeight);
+  MOZ_ASSERT(size.width > 0 && size.height > 0);
+
+  EncoderConfig::CodecSpecific specific(void_t{});
+  if (codec == CodecType::H264) {
+    // Bug 2024767 will derive H264 profile/level from fmtp parameters.
+    // H.264 Constrained Baseline cannot be expressed with the current
+    // media profile enums (Bug 2040726), so we use use permissive defaults.
+    // here until then, 0x42e01f without 0xe1.
+    specific = AsVariant(H264Specific(H264_PROFILE::H264_PROFILE_BASE,
+                                      H264_LEVEL::H264_LEVEL_3_1,
+                                      H264BitStreamFormat::ANNEXB));
+  }
+  const float framerate = static_cast<float>(aConfig.mFramerate);
+  const uint32_t fr =
+      framerate > 1.0f ? SaturatingCast<uint32_t>(std::ceil(framerate)) : 1;
+  const uint32_t bitrate = SaturatingCast<uint32_t>(aConfig.mBitrate);
+  // PEMFactory::Supports() does not check bitrate, but we include it here
+  // for future use.
+  return EncoderConfig(
+      codec, size, Usage::Realtime,
+      EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P), fr,
+      /* kf interval*/ 0, bitrate, /* br min */ 0, /* br max */ 0,
+      mozilla::BitrateMode::Variable, HardwarePreference::None,
+      ScalabilityMode::None, specific);
+}
+
 // Caches codec support state (e.g., WebrtcCodecInfo) for reuse across
 // audio and video support queries within a single MediaCapabilities request.
 class MOZ_STACK_CLASS CodecSupportState final {
@@ -620,14 +675,43 @@ void MediaCapabilities::CreateWebRTCDecodingInfo(
         info.mPowerEfficient = true;
 
         if (videoContainer) {
-          auto videoSupport =
-              // TODO(Bug 2024767): Handle fmtp parameters
-              SupportsVideoMimeDecodeForWebrtc(videoContainer->ExtendedType());
           const auto& v = aConfiguration.mVideo.Value();
           const CheckedInt<uint32_t> pixels =
               CheckedInt<uint32_t>(v.mWidth) * CheckedInt<uint32_t>(v.mHeight);
           const bool lowResolution =
               pixels.isValid() && pixels.value() <= kLowResolutionPixelCount;
+          // Normalize for PDMs that expect "video/avc"
+          nsCString trackMime(videoContainer->Type().AsString());
+          if (trackMime.LowerCaseEqualsLiteral("video/h264")) {
+            trackMime.AssignLiteral("video/avc");
+          }
+          auto trackInfo =
+              CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
+                  trackMime, *videoContainer);
+          if (!trackInfo) {
+            MediaCapabilitiesDecodingInfo unsupported;
+            unsupported.mSupported = false;
+            unsupported.mSmooth = false;
+            unsupported.mPowerEfficient = false;
+            LOG("{} -> {}", aConfiguration, unsupported);
+            return PromiseType::CreateAndResolve(
+                std::move(unsupported), "MediaCapabilities::DecodingInfo");
+          }
+          // TODO(Bug 2024767): Handle fmtp parameters
+          SupportDecoderParams videoParameters(
+              *trackInfo,
+              media::VideoFrameRate(static_cast<float>(v.mFramerate)));
+          auto videoSupport = SupportsVideoDecodeForWebrtc(
+              videoContainer->ExtendedType(), videoParameters);
+          if (videoSupport.isEmpty()) {
+            MediaCapabilitiesDecodingInfo unsupported;
+            unsupported.mSupported = false;
+            unsupported.mSmooth = false;
+            unsupported.mPowerEfficient = false;
+            LOG("{} -> {}", aConfiguration, unsupported);
+            return PromiseType::CreateAndResolve(
+                std::move(unsupported), "MediaCapabilities::DecodingInfo");
+          }
           const bool hwSupported =
               videoSupport.contains(media::DecodeSupport::HardwareDecode);
           info.mPowerEfficient = hwSupported || lowResolution;
@@ -1283,72 +1367,80 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
   RefPtr<TaskQueue> taskQueue =
       TaskQueue::Create(GetMediaThreadPool(MediaThreadType::PLATFORM_ENCODER),
                         "MediaCapabilities::TaskQueue");
-  InvokeAsync(taskQueue, __func__,
-              [aConfiguration, videoMime, videoSupported, audioMime,
-               audioSupported, info = std::move(info)]() mutable {
-                // Step 7 returns early if neither audio nor video are
-                // supported. If video isn't supported, audio must be - they
-                // can't both be unknown. We can assume audio playback, which
-                // should be smooth and powerEfficient.
-                MOZ_ASSERT(audioSupported == CodecSupport::Supported ||
-                           videoSupported == CodecSupport::Supported);
-                (void)audioSupported;
-                info.mSmooth = true;
-                info.mPowerEfficient = true;
+  InvokeAsync(
+      taskQueue, __func__,
+      [aConfiguration, videoMime, videoSupported, audioMime, audioSupported,
+       info = std::move(info)]() mutable {
+        // Step 7 returns early if neither audio nor video are
+        // supported. If video isn't supported, audio must be - they
+        // can't both be unknown. We can assume audio encoding, which
+        // should be smooth and powerEfficient.
+        MOZ_ASSERT(audioSupported == CodecSupport::Supported ||
+                   videoSupported == CodecSupport::Supported);
+        (void)audioSupported;
+        info.mSmooth = true;
+        info.mPowerEfficient = true;
 
-                bool lowResolution = false;
-                if (videoSupported == CodecSupport::Supported) {
-                  // TODO(Bug 2024767): Handle fmtp parameters
-                  const media::EncodeSupportSet videoEncoderSupport =
-                      SupportsVideoMimeEncodeForWebrtc(*videoMime);
-                  MOZ_ASSERT(!videoEncoderSupport.isEmpty());
-                  const bool hwSupported = videoEncoderSupport.contains(
-                      media::EncodeSupport::HardwareEncode);
-                  MOZ_ASSERT(aConfiguration.mVideo.WasPassed());
-                  const auto& v = aConfiguration.mVideo.Value();
-                  const CheckedInt<uint32_t> pixels =
-                      CheckedInt<uint32_t>(v.mWidth) *
-                      CheckedInt<uint32_t>(v.mHeight);
-                  lowResolution = pixels.isValid() &&
-                                  pixels.value() <= kLowResolutionPixelCount;
+        bool lowResolution = false;
+        if (videoSupported == CodecSupport::Supported) {
+          // TODO(Bug 2024767): Handle fmtp parameters
+          MOZ_ASSERT(aConfiguration.mVideo.WasPassed());
+          const auto& v = aConfiguration.mVideo.Value();
+          auto encoderConfig = BuildEncoderConfig(*videoMime, v);
+          const auto videoSupport = SupportsVideoEncodeForWebrtc(encoderConfig);
+          if (videoSupport.isEmpty()) {
+            MediaCapabilitiesInfo unsupported;
+            unsupported.mSupported = false;
+            unsupported.mSmooth = false;
+            unsupported.mPowerEfficient = false;
+            LOG("{} -> {}", aConfiguration, unsupported);
+            return PromiseType::CreateAndResolve(
+                std::move(unsupported), "MediaCapabilities::EncodingInfo");
+          }
+          const bool hwSupported =
+              videoSupport.contains(media::EncodeSupport::HardwareEncode);
+          const CheckedInt<uint32_t> pixels =
+              CheckedInt<uint32_t>(v.mWidth) * CheckedInt<uint32_t>(v.mHeight);
+          lowResolution =
+              pixels.isValid() && pixels.value() <= kLowResolutionPixelCount;
 
-                  // Step 9: If the user agent is able to encode the media
-                  // represented by configuration at the indicated framerate,
-                  // set smooth to true. Otherwise set it to false.
-                  //
-                  // NOTE: The spec doesn't give hard guidelines for smooth.
-                  // We will hardware encode or low resolution encoding counts
-                  // as "smooth". For the highest accuracy we'd want to use
-                  // benchmarking code similar to what we had in the tree
-                  // earlier for decoding which was removed due to maintenance
-                  // concerns.
-                  info.mSmooth &= hwSupported || IsWebRTCSWEncodeSmooth(v);
+          // Step 9: If the user agent is able to encode the media
+          // represented by configuration at the indicated framerate,
+          // set smooth to true. Otherwise set it to false.
+          //
+          // NOTE: The spec doesn't give hard guidelines for smooth.
+          // We will hardware encode or low resolution encoding counts
+          // as "smooth". For the highest accuracy we'd want to use
+          // benchmarking code similar to what we had in the tree
+          // earlier for decoding which was removed due to maintenance
+          // concerns.
+          info.mSmooth &= hwSupported || IsWebRTCSWEncodeSmooth(v);
 
-                  // Step 10: If the user agent is able to encode the media
-                  // represented by configuration in a power efficient manner,
-                  // set powerEfficient to true. Otherwise set it to false.
-                  //
-                  // Encoding or decoding is considered power efficient when the
-                  // power draw is optimal. The definition of optimal power draw
-                  // for encoding or decoding is left to the user agent.
-                  // However, a common implementation strategy is to consider
-                  // hardware usage as indicative of optimal power draw. User
-                  // agents SHOULD NOT mark hardware encoding or decoding as
-                  // power efficient by default, as non-hardware-accelerated
-                  // codecs can be just as efficient, particularly with
-                  // low-resolution video. User agents SHOULD NOT take the
-                  // device's power source into consideration when determining
-                  // encoding power efficiency unless the device's power source
-                  // has side effects such as enabling different encoding or
-                  // decoding modules.
-                  info.mPowerEfficient &= (hwSupported || lowResolution);
-                }
+          // Step 10: If the user agent is able to encode the media
+          // represented by configuration in a power efficient manner,
+          // set powerEfficient to true. Otherwise set it to false.
+          //
+          // Encoding or decoding is considered power efficient when the
+          // power draw is optimal. The definition of optimal power draw
+          // for encoding or decoding is left to the user agent.
+          // However, a common implementation strategy is to consider
+          // hardware usage as indicative of optimal power draw. User
+          // agents SHOULD NOT mark hardware encoding or decoding as
+          // power efficient by default, as non-hardware-accelerated
+          // codecs can be just as efficient, particularly with
+          // low-resolution video. User agents SHOULD NOT take the
+          // device's power source into consideration when determining
+          // encoding power efficiency unless the device's power source
+          // has side effects such as enabling different encoding or
+          // decoding modules.
+          info.mPowerEfficient &= (hwSupported || lowResolution);
+        }
 
-                LOG("{} -> {}", aConfiguration, info);
+        LOG("{} -> {}", aConfiguration, info);
 
-                return PromiseType::CreateAndResolve(
-                    std::move(info), "MediaCapabilities::EncodingInfo");
-              })
+        return PromiseType::CreateAndResolve(std::move(info),
+                                             "MediaCapabilities::EncodingInfo");
+      })
       ->Then(
           targetThread, __func__,
           [encodePromise, workerRef, holder,
