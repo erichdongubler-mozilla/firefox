@@ -1055,12 +1055,31 @@ void Animation::CommitStyles(ErrorResult& aRv) {
 //
 // ---------------------------------------------------------------------------
 
-Nullable<double> Animation::GetStartTimeAsDouble() const {
-  return AnimationUtils::TimeDurationToDouble(mStartTime, mRTPCallerType);
+void Animation::GetStartTime(Nullable<OwningCSSNumberish>& aRetVal) const {
+  AnimationUtils::DurationToCSSNumberish(
+      GetStartTime(), AcceptsPercentageBasedTime(), mRTPCallerType,
+      GetParentObject(), aRetVal);
 }
 
-void Animation::SetStartTimeAsDouble(const Nullable<double>& aStartTime) {
-  return SetStartTime(AnimationUtils::DoubleToTimeDuration(aStartTime));
+void Animation::SetStartTime(const Nullable<CSSNumberish>& aStartTime,
+                             ErrorResult& aRv) {
+  if (aStartTime.IsNull()) {
+    SetStartTime(Nullable<TimeDuration>());
+    return;
+  }
+
+  const bool progressBased = AcceptsPercentageBasedTime();
+
+  // Step 1: Run the validate a CSSNumberish time procedure; abort on failure.
+  if (!AnimationUtils::ValidateCSSNumberishTime(aStartTime.Value(),
+                                                progressBased, aRv)) {
+    return;
+  }
+
+  Nullable<TimeDuration> time =
+      AnimationUtils::CSSNumberishToDuration(aStartTime.Value(), progressBased);
+  MOZ_ASSERT(!time.IsNull());
+  SetStartTime(time);
 }
 
 bool Animation::AcceptsPercentageBasedTime() const {

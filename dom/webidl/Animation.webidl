@@ -25,8 +25,8 @@ interface Animation : EventTarget {
   [BinaryName="timelineFromJS"]
   attribute AnimationTimeline? timeline;
 
-  [BinaryName="startTimeAsDouble"]
-  attribute double? startTime;
+  [SetterThrows]
+  attribute CSSNumberish? startTime;
   [SetterThrows]
   attribute CSSNumberish? currentTime;
 

@@ -144,13 +144,16 @@ class Animation : public DOMEventTargetHelper,
   void SetTimelineRangeNoUpdate(AnimationRange&& aRange);
 
   Nullable<TimeDuration> GetStartTime() const { return mStartTime; }
-  Nullable<double> GetStartTimeAsDouble() const;
   void SetStartTime(const Nullable<TimeDuration>& aNewStartTime);
   const TimeStamp& GetPendingReadyTime() const { return mPendingReadyTime; }
   void SetPendingReadyTime(const TimeStamp& aReadyTime) {
     mPendingReadyTime = aReadyTime;
   }
-  virtual void SetStartTimeAsDouble(const Nullable<double>& aStartTime);
+
+  // Web IDL binding for `attribute CSSNumberish? startTime`.
+  void GetStartTime(Nullable<OwningCSSNumberish>& aRetVal) const;
+  virtual void SetStartTime(const Nullable<CSSNumberish>& aStartTime,
+                            ErrorResult& aRv);
 
   // Web IDL binding for `attribute CSSNumberish? currentTime`.
   void GetCurrentTime(Nullable<OwningCSSNumberish>& aRetVal) const;

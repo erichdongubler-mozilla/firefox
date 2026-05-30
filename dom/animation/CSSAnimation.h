@@ -62,7 +62,8 @@ class CSSAnimation final : public Animation {
 
   // Animation interface overrides
   void SetEffect(AnimationEffect* aEffect) override;
-  void SetStartTimeAsDouble(const Nullable<double>& aStartTime) override;
+  void SetStartTime(const Nullable<CSSNumberish>& aStartTime,
+                    ErrorResult& aRv) override;
   Promise* GetReady(ErrorResult& aRv) override;
   void Reverse(ErrorResult& aRv) override;
 
