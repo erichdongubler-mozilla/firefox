@@ -628,10 +628,7 @@ export class MemoriesManager {
 
     // Lazy initialize embeddings generator
     if (!this.#embeddingsGenerator) {
-      this.#embeddingsGenerator = new EmbeddingsGenerator({
-        backend: "onnx-native",
-        embeddingSize: 384,
-      });
+      this.#embeddingsGenerator = EmbeddingsGenerator.forGeneral();
     }
 
     // Re-embed memories only if cache is invalid
