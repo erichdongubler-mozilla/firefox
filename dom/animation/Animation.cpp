@@ -14,14 +14,17 @@
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"  // For Maybe
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/AnimationBinding.h"
+#include "mozilla/dom/CSSNumericValueBinding.h"
 #include "mozilla/dom/CSSTransition.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/dom/Promise.h"
-#include "nsAnimationManager.h"  // For CSSAnimation
+#include "mozilla/dom/ScrollTimeline.h"  // For PROGRESS_TIMELINE_DURATION_MILLISEC
+#include "nsAnimationManager.h"          // For CSSAnimation
 #include "nsComputedDOMStyle.h"
 #include "nsDOMCSSAttrDeclaration.h"  // For nsDOMCSSAttributeDeclaration
 #include "nsDOMMutationObserver.h"    // For nsAutoAnimationMutationBatch
@@ -611,7 +614,7 @@ void Animation::SetPlaybackRate(double aPlaybackRate) {
 
   Nullable<TimeDuration> previousTime = GetCurrentTimeAsDuration();
   mPlaybackRate = aPlaybackRate;
-  if (!previousTime.IsNull()) {
+  if (!HasFiniteTimeline() && !previousTime.IsNull()) {
     SetCurrentTime(previousTime.Value());
   }
 
@@ -1060,13 +1063,21 @@ void Animation::SetStartTimeAsDouble(const Nullable<double>& aStartTime) {
   return SetStartTime(AnimationUtils::DoubleToTimeDuration(aStartTime));
 }
 
-Nullable<double> Animation::GetCurrentTimeAsDouble() const {
-  return AnimationUtils::TimeDurationToDouble(GetCurrentTimeAsDuration(),
-                                              mRTPCallerType);
+bool Animation::AcceptsPercentageBasedTime() const {
+  return StaticPrefs::layout_css_typed_om_enabled() && HasFiniteTimeline();
 }
 
-void Animation::SetCurrentTimeAsDouble(const Nullable<double>& aCurrentTime,
-                                       ErrorResult& aRv) {
+void Animation::GetCurrentTime(Nullable<OwningCSSNumberish>& aRetVal) const {
+  AnimationUtils::DurationToCSSNumberish(
+      GetCurrentTimeAsDuration(), AcceptsPercentageBasedTime(), mRTPCallerType,
+      GetParentObject(), aRetVal);
+}
+
+// https://drafts.csswg.org/web-animations-2/#setting-the-current-time-of-an-animation
+// https://drafts.csswg.org/web-animations-2/#set-the-current-time
+void Animation::SetCurrentTime(const Nullable<CSSNumberish>& aCurrentTime,
+                               ErrorResult& aRv) {
+  // Step 1: If seek time is an unresolved time value.
   if (aCurrentTime.IsNull()) {
     if (!GetCurrentTimeAsDuration().IsNull()) {
       aRv.ThrowTypeError(
@@ -1076,7 +1087,18 @@ void Animation::SetCurrentTimeAsDouble(const Nullable<double>& aCurrentTime,
     return;
   }
 
-  return SetCurrentTime(TimeDuration::FromMilliseconds(aCurrentTime.Value()));
+  const bool progressBased = AcceptsPercentageBasedTime();
+
+  // Step 2+3: Run the validate a CSSNumberish time procedure; abort on failure.
+  if (!AnimationUtils::ValidateCSSNumberishTime(aCurrentTime.Value(),
+                                                progressBased, aRv)) {
+    return;
+  }
+
+  Nullable<TimeDuration> seekTime = AnimationUtils::CSSNumberishToDuration(
+      aCurrentTime.Value(), progressBased);
+  MOZ_ASSERT(!seekTime.IsNull());
+  SetCurrentTime(seekTime.Value());
 }
 
 // ---------------------------------------------------------------------------
@@ -2126,7 +2148,8 @@ void Animation::QueuePlaybackEvent(nsAtom* aOnEvent,
 
   Nullable<double> currentTime;
   if (aOnEvent == nsGkAtoms::onfinish || aOnEvent == nsGkAtoms::onremove) {
-    currentTime = GetCurrentTimeAsDouble();
+    currentTime = AnimationUtils::TimeDurationToDouble(
+        GetCurrentTimeAsDuration(), mRTPCallerType);
   }
 
   Nullable<double> timelineTime;

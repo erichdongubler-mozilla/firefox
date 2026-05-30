@@ -82,10 +82,11 @@ class CSSNumericValue : public CSSStyleValue {
   bool Equals(const Sequence<OwningCSSNumberish>& aValue);
 
   // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-to
-  already_AddRefed<CSSUnitValue> To(const nsACString& aUnit, ErrorResult& aRv);
+  already_AddRefed<CSSUnitValue> To(const nsACString& aUnit,
+                                    ErrorResult& aRv) const;
 
   already_AddRefed<CSSMathSum> ToSum(const Sequence<nsCString>& aUnits,
-                                     ErrorResult& aRv);
+                                     ErrorResult& aRv) const;
 
   void Type(CSSNumericType& aRetVal);
 

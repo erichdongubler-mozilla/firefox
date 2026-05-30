@@ -126,7 +126,7 @@ bool CSSNumericValue::Equals(const Sequence<OwningCSSNumberish>& aValue) {
 
 // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-to
 already_AddRefed<CSSUnitValue> CSSNumericValue::To(const nsACString& aUnit,
-                                                   ErrorResult& aRv) {
+                                                   ErrorResult& aRv) const {
   // Step 1.
   // TODO: Let type be the result of creating a type from unit. If type is
   // failure, throw a SyntaxError.
@@ -161,7 +161,7 @@ already_AddRefed<CSSUnitValue> CSSNumericValue::To(const nsACString& aUnit,
 }
 
 already_AddRefed<CSSMathSum> CSSNumericValue::ToSum(
-    const Sequence<nsCString>& aUnits, ErrorResult& aRv) {
+    const Sequence<nsCString>& aUnits, ErrorResult& aRv) const {
   aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
   return nullptr;
 }
