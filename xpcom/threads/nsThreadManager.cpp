@@ -503,8 +503,8 @@ void nsThreadManager::UnregisterCurrentThread(nsThread& aThread) {
 }
 
 // Not to be used for MainThread!
-RefPtr<nsThread>
-nsThreadManager::CreateCurrentThread(SynchronizedEventQueue* aQueue) {
+RefPtr<nsThread> nsThreadManager::CreateCurrentThread(
+    SynchronizedEventQueue* aQueue) {
   // Make sure we don't have an nsThread yet.
   MOZ_ASSERT(!PR_GetThreadPrivate(mCurThreadIndex));
 
