@@ -12,6 +12,7 @@
 #include "mozilla/FlushType.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
@@ -1507,7 +1508,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   nsTArray<mozilla::WeakPtr<Document>> mDataDocumentsForMemoryReporting;
 
-  static InnerWindowByIdTable* sInnerWindowsById;
+  static mozilla::StaticAutoPtr<InnerWindowByIdTable> sInnerWindowsById;
 
   // Members in the mChromeFields member should only be used in chrome windows.
   // All accesses to this field should be guarded by a check of mIsChrome.

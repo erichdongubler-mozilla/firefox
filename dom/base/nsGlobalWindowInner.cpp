@@ -423,8 +423,8 @@ static LazyLogModule gDocShellAndDOMWindowLeakLogging(
 
 static FILE* gDumpFile = nullptr;
 
-nsGlobalWindowInner::InnerWindowByIdTable*
-    nsGlobalWindowInner::sInnerWindowsById = nullptr;
+mozilla::StaticAutoPtr<nsGlobalWindowInner::InnerWindowByIdTable>
+    nsGlobalWindowInner::sInnerWindowsById;
 
 bool nsGlobalWindowInner::sDragServiceDisabled = false;
 bool nsGlobalWindowInner::sMouseDown = false;
@@ -1148,7 +1148,6 @@ void nsGlobalWindowInner::ShutDown() {
   }
   gDumpFile = nullptr;
 
-  delete sInnerWindowsById;
   sInnerWindowsById = nullptr;
 }
 
@@ -7461,8 +7460,8 @@ already_AddRefed<Promise> nsGlobalWindowInner::PromiseDocumentFlushed(
     return nullptr;
   }
 
-  UniquePtr<PromiseDocumentFlushedResolver> flushResolver(
-      new PromiseDocumentFlushedResolver(resultPromise, aCallback));
+  auto flushResolver =
+      MakeUnique<PromiseDocumentFlushedResolver>(resultPromise, aCallback);
 
   if (!presShell->NeedStyleFlush() && !presShell->NeedLayoutFlush()) {
     flushResolver->Call();
