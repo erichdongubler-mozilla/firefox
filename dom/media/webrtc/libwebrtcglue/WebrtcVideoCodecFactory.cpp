@@ -42,12 +42,8 @@ media::DecodeSupportSet WebrtcVideoDecoderFactory::SupportsCodec(
   }
 
   switch (codec) {
-    case webrtc::VideoCodecType::kVideoCodecH264: {
-      if (HaveGMPFor("decode-video"_ns, {"h264"_ns})) {
-        return {media::DecodeSupport::SoftwareDecode};
-      }
-      return {};
-    }
+    case webrtc::VideoCodecType::kVideoCodecH264:
+      return WebrtcGmpDecoderSupports(aMime, aParams);
     case webrtc::VideoCodecType::kVideoCodecVP8:
     case webrtc::VideoCodecType::kVideoCodecVP9:
     case webrtc::VideoCodecType::kVideoCodecAV1:
@@ -72,9 +68,7 @@ media::EncodeSupportSet WebrtcVideoEncoderFactory::SupportsCodec(
       libwebrtcSupport += media::EncodeSupport::SoftwareEncode;
       break;
     case CodecType::H264:
-      if (HaveGMPFor("encode-video"_ns, {"h264"_ns})) {
-        libwebrtcSupport += media::EncodeSupport::SoftwareEncode;
-      }
+      libwebrtcSupport += WebrtcGmpEncoderSupports(aConfig);
       break;
     default:
       break;

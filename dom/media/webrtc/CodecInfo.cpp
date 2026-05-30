@@ -6,8 +6,11 @@
 #ifdef MOZ_WEBRTC
 #  include "MediaMIMETypes.h"
 #  include "jsapi/DefaultCodecPreferences.h"
+#  include "jsep/JsepCodecDescription.h"
 #  include "libwebrtcglue/WebrtcVideoCodecFactory.h"
 #  include "media/base/media_constants.h"
+#  include "mozilla/Maybe.h"
+#  include "mozilla/media/webrtc/H264FmtpParser.h"
 #endif
 
 namespace mozilla {
@@ -77,13 +80,36 @@ class CodecInfoImpl final : public WebrtcCodecInfo {
       return {};
     }
 
+    const bool isH264 =
+        isVideo && payloadString.EqualsIgnoreCase(webrtc::kH264CodecName);
+    Maybe<uint32_t> requestedPacketizationMode;
+    if (isH264) {
+      const auto fmtp = ParseH264Fmtp(aMime.OriginalString());
+      // Present-but-invalid packetization-mode (out of [0..2]) is unsupported.
+      if (fmtp.mPacketizationMode.isErr() &&
+          fmtp.mPacketizationMode.inspectErr() == H264FmtpParseError::Invalid) {
+        return false;
+      }
+      if (fmtp.mPacketizationMode.isOk()) {
+        requestedPacketizationMode = Some(fmtp.mPacketizationMode.inspect());
+      }
+    }
+
     const auto& codecs = isAudio ? mAudioCodecs : mVideoCodecs;
     for (const auto& c : codecs) {
-      // TODO(Bug 2024767): Handle fmtp parameters
-      if (payloadString.EqualsIgnoreCase(c->mName) && c->mEnabled &&
-          c->DirectionSupported(kDirection)) {
-        return true;
+      if (!payloadString.EqualsIgnoreCase(c->mName) || !c->mEnabled ||
+          !c->DirectionSupported(kDirection)) {
+        continue;
       }
+      if (isH264 && requestedPacketizationMode) {
+        MOZ_ASSERT(c->Type() == SdpMediaSection::kVideo);
+        const auto* h264 =
+            static_cast<const JsepVideoCodecDescription*>(c.get());
+        if (h264->mPacketizationMode != *requestedPacketizationMode) {
+          continue;
+        }
+      }
+      return true;
     }
     return false;
   }
