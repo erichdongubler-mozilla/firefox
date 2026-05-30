@@ -2505,7 +2505,7 @@ already_AddRefed<DataSourceSurface> FilterNodeConvolveMatrixSoftware::DoRender(
   MOZ_ASSERT(255.0 * maxResultAbs * factorFromShifts <= INT32_MAX / 2.0,
              "badly chosen float-to-int scale");
 
-  int32_t* intKernel = new int32_t[kernel.size()];
+  auto intKernel = MakeUnique<int32_t[]>(kernel.size());
   for (size_t i = 0; i < kernel.size(); i++) {
     intKernel[i] = NS_lround(kernel[i] * factorFromShifts);
   }
@@ -2515,13 +2515,11 @@ already_AddRefed<DataSourceSurface> FilterNodeConvolveMatrixSoftware::DoRender(
     for (int32_t x = 0; x < aRect.Width(); x++) {
       ConvolvePixel(sourceData, targetData, aRect.Width(), aRect.Height(),
                     sourceStride, targetStride, sourceBegin, sourceEnd, x, y,
-                    intKernel, bias, shiftL, shiftR, mPreserveAlpha,
+                    intKernel.get(), bias, shiftL, shiftR, mPreserveAlpha,
                     mKernelSize.width, mKernelSize.height, mTarget.x, mTarget.y,
                     aKernelUnitLengthX, aKernelUnitLengthY);
     }
   }
-  delete[] intKernel;
-
   return target.forget();
 }
 
