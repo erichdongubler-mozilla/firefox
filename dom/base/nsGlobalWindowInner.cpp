@@ -524,7 +524,8 @@ class IdleRequestExecutor final : public nsIRunnable,
     MOZ_DIAGNOSTIC_ASSERT(mWindow);
 
     mIdlePeriodLimit = {mDeadline, mWindow->LastIdleRequestHandle()};
-    mDelayedExecutorDispatcher = new IdleRequestExecutorTimeoutHandler(this);
+    mDelayedExecutorDispatcher =
+        MakeRefPtr<IdleRequestExecutorTimeoutHandler>(this);
   }
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -699,7 +700,7 @@ void nsGlobalWindowInner::ScheduleIdleRequestDispatch() {
   AssertIsOnMainThread();
 
   if (!mIdleRequestExecutor) {
-    mIdleRequestExecutor = new IdleRequestExecutor(this);
+    mIdleRequestExecutor = MakeRefPtr<IdleRequestExecutor>(this);
   }
 
   mIdleRequestExecutor->MaybeDispatch();
@@ -818,12 +819,11 @@ uint32_t nsGlobalWindowInner::RequestIdleCallback(
 
   uint32_t handle = mIdleRequestCallbackCounter++;
 
-  RefPtr<IdleRequest> request = new IdleRequest(&aCallback, handle);
+  RefPtr request = MakeRefPtr<IdleRequest>(&aCallback, handle);
 
   if (aOptions.mTimeout.WasPassed()) {
     int32_t timeoutHandle;
-    RefPtr<TimeoutHandler> handler(
-        new IdleRequestTimeoutHandler(aCx, request, this));
+    RefPtr handler = MakeRefPtr<IdleRequestTimeoutHandler>(aCx, request, this);
 
     nsresult rv = mTimeoutManager->SetTimeout(
         handler, aOptions.mTimeout.Value(), false,
@@ -955,7 +955,7 @@ nsGlobalWindowInner::nsGlobalWindowInner(nsGlobalWindowOuter* aOuterWindow,
                                              ->GetBrowsingContextGroup()
                                              ->GetTimerEventQueue()));
 
-  mObserver = new nsGlobalWindowObserver(this);
+  mObserver = MakeRefPtr<nsGlobalWindowObserver>(this);
   if (nsCOMPtr<nsIObserverService> os = services::GetObserverService()) {
     // Watch for online/offline status changes so we can fire events. Use
     // a strong reference.
@@ -2716,7 +2716,7 @@ WindowProxyHolder nsGlobalWindowInner::Window() {
 
 Navigation* nsPIDOMWindowInner::Navigation() {
   if (!mNavigation && Navigation::IsAPIEnabled()) {
-    mNavigation = new mozilla::dom::Navigation(this);
+    mNavigation = MakeRefPtr<mozilla::dom::Navigation>(this);
   }
 
   return mNavigation;
@@ -2724,7 +2724,7 @@ Navigation* nsPIDOMWindowInner::Navigation() {
 
 Navigator* nsPIDOMWindowInner::Navigator() {
   if (!mNavigator) {
-    mNavigator = new mozilla::dom::Navigator(this);
+    mNavigator = MakeRefPtr<mozilla::dom::Navigator>(this);
   }
 
   return mNavigator;
@@ -2736,7 +2736,7 @@ MediaDevices* nsPIDOMWindowInner::GetExtantMediaDevices() const {
 
 VisualViewport* nsGlobalWindowInner::VisualViewport() {
   if (!mVisualViewport) {
-    mVisualViewport = new mozilla::dom::VisualViewport(this);
+    mVisualViewport = MakeRefPtr<mozilla::dom::VisualViewport>(this);
   }
   return mVisualViewport;
 }
@@ -2750,14 +2750,14 @@ nsScreen* nsGlobalWindowInner::Screen() {
 
 nsHistory* nsGlobalWindowInner::GetHistory(ErrorResult& aError) {
   if (!mHistory) {
-    mHistory = new nsHistory(this);
+    mHistory = MakeRefPtr<nsHistory>(this);
   }
   return mHistory;
 }
 
 CustomElementRegistry* nsGlobalWindowInner::CustomElements() {
   if (!mCustomElements) {
-    mCustomElements = new CustomElementRegistry(this);
+    mCustomElements = MakeRefPtr<CustomElementRegistry>(this);
   }
 
   return mCustomElements;
@@ -3316,7 +3316,7 @@ void nsGlobalWindowInner::HintIsLoading(bool aIsLoading) {
 #ifdef MOZ_WEBSPEECH
 SpeechSynthesis* nsGlobalWindowInner::GetSpeechSynthesis(ErrorResult& aError) {
   if (!mSpeechSynthesis) {
-    mSpeechSynthesis = new SpeechSynthesis(this);
+    mSpeechSynthesis = MakeRefPtr<SpeechSynthesis>(this);
   }
 
   return mSpeechSynthesis;
@@ -3334,7 +3334,7 @@ bool nsGlobalWindowInner::HasActiveSpeechSynthesis() {
 
 mozilla::glean::Glean* nsGlobalWindowInner::Glean() {
   if (!mGlean) {
-    mGlean = new mozilla::glean::Glean(this);
+    mGlean = MakeRefPtr<mozilla::glean::Glean>(this);
   }
 
   return mGlean;
@@ -3342,7 +3342,7 @@ mozilla::glean::Glean* nsGlobalWindowInner::Glean() {
 
 mozilla::glean::GleanPings* nsGlobalWindowInner::GleanPings() {
   if (!mGleanPings) {
-    mGleanPings = new mozilla::glean::GleanPings();
+    mGleanPings = MakeRefPtr<mozilla::glean::GleanPings>();
   }
 
   return mGleanPings;
@@ -3398,7 +3398,7 @@ void nsGlobalWindowInner::GetContent(JSContext* aCx,
 
 BarProp* nsGlobalWindowInner::GetMenubar(ErrorResult& aError) {
   if (!mMenubar) {
-    mMenubar = new MenubarProp(this);
+    mMenubar = MakeRefPtr<MenubarProp>(this);
   }
 
   return mMenubar;
@@ -3406,7 +3406,7 @@ BarProp* nsGlobalWindowInner::GetMenubar(ErrorResult& aError) {
 
 BarProp* nsGlobalWindowInner::GetToolbar(ErrorResult& aError) {
   if (!mToolbar) {
-    mToolbar = new ToolbarProp(this);
+    mToolbar = MakeRefPtr<ToolbarProp>(this);
   }
 
   return mToolbar;
@@ -3414,28 +3414,28 @@ BarProp* nsGlobalWindowInner::GetToolbar(ErrorResult& aError) {
 
 BarProp* nsGlobalWindowInner::GetLocationbar(ErrorResult& aError) {
   if (!mLocationbar) {
-    mLocationbar = new LocationbarProp(this);
+    mLocationbar = MakeRefPtr<LocationbarProp>(this);
   }
   return mLocationbar;
 }
 
 BarProp* nsGlobalWindowInner::GetPersonalbar(ErrorResult& aError) {
   if (!mPersonalbar) {
-    mPersonalbar = new PersonalbarProp(this);
+    mPersonalbar = MakeRefPtr<PersonalbarProp>(this);
   }
   return mPersonalbar;
 }
 
 BarProp* nsGlobalWindowInner::GetStatusbar(ErrorResult& aError) {
   if (!mStatusbar) {
-    mStatusbar = new StatusbarProp(this);
+    mStatusbar = MakeRefPtr<StatusbarProp>(this);
   }
   return mStatusbar;
 }
 
 BarProp* nsGlobalWindowInner::GetScrollbars(ErrorResult& aError) {
   if (!mScrollbars) {
-    mScrollbars = new ScrollbarsProp(this);
+    mScrollbars = MakeRefPtr<ScrollbarsProp>(this);
   }
 
   return mScrollbars;
@@ -3702,7 +3702,7 @@ bool nsGlobalWindowInner::DeviceSensorsEnabled(JSContext*, JSObject*) {
 
 Crypto* nsGlobalWindowInner::GetCrypto(ErrorResult& aError) {
   if (!mCrypto) {
-    mCrypto = new Crypto(this);
+    mCrypto = MakeRefPtr<Crypto>(this);
   }
   return mCrypto;
 }
@@ -4410,8 +4410,7 @@ bool nsGlobalWindowInner::IsInModalState() {
 }
 
 void nsGlobalWindowInner::NotifyWindowIDDestroyed(const char* aTopic) {
-  nsCOMPtr<nsIRunnable> runnable =
-      new WindowDestroyedEvent(this, mWindowID, aTopic);
+  RefPtr runnable = MakeRefPtr<WindowDestroyedEvent>(this, mWindowID, aTopic);
   Dispatch(runnable.forget());
 }
 
@@ -4477,7 +4476,7 @@ void nsGlobalWindowInner::ReportError(JSContext* aCx,
     return aRv.NoteJSContextException(aCx);
   }
 
-  RefPtr<xpc::ErrorReport> xpcReport = new xpc::ErrorReport();
+  RefPtr xpcReport = MakeRefPtr<xpc::ErrorReport>();
   bool isChrome = aCallerType == CallerType::System;
   xpcReport->Init(jsReport.report(), jsReport.toStringResult().c_str(),
                   isChrome, WindowID());
@@ -4543,7 +4542,7 @@ bool nsGlobalWindowInner::ComputeDefaultWantsUntrusted(ErrorResult& aRv) {
 EventListenerManager* nsGlobalWindowInner::GetOrCreateListenerManager() {
   if (!mListenerManager) {
     mListenerManager =
-        new EventListenerManager(static_cast<EventTarget*>(this));
+        MakeRefPtr<EventListenerManager>(static_cast<EventTarget*>(this));
   }
 
   return mListenerManager;
@@ -4556,7 +4555,8 @@ EventListenerManager* nsGlobalWindowInner::GetExistingListenerManager() const {
 mozilla::dom::DebuggerNotificationManager*
 nsGlobalWindowInner::GetOrCreateDebuggerNotificationManager() {
   if (!mDebuggerNotificationManager) {
-    mDebuggerNotificationManager = new DebuggerNotificationManager(this);
+    mDebuggerNotificationManager =
+        MakeRefPtr<DebuggerNotificationManager>(this);
   }
 
   return mDebuggerNotificationManager;
@@ -4573,7 +4573,7 @@ nsGlobalWindowInner::GetExistingDebuggerNotificationManager() {
 
 Location* nsGlobalWindowInner::Location() {
   if (!mLocation) {
-    mLocation = new dom::Location(this);
+    mLocation = MakeRefPtr<dom::Location>(this);
   }
 
   return mLocation;
@@ -4619,7 +4619,7 @@ void nsGlobalWindowInner::EnableVRUpdates() {
     MOZ_ASSERT(!IsDying(),
                "Creating a VREventObserver for an nsGlobalWindow that is "
                "dying would cause it to leak.");
-    mVREventObserver = new VREventObserver(this);
+    mVREventObserver = MakeRefPtr<VREventObserver>(this);
   }
   // If the content has an XR session, then we need to tell
   // VREventObserver that there is VR activity.
@@ -4816,8 +4816,8 @@ nsresult nsGlobalWindowInner::DispatchAsyncHashchange(nsIURI* aOldURI,
   NS_ConvertUTF8toUTF16 oldWideSpec(oldSpec);
   NS_ConvertUTF8toUTF16 newWideSpec(newSpec);
 
-  nsCOMPtr<nsIRunnable> callback =
-      new HashchangeCallback(oldWideSpec, newWideSpec, this);
+  RefPtr callback =
+      MakeRefPtr<HashchangeCallback>(oldWideSpec, newWideSpec, this);
   return Dispatch(callback.forget());
 }
 
@@ -5176,7 +5176,7 @@ Storage* nsGlobalWindowInner::GetLocalStorage(ErrorResult& aError) {
 
     RefPtr<SessionStorageCache> cache;
     if (isolated) {
-      cache = new SessionStorageCache();
+      cache = MakeRefPtr<SessionStorageCache>();
     } else {
       // This will clone the session storage if it exists.
       rv = storageManager->GetSessionStorageCache(principal, storagePrincipal,
@@ -5187,8 +5187,8 @@ Storage* nsGlobalWindowInner::GetLocalStorage(ErrorResult& aError) {
       }
     }
 
-    mLocalStorage =
-        new PartitionedLocalStorage(this, principal, storagePrincipal, cache);
+    mLocalStorage = MakeRefPtr<PartitionedLocalStorage>(
+        this, principal, storagePrincipal, cache);
   }
 
   MOZ_ASSERT(mLocalStorage);
@@ -6555,7 +6555,7 @@ int32_t nsGlobalWindowInner::SetTimeoutOrInterval(
       return 0;
     }
 
-    RefPtr<TimeoutHandler> handler = new CallbackTimeoutHandler(
+    RefPtr handler = MakeRefPtr<CallbackTimeoutHandler>(
         aCx, this, &aHandler.GetAsFunction(), std::move(args));
 
     int32_t result;
@@ -6584,8 +6584,8 @@ int32_t nsGlobalWindowInner::SetTimeoutOrInterval(
   if (NS_WARN_IF(aError.Failed()) || !allowEval) {
     return 0;
   }
-  RefPtr<TimeoutHandler> handler =
-      new WindowScriptTimeoutHandler(aCx, this, *compliantString);
+  RefPtr handler =
+      MakeRefPtr<WindowScriptTimeoutHandler>(aCx, this, *compliantString);
   int32_t result;
   aError =
       mTimeoutManager->SetTimeout(handler, aTimeout, aIsInterval,
@@ -6815,8 +6815,7 @@ void nsGlobalWindowInner::NotifyDetectXRRuntimesCompleted() {
   // Connect to the VRManager in order to receive the runtime
   // detection results.
   mXRPermissionRequestInFlight = true;
-  RefPtr<XRPermissionRequest> request =
-      new XRPermissionRequest(this, WindowID());
+  RefPtr request = MakeRefPtr<XRPermissionRequest>(this, WindowID());
   (void)NS_WARN_IF(NS_FAILED(request->Start()));
 }
 
@@ -7629,7 +7628,8 @@ ChromeMessageBroadcaster* nsGlobalWindowInner::MessageManager() {
   if (!mChromeFields.mMessageManager) {
     RefPtr<ChromeMessageBroadcaster> globalMM =
         nsFrameMessageManager::GetGlobalMessageManager();
-    mChromeFields.mMessageManager = new ChromeMessageBroadcaster(globalMM);
+    mChromeFields.mMessageManager =
+        MakeRefPtr<ChromeMessageBroadcaster>(globalMM);
   }
   return mChromeFields.mMessageManager;
 }
@@ -7698,7 +7698,7 @@ bool nsGlobalWindowInner::IsSecureContext() const {
 
 External* nsGlobalWindowInner::External() {
   if (!mExternal) {
-    mExternal = new dom::External(ToSupports(this));
+    mExternal = MakeRefPtr<dom::External>(ToSupports(this));
   }
 
   return mExternal;
@@ -7807,7 +7807,7 @@ void nsGlobalWindowInner::GetWebExposedLocales(nsTArray<nsString>& aLocales) {
 
 IntlUtils* nsGlobalWindowInner::GetIntlUtils(ErrorResult& aError) {
   if (!mIntlUtils) {
-    mIntlUtils = new IntlUtils(this);
+    mIntlUtils = MakeRefPtr<IntlUtils>(this);
   }
 
   return mIntlUtils;
@@ -7936,7 +7936,8 @@ ContentMediaController* nsGlobalWindowInner::GetContentMediaController() {
     return nullptr;
   }
 
-  mContentMediaController = new ContentMediaController(mBrowsingContext->Id());
+  mContentMediaController =
+      MakeRefPtr<ContentMediaController>(mBrowsingContext->Id());
   return mContentMediaController;
 }
 
@@ -8127,7 +8128,7 @@ WebIdentityHandler* nsPIDOMWindowInner::GetOrCreateWebIdentityHandler() {
   if (mWebIdentityHandler) {
     return mWebIdentityHandler;
   }
-  mWebIdentityHandler = new WebIdentityHandler(this);
+  mWebIdentityHandler = MakeRefPtr<WebIdentityHandler>(this);
   bool success = mWebIdentityHandler->MaybeCreateActor();
   if (!success) {
     mWebIdentityHandler = nullptr;
@@ -8137,7 +8138,7 @@ WebIdentityHandler* nsPIDOMWindowInner::GetOrCreateWebIdentityHandler() {
 
 CloseWatcherManager* nsPIDOMWindowInner::EnsureCloseWatcherManager() {
   if (!mCloseWatcherManager) {
-    mCloseWatcherManager = new CloseWatcherManager();
+    mCloseWatcherManager = MakeRefPtr<CloseWatcherManager>();
   }
   return mCloseWatcherManager;
 }
