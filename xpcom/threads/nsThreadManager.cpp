@@ -505,7 +505,8 @@ void nsThreadManager::UnregisterCurrentThread(nsThread& aThread) {
 }
 
 // Not to be used for MainThread!
-nsThread* nsThreadManager::CreateCurrentThread(SynchronizedEventQueue* aQueue) {
+RefPtr<nsThread>
+nsThreadManager::CreateCurrentThread(SynchronizedEventQueue* aQueue) {
   // Make sure we don't have an nsThread yet.
   MOZ_ASSERT(!PR_GetThreadPrivate(mCurThreadIndex));
 
@@ -519,7 +520,10 @@ nsThread* nsThreadManager::CreateCurrentThread(SynchronizedEventQueue* aQueue) {
     return nullptr;
   }
 
-  return thread.get();  // reference held in TLS
+  // Note: 'thread' now has an additional reference, held in TLS (because
+  // nsThreadManager::RegisterCurrentThread manually AddRef()s it). That keeps
+  // the object alive, even if our caller disregards our returned RefPtr.
+  return thread;
 }
 
 nsresult nsThreadManager::DispatchToBackgroundThread(
@@ -576,7 +580,10 @@ nsThread* nsThreadManager::GetCurrentThread() {
     return nullptr;
   }
 
-  return thread.get();  // reference held in TLS
+  // Note: 'thread' now has an additional reference, held in TLS (because
+  // nsThreadManager::RegisterCurrentThread manually AddRef()s it). That keeps
+  // the object alive, even though our local reference is going out of scope.
+  return thread.get();
 }
 
 bool nsThreadManager::IsNSThread() const {
