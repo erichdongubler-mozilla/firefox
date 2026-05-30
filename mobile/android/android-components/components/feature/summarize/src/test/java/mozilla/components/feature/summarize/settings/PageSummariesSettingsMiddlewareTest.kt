@@ -7,6 +7,8 @@ package mozilla.components.feature.summarize.settings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.last
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertFalse
@@ -39,7 +41,7 @@ class PageSummariesSettingsMiddlewareTest {
         store.dispatch(SummarizePagesPreferenceToggled)
         this.runCurrent()
 
-        assertTrue(settings.getFeatureEnabledUserStatus().first() == true)
+        assertTrue(settings.getFeatureEnabledUserStatus().first())
     }
 
     @Test
@@ -57,7 +59,7 @@ class PageSummariesSettingsMiddlewareTest {
         store.dispatch(SummarizePagesPreferenceToggled)
         this.runCurrent()
 
-        assertFalse(settings.getFeatureEnabledUserStatus().first() == true)
+        assertFalse(settings.getFeatureEnabledUserStatus().first())
     }
 
     @Test
@@ -75,7 +77,7 @@ class PageSummariesSettingsMiddlewareTest {
         store.dispatch(ShakeToSummarizePreferenceToggled)
         this.runCurrent()
 
-        assertTrue(settings.getFeatureEnabledUserStatus().first() == true)
+        assertTrue(settings.getFeatureEnabledUserStatus().first())
     }
 
     @Test
@@ -111,7 +113,7 @@ class PageSummariesSettingsMiddlewareTest {
         store.dispatch(SummarizePagesPreferenceToggled)
         this.runCurrent()
 
-        assertFalse(settings.getFeatureEnabledUserStatus().first() == true)
+        assertFalse(settings.getFeatureEnabledUserStatus().first())
         assertTrue(settings.getGestureEnabledUserStatus().first())
     }
 

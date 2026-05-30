@@ -13,7 +13,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.getSystemService
 import com.google.android.play.core.review.ReviewManagerFactory
-import kotlinx.coroutines.MainScope
 import mozilla.components.concept.ai.controls.AIFeatureBlock
 import mozilla.components.concept.ai.controls.AIFeatureRegistry
 import mozilla.components.feature.addons.AddonManager
@@ -505,7 +504,7 @@ class Components(private val context: Context) {
     }
 
     val aiFeatureRegistry by lazyMonitored {
-        AIFeatureRegistry.default(scope = MainScope(), context = context).also {
+        AIFeatureRegistry.default().also {
             if (settings.shakeToSummarizeFeatureFlagEnabled) {
                 it.register(PageSummaryFeature(SummarizationSettings.dataStore(context)))
             }

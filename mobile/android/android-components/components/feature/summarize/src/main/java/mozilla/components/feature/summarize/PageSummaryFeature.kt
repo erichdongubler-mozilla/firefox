@@ -5,10 +5,10 @@
 package mozilla.components.feature.summarize
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import mozilla.components.concept.ai.controls.AIControllableFeature
 import mozilla.components.concept.ai.controls.AIFeatureMetadata
-import mozilla.components.concept.ai.controls.AIFeatureState
 import mozilla.components.feature.summarize.settings.SummarizationSettings
 import mozilla.components.ui.icons.R as iconsR
 
@@ -19,15 +19,7 @@ class PageSummaryFeature(
     private val settings: SummarizationSettings,
 ) : AIControllableFeature, AIFeatureMetadata by Companion {
 
-    override val featureState: Flow<AIFeatureState>
-        get() = settings.getFeatureEnabledUserStatus()
-            .map { enabledState ->
-                when {
-                    enabledState == null -> AIFeatureState.Unknown
-                    enabledState -> AIFeatureState.Enabled
-                    else -> AIFeatureState.Disabled
-                }
-            }
+    override val isEnabled: Flow<Boolean> = flow { emitAll(settings.getFeatureEnabledUserStatus()) }
 
     override suspend fun set(enabled: Boolean) {
         settings.setFeatureEnabledUserStatus(enabled)
