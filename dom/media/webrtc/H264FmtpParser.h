@@ -32,10 +32,20 @@ struct H264FmtpParams {
 // type. Missing parameters return Err(NotPresent), present but unparseable or
 // unsupported values return Err(Invalid).
 H264FmtpParams ParseH264Fmtp(const nsACString& aMimeString);
+
+// Whether the given resolution and framerate fit aLevel's H.264 Annex A
+// macroblocks-per-frame and macroblocks-per-second caps. False for unknown
+// levels.
+[[nodiscard]] bool H264LevelFits(H264_LEVEL aLevel, uint32_t aWidth,
+                                 uint32_t aHeight, double aFramerate);
 #else
 inline H264FmtpParams ParseH264Fmtp(const nsACString&) {
   MOZ_ASSERT_UNREACHABLE("ParseH264Fmtp called in non-MOZ_WEBRTC build");
   return {};
+}
+inline bool H264LevelFits(H264_LEVEL, uint32_t, uint32_t, double) {
+  MOZ_ASSERT_UNREACHABLE("H264LevelFits called in non-MOZ_WEBRTC build");
+  return false;
 }
 #endif
 

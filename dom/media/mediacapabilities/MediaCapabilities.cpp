@@ -684,8 +684,14 @@ void MediaCapabilities::CreateWebRTCDecodingInfo(
           const auto& mime = videoContainer->ExtendedType();
           if (WebrtcMimeToCodecType(mime) == CodecType::H264) {
             const auto fmtp = ParseH264Fmtp(mime.OriginalString());
-            if (fmtp.mProfileLevel.isErr() && fmtp.mProfileLevel.inspectErr() ==
-                                                  H264FmtpParseError::Invalid) {
+            const bool invalidFmtp =
+                fmtp.mProfileLevel.isErr() &&
+                fmtp.mProfileLevel.inspectErr() == H264FmtpParseError::Invalid;
+            const bool levelTooLow =
+                fmtp.mProfileLevel.isOk() &&
+                !H264LevelFits(fmtp.mProfileLevel.inspect().mLevel, v.mWidth,
+                               v.mHeight, static_cast<double>(v.mFramerate));
+            if (invalidFmtp || levelTooLow) {
               MediaCapabilitiesDecodingInfo unsupported;
               unsupported.mSupported = false;
               unsupported.mSmooth = false;
@@ -1405,8 +1411,14 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
           const auto& v = aConfiguration.mVideo.Value();
           if (WebrtcMimeToCodecType(*videoMime) == CodecType::H264) {
             const auto fmtp = ParseH264Fmtp(videoMime->OriginalString());
-            if (fmtp.mProfileLevel.isErr() && fmtp.mProfileLevel.inspectErr() ==
-                                                  H264FmtpParseError::Invalid) {
+            const bool invalidFmtp =
+                fmtp.mProfileLevel.isErr() &&
+                fmtp.mProfileLevel.inspectErr() == H264FmtpParseError::Invalid;
+            const bool levelTooLow =
+                fmtp.mProfileLevel.isOk() &&
+                !H264LevelFits(fmtp.mProfileLevel.inspect().mLevel, v.mWidth,
+                               v.mHeight, static_cast<double>(v.mFramerate));
+            if (invalidFmtp || levelTooLow) {
               MediaCapabilitiesInfo unsupported;
               unsupported.mSupported = false;
               unsupported.mSmooth = false;
