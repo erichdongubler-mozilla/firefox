@@ -6,10 +6,8 @@ XPCOMUtils.defineLazyServiceGetter(
 );
 
 const CANONICAL_CONTENT = "success";
-const CANONICAL_URL =
-  "https://example.com/browser/browser/base/content/test/captivePortal/canonical.txt";
-const CANONICAL_URL_REDIRECTED =
-  "https://example.com/browser/browser/base/content/test/captivePortal/redirected.txt";
+const CANONICAL_URL = "data:text/plain;charset=utf-8," + CANONICAL_CONTENT;
+const CANONICAL_URL_REDIRECTED = "data:text/plain;charset=utf-8,redirected";
 const PORTAL_NOTIFICATION_VALUE = "captive-portal-detected";
 const BAD_CERT_PAGE = "https://expired.example.com/";
 
