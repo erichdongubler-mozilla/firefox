@@ -305,7 +305,8 @@ class TaskController {
     mExternalCondVar = aExternalCondVar;
   }
 
-  void SetIdleTaskManager(IdleTaskManager* aIdleTaskManager) {
+  void SetIdleTaskManager(
+      already_AddRefed<IdleTaskManager>&& aIdleTaskManager) {
     mIdleTaskManager = aIdleTaskManager;
   }
   IdleTaskManager* GetIdleTaskManager() { return mIdleTaskManager.get(); }
