@@ -751,8 +751,8 @@ class RunnableTask : public Task {
 void TaskController::DispatchRunnable(already_AddRefed<nsIRunnable>&& aRunnable,
                                       uint32_t aPriority,
                                       TaskManager* aManager) {
-  RefPtr<RunnableTask> task = new RunnableTask(std::move(aRunnable), aPriority,
-                                               Task::Kind::MainThreadOnly);
+  RefPtr task = MakeRefPtr<RunnableTask>(std::move(aRunnable), aPriority,
+                                         Task::Kind::MainThreadOnly);
 
   task->SetManager(aManager);
   TaskController::Get()->AddTask(task.forget());

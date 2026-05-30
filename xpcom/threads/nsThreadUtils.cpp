@@ -763,8 +763,8 @@ nsresult NS_DispatchAndSpinEventLoopUntilComplete(
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  RefPtr<nsThreadSyncDispatch> wrapper =
-      new nsThreadSyncDispatch(current.forget(), std::move(aEvent));
+  RefPtr wrapper =
+      MakeRefPtr<nsThreadSyncDispatch>(current.forget(), std::move(aEvent));
 
   // NOTE: We use NS_DISPATCH_FALLIBLE here to avoid leaking the wrapper object.
   // As nsThreadSyncDispatch internally holds aEvent with a MaybeLeakRefPtr, we

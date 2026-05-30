@@ -332,8 +332,8 @@ nsresult nsThreadManager::Init() {
   // construct main thread.
   UniquePtr<EventQueue> queue = MakeUnique<EventQueue>(true);
 
-  RefPtr<ThreadEventQueue> synchronizedQueue =
-      new ThreadEventQueue(std::move(queue), true);
+  RefPtr synchronizedQueue =
+      MakeRefPtr<ThreadEventQueue>(std::move(queue), true);
 
   mMainThread =
       new nsThread(WrapNotNull(synchronizedQueue), nsThread::MAIN_THREAD,
@@ -608,10 +608,9 @@ nsThreadManager::NewNamedThread(
 
   TimeStamp startTime = TimeStamp::Now();
 
-  RefPtr<ThreadEventQueue> queue =
-      new ThreadEventQueue(MakeUnique<EventQueue>());
-  RefPtr<nsThread> thr =
-      new nsThread(WrapNotNull(queue), nsThread::NOT_MAIN_THREAD, aOptions);
+  RefPtr queue = MakeRefPtr<ThreadEventQueue>(MakeUnique<EventQueue>());
+  RefPtr thr = MakeRefPtr<nsThread>(WrapNotNull(queue),
+                                    nsThread::NOT_MAIN_THREAD, aOptions);
 
   // Note: nsThread::Init() will check AllowNewXPCOMThreads, and return an
   // error if we're too late in shutdown to create new XPCOM threads. If we
@@ -792,8 +791,7 @@ NS_IMETHODIMP
 nsThreadManager::DispatchToMainThreadWithMicroTask(nsIRunnable* aEvent,
                                                    uint32_t aPriority,
                                                    uint8_t aArgc) {
-  RefPtr<AutoMicroTaskWrapperRunnable> runnable =
-      new AutoMicroTaskWrapperRunnable(aEvent);
+  RefPtr runnable = MakeRefPtr<AutoMicroTaskWrapperRunnable>(aEvent);
 
   return DispatchToMainThread(runnable, aPriority, aArgc);
 }
