@@ -414,8 +414,8 @@ nsStorageStream::NewInputStream(int32_t aStartingOffset,
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  RefPtr<nsStorageInputStream> inputStream =
-      new nsStorageInputStream(this, mSegmentSize);
+  RefPtr inputStream =
+      mozilla::MakeRefPtr<nsStorageInputStream>(this, mSegmentSize);
 
   inputStream->mStorageStream->mMutex.AssertCurrentThreadOwns();
   nsresult rv = inputStream->Seek(aStartingOffset);
@@ -673,7 +673,7 @@ nsStorageInputStream::Clone(nsIInputStream** aCloneOut) {
 
 nsresult NS_NewStorageStream(uint32_t aSegmentSize, uint32_t aMaxSize,
                              nsIStorageStream** aResult) {
-  RefPtr<nsStorageStream> storageStream = new nsStorageStream();
+  RefPtr storageStream = mozilla::MakeRefPtr<nsStorageStream>();
   nsresult rv = storageStream->Init(aSegmentSize, aMaxSize);
   if (NS_FAILED(rv)) {
     return rv;

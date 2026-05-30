@@ -110,6 +110,6 @@ nsresult nsScriptableInputStream::ReadHelper(char* aBuffer, uint32_t aCount) {
 }
 
 nsresult nsScriptableInputStream::Create(REFNSIID aIID, void** aResult) {
-  RefPtr<nsScriptableInputStream> sis = new nsScriptableInputStream();
+  RefPtr sis = mozilla::MakeRefPtr<nsScriptableInputStream>();
   return sis->QueryInterface(aIID, aResult);
 }
