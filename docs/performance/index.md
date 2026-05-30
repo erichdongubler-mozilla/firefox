@@ -16,6 +16,7 @@ memory/*
 ```
 
 ## General Performance references
+
 * Tips on generating valid performance metrics by [benchmarking](Benchmarking.md)
 * [GPU Performance](GPU_performance.md) Tips for reducing impacts on browser performance in front-end code.
 * [Automated Performance testing and Sheriffing](automated_performance_testing_and_sheriffing.md) Information on automated performance testing and sheriffing at Mozilla.
@@ -24,6 +25,7 @@ memory/*
 * [Scroll Linked Effects](scroll-linked_effects.md) Information on scroll-linked effects, their effect on performance, related tools, and possible mitigation techniques.
 
 ## Memory profiling and leak detection tools
+
 * The [Developer Tools Memory panel](memory/memory.md) supports taking heap snapshots, diffing them, computing dominator trees to surface "heavy retainers", and recording allocation stacks.
 * [About:memory](memory/about_colon_memory.md) about:memory is the easiest-to-use tool for measuring memory usage in Mozilla code, and is the best place to start. It also lets you do other memory-related operations like trigger GC and CC, dump GC & CC logs, and dump DMD reports. about:memory is built on top of Firefox's [memory reporting](memory/memory_reporting.md) infrastructure.
 * [DMD](memory/dmd.md) is a tool that identifies shortcomings in about:memory's measurements, and can also do multiple kinds of general heap profiling.
