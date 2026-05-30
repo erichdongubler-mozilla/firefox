@@ -3,6 +3,8 @@
 
 "use strict";
 
+const FIRSTRUN_URL = "chrome://browser/content/aiwindow/firstrun.html";
+
 async function openFirstrunPage() {
   const tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
