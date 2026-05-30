@@ -5,7 +5,6 @@
 #include "MediaDataCodec.h"
 
 #include "PDMFactorySupport.h"
-#include "PEMFactory.h"
 #include "WebrtcGmpVideoCodec.h"
 #include "WebrtcMediaDataDecoderCodec.h"
 #include "WebrtcMediaDataEncoderCodec.h"
@@ -19,23 +18,6 @@ media::EncodeSupportSet MediaDataCodec::SupportsEncoderCodec(
   const auto codecType = webrtc::PayloadStringToCodecType(aFormat.name);
   auto support = WebrtcMediaDataEncoder::SupportsCodec(codecType);
   if (codecType == webrtc::VideoCodecType::kVideoCodecH264 &&
-      !StaticPrefs::media_webrtc_hw_h264_enabled()) {
-    support -= media::EncodeSupport::HardwareEncode;
-  }
-  return support;
-}
-
-/* static */
-media::EncodeSupportSet MediaDataCodec::SupportsEncoderCodec(
-    const EncoderConfig& aConfig) {
-  // Mirror WebrtcMediaDataEncoder::SupportsCodec's gate; bug 1980201 tracks
-  // adding the remaining codecs (AV1, HEVC) and will let both copies go.
-  if (aConfig.mCodec != CodecType::H264 && aConfig.mCodec != CodecType::VP8 &&
-      aConfig.mCodec != CodecType::VP9) {
-    return {};
-  }
-  auto support = MakeRefPtr<PEMFactory>()->Supports(aConfig);
-  if (aConfig.mCodec == CodecType::H264 &&
       !StaticPrefs::media_webrtc_hw_h264_enabled()) {
     support -= media::EncodeSupport::HardwareEncode;
   }
@@ -71,16 +53,29 @@ static inline nsDependentCString MimeTypeFor(
 /* static */
 media::DecodeSupportSet MediaDataCodec::SupportsDecoderCodec(
     webrtc::VideoCodecType aCodecType) {
-  if (!WebrtcMediaDataDecoder::IsCodecEnabled(aCodecType)) {
-    return {};
+  switch (aCodecType) {
+    case webrtc::VideoCodecType::kVideoCodecVP8:
+    case webrtc::VideoCodecType::kVideoCodecVP9:
+      if (StaticPrefs::media_navigator_mediadatadecoder_vpx_enabled()) {
+        return PDMFactorySupport::IsTypeSupported(MimeTypeFor(aCodecType));
+      }
+      break;
+    case webrtc::VideoCodecType::kVideoCodecH264:
+      if (StaticPrefs::media_navigator_mediadatadecoder_h264_enabled()) {
+        media::DecodeSupportSet support =
+            PDMFactorySupport::IsTypeSupported(MimeTypeFor(aCodecType));
+        if (!StaticPrefs::media_webrtc_hw_h264_enabled()) {
+          support -= media::DecodeSupport::HardwareDecode;
+        }
+        return support;
+      }
+      break;
+    case webrtc::VideoCodecType::kVideoCodecGeneric:
+    case webrtc::VideoCodecType::kVideoCodecAV1:
+    case webrtc::VideoCodecType::kVideoCodecH265:
+      break;
   }
-  media::DecodeSupportSet support =
-      PDMFactorySupport::IsTypeSupported(MimeTypeFor(aCodecType));
-  if (aCodecType == webrtc::VideoCodecType::kVideoCodecH264 &&
-      !StaticPrefs::media_webrtc_hw_h264_enabled()) {
-    support -= media::DecodeSupport::HardwareDecode;
-  }
-  return support;
+  return {};
 }
 
 WebrtcVideoDecoder* MediaDataCodec::CreateDecoder(

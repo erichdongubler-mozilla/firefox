@@ -13,9 +13,6 @@
 #include "api/video_codecs/video_encoder_factory.h"
 
 namespace mozilla {
-class EncoderConfig;
-class MediaExtendedMIMEType;
-struct SupportDecoderParams;
 class GmpPluginNotifierInterface {
   virtual void DisconnectAll() = 0;
   virtual MediaEventSource<uint64_t>& CreatedGmpPluginEvent() = 0;
@@ -72,8 +69,7 @@ class WebrtcVideoDecoderFactory : public GmpPluginNotifier,
       const webrtc::Environment& env,
       const webrtc::SdpVideoFormat& format) override;
 
-  static media::DecodeSupportSet SupportsCodec(
-      const MediaExtendedMIMEType& aMime, const SupportDecoderParams& aParams);
+  static media::DecodeSupportSet SupportsCodec(webrtc::VideoCodecType aType);
 
  private:
   const std::string mPCHandle;
@@ -120,7 +116,8 @@ class WebrtcVideoEncoderFactory : public GmpPluginNotifierInterface,
       const webrtc::Environment& env,
       const webrtc::SdpVideoFormat& format) override;
 
-  static media::EncodeSupportSet SupportsCodec(const EncoderConfig& aConfig);
+  static media::EncodeSupportSet SupportsCodec(
+      const webrtc::SdpVideoFormat& aFormat);
 
   void DisconnectAll() override { mInternalFactory->DisconnectAll(); }
 

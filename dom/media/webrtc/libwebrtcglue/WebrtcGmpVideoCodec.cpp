@@ -7,12 +7,9 @@
 #include <utility>
 #include <vector>
 
-#include "EncoderConfig.h"
 #include "GMPLog.h"
 #include "GMPUtils.h"
 #include "MainThreadUtils.h"
-#include "MediaMIMETypes.h"
-#include "PlatformDecoderModule.h"
 #include "VideoConduit.h"
 #include "api/video/video_frame_type.h"
 #include "common_video/include/video_frame_buffer.h"
@@ -22,76 +19,11 @@
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/svc/create_scalability_structure.h"
 #include "mozilla/CheckedInt.h"
-#include "mozilla/media/webrtc/H264FmtpParser.h"
 #include "nsServiceManagerUtils.h"
 
 namespace mozilla {
 
 using detail::InputImageData;
-
-// OpenH264 officially supports both decode and encode up to level 5.2.
-static constexpr H264_LEVEL kOpenH264MaxLevel = H264_LEVEL::H264_LEVEL_5_2;
-
-media::DecodeSupportSet WebrtcGmpDecoderSupports(
-    const MediaExtendedMIMEType& aMime, const SupportDecoderParams&) {
-  if (!HaveGMPFor("decode-video"_ns, {"h264"_ns})) {
-    return {};
-  }
-  const auto fmtp = ParseH264Fmtp(aMime.OriginalString());
-  if (fmtp.mProfileLevel.isErr() &&
-      fmtp.mProfileLevel.inspectErr() == H264FmtpParseError::Invalid) {
-    return {};
-  }
-  if (fmtp.mProfileLevel.isOk()) {
-    const auto& pl = fmtp.mProfileLevel.inspect();
-    if (pl.mProfile > H264_PROFILE::H264_PROFILE_HIGH) {
-      return {};
-    }
-    if (pl.mLevel > kOpenH264MaxLevel) {
-      return {};
-    }
-  }
-  return media::DecodeSupport::SoftwareDecode;
-}
-
-media::EncodeSupportSet WebrtcGmpEncoderSupports(const EncoderConfig& aConfig) {
-  if (aConfig.mCodec != CodecType::H264) {
-    return {};
-  }
-  if (aConfig.mHardwarePreference == HardwarePreference::RequireHardware) {
-    return {};
-  }
-  // L1T2/L1T3 require the moz-h264-temporal-svc GMP tag.
-  switch (aConfig.mScalabilityMode) {
-    case ScalabilityMode::None:
-      break;
-    case ScalabilityMode::L1T2:
-    case ScalabilityMode::L1T3:
-      if (!HaveGMPFor("encode-video"_ns, {"moz-h264-temporal-svc"_ns})) {
-        return {};
-      }
-      break;
-    default:
-      return {};
-  }
-  if (!HaveGMPFor("encode-video"_ns, {"h264"_ns})) {
-    return {};
-  }
-  if (aConfig.mCodecSpecific.is<H264Specific>()) {
-    const auto& codecSpecific = aConfig.mCodecSpecific.as<H264Specific>();
-    // Profiles beyond Baseline need the "moz-h264-advanced" GMP tag. See
-    // GMPEncoderModule::Supports for the playback equivalent.
-    if (codecSpecific.mProfile != H264_PROFILE::H264_PROFILE_UNKNOWN &&
-        codecSpecific.mProfile != H264_PROFILE::H264_PROFILE_BASE &&
-        !HaveGMPFor("encode-video"_ns, {"moz-h264-advanced"_ns})) {
-      return {};
-    }
-    if (codecSpecific.mLevel > kOpenH264MaxLevel) {
-      return {};
-    }
-  }
-  return media::EncodeSupport::SoftwareEncode;
-}
 
 // QP scaling thresholds.
 static const int kLowH264QpThreshold = 24;

@@ -98,7 +98,6 @@ if CONFIG["MOZ_WEBRTC"]:
     UNIFIED_SOURCES += [
         "TestAudioInputProcessing.cpp",
         "TestCamerasParent.cpp",
-        "TestH264FmtpParser.cpp",
         "TestRTCStatsTimestampMaker.cpp",
         "TestWebrtcTaskQueueWrapper.cpp",
     ]

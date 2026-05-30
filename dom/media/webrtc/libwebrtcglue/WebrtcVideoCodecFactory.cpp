@@ -6,10 +6,7 @@
 
 #include "GmpVideoCodec.h"
 #include "MediaDataCodec.h"
-#include "MediaMIMETypes.h"
 #include "VideoConduit.h"
-#include "WebrtcGmpVideoCodec.h"
-#include "WebrtcMediaDataDecoderCodec.h"
 #include "WebrtcMediaDataEncoderCodec.h"
 #include "mozilla/StaticPrefs_media.h"
 
@@ -33,17 +30,18 @@ enum EncoderCreationStrategy {
 
 /* static */
 media::DecodeSupportSet WebrtcVideoDecoderFactory::SupportsCodec(
-    const MediaExtendedMIMEType& aMime, const SupportDecoderParams& aParams) {
-  const auto codec =
-      webrtc::PayloadStringToCodecType(std::string(aMime.Subtype().View()));
-  if (auto support = WebrtcMediaDataDecoder::Supports(codec, aParams);
+    webrtc::VideoCodecType aType) {
+  if (auto support = MediaDataCodec::SupportsDecoderCodec(aType);
       !support.isEmpty()) {
     return support;
   }
-
-  switch (codec) {
-    case webrtc::VideoCodecType::kVideoCodecH264:
-      return WebrtcGmpDecoderSupports(aMime, aParams);
+  switch (aType) {
+    case webrtc::VideoCodecType::kVideoCodecH264: {
+      if (HaveGMPFor("decode-video"_ns, {"h264"_ns})) {
+        return {media::DecodeSupport::SoftwareDecode};
+      }
+      return {};
+    }
     case webrtc::VideoCodecType::kVideoCodecVP8:
     case webrtc::VideoCodecType::kVideoCodecVP9:
     case webrtc::VideoCodecType::kVideoCodecAV1:
@@ -57,35 +55,34 @@ media::DecodeSupportSet WebrtcVideoDecoderFactory::SupportsCodec(
 
 /* static */
 media::EncodeSupportSet WebrtcVideoEncoderFactory::SupportsCodec(
-    const EncoderConfig& aConfig) {
-  const auto strategy = static_cast<EncoderCreationStrategy>(
+    const webrtc::SdpVideoFormat& aFormat) {
+  EncoderCreationStrategy strategy = static_cast<EncoderCreationStrategy>(
       StaticPrefs::media_webrtc_encoder_creation_strategy());
   media::EncodeSupportSet libwebrtcSupport;
-  switch (aConfig.mCodec) {
-    case CodecType::VP8:
-    case CodecType::VP9:
-    case CodecType::AV1:
+  switch (webrtc::PayloadStringToCodecType(aFormat.name)) {
+    case webrtc::VideoCodecType::kVideoCodecVP8:
+    case webrtc::VideoCodecType::kVideoCodecVP9:
+    case webrtc::VideoCodecType::kVideoCodecAV1:
       libwebrtcSupport += media::EncodeSupport::SoftwareEncode;
       break;
-    case CodecType::H264:
-      libwebrtcSupport += WebrtcGmpEncoderSupports(aConfig);
+    case webrtc::VideoCodecType::kVideoCodecH264:
+      if (HaveGMPFor("encode-video"_ns, {"h264"_ns})) {
+        libwebrtcSupport += media::EncodeSupport::SoftwareEncode;
+      }
       break;
-    default:
+    case webrtc::VideoCodecType::kVideoCodecGeneric:
+    case webrtc::VideoCodecType::kVideoCodecH265:
       break;
   }
   switch (strategy) {
     case EncoderCreationStrategy::PreferWebRTCEncoder: {
-      // When libwebrtc has SW for this codec, CreateEncoder will always pick
-      // it over a PEM, so we report libwebrtc's set alone — any PEM HW
-      // capability is intentionally hidden to keep reported support aligned
-      // with the encoder that will actually be used.
       if (libwebrtcSupport.isEmpty()) {
-        return MediaDataCodec::SupportsEncoderCodec(aConfig);
+        return MediaDataCodec::SupportsEncoderCodec(aFormat);
       }
       return libwebrtcSupport;
     }
     case EncoderCreationStrategy::PreferPlatformEncoder: {
-      return MediaDataCodec::SupportsEncoderCodec(aConfig) + libwebrtcSupport;
+      return MediaDataCodec::SupportsEncoderCodec(aFormat) + libwebrtcSupport;
     }
   }
   return {};
