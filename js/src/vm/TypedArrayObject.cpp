@@ -5101,6 +5101,14 @@ bool Uint8Buffer::maybeRealloc(JSContext* cx, size_t newLength) {
     length_ = newLength;
     return true;
   }
+  MOZ_ASSERT(ownedBuf_);
+
+  if (newLength <= InlineLength) {
+    std::copy_n(ownedBuf_.get(), newLength, inlineBuf_);
+    ownedBuf_ = nullptr;
+    length_ = newLength;
+    return true;
+  }
 
   // The initial byte size estimation is based on the complete string length,
   // so it includes trailing padding and interspersed whitespace characters.
