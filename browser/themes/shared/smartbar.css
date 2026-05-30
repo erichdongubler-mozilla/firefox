@@ -222,10 +222,6 @@
       }
     }
   }
-
-  @media (forced-colors) {
-    border: var(--border-width) solid var(--button-border-color);
-  }
 }
 
 /* Input container */
@@ -258,13 +254,16 @@
 }
 
 .smartbar moz-multiline-editor {
-  --multiline-editor-border: none;
-  --multiline-editor-focus-outline: none;
   --multiline-editor-max-height: 8lh;
   --multiline-editor-scrollbar-width: thin;
-  --multiline-editor-selection-color: light-dark(var(--color-violet-0), var(--color-violet-60));
+  --multiline-editor-border: none;
+  --multiline-editor-focus-outline: none;
   font-size: var(--font-size-large);
   padding: var(--space-xsmall);
+
+  @media not (forced-colors) {
+    --multiline-editor-selection-color: light-dark(var(--color-violet-0), var(--color-violet-60));
+  }
 }
 
 .smartbar .urlbar-go-button,

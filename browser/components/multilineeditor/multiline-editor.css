@@ -73,6 +73,7 @@
   position: absolute;
   pointer-events: none;
   color: var(--text-color-deemphasized);
+  inset-inline-start: var(--space-xxsmall);
   user-select: none;
 }
 
