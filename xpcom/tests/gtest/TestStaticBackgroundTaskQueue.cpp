@@ -28,7 +28,7 @@ TEST(StaticBackgroundTaskQueue, GetAndDispatch)
   ASSERT_FALSE(queue->IsOnCurrentThread());
 
   bool didRun = false;
-  RefPtr syncWithThread = MakeRefPtr<SyncRunnable>(
+  RefPtr<SyncRunnable> syncWithThread = new SyncRunnable(
       NS_NewRunnableFunction("TestStaticBackgroundTaskQueue", [&] {
         EXPECT_FALSE(NS_IsMainThread());
         EXPECT_TRUE(queue->IsOnCurrentThread());

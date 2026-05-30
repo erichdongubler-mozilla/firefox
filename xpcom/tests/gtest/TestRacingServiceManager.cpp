@@ -138,9 +138,9 @@ Factory::CreateInstance(const nsIID& aIID, void** aResult) {
   nsCOMPtr<nsISupports> instance;
 
   if (!mFirstComponentCreated) {
-    instance = MakeRefPtr<Component1>();
+    instance = new Component1();
   } else {
-    instance = MakeRefPtr<Component2>();
+    instance = new Component2();
   }
   NS_ENSURE_TRUE(instance, NS_ERROR_OUT_OF_MEMORY);
 
@@ -200,7 +200,7 @@ TEST(RacingServiceManager, Test)
 
   AutoCreateAndDestroyReentrantMonitor mon1(&gReentrantMonitor);
 
-  RefPtr runnable = MakeRefPtr<TestRunnable>();
+  RefPtr<TestRunnable> runnable = new TestRunnable();
   ASSERT_TRUE(runnable);
 
   // Run the classID test

@@ -134,7 +134,7 @@ nsSingletonEnumerator::GetNext(nsISupports** aResult) {
 
 nsresult NS_NewSingletonEnumerator(nsISimpleEnumerator** aResult,
                                    nsISupports* aSingleton) {
-  RefPtr enumer = mozilla::MakeRefPtr<nsSingletonEnumerator>(aSingleton);
+  RefPtr<nsSingletonEnumerator> enumer = new nsSingletonEnumerator(aSingleton);
   enumer.forget(aResult);
   return NS_OK;
 }

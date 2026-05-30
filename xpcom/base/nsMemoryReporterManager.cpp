@@ -2798,7 +2798,8 @@ class MinimizeMemoryUsageRunnable : public Runnable {
 
 NS_IMETHODIMP
 nsMemoryReporterManager::MinimizeMemoryUsage(nsIRunnable* aCallback) {
-  RefPtr runnable = MakeRefPtr<MinimizeMemoryUsageRunnable>(aCallback);
+  RefPtr<MinimizeMemoryUsageRunnable> runnable =
+      new MinimizeMemoryUsageRunnable(aCallback);
 
   return NS_DispatchToMainThread(runnable);
 }

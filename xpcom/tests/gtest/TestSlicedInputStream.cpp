@@ -100,7 +100,8 @@ class NonSeekableStringStream final : public nsIAsyncInputStream {
       return NS_ERROR_FAILURE;
     }
 
-    RefPtr callback = MakeRefPtr<InputStreamCallback>(this, aCallback);
+    RefPtr<InputStreamCallback> callback =
+        new InputStreamCallback(this, aCallback);
 
     return async->AsyncWait(callback, aFlags, aRequestedCount, aEventTarget);
   }
@@ -112,10 +113,9 @@ class NonSeekableStringStream final : public nsIAsyncInputStream {
 NS_IMPL_ISUPPORTS(NonSeekableStringStream, nsIInputStream, nsIAsyncInputStream)
 
 // Helper function for creating a seekable nsIInputStream + a SlicedInputStream.
-static RefPtr<SlicedInputStream> CreateSeekableStreams(uint32_t aSize,
-                                                       uint64_t aStart,
-                                                       uint64_t aLength,
-                                                       nsCString& aBuffer) {
+static SlicedInputStream* CreateSeekableStreams(uint32_t aSize, uint64_t aStart,
+                                                uint64_t aLength,
+                                                nsCString& aBuffer) {
   aBuffer.SetLength(aSize);
   for (uint32_t i = 0; i < aSize; ++i) {
     aBuffer.BeginWriting()[i] = i % 10;
@@ -123,22 +123,22 @@ static RefPtr<SlicedInputStream> CreateSeekableStreams(uint32_t aSize,
 
   nsCOMPtr<nsIInputStream> stream;
   NS_NewCStringInputStream(getter_AddRefs(stream), aBuffer);
-  return MakeRefPtr<SlicedInputStream>(stream.forget(), aStart, aLength);
+  return new SlicedInputStream(stream.forget(), aStart, aLength);
 }
 
 // Helper function for creating a non-seekable nsIInputStream + a
 // SlicedInputStream.
-static RefPtr<SlicedInputStream> CreateNonSeekableStreams(uint32_t aSize,
-                                                          uint64_t aStart,
-                                                          uint64_t aLength,
-                                                          nsCString& aBuffer) {
+static SlicedInputStream* CreateNonSeekableStreams(uint32_t aSize,
+                                                   uint64_t aStart,
+                                                   uint64_t aLength,
+                                                   nsCString& aBuffer) {
   aBuffer.SetLength(aSize);
   for (uint32_t i = 0; i < aSize; ++i) {
     aBuffer.BeginWriting()[i] = i % 10;
   }
 
-  RefPtr stream = MakeRefPtr<NonSeekableStringStream>(aBuffer);
-  return MakeRefPtr<SlicedInputStream>(stream.forget(), aStart, aLength);
+  RefPtr<NonSeekableStringStream> stream = new NonSeekableStringStream(aBuffer);
+  return new SlicedInputStream(stream.forget(), aStart, aLength);
 }
 
 // Same start, same length.
@@ -368,7 +368,7 @@ TEST(TestSlicedInputStream, Seek_SET)
   {
     nsCOMPtr<nsIInputStream> stream;
     NS_NewCStringInputStream(getter_AddRefs(stream), buf);
-    sis = MakeRefPtr<SlicedInputStream>(stream.forget(), 1, buf.Length());
+    sis = new SlicedInputStream(stream.forget(), 1, buf.Length());
   }
 
   ASSERT_EQ(NS_OK, sis->Seek(nsISeekableStream::NS_SEEK_SET, 1));
@@ -395,7 +395,7 @@ TEST(TestSlicedInputStream, Seek_CUR)
     nsCOMPtr<nsIInputStream> stream;
     NS_NewCStringInputStream(getter_AddRefs(stream), buf);
 
-    sis = MakeRefPtr<SlicedInputStream>(stream.forget(), 1, buf.Length());
+    sis = new SlicedInputStream(stream.forget(), 1, buf.Length());
   }
 
   ASSERT_EQ(NS_OK, sis->Seek(nsISeekableStream::NS_SEEK_CUR, 1));
@@ -428,7 +428,7 @@ TEST(TestSlicedInputStream, Seek_END_Bigger)
     nsCOMPtr<nsIInputStream> stream;
     NS_NewCStringInputStream(getter_AddRefs(stream), buf);
 
-    sis = MakeRefPtr<SlicedInputStream>(stream.forget(), 2, buf.Length());
+    sis = new SlicedInputStream(stream.forget(), 2, buf.Length());
   }
 
   ASSERT_EQ(NS_OK, sis->Seek(nsISeekableStream::NS_SEEK_END, -5));
@@ -467,7 +467,7 @@ TEST(TestSlicedInputStream, Seek_END_Lower)
     nsCOMPtr<nsIInputStream> stream;
     NS_NewCStringInputStream(getter_AddRefs(stream), buf);
 
-    sis = MakeRefPtr<SlicedInputStream>(stream.forget(), 2, 6);
+    sis = new SlicedInputStream(stream.forget(), 2, 6);
   }
 
   ASSERT_EQ(NS_OK, sis->Seek(nsISeekableStream::NS_SEEK_END, -3));
@@ -516,15 +516,16 @@ TEST(TestSlicedInputStream, AsyncInputStream)
   // nsISeekableStream interface. When ::Seek() is called, it does a MOZ_CRASH.
   nsCOMPtr<nsIInputStream> sis;
   {
-    RefPtr wrapper = MakeRefPtr<NonSeekableStringStream>(reader);
+    RefPtr<NonSeekableStringStream> wrapper =
+        new NonSeekableStringStream(reader);
 
-    sis = MakeRefPtr<SlicedInputStream>(wrapper.forget(), 500, 500);
+    sis = new SlicedInputStream(wrapper.forget(), 500, 500);
   }
 
   nsCOMPtr<nsIAsyncInputStream> async = do_QueryInterface(sis);
   ASSERT_TRUE(!!async);
 
-  RefPtr cb = MakeRefPtr<testing::InputStreamCallback>();
+  RefPtr<testing::InputStreamCallback> cb = new testing::InputStreamCallback();
 
   nsresult rv = async->AsyncWait(cb, 0, 0, nullptr);
   ASSERT_NS_SUCCEEDED(rv);
@@ -551,9 +552,10 @@ TEST(TestSlicedInputStream, QIInputStreamLength)
   for (int i = 0; i < 4; i++) {
     nsCOMPtr<nsIInputStream> sis;
     {
-      RefPtr stream = MakeRefPtr<testing::LengthInputStream>(buf, i % 2, i > 1);
+      RefPtr<testing::LengthInputStream> stream =
+          new testing::LengthInputStream(buf, i % 2, i > 1);
 
-      sis = MakeRefPtr<SlicedInputStream>(stream.forget(), 0, 5);
+      sis = new SlicedInputStream(stream.forget(), 0, 5);
     }
 
     {
@@ -575,9 +577,10 @@ TEST(TestSlicedInputStream, InputStreamLength)
 
   nsCOMPtr<nsIInputStream> sis;
   {
-    RefPtr stream = MakeRefPtr<testing::LengthInputStream>(buf, true, false);
+    RefPtr<testing::LengthInputStream> stream =
+        new testing::LengthInputStream(buf, true, false);
 
-    sis = MakeRefPtr<SlicedInputStream>(stream.forget(), 0, 5);
+    sis = new SlicedInputStream(stream.forget(), 0, 5);
   }
 
   nsCOMPtr<nsIInputStreamLength> qi = do_QueryInterface(sis);
@@ -596,10 +599,10 @@ TEST(TestSlicedInputStream, NegativeInputStreamLength)
 
   nsCOMPtr<nsIInputStream> sis;
   {
-    RefPtr stream =
-        MakeRefPtr<testing::LengthInputStream>(buf, true, false, NS_OK, true);
+    RefPtr<testing::LengthInputStream> stream =
+        new testing::LengthInputStream(buf, true, false, NS_OK, true);
 
-    sis = MakeRefPtr<SlicedInputStream>(stream.forget(), 0, 5);
+    sis = new SlicedInputStream(stream.forget(), 0, 5);
   }
 
   nsCOMPtr<nsIInputStreamLength> qi = do_QueryInterface(sis);
@@ -618,15 +621,16 @@ TEST(TestSlicedInputStream, AsyncInputStreamLength)
 
   nsCOMPtr<nsIInputStream> sis;
   {
-    RefPtr stream = MakeRefPtr<testing::LengthInputStream>(buf, false, true);
+    RefPtr<testing::LengthInputStream> stream =
+        new testing::LengthInputStream(buf, false, true);
 
-    sis = MakeRefPtr<SlicedInputStream>(stream.forget(), 0, 5);
+    sis = new SlicedInputStream(stream.forget(), 0, 5);
   }
 
   nsCOMPtr<nsIAsyncInputStreamLength> qi = do_QueryInterface(sis);
   ASSERT_TRUE(!!qi);
 
-  RefPtr callback = MakeRefPtr<testing::LengthCallback>();
+  RefPtr<testing::LengthCallback> callback = new testing::LengthCallback();
 
   nsresult rv = qi->AsyncLengthWait(callback, GetCurrentSerialEventTarget());
   ASSERT_EQ(NS_OK, rv);
@@ -644,16 +648,16 @@ TEST(TestSlicedInputStream, NegativeAsyncInputStreamLength)
 
   nsCOMPtr<nsIInputStream> sis;
   {
-    RefPtr stream =
-        MakeRefPtr<testing::LengthInputStream>(buf, false, true, NS_OK, true);
+    RefPtr<testing::LengthInputStream> stream =
+        new testing::LengthInputStream(buf, false, true, NS_OK, true);
 
-    sis = MakeRefPtr<SlicedInputStream>(stream.forget(), 0, 5);
+    sis = new SlicedInputStream(stream.forget(), 0, 5);
   }
 
   nsCOMPtr<nsIAsyncInputStreamLength> qi = do_QueryInterface(sis);
   ASSERT_TRUE(!!qi);
 
-  RefPtr callback = MakeRefPtr<testing::LengthCallback>();
+  RefPtr<testing::LengthCallback> callback = new testing::LengthCallback();
 
   nsresult rv = qi->AsyncLengthWait(callback, GetCurrentSerialEventTarget());
   ASSERT_EQ(NS_OK, rv);
@@ -671,20 +675,20 @@ TEST(TestSlicedInputStream, AbortLengthCallback)
 
   nsCOMPtr<nsIInputStream> sis;
   {
-    RefPtr stream =
-        MakeRefPtr<testing::LengthInputStream>(buf, false, true, NS_OK, true);
+    RefPtr<testing::LengthInputStream> stream =
+        new testing::LengthInputStream(buf, false, true, NS_OK, true);
 
-    sis = MakeRefPtr<SlicedInputStream>(stream.forget(), 0, 5);
+    sis = new SlicedInputStream(stream.forget(), 0, 5);
   }
 
   nsCOMPtr<nsIAsyncInputStreamLength> qi = do_QueryInterface(sis);
   ASSERT_TRUE(!!qi);
 
-  RefPtr callback1 = MakeRefPtr<testing::LengthCallback>();
+  RefPtr<testing::LengthCallback> callback1 = new testing::LengthCallback();
   nsresult rv = qi->AsyncLengthWait(callback1, GetCurrentSerialEventTarget());
   ASSERT_EQ(NS_OK, rv);
 
-  RefPtr callback2 = MakeRefPtr<testing::LengthCallback>();
+  RefPtr<testing::LengthCallback> callback2 = new testing::LengthCallback();
   rv = qi->AsyncLengthWait(callback2, GetCurrentSerialEventTarget());
   ASSERT_EQ(NS_OK, rv);
 

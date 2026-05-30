@@ -79,14 +79,14 @@ TEST(ThreadManager, SpinEventLoopUntilSuccess)
   nsresult rv;
   mozilla::Atomic<uint32_t> count(0);
 
-  RefPtr condition =
-      mozilla::MakeRefPtr<WaitCondition>(count, kRunnablesToDispatch);
-  RefPtr spinner = mozilla::MakeRefPtr<SpinRunnable>(condition);
+  nsCOMPtr<nsINestedEventLoopCondition> condition =
+      new WaitCondition(count, kRunnablesToDispatch);
+  RefPtr<SpinRunnable> spinner = new SpinRunnable(condition);
   nsCOMPtr<nsIThread> thread;
   rv = NS_NewNamedThread("SpinEventLoop", getter_AddRefs(thread), spinner);
   ASSERT_NS_SUCCEEDED(rv);
 
-  RefPtr counter = mozilla::MakeRefPtr<CountRunnable>(count);
+  nsCOMPtr<nsIRunnable> counter = new CountRunnable(count);
   for (uint32_t i = 0; i < kRunnablesToDispatch; ++i) {
     rv = thread->Dispatch(counter, NS_DISPATCH_NORMAL);
     ASSERT_NS_SUCCEEDED(rv);
@@ -126,14 +126,14 @@ TEST(ThreadManager, SpinEventLoopUntilError)
   nsresult rv;
   mozilla::Atomic<uint32_t> count(0);
 
-  RefPtr condition =
-      mozilla::MakeRefPtr<ErrorCondition>(count, kRunnablesToDispatch);
-  RefPtr spinner = mozilla::MakeRefPtr<SpinRunnable>(condition);
+  nsCOMPtr<nsINestedEventLoopCondition> condition =
+      new ErrorCondition(count, kRunnablesToDispatch);
+  RefPtr<SpinRunnable> spinner = new SpinRunnable(condition);
   nsCOMPtr<nsIThread> thread;
   rv = NS_NewNamedThread("SpinEventLoop", getter_AddRefs(thread), spinner);
   ASSERT_NS_SUCCEEDED(rv);
 
-  RefPtr counter = mozilla::MakeRefPtr<CountRunnable>(count);
+  nsCOMPtr<nsIRunnable> counter = new CountRunnable(count);
   for (uint32_t i = 0; i < kRunnablesToDispatch; ++i) {
     rv = thread->Dispatch(counter, NS_DISPATCH_NORMAL);
     ASSERT_NS_SUCCEEDED(rv);

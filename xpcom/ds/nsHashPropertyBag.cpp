@@ -315,8 +315,8 @@ class ProxyHashtableDestructor final : public mozilla::Runnable {
 
 nsHashPropertyBag::~nsHashPropertyBag() {
   if (!NS_IsMainThread()) {
-    RefPtr runnable =
-        MakeRefPtr<ProxyHashtableDestructor>(std::move(mPropertyHash));
+    RefPtr<ProxyHashtableDestructor> runnable =
+        new ProxyHashtableDestructor(std::move(mPropertyHash));
     MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(runnable));
   }
 }

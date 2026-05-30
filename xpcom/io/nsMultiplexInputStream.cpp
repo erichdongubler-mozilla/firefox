@@ -831,7 +831,7 @@ void nsMultiplexInputStream::AsyncWaitCompleted() {
 nsresult nsMultiplexInputStreamConstructor(REFNSIID aIID, void** aResult) {
   *aResult = nullptr;
 
-  RefPtr inst = MakeRefPtr<nsMultiplexInputStream>();
+  RefPtr<nsMultiplexInputStream> inst = new nsMultiplexInputStream();
 
   return inst->QueryInterface(aIID, aResult);
 }
@@ -1032,7 +1032,7 @@ nsMultiplexInputStream::Clone(nsIInputStream** aClone) {
     return NS_ERROR_FAILURE;
   }
 
-  RefPtr clone = MakeRefPtr<nsMultiplexInputStream>();
+  RefPtr<nsMultiplexInputStream> clone = new nsMultiplexInputStream();
 
   nsresult rv;
   uint32_t len = mStreams.Length();

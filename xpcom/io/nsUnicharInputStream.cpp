@@ -117,7 +117,7 @@ nsresult NS_NewUnicharInputStream(nsIInputStream* aStreamToWrap,
   *aResult = nullptr;
 
   // Create converter input stream
-  RefPtr it = mozilla::MakeRefPtr<nsConverterInputStream>();
+  RefPtr<nsConverterInputStream> it = new nsConverterInputStream();
   nsresult rv = it->Init(aStreamToWrap, "UTF-8", STRING_BUFFER_SIZE,
                          nsIConverterInputStream::ERRORS_ARE_FATAL);
   if (NS_FAILED(rv)) {

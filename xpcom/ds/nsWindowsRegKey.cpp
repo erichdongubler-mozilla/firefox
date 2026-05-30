@@ -57,7 +57,7 @@ nsWindowsRegKey::OpenChild(const nsAString& aPath, uint32_t aMode,
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  RefPtr child = mozilla::MakeRefPtr<nsWindowsRegKey>();
+  RefPtr<nsWindowsRegKey> child = new nsWindowsRegKey();
   child->mKey = WinRegistry::Key(mKey, PromiseFlatString(aPath),
                                  WinRegistry::KeyMode(aMode));
   if (!child->mKey) {
@@ -74,7 +74,7 @@ nsWindowsRegKey::CreateChild(const nsAString& aPath, uint32_t aMode,
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  RefPtr child = mozilla::MakeRefPtr<nsWindowsRegKey>();
+  RefPtr<nsWindowsRegKey> child = new nsWindowsRegKey();
   child->mKey =
       WinRegistry::Key(mKey, PromiseFlatString(aPath),
                        WinRegistry::KeyMode(aMode), WinRegistry::Key::Create);
@@ -273,7 +273,7 @@ nsWindowsRegKey::WriteBinaryValue(const nsAString& aName,
 //-----------------------------------------------------------------------------
 
 void NS_NewWindowsRegKey(nsIWindowsRegKey** aResult) {
-  RefPtr key = mozilla::MakeRefPtr<nsWindowsRegKey>();
+  RefPtr<nsWindowsRegKey> key = new nsWindowsRegKey();
   key.forget(aResult);
 }
 

@@ -27,7 +27,7 @@ bool TestQITo(SourcePtr& aPtr1) {
 
 TEST(TestEventTargetQI, ThreadPool)
 {
-  RefPtr thing = MakeRefPtr<nsThreadPool>();
+  nsCOMPtr<nsIThreadPool> thing = new nsThreadPool();
 
   EXPECT_FALSE(TestQITo<nsISerialEventTarget>(thing));
 
@@ -70,7 +70,7 @@ TEST(TestEventTargetQI, ThrottledEventQueue)
 
 TEST(TestEventTargetQI, LazyIdleThread)
 {
-  RefPtr thing = MakeRefPtr<LazyIdleThread>(0, "TestThread");
+  RefPtr<LazyIdleThread> thing = new LazyIdleThread(0, "TestThread");
   EXPECT_TRUE(thing);
 
   EXPECT_TRUE(TestQITo<nsISerialEventTarget>(thing));

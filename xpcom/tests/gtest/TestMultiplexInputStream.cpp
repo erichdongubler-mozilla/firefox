@@ -306,19 +306,19 @@ static already_AddRefed<nsIInputStream> CreateStreamHelper() {
   nsCString buf1;
   buf1.AssignLiteral("Hello");
 
-  RefPtr inputStream1 = MakeRefPtr<testing::AsyncStringStream>(buf1);
+  nsCOMPtr<nsIInputStream> inputStream1 = new testing::AsyncStringStream(buf1);
   multiplexStream->AppendStream(inputStream1);
 
   nsCString buf2;
   buf2.AssignLiteral(" ");
 
-  RefPtr inputStream2 = MakeRefPtr<testing::AsyncStringStream>(buf2);
+  nsCOMPtr<nsIInputStream> inputStream2 = new testing::AsyncStringStream(buf2);
   multiplexStream->AppendStream(inputStream2);
 
   nsCString buf3;
   buf3.AssignLiteral("World!");
 
-  RefPtr inputStream3 = MakeRefPtr<testing::AsyncStringStream>(buf3);
+  nsCOMPtr<nsIInputStream> inputStream3 = new testing::AsyncStringStream(buf3);
   multiplexStream->AppendStream(inputStream3);
 
   nsCOMPtr<nsIInputStream> stream(do_QueryInterface(multiplexStream));
@@ -333,7 +333,7 @@ TEST(MultiplexInputStream, AsyncWait_withoutEventTarget)
   nsCOMPtr<nsIAsyncInputStream> ais = do_QueryInterface(is);
   ASSERT_TRUE(!!ais);
 
-  RefPtr cb = mozilla::MakeRefPtr<testing::InputStreamCallback>();
+  RefPtr<testing::InputStreamCallback> cb = new testing::InputStreamCallback();
 
   ASSERT_EQ(NS_OK, ais->AsyncWait(cb, 0, 0, nullptr));
   ASSERT_TRUE(cb->Called());
@@ -347,7 +347,7 @@ TEST(MultiplexInputStream, AsyncWait_withEventTarget)
   nsCOMPtr<nsIAsyncInputStream> ais = do_QueryInterface(is);
   ASSERT_TRUE(!!ais);
 
-  RefPtr cb = mozilla::MakeRefPtr<testing::InputStreamCallback>();
+  RefPtr<testing::InputStreamCallback> cb = new testing::InputStreamCallback();
   nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
 
   ASSERT_EQ(NS_OK, ais->AsyncWait(cb, 0, 0, thread));
@@ -369,7 +369,7 @@ TEST(MultiplexInputStream, AsyncWait_withoutEventTarget_closureOnly)
   nsCOMPtr<nsIAsyncInputStream> ais = do_QueryInterface(is);
   ASSERT_TRUE(!!ais);
 
-  RefPtr cb = mozilla::MakeRefPtr<testing::InputStreamCallback>();
+  RefPtr<testing::InputStreamCallback> cb = new testing::InputStreamCallback();
 
   ASSERT_EQ(NS_OK, ais->AsyncWait(cb, nsIAsyncInputStream::WAIT_CLOSURE_ONLY, 0,
                                   nullptr));
@@ -387,7 +387,7 @@ TEST(MultiplexInputStream, AsyncWait_withEventTarget_closureOnly)
   nsCOMPtr<nsIAsyncInputStream> ais = do_QueryInterface(is);
   ASSERT_TRUE(!!ais);
 
-  RefPtr cb = mozilla::MakeRefPtr<testing::InputStreamCallback>();
+  RefPtr<testing::InputStreamCallback> cb = new testing::InputStreamCallback();
   nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
 
   ASSERT_EQ(NS_OK, ais->AsyncWait(cb, nsIAsyncInputStream::WAIT_CLOSURE_ONLY, 0,
@@ -563,12 +563,11 @@ TEST(MultiplexInputStream, Available)
   nsresult rv = s->Available(&length);
   ASSERT_EQ(NS_BASE_STREAM_CLOSED, rv);
 
-  RefPtr closedStream = mozilla::MakeRefPtr<ClosedStream>();
-  rv = multiplexStream->AppendStream(closedStream);
+  rv = multiplexStream->AppendStream(new ClosedStream());
   ASSERT_EQ(NS_OK, rv);
 
   uint64_t asyncSize = 2;
-  RefPtr asyncStream = mozilla::MakeRefPtr<AsyncStream>(2);
+  RefPtr<AsyncStream> asyncStream = new AsyncStream(2);
   rv = multiplexStream->AppendStream(asyncStream);
   ASSERT_EQ(NS_OK, rv);
 
@@ -664,7 +663,7 @@ TEST(MultiplexInputStream, Bufferable)
 
   nsCString buf2;
   buf2.AssignLiteral("world");
-  RefPtr inputStream2 = MakeRefPtr<NonBufferableStringStream>(buf2);
+  nsCOMPtr<nsIInputStream> inputStream2 = new NonBufferableStringStream(buf2);
 
   rv = multiplexStream->AppendStream(inputStream1);
   ASSERT_NS_SUCCEEDED(rv);
@@ -713,8 +712,8 @@ TEST(MultiplexInputStream, QILengthInputStream)
   // nsMultiplexInputStream exposes nsIInputStreamLength if there is one or
   // more nsIInputStreamLength sub streams.
   {
-    RefPtr inputStream =
-        mozilla::MakeRefPtr<testing::LengthInputStream>(buf, true, false);
+    RefPtr<testing::LengthInputStream> inputStream =
+        new testing::LengthInputStream(buf, true, false);
 
     nsresult rv = multiplexStream->AppendStream(inputStream);
     ASSERT_NS_SUCCEEDED(rv);
@@ -730,8 +729,8 @@ TEST(MultiplexInputStream, QILengthInputStream)
   // nsMultiplexInputStream exposes nsIAsyncInputStreamLength if there is one
   // or more nsIAsyncInputStreamLength sub streams.
   {
-    RefPtr inputStream =
-        mozilla::MakeRefPtr<testing::LengthInputStream>(buf, true, true);
+    RefPtr<testing::LengthInputStream> inputStream =
+        new testing::LengthInputStream(buf, true, true);
 
     nsresult rv = multiplexStream->AppendStream(inputStream);
     ASSERT_NS_SUCCEEDED(rv);
@@ -762,8 +761,8 @@ TEST(MultiplexInputStream, LengthInputStream)
   ASSERT_NS_SUCCEEDED(rv);
 
   // A LengthInputStream, non-async.
-  RefPtr lengthStream =
-      mozilla::MakeRefPtr<testing::LengthInputStream>(buf, true, false);
+  RefPtr<testing::LengthInputStream> lengthStream =
+      new testing::LengthInputStream(buf, true, false);
 
   rv = multiplexStream->AppendStream(lengthStream);
   ASSERT_NS_SUCCEEDED(rv);
@@ -778,8 +777,9 @@ TEST(MultiplexInputStream, LengthInputStream)
   ASSERT_EQ(int64_t(buf.Length() * 2), length);
 
   // An async LengthInputStream.
-  RefPtr asyncLengthStream = mozilla::MakeRefPtr<testing::LengthInputStream>(
-      buf, true, true, NS_BASE_STREAM_WOULD_BLOCK);
+  RefPtr<testing::LengthInputStream> asyncLengthStream =
+      new testing::LengthInputStream(buf, true, true,
+                                     NS_BASE_STREAM_WOULD_BLOCK);
 
   rv = multiplexStream->AppendStream(asyncLengthStream);
   ASSERT_NS_SUCCEEDED(rv);
@@ -793,7 +793,7 @@ TEST(MultiplexInputStream, LengthInputStream)
   ASSERT_EQ(NS_BASE_STREAM_WOULD_BLOCK, rv);
 
   // Let's read the size async.
-  RefPtr callback = mozilla::MakeRefPtr<testing::LengthCallback>();
+  RefPtr<testing::LengthCallback> callback = new testing::LengthCallback();
   rv = afsis->AsyncLengthWait(callback, GetCurrentSerialEventTarget());
   ASSERT_EQ(NS_OK, rv);
 
@@ -803,8 +803,7 @@ TEST(MultiplexInputStream, LengthInputStream)
   ASSERT_EQ(int64_t(buf.Length() * 3), callback->Size());
 
   // Now a negative stream
-  lengthStream =
-      MakeRefPtr<testing::LengthInputStream>(buf, true, false, NS_OK, true);
+  lengthStream = new testing::LengthInputStream(buf, true, false, NS_OK, true);
 
   rv = multiplexStream->AppendStream(lengthStream);
   ASSERT_NS_SUCCEEDED(rv);
@@ -814,7 +813,7 @@ TEST(MultiplexInputStream, LengthInputStream)
   ASSERT_EQ(-1, length);
 
   // Another async LengthInputStream.
-  asyncLengthStream = MakeRefPtr<testing::LengthInputStream>(
+  asyncLengthStream = new testing::LengthInputStream(
       buf, true, true, NS_BASE_STREAM_WOULD_BLOCK);
 
   rv = multiplexStream->AppendStream(asyncLengthStream);
@@ -824,11 +823,11 @@ TEST(MultiplexInputStream, LengthInputStream)
   ASSERT_TRUE(!!afsis);
 
   // Let's read the size async.
-  RefPtr callback1 = mozilla::MakeRefPtr<testing::LengthCallback>();
+  RefPtr<testing::LengthCallback> callback1 = new testing::LengthCallback();
   rv = afsis->AsyncLengthWait(callback1, GetCurrentSerialEventTarget());
   ASSERT_EQ(NS_OK, rv);
 
-  RefPtr callback2 = mozilla::MakeRefPtr<testing::LengthCallback>();
+  RefPtr<testing::LengthCallback> callback2 = new testing::LengthCallback();
   rv = afsis->AsyncLengthWait(callback2, GetCurrentSerialEventTarget());
   ASSERT_EQ(NS_OK, rv);
 
@@ -861,7 +860,7 @@ void TestMultiplexStreamReadWhileWaiting(nsIAsyncInputStream* pipeIn,
       do_QueryInterface(multiplexStream);
   ASSERT_TRUE(asyncMultiplex);
 
-  RefPtr cb = mozilla::MakeRefPtr<testing::InputStreamCallback>();
+  RefPtr<testing::InputStreamCallback> cb = new testing::InputStreamCallback();
   ASSERT_NS_SUCCEEDED(asyncMultiplex->AsyncWait(cb, 0, 0, mainThread));
   EXPECT_FALSE(cb->Called());
 

@@ -506,13 +506,13 @@ static void TestNewRunnableMethod(bool aNamed) {
   // Scope the smart ptrs so that the runnables need to hold on to whatever they
   // need
   {
-    RefPtr foo = MakeRefPtr<nsFoo>();
-    RefPtr bar = MakeRefPtr<nsBar>();
+    RefPtr<nsFoo> foo = new nsFoo();
+    RefPtr<nsBar> bar = new nsBar();
     RefPtr<const nsBar> constBar = bar;
 
     // This pointer will be freed at the end of the block
     // Do not dereference this pointer in the runnable method!
-    RefPtr rawFoo = MakeRefPtr<nsFoo>();
+    RefPtr<nsFoo> rawFoo = new nsFoo();
 
     // Read only string. Dereferencing in runnable method to check this works.
     char* message = (char*)"Test message";
@@ -611,7 +611,7 @@ TEST(ThreadUtils, NamedRunnableMethod)
 
   // Test naming.
   {
-    RefPtr foo = MakeRefPtr<nsFoo>();
+    RefPtr<nsFoo> foo = new nsFoo();
     const char* expectedName = "NamedRunnable";
     bool unused;
     RefPtr<Runnable> NamedRunnable =
@@ -755,8 +755,9 @@ class IdleObject final {
 TEST(ThreadUtils, IdleRunnableMethod)
 {
   {
-    RefPtr idle = MakeRefPtr<IdleObject>();
-    RefPtr idleNoSetDeadline = MakeRefPtr<IdleObjectWithoutSetDeadline>();
+    RefPtr<IdleObject> idle = new IdleObject();
+    RefPtr<IdleObjectWithoutSetDeadline> idleNoSetDeadline =
+        new IdleObjectWithoutSetDeadline();
     RefPtr<IdleObjectInheritedSetDeadline> idleInheritedSetDeadline =
         new IdleObjectInheritedSetDeadline();
 

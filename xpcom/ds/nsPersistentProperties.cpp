@@ -459,7 +459,7 @@ nsPersistentProperties::Enumerate(nsISimpleEnumerator** aResult) {
 
   // Step through hash entries populating a transient array
   for (auto& entry : mTable) {
-    RefPtr element = mozilla::MakeRefPtr<nsPropertyElement>(
+    RefPtr<nsPropertyElement> element = new nsPropertyElement(
         nsDependentCString(entry.GetKey()), nsDependentString(entry.GetData()));
 
     if (!props.AppendObject(element)) {
@@ -505,7 +505,7 @@ nsPersistentProperties::GetKeys(nsTArray<nsCString>& aKeys) {
 ////////////////////////////////////////////////////////////////////////////////
 
 nsresult nsPropertyElement::Create(REFNSIID aIID, void** aResult) {
-  RefPtr propElem = mozilla::MakeRefPtr<nsPropertyElement>();
+  RefPtr<nsPropertyElement> propElem = new nsPropertyElement();
   return propElem->QueryInterface(aIID, aResult);
 }
 

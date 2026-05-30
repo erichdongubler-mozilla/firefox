@@ -403,7 +403,7 @@ RefPtr<SyncReadFile> IOUtils::OpenFileForSyncReading(GlobalObject& aGlobal,
     return nullptr;
   }
 
-  RefPtr stream = MakeRefPtr<nsFileRandomAccessStream>();
+  RefPtr<nsFileRandomAccessStream> stream = new nsFileRandomAccessStream();
   if (nsresult rv =
           stream->Init(file, PR_RDONLY | nsIFile::OS_READAHEAD, 0666, 0);
       NS_FAILED(rv)) {
@@ -1285,7 +1285,7 @@ Result<IOUtils::JsBuffer, IOUtils::IOError> IOUtils::ReadSync(
 
   const int64_t offset = static_cast<int64_t>(aOffset);
 
-  RefPtr stream = MakeRefPtr<nsFileRandomAccessStream>();
+  RefPtr<nsFileRandomAccessStream> stream = new nsFileRandomAccessStream();
   if (nsresult rv =
           stream->Init(aFile, PR_RDONLY | nsIFile::OS_READAHEAD, 0666, 0);
       NS_FAILED(rv)) {
@@ -1522,7 +1522,7 @@ Result<uint32_t, IOUtils::IOError> IOUtils::WriteSync(
                    aByteArray.Length());
     }
 
-    RefPtr stream = MakeRefPtr<nsFileOutputStream>();
+    RefPtr<nsFileOutputStream> stream = new nsFileOutputStream();
     if (nsresult rv = stream->Init(writeFile, flags, 0666, 0); NS_FAILED(rv)) {
       // Normalize platform-specific errors for opening a directory to an access
       // denied error.

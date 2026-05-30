@@ -149,7 +149,7 @@ void nsObserverService::Shutdown() {
 nsresult nsObserverService::Create(const nsIID& aIID, void** aInstancePtr) {
   LOG(("nsObserverService::Create()"));
 
-  RefPtr os = MakeRefPtr<nsObserverService>();
+  RefPtr<nsObserverService> os = new nsObserverService();
 
   // The memory reporter can not be immediately registered here because
   // the nsMemoryReporterManager may attempt to get the nsObserverService
