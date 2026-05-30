@@ -311,7 +311,9 @@ for (const type of [
   "WIDGETS_SPORTS_CHANGE_MATCHES_TAB",
   "WIDGETS_SPORTS_CHANGE_SELECTED_TEAMS",
   "WIDGETS_SPORTS_CHANGE_WIDGET_STATE",
+  "WIDGETS_SPORTS_LIVE_HIDDEN",
   "WIDGETS_SPORTS_LIVE_UPDATE",
+  "WIDGETS_SPORTS_LIVE_VISIBLE",
   "WIDGETS_SPORTS_OPEN_MATCH_SEARCH",
   "WIDGETS_SPORTS_SET_FOLLOWED_ONLY",
   "WIDGETS_SPORTS_SET_MATCHES_TAB",
@@ -17062,7 +17064,12 @@ function SportsWidget_SportsWidget({
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const sportsWidgetData = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.SportsWidget);
   const widgetSize = resolveWidgetSize(SPORTS_WIDGET_REGISTRY_ENTRY, prefs);
-  const liveEnabled = prefs[PREF_SPORTS_WIDGET_LIVE_ENABLED];
+  // Mirror SportsFeed.liveEnabled — raw pref OR trainhopConfig.sports.liveEnabled.
+  // Reading the raw pref alone would leave a Nimbus-only rollout in a
+  // permanently-paused state: the feed would start polling, but tick()
+  // bails on empty visibleTabs and we'd never attach the observer to dispatch
+  // WIDGETS_SPORTS_LIVE_VISIBLE.
+  const liveEnabled = prefs[PREF_SPORTS_WIDGET_LIVE_ENABLED] || prefs.trainhopConfig?.sports?.liveEnabled;
   const widgetsMayBeMaximized = prefs["widgets.system.maximized"];
   // /live currently serves mock data pre-kickoff, so ignore its contents
   // until the kickoff timestamp. Drop this guard once the backend returns
@@ -17183,6 +17190,45 @@ function SportsWidget_SportsWidget({
     }));
   }, [dispatch, widgetSize]);
   const widgetRef = useIntersectionObserver(handleIntersection);
+  // Track the article element via state so the live-visibility effect below
+  // re-runs whenever React mounts a new node (e.g. after an early-return
+  // gate flips and the article appears for the first time). widgetRef is a
+  // stable useRef and can't drive re-runs on its own.
+  const [liveEl, setLiveEl] = (0,external_React_namespaceObject.useState)(null);
+
+  // Live polling visibility gate. Separate from the one-shot impression
+  // observer above (which unobserves after the first intersect) — this one
+  // fires on every enter/leave so the feed can pause polling when no tab
+  // has the widget on-screen. Also listens for tab visibility changes:
+  // IntersectionObserver only reports viewport intersection, so a
+  // backgrounded tab would otherwise keep reporting VISIBLE forever.
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!liveEnabled || !liveEl) {
+      return undefined;
+    }
+    let isIntersecting = false;
+    const dispatchState = visible => {
+      dispatch(actionCreators.OnlyToMain({
+        type: visible ? actionTypes.WIDGETS_SPORTS_LIVE_VISIBLE : actionTypes.WIDGETS_SPORTS_LIVE_HIDDEN
+      }));
+    };
+    const observer = new IntersectionObserver(([entry]) => {
+      isIntersecting = entry.isIntersecting;
+      dispatchState(isIntersecting && !document.hidden);
+    },
+    // Match the impression observer's threshold so "visible enough to
+    // count" means the same thing for both.
+    {
+      threshold: 0.3
+    });
+    observer.observe(liveEl);
+    const onVisibilityChange = () => dispatchState(isIntersecting && !document.hidden);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [liveEnabled, dispatch, liveEl]);
   const handleInteraction = (0,external_React_namespaceObject.useCallback)(() => handleUserInteraction("sportsWidget"), [handleUserInteraction]);
   function handleFollowTeams(widgetSource) {
     dispatch(actionCreators.OnlyToMain({
@@ -17413,6 +17459,7 @@ function SportsWidget_SportsWidget({
     } : undefined,
     ref: el => {
       widgetRef.current = [el];
+      setLiveEl(el);
     },
     onMouseEnter: playIntroVideo,
     onFocus: e => {

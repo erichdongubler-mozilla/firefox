@@ -2826,3 +2826,296 @@ describe("<SportsWidget> list-view grouped sections", () => {
     expect(panel.querySelector(".sports-section-label-live")).toBeNull();
   });
 });
+
+describe("<SportsWidget> live polling visibility", () => {
+  const PREF_SPORTS_WIDGET_LIVE_ENABLED = "widgets.sportsWidget.live.enabled";
+
+  // The IntersectionObserver we wire up records every constructed instance so
+  // tests can grab its callback and simulate enter/leave from JSDOM, which
+  // doesn't actually fire intersection events.
+  let observerInstances;
+  let originalIntersectionObserver;
+
+  beforeEach(() => {
+    observerInstances = [];
+    originalIntersectionObserver = global.IntersectionObserver;
+    global.IntersectionObserver = class MockIntersectionObserver {
+      constructor(callback, options) {
+        this.callback = callback;
+        this.options = options;
+        this.observed = [];
+        this.disconnected = false;
+        observerInstances.push(this);
+      }
+      observe(el) {
+        this.observed.push(el);
+      }
+      unobserve(el) {
+        this.observed = this.observed.filter(e => e !== el);
+      }
+      disconnect() {
+        this.disconnected = true;
+      }
+    };
+  });
+
+  // Both observers (the existing one-shot impression observer and the new
+  // live-polling observer) use threshold 0.3. They're distinguished by the
+  // order their useEffects run — the impression hook's effect is declared
+  // first in the component, so observerInstances[0] is impression and
+  // observerInstances[1] is the live observer.
+  function findLiveObserver() {
+    return observerInstances[1];
+  }
+
+  afterEach(() => {
+    global.IntersectionObserver = originalIntersectionObserver;
+  });
+
+  function renderWithLive(liveEnabled, dispatch = jest.fn()) {
+    const state = makeState({
+      [PREF_SPORTS_WIDGET_LIVE_ENABLED]: liveEnabled,
+    });
+    const result = render(
+      <WrapWithProvider state={state}>
+        <SportsWidget dispatch={dispatch} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+    return { ...result, dispatch };
+  }
+
+  it("does not attach a live visibility observer when liveEnabled is false", () => {
+    renderWithLive(false);
+    // The impression observer is always attached; the live observer
+    // (constructed second by useEffect order) should be absent here.
+    expect(findLiveObserver()).toBeUndefined();
+  });
+
+  // Regression: SportsFeed.liveEnabled accepts trainhopConfig.sports.liveEnabled
+  // as a Nimbus rollout signal. Until this fix the component only read the
+  // raw pref, so a Nimbus-only enable started the feed's polling but never
+  // attached the IntersectionObserver — visibleTabs stayed empty and tick()
+  // bailed forever.
+  it("attaches the live visibility observer when only trainhopConfig enables live", () => {
+    const state = makeState({
+      [PREF_SPORTS_WIDGET_LIVE_ENABLED]: false,
+      trainhopConfig: { sports: { liveEnabled: true } },
+    });
+    render(
+      <WrapWithProvider state={state}>
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+    expect(findLiveObserver()).toBeDefined();
+  });
+
+  it("dispatches WIDGETS_SPORTS_LIVE_VISIBLE on intersect when liveEnabled", () => {
+    const { dispatch } = renderWithLive(true);
+    // Find the observer attached to the widget article (the live one — it
+    // observes the same element the impression observer observes).
+    const liveObserver = findLiveObserver();
+    expect(liveObserver).toBeDefined();
+    act(() => {
+      liveObserver.callback([{ isIntersecting: true }]);
+    });
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_SPORTS_LIVE_VISIBLE,
+      })
+    );
+  });
+
+  it("dispatches WIDGETS_SPORTS_LIVE_HIDDEN on un-intersect when liveEnabled", () => {
+    const { dispatch } = renderWithLive(true);
+    const liveObserver = findLiveObserver();
+    expect(liveObserver).toBeDefined();
+    act(() => {
+      liveObserver.callback([{ isIntersecting: false }]);
+    });
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_SPORTS_LIVE_HIDDEN,
+      })
+    );
+  });
+
+  it("disconnects the live observer on unmount", () => {
+    const { unmount } = renderWithLive(true);
+    const liveObserver = findLiveObserver();
+    expect(liveObserver).toBeDefined();
+    expect(liveObserver.disconnected).toBe(false);
+    unmount();
+    expect(liveObserver.disconnected).toBe(true);
+  });
+
+  // Tab-visibility tests. IntersectionObserver only tracks viewport
+  // intersection; a backgrounded tab keeps reporting isIntersecting=true.
+  // The component also listens for document visibilitychange so the feed
+  // can pause polling for background tabs.
+  describe("tab visibility", () => {
+    let hiddenValue;
+    let originalHiddenDescriptor;
+
+    beforeEach(() => {
+      hiddenValue = false;
+      originalHiddenDescriptor = Object.getOwnPropertyDescriptor(
+        Document.prototype,
+        "hidden"
+      );
+      Object.defineProperty(document, "hidden", {
+        configurable: true,
+        get: () => hiddenValue,
+      });
+    });
+
+    afterEach(() => {
+      if (originalHiddenDescriptor) {
+        Object.defineProperty(
+          Document.prototype,
+          "hidden",
+          originalHiddenDescriptor
+        );
+      } else {
+        delete document.hidden;
+      }
+    });
+
+    function fireVisibilityChange() {
+      document.dispatchEvent(new Event("visibilitychange"));
+    }
+
+    it("dispatches HIDDEN when the tab is backgrounded while intersecting", () => {
+      const { dispatch } = renderWithLive(true);
+      const liveObserver = findLiveObserver();
+      act(() => {
+        liveObserver.callback([{ isIntersecting: true }]);
+      });
+      dispatch.mockClear();
+      hiddenValue = true;
+      act(() => {
+        fireVisibilityChange();
+      });
+      expect(dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: at.WIDGETS_SPORTS_LIVE_HIDDEN,
+        })
+      );
+    });
+
+    it("dispatches VISIBLE when the tab is foregrounded while intersecting", () => {
+      const { dispatch } = renderWithLive(true);
+      const liveObserver = findLiveObserver();
+      act(() => {
+        liveObserver.callback([{ isIntersecting: true }]);
+      });
+      hiddenValue = true;
+      act(() => {
+        fireVisibilityChange();
+      });
+      dispatch.mockClear();
+      hiddenValue = false;
+      act(() => {
+        fireVisibilityChange();
+      });
+      expect(dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: at.WIDGETS_SPORTS_LIVE_VISIBLE,
+        })
+      );
+    });
+
+    it("stays HIDDEN on foreground when widget is not intersecting", () => {
+      const { dispatch } = renderWithLive(true);
+      const liveObserver = findLiveObserver();
+      act(() => {
+        liveObserver.callback([{ isIntersecting: false }]);
+      });
+      dispatch.mockClear();
+      hiddenValue = true;
+      act(() => {
+        fireVisibilityChange();
+      });
+      hiddenValue = false;
+      act(() => {
+        fireVisibilityChange();
+      });
+      // Every dispatch should be HIDDEN — no VISIBLE leaks through.
+      for (const call of dispatch.mock.calls) {
+        expect(call[0]).toEqual(
+          expect.objectContaining({
+            type: at.WIDGETS_SPORTS_LIVE_HIDDEN,
+          })
+        );
+      }
+    });
+
+    it("clamps intersect dispatch when the tab is already hidden", () => {
+      hiddenValue = true;
+      const { dispatch } = renderWithLive(true);
+      const liveObserver = findLiveObserver();
+      act(() => {
+        liveObserver.callback([{ isIntersecting: true }]);
+      });
+      expect(dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: at.WIDGETS_SPORTS_LIVE_HIDDEN,
+        })
+      );
+      expect(dispatch).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: at.WIDGETS_SPORTS_LIVE_VISIBLE,
+        })
+      );
+    });
+
+    it("removes the visibilitychange listener on unmount", () => {
+      const removeSpy = jest.spyOn(document, "removeEventListener");
+      const { unmount } = renderWithLive(true);
+      unmount();
+      expect(removeSpy).toHaveBeenCalledWith(
+        "visibilitychange",
+        expect.any(Function)
+      );
+      removeSpy.mockRestore();
+    });
+  });
+
+  // Regression: when the component initially renders without an <article>
+  // (e.g. PREF_NOVA_ENABLED is off so SportsWidget early-returns null),
+  // the live-visibility useEffect previously captured widgetRef.current[0]
+  // as undefined at mount and never re-ran because its deps included a
+  // stable useRef. Tracking the article via setState lets the effect re-run
+  // when the article actually mounts on a later render.
+  it("attaches the live observer when the article appears on a later render", () => {
+    // First render: Nova disabled → SportsWidget renders null → no article.
+    // The impression observer hook still constructs an observer (it runs
+    // before the early return), but the live-visibility effect should bail
+    // because there's no article element yet.
+    const dispatch = jest.fn();
+    const { rerender } = render(
+      <WrapWithProvider
+        state={makeState({
+          [PREF_SPORTS_WIDGET_LIVE_ENABLED]: true,
+          [PREF_NOVA_ENABLED]: false,
+        })}
+      >
+        <SportsWidget dispatch={dispatch} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+    expect(findLiveObserver()).toBeUndefined();
+
+    // Second render: Nova flips on. The article mounts; the live observer
+    // should now attach because setLiveEl(el) caused the effect to re-run.
+    rerender(
+      <WrapWithProvider
+        state={makeState({
+          [PREF_SPORTS_WIDGET_LIVE_ENABLED]: true,
+          [PREF_NOVA_ENABLED]: true,
+        })}
+      >
+        <SportsWidget dispatch={dispatch} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+    expect(findLiveObserver()).toBeDefined();
+  });
+});

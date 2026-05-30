@@ -16,6 +16,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 import {
   actionTypes as at,
   actionCreators as ac,
+  actionUtils as au,
 } from "resource://newtab/common/Actions.mjs";
 
 const PREF_SPORTS_ENABLED = "widgets.sportsWidget.enabled";
@@ -60,19 +61,21 @@ export class SportsFeed {
     this.cache = this.PersistentCache(CACHE_KEY, true);
     this.merino = this.MerinoClient(MERINO_CLIENT_KEY);
 
-    // Adaptive live-polling state. Visibility (per-tab IntersectionObserver
-    // gating) lands in a follow-up bug — polling here only gates on whether
-    // any New Tab is open.
+    // Adaptive live-polling state. visibleTabs is the set of port IDs that
+    // currently have the widget on-screen in an active (foreground) tab.
+    // Visibility is the sole driver of polling: the loop runs iff this set
+    // is non-empty. Tracked per-port so one tab going hidden doesn't pause
+    // polling while another still has the widget visible.
     this.pollTimer = null;
     this.retryTimer = null;
     this.retryCount = 0;
     this.pollingState = POLLING_STATE_IDLE;
-    this.openTabCount = 0;
+    this.visibleTabs = new Set();
     this.lastLiveUpdated = null;
     this.nextKickoffDeltaMs = null;
     // Reentrancy guard: stops a second tick() from racing the first when
-    // fetchNow() is called back-to-back (e.g. NEW_TAB_INIT followed by
-    // WIDGETS_SPORTS_LIVE_VISIBLE on a freshly opened tab in LIVE state).
+    // fetchNow() is called back-to-back (e.g. a WIDGETS_SPORTS_LIVE_VISIBLE
+    // arriving while the resume tick is still awaiting its fetch).
     this.ticking = false;
   }
 
@@ -102,12 +105,13 @@ export class SportsFeed {
     await this.syncState();
     await this.fetchSportsData();
     if (this.liveEnabled) {
+      // Compute the initial polling state from the data we just fetched
+      // (the /live array tells us whether a game is in progress), but do NOT
+      // arm a timer here. Polling always starts from the visibility path
+      // (WIDGETS_SPORTS_LIVE_VISIBLE). Arming a timer here would make the
+      // first VISIBLE see a pending pollTimer and skip its fetchNow, so the
+      // first live update wouldn't land until a full interval later.
       this.updatePollingStateFromMatches();
-      // Polling only really starts from NEW_TAB_INIT; arming a timer here when
-      // no tab is open is wasteful (tick() bails on openTabCount === 0).
-      if (this.openTabCount > 0) {
-        this.scheduleNext();
-      }
     }
   }
 
@@ -483,17 +487,18 @@ export class SportsFeed {
     this.pollingState = POLLING_STATE_IDLE;
   }
 
-  // Periodic tick. Bails entirely (no rearm) when no New Tab is open or
-  // when live is disabled — polling resumes from NEW_TAB_INIT or
-  // PREF_CHANGED. Rearming with no tabs would orphan a background wakeup
-  // loop with no way to recompute state out of LIVE.
+  // Periodic tick. Bails entirely (no rearm) when polling is paused —
+  // live disabled, or no tab has the widget visible. Polling resumes from
+  // WIDGETS_SPORTS_LIVE_VISIBLE or PREF_CHANGED. Rearming with nobody
+  // observing would orphan a background wakeup loop with no way to recompute
+  // state out of LIVE.
   async tick() {
     // Reentrancy: a second tick() while the first is still awaiting would
     // double-dispatch and race two scheduleNext writes.
     if (this.ticking) {
       return;
     }
-    if (!this.liveEnabled || this.openTabCount === 0) {
+    if (!this.liveEnabled || this.visibleTabs.size === 0) {
       return;
     }
     this.ticking = true;
@@ -514,10 +519,10 @@ export class SportsFeed {
         // normal poll timer or we'd double-fire.
         return;
       }
-      // Re-check post-await: a PREF_CHANGED → stopLive() that ran during
-      // the fetch cleared the timers, and we must not resurrect them by
-      // re-arming through scheduleNext().
-      if (!this.liveEnabled || this.openTabCount === 0) {
+      // Re-check post-await: a PREF_CHANGED → stopLive() or a HIDDEN event
+      // that ran during the fetch cleared liveEnabled/visibility, and we
+      // must not resurrect polling by re-arming through scheduleNext().
+      if (!this.liveEnabled || this.visibleTabs.size === 0) {
         return;
       }
       this.scheduleNext();
@@ -530,10 +535,13 @@ export class SportsFeed {
     this.clearTimeout(this.pollTimer);
     this.clearTimeout(this.retryTimer);
     this.retryTimer = null;
-    this.pollTimer = this.setTimeout(
-      () => this.tick(),
-      this.computeNextDelayMs()
-    );
+    // Null the ID inside the callback so `this.pollTimer` is a reliable
+    // "a poll is still scheduled" signal — visibility resume logic depends
+    // on this to avoid preempting an already-armed timer.
+    this.pollTimer = this.setTimeout(() => {
+      this.pollTimer = null;
+      this.tick();
+    }, this.computeNextDelayMs());
   }
 
   // Pick the actual setTimeout delay. In MATCH_DAY we'd otherwise miss the
@@ -561,7 +569,10 @@ export class SportsFeed {
     this.pollTimer = null;
     const delay = Math.min(1000 * 2 ** this.retryCount, MAX_RETRY_DELAY_MS);
     this.retryCount++;
-    this.retryTimer = this.setTimeout(() => this.tick(), delay);
+    this.retryTimer = this.setTimeout(() => {
+      this.retryTimer = null;
+      this.tick();
+    }, delay);
   }
 
   // Fetch immediately, cancelling any pending timers. Used when visibility
@@ -649,26 +660,77 @@ export class SportsFeed {
       case at.PREF_CHANGED:
         await this.onPrefChangedAction(action);
         break;
-      // Track open tabs so we can pause polling when no New Tab exists.
-      // Visibility (whether the widget is on-screen in any tab) is layered on
-      // top in a follow-up bug.
-      case at.NEW_TAB_INIT: {
-        // 0->1 transition means polling was paused (tick() bails when no
-        // tabs are open). Resume by fetching immediately, regardless of the
-        // current pollingState — the stored state may be stale.
-        const wasEmpty = this.openTabCount === 0;
-        this.openTabCount++;
-        if (
-          this.liveEnabled &&
-          (wasEmpty || this.pollingState === POLLING_STATE_LIVE)
-        ) {
-          await this.fetchNow();
+      // ---------------------------------------------------------------------
+      // How live polling decides when to fetch /live (during a live game)
+      //
+      // The rule is simple: we poll only while the widget is actually being
+      // looked at. A tab counts as "looking" when the widget is on-screen in
+      // the foreground tab. The content side already enforces this — it only
+      // reports a tab visible when the widget is scrolled into view and the
+      // tab is in front (isIntersecting && !document.hidden). We keep the set
+      // of those tabs in `visibleTabs`. If the set is empty, we stop polling.
+      // There is no timestamp or "last fetched" tracking — just this set and
+      // the poll timer.
+      //
+      // What that means in practice:
+      //  1. You open New Tab on a live game: the widget shows up, we fetch
+      //     /live right away, and start the timer.
+      //  2. The timer runs out while you're looking at it: we fetch /live
+      //     again and restart the timer.
+      //  3. You scroll the widget off-screen: we stop, but we leave the timer
+      //     running. If it runs out while it's off-screen, we just skip that
+      //     fetch. When you scroll back, we fetch again only if the timer
+      //     already ran out; if it hasn't, we wait for it. (This is why
+      //     quickly scrolling away and back does NOT fire extra requests.)
+      //  4. Two tabs are open and a background tab has the widget on-screen:
+      //     it does not count, because it isn't the active tab. Only the tab
+      //     you're actually looking at drives a fetch.
+      //  5. You open a new tab while the timer is still running: the new tab
+      //     does not fetch on its own — it waits for the timer that's already
+      //     going.
+      // ---------------------------------------------------------------------
+
+      // A tab going hidden, or closing, just drops its port. NEW_TAB_UNLOAD is
+      // kept as a backstop because a closing tab won't reliably fire HIDDEN
+      // before its content process tears down — without it the port would
+      // linger in visibleTabs and tick() would keep fetching for a tab that no
+      // longer exists.
+      case at.NEW_TAB_UNLOAD:
+      case at.WIDGETS_SPORTS_LIVE_HIDDEN: {
+        const portId = au.getPortIdOfSender(action);
+        if (portId) {
+          this.visibleTabs.delete(portId);
+        }
+        // Deliberately do NOT clear pollTimer/retryTimer here. A pending
+        // timer represents the remaining poll interval; keeping it alive is
+        // what makes a quick scroll-off-and-back a no-op instead of an extra
+        // /live fetch. When the timer fires with an empty visibleTabs, tick()
+        // bails without rearming and the scheduleNext/scheduleRetry callbacks
+        // null the handle, so a later VISIBLE resumes cleanly.
+        break;
+      }
+      case at.WIDGETS_SPORTS_LIVE_VISIBLE: {
+        const portId = au.getPortIdOfSender(action);
+        if (portId) {
+          this.visibleTabs.add(portId);
+          // Resume polling only when it is actually paused. A pending timer
+          // (or in-flight tick) means the current interval has not elapsed,
+          // so we wait for it rather than firing an immediate /live — this
+          // is what keeps scroll-off-and-back, and opening new tabs, from
+          // issuing extra requests. The null-in-callback bookkeeping in
+          // scheduleNext/scheduleRetry makes these handle checks reliable
+          // after a timer has fired.
+          if (
+            this.liveEnabled &&
+            !this.ticking &&
+            !this.pollTimer &&
+            !this.retryTimer
+          ) {
+            this.fetchNow();
+          }
         }
         break;
       }
-      case at.NEW_TAB_UNLOAD:
-        this.openTabCount = Math.max(0, this.openTabCount - 1);
-        break;
       // User clicked a match row — run a search for the match's `query` using
       // their default search engine via SearchUIUtils.loadSearch.
       case at.WIDGETS_SPORTS_OPEN_MATCH_SEARCH:

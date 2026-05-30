@@ -150,7 +150,14 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   const sportsWidgetData = useSelector(state => state.SportsWidget);
 
   const widgetSize = resolveWidgetSize(SPORTS_WIDGET_REGISTRY_ENTRY, prefs);
-  const liveEnabled = prefs[PREF_SPORTS_WIDGET_LIVE_ENABLED];
+  // Mirror SportsFeed.liveEnabled — raw pref OR trainhopConfig.sports.liveEnabled.
+  // Reading the raw pref alone would leave a Nimbus-only rollout in a
+  // permanently-paused state: the feed would start polling, but tick()
+  // bails on empty visibleTabs and we'd never attach the observer to dispatch
+  // WIDGETS_SPORTS_LIVE_VISIBLE.
+  const liveEnabled =
+    prefs[PREF_SPORTS_WIDGET_LIVE_ENABLED] ||
+    prefs.trainhopConfig?.sports?.liveEnabled;
   const widgetsMayBeMaximized = prefs["widgets.system.maximized"];
   // /live currently serves mock data pre-kickoff, so ignore its contents
   // until the kickoff timestamp. Drop this guard once the backend returns
@@ -296,6 +303,50 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   }, [dispatch, widgetSize]);
 
   const widgetRef = useIntersectionObserver(handleIntersection);
+  // Track the article element via state so the live-visibility effect below
+  // re-runs whenever React mounts a new node (e.g. after an early-return
+  // gate flips and the article appears for the first time). widgetRef is a
+  // stable useRef and can't drive re-runs on its own.
+  const [liveEl, setLiveEl] = useState(null);
+
+  // Live polling visibility gate. Separate from the one-shot impression
+  // observer above (which unobserves after the first intersect) — this one
+  // fires on every enter/leave so the feed can pause polling when no tab
+  // has the widget on-screen. Also listens for tab visibility changes:
+  // IntersectionObserver only reports viewport intersection, so a
+  // backgrounded tab would otherwise keep reporting VISIBLE forever.
+  useEffect(() => {
+    if (!liveEnabled || !liveEl) {
+      return undefined;
+    }
+    let isIntersecting = false;
+    const dispatchState = visible => {
+      dispatch(
+        ac.OnlyToMain({
+          type: visible
+            ? at.WIDGETS_SPORTS_LIVE_VISIBLE
+            : at.WIDGETS_SPORTS_LIVE_HIDDEN,
+        })
+      );
+    };
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isIntersecting = entry.isIntersecting;
+        dispatchState(isIntersecting && !document.hidden);
+      },
+      // Match the impression observer's threshold so "visible enough to
+      // count" means the same thing for both.
+      { threshold: 0.3 }
+    );
+    observer.observe(liveEl);
+    const onVisibilityChange = () =>
+      dispatchState(isIntersecting && !document.hidden);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [liveEnabled, dispatch, liveEl]);
 
   const handleInteraction = useCallback(
     () => handleUserInteraction("sportsWidget"),
@@ -607,6 +658,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
       }
       ref={el => {
         widgetRef.current = [el];
+        setLiveEl(el);
       }}
       onMouseEnter={playIntroVideo}
       onFocus={e => {

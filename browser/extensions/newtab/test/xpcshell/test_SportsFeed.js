@@ -1005,7 +1005,7 @@ function stubTimers(feed) {
   return { setTimeoutStub, clearTimeoutStub };
 }
 
-function makeLiveFeed({ liveEnabled = true, openTab = true } = {}) {
+function makeLiveFeed({ liveEnabled = true, visible = true } = {}) {
   const feed = makeFeed();
   feed.store.state.Prefs.values[PREF_SPORTS_LIVE_ENABLED] = liveEnabled;
   feed.store.state.Prefs.values[PREF_SPORTS_LIVE_ENDPOINT] = LIVE_ENDPOINT;
@@ -1016,10 +1016,34 @@ function makeLiveFeed({ liveEnabled = true, openTab = true } = {}) {
   feed.store.getState = function () {
     return this.state;
   };
-  if (openTab) {
-    feed.openTabCount = 1;
+  // Visibility is the sole driver of polling: tick() bails on an empty
+  // visibleTabs. Seed one visible port so the feed is in the "polling" state
+  // unless a test explicitly opts out with { visible: false }.
+  if (visible) {
+    feed.visibleTabs = new Set(["port-default"]);
   }
   return feed;
+}
+
+function liveVisibleAction(portId) {
+  return {
+    type: actionTypes.WIDGETS_SPORTS_LIVE_VISIBLE,
+    meta: { fromTarget: portId },
+  };
+}
+
+function liveHiddenAction(portId) {
+  return {
+    type: actionTypes.WIDGETS_SPORTS_LIVE_HIDDEN,
+    meta: { fromTarget: portId },
+  };
+}
+
+function newTabUnloadAction(portId) {
+  return {
+    type: actionTypes.NEW_TAB_UNLOAD,
+    meta: { fromTarget: portId },
+  };
 }
 
 add_task(async function test_liveEnabled_requires_widget_and_live_pref() {
@@ -1309,26 +1333,6 @@ add_task(async function test_fetchAndDispatch_idle_calls_fetchSportsData() {
   );
 });
 
-add_task(async function test_tick_bails_when_no_open_tab() {
-  // With no tabs open, tick must bail completely — no fetch AND no rearm.
-  // Rearming would orphan a background wakeup loop with no way to recompute
-  // out of LIVE state.
-  const feed = makeLiveFeed({ openTab: false });
-  feed.pollingState = "LIVE";
-  const { setTimeoutStub } = stubTimers(feed);
-  const fetchLiveStub = sinon.stub(feed.merino, "fetchSportsLive").resolves({
-    matches: [],
-  });
-
-  await feed.tick();
-
-  Assert.ok(fetchLiveStub.notCalled, "no fetch when openTabCount == 0");
-  Assert.ok(
-    setTimeoutStub.notCalled,
-    "no timer rearmed — polling resumes from NEW_TAB_INIT"
-  );
-});
-
 add_task(async function test_tick_no_op_when_live_disabled() {
   const feed = makeLiveFeed({ liveEnabled: false });
   feed.pollingState = "LIVE";
@@ -1353,77 +1357,48 @@ add_task(async function test_scheduleNext_arms_timer_with_resolved_interval() {
   Assert.equal(typeof setTimeoutStub.firstCall.args[0], "function");
 });
 
-// 0->1 transition resumes polling regardless of pollingState — the stored
-// state may be stale (e.g. set to IDLE by stopLive while a match is live),
-// and tick() bails entirely when no tabs are open, so nothing else would
-// restart polling.
+// Opening a new tab while a poll is already pending must NOT trigger an
+// extra fetch (heuristic 5). The new foreground tab dispatches LIVE_VISIBLE,
+// but the pending timer covers it — we just add the port and wait.
 add_task(
-  async function test_onAction_NEW_TAB_INIT_resumes_polling_on_zero_to_one() {
-    for (const state of ["IDLE", "MATCH_DAY", "LIVE"]) {
-      const feed = makeLiveFeed();
-      feed.openTabCount = 0;
-      feed.pollingState = state;
-      stubTimers(feed);
-      const fetchNowStub = sinon.stub(feed, "fetchNow");
-
-      await feed.onAction({ type: actionTypes.NEW_TAB_INIT });
-
-      Assert.equal(feed.openTabCount, 1, `openTabCount went 0->1 in ${state}`);
-      Assert.ok(
-        fetchNowStub.calledOnce,
-        `fetchNow called on 0->1 transition in ${state} state`
-      );
-    }
-  }
-);
-
-// When polling is already running (openTabCount > 0), subsequent
-// NEW_TAB_INIT actions should only kick a fresh fetch during LIVE — IDLE /
-// MATCH_DAY intervals are long enough that the existing scheduled tick is
-// fine.
-add_task(
-  async function test_onAction_NEW_TAB_INIT_no_fetch_during_idle_with_existing_tabs() {
-    const feed = makeLiveFeed();
-    feed.openTabCount = 1;
-    feed.pollingState = "IDLE";
+  async function test_LIVE_VISIBLE_new_tab_with_pending_timer_no_fetch() {
+    const feed = makeLiveFeed({ visible: false });
+    feed.pollingState = "LIVE";
+    feed.pollTimer = 42; // a poll is already scheduled (another tab)
     stubTimers(feed);
     const fetchNowStub = sinon.stub(feed, "fetchNow");
 
-    await feed.onAction({ type: actionTypes.NEW_TAB_INIT });
+    await feed.onAction(liveVisibleAction("port-newtab"));
 
-    Assert.equal(feed.openTabCount, 2);
+    Assert.ok(
+      feed.visibleTabs.has("port-newtab"),
+      "the new tab's port is tracked"
+    );
     Assert.ok(
       fetchNowStub.notCalled,
-      "no fetchNow in IDLE when tabs were already open"
+      "no extra fetch — the pending timer covers the new tab"
     );
   }
 );
 
-add_task(
-  async function test_onAction_NEW_TAB_INIT_fetches_when_LIVE_with_existing_tabs() {
-    const feed = makeLiveFeed();
-    feed.openTabCount = 1;
-    feed.pollingState = "LIVE";
-    stubTimers(feed);
-    const fetchNowStub = sinon.stub(feed, "fetchNow");
+// Several tabs opening in quick succession with a timer already armed must
+// produce exactly zero fetches (the armed timer covers them all).
+add_task(async function test_LIVE_VISIBLE_rapid_tabs_does_not_multifetch() {
+  const feed = makeLiveFeed({ visible: false });
+  feed.pollingState = "LIVE";
+  feed.pollTimer = 7;
+  stubTimers(feed);
+  const fetchNowStub = sinon.stub(feed, "fetchNow");
 
-    await feed.onAction({ type: actionTypes.NEW_TAB_INIT });
+  await feed.onAction(liveVisibleAction("port-1"));
+  await feed.onAction(liveVisibleAction("port-2"));
+  await feed.onAction(liveVisibleAction("port-3"));
 
-    Assert.equal(feed.openTabCount, 2);
-    Assert.ok(
-      fetchNowStub.calledOnce,
-      "fetchNow called for the freshly-opened tab during LIVE state"
-    );
-  }
-);
-
-add_task(async function test_onAction_NEW_TAB_UNLOAD_clamps_openTabCount() {
-  const feed = makeLiveFeed();
-  feed.openTabCount = 0;
-
-  await feed.onAction({ type: actionTypes.NEW_TAB_UNLOAD });
-
-  Assert.equal(feed.openTabCount, 0, "openTabCount clamped at 0");
+  Assert.equal(feed.visibleTabs.size, 3, "all three ports tracked");
+  Assert.ok(
+    fetchNowStub.notCalled,
+    "no fetchNow fired for any of the three rapid new tabs"
+  );
 });
 
 add_task(async function test_stopLive_clears_timers_and_resets() {
@@ -1443,33 +1418,13 @@ add_task(async function test_stopLive_clears_timers_and_resets() {
   Assert.equal(feed.pollingState, "IDLE");
 });
 
-add_task(async function test_init_starts_polling_when_liveEnabled() {
+// init() must NOT arm a poll timer, even when a tab already has the widget
+// visible. Arming here would make the first WIDGETS_SPORTS_LIVE_VISIBLE see a
+// pending pollTimer and skip its fetchNow, so the first live update wouldn't
+// land until a full interval later. Polling always starts from the
+// visibility path instead.
+add_task(async function test_init_does_not_arm_timer_when_visible() {
   const feed = makeLiveFeed();
-  feed.store.state.Prefs.values["sports.worldCup.teamsEndpoint"] =
-    "https://merino.services.mozilla.com/api/v1/wcs/teams";
-  feed.store.state.Prefs.values["sports.worldCup.matchesEndpoint"] =
-    "https://merino.services.mozilla.com/api/v1/wcs/matches";
-  sinon.stub(feed.cache, "get").resolves({});
-  sinon.stub(feed.merino, "fetchSportsTeams").resolves({ teams: [] });
-  sinon.stub(feed.merino, "fetchSportsMatches").resolves({
-    previous: [],
-    current: [],
-    next: [],
-  });
-  sinon.stub(feed.merino, "fetchSportsLive").resolves({ matches: [] });
-  const { setTimeoutStub } = stubTimers(feed);
-
-  await feed.init();
-
-  Assert.ok(setTimeoutStub.calledOnce, "init scheduled the first tick");
-});
-
-// init() runs before any NEW_TAB_INIT — openTabCount is 0 at that point. The
-// pre-NEW_TAB_INIT scheduleNext timer would either be cancelled by fetchNow()
-// on NEW_TAB_INIT or fire once and bail in tick() (openTabCount === 0), so
-// arming it is wasteful.
-add_task(async function test_init_does_not_arm_timer_when_no_tab_open() {
-  const feed = makeLiveFeed({ openTab: false });
   feed.store.state.Prefs.values["sports.worldCup.teamsEndpoint"] =
     "https://merino.services.mozilla.com/api/v1/wcs/teams";
   feed.store.state.Prefs.values["sports.worldCup.matchesEndpoint"] =
@@ -1488,7 +1443,31 @@ add_task(async function test_init_does_not_arm_timer_when_no_tab_open() {
 
   Assert.ok(
     setTimeoutStub.notCalled,
-    "no timer armed at init when openTabCount === 0"
+    "init does not arm a poll timer; visibility path starts polling"
+  );
+});
+
+add_task(async function test_init_does_not_arm_timer_when_not_visible() {
+  const feed = makeLiveFeed({ visible: false });
+  feed.store.state.Prefs.values["sports.worldCup.teamsEndpoint"] =
+    "https://merino.services.mozilla.com/api/v1/wcs/teams";
+  feed.store.state.Prefs.values["sports.worldCup.matchesEndpoint"] =
+    "https://merino.services.mozilla.com/api/v1/wcs/matches";
+  sinon.stub(feed.cache, "get").resolves({});
+  sinon.stub(feed.merino, "fetchSportsTeams").resolves({ teams: [] });
+  sinon.stub(feed.merino, "fetchSportsMatches").resolves({
+    previous: [],
+    current: [],
+    next: [],
+  });
+  sinon.stub(feed.merino, "fetchSportsLive").resolves({ matches: [] });
+  const { setTimeoutStub } = stubTimers(feed);
+
+  await feed.init();
+
+  Assert.ok(
+    setTimeoutStub.notCalled,
+    "no timer armed at init when no tab is visible"
   );
 });
 
@@ -1893,13 +1872,14 @@ add_task(async function test_persistSportsData_called_after_live_update() {
   Assert.equal(setStub.firstCall.args[0], "sportsData");
 });
 
-// #10: reentrancy guard — two back-to-back fetchNow() calls (e.g.
-// NEW_TAB_INIT then WIDGETS_SPORTS_LIVE_VISIBLE for a fresh tab) must not
-// stack parallel tick()s issuing duplicate /wcs/live requests.
+// #10: reentrancy guard — two back-to-back tick() calls (e.g. a poll timer
+// firing just as a WIDGETS_SPORTS_LIVE_VISIBLE resume lands) must not stack
+// parallel tick()s issuing duplicate /wcs/live requests.
 add_task(async function test_tick_reentrancy_guard() {
   const feed = makeLiveFeed();
   feed.pollingState = "LIVE";
   stubTimers(feed);
+  feed.visibleTabs = new Set(["port-1"]);
   sinon.stub(feed.cache, "set").resolves();
   // Stub the post-tick resync so this test isolates the reentrancy guard
   // from the empty-live-array resync path.
@@ -1932,6 +1912,7 @@ add_task(
   async function test_tick_does_not_rearm_when_live_disabled_mid_fetch() {
     const feed = makeLiveFeed();
     feed.pollingState = "LIVE";
+    feed.visibleTabs = new Set(["port-1"]);
     const { setTimeoutStub } = stubTimers(feed);
     sinon.stub(feed.cache, "set").resolves();
     // The empty-live-array path triggers a fetchSportsData() resync — stub
@@ -1964,6 +1945,9 @@ add_task(
 add_task(async function test_tick_handles_throw_via_scheduleRetry() {
   const feed = makeLiveFeed();
   feed.pollingState = "IDLE";
+  // tick() bails if visibleTabs is empty (C3 visibility gate), so populate it
+  // for this test which is exercising the post-await throw path.
+  feed.visibleTabs = new Set(["port-1"]);
   const { setTimeoutStub } = stubTimers(feed);
   sinon
     .stub(feed, "fetchSportsData")
@@ -1974,5 +1958,282 @@ add_task(async function test_tick_handles_throw_via_scheduleRetry() {
   Assert.ok(
     setTimeoutStub.called,
     "retry timer armed even though IDLE branch threw"
+  );
+});
+
+// =============================================================================
+// Per-port visibility tracking
+// =============================================================================
+
+add_task(async function test_LIVE_VISIBLE_HIDDEN_track_per_port() {
+  const feed = makeLiveFeed();
+  feed.visibleTabs = new Set();
+  // VISIBLE on a 0->1 transition fires fetchNow (fire-and-forget) — stub it
+  // so the real /live fetch doesn't trip the non-local-connections kill
+  // switch after the test returns.
+  sinon.stub(feed, "fetchNow");
+
+  info("VISIBLE adds the sender port to visibleTabs");
+  await feed.onAction(liveVisibleAction("port-1"));
+  Assert.deepEqual([...feed.visibleTabs], ["port-1"]);
+
+  info("a second VISIBLE from the same port is a no-op (Set semantics)");
+  await feed.onAction(liveVisibleAction("port-1"));
+  Assert.equal(feed.visibleTabs.size, 1);
+
+  info("a VISIBLE from a different port adds to the set");
+  await feed.onAction(liveVisibleAction("port-2"));
+  Assert.equal(feed.visibleTabs.size, 2);
+
+  info("HIDDEN removes only that port");
+  await feed.onAction(liveHiddenAction("port-1"));
+  Assert.deepEqual([...feed.visibleTabs], ["port-2"]);
+
+  info("HIDDEN for a port that wasn't in the set is a no-op");
+  await feed.onAction(liveHiddenAction("never-was-visible"));
+  Assert.deepEqual([...feed.visibleTabs], ["port-2"]);
+});
+
+add_task(async function test_LIVE_VISIBLE_ignores_actions_without_portId() {
+  const feed = makeLiveFeed();
+  feed.visibleTabs = new Set();
+
+  info("an action with no meta.fromTarget is dropped (no crash, no add)");
+  await feed.onAction({ type: actionTypes.WIDGETS_SPORTS_LIVE_VISIBLE });
+  Assert.equal(feed.visibleTabs.size, 0);
+});
+
+// Regression for the per-tab safety issue: closing a tab that never
+// reported visible must NOT drop the visibility count to zero when a
+// different tab still has the widget visible.
+add_task(async function test_NEW_TAB_UNLOAD_only_clears_that_tabs_visibility() {
+  const feed = makeLiveFeed();
+  feed.visibleTabs = new Set();
+  // Same fire-and-forget fetchNow concern as test_LIVE_VISIBLE_HIDDEN_*.
+  sinon.stub(feed, "fetchNow");
+
+  await feed.onAction(liveVisibleAction("port-visible"));
+  Assert.deepEqual([...feed.visibleTabs], ["port-visible"]);
+
+  info("Closing a hidden tab should NOT remove the visible tab's entry");
+  await feed.onAction(newTabUnloadAction("port-hidden"));
+  Assert.deepEqual(
+    [...feed.visibleTabs],
+    ["port-visible"],
+    "visible-tab port is preserved when a hidden tab unloads"
+  );
+
+  info("Closing the visible tab does remove its entry");
+  await feed.onAction(newTabUnloadAction("port-visible"));
+  Assert.equal(feed.visibleTabs.size, 0);
+});
+
+add_task(async function test_tick_bails_when_no_visible_tab() {
+  // When nobody is observing the widget, tick stops fetching AND stops
+  // rearming, to avoid an orphaned background wakeup loop. Polling resumes
+  // from WIDGETS_SPORTS_LIVE_VISIBLE.
+  const feed = makeLiveFeed();
+  feed.visibleTabs = new Set();
+  feed.pollingState = "LIVE";
+  const { setTimeoutStub } = stubTimers(feed);
+  const fetchLiveStub = sinon.stub(feed.merino, "fetchSportsLive").resolves({
+    matches: [],
+  });
+
+  await feed.tick();
+
+  Assert.ok(
+    fetchLiveStub.notCalled,
+    "no fetch when visibleTabs is empty even with an open tab"
+  );
+  Assert.ok(
+    setTimeoutStub.notCalled,
+    "no timer rearmed — polling resumes from WIDGETS_SPORTS_LIVE_VISIBLE"
+  );
+});
+
+// Visibility appearing while polling is paused (no timer) resumes polling,
+// regardless of pollingState: tick bails when nobody is observing, so we
+// need a positive trigger to restart, and the stored state may be stale
+// after a long hidden period.
+add_task(async function test_LIVE_VISIBLE_resumes_polling_on_zero_to_one() {
+  for (const state of ["IDLE", "MATCH_DAY", "LIVE"]) {
+    const feed = makeLiveFeed();
+    feed.visibleTabs = new Set();
+    feed.pollingState = state;
+    stubTimers(feed);
+    // Stub (not spy) so fetchNow doesn't actually run tick → fetchLive,
+    // which would hit the real Merino endpoint and trip the
+    // non-local-connections kill switch.
+    const fetchNowStub = sinon.stub(feed, "fetchNow");
+
+    await feed.onAction(liveVisibleAction("port-1"));
+
+    Assert.ok(
+      fetchNowStub.calledOnce,
+      `fetchNow called on visible 0->1 in ${state} state`
+    );
+  }
+});
+
+// A second tab becoming visible while polling is already active (another
+// tab is visible and a poll is scheduled) must not trigger an additional
+// fetch — the existing scheduled tick covers it.
+add_task(async function test_LIVE_VISIBLE_no_fetchNow_when_already_polling() {
+  const feed = makeLiveFeed();
+  feed.visibleTabs = new Set(["port-already-visible"]);
+  feed.pollingState = "LIVE";
+  feed.pollTimer = 1; // a poll is already scheduled
+  stubTimers(feed);
+  const fetchNowStub = sinon.stub(feed, "fetchNow");
+
+  await feed.onAction(liveVisibleAction("port-second"));
+
+  Assert.ok(
+    fetchNowStub.notCalled,
+    "no extra fetch when polling is already active"
+  );
+});
+
+// A VISIBLE 0->1 while a tick is in flight must not call fetchNow — the
+// running tick will schedule the next poll on completion. Preempting it
+// would discard the about-to-be-armed timer for no benefit (the tick()
+// reentrancy guard early-returns anyway).
+add_task(async function test_LIVE_VISIBLE_skips_fetchNow_when_ticking() {
+  const feed = makeLiveFeed();
+  feed.visibleTabs = new Set();
+  feed.pollingState = "LIVE";
+  feed.ticking = true;
+  stubTimers(feed);
+  const fetchNowStub = sinon.stub(feed, "fetchNow");
+
+  await feed.onAction(liveVisibleAction("port-1"));
+
+  Assert.ok(
+    fetchNowStub.notCalled,
+    "fetchNow skipped while a tick is in flight"
+  );
+  Assert.deepEqual(
+    [...feed.visibleTabs],
+    ["port-1"],
+    "port still added to visibleTabs even when fetch is skipped"
+  );
+});
+
+// Real-world rapid scroll: widget is visible, polling is running (pollTimer
+// armed), user scrolls off (HIDDEN) then immediately back (VISIBLE). The
+// pollTimer is still pending so we must NOT preempt it with a fresh fetch.
+add_task(
+  async function test_LIVE_VISIBLE_skips_fetchNow_when_pollTimer_armed() {
+    const feed = makeLiveFeed();
+    feed.visibleTabs = new Set();
+    feed.pollingState = "LIVE";
+    feed.pollTimer = 42; // simulate armed poll timer
+    stubTimers(feed);
+    const fetchNowStub = sinon.stub(feed, "fetchNow");
+
+    await feed.onAction(liveVisibleAction("port-1"));
+
+    Assert.ok(
+      fetchNowStub.notCalled,
+      "fetchNow skipped when a poll timer is already armed"
+    );
+  }
+);
+
+// Heuristic 3 regression (the original "scroll off and back repeats
+// requests" bug): with a poll pending, scrolling the widget off-screen
+// (HIDDEN) must NOT clear the timer, and scrolling back (VISIBLE) within the
+// interval must NOT fetch. The pending timer is preserved across the round
+// trip so the interval is honored.
+add_task(
+  async function test_HIDDEN_then_VISIBLE_within_interval_preserves_timer() {
+    const feed = makeLiveFeed();
+    feed.visibleTabs = new Set(["port-1"]);
+    feed.pollingState = "LIVE";
+    feed.pollTimer = 555; // a poll is scheduled mid-interval
+    const { clearTimeoutStub } = stubTimers(feed);
+    const fetchNowStub = sinon.stub(feed, "fetchNow");
+
+    await feed.onAction(liveHiddenAction("port-1"));
+    Assert.equal(feed.visibleTabs.size, 0, "HIDDEN removes the port");
+    Assert.equal(
+      feed.pollTimer,
+      555,
+      "HIDDEN does NOT clear the pending poll timer"
+    );
+    Assert.ok(clearTimeoutStub.notCalled, "no timer cleared on HIDDEN");
+
+    await feed.onAction(liveVisibleAction("port-1"));
+    Assert.ok(
+      fetchNowStub.notCalled,
+      "scroll-back within the interval does not refetch — waits for the timer"
+    );
+  }
+);
+
+// Backoff retries also count as a pending poll — don't preempt them.
+add_task(
+  async function test_LIVE_VISIBLE_skips_fetchNow_when_retryTimer_armed() {
+    const feed = makeLiveFeed();
+    feed.visibleTabs = new Set();
+    feed.pollingState = "LIVE";
+    feed.retryTimer = 99; // simulate armed retry timer
+    stubTimers(feed);
+    const fetchNowStub = sinon.stub(feed, "fetchNow");
+
+    await feed.onAction(liveVisibleAction("port-1"));
+
+    Assert.ok(
+      fetchNowStub.notCalled,
+      "fetchNow skipped when a retry timer is already armed"
+    );
+  }
+);
+
+// scheduleNext's setTimeout callback must null pollTimer so that a later
+// VISIBLE event can correctly detect that polling is no longer scheduled.
+add_task(async function test_scheduleNext_callback_nulls_pollTimer() {
+  const feed = makeLiveFeed();
+  let firedCallback = null;
+  feed.setTimeout = (cb, _delay) => {
+    firedCallback = cb;
+    return 7;
+  };
+  feed.clearTimeout = () => {};
+  sinon.stub(feed, "tick");
+  sinon.stub(feed, "resolvePollIntervalMs").returns(60000);
+
+  feed.scheduleNext();
+  Assert.equal(feed.pollTimer, 7, "pollTimer set to the timer ID");
+
+  firedCallback();
+  Assert.strictEqual(
+    feed.pollTimer,
+    null,
+    "pollTimer nulled when the timer fires"
+  );
+});
+
+// scheduleRetry's setTimeout callback must null retryTimer for the same
+// reason.
+add_task(async function test_scheduleRetry_callback_nulls_retryTimer() {
+  const feed = makeLiveFeed();
+  let firedCallback = null;
+  feed.setTimeout = (cb, _delay) => {
+    firedCallback = cb;
+    return 11;
+  };
+  feed.clearTimeout = () => {};
+  sinon.stub(feed, "tick");
+
+  feed.scheduleRetry();
+  Assert.equal(feed.retryTimer, 11, "retryTimer set to the timer ID");
+
+  firedCallback();
+  Assert.strictEqual(
+    feed.retryTimer,
+    null,
+    "retryTimer nulled when the timer fires"
   );
 });
