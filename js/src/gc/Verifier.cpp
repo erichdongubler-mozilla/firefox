@@ -812,8 +812,9 @@ void GCRuntime::computeNonIncrementalMarkingForValidation(
   // The test mark queue can cause spurious differences if the non-incremental
   // marking for validation happens before the full queue has been processed,
   // since the later part of the queue may mark things during sweeping. Disable
-  // validation if there is anything left in the queue at this point.
-  if (testMarkQueueRemaining() > 0) {
+  // validation if there is anything left in the queue at this point or a forced
+  // mark color from the queue is still in effect.
+  if (testMarkQueueRemaining() > 0 || queueMarkColor.isSome()) {
     return;
   }
 #  endif
