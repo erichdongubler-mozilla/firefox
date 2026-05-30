@@ -80,8 +80,8 @@ nsSimpleArrayEnumerator::GetNext(nsISupports** aResult) {
 
 nsresult NS_NewArrayEnumerator(nsISimpleEnumerator** aResult, nsIArray* aArray,
                                const nsID& aEntryIID) {
-  RefPtr<nsSimpleArrayEnumerator> enumer =
-      new nsSimpleArrayEnumerator(aArray, aEntryIID);
+  RefPtr enumer =
+      mozilla::MakeRefPtr<nsSimpleArrayEnumerator>(aArray, aEntryIID);
   enumer.forget(aResult);
   return NS_OK;
 }
