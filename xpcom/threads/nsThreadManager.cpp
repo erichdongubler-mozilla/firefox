@@ -59,15 +59,14 @@ class BackgroundEventTarget final : public nsIEventTarget {
  private:
   ~BackgroundEventTarget() = default;
 
-  nsCOMPtr<nsIThreadPool> mPool;
-  nsCOMPtr<nsIThreadPool> mIOPool;
+  RefPtr<nsThreadPool> mPool;
+  RefPtr<nsThreadPool> mIOPool;
 };
 
 NS_IMPL_ISUPPORTS(BackgroundEventTarget, nsIEventTarget)
 
 nsresult BackgroundEventTarget::Init() {
-  nsCOMPtr<nsIThreadPool> pool(new nsThreadPool());
-  NS_ENSURE_TRUE(pool, NS_ERROR_FAILURE);
+  RefPtr pool = MakeRefPtr<nsThreadPool>();
 
   nsresult rv = pool->SetName("BackgroundThreadPool"_ns);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -92,8 +91,7 @@ nsresult BackgroundEventTarget::Init() {
   NS_ENSURE_SUCCESS(rv, rv);
 
   // Initialize the background I/O event target.
-  nsCOMPtr<nsIThreadPool> ioPool(new nsThreadPool());
-  NS_ENSURE_TRUE(ioPool, NS_ERROR_FAILURE);
+  RefPtr ioPool = MakeRefPtr<nsThreadPool>();
 
   // The io pool spends a lot of its time blocking on io, so we want to offload
   // these jobs on a lower priority if available.
