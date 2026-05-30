@@ -577,6 +577,37 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.sportsWidget.pollIdleMs",
+    {
+      title:
+        "Sports widget: poll interval when no games are imminent (milliseconds)",
+      value: 21600000, // 6 hours
+    },
+  ],
+  [
+    "widgets.sportsWidget.pollMatchDayMs",
+    {
+      title:
+        "Sports widget: poll interval on a match day pre-kickoff (milliseconds)",
+      value: 1800000, // 30 minutes
+    },
+  ],
+  [
+    "widgets.sportsWidget.pollLiveMs",
+    {
+      title: "Sports widget: poll interval during live play (milliseconds)",
+      value: 60000, // 1 minute
+    },
+  ],
+  [
+    "widgets.sportsWidget.pollPregameLeadMs",
+    {
+      title:
+        "Sports widget: how early to enter LIVE polling before kickoff (milliseconds)",
+      value: 600000, // 10 minutes
+    },
+  ],
+  [
     "images.smart",
     {
       title: "Smart crop images on newtab",

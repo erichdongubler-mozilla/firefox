@@ -311,6 +311,7 @@ for (const type of [
   "WIDGETS_SPORTS_CHANGE_MATCHES_TAB",
   "WIDGETS_SPORTS_CHANGE_SELECTED_TEAMS",
   "WIDGETS_SPORTS_CHANGE_WIDGET_STATE",
+  "WIDGETS_SPORTS_LIVE_UPDATE",
   "WIDGETS_SPORTS_OPEN_MATCH_SEARCH",
   "WIDGETS_SPORTS_SET_FOLLOWED_ONLY",
   "WIDGETS_SPORTS_SET_MATCHES_TAB",
@@ -6804,6 +6805,10 @@ const INITIAL_STATE = {
       loaded: false,
       data: null,
     },
+    // Timestamp (ms since epoch) of the last successful live update.
+    // Kept at root so it survives WIDGETS_SPORTS_WIDGET_SET wholesale-replaces
+    // of `data` (e.g. post-match resync).
+    lastLiveUpdated: null,
   },
 };
 
@@ -7817,6 +7822,16 @@ function SportsWidget(prevState = INITIAL_STATE.SportsWidget, action) {
         ...prevState,
         watchLive: { loaded: true, data: action.data },
       };
+    case actionTypes.WIDGETS_SPORTS_LIVE_UPDATE: {
+      return {
+        ...prevState,
+        lastLiveUpdated: action.data?.lastLiveUpdated ?? null,
+        data: {
+          ...prevState.data,
+          live: action.data?.live ?? [],
+        },
+      };
+    }
     default:
       return prevState;
   }

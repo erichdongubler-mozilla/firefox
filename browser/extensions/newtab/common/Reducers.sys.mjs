@@ -224,6 +224,10 @@ export const INITIAL_STATE = {
       loaded: false,
       data: null,
     },
+    // Timestamp (ms since epoch) of the last successful live update.
+    // Kept at root so it survives WIDGETS_SPORTS_WIDGET_SET wholesale-replaces
+    // of `data` (e.g. post-match resync).
+    lastLiveUpdated: null,
   },
 };
 
@@ -1237,6 +1241,16 @@ function SportsWidget(prevState = INITIAL_STATE.SportsWidget, action) {
         ...prevState,
         watchLive: { loaded: true, data: action.data },
       };
+    case at.WIDGETS_SPORTS_LIVE_UPDATE: {
+      return {
+        ...prevState,
+        lastLiveUpdated: action.data?.lastLiveUpdated ?? null,
+        data: {
+          ...prevState.data,
+          live: action.data?.live ?? [],
+        },
+      };
+    }
     default:
       return prevState;
   }
