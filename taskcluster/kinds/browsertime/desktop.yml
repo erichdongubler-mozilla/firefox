@@ -522,7 +522,7 @@ browsertime-benchmark:
                 by-app:
                     firefox:
                         by-test-platform:
-                            windows11-64-.*-hw-ref-shippable/opt: [mozilla-central]
+                            windows11-64-.*-hw-ref-shippable/opt: [trunk]
                             windows11-64-shippable(-qr)?/opt: [trunk]
                             windows11-64-24h2-shippable/opt: [trunk]
                             linux.*shippable.*: [trunk]
