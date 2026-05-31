@@ -1514,15 +1514,23 @@ bool WorkerPrivate::IsFrozen() const {
   return mParentFrozen;
 }
 
-void WorkerPrivate::StoreCSPOnClient() {
+void WorkerPrivate::StorePolicyContainerArgsOnClient() {
   auto data = mWorkerThreadAccessible.Access();
   MOZ_ASSERT(data->mScope);
+  auto& clientSource = data->mScope->MutableClientSourceRef();
+
+  mozilla::ipc::PolicyContainerArgs policyContainerArgs;
+
   if (mLoadInfo.mCSPContext) {
-    mozilla::ipc::PolicyContainerArgs policyContainerArgs;
     policyContainerArgs.csp() = Some(mLoadInfo.mCSPContext->CSPInfo());
-    data->mScope->MutableClientSourceRef().SetPolicyContainerArgs(
-        policyContainerArgs);
   }
+
+  policyContainerArgs.ipAddressSpace() =
+      static_cast<nsILoadInfo::IPAddressSpace>(mLoadInfo.mIPAddressSpace);
+  // TODO(Bug 2017654): Check if integrity policy args need to be propagated
+  // to workers as well. Currently not set explicitly here.
+
+  clientSource.SetPolicyContainerArgs(policyContainerArgs);
 }
 
 void WorkerPrivate::UpdateReferrerInfoFromHeader(
@@ -3377,6 +3385,7 @@ nsresult WorkerPrivate::GetLoadInfo(
     loadInfo.mParentController = aParent->GlobalScope()->GetController();
     loadInfo.mWatchedByDevTools = aParent->IsWatchedByDevTools();
     loadInfo.mIsOn3PCBExceptionList = aParent->IsOn3PCBExceptionList();
+    loadInfo.mIPAddressSpace = aParent->mLoadInfo.mIPAddressSpace;
   } else {
     AssertIsOnMainThread();
 
@@ -3522,6 +3531,14 @@ nsresult WorkerPrivate::GetLoadInfo(
         loadInfo.mLanguageOverrideLocale = languageOverride;
         Navigator::GetAcceptLanguages(loadInfo.mLanguageOverride,
                                       &languageOverride);
+      }
+
+      // Inherit the document's IP address space for Local Network Access
+      // checks in workers.
+      if (document->GetPolicyContainer()) {
+        loadInfo.mIPAddressSpace = static_cast<uint16_t>(
+            PolicyContainer::Cast(document->GetPolicyContainer())
+                ->GetIPAddressSpace());
       }
       loadInfo.mStorageAccess = StorageAllowedForWindow(globalWindow);
       loadInfo.mUseRegularPrincipal = document->UseRegularPrincipal();
