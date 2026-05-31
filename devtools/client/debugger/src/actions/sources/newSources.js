@@ -9,10 +9,10 @@
  */
 import { insertSourceActors } from "../../actions/source-actors";
 import {
-  makeSourceId,
+  makeScriptSourceId,
   createGeneratedSource,
   createSourceMapOriginalSource,
-  createSourceActor,
+  createScriptSourceActor,
 } from "../../client/firefox/create";
 import { toggleBlackBox } from "./blackbox";
 import { syncPendingBreakpoint } from "../breakpoints/index";
@@ -311,7 +311,7 @@ export function newGeneratedSources(sourceResources) {
       if (sourceResource.targetFront.isDestroyed()) {
         continue;
       }
-      const id = makeSourceId(sourceResource);
+      const id = makeScriptSourceId(sourceResource);
 
       if (!getSource(getState(), id) && !newSourcesObj[id]) {
         newSourcesObj[id] = createGeneratedSource(sourceResource);
@@ -323,7 +323,7 @@ export function newGeneratedSources(sourceResources) {
       // request a new source list and also get a source event from the server.
       if (!hasSourceActor(getState(), actorId)) {
         newSourceActors.push(
-          createSourceActor(
+          createScriptSourceActor(
             sourceResource,
             getSource(getState(), id) || newSourcesObj[id]
           )

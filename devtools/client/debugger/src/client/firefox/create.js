@@ -19,6 +19,8 @@ import {
 import { createLocation } from "../../utils/location";
 import { getDisplayURL } from "../../utils/sources-tree/getURL";
 
+const ResourceCommand = require("resource://devtools/shared/commands/resource/resource-command.js");
+
 let store;
 
 /**
@@ -173,7 +175,7 @@ export async function waitForSourceToBeRegisteredInStore(sourceId) {
 // The last three actually try to represent the exact same thing.
 //
 // Here this method received a SOURCE resource (the 3rd bullet point)
-export function makeSourceId(sourceResource) {
+export function makeScriptSourceId(sourceResource) {
   // Allows Jest to use custom, simplier IDs
   if ("mockedJestID" in sourceResource) {
     return sourceResource.mockedJestID;
@@ -220,7 +222,7 @@ export function makeSourceId(sourceResource) {
  */
 export function createGeneratedSource(sourceResource) {
   return createSourceObject({
-    id: makeSourceId(sourceResource),
+    id: makeScriptSourceId(sourceResource),
     url: sourceResource.url,
     extensionName: sourceResource.extensionName,
     isWasm: !!features.wasm && sourceResource.introductionType === "wasm",
@@ -254,7 +256,7 @@ function createSourceObject({
   );
   return {
     // The ID, computed by:
-    // * `makeSourceId` for generated,
+    // * `makeScriptSourceId` for generated,
     // * `generatedToOriginalId` for both source map and pretty printed original,
     id,
 
@@ -307,6 +309,9 @@ function createSourceObject({
 
     // If this is an original/pretty printed source, reference to the related generated/minimized source
     generatedSource,
+
+    // This property defines the type of source object, this covers HTML and JS sources
+    type: ResourceCommand.TYPES.SOURCE,
   };
 }
 
@@ -368,7 +373,7 @@ export function createPrettyPrintOriginalSource(id, url, generatedSource) {
  * @param {object} sourceObject
  *        Source object stored in redux, i.e. created via createSourceObject.
  */
-export function createSourceActor(sourceResource, sourceObject) {
+export function createScriptSourceActor(sourceResource, sourceObject) {
   const actorId = sourceResource.actor;
 
   return {
