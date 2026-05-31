@@ -1688,7 +1688,12 @@ bool DrawTargetSkia::CanCreateSimilarDrawTarget(const IntSize& aSize,
                                                 SurfaceFormat aFormat) const {
   return aSize.width > 0 && aSize.height > 0 &&
          size_t(std::max(aSize.width, aSize.height)) <= GetMaxSurfaceSize() &&
-         size_t(aSize.width) * size_t(aSize.height) <= GetMaxSurfaceArea();
+         size_t(aSize.width) * size_t(aSize.height) <= GetMaxSurfaceArea() &&
+         // Skia requires that raster surface buffer size fits in an int32_t.
+         BufferSizeFromStrideAndHeight(
+             GetAlignedStride<4>(aSize.width, BytesPerPixel(aFormat))
+                 .valueOr(0),
+             aSize.height) > 0;
 }
 
 RefPtr<DrawTarget> DrawTargetSkia::CreateClippedDrawTarget(
