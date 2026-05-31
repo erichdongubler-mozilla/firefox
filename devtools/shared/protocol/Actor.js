@@ -238,7 +238,7 @@ var generateRequestTypes = function (actorSpec) {
           }
           if (isBulkResponse) {
             if (retToSend) {
-              throw new Actor(
+              throw new Error(
                 `Actor method '${this.typeName}.${spec.name}' is supposed to return a bulk response, but returned some value.`
               );
             }
