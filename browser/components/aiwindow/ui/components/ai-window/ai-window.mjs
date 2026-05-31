@@ -1672,18 +1672,12 @@ export class AIWindow extends MozLitElement {
       this.#updateBrowserTabbable();
       this.#smartbar?.suppressStartQuery({ permanent: true });
       this.#smartbar?.view.close();
-      if (this.#smartbar?.inputField) {
-        this.#smartbar.inputField.showPlaceholderAnimation = false;
-      }
       return;
     }
 
     this.classList.remove("chat-active");
     this.#updateBrowserTabbable();
     this.#smartbar?.unsuppressStartQuery();
-    if (this.#smartbar?.inputField) {
-      this.#smartbar.inputField.showPlaceholderAnimation = true;
-    }
   }
 
   /**
