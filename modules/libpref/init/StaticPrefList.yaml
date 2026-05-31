@@ -11928,7 +11928,7 @@
 # Enable WebRTC type support in Media Capabilities API.
 - name: media.mediacapabilities.webrtc.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 # Comma-separated hostnames (with optional `*.` wildcard prefix). Hosts in
