@@ -3,6 +3,8 @@ Limit the amount of comments you put in the code to a strict minimum. You should
 
 Do not remove existing comments unless they are directly related to what you are changing.
 
+If you see a good first bug that isn't directly related to your work, don't hesitate to propose it as a good first bug (see the `file-good-first-bug` skill).
+
 The Firefox repository is very big and so it isn't advised to blindly run rg or grep commands without specifying a narrow set of directories to search. When local text search via shell is necessary, prefer `rg` over `grep` as it is faster. There are tools available to help, see next section.
 
 ## Tooling for Firefox work
