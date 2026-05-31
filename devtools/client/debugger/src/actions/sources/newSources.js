@@ -28,7 +28,6 @@ import {
   getSource,
   getSourceFromId,
   hasSourceActor,
-  getSourceByActorId,
   getPendingSelectedLocation,
   getPendingBreakpointsForSource,
   getSelectedLocation,
@@ -71,17 +70,16 @@ function loadSourceMap(sourceActor) {
     try {
       // Ignore sourceMapURL on scripts that are part of HTML files, since
       // we currently treat sourcemaps as Source-wide, not SourceActor-specific.
-      const source = getSourceByActorId(getState(), sourceActor.id);
-      if (source) {
+      if (sourceActor.sourceObject) {
         ({ sources, ignoreListUrls, resolvedSourceMapURL, exception } =
           await sourceMapLoader.loadSourceMap({
             // Using source ID here is historical and eventually we'll want to
             // switch to all of this being per-source-actor.
-            id: source.id,
-            url: sourceActor.url || "",
+            id: sourceActor.sourceObject.id,
+            url: sourceActor.sourceObject.url || "",
             sourceMapBaseURL: sourceActor.sourceMapBaseURL || "",
             sourceMapURL: sourceActor.sourceMapURL || "",
-            isWasm: sourceActor.introductionType === "wasm",
+            isWasm: sourceActor.sourceObject.isWasm,
           }));
       }
     } catch (e) {
@@ -108,7 +106,7 @@ function loadSourceMap(sourceActor) {
       const message = L10N.getFormatStr(
         "toolbox.sourceMapFailure",
         exception,
-        sourceActor.url,
+        sourceActor.sourceObject.url,
         sourceActor.sourceMapURL
       );
       panel.toolbox.commands.targetCommand.targetFront.logWarningInPage(
