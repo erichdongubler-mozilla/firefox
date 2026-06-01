@@ -39,6 +39,8 @@ skip-if = [
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1866742
 ]
 
+["browser_audiosession_state_transitions.js"]
+
 ["browser_audiosessiontype_compute.js"]
 
 ["browser_audiosessiontype_iframe.js"]
