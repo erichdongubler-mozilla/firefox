@@ -207,7 +207,7 @@ class nsWindow final : public nsIWidget {
       nsISynthesizedEventCallback* aCallback) override;
   nsresult SynthesizeNativeMouseEvent(
       LayoutDeviceIntPoint aPoint, NativeMouseMessage aNativeMessage,
-      mozilla::MouseButton aButton, nsIWidget::NativeModifiers aModifierFlags,
+      mozilla::MouseButton aButton, nsIWidget::Modifiers aModifierFlags,
       nsISynthesizedEventCallback* aCallback) override;
   nsresult SynthesizeNativeMouseMove(
       LayoutDeviceIntPoint aPoint,

@@ -5156,7 +5156,7 @@ CodeNameIndex KeyboardLayout::ConvertScanCodeToCodeNameIndex(UINT aScanCode) {
 
 nsresult KeyboardLayout::SynthesizeNativeKeyEvent(
     nsWindow* aWidget, int32_t aNativeKeyboardLayout, int32_t aNativeKeyCode,
-    nsIWidget::NativeModifiers aModifierFlags, const nsAString& aCharacters,
+    uint32_t aModifierFlags, const nsAString& aCharacters,
     const nsAString& aUnmodifiedCharacters) {
   UINT keyboardLayoutListCount = ::GetKeyboardLayoutList(0, nullptr);
   NS_ASSERTION(keyboardLayoutListCount > 0,
@@ -5191,7 +5191,7 @@ nsresult KeyboardLayout::SynthesizeNativeKeyEvent(
   OverrideLayout(loadedLayout);
 
   bool isAltGrKeyPress = false;
-  if (aModifierFlags & nsIWidget::NativeModifiers::ALTGRAPH) {
+  if (aModifierFlags & nsIWidget::ALTGRAPH) {
     if (!HasAltGr()) {
       return NS_ERROR_INVALID_ARG;
     }
@@ -5202,55 +5202,50 @@ nsresult KeyboardLayout::SynthesizeNativeKeyEvent(
     // FYI: We don't support both ControlLeft and AltRight (AltGr) are
     //      pressed at the same time unless synthesizing key is
     //      VK_LCONTROL.
-    aModifierFlags &= ~(nsIWidget::NativeModifiers::CTRL_L |
-                        nsIWidget::NativeModifiers::ALT_R);
+    aModifierFlags &= ~(nsIWidget::CTRL_L | nsIWidget::ALT_R);
   }
 
   uint8_t argumentKeySpecific = 0;
   switch (aNativeKeyCode & 0xFF) {
     case VK_SHIFT:
-      aModifierFlags &= ~(nsIWidget::NativeModifiers::SHIFT_L |
-                          nsIWidget::NativeModifiers::SHIFT_R);
+      aModifierFlags &= ~(nsIWidget::SHIFT_L | nsIWidget::SHIFT_R);
       argumentKeySpecific = VK_LSHIFT;
       break;
     case VK_LSHIFT:
-      aModifierFlags &= ~nsIWidget::NativeModifiers::SHIFT_L;
+      aModifierFlags &= ~nsIWidget::SHIFT_L;
       argumentKeySpecific = aNativeKeyCode & 0xFF;
       aNativeKeyCode = (aNativeKeyCode & 0xFFFF0000) | VK_SHIFT;
       break;
     case VK_RSHIFT:
-      aModifierFlags &= ~nsIWidget::NativeModifiers::SHIFT_R;
+      aModifierFlags &= ~nsIWidget::SHIFT_R;
       argumentKeySpecific = aNativeKeyCode & 0xFF;
       aNativeKeyCode = (aNativeKeyCode & 0xFFFF0000) | VK_SHIFT;
       break;
     case VK_CONTROL:
-      aModifierFlags &= ~(nsIWidget::NativeModifiers::CTRL_L |
-                          nsIWidget::NativeModifiers::CTRL_R);
+      aModifierFlags &= ~(nsIWidget::CTRL_L | nsIWidget::CTRL_R);
       argumentKeySpecific = VK_LCONTROL;
       break;
     case VK_LCONTROL:
-      aModifierFlags &= ~nsIWidget::NativeModifiers::CTRL_L;
+      aModifierFlags &= ~nsIWidget::CTRL_L;
       argumentKeySpecific = aNativeKeyCode & 0xFF;
       aNativeKeyCode = (aNativeKeyCode & 0xFFFF0000) | VK_CONTROL;
       break;
     case VK_RCONTROL:
-      aModifierFlags &= ~nsIWidget::NativeModifiers::CTRL_R;
+      aModifierFlags &= ~nsIWidget::CTRL_R;
       argumentKeySpecific = aNativeKeyCode & 0xFF;
       aNativeKeyCode = (aNativeKeyCode & 0xFFFF0000) | VK_CONTROL;
       break;
     case VK_MENU:
-      aModifierFlags &= ~(nsIWidget::NativeModifiers::ALT_L |
-                          nsIWidget::NativeModifiers::ALT_R);
+      aModifierFlags &= ~(nsIWidget::ALT_L | nsIWidget::ALT_R);
       argumentKeySpecific = VK_LMENU;
       break;
     case VK_LMENU:
-      aModifierFlags &= ~nsIWidget::NativeModifiers::ALT_L;
+      aModifierFlags &= ~nsIWidget::ALT_L;
       argumentKeySpecific = aNativeKeyCode & 0xFF;
       aNativeKeyCode = (aNativeKeyCode & 0xFFFF0000) | VK_MENU;
       break;
     case VK_RMENU:
-      aModifierFlags &= ~(nsIWidget::NativeModifiers::ALT_R |
-                          nsIWidget::NativeModifiers::ALTGRAPH);
+      aModifierFlags &= ~(nsIWidget::ALT_R | nsIWidget::ALTGRAPH);
       argumentKeySpecific = aNativeKeyCode & 0xFF;
       aNativeKeyCode = (aNativeKeyCode & 0xFFFF0000) | VK_MENU;
       // If AltRight key is AltGr in the keyboard layout, let's use
@@ -5259,16 +5254,16 @@ nsresult KeyboardLayout::SynthesizeNativeKeyEvent(
       // the following code complicated.
       if (HasAltGr()) {
         isAltGrKeyPress = true;
-        aModifierFlags &= ~nsIWidget::NativeModifiers::CTRL_L;
-        aModifierFlags |= nsIWidget::NativeModifiers::ALTGRAPH;
+        aModifierFlags &= ~nsIWidget::CTRL_L;
+        aModifierFlags |= nsIWidget::ALTGRAPH;
       }
       break;
     case VK_CAPITAL:
-      aModifierFlags &= ~nsIWidget::NativeModifiers::CAPS_LOCK;
+      aModifierFlags &= ~nsIWidget::CAPS_LOCK;
       argumentKeySpecific = VK_CAPITAL;
       break;
     case VK_NUMLOCK:
-      aModifierFlags &= ~nsIWidget::NativeModifiers::NUM_LOCK;
+      aModifierFlags &= ~nsIWidget::NUM_LOCK;
       argumentKeySpecific = VK_NUMLOCK;
       break;
   }
@@ -5306,8 +5301,7 @@ nsresult KeyboardLayout::SynthesizeNativeKeyEvent(
     // When AltGr key is pressed, both ControlLeft and AltRight cause
     // WM_KEYDOWN messages.
     bool makeSysKeyMsg =
-        !(aModifierFlags & nsIWidget::NativeModifiers::ALTGRAPH) &&
-        IsSysKey(key, modKeyState);
+        !(aModifierFlags & nsIWidget::ALTGRAPH) && IsSysKey(key, modKeyState);
     MSG keyDownMsg =
         WinUtils::InitMSG(makeSysKeyMsg ? WM_SYSKEYDOWN : WM_KEYDOWN, key,
                           lParam, aWidget->GetWindowHandle());

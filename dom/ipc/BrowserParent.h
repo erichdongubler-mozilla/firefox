@@ -502,15 +502,13 @@ class BrowserParent final : public PBrowserParent,
 
   mozilla::ipc::IPCResult RecvSynthesizeNativeKeyEvent(
       const int32_t& aNativeKeyboardLayout, const int32_t& aNativeKeyCode,
-      const nsIWidget::NativeModifiers& aModifierFlags,
-      const nsString& aCharacters, const nsString& aUnmodifiedCharacters,
+      const uint32_t& aModifierFlags, const nsString& aCharacters,
+      const nsString& aUnmodifiedCharacters,
       const Maybe<uint64_t>& aCallbackId);
 
   mozilla::ipc::IPCResult RecvSynthesizeNativeMouseEvent(
-      const LayoutDeviceIntPoint& aPoint,
-      const nsIWidget::NativeMouseMessage& aNativeMessage,
-      const mozilla::MouseButton& aButton,
-      const nsIWidget::NativeModifiers& aModifierFlags,
+      const LayoutDeviceIntPoint& aPoint, const uint32_t& aNativeMessage,
+      const int16_t& aButton, const uint32_t& aModifierFlags,
       const Maybe<uint64_t>& aCallbackId);
 
   mozilla::ipc::IPCResult RecvSynthesizeNativeMouseMove(
@@ -519,8 +517,8 @@ class BrowserParent final : public PBrowserParent,
   mozilla::ipc::IPCResult RecvSynthesizeNativeMouseScrollEvent(
       const LayoutDeviceIntPoint& aPoint, const uint32_t& aNativeMessage,
       const double& aDeltaX, const double& aDeltaY, const double& aDeltaZ,
-      const nsIWidget::NativeModifiers& aModifierFlags,
-      const uint32_t& aAdditionalFlags, const Maybe<uint64_t>& aCallbackId);
+      const uint32_t& aModifierFlags, const uint32_t& aAdditionalFlags,
+      const Maybe<uint64_t>& aCallbackId);
 
   mozilla::ipc::IPCResult RecvSynthesizeNativeTouchPoint(
       const uint32_t& aPointerId, const TouchPointerState& aPointerState,

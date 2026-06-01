@@ -3177,7 +3177,7 @@ nsresult nsWindow::SynthesizeNativeTouchPoint(
 
 nsresult nsWindow::SynthesizeNativeMouseEvent(
     LayoutDeviceIntPoint aPoint, NativeMouseMessage aNativeMessage,
-    MouseButton aButton, nsIWidget::NativeModifiers aModifierFlags,
+    MouseButton aButton, nsIWidget::Modifiers aModifierFlags,
     nsISynthesizedEventCallback* aCallback) {
   mozilla::widget::AutoSynthesizedEventCallbackNotifier notifier(aCallback);
 
@@ -3246,7 +3246,7 @@ nsresult nsWindow::SynthesizeNativeMouseMove(
     LayoutDeviceIntPoint aPoint, nsISynthesizedEventCallback* aCallback) {
   return SynthesizeNativeMouseEvent(
       aPoint, NativeMouseMessage::Move, MouseButton::eNotPressed,
-      nsIWidget::NativeModifiers::NO_MODIFIERS, aCallback);
+      nsIWidget::Modifiers::NO_MODIFIERS, aCallback);
 }
 
 void nsWindow::SetCompositorWidgetDelegate(CompositorWidgetDelegate* delegate) {

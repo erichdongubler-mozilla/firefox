@@ -5453,12 +5453,13 @@ void TextInputHandlerBase::InitKeyEvent(NSEvent* aNativeKeyEvent,
 
 nsresult TextInputHandlerBase::SynthesizeNativeKeyEvent(
     int32_t aNativeKeyboardLayout, int32_t aNativeKeyCode,
-    nsIWidget::NativeModifiers aModifierFlags, const nsAString& aCharacters,
+    uint32_t aModifierFlags, const nsAString& aCharacters,
     const nsAString& aUnmodifiedCharacters) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   uint32_t modifierFlags =
-      nsCocoaUtils::ConvertWidgetModifiersToMacModifierFlags(aModifierFlags);
+      nsCocoaUtils::ConvertWidgetModifiersToMacModifierFlags(
+          static_cast<nsIWidget::Modifiers>(aModifierFlags));
   NSInteger windowNumber = [[mView window] windowNumber];
   bool sendFlagsChangedEvent = IsModifierKey(aNativeKeyCode);
   NSEventType eventType =

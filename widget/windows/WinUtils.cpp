@@ -1270,35 +1270,33 @@ bool WinUtils::IsIMEEnabled(IMEEnabled aIMEState) {
 
 /* static */
 void WinUtils::SetupKeyModifiersSequence(nsTArray<KeyPair>* aArray,
-                                         nsIWidget::NativeModifiers aModifiers,
-                                         UINT aMessage) {
-  MOZ_ASSERT(!(aModifiers & nsIWidget::NativeModifiers::ALTGRAPH) ||
-             !(aModifiers & (nsIWidget::NativeModifiers::CTRL_L |
-                             nsIWidget::NativeModifiers::ALT_R)));
+                                         uint32_t aModifiers, UINT aMessage) {
+  MOZ_ASSERT(!(aModifiers & nsIWidget::ALTGRAPH) ||
+             !(aModifiers & (nsIWidget::CTRL_L | nsIWidget::ALT_R)));
   if (aMessage == WM_KEYUP) {
     // If AltGr is released, ControlLeft key is released first, then,
     // AltRight key is released.
-    if (aModifiers & nsIWidget::NativeModifiers::ALTGRAPH) {
+    if (aModifiers & nsIWidget::ALTGRAPH) {
       aArray->AppendElement(
           KeyPair(VK_CONTROL, VK_LCONTROL, ScanCode::eControlLeft));
       aArray->AppendElement(KeyPair(VK_MENU, VK_RMENU, ScanCode::eAltRight));
     }
     for (uint32_t i = std::size(sModifierKeyMap); i; --i) {
       const uint32_t* map = sModifierKeyMap[i - 1];
-      if (aModifiers & static_cast<nsIWidget::NativeModifiers>(map[0])) {
+      if (aModifiers & map[0]) {
         aArray->AppendElement(KeyPair(map[1], map[2], map[3]));
       }
     }
   } else {
     for (uint32_t i = 0; i < std::size(sModifierKeyMap); ++i) {
       const uint32_t* map = sModifierKeyMap[i];
-      if (aModifiers & static_cast<nsIWidget::NativeModifiers>(map[0])) {
+      if (aModifiers & map[0]) {
         aArray->AppendElement(KeyPair(map[1], map[2], map[3]));
       }
     }
     // If AltGr is pressed, ControlLeft key is pressed first, then,
     // AltRight key is pressed.
-    if (aModifiers & nsIWidget::NativeModifiers::ALTGRAPH) {
+    if (aModifiers & nsIWidget::ALTGRAPH) {
       aArray->AppendElement(
           KeyPair(VK_CONTROL, VK_LCONTROL, ScanCode::eControlLeft));
       aArray->AppendElement(KeyPair(VK_MENU, VK_RMENU, ScanCode::eAltRight));

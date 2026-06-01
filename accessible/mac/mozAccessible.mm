@@ -1051,7 +1051,7 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
   nsIWidget* widget = [objOrView widget];
   widget->SynthesizeNativeMouseEvent(
       p, nsIWidget::NativeMouseMessage::ButtonDown, MouseButton::eSecondary,
-      nsIWidget::NativeModifiers::NO_MODIFIERS, nullptr);
+      nsIWidget::Modifiers::NO_MODIFIERS, nullptr);
 }
 
 - (void)moxPerformPress {

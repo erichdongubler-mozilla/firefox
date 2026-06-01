@@ -9,7 +9,6 @@
 #include "ipc/IPCMessageUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DimensionRequest.h"
-#include "mozilla/EventForwards.h"
 #include "mozilla/GfxMessageUtils.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/NativeKeyBindingsType.h"
@@ -68,24 +67,6 @@ struct ParamTraits<nsIWidget::NativePointerLockMode>
           nsIWidget::NativePointerLockMode,
           nsIWidget::NativePointerLockMode::Regular,
           nsIWidget::NativePointerLockMode::Unadjusted> {};
-
-template <>
-struct ParamTraits<nsIWidget::NativeMouseMessage>
-    : ContiguousEnumSerializerInclusive<
-          nsIWidget::NativeMouseMessage,
-          nsIWidget::NativeMouseMessage::ButtonDown,
-          nsIWidget::NativeMouseMessage::LeaveWindow> {};
-
-template <>
-struct ParamTraits<nsIWidget::NativeModifiers>
-    : BitFlagsEnumSerializer<nsIWidget::NativeModifiers,
-                             nsIWidget::NativeModifiers::ALL_BITS> {};
-
-template <>
-struct ParamTraits<mozilla::MouseButton>
-    : ContiguousEnumSerializerInclusive<mozilla::MouseButton,
-                                        mozilla::MouseButton::eNotPressed,
-                                        mozilla::MouseButton::eEraser> {};
 
 template <>
 struct ParamTraits<nsCursor>

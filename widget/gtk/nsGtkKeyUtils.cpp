@@ -1108,34 +1108,33 @@ uint32_t KeymapWrapper::ComputeKeyModifiers(guint aGdkModifierState) {
 
 /* static */
 guint KeymapWrapper::ConvertWidgetModifierToGdkState(
-    nsIWidget::NativeModifiers aNativeModifiers) {
-  if (aNativeModifiers == nsIWidget::NativeModifiers::NO_MODIFIERS) {
+    nsIWidget::Modifiers aNativeModifiers) {
+  if (!aNativeModifiers) {
     return 0;
   }
   struct ModifierMapEntry {
-    nsIWidget::NativeModifiers mWidgetModifier;
+    nsIWidget::Modifiers mWidgetModifier;
     MappedModifier mModifier;
   };
   // TODO: Currently, we don't treat L/R of each modifier on Linux.
   // TODO: No proper native modifier for Level5.
   static constexpr ModifierMapEntry sModifierMap[] = {
-      {nsIWidget::NativeModifiers::CAPS_LOCK, MappedModifier::CAPS_LOCK},
-      {nsIWidget::NativeModifiers::NUM_LOCK, MappedModifier::NUM_LOCK},
-      {nsIWidget::NativeModifiers::SHIFT_L, MappedModifier::SHIFT},
-      {nsIWidget::NativeModifiers::SHIFT_R, MappedModifier::SHIFT},
-      {nsIWidget::NativeModifiers::CTRL_L, MappedModifier::CTRL},
-      {nsIWidget::NativeModifiers::CTRL_R, MappedModifier::CTRL},
-      {nsIWidget::NativeModifiers::ALT_L, MappedModifier::ALT},
-      {nsIWidget::NativeModifiers::ALT_R, MappedModifier::ALT},
-      {nsIWidget::NativeModifiers::ALTGRAPH, MappedModifier::LEVEL3},
-      {nsIWidget::NativeModifiers::COMMAND_L, MappedModifier::SUPER},
-      {nsIWidget::NativeModifiers::COMMAND_R, MappedModifier::SUPER}};
+      {nsIWidget::CAPS_LOCK, MappedModifier::CAPS_LOCK},
+      {nsIWidget::NUM_LOCK, MappedModifier::NUM_LOCK},
+      {nsIWidget::SHIFT_L, MappedModifier::SHIFT},
+      {nsIWidget::SHIFT_R, MappedModifier::SHIFT},
+      {nsIWidget::CTRL_L, MappedModifier::CTRL},
+      {nsIWidget::CTRL_R, MappedModifier::CTRL},
+      {nsIWidget::ALT_L, MappedModifier::ALT},
+      {nsIWidget::ALT_R, MappedModifier::ALT},
+      {nsIWidget::ALTGRAPH, MappedModifier::LEVEL3},
+      {nsIWidget::COMMAND_L, MappedModifier::SUPER},
+      {nsIWidget::COMMAND_R, MappedModifier::SUPER}};
 
   guint state = 0;
   KeymapWrapper* instance = GetInstance();
   for (const ModifierMapEntry& entry : sModifierMap) {
-    if ((aNativeModifiers & entry.mWidgetModifier) !=
-        nsIWidget::NativeModifiers::NO_MODIFIERS) {
+    if (aNativeModifiers & entry.mWidgetModifier) {
       state |= instance->GetGdkModifierMask(entry.mModifier);
     }
   }

@@ -83,12 +83,9 @@ using mozilla::layers::CompositorOptions from "mozilla/layers/CompositorOptions.
 using mozilla::CSSToScreenScale from "Units.h";
 using mozilla::CommandInt from "mozilla/EventForwards.h";
 using mozilla::HapticFeedbackType from "nsIWidget.h";
-using nsIWidget::NativeMouseMessage from "nsIWidget.h";
-using nsIWidget::NativeModifiers from "nsIWidget.h";
 using nsIWidget::NativePointerLockMode from "nsIWidget.h";
 using nsIWidget::TouchPointerState from "nsIWidget.h";
 using nsIWidget::TouchpadGesturePhase from "nsIWidget.h";
-using mozilla::MouseButton from "mozilla/EventForwards.h";
 using nsCursor from "nsIWidget.h";
 using struct LookAndFeelInt from "mozilla/widget/WidgetMessageUtils.h";
 using struct mozilla::DimensionRequest from "mozilla/widget/WidgetMessageUtils.h";
@@ -469,14 +466,14 @@ parent:
 
     async SynthesizeNativeKeyEvent(int32_t aNativeKeyboardLayout,
                                    int32_t aNativeKeyCode,
-                                   NativeModifiers aModifierFlags,
+                                   uint32_t aModifierFlags,
                                    nsString aCharacters,
                                    nsString aUnmodifiedCharacters,
                                    uint64_t? aCallbackId);
     async SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
-                                     NativeMouseMessage aNativeMessage,
-                                     MouseButton aButton,
-                                     NativeModifiers aModifierFlags,
+                                     uint32_t aNativeMessage,
+                                     int16_t aButton,
+                                     uint32_t aModifierFlags,
                                      uint64_t? aCallbackId);
     async SynthesizeNativeMouseMove(LayoutDeviceIntPoint aPoint,
                                     uint64_t? aCallbackId);
@@ -485,7 +482,7 @@ parent:
                                            double aDeltaX,
                                            double aDeltaY,
                                            double aDeltaZ,
-                                           NativeModifiers aModifierFlags,
+                                           uint32_t aModifierFlags,
                                            uint32_t aAdditionalFlags,
                                            uint64_t? aCallbackId);
     async SynthesizeNativeTouchPoint(uint32_t aPointerId,

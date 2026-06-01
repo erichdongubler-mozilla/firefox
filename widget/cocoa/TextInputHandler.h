@@ -451,7 +451,7 @@ class TextInputHandlerBase : public TextEventDispatcherListener {
    */
   nsresult SynthesizeNativeKeyEvent(int32_t aNativeKeyboardLayout,
                                     int32_t aNativeKeyCode,
-                                    nsIWidget::NativeModifiers aModifierFlags,
+                                    uint32_t aModifierFlags,
                                     const nsAString& aCharacters,
                                     const nsAString& aUnmodifiedCharacters);
 

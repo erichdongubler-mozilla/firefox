@@ -1051,35 +1051,31 @@ uint32_t nsCocoaUtils::ConvertGeckoKeyCodeToMacCharCode(uint32_t aKeyCode) {
 }
 
 NSEventModifierFlags nsCocoaUtils::ConvertWidgetModifiersToMacModifierFlags(
-    nsIWidget::NativeModifiers aNativeModifiers) {
-  if (aNativeModifiers == nsIWidget::NativeModifiers::NO_MODIFIERS) {
+    nsIWidget::Modifiers aNativeModifiers) {
+  if (!aNativeModifiers) {
     return 0;
   }
   struct ModifierFlagMapEntry {
-    nsIWidget::NativeModifiers mWidgetModifier;
+    nsIWidget::Modifiers mWidgetModifier;
     NSEventModifierFlags mModifierFlags;
   };
   static constexpr ModifierFlagMapEntry sModifierFlagMap[] = {
-      {nsIWidget::NativeModifiers::CAPS_LOCK, NSEventModifierFlagCapsLock},
-      {nsIWidget::NativeModifiers::SHIFT_L, NSEventModifierFlagShift | 0x0002},
-      {nsIWidget::NativeModifiers::SHIFT_R, NSEventModifierFlagShift | 0x0004},
-      {nsIWidget::NativeModifiers::CTRL_L, NSEventModifierFlagControl | 0x0001},
-      {nsIWidget::NativeModifiers::CTRL_R, NSEventModifierFlagControl | 0x2000},
-      {nsIWidget::NativeModifiers::ALT_L, NSEventModifierFlagOption | 0x0020},
-      {nsIWidget::NativeModifiers::ALT_R, NSEventModifierFlagOption | 0x0040},
-      {nsIWidget::NativeModifiers::COMMAND_L,
-       NSEventModifierFlagCommand | 0x0008},
-      {nsIWidget::NativeModifiers::COMMAND_R,
-       NSEventModifierFlagCommand | 0x0010},
-      {nsIWidget::NativeModifiers::NUMERIC_KEY_PAD,
-       NSEventModifierFlagNumericPad},
-      {nsIWidget::NativeModifiers::HELP, NSEventModifierFlagHelp},
-      {nsIWidget::NativeModifiers::FUNCTION, NSEventModifierFlagFunction}};
+      {nsIWidget::CAPS_LOCK, NSEventModifierFlagCapsLock},
+      {nsIWidget::SHIFT_L, NSEventModifierFlagShift | 0x0002},
+      {nsIWidget::SHIFT_R, NSEventModifierFlagShift | 0x0004},
+      {nsIWidget::CTRL_L, NSEventModifierFlagControl | 0x0001},
+      {nsIWidget::CTRL_R, NSEventModifierFlagControl | 0x2000},
+      {nsIWidget::ALT_L, NSEventModifierFlagOption | 0x0020},
+      {nsIWidget::ALT_R, NSEventModifierFlagOption | 0x0040},
+      {nsIWidget::COMMAND_L, NSEventModifierFlagCommand | 0x0008},
+      {nsIWidget::COMMAND_R, NSEventModifierFlagCommand | 0x0010},
+      {nsIWidget::NUMERIC_KEY_PAD, NSEventModifierFlagNumericPad},
+      {nsIWidget::HELP, NSEventModifierFlagHelp},
+      {nsIWidget::FUNCTION, NSEventModifierFlagFunction}};
 
   NSEventModifierFlags modifierFlags = 0;
   for (const ModifierFlagMapEntry& entry : sModifierFlagMap) {
-    if ((aNativeModifiers & entry.mWidgetModifier) !=
-        nsIWidget::NativeModifiers::NO_MODIFIERS) {
+    if (aNativeModifiers & entry.mWidgetModifier) {
       modifierFlags |= entry.mModifierFlags;
     }
   }

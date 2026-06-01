@@ -7053,11 +7053,10 @@ LayoutDeviceIntPoint nsWindow::GdkPointToDevicePixels(const GdkPoint& aPoint) {
 
 nsresult nsWindow::SynthesizeNativeMouseEvent(
     LayoutDeviceIntPoint aPoint, NativeMouseMessage aNativeMessage,
-    MouseButton aButton, nsIWidget::NativeModifiers aModifierFlags,
+    MouseButton aButton, nsIWidget::Modifiers aModifierFlags,
     nsISynthesizedEventCallback* aCallback) {
   LOG("SynthesizeNativeMouseEvent(%d, %d, %d, %d, %d)", aPoint.x.value,
-      aPoint.y.value, int(aNativeMessage), int(aButton),
-      static_cast<int>(aModifierFlags));
+      aPoint.y.value, int(aNativeMessage), int(aButton), int(aModifierFlags));
 
   AutoSynthesizedEventCallbackNotifier notifier(aCallback);
 
@@ -7163,9 +7162,8 @@ void nsWindow::CreateAndPutGdkScrollEvent(mozilla::LayoutDeviceIntPoint aPoint,
 
 nsresult nsWindow::SynthesizeNativeMouseScrollEvent(
     mozilla::LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage,
-    double aDeltaX, double aDeltaY, double aDeltaZ,
-    nsIWidget::NativeModifiers aModifierFlags, uint32_t aAdditionalFlags,
-    nsISynthesizedEventCallback* aCallback) {
+    double aDeltaX, double aDeltaY, double aDeltaZ, uint32_t aModifierFlags,
+    uint32_t aAdditionalFlags, nsISynthesizedEventCallback* aCallback) {
   AutoSynthesizedEventCallbackNotifier notifier(aCallback);
 
   if (!mGdkWindow) {

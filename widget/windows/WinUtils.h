@@ -427,8 +427,7 @@ class WinUtils {
    * nsIWidget::SynthethizeNative*Event().
    */
   static void SetupKeyModifiersSequence(nsTArray<KeyPair>* aArray,
-                                        nsIWidget::NativeModifiers aModifiers,
-                                        UINT aMessage);
+                                        uint32_t aModifiers, UINT aMessage);
 
   /**
    * Does device have touch support
