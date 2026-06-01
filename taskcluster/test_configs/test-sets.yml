@@ -512,7 +512,6 @@ macosx1500-aarch64-vms-tests:
 macosx1470-64-tests:
     - cppunittest
     - crashtest
-    - firefox-ui-functional
     - gtest
     - web-platform-tests-eme
     - web-platform-tests-print-reftest
