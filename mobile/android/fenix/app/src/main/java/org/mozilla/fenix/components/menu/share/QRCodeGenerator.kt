@@ -54,7 +54,7 @@ class QRCodeGenerator {
         val inputHeight = input.height
 
         paint.style = Paint.Style.FILL
-        paint.color = context.getColor(R.color.fx_mobile_on_surface)
+        paint.color = Color.BLACK
 
         drawBackground(canvas, width, height, context)
 
