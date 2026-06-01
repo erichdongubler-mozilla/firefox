@@ -200,7 +200,7 @@ This section covers some frontend-specific aspects of patches that reviewers are
 
 Patches should only be commandeered by agreement with the original patch author or if the author cannot be expected to respond in a timely fashion (on vacation or sick leave or no longer active in the project).
 
-If you do need to commandeer a patch you can use the following to maintain the original author. Use `hg commit --amend --user "Other Person <person@mozilla.com>"` or `git commit --amend --author="Other Person <person@mozilla.com>"` when amending the original commit.
+If you do need to commandeer a patch you can preserve the original author with `git commit --amend --author="Other Person <person@mozilla.com>"` when amending the original commit.
 
 ## Community Participation Guidelines
 
