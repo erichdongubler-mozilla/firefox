@@ -27,7 +27,7 @@ fn on_disk_keystore() -> (Arc<Keystore>, tempfile::TempDir) {
 }
 
 fn mint_local(ks: &Keystore) -> String {
-    ks.create_kek(KekType::LocalKey, b"", Duration::ZERO)
+    ks.create_kek(KekType::LocalKey, "", b"", Duration::ZERO)
         .expect("create local")
 }
 

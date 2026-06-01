@@ -79,7 +79,7 @@ class LockstoreServiceTest : public ::testing::Test {
     // tests that need "a different KEK" (wrong-kek decrypt, addKek)
     // have a second one to reach for.
     RunOnBackground([&]() {
-      auto k1 = mService->DoCreateKek("local"_ns, ""_ns,
+      auto k1 = mService->DoCreateKek("local"_ns, /*identifier=*/""_ns, ""_ns,
                                       /*cacheTimeoutMs=*/0);
       ASSERT_TRUE(k1.isOk())
       << "DoCreateKek(local) must succeed";
@@ -87,7 +87,7 @@ class LockstoreServiceTest : public ::testing::Test {
       ASSERT_FALSE(mLocalKek.IsEmpty())
       << "DoCreateKek(local) must mint a non-empty kek_ref";
 
-      auto k2 = mService->DoCreateKek("local"_ns, ""_ns,
+      auto k2 = mService->DoCreateKek("local"_ns, /*identifier=*/""_ns, ""_ns,
                                       /*cacheTimeoutMs=*/0);
       ASSERT_TRUE(k2.isOk())
       << "DoCreateKek(local) must succeed";

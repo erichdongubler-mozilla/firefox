@@ -10,7 +10,7 @@ use tempfile::tempdir;
 fn make_in_memory_ds(collection: &str) -> LockstoreDatastore {
     let keystore = Arc::new(Keystore::new_in_memory().expect("Failed to create keystore"));
     let local = keystore
-        .create_kek(KekType::LocalKey, b"", Duration::ZERO)
+        .create_kek(KekType::LocalKey, "", b"", Duration::ZERO)
         .expect("create local kek");
     keystore
         .create_dek(collection, &local, false)
@@ -23,7 +23,7 @@ fn make_in_memory_ds(collection: &str) -> LockstoreDatastore {
 fn test_new_in_memory() {
     let keystore = Arc::new(Keystore::new_in_memory().expect("Failed to create keystore"));
     let local = keystore
-        .create_kek(KekType::LocalKey, b"", Duration::ZERO)
+        .create_kek(KekType::LocalKey, "", b"", Duration::ZERO)
         .expect("create local kek");
     keystore
         .create_dek("test", &local, false)
@@ -37,7 +37,7 @@ fn test_new_in_memory() {
 fn test_new_in_memory_without_dek() {
     let keystore = Arc::new(Keystore::new_in_memory().expect("Failed to create keystore"));
     let local = keystore
-        .create_kek(KekType::LocalKey, b"", Duration::ZERO)
+        .create_kek(KekType::LocalKey, "", b"", Duration::ZERO)
         .expect("create local kek");
     let result = LockstoreDatastore::new_in_memory("missing".to_string(), keystore, &local);
     assert!(matches!(result, Err(LockstoreError::NotFound(_))));
@@ -175,7 +175,7 @@ fn test_large_data() {
 fn test_multiple_collections_independent() {
     let ks1 = Arc::new(Keystore::new_in_memory().expect("Failed to create keystore"));
     let local1 = ks1
-        .create_kek(KekType::LocalKey, b"", Duration::ZERO)
+        .create_kek(KekType::LocalKey, "", b"", Duration::ZERO)
         .expect("create local kek");
     ks1.create_dek("col1", &local1, false)
         .expect("Failed to create DEK");
@@ -184,7 +184,7 @@ fn test_multiple_collections_independent() {
 
     let ks2 = Arc::new(Keystore::new_in_memory().expect("Failed to create keystore"));
     let local2 = ks2
-        .create_kek(KekType::LocalKey, b"", Duration::ZERO)
+        .create_kek(KekType::LocalKey, "", b"", Duration::ZERO)
         .expect("create local kek");
     ks2.create_dek("col2", &local2, false)
         .expect("Failed to create DEK");
@@ -214,7 +214,7 @@ fn test_new_on_disk() {
 
     let keystore = Keystore::get(ks_path).expect("Failed to create keystore");
     let local = keystore
-        .create_kek(KekType::LocalKey, b"", Duration::ZERO)
+        .create_kek(KekType::LocalKey, "", b"", Duration::ZERO)
         .expect("create local kek");
     keystore
         .create_dek("col1", &local, false)
@@ -241,7 +241,7 @@ fn test_new_on_disk_without_dek() {
 
     let keystore = Keystore::get(ks_path).expect("Failed to create keystore");
     let local = keystore
-        .create_kek(KekType::LocalKey, b"", Duration::ZERO)
+        .create_kek(KekType::LocalKey, "", b"", Duration::ZERO)
         .expect("create local kek");
     let result = LockstoreDatastore::new(
         dir.path().to_path_buf(),
@@ -262,7 +262,7 @@ fn test_on_disk_persistence() {
     {
         let keystore = Keystore::get(ks_path.clone()).expect("Failed to create keystore");
         local = keystore
-            .create_kek(KekType::LocalKey, b"", Duration::ZERO)
+            .create_kek(KekType::LocalKey, "", b"", Duration::ZERO)
             .expect("create local kek");
         keystore
             .create_dek("persist", &local, false)
@@ -292,7 +292,7 @@ fn test_on_disk_keys_persists() {
     {
         let keystore = Keystore::get(ks_path.clone()).expect("Failed to create keystore");
         local = keystore
-            .create_kek(KekType::LocalKey, b"", Duration::ZERO)
+            .create_kek(KekType::LocalKey, "", b"", Duration::ZERO)
             .expect("create local kek");
         keystore
             .create_dek("listcol", &local, false)
@@ -324,7 +324,7 @@ fn test_in_memory_datastore_with_on_disk_keystore() {
 
     let keystore = Keystore::get(ks_path).expect("Failed to create keystore");
     let local = keystore
-        .create_kek(KekType::LocalKey, b"", Duration::ZERO)
+        .create_kek(KekType::LocalKey, "", b"", Duration::ZERO)
         .expect("create local kek");
     keystore
         .create_dek("memcol", &local, false)
@@ -345,7 +345,7 @@ fn test_on_disk_datastore_with_in_memory_keystore() {
 
     let keystore = Arc::new(Keystore::new_in_memory().expect("Failed to create keystore"));
     let local = keystore
-        .create_kek(KekType::LocalKey, b"", Duration::ZERO)
+        .create_kek(KekType::LocalKey, "", b"", Duration::ZERO)
         .expect("create local kek");
     keystore
         .create_dek("ondisk", &local, false)
@@ -372,7 +372,7 @@ fn test_multiple_collections_shared_on_disk_keystore() {
 
     let keystore = Keystore::get(ks_path).expect("Failed to create keystore");
     let local = keystore
-        .create_kek(KekType::LocalKey, b"", Duration::ZERO)
+        .create_kek(KekType::LocalKey, "", b"", Duration::ZERO)
         .expect("create local kek");
     keystore
         .create_dek("col_a", &local, false)
@@ -420,10 +420,10 @@ fn test_cross_kek_access() {
 
     let keystore = Keystore::get(ks_path).expect("Failed to create keystore");
     let local = keystore
-        .create_kek(KekType::LocalKey, b"", Duration::ZERO)
+        .create_kek(KekType::LocalKey, "", b"", Duration::ZERO)
         .expect("create local kek");
     let other = keystore
-        .create_kek(KekType::LocalKey, b"", Duration::ZERO)
+        .create_kek(KekType::LocalKey, "", b"", Duration::ZERO)
         .expect("create local kek");
     keystore
         .create_dek("col", &local, false)
