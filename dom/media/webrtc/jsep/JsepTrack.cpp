@@ -423,8 +423,8 @@ void JsepTrack::AddToMsection(const std::vector<std::string>& aRids,
       }
     }
 
-    msection->GetAttributeList().SetAttribute(simulcast.release());
-    msection->GetAttributeList().SetAttribute(ridAttrs.release());
+    msection->GetAttributeList().SetAttribute(std::move(simulcast));
+    msection->GetAttributeList().SetAttribute(std::move(ridAttrs));
   }
 
   bool requireRtxSsrcs = rtxEnabled && msection->IsSending();
@@ -448,7 +448,7 @@ void JsepTrack::AddToMsection(const std::vector<std::string>& aRids,
         group->PushEntry(SdpSsrcGroupAttributeList::kFid, {ssrc, rtxSsrc});
       }
       msection->SetSsrcs(allSsrcs, mCNAME);
-      msection->GetAttributeList().SetAttribute(group.release());
+      msection->GetAttributeList().SetAttribute(std::move(group));
     } else {
       msection->SetSsrcs(mSsrcs, mCNAME);
     }

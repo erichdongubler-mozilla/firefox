@@ -5,6 +5,7 @@
 #ifndef DOM_MEDIA_WEBRTC_SDP_SIPCCSDPATTRIBUTELIST_H_
 #define DOM_MEDIA_WEBRTC_SDP_SIPCCSDPATTRIBUTELIST_H_
 
+#include "mozilla/UniquePtr.h"
 #include "sdp/SdpAttributeList.h"
 #include "sdp/SdpParser.h"
 
@@ -30,7 +31,7 @@ class SipccSdpAttributeList : public SdpAttributeList {
                             const bool sessionFallback) const override;
   virtual const SdpAttribute* GetAttribute(
       const AttributeType type, const bool sessionFallback) const override;
-  virtual void SetAttribute(SdpAttribute* attr) override;
+  virtual void SetAttribute(UniquePtr<SdpAttribute>&& attr) override;
   virtual void RemoveAttribute(const AttributeType type) override;
   virtual void Clear() override;
   virtual uint32_t Count() const override;

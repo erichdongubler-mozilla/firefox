@@ -66,7 +66,8 @@ SdpMediaSection& SipccSdp::AddMediaSection(
   media->mPortCount = 0;
   media->mProtocol = protocol;
   media->mConnection = MakeUnique<SdpConnection>(addrType, addr);
-  media->GetAttributeList().SetAttribute(new SdpDirectionAttribute(dir));
+  media->GetAttributeList().SetAttribute(
+      MakeUnique<SdpDirectionAttribute>(dir));
   mMediaSections.emplace_back(media);
   return *media;
 }

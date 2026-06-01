@@ -5,6 +5,7 @@
 #ifndef DOM_MEDIA_WEBRTC_SDP_RSDPARSASDPATTRIBUTELIST_H_
 #define DOM_MEDIA_WEBRTC_SDP_RSDPARSASDPATTRIBUTELIST_H_
 
+#include "mozilla/UniquePtr.h"
 #include "sdp/RsdparsaSdpGlue.h"
 #include "sdp/RsdparsaSdpInc.h"
 #include "sdp/SdpAttributeList.h"
@@ -28,7 +29,7 @@ class RsdparsaSdpAttributeList : public SdpAttributeList {
                     const bool sessionFallback) const override;
   const SdpAttribute* GetAttribute(const AttributeType type,
                                    const bool sessionFallback) const override;
-  void SetAttribute(SdpAttribute* attr) override;
+  void SetAttribute(UniquePtr<SdpAttribute>&& attr) override;
   void RemoveAttribute(const AttributeType type) override;
   void Clear() override;
   uint32_t Count() const override;

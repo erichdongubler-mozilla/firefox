@@ -54,19 +54,20 @@ nsresult SdpHelper::CopyTransportParams(const size_t numComponents,
       }
     }
     if (!candidateAttrs->mValues.empty()) {
-      newLocalAttrs.SetAttribute(candidateAttrs.release());
+      newLocalAttrs.SetAttribute(std::move(candidateAttrs));
     }
   }
 
   if (oldLocalAttrs.HasAttribute(SdpAttribute::kEndOfCandidatesAttribute)) {
     newLocalAttrs.SetAttribute(
-        new SdpFlagAttribute(SdpAttribute::kEndOfCandidatesAttribute));
+        MakeUnique<SdpFlagAttribute>(SdpAttribute::kEndOfCandidatesAttribute));
   }
 
   if (numComponents == 2 &&
       oldLocalAttrs.HasAttribute(SdpAttribute::kRtcpAttribute)) {
     // copy rtcp attribute if we had one that we are using
-    newLocalAttrs.SetAttribute(new SdpRtcpAttribute(oldLocalAttrs.GetRtcp()));
+    newLocalAttrs.SetAttribute(
+        MakeUnique<SdpRtcpAttribute>(oldLocalAttrs.GetRtcp()));
   }
 
   return NS_OK;
@@ -140,21 +141,21 @@ void SdpHelper::DisableMsection(Sdp* sdp, SdpMediaSection* msection) {
       UniquePtr<SdpGroupAttributeList> newGroupAttr(
           new SdpGroupAttributeList(sdp->GetAttributeList().GetGroup()));
       newGroupAttr->RemoveMid(mid);
-      sdp->GetAttributeList().SetAttribute(newGroupAttr.release());
+      sdp->GetAttributeList().SetAttribute(std::move(newGroupAttr));
     }
   }
 
   // Clear out attributes.
   msection->GetAttributeList().Clear();
 
-  auto* direction = new SdpDirectionAttribute(SdpDirectionAttribute::kInactive);
-  msection->GetAttributeList().SetAttribute(direction);
+  msection->GetAttributeList().SetAttribute(
+      MakeUnique<SdpDirectionAttribute>(SdpDirectionAttribute::kInactive));
   msection->SetPort(0);
 
   // maintain the mid for easier identification on other side
   if (!mid.empty()) {
     msection->GetAttributeList().SetAttribute(
-        new SdpStringAttribute(SdpAttribute::kMidAttribute, mid));
+        MakeUnique<SdpStringAttribute>(SdpAttribute::kMidAttribute, mid));
   }
 
   msection->ClearCodecs();
@@ -336,7 +337,7 @@ nsresult SdpHelper::AddCandidateToSdp(Sdp* sdp,
             attrList.GetAttribute(SdpAttribute::kCandidateAttribute))));
   }
   candidates->PushEntry(candidate);
-  attrList.SetAttribute(candidates.release());
+  attrList.SetAttribute(std::move(candidates));
 
   return NS_OK;
 }
@@ -369,7 +370,7 @@ nsresult SdpHelper::SetIceGatheringComplete(Sdp* sdp, const uint16_t level,
   }
 
   attrList.SetAttribute(
-      new SdpFlagAttribute(SdpAttribute::kEndOfCandidatesAttribute));
+      MakeUnique<SdpFlagAttribute>(SdpAttribute::kEndOfCandidatesAttribute));
   // Remove trickle-ice option
   attrList.RemoveAttribute(SdpAttribute::kIceOptionsAttribute);
   return NS_OK;
@@ -389,9 +390,9 @@ void SdpHelper::SetDefaultAddresses(const std::string& defaultCandidateAddr,
     if (defaultRtcpCandidateAddr.find(':') != std::string::npos) {
       ipVersion = sdp::kIPv6;
     }
-    attrList.SetAttribute(new SdpRtcpAttribute(defaultRtcpCandidatePort,
-                                               sdp::kInternet, ipVersion,
-                                               defaultRtcpCandidateAddr));
+    attrList.SetAttribute(
+        MakeUnique<SdpRtcpAttribute>(defaultRtcpCandidatePort, sdp::kInternet,
+                                     ipVersion, defaultRtcpCandidateAddr));
   }
 }
 
@@ -488,7 +489,7 @@ void SdpHelper::SetupMsidSemantic(const std::vector<std::string>& msids,
     UniquePtr<SdpMsidSemanticAttributeList> msidSemantics(
         new SdpMsidSemanticAttributeList);
     msidSemantics->PushEntry("WMS", msids);
-    sdp->GetAttributeList().SetAttribute(msidSemantics.release());
+    sdp->GetAttributeList().SetAttribute(std::move(msidSemantics));
   }
 }
 
@@ -536,26 +537,26 @@ nsresult SdpHelper::CopyStickyParams(const SdpMediaSection& source,
   // There's no reason to renegotiate rtcp-mux
   if (sourceAttrs.HasAttribute(SdpAttribute::kRtcpMuxAttribute)) {
     destAttrs.SetAttribute(
-        new SdpFlagAttribute(SdpAttribute::kRtcpMuxAttribute));
+        MakeUnique<SdpFlagAttribute>(SdpAttribute::kRtcpMuxAttribute));
   }
 
   // mid should stay the same
   if (sourceAttrs.HasAttribute(SdpAttribute::kMidAttribute)) {
-    destAttrs.SetAttribute(new SdpStringAttribute(SdpAttribute::kMidAttribute,
-                                                  sourceAttrs.GetMid()));
+    destAttrs.SetAttribute(MakeUnique<SdpStringAttribute>(
+        SdpAttribute::kMidAttribute, sourceAttrs.GetMid()));
   }
 
   // Keep RTCP mode setting
   if (sourceAttrs.HasAttribute(SdpAttribute::kRtcpRsizeAttribute) &&
       source.GetMediaType() == SdpMediaSection::kVideo) {
     destAttrs.SetAttribute(
-        new SdpFlagAttribute(SdpAttribute::kRtcpRsizeAttribute));
+        MakeUnique<SdpFlagAttribute>(SdpAttribute::kRtcpRsizeAttribute));
   }
 
   // Keep extmap-allow-mixed setting
   if (sourceAttrs.HasAttribute(SdpAttribute::kExtmapAllowMixedAttribute)) {
     destAttrs.SetAttribute(
-        new SdpFlagAttribute(SdpAttribute::kExtmapAllowMixedAttribute));
+        MakeUnique<SdpFlagAttribute>(SdpAttribute::kExtmapAllowMixedAttribute));
   }
   return NS_OK;
 }
@@ -682,7 +683,7 @@ void SdpHelper::NegotiateAndAddExtmaps(
   }
 
   if (!localExtmap->mExtmaps.empty()) {
-    localMsection->GetAttributeList().SetAttribute(localExtmap.release());
+    localMsection->GetAttributeList().SetAttribute(std::move(localExtmap));
   }
 }
 

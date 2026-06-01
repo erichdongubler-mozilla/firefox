@@ -312,19 +312,19 @@ nsresult JsepSessionImpl::CreateOfferMsection(const JsepOfferOptions& options,
   if (mSdpHelper.HasRtcp(msection->GetProtocol())) {
     // Set RTCP-MUX.
     msection->GetAttributeList().SetAttribute(
-        new SdpFlagAttribute(SdpAttribute::kRtcpMuxAttribute));
+        MakeUnique<SdpFlagAttribute>(SdpAttribute::kRtcpMuxAttribute));
     // Set RTCP-RSIZE
     if (msection->GetMediaType() == SdpMediaSection::MediaType::kVideo &&
         Preferences::GetBool("media.navigator.video.offer_rtcp_rsize", false)) {
       msection->GetAttributeList().SetAttribute(
-          new SdpFlagAttribute(SdpAttribute::kRtcpRsizeAttribute));
+          MakeUnique<SdpFlagAttribute>(SdpAttribute::kRtcpRsizeAttribute));
     }
   }
 
   if (msection->GetMediaType() != SdpMediaSection::MediaType::kApplication) {
     // Ditto for extmap-allow-mixed
     msection->GetAttributeList().SetAttribute(
-        new SdpFlagAttribute(SdpAttribute::kExtmapAllowMixedAttribute));
+        MakeUnique<SdpFlagAttribute>(SdpAttribute::kExtmapAllowMixedAttribute));
   }
 
   nsresult rv = AddTransportAttributes(msection, SdpSetupAttribute::kActpass);
@@ -345,7 +345,7 @@ nsresult JsepSessionImpl::CreateOfferMsection(const JsepOfferOptions& options,
   }
 
   msection->GetAttributeList().SetAttribute(
-      new SdpStringAttribute(SdpAttribute::kMidAttribute, mid));
+      MakeUnique<SdpStringAttribute>(SdpAttribute::kMidAttribute, mid));
 
   return NS_OK;
 }
@@ -383,7 +383,7 @@ void JsepSessionImpl::SetupBundle(Sdp* sdp) const {
 
       if (useBundleOnly) {
         attrs.SetAttribute(
-            new SdpFlagAttribute(SdpAttribute::kBundleOnlyAttribute));
+            MakeUnique<SdpFlagAttribute>(SdpAttribute::kBundleOnlyAttribute));
         // Set port to 0 for sections with bundle-only attribute. (mjf)
         sdp->GetMediaSection(i).SetPort(0);
       }
@@ -395,7 +395,7 @@ void JsepSessionImpl::SetupBundle(Sdp* sdp) const {
   if (!mids.empty()) {
     UniquePtr<SdpGroupAttributeList> groupAttr(new SdpGroupAttributeList);
     groupAttr->PushEntry(SdpGroupAttributeList::kBundle, mids);
-    sdp->GetAttributeList().SetAttribute(groupAttr.release());
+    sdp->GetAttributeList().SetAttribute(std::move(groupAttr));
   }
 }
 
@@ -466,9 +466,9 @@ void JsepSessionImpl::AddExtmap(SdpMediaSection* msection) {
   auto extensions = GetRtpExtensions(*msection);
 
   if (!extensions.empty()) {
-    SdpExtmapAttributeList* extmap = new SdpExtmapAttributeList;
+    auto extmap = MakeUnique<SdpExtmapAttributeList>();
     extmap->mExtmaps = std::move(extensions);
-    msection->GetAttributeList().SetAttribute(extmap);
+    msection->GetAttributeList().SetAttribute(std::move(extmap));
   }
 }
 
@@ -586,13 +586,13 @@ JsepSession::Result JsepSessionImpl::CreateAnswer(
   // Copy the bundle groups into our answer
   UniquePtr<SdpGroupAttributeList> groupAttr(new SdpGroupAttributeList);
   mSdpHelper.GetBundleGroups(offer, &groupAttr->mGroups);
-  sdp->GetAttributeList().SetAttribute(groupAttr.release());
+  sdp->GetAttributeList().SetAttribute(std::move(groupAttr));
 
   // Copy EXTMAP-ALLOW-MIXED from the offer to the answer
   if (offer.GetAttributeList().HasAttribute(
           SdpAttribute::kExtmapAllowMixedAttribute)) {
     sdp->GetAttributeList().SetAttribute(
-        new SdpFlagAttribute(SdpAttribute::kExtmapAllowMixedAttribute));
+        MakeUnique<SdpFlagAttribute>(SdpAttribute::kExtmapAllowMixedAttribute));
   } else {
     sdp->GetAttributeList().RemoveAttribute(
         SdpAttribute::kExtmapAllowMixedAttribute);
@@ -631,7 +631,7 @@ JsepSession::Result JsepSessionImpl::CreateAnswer(
       }
     }
   }
-  sdp->GetAttributeList().SetAttribute(groupAttr.release());
+  sdp->GetAttributeList().SetAttribute(std::move(groupAttr));
 
   if (mCurrentLocalDescription) {
     // per discussion with bwc, 3rd parm here should be offer, not *sdp. (mjf)
@@ -668,7 +668,7 @@ nsresult JsepSessionImpl::CreateAnswerMsection(
 
   MOZ_ASSERT(transceiver.IsAssociated());
   if (msection.GetAttributeList().GetMid().empty()) {
-    msection.GetAttributeList().SetAttribute(new SdpStringAttribute(
+    msection.GetAttributeList().SetAttribute(MakeUnique<SdpStringAttribute>(
         SdpAttribute::kMidAttribute, transceiver.GetMid()));
   }
 
@@ -1444,12 +1444,13 @@ nsresult JsepSessionImpl::AddTransportAttributes(
   }
 
   SdpAttributeList& attrList = msection->GetAttributeList();
+  attrList.SetAttribute(MakeUnique<SdpStringAttribute>(
+      SdpAttribute::kIceUfragAttribute, mIceUfrag));
   attrList.SetAttribute(
-      new SdpStringAttribute(SdpAttribute::kIceUfragAttribute, mIceUfrag));
-  attrList.SetAttribute(
-      new SdpStringAttribute(SdpAttribute::kIcePwdAttribute, mIcePwd));
+      MakeUnique<SdpStringAttribute>(SdpAttribute::kIcePwdAttribute, mIcePwd));
 
-  msection->GetAttributeList().SetAttribute(new SdpSetupAttribute(dtlsRole));
+  msection->GetAttributeList().SetAttribute(
+      MakeUnique<SdpSetupAttribute>(dtlsRole));
 
   return NS_OK;
 }
@@ -2208,11 +2209,12 @@ nsresult JsepSessionImpl::CreateGenericSDP(UniquePtr<Sdp>* sdpp) {
   for (auto& dtlsFingerprint : mDtlsFingerprints) {
     fpl->PushEntry(dtlsFingerprint.mAlgorithm, dtlsFingerprint.mValue);
   }
-  sdp->GetAttributeList().SetAttribute(fpl.release());
+  sdp->GetAttributeList().SetAttribute(std::move(fpl));
 
-  auto* iceOpts = new SdpOptionsAttribute(SdpAttribute::kIceOptionsAttribute);
+  auto iceOpts =
+      MakeUnique<SdpOptionsAttribute>(SdpAttribute::kIceOptionsAttribute);
   iceOpts->PushEntry("trickle");
-  sdp->GetAttributeList().SetAttribute(iceOpts);
+  sdp->GetAttributeList().SetAttribute(std::move(iceOpts));
 
   // This assumes content doesn't add a bunch of msid attributes with a
   // different semantic in mind.
