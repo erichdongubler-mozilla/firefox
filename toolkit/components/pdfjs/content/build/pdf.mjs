@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.229
- * pdfjsBuild = 145feeaa3
+ * pdfjsVersion = 6.0.239
+ * pdfjsBuild = 5fbab91f7
  */
 
 ;// ./src/shared/util.js
@@ -1997,7 +1997,7 @@ class FloatingToolbar {
 }
 
 ;// ./src/shared/internal_evt.js
-const INTERNAL_EVT = "1684dd60-3936-4889-b86a-7f7f4e3a1938";
+const INTERNAL_EVT = "b053cdd0-2415-4286-a2ec-a074783acd61";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -2778,7 +2778,7 @@ class AnnotationEditorUIManager {
         resolve();
       }
     };
-    this._eventBus.on("editorsrendered", onEditorsRendered);
+    this._eventBus.on("editorsrendered", onEditorsRendered, internalOpt);
     await promise;
   }
   getSignature(editor) {
@@ -2793,7 +2793,8 @@ class AnnotationEditorUIManager {
   switchToMode(mode, callback) {
     this._eventBus.on("annotationeditormodechanged", callback, {
       once: true,
-      signal: this._signal
+      signal: this._signal,
+      ...internalOpt
     });
     this._eventBus.dispatch("showannotationeditorui", {
       source: this,
@@ -9651,6 +9652,7 @@ function grayToRGBA(src, dest) {
 
 
 
+
 const MIN_FONT_SIZE = 16;
 const MAX_FONT_SIZE = 100;
 const EXECUTION_TIME = 15;
@@ -11124,12 +11126,7 @@ class CanvasGraphics {
       bold = "bold";
     }
     const italic = fontObj.italic ? "italic" : "normal";
-    let browserFontSize = size;
-    if (size < MIN_FONT_SIZE) {
-      browserFontSize = MIN_FONT_SIZE;
-    } else if (size > MAX_FONT_SIZE) {
-      browserFontSize = MAX_FONT_SIZE;
-    }
+    const browserFontSize = MathClamp(size, MIN_FONT_SIZE, MAX_FONT_SIZE);
     this.current.fontSizeScale = size / browserFontSize;
     this.ctx.font = `${italic} ${bold} ${browserFontSize}px ${typeface}`;
   }
@@ -14120,7 +14117,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.0.229",
+    apiVersion: "6.0.239",
     data,
     password,
     disableAutoFetch,
@@ -15763,8 +15760,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.0.229";
-const build = "145feeaa3";
+const version = "6.0.239";
+const build = "5fbab91f7";
 
 ;// ./src/display/editor/color_picker.js
 
