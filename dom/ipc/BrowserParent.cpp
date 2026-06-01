@@ -1928,22 +1928,18 @@ mozilla::ipc::IPCResult BrowserParent::RecvSynthesizeNativeKeyEvent(
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvSynthesizeNativeMouseEvent(
-    const LayoutDeviceIntPoint& aPoint, const uint32_t& aNativeMessage,
-    const int16_t& aButton, const uint32_t& aModifierFlags,
+    const LayoutDeviceIntPoint& aPoint,
+    const nsIWidget::NativeMouseMessage& aNativeMessage,
+    const mozilla::MouseButton& aButton,
+    const nsIWidget::NativeModifiers& aModifierFlags,
     const Maybe<uint64_t>& aCallbackId) {
   NS_ENSURE_TRUE(xpc::IsInAutomation(), IPC_FAIL(this, "Unexpected event"));
-
-  const uint32_t last =
-      static_cast<uint32_t>(nsIWidget::NativeMouseMessage::LeaveWindow);
-  NS_ENSURE_TRUE(aNativeMessage <= last, IPC_FAIL(this, "Bogus message"));
 
   nsCOMPtr<nsISynthesizedEventCallback> callback =
       SynthesizedEventCallback::MaybeCreate(this, aCallbackId);
   if (nsCOMPtr<nsIWidget> widget = GetWidget()) {
-    widget->SynthesizeNativeMouseEvent(
-        aPoint, static_cast<nsIWidget::NativeMouseMessage>(aNativeMessage),
-        static_cast<mozilla::MouseButton>(aButton),
-        static_cast<nsIWidget::NativeModifiers>(aModifierFlags), callback);
+    widget->SynthesizeNativeMouseEvent(aPoint, aNativeMessage, aButton,
+                                       aModifierFlags, callback);
   }
   return IPC_OK();
 }

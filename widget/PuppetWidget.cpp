@@ -344,9 +344,7 @@ nsresult PuppetWidget::SynthesizeNativeMouseEvent(
     return NS_ERROR_FAILURE;
   }
   mBrowserChild->SendSynthesizeNativeMouseEvent(
-      aPoint, static_cast<uint32_t>(aNativeMessage),
-      static_cast<int16_t>(aButton), static_cast<uint32_t>(aModifierFlags),
-      notifier.SaveCallback());
+      aPoint, aNativeMessage, aButton, aModifierFlags, notifier.SaveCallback());
   return NS_OK;
 }
 
