@@ -800,8 +800,16 @@ export class SidebarBookmarks extends SidebarPage {
   }
 
   async #addItem(type) {
+    const dialogInfo = { action: "add", type };
+    const defaultInsertionPoint = await this.#getInsertionPoint();
+    if (defaultInsertionPoint) {
+      dialogInfo.defaultInsertionPoint = defaultInsertionPoint;
+      // The folder picker ignores the insertion index, so hide it to honor the
+      // position derived from the right-clicked node.
+      dialogInfo.hiddenRows = ["folderPicker"];
+    }
     const guid = await lazy.PlacesUIUtils.showBookmarkDialog(
-      { action: "add", type },
+      dialogInfo,
       this.topWindow
     );
     const outcome = guid ? "confirmed" : "cancelled";
@@ -810,6 +818,36 @@ export class SidebarBookmarks extends SidebarPage {
         ? `add_bookmark_folder_${outcome}`
         : `add_bookmark_${outcome}`;
     Glean.browserUiInteraction.sidebarBookmarks[label].add(1);
+  }
+
+  /**
+   * Builds the insertion point for a new item added from the context menu,
+   * based on the right-clicked node. Right-clicking a folder inserts at the
+   * end of that folder, while right-clicking a bookmark or separator inserts
+   * just before it. Returns undefined when the right-clicked bookmark can no
+   * longer be fetched (e.g. it was removed between opening the menu and
+   * confirming the dialog), so the dialog falls back to its default parent.
+   *
+   * @returns {Promise<?{guid: string, getIndex: function(): number}>}
+   */
+  async #getInsertionPoint() {
+    const node = this.triggerNode;
+    if (node.isFolder) {
+      return {
+        guid: node.guid,
+        getIndex: () => lazy.PlacesUtils.bookmarks.DEFAULT_INDEX,
+      };
+    }
+    const fetchInfo = await lazy.PlacesUtils.bookmarks.fetch({
+      guid: node.guid,
+    });
+    if (!fetchInfo) {
+      return undefined;
+    }
+    return {
+      guid: fetchInfo.parentGuid,
+      getIndex: () => fetchInfo.index,
+    };
   }
 
   async #addSeparator() {
