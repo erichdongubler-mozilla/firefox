@@ -9901,35 +9901,63 @@ void nsTextFrame::AddInlineMinISizeForFlow(gfxContext* aRenderingContext,
     }
   }
 
-  for (uint32_t i = start, wordStart = start; i <= flowEndInTextRun; ++i) {
+  const auto* glyphs = textRun->GetCharacterGlyphs();
+  const auto* limit = glyphs + flowEndInTextRun;
+  const bool hasSpacing = provider.HasSpacing();
+  nscoord wordAdvance = 0;
+  uint32_t wordStart = start;
+  for (const auto* g = glyphs + start; g <= limit; ++g) {
+    if (!hyphenating) {
+      while (g < limit && g->IsSimpleGlyphNoBreakBefore()) {
+        wordAdvance += g->GetSimpleAdvance();
+        ++g;
+      }
+    }
+
     bool preformattedNewline = false;
     bool preformattedTab = false;
-    if (i < flowEndInTextRun) {
+    if (g < limit) {
       // XXXldb Shouldn't we be including the newline as part of the
       // segment that it ends rather than part of the segment that it
       // starts?
-      preformattedNewline = preformatNewlines && textRun->CharIsNewline(i);
-      preformattedTab = preformatTabs && textRun->CharIsTab(i);
-      if (!textRun->CanBreakLineBefore(i) && !preformattedNewline &&
-          !preformattedTab &&
-          (!hyphenating ||
-           !gfxTextRun::IsOptionalHyphenBreak(hyphBuffer[i - start]))) {
+      preformattedNewline = preformatNewlines && g->CharIsNewline();
+      preformattedTab = preformatTabs && g->CharIsTab();
+      if (!g->CanBreakBefore() && !preformattedNewline && !preformattedTab &&
+          (!hyphenating || !gfxTextRun::IsOptionalHyphenBreak(
+                               hyphBuffer[g - glyphs - start]))) {
         // we can't break here (and it's not the end of the flow)
+        if (g->IsSimpleGlyph()) {
+          wordAdvance += g->GetSimpleAdvance();
+        } else if (!hasSpacing) {
+          if (uint32_t count = g->GetGlyphCount()) {
+            const auto* details = textRun->GetDetailedGlyphs(g - glyphs);
+            while (count--) {
+              wordAdvance += details->mAdvance;
+              ++details;
+            }
+          }
+        }
         continue;
       }
     }
 
-    if (i > wordStart) {
-      nscoord width = NSToCoordCeilClamped(
-          textRun->GetAdvanceWidth(Range(wordStart, i), &provider));
+    uint32_t wordEnd = g - glyphs;
+    if (wordEnd > wordStart) {
+      nscoord width = !hasSpacing &&
+                              (glyphs + wordStart)->IsLigatureGroupStart() &&
+                              (wordEnd == flowEndInTextRun ||
+                               (glyphs + wordEnd)->IsLigatureGroupStart())
+                          ? wordAdvance
+                          : NSToCoordCeilClamped(textRun->GetAdvanceWidth(
+                                Range(wordStart, wordEnd), &provider));
       width = std::max(0, width);
       aData->mCurrentLine = NSCoordSaturatingAdd(aData->mCurrentLine, width);
       aData->mAtStartOfLine = false;
 
       if (collapseWhitespace || whitespaceCanHang) {
         uint32_t trimStart =
-            GetEndOfTrimmedText(characterDataBuffer, textStyle, wordStart, i,
-                                &iter, whitespaceCanHang);
+            GetEndOfTrimmedText(characterDataBuffer, textStyle, wordStart,
+                                wordEnd, &iter, whitespaceCanHang);
         if (trimStart == start) {
           // This is *all* trimmable whitespace, so whatever trailingWhitespace
           // we saw previously is still trailing...
@@ -9938,7 +9966,7 @@ void nsTextFrame::AddInlineMinISizeForFlow(gfxContext* aRenderingContext,
           // Some non-whitespace so the old trailingWhitespace is no longer
           // trailing
           nscoord wsWidth = NSToCoordCeilClamped(
-              textRun->GetAdvanceWidth(Range(trimStart, i), &provider));
+              textRun->GetAdvanceWidth(Range(trimStart, wordEnd), &provider));
           aData->mTrailingWhitespace = std::max(0, wsWidth);
         }
       } else {
@@ -9946,9 +9974,26 @@ void nsTextFrame::AddInlineMinISizeForFlow(gfxContext* aRenderingContext,
       }
     }
 
+    if (g < limit) {
+      if (g->IsSimpleGlyph()) {
+        wordAdvance = g->GetSimpleAdvance();
+      } else {
+        wordAdvance = 0;
+        if (!preformattedNewline && !preformattedTab && !hasSpacing) {
+          if (uint32_t count = g->GetGlyphCount()) {
+            const auto* details = textRun->GetDetailedGlyphs(g - glyphs);
+            while (count--) {
+              wordAdvance += details->mAdvance;
+              ++details;
+            }
+          }
+        }
+      }
+    }
+
     if (preformattedTab) {
       PropertyProvider::Spacing spacing;
-      provider.GetSpacing(Range(i, i + 1), &spacing);
+      provider.GetSpacing(Range(wordEnd, wordEnd + 1), &spacing);
       aData->mCurrentLine += nscoord(spacing.mBefore);
       if (tabWidth < 0) {
         tabWidth = ComputeTabWidthAppUnits(this);
@@ -9956,25 +10001,26 @@ void nsTextFrame::AddInlineMinISizeForFlow(gfxContext* aRenderingContext,
       gfxFloat afterTab = AdvanceToNextTab(aData->mCurrentLine, tabWidth,
                                            provider.MinTabAdvance());
       aData->mCurrentLine = nscoord(afterTab + spacing.mAfter);
-      wordStart = i + 1;
-    } else if (i < flowEndInTextRun ||
-               (i == textRun->GetLength() &&
+      wordStart = wordEnd + 1;
+    } else if (wordEnd < flowEndInTextRun ||
+               (wordEnd == textRun->GetLength() &&
                 (textRun->GetFlags2() &
                  nsTextFrameUtils::Flags::HasTrailingBreak))) {
       if (preformattedNewline) {
         aData->ForceBreak();
-      } else if (i < flowEndInTextRun && hyphenating &&
-                 gfxTextRun::IsOptionalHyphenBreak(hyphBuffer[i - start])) {
+      } else if (wordEnd < flowEndInTextRun && hyphenating &&
+                 gfxTextRun::IsOptionalHyphenBreak(
+                     hyphBuffer[wordEnd - start])) {
         aData->OptionallyBreak(NSToCoordRound(provider.GetHyphenWidth()));
       } else {
         aData->OptionallyBreak();
       }
       if (aData->mSkipWhitespace) {
-        iter.SetSkippedOffset(i);
+        iter.SetSkippedOffset(wordEnd);
         wordStart = FindStartAfterSkippingWhitespace(
             &provider, aData, textStyle, &iter, flowEndInTextRun);
       } else {
-        wordStart = i;
+        wordStart = wordEnd;
       }
       provider.SetStartOfLine(iter);
     }
