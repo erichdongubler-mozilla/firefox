@@ -155,6 +155,24 @@ class SummarizationTelemetryMiddlewareTest {
     }
 
     @Test
+    fun `WHEN SummarizationFailed with Llm Exception wrapping a cause THEN error_type is the cause class name`() {
+        assertNull(AiSummarize.completed.testGetValue())
+
+        setupFullSession()
+        val cause = IllegalStateException("boom")
+        val exception = Llm.Exception("Wrapped", ErrorCode(4001), cause = cause)
+        invokeMiddleware(SummarizationFailed(exception))
+
+        val snapshot = AiSummarize.completed.testGetValue()!!
+        assertEquals(1, snapshot.size)
+
+        val extras = snapshot.first().extra!!
+        assertEquals("false", extras["success"])
+        assertEquals("IllegalStateException", extras["error_type"])
+        assertEquals("4001", extras["error_code"])
+    }
+
+    @Test
     fun `WHEN ViewDismissed is dispatched with engine available THEN summarization_closed is recorded with correct extra`() {
         assertNull(AiSummarize.closed.testGetValue())
 

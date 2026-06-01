@@ -164,7 +164,7 @@ class SummarizationTelemetryMiddleware(
             AiSummarize.CompletedExtra(
                 connectionType = connectionType.toString(),
                 contentType = sessionTelemetry.contentMetrics?.contentType,
-                errorType = error?.let { it::class.simpleName },
+                errorType = error?.let { (it.cause ?: it)::class.simpleName },
                 errorCode = error?.errorCode?.value,
                 language = sessionTelemetry.contentMetrics?.language,
                 lengthChars = sessionTelemetry.contentMetrics?.charCount,

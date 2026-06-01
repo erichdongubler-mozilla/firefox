@@ -41,11 +41,13 @@ interface Llm {
      *
      * @param message A human-readable description of the failure.
      * @param errorCode The error code identifying the failure category.
+     * @param cause The original throwable that caused this exception, if any.
      */
     open class Exception(
         message: String,
         val errorCode: ErrorCode,
-    ) : kotlin.Exception(message) {
+        cause: Throwable? = null,
+    ) : kotlin.Exception(message, cause) {
         companion object {
             /**
              * Create an unspecified error with the general error code.
