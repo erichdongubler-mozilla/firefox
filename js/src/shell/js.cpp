@@ -898,6 +898,7 @@ enum class ShellGlobalKind {
 };
 
 static void SetStandardRealmOptions(JSContext* cx, JS::RealmOptions& options);
+static JSObject* NewStringInterruptCallbackGlobal(JSContext* cx);
 static JSObject* NewGlobalObject(
     JSContext* cx, JS::RealmOptions& options, JSPrincipals* principals,
     ShellGlobalKind kind, bool immutablePrototype,
@@ -1198,12 +1199,13 @@ static bool ShellInterruptCallback(JSContext* cx) {
       // long-running code (eg ArrayJoinKernel) with the expectation that the
       // interrupt handler will not reach into the interrupted realm and modify
       // the contents of the array. As a compromise, when fuzzing, we instead
-      // require a string argument, and evaluate that string in a fresh global.
-      // This prevents the interrupt handler from directly mutating the
-      // interrupted code, but still allows it to do interesting things (get a
-      // backtrace, trigger a GC, etc). Clever ways of circumventing this
-      // sandbox are only interesting to the extent that they correspond with
-      // things that happen in real interrupt handlers in the browser.
+      // require a string argument, and evaluate that string in a fresh global
+      // with a reduced set of shell functions. This prevents the interrupt
+      // handler from directly mutating the interrupted code, but still allows
+      // it to do interesting things (get a backtrace, trigger a GC, etc).
+      // Clever ways of circumventing this sandbox are only interesting to the
+      // extent that they correspond with things that happen in real interrupt
+      // handlers in the browser.
 
       RootedString str(cx, sc->interruptFunc.toString());
 
@@ -1212,20 +1214,7 @@ static bool ShellInterruptCallback(JSContext* cx) {
         are.emplace(cx);
       }
 
-      // Disable the Debugger API in the new global and hide this global from
-      // onNewGlobal hooks, to prevent interrupt callbacks from accessing other
-      // globals with --fuzzing-safe.
-      bool wasDebuggerDisabled = sc->disableDebuggerForNewGlobal;
-      sc->disableDebuggerForNewGlobal = true;
-      auto restore = MakeScopeExit(
-          [&]() { sc->disableDebuggerForNewGlobal = wasDebuggerDisabled; });
-
-      JS::RealmOptions options;
-      SetStandardRealmOptions(cx, options);
-
-      RootedObject glob(cx, NewGlobalObject(cx, options, nullptr,
-                                            ShellGlobalKind::WindowProxy,
-                                            /* immutablePrototype = */ true));
+      RootedObject glob(cx, NewStringInterruptCallbackGlobal(cx));
       if (!glob) {
         return false;
       }
@@ -4483,10 +4472,6 @@ static void SetStandardRealmOptions(JSContext* cx, JS::RealmOptions& options) {
       .setSharedMemoryAndAtomicsEnabled(enableSharedMemory)
       .setCoopAndCoepEnabled(false)
       .setToSourceEnabled(enableToSource);
-
-  if (GetShellContext(cx)->disableDebuggerForNewGlobal) {
-    options.creationOptions().setInvisibleToDebugger(true);
-  }
 }
 
 [[nodiscard]] static bool CheckRealmOptions(JSContext* cx,
@@ -7385,7 +7370,7 @@ static bool NewGlobal(JSContext* cx, unsigned argc, Value* vp) {
     if (!JS_GetProperty(cx, opts, "invisibleToDebugger", &v)) {
       return false;
     }
-    if (v.isBoolean() && !GetShellContext(cx)->disableDebuggerForNewGlobal) {
+    if (v.isBoolean()) {
       creationOptions.setInvisibleToDebugger(v.toBoolean());
     }
 
@@ -11692,6 +11677,100 @@ static const JSPropertySpec TestingProperties[] = {
     JS_PS_END,
 };
 
+static bool DefineStringInterruptCallbackGlobalFunctions(JSContext* cx,
+                                                         HandleObject global) {
+  RootedObject scratch(cx, JS_NewPlainObject(cx));
+  if (!scratch) {
+    return false;
+  }
+  if (!JS_DefineFunctionsWithHelp(cx, scratch, shell_functions) ||
+      !js::DefineTestingFunctions(cx, scratch, fuzzingSafe,
+                                  disableOOMFunctions)) {
+    return false;
+  }
+
+  static const char* const allowedProperties[] = {
+      "print",
+      "printErr",
+      "interruptIf",
+      "gc",
+      "minorgc",
+      "maybegc",
+      "gcparam",
+      "finishBackgroundFree",
+      "relazifyFunctions",
+      "gczeal",
+      "unsetgczeal",
+      "schedulegc",
+      "selectforgc",
+      "gcstate",
+      "schedulezone",
+      "startgc",
+      "finishgc",
+      "gcslice",
+      "abortgc",
+      "backtrace",
+      "enableGeckoProfiling",
+      "enableGeckoProfilingWithSlowAssertions",
+      "disableGeckoProfiling",
+      "readGeckoProfilingStack",
+      "readGeckoInterpProfilingStack",
+  };
+
+  RootedValue value(cx);
+  for (const char* name : allowedProperties) {
+    bool found;
+    if (!JS_HasProperty(cx, scratch, name, &found)) {
+      return false;
+    }
+    if (!found) {
+      continue;
+    }
+    if (!JS_GetProperty(cx, scratch, name, &value)) {
+      return false;
+    }
+    if (!JS_DefineProperty(cx, global, name, value, 0)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+static JSObject* NewStringInterruptCallbackGlobal(JSContext* cx) {
+  JS::RealmOptions options;
+  SetStandardRealmOptions(cx, options);
+  options.creationOptions().setInvisibleToDebugger(true);
+
+  RootedObject glob(cx,
+                    JS_NewGlobalObject(cx, &global_class, nullptr,
+                                       JS::DontFireOnNewGlobalHook, options));
+  if (!glob) {
+    return nullptr;
+  }
+
+  JSAutoRealm ar(cx, glob);
+  RootedObject proxy(cx, NewShellWindowProxy(cx, glob));
+  if (!proxy) {
+    return nullptr;
+  }
+  js::SetWindowProxy(cx, glob, proxy);
+#ifndef LAZY_STANDARD_CLASSES
+  if (!JS::InitRealmStandardClasses(cx)) {
+    return nullptr;
+  }
+#endif
+  bool succeeded;
+  if (!JS_SetImmutablePrototype(cx, glob, &succeeded)) {
+    return nullptr;
+  }
+  MOZ_ASSERT(succeeded);
+  if (!DefineStringInterruptCallbackGlobalFunctions(cx, glob)) {
+    return nullptr;
+  }
+  return glob;
+}
+
 static JSObject* NewGlobalObject(JSContext* cx, JS::RealmOptions& options,
                                  JSPrincipals* principals, ShellGlobalKind kind,
                                  bool immutablePrototype,
@@ -11758,10 +11837,8 @@ static JSObject* NewGlobalObject(JSContext* cx, JS::RealmOptions& options,
     if (!JS_InitReflectParse(cx, glob)) {
       return nullptr;
     }
-    if (!GetShellContext(cx)->disableDebuggerForNewGlobal) {
-      if (!JS_DefineDebuggerObject(cx, glob)) {
-        return nullptr;
-      }
+    if (!JS_DefineDebuggerObject(cx, glob)) {
+      return nullptr;
     }
     if (!JS_DefineFunctionsWithHelp(cx, glob, shell_functions) ||
         !JS_DefineProfilingFunctions(cx, glob)) {

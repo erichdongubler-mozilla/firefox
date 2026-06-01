@@ -195,10 +195,6 @@ struct ShellContext {
 
   JSContext* cx_;
 
-  // If true, new globals should not be visible to the Debugger and should not
-  // define the Debugger API.
-  bool disableDebuggerForNewGlobal = false;
-
   const IsWorkerEnum isWorker;
   bool lastWarningEnabled;
 
