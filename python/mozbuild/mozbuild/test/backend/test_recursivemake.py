@@ -402,6 +402,20 @@ class TestRecursiveMakeBackend(BackendTester):
         self.assertIn("mozilla/mozilla1.h", m)
         self.assertIn("mozilla/dom/dom2.h", m)
 
+    def test_js_shell_archive(self):
+        """Ensure JS_SHELL_ARCHIVE_FILES is handled properly."""
+        env = self._consume("js-shell-archive", RecursiveMakeBackend)
+
+        manifest_path = mozpath.join(env.topobjdir, "jsshell-archive.list")
+        with open(manifest_path) as fh:
+            manifest_lines = fh.read().splitlines()
+        self.assertEqual(
+            manifest_lines, ["js", "libmozglue.so", "llvm-symbolizer", "fuzz-tests"]
+        )
+
+        top_backend = open(mozpath.join(env.topobjdir, "backend.mk")).read()
+        self.assertNotIn("jsshell-archive", top_backend)
+
     def test_generated_files(self):
         """Ensure GENERATED_FILES is handled properly."""
         env = self._consume("generated-files", RecursiveMakeBackend)

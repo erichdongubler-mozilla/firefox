@@ -4,50 +4,6 @@
 
 PACKAGE       = $(PKG_PATH)$(PKG_BASENAME)$(PKG_SUFFIX)
 
-# JavaScript Shell packaging
-JSSHELL_BINS  = \
-  js$(BIN_SUFFIX) \
-  $(DLL_PREFIX)mozglue$(DLL_SUFFIX) \
-  $(NULL)
-
-ifndef MOZ_SYSTEM_NSPR
-  ifdef MOZ_FOLD_LIBS
-    JSSHELL_BINS += $(DLL_PREFIX)nss3$(DLL_SUFFIX)
-  else
-    JSSHELL_BINS += \
-      $(DLL_PREFIX)nspr4$(DLL_SUFFIX) \
-      $(DLL_PREFIX)plds4$(DLL_SUFFIX) \
-      $(DLL_PREFIX)plc4$(DLL_SUFFIX) \
-      $(NULL)
-  endif # MOZ_FOLD_LIBS
-endif # MOZ_SYSTEM_NSPR
-
-ifdef MSVC_C_RUNTIME_DLL
-  JSSHELL_BINS += $(MSVC_C_RUNTIME_DLL)
-endif
-ifdef MSVC_C_RUNTIME_1_DLL
-  JSSHELL_BINS += $(MSVC_C_RUNTIME_1_DLL)
-endif
-ifdef MSVC_CXX_RUNTIME_DLL
-  JSSHELL_BINS += $(MSVC_CXX_RUNTIME_DLL)
-endif
-ifdef MSVC_CXX_RUNTIME_ATOMIC_WAIT_DLL
-  JSSHELL_BINS += $(MSVC_CXX_RUNTIME_ATOMIC_WAIT_DLL)
-endif
-
-ifdef LLVM_SYMBOLIZER
-  JSSHELL_BINS += $(notdir $(LLVM_SYMBOLIZER))
-endif
-ifdef MOZ_CLANG_RT_ASAN_LIB_PATH
-  JSSHELL_BINS += $(notdir $(MOZ_CLANG_RT_ASAN_LIB_PATH))
-endif
-
-ifdef FUZZING_INTERFACES
-  JSSHELL_BINS += fuzz-tests$(BIN_SUFFIX)
-endif
-
-MAKE_JSSHELL  = $(call py_action,zip $(JSSHELL_NAME),-C $(DIST)/bin --strip $(abspath $(PKG_JSSHELL)) $(JSSHELL_BINS))
-
 ifneq (,$(PGO_JARLOG_PATH))
   # The backslash subst is to work around an issue with our version of mozmake,
   # where backslashes get slurped in command-line arguments if a command is run

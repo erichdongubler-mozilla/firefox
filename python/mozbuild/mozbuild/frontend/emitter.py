@@ -45,6 +45,7 @@ from .data import (
     InstallationTarget,
     IPDLCollection,
     JARManifest,
+    JsShellArchive,
     LegacyRunTests,
     Library,
     Linkable,
@@ -1595,6 +1596,9 @@ class TreeMetadataEmitter(LoggingMixin):
 
         if run_tests := context.get("LEGACY_RUN_TESTS", []):
             yield LegacyRunTests(context, run_tests)
+
+        if jsshell_files := context.get("JS_SHELL_ARCHIVE_FILES", []):
+            yield JsShellArchive(context, jsshell_files)
 
         rust_tests = context.get("RUST_TESTS", [])
         if rust_tests:

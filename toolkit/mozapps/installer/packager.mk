@@ -54,7 +54,7 @@ ifdef MOZ_PACKAGE_JSSHELL
 	# Package JavaScript Shell
 	@echo 'Packaging JavaScript Shell...'
 	$(RM) $(PKG_JSSHELL)
-	$(MAKE_JSSHELL)
+	$(call py_action,zip $(JSSHELL_NAME),-C $(DIST)/bin --strip $(abspath $(PKG_JSSHELL)) --files-from $(DEPTH)/jsshell-archive.list)
 endif # MOZ_PACKAGE_JSSHELL
 ifdef MOZ_AUTOMATION
 ifdef MOZ_ARTIFACT_BUILD_SYMBOLS

@@ -1741,6 +1741,19 @@ VARIABLES = {
         of the omni.ja, maintaining the path that they have in the source dir.
         """,
     ),
+    "JS_SHELL_ARCHIVE_FILES": (
+        ContextDerivedTypedList(Path),
+        list,
+        """List of files to include in the JS shell zip archive.
+
+        Each entry is a Path, typically of the form ``!/dist/bin/<basename>``
+        for files built into ``$(DIST)/bin``, or ``%/absolute/path`` for files
+        outside the build tree. The build backend writes the basenames to
+        <topobjdir>/jsshell-archive.list; the packager reads it via
+        --files-from when producing the archive named by JSSHELL_NAME (from
+        package-name.mk).
+        """,
+    ),
     "OBJDIR_FILES": (
         ContextDerivedTypedHierarchicalStringList(Path),
         list,
