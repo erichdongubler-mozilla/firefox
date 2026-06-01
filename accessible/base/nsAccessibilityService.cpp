@@ -2050,6 +2050,13 @@ void nsAccessibilityService::SetCacheDomains(uint64_t aCacheDomains) {
   if (newDomains != CacheDomain::None) {
     for (const RefPtr<DocAccessible>& doc : mDocAccessibleCache.Values()) {
       MOZ_ASSERT(doc, "DocAccessible in cache is null!");
+      if (doc->EffectiveCacheDomains() != gCacheDomains) {
+        // This document uses a specific set of cache domains rather than the
+        // global set. Thus, a change to the global set shouldn't impact this
+        // document.
+        MOZ_ASSERT(doc->IsPrintDoc());
+        continue;
+      }
       doc->QueueCacheUpdate(doc.get(), newDomains, true);
       Pivot pivot(doc.get());
       LocalAccInSameDocRule rule;
