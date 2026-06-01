@@ -169,6 +169,13 @@ nsIContent* AllChildrenIterator::Get() const {
       return marker;
     }
 
+    case Phase::AtCheckmarkKid: {
+      Element* checkmark = nsLayoutUtils::GetCheckmarkPseudo(Parent());
+      MOZ_ASSERT(checkmark,
+                 "No content checkmark frame at AtCheckmarkKid phase");
+      return checkmark;
+    }
+
     case Phase::AtBeforeKid: {
       Element* before = nsLayoutUtils::GetBeforePseudo(Parent());
       MOZ_ASSERT(before, "No content before frame at AtBeforeKid phase");
@@ -227,6 +234,13 @@ nsIContent* AllChildrenIterator::GetNextChild() {
       }
       [[fallthrough]];
     case Phase::AtMarkerKid:
+      if (Element* checkmarkContent =
+              nsLayoutUtils::GetCheckmarkPseudo(Parent())) {
+        mPhase = Phase::AtCheckmarkKid;
+        return checkmarkContent;
+      }
+      [[fallthrough]];
+    case Phase::AtCheckmarkKid:
       if (Element* beforeContent = nsLayoutUtils::GetBeforePseudo(Parent())) {
         mPhase = Phase::AtBeforeKid;
         return beforeContent;
@@ -303,6 +317,13 @@ nsIContent* AllChildrenIterator::GetPreviousChild() {
       }
       [[fallthrough]];
     case Phase::AtBeforeKid:
+      if (Element* checkmarkContent =
+              nsLayoutUtils::GetCheckmarkPseudo(Parent())) {
+        mPhase = Phase::AtCheckmarkKid;
+        return checkmarkContent;
+      }
+      [[fallthrough]];
+    case Phase::AtCheckmarkKid:
       if (Element* markerContent = nsLayoutUtils::GetMarkerPseudo(Parent())) {
         mPhase = Phase::AtMarkerKid;
         return markerContent;
