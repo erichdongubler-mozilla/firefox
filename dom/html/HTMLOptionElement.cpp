@@ -62,9 +62,18 @@ void HTMLOptionElement::UpdateDisabledState(bool aNotify) {
   bool isDisabled = HasAttr(nsGkAtoms::disabled);
 
   if (!isDisabled) {
-    nsIContent* parent = GetParent();
-    if (auto optGroupElement = HTMLOptGroupElement::FromNodeOrNull(parent)) {
-      isDisabled = optGroupElement->IsDisabled();
+    // https://html.spec.whatwg.org/#concept-option-disabled
+    // Walk ancestors looking for a disabled optgroup, stopping at boundary
+    // elements. Wrapper elements (div, span, etc.) are transparent.
+    for (nsINode* ancestor = GetParent(); ancestor;
+         ancestor = ancestor->GetParentNode()) {
+      if (IsOptionListBoundary(*ancestor)) {
+        break;
+      }
+      if (auto* optgroup = HTMLOptGroupElement::FromNode(ancestor)) {
+        isDisabled = optgroup->IsDisabled();
+        break;
+      }
     }
   }
 

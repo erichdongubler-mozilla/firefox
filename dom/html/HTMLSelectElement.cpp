@@ -787,22 +787,16 @@ bool HTMLSelectElement::IsOptionDisabled(HTMLOptionElement* aOption) const {
     return true;
   }
 
-  // Check for disabled optgroups
-  // If there are no artifacts, there are no optgroups
+  // https://html.spec.whatwg.org/#concept-option-disabled
+  // Walk ancestors looking for a disabled optgroup. Wrapper elements (div,
+  // span, etc.) are transparent; only boundary elements stop the walk.
   for (Element* node = aOption->GetParentElement(); node;
        node = node->GetParentElement()) {
-    // If we reached the select element, we're done
-    if (node->IsHTMLElement(nsGkAtoms::select)) {
+    if (HTMLOptionElement::IsOptionListBoundary(*node)) {
       return false;
     }
-    auto* optGroupElement = HTMLOptGroupElement::FromNode(node);
-    if (!optGroupElement) {
-      // If you put something else between you and the optgroup, you're a
-      // moron and you deserve not to have optgroup disabling work.
-      return false;
-    }
-    if (optGroupElement->Disabled()) {
-      return true;
+    if (auto* optGroupElement = HTMLOptGroupElement::FromNode(node)) {
+      return optGroupElement->Disabled();
     }
   }
   return false;
