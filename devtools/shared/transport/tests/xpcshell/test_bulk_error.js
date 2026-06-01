@@ -33,6 +33,9 @@ const testBulkSpec = protocol.generateActorSpec({
       request: { foo: Arg(0, "number") },
       response: protocol.BULK_RESPONSE,
     },
+    bulkReplyWithReturnValue: {
+      response: protocol.BULK_RESPONSE,
+    },
   },
 });
 
@@ -53,6 +56,10 @@ class TestBulkActor extends Actor {
     Assert.equal(foo, 42, "received the bulk reply request");
 
     throw new Error("actor exception");
+  }
+  // eslint-disable-next-line no-unused-vars
+  async bulkReplyWithReturnValue(startBulkSend) {
+    return "foo";
   }
 }
 
@@ -83,6 +90,16 @@ var test_string_error = async function (transportFactory) {
   await client.connect();
   await client.mainRoot.rootForm;
   const front = await client.mainRoot.getFront("testBulk");
+
+  try {
+    await front.bulkReplyWithReturnValue();
+  } catch (e) {
+    Assert.stringContains(
+      e.message,
+      "The actor method 'testBulk.bulkReplyWithReturnValue' should generate a bulk response via the `startBulkSend` callback, but returned some value",
+      "The method threw an error due to the returned value "
+    );
+  }
 
   try {
     await front.bulkReply({ foo: 42 });
