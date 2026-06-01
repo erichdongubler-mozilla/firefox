@@ -1702,7 +1702,6 @@ class JSOffThreadAtom : private JSAtom {
   };
   const char16_t* twoByteChars(const JS::AutoRequireNoGC& nogc) const {
     MOZ_ASSERT(hasTwoByteChars());
-    return JSLinearString::twoByteChars(nogc);
     return isInline() ? d.inlineStorageTwoByte : d.s.u2.nonInlineCharsTwoByte;
   }
   mozilla::Range<const JS::Latin1Char> latin1Range(
