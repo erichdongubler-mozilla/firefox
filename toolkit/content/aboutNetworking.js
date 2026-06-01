@@ -284,6 +284,13 @@ function init() {
     doLookup();
   });
 
+  let hostInput = document.getElementById("host");
+  hostInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      doLookup();
+    }
+  });
+
   let clearDNSCache = document.getElementById("clearDNSCache");
   clearDNSCache.addEventListener("click", function () {
     Services.dns.clearCache(true);
