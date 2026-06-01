@@ -89,6 +89,8 @@ subsuite = "mozbuild"
 
 ["test_containers.py"]
 
+["test_devtools_mcp.py"]
+
 ["test_dotproperties.py"]
 
 ["test_expression.py"]
