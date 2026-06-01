@@ -4519,7 +4519,7 @@ dependencies = [
 
 [[package]]
 name = "marionette"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -5098,7 +5098,7 @@ version = "0.1.0"
 
 [[package]]
 name = "mozdevice"
-version = "0.5.4"
+version = "0.5.5"
 dependencies = [
  "log",
  "once_cell",
@@ -5207,7 +5207,7 @@ dependencies = [
 
 [[package]]
 name = "mozprofile"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "tempfile",
  "thiserror 1.999.999",
@@ -5215,7 +5215,7 @@ dependencies = [
 
 [[package]]
 name = "mozrunner"
-version = "0.15.4"
+version = "0.15.5"
 dependencies = [
  "dirs",
  "log",
@@ -5239,7 +5239,7 @@ dependencies = [
 
 [[package]]
 name = "mozversion"
-version = "0.5.3"
+version = "0.5.4"
 dependencies = [
  "regex",
  "rust-ini",
@@ -8839,7 +8839,7 @@ version = "0.3.100"
 
 [[package]]
 name = "webdriver"
-version = "0.53.0"
+version = "0.54.0"
 dependencies = [
  "base64 0.22.1",
  "bytes",
