@@ -283,96 +283,18 @@ add_task(async function test_applySpotlightPolicy() {
   Assert.equal(ping.action, undefined);
 });
 
-add_task(async function test_applyMomentsPolicy_prerelease() {
+add_task(async function test_applyMomentsPolicy() {
   info(
-    "ASRouterTelemetry.applyMomentsPolicy should use client_id and " +
-      "message_id in prerelease"
+    "ASRouterTelemetry.applyMomentsPolicy should set client_id and set pingType"
   );
-  let sandbox = sinon.createSandbox();
-  sandbox.stub(UpdateUtils, "getUpdateChannel").returns("nightly");
-
   let instance = new ASRouterTelemetry();
-  let data = {
-    action: "moments_user_event",
-    event: "IMPRESSION",
-    message_id: "moments_message_01",
-    bucket_id: "moments_bucket_01",
-  };
-  let { ping, pingType } = await instance.applyMomentsPolicy(data);
+  let { ping, pingType } = await instance.applyMomentsPolicy({});
 
-  Assert.equal(pingType, "moments");
-  Assert.equal(ping.impression_id, undefined);
   Assert.equal(
     ping.client_id,
     Services.prefs.getCharPref("toolkit.telemetry.cachedClientID")
   );
-  Assert.equal(ping.bucket_id, "moments_bucket_01");
-  Assert.equal(ping.message_id, "moments_message_01");
-
-  sandbox.restore();
-});
-
-add_task(async function test_applyMomentsPolicy_release() {
-  info(
-    "ASRouterTelemetry.applyMomentsPolicy should use impression_id and " +
-      "bucket_id in release"
-  );
-  let sandbox = sinon.createSandbox();
-  sandbox.stub(UpdateUtils, "getUpdateChannel").returns("release");
-  sandbox
-    .stub(ASRouterTelemetry.prototype, "getOrCreateImpressionId")
-    .returns(FAKE_UUID);
-
-  let instance = new ASRouterTelemetry();
-  let data = {
-    action: "moments_user_event",
-    event: "IMPRESSION",
-    message_id: "moments_message_01",
-    bucket_id: "moments_bucket_01",
-  };
-  let { ping, pingType } = await instance.applyMomentsPolicy(data);
-
   Assert.equal(pingType, "moments");
-  Assert.equal(ping.impression_id, FAKE_UUID);
-  Assert.equal(ping.client_id, undefined);
-  Assert.equal(ping.bucket_id, "moments_bucket_01");
-  Assert.equal(ping.message_id, "n/a");
-
-  sandbox.restore();
-});
-
-add_task(async function test_applyMomentsPolicy_experiment_release() {
-  info(
-    "ASRouterTelemetry.applyMomentsPolicy client_id and message_id in " +
-      "the experiment cohort in release"
-  );
-  let sandbox = sinon.createSandbox();
-  sandbox.stub(UpdateUtils, "getUpdateChannel").returns("release");
-  sandbox.stub(NimbusFeatures.cfr, "getEnrollmentMetadata").returns({
-    slug: "SOME-CFR-EXP",
-    branch: "branch-slug",
-    isRollout: false,
-  });
-
-  let instance = new ASRouterTelemetry();
-  let data = {
-    action: "moments_user_event",
-    event: "IMPRESSION",
-    message_id: "moments_message_01",
-    bucket_id: "moments_bucket_01",
-  };
-  let { ping, pingType } = await instance.applyMomentsPolicy(data);
-
-  Assert.equal(pingType, "moments");
-  Assert.equal(ping.impression_id, undefined);
-  Assert.equal(
-    ping.client_id,
-    Services.prefs.getCharPref("toolkit.telemetry.cachedClientID")
-  );
-  Assert.equal(ping.bucket_id, "moments_bucket_01");
-  Assert.equal(ping.message_id, "moments_message_01");
-
-  sandbox.restore();
 });
 
 add_task(async function test_applyMenuMessagePolicy() {
