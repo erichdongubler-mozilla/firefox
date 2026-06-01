@@ -9,23 +9,21 @@ const { ChatConversation, MESSAGE_ROLE } = ChromeUtils.importESModule(
 const { SYSTEM_PROMPT_TYPE } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/ChatEnums.sys.mjs"
 );
-
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
-  sinon: "resource://testing-common/Sinon.sys.mjs",
-});
+const { _setLoadPromptForTesting } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs"
+);
 
 add_task(async function test_ChatConversation_updateSystemPromptForModel() {
+  _setLoadPromptForTesting(async () => "Updated system prompt");
+  registerCleanupFunction(() => _setLoadPromptForTesting(null));
+
   const conversation = new ChatConversation({});
   conversation.addSystemMessage(
     SYSTEM_PROMPT_TYPE.TEXT,
     "Initial system prompt"
   );
 
-  const mockEngine = { loadPrompt: lazy.sinon.stub() };
-  const newSystemPrompt = "Updated system prompt";
-  mockEngine.loadPrompt.resolves(newSystemPrompt);
-  await conversation.updateSystemPromptForModel(mockEngine);
+  await conversation.updateSystemPromptForModel("1");
 
   const systemMessage = conversation.messages.find(
     message =>
@@ -34,13 +32,15 @@ add_task(async function test_ChatConversation_updateSystemPromptForModel() {
   );
   Assert.equal(
     systemMessage.content.body,
-    newSystemPrompt,
+    "Updated system prompt",
     "System prompt should be updated to new prompt"
   );
 });
 
 add_task(
   async function test_ChatConversation_updateSystemPromptForModel_preserves_messages() {
+    _setLoadPromptForTesting(async () => "Updated system prompt");
+
     const conversation = new ChatConversation({});
     const mockMessages = [
       { role: MESSAGE_ROLE.USER, body: "Hello" },
@@ -56,9 +56,7 @@ add_task(
     conversation.addAssistantMessage("text", mockMessages[1].body);
     conversation.addUserMessage(mockMessages[2].body, null);
 
-    const mockEngine = { loadPrompt: lazy.sinon.stub() };
-    mockEngine.loadPrompt.resolves("Updated system prompt");
-    await conversation.updateSystemPromptForModel(mockEngine);
+    await conversation.updateSystemPromptForModel("1");
 
     const nonSystemMessages = conversation.messages.filter(
       message => message.role !== MESSAGE_ROLE.SYSTEM

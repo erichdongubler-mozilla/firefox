@@ -83,7 +83,7 @@ add_task(async function test_retry_preserves_context_mentions() {
       "getRealTimeInfo should be called once during retry"
     );
     Assert.deepEqual(
-      getRealTimeInfoStub.firstCall.args[1]?.contextMentions,
+      getRealTimeInfoStub.firstCall.args[0]?.contextMentions,
       contextMentions,
       "getRealTimeInfo receives the original contextMentions on retry"
     );

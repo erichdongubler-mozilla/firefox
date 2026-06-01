@@ -18,7 +18,8 @@
  * 3. `existingMemoriesList`: an array of existing memory summary strings to deduplicate against
  *
  * Example Usage:
- * const engine = await openAIEngine.build(MODEL_FEATURES.MEMORIES, DEFAULT_ENGINE_ID);
+ * const ctx = await loadCallContext(MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM);
+ * const engine = await openAIEngine.build({ model: ctx.model, serviceType: ctx.serviceType, purpose: ctx.purpose, flowId: null, feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM });
  * const sources = {history: [domainItems, titleItems, searchItems]};
  * const existingMemoriesList = [...]; // Array of existing memory summary strings; this should be fetched from memory storage
  * const newMemories = await generateMemories(engine, sources, existingMemoriesList);
@@ -26,6 +27,12 @@
  */
 
 import { renderPrompt, openAIEngine, MODEL_FEATURES } from "../Utils.sys.mjs";
+
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  loadPrompt:
+    "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
+});
 
 import {
   HISTORY,
@@ -304,13 +311,10 @@ function normalizeMemoryList(parsed) {
  * }>>>}                            Promise resolving the list of generated memories
  */
 export async function generateInitialMemoriesList(engine, sources) {
-  const systemPrompt = await engine.loadPrompt(
-    MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM
-  );
-
-  const userPromptTemplate = await engine.loadPrompt(
-    MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_USER
-  );
+  const [systemPrompt, userPromptTemplate] = await Promise.all([
+    lazy.loadPrompt(MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM),
+    lazy.loadPrompt(MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_USER),
+  ]);
 
   // Build sources string
   let profileRecordsRenderedStr = "";
@@ -361,13 +365,10 @@ export async function deduplicateMemories(
   existingMemoriesList,
   newMemoriesList
 ) {
-  const systemPrompt = await engine.loadPrompt(
-    MODEL_FEATURES.MEMORIES_DEDUPLICATION_SYSTEM
-  );
-
-  const userPromptTemplate = await engine.loadPrompt(
-    MODEL_FEATURES.MEMORIES_DEDUPLICATION_USER
-  );
+  const [systemPrompt, userPromptTemplate] = await Promise.all([
+    lazy.loadPrompt(MODEL_FEATURES.MEMORIES_DEDUPLICATION_SYSTEM),
+    lazy.loadPrompt(MODEL_FEATURES.MEMORIES_DEDUPLICATION_USER),
+  ]);
 
   const userPrompt = renderPrompt(userPromptTemplate, {
     existingMemoriesList: formatListForPrompt(existingMemoriesList),
@@ -412,13 +413,10 @@ export async function deduplicateMemories(
  * @returns {Promise<Array<string>>}    Promise resolving the list of memory summary strings classified as high quality
  */
 export async function applyQualityFilter(engine, memoriesList) {
-  const systemPrompt = await engine.loadPrompt(
-    MODEL_FEATURES.MEMORIES_QUALITY_FILTER_SYSTEM
-  );
-
-  const userPromptTemplate = await engine.loadPrompt(
-    MODEL_FEATURES.MEMORIES_QUALITY_FILTER_USER
-  );
+  const [systemPrompt, userPromptTemplate] = await Promise.all([
+    lazy.loadPrompt(MODEL_FEATURES.MEMORIES_QUALITY_FILTER_SYSTEM),
+    lazy.loadPrompt(MODEL_FEATURES.MEMORIES_QUALITY_FILTER_USER),
+  ]);
 
   const userPrompt = renderPrompt(userPromptTemplate, {
     memoriesList: formatListForPrompt(memoriesList),
@@ -460,13 +458,10 @@ export async function applyQualityFilter(engine, memoriesList) {
  * @returns {Promise<Array<string>>}    Promise resolving the final list of non-sensitive memory summary strings
  */
 export async function filterSensitiveMemories(engine, memoriesList) {
-  const systemPrompt = await engine.loadPrompt(
-    MODEL_FEATURES.MEMORIES_SENSITIVITY_FILTER_SYSTEM
-  );
-
-  const userPromptTemplate = await engine.loadPrompt(
-    MODEL_FEATURES.MEMORIES_SENSITIVITY_FILTER_USER
-  );
+  const [systemPrompt, userPromptTemplate] = await Promise.all([
+    lazy.loadPrompt(MODEL_FEATURES.MEMORIES_SENSITIVITY_FILTER_SYSTEM),
+    lazy.loadPrompt(MODEL_FEATURES.MEMORIES_SENSITIVITY_FILTER_USER),
+  ]);
 
   const userPrompt = renderPrompt(userPromptTemplate, {
     memoriesList: formatListForPrompt(memoriesList),

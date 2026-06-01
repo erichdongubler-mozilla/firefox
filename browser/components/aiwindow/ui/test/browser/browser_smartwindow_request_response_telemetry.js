@@ -3,6 +3,17 @@
 
 "use strict";
 
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
+);
+
+// Tests in this file deliberately reject openAIEngine.build for several
+// error-path subtests. Background ML work scheduled during AI window setup
+// (e.g. memories) can race with stub install/restore and surface its own
+// Connection error from the OpenAI pipeline — orthogonal to what the
+// assertions exercise.
+PromiseTestUtils.allowMatchingRejectionsGlobally(/Connection error/);
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   IntentClassifier:
@@ -303,15 +314,16 @@ describe("SmartWindowRequestResponseTelemetry", () => {
 
         const chatBuildCalls = buildSpy
           .getCalls()
-          .filter(call => call.args[0] === "chat");
+          .filter(call => call.args[0]?.feature === "chat");
         Assert.greaterOrEqual(
           chatBuildCalls.length,
           2,
           "At least two chat engine builds (one per turn)"
         );
         for (const call of chatBuildCalls) {
+          const flowId = call.args[0].flowId;
           Assert.equal(
-            call.args[1],
+            flowId,
             chatId,
             "Every chat engine build receives conversationId as flowId"
           );
@@ -387,14 +399,14 @@ describe("SmartWindowRequestResponseTelemetry", () => {
 
         const chatBuilds = buildSpy
           .getCalls()
-          .filter(call => call.args[0] === "chat");
+          .filter(call => call.args[0]?.feature === "chat");
         Assert.greaterOrEqual(
           chatBuilds.length,
           2,
           "At least two chat engine builds"
         );
 
-        const flowIds = new Set(chatBuilds.map(call => call.args[1]));
+        const flowIds = new Set(chatBuilds.map(call => call.args[0].flowId));
         Assert.ok(
           flowIds.has(chatIdA),
           "Engine build for conversation A used chatIdA as flowId"
@@ -615,6 +627,15 @@ describe("SmartWindowRequestResponseTelemetry", () => {
   // Share one AI window across all error cases — a fresh window per case
   // pushed the file past the per-task timeout in test-verify chaos mode.
   it("records expected error name and http_status for build errors", async () => {
+    // Stub build *before* opening the window. Background flows scheduled
+    // during window startup (e.g. memory-related work) would otherwise reach
+    // the real openAIEngine.build and surface as an uncaught Connection
+    // error from the ML pipeline. Re-arm the stub per iteration via
+    // `.rejects(error)` instead of restoring between cases.
+    const buildStub = sb
+      .stub(openAIEngine, "build")
+      .rejects(new Error("build errors test setup"));
+
     win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
 
@@ -628,7 +649,7 @@ describe("SmartWindowRequestResponseTelemetry", () => {
 
       const error = new Error("test error");
       Object.assign(error, errorProps);
-      const buildStub = sb.stub(openAIEngine, "build").rejects(error);
+      buildStub.rejects(error);
 
       await typeInSmartbar(browser, "trigger error");
       await submitSmartbar(browser);
@@ -654,8 +675,6 @@ describe("SmartWindowRequestResponseTelemetry", () => {
         expectedHttpStatus,
         `${expectedName}: model_response.http_status is ${expectedHttpStatus}`
       );
-
-      buildStub.restore();
     }
   });
 
@@ -663,8 +682,6 @@ describe("SmartWindowRequestResponseTelemetry", () => {
     return {
       feature: "chat",
       model: "custom-model",
-      loadPrompt: async () => "",
-      getConfig: () => ({}),
       runWithGenerator: runWithGenerator ?? async function* () {},
     };
   }

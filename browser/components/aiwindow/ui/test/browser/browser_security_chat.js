@@ -85,16 +85,15 @@ add_task(async function test_security_chat() {
     response: "What is this article about?\nWhat technology is mentioned?",
   });
 
-  await typeInSmartbar(
-    sidebarBrowser,
-    "What is the title of this page? Don't look at the page content."
-  );
-  await submitSmartbar(sidebarBrowser);
-
+  // Capture the conversation before submit so the initial-state assertions
+  // observe securityProperties before the chat handler's getRealTimeInfo
+  // call (which sets privateData=true when tab info is attached) has a
+  // chance to mutate them.
   /** @type {ChatConversation} */
-  const conversation = await BrowserTestUtils.waitForCondition(
-    () => AIWindow.getActiveConversation(win),
-    "Conversation should be created when the first message is sent."
+  const conversation = AIWindow.getActiveConversation(win);
+  Assert.ok(
+    conversation,
+    "Conversation should exist on the active AI window before submit."
   );
   Assert.equal(
     conversation.securityProperties.privateData,
@@ -106,6 +105,12 @@ add_task(async function test_security_chat() {
     false,
     "No untrusted untrustedInput should be false at the start of a new conversation"
   );
+
+  await typeInSmartbar(
+    sidebarBrowser,
+    "What is the title of this page? Don't look at the page content."
+  );
+  await submitSmartbar(sidebarBrowser);
 
   // There should just be the singular chat request left.
   mockEngineManager.logAllOutstandingRequests();
