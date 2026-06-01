@@ -88,6 +88,7 @@ class TransportLayerDtls final : public TransportLayer {
   nsresult SetVerificationDigest(const DtlsDigest& digest);
 
   nsresult GetCipherSuite(uint16_t* cipherSuite) const;
+  nsresult GetChannelInfo(SSLChannelInfo* info) const;
 
   nsresult SetSrtpCiphers(const std::vector<uint16_t>& ciphers);
   nsresult GetSrtpCipher(uint16_t* cipher) const;

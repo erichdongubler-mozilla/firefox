@@ -829,20 +829,30 @@ bool TransportLayerDtls::SetupCipherSuites(UniquePRFileDesc& ssl_fd) {
   return true;
 }
 
-nsresult TransportLayerDtls::GetCipherSuite(uint16_t* cipherSuite) const {
+nsresult TransportLayerDtls::GetChannelInfo(SSLChannelInfo* info) const {
   CheckThread();
+  if (state_ != TS_OPEN) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  if (SSL_GetChannelInfo(ssl_fd_.get(), info, sizeof(*info)) != SECSuccess) {
+    return NS_ERROR_FAILURE;
+  }
+  return NS_OK;
+}
+
+nsresult TransportLayerDtls::GetCipherSuite(uint16_t* cipherSuite) const {
   if (!cipherSuite) {
     MOZ_MTLOG(ML_ERROR, LAYER_INFO << "GetCipherSuite passed a nullptr");
     return NS_ERROR_NULL_POINTER;
   }
-  if (state_ != TS_OPEN) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
   SSLChannelInfo info;
-  SECStatus rv = SSL_GetChannelInfo(ssl_fd_.get(), &info, sizeof(info));
-  if (rv != SECSuccess) {
-    MOZ_MTLOG(ML_NOTICE, LAYER_INFO << "GetCipherSuite can't get channel info");
-    return NS_ERROR_FAILURE;
+  nsresult rv = GetChannelInfo(&info);
+  if (NS_FAILED(rv)) {
+    if (rv == NS_ERROR_FAILURE) {
+      MOZ_MTLOG(ML_NOTICE,
+                LAYER_INFO << "GetCipherSuite can't get channel info");
+    }
+    return rv;
   }
   *cipherSuite = info.cipherSuite;
   return NS_OK;
@@ -1554,10 +1564,12 @@ void TransportLayerDtls::RecordStartedHandshakeTelemetry() {
 void TransportLayerDtls::RecordTlsTelemetry() {
   MOZ_ASSERT(state_ == TS_OPEN);
   SSLChannelInfo info;
-  SECStatus ss = SSL_GetChannelInfo(ssl_fd_.get(), &info, sizeof(info));
-  if (ss != SECSuccess) {
-    MOZ_MTLOG(ML_NOTICE,
-              LAYER_INFO << "RecordTlsTelemetry failed to get channel info");
+  nsresult rv = GetChannelInfo(&info);
+  if (NS_FAILED(rv)) {
+    if (rv == NS_ERROR_FAILURE) {
+      MOZ_MTLOG(ML_NOTICE,
+                LAYER_INFO << "RecordTlsTelemetry failed to get channel info");
+    }
     return;
   }
 
@@ -1591,7 +1603,7 @@ void TransportLayerDtls::RecordTlsTelemetry() {
       info.keaType);
 
   uint16_t cipher;
-  nsresult rv = GetSrtpCipher(&cipher);
+  rv = GetSrtpCipher(&cipher);
 
   if (NS_FAILED(rv)) {
     MOZ_MTLOG(ML_DEBUG, "No SRTP cipher suite");

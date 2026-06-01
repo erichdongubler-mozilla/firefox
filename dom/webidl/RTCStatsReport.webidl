@@ -243,6 +243,8 @@ dictionary RTCTransportStats : RTCStats {
   required RTCDtlsTransportState dtlsState;
   RTCIceTransportState iceState;
   DOMString selectedCandidatePairId;
+  DOMString tlsVersion;
+  DOMString dtlsCipher;
   RTCDtlsRole dtlsRole;
   DOMString srtpCipher;
 };

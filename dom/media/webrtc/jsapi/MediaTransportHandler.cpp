@@ -34,6 +34,7 @@
 #include "mozilla/PublicSSL.h"  // For psm::InitializeCipherSuite
 #include "mozilla/dom/RTCStatsReportBinding.h"
 #include "nsDNSService2.h"
+#include "nsFmtString.h"
 #include "nsISocketTransportService.h"
 #include "nss.h"  // For NSS_NoDB_Init
 #include "sdp/SdpAttribute.h"
@@ -1041,6 +1042,19 @@ void MediaTransportHandler::OnRtcpStateChange(const std::string& aTransportId,
   mRtcpStateChange.Notify(aTransportId, aState);
 }
 
+static uint16_t ToDtlsWireVersion(uint16_t aProtocolVersion) {
+  switch (aProtocolVersion) {
+    case SSL_LIBRARY_VERSION_DTLS_1_0:
+      return SSL_LIBRARY_VERSION_DTLS_1_0_WIRE;
+    case SSL_LIBRARY_VERSION_DTLS_1_2:
+      return SSL_LIBRARY_VERSION_DTLS_1_2_WIRE;
+    case SSL_LIBRARY_VERSION_DTLS_1_3:
+      return SSL_LIBRARY_VERSION_DTLS_1_3_WIRE;
+    default:
+      return 0;
+  }
+}
+
 RefPtr<dom::RTCStatsPromise> MediaTransportHandlerSTS::GetIceStats(
     const std::string& aTransportId, DOMHighResTimeStamp aNow) {
   MOZ_RELEASE_ASSERT(mInitPromise);
@@ -1119,6 +1133,21 @@ RefPtr<dom::RTCStatsPromise> MediaTransportHandlerSTS::GetIceStats(
                     if (name) {
                       transport.mSrtpCipher.Construct(
                           NS_ConvertASCIItoUTF16(name));
+                    }
+                  }
+                  SSLChannelInfo channelInfo;
+                  if (NS_SUCCEEDED(dtlsLayer->GetChannelInfo(&channelInfo))) {
+                    if (uint16_t v =
+                            ToDtlsWireVersion(channelInfo.protocolVersion)) {
+                      transport.mTlsVersion.Construct(
+                          nsFmtString(u"{:04X}", v));
+                    }
+                    SSLCipherSuiteInfo info;
+                    if (SSL_GetCipherSuiteInfo(channelInfo.cipherSuite, &info,
+                                               sizeof(info)) == SECSuccess &&
+                        info.cipherSuiteName) {
+                      transport.mDtlsCipher.Construct(
+                          NS_ConvertASCIItoUTF16(info.cipherSuiteName));
                     }
                   }
                 }
