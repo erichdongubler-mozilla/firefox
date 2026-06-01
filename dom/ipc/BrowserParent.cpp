@@ -1913,8 +1913,9 @@ NS_IMPL_ISUPPORTS(SynthesizedEventCallback, nsISynthesizedEventCallback)
 
 mozilla::ipc::IPCResult BrowserParent::RecvSynthesizeNativeKeyEvent(
     const int32_t& aNativeKeyboardLayout, const int32_t& aNativeKeyCode,
-    const uint32_t& aModifierFlags, const nsString& aCharacters,
-    const nsString& aUnmodifiedCharacters, const Maybe<uint64_t>& aCallbackId) {
+    const nsIWidget::NativeModifiers& aModifierFlags,
+    const nsString& aCharacters, const nsString& aUnmodifiedCharacters,
+    const Maybe<uint64_t>& aCallbackId) {
   NS_ENSURE_TRUE(xpc::IsInAutomation(), IPC_FAIL(this, "Unexpected event"));
 
   nsCOMPtr<nsISynthesizedEventCallback> callback =

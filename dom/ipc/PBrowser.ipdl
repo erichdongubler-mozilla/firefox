@@ -469,7 +469,7 @@ parent:
 
     async SynthesizeNativeKeyEvent(int32_t aNativeKeyboardLayout,
                                    int32_t aNativeKeyCode,
-                                   uint32_t aModifierFlags,
+                                   NativeModifiers aModifierFlags,
                                    nsString aCharacters,
                                    nsString aUnmodifiedCharacters,
                                    uint64_t? aCallbackId);
