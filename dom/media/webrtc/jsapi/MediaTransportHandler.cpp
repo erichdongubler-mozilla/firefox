@@ -1413,7 +1413,7 @@ RefPtr<TransportFlow> MediaTransportHandlerSTS::CreateTransportFlow(
     const RefPtr<DtlsIdentity>& aDtlsIdentity, bool aDtlsClient,
     const DtlsDigestList& aDigests, bool aPrivacyRequested) {
   nsresult rv;
-  RefPtr<TransportFlow> flow = new TransportFlow(aTransportId);
+  RefPtr flow = MakeRefPtr<TransportFlow>(aTransportId);
 
   // The media streams are made on STS so we need to defer setup.
   auto ice = MakeUnique<TransportLayerIce>();

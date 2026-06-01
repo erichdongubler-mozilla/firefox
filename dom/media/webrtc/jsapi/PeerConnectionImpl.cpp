@@ -1159,7 +1159,7 @@ already_AddRefed<dom::Promise> PeerConnectionImpl::Chain(
     dom::ChainedOperation& aOperation, ErrorResult& aError) {
   MOZ_RELEASE_ASSERT(!mChainingOperation);
   mChainingOperation = true;
-  RefPtr<Operation> operation = new JSOperation(this, aOperation, aError);
+  RefPtr operation = MakeRefPtr<JSOperation>(this, aOperation, aError);
   if (aError.Failed()) {
     return nullptr;
   }
@@ -4708,7 +4708,7 @@ already_AddRefed<dom::RTCRtpTransceiver> PeerConnectionImpl::CreateTransceiver(
     });
   }
 
-  RefPtr<RTCRtpTransceiver> transceiver = new RTCRtpTransceiver(
+  RefPtr transceiver = MakeRefPtr<RTCRtpTransceiver>(
       mWindow, PrivacyRequested(), this, mTransportHandler, mJsepSession.get(),
       aId, aIsVideo, mSTSThread.get(), aSendTrack, mCall.get(), mIdGenerator);
 

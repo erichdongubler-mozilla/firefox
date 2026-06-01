@@ -349,8 +349,7 @@ RefPtr<NrIceMediaStream> NrIceCtx::CreateStream(const std::string& id,
     return nullptr;
   }
 
-  RefPtr<NrIceMediaStream> stream =
-      new NrIceMediaStream(this, id, name, components);
+  RefPtr stream = MakeRefPtr<NrIceMediaStream>(this, id, name, components);
   streams_[id] = stream;
   return stream;
 }

@@ -1416,7 +1416,7 @@ void NrUdpSocketIpc::create_i(const nsACString& host, const uint16_t port) {
   ASSERT_ON_THREAD(io_thread_);
 
   uint32_t minBuffSize = 0;
-  RefPtr<dom::UDPSocketChild> socketChild = new dom::UDPSocketChild();
+  RefPtr socketChild = MakeRefPtr<dom::UDPSocketChild>();
 
   ReentrantMonitorAutoEnter mon(monitor_);
   if (!socket_child_) {
