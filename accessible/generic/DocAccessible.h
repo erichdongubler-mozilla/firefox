@@ -431,6 +431,12 @@ class DocAccessible : public HyperTextAccessible,
   void QueueCacheUpdateForPopoverInvokers(dom::Element* aPopoverEl);
 
   /**
+   * Returns true if this document is a print document, which is a static clone
+   * of the original document.
+   */
+  bool IsPrintDoc() const;
+
+  /**
    * Return the cache domain set that should be used for accessibles in this
    * document.
    */
