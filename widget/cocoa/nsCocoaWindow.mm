@@ -400,7 +400,7 @@ nsresult nsCocoaWindow::SynthesizeNativeKeyEvent(
 
 nsresult nsCocoaWindow::SynthesizeNativeMouseEvent(
     LayoutDeviceIntPoint aPoint, NativeMouseMessage aNativeMessage,
-    MouseButton aButton, nsIWidget::Modifiers aModifierFlags,
+    MouseButton aButton, nsIWidget::NativeModifiers aModifierFlags,
     nsISynthesizedEventCallback* aCallback) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
@@ -520,7 +520,7 @@ nsresult nsCocoaWindow::SynthesizeNativeMouseMove(
 
   return SynthesizeNativeMouseEvent(
       aPoint, NativeMouseMessage::Move, mozilla::MouseButton::eNotPressed,
-      nsIWidget::Modifiers::NO_MODIFIERS, aCallback);
+      nsIWidget::NativeModifiers::NO_MODIFIERS, aCallback);
 }
 
 nsresult nsCocoaWindow::SynthesizeNativeMouseScrollEvent(

@@ -5459,7 +5459,7 @@ nsresult TextInputHandlerBase::SynthesizeNativeKeyEvent(
 
   uint32_t modifierFlags =
       nsCocoaUtils::ConvertWidgetModifiersToMacModifierFlags(
-          static_cast<nsIWidget::Modifiers>(aModifierFlags));
+          static_cast<nsIWidget::NativeModifiers>(aModifierFlags));
   NSInteger windowNumber = [[mView window] windowNumber];
   bool sendFlagsChangedEvent = IsModifierKey(aNativeKeyCode);
   NSEventType eventType =

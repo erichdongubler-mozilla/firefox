@@ -1271,12 +1271,16 @@ bool WinUtils::IsIMEEnabled(IMEEnabled aIMEState) {
 /* static */
 void WinUtils::SetupKeyModifiersSequence(nsTArray<KeyPair>* aArray,
                                          uint32_t aModifiers, UINT aMessage) {
-  MOZ_ASSERT(!(aModifiers & nsIWidget::ALTGRAPH) ||
-             !(aModifiers & (nsIWidget::CTRL_L | nsIWidget::ALT_R)));
+  MOZ_ASSERT(
+      !(aModifiers &
+        static_cast<uint32_t>(nsIWidget::NativeModifiers::ALTGRAPH)) ||
+      !(aModifiers & static_cast<uint32_t>(nsIWidget::NativeModifiers::CTRL_L |
+                                           nsIWidget::NativeModifiers::ALT_R)));
   if (aMessage == WM_KEYUP) {
     // If AltGr is released, ControlLeft key is released first, then,
     // AltRight key is released.
-    if (aModifiers & nsIWidget::ALTGRAPH) {
+    if (aModifiers &
+        static_cast<uint32_t>(nsIWidget::NativeModifiers::ALTGRAPH)) {
       aArray->AppendElement(
           KeyPair(VK_CONTROL, VK_LCONTROL, ScanCode::eControlLeft));
       aArray->AppendElement(KeyPair(VK_MENU, VK_RMENU, ScanCode::eAltRight));
@@ -1296,7 +1300,8 @@ void WinUtils::SetupKeyModifiersSequence(nsTArray<KeyPair>* aArray,
     }
     // If AltGr is pressed, ControlLeft key is pressed first, then,
     // AltRight key is pressed.
-    if (aModifiers & nsIWidget::ALTGRAPH) {
+    if (aModifiers &
+        static_cast<uint32_t>(nsIWidget::NativeModifiers::ALTGRAPH)) {
       aArray->AppendElement(
           KeyPair(VK_CONTROL, VK_LCONTROL, ScanCode::eControlLeft));
       aArray->AppendElement(KeyPair(VK_MENU, VK_RMENU, ScanCode::eAltRight));
