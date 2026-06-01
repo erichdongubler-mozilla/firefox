@@ -1960,8 +1960,8 @@ mozilla::ipc::IPCResult BrowserParent::RecvSynthesizeNativeMouseMove(
 mozilla::ipc::IPCResult BrowserParent::RecvSynthesizeNativeMouseScrollEvent(
     const LayoutDeviceIntPoint& aPoint, const uint32_t& aNativeMessage,
     const double& aDeltaX, const double& aDeltaY, const double& aDeltaZ,
-    const uint32_t& aModifierFlags, const uint32_t& aAdditionalFlags,
-    const Maybe<uint64_t>& aCallbackId) {
+    const nsIWidget::NativeModifiers& aModifierFlags,
+    const uint32_t& aAdditionalFlags, const Maybe<uint64_t>& aCallbackId) {
   NS_ENSURE_TRUE(xpc::IsInAutomation(), IPC_FAIL(this, "Unexpected event"));
 
   nsCOMPtr<nsISynthesizedEventCallback> callback =

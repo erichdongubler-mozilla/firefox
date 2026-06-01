@@ -525,8 +525,9 @@ nsresult nsCocoaWindow::SynthesizeNativeMouseMove(
 
 nsresult nsCocoaWindow::SynthesizeNativeMouseScrollEvent(
     mozilla::LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage,
-    double aDeltaX, double aDeltaY, double aDeltaZ, uint32_t aModifierFlags,
-    uint32_t aAdditionalFlags, nsISynthesizedEventCallback* aCallback) {
+    double aDeltaX, double aDeltaY, double aDeltaZ,
+    nsIWidget::NativeModifiers aModifierFlags, uint32_t aAdditionalFlags,
+    nsISynthesizedEventCallback* aCallback) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   AutoSynthesizedEventCallbackNotifier notifier(aCallback);

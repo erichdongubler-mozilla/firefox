@@ -271,7 +271,7 @@ class nsWindow final : public nsIWidget {
 
   nsresult SynthesizeNativeMouseScrollEvent(
       LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage, double aDeltaX,
-      double aDeltaY, double aDeltaZ, uint32_t aModifierFlags,
+      double aDeltaY, double aDeltaZ, nsIWidget::NativeModifiers aModifierFlags,
       uint32_t aAdditionalFlags,
       nsISynthesizedEventCallback* aCallback) override;
 
