@@ -815,18 +815,7 @@ nsresult nsUnknownDecoder::ConvertEncodedData(nsIRequest* request,
 // nsIThreadRetargetableStreamListener methods
 //
 NS_IMETHODIMP
-nsUnknownDecoder::CheckListenerChain() {
-  nsCOMPtr<nsIThreadRetargetableStreamListener> listener;
-  {
-    MutexAutoLock lock(mMutex);
-    listener = do_QueryInterface(mNextListener);
-  }
-  if (!listener) {
-    return NS_ERROR_NO_INTERFACE;
-  }
-
-  return listener->CheckListenerChain();
-}
+nsUnknownDecoder::CheckListenerChain() { return NS_ERROR_NO_INTERFACE; }
 
 NS_IMETHODIMP
 nsUnknownDecoder::OnDataFinished(nsresult aStatus) {
