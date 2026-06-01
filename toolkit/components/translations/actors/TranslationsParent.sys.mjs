@@ -50,8 +50,22 @@ const USE_LEXICAL_SHORTLIST_PREF = "browser.translations.useLexicalShortlist";
  */
 
 /**
- * @import {DetectionResult} from "../translations.d.ts"
  * @import {TranslationsFeature} from "chrome://global/content/translations/TranslationsFeature.sys.mjs"
+ * @import {
+ *   DetectionResult,
+ *   LangTags,
+ *   LanguagePair,
+ *   LanguageTranslationModelFiles,
+ *   NonPivotLanguagePair,
+ *   RemoteSettingsClient,
+ *   SupportedLanguages,
+ *   TranslationErrors,
+ *   TranslationModelPayload,
+ *   TranslationModelRecord,
+ *   TranslationsEnginePayload,
+ *   TranslationsRecord,
+ *   WasmRecord,
+ * } from "../translations"
  */
 
 /** @type {Lazy} */
@@ -221,19 +235,8 @@ XPCOMUtils.defineLazyPreferenceGetter(
 const VERIFY_SIGNATURES_FROM_FS = false;
 
 /**
- * @typedef {import("../translations").TranslationModelRecord} TranslationModelRecord
- * @typedef {import("../translations").RemoteSettingsClient} RemoteSettingsClient
- * @typedef {import("../translations").TranslationModelPayload} TranslationModelPayload
- * @typedef {import("../translations").TranslationsEnginePayload} TranslationsEnginePayload
- * @typedef {import("../translations").LanguageTranslationModelFiles} LanguageTranslationModelFiles
- * @typedef {import("../translations").WasmRecord} WasmRecord
- * @typedef {import("../translations").LangTags} LangTags
- * @typedef {import("../translations").LanguagePair} LanguagePair
- * @typedef {import("../translations").ModelLanguages} ModelLanguages
- * @typedef {import("../translations").SupportedLanguages} SupportedLanguages
- * @typedef {import("../translations").TranslationErrors} TranslationErrors
+ * Implementation exists at toolkit/content/widgets/findbar.js
  *
- * // Implementation exists at toolkit/content/widgets/findbar.js
  * @typedef {any} MozFindbar
  */
 
@@ -2287,7 +2290,7 @@ export class TranslationsParent extends JSWindowActorParent {
    *
    * @param {RemoteSettingsClient} client
    *  - The Remote Settings client for which to handle deleted records.
-   * @param {TranslationModelRecord[]} deletedRecords
+   * @param {TranslationsRecord[]} deletedRecords
    *  - The list of records that were deleted from the client's database.
    */
   static async #handleDeletedRecords(client, deletedRecords) {
@@ -2326,7 +2329,7 @@ export class TranslationsParent extends JSWindowActorParent {
    *
    * @param {RemoteSettingsClient} client
    *  - The Remote Settings client for which to handle updated records.
-   * @param {{old: TranslationModelRecord, new: TranslationModelRecord}[]} updatedRecords
+   * @param {{old: TranslationsRecord, new: TranslationsRecord}[]} updatedRecords
    *  - The list of records that were updated in the client's database.
    */
   static async #handleUpdatedRecords(client, updatedRecords) {
@@ -2448,11 +2451,11 @@ export class TranslationsParent extends JSWindowActorParent {
    *
    * @param {object} event - The sync event.
    * @param {object} event.data - The data associated with the sync event.
-   * @param {TranslationModelRecord[]} event.data.created
+   * @param {WasmRecord[]} event.data.created
    *  - The list of Remote Settings records that were created in the sync event.
-   * @param {{old: TranslationModelRecord, new: TranslationModelRecord}[]} event.data.updated
+   * @param {{old: WasmRecord, new: WasmRecord}[]} event.data.updated
    *  - The list of Remote Settings records that were updated in the sync event.
-   * @param {TranslationModelRecord[]} event.data.deleted
+   * @param {WasmRecord[]} event.data.deleted
    *  - The list of Remote Settings records that were deleted in the sync event.
    */
   static async #handleTranslationsWasmSync({
@@ -2528,7 +2531,7 @@ export class TranslationsParent extends JSWindowActorParent {
    *     This function should take a record as input and return a string that represents the lookup key for the record.
    *     For most record types, the name (default) is sufficient, however if a collection contains records with
    *     non-unique name values, it may be necessary to provide an alternative function here.
-   * @returns {Array<TranslationModelRecord | WasmRecord>}
+   * @returns {Promise<Array<TranslationsRecord>>}
    */
   static async getMaxSupportedVersionRecords(
     remoteSettingsClient,
