@@ -388,24 +388,24 @@ async function openAboutTranslations({
    * @param {number} count - Count of the language pairs expected.
    */
   const resolveDownloads = async count => {
-    await remoteClients.translationsWasm.waitForPendingDownloads(1);
-    await remoteClients.translationsWasm.resolvePendingDownloads(1);
-    await remoteClients.translationModels.waitForPendingDownloads(
-      downloadedFilesPerLanguagePair() * count
-    );
-    await remoteClients.translationModels.resolvePendingDownloads(
-      downloadedFilesPerLanguagePair() * count
-    );
+    await Promise.all([
+      remoteClients.translationsWasm.resolvePendingDownloads(1),
+      remoteClients.translationModels.resolvePendingDownloads(
+        downloadedFilesPerLanguagePair() * count
+      ),
+    ]);
   };
 
   /**
    * @param {number} count - Count of the language pairs expected.
    */
   const rejectDownloads = async count => {
-    await remoteClients.translationsWasm.rejectPendingDownloads(1);
-    await remoteClients.translationModels.rejectPendingDownloads(
-      downloadedFilesPerLanguagePair() * count
-    );
+    await Promise.all([
+      remoteClients.translationsWasm.rejectPendingDownloads(1),
+      remoteClients.translationModels.rejectPendingDownloads(
+        downloadedFilesPerLanguagePair() * count
+      ),
+    ]);
   };
 
   const runInPage = (callback, data = {}) => {
@@ -592,10 +592,10 @@ class TranslationsSettingsTestUtils {
   }
 
   async openTranslationsSubpageFromDocument() {
-    const manageButton = await waitForCondition(
-      () => this.document.getElementById("translationsManageButton"),
-      "Waiting for translationsManageButton"
-    );
+    const manageButton = await waitForCondition(() => {
+      const button = this.document.getElementById("translationsManageButton");
+      return button && BrowserTestUtils.isVisible(button) ? button : null;
+    }, "Waiting for translationsManageButton");
     manageButton.scrollIntoView({ behavior: "instant", block: "center" });
 
     await this.assertEvents(
@@ -624,10 +624,10 @@ class TranslationsSettingsTestUtils {
       });
 
     const document = gBrowser.selectedBrowser.contentDocument;
-    const manageButton = await waitForCondition(
-      () => document.getElementById("translationsManageButton"),
-      "Waiting for translationsManageButton"
-    );
+    const manageButton = await waitForCondition(() => {
+      const button = document.getElementById("translationsManageButton");
+      return button && BrowserTestUtils.isVisible(button) ? button : null;
+    }, "Waiting for translationsManageButton");
     manageButton.scrollIntoView({ behavior: "instant", block: "center" });
 
     await translationsSettingsTestUtils.assertEvents(
@@ -1155,9 +1155,6 @@ class TranslationsSettingsTestUtils {
 
     const modelNames =
       TranslationsSettingsTestUtils.getLanguageModelNames(langTag);
-    await remoteClients.translationModels.waitForPendingDownloads(
-      modelNames.length
-    );
     await remoteClients.translationModels.rejectPendingDownloads(
       modelNames.length
     );
@@ -2598,13 +2595,17 @@ async function createAndMockRemoteSettings({
   }
 
   const remoteClients = {
-    translationModels: await createTranslationModelsRemoteClient(
+    translationModels: await createTranslationModelsRemoteClient({
+      collectionName: "test-translation-models",
+      uniquePerTestRun: true,
       autoDownloadFromRemoteSettings,
-      languagePairs
-    ),
-    translationsWasm: await createTranslationsWasmRemoteClient(
-      autoDownloadFromRemoteSettings
-    ),
+      languagePairs,
+    }),
+    translationsWasm: await createTranslationsWasmRemoteClient({
+      collectionName: "test-translation-wasm",
+      uniquePerTestRun: true,
+      autoDownloadFromRemoteSettings,
+    }),
   };
 
   // The TranslationsParent will pull the language pair values from the JSON dump
@@ -3244,14 +3245,12 @@ async function autoTranslatePage(options) {
  */
 
 /**
+ * Creates a mocked Remote Settings attachments interface for tests.
+ *
  * @param {RemoteSettingsClient} client
- * @param {string} mockedCollectionName - The name of the mocked collection without
- *  the incrementing "id" part. This is provided so that attachments can be asserted
- *  as being of a certain version.
- * @param {boolean} autoDownloadFromRemoteSettings - Skip the manual download process,
- *  and automatically download the files. Normally it's preferrable to manually trigger
- *  the downloads to trigger the download behavior, but this flag lets you bypass this
- *  and automatically download the files.
+ * @param {string} mockedCollectionName
+ * @param {boolean} autoDownloadFromRemoteSettings
+ * @returns {AttachmentMock}
  */
 function createAttachmentMock(
   client,
@@ -3259,21 +3258,82 @@ function createAttachmentMock(
   autoDownloadFromRemoteSettings
 ) {
   const pendingDownloads = [];
+  const pendingDownloadWaiters = [];
+  const downloadedById = new Set();
+
+  client.sync = async () => {
+    info(
+      `Skipping network sync for mocked Remote Settings collection "${client.collectionName}"`
+    );
+    return { ok: true };
+  };
+
+  const realGet = client.get.bind(client);
+  client.get = async opts => {
+    const records = await realGet(opts);
+    for (const record of records) {
+      if (!record.attachment) {
+        record.attachment = {};
+      }
+      record.attachment.isDownloaded = downloadedById.has(record.id);
+    }
+    return records;
+  };
+
+  function markIsDownloaded(record, value) {
+    if (!record.attachment) {
+      record.attachment = {};
+    }
+    record.attachment.isDownloaded = value;
+    if (record.id != null) {
+      if (value) {
+        downloadedById.add(record.id);
+      } else {
+        downloadedById.delete(record.id);
+      }
+    }
+  }
+
+  client.attachments.isDownloaded = async record => {
+    const isDownloaded = !!record?.id && downloadedById.has(record.id);
+    if (record) {
+      markIsDownloaded(record, isDownloaded);
+    }
+    return isDownloaded;
+  };
 
   client.attachments.download = record =>
     new Promise((resolve, reject) => {
-      console.log("Download requested:", client.collectionName, record.name);
+      info(
+        `Download requested: ${client.collectionName}, ${record.name} v${record.version}`
+      );
       if (autoDownloadFromRemoteSettings) {
         const encoder = new TextEncoder();
         const { buffer } = encoder.encode(
           `Mocked download: ${mockedCollectionName} ${record.name} ${record.version}`
         );
-
+        markIsDownloaded(record, true);
         resolve({ buffer });
       } else {
-        pendingDownloads.push({ record, resolve, reject });
+        pendingDownloads.push({
+          record,
+          resolve: result => {
+            markIsDownloaded(record, true);
+            resolve(result);
+          },
+          reject,
+        });
+        notifyPendingDownloadsChanged();
       }
     });
+
+  client.attachments.deleteDownloaded = async record => {
+    markIsDownloaded(record, false);
+  };
+
+  client.attachments.deleteAll = async () => {
+    downloadedById.clear();
+  };
 
   function resolvePendingDownloads(expectedDownloadCount) {
     info(
@@ -3305,18 +3365,24 @@ function createAttachmentMock(
 
     // Wait for the expected downloads to start arriving and reject them as they do.
     while (names.length < expectedDownloadCount) {
-      try {
-        await waitForPendingDownloads(names.length + 1);
-        while (names.length < expectedDownloadCount && rejectNext()) {
-          // Keep rejecting until we reach the expected count.
+      if (!pendingDownloads.length) {
+        try {
+          await waitForPendingDownloads(1, {
+            interval: 100,
+            maxTries: 50,
+          });
+        } catch (error) {
+          // Timeout waiting for downloads. This can happen if downloads aren't
+          // requested or if they complete through a different path. Log and continue.
+          info(
+            `Timeout or error waiting for download ${names.length + 1}: ${error.message}`
+          );
+          break;
         }
-      } catch (error) {
-        // Timeout waiting for downloads - this can happen if downloads aren't
-        // requested or if they complete through a different path. Log and continue.
-        info(
-          `Timeout or error waiting for download ${names.length + 1}: ${error.message}`
-        );
-        break;
+      }
+
+      while (names.length < expectedDownloadCount && rejectNext()) {
+        // Keep rejecting until we reach the expected count.
       }
     }
 
@@ -3347,15 +3413,18 @@ function createAttachmentMock(
       if (!pendingDownloads.length) {
         try {
           await waitForPendingDownloads(1, {
-            interval: 10,
+            interval: 100,
             maxTries: 50,
           });
-        } catch {
+        } catch (error) {
+          info(
+            `Stopped resolving downloads for "${client.collectionName}" after resolving ${names.length} of ${expectedDownloadCount}: ${error.message}`
+          );
           break;
         }
       }
 
-      let download = pendingDownloads.shift();
+      const download = pendingDownloads.shift();
       console.log(`Handling download:`, client.collectionName);
       action(download);
       names.push(download.record.name);
@@ -3383,16 +3452,47 @@ function createAttachmentMock(
     );
   }
 
+  function notifyPendingDownloadsChanged() {
+    for (let i = pendingDownloadWaiters.length - 1; i >= 0; i--) {
+      const waiter = pendingDownloadWaiters[i];
+      if (pendingDownloads.length >= waiter.expectedCount) {
+        pendingDownloadWaiters.splice(i, 1);
+        waiter.resolve();
+      }
+    }
+  }
+
   function waitForPendingDownloads(
     expectedCount,
-    { interval = 100, maxTries = 10 } = {}
+    { interval = 100, maxTries = 50 } = {}
   ) {
-    return waitForCondition(
-      () => pendingDownloads.length >= expectedCount,
-      `Waiting for ${expectedCount} pending downloads for "${client.collectionName}"`,
-      interval,
-      maxTries
-    );
+    if (pendingDownloads.length >= expectedCount) {
+      return Promise.resolve();
+    }
+
+    const { promise, resolve, reject } = Promise.withResolvers();
+    let timeoutId;
+    const waiter = {
+      expectedCount,
+      resolve: () => {
+        clearTimeout(timeoutId);
+        resolve();
+      },
+    };
+    timeoutId = setTimeout(() => {
+      const waiterIndex = pendingDownloadWaiters.indexOf(waiter);
+      if (waiterIndex >= 0) {
+        pendingDownloadWaiters.splice(waiterIndex, 1);
+      }
+      reject(
+        new Error(
+          `Timed out waiting for ${expectedCount} pending downloads for "${client.collectionName}". Current pending downloads: ${pendingDownloads.length}`
+        )
+      );
+    }, interval * maxTries);
+
+    pendingDownloadWaiters.push(waiter);
+    return promise;
   }
 
   return {
@@ -3428,9 +3528,29 @@ function downloadedFilesPerLanguagePair(splitVocab = false) {
     : expectedRecords - 1;
 }
 
-function createRecordsForLanguagePair(fromLang, toLang, splitVocab = false) {
+/**
+ * Creates mock Remote Settings records for a single language pair.
+ *
+ * @param {object} options
+ * @param {string} options.sourceLanguage
+ * @param {string} options.targetLanguage
+ * @param {boolean} [options.splitVocab=false]
+ * @param {number} [options.majorVersion=TranslationsParent.LANGUAGE_MODEL_MAJOR_VERSION_MAX]
+ * @returns {TranslationModelRecord[]}
+ */
+function createRecordsForLanguagePair({
+  sourceLanguage,
+  targetLanguage,
+  splitVocab = false,
+  majorVersion = TranslationsParent.LANGUAGE_MODEL_MAJOR_VERSION_MAX,
+}) {
+  if (!sourceLanguage || !targetLanguage) {
+    throw new Error(
+      "Both sourceLanguage and targetLanguage must be provided to createRecordsForLanguagePair."
+    );
+  }
   const records = [];
-  const lang = fromLang + toLang;
+  const lang = sourceLanguage + targetLanguage;
   const models = [
     { fileType: "model", name: `model.${lang}.intgemm.alphas.bin` },
     { fileType: "lex", name: `lex.50.50.${lang}.s2t.bin` },
@@ -3465,10 +3585,10 @@ function createRecordsForLanguagePair(fromLang, toLang, splitVocab = false) {
     records.push({
       id: crypto.randomUUID(),
       name,
-      sourceLanguage: fromLang,
-      targetLanguage: toLang,
+      sourceLanguage,
+      targetLanguage,
       fileType,
-      version: TranslationsParent.LANGUAGE_MODEL_MAJOR_VERSION_MAX + ".0",
+      version: `${majorVersion}.0`,
       last_modified: Date.now(),
       schema: Date.now(),
       attachment: JSON.parse(JSON.stringify(attachment)), // Making a deep copy
@@ -3480,15 +3600,23 @@ function createRecordsForLanguagePair(fromLang, toLang, splitVocab = false) {
 /**
  * Creates a new WASM record for the Bergamot Translator to store in Remote Settings.
  *
+ * @param {number} [majorVersion]
+ *
  * @returns {WasmRecord}
  */
-function createWasmRecord() {
+function createWasmRecord(
+  majorVersion = TranslationsParent.BERGAMOT_MAJOR_VERSION
+) {
   return {
     id: crypto.randomUUID(),
     name: "bergamot-translator",
-    version: TranslationsParent.BERGAMOT_MAJOR_VERSION + ".0",
+    version: majorVersion + ".0",
     last_modified: Date.now(),
     schema: Date.now(),
+    attachment: {
+      size: 123,
+      isDownloaded: false,
+    },
   };
 }
 
@@ -3499,63 +3627,89 @@ function createWasmRecord() {
 let _remoteSettingsMockId = 0;
 
 /**
- * Creates a local RemoteSettingsClient for use within tests.
+ * Creates a RemoteSettingsClient seeded with deterministic translation model records.
  *
- * @param {boolean} autoDownloadFromRemoteSettings
- * @param {object[]} langPairs
- * @returns {RemoteSettingsClient}
+ * @param {object} options
+ * @param {string} options.collectionName
+ * @param {boolean} [options.uniquePerTestRun=false]
+ * @param {boolean} [options.autoDownloadFromRemoteSettings=false]
+ * @param {Array<{fromLang?: string, toLang?: string, sourceLanguage?: string, targetLanguage?: string}>} [options.languagePairs=[]]
+ * @param {number} [options.majorVersion]
+ * @returns {Promise<AttachmentMock>}
  */
-async function createTranslationModelsRemoteClient(
-  autoDownloadFromRemoteSettings,
-  langPairs
-) {
+async function createTranslationModelsRemoteClient({
+  collectionName,
+  uniquePerTestRun = false,
+  autoDownloadFromRemoteSettings = false,
+  languagePairs = [],
+  majorVersion = TranslationsParent.LANGUAGE_MODEL_MAJOR_VERSION_MAX,
+}) {
   const records = [];
-  for (const { fromLang, toLang } of langPairs) {
-    records.push(...createRecordsForLanguagePair(fromLang, toLang));
+  for (const pair of languagePairs) {
+    const {
+      fromLang,
+      toLang,
+      sourceLanguage = fromLang,
+      targetLanguage = toLang,
+    } = pair;
+    records.push(
+      ...createRecordsForLanguagePair({
+        sourceLanguage,
+        targetLanguage,
+        majorVersion,
+      })
+    );
   }
 
   const { RemoteSettings } = ChromeUtils.importESModule(
     "resource://services-settings/remote-settings.sys.mjs"
   );
-  const mockedCollectionName = "test-translation-models";
-  const client = RemoteSettings(
-    `${mockedCollectionName}-${_remoteSettingsMockId++}`
-  );
+  const clientCollectionName = uniquePerTestRun
+    ? `${collectionName}-${_remoteSettingsMockId++}`
+    : collectionName;
+  const client = RemoteSettings(clientCollectionName);
   const metadata = {};
   await client.db.clear();
   await client.db.importChanges(metadata, Date.now(), records);
 
   return createAttachmentMock(
     client,
-    mockedCollectionName,
+    collectionName,
     autoDownloadFromRemoteSettings
   );
 }
 
 /**
- * Creates a local RemoteSettingsClient for use within tests.
+ * Creates a RemoteSettingsClient seeded with WASM metadata for tests.
  *
- * @param {boolean} autoDownloadFromRemoteSettings
- * @returns {RemoteSettingsClient}
+ * @param {object} [options]
+ * @param {string} [options.collectionName="test-translation-wasm"]
+ * @param {boolean} [options.uniquePerTestRun=true]
+ * @param {boolean} [options.autoDownloadFromRemoteSettings=false]
+ * @param {number} [options.majorVersion=TranslationsParent.BERGAMOT_MAJOR_VERSION]
+ * @returns {Promise<AttachmentMock>}
  */
-async function createTranslationsWasmRemoteClient(
-  autoDownloadFromRemoteSettings
-) {
-  const records = [createWasmRecord()];
+async function createTranslationsWasmRemoteClient({
+  collectionName = "test-translation-wasm",
+  uniquePerTestRun = true,
+  autoDownloadFromRemoteSettings = false,
+  majorVersion = TranslationsParent.BERGAMOT_MAJOR_VERSION,
+} = {}) {
+  const records = [createWasmRecord(majorVersion)];
   const { RemoteSettings } = ChromeUtils.importESModule(
     "resource://services-settings/remote-settings.sys.mjs"
   );
-  const mockedCollectionName = "test-translation-wasm";
-  const client = RemoteSettings(
-    `${mockedCollectionName}-${_remoteSettingsMockId++}`
-  );
+  const clientCollectionName = uniquePerTestRun
+    ? `${collectionName}-${_remoteSettingsMockId++}`
+    : collectionName;
+  const client = RemoteSettings(clientCollectionName);
   const metadata = {};
   await client.db.clear();
   await client.db.importChanges(metadata, Date.now(), records);
 
   return createAttachmentMock(
     client,
-    mockedCollectionName,
+    collectionName,
     autoDownloadFromRemoteSettings
   );
 }
@@ -3822,6 +3976,7 @@ async function setupAboutPreferences(
       // Enabled by default.
       ["browser.translations.enable", true],
       ["browser.translations.logLevel", "All"],
+      ["identity.fxaccounts.account.device.name", ""],
       [USE_LEXICAL_SHORTLIST_PREF, false],
       ["browser.settings-redesign.enabled", true],
       ...prefs,

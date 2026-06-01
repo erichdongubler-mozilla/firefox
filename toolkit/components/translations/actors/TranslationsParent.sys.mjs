@@ -3179,14 +3179,7 @@ export class TranslationsParent extends JSWindowActorParent {
       languageB,
       /* includePivotRecords */ true
     )) {
-      let isDownloaded = false;
-      if (TranslationsParent.isInAutomation()) {
-        isDownloaded = record.attachment.isDownloaded;
-      } else {
-        isDownloaded = await client.attachments.isDownloaded(record);
-      }
-
-      if (isDownloaded) {
+      if (await client.attachments.isDownloaded(record)) {
         downloadedPairs.add(
           TranslationsParent.nonPivotKey(
             record.sourceLanguage,
