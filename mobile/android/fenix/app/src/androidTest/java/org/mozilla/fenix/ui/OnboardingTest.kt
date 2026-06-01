@@ -25,10 +25,7 @@ class OnboardingTest {
     @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
-            HomeActivityIntentTestRule.withDefaultSettingsOverrides(
-                launchActivity = false,
-                skipOnboarding = false,
-            ),
+            HomeActivityIntentTestRule.withDefaultSettingsOverrides(launchActivity = false),
         ) { it.activity }
 
     @get:Rule(order = 2)

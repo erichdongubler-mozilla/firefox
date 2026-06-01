@@ -48,7 +48,9 @@ class NimbusMessagingHomescreenTest {
     @get:Rule(order = 2)
     val retryableComposeTestRule = RetryableComposeTestRule {
         AndroidComposeTestRuleV2(
-            HomeActivityIntentTestRule.withDefaultSettingsOverrides().withIntent(
+            HomeActivityIntentTestRule.withDefaultSettingsOverrides(
+                skipOnboarding = true,
+            ).withIntent(
                 Intent().apply {
                     action = Intent.ACTION_VIEW
                 },

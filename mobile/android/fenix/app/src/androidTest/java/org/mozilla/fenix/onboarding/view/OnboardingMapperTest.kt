@@ -31,7 +31,7 @@ class OnboardingMapperTest {
 
     @get:Rule
     val activityTestRule =
-        HomeActivityIntentTestRule.withDefaultSettingsOverrides()
+        HomeActivityIntentTestRule.withDefaultSettingsOverrides(skipOnboarding = true)
 
     private lateinit var junoOnboardingFeature: JunoOnboarding
     private lateinit var jexlConditions: Map<String, String>

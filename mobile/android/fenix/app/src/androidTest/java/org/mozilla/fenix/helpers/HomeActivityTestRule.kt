@@ -16,6 +16,7 @@ import androidx.test.espresso.intent.rule.IntentsTestRule
 import androidx.test.rule.ActivityTestRule
 import mozilla.components.feature.sitepermissions.SitePermissionsRules
 import mozilla.components.support.base.log.logger.Logger
+import org.junit.rules.TestRule
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.components.initializeGlean
 import org.mozilla.fenix.ext.components
@@ -141,7 +142,7 @@ class HomeActivityTestRule(
         fun withDefaultSettingsOverrides(
             initialTouchMode: Boolean = false,
             launchActivity: Boolean = true,
-            skipOnboarding: Boolean = true,
+            skipOnboarding: Boolean = false,
             useNewCrashReporterFlow: Boolean = false,
         ) = HomeActivityTestRule(
             initialTouchMode = initialTouchMode,
@@ -325,7 +326,7 @@ class HomeActivityIntentTestRule internal constructor(
         fun withDefaultSettingsOverrides(
             initialTouchMode: Boolean = false,
             launchActivity: Boolean = true,
-            skipOnboarding: Boolean = true,
+            skipOnboarding: Boolean = false,
         ) = HomeActivityIntentTestRule(
             initialTouchMode = initialTouchMode,
             launchActivity = launchActivity,
