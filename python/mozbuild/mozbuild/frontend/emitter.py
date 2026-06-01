@@ -1011,6 +1011,30 @@ class TreeMetadataEmitter(LoggingMixin):
                     )
                 seen[basename] = (src, symbol)
 
+        extra_link_deps = context.get("EXTRA_LINK_DEPS")
+        if extra_link_deps:
+            link_targets = [
+                l
+                for l in linkables
+                if isinstance(l, (Program, SimpleProgram, SharedLibrary))
+            ]
+            if not link_targets:
+                raise SandboxValidationError(
+                    "EXTRA_LINK_DEPS is set but no program or shared library "
+                    "is defined in this directory.",
+                    context,
+                )
+            for dep in extra_link_deps:
+                if isinstance(dep, SourcePath) and not os.path.exists(dep.full_path):
+                    raise SandboxValidationError(
+                        f"Path specified in EXTRA_LINK_DEPS does not exist: {dep} "
+                        f"(resolved to {dep.full_path})",
+                        context,
+                    )
+            deps = list(extra_link_deps)
+            for linkable in link_targets:
+                linkable.extra_link_deps = deps
+
         # Only emit sources if we have linkables defined in the same context.
         # Note the linkables are not emitted in this function, but much later,
         # after aggregation (because of e.g. USE_LIBS processing).

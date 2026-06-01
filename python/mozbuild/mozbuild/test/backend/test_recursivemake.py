@@ -1481,6 +1481,28 @@ class TestRecursiveMakeBackend(BackendTester):
                 ][0]
                 self.assertEqual(program, expected_program)
 
+    def test_extra_link_deps(self):
+        """Test that EXTRA_LINK_DEPS is handled properly."""
+        env = self._consume("extra-link-deps", RecursiveMakeBackend)
+
+        subdir_backend = mozpath.join(env.topobjdir, "subdir", "backend.mk")
+        with open(subdir_backend) as fh:
+            subdir_content = fh.read()
+        self.assertIn(
+            "extra-link-deps-program: $(srcdir)/dep.txt",
+            subdir_content,
+        )
+        self.assertIn(
+            "extra-link-deps-program: generated.plist",
+            subdir_content,
+        )
+        self.assertIn("generated.plist:", subdir_content)
+
+        root_backend = mozpath.join(env.topobjdir, "backend.mk")
+        with open(root_backend) as fh:
+            root_content = fh.read()
+        self.assertNotIn("generated.plist:", root_content)
+
     def test_shared_lib_paths(self):
         """SHARED_LIBRARYs with various moz.build settings that change the destination should
         produce the expected paths in backend.mk."""

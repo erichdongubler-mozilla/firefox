@@ -1607,6 +1607,11 @@ class RecursiveMakeBackend(MakeBackend):
         if getattr(obj, "symbols_file", None):
             backend_file.write_once("%s: %s\n" % (obj_target, obj.symbols_file))
 
+        for dep in getattr(obj, "extra_link_deps", ()):
+            backend_file.write_once(
+                f"{obj_target}: {self._pretty_path(dep, backend_file)}\n"
+            )
+
         for lib in shared_libs:
             assert obj.KIND not in {"host", "wasm"}
             backend_file.write_once(

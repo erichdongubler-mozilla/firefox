@@ -2669,6 +2669,18 @@ VARIABLES = {
            appear in the moz.build file.
         """,
     ),
+    "EXTRA_LINK_DEPS": (
+        ContextDerivedTypedList(Path, StrictOrderingOnAppendList),
+        list,
+        """Extra prerequisites for the programs and shared libraries
+           declared in this directory.
+
+           Use this for files referenced by LDFLAGS that the linker reads
+           at link time (sectcreate inputs, response files, version
+           scripts) so backends can declare them as prerequisites of the
+           link target.
+        """,
+    ),
     "EXTRA_DSO_LDOPTS": (
         List,
         list,

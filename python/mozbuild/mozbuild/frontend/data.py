@@ -374,6 +374,7 @@ class Linkable(ContextDerived):
 
     __slots__ = (
         "cxx_link",
+        "extra_link_deps",
         "lib_defines",
         "linked_libraries",
         "linked_system_libs",
@@ -387,6 +388,7 @@ class Linkable(ContextDerived):
         self.linked_system_libs = []
         self.lib_defines = Defines(context, OrderedDict())
         self.sources = defaultdict(list)
+        self.extra_link_deps = []
 
     @property
     def output_path(self):
@@ -1441,6 +1443,7 @@ class GeneratedFile(ContextDerived):
                     ".m",
                     ".mm",
                     ".def",
+                    ".plist",
                     ".s",
                     ".S",
                     "symverscript",
