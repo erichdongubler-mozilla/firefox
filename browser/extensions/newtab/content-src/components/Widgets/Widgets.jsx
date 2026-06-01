@@ -241,9 +241,16 @@ function Widgets() {
     ? "large"
     : "medium";
 
-  // Widget size is "small" only when maximize feature is enabled and widgets
-  // are currently minimized. Otherwise defaults to "medium".
-  const widgetSize = widgetsMayBeMaximized && !isMaximized ? "small" : "medium";
+  // Widget size is "medium" only when maximize feature is enabled and widgets
+  // are currently minimized. Otherwise defaults to "large".
+  //
+  // This is a row-level approximation, not a per-widget truth. Users can resize
+  // widgets individually, so this single value will not reflect the real size of
+  // every widget in the row. For accurate per-widget sizing, rely on each
+  // widget's own change-size event (WIDGETS_USER_EVENT with user_action
+  // "change_size", which carries the widget's real widget_size) as the source of
+  // truth rather than this value.
+  const widgetSize = widgetsMayBeMaximized && !isMaximized ? "medium" : "large";
 
   // track previous timerEnabled state to detect when it becomes disabled
   const prevTimerEnabledRef = useRef(timerEnabled);
@@ -323,7 +330,7 @@ function Widgets() {
   function toggleMaximize() {
     const newMaximizedState = !isMaximized;
     const newWidgetSize =
-      widgetsMayBeMaximized && !newMaximizedState ? "small" : "medium";
+      widgetsMayBeMaximized && !newMaximizedState ? "medium" : "large";
 
     batch(() => {
       dispatch(ac.SetPref(PREF_WIDGETS_MAXIMIZED, newMaximizedState));

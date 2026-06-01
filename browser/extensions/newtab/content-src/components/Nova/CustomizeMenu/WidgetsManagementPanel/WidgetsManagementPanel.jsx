@@ -5,8 +5,9 @@
 // @nova-cleanup(move-directory): Move to components/CustomizeMenu/WidgetsManagementPanel/ after Nova ships
 
 import React, { useEffect, useRef } from "react";
-import { batch, useDispatch } from "react-redux";
+import { batch, useDispatch, useSelector } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 // eslint-disable-next-line no-shadow
 import { CSSTransition } from "react-transition-group";
 
@@ -21,10 +22,9 @@ function WidgetsManagementPanel({
   mayHaveListsWidget,
   mayHaveSportsWidget,
   mayHaveClocksWidget,
-  mayHaveWeatherForecast,
-  weatherDisplay,
   setPref,
 }) {
+  const prefs = useSelector(state => state.Prefs.values);
   const arrowButtonRef = useRef(null);
   const panelRef = useRef(null);
   const dispatch = useDispatch();
@@ -73,20 +73,10 @@ function WidgetsManagementPanel({
       }
 
       if (widgetName) {
-        const { widgetsMaximized, widgetsMayBeMaximized } = enabledWidgets;
-
-        let widgetSize;
-        if (widgetName === "weather") {
-          if (mayHaveWeatherForecast && weatherDisplay === "detailed") {
-            widgetSize =
-              widgetsMayBeMaximized && !widgetsMaximized ? "small" : "medium";
-          } else {
-            widgetSize = "mini";
-          }
-        } else {
-          widgetSize =
-            widgetsMayBeMaximized && !widgetsMaximized ? "small" : "medium";
-        }
+        const widget = WIDGET_REGISTRY.find(
+          w => w.telemetryName === widgetName
+        );
+        const widgetSize = resolveWidgetSize(widget, prefs);
 
         dispatch(
           ac.OnlyToMain({
