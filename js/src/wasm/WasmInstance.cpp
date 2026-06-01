@@ -1526,10 +1526,10 @@ template void* Instance::arrayNew<false>(Instance* instance,
                                          uint32_t typeDefIndex,
                                          gc::AllocSite* allocSite);
 
-// Copies from a data segment into a wasm GC array. Performs the necessary
-// bounds checks, accounting for the array's element size. If this function
-// returns false, it has already reported a trap error. Null arrays should
-// be handled in the caller.
+// Copies from a (possibly dropped) data segment into a wasm GC array. Performs
+// the necessary bounds checks, accounting for the array's element size. If this
+// function returns false, it has already reported a trap error. Null arrays
+// should be handled in the caller.
 static bool ArrayCopyFromData(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
                               uint32_t arrayIndex, const DataSegment* seg,
                               uint32_t segByteOffset, uint32_t numElements) {
@@ -1539,7 +1539,8 @@ static bool ArrayCopyFromData(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   CheckedUint32 numBytesToCopy =
       CheckedUint32(numElements) * CheckedUint32(elemSize);
   if (!numBytesToCopy.isValid()) {
-    // Because the request implies that 2^32 or more bytes are to be copied.
+    // If 2^32 or more bytes are to be copied, this is necessarily out of bounds
+    // on the data segment.
     ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
     return false;
   }
@@ -1551,7 +1552,7 @@ static bool ArrayCopyFromData(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   CheckedUint32 lastByteOffsetPlus1 =
       CheckedUint32(segByteOffset) + numBytesToCopy;
 
-  CheckedUint32 numBytesAvailable(seg->bytes.length());
+  CheckedUint32 numBytesAvailable(seg ? seg->bytes.length() : 0);
   if (!lastByteOffsetPlus1.isValid() || !numBytesAvailable.isValid() ||
       lastByteOffsetPlus1.value() > numBytesAvailable.value()) {
     // Because the last byte to copy doesn't exist inside `seg->bytes`.
@@ -1574,6 +1575,7 @@ static bool ArrayCopyFromData(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   // Because `numBytesToCopy` is an in-range `CheckedUint32`, the cast to
   // `size_t` is safe even on a 32-bit target.
   if (numElements != 0) {
+    MOZ_RELEASE_ASSERT(seg);
     memcpy(&arrayObj->data_[dstByteOffset], &seg->bytes[segByteOffset],
            size_t(numBytesToCopy.value()));
   }
@@ -1631,17 +1633,6 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
                      "ensured by validation");
   const DataSegment* seg = instance->passiveDataSegments_[segIndex];
 
-  // `seg` will be nullptr if the segment has already been 'data.drop'ed
-  // (either implicitly in the case of 'active' segments during instantiation,
-  // or explicitly by the data.drop instruction.)  In that case we can
-  // continue only if there's no need to copy any data out of it.
-  if (!seg && (numElements != 0 || segByteOffset != 0)) {
-    ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
-    return nullptr;
-  }
-  // At this point, if `seg` is null then `numElements` and `segByteOffset`
-  // are both zero.
-
   Rooted<WasmArrayObject*> arrayObj(
       cx,
       WasmArrayObject::createArray<true>(
@@ -1651,11 +1642,6 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
     return nullptr;
   }
   MOZ_RELEASE_ASSERT(arrayObj->is<WasmArrayObject>());
-
-  if (!seg) {
-    // A zero-length array was requested and has been created, so we're done.
-    return arrayObj;
-  }
 
   if (!ArrayCopyFromData(cx, arrayObj, 0, seg, segByteOffset, numElements)) {
     // Trap errors will be reported by ArrayCopyFromData.
@@ -1731,27 +1717,10 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
                      "ensured by validation");
   const DataSegment* seg = instance->passiveDataSegments_[segIndex];
 
-  // `seg` will be nullptr if the segment has already been 'data.drop'ed
-  // (either implicitly in the case of 'active' segments during instantiation,
-  // or explicitly by the data.drop instruction.)  In that case we can
-  // continue only if there's no need to copy any data out of it.
-  if (!seg && (numElements != 0 || segByteOffset != 0)) {
-    ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
-    return -1;
-  }
-  // At this point, if `seg` is null then `numElements` and `segByteOffset`
-  // are both zero.
-
   // Trap if the array is null.
   if (!array) {
     ReportTrapError(cx, JSMSG_WASM_DEREF_NULL);
     return -1;
-  }
-
-  if (!seg) {
-    // The segment was dropped, therefore a zero-length init was requested, so
-    // we're done.
-    return 0;
   }
 
   // Get hold of the array.
