@@ -91,7 +91,6 @@ import org.mozilla.fenix.GleanMetrics.CreditCards
 import org.mozilla.fenix.GleanMetrics.CustomizeHome
 import org.mozilla.fenix.GleanMetrics.Events.marketingNotificationAllowed
 import org.mozilla.fenix.GleanMetrics.GenaiAiControls
-import org.mozilla.fenix.GleanMetrics.Integrity
 import org.mozilla.fenix.GleanMetrics.Logins
 import org.mozilla.fenix.GleanMetrics.Metrics
 import org.mozilla.fenix.GleanMetrics.PerfStartup
@@ -577,14 +576,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         }
         runOnVisualCompleteness(queue) {
             GlobalScope.launch(IO) {
-                val start = System.currentTimeMillis()
-                val result = components.integrityClient.warmUp()
-                Integrity.warmedUp.record(
-                    Integrity.WarmedUpExtra(
-                        durationMs = (System.currentTimeMillis() - start).toInt(),
-                        success = result,
-                        ),
-                    )
+                components.integrityClient.warmUp()
             }
         }
     }
