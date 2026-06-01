@@ -1438,7 +1438,7 @@ static void DeferredCreateOffer(const std::string& aPcHandle,
 // copy c'tor.
 static std::unique_ptr<dom::PCErrorData> buildJSErrorData(
     const JsepSession::Result& aResult, const std::string& aMessage) {
-  std::unique_ptr<dom::PCErrorData> result(new dom::PCErrorData);
+  auto result = std::make_unique<dom::PCErrorData>();
   result->mName = *aResult.mError;
   result->mMessage = NS_ConvertASCIItoUTF16(aMessage.c_str());
   // Populate RTCError-specific fields when the error has an errorDetail.
@@ -4806,8 +4806,8 @@ std::unique_ptr<NrSocketProxyConfig> PeerConnectionImpl::GetProxyConfig()
   net::LoadInfoArgs loadInfoArgs;
   MOZ_ALWAYS_SUCCEEDS(
       mozilla::ipc::LoadInfoToLoadInfoArgs(loadInfo, &loadInfoArgs));
-  return std::unique_ptr<NrSocketProxyConfig>(new NrSocketProxyConfig(
-      net::WebrtcProxyConfig(id, alpn, loadInfoArgs, mForceProxy)));
+  return std::make_unique<NrSocketProxyConfig>(
+      net::WebrtcProxyConfig(id, alpn, loadInfoArgs, mForceProxy));
 }
 
 MOZ_RUNINIT std::map<uint64_t, PeerConnectionAutoTimer>
