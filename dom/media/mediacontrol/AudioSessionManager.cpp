@@ -39,7 +39,7 @@ void AudioSessionManager::SetTypeOverride(uint64_t aBrowsingContextId,
   UpdateSelectedAudioSession();
   // §5.1.3.4 Update all AudioSession states of audioSession's top-level
   // browsing context with audioSession.
-  // TODO: implementation lands in the follow-up patch (Part 3).
+  UpdateAllAudioSessionStates(aBrowsingContextId);
   RemoveRecordIfEmpty(aBrowsingContextId);
   MaybeFireEffectiveTypeChanged();
 }
@@ -121,7 +121,7 @@ void AudioSessionManager::SetAudioSessionState(uint64_t aBrowsingContextId,
   entry.Data().SetState(aBrowsingContextId, aNewState);
   // Step 6. Update all AudioSession states of audioSession's top-level
   // browsing context with audioSession.
-  // TODO: implementation in Part 3.
+  UpdateAllAudioSessionStates(aBrowsingContextId);
   // Inactive transition may leave the record empty; prune it.
   RemoveRecordIfEmpty(aBrowsingContextId);
 }

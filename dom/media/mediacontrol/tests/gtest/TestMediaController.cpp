@@ -682,3 +682,83 @@ TEST(MediaController, AudioSessionState_AudibilityDrivesActiveAndCleansUp)
                                         AudioSessionType::Playback);
   EXPECT_EQ(controller->GetAudioSessionRecordForTesting(kBc), nullptr);
 }
+
+// Helper: returns the spec state for a BC by reading the record, or
+// Inactive when no record exists (matching the spec default for a fresh
+// audio session).
+static AudioSessionState StateOf(MediaController* aController, uint64_t aBcId) {
+  const AudioSessionRecord* rec =
+      aController->GetAudioSessionRecordForTesting(aBcId);
+  return rec ? rec->GetState() : AudioSessionState::Inactive;
+}
+
+TEST(MediaController, AudioSessionState_ExclusiveCascadeFromTypeOverride)
+{
+  // Setting an explicit exclusive type on an audible BC inactivates other
+  // auto-typed exclusive sessions in the same tab. Each user-settable
+  // exclusive type triggers the cascade.
+  for (AudioSessionType exclusive : kExclusiveAudioSessionTypes) {
+    RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+    constexpr uint64_t kBcA = 71;
+    constexpr uint64_t kBcB = 72;
+
+    controller->NotifyMediaAudibleChanged(kBcA, MediaAudibleState::eAudible,
+                                          ControlType::eControllable,
+                                          AudioSessionType::Playback);
+    controller->NotifyMediaAudibleChanged(kBcB, MediaAudibleState::eAudible,
+                                          ControlType::eControllable,
+                                          AudioSessionType::Playback);
+    ASSERT_EQ(StateOf(controller, kBcA), AudioSessionState::Active);
+    ASSERT_EQ(StateOf(controller, kBcB), AudioSessionState::Active);
+
+    controller->SetAudioSessionTypeOverride(kBcB, exclusive);
+    EXPECT_EQ(StateOf(controller, kBcA), AudioSessionState::Inactive)
+        << "exclusive override " << static_cast<int>(exclusive)
+        << " should evict the auto-typed exclusive session";
+    EXPECT_EQ(StateOf(controller, kBcB), AudioSessionState::Active);
+  }
+}
+
+TEST(MediaController, AudioSessionState_NonExclusiveSessionStaysActive)
+{
+  // A non-exclusive session is never inactivated by the cascade, even when
+  // the just-updated session is exclusive. Verified for every non-exclusive
+  // type in the spec.
+  for (AudioSessionType nonExclusive : kNonExclusiveAudioSessionTypes) {
+    RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+    constexpr uint64_t kBcA = 91;
+    constexpr uint64_t kBcB = 92;
+
+    controller->NotifyMediaAudibleChanged(kBcA, MediaAudibleState::eAudible,
+                                          ControlType::eControllable,
+                                          nonExclusive);
+    controller->NotifyMediaAudibleChanged(kBcB, MediaAudibleState::eAudible,
+                                          ControlType::eControllable,
+                                          AudioSessionType::Ambient);
+    controller->SetAudioSessionTypeOverride(kBcB, AudioSessionType::Playback);
+
+    EXPECT_EQ(StateOf(controller, kBcA), AudioSessionState::Active)
+        << "non-exclusive type " << static_cast<int>(nonExclusive)
+        << " should survive the cascade";
+    EXPECT_EQ(StateOf(controller, kBcB), AudioSessionState::Active);
+  }
+}
+
+TEST(MediaController, AudioSessionState_TwoAutoTypedExclusiveSessionsCoexist)
+{
+  // Two auto-typed exclusive sessions coexist: neither evicts the other
+  // because both pages left the user-set type as auto.
+  RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+  constexpr uint64_t kBcA = 81;
+  constexpr uint64_t kBcB = 82;
+
+  controller->NotifyMediaAudibleChanged(kBcA, MediaAudibleState::eAudible,
+                                        ControlType::eControllable,
+                                        AudioSessionType::Playback);
+  controller->NotifyMediaAudibleChanged(kBcB, MediaAudibleState::eAudible,
+                                        ControlType::eControllable,
+                                        AudioSessionType::Playback);
+
+  EXPECT_EQ(StateOf(controller, kBcA), AudioSessionState::Active);
+  EXPECT_EQ(StateOf(controller, kBcB), AudioSessionState::Active);
+}
