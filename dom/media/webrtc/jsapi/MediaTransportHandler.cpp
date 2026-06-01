@@ -1062,7 +1062,7 @@ RefPtr<dom::RTCStatsPromise> MediaTransportHandlerSTS::GetIceStats(
 
   return mInitPromise->Then(
       mStsThread, __func__, [=, this, self = RefPtr(this)]() {
-        UniquePtr<dom::RTCStatsCollection> stats(new dom::RTCStatsCollection);
+        auto stats = MakeUnique<dom::RTCStatsCollection>();
         if (mIceCtx) {
           dom::RTCIceRole iceRole =
               mIceCtx->GetControlling() == NrIceCtx::ICE_CONTROLLING

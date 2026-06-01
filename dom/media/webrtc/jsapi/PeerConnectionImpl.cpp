@@ -3727,8 +3727,7 @@ RefPtr<dom::RTCStatsPromise> PeerConnectionImpl::GetDataChannelStats(
         ->Then(GetMainThreadSerialEventTarget(), __func__,
                [](DataChannelConnection::StatsPromise::ResolveOrRejectValue&&
                       aResult) {
-                 UniquePtr<dom::RTCStatsCollection> report(
-                     new dom::RTCStatsCollection);
+                 auto report = MakeUnique<dom::RTCStatsCollection>();
                  if (aResult.IsResolve()) {
                    if (!report->mDataChannelStats.AppendElements(
                            aResult.ResolveValue(), fallible)) {
@@ -3970,8 +3969,7 @@ RefPtr<dom::RTCStatsReportPromise> PeerConnectionImpl::GetStats(
 
   // This is what we're going to return; all the stuff in |promises| will be
   // accumulated here.
-  UniquePtr<dom::RTCStatsReportInternal> report(
-      new dom::RTCStatsReportInternal);
+  auto report = MakeUnique<dom::RTCStatsReportInternal>();
   report->mPcid = NS_ConvertASCIItoUTF16(mName.c_str());
   if (mWindow && mWindow->GetBrowsingContext()) {
     report->mBrowserId = mWindow->GetBrowsingContext()->BrowserId();

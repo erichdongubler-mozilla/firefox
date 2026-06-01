@@ -1274,7 +1274,7 @@ int NrUdpSocketIpc::sendto(const void* msg, size_t len, int flags,
     return R_WOULDBLOCK;
   }
 
-  UniquePtr<MediaPacket> buf(new MediaPacket);
+  auto buf = MakeUnique<MediaPacket>();
   buf->Copy(static_cast<const uint8_t*>(msg), len);
 
   RUN_ON_THREAD(

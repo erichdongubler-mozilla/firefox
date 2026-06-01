@@ -260,7 +260,7 @@ MediaPipeline::MediaPipeline(const std::string& aPc,
       mRtpBytesSent(0),
       mRtpBytesReceived(0),
       mPc(aPc),
-      mRtpHeaderExtensionMap(new webrtc::RtpHeaderExtensionMap()),
+      mRtpHeaderExtensionMap(MakeUnique<webrtc::RtpHeaderExtensionMap>()),
       mPacketDumper(PacketDumper::GetPacketDumper(mPc)) {
   if (mDirection == DirectionType::TRANSMIT) {
     mRtpSendEventListener = mConduit->SenderRtpSendEvent().Connect(
