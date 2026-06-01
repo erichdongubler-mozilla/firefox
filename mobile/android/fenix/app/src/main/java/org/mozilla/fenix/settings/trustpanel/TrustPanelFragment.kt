@@ -76,7 +76,6 @@ import org.mozilla.fenix.settings.trustpanel.ui.ProtectionPanel
 import org.mozilla.fenix.settings.trustpanel.ui.TrackerCategoryDetailsPanel
 import org.mozilla.fenix.settings.trustpanel.ui.TrackersBlockedPanel
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.trackingprotection.TrackerBuckets
 import org.mozilla.fenix.utils.DELAY_MS_MAIN_MENU
 import org.mozilla.fenix.utils.DELAY_MS_SUB_MENU
 import org.mozilla.fenix.utils.DURATION_MS_MAIN_MENU
@@ -193,13 +192,13 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                 }.collectAsState(initial = null)
                 val isTrackingProtectionEnabled by remember {
                     store.stateFlow.map { state -> state.isTrackingProtectionEnabled }
-                }.collectAsState(initial = false)
+                }.collectAsState(initial = store.state.isTrackingProtectionEnabled)
                 val numberOfTrackersBlocked by remember {
                     store.stateFlow.map { state -> state.numberOfTrackersBlocked }
-                }.collectAsState(initial = 0)
+                }.collectAsState(initial = store.state.numberOfTrackersBlocked)
                 val bucketedTrackers by remember {
                     store.stateFlow.map { state -> state.bucketedTrackers }
-                }.collectAsState(initial = TrackerBuckets())
+                }.collectAsState(initial = store.state.bucketedTrackers)
                 val detailedTrackerCategory by remember {
                     store.stateFlow.map { state -> state.detailedTrackerCategory }
                 }.collectAsState(initial = null)

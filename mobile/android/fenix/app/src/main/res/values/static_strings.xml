@@ -419,6 +419,8 @@
     <!-- Label for the secret settings preference to enable Import Bookmarks -->
     <string name="preferences_debug_settings_import_bookmarks">Enable Import Bookmarks</string>
 
-  <!-- Label for the secret settings preference to enable Import Passwords -->
-  <string name="preferences_debug_settings_import_passwords">Enable Import Passwords</string>
+    <!-- Label for the secret settings preference to enable Import Passwords -->
+    <string name="preferences_debug_settings_import_passwords">Enable Import Passwords</string>
+    <!--  Firefox brand name  -->
+    <string name="app_name_firefox" tools:ignore="BrandUsage">Firefox</string>
 </resources>
