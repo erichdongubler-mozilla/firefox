@@ -509,13 +509,6 @@
   args:
     obj: ObjId
 
-- name: GuardIsTypedArray
-  shared: true
-  transpile: true
-  cost_estimate: 1
-  args:
-    obj: ObjId
-
 - name: GuardIsNonResizableTypedArray
   shared: true
   transpile: true

@@ -5181,16 +5181,6 @@ void CodeGenerator::visitGuardIsNotArrayBufferMaybeShared(
   bailoutFrom(&bail, guard->snapshot());
 }
 
-void CodeGenerator::visitGuardIsTypedArray(LGuardIsTypedArray* guard) {
-  Register obj = ToRegister(guard->object());
-  Register temp = ToRegister(guard->temp0());
-
-  Label bail;
-  masm.loadObjClassUnsafe(obj, temp);
-  masm.branchIfClassIsNotTypedArray(temp, &bail);
-  bailoutFrom(&bail, guard->snapshot());
-}
-
 void CodeGenerator::visitGuardIsNonResizableTypedArray(
     LGuardIsNonResizableTypedArray* guard) {
   Register obj = ToRegister(guard->object());

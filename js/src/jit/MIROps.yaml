@@ -2844,18 +2844,6 @@
   lir_result_type: none
   lir_temps: 1
 
-- name: GuardIsTypedArray
-  operands:
-    object: Object
-  result_type: Object
-  guard: true
-  movable: true
-  congruent_to: if_operands_equal
-  alias_set: none
-  generate_lir: true
-  lir_result_type: none
-  lir_temps: 1
-
 - name: GuardIsNonResizableTypedArray
   operands:
     object: Object
