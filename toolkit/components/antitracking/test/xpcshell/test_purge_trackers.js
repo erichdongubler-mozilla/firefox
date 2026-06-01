@@ -424,14 +424,6 @@ async function testQuotaStorage() {
 async function testExpiredInteractionPermission() {
   await UrlClassifierTestUtils.addTestTrackers();
 
-  PermissionTestUtils.add(
-    TRACKING_PAGE,
-    "storageAccessAPI",
-    Services.perms.ALLOW_ACTION,
-    Services.perms.EXPIRE_TIME,
-    Date.now() + 500
-  );
-
   for (let url of [
     TRACKING_PAGE,
     TRACKING_PAGE2,
@@ -443,6 +435,14 @@ async function testExpiredInteractionPermission() {
     SiteDataTestUtils.addToCookies({ origin: url });
     await SiteDataTestUtils.addToIndexedDB(url);
   }
+
+  PermissionTestUtils.add(
+    TRACKING_PAGE,
+    "storageAccessAPI",
+    Services.perms.ALLOW_ACTION,
+    Services.perms.EXPIRE_TIME,
+    Date.now() + 500
+  );
 
   // Purge while storage access permission exists.
   await PurgeTrackerService.purgeTrackingCookieJars();

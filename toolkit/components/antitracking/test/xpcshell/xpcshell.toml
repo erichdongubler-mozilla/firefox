@@ -12,12 +12,6 @@ skip-if = [
 ]
 
 ["test_purge_trackers.js"]
-requesttimeoutfactor = 2  # Slow on Linux and Windows
-run-sequentially = ["os == 'mac'"] # frequent fail in parallel on Mac
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov && !fission", # Bug 1760085
-  "os == 'win' && os_version == '10.2009' && arch == 'x86_64'", # Bug 1718292
-]
 
 ["test_purge_trackers_telemetry.js"]
 
