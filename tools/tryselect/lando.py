@@ -20,7 +20,6 @@ from dataclasses import (
     field,
 )
 from pathlib import Path
-from random import random
 from typing import Union
 
 import requests
@@ -433,8 +432,7 @@ def push_to_lando_try(
 ):
     """Push a set of patches to Lando's try endpoint."""
 
-    OLD_LANDO_ENTRY = "lando-prod"
-    NEW_LANDO_ENTRY = "lando-prod-new"
+    default_lando_config_section = "lando-prod-new"
 
     metrics.mach_try.vcs_prep.start()
     # Map `Repository` subclasses to the `patch_format` value Lando expects.
@@ -447,17 +445,6 @@ def push_to_lando_try(
     if not patch_format:
         # Other VCS types (namely `src`) are unsupported.
         raise ValueError(f"Try push via Lando is not supported for `{vcs.name}`.")
-
-    # Use LANDO_TRY_CONFIG so select which configuration section from .lando.ini to use.
-    # Default to using `lando-prod`.
-
-    default_lando_config_section = OLD_LANDO_ENTRY
-
-    # Bug 1979252: A/B test use of new lando for some pushes to try.
-    new_lando_probability = 1
-
-    if not force_old_lando and random() < new_lando_probability:
-        default_lando_config_section = NEW_LANDO_ENTRY
 
     lando_config_section = os.getenv("LANDO_TRY_CONFIG", default_lando_config_section)
 
