@@ -246,11 +246,26 @@ FilterPrimitiveDescription SVGFEImageElement::GetPrimitiveDescription(
   RefPtr<SourceSurface> image;
   nsIntSize nativeSize;
   if (imageContainer) {
-    if (NS_FAILED(imageContainer->GetWidth(&nativeSize.width))) {
-      nativeSize.width = kFallbackIntrinsicWidthInPixels;
+    image::ImageIntrinsicSize size;
+    imageContainer->GetIntrinsicSize(&size);
+    if (size.mWidth) {
+      nativeSize.width = size.mWidth.value();
     }
-    if (NS_FAILED(imageContainer->GetHeight(&nativeSize.height))) {
-      nativeSize.height = kFallbackIntrinsicHeightInPixels;
+    if (size.mHeight) {
+      nativeSize.height = size.mHeight.value();
+    }
+    if (!size.mWidth || !size.mHeight) {
+      AspectRatio ratio = imageContainer->GetIntrinsicRatio();
+      if (!size.mWidth) {
+        nativeSize.width = ratio && size.mHeight
+                               ? CSSIntCoord(ratio.ApplyTo(nativeSize.height))
+                               : kFallbackIntrinsicWidthInPixels;
+      }
+      if (!size.mHeight) {
+        nativeSize.height =
+            ratio ? CSSIntCoord(ratio.Inverted().ApplyTo(nativeSize.width))
+                  : kFallbackIntrinsicHeightInPixels;
+      }
     }
     uint32_t flags =
         imgIContainer::FLAG_SYNC_DECODE | imgIContainer::FLAG_ASYNC_NOTIFY;

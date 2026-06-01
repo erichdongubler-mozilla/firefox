@@ -146,6 +146,8 @@ class SVGSVGElement final : public SVGSVGElementBase {
 
   LengthPercentage GetIntrinsicWidth();
   LengthPercentage GetIntrinsicHeight();
+  AspectRatio GetIntrinsicRatio();
+  gfx::Size GetIntrinsicSizeWithFallback();
 
   // This services any pending notifications for the transform on on this root
   // <svg> node needing to be recalculated.  (Only applicable in

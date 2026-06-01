@@ -227,36 +227,11 @@ AspectRatio SVGOuterSVGFrame::GetIntrinsicRatio() const {
     return AspectRatio();
   }
 
-  // We only have an intrinsic size/ratio if our width and height attributes
-  // are both specified and set to non-percentage values, or we have a viewBox
-  // rect: https://svgwg.org/svg2-draft/coords.html#SizingSVGInCSS
-
-  auto* content = static_cast<SVGSVGElement*>(GetContent());
-  const SVGAnimatedLength& width =
-      content->mLengthAttributes[SVGSVGElement::ATTR_WIDTH];
-  const SVGAnimatedLength& height =
-      content->mLengthAttributes[SVGSVGElement::ATTR_HEIGHT];
-  if (!width.IsPercentage() && !height.IsPercentage()) {
-    // Use width/height ratio only if
-    // 1. it's not a degenerate ratio, and
-    // 2. width and height are non-negative numbers.
-    // Otherwise, we use the viewbox rect.
-    // https://github.com/w3c/csswg-drafts/issues/6286
-    // Note width/height may have different units and therefore be
-    // affected by zoom in different ways.
-    const float w = width.GetAnimValueWithZoom(content);
-    const float h = height.GetAnimValueWithZoom(content);
-    if (w > 0.0f && h > 0.0f) {
-      return AspectRatio::FromSize(w, h);
-    }
+  auto* element = static_cast<SVGSVGElement*>(GetContent());
+  AspectRatio ratio = element->GetIntrinsicRatio();
+  if (ratio) {
+    return ratio;
   }
-
-  if (const auto& viewBox = content->GetViewBoxInternal(); viewBox.HasRect()) {
-    float zoom = Style()->EffectiveZoom().ToFloat();
-    const auto& anim = viewBox.GetAnimValue() * zoom;
-    return AspectRatio::FromSize(anim.width, anim.height);
-  }
-
   return SVGDisplayContainerFrame::GetIntrinsicRatio();
 }
 

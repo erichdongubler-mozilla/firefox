@@ -15,6 +15,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/SMILAnimationController.h"
 #include "mozilla/SMILTimeContainer.h"
+#include "mozilla/SVGOuterSVGFrame.h"
 #include "mozilla/SVGUtils.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/DOMMatrix.h"
@@ -431,6 +432,67 @@ LengthPercentage SVGSVGElement::GetIntrinsicWidthOrHeight(int aAttr) {
   // need to pass the element to be able to resolve em/ex units).
   float rawSize = mLengthAttributes[aAttr].GetAnimValueWithZoom(this);
   return LengthPercentage::FromPixels(rawSize);
+}
+
+AspectRatio SVGSVGElement::GetIntrinsicRatio() {
+  // We only have an intrinsic size/ratio if our width and height attributes
+  // are both specified and set to non-percentage values, or we have a viewBox
+  // rect: https://svgwg.org/svg2-draft/coords.html#SizingSVGInCSS
+
+  const SVGAnimatedLength& width = mLengthAttributes[SVGSVGElement::ATTR_WIDTH];
+  const SVGAnimatedLength& height =
+      mLengthAttributes[SVGSVGElement::ATTR_HEIGHT];
+  if (!width.IsPercentage() && !height.IsPercentage()) {
+    SVGElementMetrics metrics(this);
+    // Use width/height ratio only if
+    // 1. it's not a degenerate ratio, and
+    // 2. width and height are non-negative numbers.
+    // Otherwise, we use the viewbox rect.
+    // https://github.com/w3c/csswg-drafts/issues/6286
+    // Note width/height may have different units and therefore be
+    // affected by zoom in different ways.
+    const float w = width.GetAnimValueWithZoom(metrics);
+    const float h = height.GetAnimValueWithZoom(metrics);
+    if (w > 0.0f && h > 0.0f) {
+      return AspectRatio::FromSize(w, h);
+    }
+  }
+
+  if (const auto& viewBox = GetViewBoxInternal(); viewBox.HasRect()) {
+    float zoom = UserSpaceMetrics::GetZoom(this);
+    const auto& anim = viewBox.GetAnimValue() * zoom;
+    return AspectRatio::FromSize(anim.width, anim.height);
+  }
+
+  return AspectRatio();
+}
+
+gfx::Size SVGSVGElement::GetIntrinsicSizeWithFallback() {
+  auto intrinsicWidth = GetIntrinsicWidth();
+  auto intrinsicHeight = GetIntrinsicHeight();
+  bool hasWidth = intrinsicWidth.IsLength();
+  bool hasHeight = intrinsicHeight.IsLength();
+  gfx::Size size;
+  if (hasWidth) {
+    size.width = intrinsicWidth.AsLength().ToCSSPixels();
+  }
+  if (hasHeight) {
+    size.height = intrinsicHeight.AsLength().ToCSSPixels();
+  }
+  if (hasWidth && hasHeight) {
+    return size;
+  }
+  SVGOuterSVGFrame* osf = do_QueryFrame(GetPrimaryFrame());
+  AspectRatio ratio = osf ? osf->GetIntrinsicRatio() : GetIntrinsicRatio();
+  if (!hasWidth) {
+    size.width = ratio && hasHeight ? CSSIntCoord(ratio.ApplyTo(size.height))
+                                    : kFallbackIntrinsicWidthInPixels;
+  }
+  if (!hasHeight) {
+    size.height = ratio ? CSSIntCoord(ratio.Inverted().ApplyTo(size.width))
+                        : kFallbackIntrinsicHeightInPixels;
+  }
+  return size;
 }
 
 //----------------------------------------------------------------------

@@ -201,14 +201,6 @@ static bool ProcessSVGViewSpec(const nsAString& aViewSpec,
   return true;
 }
 
-static float PxLengthOrFallback(const LengthPercentage& aLenPct,
-                                CSSIntCoord aFallback) {
-  if (!aLenPct.IsLength()) {
-    return aFallback;
-  }
-  return aLenPct.AsLength().ToCSSPixels();
-}
-
 static bool ProcessMediaFragment(const nsAString& aMediaFragment,
                                  AutoFragmentHandler& aViewHandler) {
   NS_ConvertUTF16toUTF8 mediaFragment(aMediaFragment);
@@ -229,14 +221,19 @@ static bool ProcessMediaFragment(const nsAString& aMediaFragment,
   }
   if (parser.HasClip()) {
     gfx::Rect rect = IntRectToRect(parser.GetClip());
+    gfx::Size size = root->GetIntrinsicSizeWithFallback();
     if (parser.GetClipUnit() == eClipUnit_Percent) {
-      float width = PxLengthOrFallback(root->GetIntrinsicWidth(),
-                                       kFallbackIntrinsicWidthInPixels);
-      float height = PxLengthOrFallback(root->GetIntrinsicHeight(),
-                                        kFallbackIntrinsicHeightInPixels);
-      rect.Scale(width / 100.0f, height / 100.0f);
+      rect.Scale(size.width / 100.0f, size.height / 100.0f);
     }
-    return aViewHandler.SetViewBox(rect);
+    if (rect.XMost() > size.width) {
+      rect.width = size.width - rect.x;
+    }
+    if (rect.YMost() > size.height) {
+      rect.height = size.height - rect.y;
+    }
+    if (!rect.IsEmpty()) {
+      return aViewHandler.SetViewBox(rect);
+    }
   }
 
   aViewHandler.SetValid(false);
