@@ -14134,13 +14134,6 @@
   value: false
   mirror: always
 
-# Whether to block third-party tracker cookie and storage access when
-# cookieBehavior=5.
-- name: network.cookie.cookieBehavior.trackerCookieBlocking
-  type: bool
-  value: false
-  mirror: always
-
 # Whether to support CHIPS(Cookies Having Independent Partitioned State).
 - name: network.cookie.CHIPS.enabled
   type: RelaxedAtomicBool

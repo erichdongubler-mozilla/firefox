@@ -21,7 +21,6 @@ add_setup(async function () {
         "network.cookie.cookieBehavior",
         Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
       ],
-      ["network.cookie.cookieBehavior.trackerCookieBlocking", false],
     ],
   });
 

@@ -586,14 +586,8 @@ bool ShouldAllowAccessFor(nsPIDOMWindowInner* aWindow, nsIURI* aURI,
       }
     }
   } else if (behavior == nsICookieService::BEHAVIOR_PARTITION_FOREIGN) {
-    if (nsContentUtils::IsThirdPartyTrackingResourceWindow(aWindow)) {
-      // fall through, but remember that we're partitioned for trackers if
-      // it's instructed by the pref.
-      if (!StaticPrefs::network_cookie_cookieBehavior_trackerCookieBlocking()) {
-        blockedReason =
-            nsIWebProgressListener::STATE_COOKIES_PARTITIONED_FOREIGN;
-      }
-    } else if (AntiTrackingUtils::IsThirdPartyWindow(aWindow, aURI)) {
+    if (nsContentUtils::IsThirdPartyTrackingResourceWindow(aWindow) ||
+        AntiTrackingUtils::IsThirdPartyWindow(aWindow, aURI)) {
       LOG(("We're in the third-party context, storage should be partitioned"));
       // fall through, but remember that we're partitioning.
       blockedReason = nsIWebProgressListener::STATE_COOKIES_PARTITIONED_FOREIGN;
@@ -778,15 +772,9 @@ bool ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
       }
     }
   } else if (behavior == nsICookieService::BEHAVIOR_PARTITION_FOREIGN) {
-    if (classifiedChannel &&
-        classifiedChannel->IsThirdPartyTrackingResource()) {
-      // fall through, but remember that we're partitioned for trackers if
-      // it's instructed by the pref.
-      if (!StaticPrefs::network_cookie_cookieBehavior_trackerCookieBlocking()) {
-        blockedReason =
-            nsIWebProgressListener::STATE_COOKIES_PARTITIONED_FOREIGN;
-      }
-    } else if (AntiTrackingUtils::IsThirdPartyChannel(aChannel)) {
+    if ((classifiedChannel &&
+         classifiedChannel->IsThirdPartyTrackingResource()) ||
+        AntiTrackingUtils::IsThirdPartyChannel(aChannel)) {
       LOG(("We're in the third-party context, storage should be partitioned"));
       // fall through but remember that we're partitioning.
       blockedReason = nsIWebProgressListener::STATE_COOKIES_PARTITIONED_FOREIGN;
