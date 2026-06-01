@@ -1355,6 +1355,7 @@ class GeneratedFile(ContextDerived):
         "method",
         "outputs",
         "inputs",
+        "extra_deps",
         "flags",
         "required_before_export",
         "required_before_compile",
@@ -1374,6 +1375,7 @@ class GeneratedFile(ContextDerived):
         localized=False,
         force=False,
         required_during_compile=None,
+        extra_deps=(),
     ):
         ContextDerived.__init__(self, context)
         self.script = script
@@ -1381,6 +1383,7 @@ class GeneratedFile(ContextDerived):
         self.outputs = outputs if isinstance(outputs, tuple) else (outputs,)
         self.inputs = inputs
         self.flags = flags
+        self.extra_deps = extra_deps
         self.localized = localized
         self.force = force
 

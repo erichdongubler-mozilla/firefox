@@ -656,6 +656,29 @@ class TestEmitterBasic(unittest.TestCase):
         ):
             self.read_topsrcdir(reader)
 
+    def test_generated_files_extra_deps(self):
+        """Test that GENERATED_FILES extra_deps is properly parsed."""
+        reader = self.reader("generated-files-extra-deps")
+        objs = self.read_topsrcdir(reader)
+
+        self.assertEqual(len(objs), 1)
+        o = objs[0]
+        self.assertIsInstance(o, GeneratedFile)
+        self.assertEqual(o.outputs, ("foo.c",))
+        self.assertEqual(o.inputs, [])
+        self.assertEqual(len(o.extra_deps), 1)
+        self.assertIsInstance(o.extra_deps[0], ObjDirPath)
+        self.assertEqual(o.extra_deps[0], "!/generated-header.h")
+
+    def test_generated_files_extra_deps_missing(self):
+        """Test that a missing extra_deps source is an error."""
+        reader = self.reader("generated-files-extra-deps-missing")
+        with self.assertRaisesRegex(
+            SandboxValidationError,
+            "extra_dep for generating foo.c does not exist",
+        ):
+            self.read_topsrcdir(reader)
+
     def test_exports(self):
         reader = self.reader("exports")
         objs = self.read_topsrcdir(reader)

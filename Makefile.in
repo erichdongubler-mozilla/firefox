@@ -24,8 +24,6 @@ endif
 endif
 source-repo.h: $(MDDEPDIR)/source-repo.h.stub
 buildid.h: $(MDDEPDIR)/buildid.h.stub
-# Add explicit dependencies that moz.build can't declare yet.
-build/$(MDDEPDIR)/application.ini.stub: source-repo.h buildid.h
 
 BUILD_BACKEND_FILES := $(addprefix backend.,$(addsuffix Backend,$(BUILD_BACKENDS)))
 

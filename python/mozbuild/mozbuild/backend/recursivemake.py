@@ -550,15 +550,15 @@ class RecursiveMakeBackend(MakeBackend):
             reldir = mozpath.relpath(obj.objdir, backend_file.objdir)
             if not reldir:
                 for out in obj.outputs:
-                    target = mozpath.join(obj.relobjdir, out)
+                    target = mozpath.join(obj.objdir, out)
                     assert target not in self._target_per_file
                     self._target_per_file[target] = (obj.relobjdir, tier)
-                for input in obj.inputs:
-                    if isinstance(input, ObjDirPath):
+                for dep in chain(obj.inputs, obj.extra_deps):
+                    if isinstance(dep, ObjDirPath):
                         self._post_process_dependencies.append((
                             obj.relobjdir,
                             tier,
-                            input,
+                            dep,
                         ))
             # For generated files that we handle in the top-level backend file,
             # we want to have a `directory/tier` target depending on the file.

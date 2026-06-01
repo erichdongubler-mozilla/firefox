@@ -1197,6 +1197,7 @@ SchedulingComponents = ContextDerivedTypedRecord(
 GeneratedFilesList = StrictOrderingOnAppendListWithFlagsFactory({
     "script": str,
     "inputs": list,
+    "extra_deps": list,
     "force": bool,
     "flags": list,
 })
@@ -1521,13 +1522,14 @@ VARIABLES = {
         Unless you have a reason not to, use the GeneratedFile template rather
         than referencing GENERATED_FILES directly. The GeneratedFile template
         has all the same arguments as the attributes listed below (``script``,
-        ``inputs``, ``flags``, ``force``), plus an additional ``entry_point``
-        argument to specify a particular function to run in the given script.
+        ``inputs``, ``extra_deps``, ``flags``, ``force``), plus an additional
+        ``entry_point`` argument to specify a particular function to run in
+        the given script.
 
         This variable contains a list of files for the build system to
         generate at export time. The generation method may be declared
-        with optional ``script``, ``inputs``, ``flags``, and ``force``
-        attributes on individual entries.
+        with optional ``script``, ``inputs``, ``extra_deps``, ``flags``,
+        and ``force`` attributes on individual entries.
         If the optional ``script`` attribute is not present on an entry, it
         is assumed that rules for generating the file are present in
         the associated Makefile.in.
@@ -1565,6 +1567,16 @@ VARIABLES = {
 
         When the ``flags`` attribute is present, the given list of flags is
         passed as extra arguments following the inputs.
+
+        When the ``extra_deps`` attribute is present, the listed paths are
+        added as build-graph prerequisites for the generation step but are
+        not passed to ``script`` as positional arguments. Use this when the
+        script opens additional files itself at runtime (e.g. via the
+        preprocessor's #include @TOPOBJDIR@/...) and those files must
+        therefore exist on disk before the step runs. An objdir-relative
+        path like ``"!/source-repo.h"`` resolves against ``$topobjdir``,
+        and a plain path resolves relative to the directory containing the
+        moz.build file.
 
         When the ``force`` attribute is present, the file is generated every
         build, regardless of whether it is stale.  This is special to the

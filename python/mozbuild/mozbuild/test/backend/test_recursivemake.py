@@ -449,6 +449,39 @@ class TestRecursiveMakeBackend(BackendTester):
         self.maxDiff = None
         self.assertEqual(lines, expected)
 
+    def test_generated_files_extra_deps(self):
+        """Ensure GENERATED_FILES extra_deps are handled properly."""
+        env = self._consume("generated-files-extra-deps", RecursiveMakeBackend)
+
+        backend_path = mozpath.join(env.topobjdir, "consumer", "backend.mk")
+        lines = [l.strip() for l in open(backend_path).readlines()[2:]]
+
+        expected = [
+            "include $(topsrcdir)/config/AB_rCD.mk",
+            "PRE_COMPILE_TARGETS += $(MDDEPDIR)/consumer.c.stub",
+            "consumer.c: $(MDDEPDIR)/consumer.c.stub ;",
+            "EXTRA_MDDEPEND_FILES += $(MDDEPDIR)/consumer.c.pp",
+            "$(MDDEPDIR)/consumer.c.stub: "
+            f"{env.topsrcdir}/consumer/generate-consumer.py "
+            "$(srcdir)/input-data "
+            "$(srcdir)/source-extra "
+            "$(DEPTH)/producer/producer.c",
+            "$(REPORT_BUILD)",
+            "$(call py_action,file_generate consumer.c,"
+            f"{env.topsrcdir}/consumer/generate-consumer.py main "
+            "consumer.c $(MDDEPDIR)/consumer.c.pp "
+            "$(MDDEPDIR)/consumer.c.stub $(srcdir)/input-data)",
+            "@$(TOUCH) $@",
+            "",
+        ]
+
+        self.maxDiff = None
+        self.assertEqual(lines, expected)
+
+        root_deps_path = mozpath.join(env.topobjdir, "root-deps.mk")
+        lines = [l.strip() for l in open(root_deps_path).readlines()]
+        self.assertIn("consumer/pre-compile: producer/pre-compile", lines)
+
     def test_generated_files_force(self):
         """Ensure GENERATED_FILES with .force is handled properly."""
         env = self._consume("generated-files-force", RecursiveMakeBackend)
