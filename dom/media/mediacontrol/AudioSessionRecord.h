@@ -66,18 +66,27 @@ class AudioSessionRecord {
   // currently silent.
   Maybe<int64_t> GetAudibleAtMs() const { return mAudibleAtMs; }
 
+  // Spec state for this browsing context's audio session. Defaults to
+  // Inactive; transitions are driven by the §5.2 mutators on
+  // AudioSessionManager.
+  // https://w3c.github.io/audio-session/#audio-session-states
+  AudioSessionState GetState() const { return mState; }
+
   bool IsEmpty() const {
-    return mTypeOverride.isNothing() && mAudibleAtMs.isNothing();
+    return mTypeOverride.isNothing() && mAudibleAtMs.isNothing() &&
+           mState == AudioSessionState::Inactive;
   }
 
   void SetTypeOverride(uint64_t aBcId, Maybe<AudioSessionType> aTypeOverride);
   void SetAudibleAtMs(uint64_t aBcId, Maybe<int64_t> aAudibleAtMs);
+  void SetState(uint64_t aBcId, AudioSessionState aState);
 
  private:
   void LogState(uint64_t aBcId) const;
 
   Maybe<AudioSessionType> mTypeOverride;
   Maybe<int64_t> mAudibleAtMs;
+  AudioSessionState mState = AudioSessionState::Inactive;
 };
 
 }  // namespace mozilla::dom

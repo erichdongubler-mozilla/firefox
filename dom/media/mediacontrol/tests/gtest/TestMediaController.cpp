@@ -349,8 +349,14 @@ TEST(MediaController, AudioSessionOverride_StoresValueAndIsKeyedByBc)
   EXPECT_EQ(*b->GetTypeOverride(), AudioSessionType::Playback);
 }
 
-TEST(MediaController, AudioSessionOverride_AutoClearsTypeButKeepsRecord)
+TEST(MediaController, AudioSessionOverride_AutoClearAndAudibilityLifecycle)
 {
+  // Setting a non-Auto type creates the record. Clearing it via the "auto"
+  // sentinel normalises the override to Nothing; the manager keeps the
+  // record only while something else still occupies it (audibility, a
+  // non-Inactive state) and drops it once it is fully empty. An audibility
+  // cycle drives mState Active and back to Inactive while the override
+  // remains the lone reason to keep the record alive.
   constexpr AudioSessionType kOverrides[] = {
       AudioSessionType::Ambient,         AudioSessionType::Transient,
       AudioSessionType::Transient_solo,  AudioSessionType::Playback,
@@ -363,13 +369,34 @@ TEST(MediaController, AudioSessionOverride_AutoClearsTypeButKeepsRecord)
     controller->SetAudioSessionTypeOverride(kFrame, override);
     ASSERT_NE(controller->GetAudioSessionRecordForTesting(kFrame), nullptr);
 
-    // Auto normalises to "no override" but the record is kept so other
-    // per-AudioSession state stays intact.
+    // Auto on a record whose only field was the override drops the record.
     controller->SetAudioSessionTypeOverride(kFrame, AudioSessionType::Auto);
+    EXPECT_EQ(controller->GetAudioSessionRecordForTesting(kFrame), nullptr);
+
+    // Re-create the override and cycle audibility on the same browsing
+    // context. The override keeps the record alive across the audibility
+    // transitions; mState reflects the audibility.
+    controller->SetAudioSessionTypeOverride(kFrame, override);
+    controller->NotifyMediaAudibleChanged(kFrame, MediaAudibleState::eAudible,
+                                          ControlType::eControllable,
+                                          AudioSessionType::Playback);
     const AudioSessionRecord* rec =
         controller->GetAudioSessionRecordForTesting(kFrame);
     ASSERT_NE(rec, nullptr);
-    EXPECT_TRUE(rec->GetTypeOverride().isNothing());
+    EXPECT_EQ(rec->GetState(), AudioSessionState::Active);
+
+    controller->NotifyMediaAudibleChanged(kFrame, MediaAudibleState::eInaudible,
+                                          ControlType::eControllable,
+                                          AudioSessionType::Playback);
+    rec = controller->GetAudioSessionRecordForTesting(kFrame);
+    ASSERT_NE(rec, nullptr);
+    EXPECT_EQ(rec->GetState(), AudioSessionState::Inactive);
+    EXPECT_TRUE(rec->GetAudibleAtMs().isNothing());
+
+    // The record is now down to the override alone; clearing it drops the
+    // record again.
+    controller->SetAudioSessionTypeOverride(kFrame, AudioSessionType::Auto);
+    EXPECT_EQ(controller->GetAudioSessionRecordForTesting(kFrame), nullptr);
   }
 }
 
@@ -617,4 +644,41 @@ TEST(MediaController,
                                           ControlType::eUncontrollable, src);
     EXPECT_EQ(controller->GetEffectiveAudioSessionType(), src);
   }
+}
+
+TEST(MediaController, AudioSessionState_DefaultIsInactive)
+{
+  // A newly-created record starts with mState == Inactive. The field is
+  // the single source of truth for spec state.
+  RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+  constexpr uint64_t kBc = 11;
+  controller->SetAudioSessionTypeOverride(kBc, AudioSessionType::Playback);
+  const AudioSessionRecord* rec =
+      controller->GetAudioSessionRecordForTesting(kBc);
+  ASSERT_NE(rec, nullptr);
+  EXPECT_EQ(rec->GetState(), AudioSessionState::Inactive);
+}
+
+TEST(MediaController, AudioSessionState_AudibilityDrivesActiveAndCleansUp)
+{
+  // Audibility drives the per-BC state through the §5.2 mutators: becoming
+  // audible transitions the state to Active and becoming inaudible returns
+  // it to Inactive. Once the record has no override and no audibility
+  // timestamp, going Inactive empties the record and the manager removes
+  // it from the map.
+  RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+  constexpr uint64_t kBc = 21;
+
+  controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eAudible,
+                                        ControlType::eControllable,
+                                        AudioSessionType::Playback);
+  const AudioSessionRecord* rec =
+      controller->GetAudioSessionRecordForTesting(kBc);
+  ASSERT_NE(rec, nullptr);
+  EXPECT_EQ(rec->GetState(), AudioSessionState::Active);
+
+  controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eInaudible,
+                                        ControlType::eControllable,
+                                        AudioSessionType::Playback);
+  EXPECT_EQ(controller->GetAudioSessionRecordForTesting(kBc), nullptr);
 }

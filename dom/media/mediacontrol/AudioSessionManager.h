@@ -61,6 +61,28 @@ class AudioSessionManager final {
   // session is currently selected.
   Maybe<AudioSessionType> GetSelectedAudioSessionType() const;
 
+  // Refresh mSelectedAudioSessionBcId. Called from every entry point that
+  // mutates mAudioSessions so the cache always reflects the current state.
+  void UpdateSelectedAudioSession();
+
+  // §5.2 inactivate. No-op when the record does not exist or is already
+  // Inactive.
+  void InactivateAudioSession(uint64_t aBrowsingContextId);
+
+  // §5.2 try activating. No-op when the record is already Active. The
+  // caller is responsible for ensuring the record exists.
+  void TryActivateAudioSession(uint64_t aBrowsingContextId);
+
+  // §5.2 notify-the-states-change. Single entry point for state mutations:
+  // writes the field, then runs any post-mutation steps.
+  void SetAudioSessionState(uint64_t aBrowsingContextId,
+                            AudioSessionState aNewState);
+
+  // Drop the record for this browsing context if all of its fields are at
+  // their defaults. Mutators call this after any change that may have left
+  // the record empty.
+  void RemoveRecordIfEmpty(uint64_t aBrowsingContextId);
+
   // Fire the change event when the resolved effective type changed.
   void MaybeFireEffectiveTypeChanged();
 
@@ -70,6 +92,11 @@ class AudioSessionManager final {
 
   // Per-browsing-context AudioSession state.
   nsTHashMap<nsUint64HashKey, AudioSessionRecord> mAudioSessions;
+
+  // Cache for the §5.3 result: the browsing context whose audio session is
+  // currently the tab's selected one, or Nothing() when no session
+  // qualifies.
+  Maybe<uint64_t> mSelectedAudioSessionBcId;
 
   // Cached last value of GetEffectiveType().
   AudioSessionType mLastDispatchedEffectiveType = AudioSessionType::Auto;
