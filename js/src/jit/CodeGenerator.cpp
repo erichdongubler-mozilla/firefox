@@ -21476,20 +21476,6 @@ void CodeGenerator::visitAsyncResolve(LAsyncResolve* lir) {
   callVM<Fn, js::AsyncFunctionResolve>(lir);
 }
 
-void CodeGenerator::visitAsyncReject(LAsyncReject* lir) {
-  Register generator = ToRegister(lir->generator());
-  ValueOperand reason = ToValue(lir->reason());
-  ValueOperand stack = ToValue(lir->stack());
-
-  pushArg(stack);
-  pushArg(reason);
-  pushArg(generator);
-
-  using Fn = JSObject* (*)(JSContext*, Handle<AsyncFunctionGeneratorObject*>,
-                           HandleValue, HandleValue);
-  callVM<Fn, js::AsyncFunctionReject>(lir);
-}
-
 void CodeGenerator::visitAsyncAwait(LAsyncAwait* lir) {
   ValueOperand value = ToValue(lir->value());
   Register generator = ToRegister(lir->generator());

@@ -3686,15 +3686,6 @@
   possibly_calls: true
   generate_lir: true
 
-- name: AsyncReject
-  operands:
-    generator: Object
-    reason: Value
-    stack: Value
-  result_type: Object
-  possibly_calls: true
-  generate_lir: true
-
 # Returns from this function to the previous caller; this looks like a regular
 # Unary instruction and is used to lie to the MIR generator about suspending
 # ops like Yield/Await, which are emitted like returns, but MIR-Build like

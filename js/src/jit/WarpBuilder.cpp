@@ -2460,17 +2460,6 @@ bool WarpBuilder::build_AsyncResolve(BytecodeLocation loc) {
   return resumeAfter(resolve, loc);
 }
 
-bool WarpBuilder::build_AsyncReject(BytecodeLocation loc) {
-  MDefinition* generator = current->pop();
-  MDefinition* stack = current->pop();
-  MDefinition* reason = current->pop();
-
-  auto* reject = MAsyncReject::New(alloc(), generator, reason, stack);
-  current->add(reject);
-  current->push(reject);
-  return resumeAfter(reject, loc);
-}
-
 bool WarpBuilder::build_ResumeKind(BytecodeLocation loc) {
   GeneratorResumeKind resumeKind = loc.resumeKind();
 
@@ -3309,6 +3298,10 @@ bool WarpBuilder::build_CreateSuppressedError(BytecodeLocation) {
   MOZ_CRASH("Unreachable because we skip catch-blocks");
 }
 #endif
+
+bool WarpBuilder::build_AsyncReject(BytecodeLocation) {
+  MOZ_CRASH("Unreachable because we skip catch-blocks");
+}
 
 bool WarpBuilder::build_Throw(BytecodeLocation loc) {
   MDefinition* def = current->pop();
