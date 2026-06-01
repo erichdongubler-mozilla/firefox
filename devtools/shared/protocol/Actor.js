@@ -239,7 +239,7 @@ var generateRequestTypes = function (actorSpec) {
           if (isBulkResponse) {
             if (retToSend) {
               throw new Error(
-                `Actor method '${this.typeName}.${spec.name}' is supposed to return a bulk response, via last 'startBulkSend' callback argument, but returned some value.`
+                `Actor method '${this.typeName}.${spec.name}' is supposed to return a bulk response, but returned some value.`
               );
             }
             // Bulk response are one-way requests and are not replying any JSON packet.
