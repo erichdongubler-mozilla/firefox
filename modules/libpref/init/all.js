@@ -3989,8 +3989,11 @@ pref("extensions.formautofill.available", "detect");
 
 #if defined(NIGHTLY_BUILD) && !defined(ANDROID)
 pref("extensions.formautofill.addresses.supported", "on");
+// Use ML for address form field detection.
+pref("extensions.formautofill.useml", true);
 #else
 pref("extensions.formautofill.addresses.supported", "detect");
+pref("extensions.formautofill.useml", false);
 #endif
 pref("extensions.formautofill.addresses.enabled", true);
 pref("extensions.formautofill.addresses.capture.enabled", true);
