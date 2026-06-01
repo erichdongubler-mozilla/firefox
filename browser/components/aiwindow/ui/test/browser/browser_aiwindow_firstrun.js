@@ -80,7 +80,7 @@ add_task(async function test_launchWindow_shows_firstrun_when_not_completed() {
   );
 
   // Cleanup
-  AIWindow.toggleAIWindow(window, false);
+  document.documentElement.removeAttribute("ai-window");
   restoreSignIn();
   BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
@@ -137,7 +137,7 @@ add_task(async function test_switcher_shows_firstrun_when_not_completed() {
   );
 
   // Cleanup
-  AIWindow.toggleAIWindow(window, false);
+  document.documentElement.removeAttribute("ai-window");
   restoreSignIn();
   BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
@@ -184,7 +184,7 @@ add_task(
     );
 
     await BrowserTestUtils.closeWindow(newWindow);
-    AIWindow.toggleAIWindow(window, false);
+    document.documentElement.removeAttribute("ai-window");
     restoreSignIn();
     BrowserTestUtils.removeTab(tab);
     await SpecialPowers.popPrefEnv();
@@ -303,7 +303,7 @@ add_task(async function test_firstrun_explainer_page_opens() {
   );
 
   // Clean up
-  AIWindow.toggleAIWindow(window, false);
+  document.documentElement.removeAttribute("ai-window");
   restoreSignIn();
   BrowserTestUtils.removeTab(aiWindowTab);
   win.openLinkIn = originalOpenLinkIn;
