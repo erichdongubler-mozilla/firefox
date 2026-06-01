@@ -482,6 +482,7 @@ DIRS += [
     "/third_party/libwebrtc/rtc_base/system/inline_gn",
     "/third_party/libwebrtc/rtc_base/system/no_unique_address_gn",
     "/third_party/libwebrtc/rtc_base/system/rtc_export_gn",
+    "/third_party/libwebrtc/rtc_base/system/system_time_gn",
     "/third_party/libwebrtc/rtc_base/system/unused_gn",
     "/third_party/libwebrtc/rtc_base/system/warn_current_thread_is_deadlocked_gn",
     "/third_party/libwebrtc/rtc_base/task_utils/repeating_task_gn",
