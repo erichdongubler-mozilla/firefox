@@ -708,6 +708,11 @@
   > menupopup {
     min-width: 6.5em;
   }
+
+  &[disabled] {
+    opacity: 0.5;
+    pointer-events: none;
+  }
 }
 
 .protections-popup-section-header,

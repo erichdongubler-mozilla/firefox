@@ -748,6 +748,13 @@ var gPermissionPanel = {
       menulist.setAttribute("sizetopopup", "none");
       menulist.setAttribute("id", "permission-popup-menulist");
 
+      if (
+        idNoSuffix == "popup" &&
+        Services.prefs.prefIsLocked("dom.disable_open_during_load")
+      ) {
+        menulist.setAttribute("disabled", "true");
+      }
+
       for (let state of SitePermissions.getAvailableStates(idNoSuffix)) {
         let menuitem = document.createXULElement("menuitem");
         // We need to correctly display the default/unknown state, which has its
