@@ -190,7 +190,7 @@ class AppErrorBoundary extends Component {
     return infoObj;
   }
 
-  // Called automatically by React when a child component throws an error.
+  // Called when a child component throws an error.
   componentDidCatch(error, info) {
     const validInfo = this.getValidInfo(info);
     const errorMessage = error.toString();
@@ -222,21 +222,20 @@ class AppErrorBoundary extends Component {
     this.#pingSubmitted = true;
   }
 
-  // Manually called by devtools code when an exception is triggered before
-  // or outside of React render codepath.
-  handleException(exception, toolbox, showToolboxCloseButton = false) {
-    const errorMessage = exception.toString();
-    const clientPacket = exception.clientPacket || {};
-    const serverPacket = exception.serverPacket || {};
+  // This is explicitly called by the toolbox when a server issue is captured.
+  toolboxDidCatch(error, toolbox) {
+    const errorMessage = error.toString();
+    const clientPacket = error.clientPacket || {};
+    const serverPacket = error.serverPacket || {};
 
     this.setState({
       errorMsg: errorMessage,
-      errorStack: exception.stack,
+      errorStack: error.stack,
       errorInfo: {
         clientPacket,
         serverPacket,
       },
-      showToolboxCloseButton,
+      // Toolbox state will be used to provide a button to close the toolbox.
       toolbox,
     });
 
@@ -248,7 +247,7 @@ class AppErrorBoundary extends Component {
 
     const extras = Telemetry.sanitizeEventExtras(
       {
-        error_name: exception.name,
+        error_name: error.name,
         is_destroying: toolbox.isDestroying(),
         packet_error: serverPacket.error,
         packet_target: serverPacket.from,
@@ -256,7 +255,7 @@ class AppErrorBoundary extends Component {
         server_stack: serverPacket.stack || "",
         server_content_process_stack: serverPacket.contentProcessStack || "",
         session_id: toolbox.sessionId,
-        stack: exception.stack || "",
+        stack: error.stack || "",
       },
       "devtoolsMain.toolboxServerError",
       // Allow up to 500 characters for each extra value (maximum value
@@ -327,7 +326,7 @@ class AppErrorBoundary extends Component {
           },
           FILE_BUG_BUTTON
         ),
-        this.state.showToolboxCloseButton
+        this.state.toolbox
           ? button({
               className: "devtools-tabbar-button error-panel-close",
               onClick: () => {

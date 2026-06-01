@@ -1136,27 +1136,23 @@ class Toolbox extends EventEmitter {
 
       this.emit("ready");
       this._resolveIsOpen();
-    } catch (exception) {
+    } catch (error) {
       console.error(
         "Exception while opening the toolbox",
-        String(exception),
-        exception
+        String(error),
+        error
       );
       // While the exception stack is correctly printed in the Browser console when
       // passing `e` to console.error, it is not on the stdout, so print it via dump.
-      dump(exception.stack + "\n");
-      if (exception.clientPacket) {
+      dump(error.stack + "\n");
+      if (error.clientPacket) {
         dump(
-          "Client packet:" +
-            JSON.stringify(exception.clientPacket, null, 2) +
-            "\n"
+          "Client packet:" + JSON.stringify(error.clientPacket, null, 2) + "\n"
         );
       }
-      if (exception.serverPacket) {
+      if (error.serverPacket) {
         dump(
-          "Server packet:" +
-            JSON.stringify(exception.serverPacket, null, 2) +
-            "\n"
+          "Server packet:" + JSON.stringify(error.serverPacket, null, 2) + "\n"
         );
       }
 
@@ -1168,7 +1164,7 @@ class Toolbox extends EventEmitter {
         // If React managed to load, try to display the exception to the user via AppErrorBoundary component.
         // But ignore the exception if the React component itself thrown while rendering (errorInfo is defined)
         if (this._appBoundary && !this._appBoundary.state.errorInfo) {
-          this._appBoundary.handleException(exception, this, true);
+          this._appBoundary.toolboxDidCatch(error, this);
         }
       } catch (e) {
         // Ignore any further error related to AppErrorBoundary as it would prevent closing the toolbox.
