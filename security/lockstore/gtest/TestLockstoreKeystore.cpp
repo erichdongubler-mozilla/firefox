@@ -73,7 +73,7 @@ class LockstoreKeystoreTest : public ::testing::Test {
   void MintLocalKek() {
     const nsCString kekType("local"_ns);
     const nsCString empty;
-    nsresult rv = keystore_create_kek(mKeystore, &kekType, &empty, &empty,
+    nsresult rv = keystore_create_kek(mKeystore, &kekType, &empty,
                                       /* cache_timeout_ms */ 0, &mLocalKekRef);
     ASSERT_NS_SUCCEEDED(rv);
   }
@@ -83,8 +83,7 @@ class LockstoreKeystoreTest : public ::testing::Test {
   // keystore_unlock_kek before any DEK op against it.
   void MintPassword(const nsACString& aPassword, nsCString& aOut) {
     const nsCString kekType("password"_ns);
-    const nsCString empty;
-    nsresult rv = keystore_create_kek(mKeystore, &kekType, &empty, &aPassword,
+    nsresult rv = keystore_create_kek(mKeystore, &kekType, &aPassword,
                                       /* cache_timeout_ms */ 0, &aOut);
     ASSERT_NS_SUCCEEDED(rv);
   }
@@ -675,8 +674,7 @@ TEST_F(LockstoreKeystoreTest, SwitchKekNonexistentCollection) {
   {
     const nsCString kekType("local"_ns);
     const nsCString empty;
-    rv = keystore_create_kek(mKeystore, &kekType, &empty, &empty, 0,
-                             &otherLocal);
+    rv = keystore_create_kek(mKeystore, &kekType, &empty, 0, &otherLocal);
     ASSERT_NS_SUCCEEDED(rv);
   }
   rv = keystore_switch_kek(mKeystore, &coll, &mLocalKekRef, &otherLocal);
@@ -699,8 +697,7 @@ TEST_F(LockstoreKeystoreTest, SwitchKekMissingOldWrapping) {
   {
     const nsCString kekType("local"_ns);
     const nsCString empty;
-    rv = keystore_create_kek(mKeystore, &kekType, &empty, &empty, 0,
-                             &otherLocal);
+    rv = keystore_create_kek(mKeystore, &kekType, &empty, 0, &otherLocal);
     ASSERT_NS_SUCCEEDED(rv);
   }
   rv = keystore_switch_kek(mKeystore, &coll, &otherLocal, &mLocalKekRef);

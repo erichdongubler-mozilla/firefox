@@ -52,7 +52,7 @@ class LockstoreDatastoreTest : public ::testing::Test {
 
     const nsCString kekType("local"_ns);
     const nsCString empty;
-    rv = keystore_create_kek(mKeystore, &kekType, &empty, &empty,
+    rv = keystore_create_kek(mKeystore, &kekType, &empty,
                              /* cache_timeout_ms */ 0, &mLocalKekRef);
     ASSERT_NS_SUCCEEDED(rv);
 

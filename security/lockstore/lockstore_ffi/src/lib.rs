@@ -529,7 +529,6 @@ pub extern "C" fn keystore_lock(handle: &KeystoreHandle) -> nsresult {
 pub extern "C" fn keystore_create_kek(
     handle: &KeystoreHandle,
     kek_type: &nsACString,
-    identifier: &nsACString,
     secret: &nsACString,
     cache_timeout_ms: u32,
     ret_kek_ref: &mut nsCString,
@@ -540,11 +539,9 @@ pub extern "C" fn keystore_create_kek(
         None => return NS_ERROR_INVALID_ARG,
     };
 
-    let identifier_str = identifier.to_utf8();
     let mut secret_buf: Vec<u8> = secret[..].to_vec();
     let result = handle.keystore.create_kek(
         parsed,
-        &identifier_str,
         &secret_buf,
         Duration::from_millis(cache_timeout_ms as u64),
     );

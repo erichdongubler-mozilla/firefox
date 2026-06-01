@@ -78,7 +78,6 @@ class LockstoreService final : public nsILockstore, public nsIObserver {
   Result<nsTArray<uint8_t>, nsresult> DoGetDek(const nsACString& aCollection,
                                                const nsACString& aKekRef);
   Result<nsCString, nsresult> DoCreateKek(const nsACString& aKekType,
-                                          const nsACString& aIdentifier,
                                           const nsACString& aSecret,
                                           uint32_t aCacheTimeoutMs);
   nsresult DoDeleteKek(const nsACString& aKekRef);

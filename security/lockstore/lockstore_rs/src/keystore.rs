@@ -915,12 +915,9 @@ impl Keystore {
 
     /// Generic KEK-creation dispatcher used by the FFI / nsILockstore
     /// `createKek` entry point so JS / C++ consumers don't have to
-    /// special-case every `KekType`. `identifier` selects the kek_ref
-    /// `<id>` suffix: empty mints a fresh random id (the default); a
-    /// non-empty base64url identifier is used verbatim, making the call
-    /// a deterministic get-or-create (a second call with the same
-    /// identifier returns the existing KEK untouched). Returns the
-    /// `kek_ref`, of the form `lockstore::kek::<type>:<id>`.
+    /// special-case every `KekType`. Returns the freshly-minted
+    /// `kek_ref`, always of the form
+    /// `lockstore::kek::<type>:<base64url(random_id)>`.
     ///
     /// Per `kek_type`:
     ///   - `LocalKey`: generates a fresh AES-256 KEK, persists it as
@@ -949,71 +946,30 @@ impl Keystore {
     pub fn create_kek(
         &self,
         kek_type: KekType,
-        identifier: &str,
         secret: &[u8],
         cache_timeout: Duration,
     ) -> Result<String, LockstoreError> {
-        Self::validate_kek_identifier(identifier)?;
         match kek_type {
-            KekType::LocalKey => self.create_local_kek(identifier),
-            KekType::Password => self.create_password_kek(
-                identifier,
-                secret,
-                pbkdf2::PBKDF2_ITERATIONS,
-                cache_timeout,
-            ),
-            KekType::Pkcs11Token => self.create_pkcs11_kek(identifier, secret),
-        }
-    }
-
-    /// Validate a caller-supplied KEK identifier. Empty means "mint a
-    /// random id". A non-empty identifier must be base64url
-    /// (`[A-Za-z0-9_-]`) so it can't smuggle a `:` or other delimiter
-    /// that would make the resulting kek_ref ambiguous.
-    fn validate_kek_identifier(identifier: &str) -> Result<(), LockstoreError> {
-        if identifier.is_empty()
-            || identifier
-                .bytes()
-                .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
-        {
-            Ok(())
-        } else {
-            Err(LockstoreError::InvalidConfiguration(format!(
-                "KEK identifier must be base64url ([A-Za-z0-9_-]); got '{}'",
-                identifier
-            )))
-        }
-    }
-
-    /// Resolve the `<id>` suffix of a kek_ref: a non-empty `identifier`
-    /// is used verbatim (deterministic, get-or-create); an empty
-    /// identifier mints a fresh random base64url id.
-    fn kek_id_suffix(identifier: &str) -> String {
-        if identifier.is_empty() {
-            let id_bytes = crypto::generate_random_bytes(16);
-            base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(&id_bytes)
-        } else {
-            identifier.to_string()
+            KekType::LocalKey => self.create_local_kek(),
+            KekType::Password => {
+                self.create_password_kek(secret, pbkdf2::PBKDF2_ITERATIONS, cache_timeout)
+            }
+            KekType::Pkcs11Token => self.create_pkcs11_kek(secret),
         }
     }
 
     /// Generate a fresh AES-256 KEK, persist it as a `LocalKekRecord`
     /// at a freshly-minted `lockstore::kek::local:<id>` row, and return
     /// the kek_ref. See [`create_kek`] for the caller-facing contract.
-    fn create_local_kek(&self, identifier: &str) -> Result<String, LockstoreError> {
+    fn create_local_kek(&self) -> Result<String, LockstoreError> {
+        let cipher_suite = DEFAULT_CIPHER_SUITE;
+        let kek_bytes = crypto::generate_random_key(cipher_suite);
+        let id_bytes = crypto::generate_random_bytes(16);
         let kek_ref = format!(
             "{}{}",
             KEK_REF_LOCAL_PREFIX,
-            Self::kek_id_suffix(identifier)
+            base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(&id_bytes)
         );
-        // Explicit identifier already in use: get-or-create returns the
-        // existing record untouched so callers can mint a well-known
-        // shared KEK idempotently across runs.
-        if !identifier.is_empty() && self.load_local_record(&kek_ref)?.is_some() {
-            return Ok(kek_ref);
-        }
-        let cipher_suite = DEFAULT_CIPHER_SUITE;
-        let kek_bytes = crypto::generate_random_key(cipher_suite);
         self.save_local_record(&kek_ref, &LocalKekRecord { kek_bytes })?;
         Ok(kek_ref)
     }
@@ -1025,7 +981,7 @@ impl Keystore {
     /// `tests/` can reach it; the name is loud on purpose.
     #[doc(hidden)]
     pub fn create_password_kek_test_only(&self, password: &[u8]) -> Result<String, LockstoreError> {
-        self.create_password_kek("", password, 1, Duration::ZERO)
+        self.create_password_kek(password, 1, Duration::ZERO)
     }
 
     /// Generate a fresh AES-256 KEK wrapped under PBKDF2(password,...),
@@ -1037,7 +993,6 @@ impl Keystore {
     /// See [`create_kek`] for the caller-facing contract.
     fn create_password_kek(
         &self,
-        identifier: &str,
         password: &[u8],
         iterations: u32,
         cache_timeout: Duration,
@@ -1046,16 +1001,6 @@ impl Keystore {
             return Err(LockstoreError::InvalidConfiguration(
                 "Password must not be empty".into(),
             ));
-        }
-        let kek_ref = format!(
-            "{}{}",
-            KEK_REF_PASSWORD_PREFIX,
-            Self::kek_id_suffix(identifier)
-        );
-        // Explicit identifier already in use: get-or-create returns the
-        // existing record untouched (the supplied password is ignored).
-        if !identifier.is_empty() && self.load_password_record(&kek_ref)?.is_some() {
-            return Ok(kek_ref);
         }
         let cipher_suite = DEFAULT_CIPHER_SUITE;
         let salt = crypto::generate_random_bytes(pbkdf2::PBKDF2_SALT_SIZE);
@@ -1066,6 +1011,12 @@ impl Keystore {
         let ciphertext = crypto::encrypt_with_key(&kek_plaintext, &wrapping_key, cipher_suite)?;
         wrapping_key.zeroize();
 
+        let id_bytes = crypto::generate_random_bytes(16);
+        let kek_ref = format!(
+            "{}{}",
+            KEK_REF_PASSWORD_PREFIX,
+            base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(&id_bytes)
+        );
         self.save_password_record(
             &kek_ref,
             &PasswordKekRecord {
@@ -1103,25 +1054,11 @@ impl Keystore {
     /// Provision a fresh PKCS#11-backed KEK against the slot named by
     /// the PKCS#11 URI in `uri_bytes`. See [`create_kek`] for the
     /// caller-facing contract.
-    fn create_pkcs11_kek(
-        &self,
-        identifier: &str,
-        uri_bytes: &[u8],
-    ) -> Result<String, LockstoreError> {
+    fn create_pkcs11_kek(&self, uri_bytes: &[u8]) -> Result<String, LockstoreError> {
         if uri_bytes.is_empty() {
             return Err(LockstoreError::InvalidConfiguration(
                 "PKCS#11 URI must not be empty".into(),
             ));
-        }
-        let kek_ref = format!(
-            "{}{}",
-            KEK_REF_PKCS11_PREFIX,
-            Self::kek_id_suffix(identifier)
-        );
-        // Explicit identifier already in use: get-or-create returns the
-        // existing record untouched (the supplied URI is ignored).
-        if !identifier.is_empty() && self.load_pkcs11_record(&kek_ref)?.is_some() {
-            return Ok(kek_ref);
         }
         let uri_str = std::str::from_utf8(uri_bytes).map_err(|_| {
             LockstoreError::InvalidConfiguration("PKCS#11 URI is not valid UTF-8".into())
@@ -1168,6 +1105,13 @@ impl Keystore {
         let mut kek_plaintext = crypto::generate_random_key(cipher_suite);
         let ciphertext = crypto::encrypt_with_symkey(&kek_plaintext, &wrapping_key, cipher_suite)?;
         kek_plaintext.zeroize();
+
+        let id_bytes = crypto::generate_random_bytes(16);
+        let kek_ref = format!(
+            "{}{}",
+            KEK_REF_PKCS11_PREFIX,
+            base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(&id_bytes)
+        );
 
         let record = Pkcs11KekRecord {
             ciphertext,

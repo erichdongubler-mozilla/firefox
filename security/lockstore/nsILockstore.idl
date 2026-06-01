@@ -279,12 +279,6 @@ interface nsILockstore : nsISupports
    *       record. `cacheTimeoutMs` is ignored — PKCS#11 unlock is
    *       mediated by NSS, not by the Lockstore cache.
    *
-   * `identifier` selects the kek_ref `<id>` suffix: empty (the usual
-   * case) mints a fresh random id; a non-empty base64url
-   * (`[A-Za-z0-9_-]`) identifier is used verbatim, making the call a
-   * deterministic get-or-create -- a later `createKek` with the same
-   * `kekType` + `identifier` returns the existing KEK untouched.
-   *
    * `cacheTimeoutMs` is the duration (in milliseconds) that the
    * just-derived KEK is kept in the in-memory auth cache. Only
    * meaningful for the `"password"` tier; ignored elsewhere.
@@ -296,16 +290,14 @@ interface nsILockstore : nsISupports
    * The returned Promise resolves with the freshly-minted `kek_ref`
    * the caller should hand to subsequent `createDek` / `encrypt`
    * calls, and rejects with:
-   *   - NS_ERROR_INVALID_ARG on an unknown `kekType`, a non-base64url
-   *     `identifier`, an empty Password `secret`, or a malformed
-   *     PKCS#11 URI.
+   *   - NS_ERROR_INVALID_ARG on an unknown `kekType`, an empty
+   *     Password `secret`, or a malformed PKCS#11 URI.
    *   - NS_ERROR_ABORT if a PKCS#11 token unlock prompt is cancelled.
    *   - NS_ERROR_FAILURE on any other failure (SQLite write error,
    *     crypto-layer error).
    */
   [implicit_jscontext]
   Promise createKek(in ACString kekType,
-                    in ACString identifier,
                     in ACString secret,
                     in uint32_t cacheTimeoutMs);
 
