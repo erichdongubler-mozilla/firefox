@@ -988,12 +988,13 @@ nsDOMWindowUtils::SendNativeMouseScrollEvent(
 
   NS_DispatchToMainThread(NativeInputRunnable::Create(
       NewRunnableMethod<mozilla::LayoutDeviceIntPoint, uint32_t, double, double,
-                        double, uint32_t, uint32_t,
+                        double, nsIWidget::NativeModifiers, uint32_t,
                         nsISynthesizedEventCallback*>(
           "nsIWidget::SynthesizeNativeMouseScrollEvent", widget,
           &nsIWidget::SynthesizeNativeMouseScrollEvent,
           LayoutDeviceIntPoint(aScreenX, aScreenY), aNativeMessage, aDeltaX,
-          aDeltaY, aDeltaZ, aModifierFlags, aAdditionalFlags, aCallback)));
+          aDeltaY, aDeltaZ, GetWidgetModifiers(aModifierFlags),
+          aAdditionalFlags, aCallback)));
   return NS_OK;
 }
 

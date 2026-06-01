@@ -39,8 +39,8 @@ class MouseScrollHandler {
    */
   static nsresult SynthesizeNativeMouseScrollEvent(
       nsWindow* aWidget, const LayoutDeviceIntPoint& aPoint,
-      uint32_t aNativeMessage, int32_t aDelta, uint32_t aModifierFlags,
-      uint32_t aAdditionalFlags);
+      uint32_t aNativeMessage, int32_t aDelta,
+      nsIWidget::NativeModifiers aModifierFlags, uint32_t aAdditionalFlags);
 
  private:
   MouseScrollHandler();

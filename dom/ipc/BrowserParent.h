@@ -519,8 +519,8 @@ class BrowserParent final : public PBrowserParent,
   mozilla::ipc::IPCResult RecvSynthesizeNativeMouseScrollEvent(
       const LayoutDeviceIntPoint& aPoint, const uint32_t& aNativeMessage,
       const double& aDeltaX, const double& aDeltaY, const double& aDeltaZ,
-      const uint32_t& aModifierFlags, const uint32_t& aAdditionalFlags,
-      const Maybe<uint64_t>& aCallbackId);
+      const nsIWidget::NativeModifiers& aModifierFlags,
+      const uint32_t& aAdditionalFlags, const Maybe<uint64_t>& aCallbackId);
 
   mozilla::ipc::IPCResult RecvSynthesizeNativeTouchPoint(
       const uint32_t& aPointerId, const TouchPointerState& aPointerState,
