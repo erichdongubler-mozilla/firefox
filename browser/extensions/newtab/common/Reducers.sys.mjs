@@ -228,6 +228,8 @@ export const INITIAL_STATE = {
     // Kept at root so it survives WIDGETS_SPORTS_WIDGET_SET wholesale-replaces
     // of `data` (e.g. post-match resync).
     lastLiveUpdated: null,
+    // Index into the live matches list for the Now tab's single-card pager.
+    liveIndex: 0,
   },
 };
 
@@ -1251,6 +1253,8 @@ function SportsWidget(prevState = INITIAL_STATE.SportsWidget, action) {
         },
       };
     }
+    case at.WIDGETS_SPORTS_SET_LIVE_INDEX:
+      return { ...prevState, liveIndex: action.data };
     default:
       return prevState;
   }

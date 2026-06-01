@@ -3119,3 +3119,221 @@ describe("<SportsWidget> live polling visibility", () => {
     expect(findLiveObserver()).toBeDefined();
   });
 });
+
+describe("<SportsWidget> live games pagination (Now tab)", () => {
+  // Two distinct live matches so the pagination has something to step through.
+  const matchEngUsa = {
+    ...mockMatch,
+    home_team: { key: "ENG", name: "England" },
+    away_team: { key: "USA", name: "United States" },
+    query: "ENG vs USA",
+  };
+  const matchCanAus = {
+    ...mockMatch,
+    home_team: { key: "CAN", name: "Canada" },
+    away_team: { key: "AUS", name: "Australia" },
+    query: "CAN vs AUS",
+  };
+
+  function renderPagination({
+    live = [],
+    liveIndex = 0,
+    dispatch = jest.fn(),
+    size = "large",
+  } = {}) {
+    return {
+      dispatch,
+      ...render(
+        <WrapWithProvider
+          state={makeState(
+            { [PREF_SPORTS_WIDGET_SIZE]: size },
+            {
+              widgetState: "sports-matches",
+              matchesTab: "now",
+              liveIndex,
+              data: { teams: [], matches: emptyMatches, live },
+            }
+          )}
+        >
+          <SportsWidget dispatch={dispatch} handleUserInteraction={jest.fn()} />
+        </WrapWithProvider>
+      ),
+    };
+  }
+
+  function findPagination(container) {
+    return container.querySelector(".sports-live-pagination");
+  }
+
+  it("does NOT render the pagination when only one live match exists", () => {
+    const { container } = renderPagination({ live: [matchEngUsa] });
+    expect(findPagination(container)).toBeNull();
+  });
+
+  it("renders the pagination in medium size when 2+ live matches exist", () => {
+    const { container } = renderPagination({
+      size: "medium",
+      live: [matchEngUsa, matchCanAus],
+    });
+    expect(findPagination(container)).toBeTruthy();
+  });
+
+  it("renders chevrons and one dot per live match when 2+ are live", () => {
+    const { container } = renderPagination({
+      live: [matchEngUsa, matchCanAus],
+      liveIndex: 0,
+    });
+    const pagination = findPagination(container);
+    expect(pagination).toBeTruthy();
+    expect(
+      pagination.querySelector(".sports-live-pagination-prev")
+    ).toBeTruthy();
+    expect(
+      pagination.querySelector(".sports-live-pagination-next")
+    ).toBeTruthy();
+    const dots = pagination.querySelectorAll(".sports-live-pagination-dot");
+    expect(dots.length).toBe(2);
+    expect(dots[0].classList.contains("is-active")).toBe(true);
+    expect(dots[1].classList.contains("is-active")).toBe(false);
+  });
+
+  it("dispatches CHANGE_LIVE_INDEX with the next index when the next chevron is clicked", () => {
+    const { container, dispatch } = renderPagination({
+      live: [matchEngUsa, matchCanAus],
+      liveIndex: 0,
+    });
+    const nextButton = findPagination(container).querySelector(
+      ".sports-live-pagination-next"
+    );
+    act(() => {
+      fireEvent.click(nextButton);
+    });
+    const changeCall = dispatch.mock.calls.find(
+      ([action]) => action?.type === at.WIDGETS_SPORTS_CHANGE_LIVE_INDEX
+    );
+    expect(changeCall).toBeTruthy();
+    expect(changeCall[0].data).toBe(1);
+  });
+
+  it("wraps to the last match when the prev chevron is clicked from index 0", () => {
+    const { container, dispatch } = renderPagination({
+      live: [matchEngUsa, matchCanAus],
+      liveIndex: 0,
+    });
+    const prevButton = findPagination(container).querySelector(
+      ".sports-live-pagination-prev"
+    );
+    act(() => {
+      fireEvent.click(prevButton);
+    });
+    const changeCall = dispatch.mock.calls.find(
+      ([action]) => action?.type === at.WIDGETS_SPORTS_CHANGE_LIVE_INDEX
+    );
+    expect(changeCall[0].data).toBe(1);
+  });
+
+  it("dispatches CHANGE_LIVE_INDEX with the dot's index when a dot is clicked", () => {
+    const { container, dispatch } = renderPagination({
+      live: [matchEngUsa, matchCanAus],
+      liveIndex: 0,
+    });
+    const dots = findPagination(container).querySelectorAll(
+      ".sports-live-pagination-dot"
+    );
+    act(() => {
+      fireEvent.click(dots[1]);
+    });
+    const changeCall = dispatch.mock.calls.find(
+      ([action]) => action?.type === at.WIDGETS_SPORTS_CHANGE_LIVE_INDEX
+    );
+    expect(changeCall[0].data).toBe(1);
+  });
+
+  it("uses size='small' chevrons in the medium widget", () => {
+    const { container } = renderPagination({
+      size: "medium",
+      live: [matchEngUsa, matchCanAus],
+    });
+    const pagination = findPagination(container);
+    expect(
+      pagination
+        .querySelector(".sports-live-pagination-prev")
+        .getAttribute("size")
+    ).toBe("small");
+    expect(
+      pagination
+        .querySelector(".sports-live-pagination-next")
+        .getAttribute("size")
+    ).toBe("small");
+  });
+
+  it("uses default-size chevrons in the large widget", () => {
+    const { container } = renderPagination({
+      size: "large",
+      live: [matchEngUsa, matchCanAus],
+    });
+    const pagination = findPagination(container);
+    // `size={undefined}` on a moz-button leaves the attribute off entirely.
+    expect(
+      pagination
+        .querySelector(".sports-live-pagination-prev")
+        .hasAttribute("size")
+    ).toBe(false);
+    expect(
+      pagination
+        .querySelector(".sports-live-pagination-next")
+        .hasAttribute("size")
+    ).toBe(false);
+  });
+
+  it("labels the widget root via the Now tab when pagination is visible", () => {
+    const { container } = renderPagination({
+      live: [matchEngUsa, matchCanAus],
+    });
+    const article = container.querySelector("article.sports");
+    expect(article.getAttribute("aria-labelledby")).toBe("sports-now-tab");
+    // The accessible name is the visible Now tab, so the referenced id must
+    // actually exist in the document.
+    expect(container.querySelector("#sports-now-tab")).toBeTruthy();
+  });
+
+  it("does NOT set aria-labelledby on the widget root when only one live match exists", () => {
+    const { container } = renderPagination({ live: [matchEngUsa] });
+    const article = container.querySelector("article.sports");
+    expect(article.hasAttribute("aria-labelledby")).toBe(false);
+  });
+
+  it("adds aria-live='polite' and aria-atomic='false' to the slides container when pagination is active", () => {
+    const { container } = renderPagination({
+      live: [matchEngUsa, matchCanAus],
+    });
+    const nowPanel = [
+      ...container.querySelectorAll(".sports-matches-tab-panel"),
+    ].find(panel => !panel.hasAttribute("hidden"));
+    const slides = nowPanel.querySelector(".match-highlight-view");
+    expect(slides.getAttribute("aria-live")).toBe("polite");
+    expect(slides.getAttribute("aria-atomic")).toBe("false");
+  });
+
+  it("does NOT add aria-live to the slides container when only one live match exists", () => {
+    const { container } = renderPagination({ live: [matchEngUsa] });
+    const nowPanel = [
+      ...container.querySelectorAll(".sports-matches-tab-panel"),
+    ].find(panel => !panel.hasAttribute("hidden"));
+    const slides = nowPanel.querySelector(".match-highlight-view");
+    expect(slides.hasAttribute("aria-live")).toBe(false);
+  });
+
+  it("renders the match at liveIndex (not always index 0)", () => {
+    const { container } = renderPagination({
+      live: [matchEngUsa, matchCanAus],
+      liveIndex: 1,
+    });
+    const panel = getVisibleTabPanel(container);
+    const row = panel.querySelector(".match-highlight-view .sports-match-row");
+    expect(row).toBeTruthy();
+    // Verify the visible match is the second one by checking the team
+    // identifiers rendered in the row.
+    expect(row.textContent).toMatch(/CAN|AUS|Canada|Australia/);
+  });
+});

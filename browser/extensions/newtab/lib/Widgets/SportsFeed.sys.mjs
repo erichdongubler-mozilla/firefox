@@ -146,8 +146,14 @@ export class SportsFeed {
   // On startup, read whatever was saved to disk and send it to the UI.
   async syncState() {
     const cachedData = (await this.cache.get()) || {};
-    const { widgetState, selectedTeams, sportsData, matchesTab, followedOnly } =
-      cachedData;
+    const {
+      widgetState,
+      selectedTeams,
+      sportsData,
+      matchesTab,
+      followedOnly,
+      liveIndex,
+    } = cachedData;
     const { teams, matches, live } = sportsData || {};
 
     if (widgetState) {
@@ -182,6 +188,22 @@ export class SportsFeed {
         ac.BroadcastToContent({
           type: at.WIDGETS_SPORTS_SET_FOLLOWED_ONLY,
           data: followedOnly,
+        })
+      );
+    }
+
+    // Restore the live-pager position. Clamp against the cached live list so a
+    // stale persisted index can't outlive its match — if the cached list has
+    // shrunk or is empty, reset to 0.
+    if (Number.isInteger(liveIndex)) {
+      const liveCount = Array.isArray(live) ? live.length : 0;
+      const clampedLiveIndex = liveCount
+        ? Math.min(Math.max(liveIndex, 0), liveCount - 1)
+        : 0;
+      this.store.dispatch(
+        ac.BroadcastToContent({
+          type: at.WIDGETS_SPORTS_SET_LIVE_INDEX,
+          data: clampedLiveIndex,
         })
       );
     }
@@ -262,12 +284,14 @@ export class SportsFeed {
           }),
     ]);
 
-    // The /live endpoint returns `{ matches: [...] }` and is pre-filtered to
-    // in-progress games by the backend, so we surface its array directly as
-    // `live` alongside `matches`. The "Now" tab reads from `data.live`, while
-    // `matches.previous` / `matches.next` continue to drive the Results and
-    // Upcoming tabs.
-    const liveMatches = Array.isArray(live?.matches) ? live.matches : [];
+    // The /live endpoint returns `{ matches: [...] }`. The backend is meant
+    // to pre-filter to in-progress games, but we re-filter on `status_type`
+    // here as a defensive guard — the Now tab must only ever surface matches
+    // that are actually live. `matches.previous` / `matches.next` continue to
+    // drive the Results and Upcoming tabs.
+    const liveMatches = Array.isArray(live?.matches)
+      ? live.matches.filter(match => match?.status_type === "live")
+      : [];
 
     if (teams?.teams || matches || live) {
       await this.cache.set("sportsData", {
@@ -287,6 +311,26 @@ export class SportsFeed {
         },
       })
     );
+
+    // Re-clamp the persisted live-pager index against the freshly fetched
+    // list. Live games come and go between fetches, so an index that was
+    // valid against the previous list may now point past the end.
+    const cached = (await this.cache.get()) || {};
+    const cachedLiveIndex = Number.isInteger(cached.liveIndex)
+      ? cached.liveIndex
+      : 0;
+    const clampedLiveIndex = liveMatches.length
+      ? Math.min(Math.max(cachedLiveIndex, 0), liveMatches.length - 1)
+      : 0;
+    if (clampedLiveIndex !== cachedLiveIndex) {
+      await this.cache.set("liveIndex", clampedLiveIndex);
+      this.store.dispatch(
+        ac.BroadcastToContent({
+          type: at.WIDGETS_SPORTS_SET_LIVE_INDEX,
+          data: clampedLiveIndex,
+        })
+      );
+    }
   }
 
   async fetchWatchLive() {
@@ -768,6 +812,26 @@ export class SportsFeed {
           })
         );
         break;
+      // User paged to a different live match in the Now tab — clamp the
+      // index against the current live list, persist it, and broadcast.
+      case at.WIDGETS_SPORTS_CHANGE_LIVE_INDEX: {
+        const state = this.store.getState()?.SportsWidget;
+        const liveCount = Array.isArray(state?.data?.live)
+          ? state.data.live.length
+          : 0;
+        const requested = Number.isInteger(action.data) ? action.data : 0;
+        const nextIndex = liveCount
+          ? Math.min(Math.max(requested, 0), liveCount - 1)
+          : 0;
+        await this.cache.set("liveIndex", nextIndex);
+        this.store.dispatch(
+          ac.BroadcastToContent({
+            type: at.WIDGETS_SPORTS_SET_LIVE_INDEX,
+            data: nextIndex,
+          })
+        );
+        break;
+      }
       // User toggled the "Only followed teams" filter for a tab — merge into
       // the existing followedOnly object and persist.
       case at.WIDGETS_SPORTS_CHANGE_FOLLOWED_ONLY: {

@@ -14,6 +14,7 @@ import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { useIntersectionObserver, useSizeSubmenu } from "../../../lib/utils";
 import { SportsMatchRow } from "./SportsMatchRow";
+import { LivePagination } from "./LivePagination";
 import { MoveSubmenu } from "../MoveSubmenu";
 import { WatchLiveModal } from "./WatchLiveModal";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
@@ -108,6 +109,7 @@ function getHighlightMatch({
   sortedPrevious,
   sortedCurrent,
   sortedNext,
+  liveIndex,
 }) {
   if (widgetState !== WIDGET_STATES.MATCHES) {
     return null;
@@ -116,7 +118,7 @@ function getHighlightMatch({
     return sortedPrevious[0] || null;
   }
   if (activeTab === MATCHES_TABS.NOW) {
-    return sortedCurrent[0] || null;
+    return sortedCurrent[liveIndex] || sortedCurrent[0] || null;
   }
   if (activeTab === MATCHES_TABS.UPCOMING && !showUpcomingList) {
     return sortedNext[0] || null;
@@ -144,7 +146,13 @@ function getFollowedGradient(match, selectedTeamsSet, teamColorsByKey) {
   return `linear-gradient(to right, ${colors.join(", ")})`;
 }
 
-// eslint-disable-next-line max-statements
+// When the Now tab has 2+ live games, the widget root is labelled by the
+// visible "Now" tab so screen readers can name the live-matches region.
+function getCarouselArticleAttrs(active) {
+  return active ? { "aria-labelledby": "sports-now-tab" } : null;
+}
+
+// eslint-disable-next-line max-statements, complexity
 function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   const prefs = useSelector(state => state.Prefs.values);
   const sportsWidgetData = useSelector(state => state.SportsWidget);
@@ -191,6 +199,16 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   const hasUserSelectedTab = useRef(false);
   const activeTab =
     hasLiveGames && !hasUserSelectedTab.current ? MATCHES_TABS.NOW : matchesTab;
+
+  // Defensive clamp on the persisted live-pager index. The feed re-clamps
+  // after every fetch, but the restored cached index may briefly exceed the
+  // current live list (e.g. mid-flight between a fetch and the matching
+  // SET_LIVE_INDEX broadcast). When the live list is empty, the inner
+  // `Math.max((length ?? 0) - 1, 0)` collapses to 0, pinning liveIndex to 0.
+  const liveIndex = Math.min(
+    Math.max(sportsWidgetData.liveIndex ?? 0, 0),
+    Math.max((rawLive?.length ?? 0) - 1, 0)
+  );
 
   // Set of followed team keys that are still in the tournament. Eliminated
   // teams drop out so the rest of the UI (toggle, bubble-to-front sort,
@@ -260,6 +278,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
     sortedPrevious,
     sortedCurrent,
     sortedNext,
+    liveIndex,
   });
   const followedGradient = getFollowedGradient(
     highlightMatch,
@@ -666,6 +685,9 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
           playIntroVideo();
         }
       }}
+      {...getCarouselArticleAttrs(
+        activeTab === MATCHES_TABS.NOW && (rawLive?.length ?? 0) >= 2
+      )}
     >
       {widgetState === WIDGET_STATES.INTRO && (
         <video
@@ -708,6 +730,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
               ({ id, disabled }) => (
                 <button
                   key={id}
+                  id={`sports-${id}-tab`}
                   role="tab"
                   aria-selected={activeTab === id}
                   disabled={disabled}
@@ -825,11 +848,15 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
             dispatch={dispatch}
             matchesTab={activeTab}
             hasLiveGames={hasLiveGames}
+            hasLivePagination={
+              activeTab === MATCHES_TABS.NOW && (rawLive?.length ?? 0) >= 2
+            }
             size={displaySize}
             widgetSize={widgetSize}
             previous={sortedPrevious}
             current={sortedCurrent}
             next={sortedNext}
+            liveIndex={liveIndex}
             handleInteraction={handleInteraction}
             selectedTeamsSet={selectedTeamsSet}
             followedOnly={sportsWidgetData.followedOnly}
@@ -1009,6 +1036,7 @@ function SportsMatchesView({
   dispatch,
   matchesTab,
   hasLiveGames,
+  hasLivePagination,
   // `size` is the *effective* display size — it may be forced to "large"
   // when the user has expanded the match list view, even if the user's
   // chosen pref is "medium". Use it for layout decisions inside the view.
@@ -1020,6 +1048,7 @@ function SportsMatchesView({
   previous,
   current,
   next,
+  liveIndex,
   handleInteraction,
   selectedTeamsSet,
   followedOnly,
@@ -1175,14 +1204,23 @@ function SportsMatchesView({
           className="sports-matches-tab-panel"
           hidden={matchesTab !== MATCHES_TABS.NOW}
         >
-          {current[0] && (
+          {current[liveIndex] && (
             <>
               {size === "large" && (
-                <SportsSectionLabel match={current[0]} withLiveBadge={true} />
+                <SportsSectionLabel
+                  match={current[liveIndex]}
+                  withLiveBadge={true}
+                />
               )}
-              <div className="match-highlight-view">
+              <div
+                className="match-highlight-view"
+                {...(hasLivePagination && {
+                  "aria-live": "polite",
+                  "aria-atomic": "false",
+                })}
+              >
                 <SportsMatchRow
-                  match={current[0]}
+                  match={current[liveIndex]}
                   variant="now"
                   size={size}
                   handleInteraction={handleInteraction}
@@ -1191,6 +1229,7 @@ function SportsMatchesView({
               </div>
               {/* TODO: Replace play icon when finalized */}
               <moz-button
+                className="sports-watch-live-button"
                 type={size === "medium" ? "icon" : "default"}
                 size={size === "medium" ? "small" : undefined}
                 iconSrc="chrome://browser/skin/device-tv.svg"
@@ -1201,6 +1240,15 @@ function SportsMatchesView({
                 }
                 onClick={onWatchClick}
               ></moz-button>
+              {current.length >= 2 && (
+                <LivePagination
+                  dispatch={dispatch}
+                  liveIndex={liveIndex}
+                  liveCount={current.length}
+                  size={size}
+                  handleInteraction={handleInteraction}
+                />
+              )}
             </>
           )}
         </div>

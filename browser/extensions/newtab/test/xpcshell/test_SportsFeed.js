@@ -408,6 +408,42 @@ add_task(async function test_fetchSportsData_dispatches_teams_and_matches() {
   );
 });
 
+add_task(
+  async function test_fetchSportsData_filters_live_to_status_type_live() {
+    // The /live endpoint is meant to be pre-filtered by the backend, but the
+    // feed re-filters on `status_type === "live"` as a defensive guard so the
+    // Now tab only ever surfaces actually-live matches.
+    const feed = makeFeed();
+    const mockLive = {
+      matches: [
+        { id: "live1", status_type: "live", query: "team1 vs team2" },
+        { id: "scheduled1", status_type: "scheduled", query: "team3 vs team4" },
+        { id: "ended1", status_type: "ended", query: "team5 vs team6" },
+        { id: "live2", status_type: "live", query: "team7 vs team8" },
+      ],
+    };
+    sinon.stub(feed.merino, "fetchSportsTeams").resolves(null);
+    sinon.stub(feed.merino, "fetchSportsMatches").resolves(null);
+    sinon.stub(feed.merino, "fetchSportsLive").resolves(mockLive);
+
+    feed.store.state.Prefs.values["sports.worldCup.teamsEndpoint"] =
+      "https://merino.services.mozilla.com/api/v1/wcs/teams";
+    feed.store.state.Prefs.values["sports.worldCup.matchesEndpoint"] =
+      "https://merino.services.mozilla.com/api/v1/wcs/matches";
+    feed.store.state.Prefs.values["sports.worldCup.liveEndpoint"] =
+      "https://merino.services.mozilla.com/api/v1/wcs/live";
+
+    await feed.fetchSportsData();
+
+    const [dispatchedAction] = feed.store.dispatch.firstCall.args;
+    Assert.deepEqual(
+      dispatchedAction.data.live.map(m => m.id),
+      ["live1", "live2"],
+      "only matches with status_type === 'live' survive the filter"
+    );
+  }
+);
+
 add_task(async function test_fetchSportsData_reads_endpoint_prefs() {
   const feed = makeFeed();
   const teamsEndpoint = "https://merino.services.mozilla.com/api/v1/wcs/teams";
@@ -623,7 +659,9 @@ add_task(
     });
     const liveStub = sinon.stub(feed.merino, "fetchSportsLive");
 
-    const prefetched = { matches: [{ global_event_id: 1 }] };
+    const prefetched = {
+      matches: [{ global_event_id: 1, status_type: "live" }],
+    };
     await feed.fetchSportsData({ live: prefetched });
 
     Assert.ok(teamsStub.calledOnce, "teams still fetched");
@@ -962,6 +1000,83 @@ add_task(async function test_CHANGE_FOLLOWED_ONLY_merges_and_broadcasts() {
   getStub.restore();
   setStub.restore();
 });
+
+add_task(async function test_CHANGE_LIVE_INDEX_persists_and_broadcasts() {
+  // The live pager dispatches an index; the feed must clamp it against the
+  // current live list, persist it, and broadcast the SET back to the UI.
+  const feed = makeFeed();
+  feed.store.state.SportsWidget = {
+    data: { live: [{ id: "a" }, { id: "b" }, { id: "c" }] },
+  };
+  const setStub = sinon.stub(feed.cache, "set").resolves();
+
+  info(
+    "CHANGE_LIVE_INDEX should persist the in-range index and broadcast SET_LIVE_INDEX"
+  );
+  await feed.onAction({
+    type: actionTypes.WIDGETS_SPORTS_CHANGE_LIVE_INDEX,
+    data: 2,
+  });
+
+  Assert.ok(setStub.calledOnce, "cache.set called once");
+  Assert.equal(setStub.firstCall.args[0], "liveIndex");
+  Assert.equal(setStub.firstCall.args[1], 2);
+
+  const [firstDispatch] = feed.store.dispatch.getCalls();
+  Assert.equal(
+    firstDispatch.args[0].type,
+    actionTypes.WIDGETS_SPORTS_SET_LIVE_INDEX,
+    "dispatches SET_LIVE_INDEX"
+  );
+  Assert.equal(firstDispatch.args[0].data, 2);
+
+  setStub.restore();
+});
+
+add_task(async function test_CHANGE_LIVE_INDEX_clamps_past_end() {
+  // If the UI somehow sends an index past the end (race with a fetch that
+  // shrinks the live list), the handler must clamp it to the last valid slot.
+  const feed = makeFeed();
+  feed.store.state.SportsWidget = {
+    data: { live: [{ id: "a" }, { id: "b" }] },
+  };
+  const setStub = sinon.stub(feed.cache, "set").resolves();
+
+  await feed.onAction({
+    type: actionTypes.WIDGETS_SPORTS_CHANGE_LIVE_INDEX,
+    data: 99,
+  });
+
+  Assert.equal(
+    setStub.firstCall.args[1],
+    1,
+    "clamps an out-of-range index to the last live match"
+  );
+  Assert.equal(feed.store.dispatch.firstCall.args[0].data, 1);
+
+  setStub.restore();
+});
+
+add_task(
+  async function test_CHANGE_LIVE_INDEX_empty_live_list_resets_to_zero() {
+    const feed = makeFeed();
+    feed.store.state.SportsWidget = { data: { live: [] } };
+    const setStub = sinon.stub(feed.cache, "set").resolves();
+
+    await feed.onAction({
+      type: actionTypes.WIDGETS_SPORTS_CHANGE_LIVE_INDEX,
+      data: 4,
+    });
+
+    Assert.equal(
+      setStub.firstCall.args[1],
+      0,
+      "with no live matches, the index resets to 0"
+    );
+
+    setStub.restore();
+  }
+);
 
 add_task(async function test_CHANGE_FOLLOWED_ONLY_starts_empty_cache() {
   // First-time toggle: cache.get may return undefined or an object with no

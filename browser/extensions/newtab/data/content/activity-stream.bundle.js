@@ -308,6 +308,7 @@ for (const type of [
   "WIDGETS_LISTS_USER_IMPRESSION",
   "WIDGETS_OPT_IN",
   "WIDGETS_SPORTS_CHANGE_FOLLOWED_ONLY",
+  "WIDGETS_SPORTS_CHANGE_LIVE_INDEX",
   "WIDGETS_SPORTS_CHANGE_MATCHES_TAB",
   "WIDGETS_SPORTS_CHANGE_SELECTED_TEAMS",
   "WIDGETS_SPORTS_CHANGE_WIDGET_STATE",
@@ -316,6 +317,7 @@ for (const type of [
   "WIDGETS_SPORTS_LIVE_VISIBLE",
   "WIDGETS_SPORTS_OPEN_MATCH_SEARCH",
   "WIDGETS_SPORTS_SET_FOLLOWED_ONLY",
+  "WIDGETS_SPORTS_SET_LIVE_INDEX",
   "WIDGETS_SPORTS_SET_MATCHES_TAB",
   "WIDGETS_SPORTS_SET_SELECTED_TEAMS",
   "WIDGETS_SPORTS_SET_WIDGET_STATE",
@@ -6811,6 +6813,8 @@ const INITIAL_STATE = {
     // Kept at root so it survives WIDGETS_SPORTS_WIDGET_SET wholesale-replaces
     // of `data` (e.g. post-match resync).
     lastLiveUpdated: null,
+    // Index into the live matches list for the Now tab's single-card pager.
+    liveIndex: 0,
   },
 };
 
@@ -7834,6 +7838,8 @@ function SportsWidget(prevState = INITIAL_STATE.SportsWidget, action) {
         },
       };
     }
+    case actionTypes.WIDGETS_SPORTS_SET_LIVE_INDEX:
+      return { ...prevState, liveIndex: action.data };
     default:
       return prevState;
   }
@@ -16541,6 +16547,71 @@ function SportsMatchRow({
   }, isAwayFollowed ? /*#__PURE__*/external_React_default().createElement("strong", null, away_team.key) : away_team.key)));
 }
 
+;// CONCATENATED MODULE: ./content-src/components/Widgets/SportsWidget/LivePagination.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+// eslint-disable-next-line no-unused-vars
+
+
+
+// Pager for the Now tab when 2+ live games are happening at once. Chevron
+// buttons step through the live matches (already sorted followed-first); dot
+// indicators show position and let the user jump directly to a match.
+// Chevron icon direction is mirrored under RTL via CSS (`:dir(rtl)`).
+function LivePagination({
+  dispatch,
+  liveIndex,
+  liveCount,
+  size,
+  handleInteraction
+}) {
+  const buttonSize = size === "medium" ? "small" : undefined;
+  const goTo = nextIndex => {
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.WIDGETS_SPORTS_CHANGE_LIVE_INDEX,
+      data: nextIndex
+    }));
+    handleInteraction();
+  };
+  const goPrev = () => goTo((liveIndex - 1 + liveCount) % liveCount);
+  const goNext = () => goTo((liveIndex + 1) % liveCount);
+  return /*#__PURE__*/external_React_default().createElement("div", {
+    className: "sports-live-pagination",
+    role: "group"
+  }, /*#__PURE__*/external_React_default().createElement("moz-button", {
+    type: "ghost",
+    size: buttonSize,
+    className: "sports-live-pagination-prev",
+    iconSrc: "chrome://global/skin/icons/arrow-left.svg",
+    "data-l10n-id": "newtab-sports-widget-pagination-previous",
+    onClick: goPrev
+  }), /*#__PURE__*/external_React_default().createElement("div", {
+    className: "sports-live-pagination-dots"
+  }, Array.from({
+    length: liveCount
+  }, (_, i) => /*#__PURE__*/external_React_default().createElement("button", {
+    key: i,
+    type: "button",
+    className: `sports-live-pagination-dot${i === liveIndex ? " is-active" : ""}`,
+    "aria-current": i === liveIndex ? "true" : undefined,
+    "data-l10n-id": "newtab-sports-widget-pagination-dot",
+    "data-l10n-args": JSON.stringify({
+      index: i + 1,
+      total: liveCount
+    }),
+    onClick: () => goTo(i)
+  }))), /*#__PURE__*/external_React_default().createElement("moz-button", {
+    type: "ghost",
+    size: buttonSize,
+    className: "sports-live-pagination-next",
+    iconSrc: "chrome://global/skin/icons/arrow-right.svg",
+    "data-l10n-id": "newtab-sports-widget-pagination-next",
+    onClick: goNext
+  }));
+}
+
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/SportsWidget/WatchLiveModal.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -16931,11 +17002,13 @@ function groupMatchesBySection(matches) {
 }
 
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/SportsWidget/SportsWidget.jsx
+function SportsWidget_extends() { return SportsWidget_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, SportsWidget_extends.apply(null, arguments); }
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 // eslint-disable-next-line no-unused-vars
+
 
 
 
@@ -17018,7 +17091,8 @@ function getHighlightMatch({
   showUpcomingList,
   sortedPrevious,
   sortedCurrent,
-  sortedNext
+  sortedNext,
+  liveIndex
 }) {
   if (widgetState !== WIDGET_STATES.MATCHES) {
     return null;
@@ -17027,7 +17101,7 @@ function getHighlightMatch({
     return sortedPrevious[0] || null;
   }
   if (activeTab === MATCHES_TABS.NOW) {
-    return sortedCurrent[0] || null;
+    return sortedCurrent[liveIndex] || sortedCurrent[0] || null;
   }
   if (activeTab === MATCHES_TABS.UPCOMING && !showUpcomingList) {
     return sortedNext[0] || null;
@@ -17055,7 +17129,15 @@ function getFollowedGradient(match, selectedTeamsSet, teamColorsByKey) {
   return `linear-gradient(to right, ${colors.join(", ")})`;
 }
 
-// eslint-disable-next-line max-statements
+// When the Now tab has 2+ live games, the widget root is labelled by the
+// visible "Now" tab so screen readers can name the live-matches region.
+function getCarouselArticleAttrs(active) {
+  return active ? {
+    "aria-labelledby": "sports-now-tab"
+  } : null;
+}
+
+// eslint-disable-next-line max-statements, complexity
 function SportsWidget_SportsWidget({
   dispatch,
   handleUserInteraction,
@@ -17094,6 +17176,13 @@ function SportsWidget_SportsWidget({
   } = sportsWidgetData;
   const hasUserSelectedTab = (0,external_React_namespaceObject.useRef)(false);
   const activeTab = hasLiveGames && !hasUserSelectedTab.current ? MATCHES_TABS.NOW : matchesTab;
+
+  // Defensive clamp on the persisted live-pager index. The feed re-clamps
+  // after every fetch, but the restored cached index may briefly exceed the
+  // current live list (e.g. mid-flight between a fetch and the matching
+  // SET_LIVE_INDEX broadcast). When the live list is empty, the inner
+  // `Math.max((length ?? 0) - 1, 0)` collapses to 0, pinning liveIndex to 0.
+  const liveIndex = Math.min(Math.max(sportsWidgetData.liveIndex ?? 0, 0), Math.max((rawLive?.length ?? 0) - 1, 0));
 
   // Set of followed team keys that are still in the tournament. Eliminated
   // teams drop out so the rest of the UI (toggle, bubble-to-front sort,
@@ -17156,7 +17245,8 @@ function SportsWidget_SportsWidget({
     showUpcomingList,
     sortedPrevious,
     sortedCurrent,
-    sortedNext
+    sortedNext,
+    liveIndex
   });
   const followedGradient = getFollowedGradient(highlightMatch, selectedTeamsSet, teamColorsByKey);
   const impressionFired = (0,external_React_namespaceObject.useRef)(false);
@@ -17452,7 +17542,7 @@ function SportsWidget_SportsWidget({
   if (!prefs[SportsWidget_PREF_NOVA_ENABLED]) {
     return null;
   }
-  return /*#__PURE__*/external_React_default().createElement("article", {
+  return /*#__PURE__*/external_React_default().createElement("article", SportsWidget_extends({
     className: `sports widget col-4 ${displaySize}-widget ${widgetState}${followedGradient ? " is-followed-highlight" : ""}`,
     style: followedGradient ? {
       "--sports-followed-gradient": followedGradient
@@ -17467,7 +17557,7 @@ function SportsWidget_SportsWidget({
         playIntroVideo();
       }
     }
-  }, widgetState === WIDGET_STATES.INTRO && /*#__PURE__*/external_React_default().createElement("video", {
+  }, getCarouselArticleAttrs(activeTab === MATCHES_TABS.NOW && (rawLive?.length ?? 0) >= 2)), widgetState === WIDGET_STATES.INTRO && /*#__PURE__*/external_React_default().createElement("video", {
     ref: introVideoRef,
     className: "sports-intro-video",
     muted: true,
@@ -17505,6 +17595,7 @@ function SportsWidget_SportsWidget({
     disabled
   }) => /*#__PURE__*/external_React_default().createElement("button", {
     key: id,
+    id: `sports-${id}-tab`,
     role: "tab",
     "aria-selected": activeTab === id,
     disabled: disabled,
@@ -17586,11 +17677,13 @@ function SportsWidget_SportsWidget({
     dispatch: dispatch,
     matchesTab: activeTab,
     hasLiveGames: hasLiveGames,
+    hasLivePagination: activeTab === MATCHES_TABS.NOW && (rawLive?.length ?? 0) >= 2,
     size: displaySize,
     widgetSize: widgetSize,
     previous: sortedPrevious,
     current: sortedCurrent,
     next: sortedNext,
+    liveIndex: liveIndex,
     handleInteraction: handleInteraction,
     selectedTeamsSet: selectedTeamsSet,
     followedOnly: sportsWidgetData.followedOnly,
@@ -17723,6 +17816,7 @@ function SportsMatchesView({
   dispatch,
   matchesTab,
   hasLiveGames,
+  hasLivePagination,
   // `size` is the *effective* display size — it may be forced to "large"
   // when the user has expanded the match list view, even if the user's
   // chosen pref is "medium". Use it for layout decisions inside the view.
@@ -17734,6 +17828,7 @@ function SportsMatchesView({
   previous,
   current,
   next,
+  liveIndex,
   handleInteraction,
   selectedTeamsSet,
   followedOnly,
@@ -17843,23 +17938,33 @@ function SportsMatchesView({
   })), hasLiveGames && /*#__PURE__*/external_React_default().createElement("div", {
     className: "sports-matches-tab-panel",
     hidden: matchesTab !== MATCHES_TABS.NOW
-  }, current[0] && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, size === "large" && /*#__PURE__*/external_React_default().createElement(SportsSectionLabel, {
-    match: current[0],
+  }, current[liveIndex] && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, size === "large" && /*#__PURE__*/external_React_default().createElement(SportsSectionLabel, {
+    match: current[liveIndex],
     withLiveBadge: true
-  }), /*#__PURE__*/external_React_default().createElement("div", {
+  }), /*#__PURE__*/external_React_default().createElement("div", SportsWidget_extends({
     className: "match-highlight-view"
-  }, /*#__PURE__*/external_React_default().createElement(SportsMatchRow, {
-    match: current[0],
+  }, hasLivePagination && {
+    "aria-live": "polite",
+    "aria-atomic": "false"
+  }), /*#__PURE__*/external_React_default().createElement(SportsMatchRow, {
+    match: current[liveIndex],
     variant: "now",
     size: size,
     handleInteraction: handleInteraction,
     followedTeams: selectedTeamsSet
   })), /*#__PURE__*/external_React_default().createElement("moz-button", {
+    className: "sports-watch-live-button",
     type: size === "medium" ? "icon" : "default",
     size: size === "medium" ? "small" : undefined,
     iconSrc: "chrome://browser/skin/device-tv.svg",
     "data-l10n-id": size === "medium" ? "newtab-sports-widget-watch-icon" : "newtab-sports-widget-watch",
     onClick: onWatchClick
+  }), current.length >= 2 && /*#__PURE__*/external_React_default().createElement(LivePagination, {
+    dispatch: dispatch,
+    liveIndex: liveIndex,
+    liveCount: current.length,
+    size: size,
+    handleInteraction: handleInteraction
   }))), /*#__PURE__*/external_React_default().createElement("div", {
     className: "sports-matches-tab-panel",
     hidden: matchesTab !== MATCHES_TABS.UPCOMING,
