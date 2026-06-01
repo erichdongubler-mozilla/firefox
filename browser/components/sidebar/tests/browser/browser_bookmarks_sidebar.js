@@ -1006,3 +1006,279 @@ add_task(async function test_bookmarks_drag_tab_to_panel() {
   await PlacesUtils.bookmarks.remove(bm.guid);
   SidebarTestUtils.closePanel(window);
 });
+
+add_task(async function test_bookmarks_smart_bookmark_renders_as_folder() {
+  // "Recently Bookmarked" style smart bookmark.
+  const recentBookmark = await addBookmark({
+    title: "Recent Page",
+    url: "https://example.com/recent-smart",
+  });
+  const recentSmart = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: "Recently Bookmarked",
+    url: "place:queryType=1&sort=12&maxResults=10&excludeQueries=1&excludeItemIfParentHasAnnotation=livemark%2FfeedURI",
+  });
+
+  // "Recent Tags" style smart bookmark with one bookmark tagged so the
+  // RESULTS_AS_TAGS_ROOT query yields a tag container.
+  await PlacesUtils.tagging.tagURI(
+    Services.io.newURI("https://example.com/recent-smart"),
+    ["regression-tag"]
+  );
+  const tagsSmart = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: "Recent Tags",
+    url: `place:type=${Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAGS_ROOT}&sort=1&maxResults=10`,
+  });
+
+  const { component } = await showBookmarksSidebar();
+  const tabList = component.bookmarkList;
+
+  const toolbarDetails = await openToolbarFolder(tabList);
+  const toolbarList = toolbarDetails.querySelector("sidebar-bookmark-list");
+
+  await BrowserTestUtils.waitForMutationCondition(
+    toolbarList.shadowRoot,
+    { childList: true, subtree: true },
+    () =>
+      [...toolbarList.folderEls].some(
+        d => d.guid === recentSmart.guid || d.guid === tagsSmart.guid
+      )
+  );
+
+  const recentFolder = [...toolbarList.folderEls].find(
+    d => d.guid === recentSmart.guid
+  );
+  ok(recentFolder, "Recently Bookmarked renders as a folder.");
+  Assert.equal(
+    recentFolder.dataset.folderKind,
+    "place-container",
+    "Recently Bookmarked has the place-container folder kind."
+  );
+
+  const tagsFolder = [...toolbarList.folderEls].find(
+    d => d.guid === tagsSmart.guid
+  );
+  ok(tagsFolder, "Recent Tags renders as a folder.");
+  Assert.equal(
+    tagsFolder.dataset.folderKind,
+    "tags-root",
+    "Recent Tags has the tags-root folder kind."
+  );
+
+  if (!tagsFolder.open) {
+    tagsFolder.querySelector("summary").click();
+    await BrowserTestUtils.waitForMutationCondition(
+      tagsFolder,
+      { attributes: true },
+      () => tagsFolder.open
+    );
+  }
+
+  const tagsList = tagsFolder.querySelector("sidebar-bookmark-list");
+  await BrowserTestUtils.waitForMutationCondition(
+    tagsList.shadowRoot,
+    { childList: true, subtree: true },
+    () => [...tagsList.folderEls].length
+  );
+
+  const tagContainers = [...tagsList.folderEls];
+  Assert.greater(
+    tagContainers.length,
+    0,
+    "Recent Tags renders each tag as a child folder."
+  );
+  ok(
+    tagContainers.every(d => d.dataset.folderKind === "tag-container"),
+    "Tag containers under Recent Tags are marked with the tag-container kind."
+  );
+
+  await PlacesUtils.tagging.untagURI(
+    Services.io.newURI("https://example.com/recent-smart"),
+    ["regression-tag"]
+  );
+  await PlacesUtils.bookmarks.remove(tagsSmart.guid);
+  await PlacesUtils.bookmarks.remove(recentSmart.guid);
+  await PlacesUtils.bookmarks.remove(recentBookmark.guid);
+  SidebarController.hide();
+});
+
+add_task(async function test_bookmarks_smart_bookmark_context_menu() {
+  const recentBookmark = await addBookmark({
+    title: "Recent Page",
+    url: "https://example.com/recent-smart-menu",
+  });
+  const recentSmart = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: "Recently Bookmarked",
+    url: "place:queryType=1&sort=12&maxResults=10&excludeQueries=1&excludeItemIfParentHasAnnotation=livemark%2FfeedURI",
+  });
+
+  await PlacesUtils.tagging.tagURI(
+    Services.io.newURI("https://example.com/recent-smart-menu"),
+    ["regression-tag-menu"]
+  );
+  const tagsSmart = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: "Recent Tags",
+    url: `place:type=${Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAGS_ROOT}&sort=1&maxResults=10`,
+  });
+
+  const { component } = await showBookmarksSidebar();
+  const tabList = component.bookmarkList;
+
+  const toolbarDetails = await openToolbarFolder(tabList);
+  const toolbarList = toolbarDetails.querySelector("sidebar-bookmark-list");
+
+  await BrowserTestUtils.waitForMutationCondition(
+    toolbarList.shadowRoot,
+    { childList: true, subtree: true },
+    () =>
+      [...toolbarList.folderEls].some(d => d.guid === recentSmart.guid) &&
+      [...toolbarList.folderEls].some(d => d.guid === tagsSmart.guid)
+  );
+
+  const contextMenu = SidebarController.currentContextMenu;
+  const item = id => document.getElementById(id);
+  const hideMenu = async () => {
+    const promiseHidden = BrowserTestUtils.waitForPopupEvent(
+      contextMenu,
+      "hidden"
+    );
+    contextMenu.hidePopup();
+    await promiseHidden;
+  };
+
+  info(
+    "Context menu on a place-container smart bookmark (Recently Bookmarked)."
+  );
+  const recentFolder = [...toolbarList.folderEls].find(
+    d => d.guid === recentSmart.guid
+  );
+  await openAndWaitForContextMenu(
+    contextMenu,
+    recentFolder.querySelector("summary"),
+    () => {}
+  );
+
+  ok(
+    !item("sidebar-bookmarks-context-open-all-bookmarks").hidden,
+    "Open all is visible for a place-container smart bookmark."
+  );
+  ok(
+    !item("sidebar-bookmarks-context-open-all-bookmarks").disabled,
+    "Open all is enabled for a non-empty place-container smart bookmark."
+  );
+  Assert.equal(
+    item("sidebar-bookmarks-context-open-all-bookmarks").getAttribute(
+      "data-l10n-id"
+    ),
+    "places-open-all-in-tabs",
+    "Place-container uses the open-all-in-tabs label."
+  );
+  ok(
+    !item("sidebar-bookmarks-context-edit-bookmark").hidden,
+    "Edit is visible for a place-container smart bookmark."
+  );
+  ok(
+    item("sidebar-bookmarks-context-edit-bookmark").disabled,
+    "Edit is disabled for a place-container smart bookmark."
+  );
+  ok(
+    !item("sidebar-bookmarks-context-delete-bookmark").hidden,
+    "Delete is visible for a place-container smart bookmark."
+  );
+  Assert.equal(
+    item("sidebar-bookmarks-context-delete-bookmark").getAttribute(
+      "data-l10n-id"
+    ),
+    "text-action-delete",
+    "Delete uses the generic delete label."
+  );
+  ok(
+    !item("sidebar-bookmarks-context-cut").hidden,
+    "Cut is visible for a place-container smart bookmark."
+  );
+  for (const id of [
+    "sidebar-bookmarks-context-sort-by-name",
+    "sidebar-bookmarks-context-show-in-folder",
+    "sidebar-bookmarks-context-copy-link",
+    "sidebar-bookmarks-context-paste",
+    "sidebar-bookmarks-context-add-bookmark",
+    "sidebar-bookmarks-context-add-folder",
+    "sidebar-bookmarks-context-add-separator",
+  ]) {
+    ok(item(id).hidden, `${id} is hidden for a smart bookmark.`);
+  }
+  await hideMenu();
+
+  info("Context menu on a tags-root smart bookmark (Recent Tags).");
+  const tagsFolder = [...toolbarList.folderEls].find(
+    d => d.guid === tagsSmart.guid
+  );
+  await openAndWaitForContextMenu(
+    contextMenu,
+    tagsFolder.querySelector("summary"),
+    () => {}
+  );
+  ok(
+    !item("sidebar-bookmarks-context-open-all-bookmarks").hidden,
+    "Open all is visible for a tags-root smart bookmark."
+  );
+  ok(
+    item("sidebar-bookmarks-context-open-all-bookmarks").disabled,
+    "Open all is disabled for a tags-root smart bookmark."
+  );
+  ok(
+    item("sidebar-bookmarks-context-edit-bookmark").disabled,
+    "Edit is disabled for a tags-root smart bookmark."
+  );
+  await hideMenu();
+
+  info("Context menu on a tag container (a child tag under Recent Tags).");
+  if (!tagsFolder.open) {
+    tagsFolder.querySelector("summary").click();
+    await BrowserTestUtils.waitForMutationCondition(
+      tagsFolder,
+      { attributes: true },
+      () => tagsFolder.open
+    );
+  }
+  const tagsList = tagsFolder.querySelector("sidebar-bookmark-list");
+  await BrowserTestUtils.waitForMutationCondition(
+    tagsList.shadowRoot,
+    { childList: true, subtree: true },
+    () => [...tagsList.folderEls].length
+  );
+  const tagContainer = [...tagsList.folderEls][0];
+  await openAndWaitForContextMenu(
+    contextMenu,
+    tagContainer.querySelector("summary"),
+    () => {}
+  );
+  Assert.equal(
+    item("sidebar-bookmarks-context-open-all-bookmarks").getAttribute(
+      "data-l10n-id"
+    ),
+    "places-open-all-bookmarks",
+    "Tag container uses the open-all-bookmarks label."
+  );
+  ok(
+    !item("sidebar-bookmarks-context-edit-bookmark").disabled,
+    "Edit is enabled for a tag container."
+  );
+  ok(
+    item("sidebar-bookmarks-context-cut").hidden,
+    "Cut is hidden for a tag container."
+  );
+  await hideMenu();
+
+  await PlacesUtils.tagging.untagURI(
+    Services.io.newURI("https://example.com/recent-smart-menu"),
+    ["regression-tag-menu"]
+  );
+  await PlacesUtils.bookmarks.remove(tagsSmart.guid);
+  await PlacesUtils.bookmarks.remove(recentSmart.guid);
+  await PlacesUtils.bookmarks.remove(recentBookmark.guid);
+  SidebarController.hide();
+});

@@ -138,9 +138,18 @@ export class SidebarBookmarkList extends SidebarTabList {
       ></div>`;
     }
     if (tabItem.children !== undefined) {
+      let folderKind = null;
+      if (tabItem.isTagsRoot) {
+        folderKind = "tags-root";
+      } else if (tabItem.isTagContainer) {
+        folderKind = "tag-container";
+      } else if (tabItem.isPlaceContainer) {
+        folderKind = "place-container";
+      }
       if (!tabItem.children.length) {
         return html`<div
           class="bookmark-folder-label"
+          data-folder-kind=${ifDefined(folderKind)}
           tabindex="0"
           draggable="true"
           data-guid=${tabItem.guid}
@@ -154,6 +163,7 @@ export class SidebarBookmarkList extends SidebarTabList {
         <details
           ?open=${this.expandedFolderGuids.has(tabItem.guid)}
           @toggle=${e => this.#onFolderToggle(e, tabItem.guid)}
+          data-folder-kind=${ifDefined(folderKind)}
           .guid=${tabItem.guid}
         >
           <summary
