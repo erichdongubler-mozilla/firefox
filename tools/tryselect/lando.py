@@ -432,8 +432,6 @@ def push_to_lando_try(
 ):
     """Push a set of patches to Lando's try endpoint."""
 
-    default_lando_config_section = "lando-prod-new"
-
     metrics.mach_try.vcs_prep.start()
     # Map `Repository` subclasses to the `patch_format` value Lando expects.
     PATCH_FORMAT_STRING_MAPPING = {
@@ -446,11 +444,8 @@ def push_to_lando_try(
         # Other VCS types (namely `src`) are unsupported.
         raise ValueError(f"Try push via Lando is not supported for `{vcs.name}`.")
 
-    lando_config_section = os.getenv("LANDO_TRY_CONFIG", default_lando_config_section)
-
     # Load Auth0 config from `.lando.ini`.
-    lando_ini_path = Path(vcs.path) / ".lando.ini"
-    lando_api = LandoAPI.from_lando_config_file(lando_ini_path, lando_config_section)
+    lando_api = get_lando_api_config(vcs.path)
 
     # Get the time when the push was initiated, not including Auth0 login time.
     push_start_time = time.perf_counter()
@@ -504,3 +499,26 @@ def push_to_lando_try(
         "lando_job_id": job_id,
         "duration": duration,
     }
+
+
+def get_lando_instance_id(vcs_path: str, section_name: str | None = None) -> str:
+    """Return the lando instance ID from the given config section, with default."""
+    lando_api = get_lando_api_config(vcs_path, section_name)
+    return lando_api.instance_id
+
+
+def get_lando_api_config(vcs_path: str, section_name: str | None = None) -> LandoAPI:
+    """Initialise a LandoAPI object from the .lando.ini for the given section_name"""
+    lando_ini_path = Path(vcs_path) / ".lando.ini"
+    section_name = section_name or get_lando_config_section_name()
+
+    return LandoAPI.from_lando_config_file(lando_ini_path, section_name)
+
+
+def get_lando_config_section_name() -> str:
+    """Determine which lando config section to use.
+
+    This is based on defaults and overrides such as the LANDO_TRY_CONFIG env variable.
+    """
+    default_lando_config_section = "lando-prod-new"
+    return os.getenv("LANDO_TRY_CONFIG", default_lando_config_section)

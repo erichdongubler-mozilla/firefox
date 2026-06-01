@@ -17,6 +17,7 @@ from mach.util import get_state_dir
 from mozbuild.base import MozbuildObject
 from mozversioncontrol import get_repository_object
 
+from ..lando import get_lando_instance_id
 from ..push import generate_try_task_config, push_to_try
 from ..util.fzf import (
     FZF_NOT_FOUND,
@@ -39,6 +40,8 @@ from .perfselector.utils import LogProcessor
 
 here = os.path.abspath(os.path.dirname(__file__))
 build = MozbuildObject.from_environment(cwd=here)
+vcs = get_repository_object(build.topsrcdir)
+
 cache_file = pathlib.Path(get_state_dir(), "try_perf_revision_cache.json")
 PREVIEW_SCRIPT = pathlib.Path(
     build.topsrcdir, "tools/tryselect/selectors/perf_preview.py"
@@ -1042,7 +1045,7 @@ class PerfParser(CompareParser):
 
     def determine_lando_instance(push_to_vcs=False):
         """Determine the lando instance id that a push will use."""
-        return "" if push_to_vcs else os.getenv("LANDO_TRY_CONFIG", "lando-prod-2025")
+        return "" if push_to_vcs else get_lando_instance_id(vcs.path)
 
     def check_cached_revision(selected_tasks, base_commit=None, push_to_vcs=True):
         """
