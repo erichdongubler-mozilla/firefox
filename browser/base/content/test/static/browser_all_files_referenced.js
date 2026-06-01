@@ -238,6 +238,8 @@ var allowlist = [
   { file: "resource://builtin-addons/ipp-activator/breakages/tab.json" },
 
   // Starting from here, files in the allowlist are bugs that need fixing.
+  // Bug 2042933 - consumed by PermissionUI.sys.mjs in a follow-up patch.
+  { file: "resource://app/modules/PermissionPromptTargeting.sys.mjs" },
   // Bug 1339424 (wontfix?)
   {
     file: "chrome://browser/locale/taskbar.properties",
