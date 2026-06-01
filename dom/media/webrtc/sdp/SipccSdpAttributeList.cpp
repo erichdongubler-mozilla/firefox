@@ -272,7 +272,7 @@ bool SipccSdpAttributeList::LoadFingerprint(sdp_t* sdp, const uint16_t level,
     }
 
     if (!fingerprintAttrs) {
-      fingerprintAttrs.reset(new SdpFingerprintAttributeList);
+      fingerprintAttrs = MakeUnique<SdpFingerprintAttributeList>();
     }
 
     // Don't assert on unknown algorithm, just skip
@@ -538,8 +538,7 @@ void SipccSdpAttributeList::LoadSsrcGroup(sdp_t* sdp, const uint16_t level) {
 
 bool SipccSdpAttributeList::LoadImageattr(sdp_t* sdp, const uint16_t level,
                                           InternalResults& results) {
-  UniquePtr<SdpImageattrAttributeList> imageattrs(
-      new SdpImageattrAttributeList);
+  auto imageattrs = MakeUnique<SdpImageattrAttributeList>();
 
   for (uint16_t i = 1; i < UINT16_MAX; ++i) {
     const char* imageattrRaw =
@@ -574,7 +573,7 @@ bool SipccSdpAttributeList::LoadSimulcast(sdp_t* sdp, const uint16_t level,
     return true;
   }
 
-  UniquePtr<SdpSimulcastAttribute> simulcast(new SdpSimulcastAttribute);
+  auto simulcast = MakeUnique<SdpSimulcastAttribute>();
 
   std::istringstream is(simulcastRaw);
   std::string error;
@@ -601,7 +600,7 @@ bool SipccSdpAttributeList::LoadGroups(sdp_t* sdp, const uint16_t level,
     return false;
   }
 
-  UniquePtr<SdpGroupAttributeList> groups = MakeUnique<SdpGroupAttributeList>();
+  auto groups = MakeUnique<SdpGroupAttributeList>();
   for (uint16_t attr = 1; attr <= attrCount; ++attr) {
     SdpGroupAttributeList::Semantics semantics;
     std::vector<std::string> tags;
@@ -719,8 +718,8 @@ void SipccSdpAttributeList::LoadFmtp(sdp_t* sdp, const uint16_t level) {
     switch (codec) {
       case RTP_H264_P0:
       case RTP_H264_P1: {
-        SdpFmtpAttributeList::H264Parameters* h264Parameters(
-            new SdpFmtpAttributeList::H264Parameters);
+        auto h264Parameters =
+            MakeUnique<SdpFmtpAttributeList::H264Parameters>();
 
         sstrncpy(h264Parameters->sprop_parameter_sets, fmtp->parameter_sets,
                  sizeof(h264Parameters->sprop_parameter_sets));
@@ -736,11 +735,10 @@ void SipccSdpAttributeList::LoadFmtp(sdp_t* sdp, const uint16_t level) {
         h264Parameters->max_dpb = fmtp->max_dpb;
         h264Parameters->max_br = fmtp->max_br;
 
-        parameters.reset(h264Parameters);
+        parameters = std::move(h264Parameters);
       } break;
       case RTP_AV1: {
-        SdpFmtpAttributeList::Av1Parameters* av1Parameters(
-            new SdpFmtpAttributeList::Av1Parameters());
+        auto av1Parameters = MakeUnique<SdpFmtpAttributeList::Av1Parameters>();
         if (fmtp->profile > 0 && fmtp->profile <= UINT8_MAX) {
           av1Parameters->profile = Some(static_cast<uint8_t>(fmtp->profile));
         }
@@ -750,65 +748,61 @@ void SipccSdpAttributeList::LoadFmtp(sdp_t* sdp, const uint16_t level) {
         if (fmtp->av1_has_tier) {
           av1Parameters->tier = Some(fmtp->av1_tier);
         }
-        parameters.reset(av1Parameters);
+        parameters = std::move(av1Parameters);
       } break;
       case RTP_VP9: {
-        SdpFmtpAttributeList::VP8Parameters* vp9Parameters(
-            new SdpFmtpAttributeList::VP8Parameters(
-                SdpRtpmapAttributeList::kVP9));
+        auto vp9Parameters = MakeUnique<SdpFmtpAttributeList::VP8Parameters>(
+            SdpRtpmapAttributeList::kVP9);
 
         vp9Parameters->max_fs = fmtp->max_fs;
         vp9Parameters->max_fr = fmtp->max_fr;
 
-        parameters.reset(vp9Parameters);
+        parameters = std::move(vp9Parameters);
       } break;
       case RTP_VP8: {
-        SdpFmtpAttributeList::VP8Parameters* vp8Parameters(
-            new SdpFmtpAttributeList::VP8Parameters(
-                SdpRtpmapAttributeList::kVP8));
+        auto vp8Parameters = MakeUnique<SdpFmtpAttributeList::VP8Parameters>(
+            SdpRtpmapAttributeList::kVP8);
 
         vp8Parameters->max_fs = fmtp->max_fs;
         vp8Parameters->max_fr = fmtp->max_fr;
 
-        parameters.reset(vp8Parameters);
+        parameters = std::move(vp8Parameters);
       } break;
       case RTP_RED: {
-        SdpFmtpAttributeList::RedParameters* redParameters(
-            new SdpFmtpAttributeList::RedParameters);
+        auto redParameters = MakeUnique<SdpFmtpAttributeList::RedParameters>();
         for (int i = 0; i < SDP_FMTP_MAX_REDUNDANT_ENCODINGS &&
                         fmtp->redundant_encodings[i];
              ++i) {
           redParameters->encodings.push_back(fmtp->redundant_encodings[i]);
         }
 
-        parameters.reset(redParameters);
+        parameters = std::move(redParameters);
       } break;
       case RTP_OPUS: {
-        SdpFmtpAttributeList::OpusParameters* opusParameters(
-            new SdpFmtpAttributeList::OpusParameters);
+        auto opusParameters =
+            MakeUnique<SdpFmtpAttributeList::OpusParameters>();
         opusParameters->maxplaybackrate = fmtp->maxplaybackrate;
         opusParameters->stereo = fmtp->stereo;
         opusParameters->useInBandFec = fmtp->useinbandfec;
         opusParameters->maxAverageBitrate = fmtp->maxaveragebitrate;
         opusParameters->useDTX = fmtp->usedtx;
-        parameters.reset(opusParameters);
+        parameters = std::move(opusParameters);
       } break;
       case RTP_TELEPHONE_EVENT: {
-        SdpFmtpAttributeList::TelephoneEventParameters* teParameters(
-            new SdpFmtpAttributeList::TelephoneEventParameters);
+        auto teParameters =
+            MakeUnique<SdpFmtpAttributeList::TelephoneEventParameters>();
         if (strlen(fmtp->dtmf_tones) > 0) {
           teParameters->dtmfTones = fmtp->dtmf_tones;
         }
-        parameters.reset(teParameters);
+        parameters = std::move(teParameters);
       } break;
       case RTP_RTX: {
-        SdpFmtpAttributeList::RtxParameters* rtxParameters(
-            new SdpFmtpAttributeList::RtxParameters);
+        auto rtxParameters = MakeUnique<SdpFmtpAttributeList::RtxParameters>();
         rtxParameters->apt = fmtp->apt;
         if (fmtp->has_rtx_time == TRUE) {
           rtxParameters->rtx_time = Some(fmtp->rtx_time);
         }
-        parameters.reset(rtxParameters);
+        parameters = std::move(rtxParameters);
       } break;
       default: {
       }
@@ -859,7 +853,7 @@ void SipccSdpAttributeList::LoadMsids(sdp_t* sdp, const uint16_t level,
 
 bool SipccSdpAttributeList::LoadRid(sdp_t* sdp, const uint16_t level,
                                     InternalResults& results) {
-  UniquePtr<SdpRidAttributeList> rids(new SdpRidAttributeList);
+  auto rids = MakeUnique<SdpRidAttributeList>();
 
   for (uint16_t i = 1; i < UINT16_MAX; ++i) {
     const char* ridRaw =

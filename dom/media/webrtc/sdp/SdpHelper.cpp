@@ -43,8 +43,8 @@ nsresult SdpHelper::CopyTransportParams(const size_t numComponents,
   // Now we copy over attributes that won't be added by the usual logic
   if (oldLocalAttrs.HasAttribute(SdpAttribute::kCandidateAttribute) &&
       numComponents) {
-    UniquePtr<SdpMultiStringAttribute> candidateAttrs(
-        new SdpMultiStringAttribute(SdpAttribute::kCandidateAttribute));
+    auto candidateAttrs =
+        MakeUnique<SdpMultiStringAttribute>(SdpAttribute::kCandidateAttribute);
     for (const std::string& candidate : oldLocalAttrs.GetCandidate()) {
       size_t component;
       nsresult rv = GetComponent(candidate, &component);
@@ -138,8 +138,8 @@ void SdpHelper::DisableMsection(Sdp* sdp, SdpMediaSection* msection) {
   if (msection->GetAttributeList().HasAttribute(SdpAttribute::kMidAttribute)) {
     mid = msection->GetAttributeList().GetMid();
     if (sdp->GetAttributeList().HasAttribute(SdpAttribute::kGroupAttribute)) {
-      UniquePtr<SdpGroupAttributeList> newGroupAttr(
-          new SdpGroupAttributeList(sdp->GetAttributeList().GetGroup()));
+      auto newGroupAttr =
+          MakeUnique<SdpGroupAttributeList>(sdp->GetAttributeList().GetGroup());
       newGroupAttr->RemoveMid(mid);
       sdp->GetAttributeList().SetAttribute(std::move(newGroupAttr));
     }
@@ -328,13 +328,13 @@ nsresult SdpHelper::AddCandidateToSdp(Sdp* sdp,
   UniquePtr<SdpMultiStringAttribute> candidates;
   if (!attrList.HasAttribute(SdpAttribute::kCandidateAttribute)) {
     // Create new
-    candidates.reset(
-        new SdpMultiStringAttribute(SdpAttribute::kCandidateAttribute));
+    candidates =
+        MakeUnique<SdpMultiStringAttribute>(SdpAttribute::kCandidateAttribute);
   } else {
     // Copy existing
-    candidates.reset(new SdpMultiStringAttribute(
+    candidates = MakeUnique<SdpMultiStringAttribute>(
         *static_cast<const SdpMultiStringAttribute*>(
-            attrList.GetAttribute(SdpAttribute::kCandidateAttribute))));
+            attrList.GetAttribute(SdpAttribute::kCandidateAttribute)));
   }
   candidates->PushEntry(candidate);
   attrList.SetAttribute(std::move(candidates));
@@ -486,8 +486,7 @@ nsresult SdpHelper::ParseMsid(const std::string& msidAttribute,
 void SdpHelper::SetupMsidSemantic(const std::vector<std::string>& msids,
                                   Sdp* sdp) const {
   if (!msids.empty()) {
-    UniquePtr<SdpMsidSemanticAttributeList> msidSemantics(
-        new SdpMsidSemanticAttributeList);
+    auto msidSemantics = MakeUnique<SdpMsidSemanticAttributeList>();
     msidSemantics->PushEntry("WMS", msids);
     sdp->GetAttributeList().SetAttribute(std::move(msidSemantics));
   }
@@ -653,7 +652,7 @@ void SdpHelper::NegotiateAndAddExtmaps(
     return;
   }
 
-  UniquePtr<SdpExtmapAttributeList> localExtmap(new SdpExtmapAttributeList);
+  auto localExtmap = MakeUnique<SdpExtmapAttributeList>();
   auto& theirExtmap = remoteMsection.GetAttributeList().GetExtmap().mExtmaps;
   for (const auto& theirExt : theirExtmap) {
     for (auto& ourExt : localExtensions) {

@@ -28,7 +28,7 @@ SipccSdpMediaSection::SipccSdpMediaSection(
       mPortCount(aOrig.mPortCount),
       mProtocol(aOrig.mProtocol),
       mFormats(aOrig.mFormats),
-      mConnection(new SdpConnection(*aOrig.mConnection)),
+      mConnection(MakeUnique<SdpConnection>(*aOrig.mConnection)),
       mBandwidths(aOrig.mBandwidths),
       mAttributeList(aOrig.mAttributeList, sessionLevel) {}
 

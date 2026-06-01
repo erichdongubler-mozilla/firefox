@@ -87,7 +87,7 @@ JsepSessionImpl::JsepSessionImpl(const JsepSessionImpl& aOrig)
                                     ? aOrig.mPendingRemoteDescription->Clone()
                                     : nullptr),
       mSdpHelper(&mLastError),
-      mParser(new HybridSdpParser()) {
+      mParser(MakeUnique<HybridSdpParser>()) {
   for (const auto& codec : aOrig.mSupportedCodecs) {
     mSupportedCodecs.emplace_back(codec->Clone());
   }
@@ -393,7 +393,7 @@ void JsepSessionImpl::SetupBundle(Sdp* sdp) const {
   }
 
   if (!mids.empty()) {
-    UniquePtr<SdpGroupAttributeList> groupAttr(new SdpGroupAttributeList);
+    auto groupAttr = MakeUnique<SdpGroupAttributeList>();
     groupAttr->PushEntry(SdpGroupAttributeList::kBundle, mids);
     sdp->GetAttributeList().SetAttribute(std::move(groupAttr));
   }
@@ -584,7 +584,7 @@ JsepSession::Result JsepSessionImpl::CreateAnswer(
   const Sdp& offer = *mPendingRemoteDescription;
 
   // Copy the bundle groups into our answer
-  UniquePtr<SdpGroupAttributeList> groupAttr(new SdpGroupAttributeList);
+  auto groupAttr = MakeUnique<SdpGroupAttributeList>();
   mSdpHelper.GetBundleGroups(offer, &groupAttr->mGroups);
   sdp->GetAttributeList().SetAttribute(std::move(groupAttr));
 
@@ -615,7 +615,7 @@ JsepSession::Result JsepSessionImpl::CreateAnswer(
   // Ensure that each bundle-group starts with a mid that has a transport, in
   // case we've disabled what the offerer wanted to use. If the group doesn't
   // contain anything that has a transport, remove it.
-  groupAttr.reset(new SdpGroupAttributeList);
+  groupAttr = MakeUnique<SdpGroupAttributeList>();
   std::vector<SdpGroupAttributeList::Group> bundleGroups;
   mSdpHelper.GetBundleGroups(*sdp, &bundleGroups);
   for (auto& group : bundleGroups) {

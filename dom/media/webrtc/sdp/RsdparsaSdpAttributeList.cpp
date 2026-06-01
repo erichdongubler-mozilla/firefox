@@ -719,8 +719,8 @@ void RsdparsaSdpAttributeList::LoadFmtp(RustAttributeList* attributeList) {
 
       // TODO(bug 1466859): Support sprop-parameter-sets
 
-      fmtpParameters.reset(
-          new SdpFmtpAttributeList::H264Parameters(std::move(h264Parameters)));
+      fmtpParameters = MakeUnique<SdpFmtpAttributeList::H264Parameters>(
+          std::move(h264Parameters));
     } else if (codecName == "OPUS") {
       SdpFmtpAttributeList::OpusParameters opusParameters;
 
@@ -734,8 +734,8 @@ void RsdparsaSdpAttributeList::LoadFmtp(RustAttributeList* attributeList) {
       opusParameters.maxFrameSizeMs = rustFmtpParameters.maxptime;
       opusParameters.useCbr = rustFmtpParameters.cbr;
 
-      fmtpParameters.reset(
-          new SdpFmtpAttributeList::OpusParameters(std::move(opusParameters)));
+      fmtpParameters = MakeUnique<SdpFmtpAttributeList::OpusParameters>(
+          std::move(opusParameters));
     } else if ((codecName == "VP8") || (codecName == "VP9")) {
       SdpFmtpAttributeList::VP8Parameters vp8Parameters(
           codecName == "VP8" ? SdpRtpmapAttributeList::kVP8
@@ -744,24 +744,25 @@ void RsdparsaSdpAttributeList::LoadFmtp(RustAttributeList* attributeList) {
       vp8Parameters.max_fs = rustFmtpParameters.max_fs;
       vp8Parameters.max_fr = rustFmtpParameters.max_fr;
 
-      fmtpParameters.reset(
-          new SdpFmtpAttributeList::VP8Parameters(std::move(vp8Parameters)));
+      fmtpParameters = MakeUnique<SdpFmtpAttributeList::VP8Parameters>(
+          std::move(vp8Parameters));
     } else if (codecName == "TELEPHONE-EVENT") {
       SdpFmtpAttributeList::TelephoneEventParameters telephoneEventParameters;
 
       telephoneEventParameters.dtmfTones =
           std::string(convertStringView(rustFmtpParameters.dtmf_tones));
 
-      fmtpParameters.reset(new SdpFmtpAttributeList::TelephoneEventParameters(
-          std::move(telephoneEventParameters)));
+      fmtpParameters =
+          MakeUnique<SdpFmtpAttributeList::TelephoneEventParameters>(
+              std::move(telephoneEventParameters));
     } else if (codecName == "RED") {
       SdpFmtpAttributeList::RedParameters redParameters;
 
       auto encodings = convertRustSpan(rustFmtpParameters.encodings);
       redParameters.encodings.assign(encodings.begin(), encodings.end());
 
-      fmtpParameters.reset(
-          new SdpFmtpAttributeList::RedParameters(std::move(redParameters)));
+      fmtpParameters = MakeUnique<SdpFmtpAttributeList::RedParameters>(
+          std::move(redParameters));
     } else if (codecName == "RTX") {
       SdpFmtpAttributeList::RtxParameters rtxParameters;
 
@@ -770,8 +771,8 @@ void RsdparsaSdpAttributeList::LoadFmtp(RustAttributeList* attributeList) {
         rtxParameters.rtx_time = Some(rustFmtpParameters.rtx.rtx_time);
       }
 
-      fmtpParameters.reset(
-          new SdpFmtpAttributeList::RtxParameters(rtxParameters));
+      fmtpParameters =
+          MakeUnique<SdpFmtpAttributeList::RtxParameters>(rtxParameters);
     } else if (codecName == "AV1") {
       SdpFmtpAttributeList::Av1Parameters av1Parameters;
 
@@ -784,8 +785,8 @@ void RsdparsaSdpAttributeList::LoadFmtp(RustAttributeList* attributeList) {
       av1Parameters.tier = rustFmtpParameters.av1.has_tier
                                ? Some(rustFmtpParameters.av1.tier)
                                : Nothing();
-      fmtpParameters.reset(
-          new SdpFmtpAttributeList::Av1Parameters(av1Parameters));
+      fmtpParameters =
+          MakeUnique<SdpFmtpAttributeList::Av1Parameters>(av1Parameters);
 
     } else {
       // The parameter set is unknown so skip it
