@@ -1360,12 +1360,6 @@ void HTMLInputElement::BeforeSetAttr(int32_t aNameSpaceID, nsAtom* aName,
         }
       }
     }
-
-    if (aName == nsGkAtoms::webkitdirectory) {
-      glean::dom::webkit_directory_used
-          .EnumGet(glean::dom::WebkitDirectoryUsedLabel::eTrue)
-          .Add();
-    }
   }
 
   return nsGenericHTMLFormControlElementWithState::BeforeSetAttr(
@@ -1537,6 +1531,10 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       needValidityUpdate = true;
     } else if (aName == nsGkAtoms::colorspace || aName == nsGkAtoms::alpha) {
       UpdateColor();
+    } else if (aName == nsGkAtoms::webkitdirectory) {
+      glean::dom::webkit_directory_used
+          .EnumGet(glean::dom::WebkitDirectoryUsedLabel::eTrue)
+          .Add();
     }
 
     // When name or type changes, radio should be added to radio group.

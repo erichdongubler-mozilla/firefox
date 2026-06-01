@@ -41,11 +41,17 @@ class nsHtml5AttributeEntry final {
 
   inline nsAtom* GetLocal(int32_t aMode) { return mLocals[aMode]; }
 
+  inline RefPtr<nsAtom>& GetLocalRef(int32_t aMode) { return mLocals[aMode]; }
+
+  inline RefPtr<nsAtom>& GetLocalRefHTML() {
+    return mLocals[nsHtml5AttributeName::HTML];
+  }
+
   inline nsAtom* GetPrefix(int32_t aMode) { return mPrefixes[aMode]; }
 
   inline int32_t GetUri(int32_t aMode) { return mUris[aMode]; }
 
-  inline nsHtml5String GetValue() { return mValue; }
+  inline nsHtml5String& GetValue() { return mValue; }
 
   inline int32_t GetLine() { return mLine; }
 
@@ -61,7 +67,7 @@ class nsHtml5AttributeEntry final {
 
  private:
   RefPtr<nsAtom> mLocals[3];
-  RefPtr<nsAtom> mPrefixes[3];
+  RefPtr<nsAtom> mPrefixes[3];  // TODO: Why RefPtr for these?
   int32_t mUris[3];
   int32_t mLine;
   nsHtml5String mValue;
