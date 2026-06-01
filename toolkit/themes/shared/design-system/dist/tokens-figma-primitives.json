@@ -113,6 +113,7 @@
   "card/padding": "{Primitives$space/large}",
   "card/gap": "{Primitives$card/padding}",
   "card/gap/article": "{Primitives$space/small}",
+  "checkbox/border/radius": "{Primitives$border/radius/small}",
   "checkbox/margin/inline": "{Primitives$space/small}",
   "checkbox/size": "{Primitives$size/item/small}",
   "icon/size": "{Primitives$icon/size/small}",

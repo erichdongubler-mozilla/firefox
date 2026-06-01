@@ -296,6 +296,38 @@ export const tokensTable = {
       name: "--button-background-color-toolbar-selected",
     },
     { value: "var(--background-color-box)", name: "--card-background-color" },
+    {
+      value: "var(--button-background-color)",
+      name: "--checkbox-background-color",
+    },
+    {
+      value: "var(--button-background-color-hover)",
+      name: "--checkbox-background-color-hover",
+    },
+    {
+      value: "var(--button-background-color-active)",
+      name: "--checkbox-background-color-active",
+    },
+    {
+      value: "var(--button-background-color-disabled)",
+      name: "--checkbox-background-color-disabled",
+    },
+    {
+      value: "var(--button-background-color-primary)",
+      name: "--checkbox-background-color-checked",
+    },
+    {
+      value: "var(--button-background-color-primary-hover)",
+      name: "--checkbox-background-color-checked-hover",
+    },
+    {
+      value: "var(--button-background-color-primary-active)",
+      name: "--checkbox-background-color-checked-active",
+    },
+    {
+      value: "var(--button-background-color-primary-disabled)",
+      name: "--checkbox-background-color-checked-disabled",
+    },
     { value: "Field", name: "--input-text-background-color" },
     {
       value: "var(--button-background-color-disabled)",
@@ -866,6 +898,26 @@ export const tokensTable = {
       },
       name: "--card-border-color",
     },
+    {
+      value: "var(--border-color-interactive)",
+      name: "--checkbox-border-color",
+    },
+    {
+      value: "var(--checkbox-background-color-checked)",
+      name: "--checkbox-border-color-checked",
+    },
+    {
+      value: "var(--checkbox-background-color-checked-hover)",
+      name: "--checkbox-border-color-checked-hover",
+    },
+    {
+      value: "var(--checkbox-background-color-checked-active)",
+      name: "--checkbox-border-color-checked-active",
+    },
+    {
+      value: "var(--checkbox-background-color-checked-disabled)",
+      name: "--checkbox-border-color-checked-disabled",
+    },
     { value: "var(--border-color-interactive)", name: "--input-border-color" },
     { value: "var(--border-color)", name: "--input-text-border-color" },
     {
@@ -970,6 +1022,7 @@ export const tokensTable = {
     { value: "16px", name: "--border-radius-large" },
     { value: "var(--border-radius-medium)", name: "--button-border-radius" },
     { value: "var(--border-radius-large)", name: "--card-border-radius" },
+    { value: "var(--border-radius-small)", name: "--checkbox-border-radius" },
     {
       value: "var(--border-radius-medium)",
       name: "--input-text-border-radius",
@@ -2263,6 +2316,10 @@ export const tokensTable = {
     },
     {
       value: "var(--button-opacity-disabled)",
+      name: "--checkbox-opacity-disabled",
+    },
+    {
+      value: "var(--button-opacity-disabled)",
       name: "--input-text-opacity-disabled",
     },
     {
@@ -3486,7 +3543,29 @@ export const variableLookupTable = {
   "card-padding": "var(--space-large)",
   "card-gap": "var(--card-padding)",
   "card-gap-article": "var(--space-small)",
+  "checkbox-background-color": "var(--button-background-color)",
+  "checkbox-background-color-hover": "var(--button-background-color-hover)",
+  "checkbox-background-color-active": "var(--button-background-color-active)",
+  "checkbox-background-color-disabled":
+    "var(--button-background-color-disabled)",
+  "checkbox-background-color-checked": "var(--button-background-color-primary)",
+  "checkbox-background-color-checked-hover":
+    "var(--button-background-color-primary-hover)",
+  "checkbox-background-color-checked-active":
+    "var(--button-background-color-primary-active)",
+  "checkbox-background-color-checked-disabled":
+    "var(--button-background-color-primary-disabled)",
+  "checkbox-border-color": "var(--border-color-interactive)",
+  "checkbox-border-color-checked": "var(--checkbox-background-color-checked)",
+  "checkbox-border-color-checked-hover":
+    "var(--checkbox-background-color-checked-hover)",
+  "checkbox-border-color-checked-active":
+    "var(--checkbox-background-color-checked-active)",
+  "checkbox-border-color-checked-disabled":
+    "var(--checkbox-background-color-checked-disabled)",
+  "checkbox-border-radius": "var(--border-radius-small)",
   "checkbox-margin-inline": "var(--space-small)",
+  "checkbox-opacity-disabled": "var(--button-opacity-disabled)",
   "checkbox-size": "var(--size-item-small)",
   "icon-color": {
     light: "var(--color-gray-70)",
