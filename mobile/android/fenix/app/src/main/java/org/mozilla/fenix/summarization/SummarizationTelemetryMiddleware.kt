@@ -154,7 +154,20 @@ class SummarizationTelemetryMiddleware(
         )
     }
 
-    private fun recordSummarizationCompleted(success: Boolean = true, error: Llm.Exception? = null) {
+    /**
+     * Identifier for the failure in telemetry. For [Llm.Exception] subtypes we log the qualified
+     * class name so provider attribution survives (e.g. MLPA's `RateLimited` vs a hypothetical
+     * second provider's `RateLimited`). Bare [Llm.Exception] instances and raw throwables fall
+     * back to the underlying cause's simple name, which is more diagnostic than the generic
+     * wrapper class.
+     */
+    private fun Throwable.errorType(): String? = when {
+        this::class == Llm.Exception::class -> (cause ?: this)::class.simpleName
+        this is Llm.Exception -> this::class.java.name
+        else -> (cause ?: this)::class.simpleName
+    }
+
+    private fun recordSummarizationCompleted(success: Boolean = true, error: Throwable? = null) {
         timerId?.let {
             AiSummarize.duration.stopAndAccumulate(it)
             timerId = null
@@ -164,8 +177,8 @@ class SummarizationTelemetryMiddleware(
             AiSummarize.CompletedExtra(
                 connectionType = connectionType.toString(),
                 contentType = sessionTelemetry.contentMetrics?.contentType,
-                errorType = error?.let { (it.cause ?: it)::class.simpleName },
-                errorCode = error?.errorCode?.value,
+                errorType = error?.errorType(),
+                errorCode = error?.let { ErrorCodeLookup.lookup(it).code },
                 language = sessionTelemetry.contentMetrics?.language,
                 lengthChars = sessionTelemetry.contentMetrics?.charCount,
                 lengthWords = sessionTelemetry.contentMetrics?.wordCount,

@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import mozilla.components.concept.llm.CloudLlmProvider
-import mozilla.components.concept.llm.ErrorCode
 import mozilla.components.concept.llm.Llm
 import mozilla.components.feature.summarize.content.ContentProvider
 import mozilla.components.feature.summarize.ext.fetchLlm
@@ -88,11 +87,11 @@ class SummarizationMiddleware(
                     .collect { store.dispatch(ReceivedParsedDocument(it)) }
             }
         } catch (e: TimeoutCancellationException) {
-            store.dispatch(SummarizationFailed(e.asLlmException()))
+            store.dispatch(SummarizationFailed(e))
         } catch (e: CancellationException) {
             throw e
         } catch (e: Throwable) {
-            store.dispatch(SummarizationFailed(e.asLlmException()))
+            store.dispatch(SummarizationFailed(e))
         }
     }
 
@@ -105,15 +104,6 @@ class SummarizationMiddleware(
         state is SummarizationState.Inert &&
             state.initializedWithShake &&
             !settings.getHasConsentedToShake().first()
-
-    private fun Throwable.asLlmException(): Llm.Exception =
-        (this as? Llm.Exception) ?: Llm.Exception(
-            message = "Unknown error in SummarizationMiddleware: ${this::class.java}",
-            errorCode = middlewareErrorCode,
-            cause = this,
-        )
-
-    private val middlewareErrorCode = ErrorCode(4001)
 
     private companion object {
         val SUMMARIZE_TIMEOUT = 60.seconds

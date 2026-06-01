@@ -15,7 +15,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.llm.CloudLlmProvider
-import mozilla.components.concept.llm.ErrorCode
 import mozilla.components.concept.llm.Llm
 import mozilla.components.concept.llm.Prompt
 import mozilla.components.feature.summarize.SummarizationState.Error
@@ -272,7 +271,7 @@ class SummarizationStoreTest {
 
     @Test
     fun `if the page extractor fails, the failure is forwarded as a summarization failure`() = runTest {
-        val failureThrowable = PageContentExtractor.Exception(NullPointerException())
+        val failureThrowable = NullPointerException("extractor failed")
         val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(FakeLlm.successful))
         val store = SummarizationStore(
             initialState = Inert(true),
@@ -456,7 +455,7 @@ class SummarizationStoreTest {
 
     @Test
     fun `dismissing an error screen transitions to the ErrorDismissed finished state`() = runTest {
-        val failureThrowable = PageContentExtractor.Exception(NullPointerException())
+        val failureThrowable = NullPointerException("extractor failed")
         val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(FakeLlm.successful))
         val store = SummarizationStore(
             initialState = Inert(true),
@@ -499,52 +498,6 @@ class SummarizationStoreTest {
         )
 
         assertEquals(expected, states)
-    }
-
-    @Test
-    fun `dismissing a content too long error screen transitions to the ErrorDismissed finished state`() = runTest {
-        val contentTooLongException = Llm.Exception("Content too long", ErrorCode(1005))
-        val provider = FakeCloudProvider(
-            preparedState = CloudLlmProvider.State.Ready(
-            llm = object : Llm {
-                override suspend fun prompt(prompt: Prompt): Flow<String> = throw contentTooLongException
-            },
-        ),
-        )
-        val store = SummarizationStore(
-            initialState = Inert(true),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    llmProvider = provider,
-                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
-                    contentProvider = { Result.success(Content()) },
-                    errorReporter = noopReporter,
-                    scope = backgroundScope,
-                ),
-            ),
-        )
-
-        val states = mutableListOf<SummarizationState>()
-        backgroundScope.launch {
-            store.stateFlow.toList(states)
-        }
-
-        store.dispatch(ViewAppeared)
-        testScheduler.advanceTimeBy(15.seconds)
-
-        assertEquals(
-            listOf(Inert(true), Loading(provider.info), Error(SummarizationError.ContentTooLong)),
-            states,
-        )
-
-        store.dispatch(ErrorAction.ErrorDismissed)
-        testScheduler.advanceTimeBy(1.seconds)
-
-        assertEquals(
-            listOf(Inert(true), Loading(provider.info), Error(SummarizationError.ContentTooLong), Finished.ErrorDismissed),
-            states,
-        )
     }
 
     @Test
@@ -647,9 +600,8 @@ class SummarizationStoreTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `llm provider errors are reported`() = runTest {
-        val errorCode = ErrorCode(666)
         val message = "cloud not clouding"
-        val exception = Llm.Exception(message, errorCode)
+        val exception = Llm.Exception(message)
         val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Unavailable(exception))
         val store = SummarizationStore(
             initialState = Inert(true),
