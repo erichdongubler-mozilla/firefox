@@ -865,6 +865,20 @@ std::vector<uint16_t> TransportLayerDtls::GetDefaultSrtpCiphers() {
   return ciphers;
 }
 
+const char* TransportLayerDtls::GetSrtpCipherName(uint16_t cipher) {
+  switch (cipher) {
+    case kDtlsSrtpAes128CmHmacSha1_80:
+      return "SRTP_AES128_CM_HMAC_SHA1_80";
+    case kDtlsSrtpAes128CmHmacSha1_32:
+      return "SRTP_AES128_CM_HMAC_SHA1_32";
+    case kDtlsSrtpAeadAes128Gcm:
+      return "SRTP_AEAD_AES_128_GCM";
+    case kDtlsSrtpAeadAes256Gcm:
+      return "SRTP_AEAD_AES_256_GCM";
+  }
+  return nullptr;
+}
+
 void TransportLayerDtls::StateChange(TransportLayer* layer, State state) {
   switch (state) {
     case TS_NONE:

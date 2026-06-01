@@ -203,6 +203,10 @@ class NrIceMediaStream {
   // the candidate belongs to.
   const std::string& GetId() const { return id_; }
 
+  // The local ICE username fragment of the current generation, or the empty
+  // string if the stream has no active generation.
+  std::string GetUfrag() const;
+
   bool AllGenerationsDoneGathering() const;
   bool AnyGenerationIsConnected() const;
 

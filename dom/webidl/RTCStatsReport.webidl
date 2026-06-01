@@ -231,6 +231,22 @@ dictionary RTCIceCandidateStats : RTCStats {
   DOMString proxied;
 };
 
+enum RTCDtlsRole {
+  "client",
+  "server",
+  "unknown"
+};
+
+dictionary RTCTransportStats : RTCStats {
+  RTCIceRole iceRole;
+  DOMString iceLocalUsernameFragment;
+  required RTCDtlsTransportState dtlsState;
+  RTCIceTransportState iceState;
+  DOMString selectedCandidatePairId;
+  RTCDtlsRole dtlsRole;
+  DOMString srtpCipher;
+};
+
 // This is for tracking the frame rate in about:webrtc
 dictionary RTCVideoFrameHistoryEntryInternal {
   required unsigned long       width;
@@ -291,6 +307,7 @@ dictionary RTCStatsCollection {
   sequence<RTCIceCandidateStats>            trickledIceCandidateStats = [];
   sequence<RTCDataChannelStats>             dataChannelStats = [];
   sequence<RTCCodecStats>                   codecStats = [];
+  sequence<RTCTransportStats>               transportStats = [];
 
   // For internal use only
   sequence<DOMString>                       rawLocalCandidates = [];

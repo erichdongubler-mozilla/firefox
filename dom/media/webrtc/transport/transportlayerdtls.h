@@ -92,6 +92,7 @@ class TransportLayerDtls final : public TransportLayer {
   nsresult SetSrtpCiphers(const std::vector<uint16_t>& ciphers);
   nsresult GetSrtpCipher(uint16_t* cipher) const;
   static std::vector<uint16_t> GetDefaultSrtpCiphers();
+  static const char* GetSrtpCipherName(uint16_t cipher);
 
   nsresult ExportKeyingMaterial(const std::string& label, bool use_context,
                                 const std::string& context, unsigned char* out,

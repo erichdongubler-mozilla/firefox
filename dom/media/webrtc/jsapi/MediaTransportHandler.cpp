@@ -158,7 +158,8 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
   RefPtr<TransportFlow> GetTransportFlow(const std::string& aTransportId,
                                          bool aIsRtcp) const;
   void GetIceStats(const NrIceMediaStream& aStream, DOMHighResTimeStamp aNow,
-                   dom::RTCStatsCollection* aStats) const;
+                   dom::RTCStatsCollection* aStats,
+                   dom::RTCTransportStats& aTransport) const;
 
   virtual ~MediaTransportHandlerSTS() = default;
   nsCOMPtr<nsISerialEventTarget> mStsThread;
@@ -1048,9 +1049,89 @@ RefPtr<dom::RTCStatsPromise> MediaTransportHandlerSTS::GetIceStats(
       mStsThread, __func__, [=, this, self = RefPtr(this)]() {
         UniquePtr<dom::RTCStatsCollection> stats(new dom::RTCStatsCollection);
         if (mIceCtx) {
+          dom::RTCIceRole iceRole =
+              mIceCtx->GetControlling() == NrIceCtx::ICE_CONTROLLING
+                  ? dom::RTCIceRole::Controlling
+                  : dom::RTCIceRole::Controlled;
           for (const auto& stream : mIceCtx->GetStreams()) {
             if (aTransportId.empty() || aTransportId == stream->GetId()) {
-              GetIceStats(*stream, aNow, stats.get());
+              dom::RTCTransportStats transport;
+              transport.mId.Construct(
+                  NS_ConvertASCIItoUTF16(stream->GetId().c_str()));
+              transport.mTimestamp.Construct(aNow);
+              transport.mType.Construct(dom::RTCStatsType::Transport);
+              transport.mIceRole.Construct(iceRole);
+              std::string ufrag = stream->GetUfrag();
+              if (!ufrag.empty()) {
+                transport.mIceLocalUsernameFragment.Construct(
+                    NS_ConvertASCIItoUTF16(ufrag.c_str()));
+              }
+              switch (stream->state()) {
+                case NrIceMediaStream::ICE_CONNECTING:
+                  transport.mIceState.Construct(
+                      dom::RTCIceTransportState::Checking);
+                  break;
+                case NrIceMediaStream::ICE_OPEN:
+                  transport.mIceState.Construct(
+                      dom::RTCIceTransportState::Connected);
+                  break;
+                case NrIceMediaStream::ICE_CLOSED:
+                  transport.mIceState.Construct(
+                      dom::RTCIceTransportState::Closed);
+                  break;
+              }
+              // XXX(Bug 1225723) Determine if dtlsState should be `required`.
+              transport.mDtlsState = dom::RTCDtlsTransportState::New;
+              auto transportIt = mTransports.find(stream->GetId());
+              if (transportIt != mTransports.end() &&
+                  transportIt->second.mFlow) {
+                if (auto* dtlsLayer = static_cast<TransportLayerDtls*>(
+                        transportIt->second.mFlow->GetLayer(
+                            TransportLayerDtls::ID()))) {
+                  transport.mDtlsRole.Construct(
+                      dtlsLayer->role() == TransportLayerDtls::CLIENT
+                          ? dom::RTCDtlsRole::Client
+                          : dom::RTCDtlsRole::Server);
+                  switch (dtlsLayer->state()) {
+                    case TransportLayer::TS_NONE:
+                    case TransportLayer::TS_INIT:
+                      transport.mDtlsState = dom::RTCDtlsTransportState::New;
+                      break;
+                    case TransportLayer::TS_CONNECTING:
+                      transport.mDtlsState =
+                          dom::RTCDtlsTransportState::Connecting;
+                      break;
+                    case TransportLayer::TS_OPEN:
+                      transport.mDtlsState =
+                          dom::RTCDtlsTransportState::Connected;
+                      break;
+                    case TransportLayer::TS_CLOSED:
+                      transport.mDtlsState = dom::RTCDtlsTransportState::Closed;
+                      break;
+                    case TransportLayer::TS_ERROR:
+                      transport.mDtlsState = dom::RTCDtlsTransportState::Failed;
+                      break;
+                  }
+                  uint16_t srtpCipher = 0;
+                  if (NS_SUCCEEDED(dtlsLayer->GetSrtpCipher(&srtpCipher))) {
+                    const char* name =
+                        TransportLayerDtls::GetSrtpCipherName(srtpCipher);
+                    if (name) {
+                      transport.mSrtpCipher.Construct(
+                          NS_ConvertASCIItoUTF16(name));
+                    }
+                  }
+                }
+              }
+              // XXX(Bug 2037532) Fill missing fields on the transport.
+              GetIceStats(*stream, aNow, stats.get(), transport);
+
+              // XXX(Bug 1632090) Instead of extending the array 1-by-1 (which
+              // might involve multiple reallocations) and potentially crashing
+              // here, SetCapacity could be called outside the loop once.
+              if (!stats->mTransportStats.AppendElement(transport, fallible)) {
+                mozalloc_handle_oom(0);
+              }
             }
           }
         }
@@ -1195,7 +1276,7 @@ static void ToRTCIceCandidateStats(
 
 void MediaTransportHandlerSTS::GetIceStats(
     const NrIceMediaStream& aStream, DOMHighResTimeStamp aNow,
-    dom::RTCStatsCollection* aStats) const {
+    dom::RTCStatsCollection* aStats, dom::RTCTransportStats& aTransport) const {
   MOZ_ASSERT(mStsThread->IsOnCurrentThread());
 
   NS_ConvertASCIItoUTF16 transportId(aStream.GetId().c_str());
@@ -1237,6 +1318,9 @@ void MediaTransportHandlerSTS::GetIceStats(
     s.mCurrentRoundTripTime.Construct(candPair.current_rtt_ms / 1000.0);
     s.mTotalRoundTripTime.Construct(candPair.total_rtt_ms / 1000.0);
     s.mComponentId.Construct(candPair.component_id);
+    if (candPair.selected && candPair.component_id == 1) {
+      aTransport.mSelectedCandidatePairId.Construct(codeword);
+    }
     if (!aStats->mIceCandidatePairStats.AppendElement(s, fallible)) {
       // XXX(Bug 1632090) Instead of extending the array 1-by-1 (which might
       // involve multiple reallocations) and potentially crashing here,
