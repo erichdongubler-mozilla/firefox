@@ -437,7 +437,37 @@ class Inspector extends EventEmitter {
       this.#setupToolbar();
     } catch (e) {
       this.#handleRejectionIfNotDestroyed(e);
+      // Only if this isn't a toolbox closing exception,
+      // and if the markup view failed rendering,
+      // show the AppErrorBoundary for that exception.
+      if (!this.#destroyed && !this.markup) {
+        this.#showErrorBoundary(e);
+      }
     }
+  }
+
+  /**
+   * Show detailed information about a crash if the inspector
+   * failed enough to be blank and not render the markup view
+   */
+  #showErrorBoundary(exception) {
+    const STARTUP_L10N = new LocalizationHelper(
+      "devtools/client/locales/startup.properties"
+    );
+    const element = this.React.createElement(
+      this.browserRequire(
+        "resource://devtools/client/shared/components/AppErrorBoundary.js"
+      ),
+      {
+        componentName: "General",
+        panel: STARTUP_L10N.getStr("inspector.panelLabel"),
+      },
+      // Pass en empty list of children to please React
+      []
+    );
+    this.#markupBox = this.panelDoc.getElementById("markup-box");
+    const appErrorBoundary = this.ReactDOM.render(element, this.#markupBox);
+    appErrorBoundary.handleException(exception, this.#toolbox);
   }
 
   async #initMarkupView() {
