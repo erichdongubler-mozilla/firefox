@@ -153,7 +153,7 @@ class FormData final : public nsISupports,
 
   nsresult CopySubmissionDataTo(HTMLFormSubmission* aFormSubmission) const;
 
-  Element* GetSubmitterElement() const { return mSubmitter.get(); }
+  Element* GetSubmitterElement() const override { return mSubmitter.get(); }
 
   CustomElementFormValue ConvertToCustomElementFormValue();
 
