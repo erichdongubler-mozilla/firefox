@@ -894,11 +894,9 @@ void FilterNodeSoftware::FilterInvalidated(FilterNodeSoftware* aFilter) {
 void FilterNodeSoftware::Invalidate() {
   mCachedOutput = nullptr;
   mCachedRect = IntRect();
-  for (std::vector<FilterInvalidationListener*>::iterator it =
-           mInvalidationListeners.begin();
-       it != mInvalidationListeners.end(); it++) {
-    (*it)->FilterInvalidated(this);
-  }
+  std::ranges::for_each(
+      mInvalidationListeners,
+      [&](FilterInvalidationListener* i) { i->FilterInvalidated(this); });
 }
 
 FilterNodeSoftware::FilterNodeSoftware() = default;
@@ -908,13 +906,11 @@ FilterNodeSoftware::~FilterNodeSoftware() {
       mInvalidationListeners.empty(),
       "All invalidation listeners should have unsubscribed themselves by now!");
 
-  for (std::vector<RefPtr<FilterNodeSoftware>>::iterator it =
-           mInputFilters.begin();
-       it != mInputFilters.end(); it++) {
-    if (*it) {
-      (*it)->RemoveInvalidationListener(this);
+  std::ranges::for_each(mInputFilters, [&](RefPtr<FilterNodeSoftware>& i) {
+    if (i) {
+      i->RemoveInvalidationListener(this);
     }
-  }
+  });
 }
 
 void FilterNodeSoftware::SetInput(uint32_t aIndex, FilterNode* aFilter) {
