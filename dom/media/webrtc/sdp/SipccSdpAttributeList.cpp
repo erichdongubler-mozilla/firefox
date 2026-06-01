@@ -29,7 +29,7 @@ SipccSdpAttributeList::SipccSdpAttributeList(
     : SipccSdpAttributeList(sessionLevel) {
   for (size_t i = 0; i < kNumAttributeTypes; ++i) {
     if (aOrig.mAttributes[i]) {
-      mAttributes[i].reset(aOrig.mAttributes[i]->Clone());
+      mAttributes[i] = aOrig.mAttributes[i]->Clone();
     }
   }
 }
