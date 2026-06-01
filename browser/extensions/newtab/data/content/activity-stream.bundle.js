@@ -17159,8 +17159,11 @@ function SportsWidget_SportsWidget({
   const liveDataTrustable = Date.now() >= WORLD_CUP_KICKOFF_MS || prefs[PREF_FORCE_LIVE_DATA_TRUSTABLE];
   const hasLiveGames = liveDataTrustable && sportsWidgetData?.data?.live?.length > 0;
   const hasPreviousResults = sportsWidgetData?.data?.matches?.previous?.length > 0;
-  const hasUpcomingMatches = sportsWidgetData?.data?.matches?.next?.length > 0;
-  const tournamentStarted = hasLiveGames || hasPreviousResults || hasUpcomingMatches;
+  // Upcoming matches alone don't mean the tournament has started — the backend
+  // surfaces them within a +/-21 day window around kickoff, so they appear
+  // pre-kickoff. Only live games or previous results are deterministic signals
+  // that the tournament is underway.
+  const tournamentStarted = hasLiveGames || hasPreviousResults;
   const savedWidgetState = sportsWidgetData.widgetState || WIDGET_STATES.INTRO;
   // Once the backend has any match data (upcoming, live, or completed), skip
   // the intro and open on the match schedule.
