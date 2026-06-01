@@ -9,13 +9,12 @@
       "command": "./mach",
       "args": [
         "--quiet",
-        "devtools-mcp",
+        "npx",
+        "@mozilla/firefox-devtools-mcp-moz",
         "--pref",
-        "remote.prefs.recommended=false",
-        "--pref",
-        "browser.smartwindow.enabled=true",
-        "--enable-privileged-context",
-        "--enable-script"
+        "browser.ml.enable=true",
+        "--enable-scripting",
+        "--enable-privileged-context"
       ]
     }
   }
