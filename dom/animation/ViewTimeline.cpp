@@ -246,11 +246,8 @@ bool ViewTimeline::UpdateCachedCurrentTime() {
     return prevCachedCurrentTime.isSome();
   }
 
-  // If there is no scrollable overflow, then the ScrollTimeline is inactive.
-  // https://drafts.csswg.org/scroll-animations-1/#scrolltimeline-interface
-  const auto orientation = state.Axis();
-  if (!scrollContainerFrame->GetAvailableScrollingDirections().contains(
-          orientation)) {
+  // Don't try to update against a frame that hasn't been laid out yet.
+  if (scrollContainerFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     return prevCachedCurrentTime.isSome();
   }
 
@@ -294,6 +291,7 @@ bool ViewTimeline::UpdateCachedCurrentTime() {
   // (i.e. the box of the scrollport), where as |startOffset| refers to the
   // start of the timeline, and similarly for end side/offset. [1]
   // https://drafts.csswg.org/css-writing-modes-4/#css-start
+  const auto orientation = state.Axis();
   const auto sideInsets =
       ComputeInsets(scrollContainerFrame, orientation, mAxis, mInset);
 
