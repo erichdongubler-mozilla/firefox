@@ -322,6 +322,7 @@ nsresult HttpConnectionUDP::InitCommon(nsIUDPSocket* aSocket,
   if (caps & NS_HTTP_LOAD_ANONYMOUS) {
     providerFlags |= nsISocketProvider::ANONYMOUS_CONNECT;
   }
+  mSocket->SetOriginAttributes(mConnInfo->GetOriginAttributes());
   if (mConnInfo->GetPrivate()) {
     providerFlags |= nsISocketProvider::NO_PERMANENT_STORAGE;
   }
