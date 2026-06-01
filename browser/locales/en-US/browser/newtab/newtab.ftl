@@ -795,6 +795,23 @@ newtab-sports-widget-show-less =
 newtab-sports-widget-followed-only-toggle =
     .label = Only followed teams
 
+## Sports widget live-games pagination. Shown when 2+ matches are live at the same time
+
+# arrow button that goes to the previous page of live matches.
+newtab-sports-widget-pagination-previous =
+    .aria-label = Previous
+    .title = Previous
+# arrow button that goes to the next page of live matches.
+newtab-sports-widget-pagination-next =
+    .aria-label = Next
+    .title = Next
+# Dot indicator that jumps directly to a given live match.
+# $index (number) - 1-based position of this dot in the list.
+# $total (number) - Total number of live matches.
+newtab-sports-widget-pagination-dot =
+    .aria-label = Live match { $index } of { $total }
+    .title = Live match { $index } of { $total }
+
 ## Watch live stream dialog
 ## Shown when the user clicks the “Watch live” button on a live match.
 ## Lists available streaming services where the match can be watched.
