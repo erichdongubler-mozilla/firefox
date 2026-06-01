@@ -955,7 +955,8 @@ impl AuthrsService {
             );
         })
         .may_block(true)
-        .dispatch_background_task()?;
+        .dispatch_background_task()
+        .inspect_err(|_| self.discard_transaction())?;
 
         let callback_transaction = self.transaction.clone();
         let callback_origin = info.origin.clone();
@@ -1000,7 +1001,8 @@ impl AuthrsService {
                 tid,
                 Some(&info.origin),
                 Some(browsing_context_id),
-            )?;
+            )
+            .inspect_err(|_| self.discard_transaction())?;
             self.usb_token_manager.lock().unwrap().register(
                 timeout_ms.into(),
                 info,
@@ -1011,6 +1013,7 @@ impl AuthrsService {
             self.test_token_manager
                 .register(timeout_ms.into(), info, status_tx, state_callback);
         } else {
+            self.discard_transaction();
             return Err(NS_ERROR_FAILURE);
         }
 
@@ -1181,6 +1184,9 @@ impl AuthrsService {
             interactive_receiver: None,
             puat_cache: None,
         });
+        // drop the guard here to ensure we don't deadlock if the call to `sign()` below
+        // hairpins the state callback.
+        drop(guard);
 
         let (status_tx, status_rx) = channel::<StatusUpdate>();
         let status_transaction = self.transaction.clone();
@@ -1195,7 +1201,8 @@ impl AuthrsService {
             );
         })
         .may_block(true)
-        .dispatch_background_task()?;
+        .dispatch_background_task()
+        .inspect_err(|_| self.discard_transaction())?;
 
         let uniq_allowed_cred = if info.allow_list.len() == 1 {
             info.allow_list.first().cloned()
@@ -1240,7 +1247,8 @@ impl AuthrsService {
             tid,
             Some(&info.origin),
             Some(browsing_context_id),
-        )?;
+        )
+        .inspect_err(|_| self.discard_transaction())?;
 
         // As in `register`, we are intentionally avoiding `AuthenticatorService` here.
         if static_prefs::pref!("security.webauth.webauthn_enable_usbtoken") {
@@ -1254,6 +1262,7 @@ impl AuthrsService {
             self.test_token_manager
                 .sign(timeout_ms as u64, info, status_tx, state_callback);
         } else {
+            self.discard_transaction();
             return Err(NS_ERROR_FAILURE);
         }
 
@@ -1349,6 +1358,13 @@ impl AuthrsService {
         let _ = state.promise.reject(NS_ERROR_DOM_NOT_ALLOWED_ERR);
         *guard = None;
         true
+    }
+
+    // Discard transaction state for a request that was never dispatched. We
+    // don't reject the promise here; the parent WebAuthnService does that after
+    // we return an error.
+    fn discard_transaction(&self) {
+        *self.transaction.lock().unwrap() = None;
     }
 
     xpcom_method!(cancel => Cancel(aTransactionId: u64));
@@ -1577,7 +1593,8 @@ impl AuthrsService {
             },
         )
         .may_block(true)
-        .dispatch_background_task()?;
+        .dispatch_background_task()
+        .inspect_err(|_| self.discard_transaction())?;
         if static_prefs::pref!("security.webauth.webauthn_enable_usbtoken") {
             self.usb_token_manager.lock().unwrap().manage(
                 60 * 1000 * 1000,
