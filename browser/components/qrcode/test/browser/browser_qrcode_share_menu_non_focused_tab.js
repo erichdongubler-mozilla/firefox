@@ -78,3 +78,52 @@ add_task(async function test_qrcode_focuses_context_tab() {
   BrowserTestUtils.removeTab(tab2);
   BrowserTestUtils.removeTab(tab1);
 });
+
+add_task(async function test_qrcode_unloaded_tab() {
+  let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
+  let tab2 = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:blank"
+  );
+
+  let waitForDiscarded = BrowserTestUtils.waitForEvent(
+    tab1,
+    "TabBrowserDiscarded"
+  );
+  Assert.ok(gBrowser.discardBrowser(tab1), "tab1 should discard");
+  await waitForDiscarded;
+  Assert.ok(!tab1.linkedPanel, "tab1 is now lazy/unloaded");
+
+  let contextMenu = await openTabContextMenu(tab1);
+  let shareSubmenu = await openShareSubmenu(contextMenu);
+  let qrCodeItem = shareSubmenu.querySelector(".share-qrcode-item");
+
+  let popupHidden = BrowserTestUtils.waitForPopupEvent(contextMenu, "hidden");
+  qrCodeItem.doCommand();
+  contextMenu.hidePopup();
+  await popupHidden;
+
+  let dialogManager = gBrowser
+    .getTabDialogBox(tab1.linkedBrowser)
+    .getTabDialogManager();
+
+  await TestUtils.waitForCondition(
+    () =>
+      dialogManager._dialogs.length && !dialogManager._dialogs[0]._isClosing,
+    "QR code dialog should open and stay open for the discarded tab"
+  );
+
+  let dialog = dialogManager._dialogs[0];
+  await dialog._dialogReady;
+
+  let urlDisplay = dialog._frame.contentDocument.getElementById("qrcode-url");
+  Assert.equal(
+    urlDisplay.textContent,
+    TEST_URL,
+    "Dialog should show the discarded tab's URL"
+  );
+
+  dialog._frame.contentWindow.close();
+  BrowserTestUtils.removeTab(tab2);
+  BrowserTestUtils.removeTab(tab1);
+});
