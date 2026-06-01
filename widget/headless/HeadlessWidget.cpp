@@ -402,7 +402,7 @@ bool HeadlessWidget::GetEditCommands(NativeKeyBindingsType aType,
 
 nsresult HeadlessWidget::SynthesizeNativeMouseEvent(
     LayoutDeviceIntPoint aPoint, NativeMouseMessage aNativeMessage,
-    MouseButton aButton, nsIWidget::Modifiers aModifierFlags,
+    MouseButton aButton, nsIWidget::NativeModifiers aModifierFlags,
     nsISynthesizedEventCallback* aCallback) {
   AutoSynthesizedEventCallbackNotifier notifier(aCallback);
   EventMessage msg;

@@ -320,10 +320,14 @@ nsresult MouseScrollHandler::SynthesizeNativeMouseScrollEvent(
     case WM_MOUSEHWHEEL: {
       lParam = MAKELPARAM(pt.x, pt.y);
       WORD mod = 0;
-      if (aModifierFlags & (nsIWidget::CTRL_L | nsIWidget::CTRL_R)) {
+      if (aModifierFlags &
+          static_cast<uint32_t>(nsIWidget::NativeModifiers::CTRL_L |
+                                nsIWidget::NativeModifiers::CTRL_R)) {
         mod |= MK_CONTROL;
       }
-      if (aModifierFlags & (nsIWidget::SHIFT_L | nsIWidget::SHIFT_R)) {
+      if (aModifierFlags &
+          static_cast<uint32_t>(nsIWidget::NativeModifiers::SHIFT_L |
+                                nsIWidget::NativeModifiers::SHIFT_R)) {
         mod |= MK_SHIFT;
       }
       wParam = MAKEWPARAM(mod, aDelta);

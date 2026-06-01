@@ -1943,7 +1943,7 @@ mozilla::ipc::IPCResult BrowserParent::RecvSynthesizeNativeMouseEvent(
     widget->SynthesizeNativeMouseEvent(
         aPoint, static_cast<nsIWidget::NativeMouseMessage>(aNativeMessage),
         static_cast<mozilla::MouseButton>(aButton),
-        static_cast<nsIWidget::Modifiers>(aModifierFlags), callback);
+        static_cast<nsIWidget::NativeModifiers>(aModifierFlags), callback);
   }
   return IPC_OK();
 }
