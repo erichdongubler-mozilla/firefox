@@ -387,16 +387,16 @@ wheels = [
 
 [[package]]
 name = "compare-locales"
-version = "9.0.4"
+version = "9.0.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "fluent-syntax" },
     { name = "six" },
     { name = "toml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e0/56/b0307642caae7fe5276b529852ba3c5436d4f61b97319874d0a5393365a9/compare_locales-9.0.4.tar.gz", hash = "sha256:73d0d384aefa0bc96f5fd8521c08c8bb89b16a37316701323a77960accabd551", size = 58373, upload-time = "2024-07-01T08:30:45.545Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/99/d6/1437ec990438908eb8766cc4cb68a4e8e0a0fa3cec9a73861e7b383de706/compare_locales-9.0.5.tar.gz", hash = "sha256:82f2177552666d0f7af1ccc2940a8d562f345ce3a2e64f1b67853d457ea8ae33", size = 59092, upload-time = "2026-05-30T06:21:42.865Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/39/51/7e5b671298d1486e2041898e050d8a7c2aa2df1dea8c61b7be578994e69a/compare_locales-9.0.4-py3-none-any.whl", hash = "sha256:933d2b6e20f460d3ac2d3176295684505a42085b25e6c31944fcafbaf52f1cc0", size = 75469, upload-time = "2024-07-01T08:30:43.72Z" },
+    { url = "https://files.pythonhosted.org/packages/ce/22/299da0a35e0acca9164db72cb811a7dd8827b86e9cb890cbee8807799268/compare_locales-9.0.5-py3-none-any.whl", hash = "sha256:40eaa40fe9290996f5972fa83bc4f9f1e580a6e2ea06087e636e77378d8ed168", size = 76275, upload-time = "2026-05-30T06:21:41.519Z" },
 ]
 
 [[package]]

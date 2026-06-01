@@ -1,6 +1,6 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: compare-locales
-Version: 9.0.4
+Version: 9.0.5
 Summary: Lint Mozilla localizations
 Author: Axel Hecht
 Author-email: Mozilla <l10n-drivers@mozilla.org>, Eemeli Aro <eemeli@mozilla.com>
@@ -23,9 +23,10 @@ Classifier: Topic :: Software Development :: Testing
 Requires-Python: <4,>=3.7
 Description-Content-Type: text/markdown
 License-File: LICENSE.md
-Requires-Dist: fluent.syntax <0.20,>=0.18.0
+Requires-Dist: fluent.syntax<0.20,>=0.18.0
 Requires-Dist: six
 Requires-Dist: toml
+Dynamic: license-file
 
 ![Build tests](https://github.com/mozilla/compare-locales/workflows/test/badge.svg)
 # compare-locales
