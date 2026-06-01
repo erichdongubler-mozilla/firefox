@@ -164,22 +164,6 @@ netwerk:
     expires: never
 
 
-  happy_eyeballs_https_record_available:
-    type: labeled_counter
-    description: >
-      Happy Eyeballs: whether an HTTPS service record was available during
-      connection establishment.
-    labels:
-      - available
-      - unavailable
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-
   happy_eyeballs_cancelled_attempt_count:
     type: custom_distribution
     description: >
@@ -213,6 +197,54 @@ netwerk:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+
+  happy_eyeballs_h3_discovery:
+    type: labeled_counter
+    description: >
+      Happy Eyeballs: how HTTP/3 (h3) reachability was advertised for a
+      connection, crossing whether an Alt-Svc header advertised h3 with
+      whether an HTTPS DNS record advertised h3 in its ALPN set. The
+      "altsvc_only" bucket is the case where a site advertises h3 via Alt-Svc
+      but publishes no h3-capable HTTPS record: the first connection cannot
+      use h3 and must spend an extra round trip discovering it, where an
+      HTTPS record would have allowed h3 immediately.
+    labels:
+      - none
+      - altsvc_only
+      - https_rr_only
+      - both
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2043832
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2043832
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+
+  happy_eyeballs_https_rr_features:
+    type: labeled_counter
+    description: >
+      Happy Eyeballs: which connection-bootstrapping features the HTTPS DNS
+      records carried, combined across all HTTPS records received for a
+      connection (the union of features over every record, not per record).
+      The "total" label is incremented once per connection that saw at least
+      one non-empty HTTPS record and serves as the denominator; each feature
+      label is incremented once per connection whose combined records carried
+      that feature. "ech" and the address hints can only be delivered ahead
+      of the first connection via the DNS record, not via an Alt-Svc header.
+    labels:
+      - total
+      - h3_alpn
+      - ech
+      - ipv4hint
+      - ipv6hint
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2043832
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2043832
     notification_emails:
       - necko@mozilla.com
     expires: never
