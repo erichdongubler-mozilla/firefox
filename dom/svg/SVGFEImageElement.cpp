@@ -246,27 +246,9 @@ FilterPrimitiveDescription SVGFEImageElement::GetPrimitiveDescription(
   RefPtr<SourceSurface> image;
   nsIntSize nativeSize;
   if (imageContainer) {
-    image::ImageIntrinsicSize size;
-    imageContainer->GetIntrinsicSize(&size);
-    if (size.mWidth) {
-      nativeSize.width = size.mWidth.value();
-    }
-    if (size.mHeight) {
-      nativeSize.height = size.mHeight.value();
-    }
-    if (!size.mWidth || !size.mHeight) {
-      AspectRatio ratio = imageContainer->GetIntrinsicRatio();
-      if (!size.mWidth) {
-        nativeSize.width = ratio && size.mHeight
-                               ? CSSIntCoord(ratio.ApplyTo(nativeSize.height))
-                               : kFallbackIntrinsicWidthInPixels;
-      }
-      if (!size.mHeight) {
-        nativeSize.height =
-            ratio ? CSSIntCoord(ratio.Inverted().ApplyTo(nativeSize.width))
-                  : kFallbackIntrinsicHeightInPixels;
-      }
-    }
+    CSSIntSize size = NaturalSize(DoDensityCorrection::No);
+    nativeSize.width = size.width;
+    nativeSize.height = size.height;
     uint32_t flags =
         imgIContainer::FLAG_SYNC_DECODE | imgIContainer::FLAG_ASYNC_NOTIFY;
     image = imageContainer->GetFrameAtSize(nativeSize,
