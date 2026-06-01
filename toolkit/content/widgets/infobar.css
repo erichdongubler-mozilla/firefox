@@ -63,6 +63,12 @@
   }
 }
 
+@media -moz-pref("browser.nova.enabled") {
+  :host(.infobar)::before {
+    background-image: none;
+  }
+}
+
 :host([message-bar-type="infobar"]:first-of-type) {
   margin-top: 4px;
 }
