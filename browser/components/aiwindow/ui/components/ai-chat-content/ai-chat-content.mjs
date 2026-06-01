@@ -188,6 +188,16 @@ export class AIChatContent extends MozLitElement {
       this.#dispatchAction("copy", { messageId, text });
     });
 
+    this.addEventListener("copy-table", event => {
+      const { messageId, lineRange } = event.detail ?? {};
+      const text = this.#getAssistantMessageBody(messageId);
+      const tableMarkdown = text
+        .split("\n")
+        .slice(lineRange[0], lineRange[1])
+        .join("\n");
+      this.#dispatchAction("copy-table", { messageId, text: tableMarkdown });
+    });
+
     this.addEventListener("retry-message", event => {
       this.#dispatchAction("retry", event.detail);
     });
