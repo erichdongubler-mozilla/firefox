@@ -5,6 +5,9 @@
 #include "AudioSessionRecord.h"
 
 #include "MediaControlUtils.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "mozilla/dom/WindowGlobalParent.h"
 
 namespace mozilla::dom {
 
@@ -38,9 +41,24 @@ void AudioSessionRecord::SetState(uint64_t aBcId, AudioSessionState aState) {
   MOZ_ASSERT_IF(aState == AudioSessionState::Active, mAudibleAtMs.isSome());
   mState = aState;
   LogState(aBcId);
-  // TODO: dispatch the state change to the content process via IPC so the
-  // AudioSession.state attribute and statechange event reflect the new
-  // value web-side.
+}
+
+void AudioSessionRecord::DispatchStateChange(uint64_t aBcId) const {
+  if (!StaticPrefs::dom_audio_session_state_enabled()) {
+    return;
+  }
+  RefPtr<CanonicalBrowsingContext> bc = CanonicalBrowsingContext::Get(aBcId);
+  if (!bc) {
+    return;
+  }
+  RefPtr<WindowGlobalParent> wgp = bc->GetCurrentWindowGlobal();
+  if (!wgp) {
+    return;
+  }
+  MOZ_LOG(gMediaControlLog, LogLevel::Debug,
+          ("AudioSessionRecord bc=%" PRIu64 ", DispatchStateChange state=%s",
+           aBcId, GetEnumString(mState).get()));
+  (void)wgp->SendNotifyAudioSessionStateChanged(mState);
 }
 
 }  // namespace mozilla::dom

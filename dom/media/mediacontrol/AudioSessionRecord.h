@@ -81,6 +81,10 @@ class AudioSessionRecord {
   void SetAudibleAtMs(uint64_t aBcId, Maybe<int64_t> aAudibleAtMs);
   void SetState(uint64_t aBcId, AudioSessionState aState);
 
+  // Pushes the current state to the content-side AudioSession via IPC, so
+  // the `state` attribute and `statechange` event reflect the spec mutation.
+  void DispatchStateChange(uint64_t aBcId) const;
+
  private:
   void LogState(uint64_t aBcId) const;
 

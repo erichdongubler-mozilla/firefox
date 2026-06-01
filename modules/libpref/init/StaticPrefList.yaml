@@ -2606,6 +2606,12 @@
   value: false
   mirror: always
 
+# Audio Session API: enables the state changes for Audio Session.
+- name: dom.audio_session.state_enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 # Checks if offscreen animation throttling is enabled.
 - name: dom.animations.offscreen-throttling
   type: bool

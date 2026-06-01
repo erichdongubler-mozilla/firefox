@@ -122,6 +122,9 @@ void AudioSessionManager::SetAudioSessionState(uint64_t aBrowsingContextId,
   // Step 6. Update all AudioSession states of audioSession's top-level
   // browsing context with audioSession.
   UpdateAllAudioSessionStates(aBrowsingContextId);
+  // Step 7. Fire an event named statechange at audioSession. Dispatched on
+  // the content side.
+  entry.Data().DispatchStateChange(aBrowsingContextId);
   // Inactive transition may leave the record empty; prune it.
   RemoveRecordIfEmpty(aBrowsingContextId);
 }

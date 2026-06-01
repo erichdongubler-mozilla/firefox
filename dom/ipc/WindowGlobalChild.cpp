@@ -11,6 +11,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/dom/AudioSession.h"
 #include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/BrowsingContext.h"
@@ -593,6 +594,18 @@ IPCResult WindowGlobalChild::RecvRawMessage(const JSActorMessageMeta& aMeta,
                                             JSIPCValue&& aData,
                                             StructuredCloneData* aStack) {
   ReceiveRawMessage(aMeta, std::move(aData), aStack);
+  return IPC_OK();
+}
+
+IPCResult WindowGlobalChild::RecvNotifyAudioSessionStateChanged(
+    const AudioSessionState& aState) {
+  nsGlobalWindowInner* window = GetWindowGlobal();
+  if (!window) {
+    return IPC_OK();
+  }
+  if (RefPtr<dom::AudioSession> session = window->Navigator()->AudioSession()) {
+    session->SetState(aState);
+  }
   return IPC_OK();
 }
 
