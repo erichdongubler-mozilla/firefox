@@ -2014,6 +2014,36 @@ describe("<SportsWidget> followed teams matches view", () => {
     expect(toggle.getAttribute("pressed")).toBeNull();
   });
 
+  it("keeps the chronological-first match in the Upcoming highlight when the toggle is off", () => {
+    // With the toggle on (default) CAN would bubble to the highlight; off, the
+    // chronological-first match (ENG vs USA) should stay highlighted.
+    const { container } = renderMatchesWith({
+      selectedTeams: ["CAN"],
+      matchesTab: "upcoming",
+      next: [matchEngUsa, matchCanAus, matchAlgGer],
+      followedOnly: { results: true, upcoming: false },
+    });
+    expect(highlightMatchCodes(container)).toEqual(["ENG", "USA"]);
+  });
+
+  it("renders the expanded Upcoming list in chronological order when the toggle is off", () => {
+    const { container } = renderMatchesWith({
+      selectedTeams: ["CAN"],
+      matchesTab: "upcoming",
+      next: [matchEngUsa, matchCanAus, matchAlgGer],
+      followedOnly: { results: true, upcoming: false },
+    });
+    fireEvent.click(
+      visiblePanel(container).querySelector(
+        "[data-l10n-id='newtab-sports-widget-view-all']"
+      )
+    );
+    const homeCodes = [
+      ...visiblePanel(container).querySelectorAll(".sports-match-row"),
+    ].map(row => row.querySelector(".sports-match-code").textContent);
+    expect(homeCodes).toEqual(["ENG", "CAN", "ALG"]);
+  });
+
   it("filters the expanded Results list to followed teams when the toggle is on", () => {
     const { container } = renderMatchesWith({
       selectedTeams: ["CAN"],

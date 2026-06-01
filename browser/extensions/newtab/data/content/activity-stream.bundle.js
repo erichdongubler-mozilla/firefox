@@ -17220,19 +17220,23 @@ function SportsWidget_SportsWidget({
     return map;
   }, [teams]);
 
-  // Pre-sort each match bucket so followed teams' matches bubble to the front
-  // for the highlight view and the list view.
+  // Bubble followed teams to the front for the highlight view and list view
+  // when the followed-only toggle is on; with it off, matches stay chronological.
+  const resultsFollowedOnly = sportsWidgetData.followedOnly?.results ?? true;
+  const upcomingFollowedOnly = sportsWidgetData.followedOnly?.upcoming ?? true;
   const {
     sortedPrevious,
     sortedCurrent,
     sortedNext
   } = (0,external_React_namespaceObject.useMemo)(() => {
+    const previous = rawMatches?.previous ?? [];
+    const next = rawMatches?.next ?? [];
     return {
-      sortedPrevious: sortFollowedFirst(rawMatches?.previous ?? [], selectedTeamsSet),
+      sortedPrevious: resultsFollowedOnly ? sortFollowedFirst(previous, selectedTeamsSet) : previous,
       sortedCurrent: sortFollowedFirst(rawLive ?? [], selectedTeamsSet),
-      sortedNext: sortFollowedFirst(rawMatches?.next ?? [], selectedTeamsSet)
+      sortedNext: upcomingFollowedOnly ? sortFollowedFirst(next, selectedTeamsSet) : next
     };
-  }, [rawMatches, rawLive, selectedTeamsSet]);
+  }, [rawMatches, rawLive, selectedTeamsSet, resultsFollowedOnly, upcomingFollowedOnly]);
 
   // List-view toggle states for the Results and Upcoming tabs are lifted up
   // here so we can tell whether a highlight match is currently visible (for
