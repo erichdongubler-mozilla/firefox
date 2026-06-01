@@ -3390,6 +3390,9 @@ pref("browser.shareqrcode.enabled", true);
 pref("browser.shareqrcode.enabled", false);
 #endif
 
+// Whether to embed a logo in the center of generated QR codes.
+pref("browser.shareqrcode.embed_logo", true);
+
 // Mozilla-controlled domains that are allowed to use non-standard
 // context properties for SVG images for use in the browser UI. Please
 // keep this list short. This preference (and SVG `context-` keyword support)
