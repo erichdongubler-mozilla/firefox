@@ -335,6 +335,34 @@ describe("<SportsWidget>", () => {
       container.querySelector(".sports-intro-wrapper")
     ).not.toBeInTheDocument();
   });
+
+  it("stays on intro when only upcoming matches are present (no live, no previous)", () => {
+    // The backend surfaces upcoming matches within a +/-21 day window around
+    // kickoff, so they appear pre-kickoff. Upcoming matches alone must not
+    // flip the widget out of the intro view.
+    const { container } = render(
+      <WrapWithProvider
+        state={makeState(
+          {},
+          {
+            data: {
+              teams: [],
+              matches: { previous: [], current: [], next: [mockMatch] },
+              live: [],
+            },
+          }
+        )}
+      >
+        <SportsWidget {...defaultProps} />
+      </WrapWithProvider>
+    );
+    expect(
+      container.querySelector(".sports.sports-matches")
+    ).not.toBeInTheDocument();
+    expect(
+      container.querySelector(".sports-intro-wrapper")
+    ).toBeInTheDocument();
+  });
 });
 
 describe("pre-kickoff /live data guard", () => {
