@@ -41,7 +41,7 @@ import nu.validator.htmlparser.common.Interner;
 
 public final class AttributeName
 // Uncomment to regenerate
-//implements Comparable<AttributeName>
+// implements Comparable<AttributeName>
 {
     // [NOCPP[
 
@@ -549,206 +549,206 @@ public final class AttributeName
 
     // START CODE ONLY USED FOR GENERATING CODE uncomment to regenerate
 
-//   /**
-//    * @see java.lang.Object#toString()
-//    */
-//   @Override public String toString() {
-//       return "(" + formatNs() + ", " + formatLocal() + ", " + formatPrefix()
-//               + ", " + formatFlags() + ")";
-//   }
+//  /**
+//  * @see java.lang.Object#toString()
+//  */
+// @Override public String toString() {
+//     return "(" + formatNs() + ", " + formatLocal() + ", " + formatPrefix()
+//             + ", " + formatFlags() + ")";
+// }
 //
-//   private String formatFlags() {
-//       StringBuilder builder = new StringBuilder();
-//       if ((flags & NCNAME_HTML) != 0) {
-//           if (builder.length() != 0) {
-//               builder.append(" | ");
-//           }
-//           builder.append("NCNAME_HTML");
-//       }
-//       if ((flags & NCNAME_FOREIGN) != 0) {
-//           if (builder.length() != 0) {
-//               builder.append(" | ");
-//           }
-//           builder.append("NCNAME_FOREIGN");
-//       }
-//       if ((flags & NCNAME_LANG) != 0) {
-//           if (builder.length() != 0) {
-//               builder.append(" | ");
-//           }
-//           builder.append("NCNAME_LANG");
-//       }
-//       if (isXmlns()) {
-//           if (builder.length() != 0) {
-//               builder.append(" | ");
-//           }
-//           builder.append("IS_XMLNS");
-//       }
-//       if (isCaseFolded()) {
-//           if (builder.length() != 0) {
-//               builder.append(" | ");
-//           }
-//           builder.append("CASE_FOLDED");
-//       }
-//       if (isBoolean()) {
-//           if (builder.length() != 0) {
-//               builder.append(" | ");
-//           }
-//           builder.append("BOOLEAN");
-//       }
-//       if (builder.length() == 0) {
-//           return "0";
-//       }
-//       return builder.toString();
-//   }
+// private String formatFlags() {
+//     StringBuilder builder = new StringBuilder();
+//     if ((flags & NCNAME_HTML) != 0) {
+//         if (builder.length() != 0) {
+//             builder.append(" | ");
+//         }
+//         builder.append("NCNAME_HTML");
+//     }
+//     if ((flags & NCNAME_FOREIGN) != 0) {
+//         if (builder.length() != 0) {
+//             builder.append(" | ");
+//         }
+//         builder.append("NCNAME_FOREIGN");
+//     }
+//     if ((flags & NCNAME_LANG) != 0) {
+//         if (builder.length() != 0) {
+//             builder.append(" | ");
+//         }
+//         builder.append("NCNAME_LANG");
+//     }
+//     if (isXmlns()) {
+//         if (builder.length() != 0) {
+//             builder.append(" | ");
+//         }
+//         builder.append("IS_XMLNS");
+//     }
+//     if (isCaseFolded()) {
+//         if (builder.length() != 0) {
+//             builder.append(" | ");
+//         }
+//         builder.append("CASE_FOLDED");
+//     }
+//     if (isBoolean()) {
+//         if (builder.length() != 0) {
+//             builder.append(" | ");
+//         }
+//         builder.append("BOOLEAN");
+//     }
+//     if (builder.length() == 0) {
+//         return "0";
+//     }
+//     return builder.toString();
+// }
 //
-//   public int compareTo(AttributeName other) {
-//       int thisHash = this.hash();
-//       int otherHash = other.hash();
-//       if (thisHash < otherHash) {
-//           return -1;
-//       } else if (thisHash == otherHash) {
-//           return 0;
-//       } else {
-//           return 1;
-//       }
-//   }
+// public int compareTo(AttributeName other) {
+//     int thisHash = this.hash();
+//     int otherHash = other.hash();
+//     if (thisHash < otherHash) {
+//         return -1;
+//     } else if (thisHash == otherHash) {
+//         return 0;
+//     } else {
+//         return 1;
+//     }
+// }
 //
-//   private String formatPrefix() {
-//       if (prefix[0] == null && prefix[1] == null && prefix[2] == null
-//               && prefix[3] == null) {
-//           return "ALL_NO_PREFIX";
-//       } else if (prefix[0] == null && prefix[1] == prefix[2]
-//               && prefix[3] == null) {
-//           if ("xmlns".equals(prefix[1])) {
-//               return "XMLNS_PREFIX";
-//           } else if ("xml".equals(prefix[1])) {
-//               return "XML_PREFIX";
-//           } else if ("xlink".equals(prefix[1])) {
-//               return "XLINK_PREFIX";
-//           } else {
-//               throw new IllegalStateException();
-//           }
-//       } else if (prefix[0] == null && prefix[1] == null && prefix[2] == null
-//               && prefix[3] == "xml") {
-//           return "LANG_PREFIX";
-//       } else {
-//           throw new IllegalStateException();
-//       }
-//   }
+// private String formatPrefix() {
+//     if (prefix[0] == null && prefix[1] == null && prefix[2] == null
+//             && prefix[3] == null) {
+//         return "ALL_NO_PREFIX";
+//     } else if (prefix[0] == null && prefix[1] == prefix[2]
+//             && prefix[3] == null) {
+//         if ("xmlns".equals(prefix[1])) {
+//             return "XMLNS_PREFIX";
+//         } else if ("xml".equals(prefix[1])) {
+//             return "XML_PREFIX";
+//         } else if ("xlink".equals(prefix[1])) {
+//             return "XLINK_PREFIX";
+//         } else {
+//             throw new IllegalStateException();
+//         }
+//     } else if (prefix[0] == null && prefix[1] == null && prefix[2] == null
+//             && prefix[3] == "xml") {
+//         return "LANG_PREFIX";
+//     } else {
+//         throw new IllegalStateException();
+//     }
+// }
 //
-//   private String formatLocal() {
-//       return "\"" + local[0] + "\", \"" + local[1] + "\", \"" + local[2] + "\", \"" + local[3] + "\"";
-//   }
+// private String formatLocal() {
+//     return "\"" + local[0] + "\", \"" + local[1] + "\", \"" + local[2] + "\", \"" + local[3] + "\"";
+// }
 //
-//   private String formatNs() {
-//       if (uri[0] == "" && uri[1] == "" && uri[2] == "" && uri[3] == "") {
-//           return "ALL_NO_NS";
-//       } else if (uri[0] == "" && uri[1] == uri[2] && uri[3] == "") {
-//           if ("http://www.w3.org/2000/xmlns/".equals(uri[1])) {
-//               return "XMLNS_NS";
-//           } else if ("http://www.w3.org/XML/1998/namespace".equals(uri[1])) {
-//               return "XML_NS";
-//           } else if ("http://www.w3.org/1999/xlink".equals(uri[1])) {
-//               return "XLINK_NS";
-//           } else {
-//               throw new IllegalStateException();
-//           }
-//       } else if (uri[0] == "" && uri[1] == "" && uri[2] == ""
-//               && uri[3] == "http://www.w3.org/XML/1998/namespace") {
-//           return "LANG_NS";
-//       } else {
-//           throw new IllegalStateException();
-//       }
-//   }
+// private String formatNs() {
+//     if (uri[0] == "" && uri[1] == "" && uri[2] == "" && uri[3] == "") {
+//         return "ALL_NO_NS";
+//     } else if (uri[0] == "" && uri[1] == uri[2] && uri[3] == "") {
+//         if ("http://www.w3.org/2000/xmlns/".equals(uri[1])) {
+//             return "XMLNS_NS";
+//         } else if ("http://www.w3.org/XML/1998/namespace".equals(uri[1])) {
+//             return "XML_NS";
+//         } else if ("http://www.w3.org/1999/xlink".equals(uri[1])) {
+//             return "XLINK_NS";
+//         } else {
+//             throw new IllegalStateException();
+//         }
+//     } else if (uri[0] == "" && uri[1] == "" && uri[2] == ""
+//             && uri[3] == "http://www.w3.org/XML/1998/namespace") {
+//         return "LANG_NS";
+//     } else {
+//         throw new IllegalStateException();
+//     }
+// }
 //
-//   private String constName() {
-//       String name = getLocal(HTML);
-//       char[] buf = new char[name.length()];
-//       for (int i = 0; i < name.length(); i++) {
-//           char c = name.charAt(i);
-//           if (c == '-' || c == ':') {
-//               buf[i] = '_';
-//           } else if (c >= 'a' && c <= 'z') {
-//               buf[i] = (char) (c - 0x20);
-//           } else {
-//               buf[i] = c;
-//           }
-//       }
-//       return new String(buf);
-//   }
+// private String constName() {
+//     String name = getLocal(HTML);
+//     char[] buf = new char[name.length()];
+//     for (int i = 0; i < name.length(); i++) {
+//         char c = name.charAt(i);
+//         if (c == '-' || c == ':') {
+//             buf[i] = '_';
+//         } else if (c >= 'a' && c <= 'z') {
+//             buf[i] = (char) (c - 0x20);
+//         } else {
+//             buf[i] = c;
+//         }
+//     }
+//     return new String(buf);
+// }
 //
-//   private int hash() {
-//       String name = getLocal(HTML);
-//       return bufToHash(name.toCharArray(), name.length());
-//   }
+// private int hash() {
+//     String name = getLocal(HTML);
+//     return bufToHash(name.toCharArray(), name.length());
+// }
 //
-//   private static void fillLevelOrderArray(List<AttributeName> sorted, int depth,
-//                                           int rootIdx, AttributeName[] levelOrder) {
-//       if (rootIdx >= levelOrder.length) {
-//           return;
-//       }
+// private static void fillLevelOrderArray(List<AttributeName> sorted, int depth,
+//                                         int rootIdx, AttributeName[] levelOrder) {
+//     if (rootIdx >= levelOrder.length) {
+//         return;
+//     }
 //
-//       if (depth > 0) {
-//           fillLevelOrderArray(sorted, depth - 1, rootIdx * 2 + 1, levelOrder);
-//       }
+//     if (depth > 0) {
+//         fillLevelOrderArray(sorted, depth - 1, rootIdx * 2 + 1, levelOrder);
+//     }
 //
-//       if (!sorted.isEmpty()) {
-//           levelOrder[rootIdx] = sorted.remove(0);
-//       }
+//     if (!sorted.isEmpty()) {
+//         levelOrder[rootIdx] = sorted.remove(0);
+//     }
 //
-//       if (depth > 0) {
-//           fillLevelOrderArray(sorted, depth - 1, rootIdx * 2 + 2, levelOrder);
-//       }
-//   }
+//     if (depth > 0) {
+//         fillLevelOrderArray(sorted, depth - 1, rootIdx * 2 + 2, levelOrder);
+//     }
+// }
 //
-//   /**
-//    * Regenerate self with: mvn compile exec:java -Dexec.mainClass="nu.validator.htmlparser.impl.AttributeName"
-//    *
-//    * @param args
-//    */
-//   public static void main(String[] args) {
-//       Arrays.sort(ATTRIBUTE_NAMES);
-//       for (int i = 0; i < ATTRIBUTE_NAMES.length; i++) {
-//           int hash = ATTRIBUTE_NAMES[i].hash();
-//           if (hash < 0) {
-//               System.err.println("Negative hash: " + ATTRIBUTE_NAMES[i].local[0]);
-//               return;
-//           }
-//           for (int j = i + 1; j < ATTRIBUTE_NAMES.length; j++) {
-//               if (hash == ATTRIBUTE_NAMES[j].hash()) {
-//                   System.err.println(
-//                           "Hash collision: " + ATTRIBUTE_NAMES[i].local[0] + ", "
-//                                   + ATTRIBUTE_NAMES[j].local[0]);
-//                   return;
-//               }
-//           }
-//       }
-//       for (int i = 0; i < ATTRIBUTE_NAMES.length; i++) {
-//           AttributeName att = ATTRIBUTE_NAMES[i];
-//           System.out.println("public static final AttributeName "
-//                   + att.constName() + " = new AttributeName" + att.toString()
-//                   + ";");
-//       }
+// /**
+//  * Regenerate self with: mvn compile exec:java -Dexec.mainClass="nu.validator.htmlparser.impl.AttributeName"
+//  *
+//  * @param args
+//  */
+// public static void main(String[] args) {
+//     Arrays.sort(ATTRIBUTE_NAMES);
+//     for (int i = 0; i < ATTRIBUTE_NAMES.length; i++) {
+//         int hash = ATTRIBUTE_NAMES[i].hash();
+//         if (hash < 0) {
+//             System.err.println("Negative hash: " + ATTRIBUTE_NAMES[i].local[0]);
+//             return;
+//         }
+//         for (int j = i + 1; j < ATTRIBUTE_NAMES.length; j++) {
+//             if (hash == ATTRIBUTE_NAMES[j].hash()) {
+//                 System.err.println(
+//                         "Hash collision: " + ATTRIBUTE_NAMES[i].local[0] + ", "
+//                                 + ATTRIBUTE_NAMES[j].local[0]);
+//                 return;
+//             }
+//         }
+//     }
+//     for (int i = 0; i < ATTRIBUTE_NAMES.length; i++) {
+//         AttributeName att = ATTRIBUTE_NAMES[i];
+//         System.out.println("public static final AttributeName "
+//                 + att.constName() + " = new AttributeName" + att.toString()
+//                 + ";");
+//     }
 //
-//       LinkedList<AttributeName> sortedNames = new LinkedList<AttributeName>();
-//       Collections.addAll(sortedNames, ATTRIBUTE_NAMES);
-//       AttributeName[] levelOrder = new AttributeName[ATTRIBUTE_NAMES.length];
-//       int bstDepth = (int) Math.ceil(Math.log(ATTRIBUTE_NAMES.length) / Math.log(2));
-//       fillLevelOrderArray(sortedNames, bstDepth, 0, levelOrder);
+//     LinkedList<AttributeName> sortedNames = new LinkedList<AttributeName>();
+//     Collections.addAll(sortedNames, ATTRIBUTE_NAMES);
+//     AttributeName[] levelOrder = new AttributeName[ATTRIBUTE_NAMES.length];
+//     int bstDepth = (int) Math.ceil(Math.log(ATTRIBUTE_NAMES.length) / Math.log(2));
+//     fillLevelOrderArray(sortedNames, bstDepth, 0, levelOrder);
 //
-//       System.out.println("private final static @NoLength AttributeName[] ATTRIBUTE_NAMES = {");
-//       for (int i = 0; i < levelOrder.length; i++) {
-//           AttributeName att = levelOrder[i];
-//           System.out.println(att.constName() + ",");
-//       }
-//       System.out.println("};");
-//       System.out.println("private final static int[] ATTRIBUTE_HASHES = {");
-//       for (int i = 0; i < levelOrder.length; i++) {
-//           AttributeName att = levelOrder[i];
-//           System.out.println(Integer.toString(att.hash()) + ",");
-//       }
-//       System.out.println("};");
-//   }
+//     System.out.println("private final static @NoLength AttributeName[] ATTRIBUTE_NAMES = {");
+//     for (int i = 0; i < levelOrder.length; i++) {
+//         AttributeName att = levelOrder[i];
+//         System.out.println(att.constName() + ",");
+//     }
+//     System.out.println("};");
+//     System.out.println("private final static int[] ATTRIBUTE_HASHES = {");
+//     for (int i = 0; i < levelOrder.length; i++) {
+//         AttributeName att = levelOrder[i];
+//         System.out.println(Integer.toString(att.hash()) + ",");
+//     }
+//     System.out.println("};");
+// }
 
     // START GENERATED CODE
    public static final AttributeName ALT = new AttributeName(ALL_NO_NS, "alt", "alt", "alt", "alt", ALL_NO_PREFIX, NCNAME_HTML | NCNAME_FOREIGN | NCNAME_LANG);
