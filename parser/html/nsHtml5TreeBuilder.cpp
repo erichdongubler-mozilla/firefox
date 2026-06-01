@@ -2039,7 +2039,7 @@ void nsHtml5TreeBuilder::startTagScriptInHead(
 
 void nsHtml5TreeBuilder::startTagTemplateInHead(
     nsHtml5ElementName* elementName, nsHtml5HtmlAttributes* attributes) {
-  appendToCurrentNodeAndPushTemplateElement(attributes);
+  appendToCurrentNodeAndPushElement(elementName, attributes);
   insertMarker();
   framesetOk = false;
   originalMode = mode;
@@ -2061,6 +2061,36 @@ bool nsHtml5TreeBuilder::isSpecialParentInForeign(nsHtml5StackNode* stackNode) {
   return (kNameSpaceID_XHTML == ns) || (stackNode->isHtmlIntegrationPoint()) ||
          ((kNameSpaceID_MathML == ns) &&
           (stackNode->getGroup() == MI_MO_MN_MS_MTEXT));
+}
+
+nsIContentHandle* nsHtml5TreeBuilder::getDeclarativeShadowRoot(
+    nsIContentHandle* currentNode, nsIContentHandle* templateNode,
+    nsHtml5HtmlAttributes* attributes) {
+  if (!isAllowDeclarativeShadowRoots()) {
+    return nullptr;
+  }
+  nsHtml5String shadowRootMode =
+      attributes->getValue(nsHtml5AttributeName::ATTR_SHADOWROOTMODE);
+  if (!shadowRootMode) {
+    return nullptr;
+  }
+  bool shadowRootIsClonable =
+      attributes->contains(nsHtml5AttributeName::ATTR_SHADOWROOTCLONABLE);
+  bool shadowRootIsSerializable =
+      attributes->contains(nsHtml5AttributeName::ATTR_SHADOWROOTSERIALIZABLE);
+  bool shadowRootDelegatesFocus =
+      attributes->contains(nsHtml5AttributeName::ATTR_SHADOWROOTDELEGATESFOCUS);
+  bool shadowRootCustomElementRegistry = attributes->contains(
+      nsHtml5AttributeName::ATTR_SHADOWROOTCUSTOMELEMENTREGISTRY);
+  nsHtml5String shadowRootReferenceTarget = attributes->getValue(
+      nsHtml5AttributeName::ATTR_SHADOWROOTREFERENCETARGET);
+  nsHtml5String shadowRootSlotAssignment =
+      attributes->getValue(nsHtml5AttributeName::ATTR_SHADOWROOTSLOTASSIGNMENT);
+  return getShadowRootFromHost(
+      currentNode, templateNode, shadowRootMode, shadowRootIsClonable,
+      shadowRootIsSerializable, shadowRootDelegatesFocus,
+      shadowRootCustomElementRegistry, shadowRootSlotAssignment,
+      shadowRootReferenceTarget);
 }
 
 nsHtml5String nsHtml5TreeBuilder::extractCharsetFromContent(
@@ -2257,7 +2287,7 @@ charsetloop_end:;
       }
     }
     return nsHtml5Portability::newStringFromBuffer(buffer, start, end - start,
-                                                   tb, nullptr);
+                                                   tb, false);
   }
   return nullptr;
 }
@@ -4111,64 +4141,20 @@ void nsHtml5TreeBuilder::appendToCurrentNodeAndPushElement(
   nsIContentHandle* elt =
       createElement(kNameSpaceID_XHTML, elementName->getName(), attributes,
                     currentNode, htmlCreator(elementName->getHtmlCreator()));
-  appendElement(elt, currentNode);
-  nsHtml5StackNode* node = createStackNode(elementName, elt);
-  push(node);
-}
-
-void nsHtml5TreeBuilder::appendToCurrentNodeAndPushTemplateElement(
-    nsHtml5HtmlAttributes* attributes) {
-  nsIContentHandle* currentNode = nodeFromStackWithBlinkCompat(currentPtr);
-  nsHtml5String shadowRootMode = nullptr;
-  bool shadowRootIsClonable = false;
-  bool shadowRootIsSerializable = false;
-  bool shadowRootDelegatesFocus = false;
-  bool shadowRootCustomElementRegistry = false;
-  nsHtml5String shadowRootReferenceTarget = nullptr;
-  nsHtml5String shadowRootSlotAssignment = nullptr;
-  if (isAllowDeclarativeShadowRoots()) {
-    shadowRootMode = nsHtml5Portability::newStringFromString(
-        attributes->getValue(nsHtml5AttributeName::ATTR_SHADOWROOTMODE));
-    if (shadowRootMode) {
-      shadowRootIsClonable =
-          attributes->contains(nsHtml5AttributeName::ATTR_SHADOWROOTCLONABLE);
-      shadowRootIsSerializable = attributes->contains(
-          nsHtml5AttributeName::ATTR_SHADOWROOTSERIALIZABLE);
-      shadowRootDelegatesFocus = attributes->contains(
-          nsHtml5AttributeName::ATTR_SHADOWROOTDELEGATESFOCUS);
-      shadowRootCustomElementRegistry = attributes->contains(
-          nsHtml5AttributeName::ATTR_SHADOWROOTCUSTOMELEMENTREGISTRY);
-      shadowRootReferenceTarget =
-          nsHtml5Portability::newStringFromString(attributes->getValue(
-              nsHtml5AttributeName::ATTR_SHADOWROOTREFERENCETARGET));
-      shadowRootSlotAssignment =
-          nsHtml5Portability::newStringFromString(attributes->getValue(
-              nsHtml5AttributeName::ATTR_SHADOWROOTSLOTASSIGNMENT));
+  if (nsHtml5ElementName::ELT_TEMPLATE == elementName) {
+    nsIContentHandle* root =
+        getDeclarativeShadowRoot(currentNode, elt, attributes);
+    if (root) {
+      setDocumentFragmentForTemplate(elt, root);
+      elt = root;
+    } else {
+      appendElement(elt, currentNode);
+      elt = getDocumentFragmentForTemplate(elt);
     }
-  }
-  nsIContentHandle* elt =
-      createElement(kNameSpaceID_XHTML, nsGkAtoms::_template, attributes,
-                    currentNode, htmlCreator(NS_NewHTMLTemplateElement));
-  nsIContentHandle* root = nullptr;
-  if (shadowRootMode) {
-    root = getShadowRootFromHost(
-        currentNode, elt, shadowRootMode, shadowRootIsClonable,
-        shadowRootIsSerializable, shadowRootDelegatesFocus,
-        shadowRootCustomElementRegistry, shadowRootSlotAssignment,
-        shadowRootReferenceTarget);
-    shadowRootMode.Release();
-    shadowRootReferenceTarget.Release();
-    shadowRootSlotAssignment.Release();
-  }
-  if (root) {
-    setDocumentFragmentForTemplate(elt, root);
-    elt = root;
   } else {
     appendElement(elt, currentNode);
-    elt = getDocumentFragmentForTemplate(elt);
   }
-  nsHtml5StackNode* node =
-      createStackNode(nsHtml5ElementName::ELT_TEMPLATE, elt);
+  nsHtml5StackNode* node = createStackNode(elementName, elt);
   push(node);
 }
 
