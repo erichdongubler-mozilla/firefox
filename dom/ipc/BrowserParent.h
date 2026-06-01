@@ -507,8 +507,10 @@ class BrowserParent final : public PBrowserParent,
       const Maybe<uint64_t>& aCallbackId);
 
   mozilla::ipc::IPCResult RecvSynthesizeNativeMouseEvent(
-      const LayoutDeviceIntPoint& aPoint, const uint32_t& aNativeMessage,
-      const int16_t& aButton, const uint32_t& aModifierFlags,
+      const LayoutDeviceIntPoint& aPoint,
+      const nsIWidget::NativeMouseMessage& aNativeMessage,
+      const mozilla::MouseButton& aButton,
+      const nsIWidget::NativeModifiers& aModifierFlags,
       const Maybe<uint64_t>& aCallbackId);
 
   mozilla::ipc::IPCResult RecvSynthesizeNativeMouseMove(
