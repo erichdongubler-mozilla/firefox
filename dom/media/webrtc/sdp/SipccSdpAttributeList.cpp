@@ -21,9 +21,7 @@ MOZ_GLIBCXX_CONSTINIT const std::string SipccSdpAttributeList::kEmptyString;
 
 SipccSdpAttributeList::SipccSdpAttributeList(
     const SipccSdpAttributeList* sessionLevel)
-    : mSessionLevel(sessionLevel) {
-  memset(&mAttributes, 0, sizeof(mAttributes));
-}
+    : mSessionLevel(sessionLevel) {}
 
 SipccSdpAttributeList::SipccSdpAttributeList(
     const SipccSdpAttributeList& aOrig,
@@ -31,14 +29,8 @@ SipccSdpAttributeList::SipccSdpAttributeList(
     : SipccSdpAttributeList(sessionLevel) {
   for (size_t i = 0; i < kNumAttributeTypes; ++i) {
     if (aOrig.mAttributes[i]) {
-      mAttributes[i] = aOrig.mAttributes[i]->Clone();
+      mAttributes[i].reset(aOrig.mAttributes[i]->Clone());
     }
-  }
-}
-
-SipccSdpAttributeList::~SipccSdpAttributeList() {
-  for (auto& mAttribute : mAttributes) {
-    delete mAttribute;
   }
 }
 
@@ -49,7 +41,7 @@ bool SipccSdpAttributeList::HasAttribute(const AttributeType type,
 
 const SdpAttribute* SipccSdpAttributeList::GetAttribute(
     const AttributeType type, const bool sessionFallback) const {
-  const SdpAttribute* value = mAttributes[static_cast<size_t>(type)];
+  const SdpAttribute* value = mAttributes[static_cast<size_t>(type)].get();
   // Only do fallback when the attribute can appear at both the media and
   // session level
   if (!value && !AtSessionLevel() && sessionFallback &&
@@ -61,7 +53,6 @@ const SdpAttribute* SipccSdpAttributeList::GetAttribute(
 }
 
 void SipccSdpAttributeList::RemoveAttribute(const AttributeType type) {
-  delete mAttributes[static_cast<size_t>(type)];
   mAttributes[static_cast<size_t>(type)] = nullptr;
 }
 
@@ -73,7 +64,7 @@ void SipccSdpAttributeList::Clear() {
 
 uint32_t SipccSdpAttributeList::Count() const {
   uint32_t count = 0;
-  for (auto mAttribute : mAttributes) {
+  for (auto& mAttribute : mAttributes) {
     if (mAttribute) {
       count++;
     }
@@ -86,8 +77,7 @@ void SipccSdpAttributeList::SetAttribute(SdpAttribute* attr) {
     MOZ_ASSERT(false, "This type of attribute is not allowed here");
     return;
   }
-  RemoveAttribute(attr->GetType());
-  mAttributes[attr->GetType()] = attr;
+  mAttributes[attr->GetType()].reset(attr);
 }
 
 void SipccSdpAttributeList::LoadSimpleString(sdp_t* sdp, const uint16_t level,
@@ -1400,7 +1390,7 @@ const SdpSsrcGroupAttributeList& SipccSdpAttributeList::GetSsrcGroup() const {
 }
 
 void SipccSdpAttributeList::Serialize(std::ostream& os) const {
-  for (auto mAttribute : mAttributes) {
+  for (auto& mAttribute : mAttributes) {
     if (mAttribute) {
       os << *mAttribute;
     }

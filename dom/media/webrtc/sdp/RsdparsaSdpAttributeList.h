@@ -74,7 +74,7 @@ class RsdparsaSdpAttributeList : public SdpAttributeList {
 
   void Serialize(std::ostream&) const override;
 
-  virtual ~RsdparsaSdpAttributeList();
+  virtual ~RsdparsaSdpAttributeList() = default;
 
   RsdparsaSdpAttributeList(const RsdparsaSdpAttributeList& orig) = delete;
   RsdparsaSdpAttributeList& operator=(const RsdparsaSdpAttributeList& rhs) =
@@ -152,7 +152,7 @@ class RsdparsaSdpAttributeList : public SdpAttributeList {
   void WarnAboutMisplacedAttribute(SdpAttribute::AttributeType type,
                                    uint32_t lineNumber, SdpParser& errorHolder);
 
-  SdpAttribute* mAttributes[kNumAttributeTypes];
+  UniquePtr<SdpAttribute> mAttributes[kNumAttributeTypes];
 };
 
 }  // namespace mozilla

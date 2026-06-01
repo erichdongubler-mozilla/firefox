@@ -20,12 +20,6 @@ namespace ffi = mozilla::sdp::ffi;
 
 MOZ_GLIBCXX_CONSTINIT const std::string RsdparsaSdpAttributeList::kEmptyString;
 
-RsdparsaSdpAttributeList::~RsdparsaSdpAttributeList() {
-  for (auto& mAttribute : mAttributes) {
-    delete mAttribute;
-  }
-}
-
 bool RsdparsaSdpAttributeList::HasAttribute(const AttributeType type,
                                             const bool sessionFallback) const {
   return !!GetAttribute(type, sessionFallback);
@@ -33,7 +27,7 @@ bool RsdparsaSdpAttributeList::HasAttribute(const AttributeType type,
 
 const SdpAttribute* RsdparsaSdpAttributeList::GetAttribute(
     const AttributeType type, const bool sessionFallback) const {
-  const SdpAttribute* value = mAttributes[static_cast<size_t>(type)];
+  const SdpAttribute* value = mAttributes[static_cast<size_t>(type)].get();
   // Only do fallback when the attribute can appear at both the media and
   // session level
   if (!value && !AtSessionLevel() && sessionFallback &&
@@ -45,7 +39,6 @@ const SdpAttribute* RsdparsaSdpAttributeList::GetAttribute(
 }
 
 void RsdparsaSdpAttributeList::RemoveAttribute(const AttributeType type) {
-  delete mAttributes[static_cast<size_t>(type)];
   mAttributes[static_cast<size_t>(type)] = nullptr;
 }
 
@@ -57,7 +50,7 @@ void RsdparsaSdpAttributeList::Clear() {
 
 uint32_t RsdparsaSdpAttributeList::Count() const {
   uint32_t count = 0;
-  for (auto mAttribute : mAttributes) {
+  for (auto& mAttribute : mAttributes) {
     if (mAttribute) {
       count++;
     }
@@ -71,8 +64,7 @@ void RsdparsaSdpAttributeList::SetAttribute(SdpAttribute* attr) {
     delete attr;
     return;
   }
-  RemoveAttribute(attr->GetType());
-  mAttributes[attr->GetType()] = attr;
+  mAttributes[attr->GetType()].reset(attr);
 }
 
 const std::vector<std::string>& RsdparsaSdpAttributeList::GetCandidate() const {
@@ -1262,7 +1254,7 @@ bool RsdparsaSdpAttributeList::IsAllowedHere(
 }
 
 void RsdparsaSdpAttributeList::Serialize(std::ostream& os) const {
-  for (auto mAttribute : mAttributes) {
+  for (auto& mAttribute : mAttributes) {
     if (mAttribute) {
       os << *mAttribute;
     }

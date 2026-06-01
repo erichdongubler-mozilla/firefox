@@ -77,7 +77,7 @@ class SipccSdpAttributeList : public SdpAttributeList {
 
   virtual void Serialize(std::ostream&) const override;
 
-  virtual ~SipccSdpAttributeList();
+  virtual ~SipccSdpAttributeList() = default;
 
   SipccSdpAttributeList(const SipccSdpAttributeList& orig) = delete;
   SipccSdpAttributeList& operator=(const SipccSdpAttributeList& rhs) = delete;
@@ -144,7 +144,7 @@ class SipccSdpAttributeList : public SdpAttributeList {
 
   const SipccSdpAttributeList* mSessionLevel;
 
-  SdpAttribute* mAttributes[kNumAttributeTypes];
+  mozilla::UniquePtr<SdpAttribute> mAttributes[kNumAttributeTypes];
 };
 
 }  // namespace mozilla
