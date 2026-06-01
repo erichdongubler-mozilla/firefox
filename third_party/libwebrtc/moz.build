@@ -8,7 +8,6 @@
 
 DIRS += [
     "/third_party/libwebrtc/api/adaptation/resource_adaptation_api_gn",
-    "/third_party/libwebrtc/api/array_view_gn",
     "/third_party/libwebrtc/api/async_dns_resolver_gn",
     "/third_party/libwebrtc/api/audio/aec3_config_gn",
     "/third_party/libwebrtc/api/audio/aec3_factory_gn",
