@@ -474,10 +474,11 @@ export class SportsFeed {
       return null;
     }
 
-    return this.merino.fetchSportsLive({
+    const result = await this.merino.fetchSportsLive({
       source: "newtab",
       endpointUrl: liveEndpoint,
     });
+    return result.error ? null : result.data;
   }
 
   // Drive one polling step. In LIVE state hit /wcs/live and merge updates

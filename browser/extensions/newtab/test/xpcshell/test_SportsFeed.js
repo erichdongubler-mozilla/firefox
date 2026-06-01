@@ -1397,7 +1397,9 @@ add_task(
     const liveResponse = {
       matches: [{ status_type: "live", global_event_id: 42 }],
     };
-    sinon.stub(feed.merino, "fetchSportsLive").resolves(liveResponse);
+    sinon
+      .stub(feed.merino, "fetchSportsLive")
+      .resolves({ data: liveResponse, error: null });
 
     const ok = await feed.fetchAndDispatch();
 
@@ -1424,7 +1426,7 @@ add_task(
     const liveResponse = { matches: [] };
     const fetchLiveStub = sinon
       .stub(feed.merino, "fetchSportsLive")
-      .resolves(liveResponse);
+      .resolves({ data: liveResponse, error: null });
     const fetchSportsDataSpy = sinon.spy(feed, "fetchSportsData");
     sinon.stub(feed.merino, "fetchSportsTeams").resolves({ teams: [] });
     sinon.stub(feed.merino, "fetchSportsMatches").resolves({
@@ -1455,7 +1457,9 @@ add_task(async function test_fetchAndDispatch_live_failure_arms_retry() {
   const feed = makeLiveFeed();
   feed.pollingState = "LIVE";
   const { setTimeoutStub } = stubTimers(feed);
-  sinon.stub(feed.merino, "fetchSportsLive").resolves(null);
+  sinon
+    .stub(feed.merino, "fetchSportsLive")
+    .resolves({ data: null, error: "load_error" });
 
   const ok = await feed.fetchAndDispatch();
 
@@ -1804,7 +1808,8 @@ add_task(async function test_fetchAndDispatch_resyncs_when_a_live_event_ends() {
     next: [],
   };
   sinon.stub(feed.merino, "fetchSportsLive").resolves({
-    matches: [{ global_event_id: 1 }],
+    data: { matches: [{ global_event_id: 1 }] },
+    error: null,
   });
   sinon.stub(feed.merino, "fetchSportsTeams").resolves({ teams: [] });
   sinon.stub(feed.merino, "fetchSportsMatches").resolves({
@@ -1837,7 +1842,8 @@ add_task(
       next: [],
     };
     sinon.stub(feed.merino, "fetchSportsLive").resolves({
-      matches: [{ global_event_id: 1, home_score: 1 }],
+      data: { matches: [{ global_event_id: 1, home_score: 1 }] },
+      error: null,
     });
     const fetchSportsDataSpy = sinon.spy(feed, "fetchSportsData");
 
@@ -2000,7 +2006,7 @@ add_task(
     const liveResponse = { matches: [{ global_event_id: 7 }] };
     const fetchLiveStub = sinon
       .stub(feed.merino, "fetchSportsLive")
-      .resolves(liveResponse);
+      .resolves({ data: liveResponse, error: null });
     sinon.stub(feed.cache, "set").resolves();
     sinon.stub(feed.merino, "fetchSportsTeams").resolves({ teams: [] });
     sinon.stub(feed.merino, "fetchSportsMatches").resolves({
@@ -2040,7 +2046,8 @@ add_task(async function test_persistSportsData_called_after_live_update() {
     live: [{ global_event_id: 1, home_score: 1 }],
   };
   sinon.stub(feed.merino, "fetchSportsLive").resolves({
-    matches: [{ global_event_id: 1, home_score: 2 }],
+    data: { matches: [{ global_event_id: 1, home_score: 2 }] },
+    error: null,
   });
   const setStub = sinon.stub(feed.cache, "set").resolves();
   const persistSpy = sinon.spy(feed, "persistSportsData");
@@ -2076,7 +2083,7 @@ add_task(async function test_tick_reentrancy_guard() {
 
   const first = feed.tick();
   const second = feed.tick();
-  resolveLive({ matches: [] });
+  resolveLive({ data: { matches: [] }, error: null });
   await first;
   await second;
 
@@ -2109,7 +2116,7 @@ add_task(
     const inflight = feed.tick();
     // Simulate stopLive() landing during the await.
     feed.store.state.Prefs.values[PREF_SPORTS_LIVE_ENABLED] = false;
-    resolveLive({ matches: [] });
+    resolveLive({ data: { matches: [] }, error: null });
     await inflight;
 
     Assert.ok(
