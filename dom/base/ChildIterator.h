@@ -123,6 +123,7 @@ class AllChildrenIterator : private FlattenedChildIterator {
     AtBegin,
     AtBackdropKid,
     AtMarkerKid,
+    AtCheckmarkKid,
     AtBeforeKid,
     AtFlatTreeKids,
     AtAnonKids,
