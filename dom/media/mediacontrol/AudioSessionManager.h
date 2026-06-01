@@ -83,6 +83,16 @@ class AudioSessionManager final {
   // the record empty.
   void RemoveRecordIfEmpty(uint64_t aBrowsingContextId);
 
+  // §5.4 update-all-audiosession-states.
+  // Inactivates other exclusive sessions when the just-updated session is
+  // itself exclusive and active, with the auto-vs-auto exemption that two
+  // pages neither of which explicitly opted into an exclusive type can
+  // coexist.
+  void UpdateAllAudioSessionStates(uint64_t aUpdatedBcId);
+
+  // True iff the page never set an explicit type on this browsing context.
+  bool IsBcAutoTyped(uint64_t aBrowsingContextId) const;
+
   // Fire the change event when the resolved effective type changed.
   void MaybeFireEffectiveTypeChanged();
 

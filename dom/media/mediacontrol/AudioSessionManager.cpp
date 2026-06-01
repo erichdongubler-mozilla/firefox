@@ -137,6 +137,80 @@ void AudioSessionManager::RemoveRecordIfEmpty(uint64_t aBrowsingContextId) {
   mAudioSessions.Remove(aBrowsingContextId);
 }
 
+void AudioSessionManager::UpdateAllAudioSessionStates(uint64_t aUpdatedBcId) {
+  // §5.4 update-all-audiosession-states.
+  // https://w3c.github.io/audio-session/#update-all-audiosession-states
+
+  // Step 1: update the selected audio session of `context`.
+  UpdateSelectedAudioSession();
+
+  // Step 2: let updatedType be the result of computing the type of the
+  // updated session.
+  auto updatedEntry = mAudioSessions.Lookup(aUpdatedBcId);
+  if (MOZ_UNLIKELY(!updatedEntry)) {
+    LOG("[warning] UpdateAllAudioSessionStates: no record for bc=%" PRIu64,
+        aUpdatedBcId);
+    return;
+  }
+  const AudioSessionType updatedType = EffectiveTypeForBc(aUpdatedBcId);
+
+  // Step 3: if updatedType is not an exclusive type, or the updated session
+  // state is not "active", abort.
+  if (!IsExclusiveAudioSessionType(updatedType) ||
+      updatedEntry.Data().GetState() != AudioSessionState::Active) {
+    return;
+  }
+
+  // Step 4 + 5: let audioSessions be the list of audio sessions tied to
+  // context and its child browsing contexts; for each audio session, run
+  // the per-session sub-steps. We iterate mAudioSessions and collect those
+  // that step 5 leaves to inactivate, then perform the inactivation pass
+  // separately so we do not mutate the map while iterating it.
+  const bool updatedIsAuto = IsBcAutoTyped(aUpdatedBcId);
+  AutoTArray<uint64_t, 4> toInactivate;
+  for (const auto& entry : mAudioSessions) {
+    const uint64_t bcId = entry.GetKey();
+    // Step 5: except for updatedAudioSession.
+    if (bcId == aUpdatedBcId) {
+      continue;
+    }
+    const AudioSessionRecord& record = entry.GetData();
+    // Step 5.1: if state is not active, abort.
+    if (record.GetState() != AudioSessionState::Active) {
+      continue;
+    }
+    // Step 5.2: let type be the result of computing the type of this audio
+    // session.
+    const AudioSessionType type = EffectiveTypeForBc(bcId);
+    // Step 5.3: if not exclusive, abort.
+    if (!IsExclusiveAudioSessionType(type)) {
+      continue;
+    }
+    // Step 5.4: if both types are auto, abort. See XXX — the spec's `type`
+    // / `updatedType` come from "computing the type" and never return
+    // `auto`, so this predicate is unreachable; we read the page-set
+    // [[type]] slot via IsBcAutoTyped to match the clear intent of the
+    // carveout. A spec issue will be filed.
+    if (updatedIsAuto && IsBcAutoTyped(bcId)) {
+      continue;
+    }
+    toInactivate.AppendElement(bcId);
+  }
+  // Step 5.5: inactivate each remaining audio session.
+  for (const uint64_t bcId : toInactivate) {
+    InactivateAudioSession(bcId);
+  }
+}
+
+bool AudioSessionManager::IsBcAutoTyped(uint64_t aBrowsingContextId) const {
+  // No record == default == auto.
+  auto entry = mAudioSessions.Lookup(aBrowsingContextId);
+  if (!entry) {
+    return true;
+  }
+  return entry.Data().GetTypeOverride().isNothing();
+}
+
 AudioSessionType AudioSessionManager::EffectiveTypeForBc(
     uint64_t aBrowsingContextId) const {
   if (auto entry = mAudioSessions.Lookup(aBrowsingContextId)) {
