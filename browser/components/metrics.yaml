@@ -1153,7 +1153,7 @@ browser:
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2013077
     notification_emails:
-      - project-nimbus@mozilla.com
+      - nimbus-team@mozilla.com
     data_sensitivity:
       - interaction
     expires: never
@@ -1187,7 +1187,7 @@ browser:
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2012214
     notification_emails:
-      - project-nimbus@mozilla.com
+      - nimbus-team@mozilla.com
     data_sensitivity:
       - interaction
     expires: never

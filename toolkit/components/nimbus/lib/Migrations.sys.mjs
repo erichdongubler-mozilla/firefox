@@ -451,13 +451,8 @@ export const NimbusMigrations = {
         `applyMigrations ${phase}: applying migration ${i}: ${migration.name}`
       );
 
-      const migrationStart = ChromeUtils.now();
-      let duration;
       try {
-        // Not all migrations are async fns, so coerce them.
-        await Promise.try(migration.fn, migration.name).finally(() => {
-          duration = migrationStart - ChromeUtils.now();
-        });
+        await migration.fn(migration.name);
       } catch (e) {
         lazy.log.error(
           `applyMigrations: error running migration ${i} (${migration.name}): ${e}`
@@ -468,7 +463,7 @@ export const NimbusMigrations = {
           reason = e.reason;
         }
 
-        lazy.NimbusTelemetry.recordMigration(migration.name, duration, reason);
+        lazy.NimbusTelemetry.recordMigration(migration.name, reason);
 
         break;
       }
@@ -479,7 +474,7 @@ export const NimbusMigrations = {
         `applyMigrations: applied migration ${i}: ${migration.name}`
       );
 
-      lazy.NimbusTelemetry.recordMigration(migration.name, duration);
+      lazy.NimbusTelemetry.recordMigration(migration.name);
     }
 
     if (latestMigration != lastSuccess) {
