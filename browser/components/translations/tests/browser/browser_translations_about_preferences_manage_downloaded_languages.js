@@ -141,7 +141,7 @@ add_task(async function test_about_preferences_manage_languages() {
     "All models were downloaded again."
   );
 
-  await remoteClients.translationsWasm.assertNoNewDownloads();
+  remoteClients.translationsWasm.assertNoNewDownloads();
 
   await ensureVisibility({
     message: "Everything is downloaded again.",
