@@ -20844,10 +20844,6 @@ void CodeGenerator::visitWasmRefCastConcrete(LWasmRefCastConcrete* ins) {
   }
 }
 
-void CodeGenerator::visitWasmRefCastInfallible(LWasmRefCastInfallible* ins) {
-  MOZ_ASSERT(gen->compilingWasm());
-}
-
 void CodeGenerator::callWasmStructAllocFun(
     LInstruction* lir, wasm::SymbolicAddress fun, Register typeDefIndex,
     Register allocSite, Register output,
