@@ -77,6 +77,36 @@ async function addFolderViaContextMenu(triggerEl) {
   return PlacesUIUtils.lastBookmarkDialogDeferred.promise;
 }
 
+async function addBookmarkViaContextMenu(triggerEl, url) {
+  const dialogPromise = BrowserTestUtils.promiseAlertDialogOpen(
+    null,
+    BOOKMARK_DIALOG_URL,
+    {
+      isSubDialog: true,
+      callback: async dialog => {
+        await dialog.document.mozSubdialogReady;
+        // The add-bookmark dialog opens with an empty location, which keeps
+        // the accept button disabled. Set a URL and fire an input event so the
+        // button enables before we confirm.
+        const locationField = dialog.document.getElementById(
+          "editBMPanel_locationField"
+        );
+        locationField.value = url;
+        locationField.dispatchEvent(
+          new dialog.Event("input", { bubbles: true })
+        );
+        EventUtils.synthesizeKey("VK_RETURN", {}, dialog);
+      },
+    }
+  );
+  await activateContextMenuItem(
+    triggerEl,
+    "sidebar-bookmarks-context-add-bookmark"
+  );
+  await dialogPromise;
+  return PlacesUIUtils.lastBookmarkDialogDeferred.promise;
+}
+
 add_setup(async function () {
   await PlacesUtils.bookmarks.eraseEverything();
   await SidebarTestUtils.waitForInitialized(window);
@@ -682,6 +712,106 @@ add_task(async function test_add_folder_into_right_clicked_folder() {
     newFolder.index,
     2,
     "New folder is appended at the end of the right-clicked folder."
+  );
+
+  await PlacesUtils.bookmarks.eraseEverything();
+  SidebarTestUtils.closePanel(window);
+});
+
+add_task(async function test_add_bookmark_before_right_clicked_bookmark() {
+  await addBookmark({ title: "Alpha", url: "https://example.com/a" });
+  const bmB = await addBookmark({
+    title: "Beta",
+    url: "https://example.com/b",
+  });
+  await addBookmark({ title: "Gamma", url: "https://example.com/c" });
+
+  const { component } = await showBookmarksSidebar();
+  const tabList = component.bookmarkList;
+  const toolbarDetails = await openToolbarFolder(tabList);
+  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
+  await BrowserTestUtils.waitForMutationCondition(
+    nestedList.shadowRoot,
+    { childList: true, subtree: true },
+    () => [...nestedList.rowEls].some(r => r.title === "Beta")
+  );
+
+  const rowB = [...nestedList.rowEls].find(r => r.title === "Beta");
+  const { index: indexB } = await PlacesUtils.bookmarks.fetch(bmB.guid);
+
+  const newBookmarkGuid = await addBookmarkViaContextMenu(
+    rowB.mainEl,
+    "https://example.com/new"
+  );
+  const newBookmark = await PlacesUtils.bookmarks.fetch(newBookmarkGuid);
+
+  is(
+    newBookmark.parentGuid,
+    PlacesUtils.bookmarks.toolbarGuid,
+    "New bookmark is created in the right-clicked bookmark's parent."
+  );
+  is(
+    newBookmark.index,
+    indexB,
+    "New bookmark is created just before the right-clicked bookmark."
+  );
+  const movedB = await PlacesUtils.bookmarks.fetch(bmB.guid);
+  is(
+    movedB.index,
+    indexB + 1,
+    "The right-clicked bookmark is pushed down by the new bookmark."
+  );
+
+  await PlacesUtils.bookmarks.eraseEverything();
+  SidebarTestUtils.closePanel(window);
+});
+
+add_task(async function test_add_bookmark_into_right_clicked_folder() {
+  const folder = await addFolder("Parent Folder");
+  await addBookmark({
+    title: "Child One",
+    url: "https://example.com/1",
+    parentGuid: folder.guid,
+  });
+  await addBookmark({
+    title: "Child Two",
+    url: "https://example.com/2",
+    parentGuid: folder.guid,
+  });
+
+  const { component } = await showBookmarksSidebar();
+  const tabList = component.bookmarkList;
+  const toolbarDetails = await openToolbarFolder(tabList);
+  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
+  await BrowserTestUtils.waitForMutationCondition(
+    nestedList.shadowRoot,
+    { childList: true, subtree: true },
+    () =>
+      [...nestedList.folderEls].some(
+        d => d.querySelector("summary")?.textContent.trim() === "Parent Folder"
+      )
+  );
+
+  const folderDetails = [...nestedList.folderEls].find(
+    d => d.querySelector("summary")?.textContent.trim() === "Parent Folder"
+  );
+  const summary = folderDetails.querySelector("summary");
+
+  const newBookmarkGuid = await addBookmarkViaContextMenu(
+    summary,
+    "https://example.com/new"
+  );
+
+  const newBookmark = await PlacesUtils.bookmarks.fetch(newBookmarkGuid);
+  is(
+    newBookmark.parentGuid,
+    folder.guid,
+    "New bookmark is created inside the right-clicked folder."
+  );
+  is(
+    newBookmark.index,
+    2,
+    "New bookmark is appended at the end of the right-clicked folder."
   );
 
   await PlacesUtils.bookmarks.eraseEverything();
