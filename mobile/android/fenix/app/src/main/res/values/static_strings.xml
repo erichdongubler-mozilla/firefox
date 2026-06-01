@@ -184,6 +184,10 @@
     <string name="ai_controls_google_lens_title">Google Lens</string>
     <!-- Description for the Google Lens AI feature toggle -->
     <string name="ai_controls_google_lens_description">Sends images and photos to Google for visual search.</string>
+    <!-- Content description for the Lens half of the camera mode toggle -->
+    <string name="lens_camera_mode_lens">Lens</string>
+    <!-- Content description for the QR scanner half of the camera mode toggle -->
+    <string name="lens_camera_mode_qr">QR scanner</string>
 
     <!--  Voice Search in Display Mode toolbar strings  -->
     <!-- Label for toggling voice search visibility in the display-mode toolbar -->

@@ -22,6 +22,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import mozilla.components.feature.qr.QrScanActivity
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
@@ -135,6 +136,25 @@ class LensFeature(
             } finally {
                 appStore.dispatch(LensAction.LensDismissed)
             }
+        }
+    }
+
+    /**
+     * Routes the result of the Lens camera activity. If the result intent carries a QR scan
+     * payload (from the in-camera QR mode), dismisses the Lens flow and forwards the result to
+     * [qrScanFeature]; otherwise treats it as an image capture and delegates to
+     * [handleImageResult].
+     */
+    fun handleCameraActivityResult(
+        resultCode: Int,
+        data: Intent?,
+        qrScanFeature: QrScanFenixFeature?,
+    ) {
+        if (data?.hasExtra(QrScanActivity.EXTRA_SCAN_RESULT_DATA) == true) {
+            appStore.dispatch(LensAction.LensDismissed)
+            qrScanFeature?.handleToolbarQrScanResults(resultCode, data)
+        } else {
+            handleImageResult(resultCode, data)
         }
     }
 

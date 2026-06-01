@@ -21,6 +21,7 @@ import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import mozilla.components.feature.qr.QrScanActivity
 import org.mozilla.fenix.R
 
 internal const val LENS_IMAGES_DIR = "lens_images"
@@ -60,12 +61,27 @@ class LensCameraActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_lens_camera)
-        lifecycleScope.launch(Dispatchers.IO) { clearLensImageCache() }
+        if (savedInstanceState == null) {
+            lifecycleScope.launch(Dispatchers.IO) { clearLensImageCache() }
+        }
 
         supportFragmentManager.setFragmentResultListener(
             LensCameraFragment.RESULT_REQUEST_KEY,
             this,
         ) { _, bundle ->
+            // RESULT_QR_STRING must never be set to an empty string by the producer
+            // (LensCameraFragment.handleQrResult). An empty value falls through to the
+            // gallery/image branch below; downstream callers treat an empty extra as no scan.
+            val qrString = bundle.getString(LensCameraFragment.RESULT_QR_STRING)
+            if (!qrString.isNullOrEmpty()) {
+                val resultIntent = Intent().apply {
+                    putExtra(QrScanActivity.EXTRA_SCAN_RESULT_DATA, qrString)
+                }
+                setResult(RESULT_OK, resultIntent)
+                finish()
+                return@setFragmentResultListener
+            }
+
             if (bundle.getBoolean(LensCameraFragment.RESULT_GALLERY_REQUEST, false)) {
                 launchGalleryPicker()
                 return@setFragmentResultListener
