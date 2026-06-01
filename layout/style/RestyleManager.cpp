@@ -2740,15 +2740,6 @@ static bool NeedsToReframeForConditionallyCreatedPseudoElement(
       return true;
     }
   }
-  if (aElement->IsHTMLElement(nsGkAtoms::option) && !aStyleFrame->IsLeaf() &&
-      !nsLayoutUtils::GetCheckmarkPseudo(aElement)) {
-    RefPtr<ComputedStyle> pseudoStyle =
-        aRestyleState.StyleSet().ProbePseudoElementStyle(
-            *aElement, PseudoStyleType::Checkmark, nullptr, aNewStyle);
-    if (pseudoStyle) {
-      return true;
-    }
-  }
   return false;
 }
 

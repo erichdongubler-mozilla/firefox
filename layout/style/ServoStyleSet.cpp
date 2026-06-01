@@ -777,10 +777,9 @@ bool ServoStyleSet::GeneratedContentPseudoExists(
       return false;
     }
   }
-  // For ::before, ::after, and ::checkmark pseudo-elements, no 'content'
-  // items is equivalent to not having the pseudo-element at all.
-  if (type == PseudoStyleType::Before || type == PseudoStyleType::After ||
-      type == PseudoStyleType::Checkmark) {
+  // For ::before and ::after pseudo-elements, no 'content' items is
+  // equivalent to not having the pseudo-element at all.
+  if (type == PseudoStyleType::Before || type == PseudoStyleType::After) {
     if (!aPseudoStyle.StyleContent()->mContent.IsItems()) {
       return false;
     }
@@ -788,8 +787,7 @@ bool ServoStyleSet::GeneratedContentPseudoExists(
                "IsItems() implies we have at least one item");
   }
   if (type == PseudoStyleType::Before || type == PseudoStyleType::After ||
-      type == PseudoStyleType::Marker || type == PseudoStyleType::Backdrop ||
-      type == PseudoStyleType::Checkmark) {
+      type == PseudoStyleType::Marker || type == PseudoStyleType::Backdrop) {
     // display:none is equivalent to not having a pseudo at all.
     if (aPseudoStyle.StyleDisplay()->mDisplay == StyleDisplay::None) {
       return false;

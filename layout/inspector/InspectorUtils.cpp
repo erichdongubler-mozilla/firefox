@@ -215,9 +215,6 @@ void InspectorUtils::GetChildrenForNode(nsINode& aNode,
   if (auto* node = nsLayoutUtils::GetMarkerPseudo(parent)) {
     aResult.AppendElement(node);
   }
-  if (auto* node = nsLayoutUtils::GetCheckmarkPseudo(parent)) {
-    aResult.AppendElement(node);
-  }
   if (auto* node = nsLayoutUtils::GetBeforePseudo(parent)) {
     aResult.AppendElement(node);
   }
