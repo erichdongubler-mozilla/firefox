@@ -167,7 +167,7 @@ void MacroAssemblerCompat::boxValue(Register type, Register src,
     Label upperBitsZeroed;
     Lsr(ARMRegister(scratch, 64), ARMRegister(src, 64),
         ARMRegister(scratch, 64));
-    Cbz(ARMRegister(scratch, 64), &upperBitsZeroed);
+    asMasm().branchTestPtr(Assembler::Zero, scratch, scratch, &upperBitsZeroed);
     breakpoint();
     bind(&upperBitsZeroed);
   }
