@@ -9901,63 +9901,35 @@ void nsTextFrame::AddInlineMinISizeForFlow(gfxContext* aRenderingContext,
     }
   }
 
-  const auto* glyphs = textRun->GetCharacterGlyphs();
-  const auto* limit = glyphs + flowEndInTextRun;
-  const bool hasSpacing = provider.HasSpacing();
-  nscoord wordAdvance = 0;
-  uint32_t wordStart = start;
-  for (const auto* g = glyphs + start; g <= limit; ++g) {
-    if (!hyphenating) {
-      while (g < limit && g->IsSimpleGlyphNoBreakBefore()) {
-        wordAdvance += g->GetSimpleAdvance();
-        ++g;
-      }
-    }
-
+  for (uint32_t i = start, wordStart = start; i <= flowEndInTextRun; ++i) {
     bool preformattedNewline = false;
     bool preformattedTab = false;
-    if (g < limit) {
+    if (i < flowEndInTextRun) {
       // XXXldb Shouldn't we be including the newline as part of the
       // segment that it ends rather than part of the segment that it
       // starts?
-      preformattedNewline = preformatNewlines && g->CharIsNewline();
-      preformattedTab = preformatTabs && g->CharIsTab();
-      if (!g->CanBreakBefore() && !preformattedNewline && !preformattedTab &&
-          (!hyphenating || !gfxTextRun::IsOptionalHyphenBreak(
-                               hyphBuffer[g - glyphs - start]))) {
+      preformattedNewline = preformatNewlines && textRun->CharIsNewline(i);
+      preformattedTab = preformatTabs && textRun->CharIsTab(i);
+      if (!textRun->CanBreakLineBefore(i) && !preformattedNewline &&
+          !preformattedTab &&
+          (!hyphenating ||
+           !gfxTextRun::IsOptionalHyphenBreak(hyphBuffer[i - start]))) {
         // we can't break here (and it's not the end of the flow)
-        if (g->IsSimpleGlyph()) {
-          wordAdvance += g->GetSimpleAdvance();
-        } else if (!hasSpacing) {
-          if (uint32_t count = g->GetGlyphCount()) {
-            const auto* details = textRun->GetDetailedGlyphs(g - glyphs);
-            while (count--) {
-              wordAdvance += details->mAdvance;
-              ++details;
-            }
-          }
-        }
         continue;
       }
     }
 
-    uint32_t wordEnd = g - glyphs;
-    if (wordEnd > wordStart) {
-      nscoord width = !hasSpacing &&
-                              (glyphs + wordStart)->IsLigatureGroupStart() &&
-                              (wordEnd == flowEndInTextRun ||
-                               (glyphs + wordEnd)->IsLigatureGroupStart())
-                          ? wordAdvance
-                          : NSToCoordCeilClamped(textRun->GetAdvanceWidth(
-                                Range(wordStart, wordEnd), &provider));
+    if (i > wordStart) {
+      nscoord width = NSToCoordCeilClamped(
+          textRun->GetAdvanceWidth(Range(wordStart, i), &provider));
       width = std::max(0, width);
       aData->mCurrentLine = NSCoordSaturatingAdd(aData->mCurrentLine, width);
       aData->mAtStartOfLine = false;
 
       if (collapseWhitespace || whitespaceCanHang) {
         uint32_t trimStart =
-            GetEndOfTrimmedText(characterDataBuffer, textStyle, wordStart,
-                                wordEnd, &iter, whitespaceCanHang);
+            GetEndOfTrimmedText(characterDataBuffer, textStyle, wordStart, i,
+                                &iter, whitespaceCanHang);
         if (trimStart == start) {
           // This is *all* trimmable whitespace, so whatever trailingWhitespace
           // we saw previously is still trailing...
@@ -9966,7 +9938,7 @@ void nsTextFrame::AddInlineMinISizeForFlow(gfxContext* aRenderingContext,
           // Some non-whitespace so the old trailingWhitespace is no longer
           // trailing
           nscoord wsWidth = NSToCoordCeilClamped(
-              textRun->GetAdvanceWidth(Range(trimStart, wordEnd), &provider));
+              textRun->GetAdvanceWidth(Range(trimStart, i), &provider));
           aData->mTrailingWhitespace = std::max(0, wsWidth);
         }
       } else {
@@ -9974,26 +9946,9 @@ void nsTextFrame::AddInlineMinISizeForFlow(gfxContext* aRenderingContext,
       }
     }
 
-    if (g < limit) {
-      if (g->IsSimpleGlyph()) {
-        wordAdvance = g->GetSimpleAdvance();
-      } else {
-        wordAdvance = 0;
-        if (!preformattedNewline && !preformattedTab && !hasSpacing) {
-          if (uint32_t count = g->GetGlyphCount()) {
-            const auto* details = textRun->GetDetailedGlyphs(g - glyphs);
-            while (count--) {
-              wordAdvance += details->mAdvance;
-              ++details;
-            }
-          }
-        }
-      }
-    }
-
     if (preformattedTab) {
       PropertyProvider::Spacing spacing;
-      provider.GetSpacing(Range(wordEnd, wordEnd + 1), &spacing);
+      provider.GetSpacing(Range(i, i + 1), &spacing);
       aData->mCurrentLine += nscoord(spacing.mBefore);
       if (tabWidth < 0) {
         tabWidth = ComputeTabWidthAppUnits(this);
@@ -10001,26 +9956,25 @@ void nsTextFrame::AddInlineMinISizeForFlow(gfxContext* aRenderingContext,
       gfxFloat afterTab = AdvanceToNextTab(aData->mCurrentLine, tabWidth,
                                            provider.MinTabAdvance());
       aData->mCurrentLine = nscoord(afterTab + spacing.mAfter);
-      wordStart = wordEnd + 1;
-    } else if (wordEnd < flowEndInTextRun ||
-               (wordEnd == textRun->GetLength() &&
+      wordStart = i + 1;
+    } else if (i < flowEndInTextRun ||
+               (i == textRun->GetLength() &&
                 (textRun->GetFlags2() &
                  nsTextFrameUtils::Flags::HasTrailingBreak))) {
       if (preformattedNewline) {
         aData->ForceBreak();
-      } else if (wordEnd < flowEndInTextRun && hyphenating &&
-                 gfxTextRun::IsOptionalHyphenBreak(
-                     hyphBuffer[wordEnd - start])) {
+      } else if (i < flowEndInTextRun && hyphenating &&
+                 gfxTextRun::IsOptionalHyphenBreak(hyphBuffer[i - start])) {
         aData->OptionallyBreak(NSToCoordRound(provider.GetHyphenWidth()));
       } else {
         aData->OptionallyBreak();
       }
       if (aData->mSkipWhitespace) {
-        iter.SetSkippedOffset(wordEnd);
+        iter.SetSkippedOffset(i);
         wordStart = FindStartAfterSkippingWhitespace(
             &provider, aData, textStyle, &iter, flowEndInTextRun);
       } else {
-        wordStart = wordEnd;
+        wordStart = i;
       }
       provider.SetStartOfLine(iter);
     }
@@ -10213,71 +10167,37 @@ void nsTextFrame::AddInlinePrefISizeForFlow(gfxContext* aRenderingContext,
 
   // XXX Should we consider hyphenation here?
   // If newlines and tabs aren't preformatted, nothing to do inside
-  // the loop so skip directly to the end
-  const uint32_t loopStart =
+  // the loop so make i skip to the end
+  uint32_t loopStart =
       (preformatNewlines || preformatTabs) ? start : flowEndInTextRun;
-  const auto* glyphs = textRun->GetCharacterGlyphs();
-  const auto* limit = glyphs + flowEndInTextRun;
-  const bool canUseSimpleAdvance = loopStart == start && !provider.HasSpacing();
-  uint32_t lineStart = start;
-  nscoord runAdvance = 0;
-  for (const auto* g = glyphs + loopStart; g <= limit; ++g) {
-    // Simple glyphs are never tabs or newlines, so batch-skip them to avoid
-    // per-character CharIsTab/CharIsNewline calls.
-    while (g < limit && g->IsSimpleGlyph()) {
-      runAdvance += g->GetSimpleAdvance();
-      ++g;
-    }
-
-    // Now /g/ points to a non-simple glyph, or has reached /limit/.
+  for (uint32_t i = loopStart, lineStart = start; i <= flowEndInTextRun; ++i) {
     bool preformattedNewline = false;
     bool preformattedTab = false;
-    if (g < limit) {
+    if (i < flowEndInTextRun) {
       // XXXldb Shouldn't we be including the newline as part of the
       // segment that it ends rather than part of the segment that it
       // starts?
-      MOZ_ASSERT(preformatNewlines || preformatTabs,
-                 "We can't be here unless newlines are "
-                 "hard breaks or there are tabs");
-      MOZ_ASSERT(!g->IsSimpleGlyph(), "should have been skipped");
-      preformattedNewline = preformatNewlines && g->CharIsNewline();
-      preformattedTab = preformatTabs && g->CharIsTab();
-      // Skip accumulating advance if there's custom spacing in the
-      // PropertyProvider; we'll call textRun->GetAdvanceWidth instead.
-      if (canUseSimpleAdvance) {
-        if (uint32_t count = g->GetGlyphCount()) {
-          const auto* details = textRun->GetDetailedGlyphs(g - glyphs);
-          while (count--) {
-            runAdvance += details->mAdvance;
-            ++details;
-          }
-        }
-      }
+      NS_ASSERTION(preformatNewlines || preformatTabs,
+                   "We can't be here unless newlines are "
+                   "hard breaks or there are tabs");
+      preformattedNewline = preformatNewlines && textRun->CharIsNewline(i);
+      preformattedTab = preformatTabs && textRun->CharIsTab(i);
       if (!preformattedNewline && !preformattedTab) {
         // we needn't break here (and it's not the end of the flow)
         continue;
       }
     }
 
-    uint32_t lineEnd = g - glyphs;
-    if (lineEnd > lineStart) {
-      // If there's no custom spacing, and we didn't immediately skip to
-      // the end of the loop, and neither end of the range falls within a
-      // ligature, we can use the advance that was accumulated above.
-      nscoord width = canUseSimpleAdvance &&
-                              (glyphs + lineStart)->IsLigatureGroupStart() &&
-                              (lineEnd == flowEndInTextRun ||
-                               (glyphs + lineEnd)->IsLigatureGroupStart())
-                          ? runAdvance
-                          : NSToCoordCeilClamped(textRun->GetAdvanceWidth(
-                                Range(lineStart, lineEnd), &provider));
+    if (i > lineStart) {
+      nscoord width = NSToCoordCeilClamped(
+          textRun->GetAdvanceWidth(Range(lineStart, i), &provider));
       width = std::max(0, width);
       aData->mCurrentLine = NSCoordSaturatingAdd(aData->mCurrentLine, width);
       aData->mLineIsEmpty = false;
 
       if (collapseWhitespace) {
         uint32_t trimStart = GetEndOfTrimmedText(characterDataBuffer, textStyle,
-                                                 lineStart, lineEnd, &iter);
+                                                 lineStart, i, &iter);
         if (trimStart == start) {
           // This is *all* trimmable whitespace, so whatever trailingWhitespace
           // we saw previously is still trailing...
@@ -10286,18 +10206,17 @@ void nsTextFrame::AddInlinePrefISizeForFlow(gfxContext* aRenderingContext,
           // Some non-whitespace so the old trailingWhitespace is no longer
           // trailing
           nscoord wsWidth = NSToCoordCeilClamped(
-              textRun->GetAdvanceWidth(Range(trimStart, lineEnd), &provider));
+              textRun->GetAdvanceWidth(Range(trimStart, i), &provider));
           aData->mTrailingWhitespace = std::max(0, wsWidth);
         }
       } else {
         aData->mTrailingWhitespace = 0;
       }
     }
-    runAdvance = 0;
 
     if (preformattedTab) {
       PropertyProvider::Spacing spacing;
-      provider.GetSpacing(Range(lineEnd, lineEnd + 1), &spacing);
+      provider.GetSpacing(Range(i, i + 1), &spacing);
       aData->mCurrentLine += nscoord(spacing.mBefore);
       if (tabWidth < 0) {
         tabWidth = ComputeTabWidthAppUnits(this);
@@ -10306,10 +10225,10 @@ void nsTextFrame::AddInlinePrefISizeForFlow(gfxContext* aRenderingContext,
                                            provider.MinTabAdvance());
       aData->mCurrentLine = nscoord(afterTab + spacing.mAfter);
       aData->mLineIsEmpty = false;
-      lineStart = lineEnd + 1;
+      lineStart = i + 1;
     } else if (preformattedNewline) {
       aData->ForceBreak();
-      lineStart = lineEnd;
+      lineStart = i;
     }
   }
 
