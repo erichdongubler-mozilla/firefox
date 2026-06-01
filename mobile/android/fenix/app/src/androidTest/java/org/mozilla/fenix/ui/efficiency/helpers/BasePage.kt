@@ -32,6 +32,7 @@ import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.hasSibling
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.isDisplayingAtLeast
 import androidx.test.espresso.matcher.ViewMatchers.isEnabled
 import androidx.test.espresso.matcher.ViewMatchers.isNotSelected
 import androidx.test.espresso.matcher.ViewMatchers.isSelected
@@ -68,6 +69,11 @@ abstract class BasePage(
     protected val composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>,
 ) {
     abstract val pageName: String
+
+    companion object {
+        // Mirrors the minimum displayed-area Espresso's click() action requires before it will tap.
+        private const val CLICKABLE_VISIBILITY_PERCENT = 90
+    }
 
     // ------------------------------------------------------------
     // Small helpers to keep messages consistent and easy to scan
@@ -365,8 +371,10 @@ abstract class BasePage(
                 val element = mozGetElement(selector, applyPreconditions = applyPreconditions)
 
                 val isVisible = when (element) {
+                    // Espresso's click() rejects views displayed under CLICKABLE_VISIBILITY_PERCENT,
+                    // so stop swiping only once the element clears that bar.
                     is ViewInteraction -> try {
-                        element.check(matches(isDisplayed())); true
+                        element.check(matches(isDisplayingAtLeast(CLICKABLE_VISIBILITY_PERCENT))); true
                     } catch (_: Exception) {
                         false
                     }
@@ -825,10 +833,6 @@ abstract class BasePage(
 
     private fun ensureReachable(selector: Selector) {
         val rep = rep()
-
-        // If it's already visible, skip swiping.
-        val visibleNow = mozVerifyElement(selector, applyPreconditions = false)
-        if (visibleNow) return
 
         if (requiresScroll(selector.groups)) {
             val dir = desiredSwipeDirection(selector.groups)
