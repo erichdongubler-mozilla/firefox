@@ -290,7 +290,7 @@ NS_INTERFACE_MAP_END
 
 already_AddRefed<PeerConnectionImpl> PeerConnectionImpl::Constructor(
     const dom::GlobalObject& aGlobal) {
-  RefPtr<PeerConnectionImpl> pc = new PeerConnectionImpl(&aGlobal);
+  RefPtr pc = MakeRefPtr<PeerConnectionImpl>(&aGlobal);
 
   CSFLogDebug(LOGTAG, "Created PeerConnection: %p", pc.get());
 
@@ -365,7 +365,7 @@ PeerConnectionImpl::PeerConnectionImpl(const GlobalObject* aGlobal)
       mPrivateWindow(false),
       mActiveOnWindow(false),
       mTimestampMaker(dom::RTCStatsTimestampMaker::Create(mWindow)),
-      mIdGenerator(new RTCStatsIdGenerator()),
+      mIdGenerator(MakeRefPtr<RTCStatsIdGenerator>()),
       listenPort(0),
       connectPort(0),
       connectStr(nullptr) {
@@ -1756,12 +1756,12 @@ already_AddRefed<dom::Promise> PeerConnectionImpl::GetStats(
           GetMainThreadSerialEventTarget(), __func__,
           [promise,
            window = mWindow](UniquePtr<dom::RTCStatsReportInternal>&& aReport) {
-            RefPtr<RTCStatsReport> report(new RTCStatsReport(window));
+            RefPtr report = MakeRefPtr<RTCStatsReport>(window);
             report->Incorporate(*aReport);
             promise->MaybeResolve(std::move(report));
           },
           [promise, window = mWindow](nsresult aError) {
-            RefPtr<RTCStatsReport> report(new RTCStatsReport(window));
+            RefPtr report = MakeRefPtr<RTCStatsReport>(window);
             promise->MaybeResolve(std::move(report));
           });
 
@@ -1865,7 +1865,7 @@ PeerConnectionImpl::SetPeerIdentity(const nsAString& aPeerIdentity) {
       return NS_ERROR_FAILURE;
     }
   } else {
-    mPeerIdentity = new PeerIdentity(aPeerIdentity);
+    mPeerIdentity = MakeRefPtr<PeerIdentity>(aPeerIdentity);
     Document* doc = mWindow->GetExtantDoc();
     if (!doc) {
       CSFLogInfo(LOGTAG, "Can't update principal on streams; document gone");
@@ -2597,7 +2597,7 @@ nsresult PeerConnectionImpl::SetConfiguration(
   (void)mJsepSession->SetBundlePolicy(bundlePolicy);
 
   if (!aConfiguration.mPeerIdentity.IsEmpty()) {
-    mPeerIdentity = new PeerIdentity(aConfiguration.mPeerIdentity);
+    mPeerIdentity = MakeRefPtr<PeerIdentity>(aConfiguration.mPeerIdentity);
     mRequestedPrivacy = Some(PrincipalPrivacy::Private);
   }
 
@@ -2876,7 +2876,7 @@ DOMMediaStream* PeerConnectionImpl::GetReceiveStream(
 
 DOMMediaStream* PeerConnectionImpl::CreateReceiveStream(
     const std::string& aId) {
-  mReceiveStreams.AppendElement(new DOMMediaStream(mWindow));
+  mReceiveStreams.AppendElement(MakeRefPtr<DOMMediaStream>(mWindow));
   mReceiveStreams.LastElement()->AssignId(NS_ConvertASCIItoUTF16(aId.c_str()));
   return mReceiveStreams.LastElement();
 }
@@ -4280,7 +4280,7 @@ void PeerConnectionImpl::UpdateRTCDtlsTransports() {
           Nullable<uint16_t> maxChannels;
 
           if (!oldSctp) {
-            mSctpTransport = new RTCSctpTransport(
+            mSctpTransport = MakeRefPtr<RTCSctpTransport>(
                 GetParentObject(), *dtlsTransport, maxMessageSize, maxChannels);
           } else {
             // Restore the SCTP transport we had before this function was called

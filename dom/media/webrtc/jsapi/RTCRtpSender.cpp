@@ -129,7 +129,7 @@ RTCRtpSender::RTCRtpSender(nsPIDOMWindowInner* aWindow, PeerConnectionImpl* aPc,
   mPipeline->InitControl(this);
 
   if (aConduit->type() == MediaSessionConduit::AUDIO) {
-    mDtmf = new RTCDTMFSender(aWindow, mTransceiver);
+    mDtmf = MakeRefPtr<RTCDTMFSender>(aWindow, mTransceiver);
   }
   mPipeline->SetTrack(mSenderTrack);
 

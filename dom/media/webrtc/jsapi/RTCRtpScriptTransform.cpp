@@ -82,7 +82,7 @@ already_AddRefed<RTCRtpScriptTransform> RTCRtpScriptTransform::Constructor(
 }
 
 RTCRtpScriptTransform::RTCRtpScriptTransform(nsPIDOMWindowInner* aWindow)
-    : mWindow(aWindow), mProxy(new FrameTransformerProxy) {}
+    : mWindow(aWindow), mProxy(MakeRefPtr<FrameTransformerProxy>()) {}
 
 RTCRtpScriptTransform::~RTCRtpScriptTransform() {
   mProxy->ReleaseScriptTransformer();

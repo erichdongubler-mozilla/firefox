@@ -764,7 +764,7 @@ MediaPipelineTransmit::MediaPipelineTransmit(
                     std::move(aConduit)),
       mWatchManager(this, AbstractThread::MainThread()),
       mIsVideo(aIsVideo),
-      mListener(new PipelineListener(mConduit)),
+      mListener(MakeRefPtr<PipelineListener>(mConduit)),
       mDomTrack(nullptr, "MediaPipelineTransmit::mDomTrack"),
       mSendTrackOverride(nullptr, "MediaPipelineTransmit::mSendTrackOverride") {
   if (!IsVideo()) {
@@ -1425,7 +1425,7 @@ MediaPipelineReceiveAudio::MediaPipelineReceiveAudio(
     : MediaPipelineReceive(aPc, std::move(aTransportHandler),
                            std::move(aCallThread), std::move(aStsThread),
                            std::move(aConduit)),
-      mListener(aSource ? new PipelineListener(
+      mListener(aSource ? MakeRefPtr<PipelineListener>(
                               std::move(aSource), std::move(aTrackingId),
                               mConduit, std::move(aPrincipalHandle), aPrivacy)
                         : nullptr) {
@@ -1604,8 +1604,8 @@ MediaPipelineReceiveVideo::MediaPipelineReceiveVideo(
     : MediaPipelineReceive(aPc, std::move(aTransportHandler),
                            std::move(aCallThread), std::move(aStsThread),
                            std::move(aConduit)),
-      mRenderer(new PipelineRenderer(this)),
-      mListener(aSource ? new PipelineListener(
+      mRenderer(MakeRefPtr<PipelineRenderer>(this)),
+      mListener(aSource ? MakeRefPtr<PipelineListener>(
                               std::move(aSource), std::move(aTrackingId),
                               std::move(aPrincipalHandle), aPrivacy)
                         : nullptr) {
