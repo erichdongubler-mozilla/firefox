@@ -457,6 +457,14 @@ export class AIWindow extends MozLitElement {
       });
       message = { ...message, kit: undefined };
     }
+
+    if (message.toolUIData) {
+      lazy.ToolUI.handleUIDisplayTelemetry(message.toolUIData, {
+        location: this.mode,
+        chat_id: this.conversationId,
+        message_seq: this.#conversation?.messageCount ?? 0,
+      });
+    }
     this.#dispatchMessageToChatContent(message);
   };
 
@@ -2350,7 +2358,12 @@ export class AIWindow extends MozLitElement {
   }
 
   handleToolUIUpdate(data) {
-    lazy.ToolUI.handleUpdate(data, this.#conversation, this.#topChromeWindow);
+    lazy.ToolUI.handleUpdate(
+      data,
+      this.#conversation,
+      this.#topChromeWindow,
+      this.mode
+    );
   }
 
   #openFeedbackModal(type) {
