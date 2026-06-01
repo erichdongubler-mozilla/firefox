@@ -2335,6 +2335,32 @@ for (let [elemTy, valueTy, src, exp1, exp2] of ARRAY_COPY_TESTS) {
     assertErrorMessage(() => {
         arrayCopy(exp1TO, 1, exp2TO, 9, 0);
     },WebAssembly.RuntimeError, /index out of bounds/);
+
+    // dst zero-len at exact array boundary (i_dst = |dst| = 6) succeeds
+    arrayCopy(exp1TO, 6, exp2TO, 1, 0);
+
+    // dst zero-len one past array boundary (i_dst = |dst| + 1 = 7) traps
+    assertErrorMessage(() => {
+        arrayCopy(exp1TO, 7, exp2TO, 1, 0);
+    },WebAssembly.RuntimeError, /index out of bounds/);
+
+    // src zero-len at exact array boundary (j_src = |src| = 6) succeeds
+    arrayCopy(exp1TO, 1, exp2TO, 6, 0);
+
+    // src zero-len one past array boundary (j_src = |src| + 1 = 7) traps
+    assertErrorMessage(() => {
+        arrayCopy(exp1TO, 1, exp2TO, 7, 0);
+    },WebAssembly.RuntimeError, /index out of bounds/);
+
+    // dst offset = 2^32 - 4 wraps around when added to n, must trap
+    assertErrorMessage(() => {
+        arrayCopy(exp1TO, -4, exp2TO, 1, 4);
+    },WebAssembly.RuntimeError, /index out of bounds/);
+
+    // src offset = 2^32 - 4 wraps around when added to n, must trap
+    assertErrorMessage(() => {
+        arrayCopy(exp1TO, 1, exp2TO, -4, 4);
+    },WebAssembly.RuntimeError, /index out of bounds/);
 }
 
 // run: check that null src or dest array causes a trap #1
@@ -2473,6 +2499,40 @@ assertErrorMessage(() => wasmEvalText(`(module
     )
   )`).exports;
   arrayFill();
+}
+
+// run: zero length fill one past array boundary (i = |arr| + 1) traps
+{
+  const { arrayFill } = wasmEvalText(`(module
+    (type $a (array (mut i32)))
+    (func (export "arrayFill")
+      (array.new_default $a (i32.const 8))
+      i32.const 9
+      i32.const 123
+      i32.const 0
+      array.fill $a
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    arrayFill();
+  }, WebAssembly.RuntimeError, /index out of bounds/);
+}
+
+// run: fill with offset = 2^32 - 4 wraps around when added to n, must trap
+{
+  const { arrayFill } = wasmEvalText(`(module
+    (type $a (array (mut i32)))
+    (func (export "arrayFill")
+      (array.new_default $a (i32.const 8))
+      i32.const -4
+      i32.const 123
+      i32.const 4
+      array.fill $a
+    )
+  )`).exports;
+  assertErrorMessage(() => {
+    arrayFill();
+  }, WebAssembly.RuntimeError, /index out of bounds/);
 }
 
 // run: arrays are as expected (all types)
