@@ -502,8 +502,8 @@ class BrowserParent final : public PBrowserParent,
 
   mozilla::ipc::IPCResult RecvSynthesizeNativeKeyEvent(
       const int32_t& aNativeKeyboardLayout, const int32_t& aNativeKeyCode,
-      const uint32_t& aModifierFlags, const nsString& aCharacters,
-      const nsString& aUnmodifiedCharacters,
+      const nsIWidget::NativeModifiers& aModifierFlags,
+      const nsString& aCharacters, const nsString& aUnmodifiedCharacters,
       const Maybe<uint64_t>& aCallbackId);
 
   mozilla::ipc::IPCResult RecvSynthesizeNativeMouseEvent(

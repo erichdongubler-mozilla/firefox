@@ -261,7 +261,7 @@ class nsCocoaWindow final : public nsIWidget {
 
   nsresult SynthesizeNativeKeyEvent(
       int32_t aNativeKeyboardLayout, int32_t aNativeKeyCode,
-      uint32_t aModifierFlags, const nsAString& aCharacters,
+      nsIWidget::NativeModifiers aModifierFlags, const nsAString& aCharacters,
       const nsAString& aUnmodifiedCharacters,
       nsISynthesizedEventCallback* aCallback) override;
 
