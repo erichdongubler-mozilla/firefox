@@ -3034,16 +3034,30 @@ ArrayBufferObject::createFromWasmObject<ResizableArrayBufferObject>(
         MOZ_ASSERT(byteLength <= maxByteLength);
 
         if (byteLength < maxByteLength) {
-          auto newData = ReallocateArrayBufferContents(
-              cx, stolenData, maxByteLength, byteLength);
-          if (!newData) {
-            // If reallocation failed, the old pointer is still valid. The
-            // ArrayBuffer isn't detached and still owns the malloc'ed memory.
-            return nullptr;
+          // realloc with a zero size is not portable, so when shrinking to
+          // zero, allocate fresh (empty) contents and free the old allocation.
+          //
+          // If (re)allocation fails, the old pointer is still valid. The
+          // ArrayBuffer isn't detached and still owns the malloc'ed memory.
+          ArrayBufferContents newData;
+          if (byteLength > 0) {
+            newData = ReallocateArrayBufferContents(cx, stolenData,
+                                                    maxByteLength, byteLength);
+            if (!newData) {
+              return nullptr;
+            }
+          } else {
+            newData =
+                AllocateUninitializedArrayBufferContents(cx, /* nbytes = */ 0);
+            if (!newData) {
+              return nullptr;
+            }
+            js_free(stolenData);
           }
 
           // The following code must be infallible, because the data pointer of
-          // |buffer| is possibly no longer valid after the above realloc.
+          // |buffer| is possibly no longer valid after the above realloc or
+          // js_free.
 
           stolenData = newData.release();
         }

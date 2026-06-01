@@ -6564,6 +6564,37 @@ static bool DetachArrayBuffer(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+static bool StealArrayBufferContents(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  Rooted<JSObject*> callee(cx, &args.callee());
+
+  if (!args.get(0).isObject() ||
+      !JS::IsArrayBufferObject(&args[0].toObject())) {
+    js::ReportUsageErrorASCII(cx, callee, "Argument must be an ArrayBuffer");
+    return false;
+  }
+
+  Rooted<JSObject*> obj(cx, &args[0].toObject());
+  size_t length = JS::GetArrayBufferByteLength(obj);
+
+  // Note: JS::StealArrayBufferContents will either return the stolen data or
+  // throw an exception.
+  void* contents = JS::StealArrayBufferContents(cx, obj);
+  if (!contents) {
+    return false;
+  }
+
+  UniquePtr<void, JS::FreePolicy> ptr(contents);
+  JSObject* newBuffer =
+      JS::NewArrayBufferWithContents(cx, length, std::move(ptr));
+  if (!newBuffer) {
+    return false;
+  }
+
+  args.rval().setObject(*newBuffer);
+  return true;
+}
+
 static bool EnsureNonInline(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   Rooted<JSObject*> callee(cx, &args.callee());
@@ -11078,6 +11109,12 @@ JS_FOR_WASM_FEATURES(WASM_FEATURE)
 "ensureNonInline(view or buffer)",
 "  Ensure that the memory for the given ArrayBuffer or ArrayBufferView\n"
 "  is not inline."),
+
+    JS_FN_HELP("stealArrayBufferContents", StealArrayBufferContents, 1, 0,
+"stealArrayBufferContents(buffer)",
+"  Steal the contents of the given ArrayBuffer using JS::StealArrayBufferContents\n"
+"  and return a new ArrayBuffer wrapping the stolen contents. The original buffer\n"
+"  is detached."),
 
     JS_FN_HELP("pinArrayBufferOrViewLength", PinArrayBufferOrViewLength, 1, 0,
 "pinArrayBufferOrViewLength(view or buffer[, pin])",
