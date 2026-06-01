@@ -2459,15 +2459,6 @@
   generate_lir: true
   lir_temps: 1
 
-- name: CallBindVar
-  operands:
-    environmentChain: Object
-  result_type: Object
-  movable: true
-  congruent_to: if_operands_equal
-  alias_set: none
-  generate_lir: true
-
 - name: GuardShape
   operands:
     object: Object

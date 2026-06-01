@@ -1632,16 +1632,6 @@ bool WarpBuilder::build_GlobalOrEvalDeclInstantiation(BytecodeLocation loc) {
   return resumeAfter(redeclCheck, loc);
 }
 
-bool WarpBuilder::build_BindVar(BytecodeLocation) {
-  MOZ_ASSERT(usesEnvironmentChain());
-
-  MDefinition* env = current->environmentChain();
-  MCallBindVar* ins = MCallBindVar::New(alloc(), env);
-  current->add(ins);
-  current->push(ins);
-  return true;
-}
-
 bool WarpBuilder::build_MutateProto(BytecodeLocation loc) {
   MDefinition* value = current->pop();
   MDefinition* obj = current->peek(-1);

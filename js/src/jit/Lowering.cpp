@@ -5706,15 +5706,6 @@ void LIRGenerator::visitBindNameCache(MBindNameCache* ins) {
   assignSafepoint(lir, ins);
 }
 
-void LIRGenerator::visitCallBindVar(MCallBindVar* ins) {
-  MOZ_ASSERT(ins->environmentChain()->type() == MIRType::Object);
-  MOZ_ASSERT(ins->type() == MIRType::Object);
-
-  LCallBindVar* lir =
-      new (alloc()) LCallBindVar(useRegister(ins->environmentChain()));
-  define(lir, ins);
-}
-
 void LIRGenerator::visitGuardObjectIdentity(MGuardObjectIdentity* ins) {
   LGuardObjectIdentity* guard = new (alloc()) LGuardObjectIdentity(
       useRegister(ins->object()), useRegister(ins->expected()));

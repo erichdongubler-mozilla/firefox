@@ -17511,13 +17511,6 @@ void CodeGenerator::visitUnboxFloatingPoint(LUnboxFloatingPoint* lir) {
   masm.bind(ool->rejoin());
 }
 
-void CodeGenerator::visitCallBindVar(LCallBindVar* lir) {
-  pushArg(ToRegister(lir->environmentChain()));
-
-  using Fn = JSObject* (*)(JSContext*, JSObject*);
-  callVM<Fn, BindVarOperation>(lir);
-}
-
 void CodeGenerator::visitMegamorphicSetElement(LMegamorphicSetElement* lir) {
   Register obj = ToRegister(lir->object());
   ValueOperand idVal = ToValue(lir->index());
