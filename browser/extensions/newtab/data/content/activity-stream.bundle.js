@@ -16479,8 +16479,9 @@ function SportsMatchRow({
       type: actionTypes.WIDGETS_USER_EVENT,
       data: {
         widget_name: "sports",
-        widget_source: variant,
+        widget_source: "widget",
         user_action: "open_match_search",
+        action_value: variant,
         widget_size: widgetSize
       }
     }));
@@ -16632,9 +16633,10 @@ const ENTITLEMENT_L10N_IDS = {
   paid: "newtab-sports-widget-watch-stream-paid",
   "select games only": "newtab-sports-widget-watch-stream-select-games-only"
 };
-const WIDGET_NAME = "sports_livestream";
-const WIDGET_SOURCE = "watch_live_modal";
+const WIDGET_NAME = "sports";
+const WIDGET_SOURCE = "widget";
 const WatchLiveModal_USER_ACTION_TYPES = {
+  OPEN: "open",
   DISMISS: "dismiss",
   STREAM_CLICK: "stream_click"
 };
@@ -16692,6 +16694,7 @@ function WatchLiveModal({
         widget_name: WIDGET_NAME,
         widget_source: WIDGET_SOURCE,
         user_action: WatchLiveModal_USER_ACTION_TYPES.DISMISS,
+        action_value: "watch_live_modal",
         widget_size: widgetSize
       }
     }));
@@ -16714,10 +16717,13 @@ function WatchLiveModal({
     dispatch(actionCreators.AlsoToMain({
       type: actionTypes.WIDGETS_SPORTS_WATCH_LIVE_REQUEST
     }));
-    dispatch(actionCreators.AlsoToMain({
-      type: actionTypes.WIDGETS_IMPRESSION,
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.WIDGETS_USER_EVENT,
       data: {
         widget_name: WIDGET_NAME,
+        widget_source: WIDGET_SOURCE,
+        user_action: WatchLiveModal_USER_ACTION_TYPES.OPEN,
+        action_value: "watch_live_modal",
         widget_size: widgetSize
       }
     }));
@@ -17252,7 +17258,9 @@ function SportsWidget_SportsWidget({
     liveIndex
   });
   const followedGradient = getFollowedGradient(highlightMatch, selectedTeamsSet, teamColorsByKey);
+  const fetchError = sportsWidgetData?.data?.fetchError ?? null;
   const impressionFired = (0,external_React_namespaceObject.useRef)(false);
+  const errorFired = (0,external_React_namespaceObject.useRef)(false);
   const introVideoRef = (0,external_React_namespaceObject.useRef)(null);
   const playIntroVideo = (0,external_React_namespaceObject.useMemo)(() => {
     const prefersReducedMotion = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
@@ -17322,6 +17330,23 @@ function SportsWidget_SportsWidget({
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [liveEnabled, dispatch, liveEl]);
+  const handleErrorIntersection = (0,external_React_namespaceObject.useCallback)(() => {
+    if (!fetchError || errorFired.current) {
+      return;
+    }
+    errorFired.current = true;
+    // Fire from the content side so telemetry can tie the event to a tab
+    // session. Events dispatched from the main process lack that link and get dropped.
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.WIDGETS_ERROR,
+      data: {
+        widget_name: "sports",
+        widget_size: widgetSize,
+        error_type: fetchError.error_type
+      }
+    }));
+  }, [dispatch, fetchError, widgetSize]);
+  const errorRef = useIntersectionObserver(handleErrorIntersection);
   const handleInteraction = (0,external_React_namespaceObject.useCallback)(() => handleUserInteraction("sportsWidget"), [handleUserInteraction]);
   function handleFollowTeams(widgetSource) {
     dispatch(actionCreators.OnlyToMain({
@@ -17553,6 +17578,10 @@ function SportsWidget_SportsWidget({
     ref: el => {
       widgetRef.current = [el];
       setLiveEl(el);
+      // Only attach the error observer when there's something to report —
+      // otherwise the first intersect with no fetchError adds the target to
+      // the hook's internal WeakSet and a fetchError arriving later never fires.
+      errorRef.current = fetchError ? [el] : [];
     },
     onMouseEnter: playIntroVideo,
     onFocus: e => {

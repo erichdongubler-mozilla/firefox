@@ -322,41 +322,39 @@ describe("<SportsMatchRow> aria-label l10n", () => {
 });
 
 describe("<SportsMatchRow> click handling", () => {
-  it("dispatches a newtab telemetry event and the open-search action on click", () => {
-    const { container, dispatch } = renderWithDispatch(
-      <SportsMatchRow match={baseMatch} variant="upcoming" />,
-      { widgetSize: "medium" }
-    );
+  it.each(["upcoming", "results", "now"])(
+    "dispatches a newtab telemetry event and the open-search action on click (variant=%s)",
+    variant => {
+      const { container, dispatch } = renderWithDispatch(
+        <SportsMatchRow match={baseMatch} variant={variant} />,
+        { widgetSize: "medium" }
+      );
 
-    fireEvent.click(container.querySelector("a.sports-match-row"));
+      fireEvent.click(container.querySelector("a.sports-match-row"));
 
-    expect(dispatch).toHaveBeenCalledTimes(2);
-    const [[userEvent], [openSearch]] = dispatch.mock.calls;
+      expect(dispatch).toHaveBeenCalledTimes(2);
+      const [[userEvent], [openSearch]] = dispatch.mock.calls;
 
-    // First dispatch: newtab-side telemetry. The widget_source is the row's
-    // variant so we can attribute clicks to the right tab in analytics; the
-    // widget_size comes from the pref (not the row's display `size`, which
-    // can be "list").
-    expect(userEvent).toMatchObject({
-      type: at.WIDGETS_USER_EVENT,
-      data: {
-        widget_name: "sports",
-        widget_source: "upcoming",
-        user_action: "open_match_search",
-        widget_size: "medium",
-      },
-    });
+      expect(userEvent).toMatchObject({
+        type: at.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "sports",
+          widget_source: "widget",
+          user_action: "open_match_search",
+          action_value: variant,
+          widget_size: "medium",
+        },
+      });
 
-    // Second dispatch: the action the SportsFeed backend uses to call
-    // SearchUIUtils.loadSearch.
-    expect(openSearch).toMatchObject({
-      type: at.WIDGETS_SPORTS_OPEN_MATCH_SEARCH,
-      data: {
-        query: baseMatch.query,
-        eventInfo: expect.objectContaining({ button: 0 }),
-      },
-    });
-  });
+      expect(openSearch).toMatchObject({
+        type: at.WIDGETS_SPORTS_OPEN_MATCH_SEARCH,
+        data: {
+          query: baseMatch.query,
+          eventInfo: expect.objectContaining({ button: 0 }),
+        },
+      });
+    }
+  );
 
   it("propagates modifier key state in the dispatched eventInfo", () => {
     const { container, dispatch } = renderWithDispatch(

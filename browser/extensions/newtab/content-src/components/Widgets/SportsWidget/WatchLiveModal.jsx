@@ -18,9 +18,10 @@ const ENTITLEMENT_L10N_IDS = {
   "select games only": "newtab-sports-widget-watch-stream-select-games-only",
 };
 
-const WIDGET_NAME = "sports_livestream";
-const WIDGET_SOURCE = "watch_live_modal";
+const WIDGET_NAME = "sports";
+const WIDGET_SOURCE = "widget";
 const USER_ACTION_TYPES = {
+  OPEN: "open",
   DISMISS: "dismiss",
   STREAM_CLICK: "stream_click",
 };
@@ -82,6 +83,7 @@ function WatchLiveModal({ onClose, dispatch, widgetSize }) {
           widget_name: WIDGET_NAME,
           widget_source: WIDGET_SOURCE,
           user_action: USER_ACTION_TYPES.DISMISS,
+          action_value: "watch_live_modal",
           widget_size: widgetSize,
         },
       })
@@ -105,10 +107,13 @@ function WatchLiveModal({ onClose, dispatch, widgetSize }) {
     dialogRef.current?.showModal();
     dispatch(ac.AlsoToMain({ type: at.WIDGETS_SPORTS_WATCH_LIVE_REQUEST }));
     dispatch(
-      ac.AlsoToMain({
-        type: at.WIDGETS_IMPRESSION,
+      ac.OnlyToMain({
+        type: at.WIDGETS_USER_EVENT,
         data: {
           widget_name: WIDGET_NAME,
+          widget_source: WIDGET_SOURCE,
+          user_action: USER_ACTION_TYPES.OPEN,
+          action_value: "watch_live_modal",
           widget_size: widgetSize,
         },
       })

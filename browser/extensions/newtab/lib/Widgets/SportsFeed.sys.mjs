@@ -222,6 +222,53 @@ export class SportsFeed {
     }
   }
 
+  /**
+   * Returns the first error_type for an endpoint that isn't allowlisted, or
+   * null. Always checks teams first, then matches, then live.
+   */
+  getAllowlistError({
+    teamsEndpoint,
+    matchesEndpoint,
+    liveEndpoint,
+    allowedEndpoints,
+  }) {
+    const isAllowed = url =>
+      allowedEndpoints.some(prefix => url.startsWith(prefix));
+    if (teamsEndpoint && !isAllowed(teamsEndpoint)) {
+      console.error(`Sports teams endpoint not in allowlist: ${teamsEndpoint}`);
+      return "teams_endpoint_not_allowlisted";
+    }
+    if (matchesEndpoint && !isAllowed(matchesEndpoint)) {
+      console.error(
+        `Sports matches endpoint not in allowlist: ${matchesEndpoint}`
+      );
+      return "matches_endpoint_not_allowlisted";
+    }
+    if (liveEndpoint && !isAllowed(liveEndpoint)) {
+      console.error(`Sports live endpoint not in allowlist: ${liveEndpoint}`);
+      return "live_endpoint_not_allowlisted";
+    }
+    return null;
+  }
+
+  /**
+   * Sends WIDGETS_SPORTS_WIDGET_SET. Error paths can report a fetchError
+   * without having to repeat the empty teams/matches/live defaults.
+   */
+  broadcastSportsData({
+    teams = [],
+    matches = { previous: [], current: [], next: [] },
+    live = [],
+    fetchError = null,
+  }) {
+    this.store.dispatch(
+      ac.BroadcastToContent({
+        type: at.WIDGETS_SPORTS_WIDGET_SET,
+        data: { teams, matches, live, fetchError },
+      })
+    );
+  }
+
   // `live` lets a caller that already has a fresh /live payload (e.g. the
   // post-match resync from fetchAndDispatch) reuse it instead of triggering
   // a redundant /live fetch.
@@ -242,32 +289,18 @@ export class SportsFeed {
       .map(item => item.trim())
       .filter(item => item);
 
-    if (
-      teamsEndpoint &&
-      !allowedEndpoints.some(prefix => teamsEndpoint.startsWith(prefix))
-    ) {
-      console.error(`Sports teams endpoint not in allowlist: ${teamsEndpoint}`);
-      return;
-    }
-    if (
-      matchesEndpoint &&
-      !allowedEndpoints.some(prefix => matchesEndpoint.startsWith(prefix))
-    ) {
-      console.error(
-        `Sports matches endpoint not in allowlist: ${matchesEndpoint}`
-      );
-      return;
-    }
-    if (
-      prefetchedLive === undefined &&
-      liveEndpoint &&
-      !allowedEndpoints.some(prefix => liveEndpoint.startsWith(prefix))
-    ) {
-      console.error(`Sports live endpoint not in allowlist: ${liveEndpoint}`);
+    const allowlistError = this.getAllowlistError({
+      teamsEndpoint,
+      matchesEndpoint,
+      liveEndpoint: prefetchedLive === undefined ? liveEndpoint : undefined,
+      allowedEndpoints,
+    });
+    if (allowlistError) {
+      this.broadcastSportsData({ fetchError: { error_type: allowlistError } });
       return;
     }
 
-    const [teams, matches, live] = await Promise.all([
+    const [teamsResult, matchesResult, liveResult] = await Promise.all([
       this.merino.fetchSportsTeams({
         source: "newtab",
         endpointUrl: teamsEndpoint,
@@ -277,40 +310,48 @@ export class SportsFeed {
         endpointUrl: matchesEndpoint,
       }),
       prefetchedLive !== undefined
-        ? Promise.resolve(prefetchedLive)
+        ? Promise.resolve({ data: prefetchedLive, error: null })
         : this.merino.fetchSportsLive({
             source: "newtab",
             endpointUrl: liveEndpoint,
           }),
     ]);
 
-    // The /live endpoint returns `{ matches: [...] }`. The backend is meant
-    // to pre-filter to in-progress games, but we re-filter on `status_type`
-    // here as a defensive guard — the Now tab must only ever surface matches
-    // that are actually live. `matches.previous` / `matches.next` continue to
-    // drive the Results and Upcoming tabs.
-    const liveMatches = Array.isArray(live?.matches)
-      ? live.matches.filter(match => match?.status_type === "live")
+    const liveData = liveResult.data;
+    const liveMatchesValid = Array.isArray(liveData?.matches);
+    // The /live endpoint is meant to be pre-filtered to in-progress games,
+    // but we re-filter on `status_type === "live"` as a defensive guard so
+    // the Now tab only ever surfaces actually-live matches.
+    const liveMatches = liveMatchesValid
+      ? liveData.matches.filter(match => match?.status_type === "live")
       : [];
 
-    if (teams?.teams || matches || live) {
+    // Report the first failure only. Order: teams, then matches, then live,
+    // then a malformed live response.
+    const fetchErrorType =
+      (teamsResult.error && `teams_${teamsResult.error}`) ||
+      (matchesResult.error && `matches_${matchesResult.error}`) ||
+      (liveResult.error && `live_${liveResult.error}`) ||
+      (liveData !== null && !liveMatchesValid && "live_malformed_response") ||
+      null;
+
+    const teams = teamsResult.data?.teams;
+    const matches = matchesResult.data;
+
+    if (teams || matches || liveData) {
       await this.cache.set("sportsData", {
-        teams: teams?.teams,
+        teams,
         matches,
         live: liveMatches,
       });
     }
 
-    this.store.dispatch(
-      ac.BroadcastToContent({
-        type: at.WIDGETS_SPORTS_WIDGET_SET,
-        data: {
-          teams: teams?.teams ?? [],
-          matches: matches ?? { previous: [], current: [], next: [] },
-          live: liveMatches,
-        },
-      })
-    );
+    this.broadcastSportsData({
+      teams: teams ?? [],
+      matches: matches ?? { previous: [], current: [], next: [] },
+      live: liveMatches,
+      fetchError: fetchErrorType ? { error_type: fetchErrorType } : null,
+    });
 
     // Re-clamp the persisted live-pager index against the freshly fetched
     // list. Live games come and go between fetches, so an index that was

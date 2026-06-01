@@ -2887,13 +2887,11 @@ describe("<SportsWidget> live polling visibility", () => {
     };
   });
 
-  // Both observers (the existing one-shot impression observer and the new
-  // live-polling observer) use threshold 0.3. They're distinguished by the
-  // order their useEffects run — the impression hook's effect is declared
-  // first in the component, so observerInstances[0] is impression and
-  // observerInstances[1] is the live observer.
+  // Construction order is: [0] impression hook (mount), [1] error hook
+  // (mount, even with no fetchError), [2] live polling observer (created
+  // after setLiveEl triggers a re-render, only when liveEnabled).
   function findLiveObserver() {
-    return observerInstances[1];
+    return observerInstances[2];
   }
 
   afterEach(() => {
@@ -3363,5 +3361,126 @@ describe("<SportsWidget> live games pagination (Now tab)", () => {
     // Verify the visible match is the second one by checking the team
     // identifiers rendered in the row.
     expect(row.textContent).toMatch(/CAN|AUS|Canada|Australia/);
+  });
+});
+
+describe("<SportsWidget> WIDGETS_ERROR telemetry", () => {
+  let dispatch;
+  let observerCallbacks;
+  let observerInstances;
+  // Stable target so the hook's WeakSet idempotency check fires correctly
+  // across repeated intersection callbacks within a single test.
+  const mockTarget = {};
+
+  beforeEach(() => {
+    dispatch = jest.fn();
+    observerCallbacks = [];
+    observerInstances = [];
+    jest.spyOn(global, "IntersectionObserver").mockImplementation(cb => {
+      const instance = {
+        observe: jest.fn(),
+        unobserve: jest.fn(),
+        disconnect: jest.fn(),
+      };
+      observerCallbacks.push(cb);
+      observerInstances.push(instance);
+      return instance;
+    });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  function renderWithFetchError(fetchError) {
+    return render(
+      <WrapWithProvider state={makeState({}, { data: { fetchError } })}>
+        <SportsWidget dispatch={dispatch} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+  }
+
+  function fireErrorIntersection() {
+    const errorCb = observerCallbacks[observerCallbacks.length - 1];
+    act(() => {
+      errorCb([{ isIntersecting: true, target: mockTarget }]);
+    });
+  }
+
+  it("fires WIDGETS_ERROR once when fetchError is set and the widget becomes visible", () => {
+    renderWithFetchError({ error_type: "teams_load_error" });
+    expect(observerCallbacks.length).toBeGreaterThanOrEqual(2);
+    fireErrorIntersection();
+    const errorCalls = dispatch.mock.calls.filter(
+      ([action]) => action?.type === at.WIDGETS_ERROR
+    );
+    expect(errorCalls).toHaveLength(1);
+    expect(errorCalls[0][0]).toMatchObject({
+      type: at.WIDGETS_ERROR,
+      data: {
+        widget_name: "sports",
+        error_type: "teams_load_error",
+      },
+      meta: expect.objectContaining({ to: "ActivityStream:Main" }),
+    });
+    expect(errorCalls[0][0].data.widget_size).toBeDefined();
+  });
+
+  it("does not fire WIDGETS_ERROR when fetchError is null", () => {
+    renderWithFetchError(null);
+    fireErrorIntersection();
+    expect(
+      dispatch.mock.calls.filter(
+        ([action]) => action?.type === at.WIDGETS_ERROR
+      )
+    ).toHaveLength(0);
+  });
+
+  it("fires WIDGETS_ERROR at most once across multiple intersection callbacks", () => {
+    renderWithFetchError({ error_type: "teams_load_error" });
+    fireErrorIntersection();
+    fireErrorIntersection();
+    expect(
+      dispatch.mock.calls.filter(
+        ([action]) => action?.type === at.WIDGETS_ERROR
+      )
+    ).toHaveLength(1);
+  });
+
+  // Guards the conditional `errorRef.current = fetchError ? [el] : []`
+  // pattern in SportsWidget.jsx. Without it, the hook would add the article
+  // to its WeakSet on the first intersect even when no error has happened
+  // yet, and a fetchError arriving later would never fire WIDGETS_ERROR.
+  it("only attaches the error observer once fetchError appears", () => {
+    const { rerender } = renderWithFetchError(null);
+
+    // Construction order is [0] impression, [1] error. With fetchError null,
+    // the error hook's elementsRef is empty so the article is not observed.
+    expect(observerInstances[1].observe).not.toHaveBeenCalled();
+
+    rerender(
+      <WrapWithProvider
+        state={makeState(
+          {},
+          { data: { fetchError: { error_type: "teams_load_error" } } }
+        )}
+      >
+        <SportsWidget dispatch={dispatch} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+
+    // The error callback's identity changed (fetchError dep), so the hook
+    // tore down the old observer and constructed a new one that now sees
+    // the article via the conditional ref population.
+    const latestErrorObserver = observerInstances[observerInstances.length - 1];
+    expect(latestErrorObserver.observe).toHaveBeenCalledTimes(1);
+
+    fireErrorIntersection();
+
+    const errorCalls = dispatch.mock.calls.filter(
+      ([action]) => action?.type === at.WIDGETS_ERROR
+    );
+    expect(errorCalls).toHaveLength(1);
+    expect(errorCalls[0][0].data.error_type).toBe("teams_load_error");
   });
 });
