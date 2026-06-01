@@ -1836,8 +1836,15 @@ void nsSocketTransportService::AnalyzeConnection(nsTArray<SocketInfo>* data,
 
   uint64_t sent = context->mHandler->ByteCountSent();
   uint64_t received = context->mHandler->ByteCountReceived();
-  SocketInfo info = {nsCString(host),     sent, received, port, aActive,
-                     nsCString(type_desc)};
+  nsCString originAttributesSuffix;
+  context->mHandler->mOriginAttributes.CreateSuffix(originAttributesSuffix);
+  SocketInfo info = {nsCString(host),
+                     sent,
+                     received,
+                     port,
+                     aActive,
+                     nsCString(type_desc),
+                     originAttributesSuffix};
 
   data->AppendElement(info);
 }

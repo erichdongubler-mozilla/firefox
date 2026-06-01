@@ -59,6 +59,7 @@ function displayHttp(data) {
     row.appendChild(col(data.connections[i].ssl));
     row.appendChild(col(data.connections[i].active.length));
     row.appendChild(col(data.connections[i].idle.length));
+    row.appendChild(col(data.connections[i].originAttributesSuffix));
     new_cont.appendChild(row);
   }
 
@@ -79,6 +80,7 @@ function displaySockets(data) {
     row.appendChild(col(data.sockets[i].active));
     row.appendChild(col(data.sockets[i].sent));
     row.appendChild(col(data.sockets[i].received));
+    row.appendChild(col(data.sockets[i].originAttributesSuffix));
     new_cont.appendChild(row);
   }
 
