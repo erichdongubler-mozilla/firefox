@@ -639,9 +639,9 @@ ContentChild::ContentChild()
 
 #ifdef _MSC_VER
 #  pragma warning(push)
-#  pragma warning(                                                  \
-      disable : 4722) /* Silence "destructor never returns" warning \
-                       */
+#  pragma warning(disable                                               \
+                  : 4722) /* Silence "destructor never returns" warning \
+                           */
 #endif
 
 ContentChild::~ContentChild() {
@@ -4333,10 +4333,7 @@ mozilla::ipc::IPCResult ContentChild::RecvReportFrameTimingData(
 
 mozilla::ipc::IPCResult ContentChild::RecvLoadURI(
     const MaybeDiscarded<BrowsingContext>& aContext,
-    nsDocShellLoadState* aLoadState, bool aSetNavigating,
-    LoadURIResolver&& aResolve) {
-  auto resolveOnExit = MakeScopeExit([&] { aResolve(true); });
-
+    nsDocShellLoadState* aLoadState, bool aSetNavigating) {
   if (aContext.IsNullOrDiscarded()) {
     return IPC_OK();
   }

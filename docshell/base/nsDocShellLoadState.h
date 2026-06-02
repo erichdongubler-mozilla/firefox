@@ -29,6 +29,9 @@ class nsIReferrerInfo;
 struct HTTPSFirstDowngradeData;
 namespace mozilla {
 class OriginAttributes;
+namespace net {
+class DocumentLoadListener;
+}
 namespace dom {
 class FormData;
 class DocShellLoadStateInit;
@@ -352,11 +355,9 @@ class nsDocShellLoadState final {
 
   uint64_t GetLoadIdentifier() const { return mLoadIdentifier; }
 
-  void SetChannelInitialized(bool aInitilized) {
-    mChannelInitialized = aInitilized;
-  }
-
-  bool GetChannelInitialized() const { return mChannelInitialized; }
+  void SetSpeculativeListener(mozilla::net::DocumentLoadListener* aListener);
+  already_AddRefed<mozilla::net::DocumentLoadListener>
+  TakeSpeculativeListener();
 
   void SetIsMetaRefresh(bool aMetaRefresh) { mIsMetaRefresh = aMetaRefresh; }
 
@@ -725,9 +726,14 @@ class nsDocShellLoadState final {
   // BrowsingContext::{Get, Set}CurrentLoadIdentifier)
   const uint64_t mLoadIdentifier;
 
-  // Optional value to indicate that a channel has been
+  // Optional DocumentLoadListener reference. This is only set in the parent
+  // process, and indicates that the channel has been pre-initialized in the
+  // parent process.
+  RefPtr<mozilla::net::DocumentLoadListener> mSpeculativeListener;
+
+  // Optional value available in content to indicate the channel has been
   // pre-initialized in the parent process.
-  bool mChannelInitialized;
+  bool mHasSpeculativeListener = false;
 
   // True if the load was triggered by a meta refresh.
   bool mIsMetaRefresh;

@@ -1030,8 +1030,7 @@ child:
     async InitSandboxTesting(Endpoint<PSandboxTestingChild> aEndpoint);
 #endif
 
-    async LoadURI(MaybeDiscardedBrowsingContext aContext, nsDocShellLoadState aLoadState, bool aSetNavigating)
-        returns (bool aSuccess);
+    async LoadURI(MaybeDiscardedBrowsingContext aContext, nsDocShellLoadState aLoadState, bool aSetNavigating);
 
     async InternalLoad(nsDocShellLoadState aLoadState);
 

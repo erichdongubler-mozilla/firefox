@@ -730,8 +730,7 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvLoadURI(
       const MaybeDiscarded<BrowsingContext>& aContext,
-      nsDocShellLoadState* aLoadState, bool aSetNavigating,
-      LoadURIResolver&& aResolve);
+      nsDocShellLoadState* aLoadState, bool aSetNavigating);
 
   mozilla::ipc::IPCResult RecvInternalLoad(nsDocShellLoadState* aLoadState);
 

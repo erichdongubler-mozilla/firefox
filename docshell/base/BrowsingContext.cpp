@@ -2340,14 +2340,11 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
     }
   } else if (XRE_IsParentProcess()) {
     if (ContentParent* cp = Canonical()->GetContentParent()) {
-      // Attempt to initiate this load immediately in the parent, if it succeeds
-      // it'll return a unique identifier so that we can find it later.
-      uint64_t loadIdentifier = 0;
-      if (Canonical()->AttemptSpeculativeLoadInParent(aLoadState)) {
-        MOZ_DIAGNOSTIC_ASSERT(GetCurrentLoadIdentifier().isSome());
-        loadIdentifier = GetCurrentLoadIdentifier().value();
-        aLoadState->SetChannelInitialized(true);
-      }
+      // Attempt to initiate this load immediately in the parent, if it
+      // succeeds, aLoadState will have a reference to the pending
+      // DocumentLoadListener, which will be recovered when the DocumentChannel
+      // is created.
+      Canonical()->AttemptSpeculativeLoadInParent(aLoadState);
 
       cp->TransmitBlobDataIfBlobURL(aLoadState->URI(), mOriginAttributes);
 
@@ -2393,20 +2390,8 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
                           aLoadState->URI()->GetSpecOrDefault().get());
 #endif
 
-      // Setup a confirmation callback once the content process receives this
-      // load. Normally we'd expect a PDocumentChannel actor to have been
-      // created to claim the load identifier by that time. If not, then it
-      // won't be coming, so make sure we clean up and deregister.
-      cp->SendLoadURI(this, mozilla::WrapNotNull(aLoadState), aSetNavigating)
-          ->Then(GetMainThreadSerialEventTarget(), __func__,
-                 [loadIdentifier](
-                     const PContentParent::LoadURIPromise::ResolveOrRejectValue&
-                         aValue) {
-                   if (loadIdentifier) {
-                     net::DocumentLoadListener::CleanupParentLoadAttempt(
-                         loadIdentifier);
-                   }
-                 });
+      (void)cp->SendLoadURI(this, mozilla::WrapNotNull(aLoadState),
+                            aSetNavigating);
     }
   } else {
     if (!sourceBC) {
