@@ -5767,6 +5767,8 @@ Element* Element::GetPseudoElement(const PseudoStyleRequest& aRequest) const {
       return nsLayoutUtils::GetMarkerPseudo(this);
     case PseudoStyleType::Backdrop:
       return nsLayoutUtils::GetBackdropPseudo(this);
+    case PseudoStyleType::Checkmark:
+      return nsLayoutUtils::GetCheckmarkPseudo(this);
     case PseudoStyleType::ViewTransition:
     case PseudoStyleType::ViewTransitionGroup:
     case PseudoStyleType::ViewTransitionImagePair:
