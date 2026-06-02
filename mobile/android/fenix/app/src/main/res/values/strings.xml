@@ -3224,6 +3224,10 @@
     <string name="homepage_shortcuts_show_all_content_description">Show all shortcuts</string>
     <!-- Label for the "Add shortcut" button displayed as a tile. -->
     <string name="homepage_shortcuts_add_shortcut">Add shortcut</string>
+    <!-- Title for the "Add to homepage" bottom sheet. -->
+    <string name="homepage_shortcuts_add_to_homepage">Add to homepage</string>
+    <!-- Label for the "Add website" button in the "Add to homepage" bottom sheet. -->
+    <string name="homepage_shortcuts_add_website">Add website</string>
     <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
     <string name="homepage_shortcuts_add_website_title">Enter a Website URL</string>
     <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
