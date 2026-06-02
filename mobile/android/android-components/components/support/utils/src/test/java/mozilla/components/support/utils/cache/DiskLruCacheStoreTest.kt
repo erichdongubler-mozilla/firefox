@@ -32,7 +32,8 @@ class DiskLruCacheStoreTest {
     @Before
     @After
     fun cleanUp() {
-        File(testContext.cacheDir, BLOCKING_FILE_NAME).deleteRecursively()
+        CacheDirectoryMigration.resetMigrationState()
+        File(testContext.noBackupFilesDir, BLOCKING_FILE_NAME).deleteRecursively()
         File(testContext.noBackupFilesDir, STORE_PARENT).deleteRecursively()
     }
 

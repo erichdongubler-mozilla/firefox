@@ -11,8 +11,10 @@ import mozilla.components.concept.base.images.ImageSaveRequest
 import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
+import mozilla.components.support.utils.cache.CacheDirectoryMigration
 import org.junit.After
 import org.junit.Assert
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -31,6 +33,7 @@ class ThumbnailDiskCacheTest {
     @Before
     @After
     fun cleanUp() {
+        CacheDirectoryMigration.resetMigrationState()
         File(testContext.cacheDir, CACHE_DIR).deleteRecursively()
         File(testContext.noBackupFilesDir, CACHE_DIR).deleteRecursively()
     }
@@ -48,6 +51,46 @@ class ThumbnailDiskCacheTest {
 
         assertTrue("Cache directory should exist under cacheDir", newDir.exists())
         assertFalse("Cache directory must not be created under cacheDir", legacyDir.exists())
+    }
+
+    @Test
+    fun `Legacy cacheDir entries are migrated to noBackupFilesDir on first access`() {
+        val legacyParent = File(testContext.cacheDir, "mozac_browser_thumbnails")
+        val newParent = File(testContext.noBackupFilesDir, "mozac_browser_thumbnails")
+        val legacyDirectory = File(legacyParent, "thumbnails")
+        val newDirectory = File(newParent, "thumbnails")
+        assertTrue(legacyDirectory.mkdirs())
+        val cacheEntryInLegacyDirectory = File(legacyDirectory, "legacy-entry")
+        cacheEntryInLegacyDirectory.writeText("legacy")
+
+        val cache = ThumbnailDiskCache()
+        cache.getThumbnailData(testContext, ImageLoadRequest("123", 100, false))
+
+        val migratedCacheEntry = File(newDirectory, "legacy-entry")
+        assertTrue("Legacy entry should be migrated to noBackupFilesDir", migratedCacheEntry.exists())
+        assertEquals("legacy", migratedCacheEntry.readText())
+        assertFalse("Legacy cacheDir parent should be gone", legacyParent.exists())
+    }
+
+    @Test
+    fun `When both legacy and new directories exist, legacy is deleted and new content is preserved`() {
+        val legacyParent = File(testContext.cacheDir, "mozac_browser_thumbnails")
+        val newParent = File(testContext.noBackupFilesDir, "mozac_browser_thumbnails")
+        val legacyDirectory = File(legacyParent, "thumbnails")
+        val newDirectory = File(newParent, "thumbnails")
+        assertTrue(legacyDirectory.mkdirs())
+        val cacheEntryInLegacyDirectory = File(legacyDirectory, "legacy-entry")
+        cacheEntryInLegacyDirectory.writeText("legacy")
+
+        assertTrue(File(newParent, "thumbnails").mkdirs())
+        File(newDirectory, "new-entry").writeText("new")
+
+        val cache = ThumbnailDiskCache()
+        cache.getThumbnailData(testContext, ImageLoadRequest("123", 100, false))
+
+        assertFalse("Legacy cacheDir parent should be deleted", legacyParent.exists())
+        assertTrue(File(File(newParent, "thumbnails"), "new-entry").exists())
+        assertEquals("new", File(File(newParent, "thumbnails"), "new-entry").readText())
     }
 
     @Test

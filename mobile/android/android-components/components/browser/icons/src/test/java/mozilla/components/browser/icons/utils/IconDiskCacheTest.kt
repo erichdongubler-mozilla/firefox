@@ -11,6 +11,7 @@ import mozilla.components.concept.engine.manifest.Size
 import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
+import mozilla.components.support.utils.cache.CacheDirectoryMigration
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -30,6 +31,7 @@ class IconDiskCacheTest {
     @Before
     @After
     fun cleanUp() {
+        CacheDirectoryMigration.resetMigrationState()
         File(testContext.cacheDir, CACHE_PARENT).deleteRecursively()
         File(testContext.noBackupFilesDir, CACHE_PARENT).deleteRecursively()
     }
@@ -68,6 +70,51 @@ class IconDiskCacheTest {
 
         assertTrue("Icon cache should live under noBackupFilesDir", File(newParent, ICONS_DIR).exists())
         assertFalse("Icon cache must not be created under cacheDir", legacyParent.exists())
+    }
+
+    @Test
+    fun `Legacy cacheDir entries are migrated to noBackupFilesDir on first access`() {
+        val legacyParent = File(testContext.cacheDir, "mozac_browser_icons")
+        val legacyResources = File(legacyParent, "resources")
+        val legacyIcons = File(legacyParent, "icons")
+        assertTrue(legacyResources.mkdirs())
+        assertTrue(legacyIcons.mkdirs())
+        File(legacyResources, "marker").writeText("res")
+        File(legacyIcons, "marker").writeText("ico")
+
+        val cache = IconDiskCache()
+        cache.getResources(
+            testContext,
+            IconRequest("https://www.mozilla.org"),
+        )
+
+        val newParent = File(testContext.noBackupFilesDir, "mozac_browser_icons")
+        val newResources = File(newParent, "resources")
+        val newIcons = File(newParent, "icons")
+        assertTrue(File(newResources, "marker").exists())
+        assertTrue(File(newIcons, "marker").exists())
+        assertEquals("res", File(newResources, "marker").readText())
+        assertEquals("ico", File(newIcons, "marker").readText())
+        assertFalse("Legacy cacheDir parent should be gone", legacyParent.exists())
+    }
+
+    @Test
+    fun `When both legacy and new directories exist, legacy is deleted and new content is preserved`() {
+        val legacyParent = File(testContext.cacheDir, "mozac_browser_icons")
+        val legacyResources = File(legacyParent, "resources")
+        assertTrue(legacyResources.mkdirs())
+        File(legacyResources, "legacy-marker").writeText("legacy")
+
+        val newParent = File(testContext.noBackupFilesDir, "mozac_browser_icons")
+        assertTrue(File(newParent, "resources").mkdirs())
+        File(File(newParent, "resources"), "new-marker").writeText("new")
+
+        val cache = IconDiskCache()
+        cache.getResources(testContext, IconRequest("https://www.mozilla.org"))
+
+        assertFalse("Legacy cacheDir parent should be deleted", legacyParent.exists())
+        assertTrue(File(File(newParent, "resources"), "new-marker").exists())
+        assertEquals("new", File(File(newParent, "resources"), "new-marker").readText())
     }
 
     @Test

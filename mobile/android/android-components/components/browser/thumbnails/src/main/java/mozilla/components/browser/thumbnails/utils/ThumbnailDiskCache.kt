@@ -10,6 +10,7 @@ import androidx.annotation.VisibleForTesting
 import mozilla.components.concept.base.images.ImageLoadRequest
 import mozilla.components.concept.base.images.ImageSaveRequest
 import mozilla.components.support.base.log.logger.Logger
+import mozilla.components.support.utils.cache.CacheDirectoryMigration
 import mozilla.components.support.utils.cache.DiskLruCacheStore
 import java.io.File
 
@@ -33,6 +34,11 @@ class ThumbnailDiskCache(private val isPrivate: Boolean = false) {
         version = THUMBNAIL_DISK_CACHE_VERSION,
         maxSizeBytes = MAXIMUM_CACHE_THUMBNAIL_DATA_BYTES,
         directoryProvider = ::getThumbnailCacheDirectory,
+        migration = CacheDirectoryMigration(
+            logger = logger,
+            legacyDirectory = { File(it.cacheDir, THUMBNAILS_DIR_NAME) },
+            newDirectory = { File(it.noBackupFilesDir, THUMBNAILS_DIR_NAME) },
+        ),
     )
 
     internal fun clear(context: Context) = thumbnailStore.clear(context)

@@ -22,12 +22,14 @@ import java.io.OutputStream
  * @param version cache version passed to [DiskLruCache.open].
  * @param maxSizeBytes maximum size of the cache in bytes.
  * @param directoryProvider resolves the cache directory for the given [Context].
+ * @param migration handles cache directories migration if necessary
  */
 class DiskLruCacheStore(
     private val logger: Logger,
     private val version: Int,
     private val maxSizeBytes: Long,
     private val directoryProvider: (Context) -> File,
+    private val migration: CacheDirectoryMigration? = null,
 ) {
     @Volatile
     @VisibleForTesting
@@ -159,6 +161,8 @@ class DiskLruCacheStore(
     private fun getCache(context: Context): DiskLruCache? =
         synchronized(cacheLock) {
             cache?.let { return it }
+
+            migration?.migrateIfNeeded(context)
 
             return try {
                 DiskLruCache.open(

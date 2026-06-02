@@ -17,6 +17,7 @@ import mozilla.components.browser.icons.preparer.DiskIconPreparer
 import mozilla.components.browser.icons.processor.DiskIconProcessor
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.kotlin.sha1
+import mozilla.components.support.utils.cache.CacheDirectoryMigration
 import mozilla.components.support.utils.cache.DiskLruCacheStore
 import org.json.JSONArray
 import org.json.JSONException
@@ -42,6 +43,11 @@ class IconDiskCache :
     DiskIconPreparer.PreparerDiskCache,
     DiskIconProcessor.ProcessorDiskCache {
     private val logger = Logger("IconDiskCache")
+    private val migration = CacheDirectoryMigration(
+        logger = logger,
+        legacyDirectory = { getParentCacheDirectory(it.cacheDir) },
+        newDirectory = { getParentCacheDirectory(it.noBackupFilesDir) },
+    )
 
     @VisibleForTesting
     internal val iconResourcesStore = DiskLruCacheStore(
@@ -49,6 +55,7 @@ class IconDiskCache :
         version = RESOURCES_DISK_CACHE_VERSION,
         maxSizeBytes = MAXIMUM_CACHE_RESOURCES_BYTES,
         directoryProvider = { context -> getCacheDirectory(context, RESOURCES_DIR_NAME) },
+        migration = migration,
     )
 
     @VisibleForTesting
@@ -57,6 +64,7 @@ class IconDiskCache :
         version = ICON_DATA_DISK_CACHE_VERSION,
         maxSizeBytes = MAXIMUM_CACHE_ICON_DATA_BYTES,
         directoryProvider = { context -> getCacheDirectory(context, ICONS_DIR_NAME) },
+        migration,
     )
 
     override fun getResources(context: Context, request: IconRequest): List<IconRequest.Resource> {
@@ -109,10 +117,11 @@ class IconDiskCache :
         iconDataStore.clear(context)
     }
 
-    private fun getCacheDirectory(context: Context, subdirectoryName: String): File {
-        val cacheDirectory = File(context.noBackupFilesDir, BROWSER_ICONS_DIR_NAME)
-        return File(cacheDirectory, subdirectoryName)
-    }
+    private fun getCacheDirectory(context: Context, subdirectoryName: String): File =
+        File(getParentCacheDirectory(context.noBackupFilesDir), subdirectoryName)
+
+    private fun getParentCacheDirectory(parent: File) =
+        File(parent, BROWSER_ICONS_DIR_NAME)
 }
 
 private fun createKey(rawKey: String): String = rawKey.sha1()
