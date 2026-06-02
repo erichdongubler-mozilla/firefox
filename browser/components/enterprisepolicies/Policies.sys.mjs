@@ -26,6 +26,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   BookmarksPolicies: "resource:///modules/policies/BookmarksPolicies.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
+  setEnterpriseGuards: "resource://gre/modules/ExtensionPermissions.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   ProxyPolicies: "resource:///modules/policies/ProxyPolicies.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
@@ -1541,6 +1542,14 @@ export var Policies = {
         manager.setExtensionSettings(param);
       } catch (e) {
         lazy.log.error("Invalid ExtensionSettings");
+      }
+      try {
+        applyExtensionGuards(param);
+      } catch (e) {
+        lazy.log.error(
+          `Invalid runtime_blocked_hosts/runtime_allowed_hosts in ` +
+            `ExtensionSettings: ${e.message}`
+        );
       }
     },
     async onBeforeUIStartup(manager, param) {
@@ -3550,6 +3559,55 @@ function replacePathVariables(path) {
     );
   }
   return path;
+}
+
+/**
+ * Validates a list of host patterns intended for runtime_blocked_hosts or
+ * runtime_allowed_hosts. These accept match patterns without a path
+ * component (e.g. `*://*.example.com` or `<all_urls>`), matching Chrome's
+ * ExtensionSettings policy format. Throws on the first invalid pattern.
+ */
+function validateExtensionGuardPatterns(patterns) {
+  for (let pattern of patterns) {
+    if (typeof pattern !== "string") {
+      throw new Error(`Expected a string, got ${typeof pattern}`);
+    }
+    if (pattern === "<all_urls>") {
+      continue;
+    }
+    if (!/^[a-z*][a-z0-9*+.-]*:\/\/[^/]+$/i.test(pattern)) {
+      throw new Error(`Host pattern must not include a path: ${pattern}`);
+    }
+  }
+  // MatchPatternSet throws on any other malformed pattern (bad scheme,
+  // malformed host, etc.). ignorePath:true mirrors the backend's parser
+  // in setEnterpriseGuards; restrictSchemes defaults to true.
+  new MatchPatternSet(patterns, { ignorePath: true });
+}
+
+/**
+ * Build the enterprise guards map from an ExtensionSettings policy value and
+ * apply it via setEnterpriseGuards from ExtensionPermissions.sys.mjs.
+ *
+ * Throws if any pattern is malformed; the caller logs and skips applying
+ * guards in that case.
+ */
+function applyExtensionGuards(extensionSettings) {
+  let guards = {};
+  for (let [extensionID, settings] of Object.entries(extensionSettings)) {
+    let blocked = settings.runtime_blocked_hosts;
+    let allowed = settings.runtime_allowed_hosts;
+    if (!blocked && !allowed) {
+      continue;
+    }
+    validateExtensionGuardPatterns(blocked ?? []);
+    validateExtensionGuardPatterns(allowed ?? []);
+    guards[extensionID] = {
+      runtime_blocked_hosts: blocked ?? [],
+      runtime_allowed_hosts: allowed ?? [],
+    };
+  }
+  lazy.setEnterpriseGuards(guards);
 }
 
 /**

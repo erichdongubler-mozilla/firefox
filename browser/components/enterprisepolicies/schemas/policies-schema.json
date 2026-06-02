@@ -872,6 +872,18 @@
                 "type": "string"
               }
             },
+            "runtime_allowed_hosts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "runtime_blocked_hosts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
             "temporarily_allow_weak_signatures": {
               "type": "boolean"
             }
@@ -906,6 +918,18 @@
             "default_area": {
               "type": "string",
               "enum": ["navbar", "menupanel"]
+            },
+            "runtime_allowed_hosts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "runtime_blocked_hosts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "temporarily_allow_weak_signatures": {
               "type": "boolean"
