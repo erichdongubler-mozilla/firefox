@@ -489,6 +489,8 @@ macosx1500-aarch64-tests:
     - web-platform-tests-canvas
     - web-platform-tests-crashtest
     - web-platform-tests-eme
+    - web-platform-tests-print-reftest
+    - web-platform-tests-reftest
     - web-platform-tests-wdspec
     - web-platform-tests-webcodecs
     - xpcshell
