@@ -27,15 +27,16 @@ static const double kPointsPerTenthMM = 72.0 / 254.0;
 static const double kPointsPerInch = 72.0;
 
 nsPrinterWin::nsPrinterWin(const CommonPaperInfoArray* aArray,
-                           const nsAString& aName)
-    : nsPrinterBase(aArray),
+                           const nsAString& aName, bool aSortAfterLocal)
+    : nsPrinterBase(aArray, aSortAfterLocal),
       mName(aName),
       mDefaultDevmodeWStorage("nsPrinterWin::mDefaultDevmodeWStorage") {}
 
 // static
 already_AddRefed<nsPrinterWin> nsPrinterWin::Create(
-    const CommonPaperInfoArray* aArray, const nsAString& aName) {
-  return do_AddRef(new nsPrinterWin(aArray, aName));
+    const CommonPaperInfoArray* aArray, const nsAString& aName,
+    bool aSortAfterLocal) {
+  return do_AddRef(new nsPrinterWin(aArray, aName, aSortAfterLocal));
 }
 
 template <class T>
