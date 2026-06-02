@@ -83,6 +83,13 @@ class BrowserPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule
                 NavigationStep.PressBack,
             ),
         )
+
+        // Use UIAutomator selector to avoid Compose sync hanging when GeckoView is active.
+        NavigationRegistry.register(
+            from = pageName,
+            to = "TabDrawerPage",
+            steps = listOf(NavigationStep.Click(ToolbarSelectors.TAB_COUNTER_UIAUTOMATOR)),
+        )
     }
 
     override fun navigateToPage(url: String, forceNavigation: Boolean): BrowserPage {
