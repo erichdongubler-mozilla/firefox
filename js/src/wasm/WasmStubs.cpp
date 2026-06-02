@@ -3069,7 +3069,7 @@ static bool GenerateRequestTierUpStub(MacroAssembler& masm,
   masm.setFramePushed(0);
 
   GenerateExitPrologue(masm, ExitReason::Fixed::RequestTierUp,
-                       /*switchToMainStack*/ false, ExitFrameAlignment::Dynamic,
+                       /*switchToMainStack*/ true, ExitFrameAlignment::Dynamic,
                        0, offsets);
 
   uint32_t framePushed = masm.framePushed();
@@ -3115,7 +3115,7 @@ static bool GenerateRequestTierUpStub(MacroAssembler& masm,
   masm.setFramePushed(framePushed);
 
   GenerateExitEpilogue(masm, ExitReason::Fixed::RequestTierUp,
-                       /*switchToMainStack*/ false, ExitFrameAlignment::Dynamic,
+                       /*switchToMainStack*/ true, ExitFrameAlignment::Dynamic,
                        offsets);
 
   return FinishOffsets(masm, offsets);
