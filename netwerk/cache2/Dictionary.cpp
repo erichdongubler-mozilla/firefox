@@ -1602,10 +1602,15 @@ void DictionaryOrigin::SetCacheEntry(nsICacheEntry* aEntry) {
   mEntry = aEntry;
   mEntry->SetContentType(nsICacheEntry::CONTENT_TYPE_DICTIONARY);
   if (mDeferredWrites) {
+    // RemoveEntry() mutates mEntries, so defer removals.
+    DictCacheList remove;
     for (auto& entry : mEntries) {
       if (NS_FAILED(Write(entry))) {
-        RemoveEntry(entry);
+        remove.AppendElement(entry);
       }
+    }
+    for (auto& entry : remove) {
+      RemoveEntry(entry);
     }
   }
   mDeferredWrites = false;
