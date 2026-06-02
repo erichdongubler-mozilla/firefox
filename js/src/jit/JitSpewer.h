@@ -24,7 +24,7 @@ namespace js {
 namespace jit {
 
 enum JitSpewChannel {
-#define JITSPEW_CHANNEL(name) JitSpew_##name,
+#define JITSPEW_CHANNEL(name, help) JitSpew_##name,
   JITSPEW_CHANNEL_LIST(JITSPEW_CHANNEL)
 #undef JITSPEW_CHANNEL
       JitSpew_Terminator
@@ -107,7 +107,7 @@ extern mozilla::Atomic<uint32_t, mozilla::Relaxed> filteredOutCompilations;
 
 // Array of LogModules indexed by JitSpewChannel.
 inline constexpr const js::LogModule* const channelModules[] = {
-#  define JITSPEW_MODULE_PTR(name) &name##Module,
+#  define JITSPEW_MODULE_PTR(name, help) &name##Module,
     JITSPEW_CHANNEL_LIST(JITSPEW_MODULE_PTR)
 #  undef JITSPEW_MODULE_PTR
 };

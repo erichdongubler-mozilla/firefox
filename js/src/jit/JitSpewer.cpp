@@ -82,7 +82,7 @@ static void SetChannelLogLevel(JitSpewChannel channel,
 }
 
 static size_t ChannelIndentLevel[] = {
-#  define JITSPEW_CHANNEL(name) 0,
+#  define JITSPEW_CHANNEL(name, help) 0,
     JITSPEW_CHANNEL_LIST(JITSPEW_CHANNEL)
 #  undef JITSPEW_CHANNEL
 };
@@ -369,65 +369,30 @@ void JitSpewGraphSpewer::dump(Fprinter& jsonOut) {
 
 static void PrintHelpAndExit(int status = 0) {
   fflush(nullptr);
-  printf(
+  FILE* out = status == 0 ? stdout : stderr;
+  fputs(
       "\n"
-      "usage: IONFLAGS=option,option,option,... where options can be:\n"
+      "Use MOZ_LOG=help to see the full list of JS_LOG modules.\n"
       "\n"
-      "  aborts        Compilation abort messages\n"
-      "  scripts       Compiled scripts\n"
-      "  mir           MIR information\n"
-      "  prune         Prune unused branches\n"
-      "  escape        Escape analysis\n"
-      "  alias         Alias analysis\n"
-      "  alias-sum     Alias analysis: shows summaries for every block\n"
-      "  gvn           Global Value Numbering\n"
-      "  licm          Loop invariant code motion\n"
-      "  flac          Fold linear arithmetic constants\n"
-      "  eaa           Effective address analysis\n"
-      "  sink          Sink transformation\n"
-      "  regalloc      Register allocation\n"
-      "  inline        Inlining\n"
-      "  snapshots     Snapshot information\n"
-      "  codegen       Native code generation\n"
-      "  bailouts      Bailouts\n"
-      "  caches        Inline caches\n"
-      "  osi           Invalidation\n"
-      "  safepoints    Safepoints\n"
-      "  pools         Literal Pools (ARM only for now)\n"
-      "  cacheflush    Instruction Cache flushes (ARM only for now)\n"
-      "  range         Range Analysis\n"
-      "  branch-hint   Wasm Branch Hinting\n"
-      "  wasmbce       Wasm Bounds Check Elimination\n"
-      "  shapeguards   Redundant shape guard elimination\n"
-      "  gcbarriers    Redundant GC barrier elimination\n"
-      "  loadkeys      Loads used as property keys\n"
-      "  stubfolding   CacheIR stub folding\n"
-      "  stubfolding-details   Same as stubfolding, but with spewing of stub "
-      "content.\n"
-      "  logs          JSON visualization logging\n"
-      "  logs-sync     Same as logs, but flushes between each pass (sync. "
-      "compiled functions only).\n"
-      "  profiling     Profiling-related information\n"
-      "  dump-mir-expr Dump the MIR expressions\n"
-      "  unroll        Wasm loop unrolling and peeling -- summary info\n"
-      "  unroll-details  Wasm loop unrolling and peeling -- details\n"
-      "  warp-snapshots WarpSnapshots created by WarpOracle\n"
-      "  warp-transpiler Warp CacheIR transpiler\n"
-      "  warp-trial-inlining Trial inlining for Warp\n"
-      "  all           Everything\n"
+      "usage: IONFLAGS=option,option,option,...\n"
+      "\n",
+      out);
+#  define EMIT(tok, chan) fprintf(out, "  %-22s %s\n", tok, chan##Module.help);
+  IONFLAGS_CHANNEL_LIST(EMIT)
+#  undef EMIT
+  fputs(
       "\n"
-      "  bl-aborts     Baseline compiler abort messages\n"
-      "  bl-scripts    Baseline script-compilation\n"
-      "  bl-op         Baseline compiler detailed op-specific messages\n"
-      "  bl-ic         Baseline inline-cache messages\n"
-      "  bl-ic-fb      Baseline IC fallback stub messages\n"
-      "  bl-osr        Baseline IC OSR messages\n"
-      "  bl-bails      Baseline bailouts\n"
-      "  bl-dbg-osr    Baseline debug mode on stack recompile messages\n"
-      "  bl-all        All baseline spew\n"
+      "  all                    Enable every JIT spew module at Debug level\n"
+      "  bl-all                 Enable all baseline modules\n"
+      "  stubfolding-details    StubFolding + StubFoldingDetails\n"
+      "  unroll-details         Unroll + UnrollDetails\n"
+      "  logs                   JSON visualization logging to /tmp/ion.json\n"
+      "  logs-sync              Same as logs, but flushes between passes "
+      "(sync. compiled functions only)\n"
+      "  help                   Print this message and exit\n"
       "\n"
-      "See also SPEW=help for information on the Structured Spewer."
-      "\n");
+      "See also SPEW=help for information on the Structured Spewer.\n",
+      out);
   exit(status);
 }
 
@@ -452,125 +417,60 @@ void jit::CheckLogging() {
     SetChannelLogLevel(channel, mozilla::LogLevel::Debug);
   };
 
+  struct TokenToChannel {
+    const char* tok;
+    JitSpewChannel chan;
+  };
+  static constexpr TokenToChannel tokenToChannelTable[] = {
+#  define ENTRY(tok, chan) {tok, JitSpew_##chan},
+      IONFLAGS_CHANNEL_LIST(ENTRY)
+#  undef ENTRY
+  };
+
   const char* found = strtok(env, ",");
   while (found) {
     fprintf(stderr, "found tag: %s\n", found);
-    // We're at the end of a flag; check if the previous substring was a
-    // known flag (i-1 is the last character of the flag we just read).
-    if (IsFlag(found, "help")) {
-      PrintHelpAndExit();
-    } else if (IsFlag(found, "aborts")) {
-      enable(JitSpew_IonAbort);
-    } else if (IsFlag(found, "prune")) {
-      enable(JitSpew_Prune);
-    } else if (IsFlag(found, "escape")) {
-      enable(JitSpew_Escape);
-    } else if (IsFlag(found, "alias")) {
-      enable(JitSpew_Alias);
-    } else if (IsFlag(found, "alias-sum")) {
-      enable(JitSpew_AliasSummaries);
-    } else if (IsFlag(found, "scripts")) {
-      enable(JitSpew_IonScripts);
-    } else if (IsFlag(found, "mir")) {
-      enable(JitSpew_IonMIR);
-    } else if (IsFlag(found, "gvn")) {
-      enable(JitSpew_GVN);
-    } else if (IsFlag(found, "range")) {
-      enable(JitSpew_Range);
-    } else if (IsFlag(found, "wasmbce")) {
-      enable(JitSpew_WasmBCE);
-    } else if (IsFlag(found, "branch-hint")) {
-      enable(JitSpew_BranchHint);
-    } else if (IsFlag(found, "licm")) {
-      enable(JitSpew_LICM);
-    } else if (IsFlag(found, "flac")) {
-      enable(JitSpew_FLAC);
-    } else if (IsFlag(found, "eaa")) {
-      enable(JitSpew_EAA);
-    } else if (IsFlag(found, "sink")) {
-      enable(JitSpew_Sink);
-    } else if (IsFlag(found, "regalloc")) {
-      enable(JitSpew_RegAlloc);
-    } else if (IsFlag(found, "inline")) {
-      enable(JitSpew_Inlining);
-    } else if (IsFlag(found, "snapshots")) {
-      enable(JitSpew_IonSnapshots);
-    } else if (IsFlag(found, "codegen")) {
-      enable(JitSpew_Codegen);
-    } else if (IsFlag(found, "bailouts")) {
-      enable(JitSpew_IonBailouts);
-    } else if (IsFlag(found, "osi")) {
-      enable(JitSpew_IonInvalidate);
-    } else if (IsFlag(found, "caches")) {
-      enable(JitSpew_IonIC);
-    } else if (IsFlag(found, "safepoints")) {
-      enable(JitSpew_Safepoints);
-    } else if (IsFlag(found, "pools")) {
-      enable(JitSpew_Pools);
-    } else if (IsFlag(found, "cacheflush")) {
-      enable(JitSpew_CacheFlush);
-    } else if (IsFlag(found, "shapeguards")) {
-      enable(JitSpew_RedundantShapeGuards);
-    } else if (IsFlag(found, "gcbarriers")) {
-      enable(JitSpew_RedundantGCBarriers);
-    } else if (IsFlag(found, "loadkeys")) {
-      enable(JitSpew_MarkLoadsUsedAsPropertyKeys);
-    } else if (IsFlag(found, "stubfolding")) {
-      enable(JitSpew_StubFolding);
-    } else if (IsFlag(found, "stubfolding-details")) {
-      enable(JitSpew_StubFolding);
-      enable(JitSpew_StubFoldingDetails);
-    } else if (IsFlag(found, "logs")) {
-      EnableIonDebugAsyncLogging();
-    } else if (IsFlag(found, "logs-sync")) {
-      EnableIonDebugSyncLogging();
-    } else if (IsFlag(found, "profiling")) {
-      enable(JitSpew_Profiling);
-    } else if (IsFlag(found, "dump-mir-expr")) {
-      enable(JitSpew_MIRExpressions);
-    } else if (IsFlag(found, "unroll")) {
-      enable(JitSpew_Unroll);
-    } else if (IsFlag(found, "unroll-details")) {
-      enable(JitSpew_Unroll);
-      enable(JitSpew_UnrollDetails);
-    } else if (IsFlag(found, "warp-snapshots")) {
-      enable(JitSpew_WarpSnapshots);
-    } else if (IsFlag(found, "warp-transpiler")) {
-      enable(JitSpew_WarpTranspiler);
-    } else if (IsFlag(found, "warp-trial-inlining")) {
-      enable(JitSpew_WarpTrialInlining);
-    } else if (IsFlag(found, "all")) {
-#  define JITSPEW_ENABLE_ALL(name) enable(JitSpew_##name);
-      JITSPEW_CHANNEL_LIST(JITSPEW_ENABLE_ALL)
+
+    // Check if this matches a flag in tokenToChannelTable.
+    bool handled = false;
+    for (const auto& entry : tokenToChannelTable) {
+      if (IsFlag(found, entry.tok)) {
+        enable(entry.chan);
+        handled = true;
+        break;
+      }
+    }
+
+    if (!handled) {
+      if (IsFlag(found, "help")) {
+        PrintHelpAndExit();
+      } else if (IsFlag(found, "stubfolding-details")) {
+        enable(JitSpew_StubFolding);
+        enable(JitSpew_StubFoldingDetails);
+      } else if (IsFlag(found, "unroll-details")) {
+        enable(JitSpew_Unroll);
+        enable(JitSpew_UnrollDetails);
+      } else if (IsFlag(found, "logs")) {
+        EnableIonDebugAsyncLogging();
+      } else if (IsFlag(found, "logs-sync")) {
+        EnableIonDebugSyncLogging();
+      } else if (IsFlag(found, "all")) {
+#  define JITSPEW_ENABLE_ALL(name, help) enable(JitSpew_##name);
+        JITSPEW_CHANNEL_LIST(JITSPEW_ENABLE_ALL)
 #  undef JITSPEW_ENABLE_ALL
-    } else if (IsFlag(found, "bl-aborts")) {
-      enable(JitSpew_BaselineAbort);
-    } else if (IsFlag(found, "bl-scripts")) {
-      enable(JitSpew_BaselineScripts);
-    } else if (IsFlag(found, "bl-op")) {
-      enable(JitSpew_BaselineOp);
-    } else if (IsFlag(found, "bl-ic")) {
-      enable(JitSpew_BaselineIC);
-    } else if (IsFlag(found, "bl-ic-fb")) {
-      enable(JitSpew_BaselineICFallback);
-    } else if (IsFlag(found, "bl-osr")) {
-      enable(JitSpew_BaselineOSR);
-    } else if (IsFlag(found, "bl-bails")) {
-      enable(JitSpew_BaselineBailouts);
-    } else if (IsFlag(found, "bl-dbg-osr")) {
-      enable(JitSpew_BaselineDebugModeOSR);
-    } else if (IsFlag(found, "bl-all")) {
-      enable(JitSpew_BaselineAbort);
-      enable(JitSpew_BaselineScripts);
-      enable(JitSpew_BaselineOp);
-      enable(JitSpew_BaselineIC);
-      enable(JitSpew_BaselineICFallback);
-      enable(JitSpew_BaselineOSR);
-      enable(JitSpew_BaselineBailouts);
-      enable(JitSpew_BaselineDebugModeOSR);
-    } else {
-      fprintf(stderr, "Unknown flag.\n");
-      PrintHelpAndExit(64);
+      } else if (IsFlag(found, "bl-all")) {
+        enable(JitSpew_BaselineAbort);
+        enable(JitSpew_BaselineScripts);
+        enable(JitSpew_BaselineOp);
+        enable(JitSpew_BaselineIC);
+        enable(JitSpew_BaselineICFallback);
+        enable(JitSpew_BaselineOSR);
+        enable(JitSpew_BaselineBailouts);
+        enable(JitSpew_BaselineDebugModeOSR);
+      } else {
+        fprintf(stderr, "Unknown flag.\n");
+        PrintHelpAndExit(64);
+      }
     }
     found = strtok(nullptr, ",");
   }

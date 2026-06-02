@@ -408,6 +408,24 @@ static void ParseLoggerOptions(mozilla::Range<const char> mixedCaseOpts) {
   ToLower(mixedCaseOpts.begin().get(), logOpts.get(), len);
   logOpts.get()[len] = '\0';
 
+  // "help" lists every JS_LOG module and exits.
+  if (strstr(logOpts.get(), "help")) {
+    fputs(
+        "JS_LOG modules.\n"
+        "\n"
+        "Set via MOZ_LOG=<name>:<level>,<name>:<level>,... where level is\n"
+        "1..5 (1=Error, 2=Warning, 3=Info, 4=Debug, 5=Verbose). The level may\n"
+        "be omitted, in which case Debug is used.\n"
+        "\n"
+        "Example: MOZ_LOG=IonScripts:5,LICM:5\n"
+        "\n",
+        stderr);
+#define EMIT(X, HELP) fprintf(stderr, "  %-28s %s\n", #X, HELP);
+    FOR_EACH_JS_LOG_MODULE(EMIT)
+#undef EMIT
+    exit(0);
+  }
+
   // This is a really permissive parser, but will suffice!
   for (auto& logger : logModules) {
     if (logger) {
