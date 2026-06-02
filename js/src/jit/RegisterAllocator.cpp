@@ -468,7 +468,7 @@ void AllocationIntegrityState::dump() {
 
   Vector<IntegrityItem, 20, SystemAllocPolicy> seenOrdered;
   if (!seenOrdered.appendN(IntegrityItem(), seen.count())) {
-    fprintf(stderr, "OOM while dumping allocations\n");
+    JitSpew(JitSpew_RegAlloc, "OOM while dumping allocations");
     return;
   }
 
@@ -478,16 +478,16 @@ void AllocationIntegrityState::dump() {
   }
 
   if (!seenOrdered.empty()) {
-    fprintf(stderr, "Intermediate Allocations:\n");
+    JitSpew(JitSpew_RegAlloc, "Intermediate Allocations:");
 
     for (size_t i = 0; i < seenOrdered.length(); i++) {
       IntegrityItem item = seenOrdered[i];
-      fprintf(stderr, "  block %u reg v%u alloc %s\n", item.block->mir()->id(),
-              item.vreg, item.alloc.toString().get());
+      JitSpew(JitSpew_RegAlloc, "  block %u reg v%u alloc %s",
+              item.block->mir()->id(), item.vreg, item.alloc.toString().get());
     }
   }
 
-  fprintf(stderr, "\n");
+  JitSpew(JitSpew_RegAlloc, "\n");
 #  endif
 }
 #endif  // DEBUG
