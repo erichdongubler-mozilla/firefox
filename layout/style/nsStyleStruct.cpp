@@ -3404,7 +3404,8 @@ nsStyleUIReset::nsStyleUIReset(const nsStyleUIReset& aSource)
       mViewTimelineInsetCount(aSource.mViewTimelineInsetCount),
       mViewTransitionName(aSource.mViewTransitionName),
       mViewTransitionClass(aSource.mViewTransitionClass),
-      mTimelineScope(aSource.mTimelineScope) {
+      mTimelineScope(aSource.mTimelineScope),
+      mLinkParameters(aSource.mLinkParameters) {
   MOZ_COUNT_CTOR(nsStyleUIReset);
 }
 
@@ -3451,6 +3452,10 @@ nsChangeHint nsStyleUIReset::CalcDifference(
 
   if (mViewTransitionClass.value != aNewData.mViewTransitionClass.value) {
     hint |= nsChangeHint_NeutralChange;
+  }
+
+  if (mLinkParameters != aNewData.mLinkParameters) {
+    hint |= nsChangeHint_RepaintFrame;
   }
 
   if (!hint &&
