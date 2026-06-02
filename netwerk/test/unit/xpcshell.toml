@@ -482,6 +482,8 @@ skip-if = [
 
 ["test_cache2-34-overlimit-eviction-preserves-active.js"]
 
+["test_cache2-35-racing-onCacheEntryCheck.js"]
+
 ["test_cache2_clear_with_principal.js"]
 run-sequentially = ["true"] # httpd server
 
