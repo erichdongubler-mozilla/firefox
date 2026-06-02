@@ -4,6 +4,7 @@
 
 #include "GroupInfo.h"
 
+#include "GroupInfoPair.h"
 #include "OriginInfo.h"
 #include "mozilla/dom/quota/AssertionsImpl.h"
 
@@ -20,6 +21,11 @@ SafeRefPtr<OriginInfo> GroupInfo::LockedGetOriginInfo(
   }
 
   return nullptr;
+}
+
+const nsCString& GroupInfo::GetGroup() const {
+  MOZ_ASSERT(mGroupInfoPair);
+  return mGroupInfoPair->Group();
 }
 
 void GroupInfo::LockedAddOriginInfo(
