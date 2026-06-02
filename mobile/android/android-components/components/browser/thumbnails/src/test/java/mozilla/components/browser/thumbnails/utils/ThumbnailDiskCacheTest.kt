@@ -6,7 +6,6 @@ package mozilla.components.browser.thumbnails.utils
 
 import android.graphics.Bitmap
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.jakewharton.disklrucache.DiskLruCache
 import mozilla.components.concept.base.images.ImageLoadRequest
 import mozilla.components.concept.base.images.ImageSaveRequest
 import mozilla.components.support.test.any
@@ -14,16 +13,30 @@ import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.`when`
-import java.io.IOException
+import java.io.File
 import java.io.OutputStream
 import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class ThumbnailDiskCacheTest {
+
+    @Test
+    fun `Cache files are stored under cacheDir`() {
+        val cache = ThumbnailDiskCache()
+        val request = ImageLoadRequest("123", 100, false)
+        val bitmap: Bitmap = mock()
+
+        cache.putThumbnailBitmap(testContext, ImageSaveRequest(request.id, request.isPrivate), bitmap)
+
+        val directory = File(File(testContext.cacheDir, "mozac_browser_thumbnails"), "thumbnails")
+
+        assertTrue("Cache directory should exist under cacheDir", directory.exists())
+    }
 
     @Test
     fun `Writing and reading bitmap bytes for private cache`() {
@@ -78,18 +91,5 @@ class ThumbnailDiskCacheTest {
         cache.clear(testContext)
         data = cache.getThumbnailData(testContext, request)
         assertNull(data)
-    }
-
-    @Test
-    fun `Clearing bitmap from disk catch IOException`() {
-        val cache = ThumbnailDiskCache()
-        val lruCache: DiskLruCache = mock()
-        cache.thumbnailCache = lruCache
-
-        `when`(lruCache.delete()).thenThrow(IOException("test"))
-
-        cache.clear(testContext)
-
-        assertNull(cache.thumbnailCache)
     }
 }
