@@ -4,16 +4,17 @@
 
 package org.mozilla.fenix.home.toolbar
 
-import android.view.View
+import androidx.compose.runtime.Composable
 
 /**
  * Home screen toolbar.
  */
 interface FenixHomeToolbar {
     /**
-     * The root view of the toolbar.
+     * Renders the toolbar content.
      */
-    val layout: View
+    @Composable
+    fun Content()
 
     /**
      * Setups the home screen toolbar.

@@ -38,7 +38,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.getSystemService
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -416,7 +415,6 @@ class HomeFragment : Fragment() {
         }
 
         homeNavigationBar = HomeNavigationBar(
-            context = activity,
             toolbarStore = toolbarStore,
             settings = activity.settings(),
             hideWhenKeyboardShown = true,
@@ -443,6 +441,7 @@ class HomeFragment : Fragment() {
                 (awesomeBarComposable ?: initializeAwesomeBarComposable(toolbarStore, modifier))
                     ?.SearchSuggestions()
             },
+            navigationBarContent = { homeNavigationBar?.Content() },
         )
     }
 
@@ -597,22 +596,14 @@ class HomeFragment : Fragment() {
                         .imePadding(),
                     topBar = {
                         if (isToolbarAtTop) {
-                            AndroidView(factory = { toolbarView.layout })
+                            toolbarView.Content()
                         }
                     },
                     bottomBar = {
                         if (isToolbarAtTop) {
-                            homeNavigationBar?.let { navBar ->
-                                AndroidView(factory = { navBar.layout })
-                            }
+                            homeNavigationBar?.Content()
                         } else {
-                            Column {
-                                AndroidView(factory = { toolbarView.layout })
-
-                                homeNavigationBar?.let { navBar ->
-                                    AndroidView(factory = { navBar.layout })
-                                }
-                            }
+                            toolbarView.Content()
                         }
                     },
                     containerColor = Color.Transparent,
