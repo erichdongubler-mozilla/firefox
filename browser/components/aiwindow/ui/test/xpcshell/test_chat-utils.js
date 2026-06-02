@@ -54,6 +54,7 @@ add_task(function test_parseConversationRow() {
     status: "a status",
     security_properties: '{"privateData": false, "untrustedInput": true}',
     seen_urls: '["https://example.com/page1"]',
+    serp_urls_for_anonymous_fetch: '["https://search-result.example.com/a"]',
     memories_toggled: true,
   });
 
@@ -82,6 +83,12 @@ add_task(function test_parseConversationRow() {
     soft.ok(
       conversation.seenUrls.has("https://example.com/page1"),
       "seenUrls should contain the persisted URL"
+    );
+    soft.ok(
+      conversation.serpUrlsForAnonymousFetch.has(
+        "https://search-result.example.com/a"
+      ),
+      "serpUrlsForAnonymousFetch ledger should contain the persisted URL"
     );
     soft.equal(
       conversation.memoriesToggled,

@@ -171,6 +171,22 @@ async function applyV9(conn, version) {
   await conn.execute(LLM_TELEMETRY_TABLE);
 }
 
+// Persist serp URLs to conversation table
+async function applyV10(conn, version) {
+  if (version >= 10) {
+    return;
+  }
+
+  const columns = await getColumns(conn, "conversation");
+  if (columns.has("serp_urls_for_anonymous_fetch_jsonb")) {
+    return;
+  }
+
+  await conn.execute(
+    "ALTER TABLE conversation ADD COLUMN serp_urls_for_anonymous_fetch_jsonb BLOB"
+  );
+}
+
 /**
  * Array of migration functions to run in the order they should be run in.
  *
@@ -185,4 +201,5 @@ export const migrations = [
   applyV7,
   applyV8,
   applyV9,
+  applyV10,
 ];
