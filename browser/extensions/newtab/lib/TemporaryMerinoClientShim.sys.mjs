@@ -174,6 +174,10 @@ export class TemporaryMerinoClientShim {
    *   used for accuweather's location autocomplete endpoint
    * @param {string} [options.endpointUrl]
    *   If specified, overrides the default `merinoEndpointURL` pref value.
+   * @param {string} [options.acceptLanguage]
+   *   If specified, sent as the `Accept-Language` request header so Merino
+   *   (and any upstream provider it delegates to) can return localized
+   *   results.
    * @returns {Promise<MerinoClientSuggestion[]>}
    *   The Merino suggestions or null if there's an error or unexpected
    *   response.
@@ -184,6 +188,7 @@ export class TemporaryMerinoClientShim {
     timeoutMs = lazy.UrlbarPrefs.get("merinoTimeoutMs"),
     otherParams = {},
     endpointUrl = null,
+    acceptLanguage = null,
   }) {
     this.#lazy.logger.debug("Fetch start", { query });
 
@@ -332,7 +337,10 @@ export class TemporaryMerinoClientShim {
           // `response` in the outer scope and set it here instead of returning
           // the response from this inner function and assuming it will also be
           // returned by `Promise.race`.
-          let result = await this.#fetch(url, { signal: controller.signal });
+          let result = await this.#fetch(url, {
+            signal: controller.signal,
+            acceptLanguage,
+          });
           response = result?.response;
           this.#lazy.logger.debug("Got response", {
             status: response?.status,
@@ -529,6 +537,7 @@ export class TemporaryMerinoClientShim {
       otherParams,
       timeoutMs,
       endpointUrl,
+      acceptLanguage: Services.locale.appLocaleAsBCP47,
     });
     return response?.[0] ?? null;
   }
@@ -622,7 +631,9 @@ export class TemporaryMerinoClientShim {
     }
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: { "Accept-Language": Services.locale.appLocaleAsBCP47 },
+      });
       /**
        * @type {Array<{
        *   date_time: string,
@@ -881,6 +892,8 @@ export class TemporaryMerinoClientShim {
    *   Options object.
    * @param {AbortSignal} options.signal
    *   An `AbortController.signal` for the fetch.
+   * @param {string} [options.acceptLanguage]
+   *   If set, sent as the `Accept-Language` request header.
    * @returns {Promise<?FetchResult>}
    *   The fetch result, or null if the fetch couldn't be started.
    *
@@ -890,7 +903,7 @@ export class TemporaryMerinoClientShim {
    * @property {number} elapsedMs
    *   The duration of the fetch in ms.
    */
-  async #fetch(url, { signal }) {
+  async #fetch(url, { signal, acceptLanguage }) {
     let configUrl;
     let relayUrl;
     if (this.#allowOhttp) {
@@ -900,10 +913,12 @@ export class TemporaryMerinoClientShim {
 
     let useOhttp = configUrl && relayUrl;
 
+    let headers = acceptLanguage ? { "Accept-Language": acceptLanguage } : {};
+
     let response;
     let startMs = ChromeUtils.now();
     if (!useOhttp) {
-      response = await fetch(url, { signal });
+      response = await fetch(url, { signal, headers });
     } else {
       let config = await lazy.ObliviousHTTP.getOHTTPConfig(configUrl);
       if (!config) {
@@ -914,7 +929,7 @@ export class TemporaryMerinoClientShim {
       this.#lazy.logger.debug("Sending request using OHTTP", { url });
       response = await lazy.ObliviousHTTP.ohttpRequest(relayUrl, config, url, {
         signal,
-        headers: {},
+        headers,
       });
     }
 
