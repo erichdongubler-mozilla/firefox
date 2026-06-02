@@ -321,6 +321,21 @@ class TabsTrayTelemetryMiddlewareTest {
         assertNotNull(TabsTray.tabGroupDeleted.testGetValue())
     }
 
+    @Test
+    fun `WHEN closing the last tab and deleting the group is confirmed THEN the deletion metric is reported`() {
+        assertNull(TabsTray.tabGroupDeleted.testGetValue())
+
+        val mockGroup = TabsTrayItem.TabGroup(
+            id = "test group",
+            title = "Test",
+            theme = TabGroupTheme.default,
+            tabs = mutableListOf(),
+        )
+        store.dispatch(TabGroupAction.CloseTabAndDeleteGroupConfirmed(mockGroup))
+
+        assertNotNull(TabsTray.tabGroupDeleted.testGetValue())
+    }
+
     /**
      * [TabsTray.tabAddedToGroup] coverage
      */

@@ -167,7 +167,9 @@ class TabsTrayTelemetryMiddleware(
                 }
             }
 
-            is TabGroupAction.DeleteConfirmed -> {
+            is TabGroupAction.DeleteConfirmed,
+            is TabGroupAction.CloseTabAndDeleteGroupConfirmed,
+                 -> {
                 TabsTray.tabGroupDeleted.record(NoExtras())
             }
 
