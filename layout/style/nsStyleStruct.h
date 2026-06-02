@@ -2186,6 +2186,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset {
   mozilla::StyleViewTransitionClass mViewTransitionClass;
 
   mozilla::StyleScopedName mTimelineScope;
+
+  mozilla::StyleLinkParameters mLinkParameters;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUI {
