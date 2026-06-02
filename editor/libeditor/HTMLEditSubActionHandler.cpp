@@ -1034,6 +1034,13 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
     uint32_t start = editContext->SelectionStart();
     uint32_t end = editContext->SelectionEnd();
     editContext->UpdateTextAndFireEvent(start, end, aInsertionString);
+    if (NS_WARN_IF(Destroyed())) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (editContext != GetEditContext()) {
+      // textupdate handler deactivated this EditContext
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    }
     return EditActionResult::HandledResult();
   }
 

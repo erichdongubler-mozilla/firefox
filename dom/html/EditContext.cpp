@@ -115,6 +115,7 @@ EditContext::EditContext(nsIGlobalObject* aGlobalObject,
   RefPtr<Element> textContainer =
       document->CreateElem(u"div"_ns, nullptr, kNameSpaceID_XHTML);
   if (NS_WARN_IF(!textContainer)) {
+    aRv.Throw(NS_ERROR_FAILURE);
     return;
   }
   mTextContainer = nsGenericHTMLElement::FromNode(textContainer);

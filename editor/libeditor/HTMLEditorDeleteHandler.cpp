@@ -27,9 +27,11 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/OwningNonNull.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/SelectionState.h"
 #include "mozilla/StaticPrefs_editor.h"  // for StaticPrefs::editor_*
 #include "mozilla/dom/AncestorIterator.h"
+#include "mozilla/dom/EditContext.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"  // for Element::IsContentEditablePlainTextOnly
 #include "mozilla/dom/HTMLBRElement.h"
@@ -48,6 +50,7 @@
 #include "nsStringFwd.h"
 #include "nsStyleConsts.h"  // for StyleWhiteSpace
 #include "nsTArray.h"
+#include "nsTextNode.h"
 
 // NOTE: This file was split from:
 //   https://searchfox.org/mozilla-central/rev/c409dd9235c133ab41eba635f906aa16e050c197/editor/libeditor/HTMLEditSubActionHandler.cpp
@@ -520,6 +523,76 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleDeleteSelection(
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(aStripWrappers == nsIEditor::eStrip ||
              aStripWrappers == nsIEditor::eNoStrip);
+
+  if (RefPtr<EditContext> editContext = GetEditContext()) {
+    MOZ_ASSERT(
+        GetTopLevelEditSubAction() == EditSubAction::eDeleteSelectedContent,
+        "Should not reach here if deletion is for preparing to insert text.");
+    // https://github.com/w3c/edit-context/issues/88
+    uint32_t selectionStart =
+        std::min(editContext->SelectionStart(),
+                 static_cast<uint32_t>(editContext->TextLength()));
+    uint32_t selectionEnd =
+        std::min(editContext->SelectionEnd(),
+                 static_cast<uint32_t>(editContext->TextLength()));
+    if (selectionStart != selectionEnd) {
+      // Selection is not collapsed, so we just delete it
+      editContext->UpdateTextAndFireEvent(selectionStart, selectionEnd, u""_ns);
+      if (NS_WARN_IF(Destroyed())) {
+        return Err(NS_ERROR_EDITOR_DESTROYED);
+      }
+      if (editContext != GetEditContext()) {
+        // textupdate handler deactivated this EditContext
+        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+      }
+      return EditActionResult::HandledResult();
+    }
+    RefPtr<PresShell> presShell = GetPresShell();
+    if (NS_WARN_IF(!presShell)) {
+      return Err(NS_ERROR_FAILURE);
+    }
+    // Do reflow now to ensure text frame is up to date.
+    presShell->FlushPendingNotifications(FlushType::Layout);
+    if (NS_WARN_IF(Destroyed())) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (NS_WARN_IF(editContext != GetEditContext())) {
+      // EditContext was deactivated by reflow
+      return Err(NS_ERROR_FAILURE);
+    }
+    RefPtr<nsTextNode> text = &editContext->TextNode();
+    if (NS_WARN_IF(!text->GetPrimaryFrame())) {
+      // If text node hasn't been framed yet, ExtendAnchorFocusRangeFor won't
+      // work.
+      return Err(NS_ERROR_FAILURE);
+    }
+    AutoDeleteRangesHandler deleteHandler;
+    EditorDOMPoint point;
+    point.Set(text, selectionStart);
+    LimitersAndCaretData limitersAndCaretData;
+    limitersAndCaretData.mAncestorLimiter = text->GetParentElement();
+    AutoClonedSelectionRangeArray rangeArray(point, limitersAndCaretData);
+    RefPtr<Element> textContainer = &editContext->TextContainer();
+    nsresult rv = deleteHandler.ComputeRangesToDelete(
+        *this, aDirectionAndAmount, rangeArray, *textContainer);
+    NS_ENSURE_SUCCESS(rv, Err(rv));
+    EditorDOMPoint deletionStart =
+        rangeArray.GetFirstRangeStartPoint<EditorDOMPoint>();
+    EditorDOMPoint deletionEnd =
+        rangeArray.GetFirstRangeEndPoint<EditorDOMPoint>();
+    MOZ_ASSERT(deletionStart.GetContainer() == text);
+    MOZ_ASSERT(deletionEnd.GetContainer() == text);
+    editContext->UpdateTextAndFireEvent(deletionStart.Offset(),
+                                        deletionEnd.Offset(), u""_ns);
+    if (NS_WARN_IF(Destroyed())) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (editContext != GetEditContext()) {
+      // textupdate handler deactivated this EditContext
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    }
+    return EditActionResult::HandledResult();
+  }
 
   if (MOZ_UNLIKELY(!SelectionRef().RangeCount())) {
     return Err(NS_ERROR_EDITOR_NO_EDITABLE_RANGE);

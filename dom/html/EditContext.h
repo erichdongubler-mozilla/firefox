@@ -57,6 +57,10 @@ class EditContext final : public DOMEventTargetHelper {
     mAssociatedElement = aElement;
   }
 
+  // Anonymous <div> element that holds the text being edited.
+  nsGenericHTMLElement& TextContainer() { return *mTextContainer; }
+  nsTextNode& TextNode() { return *mText; }
+
   // https://w3c.github.io/edit-context/#dfn-deactivate-an-editcontext
   MOZ_CAN_RUN_SCRIPT void Deactivate();
 

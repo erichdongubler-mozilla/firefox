@@ -7343,7 +7343,16 @@ Element* HTMLEditor::ComputeEditingHostInternal(
   // shouldn't touch native anonymous subtree so that return nullptr in such
   // case.
   if (MOZ_UNLIKELY(content->IsInNativeAnonymousSubtree())) {
-    return nullptr;
+    bool isInEditContextSubtree = false;
+    if (EditContext* editContext = document->GetActiveEditContext()) {
+      // If content is inside the EditContext anonymous subtree,
+      // then we don't want to return null here.
+      isInEditContextSubtree = content == &editContext->TextContainer() ||
+                               content == &editContext->TextNode();
+    }
+    if (!isInEditContextSubtree) {
+      return nullptr;
+    }
   }
 
   // Note that `Selection` can be in <input> or <textarea>.  In the case, we
