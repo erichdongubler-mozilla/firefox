@@ -985,12 +985,6 @@ export let ProfileDataUpgrader = {
       Services.prefs.clearUserPref("widget.macos.native-anchored-select");
     }
 
-    // Updating from 170 to 171 to trigger re-migrations of the Rusts store.
-    if (existingDataVersion < 171) {
-      // Force all logins to be re-migrated to the rust store.
-      Services.prefs.setBoolPref("signon.rustMirror.migrationNeeded", true);
-    }
-
     if (existingDataVersion < 172) {
       if (Services.prefs.getBoolPref("browser.smartwindow.enabled", false)) {
         Services.prefs.setBoolPref(
@@ -1020,6 +1014,12 @@ export let ProfileDataUpgrader = {
           continue;
         }
       }
+    }
+
+    // 170 and 171 were updated to 175 to retrigger the migrations of the Rusts store.
+    if (existingDataVersion < 175) {
+      // Force all logins to be re-migrated to the rust store.
+      Services.prefs.setBoolPref("signon.rustMirror.migrationNeeded", true);
     }
 
     // Update the migration version.
