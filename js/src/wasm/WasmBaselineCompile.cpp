@@ -6816,7 +6816,8 @@ bool BaseCompiler::emitMemCopy() {
     return true;
   }
 
-  if (dstMemIndex == 0 && srcMemIndex == 0 && isMem32(dstMemIndex)) {
+  if (dstMemIndex == 0 && srcMemIndex == 0 && isMem32(dstMemIndex) &&
+      codeMeta_.memories[srcMemIndex].pageSize() == PageSize::Standard) {
     int32_t signedLength;
     if (peekConst(&signedLength) && signedLength != 0 &&
         uint32_t(signedLength) <= MaxInlineMemoryCopyLength) {
