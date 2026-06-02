@@ -1510,8 +1510,8 @@ var gProtectionsHandler = {
     },
     {
       matchPatterns: ["https://www.tiktok.com/*"],
-      shimId: "TiktokEmbed",
-      displayName: "Tiktok",
+      shimId: "TikTokEmbed",
+      displayName: "TikTok",
     },
     {
       matchPatterns: ["https://platform.twitter.com/*"],

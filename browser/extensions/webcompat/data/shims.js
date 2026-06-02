@@ -905,9 +905,9 @@ const AVAILABLE_SHIMS = [
     ],
   },
   {
-    id: "TiktokEmbed",
+    id: "TikTokEmbed",
     platform: "desktop",
-    name: "Tiktok embed placeholder",
+    name: "TikTok embed placeholder",
     bug: "1892172",
     runFirst: "tiktok-embed.js",
     // Blank stub file just so we run the script above when the matched script
