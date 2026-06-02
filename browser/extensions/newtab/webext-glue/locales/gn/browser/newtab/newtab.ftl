@@ -370,6 +370,8 @@ newtab-custom-widget-sports-toggle =
     .label = Copa del Mundo
 newtab-custom-widget-clock-toggle =
     .label = Aravopapaha
+newtab-custom-widget-sports-toggle2 =
+    .label = Tetemongu’e
 newtab-custom-widget-section-title = Widgets
 newtab-custom-widget-section-toggle =
     .label = Widgets
@@ -824,6 +826,14 @@ newtab-widget-section-menu-manage = Eñangareko widgets
 newtab-widget-section-menu-hide-all = Eñomi widgets
 newtab-widget-section-menu-learn-more = Eikuaave
 newtab-widget-section-feedback = Ja’e mba’épa opensa
+# Button shown when additional widgets are hidden beyond the
+# first row, allowing users to show them.
+newtab-widget-section-show-more =
+    .label = Ehechaukave widgets
+# Button shown when the widgets row is expanded to multiple rows,
+# allowing users to collapse it back to one row.
+newtab-widget-section-show-less =
+    .label = Ehechauka’ive widgets
 newtab-widget-lists-name-default = Tysýi hechajeyha
 
 ## Strings introduced by the Nova redesign of the Timer widget
@@ -1041,6 +1051,8 @@ newtab-sports-widget-world-cup-champions = Copa Mundial 2026 oganáva
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
 newtab-sports-widget-match-full-time = Partído opámava
+newtab-sports-widget-match-halftime = Jepytu’u
+newtab-sports-widget-match-extra-time = Aravo’i juapyvegua
 newtab-sports-widget-match-penalties = Penal jechuta
 
 ## Accessible labels for match rows in the sports widget. These are read by

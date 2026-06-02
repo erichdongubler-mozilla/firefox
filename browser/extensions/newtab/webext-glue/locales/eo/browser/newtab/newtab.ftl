@@ -367,6 +367,8 @@ newtab-custom-widget-sports-toggle =
     .label = Piedpilka mondpokalo
 newtab-custom-widget-clock-toggle =
     .label = Horloĝo
+newtab-custom-widget-sports-toggle2 =
+    .label = Sporto
 newtab-custom-widget-section-title = Komponantoj
 newtab-custom-widget-section-toggle =
     .label = Komponantoj
@@ -762,6 +764,9 @@ newtab-widget-lists-input-menu-delete = Forigi
 newtab-widget-lists-input-menu-edit = Modifi
 newtab-widget-lists-input-menu-edit2 =
     .aria-label = Modifi elementon
+newtab-widget-lists-edit-clear =
+    .aria-label = Nuligi
+    .title = Nuligi
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
     .label = + Krei novan liston
@@ -786,6 +791,15 @@ newtab-widget-lists-name-placeholder-new =
 newtab-widget-section-title = Komponantoj
 newtab-widget-menu-hide = Kaŝi komponanton
 newtab-widget-menu-change-size = Ŝanĝi grandon
+# Parent label for a submenu in the widget menu that reorders the widget
+# among its siblings. "Left" and "Right" appear as items inside this submenu.
+newtab-widget-menu-move = Movi
+# Submenu item under "Move"; moves the widget one position to the left.
+# RTL locales should translate this as "Right".
+newtab-widget-menu-move-left = Maldekstren
+# Submenu item under "Move"; moves the widget one position to the right.
+# RTL locales should translate this as "Left".
+newtab-widget-menu-move-right = Dekstren
 newtab-widget-size-small = Eta
 newtab-widget-size-medium = Mezgranda
 newtab-widget-size-large = Granda
@@ -802,6 +816,9 @@ newtab-widget-section-minimize =
 newtab-widget-section-menu-button =
     .title = Menuo de komponantoj
     .aria-label = Malfermi menuon de komponantoj
+newtab-widget-add-widgets-button =
+    .aria-label = Aldoni komponanton
+    .title = Aldoni komponanton
 newtab-widget-section-menu-manage = Administri komponantojn
 newtab-widget-section-menu-hide-all = Kaŝi komponantojn
 newtab-widget-section-menu-learn-more = Pli da informo
@@ -840,6 +857,8 @@ newtab-daily-briefing-card-timestamp =
 newtab-widget-message-title = Resti koncentrita danke al listoj kaj integrita tempumilo
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Rapidaj memorigaĵoj, ĉiutagaj farendaĵoj, koncentriĝaj seancoj kaj ripozaj paŭzoj — akurate plenumu taskojn.
+# One spot refers to a dedicated section on new tab to manage and use widgets
+newtab-widget-message-focus-forecasts-title = Koncentriĝo, veterprognozoj kaj pli, en unu loko
 # "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
 # is to customize the new tab page with a background image or color from
 # the built-in wallpaper collection or uploading your own image.
@@ -929,6 +948,18 @@ newtab-sports-widget-cancel = Nuligi
 newtab-sports-widget-done-button =
     .label = Farita
 newtab-sports-widget-group-stage = Grupa fazo
+newtab-sports-widget-group-a = Grupo A
+newtab-sports-widget-group-b = Grupo B
+newtab-sports-widget-group-c = Grupo C
+newtab-sports-widget-group-d = Grupo D
+newtab-sports-widget-group-e = Grupo E
+newtab-sports-widget-group-f = Grupo F
+newtab-sports-widget-group-g = Grupo G
+newtab-sports-widget-group-h = Grupo H
+newtab-sports-widget-group-i = Grupo I
+newtab-sports-widget-group-j = Grupo J
+newtab-sports-widget-group-k = Grupo K
+newtab-sports-widget-group-l = Grupo L
 newtab-sports-widget-round-32 = Rondo de 32
 newtab-sports-widget-round-16 = Rondo de 16
 newtab-sports-widget-quarter-finals = Kvaronfinaloj
@@ -964,6 +995,76 @@ newtab-sports-widget-third-place = Tria loko
 newtab-sports-widget-runner-up = Dua loko
 newtab-sports-widget-champions = Ĉampionoj
 newtab-sports-widget-world-cup-champions = Ĉampionoj de la piedpilka mondpokalo 2026
+# Variables:
+#   $date (Date) - The match start time
+newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
+newtab-sports-widget-match-full-time = Ludo finita
+newtab-sports-widget-match-penalties = Penaloj
+
+## Accessible labels for match rows in the sports widget. These are read by
+## screen readers to announce the match details and status.
+## Variables shared by all messages in this group:
+##   $homeTeam (String) - The full name of the home team (e.g. "Mexico")
+##   $awayTeam (String) - The full name of the away team (e.g. "Russia")
+
+# A finished match row (regular full-time result).
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+newtab-sports-widget-match-aria-label-results =
+    .aria-label = { $homeTeam }, { $homeScore } kontraŭ { $awayTeam }, { $awayScore }
+# A finished match row that went to a penalty shootout.
+# Parenthesized values are the shootout score.
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+#   $homePenalty (number) - The home team's penalty shootout score
+#   $awayPenalty (number) - The away team's penalty shootout score
+newtab-sports-widget-match-aria-label-results-penalties =
+    .aria-label = { $homeTeam }, { $homeScore } ({ $homePenalty }) kontraŭ { $awayTeam }, { $awayScore } ({ $awayPenalty })
+# A match that is currently in progress.
+# Variables:
+#   $homeScore (number) - The home team's current score
+#   $awayScore (number) - The away team's current score
+newtab-sports-widget-match-aria-label-now =
+    .aria-label = Rekte: { $homeTeam }, { $homeScore } kontraŭ { $awayTeam }, { $awayScore }
+# An upcoming scheduled match row. Announces kickoff time and date.
+# Variables:
+#   $date (Date) - The scheduled kickoff date/time
+newtab-sports-widget-match-aria-label-upcoming =
+    .aria-label = { $homeTeam } kontraŭ { $awayTeam }, { DATETIME($date, hour: "numeric", minute: "numeric") }, { DATETIME($date, day: "numeric", month: "long") }
+# An upcoming match row whose status is "delayed".
+newtab-sports-widget-match-aria-label-upcoming-delayed =
+    .aria-label = { $homeTeam } kontraŭ { $awayTeam }, malfruigita
+# An upcoming match row whose status is "postponed".
+newtab-sports-widget-match-aria-label-upcoming-postponed =
+    .aria-label = { $homeTeam } kontraŭ { $awayTeam }, prokrastita
+# An upcoming match row whose status is "suspended".
+newtab-sports-widget-match-aria-label-upcoming-suspended =
+    .aria-label = { $homeTeam } kontraŭ { $awayTeam }, haltigita
+# An upcoming match row whose status is "cancelled".
+newtab-sports-widget-match-aria-label-upcoming-cancelled =
+    .aria-label = { $homeTeam } kontraŭ { $awayTeam }, nuligita
+
+## Sports widget — team names (FIFA country codes)
+## Only includes names not adequately covered by standard country-code
+## internationalization tooling.
+
+newtab-sports-widget-team-name-label-bih =
+    .label = Bosnujo and Hercegovino
+newtab-sports-widget-team-name-label-civ =
+    .label = Eburbordo
+newtab-sports-widget-team-name-label-cod =
+    .label = Demokratia Respubliko Kongo
+newtab-sports-widget-team-name-label-eng =
+    .label = Anglio
+newtab-sports-widget-team-name-label-sco =
+    .label = Skotlando
+
+## Sports widget OMC messages
+## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
+
+newtab-sports-widget-message-wallpapers-title = Komencu la mondpokalon kun novaj ekranfonoj
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
@@ -1025,6 +1126,19 @@ newtab-clock-widget-button-save = Konservi
 newtab-clock-widget-button-remove-clock =
     .title = Forigi horloĝon
     .aria-label = Forigi horloĝon
+# Accessible name for a clock row in the "Your clocks" management panel
+# when the row has no user-provided nickname. Read aloud by screen
+# readers when focus lands on the row.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+newtab-clock-widget-edit-item =
+    .aria-label = { $city }
+# Accessible name for a clock row when a user nickname has been set.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+#   $nickname (string) - The user-provided nickname for the row.
+newtab-clock-widget-edit-item-with-nickname =
+    .aria-label = { $city }, kromnomo: { $nickname }
 newtab-clock-widget-add-clock-form =
     .aria-label = Aldoni horloĝon
 newtab-clock-widget-edit-clock-form =
@@ -1034,6 +1148,10 @@ newtab-clock-widget-edit-clock-form =
 # It means "results of the search", not "search within the results".
 newtab-clock-widget-search-results =
     .aria-label = Rezulto de serĉo
+# Shown in place of the search results when the user's query does not match any
+# supported city — e.g. typing a misspelled name or a place not in the IANA
+# time zone list.
+newtab-clock-widget-search-no-results = Neniu kongruo
 # "Open menu for clock" is an icon-only button in the widget toolbar — the
 # attributes are consumed as tooltip/screen-reader label only. The button
 # never renders visible text.

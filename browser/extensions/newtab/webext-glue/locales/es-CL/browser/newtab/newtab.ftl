@@ -823,6 +823,14 @@ newtab-widget-section-menu-manage = Gestionar widgets
 newtab-widget-section-menu-hide-all = Ocultar widgets
 newtab-widget-section-menu-learn-more = Aprender más
 newtab-widget-section-feedback = Cuéntanos lo que piensas
+# Button shown when additional widgets are hidden beyond the
+# first row, allowing users to show them.
+newtab-widget-section-show-more =
+    .label = Mostrar más widgets
+# Button shown when the widgets row is expanded to multiple rows,
+# allowing users to collapse it back to one row.
+newtab-widget-section-show-less =
+    .label = Mostrar menos widgets
 newtab-widget-lists-name-default = Lista de verificación
 
 ## Strings introduced by the Nova redesign of the Timer widget
@@ -980,7 +988,7 @@ newtab-sports-widget-watch-stream-paid = De pago
 # Note: provider only streams some matches, not the full tournament.
 newtab-sports-widget-watch-stream-select-games-only = Solo partidos seleccionados
 # Heading for the list of streaming services available in the user’s country/region.
-newtab-sports-widget-watch-available-region = Disponible en tu región.
+newtab-sports-widget-watch-available-region = Disponible en tu región
 # Heading for the list of streaming services available outside the user’s country/region.
 newtab-sports-widget-watch-available-other-regions = Otras regiones
 # Button that opens the provider’s stream page in a new tab.
@@ -1041,6 +1049,8 @@ newtab-sports-widget-world-cup-champions = Campeones de la Copa Mundial 2026
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
 newtab-sports-widget-match-full-time = Partido completo
+newtab-sports-widget-match-halftime = Medio tiempo
+newtab-sports-widget-match-extra-time = Tiempo extra
 newtab-sports-widget-match-penalties = Penales
 
 ## Accessible labels for match rows in the sports widget. These are read by

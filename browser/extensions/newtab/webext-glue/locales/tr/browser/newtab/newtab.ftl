@@ -1040,6 +1040,8 @@ newtab-sports-widget-world-cup-champions = 2026 Dünya Kupası Şampiyonu
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
 newtab-sports-widget-match-full-time = Maç sonu
+newtab-sports-widget-match-halftime = Devre arası
+newtab-sports-widget-match-extra-time = Uzatmalar
 newtab-sports-widget-match-penalties = Penaltılar
 
 ## Accessible labels for match rows in the sports widget. These are read by
@@ -1106,6 +1108,11 @@ newtab-sports-widget-team-name-label-sco =
 ## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
 
 newtab-sports-widget-message-wallpapers-title = Dünya Kupası’na yeni duvar kâğıtlarıyla başlayın
+newtab-sports-widget-message-wallpapers-cta = Duvar kâğıdı seçin
+newtab-sports-widget-message-add-widgets-cta =
+    .label = Araç ekleyin
+newtab-sports-widget-message-explore-widgets-cta =
+    .label = Araçları keşfedin
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
@@ -1167,6 +1174,13 @@ newtab-clock-widget-button-save = Kaydet
 newtab-clock-widget-button-remove-clock =
     .title = Saati sil
     .aria-label = Saati sil
+# Accessible name for a clock row in the "Your clocks" management panel
+# when the row has no user-provided nickname. Read aloud by screen
+# readers when focus lands on the row.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+newtab-clock-widget-edit-item =
+    .aria-label = { $city }
 newtab-clock-widget-add-clock-form =
     .aria-label = Saat ekle
 newtab-clock-widget-edit-clock-form =

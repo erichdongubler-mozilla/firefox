@@ -369,6 +369,8 @@ newtab-custom-widget-sports-toggle =
     .label = World Cup
 newtab-custom-widget-clock-toggle =
     .label = Đồng hồ
+newtab-custom-widget-sports-toggle2 =
+    .label = Thể thao
 newtab-custom-widget-section-title = Widget
 newtab-custom-widget-section-toggle =
     .label = Widget
@@ -823,6 +825,14 @@ newtab-widget-section-menu-manage = Quản lý widget
 newtab-widget-section-menu-hide-all = Ẩn widget
 newtab-widget-section-menu-learn-more = Tìm hiểu thêm
 newtab-widget-section-feedback = Hãy cho chúng tôi biết suy nghĩ của bạn
+# Button shown when additional widgets are hidden beyond the
+# first row, allowing users to show them.
+newtab-widget-section-show-more =
+    .label = Hiện thêm widget
+# Button shown when the widgets row is expanded to multiple rows,
+# allowing users to collapse it back to one row.
+newtab-widget-section-show-less =
+    .label = Hiện ích widget hơn
 newtab-widget-lists-name-default = Danh sách việc cần làm
 
 ## Strings introduced by the Nova redesign of the Timer widget
@@ -1032,6 +1042,8 @@ newtab-sports-widget-world-cup-champions = Nhà vô địch World Cup 2026
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
 newtab-sports-widget-match-full-time = Hết giờ
+newtab-sports-widget-match-halftime = Nghỉ giữa hiệp
+newtab-sports-widget-match-extra-time = Hiệp phụ
 newtab-sports-widget-match-penalties = Luân lưu
 
 ## Accessible labels for match rows in the sports widget. These are read by

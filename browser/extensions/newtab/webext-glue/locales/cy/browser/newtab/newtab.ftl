@@ -263,18 +263,18 @@ newtab-empty-section-highlights = Cychwynnwch bori ac fe ddangoswn rhai erthygla
 # Ex. When there are no more Pocket story recommendations, in the space where there would have been stories, this is shown instead.
 # Variables:
 #   $provider (string) - Name of the content provider for this section, e.g "Pocket".
-newtab-empty-section-topstories = Rydych wedi dal i fynDewch nôl rhywbryd eto am fwy o'r straeon pwysicaf gan { $provider }. Methu aros? Dewiswch bwnc poblogaidd i ganfod straeon da o ar draws y we.
+newtab-empty-section-topstories = Rydych yn gyfredol. Dewch nôl rhywbryd eto am fwy o'r straeon pwysicaf gan { $provider }. Methu aros? Dewiswch bwnc poblogaidd i ganfod straeon da ar draws y we.
 # Ex. When there are no more story recommendations, in the space where there would have been stories, this is shown instead.
 newtab-empty-section-topstories-generic = Rydych yn gyfredol. Dewch nôl yn ddiweddarach am fwy o straeon. Methu aros? Dewiswch bwnc poblogaidd i ganfod rhagor o straeon difyr o bob rhan o'r we.
 
 ## Empty Section (Content Discovery Experience). These show when there are no more stories or when some stories fail to load.
 
-newtab-discovery-empty-section-topstories-header = Wedi dal i fyny!
+newtab-discovery-empty-section-topstories-header = Rydych yn gyfredol!
 newtab-discovery-empty-section-topstories-content = Dewch nôl eto am ragor o straeon.
 newtab-discovery-empty-section-topstories-try-again-button = Ceisiwch eto
 newtab-discovery-empty-section-topstories-loading = Yn llwytho…
 # Displays when a layout in a section took too long to fetch articles.
-newtab-discovery-empty-section-topstories-timed-out = Wps! Bron a lwytho'r adran hon, ond nid yn llwyr.
+newtab-discovery-empty-section-topstories-timed-out = Wps! Bron a llwytho'r adran hon, ond nid yn llwyr.
 
 ## Pocket Content Section.
 
@@ -380,6 +380,8 @@ newtab-custom-widget-sports-toggle =
     .label = Cwpan y Byd
 newtab-custom-widget-clock-toggle =
     .label = Cloc
+newtab-custom-widget-sports-toggle2 =
+    .label = Chwaraeon
 newtab-custom-widget-section-title = Teclynnau
 newtab-custom-widget-section-toggle =
     .label = Teclynnau
@@ -775,6 +777,9 @@ newtab-widget-lists-input-menu-delete = Dileu
 newtab-widget-lists-input-menu-edit = Golygu
 newtab-widget-lists-input-menu-edit2 =
     .aria-label = Golygu eitem
+newtab-widget-lists-edit-clear =
+    .aria-label = Diddymu
+    .title = Diddymu
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
     .label = + Creu rhestr newydd
@@ -831,6 +836,14 @@ newtab-widget-section-menu-manage = Rheoli teclynnau
 newtab-widget-section-menu-hide-all = Cuddio teclynnau
 newtab-widget-section-menu-learn-more = Dysgu rhagor
 newtab-widget-section-feedback = Dywedwch wrthym beth yw eich barn
+# Button shown when additional widgets are hidden beyond the
+# first row, allowing users to show them.
+newtab-widget-section-show-more =
+    .label = Dangos rhagor o declynnau
+# Button shown when the widgets row is expanded to multiple rows,
+# allowing users to collapse it back to one row.
+newtab-widget-section-show-less =
+    .label = Dangos llai o declynnau
 newtab-widget-lists-name-default = Rhestr wirio
 
 ## Strings introduced by the Nova redesign of the Timer widget
@@ -861,6 +874,9 @@ newtab-daily-briefing-card-timestamp = Diweddarwyd { $minutes }m yn ôl
 newtab-widget-message-title = Canolbwyntio gyda rhestrau a'r amserydd mewnol
 # to-dos stands for "things to do".
 newtab-widget-message-copy = O negeseuon atgoffa cyflym i dasgau bob dydd, sesiynau canolbwyntio i egwyliau ymarfer corff — cadwch i'r dasg ac amser.
+# One spot refers to a dedicated section on new tab to manage and use widgets
+newtab-widget-message-focus-forecasts-title = Un man ar gyfer canolbwynt, rhagolygon, a mwy
+newtab-widget-message-focus-forecasts-body = Cadwch eich diwrnod i lifo gyda theclynnau { -brand-product-name }. Gwiriwch y rhagolwg, cadw ar dasg, neu ddilyn amser ledled y byd.
 # "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
 # is to customize the new tab page with a background image or color from
 # the built-in wallpaper collection or uploading your own image.
@@ -964,7 +980,59 @@ newtab-sports-widget-back-button =
     .aria-label = Nôl
 newtab-sports-widget-done-button =
     .label = Gorffen
+# Shown in the follow-teams list for a team that has been knocked out of the tournament.
+# Variables:
+#   $teamName (string) - the localized team name (e.g. "Canada").
+newtab-sports-widget-team-name-eliminated = { $teamName } ( wedi'i fwrw allan)
+newtab-sports-widget-view-all =
+    .label = Gweld y cyfan
+newtab-sports-widget-show-less =
+    .label = Dangos llai
+# Toggle that filters the list of teams the user follows
+newtab-sports-widget-followed-only-toggle =
+    .label = Dim ond timau sy'n cael eu dilyn
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch =
+    .label = Gwylio
+    .title = Gwylio'n fyw
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch-icon =
+    .aria-label = Gwylio'n fyw
+    .title = Gwylio'n fyw
+newtab-sports-widget-watch-dialog-close =
+    .aria-label = Cau
+    .title = Cau
+# Tag: user can watch without paying (sign-in may still be required).
+newtab-sports-widget-watch-stream-free = Am Ddim
+# Tag: user can start watching via a trial; continued access may require payment after it ends.
+newtab-sports-widget-watch-stream-free-trial = Profi am ddim
+# Tag: provider offers both a no-cost or trial path and a paid path.
+newtab-sports-widget-watch-stream-free-paid = Am ddim ac am dâl
+# Tag: user must pay to watch (subscription, TV provider, premium plan, or add-on).
+newtab-sports-widget-watch-stream-paid = Am dâl
+# Note: provider only streams some matches, not the full tournament.
+newtab-sports-widget-watch-stream-select-games-only = Dim ond gemau penodol
+# Heading for the list of streaming services available in the user’s country/region.
+newtab-sports-widget-watch-available-region = Ar gael yn eich ardal
+# Heading for the list of streaming services available outside the user’s country/region.
+newtab-sports-widget-watch-available-other-regions = Ardaloedd eraill
+# Button that opens the provider’s stream page in a new tab.
+newtab-sports-widget-watch-play =
+    .aria-label = Agor ffrwd
+    .title = Agor ffrwd
 newtab-sports-widget-group-stage = Cymal Grŵp
+newtab-sports-widget-group-a = Grŵp A
+newtab-sports-widget-group-b = Grŵp B
+newtab-sports-widget-group-c = Grŵp C
+newtab-sports-widget-group-d = Grŵp D
+newtab-sports-widget-group-e = Grŵp E
+newtab-sports-widget-group-f = Grŵp F
+newtab-sports-widget-group-g = Grŵp G
+newtab-sports-widget-group-h = Grŵp H
+newtab-sports-widget-group-i = Grŵp I
+newtab-sports-widget-group-j = Grŵp J
+newtab-sports-widget-group-k = Grŵp K
+newtab-sports-widget-group-l = Grŵp L
 newtab-sports-widget-round-32 = Rownd o 32
 newtab-sports-widget-round-16 = Rownd o 16
 newtab-sports-widget-quarter-finals = Chwarteri
@@ -1002,6 +1070,86 @@ newtab-sports-widget-third-place = Yn Drydydd
 newtab-sports-widget-runner-up = Yn Ail
 newtab-sports-widget-champions = Pencampwyr
 newtab-sports-widget-world-cup-champions = Pencampwyr Cwpan y Byd 2026
+# Variables:
+#   $date (Date) - The match start time
+newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
+newtab-sports-widget-match-full-time = Amser llawn
+newtab-sports-widget-match-halftime = Hanner amser
+newtab-sports-widget-match-extra-time = Amser ychwanegol
+newtab-sports-widget-match-penalties = Ciciau cosb
+
+## Accessible labels for match rows in the sports widget. These are read by
+## screen readers to announce the match details and status.
+## Variables shared by all messages in this group:
+##   $homeTeam (String) - The full name of the home team (e.g. "Mexico")
+##   $awayTeam (String) - The full name of the away team (e.g. "Russia")
+
+# A finished match row (regular full-time result).
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+newtab-sports-widget-match-aria-label-results =
+    .aria-label = { $homeTeam } , { $homeScore } yn erbyn { $awayTeam } , { $awayScore }
+# A finished match row that went to a penalty shootout.
+# Parenthesized values are the shootout score.
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+#   $homePenalty (number) - The home team's penalty shootout score
+#   $awayPenalty (number) - The away team's penalty shootout score
+newtab-sports-widget-match-aria-label-results-penalties =
+    .aria-label = { $homeTeam } , { $homeScore } ( { $homePenalty }) yn erbyn { $awayTeam }, { $awayScore } ( { $awayPenalty })
+# A match that is currently in progress.
+# Variables:
+#   $homeScore (number) - The home team's current score
+#   $awayScore (number) - The away team's current score
+newtab-sports-widget-match-aria-label-now =
+    .aria-label = Yn fyw: { $homeTeam } , { $homeScore } yn erbyn { $awayTeam }, { $awayScore }
+# An upcoming scheduled match row. Announces kickoff time and date.
+# Variables:
+#   $date (Date) - The scheduled kickoff date/time
+newtab-sports-widget-match-aria-label-upcoming =
+    .aria-label = { $homeTeam } yn erbyn { $awayTeam }, { DATETIME($date, hour: "numeric", minute: "numeric") }, { DATETIME($date, day: "numeric", month: "long") }
+# An upcoming match row whose status is "delayed".
+newtab-sports-widget-match-aria-label-upcoming-delayed =
+    .aria-label = { $homeTeam } yn erbyn { $awayTeam } , wedi'i ohirio
+# An upcoming match row whose status is "postponed".
+newtab-sports-widget-match-aria-label-upcoming-postponed =
+    .aria-label = { $homeTeam } yn erbyn { $awayTeam } , wedi'i ohirio
+# An upcoming match row whose status is "suspended".
+newtab-sports-widget-match-aria-label-upcoming-suspended =
+    .aria-label = { $homeTeam } yn erbyn { $awayTeam }, wedi'i atal
+# An upcoming match row whose status is "cancelled".
+newtab-sports-widget-match-aria-label-upcoming-cancelled =
+    .aria-label = { $homeTeam } yn erbyn { $awayTeam } , wedi'i ganslo
+
+## Sports widget — team names (FIFA country codes)
+## Only includes names not adequately covered by standard country-code
+## internationalization tooling.
+
+newtab-sports-widget-team-name-label-bih =
+    .label = Bosnia a Herzegovina
+newtab-sports-widget-team-name-label-civ =
+    .label = Côte d'Ivoire
+newtab-sports-widget-team-name-label-cod =
+    .label = DR Congo
+newtab-sports-widget-team-name-label-eng =
+    .label = Lloegr
+newtab-sports-widget-team-name-label-sco =
+    .label = Yr Alban
+
+## Sports widget OMC messages
+## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
+
+newtab-sports-widget-message-wallpapers-title = Cychwyn Cwpan y Byd gyda phapurau wal newydd
+newtab-sports-widget-message-wallpapers-body = Dewch ag ychydig o egni diwrnod gêm i'ch porwr ar gyfer y twrnamaint.
+newtab-sports-widget-message-wallpapers-cta = Dewis papur wal
+newtab-sports-widget-message-add-widgets-cta =
+    .label = Ychwanegu teclyn
+newtab-sports-widget-message-day-in-play-title = Cadwch eich diwrnod ar waith gyda theclynnau { -brand-product-name }
+newtab-sports-widget-message-day-in-play-body = Dilynwch Gwpan y Byd, cadw ar y dasg, dilyn amser o amgylch y byd, a mwy.
+newtab-sports-widget-message-explore-widgets-cta =
+    .label = Archwilio'r teclynnau
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
@@ -1063,6 +1211,19 @@ newtab-clock-widget-button-save = Cadw
 newtab-clock-widget-button-remove-clock =
     .title = Tynnu cloc
     .aria-label = Tynnu cloc
+# Accessible name for a clock row in the "Your clocks" management panel
+# when the row has no user-provided nickname. Read aloud by screen
+# readers when focus lands on the row.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+newtab-clock-widget-edit-item =
+    .aria-label = { $city }
+# Accessible name for a clock row when a user nickname has been set.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+#   $nickname (string) - The user-provided nickname for the row.
+newtab-clock-widget-edit-item-with-nickname =
+    .aria-label = { $city }, llysenw: { $nickname }
 newtab-clock-widget-add-clock-form =
     .aria-label = Ychwanegu cloc
 newtab-clock-widget-edit-clock-form =

@@ -379,6 +379,8 @@ newtab-custom-widget-sports-toggle =
     .label = Světový šampionát
 newtab-custom-widget-clock-toggle =
     .label = Hodiny
+newtab-custom-widget-sports-toggle2 =
+    .label = Sporty
 newtab-custom-widget-section-title = Widgety
 newtab-custom-widget-section-toggle =
     .label = Widgety
@@ -853,6 +855,14 @@ newtab-widget-section-menu-manage = Spravovat widgety
 newtab-widget-section-menu-hide-all = Skrýt widgety
 newtab-widget-section-menu-learn-more = Zjistit více
 newtab-widget-section-feedback = Sdělte nám svůj názor
+# Button shown when additional widgets are hidden beyond the
+# first row, allowing users to show them.
+newtab-widget-section-show-more =
+    .label = Zobrazit více widgetů
+# Button shown when the widgets row is expanded to multiple rows,
+# allowing users to collapse it back to one row.
+newtab-widget-section-show-less =
+    .label = Zobrazit méně widgetů
 newtab-widget-lists-name-default = Kontrolní seznam
 
 ## Strings introduced by the Nova redesign of the Timer widget
@@ -883,6 +893,11 @@ newtab-daily-briefing-card-timestamp = Aktualizováno před { $minutes } min.
 newtab-widget-message-title = Soustřeďte se díky seznamům a vestavěnému časovači
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Od rychlých připomínek po každodenní úkoly, od soustředění po přestávky na protažení - plňte úkoly včas.
+newtab-widget-message-focus-forecasts-body =
+    { -brand-product-name.case-status ->
+        [with-cases] Udržte si plynulý průběh dne díky widgetům { -brand-product-name(case: "gen") }. Podívejte se na předpověď počasí, soustřeďte se na práci nebo sledujte čas v různých částech světa.
+       *[no-cases] Udržte si plynulý průběh dne díky widgetům aplikace { -brand-product-name }. Podívejte se na předpověď počasí, soustřeďte se na práci nebo sledujte čas v různých částech světa.
+    }
 # "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
 # is to customize the new tab page with a background image or color from
 # the built-in wallpaper collection or uploading your own image.
@@ -1078,6 +1093,8 @@ newtab-sports-widget-world-cup-champions = Mistrovství světa ve fotbale 2026
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
 newtab-sports-widget-match-full-time = Konec zápasu
+newtab-sports-widget-match-halftime = Poločas
+newtab-sports-widget-match-extra-time = Prodloužení
 newtab-sports-widget-match-penalties = Penalty
 
 ## Accessible labels for match rows in the sports widget. These are read by
@@ -1112,6 +1129,9 @@ newtab-sports-widget-match-aria-label-now =
 #   $date (Date) - The scheduled kickoff date/time
 newtab-sports-widget-match-aria-label-upcoming =
     .aria-label = { $homeTeam } vs. { $awayTeam }, { DATETIME($date, hour: "numeric", minute: "numeric") }, { DATETIME($date, day: "numeric", month: "long") }
+# An upcoming match row whose status is "delayed".
+newtab-sports-widget-match-aria-label-upcoming-delayed =
+    .aria-label = { $homeTeam } vs. { $awayTeam }, zpoždění
 # An upcoming match row whose status is "postponed".
 newtab-sports-widget-match-aria-label-upcoming-postponed =
     .aria-label = { $homeTeam } vs. { $awayTeam }, odloženo
@@ -1140,10 +1160,19 @@ newtab-sports-widget-team-name-label-sco =
 ## Sports widget OMC messages
 ## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
 
+newtab-sports-widget-message-wallpapers-title = Odstartujte světový šampionát s novými tapetami
 newtab-sports-widget-message-wallpapers-body = Vneste do svého prohlížeče trochu té zápasové energie na dobu turnaje.
 newtab-sports-widget-message-wallpapers-cta = Zvolte si tapetu
 newtab-sports-widget-message-add-widgets-cta =
     .label = Přidat widgety
+newtab-sports-widget-message-day-in-play-title =
+    { -brand-product-name.case-status ->
+        [with-cases] Udržte svůj den v pohybu díky widgetům { -brand-product-name(case: "gen") }
+       *[no-cases] Udržte svůj den v pohybu díky widgetům aplikace { -brand-product-name }
+    }
+newtab-sports-widget-message-day-in-play-body = Sledujte mistrovství světa, soustřeďte se na své úkoly, sledujte čas v různých částech světa a mnoho dalšího.
+newtab-sports-widget-message-explore-widgets-cta =
+    .label = Prozkoumejte widgety
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
@@ -1216,6 +1245,12 @@ newtab-clock-widget-button-remove-clock =
 #   $city (string) - The city name displayed in the row.
 newtab-clock-widget-edit-item =
     .aria-label = { $city }
+# Accessible name for a clock row when a user nickname has been set.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+#   $nickname (string) - The user-provided nickname for the row.
+newtab-clock-widget-edit-item-with-nickname =
+    .aria-label = { $city }, označení: { $nickname }
 newtab-clock-widget-add-clock-form =
     .aria-label = Přidat hodiny
 newtab-clock-widget-edit-clock-form =

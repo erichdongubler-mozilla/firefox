@@ -367,6 +367,8 @@ newtab-custom-widget-sports-toggle =
     .label = Copa do Mundo
 newtab-custom-widget-clock-toggle =
     .label = Relógio
+newtab-custom-widget-sports-toggle2 =
+    .label = Esportes
 newtab-custom-widget-section-title = Widgets
 newtab-custom-widget-section-toggle =
     .label = Widgets
@@ -667,7 +669,7 @@ newtab-new-user-custom-wallpaper-cta = Experimentar agora
 ## Strings for Nova wallpaper feature highlight
 
 newtab-wallpaper-feature-highlight-title = Chegaram novos fundos de tela
-newtab-wallpaper-feature-highlight-subtitle = Escolha seu favorito e deixe cada nova aba do seu jeito.
+newtab-wallpaper-feature-highlight-subtitle = Escolha seu preferido e deixe a página de nova aba do seu jeito.
 newtab-wallpaper-feature-highlight-cta = Escolher fundo de tela
 
 ## Strings for download mobile highlight
@@ -821,6 +823,14 @@ newtab-widget-section-menu-manage = Gerenciar widgets
 newtab-widget-section-menu-hide-all = Ocultar widgets
 newtab-widget-section-menu-learn-more = Saiba mais
 newtab-widget-section-feedback = Diga-nos o que você acha
+# Button shown when additional widgets are hidden beyond the
+# first row, allowing users to show them.
+newtab-widget-section-show-more =
+    .label = Mostrar mais widgets
+# Button shown when the widgets row is expanded to multiple rows,
+# allowing users to collapse it back to one row.
+newtab-widget-section-show-less =
+    .label = Mostrar menos widgets
 newtab-widget-lists-name-default = Lista de verificação
 
 ## Strings introduced by the Nova redesign of the Timer widget
@@ -851,6 +861,8 @@ newtab-daily-briefing-card-timestamp = Atualizado há { $minutes } minutos
 newtab-widget-message-title = Mantenha a concentração com listas e um temporizador integrado
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Desde lembretes rápidos a tarefas diárias, com sessões de concentração e intervalos para estivar as pernas — cumpra tarefas e prazos.
+# One spot refers to a dedicated section on new tab to manage and use widgets
+newtab-widget-message-focus-forecasts-title = Um só lugar para foco, previsão do tempo e muito mais
 newtab-widget-message-focus-forecasts-body = Mantenha seu dia mais fluido usando widgets do { -brand-product-name }. Confira a previsão do tempo, concentre-se nas tarefas, ou saiba a hora em vários locais do mundo.
 # "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
 # is to customize the new tab page with a background image or color from
@@ -1034,6 +1046,9 @@ newtab-sports-widget-world-cup-champions = Campeões da Copa do Mundo de 2026
 # Variables:
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
+newtab-sports-widget-match-full-time = Fim de jogo
+newtab-sports-widget-match-halftime = Intervalo
+newtab-sports-widget-match-extra-time = Prorrogação
 newtab-sports-widget-match-penalties = Pênaltis
 
 ## Accessible labels for match rows in the sports widget. These are read by
