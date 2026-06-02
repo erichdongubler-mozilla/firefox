@@ -11426,7 +11426,7 @@ bool wasm::IonCompileFunctions(const CodeMetadata& codeMeta,
   GenerateTrapExitRegisterOffsets(&trapExitLayout, &trapExitLayoutNumWords);
 
   for (const FuncCompileInput& func : inputs) {
-    JitSpewCont(JitSpew_Codegen, "\n");
+    JitSpew(JitSpew_Codegen, "\n");
     JitSpew(JitSpew_Codegen,
             "# ================================"
             "==================================");
@@ -11515,7 +11515,7 @@ bool wasm::IonCompileFunctions(const CodeMetadata& codeMeta,
     JitSpew(JitSpew_Codegen,
             "# ================================"
             "==================================");
-    JitSpewCont(JitSpew_Codegen, "\n");
+    JitSpew(JitSpew_Codegen, "\n");
   }
 
   masm.finish();

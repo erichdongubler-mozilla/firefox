@@ -74,14 +74,30 @@ class JitSpewIndent {
   ~JitSpewIndent();
 };
 
+// RAII helper that buffers one logical message (one or more lines) of spew
+// on `channel` and emits it on destruction. The buffer is a single per-thread
+// Vector reused across messages.
+class MOZ_RAII AutoJitSpewMessage {
+  bool enabled_;
+
+ public:
+  explicit AutoJitSpewMessage(JitSpewChannel channel);
+  AutoJitSpewMessage(JitSpewChannel channel, const char* fmt, ...)
+      MOZ_FORMAT_PRINTF(3, 4);
+  ~AutoJitSpewMessage();
+
+  void append(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
+
+  // Returns a GenericPrinter that appends to this message's buffer. Only
+  // valid while this AutoJitSpewMessage is alive and enabled.
+  js::GenericPrinter& printer();
+
+  AutoJitSpewMessage(const AutoJitSpewMessage&) = delete;
+  void operator=(const AutoJitSpewMessage&) = delete;
+};
+
 void JitSpew(JitSpewChannel channel, const char* fmt, ...)
     MOZ_FORMAT_PRINTF(2, 3);
-void JitSpewStart(JitSpewChannel channel, const char* fmt, ...)
-    MOZ_FORMAT_PRINTF(2, 3);
-void JitSpewCont(JitSpewChannel channel, const char* fmt, ...)
-    MOZ_FORMAT_PRINTF(2, 3);
-void JitSpewFin(JitSpewChannel channel);
-void JitSpewHeader(JitSpewChannel channel);
 
 }  // namespace jit
 
@@ -100,10 +116,6 @@ static inline bool JitSpewEnabled(JitSpewChannel channel) {
 }
 
 void JitSpewVA(JitSpewChannel channel, const char* fmt, va_list ap)
-    MOZ_FORMAT_PRINTF(2, 0);
-void JitSpewStartVA(JitSpewChannel channel, const char* fmt, va_list ap)
-    MOZ_FORMAT_PRINTF(2, 0);
-void JitSpewContVA(JitSpewChannel channel, const char* fmt, va_list ap)
     MOZ_FORMAT_PRINTF(2, 0);
 void JitSpewDef(JitSpewChannel channel, const char* str, MDefinition* def);
 
@@ -147,6 +159,19 @@ class JitSpewIndent {
   ~JitSpewIndent() = default;
 };
 
+class MOZ_RAII AutoJitSpewMessage {
+ public:
+  explicit AutoJitSpewMessage(JitSpewChannel channel) {}
+  template <typename... Args>
+  AutoJitSpewMessage(JitSpewChannel channel, const char* fmt, Args&&... args) {}
+  ~AutoJitSpewMessage() = default;
+  template <typename... Args>
+  void append(const char* fmt, Args&&... args) {}
+  js::GenericPrinter& printer() {
+    MOZ_CRASH("Shouldn't call this in non-JS_JITSPEW builds");
+  }
+};
+
 // The computation of some of the argument of the spewing functions might be
 // costly, thus we use variaidic macros to ignore any argument of these
 // functions.
@@ -158,15 +183,10 @@ static inline void JitSpewCheckArguments(JitSpewChannel channel,
 #  define JitSpewCheckExpandedArgs_(ArgList) \
     JitSpewCheckExpandedArgs ArgList /* Fix MSVC issue */
 #  define JitSpew(...) JitSpewCheckExpandedArgs_((__VA_ARGS__))
-#  define JitSpewStart(...) JitSpewCheckExpandedArgs_((__VA_ARGS__))
-#  define JitSpewCont(...) JitSpewCheckExpandedArgs_((__VA_ARGS__))
 
 #  define JitSpewIfEnabled(channel, fmt, ...) \
     JitSpewCheckArguments(channel, fmt)
 
-static inline void JitSpewFin(JitSpewChannel channel) {}
-
-static inline void JitSpewHeader(JitSpewChannel channel) {}
 static inline bool JitSpewEnabled(JitSpewChannel channel) { return false; }
 static inline MOZ_FORMAT_PRINTF(2, 0) void JitSpewVA(JitSpewChannel channel,
                                                      const char* fmt,

@@ -189,8 +189,8 @@ AbortReasonOr<WarpSnapshot*> WarpOracle::createSnapshot() {
 
 #ifdef JS_JITSPEW
   if (JitSpewEnabled(JitSpew_WarpSnapshots)) {
-    Fprinter& out = JitSpewPrinter();
-    snapshot->dump(out);
+    AutoJitSpewMessage msg(JitSpew_WarpSnapshots);
+    snapshot->dump(msg.printer());
   }
 #endif
 

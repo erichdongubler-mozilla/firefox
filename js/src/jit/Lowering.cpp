@@ -8409,28 +8409,27 @@ void LIRGenerator::visitWasmFloatConstant(MWasmFloatConstant* ins) {
 #ifdef JS_JITSPEW
 static void SpewResumePoint(MBasicBlock* block, MInstruction* ins,
                             MResumePoint* resumePoint) {
-  Fprinter& out = JitSpewPrinter();
-  out.printf("Current resume point %p details:\n", (void*)resumePoint);
-  out.printf("    frame count: %u\n", resumePoint->frameCount());
+  JitSpew(JitSpew_IonSnapshots,
+          "Current resume point %p details:", (void*)resumePoint);
+  JitSpew(JitSpew_IonSnapshots, "    frame count: %u",
+          resumePoint->frameCount());
 
   if (ins) {
-    out.printf("    taken after: ");
-    ins->printName(out);
+    AutoJitSpewMessage msg(JitSpew_IonSnapshots, "    taken after: ");
+    ins->printName(msg.printer());
   } else {
-    out.printf("    taken at block %u entry", block->id());
+    JitSpew(JitSpew_IonSnapshots, "    taken at block %u entry", block->id());
   }
-  out.printf("\n");
 
-  out.printf("    pc: %p (script: %p, offset: %d)\n", (void*)resumePoint->pc(),
-             (void*)resumePoint->block()->info().script(),
-             int(resumePoint->block()->info().script()->pcToOffset(
-                 resumePoint->pc())));
+  JitSpew(JitSpew_IonSnapshots, "    pc: %p (script: %p, offset: %d)",
+          (void*)resumePoint->pc(),
+          (void*)resumePoint->block()->info().script(),
+          int(resumePoint->block()->info().script()->pcToOffset(
+              resumePoint->pc())));
 
   for (size_t i = 0, e = resumePoint->numOperands(); i < e; i++) {
-    MDefinition* in = resumePoint->getOperand(i);
-    out.printf("    slot%u: ", (unsigned)i);
-    in->printName(out);
-    out.printf("\n");
+    AutoJitSpewMessage msg(JitSpew_IonSnapshots, "    slot%u: ", (unsigned)i);
+    resumePoint->getOperand(i)->printName(msg.printer());
   }
 }
 #endif

@@ -551,14 +551,14 @@ void SnapshotReader::readTrackSnapshot() {
 void SnapshotReader::spewBailingFrom() const {
 #  ifdef JS_JITSPEW
   if (JitSpewEnabled(JitSpew_IonBailouts)) {
-    JitSpewHeader(JitSpew_IonBailouts);
-    Fprinter& out = JitSpewPrinter();
-    out.printf(" bailing from bytecode: %s, MIR: ", CodeName(JSOp(pcOpcode_)));
-    MDefinition::PrintOpcodeName(out, MDefinition::Opcode(mirOpcode_));
-    out.printf(" [%u], LIR: ", mirId_);
-    LInstruction::printName(out, LInstruction::Opcode(lirOpcode_));
-    out.printf(" [%u]", lirId_);
-    out.printf("\n");
+    AutoJitSpewMessage msg(
+        JitSpew_IonBailouts,
+        " bailing from bytecode: %s, MIR: ", CodeName(JSOp(pcOpcode_)));
+    MDefinition::PrintOpcodeName(msg.printer(),
+                                 MDefinition::Opcode(mirOpcode_));
+    msg.append(" [%u], LIR: ", mirId_);
+    LInstruction::printName(msg.printer(), LInstruction::Opcode(lirOpcode_));
+    msg.append(" [%u]", lirId_);
   }
 #  endif
 }
@@ -673,11 +673,9 @@ bool SnapshotWriter::add(const RValueAllocation& alloc) {
 
 #ifdef JS_JITSPEW
   if (JitSpewEnabled(JitSpew_IonSnapshots)) {
-    JitSpewHeader(JitSpew_IonSnapshots);
-    Fprinter& out = JitSpewPrinter();
-    out.printf("    slot %u (%u): ", allocWritten_, offset);
-    alloc.dump(out);
-    out.printf("\n");
+    AutoJitSpewMessage msg(JitSpew_IonSnapshots,
+                           "    slot %u (%u): ", allocWritten_, offset);
+    alloc.dump(msg.printer());
   }
 #endif
 

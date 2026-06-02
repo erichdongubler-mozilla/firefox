@@ -520,37 +520,58 @@ JitSpewIndent::JitSpewIndent(JitSpewChannel channel) : channel_(channel) {
 
 JitSpewIndent::~JitSpewIndent() { ChannelIndentLevel[channel_]--; }
 
-void jit::JitSpewStartVA(JitSpewChannel channel, const char* fmt, va_list ap) {
-  if (!JitSpewEnabled(channel)) {
+AutoJitSpewMessage::AutoJitSpewMessage(JitSpewChannel channel)
+    : enabled_(JitSpewEnabled(channel)) {
+  if (!enabled_) {
     return;
   }
-
-  JitSpewHeader(channel);
   Fprinter& out = JitSpewPrinter();
-  out.vprintf(fmt, ap);
+  out.printf("[%s] ", ChannelNames[channel]);
+  for (size_t i = ChannelIndentLevel[channel]; i != 0; i--) {
+    out.put("  ");
+  }
 }
 
-void jit::JitSpewContVA(JitSpewChannel channel, const char* fmt, va_list ap) {
-  if (!JitSpewEnabled(channel)) {
+AutoJitSpewMessage::AutoJitSpewMessage(JitSpewChannel channel, const char* fmt,
+                                       ...)
+    : AutoJitSpewMessage(channel) {
+  if (!enabled_) {
     return;
   }
-
-  Fprinter& out = JitSpewPrinter();
-  out.vprintf(fmt, ap);
+  va_list ap;
+  va_start(ap, fmt);
+  JitSpewPrinter().vprintf(fmt, ap);
+  va_end(ap);
 }
 
-void jit::JitSpewFin(JitSpewChannel channel) {
-  if (!JitSpewEnabled(channel)) {
+void AutoJitSpewMessage::append(const char* fmt, ...) {
+  if (!enabled_) {
     return;
   }
+  va_list ap;
+  va_start(ap, fmt);
+  JitSpewPrinter().vprintf(fmt, ap);
+  va_end(ap);
+}
 
-  Fprinter& out = JitSpewPrinter();
-  out.put("\n");
+js::GenericPrinter& AutoJitSpewMessage::printer() {
+  MOZ_ASSERT(enabled_);
+  return JitSpewPrinter();
+}
+
+AutoJitSpewMessage::~AutoJitSpewMessage() {
+  if (!enabled_) {
+    return;
+  }
+  JitSpewPrinter().put("\n");
 }
 
 void jit::JitSpewVA(JitSpewChannel channel, const char* fmt, va_list ap) {
-  JitSpewStartVA(channel, fmt, ap);
-  JitSpewFin(channel);
+  if (!JitSpewEnabled(channel)) {
+    return;
+  }
+  AutoJitSpewMessage msg(channel);
+  msg.printer().vprintf(fmt, ap);
 }
 
 void jit::JitSpew(JitSpewChannel channel, const char* fmt, ...) {
@@ -585,37 +606,9 @@ void jit::JitSpewDef(JitSpewChannel channel, const char* str,
   if (!JitSpewEnabled(channel)) {
     return;
   }
-
-  JitSpewHeader(channel);
-  Fprinter& out = JitSpewPrinter();
-  out.put(str);
-  def->dump(out);
-  def->dumpLocation(out);
-}
-
-void jit::JitSpewStart(JitSpewChannel channel, const char* fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-  JitSpewStartVA(channel, fmt, ap);
-  va_end(ap);
-}
-void jit::JitSpewCont(JitSpewChannel channel, const char* fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-  JitSpewContVA(channel, fmt, ap);
-  va_end(ap);
-}
-
-void jit::JitSpewHeader(JitSpewChannel channel) {
-  if (!JitSpewEnabled(channel)) {
-    return;
-  }
-
-  Fprinter& out = JitSpewPrinter();
-  out.printf("[%s] ", ChannelNames[channel]);
-  for (size_t i = ChannelIndentLevel[channel]; i != 0; i--) {
-    out.put("  ");
-  }
+  AutoJitSpewMessage msg(channel, "%s", str);
+  def->dump(msg.printer());
+  def->dumpLocation(msg.printer());
 }
 
 void jit::EnableChannel(JitSpewChannel channel) {

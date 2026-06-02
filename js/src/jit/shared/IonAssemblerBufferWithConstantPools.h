@@ -850,15 +850,14 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 #ifdef JS_JITSPEW
     if (numPoolEntries && JitSpewEnabled(JitSpew_Pools)) {
       JitSpew(JitSpew_Pools, "Inserting %d entries into pool", numPoolEntries);
-      JitSpewStart(JitSpew_Pools, "data is: 0x");
+      AutoJitSpewMessage msg(JitSpew_Pools, "data is: 0x");
       size_t length = numPoolEntries * sizeof(PoolAllocUnit);
       for (unsigned idx = 0; idx < length; idx++) {
-        JitSpewCont(JitSpew_Pools, "%02x", data[length - idx - 1]);
+        msg.append("%02x", data[length - idx - 1]);
         if (((idx & 3) == 3) && (idx + 1 != length)) {
-          JitSpewCont(JitSpew_Pools, "_");
+          msg.append("_");
         }
       }
-      JitSpewFin(JitSpew_Pools);
     }
 #endif
 

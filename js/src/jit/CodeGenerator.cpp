@@ -546,12 +546,14 @@ void CodeGenerator::visitOutOfLineCallVM(
   LInstruction* lir = ool->lir();
 
 #ifdef JS_JITSPEW
-  JitSpewStart(JitSpew_Codegen, "                                # LIR=%s",
-               lir->opName());
-  if (const char* extra = lir->getExtraName()) {
-    JitSpewCont(JitSpew_Codegen, ":%s", extra);
+  {
+    AutoJitSpewMessage msg(JitSpew_Codegen,
+                           "                                # LIR=%s",
+                           lir->opName());
+    if (const char* extra = lir->getExtraName()) {
+      msg.append(":%s", extra);
+    }
   }
-  JitSpewFin(JitSpew_Codegen);
 #endif
   perfSpewer().recordInstruction(masm, lir);
   if (!lir->isCall()) {
@@ -8545,7 +8547,7 @@ void CodeGenerator::emitDebugForceBailing(LInstruction* lir) {
 #endif  // DEBUG
 
 bool CodeGenerator::generateBody() {
-  JitSpewCont(JitSpew_Codegen, "\n");
+  JitSpew(JitSpew_Codegen, "\n");
   AutoCreatedBy acb(masm, "CodeGenerator::generateBody");
 
   JitSpew(JitSpew_Codegen, "==== BEGIN CodeGenerator::generateBody ====");
@@ -8627,12 +8629,14 @@ bool CodeGenerator::generateBlock(LBlock* current, size_t blockNumber,
 
     perfSpewer().recordInstruction(masm, *iter);
 #ifdef JS_JITSPEW
-    JitSpewStart(JitSpew_Codegen, "                                # LIR=%s",
-                 iter->opName());
-    if (const char* extra = iter->getExtraName()) {
-      JitSpewCont(JitSpew_Codegen, ":%s", extra);
+    {
+      AutoJitSpewMessage msg(JitSpew_Codegen,
+                             "                                # LIR=%s",
+                             iter->opName());
+      if (const char* extra = iter->getExtraName()) {
+        msg.append(":%s", extra);
+      }
     }
-    JitSpewFin(JitSpew_Codegen);
 #endif
 
     if (counts) {

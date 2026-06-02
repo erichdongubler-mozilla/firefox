@@ -1256,10 +1256,10 @@ void SimpleAllocator::assertValidRegisterStateBeforeInstruction() const {
 }
 
 bool SimpleAllocator::go() {
-  JitSpewCont(JitSpew_RegAlloc, "\n");
+  JitSpew(JitSpew_RegAlloc, "\n");
   JitSpew(JitSpew_RegAlloc, "Beginning register allocation");
 
-  JitSpewCont(JitSpew_RegAlloc, "\n");
+  JitSpew(JitSpew_RegAlloc, "\n");
   if (JitSpewEnabled(JitSpew_RegAlloc)) {
     dumpInstructions("(Pre-allocation LIR)");
   }

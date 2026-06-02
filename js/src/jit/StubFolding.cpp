@@ -108,14 +108,15 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
           script->column().oneOriginValue());
 
   if (JitSpewEnabled(JitSpew_StubFoldingDetails)) {
-    Fprinter& printer(JitSpewPrinter());
     uint32_t i = 0;
     for (ICCacheIRStub* stub = firstStub; stub; stub = stub->nextCacheIR()) {
-      printer.printf("- stub %d (enteredCount: %d)\n", i, stub->enteredCount());
+      JitSpew(JitSpew_StubFoldingDetails, "- stub %d (enteredCount: %d)", i,
+              stub->enteredCount());
 
 #  ifdef JS_CACHEIR_SPEW
+      AutoJitSpewMessage msg(JitSpew_StubFoldingDetails);
       ICCacheIRStub* cache_stub = stub->toCacheIRStub();
-      SpewCacheIROps(printer, "  ", cache_stub->stubInfo());
+      SpewCacheIROps(msg.printer(), "  ", cache_stub->stubInfo());
 #  endif
       i++;
     }
@@ -446,12 +447,12 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
   if (JitSpewEnabled(JitSpew_StubFoldingDetails)) {
     ICStub* newEntryStub = icEntry->firstStub();
 
-    Fprinter& printer(JitSpewPrinter());
-    printer.printf("- stub 0 (enteredCount: %d)\n",
-                   newEntryStub->enteredCount());
+    JitSpew(JitSpew_StubFoldingDetails, "- stub 0 (enteredCount: %d)",
+            newEntryStub->enteredCount());
 #  ifdef JS_CACHEIR_SPEW
+    AutoJitSpewMessage msg(JitSpew_StubFoldingDetails);
     ICCacheIRStub* newStub = newEntryStub->toCacheIRStub();
-    SpewCacheIROps(printer, "  ", newStub->stubInfo());
+    SpewCacheIROps(msg.printer(), "  ", newStub->stubInfo());
 #  endif
   }
 #endif
