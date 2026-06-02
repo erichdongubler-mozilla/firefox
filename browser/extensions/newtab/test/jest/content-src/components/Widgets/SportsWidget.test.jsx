@@ -2947,15 +2947,28 @@ describe("<SportsWidget> live polling visibility", () => {
     expect(findLiveObserver()).toBeUndefined();
   });
 
-  // Regression: SportsFeed.liveEnabled accepts trainhopConfig.sports.liveEnabled
+  // Regression: SportsFeed.liveEnabled accepts the trainhopConfig live override
   // as a Nimbus rollout signal. Until this fix the component only read the
   // raw pref, so a Nimbus-only enable started the feed's polling but never
   // attached the IntersectionObserver — visibleTabs stayed empty and tick()
   // bailed forever.
-  it("attaches the live visibility observer when only trainhopConfig enables live", () => {
+  it("attaches the live visibility observer when only legacy trainhopConfig.sports enables live", () => {
     const state = makeState({
       [PREF_SPORTS_WIDGET_LIVE_ENABLED]: false,
       trainhopConfig: { sports: { liveEnabled: true } },
+    });
+    render(
+      <WrapWithProvider state={state}>
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+    expect(findLiveObserver()).toBeDefined();
+  });
+
+  it("attaches the live visibility observer when canonical trainhopConfig.widgets.sportsWidgetLiveEnabled enables live", () => {
+    const state = makeState({
+      [PREF_SPORTS_WIDGET_LIVE_ENABLED]: false,
+      trainhopConfig: { widgets: { sportsWidgetLiveEnabled: true } },
     });
     render(
       <WrapWithProvider state={state}>

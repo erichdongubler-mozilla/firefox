@@ -158,13 +158,17 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   const sportsWidgetData = useSelector(state => state.SportsWidget);
 
   const widgetSize = resolveWidgetSize(SPORTS_WIDGET_REGISTRY_ENTRY, prefs);
-  // Mirror SportsFeed.liveEnabled — raw pref OR trainhopConfig.sports.liveEnabled.
+  // Mirror SportsFeed.liveEnabled — raw pref OR the trainhop override. The
+  // canonical key is trainhopConfig.widgets.sportsWidgetLiveEnabled (the flat
+  // sportsWidget-prefixed convention shared by every widget); the legacy
+  // trainhopConfig.sports.liveEnabled is still honored for in-flight rollouts.
   // Reading the raw pref alone would leave a Nimbus-only rollout in a
   // permanently-paused state: the feed would start polling, but tick()
   // bails on empty visibleTabs and we'd never attach the observer to dispatch
   // WIDGETS_SPORTS_LIVE_VISIBLE.
   const liveEnabled =
     prefs[PREF_SPORTS_WIDGET_LIVE_ENABLED] ||
+    prefs.trainhopConfig?.widgets?.sportsWidgetLiveEnabled ||
     prefs.trainhopConfig?.sports?.liveEnabled;
   const widgetsMayBeMaximized = prefs["widgets.system.maximized"];
   // /live currently serves mock data pre-kickoff, so ignore its contents

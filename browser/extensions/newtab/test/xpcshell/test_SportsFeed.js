@@ -67,13 +67,22 @@ add_task(async function test_enabled() {
   Assert.ok(!makeFeed({ enabled: true, systemEnabled: false }).enabled);
 
   info(
-    "SportsFeed.enabled returns true when the system pref is off but the trainhop experiment is set"
+    "SportsFeed.enabled returns true when the system pref is off but the legacy sports trainhop experiment is set"
   );
   const trainhopFeed = makeFeed({ enabled: true, systemEnabled: false });
   trainhopFeed.store.state.Prefs.values.trainhopConfig = {
     sports: { enabled: true },
   };
   Assert.ok(trainhopFeed.enabled);
+
+  info(
+    "SportsFeed.enabled returns true via the canonical widgets.sportsWidgetEnabled trainhop key"
+  );
+  const canonicalFeed = makeFeed({ enabled: true, systemEnabled: false });
+  canonicalFeed.store.state.Prefs.values.trainhopConfig = {
+    widgets: { sportsWidgetEnabled: true },
+  };
+  Assert.ok(canonicalFeed.enabled);
 });
 
 add_task(async function test_onAction_INIT_when_enabled() {
@@ -1172,6 +1181,8 @@ add_task(async function test_CHANGE_FOLLOWED_ONLY_starts_empty_cache() {
 
 const PREF_SPORTS_LIVE_ENABLED = "widgets.sportsWidget.live.enabled";
 const PREF_SPORTS_LIVE_ENDPOINT = "sports.worldCup.liveEndpoint";
+const PREF_POLL_IDLE_MS = "widgets.sportsWidget.pollIdleMs";
+const PREF_POLL_MATCH_DAY_MS = "widgets.sportsWidget.pollMatchDayMs";
 const PREF_POLL_LIVE_MS = "widgets.sportsWidget.pollLiveMs";
 const PREF_POLL_PREGAME_LEAD_MS = "widgets.sportsWidget.pollPregameLeadMs";
 
@@ -1189,6 +1200,13 @@ function makeLiveFeed({ liveEnabled = true, visible = true } = {}) {
   const feed = makeFeed();
   feed.store.state.Prefs.values[PREF_SPORTS_LIVE_ENABLED] = liveEnabled;
   feed.store.state.Prefs.values[PREF_SPORTS_LIVE_ENDPOINT] = LIVE_ENDPOINT;
+  // The harness does not load PREFS_CONFIG, and resolvePollIntervalMs no longer
+  // has inline numeric fallbacks — seed the poll-interval prefs to their
+  // production defaults so the resolved intervals match what ships.
+  feed.store.state.Prefs.values[PREF_POLL_IDLE_MS] = 21600000;
+  feed.store.state.Prefs.values[PREF_POLL_MATCH_DAY_MS] = 1800000;
+  feed.store.state.Prefs.values[PREF_POLL_LIVE_MS] = 180000;
+  feed.store.state.Prefs.values[PREF_POLL_PREGAME_LEAD_MS] = 600000;
   feed.store.state.SportsWidget = {
     data: { matches: { previous: [], current: [], next: [] } },
   };
@@ -1242,40 +1260,79 @@ add_task(async function test_liveEnabled_requires_widget_and_live_pref() {
   const liveOffFeed = makeLiveFeed({ liveEnabled: false });
   Assert.ok(!liveOffFeed.liveEnabled);
 
-  info("liveEnabled is true via trainhopConfig.sports.liveEnabled");
+  info("liveEnabled is true via legacy trainhopConfig.sports.liveEnabled");
   const trainhopFeed = makeLiveFeed({ liveEnabled: false });
   trainhopFeed.store.state.Prefs.values.trainhopConfig = {
     sports: { liveEnabled: true },
   };
   Assert.ok(trainhopFeed.liveEnabled);
+
+  info(
+    "liveEnabled is true via canonical trainhopConfig.widgets.sportsWidgetLiveEnabled"
+  );
+  const canonicalFeed = makeLiveFeed({ liveEnabled: false });
+  canonicalFeed.store.state.Prefs.values.trainhopConfig = {
+    widgets: { sportsWidgetLiveEnabled: true },
+  };
+  Assert.ok(canonicalFeed.liveEnabled);
 });
 
 add_task(async function test_resolvePollIntervalMs_per_state_and_trainhop() {
   const feed = makeLiveFeed();
 
-  info("Defaults: IDLE = 6h, MATCH_DAY = 30min, LIVE = 60s");
+  info("Defaults (from prefs): IDLE = 6h, MATCH_DAY = 30min, LIVE = 180s");
   feed.pollingState = "IDLE";
   Assert.equal(feed.resolvePollIntervalMs(), 21600000);
   feed.pollingState = "MATCH_DAY";
   Assert.equal(feed.resolvePollIntervalMs(), 1800000);
   feed.pollingState = "LIVE";
-  Assert.equal(feed.resolvePollIntervalMs(), 60000);
+  Assert.equal(feed.resolvePollIntervalMs(), 180000);
 
   info("Raw prefs override defaults");
   feed.store.state.Prefs.values[PREF_POLL_LIVE_MS] = 45000;
   Assert.equal(feed.resolvePollIntervalMs(), 45000);
 
-  info("trainhopConfig overrides raw prefs");
+  info("Legacy trainhopConfig.sports overrides raw prefs (backwards-compat)");
   feed.store.state.Prefs.values.trainhopConfig = {
     sports: { pollLiveMs: 30000 },
   };
   Assert.equal(feed.resolvePollIntervalMs(), 30000);
 
+  info(
+    "Canonical trainhopConfig.widgets.sportsWidgetPollLiveMs overrides raw prefs"
+  );
+  feed.store.state.Prefs.values.trainhopConfig = {
+    widgets: { sportsWidgetPollLiveMs: 25000 },
+  };
+  Assert.equal(feed.resolvePollIntervalMs(), 25000);
+
+  info("When both keys are present, canonical widgets key wins per-key");
+  feed.store.state.Prefs.values.trainhopConfig = {
+    sports: { pollLiveMs: 30000, pollMatchDayMs: 90000 },
+    widgets: { sportsWidgetPollLiveMs: 25000 },
+  };
+  Assert.equal(feed.resolvePollIntervalMs(), 25000, "LIVE: canonical wins");
+  feed.pollingState = "MATCH_DAY";
+  Assert.equal(
+    feed.resolvePollIntervalMs(),
+    90000,
+    "MATCH_DAY: legacy sports fills the gap"
+  );
+  feed.pollingState = "LIVE";
+
   info("resolvePregameLeadMs follows the same precedence");
+  feed.store.state.Prefs.values.trainhopConfig = {};
   feed.store.state.Prefs.values[PREF_POLL_PREGAME_LEAD_MS] = 700000;
   Assert.equal(feed.resolvePregameLeadMs(), 700000);
-  feed.store.state.Prefs.values.trainhopConfig.sports.pollPregameLeadMs = 120000;
-  Assert.equal(feed.resolvePregameLeadMs(), 120000);
+  feed.store.state.Prefs.values.trainhopConfig = {
+    sports: { pollPregameLeadMs: 120000 },
+  };
+  Assert.equal(feed.resolvePregameLeadMs(), 120000, "legacy sports honored");
+  feed.store.state.Prefs.values.trainhopConfig = {
+    sports: { pollPregameLeadMs: 120000 },
+    widgets: { sportsWidgetPollPregameLeadMs: 90000 },
+  };
+  Assert.equal(feed.resolvePregameLeadMs(), 90000, "canonical wins");
 });
 
 add_task(async function test_fetchLive_returns_null_without_endpoint() {
@@ -1537,7 +1594,7 @@ add_task(async function test_scheduleNext_arms_timer_with_resolved_interval() {
   feed.scheduleNext();
 
   Assert.equal(setTimeoutStub.callCount, 1);
-  Assert.equal(setTimeoutStub.firstCall.args[1], 60000, "LIVE default 60s");
+  Assert.equal(setTimeoutStub.firstCall.args[1], 180000, "LIVE default 180s");
   Assert.equal(typeof setTimeoutStub.firstCall.args[0], "function");
 });
 
@@ -1877,6 +1934,31 @@ add_task(async function test_resolvePollIntervalMs_clamps_to_minimum() {
   feed.store.state.Prefs.values[PREF_POLL_PREGAME_LEAD_MS] = -1;
   Assert.equal(feed.resolvePregameLeadMs(), 0, "negative pregame lead clamps");
 });
+
+// With neither a raw pref nor a trainhopConfig override set, the resolvers fall
+// back to their hard-coded per-state defaults (the safety net) rather than
+// producing NaN from Math.max(floor, undefined).
+add_task(
+  async function test_resolvePollIntervalMs_falls_back_to_static_default() {
+    const feed = makeLiveFeed();
+    feed.store.state.Prefs.values.trainhopConfig = {};
+
+    feed.pollingState = "LIVE";
+    delete feed.store.state.Prefs.values[PREF_POLL_LIVE_MS];
+    Assert.equal(
+      feed.resolvePollIntervalMs(),
+      180000,
+      "LIVE falls back to the 180s static default when pref and trainhop are unset"
+    );
+
+    delete feed.store.state.Prefs.values[PREF_POLL_PREGAME_LEAD_MS];
+    Assert.equal(
+      feed.resolvePregameLeadMs(),
+      600000,
+      "pregame lead falls back to the 10min static default when pref and trainhop are unset"
+    );
+  }
+);
 
 // #14: matches.next ordering isn't guaranteed by the backend. Pick the
 // earliest future kickoff rather than trusting next[0].

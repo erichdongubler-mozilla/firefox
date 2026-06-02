@@ -79,24 +79,53 @@ export class SportsFeed {
     this.ticking = false;
   }
 
+  // Resolve the Sports widget's trainhop overrides into a flat object keyed by
+  // bare dimension. The canonical source is `trainhopConfig.widgets`, where
+  // every widget's overrides live as flat keys prefixed with the widget id
+  // (e.g. `sportsWidgetLiveEnabled`) — the same convention used by enabled/size
+  // in WidgetsRegistry. `trainhopConfig.sports.*` is the legacy nested alias
+  // kept for backwards-compat with in-flight Nimbus enrollments. Canonical wins
+  // per-key, legacy fills the gaps.
+  _trainhopSports(prefs) {
+    const widgets = prefs?.trainhopConfig?.widgets ?? {};
+    const legacy = prefs?.trainhopConfig?.sports ?? {};
+    return {
+      enabled: widgets.sportsWidgetEnabled ?? legacy.enabled,
+      liveEnabled: widgets.sportsWidgetLiveEnabled ?? legacy.liveEnabled,
+      teamsEndpoint: widgets.sportsWidgetTeamsEndpoint ?? legacy.teamsEndpoint,
+      matchesEndpoint:
+        widgets.sportsWidgetMatchesEndpoint ?? legacy.matchesEndpoint,
+      liveEndpoint: widgets.sportsWidgetLiveEndpoint ?? legacy.liveEndpoint,
+      watchLiveEndpoint:
+        widgets.sportsWidgetWatchLiveEndpoint ?? legacy.watchLiveEndpoint,
+      pollLiveMs: widgets.sportsWidgetPollLiveMs ?? legacy.pollLiveMs,
+      pollMatchDayMs:
+        widgets.sportsWidgetPollMatchDayMs ?? legacy.pollMatchDayMs,
+      pollIdleMs: widgets.sportsWidgetPollIdleMs ?? legacy.pollIdleMs,
+      pollPregameLeadMs:
+        widgets.sportsWidgetPollPregameLeadMs ?? legacy.pollPregameLeadMs,
+    };
+  }
+
   get enabled() {
     const prefs = this.store.getState()?.Prefs.values;
     const userValue = !!prefs?.[PREF_SPORTS_ENABLED];
     const systemValue = !!prefs?.[PREF_SYSTEM_SPORTS_ENABLED];
-    const experimentValue = !!prefs?.trainhopConfig?.sports?.enabled;
+    const experimentValue = !!this._trainhopSports(prefs).enabled;
     return userValue && (systemValue || experimentValue);
   }
 
   // Live polling is a sub-feature of the Sports widget — the widget itself
   // must be enabled first. Tunable independently via raw pref or
-  // trainhopConfig.sports.liveEnabled (Nimbus rollout).
+  // trainhopConfig.widgets.sportsWidgetLiveEnabled (Nimbus rollout; legacy
+  // trainhopConfig.sports.liveEnabled still honored).
   get liveEnabled() {
     if (!this.enabled) {
       return false;
     }
     const prefs = this.store.getState()?.Prefs.values;
     const userValue = !!prefs?.[PREF_SPORTS_LIVE_ENABLED];
-    const experimentValue = !!prefs?.trainhopConfig?.sports?.liveEnabled;
+    const experimentValue = !!this._trainhopSports(prefs).liveEnabled;
     return userValue || experimentValue;
   }
 
@@ -274,15 +303,13 @@ export class SportsFeed {
   // a redundant /live fetch.
   async fetchSportsData({ live: prefetchedLive } = {}) {
     const prefs = this.store.getState()?.Prefs.values;
+    const trainhop = this._trainhopSports(prefs);
     const teamsEndpoint =
-      prefs?.trainhopConfig?.sports?.teamsEndpoint ||
-      prefs?.["sports.worldCup.teamsEndpoint"];
+      trainhop.teamsEndpoint || prefs?.["sports.worldCup.teamsEndpoint"];
     const matchesEndpoint =
-      prefs?.trainhopConfig?.sports?.matchesEndpoint ||
-      prefs?.["sports.worldCup.matchesEndpoint"];
+      trainhop.matchesEndpoint || prefs?.["sports.worldCup.matchesEndpoint"];
     const liveEndpoint =
-      prefs?.trainhopConfig?.sports?.liveEndpoint ||
-      prefs?.["sports.worldCup.liveEndpoint"];
+      trainhop.liveEndpoint || prefs?.["sports.worldCup.liveEndpoint"];
 
     const allowedEndpoints = (prefs?.["discoverystream.endpoints"] ?? "")
       .split(",")
@@ -377,7 +404,7 @@ export class SportsFeed {
   async fetchWatchLive() {
     const prefs = this.store.getState()?.Prefs.values;
     const watchLiveEndpoint =
-      prefs?.trainhopConfig?.sports?.watchLiveEndpoint ||
+      this._trainhopSports(prefs).watchLiveEndpoint ||
       prefs?.["sports.worldCup.watchLiveEndpoint"];
 
     const allowedEndpoints = (prefs?.["discoverystream.endpoints"] ?? "")
@@ -423,15 +450,18 @@ export class SportsFeed {
     }
   }
 
-  // Resolve the next poll interval from trainhopConfig, then the raw pref,
-  // then the hard-coded default. Lets Nimbus retune intervals without a ship.
+  // Resolve the next poll interval from trainhopConfig, then the raw pref
+  // (whose PREFS_CONFIG default normally supplies the value), then a hard-coded
+  // per-state default as a safety net if the pref is ever unset. Lets Nimbus
+  // retune intervals without a ship. `raw` is always numeric here, so the
+  // Math.max floor below can never produce NaN.
   resolvePollIntervalMs() {
     const prefs = this.store.getState()?.Prefs.values ?? {};
-    const trainhop = prefs.trainhopConfig?.sports ?? {};
+    const trainhop = this._trainhopSports(prefs);
     let raw;
     switch (this.pollingState) {
       case POLLING_STATE_LIVE:
-        raw = trainhop.pollLiveMs ?? prefs[PREF_POLL_LIVE_MS] ?? 60000;
+        raw = trainhop.pollLiveMs ?? prefs[PREF_POLL_LIVE_MS] ?? 180000;
         break;
       case POLLING_STATE_MATCH_DAY:
         raw =
@@ -446,7 +476,7 @@ export class SportsFeed {
   resolvePregameLeadMs() {
     const prefs = this.store.getState()?.Prefs.values ?? {};
     const raw =
-      prefs.trainhopConfig?.sports?.pollPregameLeadMs ??
+      this._trainhopSports(prefs).pollPregameLeadMs ??
       prefs[PREF_POLL_PREGAME_LEAD_MS] ??
       600000;
     return Math.max(0, raw);
@@ -457,7 +487,7 @@ export class SportsFeed {
   async fetchLive() {
     const prefs = this.store.getState()?.Prefs.values;
     const liveEndpoint =
-      prefs?.trainhopConfig?.sports?.liveEndpoint ||
+      this._trainhopSports(prefs).liveEndpoint ||
       prefs?.[PREF_SPORTS_LIVE_ENDPOINT];
 
     if (!liveEndpoint) {

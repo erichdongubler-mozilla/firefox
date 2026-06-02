@@ -596,7 +596,7 @@ export const PREFS_CONFIG = new Map([
     "widgets.sportsWidget.pollLiveMs",
     {
       title: "Sports widget: poll interval during live play (milliseconds)",
-      value: 60000, // 1 minute
+      value: 180000, // 3 minutes
     },
   ],
   [
