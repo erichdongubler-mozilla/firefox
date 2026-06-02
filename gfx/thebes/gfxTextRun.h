@@ -349,7 +349,7 @@ class gfxTextRun : public gfxShapedText {
    * Computes the minimum advance width for a substring assuming line
    * breaking is allowed everywhere.
    */
-  gfxFloat GetMinAdvanceWidth(Range aRange);
+  gfxFloat GetMinAdvanceWidth(Range aRange) const;
 
   /**
    * Clear all stored line breaks for the given range (both before and after),

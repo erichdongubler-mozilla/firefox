@@ -1222,7 +1222,7 @@ gfxFloat gfxTextRun::GetAdvanceWidth(
   return result + GetAdvanceForGlyphs(ligatureRange);
 }
 
-gfxFloat gfxTextRun::GetMinAdvanceWidth(Range aRange) {
+gfxFloat gfxTextRun::GetMinAdvanceWidth(Range aRange) const {
   MOZ_ASSERT(aRange.end <= GetLength(), "Substring out of range");
 
   Range ligatureRange = aRange;
