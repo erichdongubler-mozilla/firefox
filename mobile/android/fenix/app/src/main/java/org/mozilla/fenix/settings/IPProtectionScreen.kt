@@ -25,8 +25,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -44,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.compose.base.LinkTextState
 import mozilla.components.compose.base.PromoCard
+import mozilla.components.compose.base.Switch
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.concept.engine.ipprotection.IPProtectionHandler
@@ -252,9 +251,6 @@ private fun VpnToggleRow(
             checked = checked,
             onCheckedChange = null,
             enabled = enabled,
-            colors = SwitchDefaults.colors(
-                checkedTrackColor = MaterialTheme.colorScheme.tertiary,
-            ),
         )
     }
 }
