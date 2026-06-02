@@ -225,17 +225,15 @@ body {
   contain: paint;
   position: relative;
 
-  @media not -moz-pref("browser.nova.enabled") {
-    background-color: var(--toolbox-background-color);
-    color: var(--toolbox-text-color);
+  background-color: var(--toolbox-background-color);
+  color: var(--toolbox-text-color);
 
-    will-change: background-color;
-    transition: background-color var(--inactive-window-transition);
+  will-change: background-color;
+  transition: background-color var(--inactive-window-transition);
 
-    &:-moz-window-inactive {
-      background-color: var(--toolbox-background-color-inactive);
-      color: var(--toolbox-text-color-inactive);
-    }
+  &:-moz-window-inactive {
+    background-color: var(--toolbox-background-color-inactive);
+    color: var(--toolbox-text-color-inactive);
   }
   /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.nova.enabled") {
@@ -290,7 +288,12 @@ body {
     }
   }
 
-  #navigator-toolbox,
+  #navigator-toolbox {
+    color: inherit;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    background-color: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.05));
+  }
+
   #sidebar-main {
     background-color: var(--toolbar-background-color);
   }
