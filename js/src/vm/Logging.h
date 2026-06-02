@@ -11,7 +11,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/LoggingCore.h"
 
-#include "jit/JitSpewer.h"
+#include "jit/JitSpewChannelList.h"
 #include "js/experimental/LoggingInterface.h"
 
 struct JSContext;
