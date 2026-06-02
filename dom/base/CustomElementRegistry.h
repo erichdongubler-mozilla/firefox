@@ -324,7 +324,7 @@ class CustomElementReactionsStack {
       mReactionStack->mIsBackupQueueProcessing = true;
     }
 
-    MOZ_CAN_RUN_SCRIPT virtual void Run(AutoSlowOperation& aAso) override {
+    MOZ_CAN_RUN_SCRIPT void Run(AutoSlowOperation& aAso) override {
       mReactionStack->InvokeBackupQueue();
       mReactionStack->mIsBackupQueueProcessing = false;
     }
@@ -336,7 +336,7 @@ class CustomElementReactionsStack {
 
 class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(CustomElementRegistry)
 
  public:
@@ -534,8 +534,8 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
 
   DocGroup* GetDocGroup() const;
 
-  virtual JSObject* WrapObject(JSContext* aCx,
-                               JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   void Define(JSContext* aCx, const nsAString& aName,
               CustomElementConstructor& aFunctionConstructor,

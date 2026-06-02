@@ -96,7 +96,7 @@ class Navigator final : public nsISupports, public nsWrapperCache {
  public:
   explicit Navigator(nsPIDOMWindowInner* aInnerWindow);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(Navigator)
 
   void Invalidate();
@@ -249,8 +249,8 @@ class Navigator final : public nsISupports, public nsWrapperCache {
 
   nsPIDOMWindowInner* GetParentObject() const { return GetWindow(); }
 
-  virtual JSObject* WrapObject(JSContext* cx,
-                               JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* cx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   // GetWindowFromGlobal returns the inner window for this global, if
   // any, else null.
@@ -284,7 +284,7 @@ class Navigator final : public nsISupports, public nsWrapperCache {
   bool TestTrialGatedAttribute() const { return true; }
 
  private:
-  virtual ~Navigator();
+  ~Navigator();
 
   // This enum helps SendBeaconInternal to apply different behaviors to body
   // types.
