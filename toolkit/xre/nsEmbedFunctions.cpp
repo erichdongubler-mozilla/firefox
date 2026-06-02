@@ -124,6 +124,7 @@
 #endif
 
 #include "VRProcessChild.h"
+#include "nsTraceRefcnt.h"
 
 using namespace mozilla;
 
@@ -296,6 +297,7 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
   ScopedLogging logger;
 
   mozilla::LogModule::Init(aArgc, aArgv);
+  nsTraceRefcnt::EarlyInit();
 
   AUTO_BASE_PROFILER_LABEL("XRE_InitChildProcess (around Gecko Profiler)",
                            OTHER);
