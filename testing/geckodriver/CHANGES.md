@@ -3,7 +3,7 @@
 
 All notable changes to this program are documented in this file.
 
-## 0.37.0 (2026-06-03, `<TODO>`)
+## 0.37.0 (2026-06-03, `253b85235865`)
 
 ### Known problems
 
