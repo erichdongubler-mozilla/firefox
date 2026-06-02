@@ -30,6 +30,7 @@
 #include "mozilla/layers/SharedPlanarYCbCrImage.h"
 #include "mozilla/layers/SharedRGBImage.h"
 #include "mozilla/layers/TextureClientRecycleAllocator.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "nsProxyRelease.h"
 #include "nsISupportsUtils.h"  // for NS_IF_ADDREF
 
@@ -87,7 +88,7 @@ UniquePtr<uint8_t[]> BufferRecycleBin::GetBuffer(uint32_t aSize) {
   MutexAutoLock lock(mLock);
 
   if (mRecycledBuffers.IsEmpty() || mRecycledBufferSize != aSize) {
-    return UniquePtr<uint8_t[]>(new (fallible) uint8_t[aSize]);
+    return MakeUniqueFallible<uint8_t[]>(aSize);
   }
 
   return mRecycledBuffers.PopLastElement();
@@ -1044,7 +1045,7 @@ already_AddRefed<SourceSurface> NVImage::GetAsSourceSurface() {
   auto cbcrSize = mData.CbCrDataSize();
   const int bufferLength =
       ySize.height * mData.mYStride + cbcrSize.height * cbcrSize.width * 2;
-  UniquePtr<uint8_t[]> buffer(new uint8_t[bufferLength]);
+  auto buffer = MakeUnique<uint8_t[]>(bufferLength);
 
   Data aData = mData;
   aData.mCbCrStride = cbcrSize.width;
@@ -1229,8 +1230,7 @@ nsresult NVImage::SetData(const Data& aData) {
 const NVImage::Data* NVImage::GetData() const { return &mData; }
 
 UniquePtr<uint8_t[]> NVImage::AllocateBuffer(uint32_t aSize) {
-  UniquePtr<uint8_t[]> buffer(new uint8_t[aSize]);
-  return buffer;
+  return MakeUnique<uint8_t[]>(aSize);
 }
 
 SourceSurfaceImage::SourceSurfaceImage(const gfx::IntSize& aSize,
