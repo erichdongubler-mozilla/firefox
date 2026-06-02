@@ -83,10 +83,6 @@ class Response final : public FetchBody<Response>, public nsWrapperCache {
     mInternalResponse->GetBody(aStream, aBodyLength);
   }
 
-  void CloneBody(nsIInputStream** aStream, int64_t* aBodyLength = nullptr) {
-    mInternalResponse->CloneBody(aStream, aBodyLength);
-  }
-
   using FetchBody::GetBody;
 
   using FetchBody::BodyBlobImpl;
