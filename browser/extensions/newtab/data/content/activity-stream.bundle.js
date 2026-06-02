@@ -13261,7 +13261,6 @@ function Lists({
         data: telemetryData
       }));
     });
-    handleListInteraction();
   }
   function handleCopyListToClipboard() {
     const currentList = lists[selected];
@@ -14674,7 +14673,13 @@ const FocusTimer = ({
     "data-l10n-id": novaEnabled ? "newtab-widget-timer-menu-hide" : "newtab-widget-menu-hide",
     onClick: () => {
       (0,external_ReactRedux_namespaceObject.batch)(() => {
-        handlePrefUpdate("widgets.focusTimer.enabled", false);
+        dispatch(actionCreators.OnlyToMain({
+          type: actionTypes.SET_PREF,
+          data: {
+            name: "widgets.focusTimer.enabled",
+            value: false
+          }
+        }));
         const telemetryData = {
           widget_name: "focus_timer",
           widget_source: "context_menu",
@@ -17459,7 +17464,6 @@ function SportsWidget_SportsWidget({
         }
       }));
     });
-    handleInteraction();
   }
   const handleChangeSize = (0,external_React_namespaceObject.useCallback)(size => {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
@@ -17520,6 +17524,7 @@ function SportsWidget_SportsWidget({
         data: telemetryData
       }));
     });
+    handleInteraction();
   }
 
   // Discard any team changes and go back to the intro state.

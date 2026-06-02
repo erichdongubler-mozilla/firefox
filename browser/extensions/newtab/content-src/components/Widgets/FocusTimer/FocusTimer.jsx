@@ -1034,7 +1034,15 @@ export const FocusTimer = ({
               }
               onClick={() => {
                 batch(() => {
-                  handlePrefUpdate("widgets.focusTimer.enabled", false);
+                  dispatch(
+                    ac.OnlyToMain({
+                      type: at.SET_PREF,
+                      data: {
+                        name: "widgets.focusTimer.enabled",
+                        value: false,
+                      },
+                    })
+                  );
 
                   const telemetryData = {
                     widget_name: "focus_timer",

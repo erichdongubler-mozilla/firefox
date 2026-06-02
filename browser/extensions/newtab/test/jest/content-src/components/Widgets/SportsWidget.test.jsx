@@ -2465,6 +2465,48 @@ describe("<SportsWidget> telemetry", () => {
     expect(handleUserInteraction).toHaveBeenCalledWith("sportsWidget");
   });
 
+  it("disables the widget without recording an interaction when the Hide widget menu item is clicked", () => {
+    const { container } = renderWidget();
+    fireEvent.click(
+      container.querySelector("[data-l10n-id='newtab-widget-menu-hide']")
+    );
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.SET_PREF,
+        data: { name: "widgets.sportsWidget.enabled", value: false },
+      })
+    );
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_ENABLED,
+        data: expect.objectContaining({
+          widget_name: "sports",
+          widget_source: "context_menu",
+          enabled: false,
+        }),
+      })
+    );
+    expect(handleUserInteraction).not.toHaveBeenCalled();
+  });
+
+  it("opens the support link and records an interaction when the Learn more menu item is clicked", () => {
+    const { container } = renderWidget();
+    fireEvent.click(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-menu-learn-more']"
+      )
+    );
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.OPEN_LINK,
+        data: expect.objectContaining({
+          url: "https://support.mozilla.org/kb/firefox-new-tab-widgets",
+        }),
+      })
+    );
+    expect(handleUserInteraction).toHaveBeenCalledWith("sportsWidget");
+  });
+
   it("should dispatch view_key_dates telemetry with context_menu source when the View schedule menu item is clicked", () => {
     const { container } = renderWidget();
     fireEvent.click(
