@@ -290,9 +290,7 @@ class NetworkEventContentWatcher {
         resourceUpdates.remoteAddress = updateResource.remoteAddress;
         resourceUpdates.remotePort = updateResource.remotePort;
         resourceUpdates.waitingTime = updateResource.waitingTime;
-        if (Number.isInteger(updateResource.priority)) {
-          resourceUpdates.priority = updateResource.priority;
-        }
+
         lazy.NetworkUtils.setEventAsAvailable(resourceUpdates, [
           NETWORK_EVENT_TYPES.RESPONSE_COOKIES,
           NETWORK_EVENT_TYPES.RESPONSE_HEADERS,

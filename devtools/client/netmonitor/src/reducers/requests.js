@@ -227,7 +227,6 @@ function updateRequest(state, action) {
     ...request,
     ...processNetworkUpdates(action.data),
   };
-
   const requestEndTime =
     nextRequest.startedMs +
     (nextRequest.eventTimings ? nextRequest.eventTimings.totalTime : 0);
