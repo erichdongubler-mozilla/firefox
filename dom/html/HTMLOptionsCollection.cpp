@@ -10,26 +10,14 @@
 
 namespace mozilla::dom {
 
-// https://html.spec.whatwg.org/#concept-select-option-list
 bool HTMLOptionsCollection::IsValidOption(const HTMLOptionElement& aOption,
                                           const HTMLSelectElement& aRoot) {
-  bool seenOptgroup = false;
-  for (nsINode* ancestor = aOption.GetParent(); ancestor;
-       ancestor = ancestor->GetParentNode()) {
-    if (ancestor == &aRoot) {
-      return true;
-    }
-    if (HTMLOptionElement::IsOptionListBoundary(*ancestor)) {
-      return false;
-    }
-    if (ancestor->IsHTMLElement(nsGkAtoms::optgroup)) {
-      if (seenOptgroup) {
-        return false;
-      }
-      seenOptgroup = true;
-    }
+  auto* parent = aOption.GetParent();
+  if (parent == &aRoot) {
+    return true;
   }
-  return false;
+  return parent->IsHTMLElement(nsGkAtoms::optgroup) &&
+         parent->GetParent() == &aRoot;
 }
 
 static bool MatchOption(Element* aElement, int32_t aNamespaceID, nsAtom* aAtom,
