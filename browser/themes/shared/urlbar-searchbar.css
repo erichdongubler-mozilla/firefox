@@ -8,12 +8,20 @@
 :root {
   --urlbar-container-min-width: 310px;
 
+  --urlbar-basic-component-size: calc(var(--urlbar-min-height) - 2 * var(--urlbar-input-container-padding));
+  --urlbar-icon-padding: calc((var(--urlbar-basic-component-size) - 16px) / 2);
+
   /* Usually we wouldn't need snapping border widths manually, but we use this
    * for other layout calculations too */
-  --urlbar-container-border-width: max(env(hairline), round(down, 1px, env(hairline)));
-  --urlbar-container-padding: round(up, 1px, env(hairline));
-  --urlbar-container-inset: calc(var(--urlbar-container-border-width) + var(--urlbar-container-padding));
+  --urlbar-input-container-border-width: max(env(hairline), round(down, 1px, env(hairline)));
+  --urlbar-input-container-border-width-breakout: calc(2 * var(--urlbar-input-container-border-width));
+  --urlbar-input-container-padding: round(nearest, var(--space-xxsmall) + var(--urlbar-input-container-border-width-breakout), 1px);
 
+  @media not -moz-pref("browser.nova.enabled") {
+    --urlbar-basic-component-size: calc(var(--urlbar-min-height) - 2 * (var(--urlbar-input-container-border-width) + var(--urlbar-input-container-padding)));
+    --urlbar-icon-padding: calc((var(--urlbar-min-height) - 2px /* border */ - 2px /* padding */ - 16px /* icon */) / 2);
+    --urlbar-input-container-padding: round(up, 1px, env(hairline));
+  }
   @media (max-width: 770px) {
     --urlbar-container-min-width: 240px;
   }
@@ -68,20 +76,20 @@
   --urlbar-background-border-radius: var(--urlbarview-border-radius);
   --urlbar-background-box-shadow-breakout: 0 0 14px 0 var(--chrome-box-shadow);
   --urlbar-background-outline-focused: none;
-  --urlbar-input-container-border: var(--urlbar-container-border-width) solid var(--toolbar-field-border-color);
+  --urlbar-input-container-border: var(--urlbar-input-container-border-width) solid var(--toolbar-field-border-color);
   --urlbar-margin-block-start: calc((var(--urlbar-container-height) - var(--urlbar-height)) / 2);
   --urlbar-searchmode-switcher-panel-list-min-width: 17em;
   --urlbar-selection-border-radius: var(--border-radius-xsmall);
 
   @media not -moz-pref("browser.nova.enabled") {
-    --urlbar-background-border: var(--urlbar-container-border-width) solid var(--toolbar-field-border-color);
-    --urlbar-background-border-breakout: var(--urlbar-container-border-width) solid var(--panel-border-color);
+    --urlbar-background-border: var(--urlbar-input-container-border-width) solid var(--toolbar-field-border-color);
+    --urlbar-background-border-breakout: var(--urlbar-input-container-border-width) solid var(--panel-border-color);
     --urlbar-background-box-shadow-breakout: 0 2px 14px var(--chrome-box-shadow);
     /* We want the focus outline with the theme's border-color when focused.
        --toolbar-field-border-color-focus is set equal to --focus-outline-color
        on :root, but LWT themes can override this value. */
     --urlbar-background-outline-focused: var(--focus-outline-width) solid var(--toolbar-field-border-color-focus);
-    --urlbar-input-container-border: var(--urlbar-container-border-width) solid transparent;
+    --urlbar-input-container-border: var(--urlbar-input-container-border-width) solid transparent;
     --urlbar-margin-block-start: 0px;
     --urlbar-searchmode-switcher-panel-list-min-width: auto;
     --urlbar-selection-border-radius: 0;
@@ -227,12 +235,12 @@ toolbar[inactive="true"] .urlbar,
 }
 
 .urlbar-input-container {
-  padding: var(--urlbar-container-padding);
+  padding: var(--urlbar-input-container-padding);
   min-width: 0;
   display: flex;
+  align-items: center;
   flex: 1;
   box-sizing: border-box;
-  border: var(--urlbar-input-container-border);
   border-radius: var(--urlbar-border-radius);
   overflow: clip;
 
@@ -351,11 +359,11 @@ toolbar[inactive="true"] .urlbar,
 @media -moz-pref("browser.nova.enabled") {
   .urlbar:not(moz-smartbar)[breakout] {
     --urlbar-background-inset: calc(var(--urlbar-height) / 2 - var(--border-radius-xxlarge));
-    --urlbar-container-border-width-breakout: calc(2 * var(--urlbar-container-border-width));
 
     > .urlbar-input-container {
       height: var(--urlbar-height);
-      padding: calc(var(--urlbar-container-border-width-breakout) - var(--urlbar-container-border-width));
+      outline: var(--urlbar-input-container-border);
+      outline-offset: calc(-1 * var(--urlbar-input-container-border-width));
     }
 
     &[breakout-extend] {
@@ -363,12 +371,12 @@ toolbar[inactive="true"] .urlbar,
     }
 
     &[breakout-extend] > .urlbar-input-container {
-      padding: 0;
-      border-width: var(--urlbar-container-border-width-breakout);
+      outline-width: var(--urlbar-input-container-border-width-breakout);
+      outline-offset: calc(-1 * var(--urlbar-input-container-border-width-breakout));
     }
 
     &[breakout-extend][focused] > .urlbar-input-container {
-      border-color: var(--focus-outline-color);
+      outline-color: var(--focus-outline-color);
     }
 
     &[breakout-extend] > .urlbar-background {
@@ -433,6 +441,10 @@ toolbar[inactive="true"] .urlbar,
     }
   }
 
+  .urlbar-input-container {
+    border: var(--urlbar-input-container-border);
+  }
+
   .urlbar[breakout][breakout-extend] {
     height: auto;
     margin-left: calc(-1 * var(--urlbar-margin-inline));
@@ -440,8 +452,8 @@ toolbar[inactive="true"] .urlbar,
 
     > .urlbar-input-container {
       height: var(--urlbar-container-height);
-      padding-block: calc((var(--urlbar-container-height) - var(--urlbar-height)) / 2 + var(--urlbar-container-padding));
-      padding-inline: calc(var(--urlbar-margin-inline) + var(--urlbar-container-padding));
+      padding-block: calc((var(--urlbar-container-height) - var(--urlbar-height)) / 2 + var(--urlbar-input-container-padding));
+      padding-inline: calc(var(--urlbar-margin-inline) + var(--urlbar-input-container-padding));
     }
 
     > .urlbar-background {
@@ -713,17 +725,18 @@ toolbar[inactive="true"] .urlbar,
   fill-opacity: var(--urlbar-icon-fill-opacity);
 }
 
+#urlbar-revert-button-container,
 .urlbar-page-action,
-.urlbar-revert-button,
 .urlbar-go-button,
 .search-go-button {
-  width: calc(var(--urlbar-min-height) - 2 * var(--urlbar-container-inset));
-  height: calc(var(--urlbar-min-height) - 2 * var(--urlbar-container-inset));
+  width: var(--urlbar-basic-component-size);
+  height: var(--urlbar-basic-component-size);
   border-radius: var(--urlbar-inner-border-radius);
-  padding: var(--urlbar-icon-padding);
   color: inherit;
   outline: var(--toolbarbutton-outline);
   outline-offset: var(--toolbarbutton-outline-offset);
+  align-items: center;
+  justify-content: center;
 
   &:not([disabled]):hover {
     background-color: var(--urlbar-box-background-color-hover);
@@ -760,6 +773,7 @@ toolbar[inactive="true"] .urlbar,
 
 .urlbar-go-button,
 .search-go-button {
+  padding: var(--urlbar-icon-padding);
   &:-moz-locale-dir(rtl) {
     transform: scaleX(-1);
   }
@@ -779,7 +793,10 @@ toolbar[inactive="true"] .urlbar,
 :root[remotecontrol] {
   #remote-control-box {
     visibility: visible;
-    padding-inline: var(--urlbar-icon-padding);
+    width: var(--urlbar-basic-component-size);
+    height: var(--urlbar-basic-component-size);
+    align-items: center;
+    justify-content: center;
   }
 
   #remote-control-icon {
@@ -838,7 +855,6 @@ toolbar[inactive="true"] .urlbar,
 
     #cfr-button {
       list-style-image: var(--cfr-button-features-icon);
-      height: auto;
       align-items: center;
     }
   }
@@ -848,7 +864,6 @@ toolbar[inactive="true"] .urlbar,
 
     #cfr-button {
       list-style-image: var(--cfr-button-highlights-icon);
-      height: auto;
       align-items: center;
     }
   }
@@ -906,7 +921,6 @@ toolbar[inactive="true"] .urlbar,
   transition-timing-function: ease-in-out, ease-in-out, step-end, step-end;
   transition-duration: var(--cfr-animation-duration);
   align-items: center;
-  margin-block: calc((var(--urlbar-min-height) - 24px) / 2 - var(--urlbar-container-inset));
 
   &:-moz-locale-dir(rtl) {
     mask-position-x: calc(var(--cfr-label-width) * -1);
@@ -1085,7 +1099,6 @@ toolbar[inactive="true"] .urlbar,
   border-radius: var(--urlbar-inner-border-radius);
   background-color: var(--urlbar-box-background-color);
   color: var(--urlbar-box-text-color);
-  margin-block: calc((var(--urlbar-min-height) - 20px) / 2 - var(--urlbar-container-inset));
   overflow: hidden;
 
   :where(#urlbar[focused]) & {
@@ -1254,7 +1267,7 @@ toolbar[inactive="true"] .urlbar,
 
 .searchmode-switcher {
   margin-inline-end: var(--urlbar-searchmodeswitcher-margin-inline-end);
-  height: auto;
+  height: var(--urlbar-basic-component-size);
   --button-border: none;
   --button-padding: 0 var(--space-small);
   --button-min-height: 100%;

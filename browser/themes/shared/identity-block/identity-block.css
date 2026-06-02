@@ -4,6 +4,13 @@
 
 @namespace html url("http://www.w3.org/1999/xhtml");
 
+#tracking-protection-icon-container,
+#identity-box,
+#trust-icon-container,
+#urlbar-label-box {
+  height: var(--urlbar-basic-component-size);
+}
+
 #identity-box {
   margin-inline-end: var(--identity-box-margin-inline);
 
@@ -340,9 +347,6 @@
     padding-inline: var(--urlbar-icon-padding);
     border-radius: var(--urlbar-inner-border-radius);
     -moz-context-properties: fill, fill-opacity;
-    /* Height shouldn't need defined here but is failing wpt tests without.
-       Investigating in https://bugzilla.mozilla.org/show_bug.cgi?id=2004907 */
-    height: calc(16px + (2 * var(--urlbar-icon-padding)));
 
     /* The urlbar will show insecure or secure icon by default depending
        on the state of the connection, the further clauses may override that. */
