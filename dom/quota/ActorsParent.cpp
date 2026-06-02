@@ -2081,7 +2081,7 @@ uint64_t QuotaManager::CollectOriginsForEviction(
 
   struct MOZ_STACK_CLASS Helper final {
     static void GetInactiveOriginInfos(
-        const nsTArray<NotNull<RefPtr<OriginInfo>>>& aOriginInfos,
+        const nsTArray<NotNull<SafeRefPtr<OriginInfo>>>& aOriginInfos,
         const nsTArray<NotNull<const DirectoryLockImpl*>>& aLocks,
         OriginInfosFlatTraversable& aInactiveOriginInfos) {
       for (const auto& originInfo : aOriginInfos) {
@@ -2169,7 +2169,7 @@ uint64_t QuotaManager::CollectOriginsForEviction(
       [this, &temporaryStorageLocks = temporaryStorageLocks,
        &defaultStorageLocks = defaultStorageLocks,
        &privateStorageLocks = privateStorageLocks, aMinSizeToBeFreed] {
-        nsTArray<NotNull<RefPtr<const OriginInfo>>> inactiveOrigins;
+        OriginInfosFlatTraversable inactiveOrigins;
         for (const auto& entry : mGroupInfoPairs) {
           const auto& pair = entry.GetData();
 
@@ -2656,13 +2656,14 @@ void QuotaManager::InitQuotaForOrigin(
       aFullOriginMetadata.mPersistenceType, aFullOriginMetadata.mSuffix,
       aFullOriginMetadata.mGroup);
 
-  groupInfo->LockedAddOriginInfo(MakeNotNull<RefPtr<OriginInfo>>(
-      groupInfo, aFullOriginMetadata.mOrigin,
-      aFullOriginMetadata.mStorageOrigin, aFullOriginMetadata.mIsPrivate,
-      aFullOriginMetadata.mClientUsages, aFullOriginMetadata.mOriginUsage,
-      aFullOriginMetadata.mLastAccessTime,
-      aFullOriginMetadata.mLastMaintenanceDate, aFullOriginMetadata.mPersisted,
-      aDirectoryExists));
+  groupInfo->LockedAddOriginInfo(
+      WrapNotNullUnchecked(MakeSafeRefPtr<OriginInfo>(
+          groupInfo, aFullOriginMetadata.mOrigin,
+          aFullOriginMetadata.mStorageOrigin, aFullOriginMetadata.mIsPrivate,
+          aFullOriginMetadata.mClientUsages, aFullOriginMetadata.mOriginUsage,
+          aFullOriginMetadata.mLastAccessTime,
+          aFullOriginMetadata.mLastMaintenanceDate,
+          aFullOriginMetadata.mPersisted, aDirectoryExists)));
 }
 
 void QuotaManager::DecreaseUsageForClient(const ClientMetadata& aClientMetadata,
@@ -2683,7 +2684,7 @@ void QuotaManager::DecreaseUsageForClient(const ClientMetadata& aClientMetadata,
     return;
   }
 
-  RefPtr<OriginInfo> originInfo =
+  SafeRefPtr<OriginInfo> originInfo =
       groupInfo->LockedGetOriginInfo(aClientMetadata.mOrigin);
   if (originInfo) {
     originInfo->LockedDecreaseUsage(aClientMetadata.mClientType, aSize);
@@ -2707,7 +2708,7 @@ void QuotaManager::ResetUsageForClient(const ClientMetadata& aClientMetadata) {
     return;
   }
 
-  RefPtr<OriginInfo> originInfo =
+  SafeRefPtr<OriginInfo> originInfo =
       groupInfo->LockedGetOriginInfo(aClientMetadata.mOrigin);
   if (originInfo) {
     originInfo->LockedResetUsageForClient(aClientMetadata.mClientType);
@@ -2732,7 +2733,7 @@ UsageInfo QuotaManager::GetUsageForClient(PersistenceType aPersistenceType,
     return UsageInfo{};
   }
 
-  RefPtr<OriginInfo> originInfo =
+  SafeRefPtr<OriginInfo> originInfo =
       groupInfo->LockedGetOriginInfo(aOriginMetadata.mOrigin);
   if (!originInfo) {
     return UsageInfo{};
@@ -2759,7 +2760,7 @@ void QuotaManager::UpdateOriginAccessTime(const OriginMetadata& aOriginMetadata,
     return;
   }
 
-  RefPtr<OriginInfo> originInfo =
+  SafeRefPtr<OriginInfo> originInfo =
       groupInfo->LockedGetOriginInfo(aOriginMetadata.mOrigin);
   if (!originInfo) {
     return;
@@ -2786,7 +2787,7 @@ void QuotaManager::UpdateOriginMaintenanceDate(
     return;
   }
 
-  RefPtr<OriginInfo> originInfo =
+  SafeRefPtr<OriginInfo> originInfo =
       groupInfo->LockedGetOriginInfo(aOriginMetadata.mOrigin);
   if (!originInfo) {
     return;
@@ -2812,7 +2813,7 @@ void QuotaManager::UpdateOriginAccessed(const OriginMetadata& aOriginMetadata) {
     return;
   }
 
-  RefPtr<OriginInfo> originInfo =
+  SafeRefPtr<OriginInfo> originInfo =
       groupInfo->LockedGetOriginInfo(aOriginMetadata.mOrigin);
   if (!originInfo) {
     return;
@@ -3369,7 +3370,7 @@ already_AddRefed<QuotaObject> QuotaManager::GetQuotaObject(
       return nullptr;
     }
 
-    RefPtr<OriginInfo> originInfo =
+    SafeRefPtr<OriginInfo> originInfo =
         groupInfo->LockedGetOriginInfo(aOriginMetadata.mOrigin);
 
     if (!originInfo) {
@@ -3384,7 +3385,7 @@ already_AddRefed<QuotaObject> QuotaManager::GetQuotaObject(
           // Create a new QuotaObject. The hashtable is not responsible to
           // delete the QuotaObject.
           return WrapNotNullUnchecked(new CanonicalQuotaObject(
-              originInfo, aClientType, path, fileSize));
+              originInfo.unsafeGetRawPtr(), aClientType, path, fileSize));
         });
 
     // Addref the QuotaObject and move the ownership to the result. This must
@@ -3452,7 +3453,7 @@ Nullable<bool> QuotaManager::OriginPersisted(
 
   MutexAutoLock lock(mQuotaMutex);
 
-  RefPtr<OriginInfo> originInfo =
+  SafeRefPtr<OriginInfo> originInfo =
       LockedGetOriginInfo(PERSISTENCE_TYPE_DEFAULT, aOriginMetadata);
   if (originInfo) {
     return Nullable<bool>(originInfo->LockedPersisted());
@@ -3466,7 +3467,7 @@ void QuotaManager::PersistOrigin(const OriginMetadata& aOriginMetadata) {
 
   MutexAutoLock lock(mQuotaMutex);
 
-  RefPtr<OriginInfo> originInfo =
+  SafeRefPtr<OriginInfo> originInfo =
       LockedGetOriginInfo(PERSISTENCE_TYPE_DEFAULT, aOriginMetadata);
   if (originInfo && !originInfo->LockedPersisted()) {
     originInfo->LockedPersist();
@@ -5957,7 +5958,7 @@ bool QuotaManager::IsPendingOrigin(
     const OriginMetadata& aOriginMetadata) const {
   MutexAutoLock lock(mQuotaMutex);
 
-  RefPtr<OriginInfo> originInfo =
+  SafeRefPtr<OriginInfo> originInfo =
       LockedGetOriginInfo(aOriginMetadata.mPersistenceType, aOriginMetadata);
 
   return originInfo && !originInfo->LockedDirectoryExists();
@@ -6520,7 +6521,7 @@ bool QuotaManager::IsTemporaryOriginInitializedInternal(
 
   MutexAutoLock lock(mQuotaMutex);
 
-  RefPtr<OriginInfo> originInfo =
+  SafeRefPtr<OriginInfo> originInfo =
       LockedGetOriginInfo(aOriginMetadata.mPersistenceType, aOriginMetadata);
 
   return static_cast<bool>(originInfo);
@@ -7633,7 +7634,7 @@ Maybe<OriginStateMetadata> QuotaManager::GetOriginStateMetadata(
 
   MutexAutoLock lock(mQuotaMutex);
 
-  RefPtr<OriginInfo> originInfo =
+  SafeRefPtr<OriginInfo> originInfo =
       LockedGetOriginInfo(aOriginMetadata.mPersistenceType, aOriginMetadata);
   if (originInfo) {
     return Some(originInfo->LockedFlattenToOriginStateMetadata());
@@ -7657,7 +7658,7 @@ std::pair<uint64_t, uint64_t> QuotaManager::GetUsageAndLimitForEstimate(
         RefPtr<GroupInfo> groupInfo = pair->LockedGetGroupInfo(type);
         if (groupInfo) {
           if (type == PERSISTENCE_TYPE_DEFAULT) {
-            RefPtr<OriginInfo> originInfo =
+            SafeRefPtr<OriginInfo> originInfo =
                 groupInfo->LockedGetOriginInfo(aOriginMetadata.mOrigin);
 
             if (originInfo && originInfo->LockedPersisted()) {
@@ -7689,7 +7690,7 @@ uint64_t QuotaManager::GetOriginUsage(
       for (const PersistenceType type : kBestEffortPersistenceTypes) {
         RefPtr<GroupInfo> groupInfo = pair->LockedGetGroupInfo(type);
         if (groupInfo) {
-          RefPtr<OriginInfo> originInfo =
+          SafeRefPtr<OriginInfo> originInfo =
               groupInfo->LockedGetOriginInfo(aPrincipalMetadata.mOrigin);
           if (originInfo) {
             AssertNoOverflow(usage, originInfo->LockedUsage());
@@ -7711,7 +7712,7 @@ Maybe<FullOriginMetadata> QuotaManager::GetFullOriginMetadata(
 
   MutexAutoLock lock(mQuotaMutex);
 
-  RefPtr<OriginInfo> originInfo =
+  SafeRefPtr<OriginInfo> originInfo =
       LockedGetOriginInfo(aOriginMetadata.mPersistenceType, aOriginMetadata);
   if (originInfo) {
     return Some(originInfo->LockedFlattenToFullOriginMetadata());
@@ -7928,7 +7929,7 @@ already_AddRefed<GroupInfo> QuotaManager::LockedGetOrCreateGroupInfo(
   return groupInfo.forget();
 }
 
-already_AddRefed<OriginInfo> QuotaManager::LockedGetOriginInfo(
+SafeRefPtr<OriginInfo> QuotaManager::LockedGetOriginInfo(
     PersistenceType aPersistenceType,
     const OriginMetadata& aOriginMetadata) const {
   mQuotaMutex.AssertCurrentThreadOwns();
