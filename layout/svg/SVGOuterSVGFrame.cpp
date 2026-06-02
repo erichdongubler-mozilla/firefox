@@ -46,20 +46,6 @@ SVGOuterSVGFrame::SVGOuterSVGFrame(ComputedStyle* aStyle,
                NS_FRAME_FONT_INFLATION_FLOW_ROOT);
 }
 
-// The CSS Containment spec says that size-contained replaced elements must be
-// treated as having an intrinsic width and height of 0.  That's applicable to
-// outer SVG frames, unless they're the outermost element (in which case
-// they're not really "replaced", and there's no outer context to contain sizes
-// from leaking into). Hence, we check for a parent element before we bother
-// testing for 'contain:size'.
-static inline ContainSizeAxes ContainSizeAxesIfApplicable(
-    const SVGOuterSVGFrame* aFrame) {
-  if (!aFrame->GetContent()->GetParent()) {
-    return ContainSizeAxes(false, false);
-  }
-  return aFrame->GetContainSizeAxes();
-}
-
 // This should match ImageDocument::GetZoomLevel.
 float SVGOuterSVGFrame::ComputeFullZoom() const {
   MOZ_ASSERT(mIsRootContent);
@@ -158,7 +144,7 @@ nscoord SVGOuterSVGFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
                       : svg->mLengthAttributes[SVGSVGElement::ATTR_WIDTH];
 
   if (Maybe<nscoord> containISize =
-          ContainSizeAxesIfApplicable(this).ContainIntrinsicISize(*this)) {
+          ContainSizeAxesIfApplicable().ContainIntrinsicISize(*this)) {
     result = *containISize;
   } else if (isize.IsPercentage()) {
     // If we are here, our inline size attribute is a percentage either
@@ -192,7 +178,7 @@ IntrinsicSize SVGOuterSVGFrame::GetIntrinsicSize() {
   // XXXjwatt Note that here we want to return the CSS width/height if they're
   // specified and we're embedded inside an nsIObjectLoadingContent.
 
-  const auto containAxes = ContainSizeAxesIfApplicable(this);
+  const auto containAxes = ContainSizeAxesIfApplicable();
   if (containAxes.IsBoth()) {
     // Intrinsic size of 'contain:size' replaced elements is determined by
     // contain-intrinsic-size, defaulting to 0x0.
@@ -223,13 +209,8 @@ IntrinsicSize SVGOuterSVGFrame::GetIntrinsicSize() {
 }
 
 AspectRatio SVGOuterSVGFrame::GetIntrinsicRatio() const {
-  if (ContainSizeAxesIfApplicable(this).IsAny()) {
-    return AspectRatio();
-  }
-
-  auto* element = static_cast<SVGSVGElement*>(GetContent());
-  AspectRatio ratio = element->GetIntrinsicRatio();
-  if (ratio) {
+  if (AspectRatio ratio =
+          static_cast<SVGSVGElement*>(GetContent())->GetIntrinsicRatio()) {
     return ratio;
   }
   return SVGDisplayContainerFrame::GetIntrinsicRatio();

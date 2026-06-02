@@ -435,6 +435,11 @@ LengthPercentage SVGSVGElement::GetIntrinsicWidthOrHeight(int aAttr) {
 }
 
 AspectRatio SVGSVGElement::GetIntrinsicRatio() {
+  if (SVGOuterSVGFrame* osf = do_QueryFrame(GetPrimaryFrame())) {
+    if (osf->ContainSizeAxesIfApplicable().IsAny()) {
+      return AspectRatio();
+    }
+  }
   // We only have an intrinsic size/ratio if our width and height attributes
   // are both specified and set to non-percentage values, or we have a viewBox
   // rect: https://svgwg.org/svg2-draft/coords.html#SizingSVGInCSS
@@ -478,9 +483,7 @@ gfx::Size SVGSVGElement::GetIntrinsicSizeWithFallback() {
   if (intrinsicWidth.IsLength() && intrinsicHeight.IsLength()) {
     return size;
   }
-  SVGOuterSVGFrame* osf = do_QueryFrame(GetPrimaryFrame());
-  AspectRatio ratio = osf ? osf->GetIntrinsicRatio() : GetIntrinsicRatio();
-  if (ratio) {
+  if (AspectRatio ratio = GetIntrinsicRatio()) {
     if (!intrinsicHeight.IsLength()) {
       // Compute the height from the width & ratio.  (Note that the width we
       // use here might be kFallbackIntrinsicWidthInPixels, and that's fine.)

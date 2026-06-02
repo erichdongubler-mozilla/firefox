@@ -44,6 +44,18 @@ class SVGOuterSVGFrame final : public SVGDisplayContainerFrame,
   nscoord IntrinsicISize(const IntrinsicSizeInput& aInput,
                          IntrinsicISizeType aType) override;
 
+  // The CSS Containment spec says that size-contained replaced elements must be
+  // treated as having an intrinsic width and height of 0.  That's applicable to
+  // outer SVG frames, unless they're the outermost element (in which case
+  // they're not really "replaced", and there's no outer context to contain
+  // sizes from leaking into). Hence, we check for a parent element before we
+  // bother testing for 'contain:size'.
+  inline ContainSizeAxes ContainSizeAxesIfApplicable() const {
+    if (!GetContent()->GetParent()) {
+      return ContainSizeAxes(false, false);
+    }
+    return GetContainSizeAxes();
+  }
   IntrinsicSize GetIntrinsicSize() override;
   AspectRatio GetIntrinsicRatio() const override;
 
