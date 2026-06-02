@@ -159,7 +159,6 @@ void HTMLOptionElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
   if (!select) {
     // If option is a child of select, SetOptionsSelectedByIndex will set the
     // selected state if needed.
-    // Keep in sync with Element::SetNoNameSpaceAttrOnNewlyCreatedElement!
     SetStates(ElementState::CHECKED, !!aValue, aNotify);
     return;
   }

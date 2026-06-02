@@ -352,6 +352,9 @@ class nsHtml5TreeBuilder : public nsAHtml5TreeBuilderState {
   bool isTemplateContents();
   bool isTemplateModeStackEmpty();
   bool isSpecialParentInForeign(nsHtml5StackNode* stackNode);
+  nsIContentHandle* getDeclarativeShadowRoot(nsIContentHandle* currentNode,
+                                             nsIContentHandle* templateNode,
+                                             nsHtml5HtmlAttributes* attributes);
 
  public:
   static nsHtml5String extractCharsetFromContent(nsHtml5String attributeValue,
@@ -466,8 +469,6 @@ class nsHtml5TreeBuilder : public nsAHtml5TreeBuilderState {
       nsHtml5ElementName* elementName, nsHtml5HtmlAttributes* attributes);
   void appendToCurrentNodeAndPushElement(nsHtml5ElementName* elementName,
                                          nsHtml5HtmlAttributes* attributes);
-  void appendToCurrentNodeAndPushTemplateElement(
-      nsHtml5HtmlAttributes* attributes);
   void appendToCurrentNodeAndPushElementMayFoster(
       nsHtml5ElementName* elementName, nsHtml5HtmlAttributes* attributes);
   void appendToCurrentNodeAndPushElementMayFosterMathML(
