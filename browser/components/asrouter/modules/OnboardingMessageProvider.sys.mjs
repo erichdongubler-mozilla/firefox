@@ -2090,7 +2090,7 @@ const BASE_MESSAGES = () => [
     content: {
       template: "multistage",
       transitions: true,
-      modal: "tab",
+      modal: "window",
       backdrop: "transparent",
       id: "RESTORE_FROM_BACKUP",
       screens: [
@@ -2136,7 +2136,7 @@ const BASE_MESSAGES = () => [
     content: {
       template: "multistage",
       transitions: true,
-      modal: "tab",
+      modal: "window",
       backdrop: "transparent",
       id: "RESTORE_FROM_BACKUP_NEED_DEFAULT_NEED_PIN",
       screens: [
@@ -2241,7 +2241,7 @@ const BASE_MESSAGES = () => [
     content: {
       template: "multistage",
       transitions: true,
-      modal: "tab",
+      modal: "window",
       backdrop: "transparent",
       id: "RESTORE_FROM_BACKUP_NEED_DEFAULT",
       screens: [
@@ -2324,7 +2324,7 @@ const BASE_MESSAGES = () => [
     content: {
       template: "multistage",
       transitions: true,
-      modal: "tab",
+      modal: "window",
       backdrop: "transparent",
       id: "RESTORE_FROM_BACKUP_NEED_PIN",
       screens: [
