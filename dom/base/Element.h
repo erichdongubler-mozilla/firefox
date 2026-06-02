@@ -953,7 +953,7 @@ class Element : public FragmentOrElement {
    * most once.
    */
   nsresult SetNoNameSpaceAttrOnNewlyCreatedElement(
-      RefPtr<nsAtom>& aName, nsHtml5String& aValue,
+      already_AddRefed<nsAtom> aName, nsHtml5String& aValue,
       bool& aIsPendingMappedAttributeEvaluation);
 
   /**

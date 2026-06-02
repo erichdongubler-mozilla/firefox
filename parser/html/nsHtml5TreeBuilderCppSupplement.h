@@ -1102,7 +1102,7 @@ void nsHtml5TreeBuilder::addAttributesToElement(
   MOZ_ASSERT(aElement, "Null element");
   MOZ_ASSERT(aAttributes, "Null attributes");
 
-  if (aAttributes == nsHtml5HtmlAttributes::EMPTY_ATTRIBUTES) {
+  if (aAttributes->isEmpty()) {
     return;
   }
 

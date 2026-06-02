@@ -3730,16 +3730,17 @@ static MOZ_ALWAYS_INLINE void SetLifecycleCallbackNamespaceURI(
 }
 
 nsresult Element::SetNoNameSpaceAttrOnNewlyCreatedElement(
-    RefPtr<nsAtom>& aName, nsHtml5String& aValue,
+    already_AddRefed<nsAtom> aName, nsHtml5String& aValue,
     bool& aIsPendingMappedAttributeEvaluation) {
-  MOZ_ASSERT(aName);
   MOZ_ASSERT(aValue);
   MOZ_ASSERT(IsHTMLElement());
   MOZ_ASSERT(!GetParentNode());
+  RefPtr<nsAtom> nameRef = aName;
+  MOZ_ASSERT(nameRef);
   // This method is guaranteed not to cause a deletion of the atom that
-  // `aName` refers to, but we need the pointer after we make the `RefPtr`
-  // that `aName` refers to forget its pointee.
-  nsAtom* namePtr = aName.get();
+  // `aName` refers to, but we need the pointer after we make `nameRef`
+  // forget its pointee.
+  nsAtom* namePtr = nameRef.get();
   // Update batch for `id` not necessary, since we aren't in the tree, yet.
   // `PreIdMaybeChange` unnecessary, since we can't be removing a pre-existing
   // id. No mutation guard, since we're not in the tree, yet. No check for
@@ -3884,7 +3885,7 @@ nsresult Element::SetNoNameSpaceAttrOnNewlyCreatedElement(
   // on `option`.
 
   const nsAttrValue* valuePtr =
-      mAttrs.AddNewAttributeAssumeAvailableSlot(aName, value);
+      mAttrs.AddNewAttributeAssumeAvailableSlot(nameRef, value);
   UpdateSubtreeBloomFilterForAttribute(namePtr);
   if (!aIsPendingMappedAttributeEvaluation && IsAttributeMapped(namePtr)) {
     aIsPendingMappedAttributeEvaluation = true;
