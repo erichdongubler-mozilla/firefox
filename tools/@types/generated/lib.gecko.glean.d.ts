@@ -251,7 +251,7 @@ interface GleanImpl {
     chatPreviousSession: GleanEventWithExtras<{ tabs?: string }>;
     chatRetrieved: GleanEventWithExtras<{ chat_id?: string, location?: string, message_seq?: string, time_delta?: string }>;
     chatStorage: GleanQuantity;
-    chatSubmit: GleanEventWithExtras<{ chat_id?: string, detected_intent?: string, length?: string, location?: string, mentions?: string, message_seq?: string, model?: string, submit_type?: string, tabs?: string }>;
+    chatSubmit: GleanEventWithExtras<{ chat_id?: string, chat_version?: string, detected_intent?: string, length?: string, location?: string, mentions?: string, message_seq?: string, model?: string, submit_type?: string, tabs?: string, turn_number?: string }>;
     classicSwitch: GleanEventWithExtras<{ duration_ms?: string, opened_tabs?: string }>;
     closeWindow: GleanEventWithExtras<{ duration_ms?: string, opened_tabs?: string }>;
     getPageContent: GleanEventWithExtras<{ chat_id?: string, length?: string, location?: string, message_seq?: string, time?: string }>;
@@ -259,6 +259,7 @@ interface GleanImpl {
     historyDisplayed: GleanEventWithExtras<{ chat_id?: string, location?: string, message_seq?: string, reason?: string, total?: string }>;
     intentChangePreview: GleanEventWithExtras<{ chat_id?: string, current_intent?: string, location?: string, message_seq?: string }>;
     linkClick: GleanEventWithExtras<{ chat_id?: string, location?: string, message_seq?: string }>;
+    llmajBasedTelemetry: GleanEventWithExtras<{ attribute_name?: string, attribute_value?: string, chat_id?: string, chat_version?: string, model?: string, record_type?: string, telemetry_name?: string, telemetry_version?: string, trigger_sampled?: string, trigger_sampling_probability?: string, triggers?: string, turn_number?: string, uniform_sampled?: string, uniform_sampling_probability?: string }>;
     memoriesCount: Record<"conversation"|"history", GleanQuantity>;
     memoriesLastUpdated: GleanDatetime;
     memoriesNuke: GleanEventNoExtras;
@@ -449,7 +450,7 @@ interface GleanImpl {
   collectionShare: {
     ctaClicked: GleanEventWithExtras<{ button?: string, signed_in?: string }>;
     dialogOpen: GleanEventWithExtras<{ share_type?: string, signed_in?: string }>;
-    error: GleanEventWithExtras<{ status_code?: string }>;
+    error: GleanEventWithExtras<{ error_type?: string, status_code?: string }>;
   }
 
   containers: {
@@ -2055,6 +2056,23 @@ interface GleanImpl {
     cssContainerType: GleanCounter;
     cssContent: GleanCounter;
     cssContentVisibility: GleanCounter;
+    cssCornerBlockEndShape: GleanCounter;
+    cssCornerBlockStartShape: GleanCounter;
+    cssCornerBottomLeftShape: GleanCounter;
+    cssCornerBottomRightShape: GleanCounter;
+    cssCornerBottomShape: GleanCounter;
+    cssCornerEndEndShape: GleanCounter;
+    cssCornerEndStartShape: GleanCounter;
+    cssCornerInlineEndShape: GleanCounter;
+    cssCornerInlineStartShape: GleanCounter;
+    cssCornerLeftShape: GleanCounter;
+    cssCornerRightShape: GleanCounter;
+    cssCornerShape: GleanCounter;
+    cssCornerStartEndShape: GleanCounter;
+    cssCornerStartStartShape: GleanCounter;
+    cssCornerTopLeftShape: GleanCounter;
+    cssCornerTopRightShape: GleanCounter;
+    cssCornerTopShape: GleanCounter;
     cssCounterIncrement: GleanCounter;
     cssCounterReset: GleanCounter;
     cssCounterSet: GleanCounter;
@@ -2769,6 +2787,23 @@ interface GleanImpl {
     cssContainerType: GleanCounter;
     cssContent: GleanCounter;
     cssContentVisibility: GleanCounter;
+    cssCornerBlockEndShape: GleanCounter;
+    cssCornerBlockStartShape: GleanCounter;
+    cssCornerBottomLeftShape: GleanCounter;
+    cssCornerBottomRightShape: GleanCounter;
+    cssCornerBottomShape: GleanCounter;
+    cssCornerEndEndShape: GleanCounter;
+    cssCornerEndStartShape: GleanCounter;
+    cssCornerInlineEndShape: GleanCounter;
+    cssCornerInlineStartShape: GleanCounter;
+    cssCornerLeftShape: GleanCounter;
+    cssCornerRightShape: GleanCounter;
+    cssCornerShape: GleanCounter;
+    cssCornerStartEndShape: GleanCounter;
+    cssCornerStartStartShape: GleanCounter;
+    cssCornerTopLeftShape: GleanCounter;
+    cssCornerTopRightShape: GleanCounter;
+    cssCornerTopShape: GleanCounter;
     cssCounterIncrement: GleanCounter;
     cssCounterReset: GleanCounter;
     cssCounterSet: GleanCounter;
