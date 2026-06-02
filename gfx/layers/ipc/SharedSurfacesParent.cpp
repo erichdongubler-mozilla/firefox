@@ -37,14 +37,11 @@ void SharedSurfacesParent::MappingTracker::TakeExpired(
   aExpired = std::move(mExpired);
 }
 
-void SharedSurfacesParent::MappingTracker::InternalTrackerObserver::
-    NotifyHandlerEnd() {
+void SharedSurfacesParent::MappingTracker::NotifyHandlerEnd() {
   nsTArray<RefPtr<gfx::SourceSurfaceSharedDataWrapper>> expired;
   {
     StaticMutexAutoLock lock(sMutex);
-    if (sInstance) {
-      sInstance->mTracker.TakeExpired(expired, lock);
-    }
+    TakeExpired(expired, lock);
   }
 
   SharedSurfacesParent::ExpireMap(expired);
@@ -61,7 +58,6 @@ void SharedSurfacesParent::Initialize() {
   StaticMutexAutoLock lock(sMutex);
   if (!sInstance) {
     sInstance = new SharedSurfacesParent();
-    sInstance->mTracker.InitLocked(lock);
   }
 }
 
@@ -89,10 +85,7 @@ void SharedSurfacesParent::Shutdown() {
   // main thread.
   MOZ_ASSERT(NS_IsMainThread());
   StaticMutexAutoLock lock(sMutex);
-  if (sInstance) {
-    sInstance->mTracker.DestroyLocked(lock);
-    sInstance = nullptr;
-  }
+  sInstance = nullptr;
 }
 
 /* static */
