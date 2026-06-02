@@ -541,7 +541,6 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
         })
       );
     });
-    handleInteraction();
   }
 
   const handleChangeSize = useCallback(
@@ -618,6 +617,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
         })
       );
     });
+    handleInteraction();
   }
 
   // Discard any team changes and go back to the intro state.

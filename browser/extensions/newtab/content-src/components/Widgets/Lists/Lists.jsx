@@ -733,7 +733,6 @@ function Lists({
         })
       );
     });
-    handleListInteraction();
   }
 
   function handleCopyListToClipboard() {
