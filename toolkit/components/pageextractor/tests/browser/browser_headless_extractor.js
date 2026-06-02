@@ -25,10 +25,10 @@ add_task(async function test_headless_extraction() {
     </html>
   `;
 
-  const result = await PageExtractorParent.getHeadlessExtractor(
-    url,
-    async pageExtractor => pageExtractor.getText()
-  );
+  const result = await PageExtractorParent.getHeadlessExtractor({
+    urlString: url,
+    callback: async pageExtractor => pageExtractor.getText(),
+  });
 
   is(
     result.text,
@@ -60,10 +60,10 @@ add_task(async function test_headless_extraction_404() {
     </html>
   `;
 
-  const result = await PageExtractorParent.getHeadlessExtractor(
-    url,
-    async pageExtractor => pageExtractor.getText()
-  );
+  const result = await PageExtractorParent.getHeadlessExtractor({
+    urlString: url,
+    callback: async pageExtractor => pageExtractor.getText(),
+  });
 
   is(
     result.text,
@@ -83,7 +83,10 @@ add_task(async function test_headless_extraction_about_blank() {
   );
 
   await Assert.rejects(
-    PageExtractorParent.getHeadlessExtractor("about:blank", () => {}),
+    PageExtractorParent.getHeadlessExtractor({
+      urlString: "about:blank",
+      callback: () => {},
+    }),
     /Only http: and https: URLs are supported/,
     "PageExtractor fails on about: pages."
   );
@@ -98,10 +101,10 @@ add_task(async function test_headless_extraction_about_blank() {
   );
 
   await Assert.rejects(
-    PageExtractorParent.getHeadlessExtractor(
-      "file:///NeverGonnaGiveYouUp.mp4",
-      () => {}
-    ),
+    PageExtractorParent.getHeadlessExtractor({
+      urlString: "file:///NeverGonnaGiveYouUp.mp4",
+      callback: () => {},
+    }),
     /Only http: and https: URLs are supported/,
     "PageExtractor fails on file: URLs."
   );
