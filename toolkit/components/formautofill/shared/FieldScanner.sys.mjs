@@ -101,7 +101,8 @@ export class FieldDetail {
       fathomConfidence = null,
       isVisible = true,
       isLookup = false,
-      mlData = null,
+      // extraInfo is used for ML and heuristic comparison measurements.
+      extraInfo = null,
     } = {}
   ) {
     const fieldDetail = new FieldDetail(element);
@@ -138,7 +139,7 @@ export class FieldDetail {
       fieldDetail.reason = "regex-heuristic";
     }
 
-    fieldDetail.mlData = mlData;
+    fieldDetail.extraInfo = extraInfo;
 
     try {
       fieldDetail.browsingContextId =
