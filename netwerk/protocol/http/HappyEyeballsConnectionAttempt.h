@@ -177,6 +177,11 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
       ConnectionEstablisher* aEstablisher, nsresult aStatus);
 
   nsresult ProcessHappyEyeballsOutput();
+
+  // Report the domain lookup span: domainLookupStart is the first DNS query
+  // (any type), domainLookupEnd is the start of the first connection attempt.
+  void DnsLookupTimings(TimeStamp& aStart, TimeStamp& aEnd) const;
+
   void MaybeSendTransportStatus(nsresult aStatus,
                                 nsITransport* aTransport = nullptr,
                                 int64_t aProgress = 0);
@@ -275,8 +280,10 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   DnsMetadata mDnsMetadata;
   bool mTRRInfoForwarded = false;
 
-  TimeStamp mDomainLookupStart;
-  TimeStamp mDomainLookupEnd;
+  // domainLookupStart: when the first DNS query (A/AAAA/HTTPS) was issued.
+  // domainLookupEnd is reported as mFirstConnectionStart (the start of the
+  // first connection attempt).
+  TimeStamp mFirstDnsLookupStart;
   TimeStamp mFirstConnectionStart;
 };
 

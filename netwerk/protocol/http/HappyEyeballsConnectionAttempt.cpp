@@ -373,6 +373,12 @@ nsresult HappyEyeballsConnectionAttempt::ProcessEchRetryConnectionResult(
   return rv;
 }
 
+void HappyEyeballsConnectionAttempt::DnsLookupTimings(TimeStamp& aStart,
+                                                      TimeStamp& aEnd) const {
+  aStart = mFirstDnsLookupStart;
+  aEnd = mFirstConnectionStart;
+}
+
 nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
   LOG(("HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput %p", this));
 
@@ -610,10 +616,10 @@ void HappyEyeballsConnectionAttempt::DNSLookup(
     const nsACString& aHostname) {
   nsCOMPtr<nsIDNSService> dns = aFlags.isOk() ? GetOrInitDNSService() : nullptr;
 
-  if (dns && mDomainLookupStart.IsNull() &&
-      (aType == happy_eyeballs::DnsRecordType::A ||
-       aType == happy_eyeballs::DnsRecordType::Aaaa)) {
-    mDomainLookupStart = TimeStamp::Now();
+  if (dns) {
+    if (mFirstDnsLookupStart.IsNull()) {
+      mFirstDnsLookupStart = TimeStamp::Now();
+    }
     MaybeSendTransportStatus(NS_NET_STATUS_RESOLVING_HOST);
   }
 
@@ -1091,8 +1097,7 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
           mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
       if (trans) {
         TimingStruct timings;
-        timings.domainLookupStart = mDomainLookupStart;
-        timings.domainLookupEnd = mDomainLookupEnd;
+        DnsLookupTimings(timings.domainLookupStart, timings.domainLookupEnd);
         timings.connectStart = mFirstConnectionStart;
         timings.secureConnectionStart = mFirstConnectionStart;
         timings.connectEnd = now;
@@ -1145,8 +1150,10 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
 
   entry->RecordIPFamilyPreference(mAddrFamily);
 
-  if (!mDomainLookupStart.IsNull()) {
-    mOutputConn->SetDnsBootstrapTimings(mDomainLookupStart, mDomainLookupEnd);
+  TimeStamp dnsLookupStart, dnsLookupEnd;
+  DnsLookupTimings(dnsLookupStart, dnsLookupEnd);
+  if (!dnsLookupStart.IsNull()) {
+    mOutputConn->SetDnsBootstrapTimings(dnsLookupStart, dnsLookupEnd);
   }
 
   // Transfer the winning attempt's handshake timings to the real
@@ -1591,7 +1598,6 @@ nsresult HappyEyeballsConnectionAttempt::OnARecord(nsIDNSRecord* aRecord,
        " id=%" PRIu64,
        this, static_cast<uint32_t>(status), aId));
   if (NS_SUCCEEDED(status)) {
-    mDomainLookupEnd = TimeStamp::Now();
     MaybeSendTransportStatus(NS_NET_STATUS_RESOLVED_HOST);
   } else if (NS_FAILED(status)) {
     mLastDnsError = status;
@@ -1647,7 +1653,6 @@ nsresult HappyEyeballsConnectionAttempt::OnAAAARecord(nsIDNSRecord* aRecord,
        " id=%" PRIu64,
        this, static_cast<uint32_t>(status), aId));
   if (NS_SUCCEEDED(status)) {
-    mDomainLookupEnd = TimeStamp::Now();
     MaybeSendTransportStatus(NS_NET_STATUS_RESOLVED_HOST);
   } else if (NS_FAILED(status)) {
     mLastDnsError = status;
