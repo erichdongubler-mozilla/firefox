@@ -58,7 +58,9 @@ class FetchClientMlpaService(
         val fetchRequest = Request(
             url = "${config.baseUrl}/verify/play",
             method = Request.Method.POST,
-            headers = MutableHeaders(),
+            headers = MutableHeaders(
+                "content-type" to "application/json",
+            ),
             body = Request.Body.fromString(json.encodeToString(request)),
         )
 
