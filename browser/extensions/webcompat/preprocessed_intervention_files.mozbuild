@@ -112,7 +112,6 @@ preprocessed_intervention_files = [
     "bug1966585-hiskin.care-unhide_missing_content.css",
     "bug1970810-camper-van-week-end.fr.js",
     "bug1973976-iweather.gov.vn-fix_narrow_interface.css",
-    "bug1974686-hermes.admin.ch-fix_overlapping_table_cells.css",
     "bug1975651-comic.k-manga.jp.js",
     "bug1978572-store.renishaw.com-fix_range_sliders.css",
     "bug1980382-www.fidrec.com.sg-fix_radio_buttons.css",
