@@ -505,6 +505,7 @@ macosx1500-aarch64-vms-tests:
     - crashtest
     - jittest
     - jsreftest
+    - marionette-integration
     - marionette-unittest
     - mochitest-remote
     - telemetry-tests-client
