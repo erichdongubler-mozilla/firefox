@@ -205,9 +205,15 @@ fun WebCompatReporter(
 
                 Column {
                     Text(
-                        text = stringResource(id = R.string.webcompat_reporter_etp_checkbox_text_2),
+                        text = stringResource(id = R.string.webcompat_reporter_etp_checkbox_text),
                         color = MaterialTheme.colorScheme.onSurface,
                         style = FirefoxTheme.typography.body1,
+                    )
+
+                    Text(
+                        text = stringResource(id = R.string.webcompat_reporter_etp_checkbox_description),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = FirefoxTheme.typography.body2,
                     )
                 }
             }
