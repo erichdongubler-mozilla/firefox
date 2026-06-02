@@ -10,7 +10,8 @@
   > richlistbox > richlistitem {
     &[originaltype="autofill"] {
       display: block;
-      margin-inline: 0;
+      margin: 0;
+      padding: 0;
       height: auto;
       min-height: auto;
 

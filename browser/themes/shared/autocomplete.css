@@ -24,13 +24,6 @@
   min-height: var(--size-item-medium);
   border: 0;
   border-radius: var(--border-radius-small);
-  padding: var(--space-small);
-  gap: var(--space-small);
-
-  /* stylelint-disable-next-line media-query-no-invalid */
-  @media -moz-pref("browser.nova.enabled") {
-    border-radius: var(--border-radius-large);
-  }
 
   --status-text-color: currentColor;
   --status-background-color: rgba(248, 232, 28, 0.2);
@@ -40,9 +33,7 @@
   }
 
   > .ac-site-icon {
-    max-height: var(--icon-size-large);
-    min-width: var(--icon-size-large);
-    margin-inline: 0;
+    margin-inline: 4px 0;
   }
 
   > .ac-login-item {
@@ -83,12 +74,9 @@
     color: currentColor;
     position: relative;
 
-    &:is(:hover, [selected]) {
-      background-color: var(--button-background-color-hover);
-    }
-
-    &[selected]:active {
-      background-color: var(--button-background-color-active);
+    &:hover,
+    &[selected] {
+      background-color: hsla(0, 0%, 80%, 0.5); /* match arrowpanel-dimmed-further */
     }
   }
 
@@ -129,7 +117,7 @@
   &[originaltype="possible-username"] > .ac-site-icon,
   > .two-line-wrapper > .ac-site-icon {
     display: block;
-    margin-inline: 0;
+    margin-inline: 4px;
   }
 
   &[originaltype="possible-username"] > .ac-site-icon {
@@ -143,14 +131,9 @@
     display: flex;
     align-items: center;
     flex-direction: row;
-    gap: var(--space-small);
+    gap: 8px;
     margin: 0;
     min-width: 0;
-
-    > .ac-site-icon {
-      max-height: var(--icon-size-large);
-      min-width: var(--icon-size-large);
-    }
 
     > .ac-site-icon[src=""] {
       display: none;
@@ -194,13 +177,17 @@
     list-style-image: url(chrome://browser/skin/import.svg);
   }
 
-  @media (forced-colors) {
-    &[originaltype="generatedPassword"][selected] > .two-line-wrapper > .ac-site-icon,
-    &[originaltype="importableLogins"][selected] > .two-line-wrapper > .ac-site-icon,
-    &[originaltype="loginWithOrigin"][selected] > .two-line-wrapper > .ac-site-icon,
-    &[originaltype="login"] > .ac-site-icon[selected] {
-      fill: SelectedItemText;
-    }
+  &[originaltype="generatedPassword"][selected] > .two-line-wrapper > .ac-site-icon,
+  &[originaltype="importableLogins"][selected] > .two-line-wrapper > .ac-site-icon,
+  &[originaltype="loginWithOrigin"][selected] > .two-line-wrapper > .ac-site-icon,
+  &[originaltype="login"] > .ac-site-icon[selected] {
+    fill: SelectedItemText;
+  }
+
+  /* Login form autocompletion */
+  > .two-line-wrapper {
+    padding: var(--space-xsmall);
+    padding-inline-start: 6px;
   }
 
   &[originaltype="action"] > .two-line-wrapper {
@@ -260,24 +247,25 @@
 
   &[originaltype="autofill"][ac-image]:not([ac-image=""]) > .two-line-wrapper {
     display: grid;
-    grid-template-columns: var(--icon-size-large) 1fr;
+    grid-template-columns: 32px 1fr;
 
     > .ac-site-icon {
       width: auto;
-      max-height: var(--icon-size-large);
-      min-width: var(--icon-size-large);
+      height: 16px;
+      max-width: 32px;
+      max-height: 16px;
     }
   }
 
   /* Insecure field warning */
   &[originaltype="insecureWarning"] {
-    background-color: var(--button-background-color-hover);
+    background-color: var(--panel-background-color-dimmed);
     color: inherit;
     border-bottom: 1px solid var(--panel-separator-color);
-    padding-block: var(--space-xsmall);
+    padding-block: 4px;
 
-    &[selected]:active {
-      background-color: var(--button-background-color-active);
+    &[selected] {
+      background-color: var(--panel-background-color-dimmed-further);
       color: inherit;
     }
 
@@ -297,28 +285,23 @@
 
 /* Popup states */
 .autocomplete-richlistitem {
-  &:not([disabled]):is(:hover, [selected]) {
-    background-color: var(--button-background-color-hover);
+  &:not([disabled]):not([selected]):hover {
+    background-color: var(--panel-background-color-dimmed);
     @media (forced-colors) {
       background-color: ButtonText;
       color: ButtonFace;
     }
   }
 
-  &[selected]:active {
-    background-color: var(--button-background-color-active);
-    color: inherit;
+  &[selected] {
+    background-color: SelectedItem;
+    color: SelectedItemText;
     @media (forced-colors) {
-      background-color: SelectedItem;
-      color: SelectedItemText;
-    }
-  }
-
-  @media (forced-colors) {
-    &[selected]:not(:active) {
-      box-shadow: inset 0 0 0 3px CanvasText;
-      color: ButtonText;
-      background-color: ButtonFace;
+      &:not(:active) {
+        box-shadow: inset 0 0 0 3px CanvasText;
+        color: ButtonText;
+        background-color: ButtonFace;
+      }
     }
   }
 }
