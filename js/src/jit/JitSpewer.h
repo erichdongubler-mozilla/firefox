@@ -15,6 +15,7 @@
 #include "jit/JitSpewChannelList.h"
 #include "js/Printer.h"
 #include "js/TypeDecls.h"
+#include "vm/Logging.h"
 #include "wasm/WasmTypeDecls.h"
 
 enum JSValueType : uint8_t;
@@ -64,7 +65,6 @@ class JitSpewGraphSpewer {
 };
 
 void CheckLogging();
-Fprinter& JitSpewPrinter();
 
 class JitSpewIndent {
   JitSpewChannel channel_;
@@ -103,24 +103,31 @@ void JitSpew(JitSpewChannel channel, const char* fmt, ...)
 
 namespace jitspew::detail {
 extern bool LoggingChecked;
-extern uint64_t LoggingBits;
 extern mozilla::Atomic<uint32_t, mozilla::Relaxed> filteredOutCompilations;
+
+// Array of LogModules indexed by JitSpewChannel.
+inline constexpr const js::LogModule* const channelModules[] = {
+#  define JITSPEW_MODULE_PTR(name) &name##Module,
+    JITSPEW_CHANNEL_LIST(JITSPEW_MODULE_PTR)
+#  undef JITSPEW_MODULE_PTR
+};
 }  // namespace jitspew::detail
 
 namespace jit {
 
-static inline bool JitSpewEnabled(JitSpewChannel channel) {
+inline bool JitSpewEnabled(JitSpewChannel channel) {
   MOZ_ASSERT(jitspew::detail::LoggingChecked);
-  return (jitspew::detail::LoggingBits & (uint64_t(1) << uint32_t(channel))) &&
-         !jitspew::detail::filteredOutCompilations;
+  if (jitspew::detail::filteredOutCompilations) {
+    return false;
+  }
+  return jitspew::detail::channelModules[channel]->shouldLog(
+      mozilla::LogLevel::Debug);
 }
 
 void JitSpewVA(JitSpewChannel channel, const char* fmt, va_list ap)
     MOZ_FORMAT_PRINTF(2, 0);
 void JitSpewDef(JitSpewChannel channel, const char* str, MDefinition* def);
 
-void EnableChannel(JitSpewChannel channel);
-void DisableChannel(JitSpewChannel channel);
 void EnableIonDebugSyncLogging();
 void EnableIonDebugAsyncLogging();
 
@@ -149,9 +156,6 @@ class JitSpewGraphSpewer {
 };
 
 static inline void CheckLogging() {}
-static inline Fprinter& JitSpewPrinter() {
-  MOZ_CRASH("No empty backend for JitSpewPrinter");
-}
 
 class JitSpewIndent {
  public:
