@@ -1098,8 +1098,7 @@ already_AddRefed<HitTestingTreeNode> APZCTreeManager::RecycleOrCreateNode(
       return node.forget();
     }
   }
-  RefPtr<HitTestingTreeNode> node =
-      new HitTestingTreeNode(aApzc, false, aLayersId);
+  RefPtr node = MakeRefPtr<HitTestingTreeNode>(aApzc, false, aLayersId);
   return node.forget();
 }
 

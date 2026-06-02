@@ -82,8 +82,8 @@ void MacIOSurfaceTextureHostOGL::CreateRenderTexture(
     const wr::ExternalImageId& aExternalImageId) {
   MOZ_ASSERT(mExternalImageId.isSome());
 
-  RefPtr<wr::RenderTextureHost> texture =
-      new wr::RenderMacIOSurfaceTextureHost(GetMacIOSurface(), mGpuFence);
+  RefPtr texture = MakeRefPtr<wr::RenderMacIOSurfaceTextureHost>(
+      GetMacIOSurface(), mGpuFence);
 
   bool isDRM = (bool)(mFlags & TextureFlags::DRM_SOURCE);
   texture->SetIsFromDRMSource(isDRM);

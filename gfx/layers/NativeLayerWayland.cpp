@@ -1584,8 +1584,7 @@ NativeLayerRootSnapshotterWayland::CreateDownscaleTarget(
   if (!fb) {
     return nullptr;
   }
-  RefPtr<profiler_screenshots::DownscaleTarget> dt =
-      new DownscaleTargetNLRS(mGL, std::move(fb));
+  RefPtr dt = MakeRefPtr<DownscaleTargetNLRS>(mGL, std::move(fb));
   return dt.forget();
 }
 

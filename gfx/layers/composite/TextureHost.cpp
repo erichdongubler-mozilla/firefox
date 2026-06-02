@@ -187,9 +187,9 @@ already_AddRefed<TextureHost> CreateDummyBufferTextureHost(
   const SurfaceDescriptorBuffer& bufferDesc =
       surfDesc.get_SurfaceDescriptorBuffer();
   const MemoryOrShmem& data = bufferDesc.data();
-  RefPtr<TextureHost> host =
-      new MemoryTextureHost(reinterpret_cast<uint8_t*>(data.get_uintptr_t()),
-                            bufferDesc.desc(), aFlags);
+  RefPtr host = MakeRefPtr<MemoryTextureHost>(
+      reinterpret_cast<uint8_t*>(data.get_uintptr_t()), bufferDesc.desc(),
+      aFlags);
   return host.forget();
 }
 
