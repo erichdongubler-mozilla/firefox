@@ -214,7 +214,7 @@ private fun FirefoxLabsBanner() {
                 vertical = FirefoxTheme.layout.space.static100,
             )
             .height(IntrinsicSize.Min),
-        title = { Text(text = stringResource(R.string.firefox_labs_banner_title)) },
+        title = { Text(text = stringResource(R.string.firefox_labs_banner_title_2)) },
         message = {
             Text(
                 text = String.format(
