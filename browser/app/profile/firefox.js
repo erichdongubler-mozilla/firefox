@@ -2932,8 +2932,6 @@ pref("browser.toolbars.bookmarks.showOtherBookmarks", true);
 // restart to reflect state changes.
 pref("browser.toolbars.share-button.enabled", true);
 
-// Felt Privacy pref to control simplified private browsing UI
-pref("browser.privatebrowsing.felt-privacy-v1", true);
 pref("security.certerrors.felt-privacy-v1", true);
 
 

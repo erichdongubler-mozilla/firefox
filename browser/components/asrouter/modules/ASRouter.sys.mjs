@@ -2440,15 +2440,6 @@ export class _ASRouter {
     });
     Glean.messagingSystem.messageRequestTime.stopAndAccumulate(timerId);
 
-    // Format urls if any are defined
-    ["infoLinkUrl"].forEach(key => {
-      if (message?.content?.[key]) {
-        message.content[key] = Services.urlFormatter.formatURL(
-          message.content[key]
-        );
-      }
-    });
-
     return { message };
   }
 

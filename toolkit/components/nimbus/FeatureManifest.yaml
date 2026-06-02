@@ -4681,28 +4681,6 @@ reportBrokenSite:
         1 = show an optional "reason" dropdown
         2 = show a required "reason" dropdown
 
-feltPrivacy:
-  description: Prefs for Felt Privacy v1 experiments
-  owner: cmeador@mozilla.com
-  hasExposure: true
-  exposureDescription: Exposure when user opens a private browsing window.
-  variables:
-    feltPrivacy:
-      type: boolean
-      setPref:
-        branch: default
-        pref: browser.privatebrowsing.felt-privacy-v1
-      description: >-
-        When true, new styles and copy enabled on about:privatebrowsing. When true,
-        a toggle for showing or hiding quick suggestions appears in about:preferences.
-    resetPBMAction:
-      type: boolean
-      setPref:
-        branch: default
-        pref: browser.privatebrowsing.resetPBM.enabled
-      description: >-
-        Enables the reset PBM feature button and confirmation panel.
-
 phc:
   description: Prefs to control the Probabalistic Heap Checker (PHC)
   owner: pbone@mozilla.com

@@ -12,15 +12,7 @@
     --tabpanel-background-color: #2b2a33;
   }
   &[privatebrowsingmode="temporary"] {
-    /* Value for --background-color-canvas in aboutPrivateBrowsing.css.
-       !important overrides the direct setting of this variable in
-       ThemeVariableMap.sys.mjs when the user has a theme that defines
-       ntp_background. */
-    --tabpanel-background-color: #25003e !important;
-
-    @media -moz-pref("browser.privatebrowsing.felt-privacy-v1") {
-      --tabpanel-background-color: linear-gradient(45deg, #722291 0%, #45278d 50%, #393473 100%) !important;
-    }
+    --tabpanel-background-color: linear-gradient(45deg, #722291 0%, #45278d 50%, #393473 100%) !important;
   }
 }
 
