@@ -714,6 +714,7 @@ export class RunSearch {
       }
       text = result.text;
       conversation.addSeenUrls(result.links);
+      conversation.addSerpUrlsForAnonymousFetch(result.links);
     } catch {
       return "Error: failed to extract search results content.";
     }
@@ -743,14 +744,15 @@ export class GetPageContent {
   static async getPageContent({ url_list }, conversation) {
     // This is a decision table for allowing and blocking fetches on the configuration of the
     // SecurityProperties and the URLs. Tab URLs don't do any new page loads. Mention urls
-    // have been added by the user so they should be allowed. And all other URLs are
-    // restricted when both private and untrusted data has been seen.
+    // have been added by the user so they should be allowed. SERP urls came from a
+    // trusted search provider's SERP and are eligible for an anonymous fetch.
+    // All other URLs are restricted when both private and untrusted data has been seen.
     //
-    // │ Flags               │ tab urls │ mention urls │ any urls │
-    // ├─────────────────────┼──────────┼──────────────┼──────────┤
-    // │ Private only        │ ALLOW    │ ALLOW        │ ALLOW    │
-    // │ Untrusted only      │ ALLOW    │ ALLOW        │ ALLOW    │
-    // │ Private + Untrusted │ ALLOW    │ ALLOW        │ BLOCK    │
+    // │ Flags               │ tab urls │ mention urls │ serp urls          │ any urls │
+    // ├─────────────────────┼──────────┼──────────────┼────────────────────┼──────────┤
+    // │ Private only        │ ALLOW    │ ALLOW        │ ALLOW              │ ALLOW    │
+    // │ Untrusted only      │ ALLOW    │ ALLOW        │ ALLOW              │ ALLOW    │
+    // │ Private + Untrusted │ ALLOW    │ ALLOW        │ ALLOW (anonymous)  │ BLOCK    │
 
     // Sanitize the inputs from the language model:
     if (!Array.isArray(url_list)) {
@@ -848,21 +850,39 @@ export class GetPageContent {
     // Fetch the page headlessly since it's not loaded as a tab. This requires elevated
     // security permissions since an external network request is required, and is a
     // risk for the exfiltration of private data. If the URL is mentioned by the user
-    // then the security properties check is bypassed here.
+    // then the security properties check is bypassed here. URLs in the serp URL
+    // ledger get a anonymous fetch path that does not carry user identity.
+
+    let label = url; // For headless fetches, use the URL as the label since we don't have a tab title.
     if (
       !mentionedUrls.has(url) &&
       conversation.securityProperties.untrustedInput &&
       conversation.securityProperties.privateData
     ) {
+      if (conversation.serpUrlsForAnonymousFetch.has(url)) {
+        return PageExtractorParent.getHeadlessExtractor({
+          urlString: url,
+          callback: pageExtractor =>
+            GetPageContent.#runExtraction(
+              pageExtractor,
+              conversation,
+              label,
+              url
+            ),
+          anonymousFetch: true,
+        });
+      }
       return (
         `Access is not allowed for ${url} because of untrusted and private content ` +
         "in the conversation."
       );
     }
 
-    return PageExtractorParent.getHeadlessExtractor(url, pageExtractor =>
-      GetPageContent.#runExtraction(pageExtractor, conversation, url, url)
-    );
+    return PageExtractorParent.getHeadlessExtractor({
+      urlString: url,
+      callback: pageExtractor =>
+        GetPageContent.#runExtraction(pageExtractor, conversation, label, url),
+    });
   }
 
   /**

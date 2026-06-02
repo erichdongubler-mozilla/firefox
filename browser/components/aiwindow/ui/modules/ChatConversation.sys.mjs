@@ -151,6 +151,17 @@ export class ChatConversation extends EventEmitter {
   seenUrls;
 
   /**
+   * URLs found in SERP contents from run_search that we are willing to
+   * fetch via a anonymous request even when the conversation has
+   * been exposed to both private and untrusted content.
+   *
+   * Initialized from the constructor params (restored from DB) or as an empty Set.
+   *
+   * @type {Set<string>}
+   */
+  serpUrlsForAnonymousFetch;
+
+  /**
    * @param {object} params
    * @param {string} [params.id]
    * @param {string} params.title
@@ -174,6 +185,7 @@ export class ChatConversation extends EventEmitter {
       updatedDate = Date.now(),
       messages = [],
       seenUrls,
+      serpUrlsForAnonymousFetch,
       memoriesToggled = null,
     } = params;
 
@@ -188,6 +200,9 @@ export class ChatConversation extends EventEmitter {
     this.updatedDate = updatedDate;
     this.#messages = messages;
     this.seenUrls = seenUrls ? new Set(seenUrls) : new Set();
+    this.serpUrlsForAnonymousFetch = serpUrlsForAnonymousFetch
+      ? new Set(serpUrlsForAnonymousFetch)
+      : new Set();
     this.memoriesToggled = memoriesToggled;
 
     // transient: tracks the URL the current starter prompts were generated
@@ -1045,6 +1060,17 @@ export class ChatConversation extends EventEmitter {
       this.seenUrls.add(url);
     }
     this.emit("chat-conversation:seen-urls-updated", this.seenUrls);
+  }
+
+  /**
+   * Add an iterable of URLs to the serpUrlsForAnonymousFetch ledger
+   *
+   * @param {Iterable<string>} urls
+   */
+  addSerpUrlsForAnonymousFetch(urls) {
+    for (const url of urls) {
+      this.serpUrlsForAnonymousFetch.add(url);
+    }
   }
 
   /**
