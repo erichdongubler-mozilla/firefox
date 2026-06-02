@@ -797,18 +797,25 @@ class MarkerSchema {
     // ----------------------------------------------------
     // Numeric types
 
-    // For time data that represents a duration of time.
-    // e.g. "Label: 5s, 5ms, 5μs"
+    // For time data that represents a duration of time in ms.
+    // Pick closest unit.
+    // e.g.
+    // Value | Label
+    // ------+------
+    // 5000  | "5s"
+    // 5     | "5ms"
+    // 0.005 | "5μs"
     Duration,
-    // Data that happened at a specific time, relative to the start of the
+    // Data that happened at a specific time in ms, relative to the start of the
     // profile. e.g. "Label: 15.5s, 20.5ms, 30.5μs"
     Time,
     // The following are alternatives to display a time only in a specific unit
-    // of time.
-    Seconds,       // "Label: 5s"
-    Milliseconds,  // "Label: 5ms"
-    Microseconds,  // "Label: 5μs"
-    Nanoseconds,   // "Label: 5ns"
+    // of time (even if it is not the closest).
+    // Value unit cannot be in ms for μs and ns.
+    Seconds,       // Value in ms: 500, Label: "0.5s"
+    Milliseconds,  // Value in ms: 5000, Label: "5000ms"
+    Microseconds,  // Value in μs: 5, Label: "5μs"
+    Nanoseconds,   // Value in ns: 5, Label: "5ns"
     // e.g. "Label: 5.55mb, 5 bytes, 312.5kb"
     Bytes,
     // This should be a value between 0 and 1.
@@ -1100,6 +1107,27 @@ struct StreamPayloadHelper<Flow, aFormat> {
   static void Stream(baseprofiler::SpliceableJSONWriter& aWriter,
                      const Span<const char> aKey, const Flow& aPayload) {
     aWriter.FlowProperty(aKey, aPayload);
+  }
+};
+
+template <MarkerSchema::Format aFormat>
+struct StreamPayloadHelper<TimeDuration, aFormat> {
+  static void Stream(baseprofiler::SpliceableJSONWriter& aWriter,
+                     const Span<const char> aKey,
+                     const TimeDuration& aDuration) {
+    using MS = MarkerSchema;
+    constexpr bool useMilliseconds = aFormat == MS::Format::Milliseconds ||
+                                     aFormat == MS::Format::Duration ||
+                                     aFormat == MS::Format::Seconds;
+    if constexpr (useMilliseconds) {
+      aWriter.DoubleProperty(aKey, aDuration.ToMilliseconds());
+    } else if constexpr (aFormat == MS::Format::Microseconds) {
+      aWriter.DoubleProperty(aKey, aDuration.ToMicroseconds());
+    } else if constexpr (aFormat == MS::Format::Nanoseconds) {
+      aWriter.DoubleProperty(aKey, aDuration.ToMicroseconds() * 1000.0);
+    } else {
+      static_assert(false, "Wrong MarkerSchema::Format for TimeDuration");
+    }
   }
 };
 
