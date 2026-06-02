@@ -14854,32 +14854,6 @@ if (IsCSSPropertyPrefEnabled("layout.css.corner-shape.enabled")) {
   });
 }
 
-if (IsCSSPropertyPrefEnabled("layout.css.link-parameters.enabled")) {
-  Object.assign(gCSSProperties, {
-    "link-parameters": {
-      domProp: "linkParameters",
-      inherited: false,
-      type: CSS_TYPE_LONGHAND,
-      applies_to_first_letter: false,
-      applies_to_first_line: false,
-      applies_to_placeholder: false,
-      initial_values: ["none"],
-      other_values: []
-        .concat(validNonUrlImageValues)
-        .concat(basicShapeSVGBoxValues)
-        .concat(basicShapeOtherValues)
-        .concat(basicShapeOtherValuesWithFillRule)
-        .concat(basicShapeXywhRectValues)
-        .concat(basicShapeShapeValues)
-        .concat(basicShapeShapeValuesWithFillRule)
-        .map(i => `param(--a, ${i})`)
-        .concat("param(--foo)")
-        .concat("param(--foo) param(--bar)"),
-      invalid_values: [],
-    },
-  });
-}
-
 // Copy aliased properties' fields from their alias targets. Keep this logic
 // at the bottom of this file to ensure all the aliased properties are
 // processed.
