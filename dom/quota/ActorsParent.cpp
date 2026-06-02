@@ -3600,7 +3600,6 @@ Result<Ok, nsresult> QuotaManager::EnsureTemporaryOriginDirectoryCreated(
                     .map([](const auto& res) { return Ok{}; }));
 }
 
-// static
 nsresult QuotaManager::CreateDirectoryMetadata2(
     nsIFile& aDirectory, const FullOriginMetadata& aFullOriginMetadata) {
   GECKO_TRACE_SCOPE("dom::quota", "QuotaManager::CreateDirectoryMetadata2");
@@ -10110,8 +10109,11 @@ nsresult RestoreDirectoryMetadata2Helper::ProcessOriginDirectory(
     const OriginProps& aOriginProps) {
   AssertIsOnIOThread();
 
+  QuotaManager* qm = QuotaManager::Get();
+  MOZ_DIAGNOSTIC_ASSERT(qm);
+
   // We don't have any approach to restore aPersisted, so reset it to false.
-  QM_TRY(MOZ_TO_RESULT(QuotaManager::CreateDirectoryMetadata2(
+  QM_TRY(MOZ_TO_RESULT(qm->CreateDirectoryMetadata2(
       *aOriginProps.mDirectory,
       FullOriginMetadata{
           aOriginProps.mOriginMetadata,
