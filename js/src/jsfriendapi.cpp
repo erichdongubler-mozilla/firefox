@@ -281,6 +281,10 @@ JS_PUBLIC_API bool JS::GetBuiltinClass(JSContext* cx, HandleObject obj,
   return true;
 }
 
+JS_PUBLIC_API bool JS::IsPlainObject(JSObject* obj) {
+  return obj->is<PlainObject>();
+}
+
 JS_PUBLIC_API bool js::IsArgumentsObject(HandleObject obj) {
   return obj->is<ArgumentsObject>();
 }
