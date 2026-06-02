@@ -9,6 +9,8 @@ prefs = [
 
 ["browser_BrowserWindowTracker.js"]
 
+["browser_BrowserWindowTracker_minimize.js"]
+
 ["browser_EveryWindow.js"]
 
 ["browser_HomePage_add_button.js"]
