@@ -3729,12 +3729,191 @@ static MOZ_ALWAYS_INLINE void SetLifecycleCallbackNamespaceURI(
   }
 }
 
+nsresult Element::SetNoNameSpaceAttrOnNewlyCreatedElement(
+    RefPtr<nsAtom>& aName, nsHtml5String& aValue,
+    bool& aIsPendingMappedAttributeEvaluation) {
+  MOZ_ASSERT(aName);
+  MOZ_ASSERT(aValue);
+  MOZ_ASSERT(IsHTMLElement());
+  MOZ_ASSERT(!GetParentNode());
+  // This method is guaranteed not to cause a deletion of the atom that
+  // `aName` refers to, but we need the pointer after we make the `RefPtr`
+  // that `aName` refers to forget its pointee.
+  nsAtom* namePtr = aName.get();
+  // Update batch for `id` not necessary, since we aren't in the tree, yet.
+  // `PreIdMaybeChange` unnecessary, since we can't be removing a pre-existing
+  // id. No mutation guard, since we're not in the tree, yet. No check for
+  // custom element data, since this method is valid only for non-custom
+  // elements. No actual bookkeeping for old value, since we are only setting
+  // new, non-duplicate attributes.
+  nsAttrValue value;
+
+  // The HTML parser knows (by the Java to C++ translation looking at
+  // AtomAttributes.h) which attributes (by attribute name; not by
+  // element-attribute combination) on HTML elements are represented in
+  // nsAttrValue as either plain atom or atom array. This code trusts
+  // that `aValue.IsAtom()` is true for such attributes when they have
+  // a non-empty value. `nsHtml5String` represents the empty string
+  // distinctly from either atom-typed non-empty value or
+  // StringBuffer-typed non-empty value, so if both the non-empty value
+  // and the empty value require special handling, such as in the case
+  // of `contenteditable`, we need to handle the attribute separately
+  // in the non-empty-value atom case and in the empty-value case.
+  // In other cases, such as the `id` attribute, this code makes use
+  // of the empty vs. non-empty split, since the `id` attribute needs
+  // a flag to be set only in the non-empty case.
+  //
+  // While all atom and atom array attribute values arrive as atoms
+  // here, the reverse is not true for all attribute values that
+  // primarily expect `StringBuffer`: Single-ASCII-digit values
+  // arrive as atoms regardless of attribute name. Also, when an
+  // atom-typed attribute is not applicable to all elements, it
+  // still arrives as an atom for elements for which it's a random
+  // unknown attribute. In practice, our attribute code is tolerant
+  // of storing an atom for attributes whose value type isn't more
+  // specific than a generic string, so this works out.
+  //
+  // Other attribute types, enum, integer, etc. need to be parsed
+  // using `ParseAttribute()` regardless of which `nsHtml5String`
+  // representation the value arrives as.
+  //
+  // Transferring enum attributes as atoms from the HTML parser
+  // to this method is left as a follow-up optimization. See
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=2043161 .
+
+  if (aValue.IsAtom()) {
+    if (NS_IS_ATOM_ARRAY_ATTRIBUTE(namePtr) ||
+        NS_IS_ATOM_ARRAY_ATTRIBUTE_HTML(namePtr) ||
+        (namePtr == nsGkAtoms::_for && IsHTMLElement(nsGkAtoms::output))) {
+      value.ParseAtomArray(aValue.AsAtom());
+      if (namePtr == nsGkAtoms::_class) {
+        SetMayHaveClass();
+        UpdateSubtreeBloomFilterForClass(&value);
+      }
+    } else {
+      RefPtr<nsAtom> valueAtom = aValue.ForgetAtom();
+      if (namePtr == nsGkAtoms::id) {
+        // Keep in sync with PostIdMaybeChange!
+        SetHasID();
+        // Not adding to table since not in doc or in doc fragment.
+      } else if (namePtr == nsGkAtoms::contenteditable) {
+        // See below for the empty-value case.
+        // Splitting this like this is a micro optimization to avoid the check
+        // for non-parsed string attributes.
+        SetMayHaveContentEditableAttr();
+      } else {
+        // Single ASCII digits arrive as atoms but may need
+        // to be parsed. (In the non-parsed case, it seems
+        // fine to store an atom into a generally string-typed
+        // attribute.)
+        if (valueAtom->GetLength() == 1) {
+          // Transporting single ASCII digits as atoms was originally
+          // motivated by the data-priority attribute in Speedometer 3.1.
+          // Since data-priority is a data-* attribute, we know that
+          // `ParseAttribute` is not going to do anything interesting.
+          if (namePtr != nsGkAtoms::data_priority) {
+            // Assign pointer to intermediate to work around 32-bit Windows.
+            const char16_t* strPtr = valueAtom->GetUTF16String();
+            char16_t c = *strPtr;
+            if (c >= u'0' && c <= u'9') {
+              nsString str;  // Deliberately not Auto
+              valueAtom->ToString(str);
+              // See https://bugzilla.mozilla.org/show_bug.cgi?id=2043161 about
+              // possibly introducing a `ParseAttribute` overload for taking
+              // value as atom.
+              if (ParseAttribute(kNameSpaceID_None, namePtr, str, nullptr,
+                                 value)) {
+                valueAtom = nullptr;
+              } else if (namePtr == nsGkAtoms::selected &&
+                         IsHTMLElement(nsGkAtoms::option)) {
+                // This handles the case where the attribute value is
+                // transferred as an atom. See also below!
+                // This split is a micro optimization to avoid the check for
+                // other atom attributes. Keep in sync with
+                // HTMLOptionElement::BeforeSetAttr!
+                SetStates(ElementState::CHECKED, true, false);
+              }
+            }
+          }
+        } else {
+          MOZ_ASSERT(NS_IS_ATOM_ATTRIBUTE(namePtr) ||
+                     NS_IS_ATOM_ATTRIBUTE_HTML(namePtr));
+        }
+      }
+      if (valueAtom) {
+        value.SetToAssumeUnset(valueAtom.forget());
+      }  // else `ParseAttribute` already set `value` above.
+    }
+  } else {
+    if (namePtr == nsGkAtoms::style) {
+      SetMayHaveStyle();
+      // TODO: Should we try to call the right overload
+      // directly instead of going through a bunch of useless dispatch
+      // below?
+      // Note that a single-digit value isn't a useful style,
+      // so we don't bother mirroring this check for the case where
+      // single ASCII digit travels as an atom.
+    }
+    nsString str;          // Deliberately not Auto
+    aValue.ToString(str);  // Deliberately not move
+    if (!ParseAttribute(kNameSpaceID_None, namePtr, str, nullptr, value)) {
+      if (aValue.IsStringBuffer()) {
+        MOZ_ASSERT(!(NS_IS_ATOM_ARRAY_ATTRIBUTE(namePtr) ||
+                     NS_IS_ATOM_ARRAY_ATTRIBUTE_HTML(namePtr) ||
+                     NS_IS_ATOM_ATTRIBUTE(namePtr) ||
+                     NS_IS_ATOM_ATTRIBUTE_HTML(namePtr)));
+        value.SetToAssumeUnset(aValue.ForgetStringBuffer());
+      }  // else empty string for string-typed attribute
+      if (namePtr == nsGkAtoms::selected && IsHTMLElement(nsGkAtoms::option)) {
+        // This handles the non-atom case. See above for the atom case for
+        // single digits! This split is a micro optimization to avoid the check
+        // for other atom attributes in the general case. Keep in sync with
+        // HTMLOptionElement::BeforeSetAttr!
+        SetStates(ElementState::CHECKED, true, false);
+      }
+    } else if (namePtr == nsGkAtoms::contenteditable) {
+      // The empty-value case for contenteditable. See above for the atom case.
+      // Splitting this like this is a micro optimization to avoid the check
+      // for non-parsed string attributes.
+      SetMayHaveContentEditableAttr();
+    }
+  }
+
+  // No call to `BeforeSetAttr`, since it deals with attribute _changes_,
+  // except for setting the flags for `contenteditable`, `style`, and `selected`
+  // on `option`.
+
+  const nsAttrValue* valuePtr =
+      mAttrs.AddNewAttributeAssumeAvailableSlot(aName, value);
+  UpdateSubtreeBloomFilterForAttribute(namePtr);
+  if (!aIsPendingMappedAttributeEvaluation && IsAttributeMapped(namePtr)) {
+    aIsPendingMappedAttributeEvaluation = true;
+    mAttrs.InfallibleMarkAsPendingPresAttributeEvaluation();
+    // Not calling `Document::ScheduleForPresAttrEvaluation` since not in doc.
+  }
+
+  // No `dir` handling, because the element has neither ancestors nor
+  // descendants, yet.
+
+  // No check for `HasElementCreatedFromPrototypeAndHasUnmodifiedL10n()`, since
+  // we only call this from the HTML parser and not from the prototype content
+  // sink.
+
+  AfterSetAttr(kNameSpaceID_None, namePtr, valuePtr, nullptr, nullptr, false);
+
+  // No `dir` handling; see above.
+  // No notification.
+  return NS_OK;
+}
+
 nsresult Element::SetAttrAndNotify(
     int32_t aNamespaceID, nsAtom* aName, nsAtom* aPrefix,
     const nsAttrValue* aOldValue, nsAttrValue& aParsedValue,
     nsIPrincipal* aSubjectPrincipal, AttrModType aModType, bool aNotify,
     bool aCallAfterSetAttr, Document* aComposedDocument,
     const mozAutoDocUpdate& aGuard) {
+  // NOTE: Please keep changes to this method in sync with
+  // `SetNoNameSpaceAttrOnNewlyCreatedElement`!
   nsMutationGuard::DidMutate();
 
   // Copy aParsedValue for later use since it will be lost when we call
@@ -3842,8 +4021,10 @@ nsresult Element::SetAttrAndNotify(
   return NS_OK;
 }
 
-void Element::TryReserveAttributeCount(uint32_t aAttributeCount) {
-  (void)mAttrs.GrowTo(aAttributeCount);
+void Element::ReserveAttributeCount(uint32_t aAttributeCount) {
+  if (!mAttrs.GrowTo(aAttributeCount)) {
+    MOZ_CRASH("Could not allocate memory for attributes.");
+  }
 }
 
 bool Element::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
@@ -3861,16 +4042,7 @@ bool Element::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
   }
 
   if (aNamespaceID == kNameSpaceID_None) {
-    if (aAttribute == nsGkAtoms::_class || aAttribute == nsGkAtoms::part ||
-        aAttribute == nsGkAtoms::aria_actions ||
-        aAttribute == nsGkAtoms::aria_controls ||
-        aAttribute == nsGkAtoms::aria_describedby ||
-        aAttribute == nsGkAtoms::aria_details ||
-        aAttribute == nsGkAtoms::aria_errormessage ||
-        aAttribute == nsGkAtoms::aria_flowto ||
-        aAttribute == nsGkAtoms::aria_labelledby ||
-        aAttribute == nsGkAtoms::aria_owns || aAttribute == nsGkAtoms::_for ||
-        aAttribute == nsGkAtoms::headers) {
+    if (NS_IS_ATOM_ARRAY_ATTRIBUTE(aAttribute)) {
       aResult.ParseAtomArray(aValue);
       return true;
     }
@@ -3895,8 +4067,9 @@ bool Element::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
       aResult.ParseAtom(aValue);
       return true;
     }
+    MOZ_ASSERT(!(NS_IS_ATOM_ATTRIBUTE(aAttribute) ||
+                 NS_IS_ATOM_ARRAY_ATTRIBUTE(aAttribute)));
   }
-
   return false;
 }
 
@@ -3968,6 +4141,8 @@ void Element::PostIdMaybeChange(int32_t aNamespaceID, nsAtom* aName,
   if (aNamespaceID != kNameSpaceID_None || aName != nsGkAtoms::id) {
     return;
   }
+
+  // Keep in sync with SetNoNameSpaceAttrOnNewlyCreatedElement!
 
   // id="" means that the element has no id, not that it has an empty
   // string as the id.
