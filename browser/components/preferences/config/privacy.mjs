@@ -3411,7 +3411,7 @@ Preferences.addSetting({
     return deps.dohURL.value;
   },
   set(val, deps) {
-    deps.dohURL.value = val;
+    deps.dohURL.value = val.trim();
   },
 });
 
@@ -3469,9 +3469,11 @@ Preferences.addSetting({
     if (this._custom) {
       return "custom";
     }
-    let currentURI = deps.dohURL.value;
-    if (!currentURI) {
-      currentURI = deps.dohDefaultURL.value;
+    let currentURI = deps.dohURL.value || deps.dohDefaultURL.value;
+    let resolvers = lazy.DoHConfigController.currentConfig.providerList;
+    if (!resolvers.some(p => p.uri == currentURI)) {
+      this._custom = true;
+      return "custom";
     }
     return currentURI;
   },
