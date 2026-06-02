@@ -834,6 +834,22 @@ class QuotaManager final : public BackgroundThreadObject {
       nsIFile& aLsArchiveFile) const;
 
   template <typename OriginFunc>
+  Result<Ok, nsresult> InitializeOriginDirectory(
+      const nsCOMPtr<nsIFile>& aChildDirectory, const nsAutoString& aLeafName,
+      PersistenceType aPersistenceType,
+      nsTArray<struct RenameAndInitInfo>& aRenameAndInitInfos,
+      OriginFunc&& aOriginFunc);
+
+  // Determine the type of a repository entry (directory, file, or absent)
+  // and handle it accordingly.
+  template <typename OriginFunc>
+  Result<Ok, nsresult> ResolveRepositoryEntry(
+      const nsCOMPtr<nsIFile>& aChildDirectory,
+      PersistenceType aPersistenceType,
+      nsTArray<RenameAndInitInfo>& aRenameAndInitInfos,
+      OriginFunc&& aOriginFunc);
+
+  template <typename OriginFunc>
   nsresult InitializeRepository(PersistenceType aPersistenceType,
                                 OriginFunc&& aOriginFunc);
 
