@@ -182,6 +182,11 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   // (any type), domainLookupEnd is the start of the first connection attempt.
   void DnsLookupTimings(TimeStamp& aStart, TimeStamp& aEnd) const;
 
+  // Fill the four connect-phase timings from the first-racer timestamps.
+  // For QUIC, tcpConnectEnd stays null and secureConnectionStart equals
+  // connectStart.
+  void FillConnectTimings(bool aIsQuic, TimingStruct& aTimings) const;
+
   void MaybeSendTransportStatus(nsresult aStatus,
                                 nsITransport* aTransport = nullptr,
                                 int64_t aProgress = 0);
@@ -285,6 +290,16 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   // first connection attempt).
   TimeStamp mFirstDnsLookupStart;
   TimeStamp mFirstConnectionStart;
+
+  // First-racer connect timings, mirroring the domainLookup span: the first
+  // racer to reach each milestone across all racers (captured in
+  // MaybeSendTransportStatus). connectStart is mFirstConnectionStart;
+  // mFirstConnectEnd is the winning racer's completion (the first connection
+  // to fully succeed). For QUIC, tcpConnectEnd stays null and
+  // secureConnectionStart equals connectStart.
+  TimeStamp mFirstTcpConnectEnd;
+  TimeStamp mFirstSecureConnectionStart;
+  TimeStamp mFirstConnectEnd;
 };
 
 }  // namespace net

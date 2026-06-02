@@ -379,6 +379,20 @@ void HappyEyeballsConnectionAttempt::DnsLookupTimings(TimeStamp& aStart,
   aEnd = mFirstConnectionStart;
 }
 
+void HappyEyeballsConnectionAttempt::FillConnectTimings(
+    bool aIsQuic, TimingStruct& aTimings) const {
+  aTimings.connectStart = mFirstConnectionStart;
+  aTimings.connectEnd = mFirstConnectEnd;
+  if (aIsQuic) {
+    // QUIC has no separate TCP handshake; secureConnectionStart coincides
+    // with the connection start.
+    aTimings.secureConnectionStart = mFirstConnectionStart;
+  } else {
+    aTimings.tcpConnectEnd = mFirstTcpConnectEnd;
+    aTimings.secureConnectionStart = mFirstSecureConnectionStart;
+  }
+}
+
 nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
   LOG(("HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput %p", this));
 
@@ -551,6 +565,16 @@ HappyEyeballsConnectionAttempt::SetupDnsFlags(
 
 void HappyEyeballsConnectionAttempt::MaybeSendTransportStatus(
     nsresult aStatus, nsITransport* aTransport, int64_t aProgress) {
+  // Capture the first racer to reach each connect milestone across all racers.
+  // connectStart (mFirstConnectionStart) and connectEnd (mFirstConnectEnd) are
+  // set elsewhere.
+  if (aStatus == NS_NET_STATUS_CONNECTED_TO && mFirstTcpConnectEnd.IsNull()) {
+    mFirstTcpConnectEnd = TimeStamp::Now();
+  } else if (aStatus == NS_NET_STATUS_TLS_HANDSHAKE_STARTING &&
+             mFirstSecureConnectionStart.IsNull()) {
+    mFirstSecureConnectionStart = TimeStamp::Now();
+  }
+
   if (!mSentTransportStatuses.EnsureInserted(static_cast<uint32_t>(aStatus)) ||
       !mTransaction) {
     return;
@@ -754,6 +778,8 @@ void HappyEyeballsConnectionAttempt::HandleTCPConnectionResult(
   mOutputTrans = establisher->Transaction();
   mOutputConnId = aId;
   mAddrFamily = addr.raw.family;
+  // The winner is the first connection to fully succeed.
+  mFirstConnectEnd = TimeStamp::Now();
   // The ownership of connection is moved to HappyEyeballsConnectionAttempt now.
   establisher->ClearResultConnection();
 
@@ -967,6 +993,8 @@ void HappyEyeballsConnectionAttempt::HandleUDPConnectionResult(
   mOutputTrans = establisher->Transaction();
   mOutputConnId = aId;
   mAddrFamily = addr.raw.family;
+  // The winner is the first connection to fully succeed.
+  mFirstConnectEnd = TimeStamp::Now();
   // The ownership of connection is moved to HappyEyeballsConnectionAttempt now.
   establisher->ClearResultConnection();
 
@@ -1085,9 +1113,11 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
        aTransactionAlreadyOnConn));
 
   if (!mFirstConnectionStart.IsNull()) {
-    TimeStamp now = TimeStamp::Now();
-    aConn->SetConnectBootstrapTimings(mFirstConnectionStart, TimeStamp(),
-                                      mFirstConnectionStart, now);
+    TimingStruct connectTimings;
+    FillConnectTimings(/* aIsQuic = */ true, connectTimings);
+    aConn->SetConnectBootstrapTimings(
+        connectTimings.connectStart, connectTimings.tcpConnectEnd,
+        connectTimings.secureConnectionStart, connectTimings.connectEnd);
 
     if (aTransactionAlreadyOnConn) {
       // Activate already ran before timings were set on the connection,
@@ -1098,9 +1128,7 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
       if (trans) {
         TimingStruct timings;
         DnsLookupTimings(timings.domainLookupStart, timings.domainLookupEnd);
-        timings.connectStart = mFirstConnectionStart;
-        timings.secureConnectionStart = mFirstConnectionStart;
-        timings.connectEnd = now;
+        FillConnectTimings(/* aIsQuic = */ true, timings);
         trans->BootstrapTimings(timings);
       }
     }
@@ -1156,15 +1184,18 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
     mOutputConn->SetDnsBootstrapTimings(dnsLookupStart, dnsLookupEnd);
   }
 
-  // Transfer the winning attempt's handshake timings to the real
-  // transaction before dispatch. We preserve transactionPending
-  // explicitly — BootstrapTimings does a full struct overwrite, and
-  // DispatchTransaction will read the pending time to record wait-time
-  // metrics.
+  // Build the real transaction's timings from the first-racer domainLookup
+  // and connect spans (rather than the winning attempt's own collected
+  // timings) before dispatch. We preserve transactionPending explicitly —
+  // BootstrapTimings does a full struct overwrite, and DispatchTransaction
+  // will read the pending time to record wait-time metrics.
   if (mOutputTrans && mTransaction) {
     if (nsHttpTransaction* realTransaction =
             mTransaction->QueryHttpTransaction()) {
-      TimingStruct timings = mOutputTrans->Timings();
+      RefPtr<nsHttpConnection> tcpConn = do_QueryObject(mOutputConn);
+      TimingStruct timings;
+      DnsLookupTimings(timings.domainLookupStart, timings.domainLookupEnd);
+      FillConnectTimings(/* aIsQuic = */ !tcpConn, timings);
       timings.transactionPending = realTransaction->GetPendingTime();
       realTransaction->BootstrapTimings(timings);
     }
