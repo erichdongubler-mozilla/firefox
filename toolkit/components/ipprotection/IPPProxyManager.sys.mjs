@@ -248,6 +248,10 @@ class IPPProxyManagerSingleton extends EventTarget {
     return this.#usage;
   }
 
+  channelFilter() {
+    return this.#connection;
+  }
+
   createChannelFilter() {
     if (!this.#connection) {
       this.#connection = lazy.IPPChannelFilter.create();

@@ -33,4 +33,8 @@ prefs = [
 
 ["test_IPProtectionStates.js"]
 
+["test_IPPAlwaysOn.js"]
+head = "head_enterprise.js"
+prefs = ["browser.ipProtection.override.serverlist=[]"]
+
 ["test_IPProxyManager.js"]
