@@ -1549,7 +1549,7 @@ void NativeLayerRootSnapshotterWayland::UpdateSnapshot(
     if (!fb) {
       return;
     }
-    mSnapshot = new RenderSourceNLRS(std::move(fb));
+    mSnapshot = MakeRefPtr<RenderSourceNLRS>(std::move(fb));
   }
 
   mLayerForSnapshot->CopyFrontBufferToFrameBuffer(mSnapshot->FB().mFB);

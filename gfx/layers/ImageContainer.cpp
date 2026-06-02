@@ -61,7 +61,7 @@ static void CopyPlane(uint8_t* aDst, const uint8_t* aSrc,
 
 RefPtr<PlanarYCbCrImage> ImageFactory::CreatePlanarYCbCrImage(
     const gfx::IntSize& aScaleHint, BufferRecycleBin* aRecycleBin) {
-  return new RecyclingPlanarYCbCrImage(aRecycleBin);
+  return MakeRefPtr<RecyclingPlanarYCbCrImage>(aRecycleBin);
 }
 
 BufferRecycleBin::BufferRecycleBin()
@@ -185,10 +185,10 @@ ImageContainer::ImageContainer(ImageUsageType aUsageType, Mode aFlag)
       mDroppedImageCount(0),
       mImageFactory(new ImageFactory()),
       mRotation(VideoRotation::kDegree_0),
-      mRecycleBin(new BufferRecycleBin()),
+      mRecycleBin(MakeRefPtr<BufferRecycleBin>()),
       mCurrentProducerID(-1) {
   if (aFlag == ASYNCHRONOUS) {
-    mNotifyCompositeListener = new ImageContainerListener(this);
+    mNotifyCompositeListener = MakeRefPtr<ImageContainerListener>(this);
     EnsureImageClient();
   }
 }
@@ -337,10 +337,10 @@ RefPtr<PlanarYCbCrImage> ImageContainer::CreatePlanarYCbCrImage() {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   EnsureImageClient();
   if (mImageClient && mImageClient->AsImageClientSingle()) {
-    return new SharedPlanarYCbCrImage(mImageClient);
+    return MakeRefPtr<SharedPlanarYCbCrImage>(mImageClient);
   }
   if (mRecycleAllocator) {
-    return new SharedPlanarYCbCrImage(mRecycleAllocator);
+    return MakeRefPtr<SharedPlanarYCbCrImage>(mRecycleAllocator);
   }
   return mImageFactory->CreatePlanarYCbCrImage(mScaleHint, mRecycleBin);
 }
@@ -349,10 +349,10 @@ RefPtr<SharedRGBImage> ImageContainer::CreateSharedRGBImage() {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   EnsureImageClient();
   if (mImageClient && mImageClient->AsImageClientSingle()) {
-    return new SharedRGBImage(mImageClient);
+    return MakeRefPtr<SharedRGBImage>(mImageClient);
   }
   if (mRecycleAllocator) {
-    return new SharedRGBImage(mRecycleAllocator);
+    return MakeRefPtr<SharedRGBImage>(mRecycleAllocator);
   }
   return nullptr;
 }
@@ -573,7 +573,7 @@ void ImageContainer::EnsureRecycleAllocatorForRDD(
   static const uint32_t MAX_POOLED_VIDEO_COUNT = 5;
 
   mRecycleAllocator =
-      new layers::TextureClientRecycleAllocator(aKnowsCompositor);
+      MakeRefPtr<layers::TextureClientRecycleAllocator>(aKnowsCompositor);
   mRecycleAllocator->SetMaxPoolSize(MAX_POOLED_VIDEO_COUNT);
 }
 
@@ -598,8 +598,8 @@ ImageContainer::GetD3D11RecycleAllocator(KnowsCompositor* aKnowsCompositor,
     return do_AddRef(mD3D11RecycleAllocator);
   }
 
-  mD3D11RecycleAllocator =
-      new D3D11RecycleAllocator(aKnowsCompositor, device, aPreferredFormat);
+  mD3D11RecycleAllocator = MakeRefPtr<D3D11RecycleAllocator>(
+      aKnowsCompositor, device, aPreferredFormat);
 
   if (device != DeviceManagerDx::Get()->GetCompositorDevice()) {
     RefPtr<SyncObjectClient> syncObject =
@@ -627,7 +627,7 @@ ImageContainer::GetD3D11YCbCrRecycleAllocator(
   }
 
   mD3D11YCbCrRecycleAllocator =
-      new D3D11YCbCrRecycleAllocator(aKnowsCompositor);
+      MakeRefPtr<D3D11YCbCrRecycleAllocator>(aKnowsCompositor);
   return do_AddRef(mD3D11YCbCrRecycleAllocator);
 }
 #endif
@@ -637,7 +637,7 @@ already_AddRefed<MacIOSurfaceRecycleAllocator>
 ImageContainer::GetMacIOSurfaceRecycleAllocator() {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   if (!mMacIOSurfaceRecycleAllocator) {
-    mMacIOSurfaceRecycleAllocator = new MacIOSurfaceRecycleAllocator();
+    mMacIOSurfaceRecycleAllocator = MakeRefPtr<MacIOSurfaceRecycleAllocator>();
   }
 
   return do_AddRef(mMacIOSurfaceRecycleAllocator);

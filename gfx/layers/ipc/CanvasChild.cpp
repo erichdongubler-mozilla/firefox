@@ -282,7 +282,7 @@ class CanvasDataShmemHolder {
     }
 
     MutexAutoLock lock(mMutex);
-    mWorkerRef = new dom::ThreadSafeWorkerRef(workerRef);
+    mWorkerRef = MakeRefPtr<dom::ThreadSafeWorkerRef>(workerRef);
     return true;
   }
 
