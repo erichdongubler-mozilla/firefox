@@ -1361,7 +1361,9 @@ class ScrollContainerFrame : public nsContainerFrame,
   RefPtr<AsyncScroll> mAsyncScroll;
   RefPtr<AsyncSmoothMSDScroll> mAsyncSmoothMSDScroll;
   RefPtr<layout::ScrollbarActivity> mScrollbarActivity;
-  ScrollOrigin mLastScrollOrigin;
+  // Placed immediately before the 12-byte mApzSmoothScrollDestination so this
+  // 4-byte field fills what would otherwise be alignment padding.
+  nsExpirationState mActivityExpirationState;
   Maybe<nsPoint> mApzSmoothScrollDestination;
   MainThreadScrollGeneration mScrollGeneration;
   APZScrollGeneration mScrollGenerationOnApz;
@@ -1405,8 +1407,6 @@ class ScrollContainerFrame : public nsContainerFrame,
   // and is used to calculate relative scroll offset updates.
   nsPoint mApzScrollPos;
 
-  nsExpirationState mActivityExpirationState;
-
   nsCOMPtr<nsITimer> mScrollActivityTimer;
 
   // The scroll position where we last updated frame visibility.
@@ -1429,6 +1429,18 @@ class ScrollContainerFrame : public nsContainerFrame,
   // re-snapping.
   SnapTargetSet mSnapTargets;
 
+  // The paint sequence number if the scroll frame is the first scrollable frame
+  // encountered.
+  Maybe<uint32_t> mIsFirstScrollableFrameSequenceNumber;
+
+  // Computed style of ::webkit-scrollbar pseudo element for this scroll
+  // container.
+  RefPtr<ComputedStyle> mWebKitScrollbarStyle;
+
+  // mCurrentAPZScrollAnimationType and mLastScrollOrigin are grouped here, just
+  // before the bitfields, so these small fields pack together rather than
+  // leaving padding between larger 8-byte-aligned members.
+
   // Representing there's an APZ animation is in progress and what caused the
   // animation. Note that this is only set when repainted via APZ, which means
   // that there may be a request for an APZ animation in flight for example,
@@ -1437,13 +1449,7 @@ class ScrollContainerFrame : public nsContainerFrame,
   // mApzAnimationRequested, and this type.
   APZScrollAnimationType mCurrentAPZScrollAnimationType;
 
-  // The paint sequence number if the scroll frame is the first scrollable frame
-  // encountered.
-  Maybe<uint32_t> mIsFirstScrollableFrameSequenceNumber;
-
-  // Computed style of ::webkit-scrollbar pseudo element for this scroll
-  // container.
-  RefPtr<ComputedStyle> mWebKitScrollbarStyle;
+  ScrollOrigin mLastScrollOrigin;
 
   // Representing whether the APZC corresponding to this frame is now in the
   // middle of handling a gesture (e.g. a pan gesture).
