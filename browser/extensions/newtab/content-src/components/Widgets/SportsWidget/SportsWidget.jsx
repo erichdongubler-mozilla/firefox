@@ -804,10 +804,12 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
               className="sports-intro-title"
               data-l10n-id="newtab-sports-widget-keep-tabs"
             />
-            <p
-              className="sports-intro-lede"
-              data-l10n-id="newtab-sports-widget-get-updates"
-            ></p>
+            {displaySize === "large" && (
+              <p
+                className="sports-intro-lede"
+                data-l10n-id="newtab-sports-widget-get-updates"
+              ></p>
+            )}
           </div>
         )}
         {widgetState === WIDGET_STATES.FOLLOW_TEAMS ? (

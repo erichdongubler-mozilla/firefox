@@ -268,6 +268,34 @@ describe("<SportsWidget>", () => {
     ).toBeInTheDocument();
   });
 
+  it("hides the get-updates lede on medium size", () => {
+    const { container } = render(
+      <WrapWithProvider state={makeState()}>
+        <SportsWidget {...defaultProps} />
+      </WrapWithProvider>
+    );
+    expect(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-get-updates']"
+      )
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the get-updates lede on large size", () => {
+    const { container } = render(
+      <WrapWithProvider
+        state={makeState({ [PREF_SPORTS_WIDGET_SIZE]: "large" })}
+      >
+        <SportsWidget {...defaultProps} />
+      </WrapWithProvider>
+    );
+    expect(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-get-updates']"
+      )
+    ).toBeInTheDocument();
+  });
+
   it("should render the view-matches button", () => {
     const { container } = render(
       <WrapWithProvider state={makeState()}>
