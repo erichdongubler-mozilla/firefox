@@ -464,28 +464,24 @@ nsresult nsHtml5TreeOperation::AddAttributes(nsIContent* aNode,
   Element* node = aNode->AsElement();
   nsHtml5OtherDocUpdate update(node->OwnerDoc(), aBuilder->GetDocument());
 
-  int32_t len = aAttributes->getLength();
-  for (int32_t i = len; i > 0;) {
-    --i;
-    nsAtom* localName = aAttributes->getLocalNameNoBoundsCheck(i);
-    int32_t nsuri = aAttributes->getURINoBoundsCheck(i);
-    if (!node->HasAttr(nsuri, localName) &&
-        !(nsuri == kNameSpaceID_None && localName == nsGkAtoms::nonce)) {
-      nsHtml5String& val = aAttributes->getValueNoBoundsCheck(i);
-      nsAtom* prefix = aAttributes->getPrefixNoBoundsCheck(i);
-
+  for (nsHtml5AttributeEntry& entry : *aAttributes) {
+    nsHtml5String& val = entry.ValueRef();
+    nsAtom* localName = entry.NameHTML();
+    if (!node->HasAttr(kNameSpaceID_None, localName) &&
+        (localName != nsGkAtoms::nonce)) {
       // If value is already an atom, use it directly to avoid string
       // allocation.
       nsAtom* valAtom = val.MaybeAsAtom();
       if (valAtom) {
-        node->SetAttr(nsuri, localName, prefix, valAtom, nullptr, true);
+        node->SetAttr(kNameSpaceID_None, localName, nullptr, valAtom, nullptr,
+                      true);
       } else {
         nsString value;  // Not Auto, because using it to hold nsStringBuffer*
         // Safety: OK to call, because val is a reference into the attribute
         // holder, so a call on `val` is a call on an owning instance of
         // `nsHtml5String`.
         val.MoveToString(value);
-        node->SetAttr(nsuri, localName, prefix, value, true);
+        node->SetAttr(kNameSpaceID_None, localName, nullptr, value, true);
       }
       // XXX what to do with nsresult?
     }
@@ -503,9 +499,9 @@ void nsHtml5TreeOperation::SetHTMLElementAttributes(
   if (aAttributes->getDuplicateAttributeError()) {
     aElement->SetParserHadDuplicateAttributeError();
   }
-  for (int32_t i = 0; i < len; i++) {
-    nsHtml5String& val = aAttributes->getValueNoBoundsCheck(i);
-    nsAtom* localName = aAttributes->getLocalNameNoBoundsCheck(i);
+  for (nsHtml5AttributeEntry& entry : *aAttributes) {
+    nsHtml5String& val = entry.ValueRef();
+    nsAtom* localName = entry.NameHTML();
     if (localName == nsGkAtoms::_class) {
       nsAtom* klass = val.MaybeAsAtom();
       if (klass) {
@@ -514,20 +510,18 @@ void nsHtml5TreeOperation::SetHTMLElementAttributes(
       }
     }
 
-    nsAtom* prefix = aAttributes->getPrefixNoBoundsCheck(i);
-    int32_t nsuri = aAttributes->getURINoBoundsCheck(i);
-
     // If value is already an atom, use it directly to avoid string allocation.
     nsAtom* valAtom = val.MaybeAsAtom();
     if (valAtom) {
-      aElement->SetAttr(nsuri, localName, prefix, valAtom, nullptr, false);
+      aElement->SetAttr(kNameSpaceID_None, localName, nullptr, valAtom, nullptr,
+                        false);
     } else {
       nsString value;  // Not Auto, because using it to hold nsStringBuffer*
       // Safety: OK to call, because val is a reference into the attribute
       // holder, so a call on `val` is a call on an owning instance of
       // `nsHtml5String`.
       val.MoveToString(value);
-      aElement->SetAttr(nsuri, localName, prefix, value, false);
+      aElement->SetAttr(kNameSpaceID_None, localName, nullptr, value, false);
     }
   }
 #ifdef DEBUG
@@ -553,7 +547,7 @@ void nsHtml5TreeOperation::SetHTMLElementAttributesFast(
   bool isPendingMappedAttributeEvaluation = false;
   for (nsHtml5AttributeEntry& entry : *aAttributes) {
     aElement->SetNoNameSpaceAttrOnNewlyCreatedElement(
-        entry.GetLocalRefHTML(), entry.GetValue(),
+        entry.ForgetNameHTML(), entry.ValueRef(),
         isPendingMappedAttributeEvaluation);
   }
 #ifdef DEBUG
@@ -688,10 +682,10 @@ nsIContent* nsHtml5TreeOperation::CreateSVGElement(
     newContent->SetParserHadDuplicateAttributeError();
   }
 
-  for (int32_t i = 0; i < len; i++) {
-    nsHtml5String& val = aAttributes->getValueNoBoundsCheck(i);
-    nsAtom* localName = aAttributes->getLocalNameNoBoundsCheck(i);
-    if (localName == nsGkAtoms::_class) {
+  for (nsHtml5AttributeEntry& entry : *aAttributes) {
+    nsHtml5String& val = entry.ValueRef();
+    auto triple = entry.NameSVG();
+    if (triple.mLocal == nsGkAtoms::_class) {
       nsAtom* klass = val.MaybeAsAtom();
       if (klass) {
         newContent->SetClassAttrFromParser(klass);
@@ -699,20 +693,19 @@ nsIContent* nsHtml5TreeOperation::CreateSVGElement(
       }
     }
 
-    nsAtom* prefix = aAttributes->getPrefixNoBoundsCheck(i);
-    int32_t nsuri = aAttributes->getURINoBoundsCheck(i);
-
     // If value is already an atom, use it directly to avoid string allocation.
     nsAtom* valAtom = val.MaybeAsAtom();
     if (valAtom) {
-      newContent->SetAttr(nsuri, localName, prefix, valAtom, nullptr, false);
+      newContent->SetAttr(triple.mNamespace, triple.mLocal, triple.mPrefix,
+                          valAtom, nullptr, false);
     } else {
       nsString value;  // Not Auto, because using it to hold nsStringBuffer*
       // Safety: OK to call, because val is a reference into the attribute
       // holder, so a call on `val` is a call on an owning instance of
       // `nsHtml5String`.
       val.MoveToString(value);
-      newContent->SetAttr(nsuri, localName, prefix, value, false);
+      newContent->SetAttr(triple.mNamespace, triple.mLocal, triple.mPrefix,
+                          value, false);
     }
   }
 #ifdef DEBUG
@@ -760,10 +753,10 @@ nsIContent* nsHtml5TreeOperation::CreateMathMLElement(
     newContent->SetParserHadDuplicateAttributeError();
   }
 
-  for (int32_t i = 0; i < len; i++) {
-    nsHtml5String& val = aAttributes->getValueNoBoundsCheck(i);
-    nsAtom* localName = aAttributes->getLocalNameNoBoundsCheck(i);
-    if (localName == nsGkAtoms::_class) {
+  for (nsHtml5AttributeEntry& entry : *aAttributes) {
+    nsHtml5String& val = entry.ValueRef();
+    auto triple = entry.NameMathML();
+    if (triple.mLocal == nsGkAtoms::_class) {
       nsAtom* klass = val.MaybeAsAtom();
       if (klass) {
         newContent->SetClassAttrFromParser(klass);
@@ -771,20 +764,19 @@ nsIContent* nsHtml5TreeOperation::CreateMathMLElement(
       }
     }
 
-    nsAtom* prefix = aAttributes->getPrefixNoBoundsCheck(i);
-    int32_t nsuri = aAttributes->getURINoBoundsCheck(i);
-
     // If value is already an atom, use it directly to avoid string allocation.
     nsAtom* valAtom = val.MaybeAsAtom();
     if (valAtom) {
-      newContent->SetAttr(nsuri, localName, prefix, valAtom, nullptr, false);
+      newContent->SetAttr(triple.mNamespace, triple.mLocal, triple.mPrefix,
+                          valAtom, nullptr, false);
     } else {
       nsString value;  // Not Auto, because using it to hold nsStringBuffer*
       // Safety: OK to call, because val is a reference into the attribute
       // holder, so a call on `val` is a call on an owning instance of
       // `nsHtml5String`.
       val.MoveToString(value);
-      newContent->SetAttr(nsuri, localName, prefix, value, false);
+      newContent->SetAttr(triple.mNamespace, triple.mLocal, triple.mPrefix,
+                          value, false);
     }
   }
 #ifdef DEBUG
