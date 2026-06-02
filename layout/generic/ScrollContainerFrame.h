@@ -308,6 +308,43 @@ class ScrollContainerFrame : public nsContainerFrame,
   nsRect GetScrolledRect() const;
 
   /**
+   * While an instance of this class is alive, GetScrolledRect() caches its
+   * result so that repeated calls don't recompute the (relatively expensive)
+   * snapped rect. This is meant to wrap an operation during which
+   * GetScrolledRect() may be called many times and the scrolled rect is known
+   * not to change, such as building a display list or finishing reflow.
+   *
+   * The cache and the cached value both live in this stack object, so the only
+   * per-frame cost is the stack space and a single pointer, set while an
+   * instance is alive. The value is computed lazily, on the first
+   * GetScrolledRect() call, so using this class when GetScrolledRect() is never
+   * called costs nothing.
+   *
+   * Passing aReferenceFrame is optional but saves time computing it if the
+   * caller has easy access to it.
+   *
+   * In debug builds, the cached value is recomputed (against that same
+   * reference frame) on every subsequent GetScrolledRect() call and asserted to
+   * be unchanged, catching cases where the scrolled rect changes unexpectedly
+   * during the operation.
+   */
+  class MOZ_RAII AutoScrolledRectCache {
+   public:
+    AutoScrolledRectCache(ScrollContainerFrame* aFrame,
+                          const nsIFrame* aReferenceFrame);
+    ~AutoScrolledRectCache();
+
+   private:
+    friend class ScrollContainerFrame;
+    const nsRect& GetOrCompute();
+
+    ScrollContainerFrame* const mFrame;
+    const nsIFrame* const mReferenceFrame;
+    nsRect mScrolledRect;
+    bool mComputed = false;
+  };
+
+  /**
    * Get the area of the scrollport relative to the origin of this frame's
    * border-box.
    * This is the area of this frame minus border and scrollbars.
@@ -1007,6 +1044,15 @@ class ScrollContainerFrame : public nsContainerFrame,
   nsRect GetUnsnappedScrolledRectInternal(const nsRect& aScrolledOverflowArea,
                                           const nsSize& aScrollPortSize) const;
 
+  /**
+   * Computes the scrolled rect (for GetScrolledRect), snapping to layer pixels
+   * relative to aReferenceFrame, or relative to
+   * nsLayoutUtils::GetReferenceFrame(this) if aReferenceFrame is null. This is
+   * the uncached implementation backing GetScrolledRect() and
+   * AutoScrolledRectCache.
+   */
+  nsRect ComputeScrolledRect(const nsIFrame* aReferenceFrame) const;
+
   bool IsPhysicalLTR() const { return GetWritingMode().IsPhysicalLTR(); }
   bool IsBidiLTR() const { return GetWritingMode().IsBidiLTR(); }
 
@@ -1357,7 +1403,9 @@ class ScrollContainerFrame : public nsContainerFrame,
   nsIFrame* mScrolledFrame;
   nsIFrame* mScrollCornerBox;
   nsIFrame* mResizerBox;
-  const nsIFrame* mReferenceFrameDuringPainting;
+  // Non-null while an AutoScrolledRectCache is active for this frame; the cache
+  // itself lives in that stack object. See AutoScrolledRectCache.
+  AutoScrolledRectCache* mScrolledRectCache;
   RefPtr<AsyncScroll> mAsyncScroll;
   RefPtr<AsyncSmoothMSDScroll> mAsyncSmoothMSDScroll;
   RefPtr<layout::ScrollbarActivity> mScrollbarActivity;
