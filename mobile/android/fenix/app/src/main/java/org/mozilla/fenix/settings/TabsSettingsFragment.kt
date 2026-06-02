@@ -31,6 +31,7 @@ class TabsSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragm
     private lateinit var radioOneMonth: RadioButtonPreference
     private lateinit var inactiveTabsCategory: PreferenceCategory
     private lateinit var inactiveTabs: SwitchPreferenceCompat
+    private lateinit var privacyReport: SwitchPreferenceCompat
     private val args by navArgs<TabsSettingsFragmentArgs>()
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -68,6 +69,13 @@ class TabsSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragm
 
         inactiveTabs = requirePreference<SwitchPreferenceCompat>(R.string.pref_key_inactive_tabs).also {
             it.isChecked = requireContext().settings().inactiveTabsAreEnabled
+            it.onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        privacyReport = requirePreference<SwitchPreferenceCompat>(
+            R.string.pref_key_privacy_report_tab_manager,
+        ).also {
+            it.isChecked = requireContext().settings().showPrivacyReportInTabManager
             it.onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 

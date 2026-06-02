@@ -176,6 +176,7 @@ private val ignoredItems = listOf(HEADER_ITEM_KEY, SPAN_ITEM_KEY)
  * @param onTabGroupOnboardingDismiss Invoked when the user dismisses the tab group onboarding card.
  * @param header Optional layout to display before [tabs].
  * @param contentPadding Optional PaddingValues to pad the tab's content.
+ * @param onPrivacyReportTapped Invoked when the trackers blocked pill is tapped.
  */
 @Suppress("LongParameterList")
 @Composable
@@ -199,6 +200,7 @@ fun TabLayout(
     onTabGroupOnboardingDismiss: () -> Unit = {},
     header: (@Composable () -> Unit)? = null,
     contentPadding: PaddingValues = defaultTabLayoutContentPadding(),
+    onPrivacyReportTapped: (() -> Unit)? = null,
 ) {
     if (displayTabsInGrid) {
         TabGrid(
@@ -219,6 +221,7 @@ fun TabLayout(
             contentPadding = contentPadding,
             focusEnabled = focusEnabled,
             dragAndDropEnabled = dragAndDropEnabled,
+            onPrivacyReportTapped = onPrivacyReportTapped,
             displayTabGroupOnboarding = displayTabGroupOnboarding,
         )
     } else {
@@ -238,6 +241,7 @@ fun TabLayout(
             trackersBlockedCount = trackersBlockedCount,
             focusEnabled = focusEnabled,
             dragAndDropEnabled = dragAndDropEnabled,
+            onPrivacyReportTapped = onPrivacyReportTapped,
         )
     }
 }
@@ -260,6 +264,7 @@ private fun TabList(
     onEditTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onCloseTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     header: (@Composable () -> Unit)? = null,
+    onPrivacyReportTapped: (() -> Unit)? = null,
 ) {
     if (dragAndDropEnabled) {
         InteractableTabList(
@@ -278,6 +283,7 @@ private fun TabList(
             trackersBlockedCount = trackersBlockedCount,
             focusEnabled = focusEnabled,
             dragAndDropEnabled = dragAndDropEnabled,
+            onPrivacyReportTapped = onPrivacyReportTapped,
         )
     } else {
         ReorderableTabList(
@@ -295,6 +301,7 @@ private fun TabList(
             header = header,
             trackersBlockedCount = trackersBlockedCount,
             focusEnabled = true,
+            onPrivacyReportTapped = onPrivacyReportTapped,
         )
     }
 }
@@ -320,6 +327,7 @@ private fun TabGrid(
     onTabGroupOnboardingDismiss: () -> Unit = {},
     header: (@Composable () -> Unit)? = null,
     contentPadding: PaddingValues = defaultTabLayoutContentPadding(),
+    onPrivacyReportTapped: (() -> Unit)? = null,
 ) {
     if (dragAndDropEnabled) {
         InteractableTabGrid(
@@ -340,6 +348,7 @@ private fun TabGrid(
             header = header,
             contentPadding = contentPadding,
             focusEnabled = focusEnabled,
+            onPrivacyReportTapped = onPrivacyReportTapped,
         )
     } else {
         ReorderableTabGrid(
@@ -360,6 +369,7 @@ private fun TabGrid(
             contentPadding = contentPadding,
             trackersBlockedCount = trackersBlockedCount,
             focusEnabled = focusEnabled,
+            onPrivacyReportTapped = onPrivacyReportTapped,
         )
     }
 }
@@ -441,6 +451,7 @@ private fun ReorderableTabGrid(
     onTabGroupOnboardingDismiss: () -> Unit = {},
     header: (@Composable () -> Unit)? = null,
     trackersBlockedCount: Int? = null,
+    onPrivacyReportTapped: (() -> Unit)? = null,
 ) {
     val gridState = rememberLazyGridState()
     val tabGridBottomPadding = dimensionResource(id = R.dimen.tab_tray_grid_bottom_padding)
@@ -522,7 +533,10 @@ private fun ReorderableTabGrid(
                 )
             }
 
-            tabGridFooter(trackersBlockedCount = trackersBlockedCount)
+            tabGridFooter(
+                trackersBlockedCount = trackersBlockedCount,
+                onPrivacyReportTapped = onPrivacyReportTapped,
+            )
         }
     }
 }
@@ -548,6 +562,7 @@ private fun InteractableTabGrid(
     onCloseTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onTabGroupOnboardingDismiss: () -> Unit = {},
     header: (@Composable () -> Unit)? = null,
+    onPrivacyReportTapped: (() -> Unit)? = null,
 ) {
     val gridState = rememberLazyGridState()
     val tabGridBottomPadding = dimensionResource(id = R.dimen.tab_tray_grid_bottom_padding)
@@ -645,7 +660,10 @@ private fun InteractableTabGrid(
                 )
             }
 
-            tabGridFooter(trackersBlockedCount = trackersBlockedCount)
+            tabGridFooter(
+                trackersBlockedCount = trackersBlockedCount,
+                onPrivacyReportTapped = onPrivacyReportTapped,
+            )
         }
     }
 }
@@ -691,7 +709,10 @@ private fun LazyGridScope.tabItems(
 /**
  * Footer item for the tab grid: a [TrackersBlockedCard] when trackers are blocked.
  */
-private fun LazyGridScope.tabGridFooter(trackersBlockedCount: Int?) {
+private fun LazyGridScope.tabGridFooter(
+    trackersBlockedCount: Int?,
+    onPrivacyReportTapped: (() -> Unit)? = null,
+) {
     item(key = SPAN_ITEM_KEY, span = { GridItemSpan(maxLineSpan) }) {
         val bottomBarHeight = dimensionResource(id = R.dimen.browser_toolbar_height)
         val tabGridBottomPadding = dimensionResource(id = R.dimen.tab_tray_grid_bottom_padding)
@@ -703,7 +724,10 @@ private fun LazyGridScope.tabGridFooter(trackersBlockedCount: Int?) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (trackersBlockedCount != null) {
-                TrackersBlockedCard(trackersBlockedCount = trackersBlockedCount)
+                TrackersBlockedCard(
+                    trackersBlockedCount = trackersBlockedCount,
+                    onPrivacyReportTapped = onPrivacyReportTapped,
+                )
                 Spacer(modifier = Modifier.height(bottomBarHeight + 16.dp))
             } else {
                 Spacer(modifier = Modifier.height(tabGridBottomPadding))
@@ -968,6 +992,7 @@ private fun InteractableTabList(
     focusEnabled: Boolean,
     dragAndDropEnabled: Boolean,
     header: (@Composable () -> Unit)? = null,
+    onPrivacyReportTapped: (() -> Unit)? = null,
 ) {
     val state = rememberLazyListState()
     val tabListBottomPadding = dimensionResource(id = R.dimen.tab_tray_list_bottom_padding)
@@ -1038,6 +1063,7 @@ private fun InteractableTabList(
                 onEditTabGroupClick = onEditTabGroupClick,
                 onCloseTabGroupClick = onCloseTabGroupClick,
                 trackersBlockedCount = trackersBlockedCount,
+                onPrivacyReportTapped = onPrivacyReportTapped,
             )
         }
     }
@@ -1058,6 +1084,7 @@ private fun LazyListScope.interactableTabListContent(
     onEditTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onCloseTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     trackersBlockedCount: Int?,
+    onPrivacyReportTapped: (() -> Unit)? = null,
 ) {
     header?.let {
         item(key = HEADER_ITEM_KEY) {
@@ -1119,10 +1146,13 @@ private fun LazyListScope.interactableTabListContent(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         }
     }
-    trackersBlockedContent(trackersBlockedCount)
+    trackersBlockedContent(trackersBlockedCount, onPrivacyReportTapped)
 }
 
-private fun LazyListScope.trackersBlockedContent(trackersBlockedCount: Int?) {
+private fun LazyListScope.trackersBlockedContent(
+    trackersBlockedCount: Int?,
+    onPrivacyReportTapped: (() -> Unit)? = null,
+) {
     if (trackersBlockedCount != null) {
         item(key = SPAN_ITEM_KEY) {
             TrackersBlockedCard(
@@ -1131,6 +1161,7 @@ private fun LazyListScope.trackersBlockedContent(trackersBlockedCount: Int?) {
                     .fillMaxWidth()
                     .wrapContentWidth(Alignment.CenterHorizontally)
                     .padding(top = FirefoxTheme.layout.space.static200),
+                onPrivacyReportTapped = onPrivacyReportTapped,
             )
         }
     }
@@ -1153,6 +1184,7 @@ private fun ReorderableTabList(
     header: (@Composable () -> Unit)? = null,
     trackersBlockedCount: Int? = null,
     focusEnabled: Boolean = true,
+    onPrivacyReportTapped: (() -> Unit)? = null,
 ) {
     val state = rememberLazyListState()
     val tabListBottomPadding = dimensionResource(id = R.dimen.tab_tray_list_bottom_padding)
@@ -1309,7 +1341,7 @@ private fun ReorderableTabList(
                 }
             }
 
-            trackersBlockedContent(trackersBlockedCount)
+            trackersBlockedContent(trackersBlockedCount, onPrivacyReportTapped)
         }
     }
 }

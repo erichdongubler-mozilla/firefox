@@ -241,7 +241,7 @@ class TabManagementFragment : Fragment() {
         tabManagerInteractor = DefaultTabManagerInteractor(controller = tabManagerController)
 
         val settings = requireContext().settings()
-        val showPrivacyReport = shouldShowPrivacyReport(settings)
+        val showPrivacyReport = settings.showPrivacyReportInTabManager
 
         return content {
             val state by tabsTrayStore.stateFlow.collectAsState()
@@ -428,6 +428,7 @@ class TabManagementFragment : Fragment() {
                                         verifyUser(fallbackVerification = verificationResultLauncher)
                                     },
                                     trackersBlockedCount = trackersBlockedCount,
+                                    onPrivacyReportTapped = tabManagerController::onPrivacyReportTapped,
                                 )
                             }
 
@@ -719,7 +720,7 @@ class TabManagementFragment : Fragment() {
             view = view,
         )
 
-        if (shouldShowPrivacyReport(requireContext().settings())) {
+        if (requireContext().settings().showPrivacyReportInTabManager) {
             trackersBlockedFeature.set(
                 feature = TrackersBlockedFeature(
                     appStore = requireComponents.appStore,
@@ -1038,10 +1039,6 @@ class TabManagementFragment : Fragment() {
     ): Boolean {
         return isPrivateMode && hasPrivateTabs && biometricAvailable && !privateLockEnabled && shouldShowBanner
     }
-
-    private fun shouldShowPrivacyReport(settings: Settings): Boolean =
-        settings.showPrivacyReportFeature &&
-            settings.shouldShowTrackingProtectionDashboard
 
     private companion object {
         private const val DOWNLOAD_CANCEL_DIALOG_FRAGMENT_TAG = "DOWNLOAD_CANCEL_DIALOG_FRAGMENT_TAG"

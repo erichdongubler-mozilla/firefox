@@ -75,6 +75,7 @@ private val EmptyPageWidth = 170.dp
  * @param onDeleteTabGroupClick Invoked when the user clicks on delete tab group.
  * @param onEditTabGroupClick Invoked when the user clicks to edit a tab group.
  * @param onCloseTabGroupClick Invoked when the user clicks to close a tab group.
+ * @param onPrivacyReportTapped Invoked when the trackers blocked pill is tapped.
  */
 @Composable
 @Suppress("LongParameterList")
@@ -108,6 +109,7 @@ internal fun NormalTabsPage(
     onDeleteTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onEditTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onCloseTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
+    onPrivacyReportTapped: (() -> Unit)? = null,
 ) {
     if (items.isNotEmpty() || inactiveTabs.isNotEmpty()) {
         var showAutoCloseDialog by remember { mutableStateOf(shouldShowInactiveTabsAutoCloseDialog) }
@@ -162,9 +164,13 @@ internal fun NormalTabsPage(
             onCloseTabGroupClick = onCloseTabGroupClick,
             tabInteractionHandler = tabInteractionHandler,
             focusEnabled = focusEnabled,
+            onPrivacyReportTapped = onPrivacyReportTapped,
         )
     } else {
-        EmptyNormalTabsPage(trackersBlockedCount = trackersBlockedCount)
+        EmptyNormalTabsPage(
+            trackersBlockedCount = trackersBlockedCount,
+            onPrivacyReportTapped = onPrivacyReportTapped,
+        )
     }
 }
 
@@ -173,11 +179,13 @@ internal fun NormalTabsPage(
  *
  * @param modifier The [Modifier] to be applied to the layout.
  * @param trackersBlockedCount The number of trackers blocked to display in the footer card.
+ * @param onPrivacyReportTapped Invoked when the trackers blocked pill is tapped.
  */
 @Composable
 private fun EmptyNormalTabsPage(
     modifier: Modifier = Modifier,
     trackersBlockedCount: Int? = null,
+    onPrivacyReportTapped: (() -> Unit)? = null,
 ) {
     val bottomBarHeight = dimensionResource(id = R.dimen.browser_toolbar_height)
 
@@ -209,7 +217,10 @@ private fun EmptyNormalTabsPage(
         }
 
         if (trackersBlockedCount != null) {
-            TrackersBlockedCard(trackersBlockedCount = trackersBlockedCount)
+            TrackersBlockedCard(
+                trackersBlockedCount = trackersBlockedCount,
+                onPrivacyReportTapped = onPrivacyReportTapped,
+            )
             Spacer(modifier = Modifier.height(bottomBarHeight + 32.dp))
         }
     }

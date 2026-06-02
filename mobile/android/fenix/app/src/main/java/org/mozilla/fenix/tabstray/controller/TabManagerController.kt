@@ -47,6 +47,7 @@ import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.DEFAULT_ACTIVE_DAYS
+import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.ext.potentialInactiveTabs
 import org.mozilla.fenix.home.HomeScreenViewModel.Companion.ALL_NORMAL_TABS
@@ -206,6 +207,11 @@ interface TabManagerController :
      * Called when opening the recently closed tabs menu button.
      */
     fun onOpenRecentlyClosedClicked()
+
+    /**
+     * Called when the trackers blocked pill is tapped.
+     */
+    fun onPrivacyReportTapped()
 }
 
 /**
@@ -694,6 +700,13 @@ class DefaultTabManagerController(
             TabManagementFragmentDirections.actionGlobalRecentlyClosed(),
         )
         Events.recentlyClosedTabsOpened.record(NoExtras())
+    }
+
+    override fun onPrivacyReportTapped() {
+        navController.nav(
+            R.id.tabManagementFragment,
+            TabManagementFragmentDirections.actionTabManagementFragmentToGlobalProtectionsDashboard(),
+        )
     }
 
     /**
