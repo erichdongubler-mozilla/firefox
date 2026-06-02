@@ -15329,6 +15329,7 @@ hr {
   --button-text-color-menu-hover: light-dark(var(--button-text-color-ghost-hover), var(--button-text-color-hover));
   --button-text-color-menu-active: light-dark(var(--button-text-color-ghost-active), var(--button-text-color-active));
   --button-text-color-menu-disabled: light-dark(var(--button-text-color-ghost-disabled), var(--button-text-color-disabled));
+  --button-text-color-menu-selected: light-dark(var(--button-text-color-ghost-selected), var(--button-text-color-selected));
   --button-text-color-primary: light-dark(var(--color-white), var(--color-gray-70));
   --button-text-color-primary-active: var(--button-text-color-primary);
   --button-text-color-selected: light-dark(var(--button-text-color), var(--background-color-canvas));
@@ -15592,6 +15593,7 @@ hr {
     --button-text-color-menu-hover: var(--button-text-color-primary);
     --button-text-color-menu-active: var(--button-text-color-primary-active);
     --button-text-color-menu-disabled: var(--button-text-color-primary-disabled);
+    --button-text-color-menu-selected: var(--button-text-color-primary-selected);
     --button-text-color-primary: ButtonFace;
     --button-text-color-primary-active: var(--button-text-color-primary-hover);
     --button-text-color-selected: SelectedItemText;

@@ -309,6 +309,11 @@
     "dark": "{Theme$button/text/color/hover}",
     "forcedColors": "{Theme$button/text/color/primary}"
   },
+  "button/text/color/menu/selected": {
+    "light": "{Theme$button/text/color/ghost/selected}",
+    "dark": "{Theme$button/text/color/selected}",
+    "forcedColors": "{Theme$button/text/color/primary/selected}"
+  },
   "button/text/color/primary": {
     "light": "{Colors$color/white}",
     "dark": "{Colors$color/gray/70}",
