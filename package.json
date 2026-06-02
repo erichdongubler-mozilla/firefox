@@ -8,6 +8,7 @@
     "@eslint/json": "1.0.1",
     "@microsoft/eslint-plugin-sdl": "1.1.0",
     "@stylistic/stylelint-plugin": "3.1.1",
+    "@types/node": "25.9.1",
     "@typescript/lib-dom": "file:tools/@types",
     "eslint": "9.39.1",
     "eslint-config-prettier": "10.1.8",
