@@ -42,16 +42,14 @@
         border-color: var(--checkbox-border-color-checked-disabled);
       }
     }
-  }
 
-  label {
-    &:hover input[type="checkbox"]:not(:active, [disabled]) {
+    label:hover &:not(:active, [disabled]) {
       background-color: var(--checkbox-background-color-hover);
-    }
 
-    &:has(:checked):hover input[type="checkbox"]:not(:active, [disabled]) {
-      background-color: var(--checkbox-background-color-checked-hover);
-      border-color: var(--checkbox-border-color-checked-hover);
+      &:checked {
+        background-color: var(--checkbox-background-color-checked-hover);
+        border-color: var(--checkbox-border-color-checked-hover);
+      }
     }
   }
 }
