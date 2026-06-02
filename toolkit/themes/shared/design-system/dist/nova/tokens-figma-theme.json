@@ -1,7 +1,7 @@
 {
   "background/color/box": {
     "light": "{Colors$color/white}",
-    "dark": "{Colors$color/gray/70}",
+    "dark": "{Colors$color/gray/75}",
     "forcedColors": "{Theme$background/color/canvas}"
   },
   "background/color/box/info": {
@@ -11,7 +11,7 @@
   },
   "background/color/canvas": {
     "light": "{Colors$color/gray/05}",
-    "dark": "{Colors$color/gray/85}",
+    "dark": "{Colors$color/gray/90}",
     "forcedColors": "{HCM Theme$Canvas}"
   },
   "background/color/critical": {
@@ -86,17 +86,17 @@
   },
   "color/accent/primary": {
     "light": "{Colors$color/violet/50}",
-    "dark": "{Colors$color/violet/20}",
+    "dark": "{Colors$color/violet/30}",
     "forcedColors": "{HCM Theme$AccentColor}"
   },
   "color/accent/primary/hover": {
     "light": "{Colors$color/violet/60}",
-    "dark": "{Colors$color/violet/30}",
+    "dark": "{Colors$color/violet/20}",
     "forcedColors": "{HCM Theme$SelectedItem}"
   },
   "color/accent/primary/active": {
     "light": "{Colors$color/violet/70}",
-    "dark": "{Colors$color/violet/40}",
+    "dark": "{Colors$color/violet/10}",
     "forcedColors": "{Theme$color/accent/primary/hover}"
   },
   "color/accent/primary/selected": {
@@ -115,13 +115,13 @@
     "forcedColors": "{HCM Theme$CanvasText}"
   },
   "text/color/deemphasized": {
-    "light": "rgba(20, 9, 43, 0.7)",
+    "light": "rgba(24, 14, 48, 0.7)",
     "dark": "rgba(242, 240, 248, 0.7)",
     "forcedColors": "{HCM Theme$CanvasText}"
   },
   "text/color/disabled": {
-    "light": "rgba(21, 20, 26, 0.4)",
-    "dark": "rgba(251, 251, 254, 0.4)",
+    "light": "rgba(24, 14, 48, 0.4)",
+    "dark": "rgba(242, 240, 248, 0.4)",
     "forcedColors": "{HCM Theme$GrayText}"
   },
   "text/color/error": {
@@ -140,13 +140,13 @@
     "forcedColors": "{HCM Theme$ButtonFace}"
   },
   "button/background/color/hover": {
-    "light": "{Colors$color/violet-desaturated/10}",
+    "light": "{Colors$color/violet-desaturated/20}",
     "dark": "{Colors$color/violet-desaturated/50}",
     "forcedColors": "{HCM Theme$SelectedItemText}"
   },
   "button/background/color/active": {
-    "light": "{Colors$color/violet-desaturated/20}",
-    "dark": "{Colors$color/violet-desaturated/60}",
+    "light": "{Colors$color/violet-desaturated/30}",
+    "dark": "{Colors$color/violet-desaturated/40}",
     "forcedColors": "{HCM Theme$SelectedItemText}"
   },
   "button/background/color/disabled": {
@@ -161,17 +161,17 @@
   },
   "button/background/color/destructive": {
     "light": "{Colors$color/red/50}",
-    "dark": "{Colors$color/red/20}",
+    "dark": "{Colors$color/red/30}",
     "forcedColors": "{Theme$button/background/color/primary}"
   },
   "button/background/color/destructive/active": {
     "light": "{Colors$color/red/70}",
-    "dark": "{Colors$color/red/40}",
+    "dark": "{Colors$color/red/10}",
     "forcedColors": "{Theme$button/background/color/primary/active}"
   },
   "button/background/color/destructive/hover": {
     "light": "{Colors$color/red/60}",
-    "dark": "{Colors$color/red/30}",
+    "dark": "{Colors$color/red/20}",
     "forcedColors": "{Theme$button/background/color/primary/hover}"
   },
   "button/background/color/ghost": {
@@ -330,8 +330,8 @@
     "forcedColors": "{HCM Theme$SelectedItemText}"
   },
   "card/border/color": {
-    "light": "rgba(255, 255, 255, 0.1)",
-    "dark": "rgba(255, 255, 255, 0.06)",
+    "light": "rgba(0, 0, 0, 0.06)",
+    "dark": "rgba(255, 255, 255, 0.04)",
     "forcedColors": "{HCM Theme$CanvasText}"
   },
   "icon/color": {
@@ -373,11 +373,6 @@
     "light": "{Theme$color/accent/primary/active}",
     "dark": "{Theme$color/accent/primary/active}",
     "forcedColors": "{HCM Theme$ActiveText}"
-  },
-  "link/color/visited": {
-    "light": "{Theme$link/color}",
-    "dark": "{Theme$link/color}",
-    "forcedColors": "{Theme$link/color}"
   },
   "panel/background/color": {
     "light": "{Theme$background/color/box}",

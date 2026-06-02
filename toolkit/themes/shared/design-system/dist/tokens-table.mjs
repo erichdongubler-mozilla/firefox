@@ -2007,11 +2007,7 @@ export const tokensTable = {
       name: "--link-color-active",
     },
     {
-      value: {
-        forcedColors: "VisitedText",
-        brand: { default: "var(--link-color)" },
-        platform: { default: "var(--link-color)" },
-      },
+      value: { forcedColors: "VisitedText", default: "var(--link-color)" },
       name: "--link-color-visited",
     },
     {
@@ -3644,8 +3640,7 @@ export const variableLookupTable = {
   },
   "link-color-visited": {
     forcedColors: "VisitedText",
-    brand: { default: "var(--link-color)" },
-    platform: { default: "var(--link-color)" },
+    default: "var(--link-color)",
   },
   "link-focus-outline-offset": "1px",
   "opacity-deemphasized-strong": { default: "0.6", prefersContrast: "1" },

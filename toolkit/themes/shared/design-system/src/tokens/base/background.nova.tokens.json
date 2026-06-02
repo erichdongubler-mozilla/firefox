@@ -4,7 +4,7 @@
       "@base": {
         "value": {
           "light": "{color.white.@base}",
-          "dark": "{color.gray.70}",
+          "dark": "{color.gray.75}",
           "forcedColors": "{background.color.canvas}"
         }
       },
@@ -19,7 +19,7 @@
     "canvas": {
       "value": {
         "light": "{color.gray.05}",
-        "dark": "{color.gray.85}",
+        "dark": "{color.gray.90}",
         "forcedColors": "Canvas"
       }
     },

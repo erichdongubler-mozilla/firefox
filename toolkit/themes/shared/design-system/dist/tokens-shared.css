@@ -404,6 +404,7 @@
     --input-width: var(--size-item-small);
 
     /** link **/
+    --link-color-visited: var(--link-color);
     /**
      * Not using --force-outline-offset for links because that's intended for
      * elements with a background, and we only want a slight offset here while
@@ -742,9 +743,9 @@
     :root,
     :host(.anonymous-content-host) {
       /** background-color **/
-      --background-color-box: light-dark(var(--color-white), var(--color-gray-70));
+      --background-color-box: light-dark(var(--color-white), var(--color-gray-75));
       --background-color-box-info: light-dark(var(--color-gray-15), var(--color-gray-60));
-      --background-color-canvas: light-dark(var(--color-gray-05), var(--color-gray-85));
+      --background-color-canvas: light-dark(var(--color-gray-05), var(--color-gray-90));
       --background-color-critical: light-dark(var(--color-red-10), var(--color-red-70));
       --background-color-information: light-dark(var(--color-violet-10), var(--color-violet-70));
       --background-color-success: light-dark(var(--color-green-10), var(--color-green-70));
@@ -770,12 +771,12 @@
       /** button **/
       /* TODO Bug 1821203 - Gray use needs to be consolidated */
       --button-background-color: transparent;
-      --button-background-color-hover: light-dark(var(--color-violet-desaturated-10), var(--color-violet-desaturated-50));
-      --button-background-color-active: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-60));
+      --button-background-color-hover: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-50));
+      --button-background-color-active: light-dark(var(--color-violet-desaturated-30), var(--color-violet-desaturated-40));
       --button-background-color-disabled: var(--button-background-color);
-      --button-background-color-destructive: light-dark(var(--color-red-50), var(--color-red-20));
-      --button-background-color-destructive-hover: light-dark(var(--color-red-60), var(--color-red-30));
-      --button-background-color-destructive-active: light-dark(var(--color-red-70), var(--color-red-40));
+      --button-background-color-destructive: light-dark(var(--color-red-50), var(--color-red-30));
+      --button-background-color-destructive-hover: light-dark(var(--color-red-60), var(--color-red-20));
+      --button-background-color-destructive-active: light-dark(var(--color-red-70), var(--color-red-10));
       --button-background-color-ghost: var(--button-background-color);
       --button-background-color-ghost-disabled: var(--button-background-color-ghost);
       --button-background-color-ghost-selected: var(--button-background-color-selected);
@@ -812,15 +813,15 @@
       --button-text-color-selected: light-dark(var(--button-text-color), var(--background-color-canvas));
 
       /** card **/
-      --card-border-color: light-dark(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.06));
+      --card-border-color: light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.04));
       --card-border-radius: var(--border-radius-xlarge);
       --card-gap: var(--space-medium);
 
       /** color **/
       --color-accent-attention: light-dark(var(--color-green-40), var(--color-green-30));
-      --color-accent-primary: light-dark(var(--color-violet-50), var(--color-violet-20));
-      --color-accent-primary-hover: light-dark(var(--color-violet-60), var(--color-violet-30));
-      --color-accent-primary-active: light-dark(var(--color-violet-70), var(--color-violet-40));
+      --color-accent-primary: light-dark(var(--color-violet-50), var(--color-violet-30));
+      --color-accent-primary-hover: light-dark(var(--color-violet-60), var(--color-violet-20));
+      --color-accent-primary-active: light-dark(var(--color-violet-70), var(--color-violet-10));
       --color-accent-primary-selected: var(--button-background-color-primary-active);
       --color-blue-0: #ecf3f8;
       --color-blue-10: #c5eafe;
@@ -903,7 +904,6 @@
       --color-purple-90: #1a1220;
       --color-purple-desaturated-30: #c0a7d4;
       --color-purple-desaturated-50: #816297;
-      --color-purple-desaturated-60: #624677;
       --color-red-0: #fcf2f3;
       --color-red-10: #ffd9df;
       --color-red-20: #ffb6bf;
@@ -964,7 +964,6 @@
       --link-color: var(--color-accent-primary);
       --link-color-hover: var(--color-accent-primary-hover);
       --link-color-active: var(--color-accent-primary-active);
-      --link-color-visited: var(--link-color);
 
       /** page **/
       --page-main-content-width: 664px;
@@ -991,9 +990,9 @@
 
       /** text-color **/
       --text-color: light-dark(var(--color-violet-desaturated-90), var(--color-violet-desaturated-0));
-      --text-color-disabled: light-dark(rgba(21, 20, 26, 0.4), rgba(251, 251, 254, 0.4));
+      --text-color-disabled: light-dark(rgba(24, 14, 48, 0.4), rgba(242, 240, 248, 0.4));
       --text-color-accent-primary-selected: light-dark(var(--color-white), var(--color-gray-55));
-      --text-color-deemphasized: light-dark(rgba(20, 9, 43, 0.7), rgba(242, 240, 248, 0.7));
+      --text-color-deemphasized: light-dark(rgba(24, 14, 48, 0.7), rgba(242, 240, 248, 0.7));
       --text-color-error: light-dark(var(--color-red-50), var(--color-red-20));
 
       /** toolbar **/
@@ -1018,9 +1017,6 @@
       --toolbarbutton-outline-color-selected: var(--toolbarbutton-outline-color-active);
       --toolbarbutton-outline-offset: -1px;
       --toolbarbutton-padding-inner-touch-narrow: 0;
-
-      /** toolbarseparator **/
-      --toolbarseparator-color: color-mix(in srgb, currentColor 60%, transparent);
 
       /** toolbox **/
       --toolbox-background-color-inactive: -moz-headerbarinactive;

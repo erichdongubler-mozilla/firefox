@@ -25,7 +25,6 @@
   "toolbarbutton/padding/inner/touch/narrow": 0,
   "toolbarbutton/opacity/disabled": 0.4,
   "toolbarbutton/outline/offset": -1,
-  "toolbarseparator/color": "color-mix(in srgb, currentColor 60%, transparent)",
   "badge/border/radius": "{Primitives$border/radius/circle}",
   "message-bar/border/radius": 12,
   "message-bar/container/padding/inline": 8,

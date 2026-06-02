@@ -17,9 +17,6 @@
         "default": "{color.accent.primary.active}",
         "forcedColors": "ActiveText"
       }
-    },
-    "visited": {
-      "value": "{link.color.@base}"
     }
   }
 }

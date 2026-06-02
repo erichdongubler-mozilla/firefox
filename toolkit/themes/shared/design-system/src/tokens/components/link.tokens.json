@@ -36,12 +36,7 @@
     "visited": {
       "value": {
         "forcedColors": "VisitedText",
-        "brand": {
-          "default": "{link.color.@base}"
-        },
-        "platform": {
-          "default": "{link.color.@base}"
-        }
+        "default": "{link.color.@base}"
       }
     }
   },

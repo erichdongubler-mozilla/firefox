@@ -10,15 +10,15 @@
       },
       "hover": {
         "value": {
-          "light": "{color.violet-desaturated.10}",
+          "light": "{color.violet-desaturated.20}",
           "dark": "{color.violet-desaturated.50}",
           "forcedColors": "SelectedItemText"
         }
       },
       "active": {
         "value": {
-          "light": "{color.violet-desaturated.20}",
-          "dark": "{color.violet-desaturated.60}",
+          "light": "{color.violet-desaturated.30}",
+          "dark": "{color.violet-desaturated.40}",
           "forcedColors": "SelectedItemText"
         }
       },
@@ -38,21 +38,21 @@
         "@base": {
           "value": {
             "light": "{color.red.50}",
-            "dark": "{color.red.20}",
+            "dark": "{color.red.30}",
             "forcedColors": "{button.background.color.primary.@base}"
           }
         },
         "active": {
           "value": {
             "light": "{color.red.70}",
-            "dark": "{color.red.40}",
+            "dark": "{color.red.10}",
             "forcedColors": "{button.background.color.primary.active}"
           }
         },
         "hover": {
           "value": {
             "light": "{color.red.60}",
-            "dark": "{color.red.30}",
+            "dark": "{color.red.20}",
             "forcedColors": "{button.background.color.primary.hover}"
           }
         }
