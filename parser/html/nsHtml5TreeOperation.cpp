@@ -296,6 +296,8 @@ nsresult nsHtml5TreeOperation::Append(nsIContent* aNode, nsIContent* aParent,
     return NS_OK;
   }
 
+  Maybe<AutoSetThrowOnDynamicMarkupInsertionCounter>
+      throwOnDynamicMarkupInsertionCounter;
   Maybe<nsHtml5AutoPauseUpdate> autoPause;
   Maybe<AutoCEReaction> autoCEReaction;
   DocGroup* docGroup = aParent->OwnerDoc()->GetDocGroup();
@@ -308,6 +310,7 @@ nsresult nsHtml5TreeOperation::Append(nsIContent* aNode, nsIContent* aParent,
   if (autoCEReaction.isSome() && docGroup &&
       docGroup->CustomElementReactionsStack()
           ->IsElementQueuePushedForCurrentRecursionDepth()) {
+    throwOnDynamicMarkupInsertionCounter.emplace(aBuilder->GetDocument());
     autoPause.emplace(aBuilder);
   }
   return rv;
@@ -582,7 +585,7 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
   if (customElementDefinition) {
     // This will cause custom element constructors to run.
     AutoSetThrowOnDynamicMarkupInsertionCounter
-        throwOnDynamicMarkupInsertionCounter(document);
+        throwOnDynamicMarkupInsertionCounter(aBuilder->GetDocument());
     nsHtml5AutoPauseUpdate autoPauseContentUpdate(aBuilder);
     {
       nsAutoMicroTask mt;
