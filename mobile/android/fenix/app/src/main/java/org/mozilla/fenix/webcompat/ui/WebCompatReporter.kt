@@ -114,29 +114,6 @@ fun WebCompatReporter(
                 .width(FirefoxTheme.layout.size.containerMaxWidth),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            LinkText(
-                text = stringResource(
-                    R.string.webcompat_reporter_description_3,
-                    stringResource(R.string.app_name),
-                    stringResource(R.string.webcompat_reporter_learn_more),
-                ),
-                linkTextStates = listOf(
-                    LinkTextState(
-                        text = stringResource(R.string.webcompat_reporter_learn_more),
-                        url = "",
-                        onClick = {
-                            store.dispatch(WebCompatReporterAction.LearnMoreClicked)
-                        },
-                    ),
-                ),
-                style = FirefoxTheme.typography.body2.copy(color = MaterialTheme.colorScheme.onSurface),
-                linkTextColor = MaterialTheme.colorScheme.tertiary,
-                linkTextDecoration = TextDecoration.Underline,
-                textAlign = TextAlign.Start,
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
             TextField(
                 value = state.enteredUrl,
                 onValueChange = {
@@ -297,6 +274,30 @@ fun WebCompatReporter(
                     textDecoration = TextDecoration.Underline,
                 )
             }
+
+            Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static150))
+
+            LinkText(
+                text = stringResource(
+                    R.string.webcompat_reporter_description_3,
+                    stringResource(R.string.app_name),
+                    stringResource(R.string.webcompat_reporter_learn_more),
+                ),
+                linkTextStates = listOf(
+                    LinkTextState(
+                        text = stringResource(R.string.webcompat_reporter_learn_more),
+                        url = "",
+                        onClick = {
+                            store.dispatch(WebCompatReporterAction.LearnMoreClicked)
+                        },
+                    ),
+                ),
+                style = FirefoxTheme.typography.body2.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
+                linkTextColor = MaterialTheme.colorScheme.primary,
+                linkTextDecoration = TextDecoration.None,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.padding(bottom = FirefoxTheme.layout.space.static150),
+            )
         }
     }
 
