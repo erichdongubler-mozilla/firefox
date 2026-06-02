@@ -125,6 +125,10 @@ class nsHttpConnection final : public HttpConnectionBase,
 
   nsresult HandshakeError() const { return mHandshakeError; }
 
+  // Retry ECH config captured at TLS handshake error time. Cached because the
+  // NSS SSL state is no longer queryable by HE's failed-connection callback.
+  const nsACString& CachedRetryEchConfig() const { return mRetryEchConfig; }
+
   friend class HttpConnectionForceIO;
   friend class TlsHandshaker;
 
@@ -350,6 +354,10 @@ class nsHttpConnection final : public HttpConnectionBase,
   // by HappyEyeballsTransaction::ReadSegments to surface the cert/TLS
   // error instead of NS_BASE_STREAM_CLOSED.
   nsresult mHandshakeError{NS_OK};
+
+  // Set in PostProcessNPNSetup on SSL_ERROR_ECH_RETRY_WITH_ECH. See
+  // CachedRetryEchConfig().
+  nsCString mRetryEchConfig;
 
   // If a large keepalive has been requested for any trans,
   // scale the default by this factor

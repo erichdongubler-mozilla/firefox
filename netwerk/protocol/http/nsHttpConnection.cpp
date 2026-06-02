@@ -495,6 +495,17 @@ void nsHttpConnection::PostProcessNPNSetup(bool handshakeSucceeded,
               ("nsHttpConnection::PostProcessNPNSetup [this=%p] captured "
                "TLS handshake error rv=%" PRIx32 " (PRErrorCode=%d)",
                this, static_cast<uint32_t>(mHandshakeError), prErrorCode));
+          if (prErrorCode == SSL_ERROR_ECH_RETRY_WITH_ECH) {
+            if (NS_FAILED(tlsCtrl->GetRetryEchConfig(mRetryEchConfig))) {
+              mRetryEchConfig.Truncate();
+            }
+            LOG(
+                ("nsHttpConnection::PostProcessNPNSetup [this=%p] cached "
+                 "retry ECH config len=%zu",
+                 this, mRetryEchConfig.Length()));
+          } else if (prErrorCode == SSL_ERROR_ECH_RETRY_WITHOUT_ECH) {
+            mRetryEchConfig.Truncate();
+          }
         }
       }
     }

@@ -23,6 +23,7 @@
 #include "nsQueryObject.h"
 #include "nsSocketTransport2.h"
 #include "nsSocketTransportService2.h"
+#include "sslerr.h"
 
 // Log on level :5, instead of default :4.
 #undef LOG
@@ -36,6 +37,7 @@ using happy_eyeballs::happy_eyeballs_process_connection_result;
 using happy_eyeballs::happy_eyeballs_process_dns_response_a;
 using happy_eyeballs::happy_eyeballs_process_dns_response_aaaa;
 using happy_eyeballs::happy_eyeballs_process_dns_response_https;
+using happy_eyeballs::happy_eyeballs_process_ech_retry;
 using happy_eyeballs::happy_eyeballs_process_output;
 
 static void NotifyConnectionActivity(nsHttpConnectionInfo* aConnInfo,
@@ -289,6 +291,88 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
   return rv;
 }
 
+Maybe<nsCString> HappyEyeballsConnectionAttempt::MaybeExtractRetryEchConfig(
+    ConnectionEstablisher* aEstablisher, nsresult aStatus) {
+  if (aStatus == psm::GetXPCOMFromNSSError(SSL_ERROR_ECH_RETRY_WITHOUT_ECH)) {
+    LOG(
+        ("HappyEyeballsConnectionAttempt::MaybeExtractRetryEchConfig %p "
+         "SSL_ERROR_ECH_RETRY_WITHOUT_ECH",
+         this));
+    return Some(nsCString());
+  }
+
+  if (aStatus != psm::GetXPCOMFromNSSError(SSL_ERROR_ECH_RETRY_WITH_ECH)) {
+    return Nothing();
+  }
+
+  RefPtr<HttpConnectionBase> conn =
+      aEstablisher ? aEstablisher->ResultConn() : nullptr;
+  if (!conn) {
+    return Nothing();
+  }
+
+  // H1/H2: NSS retry_configs aren't queryable from this callback; use the
+  // bytes cached by nsHttpConnection::PostProcessNPNSetup. H3: read from
+  // QuicSocketControl, populated by Http3Session::ProcessEvents.
+  nsAutoCString retryEchConfig;
+  if (RefPtr<nsHttpConnection> httpConn = do_QueryObject(conn)) {
+    retryEchConfig = httpConn->CachedRetryEchConfig();
+  } else {
+    nsCOMPtr<nsITLSSocketControl> tlsCtrl;
+    conn->GetTLSSocketControl(getter_AddRefs(tlsCtrl));
+    if (tlsCtrl && NS_FAILED(tlsCtrl->GetRetryEchConfig(retryEchConfig))) {
+      return Nothing();
+    }
+  }
+  if (retryEchConfig.IsEmpty()) {
+    return Nothing();
+  }
+  LOG(
+      ("HappyEyeballsConnectionAttempt::MaybeExtractRetryEchConfig %p "
+       "SSL_ERROR_ECH_RETRY_WITH_ECH retryEchConfig.len=%zu",
+       this, retryEchConfig.Length()));
+  return Some(nsCString(retryEchConfig));
+}
+
+nsresult HappyEyeballsConnectionAttempt::ProcessEchRetryConnectionResult(
+    const NetAddr& aAddr, uint64_t aId, const nsACString& aEchBytes) {
+  LOG(
+      ("HappyEyeballsConnectionAttempt::ProcessEchRetryConnectionResult %p "
+       "addr=[%s] id=%" PRIu64 " ech.len=%zu",
+       this, aAddr.ToString().get(), aId, aEchBytes.Length()));
+
+  RefPtr<HappyEyeballsConnectionAttempt> self(this);
+
+  if (IsTerminal()) {
+    return NS_OK;
+  }
+
+  if (mState != State::ProcessingConnectionResult) {
+    Transition(State::ProcessingConnectionResult);
+  }
+
+  nsTArray<uint8_t> echBytes;
+  echBytes.AppendElements(
+      reinterpret_cast<const uint8_t*>(aEchBytes.BeginReading()),
+      aEchBytes.Length());
+
+  nsresult rv =
+      happy_eyeballs_process_ech_retry(mHappyEyeballs, aId, &echBytes);
+  if (NS_FAILED(rv)) {
+    LOG(("process_ech_retry failed rv=%x", static_cast<uint32_t>(rv)));
+  }
+  rv = ProcessHappyEyeballsOutput();
+
+  if (mState == State::ProcessingConnectionResult) {
+    if (mZeroRttHandle->AnyStarted() && !mZeroRttHandle->HadWinner()) {
+      Transition(State::ZeroRttRacing);
+    } else {
+      Transition(State::Connecting);
+    }
+  }
+  return rv;
+}
+
 nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
   LOG(("HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput %p", this));
 
@@ -346,15 +430,16 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
 
         LOG(("connect to:[%s] ech_config_len=%zu",
              res.unwrap().ToString().get(), echConfig.Length()));
+        bool isEchRetry = event.attempt_connection.is_ech_retry;
         if (event.attempt_connection.http_version ==
             happy_eyeballs::ConnectionAttemptHttpVersions::H3) {
           EstablishUDPConnection(res.unwrap(), event.attempt_connection.port,
                                  std::move(echConfig),
-                                 event.attempt_connection.id);
+                                 event.attempt_connection.id, isEchRetry);
         } else {
           EstablishTCPConnection(res.unwrap(), event.attempt_connection.port,
                                  std::move(echConfig),
-                                 event.attempt_connection.id);
+                                 event.attempt_connection.id, isEchRetry);
         }
         break;
       }
@@ -641,9 +726,15 @@ void HappyEyeballsConnectionAttempt::HandleTCPConnectionResult(
        this, addr.ToString().get(), addr.raw.family, aId));
 
   if (aResult.isErr()) {
+    nsresult status = aResult.unwrapErr();
     MaybeForward0RTTSecurityInfo(establisher);
-    establisher->Close(aResult.unwrapErr());
-    ProcessConnectionResult(addr, aResult.unwrapErr(), aId);
+    Maybe<nsCString> retryEch = MaybeExtractRetryEchConfig(establisher, status);
+    establisher->Close(status);
+    if (retryEch) {
+      ProcessEchRetryConnectionResult(addr, aId, *retryEch);
+    } else {
+      ProcessConnectionResult(addr, status, aId);
+    }
     return;
   }
 
@@ -738,8 +829,8 @@ HappyEyeballsConnectionAttempt::CreateAttemptTransaction(
 }
 
 nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
-    NetAddr aAddr, uint16_t aPort, nsTArray<uint8_t>&& aEchConfig,
-    uint64_t aId) {
+    NetAddr aAddr, uint16_t aPort, nsTArray<uint8_t>&& aEchConfig, uint64_t aId,
+    bool aIsEchRetry) {
   // Run the LNA check on the resolved address before opening any socket
   // so we don't leak SNI / TCP SYNs to LNA-denied peers.
   if (nsresult lna = CheckLNAForAddr(aAddr); NS_FAILED(lna)) {
@@ -757,8 +848,9 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
     NotifyConnectionActivity(info, NS_HTTP_ACTIVITY_SUBTYPE_ECH_SET);
   }
   NotifyConnectionActivity(info, NS_HTTP_ACTIVITY_SUBTYPE_CONNECTION_CREATED);
-  RefPtr<TCPConnectionEstablisher> establisher = new TCPConnectionEstablisher(
-      info, aAddr, mCaps, mSpeculative, mAllow1918);
+  uint32_t caps = mCaps | (aIsEchRetry ? NS_HTTP_IS_RETRY : 0);
+  RefPtr<TCPConnectionEstablisher> establisher =
+      new TCPConnectionEstablisher(info, aAddr, caps, mSpeculative, mAllow1918);
   establisher->SetDnsMetadata(mDnsMetadata);
   nsCOMPtr<nsIInterfaceRequestor> callbacks;
   mTransaction->GetSecurityCallbacks(getter_AddRefs(callbacks));
@@ -791,8 +883,8 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
 }
 
 nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
-    NetAddr aAddr, uint16_t aPort, nsTArray<uint8_t>&& aEchConfig,
-    uint64_t aId) {
+    NetAddr aAddr, uint16_t aPort, nsTArray<uint8_t>&& aEchConfig, uint64_t aId,
+    bool aIsEchRetry) {
   // Same pre-connect LNA check as EstablishTCPConnection.
   if (nsresult lna = CheckLNAForAddr(aAddr); NS_FAILED(lna)) {
     ProcessConnectionResult(aAddr, lna, aId);
@@ -807,8 +899,9 @@ nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
     NotifyConnectionActivity(info, NS_HTTP_ACTIVITY_SUBTYPE_ECH_SET);
   }
   NotifyConnectionActivity(info, NS_HTTP_ACTIVITY_SUBTYPE_CONNECTION_CREATED);
+  uint32_t caps = mCaps | (aIsEchRetry ? NS_HTTP_IS_RETRY : 0);
   RefPtr<UDPConnectionEstablisher> establisher =
-      new UDPConnectionEstablisher(info, aAddr, mCaps);
+      new UDPConnectionEstablisher(info, aAddr, caps);
   establisher->SetDnsMetadata(mDnsMetadata);
   establisher->SetTransportStatusCallback(
       [self = RefPtr{this}](nsITransport* trans, nsresult status,
@@ -846,9 +939,15 @@ void HappyEyeballsConnectionAttempt::HandleUDPConnectionResult(
        this, addr.ToString().get(), addr.raw.family, aId));
 
   if (aResult.isErr()) {
+    nsresult status = aResult.unwrapErr();
     MaybeForward0RTTSecurityInfo(establisher);
-    establisher->Close(aResult.unwrapErr());
-    ProcessConnectionResult(addr, aResult.unwrapErr(), aId);
+    Maybe<nsCString> retryEch = MaybeExtractRetryEchConfig(establisher, status);
+    establisher->Close(status);
+    if (retryEch) {
+      ProcessEchRetryConnectionResult(addr, aId, *retryEch);
+    } else {
+      ProcessConnectionResult(addr, status, aId);
+    }
     return;
   }
 

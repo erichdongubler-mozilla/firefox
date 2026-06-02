@@ -181,6 +181,25 @@ pub unsafe extern "C" fn happy_eyeballs_process_connection_result(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn happy_eyeballs_process_ech_retry(
+    he: *mut HappyEyeballs,
+    id: u64,
+    ech_config: *const ThinVec<u8>,
+) -> nsresult {
+    let Some(he) = (unsafe { he.as_mut() }) else {
+        debug_assert!(false, "unexpected null he pointer");
+        return NS_ERROR_INVALID_ARG;
+    };
+
+    let Some(ech_config) = (unsafe { ech_config.as_ref() }) else {
+        debug_assert!(false, "unexpected null ech_config pointer");
+        return NS_ERROR_INVALID_ARG;
+    };
+
+    he.process_ech_retry(id, ech_config)
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn happy_eyeballs_process_output(
     he: *mut HappyEyeballs,
     ret_event: *mut Output,
@@ -368,6 +387,20 @@ impl HappyEyeballs {
                 status.0
             ))
         };
+
+        let input = happy_eyeballs::Input::ConnectionResult { id, result };
+        self.inner.process_input(input, Instant::now());
+
+        NS_OK
+    }
+
+    fn process_ech_retry(&mut self, id: u64, ech_config: &ThinVec<u8>) -> nsresult {
+        let id: happy_eyeballs::Id = id.into();
+        self.profiler.connection_result(id, false);
+
+        let result = happy_eyeballs::ConnectionResult::EchRetry(happy_eyeballs::EchConfig::new(
+            ech_config.to_vec(),
+        ));
 
         let input = happy_eyeballs::Input::ConnectionResult { id, result };
         self.inner.process_input(input, Instant::now());

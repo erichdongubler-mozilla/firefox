@@ -170,6 +170,12 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
 
   nsresult ProcessConnectionResult(const NetAddr& aAddr, nsresult aStatus,
                                    uint64_t aId);
+
+  nsresult ProcessEchRetryConnectionResult(const NetAddr& aAddr, uint64_t aId,
+                                           const nsACString& aEchBytes);
+  Maybe<nsCString> MaybeExtractRetryEchConfig(
+      ConnectionEstablisher* aEstablisher, nsresult aStatus);
+
   nsresult ProcessHappyEyeballsOutput();
   void MaybeSendTransportStatus(nsresult aStatus,
                                 nsITransport* aTransport = nullptr,
@@ -195,7 +201,8 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
       nsHttpConnectionInfo* aInfo);
 
   nsresult EstablishTCPConnection(NetAddr aAddr, uint16_t aPort,
-                                  nsTArray<uint8_t>&& aEchConfig, uint64_t aId);
+                                  nsTArray<uint8_t>&& aEchConfig, uint64_t aId,
+                                  bool aIsEchRetry);
   void HandleTCPConnectionResult(
       Result<RefPtr<HttpConnectionBase>, nsresult> aResult,
       TCPConnectionEstablisher* aEstablisher, uint64_t aId);
@@ -205,7 +212,8 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   void MaybeForward0RTTSecurityInfo(ConnectionEstablisher* aEstablisher);
   void CancelConnection(uint64_t aId);
   nsresult EstablishUDPConnection(NetAddr aAddr, uint16_t aPort,
-                                  nsTArray<uint8_t>&& aEchConfig, uint64_t aId);
+                                  nsTArray<uint8_t>&& aEchConfig, uint64_t aId,
+                                  bool aIsEchRetry);
   void HandleUDPConnectionResult(
       Result<RefPtr<HttpConnectionBase>, nsresult> aResult,
       UDPConnectionEstablisher* aEstablisher, uint64_t aId);
