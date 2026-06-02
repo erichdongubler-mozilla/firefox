@@ -12,8 +12,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.distinctUntilChangedBy
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.appservices.fxaclient.FxaException
@@ -201,9 +201,11 @@ class IPProtectionFeature(
     }
 
     private suspend fun observeToggle() = withContext(Dispatchers.Main) {
+        // Dedupe over the nullable so `true -> null -> true` reads as two edges, not one.
         store.flow()
-            .mapNotNull { it.activate }
+            .map { it.activate }
             .distinctUntilChanged()
+            .filterNotNull()
             .collect { activate ->
                 if (activate) {
                     handler?.activate()

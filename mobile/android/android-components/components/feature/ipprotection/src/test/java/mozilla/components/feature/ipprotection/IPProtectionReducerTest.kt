@@ -173,6 +173,21 @@ class IPProtectionReducerTest {
     }
 
     @Test
+    fun `WHEN engine settles to ready while a pending activate was queued THEN activate is cleared`() {
+        val state = defaultState.copy(
+            serviceStatus = ServiceState.Ready,
+            proxyStatus = Authorized.Activating,
+            activate = true,
+        )
+        val info = StateInfo(serviceState = ServiceState.Ready, proxyState = PROXY_STATE_READY)
+        val nextState = iPProtectionReducer(state, IPProtectionAction.EngineStateChanged(info))
+        assertEquals(
+            null,
+            nextState.activate,
+        )
+    }
+
+    @Test
     fun `WHEN proxy errors and proxyActiveShown was true THEN proxyActiveShown is reset`() {
         val state = defaultState.copy(proxyActiveShown = true)
         val info = StateInfo(serviceState = ServiceState.Ready, proxyState = PROXY_STATE_ERROR)
