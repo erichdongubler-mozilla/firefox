@@ -110,7 +110,7 @@ class IconDiskCache :
     }
 
     private fun getCacheDirectory(context: Context, subdirectoryName: String): File {
-        val cacheDirectory = File(context.cacheDir, BROWSER_ICONS_DIR_NAME)
+        val cacheDirectory = File(context.noBackupFilesDir, BROWSER_ICONS_DIR_NAME)
         return File(cacheDirectory, subdirectoryName)
     }
 }

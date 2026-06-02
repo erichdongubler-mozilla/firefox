@@ -11,9 +11,12 @@ import mozilla.components.concept.base.images.ImageSaveRequest
 import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
+import org.junit.After
 import org.junit.Assert
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers
@@ -25,17 +28,26 @@ import kotlin.test.assertNotNull
 @RunWith(AndroidJUnit4::class)
 class ThumbnailDiskCacheTest {
 
+    @Before
+    @After
+    fun cleanUp() {
+        File(testContext.cacheDir, CACHE_DIR).deleteRecursively()
+        File(testContext.noBackupFilesDir, CACHE_DIR).deleteRecursively()
+    }
+
     @Test
-    fun `Cache files are stored under cacheDir`() {
+    fun `Cache files are stored under noBackupFilesDir, not cacheDir`() {
         val cache = ThumbnailDiskCache()
         val request = ImageLoadRequest("123", 100, false)
         val bitmap: Bitmap = mock()
 
         cache.putThumbnailBitmap(testContext, ImageSaveRequest(request.id, request.isPrivate), bitmap)
 
-        val directory = File(File(testContext.cacheDir, "mozac_browser_thumbnails"), "thumbnails")
+        val newDir = File(File(testContext.noBackupFilesDir, CACHE_DIR), "thumbnails")
+        val legacyDir = File(File(testContext.cacheDir, CACHE_DIR), "thumbnails")
 
-        assertTrue("Cache directory should exist under cacheDir", directory.exists())
+        assertTrue("Cache directory should exist under cacheDir", newDir.exists())
+        assertFalse("Cache directory must not be created under cacheDir", legacyDir.exists())
     }
 
     @Test
@@ -91,5 +103,9 @@ class ThumbnailDiskCacheTest {
         cache.clear(testContext)
         data = cache.getThumbnailData(testContext, request)
         assertNull(data)
+    }
+
+    companion object {
+        private const val CACHE_DIR = "mozac_browser_thumbnails"
     }
 }

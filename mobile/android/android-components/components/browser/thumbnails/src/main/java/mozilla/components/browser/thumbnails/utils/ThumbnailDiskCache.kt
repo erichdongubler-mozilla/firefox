@@ -73,7 +73,7 @@ class ThumbnailDiskCache(private val isPrivate: Boolean = false) {
 
     private fun getThumbnailCacheDirectory(context: Context): File {
         val dirName = if (isPrivate) "private_$BASE_DIR_NAME" else BASE_DIR_NAME
-        val cacheDirectory = File(context.cacheDir, THUMBNAILS_DIR_NAME)
+        val cacheDirectory = File(context.noBackupFilesDir, THUMBNAILS_DIR_NAME)
         return File(cacheDirectory, dirName)
     }
 }

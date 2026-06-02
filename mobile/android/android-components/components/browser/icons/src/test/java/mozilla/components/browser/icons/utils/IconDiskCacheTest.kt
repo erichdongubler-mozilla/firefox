@@ -31,10 +31,11 @@ class IconDiskCacheTest {
     @After
     fun cleanUp() {
         File(testContext.cacheDir, CACHE_PARENT).deleteRecursively()
+        File(testContext.noBackupFilesDir, CACHE_PARENT).deleteRecursively()
     }
 
     @Test
-    fun `Resource cache files are stored under resources directory`() {
+    fun `Resource cache files are stored under noBackupFilesDir, not cacheDir`() {
         val cache = IconDiskCache()
         val resource = IconRequest.Resource(
             url = "https://www.mozilla.org/icon64.png",
@@ -44,11 +45,15 @@ class IconDiskCacheTest {
         )
         cache.putResources(testContext, IconRequest("https://www.mozilla.org", resources = listOf(resource)))
 
-        assertTrue("Resource cache should live under cacheDir", File(cacheParent, RESOURCES_DIR).exists())
+        val newParent = File(testContext.noBackupFilesDir, CACHE_PARENT)
+        val legacyParent = File(testContext.cacheDir, CACHE_PARENT)
+
+        assertTrue("Resource cache should live under noBackupFilesDir", File(newParent, RESOURCES_DIR).exists())
+        assertFalse("Resource cache must not be created under cacheDir", legacyParent.exists())
     }
 
     @Test
-    fun `Icon cache files are stored under icons directory`() {
+    fun `Icon cache files are stored under noBackupFilesDir, not cacheDir`() {
         val cache = IconDiskCache()
         val resource = IconRequest.Resource(
             url = "https://www.mozilla.org/icon64.png",
@@ -58,7 +63,11 @@ class IconDiskCacheTest {
 
         cache.putIconBitmap(testContext, resource, bitmap)
 
-        assertTrue("Icon cache should live under cacheDir", File(cacheParent, ICONS_DIR).exists())
+        val newParent = File(testContext.noBackupFilesDir, CACHE_PARENT)
+        val legacyParent = File(testContext.cacheDir, CACHE_PARENT)
+
+        assertTrue("Icon cache should live under noBackupFilesDir", File(newParent, ICONS_DIR).exists())
+        assertFalse("Icon cache must not be created under cacheDir", legacyParent.exists())
     }
 
     @Test
