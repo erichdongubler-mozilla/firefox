@@ -13656,19 +13656,29 @@ bool SetGlobalOptionsPostJSInit(const OptionParser& op) {
   }
 
   if (const char* xdr = op.getStringOption("selfhosted-xdr-path")) {
-    shell::selfHostedXDRPath = xdr;
+    if (fuzzingSafe) {
+      fprintf(stderr,
+              "Warning: ignoring --selfhosted-xdr-path with --fuzzing-safe\n");
+    } else {
+      shell::selfHostedXDRPath = xdr;
+    }
   }
   if (const char* opt = op.getStringOption("selfhosted-xdr-mode")) {
-    if (strcmp(opt, "encode") == 0) {
-      shell::encodeSelfHostedCode = true;
-    } else if (strcmp(opt, "decode") == 0) {
-      shell::encodeSelfHostedCode = false;
-    } else if (strcmp(opt, "off") == 0) {
-      shell::selfHostedXDRPath = nullptr;
+    if (fuzzingSafe) {
+      fprintf(stderr,
+              "Warning: ignoring --selfhosted-xdr-mode with --fuzzing-safe\n");
     } else {
-      MOZ_CRASH(
-          "invalid option value for --selfhosted-xdr-mode, must be "
-          "encode/decode");
+      if (strcmp(opt, "encode") == 0) {
+        shell::encodeSelfHostedCode = true;
+      } else if (strcmp(opt, "decode") == 0) {
+        shell::encodeSelfHostedCode = false;
+      } else if (strcmp(opt, "off") == 0) {
+        shell::selfHostedXDRPath = nullptr;
+      } else {
+        MOZ_CRASH(
+            "invalid option value for --selfhosted-xdr-mode, must be "
+            "encode/decode");
+      }
     }
   }
 
