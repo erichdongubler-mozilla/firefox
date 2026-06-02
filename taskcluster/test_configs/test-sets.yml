@@ -514,7 +514,6 @@ macosx1470-64-tests:
     - cppunittest
     - crashtest
     - gtest
-    - web-platform-tests-eme
     - web-platform-tests-print-reftest
     - web-platform-tests-reftest
 
