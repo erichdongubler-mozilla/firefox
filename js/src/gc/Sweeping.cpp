@@ -1494,11 +1494,14 @@ void JS::Zone::maybeWriteCoverageAndSpew() {
     for (auto iter = scriptFinalWarmUpCountMap->get().iter(); !iter.done();
          iter.next()) {
       if (IsAboutToBeFinalized(iter.get().key())) {
-        JSScript* jsScript = iter.get().key()->asJSScript();
-        if (jsScript->hasJitScript()) {
-          maybeUpdateWarmUpCount(jsScript);
+        BaseScript* base = iter.get().key();
+        if (base->hasBytecode()) {
+          JSScript* jsScript = base->asJSScript();
+          if (jsScript->hasJitScript()) {
+            maybeUpdateWarmUpCount(jsScript);
+          }
+          maybeSpewScriptFinalWarmUpCount(jsScript);
         }
-        maybeSpewScriptFinalWarmUpCount(jsScript);
       }
     }
   }
