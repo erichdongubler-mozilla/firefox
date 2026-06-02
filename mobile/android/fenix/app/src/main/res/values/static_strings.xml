@@ -363,11 +363,6 @@
     <string name="firefox_labs_share_feedback">Share feedback</string>
     <!-- Content description for the share feedback link on a labs feature. This text will be used by screen readers to provide more context on the feedback link. %s is the name of the labs feature. -->
     <string name="firefox_labs_share_feedback_content_description">Share feedback for %s</string>
-    <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "on" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
-    <string name="firefox_labs_feature_enable_dialog_message">To turn on this feature, restart %s.</string>
-    <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "off" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
-    <string name="firefox_labs_feature_disable_dialog_message">To turn off this feature, restart %s.</string>
-
 
     <!-- Debug drawer tab group tools -->
     <!-- The title of the debug drawer tab to help populate tab groups-->
