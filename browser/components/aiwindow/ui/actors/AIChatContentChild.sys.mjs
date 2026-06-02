@@ -104,7 +104,7 @@ export class AIChatContentChild extends JSWindowActorChild {
     const { action, text } = event.detail ?? {};
     // Copy is handled in the child actor since it depends on content-side
     // selection and clipboard context.
-    if (action === "copy") {
+    if (action === "copy" || action === "copy-table") {
       if (text) {
         lazy.ClipboardHelper.copyString(text, this.windowContext);
       }

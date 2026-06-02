@@ -648,8 +648,8 @@ D3D11TextureData* D3D11TextureData::Create(IntSize aSize, SurfaceFormat aFormat,
       sD3D11TextureUsage,
       new TextureMemoryMeasurer(newDesc.Width * newDesc.Height * 4));
 
-  RefPtr<gfx::FileHandleWrapper> handle =
-      new gfx::FileHandleWrapper(UniqueFileHandle(sharedHandle));
+  RefPtr handle =
+      MakeRefPtr<gfx::FileHandleWrapper>(UniqueFileHandle(sharedHandle));
 
   if (useFence) {
     auto* fencesHolderMap = CompositeProcessD3D11FencesHolderMap::Get();
@@ -743,8 +743,8 @@ DXGIYCbCrTextureData* DXGIYCbCrTextureData::Create(
   if (FAILED(hr)) {
     return nullptr;
   }
-  const RefPtr<gfx::FileHandleWrapper> sharedHandleY =
-      new gfx::FileHandleWrapper(UniqueFileHandle(handleY));
+  const RefPtr sharedHandleY =
+      MakeRefPtr<gfx::FileHandleWrapper>(UniqueFileHandle(handleY));
 
   aTextureCb->QueryInterface((IDXGIResource1**)getter_AddRefs(resource));
 
@@ -755,8 +755,8 @@ DXGIYCbCrTextureData* DXGIYCbCrTextureData::Create(
   if (FAILED(hr)) {
     return nullptr;
   }
-  const RefPtr<gfx::FileHandleWrapper> sharedHandleCb =
-      new gfx::FileHandleWrapper(UniqueFileHandle(handleCb));
+  const RefPtr sharedHandleCb =
+      MakeRefPtr<gfx::FileHandleWrapper>(UniqueFileHandle(handleCb));
 
   aTextureCr->QueryInterface((IDXGIResource1**)getter_AddRefs(resource));
   HANDLE handleCr;
@@ -766,8 +766,8 @@ DXGIYCbCrTextureData* DXGIYCbCrTextureData::Create(
   if (FAILED(hr)) {
     return nullptr;
   }
-  const RefPtr<gfx::FileHandleWrapper> sharedHandleCr =
-      new gfx::FileHandleWrapper(UniqueFileHandle(handleCr));
+  const RefPtr sharedHandleCr =
+      MakeRefPtr<gfx::FileHandleWrapper>(UniqueFileHandle(handleCr));
 
   auto* fenceHolderMap = CompositeProcessD3D11FencesHolderMap::Get();
   if (!fenceHolderMap) {
@@ -1104,7 +1104,7 @@ void DXGITextureHostD3D11::CreateRenderTexture(
     const wr::ExternalImageId& aExternalImageId) {
   MOZ_ASSERT(mExternalImageId.isSome());
 
-  RefPtr<wr::RenderDXGITextureHost> texture = new wr::RenderDXGITextureHost(
+  RefPtr texture = MakeRefPtr<wr::RenderDXGITextureHost>(
       mHandle, mGpuProcessTextureId, mArrayIndex, mFormat, mColorSpace,
       mColorRange, mTransferFunction, mHDRMetadata, mSize, mHasKeyedMutex,
       mFencesHolderId);
@@ -1412,7 +1412,7 @@ void DXGIYCbCrTextureHostD3D11::CreateRenderTexture(
     const wr::ExternalImageId& aExternalImageId) {
   MOZ_ASSERT(mExternalImageId.isSome());
 
-  RefPtr<wr::RenderTextureHost> texture = new wr::RenderDXGIYCbCrTextureHost(
+  RefPtr texture = MakeRefPtr<wr::RenderDXGIYCbCrTextureHost>(
       mHandles, mYUVColorSpace, mColorDepth, mColorRange, mTransferFunction,
       mSizeY, mSizeCbCr, mFencesHolderId);
 

@@ -175,7 +175,7 @@ export const WIDGET_REGISTRY = [
     enabledPref: PREF_WIDGETS_WEATHER_ENABLED,
     sizePref: PREF_WEATHER_SIZE,
     defaultSize: "small",
-    validSizes: ["mini", "small", "medium", "large"],
+    validSizes: ["small", "medium", "large"],
     hasSidebar: true,
     systemEnabledPref: PREF_WIDGETS_SYSTEM_WEATHER_ENABLED,
     trainhopEnabledKey: "weatherEnabled",

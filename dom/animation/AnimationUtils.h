@@ -66,6 +66,13 @@ class AnimationUtils {
   static bool ValidateCSSNumberishTime(const dom::CSSNumberish& aValue,
                                        bool aProgressBased, ErrorResult& aRv);
 
+  // Fills a non-nullable CSSNumberish dictionary field from a millisecond
+  // value, converting to percent (0..100) when |aProgressBased| is true
+  // (i.e. the effect is on a progress-based timeline and Typed-OM is exposed).
+  static void DoubleToCSSNumberish(double aMs, bool aProgressBased,
+                                   nsIGlobalObject* aGlobal,
+                                   dom::OwningCSSNumberish& aRetVal);
+
   // Convert an internal TimeDuration to the CSSNumberish exposed via the
   // currentTime/startTime IDL attributes: a percent CSSUnitValue when
   // aProgressBased is true (i.e. typed-OM is enabled and the animation is

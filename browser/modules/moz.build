@@ -130,6 +130,7 @@ EXTRA_JS_MODULES += [
     "LinksCache.sys.mjs",
     "PageActions.sys.mjs",
     "PartnerLinkAttribution.sys.mjs",
+    "PermissionPromptTargeting.sys.mjs",
     "PermissionUI.sys.mjs",
     "PopupAndRedirectBlockerObserver.sys.mjs",
     "ProcessHangMonitor.sys.mjs",

@@ -18,13 +18,8 @@ struct ConnInfo {
 }
 
 enum Outcome {
-    Succeeded {
-        info: ConnInfo,
-        elapsed: Duration,
-    },
-    Failed {
-        elapsed: Duration,
-    },
+    Succeeded { info: ConnInfo, elapsed: Duration },
+    Failed { elapsed: Duration },
 }
 
 pub(crate) struct Metrics {
@@ -34,12 +29,20 @@ pub(crate) struct Metrics {
     conn_infos: HashMap<happy_eyeballs::Id, ConnInfo>,
     attempt_count: u32,
     cancelled_count: u32,
+    alt_svc_h3: bool,
     https_record_received: bool,
+    https_rr_h3: bool,
+    https_rr_ech: bool,
+    https_rr_ipv4hint: bool,
+    https_rr_ipv6hint: bool,
     outcome: Option<Outcome>,
 }
 
 impl Metrics {
-    pub(crate) fn new() -> Self {
+    pub(crate) fn new(alt_svc: &[happy_eyeballs::AltSvc]) -> Self {
+        let alt_svc_h3 = alt_svc
+            .iter()
+            .any(|a| matches!(a.http_version, happy_eyeballs::HttpVersion::H3));
         Self {
             start: Instant::now(),
             first_attempt_dispatched: false,
@@ -47,7 +50,12 @@ impl Metrics {
             conn_infos: HashMap::new(),
             attempt_count: 0,
             cancelled_count: 0,
+            alt_svc_h3,
             https_record_received: false,
+            https_rr_h3: false,
+            https_rr_ech: false,
+            https_rr_ipv4hint: false,
+            https_rr_ipv6hint: false,
             outcome: None,
         }
     }
@@ -77,8 +85,19 @@ impl Metrics {
             .accumulate_single_sample_signed(elapsed_ms);
     }
 
-    pub(crate) fn dns_response_https(&mut self, id: happy_eyeballs::Id, has_records: bool) {
-        self.https_record_received |= has_records;
+    pub(crate) fn dns_response_https(
+        &mut self,
+        id: happy_eyeballs::Id,
+        infos: &[happy_eyeballs::ServiceInfo],
+    ) {
+        self.https_record_received |= !infos.is_empty();
+        self.https_rr_h3 |= infos.iter().any(|i| {
+            i.alpn_http_versions
+                .contains(&happy_eyeballs::HttpVersion::H3)
+        });
+        self.https_rr_ech |= infos.iter().any(|i| i.ech_config.is_some());
+        self.https_rr_ipv4hint |= infos.iter().any(|i| !i.ipv4_hints.is_empty());
+        self.https_rr_ipv6hint |= infos.iter().any(|i| !i.ipv6_hints.is_empty());
         self.dns_response(id);
     }
 
@@ -145,14 +164,37 @@ impl Drop for Metrics {
                 .accumulate_single_sample_signed(info.index.into());
         }
 
-        let https_label = if self.https_record_received {
-            "available"
-        } else {
-            "unavailable"
+        let h3_discovery_label = match (self.alt_svc_h3, self.https_rr_h3) {
+            (false, false) => "none",
+            (true, false) => "altsvc_only",
+            (false, true) => "https_rr_only",
+            (true, true) => "both",
         };
-        glean::happy_eyeballs_https_record_available
-            .get(https_label)
+        glean::happy_eyeballs_h3_discovery
+            .get(h3_discovery_label)
             .add(1);
+
+        if self.https_record_received {
+            glean::happy_eyeballs_https_rr_features.get("total").add(1);
+            if self.https_rr_h3 {
+                glean::happy_eyeballs_https_rr_features
+                    .get("h3_alpn")
+                    .add(1);
+            }
+            if self.https_rr_ech {
+                glean::happy_eyeballs_https_rr_features.get("ech").add(1);
+            }
+            if self.https_rr_ipv4hint {
+                glean::happy_eyeballs_https_rr_features
+                    .get("ipv4hint")
+                    .add(1);
+            }
+            if self.https_rr_ipv6hint {
+                glean::happy_eyeballs_https_rr_features
+                    .get("ipv6hint")
+                    .add(1);
+            }
+        }
     }
 }
 

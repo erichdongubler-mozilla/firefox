@@ -2,10 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { DEFAULT_ENGINE_ID, MODEL_FEATURES, openAIEngine, renderPrompt } =
-  ChromeUtils.importESModule(
-    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
-  );
+const {
+  DEFAULT_ENGINE_ID,
+  MODEL_FEATURES,
+  openAIEngine,
+  renderPrompt,
+  SERVICE_TYPES,
+  PURPOSES,
+} = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
+);
 
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
@@ -54,7 +60,13 @@ add_task(async function test_createOpenAIEngine_with_chat_feature() {
     };
 
     const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-    const engine = await openAIEngine.build(MODEL_FEATURES.CHAT);
+    const engine = await openAIEngine.build({
+      model: MODEL,
+      serviceType: SERVICE_TYPES.AI,
+      purpose: PURPOSES.CHAT,
+      flowId: null,
+      feature: MODEL_FEATURES.CHAT,
+    });
     Assert.strictEqual(
       engine.engineInstance,
       fakeEngine,
@@ -103,7 +115,13 @@ add_task(
     try {
       const fakeEngine = { runWithGenerator() {} };
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-      await openAIEngine.build(MODEL_FEATURES.CHAT);
+      await openAIEngine.build({
+        model: MODEL,
+        serviceType: SERVICE_TYPES.AI,
+        purpose: PURPOSES.CHAT,
+        flowId: null,
+        feature: MODEL_FEATURES.CHAT,
+      });
 
       const opts = stub.firstCall.args[0];
       Assert.equal(
@@ -130,7 +148,13 @@ add_task(
     try {
       const fakeEngine = { runWithGenerator() {} };
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-      await openAIEngine.build(MODEL_FEATURES.CHAT);
+      await openAIEngine.build({
+        model: MODEL,
+        serviceType: SERVICE_TYPES.AI,
+        purpose: PURPOSES.CHAT,
+        flowId: null,
+        feature: MODEL_FEATURES.CHAT,
+      });
 
       const opts = stub.firstCall.args[0];
       Assert.equal(

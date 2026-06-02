@@ -389,7 +389,7 @@ void nsCocoaWindow::UnsuspendAsyncCATransactions() {
 
 nsresult nsCocoaWindow::SynthesizeNativeKeyEvent(
     int32_t aNativeKeyboardLayout, int32_t aNativeKeyCode,
-    uint32_t aModifierFlags, const nsAString& aCharacters,
+    nsIWidget::NativeModifiers aModifierFlags, const nsAString& aCharacters,
     const nsAString& aUnmodifiedCharacters,
     nsISynthesizedEventCallback* aCallback) {
   AutoSynthesizedEventCallbackNotifier notifier(aCallback);
@@ -400,7 +400,7 @@ nsresult nsCocoaWindow::SynthesizeNativeKeyEvent(
 
 nsresult nsCocoaWindow::SynthesizeNativeMouseEvent(
     LayoutDeviceIntPoint aPoint, NativeMouseMessage aNativeMessage,
-    MouseButton aButton, nsIWidget::Modifiers aModifierFlags,
+    MouseButton aButton, nsIWidget::NativeModifiers aModifierFlags,
     nsISynthesizedEventCallback* aCallback) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
@@ -520,13 +520,14 @@ nsresult nsCocoaWindow::SynthesizeNativeMouseMove(
 
   return SynthesizeNativeMouseEvent(
       aPoint, NativeMouseMessage::Move, mozilla::MouseButton::eNotPressed,
-      nsIWidget::Modifiers::NO_MODIFIERS, aCallback);
+      nsIWidget::NativeModifiers::NO_MODIFIERS, aCallback);
 }
 
 nsresult nsCocoaWindow::SynthesizeNativeMouseScrollEvent(
     mozilla::LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage,
-    double aDeltaX, double aDeltaY, double aDeltaZ, uint32_t aModifierFlags,
-    uint32_t aAdditionalFlags, nsISynthesizedEventCallback* aCallback) {
+    double aDeltaX, double aDeltaY, double aDeltaZ,
+    nsIWidget::NativeModifiers aModifierFlags, uint32_t aAdditionalFlags,
+    nsISynthesizedEventCallback* aCallback) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   AutoSynthesizedEventCallbackNotifier notifier(aCallback);

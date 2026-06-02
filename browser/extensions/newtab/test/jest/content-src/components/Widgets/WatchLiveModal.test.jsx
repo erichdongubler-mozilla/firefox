@@ -110,24 +110,37 @@ describe("<WatchLiveModal>", () => {
   });
 
   describe("telemetry", () => {
-    it("fires a WIDGETS_IMPRESSION on mount with widget_name and widget_size", () => {
+    it("fires an open user event on mount with widget_source, action_value, and widget_size", () => {
       const dispatch = jest.fn();
       renderModal({ state: makeState(), dispatch, widgetSize: "large" });
-      const impressions = dispatch.mock.calls
-        .map(([action]) => action)
-        .filter(a => a.type === at.WIDGETS_IMPRESSION);
-      expect(impressions).toHaveLength(1);
-      expect(impressions[0].data).toEqual({
-        widget_name: "sports_livestream",
+      const opens = findUserEvents(dispatch, "open");
+      expect(opens).toHaveLength(1);
+      expect(opens[0].data).toMatchObject({
+        widget_name: "sports",
+        widget_source: "widget",
+        user_action: "open",
+        action_value: "watch_live_modal",
         widget_size: "large",
       });
+      expect(opens[0].meta).toEqual(
+        expect.objectContaining({
+          to: "ActivityStream:Main",
+          skipLocal: true,
+        })
+      );
     });
 
     it("fires a dismiss user event on backdrop click", () => {
       const dispatch = jest.fn();
       const { container } = renderModal({ state: makeState(), dispatch });
       fireEvent.click(container.querySelector(".watch-live-modal-dialog"));
-      expect(findUserEvents(dispatch, "dismiss")).toHaveLength(1);
+      const dismisses = findUserEvents(dispatch, "dismiss");
+      expect(dismisses).toHaveLength(1);
+      expect(dismisses[0].data).toMatchObject({
+        widget_name: "sports",
+        widget_source: "widget",
+        action_value: "watch_live_modal",
+      });
     });
 
     it("fires a dismiss user event on Escape (dialog cancel)", () => {
@@ -160,8 +173,8 @@ describe("<WatchLiveModal>", () => {
       const clicks = findUserEvents(dispatch, "stream_click");
       expect(clicks).toHaveLength(1);
       expect(clicks[0].data).toMatchObject({
-        widget_name: "sports_livestream",
-        widget_source: "watch_live_modal",
+        widget_name: "sports",
+        widget_source: "widget",
         action_value: "Tubi",
       });
     });

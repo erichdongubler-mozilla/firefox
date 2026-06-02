@@ -1351,6 +1351,48 @@ class BrowserToolbarSearchMiddlewareTest {
     }
 
     @Test
+    fun `GIVEN the Lens button was clicked WHEN a QR scanner result arrives THEN the URL bar is populated`() {
+        val appStoreActionsCaptor = CaptureActionsMiddleware<AppState, AppAction>()
+        val appStore = AppStore(
+            initialState = AppState(
+                searchState = AppSearchState.EMPTY.copy(
+                    selectedSearchEngine = SelectedSearchEngine(
+                        searchEngine = googleSearchEngine(),
+                        isUserSelected = false,
+                    ),
+                ),
+            ),
+            middlewares = listOf(appStoreActionsCaptor),
+        )
+        val browserUseCases: FenixBrowserUseCases = mockk(relaxed = true)
+        every { components.useCases.fenixBrowserUseCases } returns browserUseCases
+        every { settings.googleLensIntegrationEnabled } returns true
+        every { settings.googleLensIntegrationUserEnabled } returns true
+        val browsingModeManager: BrowsingModeManager = mockk(relaxed = true) {
+            every { mode } returns Normal
+        }
+        val (_, store) = buildMiddlewareAndAddToStore(
+            appStore = appStore,
+            components = components,
+            browsingModeManager = browsingModeManager,
+        )
+        store.dispatch(EnterEditMode(false))
+        store.dispatch(SearchQueryUpdated(BrowserToolbarQuery("")))
+
+        val lensButton = store.state.editState.editActionsEnd
+            .filterIsInstance<ActionButtonRes>()
+            .find { it.onClick == LensButtonClicked }!!
+
+        store.dispatch(lensButton.onClick as BrowserToolbarEvent)
+        appStore.dispatch(QrScannerInputAvailable("scanned.example"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("scanned.example", store.state.editState.query.current)
+        assertTrue(store.state.editState.isQueryPrefilled)
+        appStoreActionsCaptor.assertLastAction(QrScannerInputConsumed::class)
+    }
+
+    @Test
     fun `GIVEN Lens scan in normal mode WHEN receiving a result THEN open it as a new normal tab`() {
         val appStoreActionsCaptor = CaptureActionsMiddleware<AppState, AppAction>()
         val appStore = AppStore(

@@ -222,9 +222,7 @@ add_task(
 
     try {
       sb.stub(this.Chat, "fetchWithHistory");
-      sb.stub(this.openAIEngine, "build").resolves({
-        loadPrompt: () => Promise.resolve("Mock system prompt"),
-      });
+      sb.stub(this.openAIEngine, "build").resolves({});
 
       const win = await openAIWindow();
       const browser = win.gBrowser.selectedBrowser;
@@ -260,9 +258,7 @@ add_task(
 
     try {
       sb.stub(this.Chat, "fetchWithHistory");
-      sb.stub(this.openAIEngine, "build").resolves({
-        loadPrompt: () => Promise.resolve("Mock system prompt"),
-      });
+      sb.stub(this.openAIEngine, "build").resolves({});
 
       const win = await openAIWindow();
       const browser = win.gBrowser.selectedBrowser;

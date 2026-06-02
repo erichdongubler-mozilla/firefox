@@ -186,6 +186,20 @@ bool AnimationUtils::ValidateCSSNumberishTime(const CSSNumberish& aValue,
 }
 
 /* static */
+void AnimationUtils::DoubleToCSSNumberish(double aMs, bool aProgressBased,
+                                          nsIGlobalObject* aGlobal,
+                                          OwningCSSNumberish& aRetVal) {
+  if (aProgressBased) {
+    const double progress =
+        aMs / static_cast<double>(PROGRESS_TIMELINE_DURATION_MILLISEC) * 100.0;
+    aRetVal.SetAsCSSNumericValue() =
+        MakeRefPtr<CSSUnitValue>(aGlobal, progress, "percent"_ns);
+    return;
+  }
+  aRetVal.SetAsDouble() = aMs;
+}
+
+/* static */
 void AnimationUtils::DurationToCSSNumberish(
     const Nullable<TimeDuration>& aTime, bool aProgressBased,
     RTPCallerType aRTPCallerType, nsIGlobalObject* aGlobal,
@@ -195,14 +209,7 @@ void AnimationUtils::DurationToCSSNumberish(
     return;
   }
   const double ms = TimeDurationToDouble(aTime, aRTPCallerType).Value();
-  if (aProgressBased) {
-    const double progress =
-        ms / static_cast<double>(PROGRESS_TIMELINE_DURATION_MILLISEC) * 100.0;
-    aRetVal.SetValue().SetAsCSSNumericValue() =
-        MakeRefPtr<CSSUnitValue>(aGlobal, progress, "percent"_ns);
-    return;
-  }
-  aRetVal.SetValue().SetAsDouble() = ms;
+  DoubleToCSSNumberish(ms, aProgressBased, aGlobal, aRetVal.SetValue());
 }
 
 /* static */

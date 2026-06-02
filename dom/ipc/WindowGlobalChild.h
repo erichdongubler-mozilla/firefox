@@ -199,6 +199,9 @@ class WindowGlobalChild final : public WindowGlobalActor,
       dom::SessionStoreRestoreData* aData,
       RestoreTabContentResolver&& aResolve);
 
+  mozilla::ipc::IPCResult RecvNotifyAudioSessionStateChanged(
+      const dom::AudioSessionState& aState);
+
   mozilla::ipc::IPCResult RecvNotifyPermissionChange(const nsCString& aType,
                                                      uint32_t aPermission);
 

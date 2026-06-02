@@ -886,9 +886,8 @@ nsresult HTMLFormElement::SubmitSubmission(
       loadState->SetUserNavigationInvolvement(
           UserNavigationInvolvement::Activation);
     }
-    if (FormData* formData = aFormSubmission->GetFormData();
-        formData && formData->GetSubmitterElement()) {
-      loadState->SetSourceElement(formData->GetSubmitterElement());
+    if (Element* element = aFormSubmission->GetSubmitterElement()) {
+      loadState->SetSourceElement(element);
     } else {
       loadState->SetSourceElement(this);
     }

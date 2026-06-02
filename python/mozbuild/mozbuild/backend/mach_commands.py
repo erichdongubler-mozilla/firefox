@@ -5,6 +5,7 @@
 import argparse
 import logging
 import os
+import shutil
 import subprocess
 import sys
 
@@ -546,6 +547,8 @@ def setup_clangd_rust_in_vscode(command_context):
 
     with open(".clangd", "w") as file:
         yaml.dump(clangd_cfg, file)
+
+    shutil.copyfile(".clangd", mozpath.join(command_context.topobjdir, ".clangd"))
 
     config = {
         "clangd.path": clangd_path,

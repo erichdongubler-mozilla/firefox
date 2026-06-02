@@ -856,6 +856,7 @@ HttpRetParams ConnectionEntry::GetConnectionData() {
   HttpRetParams data;
   data.host = mConnInfo->Origin();
   data.port = mConnInfo->OriginPort();
+  mConnInfo->GetOriginAttributes().CreateSuffix(data.originAttributesSuffix);
   for (uint32_t i = 0; i < mActiveConns.Length(); i++) {
     HttpConnInfo info;
     RefPtr<nsHttpConnection> connTCP = do_QueryObject(mActiveConns[i]);

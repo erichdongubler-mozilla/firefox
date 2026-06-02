@@ -142,6 +142,7 @@ class HomeToolbarComposableTest {
         coroutineScope = coroutineScope,
         tabStripContent = { },
         searchSuggestionsContent = { },
+        navigationBarContent = { },
     )
 
     private fun stubSpeechRecognition() {

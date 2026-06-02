@@ -21,11 +21,23 @@ class HTMLSelectedContentElement final : public nsGenericHTMLElement {
 
   nsresult Clone(class NodeInfo* aNodeInfo, nsINode** aResult) const override;
 
+  bool IsDisabled() const { return mDisabled; }
+
+  MOZ_CAN_RUN_SCRIPT void ClearContent();
+
+  // https://html.spec.whatwg.org/#the-selectedcontent-element
+  nsresult BindToTree(BindContext& aContext, nsINode& aParent) override;
+
  protected:
   virtual ~HTMLSelectedContentElement();
 
   JSObject* WrapNode(JSContext* aCx,
                      JS::Handle<JSObject*> aGivenProto) override;
+
+ private:
+  void SetDisabled(bool aDisabled) { mDisabled = aDisabled; }
+
+  bool mDisabled = false;
 };
 
 }  // namespace mozilla::dom

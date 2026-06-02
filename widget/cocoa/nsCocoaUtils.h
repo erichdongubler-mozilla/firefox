@@ -420,7 +420,7 @@ class nsCocoaUtils {
    * to native modifier flags of macOS.
    */
   static NSEventModifierFlags ConvertWidgetModifiersToMacModifierFlags(
-      nsIWidget::Modifiers aNativeModifiers);
+      nsIWidget::NativeModifiers aNativeModifiers);
 
   /**
    * Get the mouse button, which depends on the event's type and buttonNumber.

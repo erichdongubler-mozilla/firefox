@@ -49,8 +49,8 @@ RefPtr<FenceD3D11> FenceD3D11::Create(ID3D11Device* aDevice) {
     return nullptr;
   }
 
-  RefPtr<gfx::FileHandleWrapper> handle =
-      new gfx::FileHandleWrapper(UniqueFileHandle(sharedHandle));
+  RefPtr handle =
+      MakeRefPtr<gfx::FileHandleWrapper>(UniqueFileHandle(sharedHandle));
   RefPtr<FenceD3D11> fence =
       new FenceD3D11(OwnsFence::Yes, aDevice, fenceD3D11, handle);
   return fence;

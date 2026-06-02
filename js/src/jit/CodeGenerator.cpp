@@ -5181,16 +5181,6 @@ void CodeGenerator::visitGuardIsNotArrayBufferMaybeShared(
   bailoutFrom(&bail, guard->snapshot());
 }
 
-void CodeGenerator::visitGuardIsTypedArray(LGuardIsTypedArray* guard) {
-  Register obj = ToRegister(guard->object());
-  Register temp = ToRegister(guard->temp0());
-
-  Label bail;
-  masm.loadObjClassUnsafe(obj, temp);
-  masm.branchIfClassIsNotTypedArray(temp, &bail);
-  bailoutFrom(&bail, guard->snapshot());
-}
-
 void CodeGenerator::visitGuardIsNonResizableTypedArray(
     LGuardIsNonResizableTypedArray* guard) {
   Register obj = ToRegister(guard->object());
@@ -17511,13 +17501,6 @@ void CodeGenerator::visitUnboxFloatingPoint(LUnboxFloatingPoint* lir) {
   masm.bind(ool->rejoin());
 }
 
-void CodeGenerator::visitCallBindVar(LCallBindVar* lir) {
-  pushArg(ToRegister(lir->environmentChain()));
-
-  using Fn = JSObject* (*)(JSContext*, JSObject*);
-  callVM<Fn, BindVarOperation>(lir);
-}
-
 void CodeGenerator::visitMegamorphicSetElement(LMegamorphicSetElement* lir) {
   Register obj = ToRegister(lir->object());
   ValueOperand idVal = ToValue(lir->index());
@@ -20861,10 +20844,6 @@ void CodeGenerator::visitWasmRefCastConcrete(LWasmRefCastConcrete* ins) {
   }
 }
 
-void CodeGenerator::visitWasmRefCastInfallible(LWasmRefCastInfallible* ins) {
-  MOZ_ASSERT(gen->compilingWasm());
-}
-
 void CodeGenerator::callWasmStructAllocFun(
     LInstruction* lir, wasm::SymbolicAddress fun, Register typeDefIndex,
     Register allocSite, Register output,
@@ -21491,20 +21470,6 @@ void CodeGenerator::visitAsyncResolve(LAsyncResolve* lir) {
   using Fn = JSObject* (*)(JSContext*, Handle<AsyncFunctionGeneratorObject*>,
                            HandleValue);
   callVM<Fn, js::AsyncFunctionResolve>(lir);
-}
-
-void CodeGenerator::visitAsyncReject(LAsyncReject* lir) {
-  Register generator = ToRegister(lir->generator());
-  ValueOperand reason = ToValue(lir->reason());
-  ValueOperand stack = ToValue(lir->stack());
-
-  pushArg(stack);
-  pushArg(reason);
-  pushArg(generator);
-
-  using Fn = JSObject* (*)(JSContext*, Handle<AsyncFunctionGeneratorObject*>,
-                           HandleValue, HandleValue);
-  callVM<Fn, js::AsyncFunctionReject>(lir);
 }
 
 void CodeGenerator::visitAsyncAwait(LAsyncAwait* lir) {
@@ -22547,8 +22512,8 @@ void CodeGenerator::visitWeakMapGetObject(LWeakMapGetObject* ins) {
   });
   addOutOfLineCode(ool, ins->mir());
 
-  masm.emitValueReadBarrierFastPath(output, scratch, scratch2, scratch3,
-                                    scratch4, scratch5, ool->entry());
+  masm.emitWeapMapBarrierFastPath(output, scratch, scratch2, scratch3, scratch4,
+                                  scratch5, ool->entry());
   masm.jump(ool->rejoin());
 
   masm.bind(&missing);

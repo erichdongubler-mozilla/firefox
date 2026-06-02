@@ -5706,15 +5706,6 @@ void LIRGenerator::visitBindNameCache(MBindNameCache* ins) {
   assignSafepoint(lir, ins);
 }
 
-void LIRGenerator::visitCallBindVar(MCallBindVar* ins) {
-  MOZ_ASSERT(ins->environmentChain()->type() == MIRType::Object);
-  MOZ_ASSERT(ins->type() == MIRType::Object);
-
-  LCallBindVar* lir =
-      new (alloc()) LCallBindVar(useRegister(ins->environmentChain()));
-  define(lir, ins);
-}
-
 void LIRGenerator::visitGuardObjectIdentity(MGuardObjectIdentity* ins) {
   LGuardObjectIdentity* guard = new (alloc()) LGuardObjectIdentity(
       useRegister(ins->object()), useRegister(ins->expected()));
@@ -6122,16 +6113,6 @@ void LIRGenerator::visitGuardIsNotArrayBufferMaybeShared(
 
   auto* lir = new (alloc())
       LGuardIsNotArrayBufferMaybeShared(useRegister(ins->object()), temp());
-  assignSnapshot(lir, ins->bailoutKind());
-  add(lir, ins);
-  redefine(ins, ins->object());
-}
-
-void LIRGenerator::visitGuardIsTypedArray(MGuardIsTypedArray* ins) {
-  MOZ_ASSERT(ins->object()->type() == MIRType::Object);
-
-  auto* lir =
-      new (alloc()) LGuardIsTypedArray(useRegister(ins->object()), temp());
   assignSnapshot(lir, ins->bailoutKind());
   add(lir, ins);
   redefine(ins, ins->object());
@@ -6826,30 +6807,6 @@ void LIRGenerator::visitWasmLoadInstance(MWasmLoadInstance* ins) {
     auto* lir =
         new (alloc()) LWasmLoadInstance(useRegisterAtStart(ins->instance()));
     define(lir, ins);
-  }
-}
-
-void LIRGenerator::visitWasmStoreInstance(MWasmStoreInstance* ins) {
-  MDefinition* value = ins->value();
-  if (value->type() == MIRType::Int64) {
-#ifdef JS_PUNBOX64
-    LAllocation instance = useRegisterAtStart(ins->instance());
-    LInt64Allocation valueAlloc = useInt64RegisterAtStart(value);
-#else
-    LAllocation instance = useRegister(ins->instance());
-    LInt64Allocation valueAlloc = useInt64Register(value);
-#endif
-    add(new (alloc()) LWasmStoreSlotI64(valueAlloc, instance, ins->offset(),
-                                        mozilla::Nothing()),
-        ins);
-  } else {
-    MOZ_ASSERT(value->type() != MIRType::WasmAnyRef);
-    LAllocation instance = useRegisterAtStart(ins->instance());
-    LAllocation valueAlloc = useRegisterAtStart(value);
-    add(new (alloc())
-            LWasmStoreSlot(valueAlloc, instance, ins->offset(), value->type(),
-                           MNarrowingOp::None, mozilla::Nothing()),
-        ins);
   }
 }
 
@@ -7673,14 +7630,6 @@ void LIRGenerator::visitGenerator(MGenerator* ins) {
 void LIRGenerator::visitAsyncResolve(MAsyncResolve* ins) {
   auto* lir = new (alloc()) LAsyncResolve(useRegisterAtStart(ins->generator()),
                                           useBoxAtStart(ins->value()));
-  defineReturn(lir, ins);
-  assignSafepoint(lir, ins);
-}
-
-void LIRGenerator::visitAsyncReject(MAsyncReject* ins) {
-  auto* lir = new (alloc())
-      LAsyncReject(useRegisterAtStart(ins->generator()),
-                   useBoxAtStart(ins->reason()), useBoxAtStart(ins->stack()));
   defineReturn(lir, ins);
   assignSafepoint(lir, ins);
 }

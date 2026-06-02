@@ -69,8 +69,7 @@ void MediaTransportHandlerIPC::Initialize() {
               [this, self = RefPtr<MediaTransportHandlerIPC>(this)](
                   mozilla::ipc::Endpoint<mozilla::dom::PMediaTransportChild>&&
                       aEndpoint) {
-                RefPtr<MediaTransportChild> child =
-                    new MediaTransportChild(this);
+                RefPtr child = MakeRefPtr<MediaTransportChild>(this);
                 aEndpoint.Bind(child);
                 mChild = child;
 

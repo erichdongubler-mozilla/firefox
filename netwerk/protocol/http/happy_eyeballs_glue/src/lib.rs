@@ -72,13 +72,13 @@ pub unsafe extern "C" fn happy_eyeballs_create(
         })
         .collect();
 
+    let metrics = metrics::Metrics::new(&alt_svc_vec);
+
     let network_config = happy_eyeballs::NetworkConfig {
         alt_svc: alt_svc_vec,
         ip: ip_preference.into(),
         resolution_delay: Duration::from_millis(resolution_delay_ms as u64),
-        connection_attempt_delay: Duration::from_millis(
-            connection_attempt_delay_ms as u64,
-        ),
+        connection_attempt_delay: Duration::from_millis(connection_attempt_delay_ms as u64),
         ..Default::default()
     };
 
@@ -94,7 +94,7 @@ pub unsafe extern "C" fn happy_eyeballs_create(
                 refcnt: unsafe { AtomicRefcnt::new() },
                 inner: he,
                 profiler,
-                metrics: metrics::Metrics::new(),
+                metrics,
             });
             boxed
                 .profiler
@@ -344,7 +344,7 @@ impl HappyEyeballs {
         }
 
         self.profiler.dns_response_https(id, &infos);
-        self.metrics.dns_response_https(id, !infos.is_empty());
+        self.metrics.dns_response_https(id, &infos);
 
         let result = happy_eyeballs::DnsResult::Https(Ok(infos));
         let input = happy_eyeballs::Input::DnsResult { id, result };

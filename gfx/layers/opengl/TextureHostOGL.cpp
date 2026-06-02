@@ -549,10 +549,9 @@ void SurfaceTextureHost::CreateRenderTexture(
   MOZ_ASSERT(mExternalImageId.isSome());
 
   bool isRemoteTexture = !!(mFlags & TextureFlags::REMOTE_TEXTURE);
-  RefPtr<wr::RenderTextureHost> texture =
-      new wr::RenderAndroidSurfaceTextureHost(
-          mSurfTex, mSize, mFormat, mContinuousUpdate, mTransformOverride,
-          isRemoteTexture);
+  RefPtr texture = MakeRefPtr<wr::RenderAndroidSurfaceTextureHost>(
+      mSurfTex, mSize, mFormat, mContinuousUpdate, mTransformOverride,
+      isRemoteTexture);
   wr::RenderThread::Get()->RegisterExternalImage(aExternalImageId,
                                                  texture.forget());
 }
@@ -795,8 +794,7 @@ AndroidHardwareBufferTextureHost::Create(
   if (!buffer) {
     return nullptr;
   }
-  RefPtr<AndroidHardwareBufferTextureHost> host =
-      new AndroidHardwareBufferTextureHost(aFlags, buffer);
+  RefPtr host = MakeRefPtr<AndroidHardwareBufferTextureHost>(aFlags, buffer);
   return host.forget();
 }
 
@@ -1021,8 +1019,8 @@ void EGLImageTextureHost::CreateRenderTexture(
     const wr::ExternalImageId& aExternalImageId) {
   MOZ_ASSERT(mExternalImageId.isSome());
 
-  RefPtr<wr::RenderTextureHost> texture =
-      new wr::RenderEGLImageTextureHost(mImage, mSync, mSize, GetFormat());
+  RefPtr texture = MakeRefPtr<wr::RenderEGLImageTextureHost>(
+      mImage, mSync, mSize, GetFormat());
   wr::RenderThread::Get()->RegisterExternalImage(aExternalImageId,
                                                  texture.forget());
 }

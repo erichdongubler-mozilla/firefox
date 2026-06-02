@@ -19,7 +19,10 @@ import {
   actionTypes as at,
   actionUtils as au,
 } from "resource://newtab/common/Actions.mjs";
-import { WIDGET_REGISTRY } from "resource://newtab/common/WidgetsRegistry.mjs";
+import {
+  WIDGET_REGISTRY,
+  isWidgetEnabled,
+} from "resource://newtab/common/WidgetsRegistry.mjs";
 import { Prefs } from "resource://newtab/lib/ActivityStreamPrefs.sys.mjs";
 import { classifySite } from "resource://newtab/lib/SiteClassifier.sys.mjs";
 
@@ -1732,10 +1735,11 @@ export class TelemetryFeed {
     if (!prefs) {
       return;
     }
+    const widgetsEnabled = prefs["widgets.enabled"];
     Glean.newtab.widgetsEnabledList.set(
-      WIDGET_REGISTRY.filter(w => prefs[w.enabledPref]).map(
-        w => w.telemetryName
-      )
+      WIDGET_REGISTRY.filter(w =>
+        isWidgetEnabled(w, prefs, widgetsEnabled)
+      ).map(w => w.telemetryName)
     );
   }
 

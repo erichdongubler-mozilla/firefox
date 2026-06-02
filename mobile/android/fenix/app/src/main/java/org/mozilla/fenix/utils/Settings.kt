@@ -877,6 +877,19 @@ class Settings(
         default = 0L,
     )
 
+    /**
+     * Indicates the last time when the user was interacting with the [HomeFragment],
+     * This is useful to determine if the user has to start on the [HomeFragment]
+     * or it should go directly to the [BrowserFragment].
+     *
+     * This value defaults to 0L because we want to know if the user never had any interaction
+     * with the [HomeFragment]
+     */
+    var lastHomeActivity by longPreference(
+        appContext.getPreferenceKey(R.string.pref_key_last_home_activity_time),
+        default = 0L,
+    )
+
     private val openingScreenDefault: OpeningScreenOption
         get() = FxNimbus.features.homepageOpeningScreenDefault.value().defaultOption
 
@@ -911,7 +924,7 @@ class Settings(
      */
     var isLnaBlockingEnabled by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_lna_blocking_enabled),
-        default = Config.channel.isNightlyOrDebug,
+        default = { FxNimbus.features.lnaBlocking.value().blocking || Config.channel.isNightlyOrDebug },
     )
 
     /**
@@ -919,7 +932,7 @@ class Settings(
      */
     var isLnaTrackerBlockingEnabled by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_lna_tracker_blocking_enabled),
-        default = false,
+        default = { FxNimbus.features.lnaBlocking.value().blockTrackers },
     )
 
     /**
@@ -931,7 +944,7 @@ class Settings(
      */
     var isLnaFeatureEnabled by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_lna_feature_enabled),
-        default = Config.channel.isNightlyOrDebug,
+        default = { FxNimbus.features.lnaBlocking.value().enabled || Config.channel.isNightlyOrDebug },
     )
 
     /**
@@ -955,10 +968,22 @@ class Settings(
      */
     fun shouldStartOnHome(): Boolean {
         return when {
-            openHomepageAfterFourHoursOfInactivity -> timeNowInMillis() - lastBrowseActivity >= FOUR_HOURS_MS
-            alwaysOpenTheHomepageWhenOpeningTheApp -> true
-            alwaysOpenTheLastTabWhenOpeningTheApp -> false
-            else -> false
+            openHomepageAfterFourHoursOfInactivity -> {
+                timeNowInMillis() - lastBrowseActivity >= FOUR_HOURS_MS
+            }
+            alwaysOpenTheHomepageWhenOpeningTheApp -> {
+                true
+            }
+            alwaysOpenTheLastTabWhenOpeningTheApp -> {
+                if (lastHomeActivity > lastBrowseActivity) {
+                    true
+                } else {
+                    false
+                }
+            }
+            else -> {
+                false
+            }
         }
     }
 
@@ -2389,8 +2414,8 @@ class Settings(
      * Indicates if the Homepage Search Bar is enabled.
      */
     var enableHomepageSearchBar by booleanPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_enable_homepage_searchbar),
-        default = { FxNimbus.features.homepageSearchBar.value().enabled },
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_homepage_searchbar2),
+        default = false,
     )
 
     /**

@@ -4,6 +4,7 @@
 
 UNIFIED_SOURCES += [
     "TestAudioFocusManager.cpp",
+    "TestAudioSessionManager.cpp",
     "TestContentMediaController.cpp",
     "TestMediaController.cpp",
     "TestMediaControlService.cpp",

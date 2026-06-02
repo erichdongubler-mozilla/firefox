@@ -52,7 +52,6 @@ ai-chat-table {
   display: block;
   font-size: var(--font-size-small);
   max-width: 100%;
-  width: fit-content;
 
   & th,
   & td {

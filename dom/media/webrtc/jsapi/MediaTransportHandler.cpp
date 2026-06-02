@@ -34,6 +34,7 @@
 #include "mozilla/PublicSSL.h"  // For psm::InitializeCipherSuite
 #include "mozilla/dom/RTCStatsReportBinding.h"
 #include "nsDNSService2.h"
+#include "nsFmtString.h"
 #include "nsISocketTransportService.h"
 #include "nss.h"  // For NSS_NoDB_Init
 #include "sdp/SdpAttribute.h"
@@ -188,9 +189,9 @@ already_AddRefed<MediaTransportHandler> MediaTransportHandler::Create() {
   if (XRE_IsContentProcess() &&
       Preferences::GetBool("media.peerconnection.mtransport_process") &&
       StaticPrefs::network_process_enabled()) {
-    result = new MediaTransportHandlerIPC();
+    result = MakeRefPtr<MediaTransportHandlerIPC>();
   } else {
-    result = new MediaTransportHandlerSTS();
+    result = MakeRefPtr<MediaTransportHandlerSTS>();
   }
   result->Initialize();
   return result.forget();
@@ -203,7 +204,8 @@ class STSShutdownHandler : public nsISTSShutdownObserver {
   // Lazy singleton
   static RefPtr<STSShutdownHandler>& Instance() {
     MOZ_ASSERT(NS_IsMainThread());
-    static RefPtr<STSShutdownHandler> sHandler(new STSShutdownHandler);
+    static RefPtr<STSShutdownHandler> sHandler =
+        MakeRefPtr<STSShutdownHandler>();
     return sHandler;
   }
 
@@ -422,7 +424,7 @@ void MediaTransportHandlerSTS::CreateIceCtx(const std::string& aName) {
               mIceCtx->SignalConnectionStateChange.connect(
                   this, &MediaTransportHandlerSTS::OnConnectionStateChange);
 
-              mDNSResolver = new NrIceResolver;
+              mDNSResolver = MakeRefPtr<NrIceResolver>();
               nsresult rv;
               if (NS_FAILED(rv = mDNSResolver->Init())) {
                 CSFLogError(LOGTAG, "%s: Failed to initialize dns resolver",
@@ -1041,13 +1043,26 @@ void MediaTransportHandler::OnRtcpStateChange(const std::string& aTransportId,
   mRtcpStateChange.Notify(aTransportId, aState);
 }
 
+static uint16_t ToDtlsWireVersion(uint16_t aProtocolVersion) {
+  switch (aProtocolVersion) {
+    case SSL_LIBRARY_VERSION_DTLS_1_0:
+      return SSL_LIBRARY_VERSION_DTLS_1_0_WIRE;
+    case SSL_LIBRARY_VERSION_DTLS_1_2:
+      return SSL_LIBRARY_VERSION_DTLS_1_2_WIRE;
+    case SSL_LIBRARY_VERSION_DTLS_1_3:
+      return SSL_LIBRARY_VERSION_DTLS_1_3_WIRE;
+    default:
+      return 0;
+  }
+}
+
 RefPtr<dom::RTCStatsPromise> MediaTransportHandlerSTS::GetIceStats(
     const std::string& aTransportId, DOMHighResTimeStamp aNow) {
   MOZ_RELEASE_ASSERT(mInitPromise);
 
   return mInitPromise->Then(
       mStsThread, __func__, [=, this, self = RefPtr(this)]() {
-        UniquePtr<dom::RTCStatsCollection> stats(new dom::RTCStatsCollection);
+        auto stats = MakeUnique<dom::RTCStatsCollection>();
         if (mIceCtx) {
           dom::RTCIceRole iceRole =
               mIceCtx->GetControlling() == NrIceCtx::ICE_CONTROLLING
@@ -1119,6 +1134,21 @@ RefPtr<dom::RTCStatsPromise> MediaTransportHandlerSTS::GetIceStats(
                     if (name) {
                       transport.mSrtpCipher.Construct(
                           NS_ConvertASCIItoUTF16(name));
+                    }
+                  }
+                  SSLChannelInfo channelInfo;
+                  if (NS_SUCCEEDED(dtlsLayer->GetChannelInfo(&channelInfo))) {
+                    if (uint16_t v =
+                            ToDtlsWireVersion(channelInfo.protocolVersion)) {
+                      transport.mTlsVersion.Construct(
+                          nsFmtString(u"{:04X}", v));
+                    }
+                    SSLCipherSuiteInfo info;
+                    if (SSL_GetCipherSuiteInfo(channelInfo.cipherSuite, &info,
+                                               sizeof(info)) == SECSuccess &&
+                        info.cipherSuiteName) {
+                      transport.mDtlsCipher.Construct(
+                          NS_ConvertASCIItoUTF16(info.cipherSuiteName));
                     }
                   }
                 }
@@ -1384,7 +1414,7 @@ RefPtr<TransportFlow> MediaTransportHandlerSTS::CreateTransportFlow(
     const RefPtr<DtlsIdentity>& aDtlsIdentity, bool aDtlsClient,
     const DtlsDigestList& aDigests, bool aPrivacyRequested) {
   nsresult rv;
-  RefPtr<TransportFlow> flow = new TransportFlow(aTransportId);
+  RefPtr flow = MakeRefPtr<TransportFlow>(aTransportId);
 
   // The media streams are made on STS so we need to defer setup.
   auto ice = MakeUnique<TransportLayerIce>();

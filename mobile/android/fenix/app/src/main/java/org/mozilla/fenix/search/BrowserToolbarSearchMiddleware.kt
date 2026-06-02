@@ -314,6 +314,10 @@ class BrowserToolbarSearchMiddleware(
                 Toolbar.ButtonTappedExtra(source = SOURCE_ADDRESS_BAR, item = ACTION_LENS_CLICKED),
             )
             observeLensInput()
+            // The Lens camera screen lets the user toggle to QR scanning; observe both
+            // result streams so a QR string returned from the Lens flow still lands in
+            // the URL bar.
+            observeQrScannerInput(store)
             appStore.dispatch(LensRequested)
         }
 
@@ -589,7 +593,7 @@ class BrowserToolbarSearchMiddleware(
     }
 
     private fun observeQrScannerInput(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
-        observeQRScannerInputJob = null
+        observeQRScannerInputJob?.cancel()
         observeQRScannerInputJob = appStore.observeWhileActive {
             distinctUntilChangedBy { it.qrScannerState.lastScanData }
                 .collect {
@@ -616,7 +620,7 @@ class BrowserToolbarSearchMiddleware(
     }
 
     private fun observeLensInput() {
-        observeLensInputJob = null
+        observeLensInputJob?.cancel()
         observeLensInputJob = appStore.observeWhileActive {
             distinctUntilChangedBy { it.lensState.resultUrl }
                 .collect {

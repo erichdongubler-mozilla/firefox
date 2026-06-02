@@ -2606,6 +2606,12 @@
   value: false
   mirror: always
 
+# Audio Session API: enables the state changes for Audio Session.
+- name: dom.audio_session.state_enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 # Checks if offscreen animation throttling is enabled.
 - name: dom.animations.offscreen-throttling
   type: bool
@@ -14130,13 +14136,6 @@
 # Changes cookieBehavior=5 to block third-party cookies in the private browsing
 # mode.
 - name: network.cookie.cookieBehavior.optInPartitioning.pbmode
-  type: bool
-  value: false
-  mirror: always
-
-# Whether to block third-party tracker cookie and storage access when
-# cookieBehavior=5.
-- name: network.cookie.cookieBehavior.trackerCookieBlocking
   type: bool
   value: false
   mirror: always

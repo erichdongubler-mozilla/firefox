@@ -116,8 +116,8 @@ int32_t WebrtcMediaDataDecoder::Decode(const webrtc::EncodedImage& aInputImage,
   auto disabledHardwareAcceleration =
       MakeScopeExit([&] { mDisabledHardwareAcceleration = true; });
 
-  RefPtr<MediaRawData> compressedFrame =
-      new MediaRawData(aInputImage.data(), aInputImage.size());
+  RefPtr compressedFrame =
+      MakeRefPtr<MediaRawData>(aInputImage.data(), aInputImage.size());
   if (!compressedFrame->Data()) {
     return WEBRTC_VIDEO_CODEC_MEMORY;
   }

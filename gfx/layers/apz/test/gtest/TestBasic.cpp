@@ -87,8 +87,8 @@ TEST_F(APZCBasicTester, ComplexTransform) {
   // CSS pixels). The displayport is 1 extra CSS pixel on all
   // sides.
 
-  RefPtr<TestAsyncPanZoomController> childApzc =
-      new TestAsyncPanZoomController(LayersId{0}, mcc, tm);
+  RefPtr childApzc =
+      mozilla::MakeRefPtr<TestAsyncPanZoomController>(LayersId{0}, mcc, tm);
 
   const char* treeShape = "x(x)";
   // LayerID                     0 1

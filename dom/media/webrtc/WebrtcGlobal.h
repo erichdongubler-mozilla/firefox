@@ -229,7 +229,7 @@ DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::RTCCodecStats, mTimestamp,
 DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS_AND_FIELDS(
     mozilla::dom::RTCTransportStats, mozilla::dom::RTCStats, mIceRole,
     mIceLocalUsernameFragment, mDtlsState, mIceState, mSelectedCandidatePairId,
-    mDtlsRole, mSrtpCipher)
+    mTlsVersion, mDtlsCipher, mDtlsRole, mSrtpCipher)
 
 template <>
 struct ParamTraits<mozilla::dom::RTCIceRole>

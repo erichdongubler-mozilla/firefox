@@ -409,8 +409,7 @@ static already_AddRefed<VideoData> CreateVideoDataFromWebrtcVideoFrame(
   yCbCrData.mPictureRect = gfx::IntRect(0, 0, i420->width(), i420->height());
   yCbCrData.mChromaSubsampling = gfx::ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
 
-  RefPtr<PlanarYCbCrImage> image =
-      new RecyclingPlanarYCbCrImage(new BufferRecycleBin());
+  RefPtr image = MakeRefPtr<RecyclingPlanarYCbCrImage>(new BufferRecycleBin());
   image->CopyData(yCbCrData);
 
   // Use the input frame's microsecond timestamp ("webrtc time") as the

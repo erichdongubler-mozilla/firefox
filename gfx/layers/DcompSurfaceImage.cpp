@@ -56,7 +56,7 @@ already_AddRefed<TextureHost> CreateTextureHostDcompSurface(
           aDesc.get_SurfaceDescriptorDcompSurface())) {
     return nullptr;
   }
-  RefPtr<TextureHost> result = new DcompSurfaceHandleHost(
+  RefPtr result = MakeRefPtr<DcompSurfaceHandleHost>(
       aFlags, aDesc.get_SurfaceDescriptorDcompSurface());
   return result.forget();
 }
@@ -125,8 +125,8 @@ void DcompSurfaceHandleHost::CreateRenderTexture(
   MOZ_ASSERT(mExternalImageId.isSome());
   LOG("DcompSurfaceHandleHost %p CreateRenderTexture, ext-id=%" PRIu64, this,
       wr::AsUint64(aExternalImageId));
-  RefPtr<wr::RenderTextureHost> texture =
-      new wr::RenderDcompSurfaceTextureHost(mHandle.get(), mSize, mFormat);
+  RefPtr texture = MakeRefPtr<wr::RenderDcompSurfaceTextureHost>(
+      mHandle.get(), mSize, mFormat);
   wr::RenderThread::Get()->RegisterExternalImage(aExternalImageId,
                                                  texture.forget());
 }

@@ -239,18 +239,29 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
     return map;
   }, [teams]);
 
-  // Pre-sort each match bucket so followed teams' matches bubble to the front
-  // for the highlight view and the list view.
+  // Bubble followed teams to the front for the highlight view and list view
+  // when the followed-only toggle is on; with it off, matches stay chronological.
+  const resultsFollowedOnly = sportsWidgetData.followedOnly?.results ?? true;
+  const upcomingFollowedOnly = sportsWidgetData.followedOnly?.upcoming ?? true;
   const { sortedPrevious, sortedCurrent, sortedNext } = useMemo(() => {
+    const previous = rawMatches?.previous ?? [];
+    const next = rawMatches?.next ?? [];
     return {
-      sortedPrevious: sortFollowedFirst(
-        rawMatches?.previous ?? [],
-        selectedTeamsSet
-      ),
+      sortedPrevious: resultsFollowedOnly
+        ? sortFollowedFirst(previous, selectedTeamsSet)
+        : previous,
       sortedCurrent: sortFollowedFirst(rawLive ?? [], selectedTeamsSet),
-      sortedNext: sortFollowedFirst(rawMatches?.next ?? [], selectedTeamsSet),
+      sortedNext: upcomingFollowedOnly
+        ? sortFollowedFirst(next, selectedTeamsSet)
+        : next,
     };
-  }, [rawMatches, rawLive, selectedTeamsSet]);
+  }, [
+    rawMatches,
+    rawLive,
+    selectedTeamsSet,
+    resultsFollowedOnly,
+    upcomingFollowedOnly,
+  ]);
 
   // List-view toggle states for the Results and Upcoming tabs are lifted up
   // here so we can tell whether a highlight match is currently visible (for
@@ -287,7 +298,9 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
     selectedTeamsSet,
     teamColorsByKey
   );
+  const fetchError = sportsWidgetData?.data?.fetchError ?? null;
   const impressionFired = useRef(false);
+  const errorFired = useRef(false);
   const introVideoRef = useRef(null);
   const playIntroVideo = useMemo(() => {
     const prefersReducedMotion =
@@ -368,6 +381,27 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [liveEnabled, dispatch, liveEl]);
+
+  const handleErrorIntersection = useCallback(() => {
+    if (!fetchError || errorFired.current) {
+      return;
+    }
+    errorFired.current = true;
+    // Fire from the content side so telemetry can tie the event to a tab
+    // session. Events dispatched from the main process lack that link and get dropped.
+    dispatch(
+      ac.AlsoToMain({
+        type: at.WIDGETS_ERROR,
+        data: {
+          widget_name: "sports",
+          widget_size: widgetSize,
+          error_type: fetchError.error_type,
+        },
+      })
+    );
+  }, [dispatch, fetchError, widgetSize]);
+
+  const errorRef = useIntersectionObserver(handleErrorIntersection);
 
   const handleInteraction = useCallback(
     () => handleUserInteraction("sportsWidget"),
@@ -680,6 +714,10 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
       ref={el => {
         widgetRef.current = [el];
         setLiveEl(el);
+        // Only attach the error observer when there's something to report —
+        // otherwise the first intersect with no fetchError adds the target to
+        // the hook's internal WeakSet and a fetchError arriving later never fires.
+        errorRef.current = fetchError ? [el] : [];
       }}
       onMouseEnter={playIntroVideo}
       onFocus={e => {

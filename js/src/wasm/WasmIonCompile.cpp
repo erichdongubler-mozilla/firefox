@@ -5594,37 +5594,6 @@ class FunctionCompiler {
 
   /*********************************************** WasmGC: other helpers ***/
 
-  // Generate MIR that causes a trap of kind `trapKind` if `arg` is zero.
-  // Currently `arg` may only be a MIRType::Int32, but that requirement could
-  // be relaxed if needed in future.
-  [[nodiscard]] bool trapIfZero(wasm::Trap trapKind, MDefinition* arg) {
-    MOZ_ASSERT(arg->type() == MIRType::Int32);
-
-    MBasicBlock* trapBlock = nullptr;
-    if (!newBlock(curBlock_, &trapBlock)) {
-      return false;
-    }
-
-    auto* trap = MWasmTrap::New(alloc(), trapKind, trapSiteDesc());
-    if (!trap) {
-      return false;
-    }
-    trapBlock->end(trap);
-
-    MBasicBlock* joinBlock = nullptr;
-    if (!newBlock(curBlock_, &joinBlock)) {
-      return false;
-    }
-
-    auto* test = MTest::New(alloc(), arg, joinBlock, trapBlock);
-    if (!test) {
-      return false;
-    }
-    curBlock_->end(test);
-    curBlock_ = joinBlock;
-    return true;
-  }
-
   // Generate MIR that attempts to cast `ref` to `castToTypeDef`.  If the
   // cast fails, we trap.  If it succeeds, then `ref` can be assumed to
   // have a type that is a subtype of (or the same as) `castToTypeDef` after

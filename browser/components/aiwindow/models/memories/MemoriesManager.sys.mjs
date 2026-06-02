@@ -16,6 +16,11 @@ import {
   openAIEngine,
   renderPrompt,
 } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
+import {
+  loadCallContext,
+  loadPrompt,
+} from "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs";
+
 import { MemoryStore } from "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs";
 import {
   CATEGORIES,
@@ -83,10 +88,17 @@ export class MemoriesManager {
    * @returns {Promise<openAIEngine>}  openAIEngine instance
    */
   static async ensureOpenAIEngineForGeneration() {
-    const buildFresh = () => {
-      this.#openAIEngineGenerationPromise = openAIEngine.build(
+    const buildFresh = async () => {
+      const callContext = await loadCallContext(
         MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM
       );
+      this.#openAIEngineGenerationPromise = openAIEngine.build({
+        model: callContext.model,
+        serviceType: callContext.serviceType,
+        purpose: callContext.purpose,
+        flowId: null,
+        feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+      });
       return this.#openAIEngineGenerationPromise;
     };
 
@@ -117,10 +129,17 @@ export class MemoriesManager {
    * @returns {Promise<openAIEngine>}  openAIEngine instance
    */
   static async ensureOpenAIEngineForUsage() {
-    const buildFresh = () => {
-      this.#openAIEngineUsagePromise = openAIEngine.build(
+    const buildFresh = async () => {
+      const callContext = await loadCallContext(
         MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM
       );
+      this.#openAIEngineUsagePromise = openAIEngine.build({
+        model: callContext.model,
+        serviceType: callContext.serviceType,
+        purpose: callContext.purpose,
+        flowId: null,
+        feature: MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM,
+      });
       return this.#openAIEngineUsagePromise;
     };
 
@@ -531,10 +550,10 @@ export class MemoriesManager {
    */
   static async memoryClassifyMessage(message) {
     const engine = await this.ensureOpenAIEngineForUsage();
-    const systemPrompt = await engine.loadPrompt(
+    const systemPrompt = await loadPrompt(
       MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM
     );
-    const userPromptTemplate = await engine.loadPrompt(
+    const userPromptTemplate = await loadPrompt(
       MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_USER
     );
     const userPrompt = await renderPrompt(userPromptTemplate, {

@@ -7,7 +7,7 @@ use std::time::Duration;
 use tempfile::tempdir;
 
 fn mint_local(ks: &Keystore) -> String {
-    ks.create_kek(KekType::LocalKey, b"", Duration::ZERO)
+    ks.create_kek(KekType::LocalKey, "", b"", Duration::ZERO)
         .expect("create local kek")
 }
 
@@ -1100,5 +1100,42 @@ fn test_switch_kek_preserves_ciphertext() {
         .expect("decrypt after switch");
     assert_eq!(pt, b"pre-switch");
 
+    keystore.close();
+}
+
+#[test]
+fn test_create_kek_identifier_deterministic_and_idempotent() {
+    let keystore = Keystore::new_in_memory().expect("keystore");
+    // A non-empty identifier yields a deterministic, well-known kek_ref.
+    let kek = keystore
+        .create_kek(KekType::LocalKey, "sqlite", b"", Duration::ZERO)
+        .expect("create with identifier");
+    assert_eq!(kek, "lockstore::kek::local:sqlite");
+
+    // Wrap a DEK and produce a ciphertext under it.
+    keystore.create_dek("c", &kek, false).expect("create dek");
+    let ct = keystore.encrypt("c", &kek, b"hello").expect("encrypt");
+
+    // A second create with the same identifier is get-or-create: same ref,
+    // and it must NOT regenerate the KEK bytes, so the earlier ciphertext
+    // still decrypts.
+    let kek2 = keystore
+        .create_kek(KekType::LocalKey, "sqlite", b"", Duration::ZERO)
+        .expect("idempotent create");
+    assert_eq!(kek, kek2);
+    let pt = keystore.decrypt("c", &kek, &ct).expect("decrypt");
+    assert_eq!(pt, b"hello".to_vec());
+
+    keystore.close();
+}
+
+#[test]
+fn test_create_kek_rejects_non_base64url_identifier() {
+    let keystore = Keystore::new_in_memory().expect("keystore");
+    let result = keystore.create_kek(KekType::LocalKey, "bad:id", b"", Duration::ZERO);
+    assert!(matches!(
+        result,
+        Err(LockstoreError::InvalidConfiguration(_))
+    ));
     keystore.close();
 }

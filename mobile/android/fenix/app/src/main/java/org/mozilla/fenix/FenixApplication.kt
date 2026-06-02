@@ -45,6 +45,7 @@ import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.selectedOrDefaultPrivateSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.storage.sync.GlobalPlacesDependencyProvider
+import mozilla.components.concept.ai.controls.isEnabled
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.concept.engine.webextension.WebExtension
 import mozilla.components.concept.engine.webextension.isUnsupported
@@ -91,7 +92,6 @@ import org.mozilla.fenix.GleanMetrics.CreditCards
 import org.mozilla.fenix.GleanMetrics.CustomizeHome
 import org.mozilla.fenix.GleanMetrics.Events.marketingNotificationAllowed
 import org.mozilla.fenix.GleanMetrics.GenaiAiControls
-import org.mozilla.fenix.GleanMetrics.Integrity
 import org.mozilla.fenix.GleanMetrics.Logins
 import org.mozilla.fenix.GleanMetrics.Metrics
 import org.mozilla.fenix.GleanMetrics.PerfStartup
@@ -577,14 +577,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         }
         runOnVisualCompleteness(queue) {
             GlobalScope.launch(IO) {
-                val start = System.currentTimeMillis()
-                val result = components.integrityClient.warmUp()
-                Integrity.warmedUp.record(
-                    Integrity.WarmedUpExtra(
-                        durationMs = (System.currentTimeMillis() - start).toInt(),
-                        success = result,
-                        ),
-                    )
+                components.integrityClient.warmUp()
             }
         }
     }
@@ -993,7 +986,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         }
 
         val summarizeSettings = SummarizationSettings.dataStore(applicationContext)
-        UserAiSummarize.summarizationEnabled.set(summarizeSettings.getFeatureEnabledUserStatus().first())
+        UserAiSummarize.summarizationEnabled.set(summarizeSettings.getFeatureEnabledUserStatus().first() == true)
         UserAiSummarize.gestureEnabled.set(summarizeSettings.getGestureEnabledUserStatus().first())
         UserAiSummarize.summarizationConsented.set(summarizeSettings.getHasConsentedToShake().first())
 

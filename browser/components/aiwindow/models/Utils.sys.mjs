@@ -24,9 +24,8 @@ const lazy = XPCOMUtils.declareLazy({
 });
 
 const APIKEY_PREF = "browser.smartwindow.apiKey";
-const MODEL_PREF = "browser.smartwindow.model";
+export const MODEL_PREF = "browser.smartwindow.model";
 const ENDPOINT_PREF = "browser.smartwindow.endpoint";
-const MODEL_CHOICE_PREF = "browser.smartwindow.firstrun.modelChoice";
 const GENERIC_MODEL_NAME = "generic";
 
 /**
@@ -108,30 +107,13 @@ export const PURPOSES = Object.freeze({
 });
 
 /**
- * Default purposes for different AI Window features, used to track usage and performance in telemetry
- * (purposes are now defined in remote-settings)
- */
-export const DEFAULT_PURPOSE = "default";
-export const FEATURE_PURPOSES = Object.freeze({
-  DEFAULT_PURPOSE: PURPOSES.CHAT,
-  [MODEL_FEATURES.CHAT]: PURPOSES.CHAT,
-  [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER]:
-    PURPOSES.CONVERSATION_STARTERS_SIDEBAR,
-  [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_FOLLOWUP]:
-    PURPOSES.CONVERSATION_STARTERS_SIDEBAR,
-  [MODEL_FEATURES.TITLE_GENERATION]: PURPOSES.TITLE_GENERATION,
-  [MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM]:
-    PURPOSES.MEMORY_GENERATION,
-  [MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM]:
-    PURPOSES.MEMORY_GENERATION,
-});
-
-/**
  * Major version compatibility requirements for each feature.
  * When incrementing a feature's major version:
  * - Update this constant
  * - Ensure Remote Settings has configs for the new major version
  * - Old clients will continue using old major version
+ *
+ * Keep ui/test/browser/head.js MOCK_RS_RECORDS aligned with this table.
  */
 export const FEATURE_MAJOR_VERSIONS = Object.freeze({
   [MODEL_FEATURES.CHAT]: 5,
@@ -140,6 +122,7 @@ export const FEATURE_MAJOR_VERSIONS = Object.freeze({
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER]: 2,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_FOLLOWUP]: 1,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_ASSISTANT_LIMITATIONS]: 1,
+  [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_MEMORIES]: 1,
   // memories generation feature versions
   [MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM]: 2,
   [MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_USER]: 2,
@@ -153,6 +136,12 @@ export const FEATURE_MAJOR_VERSIONS = Object.freeze({
   [MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM]: 1,
   [MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_USER]: 1,
   [MODEL_FEATURES.MEMORIES_RELEVANT_CONTEXT]: 2,
+  // real-time-context fragments and table-instructions fragments
+  [MODEL_FEATURES.REAL_TIME_CONTEXT_DATE]: 1,
+  [MODEL_FEATURES.REAL_TIME_CONTEXT_TAB]: 1,
+  [MODEL_FEATURES.REAL_TIME_CONTEXT_MENTIONS]: 1,
+  [MODEL_FEATURES.ENABLE_TABLE_INSTRUCTIONS]: 1,
+  [MODEL_FEATURES.DISABLE_TABLE_INSTRUCTIONS]: 1,
 });
 
 /**
@@ -221,7 +210,7 @@ export function checkMajorVersion(recordVersion, comparisonVersion) {
  * @param {string} options.feature
  * @returns {object|null} Selected config or null if no match
  */
-function selectMainConfig(
+export function selectMainConfig(
   featureConfigs,
   { majorVersion, userModel, modelChoiceId, feature }
 ) {
@@ -321,21 +310,16 @@ export class openAIEngine {
   static _remoteClient = null;
 
   /**
-   * Configuration map: { featureName: configObject }
-   *
-   * @type {object | null}
-   */
-  #configs = null;
-
-  /**
-   * Main feature name
+   * Main feature name. Retained on the instance so _recreateEngine() can
+   * rebuild after 401 retry without the caller re-supplying it.
    *
    * @type {string | null}
    */
   feature = null;
 
   /**
-   * Resolved model name for LLM inference
+   * Resolved model name for LLM inference. Retained on the instance for
+   * _recreateEngine() (same reason as `feature`).
    *
    * @type {string | null}
    */
@@ -363,13 +347,6 @@ export class openAIEngine {
   #purpose = null;
 
   /**
-   * Feature name passed to PipelineOptions as featureId for telemetry.
-   *
-   * @type {string | null}
-   */
-  #feature = null;
-
-  /**
    * Flow ID for correlating frontend and backend telemetry.
    *
    * @type {string | null}
@@ -395,167 +372,6 @@ export class openAIEngine {
   }
 
   /**
-   * Overrides the model when using a custom endpoint.
-   * Only called after Remote Settings config has been loaded.
-   *
-   * @private
-   */
-  _applyCustomEndpointModel() {
-    const userModel = Services.prefs.getStringPref(MODEL_PREF, "");
-    if (userModel) {
-      console.warn(
-        `Using custom model "${userModel}" for feature: ${this.feature}`
-      );
-      this.model = userModel;
-    }
-  }
-
-  /**
-   * Applies configuration from Remote Settings with version-aware selection.
-   *
-   * @param {string} feature - The feature identifier
-   * @param {Array} allRecords - All Remote Settings records
-   * @param {Array} featureConfigs - Remote Settings configs for this feature
-   * @param {number} majorVersion - Required major version
-   * @param {string} [modelChoiceIdOverride] - Optional model choice ID to override the global preference
-   * @private
-   */
-  _applyRemoteSettingsConfig(
-    feature,
-    allRecords,
-    featureConfigs,
-    majorVersion,
-    modelChoiceIdOverride = null
-  ) {
-    if (!featureConfigs.length) {
-      const msg = `No Remote Settings records found for feature: ${feature}`;
-      console.error(msg);
-      const err = new Error(msg);
-      err.clientReason = "remoteSettingsUnavailable";
-      throw err;
-    }
-
-    const userModel = Services.prefs.getStringPref(MODEL_PREF, "");
-    const hasCustomModel = Services.prefs.prefHasUserValue(MODEL_PREF);
-    const modelChoiceId =
-      modelChoiceIdOverride ??
-      Services.prefs.getStringPref(MODEL_CHOICE_PREF, "");
-
-    const mainConfig = selectMainConfig(featureConfigs, {
-      majorVersion,
-      userModel: hasCustomModel ? userModel : "",
-      modelChoiceId,
-      feature,
-    });
-
-    if (!mainConfig) {
-      const msg = `No matching model config found for feature: ${feature} with major version ${majorVersion};`;
-      console.error(msg);
-      const err = new Error(msg);
-      err.clientReason = "modelConfigUnavailable";
-      throw err;
-    }
-
-    this.feature = feature;
-    this.model = mainConfig.model;
-
-    // Parse JSON string fields if needed
-    if (typeof mainConfig.additional_components === "string") {
-      try {
-        mainConfig.additional_components = JSON.parse(
-          mainConfig.additional_components
-        );
-      } catch (e) {
-        // Fallback: parse malformed array string like "[item1, item2, item3]"
-        const match = /^\[([^\]]*)\]$/.exec(
-          mainConfig.additional_components.trim()
-        );
-        if (match) {
-          mainConfig.additional_components = match[1]
-            .split(",")
-            .map(s => s.trim())
-            .filter(s => !!s.length);
-        } else {
-          console.warn(
-            `Failed to parse additional_components for ${feature}, setting to empty array`
-          );
-          mainConfig.additional_components = [];
-        }
-      }
-    }
-    if (typeof mainConfig.parameters === "string") {
-      try {
-        mainConfig.parameters = JSON.parse(mainConfig.parameters);
-      } catch (e) {
-        console.warn(`Failed to parse parameters for ${feature}:`, e);
-        mainConfig.parameters = {};
-      }
-    }
-
-    // Build configsMap for looking up additional_components
-    const configsMap = new Map(allRecords.map(r => [r.feature, r]));
-
-    // Build configs map: { featureName: configObject }
-    this.#configs = {};
-    this.#configs[feature] = mainConfig;
-
-    // Add additional_components if exists
-    // This field lists what other remote settings configs are needed
-    // as dependency to the current feature.
-    if (mainConfig.additional_components) {
-      for (const componentFeature of mainConfig.additional_components) {
-        const componentConfig = configsMap.get(componentFeature);
-        if (componentConfig) {
-          this.#configs[componentFeature] = componentConfig;
-        } else {
-          console.warn(
-            `Additional component "${componentFeature}" not found in Remote Settings`
-          );
-        }
-      }
-    }
-  }
-
-  /**
-   * Loads configuration from Remote Settings with version-aware selection.
-   *
-   * Selection logic:
-   * 1. Filter configs by feature and major version compatibility
-   * 2. If user has model preference, find latest minor for that model
-   * 3. Otherwise, find latest minor among default configs
-   * 4. Fall back to latest minor overall if no defaults
-   * 5. Fall back to local defaults if no matching major version
-   * 6. If custom endpoint is set, override model with pref value
-   *
-   * @param {string} feature - The feature identifier from MODEL_FEATURES
-   * @param {number} majorVersionOverride - Used to override hardcoded major version
-   * @param {string} [modelChoiceId] - Optional model choice ID to override the global preference
-   * @returns {Promise<void>}
-   *   Sets this.feature to the feature name
-   *   Sets this.model to the selected model ID
-   *   Sets this.#configs to contain feature's and additional_components' configs
-   */
-  async loadConfig(feature, majorVersionOverride = null, modelChoiceId = null) {
-    const client = openAIEngine.getRemoteClient();
-    const allRecords = await client.get();
-
-    const featureConfigs = allRecords.filter(
-      record => record.feature === feature
-    );
-
-    const majorVersion =
-      majorVersionOverride ?? FEATURE_MAJOR_VERSIONS[feature];
-
-    this._applyRemoteSettingsConfig(
-      feature,
-      allRecords,
-      featureConfigs,
-      majorVersion,
-      modelChoiceId
-    );
-  }
-
-  /**
    * Checks whether a custom endpoint is configured via pref.
    *
    * @returns {boolean} True if the endpoint pref has a user-set value.
@@ -565,97 +381,33 @@ export class openAIEngine {
   }
 
   /**
-   * Gets the configuration for a specific feature.
+   * Builds an openAIEngine instance.
    *
-   * @param {string} [feature] - The feature identifier. Defaults to the main feature.
-   * @returns {object|null} The feature's configuration object
+   * @param {object} options
+   * @param {string} options.model
+   * @param {string} options.serviceType
+   * @param {string} options.purpose
+   * @param {string|null} [options.flowId]
+   * @param {string} options.feature
+   * @returns {Promise<openAIEngine>}
    */
-  getConfig(feature) {
-    const targetFeature = feature || this.feature;
-    // load custom prompt pref if exists
-    // custom prompts should be entered as { feature_name: prompt }
-    const prefPromptRaw = Services.prefs.getStringPref(
-      "browser.smartwindow.customPrompts",
-      ""
-    );
-    let prefPrompt = null;
-    if (prefPromptRaw) {
-      try {
-        prefPrompt = JSON.parse(prefPromptRaw);
-      } catch (e) {
-        console.warn(
-          "browser.smartwindow.customPrompts contains invalid JSON. Expecting: { feature: prompt }",
-          e
-        );
-      }
-    }
-    const prefPromptMapping = prefPrompt?.[targetFeature]
-      ? { prompts: prefPrompt[targetFeature] }
-      : null;
-
-    return {
-      ...this.#configs?.[targetFeature],
-      ...prefPromptMapping,
-    };
-  }
-
-  /**
-   * Loads a prompt for the specified feature.
-   * Tries Remote Settings first, then falls back to local prompts.
-   *
-   * @param {string} feature - The feature identifier
-   * @returns {Promise<string>} The prompt content
-   */
-  async loadPrompt(feature) {
-    const config = this.getConfig(feature);
-    if (config?.prompts) {
-      return config.prompts;
-    }
-
-    console.error(`Failed to load prompt for ${feature}`);
-    const err = new Error(`Failed to load prompt for ${feature}`);
-    err.clientReason = "promptLoadFailure";
-    throw err;
-  }
-
-  /**
-   * Builds an openAIEngine instance with configuration loaded from Remote Settings.
-   *
-   * @param {string} feature
-   *   The feature name to use to retrieve remote settings for prompts.
-   * @param {string | null} [flowId]
-   *   Flow ID for correlating frontend and backend telemetry.
-   * @param {string} [modelChoiceId]
-   *   Model choice ID to override the global preference.
-   * @returns {Promise<object>}
-   *   Promise that will resolve to the configured engine instance.
-   */
-  static async build(feature, flowId = null, modelChoiceId = null) {
+  static async build({ model, serviceType, purpose, flowId, feature }) {
     const engine = new openAIEngine();
-
-    await engine.loadConfig(feature, null, modelChoiceId);
-
-    const config = engine.getConfig(feature);
-    const engineId = `${DEFAULT_ENGINE_ID}-${feature}-${engine.model}`;
+    const engineId = `${DEFAULT_ENGINE_ID}-${feature}-${model}`;
     engine.#engineId = engineId;
-    engine.#serviceType =
-      config?.service_type ?? getDefaultServiceType(feature);
-    engine.#purpose =
-      config?.purpose ??
-      FEATURE_PURPOSES[feature] ??
-      FEATURE_PURPOSES[DEFAULT_PURPOSE];
-    engine.#feature = feature;
+    engine.feature = feature;
+    engine.model = model;
+    engine.#serviceType = serviceType;
+    engine.#purpose = purpose;
     engine.#flowId = flowId;
-
     engine.engineInstance = await openAIEngine.#createOpenAIEngine(
       engineId,
-      engine.#serviceType,
-      engine.#purpose,
-      engine.model,
+      serviceType,
+      purpose,
+      model,
       flowId,
       feature
     );
-
     return engine;
   }
 
@@ -825,7 +577,7 @@ export class openAIEngine {
       this.#purpose,
       this.model,
       this.#flowId,
-      this.#feature
+      this.feature
     );
   }
 
@@ -996,11 +748,4 @@ export function renderPrompt(rawPromptContent, stringsToReplace = {}) {
   }
 
   return finalPromptContent;
-}
-
-function getDefaultServiceType(feature) {
-  if (feature.startsWith("memories")) {
-    return SERVICE_TYPES.MEMORIES;
-  }
-  return SERVICE_TYPES.AI;
 }

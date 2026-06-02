@@ -651,18 +651,18 @@ export class TemporaryMerinoClientShim {
    *   The source that is requesting this fetch.
    * @param {string} options.endpointUrl
    *   The teams endpoint URL.
-   * @returns {Promise<Array|null>}
-   *   Array of team objects, or null if the endpoint is not configured or an
-   *   error occurs.
+   * @returns {Promise<{data: object|null, error: null | "invalid_url" | "load_error"}>}
+   *   `error: null` with `data: null` means the endpoint is not configured
+   *   (deliberate skip).
    */
   async fetchSportsTeams({ source, endpointUrl }) {
     if (!endpointUrl) {
-      return null;
+      return { data: null, error: null };
     }
     let url = URL.parse(endpointUrl);
     if (!url) {
       this.#lazy.logger.error("Invalid sports teams endpoint URL", endpointUrl);
-      return null;
+      return { data: null, error: "invalid_url" };
     }
     if (source) {
       url.searchParams.set("source", source);
@@ -673,15 +673,14 @@ export class TemporaryMerinoClientShim {
         this.#lazy.logger.error(
           `Sports teams fetch failed with status ${response.status}`
         );
-        return null;
+        return { data: null, error: "load_error" };
       }
-      // The `data` variable has the teams response we'll be reading
       const data = /** @type {any} */ (await response.json());
       this.#lazy.logger.debug("fetchSportsTeams response", data);
-      return data;
+      return { data, error: null };
     } catch (e) {
       this.#lazy.logger.error("Sports teams fetch error", e);
-      return null;
+      return { data: null, error: "load_error" };
     }
   }
 
@@ -694,13 +693,13 @@ export class TemporaryMerinoClientShim {
    *   The source that is requesting this fetch.
    * @param {string} options.endpointUrl
    *   The matches endpoint URL.
-   * @returns {Promise<Array|null>}
-   *   Array of match objects, or null if the endpoint is not configured or an
-   *   error occurs.
+   * @returns {Promise<{data: object|null, error: null | "invalid_url" | "load_error"}>}
+   *   `error: null` with `data: null` means the endpoint is not configured
+   *   (deliberate skip).
    */
   async fetchSportsMatches({ source, endpointUrl }) {
     if (!endpointUrl) {
-      return null;
+      return { data: null, error: null };
     }
     let url = URL.parse(endpointUrl);
     if (!url) {
@@ -708,7 +707,7 @@ export class TemporaryMerinoClientShim {
         "Invalid sports matches endpoint URL",
         endpointUrl
       );
-      return null;
+      return { data: null, error: "invalid_url" };
     }
     if (source) {
       url.searchParams.set("source", source);
@@ -719,15 +718,14 @@ export class TemporaryMerinoClientShim {
         this.#lazy.logger.error(
           `Sports matches fetch failed with status ${response.status}`
         );
-        return null;
+        return { data: null, error: "load_error" };
       }
-      // The `data` variable has the matches response we'll be reading
       const data = /** @type {any} */ (await response.json());
       this.#lazy.logger.debug("fetchSportsMatches response", data);
-      return data;
+      return { data, error: null };
     } catch (e) {
       this.#lazy.logger.error("Sports matches fetch error", e);
-      return null;
+      return { data: null, error: "load_error" };
     }
   }
 
@@ -740,18 +738,18 @@ export class TemporaryMerinoClientShim {
    *   The source that is requesting this fetch.
    * @param {string} options.endpointUrl
    *   The live matches endpoint URL.
-   * @returns {Promise<object|null>}
-   *   The parsed response (`{ matches: [...] }`), or null if the endpoint is
-   *   not configured or an error occurs.
+   * @returns {Promise<{data: object|null, error: null | "invalid_url" | "load_error"}>}
+   *   On success, `data` is `{ matches: [...] }`. `error: null` with
+   *   `data: null` means the endpoint is not configured (deliberate skip).
    */
   async fetchSportsLive({ source, endpointUrl }) {
     if (!endpointUrl) {
-      return null;
+      return { data: null, error: null };
     }
     let url = URL.parse(endpointUrl);
     if (!url) {
       this.#lazy.logger.error("Invalid sports live endpoint URL", endpointUrl);
-      return null;
+      return { data: null, error: "invalid_url" };
     }
     if (source) {
       url.searchParams.set("source", source);
@@ -762,15 +760,14 @@ export class TemporaryMerinoClientShim {
         this.#lazy.logger.error(
           `Sports live fetch failed with status ${response.status}`
         );
-        return null;
+        return { data: null, error: "load_error" };
       }
-      // The `data` variable has the live matches response we'll be reading
       const data = /** @type {any} */ (await response.json());
       this.#lazy.logger.debug("fetchSportsLive response", data);
-      return data;
+      return { data, error: null };
     } catch (e) {
       this.#lazy.logger.error("Sports live fetch error", e);
-      return null;
+      return { data: null, error: "load_error" };
     }
   }
 

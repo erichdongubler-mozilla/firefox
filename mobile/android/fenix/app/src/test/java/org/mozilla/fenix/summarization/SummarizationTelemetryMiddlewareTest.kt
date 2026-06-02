@@ -6,7 +6,6 @@ package org.mozilla.fenix.summarization
 
 import io.mockk.every
 import io.mockk.mockk
-import mozilla.components.concept.llm.ErrorCode
 import mozilla.components.concept.llm.Llm
 import mozilla.components.concept.llm.LlmProvider
 import mozilla.components.feature.summarize.ContentExtracted
@@ -20,6 +19,7 @@ import mozilla.components.feature.summarize.ViewAppeared
 import mozilla.components.feature.summarize.ViewDismissed
 import mozilla.components.feature.summarize.content.Content
 import mozilla.components.feature.summarize.content.PageMetadata
+import mozilla.components.lib.llm.mlpa.service.RateLimited
 import mozilla.components.lib.state.Store
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
@@ -138,20 +138,43 @@ class SummarizationTelemetryMiddlewareTest {
     }
 
     @Test
-    fun `WHEN SummarizationFailed with Llm Exception THEN error_type is exception name and error_code is the int code`() {
+    fun `WHEN SummarizationFailed with a known Llm subtype THEN error_code is the looked-up value and error_type carries provider attribution`() {
         assertNull(AiSummarize.completed.testGetValue())
 
         setupFullSession()
-        val exception = Llm.Exception("Error", ErrorCode(1001))
-        invokeMiddleware(SummarizationFailed(exception))
+        invokeMiddleware(SummarizationFailed(RateLimited(retryAfter = 60L)))
 
-        val snapshot = AiSummarize.completed.testGetValue()!!
-        assertEquals(1, snapshot.size)
-
-        val extras = snapshot.first().extra!!
+        val extras = AiSummarize.completed.testGetValue()!!.first().extra!!
         assertEquals("false", extras["success"])
-        assertEquals("Exception", extras["error_type"])
-        assertEquals("1001", extras["error_code"])
+        assertEquals("mozilla.components.lib.llm.mlpa.service.RateLimited", extras["error_type"])
+        assertEquals("1008", extras["error_code"])
+    }
+
+    @Test
+    fun `WHEN SummarizationFailed with an unrecognized throwable THEN error_code is the fallback`() {
+        assertNull(AiSummarize.completed.testGetValue())
+
+        setupFullSession()
+        invokeMiddleware(SummarizationFailed(IllegalStateException("boom")))
+
+        val extras = AiSummarize.completed.testGetValue()!!.first().extra!!
+        assertEquals("false", extras["success"])
+        assertEquals("IllegalStateException", extras["error_type"])
+        assertEquals("9999", extras["error_code"])
+    }
+
+    @Test
+    fun `WHEN SummarizationFailed with Llm Exception wrapping a cause THEN error_type is the cause class name`() {
+        assertNull(AiSummarize.completed.testGetValue())
+
+        setupFullSession()
+        val cause = IllegalStateException("boom")
+        invokeMiddleware(SummarizationFailed(Llm.Exception("Wrapped", cause = cause)))
+
+        val extras = AiSummarize.completed.testGetValue()!!.first().extra!!
+        assertEquals("false", extras["success"])
+        assertEquals("IllegalStateException", extras["error_type"])
+        assertEquals("9999", extras["error_code"])
     }
 
     @Test

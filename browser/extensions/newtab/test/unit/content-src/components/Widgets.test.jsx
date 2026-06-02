@@ -414,8 +414,8 @@ describe("<Widgets>", () => {
       assert.ok(hideAllAction, "should dispatch WIDGETS_HIDE_ALL event");
       assert.equal(
         hideAllAction.data.widget_size,
-        "medium",
-        "widget_size should be medium when widgets.system.maximized is false"
+        "large",
+        "widget_size should be large when widgets.system.maximized is false"
       );
 
       const listsTarget = hideAllAction.data.targets.find(
@@ -430,7 +430,7 @@ describe("<Widgets>", () => {
       assert.equal(timerTarget.active, true);
     });
 
-    it("should dispatch WIDGETS_HIDE_ALL with medium size when widgets are maximized", () => {
+    it("should dispatch WIDGETS_HIDE_ALL with large size when widgets are maximized", () => {
       const maximizedState = {
         ...state,
         Prefs: {
@@ -467,8 +467,8 @@ describe("<Widgets>", () => {
       assert.ok(hideAllAction, "should dispatch WIDGETS_HIDE_ALL");
       assert.equal(
         hideAllAction.data.widget_size,
-        "medium",
-        "should report medium size when maximized"
+        "large",
+        "should report large size when maximized"
       );
       maximizedStore.dispatch.restore();
     });
@@ -585,8 +585,8 @@ describe("<Widgets>", () => {
       assert.ok(hideAllAction, "should dispatch WIDGETS_HIDE_ALL");
       assert.equal(
         hideAllAction.data.widget_size,
-        "medium",
-        "widget_size should be medium when maximized"
+        "large",
+        "widget_size should be large when maximized"
       );
 
       maximizedStore.dispatch.restore();
@@ -734,7 +734,7 @@ describe("<Widgets>", () => {
       assert.ok(openLink, "should dispatch OPEN_LINK");
       assert.ok(containerAction, "should dispatch WIDGETS_CONTAINER_ACTION");
       assert.equal(containerAction.data.action_type, "feedback");
-      assert.equal(containerAction.data.widget_size, "medium");
+      assert.equal(containerAction.data.widget_size, "large");
 
       store.dispatch.restore();
     });
@@ -1138,7 +1138,7 @@ describe("<Widgets>", () => {
       );
       assert.equal(containerAction.data.action_type, "change_size_all");
       assert.equal(containerAction.data.action_value, "maximize_widgets");
-      assert.equal(containerAction.data.widget_size, "medium");
+      assert.equal(containerAction.data.widget_size, "large");
     });
 
     it("should dispatch WIDGETS_CONTAINER_ACTION with correct values when toggling from maximized", () => {
@@ -1187,8 +1187,8 @@ describe("<Widgets>", () => {
       );
       assert.equal(
         containerAction.data.widget_size,
-        "small",
-        "should report new size (small) after minimizing"
+        "medium",
+        "should report new size (medium) after minimizing"
       );
 
       maximizedStore.dispatch.restore();

@@ -38,7 +38,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.getSystemService
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -279,7 +278,11 @@ class HomeFragment : Fragment() {
         ViewBoundFeatureWrapper()
     private val lensLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            lensFeature?.get()?.handleImageResult(result.resultCode, result.data)
+            lensFeature?.get()?.handleCameraActivityResult(
+                result.resultCode,
+                result.data,
+                qrScanFenixFeature?.get(),
+            )
         }
     private val lensCameraPermissionLauncher: ActivityResultLauncher<String> =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -412,7 +415,6 @@ class HomeFragment : Fragment() {
         }
 
         homeNavigationBar = HomeNavigationBar(
-            context = activity,
             toolbarStore = toolbarStore,
             settings = activity.settings(),
             hideWhenKeyboardShown = true,
@@ -439,6 +441,7 @@ class HomeFragment : Fragment() {
                 (awesomeBarComposable ?: initializeAwesomeBarComposable(toolbarStore, modifier))
                     ?.SearchSuggestions()
             },
+            navigationBarContent = { homeNavigationBar?.Content() },
         )
     }
 
@@ -593,22 +596,14 @@ class HomeFragment : Fragment() {
                         .imePadding(),
                     topBar = {
                         if (isToolbarAtTop) {
-                            AndroidView(factory = { toolbarView.layout })
+                            toolbarView.Content()
                         }
                     },
                     bottomBar = {
                         if (isToolbarAtTop) {
-                            homeNavigationBar?.let { navBar ->
-                                AndroidView(factory = { navBar.layout })
-                            }
+                            homeNavigationBar?.Content()
                         } else {
-                            Column {
-                                AndroidView(factory = { toolbarView.layout })
-
-                                homeNavigationBar?.let { navBar ->
-                                    AndroidView(factory = { navBar.layout })
-                                }
-                            }
+                            toolbarView.Content()
                         }
                     },
                     containerColor = Color.Transparent,
@@ -845,6 +840,7 @@ class HomeFragment : Fragment() {
         findNavController().addOnDestinationChangedListener(destinationChangedListener)
 
         subscribeToTabCollections()
+        updateLastHomeActivity()
 
         requireComponents.backgroundServices.accountManagerAvailableQueue.runIfReadyOrQueue {
             // By the time this code runs, we may not be attached to a context or have a view lifecycle owner.
@@ -980,6 +976,7 @@ class HomeFragment : Fragment() {
 
     override fun onStop() {
         super.onStop()
+        updateLastHomeActivity()
 
         findNavController().removeOnDestinationChangedListener(destinationChangedListener)
     }
@@ -1372,6 +1369,16 @@ class HomeFragment : Fragment() {
         }
 
         FxNimbus.features.homescreen.recordExposure()
+    }
+
+    /**
+     * Updates the last time the user was active on the [HomeFragment].
+     * This is useful to determine if the user has to start on the [HomeFragment]
+     * or it should go directly to the [BrowserFragment].
+     */
+    @VisibleForTesting
+    internal fun updateLastHomeActivity() {
+        requireContext().settings().lastHomeActivity = System.currentTimeMillis()
     }
 
     companion object {

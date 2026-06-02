@@ -301,12 +301,6 @@ when = "2025-08-29"
 user-id = 55123
 user-login = "rust-lang-owner"
 
-[[publisher.hashbrown]]
-version = "0.17.0"
-when = "2026-04-09"
-user-id = 55123
-user-login = "rust-lang-owner"
-
 [[publisher.hawk]]
 version = "5.0.1"
 when = "2024-09-13"

@@ -299,9 +299,9 @@ colorama==0.4.6 \
     #   click
     #   mozilla-third-party-python-vendor-dir
     #   tqdm
-compare-locales==9.0.4 \
-    --hash=sha256:73d0d384aefa0bc96f5fd8521c08c8bb89b16a37316701323a77960accabd551 \
-    --hash=sha256:933d2b6e20f460d3ac2d3176295684505a42085b25e6c31944fcafbaf52f1cc0
+compare-locales==9.0.5 \
+    --hash=sha256:40eaa40fe9290996f5972fa83bc4f9f1e580a6e2ea06087e636e77378d8ed168 \
+    --hash=sha256:82f2177552666d0f7af1ccc2940a8d562f345ce3a2e64f1b67853d457ea8ae33
     # via
     #   fluent-migrate
     #   mozilla-third-party-python-vendor-dir

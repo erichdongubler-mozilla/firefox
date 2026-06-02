@@ -20,7 +20,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -47,6 +49,7 @@ import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEnded
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchStarted
 import org.mozilla.fenix.components.appstate.VoiceSearchAction.VoiceInputRequested
 import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.components.toolbar.ToolbarPosition.BOTTOM
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.wallpapers.Wallpaper
@@ -71,6 +74,7 @@ internal const val EDIT_TOOLBAR_DELAY_AFTER_VOICE_REQUEST = 1_000L
  * @param tabStripContent [Composable] as the tab strip content to be displayed together with this toolbar.
  * @param searchSuggestionsContent [Composable] as the search suggestions content to be displayed
  * together with this toolbar.
+ * @param navigationBarContent [Composable] content for the navigation bar.
  */
 @Suppress("LongParameterList")
 internal class HomeToolbarComposable(
@@ -85,6 +89,7 @@ internal class HomeToolbarComposable(
     private val coroutineScope: CoroutineScope,
     private val tabStripContent: @Composable () -> Unit,
     private val searchSuggestionsContent: @Composable (Modifier) -> Unit,
+    private val navigationBarContent: (@Composable () -> Unit)?,
 ) : FenixHomeToolbar {
     private val addressBarVisibility = mutableStateOf(true)
 
@@ -137,7 +142,12 @@ internal class HomeToolbarComposable(
         val shouldShowTabStrip: Boolean = remember { settings.isTabStripEnabled }
         val isAddressBarVisible = remember { addressBarVisibility }
 
-        Column {
+        Column(
+            modifier = Modifier.semantics {
+                testTagsAsResourceId = true
+                testTag = context.resources.getResourceName(R.id.composable_toolbar)
+            },
+        ) {
             if (shouldShowTabStrip) {
                 tabStripContent()
             }
@@ -170,19 +180,19 @@ internal class HomeToolbarComposable(
                 }
             }
 
+            if (settings.toolbarPosition == BOTTOM) {
+                navigationBarContent?.invoke()
+            }
+
             if (!settings.shouldUseBottomToolbar) {
                 searchSuggestionsContent(Modifier.weight(1f))
             }
         }
     }
 
-    override val layout = ComposeView(context).apply {
-        id = R.id.composable_toolbar
-
-        setContent {
-            DefaultToolbar()
-        }
-        translationZ = context.resources.getDimension(R.dimen.browser_fragment_above_toolbar_panels_elevation)
+    @Composable
+    override fun Content() {
+        DefaultToolbar()
     }
 
     override fun build(middleSearchEnabled: Boolean) {

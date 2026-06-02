@@ -227,7 +227,7 @@ static RefPtr<AudioDeviceSet> GetDeviceCollection(Side aSide) {
           if (device.max_channels == 0) {
             continue;
           }
-          RefPtr<AudioDeviceInfo> info = new AudioDeviceInfo(
+          RefPtr info = MakeRefPtr<AudioDeviceInfo>(
               device.devid, NS_ConvertUTF8toUTF16(device.friendly_name),
               NS_ConvertUTF8toUTF16(device.group_id),
               NS_ConvertUTF8toUTF16(device.vendor_name),
@@ -306,7 +306,7 @@ RefPtr<const AudioDeviceSet> CubebDeviceEnumerator::EnumerateAudioDevices(
   // a single channel. All the other values are made up and are not to be used.
   // Bug 1660391: we can't use fluent here yet to get localized strings, so
   // those are hard-coded en_US strings for now.
-  RefPtr<AudioDeviceInfo> info = new AudioDeviceInfo(
+  RefPtr info = MakeRefPtr<AudioDeviceInfo>(
       nullptr, name, u""_ns, u""_ns, type, CUBEB_DEVICE_STATE_ENABLED,
       CUBEB_DEVICE_PREF_ALL, CUBEB_DEVICE_FMT_ALL, CUBEB_DEVICE_FMT_S16NE,
       channels, 44100, 44100, 44100, 441, 128);

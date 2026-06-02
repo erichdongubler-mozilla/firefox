@@ -45,6 +45,13 @@ struct ParamTraits<mozilla::dom::AudioSessionType>
           mozilla::dom::AudioSessionType::Play_and_record> {};
 
 template <>
+struct ParamTraits<mozilla::dom::AudioSessionState>
+    : public ContiguousEnumSerializerInclusive<
+          mozilla::dom::AudioSessionState,
+          mozilla::dom::AudioSessionState::Inactive,
+          mozilla::dom::AudioSessionState::Interrupted> {};
+
+template <>
 struct ParamTraits<mozilla::dom::AbsoluteSeek> {
   typedef mozilla::dom::AbsoluteSeek paramType;
 

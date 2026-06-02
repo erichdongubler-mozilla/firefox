@@ -610,7 +610,6 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
     DECLARE_CACHEOP_CASE(GuardIsProxy);
     DECLARE_CACHEOP_CASE(GuardIsNotProxy);
     DECLARE_CACHEOP_CASE(GuardIsNotArrayBufferMaybeShared);
-    DECLARE_CACHEOP_CASE(GuardIsTypedArray);
     DECLARE_CACHEOP_CASE(GuardHasProxyHandler);
     DECLARE_CACHEOP_CASE(GuardIsNotDOMProxy);
     DECLARE_CACHEOP_CASE(GuardSpecificObject);
@@ -1351,15 +1350,6 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
             clasp == &FixedLengthSharedArrayBufferObject::class_ ||
             clasp == &ResizableArrayBufferObject::class_ ||
             clasp == &GrowableSharedArrayBufferObject::class_) {
-          FAIL_IC();
-        }
-        DISPATCH_CACHEOP();
-      }
-
-      CACHEOP_CASE(GuardIsTypedArray) {
-        ObjOperandId objId = cacheIRReader.objOperandId();
-        JSObject* obj = reinterpret_cast<JSObject*>(READ_REG(objId.id()));
-        if (!IsTypedArrayClass(obj->getClass())) {
           FAIL_IC();
         }
         DISPATCH_CACHEOP();

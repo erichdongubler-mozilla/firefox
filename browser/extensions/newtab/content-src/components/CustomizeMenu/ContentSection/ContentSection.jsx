@@ -61,13 +61,13 @@ export class ContentSection extends React.PureComponent {
             this.props.weatherDisplay === "detailed"
           ) {
             widgetSize =
-              widgetsMayBeMaximized && !widgetsMaximized ? "small" : "medium";
+              widgetsMayBeMaximized && !widgetsMaximized ? "medium" : "large";
           } else {
-            widgetSize = "mini";
+            widgetSize = "small";
           }
         } else {
           widgetSize =
-            widgetsMayBeMaximized && !widgetsMaximized ? "small" : "medium";
+            widgetsMayBeMaximized && !widgetsMaximized ? "medium" : "large";
         }
 
         const data = {

@@ -261,13 +261,13 @@ class nsCocoaWindow final : public nsIWidget {
 
   nsresult SynthesizeNativeKeyEvent(
       int32_t aNativeKeyboardLayout, int32_t aNativeKeyCode,
-      uint32_t aModifierFlags, const nsAString& aCharacters,
+      nsIWidget::NativeModifiers aModifierFlags, const nsAString& aCharacters,
       const nsAString& aUnmodifiedCharacters,
       nsISynthesizedEventCallback* aCallback) override;
 
   nsresult SynthesizeNativeMouseEvent(
       LayoutDeviceIntPoint aPoint, NativeMouseMessage aNativeMessage,
-      mozilla::MouseButton aButton, nsIWidget::Modifiers aModifierFlags,
+      mozilla::MouseButton aButton, nsIWidget::NativeModifiers aModifierFlags,
       nsISynthesizedEventCallback* aCallback) override;
 
   nsresult SynthesizeNativeMouseMove(
@@ -275,7 +275,7 @@ class nsCocoaWindow final : public nsIWidget {
       nsISynthesizedEventCallback* aCallback) override;
   nsresult SynthesizeNativeMouseScrollEvent(
       LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage, double aDeltaX,
-      double aDeltaY, double aDeltaZ, uint32_t aModifierFlags,
+      double aDeltaY, double aDeltaZ, nsIWidget::NativeModifiers aModifierFlags,
       uint32_t aAdditionalFlags,
       nsISynthesizedEventCallback* aCallback) override;
   nsresult SynthesizeNativeTouchPoint(

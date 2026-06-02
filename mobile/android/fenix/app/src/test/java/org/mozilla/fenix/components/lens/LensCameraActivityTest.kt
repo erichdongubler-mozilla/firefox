@@ -7,7 +7,9 @@ package org.mozilla.fenix.components.lens
 import android.Manifest
 import android.app.Activity
 import android.app.Application
+import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
+import mozilla.components.feature.qr.QrScanActivity
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -113,5 +115,62 @@ class LensCameraActivityTest {
             .findFragmentById(R.id.lens_fragment_container_view)
         assertNotNull(fragment)
         assertIs<LensCameraFragment>(fragment)
+    }
+
+    @Test
+    fun `WHEN the fragment result bundle carries RESULT_QR_STRING THEN the activity returns RESULT_OK with EXTRA_SCAN_RESULT_DATA and finishes`() {
+        val controller = Robolectric.buildActivity(LensCameraActivity::class.java).setup()
+        val activity = controller.get()
+        val qrString = "https://example.com"
+
+        activity.supportFragmentManager.setFragmentResult(
+            LensCameraFragment.RESULT_REQUEST_KEY,
+            Bundle().apply { putString(LensCameraFragment.RESULT_QR_STRING, qrString) },
+        )
+        activity.supportFragmentManager.executePendingTransactions()
+
+        val shadow = Shadows.shadowOf(activity)
+        assertEquals(Activity.RESULT_OK, shadow.resultCode)
+        assertEquals(qrString, shadow.resultIntent.getStringExtra(QrScanActivity.EXTRA_SCAN_RESULT_DATA))
+        assertTrue(activity.isFinishing)
+    }
+
+    @Test
+    fun `GIVEN both QR string and image URI are present WHEN the fragment result fires THEN the QR string takes priority`() {
+        val controller = Robolectric.buildActivity(LensCameraActivity::class.java).setup()
+        val activity = controller.get()
+        val qrString = "https://example.com"
+
+        activity.supportFragmentManager.setFragmentResult(
+            LensCameraFragment.RESULT_REQUEST_KEY,
+            Bundle().apply {
+                putString(LensCameraFragment.RESULT_QR_STRING, qrString)
+                putBoolean(LensCameraFragment.RESULT_GALLERY_REQUEST, true)
+            },
+        )
+        activity.supportFragmentManager.executePendingTransactions()
+
+        val shadow = Shadows.shadowOf(activity)
+        assertEquals(Activity.RESULT_OK, shadow.resultCode)
+        assertEquals(qrString, shadow.resultIntent.getStringExtra(QrScanActivity.EXTRA_SCAN_RESULT_DATA))
+        assertTrue(activity.isFinishing)
+    }
+
+    @Test
+    fun `WHEN the fragment result bundle has an empty QR string THEN the QR branch is ignored`() {
+        val controller = Robolectric.buildActivity(LensCameraActivity::class.java).setup()
+        val activity = controller.get()
+
+        activity.supportFragmentManager.setFragmentResult(
+            LensCameraFragment.RESULT_REQUEST_KEY,
+            Bundle().apply { putString(LensCameraFragment.RESULT_QR_STRING, "") },
+        )
+        activity.supportFragmentManager.executePendingTransactions()
+
+        // No QR result means we fall through; empty bundle (no image URI, no gallery flag)
+        // sets RESULT_CANCELED and finishes.
+        val shadow = Shadows.shadowOf(activity)
+        assertEquals(Activity.RESULT_CANCELED, shadow.resultCode)
+        assertTrue(activity.isFinishing)
     }
 }

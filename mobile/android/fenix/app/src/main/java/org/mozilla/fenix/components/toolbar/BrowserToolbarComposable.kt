@@ -70,7 +70,7 @@ import org.mozilla.fenix.utils.Settings
  * @param tabStripContent Composable content for the tab strip.
  * @param searchSuggestionsContent [Composable] as the search suggestions content to be displayed
  * together with this toolbar.
- * @param navigationBarContent Composable content for the navigation bar.
+ * @param navigationBarContent [Composable] content for the navigation bar.
  */
 @Suppress("LongParameterList")
 class BrowserToolbarComposable(

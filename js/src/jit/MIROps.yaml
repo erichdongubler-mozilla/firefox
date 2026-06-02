@@ -2369,7 +2369,6 @@
   arguments:
     resultShape: Shape*
   result_type: Object
-  can_recover: custom
   possibly_calls: true
   generate_lir: true
 
@@ -2458,15 +2457,6 @@
   result_type: Object
   generate_lir: true
   lir_temps: 1
-
-- name: CallBindVar
-  operands:
-    environmentChain: Object
-  result_type: Object
-  movable: true
-  congruent_to: if_operands_equal
-  alias_set: none
-  generate_lir: true
 
 - name: GuardShape
   operands:
@@ -2848,18 +2838,6 @@
   movable: true
   congruent_to: if_operands_equal
   folds_to: custom
-  alias_set: none
-  generate_lir: true
-  lir_result_type: none
-  lir_temps: 1
-
-- name: GuardIsTypedArray
-  operands:
-    object: Object
-  result_type: Object
-  guard: true
-  movable: true
-  congruent_to: if_operands_equal
   alias_set: none
   generate_lir: true
   lir_result_type: none
@@ -3704,15 +3682,6 @@
   operands:
     generator: Object
     value: Value
-  result_type: Object
-  possibly_calls: true
-  generate_lir: true
-
-- name: AsyncReject
-  operands:
-    generator: Object
-    reason: Value
-    stack: Value
   result_type: Object
   possibly_calls: true
   generate_lir: true
@@ -4657,9 +4626,6 @@
   gen_boilerplate: false
 
 - name: WasmLoadInstance
-  gen_boilerplate: false
-
-- name: WasmStoreInstance
   gen_boilerplate: false
 
 - name: WasmHeapReg

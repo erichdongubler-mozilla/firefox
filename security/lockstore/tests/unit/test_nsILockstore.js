@@ -26,12 +26,22 @@ function str(arr) {
   return new TextDecoder().decode(new Uint8Array(arr));
 }
 
-async function mintLocalKek() {
-  return getService().createKek("local", "", /* cacheTimeoutMs */ 0);
+async function mintLocalKek(identifier = "") {
+  return getService().createKek(
+    "local",
+    identifier,
+    "",
+    /* cacheTimeoutMs */ 0
+  );
 }
 
 async function mintPasswordKek(password) {
-  return getService().createKek("password", password, /* cacheTimeoutMs */ 0);
+  return getService().createKek(
+    "password",
+    /* identifier */ "",
+    password,
+    /* cacheTimeoutMs */ 0
+  );
 }
 
 // `NS_ERROR_INVALID_ARG` and `NS_ERROR_ILLEGAL_VALUE` are the same

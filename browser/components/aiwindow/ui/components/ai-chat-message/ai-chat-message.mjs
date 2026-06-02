@@ -298,8 +298,16 @@ export class AIChatMessage extends MozLitElement {
   static #chatMessageSanitizer;
   static {
     this.#chatMessageSanitizer = new Sanitizer();
-    for (const element of Object.values(CHAT_WRAPPER_ELEMENTS)) {
+    for (const { element, attributes } of Object.values(
+      CHAT_WRAPPER_ELEMENTS
+    )) {
       this.#chatMessageSanitizer.allowElement(element);
+      for (const attr of attributes) {
+        this.#chatMessageSanitizer.allowAttribute({
+          name: attr,
+          elements: [element],
+        });
+      }
     }
   }
 
@@ -313,6 +321,12 @@ export class AIChatMessage extends MozLitElement {
     element.setHTML(parseMarkdown(markdown), {
       sanitizer: AIChatMessage.#chatMessageSanitizer,
     });
+    // Pass messageId to table elements for copy functionality.
+    if (this.messageId) {
+      for (const table of element.querySelectorAll("ai-chat-table")) {
+        table.setAttribute("message-id", this.messageId);
+      }
+    }
   }
 
   /**

@@ -53,7 +53,7 @@ void RemoteTextureOwnerClient::RegisterTextureOwner(
   RefPtr<RemoteTextureRecycleBin> recycleBin;
   if (aSharedRecycling) {
     if (!mSharedRecycleBin) {
-      mSharedRecycleBin = new RemoteTextureRecycleBin(true);
+      mSharedRecycleBin = MakeRefPtr<RemoteTextureRecycleBin>(true);
     }
     recycleBin = mSharedRecycleBin;
   }
@@ -594,7 +594,7 @@ void RemoteTextureMap::RegisterTextureOwner(
   if (aRecycleBin) {
     owner->mRecycleBin = aRecycleBin;
   } else {
-    owner->mRecycleBin = new RemoteTextureRecycleBin(false);
+    owner->mRecycleBin = MakeRefPtr<RemoteTextureRecycleBin>(false);
   }
 
   auto itWaiting = mWaitingTextureOwners.find(key);

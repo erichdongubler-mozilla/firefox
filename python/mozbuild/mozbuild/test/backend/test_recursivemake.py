@@ -402,6 +402,20 @@ class TestRecursiveMakeBackend(BackendTester):
         self.assertIn("mozilla/mozilla1.h", m)
         self.assertIn("mozilla/dom/dom2.h", m)
 
+    def test_js_shell_archive(self):
+        """Ensure JS_SHELL_ARCHIVE_FILES is handled properly."""
+        env = self._consume("js-shell-archive", RecursiveMakeBackend)
+
+        manifest_path = mozpath.join(env.topobjdir, "jsshell-archive.list")
+        with open(manifest_path) as fh:
+            manifest_lines = fh.read().splitlines()
+        self.assertEqual(
+            manifest_lines, ["js", "libmozglue.so", "llvm-symbolizer", "fuzz-tests"]
+        )
+
+        top_backend = open(mozpath.join(env.topobjdir, "backend.mk")).read()
+        self.assertNotIn("jsshell-archive", top_backend)
+
     def test_generated_files(self):
         """Ensure GENERATED_FILES is handled properly."""
         env = self._consume("generated-files", RecursiveMakeBackend)
@@ -434,6 +448,39 @@ class TestRecursiveMakeBackend(BackendTester):
 
         self.maxDiff = None
         self.assertEqual(lines, expected)
+
+    def test_generated_files_extra_deps(self):
+        """Ensure GENERATED_FILES extra_deps are handled properly."""
+        env = self._consume("generated-files-extra-deps", RecursiveMakeBackend)
+
+        backend_path = mozpath.join(env.topobjdir, "consumer", "backend.mk")
+        lines = [l.strip() for l in open(backend_path).readlines()[2:]]
+
+        expected = [
+            "include $(topsrcdir)/config/AB_rCD.mk",
+            "PRE_COMPILE_TARGETS += $(MDDEPDIR)/consumer.c.stub",
+            "consumer.c: $(MDDEPDIR)/consumer.c.stub ;",
+            "EXTRA_MDDEPEND_FILES += $(MDDEPDIR)/consumer.c.pp",
+            "$(MDDEPDIR)/consumer.c.stub: "
+            f"{env.topsrcdir}/consumer/generate-consumer.py "
+            "$(srcdir)/input-data "
+            "$(srcdir)/source-extra "
+            "$(DEPTH)/producer/producer.c",
+            "$(REPORT_BUILD)",
+            "$(call py_action,file_generate consumer.c,"
+            f"{env.topsrcdir}/consumer/generate-consumer.py main "
+            "consumer.c $(MDDEPDIR)/consumer.c.pp "
+            "$(MDDEPDIR)/consumer.c.stub $(srcdir)/input-data)",
+            "@$(TOUCH) $@",
+            "",
+        ]
+
+        self.maxDiff = None
+        self.assertEqual(lines, expected)
+
+        root_deps_path = mozpath.join(env.topobjdir, "root-deps.mk")
+        lines = [l.strip() for l in open(root_deps_path).readlines()]
+        self.assertIn("consumer/pre-compile: producer/pre-compile", lines)
 
     def test_generated_files_force(self):
         """Ensure GENERATED_FILES with .force is handled properly."""
@@ -1433,6 +1480,28 @@ class TestRecursiveMakeBackend(BackendTester):
                     if line.startswith(prefix)
                 ][0]
                 self.assertEqual(program, expected_program)
+
+    def test_extra_link_deps(self):
+        """Test that EXTRA_LINK_DEPS is handled properly."""
+        env = self._consume("extra-link-deps", RecursiveMakeBackend)
+
+        subdir_backend = mozpath.join(env.topobjdir, "subdir", "backend.mk")
+        with open(subdir_backend) as fh:
+            subdir_content = fh.read()
+        self.assertIn(
+            "extra-link-deps-program: $(srcdir)/dep.txt",
+            subdir_content,
+        )
+        self.assertIn(
+            "extra-link-deps-program: generated.plist",
+            subdir_content,
+        )
+        self.assertIn("generated.plist:", subdir_content)
+
+        root_backend = mozpath.join(env.topobjdir, "backend.mk")
+        with open(root_backend) as fh:
+            root_content = fh.read()
+        self.assertNotIn("generated.plist:", root_content)
 
     def test_shared_lib_paths(self):
         """SHARED_LIBRARYs with various moz.build settings that change the destination should

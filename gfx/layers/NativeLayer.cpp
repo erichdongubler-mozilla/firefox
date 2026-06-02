@@ -20,7 +20,7 @@ DownscaleTargetNLRS::DownscaleTargetNLRS(
     gl::GLContext* aGL, UniquePtr<gl::MozFramebuffer>&& aFramebuffer)
     : profiler_screenshots::DownscaleTarget(aFramebuffer->mSize),
       mGL(aGL),
-      mRenderSource(new RenderSourceNLRS(std::move(aFramebuffer))) {}
+      mRenderSource(MakeRefPtr<RenderSourceNLRS>(std::move(aFramebuffer))) {}
 
 bool DownscaleTargetNLRS::DownscaleFrom(
     profiler_screenshots::RenderSource* aSource,

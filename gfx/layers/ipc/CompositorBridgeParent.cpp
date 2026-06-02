@@ -1499,8 +1499,8 @@ CompositorBridgeParent::AllocPCompositorWidgetParent(
     return nullptr;
   }
 
-  RefPtr<widget::CompositorWidgetParent> widget =
-      new widget::CompositorWidgetParent(aInitData, mOptions);
+  RefPtr widget =
+      MakeRefPtr<widget::CompositorWidgetParent>(aInitData, mOptions);
 
   // Sending the constructor acts as initialization as well.
   mWidget = widget;

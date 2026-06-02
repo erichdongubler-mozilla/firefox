@@ -268,6 +268,8 @@ void WasmArrayObject::obj_trace(JSTracer* trc, JSObject* object) {
   WasmArrayObject& arrayObj = object->as<WasmArrayObject>();
   uint8_t* data = arrayObj.data_;
 
+  // data_ may be null if the array was only partially initialized due to OOM
+  // during createArrayOOL.
   if (!data) {
     MOZ_ASSERT(arrayObj.numElements_ == 0);
     return;

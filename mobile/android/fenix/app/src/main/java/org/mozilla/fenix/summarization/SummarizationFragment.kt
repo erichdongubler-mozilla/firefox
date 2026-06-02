@@ -67,7 +67,7 @@ private fun EngineSession?.asPageContentExtractor(): PageContentExtractor = { op
                     continuation.resume(content)
                 },
                 onException = { error ->
-                    continuation.resumeWithException(PageContentExtractor.Exception(error))
+                    continuation.resumeWithException(error)
                 },
             )
         }
@@ -89,7 +89,7 @@ private fun EngineSession?.asPageMetadataExtractor(): PageMetadataExtractor = {
                     )
                 },
                 onException = { error ->
-                    continuation.resumeWithException(PageMetadataExtractor.Exception(error))
+                    continuation.resumeWithException(error)
                 },
             )
         }
@@ -211,6 +211,7 @@ class SummarizationFragment : BottomSheetDialogFragment() {
                 productName = getString(R.string.app_name),
                 store = storeViewModel.store,
                 settingsStore = settingsStore,
+                resolveError = { throwable -> ErrorCodeLookup.lookup(throwable).code },
             )
         }
     }

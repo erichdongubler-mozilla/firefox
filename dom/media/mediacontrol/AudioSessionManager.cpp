@@ -22,38 +22,196 @@ AudioSessionManager::AudioSessionManager(MediaController* aController)
 
 void AudioSessionManager::SetTypeOverride(uint64_t aBrowsingContextId,
                                           AudioSessionType aType) {
-  // "auto" means no override.
+  // https://w3c.github.io/audio-session/#audio-session-update-type-algorithm
+  // §5.1 update-the-type. Firefox does not separately "queue a task" here:
+  // this runs on the parent process, reached via the content→parent IPC
+  // that delivers the `audioSession.type` setter, so the work is already
+  // asynchronous relative to the content event loop. A content-side busy
+  // loop after the setter cannot observe any parent-driven state mutation;
+  // the content event loop has to yield before the parent's reply IPC and
+  // the `statechange` event are delivered.
+  //
+  // "auto" maps to no override on the underlying record.
   mAudioSessions.LookupOrInsert(aBrowsingContextId)
       .SetTypeOverride(aBrowsingContextId, aType == AudioSessionType::Auto
                                                ? Nothing()
                                                : Some(aType));
+  UpdateSelectedAudioSession();
+  // §5.1.3.4 Update all AudioSession states of audioSession's top-level
+  // browsing context with audioSession.
+  UpdateAllAudioSessionStates(aBrowsingContextId);
+  RemoveRecordIfEmpty(aBrowsingContextId);
   MaybeFireEffectiveTypeChanged();
 }
 
 void AudioSessionManager::NotifyAudibilityChanged(uint64_t aBrowsingContextId) {
-  AudioSessionRecord& record =
-      mAudioSessions.LookupOrInsert(aBrowsingContextId);
-  const bool bcWasAudible = record.GetAudibleAtMs().isSome();
   const bool bcIsAudibleNow = mController->IsBcAudible(aBrowsingContextId);
+  auto existing = mAudioSessions.Lookup(aBrowsingContextId);
+  const bool bcWasAudible =
+      existing && existing.Data().GetAudibleAtMs().isSome();
   if (!bcWasAudible && bcIsAudibleNow) {
-    record.SetAudibleAtMs(
-        aBrowsingContextId,
-        Some(static_cast<int64_t>(mozilla::ProcessUptimeMs().valueOr(0))));
+    // Lazy-create on the first audible transition. The audibility timestamp
+    // must be set before the §5.2 mutator below transitions mState to Active,
+    // to satisfy the "active requires audible" invariant on the record.
+    Maybe<int64_t> uptime = mozilla::ProcessUptimeMs();
+    MOZ_DIAGNOSTIC_ASSERT(uptime.isSome(),
+                          "ProcessUptimeMs should always have a value "
+                          "during audibility transitions");
+    mAudioSessions.LookupOrInsert(aBrowsingContextId)
+        .SetAudibleAtMs(aBrowsingContextId, Some(*uptime));
   } else if (bcWasAudible && !bcIsAudibleNow) {
-    record.SetAudibleAtMs(aBrowsingContextId, Nothing());
+    existing.Data().SetAudibleAtMs(aBrowsingContextId, Nothing());
   }
-  if (record.IsEmpty()) {
-    LOG("Removing empty AudioSessionRecord bc=%" PRIu64, aBrowsingContextId);
-    mAudioSessions.Remove(aBrowsingContextId);
+  // Derive mState from audibility. The §5.4 cross-session cascade triggered
+  // from these state transitions lands in a follow-up patch; here the
+  // mutators only set the field. InactivateAudioSession prunes the record
+  // if it ends up empty.
+  if (bcIsAudibleNow) {
+    TryActivateAudioSession(aBrowsingContextId);
+  } else {
+    InactivateAudioSession(aBrowsingContextId);
   }
+  UpdateSelectedAudioSession();
   MaybeFireEffectiveTypeChanged();
 }
 
 void AudioSessionManager::NotifyBcDiscarded(uint64_t aBrowsingContextId) {
   if (mAudioSessions.Remove(aBrowsingContextId)) {
     LOG("NotifyBcDiscarded bc=%" PRIu64, aBrowsingContextId);
+    UpdateSelectedAudioSession();
     MaybeFireEffectiveTypeChanged();
   }
+}
+
+void AudioSessionManager::InactivateAudioSession(uint64_t aBrowsingContextId) {
+  // https://w3c.github.io/audio-session/#inactivate
+  auto entry = mAudioSessions.Lookup(aBrowsingContextId);
+  if (!entry || entry.Data().GetState() == AudioSessionState::Inactive) {
+    // §5.2 inactivate: if the record is absent or already Inactive, abort.
+    LOG("Inactivate bc=%" PRIu64 " aborted: %s", aBrowsingContextId,
+        !entry ? "no record" : "already inactive");
+    return;
+  }
+  SetAudioSessionState(aBrowsingContextId, AudioSessionState::Inactive);
+}
+
+void AudioSessionManager::TryActivateAudioSession(uint64_t aBrowsingContextId) {
+  // https://w3c.github.io/audio-session/#try-activating
+  auto entry = mAudioSessions.Lookup(aBrowsingContextId);
+  MOZ_ASSERT(entry, "TryActivate called without an existing record");
+  if (!entry || entry.Data().GetState() == AudioSessionState::Active) {
+    // §5.2 try activating: if the record is already Active, abort.
+    LOG("TryActivate bc=%" PRIu64 " aborted: %s", aBrowsingContextId,
+        !entry ? "no record" : "already active");
+    return;
+  }
+  SetAudioSessionState(aBrowsingContextId, AudioSessionState::Active);
+}
+
+void AudioSessionManager::SetAudioSessionState(uint64_t aBrowsingContextId,
+                                               AudioSessionState aNewState) {
+  // https://w3c.github.io/audio-session/#notify-the-states-change
+  auto entry = mAudioSessions.Lookup(aBrowsingContextId);
+  MOZ_ASSERT(entry, "SetAudioSessionState called without an existing record");
+  if (!entry || entry.Data().GetState() == aNewState) {
+    LOG("SetAudioSessionState bc=%" PRIu64 " aborted: %s", aBrowsingContextId,
+        !entry ? "no record" : "state unchanged");
+    return;
+  }
+  entry.Data().SetState(aBrowsingContextId, aNewState);
+  // Step 6. Update all AudioSession states of audioSession's top-level
+  // browsing context with audioSession.
+  UpdateAllAudioSessionStates(aBrowsingContextId);
+  // Step 7. Fire an event named statechange at audioSession. Dispatched on
+  // the content side.
+  entry.Data().DispatchStateChange(aBrowsingContextId);
+  // Inactive transition may leave the record empty; prune it.
+  RemoveRecordIfEmpty(aBrowsingContextId);
+}
+
+void AudioSessionManager::RemoveRecordIfEmpty(uint64_t aBrowsingContextId) {
+  auto entry = mAudioSessions.Lookup(aBrowsingContextId);
+  if (!entry || !entry.Data().IsEmpty()) {
+    LOG("RemoveRecordIfEmpty bc=%" PRIu64 " skipped: %s", aBrowsingContextId,
+        !entry ? "no record" : "record still occupied");
+    return;
+  }
+  LOG("Removing empty AudioSessionRecord bc=%" PRIu64, aBrowsingContextId);
+  mAudioSessions.Remove(aBrowsingContextId);
+}
+
+void AudioSessionManager::UpdateAllAudioSessionStates(uint64_t aUpdatedBcId) {
+  // §5.4 update-all-audiosession-states.
+  // https://w3c.github.io/audio-session/#update-all-audiosession-states
+
+  // Step 1: update the selected audio session of `context`.
+  UpdateSelectedAudioSession();
+
+  // Step 2: let updatedType be the result of computing the type of the
+  // updated session.
+  auto updatedEntry = mAudioSessions.Lookup(aUpdatedBcId);
+  if (MOZ_UNLIKELY(!updatedEntry)) {
+    LOG("[warning] UpdateAllAudioSessionStates: no record for bc=%" PRIu64,
+        aUpdatedBcId);
+    return;
+  }
+  const AudioSessionType updatedType = EffectiveTypeForBc(aUpdatedBcId);
+
+  // Step 3: if updatedType is not an exclusive type, or the updated session
+  // state is not "active", abort.
+  if (!IsExclusiveAudioSessionType(updatedType) ||
+      updatedEntry.Data().GetState() != AudioSessionState::Active) {
+    return;
+  }
+
+  // Step 4 + 5: let audioSessions be the list of audio sessions tied to
+  // context and its child browsing contexts; for each audio session, run
+  // the per-session sub-steps. We iterate mAudioSessions and collect those
+  // that step 5 leaves to inactivate, then perform the inactivation pass
+  // separately so we do not mutate the map while iterating it.
+  const bool updatedIsAuto = IsBcAutoTyped(aUpdatedBcId);
+  AutoTArray<uint64_t, 4> toInactivate;
+  for (const auto& entry : mAudioSessions) {
+    const uint64_t bcId = entry.GetKey();
+    // Step 5: except for updatedAudioSession.
+    if (bcId == aUpdatedBcId) {
+      continue;
+    }
+    const AudioSessionRecord& record = entry.GetData();
+    // Step 5.1: if state is not active, abort.
+    if (record.GetState() != AudioSessionState::Active) {
+      continue;
+    }
+    // Step 5.2: let type be the result of computing the type of this audio
+    // session.
+    const AudioSessionType type = EffectiveTypeForBc(bcId);
+    // Step 5.3: if not exclusive, abort.
+    if (!IsExclusiveAudioSessionType(type)) {
+      continue;
+    }
+    // Step 5.4: if both types are auto, abort. See XXX — the spec's `type`
+    // / `updatedType` come from "computing the type" and never return
+    // `auto`, so this predicate is unreachable; we read the page-set
+    // [[type]] slot via IsBcAutoTyped to match the clear intent of the
+    // carveout. A spec issue will be filed.
+    if (updatedIsAuto && IsBcAutoTyped(bcId)) {
+      continue;
+    }
+    toInactivate.AppendElement(bcId);
+  }
+  // Step 5.5: inactivate each remaining audio session.
+  for (const uint64_t bcId : toInactivate) {
+    InactivateAudioSession(bcId);
+  }
+}
+
+bool AudioSessionManager::IsBcAutoTyped(uint64_t aBrowsingContextId) const {
+  // No record == default == auto.
+  auto entry = mAudioSessions.Lookup(aBrowsingContextId);
+  if (!entry) {
+    return true;
+  }
+  return entry.Data().GetTypeOverride().isNothing();
 }
 
 AudioSessionType AudioSessionManager::EffectiveTypeForBc(
@@ -70,53 +228,63 @@ AudioSessionType AudioSessionManager::EffectiveTypeForBc(
 
 Maybe<AudioSessionType> AudioSessionManager::GetSelectedAudioSessionType()
     const {
-  // Compute the selected audio session per the spec algorithm.
+  if (!mSelectedAudioSessionBcId) {
+    return Nothing();
+  }
+  return Some(EffectiveTypeForBc(*mSelectedAudioSessionBcId));
+}
+
+void AudioSessionManager::UpdateSelectedAudioSession() {
   // https://w3c.github.io/audio-session/#audio-session-update-selected-audio-session-algorithm
   //
-  // Step 1: let activeAudioSessions be the records whose browsing context is
-  // currently audible and whose effective type is exclusive.
-  // TODO(bug 2040798): tighten the state and type check to follow the spec
-  // more closely.
-  AutoTArray<const AudioSessionRecord*, 4> activeAudioSessions;
-  AutoTArray<AudioSessionType, 4> activeEffectiveTypes;
+  // Step 1: let activeAudioSessions be the records whose state is `active`
+  // and whose effective type is exclusive.
+  AutoTArray<uint64_t, 4> activeBcIds;
   for (const auto& entry : mAudioSessions) {
     const AudioSessionRecord& record = entry.GetData();
-    if (record.GetAudibleAtMs().isNothing()) {
+    if (record.GetState() != AudioSessionState::Active) {
       continue;
     }
     const AudioSessionType type = EffectiveTypeForBc(entry.GetKey());
     if (!IsExclusiveAudioSessionType(type)) {
       continue;
     }
-    activeAudioSessions.AppendElement(&record);
-    activeEffectiveTypes.AppendElement(type);
+    activeBcIds.AppendElement(entry.GetKey());
   }
 
   // Step 2: if activeAudioSessions is empty, no audio session is selected.
-  if (activeAudioSessions.IsEmpty()) {
-    return Nothing();
+  if (activeBcIds.IsEmpty()) {
+    LOG("Selected audio session: <none>");
+    mSelectedAudioSessionBcId = Nothing();
+    return;
   }
 
   // Step 3: if there is only one audio session in activeAudioSessions, that
   // is the selected audio session.
-  if (activeAudioSessions.Length() == 1) {
-    return Some(activeEffectiveTypes[0]);
+  if (activeBcIds.Length() == 1) {
+    LOG("Selected audio session: bc=%" PRIu64, activeBcIds[0]);
+    mSelectedAudioSessionBcId = Some(activeBcIds[0]);
+    return;
   }
 
   // Step 5: the user agent MAY apply specific heuristics to reorder
   // activeAudioSessions. We pick "most recently audible first" using the
   // timestamp stored on each record.
-  size_t winner = 0;
-  for (size_t i = 1; i < activeAudioSessions.Length(); ++i) {
-    if (*activeAudioSessions[i]->GetAudibleAtMs() >
-        *activeAudioSessions[winner]->GetAudibleAtMs()) {
-      winner = i;
+  uint64_t winnerBcId = activeBcIds[0];
+  int64_t winnerAt = *mAudioSessions.Lookup(winnerBcId).Data().GetAudibleAtMs();
+  for (size_t i = 1; i < activeBcIds.Length(); ++i) {
+    const int64_t at =
+        *mAudioSessions.Lookup(activeBcIds[i]).Data().GetAudibleAtMs();
+    if (at > winnerAt) {
+      winnerBcId = activeBcIds[i];
+      winnerAt = at;
     }
   }
 
   // Step 6: the selected audio session is the first audio session in
-  // activeAudioSessions.
-  return Some(activeEffectiveTypes[winner]);
+  // activeAudioSessions (after the optional step 5 reorder).
+  LOG("Selected audio session: bc=%" PRIu64, winnerBcId);
+  mSelectedAudioSessionBcId = Some(winnerBcId);
 }
 
 AudioSessionType AudioSessionManager::GetEffectiveType() const {

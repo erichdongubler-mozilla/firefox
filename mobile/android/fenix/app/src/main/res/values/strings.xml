@@ -3562,8 +3562,15 @@
     <!-- Title text for the protection panel banner when tracking protection is enabled.
         %s is the name of the app (for example "Firefox"). -->
     <string name="protection_panel_banner_protected_title">%s is on guard</string>
-    <!-- Description text for the protection panel banner when tracking protection is enabled. -->
-    <string name="protection_panel_banner_protected_description">You’re protected. If we spot something, we’ll let you know.</string>
+    <!-- Description text for the protection panel banner when privacy dashboard is enabled.
+        %1$d is the number of trackers blocked. -->
+    <plurals name="protection_panel_banner_protected_blocked_trackers_description">
+        <item quantity="one">%1$d tracker blocked on this site.</item>
+        <item quantity="other">%1$d trackers blocked on this site.</item>
+    </plurals>
+    <!-- Description text for the protection panel banner when privacy dashboard is enabled.
+          and there are no trackers blocked.-->
+    <string name="protection_panel_banner_protected_no_blocked_trackers_description">You’re protected.</string>
     <!-- Label text for the Enhanced Tracking Protection toggle. -->
     <string name="protection_panel_etp_toggle_label">Enhanced Tracking Protection</string>
     <!-- Toggle if Enhanced Tracking Protection is turned on -->
@@ -3577,8 +3584,6 @@
     <!-- Text for displaying the total number of trackers blocked in the protection panel.
         %d is a placeholder for the number of trackers blocked. -->
     <string name="protection_panel_num_trackers_blocked">Trackers blocked: %d</string>
-    <!-- Text for when no trackers have been blocked. -->
-    <string name="protection_panel_no_trackers_blocked">No trackers found</string>
     <!-- Text for when tracking protection is disabled and no trackers are blocked. -->
     <string name="protection_panel_etp_disabled_no_trackers_blocked">Trackers aren’t blocked</string>
     <!-- Link text to navigate to privacy and security settings from the protection panel. -->
@@ -4243,5 +4248,4 @@
     <string name="firefox_labs_restore_defaults_dialog_message">To restore defaults, restart %s.</string>
     <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
     <string name="firefox_labs_no_labs_available_description">No experimental features to try right now</string>
-
 </resources>

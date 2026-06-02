@@ -3390,6 +3390,9 @@ pref("browser.shareqrcode.enabled", true);
 pref("browser.shareqrcode.enabled", false);
 #endif
 
+// Whether to embed a logo in the center of generated QR codes.
+pref("browser.shareqrcode.embed_logo", true);
+
 // Mozilla-controlled domains that are allowed to use non-standard
 // context properties for SVG images for use in the browser UI. Please
 // keep this list short. This preference (and SVG `context-` keyword support)
@@ -3461,8 +3464,6 @@ pref("ui.new-webcompat-reporter.send-more-info-link", false);
 
 # 0 = disabled, 1 = reason optional, 2 = reason required.
 pref("ui.new-webcompat-reporter.reason-dropdown", 2);
-
-pref("ui.new-webcompat-reporter.reason-dropdown.randomized", true);
 
 // Reset Private Browsing Session feature a.k.a "Fire Button"
 pref("browser.privatebrowsing.resetPBM.enabled", true);

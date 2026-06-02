@@ -660,7 +660,6 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
 #endif
       case JSOp::ToString:
       case JSOp::GlobalOrEvalDeclInstantiation:
-      case JSOp::BindVar:
       case JSOp::MutateProto:
       case JSOp::Callee:
       case JSOp::ToAsyncIter:

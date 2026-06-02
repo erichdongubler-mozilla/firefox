@@ -251,8 +251,7 @@ void WebrtcGmpVideoEncoder::InitEncode_g(const GMPVideoCodec& aCodecParams,
                                          uint32_t aMaxPayloadSize) {
   nsTArray<nsCString> tags;
   tags.AppendElement("h264"_ns);
-  UniquePtr<GetGMPVideoEncoderCallback> callback(
-      new InitDoneCallback(this, aCodecParams));
+  auto callback = MakeUnique<InitDoneCallback>(this, aCodecParams);
   mInitting = true;
   mMaxPayloadSize = aMaxPayloadSize;
   mSyncLayerCap = aCodecParams.mTemporalLayerNum;
@@ -390,8 +389,8 @@ void WebrtcGmpVideoEncoder::RegetEncoderForResolutionChange(uint32_t aWidth,
                                                             uint32_t aHeight) {
   Close_g();
 
-  UniquePtr<GetGMPVideoEncoderCallback> callback(
-      new InitDoneForResolutionChangeCallback(this, aWidth, aHeight));
+  UniquePtr<GetGMPVideoEncoderCallback> callback =
+      MakeUnique<InitDoneForResolutionChangeCallback>(this, aWidth, aHeight);
 
   // OpenH264 codec (at least) can't handle dynamic input resolution changes
   // re-init the plugin when the resolution changes
@@ -843,7 +842,8 @@ void WebrtcGmpVideoDecoder::Configure_g(
     const webrtc::VideoDecoder::Settings& settings) {
   nsTArray<nsCString> tags;
   tags.AppendElement("h264"_ns);
-  UniquePtr<GetGMPVideoDecoderCallback> callback(new InitDoneCallback(this));
+  UniquePtr<GetGMPVideoDecoderCallback> callback =
+      MakeUnique<InitDoneCallback>(this);
   mInitting = true;
   nsresult rv =
       mMPS->GetGMPVideoDecoder(nullptr, &tags, ""_ns, std::move(callback));

@@ -1038,13 +1038,13 @@ Preferences.addSetting(
 
     /** @param {CustomEvent} event */
     async onUserReorder(event) {
-      const { draggedElement, targetIndex } = event.detail;
+      const { draggedElement, insertAt } = event.detail;
       let draggedEngineName = draggedElement.label;
       let draggedEngine = lazy.SearchService.getEngineByName(draggedEngineName);
       if (!draggedEngine) {
         return;
       }
-      await lazy.SearchService.moveEngine(draggedEngine, targetIndex);
+      await lazy.SearchService.moveEngine(draggedEngine, insertAt);
     }
     async getControlConfig() {
       /** @type {Partial<SettingControlConfig>} */

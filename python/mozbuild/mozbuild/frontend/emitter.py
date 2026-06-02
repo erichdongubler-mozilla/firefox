@@ -45,6 +45,7 @@ from .data import (
     InstallationTarget,
     IPDLCollection,
     JARManifest,
+    JsShellArchive,
     LegacyRunTests,
     Library,
     Linkable,
@@ -1010,6 +1011,30 @@ class TreeMetadataEmitter(LoggingMixin):
                     )
                 seen[basename] = (src, symbol)
 
+        extra_link_deps = context.get("EXTRA_LINK_DEPS")
+        if extra_link_deps:
+            link_targets = [
+                l
+                for l in linkables
+                if isinstance(l, (Program, SimpleProgram, SharedLibrary))
+            ]
+            if not link_targets:
+                raise SandboxValidationError(
+                    "EXTRA_LINK_DEPS is set but no program or shared library "
+                    "is defined in this directory.",
+                    context,
+                )
+            for dep in extra_link_deps:
+                if isinstance(dep, SourcePath) and not os.path.exists(dep.full_path):
+                    raise SandboxValidationError(
+                        f"Path specified in EXTRA_LINK_DEPS does not exist: {dep} "
+                        f"(resolved to {dep.full_path})",
+                        context,
+                    )
+            deps = list(extra_link_deps)
+            for linkable in link_targets:
+                linkable.extra_link_deps = deps
+
         # Only emit sources if we have linkables defined in the same context.
         # Note the linkables are not emitted in this function, but much later,
         # after aggregation (because of e.g. USE_LIBS processing).
@@ -1596,6 +1621,9 @@ class TreeMetadataEmitter(LoggingMixin):
         if run_tests := context.get("LEGACY_RUN_TESTS", []):
             yield LegacyRunTests(context, run_tests)
 
+        if jsshell_files := context.get("JS_SHELL_ARCHIVE_FILES", []):
+            yield JsShellArchive(context, jsshell_files)
+
         rust_tests = context.get("RUST_TESTS", [])
         if rust_tests:
             # TODO: more sophisticated checking of the declared name vs.
@@ -1755,6 +1783,16 @@ class TreeMetadataEmitter(LoggingMixin):
                         )
                     inputs.append(p)
 
+                extra_deps = []
+                for d in flags.extra_deps:
+                    p = Path(context, d)
+                    if isinstance(p, SourcePath) and not os.path.exists(p.full_path):
+                        raise SandboxValidationError(
+                            f"extra_dep for generating {f} does not exist: {p.full_path}",
+                            context,
+                        )
+                    extra_deps.append(p)
+
                 yield GeneratedFile(
                     context,
                     script,
@@ -1764,6 +1802,7 @@ class TreeMetadataEmitter(LoggingMixin):
                     flags.flags,
                     localized=localized,
                     force=flags.force,
+                    extra_deps=extra_deps,
                 )
 
     def _process_test_manifests(self, context):

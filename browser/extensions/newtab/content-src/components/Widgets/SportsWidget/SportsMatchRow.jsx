@@ -213,8 +213,9 @@ function SportsMatchRow({
         type: at.WIDGETS_USER_EVENT,
         data: {
           widget_name: "sports",
-          widget_source: variant,
+          widget_source: "widget",
           user_action: "open_match_search",
+          action_value: variant,
           widget_size: widgetSize,
         },
       })

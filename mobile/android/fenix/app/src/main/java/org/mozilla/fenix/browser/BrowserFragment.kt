@@ -102,7 +102,11 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
         ViewBoundFeatureWrapper<LensFeature>()
     private val lensLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            lensFeature?.get()?.handleImageResult(result.resultCode, result.data)
+            lensFeature?.get()?.handleCameraActivityResult(
+                result.resultCode,
+                result.data,
+                qrScanFenixFeature?.get(),
+            )
         }
     private val lensCameraPermissionLauncher: ActivityResultLauncher<String> =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->

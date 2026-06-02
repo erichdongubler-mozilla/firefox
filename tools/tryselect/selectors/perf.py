@@ -109,6 +109,7 @@ class PerfParser(CompareParser):
         "disable-pgo",
         "env",
         "gecko-profile",
+        "native-profiling",
         "path",
         "rebuild",
     ]

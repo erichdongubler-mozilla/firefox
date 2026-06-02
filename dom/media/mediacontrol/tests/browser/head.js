@@ -1,4 +1,22 @@
 /**
+ * Return an https-based URL for a test support file under the mediacontrol
+ * browser-tests directory. Pass `crossOrigin: true` to get a URL whose host
+ * differs from the default top-level page origin, useful for iframe tests.
+ *
+ * @param {string} fileName
+ *        the support-file name (without directory)
+ * @param {object} [options]
+ * @param {boolean} [options.crossOrigin=false]
+ */
+function GetTestWebBasedURL(fileName, { crossOrigin = false } = {}) {
+  const origin = crossOrigin ? "https://example.org" : "https://example.com";
+  return (
+    getRootDirectory(gTestPath).replace("chrome://mochitests/content", origin) +
+    fileName
+  );
+}
+
+/**
  * This function would create a new foreround tab and load the url for it. In
  * addition, instead of returning a tab element, we return a tab wrapper that
  * helps us to automatically detect if the media controller of that tab

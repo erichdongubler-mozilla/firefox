@@ -33,6 +33,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PromptListener:
     "chrome://remote/content/shared/listeners/PromptListener.sys.mjs",
   RemoteAgent: "chrome://remote/content/components/RemoteAgent.sys.mjs",
+  SessionDataCategory:
+    "chrome://remote/content/shared/messagehandler/sessiondata/SessionData.sys.mjs",
   SessionDataMethod:
     "chrome://remote/content/shared/messagehandler/sessiondata/SessionData.sys.mjs",
   setDefaultAndAssertSerializationOptions:
@@ -1766,7 +1768,7 @@ class BrowsingContextModule extends RootBiDiModule {
           }
         );
         sessionDataItems.push({
-          category: "viewport-override",
+          category: lazy.SessionDataCategory.ViewportOverride,
           moduleName: "_configuration",
           values: [viewportOverride],
           contextDescriptor: {
@@ -1779,7 +1781,7 @@ class BrowsingContextModule extends RootBiDiModule {
     } else {
       for (const navigable of navigables) {
         sessionDataItems.push({
-          category: "viewport-override",
+          category: lazy.SessionDataCategory.ViewportOverride,
           moduleName: "_configuration",
           values: [viewportOverride],
           contextDescriptor: {
