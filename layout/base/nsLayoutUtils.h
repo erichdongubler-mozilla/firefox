@@ -298,12 +298,6 @@ class nsLayoutUtils {
   static nsIFrame* GetBackdropFrame(const nsIContent* aContent);
 
   /**
-   * Returns the ::checkmark pseudo-element for aContent, if any.
-   */
-  static mozilla::dom::Element* GetCheckmarkPseudo(const nsIContent* aContent);
-  static nsIFrame* GetCheckmarkFrame(const nsIContent* aContent);
-
-  /**
    * Stores generated content pseudos such as ::after into aPseudos.
    */
   static void AppendGeneratedContentPseudos(

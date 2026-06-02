@@ -1770,8 +1770,7 @@ void nsCSSFrameConstructor::CreateGeneratedContentItem(
   MOZ_ASSERT(aPseudoElement == PseudoStyleType::Before ||
                  aPseudoElement == PseudoStyleType::After ||
                  aPseudoElement == PseudoStyleType::Marker ||
-                 aPseudoElement == PseudoStyleType::Backdrop ||
-                 aPseudoElement == PseudoStyleType::Checkmark,
+                 aPseudoElement == PseudoStyleType::Backdrop,
              "unexpected aPseudoElement");
 
   if (aPseudoElement != PseudoStyleType::Backdrop &&
@@ -1812,10 +1811,6 @@ void nsCSSFrameConstructor::CreateGeneratedContentItem(
     case PseudoStyleType::Backdrop:
       elemName = nsGkAtoms::mozgeneratedcontentbackdrop;
       property = nsGkAtoms::backdropPseudoProperty;
-      break;
-    case PseudoStyleType::Checkmark:
-      elemName = nsGkAtoms::mozgeneratedcontentcheckmark;
-      property = nsGkAtoms::checkmarkPseudoProperty;
       break;
     default:
       MOZ_ASSERT_UNREACHABLE("unexpected aPseudoElement");
@@ -9170,11 +9165,6 @@ void nsCSSFrameConstructor::ProcessChildren(
         CreateGeneratedContentItem(aState, aFrame, *aContent->AsElement(),
                                    *parentStyle, PseudoStyleType::Marker,
                                    itemsToConstruct, extraFlags);
-      }
-      if (aContent->IsHTMLElement(nsGkAtoms::option)) {
-        CreateGeneratedContentItem(aState, aFrame, *aContent->AsElement(),
-                                   *parentStyle, PseudoStyleType::Checkmark,
-                                   itemsToConstruct);
       }
       // Probe for generated content before
       CreateGeneratedContentItem(aState, aFrame, *aContent->AsElement(),

@@ -964,16 +964,5 @@ textarea:autofill {
     input[type="file"]:disabled::file-selector-button {
       color: color-mix(currentColor 50%, transparent);
     }
-
-    /* stylelint-disable-next-line selector-pseudo-element-no-unknown */
-    select option::checkmark {
-      content: "\2713" / "";
-      pointer-events: none;
-    }
-
-    /* stylelint-disable-next-line selector-pseudo-element-no-unknown */
-    select option:not(:checked)::checkmark {
-      visibility: hidden;
-    }
   }
 }

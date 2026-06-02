@@ -958,8 +958,6 @@ class PageStyleActor extends Actor {
         // for DevTools. For now we skip them.
         return false;
       case "::-webkit-scrollbar":
-      case "::checkmark":
-        // FIXME: Bug 2042839. Need to handle in DevTools.
         return false;
       default:
         console.error("Unhandled pseudo-element " + pseudo);
