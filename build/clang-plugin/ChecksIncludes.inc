@@ -18,6 +18,7 @@
 #include "FopenUsageChecker.h"
 #endif
 #include "GlobalVariableInitializationChecker.h"
+#include "IntToEnumCastChecker.h"
 #include "JSHandleRootedTypedefChecker.h"
 #include "KungFuDeathGripChecker.h"
 #include "KnownLiveChecker.h"

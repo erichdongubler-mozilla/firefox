@@ -17,6 +17,7 @@ SOURCES += [
     "TestGlobalVariableInitialization.cpp",
     "TestHeapClass.cpp",
     "TestInheritTypeAnnotationsFromTemplateArgs.cpp",
+    "TestIntToEnumCast.cpp",
     "TestJSHandleRootedTypedef.cpp",
     "TestKnownLive.cpp",
     "TestKungFuDeathGrip.cpp",
