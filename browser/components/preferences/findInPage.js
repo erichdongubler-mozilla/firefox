@@ -228,18 +228,12 @@ var gSearchResultsPane = {
           }
         }
       }
-      try {
-        let range = document.createRange();
-        range.setStart(startNode, startValue);
-        range.setEnd(endNode, endValue);
-        this.getFindSelection(startNode.documentGlobal).addRange(range);
+      let range = document.createRange();
+      range.setStart(startNode, startValue);
+      range.setEnd(endNode, endValue);
+      this.getFindSelection(startNode.documentGlobal).addRange(range);
 
-        this.searchResultsHighlighted = true;
-      } catch (ex) {
-        // The range can span text nodes that don't share a selection root (e.g.
-        // across a shadow DOM boundary), which the find selection rejects. The
-        // match still counts as found, so don't let it abort the whole search.
-      }
+      this.searchResultsHighlighted = true;
     }
 
     return !!indices.length;
