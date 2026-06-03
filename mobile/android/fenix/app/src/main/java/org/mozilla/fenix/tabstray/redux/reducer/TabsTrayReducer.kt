@@ -193,7 +193,6 @@ internal object TabsTrayReducer {
                 tabGroupState = state.tabGroupState.copy(
                     groups = action.tabStorageUpdate.tabGroups,
                 ),
-                hasTabDataLoaded = true,
             )
 
             else -> state
