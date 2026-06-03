@@ -169,7 +169,7 @@ class TabStorageMiddleware(
                 handleTabAddedToGroup(groupId = action.groupId, tabId = action.tabId, store = store)
             }
 
-            is TabGroupAction.DeleteConfirmed -> handleDeleteClicked(action.group)
+            is TabGroupAction.DeleteConfirmed -> handleDeleteClicked(action.group, store)
 
             is TabGroupAction.DragAndDropCompleted -> {
                 handleDragAndDrop(action = action, store = store)
@@ -195,7 +195,7 @@ class TabStorageMiddleware(
             }
 
             is TabGroupAction.CloseTabAndDeleteGroupConfirmed -> {
-                handleDeleteClicked(action.group)
+                handleDeleteClicked(action.group, store)
             }
 
             is TabGroupAction.TabClosed -> {
@@ -704,9 +704,22 @@ class TabStorageMiddleware(
         }
     }
 
-    private fun handleDeleteClicked(group: TabsTrayItem.TabGroup) {
+    private fun handleDeleteClicked(
+        group: TabsTrayItem.TabGroup,
+        store: Store<TabsTrayState, TabsTrayAction>,
+    ) {
         scope.launch {
-            removeTabsUseCase.invoke(ids = group.tabs.map { it.id })
+            val inactiveTabIds = if (inactiveTabsEnabled) {
+                store.state.inactiveTabs.tabs.map { it.id }.toSet()
+            } else {
+                emptySet()
+            }
+
+            removeTabsUseCase.invoke(
+                ids = group.tabs.map { it.id },
+                excludedTabIds = inactiveTabIds,
+            )
+
             tabGroupRepository.deleteTabGroupById(group.id)
         }
     }
