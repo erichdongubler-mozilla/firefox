@@ -1019,11 +1019,7 @@ void MediaTransportHandler::OnStateChange(const std::string& aTransportId,
                                           TransportLayer::State aState) {
   {
     MutexAutoLock lock(mStateCacheMutex);
-    if (aState == TransportLayer::TS_NONE) {
-      mStateCache.erase(aTransportId);
-    } else {
-      mStateCache[aTransportId] = aState;
-    }
+    mStateCache[aTransportId] = aState;
   }
   mStateChange.Notify(aTransportId, aState);
 }
@@ -1032,11 +1028,7 @@ void MediaTransportHandler::OnRtcpStateChange(const std::string& aTransportId,
                                               TransportLayer::State aState) {
   {
     MutexAutoLock lock(mStateCacheMutex);
-    if (aState == TransportLayer::TS_NONE) {
-      mRtcpStateCache.erase(aTransportId);
-    } else {
-      mRtcpStateCache[aTransportId] = aState;
-    }
+    mRtcpStateCache[aTransportId] = aState;
   }
   mRtcpStateChange.Notify(aTransportId, aState);
 }
