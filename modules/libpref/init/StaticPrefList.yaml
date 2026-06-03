@@ -11708,7 +11708,7 @@
 # https://drafts.csswg.org/css-position-3/#absolute-cb
 - name: layout.abspos.fragment-aware-inline-cb.enabled
   type: bool
-  value: false
+  value: true
   mirror: always
 
 #---------------------------------------------------------------------------
