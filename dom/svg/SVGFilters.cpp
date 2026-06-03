@@ -408,9 +408,7 @@ bool SVGFELightingElement::OutputIsTainted(
     const nsTArray<bool>& aInputsAreTainted,
     nsIPrincipal* aReferencePrincipal) {
   if (const auto* frame = GetPrimaryFrame()) {
-    if (frame->Style()
-            ->StyleSVGReset()
-            ->mLightingColor.DependsOnCurrentColor()) {
+    if (frame->Style()->StyleSVGReset()->mLightingColor.IsCurrentColor()) {
       return true;
     }
   }
