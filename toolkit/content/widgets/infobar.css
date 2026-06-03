@@ -7,6 +7,7 @@
   --info-bar-text-color: light-dark(var(--color-gray-100), var(--color-gray-05));
   --message-bar-border-color: color-mix(in srgb, currentColor 9%, transparent);
   --message-bar-border-radius: var(--border-radius-small);
+  --message-bar-icon-container-margin-block-start: 0;
   position: relative;
 
   &::before {
