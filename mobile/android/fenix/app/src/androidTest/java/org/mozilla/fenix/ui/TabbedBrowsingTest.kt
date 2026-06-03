@@ -528,6 +528,7 @@ class TabbedBrowsingTest {
     @Test
     fun verifyTabsTrayListViewTest() {
         appContext.settings().gridTabView = false
+        appContext.settings().tabGroupsOnboardingEnabled = false
 
         val webPages = mockWebServer.genericAssets
 
