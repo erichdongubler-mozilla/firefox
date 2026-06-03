@@ -573,12 +573,9 @@ class IPPProxyManagerSingleton extends EventTarget {
     this.#setState(IPPProxyStates.PAUSED);
   }
 
-  async #handleEvent(event) {
-    const { state, prevState } = event.detail;
-    if (state !== lazy.IPProtectionStates.READY) {
+  async #handleEvent(_event) {
+    if (lazy.IPProtectionService.state !== lazy.IPProtectionStates.READY) {
       await this.reset();
-    } else if (prevState !== lazy.IPProtectionStates.READY) {
-      this.refreshUsage();
     }
     this.updateState();
   }
