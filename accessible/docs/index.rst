@@ -20,4 +20,3 @@ The `Mochitest FAQ docs <../testing/mochitest-plain/faq.html#how-can-i-run-acces
    HCMMediaQueries
    HCMCSSChecklist
    TaggedPdfOutput
-
