@@ -104,9 +104,6 @@ class ProviderContextualSearch extends ActionsProvider {
     if (type == INSTALLED_ENGINE) {
       result.engine = engine.name;
       result.dataset = { providesSearchMode: true };
-      if (key != "matched-contextual-search") {
-        result.dataset.immediateSearch = true;
-      }
     }
 
     return new ActionsResult(result);
@@ -343,7 +340,7 @@ class ProviderContextualSearch extends ActionsProvider {
       engine,
       queryContext.searchString,
       controller,
-      this.#resultEngine.key == "matched-contextual-search"
+      type == INSTALLED_ENGINE
     );
 
     if (
