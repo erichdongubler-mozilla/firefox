@@ -595,6 +595,13 @@ class nsPresContext : public nsISupports,
   void SetColorSchemeOverride(mozilla::dom::PrefersColorSchemeOverride);
 
   /**
+   * Sets the effective link parameters overrides, and invalidate stuff as
+   * needed.
+   */
+  void SetLinkParametersOverride(
+      const mozilla::StyleLinkParameters& aLinkParameters);
+
+  /**
    * Return the device's screen size in inches, for font size
    * inflation.
    *
@@ -1425,6 +1432,7 @@ class nsPresContext : public nsISupports,
   FontVisibility mFontVisibility = FontVisibility::Unknown;
   mozilla::dom::PrefersColorSchemeOverride mOverriddenOrEmbedderColorScheme;
   mozilla::StyleForcedColors mForcedColors;
+  mozilla::StyleLinkParameters mLinkParameters;
 
  protected:
   virtual ~nsPresContext();

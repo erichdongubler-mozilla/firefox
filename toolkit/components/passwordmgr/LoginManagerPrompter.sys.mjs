@@ -344,7 +344,7 @@ export class LoginManagerPrompter {
 
     const onKeyUp = e => {
       if (e.key == "Enter") {
-        e.target.closest("popupnotification").button.doCommand();
+        e.target.closest("popupnotification").button.click();
       }
     };
 

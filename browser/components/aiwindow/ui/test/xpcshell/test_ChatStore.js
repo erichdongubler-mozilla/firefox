@@ -1158,6 +1158,38 @@ add_atomic_task(async function test_seenUrls_roundTrip() {
   );
 });
 
+add_atomic_task(async function test_serpUrlsForAnonymousFetch_roundTrip() {
+  const conversation = new ChatConversation({});
+  conversation.title = "conversation with search result url ledger";
+  conversation.addUserMessage("test content", "https://www.firefox.com");
+  conversation.addSerpUrlsForAnonymousFetch([
+    "https://search-result.example.com/a",
+    "https://search-result.example.com/b",
+  ]);
+  await gChatStore.updateConversation(conversation);
+
+  const restored = await gChatStore.findConversationById(conversation.id);
+
+  Assert.ok(restored, "conversation should restore from DB");
+  Assert.ok(
+    restored.serpUrlsForAnonymousFetch.has(
+      "https://search-result.example.com/a"
+    ),
+    "first ledger URL should be restored"
+  );
+  Assert.ok(
+    restored.serpUrlsForAnonymousFetch.has(
+      "https://search-result.example.com/b"
+    ),
+    "second ledger URL should be restored"
+  );
+  Assert.equal(
+    restored.serpUrlsForAnonymousFetch.size,
+    2,
+    "serpUrlsForAnonymousFetch should have exactly 2 entries"
+  );
+});
+
 add_atomic_task(async function test_securityProperties_upsert_updatesFlags() {
   const conversation = new ChatConversation({});
   conversation.title = "conversation that becomes tainted";

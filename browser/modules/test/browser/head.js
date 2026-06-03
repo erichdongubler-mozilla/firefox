@@ -121,12 +121,13 @@ function makeMockPermissionRequest(browser) {
  *         Resolves once the panel has fired the "popuphidden"
  *         event.
  */
-function clickMainAction() {
+async function clickMainAction() {
   let removePromise = BrowserTestUtils.waitForEvent(
     PopupNotifications.panel,
     "popuphidden"
   );
   let popupNotification = getPopupNotificationNode();
+  await popupNotification.button.updateComplete;
   popupNotification.button.click();
   return removePromise;
 }
@@ -161,7 +162,11 @@ function clickSecondaryAction(actionIndex) {
       popupNotification.menupopup,
       "popupshown"
     );
-    EventUtils.synthesizeMouseAtCenter(popupNotification.menubutton, {});
+    await popupNotification.secondaryButton.updateComplete;
+    await EventUtils.synthesizeMouseAtCenter(
+      popupNotification.secondaryButton.chevronButtonEl,
+      {}
+    );
     await dropdownPromise;
 
     // The menuitems in the dropdown are accessible as direct children of the panel,

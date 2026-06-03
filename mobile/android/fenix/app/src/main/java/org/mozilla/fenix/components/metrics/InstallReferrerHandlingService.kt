@@ -17,6 +17,7 @@ import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.nimbus.FxNimbus
+import java.net.URLDecoder
 
 private const val GCLID_PREFIX = "gclid="
 private const val ADJUST_REFTAG_PREFIX = "adjust_reftag="
@@ -30,9 +31,11 @@ private const val ADJUST_REFTAG_PREFIX = "adjust_reftag="
  * telemetry or makes network calls until after ToS is accepted.
  *
  * @param context The application context.
+ * @param scope Coroutine scope used to launch background work.
  */
 class InstallReferrerHandlingService(
     private val context: Context,
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
 ) {
     private val logger = Logger("InstallReferrerHandlingService")
 
@@ -68,15 +71,17 @@ class InstallReferrerHandlingService(
                             if (!installReferrerResponse.isNullOrBlank()) {
                                 response = installReferrerResponse
                                 context.settings().isUserMetaAttributed = isMetaAttribution(installReferrerResponse)
+                                context.settings().isUserTikTokAttributed = isTikTokAttribution(installReferrerResponse)
+                                context.settings().isUserRedditAttributed = isRedditAttribution(installReferrerResponse)
                                 distributionIdManager.updateDistributionIdFromUtmParams(
                                     UTMParams.parseUTMParameters(installReferrerResponse),
                                 )
-                                CoroutineScope(Dispatchers.IO).launch {
+                                scope.launch {
                                     distributionIdManager.startAdjustIfSkippingConsentScreen()
                                 }
                             }
 
-                            CoroutineScope(Dispatchers.IO).launch {
+                            scope.launch {
                                 context.settings().shouldShowMarketingOnboarding =
                                     shouldShowMarketingOnboarding(
                                         installReferrerResponse,
@@ -141,6 +146,46 @@ class InstallReferrerHandlingService(
             return MetaParams.extractMetaAttribution(utmParams.content) != null
         }
 
+        private const val ADJUST_EXTERNAL_CLICK_ID = "adjust_external_click_id"
+        private val TIKTOK_EXTERNAL_CLICK_ID_PREFIXES = listOf("E.C.P.C", "E_C_P_C")
+        private const val REDDIT_EXTERNAL_CLICK_ID_PREFIX = "reddit_"
+
+        @VisibleForTesting
+        internal fun isTikTokAttribution(installReferrerResponse: String?): Boolean {
+            if (installReferrerResponse.isNullOrBlank()) return false
+
+            val decoded = try {
+                URLDecoder.decode(installReferrerResponse, "UTF-8")
+            } catch (e: IllegalArgumentException) {
+                Logger.error("isTikTokAttribution() - bad installReferrerResponse", e)
+
+                installReferrerResponse
+            }
+
+            val clickId = UTMParams.parseInstallReferrer(decoded)[ADJUST_EXTERNAL_CLICK_ID]
+                ?: return false
+
+            return TIKTOK_EXTERNAL_CLICK_ID_PREFIXES.any { clickId.startsWith(it, ignoreCase = true) }
+        }
+
+        @VisibleForTesting
+        internal fun isRedditAttribution(installReferrerResponse: String?): Boolean {
+            if (installReferrerResponse.isNullOrBlank()) return false
+
+            val decoded = try {
+                URLDecoder.decode(installReferrerResponse, "UTF-8")
+            } catch (e: IllegalArgumentException) {
+                Logger.error("isRedditAttribution() - bad installReferrerResponse", e)
+
+                installReferrerResponse
+            }
+
+            val clickId = UTMParams.parseInstallReferrer(decoded)[ADJUST_EXTERNAL_CLICK_ID]
+                ?: return false
+
+            return clickId.startsWith(REDDIT_EXTERNAL_CLICK_ID_PREFIX, ignoreCase = true)
+        }
+
         @Suppress("ReturnCount")
         @VisibleForTesting
         internal suspend fun shouldShowMarketingOnboarding(
@@ -160,6 +205,14 @@ class InstallReferrerHandlingService(
             }
 
             if (isMetaAttribution(installReferrerResponse)) {
+                return true
+            }
+
+            if (isTikTokAttribution(installReferrerResponse)) {
+                return true
+            }
+
+            if (isRedditAttribution(installReferrerResponse)) {
                 return true
             }
 

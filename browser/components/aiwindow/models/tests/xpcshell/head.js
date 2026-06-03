@@ -29,10 +29,12 @@ function makeConversation({
   securityProperties.commit();
   return {
     securityProperties,
+    serpUrlsForAnonymousFetch: new Set(),
     addSeenUrls() {},
     getAllMentionURLs() {
       return new Set();
     },
+    addSerpUrlsForAnonymousFetch() {},
   };
 }
 const { PlacesUtils } = ChromeUtils.importESModule(

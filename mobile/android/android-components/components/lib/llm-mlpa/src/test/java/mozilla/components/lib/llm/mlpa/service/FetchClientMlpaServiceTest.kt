@@ -28,6 +28,39 @@ import kotlin.test.assertIs
 class FetchClientMlpaServiceTest {
 
     @Test
+    fun `GIVEN a verification request WHEN made THEN headers include json content type`() =
+        runTest {
+            val json = """
+                {
+                    "access_token": "my-authorization-token",
+                    "token_type": "bearer",
+                    "expires_in": 6000
+                }
+            """.trimIndent()
+            val client = FakeClient.success(json.asBody)
+
+            val mlpaService =
+                FetchClientMlpaService(client, MlpaConfig.prodProd)
+
+            val response = mlpaService.verify(
+                request = AuthenticationService.Request(
+                    userId = UserId("my-user-id"),
+                    integrityToken = IntegrityToken("my-integrity-token"),
+                    packageName = PackageName("my.package.name"),
+                ),
+            )
+
+            val expected = AuthenticationService.Response(
+                accessToken = AuthorizationToken.Integrity("my-authorization-token"),
+                tokenType = "bearer",
+                expiresIn = 6000,
+            )
+
+            assertEquals(response.getOrThrow(), expected)
+            assertEquals("application/json", client.lastRequest?.headers?.get("content-type"))
+        }
+
+    @Test
     fun `GIVEN a successful response WHEN try to verify an integrity token THEN return a constructed Response`() =
         runTest {
             val json = """

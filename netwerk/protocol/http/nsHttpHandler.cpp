@@ -1139,11 +1139,22 @@ void nsHttpHandler::InitUserAgentComponents() {
           (androidVersion.Length() >= 2 && std::isdigit(androidVersion[0]) &&
            (androidVersion[1] == u'.' || std::isdigit(androidVersion[1]))));
 
+  // Normalize: strip any minor-version suffix (everything from the first '.'
+  // onward, including the '.'). Some OEM firmwares report Build.VERSION.RELEASE
+  // as e.g. "14.0" while stock AOSP reports "14"; that variance splits the
+  // population into fingerprintable subsets without conveying any useful
+  // information about the OS. Bug 2043395.
+  int32_t dotIdx = androidVersion.FindChar(u'.');
+  if (dotIdx >= 0) {
+    androidVersion.Truncate(dotIdx);
+  }
+
   // Spoof version "Android 10" for Android OS versions < 10 to reduce their
   // fingerprintable user information. For Android OS versions >= 10, report
   // the real OS version because some enterprise websites only want to permit
-  // clients with recent OS version (like bug 1876742). Two leading digits
-  // in the version string means the version number is >= 10.
+  // clients with recent OS version (like bug 1876742). After the truncation
+  // above, all versions are bare integers; two digits means the version is
+  // >= 10.
   mPlatform += " ";
   if (NS_SUCCEEDED(rv) && androidVersion.Length() >= 2 &&
       std::isdigit(androidVersion[0]) && std::isdigit(androidVersion[1])) {

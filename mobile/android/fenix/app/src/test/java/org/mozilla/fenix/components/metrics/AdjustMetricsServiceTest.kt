@@ -14,7 +14,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.AURA_PARTNER_ID
+import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.GOOGLE_PARTNER_ID
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.META_PARTNER_ID
+import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.REDDIT_PARTNER_ID
+import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.TIKTOK_PARTNER_ID
 import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.utils.Settings
 
@@ -56,6 +59,8 @@ internal class AdjustMetricsServiceTest {
         AdjustMetricsService.applyThirdPartySharingSettings(
             distribution = DistributionIdManager.Distribution.DEFAULT,
             isUserMetaAttributed = true,
+            isUserTikTokAttributed = false,
+            isUserRedditAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -63,14 +68,42 @@ internal class AdjustMetricsServiceTest {
     }
 
     @Test
-    fun `WHEN the distribution is DEFAULT AND the user is not meta attributed THEN sharing is enabled for META`() {
+    fun `WHEN the distribution is DEFAULT AND the user has no Meta, TikTok, or Reddit attribution THEN sharing is enabled for Google`() {
         AdjustMetricsService.applyThirdPartySharingSettings(
             distribution = DistributionIdManager.Distribution.DEFAULT,
             isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
+            isUserRedditAttributed = false,
             controller = thirdPartySharingController,
         )
 
-        verify { thirdPartySharingController.disableMetaThirdPartySharing() }
+        verify { thirdPartySharingController.enableThirdPartySharingForPartner(GOOGLE_PARTNER_ID) }
+    }
+
+    @Test
+    fun `WHEN the distribution is DEFAULT AND the user is TikTok attributed THEN sharing is enabled for TikTok`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.DEFAULT,
+            isUserMetaAttributed = false,
+            isUserTikTokAttributed = true,
+            isUserRedditAttributed = false,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.enableThirdPartySharingForPartner(TIKTOK_PARTNER_ID) }
+    }
+
+    @Test
+    fun `WHEN the distribution is DEFAULT AND the user is Reddit attributed THEN sharing is enabled for Reddit`() {
+        AdjustMetricsService.applyThirdPartySharingSettings(
+            distribution = DistributionIdManager.Distribution.DEFAULT,
+            isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
+            isUserRedditAttributed = true,
+            controller = thirdPartySharingController,
+        )
+
+        verify { thirdPartySharingController.enableThirdPartySharingForPartner(REDDIT_PARTNER_ID) }
     }
 
     @Test
@@ -78,6 +111,8 @@ internal class AdjustMetricsServiceTest {
         AdjustMetricsService.applyThirdPartySharingSettings(
             distribution = DistributionIdManager.Distribution.AURA_001,
             isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
+            isUserRedditAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -89,6 +124,8 @@ internal class AdjustMetricsServiceTest {
         AdjustMetricsService.applyThirdPartySharingSettings(
             distribution = DistributionIdManager.Distribution.VIVO_001,
             isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
+            isUserRedditAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -100,6 +137,8 @@ internal class AdjustMetricsServiceTest {
         AdjustMetricsService.applyThirdPartySharingSettings(
             distribution = DistributionIdManager.Distribution.DT_001,
             isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
+            isUserRedditAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -111,6 +150,8 @@ internal class AdjustMetricsServiceTest {
         AdjustMetricsService.applyThirdPartySharingSettings(
             distribution = DistributionIdManager.Distribution.DT_002,
             isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
+            isUserRedditAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -122,6 +163,8 @@ internal class AdjustMetricsServiceTest {
         AdjustMetricsService.applyThirdPartySharingSettings(
             distribution = DistributionIdManager.Distribution.DT_003,
             isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
+            isUserRedditAttributed = false,
             controller = thirdPartySharingController,
         )
 
@@ -133,6 +176,8 @@ internal class AdjustMetricsServiceTest {
         AdjustMetricsService.applyThirdPartySharingSettings(
             distribution = DistributionIdManager.Distribution.XIAOMI_001,
             isUserMetaAttributed = false,
+            isUserTikTokAttributed = false,
+            isUserRedditAttributed = false,
             controller = thirdPartySharingController,
         )
 

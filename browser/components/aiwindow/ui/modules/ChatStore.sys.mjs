@@ -177,6 +177,9 @@ class ChatStore {
           security_properties: toJSONOrNull(conversation.securityProperties),
           seen_urls: JSON.stringify(Array.from(conversation.seenUrls ?? [])),
           memories_toggled: conversation.memoriesToggled,
+          serp_urls_for_anonymous_fetch: JSON.stringify(
+            Array.from(conversation.serpUrlsForAnonymousFetch ?? [])
+          ),
         });
 
         const messages = conversation.messages.map(m => ({

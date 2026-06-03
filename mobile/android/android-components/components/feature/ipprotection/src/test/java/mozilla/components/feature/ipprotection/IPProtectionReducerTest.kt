@@ -229,12 +229,13 @@ class IPProtectionReducerTest {
     }
 
     @Test
-    fun `GIVEN successful enrollment WHEN FinishingEnrollment is dispatched THEN user is ready to use the feature`() {
+    fun `GIVEN successful enrollment WHEN FinishingEnrollment is dispatched THEN user is entitled to use the feature and the feature starts activation`() {
         val initialState = buildIPProtectionState(accountStatus = AccountStatus.AwaitingEnrollment)
 
         val resultState = iPProtectionReducer(initialState, InternalAction.FinishingEnrollment(true))
 
         assertEquals(AccountStatus.EnrolledAndEntitled, resultState.accountState.status)
+        assertEquals(true, resultState.activate)
     }
 
     @Test

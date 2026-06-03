@@ -1497,6 +1497,7 @@ export class AboutPreferences {
           items: [
             {
               id: "shortcutsRows",
+              l10nId: "home-prefs-shortcuts-select",
               control: "moz-select",
               options: [
                 {
@@ -1580,6 +1581,7 @@ export class AboutPreferences {
           items: [
             {
               id: "recentActivityRows",
+              l10nId: "home-prefs-recent-activity-select",
               control: "moz-select",
               options: [
                 {
