@@ -419,6 +419,10 @@ input[type=text], input[type=search] {
   border-radius: var(--border-radius-small);
 }
 
+panel-list:not(:defined) {
+  display: none;
+}
+
 panel-item::part(button) {
   padding-inline-start: var(--space-medium);
 }
