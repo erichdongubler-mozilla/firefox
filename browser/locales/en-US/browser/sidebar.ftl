@@ -226,6 +226,11 @@ sidebar-syncedtabs-title = Tabs from other devices
 # currently open in the browser.
 sidebar-opentabs-title = Open tabs
 
+# Title attribute for the pinned tabs section in the Open Tabs sidebar
+# panel.
+sidebar-opentabs-pinned-tabs =
+  .title = Pinned tabs
+
 ## Context for closing synced tabs when hovering over the items
 
 # Context for hovering over the close tab button that will
