@@ -171,13 +171,6 @@ class NetworkParentActor extends Actor {
     }
     this.networkEventWatcher.removeOverride(url);
   }
-
-  setLocalModeMappings(mappings) {
-    if (!this.networkEventWatcher) {
-      throw new Error("Not listening for network events");
-    }
-    this.networkEventWatcher.setLocalModeMappings(mappings);
-  }
 }
 
 exports.NetworkParentActor = NetworkParentActor;
