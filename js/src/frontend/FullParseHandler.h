@@ -757,18 +757,10 @@ class FullParseHandler {
                                  metaHolder);
   }
 
-  BinaryNodeResult newCallImport(NullaryNodeType importHolder, Node singleArg) {
-    return newResult<BinaryNode>(ParseNodeKind::CallImportExpr, importHolder,
-                                 singleArg);
+  BinaryNodeResult newCallImport(NullaryNodeType importHolder, Node singleArg,
+                                 ParseNodeKind kind) {
+    return newResult<BinaryNode>(kind, importHolder, singleArg);
   }
-
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-  BinaryNodeResult newCallImportSource(NullaryNodeType importHolder,
-                                       Node singleArg) {
-    return newResult<BinaryNode>(ParseNodeKind::CallImportSourceExpr,
-                                 importHolder, singleArg);
-  }
-#endif
 
   BinaryNodeResult newCallImportSpec(Node specifierArg, Node optionalArg) {
     return newResult<BinaryNode>(ParseNodeKind::CallImportSpec, specifierArg,

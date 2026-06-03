@@ -12598,12 +12598,13 @@ GeneralParser<ParseHandler, Unit>::importExpr(YieldHandling yieldHandling,
 
     Node spec = MOZ_TRY(handler_.newCallImportSpec(arg, optionalArg));
 
+    ParseNodeKind kind = ParseNodeKind::CallImportExpr;
 #ifdef ENABLE_SOURCE_PHASE_IMPORTS
     if (isSourcePhaseImport) {
-      return handler_.newCallImportSource(importHolder, spec);
+      kind = ParseNodeKind::CallImportSourceExpr;
     }
 #endif
-    return handler_.newCallImport(importHolder, spec);
+    return handler_.newCallImport(importHolder, spec, kind);
   }
 
   error(JSMSG_UNEXPECTED_TOKEN_NO_EXPECT, TokenKindToDesc(next));
