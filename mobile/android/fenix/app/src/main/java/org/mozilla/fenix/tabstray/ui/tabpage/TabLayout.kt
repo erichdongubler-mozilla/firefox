@@ -154,7 +154,7 @@ private val tabListPadding
     @Composable
     @ReadOnlyComposable
     get() = FirefoxTheme.layout.space.static200
-private val ignoredItems = listOf(HEADER_ITEM_KEY, SPAN_ITEM_KEY, TAB_GROUP_ONBOARDING_ITEM_KEY)
+private val ignoredItems = setOf(HEADER_ITEM_KEY, SPAN_ITEM_KEY, TAB_GROUP_ONBOARDING_ITEM_KEY)
 
 /**
  * Top-level UI for displaying a list of tabs.
@@ -493,7 +493,7 @@ private fun ReorderableTabGrid(
                 onItemLongClick(tab)
             }
         },
-        ignoredItems = listOf(HEADER_ITEM_KEY, SPAN_ITEM_KEY, TAB_GROUP_ONBOARDING_ITEM_KEY),
+        ignoredItems = ignoredItems.toList(),
         tabInteractionHandler = tabInteractionHandler,
     )
 
@@ -598,7 +598,7 @@ private fun InteractableTabGrid(
                 onItemLongClick(tab)
             }
         },
-        ignoredItems = listOf(HEADER_ITEM_KEY, SPAN_ITEM_KEY, TAB_GROUP_ONBOARDING_ITEM_KEY),
+        ignoredItems = ignoredItems,
     )
     LaunchedEffect(selectionMode, gridInteractionState.draggedItem.key) {
         if (gridInteractionState.draggedItem.key == null) {
@@ -1296,7 +1296,7 @@ private fun ReorderableTabList(
                 onItemLongClick(tab)
             }
         },
-        ignoredItems = listOf(HEADER_ITEM_KEY, SPAN_ITEM_KEY, TAB_GROUP_ONBOARDING_ITEM_KEY),
+        ignoredItems = ignoredItems.toList(),
         onExitLongPress = { sourceKey ->
             tabInteractionHandler.onDragStart(
                 sourceKey = sourceKey as String,
