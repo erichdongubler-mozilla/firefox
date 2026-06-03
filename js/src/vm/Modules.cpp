@@ -2395,6 +2395,11 @@ static bool ExecuteAsyncModule(JSContext* cx, Handle<ModuleObject*> module) {
 static bool GatherAvailableModuleAncestors(
     JSContext* cx, Handle<ModuleObject*> module,
     MutableHandle<ModuleVector> execList) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
+    return false;
+  }
+
   MOZ_ASSERT(module->status() == ModuleStatus::EvaluatingAsync);
 
   // Step 1. For each Cyclic Module Record m of module.[[AsyncParentModules]],
@@ -2464,10 +2469,11 @@ static void RejectExecutionWithPendingException(JSContext* cx,
   RootedValue exception(cx);
   if (cx->isExceptionPending()) {
     (void)cx->getPendingException(&exception);
+    cx->clearPendingException();
   }
-  cx->clearPendingException();
   if (!AsyncModuleExecutionRejected(cx, module, exception)) {
     MOZ_ASSERT(cx->isThrowingOverRecursed());
+    cx->clearPendingException();
   }
 }
 
