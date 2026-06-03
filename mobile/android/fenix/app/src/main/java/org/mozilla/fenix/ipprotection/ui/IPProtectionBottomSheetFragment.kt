@@ -105,7 +105,6 @@ class IPProtectionBottomSheetFragment : BottomSheetDialogFragment() {
                                 useMobilePage = false,
                             ),
                         )
-                        dismiss()
                     },
                 )
             }
