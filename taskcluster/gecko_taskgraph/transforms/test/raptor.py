@@ -34,7 +34,9 @@ class RaptorSchema(Schema, kw_only=True):
         optionally_keyed_by("app", "test-platform", bool, use_msgspec=True)
     ] = None
     subtests: Optional[  # type: ignore
-        optionally_keyed_by("app", "test-platform", list[object], use_msgspec=True)
+        optionally_keyed_by(
+            "app", "test-platform", "variant", list[object], use_msgspec=True
+        )
     ] = None
     test: Optional[str] = None
     test_url_param: Optional[  # type: ignore
@@ -161,7 +163,12 @@ def handle_keyed_by_prereqs(config, tests):
     as well.
     """
     for test in tests:
-        resolve_keyed_by(test, "raptor.subtests", item_name=test["test-name"])
+        resolve_keyed_by(
+            test,
+            "raptor.subtests",
+            item_name=test["test-name"],
+            variant=test["attributes"].get("unittest_variant"),
+        )
         yield test
 
 
