@@ -467,7 +467,7 @@ struct ParamTraits<mozilla::Variant<Ts...>> {
     // comparisons are off by 1.  If we get to N = 0 then we have failed to
     // find a match to the tag.
     static constexpr size_t Idx = N - 1;
-    using T = mozilla::detail::Nth<Idx, Ts...>;
+    using T = typename mozilla::detail::Nth<Idx, Ts...>::Type;
 
     static ReadResult<paramType> Read(MessageReader* reader, Tag tag) {
       if (tag == Idx) {

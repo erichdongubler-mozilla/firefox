@@ -31,35 +31,18 @@ class Variant;
 namespace detail {
 
 // Nth<N, types...>::Type is the Nth type (0-based) in the list of types Ts.
-#if defined(__has_builtin)
-#  if __has_builtin(__type_pack_element)
-#    define MOZ_HAS_TYPE_PACK_ELEMENT
-#  endif
-#endif
-
-#ifdef MOZ_HAS_TYPE_PACK_ELEMENT
-
 template <size_t N, typename... Ts>
-using Nth = __type_pack_element<N, Ts...>;
-
-#else
-
-template <size_t N, typename... Ts>
-struct NthImpl;
+struct Nth;
 
 template <typename T, typename... Ts>
-struct NthImpl<0, T, Ts...> {
+struct Nth<0, T, Ts...> {
   using Type = T;
 };
 
 template <size_t N, typename T, typename... Ts>
-struct NthImpl<N, T, Ts...> {
-  using Type = typename NthImpl<N - 1, Ts...>::Type;
+struct Nth<N, T, Ts...> {
+  using Type = typename Nth<N - 1, Ts...>::Type;
 };
-
-template <size_t N, typename... Ts>
-using Nth = NthImpl<T, Ts...>;
-#endif
 
 /// SelectVariantTypeHelper is used in the implementation of SelectVariantType.
 template <typename T, typename... Variants>
@@ -646,7 +629,7 @@ MOZ_NON_PARAM MOZ_GSL_OWNER Variant {
    */
   template <size_t N, typename... Args>
   MOZ_IMPLICIT Variant(const VariantIndex<N>&, Args&&... aTs) : tag(N) {
-    using T = detail::Nth<N, Ts...>;
+    using T = typename detail::Nth<N, Ts...>::Type;
     ::new (KnownNotNull, ptr()) T(std::forward<Args>(aTs)...);
   }
 
@@ -714,8 +697,8 @@ MOZ_NON_PARAM MOZ_GSL_OWNER Variant {
   }
 
   template <size_t N, typename... Args>
-  detail::Nth<N, Ts...>& emplace(Args&&... aTs) {
-    using T = detail::Nth<N, Ts...>;
+  typename detail::Nth<N, Ts...>::Type& emplace(Args&&... aTs) {
+    using T = typename detail::Nth<N, Ts...>::Type;
     Impl::destroy(*this);
     tag = N;
     ::new (KnownNotNull, ptr()) T(std::forward<Args>(aTs)...);
@@ -766,11 +749,11 @@ MOZ_NON_PARAM MOZ_GSL_OWNER Variant {
   }
 
   template <size_t N>
-      detail::Nth<N, Ts...>& as() & MOZ_LIFETIME_BOUND {
+      typename detail::Nth<N, Ts...>::Type& as() & MOZ_LIFETIME_BOUND {
     static_assert(N < sizeof...(Ts),
                   "provided an index outside of this Variant's type list");
     MOZ_RELEASE_ASSERT(is<N>());
-    return *static_cast<detail::Nth<N, Ts...>*>(ptr());
+    return *static_cast<typename detail::Nth<N, Ts...>::Type*>(ptr());
   }
 
   /** Immutable const lvalue-reference. */
@@ -783,11 +766,11 @@ MOZ_NON_PARAM MOZ_GSL_OWNER Variant {
   }
 
   template <size_t N>
-  const detail::Nth<N, Ts...>& as() const& MOZ_LIFETIME_BOUND {
+  const typename detail::Nth<N, Ts...>::Type& as() const& MOZ_LIFETIME_BOUND {
     static_assert(N < sizeof...(Ts),
                   "provided an index outside of this Variant's type list");
     MOZ_RELEASE_ASSERT(is<N>());
-    return *static_cast<const detail::Nth<N, Ts...>*>(ptr());
+    return *static_cast<const typename detail::Nth<N, Ts...>::Type*>(ptr());
   }
 
   /** Mutable rvalue-reference. */
@@ -801,11 +784,12 @@ MOZ_NON_PARAM MOZ_GSL_OWNER Variant {
   }
 
   template <size_t N>
-      detail::Nth<N, Ts...>&& as() && MOZ_LIFETIME_BOUND {
+      typename detail::Nth<N, Ts...>::Type&& as() && MOZ_LIFETIME_BOUND {
     static_assert(N < sizeof...(Ts),
                   "provided an index outside of this Variant's type list");
     MOZ_RELEASE_ASSERT(is<N>());
-    return std::move(*static_cast<detail::Nth<N, Ts...>*>(ptr()));
+    return std::move(
+        *static_cast<typename detail::Nth<N, Ts...>::Type*>(ptr()));
   }
 
   /** Immutable const rvalue-reference. */
@@ -818,11 +802,12 @@ MOZ_NON_PARAM MOZ_GSL_OWNER Variant {
   }
 
   template <size_t N>
-  const detail::Nth<N, Ts...>&& as() const&& MOZ_LIFETIME_BOUND {
+  const typename detail::Nth<N, Ts...>::Type&& as() const&& MOZ_LIFETIME_BOUND {
     static_assert(N < sizeof...(Ts),
                   "provided an index outside of this Variant's type list");
     MOZ_RELEASE_ASSERT(is<N>());
-    return std::move(*static_cast<const detail::Nth<N, Ts...>*>(ptr()));
+    return std::move(
+        *static_cast<const typename detail::Nth<N, Ts...>::Type*>(ptr()));
   }
 
   /**
@@ -841,11 +826,11 @@ MOZ_NON_PARAM MOZ_GSL_OWNER Variant {
   }
 
   template <size_t N>
-  detail::Nth<N, Ts...> extract() {
+  typename detail::Nth<N, Ts...>::Type extract() {
     static_assert(N < sizeof...(Ts),
                   "provided an index outside of this Variant's type list");
     MOZ_RELEASE_ASSERT(is<N>());
-    return detail::Nth<N, Ts...>(std::move(as<N>()));
+    return typename detail::Nth<N, Ts...>::Type(std::move(as<N>()));
   }
 
   // Exhaustive matching of all variant types on the contained value.
