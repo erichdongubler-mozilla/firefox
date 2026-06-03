@@ -231,9 +231,7 @@ FormAutofillUtils = {
 
   get useMLInference() {
     return (
-      AppConstants.NIGHTLY_BUILD &&
-      AppConstants.platform !== "android" &&
-      FormAutofillUtils.useMLTelemetry
+      AppConstants.platform !== "android" && FormAutofillUtils.enableMLAutofill
     );
   },
 
@@ -1563,14 +1561,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofillUtils,
-  "useMLTelemetry",
-  "extensions.formautofill.addresses.telemetry.mlenabled",
-  true
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  FormAutofillUtils,
   "enableMLAutofill",
-  "extensions.formautofill.addresses.useml",
+  "extensions.formautofill.useml",
   false
 );
