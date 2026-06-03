@@ -1790,7 +1790,7 @@ fuzzy(0-1,0-24000) == 1025914-1.html 1025914-1-ref.html
 == 1062792-1.html 1062792-1-ref.html
 == 1066554-1.html 1066554-1-ref.html
 == 1069716-1.html 1069716-1-ref.html
-fuzzy(0-10,0-60) fuzzy-if(swgl,0-44,0-150) fuzzy-if(nogpu,0-45,0-200)  fuzzy-if(cocoaWidget,0-44,0-200) fuzzy-if(winWidget,0-45,0-210) == 1078262-1.html about:blank # bug 1656792
+== 1078262-1.html about:blank # bug 1656792
 test-pref(layout.testing.overlay-scrollbars.always-visible,false) == 1081072-1.html 1081072-1-ref.html
 fuzzy(15-65,100-500) fuzzy-if(useDrawSnapshot,0-33,0-218) == 1081185-1.html 1081185-1-ref.html
 == 1097437-1.html 1097437-1-ref.html
