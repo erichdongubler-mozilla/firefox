@@ -1503,16 +1503,16 @@ void TestStreamPayloadHelperTimeDuration() {
   using mozilla::TimeDuration;
   using mozilla::detail::StreamPayloadHelper;
 
-#define TEST(fmt, td, out)                                            \
-  do {                                                                \
-    mozilla::baseprofiler::SpliceableJSONWriter writer(               \
-        mozilla::MakeUnique<StringWriteFunc>(),                       \
-        FailureLatchInfallibleSource::Singleton());                   \
-    writer.Start();                                                   \
-    StreamPayloadHelper<TimeDuration, MS::Format::fmt>::Stream(       \
-        writer, mozilla::MakeStringSpan("v"), (td));                  \
-    writer.End();                                                     \
-    CheckJSON(writer, "{\"v\":" out "}", __LINE__);                   \
+#define TEST(fmt, td, out)                                      \
+  do {                                                          \
+    mozilla::baseprofiler::SpliceableJSONWriter writer(         \
+        mozilla::MakeUnique<StringWriteFunc>(),                 \
+        FailureLatchInfallibleSource::Singleton());             \
+    writer.Start();                                             \
+    StreamPayloadHelper<TimeDuration, MS::Format::fmt>::Stream( \
+        writer, mozilla::MakeStringSpan("v"), (td));            \
+    writer.End();                                               \
+    CheckJSON(writer, "{\"v\":" out "}", __LINE__);             \
   } while (false)
 
   // Milliseconds / Duration / Seconds all serialize as milliseconds.
