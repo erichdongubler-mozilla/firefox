@@ -115,6 +115,8 @@ run-if = [
 
 ["browser_usercharacteristics_timezone.js"]
 
+["browser_usercharacteristics_voices.js"]
+
 ["browser_worker_granular_overrides.js"]
 
 ["browser_worker_overrides.js"]

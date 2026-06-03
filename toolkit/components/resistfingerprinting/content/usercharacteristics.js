@@ -528,14 +528,24 @@ async function populateVoiceList() {
 
     const timeout = new Promise(resolve => {
       setTimeout(() => {
-        resolve([]);
+        // `null` is an internal sentinel meaning "voice population timed
+        // out". The outer caller turns this into an empty result object so
+        // the voices_* Glean fields are left unset for this submission --
+        // separating incomplete enumerations (the asynchronous populate
+        // race) from genuine empty voice lists, which previously both
+        // collapsed to voicesCount=0 / voicesSha1=sha1("").
+        resolve(null);
       }, 5000);
     });
 
     return Promise.race([promise, timeout]);
   }
 
-  return fetchVoices().then(processVoices);
+  return fetchVoices().then(result => {
+    // Timeout: emit nothing for voices_* so analysis can tell timed-out
+    // submissions apart from real zero-voice clients.
+    return result === null ? {} : processVoices(result);
+  });
 }
 
 async function populateMediaCapabilities() {
