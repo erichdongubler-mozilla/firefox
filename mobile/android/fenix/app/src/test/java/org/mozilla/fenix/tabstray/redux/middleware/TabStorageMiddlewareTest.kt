@@ -2053,6 +2053,56 @@ class TabStorageMiddlewareTest {
     }
 
     @Test
+    fun `GIVEN inactive tabs feature is enabled and inactive tabs exist WHEN tab group delete is confirmed THEN exclude inactive tabs from deletion`() = runTest {
+        val browserStore = BrowserStore()
+        val removeTabsUseCase = TabsUseCases(store = browserStore).removeTabs
+
+        val activeGroupedTab = createTab("https://mozilla.org")
+        browserStore.dispatch(TabListAction.AddTabAction(activeGroupedTab))
+
+        val inactiveTabId = "inactive_99"
+        val inactiveTab = TabsTrayItem.Tab(createTab(id = inactiveTabId, url = "https://example.com"))
+
+        val title = "Group 1"
+        val theme = TabGroupTheme.Red
+        val storedGroup = StoredTabGroup(
+            title = title,
+            theme = theme.name,
+            lastModified = 0L,
+        )
+
+        val repository = FakeTabGroupRepository(
+            tabGroupFlow = MutableStateFlow(listOf(storedGroup)),
+        )
+
+        val store = createStore(
+            initialState = TabsTrayState(
+                inactiveTabs = TabsTrayState.InactiveTabsState(tabs = listOf(inactiveTab)),
+            ),
+            inactiveTabsEnabled = true,
+            tabGroupRepository = repository,
+            removeTabsUseCase = removeTabsUseCase,
+            scope = backgroundScope,
+        )
+
+        val group = TabsTrayItem.TabGroup(
+            id = storedGroup.id,
+            title = title,
+            theme = theme,
+            tabs = mutableListOf(TabsTrayItem.Tab(activeGroupedTab)),
+        )
+
+        store.dispatch(TabGroupAction.DeleteConfirmed(group))
+
+        runCurrent()
+        advanceUntilIdle()
+
+        assertTrue(repository.fetchTabGroups().isEmpty())
+
+        assertTrue(browserStore.state.tabs.isEmpty())
+    }
+
+    @Test
     fun `WHEN a user closes the last tab and delete group is confirmed THEN remove the tab group and its tabs`() = runTest {
         val browserStore = BrowserStore()
         val removeTabsUseCase = TabsUseCases(store = browserStore).removeTabs
