@@ -54,7 +54,6 @@ class TextInputHandler;
 
   NSRect mDirtyRect;
 
-  BOOL mBeingShown;
   BOOL mIsAnimationSuppressed;
 
   nsTouchBar* mTouchBar;
@@ -84,8 +83,7 @@ class TextInputHandler;
 - (void)createTrackingArea;
 - (void)removeTrackingArea;
 
-- (void)setIsBeingShown:(BOOL)aValue;
-- (BOOL)isBeingShown;
+@property(nonatomic) BOOL isBeingShown;
 - (BOOL)isVisibleOrBeingShown;
 
 - (void)setIsAnimationSuppressed:(BOOL)aValue;
