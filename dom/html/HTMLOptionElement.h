@@ -114,6 +114,14 @@ class HTMLOptionElement final : public nsGenericHTMLElement {
    */
   HTMLSelectElement* GetSelect() const;
 
+  // https://html.spec.whatwg.org/#concept-select-option-list
+  // Elements whose children are excluded from the select's option list.
+  // Callers handle optgroup separately (context-dependent behavior).
+  static bool IsOptionListBoundary(const nsINode& aNode) {
+    return aNode.IsAnyOfHTMLElements(nsGkAtoms::select, nsGkAtoms::hr,
+                                     nsGkAtoms::option, nsGkAtoms::datalist);
+  }
+
   // https://html.spec.whatwg.org/#concept-option-nearest-ancestor-select
   HTMLSelectElement* ComputeNearestAncestorSelect() const;
 
