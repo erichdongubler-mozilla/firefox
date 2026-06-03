@@ -20,6 +20,67 @@ bool StyleColor::MaybeTransparent() const {
 }
 
 template <>
+bool StyleColor::DependsOnCurrentColor() const;
+
+static bool OptionalDependsOnCurrentColor(const StyleOptional<StyleColor>& o) {
+  return o.IsSome() && o.AsSome().DependsOnCurrentColor();
+}
+
+using ColorFunction = StyleColorFunction<StyleColor>;
+
+template <>
+bool ColorFunction::DependsOnCurrentColor() const {
+  switch (tag) {
+    case Tag::Rgb:
+      return OptionalDependsOnCurrentColor(AsRgb()._0);
+    case Tag::Hsl:
+      return OptionalDependsOnCurrentColor(AsHsl()._0);
+    case Tag::Hwb:
+      return OptionalDependsOnCurrentColor(AsHwb()._0);
+    case Tag::Lab:
+      return OptionalDependsOnCurrentColor(AsLab()._0);
+    case Tag::Lch:
+      return OptionalDependsOnCurrentColor(AsLch()._0);
+    case Tag::Oklab:
+      return OptionalDependsOnCurrentColor(AsOklab()._0);
+    case Tag::Oklch:
+      return OptionalDependsOnCurrentColor(AsOklch()._0);
+    case Tag::Color:
+      return OptionalDependsOnCurrentColor(AsColor()._0);
+  }
+  MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Unknown color function type");
+}
+
+using ColorMix = StyleGenericColorMix<StyleColor, StylePercentage>;
+
+template <>
+bool ColorMix::DependsOnCurrentColor() const {
+  for (const auto& colorMixItem : items.AsSpan()) {
+    if (colorMixItem.color.DependsOnCurrentColor()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+template <>
+bool StyleColor::DependsOnCurrentColor() const {
+  switch (tag) {
+    case Tag::Absolute:
+      return false;
+    case Tag::ColorFunction:
+      return AsColorFunction()->DependsOnCurrentColor();
+    case Tag::CurrentColor:
+      return true;
+    case Tag::ColorMix:
+      return AsColorMix()->DependsOnCurrentColor();
+    case Tag::ContrastColor:
+      return AsContrastColor()->DependsOnCurrentColor();
+  }
+  MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Unknown color type");
+}
+
+template <>
 StyleAbsoluteColor StyleColor::ResolveColor(
     const StyleAbsoluteColor& aForegroundColor) const {
   if (IsAbsolute()) {
