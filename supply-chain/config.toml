@@ -159,6 +159,10 @@ audit-as-crates-io = true
 audit-as-crates-io = true
 notes = "This is a pinned version of the upstream code, presumably to get a fix that hadn't been released yet. We should consider switching to the latest official release."
 
+[policy.minidump-writer]
+audit-as-crates-io = true
+notes = "We are letting a pre-release ride the trains to catch any regressions before we cut an actual release."
+
 [policy.mls-rs-provider-sqlite]
 audit-as-crates-io = true
 notes = "This is a pinned version of the upstream code, pending update of the crate."
