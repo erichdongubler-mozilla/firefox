@@ -6476,8 +6476,17 @@ characteristics:
   mathml_diag_font_family:
     type: string
     description: >
-      The computed font-family value from a MathML element on the page.
-      Shows what font is actually being used for MathML rendering.
+      The family name of the resolved MATH-table font for MathML rendering,
+      as reported by InspectorUtils.getMathFontFamily on a <math> element.
+      Expected values include "Cambria Math" on Windows, "STIX Two Math"
+      on macOS Ventura+, one of "Latin Modern Math" / "STIX Two Math" /
+      "TeX Gyre Pagella Math" / etc. on Linux depending on installed
+      packages, and the literal sentinel "(no MATH font)" on platforms
+      where the layout engine has no MATH-table font available (Android,
+      pre-Ventura macOS). Earlier schema versions of this metric reported
+      the CSS-author font-family value, which was always the literal
+      "math" generic due to mathml.css; see kSubmissionSchema to
+      distinguish.
     lifetime: application
     send_in_pings:
       - user-characteristics
