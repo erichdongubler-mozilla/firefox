@@ -413,7 +413,7 @@ tasks:
                   in:
                       $if: >
                         eventType in ["action", "cron"]
-                        || (eventType == "push" && shortRef == "main")
+                        || (eventType == "push" && repoUrl == "https://github.com/mozilla-firefox/firefox" && shortRef == "main")
                         || (isPullRequest && eventAction in ["opened", "reopened", "synchronize"])
                       then:
                           $let:
