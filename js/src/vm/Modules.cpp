@@ -949,6 +949,11 @@ static bool CyclicModuleResolveExport(JSContext* cx,
                                       MutableHandle<ResolveSet> resolveSet,
                                       MutableHandle<Value> result,
                                       ModuleErrorInfo* errorInfoOut) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
+    return false;
+  }
+
   // Step 2. For each Record { [[Module]], [[ExportName]] } r of resolveSet, do:
   for (const auto& entry : resolveSet) {
     // Step 3.a. If module and r.[[Module]] are the same Module Record and
