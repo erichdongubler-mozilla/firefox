@@ -954,6 +954,31 @@ dom.isObscured = function (el) {
   return !el.contains(tree[0]);
 };
 
+/**
+ * Returns the first rect from a DOMRectList with non-zero width and height,
+ * falling back to the first rect if all are zero-size.
+ *
+ * Inline elements wrapping block-level children produce zero-size line-box
+ * rects at the start/end of their getClientRects() list. Using such a rect
+ * to compute a click point or check visibility leads to incorrect results.
+ *
+ * Note: this diverges from the Webdriver spec. Indeed the Webdriver spec
+ * mentions using the first rect in the list.
+ * See https://github.com/w3c/webdriver/issues/1961
+ *
+ * @param {DOMRectList} rects
+ *     List of rects to search through.
+ *
+ * @returns {DOMRect}
+ *     First rect with non-zero width and height, or rects[0] if all are zero-size.
+ */
+dom.getFirstNonZeroRect = function (rects) {
+  return (
+    Array.prototype.find.call(rects, r => r.width > 0 && r.height > 0) ||
+    rects[0]
+  );
+};
+
 // TODO(ato): Only used by deprecated action API
 // https://bugzil.la/1354578
 /**
@@ -1034,7 +1059,7 @@ dom.getPointerInteractablePaintTree = function (el) {
   }
 
   // step 4
-  let centre = dom.getInViewCentrePoint(rects[0], win);
+  let centre = dom.getInViewCentrePoint(dom.getFirstNonZeroRect(rects), win);
 
   // step 5
   return rootNode.elementsFromPoint(centre.x, centre.y);
