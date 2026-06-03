@@ -984,6 +984,11 @@
     "dark": "{Theme$toolbox/background/color}",
     "forcedColors": "{Theme$toolbox/background/color}"
   },
+  "toolbox/background/nova-gradient": {
+    "light": "linear-gradient(96deg, color-mix({Primitives$toolbox/background/color/gradient-leading} 50%, transparent) 39.84%, color-mix({Primitives$toolbox/background/color/gradient-trailing} 50%, transparent) 101.72%)",
+    "dark": "linear-gradient(96deg, color-mix({Primitives$toolbox/background/color/gradient-leading} 50%, transparent) 39.84%, color-mix({Primitives$toolbox/background/color/gradient-trailing} 50%, transparent) 101.72%)",
+    "forcedColors": "image(transparent)"
+  },
   "toolbox/text/color": {
     "light": "{Colors$color/gray/100}",
     "dark": "{Colors$color/gray/05}",
