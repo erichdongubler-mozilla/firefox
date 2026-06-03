@@ -150,7 +150,7 @@
     /* compiler predicate */ BaselineAvailable(cx),                     \
     /* flag predicate     */ !IsFuzzingIon(cx),                         \
     /* flag force enable  */ false,                                     \
-    /* flag fuzz enable   */ true,                                      \
+    /* flag fuzz enable   */ false,                                     \
     /* preference name    */ custom_page_sizes)                         \
   FEATURE(                                                              \
     /* capitalized name   */ CompactImports,                            \
