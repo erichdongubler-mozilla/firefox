@@ -161,6 +161,19 @@ fun WebCompatReporter(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            Text(
+                text = stringResource(id = R.string.webcompat_reporter_label_description_2),
+                style = FirefoxTheme.typography.headline7,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = FirefoxTheme.layout.space.static50,
+                        bottom = FirefoxTheme.layout.space.static100,
+                        end = FirefoxTheme.layout.space.static50,
+                    ),
+            )
+
             TextField(
                 value = state.problemDescription,
                 onValueChange = {
@@ -170,11 +183,13 @@ fun WebCompatReporter(
                         ),
                     )
                 },
-                placeholder = stringResource(id = R.string.webcompat_reporter_problem_description_placeholder_text),
+                placeholder = stringResource(id = R.string.webcompat_reporter_problem_description_placeholder_text_2),
                 errorText = "",
-                label = stringResource(id = R.string.webcompat_reporter_label_description),
                 singleLine = false,
                 maxLines = PROBLEM_DESCRIPTION_MAX_LINES,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(225.dp),
             )
 
             Spacer(modifier = Modifier.height(16.dp))
