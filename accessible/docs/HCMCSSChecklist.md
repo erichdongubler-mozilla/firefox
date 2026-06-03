@@ -9,7 +9,6 @@ Note: These checks are ordered intentionally, please complete them in order.
 ---
 
 ## Architecture
----
 
 ### Check 1: Have I identified all places where HCM overrides are necessary?
 
