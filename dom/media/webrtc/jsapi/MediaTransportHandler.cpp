@@ -871,10 +871,8 @@ void MediaTransportHandlerSTS::RemoveTransportsExcept(
         for (auto it = mTransports.begin(); it != mTransports.end();) {
           const std::string transportId(it->first);
           if (!aTransportIds.count(transportId)) {
-            if (it->second.mFlow) {
-              OnStateChange(transportId, TransportLayer::TS_NONE);
-              OnRtcpStateChange(transportId, TransportLayer::TS_NONE);
-            }
+            OnStateChange(transportId, TransportLayer::TS_CLOSED);
+            OnRtcpStateChange(transportId, TransportLayer::TS_CLOSED);
             // Erase the transport before destroying the ice stream so that
             // the close_notify alerts have a chance to be sent as the
             // TransportFlow destructors execute.
