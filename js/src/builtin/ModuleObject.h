@@ -614,12 +614,8 @@ class GraphLoadingStateRecordObject : public NativeObject {
 JSObject* GetOrCreateModuleMetaObject(JSContext* cx, HandleObject module);
 
 JSObject* StartDynamicModuleImport(JSContext* cx, HandleScript script,
-                                   HandleValue specifier, HandleValue options);
-
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-JSObject* StartDynamicModuleImportSource(JSContext* cx, HandleScript script,
-                                         HandleValue specifier);
-#endif
+                                   HandleValue specifier, HandleValue options,
+                                   ImportPhase phase);
 
 }  // namespace js
 

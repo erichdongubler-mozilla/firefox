@@ -4,7 +4,7 @@
 
 const lazy = {};
 
-import { html } from "chrome://global/content/vendor/lit.all.mjs";
+import { html, when } from "chrome://global/content/vendor/lit.all.mjs";
 
 import { SidebarPage } from "./sidebar-page.mjs";
 
@@ -58,8 +58,15 @@ export class SidebarOpenTabs extends SidebarPage {
     }));
   }
 
-  onPrimaryAction(e) {
-    const { tabElement } = e.originalTarget;
+  get pinnedTabItems() {
+    return this.tabItems.filter(item => item.indicators?.includes("pinned"));
+  }
+
+  get unpinnedTabItems() {
+    return this.tabItems.filter(item => !item.indicators?.includes("pinned"));
+  }
+
+  #activateTab(tabElement) {
     if (!tabElement) {
       return;
     }
@@ -68,12 +75,54 @@ export class SidebarOpenTabs extends SidebarPage {
     browserWindow.gBrowser.selectedTab = tabElement;
   }
 
+  #getPinnedIconSrc(item) {
+    const { icon, url } = item;
+    // For HTTP and moz-remote-image: URLs, route through page-icon:
+    // which the panel CSP allows. data: URIs and chrome:// pass through.
+    if (
+      icon &&
+      !icon.startsWith("http") &&
+      !icon.startsWith("moz-remote-image:")
+    ) {
+      return icon;
+    }
+    if (url) {
+      return `page-icon:${url}`;
+    }
+    return "chrome://global/skin/icons/defaultFavicon.svg";
+  }
+
+  onPrimaryAction(e) {
+    this.#activateTab(e.originalTarget.tabElement);
+  }
+
   onSecondaryAction(e) {
     const { tabElement } = e.detail.item;
     if (!tabElement) {
       return;
     }
     tabElement.documentGlobal.gBrowser.removeTabs([tabElement]);
+  }
+
+  #pinnedTabsTemplate() {
+    return html`
+      <div
+        class="pinned-tabs"
+        role="tablist"
+        data-l10n-id="sidebar-opentabs-pinned-tabs"
+      >
+        ${this.pinnedTabItems.map(
+          item => html`
+            <moz-button
+              type="icon ghost"
+              .iconSrc=${this.#getPinnedIconSrc(item)}
+              title=${item.title}
+              @click=${() => this.#activateTab(item.tabElement)}
+            ></moz-button>
+          `
+        )}
+      </div>
+    `;
   }
 
   render() {
@@ -90,11 +139,12 @@ export class SidebarOpenTabs extends SidebarPage {
           view="viewOpenTabsSidebar"
         ></sidebar-panel-header>
         <div class="sidebar-panel-scrollable-content">
+          ${when(this.pinnedTabItems.length, () => this.#pinnedTabsTemplate())}
           <sidebar-tab-list
             maxTabsLength="-1"
             secondaryActionClass="dismiss-button"
             .multiSelect=${false}
-            .tabItems=${this.tabItems}
+            .tabItems=${this.unpinnedTabItems}
             @fxview-tab-list-primary-action=${this.onPrimaryAction}
             @fxview-tab-list-secondary-action=${this.onSecondaryAction}
           ></sidebar-tab-list>

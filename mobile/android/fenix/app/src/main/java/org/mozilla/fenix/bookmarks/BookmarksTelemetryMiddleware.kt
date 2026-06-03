@@ -279,8 +279,6 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
         is ImportAction.ImportFailed -> BookmarksManagement.importFailed.record(NoExtras())
         is ImportAction.ImportFileClicked.FromMenu ->
             BookmarksManagement.importFromFileMenuClick.record(NoExtras())
-        is ImportAction.ImportFileClicked.FromButton ->
-            BookmarksManagement.importFromFileButtonClick.record(NoExtras())
         is ImportAction.ImportSucceeded -> {
             BookmarksManagement.importSuccessful.record(
                 extra = BookmarksManagement.ImportSuccessfulExtra(bookmarksCount = action.count),

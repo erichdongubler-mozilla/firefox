@@ -4978,24 +4978,37 @@ bool GeneralParser<ParseHandler, Unit>::withClause(ListNodeType attributesSet) {
     return false;
   }
 
+  // https://tc39.es/ecma262/#prod-WithClause
+  // WithClause:
+  //     with { }
+  //     with { WithEntries ,opt }
   if (!mustMatchToken(TokenKind::LeftCurly, JSMSG_CURLY_AFTER_WITH)) {
     return false;
   }
 
-  // Handle the form |... with {}|
-  TokenKind token;
-  if (!tokenStream.getToken(&token)) {
+  js::HashSet<TaggedParserAtomIndex, TaggedParserAtomIndexHasher,
+              js::SystemAllocPolicy>
+      usedAttributeKeys;
+
+  bool empty;
+  if (!tokenStream.matchToken(&empty, TokenKind::RightCurly)) {
     return false;
   }
-  if (token == TokenKind::RightCurly) {
+  if (empty) {
+    // WithClause: with { }
     return true;
   }
 
-  js::HashSet<TaggedParserAtomIndex, TaggedParserAtomIndexHasher,
-              js::SystemAllocPolicy>
-      usedAssertionKeys;
-
+  // WithClause: with { WithEntries ,opt }
+  // WithEntries:
+  //    AttributeKey : StringLiteral
+  //    AttributeKey : StringLiteral , WithEntries
   for (;;) {
+    TokenKind token;
+    if (!tokenStream.getToken(&token)) {
+      return false;
+    }
+
     TaggedParserAtomIndex keyName;
     if (TokenKindIsPossibleIdentifierName(token)) {
       keyName = anyChars.currentName();
@@ -5006,7 +5019,7 @@ bool GeneralParser<ParseHandler, Unit>::withClause(ListNodeType attributesSet) {
       return false;
     }
 
-    auto p = usedAssertionKeys.lookupForAdd(keyName);
+    auto p = usedAttributeKeys.lookupForAdd(keyName);
     if (p) {
       UniqueChars str = this->parserAtoms().toPrintableString(keyName);
       if (!str) {
@@ -5016,7 +5029,7 @@ bool GeneralParser<ParseHandler, Unit>::withClause(ListNodeType attributesSet) {
       error(JSMSG_DUPLICATE_ATTRIBUTE_KEY, str.get());
       return false;
     }
-    if (!usedAssertionKeys.add(p, keyName)) {
+    if (!usedAttributeKeys.add(p, keyName)) {
       ReportOutOfMemory(this->fc_);
       return false;
     }
@@ -5038,23 +5051,32 @@ bool GeneralParser<ParseHandler, Unit>::withClause(ListNodeType attributesSet) {
     MOZ_TRY_VAR_OR_RETURN(importAttributeNode,
                           handler_.newImportAttribute(keyNode, valueNode),
                           false);
-
     handler_.addList(attributesSet, importAttributeNode);
 
-    if (!tokenStream.getToken(&token)) {
+    bool hasComma;
+    if (!tokenStream.matchToken(&hasComma, TokenKind::Comma)) {
       return false;
     }
-    if (token == TokenKind::Comma) {
-      if (!tokenStream.getToken(&token)) {
-        return false;
-      }
-    }
-    if (token == TokenKind::RightCurly) {
+    if (!hasComma) {
+      // No comma: end of WithEntries, expect closing '}'.
       break;
     }
+    // The comma is either the optional trailing ',' in WithClause
+    // (with { WithEntries ,opt }), or the ',' separator in WithEntries
+    // (AttributeKey : StringLiteral , WithEntries).
+    TokenKind next;
+    if (!tokenStream.peekToken(&next)) {
+      return false;
+    }
+    if (next == TokenKind::RightCurly) {
+      // Optional trailing comma in WithClause — '}' consumed below.
+      break;
+    }
+    // Comma was the WithEntries separator — another WithEntries must follow.
   }
 
-  return true;
+  return mustMatchToken(TokenKind::RightCurly,
+                        JSMSG_RC_AFTER_IMPORT_ATTRIBUTE_LIST);
 }
 
 template <class ParseHandler, typename Unit>
@@ -12598,12 +12620,13 @@ GeneralParser<ParseHandler, Unit>::importExpr(YieldHandling yieldHandling,
 
     Node spec = MOZ_TRY(handler_.newCallImportSpec(arg, optionalArg));
 
+    ParseNodeKind kind = ParseNodeKind::CallImportExpr;
 #ifdef ENABLE_SOURCE_PHASE_IMPORTS
     if (isSourcePhaseImport) {
-      return handler_.newCallImportSource(importHolder, spec);
+      kind = ParseNodeKind::CallImportSourceExpr;
     }
 #endif
-    return handler_.newCallImport(importHolder, spec);
+    return handler_.newCallImport(importHolder, spec, kind);
   }
 
   error(JSMSG_UNEXPECTED_TOKEN_NO_EXPECT, TokenKindToDesc(next));

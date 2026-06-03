@@ -2868,7 +2868,9 @@
     <string name="ip_protection_title">VPN</string>
     <!-- Label for the browser VPN toggle on the settings screen -->
     <string name="ip_protection_toggle_label">VPN</string>
-    <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+    <!-- Content description for the browser VPN settings screen top bar back button -->
+    <string name="ip_protection_navigate_back_button_content_description">Navigate back</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
     <string name="ip_protection_promo_headline">%s’s built-in VPN</string>
     <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text.-->
     <string name="ip_protection_promo_body_2">Browse with extra protection by hiding your location, even on public Wi-Fi. %s</string>
@@ -2915,6 +2917,8 @@
     <string name="ip_protection_toolbar_pill_description">VPN is active.</string>
     <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
     <string name="ip_protection_get_started">Get started</string>
+    <!-- Label for the "connecting" state of the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+    <string name="ip_protection_connecting">Connecting…</string>
     <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
     <string name="ip_protection_onboarding_card_headline">Try %s’s built-in VPN</string>
     <!-- The body of the VPN onboarding card.

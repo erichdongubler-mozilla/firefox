@@ -167,6 +167,5 @@ internal sealed class ImportAction : BookmarksAction {
     internal data class ImportSucceeded(val count: Int) : ImportAction()
     internal sealed class ImportFileClicked : ImportAction() {
         internal data object FromMenu : ImportFileClicked()
-        internal data object FromButton : ImportFileClicked()
     }
 }

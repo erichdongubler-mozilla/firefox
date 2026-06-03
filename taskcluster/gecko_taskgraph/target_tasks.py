@@ -851,6 +851,9 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
             if "windows11" in platform and "bing-search" in try_name:
                 return False
             if "browsertime" in try_name:
+                if "chrome" in try_name or "custom-car" in try_name:
+                    if "linux2404" in platform:
+                        return False
                 if "chrome" in try_name:
                     if "tp6" in try_name and "essential" not in try_name:
                         return False
@@ -862,6 +865,8 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                             for x in ["speedometer3", "jetstream3", "motionmark"]
                         ):
                             return False
+                    if "wasm-godot" in try_name:
+                        return False
                     return True
                 # chromium-as-release has its own cron
                 if "custom-car" in try_name:

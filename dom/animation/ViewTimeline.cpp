@@ -9,6 +9,7 @@
 #include "mozilla/ServoCSSParser.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/dom/Animation.h"
+#include "mozilla/dom/CSSUnitValue.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/ElementInlines.h"
@@ -159,20 +160,36 @@ already_AddRefed<ViewTimeline> ViewTimeline::Constructor(
                                      PseudoStyleType::NotPseudo, inset);
 }
 
-Nullable<double> ViewTimeline::GetStartOffset() const {
+already_AddRefed<CSSNumericValue> ViewTimeline::GetStartOffset(
+    ErrorResult& aRv) const {
   auto data = ComputeTimelineData();
   if (!data) {
     return nullptr;
   }
-  return nsPresContext::AppUnitsToFloatCSSPixels(data->mStart);
+
+  if (!StaticPrefs::layout_css_typed_om_enabled()) {
+    aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return nullptr;
+  }
+  return MakeAndAddRef<CSSUnitValue>(
+      GetParentObject(), nsPresContext::AppUnitsToDoubleCSSPixels(data->mStart),
+      "px"_ns);
 }
 
-Nullable<double> ViewTimeline::GetEndOffset() const {
+already_AddRefed<CSSNumericValue> ViewTimeline::GetEndOffset(
+    ErrorResult& aRv) const {
   auto data = ComputeTimelineData();
   if (!data) {
     return nullptr;
   }
-  return nsPresContext::AppUnitsToFloatCSSPixels(data->mEnd);
+
+  if (!StaticPrefs::layout_css_typed_om_enabled()) {
+    aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return nullptr;
+  }
+  return MakeAndAddRef<CSSUnitValue>(
+      GetParentObject(), nsPresContext::AppUnitsToDoubleCSSPixels(data->mEnd),
+      "px"_ns);
 }
 
 void ViewTimeline::ReplacePropertiesWith(

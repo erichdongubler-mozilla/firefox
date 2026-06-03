@@ -274,6 +274,8 @@ ChromeUtils.defineLazyGetter(lazy, "gFormAutofillStorage", () => {
 });
 
 export class FormAutofillParent extends JSWindowActorParent {
+  static #mlFeature;
+
   constructor() {
     super();
     FormAutofillStatus.init();
@@ -550,24 +552,21 @@ export class FormAutofillParent extends JSWindowActorParent {
       fieldsIncludeIframe
     );
 
+    if (FormAutofillUtils.useMLInference) {
+      if (fieldDetails.some(fd => !fd.fieldName && fd.mlData)) {
+        if (!FormAutofillParent.#mlFeature) {
+          FormAutofillParent.#mlFeature = new lazy.FormAutofillML();
+        }
+
+        await FormAutofillParent.#mlFeature.detectFields(fieldDetails);
+      }
+    }
+
     // Now we have collected all the fields for the form, run parsing heuristics
     // to update the field name based on surrounding fields.
     const sections = FormAutofillParent.parseAndClassifyFields(fieldDetails);
 
     this.sectionsByRootId.set(rootElementId, sections);
-
-    // This should really happen before parseAndClassifyFields, but the
-    // asyncronous nature of the ML call means that multiple calls to add
-    // to this.sectionsByRootId will be performed in a non-fixed order,
-    // resulting in test failures. This will be something to fix up later
-    // and it doesn't matter right now until we get to a more final form of
-    // what will happen here.
-    if (FormAutofillUtils.useMLInference) {
-      await lazy.FormAutofillML.detectFields(
-        topBC.topChromeWindow,
-        fieldDetails
-      );
-    }
 
     // Note that 'onFieldsDetected' is not only called when a form is detected,
     // but also called when the elements in a form are changed. When the elements

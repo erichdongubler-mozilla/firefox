@@ -27,6 +27,7 @@ const statsExpectedByType = {
       "jitterBufferTargetDelay",
       "jitterBufferMinimumDelay",
       "jitterBufferEmittedCount",
+      "transportId",
     ],
     optional: ["remoteId", "nackCount", "qpSum", "estimatedPlayoutTimestamp"],
     localVideoOnly: [
@@ -67,7 +68,6 @@ const statsExpectedByType = {
     ],
     unimplemented: [
       "mediaTrackId",
-      "transportId",
       "associateStatsId",
       "sliCount",
       "packetsRepaired",
@@ -96,6 +96,7 @@ const statsExpectedByType = {
       "headerBytesSent",
       "retransmittedPacketsSent",
       "retransmittedBytesSent",
+      "transportId",
     ],
     optional: ["nackCount", "qpSum", "rid"],
     localAudioOnly: [],
@@ -111,7 +112,7 @@ const statsExpectedByType = {
       "totalEncodeTime",
       "totalEncodedBytesTarget",
     ],
-    unimplemented: ["mediaTrackId", "transportId", "sliCount", "targetBitrate"],
+    unimplemented: ["mediaTrackId", "sliCount", "targetBitrate"],
     deprecated: ["isRemote"],
   },
   "remote-inbound-rtp": {
@@ -129,11 +130,11 @@ const statsExpectedByType = {
       "totalRoundTripTime",
       "fractionLost",
       "roundTripTimeMeasurements",
+      "transportId",
     ],
     optional: ["roundTripTime", "nackCount", "packetsReceived"],
     unimplemented: [
       "mediaTrackId",
-      "transportId",
       "packetsDiscarded",
       "associateStatsId",
       "sliCount",
@@ -159,9 +160,10 @@ const statsExpectedByType = {
       "bytesSent",
       "localId",
       "remoteTimestamp",
+      "transportId",
     ],
     optional: ["nackCount"],
-    unimplemented: ["mediaTrackId", "transportId", "sliCount", "targetBitrate"],
+    unimplemented: ["mediaTrackId", "sliCount", "targetBitrate"],
     deprecated: ["isRemote"],
   },
   "media-source": {
@@ -247,9 +249,10 @@ const statsExpectedByType = {
       "priority",
       "usernameFragment",
       "foundation",
+      "transportId",
     ],
     optional: ["relayProtocol", "proxied", "tcpType"],
-    unimplemented: ["networkType", "url", "transportId"],
+    unimplemented: ["networkType", "url"],
     deprecated: [
       "candidateId",
       "portNumber",
@@ -270,9 +273,10 @@ const statsExpectedByType = {
       "candidateType",
       "priority",
       "usernameFragment",
+      "transportId",
     ],
     optional: ["foundation", "relayProtocol", "proxied", "tcpType"],
-    unimplemented: ["networkType", "url", "transportId"],
+    unimplemented: ["networkType", "url"],
     deprecated: [
       "candidateId",
       "portNumber",
@@ -446,6 +450,13 @@ function pedanticChecks(report) {
         stat.kind,
         `codecId ${stat.codecId} in report is for a mimeType of the same ` +
           `media type as the referencing rtp stream stat`
+      );
+
+      // transportId
+      ok(stat.transportId, `{stat.type}.transportId has a value`);
+      ok(
+        report.has(stat.transportId),
+        `{stat.type} transportId ${stat.transportId} exists in report`
       );
 
       if (isRemote) {
@@ -1289,8 +1300,11 @@ function pedanticChecks(report) {
       }
 
       // transportId
-      // (no transport stats yet)
-      ok(stat.transportId, "codec.transportId is set");
+      ok(stat.transportId, `{stat.type}.transportId has a value`);
+      ok(
+        report.has(stat.transportId),
+        `{stat.type} transportId ${stat.transportId} exists in report`
+      );
 
       // clockRate
       if (stat.mimeType.startsWith("audio")) {
@@ -1457,10 +1471,10 @@ function pedanticChecks(report) {
       //
 
       // transportId
+      ok(stat.transportId, `{stat.type}.transportId has a value`);
       ok(
-        stat.transportId,
-        `${stat.type}.transportId has a value. value=` +
-          `${stat.transportId} (${stat.kind})`
+        report.has(stat.transportId),
+        `{stat.type} transportId ${stat.transportId} exists in report`
       );
 
       // localCandidateId

@@ -25,8 +25,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
-  UrlbarTokenizer:
-    "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
 });
 
@@ -432,8 +431,8 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
     if (
       queryContext.tokens.some(
         t =>
-          t.type == lazy.UrlbarTokenizer.TYPE.RESTRICT_TAG ||
-          t.type == lazy.UrlbarTokenizer.TYPE.RESTRICT_TITLE
+          t.type == lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_TAG ||
+          t.type == lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_TITLE
       )
     ) {
       return false;

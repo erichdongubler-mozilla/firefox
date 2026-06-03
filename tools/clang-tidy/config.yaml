@@ -48,6 +48,10 @@ clang_checkers:
     reliability: high
   - name: bugprone-move-forwarding-reference
     reliability: high
+  - name: bugprone-redundant-branch-condition
+    reliability: high
+  - name: misc-definitions-in-headers
+    reliability: high
   - name: performance-for-range-copy
     reliability: high
     config:

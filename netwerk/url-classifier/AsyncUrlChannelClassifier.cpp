@@ -10,6 +10,7 @@
 #include "mozilla/ErrorNames.h"
 #include "mozilla/FlowMarkers.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/PerfStats.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/glean/UrlClassifierMetrics.h"
@@ -1081,9 +1082,13 @@ nsresult AntiTrackingChannelClassifierUtils::CheckChannelHelper(
                     }
                   }
                   if (aPerformBlocking) {
+                    TimeDuration checkChannelHelperDuration =
+                        TimeStamp::Now() - outerStartTime;
                     glean::urlclassifier::check_channel_helper_time
-                        .AccumulateRawDuration(TimeStamp::Now() -
-                                               outerStartTime);
+                        .AccumulateRawDuration(checkChannelHelperDuration);
+                    PerfStats::RecordMeasurement(
+                        PerfStats::Metric::UrlClassifierCheckChannel,
+                        checkChannelHelperDuration);
                   }
                   PROFILER_MARKER(
                       "AntiTrackingChannelClassifier::CheckChannelHelper",

@@ -95,7 +95,7 @@ const DEFAULT_ACTIONS = {
   },
   clear: {
     l10nCommands: [
-      "quickactions-cmd-clearrecenthistory",
+      "quickactions-cmd-clearrecenthistory2",
       "quickactions-clearrecenthistory",
     ],
     icon: "chrome://browser/skin/forget.svg",

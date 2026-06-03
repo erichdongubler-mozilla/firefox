@@ -513,15 +513,10 @@ class SyntaxParseHandler {
                                  NullaryNodeType metaHolder) {
     return NodeGeneric;
   }
-  BinaryNodeResult newCallImport(NullaryNodeType importHolder, Node singleArg) {
+  BinaryNodeResult newCallImport(NullaryNodeType importHolder, Node singleArg,
+                                 ParseNodeKind kind) {
     return NodeGeneric;
   }
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-  BinaryNodeResult newCallImportSource(NullaryNodeType importHolder,
-                                       Node singleArg) {
-    return NodeGeneric;
-  }
-#endif
   BinaryNodeResult newCallImportSpec(Node specifierArg, Node optionalArg) {
     return NodeGeneric;
   }

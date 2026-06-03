@@ -93,8 +93,8 @@ android {
                     exclude 'org/mozilla/gecko/media/GeckoHlsPlayer.java'
                     exclude 'org/mozilla/gecko/media/GeckoHlsRendererBase.java'
                     exclude 'org/mozilla/gecko/media/GeckoHlsVideoRenderer.java'
+                    exclude 'org/mozilla/gecko/media/HttpChannelDataSource.java'
                     exclude 'org/mozilla/gecko/media/Utils.java'
-                    exclude 'org/mozilla/gecko/util/GeckoHttpDataSource.java'
                 }
 
                 if (mozconfig.substs.MOZ_WEBRTC) {

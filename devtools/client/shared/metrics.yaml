@@ -1991,13 +1991,29 @@ devtools.main:
       - jdescottes@mozilla.com
     expires: never
     extra_keys:
+      descriptor_type:
+        description: >
+          The type of the target descriptor for the toolbox.
+        type: string
       error_name:
         description: >
           The name of the captured error.
         type: string
+      host_type:
+        description: >
+          The host type of the toolbox.
+        type: string
       is_destroying:
         description: >
           True if toolbox destroy already started when the error occurred.
+        type: boolean
+      is_local_tab:
+        description: >
+          True if the toolbox is debugging a local tab.
+        type: boolean
+      is_window_closed:
+        description: >
+          True if the window owning the toolbox is closed.
         type: boolean
       stack:
         description: >

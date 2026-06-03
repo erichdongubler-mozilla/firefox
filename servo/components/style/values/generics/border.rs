@@ -28,6 +28,7 @@ use style_traits::{CssWriter, ToCss};
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C, u8)]
 pub enum GenericBorderImageSideWidth<LP, N> {
@@ -60,10 +61,8 @@ pub use self::GenericBorderImageSideWidth as BorderImageSideWidth;
     ToCss,
     ToResolvedValue,
     ToShmem,
-    ToTyped,
 )]
 #[repr(C)]
-#[typed(todo_derive_fields)]
 pub struct GenericBorderImageSlice<NumberOrPercentage> {
     /// The offsets.
     #[css(field_bound)]

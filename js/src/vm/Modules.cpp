@@ -16,6 +16,7 @@
 
 #include "builtin/JSON.h"  // js::ParseJSONWithReviver
 #include "builtin/ModuleObject.h"
+#include "builtin/Number.h"  // js::Int32ToAtom
 #include "builtin/Promise.h"  // js::CreatePromiseObjectForAsync, js::AsyncFunctionReturned
 #include "ds/Sort.h"
 #include "frontend/BytecodeCompiler.h"  // js::frontend::CompileModule
@@ -2667,7 +2668,7 @@ bool js::AsyncModuleExecutionRejected(JSContext* cx,
   return true;
 }
 
-// https://tc39.es/proposal-import-attributes/#sec-evaluate-import-call
+// https://tc39.es/ecma262/#sec-evaluate-import-call
 // NOTE: The caller needs to handle the promise.
 static bool EvaluateDynamicImportOptions(
     JSContext* cx, HandleValue optionsArg,
@@ -2695,12 +2696,12 @@ static bool EvaluateDynamicImportOptions(
     return false;
   }
 
-  // Step 11.e. If attributesObj is not undefined, then
+  // Step 11.d. If attributesObj is not undefined, then
   if (attributesValue.isUndefined()) {
     return true;
   }
 
-  // Step 11.e.i. If attributesObj is not an Object, then
+  //   Step i. If attributesObj is not an Object, then
   if (!attributesValue.isObject()) {
     JS_ReportErrorNumberASCII(
         cx, GetErrorMessage, nullptr, JSMSG_NOT_EXPECTED_TYPE, "import",
@@ -2708,8 +2709,8 @@ static bool EvaluateDynamicImportOptions(
     return false;
   }
 
-  // Step 11.e.ii. Let entries be
-  // Completion(EnumerableOwnProperties(attributesObj, key+value)).
+  //   Step ii. Let entries be
+  //   Completion(EnumerableOwnProperties(attributesObj, key+value)).
   RootedObject attributesObject(cx, &attributesValue.toObject());
   RootedIdVector attributes(cx);
   if (!GetPropertyKeys(cx, attributesObject, JSITER_OWNONLY, &attributes)) {
@@ -2729,65 +2730,75 @@ static bool EvaluateDynamicImportOptions(
 
   size_t numberOfValidAttributes = 0;
 
-  // Step 11.e.iv. For each element entry of entries, do
+  //   Step iv. For each element entry of entries, do
   RootedId key(cx);
   RootedValue value(cx);
   Rooted<JSAtom*> keyAtom(cx);
   Rooted<JSString*> valueString(cx);
   for (size_t i = 0; i < numberOfAttributes; i++) {
-    // Step 11.e.ii.iv.1. Let key be ! Get(entry, "0").
+    //   Step 1. Let key be ! Get(entry, "0").
     key = attributes[i];
 
-    // Step 11.e.ii.iv.2. Let value be ! Get(entry, "1").
+    //   Step 2. Let value be ! Get(entry, "1").
     if (!GetProperty(cx, attributesObject, attributesObject, key, &value)) {
       return false;
     }
 
-    // Step 11.e.ii.iv.3. If key is a String, then
-    if (key.isString()) {
-      // Step 11.f (reordered). If AllImportAttributesSupported(attributes) is
-      // false, then
-      //
-      // Note: This should be driven by a host hook
-      // (HostGetSupportedImportAttributes), however the infrastructure of said
-      // host hook is deeply unclear, and so right now embedders will not have
-      // the ability to alter or extend the set of supported attributes.
-      // See https://bugzilla.mozilla.org/show_bug.cgi?id=1840723.
-      bool supported = key.isAtom(cx->names().type);
-      if (!supported) {
-        UniqueChars printableKey = AtomToPrintableString(cx, key.toAtom());
-        if (!printableKey) {
-          return false;
-        }
-        JS_ReportErrorNumberASCII(
-            cx, GetErrorMessage, nullptr,
-            JSMSG_IMPORT_ATTRIBUTES_DYNAMIC_IMPORT_UNSUPPORTED_ATTRIBUTE,
-            printableKey.get());
-        return false;
-      }
+    //   Step 3. If key is a String, then
+    //
+    //   JSITER_OWNONLY only returns String and Int keys; Int keys are
+    //   converted to String atoms below.
+    MOZ_ASSERT(key.isString() || key.isInt());
 
-      // Step 10.d.v.3.a. If value is not a String, then
-      if (!value.isString()) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_NOT_EXPECTED_TYPE, "import", "string",
-                                  InformalValueTypeName(value));
-        return false;
-      }
-
-      // Step 10.d.v.3.b. Append the ImportAttribute Record { [[Key]]: key,
-      // [[Value]]: value } to attributes.
-      keyAtom = key.toAtom();
-      valueString = value.toString();
-      attributesArrayArg.infallibleEmplaceBack(keyAtom, valueString);
-      ++numberOfValidAttributes;
+    //     Step a. If value is not a String, then
+    if (!value.isString()) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_NOT_EXPECTED_TYPE, "import", "string",
+                                InformalValueTypeName(value));
+      return false;
     }
+
+    if (key.isInt()) {
+      keyAtom = Int32ToAtom(cx, key.toInt());
+      if (!keyAtom) {
+        return false;
+      }
+    } else {
+      keyAtom = key.toAtom();
+    }
+
+    // Step 11.e (reordered). If AllImportAttributesSupported(attributes) is
+    // false, then
+    //
+    // Note: This should be driven by a host hook
+    // (HostGetSupportedImportAttributes), however the infrastructure of said
+    // host hook is deeply unclear, and so right now embedders will not have
+    // the ability to alter or extend the set of supported attributes.
+    // See https://bugzilla.mozilla.org/show_bug.cgi?id=1840723.
+    if (keyAtom != cx->names().type) {
+      UniqueChars printableKey = AtomToPrintableString(cx, keyAtom);
+      if (!printableKey) {
+        return false;
+      }
+      JS_ReportErrorNumberASCII(
+          cx, GetErrorMessage, nullptr,
+          JSMSG_IMPORT_ATTRIBUTES_DYNAMIC_IMPORT_UNSUPPORTED_ATTRIBUTE,
+          printableKey.get());
+      return false;
+    }
+
+    // Step 3.b. Append the ImportAttribute Record { [[Key]]: key,
+    // [[Value]]: value } to attributes.
+    valueString = value.toString();
+    attributesArrayArg.infallibleEmplaceBack(keyAtom, valueString);
+    ++numberOfValidAttributes;
   }
 
   if (numberOfValidAttributes == 0) {
     return true;
   }
 
-  // Step 10.g (skipped). Sort attributes according to the lexicographic order
+  // Step 11.f (skipped). Sort attributes according to the lexicographic order
   // of their [[Key]] fields, treating the value of each such field as a
   // sequence of UTF-16 code unit values.
   //
@@ -2799,15 +2810,24 @@ static bool EvaluateDynamicImportOptions(
 // https://tc39.es/ecma262/#sec-evaluate-import-call
 JSObject* js::StartDynamicModuleImport(JSContext* cx, HandleScript script,
                                        HandleValue specifierArg,
-                                       HandleValue optionsArg) {
-  // Step 7. Let promiseCapability be ! NewPromiseCapability(%Promise%).
-  RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
+                                       HandleValue optionsArg,
+                                       ImportPhase phase) {
+  RootedObject promise(cx);
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  if (phase == ImportPhase::Source) {
+    promise = PromiseObject::createSkippingExecutor(cx);
+  } else
+#endif
+  {
+    // Step 7. Let promiseCapability be ! NewPromiseCapability(%Promise%).
+    promise = JS::NewPromiseObject(cx, nullptr);
+  }
   if (!promise) {
     return nullptr;
   }
 
   if (!TryStartDynamicModuleImport(cx, script, specifierArg, optionsArg,
-                                   promise, ImportPhase::Evaluation)) {
+                                   promise, phase)) {
     if (!RejectPromiseWithPendingError(cx, promise.as<PromiseObject>())) {
       return nullptr;
     }
@@ -2866,28 +2886,6 @@ static bool TryStartDynamicModuleImport(JSContext* cx, HandleScript script,
 
   return true;
 }
-
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-// https://tc39.es/proposal-source-phase-imports/#sec-evaluate-import-call
-JSObject* js::StartDynamicModuleImportSource(JSContext* cx, HandleScript script,
-                                             HandleValue specifierArg) {
-  JS::Rooted<PromiseObject*> promise(cx,
-                                     PromiseObject::createSkippingExecutor(cx));
-  if (!promise) {
-    return nullptr;
-  }
-
-  if (!TryStartDynamicModuleImport(cx, script, specifierArg,
-                                   JS::UndefinedHandleValue, promise,
-                                   ImportPhase::Source)) {
-    if (!RejectPromiseWithPendingError(cx, promise)) {
-      return nullptr;
-    }
-  }
-
-  return promise;
-}
-#endif
 
 static bool OnRootModuleRejected(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);

@@ -37,6 +37,7 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/customizableui/PanelMultiView.sys.mjs",
   RecentlyClosedTabsAndWindowsMenuUtils:
     "resource:///modules/sessionstore/RecentlyClosedTabsAndWindowsMenuUtils.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 var StarUI = {
@@ -576,7 +577,7 @@ var PlacesCommandHook = {
     let win =
       BrowserWindowTracker.getTopWindow() ??
       (await BrowserWindowTracker.promiseOpenWindow());
-    win.gURLBar.search(UrlbarTokenizer.RESTRICT.BOOKMARK, {
+    win.gURLBar.search(UrlbarShared.RESTRICT_TOKENS.BOOKMARK, {
       searchModeEntry: "bookmarkmenu",
     });
   },
@@ -585,7 +586,7 @@ var PlacesCommandHook = {
     let win =
       BrowserWindowTracker.getTopWindow() ??
       (await BrowserWindowTracker.promiseOpenWindow());
-    win.gURLBar.search(UrlbarTokenizer.RESTRICT.HISTORY, {
+    win.gURLBar.search(UrlbarShared.RESTRICT_TOKENS.HISTORY, {
       searchModeEntry: "historymenu",
     });
   },

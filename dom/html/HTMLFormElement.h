@@ -66,7 +66,8 @@ class HTMLFormElement final : public nsGenericHTMLElement {
                       nsAttrValue& aResult) override;
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
   void WillHandleEvent(EventChainPostVisitor& aVisitor) override;
-  nsresult PostHandleEvent(EventChainPostVisitor& aVisitor) override;
+  MOZ_CAN_RUN_SCRIPT nsresult
+  PostHandleEvent(EventChainPostVisitor& aVisitor) override;
 
   nsresult BindToTree(BindContext&, nsINode& aParent) override;
   void UnbindFromTree(UnbindContext&) override;
@@ -356,7 +357,7 @@ class HTMLFormElement final : public nsGenericHTMLElement {
     RefPtr<HTMLFormElement> mForm;
   };
 
-  nsresult DoReset();
+  MOZ_CAN_RUN_SCRIPT nsresult DoReset();
 
   // Async callback to handle removal of our default submit
   void HandleDefaultSubmitRemoval();

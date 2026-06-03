@@ -516,7 +516,8 @@ void ContStack::init(ContStackArena* arena, uintptr_t allocationBase,
 }
 
 void ContStack::prepare(Handle<ContObject*> continuation,
-                        Handle<JSFunction*> target, void* contBaseFrameStub) {
+                        Handle<JSFunction*> target, void* contBaseFrameStub,
+                        const Code* creatorCode) {
   // Can only prepare a dead stack.
   MOZ_RELEASE_ASSERT(isDead());
   MOZ_RELEASE_ASSERT(target->isWasm());
@@ -528,6 +529,7 @@ void ContStack::prepare(Handle<ContObject*> continuation,
   initialResumeTarget_.stack = &target_;
 
   initialResumeCallee_ = target;
+  initialResumeCode_ = creatorCode;
   handlers_ = nullptr;
   resumeTarget_ = &initialResumeTarget_;
 
@@ -564,6 +566,7 @@ void ContStack::reset() {
   initialResumeTarget_.stack = nullptr;
 
   initialResumeCallee_ = nullptr;
+  initialResumeCode_ = nullptr;
   handlers_ = nullptr;
   resumeTarget_ = nullptr;
 }
@@ -838,14 +841,15 @@ bool ContStackArena::contains(uintptr_t address) const {
 
 UniqueContStack ContStackArena::allocate(Handle<ContObject*> continuation,
                                          Handle<JSFunction*> target,
-                                         void* contBaseFrameStub) {
+                                         void* contBaseFrameStub,
+                                         const Code* creatorCode) {
   if (isFull()) {
     return nullptr;
   }
   uint32_t freeIndex = uint32_t(std::countr_zero(currentFreeMask_));
   currentFreeMask_ &= ~(uint64_t(1) << freeIndex);
   UniqueContStack result(stack(freeIndex));
-  result->prepare(continuation, target, contBaseFrameStub);
+  result->prepare(continuation, target, contBaseFrameStub, creatorCode);
   return result;
 }
 
@@ -939,7 +943,8 @@ ContStackArena* ContStackAllocator::findArenaForAddress(
 UniqueContStack ContStackAllocator::allocate(JSContext* cx,
                                              Handle<ContObject*> continuation,
                                              Handle<JSFunction*> target,
-                                             void* contBaseFrameStub) {
+                                             void* contBaseFrameStub,
+                                             const Code* creatorCode) {
   ensureInitialized();
 
   ContStackArena* arena = findOrAddArenaForAllocate(cx);
@@ -951,7 +956,7 @@ UniqueContStack ContStackAllocator::allocate(JSContext* cx,
   }
 
   UniqueContStack stack =
-      arena->allocate(continuation, target, contBaseFrameStub);
+      arena->allocate(continuation, target, contBaseFrameStub, creatorCode);
 
   // This arena should have capacity, so allocation should be infallible.
   MOZ_ASSERT(stack);
@@ -1004,15 +1009,16 @@ size_t ContStackAllocator::sizeOfNonHeap() const {
 
 /* static */
 ContObject* ContObject::create(JSContext* cx, Handle<JSFunction*> target,
-                               void* contBaseFrameStub) {
+                               void* contBaseFrameStub,
+                               const Code* creatorCode) {
   Rooted<ContObject*> cont(cx, NewBuiltinClassInstance<ContObject>(cx));
   if (!cont) {
     ReportOutOfMemory(cx);
     return nullptr;
   }
 
-  UniqueContStack stack(
-      cx->wasm().contStacks().allocate(cx, cont, target, contBaseFrameStub));
+  UniqueContStack stack(cx->wasm().contStacks().allocate(
+      cx, cont, target, contBaseFrameStub, creatorCode));
   if (!stack) {
     return nullptr;
   }

@@ -93,7 +93,6 @@ export default [
       "toolkit/components/utils/JsonSchemaValidator.sys.mjs",
       "toolkit/modules/AsanReporter.sys.mjs",
       "toolkit/modules/GMPInstallManager.sys.mjs",
-      "toolkit/modules/OSKeyStore.sys.mjs",
       "toolkit/modules/ProfileAge.sys.mjs",
       "toolkit/modules/tests/xpcshell/test_Log*.js",
       "toolkit/mozapps/defaultagent/BackgroundTask_defaultagent.sys.mjs",

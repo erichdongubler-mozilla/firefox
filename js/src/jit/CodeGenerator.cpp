@@ -3805,23 +3805,15 @@ void CodeGenerator::visitModuleMetadata(LModuleMetadata* lir) {
 }
 
 void CodeGenerator::visitDynamicImport(LDynamicImport* lir) {
+  pushArg(Imm32(uint8_t(lir->mir()->phase())));
   pushArg(ToValue(lir->options()));
   pushArg(ToValue(lir->specifier()));
   pushArg(ImmGCPtr(current->mir()->info().script()));
 
-  using Fn = JSObject* (*)(JSContext*, HandleScript, HandleValue, HandleValue);
+  using Fn = JSObject* (*)(JSContext*, HandleScript, HandleValue, HandleValue,
+                           ImportPhase);
   callVM<Fn, js::StartDynamicModuleImport>(lir);
 }
-
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-void CodeGenerator::visitDynamicImportSource(LDynamicImportSource* lir) {
-  pushArg(ToValue(lir->specifier()));
-  pushArg(ImmGCPtr(current->mir()->info().script()));
-
-  using Fn = JSObject* (*)(JSContext*, HandleScript, HandleValue);
-  callVM<Fn, js::StartDynamicModuleImportSource>(lir);
-}
-#endif
 
 void CodeGenerator::visitLambda(LLambda* lir) {
   Register envChain = ToRegister(lir->environmentChain());

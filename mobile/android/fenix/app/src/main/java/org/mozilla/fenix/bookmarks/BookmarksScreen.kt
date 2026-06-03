@@ -93,7 +93,6 @@ import mozilla.components.browser.state.action.AwesomeBarAction
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
-import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.FloatingActionButton
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.button.OutlinedButton
@@ -379,7 +378,6 @@ private fun BookmarksList(
             EmptyList(
                 state = emptyListState,
                 dispatcher = store::dispatch,
-                showBookmarksImport = state.showBookmarksImport,
             )
             return@Scaffold
         }
@@ -1000,7 +998,6 @@ private fun BookmarksState.emptyListState(): EmptyListState? {
 @Composable
 private fun EmptyList(
     state: EmptyListState,
-    showBookmarksImport: Boolean,
     dispatcher: (BookmarksAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -1018,12 +1015,10 @@ private fun EmptyList(
                 is EmptyListState.NotAuthenticated -> RootEmptyContent(
                     dispatcher,
                     showSignIn = true,
-                    showBookmarksImport = showBookmarksImport,
                 )
                 EmptyListState.Authenticated -> RootEmptyContent(
                     dispatcher,
                     showSignIn = false,
-                    showBookmarksImport = showBookmarksImport,
                 )
                 EmptyListState.Folder -> FolderEmptyContent()
             }
@@ -1035,7 +1030,6 @@ private fun EmptyList(
 private fun RootEmptyContent(
     dispatcher: (BookmarksAction) -> Unit,
     showSignIn: Boolean,
-    showBookmarksImport: Boolean,
 ) {
     Image(
         painter = painterResource(R.drawable.ic_kit_bookmarks_empty_state),
@@ -1053,16 +1047,6 @@ private fun RootEmptyContent(
     )
 
     Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static300))
-
-    if (showBookmarksImport) {
-        FilledButton(
-            text = stringResource(R.string.bookmark_import_menu_button),
-            onClick = { dispatcher(ImportAction.ImportFileClicked.FromButton) },
-            modifier = Modifier
-                .heightIn(40.dp)
-                .fillMaxWidth(),
-        )
-    }
 
     if (showSignIn) {
         Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))

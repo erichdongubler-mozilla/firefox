@@ -174,8 +174,6 @@ dictionary RTCDataChannelStats : RTCStats {
   DOMString           label;
   DOMString           protocol;
   long                dataChannelIdentifier;
-  // RTCTransportId is not yet implemented - Bug 1225723
-  // DOMString transportId;
   RTCDataChannelState state;
   unsigned long       messagesSent;
   unsigned long long  bytesSent;
@@ -193,7 +191,7 @@ enum RTCStatsIceCandidatePairState {
 };
 
 dictionary RTCIceCandidatePairStats : RTCStats {
-  DOMString transportId;
+  required DOMString transportId;
   DOMString localCandidateId;
   DOMString remoteCandidateId;
   RTCStatsIceCandidatePairState state;
@@ -214,6 +212,7 @@ dictionary RTCIceCandidatePairStats : RTCStats {
 };
 
 dictionary RTCIceCandidateStats : RTCStats {
+  required DOMString transportId;
   DOMString address;
   long port;
   DOMString protocol;
@@ -223,10 +222,6 @@ dictionary RTCIceCandidateStats : RTCStats {
   DOMString foundation;
   DOMString usernameFragment;
   RTCIceTcpCandidateType tcpType;
-  // Because we use this internally but don't support RTCIceCandidateStats,
-  // we need to keep the field as ChromeOnly. Bug 1225723
-  [ChromeOnly]
-  DOMString transportId;
   [ChromeOnly]
   DOMString proxied;
 };

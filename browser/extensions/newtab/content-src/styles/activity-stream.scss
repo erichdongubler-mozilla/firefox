@@ -131,6 +131,14 @@ input {
   }
 }
 
+// The panel list custom element is still loading when the page first paints,
+// so its menu items, which should stay hidden until opened, briefly show. Hide
+// it until the element has loaded. We cannot fix this inside the component,
+// since that fix would be delayed by the same loading.
+panel-list:not(:defined) {
+  display: none;
+}
+
 panel-item::part(button) {
   padding-inline-start: var(--space-medium);
 }

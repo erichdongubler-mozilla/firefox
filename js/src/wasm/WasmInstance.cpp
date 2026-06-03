@@ -1879,9 +1879,10 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   }
   MOZ_ASSERT(target->isWasm());
 
-  void* stub = instance->code().sharedStubs().codeBase +
-               instance->code().contBaseFrameOffset();
-  ContObject* cont = ContObject::create(cx, target, stub);
+  const Code& creatorCode = instance->code();
+  void* stub =
+      creatorCode.sharedStubs().codeBase + creatorCode.contBaseFrameOffset();
+  ContObject* cont = ContObject::create(cx, target, stub, &creatorCode);
   return AnyRef::fromJSObjectOrNull(cont).forCompiledCode();
 }
 

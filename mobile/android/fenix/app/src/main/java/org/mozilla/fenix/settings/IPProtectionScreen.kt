@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,12 +21,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,19 +49,23 @@ import mozilla.components.compose.base.PromoCard
 import mozilla.components.compose.base.Switch
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.FilledButton
+import mozilla.components.compose.base.button.IconButton
 import mozilla.components.concept.engine.ipprotection.IPProtectionHandler
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.store.state.Authorized
 import mozilla.components.feature.ipprotection.store.state.BYTES_PER_GB
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
+import mozilla.components.feature.ipprotection.store.state.Uninitialized
 import mozilla.components.feature.ipprotection.store.state.maxDataGb
+import mozilla.components.feature.ipprotection.store.state.remainingDataGb
 import mozilla.components.feature.ipprotection.store.state.usedDataGb
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
+import mozilla.components.ui.icons.R as iconsR
 
 private val PROMO_ILLUSTRATION_SIZE = 60.dp
 
@@ -65,63 +73,139 @@ private val PROMO_ILLUSTRATION_SIZE = 60.dp
  * The main VPN / IP Protection settings screen.
  *
  * @param state Current [IPProtectionHandler.StateInfo] to render.
+ * @param readyToUse Whether the user is entitled to use the service.
+ * @param syncingData Whether the data sync is in progress.
  * @param onVpnToggle Called when the VPN switch is toggled.
  * @param onLearnMoreClick Called when any "Learn more" link is tapped.
  * @param onGetStartedClick Called when the "Get started" button is tapped.
+ * @param showDebugAction Whether to show the debug menu action in the toolbar.
+ * @param onDebugActionClick Called when the debug menu action is tapped.
+ * @param onNavigateBack Called when the back navigation icon is tapped.
  */
 @Composable
 fun IPProtectionScreen(
     state: IPProtectionState,
+    readyToUse: Boolean,
+    syncingData: Boolean,
     onVpnToggle: (Boolean) -> Unit,
     onLearnMoreClick: () -> Unit,
     onGetStartedClick: () -> Unit,
+    showDebugAction: Boolean = false,
+    onDebugActionClick: () -> Unit = {},
+    onNavigateBack: () -> Unit,
 ) {
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.surface,
-    ) {
-        Column(
-            modifier = Modifier.verticalScroll(rememberScrollState()),
+    Scaffold(
+        topBar = {
+            IPProtectionTopAppBar(
+                showDebugAction = showDebugAction,
+                onNavigateBack = onNavigateBack,
+                onDebugActionClick = onDebugActionClick,
+            )
+        },
+    ) { paddingValues ->
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            color = MaterialTheme.colorScheme.surface,
         ) {
-            Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static100))
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+            ) {
+                Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static100))
 
-            VpnPromoCard(
-                isActive = state.proxyStatus is Authorized.Active,
-                onLearnMoreClick = onLearnMoreClick,
-                modifier = Modifier.padding(horizontal = FirefoxTheme.layout.space.dynamic200),
-            )
+                VpnPromoCard(
+                    isActive = state.proxyStatus is Authorized.Active,
+                    onLearnMoreClick = onLearnMoreClick,
+                    modifier = Modifier.padding(horizontal = FirefoxTheme.layout.space.dynamic200),
+                )
 
-            Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))
+                Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))
 
-            VpnToggleRow(
-                checked = state.proxyStatus is Authorized.Active,
-                enabled = state.proxyStatus is Authorized && state.proxyStatus !is Authorized.DataLimitReached,
-                onToggle = onVpnToggle,
-            )
-
-            HorizontalDivider()
-
-            if (state.proxyStatus is Authorized) {
-                DataLimitSection(state = state, onLearnMoreClick = onLearnMoreClick)
+                VpnToggleRow(
+                    checked = state.proxyStatus is Authorized.Active,
+                    enabled = state.proxyStatus is Authorized && state.proxyStatus !is Authorized.DataLimitReached,
+                    onToggle = onVpnToggle,
+                )
 
                 HorizontalDivider()
 
-                VpnLocationSection()
-            } else {
-                Spacer(modifier = Modifier.weight(1f))
+                if (readyToUse) {
+                    DataLimitSection(state = state, onLearnMoreClick = onLearnMoreClick)
 
-                FilledButton(
-                    text = stringResource(R.string.ip_protection_get_started),
-                    modifier = Modifier
-                        .padding(horizontal = FirefoxTheme.layout.space.static200)
-                        .fillMaxWidth(),
-                    onClick = onGetStartedClick,
-                )
+                    HorizontalDivider()
 
-                Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static400))
+                    VpnLocationSection()
+                } else {
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    val text = if (syncingData) {
+                        stringResource(R.string.ip_protection_connecting)
+                    } else {
+                        stringResource(R.string.ip_protection_get_started)
+                    }
+
+                    FilledButton(
+                        text = text,
+                        enabled = !syncingData,
+                        modifier = Modifier
+                            .padding(horizontal = FirefoxTheme.layout.space.static200)
+                            .fillMaxWidth(),
+                        onClick = onGetStartedClick,
+                    )
+
+                    Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static400))
+                }
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun IPProtectionTopAppBar(
+    showDebugAction: Boolean,
+    onNavigateBack: () -> Unit,
+    onDebugActionClick: () -> Unit,
+) {
+    TopAppBar(
+        title = {
+            Text(
+                text = stringResource(R.string.ip_protection_title),
+                style = FirefoxTheme.typography.headline5,
+            )
+        },
+        navigationIcon = {
+            IconButton(
+                onClick = onNavigateBack,
+                contentDescription = stringResource(
+                    R.string.ip_protection_navigate_back_button_content_description,
+                ),
+            ) {
+                Icon(
+                    painter = painterResource(iconsR.drawable.mozac_ic_back_24),
+                    contentDescription = null,
+                )
+            }
+        },
+        actions = {
+            if (showDebugAction) {
+                IconButton(
+                    onClick = onDebugActionClick,
+                    contentDescription = stringResource(R.string.content_description_menu),
+                ) {
+                    Icon(
+                        painter = painterResource(iconsR.drawable.mozac_ic_debug_drawer_24),
+                        contentDescription = stringResource(R.string.debug_drawer_title),
+                    )
+                }
+            }
+        },
+        windowInsets = WindowInsets(
+            top = 0.dp,
+            bottom = 0.dp,
+        ),
+    )
 }
 
 @OptIn(ExperimentalAndroidComponentsApi::class)
@@ -148,7 +232,7 @@ private fun DataLimitSection(
 
         if (!isDataLimitReached) {
             Text(
-                text = stringResource(R.string.ip_protection_data_limit_value, state.usedDataGb, state.maxDataGb),
+                text = stringResource(R.string.ip_protection_data_limit_value, state.remainingDataGb, state.maxDataGb),
                 style = FirefoxTheme.typography.body2,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -304,9 +388,14 @@ private fun IPProtectionScreenActivePreview(
                 remainingDataBytes = 40 * BYTES_PER_GB.toLong(),
                 maxDataBytes = 50 * BYTES_PER_GB.toLong(),
             ),
+            readyToUse = true,
+            syncingData = false,
             onVpnToggle = {},
             onLearnMoreClick = {},
             onGetStartedClick = {},
+            showDebugAction = false,
+            onDebugActionClick = {},
+            onNavigateBack = {},
         )
     }
 }
@@ -323,9 +412,14 @@ private fun IPProtectionScreenNotEnrolledPreview(
                 eligibilityStatus = EligibilityStatus.Eligible,
                 serviceStatus = ServiceState.Unauthenticated,
             ),
+            readyToUse = false,
+            syncingData = true,
             onVpnToggle = {},
             onLearnMoreClick = {},
             onGetStartedClick = {},
+            showDebugAction = false,
+            onDebugActionClick = {},
+            onNavigateBack = {},
         )
     }
 }
@@ -344,9 +438,40 @@ private fun IPProtectionScreenPausedPreview(
                 maxDataBytes = 50 * BYTES_PER_GB.toLong(),
                 remainingDataBytes = 0L,
             ),
+            readyToUse = true,
+            syncingData = false,
             onVpnToggle = {},
             onLearnMoreClick = {},
             onGetStartedClick = {},
+            showDebugAction = false,
+            onDebugActionClick = {},
+            onNavigateBack = {},
+        )
+    }
+}
+
+@OptIn(ExperimentalAndroidComponentsApi::class)
+@FlexibleWindowPreview
+@Composable
+private fun IPProtectionScreenConnectingPreview(
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme = theme) {
+        IPProtectionScreen(
+            state = IPProtectionState(
+                eligibilityStatus = EligibilityStatus.Eligible,
+                proxyStatus = Uninitialized,
+                remainingDataBytes = 40 * BYTES_PER_GB.toLong(),
+                maxDataBytes = 50 * BYTES_PER_GB.toLong(),
+            ),
+            readyToUse = false,
+            syncingData = false,
+            onVpnToggle = {},
+            onLearnMoreClick = {},
+            onGetStartedClick = {},
+            showDebugAction = false,
+            onDebugActionClick = {},
+            onNavigateBack = {},
         )
     }
 }

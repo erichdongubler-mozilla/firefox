@@ -790,12 +790,12 @@ static bool GC(JSContext* cx, unsigned argc, Value* vp) {
     if (arg.isString()) {
       bool shrinking = false;
       bool last_ditch = false;
-      bool debug_gc = false;
       if (!JS_StringEqualsLiteral(cx, arg.toString(), "shrinking",
-                                  &shrinking) ||
-          !JS_StringEqualsLiteral(cx, arg.toString(), "last-ditch",
-                                  &last_ditch) ||
-          !JS_StringEqualsLiteral(cx, arg.toString(), "debug-gc", &debug_gc)) {
+                                  &shrinking)) {
+        return false;
+      }
+      if (!JS_StringEqualsLiteral(cx, arg.toString(), "last-ditch",
+                                  &last_ditch)) {
         return false;
       }
       if (shrinking) {
@@ -803,10 +803,6 @@ static bool GC(JSContext* cx, unsigned argc, Value* vp) {
       } else if (last_ditch) {
         options = JS::GCOptions::Shrink;
         reason = JS::GCReason::LAST_DITCH;
-      } else if (debug_gc) {
-        // This reason is allowed to trigger high frequency GC mode by
-        // StartReasonCanTriggerHFMode.
-        reason = JS::GCReason::DEBUG_GC;
       }
     }
   }
@@ -10331,14 +10327,13 @@ static bool GetLastOOMStackTrace(JSContext* cx, unsigned argc, Value* vp) {
 // clang-format off
 static const JSFunctionSpecWithHelp TestingFunctions[] = {
     JS_FN_HELP("gc", ::GC, 0, 0,
-"gc([obj] | 'zone' [, ('shrinking' | 'last-ditch' | 'debug-gc') ])",
+"gc([obj] | 'zone' [, ('shrinking' | 'last-ditch') ])",
 "  Run the garbage collector.\n"
 "  The first parameter describes which zones to collect: if an object is\n"
 "  given, GC only its zone. If 'zone' is given, GC any zones that were\n"
 "  scheduled via schedulegc.\n"
 "  The second parameter is optional and may be 'shrinking' to perform a\n"
-"  shrinking GC, 'last-ditch' for a shrinking last-ditch GC or 'debug-gc' for\n"
-"  a GC with DEBUG_GC reason."),
+"  shrinking GC or 'last-ditch' for a shrinking, last-ditch GC."),
 
     JS_FN_HELP("minorgc", ::MinorGC, 0, 0,
 "minorgc([aboutToOverflow])",

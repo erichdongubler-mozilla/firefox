@@ -13094,7 +13094,7 @@ bool BytecodeEmitter::emitTree(
         }
       }
 
-      if (!emit1(JSOp::DynamicImport)) {
+      if (!emit2(JSOp::DynamicImport, uint8_t(ImportPhase::Evaluation))) {
         return false;
       }
 
@@ -13113,7 +13113,12 @@ bool BytecodeEmitter::emitTree(
       // import.source does not have an options parameter
       MOZ_ASSERT(spec->right()->isKind(ParseNodeKind::PosHolder));
 
-      if (!emit1(JSOp::DynamicImportSource)) {
+      if (!emit1(JSOp::Undefined)) {
+        //          [stack] specifier undefined
+        return false;
+      }
+
+      if (!emit2(JSOp::DynamicImport, uint8_t(ImportPhase::Source))) {
         return false;
       }
       break;

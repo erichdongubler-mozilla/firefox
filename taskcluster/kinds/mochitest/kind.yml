@@ -209,6 +209,11 @@ tasks:
                     by-test-platform:
                         android-em.*/debug-isolated-process: ['trunk']
                         android.*: built-projects
+                        # Compositor shutdown assertion in DisconnectApzcTreeManager
+                        # on headless macOS aarch64 VM workers (Bug 2039987 family);
+                        # same pattern excludes jsreftest, marionette, mochitest-remote,
+                        # and crashtest debug on this platform.
+                        macosx1500-aarch64-vms/debug: []
                         default: built-projects
         chunks: dynamic
         default-chunks:

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,6 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.RadioCheckmark
@@ -47,6 +49,10 @@ import mozilla.components.browser.tabstray.R as tabstrayR
 
 private val ThumbnailWidth = 78.dp
 private val ThumbnailHeight = 68.dp
+internal val TabListItemHeight: Dp
+    @Composable
+    @ReadOnlyComposable
+    get() = ThumbnailHeight + FirefoxTheme.layout.space.static100 * 2
 
 /**
  * List item used to display a tab that supports clicks,

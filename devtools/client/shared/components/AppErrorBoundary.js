@@ -246,10 +246,15 @@ class AppErrorBoundary extends Component {
       return;
     }
 
+    const descriptorFront = toolbox.commands?.descriptorFront;
     const extras = Telemetry.sanitizeEventExtras(
       {
+        descriptor_type: descriptorFront?.descriptorType,
         error_name: exception.name,
+        host_type: toolbox.hostType,
         is_destroying: toolbox.isDestroying(),
+        is_local_tab: descriptorFront?.isLocalTab,
+        is_window_closed: !!toolbox.win?.closed,
         packet_error: serverPacket.error,
         packet_target: serverPacket.from,
         packet_type: clientPacket.type,

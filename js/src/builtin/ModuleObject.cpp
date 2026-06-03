@@ -25,6 +25,7 @@
 #include "vm/PlainObject.h"    // js::PlainObject
 #include "vm/PromiseObject.h"  // js::PromiseObject
 #include "vm/SharedStencil.h"  // js::GCThingIndex
+#include "vm/StringType.h"     // js::IdToPrintableUTF8
 #include "wasm/WasmJS.h"       // js::WasmModuleObject
 
 #include "gc/GCContext-inl.h"
@@ -457,6 +458,16 @@ bool ModuleNamespaceObject::addBinding(JSContext* cx,
 
 constexpr char ModuleNamespaceObject::ProxyHandler::family = 0;
 
+static void ReportUninitializedModuleBinding(JSContext* cx, HandleId id) {
+  // Module export names are property keys and may not be identifier names,
+  // so use IdIsPropertyKey rather than IdIsIdentifier.
+  if (UniqueChars printable =
+          IdToPrintableUTF8(cx, id, IdToPrintableBehavior::IdIsPropertyKey)) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_UNINITIALIZED_LEXICAL, printable.get());
+  }
+}
+
 bool ModuleNamespaceObject::ProxyHandler::getPrototype(
     JSContext* cx, HandleObject proxy, MutableHandleObject protop) const {
   protop.set(nullptr);
@@ -523,7 +534,7 @@ bool ModuleNamespaceObject::ProxyHandler::getOwnPropertyDescriptor(
 
   RootedValue value(cx, env->getSlot(prop->slot()));
   if (value.isMagic(JS_UNINITIALIZED_LEXICAL)) {
-    ReportRuntimeLexicalError(cx, JSMSG_UNINITIALIZED_LEXICAL, id);
+    ReportUninitializedModuleBinding(cx, id);
     return false;
   }
 
@@ -588,7 +599,7 @@ bool ModuleNamespaceObject::ProxyHandler::defineProperty(
 
   RootedValue value(cx, env->getSlot(prop->slot()));
   if (value.isMagic(JS_UNINITIALIZED_LEXICAL)) {
-    ReportRuntimeLexicalError(cx, JSMSG_UNINITIALIZED_LEXICAL, id);
+    ReportUninitializedModuleBinding(cx, id);
     return false;
   }
 
@@ -630,7 +641,7 @@ bool ModuleNamespaceObject::ProxyHandler::get(JSContext* cx, HandleObject proxy,
 
   RootedValue value(cx, env->getSlot(prop->slot()));
   if (value.isMagic(JS_UNINITIALIZED_LEXICAL)) {
-    ReportRuntimeLexicalError(cx, JSMSG_UNINITIALIZED_LEXICAL, id);
+    ReportUninitializedModuleBinding(cx, id);
     return false;
   }
 

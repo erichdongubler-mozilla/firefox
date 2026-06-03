@@ -6914,15 +6914,17 @@ bool BaselineCodeGen<Handler>::emit_ImportMeta() {
 
 template <typename Handler>
 bool BaselineCodeGen<Handler>::emit_DynamicImport() {
-  // Put specifier into R0 and object value into R1
+  // Put specifier into R0 and options into R1
   frame.popRegsAndSync(2);
 
   prepareVMCall();
+  pushUint8BytecodeOperandArg(R2.scratchReg());
   pushArg(R1);
   pushArg(R0);
   pushScriptArg();
 
-  using Fn = JSObject* (*)(JSContext*, HandleScript, HandleValue, HandleValue);
+  using Fn = JSObject* (*)(JSContext*, HandleScript, HandleValue, HandleValue,
+                           ImportPhase);
   if (!callVM<Fn, js::StartDynamicModuleImport>()) {
     return false;
   }
@@ -6931,27 +6933,6 @@ bool BaselineCodeGen<Handler>::emit_DynamicImport() {
   frame.push(R0);
   return true;
 }
-
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-template <typename Handler>
-bool BaselineCodeGen<Handler>::emit_DynamicImportSource() {
-  // Put specifier into R0
-  frame.popRegsAndSync(1);
-
-  prepareVMCall();
-  pushArg(R0);
-  pushScriptArg();
-
-  using Fn = JSObject* (*)(JSContext*, HandleScript, HandleValue);
-  if (!callVM<Fn, js::StartDynamicModuleImportSource>()) {
-    return false;
-  }
-
-  masm.tagValue(JSVAL_TYPE_OBJECT, ReturnReg, R0);
-  frame.push(R0);
-  return true;
-}
-#endif
 
 template <>
 bool BaselineCompilerCodeGen::emit_ForceInterpreter() {

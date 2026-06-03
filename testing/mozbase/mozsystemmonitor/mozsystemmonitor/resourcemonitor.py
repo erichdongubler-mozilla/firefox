@@ -489,6 +489,10 @@ class SystemResourceMonitor:
 
         self._active_phases = {}
         self._active_markers = {}
+
+        # Counter used to correlate the several markers emitted for one TSan
+        # report (one marker per labeled stack).
+        self._tsan_report_count = 0
         # ++DOCSHELL/++DOMWINDOW lines awaiting their matching -- line.
         # Keyed by (kind, pid, ptr, id|serial); value is (kind, start_time, marker_data).
         self._leaked_instances = {}
@@ -1582,6 +1586,76 @@ class SystemResourceMonitor:
         SystemResourceMonitor.record_event("LSan Summary", timestamp, marker_data)
 
     @staticmethod
+    def tsan_error(data):
+        """Record a ThreadSanitizer report.
+
+        A TSan report can carry several labeled stacks (e.g. the two
+        acquisition sites of a lock-order inversion, or the racing accesses of
+        a data race). A profiler marker holds a single stack, so one marker is
+        emitted per labeled stack; all markers from the same report share a
+        "report_index" so they can be correlated on the timeline.
+
+        Args:
+            data: Dictionary containing tsan_error data including:
+                  - "kind": report kind (e.g. "data race",
+                            "lock-order-inversion (potential deadlock)")
+                  - "signature": SUMMARY location (e.g.
+                                 "Mutex_posix.cpp:91:3 in mutexLock")
+                  - "pid": pid the report is about (optional)
+                  - "description": extra context such as the lock-order cycle
+                                   graph (optional)
+                  - "stacks": list of {"label", "stack"} dicts, one per labeled
+                              stack in the report
+                  - "scope": identifier for the browser session, e.g. a
+                             directory name (optional)
+        """
+        if not SystemResourceMonitor.instance:
+            return
+
+        monitor = SystemResourceMonitor.instance
+        timestamp = monitor.get_monotonic_time_from_data(data)
+
+        report_index = monitor._tsan_report_count
+        monitor._tsan_report_count += 1
+
+        def make_marker_data():
+            marker_data = {
+                "type": "TSanError",
+                "kind": data["kind"],
+                "report_index": report_index,
+                "color": "orange",
+            }
+            if pid := data.get("pid"):
+                marker_data["pid"] = pid
+            if description := data.get("description"):
+                marker_data["description"] = description
+            if scope := data.get("scope"):
+                marker_data["scope"] = scope
+            return marker_data
+
+        stacks = data.get("stacks") or []
+        if not stacks:
+            SystemResourceMonitor.record_event(
+                "TSan Error", timestamp, make_marker_data()
+            )
+            return
+
+        for substack in stacks:
+            marker_data = make_marker_data()
+            marker_data["label"] = substack.get("label", "")
+            rewritten = []
+            for frame in substack.get("stack", []):
+                if "file" in frame:
+                    rewritten.append({
+                        **frame,
+                        "file": monitor._clean_frame_file(frame["file"])[1],
+                    })
+                else:
+                    rewritten.append(frame)
+            marker_data["stack"] = rewritten
+            SystemResourceMonitor.record_event("TSan Error", timestamp, marker_data)
+
+    @staticmethod
     def mozleak_object(data):
         """Record a per-process per-class leaked object event.
 
@@ -2179,6 +2253,50 @@ class SystemResourceMonitor:
                         {
                             "key": "color",
                             "hidden": True,
+                        },
+                    ],
+                },
+                {
+                    "name": "TSanError",
+                    "tooltipLabel": "{marker.data.kind} (report {marker.data.report_index}) — {marker.data.label}",
+                    "tableLabel": "{marker.data.kind} (report {marker.data.report_index}) — {marker.data.label}",
+                    "display": ["marker-chart", "marker-table"],
+                    "colorField": "color",
+                    "data": [
+                        {
+                            "key": "kind",
+                            "label": "Kind",
+                            "format": "string",
+                        },
+                        {
+                            "key": "report_index",
+                            "label": "Report",
+                            "format": "integer",
+                        },
+                        {
+                            "key": "pid",
+                            "label": "PID",
+                            "format": "integer",
+                        },
+                        {
+                            "key": "scope",
+                            "label": "Scope",
+                            "format": "string",
+                        },
+                        {
+                            "key": "description",
+                            "label": "Description",
+                            "format": "string",
+                        },
+                        {
+                            "key": "color",
+                            "hidden": True,
+                        },
+                        # Declared last so it renders directly above the stack.
+                        {
+                            "key": "label",
+                            "label": "Stack",
+                            "format": "string",
                         },
                     ],
                 },

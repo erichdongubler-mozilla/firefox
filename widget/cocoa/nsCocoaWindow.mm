@@ -5472,6 +5472,11 @@ void nsCocoaWindow::Show(bool aState) {
   }
 
   mWindow.isBeingShown = aState;
+  // isBeingShown is a transient flag that must be cleared on every exit path.
+  // If it stays set, isVisibleOrBeingShown gets stuck reporting true, which
+  // makes IsVisible() lie and causes the early-return guard above to refuse a
+  // later Show(true).
+  auto resetBeingShown = MakeScopeExit([&] { mWindow.isBeingShown = NO; });
   if (aState && !mWasShown) {
     mWasShown = true;
   }
@@ -5654,8 +5659,6 @@ void nsCocoaWindow::Show(bool aState) {
                         object:@"org.mozilla.gecko.PopupWindow"];
     }
   }
-
-  mWindow.isBeingShown = NO;
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
@@ -8077,7 +8080,6 @@ static NSMutableSet* gSwizzledFrameViewClasses = nil;
   mTrackingArea = nil;
   mViewWithTrackingArea = nil;
   mDirtyRect = NSZeroRect;
-  mBeingShown = NO;
   mTouchBar = nil;
   mIsAnimationSuppressed = NO;
 
@@ -8159,16 +8161,8 @@ static NSImage* GetMenuMaskImage() {
   return mTouchBar;
 }
 
-- (void)setIsBeingShown:(BOOL)aValue {
-  mBeingShown = aValue;
-}
-
-- (BOOL)isBeingShown {
-  return mBeingShown;
-}
-
 - (BOOL)isVisibleOrBeingShown {
-  return [super isVisible] || mBeingShown;
+  return [super isVisible] || self.isBeingShown;
 }
 
 - (void)setIsAnimationSuppressed:(BOOL)aValue {
@@ -9044,6 +9038,14 @@ static const NSUInteger kWindowShadowOptionsTooltip = 4;
 
 - (NSPopover*)popover {
   return mPopover;
+}
+
+// When shown as a native NSPopover, the content lives in the popover's own
+// window and this backing window is never ordered front, so [super isVisible]
+// is NO. Report a shown popover as visible so IsVisible() stays correct once
+// the transient isBeingShown flag has been cleared.
+- (BOOL)isVisibleOrBeingShown {
+  return [super isVisibleOrBeingShown] || (mPopover && mPopover.shown);
 }
 
 - (BOOL)canBecomeMainWindow {

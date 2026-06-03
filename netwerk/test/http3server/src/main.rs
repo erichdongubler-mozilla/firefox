@@ -1769,7 +1769,11 @@ async fn main() -> Result<(), io::Error> {
 #[no_mangle]
 extern "C" fn __tsan_default_suppressions() -> *const std::os::raw::c_char {
     // https://github.com/rust-lang/rust/issues/128769
-    "race:tokio::runtime::io::registration_set::RegistrationSet::allocate\0".as_ptr() as *const _
+    concat!(
+        "race:<tokio::runtime::io::registration_set::RegistrationSet>::allocate\n",
+        "race:tokio::runtime::io::registration_set::RegistrationSet::allocate\0",
+    )
+    .as_ptr() as *const _
 }
 
 // Work around until we can use raw-dylibs.

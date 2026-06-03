@@ -497,7 +497,9 @@ nsresult nsGenericHTMLElement::BindToTree(BindContext& aContext,
   }
 
   if (HasFlag(NODE_IS_EDITABLE) &&
-      HasContentEditableAttrTrueOrPlainTextOnly() && IsInComposedDoc()) {
+      (HasContentEditableAttrTrueOrPlainTextOnly() ||
+       HasFlag(ELEMENT_HAS_EDIT_CONTEXT)) &&
+      IsInComposedDoc()) {
     aContext.OwnerDoc().ChangeContentEditableCount(this, +1);
   }
 
@@ -557,7 +559,8 @@ void nsGenericHTMLElement::UnbindFromTree(UnbindContext& aContext) {
     }
   }
 
-  if (HasContentEditableAttrTrueOrPlainTextOnly()) {
+  if (HasContentEditableAttrTrueOrPlainTextOnly() ||
+      HasFlag(ELEMENT_HAS_EDIT_CONTEXT)) {
     if (Document* doc = GetComposedDoc()) {
       doc->ChangeContentEditableCount(this, -1);
     }

@@ -118,9 +118,6 @@
       "chrome://browser/content/backup/turn-on-scheduled-backups.mjs": [
         "../../../browser/components/backup/content/turn-on-scheduled-backups.mjs"
       ],
-      "chrome://browser/content/contentSearchHandoffUI.mjs": [
-        "../../../browser/components/search/content/contentSearchHandoffUI.mjs"
-      ],
       "chrome://browser/content/firefoxview/card-container.mjs": [
         "../../../browser/components/firefoxview/card-container.mjs"
       ],
@@ -367,6 +364,9 @@
       "chrome://browser/content/urlbar/UrlbarResult.mjs": [
         "../../../browser/components/urlbar/content/UrlbarResult.mjs"
       ],
+      "chrome://browser/content/urlbar/UrlbarShared.mjs": [
+        "../../../browser/components/urlbar/content/UrlbarShared.mjs"
+      ],
       "chrome://browser/content/urlbar/UrlbarView.mjs": [
         "../../../browser/components/urlbar/content/UrlbarView.mjs"
       ],
@@ -549,6 +549,9 @@
       ],
       "chrome://global/content/ml/EngineProcess.sys.mjs": [
         "../../../toolkit/components/ml/content/EngineProcess.sys.mjs"
+      ],
+      "chrome://global/content/ml/MLEngine.worker.mjs": [
+        "../../../toolkit/components/ml/content/MLEngine.worker.mjs"
       ],
       "chrome://global/content/ml/MLTelemetry.sys.mjs": [
         "../../../toolkit/components/ml/MLTelemetry.sys.mjs"
@@ -1461,6 +1464,9 @@
       ],
       "resource:///modules/PartnerLinkAttribution.sys.mjs": [
         "../../../browser/modules/PartnerLinkAttribution.sys.mjs"
+      ],
+      "resource:///modules/PermissionPromptTargeting.sys.mjs": [
+        "../../../browser/modules/PermissionPromptTargeting.sys.mjs"
       ],
       "resource:///modules/PermissionUI.sys.mjs": [
         "../../../browser/modules/PermissionUI.sys.mjs"
@@ -7806,6 +7812,9 @@
       ],
       "resource://testing-common/httpd.sys.mjs": [
         "../../../netwerk/test/httpserver/httpd.sys.mjs"
+      ],
+      "resource://testing-common/ipprotection/IPPAlwaysOn.sys.mjs": [
+        "../../../toolkit/components/ipprotection/enterprise/IPPAlwaysOn.sys.mjs"
       ],
       "resource://testing-common/ipprotection/IPPDummyAuthProvider.sys.mjs": [
         "../../../toolkit/components/ipprotection/tests/IPPDummyAuthProvider.sys.mjs"

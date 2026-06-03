@@ -119,10 +119,20 @@ body {
   --lwt-background-alignment: right top;
   --lwt-background-tiling: no-repeat;
 
-  --toolbox-background-image: var(--lwt-additional-images);
-  --toolbox-background-repeat: var(--lwt-background-tiling);
-  --toolbox-background-position: var(--lwt-background-alignment);
+  --toolbox-background-image: none;
   --toolbox-background-size: auto;
+  --toolbox-background-position: top left;
+  --toolbox-background-repeat: repeat;
+
+  @media -moz-pref("browser.nova.enabled") {
+    --toolbox-background-image: var(--toolbox-background-gradient);
+  }
+
+  &[lwtheme] {
+    --toolbox-background-image: var(--lwt-additional-images);
+    --toolbox-background-repeat: var(--lwt-background-tiling);
+    --toolbox-background-position: var(--lwt-background-alignment);
+  }
 
   &[lwtheme-image] {
     /* When a theme defines both theme_frame and additional_backgrounds, show
@@ -235,10 +245,6 @@ body {
     background-color: var(--toolbox-background-color-inactive);
     color: var(--toolbox-text-color-inactive);
   }
-  /* stylelint-disable-next-line media-query-no-invalid */
-  @media -moz-pref("browser.nova.enabled") {
-    background-color: var(--background-color-canvas);
-  }
 
   :root[customizing] & {
     border-bottom-style: none;
@@ -272,7 +278,35 @@ body {
   }
 }
 
+/* Toolbox background images go either on the `<body>` or on the toolbox itself.
+ * For most themes and pre-nova default theme, it goes on the `<body>`. For themes
+ * that align the image in the y axis, and the nova default theme, they go on the toolbox.
+ * FIXME(bug 2044711): Clean this up by using a more specific attribute or so. */
+@media not -moz-pref("browser.nova.enabled") {
+  :root:not([lwtheme-image-y-align]) body,
+  :root[lwtheme-image-y-align] #navigator-toolbox {
+    background-image: var(--toolbox-background-image);
+    background-repeat: var(--toolbox-background-repeat);
+    background-position: var(--toolbox-background-position);
+    background-size: var(--toolbox-background-size);
+  }
+}
+
 @media -moz-pref("browser.nova.enabled") {
+  :root[lwtheme]:not([lwtheme-image-y-align]) #navigator-toolbox {
+    color: inherit;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    background-color: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.05));
+  }
+
+  :root[lwtheme]:not([lwtheme-image-y-align]) body,
+  :root:is([lwtheme-image-y-align], :not([lwtheme])) #navigator-toolbox {
+    background-image: var(--toolbox-background-image);
+    background-repeat: var(--toolbox-background-repeat);
+    background-position: var(--toolbox-background-position);
+    background-size: var(--toolbox-background-size);
+  }
+
   .chrome-block {
     background-color: var(--toolbox-background-color);
     color: var(--toolbox-text-color);
@@ -288,25 +322,9 @@ body {
     }
   }
 
-  #navigator-toolbox {
-    color: inherit;
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    background-color: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.05));
-  }
-
   #sidebar-main {
     background-color: var(--toolbar-background-color);
   }
-}
-
-/* Images go on the body by default, unless they are aligned in the y axis in
- * which case they go on the toolbox for backwards compatibility */
-:root:not([lwtheme-image-y-align]) body,
-:root[lwtheme-image-y-align] #navigator-toolbox {
-  background-image: var(--toolbox-background-image);
-  background-repeat: var(--toolbox-background-repeat);
-  background-position: var(--toolbox-background-position);
-  background-size: var(--toolbox-background-size);
 }
 
 .browser-toolbar {
@@ -549,6 +567,15 @@ body {
      area twice. */
   min-height: 0;
   padding-inline: var(--space-small);
+
+  @media -moz-pref("browser.nova.enabled") {
+    :root:not([lwtheme]) & {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      border-top: 1px solid var(--chrome-content-separator-color);
+      background-color: var(--toolbar-background-color);
+      color: var(--toolbar-text-color);
+    }
+  }
 
   :root[uidensity="compact"] & {
     padding-inline: var(--space-xxsmall);
