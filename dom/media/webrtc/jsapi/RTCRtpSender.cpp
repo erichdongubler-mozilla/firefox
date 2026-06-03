@@ -207,6 +207,8 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal(
   }
 
   std::string mid = mTransceiver->GetMidAscii();
+  nsString transportId =
+      NS_ConvertASCIItoUTF16(GetJsepTransceiver().mTransport.mTransportId);
   std::map<uint32_t, std::string> videoSsrcToRidMap;
   const auto encodings = mVideoCodec.Ref().andThen(
       [](const auto& aCodec) { return SomeRef(aCodec.mEncodings); });
@@ -248,6 +250,7 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal(
   promises.AppendElement(InvokeAsync(
       mPipeline->mCallThread, __func__,
       [pipeline = mPipeline, trackName, mid = std::move(mid),
+       transportId = std::move(transportId),
        videoSsrcToRidMap = std::move(videoSsrcToRidMap), isSending,
        audioCodec = mAudioCodec.Ref()] {
         auto report = MakeUnique<dom::RTCStatsCollection>();
@@ -285,6 +288,9 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal(
                 aRemote.mMediaType.Construct(
                     kind);  // mediaType is the old name for kind.
                 aRemote.mLocalId.Construct(localId);
+                if (!transportId.IsEmpty()) {
+                  aRemote.mTransportId.Construct(transportId);
+                }
                 if (base_seq) {
                   if (aRtcpData.extended_highest_sequence_number() <
                       *base_seq) {
@@ -325,6 +331,9 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal(
                 }
                 if (!mid.empty()) {
                   aLocal.mMid.Construct(NS_ConvertUTF8toUTF16(mid).get());
+                }
+                if (!transportId.IsEmpty()) {
+                  aLocal.mTransportId.Construct(transportId);
                 }
               };
 

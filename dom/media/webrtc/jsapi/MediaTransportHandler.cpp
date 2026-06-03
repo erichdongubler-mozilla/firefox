@@ -1248,7 +1248,7 @@ static void ToRTCIceCandidateStats(
     dom::RTCIceCandidateStats cand;
     cand.mType.Construct(candidateType);
     NS_ConvertASCIItoUTF16 codeword(candidate.codeword.c_str());
-    cand.mTransportId.Construct(transportId);
+    cand.mTransportId = transportId;
     cand.mId.Construct(codeword);
     cand.mTimestamp.Construct(now);
     cand.mCandidateType.Construct(dom::RTCIceCandidateType(candidate.type));
@@ -1329,7 +1329,7 @@ void MediaTransportHandlerSTS::GetIceStats(
 
     dom::RTCIceCandidatePairStats s;
     s.mId.Construct(codeword);
-    s.mTransportId.Construct(transportId);
+    s.mTransportId = transportId;
     s.mTimestamp.Construct(aNow);
     s.mType.Construct(dom::RTCStatsType::Candidate_pair);
     s.mLocalCandidateId.Construct(localCodeword);

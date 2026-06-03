@@ -250,6 +250,8 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
   }
 
   std::string mid = mTransceiver->GetMidAscii();
+  nsString transportId =
+      NS_ConvertASCIItoUTF16(GetJsepTransceiver().mTransport.mTransportId);
 
   {
     // Add bandwidth estimation stats
@@ -281,7 +283,7 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
       InvokeAsync(
           mCallThread, __func__,
           [pipeline = mPipeline, recvTrackId = std::move(recvTrackId),
-           mid = std::move(mid)] {
+           mid = std::move(mid), transportId = std::move(transportId)] {
             auto report = MakeUnique<dom::RTCStatsCollection>();
             auto asAudio = pipeline->mConduit->AsAudioSessionConduit();
             auto asVideo = pipeline->mConduit->AsVideoSessionConduit();
@@ -319,6 +321,9 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
                   aRemote.mMediaType.Construct(
                       kind);  // mediaType is the old name for kind.
                   aRemote.mLocalId.Construct(localId);
+                  if (!transportId.IsEmpty()) {
+                    aRemote.mTransportId.Construct(transportId);
+                  }
                 };
 
             auto constructCommonInboundRtpStats =
@@ -337,6 +342,9 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
                       kind);  // mediaType is the old name for kind.
                   if (remoteId.Length()) {
                     aLocal.mRemoteId.Construct(remoteId);
+                  }
+                  if (!transportId.IsEmpty()) {
+                    aLocal.mTransportId.Construct(transportId);
                   }
                 };
 
