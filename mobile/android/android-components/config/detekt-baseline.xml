@@ -207,6 +207,9 @@
     <ID>HardcodedPaddingUsage:TabCounterButton.kt$(16.dp)</ID>
     <ID>HardcodedPaddingUsage:TextField.kt$(8.dp)</ID>
     <ID>HardcodedPaddingUsage:TrailingIconScope.kt$(8.dp)</ID>
+    <ID>MaterialTextButtonUsage:CFRPopupLayout.kt$import androidx.compose.material3.TextButton</ID>
+    <ID>MaterialTextButtonUsage:ImporterDialog.kt$import androidx.compose.material3.TextButton</ID>
+    <ID>MaterialTextButtonUsage:PasswordsImporterDialog.kt$import androidx.compose.material3.TextButton</ID>
     <ID>MaterialTypographyUsage:AcornColorGrid.kt$MaterialTheme.typography</ID>
     <ID>MaterialTypographyUsage:AnimatedPillButton.kt$MaterialTheme.typography</ID>
     <ID>MaterialTypographyUsage:AnimationLayer.kt$MaterialTheme.typography</ID>

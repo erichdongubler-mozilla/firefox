@@ -93,7 +93,6 @@
     <ID>ForbiddenSuppress:PagedHistoryProvider.kt$DefaultPagedHistoryProvider$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:PrivateBrowsingFragment.kt$PrivateBrowsingFragment$@Suppress("CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:ProtectionPanel.kt$@Suppress("CognitiveComplexMethod")</ID>
-    <ID>ForbiddenSuppress:ProtectionPanel.kt$@Suppress("LongParameterList", "LongMethod", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:RecentSyncedTab.kt$@Suppress("LongMethod", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:RecentTabs.kt$@Suppress("LongMethod")</ID>
     <ID>ForbiddenSuppress:RecentlyVisited.kt$@Suppress("CognitiveComplexMethod")</ID>
@@ -257,7 +256,6 @@
     <ID>HardcodedPaddingUsage:InactiveTabs.kt$(start = 16.dp)</ID>
     <ID>HardcodedPaddingUsage:InfoScreen.kt$( start = 72.dp, top = 6.dp, end = 16.dp, bottom = 6.dp, )</ID>
     <ID>HardcodedPaddingUsage:InfoScreen.kt$(end = 8.dp)</ID>
-    <ID>HardcodedPaddingUsage:LensCameraScreen.kt$(top = 24.dp, bottom = 48.dp, start = 32.dp, end = 32.dp)</ID>
     <ID>HardcodedPaddingUsage:LensCameraScreen.kt$(top = 48.dp, start = 12.dp)</ID>
     <ID>HardcodedPaddingUsage:LibraryMenuItem.kt$(horizontal = 4.dp, vertical = 12.dp)</ID>
     <ID>HardcodedPaddingUsage:LoginsTools.kt$(16.dp)</ID>
@@ -310,7 +308,6 @@
     <ID>HardcodedPaddingUsage:ProfilerReusableComposable.kt$(bottom = 16.dp)</ID>
     <ID>HardcodedPaddingUsage:ProfilerStartDialogFragment.kt$ProfilerStartDialogFragment$(bottom = 8.dp)</ID>
     <ID>HardcodedPaddingUsage:ProgressBarSetupChecklistView.kt$(16.dp)</ID>
-    <ID>HardcodedPaddingUsage:ProtectionPanel.kt$(16.dp)</ID>
     <ID>HardcodedPaddingUsage:ProtectionPanel.kt$(horizontal = 16.dp, vertical = 8.dp)</ID>
     <ID>HardcodedPaddingUsage:ProtectionPanelHeader.kt$(horizontal = 16.dp, vertical = 6.dp)</ID>
     <ID>HardcodedPaddingUsage:ProtectionsView.kt$(horizontal = 16.dp)</ID>
@@ -423,6 +420,9 @@
     <ID>HardcodedPaddingUsage:WebCompatReporterPreviewSheet.kt$(top = 72.dp)</ID>
     <ID>HardcodedPaddingUsage:Wordmark.kt$(end = 10.dp)</ID>
     <ID>LongMethod:ThemeOnboardingPage.kt$@Composable private fun SelectableImageItem( boxWithConstraintsScope: BoxWithConstraintsScope, themeOption: ThemeOption, selectedOption: ThemeOptionType, onClick: (ThemeOptionType) -&gt; Unit, )</ID>
+    <ID>MaterialTextButtonUsage:AppLinksPromptFragment.kt$import androidx.compose.material3.TextButton</ID>
+    <ID>MaterialTextButtonUsage:HomeSectionHeader.kt$import androidx.compose.material3.TextButton</ID>
+    <ID>MaterialTextButtonUsage:WallpaperOnboarding.kt$import androidx.compose.material3.TextButton</ID>
     <ID>MaterialTypographyUsage:ContinuousOnboardingScreen.kt$MaterialTheme.typography</ID>
     <ID>MaterialTypographyUsage:DownloadDeleteBehaviorComposePreference.kt$MaterialTheme.typography</ID>
     <ID>MaterialTypographyUsage:DownloadsScreen.kt$MaterialTheme.typography</ID>

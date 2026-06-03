@@ -21,7 +21,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,6 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.button.TextButton
 import mozilla.components.lib.state.ext.observeAsComposableState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.settings.settingssearch.ui.SettingsSearchSectionHeader
@@ -214,20 +214,15 @@ private fun RecentSearchesContent(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             TextButton(
+                text = stringResource(R.string.settings_search_clear_recent_searches_message),
                 onClick = {
                     store.dispatch(SettingsSearchAction.ClearRecentSearchesClicked)
                 },
-                colors = ButtonDefaults.textButtonColors(),
                 modifier = Modifier.heightIn(min = 48.dp),
-                enabled = true,
-            ) {
-               Text(
-                   text = stringResource(R.string.settings_search_clear_recent_searches_message),
-                   color = MaterialTheme.colorScheme.secondary,
-                   style = FirefoxTheme.typography.button,
-                   maxLines = 1,
-               )
-            }
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.secondary,
+                ),
+            )
         }
         LazyColumn(
             state = listState,

@@ -817,6 +817,8 @@ acorn-detekt-rules:
     appThemeName: 'org.mozilla.fenix.theme.FirefoxTheme'
   MaterialSwitchUsage:
     active: true
+  MaterialTextButtonUsage:
+    active: true
   MaterialTypographyUsage:
     active: true
     appTypographyName: 'org.mozilla.fenix.theme.FirefoxTheme.typography'

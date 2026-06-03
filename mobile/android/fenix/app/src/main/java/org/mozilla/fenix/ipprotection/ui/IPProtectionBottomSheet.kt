@@ -27,7 +27,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,6 +45,7 @@ import mozilla.components.compose.base.LinkText
 import mozilla.components.compose.base.LinkTextState
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.FilledButton
+import mozilla.components.compose.base.button.TextButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
@@ -220,12 +220,10 @@ private fun IPProtectionButtons(
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TextButton(onClick = onNotNowClicked) {
-            Text(
-                text = stringResource(R.string.ip_protection_onboarding_not_now_button),
-                style = FirefoxTheme.typography.button,
-            )
-        }
+        TextButton(
+            text = stringResource(R.string.ip_protection_onboarding_not_now_button),
+            onClick = onNotNowClicked,
+        )
 
         Spacer(Modifier.width(8.dp))
         FilledButton(

@@ -21,6 +21,7 @@ class AcornRuleSetProvider : RuleSetProvider {
             AcornPaddingRule(config),
             AcornThemeUsageRule(config),
             MaterialSwitchUsageRule(config),
+            MaterialTextButtonUsageRule(config),
             MaterialTypographyUsageRule(config),
         ),
     )
