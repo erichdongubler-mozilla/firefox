@@ -377,12 +377,9 @@ export function createSourceActor(sourceResource, sourceObject) {
     // As sourceResource is only SourceActor's form and not the SourceFront,
     // we have to go through the target to retrieve the related ThreadActor's ID.
     thread: sourceResource.targetFront.getCachedFront("thread").actorID,
-    // `source` is the reducer source ID
-    source: makeSourceId(sourceResource),
     sourceObject,
     sourceMapBaseURL: sourceResource.sourceMapBaseURL,
     sourceMapURL: sourceResource.sourceMapURL,
-    url: sourceResource.url,
     introductionType: sourceResource.introductionType,
     sourceStartLine: sourceResource.sourceStartLine,
     sourceStartColumn: sourceResource.sourceStartColumn,
