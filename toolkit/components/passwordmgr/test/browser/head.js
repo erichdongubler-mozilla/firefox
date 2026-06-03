@@ -425,7 +425,7 @@ function getDoorhangerButton(aPopup, aButtonIndex) {
  * @param {number} aButtonIndex Number indicating which button to click.
  *                              See the constants in this file.
  */
-function clickDoorhangerButton(aPopup, aButtonIndex) {
+async function clickDoorhangerButton(aPopup, aButtonIndex) {
   Assert.ok(true, "Looking for action at index " + aButtonIndex);
 
   let button = getDoorhangerButton(aPopup, aButtonIndex);
@@ -436,7 +436,13 @@ function clickDoorhangerButton(aPopup, aButtonIndex) {
   } else {
     Assert.ok(true, "Triggering menuitem # " + aButtonIndex);
   }
-  button.doCommand();
+  let panel = aPopup.owner?.panel;
+  let promiseHidden =
+    panel && aPopup.owner.isPanelOpen
+      ? BrowserTestUtils.waitForEvent(panel, "popuphidden")
+      : Promise.resolve();
+  button.click();
+  await promiseHidden;
 }
 
 async function cleanupDoorhanger(notif) {

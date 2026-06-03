@@ -306,13 +306,21 @@ export function PopupNotifications(tabbrowser, panel, iconBox, options = {}) {
     let doc = this.window.document;
     let focusedElement = Services.focus.focusedElement;
 
-    // If the chrome window has a focused element, let it handle the ESC key instead.
+    // Go through shadow roots so that focus delegated into a shadow DOM
+    // (e.g., moz-button with delegatesFocus:true) is still treated as inside
+    // the notification.
+    let focusedInsideNotification = false;
+    for (let el = focusedElement; el; el = el.parentNode ?? el.host) {
+      if (el === notification) {
+        focusedInsideNotification = true;
+        break;
+      }
+    }
     if (
       !focusedElement ||
       focusedElement == doc.body ||
       focusedElement == this.tabbrowser.selectedBrowser ||
-      // Ignore focused elements inside the notification.
-      notification.contains(focusedElement)
+      focusedInsideNotification
     ) {
       let escAction = notification.notification.options.escAction;
       this._onButtonEvent(aEvent, escAction, "esc-press", notification);

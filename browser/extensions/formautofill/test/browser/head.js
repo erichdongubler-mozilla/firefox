@@ -889,7 +889,7 @@ async function clickDoorhangerButton(buttonType, index = 0) {
       "popupshown"
     );
 
-    notification.menubutton.click();
+    notification.menubutton.chevronButtonEl.click();
     info("expecting notification popup show up");
     await dropdownPromise;
 
