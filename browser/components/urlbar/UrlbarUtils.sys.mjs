@@ -39,6 +39,7 @@ const lazy = XPCOMUtils.declareLazy({
   SearchSuggestionController:
     "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarProviderInterventions:
     "moz-src:///browser/components/urlbar/UrlbarProviderInterventions.sys.mjs",
   UrlbarProviderOpenTabs:
@@ -47,8 +48,6 @@ const lazy = XPCOMUtils.declareLazy({
     "moz-src:///browser/components/urlbar/UrlbarProviderSearchTips.sys.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
-  UrlbarTokenizer:
-    "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
@@ -273,7 +272,7 @@ export var UrlbarUtils = {
      * @typedef {object} LocalSearchMode
      * @property {Values<typeof this.RESULT_SOURCE>} source
      *   The source which the search mode will search.
-     * @property {Values<typeof lazy.UrlbarTokenizer.RESTRICT>} restrict
+     * @property {Values<typeof lazy.UrlbarShared.RESTRICT_TOKENS>} restrict
      *   The restrict token that is associated with the search (*, %, $ etc).
      * @property {string} icon
      *   The URL of the icon associated with the search mode in preferences.
@@ -289,7 +288,7 @@ export var UrlbarUtils = {
     return /** @type {LocalSearchMode[]} */ ([
       {
         source: this.RESULT_SOURCE.BOOKMARKS,
-        restrict: lazy.UrlbarTokenizer.RESTRICT.BOOKMARK,
+        restrict: lazy.UrlbarShared.RESTRICT_TOKENS.BOOKMARK,
         icon: "chrome://browser/skin/bookmark.svg",
         pref: "shortcuts.bookmarks",
         telemetryLabel: "bookmarks",
@@ -297,7 +296,7 @@ export var UrlbarUtils = {
       },
       {
         source: this.RESULT_SOURCE.TABS,
-        restrict: lazy.UrlbarTokenizer.RESTRICT.OPENPAGE,
+        restrict: lazy.UrlbarShared.RESTRICT_TOKENS.OPENPAGE,
         icon: "chrome://browser/skin/tabs.svg",
         pref: "shortcuts.tabs",
         telemetryLabel: "tabs",
@@ -305,7 +304,7 @@ export var UrlbarUtils = {
       },
       {
         source: this.RESULT_SOURCE.HISTORY,
-        restrict: lazy.UrlbarTokenizer.RESTRICT.HISTORY,
+        restrict: lazy.UrlbarShared.RESTRICT_TOKENS.HISTORY,
         icon: "chrome://browser/skin/history.svg",
         pref: "shortcuts.history",
         telemetryLabel: "history",
@@ -313,7 +312,7 @@ export var UrlbarUtils = {
       },
       {
         source: this.RESULT_SOURCE.ACTIONS,
-        restrict: lazy.UrlbarTokenizer.RESTRICT.ACTION,
+        restrict: lazy.UrlbarShared.RESTRICT_TOKENS.ACTION,
         icon: "chrome://browser/skin/quickactions.svg",
         pref: "shortcuts.actions",
         telemetryLabel: "actions",
@@ -1898,16 +1897,24 @@ export var UrlbarUtils = {
         }
         return "dynamic";
       case this.RESULT_TYPE.RESTRICT:
-        if (result.payload.keyword === lazy.UrlbarTokenizer.RESTRICT.BOOKMARK) {
+        if (
+          result.payload.keyword === lazy.UrlbarShared.RESTRICT_TOKENS.BOOKMARK
+        ) {
           return "restrict_keyword_bookmarks";
         }
-        if (result.payload.keyword === lazy.UrlbarTokenizer.RESTRICT.OPENPAGE) {
+        if (
+          result.payload.keyword === lazy.UrlbarShared.RESTRICT_TOKENS.OPENPAGE
+        ) {
           return "restrict_keyword_tabs";
         }
-        if (result.payload.keyword === lazy.UrlbarTokenizer.RESTRICT.HISTORY) {
+        if (
+          result.payload.keyword === lazy.UrlbarShared.RESTRICT_TOKENS.HISTORY
+        ) {
           return "restrict_keyword_history";
         }
-        if (result.payload.keyword === lazy.UrlbarTokenizer.RESTRICT.ACTION) {
+        if (
+          result.payload.keyword === lazy.UrlbarShared.RESTRICT_TOKENS.ACTION
+        ) {
           return "restrict_keyword_actions";
         }
         break;
@@ -2199,16 +2206,24 @@ export var UrlbarUtils = {
         }
         return checkForSubType("history", result);
       case this.RESULT_TYPE.RESTRICT:
-        if (result.payload.keyword === lazy.UrlbarTokenizer.RESTRICT.BOOKMARK) {
+        if (
+          result.payload.keyword === lazy.UrlbarShared.RESTRICT_TOKENS.BOOKMARK
+        ) {
           return "restrict_keyword_bookmarks";
         }
-        if (result.payload.keyword === lazy.UrlbarTokenizer.RESTRICT.OPENPAGE) {
+        if (
+          result.payload.keyword === lazy.UrlbarShared.RESTRICT_TOKENS.OPENPAGE
+        ) {
           return "restrict_keyword_tabs";
         }
-        if (result.payload.keyword === lazy.UrlbarTokenizer.RESTRICT.HISTORY) {
+        if (
+          result.payload.keyword === lazy.UrlbarShared.RESTRICT_TOKENS.HISTORY
+        ) {
           return "restrict_keyword_history";
         }
-        if (result.payload.keyword === lazy.UrlbarTokenizer.RESTRICT.ACTION) {
+        if (
+          result.payload.keyword === lazy.UrlbarShared.RESTRICT_TOKENS.ACTION
+        ) {
           return "restrict_keyword_actions";
         }
         break;
@@ -3397,9 +3412,9 @@ export class UrlbarQueryContext {
     // an origin but we've determined a search is allowed, then allow it.
     if (this.tokens.length == 1) {
       switch (this.tokens[0].type) {
-        case lazy.UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN:
+        case lazy.UrlbarShared.TOKEN_TYPE.POSSIBLE_ORIGIN:
           return false;
-        case lazy.UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN_BUT_SEARCH_ALLOWED:
+        case lazy.UrlbarShared.TOKEN_TYPE.POSSIBLE_ORIGIN_BUT_SEARCH_ALLOWED:
           return true;
       }
     }

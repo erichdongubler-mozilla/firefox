@@ -6,6 +6,8 @@
  * @import {ProvidersManager} from "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs"
  */
 
+import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -24,8 +26,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarSearchOneOffs:
     "moz-src:///browser/components/urlbar/UrlbarSearchOneOffs.sys.mjs",
-  UrlbarTokenizer:
-    "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
@@ -873,7 +873,7 @@ export class UrlbarView {
           queryContext.trimmedSearchString) &&
           queryContext.trimmedSearchString[0] != "@" &&
           (queryContext.trimmedSearchString[0] !=
-            lazy.UrlbarTokenizer.RESTRICT.SEARCH ||
+            UrlbarShared.RESTRICT_TOKENS.SEARCH ||
             queryContext.trimmedSearchString.length != 1)
       );
     }

@@ -19,8 +19,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
-  UrlbarTokenizer:
-    "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 /**
@@ -64,7 +63,7 @@ export class UrlbarProviderPrivateSearch extends UrlbarProvider {
     let searchString = queryContext.trimmedSearchString;
     if (
       queryContext.tokens.some(
-        t => t.type == lazy.UrlbarTokenizer.TYPE.RESTRICT_SEARCH
+        t => t.type == lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_SEARCH
       )
     ) {
       if (queryContext.tokens.length == 1) {
@@ -73,7 +72,7 @@ export class UrlbarProviderPrivateSearch extends UrlbarProvider {
       }
       // Remove the restriction char from the search string.
       searchString = queryContext.tokens
-        .filter(t => t.type != lazy.UrlbarTokenizer.TYPE.RESTRICT_SEARCH)
+        .filter(t => t.type != lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_SEARCH)
         .map(t => t.value)
         .join(" ");
     }

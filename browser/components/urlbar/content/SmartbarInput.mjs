@@ -6,6 +6,7 @@ import { SearchModeSwitcher } from "chrome://browser/content/urlbar/SearchModeSw
 import { UrlbarEventBufferer } from "chrome://browser/content/urlbar/UrlbarEventBufferer.mjs";
 import { UrlbarView } from "chrome://browser/content/urlbar/UrlbarView.mjs";
 import { createEditor } from "chrome://browser/content/urlbar/SmartbarInputUtils.mjs";
+import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/ai-website-chip.mjs";
 // eslint-disable-next-line import/no-unassigned-import
@@ -73,8 +74,6 @@ const lazy = XPCOMUtils.declareLazy({
     "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
-  UrlbarTokenizer:
-    "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   UrlbarValueFormatter:
     "moz-src:///browser/components/urlbar/UrlbarValueFormatter.sys.mjs",
@@ -2841,11 +2840,11 @@ ${
         value = value.slice(1);
       }
     } else if (
-      Object.values(lazy.UrlbarTokenizer.RESTRICT).includes(firstToken)
+      Object.values(UrlbarShared.RESTRICT_TOKENS).includes(firstToken)
     ) {
       this.searchMode = null;
       // If the entire value is a restricted token, append a space.
-      if (Object.values(lazy.UrlbarTokenizer.RESTRICT).includes(value)) {
+      if (Object.values(UrlbarShared.RESTRICT_TOKENS).includes(value)) {
         value += " ";
       }
     }
@@ -2875,14 +2874,14 @@ ${
    * Returns a search mode object if a token should enter search mode when
    * typed. This does not handle engine aliases.
    *
-   * @param {Values<typeof lazy.UrlbarTokenizer.RESTRICT>} token
+   * @param {Values<typeof UrlbarShared.RESTRICT_TOKENS>} token
    *   A restriction token to convert to search mode.
    * @returns {?object}
    *   A search mode object. Null if search mode should not be entered. See
    *   setSearchMode documentation for details.
    */
   searchModeForToken(token) {
-    if (token == lazy.UrlbarTokenizer.RESTRICT.SEARCH) {
+    if (token == UrlbarShared.RESTRICT_TOKENS.SEARCH) {
       return {
         engineName: lazy.UrlbarSearchUtils.getDefaultEngine(this.isPrivate)
           ?.name,
@@ -5215,7 +5214,7 @@ ${
       if (result.type == lazy.UrlbarUtils.RESULT_TYPE.RESTRICT) {
         searchMode.restrictType = "keyword";
       } else if (
-        lazy.UrlbarTokenizer.SEARCH_MODE_RESTRICT.has(result.payload.keyword)
+        UrlbarShared.SEARCH_MODE_RESTRICT.has(result.payload.keyword)
       ) {
         searchMode.restrictType = "symbol";
       }
