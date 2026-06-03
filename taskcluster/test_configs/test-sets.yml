@@ -509,6 +509,7 @@ macosx1500-aarch64-vms-tests:
     - jsreftest
     - marionette-integration
     - marionette-unittest
+    - mochitest-plain
     - mochitest-remote
     - telemetry-tests-client
     - xpcshell
