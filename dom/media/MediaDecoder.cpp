@@ -1415,13 +1415,14 @@ void MediaDecoder::DisconnectMirrors() {
 }
 
 void MediaDecoder::SetStateMachine(
-    MediaDecoderStateMachineBase* aStateMachine) {
+    already_AddRefed<MediaDecoderStateMachineBase> aStateMachine) {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT_IF(aStateMachine, !mDecoderStateMachine);
-  if (aStateMachine) {
-    mDecoderStateMachine = aStateMachine;
+  RefPtr stateMachine = aStateMachine;
+  MOZ_ASSERT_IF(stateMachine, !mDecoderStateMachine);
+  if (stateMachine) {
+    mDecoderStateMachine = std::move(stateMachine);
     LOG("set state machine %p", mDecoderStateMachine.get());
-    ConnectMirrors(aStateMachine);
+    ConnectMirrors(mDecoderStateMachine);
     UpdateVideoDecodeMode();
   } else if (mDecoderStateMachine) {
     LOG("null out state machine %p", mDecoderStateMachine.get());

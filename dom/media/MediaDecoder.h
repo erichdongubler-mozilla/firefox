@@ -318,7 +318,8 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   virtual void SetLoadInBackground(bool aLoadInBackground) {}
 
   MediaDecoderStateMachineBase* GetStateMachine() const;
-  void SetStateMachine(MediaDecoderStateMachineBase* aStateMachine);
+  void SetStateMachine(
+      already_AddRefed<MediaDecoderStateMachineBase> aStateMachine);
 
   // Constructs the time ranges representing what segments of the media
   // are buffered and playable.
@@ -485,8 +486,8 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   // Always return a state machine. If the decoder supports using external
   // engine, `aDisableExternalEngine` can disable the external engine if needed.
-  virtual MediaDecoderStateMachineBase* CreateStateMachine(
-      bool aDisableExternalEngine) MOZ_NONNULL_RETURN = 0;
+  virtual already_AddRefed<MediaDecoderStateMachineBase> CreateStateMachine(
+      bool aDisableExternalEngine) = 0;
 
   void SetStateMachineParameters();
 
