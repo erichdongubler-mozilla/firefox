@@ -798,6 +798,9 @@ acorn-detekt-rules:
     active: true
   AcornThemeUsage:
     active: false
+  MaterialSwitchUsage:
+    active: true
+    excludes: ['**/compose/base/Switch.kt']
   MaterialTypographyUsage:
     active: true
     appTypographyName: 'mozilla.components.compose.base.theme.AcornTheme.typography'

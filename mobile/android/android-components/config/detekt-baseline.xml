@@ -8,7 +8,6 @@
     <ID>ForbiddenSuppress:AcornColorGrid.kt$@Suppress("LongMethod", "MagicNumber")</ID>
     <ID>ForbiddenSuppress:AcornColorGrid.kt$@Suppress("LongParameterList", "LongMethod", "MagicNumber")</ID>
     <ID>ForbiddenSuppress:AcornColors.kt$@file:Suppress("MagicNumber")</ID>
-    <ID>ForbiddenSuppress:AcornColors.kt$AcornColors$@Suppress("LongMethod")</ID>
     <ID>ForbiddenSuppress:AcornTheme.kt$@file:Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:ActionButton.kt$@Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:Addon.kt$Addon.Companion$@Suppress("MagicNumber", "CognitiveComplexMethod", "CyclomaticComplexMethod")</ID>
