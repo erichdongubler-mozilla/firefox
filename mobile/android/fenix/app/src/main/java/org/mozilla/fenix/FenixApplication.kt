@@ -974,7 +974,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             )
 
             ramMoreThanThreshold.set(isDeviceRamAboveThreshold)
-            deviceTotalRam.set(getDeviceTotalRAM())
+            deviceTotalRam.set(deviceTotalRAM)
 
             isLargeDevice.set(isLargeScreenSize())
         }
@@ -1055,28 +1055,14 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
     }
 
     @VisibleForTesting
-    internal fun getDeviceTotalRAM(): Long {
-        val memoryInfo = getMemoryInfo()
-        return if (SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            memoryInfo.advertisedMem
-        } else {
-            memoryInfo.totalMem
+    internal val deviceTotalRAM: Long by lazy {
+        ActivityManager.MemoryInfo().let { info ->
+            (getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(info)
+            if (SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) info.advertisedMem else info.totalMem
         }
     }
 
-    @VisibleForTesting
-    internal fun getMemoryInfo(): ActivityManager.MemoryInfo {
-        val memoryInfo = ActivityManager.MemoryInfo()
-        val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        activityManager.getMemoryInfo(memoryInfo)
-
-        return memoryInfo
-    }
-
-    private fun deviceRamApproxMegabytes(): Long {
-        val deviceRamBytes = getMemoryInfo().totalMem
-        return deviceRamBytes.toRoundedMegabytes()
-    }
+    private fun deviceRamApproxMegabytes(): Long = deviceTotalRAM.toRoundedMegabytes()
 
     private fun Long.toRoundedMegabytes(): Long = (this / BYTES_TO_MEGABYTES_CONVERSION).roundToLong()
 
