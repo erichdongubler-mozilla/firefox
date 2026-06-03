@@ -97,6 +97,7 @@ void CSSUnitValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
       case eCSSProperty_z_index:
         return round(aValue) != aValue;
 
+      case eCSSProperty_border_image_outset:
       case eCSSProperty_font_size_adjust:
       case eCSSProperty_font_stretch:
       case eCSSProperty_flex_grow:
