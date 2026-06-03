@@ -17,9 +17,11 @@ import androidx.fragment.compose.content
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import mozilla.components.ExperimentalAndroidComponentsApi
+import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.debug.IPProtectionStateDebugContent
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
+import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Vpn
@@ -50,20 +52,17 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ) = content {
-        val state = components.ipProtection.store.observeAsComposableState { it }
-        val shouldHide = when (state.value.accountState.status) {
-            AccountStatus.RequestingAuthentication,
-            AccountStatus.RequestingAuthorization,
-            AccountStatus.AwaitingAuthentication,
-            AccountStatus.AwaitingAuthorization,
-                -> true
-            else -> false
-        }
-        if (shouldHide) return@content
+        val state = components.ipProtection.store.observeAsComposableState { it }.value
+
+        // When navigating to the fragment from the vpn onboarding screen, it immediately starts the auth flow.
+        // To make the transition smoother, we prevent the fragment from drawing UI in that case.
+        if (shouldHideUi(state)) return@content
 
         FirefoxTheme {
             IPProtectionScreen(
-                state = state.value,
+                state = state,
+                readyToUse = state.readyToUse(),
+                syncingData = state.syncingData(),
                 onVpnToggle = { enabled ->
                     if (enabled) {
                         requireContext().settings().hasAlreadyUsedVpn = true
@@ -94,11 +93,50 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
                     onDismissRequest = { showDebugDialog = false },
                     properties = DialogProperties(usePlatformDefaultWidth = false),
                 ) {
-                    IPProtectionStateDebugContent(state.value)
+                    IPProtectionStateDebugContent(state)
                 }
             }
         }
     }
+
+    /**
+     * ServiceState is the source of truth for vpn "readiness". Proxy might error out, the data limit might
+     * be reached, but the user is entitled to interrace with it. We also have AccountStatus entitlement,
+     * but there is a tiny gap between as enrolling for IPProtection service, and the service actually
+     * becoming active and sending us data - the gap that should be presented as "connecting" state.
+     */
+    @OptIn(ExperimentalAndroidComponentsApi::class)
+    private fun IPProtectionState.readyToUse() = serviceStatus == ServiceState.Ready
+
+    /**
+     * Syncing state locks the screen from interaction, so we want to be explicit about it: for now, it is
+     * specifically for the enrollment state - when the user has passed the auth flow, but the toolkit
+     * service has not been updated yet.
+     * Otherwise, if the ServiceState is not `Ready`, the user gets a "get started" button.
+     */
+    @OptIn(ExperimentalAndroidComponentsApi::class)
+    private fun IPProtectionState.syncingData(): Boolean {
+        return serviceStatus == ServiceState.Unauthenticated &&
+            (
+                accountState.status == AccountStatus.AwaitingEnrollment ||
+                    accountState.status == AccountStatus.Authenticated ||
+                    accountState.status == AccountStatus.EnrolledAndEntitled
+            )
+    }
+
+    private fun IPProtectionState.authInProgress() = when (accountState.status) {
+        AccountStatus.RequestingAuthentication,
+        AccountStatus.RequestingAuthorization,
+        AccountStatus.AwaitingAuthentication,
+        AccountStatus.AwaitingAuthorization,
+            -> true
+        else -> false
+    }
+
+    private fun shouldHideUi(
+        state: IPProtectionState,
+        shouldStartAuthFlow: Boolean = args.startAuthFlow,
+    ) = shouldStartAuthFlow && state.authInProgress()
 
     override fun onResume() {
         super.onResume()

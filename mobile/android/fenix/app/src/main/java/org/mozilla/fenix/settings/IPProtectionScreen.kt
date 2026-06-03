@@ -56,6 +56,7 @@ import mozilla.components.feature.ipprotection.store.state.Authorized
 import mozilla.components.feature.ipprotection.store.state.BYTES_PER_GB
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
+import mozilla.components.feature.ipprotection.store.state.Uninitialized
 import mozilla.components.feature.ipprotection.store.state.maxDataGb
 import mozilla.components.feature.ipprotection.store.state.usedDataGb
 import org.mozilla.fenix.R
@@ -71,6 +72,8 @@ private val PROMO_ILLUSTRATION_SIZE = 60.dp
  * The main VPN / IP Protection settings screen.
  *
  * @param state Current [IPProtectionHandler.StateInfo] to render.
+ * @param readyToUse Whether the user is entitled to use the service.
+ * @param syncingData Whether the data sync is in progress.
  * @param onVpnToggle Called when the VPN switch is toggled.
  * @param onLearnMoreClick Called when any "Learn more" link is tapped.
  * @param onGetStartedClick Called when the "Get started" button is tapped.
@@ -81,6 +84,8 @@ private val PROMO_ILLUSTRATION_SIZE = 60.dp
 @Composable
 fun IPProtectionScreen(
     state: IPProtectionState,
+    readyToUse: Boolean,
+    syncingData: Boolean,
     onVpnToggle: (Boolean) -> Unit,
     onLearnMoreClick: () -> Unit,
     onGetStartedClick: () -> Unit,
@@ -124,7 +129,7 @@ fun IPProtectionScreen(
 
                 HorizontalDivider()
 
-                if (state.proxyStatus is Authorized) {
+                if (readyToUse) {
                     DataLimitSection(state = state, onLearnMoreClick = onLearnMoreClick)
 
                     HorizontalDivider()
@@ -133,8 +138,15 @@ fun IPProtectionScreen(
                 } else {
                     Spacer(modifier = Modifier.weight(1f))
 
+                    val text = if (syncingData) {
+                        stringResource(R.string.ip_protection_connecting)
+                    } else {
+                        stringResource(R.string.ip_protection_get_started)
+                    }
+
                     FilledButton(
-                        text = stringResource(R.string.ip_protection_get_started),
+                        text = text,
+                        enabled = !syncingData,
                         modifier = Modifier
                             .padding(horizontal = FirefoxTheme.layout.space.static200)
                             .fillMaxWidth(),
@@ -375,6 +387,8 @@ private fun IPProtectionScreenActivePreview(
                 remainingDataBytes = 40 * BYTES_PER_GB.toLong(),
                 maxDataBytes = 50 * BYTES_PER_GB.toLong(),
             ),
+            readyToUse = true,
+            syncingData = false,
             onVpnToggle = {},
             onLearnMoreClick = {},
             onGetStartedClick = {},
@@ -397,6 +411,8 @@ private fun IPProtectionScreenNotEnrolledPreview(
                 eligibilityStatus = EligibilityStatus.Eligible,
                 serviceStatus = ServiceState.Unauthenticated,
             ),
+            readyToUse = false,
+            syncingData = true,
             onVpnToggle = {},
             onLearnMoreClick = {},
             onGetStartedClick = {},
@@ -421,6 +437,34 @@ private fun IPProtectionScreenPausedPreview(
                 maxDataBytes = 50 * BYTES_PER_GB.toLong(),
                 remainingDataBytes = 0L,
             ),
+            readyToUse = true,
+            syncingData = false,
+            onVpnToggle = {},
+            onLearnMoreClick = {},
+            onGetStartedClick = {},
+            showDebugAction = false,
+            onDebugActionClick = {},
+            onNavigateBack = {},
+        )
+    }
+}
+
+@OptIn(ExperimentalAndroidComponentsApi::class)
+@FlexibleWindowPreview
+@Composable
+private fun IPProtectionScreenConnectingPreview(
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme = theme) {
+        IPProtectionScreen(
+            state = IPProtectionState(
+                eligibilityStatus = EligibilityStatus.Eligible,
+                proxyStatus = Uninitialized,
+                remainingDataBytes = 40 * BYTES_PER_GB.toLong(),
+                maxDataBytes = 50 * BYTES_PER_GB.toLong(),
+            ),
+            readyToUse = false,
+            syncingData = false,
             onVpnToggle = {},
             onLearnMoreClick = {},
             onGetStartedClick = {},

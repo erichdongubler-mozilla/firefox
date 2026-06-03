@@ -6,6 +6,8 @@ package org.mozilla.fenix.settings
 
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -44,9 +46,14 @@ class IPProtectionScreenTest {
             FirefoxTheme(theme = Theme.Light) {
                 IPProtectionScreen(
                     state = state,
+                    readyToUse = true,
+                    syncingData = false,
                     onVpnToggle = {},
                     onLearnMoreClick = {},
                     onGetStartedClick = {},
+                    showDebugAction = false,
+                    onDebugActionClick = {},
+                    onNavigateBack = {},
                 )
             }
         }
@@ -62,8 +69,8 @@ class IPProtectionScreenTest {
             ),
         ).assertExists()
 
-        composeTestRule.onNodeWithText(
-            testContext.getString(R.string.ip_protection_toggle_label),
+        composeTestRule.onNode(
+            hasText(testContext.getString(R.string.ip_protection_toggle_label)) and isToggleable(),
         )
             .assertExists()
             .assertIsOff()
