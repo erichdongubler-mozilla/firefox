@@ -897,13 +897,28 @@ async function populateCSSSystemColors() {
   ];
 
   const rgbToHex = rgb => {
-    const match = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    // getComputedStyle returns rgb(R, G, B) for opaque colors and
+    // rgba(R, G, B, A) for non-opaque. Gecko normalizes the modern
+    // rgb(R G B / A) form to the legacy rgba(,,,) form (verified
+    // empirically on desktop Firefox 152/153). Alpha is a decimal 0–1
+    // with up to 3 decimal places; round(× 255) round-trips every
+    // nscolor alpha byte we observe in practice (e.g. macOS Highlight
+    // 0x7F, Fenix Highlight 0x4E, Linux GTK-theme alphas).
+    // Output is always 8-char uppercase RRGGBBAA — opaque colors get a
+    // trailing FF so the on-wire format is uniform.
+    const match = rgb.match(
+      /rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\s*\)/
+    );
     if (!match) {
       return rgb;
     }
-    const [, r, g, b] = match;
-    return [r, g, b]
-      .map(x => parseInt(x, 10).toString(16).padStart(2, "0"))
+    const r = parseInt(match[1], 10);
+    const g = parseInt(match[2], 10);
+    const b = parseInt(match[3], 10);
+    const a =
+      match[4] === undefined ? 255 : Math.round(parseFloat(match[4]) * 255);
+    return [r, g, b, a]
+      .map(x => x.toString(16).padStart(2, "0"))
       .join("")
       .toUpperCase();
   };
