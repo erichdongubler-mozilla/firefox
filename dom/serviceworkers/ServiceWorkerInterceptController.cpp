@@ -103,7 +103,7 @@ ServiceWorkerInterceptController::ShouldPrepareForIntercept(
       if (requestMode == RequestMode::No_cors && !mayLoad) {
         *aShouldIntercept = false;
       }
-    }
+    } 
 
     return NS_OK;
   }
