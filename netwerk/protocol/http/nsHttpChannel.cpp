@@ -6274,6 +6274,8 @@ bool nsHttpChannel::ParseDictionary(nsICacheEntry* aEntry,
           ("Failed to parse dictionary pattern %s", matchVal.get()));
       return false;
     }
+
+    auto freePattern = MakeScopeExit([&] { urlpattern_pattern_free(pattern); });
     if (urlpattern_get_has_regexp_groups(pattern)) {
       LOG_DICTIONARIES(("Pattern %s has regexp groups", matchVal.get()));
       return false;
