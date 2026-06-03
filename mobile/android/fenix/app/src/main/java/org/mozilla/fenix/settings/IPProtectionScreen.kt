@@ -58,6 +58,7 @@ import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.feature.ipprotection.store.state.Uninitialized
 import mozilla.components.feature.ipprotection.store.state.maxDataGb
+import mozilla.components.feature.ipprotection.store.state.remainingDataGb
 import mozilla.components.feature.ipprotection.store.state.usedDataGb
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.TextListItem
@@ -231,7 +232,7 @@ private fun DataLimitSection(
 
         if (!isDataLimitReached) {
             Text(
-                text = stringResource(R.string.ip_protection_data_limit_value, state.usedDataGb, state.maxDataGb),
+                text = stringResource(R.string.ip_protection_data_limit_value, state.remainingDataGb, state.maxDataGb),
                 style = FirefoxTheme.typography.body2,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
