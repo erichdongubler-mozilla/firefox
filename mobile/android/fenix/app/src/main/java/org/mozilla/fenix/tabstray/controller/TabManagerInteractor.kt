@@ -91,7 +91,7 @@ interface TabManagerInteractor :
     /**
      * A tab has been closed.
      */
-    fun onTabClosed(tab: TabsTrayItem.Tab, source: String? = null)
+    fun onTabClosed(tab: TabsTrayItem, source: String? = null)
 }
 
 /**
@@ -108,7 +108,7 @@ class DefaultTabManagerInteractor(
     }
 
     override fun onDeletePrivateTabWarningAccepted(tabId: String, source: String?) {
-        controller.handleDeletePrivateTabWarningAccepted(tabId = tabId, source = source)
+        controller.handleDeleteTabWarningAccepted(tabId, source)
     }
 
     override fun onDeleteSelectedTabsClicked() {
@@ -141,8 +141,8 @@ class DefaultTabManagerInteractor(
 
     override fun onBackPressed(): Boolean = controller.handleBackPressed()
 
-    override fun onTabClosed(tab: TabsTrayItem.Tab, source: String?) {
-        controller.handleTabDeletion(tab, source)
+    override fun onTabClosed(tab: TabsTrayItem, source: String?) {
+        controller.handleTabDeletion(tab.id, source)
     }
 
     override fun onTabSelected(tab: TabsTrayItem.Tab, source: String?) {

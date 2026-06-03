@@ -107,12 +107,7 @@ internal object TabListReducer {
                         removedTabWasSelected -> {
                             // The selected tab was removed and we need to find a new one
                             val previousIndex = state.tabs.indexOf(tabToRemove)
-                            findNewSelectedTabId(
-                                tabs = updatedTabList,
-                                isPrivate = tabToRemove.content.private,
-                                previousIndex = previousIndex,
-                                excludedTabIds = action.excludedTabIds,
-                            )
+                            findNewSelectedTabId(updatedTabList, tabToRemove.content.private, previousIndex)
                         }
                         else -> {
                             // The selected tab is not affected and can stay the same
@@ -151,7 +146,6 @@ internal object TabListReducer {
                                 updatedTabList,
                                 removedSelectedTab.content.private,
                                 previousIndex,
-                                action.excludedTabIds,
                             )
                         } else {
                             // The selected tab is not affected and can stay the same
@@ -284,16 +278,13 @@ private fun findNewSelectedTabId(
     tabs: List<TabSessionState>,
     isPrivate: Boolean,
     previousIndex: Int,
-    excludedTabIds: Set<String> = emptySet(),
 ): String? {
     if (tabs.isEmpty()) {
         // There's no tab left to select.
         return null
     }
 
-    val predicate: (TabSessionState) -> Boolean = { tab ->
-        tab.content.private == isPrivate && !excludedTabIds.contains(tab.id)
-    }
+    val predicate: (TabSessionState) -> Boolean = { tab -> tab.content.private == isPrivate }
 
     // If the previous index is still a valid index and if this is a private/normal tab we are looking for then
     // let's use the tab at the same index.

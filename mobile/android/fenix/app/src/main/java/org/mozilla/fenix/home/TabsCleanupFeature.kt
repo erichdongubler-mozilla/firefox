@@ -18,7 +18,6 @@ import mozilla.components.support.base.feature.LifecycleAwareFeature
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
-import org.mozilla.fenix.ext.actualInactiveTabs
 import org.mozilla.fenix.ext.tabClosedUndoMessage
 import org.mozilla.fenix.ext.tabsClosedUndoMessage
 import org.mozilla.fenix.home.HomeScreenViewModel.Companion.ALL_NORMAL_TABS
@@ -151,9 +150,7 @@ class TabsCleanupFeature(
             browserStore.state.normalTabs.size > 1
         }
 
-        val inactiveTabs = browserStore.state.actualInactiveTabs(settings = settings)
-
-        tabsUseCases.removeTab(tabId = sessionId, excludedTabIds = inactiveTabs.map { it.id }.toSet())
+        tabsUseCases.removeTab(sessionId)
 
         var tabId = ""
         if (settings.enableHomepageAsNewTab && !hasTabsRemaining) {
