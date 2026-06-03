@@ -2799,15 +2799,24 @@ static bool EvaluateDynamicImportOptions(
 // https://tc39.es/ecma262/#sec-evaluate-import-call
 JSObject* js::StartDynamicModuleImport(JSContext* cx, HandleScript script,
                                        HandleValue specifierArg,
-                                       HandleValue optionsArg) {
-  // Step 7. Let promiseCapability be ! NewPromiseCapability(%Promise%).
-  RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
+                                       HandleValue optionsArg,
+                                       ImportPhase phase) {
+  RootedObject promise(cx);
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  if (phase == ImportPhase::Source) {
+    promise = PromiseObject::createSkippingExecutor(cx);
+  } else
+#endif
+  {
+    // Step 7. Let promiseCapability be ! NewPromiseCapability(%Promise%).
+    promise = JS::NewPromiseObject(cx, nullptr);
+  }
   if (!promise) {
     return nullptr;
   }
 
   if (!TryStartDynamicModuleImport(cx, script, specifierArg, optionsArg,
-                                   promise, ImportPhase::Evaluation)) {
+                                   promise, phase)) {
     if (!RejectPromiseWithPendingError(cx, promise.as<PromiseObject>())) {
       return nullptr;
     }
@@ -2866,28 +2875,6 @@ static bool TryStartDynamicModuleImport(JSContext* cx, HandleScript script,
 
   return true;
 }
-
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-// https://tc39.es/proposal-source-phase-imports/#sec-evaluate-import-call
-JSObject* js::StartDynamicModuleImportSource(JSContext* cx, HandleScript script,
-                                             HandleValue specifierArg) {
-  JS::Rooted<PromiseObject*> promise(cx,
-                                     PromiseObject::createSkippingExecutor(cx));
-  if (!promise) {
-    return nullptr;
-  }
-
-  if (!TryStartDynamicModuleImport(cx, script, specifierArg,
-                                   JS::UndefinedHandleValue, promise,
-                                   ImportPhase::Source)) {
-    if (!RejectPromiseWithPendingError(cx, promise)) {
-      return nullptr;
-    }
-  }
-
-  return promise;
-}
-#endif
 
 static bool OnRootModuleRejected(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);

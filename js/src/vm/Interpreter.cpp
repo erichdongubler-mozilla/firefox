@@ -4384,6 +4384,8 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
     END_CASE(ImportMeta)
 
     CASE(DynamicImport) {
+      ImportPhase phase = ImportPhase(GET_UINT8(REGS.pc));
+
       ReservedRooted<Value> options(&rootValue0, REGS.sp[-1]);
       REGS.sp--;
 
@@ -4391,25 +4393,12 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
       POP_COPY_TO(specifier);
 
       JSObject* promise =
-          StartDynamicModuleImport(cx, script, specifier, options);
+          StartDynamicModuleImport(cx, script, specifier, options, phase);
       if (!promise) goto error;
 
       PUSH_OBJECT(*promise);
     }
     END_CASE(DynamicImport)
-
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-    CASE(DynamicImportSource) {
-      ReservedRooted<Value> specifier(&rootValue0);
-      POP_COPY_TO(specifier);
-
-      JSObject* promise = StartDynamicModuleImportSource(cx, script, specifier);
-      if (!promise) goto error;
-
-      PUSH_OBJECT(*promise);
-    }
-    END_CASE(DynamicImportSource)
-#endif
 
     CASE(EnvCallee) {
       uint16_t numHops = GET_ENVCOORD_HOPS(REGS.pc);

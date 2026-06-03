@@ -27,6 +27,7 @@
 
 #include "NamespaceImports.h"
 
+#include "builtin/ModuleObject.h"  // js::ImportPhase
 #include "jit/AtomicOp.h"
 #include "jit/FixedList.h"
 #include "jit/InlineList.h"
