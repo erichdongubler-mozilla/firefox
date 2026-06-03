@@ -205,8 +205,8 @@ already_AddRefed<ChannelMediaDecoder> ChannelMediaDecoder::Clone(
   return decoder.forget();
 }
 
-already_AddRefed<MediaDecoderStateMachineBase>
-ChannelMediaDecoder::CreateStateMachine(bool aDisableExternalEngine) {
+MediaDecoderStateMachineBase* ChannelMediaDecoder::CreateStateMachine(
+    bool aDisableExternalEngine) {
   MOZ_ASSERT(NS_IsMainThread());
   MediaFormatReaderInit init;
   init.mVideoFrameContainer = GetVideoFrameContainer();
@@ -232,10 +232,10 @@ ChannelMediaDecoder::CreateStateMachine(bool aDisableExternalEngine) {
        StaticPrefs::media_wmf_media_engine_enabled() == 3) &&
       StaticPrefs::media_wmf_media_engine_channel_decoder_enabled() &&
       !aDisableExternalEngine) {
-    return MakeAndAddRef<ExternalEngineStateMachine>(this, mReader);
+    return new ExternalEngineStateMachine(this, mReader);
   }
 #endif
-  return MakeAndAddRef<MediaDecoderStateMachine>(this, mReader);
+  return new MediaDecoderStateMachine(this, mReader);
 }
 
 void ChannelMediaDecoder::Shutdown() {

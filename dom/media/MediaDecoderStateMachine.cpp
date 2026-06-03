@@ -3471,11 +3471,11 @@ void MediaDecoderStateMachine::OnPlaybackRateFallback() {
   mOnPlaybackEvent.Notify(MediaPlaybackEvent::PlaybackRateFallback);
 }
 
-already_AddRefed<MediaSink> MediaDecoderStateMachine::CreateAudioSink() {
+MediaSink* MediaDecoderStateMachine::CreateAudioSink() {
   if (mOutputCaptureInfo.Ref().mState !=
       MediaDecoder::OutputCaptureState::None) {
     const auto& outputCaptureInfo = mOutputCaptureInfo.Ref();
-    RefPtr stream = MakeRefPtr<DecodedStream>(
+    DecodedStream* stream = new DecodedStream(
         OwnerThread(),
         outputCaptureInfo.mState == MediaDecoder::OutputCaptureState::Capture
             ? outputCaptureInfo.mDummyTrack
@@ -3489,7 +3489,7 @@ already_AddRefed<MediaSink> MediaDecoderStateMachine::CreateAudioSink() {
     mPlaybackRateFallbackListener.DisconnectIfExists();
     mPlaybackRateFallbackListener = stream->PlaybackRateFallbackEvent().Connect(
         OwnerThread(), this, &MediaDecoderStateMachine::OnPlaybackRateFallback);
-    return stream.forget();
+    return stream;
   }
 
   auto audioSinkCreator = [s = RefPtr<MediaDecoderStateMachine>(this), this]() {
@@ -3501,7 +3501,7 @@ already_AddRefed<MediaSink> MediaDecoderStateMachine::CreateAudioSink() {
         mTaskQueue, this, &MediaDecoderStateMachine::AudioAudibleChanged);
     return audioSink;
   };
-  return MakeAndAddRef<AudioSinkWrapper>(
+  return new AudioSinkWrapper(
       mTaskQueue, mAudioQueue, std::move(audioSinkCreator), mVolume,
       mPlaybackRate, mPreservesPitch, mSinkDevice.Ref());
 }

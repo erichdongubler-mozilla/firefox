@@ -297,7 +297,7 @@ HLSDecoder::~HLSDecoder() {
   HLS_DEBUG("HLSDecoder", "~HLSDecoder(): allocated=%zu", sAllocatedInstances);
 }
 
-already_AddRefed<MediaDecoderStateMachineBase> HLSDecoder::CreateStateMachine(
+MediaDecoderStateMachineBase* HLSDecoder::CreateStateMachine(
     bool aDisableExternalEngine) {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -314,7 +314,7 @@ already_AddRefed<MediaDecoderStateMachineBase> HLSDecoder::CreateStateMachine(
   mReader = new MediaFormatReader(
       init, new HLSDemuxer(mHLSResourceWrapper->GetPlayerId()));
 
-  return MakeAndAddRef<MediaDecoderStateMachine>(this, mReader);
+  return new MediaDecoderStateMachine(this, mReader);
 }
 
 bool HLSDecoder::IsEnabled() { return StaticPrefs::media_hls_enabled(); }
