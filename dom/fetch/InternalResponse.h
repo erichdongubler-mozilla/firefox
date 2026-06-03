@@ -189,8 +189,6 @@ class InternalResponse final : public AtomicSafeRefCounted<InternalResponse> {
     GetUnfilteredBody(aStream, aBodySize);
   }
 
-  void CloneBody(nsIInputStream** aStream, int64_t* aBodySize = nullptr);
-
   void SetBodyBlobImpl(BlobImpl* aBlobImpl) { mBodyBlobImpl = aBlobImpl; }
 
   BlobImpl* BodyBlobImpl() const {
