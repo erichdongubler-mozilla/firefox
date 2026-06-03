@@ -118,6 +118,10 @@ class TooltipsOverlay {
     return false;
   }
 
+  get instances() {
+    return this.#instances;
+  }
+
   /**
    * Add the tooltips overlay to the view. This will start tracking mouse
    * movements and display tooltips when needed

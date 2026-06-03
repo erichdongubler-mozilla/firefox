@@ -2151,6 +2151,22 @@ class Inspector extends EventEmitter {
       this.markup.eventDetailsTooltip.hide();
       return true;
     }
+
+    // We only want to see if the RuleView was created, as the tooltips might be displayed
+    // even if the RuleView is not the active tab.
+    if (this.#panels.has("ruleview")) {
+      const ruleView = this.getPanel("ruleview").view;
+      for (const tooltip of ruleView.tooltips.instances.values()) {
+        // If we have a tooltip displayed in the Rules view, hide it and bail.
+        // We can't have multiple tooltips visible at the same time, so it's fine to
+        // hide the first visible one for now.
+        if (tooltip.isVisible()) {
+          tooltip.hide();
+          return true;
+        }
+      }
+    }
+
     return false;
   }
 
