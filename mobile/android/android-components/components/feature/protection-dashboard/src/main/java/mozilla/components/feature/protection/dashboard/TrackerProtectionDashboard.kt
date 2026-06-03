@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -41,14 +40,16 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import mozilla.components.compose.base.theme.AcornTheme
-import mozilla.components.compose.base.theme.surfaceDimVariant
 
 /**
  * Composable for the Tracker Protection Dashboard.
@@ -59,6 +60,9 @@ import mozilla.components.compose.base.theme.surfaceDimVariant
  * @param sitesCount Number of sites the trackers were blocked on.
  * @param dataSavedMB Approximate data saved in megabytes, or null if not available.
  * @param trackersBlocked Breakdown of trackers blocked by their category.
+ * @param totalTrackersBlockedAllTime Total number of trackers blocked since [trackingSinceDate].
+ * The footer is hidden when this is 0 or [trackingSinceDate] is null.
+ * @param trackingSinceDate Pre-formatted date from which the all-time blocking has been tracked.
  * @param contentPadding Inner padding for the weekly stats card content.
  * Allows pushing the content down while leaving room for an overlay
  * (e.g. a bottom sheet handle) above the title.
@@ -71,6 +75,8 @@ fun TrackerProtectionDashboard(
     sitesCount: Int,
     dataSavedMB: Int? = null,
     trackersBlocked: List<TrackersBlockedCategory> = emptyList(),
+    totalTrackersBlockedAllTime: Int = 0,
+    trackingSinceDate: String? = null,
     contentPadding: PaddingValues = PaddingValues(),
 ) {
     val colors = rememberProtectionsDashboardColors()
@@ -90,6 +96,12 @@ fun TrackerProtectionDashboard(
                 colors = colors,
             )
         }
+        if (totalTrackersBlockedAllTime > 0 && trackingSinceDate != null) {
+            TotalTrackersFooter(
+                totalTrackersBlockedAllTime = totalTrackersBlockedAllTime,
+                trackingSinceDate = trackingSinceDate,
+            )
+        }
     }
 }
 
@@ -103,10 +115,10 @@ private fun WeeklyStatsCard(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
 ) {
-    val gradientBrush = Brush.horizontalGradient(
+    val gradientBrush = Brush.linearGradient(
         colorStops = arrayOf(
-            0.031f to colors.gradientStart,
-            0.7816f to colors.gradientEnd,
+            0.4f to colors.gradientStart,
+            1.0f to colors.gradientEnd,
         ),
     )
 
@@ -125,7 +137,7 @@ private fun WeeklyStatsCard(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (totalTrackersBlocked == 0) {
-                WeeklyStatsEmptyContent(appName, colors)
+                WeeklyStatsEmptyContent(appName)
             } else {
                 WeeklyStatsContent(
                     totalTrackersBlocked = totalTrackersBlocked,
@@ -141,7 +153,6 @@ private fun WeeklyStatsCard(
 @Composable
 private fun WeeklyStatsEmptyContent(
     appName: String,
-    colors: ProtectionsDashboardColors,
 ) {
     Image(
         painter = painterResource(R.drawable.firefox_pictorgram_shield_check_rgb_2),
@@ -156,14 +167,14 @@ private fun WeeklyStatsEmptyContent(
         modifier = Modifier.semantics { heading() },
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Medium,
-        color = colors.textPrimary,
+        color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center,
     )
 
     Text(
         text = stringResource(R.string.mozac_protections_dashboard_empty_subtitle),
         style = MaterialTheme.typography.bodyMedium,
-        color = colors.textSecondary,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
     )
 }
@@ -175,64 +186,48 @@ private fun WeeklyStatsContent(
     dataSavedMB: Int?,
     colors: ProtectionsDashboardColors,
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Column(
+        modifier = Modifier.semantics(mergeDescendants = true) { heading() },
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Image(
             painter = painterResource(R.drawable.firefox_pictorgram_shield_check_rgb_2),
             contentDescription = null,
-            modifier = Modifier.size(AcornTheme.layout.space.static300),
+            modifier = Modifier.size(55.dp),
         )
 
-        Spacer(modifier = Modifier.width(AcornTheme.layout.space.static100))
+        Spacer(modifier = Modifier.height(AcornTheme.layout.space.static100))
+
+        Text(
+            text = totalTrackersBlocked.toString(),
+            fontSize = 48.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            letterSpacing = 0.18.sp,
+        )
 
         Text(
             text = stringResource(R.string.mozac_protections_dashboard_trackers_blocked_this_week_title),
-            modifier = Modifier.semantics { heading() },
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Medium,
-            color = colors.textPrimary,
+            fontWeight = FontWeight.Normal,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            letterSpacing = 0.15.sp,
         )
-    }
 
-    Box(
-        modifier = Modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(
-            modifier = Modifier.semantics(mergeDescendants = true) { heading() },
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
+        if (sitesCount > 0) {
             Text(
-                text = totalTrackersBlocked.toString(),
-                fontSize = 48.sp,
-                fontWeight = FontWeight.Bold,
-                color = colors.textPrimary,
-                letterSpacing = 0.18.sp,
+                text = pluralStringResource(
+                    // If we are to use these in the future, move out string from static_strings.xml
+                    R.plurals.mozac_protections_dashboard_across_sites,
+                    sitesCount,
+                    sitesCount,
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
             )
-
-            if (sitesCount > 0) {
-                Text(
-                    text = pluralStringResource(
-                        // If we are to use these in the future, move out string from static_strings.xml
-                        R.plurals.mozac_protections_dashboard_across_sites,
-                        sitesCount,
-                        sitesCount,
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colors.textSecondary,
-                )
-            }
         }
-
-        Image(
-            painter = painterResource(R.drawable.delete_me),
-            contentDescription = null,
-            modifier = Modifier
-                .size(80.dp)
-                .align(Alignment.BottomEnd)
-                .offset(y = AcornTheme.layout.space.static100),
-        )
     }
 
     dataSavedMB?.takeIf { it > 0 }?.let { dataSaved ->
@@ -298,6 +293,47 @@ private fun TrackerBreakdownSection(
 }
 
 @Composable
+private fun TotalTrackersFooter(
+    totalTrackersBlockedAllTime: Int,
+    trackingSinceDate: String,
+    modifier: Modifier = Modifier,
+) {
+    val trackersPhrase = pluralStringResource(
+        R.plurals.mozac_protections_dashboard_trackers_count,
+        totalTrackersBlockedAllTime,
+        totalTrackersBlockedAllTime,
+    )
+    val fullText = pluralStringResource(
+        R.plurals.mozac_protections_dashboard_total_blocked_since,
+        totalTrackersBlockedAllTime,
+        trackersPhrase,
+        trackingSinceDate,
+    )
+    val annotatedText = buildAnnotatedString {
+        val accentStart = fullText.indexOf(trackersPhrase)
+        if (accentStart >= 0) {
+            append(fullText.take(accentStart))
+            withStyle(SpanStyle(color = MaterialTheme.colorScheme.tertiary)) {
+                append(trackersPhrase)
+            }
+            append(fullText.substring(accentStart + trackersPhrase.length))
+        } else {
+            append(fullText)
+        }
+    }
+
+    Text(
+        text = annotatedText,
+        modifier = modifier
+            .padding(top = AcornTheme.layout.space.static300)
+            .padding(bottom = AcornTheme.layout.space.static200)
+            .padding(horizontal = AcornTheme.layout.space.static400),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
+}
+
+@Composable
 private fun TrackerCategoryRow(
     trackersBlocked: TrackersBlockedCategory,
     maxCount: Int,
@@ -315,7 +351,7 @@ private fun TrackerCategoryRow(
         modifier = modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.extraSmall)
-            .background(MaterialTheme.colorScheme.surfaceDimVariant)
+            .background(MaterialTheme.colorScheme.surfaceBright)
             .padding(vertical = AcornTheme.layout.space.static100)
             .padding(horizontal = AcornTheme.layout.space.static200)
             .semantics(mergeDescendants = true) {},
@@ -334,10 +370,11 @@ private fun TrackerCategoryRow(
             modifier = Modifier.weight(1f),
         ) {
             Text(
-                text = stringResource(trackersBlocked.name),
+                text = "${trackersBlocked.count} ${stringResource(trackersBlocked.name)}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = contentColor,
-                maxLines = 2,
+                textAlign = TextAlign.Start,
+                maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
             )
 
@@ -363,16 +400,6 @@ private fun TrackerCategoryRow(
                 }
             }
         }
-
-        Spacer(modifier = Modifier.width(AcornTheme.layout.space.static200))
-
-        Text(
-            text = trackersBlocked.count.toString(),
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
-            color = if (isEmpty) contentColor else colors.textPrimary,
-            textAlign = TextAlign.End,
-        )
     }
 }
 
@@ -446,6 +473,10 @@ private fun TrackerProtectionDashboardPreview() {
                 maxCount = trackersBlocked.maxOfOrNull { it.count } ?: 1,
                 colors = previewDashboardColors(),
             )
+            TotalTrackersFooter(
+                totalTrackersBlockedAllTime = 5305,
+                trackingSinceDate = "February 23, 2026",
+            )
         }
     }
 }
@@ -455,26 +486,19 @@ private fun TrackerProtectionDashboardPreview() {
 @ReadOnlyComposable
 private fun previewDashboardColors() = when (isSystemInDarkTheme()) {
     true -> ProtectionsDashboardColors(
-        background = Color(0xFF4B3974),
-        textPrimary = Color(0xFFFBFBFE),
-        textSecondary = Color(0xFFFBFBFE),
-        textAccent = Color(0xFFD9BFFF),
         chipBackground = Color(0xFF1C1B22).copy(alpha = 0.4f),
         chipText = Color(0xFFD9BFFF),
-        progressBar = Color(0xFFD9BFFF),
-        gradientStart = Color(0xFFAB71FF).copy(alpha = 0.5f),
-        gradientEnd = Color(0xFFFF8A50).copy(alpha = 0.5f),
+        progressBar = Color(0xFF764EDD),
+        gradientStart = Color(0xFF180E30).copy(alpha = 0.5f),
+        gradientEnd = Color(0xFF711D08).copy(alpha = 0.5f),
     )
+
     else -> ProtectionsDashboardColors(
-        background = Color(0xFFE6E0F5),
-        textPrimary = Color(0xFF15141A),
-        textSecondary = Color(0xFF5B5B66),
-        textAccent = Color(0xFF312A64),
         chipBackground = Color.White.copy(alpha = 0.4f),
         chipText = Color(0xFF312A64),
-        progressBar = Color(0xFF592ACB),
-        gradientStart = Color(0xFFD9BFFF).copy(alpha = 0.5f),
-        gradientEnd = Color(0xFFFFD5B2).copy(alpha = 0.5f),
+        progressBar = Color(0xFF764EDD),
+        gradientStart = Color(0xFFE5D6FF).copy(alpha = 0.5f),
+        gradientEnd = Color(0xFFFFD4B7).copy(alpha = 0.5f),
     )
 }
 

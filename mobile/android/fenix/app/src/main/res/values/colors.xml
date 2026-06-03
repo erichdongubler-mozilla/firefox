@@ -186,26 +186,18 @@
     <color name="search_suggestion_indicator_icon_bookmark_color_normal_theme">@color/photonBlue50</color>
 
     <!-- Tracking protection dashboard colors used in normal browsing mode -->
-    <color name="protections_dashboard_background">#FFE6E0F5</color>
-    <color name="protections_dashboard_text_primary">#FF15141A</color>
-    <color name="protections_dashboard_text_secondary">#FF5B5B66</color>
-    <color name="protections_dashboard_text_accent">#FF312A64</color>
     <color name="protections_dashboard_chip_background">#66FFFFFF</color>
     <color name="protections_dashboard_chip_text">#FF312A64</color>
-    <color name="protections_dashboard_progress_bar">#FF592ACB</color>
-    <color name="protections_dashboard_gradient_start">#80D9BFFF</color>
-    <color name="protections_dashboard_gradient_end">#80FFD5B2</color>
+    <color name="protections_dashboard_progress_bar">@color/novaViolet50</color>
+    <color name="protections_dashboard_gradient_start">@color/novaViolet10</color>
+    <color name="protections_dashboard_gradient_end">@color/novaOrange10</color>
 
     <!-- Tracking protection dashboard colors used in private browsing mode -->
-    <color name="protections_dashboard_background_private">#FF4B3974</color>
-    <color name="protections_dashboard_text_primary_private">#FFD9D0F5</color>
-    <color name="protections_dashboard_text_secondary_private">#FFB5B5C3</color>
-    <color name="protections_dashboard_text_accent_private">#FFE8CCFF</color>
     <color name="protections_dashboard_chip_background_private">#FF3D3264</color>
     <color name="protections_dashboard_chip_text_private">#FFD9D0F5</color>
-    <color name="protections_dashboard_progress_bar_private">#FFD9BFFF</color>
-    <color name="protections_dashboard_gradient_start_private">#80AB71FF</color>
-    <color name="protections_dashboard_gradient_end_private">#80FF8A50</color>
+    <color name="protections_dashboard_progress_bar_private">@color/novaViolet50</color>
+    <color name="protections_dashboard_gradient_start_private">@color/novaVioletDesaturated90</color>
+    <color name="protections_dashboard_gradient_end_private">@color/novaOrange70</color>
 
     <!-- Colors for Edge to Edge background  -->
     <color name="homepage_edge_to_edge_gradient_start">#FFF7EAE8</color>
