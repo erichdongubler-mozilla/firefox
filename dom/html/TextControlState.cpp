@@ -503,6 +503,12 @@ TextInputSelectionController::GetCaretVisible(bool* _retval) {
   if (!caret) {
     return NS_ERROR_FAILURE;
   }
+  // If the caret is for another selection, our caret is hidden.
+  Selection* selection = caret->GetSelection();
+  if (!selection || selection->GetFrameSelection() != mFrameSelection) {
+    *_retval = false;
+    return NS_OK;
+  }
   *_retval = caret->IsVisible();
   return NS_OK;
 }
