@@ -11,6 +11,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import org.mozilla.fenix.longfox.GleanMetrics.Longfox
 
 /**
  * Defines the api for using Long Fox.
@@ -22,6 +23,11 @@ interface LongFoxFeatureApi {
      * @param container the view that you want to put the game in
      */
     fun start(container: ViewGroup)
+
+    /**
+     * Call this if you want to send a telemetry event when the entry point is shown.
+     */
+    fun onEntryPointShown()
 }
 
 /**
@@ -37,6 +43,7 @@ class LongFoxFeature : LongFoxFeatureApi {
      */
     override fun start(container: ViewGroup) {
         val context = container.context ?: return
+        Longfox.gameLaunched.record()
         container.addView(
             ComposeView(context).apply {
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -51,5 +58,12 @@ class LongFoxFeature : LongFoxFeatureApi {
                 }
             },
         )
+    }
+
+    /**
+     * When the entry point is shown, send a glean telemetry event.
+     */
+    override fun onEntryPointShown() {
+        Longfox.entryPointShown.record()
     }
 }

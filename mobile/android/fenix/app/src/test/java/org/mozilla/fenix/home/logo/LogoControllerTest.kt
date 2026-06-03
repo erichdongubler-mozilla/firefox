@@ -20,6 +20,7 @@ class LogoControllerTest {
         override fun start(container: ViewGroup) {
             started = true
         }
+        override fun onEntryPointShown() { }
     }
 
     class FakeViewGroup : ViewGroup(FakeContext()) {
