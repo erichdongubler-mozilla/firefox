@@ -1642,7 +1642,7 @@ bool H265::CompareExtraData(const mozilla::MediaByteBuffer* aExtraData1,
   const auto config1 = rv1.unwrap();
   const auto config2 = rv2.unwrap();
   uint8_t numSPS = config1.NumSPS();
-  if (numSPS != config2.NumSPS()) {
+  if (numSPS == 0 || numSPS != config2.NumSPS()) {
     return false;
   }
 
