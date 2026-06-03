@@ -478,7 +478,7 @@ void RestyleManager::ContentWillBeRemoved(nsIContent* aOldChild) {
         break;
       }
     }
-    if (isEmpty && containerIsElement) {
+    if (isEmpty) {
       RestyleForEmptyChange(container->AsElement());
       return;
     }
