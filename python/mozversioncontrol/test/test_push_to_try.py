@@ -147,7 +147,7 @@ def test_push_to_try(repo, monkeypatch):
                 "log",
                 "-n1",
                 "--no-graph",
-                "-T",
+                "--template",
                 "id.short(16)",
             ),
             (
@@ -157,7 +157,7 @@ def test_push_to_try(repo, monkeypatch):
                 "--no-graph",
                 "-r",
                 "heads(trunk() | (remote_bookmarks() & ancestors(@)))..@ ~ description(exact:'')",
-                "-T",
+                "--template",
                 "'  ' ++ description.first_line() ++ '\n'",
             ),
             (
@@ -165,7 +165,7 @@ def test_push_to_try(repo, monkeypatch):
                 "--quiet",
                 "log",
                 "-n0",
-                "-T",
+                "--template",
                 '"snapshot: prepare_try_push"',
             ),
             (
@@ -175,7 +175,7 @@ def test_push_to_try(repo, monkeypatch):
                 "log",
                 "-n1",
                 "--no-graph",
-                "-T",
+                "--template",
                 "id.short(16)",
             ),
             (
@@ -188,7 +188,14 @@ def test_push_to_try(repo, monkeypatch):
             ),
             (str(tool), "--quiet", "file", "track", "extra-file"),
             (str(tool), "--quiet", "file", "track", "other/extra-file"),
-            (str(tool), "--quiet", "log", "-n0", "-T", '"snapshot: prepare_try_push"'),
+            (
+                str(tool),
+                "--quiet",
+                "log",
+                "-n0",
+                "--template",
+                '"snapshot: prepare_try_push"',
+            ),
             (
                 str(tool),
                 "--quiet",
@@ -208,7 +215,7 @@ def test_push_to_try(repo, monkeypatch):
                 "-n1",
                 "-r",
                 "@",
-                "-T",
+                "--template",
                 "change_id.short()",
             ),
             (str(vcs._git._tool), "remote"),
@@ -325,7 +332,7 @@ def test_push_to_git_try_bookmark_persists(repo, mocker):
         "-n1",
         "-r",
         "@",
-        "-T",
+        "--template",
         'local_bookmarks.join("\n")',
     )
     bookmark = output.split("\n")[0].strip()
