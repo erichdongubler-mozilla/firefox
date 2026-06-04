@@ -103,7 +103,7 @@ constexpr TimeUnit MediaDecoder::DEFAULT_NEXT_FRAME_AVAILABLE_BUFFERED;
 void MediaDecoder::InitStatics() {
   MOZ_ASSERT(NS_IsMainThread());
   // Eagerly init gMediaDecoderLog to work around bug 1415441.
-  MOZ_LOG(gMediaDecoderLog, LogLevel::Info, ("MediaDecoder::InitStatics"));
+  MOZ_LOG_FMT(gMediaDecoderLog, LogLevel::Info, "MediaDecoder::InitStatics");
 
   if (XRE_IsParentProcess()) {
     // Lock Utility process preferences so that people cannot opt-out of
