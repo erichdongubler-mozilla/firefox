@@ -6,6 +6,13 @@
 // active theme can be found. This the case for WebExtension Themes, for example.
 var _fallbackThemeData = null;
 
+function processImage(img, baseURI) {
+  if (typeof img == "object") {
+    return img;
+  }
+  return baseURI.resolve(img);
+}
+
 // Parses the `images` property of a theme manifest and stores them in `styles`.
 function loadImages(images, styles, experiment, baseURI, logger) {
   for (let image of Object.keys(images)) {
@@ -17,18 +24,16 @@ function loadImages(images, styles, experiment, baseURI, logger) {
 
     switch (image) {
       case "additional_backgrounds": {
-        let backgroundImages = val.map(img => baseURI.resolve(img));
-        styles.additionalBackgrounds = backgroundImages;
+        styles.additionalBackgrounds = val.map(v => processImage(v, baseURI));
         break;
       }
       case "theme_frame": {
-        let resolvedURL = baseURI.resolve(val);
-        styles.headerURL = resolvedURL;
+        styles.headerImage = processImage(val, baseURI);
         break;
       }
       default: {
         if (experiment?.images && image in experiment.images) {
-          styles.experimental.images[image] = baseURI.resolve(val);
+          styles.experimental.images[image] = processImage(val, baseURI);
         } else {
           logger?.warn(`Unrecognized theme property found: images.${image}`);
         }
@@ -160,12 +165,14 @@ function loadProperties(properties, styles, experiment, logger) {
         if (!assertValidAdditionalBackgrounds(property, val.length)) {
           break;
         }
-
-        let tiling = [];
-        for (let i = 0, l = styles.additionalBackgrounds.length; i < l; ++i) {
-          tiling.push(val[i] || "no-repeat");
+        styles.backgroundsTiling = val.join(",");
+        break;
+      }
+      case "additional_backgrounds_size": {
+        if (!assertValidAdditionalBackgrounds(property, val.length)) {
+          break;
         }
-        styles.backgroundsTiling = tiling.join(",");
+        styles.backgroundsSize = val.join(",");
         break;
       }
       case "color_scheme":

@@ -40,6 +40,7 @@ namespace InspectorUtils {
   InspectorRGBATuple? colorToRGBA(UTF8String colorString);
   InspectorColorToResult? colorTo(UTF8String fromColor, UTF8String toColorSpace);
   boolean isValidCSSColor(UTF8String colorString);
+  boolean isValidCSSImage(UTF8String imageString);
   [Throws] sequence<DOMString> getSubpropertiesForCSSProperty(UTF8String property);
   [Throws] boolean cssPropertyIsShorthand(UTF8String property);
 

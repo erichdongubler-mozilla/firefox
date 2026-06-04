@@ -143,6 +143,10 @@ class InspectorUtils {
   static bool IsValidCSSColor(GlobalObject& aGlobal,
                               const nsACString& aColorString);
 
+  // Check whether a given string is a valid CSS <image> value.
+  static bool IsValidCSSImage(GlobalObject& aGlobal,
+                              const nsACString& aImageString);
+
   // Utilities for obtaining information about a CSS property.
 
   // Get a list of the longhands corresponding to the given CSS property.  If

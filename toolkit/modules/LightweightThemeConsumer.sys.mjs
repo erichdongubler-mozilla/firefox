@@ -373,7 +373,7 @@ LightweightThemeConsumer.prototype = {
     let hasTheme = theme.id != DEFAULT_THEME_ID && !builtinThemeConfig?.inApp;
     this._doc.forceNonNativeTheme = !!builtinThemeConfig?.nonNative;
     let root = this._doc.documentElement;
-    root.toggleAttribute("lwtheme-image", !!(hasTheme && theme.headerURL));
+    root.toggleAttribute("lwtheme-image", !!(hasTheme && theme.headerImage));
     root.toggleAttribute(
       "lwtheme-image-y-align",
       hasTheme &&
@@ -386,7 +386,13 @@ LightweightThemeConsumer.prototype = {
         })
     );
     this._setExperiment(hasTheme, themeData.experiment, theme.experimental);
-    _setImage(this._win, root, hasTheme, "--lwt-header-image", theme.headerURL);
+    _setImage(
+      this._win,
+      root,
+      hasTheme,
+      "--lwt-header-image",
+      theme.headerImage
+    );
     _setImage(
       this._win,
       root,
@@ -577,15 +583,26 @@ function _getContentProperties(doc, hasTheme, data) {
   return properties;
 }
 
-function _setImage(aWin, aRoot, aActive, aVariableName, aURLs) {
-  if (aURLs && !Array.isArray(aURLs)) {
-    aURLs = [aURLs];
+function _imageToCss(aWin, aImage) {
+  if (typeof aImage == "object") {
+    // Note that the theme manifest post-processor (validCSSGradient) has
+    // already validated this was a single valid gradient, or returned an
+    // image(transparent) otherwise.
+    const [gradient, args] = Object.entries(aImage)[0];
+    return `${gradient}(${args})`;
+  }
+  return `url(${aWin.CSS.escape(aImage)})`;
+}
+
+function _setImage(aWin, aRoot, aActive, aVariableName, aImages) {
+  if (aImages && !Array.isArray(aImages)) {
+    aImages = [aImages];
   }
   _setProperty(
     aRoot,
     aActive,
     aVariableName,
-    aURLs && aURLs.map(v => `url(${aWin.CSS.escape(v)})`).join(", ")
+    aImages && aImages.map(v => _imageToCss(aWin, v)).join(", ")
   );
 }
 
@@ -622,7 +639,7 @@ function _hasDarkFrame(doc, theme, colors, hasTheme) {
   // background image on top) because some text colors can be dark enough for
   // our heuristics, but still contrast well enough with a dark background,
   // see bug 1743010.
-  if (!theme.headerURL && colors.accentcolor) {
+  if (!theme.headerImage && colors.accentcolor) {
     let color = _cssColorToRGBA(doc, colors.accentcolor);
     if (color.a == 1) {
       return _isColorDark(color.r, color.g, color.b);

@@ -116,13 +116,14 @@ body {
   --browser-area-z-index-toolbox-while-animating: 4;
 
   --lwt-additional-images: none;
-  --lwt-background-alignment: right top;
   --lwt-background-tiling: no-repeat;
+  --lwt-background-alignment: right top;
+  --lwt-background-size: auto;
 
   --toolbox-background-image: none;
+  --toolbox-background-repeat: no-repeat;
+  --toolbox-background-position: right top;
   --toolbox-background-size: auto;
-  --toolbox-background-position: top left;
-  --toolbox-background-repeat: repeat;
 
   @media -moz-pref("browser.nova.enabled") {
     --toolbox-background-image: var(--toolbox-background-gradient);
@@ -132,6 +133,7 @@ body {
     --toolbox-background-image: var(--lwt-additional-images);
     --toolbox-background-repeat: var(--lwt-background-tiling);
     --toolbox-background-position: var(--lwt-background-alignment);
+    --toolbox-background-size: var(--lwt-background-size);
   }
 
   &[lwtheme-image] {
@@ -140,6 +142,7 @@ body {
     --toolbox-background-image: var(--lwt-header-image), var(--lwt-additional-images);
     --toolbox-background-repeat: no-repeat, var(--lwt-background-tiling);
     --toolbox-background-position: right top, var(--lwt-background-alignment);
+    --toolbox-background-size: auto, var(--lwt-background-size);
   }
 
   --ext-theme-background-transition: background-color 0.1s cubic-bezier(0.17, 0.67, 0.83, 0.67);
@@ -288,6 +291,7 @@ body {
     background-image: var(--toolbox-background-image);
     background-repeat: var(--toolbox-background-repeat);
     background-position: var(--toolbox-background-position);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     background-size: var(--toolbox-background-size);
   }
 }
@@ -304,6 +308,7 @@ body {
     background-image: var(--toolbox-background-image);
     background-repeat: var(--toolbox-background-repeat);
     background-position: var(--toolbox-background-position);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     background-size: var(--toolbox-background-size);
   }
 

@@ -9329,6 +9329,26 @@ pub unsafe extern "C" fn Servo_IsValidCSSColor(value: &nsACString) -> bool {
     specified::Color::is_valid(&context, &mut input)
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn Servo_IsValidCSSImage(value: &nsACString) -> bool {
+    let mut input = ParserInput::new(value.as_str_unchecked());
+    let mut input = Parser::new(&mut input);
+    let context = ParserContext::new(
+        Origin::Author,
+        dummy_url_data(),
+        Some(CssRuleType::Style),
+        ParsingMode::DEFAULT,
+        QuirksMode::NoQuirks,
+        /* namespaces = */ Default::default(),
+        None,
+        None,
+        /* attr_taint */ Default::default(),
+    );
+    input
+        .parse_entirely(|input| specified::Image::parse(&context, input))
+        .is_ok()
+}
+
 struct ComputeColorResult {
     result_color: AbsoluteColor,
     was_current_color: bool,
