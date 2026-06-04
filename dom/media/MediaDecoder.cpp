@@ -1397,13 +1397,14 @@ void MediaDecoder::SetStreamName(const nsAutoString& aStreamName) {
   mStreamName = aStreamName;
 }
 
-void MediaDecoder::ConnectMirrors(MediaDecoderStateMachineBase* aObject) {
+void MediaDecoder::ConnectMirrors() {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aObject);
-  mStateMachineDuration.Connect(aObject->CanonicalDuration());
-  mBuffered.Connect(aObject->CanonicalBuffered());
-  mCurrentPosition.Connect(aObject->CanonicalCurrentPosition());
-  mIsAudioDataAudible.Connect(aObject->CanonicalIsAudioDataAudible());
+  MOZ_ASSERT(mDecoderStateMachine);
+  mStateMachineDuration.Connect(mDecoderStateMachine->CanonicalDuration());
+  mBuffered.Connect(mDecoderStateMachine->CanonicalBuffered());
+  mCurrentPosition.Connect(mDecoderStateMachine->CanonicalCurrentPosition());
+  mIsAudioDataAudible.Connect(
+      mDecoderStateMachine->CanonicalIsAudioDataAudible());
 }
 
 void MediaDecoder::DisconnectMirrors() {
@@ -1422,7 +1423,7 @@ void MediaDecoder::SetStateMachine(
   if (stateMachine) {
     mDecoderStateMachine = std::move(stateMachine);
     LOG("set state machine %p", mDecoderStateMachine.get());
-    ConnectMirrors(mDecoderStateMachine);
+    ConnectMirrors();
     UpdateVideoDecodeMode();
   } else if (mDecoderStateMachine) {
     LOG("null out state machine %p", mDecoderStateMachine.get());
