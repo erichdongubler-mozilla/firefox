@@ -961,7 +961,7 @@ add_task(
     const conversation = new ChatConversation({});
     conversation.addAssistantMessage("text", "some response");
     const assistantMsg = conversation.messages.at(-1);
-    assistantMsg._pendingMemoryIds = ["mem-1", "mem-1", "mem-2", "mem-2"];
+    assistantMsg.memoriesApplied = ["mem-1", "mem-1", "mem-2", "mem-2"];
 
     async function* emptyStream() {}
     await conversation.receiveResponse(emptyStream());
@@ -982,10 +982,6 @@ add_task(
       assistantMsg.memoriesApplied,
       mockMemories,
       "memoriesApplied should be set to the resolved memories"
-    );
-    Assert.ok(
-      !("_pendingMemoryIds" in assistantMsg),
-      "_pendingMemoryIds should be deleted after processing"
     );
 
     sandbox.restore();

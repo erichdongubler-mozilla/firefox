@@ -372,13 +372,11 @@ export class ChatConversation extends EventEmitter {
       this.emit("chat-conversation:message-update", currentMessage);
     }
 
-    if (currentMessage._pendingMemoryIds?.length) {
+    if (currentMessage.memoriesApplied?.length) {
       currentMessage.memoriesApplied =
         await lazy.MemoriesManager.getMemoriesByID(
-          new Set(currentMessage._pendingMemoryIds)
+          new Set(currentMessage.memoriesApplied)
         );
-
-      delete currentMessage._pendingMemoryIds;
 
       this.emit("chat-conversation:message-update", currentMessage);
     }
