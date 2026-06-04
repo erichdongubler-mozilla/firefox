@@ -1872,9 +1872,21 @@ JSObject* js::CopyErrorObject(JSContext* cx, Handle<ErrorObject*> err) {
   JSExnType errorType = err->type();
 
   // Create the Error object.
-  return ErrorObject::create(cx, errorType, stack, fileName, sourceId,
-                             lineNumber, columnNumber, std::move(copyReport),
-                             message, cause);
+  Rooted<ErrorObject*> copy(
+      cx,
+      ErrorObject::create(cx, errorType, stack, fileName, sourceId, lineNumber,
+                          columnNumber, std::move(copyReport), message, cause));
+  if (!copy) {
+    return nullptr;
+  }
+
+  // Preserve the Wasm trap flag so that a copied trap remains uncatchable by
+  // Wasm exception handling (catch_all).
+  if (err->mightBeWasmTrap() && err->fromWasmTrap()) {
+    copy->setFromWasmTrap();
+  }
+
+  return copy;
 }
 
 JS_PUBLIC_API bool JS::CreateError(JSContext* cx, JSExnType type,
