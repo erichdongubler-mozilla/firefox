@@ -6,6 +6,7 @@ package org.mozilla.fenix.settings
 
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,13 +19,18 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.concept.engine.ipprotection.ServiceState
+import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow
+import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow.Companion.EntrypointConfig
+import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow.Companion.INTENT_ON_COMPLETE
 import mozilla.components.feature.ipprotection.debug.IPProtectionStateDebugContent
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.lib.state.ext.observeAsComposableState
+import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Vpn
+import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.hideToolbar
@@ -36,7 +42,9 @@ import org.mozilla.fenix.theme.FirefoxTheme
 class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
 
     private var showDebugDialog by mutableStateOf(false)
+
     private val args: IPProtectionFragmentArgs by navArgs()
+    private val fxaAccountAuthFlow = ViewBoundFeatureWrapper<IPProtectionFxaAuthFlow>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,6 +105,28 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
                 }
             }
         }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        fxaAccountAuthFlow.set(
+            feature = IPProtectionFxaAuthFlow(
+                accountManager = requireComponents.backgroundServices.accountManager,
+                store = requireComponents.ipProtection.store,
+                entrypointConfig = EntrypointConfig(
+                    authorization = FenixFxAEntryPoint.IPProtectionMainMenu,
+                    authentication = FenixFxAEntryPoint.IPProtectionOnboarding,
+                ),
+                onAuthRequested = { url, onCompleteAction ->
+                    val intent = SupportUtils.createAuthCustomTabIntent(requireContext(), url)
+                    intent.putExtra(INTENT_ON_COMPLETE, onCompleteAction)
+                    startActivity(intent)
+                },
+            ),
+            view = view,
+            owner = this,
+        )
     }
 
     /**

@@ -64,9 +64,6 @@ import mozilla.components.concept.engine.EngineView
 import mozilla.components.concept.storage.HistoryMetadataKey
 import mozilla.components.feature.contextmenu.DefaultSelectionActionDelegate
 import mozilla.components.feature.customtabs.isCustomTabIntent
-import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow
-import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow.Companion.EntrypointConfig
-import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow.Companion.INTENT_ON_COMPLETE
 import mozilla.components.feature.media.ext.findActiveMediaTab
 import mozilla.components.feature.privatemode.notification.PrivateNotificationFeature
 import mozilla.components.feature.search.BrowserStoreSearchAdapter
@@ -105,7 +102,6 @@ import org.mozilla.fenix.browser.BrowserFragment
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.browser.browsingmode.DefaultBrowsingModeManager
-import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.ShareAction
 import org.mozilla.fenix.components.appstate.OrientationMode
@@ -344,22 +340,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                 preferences = settings().preferences,
                 privateBrowsingLockPrefKey = getString(R.string.pref_key_private_browsing_locked),
             ),
-        )
-    }
-
-    private val ipProtectionFxaAccountAuthFlow by lazy {
-        IPProtectionFxaAuthFlow(
-            accountManager = components.backgroundServices.accountManager,
-            store = components.ipProtection.store,
-            entrypointConfig = EntrypointConfig(
-                authorization = FenixFxAEntryPoint.IPProtectionMainMenu,
-                authentication = FenixFxAEntryPoint.IPProtectionOnboarding,
-            ),
-            onAuthRequested = { url, onCompleteAction ->
-                val intent = SupportUtils.createAuthCustomTabIntent(this, url)
-                intent.putExtra(INTENT_ON_COMPLETE, onCompleteAction)
-                startActivity(intent)
-            },
         )
     }
 
@@ -624,8 +604,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
 
         if (!isCustomTabIntent(intent)) {
             lifecycle.addObserver(webExtensionPromptFeature)
-            // FIXME(IPP) move this to each UI fragment with separate entry points.
-            lifecycle.addObserver(ipProtectionFxaAccountAuthFlow)
         }
 
         if (shouldAddToRecentsScreen(intent)) {
