@@ -21,7 +21,7 @@ dictionary ViewTimelineOptions {
   (UTF8String or sequence<(CSSKeywordish or CSSNumericValue)>) inset = "auto";
 };
 
-[Exposed=Window, Pref="layout.css.scroll-driven-animations.viewtimeline.enabled"]
+[Exposed=Window, Pref="layout.css.scroll-driven-animations.enabled"]
 interface ViewTimeline : ScrollTimeline {
   [Throws]
   constructor(optional ViewTimelineOptions options = {});
