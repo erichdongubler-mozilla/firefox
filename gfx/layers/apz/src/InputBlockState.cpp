@@ -848,7 +848,9 @@ bool TouchBlockState::UpdateSlopState(const MultiTouchInput& aInput,
   return mInSlop;
 }
 
-bool TouchBlockState::IsInSlop() const { return mInSlop; }
+TouchBlockState::InSlop TouchBlockState::IsInSlop() const {
+  return mInSlop ? InSlop::Yes : InSlop::No;
+}
 
 Maybe<ScrollDirection> TouchBlockState::GetBestGuessPanDirection(
     const MultiTouchInput& aInput) const {
@@ -883,6 +885,23 @@ uint32_t TouchBlockState::GetActiveTouchCount() const {
 
 bool TouchBlockState::IsTargetOriginallyConfirmed() const {
   return mOriginalTargetConfirmedState != TargetConfirmationState::eUnconfirmed;
+}
+
+bool TouchBlockState::NeedsContentResponseAfterLongTap(
+    const MultiTouchInput& aEvent, InSlop aWasInSlop) const {
+  if (aWasInSlop != InSlop::Yes) {
+    return false;
+  }
+  if (aEvent.mType != MultiTouchInput::MULTITOUCH_MOVE) {
+    return false;
+  }
+  if (!WasLongTapProcessed() && !IsWaitingLongTapResult()) {
+    return false;
+  }
+  if (IsTargetOriginallyConfirmed()) {
+    return false;
+  }
+  return !ShouldDropEvents();
 }
 
 KeyboardBlockState::KeyboardBlockState(
