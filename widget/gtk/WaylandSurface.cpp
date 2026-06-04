@@ -918,11 +918,9 @@ bool WaylandSurface::ConfigureScaleLocked(
 
   // Configure/set new handlers for callbacks
   if (aScaleType == ScaleType::Coordinates) {
-    return ConfigureCoordinateScaleLocked(aProofOfLock,
-                                                 aSetProtocolHandler);
+    return ConfigureCoordinateScaleLocked(aProofOfLock, aSetProtocolHandler);
   } else if (aScaleType == ScaleType::Fractional) {
-    return ConfigureFractionalScaleLocked(aProofOfLock,
-                                                 aSetProtocolHandler);
+    return ConfigureFractionalScaleLocked(aProofOfLock, aSetProtocolHandler);
   }
   return true;
 }
@@ -962,7 +960,7 @@ void WaylandSurface::SetScaleTypeLocked(const WaylandSurfaceLock& aProofOfLock,
     // Disabled/Ceiled
     default:
       ConfigureScaleLocked(aProofOfLock, aScaleType,
-                          /* aSetProtocolHandler */ false);
+                           /* aSetProtocolHandler */ false);
       break;
   }
 }

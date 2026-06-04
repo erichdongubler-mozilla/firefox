@@ -396,10 +396,10 @@ class WaylandSurface final {
   // and propagate the scale change to child surfaces.
   bool ConfigureScaleLocked(const WaylandSurfaceLock& aProofOfLock,
                             ScaleType aScaleType, bool aSetProtocolHandler);
-  bool ConfigureCoordinateScaleLocked(
-      const WaylandSurfaceLock& aProofOfLock, bool aSetProtocolHandler);
-  bool ConfigureFractionalScaleLocked(
-      const WaylandSurfaceLock& aProofOfLock, bool aSetProtocolHandler);
+  bool ConfigureCoordinateScaleLocked(const WaylandSurfaceLock& aProofOfLock,
+                                      bool aSetProtocolHandler);
+  bool ConfigureFractionalScaleLocked(const WaylandSurfaceLock& aProofOfLock,
+                                      bool aSetProtocolHandler);
 
   // Calculate 'stable' rounded size for subsurface based
   // on its size and position.
