@@ -5,7 +5,6 @@
 package org.mozilla.fenix.tabstray.browser.compose.interactable
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -17,11 +16,11 @@ import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListItemInfo
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -63,76 +62,21 @@ fun createListInteractionState(
     val scope = rememberCoroutineScope()
     val touchSlop = LocalViewConfiguration.current.touchSlop
     val hapticFeedback = LocalHapticFeedback.current
-    val state = remember(listState) {
-        ListInteractionStateImpl(
+    val currentLongPress by rememberUpdatedState(onLongPress)
+    val currentHandler by rememberUpdatedState(tabInteractionHandler)
+    val state = remember(listState, dragAndDropEnabled, ignoredItems) {
+        ListInteractionState(
             listState = listState,
             scope = scope,
             touchSlop = touchSlop,
             hapticFeedback = hapticFeedback,
             ignoredItems = ignoredItems,
-            onLongPress = onLongPress,
-            tabInteractionHandler = tabInteractionHandler,
+            onLongPress = currentLongPress,
+            tabInteractionHandler = currentHandler,
             dragAndDropEnabled = dragAndDropEnabled,
         )
     }
     return state
-}
-
-/**
- * Stable snapshot interface for a list's interaction state.
- */
-@Stable
-interface ListInteractionState {
-    /** The currently dragged item.  Can be [InteractionState.List.None] */
-    val draggedItem: InteractionState.List
-
-    /** The currently hovered item.  Can be [InteractionState.List.None] */
-    val hoveredItem: InteractionState.List
-
-    /**  The [Rect] used to display a reorder placement indicator */
-    val highlightedRect: Rect?
-
-    /** The current [InteractionMode], e.g. reordering, scrolling, drag and drop */
-    val interactionMode: InteractionMode.List
-
-    /**  The previously dragged item's key */
-    val previousKeyOfDraggedItem: Any?
-
-    /** The list's orientation */
-    val orientation: Orientation
-
-    /** Cached offset used to animate the item from a cancelled drag back into place */
-    val previousItemAnimatableOffset: Animatable<Float, AnimationVector1D>
-
-    /**
-     * Called when a slop threshold has been exceeded to start a drag event.
-     * @param offset The offset for the drag event
-     * @param shouldLongPress Whether long press is needed to initiate a drag event
-     */
-    fun onTouchSlopPassed(offset: Float, shouldLongPress: Boolean)
-
-    /**
-     * Called when a drag event is updated.
-     * @param offset the latest offset for the drag event
-     * @param preserveSelectMode whether select mode should be preserved
-     */
-    fun onDrag(offset: Float, preserveSelectMode: Boolean)
-
-    /**
-     * Called when a drag event ends.
-     */
-    fun onDragEnd()
-
-    /**
-     * Called when a drag is cancelled, for example, when a user lets go without performing an action.
-     */
-    fun onDragCancelled()
-
-    /**
-     * Computes the offset of an item at a given index.
-     * @param index the item's index
-     */
-    fun computeItemOffset(index: Int): Float
 }
 
 /**
@@ -148,7 +92,7 @@ interface ListInteractionState {
  * @param onLongPress Optional callback to be invoked when long pressing an item.
  */
 @Suppress("LongParameterList")
-class ListInteractionStateImpl internal constructor(
+class ListInteractionState internal constructor(
     private val listState: LazyListState,
     private val scope: CoroutineScope,
     private val hapticFeedback: HapticFeedback,
@@ -157,14 +101,14 @@ class ListInteractionStateImpl internal constructor(
     private val tabInteractionHandler: TabInteractionHandler,
     private val dragAndDropEnabled: Boolean,
     private val onLongPress: (LazyListItemInfo) -> Unit = {},
-) : ListInteractionState {
-    override var draggedItem by mutableStateOf<InteractionState.List>(InteractionState.List.None)
+) {
+    internal var draggedItem by mutableStateOf<InteractionState.List>(InteractionState.List.None)
         private set
-    override var hoveredItem by mutableStateOf<InteractionState.List>(InteractionState.List.None)
+    internal var hoveredItem by mutableStateOf<InteractionState.List>(InteractionState.List.None)
         private set
-    override var highlightedRect by mutableStateOf<Rect?>(null)
+    internal var highlightedRect by mutableStateOf<Rect?>(null)
         private set
-    override var interactionMode by mutableStateOf<InteractionMode.List>(InteractionMode.List.None)
+    internal var interactionMode by mutableStateOf<InteractionMode.List>(InteractionMode.List.None)
         private set
 
     private var scrollJob: Job? = null
@@ -172,17 +116,10 @@ class ListInteractionStateImpl internal constructor(
     internal var moved by mutableStateOf(false)
         private set
 
-    override var previousKeyOfDraggedItem by mutableStateOf<Any?>(null)
-        private set
-    override val previousItemAnimatableOffset = Animatable(0f)
-
-    override val orientation: Orientation
-        get() = listState.layoutInfo.orientation
-
     val itemSize: Int?
         get() = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.key !in ignoredItems }?.size
 
-    override fun computeItemOffset(index: Int): Float {
+    internal fun computeItemOffset(index: Int): Float {
         val itemAtIndex =
             listState.layoutInfo.visibleItemsInfo.firstOrNull { info -> info.index == index }
         if (itemAtIndex != null) {
@@ -191,7 +128,14 @@ class ListInteractionStateImpl internal constructor(
         return draggedItem.initialOffset + draggedItem.cumulatedOffset
     }
 
-    override fun onTouchSlopPassed(offset: Float, shouldLongPress: Boolean) {
+    internal var previousKeyOfDraggedItem by mutableStateOf<Any?>(null)
+        private set
+    internal val previousItemAnimatableOffset = Animatable(0f)
+
+    internal val orientation: Orientation
+        get() = listState.layoutInfo.orientation
+
+    internal fun onTouchSlopPassed(offset: Float, shouldLongPress: Boolean) {
         listState.findItem(offset)?.also { item ->
             val key = item.key as? String
             if (shouldLongPress) {
@@ -208,7 +152,7 @@ class ListInteractionStateImpl internal constructor(
         }
     }
 
-    override fun onDragEnd() {
+    internal fun onDragEnd() {
         if (draggedItem is InteractionState.List.Active) {
             handleDragEnd(interactionMode)
         }
@@ -246,7 +190,7 @@ class ListInteractionStateImpl internal constructor(
         }
     }
 
-    override fun onDragCancelled() {
+    internal fun onDragCancelled() {
         if (moved) {
             tabInteractionHandler.onDragCancel()
         }
@@ -318,7 +262,7 @@ class ListInteractionStateImpl internal constructor(
         }
     }
 
-    override fun onDrag(offset: Float, preserveSelectMode: Boolean) {
+    internal fun onDrag(offset: Float, preserveSelectMode: Boolean) {
         draggedItem = draggedItem.incrementCumulatedOffset(offset)
         if (!moved && abs(draggedItem.cumulatedOffset) > touchSlop) {
             draggedItem = draggedItem.markAsMoved()

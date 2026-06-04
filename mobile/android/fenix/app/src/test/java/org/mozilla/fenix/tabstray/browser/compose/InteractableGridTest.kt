@@ -22,7 +22,6 @@ import kotlinx.coroutines.test.TestScope
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mozilla.fenix.tabstray.browser.compose.interactable.GridInteractionState
-import org.mozilla.fenix.tabstray.browser.compose.interactable.GridInteractionStateImpl
 import org.mozilla.fenix.tabstray.browser.compose.interactable.GridItemOffset
 import org.mozilla.fenix.tabstray.browser.compose.interactable.InteractionMode
 import org.mozilla.fenix.tabstray.browser.compose.interactable.InteractionState
@@ -597,7 +596,7 @@ class InteractableGridTest {
         gridState: LazyGridState,
         handler: TabInteractionHandler = NoOpTabInteractionHandler,
     ): GridInteractionState {
-        return GridInteractionStateImpl(
+        return GridInteractionState(
             gridState = gridState,
             tabInteractionHandler = handler,
             scope = scope,

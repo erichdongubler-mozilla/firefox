@@ -22,7 +22,6 @@ import org.mozilla.fenix.tabstray.browser.compose.interactable.InteractionMode
 import org.mozilla.fenix.tabstray.browser.compose.interactable.InteractionState
 import org.mozilla.fenix.tabstray.browser.compose.interactable.InteractionType
 import org.mozilla.fenix.tabstray.browser.compose.interactable.ListInteractionState
-import org.mozilla.fenix.tabstray.browser.compose.interactable.ListInteractionStateImpl
 import org.mozilla.fenix.tabstray.browser.compose.interactable.ListItemOffset
 import org.mozilla.fenix.tabstray.browser.compose.interactable.closestDistanceTo
 import org.mozilla.fenix.tabstray.browser.compose.interactable.closestPointTo
@@ -671,7 +670,7 @@ class InteractableListTest {
         handler: TabInteractionHandler = NoOpTabInteractionHandler,
         dragAndDropEnabled: Boolean = true,
     ): ListInteractionState {
-        return ListInteractionStateImpl(
+        return ListInteractionState(
             listState = listState,
             tabInteractionHandler = handler,
             scope = scope,

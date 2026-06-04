@@ -65,6 +65,13 @@ interface TabManagerInteractor :
     fun onRecentlyClosedClicked()
 
     /**
+     * Invoked when a tab is long clicked.
+     *
+     * @param tab [TabsTrayItem] that was clicked.
+     */
+    fun onTabLongClicked(tab: TabsTrayItem): Boolean
+
+    /**
      * Invoked when the back button is pressed.
      *
      * @return true if the back button press was consumed.
@@ -156,6 +163,10 @@ class DefaultTabManagerInteractor(
 
     override fun onRecentlyClosedClicked() {
         controller.handleNavigateToRecentlyClosed()
+    }
+
+    override fun onTabLongClicked(tab: TabsTrayItem): Boolean {
+        return controller.handleTabLongClick(tab)
     }
 
     /**

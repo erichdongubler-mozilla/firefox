@@ -60,7 +60,6 @@ private val THUMBNAIL_HEIGHT = 68.dp
  * @param selectionState: The tab selection state.
  * @param trailingContent Optional trailing content.
  * @param trailingContentColor Optional content color for trailing content.
- * @param shouldClickListen Whether the [TabGroupRow] should respond to click events.
  */
 @Composable
 fun TabGroupRow(
@@ -70,7 +69,6 @@ fun TabGroupRow(
     selectionState: TabsTrayItemSelectionState = TabsTrayItemSelectionState(),
     trailingContent: @Composable (() -> Unit)? = null,
     trailingContentColor: Color? = null,
-    shouldClickListen: Boolean = true,
 ) {
     val tabGroupRowContentDescription = pluralStringResource(
         id = R.plurals.add_to_exiting_tab_group_content_description,
@@ -83,7 +81,7 @@ fun TabGroupRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(enabled = shouldClickListen, onClick = onClick)
+            .clickable(onClick = onClick)
             .testTag("${TabsTrayTestTag.TAB_GROUP_ROOT}.${tabGroup.id}")
             .padding(
                 if (trailingContent == null) {

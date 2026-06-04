@@ -42,11 +42,8 @@ class TabsTrayTelemetryMiddleware(
 
         requireNotNull(topDestination) { "The backstack cannot be empty" }
 
-        // these actions need to be handled prior to invoking next(action)
-        when (action) {
-            is TabGroupAction -> handleTabGroupAction(store, action)
-            is TabsTrayAction.TabItemLongClicked -> handleTabItemLongClicked(store, action)
-            else -> {}
+        if (action is TabGroupAction) {
+            handleTabGroupAction(store, action)
         }
 
         next(action)
@@ -54,10 +51,10 @@ class TabsTrayTelemetryMiddleware(
         when (action) {
             is TabSearchAction -> handleTabSearchAction(action)
             is TabsTrayAction.NavigateBackInvoked -> handleNavigateBackInvoked(topDestination, isEditing)
-            // ignore the actions that were handled prior
-            is TabGroupAction, is TabsTrayAction.TabItemLongClicked -> {}
             else -> {
-                handleGeneralTabsTrayAction(store, action)
+                if (action !is TabGroupAction) {
+                    handleGeneralTabsTrayAction(store, action)
+                }
             }
         }
     }
@@ -95,7 +92,6 @@ class TabsTrayTelemetryMiddleware(
                 -> {
                 TabsTray.shareAllTabs.record(NoExtras())
             }
-
             is TabsTrayAction.SelectAllNormalTabs -> {
                 TabsTray.selectAllNormalTabs.record(NoExtras())
             }
@@ -152,32 +148,6 @@ class TabsTrayTelemetryMiddleware(
         }
     }
 
-    private fun handleTabItemLongClicked(
-        store: Store<TabsTrayState, TabsTrayAction>,
-        action: TabsTrayAction.TabItemLongClicked,
-    ) {
-        // We should record a long press even if we are not entering multi-select mode.
-        // E.g. you can still long press and drag to reorder in private mode, which does not support multi-selection.
-        TabsTray.tabLongPress.record(NoExtras())
-        // Note that the selected tab check is also executed in TabsTrayReducer
-        // and should be updated if this business logic ever changes.
-        if (store.state.mode.selectedTabs.isNotEmpty()) {
-            return
-        }
-        when (action.item) {
-            is TabsTrayItem.TabGroup -> {
-                TabsTray.enterMultiselectMode.record(TabsTray.EnterMultiselectModeExtra(true))
-            }
-
-            is TabsTrayItem.Tab -> {
-                // Private tabs cannot be multi-selected
-                if (!action.item.private) {
-                    TabsTray.enterMultiselectMode.record(TabsTray.EnterMultiselectModeExtra(true))
-                }
-            }
-        }
-    }
-
     private fun handleTabGroupAction(
         store: Store<TabsTrayState, TabsTrayAction>,
         action: TabGroupAction,
@@ -199,7 +169,7 @@ class TabsTrayTelemetryMiddleware(
 
             is TabGroupAction.DeleteConfirmed,
             is TabGroupAction.CloseTabAndDeleteGroupConfirmed,
-                -> {
+                 -> {
                 TabsTray.tabGroupDeleted.record(NoExtras())
             }
 

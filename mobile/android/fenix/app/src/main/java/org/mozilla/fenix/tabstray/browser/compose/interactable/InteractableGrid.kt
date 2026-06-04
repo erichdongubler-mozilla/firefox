@@ -6,7 +6,6 @@ package org.mozilla.fenix.tabstray.browser.compose.interactable
 
 import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationVector2D
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.VisibilityThreshold
@@ -20,7 +19,6 @@ import androidx.compose.foundation.lazy.grid.LazyGridItemInfo
 import androidx.compose.foundation.lazy.grid.LazyGridItemScope
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,7 +70,7 @@ fun createGridInteractionState(
     val touchSlop = LocalViewConfiguration.current.touchSlop
     val hapticFeedback = LocalHapticFeedback.current
     val state = remember(gridState) {
-        GridInteractionStateImpl(
+        GridInteractionState(
             gridState = gridState,
             touchSlop = touchSlop,
             tabInteractionHandler = tabInteractionHandler,
@@ -84,75 +82,6 @@ fun createGridInteractionState(
         )
     }
     return state
-}
-
-/**
- * Stable snapshot interface for a grid's interaction state.
- */
-@Stable
-interface GridInteractionState {
-    /**  LayoutCoordinates used to map between grid and screen space. */
-    val gridLayoutCoordinates: LayoutCoordinates?
-
-    /**  The currently dragged item.  Can be [InteractionState.Grid.None] */
-    val draggedItem: InteractionState.Grid
-
-    /**  The currently hovered item.  Can be [InteractionState.Grid.None] */
-    val hoveredItem: InteractionState.Grid
-
-    /**  The [Rect] used to display a reorder placement indicator */
-    val highlightedRect: Rect?
-
-    /** The current [InteractionMode], e.g. reordering, scrolling, drag and drop */
-    val interactionMode: InteractionMode.Grid
-
-    /** The previously dragged item's key */
-    val previousKeyOfDraggedItem: TabItemKey?
-
-    /** Cached offset used to animate the item from a cancelled drag back into place */
-    val previousItemAnimatableOffset: Animatable<Offset, AnimationVector2D>
-
-    /**
-     * Called to update the cached offset of a dragged item by its [LayoutCoordinates]
-     *
-     * @param itemCoordinates the item's layout coordinates
-     */
-    fun onDraggedItemPositioned(itemCoordinates: LayoutCoordinates)
-
-    /**
-     * Computes the offset of an item at a given index.
-     * @param index the item's index
-     */
-    fun computeItemOffset(index: Int): Offset
-
-    /**
-     * Called when a slop threshold has been exceeded to start a drag event.
-     * @param offset The offset for the drag event
-     * @param shouldLongPress Whether long press is needed to initiate a drag event
-     */
-    fun onTouchSlopPassed(offset: Offset, shouldLongPress: Boolean)
-
-    /**
-     * Called when a drag event is updated.
-     * @param offset the latest offset for the drag event
-     * @param preserveSelectMode whether select mode should be preserved
-     */
-    fun onDrag(offset: Offset, preserveSelectMode: Boolean)
-
-    /**
-     * Called when a drag event ends.
-     */
-    fun onDragEnd()
-
-    /**
-     * Called when a drag is cancelled, for example, when a user lets go without performing an action.
-     */
-    fun onDragCancelled()
-
-    /**
-     * Updates the stored layout coordinates in order to map grid space to screen space.
-     */
-    fun updateGridLayoutCoordinates(coordinates: LayoutCoordinates)
 }
 
 /**
@@ -168,7 +97,7 @@ interface GridInteractionState {
  * @param onLongPress Optional callback to be invoked when long pressing an item.
  * @param ignoredItems List of keys for non-draggable items.
  */
-class GridInteractionStateImpl internal constructor(
+class GridInteractionState internal constructor(
     private val gridState: LazyGridState,
     private val touchSlop: Float,
     private val scope: CoroutineScope,
@@ -177,40 +106,34 @@ class GridInteractionStateImpl internal constructor(
     private val tabInteractionHandler: TabInteractionHandler,
     private val onLongPress: (LazyGridItemInfo) -> Unit = {},
     private val ignoredItems: Set<Any> = emptySet(),
-) : GridInteractionState {
-
-    override var gridLayoutCoordinates: LayoutCoordinates? by mutableStateOf(null)
-        private set
+) {
+    internal var gridLayoutCoordinates: LayoutCoordinates? = null
     private var cachedDraggedItemLayoutOffset: Offset? = null
 
-    override var draggedItem by mutableStateOf<InteractionState.Grid>(InteractionState.Grid.None)
+    internal var draggedItem by mutableStateOf<InteractionState.Grid>(InteractionState.Grid.None)
+        private set
+    internal var hoveredItem by mutableStateOf<InteractionState.Grid>(InteractionState.Grid.None)
+        private set
+    internal var highlightedRect by mutableStateOf<Rect?>(null)
+        private set
+    internal var interactionMode by mutableStateOf<InteractionMode.Grid>(InteractionMode.Grid.None)
         private set
 
-    override var hoveredItem by mutableStateOf<InteractionState.Grid>(InteractionState.Grid.None)
+    internal var moved by mutableStateOf(false)
         private set
 
-    override var highlightedRect by mutableStateOf<Rect?>(null)
-        private set
-    override var interactionMode by mutableStateOf<InteractionMode.Grid>(InteractionMode.Grid.None)
-        private set
-    private var moved by mutableStateOf(false)
-
-    override var previousKeyOfDraggedItem by mutableStateOf<TabItemKey?>(null)
-        private set
-    override val previousItemAnimatableOffset = Animatable(Offset.Zero, Offset.VectorConverter)
-
-    private var scrollJob by mutableStateOf<Job?>(null)
+    var scrollJob by mutableStateOf<Job?>(null)
 
     val itemSize: IntSize?
         get() = gridState.layoutInfo.visibleItemsInfo.firstOrNull { it.key !in ignoredItems }?.size
 
-    override fun onDraggedItemPositioned(itemCoordinates: LayoutCoordinates) {
+    internal fun onDraggedItemPositioned(itemCoordinates: LayoutCoordinates) {
         gridLayoutCoordinates?.let {
             cachedDraggedItemLayoutOffset = it.localPositionOf(itemCoordinates, Offset.Zero)
         }
     }
 
-    override fun computeItemOffset(index: Int): Offset {
+    internal fun computeItemOffset(index: Int): Offset {
         val itemAtIndex = gridState.layoutInfo.visibleItemsInfo.firstOrNull { info -> info.index == index }
         if (itemAtIndex != null) {
             return draggedItem.initialOffset + draggedItem.cumulatedOffset - itemAtIndex.offset.toOffset()
@@ -219,7 +142,12 @@ class GridInteractionStateImpl internal constructor(
         return draggedItem.initialOffset + draggedItem.cumulatedOffset - cachedOffset
     }
 
-    override fun onTouchSlopPassed(offset: Offset, shouldLongPress: Boolean) {
+    internal var previousKeyOfDraggedItem by mutableStateOf<TabItemKey?>(null)
+        private set
+    internal var previousItemAnimatableOffset = Animatable(Offset.Zero, Offset.VectorConverter)
+        private set
+
+    internal fun onTouchSlopPassed(offset: Offset, shouldLongPress: Boolean) {
         gridState.findItem(offset)?.also { item ->
             val key = item.key as? String
             key?.let {
@@ -236,15 +164,11 @@ class GridInteractionStateImpl internal constructor(
         }
     }
 
-    override fun onDragEnd() {
+    internal fun onDragEnd() {
         if (draggedItem is InteractionState.Grid.Active) {
             handleDragEnd(interactionMode)
         }
         resetState()
-    }
-
-    override fun updateGridLayoutCoordinates(coordinates: LayoutCoordinates) {
-        gridLayoutCoordinates = coordinates
     }
 
     private fun handleDragEnd(mode: InteractionMode.Grid) {
@@ -278,7 +202,7 @@ class GridInteractionStateImpl internal constructor(
         }
     }
 
-    override fun onDragCancelled() {
+    internal fun onDragCancelled() {
         if (moved) {
             tabInteractionHandler.onDragCancel()
         }
@@ -361,7 +285,7 @@ class GridInteractionStateImpl internal constructor(
         }
     }
 
-    override fun onDrag(offset: Offset, preserveSelectMode: Boolean) {
+    internal fun onDrag(offset: Offset, preserveSelectMode: Boolean) {
         draggedItem = draggedItem.incrementCumulatedOffset(offset)
         if (!moved && draggedItem.cumulatedOffset.getDistance() > touchSlop) {
             (draggedItem as? InteractionState.Grid.Active)?.let { active ->
