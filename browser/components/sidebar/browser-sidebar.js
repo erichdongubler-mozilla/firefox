@@ -245,6 +245,7 @@ var SidebarController = {
           elementId: "sidebar-switcher-opentabs",
           url: "chrome://browser/content/sidebar/sidebar-opentabs.html",
           menuId: "menu_openTabsSidebar",
+          keyId: "viewOpenTabsSidebarKb",
           menuL10nId: "menu-view-open-tabs",
           revampL10nId: "sidebar-menu-open-tabs-label",
           iconUrl: "chrome://browser/content/firefoxview/view-opentabs.svg",

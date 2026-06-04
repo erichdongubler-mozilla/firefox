@@ -301,6 +301,9 @@ document.addEventListener(
         case "viewBookmarksSidebarKb":
           SidebarController.toggle("viewBookmarksSidebar");
           break;
+        case "viewOpenTabsSidebarKb":
+          SidebarController.toggle("viewOpenTabsSidebar");
+          break;
         case "viewBookmarksToolbarKb":
           BookmarkingUI.toggleBookmarksToolbar("shortcut");
           break;
