@@ -516,6 +516,7 @@ macosx1500-aarch64-vms-tests:
 
 macosx1470-64-tests:
     - cppunittest
+    - crashtest
     - gtest
     - web-platform-tests-print-reftest
     - web-platform-tests-reftest
