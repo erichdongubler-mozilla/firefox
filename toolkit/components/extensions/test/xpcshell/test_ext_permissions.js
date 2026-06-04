@@ -751,6 +751,7 @@ const GRANTED_WITHOUT_USER_PROMPT = [
   "idle",
   "mozillaAddons",
   "networkStatus",
+  "publicSuffix",
   "scripting",
   "storage",
   "telemetry",
