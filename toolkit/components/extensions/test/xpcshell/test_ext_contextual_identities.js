@@ -51,6 +51,114 @@ add_task(async function test_contextualIdentities_without_permissions() {
   await extension.unload();
 });
 
+add_task(async function test_contextualIdentities_supported_colors_and_icons() {
+  // Pin the pref so the expected color codes below are deterministic.
+  Services.prefs.setBoolPref("browser.nova.enabled", false);
+
+  // The API must expose exactly the palette the service considers supported,
+  // in the same order, so it can't silently drift from the source of truth.
+  const expectedColors = ContextualIdentityService.containerColors.map(
+    name => ({
+      color: name,
+      colorCode: ContextualIdentityService.getContainerColorCode(name),
+    })
+  );
+  const expectedIcons = ContextualIdentityService.containerIcons.map(name => ({
+    icon: name,
+    iconUrl: ContextualIdentityService.getContainerIconURL(name),
+  }));
+
+  async function background(expected) {
+    let colors = await browser.contextualIdentities.getSupportedColors();
+    browser.test.assertEq(
+      JSON.stringify(expected.colors),
+      JSON.stringify(colors),
+      "getSupportedColors mirrors the colors supported by the browser"
+    );
+
+    let icons = await browser.contextualIdentities.getSupportedIcons();
+    browser.test.assertEq(
+      JSON.stringify(expected.icons),
+      JSON.stringify(icons),
+      "getSupportedIcons mirrors the icons supported by the browser"
+    );
+
+    // Shape checks that don't depend on the values computed in the parent, so a
+    // service returning a well-formed object with garbage values is caught too.
+    const hexMatch = /^#[0-9a-f]{6}$/;
+    for (let entry of colors) {
+      browser.test.assertTrue(
+        hexMatch.test(entry.colorCode),
+        `colorCode for ${entry.color} is a hex value (${entry.colorCode})`
+      );
+    }
+    const iconMatch = /^resource:\/\/usercontext-content\/[a-z]+[.]svg$/;
+    for (let entry of icons) {
+      browser.test.assertTrue(
+        iconMatch.test(entry.iconUrl),
+        `iconUrl for ${entry.icon} has the expected shape (${entry.iconUrl})`
+      );
+
+      // An extension must actually be able to load the icon, so check the URL
+      // resolves to a decodable image of the expected size.
+      const img = new Image();
+      img.src = entry.iconUrl;
+      try {
+        await img.decode();
+      } catch (e) {
+        browser.test.fail(`Failed to load image: ${img.src} - ${e}`);
+      }
+      browser.test.assertEq(
+        32,
+        img.naturalWidth,
+        `Expected width for ${entry.icon}`
+      );
+      browser.test.assertEq(
+        32,
+        img.naturalHeight,
+        `Expected height for ${entry.icon}`
+      );
+    }
+
+    // Independent anchors with known values, so a totally broken source of
+    // truth can't make the equality checks above trivially pass.
+    browser.test.assertTrue(
+      colors.some(c => c.color === "blue" && c.colorCode === "#37adff"),
+      "blue is exposed with its expected color code"
+    );
+    browser.test.assertTrue(
+      icons.some(
+        i =>
+          i.icon === "fingerprint" &&
+          i.iconUrl === "resource://usercontext-content/fingerprint.svg"
+      ),
+      "fingerprint is exposed with its expected icon url"
+    );
+
+    browser.test.notifyPass("contextualIdentities_supported");
+  }
+
+  let extension = ExtensionTestUtils.loadExtension({
+    useAddonManager: "temporary",
+    background: `(${background})(${JSON.stringify({
+      colors: expectedColors,
+      icons: expectedIcons,
+    })})`,
+    manifest: {
+      browser_specific_settings: {
+        gecko: { id: "supported@thing.com" },
+      },
+      permissions: ["contextualIdentities"],
+    },
+  });
+
+  await extension.startup();
+  await extension.awaitFinish("contextualIdentities_supported");
+  await extension.unload();
+
+  Services.prefs.clearUserPref("browser.nova.enabled");
+});
+
 add_task(async function test_contextualIdentity_events() {
   async function background() {
     function createOneTimeListener(type) {
