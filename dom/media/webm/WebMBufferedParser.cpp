@@ -320,8 +320,9 @@ MediaResult WebMBufferedParser::Append(const unsigned char* aBuffer,
                                              mClusterOffset, mClusterEndOffset);
                     aMapping.InsertElementAt(idx, entry);
                   } else {
-                    WEBM_DEBUG("Out of order timecode {} in Cluster at {} ignored",
-                               absTimecode, mClusterOffset);
+                    WEBM_DEBUG(
+                        "Out of order timecode {} in Cluster at {} ignored",
+                        absTimecode, mClusterOffset);
                   }
                 }
               }
