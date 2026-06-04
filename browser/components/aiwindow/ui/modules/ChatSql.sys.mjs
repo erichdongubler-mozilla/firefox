@@ -481,6 +481,21 @@ FROM llm_telemetry
 WHERE conv_id = :conv_id
 `;
 
+/**
+ * Get uniform_sampling_probability for multiple conversations. Used on
+ * conversation reload to rehydrate the in-memory telemetry sampling state
+ * (_telemetryUniformSample / _telemetryUniformProbability).
+ *
+ * @param {number} amount - The number of conversation IDs to look up
+ */
+export function getUniformSamplingByConvIdsSql(amount) {
+  return `
+    SELECT conv_id, uniform_sampling_probability
+    FROM llm_telemetry
+    WHERE conv_id IN(${new Array(amount).fill("?").join(",")});
+  `;
+}
+
 export const GET_CONVERSATIONS_FOR_TELEMETRY = `
 SELECT
   m.conv_id,
