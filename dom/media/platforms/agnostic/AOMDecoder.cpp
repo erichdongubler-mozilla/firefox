@@ -37,10 +37,10 @@
   DDMOZ_LOGEX(_this, sPDMLog, mozilla::LogLevel::Debug, \
               "::%s: %s (code %d) " message, __func__,  \
               aom_codec_err_to_string(code), (int)code, ##__VA_ARGS__)
-#define LOG_STATIC_RESULT(code, message, ...)                 \
-  MOZ_LOG(sPDMLog, mozilla::LogLevel::Debug,                  \
-          ("AOMDecoder::%s: %s (code %d) " message, __func__, \
-           aom_codec_err_to_string(code), (int)code, ##__VA_ARGS__))
+#define LOG_STATIC_RESULT(code, message, ...)                    \
+  MOZ_LOG_FMT(sPDMLog, mozilla::LogLevel::Debug,                 \
+              "AOMDecoder::{}: {} (code {}) " message, __func__, \
+              aom_codec_err_to_string(code), (int)code, ##__VA_ARGS__)
 
 #define ASSERT_BYTE_ALIGNED(bitIO) MOZ_ASSERT((bitIO).BitCount() % 8 == 0)
 
