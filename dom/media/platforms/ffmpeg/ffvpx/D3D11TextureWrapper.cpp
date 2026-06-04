@@ -16,7 +16,7 @@ struct ID3D11Texture2D;
 extern mozilla::LazyLogModule sFFmpegVideoLog;
 
 #define LOG(...) \
-  MOZ_LOG(sFFmpegVideoLog, mozilla::LogLevel::Verbose, (__VA_ARGS__))
+  MOZ_LOG_FMT(sFFmpegVideoLog, mozilla::LogLevel::Verbose, __VA_ARGS__)
 
 namespace mozilla {
 
