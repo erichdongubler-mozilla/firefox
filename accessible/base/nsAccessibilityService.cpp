@@ -755,24 +755,6 @@ void nsAccessibilityService::NotifyAttrElementChanged(
   }
 }
 
-void nsAccessibilityService::NotifyARIAAttributeDefaultWillChange(
-    mozilla::dom::Element* aElement, nsAtom* aAttribute, AttrModType aModType) {
-  mozilla::dom::Document* doc = aElement->OwnerDoc();
-  MOZ_ASSERT(doc);
-  if (DocAccessible* docAcc = GetDocAccessible(doc)) {
-    docAcc->ARIAAttributeDefaultWillChange(aElement, aAttribute, aModType);
-  }
-}
-
-void nsAccessibilityService::NotifyARIAAttributeDefaultChanged(
-    mozilla::dom::Element* aElement, nsAtom* aAttribute, AttrModType aModType) {
-  mozilla::dom::Document* doc = aElement->OwnerDoc();
-  MOZ_ASSERT(doc);
-  if (DocAccessible* docAcc = GetDocAccessible(doc)) {
-    docAcc->ARIAAttributeDefaultChanged(aElement, aAttribute, aModType);
-  }
-}
-
 void nsAccessibilityService::AriaNotify(
     nsINode* aNode, const nsAString& aAnnouncement,
     const mozilla::dom::AriaNotificationOptions& aOptions) {

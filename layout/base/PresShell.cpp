@@ -4561,12 +4561,6 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::CharacterDataChanged(
   MOZ_ASSERT(!mIsDocumentGone, "Unexpected CharacterDataChanged");
   MOZ_ASSERT(aContent->OwnerDoc() == mDocument, "Unexpected document");
 
-#ifdef ACCESSIBILITY
-  if (mDocAccessible) {
-    mDocAccessible->MaybeHandleChangeToHiddenNameOrDescription(aContent);
-  }
-#endif
-
   nsAutoCauseReflowNotifier crNotifier(this);
 
   mPresContext->RestyleManager()->CharacterDataChanged(aContent, aInfo);
@@ -4578,12 +4572,6 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ElementStateChanged(
   MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript());
   MOZ_ASSERT(!mIsDocumentGone, "Unexpected ContentStateChanged");
   MOZ_ASSERT(aDocument == mDocument, "Unexpected aDocument");
-
-#ifdef ACCESSIBILITY
-  if (mDocAccessible) {
-    mDocAccessible->ElementStateChanged(aDocument, aElement, aStateMask);
-  }
-#endif
 
   if (mDidInitialize) {
     nsAutoCauseReflowNotifier crNotifier(this);
@@ -4634,13 +4622,6 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::AttributeWillChange(
   MOZ_ASSERT(!mIsDocumentGone, "Unexpected AttributeWillChange");
   MOZ_ASSERT(aElement->OwnerDoc() == mDocument, "Unexpected document");
 
-#ifdef ACCESSIBILITY
-  if (mDocAccessible) {
-    mDocAccessible->AttributeWillChange(aElement, aNameSpaceID, aAttribute,
-                                        aModType);
-  }
-#endif
-
   // XXXwaterson it might be more elegant to wait until after the
   // initial reflow to begin observing the document. That would
   // squelch any other inappropriate notifications as well.
@@ -4657,13 +4638,6 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::AttributeChanged(
   MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript());
   MOZ_ASSERT(!mIsDocumentGone, "Unexpected AttributeChanged");
   MOZ_ASSERT(aElement->OwnerDoc() == mDocument, "Unexpected document");
-
-#ifdef ACCESSIBILITY
-  if (mDocAccessible) {
-    mDocAccessible->AttributeChanged(aElement, aNameSpaceID, aAttribute,
-                                     aModType, aOldValue);
-  }
-#endif
 
   // XXXwaterson it might be more elegant to wait until after the
   // initial reflow to begin observing the document. That would
@@ -4711,13 +4685,6 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentAppended(
     return;
   }
 
-#ifdef ACCESSIBILITY
-  if (mDocAccessible) {
-    mDocAccessible->MaybeHandleChangeToHiddenNameOrDescription(
-        aFirstNewContent);
-  }
-#endif
-
   mPresContext->EventStateManager()->ContentAppended(aFirstNewContent, aInfo);
 
   if (aInfo.mOldParent) {
@@ -4747,12 +4714,6 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentInserted(
 
   mPresContext->EventStateManager()->ContentInserted(aChild, aInfo);
 
-#ifdef ACCESSIBILITY
-  if (mDocAccessible) {
-    mDocAccessible->MaybeHandleChangeToHiddenNameOrDescription(aChild);
-  }
-#endif
-
   if (aInfo.mOldParent) {
     MaybeDestroyFramesAndStyles(aChild, *mPresContext);
   }
@@ -4777,12 +4738,6 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentWillBeRemoved(
   // it can clean up any state related to the content.
 
   mPresContext->EventStateManager()->ContentRemoved(mDocument, aChild, aInfo);
-
-#ifdef ACCESSIBILITY
-  if (mDocAccessible) {
-    mDocAccessible->ContentRemoved(aChild);
-  }
-#endif
 
   nsAutoCauseReflowNotifier crNotifier(this);
 
