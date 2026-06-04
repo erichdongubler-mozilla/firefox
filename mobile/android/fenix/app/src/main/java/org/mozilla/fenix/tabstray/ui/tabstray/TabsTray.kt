@@ -106,6 +106,7 @@ import org.mozilla.fenix.tabstray.ui.syncedtabs.OnTabCloseClick as OnSyncedTabCl
  * @param onInactiveTabsCFRShown Invoked when the inactive tabs CFR is displayed.
  * @param onInactiveTabsCFRClick Invoked when the inactive tabs CFR is clicked.
  * @param onInactiveTabsCFRDismiss Invoked when the inactive tabs CFR is dismissed.
+ * @param onTabGroupOnboardingDismiss Invoked when the tab group onboarding card is dismissed.
  * @param onOpenNewNormalTabClicked Invoked when the fab is clicked in [Page.NormalTabs].
  * @param onOpenNewPrivateTabClicked Invoked when the fab is clicked in [Page.PrivateTabs].
  * @param onSyncedTabsFabClicked Invoked when the fab is clicked in [Page.SyncedTabs].
@@ -151,6 +152,7 @@ fun TabsTray(
     onInactiveTabsCFRShown: () -> Unit,
     onInactiveTabsCFRClick: () -> Unit,
     onInactiveTabsCFRDismiss: () -> Unit,
+    onTabGroupOnboardingDismiss: () -> Unit,
     onOpenNewNormalTabClicked: () -> Unit,
     onOpenNewPrivateTabClicked: () -> Unit,
     onSyncedTabsFabClicked: () -> Unit,
@@ -240,6 +242,7 @@ fun TabsTray(
         },
         floatingActionButtonPosition = FabPosition.Center,
     ) { paddingValues ->
+<<<<<<< HEAD
         AnimatedVisibility(
             visible = tabsTrayState.hasTabDataLoaded,
             enter = fadeIn(animationSpec = tween()),
@@ -288,6 +291,7 @@ fun TabsTray(
                             onCloseTabGroupClick = { group ->
                                 tabsTrayStore.dispatch(TabGroupAction.CloseTabGroupClicked(group = group))
                             },
+                            onTabGroupOnboardingDismiss = onTabGroupOnboardingDismiss,
                             trackersBlockedCount = trackersBlockedCount,
                             focusEnabled = tabsTrayState.normalTabsState.itemFocusIndicatorEnabled,
                             onPrivacyReportTapped = onPrivacyReportTapped,
@@ -485,6 +489,7 @@ private fun TabsTrayPreview(
             onInactiveTabsCFRShown = {},
             onInactiveTabsCFRClick = {},
             onInactiveTabsCFRDismiss = {},
+            onTabGroupOnboardingDismiss = {},
             onOpenNewNormalTabClicked = {},
             onOpenNewPrivateTabClicked = {},
             onSyncedTabsFabClicked = {
