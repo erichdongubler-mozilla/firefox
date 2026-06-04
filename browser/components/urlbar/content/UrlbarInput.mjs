@@ -2995,7 +2995,7 @@ ${
       return;
     }
 
-    if (this.focused || (this.view.isOpen && this.view.visibleRowCount)) {
+    if (this.focused || this.view.isOpen) {
       this.startLayoutExtend();
     } else {
       this.endLayoutExtend();
