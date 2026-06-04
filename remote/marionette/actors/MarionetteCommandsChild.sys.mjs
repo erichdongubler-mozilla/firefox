@@ -127,6 +127,10 @@ export class MarionetteCommandsChild extends JSWindowActorChild {
   }
 
   async #finalizeAction() {
+    if (!this.contentWindow) {
+      return;
+    }
+
     // Terminate the current wheel transaction if there is one. Wheel
     // transactions should not live longer than a single action chain.
     await ChromeUtils.endWheelTransaction(this.contentWindow);

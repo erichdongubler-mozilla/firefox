@@ -274,6 +274,10 @@ class InputModule extends WindowGlobalBiDiModule {
   }
 
   async _finalizeAction() {
+    if (!this.messageHandler.window) {
+      return;
+    }
+
     // Terminate the current wheel transaction if there is one. Wheel
     // transactions should not live longer than a single action chain.
     await ChromeUtils.endWheelTransaction(this.messageHandler.window);
