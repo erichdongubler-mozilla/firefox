@@ -64,6 +64,7 @@ class HTMLDialogElement final : public nsGenericHTMLElement {
   }
   void ClearRequestCloseReturnValue() { mRequestCloseReturnValue.reset(); }
   void SetRequestCloseReturnValue(const nsAString& aReturnValue) {
+    mRequestCloseReturnValue.reset();
     mRequestCloseReturnValue.emplace(aReturnValue);
   }
 
