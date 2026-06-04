@@ -575,7 +575,7 @@ void EventListenerManager::AddEventListenerInternal(
   }
 
   if (mIsMainThreadELM && !aFlags.mPassive && IsApzAwareEvent(aTypeAtom)) {
-    ProcessApzAwareEventListenerAdd();
+    ProcessApzAwareEventListenerAdd(aTypeAtom);
   }
 
   if (mTarget) {
@@ -588,7 +588,7 @@ void EventListenerManager::AddEventListenerInternal(
   }
 }
 
-void EventListenerManager::ProcessApzAwareEventListenerAdd() {
+void EventListenerManager::ProcessApzAwareEventListenerAdd(nsAtom* aEvent) {
   Document* doc = nullptr;
 
   // Mark the node as having apz aware listeners
@@ -660,7 +660,10 @@ void EventListenerManager::ProcessApzAwareEventListenerAdd() {
   }
 
   if (StaticPrefs::apz_fastpath_apz_aware_listener_enabled()) {
-    if (scrollId != layers::ScrollableLayerGuid::NULL_SCROLL_ID) {
+    // Bug 2042628: Eventually we will end up using the fast-path for other
+    // event type, but for now we restrict it to touchmove.
+    if (aEvent == nsGkAtoms::ontouchmove &&
+        scrollId != layers::ScrollableLayerGuid::NULL_SCROLL_ID) {
       // Fast path: inform APZ directly via IPC so it can flag subsequent
       // hit-test results targeting |scrollId| (or any of its APZC-tree
       // descendants) with eApzAwareListeners. This avoids the long detour
