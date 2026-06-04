@@ -228,9 +228,8 @@ already_AddRefed<nsIThread> get_conn_async_thread(mozIStorageConnection* db) {
   nsCOMPtr<mozIStorageAsyncStatement> stmt;
   db->CreateAsyncStatement("SELECT 1"_ns, getter_AddRefs(stmt));
   blocking_async_execute(stmt);
-  stmt->Finalize();
-
   nsCOMPtr<nsIThread> asyncThread = last_non_watched_thread;
+  stmt->Finalize();
 
   // Additionally, check that the thread we get as the background thread is the
   // same one as the one we report from getInterface.
