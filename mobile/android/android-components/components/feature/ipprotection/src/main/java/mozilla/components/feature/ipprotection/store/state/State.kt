@@ -23,6 +23,7 @@ const val BYTES_PER_GB = 1024 * 1024 * 1024f
  * @property maxDataBytes Maximum monthly data allowance in bytes, or -1 if unavailable.
  * @property resetDate ISO 8601 string for when the monthly allowance resets, or null if unavailable.
  * @property accountState The state of the authenticator being used.
+ * @property lastError The last error received from the IPProtection service.
  * @property proxyActiveShown Whether the proxy-active status has been shown to the user.
  * @property activate To turn protection on or off.
  */
@@ -34,6 +35,7 @@ data class IPProtectionState(
     val maxDataBytes: Long = -1L,
     val resetDate: String? = null,
     val accountState: AccountState = AccountState(),
+    val lastError: String? = null,
     val proxyActiveShown: Boolean = false,
     val activate: Boolean? = null,
 ) : State

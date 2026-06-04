@@ -73,6 +73,7 @@ internal fun iPProtectionReducer(
             accountState = state.accountState.copy(
                 status = newAccountStatus,
             ),
+            lastError = action.info.lastError,
             proxyActiveShown = newProxyActiveShown,
             activate = newActivate,
         )
