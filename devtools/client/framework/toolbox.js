@@ -2470,22 +2470,41 @@ class Toolbox extends EventEmitter {
 
   /**
    * Update the visibility of the buttons.
+   *
+   * @param {object} options
+   * @param {boolean} options.fromWillNavigate: true if this is called because the
+   *        page is going to navigate
    */
-  updateToolboxButtonsVisibility() {
+  updateToolboxButtonsVisibility({ fromWillNavigate = false } = {}) {
     const inspectorFront = this.target.getCachedFront("inspector");
 
-    this.toolbarButtons.forEach(button => {
+    let hasHighlighters = false;
+    for (const button of this.toolbarButtons) {
       button.isVisible = this._commandIsVisible(button);
 
-      if (!button.isVisible && inspectorFront) {
-        // Any highlighters associated with the toolbox button need to be cleared
-        // when a button is hidden.
-        button.highlighterTypes?.forEach(type => {
-          inspectorFront.destroyHighlighterByType(type);
-        });
+      if (
+        inspectorFront &&
+        // We want to destroy highlighters associated with the toolbox button when:
+        // - the button gets hidden (from the Settings panel)
+        // - or when we're going to navigate
+        (!button.isVisible || fromWillNavigate)
+      ) {
+        if (!button.highlighterTypes) {
+          continue;
+        }
+
+        for (const type of button.highlighterTypes) {
+          if (inspectorFront.getKnownHighlighter(type)?.isShown()) {
+            inspectorFront.destroyHighlighterByType(type);
+            hasHighlighters = true;
+          }
+        }
       }
-    });
-    this._renderToolboxButtons();
+    }
+
+    if (hasHighlighters || !fromWillNavigate) {
+      this._renderToolboxButtons();
+    }
   }
 
   /**
@@ -3458,7 +3477,7 @@ class Toolbox extends EventEmitter {
       this._updateFrames({ destroyAll: true });
     }
 
-    this.updateToolboxButtonsVisibility();
+    this.updateToolboxButtonsVisibility({ fromWillNavigate: true });
 
     const toolId = this.currentToolId;
     // For now, only inspector, webconsole, netmonitor and accessibility fire "reloaded" event
