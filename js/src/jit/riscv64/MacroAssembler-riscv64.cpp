@@ -1742,30 +1742,24 @@ void MacroAssemblerRiscv64Compat::testNullSet(Condition cond,
                                               const ValueOperand& value,
                                               Register dest) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  splitTag(value, scratch);
-  ma_cmp_set(dest, scratch, ImmTag(JSVAL_TAG_NULL), cond);
+  splitSignExtTag(value, dest);
+  ma_cmp_set(dest, dest, ImmTagSignExt(JSVAL_TAG_NULL), cond);
 }
 
 void MacroAssemblerRiscv64Compat::testObjectSet(Condition cond,
                                                 const ValueOperand& value,
                                                 Register dest) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  splitTag(value, scratch);
-  ma_cmp_set(dest, scratch, ImmTag(JSVAL_TAG_OBJECT), cond);
+  splitSignExtTag(value, dest);
+  ma_cmp_set(dest, dest, ImmTagSignExt(JSVAL_TAG_OBJECT), cond);
 }
 
 void MacroAssemblerRiscv64Compat::testUndefinedSet(Condition cond,
                                                    const ValueOperand& value,
                                                    Register dest) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  splitTag(value, scratch);
-  ma_cmp_set(dest, scratch, ImmTag(JSVAL_TAG_UNDEFINED), cond);
+  splitSignExtTag(value, dest);
+  ma_cmp_set(dest, dest, ImmTagSignExt(JSVAL_TAG_UNDEFINED), cond);
 }
 
 void MacroAssemblerRiscv64Compat::unboxInt32(const ValueOperand& operand,
@@ -2086,7 +2080,7 @@ void MacroAssemblerRiscv64Compat::loadInt32OrDouble(const Address& src,
   {
     // Inlined |branchTestInt32| to use a short-jump.
     Register tag = extractTag(src, scratch);
-    ma_b(tag, ImmTag(JSVAL_TAG_INT32), &notInt32, Assembler::NotEqual,
+    ma_b(tag, ImmTagSignExt(JSVAL_TAG_INT32), &notInt32, Assembler::NotEqual,
          ShortJump);
   }
   {
@@ -2127,7 +2121,7 @@ Register MacroAssemblerRiscv64Compat::extractObject(const Address& address,
 Register MacroAssemblerRiscv64Compat::extractTag(const Address& address,
                                                  Register scratch) {
   loadPtr(address, scratch);
-  ExtractBits(scratch, scratch, JSVAL_TAG_SHIFT, 64 - JSVAL_TAG_SHIFT);
+  splitSignExtTag(scratch, scratch);
   return scratch;
 }
 

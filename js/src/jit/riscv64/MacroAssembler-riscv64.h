@@ -86,6 +86,16 @@ struct ImmTag : public Imm32 {
   explicit ImmTag(JSValueTag mask) : Imm32(int32_t(mask)) {}
 };
 
+struct ImmTagSignExt : public Imm32 {
+  static constexpr int32_t signExtend(JSValueTag mask) {
+    int64_t tag = (int64_t(mask) << JSVAL_TAG_SHIFT) >> JSVAL_TAG_SHIFT;
+    MOZ_ASSERT(is_int12(tag));
+    return tag;
+  }
+
+  explicit ImmTagSignExt(JSValueTag mask) : Imm32(signExtend(mask)) {}
+};
+
 class MacroAssemblerRiscv64 : public Assembler {
  public:
   MacroAssemblerRiscv64() {}
@@ -712,16 +722,25 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
 
   void jump(TrampolinePtr code) { jump(ImmPtr(code.value)); }
 
-  void splitTag(Register src, Register dest) {
-    srli(dest, src, JSVAL_TAG_SHIFT);
+  void splitSignExtTag(Register src, Register dest) {
+    // As opposed to other architectures, splitTag is replaced by
+    // splitSignExtTag which extracts the tag with sign extension. This happens
+    // because a tag value is too large to fit in a 12-bit immediate value, and
+    // would require to add an extra instruction and require an extra scratch
+    // register to load the tag value.
+    //
+    // Instead, we compare with the sign-extended tag. The sign-extended tag is
+    // a negative value near zero and fits in 12 bits.
+
+    srai(dest, src, JSVAL_TAG_SHIFT);
   }
 
-  void splitTag(const ValueOperand& operand, Register dest) {
-    splitTag(operand.valueReg(), dest);
+  void splitSignExtTag(const ValueOperand& operand, Register dest) {
+    splitSignExtTag(operand.valueReg(), dest);
   }
 
   void splitTagForTest(const ValueOperand& value, ScratchTagScope& tag) {
-    splitTag(value, tag);
+    splitSignExtTag(value, tag);
   }
 
   void moveIfZero(Register dst, Register src, Register cond) {
@@ -881,7 +900,7 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   [[nodiscard]] Register extractTag(const BaseIndex& address, Register scratch);
   [[nodiscard]] Register extractTag(const ValueOperand& value,
                                     Register scratch) {
-    splitTag(value, scratch);
+    splitSignExtTag(value, scratch);
     return scratch;
   }
 
