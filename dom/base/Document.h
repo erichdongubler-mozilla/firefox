@@ -5002,7 +5002,8 @@ class Document : public nsINode,
 
   RefPtr<Promise> mReadyForIdle;
 
-  RefPtr<mozilla::dom::FeaturePolicy> mFeaturePolicy;
+  // Lazily created in FeaturePolicy().
+  mutable RefPtr<mozilla::dom::FeaturePolicy> mFeaturePolicy;
 
   // Permission Delegate Handler, lazily-initialized in
   // GetPermissionDelegateHandler
