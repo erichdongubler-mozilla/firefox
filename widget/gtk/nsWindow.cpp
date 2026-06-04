@@ -673,7 +673,7 @@ bool nsWindow::WidgetTypeSupportsAcceleration() {
 }
 
 bool nsWindow::WidgetTypeSupportsNativeCompositing() {
-  if (IsDragPopup()) {
+  if (mIsDragPopup) {
     return false;
   }
 #if defined(NIGHTLY_BUILD)
@@ -4424,8 +4424,9 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
 
 #ifdef MOZ_WAYLAND
   if (GdkIsWaylandDisplay()) {
-    mSurface = new WaylandSurface();
-    mSurface->Init();
+    mSurface = new WaylandSurface(
+        parentnsWindow ? MOZ_WL_SURFACE(parentnsWindow->GetMozContainer())
+                       : nullptr);
   }
   container = moz_container_new(this, mSurface);
 #else

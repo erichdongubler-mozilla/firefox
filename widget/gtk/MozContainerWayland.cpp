@@ -215,7 +215,6 @@ static bool moz_container_wayland_ensure_surface(MozContainer* container,
     return false;
   }
 
-  surface->SetViewportFollowsSizeChangesLocked(lock);
   surface->AddOpaqueSurfaceHandlerLocked(lock, gdkWindow,
                                          /* aRegisterCommitHandler */ true);
 
@@ -229,20 +228,20 @@ static bool moz_container_wayland_ensure_surface(MozContainer* container,
                              MOZ_WL_SURFACE(parentWindow->GetMozContainer()));
   }
 
-  bool fractionalScale = StaticPrefs::widget_wayland_fractional_scale_enabled();
-  if (surface->IsToplevelSurface() && fractionalScale) {
-    surface->SetScaleCallbackLocked(
-        lock, WaylandSurface::ScaleCallbackType::Widget,
+  bool fractionalScale = false;
+  if (StaticPrefs::widget_wayland_fractional_scale_enabled()) {
+    fractionalScale = surface->EnableFractionalScaleLocked(
+        lock,
         [win = RefPtr{window}]() {
           win->RefreshScale(/* aRefreshScreen */ true,
                             /* aForceRefresh */ true);
-        });
+        },
+        /* aManageViewport */ true);
   }
-  surface->SetScaleTypeLocked(lock,
-                              fractionalScale
-                                  ? WaylandSurface::ScaleType::Fractional
-                                  : WaylandSurface::ScaleType::Ceiled,
-                              /* aSetHandler */ true);
+
+  if (!fractionalScale) {
+    surface->EnableCeiledScaleLocked(lock);
+  }
 
   surface->SetOpaqueRegionLocked(lock,
                                  window->GetOpaqueRegion().ToUnknownRegion());
