@@ -7,7 +7,9 @@ package org.mozilla.fenix.trackingprotection
 import androidx.annotation.MainThread
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.selector.findTabOrCustomTab
@@ -28,6 +30,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -61,8 +64,10 @@ class TrackersBlockedFeature(
         // Re-fetching this data whenever the blocked trackers callback fires (not always accurate)
         // allows for a dynamic update of the trackers blocked numbers.
         currentSessionId?.let {
+            @OptIn(FlowPreview::class)
             flow.mapNotNull { state -> state.findTabOrCustomTab(it) }
                 .ifAnyChanged { tab -> arrayOf(tab.trackingProtection.blockedTrackers) }
+                .debounce(1.seconds)
                 .collect {
                     withContext(Dispatchers.Main) {
                         syncTrackersBlockedDetails()

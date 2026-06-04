@@ -10,6 +10,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.TrackingProtectionAction
@@ -137,6 +138,38 @@ class TrackersBlockedFeatureTest {
             )
         }
         assertEquals(TimeUnit.DAYS.toMillis(7), windowMs)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `GIVEN multiple trackers are blocked in quick succession THEN sync is debounced`() = runTest(testDispatcher) {
+        startFeature()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        verify(exactly = 1) {
+            trackingProtectionUseCases.fetchTotalTrackersBlocked(any(), any())
+        }
+
+        // Block multiple trackers within the debounce window (500ms intervals)
+        blockNewTracker(url = "https://tracker1.test")
+        testDispatcher.scheduler.advanceTimeBy(500)
+        blockNewTracker(url = "https://tracker2.test")
+        testDispatcher.scheduler.advanceTimeBy(500)
+        blockNewTracker(url = "https://tracker3.test")
+
+        // At this point, no additional sync should have happened because of debounce(1s)
+        shadowOf(Looper.getMainLooper()).idle()
+        verify(exactly = 1) {
+            trackingProtectionUseCases.fetchTotalTrackersBlocked(any(), any())
+        }
+
+        // Advance time past the debounce period (1s)
+        testDispatcher.scheduler.advanceTimeBy(1001)
+        shadowOf(Looper.getMainLooper()).idle()
+
+        verify(exactly = 2) {
+            trackingProtectionUseCases.fetchTotalTrackersBlocked(any(), any())
+        }
     }
 
     @Test

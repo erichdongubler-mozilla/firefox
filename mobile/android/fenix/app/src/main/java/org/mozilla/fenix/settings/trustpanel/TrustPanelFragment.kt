@@ -44,6 +44,8 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.withContext
@@ -91,6 +93,7 @@ import org.mozilla.fenix.utils.enterMenu
 import org.mozilla.fenix.utils.enterSubmenu
 import org.mozilla.fenix.utils.exitMenu
 import org.mozilla.fenix.utils.exitSubmenu
+import kotlin.time.Duration.Companion.seconds
 import com.google.android.material.R as materialR
 
 /**
@@ -282,16 +285,18 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                     }
                 }
 
-                observeTrackersChange(components.core.store) {
-                    components.useCases.trackingProtectionUseCases.fetchTrackingLogs(
-                        tabId = args.sessionId,
-                        onSuccess = { trackerLogs ->
-                            store.dispatch(TrustPanelAction.UpdateTrackersBlocked(trackerLogs))
-                        },
-                        onError = {
-                            Logger.error("TrackingProtectionUseCases - fetchTrackingLogs onError", it)
-                        },
-                    )
+                LaunchedEffect(Unit) {
+                    observeTrackersChange(components.core.store) {
+                        components.useCases.trackingProtectionUseCases.fetchTrackingLogs(
+                            tabId = args.sessionId,
+                            onSuccess = { trackerLogs ->
+                                store.dispatch(TrustPanelAction.UpdateTrackersBlocked(trackerLogs))
+                            },
+                            onError = {
+                                Logger.error("TrackingProtectionUseCases - fetchTrackingLogs onError", it)
+                            },
+                        )
+                    }
                 }
 
                 LaunchedEffect(Unit) {
@@ -475,10 +480,17 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
         }
     }
 
+    @OptIn(FlowPreview::class)
     private fun observeTrackersChange(store: BrowserStore, onChange: (SessionState) -> Unit) {
+        val currentSession = store.state.findTabOrCustomTab(args.sessionId) ?: return
+
+        // Dispatch an immediate change signal to ensure an initial blocked trackers information fetch.
+        onChange(currentSession)
+
         consumeFlow(store) { flow ->
             flow.mapNotNull { state -> state.findTabOrCustomTab(args.sessionId) }
                 .ifAnyChanged { tab -> arrayOf(tab.trackingProtection.blockedTrackers) }
+                .debounce(1.seconds)
                 .collect(onChange)
         }
     }
