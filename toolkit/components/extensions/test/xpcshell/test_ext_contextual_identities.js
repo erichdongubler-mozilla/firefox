@@ -1,6 +1,9 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
+  CONTAINER_COLORS: "resource://gre/modules/ContextualIdentityService.sys.mjs",
+  CONTAINER_COLOR_ALIASES:
+    "resource://gre/modules/ContextualIdentityService.sys.mjs",
   ContextualIdentityService:
     "resource://gre/modules/ContextualIdentityService.sys.mjs",
   ExtensionPreferencesManager:
@@ -604,3 +607,170 @@ add_task(
     await extension.unload();
   }
 );
+
+add_task(async function test_contextualIdentity_color_api_names() {
+  // Every color name accepted by the API, see
+  // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/contextualIdentities/ContextualIdentity#color
+  const inputColors = [
+    // Colors since inception of contextualIdentities:
+    "blue",
+    "turquoise",
+    "green",
+    "yellow",
+    "orange",
+    "red",
+    "pink",
+    "purple",
+    "toolbar",
+    // New colors in version 153:
+    "cyan",
+    "violet",
+    "gray",
+  ];
+
+  // Inputs that resolve to a different name. Inputs not listed here are
+  // expected to be returned unchanged.
+  const RENAMED_COLORS = {
+    turquoise: "cyan",
+    toolbar: "gray",
+  };
+
+  // Forward coverage: every internal color name and alias must be listed
+  // above, so this test has to be updated whenever the set of names changes.
+  for (let { name } of CONTAINER_COLORS) {
+    ok(
+      inputColors.includes(name),
+      `internal color "${name}" is covered by the API test`
+    );
+  }
+  for (let legacy of Object.keys(CONTAINER_COLOR_ALIASES)) {
+    ok(
+      inputColors.includes(legacy),
+      `internal alias "${legacy}" is covered by the API test`
+    );
+  }
+
+  let expectations = inputColors.map(input => [
+    input,
+    RENAMED_COLORS[input] ?? input,
+  ]);
+
+  async function background(colorExpectations) {
+    let { cookieStoreId } = await browser.contextualIdentities.create({
+      name: "color-api",
+      color: "blue",
+      icon: "circle",
+    });
+
+    for (let [input, expected] of colorExpectations) {
+      let updated = await browser.contextualIdentities.update(cookieStoreId, {
+        color: input,
+      });
+      browser.test.assertEq(
+        expected,
+        updated.color,
+        `update() with "${input}" returns "${expected}"`
+      );
+
+      let fetched = await browser.contextualIdentities.get(cookieStoreId);
+      browser.test.assertEq(
+        expected,
+        fetched.color,
+        `get() after "${input}" returns "${expected}"`
+      );
+    }
+
+    await browser.contextualIdentities.remove(cookieStoreId);
+    browser.test.notifyPass("color-api-names");
+  }
+
+  let extension = ExtensionTestUtils.loadExtension({
+    useAddonManager: "temporary",
+    background: `(${background})(${JSON.stringify(expectations)})`,
+    manifest: {
+      browser_specific_settings: { gecko: { id: "color-api@mozilla.org" } },
+      permissions: ["contextualIdentities"],
+    },
+  });
+
+  await extension.startup();
+  await extension.awaitFinish("color-api-names");
+  await extension.unload();
+});
+
+add_task(async function test_contextualIdentity_color_aliases_api() {
+  Services.prefs.setBoolPref("browser.nova.enabled", false);
+
+  async function background() {
+    function setNova(value) {
+      return new Promise(resolve => {
+        browser.test.onMessage.addListener(function listener(msg) {
+          if (msg === "nova-updated") {
+            browser.test.onMessage.removeListener(listener);
+            resolve();
+          }
+        });
+        browser.test.sendMessage("set-nova", value);
+      });
+    }
+
+    let cyan = await browser.contextualIdentities.create({
+      name: "alias-cyan",
+      color: "turquoise",
+      icon: "circle",
+    });
+    browser.test.assertEq("cyan", cyan.color, "turquoise is returned as cyan");
+    browser.test.assertEq(
+      "#00c79a",
+      cyan.colorCode,
+      "nova off: cyan returns the legacy code"
+    );
+
+    let gray = await browser.contextualIdentities.create({
+      name: "alias-gray",
+      color: "red",
+      icon: "circle",
+    });
+    gray = await browser.contextualIdentities.update(gray.cookieStoreId, {
+      name: "alias-gray",
+      color: "toolbar",
+      icon: "circle",
+    });
+    browser.test.assertEq("gray", gray.color, "toolbar is returned as gray");
+
+    await setNova(true);
+
+    cyan = await browser.contextualIdentities.get(cyan.cookieStoreId);
+    browser.test.assertEq("cyan", cyan.color, "name stays cyan with nova on");
+    browser.test.assertEq(
+      "#4cc4e1",
+      cyan.colorCode,
+      "nova on: the same container returns the refreshed code"
+    );
+
+    await browser.contextualIdentities.remove(cyan.cookieStoreId);
+    await browser.contextualIdentities.remove(gray.cookieStoreId);
+
+    browser.test.notifyPass("color-aliases");
+  }
+
+  let extension = ExtensionTestUtils.loadExtension({
+    useAddonManager: "temporary",
+    background,
+    manifest: {
+      browser_specific_settings: { gecko: { id: "color-aliases@mozilla.org" } },
+      permissions: ["contextualIdentities"],
+    },
+  });
+
+  extension.onMessage("set-nova", value => {
+    Services.prefs.setBoolPref("browser.nova.enabled", value);
+    extension.sendMessage("nova-updated");
+  });
+
+  await extension.startup();
+  await extension.awaitFinish("color-aliases");
+  await extension.unload();
+
+  Services.prefs.clearUserPref("browser.nova.enabled");
+});

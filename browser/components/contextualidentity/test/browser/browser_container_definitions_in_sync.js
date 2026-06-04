@@ -12,10 +12,11 @@ function computedVar(className, varName) {
   return value;
 }
 
-// `toolbar` is intentionally excluded: the CSS uses `currentColor` to follow
-// the theme, while the API exposes a fixed hex code for extensions.
+// `gray` is intentionally excluded: when nova is off the CSS uses
+// `currentColor` to follow the theme, while the API exposes a fixed hex code
+// for extensions.
 add_task(async function container_color_codes_match_css() {
-  const SKIP = new Set(["toolbar"]);
+  const SKIP = new Set(["gray"]);
   for (const color of ContextualIdentityService.containerColors) {
     if (SKIP.has(color)) {
       continue;

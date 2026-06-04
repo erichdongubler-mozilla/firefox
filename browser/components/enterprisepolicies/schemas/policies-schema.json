@@ -320,14 +320,15 @@
                 "type": "string",
                 "enum": [
                   "blue",
-                  "turquoise",
+                  "cyan",
                   "green",
                   "yellow",
                   "orange",
                   "red",
                   "pink",
                   "purple",
-                  "toolbar"
+                  "violet",
+                  "gray"
                 ]
               }
             },

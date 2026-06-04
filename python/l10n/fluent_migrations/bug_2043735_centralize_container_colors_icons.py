@@ -18,8 +18,6 @@ def migrate(ctx):
             """
 user-context-color-blue =
     .label = {COPY_PATTERN(from_path, "containers-color-blue.label")}
-user-context-color-turquoise =
-    .label = {COPY_PATTERN(from_path, "containers-color-turquoise.label")}
 user-context-color-green =
     .label = {COPY_PATTERN(from_path, "containers-color-green.label")}
 user-context-color-yellow =

@@ -35,6 +35,7 @@ function getContainerIcon(iconName) {
 }
 
 function getContainerColor(colorName) {
+  colorName = ContextualIdentityService.resolveContainerColor(colorName);
   const colorCode = ContextualIdentityService.getContainerColorCode(colorName);
   if (!colorCode) {
     throw new ExtensionError(`Invalid color name ${colorName} for container`);
@@ -186,7 +187,7 @@ this.contextualIdentities = class extends ExtensionAPIPersistent {
           let identity = ContextualIdentityService.create(
             details.name,
             details.icon,
-            details.color
+            ContextualIdentityService.resolveContainerColor(details.color)
           );
           return convertIdentity(identity);
         },
@@ -214,7 +215,9 @@ this.contextualIdentities = class extends ExtensionAPIPersistent {
 
           if (details.color !== null) {
             getContainerColor(details.color);
-            identity.color = details.color;
+            identity.color = ContextualIdentityService.resolveContainerColor(
+              details.color
+            );
           }
 
           if (details.icon !== null) {

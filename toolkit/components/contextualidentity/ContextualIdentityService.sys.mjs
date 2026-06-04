@@ -4,7 +4,7 @@
 
 // The maximum valid numeric value for the userContextId.
 const MAX_USER_CONTEXT_ID = -1 >>> 0;
-const LAST_CONTAINERS_JSON_VERSION = 5;
+const LAST_CONTAINERS_JSON_VERSION = 6;
 const SAVE_DELAY_MS = 1500;
 const CONTEXTUAL_IDENTITY_ENABLED_PREF = "privacy.userContext.enabled";
 
@@ -16,21 +16,84 @@ const CONTEXTUAL_IDENTITY_ENABLED_PREF = "privacy.userContext.enabled";
 //     user-context-icon-* labels
 //   - enterprisepolicies/schemas/policies-schema.json: Containers.Default enums
 // Reordering only affects the swatch order and is local to this file.
-const CONTAINER_COLORS = [
-  { name: "blue", code: "#37adff", l10nId: "user-context-color-blue" },
+//
+// Each color carries two codes: `code` is the legacy value used when
+// `browser.nova.enabled` is off, `codeNova` is the refreshed value used when it
+// is on. getContainerColorCode() and usercontext.css pick between them based on
+// the pref.
+export const CONTAINER_COLORS = [
   {
-    name: "turquoise",
-    code: "#00c79a",
-    l10nId: "user-context-color-turquoise",
+    name: "blue",
+    code: "#37adff",
+    codeNova: "#7bb2ff",
+    l10nId: "user-context-color-blue",
   },
-  { name: "green", code: "#51cd00", l10nId: "user-context-color-green" },
-  { name: "yellow", code: "#ffcb00", l10nId: "user-context-color-yellow" },
-  { name: "orange", code: "#ff9f00", l10nId: "user-context-color-orange" },
-  { name: "red", code: "#ff613d", l10nId: "user-context-color-red" },
-  { name: "pink", code: "#ff4bda", l10nId: "user-context-color-pink" },
-  { name: "purple", code: "#af51f5", l10nId: "user-context-color-purple" },
-  { name: "toolbar", code: "#7c7c7d", l10nId: "user-context-color-toolbar" },
+  {
+    name: "cyan",
+    code: "#00c79a",
+    codeNova: "#4cc4e1",
+    l10nId: "user-context-color-cyan",
+  },
+  {
+    name: "green",
+    code: "#51cd00",
+    codeNova: "#4acca6",
+    l10nId: "user-context-color-green",
+  },
+  {
+    name: "yellow",
+    code: "#ffcb00",
+    codeNova: "#f3a81e",
+    l10nId: "user-context-color-yellow",
+  },
+  {
+    name: "orange",
+    code: "#ff9f00",
+    codeNova: "#ff9565",
+    l10nId: "user-context-color-orange",
+  },
+  {
+    name: "red",
+    code: "#ff613d",
+    codeNova: "#ff8998",
+    l10nId: "user-context-color-red",
+  },
+  {
+    name: "pink",
+    code: "#ff4bda",
+    codeNova: "#f585d3",
+    l10nId: "user-context-color-pink",
+  },
+  {
+    name: "purple",
+    code: "#af51f5",
+    codeNova: "#d490ff",
+    l10nId: "user-context-color-purple",
+  },
+  {
+    name: "violet",
+    code: "#764edd",
+    codeNova: "#b89cff",
+    l10nId: "user-context-color-violet",
+  },
+  {
+    name: "gray",
+    code: "#7c7c7d",
+    codeNova: "#e3e2e7",
+    l10nId: "user-context-color-gray",
+  },
 ];
+
+// Legacy container color names accepted only at the contextualIdentities
+// WebExtension API boundary (see ext-contextualIdentities.js), for extensions
+// and containers created before the color refresh. Each maps to the canonical
+// name that replaced it in CONTAINER_COLORS. Resolved via
+// resolveContainerColor(). Internal callers always use canonical names.
+export const CONTAINER_COLOR_ALIASES = {
+  __proto__: null,
+  turquoise: "cyan",
+  toolbar: "gray",
+};
 
 const CONTAINER_ICONS = [
   { name: "fingerprint", l10nId: "user-context-icon-fingerprint" },
@@ -480,6 +543,11 @@ _ContextualIdentityService.prototype = {
       saveNeeded = true;
     }
 
+    if (data.version == 5) {
+      data = this.migrate5to6(data);
+      saveNeeded = true;
+    }
+
     if (data.version != LAST_CONTAINERS_JSON_VERSION) {
       dump(
         "ERROR - ContextualIdentityService - Unknown version found in " +
@@ -620,8 +688,22 @@ _ContextualIdentityService.prototype = {
     return CONTAINER_ICONS.map(icon => icon.name);
   },
 
+  // Maps a possibly-legacy color name to its canonical name. Unknown and
+  // already-canonical names are returned as-is.  Only the contextualIdentities
+  // WebExtension API should need this; internal callers always pass canonical
+  // names.
+  resolveContainerColor(color) {
+    return CONTAINER_COLOR_ALIASES[color] ?? color;
+  },
+
   getContainerColorCode(color) {
-    return CONTAINER_COLORS.find(entry => entry.name === color)?.code ?? null;
+    let entry = CONTAINER_COLORS.find(e => e.name === color);
+    if (!entry) {
+      return null;
+    }
+    return Services.prefs.getBoolPref("browser.nova.enabled", false)
+      ? entry.codeNova
+      : entry.code;
   },
 
   getContainerIconURL(icon) {
@@ -820,6 +902,22 @@ _ContextualIdentityService.prototype = {
     }
 
     data.version = 5;
+
+    return data;
+  },
+
+  migrate5to6(data) {
+    // Migrating from 5 to 6 is:
+    // - renaming the refreshed container colors, so stored identities only use
+    //   canonical names
+    // - increasing the version id.
+    for (let identity of data.identities) {
+      if (identity.color) {
+        identity.color = this.resolveContainerColor(identity.color);
+      }
+    }
+
+    data.version = 6;
 
     return data;
   },

@@ -2,49 +2,108 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* Each color uses its legacy value by default and, when browser.nova.enabled
+   is on, the refreshed value from the design-system palette. The legacy values
+   have no design-system token, so they stay literal. Kept in sync with
+   CONTAINER_COLORS (code / codeNova) in ContextualIdentityService. */
 .identity-color-blue {
   --identity-tab-color: #37adff;
   --identity-icon-color: #37adff;
+
+  @media -moz-pref("browser.nova.enabled") {
+    --identity-tab-color: var(--color-blue-30);
+    --identity-icon-color: var(--color-blue-30);
+  }
 }
 
-.identity-color-turquoise {
+.identity-color-cyan {
   --identity-tab-color: #00c79a;
   --identity-icon-color: #00c79a;
+
+  @media -moz-pref("browser.nova.enabled") {
+    --identity-tab-color: var(--color-cyan-30);
+    --identity-icon-color: var(--color-cyan-30);
+  }
 }
 
 .identity-color-green {
   --identity-tab-color: #51cd00;
   --identity-icon-color: #51cd00;
+
+  @media -moz-pref("browser.nova.enabled") {
+    --identity-tab-color: var(--color-green-30);
+    --identity-icon-color: var(--color-green-30);
+  }
 }
 
 .identity-color-yellow {
   --identity-tab-color: #ffcb00;
   --identity-icon-color: #ffcb00;
+
+  @media -moz-pref("browser.nova.enabled") {
+    --identity-tab-color: var(--color-yellow-30);
+    --identity-icon-color: var(--color-yellow-30);
+  }
 }
 
 .identity-color-orange {
   --identity-tab-color: #ff9f00;
   --identity-icon-color: #ff9f00;
+
+  @media -moz-pref("browser.nova.enabled") {
+    --identity-tab-color: var(--color-orange-30);
+    --identity-icon-color: var(--color-orange-30);
+  }
 }
 
 .identity-color-red {
   --identity-tab-color: #ff613d;
   --identity-icon-color: #ff613d;
+
+  @media -moz-pref("browser.nova.enabled") {
+    --identity-tab-color: var(--color-red-30);
+    --identity-icon-color: var(--color-red-30);
+  }
 }
 
 .identity-color-pink {
   --identity-tab-color: #ff4bda;
   --identity-icon-color: #ff4bda;
+
+  @media -moz-pref("browser.nova.enabled") {
+    --identity-tab-color: var(--color-pink-30);
+    --identity-icon-color: var(--color-pink-30);
+  }
 }
 
 .identity-color-purple {
   --identity-tab-color: #af51f5;
   --identity-icon-color: #af51f5;
+
+  @media -moz-pref("browser.nova.enabled") {
+    --identity-tab-color: var(--color-purple-30);
+    --identity-icon-color: var(--color-purple-30);
+  }
 }
 
-.identity-color-toolbar {
+.identity-color-violet {
+  --identity-tab-color: #764edd;
+  --identity-icon-color: #764edd;
+
+  @media -moz-pref("browser.nova.enabled") {
+    --identity-tab-color: var(--color-violet-30);
+    --identity-icon-color: var(--color-violet-30);
+  }
+}
+
+.identity-color-gray {
   --identity-tab-color: currentColor;
   --identity-icon-color: currentColor;
+
+  @media -moz-pref("browser.nova.enabled") {
+    --identity-tab-color: var(--color-gray-15);
+    --identity-icon-color: var(--color-gray-15);
+  }
 }
 
 .identity-icon-fence {
