@@ -386,7 +386,7 @@ toolbar[inactive="true"] .urlbar,
       inset: var(--urlbar-background-inset);
     }
 
-    &[breakout-extend][open] > .urlbar-background {
+    &[breakout-extend][open]:not([noresults]) > .urlbar-background {
       /* Rely on the height of urlbar, but compensate for the row's transparent
          border (gutter). */
       inset-block-end: var(--urlbarView-row-gutter);
