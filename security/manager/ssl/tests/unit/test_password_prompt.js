@@ -57,7 +57,7 @@ function run_test() {
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token
   );
-  token.initPassword("hunter2");
+  token.changePassword("", "hunter2");
   token.logoutSimple();
 
   // Try with the correct password.

@@ -165,13 +165,11 @@ function enableButtons() {
     unload_toggle = false;
     showModuleInfo();
   } else if (selected_slot) {
-    // here's the workaround - login functions are all with token,
-    // so grab the token type
     var selected_token = selected_slot.getToken();
     if (selected_token != null) {
-      if (selected_token.needsLogin() || !selected_token.needsUserInit) {
+      if (selected_token.canHavePassword) {
         pw_toggle = false;
-        if (selected_token.needsLogin()) {
+        if (selected_token.hasPassword) {
           if (selected_token.isLoggedIn()) {
             logout_toggle = false;
           } else {
@@ -185,7 +183,7 @@ function enableButtons() {
         selected_token.isInternalKeyToken &&
         !selected_token.hasPassword
       ) {
-        pw_toggle = "true";
+        pw_toggle = true;
       }
     }
     showSlotInfo();

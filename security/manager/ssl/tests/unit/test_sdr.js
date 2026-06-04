@@ -214,7 +214,7 @@ add_task(async function testAsyncDecryptLoggedOut() {
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token
   );
-  token.initPassword("password");
+  token.changePassword("", "password");
   token.logoutSimple();
 
   let sdr = Cc["@mozilla.org/security/sdr;1"].getService(
@@ -228,5 +228,4 @@ add_task(async function testAsyncDecryptLoggedOut() {
   );
 
   token.reset();
-  token.initPassword("");
 });

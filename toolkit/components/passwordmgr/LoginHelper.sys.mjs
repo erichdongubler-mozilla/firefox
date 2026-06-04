@@ -1723,8 +1723,8 @@ export const LoginHelper = {
         telemetryEvent,
       };
     }
-    // We'll attempt to re-auth via Primary Password, force a log-out
-    token.checkPassword("");
+    // We'll attempt to re-auth via Primary Password, so log out.
+    token.logoutSimple();
 
     // If a primary password prompt is already open, just exit early and return false.
     // The user can re-trigger it after responding to the already open dialog.
@@ -1736,8 +1736,6 @@ export const LoginHelper = {
       };
     }
 
-    // So there's a primary password. But since checkPassword didn't succeed,
-    // we're logged out (per nsIPKCS11Token.idl).
     try {
       // Relogin and ask for the primary password.
       token.login(true); // 'true' means always prompt for token password. User will be prompted until

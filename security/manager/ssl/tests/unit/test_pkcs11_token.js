@@ -49,56 +49,6 @@ function checkBasicAttributes(token) {
   );
 }
 
-/**
- * Checks the various password related features of the given token.
- * The token should already have been init with a password and be logged into.
- * The password of the token will be reset after calling this function.
- *
- * @param {nsIPKCS11Token} token
- *        The token to test.
- * @param {string} initialPW
- *        The password that the token should have been init with.
- */
-function checkPasswordFeaturesAndResetPassword(token, initialPW) {
-  ok(
-    !token.needsUserInit,
-    "Token should not need user init after setting a password"
-  );
-  ok(
-    token.hasPassword,
-    "Token should have a password after setting a password"
-  );
-
-  ok(
-    token.checkPassword(initialPW),
-    "checkPassword() should succeed if the correct initial password is given"
-  );
-  token.changePassword(initialPW, "newPW ÿ 一二三");
-  ok(
-    token.checkPassword("newPW ÿ 一二三"),
-    "checkPassword() should succeed if the correct new password is given"
-  );
-
-  ok(
-    !token.checkPassword("wrongPW"),
-    "checkPassword() should fail if an incorrect password is given"
-  );
-  ok(
-    !token.isLoggedIn(),
-    "Token should be logged out after an incorrect password was given"
-  );
-  ok(
-    !token.needsUserInit,
-    "Token should still be init with a password even if an incorrect " +
-      "password was given"
-  );
-
-  token.reset();
-  ok(token.needsUserInit, "Token should need password init after reset");
-  ok(!token.hasPassword, "Token should not have a password after reset");
-  ok(!token.isLoggedIn(), "Token should be logged out of after reset");
-}
-
 function run_test() {
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token
@@ -122,18 +72,10 @@ function run_test() {
   );
 
   let initialPW = "foo 1234567890`~!@#$%^&*()-_=+{[}]|\\:;'\",<.>/? 一二三";
-  token.initPassword(initialPW);
+  token.changePassword("", initialPW);
   token.login(/* force */ false);
   ok(token.isLoggedIn(), "Token should now be logged into");
 
-  checkPasswordFeaturesAndResetPassword(token, initialPW);
-
-  // We reset the password previously, so we need to initialize again.
-  token.initPassword("arbitrary");
-  ok(
-    token.isLoggedIn(),
-    "Token should be logged into after initializing password again"
-  );
   token.logoutSimple();
   ok(
     !token.isLoggedIn(),
@@ -141,7 +83,7 @@ function run_test() {
   );
 
   ok(
-    token.needsLogin(),
-    "The internal token should always need authentication"
+    token.canHavePassword,
+    "The internal token should always be able to have a password"
   );
 }

@@ -109,7 +109,7 @@ function run_test() {
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token
   );
-  token.initPassword("password");
+  token.changePassword("", "password");
   token.logoutSimple();
 
   // Sanity check the CA cert is missing.
