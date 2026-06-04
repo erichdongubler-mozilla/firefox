@@ -1722,6 +1722,12 @@ void nsWindow::RecomputeBounds(bool aScaleChange) {
   const bool resized = aScaleChange || clientMarginsChanged ||
                        oldClientArea.Size() != mClientArea.Size();
 
+#ifdef MOZ_X11
+  if ((moved || resized) && AsX11()) {
+    AsX11()->UpdateNativePointerBarriers();
+  }
+#endif
+
   if (moved) {
     NotifyWindowMoved(GetScreenBoundsUnscaled().TopLeft());
   }
