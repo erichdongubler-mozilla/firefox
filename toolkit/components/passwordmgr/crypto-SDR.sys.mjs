@@ -269,7 +269,7 @@ LoginManagerCrypto_SDR.prototype = {
     let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
       Ci.nsIPKCS11Token
     );
-    return !token.hasPassword || token.isLoggedIn();
+    return !token.hasPassword || token.isLoggedIn;
   },
 
   /*

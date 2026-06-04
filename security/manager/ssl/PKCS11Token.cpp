@@ -153,42 +153,23 @@ PKCS11Token::GetTokenSerialNumber(/*out*/ nsACString& tokenSerialNum) {
 }
 
 NS_IMETHODIMP
-PKCS11Token::IsLoggedIn(bool* _retval) {
-  NS_ENSURE_ARG_POINTER(_retval);
-  *_retval = PK11_IsLoggedIn(mSlot.get(), nullptr);
+PKCS11Token::GetIsLoggedIn(bool* isLoggedIn) {
+  *isLoggedIn = PK11_IsLoggedIn(mSlot.get(), nullptr);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-PKCS11Token::Login(bool force) {
-  if (force) {
-    (void)this->LogoutSimple();
-  }
-
+PKCS11Token::Login() {
   return mozilla::MapSECStatus(
       PK11_Authenticate(mSlot.get(), true, mUIContext));
 }
 
 NS_IMETHODIMP
-PKCS11Token::LogoutSimple() {
+PKCS11Token::Logout() {
   // PK11_Logout() can fail if the user wasn't logged in beforehand. We want
   // this method to succeed even in this case, so we ignore the return value.
   (void)PK11_Logout(mSlot.get());
   return NS_OK;
-}
-
-NS_IMETHODIMP
-PKCS11Token::LogoutAndDropAuthenticatedResources() {
-  static NS_DEFINE_CID(kNSSComponentCID, NS_NSSCOMPONENT_CID);
-
-  nsresult rv = LogoutSimple();
-
-  if (NS_FAILED(rv)) return rv;
-
-  nsCOMPtr<nsINSSComponent> nssComponent(do_GetService(kNSSComponentCID, &rv));
-  if (NS_FAILED(rv)) return rv;
-
-  return nssComponent->LogoutAuthenticatedPK11();
 }
 
 NS_IMETHODIMP

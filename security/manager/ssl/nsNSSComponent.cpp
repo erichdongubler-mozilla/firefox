@@ -1758,7 +1758,8 @@ nsresult nsNSSComponent::GetNewPrompter(nsIPrompt** result) {
   return rv;
 }
 
-nsresult nsNSSComponent::LogoutAuthenticatedPK11() {
+NS_IMETHODIMP
+nsNSSComponent::ClearTLSCacheAndCancelAllConnections() {
   ClearSSLExternalAndInternalSessionCache();
 
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();

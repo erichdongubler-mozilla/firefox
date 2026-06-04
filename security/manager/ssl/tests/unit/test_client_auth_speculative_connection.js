@@ -67,7 +67,7 @@ function run_test() {
 
   add_tls_server_setup("BadCertAndPinningServer", "bad_certs");
   add_test(function () {
-    token.logoutSimple();
+    token.logout();
     run_next_test();
   });
   Services.prefs.setIntPref("network.http.speculative-parallel-limit", 6);

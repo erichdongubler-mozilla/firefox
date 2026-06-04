@@ -37,13 +37,11 @@ interface nsIPKCS11Token : nsISupports
    * Login information
    */
   [must_use]
-  boolean isLoggedIn();
+  readonly attribute boolean isLoggedIn;
   [must_use]
-  void login(in boolean force);
+  void login();
   [must_use]
-  void logoutSimple();
-  [must_use]
-  void logoutAndDropAuthenticatedResources();
+  void logout();
 
   /*
    * Reset password

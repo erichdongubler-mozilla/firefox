@@ -522,7 +522,7 @@ LoginTestUtils.primaryPassword = {
       dump("MP change from " + oldPW + " to " + newPW + "\n");
       token.changePassword(oldPW, newPW);
       if (!stayLoggedIn) {
-        token.logoutSimple();
+        token.logout();
       }
     } catch (e) {
       dump(

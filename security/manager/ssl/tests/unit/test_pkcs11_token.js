@@ -61,11 +61,11 @@ function run_test() {
 
   checkBasicAttributes(token);
 
-  ok(!token.isLoggedIn(), "Token should not be logged into yet");
+  ok(!token.isLoggedIn, "Token should not be logged into yet");
   // Test that attempting to log out even when the token was not logged into
   // does not result in an error.
-  token.logoutSimple();
-  ok(!token.isLoggedIn(), "Token should still not be logged into");
+  token.logout();
+  ok(!token.isLoggedIn, "Token should still not be logged into");
   ok(
     !token.hasPassword,
     "Token should not have a password before it has been set"
@@ -73,14 +73,11 @@ function run_test() {
 
   let initialPW = "foo 1234567890`~!@#$%^&*()-_=+{[}]|\\:;'\",<.>/? 一二三";
   token.changePassword("", initialPW);
-  token.login(/* force */ false);
-  ok(token.isLoggedIn(), "Token should now be logged into");
+  token.login();
+  ok(token.isLoggedIn, "Token should now be logged into");
 
-  token.logoutSimple();
-  ok(
-    !token.isLoggedIn(),
-    "Token should be logged out after calling logoutSimple()"
-  );
+  token.logout();
+  ok(!token.isLoggedIn, "Token should be logged out after calling logout()");
 
   ok(
     token.canHavePassword,

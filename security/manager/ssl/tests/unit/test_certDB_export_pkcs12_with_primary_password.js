@@ -70,7 +70,7 @@ function run_test() {
     Ci.nsIPKCS11Token
   );
   token.changePassword("", "password");
-  token.logoutSimple();
+  token.logout();
 
   // Import the certificate and key so we have something to export.
   let cert = findCertByCommonName(CERT_COMMON_NAME);
@@ -83,7 +83,7 @@ function run_test() {
   notEqual(cert, null, "cert should be found now");
 
   // Log out so we're prompted for the password.
-  token.logoutSimple();
+  token.logout();
 
   // Export the certificate and key (and don't cancel the password request
   // dialog).
@@ -96,7 +96,7 @@ function run_test() {
   output.remove(false /* not a directory; recursive doesn't apply */);
 
   // Log out again so we're prompted for the password.
-  token.logoutSimple();
+  token.logout();
 
   // Attempt to export the certificate and key, but this time cancel the
   // password request dialog. The export operation should also be canceled.

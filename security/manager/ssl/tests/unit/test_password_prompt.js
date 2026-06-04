@@ -58,7 +58,7 @@ function run_test() {
     Ci.nsIPKCS11Token
   );
   token.changePassword("", "hunter2");
-  token.logoutSimple();
+  token.logout();
 
   // Try with the correct password.
   gMockPrompter.passwordToTry = "hunter2";
@@ -72,7 +72,7 @@ function run_test() {
 
   // Reset state.
   gMockPrompter.numPrompts = 0;
-  token.logoutSimple();
+  token.logout();
 
   // Try with an incorrect password.
   gMockPrompter.passwordToTry = "*******";
