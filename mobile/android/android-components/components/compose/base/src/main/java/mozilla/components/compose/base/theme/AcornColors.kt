@@ -25,14 +25,11 @@ import mozilla.components.ui.colors.PhotonColors
 @Suppress("LongParameterList")
 @Stable
 class AcornColors(
-    layer3: Color,
     layerGradientStart: Color,
     layerGradientEnd: Color,
     formDefault: Color,
     textOnColorPrimary: Color,
     iconOnColor: Color,
-    tabActive: Color,
-    tabInactive: Color,
     information: Color,
     informationContainer: Color,
     onInformationContainer: Color,
@@ -44,12 +41,6 @@ class AcornColors(
     autofillText: Color,
     selectedText: Color,
 ) {
-    // Layers
-
-    // Search
-    var layer3 by mutableStateOf(layer3)
-        private set
-
     // Tooltip
     var layerGradientStart by mutableStateOf(layerGradientStart)
         private set
@@ -72,14 +63,6 @@ class AcornColors(
 
     // Icon inverted (on color)
     var iconOnColor by mutableStateOf(iconOnColor)
-        private set
-
-    // Tab Active
-    var tabActive by mutableStateOf(tabActive)
-        private set
-
-    // Tab Inactive
-    var tabInactive by mutableStateOf(tabInactive)
         private set
 
     /*
@@ -153,14 +136,11 @@ class AcornColors(
      * Updates the existing colors with the provided [AcornColors].
      */
     fun update(other: AcornColors) {
-        layer3 = other.layer3
         layerGradientStart = other.layerGradientStart
         layerGradientEnd = other.layerGradientEnd
         formDefault = other.formDefault
         textOnColorPrimary = other.textOnColorPrimary
         iconOnColor = other.iconOnColor
-        tabActive = other.tabActive
-        tabInactive = other.tabInactive
         information = other.information
         informationContainer = other.informationContainer
         onInformationContainer = other.onInformationContainer
@@ -177,14 +157,11 @@ class AcornColors(
      * Return a copy of this [AcornColors] and optionally overriding any of the provided values.
      */
     fun copy(
-        layer3: Color = this.layer3,
         layerGradientStart: Color = this.layerGradientStart,
         layerGradientEnd: Color = this.layerGradientEnd,
         formDefault: Color = this.formDefault,
         textOnColorPrimary: Color = this.textOnColorPrimary,
         iconOnColor: Color = this.iconOnColor,
-        tabActive: Color = this.tabActive,
-        tabInactive: Color = this.tabInactive,
         information: Color = this.information,
         informationContainer: Color = this.informationContainer,
         onInformationContainer: Color = this.onInformationContainer,
@@ -196,14 +173,11 @@ class AcornColors(
         autofillText: Color = this.autofillText,
         selectedText: Color = this.selectedText,
     ): AcornColors = AcornColors(
-        layer3 = layer3,
         layerGradientStart = layerGradientStart,
         layerGradientEnd = layerGradientEnd,
         formDefault = formDefault,
         textOnColorPrimary = textOnColorPrimary,
         iconOnColor = iconOnColor,
-        tabActive = tabActive,
-        tabInactive = tabInactive,
         information = information,
         informationContainer = informationContainer,
         onInformationContainer = onInformationContainer,
@@ -218,14 +192,11 @@ class AcornColors(
 }
 
 val darkColorPalette = AcornColors(
-    layer3 = PhotonColors.DarkGrey80,
     layerGradientStart = PhotonColors.Violet70,
     layerGradientEnd = PhotonColors.Violet60,
     formDefault = PhotonColors.LightGrey05,
     textOnColorPrimary = PhotonColors.LightGrey05,
     iconOnColor = PhotonColors.LightGrey05,
-    tabActive = PhotonColors.DarkGrey30,
-    tabInactive = PhotonColors.DarkGrey80,
     information = NovaColors.Blue30,
     informationContainer = NovaColors.Blue70,
     onInformationContainer = NovaColors.VioletDesaturated0,
@@ -239,14 +210,11 @@ val darkColorPalette = AcornColors(
 )
 
 val lightColorPalette = AcornColors(
-    layer3 = PhotonColors.LightGrey20,
     layerGradientStart = PhotonColors.Violet70,
     layerGradientEnd = PhotonColors.Violet60,
     formDefault = PhotonColors.DarkGrey90,
     textOnColorPrimary = PhotonColors.LightGrey05,
     iconOnColor = PhotonColors.LightGrey05,
-    tabActive = PhotonColors.LightGrey10,
-    tabInactive = PhotonColors.LightGrey20,
     information = NovaColors.Blue50,
     informationContainer = NovaColors.Blue10,
     onInformationContainer = NovaColors.VioletDesaturated90,
@@ -260,9 +228,6 @@ val lightColorPalette = AcornColors(
 )
 
 val privateColorPalette = darkColorPalette.copy(
-    layer3 = PhotonColors.Ink90,
-    tabActive = PhotonColors.Purple60,
-    tabInactive = PhotonColors.Ink90,
     surfaceDimVariant = Color(0xFF11042B),
     selectedText = NovaColors.Gray45A81,
 )
