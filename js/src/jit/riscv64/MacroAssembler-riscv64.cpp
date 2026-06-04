@@ -159,63 +159,6 @@ void MacroAssemblerRiscv64::ma_cmp_set(Register dst, Register lhs, Imm32 imm,
 }
 
 Assembler::Condition MacroAssemblerRiscv64::ma_cmp(Register rd, Register lhs,
-                                                   Register rhs, Condition c) {
-  switch (c) {
-    case Above:
-      // bgtu s,t,label =>
-      //   sltu at,t,s
-      //   bne at,$zero,offs
-      sltu(rd, rhs, lhs);
-      return NotEqual;
-    case AboveOrEqual:
-      // bgeu s,t,label =>
-      //   sltu at,s,t
-      //   beq at,$zero,offs
-      sltu(rd, lhs, rhs);
-      return Equal;
-    case Below:
-      // bltu s,t,label =>
-      //   sltu at,s,t
-      //   bne at,$zero,offs
-      sltu(rd, lhs, rhs);
-      return NotEqual;
-    case BelowOrEqual:
-      // bleu s,t,label =>
-      //   sltu at,t,s
-      //   beq at,$zero,offs
-      sltu(rd, rhs, lhs);
-      return Equal;
-    case GreaterThan:
-      // bgt s,t,label =>
-      //   slt at,t,s
-      //   bne at,$zero,offs
-      slt(rd, rhs, lhs);
-      return NotEqual;
-    case GreaterThanOrEqual:
-      // bge s,t,label =>
-      //   slt at,s,t
-      //   beq at,$zero,offs
-      slt(rd, lhs, rhs);
-      return Equal;
-    case LessThan:
-      // blt s,t,label =>
-      //   slt at,s,t
-      //   bne at,$zero,offs
-      slt(rd, lhs, rhs);
-      return NotEqual;
-    case LessThanOrEqual:
-      // ble s,t,label =>
-      //   slt at,t,s
-      //   beq at,$zero,offs
-      slt(rd, rhs, lhs);
-      return Equal;
-    default:
-      MOZ_CRASH("Invalid condition.");
-  }
-  return Always;
-}
-
-Assembler::Condition MacroAssemblerRiscv64::ma_cmp(Register rd, Register lhs,
                                                    Imm32 imm, Condition c) {
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
