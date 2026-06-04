@@ -2549,7 +2549,7 @@ CodeOffset MacroAssembler::moveNearAddressWithPatch(Register dest) {
 
 CodeOffset MacroAssembler::nopPatchableToCall() {
   // Generate a seven instruction sequence:
-  // - Six instructions for WriteLoad64Instructions.
+  // - Six instructions for WriteLiPtrInstructions.
   // - Plus one instruction for the final jalr.
   AutoForbidPoolsAndNops afp(this, 7);
   nop();  // lui(rd, (int32_t)high_20);
@@ -3941,12 +3941,10 @@ void MacroAssembler::patchNearAddressMove(CodeLocationLabel loc,
 void MacroAssembler::patchNopToCall(uint8_t* call, uint8_t* target) {
   // See nopPatchableToCall() for the expected code layout.
 
+  // Write |target| to the six instruction sequence starting at |instr|.
   Instruction* instr = Instruction::At(call - 7 * kInstrSize);
-  Assembler::WriteLoad64Instructions(instr, SavedScratchRegister,
-                                     (uint64_t)target);
-  DEBUG_PRINTF("\tpatchNopToCall %" PRIu64 " %" PRIu64 "\n", (uint64_t)target,
-               ExtractLoad64Value(instr));
-  MOZ_ASSERT(ExtractLoad64Value(instr) == (uint64_t)target);
+  Assembler::WriteLiPtrInstructions(instr, SavedScratchRegister,
+                                    uintptr_t(target));
 
   Instruction* jalr = (instr + 6 * kInstrSize);
   jalr->SetIFormat(RO_JALR, ra.code(), SavedScratchRegister.code(), 0);

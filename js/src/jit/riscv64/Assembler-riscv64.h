@@ -402,8 +402,6 @@ class Assembler : public AssemblerShared,
                                Instruction* instruction2 = nullptr);
   BufferOffset jumpChainGetNextLink(BufferOffset pos);
   uint32_t jumpChainUseNextLink(Label* label);
-  static uint64_t jumpChainTargetAddressAt(Instruction* pos);
-  static void jumpChainSetTargetValueAt(Instruction* pc, uint64_t target);
   // Returns true if the target was successfully assembled and spewed.
   bool jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos);
   int32_t branchOffsetHelper(Label* L, OffsetSize bits);
@@ -459,15 +457,14 @@ class Assembler : public AssemblerShared,
     // - Jump has to be the same size because of PatchWrite_NearCallSize.
     // - Return address has to be at the end of replaced block.
     // Short jump wouldn't be more efficient.
-    // WriteLoad64Instructions will emit 6 instrs to load a addr.
-    Assembler::WriteLoad64Instructions(inst, SavedScratchRegister,
-                                       (uint64_t)dest);
+
+    // WriteLiPtrInstructions writes 6 instructions to load an address.
+    Assembler::WriteLiPtrInstructions(inst, SavedScratchRegister,
+                                      uintptr_t(dest));
 
     Instruction* jalr = (inst + 6 * kInstrSize);
     jalr->SetIFormat(RO_JALR, ra.code(), SavedScratchRegister.code(), 0);
   }
-  static void WriteLoad64Instructions(Instruction* inst0, Register reg,
-                                      uint64_t value);
 
   static uint32_t PatchWrite_NearCallSize() { return 7 * kInstrSize; }
 
@@ -488,7 +485,7 @@ class Assembler : public AssemblerShared,
   void retarget(Label* label, Label* target);
   static uint32_t NopSize() { return kInstrSize; }
 
-  static uint64_t GetPointer(uint8_t* instPtr) {
+  static uintptr_t GetPointer(uint8_t* instPtr) {
     Instruction* inst = Instruction::At(instPtr);
     return Assembler::ExtractLoad64Value(inst);
   }
@@ -589,6 +586,36 @@ class Assembler : public AssemblerShared,
     slli(rd, rs, 32);
     srli(rd, rd, 32);
   }
+
+ protected:
+  // Load the value from the six instruction sequence starting at |instr|.
+  //
+  // Also see Assembler::li_ptr.
+  static uintptr_t LoadLiPtrInstructions(Instruction* instr);
+
+  // Updates the six instruction sequence to load |value| into a register.
+  //
+  // Also see Assembler::li_ptr.
+  static void UpdateLiPtrInstructions(Instruction* instr, uintptr_t value);
+
+  // Write the six instruction sequence to load |value| into |reg|.
+  //
+  // The instruction sequence at |instr| must either be an existing li_ptr
+  // immediate or a sequence of six nop instructions.
+  //
+  // Also see Assembler::li_ptr.
+  static void WriteLiPtrInstructions(Instruction* instr, Register reg,
+                                     uintptr_t value);
+
+  // Load the value from the eight instruction sequence starting at |instr|.
+  //
+  // Also see Assembler::li_constant.
+  static int64_t LoadLiConstantInstructions(Instruction* instr);
+
+  // Updates the eight instruction sequence to load |value| into a register.
+  //
+  // Also see Assembler::li_constant.
+  static void UpdateLiConstantInstructions(Instruction* instr, int64_t value);
 };
 
 class ABIArgGenerator : public ABIArgGeneratorShared {
