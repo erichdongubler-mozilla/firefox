@@ -275,7 +275,7 @@ static const char kGrandTotalsStr[] = "Grand Totals";
 class ReflowCounter {
  public:
   explicit ReflowCounter(ReflowCountMgr* aMgr = nullptr);
-  ~ReflowCounter();
+  ~ReflowCounter() = default;
 
   void ClearTotals();
   void DisplayTotals(const char* aStr);
@@ -11069,9 +11069,6 @@ ReflowCounter::ReflowCounter(ReflowCountMgr* aMgr) : mMgr(aMgr) {
   ClearTotals();
   SetTotalsCache();
 }
-
-//------------------------------------------------------------------
-ReflowCounter::~ReflowCounter() = default;
 
 //------------------------------------------------------------------
 void ReflowCounter::ClearTotals() { mTotal = 0; }
