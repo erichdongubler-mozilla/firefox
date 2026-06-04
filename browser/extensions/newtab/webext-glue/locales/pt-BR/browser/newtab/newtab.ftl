@@ -7,7 +7,7 @@
 
 newtab-page-title = Nova aba
 newtab-settings-button =
-    .title = Personalizar sua página de nova aba
+    .title = Personalize sua página de nova aba
 #  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button =
     .title = Personalizar esta página
@@ -1050,6 +1050,23 @@ newtab-sports-widget-match-full-time = Fim de jogo
 newtab-sports-widget-match-halftime = Intervalo
 newtab-sports-widget-match-extra-time = Prorrogação
 newtab-sports-widget-match-penalties = Pênaltis
+
+## Sports widget live-games pagination. Shown when 2+ matches are live at the same time
+
+# arrow button that goes to the previous page of live matches.
+newtab-sports-widget-pagination-previous =
+    .aria-label = Anterior
+    .title = Anterior
+# arrow button that goes to the next page of live matches.
+newtab-sports-widget-pagination-next =
+    .aria-label = Próximo
+    .title = Próximo
+# Dot indicator that jumps directly to a given live match.
+# $index (number) - 1-based position of this dot in the list.
+# $total (number) - Total number of live matches.
+newtab-sports-widget-pagination-dot =
+    .aria-label = Jogo ao vivo { $index } de { $total }
+    .title = Jogo ao vivo { $index } de { $total }
 
 ## Accessible labels for match rows in the sports widget. These are read by
 ## screen readers to announce the match details and status.

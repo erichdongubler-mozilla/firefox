@@ -809,8 +809,8 @@ newtab-widget-size-medium = Μεσαίο
 newtab-widget-size-large = Μεγάλο
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
-    .title = Απόκρυψη widgets
-    .aria-label = Απόκρυψη όλων των widgets
+    .title = Απόκρυψη γραφικών στοιχείων
+    .aria-label = Απόκρυψη όλων των γραφικών στοιχείων
 newtab-widget-section-maximize =
     .title = Ανάπτυξη λίστας widgets
     .aria-label = Ανάπτυξη όλων των widgets σε πλήρη μέγεθος
@@ -824,7 +824,7 @@ newtab-widget-add-widgets-button =
     .aria-label = Προσθήκη γραφικού στοιχείου
     .title = Προσθήκη γραφικού στοιχείου
 newtab-widget-section-menu-manage = Διαχείριση γραφικών στοιχείων
-newtab-widget-section-menu-hide-all = Απόκρυψη widgets
+newtab-widget-section-menu-hide-all = Απόκρυψη γραφικών στοιχείων
 newtab-widget-section-menu-learn-more = Μάθετε περισσότερα
 newtab-widget-section-feedback = Πείτε μας τη γνώμη σας
 # Button shown when additional widgets are hidden beyond the
@@ -998,7 +998,7 @@ newtab-sports-widget-watch-available-other-regions = Άλλες περιοχές
 newtab-sports-widget-watch-play =
     .aria-label = Άνοιγμα μετάδοσης
     .title = Άνοιγμα μετάδοσης
-newtab-sports-widget-group-stage = Φάση ομίλου
+newtab-sports-widget-group-stage = Φάση ομίλων
 newtab-sports-widget-group-a = Όμιλος Α
 newtab-sports-widget-group-b = Όμιλος Β
 newtab-sports-widget-group-c = Όμιλος Γ
@@ -1055,6 +1055,23 @@ newtab-sports-widget-match-full-time = Κανονική διάρκεια
 newtab-sports-widget-match-halftime = Ημίχρονο
 newtab-sports-widget-match-extra-time = Παράταση
 newtab-sports-widget-match-penalties = Πέναλτι
+
+## Sports widget live-games pagination. Shown when 2+ matches are live at the same time
+
+# arrow button that goes to the previous page of live matches.
+newtab-sports-widget-pagination-previous =
+    .aria-label = Προηγούμενο
+    .title = Προηγούμενο
+# arrow button that goes to the next page of live matches.
+newtab-sports-widget-pagination-next =
+    .aria-label = Επόμενο
+    .title = Επόμενο
+# Dot indicator that jumps directly to a given live match.
+# $index (number) - 1-based position of this dot in the list.
+# $total (number) - Total number of live matches.
+newtab-sports-widget-pagination-dot =
+    .aria-label = Ζωντανός αγώνας { $index } από { $total }
+    .title = Ζωντανός αγώνας { $index } από { $total }
 
 ## Accessible labels for match rows in the sports widget. These are read by
 ## screen readers to announce the match details and status.
