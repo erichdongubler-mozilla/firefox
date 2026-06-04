@@ -137,6 +137,11 @@ class Speedometer3Support(BasePythonSupport):
         if self.platform == "Windows":
             suite["alertSeverity"] = "critical"
 
+        if test.get("simpleperf", False):
+            suite["shouldAlert"] = False
+            for subtest in suite.get("subtests", []):
+                subtest["shouldAlert"] = False
+
     def modify_command(self, cmd, test):
         """Modify the browsertime command for speedometer 3.
 
