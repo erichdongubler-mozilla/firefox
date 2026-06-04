@@ -1292,48 +1292,19 @@ void MacroAssembler::branchUInt64NotInPtrRange(Register64 src, Label* label) {
 }
 
 void MacroAssembler::byteSwap16SignExtend(Register src) {
-  JitSpew(JitSpew_Codegen, "[ %s\n", __FUNCTION__);
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  Register scratch2 = temps.Acquire();
-  // src 0xFFFFFFFFFFFF8000
-  andi(scratch, src, 0xFF);   //
-  slli(scratch, scratch, 8);  // scratch 0x00
-  ma_li(scratch2, 0xFF00);    // scratch2 0xFF00
-  and_(src, src, scratch2);   // src 0x8000
-  srli(src, src, 8);          // src 0x0080
-  or_(src, src, scratch);     // src 0x0080
-  slliw(src, src, 16);
-  sraiw(src, src, 16);
-  JitSpew(JitSpew_Codegen, "]");
+  ByteSwap(src, src, 2);
 }
 
 void MacroAssembler::byteSwap16ZeroExtend(Register src) {
-  JitSpew(JitSpew_Codegen, "[ %s\n", __FUNCTION__);
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  Register scratch2 = temps.Acquire();
-  andi(scratch, src, 0xFF);
-  slli(scratch, scratch, 8);
-  ma_li(scratch2, 0xFF00);
-  and_(src, src, scratch2);
-  srli(src, src, 8);
-  or_(src, src, scratch);
-  slliw(src, src, 16);
-  srliw(src, src, 16);
-  JitSpew(JitSpew_Codegen, "]");
+  ByteSwap(src, src, 2, /* zeroExtend= */ true);
 }
 
-void MacroAssembler::byteSwap32(Register src) {
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  ByteSwap(src, src, 4, scratch);
-}
+void MacroAssembler::byteSwap32(Register src) { ByteSwap(src, src, 4); }
+
 void MacroAssembler::byteSwap64(Register64 src) {
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  ByteSwap(src.reg, src.reg, 8, scratch);
+  ByteSwap(src.reg, src.reg, 8);
 }
+
 void MacroAssembler::clampIntToUint8(Register reg) {
   // If reg is < 0, then we want to clamp to 0.
   {

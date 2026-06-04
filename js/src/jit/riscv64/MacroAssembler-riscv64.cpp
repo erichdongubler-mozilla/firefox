@@ -6250,19 +6250,38 @@ void MacroAssemblerRiscv64::ma_mod_mask(Register src, Register dest,
 }
 
 void MacroAssemblerRiscv64::ByteSwap(Register dest, Register src,
-                                     int operand_size, Register scratch) {
-  MOZ_ASSERT(operand_size == 4 || operand_size == 8);
+                                     int operand_size, bool zeroExtend) {
+  MOZ_ASSERT(operand_size == 2 || operand_size == 4 || operand_size == 8);
+  MOZ_ASSERT_IF(zeroExtend, operand_size == 2);
+
   if (HasZbbExtension()) {
     rev8(dest, src);
     if (operand_size == 4) {
       srai(dest, dest, 32);
+    } else if (operand_size == 2) {
+      if (zeroExtend) {
+        srli(dest, dest, 48);
+      } else {
+        srai(dest, dest, 48);
+      }
     }
     return;
   }
 
-  MOZ_ASSERT(scratch != src);
-  MOZ_ASSERT(scratch != dest);
-  if (operand_size == 4) {
+  if (operand_size == 2) {
+    UseScratchRegisterScope temps(this);
+    Register scratch = temps.Acquire();
+
+    slli(scratch, src, 48);
+    srli(scratch, scratch, 56);
+    slli(dest, src, 56);
+    if (zeroExtend) {
+      srli(dest, dest, 48);
+    } else {
+      srai(dest, dest, 48);
+    }
+    or_(dest, dest, scratch);
+  } else if (operand_size == 4) {
     // TODO: It's unclear why forbidding pools is necessary here. It should
     // either be documented or pools should be allowed.
     AutoForbidPoolsAndNops afp(this, 17);
@@ -6271,10 +6290,9 @@ void MacroAssemblerRiscv64::ByteSwap(Register dest, Register src,
     // x0 = (x0 << 16 | x0 >> 16);
     // x0 = (((x0 & x1) << 8)  | ((x0 & (x1 << 8)) >> 8));
     UseScratchRegisterScope temps(this);
-    MOZ_ASSERT((dest != t6) && (src != t6));
     Register x0 = temps.Acquire();
     Register x1 = temps.Acquire();
-    Register x2 = scratch;
+    Register x2 = temps.Acquire();
     RV_li(x1, 0x00FF00FF);
     slliw(x0, src, 16);
     srliw(dest, src, 16);
@@ -6296,10 +6314,9 @@ void MacroAssemblerRiscv64::ByteSwap(Register dest, Register src,
     // x0 = (x0 & x1) << 16 | (x0 & (x1 << 16)) >> 16;
     // x0 = (x0 & x1) << 8  | (x0 & (x1 << 8)) >> 8;
     UseScratchRegisterScope temps(this);
-    MOZ_ASSERT((dest != t6) && (src != t6));
     Register x0 = temps.Acquire();
     Register x1 = temps.Acquire();
-    Register x2 = scratch;
+    Register x2 = temps.Acquire();
     RV_li(x1, 0x0000FFFF0000FFFFl);
     slli(x0, src, 32);
     srli(dest, src, 32);

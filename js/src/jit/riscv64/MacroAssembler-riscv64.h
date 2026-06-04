@@ -475,7 +475,7 @@ class MacroAssemblerRiscv64 : public Assembler {
 
   // Change endianness
   void ByteSwap(Register dest, Register src, int operand_size,
-                Register scratch);
+                bool zeroExtend = false);
 
   void Rol(Register rd, Register rs, Imm32 rt);
   void Rol(Register rd, Register rs, Register rt);
