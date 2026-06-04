@@ -524,35 +524,6 @@ bool GLContext::InitImpl() {
 
   if (!fnLoadSymbols(coreSymbols, "GL")) return false;
 
-  {
-    const SymLoadStruct symbols[] = {
-        {(PRFuncPtr*)&mSymbols.fGetGraphicsResetStatus,
-         {{"glGetGraphicsResetStatus", "glGetGraphicsResetStatusARB",
-           "glGetGraphicsResetStatusKHR", "glGetGraphicsResetStatusEXT"}}},
-        END_SYMBOLS};
-    (void)fnLoadSymbols(symbols, nullptr);
-
-    // We need to call the fGetError symbol directly here because if there is an
-    // unflushed reset status, we don't want to mark the context as lost. That
-    // would prevent us from recovering.
-    auto err = mSymbols.fGetError();
-    if (err == LOCAL_GL_CONTEXT_LOST) {
-      MOZ_ASSERT(mSymbols.fGetGraphicsResetStatus);
-      const auto status = fGetGraphicsResetStatus();
-      if (status) {
-        printf_stderr("Unflushed glGetGraphicsResetStatus: 0x%04x\n", status);
-      }
-      err = fGetError();
-      MOZ_ASSERT(!err);
-    }
-    if (err) {
-      MOZ_ASSERT(false);
-      return false;
-    }
-  }
-
-  ////////////////
-
   const auto* const versionRawStr = (const char*)fGetString(LOCAL_GL_VERSION);
   if (!versionRawStr || !*versionRawStr) {
     // This can happen with Pernosco.
@@ -574,6 +545,47 @@ bool GLContext::InitImpl() {
   MOZ_ASSERT(minorVer < 10);
   mVersion = majorVer * 100 + minorVer * 10;
   if (mVersion < 200) return false;
+
+  {
+    const SymLoadStruct allSymbols[] = {
+        {(PRFuncPtr*)&mSymbols.fGetGraphicsResetStatus,
+         {{"glGetGraphicsResetStatus", "glGetGraphicsResetStatusARB",
+           "glGetGraphicsResetStatusKHR", "glGetGraphicsResetStatusEXT"}}},
+        END_SYMBOLS};
+    const SymLoadStruct extensionSymbols[] = {
+        {(PRFuncPtr*)&mSymbols.fGetGraphicsResetStatus,
+         {{"glGetGraphicsResetStatusKHR", "glGetGraphicsResetStatusARB",
+           "glGetGraphicsResetStatusEXT"}}},
+        END_SYMBOLS};
+
+    // Some drivers (e.g. ANGLE) will allow loading the core symbol when using a
+    // context version that does not support it, but will subsequently raise an
+    // error when it is called. We therefore avoid attempting to load the core
+    // symbol on unsupported context versions.
+    const bool useExtensionSymbols = (mProfile == ContextProfile::OpenGLES)
+                                         ? (mVersion < 320)
+                                         : (mVersion < 450);
+    (void)fnLoadSymbols(useExtensionSymbols ? extensionSymbols : allSymbols,
+                        nullptr);
+
+    // We need to call the fGetError symbol directly here because if there is an
+    // unflushed reset status, we don't want to mark the context as lost. That
+    // would prevent us from recovering.
+    auto err = mSymbols.fGetError();
+    if (err == LOCAL_GL_CONTEXT_LOST) {
+      MOZ_ASSERT(mSymbols.fGetGraphicsResetStatus);
+      const auto status = fGetGraphicsResetStatus();
+      if (status) {
+        printf_stderr("Unflushed glGetGraphicsResetStatus: 0x%04x\n", status);
+      }
+      err = fGetError();
+      MOZ_ASSERT(!err);
+    }
+    if (err) {
+      MOZ_ASSERT(false);
+      return false;
+    }
+  }
 
   ////
 
