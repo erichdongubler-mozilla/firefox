@@ -779,7 +779,8 @@ class TabBase {
 
     let results = await Promise.all(promises).catch(err => {
       if (err.name === "DataCloneError") {
-        let fileName = options.jsPaths.slice(-1)[0] || "<anonymous code>";
+        let fileName =
+          options.jsExecuteScriptSources.at(-1)?.file ?? "<anonymous code>";
         let message = `Script '${fileName}' result is non-structured-clonable data`;
         return Promise.reject({ message, fileName });
       }
@@ -824,7 +825,7 @@ class TabBase {
    */
   _execute(context, details, kind, method) {
     let options = {
-      jsPaths: [],
+      jsExecuteScriptSources: [],
       cssPaths: [],
       removeCSS: method == "removeCSS",
       extensionId: context.extension.id,
@@ -849,7 +850,11 @@ class TabBase {
     );
 
     if (details.code !== null) {
-      options[`${kind}Code`] = details.code;
+      if (kind === "js") {
+        options.jsExecuteScriptSources.push({ code: details.code });
+      } else if (kind === "css") {
+        options.cssCode = details.code;
+      }
     }
     if (details.file !== null) {
       let url = context.uri.resolve(details.file);
@@ -858,7 +863,11 @@ class TabBase {
           message: "Files to be injected must be within the extension",
         });
       }
-      options[`${kind}Paths`].push(url);
+      if (kind === "js") {
+        options.jsExecuteScriptSources.push({ file: url });
+      } else if (kind === "css") {
+        options.cssPaths.push(url);
+      }
     }
 
     if (details.allFrames) {

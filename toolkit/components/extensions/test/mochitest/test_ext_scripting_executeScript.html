@@ -93,19 +93,6 @@ add_task(async function test_executeScript_params_validation() {
           },
           expectedError: "Invalid frame IDs: [1, 2].",
         },
-        {
-          title: "throw non-structurally cloneable data in all frames",
-          executeScriptParams: {
-            target: {
-              tabId,
-              allFrames: true,
-            },
-            func: () => {
-              throw window;
-            },
-          },
-          expectedError: /Script '<anonymous code>' result is non-structured-clonable data/,
-        },
       ];
 
       for (const { title, executeScriptParams, expectedError } of TEST_CASES) {
@@ -1279,6 +1266,23 @@ add_task(async function test_executeScript_runtime_errors() {
           );
         }
       }
+
+      // TODO Currently the promises is rejected
+      // Expected behaviour: return individual error messages per frame in the result array
+      // See bug 2041680
+      await browser.test.assertRejects(
+        browser.scripting.executeScript({
+          target: {
+            tabId,
+            allFrames: true,
+          },
+          func: () => {
+            throw window;
+          },
+        }),
+        /Script '<anonymous code>' result is non-structured-clonable data/,
+        "throw non-structurally cloneable data in all frames"
+      );
 
       browser.test.notifyPass("execute-script");
     },

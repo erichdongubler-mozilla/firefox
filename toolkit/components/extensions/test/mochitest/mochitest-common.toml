@@ -534,6 +534,16 @@ skip-if = [
 
 ["test_ext_unlimitedStorage.html"]
 
+["test_ext_userScripts_execute.html"]
+
+["test_ext_userScripts_execute_activeTab.html"]
+
+["test_ext_userScripts_execute_injectImmediately.html"]
+
+["test_ext_userScripts_execute_null_principal.html"]
+
+["test_ext_userScripts_execute_world.html"]
+
 ["test_ext_web_accessible_incognito.html"]
 skip-if = [
   "os == 'android'", # bug 1397615, bug 1513544
