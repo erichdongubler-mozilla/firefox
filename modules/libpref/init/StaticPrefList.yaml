@@ -10957,6 +10957,13 @@
   mirror: always
   rust: true
 
+# Whether the ViewTimeline WebIDL interface is enabled.
+- name: layout.css.scroll-driven-animations.viewtimeline.enabled
+  type: bool
+  value: false
+  mirror: always
+  rust: true
+
 # When selecting the snap point for CSS scroll snapping, the velocity of the
 # scroll frame is clamped to this speed, in CSS pixels / s.
 - name: layout.css.scroll-snap.prediction-max-velocity

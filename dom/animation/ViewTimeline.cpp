@@ -53,6 +53,10 @@ already_AddRefed<ViewTimeline> ViewTimeline::MakeAnonymous(
 
 JSObject* ViewTimeline::WrapObject(JSContext* aCx,
                                    JS::Handle<JSObject*> aGivenProto) {
+  if (!StaticPrefs::
+          layout_css_scroll_driven_animations_viewtimeline_enabled()) {
+    return ScrollTimeline::WrapObject(aCx, aGivenProto);
+  }
   return ViewTimeline_Binding::Wrap(aCx, this, aGivenProto);
 }
 
