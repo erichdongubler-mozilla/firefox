@@ -154,6 +154,8 @@
   }
 
   &.sports-match-row-medium {
+    padding: var(--space-xsmall);
+
     .sports-match-upcoming {
       .sports-match-time {
         font-size: var(--font-size-root);
