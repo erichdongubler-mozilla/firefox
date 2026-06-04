@@ -1,10 +1,9 @@
-#![expect(missing_docs)] // https://github.com/rust-lang/rust/issues/137561
 #![cfg(feature = "serde")]
 
 use core::hash::BuildHasherDefault;
 use fnv::FnvHasher;
 use hashbrown::{HashMap, HashSet};
-use serde_test::{Token, assert_tokens};
+use serde_test::{assert_tokens, Token};
 
 // We use FnvHash for this test because we rely on the ordering
 type FnvHashMap<K, V> = HashMap<K, V, BuildHasherDefault<FnvHasher>>;

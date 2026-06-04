@@ -1,32 +1,34 @@
 //! Compare `insert` and `insert_unique_unchecked` operations performance.
-use criterion::Criterion;
+
+#![feature(test)]
+
+extern crate test;
+
 use hashbrown::HashMap;
-use std::hint::black_box;
+use test::Bencher;
 
-pub(crate) fn register_benches(c: &mut Criterion) {
-    let keys: Vec<String> = (0..1000).map(|i| format!("xxxx{i}yyyy")).collect();
-
-    c.bench_function("insert", |b| {
+#[bench]
+fn insert(b: &mut Bencher) {
+    let keys: Vec<String> = (0..1000).map(|i| format!("xxxx{}yyyy", i)).collect();
+    b.iter(|| {
         let mut m = HashMap::with_capacity(1000);
-        b.iter(|| {
-            m.clear();
-            for k in &keys {
-                m.insert(k, k);
-            }
-            black_box(m.len())
-        });
+        for k in &keys {
+            m.insert(k, k);
+        }
+        m
     });
+}
 
-    c.bench_function("insert_unique_unchecked", |b| {
+#[bench]
+fn insert_unique_unchecked(b: &mut Bencher) {
+    let keys: Vec<String> = (0..1000).map(|i| format!("xxxx{}yyyy", i)).collect();
+    b.iter(|| {
         let mut m = HashMap::with_capacity(1000);
-        b.iter(|| {
-            m.clear();
-            for k in &keys {
-                unsafe {
-                    m.insert_unique_unchecked(k, k);
-                }
+        for k in &keys {
+            unsafe {
+                m.insert_unique_unchecked(k, k);
             }
-            black_box(m.len())
-        });
+        }
+        m
     });
 }

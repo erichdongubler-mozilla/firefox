@@ -1,12 +1,13 @@
-#![expect(missing_docs)] // https://github.com/rust-lang/rust/issues/137561
 #![cfg(feature = "rayon")]
+
+#[macro_use]
+extern crate lazy_static;
 
 use hashbrown::{HashMap, HashSet};
 use rayon::iter::{
     IntoParallelIterator, IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelExtend,
     ParallelIterator,
 };
-use std::sync::LazyLock;
 
 macro_rules! assert_eq3 {
     ($e1:expr, $e2:expr, $e3:expr) => {{
@@ -16,18 +17,19 @@ macro_rules! assert_eq3 {
     }};
 }
 
-static MAP_EMPTY: LazyLock<HashMap<char, u32>> = LazyLock::new(HashMap::new);
-
-static MAP: LazyLock<HashMap<char, u32>> = LazyLock::new(|| {
-    let mut m = HashMap::new();
-    m.insert('b', 20);
-    m.insert('a', 10);
-    m.insert('c', 30);
-    m.insert('e', 50);
-    m.insert('f', 60);
-    m.insert('d', 40);
-    m
-});
+lazy_static! {
+    static ref MAP_EMPTY: HashMap<char, u32> = HashMap::new();
+    static ref MAP: HashMap<char, u32> = {
+        let mut m = HashMap::new();
+        m.insert('b', 20);
+        m.insert('a', 10);
+        m.insert('c', 30);
+        m.insert('e', 50);
+        m.insert('f', 60);
+        m.insert('d', 40);
+        m
+    };
+}
 
 #[test]
 fn map_seq_par_equivalence_iter_empty() {
@@ -212,22 +214,26 @@ fn map_seq_par_equivalence_into_iter() {
     assert_eq3!(vec_seq, vec_par, expected_sorted);
 }
 
-static MAP_VEC_EMPTY: &[(char, u32)] = &[];
-
-static MAP_VEC: &[(char, u32)] = &[
-    ('b', 20),
-    ('a', 10),
-    ('c', 30),
-    ('e', 50),
-    ('f', 60),
-    ('d', 40),
-];
+lazy_static! {
+    static ref MAP_VEC_EMPTY: Vec<(char, u32)> = vec![];
+    static ref MAP_VEC: Vec<(char, u32)> = vec![
+        ('b', 20),
+        ('a', 10),
+        ('c', 30),
+        ('e', 50),
+        ('f', 60),
+        ('d', 40),
+    ];
+}
 
 #[test]
 fn map_seq_par_equivalence_collect_empty() {
     let map_expected = MAP_EMPTY.clone();
-    let map_seq = MAP_VEC_EMPTY.iter().copied().collect::<HashMap<_, _>>();
-    let map_par = MAP_VEC_EMPTY.par_iter().copied().collect::<HashMap<_, _>>();
+    let map_seq = MAP_VEC_EMPTY.clone().into_iter().collect::<HashMap<_, _>>();
+    let map_par = MAP_VEC_EMPTY
+        .clone()
+        .into_par_iter()
+        .collect::<HashMap<_, _>>();
 
     assert_eq!(map_seq, map_par);
     assert_eq!(map_seq, map_expected);
@@ -237,26 +243,25 @@ fn map_seq_par_equivalence_collect_empty() {
 #[test]
 fn map_seq_par_equivalence_collect() {
     let map_expected = MAP.clone();
-    let map_seq = MAP_VEC.iter().copied().collect::<HashMap<_, _>>();
-    let map_par = MAP_VEC.par_iter().copied().collect::<HashMap<_, _>>();
+    let map_seq = MAP_VEC.clone().into_iter().collect::<HashMap<_, _>>();
+    let map_par = MAP_VEC.clone().into_par_iter().collect::<HashMap<_, _>>();
 
     assert_eq!(map_seq, map_par);
     assert_eq!(map_seq, map_expected);
     assert_eq!(map_par, map_expected);
 }
 
-static MAP_EXISTING_EMPTY: LazyLock<HashMap<char, u32>> = LazyLock::new(HashMap::new);
-
-static MAP_EXISTING: LazyLock<HashMap<char, u32>> = LazyLock::new(|| {
-    let mut m = HashMap::new();
-    m.insert('b', 20);
-    m.insert('a', 10);
-    m
-});
-
-static MAP_EXTENSION_EMPTY: &[(char, u32)] = &[];
-
-static MAP_EXTENSION: &[(char, u32)] = &[('c', 30), ('e', 50), ('f', 60), ('d', 40)];
+lazy_static! {
+    static ref MAP_EXISTING_EMPTY: HashMap<char, u32> = HashMap::new();
+    static ref MAP_EXISTING: HashMap<char, u32> = {
+        let mut m = HashMap::new();
+        m.insert('b', 20);
+        m.insert('a', 10);
+        m
+    };
+    static ref MAP_EXTENSION_EMPTY: Vec<(char, u32)> = vec![];
+    static ref MAP_EXTENSION: Vec<(char, u32)> = vec![('c', 30), ('e', 50), ('f', 60), ('d', 40),];
+}
 
 #[test]
 fn map_seq_par_equivalence_existing_empty_extend_empty() {
@@ -306,18 +311,19 @@ fn map_seq_par_equivalence_existing_extend() {
     assert_eq3!(map_seq, map_par, expected);
 }
 
-static SET_EMPTY: LazyLock<HashSet<char>> = LazyLock::new(HashSet::new);
-
-static SET: LazyLock<HashSet<char>> = LazyLock::new(|| {
-    let mut s = HashSet::new();
-    s.insert('b');
-    s.insert('a');
-    s.insert('c');
-    s.insert('e');
-    s.insert('f');
-    s.insert('d');
-    s
-});
+lazy_static! {
+    static ref SET_EMPTY: HashSet<char> = HashSet::new();
+    static ref SET: HashSet<char> = {
+        let mut s = HashSet::new();
+        s.insert('b');
+        s.insert('a');
+        s.insert('c');
+        s.insert('e');
+        s.insert('f');
+        s.insert('d');
+        s
+    };
+}
 
 #[test]
 fn set_seq_par_equivalence_iter_empty() {
@@ -371,15 +377,19 @@ fn set_seq_par_equivalence_into_iter() {
     assert_eq3!(vec_seq, vec_par, expected_sorted);
 }
 
-static SET_VEC_EMPTY: &[char] = &[];
-
-static SET_VEC: &[char] = &['b', 'a', 'c', 'e', 'f', 'd'];
+lazy_static! {
+    static ref SET_VEC_EMPTY: Vec<char> = vec![];
+    static ref SET_VEC: Vec<char> = vec!['b', 'a', 'c', 'e', 'f', 'd',];
+}
 
 #[test]
 fn set_seq_par_equivalence_collect_empty() {
     let set_expected = SET_EMPTY.clone();
-    let set_seq = SET_VEC_EMPTY.iter().copied().collect::<HashSet<_>>();
-    let set_par = SET_VEC_EMPTY.par_iter().copied().collect::<HashSet<_>>();
+    let set_seq = SET_VEC_EMPTY.clone().into_iter().collect::<HashSet<_>>();
+    let set_par = SET_VEC_EMPTY
+        .clone()
+        .into_par_iter()
+        .collect::<HashSet<_>>();
 
     assert_eq!(set_seq, set_par);
     assert_eq!(set_seq, set_expected);
@@ -389,26 +399,25 @@ fn set_seq_par_equivalence_collect_empty() {
 #[test]
 fn set_seq_par_equivalence_collect() {
     let set_expected = SET.clone();
-    let set_seq = SET_VEC.iter().copied().collect::<HashSet<_>>();
-    let set_par = SET_VEC.par_iter().copied().collect::<HashSet<_>>();
+    let set_seq = SET_VEC.clone().into_iter().collect::<HashSet<_>>();
+    let set_par = SET_VEC.clone().into_par_iter().collect::<HashSet<_>>();
 
     assert_eq!(set_seq, set_par);
     assert_eq!(set_seq, set_expected);
     assert_eq!(set_par, set_expected);
 }
 
-static SET_EXISTING_EMPTY: LazyLock<HashSet<char>> = LazyLock::new(HashSet::new);
-
-static SET_EXISTING: LazyLock<HashSet<char>> = LazyLock::new(|| {
-    let mut s = HashSet::new();
-    s.insert('b');
-    s.insert('a');
-    s
-});
-
-static SET_EXTENSION_EMPTY: &[char] = &[];
-
-static SET_EXTENSION: &[char] = &['c', 'e', 'f', 'd'];
+lazy_static! {
+    static ref SET_EXISTING_EMPTY: HashSet<char> = HashSet::new();
+    static ref SET_EXISTING: HashSet<char> = {
+        let mut s = HashSet::new();
+        s.insert('b');
+        s.insert('a');
+        s
+    };
+    static ref SET_EXTENSION_EMPTY: Vec<char> = vec![];
+    static ref SET_EXTENSION: Vec<char> = vec!['c', 'e', 'f', 'd',];
+}
 
 #[test]
 fn set_seq_par_equivalence_existing_empty_extend_empty() {
@@ -458,26 +467,16 @@ fn set_seq_par_equivalence_existing_extend() {
     assert_eq3!(set_seq, set_par, expected);
 }
 
-static SET_A: LazyLock<HashSet<char>> =
-    LazyLock::new(|| ['a', 'b', 'c', 'd'].iter().copied().collect());
-
-static SET_B: LazyLock<HashSet<char>> =
-    LazyLock::new(|| ['a', 'b', 'e', 'f'].iter().copied().collect());
-
-static SET_DIFF_AB: LazyLock<HashSet<char>> =
-    LazyLock::new(|| ['c', 'd'].iter().copied().collect());
-
-static SET_DIFF_BA: LazyLock<HashSet<char>> =
-    LazyLock::new(|| ['e', 'f'].iter().copied().collect());
-
-static SET_SYMM_DIFF_AB: LazyLock<HashSet<char>> =
-    LazyLock::new(|| ['c', 'd', 'e', 'f'].iter().copied().collect());
-
-static SET_INTERSECTION_AB: LazyLock<HashSet<char>> =
-    LazyLock::new(|| ['a', 'b'].iter().copied().collect());
-
-static SET_UNION_AB: LazyLock<HashSet<char>> =
-    LazyLock::new(|| ['a', 'b', 'c', 'd', 'e', 'f'].iter().copied().collect());
+lazy_static! {
+    static ref SET_A: HashSet<char> = ['a', 'b', 'c', 'd'].iter().copied().collect();
+    static ref SET_B: HashSet<char> = ['a', 'b', 'e', 'f'].iter().copied().collect();
+    static ref SET_DIFF_AB: HashSet<char> = ['c', 'd'].iter().copied().collect();
+    static ref SET_DIFF_BA: HashSet<char> = ['e', 'f'].iter().copied().collect();
+    static ref SET_SYMM_DIFF_AB: HashSet<char> = ['c', 'd', 'e', 'f'].iter().copied().collect();
+    static ref SET_INTERSECTION_AB: HashSet<char> = ['a', 'b'].iter().copied().collect();
+    static ref SET_UNION_AB: HashSet<char> =
+        ['a', 'b', 'c', 'd', 'e', 'f'].iter().copied().collect();
+}
 
 #[test]
 fn set_seq_par_equivalence_difference() {

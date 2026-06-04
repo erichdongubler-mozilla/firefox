@@ -32,6 +32,7 @@ impl Tag {
 
     /// Creates a control tag representing a full bucket with the given hash.
     #[inline]
+    #[allow(clippy::cast_possible_truncation)]
     pub(crate) const fn full(hash: u64) -> Tag {
         // Constant for function that grabs the top 7 bits of the hash.
         const MIN_HASH_LEN: usize = if mem::size_of::<usize>() < mem::size_of::<u64>() {
@@ -70,10 +71,10 @@ pub(crate) trait TagSliceExt {
     /// Clears out the control.
     #[inline]
     fn fill_empty(&mut self) {
-        self.fill_tag(Tag::EMPTY);
+        self.fill_tag(Tag::EMPTY)
     }
 }
-impl TagSliceExt for [mem::MaybeUninit<Tag>] {
+impl TagSliceExt for [Tag] {
     #[inline]
     fn fill_tag(&mut self, tag: Tag) {
         // SAFETY: We have access to the entire slice, so, we can write to the entire slice.

@@ -1,5 +1,3 @@
-#![expect(missing_docs)] // https://github.com/rust-lang/rust/issues/137561
-
 use hashbrown::Equivalent;
 use hashbrown::HashMap;
 

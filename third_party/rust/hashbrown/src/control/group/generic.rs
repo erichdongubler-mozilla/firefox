@@ -24,7 +24,8 @@ pub(crate) type BitMaskWord = GroupWord;
 pub(crate) type NonZeroBitMaskWord = NonZeroGroupWord;
 pub(crate) const BITMASK_STRIDE: usize = 8;
 // We only care about the highest bit of each tag for the mask.
-const BITMASK_MASK: BitMaskWord = u64::from_ne_bytes([Tag::DELETED.0; 8]) as GroupWord;
+#[allow(clippy::cast_possible_truncation, clippy::unnecessary_cast)]
+pub(crate) const BITMASK_MASK: BitMaskWord = u64::from_ne_bytes([Tag::DELETED.0; 8]) as GroupWord;
 pub(crate) const BITMASK_ITER_MASK: BitMaskWord = !0;
 
 /// Helper function to replicate a tag across a `GroupWord`.
@@ -44,7 +45,7 @@ pub(crate) struct Group(GroupWord);
 // little-endian just before creating a BitMask. The can potentially
 // enable the compiler to eliminate unnecessary byte swaps if we are
 // only checking whether a BitMask is empty.
-#[expect(clippy::use_self)]
+#[allow(clippy::use_self)]
 impl Group {
     /// Number of bytes in the group.
     pub(crate) const WIDTH: usize = mem::size_of::<Self>();
@@ -69,26 +70,27 @@ impl Group {
 
     /// Loads a group of tags starting at the given address.
     #[inline]
+    #[allow(clippy::cast_ptr_alignment)] // unaligned load
     pub(crate) unsafe fn load(ptr: *const Tag) -> Self {
-        unsafe { Group(ptr::read_unaligned(ptr.cast())) }
+        Group(ptr::read_unaligned(ptr.cast()))
     }
 
     /// Loads a group of tags starting at the given address, which must be
     /// aligned to `mem::align_of::<Group>()`.
     #[inline]
+    #[allow(clippy::cast_ptr_alignment)]
     pub(crate) unsafe fn load_aligned(ptr: *const Tag) -> Self {
         debug_assert_eq!(ptr.align_offset(mem::align_of::<Self>()), 0);
-        unsafe { Group(ptr::read(ptr.cast())) }
+        Group(ptr::read(ptr.cast()))
     }
 
     /// Stores the group of tags to the given address, which must be
     /// aligned to `mem::align_of::<Group>()`.
     #[inline]
+    #[allow(clippy::cast_ptr_alignment)]
     pub(crate) unsafe fn store_aligned(self, ptr: *mut Tag) {
         debug_assert_eq!(ptr.align_offset(mem::align_of::<Self>()), 0);
-        unsafe {
-            ptr::write(ptr.cast(), self.0);
-        }
+        ptr::write(ptr.cast(), self.0);
     }
 
     /// Returns a `BitMask` indicating all tags in the group which *may*
@@ -100,7 +102,7 @@ impl Group {
     /// - This never happens for `EMPTY` and `DELETED`, only full entries.
     /// - The check for key equality will catch these.
     /// - This only happens if there is at least 1 true match.
-    /// - The chance of this happening is very low (< 1% chance per byte).
+    /// - The chance of this happening is very low (< 1% chance per tag).
     #[inline]
     pub(crate) fn match_tag(self, tag: Tag) -> BitMask {
         // This algorithm is derived from
@@ -130,7 +132,7 @@ impl Group {
     /// Returns a `BitMask` indicating all tags in the group which are full.
     #[inline]
     pub(crate) fn match_full(self) -> BitMask {
-        BitMask(self.match_empty_or_deleted().0 ^ BITMASK_MASK)
+        self.match_empty_or_deleted().invert()
     }
 
     /// Performs the following transformation on all tags in the group:

@@ -1,8 +1,7 @@
-#![expect(missing_docs)] // https://github.com/rust-lang/rust/issues/137561
 #![cfg(not(miri))] // FIXME: takes too long
 
 use hashbrown::HashSet;
-use rand::{Rng, SeedableRng, distr::Alphanumeric, rngs::SmallRng};
+use rand::{distr::Alphanumeric, rngs::SmallRng, Rng, SeedableRng};
 use std::iter;
 
 #[test]
@@ -21,7 +20,7 @@ fn test_hashset_insert_remove() {
     .collect();
 
     // more readable with explicit `true` / `false`
-    #[expect(clippy::bool_assert_comparison)]
+    #[allow(clippy::bool_assert_comparison)]
     for _ in 0..32 {
         for x in &tx {
             assert_eq!(m.contains(x), false);
