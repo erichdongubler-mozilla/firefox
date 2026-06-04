@@ -337,6 +337,7 @@ internal fun Homepage(
                                             setOf(countryCode)
                                         }
                                         interactor.onCountriesSelected(selection)
+                                        showSportsCountrySelector = false
                                     },
                                     onDismiss = { showSportsCountrySelector = false },
                                 )
