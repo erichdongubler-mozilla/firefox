@@ -7278,40 +7278,29 @@ bool BaseCompiler::emitI64MulWide(bool isSigned) {
   }
 
 #ifdef JS_CODEGEN_X64
-  // 64-bit Intel implementation.  Produce inline code.  This is a bit gnarly
-  // because of the register behaviour of wasmMulI64WideHI64, which in turn is
-  // specified as it is because of the need to make register constraints on the
-  // associated LIR (for Ion) describable to (Ion's) register allocator.
+  // 64-bit Intel implementation.  Produce inline code.  The inputs need to be
+  // in rax/rdx, and we also need three temporaries.
   need2xI64(specific_.rax, specific_.rdx);
   RegI64 y = popI64ToSpecific(specific_.rdx);
   RegI64 x = popI64ToSpecific(specific_.rax);
-  RegI64 temp = needI64();
-  MOZ_ASSERT(temp.reg != x.reg && temp.reg != y.reg);
+  RegI64 temp0 = needI64();
+  RegI64 temp1 = needI64();
+  RegI64 temp2 = needI64();
 
-  // Compute zHi:zLo = x *widen y.  The `mul64` performs `temp *= x` and does
-  // not have any hardwired assumptions about RDX/RAX.
-  masm.move64(x, temp);
-  masm.mul64(y, temp);
-  pushI64(temp);  // zLo
+  // Compute zHi:zLo = x *widen y.
+  masm.move64(x, temp0);
+  masm.mul64(y, temp0);
+  pushI64(temp0);  // zLo
 
-  temp = needI64();
-  MOZ_ASSERT(x.reg == rax);
-  MOZ_ASSERT(y.reg == rdx);
-  MOZ_ASSERT(temp.reg != rax && temp.reg != rdx);
-  masm.move64(y, temp);
+  temp0 = needI64();
+  masm.wasmMulI64WideHI64(x.reg, y.reg, temp1.reg, temp2.reg, temp0.reg,
+                          isSigned);
+  pushI64(temp0);  // zHi
 
-  // Whereas the `wasmMulI64WideHI64` does make assumptions about RAX and RDX.
-  // x is in RAX.  y is in neither RAX nor RDX.  Result will be in RAX, and RDX
-  // will be trashed.
-  masm.wasmMulI64WideHI64(temp.reg, isSigned);
-  free(temp);
-  temp = needI64();
-  MOZ_ASSERT(temp.reg != rax && temp.reg != rdx);
-  masm.move64(x /* that is to say, RAX */, temp);
-  pushI64(temp);  // zHi
-
-  free(y);
+  free(temp1);
+  free(temp2);
   free(x);
+  free(y);
 
 #elif JS_64BIT
   // All other 64-bit targets.  Produce inline code.  We need just one
