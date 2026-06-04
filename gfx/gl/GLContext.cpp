@@ -1459,22 +1459,36 @@ void GLContext::LoadMoreSymbols(const SymbolLoader& loader) {
         fnLoadForFeature(symbols, GLFeature::prim_restart);
     }
 
-    if (IsExtensionSupported(KHR_debug)) {
-        const SymLoadStruct symbols[] = {
-            { (PRFuncPtr*) &mSymbols.fDebugMessageControl,  {{ "glDebugMessageControl",  "glDebugMessageControlKHR", }} },
-            { (PRFuncPtr*) &mSymbols.fDebugMessageInsert,   {{ "glDebugMessageInsert",   "glDebugMessageInsertKHR",  }} },
-            { (PRFuncPtr*) &mSymbols.fDebugMessageCallback, {{ "glDebugMessageCallback", "glDebugMessageCallbackKHR" }} },
-            { (PRFuncPtr*) &mSymbols.fGetDebugMessageLog,   {{ "glGetDebugMessageLog",   "glGetDebugMessageLogKHR",  }} },
-            { (PRFuncPtr*) &mSymbols.fGetPointerv,          {{ "glGetPointerv",          "glGetPointervKHR",         }} },
-            { (PRFuncPtr*) &mSymbols.fPushDebugGroup,       {{ "glPushDebugGroup",       "glPushDebugGroupKHR",      }} },
-            { (PRFuncPtr*) &mSymbols.fPopDebugGroup,        {{ "glPopDebugGroup",        "glPopDebugGroupKHR",       }} },
-            { (PRFuncPtr*) &mSymbols.fObjectLabel,          {{ "glObjectLabel",          "glObjectLabelKHR",         }} },
-            { (PRFuncPtr*) &mSymbols.fGetObjectLabel,       {{ "glGetObjectLabel",       "glGetObjectLabelKHR",      }} },
-            { (PRFuncPtr*) &mSymbols.fObjectPtrLabel,       {{ "glObjectPtrLabel",       "glObjectPtrLabelKHR",      }} },
-            { (PRFuncPtr*) &mSymbols.fGetObjectPtrLabel,    {{ "glGetObjectPtrLabel",    "glGetObjectPtrLabelKHR",   }} },
+    if (IsSupported(GLFeature::debug)) {
+        const SymLoadStruct coreSymbols[] = {
+            { (PRFuncPtr*) &mSymbols.fDebugMessageControl,  {{ "glDebugMessageControl" }} },
+            { (PRFuncPtr*) &mSymbols.fDebugMessageInsert,   {{ "glDebugMessageInsert" }} },
+            { (PRFuncPtr*) &mSymbols.fDebugMessageCallback, {{ "glDebugMessageCallback" }} },
+            { (PRFuncPtr*) &mSymbols.fGetDebugMessageLog,   {{ "glGetDebugMessageLog" }} },
+            { (PRFuncPtr*) &mSymbols.fGetPointerv,          {{ "glGetPointerv" }} },
+            { (PRFuncPtr*) &mSymbols.fPushDebugGroup,       {{ "glPushDebugGroup" }} },
+            { (PRFuncPtr*) &mSymbols.fPopDebugGroup,        {{ "glPopDebugGroup" }} },
+            { (PRFuncPtr*) &mSymbols.fObjectLabel,          {{ "glObjectLabel" }} },
+            { (PRFuncPtr*) &mSymbols.fGetObjectLabel,       {{ "glGetObjectLabel" }} },
+            { (PRFuncPtr*) &mSymbols.fObjectPtrLabel,       {{ "glObjectPtrLabel" }} },
+            { (PRFuncPtr*) &mSymbols.fGetObjectPtrLabel,    {{ "glGetObjectPtrLabel" }} },
             END_SYMBOLS
         };
-        fnLoadForExt(symbols, KHR_debug);
+        const SymLoadStruct extSymbols[] = {
+            { (PRFuncPtr*) &mSymbols.fDebugMessageControl,  {{ "glDebugMessageControlKHR" }} },
+            { (PRFuncPtr*) &mSymbols.fDebugMessageInsert,   {{ "glDebugMessageInsertKHR" }} },
+            { (PRFuncPtr*) &mSymbols.fDebugMessageCallback, {{ "glDebugMessageCallbackKHR" }} },
+            { (PRFuncPtr*) &mSymbols.fGetDebugMessageLog,   {{ "glGetDebugMessageLogKHR" }} },
+            { (PRFuncPtr*) &mSymbols.fGetPointerv,          {{ "glGetPointervKHR" }} },
+            { (PRFuncPtr*) &mSymbols.fPushDebugGroup,       {{ "glPushDebugGroupKHR" }} },
+            { (PRFuncPtr*) &mSymbols.fPopDebugGroup,        {{ "glPopDebugGroupKHR" }} },
+            { (PRFuncPtr*) &mSymbols.fObjectLabel,          {{ "glObjectLabelKHR" }} },
+            { (PRFuncPtr*) &mSymbols.fGetObjectLabel,       {{ "glGetObjectLabelKHR" }} },
+            { (PRFuncPtr*) &mSymbols.fObjectPtrLabel,       {{ "glObjectPtrLabelKHR" }} },
+            { (PRFuncPtr*) &mSymbols.fGetObjectPtrLabel,    {{ "glGetObjectPtrLabelKHR" }} },
+            END_SYMBOLS
+        };
+        fnLoadFeatureByCore(coreSymbols, extSymbols, GLFeature::debug);
     }
 
     if (IsExtensionSupported(NV_fence)) {
