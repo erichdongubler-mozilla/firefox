@@ -407,7 +407,7 @@ def export_target(target_full_name) -> Set[str]:
             if REGISTERED_DEFINES[k] == False:
                 line = "# " + line
         except KeyError:
-            print(f"[{name}] Unrecognized define: {k}")
+            print(f"[{name}] Unrecognized define: {k} = {v}")
             line = "# Unrecognized: " + line
         lines.append(line)
     lines.append("")
