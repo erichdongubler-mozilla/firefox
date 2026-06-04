@@ -19837,6 +19837,7 @@ function Widgets_extends() { return Widgets_extends = Object.assign ? Object.ass
 
 
 
+
 const CONTAINER_ACTION_TYPES = {
   HIDE_ALL: "hide_all",
   CHANGE_SIZE_ALL: "change_size_all",
@@ -20366,28 +20367,36 @@ function Widgets() {
         key: id,
         className: wrapperClassName,
         "data-widget-id": id
-      }, hiddenAttrs, dragProps), /*#__PURE__*/external_React_default().createElement(Component, {
+      }, hiddenAttrs, dragProps), /*#__PURE__*/external_React_default().createElement(ErrorBoundary, {
+        className: "widget-error-fallback"
+      }, /*#__PURE__*/external_React_default().createElement(Component, {
         dispatch: dispatch,
         handleUserInteraction: handleUserInteraction,
         isMaximized: isMaximized,
         widgetsMayBeMaximized: widgetsMayBeMaximized,
         widgetEnabledMap: widgetEnabledMap
-      }));
+      })));
     }
     // @nova-cleanup: remove below
     return /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, {
       key: id
-    }, id === "lists" && listsEnabled && /*#__PURE__*/external_React_default().createElement(Lists, {
+    }, id === "lists" && listsEnabled && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, {
+      className: "widget-error-fallback"
+    }, /*#__PURE__*/external_React_default().createElement(Lists, {
       dispatch: dispatch,
       handleUserInteraction: handleUserInteraction,
       isMaximized: isMaximized,
       widgetsMayBeMaximized: widgetsMayBeMaximized
-    }), id === "focusTimer" && timerEnabled && /*#__PURE__*/external_React_default().createElement(FocusTimer, {
+    })), id === "focusTimer" && timerEnabled && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, {
+      className: "widget-error-fallback"
+    }, /*#__PURE__*/external_React_default().createElement(FocusTimer, {
       dispatch: dispatch,
       handleUserInteraction: handleUserInteraction,
       isMaximized: isMaximized,
       widgetsMayBeMaximized: widgetsMayBeMaximized
-    }), id === "weather" && renderWeather({
+    })), id === "weather" && weatherForecastEnabled && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, {
+      className: "widget-error-fallback"
+    }, renderWeather({
       novaEnabled,
       weatherEnabled,
       weatherForecastEnabled,
@@ -20396,7 +20405,7 @@ function Widgets() {
       handleUserInteraction,
       isMaximized,
       widgetsMayBeMaximized
-    }));
+    })));
   }), novaEnabled && !allWidgetsAdded && /*#__PURE__*/external_React_default().createElement("button", {
     type: "button",
     className: `widgets-add-button col-4 ${addButtonSize}-widget`,
