@@ -6586,7 +6586,8 @@ button.arrow-button:dir(rtl) {
   margin-block-start: var(--space-medium);
 }
 .sports.medium-widget .sports-body {
-  padding-block-end: 0;
+  margin-block-end: calc(-1 * var(--space-xsmall));
+  padding-block-end: var(--space-xsmall);
   justify-content: space-between;
 }
 .sports.medium-widget .match-highlight-view {

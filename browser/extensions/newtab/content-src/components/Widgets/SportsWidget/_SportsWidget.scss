@@ -58,7 +58,9 @@
     }
 
     .sports-body {
-      padding-block-end: 0;
+      // Bleed into the widget padding so the View all button focus outline isn't clipped.
+      margin-block-end: calc(-1 * var(--space-xsmall));
+      padding-block-end: var(--space-xsmall);
       justify-content: space-between;
     }
 
