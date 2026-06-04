@@ -55,7 +55,7 @@ async function testEditDisableProperty(view, prop, fieldType, commitKey) {
 
   let onChangeDone;
   if (fieldType === "value") {
-    onChangeDone = view.once("property-value-updated");
+    onChangeDone = view.once("ruleview-changed");
   }
 
   const onBlur = once(editor.input, "blur");

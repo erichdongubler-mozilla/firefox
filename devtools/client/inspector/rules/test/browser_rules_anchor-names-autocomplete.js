@@ -169,9 +169,9 @@ async function autocompletePositionAnchor({
   await onPopupClosed;
 
   info("Hit Escape to cancel the edit");
-  const onEditingCancelled = view.once("property-value-updated");
+  const onRuleViewChanged = view.once("ruleview-changed");
   EventUtils.synthesizeKey("KEY_Escape", {}, view.styleWindow);
-  await onEditingCancelled;
+  await onRuleViewChanged;
 }
 
 async function autocompleteInsetAnchorFunction({
@@ -214,7 +214,7 @@ async function autocompleteInsetAnchorFunction({
   await onPopupClosed;
 
   info("Hit Escape to cancel the edit");
-  const onEditingCancelled = view.once("property-value-updated");
+  const onRuleViewChanged = view.once("ruleview-changed");
   EventUtils.synthesizeKey("KEY_Escape", {}, view.styleWindow);
-  await onEditingCancelled;
+  await onRuleViewChanged;
 }

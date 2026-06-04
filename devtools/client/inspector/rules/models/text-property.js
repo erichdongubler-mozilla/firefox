@@ -208,22 +208,8 @@ class TextProperty {
     }
   }
 
-  /**
-   * Called to update the value and priority of this rule.
-   *
-   * @param {string} value
-   * @param {string} priority
-   * @param {boolean} force
-   *        To be set to true if the property should be considered as modified by the user,
-   *        even if the value, nor the priority changed.
-   * @param {boolean} reverting
-   *        To be set to true if the change relates to reverting to page's value,
-   *        and so the property should no longer be considerd as modified by the user..
-   */
-  async setValue(value, priority, force = false, reverting = false) {
-    if (reverting) {
-      this.userProperties.clearProperty(this.rule.domRule, this.name);
-    } else if (value !== this.value || priority != this.priority || force) {
+  async setValue(value, priority, force = false) {
+    if (value !== this.value || force) {
       this.userProperties.setProperty(this.rule.domRule, this.name, value);
     }
 

@@ -116,8 +116,8 @@ add_task(async function () {
   await mouse.down(xCenter, top, ".wrapper");
   await mouse.move(xCenter, top + dy, ".wrapper");
   await mouse.up(xCenter, top + dy, ".wrapper");
-  await onShapeChangeApplied;
   await reflowContentPage();
+  await onShapeChangeApplied;
 
   const offsetPathAfterUpdate = await SpecialPowers.spawn(
     gBrowser.selectedBrowser,

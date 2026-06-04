@@ -39,7 +39,7 @@ add_task(async function () {
   await onNameDone;
 
   info("Escape editing the property value");
-  const onValueDone = view.once("property-value-updated");
+  const onValueDone = view.once("ruleview-changed");
   EventUtils.synthesizeKey("VK_ESCAPE", {}, view.styleWindow);
   await onValueDone;
 

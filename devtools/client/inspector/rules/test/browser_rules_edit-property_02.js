@@ -78,11 +78,7 @@ async function testEditProperty(inspector, ruleView) {
   // Use sendChar() to pass each character as a string so that we can test
   // prop.editor.warning.hidden after each character.
   for (const ch of "red;") {
-    // When pressing the last ";", there will be only a light property update
-    // whereas all other chars are going to trigger a more involved rule view update.
-    const onPreviewDone = ruleView.once(
-      ch == ";" ? "property-value-updated" : "ruleview-changed"
-    );
+    const onPreviewDone = ruleView.once("ruleview-changed");
     EventUtils.sendChar(ch, ruleView.styleWindow);
     ruleView.debounce.flush();
     await onPreviewDone;

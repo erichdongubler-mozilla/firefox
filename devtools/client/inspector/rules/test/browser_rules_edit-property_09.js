@@ -53,11 +53,11 @@ async function testClickOnEmptyAreaToCloseEditor(inspector, view) {
     "Close the property value editor by clicking on an empty area " +
       "in the rule editor"
   );
-  const onModifications = view.once("property-value-updated");
+  const onRuleViewChanged = view.once("ruleview-changed");
   let onBlur = once(editor.input, "blur");
   synthesizeMouseOnEmptyArea(view);
   await onBlur;
-  await onModifications;
+  await onRuleViewChanged;
   ok(!view.isEditing, "No inplace editor should be displayed in the ruleview");
 
   info("Create new newProperty editor by clicking again on the empty area");

@@ -69,7 +69,7 @@ add_task(async function () {
   );
 
   info("Entering the property value");
-  const onValueAdded = view.once("ruleview-changed");
+  let onValueAdded = view.once("ruleview-changed");
   editor.input.value = "purple";
   EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);
   await onValueAdded;
@@ -86,11 +86,11 @@ add_task(async function () {
   await onNameAdded;
 
   info("Entering the empty property value");
-  const onModifications = view.once("property-value-updated");
+  onValueAdded = view.once("ruleview-changed");
   // the input value should already be empty, but let's make it explicit
   inplaceEditor(view.styleDocument.activeElement).input.value = "";
   EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);
-  await onModifications;
+  await onValueAdded;
 
   is(
     ruleEditor.rule.textProps.length,

@@ -34,15 +34,15 @@ add_task(async function () {
   await focusEditableField(view, propEditor.valueSpan);
 
   info("Deleting all the text out of a value field");
-  const onRuleViewChanged = view.once("ruleview-changed");
+  let onRuleViewChanged = view.once("ruleview-changed");
   await sendKeysAndWaitForFocus(view, ruleEditor.element, ["DELETE", "TAB"]);
   await onRuleViewChanged;
 
   info("Pressing enter a couple times to cycle through editors");
   await sendKeysAndWaitForFocus(view, ruleEditor.element, ["TAB"]);
-  const onModifications = view.once("property-value-updated");
+  onRuleViewChanged = view.once("ruleview-changed");
   await sendKeysAndWaitForFocus(view, ruleEditor.element, ["TAB"]);
-  await onModifications;
+  await onRuleViewChanged;
 
   isnot(propEditor.nameSpan.style.display, "none", "The name span is visible");
   is(ruleEditor.rule.textProps.length, 2, "Correct number of props");

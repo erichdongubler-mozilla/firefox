@@ -83,10 +83,7 @@ async function testEditProperty(view, rule, name, value, isValid) {
   is(inplaceEditor(prop.editor.valueSpan), editor, "Focus moved to the value.");
 
   info("Entering a new value, including ; to commit and blur the value");
-  // Depending on the existing value, we may trigger a full ruleview update or only a light property one.
-  const onValueDone = view.once(
-    prop.value == value ? "property-value-updated" : "ruleview-changed"
-  );
+  const onValueDone = view.once("ruleview-changed");
   const onBlur = once(input, "blur");
   EventUtils.sendString(value + ";", doc.defaultView);
   await onBlur;

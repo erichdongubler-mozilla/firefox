@@ -1044,7 +1044,7 @@ class FontInspector {
    * Preview a property value (live) then sync the changes (debounced) to the Rule view.
    *
    * NOTE: Until Bug 1462591 is addressed, all changes are written to the element's inline
-   * style attribute. In this current scenario, Rule.setPropertyValue()
+   * style attribute. In this current scenario, Rule.previewPropertyValue()
    * causes the whole inline style representation in the Rule view to update instead of
    * just previewing the change on the element.
    * We keep the debounced call to syncChanges() because it explicitly calls
@@ -1072,7 +1072,7 @@ class FontInspector {
     this.ruleView.off("property-value-updated", this.onRulePropertyUpdated);
     // Live preview font property changes on the page.
     textProperty.rule
-      .setPropertyValue(textProperty, value, "")
+      .previewPropertyValue(textProperty, value, "")
       .catch(console.error);
 
     // Sync Rule view with changes reflected on the page (debounced).

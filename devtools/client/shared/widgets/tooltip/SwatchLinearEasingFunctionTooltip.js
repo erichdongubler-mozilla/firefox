@@ -84,29 +84,6 @@ class SwatchLinearEasingFunctionTooltip extends SwatchBasedEditorTooltip {
     this.preview(newValue);
   }
 
-  /**
-   * Like SwatchBasedEditorTooltip.addSwatch.
-   *
-   * @param {node} swatchEl
-   *        @see SwatchBasedEditorTooltip.addSwatch
-   * @param {object} callbacks
-   *        @see SwatchBasedEditorTooltip.addSwatch
-   * @param {node|undefined} previousSwatchEl
-   *        @see SwatchBasedEditorTooltip.addSwatch
-   */
-  addSwatch(swatchEl, callbacks, previousSwatchEl) {
-    super.addSwatch(swatchEl, callbacks, previousSwatchEl);
-
-    // If we are updating an already rendered and visible swatch,
-    // update the current value DOM reference to the new DOM element.
-    if (
-      previousSwatchEl &&
-      this.ruleViewCurrentLinearValueElement == previousSwatchEl.nextSibling
-    ) {
-      this.ruleViewCurrentLinearValueElement = swatchEl.nextSibling;
-    }
-  }
-
   destroy() {
     super.destroy();
     this.currentFunctionText = null;

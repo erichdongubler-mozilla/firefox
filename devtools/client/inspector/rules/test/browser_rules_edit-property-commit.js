@@ -73,17 +73,17 @@ async function runTestData(view, { value, commitKey, modifiers, expected }) {
   );
 
   info("Entering test data " + value);
-  const onRuleViewChanged = view.once("ruleview-changed");
+  let onRuleViewChanged = view.once("ruleview-changed");
   EventUtils.sendString(value, view.styleWindow);
   view.debounce.flush();
   await onRuleViewChanged;
 
   info("Entering the commit key " + commitKey + " " + modifiers);
-  const onModifications = view.once("property-value-updated");
+  onRuleViewChanged = view.once("ruleview-changed");
   const onBlur = once(editor.input, "blur");
   EventUtils.synthesizeKey(commitKey, modifiers);
   await onBlur;
-  await onModifications;
+  await onRuleViewChanged;
 
   if (commitKey === "VK_ESCAPE") {
     is(

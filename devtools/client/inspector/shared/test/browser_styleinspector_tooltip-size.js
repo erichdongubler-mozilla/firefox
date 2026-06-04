@@ -83,8 +83,8 @@ async function testPickerDimension(ruleView) {
   );
 
   const onHidden = cPicker.tooltip.once("hidden");
-  const onModifications = ruleView.once("property-value-updated");
+  const onRuleViewChanged = ruleView.once("ruleview-changed");
   cPicker.hide();
   await onHidden;
-  await onModifications;
+  await onRuleViewChanged;
 }
