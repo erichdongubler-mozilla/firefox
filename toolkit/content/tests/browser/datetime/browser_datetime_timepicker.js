@@ -193,3 +193,80 @@ add_task(async function test_picker_button_markup_time_picker_off() {
   await SpecialPowers.popPrefEnv();
   BrowserTestUtils.removeTab(testTab);
 });
+
+/**
+ * Test that the time picker enables the correct values when the valid range wraps midnight
+ */
+add_task(async function test_timepicker_wrap_midnight() {
+  info(
+    "Test that the time picker enables the correct values when the valid range wraps midnight"
+  );
+  const maxValue = "01:00";
+  const minValue = "23:00";
+  const inputValue = "00:00";
+
+  await helper.openPicker(
+    `data:text/html, <input type='time' value="${inputValue}" max="${maxValue}" min="${minValue}">`
+  );
+
+  let hours = [
+    ...new Set(
+      helper
+        .getChildren(SPINNER_HOUR)
+        .filter(item => !item.classList.contains("disabled"))
+        .map(item => item.textContent)
+    ),
+  ];
+  const dayPeriods = [
+    ...new Set(
+      helper
+        .getChildren(SPINNER_TIME)
+        .filter(item => !item.classList.contains("disabled"))
+        .map(item => item.textContent)
+    ),
+  ];
+
+  Assert.deepEqual(
+    hours,
+    ["12", "1"],
+    "The valid AM hours are available in the picker"
+  );
+
+  Assert.deepEqual(
+    dayPeriods,
+    ["AM", "PM"],
+    "The valid day periods are available in the picker"
+  );
+
+  // Move focus to the day period spinner and select PM
+  EventUtils.synthesizeKey("KEY_Tab", {});
+  EventUtils.synthesizeKey("KEY_Tab", {});
+  EventUtils.synthesizeKey("KEY_ArrowDown", {});
+
+  const spinnerTime = helper.getElement(SPINNER_TIME);
+  await BrowserTestUtils.waitForMutationCondition(
+    spinnerTime,
+    { attributeFilter: ["aria-valuenow"] },
+    () => {
+      return spinnerTime.ariaValueNow == "12";
+    },
+    `Should change to 12, instead got ${spinnerTime.ariaValueNow}`
+  );
+
+  hours = [
+    ...new Set(
+      helper
+        .getChildren(SPINNER_HOUR)
+        .filter(item => !item.classList.contains("disabled"))
+        .map(item => item.textContent)
+    ),
+  ];
+
+  Assert.deepEqual(
+    hours,
+    ["11"],
+    "The valid PM hours are available in the picker"
+  );
+
+  await helper.tearDown();
+});

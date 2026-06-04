@@ -12,6 +12,7 @@
  *
  * @param {object} props
  *        {
+ *          {String} type: "date", "time", or "datetime-local"
  *          {Date} min
  *          {Date} max
  *          {Number} step
@@ -85,7 +86,7 @@ function TimeKeeper(props) {
      *        }
      */
     setState(timeState) {
-      const { min, max } = this.props;
+      const { type, min, max } = this.props;
       const { hour, minute, second, millisecond } = timeState;
 
       if (hour != undefined) {
@@ -102,7 +103,12 @@ function TimeKeeper(props) {
       }
 
       this.state.isOffStep = this._isOffStep(this.state.time);
-      this.state.isOutOfRange = this.state.time < min || this.state.time > max;
+      // If type="time" and min > max, the valid range wraps across midnight.
+      // Otherwise, the valid range is between min and max.
+      this.state.isOutOfRange =
+        type == "time" && min > max
+          ? this.state.time < min && this.state.time > max
+          : this.state.time < min || this.state.time > max;
       this.state.isInvalid = this.state.isOutOfRange || this.state.isOffStep;
 
       this._setRanges(this.dayPeriod, this.hour, this.minute, this.second);
@@ -305,7 +311,7 @@ function TimeKeeper(props) {
      *         }
      */
     _getSteps(startValue, endValue, minStep, formatter) {
-      const { min, max, step } = this.props;
+      const { type, min, max, step } = this.props;
       // The timeStep should be big enough so that there won't be
       // duplications. Ex: minimum step for minute should be 60000ms,
       // if smaller than that, next step might return the same minute.
@@ -326,9 +332,13 @@ function TimeKeeper(props) {
           value: formatter(time),
           // Check if the value is within the min and max. If it's out of range,
           // also check for the case when minStep is too large, and has stepped out
-          // of range when it should be enabled.
+          // of range when it should be enabled. If type="time" and min > max, the
+          // valid values wrap across midnight.
           enabled:
             (time >= min.valueOf() && time <= max.valueOf()) ||
+            (type == "time" &&
+              min > max &&
+              (time >= min.valueOf() || time <= max.valueOf())) ||
             (time > maxValue &&
               startValue <= maxValue &&
               endValue >= maxValue &&
