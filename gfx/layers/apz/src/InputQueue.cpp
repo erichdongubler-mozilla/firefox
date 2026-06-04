@@ -192,6 +192,7 @@ APZEventResult InputQueue::ReceiveTouchInput(
     // ordering guarantees that.
     if (aInitialTouchMove == InitialTouchMove::Yes &&
         aFlags.mDispatchToContent &&
+        !block->IsDuringFastFling() &&
         (!block->HasContentResponded() || !block->IsDefaultPrevented())) {
       block->ResetContentResponseTimerExpired();
       ScheduleMainThreadTimeout(aTarget, block);
