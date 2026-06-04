@@ -2014,6 +2014,15 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
       case SYS_SHUTDOWN:
         return Some(Allow());
 
+#ifdef MOZ_ENABLE_VULKAN_VIDEO
+      // GPU drivers may call bind() while probing display sockets; this does
+      // not enable any connections (no MAY_CONNECT targets in RDD policy) and
+      // is not needed for Vulkan video decode — only avoids seccomp noise
+      // (bug 2021722).
+      case SYS_BIND:
+        return Some(Error(EPERM));
+#endif
+
       case SYS_SOCKET:
         // Hardware-accelerated decode uses EGL to manage hardware surfaces.
         // When initialised it tries to connect to the Wayland server over a
@@ -2048,6 +2057,10 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         static constexpr unsigned long kVideoType =
             static_cast<unsigned long>('V') << _IOC_TYPESHIFT;
 #endif
+#ifdef MOZ_ENABLE_VULKAN_VIDEO
+        static constexpr unsigned long kNvidiaRmType =
+            static_cast<unsigned long>('m') << _IOC_TYPESHIFT;
+#endif
         // nvidia non-tegra uses some ioctls from this range (but not actual
         // fbdev ioctls; nvidia uses values >= 200 for the NR field
         // (low 8 bits))
@@ -2066,6 +2079,9 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         // Allow DRI and DMA-Buf for VA-API. Also allow V4L2 if enabled
         return If(shifted_type == kDrmType, Allow())
             .ElseIf(shifted_type == kDmaBufType, Allow())
+#ifdef MOZ_ENABLE_VULKAN_VIDEO
+            .ElseIf(shifted_type == kNvidiaRmType, Allow())
+#endif
 #ifdef MOZ_ENABLE_V4L2
             .ElseIf(shifted_type == kVideoType, Allow())
 #endif
@@ -2075,7 +2091,11 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
             .ElseIf(shifted_type == kNvidiaNvhostType, Allow())
 #endif  // defined(__aarch64__)
         // Hack for nvidia non-tegra devices, which isn't supported yet:
+#ifdef MOZ_ENABLE_VULKAN_VIDEO
+            .ElseIf(shifted_type == kFbDevType, Allow())
+#else
             .ElseIf(shifted_type == kFbDevType, Error(ENOTTY))
+#endif
             .Else(SandboxPolicyCommon::EvaluateSyscall(sysno));
       }
 
@@ -2130,8 +2150,18 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
       case __NR_fork:
         return Error(ENOSYS);
 #endif
-
-        // Pass through the common policy.
+#ifdef MOZ_ENABLE_VULKAN_VIDEO
+      CASES_FOR_getresuid:
+      CASES_FOR_getresgid:
+        return Allow();
+      CASES_FOR_fcntl: {
+        Arg<int> cmd(1);
+        return Switch(cmd)
+            .Case(F_ADD_SEALS, Allow())
+            .Default(SandboxPolicyCommon::EvaluateSyscall(sysno));
+      }
+#endif
+        // Pass through the common policy for other syscalls
       default:
         return SandboxPolicyCommon::EvaluateSyscall(sysno);
     }
