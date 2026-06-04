@@ -36,8 +36,8 @@ const MacroAssembler& MacroAssemblerRiscv64::asMasm() const {
 
 void MacroAssemblerRiscv64::ma_cmp_set(Register dst, Register lhs, ImmWord imm,
                                        Condition c) {
-  if (imm.value <= INT32_MAX) {
-    ma_cmp_set(dst, lhs, Imm32(uint32_t(imm.value)), c);
+  if (is_int32(imm.value)) {
+    ma_cmp_set(dst, lhs, Imm32(int32_t(imm.value)), c);
   } else {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
