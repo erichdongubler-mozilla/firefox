@@ -267,7 +267,6 @@ class MacroAssemblerRiscv64 : public Assembler {
   void ma_pop(FloatRegister f);
   void ma_push(FloatRegister f);
 
-  Condition ma_cmp(Register rd, Register lhs, Imm32 imm, Condition c);
   void ma_cmp_set(Register dst, Register lhs, ImmWord imm, Condition c);
   void ma_cmp_set(Register dst, Register lhs, ImmPtr imm, Condition c);
   void ma_cmp_set(Register dst, Register lhs, ImmGCPtr imm, Condition c);

@@ -143,74 +143,139 @@ void MacroAssemblerRiscv64::ma_cmp_set(Register dst, Register lhs, Imm32 imm,
         snez(dst, dst);
       }
       break;
-    case Zero:
-    case NonZero:
-    case Signed:
-    case NotSigned:
-      MOZ_CRASH("Invalid condition.");
-    default:
-      Condition cond = ma_cmp(dst, lhs, imm, c);
-      MOZ_ASSERT(cond == Equal || cond == NotEqual);
-
-      if (cond == Equal) {
+    case Above: {
+      if (imm.value == -1) {
+        // Always false.
+        mv(dst, zero);
+      } else if (imm.value == INT32_MAX) {
+        // True iff any bit in lhs[63:31] is set.
+        srli(dst, lhs, 31);
+        snez(dst, dst);
+      } else if (is_int12(imm.value + 1)) {
+        // lhs > rhs via not(lhs < rhs + 1) if rhs + 1 does not overflow.
+        sltiu(dst, lhs, imm.value + 1);
         NegateBool(dst, dst);
-      }
-  }
-}
-
-Assembler::Condition MacroAssemblerRiscv64::ma_cmp(Register rd, Register lhs,
-                                                   Imm32 imm, Condition c) {
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  MOZ_RELEASE_ASSERT(lhs != scratch);
-
-  switch (c) {
-    case Above:
-    case BelowOrEqual:
-      if (imm.value != 0x7fffffff && is_int12(imm.value + 1) &&
-          imm.value != -1) {
-        // lhs <= rhs via lhs < rhs + 1 if rhs + 1 does not overflow
-        sltiu(rd, lhs, imm.value + 1);
-
-        return (c == BelowOrEqual ? NotEqual : Equal);
       } else {
+        // lhs > rhs via rhs < lhs
+        UseScratchRegisterScope temps(this);
+        Register scratch = temps.Acquire();
+
         ma_li(scratch, imm);
-        sltu(rd, scratch, lhs);
-        return (c == BelowOrEqual ? Equal : NotEqual);
+        sltu(dst, scratch, lhs);
       }
-    case AboveOrEqual:
-    case Below:
+      break;
+    }
+    case BelowOrEqual: {
+      if (imm.value == -1) {
+        // Always true.
+        ma_li(dst, Imm32(1));
+      } else if (imm.value == INT32_MAX) {
+        // True iff no bit in lhs[63:31] is set.
+        srli(dst, lhs, 31);
+        seqz(dst, dst);
+      } else if (is_int12(imm.value + 1)) {
+        // lhs <= rhs via lhs < rhs + 1 if rhs + 1 does not overflow.
+        sltiu(dst, lhs, imm.value + 1);
+      } else {
+        // lhs <= rhs via lhs < rhs + 1 if rhs + 1 does not overflow.
+        UseScratchRegisterScope temps(this);
+        Register scratch = temps.Acquire();
+
+        ma_li(scratch, Imm32(imm.value + 1));
+        sltu(dst, lhs, scratch);
+      }
+      break;
+    }
+    case AboveOrEqual: {
       if (is_int12(imm.value)) {
-        sltiu(rd, lhs, imm.value);
+        // lhs >= rhs via not(lhs < rhs).
+        sltiu(dst, lhs, imm.value);
+        NegateBool(dst, dst);
+      } else if (imm.value == INT32_MIN) {
+        // True iff any bit in lhs[63:31] is set.
+        srli(dst, lhs, 31);
+        snez(dst, dst);
       } else {
-        ma_li(scratch, imm);
-        sltu(rd, lhs, scratch);
+        // lhs >= rhs via (rhs - 1 < lhs) if rhs - 1 does not overflow.
+        UseScratchRegisterScope temps(this);
+        Register scratch = temps.Acquire();
+
+        ma_li(scratch, Imm32(imm.value - 1));
+        sltu(dst, scratch, lhs);
       }
-      return (c == AboveOrEqual ? Equal : NotEqual);
-    case GreaterThan:
-    case LessThanOrEqual:
-      if (imm.value != 0x7fffffff && is_int12(imm.value + 1)) {
+      break;
+    }
+    case Below: {
+      if (is_int12(imm.value)) {
+        sltiu(dst, lhs, imm.value);
+      } else {
+        UseScratchRegisterScope temps(this);
+        Register scratch = temps.Acquire();
+
+        ma_li(scratch, imm);
+        sltu(dst, lhs, scratch);
+      }
+      break;
+    }
+    case GreaterThan: {
+      if (imm.value != INT32_MAX && is_int12(imm.value + 1)) {
+        // lhs > rhs via not(lhs < rhs + 1) if rhs + 1 does not overflow.
+        slti(dst, lhs, imm.value + 1);
+        NegateBool(dst, dst);
+      } else {
+        // lhs > rhs via rhs < lhs
+        UseScratchRegisterScope temps(this);
+        Register scratch = temps.Acquire();
+
+        ma_li(scratch, imm);
+        slt(dst, scratch, lhs);
+      }
+      break;
+    }
+    case LessThanOrEqual: {
+      if (imm.value != INT32_MAX && is_int12(imm.value + 1)) {
+        // lhs <= rhs via lhs < rhs + 1 if rhs + 1 does not overflow.
+        slti(dst, lhs, imm.value + 1);
+      } else {
         // lhs <= rhs via lhs < rhs + 1.
-        slti(rd, lhs, imm.value + 1);
-        return (c == LessThanOrEqual ? NotEqual : Equal);
-      } else {
-        ma_li(scratch, imm);
-        slt(rd, scratch, lhs);
-        return (c == LessThanOrEqual ? Equal : NotEqual);
+        UseScratchRegisterScope temps(this);
+        Register scratch = temps.Acquire();
+
+        ma_li(scratch, Imm64(int64_t(imm.value) + 1));
+        slt(dst, lhs, scratch);
       }
-    case GreaterThanOrEqual:
-    case LessThan:
+      break;
+    }
+    case GreaterThanOrEqual: {
       if (is_int12(imm.value)) {
-        slti(rd, lhs, imm.value);
+        // lhs >= rhs via not(lhs < rhs).
+        slti(dst, lhs, imm.value);
+        NegateBool(dst, dst);
       } else {
-        ma_li(scratch, imm);
-        slt(rd, lhs, scratch);
+        // lhs >= rhs via (rhs - 1 < lhs).
+        UseScratchRegisterScope temps(this);
+        Register scratch = temps.Acquire();
+
+        ma_li(scratch, Imm64(int64_t(imm.value) - 1));
+        slt(dst, scratch, lhs);
       }
-      return (c == GreaterThanOrEqual ? Equal : NotEqual);
+      break;
+    }
+    case LessThan: {
+      if (is_int12(imm.value)) {
+        slti(dst, lhs, imm.value);
+      } else {
+        UseScratchRegisterScope temps(this);
+        Register scratch = temps.Acquire();
+
+        ma_li(scratch, imm);
+        slt(dst, lhs, scratch);
+      }
+      break;
+    }
     default:
       MOZ_CRASH("Invalid condition.");
   }
-  return Always;
 }
 
 void MacroAssemblerRiscv64::ma_cmp_set(Register dst, Register lhs, Register rhs,
