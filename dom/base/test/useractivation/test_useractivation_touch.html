@@ -1,0 +1,87 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>User activation test: touch event</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<script src="/tests/SimpleTest/EventUtils.js"></script>
+<script src="/tests/SimpleTest/paint_listener.js"></script>
+<script src="/tests/gfx/layers/apz/test/mochitest/apz_test_utils.js"></script>
+<link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<div id="scroller" style="width: 100%; height: 500px; overflow-y: scroll;">
+<div id="content" style="width: 100%; height: 2000px; background-color: green;"></div>
+<script>
+
+const scroller = document.getElementById("scroller");
+
+function waitForEventAndCheck(aElement, aEventType, aExpectedActivation) {
+  return new Promise((aResolve) => {
+    aElement.addEventListener(aEventType, (e) => {
+      info(`Received ${aEventType} event`);
+      is(navigator.userActivation.isActive, aExpectedActivation,
+         `${aEventType} event should ${aExpectedActivation ? "" : "not "}have activation`);
+      SpecialPowers.wrap(document).clearUserGestureActivation();
+      aResolve();
+    }, { once: true});
+  });
+}
+
+add_setup(async function init() {
+  await SpecialPowers.pushPrefEnv({
+    // We need to synthesize touch events from the parent process in order for
+    // scrolling to occur.
+    set: [["test.events.async.enabled", true]],
+  });
+  await waitUntilApzStable();
+});
+
+add_task(async function test_touch_not_canceled() {
+  SpecialPowers.wrap(document).clearUserGestureActivation();
+
+  scroller.addEventListener("touchmove", (event) => {
+    event.preventDefault();
+  }, { once: true });
+
+  let promise = waitForEventAndCheck(document, "pointerdown", false);
+  synthesizeTouchAtPoint(50, 50, { type: "touchstart" });
+  await promiseApzFlushedRepaints();
+  await promise;
+
+  promise = Promise.all([waitForEventAndCheck(document, "pointerup", true),
+                         waitForEventAndCheck(document, "touchend", false)]);
+  synthesizeTouchAtPoint(50, 40, { type: "touchmove" });
+  synthesizeTouchAtPoint(50, 30, { type: "touchmove" });
+  synthesizeTouchAtPoint(50, 20, { type: "touchmove" });
+  synthesizeTouchAtPoint(50, 10, { type: "touchend" });
+  await promise;
+});
+
+add_task(async function test_touch_tap() {
+  SpecialPowers.wrap(document).clearUserGestureActivation();
+
+  let promise = Promise.all([waitForEventAndCheck(document, "pointerdown", false),
+                             waitForEventAndCheck(document, "pointerup", true),
+                             waitForEventAndCheck(document, "touchend", false)]);
+  synthesizeTouchAtPoint(0, 0, {});
+  await promise;
+});
+
+add_task(async function test_touch_canceled() {
+  SpecialPowers.wrap(document).clearUserGestureActivation();
+
+  let promise = waitForEventAndCheck(document, "touchstart", false);
+  synthesizeTouchAtPoint(50, 50, { type: "touchstart" });
+  await promise;
+
+  promise = Promise.all([waitForEventAndCheck(document, "pointercancel", false),
+                         waitForEventAndCheck(document, "touchend", false)]);
+  synthesizeTouchAtPoint(50, 40, { type: "touchmove" });
+  synthesizeTouchAtPoint(50, 30, { type: "touchmove" });
+  synthesizeTouchAtPoint(50, 20, { type: "touchmove" });
+  synthesizeTouchAtPoint(50, 10, { type: "touchend" });
+  await promise;
+});
+
+</script>
+</body>
