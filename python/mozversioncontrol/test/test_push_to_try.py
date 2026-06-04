@@ -76,7 +76,7 @@ def test_push_to_try(repo, monkeypatch):
                 os.path.join(vcs.path, "extra-file"),
                 os.path.join(vcs.path, "other", "extra-file"),
             ),
-            (str(tool), "push-to-try", "-m", commit_message),
+            (str(tool), "push-to-try", "--message", commit_message),
             (str(tool), "revert", "--all"),
         ]
         expected_inputs = []
@@ -314,7 +314,7 @@ def test_push_to_git_try_bookmark_persists(repo, mocker):
         pytest.skip("bookmark persistence only applies to jj")
 
     subprocess.check_call(
-        ["jj", "new", "-m", "test commit"],
+        ["jj", "new", "--message", "test commit"],
         cwd=repo.dir,
         env={**os.environ, "JJ_CONFIG": ""},
     )
