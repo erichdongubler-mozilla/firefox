@@ -456,10 +456,13 @@ nsresult ElementInternals::SetAttr(nsAtom* aName, const nsAString& aValue) {
   Document* document = mTarget->GetComposedDoc();
   mozAutoDocUpdate updateBatch(document, true);
 
+#ifdef ACCESSIBILITY
   const AttrModType modType =
       mAttrs.HasAttr(aName) ? AttrModType::Modification : AttrModType::Addition;
-  MutationObservers::NotifyARIAAttributeDefaultWillChange(mTarget, aName,
-                                                          modType);
+  if (auto* accService = GetAccService()) {
+    accService->NotifyARIAAttributeDefaultWillChange(mTarget, aName, modType);
+  }
+#endif
 
   nsAttrValue attrValue(aValue);
   nsresult rs = NS_OK;
@@ -474,8 +477,11 @@ nsresult ElementInternals::SetAttr(nsAtom* aName, const nsAString& aValue) {
   }
   nsMutationGuard::DidMutate();
 
-  MutationObservers::NotifyARIAAttributeDefaultChanged(mTarget, aName, modType);
-
+#ifdef ACCESSIBILITY
+  if (auto* accService = GetAccService()) {
+    accService->NotifyARIAAttributeDefaultChanged(mTarget, aName, modType);
+  }
+#endif
   return rs;
 }
 
