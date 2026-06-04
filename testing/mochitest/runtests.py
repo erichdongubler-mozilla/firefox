@@ -2691,6 +2691,11 @@ toolbar#nav-bar {
             self.virtualAudioNodeIdList = []
 
     def dumpScreen(self, utilityPath):
+        if self.message_logger.retry_mode:
+            self.log.info(
+                "Not taking screenshot here: screenshot will be taken on retry if the test still fails"
+            )
+            return
         if self.haveDumpedScreen:
             self.log.info(
                 "Not taking screenshot here: see the one that was previously logged"
