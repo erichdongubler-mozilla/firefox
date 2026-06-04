@@ -109,21 +109,16 @@ inline AsyncTransformMatrix CompleteAsyncTransform(
       aMatrix, PixelCastJustification::MultipleAsyncTransforms);
 }
 
-enum class FastPathApzAwareListener : bool { No, Yes };
-
 struct TargetConfirmationFlags final {
   explicit TargetConfirmationFlags(bool aTargetConfirmed)
       : mTargetConfirmed(aTargetConfirmed),
         mRequiresTargetConfirmation(false),
         mHitScrollbar(false),
         mHitScrollThumb(false),
-        mDispatchToContent(false),
-        mFastPathApzAwareListener(false) {}
+        mDispatchToContent(false) {}
 
   explicit TargetConfirmationFlags(
-      const gfx::CompositorHitTestInfo& aHitTestInfo,
-      FastPathApzAwareListener aFastPathApzAwareListener =
-          FastPathApzAwareListener::No)
+      const gfx::CompositorHitTestInfo& aHitTestInfo)
       : mTargetConfirmed(
             (aHitTestInfo != gfx::CompositorHitTestInvisibleToHit) &&
             (aHitTestInfo & gfx::CompositorHitTestDispatchToContent).isEmpty()),
@@ -135,16 +130,10 @@ struct TargetConfirmationFlags final {
             gfx::CompositorHitTestFlags::eScrollbarThumb)),
         mDispatchToContent(
             !(aHitTestInfo & gfx::CompositorHitTestDispatchToContent)
-                 .isEmpty()),
-        mFastPathApzAwareListener(aFastPathApzAwareListener ==
-                                  FastPathApzAwareListener::Yes) {}
+                 .isEmpty()) {}
 
   DispatchToContent NeedDispatchToContent() const {
     return mDispatchToContent ? DispatchToContent::Yes : DispatchToContent::No;
-  }
-
-  bool IsFastPathApzAwareDispatchToContent() const {
-    return mDispatchToContent && mFastPathApzAwareListener;
   }
 
   bool mTargetConfirmed : 1;
@@ -152,7 +141,6 @@ struct TargetConfirmationFlags final {
   bool mHitScrollbar : 1;
   bool mHitScrollThumb : 1;
   bool mDispatchToContent : 1;
-  bool mFastPathApzAwareListener : 1;
 };
 
 enum class AsyncTransformComponent { eLayout, eVisual };

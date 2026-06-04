@@ -36,8 +36,7 @@ InputQueue::~InputQueue() { mQueuedInputs.Clear(); }
 APZEventResult InputQueue::ReceiveInputEvent(
     const RefPtr<AsyncPanZoomController>& aTarget,
     TargetConfirmationFlags aFlags, InputData& aEvent,
-    const Maybe<nsTArray<TouchBehaviorFlags>>& aTouchBehaviors,
-    InitialTouchMove aInitialTouchMove) {
+    const Maybe<nsTArray<TouchBehaviorFlags>>& aTouchBehaviors) {
   APZThreadUtils::AssertOnControllerThread();
 
   AutoRunImmediateTimeout timeoutRunner{this};
@@ -45,8 +44,7 @@ APZEventResult InputQueue::ReceiveInputEvent(
   switch (aEvent.mInputType) {
     case MULTITOUCH_INPUT: {
       const MultiTouchInput& event = aEvent.AsMultiTouchInput();
-      return ReceiveTouchInput(aTarget, aFlags, event, aTouchBehaviors,
-                               aInitialTouchMove);
+      return ReceiveTouchInput(aTarget, aFlags, event, aTouchBehaviors);
     }
 
     case SCROLLWHEEL_INPUT: {
@@ -105,8 +103,7 @@ APZEventResult InputQueue::ReceiveInputEvent(
 APZEventResult InputQueue::ReceiveTouchInput(
     const RefPtr<AsyncPanZoomController>& aTarget,
     TargetConfirmationFlags aFlags, const MultiTouchInput& aEvent,
-    const Maybe<nsTArray<TouchBehaviorFlags>>& aTouchBehaviors,
-    InitialTouchMove aInitialTouchMove) {
+    const Maybe<nsTArray<TouchBehaviorFlags>>& aTouchBehaviors) {
   APZEventResult result(aTarget, aFlags);
 
   RefPtr<TouchBlockState> block;
@@ -177,27 +174,6 @@ APZEventResult InputQueue::ReceiveTouchInput(
 
     INPQ_LOG("received new touch event (type=%d) in block %p\n", aEvent.mType,
              block.get());
-
-    // If this is the first touch-move of the block and it needs to be
-    // dispatched to content (e.g. because a touch-start handler has just
-    // installed an APZ-aware touchmove listener), wait for a content
-    // response before processing it so that the new listener has a chance
-    // to preventDefault().
-    //
-    // The "!HasContentResponded() || !IsDefaultPrevented()" short-circuit
-    // also covers the case where the touch-start was not preventDefault-ed
-    // and content has already responded: we still want to wait again on
-    // the first touch-move. Note that IsDefaultPrevented() must not be
-    // called when HasContentResponded() is false; the short-circuit
-    // ordering guarantees that.
-    if (aInitialTouchMove == InitialTouchMove::Yes &&
-        aFlags.IsFastPathApzAwareDispatchToContent() &&
-        !block->IsDuringFastFling() &&
-        (!block->HasContentResponded() || !block->IsDefaultPrevented())) {
-      block->ResetContentResponseTimerExpired();
-      ScheduleMainThreadTimeout(aTarget, block);
-      waitingForContentResponse = true;
-    }
   }
 
   result.mInputBlockId = block->GetBlockId();
@@ -221,13 +197,29 @@ APZEventResult InputQueue::ReceiveTouchInput(
     result.SetStatusForFastFling(*block, aFlags, consumableFlags, target);
   } else {  // handling depends on ArePointerEventsConsumable()
     bool consumable = consumableFlags.IsConsumable();
-    TouchBlockState::InSlop wasInSlop = block->IsInSlop();
+    const bool wasInSlop = block->IsInSlop();
     if (block->UpdateSlopState(aEvent, consumable)) {
       INPQ_LOG("dropping event due to block %p being in %sslop\n", block.get(),
                consumable ? "" : "mini-");
       result.SetStatusAsConsumeNoDefault();
     } else {
-      if (block->NeedsContentResponseAfterLongTap(aEvent, wasInSlop)) {
+      // If all following conditions are met, we need to wait for a content
+      // response (again);
+      //  1) this is the first touch-move event bailing out from in-slop state
+      //     after a long-tap event has been fired
+      //  2) there's any APZ-aware event listeners
+      //  3) the event block hasn't yet been prevented
+      //
+      // An example scenario;
+      //  in the content there are two event listeners for `touchstart` and
+      //  `touchmove` respectively, and doing `preventDefault()` in the
+      //  `touchmove` event listener. Then if the user kept touching at a point
+      //  until a long-tap event happens, then if the user started moving their
+      // finger, we have to wait for a content response twice, one is for
+      // `touchstart` and one is for `touchmove`.
+      if (wasInSlop && aEvent.mType == MultiTouchInput::MULTITOUCH_MOVE &&
+          (block->WasLongTapProcessed() || block->IsWaitingLongTapResult()) &&
+          !block->IsTargetOriginallyConfirmed() && !block->ShouldDropEvents()) {
         INPQ_LOG(
             "bailing out from in-stop state in block %p after a long-tap "
             "happened\n",
@@ -252,9 +244,8 @@ APZEventResult InputQueue::ReceiveTouchInput(
   int32_t longTapTimeout = StaticPrefs::ui_click_hold_context_menus_delay();
   int32_t contentTimeout = StaticPrefs::apz_content_response_timeout();
   if (waitingForContentResponse && longTapTimeout < contentTimeout &&
-      bool(block->IsInSlop()) && GestureEventListener::IsLongTapEnabled()) {
-    MOZ_ASSERT(aEvent.mType == MultiTouchInput::MULTITOUCH_START ||
-               aInitialTouchMove == InitialTouchMove::Yes);
+      block->IsInSlop() && GestureEventListener::IsLongTapEnabled()) {
+    MOZ_ASSERT(aEvent.mType == MultiTouchInput::MULTITOUCH_START);
     MOZ_ASSERT(!block->IsDuringFastFling());
     RefPtr<Runnable> maybeLongTap = NewRunnableMethod<uint64_t>(
         "layers::InputQueue::MaybeLongTapTimeout", this,
@@ -871,8 +862,7 @@ void InputQueue::MainThreadTimeout(uint64_t aInputBlockId) {
     NS_WARNING("input block is not a cancelable block");
   }
   if (success) {
-    if (inputBlock->AsTouchBlock() &&
-        bool(inputBlock->AsTouchBlock()->IsInSlop())) {
+    if (inputBlock->AsTouchBlock() && inputBlock->AsTouchBlock()->IsInSlop()) {
       // If the touch block is still in slop, it's still possible this block
       // needs to send a touchmove to content after the long-press gesture
       // since preventDefault() in a touchmove event handler should stop
@@ -895,7 +885,7 @@ void InputQueue::MaybeLongTapTimeout(uint64_t aInputBlockId) {
 
   InputBlockState* inputBlock = FindBlockForId(aInputBlockId, nullptr);
   MOZ_ASSERT(!inputBlock || inputBlock->AsTouchBlock());
-  if (inputBlock && bool(inputBlock->AsTouchBlock()->IsInSlop())) {
+  if (inputBlock && inputBlock->AsTouchBlock()->IsInSlop()) {
     // If the block is still in slop, it won't have sent a touchmove to content
     // and so content will not have sent a content response. But also it means
     // the touchstart should trigger a long-press gesture so let's force the
