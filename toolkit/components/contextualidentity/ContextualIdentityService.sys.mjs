@@ -8,6 +8,46 @@ const LAST_CONTAINERS_JSON_VERSION = 5;
 const SAVE_DELAY_MS = 1500;
 const CONTEXTUAL_IDENTITY_ENABLED_PREF = "privacy.userContext.enabled";
 
+// Canonical container colors and icons. Adding/renaming an entry here must be
+// mirrored in (kept in sync by browser_container_definitions_in_sync.js):
+//   - usercontext.css: .identity-color-* / .identity-icon-* rules
+//   - the matching content/<icon>.svg file
+//   - toolkit/global/contextual-identity.ftl: user-context-color-* /
+//     user-context-icon-* labels
+//   - enterprisepolicies/schemas/policies-schema.json: Containers.Default enums
+// Reordering only affects the swatch order and is local to this file.
+const CONTAINER_COLORS = [
+  { name: "blue", code: "#37adff", l10nId: "user-context-color-blue" },
+  {
+    name: "turquoise",
+    code: "#00c79a",
+    l10nId: "user-context-color-turquoise",
+  },
+  { name: "green", code: "#51cd00", l10nId: "user-context-color-green" },
+  { name: "yellow", code: "#ffcb00", l10nId: "user-context-color-yellow" },
+  { name: "orange", code: "#ff9f00", l10nId: "user-context-color-orange" },
+  { name: "red", code: "#ff613d", l10nId: "user-context-color-red" },
+  { name: "pink", code: "#ff4bda", l10nId: "user-context-color-pink" },
+  { name: "purple", code: "#af51f5", l10nId: "user-context-color-purple" },
+  { name: "toolbar", code: "#7c7c7d", l10nId: "user-context-color-toolbar" },
+];
+
+const CONTAINER_ICONS = [
+  { name: "fingerprint", l10nId: "user-context-icon-fingerprint" },
+  { name: "briefcase", l10nId: "user-context-icon-briefcase" },
+  { name: "dollar", l10nId: "user-context-icon-dollar" },
+  { name: "cart", l10nId: "user-context-icon-cart" },
+  { name: "vacation", l10nId: "user-context-icon-vacation" },
+  { name: "gift", l10nId: "user-context-icon-gift" },
+  { name: "food", l10nId: "user-context-icon-food" },
+  { name: "fruit", l10nId: "user-context-icon-fruit" },
+  { name: "pet", l10nId: "user-context-icon-pet" },
+  { name: "tree", l10nId: "user-context-icon-tree" },
+  { name: "chill", l10nId: "user-context-icon-chill" },
+  { name: "circle", l10nId: "user-context-icon-circle" },
+  { name: "fence", l10nId: "user-context-icon-fence" },
+];
+
 const lazy = {};
 
 ChromeUtils.defineLazyGetter(lazy, "l10n", function () {
@@ -317,7 +357,7 @@ _ContextualIdentityService.prototype = {
     this.ensureDataReady();
 
     let identity = this._identities.find(
-      identity => identity.userContextId == userContextId && identity.public
+      i => i.userContextId == userContextId && i.public
     );
 
     if (!name.trim()) {
@@ -570,6 +610,43 @@ _ContextualIdentityService.prototype = {
     }
 
     return "";
+  },
+
+  get containerColors() {
+    return CONTAINER_COLORS.map(color => color.name);
+  },
+
+  get containerIcons() {
+    return CONTAINER_ICONS.map(icon => icon.name);
+  },
+
+  getContainerColorCode(color) {
+    return CONTAINER_COLORS.find(entry => entry.name === color)?.code ?? null;
+  },
+
+  getContainerIconURL(icon) {
+    if (!CONTAINER_ICONS.some(entry => entry.name === icon)) {
+      return null;
+    }
+    return `resource://usercontext-content/${icon}.svg`;
+  },
+
+  getContainerColorL10nId(color) {
+    return CONTAINER_COLORS.find(entry => entry.name === color)?.l10nId ?? null;
+  },
+
+  getContainerIconL10nId(icon) {
+    return CONTAINER_ICONS.find(entry => entry.name === icon)?.l10nId ?? null;
+  },
+
+  getContainerColorLabel(color) {
+    let l10nId = this.getContainerColorL10nId(color);
+    return l10nId ? this.formatContextLabel(l10nId) : "";
+  },
+
+  getContainerIconLabel(icon) {
+    let l10nId = this.getContainerIconL10nId(icon);
+    return l10nId ? this.formatContextLabel(l10nId) : "";
   },
 
   setTabStyle(tab) {

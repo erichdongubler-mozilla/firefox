@@ -24,34 +24,6 @@ function setTitle() {
 setTitle();
 
 let gContainersManager = {
-  icons: [
-    "fingerprint",
-    "briefcase",
-    "dollar",
-    "cart",
-    "vacation",
-    "gift",
-    "food",
-    "fruit",
-    "pet",
-    "tree",
-    "chill",
-    "circle",
-    "fence",
-  ],
-
-  colors: [
-    "blue",
-    "turquoise",
-    "green",
-    "yellow",
-    "orange",
-    "red",
-    "pink",
-    "purple",
-    "toolbar",
-  ],
-
   onLoad() {
     let params = window.arguments[0] || {};
     this.init(params);
@@ -97,7 +69,7 @@ let gContainersManager = {
     radiogroup.setAttribute("id", "icon");
     radiogroup.className = "icon-buttons radio-buttons";
 
-    for (let icon of this.icons) {
+    for (let icon of ContextualIdentityService.containerIcons) {
       let iconSwatch = document.createXULElement("radio");
       iconSwatch.id = "iconbutton-" + icon;
       iconSwatch.name = "icon";
@@ -108,7 +80,10 @@ let gContainersManager = {
         iconSwatch.setAttribute("selected", true);
       }
 
-      document.l10n.setAttributes(iconSwatch, `containers-icon-${icon}`);
+      document.l10n.setAttributes(
+        iconSwatch,
+        ContextualIdentityService.getContainerIconL10nId(icon)
+      );
       let iconElement = document.createXULElement("hbox");
       iconElement.className = "userContext-icon";
       iconElement.classList.add("identity-icon-" + icon);
@@ -125,7 +100,7 @@ let gContainersManager = {
     radiogroup.setAttribute("id", "color");
     radiogroup.className = "radio-buttons";
 
-    for (let color of this.colors) {
+    for (let color of ContextualIdentityService.containerColors) {
       let colorSwatch = document.createXULElement("radio");
       colorSwatch.id = "colorswatch-" + color;
       colorSwatch.name = "color";
@@ -136,7 +111,10 @@ let gContainersManager = {
         colorSwatch.setAttribute("selected", true);
       }
 
-      document.l10n.setAttributes(colorSwatch, `containers-color-${color}`);
+      document.l10n.setAttributes(
+        colorSwatch,
+        ContextualIdentityService.getContainerColorL10nId(color)
+      );
       let iconElement = document.createXULElement("hbox");
       iconElement.className = "userContext-icon";
       iconElement.classList.add("identity-icon-circle");
@@ -153,11 +131,11 @@ let gContainersManager = {
     let color = document.getElementById("color").value;
     let name = document.getElementById("name").value;
 
-    if (!this.icons.includes(icon)) {
+    if (!ContextualIdentityService.getContainerIconURL(icon)) {
       throw new Error("Internal error. The icon value doesn't match.");
     }
 
-    if (!this.colors.includes(color)) {
+    if (!ContextualIdentityService.getContainerColorCode(color)) {
       throw new Error("Internal error. The color value doesn't match.");
     }
 

@@ -3465,12 +3465,14 @@ export class UrlbarView {
         let iconModeLabel = this.#createElement("div");
         iconModeLabel.classList.add("urlbarView-userContext-iconMode");
         actionNode.appendChild(iconModeLabel);
-        if (identity.icon) {
+        let iconURL = lazy.ContextualIdentityService.getContainerIconURL(
+          identity.icon
+        );
+        if (iconURL) {
           let userContextIcon = this.#createElement("img");
           userContextIcon.classList.add("urlbarView-userContext-icon");
           userContextIcon.setAttribute("alt", label);
-          userContextIcon.src =
-            "resource://usercontext-content/" + identity.icon + ".svg";
+          userContextIcon.src = iconURL;
           iconModeLabel.appendChild(userContextIcon);
         }
         actionNode.setAttribute("tooltiptext", label);

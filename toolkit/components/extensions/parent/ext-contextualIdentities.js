@@ -26,46 +26,20 @@ const CONTAINER_PREF_INSTALL_DEFAULTS = {
 
 const CONTAINERS_ENABLED_SETTING_NAME = "privacy.containers";
 
-const CONTAINER_COLORS = new Map([
-  ["blue", "#37adff"],
-  ["turquoise", "#00c79a"],
-  ["green", "#51cd00"],
-  ["yellow", "#ffcb00"],
-  ["orange", "#ff9f00"],
-  ["red", "#ff613d"],
-  ["pink", "#ff4bda"],
-  ["purple", "#af51f5"],
-  ["toolbar", "#7c7c7d"],
-]);
-
-const CONTAINER_ICONS = new Set([
-  "briefcase",
-  "cart",
-  "circle",
-  "dollar",
-  "fence",
-  "fingerprint",
-  "gift",
-  "vacation",
-  "food",
-  "fruit",
-  "pet",
-  "tree",
-  "chill",
-]);
-
 function getContainerIcon(iconName) {
-  if (!CONTAINER_ICONS.has(iconName)) {
+  const iconUrl = ContextualIdentityService.getContainerIconURL(iconName);
+  if (!iconUrl) {
     throw new ExtensionError(`Invalid icon ${iconName} for container`);
   }
-  return `resource://usercontext-content/${iconName}.svg`;
+  return iconUrl;
 }
 
 function getContainerColor(colorName) {
-  if (!CONTAINER_COLORS.has(colorName)) {
+  const colorCode = ContextualIdentityService.getContainerColorCode(colorName);
+  if (!colorCode) {
     throw new ExtensionError(`Invalid color name ${colorName} for container`);
   }
-  return CONTAINER_COLORS.get(colorName);
+  return colorCode;
 }
 
 const convertIdentity = identity => {
