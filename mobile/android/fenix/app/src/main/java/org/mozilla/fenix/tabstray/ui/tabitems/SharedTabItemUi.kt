@@ -348,7 +348,7 @@ fun tabItemConditionalBorder(selectionState: TabsTrayItemSelectionState): Border
 @Composable
 @ReadOnlyComposable
 fun tabItemBorderFocused(): BorderStroke {
-    return BorderStroke(width = FirefoxTheme.layout.border.thick, color = MaterialTheme.colorScheme.tertiary)
+    return BorderStroke(width = FirefoxTheme.layout.border.thick, brush = FirefoxTheme.gradients.tabOutline.brush)
 }
 
 /**
