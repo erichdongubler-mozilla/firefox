@@ -77,7 +77,7 @@ def test_push_to_try(repo, monkeypatch):
                 os.path.join(vcs.path, "other", "extra-file"),
             ),
             (str(tool), "push-to-try", "-m", commit_message),
-            (str(tool), "revert", "-a"),
+            (str(tool), "revert", "--all"),
         ]
         expected_inputs = []
     elif repo.vcs == "git":

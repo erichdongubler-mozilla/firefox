@@ -346,7 +346,7 @@ class HgRepository(Repository):
             self.raise_for_missing_extension("push-to-try")
             raise
         finally:
-            self._run("revert", "-a")
+            self._run("revert", "--all")
 
     def get_commits(
         self,
