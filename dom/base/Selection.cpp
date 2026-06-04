@@ -3953,8 +3953,7 @@ void Selection::NotifySelectionListeners() {
     if (mSelectionType == SelectionType::eNormal && RangeCount() && doc) {
       // Focus navigation should start from the new selection, instead
       // of the last focused element.
-      doc->SetPreviouslyFocusedContent(nullptr);
-      doc->SetSelectionMoreRecentThanFocus(true);
+      doc->SetFocusNavigationStartingPoint(nullptr);
     }
   }
 

@@ -983,14 +983,22 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   MOZ_ASSERT(aDocument);
   MOZ_ASSERT(aContent);
 
-  if (auto* prevFocused = aDocument->GetPreviouslyFocusedContent()) {
+  if (auto* startingPoint = aDocument->GetFocusNavigationStartingPoint()) {
+    bool isFlatTreeAncestor = false;
+    for (nsIContent* ancestor :
+         startingPoint->InclusiveFlatTreeAncestorsOfType<nsIContent>()) {
+      if (ancestor == aContent) {
+        isFlatTreeAncestor = true;
+        break;
+      }
+    }
     // Fix up sequential focus navigation starting point when its ancestor is
     // removed. But if we are moving aContent with moveBefore and the focus
     // navigation starting point is inside it, then we don't need to do
     // anything.
-    if ((!aInfo.mNewParent || aDocument->WasFocusedElementRemoved()) &&
-        prevFocused->IsInclusiveFlatTreeDescendantOf(aContent)) {
-      aDocument->SetPreviouslyFocusedContent(aContent, true);
+    if (isFlatTreeAncestor &&
+        (!aInfo.mNewParent || aDocument->WasFocusedElementRemoved())) {
+      aDocument->SetFocusNavigationStartingPoint(aContent, true);
     }
   }
 
@@ -1133,9 +1141,9 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   }
 
   if (!newFocusedElement) {
-    // Ensure that focus navigation continues from the location of the
-    // previously-focused element.
-    aDocument->SetPreviouslyFocusedContent(aContent, true);
+    // Set sequential focus navigation starting point so that focus navigation
+    // continues from the location of the previously focused element.
+    aDocument->SetFocusNavigationStartingPoint(aContent, true);
     NotifyFocusStateChange(previousFocusedElement, nullptr, 0,
                            /* aGettingFocus = */ false, false);
   } else {
@@ -2514,12 +2522,9 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
   bool sendBlurEvent =
       element && element->IsInComposedDoc() && !IsNonFocusableRoot(element);
   if (element) {
-    if (!aIsLeavingDocument) {
-      // Ensure that focus navigation still continues from element.
-      // If we're leaving the document, we will refocus the element
-      // when the document is refocused, so we don't need to do this.
-      element->OwnerDoc()->SetPreviouslyFocusedContent(element);
-    }
+    // Set focus navigation starting point, so that focus navigation still
+    // continues from element.
+    element->OwnerDoc()->SetFocusNavigationStartingPoint(element);
     if (sendBlurEvent) {
       NotifyFocusStateChange(element, aElementToFocus, 0, false, false);
     }
@@ -2844,15 +2849,6 @@ void nsFocusManager::Focus(
     }
     return aElement;
   }();
-
-  if (elementToFocus) {
-    // Don't need previously-focused content anymore, since an element is
-    // focused.
-    Document* doc = elementToFocus->OwnerDoc();
-    doc->SetPreviouslyFocusedContent(nullptr);
-    doc->SetSelectionMoreRecentThanFocus(false);
-  }
-
   if (elementToFocus && !mFocusedElement &&
       GetFocusedBrowsingContext() == aWindow->GetBrowsingContext()) {
     mFocusedElement = elementToFocus;
@@ -2944,6 +2940,12 @@ void nsFocusManager::Focus(
     RefPtr<Element> focusedElement = mFocusedElement;
     UpdateCaret(aFocusChanged && !(aFlags & FLAG_BYMOUSE), aIsNewDocument,
                 focusedElement);
+  }
+
+  if (mFocusedElement) {
+    // Don't need focus navigation starting point anymore,
+    // since an element is focused.
+    mFocusedElement->OwnerDoc()->SetFocusNavigationStartingPoint(nullptr);
   }
 }
 
@@ -3505,48 +3507,6 @@ static nsIContent* GetFlatTreeNextNonDescendant(nsIContent& aContent) {
   return nullptr;
 }
 
-void nsFocusManager::GetSequentialFocusNavigationStartingPoint(
-    Document* aDocument, nsIContent* aFocusedContent, bool aForward,
-    nsIContent** aStartContent, bool* aConsiderStartContent) {
-  *aConsiderStartContent = true;
-  // First consider location of previously-focused content.
-  if (nsIContent* content = aDocument->GetPreviouslyFocusedContent()) {
-    if (aDocument->WasFocusedElementRemoved()) {
-      content = GetFlatTreeNextNonDescendant(*content);
-      *aConsiderStartContent = aForward;
-    } else {
-      *aConsiderStartContent = false;
-    }
-    if (content) {
-      NS_ADDREF(*aStartContent = content);
-      return;
-    }
-  }
-  if (aFocusedContent && !aDocument->IsSelectionMoreRecentThanFocus()) {
-    // If some new element was focused more recently than the selection
-    // was set, we should start there instead.
-    NS_ADDREF(*aStartContent = aFocusedContent);
-    return;
-  }
-  // Now consider selection.
-  RefPtr<nsIContent> selectionStart, selectionEnd;
-  GetSelectionLocation(aDocument, aDocument->GetPresShell(),
-                       getter_AddRefs(selectionStart),
-                       getter_AddRefs(selectionEnd));
-  if (selectionStart) {
-    // If there is something focused, we only want to start from the selection
-    // if it's a flat tree descendant of the focused content.
-    if (!aFocusedContent ||
-        selectionStart->IsInclusiveFlatTreeDescendantOf(aFocusedContent)) {
-      NS_ADDREF(*aStartContent = selectionStart);
-      return;
-    }
-  }
-  // Lastly, if we have no better place to start, just start from the focused
-  // content (if any).
-  NS_IF_ADDREF(*aStartContent = aFocusedContent);
-}
-
 nsresult nsFocusManager::DetermineElementToMoveFocus(
     nsPIDOMWindowOuter* aWindow, nsIContent* aStartContent, int32_t aType,
     bool aNoParentTraversal, bool aNavigateByKey, nsIContent** aNextContent) {
@@ -3639,32 +3599,11 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
   nsIFrame* popupFrame = nullptr;
 
   int32_t tabIndex = forward ? 1 : 0;
-  nsCOMPtr<nsIContent> focusedContent = startContent;
   if (startContent) {
     nsIFrame* frame = startContent->GetPrimaryFrame();
     tabIndex = (frame && !startContent->IsHTMLElement(nsGkAtoms::area))
                    ? frame->IsFocusable().mTabIndex
                    : startContent->IsFocusableWithoutStyle().mTabIndex;
-
-    if (!aStartContent &&
-        (aType == MOVEFOCUS_FORWARD || aType == MOVEFOCUS_BACKWARD)) {
-      bool considerStartingPoint = false;
-      GetSequentialFocusNavigationStartingPoint(doc, focusedContent, forward,
-                                                getter_AddRefs(startContent),
-                                                &considerStartingPoint);
-      // Should always have a starting point, since there is focused content.
-      MOZ_ASSERT(startContent);
-      if (focusedContent != startContent) {
-        // not starting from focused content - ignore tabindex
-        ignoreTabIndex = true;
-        if (considerStartingPoint && startContent->IsElement() &&
-            startContent->GetPrimaryFrame() &&
-            startContent->GetPrimaryFrame()->IsFocusable().IsTabbable()) {
-          NS_ADDREF(*aNextContent = startContent);
-          return NS_OK;
-        }
-      }
-    }
 
     // if the current element isn't tabbable, ignore the tabindex and just
     // look for the next element. The root content won't have a tabindex
@@ -3730,13 +3669,19 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
       // Otherwise, for content shells, start from the location of the caret.
       nsCOMPtr<nsIDocShell> docShell = aWindow->GetDocShell();
       if (docShell && docShell->ItemType() != nsIDocShellTreeItem::typeChrome) {
-        bool considerStartContent = false;
-        RefPtr<nsIContent> endSelectionContent;
-        if (aType == MOVEFOCUS_FORWARD || aType == MOVEFOCUS_BACKWARD) {
-          GetSequentialFocusNavigationStartingPoint(
-              doc, nullptr, forward, getter_AddRefs(startContent),
-              &considerStartContent);
-        } else {
+        startContent = doc->GetFocusNavigationStartingPoint();
+        bool considerStartContent = true;
+        if (aType != MOVEFOCUS_CARET && !forDocumentNavigation &&
+            startContent) {
+          if (doc->WasFocusedElementRemoved()) {
+            startContent = GetFlatTreeNextNonDescendant(*startContent);
+            considerStartContent = forward;
+          } else {
+            considerStartContent = false;
+          }
+        }
+        nsCOMPtr<nsIContent> endSelectionContent;
+        if (!startContent) {
           GetSelectionLocation(doc, presShell, getter_AddRefs(startContent),
                                getter_AddRefs(endSelectionContent));
         }
@@ -3843,22 +3788,6 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
 
       // found a content node to focus.
       if (nextFocus) {
-        if (nextFocus == focusedContent) {
-          // Got back to the original focused content. This can happen with
-          // backward navigation if selection is inside the focused element,
-          // and there is nothing else focusable before it.
-          // GetNextTabbableContent can return the start content in certain
-          // cases (e.g. only one focusable element in the document).
-          // In these cases, we don't want to loop infinitely.
-          if (nextFocus != startContent) {
-            if (tabIndex >= 0) {
-              ignoreTabIndex = false;
-            }
-            startContent = nextFocus;
-            continue;
-          }
-        }
-
         LOGCONTENTNAVIGATION("Next Content: %s", nextFocus.get());
 
         // as long as the found node was not the same as the starting node,
