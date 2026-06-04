@@ -313,6 +313,17 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
    */
   void NotifyAttrElementChanged(mozilla::dom::Element* aElement, nsAtom* aAttr);
 
+  /**
+   * Notify accessibility that an ARIA attribute reflected from ElementInternals
+   * is about to change / has changed. See dom::ElementInternals.
+   */
+  void NotifyARIAAttributeDefaultWillChange(mozilla::dom::Element* aElement,
+                                            nsAtom* aAttribute,
+                                            AttrModType aModType);
+  void NotifyARIAAttributeDefaultChanged(mozilla::dom::Element* aElement,
+                                         nsAtom* aAttribute,
+                                         AttrModType aModType);
+
   void AriaNotify(nsINode* aNode, const nsAString& aAnnouncement,
                   const mozilla::dom::AriaNotificationOptions& aOptions);
 

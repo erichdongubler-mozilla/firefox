@@ -151,8 +151,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(DocAccessible, LocalAccessible)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DocAccessible)
-  NS_INTERFACE_MAP_ENTRY(nsIDocumentObserver)
-  NS_INTERFACE_MAP_ENTRY(nsIMutationObserver)
   NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
 NS_INTERFACE_MAP_END_INHERITING(HyperTextAccessible)
 
@@ -721,9 +719,6 @@ nsRect DocAccessible::RelativeBounds(nsIFrame** aRelativeFrame) const {
 // DocAccessible protected member
 nsresult DocAccessible::AddEventListeners() {
   SelectionMgr()->AddDocSelectionListener(mPresShell);
-
-  // Add document observer.
-  mDocumentNode->AddObserver(this);
   return NS_OK;
 }
 
@@ -731,10 +726,6 @@ nsresult DocAccessible::AddEventListeners() {
 nsresult DocAccessible::RemoveEventListeners() {
   // Remove listeners associated with content documents
   NS_ASSERTION(mDocumentNode, "No document during removal of listeners.");
-
-  if (mDocumentNode) {
-    mDocumentNode->RemoveObserver(this);
-  }
 
   if (mScrollWatchTimer) {
     mScrollWatchTimer->Cancel();
@@ -838,12 +829,6 @@ std::pair<nsPoint, nsRect> DocAccessible::ComputeScrollData(
 
   return {scrollPoint, scrollRange};
 }
-
-////////////////////////////////////////////////////////////////////////////////
-// nsIDocumentObserver
-
-NS_IMPL_NSIDOCUMENTOBSERVER_CORE_STUB(DocAccessible)
-NS_IMPL_NSIDOCUMENTOBSERVER_LOAD_STUB(DocAccessible)
 
 // When a reflected element IDL attribute changes, we might get the following
 // synchronous calls:
@@ -1089,11 +1074,6 @@ void DocAccessible::ARIAActiveDescendantChanged(LocalAccessible* aAccessible) {
   }
 }
 
-void DocAccessible::ContentAppended(nsIContent* aFirstNewContent,
-                                    const ContentAppendInfo&) {
-  MaybeHandleChangeToHiddenNameOrDescription(aFirstNewContent);
-}
-
 void DocAccessible::ElementStateChanged(dom::Document* aDocument,
                                         dom::Element* aElement,
                                         dom::ElementState aStateMask) {
@@ -1224,34 +1204,6 @@ void DocAccessible::ElementStateChanged(dom::Document* aDocument,
     QueueCacheUpdate(accessible, CacheDomain::GroupInfo);
   }
 }
-
-void DocAccessible::CharacterDataWillChange(nsIContent* aContent,
-                                            const CharacterDataChangeInfo&) {}
-
-void DocAccessible::CharacterDataChanged(nsIContent* aContent,
-                                         const CharacterDataChangeInfo&) {
-  MaybeHandleChangeToHiddenNameOrDescription(aContent);
-}
-
-void DocAccessible::ContentInserted(nsIContent* aChild,
-                                    const ContentInsertInfo&) {
-  MaybeHandleChangeToHiddenNameOrDescription(aChild);
-}
-
-void DocAccessible::ContentWillBeRemoved(nsIContent* aChildNode,
-                                         const ContentRemoveInfo&) {
-#ifdef A11Y_LOG
-  if (logging::IsEnabled(logging::eTree)) {
-    logging::MsgBegin("TREE", "DOM content removed; doc: %p", this);
-    logging::Node("container node", aChildNode->GetParent());
-    logging::Node("content node", aChildNode);
-    logging::MsgEnd();
-  }
-#endif
-  ContentRemoved(aChildNode);
-}
-
-void DocAccessible::ParentChainChanged(nsIContent* aContent) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // LocalAccessible
