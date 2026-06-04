@@ -353,7 +353,7 @@ class JujutsuRepository(Repository):
         if Path(self.path).samefile(path):
             raise CannotDeleteFromRootOfRepositoryException()
 
-        self._run("restore", "-r", "@-", str(path))
+        self._run("restore", "--", str(path))
 
     def commit(self, message, author=None, date=None, paths=None):
         run_kwargs = {}
