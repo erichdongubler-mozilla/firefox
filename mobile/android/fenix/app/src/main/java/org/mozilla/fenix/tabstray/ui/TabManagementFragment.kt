@@ -427,6 +427,10 @@ class TabManagementFragment : Fragment() {
                                             System.currentTimeMillis()
                                         TabsTray.inactiveTabsCfrDismissed.record(NoExtras())
                                     },
+                                    onTabGroupOnboardingDismiss = {
+                                        // TODO (Bug 2038234): Persistence will be handled later by the middleware.
+                                        tabsTrayStore.dispatch(TabGroupAction.OnboardingDismissed)
+                                    },
                                     onOpenNewNormalTabClicked = tabManagerInteractor::onNormalTabsFabClicked,
                                     onOpenNewPrivateTabClicked = tabManagerInteractor::onPrivateTabsFabClicked,
                                     onSyncedTabsFabClicked = tabManagerInteractor::onSyncedTabsFabClicked,
