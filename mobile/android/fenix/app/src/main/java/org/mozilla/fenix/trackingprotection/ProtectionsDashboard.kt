@@ -5,9 +5,9 @@
 package org.mozilla.fenix.trackingprotection
 
 import android.app.Dialog
-import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
@@ -18,9 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,48 +33,20 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import mozilla.components.compose.base.BottomSheetHandle
-import mozilla.components.concept.engine.content.blocking.TrackingProtectionEvent
-import mozilla.components.concept.engine.content.blocking.TrackingProtectionEvent.Companion.FINGERPRINTERS
-import mozilla.components.concept.engine.content.blocking.TrackingProtectionEvent.Companion.SOCIAL
-import mozilla.components.concept.engine.content.blocking.TrackingProtectionEvent.Companion.SUSPICIOUS_FINGERPRINTERS
-import mozilla.components.concept.engine.content.blocking.TrackingProtectionEvent.Companion.TRACKERS
-import mozilla.components.concept.engine.content.blocking.TrackingProtectionEvent.Companion.TRACKING_COOKIES
 import mozilla.components.feature.protection.dashboard.TrackerProtectionDashboard
-import mozilla.components.feature.protection.dashboard.TrackersBlockedCategory
-import mozilla.components.feature.session.TrackingProtectionUseCases
-import mozilla.components.support.base.log.logger.Logger
-import mozilla.components.support.utils.DefaultDateTimeProvider
+import mozilla.components.lib.state.ext.observeAsComposableState
+import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import org.mozilla.fenix.R
-import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.theme.FirefoxTheme
-import java.util.concurrent.TimeUnit
 import com.google.android.material.R as materialR
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * [BottomSheetDialog] showing the global protections dashboard.
  */
 class ProtectionsDashboard : BottomSheetDialogFragment() {
-    private val logger = Logger("ProtectionsDashboard")
-    private var trackingProtectionsUseCases: TrackingProtectionUseCases? = null
-    private var totalTrackersBlocked by mutableIntStateOf(0)
-    private var blockedTrackersCategoriesCount by mutableStateOf<List<TrackersBlockedCategory>>(emptyList())
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-
-        trackingProtectionsUseCases = context.components.useCases.trackingProtectionUseCases
-        val now = DefaultDateTimeProvider().currentTimeMillis()
-        val oneWeekAgo = now - TimeUnit.DAYS.toMillis(7)
-
-        trackingProtectionsUseCases?.fetchTrackingEvents(
-            dateFrom = oneWeekAgo,
-            dateTo = DefaultDateTimeProvider().currentTimeMillis(),
-            onSuccess = { blockedTrackersCategoriesCount = it.blockedTrackersCategories },
-            onError = { logger.error("Could not fetch blocked trackers list", it) },
-        )
-    }
+    private val trackersBlockedFeature = ViewBoundFeatureWrapper<TrackersBlockedFeature>()
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
         (super.onCreateDialog(savedInstanceState) as BottomSheetDialog).apply {
@@ -104,6 +73,11 @@ class ProtectionsDashboard : BottomSheetDialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ) = content {
+        val appStore = requireComponents.appStore
+        val trackerBlockedThisWeek by appStore.observeAsComposableState { state ->
+            state.trackersBlockedThisWeek
+        }
+
         FirefoxTheme {
             BackHandler {
                 dismiss()
@@ -125,10 +99,10 @@ class ProtectionsDashboard : BottomSheetDialogFragment() {
                         .fillMaxWidth()
                         .semantics { traversalIndex = 0f },
                     appName = stringResource(R.string.firefox),
-                    totalTrackersBlocked = blockedTrackersCategoriesCount.sumOf { it.count },
+                    totalTrackersBlocked = trackerBlockedThisWeek.sumOf { it.count },
                     sitesCount = 0, // We don't yet have an API to get this data from.
                     dataSavedMB = null, // We don't yet have an API to get this data from.
-                    trackersBlocked = blockedTrackersCategoriesCount,
+                    trackersBlocked = trackerBlockedThisWeek,
                     contentPadding = PaddingValues(
                         top = FirefoxTheme.layout.size.static300, // handle height + its top padding
                     ),
@@ -146,36 +120,17 @@ class ProtectionsDashboard : BottomSheetDialogFragment() {
         }
     }
 
-    private val List<TrackingProtectionEvent>?.blockedTrackersCategories: List<TrackersBlockedCategory>
-        get() {
-            val events = this ?: return emptyList()
-            val trackerCategories = listOf(
-                Triple(
-                    R.string.etp_cookies_title,
-                    iconsR.drawable.mozac_ic_cookies_24,
-                    setOf(TRACKING_COOKIES),
-                ),
-                Triple(
-                    R.string.etp_social_media_trackers_title,
-                    iconsR.drawable.mozac_ic_social_tracker_24,
-                    setOf(SOCIAL),
-                ),
-                Triple(
-                    R.string.tracking_dashboard_fingerprinters_category_name,
-                    iconsR.drawable.mozac_ic_fingerprinter_24,
-                    setOf(FINGERPRINTERS, SUSPICIOUS_FINGERPRINTERS),
-                ),
-                Triple(
-                    R.string.etp_tracking_content_title,
-                    iconsR.drawable.mozac_ic_image_24,
-                    setOf(TRACKERS),
-                ),
-            )
-            return trackerCategories.map { (trackerNameRes, trackerIconRes, types) ->
-                val count = events
-                    .filter { it.type in types }
-                    .sumOf { it.count }
-                TrackersBlockedCategory(trackerIconRes, trackerNameRes, count)
-            }
-        }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        trackersBlockedFeature.set(
+            feature = TrackersBlockedFeature(
+                browserStore = requireComponents.core.store,
+                appStore = requireComponents.appStore,
+                trackingProtectionUseCases = requireComponents.useCases.trackingProtectionUseCases,
+            ),
+            owner = viewLifecycleOwner,
+            view = view,
+        )
+    }
 }

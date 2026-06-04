@@ -9,6 +9,7 @@ import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.storage.BookmarkNodeType
+import mozilla.components.feature.protection.dashboard.TrackersBlockedCategory
 import mozilla.components.lib.crash.Crash.NativeCodeCrash
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -340,6 +341,32 @@ class AppStoreReducerTest {
             finalState.snackbarState,
         )
         assertTrue(finalState.supportedMenuNotifications.contains(SupportedMenuNotifications.Downloads))
+    }
+
+    @Test
+    fun `WHEN an update for the total count of blocked trackers is dispatched THEN update the state value`() {
+        val initialState = AppState(
+            trackersBlockedCount = 2,
+        )
+        val newValue = 999
+
+        val finalState = AppStoreReducer.reduce(initialState, AppAction.UpdateTrackersBlockedCount(newValue))
+
+        assertEquals(newValue, finalState.trackersBlockedCount)
+    }
+
+    @Test
+    fun `WHEN an update for the blocked trackers categories is dispatches THEN update the state value`() {
+        val initialState = AppState(
+            trackersBlockedCount = 3,
+            trackersBlockedThisWeek = listOf(mockk()),
+        )
+        val newValue = listOf<TrackersBlockedCategory>(mockk(), mockk())
+
+        val finalState = AppStoreReducer.reduce(initialState, AppAction.UpdateTrackersBlockedThisWeek(newValue))
+
+        assertEquals(newValue, finalState.trackersBlockedThisWeek)
+        assertEquals(3, finalState.trackersBlockedCount)
     }
 
     @Test

@@ -5,6 +5,7 @@
 package org.mozilla.fenix.components.appstate
 
 import mozilla.components.concept.storage.BookmarkNode
+import mozilla.components.feature.protection.dashboard.TrackersBlockedCategory
 import mozilla.components.feature.tab.collections.TabCollection
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.lib.crash.Crash.NativeCodeCrash
@@ -83,6 +84,7 @@ import org.mozilla.fenix.wallpapers.WallpaperState
  * @property voiceSearchState The [VoiceSearchState] representing the current state of voice search functionality.
  * @property isDefaultBrowser Whether Firefox is the default browser or not.
  * @property trackersBlockedCount The total number of trackers blocked to display in the privacy report.
+ * @property trackersBlockedThisWeek The total number of trackers blocked this week.
  * @property sportsWidgetState The [sportsWidgetState] to display.
  */
 data class AppState(
@@ -122,5 +124,6 @@ data class AppState(
     val voiceSearchState: VoiceSearchState = VoiceSearchState(),
     val isDefaultBrowser: Boolean = false,
     val trackersBlockedCount: Int = 0,
+    val trackersBlockedThisWeek: List<TrackersBlockedCategory> = emptyList(),
     val sportsWidgetState: SportsWidgetState = SportsWidgetState(),
 ) : State

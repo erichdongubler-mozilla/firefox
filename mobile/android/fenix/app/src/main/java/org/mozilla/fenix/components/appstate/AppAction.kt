@@ -9,6 +9,7 @@ import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.sync.TabData
+import mozilla.components.feature.protection.dashboard.TrackersBlockedCategory
 import mozilla.components.feature.tab.collections.TabCollection
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.lib.crash.Crash.NativeCodeCrash
@@ -821,6 +822,13 @@ sealed class AppAction : Action {
      * @property count The new count of trackers blocked.
      */
     data class UpdateTrackersBlockedCount(val count: Int) : AppAction()
+
+    /**
+     * Updates the details about what trackers have been blocked this week.
+     *
+     * @property blockedTrackerCategories The list of trackers blocked this week as a tracker category split.
+     */
+    data class UpdateTrackersBlockedThisWeek(val blockedTrackerCategories: List<TrackersBlockedCategory>) : AppAction()
 
     /**
      * [AppAction]s related to the sports widget.

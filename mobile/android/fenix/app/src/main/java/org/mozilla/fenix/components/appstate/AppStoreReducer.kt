@@ -284,6 +284,10 @@ internal object AppStoreReducer {
             trackersBlockedCount = action.count,
         )
 
+        is AppAction.UpdateTrackersBlockedThisWeek -> state.copy(
+            trackersBlockedThisWeek = action.blockedTrackerCategories,
+        )
+
         is AppAction.SportsWidgetAction -> SportsWidgetReducer.reduce(state, action)
     }
 }
