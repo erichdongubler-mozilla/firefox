@@ -38,6 +38,7 @@ internal fun TrackersBlockedPanel(
     numberOfTrackersBlockedThisWeek: Int,
     bucketedTrackers: TrackerBuckets,
     onTrackerCategoryClick: (TrackingProtectionCategory) -> Unit,
+    onTrackersBlockedThisWeekClicked: () -> Unit,
     onBackButtonClick: () -> Unit,
 ) {
     MenuScaffold(
@@ -96,6 +97,7 @@ internal fun TrackersBlockedPanel(
                         protectionDashboardR.drawable.firefox_pictorgram_shield_check_rgb_2,
                     ),
                     state = MenuItemState.CRITICAL, // ensure no tint is applied for the icon.
+                    onClick = { onTrackersBlockedThisWeekClicked() },
                 )
             }
         }
@@ -116,6 +118,7 @@ private fun TrackersBlockedPanelPreview() {
                 numberOfTrackersBlockedThisWeek = 33,
                 bucketedTrackers = TrackerBuckets(),
                 onTrackerCategoryClick = {},
+                onTrackersBlockedThisWeekClicked = {},
                 onBackButtonClick = {},
             )
         }

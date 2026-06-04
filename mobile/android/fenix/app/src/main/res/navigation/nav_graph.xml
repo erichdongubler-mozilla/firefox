@@ -2004,7 +2004,7 @@
 
     <dialog
         android:id="@+id/global_protections_dashboard"
-        android:name="org.mozilla.fenix.trackingprotection.ProtectionsDashboard">
+        android:name="org.mozilla.fenix.trackingprotection.ProtectionsDashboardFragment">
         <argument
             android:name="customTabSessionId"
             app:argType="string"

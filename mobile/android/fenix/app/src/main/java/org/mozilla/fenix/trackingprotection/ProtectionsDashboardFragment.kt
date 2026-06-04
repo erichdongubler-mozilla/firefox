@@ -10,22 +10,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CornerSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.isTraversalGroup
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.traversalIndex
-import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat.Type.systemBars
 import androidx.fragment.compose.content
@@ -33,21 +18,18 @@ import androidx.navigation.fragment.navArgs
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import mozilla.components.compose.base.BottomSheetHandle
-import mozilla.components.feature.protection.dashboard.TrackerProtectionDashboard
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
-import org.mozilla.fenix.theme.FirefoxTheme
 import com.google.android.material.R as materialR
 
 /**
  * [BottomSheetDialog] showing the global protections dashboard.
  */
-class ProtectionsDashboard : BottomSheetDialogFragment() {
-    private val args by navArgs<ProtectionsDashboardArgs>()
+class ProtectionsDashboardFragment : BottomSheetDialogFragment() {
+    private val args by navArgs<ProtectionsDashboardFragmentArgs>()
     private val trackersBlockedFeature = ViewBoundFeatureWrapper<TrackersBlockedFeature>()
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
@@ -80,46 +62,7 @@ class ProtectionsDashboard : BottomSheetDialogFragment() {
             state.trackersBlockedThisWeek
         }
 
-        FirefoxTheme {
-            BackHandler {
-                dismiss()
-            }
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(
-                        MaterialTheme.shapes.extraLarge.copy(
-                            bottomStart = CornerSize(0.dp),
-                            bottomEnd = CornerSize(0.dp),
-                        ),
-                    )
-                    .semantics { isTraversalGroup = true },
-            ) {
-                TrackerProtectionDashboard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .semantics { traversalIndex = 0f },
-                    appName = stringResource(R.string.firefox),
-                    totalTrackersBlocked = trackerBlockedThisWeek.sumOf { it.count },
-                    sitesCount = 0, // We don't yet have an API to get this data from.
-                    dataSavedMB = null, // We don't yet have an API to get this data from.
-                    trackersBlocked = trackerBlockedThisWeek,
-                    contentPadding = PaddingValues(
-                        top = FirefoxTheme.layout.size.static300, // handle height + its top padding
-                    ),
-                )
-
-                BottomSheetHandle(
-                    onRequestDismiss = ::dismiss,
-                    contentDescription = "",
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = FirefoxTheme.layout.size.static200)
-                        .semantics { traversalIndex = 1f },
-                )
-            }
-        }
+        ProtectionsDashboardContent(trackerBlockedThisWeek) { dismiss() }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

@@ -50,6 +50,7 @@ import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.lib.state.ext.consumeFlow
+import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.base.log.logger.Logger
@@ -76,6 +77,7 @@ import org.mozilla.fenix.settings.trustpanel.ui.ProtectionPanel
 import org.mozilla.fenix.settings.trustpanel.ui.TrackerCategoryDetailsPanel
 import org.mozilla.fenix.settings.trustpanel.ui.TrackersBlockedPanel
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.trackingprotection.ProtectionsDashboardContent
 import org.mozilla.fenix.trackingprotection.TrackersBlockedFeature
 import org.mozilla.fenix.utils.DELAY_MS_MAIN_MENU
 import org.mozilla.fenix.utils.DELAY_MS_SUB_MENU
@@ -257,6 +259,9 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                         Route.TrackerCategoryDetailsPanel,
                         -> contentState = Route.TrackersPanel
 
+                        Route.TrackersProtectionDashboard,
+                        -> contentState = Route.TrackersPanel
+
                         else -> this@TrustPanelFragment.dismissAllowingStateLoss()
                     }
                 }
@@ -344,6 +349,9 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                                     )
                                     contentState = Route.TrackerCategoryDetailsPanel
                                 },
+                                onTrackersBlockedThisWeekClicked = {
+                                    contentState = Route.TrackersProtectionDashboard
+                                },
                                 onBackButtonClick = {
                                     contentState = Route.ProtectionPanel
                                 },
@@ -356,6 +364,20 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                                 detailedTrackerCategory = detailedTrackerCategory,
                                 bucketedTrackers = bucketedTrackers,
                                 onBackButtonClick = {
+                                    contentState = Route.TrackersPanel
+                                },
+                            )
+                        }
+
+                        Route.TrackersProtectionDashboard -> {
+                            val appStore = requireComponents.appStore
+                            val trackerBlockedThisWeek by appStore.observeAsComposableState { state ->
+                                state.trackersBlockedThisWeek
+                            }
+
+                            ProtectionsDashboardContent(
+                                trackersBlockedThisWeek = trackerBlockedThisWeek,
+                                onDismiss = {
                                     contentState = Route.TrackersPanel
                                 },
                             )
@@ -453,5 +475,6 @@ enum class Route {
     ProtectionPanel,
     TrackersPanel,
     TrackerCategoryDetailsPanel,
+    TrackersProtectionDashboard,
     ClearSiteDataDialog,
 }
