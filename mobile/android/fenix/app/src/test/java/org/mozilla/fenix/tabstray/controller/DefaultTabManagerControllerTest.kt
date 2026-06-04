@@ -6,6 +6,7 @@ package org.mozilla.fenix.tabstray.controller
 
 import android.content.Context
 import androidx.navigation.NavController
+import androidx.navigation.NavDestination
 import androidx.navigation.NavDirections
 import androidx.navigation.NavOptions
 import io.mockk.MockKAnnotations
@@ -22,7 +23,6 @@ import io.mockk.verifyOrder
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.appservices.places.BookmarkRoot
-import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.TabSessionState
@@ -2268,6 +2268,28 @@ class DefaultTabManagerControllerTest {
         createController().handleNavigationRequested()
 
         verify { navController.navigate(R.id.browserFragment) }
+    }
+
+    @Test
+    fun `WHEN the privacy report pill is tapped THEN navigate to the protections dashboard`() {
+        every { navController.currentDestination } returns mockk<NavDestination> {
+            every { id } returns R.id.tabManagementFragment
+        }
+        val currentSessionId = "test"
+        every { browserStore.state } returns mockk {
+            every { selectedTabId } returns currentSessionId
+        }
+
+        createController().onPrivacyReportTapped()
+
+        verify {
+            navController.navigate(
+                directions = TabManagementFragmentDirections.actionTabManagementFragmentToGlobalProtectionsDashboard(
+                    currentSessionId,
+                ),
+                navOptions = null,
+            )
+        }
     }
 
     private fun makeBookmarkFolder(guid: String) = BookmarkNode(

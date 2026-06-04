@@ -3606,6 +3606,9 @@
         %s is a placeholder for the name of the tracker category.
         %d is a placeholder for the number of trackers blocked. -->
     <string name="trackers_blocked_panel_categorical_num_trackers_blocked">%s: %d</string>
+    <!-- Text for displaying the number of trackers blocked this week in the trackers blocked panel.
+        %d is a placeholder for the number of trackers blocked this week. -->
+    <string name="trackers_blocked_panel_num_trackers_blocked_this_week">Trackers blocked this week: %d</string>
     <!-- Description text for a dialog confirming whether the user wants to delete all data for current site.
         %s is a placeholder for the base domain of website. -->
     <string name="clear_site_data_dialog_description"><![CDATA[Removing cookies and site data for <b>%s</b> might log you out of websites and clear shopping carts.]]></string>

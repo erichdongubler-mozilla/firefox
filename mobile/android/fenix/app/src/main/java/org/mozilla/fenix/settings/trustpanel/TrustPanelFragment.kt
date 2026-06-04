@@ -76,6 +76,7 @@ import org.mozilla.fenix.settings.trustpanel.ui.ProtectionPanel
 import org.mozilla.fenix.settings.trustpanel.ui.TrackerCategoryDetailsPanel
 import org.mozilla.fenix.settings.trustpanel.ui.TrackersBlockedPanel
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.trackingprotection.TrackersBlockedFeature
 import org.mozilla.fenix.utils.DELAY_MS_MAIN_MENU
 import org.mozilla.fenix.utils.DELAY_MS_SUB_MENU
 import org.mozilla.fenix.utils.DURATION_MS_MAIN_MENU
@@ -93,6 +94,7 @@ import com.google.android.material.R as materialR
 class TrustPanelFragment : BottomSheetDialogFragment() {
 
     private val args by navArgs<TrustPanelFragmentArgs>()
+    private val trackersBlockedFeature = ViewBoundFeatureWrapper<TrackersBlockedFeature>()
     private val ipProtectionMenuBinding = ViewBoundFeatureWrapper<IPProtectionMenuBinding>()
     private lateinit var permissionsCallback: ((Map<String, Boolean>) -> Unit)
     private val requestPermissionsLauncher = registerForActivityResult(
@@ -174,8 +176,8 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
     ) = content {
         FirefoxTheme {
             val components = components
-            val trackingProtectionUseCases = components.useCases.trackingProtectionUseCases
             val settings = components.settings
+            val appStore = components.appStore
 
             MenuDialogBottomSheet(
                 modifier = Modifier
@@ -196,6 +198,9 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                 val numberOfTrackersBlocked by remember {
                     store.stateFlow.map { state -> state.numberOfTrackersBlocked }
                 }.collectAsState(initial = store.state.numberOfTrackersBlocked)
+                val numberOfTrackersBlockedThisWeek by remember {
+                    appStore.stateFlow.map { state -> state.trackersBlockedThisWeek.sumOf { it.count } }
+                }.collectAsState(initial = appStore.state.trackersBlockedThisWeek.sumOf { it.count })
                 val bucketedTrackers by remember {
                     store.stateFlow.map { state -> state.bucketedTrackers }
                 }.collectAsState(initial = store.state.bucketedTrackers)
@@ -257,7 +262,7 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                 }
 
                 observeTrackersChange(components.core.store) {
-                    trackingProtectionUseCases.fetchTrackingLogs(
+                    components.useCases.trackingProtectionUseCases.fetchTrackingLogs(
                         tabId = args.sessionId,
                         onSuccess = { trackerLogs ->
                             store.dispatch(TrustPanelAction.UpdateTrackersBlocked(trackerLogs))
@@ -331,6 +336,7 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                             TrackersBlockedPanel(
                                 title = args.title,
                                 numberOfTrackersBlocked = numberOfTrackersBlocked,
+                                numberOfTrackersBlockedThisWeek = numberOfTrackersBlockedThisWeek,
                                 bucketedTrackers = bucketedTrackers,
                                 onTrackerCategoryClick = { detailedTrackerCategory ->
                                     store.dispatch(
@@ -372,6 +378,20 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        if (requireComponents.settings.shouldUseTrackingProtection) {
+            trackersBlockedFeature.set(
+                feature = TrackersBlockedFeature(
+                    browserStore = requireComponents.core.store,
+                    appStore = requireComponents.appStore,
+                    currentSessionId = args.sessionId,
+                    trackingProtectionUseCases = requireComponents.useCases.trackingProtectionUseCases,
+                ),
+                owner = viewLifecycleOwner,
+                view = view,
+            )
+        }
+
         ipProtectionMenuBinding.set(
             feature = IPProtectionMenuBinding(
                 ipProtectionStore = requireComponents.ipProtection.store,

@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat.Type.systemBars
 import androidx.fragment.compose.content
+import androidx.navigation.fragment.navArgs
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -46,6 +47,7 @@ import com.google.android.material.R as materialR
  * [BottomSheetDialog] showing the global protections dashboard.
  */
 class ProtectionsDashboard : BottomSheetDialogFragment() {
+    private val args by navArgs<ProtectionsDashboardArgs>()
     private val trackersBlockedFeature = ViewBoundFeatureWrapper<TrackersBlockedFeature>()
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
@@ -127,6 +129,7 @@ class ProtectionsDashboard : BottomSheetDialogFragment() {
             feature = TrackersBlockedFeature(
                 browserStore = requireComponents.core.store,
                 appStore = requireComponents.appStore,
+                currentSessionId = args.customTabSessionId,
                 trackingProtectionUseCases = requireComponents.useCases.trackingProtectionUseCases,
             ),
             owner = viewLifecycleOwner,

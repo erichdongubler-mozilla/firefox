@@ -725,6 +725,7 @@ class TabManagementFragment : Fragment() {
                 feature = TrackersBlockedFeature(
                     browserStore = requireComponents.core.store,
                     appStore = requireComponents.appStore,
+                    currentSessionId = requireComponents.core.store.state.selectedTabId,
                     trackingProtectionUseCases = requireComponents.useCases.trackingProtectionUseCases,
                 ),
                 owner = this,

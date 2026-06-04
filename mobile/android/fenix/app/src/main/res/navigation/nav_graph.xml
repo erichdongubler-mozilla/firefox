@@ -2003,8 +2003,12 @@
     </navigation>
 
     <dialog
-      android:id="@+id/global_protections_dashboard"
-      android:name="org.mozilla.fenix.trackingprotection.ProtectionsDashboard">
+        android:id="@+id/global_protections_dashboard"
+        android:name="org.mozilla.fenix.trackingprotection.ProtectionsDashboard">
+        <argument
+            android:name="customTabSessionId"
+            app:argType="string"
+            app:nullable="true" />
     </dialog>
 
     <dialog

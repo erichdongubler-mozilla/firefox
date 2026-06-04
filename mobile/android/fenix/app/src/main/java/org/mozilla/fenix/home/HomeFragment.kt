@@ -1106,6 +1106,7 @@ class HomeFragment : Fragment() {
                 feature = TrackersBlockedFeature(
                     browserStore = requireComponents.core.store,
                     appStore = requireComponents.appStore,
+                    currentSessionId = requireComponents.core.store.state.selectedTabId,
                     trackingProtectionUseCases = requireComponents.useCases.trackingProtectionUseCases,
                 ),
                 owner = viewLifecycleOwner,
@@ -1273,6 +1274,7 @@ class HomeFragment : Fragment() {
             ),
             trackingProtectionController = TrackingProtectionController(
                 navController = findNavController(),
+                currentSessionId = requireComponents.core.store.state.selectedTabId,
             ),
             logoController = LogoController(
                 longFoxFeature = requireComponents.core.longFoxFeature,

@@ -10,7 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.withContext
-import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.browser.state.selector.findTabOrCustomTab
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.content.blocking.TrackingProtectionEvent
@@ -36,29 +36,39 @@ import mozilla.components.ui.icons.R as iconsR
  *
  * @param browserStore The [BrowserStore] to observe for trackers blocked related events.
  * @param appStore The [AppStore] to dispatch actions to.
+ * @param currentSessionId Optional id of a session to observe for tracker related updates.
+ * which will trigger querying the blocked trackers database for new details.
  * @param trackingProtectionUseCases Use case to fetch details about blocked trackers.
  * @param ioDispatcher The [CoroutineDispatcher] for database operations. Defaults to [Dispatchers.IO].
  */
 class TrackersBlockedFeature(
-    browserStore: BrowserStore,
+    private val browserStore: BrowserStore,
     private val appStore: AppStore,
+    private val currentSessionId: String?,
     private val trackingProtectionUseCases: TrackingProtectionUseCases,
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : AbstractBinding<BrowserState>(browserStore, ioDispatcher) {
 
     override suspend fun onState(flow: Flow<BrowserState>) {
+        // The tracker counts are read from Gecko's DB, not the tab state, so we always
+        // perform one initial sync when the feature starts.
+        // Subsequent changes to the tab's blocked trackers then trigger a refresh for dynamic updates.
+        withContext(Dispatchers.Main) {
+            syncTrackersBlockedDetails()
+        }
+
         // The number of blocked trackers can change while a tab is being loaded in background.
         // Re-fetching this data whenever the blocked trackers callback fires (not always accurate)
         // allows for a dynamic update of the trackers blocked numbers.
-        flow.mapNotNull { state -> state.selectedTab }
-            .ifAnyChanged { tab ->
-                arrayOf(tab.trackingProtection.blockedTrackers)
-            }
-            .collect {
-                withContext(Dispatchers.Main) {
-                    syncTrackersBlockedDetails()
+        currentSessionId?.let {
+            flow.mapNotNull { state -> state.findTabOrCustomTab(it) }
+                .ifAnyChanged { tab -> arrayOf(tab.trackingProtection.blockedTrackers) }
+                .collect {
+                    withContext(Dispatchers.Main) {
+                        syncTrackersBlockedDetails()
+                    }
                 }
-            }
+        }
     }
 
     @MainThread // the Gecko queries need a Looper. Easiest is to do the queries on the main thread.

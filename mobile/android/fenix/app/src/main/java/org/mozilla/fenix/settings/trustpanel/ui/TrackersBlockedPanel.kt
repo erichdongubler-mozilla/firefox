@@ -23,16 +23,19 @@ import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.compose.MenuGroup
 import org.mozilla.fenix.components.menu.compose.MenuItem
+import org.mozilla.fenix.components.menu.compose.MenuItemState
 import org.mozilla.fenix.components.menu.compose.MenuScaffold
 import org.mozilla.fenix.components.menu.compose.header.SubmenuHeader
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.trackingprotection.TrackerBuckets
 import org.mozilla.fenix.trackingprotection.TrackingProtectionCategory
+import mozilla.components.feature.protection.dashboard.R as protectionDashboardR
 
 @Composable
 internal fun TrackersBlockedPanel(
     title: String,
     numberOfTrackersBlocked: Int,
+    numberOfTrackersBlockedThisWeek: Int,
     bucketedTrackers: TrackerBuckets,
     onTrackerCategoryClick: (TrackingProtectionCategory) -> Unit,
     onBackButtonClick: () -> Unit,
@@ -80,6 +83,21 @@ internal fun TrackersBlockedPanel(
                         )
                     }
             }
+
+            Spacer(Modifier.height(FirefoxTheme.layout.space.static200))
+
+            MenuGroup {
+                MenuItem(
+                    label = stringResource(
+                        R.string.trackers_blocked_panel_num_trackers_blocked_this_week,
+                        numberOfTrackersBlockedThisWeek,
+                    ),
+                    beforeIconPainter = painterResource(
+                        protectionDashboardR.drawable.firefox_pictorgram_shield_check_rgb_2,
+                    ),
+                    state = MenuItemState.CRITICAL, // ensure no tint is applied for the icon.
+                )
+            }
         }
     }
 }
@@ -95,6 +113,7 @@ private fun TrackersBlockedPanelPreview() {
             TrackersBlockedPanel(
                 title = "Mozilla",
                 numberOfTrackersBlocked = 0,
+                numberOfTrackersBlockedThisWeek = 33,
                 bucketedTrackers = TrackerBuckets(),
                 onTrackerCategoryClick = {},
                 onBackButtonClick = {},

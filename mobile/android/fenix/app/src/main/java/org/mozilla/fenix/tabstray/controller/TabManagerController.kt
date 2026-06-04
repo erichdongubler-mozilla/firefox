@@ -761,9 +761,10 @@ class DefaultTabManagerController(
     }
 
     override fun onPrivacyReportTapped() {
+        val currentSessionId = browserStore.state.selectedTabId
         navController.nav(
             R.id.tabManagementFragment,
-            TabManagementFragmentDirections.actionTabManagementFragmentToGlobalProtectionsDashboard(),
+            TabManagementFragmentDirections.actionTabManagementFragmentToGlobalProtectionsDashboard(currentSessionId),
         )
     }
 

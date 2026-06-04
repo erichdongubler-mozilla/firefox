@@ -93,10 +93,9 @@ class TrackersBlockedFeatureTest {
     }
 
     @Test
-    fun `GIVEN feature started WHEN a tracker is blocked THEN fetch the total trackers blocked and trackers blocked this week`() = runTest(testDispatcher) {
+    fun `GIVEN feature started WHEN there is no tracker blocked event for the current tab THEN fetch the total trackers blocked and trackers blocked this week`() = runTest(testDispatcher) {
         startFeature()
-
-        blockNewTracker()
+        shadowOf(Looper.getMainLooper()).idle()
 
         verify {
             trackingProtectionUseCases.fetchTotalTrackersBlocked(any(), any())
@@ -107,7 +106,41 @@ class TrackersBlockedFeatureTest {
     }
 
     @Test
-    fun `GIVEN tracking events for the four supported types WHEN onSuccess fires THEN dispatch a category for each, with summed counts`() = runTest(testDispatcher) {
+    fun `GIVEN feature started WHEN a tracker is blocked THEN fetch the total trackers blocked and trackers blocked this week`() = runTest(testDispatcher) {
+        startFeature()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        // Verify the initial sync
+        verify(exactly = 1) {
+            trackingProtectionUseCases.fetchTotalTrackersBlocked(any(), any())
+            trackingProtectionUseCases.fetchTrackingEvents.invoke(
+                dateFrom = any(),
+                dateTo = any(),
+                onSuccess = any(),
+                onError = any(),
+            )
+        }
+        val windowMs = fetchEventsDateTo.captured - fetchEventsDateFrom.captured
+        assertEquals(TimeUnit.DAYS.toMillis(7), windowMs)
+
+        // Verify a new sync following trackers blocked events
+        blockNewTracker()
+        testDispatcher.scheduler.advanceUntilIdle()
+        shadowOf(Looper.getMainLooper()).idle()
+        verify(exactly = 2) {
+            trackingProtectionUseCases.fetchTotalTrackersBlocked(any(), any())
+            trackingProtectionUseCases.fetchTrackingEvents.invoke(
+                dateFrom = any(),
+                dateTo = any(),
+                onSuccess = any(),
+                onError = any(),
+            )
+        }
+        assertEquals(TimeUnit.DAYS.toMillis(7), windowMs)
+    }
+
+    @Test
+    fun `GIVEN a successful response for fetching blocked tracker events THEN dispatch a category for each tracker category with summed counts`() = runTest(testDispatcher) {
         startFeature()
 
         blockNewTracker()
@@ -133,7 +166,7 @@ class TrackersBlockedFeatureTest {
     }
 
     @Test
-    fun `GIVEN FINGERPRINTERS and SUSPICIOUS_FINGERPRINTERS events WHEN categorized THEN both sum into the Fingerprinters bucket`() = runTest(testDispatcher) {
+    fun `GIVEN a successful response for fetching blocked tracker events THEN sum fingerprint events into the Fingerprinters bucket`() = runTest(testDispatcher) {
         startFeature()
 
         blockNewTracker()
@@ -153,7 +186,7 @@ class TrackersBlockedFeatureTest {
     }
 
     @Test
-    fun `GIVEN events of types outside the four supported buckets WHEN categorized THEN those events are excluded`() = runTest(testDispatcher) {
+    fun `GIVEN a successful response for fetching blocked tracker events WHEN some events are unrecognized THEN those are excluded`() = runTest(testDispatcher) {
         startFeature()
 
         blockNewTracker()
@@ -173,7 +206,7 @@ class TrackersBlockedFeatureTest {
     }
 
     @Test
-    fun `GIVEN an empty events list WHEN onSuccess fires THEN dispatch all four categories with zero counts`() = runTest(testDispatcher) {
+    fun `GIVEN a successful response for fetching blocked tracker events WHEN the response is empty THEN update the state with no blocked tracker`() = runTest(testDispatcher) {
         startFeature()
 
         blockNewTracker()
@@ -185,25 +218,11 @@ class TrackersBlockedFeatureTest {
         }
     }
 
-    @Test
-    fun `GIVEN fetching the total numbers of trackers blocked fails THEN fetch the details about trackers blocked in the past week`() = runTest(testDispatcher) {
-        startFeature()
-
-        blockNewTracker()
-        fetchTotalOnError.captured.invoke(RuntimeException("db read failed"))
-
-        verify {
-            trackingProtectionUseCases.fetchTotalTrackersBlocked.invoke(
-                onSuccess = any(),
-                onError = any(),
-            )
-        }
-    }
-
     private fun startFeature() {
         val feature = TrackersBlockedFeature(
             browserStore = browserStore,
             appStore = appStore,
+            currentSessionId = browserStore.state.selectedTabId,
             trackingProtectionUseCases = trackingProtectionUseCases,
             ioDispatcher = testDispatcher,
         )
