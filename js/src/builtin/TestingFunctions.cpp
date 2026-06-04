@@ -9932,6 +9932,7 @@ static bool ResetFallbackStubStates(JSContext* cx, unsigned argc, Value* vp) {
     stub->discardStubs(zone, &icScript->icEntry(i));
     stub->state().reset();
   }
+  script->jitScript()->notePurgedStubs();
 
   args.rval().setUndefined();
   return true;
