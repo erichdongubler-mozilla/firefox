@@ -1343,6 +1343,7 @@ void TRRService::ConfirmationContext::RequestCompleted(
 
 void TRRService::ConfirmationContext::CompleteConfirmation(nsresult aStatus,
                                                            TRR* aTRRRequest) {
+  bool confirmOK;
   {
     MutexAutoLock lock(OwningObject()->mLock);
     // Ignore confirmations that dont match the pending task.
@@ -1370,7 +1371,12 @@ void TRRService::ConfirmationContext::CompleteConfirmation(nsresult aStatus,
       HandleEvent(ConfirmationEvent::ConfirmFail, lock);
     }
 
-    if (State() == CONFIRM_OK) {
+    // Capture the final state while still holding the lock. The retry timer
+    // set by ConfirmFail can fire as soon as the lock is released and advance
+    // the state from CONFIRM_FAILED to CONFIRM_TRYING_FAILED, so we must not
+    // read State() after the lock drops.
+    confirmOK = (State() == CONFIRM_OK);
+    if (confirmOK) {
       // Record event and start new confirmation context
       RecordEvent("success", lock);
     }
@@ -1378,18 +1384,15 @@ void TRRService::ConfirmationContext::CompleteConfirmation(nsresult aStatus,
          OwningObject()->mPrivateURI.get(), State(), (unsigned int)aStatus));
   }
 
-  if (State() == CONFIRM_OK) {
+  if (confirmOK) {
     // A fresh confirmation means previous blocked entries might not
     // be valid anymore.
     auto bl = OwningObject()->mTRRBLStorage.Lock();
     bl->Clear();
-  } else {
-    MOZ_ASSERT(State() == CONFIRM_FAILED);
   }
 
   glean::dns::trr_ns_verfified
-      .Get(TRRService::ProviderKey(),
-           (State() == CONFIRM_OK) ? "true"_ns : "false"_ns)
+      .Get(TRRService::ProviderKey(), confirmOK ? "true"_ns : "false"_ns)
       .Add();
 }
 
