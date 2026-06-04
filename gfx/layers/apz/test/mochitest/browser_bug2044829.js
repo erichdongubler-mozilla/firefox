@@ -125,6 +125,17 @@ requestLongerTimeout(2);
 
 add_task(async () => {
   await SpecialPowers.pushPrefEnv({
+    set: [["apz.fastpath_apz_aware_listener.enabled", false]],
+  });
+  ok(
+    await runTest(),
+    "APZ scrolled during the busy-wait with fast-path disabled " +
+      "(no unnecessary wait for first touchmove)"
+  );
+});
+
+add_task(async () => {
+  await SpecialPowers.pushPrefEnv({
     set: [["apz.fastpath_apz_aware_listener.enabled", true]],
   });
   ok(
