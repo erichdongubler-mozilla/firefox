@@ -171,6 +171,8 @@ class MacroAssemblerRiscv64 : public Assembler {
   void ma_li(Register dest, CodeLabel* label);
   void ma_li(Register dest, ImmWord imm);
 
+  void patchLi32(CodeOffset offset, Imm32 imm);
+
 #define DEFINE_INSTRUCTION(instr)                     \
   void instr(Register rd, Register rs, Imm64 imm);    \
   void instr(Register rd, Register rs, Imm32 imm) {   \

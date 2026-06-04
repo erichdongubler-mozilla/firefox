@@ -70,6 +70,10 @@ CodeOffset MacroAssembler::sub32FromStackPtrWithPatch(Register dest) {
   return CodeOffset(offset.getOffset());
 }
 
+void MacroAssembler::patchSub32FromStackPtr(CodeOffset offset, Imm32 imm) {
+  patchLi32(offset, imm);
+}
+
 void MacroAssembler::branchTest32(Condition cond, Register lhs, Imm32 rhs,
                                   Label* label) {
   MOZ_ASSERT(cond == Zero || cond == NonZero || cond == Signed ||
@@ -1829,29 +1833,6 @@ void MacroAssembler::orPtr(Imm32 imm, Register dest) { ma_or(dest, dest, imm); }
 
 void MacroAssembler::orPtr(Imm32 imm, Register src, Register dest) {
   ma_or(dest, src, imm);
-}
-
-void MacroAssembler::patchSub32FromStackPtr(CodeOffset offset, Imm32 imm) {
-  DEBUG_PRINTF("patchSub32FromStackPtr at offset %zu with immediate %d\n",
-               offset.offset(), imm.value);
-  Instruction* inst0 = getInstructionAt(BufferOffset(offset.offset()));
-  Instruction* inst1 =
-      getInstructionAt(BufferOffset(offset.offset() + kInstrSize));
-  MOZ_ASSERT(inst0->IsLui());
-  MOZ_ASSERT(inst1->IsAddi());
-
-  auto [high_20, low_12] = ToHigh20Low12(imm.value);
-
-  inst0->SetImm20UValue(high_20);
-  inst1->SetImm12Value(low_12);
-
-#ifdef JS_DISASM_RISCV64
-  disassembleInstr(inst0);
-  disassembleInstr(inst1);
-#endif /* JS_DISASM_RISCV64 */
-
-  MOZ_ASSERT((inst0->Imm20UValue() << kImm20Shift) + inst1->Imm12Value() ==
-             imm.value);
 }
 
 void MacroAssembler::popcnt32(Register input, Register output, Register tmp) {

@@ -3625,6 +3625,8 @@ CodeOffset MacroAssembler::sub32FromMemAndBranchIfNegativeWithPatch(
   Register scratch = temps.Acquire();
   MOZ_ASSERT(scratch != address.base);
   ma_load(scratch, address);
+  // 128 is arbitrary, but makes `*address` count upwards, which may help to
+  // identify cases where the subsequent ::patch..() call was forgotten.
   addiw(scratch, scratch, 128);
   // Points immediately after the instruction to patch.
   CodeOffset patchPoint = CodeOffset(currentOffset());
@@ -3636,6 +3638,8 @@ CodeOffset MacroAssembler::sub32FromMemAndBranchIfNegativeWithPatch(
 void MacroAssembler::patchSub32FromMemAndBranchIfNegative(CodeOffset offset,
                                                           Imm32 imm) {
   int32_t val = imm.value;
+
+  // Patching it to zero would make the instruction pointless.
   MOZ_RELEASE_ASSERT(val >= 1 && val <= 127);
 
   auto* inst = getInstructionAt(BufferOffset(offset.offset() - kInstrSize));
@@ -4000,7 +4004,7 @@ CodeOffset MacroAssembler::move32WithPatch(Register dest) {
 }
 
 void MacroAssembler::patchMove32(CodeOffset offset, Imm32 n) {
-  patchSub32FromStackPtr(offset, n);
+  patchLi32(offset, n);
 }
 
 void MacroAssembler::pushReturnAddress() { push(ra); }
@@ -4818,9 +4822,8 @@ CodeOffset MacroAssembler::wasmMarkedSlowCall(const wasm::CallSiteDesc& desc,
 }
 //}}} check_macroassembler_style
 
-// This method generates lui + addi instruction block that can be
-// modified by UpdateLoad64Value, either during compilation (eg.
-// Assembler::bind), or during execution (eg. jit::PatchJump).
+// This method generates lui + addi instruction block that can be modified by
+// patchLi32.
 BufferOffset MacroAssemblerRiscv64::ma_liPatchable(Register dest, Imm32 imm) {
   AutoForbidPoolsAndNops afp(this, 2);
   BufferOffset offset = nextOffset();
@@ -4830,6 +4833,27 @@ BufferOffset MacroAssemblerRiscv64::ma_liPatchable(Register dest, Imm32 imm) {
   addi(dest, dest, low_12);
 
   return offset;
+}
+
+void MacroAssemblerRiscv64::patchLi32(CodeOffset offset, Imm32 imm) {
+  Instruction* inst0 = getInstructionAt(BufferOffset(offset.offset()));
+  Instruction* inst1 =
+      getInstructionAt(BufferOffset(offset.offset() + kInstrSize));
+  MOZ_ASSERT(inst0->IsLui());
+  MOZ_ASSERT(inst1->IsAddi());
+
+  auto [high_20, low_12] = ToHigh20Low12(imm.value);
+
+  inst0->SetImm20UValue(high_20);
+  inst1->SetImm12Value(low_12);
+
+#ifdef JS_DISASM_RISCV64
+  disassembleInstr(inst0);
+  disassembleInstr(inst1);
+#endif /* JS_DISASM_RISCV64 */
+
+  MOZ_ASSERT((inst0->Imm20UValue() << kImm20Shift) + inst1->Imm12Value() ==
+             imm.value);
 }
 
 void MacroAssemblerRiscv64::ma_li(Register dest, ImmGCPtr ptr) {
