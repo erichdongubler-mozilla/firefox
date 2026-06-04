@@ -581,6 +581,8 @@ run-sequentially = ["true"] # TCPServerSocket fails otherwise
 
 ["test_ext_proxy_startup.js"]
 
+["test_ext_publicSuffix.js"]
+
 ["test_ext_redirects.js"]
 skip-if = [
   "os == 'android' && debug",
