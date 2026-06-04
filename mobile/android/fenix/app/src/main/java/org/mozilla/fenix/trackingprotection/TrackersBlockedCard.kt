@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -51,6 +52,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 import java.text.BreakIterator
 import java.text.StringCharacterIterator
 import kotlin.math.roundToInt
+import mozilla.components.ui.icons.R as iconsR
 
 private const val FOX_ANIMATION_DURATION = 600
 private const val TYPING_DELAY_MS = 50L
@@ -152,7 +154,7 @@ private fun ProtectionStatusPill(
     Row(
         modifier = Modifier
             .background(
-                color = MaterialTheme.colorScheme.secondaryContainer,
+                color = MaterialTheme.colorScheme.surfaceBright,
                 shape = shape,
             )
             .clip(shape)
@@ -164,10 +166,11 @@ private fun ProtectionStatusPill(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Image(
-            painter = painterResource(R.drawable.firefox_pictorgram_shield_rgb),
+        Icon(
+            painter = painterResource(iconsR.drawable.mozac_ic_shield_checkmark_20),
             contentDescription = null,
             modifier = Modifier.size(20.dp),
+            tint = MaterialTheme.colorScheme.tertiary,
         )
 
         Text(
