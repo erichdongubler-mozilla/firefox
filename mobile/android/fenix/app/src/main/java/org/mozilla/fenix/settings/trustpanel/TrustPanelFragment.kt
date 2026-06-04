@@ -23,6 +23,8 @@ import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -60,6 +62,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.components.menu.IPProtectionMenuBinding
 import org.mozilla.fenix.components.menu.compose.MenuDialogBottomSheet
+import org.mozilla.fenix.components.menu.compose.MenuHandleState
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuStatus
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
@@ -181,12 +184,29 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
             val settings = components.settings
             val appStore = components.appStore
 
+            val initRoute = Route.ProtectionPanel
+            var contentState: Route by remember { mutableStateOf(initRoute) }
+            val isShowingProtectionsDashboard = remember(contentState) {
+                contentState == Route.TrackersProtectionDashboard
+            }
+
             MenuDialogBottomSheet(
                 modifier = Modifier
                     .padding(top = 8.dp, bottom = 5.dp)
                     .fillMaxWidth(0.1f),
                 onRequestDismiss = ::dismiss,
-                handlebarContentDescription = "",
+                menuHandleState = MenuHandleState(
+                    contentDescription = "",
+                    visible = !isShowingProtectionsDashboard,
+                ),
+                cornerShape = if (isShowingProtectionsDashboard) {
+                    MaterialTheme.shapes.extraLarge
+                } else {
+                    MaterialTheme.shapes.large
+                }.copy(
+                    bottomStart = CornerSize(0.dp),
+                    bottomEnd = CornerSize(0.dp),
+                ),
             ) {
                 val websiteInfoState by remember {
                     store.stateFlow.map { state -> state.websiteInfoState }
@@ -246,10 +266,6 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                         }
                     }
                 }
-
-                val initRoute = Route.ProtectionPanel
-
-                var contentState: Route by remember { mutableStateOf(initRoute) }
 
                 BackHandler {
                     when (contentState) {

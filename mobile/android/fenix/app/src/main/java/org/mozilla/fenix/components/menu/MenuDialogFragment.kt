@@ -81,6 +81,7 @@ import org.mozilla.fenix.components.menu.compose.CustomTabMenu
 import org.mozilla.fenix.components.menu.compose.MainMenu
 import org.mozilla.fenix.components.menu.compose.MenuCFRState
 import org.mozilla.fenix.components.menu.compose.MenuDialogBottomSheet
+import org.mozilla.fenix.components.menu.compose.MenuHandleState
 import org.mozilla.fenix.components.menu.compose.MoreSettingsSubmenu
 import org.mozilla.fenix.components.menu.middleware.MenuDialogMiddleware
 import org.mozilla.fenix.components.menu.middleware.MenuNavigationMiddleware
@@ -390,11 +391,13 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                         .padding(top = 16.dp, bottom = 16.dp)
                         .width(32.dp),
                     onRequestDismiss = ::dismiss,
-                    handlebarContentDescription = handlebarContentDescription,
-                    isMenuDragBarDark = !settings.shouldUseBottomToolbar &&
+                    menuHandleState = MenuHandleState(
+                        contentDescription = handlebarContentDescription,
+                        useDarkBackground = !settings.shouldUseBottomToolbar &&
                             !settings.shouldUseExpandedToolbar &&
                             (isExtensionsExpanded || isMoreMenuExpanded) &&
                             args.accesspoint == MenuAccessPoint.Browser,
+                    ),
                     cornerShape = MaterialTheme.shapes.extraLarge.copy(
                         bottomStart = CornerSize(0.dp),
                         bottomEnd = CornerSize(0.dp),
