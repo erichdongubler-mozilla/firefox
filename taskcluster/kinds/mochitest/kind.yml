@@ -619,6 +619,10 @@ tasks:
                 1proc:
                     by-test-platform:
                         .*-wayland.*: []
+                        # Compositor shutdown assertion in DisconnectApzcTreeManager
+                        # on headless macOS aarch64 VM workers (Bug 2039987 family);
+                        # same pattern excludes the other suites' debug on this platform.
+                        macosx1500-aarch64-vms/debug: []
                         default: built-projects
                 standalone:
                     by-test-platform:
