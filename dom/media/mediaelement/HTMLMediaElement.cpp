@@ -3757,12 +3757,20 @@ void HTMLMediaElement::SetMutedInternal(uint32_t aMuted) {
   uint32_t oldMuted = mMuted;
   mMuted = aMuted;
 
+  // The :muted pseudo-class follows the muted getter, so update it whenever a
+  // reason that the getter reflects changes, independently of whether the
+  // overall muted bitmask becomes (non-)empty below.
+  constexpr uint32_t kReflectedByGetter =
+      MUTED_BY_CONTENT | MUTED_BY_INVALID_PLAYBACK_RATE;
+  if ((oldMuted & kReflectedByGetter) != (aMuted & kReflectedByGetter)) {
+    // https://html.spec.whatwg.org/multipage/semantics-other.html#selector-muted
+    SetStates(ElementState::MUTED, Muted());
+  }
+
   if (!!aMuted == !!oldMuted) {
     return;
   }
 
-  // https://html.spec.whatwg.org/multipage/semantics-other.html#selector-muted
-  SetStates(ElementState::MUTED, mMuted & MUTED_BY_CONTENT);
   SetVolumeInternal();
 }
 
@@ -3793,14 +3801,26 @@ void HTMLMediaElement::SetVolumeInternal() {
 
 void HTMLMediaElement::SetMuted(bool aMuted) {
   LOG(LogLevel::Debug, ("%p SetMuted(%d) called by JS", this, aMuted));
-  if (aMuted == Muted()) {
-    return;
-  }
 
+  // The setter latches the muted state (to True or False); afterwards the muted
+  // content attribute no longer affects the muted getter. The muted state is
+  // latched even when the computed muted value is unchanged. E.g. an element
+  // muted only by its content attribute has muted state "default" and reports
+  // muted == true; calling `muted = true` leaves the muted value true, but the
+  // muted state must still become True so that later removing the content
+  // attribute does not unmute it.
+  // https://html.spec.whatwg.org/multipage/media.html#dom-media-muted
+  mMutedState = aMuted ? MutedState::True : MutedState::False;
+
+  bool wasMuted = Muted();
   if (aMuted) {
     SetMutedInternal(mMuted | MUTED_BY_CONTENT);
   } else {
     SetMutedInternal(mMuted & ~MUTED_BY_CONTENT);
+  }
+
+  if (Muted() == wasMuted) {
+    return;
   }
 
   QueueEvent(u"volumechange"_ns);
@@ -5377,8 +5397,11 @@ bool HTMLMediaElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
 }
 
 void HTMLMediaElement::DoneCreatingElement() {
+  // A parser-created element with the muted content attribute has the "default"
+  // muted state, so the attribute makes it muted.
   if (HasAttr(nsGkAtoms::muted)) {
     mMuted |= MUTED_BY_CONTENT;
+    SetStates(ElementState::MUTED, Muted());
   }
 }
 
@@ -5436,6 +5459,15 @@ void HTMLMediaElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
     } else if (aName == nsGkAtoms::controls && IsInComposedDoc()) {
       NotifyUAWidgetSetupOrChange();
       SetCuesDirty();
+    } else if (aName == nsGkAtoms::muted) {
+      // While the muted state is "default", the muted content attribute is a
+      // fallback that determines whether the element is muted. Changing the
+      // content attribute is not a volumechange trigger; only the muted and
+      // volume IDL setters fire that event.
+      if (mMutedState == MutedState::Default) {
+        SetMutedInternal(aValue ? (mMuted | MUTED_BY_CONTENT)
+                                : (mMuted & ~MUTED_BY_CONTENT));
+      }
     }
   }
 
@@ -7367,8 +7399,11 @@ nsresult HTMLMediaElement::CopyInnerTo(Element* aDest) {
   NS_ENSURE_SUCCESS(rv, rv);
 
   HTMLMediaElement* dest = static_cast<HTMLMediaElement*>(aDest);
+  // The clone has the "default" muted state, so its muted content attribute
+  // makes it muted.
   if (HasAttr(nsGkAtoms::muted)) {
     dest->mMuted |= MUTED_BY_CONTENT;
+    dest->SetStates(ElementState::MUTED, dest->Muted());
   }
 
   if (aDest->OwnerDoc()->IsStaticDocument()) {
