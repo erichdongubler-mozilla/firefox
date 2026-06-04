@@ -229,7 +229,6 @@ fun TabsTray(
             TabManagerFloatingToolbar(
                 tabsTrayStore = tabsTrayStore,
                 isSignedIn = tabsTrayState.sync.isSignedIn,
-                pbmLocked = tabsTrayState.privateBrowsing.isLocked,
                 onOpenNewNormalTabClicked = onOpenNewNormalTabClicked,
                 onOpenNewPrivateTabClicked = onOpenNewPrivateTabClicked,
                 onSyncedTabsFabClicked = onSyncedTabsFabClicked,
