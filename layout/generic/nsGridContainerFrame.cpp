@@ -9953,9 +9953,9 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
       }
     }
 
-    ComputedGridLineInfo* columnLineInfo = new ComputedGridLineInfo(
+    ComputedGridLineInfo* columnLineInfo = new ComputedGridLineInfo{
         std::move(columnLineNames), std::move(colBeforeRepeatAuto),
-        std::move(colAfterRepeatAuto), std::move(colNamesFollowingRepeat));
+        std::move(colAfterRepeatAuto), std::move(colNamesFollowingRepeat)};
     SetProperty(GridColumnLineInfo(), columnLineInfo);
 
     // Generate row lines next.
@@ -9993,9 +9993,9 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
       }
     }
 
-    ComputedGridLineInfo* rowLineInfo = new ComputedGridLineInfo(
+    ComputedGridLineInfo* rowLineInfo = new ComputedGridLineInfo{
         std::move(rowLineNames), std::move(rowBeforeRepeatAuto),
-        std::move(rowAfterRepeatAuto), std::move(rowNamesFollowingRepeat));
+        std::move(rowAfterRepeatAuto), std::move(rowNamesFollowingRepeat)};
     SetProperty(GridRowLineInfo(), rowLineInfo);
 
     // Generate area info for explicit areas. Implicit areas are handled
