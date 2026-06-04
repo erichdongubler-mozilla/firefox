@@ -22,7 +22,6 @@ import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
 import org.mozilla.fenix.tabstray.redux.state.initializeTabGroupForm
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 
 class TabGroupReducerTest {
     @Test
@@ -659,19 +658,5 @@ class TabGroupReducerTest {
             action = TabGroupAction.DragAndDropTwoTabs(sourceTabId = draggedId, destinationTabId = destinationId),
         )
         assertEquals(expected = expectedState, actual = resultState)
-    }
-
-    @Test
-    fun `WHEN OnboardingDismissed THEN tab group onboarding is disabled in the config`() {
-        val initialState = TabsTrayState(
-            config = TabsTrayState.TabsTrayConfig(tabGroupsOnboardingEnabled = true),
-        )
-
-        val resultState = TabGroupActionReducer.reduce(
-            state = initialState,
-            action = TabGroupAction.OnboardingDismissed,
-        )
-
-        assertFalse(resultState.config.tabGroupsOnboardingEnabled)
     }
 }

@@ -200,7 +200,7 @@ fun TabLayout(
     onDeleteTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onEditTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onCloseTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
-    onTabGroupOnboardingDismiss: () -> Unit,
+    onTabGroupOnboardingDismiss: () -> Unit = {},
     header: (@Composable () -> Unit)? = null,
     contentPadding: PaddingValues = defaultTabLayoutContentPadding(),
     onPrivacyReportTapped: (() -> Unit)? = null,
@@ -1532,7 +1532,6 @@ private fun TabListPreview(
                 onDeleteTabGroupClick = {},
                 onEditTabGroupClick = {},
                 onCloseTabGroupClick = {},
-                onTabGroupOnboardingDismiss = {},
                 focusEnabled = true,
             )
         }
@@ -1569,7 +1568,6 @@ private fun TabGridPreview(
             onDeleteTabGroupClick = {},
             onEditTabGroupClick = {},
             onCloseTabGroupClick = {},
-            onTabGroupOnboardingDismiss = {},
             focusEnabled = true,
         )
     }
@@ -1719,7 +1717,6 @@ private fun MultiSelectPreview(
             onDeleteTabGroupClick = {},
             onEditTabGroupClick = {},
             onCloseTabGroupClick = {},
-            onTabGroupOnboardingDismiss = {},
             focusEnabled = true,
         )
     }

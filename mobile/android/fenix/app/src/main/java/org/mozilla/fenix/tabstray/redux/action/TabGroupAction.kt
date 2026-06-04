@@ -129,9 +129,4 @@ sealed interface TabGroupAction : TabsTrayAction {
         val tab: TabsTrayItem.Tab,
         val group: TabsTrayItem.TabGroup,
     ) : TabGroupAction, TabsStorageAction
-
-    /**
-     * Invoked when the user dismisses the tab group onboarding card.
-     */
-    data object OnboardingDismissed : TabGroupAction
 }

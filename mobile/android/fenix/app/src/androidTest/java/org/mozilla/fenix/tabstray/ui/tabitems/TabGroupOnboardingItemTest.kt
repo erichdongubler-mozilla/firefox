@@ -175,7 +175,6 @@ class TabGroupOnboardingItemTest {
                         onDeleteTabGroupClick = {},
                         onEditTabGroupClick = {},
                         onCloseTabGroupClick = {},
-                        onTabGroupOnboardingDismiss = {},
                     )
                 }
             }
