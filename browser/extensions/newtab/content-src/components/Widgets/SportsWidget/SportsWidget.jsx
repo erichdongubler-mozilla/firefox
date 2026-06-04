@@ -306,12 +306,20 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   const impressionFired = useRef(false);
   const errorFired = useRef(false);
   const introVideoRef = useRef(null);
+  // Caps the intro animation to two plays per widget mount.
+  // Toggling the widget off and back on remounts the component and resets this counter.
+  // You can also refresh the new tab page or open a new tab to reset the counter.
+  const introVideoPlayCount = useRef(0);
   const playIntroVideo = useMemo(() => {
     const prefersReducedMotion =
       globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ??
       false;
+    const maxIntroVideoPlays = 2;
     return () => {
       if (prefersReducedMotion) {
+        return;
+      }
+      if (introVideoPlayCount.current >= maxIntroVideoPlays) {
         return;
       }
       const video = introVideoRef.current;
@@ -319,7 +327,12 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
         return;
       }
       video.currentTime = 0;
-      video.play().catch(() => {});
+      video
+        .play()
+        .then(() => {
+          introVideoPlayCount.current += 1;
+        })
+        .catch(() => {});
     };
   }, []);
   const [watchLiveOpen, setWatchLiveOpen] = useState(false);

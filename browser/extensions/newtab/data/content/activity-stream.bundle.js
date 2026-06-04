@@ -17291,10 +17291,18 @@ function SportsWidget_SportsWidget({
   const impressionFired = (0,external_React_namespaceObject.useRef)(false);
   const errorFired = (0,external_React_namespaceObject.useRef)(false);
   const introVideoRef = (0,external_React_namespaceObject.useRef)(null);
+  // Caps the intro animation to two plays per widget mount.
+  // Toggling the widget off and back on remounts the component and resets this counter.
+  // You can also refresh the new tab page or open a new tab to reset the counter.
+  const introVideoPlayCount = (0,external_React_namespaceObject.useRef)(0);
   const playIntroVideo = (0,external_React_namespaceObject.useMemo)(() => {
     const prefersReducedMotion = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    const maxIntroVideoPlays = 2;
     return () => {
       if (prefersReducedMotion) {
+        return;
+      }
+      if (introVideoPlayCount.current >= maxIntroVideoPlays) {
         return;
       }
       const video = introVideoRef.current;
@@ -17302,7 +17310,9 @@ function SportsWidget_SportsWidget({
         return;
       }
       video.currentTime = 0;
-      video.play().catch(() => {});
+      video.play().then(() => {
+        introVideoPlayCount.current += 1;
+      }).catch(() => {});
     };
   }, []);
   const [watchLiveOpen, setWatchLiveOpen] = (0,external_React_namespaceObject.useState)(false);

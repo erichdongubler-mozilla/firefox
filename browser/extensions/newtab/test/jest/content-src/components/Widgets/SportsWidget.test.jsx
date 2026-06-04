@@ -229,6 +229,131 @@ describe("<SportsWidget>", () => {
     ).toBeInTheDocument();
   });
 
+  describe("intro video playback", () => {
+    let playSpy;
+    let originalPlay;
+    let originalMatchMedia;
+
+    beforeEach(() => {
+      originalPlay = HTMLMediaElement.prototype.play;
+      playSpy = jest.fn(() => Promise.resolve());
+      HTMLMediaElement.prototype.play = playSpy;
+      originalMatchMedia = globalThis.matchMedia;
+    });
+
+    afterEach(() => {
+      HTMLMediaElement.prototype.play = originalPlay;
+      globalThis.matchMedia = originalMatchMedia;
+    });
+
+    async function flushPromises() {
+      await act(async () => {
+        await Promise.resolve();
+      });
+    }
+
+    it("plays the intro video on mouseEnter", async () => {
+      const { container } = render(
+        <WrapWithProvider state={makeState()}>
+          <SportsWidget {...defaultProps} />
+        </WrapWithProvider>
+      );
+      const widget = container.querySelector(".sports");
+      fireEvent.mouseEnter(widget);
+      await flushPromises();
+      expect(playSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("stops playing the intro video after two plays per page lifetime", async () => {
+      const { container } = render(
+        <WrapWithProvider state={makeState()}>
+          <SportsWidget {...defaultProps} />
+        </WrapWithProvider>
+      );
+      const widget = container.querySelector(".sports");
+
+      fireEvent.mouseEnter(widget);
+      await flushPromises();
+      fireEvent.mouseEnter(widget);
+      await flushPromises();
+      fireEvent.mouseEnter(widget);
+      await flushPromises();
+      fireEvent.mouseEnter(widget);
+      await flushPromises();
+
+      expect(playSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it("counts focus toward the per-lifetime cap", async () => {
+      const { container } = render(
+        <WrapWithProvider state={makeState()}>
+          <SportsWidget {...defaultProps} />
+        </WrapWithProvider>
+      );
+      const widget = container.querySelector(".sports");
+
+      fireEvent.focus(widget);
+      await flushPromises();
+      fireEvent.mouseEnter(widget);
+      await flushPromises();
+      fireEvent.focus(widget);
+      await flushPromises();
+
+      expect(playSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it("does not refill the cap if play() rejects", async () => {
+      playSpy.mockImplementation(() => Promise.reject(new Error("blocked")));
+      const { container } = render(
+        <WrapWithProvider state={makeState()}>
+          <SportsWidget {...defaultProps} />
+        </WrapWithProvider>
+      );
+      const widget = container.querySelector(".sports");
+
+      fireEvent.mouseEnter(widget);
+      await flushPromises();
+      fireEvent.mouseEnter(widget);
+      await flushPromises();
+
+      // Rejected plays must not burn a slot — both attempts went through to
+      // play() because the success counter never incremented.
+      expect(playSpy).toHaveBeenCalledTimes(2);
+
+      playSpy.mockImplementation(() => Promise.resolve());
+      fireEvent.mouseEnter(widget);
+      await flushPromises();
+      fireEvent.mouseEnter(widget);
+      await flushPromises();
+      fireEvent.mouseEnter(widget);
+      await flushPromises();
+
+      // Two more successful plays land, then the cap kicks in.
+      expect(playSpy).toHaveBeenCalledTimes(4);
+    });
+
+    it("does not play the intro video when prefers-reduced-motion is set", async () => {
+      globalThis.matchMedia = query => ({
+        matches: query === "(prefers-reduced-motion: reduce)",
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      });
+      const { container } = render(
+        <WrapWithProvider state={makeState()}>
+          <SportsWidget {...defaultProps} />
+        </WrapWithProvider>
+      );
+      const widget = container.querySelector(".sports");
+      fireEvent.mouseEnter(widget);
+      await flushPromises();
+      fireEvent.focus(widget);
+      await flushPromises();
+      expect(playSpy).not.toHaveBeenCalled();
+    });
+  });
+
   it("renders the intro video pointing at the size-matched webm", () => {
     const mediumResult = render(
       <WrapWithProvider state={makeState()}>
