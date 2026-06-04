@@ -459,8 +459,10 @@ Result<bool, nsresult> FrameParser::VBRHeader::ParseXing(BufferReader* aReader,
     mEncoderDelay += DEFAULT_DECODER_DELAY + aFrameSize;  // ignore first frame.
     mEncoderPadding -= std::min(mEncoderPadding, DEFAULT_DECODER_DELAY);
 
-    MP3LOG("VBRHeader::ParseXing: LAME encoder delay section: delay: {} frames, padding: {} frames",
-           mEncoderDelay, mEncoderPadding);
+    MP3LOG(
+        "VBRHeader::ParseXing: LAME encoder delay section: delay: {} frames, "
+        "padding: {} frames",
+        mEncoderDelay, mEncoderPadding);
   }
 
   return mType == XING;
