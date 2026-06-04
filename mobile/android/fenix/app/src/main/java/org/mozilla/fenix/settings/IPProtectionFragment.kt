@@ -20,7 +20,6 @@ import androidx.navigation.fragment.navArgs
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow
-import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow.Companion.EntrypointConfig
 import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow.Companion.INTENT_ON_COMPLETE
 import mozilla.components.feature.ipprotection.debug.IPProtectionStateDebugContent
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
@@ -30,7 +29,6 @@ import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Vpn
-import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.hideToolbar
@@ -114,10 +112,7 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
             feature = IPProtectionFxaAuthFlow(
                 accountManager = requireComponents.backgroundServices.accountManager,
                 store = requireComponents.ipProtection.store,
-                entrypointConfig = EntrypointConfig(
-                    authorization = FenixFxAEntryPoint.IPProtectionMainMenu,
-                    authentication = FenixFxAEntryPoint.IPProtectionOnboarding,
-                ),
+                entrypoint = args.entrypoint,
                 onAuthRequested = { url, onCompleteAction ->
                     val intent = SupportUtils.createAuthCustomTabIntent(requireContext(), url)
                     intent.putExtra(INTENT_ON_COMPLETE, onCompleteAction)

@@ -889,6 +889,9 @@
             android:name="start_auth_flow"
             android:defaultValue="false"
             app:argType="boolean" />
+        <argument
+            android:name="entrypoint"
+            app:argType="org.mozilla.fenix.components.accounts.FenixFxAEntryPoint" />
     </fragment>
     <fragment
         android:id="@+id/aiControlsFragment"
