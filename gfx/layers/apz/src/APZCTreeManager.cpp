@@ -2133,6 +2133,8 @@ void APZCTreeManager::ProcessTouchInput(InputHandlingState& aState,
   nsTArray<TouchBehaviorFlags> touchBehaviors;
   HitTestingTreeNodeAutoLock hitScrollbarNode;
   InitialTouchMove initialTouchMove = InitialTouchMove::No;
+  FastPathApzAwareListener fastPathApzAwareListener =
+      FastPathApzAwareListener::No;
   if (aInput.mType == MultiTouchInput::MULTITOUCH_START) {
     // If we are panned into overscroll and a second finger goes down,
     // ignore that second touch point completely. The touch-start for it is
@@ -2191,6 +2193,7 @@ void APZCTreeManager::ProcessTouchInput(InputHandlingState& aState,
               mTouchBlockHitResult.mTargetApzc->GetGuid())) {
         mTouchBlockHitResult.mHitResult +=
             CompositorHitTestFlags::eApzAwareListeners;
+        fastPathApzAwareListener = FastPathApzAwareListener::Yes;
       }
     }
     aState.mHit = mHitTester->CloneHitTestResult(lock, mTouchBlockHitResult);
@@ -2233,7 +2236,9 @@ void APZCTreeManager::ProcessTouchInput(InputHandlingState& aState,
 
       aState.mResult = mInputQueue->ReceiveInputEvent(
           mTouchBlockHitResult.mTargetApzc,
-          TargetConfirmationFlags{mTouchBlockHitResult.mHitResult}, aInput,
+          TargetConfirmationFlags{mTouchBlockHitResult.mHitResult,
+                                  fastPathApzAwareListener},
+          aInput,
           touchBehaviors.IsEmpty() ? Nothing()
                                    : Some(std::move(touchBehaviors)),
           initialTouchMove);

@@ -191,7 +191,7 @@ APZEventResult InputQueue::ReceiveTouchInput(
     // called when HasContentResponded() is false; the short-circuit
     // ordering guarantees that.
     if (aInitialTouchMove == InitialTouchMove::Yes &&
-        aFlags.mDispatchToContent &&
+        aFlags.IsFastPathApzAwareDispatchToContent() &&
         !block->IsDuringFastFling() &&
         (!block->HasContentResponded() || !block->IsDefaultPrevented())) {
       block->ResetContentResponseTimerExpired();
