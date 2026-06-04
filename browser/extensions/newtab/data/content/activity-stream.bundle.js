@@ -16294,6 +16294,9 @@ function SportsMatchRow_extends() { return SportsMatchRow_extends = Object.assig
 
 
 const SportsMatchRow_PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
+const SportsMatchRow_USER_ACTION_TYPES = {
+  OPEN_MATCH_SEARCH: "open_match_search"
+};
 const STATUS_L10N_MAP = {
   delayed: "newtab-sports-widget-delayed",
   postponed: "newtab-sports-widget-postponed",
@@ -16485,7 +16488,7 @@ function SportsMatchRow({
       data: {
         widget_name: "sports",
         widget_source: "widget",
-        user_action: "open_match_search",
+        user_action: SportsMatchRow_USER_ACTION_TYPES.OPEN_MATCH_SEARCH,
         action_value: variant,
         widget_size: widgetSize
       }
@@ -16561,20 +16564,34 @@ function SportsMatchRow({
 // eslint-disable-next-line no-unused-vars
 
 
+const LivePagination_USER_ACTION_TYPES = {
+  CHANGE_LIVE_MATCH: "change_live_match"
+};
 
-// Pager for the Now tab when 2+ live games are happening at once. Chevron
-// buttons step through the live matches (already sorted followed-first); dot
-// indicators show position and let the user jump directly to a match.
-// Chevron icon direction is mirrored under RTL via CSS (`:dir(rtl)`).
+// Arrow icons are mirrored under RTL via :dir(rtl) CSS.
 function LivePagination({
   dispatch,
   liveIndex,
   liveCount,
   size,
+  widgetSize,
   handleInteraction
 }) {
   const buttonSize = size === "medium" ? "small" : undefined;
   const goTo = nextIndex => {
+    if (nextIndex === liveIndex) {
+      return;
+    }
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.WIDGETS_USER_EVENT,
+      data: {
+        widget_name: "sports",
+        widget_source: "widget",
+        user_action: LivePagination_USER_ACTION_TYPES.CHANGE_LIVE_MATCH,
+        action_value: String(nextIndex + 1),
+        widget_size: widgetSize
+      }
+    }));
     dispatch(actionCreators.AlsoToMain({
       type: actionTypes.WIDGETS_SPORTS_CHANGE_LIVE_INDEX,
       data: nextIndex
@@ -18008,6 +18025,7 @@ function SportsMatchesView({
     liveIndex: liveIndex,
     liveCount: current.length,
     size: size,
+    widgetSize: widgetSize,
     handleInteraction: handleInteraction
   }))), /*#__PURE__*/external_React_default().createElement("div", {
     className: "sports-matches-tab-panel",

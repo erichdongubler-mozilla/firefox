@@ -8,6 +8,10 @@ import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 
 const PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
 
+const USER_ACTION_TYPES = {
+  OPEN_MATCH_SEARCH: "open_match_search",
+};
+
 const STATUS_L10N_MAP = {
   delayed: "newtab-sports-widget-delayed",
   postponed: "newtab-sports-widget-postponed",
@@ -214,7 +218,7 @@ function SportsMatchRow({
         data: {
           widget_name: "sports",
           widget_source: "widget",
-          user_action: "open_match_search",
+          user_action: USER_ACTION_TYPES.OPEN_MATCH_SEARCH,
           action_value: variant,
           widget_size: widgetSize,
         },

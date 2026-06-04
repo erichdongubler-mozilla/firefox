@@ -1292,6 +1292,7 @@ function SportsMatchesView({
                   liveIndex={liveIndex}
                   liveCount={current.length}
                   size={size}
+                  widgetSize={widgetSize}
                   handleInteraction={handleInteraction}
                 />
               )}

@@ -3317,7 +3317,7 @@ describe("<SportsWidget> live games pagination (Now tab)", () => {
     expect(findPagination(container)).toBeTruthy();
   });
 
-  it("renders chevrons and one dot per live match when 2+ are live", () => {
+  it("renders arrows and one dot per live match when 2+ are live", () => {
     const { container } = renderPagination({
       live: [matchEngUsa, matchCanAus],
       liveIndex: 0,
@@ -3336,7 +3336,7 @@ describe("<SportsWidget> live games pagination (Now tab)", () => {
     expect(dots[1].classList.contains("is-active")).toBe(false);
   });
 
-  it("dispatches CHANGE_LIVE_INDEX with the next index when the next chevron is clicked", () => {
+  it("dispatches CHANGE_LIVE_INDEX with the next index when the next arrow is clicked", () => {
     const { container, dispatch } = renderPagination({
       live: [matchEngUsa, matchCanAus],
       liveIndex: 0,
@@ -3354,7 +3354,7 @@ describe("<SportsWidget> live games pagination (Now tab)", () => {
     expect(changeCall[0].data).toBe(1);
   });
 
-  it("wraps to the last match when the prev chevron is clicked from index 0", () => {
+  it("wraps to the last match when the prev arrow is clicked from index 0", () => {
     const { container, dispatch } = renderPagination({
       live: [matchEngUsa, matchCanAus],
       liveIndex: 0,
@@ -3388,7 +3388,7 @@ describe("<SportsWidget> live games pagination (Now tab)", () => {
     expect(changeCall[0].data).toBe(1);
   });
 
-  it("uses size='small' chevrons in the medium widget", () => {
+  it("uses size='small' arrows in the medium widget", () => {
     const { container } = renderPagination({
       size: "medium",
       live: [matchEngUsa, matchCanAus],
@@ -3406,7 +3406,7 @@ describe("<SportsWidget> live games pagination (Now tab)", () => {
     ).toBe("small");
   });
 
-  it("uses default-size chevrons in the large widget", () => {
+  it("uses default-size arrows in the large widget", () => {
     const { container } = renderPagination({
       size: "large",
       live: [matchEngUsa, matchCanAus],
@@ -3474,6 +3474,112 @@ describe("<SportsWidget> live games pagination (Now tab)", () => {
     // Verify the visible match is the second one by checking the team
     // identifiers rendered in the row.
     expect(row.textContent).toMatch(/CAN|AUS|Canada|Australia/);
+  });
+
+  it("dispatches both CHANGE_LIVE_INDEX and a change_live_match user_event with 1-based new index on next arrow", () => {
+    const { container, dispatch } = renderPagination({
+      live: [matchEngUsa, matchCanAus],
+      liveIndex: 0,
+    });
+    const nextButton = findPagination(container).querySelector(
+      ".sports-live-pagination-next"
+    );
+    act(() => {
+      fireEvent.click(nextButton);
+    });
+    const actions = dispatch.mock.calls.map(([action]) => action);
+    const stateAction = actions.find(
+      a => a?.type === at.WIDGETS_SPORTS_CHANGE_LIVE_INDEX
+    );
+    const userEvent = actions.find(
+      a =>
+        a?.type === at.WIDGETS_USER_EVENT &&
+        a.data?.user_action === "change_live_match"
+    );
+    expect(stateAction).toBeTruthy();
+    expect(stateAction.data).toBe(1);
+    expect(userEvent).toBeTruthy();
+    expect(userEvent.data).toMatchObject({
+      widget_name: "sports",
+      widget_source: "widget",
+      user_action: "change_live_match",
+      action_value: "2",
+      widget_size: "large",
+    });
+    expect(userEvent.meta).toEqual(
+      expect.objectContaining({
+        to: "ActivityStream:Main",
+        skipLocal: true,
+      })
+    );
+  });
+
+  it("dispatches change_live_match with 1-based wrapped index on prev arrow from index 0", () => {
+    const { container, dispatch } = renderPagination({
+      live: [matchEngUsa, matchCanAus],
+      liveIndex: 0,
+    });
+    const prevButton = findPagination(container).querySelector(
+      ".sports-live-pagination-prev"
+    );
+    act(() => {
+      fireEvent.click(prevButton);
+    });
+    const userEvent = dispatch.mock.calls
+      .map(([action]) => action)
+      .find(
+        a =>
+          a?.type === at.WIDGETS_USER_EVENT &&
+          a.data?.user_action === "change_live_match"
+      );
+    expect(userEvent).toBeTruthy();
+    expect(userEvent.data.action_value).toBe("2");
+  });
+
+  it("dispatches change_live_match with the dot's 1-based index on dot click", () => {
+    const { container, dispatch } = renderPagination({
+      live: [matchEngUsa, matchCanAus],
+      liveIndex: 0,
+    });
+    const dots = findPagination(container).querySelectorAll(
+      ".sports-live-pagination-dot"
+    );
+    act(() => {
+      fireEvent.click(dots[1]);
+    });
+    const userEvent = dispatch.mock.calls
+      .map(([action]) => action)
+      .find(
+        a =>
+          a?.type === at.WIDGETS_USER_EVENT &&
+          a.data?.user_action === "change_live_match"
+      );
+    expect(userEvent).toBeTruthy();
+    expect(userEvent.data.action_value).toBe("2");
+  });
+
+  it("does not dispatch CHANGE_LIVE_INDEX or change_live_match when clicking the already-active dot", () => {
+    const { container, dispatch } = renderPagination({
+      live: [matchEngUsa, matchCanAus],
+      liveIndex: 0,
+    });
+    const dots = findPagination(container).querySelectorAll(
+      ".sports-live-pagination-dot"
+    );
+    act(() => {
+      fireEvent.click(dots[0]);
+    });
+    const actions = dispatch.mock.calls.map(([action]) => action);
+    expect(
+      actions.some(a => a?.type === at.WIDGETS_SPORTS_CHANGE_LIVE_INDEX)
+    ).toBe(false);
+    expect(
+      actions.some(
+        a =>
+          a?.type === at.WIDGETS_USER_EVENT &&
+          a.data?.user_action === "change_live_match"
+      )
+    ).toBe(false);
   });
 });
 
