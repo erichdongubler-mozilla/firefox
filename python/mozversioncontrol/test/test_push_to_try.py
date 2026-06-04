@@ -182,7 +182,7 @@ def test_push_to_try(repo, monkeypatch):
                 str(tool),
                 "--quiet",
                 "new",
-                "-m",
+                "--message",
                 "commit message",
                 'coalesce(@ ~ (empty() & description(exact:"")) ~ bookmarks(), @-)',
             ),
