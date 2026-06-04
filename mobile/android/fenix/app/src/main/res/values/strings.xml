@@ -1883,8 +1883,8 @@
     <string name="webcompat_reporter_choose_reason_2">Choose a reason</string>
     <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
     <string name="webcompat_reporter_choose_reason_error">Please choose a reason</string>
-    <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
-    <string name="webcompat_reporter_label_description">Describe the problem (optional)</string>
+  <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
+    <string name="webcompat_reporter_label_description_2">Describe the problem in detail to help us investigate the issue (optional)</string>
     <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
     <string name="webcompat_reporter_add_more_info">Add more info</string>
     <!-- The button text for the cancel button to leave the Web Compat Reporter feature. -->
@@ -1893,8 +1893,8 @@
     <string name="webcompat_reporter_send">Send</string>
     <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
     <string name="webcompat_reporter_success_snackbar_text_2">Report sent</string>
-    <!-- Placeholder text for the description field to prompt the user on what they should type. -->
-    <string name="webcompat_reporter_problem_description_placeholder_text">What happened? What should have happened?</string>
+  <!-- Placeholder text for the description field to prompt the user on what they should type. -->
+    <string name="webcompat_reporter_problem_description_placeholder_text_2">What happened? What did you expect to happen? Please provide steps to reproduce the issue.</string>
     <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
     <string name="webcompat_reporter_etp_checkbox_text_2">Send list of items blocked by tracking protection</string>
     <!-- The button text for the preview report button to view a preview of the report. -->
