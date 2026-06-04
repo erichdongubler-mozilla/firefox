@@ -92,7 +92,6 @@ private val tabItemHeight = 40.dp
 private val spaceBetweenTabs = 4.dp
 private val tabStripListContentStartPadding = 8.dp
 private val titleFadeWidth = 16.dp
-private val tabStripHorizontalPadding = 16.dp
 
 private val tabStripIconSize
     @Composable
@@ -199,8 +198,7 @@ private fun TabStripContent(
             .fillMaxWidth()
             .height(dimensionResource(R.dimen.tab_strip_height))
             .background(brush = colors.backgroundBrush)
-            .systemGestureExclusion()
-            .padding(horizontal = tabStripHorizontalPadding),
+            .systemGestureExclusion(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
