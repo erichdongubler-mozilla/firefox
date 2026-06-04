@@ -3878,6 +3878,12 @@ bool WasmGlobalObject::valueSetterImpl(JSContext* cx, const CallArgs& args) {
     return false;
   }
 
+  if (!global->type().isExposable()) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_BAD_VAL_TYPE);
+    return false;
+  }
+
   RootedVal val(cx);
   if (!Val::fromJSValue(cx, global->type(), args.get(0), &val)) {
     return false;
