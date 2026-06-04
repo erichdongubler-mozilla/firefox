@@ -108,7 +108,7 @@ this.publicSuffix = class extends ExtensionAPI {
           ) {
             return null;
           }
-          if (options.encoding === "unicode") {
+          if (options.encoding === "display") {
             domain = idn.domainToDisplay(domain);
           }
           return domain;

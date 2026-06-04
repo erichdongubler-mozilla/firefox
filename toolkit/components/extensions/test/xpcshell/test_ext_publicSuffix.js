@@ -414,7 +414,7 @@ add_task(async function test_publicSuffix() {
 
     testApi({
       hostname: "foo.مليسيا",
-      getDomain_options: { encoding: "unicode" },
+      getDomain_options: { encoding: "display" },
       description: "this is an IDN, using options",
       expect: {
         isKnownSuffix: false,
@@ -435,12 +435,25 @@ add_task(async function test_publicSuffix() {
 
     testApi({
       hostname: "foo.xn--mgbx4cd0ab",
-      getDomain_options: { encoding: "unicode" },
+      getDomain_options: { encoding: "display" },
       description: "this is an IDN, but punycode, using options",
       expect: {
         isKnownSuffix: false,
         getKnownSuffix: "xn--mgbx4cd0ab",
         getDomain: "foo.مليسيا",
+      },
+    });
+
+    testApi({
+      hostname: "xn--bs-red.com",
+      getDomain_options: { encoding: "display" },
+      description:
+        "this is an IDN, but punycode, with a unicode confusable label",
+      expect: {
+        isKnownSuffix: false,
+        getKnownSuffix: "com",
+        // not converted to unicode due to unicode confusable.
+        getDomain: "xn--bs-red.com",
       },
     });
 

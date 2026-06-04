@@ -22,7 +22,7 @@
         "id": "DomainEncoding",
         "type": "string",
         "description": "The available encoding types for the returned domain.",
-        "enum": ["punycode", "unicode"]
+        "enum": ["punycode", "display"]
       }
     ],
     "functions": [
