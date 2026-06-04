@@ -77,7 +77,7 @@
   --urlbar-background-box-shadow-breakout: 0 0 14px 0 var(--chrome-box-shadow);
   --urlbar-background-outline-focused: none;
   --urlbar-input-container-border: var(--urlbar-input-container-border-width) solid var(--toolbar-field-border-color);
-  --urlbar-margin-block-start: calc((var(--urlbar-container-height) - var(--urlbar-height)) / 2);
+  --urlbar-margin-block-start-breakout: calc((var(--urlbar-container-height) - var(--urlbar-height)) / 2);
   --urlbar-searchmode-switcher-panel-list-min-width: 17em;
   --urlbar-selection-border-radius: var(--border-radius-xsmall);
 
@@ -90,7 +90,7 @@
        on :root, but LWT themes can override this value. */
     --urlbar-background-outline-focused: var(--focus-outline-width) solid var(--toolbar-field-border-color-focus);
     --urlbar-input-container-border: var(--urlbar-input-container-border-width) solid transparent;
-    --urlbar-margin-block-start: 0px;
+    --urlbar-margin-block-start-breakout: 0px;
     --urlbar-searchmode-switcher-panel-list-min-width: auto;
     --urlbar-selection-border-radius: 0;
   }
@@ -163,7 +163,10 @@ toolbar[inactive="true"] .urlbar,
     position: absolute;
     height: var(--urlbar-height);
     width: var(--urlbar-width);
-    margin-block-start: var(--urlbar-margin-block-start);
+
+    &[breakout-extend] {
+      margin-block-start: var(--urlbar-margin-block-start-breakout);
+    }
   }
 }
 

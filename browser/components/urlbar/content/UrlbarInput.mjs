@@ -2951,9 +2951,8 @@ ${
       return;
     }
 
-    this.#updateTextboxPosition();
-
     this.toggleAttribute("breakout-extend", true);
+    this.#updateTextboxPosition();
 
     // Enable the animation only after the first extend call to ensure it
     // doesn't run when opening a new window.
@@ -3301,10 +3300,7 @@ ${
   }
 
   #updateTextboxPosition() {
-    if (
-      !this.view.isOpen &&
-      !Services.prefs.getBoolPref("browser.nova.enabled", false)
-    ) {
+    if (!this.hasAttribute("breakout-extend")) {
       this.style.top = "";
       return;
     }
