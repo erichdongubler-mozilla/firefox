@@ -76,8 +76,8 @@ def test_push_to_try(repo, monkeypatch):
                 os.path.join(vcs.path, "extra-file"),
                 os.path.join(vcs.path, "other", "extra-file"),
             ),
-            (str(tool), "push-to-try", "--message", commit_message),
-            (str(tool), "revert", "--all"),
+            (str(tool), "push-to-try", "-m", commit_message),
+            (str(tool), "revert", "-a"),
         ]
         expected_inputs = []
     elif repo.vcs == "git":
@@ -145,9 +145,9 @@ def test_push_to_try(repo, monkeypatch):
                 "--quiet",
                 "operation",
                 "log",
-                "--limit=1",
+                "-n1",
                 "--no-graph",
-                "--template",
+                "-T",
                 "id.short(16)",
             ),
             (
@@ -155,17 +155,17 @@ def test_push_to_try(repo, monkeypatch):
                 "--quiet",
                 "log",
                 "--no-graph",
-                "--revisions",
+                "-r",
                 "heads(trunk() | (remote_bookmarks() & ancestors(@)))..@ ~ description(exact:'')",
-                "--template",
+                "-T",
                 "'  ' ++ description.first_line() ++ '\n'",
             ),
             (
                 str(tool),
                 "--quiet",
                 "log",
-                "--limit=0",
-                "--template",
+                "-n0",
+                "-T",
                 '"snapshot: prepare_try_push"',
             ),
             (
@@ -173,29 +173,22 @@ def test_push_to_try(repo, monkeypatch):
                 "--quiet",
                 "operation",
                 "log",
-                "--limit=1",
+                "-n1",
                 "--no-graph",
-                "--template",
+                "-T",
                 "id.short(16)",
             ),
             (
                 str(tool),
                 "--quiet",
                 "new",
-                "--message",
+                "-m",
                 "commit message",
                 'coalesce(@ ~ (empty() & description(exact:"")) ~ bookmarks(), @-)',
             ),
             (str(tool), "--quiet", "file", "track", "extra-file"),
             (str(tool), "--quiet", "file", "track", "other/extra-file"),
-            (
-                str(tool),
-                "--quiet",
-                "log",
-                "--limit=0",
-                "--template",
-                '"snapshot: prepare_try_push"',
-            ),
+            (str(tool), "--quiet", "log", "-n0", "-T", '"snapshot: prepare_try_push"'),
             (
                 str(tool),
                 "--quiet",
@@ -212,10 +205,10 @@ def test_push_to_try(repo, monkeypatch):
                 "--ignore-working-copy",
                 "log",
                 "--no-graph",
-                "--limit=1",
-                "--revisions",
+                "-n1",
+                "-r",
                 "@",
-                "--template",
+                "-T",
                 "change_id.short()",
             ),
             (str(vcs._git._tool), "remote"),
@@ -302,7 +295,7 @@ def test_push_to_git_try_creates_bookmark(repo, mocker):
     vcs.push_to_try("msg", remote=remote)
 
     mock_run.assert_called_once_with(
-        "bookmark", "create", "push-abc123", "--revision", vcs.HEAD_REVSET
+        "bookmark", "create", "push-abc123", "-r", vcs.HEAD_REVSET
     )
     mock_push.assert_called_once_with(
         remote, ref="fakehead", dest_branch="user/test/push-abc123", force=True
@@ -314,7 +307,7 @@ def test_push_to_git_try_bookmark_persists(repo, mocker):
         pytest.skip("bookmark persistence only applies to jj")
 
     subprocess.check_call(
-        ["jj", "new", "--message", "test commit"],
+        ["jj", "new", "-m", "test commit"],
         cwd=repo.dir,
         env={**os.environ, "JJ_CONFIG": ""},
     )
@@ -329,10 +322,10 @@ def test_push_to_git_try_bookmark_persists(repo, mocker):
     output = vcs._run_read_only(
         "log",
         "--no-graph",
-        "--limit=1",
-        "--revision",
+        "-n1",
+        "-r",
         "@",
-        "--template",
+        "-T",
         'local_bookmarks.join("\n")',
     )
     bookmark = output.split("\n")[0].strip()
