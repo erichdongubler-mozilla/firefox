@@ -7219,6 +7219,19 @@ dialog:dir(rtl)::after {
   width: fit-content;
 }
 
+.sports-upcoming-empty-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+}
+.sports-upcoming-empty-info .sports-upcoming-empty-info-icon {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  background: url("chrome://global/skin/icons/info.svg") no-repeat center/contain;
+  -moz-context-properties: fill;
+  fill: currentColor;
+}
+
 .sports-matches-tab {
   flex: 1;
   padding-block: var(--space-small);
@@ -7299,6 +7312,9 @@ dialog:dir(rtl)::after {
 .sports-match-row:hover {
   background: var(--button-background-color-hover);
 }
+.sports-match-row.sports-match-row-placeholder:hover {
+  background: none;
+}
 .sports-match-row .sports-match-team {
   display: flex;
   flex-direction: column;
@@ -7322,6 +7338,17 @@ dialog:dir(rtl)::after {
   height: var(--sports-flag-height);
   /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
   display: block;
+}
+.sports-match-row .sports-match-team .sports-match-flag-tbd {
+  --sports-tbd-placeholder-color: light-dark(
+    var(--color-gray-15),
+    var(--color-gray-75)
+  );
+  box-sizing: border-box;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  background-color: var(--sports-tbd-placeholder-color);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--border-radius-small);
 }
 .sports-match-row .sports-match-team .sports-match-flag-check {
   position: absolute;
@@ -7353,6 +7380,10 @@ dialog:dir(rtl)::after {
 .sports-match-row .sports-match-upcoming .sports-match-date,
 .sports-match-row .sports-match-result .sports-match-date {
   color: var(--text-color-deemphasized);
+}
+.sports-match-row .sports-match-upcoming .sports-match-vs,
+.sports-match-row .sports-match-result .sports-match-vs {
+  font-size: var(--font-size-xxlarge);
 }
 .sports-match-row .sports-match-result {
   gap: var(--space-xsmall);
@@ -7404,6 +7435,7 @@ dialog:dir(rtl)::after {
 .sports-match-row.sports-match-row-medium .sports-match-code, .sports-match-row.sports-match-row-list .sports-match-code {
   width: 35px;
   /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+  text-align: center;
 }
 .sports-match-row.sports-match-row-medium .sports-match-result-footer, .sports-match-row.sports-match-row-list .sports-match-result-footer {
   font-size: var(--font-size-small);
@@ -7417,6 +7449,9 @@ dialog:dir(rtl)::after {
 }
 .sports-match-row.sports-match-row-medium .sports-match-upcoming .sports-match-date {
   font-size: var(--font-size-small);
+}
+.sports-match-row.sports-match-row-medium .sports-match-upcoming .sports-match-vs {
+  font-size: var(--font-size-xlarge);
 }
 .sports-match-row.sports-match-row-medium .sports-score-pill {
   font-size: var(--font-size-xlarge);

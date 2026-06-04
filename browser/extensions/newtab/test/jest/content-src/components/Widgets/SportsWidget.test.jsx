@@ -3828,3 +3828,73 @@ describe("<SportsWidget> WIDGETS_ERROR telemetry", () => {
     expect(errorCalls[0][0].data.error_type).toBe("teams_load_error");
   });
 });
+
+// Regression test for bug 2044931. The World Cup backend can return matches
+// with home_team/away_team set to null (undecided knockout slots). Following a
+// team used to crash the entire widget section: sortFollowedFirst and
+// filterFollowed run once selectedTeams is non-empty and read
+// match.home_team.key directly, throwing on the null team. With the null-safe
+// access this patch adds, the widget must keep rendering and still bubble the
+// followed match to the front past the team-less one.
+describe("<SportsWidget> matches missing a team (bug 2044931)", () => {
+  const tbdMatch = {
+    ...mockMatch,
+    home_team: null,
+    away_team: null,
+    status_type: "scheduled",
+    query: "Quarter-finals World Cup 2026",
+    stage: "Quarter-finals",
+  };
+  const followedMatch = {
+    ...mockMatch,
+    status_type: "scheduled",
+    home_team: { key: "ENG", name: "England" },
+    away_team: { key: "USA", name: "United States" },
+    query: "ENG vs USA upcoming",
+  };
+
+  function renderWithFollowedTeamAndTbd() {
+    return render(
+      <WrapWithProvider
+        state={makeState(
+          {},
+          {
+            widgetState: "sports-matches",
+            matchesTab: "upcoming",
+            selectedTeams: ["ENG"],
+            data: {
+              teams: makeTeams(),
+              // The team-less match sits ahead of the followed one in both the
+              // results and upcoming buckets, so sortFollowedFirst has to sort
+              // past it and filterFollowed has to test it.
+              matches: {
+                previous: [tbdMatch, followedMatch],
+                current: [],
+                next: [tbdMatch, followedMatch],
+              },
+            },
+          }
+        )}
+      >
+        <SportsWidget {...defaultProps} />
+      </WrapWithProvider>
+    );
+  }
+
+  it("renders without crashing when a team is followed and a match has no teams", () => {
+    const { container } = renderWithFollowedTeamAndTbd();
+    // The section renders rather than tripping the React error boundary.
+    expect(
+      container.querySelector(".sports.sports-matches")
+    ).toBeInTheDocument();
+  });
+
+  it("bubbles the followed match ahead of the team-less one in the highlight", () => {
+    const { container } = renderWithFollowedTeamAndTbd();
+    const panel = getVisibleTabPanel(container);
+    const titles = [...panel.querySelectorAll(".sports-match-flag")].map(f =>
+      f.getAttribute("title")
+    );
+    expect(titles).toEqual(expect.arrayContaining(["England"]));
+  });
+});

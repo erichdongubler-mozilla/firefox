@@ -389,6 +389,20 @@
   width: fit-content;
 }
 
+.sports-upcoming-empty-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+
+  .sports-upcoming-empty-info-icon {
+    width: var(--icon-size);
+    height: var(--icon-size);
+    background: url('chrome://global/skin/icons/info.svg') no-repeat center / contain;
+    -moz-context-properties: fill;
+    fill: currentColor;
+  }
+}
+
 .sports-matches-tab {
   flex: 1;
   padding-block: var(--space-small);

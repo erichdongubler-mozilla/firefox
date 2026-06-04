@@ -12,6 +12,10 @@ const USER_ACTION_TYPES = {
   OPEN_MATCH_SEARCH: "open_match_search",
 };
 
+// Visible placeholder shown in place of a team's country code when the
+// match-up isn't decided yet.
+const TBD_PLACEHOLDER = "--";
+
 const STATUS_L10N_MAP = {
   delayed: "newtab-sports-widget-delayed",
   postponed: "newtab-sports-widget-postponed",
@@ -48,12 +52,81 @@ function ScorePill({
   );
 }
 
+// Renders one side of a match row: the team flag and code, or a placeholder
+// when the team is not yet decided.
+function MatchTeam({ team, isFollowed }) {
+  if (!team) {
+    return (
+      <div className="sports-match-team">
+        <span className="sports-match-flag-wrapper">
+          <span
+            className="sports-match-flag sports-match-flag-tbd"
+            aria-hidden="true"
+          />
+        </span>
+        <span className="sports-match-code">{TBD_PLACEHOLDER}</span>
+      </div>
+    );
+  }
+  return (
+    <div className="sports-match-team">
+      <span
+        className={`sports-match-flag-wrapper${isFollowed ? " is-followed" : ""}`}
+      >
+        <img
+          className="sports-match-flag"
+          src={team.icon_url}
+          alt={team.name}
+          title={team.name}
+        />
+        {isFollowed && (
+          <span className="sports-match-flag-check" aria-hidden="true" />
+        )}
+      </span>
+      <span className="sports-match-code">
+        {isFollowed ? <strong>{team.key}</strong> : team.key}
+      </span>
+    </div>
+  );
+}
+
+// Fallback shown in the Upcoming tab if the backend returns no matches.
+function UpcomingMatchPlaceholder({ size = "large" }) {
+  return (
+    <>
+      <div
+        className={`sports-match-row sports-match-row-${size} sports-match-row-placeholder`}
+        aria-hidden="true"
+      >
+        <MatchTeam team={null} />
+        <div className="sports-match-upcoming">
+          <span
+            className="sports-match-time sports-match-vs"
+            data-l10n-id="newtab-sports-widget-match-vs"
+          />
+        </div>
+        <MatchTeam team={null} />
+      </div>
+      {size === "large" && (
+        <p className="sports-upcoming-empty-info">
+          <span
+            className="sports-upcoming-empty-info-icon"
+            aria-hidden="true"
+          />
+          <span data-l10n-id="newtab-sports-widget-no-upcoming-matches" />
+        </p>
+      )}
+    </>
+  );
+}
+
 function SportsMatchRow({
   match,
   variant,
   size = "large",
   handleInteraction,
   followedTeams,
+  tbdTeamName = "",
 }) {
   const dispatch = useDispatch();
   // Read the widget size pref (not `size`, which can be "list" when the
@@ -75,8 +148,10 @@ function SportsMatchRow({
     away_penalty,
     query,
   } = match;
-  const isHomeFollowed = !!followedTeams?.has(home_team.key);
-  const isAwayFollowed = !!followedTeams?.has(away_team.key);
+  const isHomeFollowed = !!(home_team && followedTeams?.has(home_team.key));
+  const isAwayFollowed = !!(away_team && followedTeams?.has(away_team.key));
+  const homeTeamName = home_team ? home_team.name : tbdTeamName;
+  const awayTeamName = away_team ? away_team.name : tbdTeamName;
   const dateTimestamp = new Date(date).getTime();
   // (developer note): Assumes home_score/away_score exclude extra time goals
   const displayHomeScore = home_score + (home_extra || 0);
@@ -96,7 +171,7 @@ function SportsMatchRow({
   // translators see complete sentences and the strings are independently
   // translatable.
   function getAriaLabelL10n() {
-    const teams = { homeTeam: home_team.name, awayTeam: away_team.name };
+    const teams = { homeTeam: homeTeamName, awayTeam: awayTeamName };
     if (variant === "results") {
       if (hasPenalties) {
         return {
@@ -264,45 +339,11 @@ function SportsMatchRow({
       })}
     >
       {/* (developer note): Replace href with SERP link. */}
-      <div className="sports-match-team">
-        <span
-          className={`sports-match-flag-wrapper${isHomeFollowed ? " is-followed" : ""}`}
-        >
-          <img
-            className="sports-match-flag"
-            src={home_team.icon_url}
-            alt={home_team.name}
-            title={home_team.name}
-          />
-          {isHomeFollowed && (
-            <span className="sports-match-flag-check" aria-hidden="true" />
-          )}
-        </span>
-        <span className="sports-match-code">
-          {isHomeFollowed ? <strong>{home_team.key}</strong> : home_team.key}
-        </span>
-      </div>
+      <MatchTeam team={home_team} isFollowed={isHomeFollowed} />
       {renderMiddle()}
-      <div className="sports-match-team">
-        <span
-          className={`sports-match-flag-wrapper${isAwayFollowed ? " is-followed" : ""}`}
-        >
-          <img
-            className="sports-match-flag"
-            src={away_team.icon_url}
-            alt={away_team.name}
-            title={away_team.name}
-          />
-          {isAwayFollowed && (
-            <span className="sports-match-flag-check" aria-hidden="true" />
-          )}
-        </span>
-        <span className="sports-match-code">
-          {isAwayFollowed ? <strong>{away_team.key}</strong> : away_team.key}
-        </span>
-      </div>
+      <MatchTeam team={away_team} isFollowed={isAwayFollowed} />
     </a>
   );
 }
 
-export { SportsMatchRow };
+export { SportsMatchRow, UpcomingMatchPlaceholder };
