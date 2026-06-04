@@ -16,10 +16,9 @@ namespace mozilla {
 
 extern LazyLogModule gMediaDecoderLog;
 
-#define LOG(msg, ...)                                                \
-  MOZ_LOG_FMT(gMediaDecoderLog, LogLevel::Debug,                     \
-              "AudioNodeExternalInputTrack={} " msg, fmt::ptr(this), \
-              ##__VA_ARGS__)
+#define LOG(msg, ...)                        \
+  MOZ_LOG(gMediaDecoderLog, LogLevel::Debug, \
+          ("AudioNodeExternalInputTrack=%p " msg, this, ##__VA_ARGS__))
 
 AudioNodeExternalInputTrack::AudioNodeExternalInputTrack(
     AudioNodeEngine* aEngine, TrackRate aSampleRate)
@@ -233,9 +232,9 @@ bool AudioNodeExternalInputTrack::IsEnabled() {
 
 void AudioNodeExternalInputTrack::SetVolume(float aVolume) {
   MOZ_ASSERT(NS_IsMainThread());
-  LOG("Set volume {}", aVolume);
+  LOG("Set volume %f", aVolume);
   QueueControlMessageWithNoShutdown([self = RefPtr{this}, this, aVolume] {
-    LOG("Apply volume {}", aVolume);
+    LOG("Apply volume %f", aVolume);
     mVolume = aVolume;
   });
 }

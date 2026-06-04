@@ -17,11 +17,10 @@
 
 #undef LOG
 extern mozilla::LogModule* GetSpeechSynthLog();
-#define LOG(type, msg) \
-  MOZ_LOG_FMT(GetSpeechSynthLog(), type, MOZ_LOG_EXPAND_ARGS msg)
+#define LOG(type, msg) MOZ_LOG(GetSpeechSynthLog(), type, msg)
 
 #define MEDIA_CONTROL_LOG(msg, ...) \
-  MOZ_LOG_FMT(gMediaControlLog, LogLevel::Debug, msg, ##__VA_ARGS__)
+  MOZ_LOG(gMediaControlLog, LogLevel::Debug, (msg, ##__VA_ARGS__))
 
 #define AUDIO_TRACK 1
 
@@ -59,15 +58,13 @@ class MediaSharedKeysListener final : public ContentMediaControlKeyReceiver {
     BrowsingContext* bc = aWindow ? aWindow->GetBrowsingContext() : nullptr;
     if (!bc) {
       MEDIA_CONTROL_LOG(
-          "MediaSharedKeysListener {} Start: no browsing context, skip",
-          fmt::ptr(this));
+          "MediaSharedKeysListener %p Start: no browsing context, skip", this);
       return;
     }
     mAgent = ContentMediaAgent::Get(bc);
     if (!mAgent) {
       MEDIA_CONTROL_LOG(
-          "MediaSharedKeysListener {} Start: no ContentMediaAgent, skip",
-          fmt::ptr(this));
+          "MediaSharedKeysListener %p Start: no ContentMediaAgent, skip", this);
       return;
     }
     mBrowsingContextId = bc->Id();
@@ -79,9 +76,9 @@ class MediaSharedKeysListener final : public ContentMediaControlKeyReceiver {
         ControlType::eUncontrollable, kSessionType);
     mIsAudible = true;
     MEDIA_CONTROL_LOG(
-        "MediaSharedKeysListener {} Start: registered as uncontrollable "
-        "receiver and reported audible in BC {}",
-        fmt::ptr(this), mBrowsingContextId);
+        "MediaSharedKeysListener %p Start: registered as uncontrollable "
+        "receiver and reported audible in BC %" PRIu64,
+        this, mBrowsingContextId);
   }
 
   void Shutdown() {
@@ -91,8 +88,7 @@ class MediaSharedKeysListener final : public ContentMediaControlKeyReceiver {
     if (!mAgent) {
       // Start() bailed out (no BC or no agent at the time); nothing to undo.
       MEDIA_CONTROL_LOG(
-          "MediaSharedKeysListener {} Shutdown: never registered, skip",
-          fmt::ptr(this));
+          "MediaSharedKeysListener %p Shutdown: never registered, skip", this);
       return;
     }
     if (mIsAudible) {
@@ -104,8 +100,8 @@ class MediaSharedKeysListener final : public ContentMediaControlKeyReceiver {
     mAgent->RemoveReceiver(this, ControlType::eUncontrollable);
     mAgent = nullptr;
     MEDIA_CONTROL_LOG(
-        "MediaSharedKeysListener {} Shutdown: unregistered from BC {}",
-        fmt::ptr(this), mBrowsingContextId);
+        "MediaSharedKeysListener %p Shutdown: unregistered from BC %" PRIu64,
+        this, mBrowsingContextId);
   }
 
   bool IsPlaying() const override { return mTask.IsSpeaking(); }
@@ -114,8 +110,8 @@ class MediaSharedKeysListener final : public ContentMediaControlKeyReceiver {
                       const MediaControlActionParams& aParams) override {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT(!mShutdown, "HandleMediaKey must not be called after Shutdown");
-    MEDIA_CONTROL_LOG("MediaSharedKeysListener {} HandleMediaKey '{}'",
-                      fmt::ptr(this), GetEnumString(aKey).get());
+    MEDIA_CONTROL_LOG("MediaSharedKeysListener %p HandleMediaKey '%s'", this,
+                      GetEnumString(aKey).get());
     if (aKey == MediaControlKey::Stop) {
       mTask.Pause();
     }

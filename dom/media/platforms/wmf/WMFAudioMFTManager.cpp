@@ -14,7 +14,7 @@
 #include "mozilla/ScopeExit.h"
 #include "nsTArray.h"
 
-#define LOG(...) MOZ_LOG_FMT(sPDMLog, mozilla::LogLevel::Debug, __VA_ARGS__)
+#define LOG(...) MOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
 
 namespace mozilla {
 
@@ -41,8 +41,8 @@ WMFAudioMFTManager::WMFAudioMFTManager(const AudioInfo& aConfig)
       mRemainingEncoderDelay = mEncoderDelay =
           aacCodecSpecificData.mEncoderDelayFrames;
       mTotalMediaFrames = aacCodecSpecificData.mMediaFrameCount;
-      LOG("AudioMFT decoder: Found AAC decoder delay ({}frames) and total "
-          "media frames ({} frames)\n",
+      LOG("AudioMFT decoder: Found AAC decoder delay (%" PRIu32
+          "frames) and total media frames (%" PRIu64 " frames)\n",
           mEncoderDelay, mTotalMediaFrames);
     } else {
       // Gracefully handle failure to cover all codec specific cases above. Once
@@ -257,7 +257,8 @@ WMFAudioMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutput) {
   }
 
   if (oldAudioRate != mAudioRate) {
-    LOG("Audio rate changed from {} to {}", oldAudioRate, mAudioRate);
+    LOG("Audio rate changed from %" PRIu32 " to %" PRIu32, oldAudioRate,
+        mAudioRate);
   }
 
   AlignedAudioBuffer audioData(numSamples);
@@ -273,7 +274,7 @@ WMFAudioMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutput) {
 
   const bool isAudioRateChangedToHigher = oldAudioRate < mAudioRate;
   if (IsPartialOutput(duration, isAudioRateChangedToHigher)) {
-    LOG("Encounter a partial frame?! duration shrinks from {} to {}",
+    LOG("Encounter a partial frame?! duration shrinks from %s to %s",
         mLastOutputDuration.ToString().get(), duration.ToString().get());
     return MF_E_TRANSFORM_NEED_MORE_INPUT;
   }
@@ -284,7 +285,7 @@ WMFAudioMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutput) {
   mLastOutputDuration = aOutput->mDuration;
 
 #ifdef LOG_SAMPLE_DECODE
-  LOG("Decoded audio sample! timestamp={} duration={} currentLength={}",
+  LOG("Decoded audio sample! timestamp=%lld duration=%lld currentLength=%u",
       pts.ToMicroseconds(), duration.ToMicroseconds(), currentLength);
 #endif
 

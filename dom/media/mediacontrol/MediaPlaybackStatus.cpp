@@ -10,14 +10,14 @@
 namespace mozilla::dom {
 
 #undef LOG
-#define LOG(msg, ...)                            \
-  MOZ_LOG_FMT(gMediaControlLog, LogLevel::Debug, \
-              "MediaPlaybackStatus={}, " msg, fmt::ptr(this), ##__VA_ARGS__)
+#define LOG(msg, ...)                        \
+  MOZ_LOG(gMediaControlLog, LogLevel::Debug, \
+          ("MediaPlaybackStatus=%p, " msg, this, ##__VA_ARGS__))
 
 void MediaPlaybackStatus::UpdateMediaPlaybackState(uint64_t aContextId,
                                                    MediaPlaybackState aState) {
-  LOG("Update playback state '{}' for context {}", EnumValueToString(aState),
-      aContextId);
+  LOG("Update playback state '%s' for context %" PRIu64,
+      EnumValueToString(aState), aContextId);
   MOZ_ASSERT(NS_IsMainThread());
 
   ContextMediaInfo& info = GetNotNullContextInfo(aContextId);
@@ -32,7 +32,8 @@ void MediaPlaybackStatus::UpdateMediaPlaybackState(uint64_t aContextId,
     info.DecreasePlayingMediaNum();
   }
 
-  LOG("UpdateMediaPlaybackState for context {} (controlled {} audible {})",
+  LOG("UpdateMediaPlaybackState for context %" PRIu64
+      " (controlled %u audible %zu)",
       aContextId, info.ControlledMediaNum(), info.AudibleSourceCount());
   // DO NOT access `info` after this line.
   MaybeDestroyContextInfo(aContextId, info);
@@ -40,7 +41,7 @@ void MediaPlaybackStatus::UpdateMediaPlaybackState(uint64_t aContextId,
 
 void MediaPlaybackStatus::DestroyContextInfo(uint64_t aContextId) {
   MOZ_ASSERT(NS_IsMainThread());
-  LOG("Remove context {}", aContextId);
+  LOG("Remove context %" PRIu64, aContextId);
   mContextInfoMap.Remove(aContextId);
   // If the removed context was the active audible controllable context,
   // re-derive it from the remaining contexts (or clear it if none qualify).
@@ -64,8 +65,8 @@ void MediaPlaybackStatus::MaybeDestroyContextInfo(
 bool MediaPlaybackStatus::UpdateMediaAudibleState(
     uint64_t aContextId, MediaAudibleState aState, ControlType aControlType,
     AudioSessionType aSessionType) {
-  LOG("Update audible state '{}' for context {}", EnumValueToString(aState),
-      aContextId);
+  LOG("Update audible state '%s' for context %" PRIu64,
+      EnumValueToString(aState), aContextId);
   MOZ_ASSERT(NS_IsMainThread());
   ContextMediaInfo& info = GetNotNullContextInfo(aContextId);
   const Maybe<uint64_t> oldActiveContextId =
@@ -94,13 +95,13 @@ void MediaPlaybackStatus::UpdateGuessedPositionState(
     const Maybe<PositionState>& aState) {
   MOZ_ASSERT(NS_IsMainThread());
   if (aState) {
-    LOG("Update guessed position state for context {} element {} (duration={}, "
-        "playbackRate={}, position={})",
+    LOG("Update guessed position state for context %" PRIu64
+        " element %s (duration=%f, playbackRate=%f, position=%f)",
         aContextId, aElementId.ToString().get(), aState->mDuration,
         aState->mPlaybackRate, aState->mLastReportedPlaybackPosition);
   } else {
-    LOG("Clear guessed position state for context {} element {}", aContextId,
-        aElementId.ToString().get());
+    LOG("Clear guessed position state for context %" PRIu64 " element %s",
+        aContextId, aElementId.ToString().get());
   }
   ContextMediaInfo& info = GetNotNullContextInfo(aContextId);
   info.UpdateGuessedPositionState(aElementId, aState);
@@ -152,7 +153,7 @@ Maybe<PositionState> MediaPlaybackStatus::GuessedMediaPositionState(
     if (!entry) {
       return Nothing();
     }
-    LOG("Using guessed position state from preferred/focused BC {}",
+    LOG("Using guessed position state from preferred/focused BC %" PRId64,
         *contextId);
     return entry.Data()->GuessedPositionState();
   }
@@ -161,7 +162,7 @@ Maybe<PositionState> MediaPlaybackStatus::GuessedMediaPositionState(
   for (const auto& context : mContextInfoMap.Values()) {
     auto state = context->GuessedPositionState();
     if (state) {
-      LOG("Using guessed position state from BC {}", context->Id());
+      LOG("Using guessed position state from BC %" PRId64, context->Id());
       return state;
     }
   }
@@ -242,7 +243,7 @@ bool MediaPlaybackStatus::IsActiveAudibleControllableContext(
 Maybe<PositionState>
 MediaPlaybackStatus::ContextMediaInfo::GuessedPositionState() const {
   if (mGuessedPositionStateMap.Count() != 1) {
-    LOG("Count is {}", mGuessedPositionStateMap.Count());
+    LOG("Count is %d", mGuessedPositionStateMap.Count());
     return Nothing();
   }
   return Some(mGuessedPositionStateMap.begin()->GetData());
@@ -297,8 +298,8 @@ MediaPlaybackStatus::ContextMediaInfo::PriorityTypeFromAudibleSources() const {
     }
   }
   const AudioSessionType result = winner.valueOr(DefaultAudioSessionType());
-  LOG("PriorityTypeFromAudibleSources for context {} -> {}", mContextId,
-      GetEnumString(result).get());
+  LOG("PriorityTypeFromAudibleSources for context %" PRIu64 " -> %s",
+      mContextId, GetEnumString(result).get());
   return result;
 }
 
@@ -306,7 +307,7 @@ AudioSessionType MediaPlaybackStatus::EffectiveTypeForBc(uint64_t aBcId) const {
   MOZ_ASSERT(NS_IsMainThread());
   auto entry = mContextInfoMap.Lookup(aBcId);
   if (!entry) {
-    LOG("[warning] EffectiveTypeForBc no entry for context {}", aBcId);
+    LOG("[warning] EffectiveTypeForBc no entry for context %" PRIu64, aBcId);
     return DefaultAudioSessionType();
   }
   return entry.Data()->PriorityTypeFromAudibleSources();

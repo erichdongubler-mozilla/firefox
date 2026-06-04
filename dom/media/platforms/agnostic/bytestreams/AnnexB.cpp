@@ -14,9 +14,8 @@
 
 mozilla::LazyLogModule gAnnexB("AnnexB");
 
-#define LOG(msg, ...) MOZ_LOG_FMT(gAnnexB, LogLevel::Debug, msg, ##__VA_ARGS__)
-#define LOGV(msg, ...) \
-  MOZ_LOG_FMT(gAnnexB, LogLevel::Verbose, msg, ##__VA_ARGS__)
+#define LOG(msg, ...) MOZ_LOG(gAnnexB, LogLevel::Debug, (msg, ##__VA_ARGS__))
+#define LOGV(msg, ...) MOZ_LOG(gAnnexB, LogLevel::Verbose, (msg, ##__VA_ARGS__))
 
 namespace mozilla {
 
@@ -92,7 +91,7 @@ Result<Ok, nsresult> AnnexB::ConvertAVCCSampleToAnnexB(
         samplewriter->mCrypto.mPlainSizes[0] = newSize.value();
       }
     }
-    LOG("Appended extradata {} bytes", annexB->Length());
+    LOG("Appended extradata %zu bytes", annexB->Length());
   }
 
   return Ok();
@@ -172,7 +171,7 @@ Result<Ok, nsresult> AnnexB::ConvertHVCCSampleToAnnexB(
         samplewriter->mCrypto.mPlainSizes[0] = newSize.value();
       }
     }
-    LOG("Appended extradata {} bytes", annexB->Length());
+    LOG("Appended extradata %zu bytes", annexB->Length());
   }
   return Ok();
 }
@@ -229,7 +228,7 @@ already_AddRefed<mozilla::MediaByteBuffer> AnnexB::ConvertHVCCExtraDataToAnnexB(
           H265::FilterPrefixSEIForWindows(nalu);
       if (!filteredNalu) {
         LOGV(
-            "Skipping PREFIX_SEI_NUT (size={}) from AnnexB extradata on "
+            "Skipping PREFIX_SEI_NUT (size=%zu) from AnnexB extradata on "
             "Windows because it only contains unregistered user data",
             nalu.mNALU.Length());
         continue;
@@ -237,15 +236,15 @@ already_AddRefed<mozilla::MediaByteBuffer> AnnexB::ConvertHVCCExtraDataToAnnexB(
       annexB->AppendElements(kAnnexBDelimiter, std::size(kAnnexBDelimiter));
       annexB->AppendElements(filteredNalu->Elements(), filteredNalu->Length());
       LOGV(
-          "Insert filtered PREFIX_SEI_NUT (old size={}, new size={}) to "
-          "AnnexB (size={})",
+          "Insert filtered PREFIX_SEI_NUT (old size=%zu, new size=%zu) to "
+          "AnnexB (size=%zu)",
           nalu.mNALU.Length(), filteredNalu->Length(), annexB->Length());
       continue;
     }
 #endif
     annexB->AppendElements(kAnnexBDelimiter, std::size(kAnnexBDelimiter));
     annexB->AppendElements(nalu.mNALU.Elements(), nalu.mNALU.Length());
-    LOGV("Insert NALU (type={}, size={}) to AnnexB (size={})",
+    LOGV("Insert NALU (type=%hhu, size=%zu) to AnnexB (size=%zu)",
          nalu.mNalUnitType, nalu.mNALU.Length(), annexB->Length());
   }
   return annexB.forget();

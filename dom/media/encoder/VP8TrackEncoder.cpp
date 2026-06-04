@@ -23,7 +23,7 @@ namespace mozilla {
 
 LazyLogModule gVP8TrackEncoderLog("VP8TrackEncoder");
 #define VP8LOG(level, msg, ...) \
-  MOZ_LOG_FMT(gVP8TrackEncoderLog, level, msg, ##__VA_ARGS__)
+  MOZ_LOG(gVP8TrackEncoderLog, level, (msg, ##__VA_ARGS__))
 
 constexpr int DEFAULT_BITRATE_BPS = 2500000;
 constexpr int DEFAULT_KEYFRAME_INTERVAL_MS = 10000;
@@ -186,20 +186,18 @@ void VP8TrackEncoder::SetMaxKeyFrameDistance(int32_t aMaxKeyFrameDistance) {
   if (mInitialized) {
     VP8LOG(
         LogLevel::Debug,
-        "{} SetMaxKeyFrameDistance() set kf_max_dist to {} based on estimated "
-        "framerate {:.2f}fps keyframe-factor {:.2f} and keyframe-interval "
-        "{:.2f}s",
-        fmt::ptr(this), aMaxKeyFrameDistance,
-        1 / mMeanFrameDuration.mean().ToSeconds(), mKeyFrameIntervalFactor,
-        mKeyFrameInterval.ToSeconds());
+        "%p SetMaxKeyFrameDistance() set kf_max_dist to %d based on estimated "
+        "framerate %.2ffps keyframe-factor %.2f and keyframe-interval %.2fs",
+        this, aMaxKeyFrameDistance, 1 / mMeanFrameDuration.mean().ToSeconds(),
+        mKeyFrameIntervalFactor, mKeyFrameInterval.ToSeconds());
     DebugOnly<nsresult> rv =
         Reconfigure(mFrameWidth, mFrameHeight, aMaxKeyFrameDistance);
     MOZ_ASSERT(
         NS_SUCCEEDED(rv),
         "Reconfig for new key frame distance with proven size should succeed");
   } else {
-    VP8LOG(LogLevel::Debug, "{} SetMaxKeyFrameDistance() distance={}",
-           fmt::ptr(this), aMaxKeyFrameDistance);
+    VP8LOG(LogLevel::Debug, "%p SetMaxKeyFrameDistance() distance=%d", this,
+           aMaxKeyFrameDistance);
     mMaxKeyFrameDistance = Some(aMaxKeyFrameDistance);
   }
 }
@@ -227,7 +225,7 @@ nsresult VP8TrackEncoder::Init(int32_t aWidth, int32_t aHeight,
   mI420Frame.reset(new (fallible) uint8_t[neededSize]);
   mI420FrameSize = mI420Frame ? neededSize : 0;
   if (!mI420Frame) {
-    VP8LOG(LogLevel::Warning, "Allocating I420 frame of size {} failed",
+    VP8LOG(LogLevel::Warning, "Allocating I420 frame of size %zu failed",
            neededSize);
     return NS_ERROR_FAILURE;
   }
@@ -242,9 +240,9 @@ nsresult VP8TrackEncoder::Init(int32_t aWidth, int32_t aHeight,
     mMetadata->mDisplayHeight = aDisplayHeight;
 
     VP8LOG(LogLevel::Info,
-           "{} Init() created metadata. width={}, height={}, displayWidth={}, "
-           "displayHeight={}, framerate={:.2f}",
-           fmt::ptr(this), mMetadata->mWidth, mMetadata->mHeight,
+           "%p Init() created metadata. width=%d, height=%d, displayWidth=%d, "
+           "displayHeight=%d, framerate=%.2f",
+           this, mMetadata->mWidth, mMetadata->mHeight,
            mMetadata->mDisplayWidth, mMetadata->mDisplayHeight,
            aEstimatedFrameRate);
 
@@ -266,8 +264,8 @@ nsresult VP8TrackEncoder::InitInternal(int32_t aWidth, int32_t aHeight,
   }
 
   VP8LOG(LogLevel::Debug,
-         "{} InitInternal(). width={}, height={}, kf_max_dist={}",
-         fmt::ptr(this), aWidth, aHeight, aMaxKeyFrameDistance);
+         "%p InitInternal(). width=%d, height=%d, kf_max_dist=%d", this, aWidth,
+         aHeight, aMaxKeyFrameDistance);
 
   // Encoder configuration structure.
   vpx_codec_enc_cfg_t config;
@@ -308,7 +306,7 @@ nsresult VP8TrackEncoder::Reconfigure(int32_t aWidth, int32_t aHeight,
   bool needsReInit = aMaxKeyFrameDistance != *mMaxKeyFrameDistance;
 
   if (aWidth != mFrameWidth || aHeight != mFrameHeight) {
-    VP8LOG(LogLevel::Info, "Dynamic resolution change ({}x{} -> {}x{}).",
+    VP8LOG(LogLevel::Info, "Dynamic resolution change (%dx%d -> %dx%d).",
            mFrameWidth, mFrameHeight, aWidth, aHeight);
     const size_t neededSize = I420Size<I420_STRIDE_ALIGN>(aWidth, aHeight);
     if (neededSize > mI420FrameSize) {
@@ -317,7 +315,7 @@ nsresult VP8TrackEncoder::Reconfigure(int32_t aWidth, int32_t aHeight,
       mI420FrameSize = mI420Frame ? neededSize : 0;
     }
     if (!mI420Frame) {
-      VP8LOG(LogLevel::Warning, "Allocating I420 frame of size {} failed",
+      VP8LOG(LogLevel::Warning, "Allocating I420 frame of size %zu failed",
              neededSize);
       return NS_ERROR_FAILURE;
     }
@@ -438,9 +436,8 @@ Result<RefPtr<EncodedFrame>, nsresult> VP8TrackEncoder::ExtractEncodedData() {
   mExtractedDurationUs = totalDuration;
 
   VP8LOG(LogLevel::Verbose,
-         "ExtractEncodedData TimeStamp {:.2f}, Duration {:.2f}, FrameType {}",
-         timestamp.ToSeconds(), duration.ToSeconds(),
-         static_cast<int>(frameType));
+         "ExtractEncodedData TimeStamp %.2f, Duration %.2f, FrameType %d",
+         timestamp.ToSeconds(), duration.ToSeconds(), frameType);
 
   if (static_cast<int>(totalDuration.ToSeconds()) /
           DYNAMIC_MAXKFDIST_CHECK_INTERVAL >
@@ -452,7 +449,7 @@ Result<RefPtr<EncodedFrame>, nsresult> VP8TrackEncoder::ExtractEncodedData() {
         CalculateMaxKeyFrameDistance().valueOr(*mMaxKeyFrameDistance);
     const float diffFactor =
         static_cast<float>(maxKfDistance) / *mMaxKeyFrameDistance;
-    VP8LOG(LogLevel::Debug, "maxKfDistance: {}, factor: {:.2f}", maxKfDistance,
+    VP8LOG(LogLevel::Debug, "maxKfDistance: %d, factor: %.2f", maxKfDistance,
            diffFactor);
     if (std::abs(1.0 - diffFactor) > DYNAMIC_MAXKFDIST_DIFFACTOR) {
       SetMaxKeyFrameDistance(maxKfDistance);
@@ -492,8 +489,8 @@ nsresult VP8TrackEncoder::Encode(VideoSegment* aSegment) {
     VideoChunk& chunk = *iter;
 
     VP8LOG(LogLevel::Verbose,
-           "nextEncodeOperation is {} for frame of duration {}",
-           static_cast<int>(nextEncodeOperation), chunk.GetDuration());
+           "nextEncodeOperation is %d for frame of duration %" PRId64,
+           nextEncodeOperation, chunk.GetDuration());
 
     TimeStamp timebase = TimeStamp::Now();
 
@@ -518,7 +515,7 @@ nsresult VP8TrackEncoder::Encode(VideoSegment* aSegment) {
                 .ToTimeDuration() >= mKeyFrameInterval) {
           VP8LOG(LogLevel::Warning,
                  "Reached mKeyFrameInterval without seeing a keyframe. Forcing "
-                 "one. time: {:.2f}, interval: {:.2f}",
+                 "one. time: %.2f, interval: %.2f",
                  media::TimeUnit(mDurationSinceLastKeyframe, mTrackRate)
                      .ToSeconds(),
                  mKeyFrameInterval.ToSeconds());
@@ -652,7 +649,7 @@ nsresult VP8TrackEncoder::PrepareRawFrame(VideoChunk& aChunk) {
       mMuteFrame = mozilla::VideoFrame::CreateBlackImage(intrinsicSize);
     }
     if (!mMuteFrame) {
-      VP8LOG(LogLevel::Warning, "Failed to allocate black image of size {}x{}",
+      VP8LOG(LogLevel::Warning, "Failed to allocate black image of size %dx%d",
              intrinsicSize.width, intrinsicSize.height);
       return NS_OK;
     }

@@ -27,9 +27,10 @@
 #include "rtc_base/logging.h"
 
 mozilla::LazyLogModule gTabShareLog("TabShare");
-#define LOG_FUNC_IMPL(level)                                         \
-  MOZ_LOG_FMT(gTabShareLog, level, "TabCapturerWebrtc {}: {} id={}", \
-              fmt::ptr(this), __func__, mBrowserId)
+#define LOG_FUNC_IMPL(level) \
+  MOZ_LOG(                   \
+      gTabShareLog, level,   \
+      ("TabCapturerWebrtc %p: %s id=%" PRIu64, this, __func__, mBrowserId))
 #define LOG_FUNC() LOG_FUNC_IMPL(LogLevel::Debug)
 #define LOG_FUNCV() LOG_FUNC_IMPL(LogLevel::Verbose)
 
@@ -125,8 +126,8 @@ TabCapturerWebrtc::~TabCapturerWebrtc() {
 
 bool TabCapturerWebrtc::GetSourceList(
     webrtc::DesktopCapturer::SourceList* aSources) {
-  MOZ_LOG_FMT(gTabShareLog, LogLevel::Debug,
-              "TabShare: GetSourceList, result {}", aSources->size());
+  MOZ_LOG(gTabShareLog, LogLevel::Debug,
+          ("TabShare: GetSourceList, result %zu", aSources->size()));
   // XXX UI
   return true;
 }

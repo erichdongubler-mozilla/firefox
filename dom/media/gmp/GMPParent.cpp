@@ -58,9 +58,8 @@ using CrashReporter::AnnotationTable;
 
 namespace mozilla::gmp {
 
-#define GMP_PARENT_LOG_DEBUG(x, ...)                                       \
-  GMP_LOG_DEBUG("GMPParent[{}|childPid={}] " x, fmt::ptr(this), mChildPid, \
-                ##__VA_ARGS__)
+#define GMP_PARENT_LOG_DEBUG(x, ...) \
+  GMP_LOG_DEBUG("GMPParent[%p|childPid=%d] " x, this, mChildPid, ##__VA_ARGS__)
 
 #ifdef __CLASS__
 #  undef __CLASS__
@@ -82,12 +81,12 @@ GMPParent::GMPParent()
 #endif
       mMainThread(GetMainThreadSerialEventTarget()) {
   MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
-  GMP_PARENT_LOG_DEBUG("GMPParent ctor id={}", mPluginId);
+  GMP_PARENT_LOG_DEBUG("GMPParent ctor id=%u", mPluginId);
 }
 
 GMPParent::~GMPParent() {
   // This method is not restricted to a specific thread.
-  GMP_PARENT_LOG_DEBUG("GMPParent dtor id={}", mPluginId);
+  GMP_PARENT_LOG_DEBUG("GMPParent dtor id=%u", mPluginId);
   MOZ_ASSERT(!mProcess);
 }
 
@@ -125,7 +124,7 @@ nsresult GMPParent::GetPluginFileArch(nsIFile* aPluginDir,
 #  elif defined(XP_WIN)
   nsAutoString pluginFileName = aBaseName + u".dll"_ns;
 #  endif
-  GMP_PARENT_LOG_DEBUG("{}: pluginFileName: {}", __FUNCTION__,
+  GMP_PARENT_LOG_DEBUG("%s: pluginFileName: %s", __FUNCTION__,
                        NS_LossyConvertUTF16toASCII(pluginFileName).get());
 
   // Create an nsIFile representing the plugin
@@ -139,7 +138,7 @@ nsresult GMPParent::GetPluginFileArch(nsIFile* aPluginDir,
   nsAutoCString pluginPath;
   rv = pluginFile->GetNativePath(pluginPath);
   NS_ENSURE_SUCCESS(rv, rv);
-  GMP_PARENT_LOG_DEBUG("{}: pluginPath: {}", __FUNCTION__, pluginPath.get());
+  GMP_PARENT_LOG_DEBUG("%s: pluginPath: %s", __FUNCTION__, pluginPath.get());
 
   rv = nsMacUtilsImpl::GetArchitecturesForBinary(pluginPath.get(), &aArchSet);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -152,7 +151,7 @@ nsresult GMPParent::GetPluginFileArch(nsIFile* aPluginDir,
   nsAutoString pluginPath;
   rv = pluginFile->GetTarget(pluginPath);
   NS_ENSURE_SUCCESS(rv, rv);
-  GMP_PARENT_LOG_DEBUG("{}: pluginPath: {}", __FUNCTION__,
+  GMP_PARENT_LOG_DEBUG("%s: pluginPath: %s", __FUNCTION__,
                        NS_LossyConvertUTF16toASCII(pluginPath).get());
 
   aArchSet = GetExecutableArchitecture(pluginPath.get());
@@ -209,7 +208,7 @@ RefPtr<GenericPromise> GMPParent::Init(GeckoMediaPluginServiceParent* aService,
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return GenericPromise::CreateAndReject(rv, __func__);
   }
-  GMP_PARENT_LOG_DEBUG("{}: for {}", __FUNCTION__,
+  GMP_PARENT_LOG_DEBUG("%s: for %s", __FUNCTION__,
                        NS_LossyConvertUTF16toASCII(parentLeafName).get());
 
   MOZ_ASSERT(parentLeafName.Length() > 4);
@@ -226,10 +225,10 @@ RefPtr<GenericPromise> GMPParent::Init(GeckoMediaPluginServiceParent* aService,
 #  endif
       pluginArch);
   if (NS_FAILED(rv)) {
-    GMP_PARENT_LOG_DEBUG("{}: Plugin arch error: {}", __FUNCTION__,
+    GMP_PARENT_LOG_DEBUG("%s: Plugin arch error: %d", __FUNCTION__,
                          uint32_t(rv));
   } else {
-    GMP_PARENT_LOG_DEBUG("{}: Plugin arch: 0x{:x}", __FUNCTION__, pluginArch);
+    GMP_PARENT_LOG_DEBUG("%s: Plugin arch: 0x%x", __FUNCTION__, pluginArch);
   }
 
   const uint32_t x86 = base::PROCESS_ARCH_X86_64 | base::PROCESS_ARCH_I386;
@@ -271,10 +270,10 @@ RefPtr<GenericPromise> GMPParent::Init(GeckoMediaPluginServiceParent* aService,
     rv = nsMacUtilsImpl::GetArchitecturesForBundle(&bundleArch);
     if (NS_FAILED(rv)) {
       // If we fail here, continue as if this is not a univeral binary.
-      GMP_PARENT_LOG_DEBUG("{}: Bundle arch error: {}", __FUNCTION__,
+      GMP_PARENT_LOG_DEBUG("%s: Bundle arch error: %d", __FUNCTION__,
                            uint32_t(rv));
     } else {
-      GMP_PARENT_LOG_DEBUG("{}: Bundle arch: 0x{:x}", __FUNCTION__, bundleArch);
+      GMP_PARENT_LOG_DEBUG("%s: Bundle arch: 0x%x", __FUNCTION__, bundleArch);
     }
 
     bool isUniversalBinary = (bundleArch & base::PROCESS_ARCH_X86_64) &&
@@ -295,7 +294,7 @@ RefPtr<GenericPromise> GMPParent::Init(GeckoMediaPluginServiceParent* aService,
   // downloaded when the check is next performed. This could occur if a profile
   // is moved from an ARM64 system to an x64 system.
   if ((pluginArch & x86) == 0) {
-    GMP_PARENT_LOG_DEBUG("{}: Removing plugin directory", __FUNCTION__);
+    GMP_PARENT_LOG_DEBUG("%s: Removing plugin directory", __FUNCTION__);
     aPluginDir->Remove(true);
     return GenericPromise::CreateAndReject(NS_ERROR_NOT_IMPLEMENTED, __func__);
   }
@@ -369,7 +368,7 @@ nsresult GMPParent::LoadProcess() {
   MOZ_ASSERT(mState == GMPState::NotLoaded);
 
   if (NS_WARN_IF(mPluginType == GMPPluginType::WidevineL1)) {
-    GMP_PARENT_LOG_DEBUG("{}: cannot load process for WidevineL1",
+    GMP_PARENT_LOG_DEBUG("%s: cannot load process for WidevineL1",
                          __FUNCTION__);
     return NS_ERROR_NOT_IMPLEMENTED;
   }
@@ -385,7 +384,7 @@ nsresult GMPParent::LoadProcess() {
     return NS_ERROR_FAILURE;
   }
 #endif
-  GMP_PARENT_LOG_DEBUG("{}: for {}", __FUNCTION__,
+  GMP_PARENT_LOG_DEBUG("%s: for %s", __FUNCTION__,
                        NS_ConvertUTF16toUTF8(path).get());
 
   if (!mProcess) {
@@ -407,7 +406,7 @@ nsresult GMPParent::LoadProcess() {
     constexpr int32_t kLaunchTimeoutMs = 30 * 1000;
 #endif
     if (!mProcess->Launch(kLaunchTimeoutMs)) {
-      GMP_PARENT_LOG_DEBUG("{}: Failed to launch new child process",
+      GMP_PARENT_LOG_DEBUG("%s: Failed to launch new child process",
                            __FUNCTION__);
       mProcess->Delete();
       mProcess = nullptr;
@@ -415,17 +414,17 @@ nsresult GMPParent::LoadProcess() {
     }
 
     mChildPid = mProcess->GetChildProcessId();
-    GMP_PARENT_LOG_DEBUG("{}: Launched new child process", __FUNCTION__);
+    GMP_PARENT_LOG_DEBUG("%s: Launched new child process", __FUNCTION__);
 
     bool opened = mProcess->TakeInitialEndpoint().Bind(this);
     if (!opened) {
-      GMP_PARENT_LOG_DEBUG("{}: Failed to open channel to new child process",
+      GMP_PARENT_LOG_DEBUG("%s: Failed to open channel to new child process",
                            __FUNCTION__);
       mProcess->Delete();
       mProcess = nullptr;
       return NS_ERROR_FAILURE;
     }
-    GMP_PARENT_LOG_DEBUG("{}: Opened channel to new child process",
+    GMP_PARENT_LOG_DEBUG("%s: Opened channel to new child process",
                          __FUNCTION__);
 
     // ComputeStorageId may return empty string, we leave the error handling to
@@ -434,21 +433,21 @@ nsresult GMPParent::LoadProcess() {
     bool ok =
         SendProvideStorageId(CDMStorageIdProvider::ComputeStorageId(mNodeId));
     if (!ok) {
-      GMP_PARENT_LOG_DEBUG("{}: Failed to send storage id to child process",
+      GMP_PARENT_LOG_DEBUG("%s: Failed to send storage id to child process",
                            __FUNCTION__);
       return NS_ERROR_FAILURE;
     }
-    GMP_PARENT_LOG_DEBUG("{}: Sent storage id to child process", __FUNCTION__);
+    GMP_PARENT_LOG_DEBUG("%s: Sent storage id to child process", __FUNCTION__);
 
 #if defined(XP_WIN) || defined(XP_LINUX)
     if (!mLibs.IsEmpty()) {
       bool ok = SendPreloadLibs(mLibs);
       if (!ok) {
-        GMP_PARENT_LOG_DEBUG("{}: Failed to send preload-libs to child process",
+        GMP_PARENT_LOG_DEBUG("%s: Failed to send preload-libs to child process",
                              __FUNCTION__);
         return NS_ERROR_FAILURE;
       }
-      GMP_PARENT_LOG_DEBUG("{}: Sent preload-libs ('{}') to child process",
+      GMP_PARENT_LOG_DEBUG("%s: Sent preload-libs ('%s') to child process",
                            __FUNCTION__, mLibs.get());
     }
 #endif
@@ -457,11 +456,11 @@ nsresult GMPParent::LoadProcess() {
 
     // Intr call to block initialization on plugin load.
     if (!SendStartPlugin(mAdapter)) {
-      GMP_PARENT_LOG_DEBUG("{}: Failed to send start to child process",
+      GMP_PARENT_LOG_DEBUG("%s: Failed to send start to child process",
                            __FUNCTION__);
       return NS_ERROR_FAILURE;
     }
-    GMP_PARENT_LOG_DEBUG("{}: Sent StartPlugin to child process", __FUNCTION__);
+    GMP_PARENT_LOG_DEBUG("%s: Sent StartPlugin to child process", __FUNCTION__);
   }
 
   mState = GMPState::Loaded;
@@ -471,7 +470,7 @@ nsresult GMPParent::LoadProcess() {
 
 void GMPParent::OnPreferenceChange(const mozilla::dom::Pref& aPref) {
   MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
-  GMP_PARENT_LOG_DEBUG("{}", __FUNCTION__);
+  GMP_PARENT_LOG_DEBUG("%s", __FUNCTION__);
 
   if (!mProcess || !mProcess->UseXPCOM()) {
     return;
@@ -539,7 +538,7 @@ mozilla::ipc::IPCResult GMPParent::RecvGetModulesTrust(
 
 void GMPParent::CloseIfUnused() {
   MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
-  GMP_PARENT_LOG_DEBUG("{}", __FUNCTION__);
+  GMP_PARENT_LOG_DEBUG("%s", __FUNCTION__);
 
   if ((mDeleteProcessOnlyOnUnload || mState == GMPState::Loaded ||
        mState == GMPState::Unloading) &&
@@ -560,7 +559,7 @@ void GMPParent::CloseIfUnused() {
 
 void GMPParent::CloseActive(bool aDieWhenUnloaded) {
   MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
-  GMP_PARENT_LOG_DEBUG("{}: state {}", __FUNCTION__,
+  GMP_PARENT_LOG_DEBUG("%s: state %u", __FUNCTION__,
                        uint32_t(GMPState(mState)));
 
   if (aDieWhenUnloaded) {
@@ -584,7 +583,7 @@ bool GMPParent::IsMarkedForDeletion() { return mIsBlockingDeletion; }
 
 void GMPParent::Shutdown() {
   MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
-  GMP_PARENT_LOG_DEBUG("{}", __FUNCTION__);
+  GMP_PARENT_LOG_DEBUG("%s", __FUNCTION__);
 
   if (mAbnormalShutdownInProgress) {
     return;
@@ -638,7 +637,7 @@ void GMPParent::ChildTerminated() {
     // PluginTerminated removes the GMP from the GMPService.
     // On shutdown we can have this case where it is already been
     // removed so there is no harm in not trying to remove it again.
-    GMP_PARENT_LOG_DEBUG("{}::{}: GMPEventTarget() returned nullptr.",
+    GMP_PARENT_LOG_DEBUG("%s::%s: GMPEventTarget() returned nullptr.",
                          __CLASS__, __FUNCTION__);
   } else {
     gmpEventTarget->Dispatch(
@@ -658,12 +657,12 @@ void GMPParent::DeleteProcess() {
       break;
     case GMPState::Closing:
       // Closing in progress, just waiting for the shutdown response.
-      GMP_PARENT_LOG_DEBUG("{}: Shutdown handshake in progress.", __FUNCTION__);
+      GMP_PARENT_LOG_DEBUG("%s: Shutdown handshake in progress.", __FUNCTION__);
       return;
     default: {
       // Don't Close() twice!
       // Probably remove when bug 1043671 is resolved
-      GMP_PARENT_LOG_DEBUG("{}: Shutdown handshake starting.", __FUNCTION__);
+      GMP_PARENT_LOG_DEBUG("%s: Shutdown handshake starting.", __FUNCTION__);
 
       RefPtr<GMPParent> self = this;
       nsCOMPtr<nsISerialEventTarget> gmpEventTarget = GMPEventTarget();
@@ -676,9 +675,9 @@ void GMPParent::DeleteProcess() {
           gmpEventTarget, __func__,
           [self](ProfileAndAdditionalInformation&& aProfileAndAdditionalInfo) {
             GMP_LOG_DEBUG(
-                "GMPParent[{}|childPid={}] DeleteProcess: Shutdown handshake "
-                "success, profileLen={}.",
-                fmt::ptr(self.get()), self->mChildPid,
+                "GMPParent[%p|childPid=%d] DeleteProcess: Shutdown handshake "
+                "success, profileLen=%zu.",
+                self.get(), self->mChildPid,
                 aProfileAndAdditionalInfo.mProfile.Length());
             if (!aProfileAndAdditionalInfo.mProfile.IsEmpty()) {
               NS_DispatchToMainThread(NS_NewRunnableFunction(
@@ -696,18 +695,18 @@ void GMPParent::DeleteProcess() {
           [self](const ipc::ResponseRejectReason&) {
             // We crashed during shutdown, ActorDestroy will perform cleanup.
             GMP_LOG_DEBUG(
-                "GMPParent[{}|childPid={}] DeleteProcess: Shutdown handshake "
+                "GMPParent[%p|childPid=%d] DeleteProcess: Shutdown handshake "
                 "error.",
-                fmt::ptr(self.get()), self->mChildPid);
+                self.get(), self->mChildPid);
           });
       return;
     }
   }
 
-  GMP_PARENT_LOG_DEBUG("{}: Shutting down process.", __FUNCTION__);
+  GMP_PARENT_LOG_DEBUG("%s: Shutting down process.", __FUNCTION__);
   mProcess->Delete(NewRunnableMethod("gmp::GMPParent::ChildTerminated", this,
                                      &GMPParent::ChildTerminated));
-  GMP_PARENT_LOG_DEBUG("{}: Shut down process", __FUNCTION__);
+  GMP_PARENT_LOG_DEBUG("%s: Shut down process", __FUNCTION__);
   mProcess = nullptr;
 
 #if defined(MOZ_WIDGET_ANDROID)
@@ -850,7 +849,7 @@ static void GMPNotifyObservers(const uint32_t aPluginID,
 
 void GMPParent::ActorDestroy(ActorDestroyReason aWhy) {
   MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
-  GMP_PARENT_LOG_DEBUG("{}: ({}), state={}", __FUNCTION__, (int)aWhy,
+  GMP_PARENT_LOG_DEBUG("%s: (%d), state=%u", __FUNCTION__, (int)aWhy,
                        uint32_t(GMPState(mState)));
 
   if (AbnormalShutdown == aWhy) {
@@ -1141,13 +1140,13 @@ static bool IsCDMAPISupported(
 
 RefPtr<GenericPromise> GMPParent::ParseChromiumManifest(
     const nsAString& aJSON) {
-  GMP_PARENT_LOG_DEBUG("{}: for '{}'", __FUNCTION__,
+  GMP_PARENT_LOG_DEBUG("%s: for '%s'", __FUNCTION__,
                        NS_LossyConvertUTF16toASCII(aJSON).get());
 
   MOZ_ASSERT(NS_IsMainThread());
   mozilla::dom::WidevineCDMManifest m;
   if (!m.Init(aJSON)) {
-    GMP_PARENT_LOG_DEBUG("{}: Failed to initialize json parser, failing.",
+    GMP_PARENT_LOG_DEBUG("%s: Failed to initialize json parser, failing.",
                          __FUNCTION__);
     return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
@@ -1166,7 +1165,7 @@ RefPtr<GenericPromise> GMPParent::ParseChromiumManifest(
         " but this system can't sandbox it; not loading.",
         mDisplayName.get());
     printf_stderr("%s\n", msg.get());
-    GMP_PARENT_LOG_DEBUG("{}", msg.get());
+    GMP_PARENT_LOG_DEBUG("%s", msg.get());
     return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 #endif
@@ -1184,7 +1183,7 @@ RefPtr<GenericPromise> GMPParent::ParseChromiumManifest(
     mAdapter = NS_ConvertUTF8toUTF16(kWidevineExperimentAPIName);
 #endif
   } else {
-    GMP_PARENT_LOG_DEBUG("{}: CDM API not supported, failing.", __FUNCTION__);
+    GMP_PARENT_LOG_DEBUG("%s: CDM API not supported, failing.", __FUNCTION__);
     return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
@@ -1226,7 +1225,7 @@ RefPtr<GenericPromise> GMPParent::ParseChromiumManifest(
 #endif
       break;
     default:
-      GMP_PARENT_LOG_DEBUG("{}: Unrecognized key system: {}, failing.",
+      GMP_PARENT_LOG_DEBUG("%s: Unrecognized key system: %s, failing.",
                            __FUNCTION__, mDisplayName.get());
       return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
@@ -1268,7 +1267,7 @@ RefPtr<GenericPromise> GMPParent::ParseChromiumManifest(
     } else if (chromiumCodec.EqualsASCII("av01")) {
       codec = "av1"_ns;
     } else {
-      GMP_PARENT_LOG_DEBUG("{}: Unrecognized codec: {}.", __FUNCTION__,
+      GMP_PARENT_LOG_DEBUG("%s: Unrecognized codec: %s.", __FUNCTION__,
                            chromiumCodec.get());
       MOZ_ASSERT_UNREACHABLE(
           "Unhandled codec string! Need to add it to the parser.");
@@ -1280,7 +1279,7 @@ RefPtr<GenericPromise> GMPParent::ParseChromiumManifest(
 
   mCapabilities.AppendElement(std::move(video));
 
-  GMP_PARENT_LOG_DEBUG("{}: Successfully parsed manifest.", __FUNCTION__);
+  GMP_PARENT_LOG_DEBUG("%s: Successfully parsed manifest.", __FUNCTION__);
   return GenericPromise::CreateAndResolve(true, __func__);
 }
 
@@ -1376,7 +1375,7 @@ void GMPParent::RejectGetContentParentPromises() {
 void GMPParent::GetGMPContentParent(
     UniquePtr<MozPromiseHolder<GetGMPContentParentPromise>>&& aPromiseHolder) {
   MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
-  GMP_PARENT_LOG_DEBUG("{} {}", __FUNCTION__, fmt::ptr(this));
+  GMP_PARENT_LOG_DEBUG("%s %p", __FUNCTION__, this);
 
   if (mGMPContentParent) {
     RefPtr<GMPContentParentCloseBlocker> blocker(
@@ -1433,10 +1432,10 @@ void GMPParent::PreTranslateBins() {
 
 void GMPParent::PreTranslateBinsWorker() {
   int rv = nsMacUtilsImpl::PreTranslateXUL();
-  GMP_PARENT_LOG_DEBUG("{}: XUL translation result: {}", __FUNCTION__, rv);
+  GMP_PARENT_LOG_DEBUG("%s: XUL translation result: %d", __FUNCTION__, rv);
 
   rv = nsMacUtilsImpl::PreTranslateBinary(mPluginFilePath);
-  GMP_PARENT_LOG_DEBUG("{}: {} translation result: {}", __FUNCTION__,
+  GMP_PARENT_LOG_DEBUG("%s: %s translation result: %d", __FUNCTION__,
                        mPluginFilePath.get(), rv);
 }
 #endif

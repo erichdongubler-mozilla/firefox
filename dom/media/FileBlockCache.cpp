@@ -19,9 +19,8 @@ namespace mozilla {
 
 #undef LOG
 LazyLogModule gFileBlockCacheLog("FileBlockCache");
-#define LOG(x, ...)                                                         \
-  MOZ_LOG_FMT(gFileBlockCacheLog, LogLevel::Debug, "{} " x, fmt::ptr(this), \
-              ##__VA_ARGS__)
+#define LOG(x, ...) \
+  MOZ_LOG(gFileBlockCacheLog, LogLevel::Debug, ("%p " x, this, ##__VA_ARGS__))
 
 static void CloseFD(PRFileDesc* aFD) {
   PRStatus prrc;
@@ -32,7 +31,7 @@ static void CloseFD(PRFileDesc* aFD) {
 }
 
 void FileBlockCache::SetCacheFile(PRFileDesc* aFD) {
-  LOG("SetCacheFile aFD={}", fmt::ptr(aFD));
+  LOG("SetCacheFile aFD=%p", aFD);
   if (!aFD) {
     // Failed to get a temporary file. Shutdown.
     Close();
@@ -44,8 +43,8 @@ void FileBlockCache::SetCacheFile(PRFileDesc* aFD) {
   }
   {
     MutexAutoLock lock(mDataMutex);
-    LOG("SetFileCache mBackgroundET={}, mIsWriteScheduled {}",
-        fmt::ptr(mBackgroundET.get()), mIsWriteScheduled);
+    LOG("SetFileCache mBackgroundET=%p, mIsWriteScheduled %d",
+        mBackgroundET.get(), mIsWriteScheduled);
     if (mBackgroundET) {
       // Still open, complete the initialization.
       mInitialized = true;
@@ -265,7 +264,7 @@ nsresult FileBlockCache::Seek(int64_t aOffset) {
 nsresult FileBlockCache::ReadFromFile(int64_t aOffset, uint8_t* aDest,
                                       int32_t aBytesToRead,
                                       int32_t& aBytesRead) {
-  LOG("ReadFromFile(offset={}, len={})", aOffset, aBytesToRead);
+  LOG("ReadFromFile(offset=%" PRIu64 ", len=%u)", aOffset, aBytesToRead);
   mFileMutex.AssertCurrentThreadOwns();
   MOZ_ASSERT(mFD);
 
@@ -281,7 +280,7 @@ nsresult FileBlockCache::ReadFromFile(int64_t aOffset, uint8_t* aDest,
 
 nsresult FileBlockCache::WriteBlockToFile(int32_t aBlockIndex,
                                           const uint8_t* aBlockData) {
-  LOG("WriteBlockToFile(index={})", aBlockIndex);
+  LOG("WriteBlockToFile(index=%u)", aBlockIndex);
 
   mFileMutex.AssertCurrentThreadOwns();
   MOZ_ASSERT(mFD);
@@ -301,7 +300,7 @@ nsresult FileBlockCache::WriteBlockToFile(int32_t aBlockIndex,
 
 nsresult FileBlockCache::MoveBlockInFile(int32_t aSourceBlockIndex,
                                          int32_t aDestBlockIndex) {
-  LOG("MoveBlockInFile(src={}, dest={})", aSourceBlockIndex, aDestBlockIndex);
+  LOG("MoveBlockInFile(src=%u, dest=%u)", aSourceBlockIndex, aDestBlockIndex);
 
   mFileMutex.AssertCurrentThreadOwns();
 
@@ -319,8 +318,7 @@ void FileBlockCache::PerformBlockIOs() {
   MOZ_ASSERT(mBackgroundET->IsOnCurrentThread());
   NS_ASSERTION(mIsWriteScheduled, "Should report write running or scheduled.");
 
-  LOG("Run() mFD={} mBackgroundET={}", fmt::ptr(mFD),
-      fmt::ptr(mBackgroundET.get()));
+  LOG("Run() mFD=%p mBackgroundET=%p", mFD, mBackgroundET.get());
 
   while (!mChangeIndexList.empty()) {
     if (!mBackgroundET) {

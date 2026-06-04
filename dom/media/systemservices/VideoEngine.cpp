@@ -20,14 +20,12 @@ int32_t SetCaptureAndroidVM(JavaVM* javaVM);
 namespace mozilla::camera {
 
 mozilla::LazyLogModule gVideoEngineLog("VideoEngine");
-#define LOG(args)                                        \
-  MOZ_LOG_FMT(gVideoEngineLog, mozilla::LogLevel::Debug, \
-              MOZ_LOG_EXPAND_ARGS args)
+#define LOG(args) MOZ_LOG(gVideoEngineLog, mozilla::LogLevel::Debug, args)
 #define LOG_ENABLED() MOZ_LOG_TEST(gVideoEngineLog, mozilla::LogLevel::Debug)
 
 #if defined(ANDROID)
 int VideoEngine::SetAndroidObjects() {
-  LOG(("{}", __PRETTY_FUNCTION__));
+  LOG(("%s", __PRETTY_FUNCTION__));
 
   JavaVM* const javaVM = mozilla::jni::GetVM();
   if (!javaVM || webrtc::SetCaptureAndroidVM(javaVM) != 0) {
@@ -46,7 +44,7 @@ int VideoEngine::SetAndroidObjects() {
 
 VideoCaptureFactory::CreateVideoCaptureResult VideoEngine::CreateVideoCapture(
     int32_t aCaptureId, const char* aDeviceUniqueIdUTF8) {
-  LOG(("{}", __PRETTY_FUNCTION__));
+  LOG(("%s", __PRETTY_FUNCTION__));
   MOZ_ASSERT(aDeviceUniqueIdUTF8);
 
   return mVideoCaptureFactory->CreateVideoCapture(
@@ -55,7 +53,7 @@ VideoCaptureFactory::CreateVideoCaptureResult VideoEngine::CreateVideoCapture(
 
 std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo>
 VideoEngine::GetOrCreateVideoCaptureDeviceInfo() {
-  LOG(("{}", __PRETTY_FUNCTION__));
+  LOG(("%s", __PRETTY_FUNCTION__));
   webrtc::Timestamp currentTime = webrtc::Timestamp::Micros(0);
 
   const char* capDevTypeName = EnumValueToString(mCaptureDevType);
@@ -64,26 +62,27 @@ VideoEngine::GetOrCreateVideoCaptureDeviceInfo() {
     LOG(("Device cache available."));
     // Camera cache is invalidated by HW change detection elsewhere
     if (mCaptureDevType == CaptureDeviceType::Camera) {
-      LOG(("returning cached CaptureDeviceInfo of type {}", capDevTypeName));
+      LOG(("returning cached CaptureDeviceInfo of type %s", capDevTypeName));
       return mDeviceInfo;
     }
     // Screen sharing cache is invalidated after the expiration time
     currentTime = WebrtcSystemTime();
-    LOG(("Checking expiry, fetched current time of: {}", currentTime.ms()));
-    LOG(("device cache expiration is {}", mExpiryTime.ms()));
+    LOG(("Checking expiry, fetched current time of: %" PRId64,
+         currentTime.ms()));
+    LOG(("device cache expiration is %" PRId64, mExpiryTime.ms()));
     if (currentTime <= mExpiryTime) {
-      LOG(("returning cached CaptureDeviceInfo of type {}", capDevTypeName));
+      LOG(("returning cached CaptureDeviceInfo of type %s", capDevTypeName));
       return mDeviceInfo;
     }
   }
 
   if (currentTime.IsZero()) {
     currentTime = WebrtcSystemTime();
-    LOG(("Fetched current time of: {}", currentTime.ms()));
+    LOG(("Fetched current time of: %" PRId64, currentTime.ms()));
   }
   mExpiryTime = currentTime + webrtc::TimeDelta::Millis(kCacheExpiryPeriodMs);
-  LOG(("new device cache expiration is {}", mExpiryTime.ms()));
-  LOG(("creating a new VideoCaptureDeviceInfo of type {}", capDevTypeName));
+  LOG(("new device cache expiration is %" PRId64, mExpiryTime.ms()));
+  LOG(("creating a new VideoCaptureDeviceInfo of type %s", capDevTypeName));
 
 #ifdef MOZ_WIDGET_ANDROID
   if (mCaptureDevType == CaptureDeviceType::Camera) {
@@ -104,12 +103,12 @@ VideoEngine::GetOrCreateVideoCaptureDeviceInfo() {
     mDeviceInfo->RegisterVideoInputFeedBack(this);
   }
 
-  LOG(("EXIT {}", __PRETTY_FUNCTION__));
+  LOG(("EXIT %s", __PRETTY_FUNCTION__));
   return mDeviceInfo;
 }
 
 void VideoEngine::ClearVideoCaptureDeviceInfo() {
-  LOG(("{}", __PRETTY_FUNCTION__));
+  LOG(("%s", __PRETTY_FUNCTION__));
   if (mDeviceInfo) {
     mDeviceInfo->DeRegisterVideoInputFeedBack(this);
     OnDeviceChange();
@@ -121,7 +120,7 @@ void VideoEngine::ClearVideoCaptureDeviceInfo() {
 already_AddRefed<VideoEngine> VideoEngine::Create(
     const CaptureDeviceType& aCaptureDeviceType,
     RefPtr<VideoCaptureFactory> aVideoCaptureFactory) {
-  LOG(("{}", __PRETTY_FUNCTION__));
+  LOG(("%s", __PRETTY_FUNCTION__));
   return do_AddRef(
       new VideoEngine(aCaptureDeviceType, std::move(aVideoCaptureFactory)));
 }
@@ -141,8 +140,8 @@ VideoEngine::VideoEngine(const CaptureDeviceType& aCaptureDeviceType,
       mVideoCaptureFactory(std::move(aVideoCaptureFactory)),
       mDeviceInfo(nullptr) {
   MOZ_ASSERT(mVideoCaptureFactory);
-  LOG(("{}", __PRETTY_FUNCTION__));
-  LOG(("Creating new VideoEngine with CaptureDeviceType {}",
+  LOG(("%s", __PRETTY_FUNCTION__));
+  LOG(("Creating new VideoEngine with CaptureDeviceType %s",
        EnumValueToString(mCaptureDevType)));
 }
 

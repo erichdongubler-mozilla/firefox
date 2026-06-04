@@ -17,14 +17,12 @@
 extern mozilla::LogModule* GetMediaSourceLog();
 extern mozilla::LogModule* GetMediaSourceAPILog();
 
-#define MSE_API(arg, ...)                                                 \
-  MOZ_LOG_FMT(GetMediaSourceAPILog(), mozilla::LogLevel::Debug,           \
-              "SourceBufferList({})::{}: " arg, fmt::ptr(this), __func__, \
-              ##__VA_ARGS__)
-#define MSE_DEBUG(arg, ...)                                               \
-  MOZ_LOG_FMT(GetMediaSourceLog(), mozilla::LogLevel::Debug,              \
-              "SourceBufferList({})::{}: " arg, fmt::ptr(this), __func__, \
-              ##__VA_ARGS__)
+#define MSE_API(arg, ...)                                   \
+  MOZ_LOG(GetMediaSourceAPILog(), mozilla::LogLevel::Debug, \
+          ("SourceBufferList(%p)::%s: " arg, this, __func__, ##__VA_ARGS__))
+#define MSE_DEBUG(arg, ...)                              \
+  MOZ_LOG(GetMediaSourceLog(), mozilla::LogLevel::Debug, \
+          ("SourceBufferList(%p)::%s: " arg, this, __func__, ##__VA_ARGS__))
 
 struct JSContext;
 class JSObject;
@@ -104,7 +102,7 @@ bool SourceBufferList::AnyUpdating() {
 
 void SourceBufferList::RangeRemoval(double aStart, double aEnd) {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_DEBUG("RangeRemoval(aStart={}, aEnd={})", aStart, aEnd);
+  MSE_DEBUG("RangeRemoval(aStart=%f, aEnd=%f)", aStart, aEnd);
   for (uint32_t i = 0; i < mSourceBuffers.Length(); ++i) {
     mSourceBuffers[i]->RangeRemoval(aStart, aEnd);
   }
@@ -130,12 +128,12 @@ TimeUnit SourceBufferList::GetHighestBufferedEndTime() {
 
 void SourceBufferList::DispatchSimpleEvent(const char* aName) {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_API("Dispatch event '{}'", aName);
+  MSE_API("Dispatch event '%s'", aName);
   DispatchTrustedEvent(NS_ConvertUTF8toUTF16(aName));
 }
 
 void SourceBufferList::QueueAsyncSimpleEvent(const char* aName) {
-  MSE_DEBUG("Queue event '{}'", aName);
+  MSE_DEBUG("Queue event '%s'", aName);
   nsCOMPtr<nsIRunnable> event =
       new AsyncEventRunner<SourceBufferList>(this, aName);
   mAbstractMainThread->Dispatch(event.forget());

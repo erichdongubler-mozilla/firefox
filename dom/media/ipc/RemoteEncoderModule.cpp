@@ -55,10 +55,9 @@ already_AddRefed<MediaDataEncoder> RemoteEncoderModule::CreateEncoder(
       RemoteMediaManagerChild::GetManagerThread();
   if (!thread) {
     // Shutdown has begun.
-    MOZ_LOG_FMT(sPEMLog, LogLevel::Debug,
-                "Sandbox {} encoder requested codec {} after shutdown",
-                RemoteMediaInToStr(mLocation),
-                static_cast<int>(aConfig.mCodec));
+    MOZ_LOG(sPEMLog, LogLevel::Debug,
+            ("Sandbox %s encoder requested codec %d after shutdown",
+             RemoteMediaInToStr(mLocation), static_cast<int>(aConfig.mCodec)));
     return nullptr;
   }
 
@@ -81,10 +80,10 @@ RemoteEncoderModule::AsyncCreateEncoder(const EncoderConfig& aEncoderConfig,
       RemoteMediaManagerChild::GetManagerThread();
   if (!thread) {
     // Shutdown has begun.
-    MOZ_LOG_FMT(sPEMLog, LogLevel::Debug,
-                "Sandbox {} encoder requested codec {} after shutdown",
-                RemoteMediaInToStr(mLocation),
-                static_cast<int>(aEncoderConfig.mCodec));
+    MOZ_LOG(sPEMLog, LogLevel::Debug,
+            ("Sandbox %s encoder requested codec %d after shutdown",
+             RemoteMediaInToStr(mLocation),
+             static_cast<int>(aEncoderConfig.mCodec)));
     return PlatformEncoderModule::CreateEncoderPromise::CreateAndReject(
         MediaResult(NS_ERROR_DOM_MEDIA_CANCELED,
                     "Remote manager not available"),
@@ -143,11 +142,11 @@ media::EncodeSupportSet RemoteEncoderModule::SupportsCodec(
     CodecType aCodecType) const {
   media::EncodeSupportSet supports =
       RemoteMediaManagerChild::Supports(mLocation, aCodecType);
-  MOZ_LOG_FMT(sPEMLog, LogLevel::Debug,
-              "Sandbox {} encoder {} requested codec {}",
-              RemoteMediaInToStr(mLocation),
-              supports.isEmpty() ? "supports" : "rejects",
-              static_cast<int>(aCodecType));
+  MOZ_LOG(sPEMLog, LogLevel::Debug,
+          ("Sandbox %s encoder %s requested codec %d",
+           RemoteMediaInToStr(mLocation),
+           supports.isEmpty() ? "supports" : "rejects",
+           static_cast<int>(aCodecType)));
   return supports;
 }
 

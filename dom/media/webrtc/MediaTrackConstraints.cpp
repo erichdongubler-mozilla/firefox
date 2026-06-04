@@ -18,7 +18,7 @@ extern LazyLogModule gMediaManagerLog;
 #else
 static mozilla::LazyLogModule gMediaManagerLog("MediaManager");
 #endif
-#define LOG(...) MOZ_LOG_FMT(gMediaManagerLog, LogLevel::Debug, __VA_ARGS__)
+#define LOG(...) MOZ_LOG(gMediaManagerLog, LogLevel::Debug, (__VA_ARGS__))
 
 namespace mozilla {
 
@@ -507,7 +507,7 @@ const char* MediaConstraintsHelper::FindBadConstraint(
 static void LogConstraintStringRange(
     const NormalizedConstraintSet::StringRange& aRange) {
   if (aRange.mExact.size() <= 1 && aRange.mIdeal.size() <= 1) {
-    LOG("  {}: {{ exact: [{}], ideal: [{}] }}", aRange.mName.get(),
+    LOG("  %s: { exact: [%s], ideal: [%s] }", aRange.mName.get(),
         (aRange.mExact.empty()
              ? ""
              : NS_ConvertUTF16toUTF8(*aRange.mExact.begin()).get()),
@@ -515,15 +515,15 @@ static void LogConstraintStringRange(
              ? ""
              : NS_ConvertUTF16toUTF8(*aRange.mIdeal.begin()).get()));
   } else {
-    LOG("  {}: {{ exact: [", aRange.mName.get());
+    LOG("  %s: { exact: [", aRange.mName.get());
     for (const auto& entry : aRange.mExact) {
-      LOG("      {},", NS_ConvertUTF16toUTF8(entry).get());
+      LOG("      %s,", NS_ConvertUTF16toUTF8(entry).get());
     }
     LOG("    ], ideal: [");
     for (const auto& entry : aRange.mIdeal) {
-      LOG("      {},", NS_ConvertUTF16toUTF8(entry).get());
+      LOG("      %s,", NS_ConvertUTF16toUTF8(entry).get());
     }
-    LOG("    ]}}");
+    LOG("    ]}");
   }
 }
 
@@ -531,10 +531,10 @@ template <typename T>
 static void LogConstraintRange(
     const NormalizedConstraintSet::Range<T>& aRange) {
   if (aRange.mIdeal.isSome()) {
-    LOG("  {}: {{ min: {}, max: {}, ideal: {} }}", aRange.mName.get(),
+    LOG("  %s: { min: %d, max: %d, ideal: %d }", aRange.mName.get(),
         aRange.mMin, aRange.mMax, aRange.mIdeal.valueOr(0));
   } else {
-    LOG("  {}: {{ min: {}, max: {} }}", aRange.mName.get(), aRange.mMin,
+    LOG("  %s: { min: %d, max: %d }", aRange.mName.get(), aRange.mMin,
         aRange.mMax);
   }
 }
@@ -542,10 +542,10 @@ static void LogConstraintRange(
 template <>
 void LogConstraintRange(const NormalizedConstraintSet::Range<double>& aRange) {
   if (aRange.mIdeal.isSome()) {
-    LOG("  {}: {{ min: {}, max: {}, ideal: {} }}", aRange.mName.get(),
+    LOG("  %s: { min: %f, max: %f, ideal: %f }", aRange.mName.get(),
         aRange.mMin, aRange.mMax, aRange.mIdeal.valueOr(0));
   } else {
-    LOG("  {}: {{ min: {}, max: {} }}", aRange.mName.get(), aRange.mMin,
+    LOG("  %s: { min: %f, max: %f }", aRange.mName.get(), aRange.mMin,
         aRange.mMax);
   }
 }
@@ -554,8 +554,8 @@ void LogConstraintRange(const NormalizedConstraintSet::Range<double>& aRange) {
 void MediaConstraintsHelper::LogConstraints(
     const NormalizedConstraintSet& aConstraints) {
   const auto& c = aConstraints;
-  LOG("Constraints: {{");
-  LOG("{}", [&]() {
+  LOG("Constraints: {");
+  LOG("%s", [&]() {
     LogConstraintRange(c.mWidth);
     LogConstraintRange(c.mHeight);
     LogConstraintRange(c.mFrameRate);

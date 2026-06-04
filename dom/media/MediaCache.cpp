@@ -37,8 +37,8 @@ namespace mozilla {
 #undef LOGI
 #undef LOGE
 LazyLogModule gMediaCacheLog("MediaCache");
-#define LOG(...) MOZ_LOG_FMT(gMediaCacheLog, LogLevel::Debug, __VA_ARGS__)
-#define LOGI(...) MOZ_LOG_FMT(gMediaCacheLog, LogLevel::Info, __VA_ARGS__)
+#define LOG(...) MOZ_LOG(gMediaCacheLog, LogLevel::Debug, (__VA_ARGS__))
+#define LOGI(...) MOZ_LOG(gMediaCacheLog, LogLevel::Info, (__VA_ARGS__))
 #define LOGE(...)                                                              \
   NS_DebugBreak(NS_DEBUG_WARNING, nsPrintfCString(__VA_ARGS__).get(), nullptr, \
                 __FILE__, __LINE__)
@@ -303,7 +303,7 @@ class MediaCache {
       // This is the file-backed MediaCache, reset the global pointer.
       gMediaCache = nullptr;
     } else {
-      LOG("~MediaCache(Memory-backed MediaCache {})", fmt::ptr(this));
+      LOG("~MediaCache(Memory-backed MediaCache %p)", this);
     }
     MediaCacheFlusher::UnregisterMediaCache(this);
     NS_ASSERTION(mStreams.IsEmpty(), "Stream(s) still open!");
@@ -503,7 +503,7 @@ void MediaCache::UpdateOnCellular() {
   NS_ASSERTION(NS_IsMainThread(),
                "Only call on main thread");  // JNI required on Android...
   bool onCellular = OnCellularConnection();
-  LOG("MediaCache::UpdateOnCellular() onCellular={}", onCellular);
+  LOG("MediaCache::UpdateOnCellular() onCellular=%d", onCellular);
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
       "MediaCache::UpdateOnCellular", [=]() { sOnCellular = onCellular; });
   sThread->Dispatch(r.forget());
@@ -825,8 +825,8 @@ RefPtr<MediaCache> MediaCache::GetMediaCache(int64_t aContentLength,
     nsresult rv = bc->Init();
     if (NS_SUCCEEDED(rv)) {
       RefPtr<MediaCache> mc = new MediaCache(bc);
-      LOG("GetMediaCache({}) -> Memory MediaCache {}", aContentLength,
-          fmt::ptr(mc.get()));
+      LOG("GetMediaCache(%" PRIi64 ") -> Memory MediaCache %p", aContentLength,
+          mc.get());
       return mc;
     }
 
@@ -839,7 +839,8 @@ RefPtr<MediaCache> MediaCache::GetMediaCache(int64_t aContentLength,
   }
 
   if (gMediaCache) {
-    LOG("GetMediaCache({}) -> Existing file-backed MediaCache", aContentLength);
+    LOG("GetMediaCache(%" PRIi64 ") -> Existing file-backed MediaCache",
+        aContentLength);
     return gMediaCache;
   }
 
@@ -847,9 +848,10 @@ RefPtr<MediaCache> MediaCache::GetMediaCache(int64_t aContentLength,
   nsresult rv = bc->Init();
   if (NS_SUCCEEDED(rv)) {
     gMediaCache = new MediaCache(bc);
-    LOG("GetMediaCache({}) -> Created file-backed MediaCache", aContentLength);
+    LOG("GetMediaCache(%" PRIi64 ") -> Created file-backed MediaCache",
+        aContentLength);
   } else {
-    LOG("GetMediaCache({}) -> Failed to create file-backed MediaCache",
+    LOG("GetMediaCache(%" PRIi64 ") -> Failed to create file-backed MediaCache",
         aContentLength);
   }
 
@@ -1127,7 +1129,7 @@ void MediaCache::FreeBlock(AutoLock& aLock, int32_t aBlock) {
     return;
   }
 
-  LOG("Released block {}", aBlock);
+  LOG("Released block %d", aBlock);
 
   for (uint32_t i = 0; i < block->mOwners.Length(); ++i) {
     BlockOwner* bo = &block->mOwners[i];
@@ -1259,18 +1261,18 @@ void MediaCache::Update() {
     MediaCacheStream* stream = mStreams[i];
     switch (actions[i].mTag) {
       case StreamAction::SEEK:
-        LOG("Stream {} CacheSeek to {} (resume={})", fmt::ptr(stream),
+        LOG("Stream %p CacheSeek to %" PRId64 " (resume=%d)", stream,
             actions[i].mSeekTarget, actions[i].mResume);
         stream->mClient->CacheClientSeek(actions[i].mSeekTarget,
                                          actions[i].mResume);
         break;
       case StreamAction::RESUME:
-        LOG("Stream {} Resumed", fmt::ptr(stream));
+        LOG("Stream %p Resumed", stream);
         stream->mClient->CacheClientResume();
         QueueSuspendedStatusUpdate(lock, stream->mResourceID);
         break;
       case StreamAction::SUSPEND:
-        LOG("Stream {} Suspended", fmt::ptr(stream));
+        LOG("Stream %p Suspended", stream);
         stream->mClient->CacheClientSuspend();
         QueueSuspendedStatusUpdate(lock, stream->mResourceID);
         break;
@@ -1372,18 +1374,18 @@ int32_t MediaCache::TrimCacheIfNeeded(AutoLock& aLock, const TimeStamp& aNow) {
 
       if (NS_SUCCEEDED(rv)) {
         // We successfully copied the file data.
-        LOG("Swapping blocks {} and {} (trimming cache)", blockIndex,
+        LOG("Swapping blocks %d and %d (trimming cache)", blockIndex,
             destinationBlockIndex);
         // Swapping the block metadata here lets us maintain the
         // correct positions in the linked lists
         SwapBlocks(aLock, blockIndex, destinationBlockIndex);
         // Free the overflowing block even if the copy failed.
-        LOG("Released block {} (trimming cache)", blockIndex);
+        LOG("Released block %d (trimming cache)", blockIndex);
         FreeBlock(aLock, blockIndex);
       }
     } else {
-      LOG("Could not trim cache block {} (destination {}, "
-          "predicted next use {}, latest predicted use for overflow {}",
+      LOG("Could not trim cache block %d (destination %d, "
+          "predicted next use %f, latest predicted use for overflow %f",
           blockIndex, destinationBlockIndex,
           PredictNextUse(aLock, aNow, destinationBlockIndex).ToSeconds(),
           latestPredictedUseForOverflow.ToSeconds());
@@ -1428,7 +1430,7 @@ void MediaCache::DetermineActionsForStreams(AutoLock& aLock,
 
     MediaCacheStream* stream = mStreams[i];
     if (stream->mClosed) {
-      LOG("Stream {} closed", fmt::ptr(stream));
+      LOG("Stream %p closed", stream);
       continue;
     }
 
@@ -1487,17 +1489,17 @@ void MediaCache::DetermineActionsForStreams(AutoLock& aLock,
       // advertised with Content-Length, and we may as well keep reading.
       // But we don't want to seek to the end of the stream if we're not
       // already there.
-      LOG("Stream {} at end of stream", fmt::ptr(stream));
+      LOG("Stream %p at end of stream", stream);
       enableReading =
           !stream->mCacheSuspended && stream->mStreamLength == channelOffset;
     } else if (desiredOffset < stream->mStreamOffset) {
       // We're reading to try to catch up to where the current stream
       // reader wants to be. Better not stop.
-      LOG("Stream {} catching up", fmt::ptr(stream));
+      LOG("Stream %p catching up", stream);
       enableReading = true;
     } else if (desiredOffset < stream->mStreamOffset + BLOCK_SIZE) {
       // The stream reader is waiting for us, or nearly so. Better feed it.
-      LOG("Stream {} feeding reader", fmt::ptr(stream));
+      LOG("Stream %p feeding reader", stream);
       enableReading = true;
     } else if (!stream->mIsTransportSeekable &&
                nonSeekableReadaheadBlockCount >=
@@ -1505,12 +1507,12 @@ void MediaCache::DetermineActionsForStreams(AutoLock& aLock,
       // This stream is not seekable and there are already too many blocks
       // being cached for readahead for nonseekable streams (which we can't
       // free). So stop reading ahead now.
-      LOG("Stream {} throttling non-seekable readahead", fmt::ptr(stream));
+      LOG("Stream %p throttling non-seekable readahead", stream);
       enableReading = false;
     } else if (mIndex.Length() > uint32_t(maxBlocks)) {
       // We're in the process of bringing the cache size back to the
       // desired limit, so don't bring in more data yet
-      LOG("Stream {} throttling to reduce cache size", fmt::ptr(stream));
+      LOG("Stream %p throttling to reduce cache size", stream);
       enableReading = false;
     } else {
       TimeDuration predictedNewDataUse =
@@ -1519,30 +1521,27 @@ void MediaCache::DetermineActionsForStreams(AutoLock& aLock,
       if (stream->mThrottleReadahead && stream->mCacheSuspended &&
           predictedNewDataUse.ToSeconds() > MediaCache::ResumeThreshold()) {
         // Don't need data for a while, so don't bother waking up the stream
-        LOG("Stream {} avoiding wakeup since more data is not needed",
-            fmt::ptr(stream));
+        LOG("Stream %p avoiding wakeup since more data is not needed", stream);
         enableReading = false;
       } else if (stream->mThrottleReadahead &&
                  predictedNewDataUse.ToSeconds() >
                      MediaCache::ReadaheadLimit()) {
         // Don't read ahead more than this much
-        LOG("Stream {} throttling to avoid reading ahead too far",
-            fmt::ptr(stream));
+        LOG("Stream %p throttling to avoid reading ahead too far", stream);
         enableReading = false;
       } else if (aFreeBlockCount > 0) {
         // Free blocks in the cache, so keep reading
-        LOG("Stream {} reading since there are free blocks", fmt::ptr(stream));
+        LOG("Stream %p reading since there are free blocks", stream);
         enableReading = true;
       } else if (latestNextUse <= TimeDuration(0)) {
         // No reusable blocks, so can't read anything
-        LOG("Stream {} throttling due to no reusable blocks", fmt::ptr(stream));
+        LOG("Stream %p throttling due to no reusable blocks", stream);
         enableReading = false;
       } else {
         // Read ahead if the data we expect to read is more valuable than
         // the least valuable block in the main part of the cache
-        LOG("Stream {} predict next data in {}, current worst block is {}",
-            fmt::ptr(stream), predictedNewDataUse.ToSeconds(),
-            latestNextUse.ToSeconds());
+        LOG("Stream %p predict next data in %f, current worst block is %f",
+            stream, predictedNewDataUse.ToSeconds(), latestNextUse.ToSeconds());
         enableReading = predictedNewDataUse < latestNextUse;
       }
     }
@@ -1559,9 +1558,8 @@ void MediaCache::DetermineActionsForStreams(AutoLock& aLock,
           // This block is already going to be read by the other stream.
           // So don't try to read it from this stream as well.
           enableReading = false;
-          LOG("Stream {} waiting on same block ({}) from stream {}",
-              fmt::ptr(stream), OffsetToBlockIndexUnchecked(desiredOffset),
-              fmt::ptr(other));
+          LOG("Stream %p waiting on same block (%" PRId32 ") from stream %p",
+              stream, OffsetToBlockIndexUnchecked(desiredOffset), other);
           break;
         }
       }
@@ -1584,8 +1582,8 @@ void MediaCache::DetermineActionsForStreams(AutoLock& aLock,
     } else if (!enableReading && !stream->mCacheSuspended) {
       aActions[i].mTag = StreamAction::SUSPEND;
     }
-    LOG("Stream {}, mCacheSuspended={}, enableReading={}, action={}",
-        fmt::ptr(stream), stream->mCacheSuspended, enableReading,
+    LOG("Stream %p, mCacheSuspended=%d, enableReading=%d, action=%s", stream,
+        stream->mCacheSuspended, enableReading,
         aActions[i].mTag == StreamAction::SEEK      ? "SEEK"
         : aActions[i].mTag == StreamAction::RESUME  ? "RESUME"
         : aActions[i].mTag == StreamAction::SUSPEND ? "SUSPEND"
@@ -1680,8 +1678,9 @@ void MediaCache::AllocateAndWriteBlock(AutoLock& aLock,
     if (stream->mBlocks[aStreamBlockIndex] >= 0) {
       // We no longer want to own this block
       int32_t globalBlockIndex = stream->mBlocks[aStreamBlockIndex];
-      LOG("Released block {} from stream {} block {}({})", globalBlockIndex,
-          fmt::ptr(stream), aStreamBlockIndex, aStreamBlockIndex * BLOCK_SIZE);
+      LOG("Released block %d from stream %p block %d(%" PRId64 ")",
+          globalBlockIndex, stream, aStreamBlockIndex,
+          aStreamBlockIndex * BLOCK_SIZE);
       RemoveBlockOwner(aLock, globalBlockIndex, stream);
     }
   }
@@ -1695,8 +1694,8 @@ void MediaCache::AllocateAndWriteBlock(AutoLock& aLock,
     FreeBlock(aLock, blockIndex);
 
     Block* block = &mIndex[blockIndex];
-    LOG("Allocated block {} to stream {} block {}({})", blockIndex,
-        fmt::ptr(aStream), aStreamBlockIndex, aStreamBlockIndex * BLOCK_SIZE);
+    LOG("Allocated block %d to stream %p block %d(%" PRId64 ")", blockIndex,
+        aStream, aStreamBlockIndex, aStreamBlockIndex * BLOCK_SIZE);
 
     ResourceStreamIterator iter(this, aStream->mResourceID);
     while (MediaCacheStream* stream = iter.Next(aLock)) {
@@ -1743,8 +1742,8 @@ void MediaCache::AllocateAndWriteBlock(AutoLock& aLock,
 
     nsresult rv = mBlockCache->WriteBlock(blockIndex, aData1, aData2);
     if (NS_FAILED(rv)) {
-      LOG("Released block {} from stream {} block {}({})", blockIndex,
-          fmt::ptr(aStream), aStreamBlockIndex, aStreamBlockIndex * BLOCK_SIZE);
+      LOG("Released block %d from stream %p block %d(%" PRId64 ")", blockIndex,
+          aStream, aStreamBlockIndex, aStreamBlockIndex * BLOCK_SIZE);
       FreeBlock(aLock, blockIndex);
     }
   }
@@ -1756,9 +1755,9 @@ void MediaCache::AllocateAndWriteBlock(AutoLock& aLock,
 
 void MediaCache::OpenStream(AutoLock& aLock, MediaCacheStream* aStream,
                             bool aIsClone) {
-  LOG("Stream {} opened, aIsClone={}, mCacheSuspended={}, "
-      "mDidNotifyDataEnded={}",
-      fmt::ptr(aStream), aIsClone, aStream->mCacheSuspended,
+  LOG("Stream %p opened, aIsClone=%d, mCacheSuspended=%d, "
+      "mDidNotifyDataEnded=%d",
+      aStream, aIsClone, aStream->mCacheSuspended,
       aStream->mDidNotifyDataEnded);
   mStreams.AppendElement(aStream);
 
@@ -1777,7 +1776,7 @@ void MediaCache::OpenStream(AutoLock& aLock, MediaCacheStream* aStream,
 
 void MediaCache::ReleaseStream(AutoLock&, MediaCacheStream* aStream) {
   MOZ_ASSERT(OwnerThread()->IsOnCurrentThread());
-  LOG("Stream {} closed", fmt::ptr(aStream));
+  LOG("Stream %p closed", aStream);
   mStreams.RemoveElement(aStream);
   // The caller needs to call QueueUpdate() to re-run Update().
 }
@@ -1791,8 +1790,8 @@ void MediaCache::ReleaseStreamBlocks(AutoLock& aLock,
   for (uint32_t i = 0; i < length; ++i) {
     int32_t blockIndex = aStream->mBlocks[i];
     if (blockIndex >= 0) {
-      LOG("Released block {} from stream {} block {}({})", blockIndex,
-          fmt::ptr(aStream), i, i * BLOCK_SIZE);
+      LOG("Released block %d from stream %p block %d(%" PRId64 ")", blockIndex,
+          aStream, i, i * BLOCK_SIZE);
       RemoveBlockOwner(aLock, blockIndex, aStream);
     }
   }
@@ -1928,7 +1927,7 @@ void MediaCacheStream::NotifyDataStartedInternal(uint32_t aLoadID,
                                                  int64_t aLength) {
   MOZ_ASSERT(OwnerThread()->IsOnCurrentThread());
   MOZ_ASSERT(aLoadID > 0);
-  LOG("Stream {} DataStarted: {} aLoadID={} aLength={}", fmt::ptr(this),
+  LOG("Stream %p DataStarted: %" PRId64 " aLoadID=%u aLength=%" PRId64, this,
       aOffset, aLoadID, aLength);
 
   AutoLock lock(mMediaCache->Monitor());
@@ -1988,7 +1987,7 @@ void MediaCacheStream::NotifyDataReceived(uint32_t aLoadID, uint32_t aCount,
     return;
   }
 
-  LOG("Stream {} DataReceived at {} count={} aLoadID={}", fmt::ptr(this),
+  LOG("Stream %p DataReceived at %" PRId64 " count=%u aLoadID=%u", this,
       mChannelOffset, aCount, aLoadID);
 
   if (mLoadID != aLoadID) {
@@ -2055,10 +2054,10 @@ void MediaCacheStream::FlushPartialBlockInternal(AutoLock& aLock) {
   int32_t blockIndex = OffsetToBlockIndexUnchecked(mChannelOffset);
   int32_t blockOffset = OffsetInBlock(mChannelOffset);
   if (blockOffset > 0) {
-    LOG("Stream {} writing partial block: [{}] bytes; "
-        "mStreamOffset [{}] mChannelOffset[{}] mStreamLength [{}]",
-        fmt::ptr(this), blockOffset, mStreamOffset, mChannelOffset,
-        mStreamLength);
+    LOG("Stream %p writing partial block: [%d] bytes; "
+        "mStreamOffset [%" PRId64 "] mChannelOffset[%" PRId64
+        "] mStreamLength [%" PRId64 "]",
+        this, blockOffset, mStreamOffset, mChannelOffset, mStreamLength);
 
     // Write back the partial block
     memset(mPartialBlockBuffer.get() + blockOffset, 0,
@@ -2191,9 +2190,9 @@ MediaCacheStream::~MediaCacheStream() {
 
   uint32_t lengthKb = uint32_t(std::min(
       std::max(mStreamLength, int64_t(0)) / 1024, int64_t(UINT32_MAX)));
-  LOG("MediaCacheStream::~MediaCacheStream(this={}) "
-      "MEDIACACHESTREAM_LENGTH_KB={}",
-      fmt::ptr(this), lengthKb);
+  LOG("MediaCacheStream::~MediaCacheStream(this=%p) "
+      "MEDIACACHESTREAM_LENGTH_KB=%" PRIu32,
+      this, lengthKb);
 }
 
 bool MediaCacheStream::AreAllStreamsForResourceSuspended(AutoLock& aLock) {
@@ -2406,7 +2405,7 @@ nsresult MediaCacheStream::Seek(AutoLock& aLock, int64_t aOffset) {
 
   int64_t oldOffset = mStreamOffset;
   mStreamOffset = aOffset;
-  LOG("Stream {} Seek to {}", fmt::ptr(this), mStreamOffset);
+  LOG("Stream %p Seek to %" PRId64, this, mStreamOffset);
   mMediaCache->NoteSeek(aLock, this, oldOffset);
   mMediaCache->QueueUpdate(aLock);
   return NS_OK;
@@ -2420,7 +2419,7 @@ void MediaCacheStream::ThrottleReadahead(bool bThrottle) {
       [client = RefPtr<ChannelMediaResource>(mClient), this, bThrottle]() {
         AutoLock lock(mMediaCache->Monitor());
         if (!mClosed && mThrottleReadahead != bThrottle) {
-          LOGI("Stream {} ThrottleReadahead {}", fmt::ptr(this), bThrottle);
+          LOGI("Stream %p ThrottleReadahead %d", this, bThrottle);
           mThrottleReadahead = bThrottle;
           mMediaCache->QueueUpdate(lock);
         }
@@ -2593,7 +2592,7 @@ nsresult MediaCacheStream::Read(AutoLock& aLock, char* aBuffer, uint32_t aCount,
   // have changed
   mMediaCache->QueueUpdate(aLock);
 
-  LOG("Stream {} Read at {} count={}", fmt::ptr(this), streamOffset - count,
+  LOG("Stream %p Read at %" PRId64 " count=%d", this, streamOffset - count,
       count);
   mStreamOffset = streamOffset;
   return NS_OK;
@@ -2664,9 +2663,9 @@ nsresult MediaCacheStream::Init(int64_t aContentLength) {
 
   if (aContentLength > 0) {
     uint32_t length = uint32_t(std::min(aContentLength, int64_t(UINT32_MAX)));
-    LOG("MediaCacheStream::Init(this={}) "
-        "MEDIACACHESTREAM_NOTIFIED_LENGTH={}",
-        fmt::ptr(this), length);
+    LOG("MediaCacheStream::Init(this=%p) "
+        "MEDIACACHESTREAM_NOTIFIED_LENGTH=%" PRIu32,
+        this, length);
 
     mStreamLength = aContentLength;
   }
@@ -2703,8 +2702,8 @@ void MediaCacheStream::InitAsClone(MediaCacheStream* aOriginal) {
 void MediaCacheStream::InitAsCloneInternal(MediaCacheStream* aOriginal) {
   MOZ_ASSERT(OwnerThread()->IsOnCurrentThread());
   AutoLock lock(mMediaCache->Monitor());
-  LOG("MediaCacheStream::InitAsCloneInternal(this={}, original={})",
-      fmt::ptr(this), fmt::ptr(aOriginal));
+  LOG("MediaCacheStream::InitAsCloneInternal(this=%p, original=%p)", this,
+      aOriginal);
 
   // Download data and notify events if necessary. Note the order is important
   // in order to mimic the behavior of data being downloaded from the channel.

@@ -28,8 +28,7 @@
 // Un-comment to enable logging of seek bisections.
 // #define SEEK_LOGGING
 #ifdef SEEK_LOGGING
-#  define SEEK_LOG(type, msg) \
-    MOZ_LOG_FMT(gMediaDemuxerLog, type, MOZ_LOG_EXPAND_ARGS msg)
+#  define SEEK_LOG(type, msg) MOZ_LOG(gMediaDemuxerLog, type, msg)
 #else
 #  define SEEK_LOG(type, msg)
 #endif
@@ -1924,7 +1923,7 @@ nsresult OggDemuxer::SeekBisection(TrackInfo::TrackType aType,
         // offset using an exponential backoff until we determine the time.
         SEEK_LOG(
             LogLevel::Debug,
-            ("Backing off {} bytes, backsteps={}",
+            ("Backing off %d bytes, backsteps=%d",
              static_cast<int32_t>(PAGE_STEP * pow(2.0, backsteps)), backsteps));
         guess -= PAGE_STEP * static_cast<ogg_int64_t>(pow(2.0, backsteps));
 
@@ -1944,9 +1943,9 @@ nsresult OggDemuxer::SeekBisection(TrackInfo::TrackType aType,
       guess = std::max(guess, startOffset + startLength);
 
       SEEK_LOG(LogLevel::Debug,
-               ("Seek loop start[o={}..{} t={}] "
-                "end[o={} t={}] "
-                "interval={} target={} guess={}",
+               ("Seek loop start[o=%lld..%lld t=%lld] "
+                "end[o=%lld t=%lld] "
+                "interval=%lld target=%lf guess=%lld",
                 startOffset, (startOffset + startLength), startTime, endOffset,
                 endTime, interval, target, guess));
 
@@ -2065,7 +2064,8 @@ nsresult OggDemuxer::SeekBisection(TrackInfo::TrackType aType,
     if (interval == 0) {
       // Seek termination condition; we've found the page boundary of the
       // last page before the target, and the first page after the target.
-      SEEK_LOG(LogLevel::Debug, ("Terminating seek at offset={}", startOffset));
+      SEEK_LOG(LogLevel::Debug,
+               ("Terminating seek at offset=%lld", startOffset));
       MOZ_ASSERT(startTime < aTarget.ToMicroseconds(),
                  "Start time must always be less than target");
       res = Resource(aType)->Seek(nsISeekableStream::NS_SEEK_SET, startOffset);
@@ -2076,7 +2076,8 @@ nsresult OggDemuxer::SeekBisection(TrackInfo::TrackType aType,
       break;
     }
 
-    SEEK_LOG(LogLevel::Debug, ("Time at offset {} is {}", guess, granuleTime));
+    SEEK_LOG(LogLevel::Debug,
+             ("Time at offset %lld is %lld", guess, granuleTime));
     if (granuleTime < seekTarget && granuleTime > seekLowerBound) {
       // We're within the fuzzy region in which we want to terminate the search.
       res = Resource(aType)->Seek(nsISeekableStream::NS_SEEK_SET, pageOffset);
@@ -2084,7 +2085,8 @@ nsresult OggDemuxer::SeekBisection(TrackInfo::TrackType aType,
       if (NS_FAILED(Reset(aType))) {
         return NS_ERROR_FAILURE;
       }
-      SEEK_LOG(LogLevel::Debug, ("Terminating seek at offset={}", pageOffset));
+      SEEK_LOG(LogLevel::Debug,
+               ("Terminating seek at offset=%lld", pageOffset));
       break;
     }
 
@@ -2107,7 +2109,7 @@ nsresult OggDemuxer::SeekBisection(TrackInfo::TrackType aType,
   }
 
   (void)hops;
-  SEEK_LOG(LogLevel::Debug, ("Seek complete in {} bisections.", hops));
+  SEEK_LOG(LogLevel::Debug, ("Seek complete in %d bisections.", hops));
 
   return NS_OK;
 }

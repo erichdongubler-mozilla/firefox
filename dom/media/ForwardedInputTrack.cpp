@@ -36,8 +36,7 @@ namespace mozilla {
 #endif
 
 LazyLogModule gForwardedInputTrackLog("ForwardedInputTrack");
-#define TRACK_LOG(type, ...) \
-  MOZ_LOG_FMT(gForwardedInputTrackLog, type, MOZ_LOG_EXPAND_ARGS __VA_ARGS__)
+#define TRACK_LOG(type, msg) MOZ_LOG(gForwardedInputTrackLog, type, msg)
 
 ForwardedInputTrack::ForwardedInputTrack(TrackRate aSampleRate,
                                          MediaSegment::Type aType)
@@ -53,17 +52,16 @@ void ForwardedInputTrack::AddInput(MediaInputPort* aPort) {
 }
 
 void ForwardedInputTrack::RemoveInput(MediaInputPort* aPort) {
-  TRACK_LOG(LogLevel::Debug, ("ForwardedInputTrack {} removing input {}",
-                              fmt::ptr(this), fmt::ptr(aPort)));
+  TRACK_LOG(LogLevel::Debug,
+            ("ForwardedInputTrack %p removing input %p", this, aPort));
   MOZ_ASSERT(aPort == mInputPort);
 
   for (const auto& listener : mOwnedDirectListeners) {
     MediaTrack* source = mInputPort->GetSource();
     TRACK_LOG(LogLevel::Debug,
-              ("ForwardedInputTrack {} removing direct listener "
-               "{}. Forwarding to input track {}.",
-               fmt::ptr(this), fmt::ptr(listener.get()),
-               fmt::ptr(aPort->GetSource())));
+              ("ForwardedInputTrack %p removing direct listener "
+               "%p. Forwarding to input track %p.",
+               this, listener.get(), aPort->GetSource()));
     source->RemoveDirectListenerImpl(listener);
   }
 
@@ -86,10 +84,9 @@ void ForwardedInputTrack::SetInput(MediaInputPort* aPort) {
 
   for (const auto& listener : mOwnedDirectListeners) {
     MediaTrack* source = mInputPort->GetSource();
-    TRACK_LOG(LogLevel::Debug, ("ForwardedInputTrack {} adding direct listener "
-                                "{}. Forwarding to input track {}.",
-                                fmt::ptr(this), fmt::ptr(listener.get()),
-                                fmt::ptr(aPort->GetSource())));
+    TRACK_LOG(LogLevel::Debug, ("ForwardedInputTrack %p adding direct listener "
+                                "%p. Forwarding to input track %p.",
+                                this, listener.get(), aPort->GetSource()));
     source->AddDirectListenerImpl(do_AddRef(listener));
   }
 
@@ -127,14 +124,16 @@ void ForwardedInputTrack::ProcessInputImpl(MediaTrack* aSource,
         break;
       }
       aSegment->AppendNullData(ticks);
-      TRACK_LOG(LogLevel::Verbose, ("ForwardedInputTrack {} appending {} ticks "
-                                    "of null data (ended input)",
-                                    fmt::ptr(this), (long long)ticks));
+      TRACK_LOG(LogLevel::Verbose,
+                ("ForwardedInputTrack %p appending %lld ticks "
+                 "of null data (ended input)",
+                 this, (long long)ticks));
     } else if (interval.mInputIsBlocked) {
       aSegment->AppendNullData(ticks);
-      TRACK_LOG(LogLevel::Verbose, ("ForwardedInputTrack {} appending {} ticks "
-                                    "of null data (blocked input)",
-                                    fmt::ptr(this), (long long)ticks));
+      TRACK_LOG(LogLevel::Verbose,
+                ("ForwardedInputTrack %p appending %lld ticks "
+                 "of null data (blocked input)",
+                 this, (long long)ticks));
     } else if (InMutedCycle()) {
       aSegment->AppendNullData(ticks);
     } else if (aSource->IsSuspended()) {
@@ -195,20 +194,20 @@ DisabledTrackMode ForwardedInputTrack::CombinedDisabledMode() const {
 
 void ForwardedInputTrack::SetDisabledTrackModeImpl(DisabledTrackMode aMode) {
   bool enabled = aMode == DisabledTrackMode::ENABLED;
-  TRACK_LOG(LogLevel::Info, ("ForwardedInputTrack {} was explicitly {}",
-                             fmt::ptr(this), enabled ? "enabled" : "disabled"));
+  TRACK_LOG(LogLevel::Info, ("ForwardedInputTrack %p was explicitly %s", this,
+                             enabled ? "enabled" : "disabled"));
   for (DirectMediaTrackListener* listener : mOwnedDirectListeners) {
     DisabledTrackMode oldMode = mDisabledMode;
     bool oldEnabled = oldMode == DisabledTrackMode::ENABLED;
     if (!oldEnabled && enabled) {
-      TRACK_LOG(LogLevel::Debug, ("ForwardedInputTrack {} setting "
+      TRACK_LOG(LogLevel::Debug, ("ForwardedInputTrack %p setting "
                                   "direct listener enabled",
-                                  fmt::ptr(this)));
+                                  this));
       listener->DecreaseDisabled(oldMode);
     } else if (oldEnabled && !enabled) {
-      TRACK_LOG(LogLevel::Debug, ("ForwardedInputTrack {} setting "
+      TRACK_LOG(LogLevel::Debug, ("ForwardedInputTrack %p setting "
                                   "direct listener disabled",
-                                  fmt::ptr(this)));
+                                  this));
       listener->IncreaseDisabled(aMode);
     }
   }
@@ -250,10 +249,9 @@ void ForwardedInputTrack::AddDirectListenerImpl(
 
   if (mInputPort) {
     MediaTrack* source = mInputPort->GetSource();
-    TRACK_LOG(LogLevel::Debug,
-              ("ForwardedInputTrack {} adding direct listener "
-               "{}. Forwarding to input track {}.",
-               fmt::ptr(this), fmt::ptr(listener.get()), fmt::ptr(source)));
+    TRACK_LOG(LogLevel::Debug, ("ForwardedInputTrack %p adding direct listener "
+                                "%p. Forwarding to input track %p.",
+                                this, listener.get(), source));
     source->AddDirectListenerImpl(listener.forget());
   }
 }
@@ -263,8 +261,8 @@ void ForwardedInputTrack::RemoveDirectListenerImpl(
   for (size_t i = 0; i < mOwnedDirectListeners.Length(); ++i) {
     if (mOwnedDirectListeners[i] == aListener) {
       TRACK_LOG(LogLevel::Debug,
-                ("ForwardedInputTrack {} removing direct listener {}",
-                 fmt::ptr(this), fmt::ptr(aListener)));
+                ("ForwardedInputTrack %p removing direct listener %p", this,
+                 aListener));
       DisabledTrackMode currentMode = mDisabledMode;
       if (currentMode != DisabledTrackMode::ENABLED) {
         // Reset the listener's state.

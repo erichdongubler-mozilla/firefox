@@ -37,7 +37,7 @@ nsCString CDMStorageIdProvider::ComputeStorageId(const nsCString& aOriginSalt) {
   if (NS_WARN_IF(NS_FAILED(rv))) {
     GMP_LOG_DEBUG(
         "CDMStorageIdProvider::ComputeStorageId: failed to initialize "
-        "hash(0x{:08x})",
+        "hash(0x%08" PRIx32 ")",
         static_cast<uint32_t>(rv));
     return ""_ns;
   }
@@ -47,7 +47,7 @@ nsCString CDMStorageIdProvider::ComputeStorageId(const nsCString& aOriginSalt) {
   if (NS_WARN_IF(NS_FAILED(rv))) {
     GMP_LOG_DEBUG(
         "CDMStorageIdProvider::ComputeStorageId: failed to update "
-        "hash(0x{:08x})",
+        "hash(0x%08" PRIx32 ")",
         static_cast<uint32_t>(rv));
     return ""_ns;
   }
@@ -57,7 +57,7 @@ nsCString CDMStorageIdProvider::ComputeStorageId(const nsCString& aOriginSalt) {
   if (NS_WARN_IF(NS_FAILED(rv))) {
     GMP_LOG_DEBUG(
         "CDMStorageIdProvider::ComputeStorageId: failed to get the final hash "
-        "result(0x{:08x})",
+        "result(0x%08" PRIx32 ")",
         static_cast<uint32_t>(rv));
     return ""_ns;
   }

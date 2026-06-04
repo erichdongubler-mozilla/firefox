@@ -17,8 +17,8 @@ mozilla::ipc::IPCResult WebrtcTCPSocketParent::RecvAsyncOpen(
     const nsACString& aHost, const int& aPort, const nsACString& aLocalAddress,
     const int& aLocalPort, const bool& aUseTls,
     const Maybe<WebrtcProxyConfig>& aProxyConfig) {
-  LOG("WebrtcTCPSocketParent::RecvAsyncOpen {} to {}:{}\n", fmt::ptr(this),
-      PromiseFlatCString(aHost).get(), aPort);
+  LOG(("WebrtcTCPSocketParent::RecvAsyncOpen %p to %s:%d\n", this,
+       PromiseFlatCString(aHost).get(), aPort));
 
   MOZ_ASSERT(mChannel, "webrtc TCP socket should be non-null");
   if (!mChannel) {
@@ -33,8 +33,8 @@ mozilla::ipc::IPCResult WebrtcTCPSocketParent::RecvAsyncOpen(
 
 mozilla::ipc::IPCResult WebrtcTCPSocketParent::RecvWrite(
     nsTArray<uint8_t>&& aWriteData) {
-  LOG("WebrtcTCPSocketParent::RecvWrite {} for {}\n", fmt::ptr(this),
-      aWriteData.Length());
+  LOG(("WebrtcTCPSocketParent::RecvWrite %p for %zu\n", this,
+       aWriteData.Length()));
 
   // Need to check this here in case there are Writes in the queue after OnClose
   if (mChannel) {
@@ -45,7 +45,7 @@ mozilla::ipc::IPCResult WebrtcTCPSocketParent::RecvWrite(
 }
 
 mozilla::ipc::IPCResult WebrtcTCPSocketParent::RecvClose() {
-  LOG("WebrtcTCPSocketParent::RecvClose {}\n", fmt::ptr(this));
+  LOG(("WebrtcTCPSocketParent::RecvClose %p\n", this));
 
   CleanupChannel();
 
@@ -58,8 +58,7 @@ mozilla::ipc::IPCResult WebrtcTCPSocketParent::RecvClose() {
 }
 
 void WebrtcTCPSocketParent::ActorDestroy(ActorDestroyReason aWhy) {
-  LOG("WebrtcTCPSocketParent::ActorDestroy {} for {}\n", fmt::ptr(this),
-      static_cast<int>(aWhy));
+  LOG(("WebrtcTCPSocketParent::ActorDestroy %p for %d\n", this, aWhy));
 
   CleanupChannel();
 }
@@ -67,7 +66,7 @@ void WebrtcTCPSocketParent::ActorDestroy(ActorDestroyReason aWhy) {
 WebrtcTCPSocketParent::WebrtcTCPSocketParent(const Maybe<dom::TabId>& aTabId) {
   MOZ_COUNT_CTOR(WebrtcTCPSocketParent);
 
-  LOG("WebrtcTCPSocketParent::WebrtcTCPSocketParent {}\n", fmt::ptr(this));
+  LOG(("WebrtcTCPSocketParent::WebrtcTCPSocketParent %p\n", this));
 
   mChannel = MakeRefPtr<WebrtcTCPSocket>(this);
   if (aTabId.isSome()) {
@@ -78,14 +77,14 @@ WebrtcTCPSocketParent::WebrtcTCPSocketParent(const Maybe<dom::TabId>& aTabId) {
 WebrtcTCPSocketParent::~WebrtcTCPSocketParent() {
   MOZ_COUNT_DTOR(WebrtcTCPSocketParent);
 
-  LOG("WebrtcTCPSocketParent::~WebrtcTCPSocketParent {}\n", fmt::ptr(this));
+  LOG(("WebrtcTCPSocketParent::~WebrtcTCPSocketParent %p\n", this));
 
   CleanupChannel();
 }
 
 // WebrtcTCPSocketCallback
 void WebrtcTCPSocketParent::OnClose(nsresult aReason) {
-  LOG("WebrtcTCPSocketParent::OnClose {}\n", fmt::ptr(this));
+  LOG(("WebrtcTCPSocketParent::OnClose %p\n", this));
 
   if (mChannel) {
     (void)SendOnClose(aReason);
@@ -95,8 +94,7 @@ void WebrtcTCPSocketParent::OnClose(nsresult aReason) {
 }
 
 void WebrtcTCPSocketParent::OnRead(nsTArray<uint8_t>&& aReadData) {
-  LOG("WebrtcTCPSocketParent::OnRead {} {}\n", fmt::ptr(this),
-      aReadData.Length());
+  LOG(("WebrtcTCPSocketParent::OnRead %p %zu\n", this, aReadData.Length()));
 
   if (mChannel && !SendOnRead(std::move(aReadData))) {
     CleanupChannel();
@@ -104,7 +102,7 @@ void WebrtcTCPSocketParent::OnRead(nsTArray<uint8_t>&& aReadData) {
 }
 
 void WebrtcTCPSocketParent::OnConnected(const nsACString& aProxyType) {
-  LOG("WebrtcTCPSocketParent::OnConnected {}\n", fmt::ptr(this));
+  LOG(("WebrtcTCPSocketParent::OnConnected %p\n", this));
 
   if (mChannel && !SendOnConnected(aProxyType)) {
     CleanupChannel();

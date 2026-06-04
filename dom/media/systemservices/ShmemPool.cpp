@@ -11,9 +11,8 @@
 
 mozilla::LazyLogModule sShmemPoolLog("ShmemPool");
 
-#define SHMEMPOOL_LOG_VERBOSE(args)                      \
-  MOZ_LOG_FMT(sShmemPoolLog, mozilla::LogLevel::Verbose, \
-              MOZ_LOG_EXPAND_ARGS args)
+#define SHMEMPOOL_LOG_VERBOSE(args) \
+  MOZ_LOG(sShmemPoolLog, mozilla::LogLevel::Verbose, args)
 
 namespace mozilla {
 
@@ -67,7 +66,8 @@ mozilla::ShmemBuffer ShmemPool::GetIfAvailable(size_t aSize) {
   size_t poolUse = mShmemPool.Length() - mPoolFree;
   if (poolUse > mMaxPoolUse) {
     mMaxPoolUse = poolUse;
-    SHMEMPOOL_LOG(("Maximum ShmemPool use increased: {} buffers", mMaxPoolUse));
+    SHMEMPOOL_LOG(
+        ("Maximum ShmemPool use increased: %zu buffers", mMaxPoolUse));
   }
 #endif
   return std::move(res);
@@ -81,7 +81,7 @@ void ShmemPool::Put(ShmemBuffer&& aShmem) {
 #ifdef DEBUG
   size_t poolUse = mShmemPool.Length() - mPoolFree;
   if (poolUse > 0) {
-    SHMEMPOOL_LOG_VERBOSE(("ShmemPool usage reduced to {} buffers", poolUse));
+    SHMEMPOOL_LOG_VERBOSE(("ShmemPool usage reduced to %zu buffers", poolUse));
   }
 #endif
 }

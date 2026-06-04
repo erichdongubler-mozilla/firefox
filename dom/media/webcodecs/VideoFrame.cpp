@@ -50,7 +50,7 @@ namespace mozilla::dom {
 #  undef LOG_INTERNAL
 #endif  // LOG_INTERNAL
 #define LOG_INTERNAL(level, msg, ...) \
-  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::level, msg, ##__VA_ARGS__)
+  MOZ_LOG(gWebCodecsLog, LogLevel::level, (msg, ##__VA_ARGS__))
 
 #ifdef LOG
 #  undef LOG
@@ -1368,7 +1368,7 @@ VideoFrame::VideoFrame(nsIGlobalObject* aParent,
       mTimestamp(aTimestamp),
       mColorSpace(aColorSpace) {
   MOZ_ASSERT(mParent);
-  LOG("VideoFrame {} ctor", fmt::ptr(this));
+  LOG("VideoFrame %p ctor", this);
   mResource.emplace(
       Resource(aImage, aFormat.map([](const VideoPixelFormat& aPixelFormat) {
         return VideoFrame::Format(aPixelFormat);
@@ -1389,7 +1389,7 @@ VideoFrame::VideoFrame(nsIGlobalObject* aParent,
       mTimestamp(aData.mTimestamp),
       mColorSpace(aData.mColorSpace) {
   MOZ_ASSERT(mParent);
-  LOG("VideoFrame {} ctor (from serialized data)", fmt::ptr(this));
+  LOG("VideoFrame %p ctor (from serialized data)", this);
   mResource.emplace(Resource(
       aData.mImage, aData.mFormat.map([](const VideoPixelFormat& aPixelFormat) {
         return VideoFrame::Format(aPixelFormat);
@@ -1410,13 +1410,13 @@ VideoFrame::VideoFrame(const VideoFrame& aOther)
       mTimestamp(aOther.mTimestamp),
       mColorSpace(aOther.mColorSpace) {
   MOZ_ASSERT(mParent);
-  LOG("VideoFrame {} copy ctor", fmt::ptr(this));
+  LOG("VideoFrame %p copy ctor", this);
   StartAutoClose();
 }
 
 VideoFrame::~VideoFrame() {
   MOZ_ASSERT(IsClosed());
-  LOG("VideoFrame {} dtor", fmt::ptr(this));
+  LOG("VideoFrame %p dtor", this);
 }
 
 nsIGlobalObject* VideoFrame::GetParentObject() const {
@@ -2056,7 +2056,7 @@ already_AddRefed<VideoFrame> VideoFrame::Clone(ErrorResult& aRv) const {
 // https://w3c.github.io/webcodecs/#close-videoframe
 void VideoFrame::Close() {
   AssertIsOnOwningThread();
-  LOG("VideoFrame {} is closed", fmt::ptr(this));
+  LOG("VideoFrame %p is closed", this);
 
   mResource.reset();
   mCodedSize = gfx::IntSize();
@@ -2192,9 +2192,8 @@ already_AddRefed<VideoFrame> VideoFrame::ConvertToRGBFrame(
   auto r = ConvertToRGBAImage(mResource->mImage, aFormat, aColorSpace);
   if (r.isErr()) {
     MediaResult err = r.unwrapErr();
-    LOGE("VideoFrame {}, failed to convert image into {} format: {}",
-         fmt::ptr(this), dom::GetEnumString(aFormat).get(),
-         err.Description().get());
+    LOGE("VideoFrame %p, failed to convert image into %s format: %s", this,
+         dom::GetEnumString(aFormat).get(), err.Description().get());
     return nullptr;
   }
   const RefPtr<layers::Image> img = r.unwrap();
@@ -2214,21 +2213,21 @@ void VideoFrame::StartAutoClose() {
 
   mShutdownWatcher = media::ShutdownWatcher::Create(this);
   if (NS_WARN_IF(!mShutdownWatcher)) {
-    LOG("VideoFrame {}, cannot monitor resource release", fmt::ptr(this));
+    LOG("VideoFrame %p, cannot monitor resource release", this);
     Close();
     return;
   }
 
-  LOG("VideoFrame {}, start monitoring resource release, watcher {}",
-      fmt::ptr(this), fmt::ptr(mShutdownWatcher.get()));
+  LOG("VideoFrame %p, start monitoring resource release, watcher %p", this,
+      mShutdownWatcher.get());
 }
 
 void VideoFrame::StopAutoClose() {
   AssertIsOnOwningThread();
 
   if (mShutdownWatcher) {
-    LOG("VideoFrame {}, stop monitoring resource release, watcher {}",
-        fmt::ptr(this), fmt::ptr(mShutdownWatcher.get()));
+    LOG("VideoFrame %p, stop monitoring resource release, watcher %p", this,
+        mShutdownWatcher.get());
     mShutdownWatcher->Destroy();
     mShutdownWatcher = nullptr;
   }
@@ -2237,10 +2236,10 @@ void VideoFrame::StopAutoClose() {
 void VideoFrame::CloseIfNeeded() {
   AssertIsOnOwningThread();
 
-  LOG("VideoFrame {}, needs to close itself? {}", fmt::ptr(this),
+  LOG("VideoFrame %p, needs to close itself? %s", this,
       IsClosed() ? "no" : "yes");
   if (!IsClosed()) {
-    LOG("Close VideoFrame {} obligatorily", fmt::ptr(this));
+    LOG("Close VideoFrame %p obligatorily", this);
     Close();
   }
 }

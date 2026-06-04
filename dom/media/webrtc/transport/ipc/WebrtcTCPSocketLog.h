@@ -12,8 +12,7 @@ extern LazyLogModule webrtcTCPSocketLog;
 }  // namespace mozilla::net
 
 #undef LOG
-#define LOG(...)                                                          \
-  MOZ_LOG_FMT(mozilla::net::webrtcTCPSocketLog, mozilla::LogLevel::Debug, \
-              __VA_ARGS__)
+#define LOG(args) \
+  MOZ_LOG(mozilla::net::webrtcTCPSocketLog, mozilla::LogLevel::Debug, args)
 
 #endif  // webrtc_tcp_socket_log_h_

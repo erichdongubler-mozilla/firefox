@@ -39,10 +39,9 @@ void FrameTransformerProxy::SetScriptTransformer(
     dom::RTCRtpScriptTransformer& aTransformer) {
   MutexAutoLock lock(mMutex);
   if (mReleaseScriptTransformerCalled) {
-    MOZ_LOG_FMT(
-        gFrameTransformerProxyLog, LogLevel::Warning,
-        "RTCRtpScriptTransformer is ready, but ReleaseScriptTransformer "
-        "has already been called.");
+    MOZ_LOG(gFrameTransformerProxyLog, LogLevel::Warning,
+            ("RTCRtpScriptTransformer is ready, but ReleaseScriptTransformer "
+             "has already been called."));
     // The mainthread side has torn down while the worker init was pending.
     // Don't grab a reference to the worker thread, or the script transformer.
     // Also, let the script transformer know that we do not need it after all.
@@ -50,8 +49,8 @@ void FrameTransformerProxy::SetScriptTransformer(
     return;
   }
 
-  MOZ_LOG_FMT(gFrameTransformerProxyLog, LogLevel::Info,
-              "RTCRtpScriptTransformer is ready!");
+  MOZ_LOG(gFrameTransformerProxyLog, LogLevel::Info,
+          ("RTCRtpScriptTransformer is ready!"));
   mWorkerThread = GetCurrentSerialEventTarget();
   MOZ_ASSERT(mWorkerThread);
 
@@ -84,8 +83,7 @@ Maybe<bool> FrameTransformerProxy::IsVideo() const {
 
 void FrameTransformerProxy::ReleaseScriptTransformer() {
   MutexAutoLock lock(mMutex);
-  MOZ_LOG_FMT(gFrameTransformerProxyLog, LogLevel::Debug, "In {}",
-              __FUNCTION__);
+  MOZ_LOG(gFrameTransformerProxyLog, LogLevel::Debug, ("In %s", __FUNCTION__));
   if (mReleaseScriptTransformerCalled) {
     return;
   }
@@ -117,8 +115,8 @@ void FrameTransformerProxy::SetLibwebrtcTransformer(
   MutexAutoLock lock(mMutex);
   mLibwebrtcTransformer = aLibwebrtcTransformer;
   if (mLibwebrtcTransformer) {
-    MOZ_LOG_FMT(gFrameTransformerProxyLog, LogLevel::Info,
-                "mLibwebrtcTransformer is now set!");
+    MOZ_LOG(gFrameTransformerProxyLog, LogLevel::Info,
+            ("mLibwebrtcTransformer is now set!"));
     mVideo = Some(mLibwebrtcTransformer->IsVideo());
   }
 }
@@ -126,13 +124,12 @@ void FrameTransformerProxy::SetLibwebrtcTransformer(
 void FrameTransformerProxy::Transform(
     std::unique_ptr<webrtc::TransformableFrameInterface> aFrame) {
   MutexAutoLock lock(mMutex);
-  MOZ_LOG_FMT(gFrameTransformerProxyLog, LogLevel::Debug, "In {}",
-              __FUNCTION__);
+  MOZ_LOG(gFrameTransformerProxyLog, LogLevel::Debug, ("In %s", __FUNCTION__));
   if (!mWorkerThread && !mReleaseScriptTransformerCalled) {
-    MOZ_LOG_FMT(
+    MOZ_LOG(
         gFrameTransformerProxyLog, LogLevel::Info,
-        "In {}, queueing frame because RTCRtpScriptTransformer is not ready",
-        __FUNCTION__);
+        ("In %s, queueing frame because RTCRtpScriptTransformer is not ready",
+         __FUNCTION__));
     // We are still waiting for the script transformer to be created on the
     // worker thread.
     mQueue.push_back(std::move(aFrame));
@@ -140,8 +137,8 @@ void FrameTransformerProxy::Transform(
   }
 
   if (mWorkerThread) {
-    MOZ_LOG_FMT(gFrameTransformerProxyLog, LogLevel::Debug,
-                "Queueing call to RTCRtpScriptTransformer::TransformFrame");
+    MOZ_LOG(gFrameTransformerProxyLog, LogLevel::Debug,
+            ("Queueing call to RTCRtpScriptTransformer::TransformFrame"));
     mWorkerThread->Dispatch(NS_NewRunnableFunction(
         __func__, [this, self = RefPtr<FrameTransformerProxy>(this),
                    frame = std::move(aFrame)]() mutable {
@@ -173,8 +170,7 @@ void FrameTransformerProxy::SetSender(dom::RTCRtpSender* aSender) {
     mSender = aSender;
   }
   if (!aSender) {
-    MOZ_LOG_FMT(gFrameTransformerProxyLog, LogLevel::Info,
-                "Sender set to null");
+    MOZ_LOG(gFrameTransformerProxyLog, LogLevel::Info, ("Sender set to null"));
     ReleaseScriptTransformer();
   }
 }
@@ -186,8 +182,8 @@ void FrameTransformerProxy::SetReceiver(dom::RTCRtpReceiver* aReceiver) {
     mReceiver = aReceiver;
   }
   if (!aReceiver) {
-    MOZ_LOG_FMT(gFrameTransformerProxyLog, LogLevel::Info,
-                "Receiver set to null");
+    MOZ_LOG(gFrameTransformerProxyLog, LogLevel::Info,
+            ("Receiver set to null"));
     ReleaseScriptTransformer();
   }
 }

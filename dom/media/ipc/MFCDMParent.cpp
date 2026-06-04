@@ -54,50 +54,47 @@ DEFINE_PROPERTYKEY(EME_CONTENTDECRYPTIONMODULE_ORIGIN_ID, 0x1218a3e2, 0xcfb0,
                    PID_FIRST_USABLE);
 #endif
 
-#define MFCDM_PARENT_LOG(msg, ...)                                      \
-  EME_LOG("MFCDMParent[{}, Id={}]@{}: " msg, fmt::ptr(this), this->mId, \
+#define MFCDM_PARENT_LOG(msg, ...)                                     \
+  EME_LOG("MFCDMParent[%p, Id=%" PRIu64 "]@%s: " msg, this, this->mId, \
           __func__, ##__VA_ARGS__)
 #define MFCDM_PARENT_SLOG(msg, ...) \
-  EME_LOG("MFCDMParent@{}: " msg, __func__, ##__VA_ARGS__)
+  EME_LOG("MFCDMParent@%s: " msg, __func__, ##__VA_ARGS__)
 
-#define MFCDM_RETURN_IF_FAILED(x)                   \
-  do {                                              \
-    HRESULT rv = x;                                 \
-    if (MOZ_UNLIKELY(FAILED(rv))) {                 \
-      MFCDM_PARENT_SLOG("(" #x ") failed, rv={:x}", \
-                        static_cast<uint32_t>(rv)); \
-      return rv;                                    \
-    }                                               \
+#define MFCDM_RETURN_IF_FAILED(x)                       \
+  do {                                                  \
+    HRESULT rv = x;                                     \
+    if (MOZ_UNLIKELY(FAILED(rv))) {                     \
+      MFCDM_PARENT_SLOG("(" #x ") failed, rv=%lx", rv); \
+      return rv;                                        \
+    }                                                   \
   } while (false)
 
-#define MFCDM_RETURN_BOOL_IF_FAILED(x)              \
-  do {                                              \
-    HRESULT rv = x;                                 \
-    if (MOZ_UNLIKELY(FAILED(rv))) {                 \
-      MFCDM_PARENT_SLOG("(" #x ") failed, rv={:x}", \
-                        static_cast<uint32_t>(rv)); \
-      return false;                                 \
-    }                                               \
+#define MFCDM_RETURN_BOOL_IF_FAILED(x)                  \
+  do {                                                  \
+    HRESULT rv = x;                                     \
+    if (MOZ_UNLIKELY(FAILED(rv))) {                     \
+      MFCDM_PARENT_SLOG("(" #x ") failed, rv=%lx", rv); \
+      return false;                                     \
+    }                                                   \
   } while (false)
 
-#define MFCDM_REJECT_IF(pred, rv)                                        \
-  do {                                                                   \
-    if (MOZ_UNLIKELY(pred)) {                                            \
-      MFCDM_PARENT_LOG("reject for [" #pred "], rv={:x}", uint32_t(rv)); \
-      aResolver(rv);                                                     \
-      return IPC_OK();                                                   \
-    }                                                                    \
+#define MFCDM_REJECT_IF(pred, rv)                                      \
+  do {                                                                 \
+    if (MOZ_UNLIKELY(pred)) {                                          \
+      MFCDM_PARENT_LOG("reject for [" #pred "], rv=%x", uint32_t(rv)); \
+      aResolver(rv);                                                   \
+      return IPC_OK();                                                 \
+    }                                                                  \
   } while (false)
 
-#define MFCDM_REJECT_IF_FAILED(op, rv)                           \
-  do {                                                           \
-    HRESULT hr = op;                                             \
-    if (MOZ_UNLIKELY(FAILED(hr))) {                              \
-      MFCDM_PARENT_LOG("(" #op ") failed(hr={:x}), rv={:x}",     \
-                       static_cast<uint32_t>(hr), uint32_t(rv)); \
-      aResolver(rv);                                             \
-      return IPC_OK();                                           \
-    }                                                            \
+#define MFCDM_REJECT_IF_FAILED(op, rv)                                       \
+  do {                                                                       \
+    HRESULT hr = op;                                                         \
+    if (MOZ_UNLIKELY(FAILED(hr))) {                                          \
+      MFCDM_PARENT_LOG("(" #op ") failed(hr=%lx), rv=%x", hr, uint32_t(rv)); \
+      aResolver(rv);                                                         \
+      return IPC_OK();                                                       \
+    }                                                                        \
   } while (false)
 
 MOZ_RUNINIT static StaticDataMutex<
@@ -390,8 +387,7 @@ void MFCDMParent::SetWidevineL1Path(const char* aPath) {
   nsAutoCString path(aPath);
   path.AppendLiteral("\\Google.Widevine.CDM.dll");
   sWidevineL1Path = CreateBSTRFromConstChar(path.get());
-  MFCDM_PARENT_SLOG("Set Widevine L1 dll path={}\n",
-                    NS_ConvertUTF16toUTF8(sWidevineL1Path).get());
+  MFCDM_PARENT_SLOG("Set Widevine L1 dll path=%ls\n", sWidevineL1Path);
 }
 
 void MFCDMParent::Register() {
@@ -431,7 +427,7 @@ MFCDMParent::MFCDMParent(const nsAString& aKeySystem,
   if (IsBeingProfiledOrLogEnabled()) {
     nsPrintfCString msg("MFCDMParent created for %s",
                         NS_ConvertUTF16toUTF8(aKeySystem).get());
-    MFCDM_PARENT_LOG("{}", msg.get());
+    MFCDM_PARENT_LOG("%s", msg.get());
     PROFILER_MARKER_TEXT("MFCDMParent::Ctor", MEDIA_PLAYBACK, {}, msg);
   }
   Register();
@@ -466,7 +462,7 @@ void MFCDMParent::OnHardwareContextReset() {
   if (mInitParams.isSome()) {
     HRESULT rv = RecreateCDM();
     if (FAILED(rv)) {
-      MFCDM_PARENT_LOG("Failed to recreate CDM after hardware reset, hr={:x}",
+      MFCDM_PARENT_LOG("Failed to recreate CDM after hardware reset, hr=%lx",
                        rv);
     }
   }
@@ -482,7 +478,7 @@ HRESULT MFCDMParent::RecreateCDM() {
   if (mCDM) {
     auto rv = mCDM->SetPMPHostApp(nullptr);
     if (FAILED(rv)) {
-      MFCDM_PARENT_LOG("Failed to clear PMP Host App, rv={:x}", rv);
+      MFCDM_PARENT_LOG("Failed to clear PMP Host App, rv=%lx", rv);
     }
   }
   mCDMProxy = nullptr;
@@ -528,7 +524,7 @@ void MFCDMParent::ShutdownCDM() {
   }
   auto rv = mCDM->SetPMPHostApp(nullptr);
   if (FAILED(rv)) {
-    MFCDM_PARENT_LOG("Failed to clear PMP Host App, rv={:x}", rv);
+    MFCDM_PARENT_LOG("Failed to clear PMP Host App, rv=%lx", rv);
   }
   if (mCDMProxy) {
     mCDMProxy->Shutdown();
@@ -607,7 +603,7 @@ HRESULT MFCDMParent::GetOrCreateFactory(
   auto factoryMap = sFactoryMap.Lock();
   auto rv = factoryMap->MaybeGet(aKeySystem);
   if (!rv) {
-    MFCDM_PARENT_SLOG("No factory {}, creating...",
+    MFCDM_PARENT_SLOG("No factory %s, creating...",
                       NS_ConvertUTF16toUTF8(aKeySystem).get());
     ComPtr<IMFContentDecryptionModuleFactory> factory;
     MFCDM_RETURN_IF_FAILED(LoadFactory(aKeySystem, factory));
@@ -625,11 +621,10 @@ HRESULT MFCDMParent::LoadFactory(
     ComPtr<IMFContentDecryptionModuleFactory>& aFactoryOut) {
   LPCWSTR libraryName = GetCDMLibraryName(aKeySystem);
   const bool loadFromPlatform = wcslen(libraryName) == 0;
-  MFCDM_PARENT_SLOG("Load factory for {} (libraryName={})",
-                    NS_ConvertUTF16toUTF8(aKeySystem).get(),
-                    NS_ConvertUTF16toUTF8(libraryName).get());
+  MFCDM_PARENT_SLOG("Load factory for %s (libraryName=%ls)",
+                    NS_ConvertUTF16toUTF8(aKeySystem).get(), libraryName);
 
-  MFCDM_PARENT_SLOG("Create factory for {}",
+  MFCDM_PARENT_SLOG("Create factory for %s",
                     NS_ConvertUTF16toUTF8(aKeySystem).get());
   ComPtr<IMFContentDecryptionModuleFactory> cdmFactory;
   if (loadFromPlatform) {
@@ -650,14 +645,14 @@ HRESULT MFCDMParent::LoadFactory(
         nsPrintfCString msg(
             "CreateContentDecryptionModuleFactory succeeded, but still no "
             "factory?!");
-        MFCDM_PARENT_SLOG("{}", msg.get());
+        MFCDM_PARENT_SLOG("%s", msg.get());
         PROFILER_MARKER_TEXT("MFCDMParent::LoadFactoryFailed", MEDIA_PLAYBACK,
                              {}, msg);
       }
       return E_UNEXPECTED;
     }
     aFactoryOut.Swap(cdmFactory);
-    MFCDM_PARENT_SLOG("Created factory for {} from platform!",
+    MFCDM_PARENT_SLOG("Created factory for %s from platform!",
                       NS_ConvertUTF16toUTF8(aKeySystem).get());
     return S_OK;
   }
@@ -666,12 +661,11 @@ HRESULT MFCDMParent::LoadFactory(
   // support will be soon removed.
   HMODULE handle = LoadLibraryW(libraryName);
   if (!handle) {
-    MFCDM_PARENT_SLOG("Failed to load library {}! (error={:x})",
-                      NS_ConvertUTF16toUTF8(libraryName).get(), GetLastError());
+    MFCDM_PARENT_SLOG("Failed to load library %ls! (error=%lx)", libraryName,
+                      GetLastError());
     return E_FAIL;
   }
-  MFCDM_PARENT_SLOG("Loaded external library '{}'",
-                    NS_ConvertUTF16toUTF8(libraryName).get());
+  MFCDM_PARENT_SLOG("Loaded external library '%ls'", libraryName);
 
   using DllGetActivationFactoryFunc =
       HRESULT(WINAPI*)(_In_ HSTRING, _COM_Outptr_ IActivationFactory**);
@@ -696,7 +690,7 @@ HRESULT MFCDMParent::LoadFactory(
     // the class Id.
     stringId.AppendLiteral("com.widevine.alpha.ContentDecryptionModuleFactory");
   }
-  MFCDM_PARENT_SLOG("Query factory by classId '{}'",
+  MFCDM_PARENT_SLOG("Query factory by classId '%s'",
                     NS_ConvertUTF16toUTF8(stringId).get());
   ScopedHString classId(stringId);
   ComPtr<IActivationFactory> pFactory = NULL;
@@ -713,7 +707,7 @@ HRESULT MFCDMParent::LoadFactory(
     }
   }
   aFactoryOut.Swap(cdmFactory);
-  MFCDM_PARENT_SLOG("Created factory for {} from external library!",
+  MFCDM_PARENT_SLOG("Created factory for %s from external library!",
                     NS_ConvertUTF16toUTF8(aKeySystem).get());
   return S_OK;
 }
@@ -787,10 +781,8 @@ static bool FactorySupports(
         canPlay !=
         MF_MEDIA_ENGINE_CANPLAY::MF_MEDIA_ENGINE_CANPLAY_NOT_SUPPORTED;
     MFCDM_PARENT_SLOG(
-        "IsTypeSupportedEx={}, canPlay={} (key-system={}, content-type={})",
-        support, static_cast<int>(canPlay),
-        NS_ConvertUTF16toUTF8(keySystem).get(),
-        NS_ConvertUTF16toUTF8(contentType).get());
+        "IsTypeSupportedEx=%d, canPlay=%d (key-system=%ls, content-type=%s)",
+        support, canPlay, keySystem, NS_ConvertUTF16toUTF8(contentType).get());
     if (aIsHWSecure && support) {
       // For HWDRM, `IsTypeSupportedEx` might still return the wrong answer on
       // certain devices, so we need to create a dummy CDM to see if the HWDRM
@@ -821,15 +813,14 @@ static bool FactorySupports(
               keySystem, NS_ConvertUTF16toUTF8(contentType).get());
           PROFILER_MARKER_TEXT("MFCDMParent::FailedToUseHWDRM", MEDIA_PLAYBACK,
                                {}, msg);
-          MFCDM_PARENT_SLOG("{}", msg.get());
+          MFCDM_PARENT_SLOG("%s", msg.get());
         }
         support = false;
       }
       MFCDM_PARENT_SLOG(
-          "After HWDRM creation check, support={} (key-system={}, "
-          "content-type={})",
-          support, NS_ConvertUTF16toUTF8(keySystem).get(),
-          NS_ConvertUTF16toUTF8(contentType).get());
+          "After HWDRM creation check, support=%d (key-system=%ls, "
+          "content-type=%s)",
+          support, keySystem, NS_ConvertUTF16toUTF8(contentType).get());
       if (dummyCDM) {
         SHUTDOWN_IF_POSSIBLE(dummyCDM);
       }
@@ -840,7 +831,7 @@ static bool FactorySupports(
   // Checking capabilies from CDM's IsTypeSupported. Widevine implements this
   // method well.
   bool support = IsTypeSupported(aFactory, aKeySystem, &contentType);
-  MFCDM_PARENT_SLOG("IsTypeSupport={} (key-system={}, content-type={})",
+  MFCDM_PARENT_SLOG("IsTypeSupport=%d (key-system=%s, content-type=%s)",
                     support, NS_ConvertUTF16toUTF8(aKeySystem).get(),
                     NS_ConvertUTF16toUTF8(contentType).get());
   return support;
@@ -881,9 +872,9 @@ static MF_MEDIA_ENGINE_CANPLAY RunHDCPSupportCheck(
   spDrmTypeSupport->IsTypeSupportedEx(SysAllocString(contentType.get()),
                                       keySystem, &canPlay);
   MFCDM_PARENT_SLOG(
-      "IsTypeSupportedEx for HDCP, canplay={} (key-system={}, "
-      "content-type={})",
-      static_cast<int32_t>(canPlay), NS_ConvertUTF16toUTF8(keySystem).get(),
+      "IsTypeSupportedEx for HDCP, canplay=%d (key-system=%ls, "
+      "content-type=%s)",
+      static_cast<int32_t>(canPlay), keySystem,
       NS_ConvertUTF16toUTF8(contentType).get());
   return canPlay;
 }
@@ -1030,7 +1021,7 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
   if (isHardwareDecryption && gfx::gfxVars::IsInitialized() &&
       !gfx::gfxVars::UseWMFHWDWM() &&
       !StaticPrefs::media_eme_wmf_use_mock_cdm_for_external_cdms()) {
-    MFCDM_PARENT_SLOG("Block HWDRM for {}",
+    MFCDM_PARENT_SLOG("Block HWDRM for %s",
                       NS_ConvertUTF16toUTF8(aKeySystem).get());
     return;
   }
@@ -1046,7 +1037,7 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
     if (capabilities.keySystem().Equals(aKeySystem) &&
         capabilities.isHardwareDecryption() == isHardwareDecryption) {
       MFCDM_PARENT_SLOG(
-          "Return cached capabilities for {} (hardwareDecryption={})",
+          "Return cached capabilities for %s (hardwareDecryption=%d)",
           NS_ConvertUTF16toUTF8(aKeySystem).get(), isHardwareDecryption);
       aCapabilitiesOut = capabilities;
       return;
@@ -1054,7 +1045,7 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
   }
 
   MFCDM_PARENT_SLOG(
-      "Query capabilities for {} from the factory (hardwareDecryption={})",
+      "Query capabilities for %s from the factory (hardwareDecryption=%d)",
       NS_ConvertUTF16toUTF8(aKeySystem).get(), isHardwareDecryption);
 
   ComPtr<IMFContentDecryptionModuleFactory> factory = aFactory;
@@ -1144,7 +1135,7 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
         bool rv = FactorySupports(factory, spDrmTypeSupport, aKeySystem,
                                   convertCodecToFourCC(codec), nsCString(""),
                                   additionalFeature, isHardwareDecryption);
-        MFCDM_PARENT_SLOG("clearlead {} IV 8 bytes {} {}",
+        MFCDM_PARENT_SLOG("clearlead %s IV 8 bytes %s %s",
                           EnumValueToString(scheme), codec.get(),
                           rv ? "supported" : "not supported");
         if (rv) {
@@ -1156,7 +1147,7 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
         rv = FactorySupports(factory, spDrmTypeSupport, aKeySystem,
                              convertCodecToFourCC(codec), nsCString(""),
                              additionalFeature, isHardwareDecryption);
-        MFCDM_PARENT_SLOG("clearlead {} IV 16 bytes {} {}",
+        MFCDM_PARENT_SLOG("clearlead %s IV 16 bytes %s %s",
                           EnumValueToString(scheme), codec.get(),
                           rv ? "supported" : "not supported");
 
@@ -1174,11 +1165,11 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
             GetRobustnessStringForKeySystem(aKeySystem, isHardwareDecryption);
         if (supportedScheme.contains(CryptoScheme::Cenc)) {
           c->encryptionSchemes().AppendElement(CryptoScheme::Cenc);
-          MFCDM_PARENT_SLOG("{}: +video:{} (cenc)", __func__, codec.get());
+          MFCDM_PARENT_SLOG("%s: +video:%s (cenc)", __func__, codec.get());
         }
         if (supportedScheme.contains(CryptoScheme::Cbcs)) {
           c->encryptionSchemes().AppendElement(CryptoScheme::Cbcs);
-          MFCDM_PARENT_SLOG("{}: +video:{} (cbcs)", __func__, codec.get());
+          MFCDM_PARENT_SLOG("%s: +video:%s (cbcs)", __func__, codec.get());
         }
         supportedVideoCodecs.AppendElement(codec);
       }
@@ -1202,7 +1193,7 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
         // 'If value is unspecified, default value of "cenc" is used.' See
         // https://learn.microsoft.com/en-us/windows/win32/api/mfmediaengine/nf-mfmediaengine-imfextendeddrmtypesupport-istypesupportedex
         c->encryptionSchemes().AppendElement(CryptoScheme::Cenc);
-        MFCDM_PARENT_SLOG("{}: +video:{} (cenc)", __func__, codec.get());
+        MFCDM_PARENT_SLOG("%s: +video:%s (cenc)", __func__, codec.get());
         // Check cbcs scheme support
         if (FactorySupports(
                 factory, spDrmTypeSupport, aKeySystem,
@@ -1211,7 +1202,7 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
                 nsString(u"encryption-type=cbcs,encryption-iv-size=16,"),
                 isHardwareDecryption)) {
           c->encryptionSchemes().AppendElement(CryptoScheme::Cbcs);
-          MFCDM_PARENT_SLOG("{}: +video:{} (cbcs)", __func__, codec.get());
+          MFCDM_PARENT_SLOG("%s: +video:%s (cbcs)", __func__, codec.get());
         }
         supportedVideoCodecs.AppendElement(codec);
       }
@@ -1244,7 +1235,7 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
       c->robustness() = GetRobustnessStringForKeySystem(
           aKeySystem, false /* aIsHWSecure */, false /* isVideo */);
       c->encryptionSchemes().AppendElement(CryptoScheme::Cenc);
-      MFCDM_PARENT_SLOG("{}: +audio:{}", __func__, codec.get());
+      MFCDM_PARENT_SLOG("%s: +audio:%s", __func__, codec.get());
     }
   }
 
@@ -1306,7 +1297,7 @@ mozilla::ipc::IPCResult MFCDMParent::RecvInit(
         NS_ConvertUTF16toUTF8(aParams.origin()).get(),
         RequirementToStr(aParams.distinctiveID()),
         RequirementToStr(aParams.persistentState()), isHWSecure);
-    MFCDM_PARENT_LOG("Creating a CDM {}", msg.get());
+    MFCDM_PARENT_LOG("Creating a CDM %s", msg.get());
     PROFILER_MARKER_TEXT("MFCDMParent::RecvInit(creating CDM)", MEDIA_PLAYBACK,
                          {}, msg);
   }
@@ -1359,7 +1350,7 @@ mozilla::ipc::IPCResult MFCDMParent::RecvCreateSessionAndGenerateRequest(
   if (IsBeingProfiledOrLogEnabled()) {
     nsPrintfCString msg("session for type '%s'",
                         SessionTypeToStr(aParams.sessionType()));
-    MFCDM_PARENT_LOG("Creating CDM {}", msg.get());
+    MFCDM_PARENT_LOG("Creating CDM %s", msg.get());
     PROFILER_MARKER_TEXT(
         "MFCDMParent::RecvCreateSessionAndGenerateRequest(creating)",
         MEDIA_PLAYBACK, {}, msg);
@@ -1391,7 +1382,7 @@ mozilla::ipc::IPCResult MFCDMParent::RecvCreateSessionAndGenerateRequest(
   }
 
   if (FAILED(hr)) {
-    MFCDM_PARENT_LOG("Failed to generate request (hr={:x})!", hr);
+    MFCDM_PARENT_LOG("Failed to generate request (hr=%lx)!", hr);
     aResolver(NS_ERROR_DOM_MEDIA_CDM_NO_SESSION_ERR);
     // No need to call session's close() because this is not an unrecoverable
     // error for CDM.
@@ -1408,7 +1399,7 @@ mozilla::ipc::IPCResult MFCDMParent::RecvCreateSessionAndGenerateRequest(
     nsPrintfCString msg("session for type '%s', sessionId=%s",
                         SessionTypeToStr(aParams.sessionType()),
                         NS_ConvertUTF16toUTF8(*sessionId).get());
-    MFCDM_PARENT_LOG("Created CDM {}", msg.get());
+    MFCDM_PARENT_LOG("Created CDM %s", msg.get());
     PROFILER_MARKER_TEXT(
         "MFCDMParent::RecvCreateSessionAndGenerateRequest(created)",
         MEDIA_PLAYBACK, {}, msg);
@@ -1433,7 +1424,7 @@ mozilla::ipc::IPCResult MFCDMParent::RecvLoadSession(
   if (IsBeingProfiledOrLogEnabled()) {
     nsPrintfCString msg("Load Session %s",
                         NS_ConvertUTF16toUTF8(aSessionId).get());
-    MFCDM_PARENT_LOG("{}", msg.get());
+    MFCDM_PARENT_LOG("%s", msg.get());
     PROFILER_MARKER_TEXT("MFCDMParent::RecvLoadSession", MEDIA_PLAYBACK, {},
                          msg);
   }
@@ -1457,7 +1448,7 @@ mozilla::ipc::IPCResult MFCDMParent::RecvUpdateSession(
   if (IsBeingProfiledOrLogEnabled()) {
     nsPrintfCString msg("Update Session %s",
                         NS_ConvertUTF16toUTF8(aSessionId).get());
-    MFCDM_PARENT_LOG("{}", msg.get());
+    MFCDM_PARENT_LOG("%s", msg.get());
     PROFILER_MARKER_TEXT("MFCDMParent::RecvUpdateSession", MEDIA_PLAYBACK, {},
                          msg);
   }
@@ -1480,7 +1471,7 @@ mozilla::ipc::IPCResult MFCDMParent::RecvCloseSession(
   if (IsBeingProfiledOrLogEnabled()) {
     nsPrintfCString msg("Close Session %s",
                         NS_ConvertUTF16toUTF8(aSessionId).get());
-    MFCDM_PARENT_LOG("{}", msg.get());
+    MFCDM_PARENT_LOG("%s", msg.get());
     PROFILER_MARKER_TEXT("MFCDMParent::RecvCloseSession", MEDIA_PLAYBACK, {},
                          msg);
   }
@@ -1504,7 +1495,7 @@ mozilla::ipc::IPCResult MFCDMParent::RecvRemoveSession(
   if (IsBeingProfiledOrLogEnabled()) {
     nsPrintfCString msg("Remove Session %s",
                         NS_ConvertUTF16toUTF8(aSessionId).get());
-    MFCDM_PARENT_LOG("{}", msg.get());
+    MFCDM_PARENT_LOG("%s", msg.get());
     PROFILER_MARKER_TEXT("MFCDMParent::RecvRemoveSession", MEDIA_PLAYBACK, {},
                          msg);
   }
@@ -1553,7 +1544,7 @@ mozilla::ipc::IPCResult MFCDMParent::RecvGetStatusForPolicy(
           nsPrintfCString msg("HDCP version=%u, support=%s",
                               static_cast<uint8_t>(aMinHdcpVersion),
                               rv == NS_OK ? "true" : "false");
-          MFCDM_PARENT_LOG("{}", msg.get());
+          MFCDM_PARENT_LOG("%s", msg.get());
           PROFILER_MARKER_TEXT("MFCDMParent::RecvGetStatusForPolicy",
                                MEDIA_PLAYBACK, {}, msg);
         }
@@ -1586,12 +1577,12 @@ RefPtr<GenericPromise> MFCDMParent::WaitForHDCPSettleAfterReset() {
       NS_NewRunnableFunction(__func__, [keySystem, managerThread, p] {
         auto result = IsHDCPVersionSupported(keySystem, dom::HDCPVersion::_2_2,
                                              managerThread);
-        MFCDM_PARENT_SLOG("HDCP 2.2 settle check after hardware reset: {}",
+        MFCDM_PARENT_SLOG("HDCP 2.2 settle check after hardware reset: %s",
                           result == NS_OK ? "ready" : "not ready");
         p->Resolve(true, __func__);
       }));
   if (NS_FAILED(rv)) {
-    MFCDM_PARENT_LOG("Failed to dispatch HDCP settle check, rv={:x}",
+    MFCDM_PARENT_LOG("Failed to dispatch HDCP settle check, rv=%x",
                      static_cast<uint32_t>(rv));
     p->Reject(rv, __func__);
   }

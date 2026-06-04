@@ -19,8 +19,7 @@ extern "C" {
 namespace mozilla {
 
 extern LazyLogModule gMediaDecoderLog;
-#define OPUS_LOG(type, msg) \
-  MOZ_LOG_FMT(gMediaDecoderLog, type, MOZ_LOG_EXPAND_ARGS msg)
+#define OPUS_LOG(type, msg) MOZ_LOG(gMediaDecoderLog, type, msg)
 
 OpusParser::OpusParser()
     : mRate(0),
@@ -50,14 +49,14 @@ bool OpusParser::DecodeHeader(unsigned char* aData, size_t aLength) {
   // Accept file format versions 0.x.
   if ((version & 0xf0) != 0) {
     OPUS_LOG(LogLevel::Debug,
-             ("Rejecting unknown Opus file version {}", version));
+             ("Rejecting unknown Opus file version %d", version));
     return false;
   }
 
   mChannels = aData[9];
   if (mChannels < 1) {
     OPUS_LOG(LogLevel::Debug,
-             ("Invalid Opus file: Number of channels {}", mChannels));
+             ("Invalid Opus file: Number of channels %d", mChannels));
     return false;
   }
 
@@ -75,7 +74,7 @@ bool OpusParser::DecodeHeader(unsigned char* aData, size_t aLength) {
   if (mChannelMapping == 0) {
     // Mapping family 0 only allows two channels
     if (mChannels > 2) {
-      OPUS_LOG(LogLevel::Debug, ("Invalid Opus file: too many channels ({}) for"
+      OPUS_LOG(LogLevel::Debug, ("Invalid Opus file: too many channels (%d) for"
                                  " mapping family 0.",
                                  mChannels));
       return false;
@@ -88,7 +87,7 @@ bool OpusParser::DecodeHeader(unsigned char* aData, size_t aLength) {
              mChannelMapping == 255) {
     // Currently only up to 8 channels are defined for mapping family 1
     if (mChannelMapping == 1 && mChannels > 8) {
-      OPUS_LOG(LogLevel::Debug, ("Invalid Opus file: too many channels ({}) for"
+      OPUS_LOG(LogLevel::Debug, ("Invalid Opus file: too many channels (%d) for"
                                  " mapping family 1.",
                                  mChannels));
       return false;
@@ -106,14 +105,14 @@ bool OpusParser::DecodeHeader(unsigned char* aData, size_t aLength) {
         mMappingTable[i] = aData[21 + i];
       }
     } else {
-      OPUS_LOG(LogLevel::Debug, ("Invalid Opus file: channel mapping {},"
+      OPUS_LOG(LogLevel::Debug, ("Invalid Opus file: channel mapping %d,"
                                  " but no channel mapping table",
                                  mChannelMapping));
       return false;
     }
   } else {
     OPUS_LOG(LogLevel::Debug, ("Invalid Opus file: unsupported channel mapping "
-                               "family {}",
+                               "family %d",
                                mChannelMapping));
     return false;
   }
@@ -123,21 +122,21 @@ bool OpusParser::DecodeHeader(unsigned char* aData, size_t aLength) {
   }
   if (mCoupledStreams > mStreams) {
     OPUS_LOG(LogLevel::Debug,
-             ("Invalid Opus file: more coupled streams ({}) than "
-              "total streams ({})",
+             ("Invalid Opus file: more coupled streams (%d) than "
+              "total streams (%d)",
               mCoupledStreams, mStreams));
     return false;
   }
 
 #ifdef DEBUG
   OPUS_LOG(LogLevel::Debug, ("Opus stream header:"));
-  OPUS_LOG(LogLevel::Debug, (" channels: {}", mChannels));
-  OPUS_LOG(LogLevel::Debug, ("  preskip: {}", mPreSkip));
-  OPUS_LOG(LogLevel::Debug, (" original: {} Hz", mNominalRate));
-  OPUS_LOG(LogLevel::Debug, ("     gain: {:.2f} dB", gain_dB));
+  OPUS_LOG(LogLevel::Debug, (" channels: %d", mChannels));
+  OPUS_LOG(LogLevel::Debug, ("  preskip: %d", mPreSkip));
+  OPUS_LOG(LogLevel::Debug, (" original: %d Hz", mNominalRate));
+  OPUS_LOG(LogLevel::Debug, ("     gain: %.2f dB", gain_dB));
   OPUS_LOG(LogLevel::Debug, ("Channel Mapping:"));
-  OPUS_LOG(LogLevel::Debug, ("   family: {}", mChannelMapping));
-  OPUS_LOG(LogLevel::Debug, ("  streams: {}", mStreams));
+  OPUS_LOG(LogLevel::Debug, ("   family: %d", mChannelMapping));
+  OPUS_LOG(LogLevel::Debug, ("  streams: %d", mStreams));
 #endif
   return true;
 }
@@ -185,9 +184,9 @@ bool OpusParser::DecodeTags(unsigned char* aData, size_t aLength) {
 
 #ifdef DEBUG
   OPUS_LOG(LogLevel::Debug, ("Opus metadata header:"));
-  OPUS_LOG(LogLevel::Debug, ("  vendor: {}", mVendorString.get()));
+  OPUS_LOG(LogLevel::Debug, ("  vendor: %s", mVendorString.get()));
   for (uint32_t i = 0; i < mTags.Length(); i++) {
-    OPUS_LOG(LogLevel::Debug, (" {}", mTags[i].get()));
+    OPUS_LOG(LogLevel::Debug, (" %s", mTags[i].get()));
   }
 #endif
   return true;

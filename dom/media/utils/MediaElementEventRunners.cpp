@@ -16,8 +16,7 @@
 #include "mozilla/dom/TimeRanges.h"
 
 extern mozilla::LazyLogModule gMediaElementEventsLog;
-#define LOG_EVENT(type, msg) \
-  MOZ_LOG_FMT(gMediaElementEventsLog, type, MOZ_LOG_EXPAND_ARGS msg)
+#define LOG_EVENT(type, msg) MOZ_LOG(gMediaElementEventsLog, type, msg)
 
 namespace mozilla::dom {
 
@@ -169,8 +168,8 @@ NS_IMETHODIMP nsSourceErrorEventRunner::Run() {
   if (IsCancelled()) {
     return NS_OK;
   }
-  LOG_EVENT(LogLevel::Debug, ("{} Dispatching simple event source error",
-                              fmt::ptr(mElement.get())));
+  LOG_EVENT(LogLevel::Debug,
+            ("%p Dispatching simple event source error", mElement.get()));
   if (profiler_is_collecting_markers()) {
     profiler_add_marker("sourceerror", geckoprofiler::category::MEDIA_PLAYBACK,
                         {}, ErrorMarker{}, mErrorDetails,
@@ -199,7 +198,7 @@ NS_IMETHODIMP nsTimeupdateRunner::Run() {
   nsresult rv = FireEvent(mEventName);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     LOG_EVENT(LogLevel::Debug,
-              ("{} Failed to dispatch 'timeupdate'", fmt::ptr(mElement.get())));
+              ("%p Failed to dispatch 'timeupdate'", mElement.get()));
   } else {
     mElement->UpdateLastTimeupdateDispatchTime();
   }

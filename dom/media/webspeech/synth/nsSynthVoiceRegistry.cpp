@@ -28,8 +28,7 @@ using mozilla::intl::LocaleService;
 
 #undef LOG
 extern mozilla::LogModule* GetSpeechSynthLog();
-#define LOG(type, msg) \
-  MOZ_LOG_FMT(GetSpeechSynthLog(), type, MOZ_LOG_EXPAND_ARGS msg)
+#define LOG(type, msg) MOZ_LOG(GetSpeechSynthLog(), type, msg)
 
 namespace {
 
@@ -292,8 +291,8 @@ nsSynthVoiceRegistry::AddVoice(nsISpeechService* aService,
                                const nsAString& aLang, bool aLocalService,
                                bool aQueuesUtterances) {
   LOG(LogLevel::Debug,
-      ("nsSynthVoiceRegistry::AddVoice uri='{}' name='{}' lang='{}' local={} "
-       "queued={}",
+      ("nsSynthVoiceRegistry::AddVoice uri='%s' name='%s' lang='%s' local=%s "
+       "queued=%s",
        NS_ConvertUTF16toUTF8(aUri).get(), NS_ConvertUTF16toUTF8(aName).get(),
        NS_ConvertUTF16toUTF8(aLang).get(), aLocalService ? "true" : "false",
        aQueuesUtterances ? "true" : "false"));
@@ -309,7 +308,7 @@ nsSynthVoiceRegistry::AddVoice(nsISpeechService* aService,
 NS_IMETHODIMP
 nsSynthVoiceRegistry::RemoveVoice(nsISpeechService* aService,
                                   const nsAString& aUri) {
-  LOG(LogLevel::Debug, ("nsSynthVoiceRegistry::RemoveVoice uri='{}' ({})",
+  LOG(LogLevel::Debug, ("nsSynthVoiceRegistry::RemoveVoice uri='%s' (%s)",
                         NS_ConvertUTF16toUTF8(aUri).get(),
                         (XRE_IsContentProcess()) ? "child" : "parent"));
 
@@ -405,7 +404,7 @@ nsSynthVoiceRegistry::SetDefaultVoice(const nsAString& aUri, bool aIsDefault) {
   mDefaultVoices.RemoveElement(retval);
 
   LOG(LogLevel::Debug,
-      ("nsSynthVoiceRegistry::SetDefaultVoice {} {}",
+      ("nsSynthVoiceRegistry::SetDefaultVoice %s %s",
        NS_ConvertUTF16toUTF8(aUri).get(), aIsDefault ? "true" : "false"));
 
   if (aIsDefault) {
@@ -586,7 +585,7 @@ VoiceData* nsSynthVoiceRegistry::FindBestMatch(const nsAString& aUri,
   if (!aLang.IsVoid() && !aLang.IsEmpty()) {
     if (FindVoiceByLang(aLang, &retval)) {
       LOG(LogLevel::Debug,
-          ("nsSynthVoiceRegistry::FindBestMatch - Matched language ({} ~= {})",
+          ("nsSynthVoiceRegistry::FindBestMatch - Matched language (%s ~= %s)",
            NS_ConvertUTF16toUTF8(aLang).get(),
            NS_ConvertUTF16toUTF8(retval->mLang).get()));
 
@@ -600,7 +599,7 @@ VoiceData* nsSynthVoiceRegistry::FindBestMatch(const nsAString& aUri,
 
   if (FindVoiceByLang(NS_ConvertASCIItoUTF16(uiLang), &retval)) {
     LOG(LogLevel::Debug,
-        ("nsSynthVoiceRegistry::FindBestMatch - Matched UI language ({} ~= {})",
+        ("nsSynthVoiceRegistry::FindBestMatch - Matched UI language (%s ~= %s)",
          uiLang.get(), NS_ConvertUTF16toUTF8(retval->mLang).get()));
 
     return retval;
@@ -609,7 +608,7 @@ VoiceData* nsSynthVoiceRegistry::FindBestMatch(const nsAString& aUri,
   // Try en-US, the language of locale "C"
   if (FindVoiceByLang(u"en-US"_ns, &retval)) {
     LOG(LogLevel::Debug, ("nsSynthVoiceRegistry::FindBestMatch - Matched C "
-                          "locale language (en-US ~= {})",
+                          "locale language (en-US ~= %s)",
                           NS_ConvertUTF16toUTF8(retval->mLang).get()));
 
     return retval;
@@ -688,8 +687,8 @@ void nsSynthVoiceRegistry::Speak(const nsAString& aText, const nsAString& aLang,
   if (mUseGlobalQueue ||
       StaticPrefs::media_webspeech_synth_force_global_queue()) {
     LOG(LogLevel::Debug,
-        ("nsSynthVoiceRegistry::Speak queueing text='{}' lang='{}' uri='{}' "
-         "rate={} pitch={}",
+        ("nsSynthVoiceRegistry::Speak queueing text='%s' lang='%s' uri='%s' "
+         "rate=%f pitch=%f",
          NS_ConvertUTF16toUTF8(aText).get(), NS_ConvertUTF16toUTF8(aLang).get(),
          NS_ConvertUTF16toUTF8(aUri).get(), aRate, aPitch));
     RefPtr<GlobalQueueItem> item =
@@ -709,7 +708,7 @@ void nsSynthVoiceRegistry::SpeakNext() {
   MOZ_ASSERT(XRE_IsParentProcess());
 
   LOG(LogLevel::Debug,
-      ("nsSynthVoiceRegistry::SpeakNext {}", mGlobalQueue.IsEmpty()));
+      ("nsSynthVoiceRegistry::SpeakNext %d", mGlobalQueue.IsEmpty()));
 
   SetIsSpeaking(false);
 
@@ -736,7 +735,7 @@ void nsSynthVoiceRegistry::SpeakNext() {
 void nsSynthVoiceRegistry::ResumeQueue() {
   MOZ_ASSERT(XRE_IsParentProcess());
   LOG(LogLevel::Debug,
-      ("nsSynthVoiceRegistry::ResumeQueue {}", mGlobalQueue.IsEmpty()));
+      ("nsSynthVoiceRegistry::ResumeQueue %d", mGlobalQueue.IsEmpty()));
 
   if (mGlobalQueue.IsEmpty()) {
     return;
@@ -771,8 +770,8 @@ void nsSynthVoiceRegistry::SpeakImpl(VoiceData* aVoice, nsSpeechTask* aTask,
                                      const float& aVolume, const float& aRate,
                                      const float& aPitch) {
   LOG(LogLevel::Debug,
-      ("nsSynthVoiceRegistry::SpeakImpl queueing text='{}' uri='{}' rate={} "
-       "pitch={}",
+      ("nsSynthVoiceRegistry::SpeakImpl queueing text='%s' uri='%s' rate=%f "
+       "pitch=%f",
        NS_ConvertUTF16toUTF8(aText).get(),
        NS_ConvertUTF16toUTF8(aVoice->mUri).get(), aRate, aPitch));
 

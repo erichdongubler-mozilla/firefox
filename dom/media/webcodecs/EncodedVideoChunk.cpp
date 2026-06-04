@@ -26,7 +26,7 @@ namespace mozilla::dom {
 #  undef LOG_INTERNAL
 #endif  // LOG_INTERNAL
 #define LOG_INTERNAL(level, msg, ...) \
-  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::level, msg, ##__VA_ARGS__)
+  MOZ_LOG(gWebCodecsLog, LogLevel::level, (msg, ##__VA_ARGS__))
 
 #ifdef LOGW
 #  undef LOGW
@@ -65,20 +65,20 @@ EncodedVideoChunkData::~EncodedVideoChunkData() = default;
 
 UniquePtr<EncodedVideoChunkData> EncodedVideoChunkData::Clone() const {
   if (!mBuffer) {
-    LOGE("No buffer in EncodedVideoChunkData {} to clone!", fmt::ptr(this));
+    LOGE("No buffer in EncodedVideoChunkData %p to clone!", this);
     return nullptr;
   }
 
   // Since EncodedVideoChunkData can be zero-sized, cloning a zero-sized chunk
   // is allowed.
   if (mBuffer->Size() == 0) {
-    LOGW("Cloning an empty EncodedVideoChunkData {}", fmt::ptr(this));
+    LOGW("Cloning an empty EncodedVideoChunkData %p", this);
   }
 
   auto buffer =
       MakeRefPtr<MediaAlignedByteBuffer>(mBuffer->Data(), mBuffer->Length());
   if (!buffer || buffer->Size() != mBuffer->Size()) {
-    LOGE("OOM to copy EncodedVideoChunkData {}", fmt::ptr(this));
+    LOGE("OOM to copy EncodedVideoChunkData %p", this);
     return nullptr;
   }
 
@@ -88,7 +88,7 @@ UniquePtr<EncodedVideoChunkData> EncodedVideoChunkData::Clone() const {
 
 already_AddRefed<MediaRawData> EncodedVideoChunkData::TakeData() {
   if (!mBuffer || !(*mBuffer)) {
-    LOGE("EncodedVideoChunkData {} has no data!", fmt::ptr(this));
+    LOGE("EncodedVideoChunkData %p has no data!", this);
     return nullptr;
   }
 
@@ -100,8 +100,8 @@ already_AddRefed<MediaRawData> EncodedVideoChunkData::TakeData() {
   if (mDuration) {
     CheckedInt64 duration(*mDuration);
     if (!duration.isValid()) {
-      LOGE("EncodedVideoChunkData {} 's duration exceeds TimeUnit's limit",
-           fmt::ptr(this));
+      LOGE("EncodedVideoChunkData %p 's duration exceeds TimeUnit's limit",
+           this);
       return nullptr;
     }
     sample->mDuration = TimeUnit::FromMicroseconds(duration.value());
@@ -181,7 +181,7 @@ already_AddRefed<EncodedVideoChunk> EncodedVideoChunk::Constructor(
 
   if (res.isErr()) {
     MediaResult err = res.unwrapErr();
-    LOGE("Failed to process buffer for EncodedVideoChunk constructor: {}",
+    LOGE("Failed to process buffer for EncodedVideoChunk constructor: %s",
          err.Description().get());
     aRv.Throw(err.Code());
     return nullptr;

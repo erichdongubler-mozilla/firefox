@@ -17,8 +17,7 @@
 namespace mozilla {
 
 LazyLogModule gTrackEncoderLog("TrackEncoder");
-#define TRACK_LOG(type, msg) \
-  MOZ_LOG_FMT(gTrackEncoderLog, type, MOZ_LOG_EXPAND_ARGS msg)
+#define TRACK_LOG(type, msg) MOZ_LOG(gTrackEncoderLog, type, msg)
 
 constexpr int DEFAULT_CHANNELS = 1;
 constexpr int DEFAULT_FRAME_WIDTH = 640;
@@ -113,9 +112,8 @@ void TrackEncoder::SetWorkerThread(AbstractThread* aWorkerThread) {
 
 void AudioTrackEncoder::Suspend() {
   MOZ_ASSERT(!mWorkerThread || mWorkerThread->IsCurrentThreadIn());
-  TRACK_LOG(LogLevel::Info,
-            ("[AudioTrackEncoder {}]: Suspend(), was {}", fmt::ptr(this),
-             mSuspended ? "suspended" : "live"));
+  TRACK_LOG(LogLevel::Info, ("[AudioTrackEncoder %p]: Suspend(), was %s", this,
+                             mSuspended ? "suspended" : "live"));
 
   if (mSuspended) {
     return;
@@ -126,9 +124,8 @@ void AudioTrackEncoder::Suspend() {
 
 void AudioTrackEncoder::Resume() {
   MOZ_ASSERT(!mWorkerThread || mWorkerThread->IsCurrentThreadIn());
-  TRACK_LOG(LogLevel::Info,
-            ("[AudioTrackEncoder {}]: Resume(), was {}", fmt::ptr(this),
-             mSuspended ? "suspended" : "live"));
+  TRACK_LOG(LogLevel::Info, ("[AudioTrackEncoder %p]: Resume(), was %s", this,
+                             mSuspended ? "suspended" : "live"));
 
   if (!mSuspended) {
     return;
@@ -141,8 +138,8 @@ void AudioTrackEncoder::AppendAudioSegment(AudioSegment&& aSegment) {
   MOZ_ASSERT(!mWorkerThread || mWorkerThread->IsCurrentThreadIn());
   AUTO_PROFILER_LABEL("AudioTrackEncoder::AppendAudioSegment", OTHER);
   TRACK_LOG(LogLevel::Verbose,
-            ("[AudioTrackEncoder {}]: AppendAudioSegment() duration={}",
-             fmt::ptr(this), aSegment.GetDuration()));
+            ("[AudioTrackEncoder %p]: AppendAudioSegment() duration=%" PRIu64,
+             this, aSegment.GetDuration()));
 
   if (mCanceled) {
     return;
@@ -183,8 +180,8 @@ void AudioTrackEncoder::TryInit(const AudioSegment& aSegment,
 
   mInitCounter++;
   TRACK_LOG(LogLevel::Debug,
-            ("[AudioTrackEncoder {}]: Inited the audio encoder {} times",
-             fmt::ptr(this), mInitCounter));
+            ("[AudioTrackEncoder %p]: Inited the audio encoder %d times", this,
+             mInitCounter));
 
   for (AudioSegment::ConstChunkIterator iter(aSegment); !iter.IsEnded();
        iter.Next()) {
@@ -198,13 +195,12 @@ void AudioTrackEncoder::TryInit(const AudioSegment& aSegment,
 
     if (NS_SUCCEEDED(rv)) {
       TRACK_LOG(LogLevel::Info,
-                ("[AudioTrackEncoder {}]: Successfully initialized!",
-                 fmt::ptr(this)));
+                ("[AudioTrackEncoder %p]: Successfully initialized!", this));
       return;
     } else {
-      TRACK_LOG(LogLevel::Error,
-                ("[AudioTrackEncoder {}]: Failed to initialize the encoder!",
-                 fmt::ptr(this)));
+      TRACK_LOG(
+          LogLevel::Error,
+          ("[AudioTrackEncoder %p]: Failed to initialize the encoder!", this));
       OnError();
       return;
     }
@@ -218,14 +214,13 @@ void AudioTrackEncoder::TryInit(const AudioSegment& aSegment,
     // Perform a best effort initialization since we haven't gotten any
     // data yet. Motivated by issues like Bug 1336367
     TRACK_LOG(LogLevel::Warning,
-              ("[AudioTrackEncoder]: Initialize failed for {}s. Attempting to "
-               "init with {} (default) channels!",
+              ("[AudioTrackEncoder]: Initialize failed for %ds. Attempting to "
+               "init with %d (default) channels!",
                AUDIO_INIT_FAILED_DURATION, DEFAULT_CHANNELS));
     nsresult rv = Init(DEFAULT_CHANNELS);
     if (NS_FAILED(rv)) {
       TRACK_LOG(LogLevel::Error,
-                ("[AudioTrackEncoder {}]: Default-channel-init failed.",
-                 fmt::ptr(this)));
+                ("[AudioTrackEncoder %p]: Default-channel-init failed.", this));
       OnError();
       return;
     }
@@ -234,8 +229,7 @@ void AudioTrackEncoder::TryInit(const AudioSegment& aSegment,
 
 void AudioTrackEncoder::Cancel() {
   MOZ_ASSERT(!mWorkerThread || mWorkerThread->IsCurrentThreadIn());
-  TRACK_LOG(LogLevel::Info,
-            ("[AudioTrackEncoder {}]: Cancel()", fmt::ptr(this)));
+  TRACK_LOG(LogLevel::Info, ("[AudioTrackEncoder %p]: Cancel()", this));
   mCanceled = true;
   mEndOfStream = true;
   mOutgoingBuffer.Clear();
@@ -245,7 +239,7 @@ void AudioTrackEncoder::Cancel() {
 void AudioTrackEncoder::NotifyEndOfStream() {
   MOZ_ASSERT(!mWorkerThread || mWorkerThread->IsCurrentThreadIn());
   TRACK_LOG(LogLevel::Info,
-            ("[AudioTrackEncoder {}]: NotifyEndOfStream()", fmt::ptr(this)));
+            ("[AudioTrackEncoder %p]: NotifyEndOfStream()", this));
 
   if (!mCanceled && !mInitialized) {
     // If source audio track is completely silent till the end of encoding,
@@ -334,11 +328,10 @@ VideoTrackEncoder::VideoTrackEncoder(
 
 void VideoTrackEncoder::Suspend(const TimeStamp& aTime) {
   MOZ_ASSERT(!mWorkerThread || mWorkerThread->IsCurrentThreadIn());
-  TRACK_LOG(
-      LogLevel::Info,
-      ("[VideoTrackEncoder {}]: Suspend() at {:.3f}s, was {}", fmt::ptr(this),
-       mStartTime.IsNull() ? 0.0 : (aTime - mStartTime).ToSeconds(),
-       mSuspended ? "suspended" : "live"));
+  TRACK_LOG(LogLevel::Info,
+            ("[VideoTrackEncoder %p]: Suspend() at %.3fs, was %s", this,
+             mStartTime.IsNull() ? 0.0 : (aTime - mStartTime).ToSeconds(),
+             mSuspended ? "suspended" : "live"));
 
   if (mSuspended) {
     return;
@@ -357,7 +350,7 @@ void VideoTrackEncoder::Resume(const TimeStamp& aTime) {
 
   TRACK_LOG(
       LogLevel::Info,
-      ("[VideoTrackEncoder {}]: Resume() after {:.3f}s, was {}", fmt::ptr(this),
+      ("[VideoTrackEncoder %p]: Resume() after %.3fs, was %s", this,
        (aTime - mSuspendTime).ToSeconds(), mSuspended ? "suspended" : "live"));
 
   mSuspended = false;
@@ -380,8 +373,7 @@ void VideoTrackEncoder::Resume(const TimeStamp& aTime) {
 
 void VideoTrackEncoder::Disable(const TimeStamp& aTime) {
   MOZ_ASSERT(!mWorkerThread || mWorkerThread->IsCurrentThreadIn());
-  TRACK_LOG(LogLevel::Debug,
-            ("[VideoTrackEncoder {}]: Disable()", fmt::ptr(this)));
+  TRACK_LOG(LogLevel::Debug, ("[VideoTrackEncoder %p]: Disable()", this));
 
   if (mStartTime.IsNull()) {
     // We haven't started yet. No need to touch future frames.
@@ -408,8 +400,7 @@ void VideoTrackEncoder::Disable(const TimeStamp& aTime) {
 
 void VideoTrackEncoder::Enable(const TimeStamp& aTime) {
   MOZ_ASSERT(!mWorkerThread || mWorkerThread->IsCurrentThreadIn());
-  TRACK_LOG(LogLevel::Debug,
-            ("[VideoTrackEncoder {}]: Enable()", fmt::ptr(this)));
+  TRACK_LOG(LogLevel::Debug, ("[VideoTrackEncoder %p]: Enable()", this));
 
   if (mStartTime.IsNull()) {
     // We haven't started yet. No need to touch future frames.
@@ -437,7 +428,7 @@ void VideoTrackEncoder::Enable(const TimeStamp& aTime) {
 void VideoTrackEncoder::AppendVideoSegment(VideoSegment&& aSegment) {
   MOZ_ASSERT(!mWorkerThread || mWorkerThread->IsCurrentThreadIn());
   TRACK_LOG(LogLevel::Verbose,
-            ("[VideoTrackEncoder {}]: AppendVideoSegment()", fmt::ptr(this)));
+            ("[VideoTrackEncoder %p]: AppendVideoSegment()", this));
 
   if (mCanceled) {
     return;
@@ -484,8 +475,8 @@ void VideoTrackEncoder::Init(const VideoSegment& aSegment,
 
   mInitCounter++;
   TRACK_LOG(LogLevel::Debug,
-            ("[VideoTrackEncoder {}]: Init the video encoder {} times",
-             fmt::ptr(this), mInitCounter));
+            ("[VideoTrackEncoder %p]: Init the video encoder %d times", this,
+             mInitCounter));
 
   Maybe<float> framerate;
   if (!aSegment.IsEmpty()) {
@@ -500,8 +491,8 @@ void VideoTrackEncoder::Init(const VideoSegment& aSegment,
       meanDuration.insert(iter->mTimeStamp - previousChunkTime);
       previousChunkTime = iter->mTimeStamp;
     }
-    TRACK_LOG(LogLevel::Debug, ("[VideoTrackEncoder {}]: Init() frameCount={}",
-                                fmt::ptr(this), frameCount));
+    TRACK_LOG(LogLevel::Debug, ("[VideoTrackEncoder %p]: Init() frameCount=%zu",
+                                this, frameCount));
     if (frameCount >= aFrameRateDetectionMinChunks) {
       if (meanDuration.empty()) {
         // No whole frames available, use aTime as end time.
@@ -533,14 +524,13 @@ void VideoTrackEncoder::Init(const VideoSegment& aSegment,
 
       if (NS_SUCCEEDED(rv)) {
         TRACK_LOG(LogLevel::Info,
-                  ("[VideoTrackEncoder {}]: Successfully initialized!",
-                   fmt::ptr(this)));
+                  ("[VideoTrackEncoder %p]: Successfully initialized!", this));
         return;
       }
 
-      TRACK_LOG(LogLevel::Error,
-                ("[VideoTrackEncoder {}]: Failed to initialize the encoder!",
-                 fmt::ptr(this)));
+      TRACK_LOG(
+          LogLevel::Error,
+          ("[VideoTrackEncoder %p]: Failed to initialize the encoder!", this));
       OnError();
       break;
     }
@@ -549,8 +539,8 @@ void VideoTrackEncoder::Init(const VideoSegment& aSegment,
   if (((aTime - mStartTime).ToSeconds() > VIDEO_INIT_FAILED_DURATION) &&
       mInitCounter > 1) {
     TRACK_LOG(LogLevel::Warning,
-              ("[VideoTrackEncoder {}]: No successful init for {}s.",
-               fmt::ptr(this), VIDEO_INIT_FAILED_DURATION));
+              ("[VideoTrackEncoder %p]: No successful init for %ds.", this,
+               VIDEO_INIT_FAILED_DURATION));
     OnError();
     return;
   }
@@ -558,8 +548,7 @@ void VideoTrackEncoder::Init(const VideoSegment& aSegment,
 
 void VideoTrackEncoder::Cancel() {
   MOZ_ASSERT(!mWorkerThread || mWorkerThread->IsCurrentThreadIn());
-  TRACK_LOG(LogLevel::Info,
-            ("[VideoTrackEncoder {}]: Cancel()", fmt::ptr(this)));
+  TRACK_LOG(LogLevel::Info, ("[VideoTrackEncoder %p]: Cancel()", this));
   mCanceled = true;
   mEndOfStream = true;
   mIncomingBuffer.Clear();
@@ -582,7 +571,7 @@ void VideoTrackEncoder::NotifyEndOfStream() {
 
   mEndOfStream = true;
   TRACK_LOG(LogLevel::Info,
-            ("[VideoTrackEncoder {}]: NotifyEndOfStream()", fmt::ptr(this)));
+            ("[VideoTrackEncoder %p]: NotifyEndOfStream()", this));
 
   if (!mLastChunk.IsNull()) {
     RefPtr<layers::Image> lastImage = mLastChunk.mFrame.GetImage();
@@ -596,10 +585,10 @@ void VideoTrackEncoder::NotifyEndOfStream() {
     if (duration.isValid() && duration.value() > 0) {
       mEncodedTicks += duration.value();
       TRACK_LOG(LogLevel::Debug,
-                ("[VideoTrackEncoder {}]: Appending last video frame {} at pos "
-                 "{:.3f}s, "
-                 "track-end={:.3f}s",
-                 fmt::ptr(this), fmt::ptr(lastImage.get()),
+                ("[VideoTrackEncoder %p]: Appending last video frame %p at pos "
+                 "%.3fs, "
+                 "track-end=%.3fs",
+                 this, lastImage.get(),
                  (mLastChunk.mTimeStamp - mStartTime).ToSeconds(),
                  absoluteEndTime.ToSeconds()));
       mOutgoingBuffer.AppendFrame(
@@ -641,8 +630,7 @@ void VideoTrackEncoder::NotifyEndOfStream() {
 void VideoTrackEncoder::SetStartOffset(const TimeStamp& aStartOffset) {
   MOZ_ASSERT(!mWorkerThread || mWorkerThread->IsCurrentThreadIn());
   MOZ_ASSERT(mCurrentTime.IsNull());
-  TRACK_LOG(LogLevel::Info,
-            ("[VideoTrackEncoder {}]: SetStartOffset()", fmt::ptr(this)));
+  TRACK_LOG(LogLevel::Info, ("[VideoTrackEncoder %p]: SetStartOffset()", this));
   mStartTime = aStartOffset;
   mCurrentTime = aStartOffset;
 }
@@ -665,16 +653,16 @@ void VideoTrackEncoder::AdvanceCurrentTime(const TimeStamp& aTime) {
   if (mSuspended) {
     TRACK_LOG(
         LogLevel::Verbose,
-        ("[VideoTrackEncoder {}]: AdvanceCurrentTime() suspended at {:.3f}s",
-         fmt::ptr(this), (mCurrentTime - mStartTime).ToSeconds()));
+        ("[VideoTrackEncoder %p]: AdvanceCurrentTime() suspended at %.3fs",
+         this, (mCurrentTime - mStartTime).ToSeconds()));
     mCurrentTime = aTime;
     mIncomingBuffer.ForgetUpToTime(mCurrentTime);
     return;
   }
 
   TRACK_LOG(LogLevel::Verbose,
-            ("[VideoTrackEncoder {}]: AdvanceCurrentTime() to {:.3f}s",
-             fmt::ptr(this), (aTime - mStartTime).ToSeconds()));
+            ("[VideoTrackEncoder %p]: AdvanceCurrentTime() to %.3fs", this,
+             (aTime - mStartTime).ToSeconds()));
 
   // Grab frames within the currentTime range from the incoming buffer.
   VideoSegment tempSegment;
@@ -691,11 +679,11 @@ void VideoTrackEncoder::AdvanceCurrentTime(const TimeStamp& aTime) {
             previousChunk->mFrame.GetPrincipalHandle(),
             previousChunk->mFrame.GetForceBlack() || !mEnabled,
             previousChunk->mTimeStamp);
-        TRACK_LOG(LogLevel::Verbose,
-                  ("[VideoTrackEncoder {}]: Duplicating video frame ({}) at "
-                   "pos {:.3f}",
-                   fmt::ptr(this), fmt::ptr(previousChunk->mFrame.GetImage()),
-                   (previousChunk->mTimeStamp - mStartTime).ToSeconds()));
+        TRACK_LOG(
+            LogLevel::Verbose,
+            ("[VideoTrackEncoder %p]: Duplicating video frame (%p) at pos %.3f",
+             this, previousChunk->mFrame.GetImage(),
+             (previousChunk->mTimeStamp - mStartTime).ToSeconds()));
       }
     };
     for (VideoSegment::ChunkIterator iter(mIncomingBuffer); !iter.IsEnded();
@@ -717,11 +705,10 @@ void VideoTrackEncoder::AdvanceCurrentTime(const TimeStamp& aTime) {
           do_AddRef(iter->mFrame.GetImage()), iter->mFrame.GetIntrinsicSize(),
           iter->mFrame.GetPrincipalHandle(),
           iter->mFrame.GetForceBlack() || !mEnabled, iter->mTimeStamp);
-      TRACK_LOG(
-          LogLevel::Verbose,
-          ("[VideoTrackEncoder {}]: Taking video frame ({}) at pos {:.3f}",
-           fmt::ptr(this), fmt::ptr(iter->mFrame.GetImage()),
-           (iter->mTimeStamp - mStartTime).ToSeconds()));
+      TRACK_LOG(LogLevel::Verbose,
+                ("[VideoTrackEncoder %p]: Taking video frame (%p) at pos %.3f",
+                 this, iter->mFrame.GetImage(),
+                 (iter->mTimeStamp - mStartTime).ToSeconds()));
       previousChunk = &*iter;
     }
     if (!previousChunk->IsNull()) {
@@ -743,12 +730,12 @@ void VideoTrackEncoder::AdvanceCurrentTime(const TimeStamp& aTime) {
       // beginning of the track.
       MOZ_ASSERT(!iter->mTimeStamp.IsNull());
 
-      TRACK_LOG(LogLevel::Verbose,
-                ("[VideoTrackEncoder {}]: Got the first video frame ({}) at "
-                 "pos {:.3f} "
-                 "(moving it to beginning)",
-                 fmt::ptr(this), fmt::ptr(iter->mFrame.GetImage()),
-                 (iter->mTimeStamp - mStartTime).ToSeconds()));
+      TRACK_LOG(
+          LogLevel::Verbose,
+          ("[VideoTrackEncoder %p]: Got the first video frame (%p) at pos %.3f "
+           "(moving it to beginning)",
+           this, iter->mFrame.GetImage(),
+           (iter->mTimeStamp - mStartTime).ToSeconds()));
 
       mLastChunk = *iter;
       mLastChunk.mTimeStamp = mStartTime;
@@ -760,15 +747,14 @@ void VideoTrackEncoder::AdvanceCurrentTime(const TimeStamp& aTime) {
 
     TimeDuration absoluteEndTime =
         mDriftCompensator->GetVideoTime(now, chunk.mTimeStamp) - mStartTime;
-    TRACK_LOG(
-        LogLevel::Verbose,
-        ("[VideoTrackEncoder {}]: Appending video frame {}, at pos {:.3f}s "
-         "until {:.3f}s",
-         fmt::ptr(this), fmt::ptr(mLastChunk.mFrame.GetImage()),
-         (mDriftCompensator->GetVideoTime(now, mLastChunk.mTimeStamp) -
-          mStartTime)
-             .ToSeconds(),
-         absoluteEndTime.ToSeconds()));
+    TRACK_LOG(LogLevel::Verbose,
+              ("[VideoTrackEncoder %p]: Appending video frame %p, at pos %.3fs "
+               "until %.3fs",
+               this, mLastChunk.mFrame.GetImage(),
+               (mDriftCompensator->GetVideoTime(now, mLastChunk.mTimeStamp) -
+                mStartTime)
+                   .ToSeconds(),
+               absoluteEndTime.ToSeconds()));
     CheckedInt64 duration =
         UsecsToFrames(absoluteEndTime.ToMicroseconds(), mTrackRate) -
         mEncodedTicks;
@@ -784,11 +770,10 @@ void VideoTrackEncoder::AdvanceCurrentTime(const TimeStamp& aTime) {
       // position. We handle both cases by ignoring the previous frame.
 
       TRACK_LOG(LogLevel::Verbose,
-                ("[VideoTrackEncoder {}]: Duration from frame {} to frame {} "
-                 "is {}. Ignoring {}",
-                 fmt::ptr(this), fmt::ptr(mLastChunk.mFrame.GetImage()),
-                 fmt::ptr(iter->mFrame.GetImage()), duration.value(),
-                 fmt::ptr(mLastChunk.mFrame.GetImage())));
+                ("[VideoTrackEncoder %p]: Duration from frame %p to frame %p "
+                 "is %" PRId64 ". Ignoring %p",
+                 this, mLastChunk.mFrame.GetImage(), iter->mFrame.GetImage(),
+                 duration.value(), mLastChunk.mFrame.GetImage()));
 
       TimeStamp t = mLastChunk.mTimeStamp;
       mLastChunk = *iter;

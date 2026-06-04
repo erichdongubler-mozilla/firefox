@@ -82,7 +82,7 @@
 extern mozilla::LazyLogModule gAutoplayPermissionLog;
 
 #define AUTOPLAY_LOG(msg, ...) \
-  MOZ_LOG_FMT(gAutoplayPermissionLog, LogLevel::Debug, msg, ##__VA_ARGS__)
+  MOZ_LOG(gAutoplayPermissionLog, LogLevel::Debug, (msg, ##__VA_ARGS__))
 
 namespace mozilla::dom {
 
@@ -185,7 +185,7 @@ AudioContext::AudioContext(nsPIDOMWindowInner* aWindow, bool aIsOffline,
   // AudioContext.resume() or AudioScheduledSourceNode.start().
   if (!allowedToStart) {
     MOZ_ASSERT(!mIsOffline);
-    AUTOPLAY_LOG("AudioContext {} is not allowed to start", fmt::ptr(this));
+    AUTOPLAY_LOG("AudioContext %p is not allowed to start", this);
     ReportBlocked();
   } else if (!mIsOffline) {
     ResumeInternal();
@@ -207,8 +207,8 @@ void AudioContext::StartBlockedAudioContextIfAllowed() {
   }
 
   const bool isAllowedToPlay = media::AutoplayPolicy::IsAllowedToPlay(*this);
-  AUTOPLAY_LOG("Trying to start AudioContext {}, IsAllowedToPlay={}",
-               fmt::ptr(this), isAllowedToPlay);
+  AUTOPLAY_LOG("Trying to start AudioContext %p, IsAllowedToPlay=%d", this,
+               isAllowedToPlay);
 
   // Only start the AudioContext if this resume() call was initiated by content,
   // not if it was a result of the AudioContext starting after having been
@@ -1076,8 +1076,8 @@ already_AddRefed<Promise> AudioContext::Resume(ErrorResult& aRv) {
   mPendingResumePromises.AppendElement(promise);
 
   const bool isAllowedToPlay = media::AutoplayPolicy::IsAllowedToPlay(*this);
-  AUTOPLAY_LOG("Trying to resume AudioContext {}, IsAllowedToPlay={}",
-               fmt::ptr(this), isAllowedToPlay);
+  AUTOPLAY_LOG("Trying to resume AudioContext %p, IsAllowedToPlay=%d", this,
+               isAllowedToPlay);
   if (isAllowedToPlay) {
     ResumeInternal();
   } else {
@@ -1089,7 +1089,7 @@ already_AddRefed<Promise> AudioContext::Resume(ErrorResult& aRv) {
 
 void AudioContext::ResumeInternal() {
   MOZ_ASSERT(!mIsOffline);
-  AUTOPLAY_LOG("Allow to resume AudioContext {}", fmt::ptr(this));
+  AUTOPLAY_LOG("Allow to resume AudioContext %p", this);
   mWasAllowedToStart = true;
 
   if (mSuspendedByChrome || mSuspendedByContent || mCloseCalled) {
@@ -1142,8 +1142,8 @@ void AudioContext::ReportBlocked() {
           return;
         }
 
-        AUTOPLAY_LOG("Dispatch `blocked` event for AudioContext {}",
-                     fmt::ptr(self.get()));
+        AUTOPLAY_LOG("Dispatch `blocked` event for AudioContext %p",
+                     self.get());
         nsContentUtils::DispatchTrustedEvent(doc, self, u"blocked"_ns,
                                              CanBubble::eNo, Cancelable::eNo);
       });

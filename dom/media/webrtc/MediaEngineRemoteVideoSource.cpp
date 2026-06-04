@@ -21,9 +21,9 @@
 namespace mozilla {
 
 extern LazyLogModule gMediaManagerLog;
-#define LOG(...) MOZ_LOG_FMT(gMediaManagerLog, LogLevel::Debug, __VA_ARGS__)
+#define LOG(...) MOZ_LOG(gMediaManagerLog, LogLevel::Debug, (__VA_ARGS__))
 #define LOG_FRAME(...) \
-  MOZ_LOG_FMT(gMediaManagerLog, LogLevel::Verbose, __VA_ARGS__)
+  MOZ_LOG(gMediaManagerLog, LogLevel::Verbose, (__VA_ARGS__))
 
 using dom::MediaSourceEnum;
 using dom::MediaTrackCapabilities;
@@ -190,7 +190,7 @@ MediaEngineRemoteVideoSource::MediaEngineRemoteVideoSource(
       mPrefs(MakeUnique<MediaEnginePrefs>()),
       mMediaDevice(aMediaDevice),
       mDeviceUUID(NS_ConvertUTF16toUTF8(aMediaDevice->mRawID)) {
-  LOG("{}", __PRETTY_FUNCTION__);
+  LOG("%s", __PRETTY_FUNCTION__);
   if (mCapEngine == camera::CameraEngine) {
     // Only cameras can have a facing mode.
     Maybe<VideoFacingModeEnum> facingMode =
@@ -249,7 +249,7 @@ static inline const char* ToString(DistanceCalculation aMode) {
 nsresult MediaEngineRemoteVideoSource::Allocate(
     const MediaTrackConstraints& aConstraints, const MediaEnginePrefs& aPrefs,
     uint64_t aWindowID, const char** aOutBadConstraint) {
-  LOG("{}", __PRETTY_FUNCTION__);
+  LOG("%s", __PRETTY_FUNCTION__);
   AssertIsOnOwningThread();
 
   MOZ_ASSERT(mState == kReleased);
@@ -261,7 +261,7 @@ nsresult MediaEngineRemoteVideoSource::Allocate(
   const auto distanceMode =
       resizeMode.map(&ToDistanceCalculation).valueOr(legacyDistanceMode);
   webrtc::CaptureCapability newCapability;
-  LOG("ChooseCapability({}) for mCapability (Allocate) ++",
+  LOG("ChooseCapability(%s) for mCapability (Allocate) ++",
       ToString(distanceMode));
   if (!ChooseCapability(c, aPrefs, newCapability, distanceMode,
                         aOutBadConstraint)) {
@@ -271,7 +271,7 @@ nsresult MediaEngineRemoteVideoSource::Allocate(
     }
     return NS_ERROR_FAILURE;
   }
-  LOG("ChooseCapability({}) for mCapability (Allocate) --",
+  LOG("ChooseCapability(%s) for mCapability (Allocate) --",
       ToString(distanceMode));
 
   mCaptureId =
@@ -343,12 +343,12 @@ nsresult MediaEngineRemoteVideoSource::Allocate(
         }
       }));
 
-  LOG("Video device {} allocated", mCaptureId);
+  LOG("Video device %d allocated", mCaptureId);
   return NS_OK;
 }
 
 nsresult MediaEngineRemoteVideoSource::Deallocate() {
-  LOG("{}", __PRETTY_FUNCTION__);
+  LOG("%s", __PRETTY_FUNCTION__);
   AssertIsOnOwningThread();
 
   MOZ_ASSERT(mState == kStopped || mState == kAllocated);
@@ -371,7 +371,7 @@ nsresult MediaEngineRemoteVideoSource::Deallocate() {
   mImageContainer = nullptr;
   mRescalingBufferPool.Release();
 
-  LOG("Video device {} deallocated", mCaptureId);
+  LOG("Video device %d deallocated", mCaptureId);
 
   int error = camera::GetChildAndCall(&camera::CamerasChild::ReleaseCapture,
                                       mCapEngine, mCaptureId);
@@ -393,7 +393,7 @@ nsresult MediaEngineRemoteVideoSource::Deallocate() {
 
 void MediaEngineRemoteVideoSource::SetTrack(const RefPtr<MediaTrack>& aTrack,
                                             const PrincipalHandle& aPrincipal) {
-  LOG("{}", __PRETTY_FUNCTION__);
+  LOG("%s", __PRETTY_FUNCTION__);
   AssertIsOnOwningThread();
 
   MOZ_ASSERT(mState == kAllocated);
@@ -414,7 +414,7 @@ void MediaEngineRemoteVideoSource::SetTrack(const RefPtr<MediaTrack>& aTrack,
 }
 
 nsresult MediaEngineRemoteVideoSource::Start() {
-  LOG("{}", __PRETTY_FUNCTION__);
+  LOG("%s", __PRETTY_FUNCTION__);
   AssertIsOnOwningThread();
 
   MOZ_ASSERT(mState == kAllocated || mState == kStarted || mState == kStopped);
@@ -445,7 +445,7 @@ nsresult MediaEngineRemoteVideoSource::Start() {
 nsresult MediaEngineRemoteVideoSource::StartCapture(
     const NormalizedConstraints& aConstraints,
     const dom::VideoResizeModeEnum& aResizeMode) {
-  LOG("{}", __PRETTY_FUNCTION__);
+  LOG("%s", __PRETTY_FUNCTION__);
   AssertIsOnOwningThread();
 
   MOZ_ASSERT(mState == kStarted);
@@ -463,7 +463,7 @@ nsresult MediaEngineRemoteVideoSource::StartCapture(
 }
 
 nsresult MediaEngineRemoteVideoSource::FocusOnSelectedSource() {
-  LOG("{}", __PRETTY_FUNCTION__);
+  LOG("%s", __PRETTY_FUNCTION__);
   AssertIsOnOwningThread();
 
   int result;
@@ -473,7 +473,7 @@ nsresult MediaEngineRemoteVideoSource::FocusOnSelectedSource() {
 }
 
 nsresult MediaEngineRemoteVideoSource::Stop() {
-  LOG("{}", __PRETTY_FUNCTION__);
+  LOG("%s", __PRETTY_FUNCTION__);
   AssertIsOnOwningThread();
 
   if (mState == kStopped || mState == kAllocated) {
@@ -509,7 +509,7 @@ nsresult MediaEngineRemoteVideoSource::Stop() {
 nsresult MediaEngineRemoteVideoSource::Reconfigure(
     const MediaTrackConstraints& aConstraints, const MediaEnginePrefs& aPrefs,
     const char** aOutBadConstraint) {
-  LOG("{}", __PRETTY_FUNCTION__);
+  LOG("%s", __PRETTY_FUNCTION__);
   AssertIsOnOwningThread();
 
   NormalizedConstraints c(aConstraints);
@@ -519,7 +519,7 @@ nsresult MediaEngineRemoteVideoSource::Reconfigure(
   const auto distanceMode =
       resizeMode.map(&ToDistanceCalculation).valueOr(legacyDistanceMode);
   webrtc::CaptureCapability newCapability;
-  LOG("ChooseCapability({}) for mTargetCapability (Reconfigure) ++",
+  LOG("ChooseCapability(%s) for mTargetCapability (Reconfigure) ++",
       ToString(distanceMode));
   if (!ChooseCapability(c, aPrefs, newCapability, distanceMode,
                         aOutBadConstraint)) {
@@ -529,7 +529,7 @@ nsresult MediaEngineRemoteVideoSource::Reconfigure(
     }
     return NS_ERROR_INVALID_ARG;
   }
-  LOG("ChooseCapability({}) for mTargetCapability (Reconfigure) --",
+  LOG("ChooseCapability(%s) for mTargetCapability (Reconfigure) --",
       ToString(distanceMode));
 
   bool needsRestart{};
@@ -570,9 +570,11 @@ nsresult MediaEngineRemoteVideoSource::Reconfigure(
     nsresult rv =
         StartCapture(c, resizeMode.valueOr(dom::VideoResizeModeEnum::None));
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      LOG("Video source {} for video device {} Reconfigure() failed "
-          "unexpectedly in Start(). rv={}",
-          fmt::ptr(this), mCaptureId, rv);
+      nsAutoCString name;
+      GetErrorName(rv, name);
+      LOG("Video source %p for video device %d Reconfigure() failed "
+          "unexpectedly in Start(). rv=%s",
+          this, mCaptureId, name.get());
       return NS_ERROR_UNEXPECTED;
     }
   }
@@ -730,8 +732,8 @@ int MediaEngineRemoteVideoSource::DeliverFrame(
 #ifdef DEBUG
   static uint32_t frame_num = 0;
   LOG_FRAME(
-      "frame {} ({}x{})->({}x{}); rotation {}, rtpTimeStamp {}, ntpTimeMs "
-      "{}, renderTimeMs {}",
+      "frame %d (%dx%d)->(%dx%d); rotation %d, rtpTimeStamp %u, ntpTimeMs "
+      "%" PRIu64 ", renderTimeMs %" PRIu64,
       frame_num++, aProps.width(), aProps.height(), dstSize.width,
       dstSize.height, aProps.rotation(), aProps.rtpTimeStamp(),
       aProps.ntpTimeMs(), aProps.renderTimeMs());
@@ -920,7 +922,7 @@ static const char* ConvertVideoTypeToCStr(webrtc::VideoType aType) {
 static void LogCapability(const char* aHeader,
                           const webrtc::CaptureCapability& aCapability,
                           uint32_t aDistance) {
-  LOG("{}: {:4} x {:4} x {:2} maxFps, {}. Distance = {}", aHeader,
+  LOG("%s: %4u x %4u x %2u maxFps, %s. Distance = %" PRIu32, aHeader,
       aCapability.width, aCapability.height, aCapability.maxFPS,
       ConvertVideoTypeToCStr(aCapability.videoType), aDistance);
 }
@@ -929,15 +931,15 @@ bool MediaEngineRemoteVideoSource::ChooseCapability(
     const NormalizedConstraints& aConstraints, const MediaEnginePrefs& aPrefs,
     webrtc::CaptureCapability& aCapability,
     const DistanceCalculation aCalculate, const char** aOutBadConstraint) {
-  LOG("{}", __PRETTY_FUNCTION__);
+  LOG("%s", __PRETTY_FUNCTION__);
   AssertIsOnOwningThread();
 
   if (MOZ_LOG_TEST(gMediaManagerLog, LogLevel::Debug)) {
-    LOG("ChooseCapability: prefs: {}x{} @{}fps", aPrefs.GetWidth(),
+    LOG("ChooseCapability: prefs: %dx%d @%dfps", aPrefs.GetWidth(),
         aPrefs.GetHeight(), aPrefs.mFPS);
     MediaConstraintsHelper::LogConstraints(aConstraints);
     if (!aConstraints.mAdvanced.empty()) {
-      LOG("Advanced array[{}]:", aConstraints.mAdvanced.size());
+      LOG("Advanced array[%zu]:", aConstraints.mAdvanced.size());
       for (const auto& advanced : aConstraints.mAdvanced) {
         MediaConstraintsHelper::LogConstraints(advanced);
       }
@@ -1093,7 +1095,7 @@ bool MediaEngineRemoteVideoSource::ChooseCapability(
   }
 
   if (candidateSet.IsEmpty()) {
-    LOG("failed to find capability match from {} choices",
+    LOG("failed to find capability match from %zu choices",
         candidateSet.Length());
     return false;
   }

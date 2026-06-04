@@ -27,7 +27,7 @@ namespace mozilla::dom {
 #  undef LOG_INTERNAL
 #endif  // LOG_INTERNAL
 #define LOG_INTERNAL(level, msg, ...) \
-  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::level, msg, ##__VA_ARGS__)
+  MOZ_LOG(gWebCodecsLog, LogLevel::level, (msg, ##__VA_ARGS__))
 
 #ifdef LOGW
 #  undef LOGW
@@ -64,20 +64,20 @@ EncodedAudioChunkData::EncodedAudioChunkData(
 
 UniquePtr<EncodedAudioChunkData> EncodedAudioChunkData::Clone() const {
   if (!mBuffer) {
-    LOGE("No buffer in EncodedAudioChunkData {} to clone!", fmt::ptr(this));
+    LOGE("No buffer in EncodedAudioChunkData %p to clone!", this);
     return nullptr;
   }
 
   // Since EncodedAudioChunkData can be zero-sized, cloning a zero-sized chunk
   // is allowed.
   if (mBuffer->Size() == 0) {
-    LOGW("Cloning an empty EncodedAudioChunkData {}", fmt::ptr(this));
+    LOGW("Cloning an empty EncodedAudioChunkData %p", this);
   }
 
   auto buffer =
       MakeRefPtr<MediaAlignedByteBuffer>(mBuffer->Data(), mBuffer->Length());
   if (!buffer || buffer->Size() != mBuffer->Size()) {
-    LOGE("OOM to copy EncodedAudioChunkData {}", fmt::ptr(this));
+    LOGE("OOM to copy EncodedAudioChunkData %p", this);
     return nullptr;
   }
 
@@ -87,7 +87,7 @@ UniquePtr<EncodedAudioChunkData> EncodedAudioChunkData::Clone() const {
 
 already_AddRefed<MediaRawData> EncodedAudioChunkData::TakeData() {
   if (!mBuffer || !(*mBuffer)) {
-    LOGE("EncodedAudioChunkData {} has no data!", fmt::ptr(this));
+    LOGE("EncodedAudioChunkData %p has no data!", this);
     return nullptr;
   }
 
@@ -99,8 +99,8 @@ already_AddRefed<MediaRawData> EncodedAudioChunkData::TakeData() {
   if (mDuration) {
     CheckedInt64 duration(*mDuration);
     if (!duration.isValid()) {
-      LOGE("EncodedAudioChunkData {} 's duration exceeds TimeUnit's limit",
-           fmt::ptr(this));
+      LOGE("EncodedAudioChunkData %p 's duration exceeds TimeUnit's limit",
+           this);
       return nullptr;
     }
     sample->mDuration = TimeUnit::FromMicroseconds(duration.value());

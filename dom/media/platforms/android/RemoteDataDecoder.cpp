@@ -34,10 +34,9 @@
 #include "prlog.h"
 
 #undef LOG
-#define LOG(arg, ...)                                                      \
-  MOZ_LOG_FMT(sAndroidDecoderModuleLog, mozilla::LogLevel::Debug,          \
-              "RemoteDataDecoder({})::{}: " arg, fmt::ptr(this), __func__, \
-              ##__VA_ARGS__)
+#define LOG(arg, ...)                                         \
+  MOZ_LOG(sAndroidDecoderModuleLog, mozilla::LogLevel::Debug, \
+          ("RemoteDataDecoder(%p)::%s: " arg, this, __func__, ##__VA_ARGS__))
 
 using namespace mozilla;
 using namespace mozilla::gl;
@@ -437,8 +436,8 @@ class RemoteVideoDecoder final : public RemoteDataDecoder {
       return;
     }
 
-    LOG("flags={:x} size={} presentationTimeUs={}", flags, size,
-        presentationTimeUs);
+    LOG("flags=%" PRIx32 " size=%" PRIi32 " presentationTimeUs=%" PRIi64, flags,
+        size, presentationTimeUs);
     if (inputInfo && (size > 0 || presentationTimeUs >= 0)) {
       bool forceBT709ColorSpace = false;
       // On certain devices SMPTE 432 color primaries are rendered incorrectly,
@@ -745,7 +744,7 @@ class RemoteAudioDecoder final : public RemoteDataDecoder {
 
       int32_t sampleRate = 0;
       aFormat->GetInteger(u"sample-rate"_ns, &sampleRate);
-      LOG("Audio output format changed: channels:{} sample rate:{}",
+      LOG("Audio output format changed: channels:%d sample rate:%d",
           outputChannels, sampleRate);
 
       mDecoder->ProcessOutputFormatChange(outputChannels, sampleRate);
@@ -823,7 +822,7 @@ class RemoteAudioDecoder final : public RemoteDataDecoder {
     if (!ok ||
         (IsSampleTimeSmallerThanFirstDemuxedSampleTime(presentationTimeUs) &&
          !isEOS)) {
-      LOG("ProcessOutput: decoding error ok[{}], pts[{}], eos[{}]",
+      LOG("ProcessOutput: decoding error ok[%s], pts[%" PRId64 "], eos[%s]",
           ok ? "true" : "false", presentationTimeUs, isEOS ? "true" : "false");
       Error(MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, __func__));
       return;
@@ -850,7 +849,8 @@ class RemoteAudioDecoder final : public RemoteDataDecoder {
 
       TimeUnit pts = TimeUnit::FromMicroseconds(presentationTimeUs);
 
-      LOG("Decoded: {} frames of {} audio, pts: {}, {} channels, {} Hz",
+      LOG("Decoded: %u frames of %s audio, pts: %s, %d channels, %" PRId32
+          " Hz",
           numSamples / mOutputChannels,
           sampleSize == sizeof(int16_t) ? "int16" : "f32", pts.ToString().get(),
           mOutputChannels, mOutputSampleRate);
@@ -1166,7 +1166,7 @@ void RemoteDataDecoder::ReturnDecodedData() {
   MOZ_ASSERT(GetState() != State::SHUTDOWN);
 
   // We only want to clear mDecodedData when we have resolved the promises.
-  LOG("have decode promise={}, have drain promise={}, state={}",
+  LOG("have decode promise=%i, have drain promise=%i, state=%i",
       static_cast<int>(!mDecodePromise.IsEmpty()),
       static_cast<int>(!mDrainPromise.IsEmpty()), static_cast<int>(GetState()));
   MOZ_ASSERT(mDecodePromise.IsEmpty() || mDrainPromise.IsEmpty());
@@ -1222,7 +1222,7 @@ void RemoteDataDecoder::Error(const MediaResult& aError) {
     return;
   }
 
-  LOG("ErrorName={} Message={}", aError.ErrorName().get(),
+  LOG("ErrorName=%s Message=%s", aError.ErrorName().get(),
       aError.Message().get());
   // If we know we need a new decoder (eg because RemoteVideoDecoder's mSurface
   // has been released due to a GPU process crash) then override the error to
@@ -1238,7 +1238,7 @@ void RemoteDataDecoder::Error(const MediaResult& aError) {
 }
 
 void RemoteDataDecoder::SetState(RemoteDataDecoder::State aState) {
-  LOG("{}", static_cast<int>(aState));
+  LOG("%i", static_cast<int>(aState));
   AssertOnThread();
   mState = aState;
 }

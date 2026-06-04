@@ -26,10 +26,10 @@ namespace mozilla {
 extern LazyLogModule gMediaDecoderLog;
 
 #define LOG(x, ...) \
-  MOZ_LOG_FMT(gMediaDecoderLog, LogLevel::Debug, x, ##__VA_ARGS__)
+  MOZ_LOG(gMediaDecoderLog, LogLevel::Debug, (x, ##__VA_ARGS__))
 
 #define LOGV(x, ...) \
-  MOZ_LOG_FMT(gMediaDecoderLog, LogLevel::Verbose, x, ##__VA_ARGS__)
+  MOZ_LOG(gMediaDecoderLog, LogLevel::Verbose, (x, ##__VA_ARGS__))
 
 // Gets the pixel aspect ratio from the decoded video size and the rendered
 // size.
@@ -158,7 +158,7 @@ class H264ChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
       nsPrintfCString msg(
           "H264ChangeMonitor::CheckForChange has detected a "
           "change in the stream and will request a new decoder");
-      LOG("{}", msg.get());
+      LOG("%s", msg.get());
       PROFILER_MARKER_TEXT("H264 Stream Change", MEDIA_PLAYBACK, {}, msg);
     }
     return NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER;
@@ -187,7 +187,8 @@ class H264ChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
         H264::GetFrameType(aSample) == H264::FrameType::I_FRAME_IDR) {
       RefPtr<MediaByteBuffer> extradata = H264::ExtractExtraData(aSample);
       appendExtradata = aNeedKeyFrame || !H264::HasSPS(extradata);
-      LOG("{} need to append extradata for IDR sample [{},{}]",
+      LOG("%s need to append extradata for IDR sample [%" PRId64 ",%" PRId64
+          "]",
           appendExtradata ? "Do" : "No", aSample->mTime.ToMicroseconds(),
           aSample->GetEndTime().ToMicroseconds());
     }
@@ -301,7 +302,7 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
     if (canBeInstantiated) {
       UpdateConfigFromExtraData(aInfo.mExtraData);
     }
-    LOG("created HEVCChangeMonitor, CanBeInstantiated={}", canBeInstantiated);
+    LOG("created HEVCChangeMonitor, CanBeInstantiated=%d", canBeInstantiated);
   }
 
   bool CanBeInstantiated() const override {
@@ -318,13 +319,13 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
       // We need HVCC content to be able to later parse the SPS.
       // This is a no-op if the data is already HVCC.
       nsPrintfCString msg("Failed to convert to HVCC");
-      LOG("{}", msg.get());
+      LOG("%s", msg.get());
       return MediaResult(rv.unwrapErr(), msg);
     }
 
     if (!AnnexB::IsHVCC(aSample)) {
       nsPrintfCString msg("Invalid HVCC content");
-      LOG("{}", msg.get());
+      LOG("%s", msg.get());
       return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, msg);
     }
 
@@ -365,7 +366,7 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
       return NS_OK;
     }
     const HVCCConfig newConfig = rv.unwrap();
-    LOGV("Current config: {}, new config: {}",
+    LOGV("Current config: %s, new config: %s",
          curConfig.isOk() ? curConfig.inspect().ToString().get() : "invalid",
          newConfig.ToString().get());
 
@@ -387,7 +388,7 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
       nsPrintfCString msg(
           "HEVCChangeMonitor::CheckForChange has detected a change in the "
           "stream and will request a new decoder");
-      LOG("{}", msg.get());
+      LOG("%s", msg.get());
       PROFILER_MARKER_TEXT("HEVC Stream Change", MEDIA_PLAYBACK, {}, msg);
     }
     return NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER;
@@ -408,7 +409,8 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
 
     bool appendExtradata = aNeedKeyFrame;
     if (aSample->mCrypto.IsEncrypted() && !mReceivedFirstEncryptedSample) {
-      LOG("Detected first encrypted sample [{},{}], keyframe={}",
+      LOG("Detected first encrypted sample [%" PRId64 ",%" PRId64
+          "], keyframe=%d",
           aSample->mTime.ToMicroseconds(),
           aSample->GetEndTime().ToMicroseconds(), aSample->mKeyframe);
       mReceivedFirstEncryptedSample = true;
@@ -507,7 +509,7 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
     }
     mCurrentConfig.mExtraData = H265::CreateNewExtraData(hvcc, nalus);
     mTrackInfo = new TrackInfoSharedPtr(mCurrentConfig, mStreamID++);
-    LOG("Updated extradata, hasSPS={}, hasPPS={}, hasVPS={}, hasSEI={}",
+    LOG("Updated extradata, hasSPS=%d, hasPPS=%d, hasVPS=%d, hasSEI=%d",
         !mSPS.IsEmpty(), !mPPS.IsEmpty(), !mVPS.IsEmpty(), !mSEI.IsEmpty());
   }
 
@@ -617,8 +619,9 @@ class VPXChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
       rv = NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER;
     }
 
-    LOG("Detect inband {} resolution changes, image ({},{})->({},{}), display "
-        "({},{})->({},{} {})",
+    LOG("Detect inband %s resolution changes, image (%" PRId32 ",%" PRId32
+        ")->(%" PRId32 ",%" PRId32 "), display (%" PRId32 ",%" PRId32
+        ")->(%" PRId32 ",%" PRId32 " %s)",
         mCodec == VPXDecoder::Codec::VP9 ? "VP9" : "VP8",
         mCurrentConfig.mImage.Width(), mCurrentConfig.mImage.Height(),
         info.mImage.Width(), info.mImage.Height(),
@@ -725,7 +728,9 @@ class AV1ChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
       gfx::IntSize newDisplay =
           ApplyPixelAspectRatio(mPixelAspectRatio, aInfo.mImage);
       LOG("AV1ChangeMonitor detected a resolution change in-band, image "
-          "({},{})->({},{}), display ({},{})->({},{} from PAR)",
+          "(%" PRIu32 ",%" PRIu32 ")->(%" PRIu32 ",%" PRIu32
+          "), display (%" PRIu32 ",%" PRIu32 ")->(%" PRIu32 ",%" PRIu32
+          " from PAR)",
           mCurrentConfig.mImage.Width(), mCurrentConfig.mImage.Height(),
           aInfo.mImage.Width(), aInfo.mImage.Height(),
           mCurrentConfig.mDisplay.Width(), mCurrentConfig.mDisplay.Height(),
@@ -760,7 +765,7 @@ class AV1ChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
       return NS_OK;
     }
     if (seqHdrCode != NS_OK) {
-      LOG("AV1ChangeMonitor::CheckForChange read a corrupted sample: {}",
+      LOG("AV1ChangeMonitor::CheckForChange read a corrupted sample: %s",
           seqHdrResult.Description().get());
       return seqHdrResult;
     }
@@ -828,7 +833,7 @@ class AACCodecChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
           return MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR);
         }
         LOG("Reconfiguring decoder adts -> raw aac, with maked AAC specific "
-            "config: {} bytes",
+            "config: %zu bytes",
             mCurrentConfig.mCodecSpecificConfig
                 .as<AudioCodecSpecificBinaryBlob>()
                 .mBinaryBlob->Length());
@@ -891,7 +896,7 @@ MediaChangeMonitor::MediaChangeMonitor(
 /* static */
 RefPtr<PlatformDecoderModule::CreateDecoderPromise> MediaChangeMonitor::Create(
     PDMFactory* aPDMFactory, const CreateDecoderParams& aParams) {
-  LOG("MediaChangeMonitor::Create, params = {}", aParams.ToString().get());
+  LOG("MediaChangeMonitor::Create, params = %s", aParams.ToString().get());
   UniquePtr<CodecChangeMonitor> changeMonitor;
   if (aParams.IsVideo()) {
     const VideoInfo& config = aParams.VideoConfig();
@@ -915,7 +920,7 @@ RefPtr<PlatformDecoderModule::CreateDecoderPromise> MediaChangeMonitor::Create(
   // new set of params with the updated track info from our monitor and the
   // other params for aParams and use that going forward.
   const CreateDecoderParams updatedParams{changeMonitor->Config(), aParams};
-  LOG("updated params = {}", updatedParams.ToString().get());
+  LOG("updated params = %s", updatedParams.ToString().get());
 
   RefPtr<MediaChangeMonitor> instance = new MediaChangeMonitor(
       aPDMFactory, std::move(changeMonitor), nullptr, updatedParams);
@@ -1155,7 +1160,7 @@ MediaChangeMonitor::CreateDecoder() {
   mCurrentConfig = mChangeMonitor->Config().Clone();
   CreateDecoderParams currentParams = {*mCurrentConfig, mParams};
   currentParams.mWrappers -= media::Wrapper::MediaChangeMonitor;
-  LOG("MediaChangeMonitor::CreateDecoder, current params = {}",
+  LOG("MediaChangeMonitor::CreateDecoder, current params = %s",
       currentParams.ToString().get());
 
   mDecoderInitialized = false;

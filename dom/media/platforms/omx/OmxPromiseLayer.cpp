@@ -12,10 +12,9 @@
 #  undef LOG
 #endif
 
-#define LOG(arg, ...)                                                    \
-  MOZ_LOG_FMT(sPDMLog, mozilla::LogLevel::Debug,                         \
-              "OmxPromiseLayer({})::{}: " arg, fmt::ptr(this), __func__, \
-              ##__VA_ARGS__)
+#define LOG(arg, ...)                        \
+  MOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, \
+          ("OmxPromiseLayer(%p)::%s: " arg, this, __func__, ##__VA_ARGS__))
 
 namespace mozilla {
 
@@ -60,7 +59,7 @@ OmxPromiseLayer::Config() {
 RefPtr<OmxPromiseLayer::OmxBufferPromise> OmxPromiseLayer::FillBuffer(
     BufferData* aData) {
   MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn());
-  LOG("buffer {}", fmt::ptr(aData->mBuffer));
+  LOG("buffer %p", aData->mBuffer);
 
   RefPtr<OmxBufferPromise> p = aData->mPromise.Ensure(__func__);
 
@@ -80,8 +79,7 @@ RefPtr<OmxPromiseLayer::OmxBufferPromise> OmxPromiseLayer::FillBuffer(
 RefPtr<OmxPromiseLayer::OmxBufferPromise> OmxPromiseLayer::EmptyBuffer(
     BufferData* aData) {
   MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn());
-  LOG("buffer {}, size {}", fmt::ptr(aData->mBuffer),
-      aData->mBuffer->nFilledLen);
+  LOG("buffer %p, size %lu", aData->mBuffer, aData->mBuffer->nFilledLen);
 
   RefPtr<OmxBufferPromise> p = aData->mPromise.Ensure(__func__);
 
@@ -161,8 +159,7 @@ already_AddRefed<BufferData> OmxPromiseLayer::FindBufferById(
 void OmxPromiseLayer::EmptyFillBufferDone(OMX_DIRTYPE aType,
                                           BufferData* aData) {
   if (aData) {
-    LOG("type {}, buffer {}", static_cast<int>(aType),
-        fmt::ptr(aData->mBuffer));
+    LOG("type %d, buffer %p", aType, aData->mBuffer);
     if (aType == OMX_DirOutput) {
       aData->mRawData = nullptr;
       aData->mRawData = FindAndRemoveRawData(aData->mBuffer->nTimeStamp);
@@ -170,7 +167,7 @@ void OmxPromiseLayer::EmptyFillBufferDone(OMX_DIRTYPE aType,
     aData->mStatus = BufferData::BufferStatus::OMX_CLIENT;
     aData->mPromise.Resolve(aData, __func__);
   } else {
-    LOG("type {}, no buffer", static_cast<int>(aType));
+    LOG("type %d, no buffer", aType);
   }
 }
 
@@ -254,7 +251,7 @@ bool OmxPromiseLayer::Event(OMX_EVENTTYPE aEvent, OMX_U32 aData1,
         mCommandStatePromise.Resolve(OMX_CommandStateSet, __func__);
       } else if (cmd == OMX_CommandFlush) {
         MOZ_RELEASE_ASSERT(mFlushCommands.ElementAt(0).type == aData2);
-        LOG("OMX_CommandFlush completed port type {}", aData2);
+        LOG("OMX_CommandFlush completed port type %lu", aData2);
         mFlushCommands.RemoveElementAt(0);
 
         // Sending next flush command.

@@ -112,13 +112,13 @@ ImageDecoder::ImageDecoder(nsCOMPtr<nsIGlobalObject>&& aParent,
     : mParent(std::move(aParent)),
       mType(aType),
       mFramesTimestamp(image::FrameTimeout::Zero()) {
-  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Debug, "ImageDecoder {} ImageDecoder",
-              fmt::ptr(this));
+  MOZ_LOG(gWebCodecsLog, LogLevel::Debug,
+          ("ImageDecoder %p ImageDecoder", this));
 }
 
 ImageDecoder::~ImageDecoder() {
-  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Debug, "ImageDecoder {} ~ImageDecoder",
-              fmt::ptr(this));
+  MOZ_LOG(gWebCodecsLog, LogLevel::Debug,
+          ("ImageDecoder %p ~ImageDecoder", this));
   CloseWithoutRef(MediaResult(NS_ERROR_DOM_ABORT_ERR, "Destroyed decoder"_ns));
 }
 
@@ -195,9 +195,9 @@ MessageProcessedResult ImageDecoder::ProcessConfigureMessage(
   image::DecoderType type = image::ImageUtils::GetDecoderType(mimeType);
   if (NS_WARN_IF(type == image::DecoderType::UNKNOWN) ||
       NS_WARN_IF(type == image::DecoderType::ICON)) {
-    MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
-                "ImageDecoder {} Initialize -- unsupported mime type '{}'",
-                fmt::ptr(this), mimeType.get());
+    MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+            ("ImageDecoder %p Initialize -- unsupported mime type '%s'", this,
+             mimeType.get()));
     Close(MediaResult(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
                       "Unsupported mime type"_ns));
     return MessageProcessedResult::Processed;
@@ -211,10 +211,10 @@ MessageProcessedResult ImageDecoder::ProcessConfigureMessage(
     case ColorSpaceConversion::Default:
       break;
     default:
-      MOZ_LOG_FMT(
+      MOZ_LOG(
           gWebCodecsLog, LogLevel::Error,
-          "ImageDecoder {} Initialize -- unsupported colorspace conversion",
-          fmt::ptr(this));
+          ("ImageDecoder %p Initialize -- unsupported colorspace conversion",
+           this));
       Close(MediaResult(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
                         "Unsupported colorspace conversion"_ns));
       return MessageProcessedResult::Processed;
@@ -225,10 +225,9 @@ MessageProcessedResult ImageDecoder::ProcessConfigureMessage(
   mDecoder = image::ImageUtils::CreateDecoder(mSourceBuffer, type,
                                               aMsg->mOutputSize, surfaceFlags);
   if (NS_WARN_IF(!mDecoder)) {
-    MOZ_LOG_FMT(
-        gWebCodecsLog, LogLevel::Error,
-        "ImageDecoder {} Initialize -- failed to create platform decoder",
-        fmt::ptr(this));
+    MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+            ("ImageDecoder %p Initialize -- failed to create platform decoder",
+             this));
     Close(MediaResult(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
                       "Failed to create platform decoder"_ns));
     return MessageProcessedResult::Processed;
@@ -335,20 +334,18 @@ void ImageDecoder::CheckOutstandingDecodes() {
     auto& decode = mOutstandingDecodes[i];
     const auto frameIndex = decode.mFrameIndex;
     if (frameIndex < decodedFrameCount) {
-      MOZ_LOG_FMT(
-          gWebCodecsLog, LogLevel::Debug,
-          "ImageDecoder {} CheckOutstandingDecodes -- resolved index {}",
-          fmt::ptr(this), frameIndex);
+      MOZ_LOG(gWebCodecsLog, LogLevel::Debug,
+              ("ImageDecoder %p CheckOutstandingDecodes -- resolved index %u",
+               this, frameIndex));
       resolved.AppendElement(std::move(decode));
       mOutstandingDecodes.RemoveElementAt(i);
     } else if (frameCountComplete && frameCount <= frameIndex) {
       // We have gotten the frame count from the decoder, so we must reject any
       // unfulfilled requests that are beyond it with a RangeError.
-      MOZ_LOG_FMT(
-          gWebCodecsLog, LogLevel::Warning,
-          "ImageDecoder {} CheckOutstandingDecodes -- rejected index {} "
-          "out-of-bounds",
-          fmt::ptr(this), frameIndex);
+      MOZ_LOG(gWebCodecsLog, LogLevel::Warning,
+              ("ImageDecoder %p CheckOutstandingDecodes -- rejected index %u "
+               "out-of-bounds",
+               this, frameIndex));
       rejectedRange.AppendElement(std::move(decode));
       mOutstandingDecodes.RemoveElementAt(i);
     } else if (frameCountComplete && decodedFramesComplete) {
@@ -356,19 +353,18 @@ void ImageDecoder::CheckOutstandingDecodes() {
       // count indicated. This means we ran into problems while decoding and
       // aborted. We must reject any unfulfilled requests with an
       // InvalidStateError.
-      MOZ_LOG_FMT(
-          gWebCodecsLog, LogLevel::Warning,
-          "ImageDecoder {} CheckOutstandingDecodes -- rejected index {} "
-          "decode error",
-          fmt::ptr(this), frameIndex);
+      MOZ_LOG(gWebCodecsLog, LogLevel::Warning,
+              ("ImageDecoder %p CheckOutstandingDecodes -- rejected index %u "
+               "decode error",
+               this, frameIndex));
       rejectedState.AppendElement(std::move(decode));
       mOutstandingDecodes.RemoveElementAt(i);
     } else if (!decodedFramesComplete) {
       // We haven't gotten the last frame yet, so we can advance to the next
       // one.
-      MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Debug,
-                  "ImageDecoder {} CheckOutstandingDecodes -- pending index {}",
-                  fmt::ptr(this), frameIndex);
+      MOZ_LOG(gWebCodecsLog, LogLevel::Debug,
+              ("ImageDecoder %p CheckOutstandingDecodes -- pending index %u",
+               this, frameIndex));
       if (frameCount > frameIndex) {
         minFrameIndex = std::min(minFrameIndex, frameIndex);
       }
@@ -423,8 +419,8 @@ void ImageDecoder::CheckOutstandingDecodes() {
   // 10.3.1. If type is not a valid image MIME type, return false.
   const auto mimeType = Substring(aInit.mType, 0, 6);
   if (!mimeType.Equals(u"image/"_ns)) {
-    MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
-                "ImageDecoder Constructor -- bad mime type");
+    MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+            ("ImageDecoder Constructor -- bad mime type"));
     aRv.ThrowTypeError("Invalid MIME type, must be 'image'");
     return nullptr;
   }
@@ -434,8 +430,8 @@ void ImageDecoder::CheckOutstandingDecodes() {
     // 10.3.2. If data is of type ReadableStream and the ReadableStream is
     // disturbed or locked, return false.
     if (stream->Disturbed() || stream->Locked()) {
-      MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
-                  "ImageDecoder Constructor -- bad stream");
+      MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+              ("ImageDecoder Constructor -- bad stream"));
       aRv.ThrowTypeError("ReadableStream data is disturbed and/or locked");
       return nullptr;
     }
@@ -463,8 +459,8 @@ void ImageDecoder::CheckOutstandingDecodes() {
     // 10.3.3.1. If data is [detached], return false.
     // 10.3.3.2. If data is empty, return false.
     if (empty) {
-      MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
-                  "ImageDecoder Constructor -- detached/empty BufferSource");
+      MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+              ("ImageDecoder Constructor -- detached/empty BufferSource"));
       aRv.ThrowTypeError("BufferSource is detached/empty");
       return nullptr;
     }
@@ -475,9 +471,9 @@ void ImageDecoder::CheckOutstandingDecodes() {
   // 10.3.5. If desiredHeight exists and desiredWidth does not exist, return
   // false.
   if (aInit.mDesiredHeight.WasPassed() != aInit.mDesiredWidth.WasPassed()) {
-    MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
-                "ImageDecoder Constructor -- both/neither desiredHeight/width "
-                "needed");
+    MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+            ("ImageDecoder Constructor -- both/neither desiredHeight/width "
+             "needed"));
     aRv.ThrowTypeError(
         "Both or neither of desiredHeight and desiredWidth must be passed");
     return nullptr;
@@ -488,9 +484,9 @@ void ImageDecoder::CheckOutstandingDecodes() {
     // 10.2.2.2. If init.transfer contains more than one reference to the same
     // ArrayBuffer, then throw a DataCloneError DOMException.
     if (transferSet.Contains(buffer.Obj())) {
-      MOZ_LOG_FMT(
+      MOZ_LOG(
           gWebCodecsLog, LogLevel::Error,
-          "ImageDecoder Constructor -- duplicate transferred ArrayBuffer");
+          ("ImageDecoder Constructor -- duplicate transferred ArrayBuffer"));
       aRv.ThrowDataCloneError(
           "Transfer contains duplicate ArrayBuffer objects");
       return nullptr;
@@ -503,9 +499,9 @@ void ImageDecoder::CheckOutstandingDecodes() {
           return aData.IsEmpty();
         });
     if (empty) {
-      MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
-                  "ImageDecoder Constructor -- empty/detached transferred "
-                  "ArrayBuffer");
+      MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+              ("ImageDecoder Constructor -- empty/detached transferred "
+               "ArrayBuffer"));
       aRv.ThrowDataCloneError(
           "Transfer contains empty/detached ArrayBuffer objects");
       return nullptr;
@@ -519,8 +515,8 @@ void ImageDecoder::CheckOutstandingDecodes() {
   auto imageDecoder = MakeRefPtr<ImageDecoder>(std::move(global), aInit.mType);
   imageDecoder->Initialize(aGlobal, aInit, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
-    MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
-                "ImageDecoder Constructor -- initialize failed");
+    MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+            ("ImageDecoder Constructor -- initialize failed"));
     return nullptr;
   }
 
@@ -559,18 +555,17 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
                               const ImageDecoderInit& aInit, ErrorResult& aRv) {
   mShutdownWatcher = media::ShutdownWatcher::Create(this);
   if (!mShutdownWatcher) {
-    MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
-                "ImageDecoder {} Initialize -- create shutdown watcher failed",
-                fmt::ptr(this));
+    MOZ_LOG(
+        gWebCodecsLog, LogLevel::Error,
+        ("ImageDecoder %p Initialize -- create shutdown watcher failed", this));
     aRv.ThrowInvalidStateError("Could not create shutdown watcher");
     return;
   }
 
   mCompletePromise = Promise::Create(mParent, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
-    MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
-                "ImageDecoder {} Initialize -- create promise failed",
-                fmt::ptr(this));
+    MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+            ("ImageDecoder %p Initialize -- create promise failed", this));
     return;
   }
 
@@ -580,9 +575,8 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
   mTracks = MakeAndAddRef<ImageTrackList>(mParent, this);
   mTracks->Initialize(aRv);
   if (NS_WARN_IF(aRv.Failed())) {
-    MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
-                "ImageDecoder {} Initialize -- create tracks failed",
-                fmt::ptr(this));
+    MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+            ("ImageDecoder %p Initialize -- create tracks failed", this));
     return;
   }
 
@@ -597,21 +591,19 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
           mSourceBuffer->AdoptData(reinterpret_cast<char*>(aData.Elements()),
                                    aData.Length(), js_realloc, js_free);
       if (NS_WARN_IF(NS_FAILED(rv))) {
-        MOZ_LOG_FMT(
-            gWebCodecsLog, LogLevel::Error,
-            "ImageDecoder {} Initialize -- failed to adopt source buffer",
-            fmt::ptr(this));
+        MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+                ("ImageDecoder %p Initialize -- failed to adopt source buffer",
+                 this));
         aRv.ThrowRangeError("Could not allocate for encoded source buffer");
         return;
       }
     } else {
       nsresult rv = mSourceBuffer->ExpectLength(aData.Length());
       if (NS_WARN_IF(NS_FAILED(rv))) {
-        MOZ_LOG_FMT(
-            gWebCodecsLog, LogLevel::Error,
-            "ImageDecoder {} Initialize -- failed to pre-allocate source "
-            "buffer",
-            fmt::ptr(this));
+        MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+                ("ImageDecoder %p Initialize -- failed to pre-allocate source "
+                 "buffer",
+                 this));
         aRv.ThrowRangeError("Could not allocate for encoded source buffer");
         return;
       }
@@ -620,10 +612,9 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
       rv = mSourceBuffer->Append(
           reinterpret_cast<const char*>(aData.Elements()), aData.Length());
       if (NS_WARN_IF(NS_FAILED(rv))) {
-        MOZ_LOG_FMT(
-            gWebCodecsLog, LogLevel::Error,
-            "ImageDecoder {} Initialize -- failed to append source buffer",
-            fmt::ptr(this));
+        MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+                ("ImageDecoder %p Initialize -- failed to append source buffer",
+                 this));
         aRv.ThrowRangeError("Could not allocate for encoded source buffer");
         return;
       }
@@ -647,9 +638,9 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
     //              reader.
     mReadRequest = MakeAndAddRef<ImageDecoderReadRequest>(mSourceBuffer);
     if (NS_WARN_IF(!mReadRequest->Initialize(aGlobal, this, stream))) {
-      MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
-                  "ImageDecoder {} Initialize -- create read request failed",
-                  fmt::ptr(this));
+      MOZ_LOG(
+          gWebCodecsLog, LogLevel::Error,
+          ("ImageDecoder %p Initialize -- create read request failed", this));
       aRv.ThrowInvalidStateError("Could not create reader for ReadableStream");
       return;
     }
@@ -735,9 +726,9 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
 }
 
 void ImageDecoder::OnSourceBufferComplete(const MediaResult& aResult) {
-  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Debug,
-              "ImageDecoder {} OnSourceBufferComplete -- success {}",
-              fmt::ptr(this), NS_SUCCEEDED(aResult.Code()));
+  MOZ_LOG(gWebCodecsLog, LogLevel::Debug,
+          ("ImageDecoder %p OnSourceBufferComplete -- success %d", this,
+           NS_SUCCEEDED(aResult.Code())));
 
   MOZ_ASSERT(mSourceBuffer->IsComplete());
 
@@ -763,15 +754,15 @@ void ImageDecoder::OnCompleteSuccess() {
   // NOTE: ImageTrack frameCount can receive subsequent updates until complete
   // is true.
   if (!mSourceBuffer->IsComplete() || !mHasFrameCount) {
-    MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Debug,
-                "ImageDecoder {} OnCompleteSuccess -- not complete yet; "
-                "sourceBuffer {}, hasFrameCount {}",
-                fmt::ptr(this), mSourceBuffer->IsComplete(), mHasFrameCount);
+    MOZ_LOG(gWebCodecsLog, LogLevel::Debug,
+            ("ImageDecoder %p OnCompleteSuccess -- not complete yet; "
+             "sourceBuffer %d, hasFrameCount %d",
+             this, mSourceBuffer->IsComplete(), mHasFrameCount));
     return;
   }
 
-  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Debug,
-              "ImageDecoder {} OnCompleteSuccess -- complete", fmt::ptr(this));
+  MOZ_LOG(gWebCodecsLog, LogLevel::Debug,
+          ("ImageDecoder %p OnCompleteSuccess -- complete", this));
   mComplete = true;
   mCompletePromise->MaybeResolveWithUndefined();
 }
@@ -781,8 +772,8 @@ void ImageDecoder::OnCompleteFailed(const MediaResult& aResult) {
     return;
   }
 
-  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
-              "ImageDecoder {} OnCompleteFailed -- complete", fmt::ptr(this));
+  MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+          ("ImageDecoder %p OnCompleteFailed -- complete", this));
   mComplete = true;
   aResult.RejectTo(mCompletePromise);
 }
@@ -800,12 +791,12 @@ void ImageDecoder::OnMetadataSuccess(
 
   // 2. and 3. See ImageDecoder::OnMetadataFailed.
 
-  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Debug,
-              "ImageDecoder {} OnMetadataSuccess -- {}x{}, repetitions {}, "
-              "animated {}, frameCount {}, frameCountComplete {}",
-              fmt::ptr(this), aMetadata.mWidth, aMetadata.mHeight,
-              aMetadata.mRepetitions, aMetadata.mAnimated,
-              aMetadata.mFrameCount, aMetadata.mFrameCountComplete);
+  MOZ_LOG(gWebCodecsLog, LogLevel::Debug,
+          ("ImageDecoder %p OnMetadataSuccess -- %dx%d, repetitions %d, "
+           "animated %d, frameCount %u, frameCountComplete %d",
+           this, aMetadata.mWidth, aMetadata.mHeight, aMetadata.mRepetitions,
+           aMetadata.mAnimated, aMetadata.mFrameCount,
+           aMetadata.mFrameCountComplete));
 
   // 4. - 9., 11. See ImageTrackList::OnMetadataSuccess
   mTracks->OnMetadataSuccess(aMetadata);
@@ -820,9 +811,9 @@ void ImageDecoder::OnMetadataSuccess(
 }
 
 void ImageDecoder::OnMetadataFailed(const nsresult& aErr) {
-  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
-              "ImageDecoder {} OnMetadataFailed 0x{:08x}", fmt::ptr(this),
-              static_cast<uint32_t>(aErr));
+  MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+          ("ImageDecoder %p OnMetadataFailed 0x%08x", this,
+           static_cast<uint32_t>(aErr)));
 
   // 10.2.5. Establish Tracks
 
@@ -847,9 +838,9 @@ void ImageDecoder::RequestFrameCount(uint32_t aKnownFrameCount) {
     return;
   }
 
-  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Debug,
-              "ImageDecoder {} RequestFrameCount -- knownFrameCount {}",
-              fmt::ptr(this), aKnownFrameCount);
+  MOZ_LOG(gWebCodecsLog, LogLevel::Debug,
+          ("ImageDecoder %p RequestFrameCount -- knownFrameCount %u", this,
+           aKnownFrameCount));
   mDecoder->DecodeFrameCount(aKnownFrameCount)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
@@ -868,9 +859,9 @@ void ImageDecoder::RequestDecodeFrames(uint32_t aFramesToDecode) {
 
   mHasFramePending = true;
 
-  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Debug,
-              "ImageDecoder {} RequestDecodeFrames -- framesToDecode {}",
-              fmt::ptr(this), aFramesToDecode);
+  MOZ_LOG(gWebCodecsLog, LogLevel::Debug,
+          ("ImageDecoder %p RequestDecodeFrames -- framesToDecode %u", this,
+           aFramesToDecode));
 
   mDecoder->DecodeFrames(aFramesToDecode)
       ->Then(
@@ -889,10 +880,9 @@ void ImageDecoder::OnFrameCountSuccess(
     return;
   }
 
-  MOZ_LOG_FMT(
-      gWebCodecsLog, LogLevel::Debug,
-      "ImageDecoder {} OnFrameCountSuccess -- frameCount {}, finished {}",
-      fmt::ptr(this), aResult.mFrameCount, aResult.mFinished);
+  MOZ_LOG(gWebCodecsLog, LogLevel::Debug,
+          ("ImageDecoder %p OnFrameCountSuccess -- frameCount %u, finished %d",
+           this, aResult.mFrameCount, aResult.mFinished));
 
   // 10.2.5. Update Tracks.
 
@@ -913,8 +903,8 @@ void ImageDecoder::OnFrameCountSuccess(
 }
 
 void ImageDecoder::OnFrameCountFailed(const nsresult& aErr) {
-  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
-              "ImageDecoder {} OnFrameCountFailed", fmt::ptr(this));
+  MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+          ("ImageDecoder %p OnFrameCountFailed", this));
   Close(MediaResult(NS_ERROR_DOM_ENCODING_NOT_SUPPORTED_ERR,
                     "Frame count decoding failed"_ns));
 }
@@ -928,9 +918,8 @@ already_AddRefed<Promise> ImageDecoder::Decode(
   // 4. Let promise be a new Promise.
   RefPtr<Promise> promise = Promise::Create(mParent, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
-    MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
-                "ImageDecoder {} Decode -- create promise failed",
-                fmt::ptr(this));
+    MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+            ("ImageDecoder %p Decode -- create promise failed", this));
     return nullptr;
   }
 
@@ -938,8 +927,8 @@ already_AddRefed<Promise> ImageDecoder::Decode(
   // NotSupportedError if the User Agent does not support type. This would have
   // been set in Close by ProcessConfigureMessage.
   if (mTypeNotSupported) {
-    MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
-                "ImageDecoder {} Decode -- not supported", fmt::ptr(this));
+    MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+            ("ImageDecoder %p Decode -- not supported", this));
     promise->MaybeRejectWithNotSupportedError("Unsupported MIME type"_ns);
     return promise.forget();
   }
@@ -947,8 +936,8 @@ already_AddRefed<Promise> ImageDecoder::Decode(
   // 1. If [[closed]] is true, return a Promise rejected with an
   //    InvalidStateError DOMException.
   if (mClosed || !mTracks || !mDecoder) {
-    MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
-                "ImageDecoder {} Decode -- closed", fmt::ptr(this));
+    MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+            ("ImageDecoder %p Decode -- closed", this));
     promise->MaybeRejectWithInvalidStateError("Closed decoder"_ns);
     return promise.forget();
   }
@@ -960,8 +949,8 @@ already_AddRefed<Promise> ImageDecoder::Decode(
   // the tracks are established and we are supposed to wait.
   ImageTrack* track = mTracks->GetSelectedTrack();
   if (mTracksEstablished && !track) {
-    MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
-                "ImageDecoder {} Decode -- no track selected", fmt::ptr(this));
+    MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+            ("ImageDecoder %p Decode -- no track selected", this));
     promise->MaybeRejectWithInvalidStateError("No track selected"_ns);
     return promise.forget();
   }
@@ -1010,21 +999,21 @@ void ImageDecoder::OnDecodeFramesFailed(const nsresult& aErr) {
   MOZ_ASSERT(mHasFramePending);
   mHasFramePending = false;
 
-  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
-              "ImageDecoder {} OnDecodeFramesFailed", fmt::ptr(this));
+  MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+          ("ImageDecoder %p OnDecodeFramesFailed", this));
 
   AutoTArray<OutstandingDecode, 1> rejected = std::move(mOutstandingDecodes);
   for (const auto& i : rejected) {
-    MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error,
-                "ImageDecoder {} OnDecodeFramesFailed -- reject index {}",
-                fmt::ptr(this), i.mFrameIndex);
+    MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+            ("ImageDecoder %p OnDecodeFramesFailed -- reject index %u", this,
+             i.mFrameIndex));
     i.mPromise->MaybeRejectWithRangeError("No more frames available"_ns);
   }
 }
 
 void ImageDecoder::ResetWithoutRef(const MediaResult& aResult) {
-  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Debug, "ImageDecoder {} Reset '{}'",
-              fmt::ptr(this), aResult.Message().get());
+  MOZ_LOG(gWebCodecsLog, LogLevel::Debug,
+          ("ImageDecoder %p Reset '%s'", this, aResult.Message().get()));
   // 10.2.5. Reset ImageDecoder (with exception)
 
   // 1. Signal [[codec implementation]] to abort any active decoding operation.
@@ -1037,9 +1026,8 @@ void ImageDecoder::ResetWithoutRef(const MediaResult& aResult) {
   // 2.3. Remove decodePromise from [[pending decode promises]].
   AutoTArray<OutstandingDecode, 1> rejected = std::move(mOutstandingDecodes);
   for (const auto& i : rejected) {
-    MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Debug,
-                "ImageDecoder {} Reset -- reject index {}", fmt::ptr(this),
-                i.mFrameIndex);
+    MOZ_LOG(gWebCodecsLog, LogLevel::Debug,
+            ("ImageDecoder %p Reset -- reject index %u", this, i.mFrameIndex));
     aResult.RejectTo(i.mPromise);
   }
 }
@@ -1054,8 +1042,8 @@ void ImageDecoder::CloseWithoutRef(const MediaResult& aResult) {
     return;
   }
 
-  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Debug, "ImageDecoder {} Close '{}'",
-              fmt::ptr(this), aResult.Message().get());
+  MOZ_LOG(gWebCodecsLog, LogLevel::Debug,
+          ("ImageDecoder %p Close '%s'", this, aResult.Message().get()));
 
   // 10.2.5. Algorithms - Close ImageDecoder (with exception)
   mClosed = true;

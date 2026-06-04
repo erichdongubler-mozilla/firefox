@@ -13,9 +13,9 @@
 
 // avoid redefined macro in unified build
 #undef LOG
-#define LOG(msg, ...)                                                     \
-  MOZ_LOG_FMT(gMediaControlLog, LogLevel::Debug, "MediaSession={}, " msg, \
-              fmt::ptr(this), ##__VA_ARGS__)
+#define LOG(msg, ...)                        \
+  MOZ_LOG(gMediaControlLog, LogLevel::Debug, \
+          ("MediaSession=%p, " msg, this, ##__VA_ARGS__))
 
 namespace mozilla::dom {
 
@@ -97,7 +97,7 @@ void MediaSession::Shutdown() {
 
 void MediaSession::NotifyOwnerDocumentActivityChanged() {
   const bool isDocActive = mDoc->IsCurrentActiveDocument();
-  LOG("Document activity changed, isActive={}", isDocActive);
+  LOG("Document activity changed, isActive=%d", isDocActive);
   if (isDocActive) {
     SetMediaSessionDocStatus(SessionDocStatus::eActive);
   } else {
@@ -269,8 +269,8 @@ bool MediaSession::IsActive() const {
   if (!activeSessionContextId) {
     return false;
   }
-  LOG("session context Id={}, active session context Id={}", currentBC->Id(),
-      *activeSessionContextId);
+  LOG("session context Id=%" PRIu64 ", active session context Id=%" PRIu64,
+      currentBC->Id(), *activeSessionContextId);
   return *activeSessionContextId == currentBC->Id();
 }
 

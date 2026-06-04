@@ -17,8 +17,7 @@ WidevineVideoFrame::WidevineVideoFrame()
       mBuffer(nullptr),
       mTimestamp(0) {
   MOZ_ASSERT(mSize.height == 0 && mSize.width == 0, "Size should be zeroed");
-  GMP_LOG_DEBUG("WidevineVideoFrame::WidevineVideoFrame() this={}",
-                fmt::ptr(this));
+  GMP_LOG_DEBUG("WidevineVideoFrame::WidevineVideoFrame() this=%p", this);
   memset(mPlaneOffsets, 0, sizeof(mPlaneOffsets));
   memset(mPlaneStrides, 0, sizeof(mPlaneStrides));
 }
@@ -30,8 +29,8 @@ WidevineVideoFrame::WidevineVideoFrame(WidevineVideoFrame&& aOther)
       mTimestamp(aOther.mTimestamp) {
   GMP_LOG_DEBUG(
       "WidevineVideoFrame::WidevineVideoFrame(WidevineVideoFrame&&) "
-      "this={}, other={}",
-      fmt::ptr(this), fmt::ptr(&aOther));
+      "this=%p, other=%p",
+      this, &aOther);
   memcpy(mPlaneOffsets, aOther.mPlaneOffsets, sizeof(mPlaneOffsets));
   memcpy(mPlaneStrides, aOther.mPlaneStrides, sizeof(mPlaneStrides));
   aOther.mBuffer = nullptr;
@@ -45,16 +44,15 @@ WidevineVideoFrame::~WidevineVideoFrame() {
 }
 
 void WidevineVideoFrame::SetFormat(cdm::VideoFormat aFormat) {
-  GMP_LOG_DEBUG("WidevineVideoFrame::SetFormat({}) this={}",
-                static_cast<int>(aFormat), fmt::ptr(this));
+  GMP_LOG_DEBUG("WidevineVideoFrame::SetFormat(%d) this=%p", aFormat, this);
   mFormat = aFormat;
 }
 
 cdm::VideoFormat WidevineVideoFrame::Format() const { return mFormat; }
 
 void WidevineVideoFrame::SetSize(cdm::Size aSize) {
-  GMP_LOG_DEBUG("WidevineVideoFrame::SetSize({},{}) this={}", aSize.width,
-                aSize.height, fmt::ptr(this));
+  GMP_LOG_DEBUG("WidevineVideoFrame::SetSize(%d,%d) this=%p", aSize.width,
+                aSize.height, this);
   mSize.width = aSize.width;
   mSize.height = aSize.height;
 }
@@ -62,8 +60,8 @@ void WidevineVideoFrame::SetSize(cdm::Size aSize) {
 cdm::Size WidevineVideoFrame::Size() const { return mSize; }
 
 void WidevineVideoFrame::SetFrameBuffer(cdm::Buffer* aFrameBuffer) {
-  GMP_LOG_DEBUG("WidevineVideoFrame::SetFrameBuffer({}) this={}",
-                fmt::ptr(aFrameBuffer), fmt::ptr(this));
+  GMP_LOG_DEBUG("WidevineVideoFrame::SetFrameBuffer(%p) this=%p", aFrameBuffer,
+                this);
   MOZ_ASSERT(!mBuffer);
   mBuffer = aFrameBuffer;
 }
@@ -72,8 +70,8 @@ cdm::Buffer* WidevineVideoFrame::FrameBuffer() { return mBuffer; }
 
 void WidevineVideoFrame::SetPlaneOffset(cdm::VideoPlane aPlane,
                                         uint32_t aOffset) {
-  GMP_LOG_DEBUG("WidevineVideoFrame::SetPlaneOffset({}, {}) this={}", aPlane,
-                aOffset, fmt::ptr(this));
+  GMP_LOG_DEBUG("WidevineVideoFrame::SetPlaneOffset(%d, %" PRIu32 ") this=%p",
+                aPlane, aOffset, this);
   mPlaneOffsets[aPlane] = aOffset;
 }
 
@@ -82,8 +80,8 @@ uint32_t WidevineVideoFrame::PlaneOffset(cdm::VideoPlane aPlane) {
 }
 
 void WidevineVideoFrame::SetStride(cdm::VideoPlane aPlane, uint32_t aStride) {
-  GMP_LOG_DEBUG("WidevineVideoFrame::SetStride({}, {}) this={}", aPlane,
-                aStride, fmt::ptr(this));
+  GMP_LOG_DEBUG("WidevineVideoFrame::SetStride(%d, %" PRIu32 ") this=%p",
+                aPlane, aStride, this);
   mPlaneStrides[aPlane] = aStride;
 }
 
@@ -92,8 +90,8 @@ uint32_t WidevineVideoFrame::Stride(cdm::VideoPlane aPlane) {
 }
 
 void WidevineVideoFrame::SetTimestamp(int64_t timestamp) {
-  GMP_LOG_DEBUG("WidevineVideoFrame::SetTimestamp({}) this={}", timestamp,
-                fmt::ptr(this));
+  GMP_LOG_DEBUG("WidevineVideoFrame::SetTimestamp(%" PRId64 ") this=%p",
+                timestamp, this);
   mTimestamp = timestamp;
 }
 
