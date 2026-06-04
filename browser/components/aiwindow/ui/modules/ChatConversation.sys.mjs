@@ -63,7 +63,12 @@ export function _setLoadPromptForTesting(fn) {
       lazy,
       "loadPrompt"
     );
-    lazy.loadPrompt = fn;
+    lazy.loadPrompt = async (...args) => {
+      const result = await fn(...args);
+      return typeof result === "string"
+        ? { prompt: result, version: "" }
+        : result;
+    };
   } else if (_savedLoadPromptDescriptor) {
     // eslint-disable-next-line mozilla/valid-lazy
     Object.defineProperty(lazy, "loadPrompt", _savedLoadPromptDescriptor);
@@ -404,6 +409,15 @@ export class ChatConversation extends EventEmitter {
       .at(-1);
   }
 
+  get chatPromptVersion() {
+    const sysMsg = this.messages.find(
+      message =>
+        message.role === MESSAGE_ROLE.SYSTEM &&
+        message.content?.type === SYSTEM_PROMPT_TYPE.TEXT
+    );
+    return sysMsg?.content?.version ?? "";
+  }
+
   /**
    * Returns a filtered messages array consisting only of the messages
    * that are meant to be rendered as the chat conversation.
@@ -648,10 +662,11 @@ export class ChatConversation extends EventEmitter {
    *
    * @param {string} type - The assistant message type: text|injected_memories|injected_real_time_info
    * @param {string} contentBody - The system message object to be saved as JSON
+   * @param {string} [version] - Prompt version for SYSTEM_PROMPT_TYPE.TEXT messages
    * @returns {ChatMessage} The newly created system message
    */
-  addSystemMessage(type, contentBody) {
-    const content = { type, body: contentBody };
+  addSystemMessage(type, contentBody, version) {
+    const content = { type, body: contentBody, ...(version && { version }) };
 
     return this.addMessage(
       MESSAGE_ROLE.SYSTEM,
@@ -666,23 +681,30 @@ export class ChatConversation extends EventEmitter {
    *
    * @param {object} [opts]
    * @param {string} [opts.modelChoiceIdOverride] - Override the user's model-choice pref
-   * @returns {Promise<string>} The rendered system prompt
+   * @returns {Promise<{body: string, version: string}>} The rendered system prompt and its version
    */
   async #loadSystemPrompt(opts = {}) {
-    const _systemPrompt = await lazy.loadPrompt(MODEL_FEATURES.CHAT, opts);
+    const { prompt: _systemPrompt, version } = await lazy.loadPrompt(
+      MODEL_FEATURES.CHAT,
+      opts
+    );
+
     let tableInstructions;
     if (Services.prefs.getBoolPref(TABLES_PREF, false)) {
-      tableInstructions = await lazy.loadPrompt(
+      ({ prompt: tableInstructions } = await lazy.loadPrompt(
         MODEL_FEATURES.ENABLE_TABLE_INSTRUCTIONS,
         opts
-      );
+      ));
     } else {
-      tableInstructions = await lazy.loadPrompt(
+      ({ prompt: tableInstructions } = await lazy.loadPrompt(
         MODEL_FEATURES.DISABLE_TABLE_INSTRUCTIONS,
         opts
-      );
+      ));
     }
-    return renderPrompt(_systemPrompt, { tableInstructions });
+    return {
+      body: renderPrompt(_systemPrompt, { tableInstructions }),
+      version,
+    };
   }
 
   /**
@@ -701,9 +723,11 @@ export class ChatConversation extends EventEmitter {
       return;
     }
 
-    systemMessage.content.body = await this.#loadSystemPrompt({
+    const { body, version } = await this.#loadSystemPrompt({
       modelChoiceIdOverride,
     });
+    systemMessage.content.body = body;
+    systemMessage.content.version = version;
   }
 
   /**
@@ -727,8 +751,8 @@ export class ChatConversation extends EventEmitter {
     this.removeSystemTimeMemoriesMessages();
 
     if (!this.messages.length) {
-      const systemPrompt = await this.#loadSystemPrompt();
-      this.addSystemMessage(SYSTEM_PROMPT_TYPE.TEXT, systemPrompt);
+      const { body, version } = await this.#loadSystemPrompt();
+      this.addSystemMessage(SYSTEM_PROMPT_TYPE.TEXT, body, version);
     }
 
     // userContext starts empty so the user message can be added and dispatched
@@ -866,12 +890,12 @@ export class ChatConversation extends EventEmitter {
   } = {}) {
     const realTimeInfoMapping = await getRealTimeMapping(contextMentions);
     if (realTimeInfoMapping) {
-      let realTimePromptRaw = await lazy.loadPrompt(
+      let { prompt: realTimePromptRaw } = await lazy.loadPrompt(
         MODEL_FEATURES.REAL_TIME_CONTEXT_DATE
       );
       if (realTimeInfoMapping.hasTabInfo) {
         securityProperties.setPrivateData();
-        const realTimeTabPromptRaw = await lazy.loadPrompt(
+        const { prompt: realTimeTabPromptRaw } = await lazy.loadPrompt(
           MODEL_FEATURES.REAL_TIME_CONTEXT_TAB
         );
         realTimePromptRaw += realTimeTabPromptRaw;
@@ -890,7 +914,7 @@ export class ChatConversation extends EventEmitter {
           )
           .join("\n");
         realTimeInfoMapping.contextUrls = contextUrls;
-        const contextMentionsPrompt = await lazy.loadPrompt(
+        const { prompt: contextMentionsPrompt } = await lazy.loadPrompt(
           MODEL_FEATURES.REAL_TIME_CONTEXT_MENTIONS
         );
         realTimePromptRaw += contextMentionsPrompt;

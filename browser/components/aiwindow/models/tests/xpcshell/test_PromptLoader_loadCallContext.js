@@ -149,11 +149,11 @@ add_task(async function test_loadPrompt_returns_prompt_text() {
       get: sb.stub().resolves(fakeRecords),
     });
 
-    const prompt = await loadPrompt(MODEL_FEATURES.CHAT);
+    const result = await loadPrompt(MODEL_FEATURES.CHAT);
 
-    Assert.equal(
-      prompt,
-      "You are a helpful assistant.",
+    Assert.deepEqual(
+      result,
+      { prompt: "You are a helpful assistant.", version: "5.0" },
       "loadPrompt should return the prompts field from the record"
     );
   } finally {
@@ -207,7 +207,7 @@ add_task(async function test_loadPrompt_honors_custom_prompt_pref() {
       JSON.stringify({ [MODEL_FEATURES.CHAT]: "OVERRIDE" })
     );
 
-    const prompt = await loadPrompt(MODEL_FEATURES.CHAT);
+    const { prompt } = await loadPrompt(MODEL_FEATURES.CHAT);
 
     Assert.equal(
       prompt,
