@@ -2656,14 +2656,20 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
 #ifdef ENABLE_WASM_JSPI
     if (JSObject* suspendingObject = MaybeUnwrapSuspendingObject(f)) {
       // Compile suspending function Wasm wrapper.
-      const FuncType& funcType = codeMeta().getFuncType(i);
+      uint32_t funcTypeIndex = codeMeta().funcs[i].typeIndex;
       RootedObject wrapped(cx, suspendingObject);
-      RootedFunction wrapper(cx, WasmSuspendingFunctionCreate(
-                                     cx, wrapped, funcType, codeMeta().types));
+      RootedFunction wrapper(
+          cx, WasmSuspendingFunctionCreate(cx, wrapped, funcTypeIndex,
+                                           codeMeta().types));
       if (!wrapper) {
         return false;
       }
-      MOZ_ASSERT(wrapper->isWasm());
+      // The wrapper must expose exactly the import's declared type so that
+      // ref.test/ref.cast/call_indirect against that type behave correctly.
+      MOZ_RELEASE_ASSERT(wrapper->isWasm());
+      MOZ_RELEASE_ASSERT(&wrapper->wasmInstance().codeMeta().getFuncTypeDef(
+                             wrapper->wasmFuncIndex()) ==
+                         &codeMeta().getFuncTypeDef(i));
       f = wrapper;
     }
 #endif

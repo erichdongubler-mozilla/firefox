@@ -214,7 +214,7 @@ class SuspendingFunctionModuleFactory {
  public:
   SharedModule build(JSContext* cx, HandleObject func,
                      const SharedTypeContext& foreignTypes,
-                     ValTypeVector&& params, ValTypeVector&& results) {
+                     uint32_t funcTypeIndex) {
     FeatureOptions options;
     // Builtin modules can use special opcodes and get stack switching enabled.
     options.isBuiltinModule = true;
@@ -254,6 +254,18 @@ class SuspendingFunctionModuleFactory {
     // module's types, then fail and treat this as an OOM. This is extremely
     // unlikely.
     if (codeMeta->types->length() > MaxTypes - TypeIdx::Count) {
+      ReportOutOfMemory(cx);
+      return nullptr;
+    }
+
+    // Pull the params and results from the import's declared type.
+    const FuncType& importFuncType =
+        codeMeta->types->type(funcTypeIndex).funcType();
+    ValTypeVector params, results;
+    if (!params.append(importFuncType.args().begin(),
+                       importFuncType.args().end()) ||
+        !results.append(importFuncType.results().begin(),
+                        importFuncType.results().end())) {
       ReportOutOfMemory(cx);
       return nullptr;
     }
@@ -311,10 +323,15 @@ class SuspendingFunctionModuleFactory {
     codeMeta->numFuncImports = codeMeta->funcs.length();
 
     // Func 1: $suspending.exported (defined, exported) - params -> results
+    //
+    // Give the wrapper the import's actual declared type so that it has the
+    // correct identity, subtyping, and final attributes.
     MOZ_ASSERT(codeMeta->funcs.length() == ExportedFnIndex);
-    if (!moduleMeta->addDefinedFunc(std::move(params), std::move(results),
-                                    /*declareForRef = */ true,
-                                    mozilla::Some(CacheableName()))) {
+    MOZ_ASSERT(funcTypeIndex < baseTypeIndex_);
+    MOZ_ASSERT((*codeMeta->types)[funcTypeIndex].isFuncType());
+    if (!moduleMeta->addDefinedFuncWithType(funcTypeIndex,
+                                            /*declareForRef = */ true,
+                                            mozilla::Some(CacheableName()))) {
       return nullptr;
     }
 
@@ -354,17 +371,10 @@ class SuspendingFunctionModuleFactory {
 };
 
 JSFunction* WasmSuspendingFunctionCreate(JSContext* cx, HandleObject func,
-                                         const FuncType& type,
+                                         uint32_t funcTypeIndex,
                                          const SharedTypeContext& typeContext) {
   if (!JSPromiseIntegrationAvailable(cx)) {
     JS_ReportErrorASCII(cx, "JS-PI is not enabled");
-    return nullptr;
-  }
-
-  ValTypeVector params, results;
-  if (!params.append(type.args().begin(), type.args().end()) ||
-      !results.append(type.results().begin(), type.results().end())) {
-    ReportOutOfMemory(cx);
     return nullptr;
   }
 
@@ -372,8 +382,8 @@ JSFunction* WasmSuspendingFunctionCreate(JSContext* cx, HandleObject func,
              !IsCrossCompartmentWrapper(func));
 
   SuspendingFunctionModuleFactory moduleFactory;
-  SharedModule module = moduleFactory.build(
-      cx, func, typeContext, std::move(params), std::move(results));
+  SharedModule module =
+      moduleFactory.build(cx, func, typeContext, funcTypeIndex);
   if (!module) {
     return nullptr;
   }
