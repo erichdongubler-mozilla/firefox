@@ -22,6 +22,12 @@ skip-if = [
   "os == 'win'", # bug 1495580
 ]
 
+["browser_bug2044829.js"]
+support-files = ["helper_bug2043349_browser.html"]
+skip-if = [
+  "os == 'win'", # bug 1495580
+]
+
 ["browser_test_background_tab_load_scroll.js"]
 support-files = ["helper_background_tab_load_scroll.html"]
 
