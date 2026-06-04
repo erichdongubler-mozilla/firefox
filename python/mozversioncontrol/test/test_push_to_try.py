@@ -155,7 +155,7 @@ def test_push_to_try(repo, monkeypatch):
                 "--quiet",
                 "log",
                 "--no-graph",
-                "-r",
+                "--revisions",
                 "heads(trunk() | (remote_bookmarks() & ancestors(@)))..@ ~ description(exact:'')",
                 "--template",
                 "'  ' ++ description.first_line() ++ '\n'",
@@ -213,7 +213,7 @@ def test_push_to_try(repo, monkeypatch):
                 "log",
                 "--no-graph",
                 "-n1",
-                "-r",
+                "--revisions",
                 "@",
                 "--template",
                 "change_id.short()",
@@ -302,7 +302,7 @@ def test_push_to_git_try_creates_bookmark(repo, mocker):
     vcs.push_to_try("msg", remote=remote)
 
     mock_run.assert_called_once_with(
-        "bookmark", "create", "push-abc123", "-r", vcs.HEAD_REVSET
+        "bookmark", "create", "push-abc123", "--revision", vcs.HEAD_REVSET
     )
     mock_push.assert_called_once_with(
         remote, ref="fakehead", dest_branch="user/test/push-abc123", force=True
@@ -330,7 +330,7 @@ def test_push_to_git_try_bookmark_persists(repo, mocker):
         "log",
         "--no-graph",
         "-n1",
-        "-r",
+        "--revisions",
         "@",
         "--template",
         'local_bookmarks.join("\n")',

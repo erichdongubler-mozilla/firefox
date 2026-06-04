@@ -97,7 +97,13 @@ class JujutsuRepository(Repository):
 
     def _resolve_to_change(self, revset: str) -> Optional[str]:
         change_id = self._run_read_only(
-            "log", "--no-graph", "-n1", "-r", revset, "--template", "change_id.short()"
+            "log",
+            "--no-graph",
+            "-n1",
+            "--revisions",
+            revset,
+            "--template",
+            "change_id.short()",
         ).rstrip()
         return change_id if change_id != "" else None
 
@@ -130,7 +136,12 @@ class JujutsuRepository(Repository):
 
     def _resolve_to_commit(self, revset):
         commit = self._run_read_only(
-            "log", "--no-graph", "-r", f"latest({revset})", "--template", "commit_id"
+            "log",
+            "--no-graph",
+            "--revisions",
+            f"latest({revset})",
+            "--template",
+            "commit_id",
         ).rstrip()
         return commit
 
@@ -146,7 +157,7 @@ class JujutsuRepository(Repository):
             "log",
             "--no-graph",
             "-n1",
-            "-r",
+            "--revisions",
             self.HEAD_REVSET,
             "--template",
             'local_bookmarks.join("\n")',
@@ -204,7 +215,7 @@ class JujutsuRepository(Repository):
 
         out = self._run(
             "log",
-            "-r",
+            "--revisions",
             rev,
             "--no-graph",
             "--template",
@@ -264,7 +275,7 @@ class JujutsuRepository(Repository):
     def diff_stream(self, rev=None, extensions=(), exclude_file=None, context=8):
         if rev is None:
             rev = self.HEAD_REVSET
-        args = ["diff", "-r", rev, "--git"]
+        args = ["diff", "--revisions", rev, "--git"]
 
         # File patterns to include
         patterns = [f'glob:"**/*{dot_extension}"' for dot_extension in extensions]
@@ -395,12 +406,12 @@ class JujutsuRepository(Repository):
                 "log",
                 "--no-graph",
                 "-n1",
-                "-r",
+                "--revisions",
                 self.HEAD_REVSET,
                 "--template",
                 template,
             ).strip()
-            self._run("bookmark", "create", dest_branch, "-r", self.HEAD_REVSET)
+            self._run("bookmark", "create", dest_branch, "--revision", self.HEAD_REVSET)
 
         return dest_branch
 
@@ -459,7 +470,7 @@ class JujutsuRepository(Repository):
         cmd = [
             "log",
             "--no-graph",
-            "-r",
+            "--revisions",
             f"(::{head} & mutable()) ~ empty()",
             "--template",
             'commit_id ++ "\n"',
@@ -539,7 +550,7 @@ class JujutsuRepository(Repository):
             self._run(
                 "log",
                 "--no-graph",
-                "-r",
+                "--revisions",
                 "heads(trunk() | (remote_bookmarks() & ancestors(@)))..@ ~ description(exact:'')",
                 "--template",
                 "'  ' ++ description.first_line() ++ '\n'",
