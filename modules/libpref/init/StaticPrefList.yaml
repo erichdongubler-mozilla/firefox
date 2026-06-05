@@ -106,6 +106,11 @@
 #   changed at runtime.
 #   This option is only valid for javascript.options.* prefs.
 #
+# - `fuzzing_safe` indicates whether the SpiderMonkey pref is safe to toggle
+#   while fuzzing. Defaults to `true`. When set to `false`, the JS shell ignores
+#   attempts to change the pref while running with --fuzzing-safe.
+#   This option is only valid for prefs with `set_spidermonkey_pref`.
+#
 # The getter function's base name is the same as the pref's name, but with
 # '.' or '-' chars converted to '_', to make a valid identifier. For example,
 # the getter for `foo.bar_baz` is `foo_bar_baz()`. This is ugly but clear,
@@ -9323,6 +9328,14 @@
   value: 1
   mirror: always
   set_spidermonkey_pref: always
+
+# No-op pref for testing fuzzing-safe handling of the SpiderMonkey pref system.
+- name: javascript.options.tests.fuzzing-unsafe-pref
+  type: bool
+  value: false
+  mirror: always
+  set_spidermonkey_pref: always
+  fuzzing_safe: false
 
 # The default amount of time to wait from the user being idle to starting a
 # shrinking GC. Measured in milliseconds.

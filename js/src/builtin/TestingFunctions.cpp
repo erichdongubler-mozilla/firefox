@@ -9369,9 +9369,9 @@ static bool GetAllPrefNames(JSContext* cx, unsigned argc, Value* vp) {
     return values.append(StringValue(s));
   };
 
-#define ADD_NAME(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF) \
-  if (!addPref(NAME)) {                                         \
-    return false;                                               \
+#define ADD_NAME(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF, FUZZING_SAFE) \
+  if (!addPref(NAME)) {                                                       \
+    return false;                                                             \
   }
   FOR_EACH_JS_PREF(ADD_NAME)
 #undef ADD_NAME
@@ -9412,7 +9412,8 @@ static bool GetPrefValue(JSContext* cx, unsigned argc, Value* vp) {
   };
 
   // Search for a matching pref and return its value.
-#define CHECK_PREF(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF) \
+#define CHECK_PREF(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF, \
+                   FUZZING_SAFE)                                  \
   if (StringEqualsLiteral(name, NAME)) {                          \
     setReturnValue(JS::Prefs::CPP_NAME());                        \
     return true;                                                  \
