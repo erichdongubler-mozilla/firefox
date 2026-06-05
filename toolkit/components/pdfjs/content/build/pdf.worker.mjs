@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.271
- * pdfjsBuild = 091f459d2
+ * pdfjsVersion = 6.0.243
+ * pdfjsBuild = b43ef1c74
  */
 
 ;// ./src/shared/util.js
@@ -2805,10 +2805,19 @@ class Stream extends BaseStream {
     return this.bytes[this.pos++];
   }
   getBytes(length) {
+    const bytes = this.bytes;
     const pos = this.pos;
-    const endPos = !length ? this.end : Math.min(pos + length, this.end);
-    this.pos = endPos;
-    return this.bytes.subarray(pos, endPos);
+    const strEnd = this.end;
+    if (!length) {
+      this.pos = strEnd;
+      return bytes.subarray(pos, strEnd);
+    }
+    let end = pos + length;
+    if (end > strEnd) {
+      end = strEnd;
+    }
+    this.pos = end;
+    return bytes.subarray(pos, end);
   }
   getByteRange(begin, end) {
     if (begin < 0) {
@@ -2958,13 +2967,25 @@ class ChunkedStream extends Stream {
     return this.bytes[this.pos++];
   }
   getBytes(length) {
+    const bytes = this.bytes;
     const pos = this.pos;
-    const endPos = !length ? this.end : Math.min(pos + length, this.end);
-    if (endPos > this.progressiveDataLength) {
-      this.ensureRange(pos, endPos);
+    const strEnd = this.end;
+    if (!length) {
+      if (strEnd > this.progressiveDataLength) {
+        this.ensureRange(pos, strEnd);
+      }
+      this.pos = strEnd;
+      return bytes.subarray(pos, strEnd);
     }
-    this.pos = endPos;
-    return this.bytes.subarray(pos, endPos);
+    let end = pos + length;
+    if (end > strEnd) {
+      end = strEnd;
+    }
+    if (end > this.progressiveDataLength) {
+      this.ensureRange(pos, end);
+    }
+    this.pos = end;
+    return bytes.subarray(pos, end);
   }
   getByteRange(begin, end) {
     if (begin < 0) {
@@ -34249,8 +34270,7 @@ class PartialEvaluator {
         smask,
         isolated: false,
         knockout: false,
-        needsIsolation: false,
-        isGray: false
+        needsIsolation: false
       };
       const groupSubtype = group.get("S");
       let colorSpace = null;
@@ -34262,7 +34282,6 @@ class PartialEvaluator {
           colorSpace = cs instanceof ColorSpace ? cs : await this._handleColorSpace(cs);
         }
       }
-      groupOptions.isGray = colorSpace?.numComps === 1;
       if (smask?.backdrop) {
         colorSpace ||= ColorSpaceUtils.rgb;
         smask.backdrop = colorSpace.getRgbHex(smask.backdrop, 0);
@@ -38527,7 +38546,7 @@ class NameOrNumberTree {
         continue;
       }
       for (let i = 0, ii = entries.length; i < ii; i += 2) {
-        map.set(isRaw ? entries[i] : xref.fetchIfRef(entries[i]), isRaw ? entries[i + 1] : xref.fetchIfRef(entries[i + 1]));
+        map.set(xref.fetchIfRef(entries[i]), isRaw ? entries[i + 1] : xref.fetchIfRef(entries[i + 1]));
       }
     }
     return map;
@@ -38630,7 +38649,8 @@ function pickPlatformItem(dict) {
   return null;
 }
 class FileSpec {
-  constructor(root) {
+  #contentAvailable = false;
+  constructor(root, skipContent = false) {
     if (!(root instanceof Dict)) {
       return;
     }
@@ -38641,6 +38661,13 @@ class FileSpec {
     if (root.has("RF")) {
       warn("Related file specifications are not supported");
     }
+    if (!skipContent) {
+      if (root.has("EF")) {
+        this.#contentAvailable = true;
+      } else {
+        warn("Non-embedded file specifications are not supported");
+      }
+    }
   }
   get filename() {
     const item = pickPlatformItem(this.root);
@@ -38648,6 +38675,17 @@ class FileSpec {
       return stringToPDFString(item, true).replaceAll("\\\\", "\\").replaceAll("\\/", "/").replaceAll("\\", "/");
     }
     return "";
+  }
+  get content() {
+    if (!this.#contentAvailable) {
+      return null;
+    }
+    const ef = pickPlatformItem(this.root?.get("EF"));
+    if (ef instanceof BaseStream) {
+      return ef.getBytes();
+    }
+    warn("Embedded file specification points to non-existing/invalid content");
+    return null;
   }
   get description() {
     const desc = this.root?.get("Desc");
@@ -38659,28 +38697,15 @@ class FileSpec {
   get serializable() {
     const {
       filename,
+      content,
       description
     } = this;
     return {
       rawFilename: filename,
       filename: stripPath(filename) || "unnamed",
+      content,
       description
     };
-  }
-  static readContent(dict) {
-    if (!(dict instanceof Dict)) {
-      return null;
-    }
-    const ef = pickPlatformItem(dict.get("EF"));
-    if (!(ef instanceof BaseStream)) {
-      warn("Embedded file specification points to non-existing/invalid content");
-      return null;
-    }
-    const encrypt = dict.xref?.encrypt;
-    if (encrypt?.encryptionKey === null) {
-      throw new PasswordException("No password given", PasswordResponses.NEED_PASSWORD);
-    }
-    return ef.getBytes();
   }
 }
 
@@ -40081,9 +40106,7 @@ function fetchRemoteDest(action) {
 }
 class Catalog {
   #actualNumPages = null;
-  #attachmentIdByRef = null;
   #catDict = null;
-  attachmentDictById = new Map();
   builtInCMapCache = new Map();
   fontCache = new RefSetCache();
   globalColorSpaceCache = new GlobalColorSpaceCache();
@@ -40102,19 +40125,6 @@ class Catalog {
       throw new FormatError("Catalog object is not a dictionary.");
     }
     this.toplevelPagesDict;
-  }
-  get attachmentIdByRef() {
-    if (this.#attachmentIdByRef) {
-      return this.#attachmentIdByRef;
-    }
-    const attachmentIdByRef = new RefSetCache();
-    for (const [name, ref] of this.rawEmbeddedFiles || []) {
-      if (!(ref instanceof Ref)) {
-        continue;
-      }
-      attachmentIdByRef.put(ref, stringToPDFString(name, true));
-    }
-    return this.#attachmentIdByRef = attachmentIdByRef;
   }
   cloneDict() {
     return this.#catDict.clone();
@@ -40321,7 +40331,6 @@ class Catalog {
       }
       const outlineItem = {
         action: data.action,
-        attachmentId: data.attachmentId,
         attachment: data.attachment,
         dest: data.dest,
         url: data.url,
@@ -40941,22 +40950,6 @@ class Catalog {
     }
     return shadow(this, "attachments", attachments);
   }
-  attachmentContent(id) {
-    const dict = this.attachmentDictById.get(id);
-    if (dict) {
-      return FileSpec.readContent(dict);
-    }
-    const obj = this.#catDict.get("Names");
-    if (obj instanceof Dict && obj.has("EmbeddedFiles")) {
-      const nameTree = new NameTree(obj.getRaw("EmbeddedFiles"), this.xref);
-      for (const [key, value] of nameTree.getAll()) {
-        if (stringToPDFString(key, true) === id) {
-          return FileSpec.readContent(value);
-        }
-      }
-    }
-    return null;
-  }
   get rawEmbeddedFiles() {
     const obj = this.#catDict.get("Names");
     if (!(obj instanceof Dict) || !obj.has("EmbeddedFiles")) {
@@ -41029,9 +41022,6 @@ class Catalog {
   }
   async cleanup(manuallyTriggered = false) {
     clearGlobalCaches();
-    this.#attachmentIdByRef?.clear();
-    this.#attachmentIdByRef = null;
-    this.attachmentDictById.clear();
     this.globalColorSpaceCache.clear();
     this.globalImageCache.clear(manuallyTriggered);
     this.pageKidsCountCache.clear();
@@ -41466,7 +41456,10 @@ class Catalog {
         case "GoToR":
           const urlDict = action.get("F");
           if (urlDict instanceof Dict) {
-            url = new FileSpec(urlDict).filename;
+            const fs = new FileSpec(urlDict, true);
+            ({
+              rawFilename: url
+            } = fs.serializable);
           } else if (typeof urlDict === "string") {
             url = urlDict;
           } else {
@@ -41483,17 +41476,16 @@ class Catalog {
           break;
         case "GoToE":
           const target = action.get("T");
-          let id = null;
-          if (target instanceof Dict) {
+          let attachment;
+          if (docAttachments && target instanceof Dict) {
             const relationship = target.get("R");
             const name = target.get("N");
             if (isName(relationship, "C") && typeof name === "string") {
-              id = stringToPDFString(name, true);
+              attachment = docAttachments[stringToPDFString(name, true)];
             }
           }
-          if (docAttachments && id) {
-            resultObj.attachmentId = id;
-            resultObj.attachment = docAttachments[id];
+          if (attachment) {
+            resultObj.attachment = attachment;
             const attachmentDest = fetchRemoteDest(action);
             if (attachmentDest) {
               resultObj.attachmentDest = attachmentDest;
@@ -56030,28 +56022,11 @@ class FileAttachmentAnnotation extends MarkupAnnotation {
   constructor(params) {
     super(params);
     const {
-      annotationGlobals,
       dict
     } = params;
-    const fileSpecRef = dict.getRaw("FS");
-    const fsDict = dict.get("FS");
-    const file = new FileSpec(fsDict);
-    const {
-      catalog
-    } = annotationGlobals.pdfManager.pdfDocument;
-    let fileId = fileSpecRef instanceof Ref ? catalog?.attachmentIdByRef.get(fileSpecRef) : undefined;
-    if (catalog && fsDict instanceof Dict && typeof fileId !== "string") {
-      const baseFileId = `annotation:${this.data.id}`;
-      fileId = baseFileId;
-      let i = 1;
-      while (catalog.attachmentDictById.has(fileId)) {
-        fileId = `${baseFileId}-${i++}`;
-      }
-      catalog.attachmentDictById.set(fileId, fsDict);
-    }
+    const file = new FileSpec(dict.get("FS"));
     this.data.hasOwnCanvas = this.data.noRotate;
     this.data.noHTML = false;
-    this.data.fileId = fileId;
     this.data.file = file.serializable;
     const name = dict.get("Name");
     this.data.name = name instanceof Name ? stringToPDFString(name.name) : "PushPin";
@@ -57224,7 +57199,6 @@ class PDF20 extends PDFBase {
 }
 class CipherTransform {
   #cipherCache = new Map();
-  embeddedFilterName = null;
   constructor(resolveCipher, stringFilterName = null, streamFilterName = null) {
     this.resolveCipher = resolveCipher;
     this.streamFilterName = streamFilterName;
@@ -57235,8 +57209,7 @@ class CipherTransform {
     return this.#cipherCache.getOrInsertComputed(key, () => this.resolveCipher(filterName));
   }
   createStream(stream, length, cryptFilterName = null) {
-    const defaultFilterName = this.embeddedFilterName && isDict(stream.dict, "EmbeddedFile") ? this.embeddedFilterName : this.streamFilterName;
-    const Cipher = this.#getCipher(cryptFilterName || defaultFilterName);
+    const Cipher = this.#getCipher(cryptFilterName || this.streamFilterName);
     const cipher = new Cipher();
     return new DecryptStream(stream, length, function cipherTransformDecryptStream(data, finalize) {
       return cipher.decryptBlock(data, finalize);
@@ -57271,7 +57244,6 @@ class CipherTransform {
   }
 }
 class CipherTransformFactory {
-  #fileId;
   static get _defaultPasswordBytes() {
     return shadow(this, "_defaultPasswordBytes", new Uint8Array([0x28, 0xbf, 0x4e, 0x5e, 0x4e, 0x75, 0x8a, 0x41, 0x64, 0x00, 0x4e, 0x56, 0xff, 0xfa, 0x01, 0x08, 0x2e, 0x2e, 0x00, 0xb6, 0xd0, 0x68, 0x3e, 0x80, 0x2f, 0x0c, 0xa9, 0xfe, 0x64, 0x53, 0x69, 0x7a]));
   }
@@ -57411,7 +57383,6 @@ class CipherTransformFactory {
     }
     this.filterName = filter.name;
     this.dict = dict;
-    this.#fileId = fileId;
     const algorithm = dict.get("V");
     if (!Number.isInteger(algorithm) || algorithm !== 1 && algorithm !== 2 && algorithm !== 4 && algorithm !== 5) {
       throw new FormatError("unsupported encryption algorithm");
@@ -57437,23 +57408,6 @@ class CipherTransformFactory {
     if (!Number.isInteger(keyLength) || keyLength < 40 || keyLength % 8 !== 0) {
       throw new FormatError("invalid key length");
     }
-    let cf = null;
-    let stmf = Name.get("Identity");
-    let strf = Name.get("Identity");
-    let eff = stmf;
-    if (algorithm >= 4) {
-      cf = dict.get("CF");
-      if (cf instanceof Dict) {
-        cf.suppressEncryption = true;
-      }
-      stmf = dict.get("StmF") || Name.get("Identity");
-      strf = dict.get("StrF") || Name.get("Identity");
-      eff = dict.get("EFF") || stmf;
-    }
-    this.cf = cf;
-    this.stmf = stmf;
-    this.strf = strf;
-    this.eff = eff;
     const ownerBytes = stringToBytes(dict.get("O")),
       userBytes = stringToBytes(dict.get("U"));
     const ownerPassword = ownerBytes.subarray(0, 32);
@@ -57490,14 +57444,6 @@ class CipherTransformFactory {
     }
     if (!encryptionKey) {
       if (!password) {
-        if (this.algorithm >= 4 && isName(this.stmf, "Identity") && isName(this.strf, "Identity")) {
-          const effCF = this.cf?.get(this.eff.name);
-          const authEvent = effCF?.get("AuthEvent");
-          if (isName(authEvent, "EFOpen")) {
-            this.encryptionKey = null;
-            return;
-          }
-        }
         throw new PasswordException("No password given", PasswordResponses.NEED_PASSWORD);
       }
       const decodedPassword = this.#decodeUserPassword(passwordBytes, ownerPassword, revision, keyLength);
@@ -57512,10 +57458,16 @@ class CipherTransformFactory {
     } else {
       this.encryptionKey = encryptionKey;
     }
-  }
-  setPassword(password) {
-    const transform = new CipherTransformFactory(this.dict, this.#fileId, password);
-    this.encryptionKey = transform.encryptionKey;
+    if (algorithm >= 4) {
+      const cf = dict.get("CF");
+      if (cf instanceof Dict) {
+        cf.suppressEncryption = true;
+      }
+      this.cf = cf;
+      this.stmf = dict.get("StmF") || Name.get("Identity");
+      this.strf = dict.get("StrF") || Name.get("Identity");
+      this.eff = dict.get("EFF") || this.stmf;
+    }
   }
   createCipherTransform(num, gen) {
     if (this.algorithm === 4 || this.algorithm === 5) {
@@ -57528,9 +57480,6 @@ class CipherTransformFactory {
         if (!cfm || cfm.name === "None") {
           return NullCipher;
         }
-        if (!this.encryptionKey) {
-          throw new PasswordException("No password given", PasswordResponses.NEED_PASSWORD);
-        }
         if (cfm.name === "V2") {
           return ARCFourCipher.bind(null, this.#buildObjectKey(num, gen, this.encryptionKey, false));
         }
@@ -57542,9 +57491,7 @@ class CipherTransformFactory {
         }
         throw new FormatError("Unknown crypto method");
       };
-      const transform = new CipherTransform(resolveCipher, this.strf, this.stmf);
-      transform.embeddedFilterName = this.eff;
-      return transform;
+      return new CipherTransform(resolveCipher, this.strf, this.stmf);
     }
     const resolveCipher = () => ARCFourCipher.bind(null, this.#buildObjectKey(num, gen, this.encryptionKey, false));
     return new CipherTransform(resolveCipher);
@@ -59827,7 +59774,6 @@ class BasePdfManager {
   }
   updatePassword(password) {
     this._password = password;
-    this.pdfDocument.xref.encrypt?.setPassword(password);
   }
   terminate(reason) {
     unreachable("Abstract method `terminate` called");
@@ -60336,9 +60282,8 @@ async function writeStream(stream, buffer, transform) {
   const filterZero = Array.isArray(filter) ? await dict.xref.fetchIfRefAsync(filter[0]) : filter;
   const isFilterZeroFlateDecode = isName(filterZero, "FlateDecode");
   const isFilterZeroImageDecode = isName(filterZero, "DCTDecode") || isName(filterZero, "JPXDecode") || isName(filterZero, "JBIG2Decode") || isName(filterZero, "CCITTFaxDecode") || isName(filterZero, "LZWDecode");
-  const isFilterZeroCompressedObject = isFilterZeroFlateDecode || isFilterZeroImageDecode || isName(filterZero, "BrotliDecode");
   const MIN_LENGTH_FOR_COMPRESSING = 256;
-  if (!isFilterZeroCompressedObject && bytes.length >= MIN_LENGTH_FOR_COMPRESSING) {
+  if (!isFilterZeroFlateDecode && !isFilterZeroImageDecode && bytes.length >= MIN_LENGTH_FOR_COMPRESSING) {
     try {
       const cs = new CompressionStream("deflate");
       const writer = cs.writable.getWriter();
@@ -60723,7 +60668,6 @@ async function incrementalUpdate({
 
 
 
-
 const MAX_LEAVES_PER_PAGES_NODE = 16;
 const MAX_IN_NAME_TREE_NODE = 64;
 class PageData {
@@ -60745,7 +60689,6 @@ class DocumentData {
     this.dedupNamedDestinations = new Map();
     this.usedNamedDestinations = new Set();
     this.postponedRefCopies = new RefSetCache();
-    this.resourceStreamPromises = new Map();
     this.usedStructParents = new Set();
     this.oldStructParentMapping = new Map();
     this.structTreeRoot = null;
@@ -60794,7 +60737,6 @@ class PDFEditor {
   isSingleFile = false;
   #newAnnotationsParams = null;
   #primaryDocument = null;
-  #resourceStreamCache = new Map();
   currentDocument = null;
   oldPages = [];
   newPages = [];
@@ -60853,28 +60795,25 @@ class PDFEditor {
     newDict.xref = this.xrefWrapper;
     return newDict;
   }
-  async #collectDependencies(obj, mustClone, xref, resourceStreamPath = new RefSet()) {
+  async #collectDependencies(obj, mustClone, xref) {
     if (obj instanceof Ref) {
       const {
         currentDocument: {
           oldRefMapping
         }
       } = this;
-      const existingRef = oldRefMapping.get(obj);
-      if (existingRef) {
-        return existingRef;
+      let newRef = oldRefMapping.get(obj);
+      if (newRef) {
+        return newRef;
       }
       const oldRef = obj;
       obj = await xref.fetchAsync(oldRef);
       if (typeof obj === "number") {
         return obj;
       }
-      if (obj instanceof BaseStream && this.#isResourceStream(obj.dict)) {
-        return this.#collectResourceStream(oldRef, obj, xref, resourceStreamPath);
-      }
-      const newRef = this.newRef;
+      newRef = this.newRef;
       oldRefMapping.put(oldRef, newRef);
-      this.xref[newRef.num] = await this.#collectDependencies(obj, true, xref, resourceStreamPath);
+      this.xref[newRef.num] = await this.#collectDependencies(obj, true, xref);
       return newRef;
     }
     const promises = [];
@@ -60893,7 +60832,7 @@ class PDFEditor {
           postponedActions.push(ref => obj[i] = ref);
           continue;
         }
-        promises.push(this.#collectDependencies(obj[i], true, xref, resourceStreamPath).then(newObj => obj[i] = newObj));
+        promises.push(this.#collectDependencies(obj[i], true, xref).then(newObj => obj[i] = newObj));
       }
       await Promise.all(promises);
       return obj;
@@ -60918,111 +60857,11 @@ class PDFEditor {
           postponedActions.push(ref => dict.set(key, ref));
           continue;
         }
-        promises.push(this.#collectDependencies(rawObj, true, xref, resourceStreamPath).then(newObj => dict.set(key, newObj)));
+        promises.push(this.#collectDependencies(rawObj, true, xref).then(newObj => dict.set(key, newObj)));
       }
       await Promise.all(promises);
     }
     return obj;
-  }
-  #isResourceStream(dict) {
-    const subtype = dict.get("Subtype");
-    return isName(subtype, "Image") || dict.has("Length1") || isName(subtype, "Type1C") || isName(subtype, "CIDFontType0C") || isName(subtype, "OpenType");
-  }
-  #rawStreamBytes(stream) {
-    const original = stream.getOriginalStream();
-    original.reset();
-    return original.getBytes();
-  }
-  async #serializeDict(dict) {
-    const buffer = [];
-    await writeValue(dict, buffer, null);
-    return buffer.join("");
-  }
-  #resourceStreamKey(dictStr, bytes) {
-    const SAMPLE_SIZE = 256;
-    const SAMPLE_COUNT = 4;
-    const {
-      length
-    } = bytes;
-    const hash = new MurmurHash3_64();
-    hash.update(dictStr);
-    hash.update(`#${length}`);
-    if (length <= SAMPLE_SIZE * SAMPLE_COUNT) {
-      hash.update(bytes);
-    } else {
-      const step = Math.floor((length - SAMPLE_SIZE) / (SAMPLE_COUNT - 1));
-      for (let i = 0; i < SAMPLE_COUNT; i++) {
-        const start = Math.min(i * step, length - SAMPLE_SIZE);
-        hash.update(bytes.subarray(start, start + SAMPLE_SIZE));
-      }
-    }
-    return hash.hexdigest();
-  }
-  async #collectResourceStream(oldRef, stream, xref, resourceStreamPath) {
-    const {
-      currentDocument: {
-        oldRefMapping,
-        resourceStreamPromises
-      }
-    } = this;
-    if (resourceStreamPath.has(oldRef)) {
-      let ref = oldRefMapping.get(oldRef);
-      if (!ref) {
-        ref = this.newRef;
-        oldRefMapping.put(oldRef, ref);
-      }
-      return ref;
-    }
-    const key = oldRef.toString();
-    const pending = resourceStreamPromises.get(key);
-    if (pending) {
-      return pending;
-    }
-    const childPath = new RefSet(resourceStreamPath);
-    childPath.put(oldRef);
-    const promise = Promise.resolve().then(async () => {
-      const collected = await this.#collectDependencies(stream, true, xref, childPath);
-      const cycleRef = oldRefMapping.get(oldRef);
-      if (cycleRef) {
-        this.xref[cycleRef.num] = collected;
-        return cycleRef;
-      }
-      const ref = await this.#dedupResourceStream(collected);
-      oldRefMapping.put(oldRef, ref);
-      return ref;
-    });
-    resourceStreamPromises.set(key, promise);
-    try {
-      return await promise;
-    } finally {
-      if (resourceStreamPromises.get(key) === promise) {
-        resourceStreamPromises.delete(key);
-      }
-    }
-  }
-  async #dedupResourceStream(stream) {
-    const dictStr = await this.#serializeDict(stream.dict);
-    const bytes = this.#rawStreamBytes(stream);
-    const key = this.#resourceStreamKey(dictStr, bytes);
-    let bucket = this.#resourceStreamCache.get(key);
-    if (bucket) {
-      for (const entry of bucket) {
-        if (entry.dictStr === dictStr && isArrayEqual(this.#rawStreamBytes(entry.stream), bytes)) {
-          return entry.ref;
-        }
-      }
-    } else {
-      bucket = [];
-      this.#resourceStreamCache.set(key, bucket);
-    }
-    const ref = this.newRef;
-    this.xref[ref.num] = stream;
-    bucket.push({
-      ref,
-      dictStr,
-      stream
-    });
-    return ref;
   }
   async #cloneStructTreeNode(parentStructRef, node, xref, removedStructElements, dedupIDs, dedupClasses, dedupRoles, visited = new RefSet()) {
     const {
@@ -63307,7 +63146,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "6.0.271";
+    const workerVersion = "6.0.243";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }
@@ -63535,34 +63374,6 @@ class WorkerMessageHandler {
     });
     handler.on("GetAttachments", function (data) {
       return pdfManager.ensureCatalog("attachments");
-    });
-    handler.on("GetAttachmentContent", async function (id) {
-      while (true) {
-        try {
-          return await pdfManager.ensureCatalog("attachmentContent", [id]);
-        } catch (error) {
-          if (!(error instanceof PasswordException)) {
-            throw error;
-          }
-          const task = new WorkerTask(`PasswordException: response ${error.code}`);
-          startWorkerTask(task);
-          try {
-            const {
-              password
-            } = await handler.sendWithPromise("PasswordRequest", error);
-            try {
-              pdfManager.updatePassword(password);
-            } catch (exception) {
-              if (exception instanceof PasswordException) {
-                continue;
-              }
-              throw exception;
-            }
-          } finally {
-            finishWorkerTask(task);
-          }
-        }
-      }
     });
     handler.on("GetDocJSActions", function (data) {
       return pdfManager.ensureCatalog("jsActions");

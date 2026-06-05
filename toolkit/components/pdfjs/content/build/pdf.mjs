@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.271
- * pdfjsBuild = 091f459d2
+ * pdfjsVersion = 6.0.243
+ * pdfjsBuild = b43ef1c74
  */
 
 ;// ./src/shared/util.js
@@ -1997,7 +1997,7 @@ class FloatingToolbar {
 }
 
 ;// ./src/shared/internal_evt.js
-const INTERNAL_EVT = "8c84071d-c3bf-4376-88cc-71baf470c875";
+const INTERNAL_EVT = "e98dca24-d106-42e8-b751-ec03fd07f6c7";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -11626,7 +11626,7 @@ class CanvasGraphics {
     if (!group.isolated && !group.knockout && this.#knockoutGroupLevel === 0) {
       info("TODO: Fully support non-isolated non-knockout groups.");
     }
-    if (!group.needsIsolation && !group.knockout && !group.isGray && this.#knockoutGroupLevel === 0 && currentCtx.globalAlpha === 1 && currentCtx.globalCompositeOperation === "source-over" && !inSMaskMode) {
+    if (!group.needsIsolation && !group.knockout && this.#knockoutGroupLevel === 0 && currentCtx.globalAlpha === 1 && currentCtx.globalCompositeOperation === "source-over" && !inSMaskMode) {
       if (group.bbox) {
         let clip = new Path2D();
         const [x0, y0, x1, y1] = group.bbox;
@@ -11742,9 +11742,6 @@ class CanvasGraphics {
       this.restore(opIdx);
       return;
     }
-    if (group.isGray) {
-      this.#convertGroupToGray(groupCtx);
-    }
     this.ctx = ctx;
     this.ctx.imageSmoothingEnabled = false;
     this.dependencyTracker?.popBaseTransform();
@@ -11822,34 +11819,6 @@ class CanvasGraphics {
       this.#destroyKnockoutPools(groupMeta);
       this.compose(dirtyBox);
     }
-  }
-  #convertGroupToGray(groupCtx) {
-    const {
-      canvas
-    } = groupCtx;
-    const {
-      width,
-      height
-    } = canvas;
-    if (FeatureTest.isCanvasFilterSupported) {
-      groupCtx.save();
-      groupCtx.setTransform(1, 0, 0, 1, 0, 0);
-      groupCtx.filter = "grayscale(1)";
-      groupCtx.globalAlpha = 1;
-      groupCtx.globalCompositeOperation = "copy";
-      groupCtx.drawImage(canvas, 0, 0);
-      groupCtx.restore();
-      return;
-    }
-    const imageData = groupCtx.getImageData(0, 0, width, height);
-    const {
-      data
-    } = imageData;
-    for (let i = 0, ii = data.length; i < ii; i += 4) {
-      const gray = data[i] * 0.2126 + data[i + 1] * 0.7152 + data[i + 2] * 0.0722 + 0.5 | 0;
-      data[i] = data[i + 1] = data[i + 2] = gray;
-    }
-    groupCtx.putImageData(imageData, 0, 0);
   }
   #destroyKnockoutPools(groupMeta) {
     if (!groupMeta) {
@@ -12897,24 +12866,16 @@ class OptionalContentGroup {
     this.#userSet = userSet;
     this.#visible = visible;
   }
-  get serializable() {
-    return {
-      userSet: this.#userSet,
-      visible: this.#visible
-    };
-  }
 }
 class OptionalContentConfig {
   #cachedGetHash = null;
   #groups = new Map();
   #initialHash = null;
   #order = null;
-  #rawData;
-  creator = null;
-  name = null;
-  constructor(data, renderingIntent = RenderingIntentFlag.DISPLAY, groupState = null) {
-    this.#rawData = data;
+  constructor(data, renderingIntent = RenderingIntentFlag.DISPLAY) {
     this.renderingIntent = renderingIntent;
+    this.name = null;
+    this.creator = null;
     if (data === null) {
       return;
     }
@@ -12924,25 +12885,16 @@ class OptionalContentConfig {
     for (const group of data.groups) {
       this.#groups.set(group.id, new OptionalContentGroup(renderingIntent, group));
     }
-    if (groupState) {
-      if (groupState.size !== this.#groups.size) {
-        unreachable("Incorrect serialized groupState.");
+    if (data.baseState === "OFF") {
+      for (const group of this.#groups.values()) {
+        group._setVisible(INTERNAL, false);
       }
-      for (const [id, group] of groupState) {
-        this.#groups.get(id)._setVisible(INTERNAL, group.visible, group.userSet);
-      }
-    } else {
-      if (data.baseState === "OFF") {
-        for (const group of this.#groups.values()) {
-          group._setVisible(INTERNAL, false);
-        }
-      }
-      for (const on of data.on) {
-        this.#groups.get(on)._setVisible(INTERNAL, true);
-      }
-      for (const off of data.off) {
-        this.#groups.get(off)._setVisible(INTERNAL, false);
-      }
+    }
+    for (const on of data.on) {
+      this.#groups.get(on)._setVisible(INTERNAL, true);
+    }
+    for (const off of data.off) {
+      this.#groups.get(off)._setVisible(INTERNAL, false);
     }
     this.#initialHash = this.getHash();
   }
@@ -13127,24 +13079,6 @@ class OptionalContentConfig {
   }
   [Symbol.iterator]() {
     return this.#groups.entries();
-  }
-  get serializable() {
-    const groupState = new Map();
-    for (const [id, group] of this.#groups) {
-      groupState.set(id, group.serializable);
-    }
-    return {
-      data: this.#rawData,
-      renderingIntent: this.renderingIntent,
-      groupState
-    };
-  }
-  static fromSerializable({
-    data,
-    renderingIntent,
-    groupState
-  }) {
-    return new OptionalContentConfig(data, renderingIntent, groupState);
   }
 }
 
@@ -14183,7 +14117,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.0.271",
+    apiVersion: "6.0.243",
     data,
     password,
     disableAutoFetch,
@@ -14386,9 +14320,6 @@ class PDFDocumentProxy {
   }
   getAttachments() {
     return this._transport.getAttachments();
-  }
-  getAttachmentContent(id) {
-    return this._transport.getAttachmentContent(id);
   }
   getAnnotationsByType(types, pageIndexesToSkip) {
     return this._transport.getAnnotationsByType(types, pageIndexesToSkip);
@@ -15567,9 +15498,6 @@ class WorkerTransport {
   getAttachments() {
     return this.messageHandler.sendWithPromise("GetAttachments", null);
   }
-  getAttachmentContent(id) {
-    return this.messageHandler.sendWithPromise("GetAttachmentContent", id);
-  }
   getAnnotationsByType(types, pageIndexesToSkip) {
     return this.messageHandler.sendWithPromise("GetAnnotationsByType", {
       types,
@@ -15832,8 +15760,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.0.271";
-const build = "091f459d2";
+const version = "6.0.243";
+const build = "b43ef1c74";
 
 ;// ./src/display/editor/color_picker.js
 
@@ -17060,7 +16988,7 @@ class LinkAnnotationElement extends AnnotationElement {
       this._bindNamedAction(link, data.action, data.overlaidText);
       isBound = true;
     } else if (data.attachment) {
-      this.#bindAttachment(link, data.attachmentId, data.attachment, data.overlaidText, data.attachmentDest);
+      this.#bindAttachment(link, data.attachment, data.overlaidText, data.attachmentDest);
       isBound = true;
     } else if (data.setOCGState) {
       this.#bindSetOCGState(link, data.setOCGState, data.overlaidText);
@@ -17117,21 +17045,15 @@ class LinkAnnotationElement extends AnnotationElement {
     }
     this.#setInternalLink();
   }
-  #bindAttachment(link, attachmentId, attachment, overlaidText = "", dest = null) {
+  #bindAttachment(link, attachment, overlaidText = "", dest = null) {
     link.href = this.linkService.getAnchorUrl("");
     if (attachment.description) {
       link.title = attachment.description;
     } else if (overlaidText) {
       link.title = overlaidText;
     }
-    const openAttachment = async () => {
-      const content = await this.linkService.getAttachmentContent(attachmentId);
-      if (content) {
-        this.downloadManager?.openOrDownloadData(content, attachment.filename, dest);
-      }
-    };
     link.onclick = () => {
-      openAttachment();
+      this.downloadManager?.openOrDownloadData(attachment.content, attachment.filename, dest);
       return false;
     };
     this.#setInternalLink();
@@ -19291,15 +19213,12 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
       isRenderable: true
     });
     const {
-      fileId,
       file
     } = this.data;
     this.filename = file.filename;
     this.content = file.content;
-    this.fileId = fileId;
     this.linkService.eventBus?.dispatch("fileattachmentannotation", {
       source: this,
-      attachmentId: this.fileId,
       ...file
     });
   }
@@ -19344,16 +19263,8 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
   addHighlightArea() {
     this.container.classList.add("highlightArea");
   }
-  async #download() {
-    const {
-      fileId,
-      filename,
-      content: fallbackContent
-    } = this;
-    const content = (await this.linkService.getAttachmentContent(fileId)) || fallbackContent;
-    if (content) {
-      this.downloadManager?.openOrDownloadData(content, filename);
-    }
+  #download() {
+    this.downloadManager?.openOrDownloadData(this.content, this.filename);
   }
 }
 class AnnotationLayer {
@@ -26645,7 +26556,6 @@ globalThis.pdfjsLib = {
   normalizeUnicode: normalizeUnicode,
   OPS: OPS,
   OutputScale: OutputScale,
-  PasswordException: PasswordException,
   PasswordResponses: PasswordResponses,
   PDFDataRangeTransport: PDFDataRangeTransport,
   PDFDateString: PDFDateString,
@@ -26670,4 +26580,4 @@ globalThis.pdfjsLib = {
   XfaLayer: XfaLayer
 };
 
-export { AbortException, AnnotationEditorLayer, AnnotationEditorParamsType, AnnotationEditorType, AnnotationEditorUIManager, AnnotationLayer, AnnotationMode, AnnotationType, CSSConstants, ColorPicker, DOMSVGFactory, DrawLayer, FeatureTest, GlobalWorkerOptions, ImageKind, InvalidPDFException, MathClamp, OPS, OutputScale, PDFDataRangeTransport, PDFDateString, PDFWorker, PasswordException, PasswordResponses, PermissionFlag, PixelsPerInch, RenderingCancelledException, ResponseException, SignatureExtractor, SupportedImageMimeTypes, TextLayer, TextLayerImages, TouchManager, Util, VerbosityLevel, XfaLayer, applyOpacity, build, createValidAbsoluteUrl, fetchData, findContrastColor, getDocument, getFilenameFromUrl, getPdfFilenameFromUrl, getRGB, getRGBA, getUuid, isDataScheme, isPdfFile, isValidExplicitDest, makeArr, makeMap, makeObj, noContextMenu, normalizeUnicode, renderRichText, setLayerDimensions, shadow, stopEvent, updateUrlHash, version };
+export { AbortException, AnnotationEditorLayer, AnnotationEditorParamsType, AnnotationEditorType, AnnotationEditorUIManager, AnnotationLayer, AnnotationMode, AnnotationType, CSSConstants, ColorPicker, DOMSVGFactory, DrawLayer, FeatureTest, GlobalWorkerOptions, ImageKind, InvalidPDFException, MathClamp, OPS, OutputScale, PDFDataRangeTransport, PDFDateString, PDFWorker, PasswordResponses, PermissionFlag, PixelsPerInch, RenderingCancelledException, ResponseException, SignatureExtractor, SupportedImageMimeTypes, TextLayer, TextLayerImages, TouchManager, Util, VerbosityLevel, XfaLayer, applyOpacity, build, createValidAbsoluteUrl, fetchData, findContrastColor, getDocument, getFilenameFromUrl, getPdfFilenameFromUrl, getRGB, getRGBA, getUuid, isDataScheme, isPdfFile, isValidExplicitDest, makeArr, makeMap, makeObj, noContextMenu, normalizeUnicode, renderRichText, setLayerDimensions, shadow, stopEvent, updateUrlHash, version };
