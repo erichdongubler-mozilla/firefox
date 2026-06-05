@@ -73,9 +73,8 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   using ConstraintValidation::GetValidationMessage;
 
-  explicit HTMLSelectElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-      FromParser aFromParser = NOT_FROM_PARSER);
+  explicit HTMLSelectElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
+                             FromParser aFromParser = NOT_FROM_PARSER);
 
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLSelectElement, select)
 

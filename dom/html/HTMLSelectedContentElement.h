@@ -12,7 +12,7 @@ namespace mozilla::dom {
 class HTMLSelectedContentElement final : public nsGenericHTMLElement {
  public:
   explicit HTMLSelectedContentElement(
-      already_AddRefed<class NodeInfo>&& aNodeInfo);
+      already_AddRefed<class NodeInfo> aNodeInfo);
 
   NS_IMPL_FROMNODE_HELPER(HTMLSelectedContentElement,
                           IsSelectedContentElement())

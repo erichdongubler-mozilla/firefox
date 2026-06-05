@@ -12,7 +12,7 @@
 #include "nsGenericHTMLElement.h"
 
 nsGenericHTMLElement* NS_NewHTMLSelectedContentElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     mozilla::dom::FromParser aFromParser) {
   if (!mozilla::StaticPrefs::dom_select_customizable_select_enabled()) {
     return NS_NewHTMLElement(std::move(aNodeInfo), aFromParser);
@@ -26,7 +26,7 @@ nsGenericHTMLElement* NS_NewHTMLSelectedContentElement(
 namespace mozilla::dom {
 
 HTMLSelectedContentElement::HTMLSelectedContentElement(
-    already_AddRefed<class NodeInfo>&& aNodeInfo)
+    already_AddRefed<class NodeInfo> aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
 HTMLSelectedContentElement::~HTMLSelectedContentElement() = default;

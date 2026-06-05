@@ -24,8 +24,7 @@ class HTMLDialogElement final : public nsGenericHTMLElement {
     CloseRequest,
   };
 
-  explicit HTMLDialogElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit HTMLDialogElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)),
         mPreviouslyFocusedElement(nullptr),
         mRequestCloseSourceElement(nullptr) {}

@@ -97,8 +97,7 @@ namespace mozilla::dom {
 // construction, destruction
 
 HTMLSelectElement::HTMLSelectElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-    FromParser aFromParser)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo, FromParser aFromParser)
     : nsGenericHTMLFormControlElementWithState(
           std::move(aNodeInfo), aFromParser, FormControlType::Select),
       mOptions(new HTMLOptionsCollection(this, !!aFromParser)),
