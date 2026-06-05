@@ -739,36 +739,28 @@ void nsAccessibilityService::NotifyAnchorPositionedScrollUpdate(
 
 void nsAccessibilityService::NotifyAttrElementWillChange(
     mozilla::dom::Element* aElement, nsAtom* aAttr) {
-  mozilla::dom::Document* doc = aElement->OwnerDoc();
-  MOZ_ASSERT(doc);
-  if (DocAccessible* docAcc = GetDocAccessible(doc)) {
+  if (DocAccessible* docAcc = GetDocAccessible(aElement->GetComposedDoc())) {
     docAcc->AttrElementWillChange(aElement, aAttr);
   }
 }
 
 void nsAccessibilityService::NotifyAttrElementChanged(
     mozilla::dom::Element* aElement, nsAtom* aAttr) {
-  mozilla::dom::Document* doc = aElement->OwnerDoc();
-  MOZ_ASSERT(doc);
-  if (DocAccessible* docAcc = GetDocAccessible(doc)) {
+  if (DocAccessible* docAcc = GetDocAccessible(aElement->GetComposedDoc())) {
     docAcc->AttrElementChanged(aElement, aAttr);
   }
 }
 
 void nsAccessibilityService::NotifyARIAAttributeDefaultWillChange(
     mozilla::dom::Element* aElement, nsAtom* aAttribute, AttrModType aModType) {
-  mozilla::dom::Document* doc = aElement->OwnerDoc();
-  MOZ_ASSERT(doc);
-  if (DocAccessible* docAcc = GetDocAccessible(doc)) {
+  if (DocAccessible* docAcc = GetDocAccessible(aElement->GetComposedDoc())) {
     docAcc->ARIAAttributeDefaultWillChange(aElement, aAttribute, aModType);
   }
 }
 
 void nsAccessibilityService::NotifyARIAAttributeDefaultChanged(
     mozilla::dom::Element* aElement, nsAtom* aAttribute, AttrModType aModType) {
-  mozilla::dom::Document* doc = aElement->OwnerDoc();
-  MOZ_ASSERT(doc);
-  if (DocAccessible* docAcc = GetDocAccessible(doc)) {
+  if (DocAccessible* docAcc = GetDocAccessible(aElement->GetComposedDoc())) {
     docAcc->ARIAAttributeDefaultChanged(aElement, aAttribute, aModType);
   }
 }
