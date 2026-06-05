@@ -2939,8 +2939,7 @@ nsresult ContentEventHandler::OnQueryDropTargetHittest(
 /* static */
 nsresult ContentEventHandler::GetFlatTextLengthInRange(
     const RawNodePosition& aStartPosition, const RawNodePosition& aEndPosition,
-    const Element* aRootElement, uint32_t* aLength,
-    bool aIsRemovingNode /* = false */) {
+    const Element* aRootElement, uint32_t* aLength) {
   if (NS_WARN_IF(!aRootElement) || NS_WARN_IF(!aStartPosition.IsSet()) ||
       NS_WARN_IF(!aEndPosition.IsSet()) || NS_WARN_IF(!aLength)) {
     return NS_ERROR_INVALID_ARG;
@@ -2951,93 +2950,76 @@ nsresult ContentEventHandler::GetFlatTextLengthInRange(
     return NS_OK;
   }
 
+  MOZ_ASSERT(!aStartPosition.GetContainer()->IsBeingRemoved());
+  MOZ_ASSERT(!aEndPosition.GetContainer()->IsBeingRemoved());
+
   UnsafePreContentIterator preOrderIter;
 
   // Working with ContentIterator, we may need to adjust the end position for
   // including it forcibly.
   RawNodePosition endPosition(aEndPosition);
 
-  // This may be called for retrieving the text of removed nodes. So, be careful
-  // to handle this case. FIXME: Do we need this special-case now?
-  if (aIsRemovingNode) {
-    MOZ_ASSERT(aStartPosition.GetContainer() == endPosition.GetContainer(),
-               "At removing the node, start and end node should be same");
-    MOZ_ASSERT(*aStartPosition.Offset(
-                   RawNodePosition::OffsetFilter::kValidOrInvalidOffsets) == 0,
-               "When the node is being removed, the start offset should be 0");
-    MOZ_ASSERT(
-        static_cast<uint32_t>(*endPosition.Offset(
-            RawNodePosition::OffsetFilter::kValidOrInvalidOffsets)) ==
-            endPosition.GetContainer()->GetChildCount(),
-        "When the node is being removed, the end offset should be child count");
-    nsresult rv = preOrderIter.Init(aStartPosition.GetContainer());
+  SimpleRange prevSimpleRange;
+  nsresult rv = prevSimpleRange.SetStart(aStartPosition.AsRaw());
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  // When the end position is immediately after non-root element's open tag,
+  // we need to include a line break caused by the open tag.
+  if (endPosition.GetContainer() != aRootElement &&
+      endPosition.IsImmediatelyAfterOpenTag()) {
+    if (endPosition.GetContainer()->HasChildren()) {
+      // When the end node has some children, move the end position to before
+      // the open tag of its first child.
+      nsIContent* const firstChild =
+          endPosition.GetContainer()->GetFirstChild();
+      if (NS_WARN_IF(!firstChild)) {
+        return NS_ERROR_FAILURE;
+      }
+      endPosition = RawNodePosition::Before(*firstChild);
+    } else {
+      // When the end node is empty, move the end position after the node.
+      if (NS_WARN_IF(!endPosition.GetContainer()->IsContent())) {
+        return NS_ERROR_FAILURE;
+      }
+      nsIContent* const parentContent = endPosition.GetContainer()->GetParent();
+      if (NS_WARN_IF(!parentContent)) {
+        return NS_ERROR_FAILURE;
+      }
+      endPosition =
+          RawNodePosition::After(*endPosition.GetContainer()->AsContent());
+    }
+  }
+
+  if (endPosition.IsSetAndValid()) {
+    // Offset is within node's length; set end of range to that offset
+    rv = prevSimpleRange.SetEnd(endPosition.AsRaw());
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    rv = preOrderIter.Init(prevSimpleRange.Start().AsRaw(),
+                           prevSimpleRange.End().AsRaw());
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  } else if (endPosition.GetContainer() != aRootElement) {
+    // Offset is past node's length; set end of range to end of node
+    rv = prevSimpleRange.SetEndAfter(
+        nsIContent::FromNode(endPosition.GetContainer()));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    rv = preOrderIter.Init(prevSimpleRange.Start().AsRaw(),
+                           prevSimpleRange.End().AsRaw());
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
   } else {
-    SimpleRange prevSimpleRange;
-    nsresult rv = prevSimpleRange.SetStart(aStartPosition.AsRaw());
+    // Offset is past the root node; set end of range to end of root node
+    rv = preOrderIter.Init(const_cast<Element*>(aRootElement));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
-    }
-
-    // When the end position is immediately after non-root element's open tag,
-    // we need to include a line break caused by the open tag.
-    if (endPosition.GetContainer() != aRootElement &&
-        endPosition.IsImmediatelyAfterOpenTag()) {
-      if (endPosition.GetContainer()->HasChildren()) {
-        // When the end node has some children, move the end position to before
-        // the open tag of its first child.
-        nsIContent* const firstChild =
-            endPosition.GetContainer()->GetFirstChild();
-        if (NS_WARN_IF(!firstChild)) {
-          return NS_ERROR_FAILURE;
-        }
-        endPosition = RawNodePosition::Before(*firstChild);
-      } else {
-        // When the end node is empty, move the end position after the node.
-        if (NS_WARN_IF(!endPosition.GetContainer()->IsContent())) {
-          return NS_ERROR_FAILURE;
-        }
-        nsIContent* const parentContent =
-            endPosition.GetContainer()->GetParent();
-        if (NS_WARN_IF(!parentContent)) {
-          return NS_ERROR_FAILURE;
-        }
-        endPosition =
-            RawNodePosition::After(*endPosition.GetContainer()->AsContent());
-      }
-    }
-
-    if (endPosition.IsSetAndValid()) {
-      // Offset is within node's length; set end of range to that offset
-      rv = prevSimpleRange.SetEnd(endPosition.AsRaw());
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-      rv = preOrderIter.Init(prevSimpleRange.Start().AsRaw(),
-                             prevSimpleRange.End().AsRaw());
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-    } else if (endPosition.GetContainer() != aRootElement) {
-      // Offset is past node's length; set end of range to end of node
-      rv = prevSimpleRange.SetEndAfter(
-          nsIContent::FromNode(endPosition.GetContainer()));
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-      rv = preOrderIter.Init(prevSimpleRange.Start().AsRaw(),
-                             prevSimpleRange.End().AsRaw());
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-    } else {
-      // Offset is past the root node; set end of range to end of root node
-      rv = preOrderIter.Init(const_cast<Element*>(aRootElement));
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
     }
   }
 

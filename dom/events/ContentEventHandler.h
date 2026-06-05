@@ -331,18 +331,11 @@ class MOZ_STACK_CLASS ContentEventHandler {
    *                            line breaks.
    * @param aLength             The result of the flatten text length of the
    *                            range.
-   * @param aIsRemovingNode     Should be true only when this is called from
-   *                            nsIMutationObserver::ContentRemoved().
-   *                            When this is true, the container of
-   *                            aStartPosition should be the removing node and
-   *                            points start of it and the container of
-   *                            aEndPosition must be same as the container of
-   *                            aStartPosition and points end of the container.
    */
   static nsresult GetFlatTextLengthInRange(
       const RawNodePosition& aStartPosition,
       const RawNodePosition& aEndPosition, const Element* aRootElement,
-      uint32_t* aLength, bool aIsRemovingNode = false);
+      uint32_t* aLength);
 
   // Computes the native text length between aStartOffset and aEndOffset of
   // aTextNode.
