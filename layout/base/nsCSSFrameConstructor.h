@@ -1225,7 +1225,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     explicit AutoFrameConstructionItem(nsCSSFrameConstructor* aFCtor,
                                        Args&&... args)
         : mFCtor(aFCtor),
-          mItem(new(aFCtor)
+          mItem(new (aFCtor)
                     FrameConstructionItem(std::forward<Args>(args)...)) {
       MOZ_ASSERT(mFCtor);
     }
