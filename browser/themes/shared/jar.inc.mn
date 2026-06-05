@@ -304,6 +304,7 @@
   skin/classic/browser/tabbrowser/tab-groups-list.css          (../shared/tabbrowser/tab-groups-list.css)
   skin/classic/browser/tabbrowser/tab-hover-preview.css        (../shared/tabbrowser/tab-hover-preview.css)
   skin/classic/browser/tabbrowser/tab.tokens.css               (../shared/tabbrowser/tab.tokens.css)
+  skin/classic/browser/tabbrowser/tabs-navbar.tokens.css       (../shared/tabbrowser/tabs-navbar.tokens.css)
   skin/classic/browser/tabbrowser/tabs.css                     (../shared/tabbrowser/tabs.css)
 
   skin/classic/browser/update-badge.svg                        (../shared/update-badge.svg)

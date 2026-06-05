@@ -764,6 +764,11 @@
     "dark": "{Theme$border/color/interactive}",
     "forcedColors": "{Theme$border/color/interactive}"
   },
+  "input/text/background/color": {
+    "light": "transparent",
+    "dark": "transparent",
+    "forcedColors": "transparent"
+  },
   "input/text/background/color/disabled": {
     "light": "{Theme$button/background/color/disabled}",
     "dark": "{Theme$button/background/color/disabled}",
@@ -784,9 +789,14 @@
     "dark": "{Theme$border/color/interactive/disabled}",
     "forcedColors": "{Theme$border/color/interactive/disabled}"
   },
+  "input/text/color": {
+    "light": "transparent",
+    "dark": "transparent",
+    "forcedColors": "transparent"
+  },
   "input/text/color/disabled": {
-    "light": "{Primitives$input/text/color}",
-    "dark": "{Primitives$input/text/color}",
+    "light": "{Theme$input/text/color}",
+    "dark": "{Theme$input/text/color}",
     "forcedColors": "{HCM Theme$GrayText}"
   },
   "input/text/opacity/disabled": {
@@ -848,6 +858,21 @@
     "light": "{Colors$color/black}",
     "dark": "rgb(251, 251, 254)",
     "forcedColors": "transparent"
+  },
+  "sidebar/background/color": {
+    "light": "white",
+    "dark": "rgb(28, 27, 34)",
+    "forcedColors": "transparent"
+  },
+  "sidebar/text/color": {
+    "light": "rgb(21, 20, 26)",
+    "dark": "rgb(249, 249, 250)",
+    "forcedColors": "transparent"
+  },
+  "sidebar/border/color": {
+    "light": "{Theme$card/border/color}",
+    "dark": "{Theme$card/border/color}",
+    "forcedColors": "{Theme$card/border/color}"
   },
   "table/background/color": {
     "light": "#f8f8fa",
@@ -1355,10 +1380,20 @@
     "dark": "transparent",
     "forcedColors": "currentColor"
   },
+  "tab/background/color/selected": {
+    "light": "{Colors$color/white}",
+    "dark": "rgba(106, 106, 120, 0.7)",
+    "forcedColors": "transparent"
+  },
   "tab/selected/outline/color": {
     "light": "transparent",
     "dark": "transparent",
     "forcedColors": "currentColor"
+  },
+  "tab/selected/textcolor": {
+    "light": "rgb(21, 20, 26)",
+    "dark": "{Colors$color/white}",
+    "forcedColors": "transparent"
   },
   "tab/group/blue": {
     "light": "{Colors$color/blue/50}",
@@ -1584,6 +1619,11 @@
     "light": "{Colors$color/gray/05}",
     "dark": "{Colors$color/gray/55}",
     "forcedColors": "transparent"
+  },
+  "tabs-navbar/separator/style": {
+    "light": "none",
+    "dark": "none",
+    "forcedColors": "none"
   },
   "urlbar/box/background/color": {
     "light": "white",

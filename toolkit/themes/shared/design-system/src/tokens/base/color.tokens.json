@@ -576,7 +576,9 @@
             "dark": "{color.cyan.30}"
           },
           "platform": {
-            "default": "AccentColor"
+            "nativeTheme": "AccentColor",
+            "light": "{color.blue.60}",
+            "dark": "{color.cyan.30}"
           }
         }
       },
@@ -619,10 +621,12 @@
     },
     "attention": {
       "value": {
-        "platform": {
-          "default": "AccentColor"
-        },
         "brand": {
+          "light": "#2ac3a2",
+          "dark": "#54ffbd"
+        },
+        "platform": {
+          "nativeTheme": "AccentColor",
           "light": "#2ac3a2",
           "dark": "#54ffbd"
         },

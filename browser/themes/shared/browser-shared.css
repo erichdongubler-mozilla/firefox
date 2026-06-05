@@ -11,6 +11,7 @@
 @import url("chrome://browser/skin/tabbrowser/ctrlTab.css");
 @import url("chrome://browser/skin/tabbrowser/fullscreen-and-pointerlock.css");
 @import url("chrome://browser/skin/tabbrowser/tab.tokens.css");
+@import url("chrome://browser/skin/tabbrowser/tabs-navbar.tokens.css");
 @import url("chrome://browser/skin/tabbrowser/tabs.css");
 @import url("chrome://browser/skin/tabbrowser/tab-groups-list.css");
 @import url("chrome://browser/skin/tabbrowser/tab-hover-preview.css");
@@ -1296,7 +1297,7 @@ popupnotificationcontent {
   -moz-context-properties: fill;
   /* Variables defined in browser-colors.css will be updated to use design tokens, see bug 1952566. */
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  fill: var(--input-color, -moz-DialogText);
+  fill: var(--input-text-color);
 }
 
 .ac-has-end-icon {
