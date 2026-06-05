@@ -56,7 +56,7 @@ class SheetLoadDataHashKey : public PLDHashEntryHdr {
         mPartitionPrincipal(aKey->mPartitionPrincipal),
         mEncodingGuess(aKey->mEncodingGuess),
         mCORSMode(aKey->mCORSMode),
-        mParsingMode(aKey->mParsingMode),
+        mOrigin(aKey->mOrigin),
         mCompatMode(aKey->mCompatMode),
         mSRIMetadata(aKey->mSRIMetadata),
         mIsLinkRelPreloadOrEarlyHint(aKey->mIsLinkRelPreloadOrEarlyHint) {
@@ -66,7 +66,7 @@ class SheetLoadDataHashKey : public PLDHashEntryHdr {
   SheetLoadDataHashKey(nsIURI* aURI, nsIPrincipal* aLoaderPrincipal,
                        nsIPrincipal* aPartitionPrincipal,
                        NotNull<const Encoding*> aEncodingGuess,
-                       CORSMode aCORSMode, css::SheetParsingMode aParsingMode,
+                       CORSMode aCORSMode, StyleOrigin aOrigin,
                        nsCompatibility aCompatMode,
                        const dom::SRIMetadata& aSRIMetadata,
                        css::StylePreloadKind aPreloadKind)
@@ -75,7 +75,7 @@ class SheetLoadDataHashKey : public PLDHashEntryHdr {
         mPartitionPrincipal(aPartitionPrincipal),
         mEncodingGuess(aEncodingGuess),
         mCORSMode(aCORSMode),
-        mParsingMode(aParsingMode),
+        mOrigin(aOrigin),
         mCompatMode(aCompatMode),
         mSRIMetadata(aSRIMetadata),
         mIsLinkRelPreloadOrEarlyHint(
@@ -91,7 +91,7 @@ class SheetLoadDataHashKey : public PLDHashEntryHdr {
         mPartitionPrincipal(std::move(toMove.mPartitionPrincipal)),
         mEncodingGuess(std::move(toMove.mEncodingGuess)),
         mCORSMode(std::move(toMove.mCORSMode)),
-        mParsingMode(std::move(toMove.mParsingMode)),
+        mOrigin(std::move(toMove.mOrigin)),
         mCompatMode(std::move(toMove.mCompatMode)),
         mSRIMetadata(std::move(toMove.mSRIMetadata)),
         mIsLinkRelPreloadOrEarlyHint(
@@ -125,7 +125,7 @@ class SheetLoadDataHashKey : public PLDHashEntryHdr {
   nsIPrincipal* LoaderPrincipal() const { return mLoaderPrincipal; }
   nsIPrincipal* PartitionPrincipal() const { return mPartitionPrincipal; }
 
-  css::SheetParsingMode ParsingMode() const { return mParsingMode; }
+  StyleOrigin Origin() const { return mOrigin; }
 
   enum { ALLOW_MEMMOVE = true };
 
@@ -138,7 +138,7 @@ class SheetLoadDataHashKey : public PLDHashEntryHdr {
   // header.
   const NotNull<const Encoding*> mEncodingGuess;
   const CORSMode mCORSMode;
-  const css::SheetParsingMode mParsingMode;
+  const StyleOrigin mOrigin;
   const nsCompatibility mCompatMode;
   dom::SRIMetadata mSRIMetadata;
   const bool mIsLinkRelPreloadOrEarlyHint;
@@ -316,8 +316,8 @@ class Loader final {
    * method can be used to load sheets not associated with a document.
    *
    * @param aURL the URL of the sheet to load
-   * @param aParsingMode the mode in which to parse the sheet
-   *        (see comments at enum SheetParsingMode, above).
+   * @param aOrigin whether this sheet comes from the user-agent, the user,
+   *                or an author.
    * @param aUseSystemPrincipal if true, give the resulting sheet the system
    * principal no matter where it's being loaded from.
    *
@@ -329,9 +329,8 @@ class Loader final {
    * whether the data could be parsed as CSS and doesn't indicate anything
    * about the status of child sheets of the returned sheet.
    */
-  Result<RefPtr<StyleSheet>, nsresult> LoadSheetSync(
-      nsIURI*, SheetParsingMode = eAuthorSheetFeatures,
-      UseSystemPrincipal = UseSystemPrincipal::No);
+  Result<RefPtr<StyleSheet>, nsresult> LoadSheetSync(nsIURI*, StyleOrigin,
+                                                     UseSystemPrincipal);
 
   /**
    * Asynchronously load the stylesheet at aURL.  If a successful result is
@@ -340,8 +339,8 @@ class Loader final {
    * sheets not associated with a document.
    *
    * @param aURL the URL of the sheet to load
-   * @param aParsingMode the mode in which to parse the sheet
-   *        (see comments at enum SheetParsingMode, above).
+   * @param aOrigin whether this sheet comes from the user-agent, the user,
+   *                or an author.
    * @param aUseSystemPrincipal if true, give the resulting sheet the system
    * principal no matter where it's being loaded from.
    * @param aReferrerInfo referrer information of the sheet.
@@ -367,7 +366,7 @@ class Loader final {
    * As above, but without caring for a couple things.
    * Only to be called by `PreloadedStyleSheet::PreloadAsync`.
    */
-  Result<RefPtr<StyleSheet>, nsresult> LoadSheet(nsIURI*, SheetParsingMode,
+  Result<RefPtr<StyleSheet>, nsresult> LoadSheet(nsIURI*, StyleOrigin,
                                                  UseSystemPrincipal,
                                                  nsICSSLoaderObserver*);
 
@@ -527,13 +526,13 @@ class Loader final {
  private:
   std::tuple<RefPtr<StyleSheet>, SheetState,
              RefPtr<SubResourceNetworkMetadataHolder>>
-  CreateSheet(const SheetInfo& aInfo, css::SheetParsingMode aParsingMode,
-              bool aSyncLoad, css::StylePreloadKind aPreloadKind) {
+  CreateSheet(const SheetInfo& aInfo, StyleOrigin aOrigin, bool aSyncLoad,
+              css::StylePreloadKind aPreloadKind) {
     nsIPrincipal* triggeringPrincipal = aInfo.mTriggeringPrincipal
                                             ? aInfo.mTriggeringPrincipal.get()
                                             : LoaderPrincipal();
-    return CreateSheet(aInfo.mURI, aInfo.mContent, triggeringPrincipal,
-                       aParsingMode, aInfo.mCORSMode,
+    return CreateSheet(aInfo.mURI, aInfo.mContent, triggeringPrincipal, aOrigin,
+                       aInfo.mCORSMode,
                        /* aPreloadOrParentDataEncoding = */ nullptr,
                        aInfo.mIntegrity, aSyncLoad, aPreloadKind);
   }
@@ -544,8 +543,8 @@ class Loader final {
   std::tuple<RefPtr<StyleSheet>, SheetState,
              RefPtr<SubResourceNetworkMetadataHolder>>
   CreateSheet(nsIURI* aURI, nsIContent* aLinkingContent,
-              nsIPrincipal* aTriggeringPrincipal, css::SheetParsingMode,
-              CORSMode, const Encoding* aPreloadOrParentDataEncoding,
+              nsIPrincipal* aTriggeringPrincipal, StyleOrigin, CORSMode,
+              const Encoding* aPreloadOrParentDataEncoding,
               const nsAString& aIntegrity, bool aSyncLoad, StylePreloadKind);
 
   // Pass in either a media string or the MediaList from the CSSParser.  Don't
@@ -560,10 +559,10 @@ class Loader final {
   void InsertChildSheet(StyleSheet& aSheet, StyleSheet& aParentSheet);
 
   Result<RefPtr<StyleSheet>, nsresult> InternalLoadNonDocumentSheet(
-      nsIURI* aURL, StylePreloadKind, SheetParsingMode aParsingMode,
-      UseSystemPrincipal, const Encoding* aPreloadEncoding,
-      nsIReferrerInfo* aReferrerInfo, nsICSSLoaderObserver* aObserver,
-      CORSMode aCORSMode, const nsAString& aNonce, const nsAString& aIntegrity,
+      nsIURI* aURL, StylePreloadKind, StyleOrigin aOrigin, UseSystemPrincipal,
+      const Encoding* aPreloadEncoding, nsIReferrerInfo* aReferrerInfo,
+      nsICSSLoaderObserver* aObserver, CORSMode aCORSMode,
+      const nsAString& aNonce, const nsAString& aIntegrity,
       uint64_t aEarlyHintPreloaderId, dom::FetchPriority aFetchPriority);
 
   RefPtr<StyleSheet> LookupInlineSheetInCache(const nsAString&, nsIPrincipal*,
