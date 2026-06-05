@@ -71,6 +71,7 @@ import { updateEditorSizeCssVariables } from "../../utils/ui";
 
 const { debounce } = require("resource://devtools/shared/debounce.js");
 const classnames = require("resource://devtools/client/shared/classnames.js");
+const SourceEditor = require("resource://devtools/client/shared/sourceeditor/editor.js");
 
 const { appinfo } = Services;
 const isMacOS = appinfo.OS === "Darwin";
@@ -693,6 +694,11 @@ class Editor extends PureComponent {
       this.showErrorMessage(value);
       return;
     }
+
+    if (selectedSource.isStyleSheet) {
+      await editor.setMode(SourceEditor.modes.css);
+    }
+
     await editor.setText(selectedSourceTextContent.value.value, {
       documentId: selectedSource.id,
     });
