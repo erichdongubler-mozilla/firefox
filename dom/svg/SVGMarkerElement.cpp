@@ -51,7 +51,7 @@ SVGElement::EnumInfo SVGMarkerElement::sEnumInfo[1] = {
 // Implementation
 
 SVGMarkerElement::SVGMarkerElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGMarkerElementBase(std::move(aNodeInfo)), mCoordCtx(nullptr) {}
 
 //----------------------------------------------------------------------

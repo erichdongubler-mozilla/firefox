@@ -46,7 +46,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 // Implementation
 
 SVGStyleElement::SVGStyleElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGStyleElementBase(std::move(aNodeInfo)) {
   AddMutationObserver(this);
   SetEnabledCallbacks(kCharacterDataChanged | kContentAppended |

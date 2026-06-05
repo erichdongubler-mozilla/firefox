@@ -34,7 +34,7 @@ SVGElement::LengthInfo SVGLineElement::sLengthInfo[4] = {
 // Implementation
 
 SVGLineElement::SVGLineElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGLineElementBase(std::move(aNodeInfo)) {}
 
 void SVGLineElement::MaybeAdjustForZeroLength(float aX1, float aY1, float& aX2,

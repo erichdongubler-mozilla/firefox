@@ -24,7 +24,7 @@ JSObject* SVGPolygonElement::WrapNode(JSContext* aCx,
 // Implementation
 
 SVGPolygonElement::SVGPolygonElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGPolygonElementBase(std::move(aNodeInfo)) {}
 
 //----------------------------------------------------------------------

@@ -17,7 +17,7 @@ namespace mozilla::dom {
 // Implementation
 
 SVGPolyElement::SVGPolyElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGPolyElementBase(std::move(aNodeInfo)) {}
 
 already_AddRefed<DOMSVGPointList> SVGPolyElement::Points() {

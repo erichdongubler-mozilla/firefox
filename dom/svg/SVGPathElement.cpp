@@ -62,7 +62,7 @@ JSObject* SVGPathElement::WrapNode(JSContext* aCx,
 // Implementation
 
 SVGPathElement::SVGPathElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGPathElementBase(std::move(aNodeInfo)) {}
 
 //----------------------------------------------------------------------
