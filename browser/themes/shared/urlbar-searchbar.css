@@ -66,7 +66,7 @@
 }
 
 /* Variables that make it easier to support both Nova and Proton. These can
-   optionally be removed when Proton is removed. */
+   optionally be replaced with inline definitions when Proton is removed. */
 .urlbar,
 #searchbar {
   --urlbar-background-background-color: var(--toolbar-field-background-color);
@@ -74,7 +74,11 @@
   --urlbar-background-border: none;
   --urlbar-background-border-breakout: none;
   --urlbar-background-border-radius: var(--urlbarview-border-radius);
+  --urlbar-background-border-top-radius-breakout-compact: min(var(--urlbar-background-border-radius), calc(var(--urlbar-min-height) / 2));
   --urlbar-background-box-shadow-breakout: 0 0 14px 0 var(--chrome-box-shadow);
+  --urlbar-background-box-shadow-breakout-compact: none;
+  --urlbar-background-inset-breakout: calc(var(--urlbar-min-height) / 2 - var(--border-radius-xxlarge));
+  --urlbar-background-inset-breakout-compact: 0;
   --urlbar-background-outline-focused: none;
   --urlbar-input-container-border: var(--urlbar-input-container-border-width) solid var(--toolbar-field-border-color);
   --urlbar-margin-block-start-breakout: calc((var(--urlbar-container-height) - var(--urlbar-height)) / 2);
@@ -84,7 +88,10 @@
   @media not -moz-pref("browser.nova.enabled") {
     --urlbar-background-border: var(--urlbar-input-container-border-width) solid var(--toolbar-field-border-color);
     --urlbar-background-border-breakout: var(--urlbar-input-container-border-width) solid var(--panel-border-color);
+    --urlbar-background-border-top-radius-breakout-compact: var(--urlbar-background-border-radius);
     --urlbar-background-box-shadow-breakout: 0 2px 14px var(--chrome-box-shadow);
+    --urlbar-background-box-shadow-breakout-compact: var(--urlbar-background-box-shadow-breakout);
+    --urlbar-background-inset-breakout: 0;
     /* We want the focus outline with the theme's border-color when focused.
        --toolbar-field-border-color-focus is set equal to --focus-outline-color
        on :root, but LWT themes can override this value. */
@@ -223,6 +230,20 @@ toolbar[inactive="true"] .urlbar,
   .urlbar[breakout-extend] > & {
     border: var(--urlbar-background-border-breakout);
     box-shadow: var(--urlbar-background-box-shadow-breakout);
+    inset: var(--urlbar-background-inset-breakout);
+  }
+
+  :root[uidensity="compact"] .urlbar[breakout-extend] > & {
+    inset: var(--urlbar-background-inset-breakout-compact);
+
+    .urlbar:not([open]) > & {
+      box-shadow: var(--urlbar-background-box-shadow-breakout-compact);
+    }
+
+    .urlbar[open]:not([noresults]) > & {
+      border-top-left-radius: var(--urlbar-background-border-top-radius-breakout-compact);
+      border-top-right-radius: var(--urlbar-background-border-top-radius-breakout-compact);
+    }
   }
 
   .urlbar[open] > & {
@@ -361,8 +382,6 @@ toolbar[inactive="true"] .urlbar,
 
 @media -moz-pref("browser.nova.enabled") {
   .urlbar:not(moz-smartbar)[breakout] {
-    --urlbar-background-inset: calc(var(--urlbar-height) / 2 - var(--border-radius-xxlarge));
-
     > .urlbar-input-container {
       height: var(--urlbar-height);
       outline: var(--urlbar-input-container-border);
@@ -380,16 +399,6 @@ toolbar[inactive="true"] .urlbar,
 
     &[breakout-extend][focused] > .urlbar-input-container {
       outline-color: var(--focus-outline-color);
-    }
-
-    &[breakout-extend] > .urlbar-background {
-      inset: var(--urlbar-background-inset);
-    }
-
-    &[breakout-extend][open] > .urlbar-background {
-      /* Rely on the height of urlbar, but compensate for the row's transparent
-         border (gutter). */
-      inset-block-end: var(--urlbarView-row-gutter);
     }
   }
 }

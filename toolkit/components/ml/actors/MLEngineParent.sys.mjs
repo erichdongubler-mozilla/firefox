@@ -1409,6 +1409,12 @@ export class MLEngine {
         if (data.error) {
           newPortResolvers.reject(data.error);
         } else {
+          // The child reports the backend it actually used; record it so
+          // telemetry and log messages reflect reality rather than the
+          // requested sentinel (e.g. "best-onnx").
+          if (data.resolvedBackend) {
+            this.pipelineOptions.backend = data.resolvedBackend;
+          }
           newPortResolvers.resolve();
         }
 

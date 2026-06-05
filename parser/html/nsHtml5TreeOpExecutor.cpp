@@ -1300,8 +1300,7 @@ void nsHtml5TreeOpExecutor::PreloadStyle(
   if (aLinkPreload) {
     auto hashKey = PreloadHashKey::CreateAsStyle(
         uri, mDocument->NodePrincipal(),
-        dom::Element::StringToCORSMode(aCrossOrigin),
-        css::eAuthorSheetFeatures);
+        dom::Element::StringToCORSMode(aCrossOrigin));
     if (mDocument->Preloads().PreloadExists(hashKey)) {
       return;
     }

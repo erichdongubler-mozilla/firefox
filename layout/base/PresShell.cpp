@@ -3867,7 +3867,8 @@ void PresShell::ScrollFrameIntoVisualViewport(
   // scroll-behavior for visual scrolling.
   ScrollMode scrollMode =
       GetScrollModeForScrollIntoView(rootScrollContainer, aScrollFlags);
-  root->ScrollToVisual(*aDestination, FrameMetrics::eMainThread, scrollMode);
+  root->ScrollToVisual(*aDestination, ScrollOffsetUpdateType::MainThread,
+                       scrollMode);
 }
 
 bool PresShell::ScrollFrameIntoView(
@@ -12270,7 +12271,7 @@ void PresShell::RefreshViewportSize() {
 }
 
 void PresShell::ScrollToVisual(const nsPoint& aVisualViewportOffset,
-                               FrameMetrics::ScrollOffsetUpdateType aUpdateType,
+                               ScrollOffsetUpdateType aUpdateType,
                                ScrollMode aMode) {
   if (aMode == ScrollMode::Smooth || aMode == ScrollMode::SmoothMsd) {
     if (ScrollContainerFrame* sf = GetRootScrollContainerFrame()) {
@@ -12286,8 +12287,7 @@ void PresShell::ScrollToVisual(const nsPoint& aVisualViewportOffset,
 }
 
 void PresShell::SetPendingVisualScrollUpdate(
-    const nsPoint& aVisualViewportOffset,
-    FrameMetrics::ScrollOffsetUpdateType aUpdateType) {
+    const nsPoint& aVisualViewportOffset, ScrollOffsetUpdateType aUpdateType) {
   mPendingVisualScrollUpdate =
       Some(VisualScrollUpdate{aVisualViewportOffset, aUpdateType});
 

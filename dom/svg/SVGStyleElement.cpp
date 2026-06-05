@@ -5,6 +5,7 @@
 #include "mozilla/dom/SVGStyleElement.h"
 
 #include "mozilla/RefPtr.h"
+#include "mozilla/StyleSheet.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FetchPriority.h"

@@ -1599,13 +1599,13 @@ nsDOMWindowUtils::ScrollToVisual(float aOffsetX, float aOffsetY,
       presContext->PresShell()->GetRootScrollContainerFrame();
   NS_ENSURE_TRUE(sf, NS_ERROR_NOT_AVAILABLE);
 
-  FrameMetrics::ScrollOffsetUpdateType updateType;
+  ScrollOffsetUpdateType updateType;
   switch (aUpdateType) {
     case UPDATE_TYPE_RESTORE:
-      updateType = FrameMetrics::eRestore;
+      updateType = ScrollOffsetUpdateType::Restore;
       break;
     case UPDATE_TYPE_MAIN_THREAD:
-      updateType = FrameMetrics::eMainThread;
+      updateType = ScrollOffsetUpdateType::MainThread;
       break;
     default:
       return NS_ERROR_INVALID_ARG;

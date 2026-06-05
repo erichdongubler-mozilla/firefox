@@ -156,11 +156,11 @@ struct ParamTraits<mozilla::layers::ScrollDirection>
           mozilla::layers::kHighestScrollDirection> {};
 
 template <>
-struct ParamTraits<mozilla::layers::FrameMetrics::ScrollOffsetUpdateType>
+struct ParamTraits<mozilla::layers::ScrollOffsetUpdateType>
     : public ContiguousEnumSerializerInclusive<
-          mozilla::layers::FrameMetrics::ScrollOffsetUpdateType,
-          mozilla::layers::FrameMetrics::ScrollOffsetUpdateType::eNone,
-          mozilla::layers::FrameMetrics::sHighestScrollOffsetUpdateType> {};
+          mozilla::layers::ScrollOffsetUpdateType,
+          mozilla::layers::ScrollOffsetUpdateType::None,
+          mozilla::layers::kHighestScrollOffsetUpdateType> {};
 
 template <>
 struct ParamTraits<mozilla::layers::RepaintRequest::ScrollOffsetUpdateType>

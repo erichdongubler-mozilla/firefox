@@ -135,7 +135,6 @@
 #include "mozilla/css/ImageLoader.h"
 #include "mozilla/css/Loader.h"
 #include "mozilla/css/Rule.h"
-#include "mozilla/css/SheetParsingMode.h"
 #include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/AnonymousContent.h"
 #include "mozilla/dom/BindContext.h"
@@ -8047,25 +8046,25 @@ nsresult Document::LoadAdditionalStyleSheet(additionalSheetType aType,
   // Loading the sheet sync.
   RefPtr<css::Loader> loader = new css::Loader(GetDocGroup());
 
-  css::SheetParsingMode parsingMode;
+  StyleOrigin origin;
   switch (aType) {
     case Document::eAgentSheet:
-      parsingMode = css::eAgentSheetFeatures;
+      origin = StyleOrigin::UserAgent;
       break;
 
     case Document::eUserSheet:
-      parsingMode = css::eUserSheetFeatures;
+      origin = StyleOrigin::User;
       break;
 
     case Document::eAuthorSheet:
-      parsingMode = css::eAuthorSheetFeatures;
+      origin = StyleOrigin::Author;
       break;
 
     default:
       MOZ_CRASH("impossible value for aType");
   }
 
-  auto result = loader->LoadSheetSync(aSheetURI, parsingMode,
+  auto result = loader->LoadSheetSync(aSheetURI, origin,
                                       css::Loader::UseSystemPrincipal::Yes);
   if (result.isErr()) {
     return result.unwrapErr();

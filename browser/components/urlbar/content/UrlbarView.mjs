@@ -79,9 +79,7 @@ export class UrlbarView {
     this.resultMenu.addEventListener("command", this);
     this.resultMenu.addEventListener("popupshowing", this);
 
-    // `noresults` is used to style the one-offs without their usual top border
-    // when no results are present.
-    this.panel.setAttribute("noresults", "true");
+    this.input.toggleAttribute("noresults", true);
 
     this.controller.setView(this);
     this.controller.addListener(this);
@@ -511,7 +509,7 @@ export class UrlbarView {
 
   clear() {
     this.#rows.textContent = "";
-    this.panel.setAttribute("noresults", "true");
+    this.input.toggleAttribute("noresults", true);
     this.clearSelection();
     this.visibleResults = [];
   }
@@ -2765,11 +2763,7 @@ export class UrlbarView {
       selectableElement = this.#getNextSelectableElement(selectableElement);
     }
 
-    if (this.visibleResults.length) {
-      this.panel.removeAttribute("noresults");
-    } else {
-      this.panel.setAttribute("noresults", "true");
-    }
+    this.input.toggleAttribute("noresults", !this.visibleResults.length);
   }
 
   /**
