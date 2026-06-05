@@ -46,7 +46,9 @@ class SettingsDeleteBrowsingDataOnQuitTest {
     @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
-            HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
+            HomeActivityIntentTestRule.withDefaultSettingsOverrides(
+                skipOnboarding = true,
+            ),
         ) { it.activity }
 
     @get:Rule(order = 2)
