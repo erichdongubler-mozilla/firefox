@@ -11,9 +11,6 @@
 let testEngine;
 
 add_setup(async () => {
-  // Force settings redesign to false, so that `hideOneOffButton` will correctly
-  // work for the time being.
-  Services.prefs.setBoolPref("browser.settings-redesign.enabled", false);
   // Disable search suggestions for a less verbose test.
   Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
   // Disable ScotchBonnet that provides its own tab to search implementation.

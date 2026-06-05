@@ -20,10 +20,6 @@ const lazy = XPCOMUtils.declareLazy({
       prefix: "SearchEngine",
       maxLogLevel: lazy.SearchUtils.loggingEnabled ? "Debug" : "Warn",
     }),
-  settingsRedesignEnabled: {
-    pref: "browser.settings-redesign.enabled",
-    default: false,
-  },
 });
 
 // Supported OpenSearch parameters
@@ -1255,11 +1251,6 @@ export class SearchEngine {
    * @returns {boolean}
    */
   get hideOneOffButton() {
-    if (lazy.settingsRedesignEnabled) {
-      // This setting is no longer supported after the settings redesign, so
-      // always return false.
-      return false;
-    }
     return this.getAttr("hideOneOffButton") || false;
   }
 
