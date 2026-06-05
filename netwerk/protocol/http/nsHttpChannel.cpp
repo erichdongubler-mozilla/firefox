@@ -3994,7 +3994,7 @@ nsresult nsHttpChannel::ProxyFailover() {
 }
 
 void nsHttpChannel::SetHTTPSSVCRecord(
-    already_AddRefed<nsIDNSHTTPSSVCRecord>&& aRecord) {
+    already_AddRefed<nsIDNSHTTPSSVCRecord> aRecord) {
   LOG(("nsHttpChannel::SetHTTPSSVCRecord [this=%p]\n", this));
   nsCOMPtr<nsIDNSHTTPSSVCRecord> record = aRecord;
   MOZ_ASSERT(!mHTTPSSVCRecord);

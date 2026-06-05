@@ -834,7 +834,7 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   nsresult LogConsoleError(const char* aTag);
 
-  void SetHTTPSSVCRecord(already_AddRefed<nsIDNSHTTPSSVCRecord>&& aRecord);
+  void SetHTTPSSVCRecord(already_AddRefed<nsIDNSHTTPSSVCRecord> aRecord);
 
   void RecordOnStartTelemetry(nsresult aStatus, bool aIsNavigation);
 

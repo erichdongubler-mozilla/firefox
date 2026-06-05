@@ -120,7 +120,7 @@ class ExtensionStreamGetter final : public nsICancelable {
   // To use when getting an FD for a packed extension JAR file
   // in order to load a resource.
   ExtensionStreamGetter(nsIURI* aURI, nsILoadInfo* aLoadInfo,
-                        already_AddRefed<nsIJARChannel>&& aJarChannel,
+                        already_AddRefed<nsIJARChannel> aJarChannel,
                         nsIFile* aJarFile)
       : mURI(aURI),
         mLoadInfo(aLoadInfo),
