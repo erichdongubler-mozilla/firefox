@@ -924,7 +924,7 @@ class nsDocShell final : public nsDocLoader,
   // TODO: Convert this to MOZ_CAN_RUN_SCRIPT (bug 1415230)
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void FirePageHideShowNonRecursive(bool aShow);
 
-  nsresult Dispatch(already_AddRefed<nsIRunnable>&& aRunnable);
+  nsresult Dispatch(already_AddRefed<nsIRunnable> aRunnable);
 
   // Determine if this type of load should update history.
   static bool ShouldUpdateGlobalHistory(uint32_t aLoadType);
