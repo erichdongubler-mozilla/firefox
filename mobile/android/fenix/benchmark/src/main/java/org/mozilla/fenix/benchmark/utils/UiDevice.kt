@@ -73,17 +73,15 @@ fun UiDevice.waitForHomepage() {
 
 fun UiDevice.clickIfExistsWithText(text: String) {
     findObject(UiSelector().text(text)).run {
-        if (waitForExists(WAITING_TIME_MS)) {
-            click()
-        }
+        waitForExists(WAITING_TIME_MS)
+        click()
     }
 }
 
 fun UiDevice.clickIfExistsWithResourceId(resourceId: String) {
     findObject(UiSelector().resourceId(resourceId)).run {
-        if (waitForExists(WAITING_TIME_MS)) {
-            click()
-        }
+        waitForExists(WAITING_TIME_MS)
+        click()
     }
 }
 

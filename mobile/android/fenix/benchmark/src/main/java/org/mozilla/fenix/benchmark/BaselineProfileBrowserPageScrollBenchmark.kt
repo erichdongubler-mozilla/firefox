@@ -17,7 +17,6 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.benchmark.utils.HtmlAsset
 import org.mozilla.fenix.benchmark.utils.MockWebServerRule
 import org.mozilla.fenix.benchmark.utils.TARGET_PACKAGE
-import org.mozilla.fenix.benchmark.utils.completeOnboarding
 import org.mozilla.fenix.benchmark.utils.flingToBeginning
 import org.mozilla.fenix.benchmark.utils.flingToEnd
 import org.mozilla.fenix.benchmark.utils.measureRepeatedDefault
@@ -79,7 +78,6 @@ class BaselineProfilesBrowserPageScrollBenchmark {
             intent.setPackage(packageName)
 
             startActivityAndWait(intent = intent)
-            device.completeOnboarding()
 
             device.flingToEnd(
                 scrollableId = "$packageName:id/engineView",

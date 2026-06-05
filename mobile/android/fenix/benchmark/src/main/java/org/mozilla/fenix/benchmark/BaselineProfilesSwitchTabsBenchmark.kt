@@ -18,7 +18,6 @@ import org.mozilla.fenix.benchmark.utils.HtmlAsset
 import org.mozilla.fenix.benchmark.utils.MockWebServerRule
 import org.mozilla.fenix.benchmark.utils.TARGET_PACKAGE
 import org.mozilla.fenix.benchmark.utils.closeAllTabs
-import org.mozilla.fenix.benchmark.utils.completeOnboarding
 import org.mozilla.fenix.benchmark.utils.enterSearchMode
 import org.mozilla.fenix.benchmark.utils.loadSite
 import org.mozilla.fenix.benchmark.utils.measureRepeatedDefault
@@ -82,7 +81,6 @@ class BaselineProfilesSwitchTabsBenchmark {
             intent.setPackage(packageName)
 
             startActivityAndWait(intent = intent)
-            device.completeOnboarding()
 
             device.enterSearchMode()
             val simpleHtmlUrl = mockRule.url(HtmlAsset.SIMPLE)

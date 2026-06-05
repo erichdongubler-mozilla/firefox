@@ -15,7 +15,6 @@ import org.mozilla.fenix.benchmark.utils.HtmlAsset
 import org.mozilla.fenix.benchmark.utils.MockWebServerRule
 import org.mozilla.fenix.benchmark.utils.TARGET_PACKAGE
 import org.mozilla.fenix.benchmark.utils.closeTab
-import org.mozilla.fenix.benchmark.utils.completeOnboarding
 import org.mozilla.fenix.benchmark.utils.dismissWallpaperOnboarding
 import org.mozilla.fenix.benchmark.utils.isWallpaperOnboardingShown
 import org.mozilla.fenix.benchmark.utils.loadSite
@@ -64,7 +63,6 @@ class PrivateBrowsingBaselineProfileGenerator {
             val intent = Intent(Intent.ACTION_VIEW, FENIX_HOME_DEEP_LINK)
 
             startActivityAndWait(intent = intent)
-            device.completeOnboarding()
 
             if (device.isWallpaperOnboardingShown()) {
                 device.dismissWallpaperOnboarding()
