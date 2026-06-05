@@ -11,9 +11,8 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-nsresult NS_NewXMLElement(
-    Element** aInstancePtrResult,
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo) {
+nsresult NS_NewXMLElement(Element** aInstancePtrResult,
+                          already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo) {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo(std::move(aNodeInfo));
   auto* nim = nodeInfo->NodeInfoManager();
   RefPtr<nsXMLElement> it = new (nim) nsXMLElement(nodeInfo.forget());
