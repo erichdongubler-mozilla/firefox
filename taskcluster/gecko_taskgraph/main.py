@@ -586,12 +586,6 @@ def image_digest(args):
 )
 @argument("--try-task-config-file", help="path to try task configuration file")
 @argument(
-    "--allow-parameter-override",
-    default=False,
-    action="store_true",
-    help="Allow user to override computed decision task parameters.",
-)
-@argument(
     "--no-verify",
     dest="verify",
     default=True,
