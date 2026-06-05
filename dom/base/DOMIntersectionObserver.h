@@ -117,7 +117,7 @@ class DOMIntersectionObserver final : public nsISupports,
   DOMIntersectionObserver(Document&, NativeCallback);
 
  public:
-  DOMIntersectionObserver(already_AddRefed<nsPIDOMWindowInner>&& aOwner,
+  DOMIntersectionObserver(already_AddRefed<nsPIDOMWindowInner> aOwner,
                           dom::IntersectionCallback& aCb);
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMIntersectionObserver)

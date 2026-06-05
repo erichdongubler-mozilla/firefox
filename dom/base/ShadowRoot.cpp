@@ -64,7 +64,7 @@ ShadowRoot::ShadowRoot(Element* aElement, ShadowRootMode aMode,
                        IsClonable aIsClonable, IsSerializable aIsSerializable,
                        Declarative aDeclarative,
                        CustomSlotDispatch aCustomSlotDispatch,
-                       already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+                       already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : DocumentFragment(std::move(aNodeInfo)), DocumentOrShadowRoot(this) {
   // nsINode.h relies on this.
   MOZ_ASSERT(static_cast<nsINode*>(this) == reinterpret_cast<nsINode*>(this));

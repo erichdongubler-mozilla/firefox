@@ -4110,7 +4110,7 @@ class Document : public nsINode,
   void UpdateLastRememberedSizes();
 
   // Dispatch a runnable related to the document.
-  nsresult Dispatch(already_AddRefed<nsIRunnable>&& aRunnable) const;
+  nsresult Dispatch(already_AddRefed<nsIRunnable> aRunnable) const;
 
   // The URLs passed to this function should match what
   // JS::DescribeScriptedCaller() returns, since this API is used to

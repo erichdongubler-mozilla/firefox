@@ -4536,7 +4536,7 @@ void Document::AssertDocGroupMatchesKey() const {
 }
 #endif
 
-nsresult Document::Dispatch(already_AddRefed<nsIRunnable>&& aRunnable) const {
+nsresult Document::Dispatch(already_AddRefed<nsIRunnable> aRunnable) const {
   return SchedulerGroup::Dispatch(std::move(aRunnable));
 }
 

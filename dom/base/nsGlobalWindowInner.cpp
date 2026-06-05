@@ -7700,7 +7700,7 @@ void nsGlobalWindowInner::StructuredClone(
 }
 
 nsresult nsGlobalWindowInner::Dispatch(
-    already_AddRefed<nsIRunnable>&& aRunnable) const {
+    already_AddRefed<nsIRunnable> aRunnable) const {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   return NS_DispatchToCurrentThread(std::move(aRunnable));
 }

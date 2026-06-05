@@ -117,7 +117,7 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
              SlotAssignmentMode aSlotAssignment, IsClonable aClonable,
              IsSerializable aIsSerializable, Declarative aDeclarative,
              CustomSlotDispatch aCustomSlotDispatch,
-             already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+             already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   void AddSizeOfExcludingThis(nsWindowSizes&, size_t* aNodeSize) const final;
 

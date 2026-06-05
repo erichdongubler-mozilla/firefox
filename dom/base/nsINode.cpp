@@ -255,7 +255,7 @@ void nsINode::nsSlots::Unlink(nsINode& aNode) {
 //----------------------------------------------------------------------
 
 #ifdef MOZILLA_INTERNAL_API
-nsINode::nsINode(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+nsINode::nsINode(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : mNodeInfo(std::move(aNodeInfo)),
       mParent(nullptr)
 #  ifndef BOOL_FLAGS_ON_WRAPPER_CACHE

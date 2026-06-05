@@ -1237,7 +1237,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   bool IsPlayingAudio() override;
 
   // Dispatch a runnable related to the global.
-  nsresult Dispatch(already_AddRefed<nsIRunnable>&& aRunnable) const final;
+  nsresult Dispatch(already_AddRefed<nsIRunnable> aRunnable) const final;
   nsISerialEventTarget* SerialEventTarget() const final;
 
   void DisableIdleCallbackRequests();

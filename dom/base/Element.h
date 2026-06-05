@@ -302,7 +302,7 @@ class TrustedHTMLOrTrustedScriptOrTrustedScriptURLOrString;
 class Element : public FragmentOrElement {
  public:
 #ifdef MOZILLA_INTERNAL_API
-  explicit Element(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit Element(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : FragmentOrElement(std::move(aNodeInfo)),
         mState(ElementState::READONLY | ElementState::DEFINED |
                ElementState::LTR) {

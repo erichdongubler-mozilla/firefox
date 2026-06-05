@@ -198,21 +198,21 @@ class OldWindowSize : public LinkedListElement<OldWindowSize> {
 namespace {
 
 class NativeInputRunnable final : public PrioritizableRunnable {
-  explicit NativeInputRunnable(already_AddRefed<nsIRunnable>&& aEvent);
+  explicit NativeInputRunnable(already_AddRefed<nsIRunnable> aEvent);
   ~NativeInputRunnable() = default;
 
  public:
   static already_AddRefed<nsIRunnable> Create(
-      already_AddRefed<nsIRunnable>&& aEvent);
+      already_AddRefed<nsIRunnable> aEvent);
 };
 
-NativeInputRunnable::NativeInputRunnable(already_AddRefed<nsIRunnable>&& aEvent)
+NativeInputRunnable::NativeInputRunnable(already_AddRefed<nsIRunnable> aEvent)
     : PrioritizableRunnable(std::move(aEvent),
                             nsIRunnablePriority::PRIORITY_INPUT_HIGH) {}
 
 /* static */
 already_AddRefed<nsIRunnable> NativeInputRunnable::Create(
-    already_AddRefed<nsIRunnable>&& aEvent) {
+    already_AddRefed<nsIRunnable> aEvent) {
   MOZ_ASSERT(NS_IsMainThread());
   nsCOMPtr<nsIRunnable> event(new NativeInputRunnable(std::move(aEvent)));
   return event.forget();
