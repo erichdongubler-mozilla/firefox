@@ -4334,6 +4334,6 @@ BrowserChildMessageManager::GetTabEventTarget() {
 }
 
 nsresult BrowserChildMessageManager::Dispatch(
-    already_AddRefed<nsIRunnable>&& aRunnable) const {
+    already_AddRefed<nsIRunnable> aRunnable) const {
   return SchedulerGroup::Dispatch(std::move(aRunnable));
 }

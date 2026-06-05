@@ -459,7 +459,7 @@ int CamerasChild::StopCapture(CaptureEngine aCapEngine, const int capture_id) {
 
 class ShutdownRunnable : public Runnable {
  public:
-  explicit ShutdownRunnable(already_AddRefed<Runnable>&& aReplyEvent)
+  explicit ShutdownRunnable(already_AddRefed<Runnable> aReplyEvent)
       : Runnable("camera::ShutdownRunnable"), mReplyEvent(aReplyEvent) {};
 
   NS_IMETHOD Run() override {

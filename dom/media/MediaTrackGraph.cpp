@@ -2141,7 +2141,7 @@ void MediaTrackGraphImpl::AppendMessage(
   EnsureRunInStableState();
 }
 
-void MediaTrackGraphImpl::Dispatch(already_AddRefed<nsIRunnable>&& aRunnable) {
+void MediaTrackGraphImpl::Dispatch(already_AddRefed<nsIRunnable> aRunnable) {
   mMainThread->Dispatch(std::move(aRunnable));
 }
 

@@ -118,8 +118,8 @@ UniquePtr<CubebInputStream> CubebInputStream::Create(cubeb_devid aDeviceId,
 }
 
 CubebInputStream::CubebInputStream(
-    already_AddRefed<Listener>&& aListener,
-    already_AddRefed<CubebUtils::CubebHandle>&& aCubeb,
+    already_AddRefed<Listener> aListener,
+    already_AddRefed<CubebUtils::CubebHandle> aCubeb,
     UniquePtr<cubeb_stream, CubebDestroyPolicy>&& aStream)
     : mListener(aListener), mCubeb(aCubeb), mStream(std::move(aStream)) {
   MOZ_ASSERT(mListener);

@@ -54,7 +54,7 @@ extern mozilla::LazyLogModule gMediaElementLog;
               fmt::ptr(this), ##__VA_ARGS__)
 
 nsGenericHTMLElement* NS_NewHTMLVideoElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     mozilla::dom::FromParser aFromParser) {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo(aNodeInfo);
   auto* nim = nodeInfo->NodeInfoManager();
@@ -162,7 +162,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(HTMLVideoElement,
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPictureInPictureWindow)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
-HTMLVideoElement::HTMLVideoElement(already_AddRefed<NodeInfo>&& aNodeInfo)
+HTMLVideoElement::HTMLVideoElement(already_AddRefed<NodeInfo> aNodeInfo)
     : HTMLMediaElement(std::move(aNodeInfo)),
       mVideoWatchManager(this, AbstractThread::MainThread()) {
   DecoderDoctorLogger::LogConstruction(this);

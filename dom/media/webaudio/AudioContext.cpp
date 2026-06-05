@@ -836,7 +836,7 @@ class OnStateChangeTask final : public Runnable {
   RefPtr<AudioContext> mAudioContext;
 };
 
-void AudioContext::Dispatch(already_AddRefed<nsIRunnable>&& aRunnable) {
+void AudioContext::Dispatch(already_AddRefed<nsIRunnable> aRunnable) {
   MOZ_ASSERT(NS_IsMainThread());
   // It can happen that this runnable took a long time to reach the main thread,
   // and the global is not valid anymore.

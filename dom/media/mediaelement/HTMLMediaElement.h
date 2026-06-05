@@ -172,8 +172,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   CORSMode GetCORSMode() { return mCORSMode; }
 
-  explicit HTMLMediaElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit HTMLMediaElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   void Init();
 
   virtual HTMLVideoElement* AsHTMLVideoElement() { return nullptr; };

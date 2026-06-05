@@ -4782,7 +4782,7 @@ class HTMLMediaElement::TitleChangeObserver final : public nsIObserver {
 NS_IMPL_ISUPPORTS(HTMLMediaElement::TitleChangeObserver, nsIObserver)
 
 HTMLMediaElement::HTMLMediaElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)),
       mWatchManager(this, AbstractThread::MainThread()),
       mShutdownObserver(new ShutdownObserver),
