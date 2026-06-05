@@ -571,11 +571,7 @@ tasks:
                                       - bash
                                       - -cx
                                       - $let:
-                                            extraArgs:
-                                                $switch:
-                                                    'tasks_for == "cron"': '${cron.quoted_args}'
-                                                    'repoType == "dev"': '--allow-parameter-override'
-                                                    $default: ''
+                                            extraArgs: {$if: 'tasks_for == "cron"', then: '${cron.quoted_args}', else: ''}
                                         in:
                                             $if: 'eventType == "action"'
                                             then: >
