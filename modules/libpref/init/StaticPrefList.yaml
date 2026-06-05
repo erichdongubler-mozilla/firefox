@@ -9714,6 +9714,7 @@
     value: false
     mirror: always
     set_spidermonkey_pref: always
+    fuzzing_safe: false
 
 -   name: javascript.options.wasm_branch_hinting
     type: bool
@@ -9730,6 +9731,7 @@
     value: false
     mirror: always
     set_spidermonkey_pref: startup
+    fuzzing_safe: false
 
 -   name: javascript.options.wasm_compact_imports
     type: bool
@@ -9742,6 +9744,7 @@
   value: false
   mirror: always
   set_spidermonkey_pref: always
+  fuzzing_safe: false
 
 #if defined(ENABLE_WASM_SIMD)
 #if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86)
@@ -9792,6 +9795,7 @@
     value: false
     mirror: always
     set_spidermonkey_pref: always
+    fuzzing_safe: false
 
 # Enables lazy tiering for all modules. Use wasm_lazy_tiering_for_gc to only
 # enable this for GC modules.

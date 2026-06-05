@@ -56,9 +56,14 @@ static int testWasmInit(int* argc, char*** argv) {
     MOZ_CRASH("Wasm is not supported");
   }
 
+  // Enable fuzzing-safe mode, then turn on all wasm features. Features that are
+  // marked |fuzzing_safe: false| in StaticPrefList.yaml are ignored by the
+  // setters below.
+  JS::Prefs::setFuzzingSafe(true);
+
 #define WASM_FEATURE(NAME, LOWER_NAME, COMPILE_PRED, COMPILER_PRED, FLAG_PRED, \
-                     FLAG_FORCE_ON, FLAG_FUZZ_ON, PREF)                        \
-  PrefsSetters::set_wasm_##PREF(FLAG_FUZZ_ON);
+                     FLAG_FORCE_ON, PREF)                                      \
+  PrefsSetters::set_wasm_##PREF(true);
   JS_FOR_WASM_FEATURES(WASM_FEATURE)
 #undef WASM_FEATURE
 
