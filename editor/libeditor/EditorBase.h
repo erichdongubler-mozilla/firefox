@@ -17,7 +17,6 @@
 #include "mozilla/PendingStyles.h"       // for PendingStyle, PendingStyleCache
 #include "mozilla/RangeBoundary.h"       // for RawRangeBoundary, RangeBoundary
 #include "mozilla/SelectionState.h"      // for RangeUpdater, etc.
-#include "mozilla/StyleSheet.h"          // for StyleSheet
 #include "mozilla/TransactionManager.h"  // for TransactionManager
 #include "mozilla/WeakPtr.h"             // for WeakPtr
 #include "mozilla/dom/DataTransfer.h"    // for dom::DataTransfer

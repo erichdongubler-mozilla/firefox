@@ -16,6 +16,7 @@
 #include "mozilla/ServoStyleRuleMap.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/StyleSheet.h"
+#include "mozilla/css/Rule.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/DirectionalityUtils.h"

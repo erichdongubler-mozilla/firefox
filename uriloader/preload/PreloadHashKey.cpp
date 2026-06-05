@@ -7,6 +7,7 @@
 #include "mozilla/dom/Element.h"  // StringToCORSMode
 #include "mozilla/css/SheetLoadData.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
+#include "mozilla/StyleSheet.h"
 #include "nsIPrincipal.h"
 #include "nsIReferrerInfo.h"
 

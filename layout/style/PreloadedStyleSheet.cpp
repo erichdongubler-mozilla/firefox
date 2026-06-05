@@ -6,6 +6,7 @@
 
 #include "PreloadedStyleSheet.h"
 
+#include "mozilla/StyleSheet.h"
 #include "mozilla/css/Loader.h"
 #include "mozilla/dom/Promise.h"
 #include "nsICSSLoaderObserver.h"

@@ -16,9 +16,9 @@
 #include "mozilla/SharedSubResourceCache.h"
 #include "mozilla/css/StylePreloadKind.h"
 #include "mozilla/dom/LinkStyle.h"
+#include "mozilla/dom/SRIMetadata.h"
 #include "nsCompatibility.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsRefPtrHashtable.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
 #include "nsTObserverArray.h"
@@ -39,6 +39,7 @@ class StyleSheet;
 namespace dom {
 class DocGroup;
 class Element;
+class MediaList;
 enum class FetchPriority : uint8_t;
 }  // namespace dom
 
@@ -147,15 +148,12 @@ class SheetLoadDataHashKey : public PLDHashEntryHdr {
 namespace css {
 
 class SheetLoadData;
+using SheetLoadDataHolder = nsMainThreadPtrHolder<SheetLoadData>;
 class ImportRule;
-
-/*********************
- * Style sheet reuse *
- *********************/
-
 class MOZ_RAII LoaderReusableStyleSheets {
  public:
   LoaderReusableStyleSheets() = default;
+  ~LoaderReusableStyleSheets();
 
   /**
    * Look for a reusable sheet (see AddReusableSheet) matching the
@@ -175,15 +173,13 @@ class MOZ_RAII LoaderReusableStyleSheets {
    *
    * @param aSheet the sheet which can be reused
    */
-  void AddReusableSheet(StyleSheet* aSheet) {
-    mReusableSheets.AppendElement(aSheet);
-  }
+  void AddReusableSheet(StyleSheet* aSheet);
 
- private:
   LoaderReusableStyleSheets(const LoaderReusableStyleSheets&) = delete;
   LoaderReusableStyleSheets& operator=(const LoaderReusableStyleSheets&) =
       delete;
 
+ private:
   // The sheets that can be reused.
   nsTArray<RefPtr<StyleSheet>> mReusableSheets;
 };
@@ -527,15 +523,7 @@ class Loader final {
   std::tuple<RefPtr<StyleSheet>, SheetState,
              RefPtr<SubResourceNetworkMetadataHolder>>
   CreateSheet(const SheetInfo& aInfo, StyleOrigin aOrigin, bool aSyncLoad,
-              css::StylePreloadKind aPreloadKind) {
-    nsIPrincipal* triggeringPrincipal = aInfo.mTriggeringPrincipal
-                                            ? aInfo.mTriggeringPrincipal.get()
-                                            : LoaderPrincipal();
-    return CreateSheet(aInfo.mURI, aInfo.mContent, triggeringPrincipal, aOrigin,
-                       aInfo.mCORSMode,
-                       /* aPreloadOrParentDataEncoding = */ nullptr,
-                       aInfo.mIntegrity, aSyncLoad, aPreloadKind);
-  }
+              css::StylePreloadKind aPreloadKind);
 
   // For inline style, the aURI param is null, but the aLinkingContent
   // must be non-null then.  The loader principal must never be null

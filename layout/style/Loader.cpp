@@ -462,9 +462,11 @@ nsINode* SheetLoadData::GetRequestingNode() const {
   return mLoader->GetDocument();
 }
 
-/*********************
- * Style sheet reuse *
- *********************/
+LoaderReusableStyleSheets::~LoaderReusableStyleSheets() = default;
+
+void LoaderReusableStyleSheets::AddReusableSheet(StyleSheet* aSheet) {
+  mReusableSheets.AppendElement(aSheet);
+}
 
 bool LoaderReusableStyleSheets::FindReusableStyleSheet(
     nsIURI* aURL, RefPtr<StyleSheet>& aResult) {
@@ -899,6 +901,19 @@ bool Loader::MaybePutIntoLoadsPerformed(SheetLoadData& aLoadData) {
  * state of the sheet they are clones off; make sure to call PrepareSheet() on
  * the result of CreateSheet().
  */
+std::tuple<RefPtr<StyleSheet>, Loader::SheetState,
+           RefPtr<SubResourceNetworkMetadataHolder>>
+Loader::CreateSheet(const SheetInfo& aInfo, StyleOrigin aOrigin, bool aSyncLoad,
+                    css::StylePreloadKind aPreloadKind) {
+  nsIPrincipal* triggeringPrincipal = aInfo.mTriggeringPrincipal
+                                          ? aInfo.mTriggeringPrincipal.get()
+                                          : LoaderPrincipal();
+  return CreateSheet(aInfo.mURI, aInfo.mContent, triggeringPrincipal, aOrigin,
+                     aInfo.mCORSMode,
+                     /* aPreloadOrParentDataEncoding = */ nullptr,
+                     aInfo.mIntegrity, aSyncLoad, aPreloadKind);
+}
+
 std::tuple<RefPtr<StyleSheet>, Loader::SheetState,
            RefPtr<SubResourceNetworkMetadataHolder>>
 Loader::CreateSheet(nsIURI* aURI, nsIContent* aLinkingContent,
