@@ -314,6 +314,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
 
   /**
    * Get the flatten text length in the range.
+   *
    * @param aStartPosition      Start node and offset in the node of the range.
    *                            If the container is an element node, it's
    *                            important to start from before or after its open
@@ -329,13 +330,10 @@ class MOZ_STACK_CLASS ContentEventHandler {
    * @param aRootElement        The root element of the editor or document.
    *                            aRootElement won't cause any text including
    *                            line breaks.
-   * @param aLength             The result of the flatten text length of the
-   *                            range.
    */
-  static nsresult GetFlatTextLengthInRange(
+  static Result<uint32_t, nsresult> GetFlatTextLengthInRange(
       const RawNodePosition& aStartPosition,
-      const RawNodePosition& aEndPosition, const Element* aRootElement,
-      uint32_t* aLength);
+      const RawNodePosition& aEndPosition, const Element* aRootElement);
 
   // Computes the native text length between aStartOffset and aEndOffset of
   // aTextNode.
@@ -380,8 +378,8 @@ class MOZ_STACK_CLASS ContentEventHandler {
   // of line breaker caused by the start of aContent because aRange never
   // includes the line breaker caused by its start node.
   template <typename SimpleRangeType>
-  nsresult GetStartOffset(const SimpleRangeType& aSimpleRange,
-                          uint32_t* aOffset);
+  Result<uint32_t, nsresult> GetStartOffset(
+      const SimpleRangeType& aSimpleRange) const;
   // Check if we should insert a line break before aContent.
   // This should return false only when aContent is an html element which
   // is typically used in a paragraph like <em>.

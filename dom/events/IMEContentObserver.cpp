@@ -982,12 +982,14 @@ void IMEContentObserver::CharacterDataChanged(
                                                         aInfo.mChangeStart);
     }
   } else {
-    nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
-        RawNodePosition::BeforeFirstContentOf(*mRootElement),
-        RawNodePosition(aContent, aInfo.mChangeStart), mRootElement, &offset);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
+    Result<uint32_t, nsresult> offsetOrError =
+        ContentEventHandler::GetFlatTextLengthInRange(
+            RawNodePosition::BeforeFirstContentOf(*mRootElement),
+            RawNodePosition(aContent, aInfo.mChangeStart), mRootElement);
+    if (NS_WARN_IF(offsetOrError.isErr())) {
       return;
     }
+    offset = offsetOrError.unwrap();
   }
 
   uint32_t newLength = ContentEventHandler::GetNativeTextLength(
@@ -2378,17 +2380,17 @@ nsresult IMEContentObserver::FlatTextCache::
   MOZ_ASSERT(aRootElement);
   MOZ_ASSERT(aContent.GetParentNode());
 
-  uint32_t length = 0;
-  nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
-      RawNodePosition::BeforeFirstContentOf(*aRootElement),
-      RawNodePosition::After(aContent), aRootElement, &length);
-  if (NS_FAILED(rv)) {
+  Result<uint32_t, nsresult> lengthOrError =
+      ContentEventHandler::GetFlatTextLengthInRange(
+          RawNodePosition::BeforeFirstContentOf(*aRootElement),
+          RawNodePosition::After(aContent), aRootElement);
+  if (lengthOrError.isErr()) [[unlikely]] {
     Clear(aCallerName);
-    return rv;
+    return lengthOrError.unwrapErr();
   }
 
-  CacheFlatTextLengthBeforeEndOfContent(aCallerName, aContent, length,
-                                        aRootElement);
+  CacheFlatTextLengthBeforeEndOfContent(aCallerName, aContent,
+                                        lengthOrError.inspect(), aRootElement);
   return NS_OK;
 }
 
@@ -2566,15 +2568,9 @@ IMEContentObserver::FlatTextCache::ComputeTextLengthOfContent(
 Result<uint32_t, nsresult>
 IMEContentObserver::FlatTextCache::ComputeTextLengthBeforeContent(
     const nsIContent& aContent, const dom::Element* aRootElement) {
-  uint32_t textLengthBeforeContent = 0;
-  nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
+  return ContentEventHandler::GetFlatTextLengthInRange(
       RawNodePosition::BeforeFirstContentOf(*aRootElement),
-      RawNodePosition::Before(aContent), aRootElement,
-      &textLengthBeforeContent);
-  if (NS_FAILED(rv)) {
-    return Err(rv);
-  }
-  return textLengthBeforeContent;
+      RawNodePosition::Before(aContent), aRootElement);
 }
 
 /* static */
@@ -2582,31 +2578,21 @@ Result<uint32_t, nsresult> IMEContentObserver::FlatTextCache::
     ComputeTextLengthStartOfContentToEndOfContent(
         const nsIContent& aStartContent, const nsIContent& aEndContent,
         const dom::Element* aRootElement) {
-  uint32_t textLength = 0;
-  nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
+  return ContentEventHandler::GetFlatTextLengthInRange(
       RawNodePosition::Before(aStartContent),
-      RawNodePosition::After(aEndContent), aRootElement, &textLength);
-  if (NS_FAILED(rv)) {
-    return Err(rv);
-  }
-  return textLength;
+      RawNodePosition::After(aEndContent), aRootElement);
 }
 
 /* static */
 Result<uint32_t, nsresult>
 IMEContentObserver::FlatTextCache::ComputeTextLengthBeforeFirstContentOf(
     const nsINode& aContainer, const dom::Element* aRootElement) {
-  uint32_t lengthIncludingLineBreakCausedByOpenTagOfContent = 0;
-  nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
+  return ContentEventHandler::GetFlatTextLengthInRange(
       RawNodePosition::BeforeFirstContentOf(*aRootElement),
       // Include the line break caused by open tag of aContainer if it's an
       // element when we cache text length before first content of aContainer.
-      RawNodePosition(const_cast<nsINode*>(&aContainer), nullptr), aRootElement,
-      &lengthIncludingLineBreakCausedByOpenTagOfContent);
-  if (NS_FAILED(rv)) {
-    return Err(rv);
-  }
-  return lengthIncludingLineBreakCausedByOpenTagOfContent;
+      RawNodePosition(const_cast<nsINode*>(&aContainer), nullptr),
+      aRootElement);
 }
 
 void IMEContentObserver::FlatTextCache::AssertValidCache(
