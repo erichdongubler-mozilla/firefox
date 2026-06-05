@@ -870,11 +870,12 @@ static void global_registry_handler(void* data, wl_registry* registry,
   } else if (iface.EqualsLiteral("wl_fixes")) {
     // wl_fixes_interface was introduced in libwayland-client 1.24, but
     // Ubuntu 22.04 still ships 1.20.
+    // We force wl_fixes v.1 interface.
     static auto* sWlFixesInterface =
         (wl_interface*)dlsym(RTLD_DEFAULT, "wl_fixes_interface");
     if (sWlFixesInterface) {
-      auto* fixes = WaylandRegistryBind<wl_fixes>(
-          registry, id, sWlFixesInterface, MIN(version, 2));
+      auto* fixes =
+          WaylandRegistryBind<wl_fixes>(registry, id, sWlFixesInterface, 1);
       display->SetFixes(fixes);
     } else {
       LOG("wl_fixes_interface is missing!");
