@@ -1042,6 +1042,13 @@ static bool canUseHTTPSRRonNetwork(bool& aTRREnabled) {
     }
   }
 
+  // With Happy Eyeballs enabled we can allow native HTTPS RR queries: HE's
+  // resolution-delay timer lets connection attempts proceed using the A/AAAA
+  // results even when the native HTTPS RR lookup is slow or blocked.
+  if (StaticPrefs::network_http_happy_eyeballs_enabled()) {
+    return true;
+  }
+
   if (RefPtr<NetworkConnectivityService> ncs =
           NetworkConnectivityService::GetSingleton()) {
     nsINetworkConnectivityService::ConnectivityState state;
