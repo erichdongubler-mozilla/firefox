@@ -226,6 +226,9 @@ loader.lazyGetter(this, "ProfilerBackground", () => {
   );
 });
 
+const DEVTOOLS_STYLESHEETS_IN_DEBUGGER =
+  "devtools.debugger.features.stylesheets-in-debugger";
+
 const BOOLEAN_CONFIGURATION_PREFS = {
   "devtools.cache.disabled": {
     name: "cacheDisabled",
@@ -4658,7 +4661,7 @@ class Toolbox extends EventEmitter {
    *
    * @param {string} url The URL of the CSS file to open.
    */
-  async viewGeneratedSourceInStyleEditor(url) {
+  async viewStyleGeneratedSource(url) {
     if (typeof url !== "string") {
       console.warn("Failed to open generated source, no url given");
       return false;
@@ -4667,16 +4670,19 @@ class Toolbox extends EventEmitter {
     // The style editor hides the generated file if the file has original
     // sources, so we have no choice but to open whichever original file
     // corresponds to the first line of the generated file.
-    return viewSource.viewSourceInStyleEditor(this, url, 1);
+    // TODO: Update this when sourcemaps support for stylesheets is supported
+    // in the debugger.
+    return this.viewStyleSourceByURL(url, 1);
   }
 
   /**
-   * Given a URL for a stylesheet (generated or original), open in the style
-   * editor if possible. Falls back to plain "view-source:".
+   * Given a URL for a stylesheet (generated or original), open in the debugger
+   * if the `devtools.debugger.features.stylesheets-in-debugger` pref is enabled
+   *  or open in the style editor if possible. Falls back to plain "view-source:".
    * If the stylesheet has a sourcemap, we will attempt to open the original
    * version of the file instead of the generated version.
    */
-  async viewSourceInStyleEditorByURL(url, line, column) {
+  async viewStyleSourceByURL(url, line, column) {
     if (typeof url !== "string") {
       console.warn("Failed to open source, no url given");
       return false;
@@ -4687,9 +4693,14 @@ class Toolbox extends EventEmitter {
       );
 
       // This is a fallback in case of programming errors, but in a perfect
-      // world, viewSourceInStyleEditorByURL would always get a line/colum.
+      // world, viewStyleSourceByURL would always get a line/column.
       line = 1;
       column = null;
+    }
+
+    // Instead view the stylesheet in the debugger since the pref is enabled
+    if (Services.prefs.getBoolPref(DEVTOOLS_STYLESHEETS_IN_DEBUGGER)) {
+      return viewSource.viewSourceInDebugger(this, url, line, column, null);
     }
 
     return viewSource.viewSourceInStyleEditor(this, url, line, column);
@@ -4700,7 +4711,7 @@ class Toolbox extends EventEmitter {
    * If the stylesheet has a sourcemap, we will attempt to open the original
    * version of the file instead of the generated version.
    */
-  async viewSourceInStyleEditorByResource(stylesheetResource, line, column) {
+  async viewStyleSourceByResource(stylesheetResource, line, column) {
     if (!stylesheetResource || typeof stylesheetResource !== "object") {
       console.warn("Failed to open source, no stylesheet given");
       return false;
@@ -4711,9 +4722,20 @@ class Toolbox extends EventEmitter {
       );
 
       // This is a fallback in case of programming errors, but in a perfect
-      // world, viewSourceInStyleEditorByResource would always get a line/colum.
+      // world, viewStyleSourceByResource would always get a line/colum.
       line = 1;
       column = null;
+    }
+
+    // Instead view the stylesheet in the debugger since the pref is enabled
+    if (Services.prefs.getBoolPref(DEVTOOLS_STYLESHEETS_IN_DEBUGGER)) {
+      return viewSource.viewSourceInDebugger(
+        this,
+        stylesheetResource.href,
+        line,
+        column,
+        stylesheetResource.resourceId
+      );
     }
 
     return viewSource.viewSourceInStyleEditor(
