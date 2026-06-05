@@ -904,10 +904,9 @@ class ScrollContainerFrame : public nsContainerFrame,
   const ScrollAnchorContainer* Anchor() const { return &mAnchor; }
   ScrollAnchorContainer* Anchor() { return &mAnchor; }
 
-  bool SmoothScrollVisual(
-      const nsPoint& aVisualViewportOffset,
-      layers::FrameMetrics::ScrollOffsetUpdateType aUpdateType,
-      ScrollMode aMode);
+  bool SmoothScrollVisual(const nsPoint& aVisualViewportOffset,
+                          layers::ScrollOffsetUpdateType aUpdateType,
+                          ScrollMode aMode);
 
   /**
    * Returns true if this scroll frame should perform smooth scroll with the

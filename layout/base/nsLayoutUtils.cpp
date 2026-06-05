@@ -8807,7 +8807,8 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
         // Restore the visual viewport offset to the copy stored on the
         // main thread.
         presShell->ScrollToVisual(presShell->GetVisualViewportOffset(),
-                                  FrameMetrics::eRestore, ScrollMode::Instant);
+                                  ScrollOffsetUpdateType::Restore,
+                                  ScrollMode::Instant);
       }
     }
 

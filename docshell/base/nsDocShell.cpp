@@ -4831,8 +4831,8 @@ nsresult nsDocShell::SetCurScrollPosEx(int32_t aCurHorizontalPos,
     return NS_OK;
   }
 
-  presShell->ScrollToVisual(targetPos, layers::FrameMetrics::eMainThread,
-                            scrollMode);
+  presShell->ScrollToVisual(
+      targetPos, layers::ScrollOffsetUpdateType::MainThread, scrollMode);
 
   return NS_OK;
 }

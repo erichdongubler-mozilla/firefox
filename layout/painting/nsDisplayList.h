@@ -16,9 +16,7 @@
 
 #include "DisplayItemClipChain.h"
 #include "DisplayListClipState.h"
-#include "FrameMetrics.h"
 #include "HitTestInfo.h"
-#include "ImgDrawResult.h"
 #include "RetainedDisplayListHelpers.h"
 #include "Units.h"
 #include "gfxContext.h"
@@ -5920,8 +5918,7 @@ class nsDisplayAsyncZoom final : public nsDisplayOwnLayer {
   nsDisplayAsyncZoom(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                      nsDisplayList* aList,
                      const ActiveScrolledRoot* aActiveScrolledRoot,
-                     ContainerASRType aContainerASRType,
-                     layers::FrameMetrics::ViewID aViewID);
+                     ContainerASRType aContainerASRType, ViewID aViewID);
   nsDisplayAsyncZoom(nsDisplayListBuilder* aBuilder,
                      const nsDisplayAsyncZoom& aOther)
       : nsDisplayOwnLayer(aBuilder, aOther), mViewID(aOther.mViewID) {
@@ -5938,7 +5935,7 @@ class nsDisplayAsyncZoom final : public nsDisplayOwnLayer {
                         layers::WebRenderLayerScrollData* aLayerData) override;
 
  protected:
-  layers::FrameMetrics::ViewID mViewID;
+  ViewID mViewID;
 };
 
 /**
