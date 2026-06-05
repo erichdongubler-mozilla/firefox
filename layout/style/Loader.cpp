@@ -257,7 +257,7 @@ SheetLoadData::SheetLoadData(
     StylePreloadKind aPreloadKind, nsICSSLoaderObserver* aObserver,
     nsIPrincipal* aTriggeringPrincipal, nsIReferrerInfo* aReferrerInfo,
     const nsAString& aNonce, FetchPriority aFetchPriority,
-    already_AddRefed<SubResourceNetworkMetadataHolder>&& aNetworkMetadata)
+    already_AddRefed<SubResourceNetworkMetadataHolder> aNetworkMetadata)
     : mLoader(aLoader),
       mTitle(aTitle),
       mEncoding(nullptr),
@@ -300,7 +300,7 @@ SheetLoadData::SheetLoadData(
     css::Loader* aLoader, nsIURI* aURI, StyleSheet* aSheet,
     SheetLoadData* aParentData, nsICSSLoaderObserver* aObserver,
     nsIPrincipal* aTriggeringPrincipal, nsIReferrerInfo* aReferrerInfo,
-    already_AddRefed<SubResourceNetworkMetadataHolder>&& aNetworkMetadata)
+    already_AddRefed<SubResourceNetworkMetadataHolder> aNetworkMetadata)
     : mLoader(aLoader),
       mEncoding(nullptr),
       mURI(aURI),
@@ -347,7 +347,7 @@ SheetLoadData::SheetLoadData(
     const Encoding* aPreloadEncoding, nsICSSLoaderObserver* aObserver,
     nsIPrincipal* aTriggeringPrincipal, nsIReferrerInfo* aReferrerInfo,
     const nsAString& aNonce, FetchPriority aFetchPriority,
-    already_AddRefed<SubResourceNetworkMetadataHolder>&& aNetworkMetadata)
+    already_AddRefed<SubResourceNetworkMetadataHolder> aNetworkMetadata)
     : mLoader(aLoader),
       mEncoding(nullptr),
       mURI(aURI),

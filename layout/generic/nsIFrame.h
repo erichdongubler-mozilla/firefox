@@ -616,7 +616,7 @@ namespace mozilla {
 struct MOZ_RAII FrameDestroyContext {
   explicit FrameDestroyContext(PresShell* aPs) : mPresShell(aPs) {}
 
-  void AddAnonymousContent(already_AddRefed<nsIContent>&& aContent) {
+  void AddAnonymousContent(already_AddRefed<nsIContent> aContent) {
     if (RefPtr<nsIContent> content = aContent) {
       mAnonymousContent.AppendElement(std::move(content));
     }
