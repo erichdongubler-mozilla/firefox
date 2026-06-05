@@ -61,21 +61,7 @@ bool SVGTransformListSMILType::IsEqual(const SMILValue& aLeft,
   const TransformArray& rightArr(
       *static_cast<const TransformArray*>(aRight.mU.mPtr));
 
-  // If array-lengths don't match, we're trivially non-equal.
-  if (leftArr.Length() != rightArr.Length()) {
-    return false;
-  }
-
-  // Array-lengths match -- check each array-entry for equality.
-  uint32_t length = leftArr.Length();  // == rightArr->Length(), if we get here
-  for (uint32_t i = 0; i < length; ++i) {
-    if (leftArr[i] != rightArr[i]) {
-      return false;
-    }
-  }
-
-  // Found no differences.
-  return true;
+  return leftArr == rightArr;
 }
 
 nsresult SVGTransformListSMILType::Add(SMILValue& aDest,
