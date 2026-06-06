@@ -22,8 +22,9 @@ namespace mozilla {
 
 struct CSSPropertyId;
 class ErrorResult;
+template <class T>
+class Maybe;
 struct StyleNumericValue;
-struct StyleNumericValueResult;
 
 namespace dom {
 
@@ -120,7 +121,7 @@ class CSSNumericValue : public CSSStyleValue {
 
   // TODO: This can be changed to return StyleNumericValue directly once the
   // Unitialized type is removed.
-  StyleNumericValueResult ToStyleNumericValue() const;
+  Maybe<StyleNumericValue> ToStyleNumericValue() const;
 
  protected:
   virtual ~CSSNumericValue() = default;
