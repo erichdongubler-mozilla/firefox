@@ -1549,6 +1549,14 @@ class ScrollContainerFrame : public nsContainerFrame,
   // a scrollable layer. Used for asynchronous scrolling.
   bool mWillBuildScrollableLayer : 1;
 
+  // True if, as of the previous paint, this scroll frame was async-inactive
+  // (ie no displayport) but had descendant async-active scroll frames.
+  bool mInactiveWithActiveDescendantScrollFrames : 1;
+
+  // True if this reflow changed our scroll port or scrolled area bounds (the
+  // amount of scrollable space). Set in Reflow and used in ReflowFinished.
+  bool mScrollPortOrScrolledAreaBoundsChanged : 1;
+
   // If true, the scroll frame is an ancestor of other "active" scrolling
   // frames, where "active" means has a non-minimal display port if
   // ShouldActivateAllScrollFrames is true, or has a display port if
