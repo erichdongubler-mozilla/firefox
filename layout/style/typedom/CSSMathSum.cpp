@@ -26,7 +26,7 @@ RefPtr<CSSMathSum> CSSMathSum::Create(nsCOMPtr<nsISupports> aParent,
                                       const StyleMathSum& aMathSum) {
   nsTArray<RefPtr<CSSNumericValue>> values;
 
-  for (const auto& value : aMathSum.values) {
+  for (const auto& value : aMathSum) {
     // XXX Only supporting units for now
     if (value.IsUnit()) {
       const auto& unitValue = value.AsUnit();
