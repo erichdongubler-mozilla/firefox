@@ -1751,6 +1751,20 @@ Result<mozilla::LayoutDeviceRect, nsresult> nsDOMWindowUtils::ConvertTo(
 }
 
 NS_IMETHODIMP
+nsDOMWindowUtils::GetElementBoundingScreenRect(Element* aElement,
+                                               DOMRect** aResult) {
+  NS_ENSURE_ARG_POINTER(aElement);
+
+  CSSRect rect;
+  if (nsIFrame* frame = aElement->GetPrimaryFrame(FlushType::Layout)) {
+    rect = CSSRect::FromAppUnits(frame->GetBoundingClientRect());
+  }
+
+  return ToScreenRectInCSSUnits(rect.x, rect.y, rect.width, rect.height,
+                                aResult);
+}
+
+NS_IMETHODIMP
 nsDOMWindowUtils::ToScreenRectInCSSUnits(float aX, float aY, float aWidth,
                                          float aHeight, DOMRect** aResult) {
   LayoutDeviceRect devRect =
