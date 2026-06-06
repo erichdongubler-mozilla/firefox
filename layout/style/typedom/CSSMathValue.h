@@ -5,6 +5,7 @@
 #ifndef LAYOUT_STYLE_TYPEDOM_CSSMATHVALUE_H_
 #define LAYOUT_STYLE_TYPEDOM_CSSMATHVALUE_H_
 
+#include "mozilla/dom/CSSMathMinBindingFwd.h"
 #include "mozilla/dom/CSSMathSumBindingFwd.h"
 #include "mozilla/dom/CSSNumericValue.h"
 #include "nsStringFwd.h"
@@ -29,6 +30,7 @@ class CSSMathValue : public CSSNumericValue {
   enum class MathValueType {
     Uninitialized,  // TODO: Remove once the implementation is complete.
     MathSum,
+    MathMin,
   };
 
   explicit CSSMathValue(nsCOMPtr<nsISupports> aParent);
@@ -53,6 +55,14 @@ class CSSMathValue : public CSSNumericValue {
 
   // Defined in CSSMathSum.cpp
   CSSMathSum& GetAsCSSMathSum();
+
+  bool IsCSSMathMin() const;
+
+  // Defined in CSSMathMin.cpp
+  const CSSMathMin& GetAsCSSMathMin() const;
+
+  // Defined in CSSMathMin.cpp
+  CSSMathMin& GetAsCSSMathMin();
 
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId, bool aNested,
                              nsACString& aDest) const;

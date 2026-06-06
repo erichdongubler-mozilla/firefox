@@ -8,6 +8,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoStyleConsts.h"
+#include "mozilla/dom/CSSMathMin.h"
 #include "mozilla/dom/CSSMathSum.h"
 #include "mozilla/dom/CSSMathValueBinding.h"
 
@@ -45,6 +46,9 @@ CSSMathOperator CSSMathValue::Operator() const {
   // TODO: Just return mMathOperator once mMathValueType is replaced with it.
 
   switch (GetMathValueType()) {
+    case MathValueType::MathMin:
+      return CSSMathOperator::Min;
+
     case MathValueType::MathSum:
       return CSSMathOperator::Sum;
 
@@ -61,10 +65,21 @@ bool CSSMathValue::IsCSSMathSum() const {
   return mMathValueType == MathValueType::MathSum;
 }
 
+bool CSSMathValue::IsCSSMathMin() const {
+  return mMathValueType == MathValueType::MathMin;
+}
+
 void CSSMathValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                          bool aNested,
                                          nsACString& aDest) const {
   switch (GetMathValueType()) {
+    case MathValueType::MathMin: {
+      const CSSMathMin& mathMin = GetAsCSSMathMin();
+
+      mathMin.ToCssTextWithProperty(aPropertyId, aNested, aDest);
+      break;
+    }
+
     case MathValueType::MathSum: {
       const CSSMathSum& mathSum = GetAsCSSMathSum();
 
@@ -79,6 +94,9 @@ void CSSMathValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
 
 Maybe<StyleMathValue> CSSMathValue::ToStyleMathValue() const {
   switch (GetMathValueType()) {
+    case MathValueType::MathMin:
+      return Nothing();
+
     case MathValueType::MathSum: {
       const CSSMathSum& mathSum = GetAsCSSMathSum();
 
