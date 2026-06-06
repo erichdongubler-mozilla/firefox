@@ -8,6 +8,7 @@
 #include "mozilla/dom/CSSMathClampBindingFwd.h"
 #include "mozilla/dom/CSSMathMaxBindingFwd.h"
 #include "mozilla/dom/CSSMathMinBindingFwd.h"
+#include "mozilla/dom/CSSMathNegateBindingFwd.h"
 #include "mozilla/dom/CSSMathSumBindingFwd.h"
 #include "mozilla/dom/CSSNumericValue.h"
 #include "nsStringFwd.h"
@@ -32,6 +33,7 @@ class CSSMathValue : public CSSNumericValue {
   enum class MathValueType {
     Uninitialized,  // TODO: Remove once the implementation is complete.
     MathSum,
+    MathNegate,
     MathMin,
     MathMax,
     MathClamp,
@@ -59,6 +61,14 @@ class CSSMathValue : public CSSNumericValue {
 
   // Defined in CSSMathSum.cpp
   CSSMathSum& GetAsCSSMathSum();
+
+  bool IsCSSMathNegate() const;
+
+  // Defined in CSSMathNegate.cpp
+  const CSSMathNegate& GetAsCSSMathNegate() const;
+
+  // Defined in CSSMathNegate.cpp
+  CSSMathNegate& GetAsCSSMathNegate();
 
   bool IsCSSMathMin() const;
 

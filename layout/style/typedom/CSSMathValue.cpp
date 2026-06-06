@@ -11,6 +11,7 @@
 #include "mozilla/dom/CSSMathClamp.h"
 #include "mozilla/dom/CSSMathMax.h"
 #include "mozilla/dom/CSSMathMin.h"
+#include "mozilla/dom/CSSMathNegate.h"
 #include "mozilla/dom/CSSMathSum.h"
 #include "mozilla/dom/CSSMathValueBinding.h"
 
@@ -57,6 +58,9 @@ CSSMathOperator CSSMathValue::Operator() const {
     case MathValueType::MathMin:
       return CSSMathOperator::Min;
 
+    case MathValueType::MathNegate:
+      return CSSMathOperator::Negate;
+
     case MathValueType::MathSum:
       return CSSMathOperator::Sum;
 
@@ -71,6 +75,10 @@ CSSMathOperator CSSMathValue::Operator() const {
 
 bool CSSMathValue::IsCSSMathSum() const {
   return mMathValueType == MathValueType::MathSum;
+}
+
+bool CSSMathValue::IsCSSMathNegate() const {
+  return mMathValueType == MathValueType::MathNegate;
 }
 
 bool CSSMathValue::IsCSSMathMin() const {
@@ -110,6 +118,13 @@ void CSSMathValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
       break;
     }
 
+    case MathValueType::MathNegate: {
+      const CSSMathNegate& mathNegate = GetAsCSSMathNegate();
+
+      mathNegate.ToCssTextWithProperty(aPropertyId, aNested, aDest);
+      break;
+    }
+
     case MathValueType::MathSum: {
       const CSSMathSum& mathSum = GetAsCSSMathSum();
 
@@ -131,6 +146,9 @@ Maybe<StyleMathValue> CSSMathValue::ToStyleMathValue() const {
       return Nothing();
 
     case MathValueType::MathMin:
+      return Nothing();
+
+    case MathValueType::MathNegate:
       return Nothing();
 
     case MathValueType::MathSum: {
