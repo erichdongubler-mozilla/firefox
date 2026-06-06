@@ -8,6 +8,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoStyleConsts.h"
+#include "mozilla/dom/CSSMathClamp.h"
 #include "mozilla/dom/CSSMathMax.h"
 #include "mozilla/dom/CSSMathMin.h"
 #include "mozilla/dom/CSSMathSum.h"
@@ -47,6 +48,9 @@ CSSMathOperator CSSMathValue::Operator() const {
   // TODO: Just return mMathOperator once mMathValueType is replaced with it.
 
   switch (GetMathValueType()) {
+    case MathValueType::MathClamp:
+      return CSSMathOperator::Clamp;
+
     case MathValueType::MathMax:
       return CSSMathOperator::Max;
 
@@ -77,10 +81,21 @@ bool CSSMathValue::IsCSSMathMax() const {
   return mMathValueType == MathValueType::MathMax;
 }
 
+bool CSSMathValue::IsCSSMathClamp() const {
+  return mMathValueType == MathValueType::MathClamp;
+}
+
 void CSSMathValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                          bool aNested,
                                          nsACString& aDest) const {
   switch (GetMathValueType()) {
+    case MathValueType::MathClamp: {
+      const CSSMathClamp& mathClamp = GetAsCSSMathClamp();
+
+      mathClamp.ToCssTextWithProperty(aPropertyId, aNested, aDest);
+      break;
+    }
+
     case MathValueType::MathMax: {
       const CSSMathMax& mathMax = GetAsCSSMathMax();
 
@@ -109,6 +124,9 @@ void CSSMathValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
 
 Maybe<StyleMathValue> CSSMathValue::ToStyleMathValue() const {
   switch (GetMathValueType()) {
+    case MathValueType::MathClamp:
+      return Nothing();
+
     case MathValueType::MathMax:
       return Nothing();
 
