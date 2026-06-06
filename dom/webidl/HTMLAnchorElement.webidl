@@ -16,8 +16,6 @@ interface HTMLAnchorElement : HTMLElement {
   [HTMLConstructor] constructor();
 
            [CEReactions, SetterThrows]
-           attribute DOMString target;
-           [CEReactions, SetterThrows]
            attribute DOMString download;
            [CEReactions, SetterThrows]
            attribute USVString ping;
