@@ -9,6 +9,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/CSSMathClamp.h"
+#include "mozilla/dom/CSSMathInvert.h"
 #include "mozilla/dom/CSSMathMax.h"
 #include "mozilla/dom/CSSMathMin.h"
 #include "mozilla/dom/CSSMathNegate.h"
@@ -58,6 +59,9 @@ CSSMathOperator CSSMathValue::Operator() const {
     case MathValueType::MathMin:
       return CSSMathOperator::Min;
 
+    case MathValueType::MathInvert:
+      return CSSMathOperator::Invert;
+
     case MathValueType::MathNegate:
       return CSSMathOperator::Negate;
 
@@ -79,6 +83,10 @@ bool CSSMathValue::IsCSSMathSum() const {
 
 bool CSSMathValue::IsCSSMathNegate() const {
   return mMathValueType == MathValueType::MathNegate;
+}
+
+bool CSSMathValue::IsCSSMathInvert() const {
+  return mMathValueType == MathValueType::MathInvert;
 }
 
 bool CSSMathValue::IsCSSMathMin() const {
@@ -118,6 +126,13 @@ void CSSMathValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
       break;
     }
 
+    case MathValueType::MathInvert: {
+      const CSSMathInvert& mathInvert = GetAsCSSMathInvert();
+
+      mathInvert.ToCssTextWithProperty(aPropertyId, aNested, aDest);
+      break;
+    }
+
     case MathValueType::MathNegate: {
       const CSSMathNegate& mathNegate = GetAsCSSMathNegate();
 
@@ -146,6 +161,9 @@ Maybe<StyleMathValue> CSSMathValue::ToStyleMathValue() const {
       return Nothing();
 
     case MathValueType::MathMin:
+      return Nothing();
+
+    case MathValueType::MathInvert:
       return Nothing();
 
     case MathValueType::MathNegate:

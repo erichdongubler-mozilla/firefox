@@ -6,6 +6,7 @@
 #define LAYOUT_STYLE_TYPEDOM_CSSMATHVALUE_H_
 
 #include "mozilla/dom/CSSMathClampBindingFwd.h"
+#include "mozilla/dom/CSSMathInvertBindingFwd.h"
 #include "mozilla/dom/CSSMathMaxBindingFwd.h"
 #include "mozilla/dom/CSSMathMinBindingFwd.h"
 #include "mozilla/dom/CSSMathNegateBindingFwd.h"
@@ -34,6 +35,7 @@ class CSSMathValue : public CSSNumericValue {
     Uninitialized,  // TODO: Remove once the implementation is complete.
     MathSum,
     MathNegate,
+    MathInvert,
     MathMin,
     MathMax,
     MathClamp,
@@ -69,6 +71,14 @@ class CSSMathValue : public CSSNumericValue {
 
   // Defined in CSSMathNegate.cpp
   CSSMathNegate& GetAsCSSMathNegate();
+
+  bool IsCSSMathInvert() const;
+
+  // Defined in CSSMathInvert.cpp
+  const CSSMathInvert& GetAsCSSMathInvert() const;
+
+  // Defined in CSSMathInvert.cpp
+  CSSMathInvert& GetAsCSSMathInvert();
 
   bool IsCSSMathMin() const;
 
