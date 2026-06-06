@@ -291,6 +291,9 @@ void IdleTaskRunner::ResetTimer(TimeDuration aDelay) {
     if (NS_WARN_IF(NS_FAILED(rv))) {
       MOZ_ASSERT(
           AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownThreads));
+      if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownThreads)) {
+        Cancel();
+      }
     } else {
       mTimerActive = true;
     }
