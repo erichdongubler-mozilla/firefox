@@ -5,6 +5,7 @@
 #include "mozilla/dom/CSSMathSum.h"
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -18,7 +19,7 @@ namespace mozilla::dom {
 
 CSSMathSum::CSSMathSum(nsCOMPtr<nsISupports> aParent,
                        RefPtr<CSSNumericArray> aValues)
-    : CSSMathValue(std::move(aParent), NumericValueType::MathSum),
+    : CSSMathValue(std::move(aParent), MathValueType::MathSum),
       mValues(std::move(aValues)) {}
 
 // static
@@ -129,14 +130,14 @@ StyleMathSum CSSMathSum::ToStyleMathSum() const {
   return StyleMathSum{std::move(values)};
 }
 
-const CSSMathSum& CSSNumericValue::GetAsCSSMathSum() const {
-  MOZ_DIAGNOSTIC_ASSERT(mNumericValueType == NumericValueType::MathSum);
+const CSSMathSum& CSSMathValue::GetAsCSSMathSum() const {
+  MOZ_DIAGNOSTIC_ASSERT(mMathValueType == MathValueType::MathSum);
 
   return *static_cast<const CSSMathSum*>(this);
 }
 
-CSSMathSum& CSSNumericValue::GetAsCSSMathSum() {
-  MOZ_DIAGNOSTIC_ASSERT(mNumericValueType == NumericValueType::MathSum);
+CSSMathSum& CSSMathValue::GetAsCSSMathSum() {
+  MOZ_DIAGNOSTIC_ASSERT(mMathValueType == MathValueType::MathSum);
 
   return *static_cast<CSSMathSum*>(this);
 }

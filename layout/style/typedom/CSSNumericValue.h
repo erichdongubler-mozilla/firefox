@@ -7,6 +7,7 @@
 
 #include "js/TypeDecls.h"
 #include "mozilla/dom/CSSMathSumBindingFwd.h"
+#include "mozilla/dom/CSSMathValueBindingFwd.h"
 #include "mozilla/dom/CSSNumericValueBindingFwd.h"
 #include "mozilla/dom/CSSStyleValue.h"
 #include "mozilla/dom/CSSUnitValueBindingFwd.h"
@@ -35,12 +36,9 @@ class Sequence;
 class CSSNumericValue : public CSSStyleValue {
  public:
   enum class NumericValueType {
-    Uninitialized,  // TODO: Remove once the implementation is complete.
     UnitValue,
-    MathSum,
+    MathValue,
   };
-
-  explicit CSSNumericValue(nsCOMPtr<nsISupports> aParent);
 
   CSSNumericValue(nsCOMPtr<nsISupports> aParent,
                   NumericValueType aNumericValueType);
@@ -108,19 +106,19 @@ class CSSNumericValue : public CSSStyleValue {
   // Defined in CSSUnitValue.cpp
   CSSUnitValue& GetAsCSSUnitValue();
 
-  bool IsCSSMathSum() const;
+  bool IsCSSMathValue() const;
 
-  // Defined in CSSMathSum.cpp
-  const CSSMathSum& GetAsCSSMathSum() const;
+  // Defined in CSSMathValue.cpp
+  const CSSMathValue& GetAsCSSMathValue() const;
 
-  // Defined in CSSMathSum.cpp
-  CSSMathSum& GetAsCSSMathSum();
+  // Defined in CSSMathValue.cpp
+  CSSMathValue& GetAsCSSMathValue();
 
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                              nsACString& aDest) const;
 
   // TODO: This can be changed to return StyleNumericValue directly once the
-  // Unitialized type is removed.
+  // Unitialized type in CSSMathValue is removed.
   Maybe<StyleNumericValue> ToStyleNumericValue() const;
 
  protected:

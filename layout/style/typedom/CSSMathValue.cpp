@@ -4,21 +4,90 @@
 
 #include "mozilla/dom/CSSMathValue.h"
 
+#include "mozilla/Assertions.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/ServoStyleConsts.h"
+#include "mozilla/dom/CSSMathSum.h"
 #include "mozilla/dom/CSSMathValueBinding.h"
 
 namespace mozilla::dom {
 
 CSSMathValue::CSSMathValue(nsCOMPtr<nsISupports> aParent)
-    : CSSNumericValue(std::move(aParent)) {}
+    : CSSNumericValue(std::move(aParent), NumericValueType::MathValue),
+      mMathValueType(MathValueType::Uninitialized) {}
 
 CSSMathValue::CSSMathValue(nsCOMPtr<nsISupports> aParent,
-                           NumericValueType aNumericValueType)
-    : CSSNumericValue(std::move(aParent), aNumericValueType) {}
+                           MathValueType aMathValueType)
+    : CSSNumericValue(std::move(aParent), NumericValueType::MathValue),
+      mMathValueType(aMathValueType) {}
+
+// static
+RefPtr<CSSMathValue> CSSMathValue::Create(nsCOMPtr<nsISupports> aParent,
+                                          const StyleMathValue& aMathValue) {
+  RefPtr<CSSMathValue> mathValue;
+
+  switch (aMathValue.tag) {
+    case StyleMathValue::Tag::Sum: {
+      const auto& mathSum = aMathValue.AsSum();
+
+      mathValue = CSSMathSum::Create(std::move(aParent), mathSum);
+      break;
+    }
+  }
+
+  return mathValue;
+}
 
 // start of CSSMathtValue Web IDL implementation
 
 CSSMathOperator CSSMathValue::Operator() const { return CSSMathOperator::Sum; }
 
 // end of CSSMathtValue Web IDL implementation
+
+bool CSSMathValue::IsCSSMathSum() const {
+  return mMathValueType == MathValueType::MathSum;
+}
+
+void CSSMathValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                                         nsACString& aDest) const {
+  switch (GetMathValueType()) {
+    case MathValueType::MathSum: {
+      const CSSMathSum& mathSum = GetAsCSSMathSum();
+
+      mathSum.ToCssTextWithProperty(aPropertyId, aDest);
+      break;
+    }
+
+    case MathValueType::Uninitialized:
+      break;
+  }
+}
+
+Maybe<StyleMathValue> CSSMathValue::ToStyleMathValue() const {
+  switch (GetMathValueType()) {
+    case MathValueType::MathSum: {
+      const CSSMathSum& mathSum = GetAsCSSMathSum();
+
+      return Some(StyleMathValue::Sum(mathSum.ToStyleMathSum()));
+    }
+
+    case MathValueType::Uninitialized:
+      return Nothing();
+  }
+  MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Bad math value type!");
+}
+
+const CSSMathValue& CSSNumericValue::GetAsCSSMathValue() const {
+  MOZ_DIAGNOSTIC_ASSERT(mNumericValueType == NumericValueType::MathValue);
+
+  return *static_cast<const CSSMathValue*>(this);
+}
+
+CSSMathValue& CSSNumericValue::GetAsCSSMathValue() {
+  MOZ_DIAGNOSTIC_ASSERT(mNumericValueType == NumericValueType::MathValue);
+
+  return *static_cast<CSSMathValue*>(this);
+}
 
 }  // namespace mozilla::dom
