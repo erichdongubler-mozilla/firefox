@@ -41,7 +41,19 @@ RefPtr<CSSMathValue> CSSMathValue::Create(nsCOMPtr<nsISupports> aParent,
 
 // start of CSSMathtValue Web IDL implementation
 
-CSSMathOperator CSSMathValue::Operator() const { return CSSMathOperator::Sum; }
+CSSMathOperator CSSMathValue::Operator() const {
+  // TODO: Just return mMathOperator once mMathValueType is replaced with it.
+
+  switch (GetMathValueType()) {
+    case MathValueType::MathSum:
+      return CSSMathOperator::Sum;
+
+    case MathValueType::Uninitialized:
+      // This is only a temporary variant, return Sum for now.
+      return CSSMathOperator::Sum;
+  }
+  MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Bad math value type!");
+}
 
 // end of CSSMathtValue Web IDL implementation
 
