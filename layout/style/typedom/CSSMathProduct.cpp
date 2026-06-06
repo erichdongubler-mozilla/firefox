@@ -5,15 +5,24 @@
 #include "mozilla/dom/CSSMathProduct.h"
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSMathProductBinding.h"
+#include "mozilla/dom/CSSNumericArray.h"
+#include "mozilla/dom/CSSNumericValue.h"
+#include "mozilla/dom/CSSNumericValueBinding.h"
+#include "nsString.h"
 
 namespace mozilla::dom {
 
-CSSMathProduct::CSSMathProduct(nsCOMPtr<nsISupports> aParent)
-    : CSSMathValue(std::move(aParent)) {}
+CSSMathProduct::CSSMathProduct(nsCOMPtr<nsISupports> aParent,
+                               RefPtr<CSSNumericArray> aValues)
+    : CSSMathValue(std::move(aParent), MathValueType::MathProduct),
+      mValues(std::move(aValues)) {}
+
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSMathProduct, CSSMathValue)
+NS_IMPL_CYCLE_COLLECTION_INHERITED(CSSMathProduct, CSSMathValue, mValues)
 
 JSObject* CSSMathProduct::WrapObject(JSContext* aCx,
                                      JS::Handle<JSObject*> aGivenProto) {
@@ -22,18 +31,72 @@ JSObject* CSSMathProduct::WrapObject(JSContext* aCx,
 
 // start of CSSMathProduct Web IDL implementation
 
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-cssmathproduct-cssmathproduct
 // static
 already_AddRefed<CSSMathProduct> CSSMathProduct::Constructor(
     const GlobalObject& aGlobal, const Sequence<OwningCSSNumberish>& aArgs,
     ErrorResult& aRv) {
-  return MakeAndAddRef<CSSMathProduct>(aGlobal.GetAsSupports());
+  nsCOMPtr<nsISupports> global = aGlobal.GetAsSupports();
+
+  // Step 1.
+
+  nsTArray<RefPtr<CSSNumericValue>> values;
+
+  for (const OwningCSSNumberish& arg : aArgs) {
+    RefPtr<CSSNumericValue> value = CSSNumericValue::Create(global, arg);
+
+    values.AppendElement(std::move(value));
+  }
+
+  // Step 2.
+
+  if (values.IsEmpty()) {
+    aRv.ThrowSyntaxError("Arguments can't be empty");
+    return nullptr;
+  }
+
+  // XXX Step 3 is not yet implemented!
+
+  // Step 4.
+
+  auto array = MakeRefPtr<CSSNumericArray>(global, std::move(values));
+
+  return MakeAndAddRef<CSSMathProduct>(global, std::move(array));
 }
 
-CSSNumericArray* CSSMathProduct::GetValues(ErrorResult& aRv) const {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
-}
+CSSNumericArray* CSSMathProduct::Values() const { return mValues; }
 
 // end of CSSMathProduct Web IDL implementation
+
+void CSSMathProduct::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                                           bool aNested,
+                                           nsACString& aDest) const {
+  aDest.Append(aNested ? "("_ns : "calc("_ns);
+
+  const auto& values = mValues->GetValues();
+  MOZ_DIAGNOSTIC_ASSERT(!values.IsEmpty());
+
+  values[0]->ToCssTextWithProperty(aPropertyId, /* aNested */ true, aDest);
+
+  for (size_t index = 1; index < values.Length(); ++index) {
+    aDest.Append(" * "_ns);
+    values[index]->ToCssTextWithProperty(aPropertyId, /* aNested */ true,
+                                         aDest);
+  }
+
+  aDest.Append(")"_ns);
+}
+
+const CSSMathProduct& CSSMathValue::GetAsCSSMathProduct() const {
+  MOZ_DIAGNOSTIC_ASSERT(mMathValueType == MathValueType::MathProduct);
+
+  return *static_cast<const CSSMathProduct*>(this);
+}
+
+CSSMathProduct& CSSMathValue::GetAsCSSMathProduct() {
+  MOZ_DIAGNOSTIC_ASSERT(mMathValueType == MathValueType::MathProduct);
+
+  return *static_cast<CSSMathProduct*>(this);
+}
 
 }  // namespace mozilla::dom
