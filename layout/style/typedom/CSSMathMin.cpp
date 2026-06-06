@@ -70,7 +70,8 @@ CSSNumericArray* CSSMathMin::Values() const { return mValues; }
 // end of CSSMathMin Web IDL implementation
 
 void CSSMathMin::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
-                                       bool aNested, nsACString& aDest) const {
+                                       const SerializationContext& aContext,
+                                       nsACString& aDest) const {
   aDest.Append("min("_ns);
 
   bool first = true;
@@ -79,8 +80,8 @@ void CSSMathMin::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
       aDest.Append(", "_ns);
     }
 
-    value->ToCssTextWithProperty(aPropertyId, /* aNested */ true,
-                                 /* aParenLess */ true, aDest);
+    value->ToCssTextWithProperty(
+        aPropertyId, SerializationContext(Nested{}, ParenLess{}), aDest);
     first = false;
   }
 

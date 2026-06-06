@@ -202,24 +202,17 @@ bool CSSNumericValue::IsCSSMathValue() const {
 
 void CSSNumericValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                             nsACString& aDest) const {
-  ToCssTextWithProperty(aPropertyId, /* aNested */ false,
-                        /* aParenLess */ false, aDest);
+  ToCssTextWithProperty(aPropertyId, SerializationContext(), aDest);
 }
 
-void CSSNumericValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
-                                            bool aNested,
-                                            nsACString& aDest) const {
-  ToCssTextWithProperty(aPropertyId, aNested, /* aParenLess */ false, aDest);
-}
-
-void CSSNumericValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
-                                            bool aNested, bool aParenLess,
-                                            nsACString& aDest) const {
+void CSSNumericValue::ToCssTextWithProperty(
+    const CSSPropertyId& aPropertyId, const SerializationContext& aContext,
+    nsACString& aDest) const {
   switch (GetNumericValueType()) {
     case NumericValueType::MathValue: {
       const CSSMathValue& mathValue = GetAsCSSMathValue();
 
-      mathValue.ToCssTextWithProperty(aPropertyId, aNested, aParenLess, aDest);
+      mathValue.ToCssTextWithProperty(aPropertyId, aContext, aDest);
       break;
     }
 

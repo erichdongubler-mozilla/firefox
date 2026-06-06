@@ -65,22 +65,22 @@ CSSNumericValue* CSSMathClamp::Upper() const { return mUpper; }
 // end of CSSMathClamp Web IDL implementation
 
 void CSSMathClamp::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
-                                         bool aNested,
+                                         const SerializationContext& aContext,
                                          nsACString& aDest) const {
   // TODO: The spec seems to not describe CSSMathClamp serialization.
 
   aDest.Append("clamp("_ns);
 
-  mLower->ToCssTextWithProperty(aPropertyId, /* aNested */ true,
-                                /* aParenLess */ true, aDest);
+  mLower->ToCssTextWithProperty(
+      aPropertyId, SerializationContext(Nested{}, ParenLess{}), aDest);
   aDest.Append(", "_ns);
 
-  mValue->ToCssTextWithProperty(aPropertyId, /* aNested */ true,
-                                /* aParenLess */ true, aDest);
+  mValue->ToCssTextWithProperty(
+      aPropertyId, SerializationContext(Nested{}, ParenLess{}), aDest);
   aDest.Append(", "_ns);
 
-  mUpper->ToCssTextWithProperty(aPropertyId, /* aNested */ true,
-                                /* aParenLess */ true, aDest);
+  mUpper->ToCssTextWithProperty(
+      aPropertyId, SerializationContext(Nested{}, ParenLess{}), aDest);
 
   aDest.Append(")"_ns);
 }

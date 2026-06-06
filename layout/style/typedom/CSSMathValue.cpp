@@ -110,56 +110,55 @@ bool CSSMathValue::IsCSSMathClamp() const {
 }
 
 void CSSMathValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
-                                         bool aNested, bool aParenLess,
+                                         const SerializationContext& aContext,
                                          nsACString& aDest) const {
   switch (GetMathValueType()) {
     case MathValueType::MathClamp: {
       const CSSMathClamp& mathClamp = GetAsCSSMathClamp();
 
-      mathClamp.ToCssTextWithProperty(aPropertyId, aNested, aDest);
+      mathClamp.ToCssTextWithProperty(aPropertyId, aContext, aDest);
       break;
     }
 
     case MathValueType::MathMax: {
       const CSSMathMax& mathMax = GetAsCSSMathMax();
 
-      mathMax.ToCssTextWithProperty(aPropertyId, aNested, aDest);
+      mathMax.ToCssTextWithProperty(aPropertyId, aContext, aDest);
       break;
     }
 
     case MathValueType::MathMin: {
       const CSSMathMin& mathMin = GetAsCSSMathMin();
 
-      mathMin.ToCssTextWithProperty(aPropertyId, aNested, aDest);
+      mathMin.ToCssTextWithProperty(aPropertyId, aContext, aDest);
       break;
     }
 
     case MathValueType::MathInvert: {
       const CSSMathInvert& mathInvert = GetAsCSSMathInvert();
 
-      mathInvert.ToCssTextWithProperty(aPropertyId, aNested, aParenLess, aDest);
+      mathInvert.ToCssTextWithProperty(aPropertyId, aContext, aDest);
       break;
     }
 
     case MathValueType::MathNegate: {
       const CSSMathNegate& mathNegate = GetAsCSSMathNegate();
 
-      mathNegate.ToCssTextWithProperty(aPropertyId, aNested, aParenLess, aDest);
+      mathNegate.ToCssTextWithProperty(aPropertyId, aContext, aDest);
       break;
     }
 
     case MathValueType::MathProduct: {
       const CSSMathProduct& mathProduct = GetAsCSSMathProduct();
 
-      mathProduct.ToCssTextWithProperty(aPropertyId, aNested, aParenLess,
-                                        aDest);
+      mathProduct.ToCssTextWithProperty(aPropertyId, aContext, aDest);
       break;
     }
 
     case MathValueType::MathSum: {
       const CSSMathSum& mathSum = GetAsCSSMathSum();
 
-      mathSum.ToCssTextWithProperty(aPropertyId, aNested, aParenLess, aDest);
+      mathSum.ToCssTextWithProperty(aPropertyId, aContext, aDest);
       break;
     }
 

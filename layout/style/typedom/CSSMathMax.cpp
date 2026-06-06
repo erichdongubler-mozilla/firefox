@@ -70,7 +70,8 @@ CSSNumericArray* CSSMathMax::Values() const { return mValues; }
 // end of CSSMathMax Web IDL implementation
 
 void CSSMathMax::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
-                                       bool aNested, nsACString& aDest) const {
+                                       const SerializationContext& aContext,
+                                       nsACString& aDest) const {
   aDest.Append("max("_ns);
 
   bool first = true;
@@ -79,8 +80,8 @@ void CSSMathMax::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
       aDest.Append(", "_ns);
     }
 
-    value->ToCssTextWithProperty(aPropertyId, /* aNested */ true,
-                                 /* aParenLess */ true, aDest);
+    value->ToCssTextWithProperty(
+        aPropertyId, SerializationContext(Nested{}, ParenLess{}), aDest);
     first = false;
   }
 

@@ -55,8 +55,9 @@ class CSSMathSum final : public CSSMathValue {
 
   // end of CSSMathSum Web IDL declarations
 
-  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId, bool aNested,
-                             bool aParenLess, nsACString& aDest) const;
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                             const SerializationContext& aContext,
+                             nsACString& aDest) const;
 
   StyleMathSum ToStyleMathSum() const;
 
