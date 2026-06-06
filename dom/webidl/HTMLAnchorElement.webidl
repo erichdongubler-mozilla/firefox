@@ -27,10 +27,6 @@ interface HTMLAnchorElement : HTMLElement {
            attribute DOMString referrerPolicy;
            [PutForwards=value]
   readonly attribute DOMTokenList relList;
-           [CEReactions, SetterThrows]
-           attribute DOMString hreflang;
-           [CEReactions, SetterThrows]
-           attribute DOMString type;
 
            [CEReactions, Throws]
            attribute DOMString text;

@@ -80,6 +80,19 @@ class HTMLAreaElement final : public nsGenericHTMLElement, public Link {
     SetHTMLAttr(nsGkAtoms::download, aDownload, aError);
   }
 
+  void GetHreflang(DOMString& aValue) const {
+    GetHTMLAttr(nsGkAtoms::hreflang, aValue);
+  }
+  void SetHreflang(const nsAString& aValue, mozilla::ErrorResult& rv) {
+    SetHTMLAttr(nsGkAtoms::hreflang, aValue, rv);
+  }
+  void GetType(DOMString& aValue) const {
+    GetHTMLAttr(nsGkAtoms::type, aValue);
+  }
+  void SetType(const nsAString& aValue, mozilla::ErrorResult& rv) {
+    SetHTMLAttr(nsGkAtoms::type, aValue, rv);
+  }
+
   void GetPing(DOMString& aValue) { GetHTMLAttr(nsGkAtoms::ping, aValue); }
   void SetPing(const nsAString& aPing, ErrorResult& aError) {
     SetHTMLAttr(nsGkAtoms::ping, aPing, aError);
