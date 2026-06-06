@@ -54,7 +54,7 @@ class CSSMathProduct final : public CSSMathValue {
   // end of CSSMathProduct Web IDL declarations
 
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId, bool aNested,
-                             nsACString& aDest) const;
+                             bool aParenLess, nsACString& aDest) const;
 
  private:
   virtual ~CSSMathProduct() = default;

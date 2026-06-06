@@ -110,7 +110,7 @@ bool CSSMathValue::IsCSSMathClamp() const {
 }
 
 void CSSMathValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
-                                         bool aNested,
+                                         bool aNested, bool aParenLess,
                                          nsACString& aDest) const {
   switch (GetMathValueType()) {
     case MathValueType::MathClamp: {
@@ -137,28 +137,29 @@ void CSSMathValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
     case MathValueType::MathInvert: {
       const CSSMathInvert& mathInvert = GetAsCSSMathInvert();
 
-      mathInvert.ToCssTextWithProperty(aPropertyId, aNested, aDest);
+      mathInvert.ToCssTextWithProperty(aPropertyId, aNested, aParenLess, aDest);
       break;
     }
 
     case MathValueType::MathNegate: {
       const CSSMathNegate& mathNegate = GetAsCSSMathNegate();
 
-      mathNegate.ToCssTextWithProperty(aPropertyId, aNested, aDest);
+      mathNegate.ToCssTextWithProperty(aPropertyId, aNested, aParenLess, aDest);
       break;
     }
 
     case MathValueType::MathProduct: {
       const CSSMathProduct& mathProduct = GetAsCSSMathProduct();
 
-      mathProduct.ToCssTextWithProperty(aPropertyId, aNested, aDest);
+      mathProduct.ToCssTextWithProperty(aPropertyId, aNested, aParenLess,
+                                        aDest);
       break;
     }
 
     case MathValueType::MathSum: {
       const CSSMathSum& mathSum = GetAsCSSMathSum();
 
-      mathSum.ToCssTextWithProperty(aPropertyId, aNested, aDest);
+      mathSum.ToCssTextWithProperty(aPropertyId, aNested, aParenLess, aDest);
       break;
     }
 

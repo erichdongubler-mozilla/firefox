@@ -86,8 +86,11 @@ CSSNumericArray* CSSMathSum::Values() const { return mValues; }
 // end of CSSMathSum Web IDL implementation
 
 void CSSMathSum::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
-                                       bool aNested, nsACString& aDest) const {
-  aDest.Append(aNested ? "("_ns : "calc("_ns);
+                                       bool aNested, bool aParenLess,
+                                       nsACString& aDest) const {
+  if (!aParenLess) {
+    aDest.Append(aNested ? "("_ns : "calc("_ns);
+  }
 
   const auto& values = mValues->GetValues();
   MOZ_DIAGNOSTIC_ASSERT(!values.IsEmpty());
@@ -100,7 +103,9 @@ void CSSMathSum::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                          aDest);
   }
 
-  aDest.Append(")"_ns);
+  if (!aParenLess) {
+    aDest.Append(")"_ns);
+  }
 }
 
 StyleMathSum CSSMathSum::ToStyleMathSum() const {

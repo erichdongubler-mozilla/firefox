@@ -47,7 +47,7 @@ class CSSMathInvert final : public CSSMathValue {
   // end of CSSMathInvert Web IDL declarations
 
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId, bool aNested,
-                             nsACString& aDest) const;
+                             bool aParenLess, nsACString& aDest) const;
 
  private:
   virtual ~CSSMathInvert() = default;

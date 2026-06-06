@@ -47,7 +47,7 @@ class CSSMathNegate final : public CSSMathValue {
   // end of CSSMathNegate Web IDL declarations
 
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId, bool aNested,
-                             nsACString& aDest) const;
+                             bool aParenLess, nsACString& aDest) const;
 
  private:
   virtual ~CSSMathNegate() = default;

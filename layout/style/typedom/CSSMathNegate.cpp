@@ -49,15 +49,19 @@ CSSNumericValue* CSSMathNegate::Value() const { return mValue; }
 // end of CSSMathNegate Web IDL implementation
 
 void CSSMathNegate::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
-                                          bool aNested,
+                                          bool aNested, bool aParenLess,
                                           nsACString& aDest) const {
-  aDest.Append(aNested ? "("_ns : "calc("_ns);
+  if (!aParenLess) {
+    aDest.Append(aNested ? "("_ns : "calc("_ns);
+  }
 
   aDest.Append("-"_ns);
 
   mValue->ToCssTextWithProperty(aPropertyId, /* aNested */ true, aDest);
 
-  aDest.Append(")"_ns);
+  if (!aParenLess) {
+    aDest.Append(")"_ns);
+  }
 }
 
 const CSSMathNegate& CSSMathValue::GetAsCSSMathNegate() const {

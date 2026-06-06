@@ -69,9 +69,11 @@ CSSNumericArray* CSSMathProduct::Values() const { return mValues; }
 // end of CSSMathProduct Web IDL implementation
 
 void CSSMathProduct::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
-                                           bool aNested,
+                                           bool aNested, bool aParenLess,
                                            nsACString& aDest) const {
-  aDest.Append(aNested ? "("_ns : "calc("_ns);
+  if (!aParenLess) {
+    aDest.Append(aNested ? "("_ns : "calc("_ns);
+  }
 
   const auto& values = mValues->GetValues();
   MOZ_DIAGNOSTIC_ASSERT(!values.IsEmpty());
@@ -84,7 +86,9 @@ void CSSMathProduct::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                          aDest);
   }
 
-  aDest.Append(")"_ns);
+  if (!aParenLess) {
+    aDest.Append(")"_ns);
+  }
 }
 
 const CSSMathProduct& CSSMathValue::GetAsCSSMathProduct() const {
