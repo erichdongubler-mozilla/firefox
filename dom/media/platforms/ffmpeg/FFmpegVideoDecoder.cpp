@@ -247,6 +247,13 @@ static AVPixelFormat ChooseV4L2PixelFormat(AVCodecContext* aCodecContext,
 }
 
 #  if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
+static bool VulkanDirectDecodeExportEnabled() {
+  return StaticPrefs::
+             media_hardware_video_decoding_vulkan_enabled_AtStartup() &&
+         StaticPrefs::
+             media_hardware_video_decoding_vulkan_direct_export_enabled_AtStartup();
+}
+
 static AVPixelFormat ChooseVulkanPixelFormat(AVCodecContext* aCodecContext,
                                              const AVPixelFormat* aFormats) {
   auto* decoder =
@@ -421,7 +428,7 @@ int FFmpegVideoDecoder<LIBAV_VER>::ChooseVulkanPixelFormatFromContext(
 
     VkImageUsageFlags imageUsages =
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    if (getenv("MOZ_VULKAN_ENABLE_DIRECT_DECODE_EXPORT")) {
+    if (VulkanDirectDecodeExportEnabled()) {
       imageUsages |= VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR;
       imageUsages |= VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR;
     }
@@ -432,8 +439,7 @@ int FFmpegVideoDecoder<LIBAV_VER>::ChooseVulkanPixelFormatFromContext(
           (mVulkanDecoder.mDrmModifiers[0] == DRM_FORMAT_MOD_LINEAR) &&
           (mVulkanDecoder.mDrmModifiers.size() == 1);
     }
-    if (getenv("MOZ_VULKAN_ENABLE_DIRECT_DECODE_EXPORT") &&
-        !drmModsAreLinearOrEmpty) {
+    if (VulkanDirectDecodeExportEnabled() && !drmModsAreLinearOrEmpty) {
       AVVulkanFramesContext* hwfc = (AVVulkanFramesContext*)frames_ctx->hwctx;
       void* const originalCreatePnext = hwfc->create_pnext;
       int formatCount = 0;
@@ -2286,11 +2292,11 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageVulkan(
     auto* vkf = (AVVkFrame*)mFrame->data[0];
     // Direct decode export maps the Vulkan decoder output image directly as a
     // DMA-BUF, avoiding a GPU copy. This requires av_hwframe_map() to work
-    // correctly, which is only guaranteed on FFmpeg master (released FFmpeg
-    // builds stall the CPU). Enable via env var for development/testing only.
+    // correctly (FFmpeg master / future releases). Controlled by pref
+    // media.hardware-video-decoding-vulkan.direct-export.enabled (default off).
     if (hf->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT && vkf &&
         mVulkanDecoder.mGetImageDrmFormatModifierPropertiesEXT &&
-        getenv("MOZ_VULKAN_ENABLE_DIRECT_DECODE_EXPORT")) {
+        VulkanDirectDecodeExportEnabled()) {
       VkImageDrmFormatModifierPropertiesEXT modProps = {
           VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT};
       VkResult r = mVulkanDecoder.mGetImageDrmFormatModifierPropertiesEXT(
