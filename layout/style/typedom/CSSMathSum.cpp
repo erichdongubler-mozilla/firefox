@@ -7,12 +7,13 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSMathSumBinding.h"
 #include "mozilla/dom/CSSNumericArray.h"
+#include "mozilla/dom/CSSNumericValue.h"
 #include "mozilla/dom/CSSNumericValueBinding.h"
-#include "mozilla/dom/CSSUnitValue.h"
 #include "nsString.h"
 
 namespace mozilla::dom {
@@ -28,12 +29,7 @@ RefPtr<CSSMathSum> CSSMathSum::Create(nsCOMPtr<nsISupports> aParent,
   nsTArray<RefPtr<CSSNumericValue>> values;
 
   for (const auto& value : aMathSum) {
-    // XXX Only supporting units for now
-    if (value.IsUnit()) {
-      const auto& unitValue = value.AsUnit();
-
-      values.AppendElement(CSSUnitValue::Create(aParent, unitValue));
-    }
+    values.AppendElement(CSSNumericValue::Create(aParent, value));
   }
 
   auto array = MakeRefPtr<CSSNumericArray>(aParent, std::move(values));
@@ -93,21 +89,14 @@ void CSSMathSum::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                        nsACString& aDest) const {
   aDest.Append("calc("_ns);
 
-  bool written = false;
+  const auto& values = mValues->GetValues();
+  MOZ_DIAGNOSTIC_ASSERT(!values.IsEmpty());
 
-  for (const RefPtr<CSSNumericValue>& value : mValues->GetValues()) {
-    if (value->IsCSSUnitValue()) {
-      CSSUnitValue& unitValue = value->GetAsCSSUnitValue();
+  values[0]->ToCssTextWithProperty(aPropertyId, aDest);
 
-      if (written) {
-        aDest.Append(" + "_ns);
-      }
-
-      unitValue.ToCssTextWithProperty(aPropertyId, aDest);
-      written = true;
-    }
-
-    // TODO: Add support for other objects. See bug 2012324.
+  for (size_t index = 1; index < values.Length(); ++index) {
+    aDest.Append(" + "_ns);
+    values[index]->ToCssTextWithProperty(aPropertyId, aDest);
   }
 
   aDest.Append(")"_ns);
@@ -117,14 +106,12 @@ StyleMathSum CSSMathSum::ToStyleMathSum() const {
   nsTArray<StyleNumericValue> values;
 
   for (const RefPtr<CSSNumericValue>& value : mValues->GetValues()) {
-    if (value->IsCSSUnitValue()) {
-      CSSUnitValue& unitValue = value->GetAsCSSUnitValue();
-
-      values.AppendElement(
-          StyleNumericValue::Unit(unitValue.ToStyleUnitValue()));
+    Maybe<StyleNumericValue> styleNumericValue = value->ToStyleNumericValue();
+    if (styleNumericValue.isNothing()) {
+      continue;
     }
 
-    // TODO: Add support for other objects. See bug 2012324.
+    values.AppendElement(styleNumericValue.extract());
   }
 
   return StyleMathSum{std::move(values)};
