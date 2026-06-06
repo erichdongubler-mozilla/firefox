@@ -10,6 +10,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/CSSMathNegate.h"
 #include "mozilla/dom/CSSMathSumBinding.h"
 #include "mozilla/dom/CSSNumericArray.h"
 #include "mozilla/dom/CSSNumericValue.h"
@@ -99,9 +100,23 @@ void CSSMathSum::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                    aDest);
 
   for (size_t index = 1; index < values.Length(); ++index) {
+    const RefPtr<CSSNumericValue>& value = values[index];
+
+    if (value->IsCSSMathValue()) {
+      CSSMathValue& mathValue = value->GetAsCSSMathValue();
+      if (mathValue.IsCSSMathNegate()) {
+        CSSMathNegate& mathNegate = mathValue.GetAsCSSMathNegate();
+
+        aDest.Append(" - "_ns);
+        mathNegate.Value()->ToCssTextWithProperty(
+            aPropertyId, SerializationContext(Nested{}), aDest);
+        continue;
+      }
+    }
+
     aDest.Append(" + "_ns);
-    values[index]->ToCssTextWithProperty(aPropertyId,
-                                         SerializationContext(Nested{}), aDest);
+    value->ToCssTextWithProperty(aPropertyId, SerializationContext(Nested{}),
+                                 aDest);
   }
 
   if (!aContext.IsParenLess()) {
