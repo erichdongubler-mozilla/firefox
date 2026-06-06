@@ -6,9 +6,12 @@
 #define LAYOUT_STYLE_TYPEDOM_CSSMATHMAX_H_
 
 #include "js/TypeDecls.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/dom/CSSMathValue.h"
 #include "mozilla/dom/CSSNumericArrayBindingFwd.h"
 #include "mozilla/dom/CSSNumericValueBindingFwd.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsISupportsImpl.h"
 
 template <class T>
 struct already_AddRefed;
@@ -18,6 +21,7 @@ class nsISupports;
 
 namespace mozilla {
 
+struct CSSPropertyId;
 class ErrorResult;
 
 namespace dom {
@@ -28,23 +32,33 @@ class Sequence;
 
 class CSSMathMax final : public CSSMathValue {
  public:
-  explicit CSSMathMax(nsCOMPtr<nsISupports> aParent);
+  explicit CSSMathMax(nsCOMPtr<nsISupports> aParent,
+                      RefPtr<CSSNumericArray> aValues);
+
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CSSMathMax, CSSMathValue)
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
   // start of CSSMathMax Web IDL declarations
 
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssmathmax-cssmathmax
   static already_AddRefed<CSSMathMax> Constructor(
       const GlobalObject& aGlobal, const Sequence<OwningCSSNumberish>& aArgs,
       ErrorResult& aRv);
 
-  CSSNumericArray* GetValues(ErrorResult& aRv) const;
+  CSSNumericArray* Values() const;
 
   // end of CSSMathMax Web IDL declarations
 
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId, bool aNested,
+                             nsACString& aDest) const;
+
  private:
   virtual ~CSSMathMax() = default;
+
+  RefPtr<CSSNumericArray> mValues;
 };
 
 }  // namespace dom

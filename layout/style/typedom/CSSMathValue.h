@@ -5,6 +5,7 @@
 #ifndef LAYOUT_STYLE_TYPEDOM_CSSMATHVALUE_H_
 #define LAYOUT_STYLE_TYPEDOM_CSSMATHVALUE_H_
 
+#include "mozilla/dom/CSSMathMaxBindingFwd.h"
 #include "mozilla/dom/CSSMathMinBindingFwd.h"
 #include "mozilla/dom/CSSMathSumBindingFwd.h"
 #include "mozilla/dom/CSSNumericValue.h"
@@ -31,6 +32,7 @@ class CSSMathValue : public CSSNumericValue {
     Uninitialized,  // TODO: Remove once the implementation is complete.
     MathSum,
     MathMin,
+    MathMax,
   };
 
   explicit CSSMathValue(nsCOMPtr<nsISupports> aParent);
@@ -63,6 +65,14 @@ class CSSMathValue : public CSSNumericValue {
 
   // Defined in CSSMathMin.cpp
   CSSMathMin& GetAsCSSMathMin();
+
+  bool IsCSSMathMax() const;
+
+  // Defined in CSSMathMax.cpp
+  const CSSMathMax& GetAsCSSMathMax() const;
+
+  // Defined in CSSMathMax.cpp
+  CSSMathMax& GetAsCSSMathMax();
 
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId, bool aNested,
                              nsACString& aDest) const;
