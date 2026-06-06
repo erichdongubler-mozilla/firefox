@@ -62,12 +62,13 @@ bool CSSMathValue::IsCSSMathSum() const {
 }
 
 void CSSMathValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                                         bool aNested,
                                          nsACString& aDest) const {
   switch (GetMathValueType()) {
     case MathValueType::MathSum: {
       const CSSMathSum& mathSum = GetAsCSSMathSum();
 
-      mathSum.ToCssTextWithProperty(aPropertyId, aDest);
+      mathSum.ToCssTextWithProperty(aPropertyId, aNested, aDest);
       break;
     }
 

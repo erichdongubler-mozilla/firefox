@@ -117,6 +117,9 @@ class CSSNumericValue : public CSSStyleValue {
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                              nsACString& aDest) const;
 
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId, bool aNested,
+                             nsACString& aDest) const;
+
   // TODO: This can be changed to return StyleNumericValue directly once the
   // Unitialized type in CSSMathValue is removed.
   Maybe<StyleNumericValue> ToStyleNumericValue() const;

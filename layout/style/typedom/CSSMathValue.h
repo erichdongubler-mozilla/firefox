@@ -54,7 +54,7 @@ class CSSMathValue : public CSSNumericValue {
   // Defined in CSSMathSum.cpp
   CSSMathSum& GetAsCSSMathSum();
 
-  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId, bool aNested,
                              nsACString& aDest) const;
 
   // TODO: This can be changed to return StyleMathValue directly once the
