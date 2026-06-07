@@ -56,6 +56,7 @@ class HomeActivityTestRule(
         isDeleteSitePermissionsEnabled: Boolean = settings.deleteSitePermissions,
         isOpenInAppBannerEnabled: Boolean = settings.shouldShowOpenInAppBanner,
         isUnifiedTrustPanelEnabled: Boolean = false,
+        isHomepageSportsWidgetVisible: Boolean = false,
         etpPolicy: ETPPolicy = getETPPolicy(settings),
         isLocationPermissionEnabled: SitePermissionsRules.Action = getFeaturePermission(PhoneFeature.LOCATION, settings),
         isMenuRedesignCFREnabled: Boolean = false,
@@ -81,6 +82,7 @@ class HomeActivityTestRule(
         this.isDeleteSitePermissionsEnabled = isDeleteSitePermissionsEnabled
         this.isOpenInAppBannerEnabled = isOpenInAppBannerEnabled
         this.isUnifiedTrustPanelEnabled = isUnifiedTrustPanelEnabled
+        this.isHomepageSportsWidgetVisible = isHomepageSportsWidgetVisible
         this.etpPolicy = etpPolicy
         this.isLocationPermissionEnabled = isLocationPermissionEnabled
         this.isMenuRedesignCFREnabled = isMenuRedesignCFREnabled
@@ -194,6 +196,7 @@ class HomeActivityIntentTestRule internal constructor(
         isDeleteSitePermissionsEnabled: Boolean = settings.deleteSitePermissions,
         isOpenInAppBannerEnabled: Boolean = settings.shouldShowOpenInAppBanner,
         isUnifiedTrustPanelEnabled: Boolean = false,
+        isHomepageSportsWidgetVisible: Boolean = false,
         etpPolicy: ETPPolicy = getETPPolicy(settings),
         isLocationPermissionEnabled: SitePermissionsRules.Action = getFeaturePermission(PhoneFeature.LOCATION, settings),
         isMenuRedesignCFREnabled: Boolean = false,
@@ -220,6 +223,7 @@ class HomeActivityIntentTestRule internal constructor(
         this.isDeleteSitePermissionsEnabled = isDeleteSitePermissionsEnabled
         this.isOpenInAppBannerEnabled = isOpenInAppBannerEnabled
         this.isUnifiedTrustPanelEnabled = isUnifiedTrustPanelEnabled
+        this.isHomepageSportsWidgetVisible = isHomepageSportsWidgetVisible
         this.etpPolicy = etpPolicy
         this.isLocationPermissionEnabled = isLocationPermissionEnabled
         this.isMenuRedesignCFREnabled = isMenuRedesignCFREnabled
@@ -300,6 +304,7 @@ class HomeActivityIntentTestRule internal constructor(
         isDeleteSitePermissionsEnabled = settings.deleteSitePermissions
         isOpenInAppBannerEnabled = settings.shouldShowOpenInAppBanner
         isUnifiedTrustPanelEnabled = settings.enableUnifiedTrustPanel
+        isHomepageSportsWidgetVisible = settings.showHomepageSportsWidget
         etpPolicy = getETPPolicy(settings)
         isLocationPermissionEnabled = getFeaturePermission(PhoneFeature.LOCATION, settings)
         isMenuRedesignCFREnabled = settings.shouldShowMenuCFR
