@@ -218,6 +218,7 @@
 #include "mozilla/dom/PageTransitionEvent.h"
 #include "mozilla/dom/PageTransitionEventBinding.h"
 #include "mozilla/dom/Performance.h"
+#include "mozilla/dom/PerformanceMainThread.h"
 #include "mozilla/dom/PermissionMessageUtils.h"
 #include "mozilla/dom/PictureInPictureEvent.h"
 #include "mozilla/dom/PictureInPictureService.h"
@@ -2010,6 +2011,32 @@ void Document::ReportPageLoadEvent() {
       if (TimeStamp lcpTime = timing->GetLargestContentfulRenderTimeStamp()) {
         mPageloadEventData.set_lcpTime(static_cast<uint32_t>(
             (lcpTime - navigationStart).ToMilliseconds()));
+      }
+    }
+  }
+
+  if (nsPIDOMWindowInner* inner = window->GetCurrentInnerWindow()) {
+    if (Performance* perf = inner->GetPerformance()) {
+      if (perf->IsGlobalObjectWindow()) {
+        const auto& t = static_cast<PerformanceMainThread*>(perf)
+                            ->GetInteractionTelemetry();
+        mPageloadEventData.set_interactionCount(static_cast<uint32_t>(
+            std::min<uint64_t>(perf->InteractionCount(), UINT32_MAX)));
+        if (t.inpLongest) {
+          mPageloadEventData.set_inpLongest(t.inpLongest);
+        }
+        if (t.keypressMaxDuration) {
+          mPageloadEventData.set_keypressMaxDuration(t.keypressMaxDuration);
+        }
+        if (t.mouseClick) {
+          mPageloadEventData.set_mouseClick(t.mouseClick);
+        }
+        const auto& durations = t.interactionEventDurations;
+        if (!durations.IsEmpty()) {
+          const size_t len = durations.Length();
+          mPageloadEventData.set_inpP98(durations[len - 1 - (len / 50)]);
+          mPageloadEventData.set_inpP75(durations[len - 1 - (len / 4)]);
+        }
       }
     }
   }
