@@ -87,7 +87,7 @@ exclude = [
   "intl/icu/",
   "ipc/chromium/src/third_party/",
   "js/*.configure",
-  "gfx/angle/",
+  "gfx/angle/vendor_from_git.py",
   "gfx/harfbuzz",
   "gfx/skia/",
   "memory/moz.configure",
