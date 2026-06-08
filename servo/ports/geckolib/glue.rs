@@ -1556,35 +1556,55 @@ pub extern "C" fn Servo_Element_IsPrimaryStyleReusedViaRuleNode(element: &RawGec
         .contains(data::ElementDataFlags::PRIMARY_STYLE_REUSED_VIA_RULE_NODE)
 }
 
-#[no_mangle]
-pub extern "C" fn Servo_Element_ReferencesAttribute(
+fn check_element_and_eager_pseudos(
     element: &RawGeckoElement,
-    attr: *const nsAtom,
+    check_styles_fn: impl Fn(&ComputedValues) -> bool,
 ) -> bool {
     let element = GeckoElement(element);
     let Some(data) = element.borrow_data() else {
         return false;
     };
-    if let Some(ref attrs) = data.styles.primary().attribute_references {
-        if unsafe { Atom::with(attr, |attr| attrs.contains_key(AtomIdent::cast(attr))) } {
-            return true;
-        }
+
+    if check_styles_fn(data.styles.primary()) {
+        return true;
     }
 
     // Some eager pseudos (::first-letter, ::first-line) lack Gecko element nodes,
-    // so check them for attr() dependency through the originating element here.
+    // so check them through the originating element here.
     for pseudo_styles in data.styles.pseudos.as_array() {
         let Some(ref styles) = pseudo_styles else {
             continue;
         };
-        let Some(ref attrs) = styles.attribute_references else {
-            continue;
-        };
-        if unsafe { Atom::with(attr, |attr| attrs.contains_key(AtomIdent::cast(attr))) } {
+        if check_styles_fn(styles) {
             return true;
         }
     }
+
     false
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_Element_ReferencesAttribute(
+    element: &RawGeckoElement,
+    attr: *const nsAtom,
+) -> bool {
+    check_element_and_eager_pseudos(element, |styles| {
+        if let Some(ref attrs) = styles.attribute_references {
+            if unsafe { Atom::with(attr, |attr| attrs.contains_key(AtomIdent::cast(attr))) } {
+                return true;
+            }
+        }
+        false
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_Element_UsesTreeCountingFunction(element: &RawGeckoElement) -> bool {
+    check_element_and_eager_pseudos(element, |styles| {
+        styles
+            .flags
+            .intersects(ComputedValueFlags::tree_counting_function_flags())
+    })
 }
 
 #[no_mangle]

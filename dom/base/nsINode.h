@@ -211,10 +211,15 @@ enum class NodeSelectorFlags : uint32_t {
   /// All instances of :nth flags.
   HasSlowSelectorNthAll = HasSlowSelectorNthOf | HasSlowSelectorNth,
 
+  /// A child of this node may be using sibling-index() or sibling-count(),
+  /// and must be recascaded if other children are added or removed.
+  MayHaveTreeCountingFunction = 1 << 6,
+
   /// Set of selector flags that may trigger a restyle on DOM append, with
   /// restyle on siblings or a single parent (And perhaps their subtrees).
-  AllSimpleRestyleFlagsForAppend = HasEmptySelector | HasSlowSelector |
-                                   HasEdgeChildSelector | HasSlowSelectorNthAll,
+  AllSimpleRestyleFlagsForAppend =
+      HasEmptySelector | HasSlowSelector | HasEdgeChildSelector |
+      HasSlowSelectorNthAll | MayHaveTreeCountingFunction,
 
   /// Set of selector flags that may trigger a restyle as a result of any
   /// DOM mutation.
@@ -222,17 +227,17 @@ enum class NodeSelectorFlags : uint32_t {
       AllSimpleRestyleFlagsForAppend | HasSlowSelectorLaterSiblings,
 
   // This node was evaluated as an anchor for a relative selector.
-  RelativeSelectorAnchor = 1 << 6,
+  RelativeSelectorAnchor = 1 << 7,
 
   // This node was evaluated as an anchor for a relative selector, and that
   // relative selector was not the subject of the overall selector.
-  RelativeSelectorAnchorNonSubject = 1 << 7,
+  RelativeSelectorAnchorNonSubject = 1 << 8,
 
   // This node's sibling(s) performed a relative selector search to this node.
-  RelativeSelectorSearchDirectionSibling = 1 << 8,
+  RelativeSelectorSearchDirectionSibling = 1 << 9,
 
   // This node's ancestor(s) performed a relative selector search to this node.
-  RelativeSelectorSearchDirectionAncestor = 1 << 9,
+  RelativeSelectorSearchDirectionAncestor = 1 << 10,
 
   // This node's sibling(s) and ancestor(s), and/or this node's ancestor's
   // sibling(s) performed a relative selector search to this node.
