@@ -9,29 +9,20 @@ from mozbuild.vendor.host_base import BaseHost
 
 class AngleHost(BaseHost):
     def upstream_commit(self, revision):
-        raise Exception("Should not be called")
+        def _chromium_beta_angle_revision() -> str:
+            response = requests.get(
+                "https://chromiumdash.appspot.com/fetch_releases",
+                params={"channel": "Beta", "platform": "Windows", "num": 1},
+            )
+            response.raise_for_status()
+            return response.json()[0]["hashes"]["angle"]
 
-    def upstream_tag(self, revision):
-        data = requests.get("https://omahaproxy.appspot.com/all.json").json()
+        # If no specific revision specified, use the current ANGLE version used
+        # by Chromium's Beta channel.
+        if revision == "HEAD":
+            revision = _chromium_beta_angle_revision()
 
-        for row in data:
-            if row["os"] == "win64":
-                for version in row["versions"]:
-                    if version["channel"] == "beta":
-                        branch = "chromium/" + version["true_branch"]
-
-                        if revision not in {"HEAD", branch}:
-                            raise Exception(
-                                "Passing a --revision for Angle that is not HEAD "
-                                + "or the true branch is not supported."
-                            )
-
-                        return (
-                            branch,
-                            version["current_reldate"],
-                        )
-
-        raise Exception("Could not find win64 beta version in the JSON response")
+        return super().upstream_commit(revision)
 
     def upstream_snapshot(self, revision):
         raise Exception("Not supported for Angle")

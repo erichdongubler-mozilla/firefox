@@ -31,10 +31,6 @@ updatebot:
 
 vendoring:
   url: https://chromium.googlesource.com/angle/angle
-  # Technically we aren't tracking 'tags', we're tracking branches but Angle has a
-  # special setup and tag is the most analogous without needing to create a whole
-  # new thing just for it.
-  tracking: tag
   source-hosting: angle
   vendor-directory: gfx/angle/checkout
   skip-vendoring-steps: ["fetch", "update-moz-build"]
