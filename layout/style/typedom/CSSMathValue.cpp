@@ -47,6 +47,13 @@ RefPtr<CSSMathValue> CSSMathValue::Create(nsCOMPtr<nsISupports> aParent,
       mathValue = CSSMathMin::Create(std::move(aParent), mathMin);
       break;
     }
+
+    case StyleMathValue::Tag::Max: {
+      const auto& mathMax = aMathValue.AsMax();
+
+      mathValue = CSSMathMax::Create(std::move(aParent), mathMax);
+      break;
+    }
   }
 
   return mathValue;
@@ -179,8 +186,11 @@ Maybe<StyleMathValue> CSSMathValue::ToStyleMathValue() const {
     case MathValueType::MathClamp:
       return Nothing();
 
-    case MathValueType::MathMax:
-      return Nothing();
+    case MathValueType::MathMax: {
+      const CSSMathMax& mathMax = GetAsCSSMathMax();
+
+      return Some(StyleMathValue::Max(mathMax.ToStyleMathMax()));
+    }
 
     case MathValueType::MathMin: {
       const CSSMathMin& mathMin = GetAsCSSMathMin();

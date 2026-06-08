@@ -7,6 +7,8 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSMathMaxBinding.h"
 #include "mozilla/dom/CSSNumericArray.h"
@@ -20,6 +22,20 @@ CSSMathMax::CSSMathMax(nsCOMPtr<nsISupports> aParent,
                        RefPtr<CSSNumericArray> aValues)
     : CSSMathValue(std::move(aParent), MathValueType::MathMax),
       mValues(std::move(aValues)) {}
+
+// static
+RefPtr<CSSMathMax> CSSMathMax::Create(nsCOMPtr<nsISupports> aParent,
+                                      const StyleMathMax& aMathMax) {
+  nsTArray<RefPtr<CSSNumericValue>> values;
+
+  for (const auto& value : aMathMax) {
+    values.AppendElement(CSSNumericValue::Create(aParent, value));
+  }
+
+  auto array = MakeRefPtr<CSSNumericArray>(aParent, std::move(values));
+
+  return MakeRefPtr<CSSMathMax>(std::move(aParent), std::move(array));
+}
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSMathMax, CSSMathValue)
 NS_IMPL_CYCLE_COLLECTION_INHERITED(CSSMathMax, CSSMathValue, mValues)
@@ -86,6 +102,21 @@ void CSSMathMax::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
   }
 
   aDest.Append(")"_ns);
+}
+
+StyleMathMin CSSMathMax::ToStyleMathMax() const {
+  nsTArray<StyleNumericValue> values;
+
+  for (const RefPtr<CSSNumericValue>& value : mValues->GetValues()) {
+    Maybe<StyleNumericValue> styleNumericValue = value->ToStyleNumericValue();
+    if (styleNumericValue.isNothing()) {
+      continue;
+    }
+
+    values.AppendElement(styleNumericValue.extract());
+  }
+
+  return StyleMathMax{std::move(values)};
 }
 
 const CSSMathMax& CSSMathValue::GetAsCSSMathMax() const {

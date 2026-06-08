@@ -23,6 +23,8 @@ namespace mozilla {
 
 struct CSSPropertyId;
 class ErrorResult;
+struct StyleNumericValue;
+using StyleMathMax = CopyableTArray<StyleNumericValue>;
 
 namespace dom {
 
@@ -34,6 +36,9 @@ class CSSMathMax final : public CSSMathValue {
  public:
   explicit CSSMathMax(nsCOMPtr<nsISupports> aParent,
                       RefPtr<CSSNumericArray> aValues);
+
+  static RefPtr<CSSMathMax> Create(nsCOMPtr<nsISupports> aParent,
+                                   const StyleMathMax& aMathMax);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CSSMathMax, CSSMathValue)
@@ -55,6 +60,8 @@ class CSSMathMax final : public CSSMathValue {
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                              const SerializationContext& aContext,
                              nsACString& aDest) const;
+
+  StyleMathMax ToStyleMathMax() const;
 
  private:
   virtual ~CSSMathMax() = default;
