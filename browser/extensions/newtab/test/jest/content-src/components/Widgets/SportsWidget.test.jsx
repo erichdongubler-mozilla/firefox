@@ -3898,3 +3898,144 @@ describe("<SportsWidget> matches missing a team (bug 2044931)", () => {
     expect(titles).toEqual(expect.arrayContaining(["England"]));
   });
 });
+
+describe("<SportsWidget> end-of-match celebration", () => {
+  let originalMatchMedia;
+
+  function mockMatchMedia(matches) {
+    window.matchMedia = jest.fn().mockImplementation(query => ({
+      matches,
+      media: query,
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+    }));
+  }
+
+  beforeEach(() => {
+    originalMatchMedia = window.matchMedia;
+    // <WidgetCelebration> bails out under prefers-reduced-motion: reduce.
+    mockMatchMedia(false);
+    // Another describe's afterEach (jest.restoreAllMocks) can tear down the
+    // suite-wide Date.now pin before this block runs; re-establish it so the
+    // celebration window math stays deterministic regardless of describe order.
+    dateNowSpy = jest.spyOn(Date, "now").mockReturnValue(POST_KICKOFF_MS);
+  });
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia;
+  });
+
+  // Celebrations are off by default (opt-in), so enable the pref unless a test
+  // overrides the state to exercise the off path.
+  function renderSports(
+    state = makeState({ "widgets.sportsWidget.celebrations.enabled": true })
+  ) {
+    return render(
+      <WrapWithProvider state={state}>
+        <SportsWidget {...defaultProps} />
+      </WrapWithProvider>
+    );
+  }
+
+  // Fires the temporary context-menu debug trigger (TODO(patch2): remove with
+  // the debug items once detection wires real winners in).
+  function clickDebugTrigger(container, label) {
+    const item = [...container.querySelectorAll("panel-item")].find(el =>
+      el.textContent.includes(label)
+    );
+    expect(item).toBeTruthy();
+    act(() => {
+      fireEvent.click(item);
+    });
+  }
+
+  it("mounts the celebration overlay when a followed-team win fires", () => {
+    const { container } = renderSports();
+    expect(
+      container.querySelector(".sports-celebration")
+    ).not.toBeInTheDocument();
+
+    clickDebugTrigger(container, "followed celebration");
+
+    expect(container.querySelector(".sports-celebration")).toBeInTheDocument();
+  });
+
+  it("applies the followed-team gradient border for a followed win", () => {
+    const { container } = renderSports();
+    clickDebugTrigger(container, "followed celebration");
+
+    const widget = container.querySelector(".sports.is-followed-celebration");
+    expect(widget).toBeInTheDocument();
+    const gradient = widget.style.getPropertyValue(
+      "--sports-celebration-border-gradient"
+    );
+    expect(gradient).toContain("#006847");
+    expect(gradient).toContain("#ce1126");
+  });
+
+  it("shows a team-colored soccer-ball confetti shower for a followed win", () => {
+    const { container } = renderSports();
+    clickDebugTrigger(container, "followed celebration");
+
+    const pieces = [
+      ...container.querySelectorAll(".sports-celebration-confetti-piece"),
+    ];
+    expect(pieces.length).toBeGreaterThan(0);
+    // Soccer balls are <svg> pieces referencing the shared ball <symbol>; they
+    // tint via the team color in --confetti-color (currentColor). The shower
+    // mixes balls with flat <i> pieces.
+    const balls = pieces.filter(piece => piece.tagName === "svg");
+    expect(balls.length).toBeGreaterThan(0);
+    const palette = ["#006847", "#ffffff", "#ce1126"];
+    balls.forEach(ball => {
+      expect(palette).toContain(
+        ball.style.getPropertyValue("--confetti-color")
+      );
+    });
+    expect(
+      container.querySelector(".sports-celebration-confetti use")
+    ).toBeInTheDocument();
+  });
+
+  it("uses the generic celebration (no team border or confetti) for a generic celebration", () => {
+    const { container } = renderSports();
+    clickDebugTrigger(container, "generic celebration");
+
+    expect(container.querySelector(".sports-celebration")).toBeInTheDocument();
+    expect(
+      container.querySelector(".sports.is-followed-celebration")
+    ).not.toBeInTheDocument();
+    expect(
+      container.querySelector(".sports-celebration-confetti")
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not celebrate under prefers-reduced-motion", () => {
+    mockMatchMedia(true);
+    const { container } = renderSports();
+    clickDebugTrigger(container, "followed celebration");
+
+    expect(
+      container.querySelector(".sports-celebration")
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not celebrate when celebrations are disabled (off by default)", () => {
+    // makeState() leaves the celebrations pref unset -> off.
+    const { container } = renderSports(makeState());
+    clickDebugTrigger(container, "followed celebration");
+
+    expect(
+      container.querySelector(".sports-celebration")
+    ).not.toBeInTheDocument();
+  });
+
+  it("celebrates when enabled via trainhopConfig", () => {
+    const { container } = renderSports(
+      makeState({ trainhopConfig: { sports: { celebrationsEnabled: true } } })
+    );
+    clickDebugTrigger(container, "followed celebration");
+
+    expect(container.querySelector(".sports-celebration")).toBeInTheDocument();
+  });
+});

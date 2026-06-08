@@ -4942,6 +4942,24 @@ button.arrow-button:dir(rtl) {
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
+@keyframes widget-celebration-confetti-fall {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+  12% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: var(--confetti-drift) var(--confetti-fall, 360px);
+    rotate: var(--confetti-rotate);
+  }
+}
 @keyframes widget-celebration-lifecycle {
   from {
     opacity: 1;
@@ -5333,6 +5351,44 @@ button.arrow-button:dir(rtl) {
   transform-origin: bottom right;
   animation: widget-celebration-illustration-in 360ms var(--widget-celebration-enter-ease) forwards, widget-celebration-illustration-out var(--widget-celebration-exit-duration) ease forwards;
   animation-delay: var(--widget-celebration-illustration-delay), var(--widget-celebration-hold-duration);
+}
+.lists .lists-celebration-confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.lists .lists-celebration-confetti-defs {
+  position: absolute;
+  inline-size: 0;
+  block-size: 0;
+}
+.lists .lists-celebration-confetti-piece {
+  position: absolute;
+  inset-block-start: -12%;
+  /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+  inset-inline-start: var(--confetti-x);
+  inline-size: var(--confetti-w);
+  block-size: var(--confetti-h);
+  /* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
+  opacity: 0;
+  animation-name: widget-celebration-confetti-fall;
+  animation-duration: var(--confetti-duration);
+  animation-timing-function: cubic-bezier(0.3, 0.45, 0.55, 1);
+  animation-delay: var(--confetti-delay);
+  animation-fill-mode: forwards;
+}
+.lists i.lists-celebration-confetti-piece {
+  /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+  background-color: var(--confetti-color);
+  border-radius: var(--confetti-radius);
+  /* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
+  clip-path: var(--confetti-clip);
+}
+.lists svg.lists-celebration-confetti-piece {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  color: var(--confetti-color);
 }
 .lists .lists-header {
   display: flex;
@@ -6070,6 +6126,44 @@ button.arrow-button:dir(rtl) {
   animation: widget-celebration-illustration-in 360ms var(--widget-celebration-enter-ease) forwards, widget-celebration-illustration-out var(--widget-celebration-exit-duration) ease forwards;
   animation-delay: var(--widget-celebration-illustration-delay), var(--widget-celebration-hold-duration);
 }
+.nova-enabled .focus-timer .focus-timer-celebration-confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.nova-enabled .focus-timer .focus-timer-celebration-confetti-defs {
+  position: absolute;
+  inline-size: 0;
+  block-size: 0;
+}
+.nova-enabled .focus-timer .focus-timer-celebration-confetti-piece {
+  position: absolute;
+  inset-block-start: -12%;
+  /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+  inset-inline-start: var(--confetti-x);
+  inline-size: var(--confetti-w);
+  block-size: var(--confetti-h);
+  /* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
+  opacity: 0;
+  animation-name: widget-celebration-confetti-fall;
+  animation-duration: var(--confetti-duration);
+  animation-timing-function: cubic-bezier(0.3, 0.45, 0.55, 1);
+  animation-delay: var(--confetti-delay);
+  animation-fill-mode: forwards;
+}
+.nova-enabled .focus-timer i.focus-timer-celebration-confetti-piece {
+  /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+  background-color: var(--confetti-color);
+  border-radius: var(--confetti-radius);
+  /* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
+  clip-path: var(--confetti-clip);
+}
+.nova-enabled .focus-timer svg.focus-timer-celebration-confetti-piece {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  color: var(--confetti-color);
+}
 .nova-enabled .focus-timer:hover {
   background: var(--newtab-background-color-secondary);
 }
@@ -6530,6 +6624,39 @@ button.arrow-button:dir(rtl) {
   box-shadow: var(--box-shadow-level-2);
   height: 100%;
   position: relative;
+  --widget-celebration-accent-color: var(--color-accent-primary);
+  --widget-celebration-copy-color: var(--text-color);
+  --widget-celebration-surface-color: var(--background-color-box);
+  --widget-celebration-headline-gradient-angle: 90deg;
+  --widget-celebration-headline-gradient-start: var(--color-orange-20);
+  --widget-celebration-headline-gradient-mid-start: var(--color-orange-30);
+  --widget-celebration-headline-gradient-mid-end: var(--color-pink-30);
+  --widget-celebration-headline-gradient-end: var(--color-pink-40);
+  --widget-celebration-tint-color: transparent;
+  --widget-celebration-glow-color: color-mix(
+    in srgb,
+    var(--widget-celebration-accent-color) 35%,
+    transparent
+  );
+  --widget-celebration-orbit-color: color-mix(
+    in srgb,
+    var(--widget-celebration-accent-color) 70%,
+    transparent
+  );
+  --widget-celebration-track-color: color-mix(
+    in srgb,
+    var(--widget-celebration-accent-color) 45%,
+    transparent
+  );
+  --widget-celebration-border-draw-duration: 1900ms;
+  --widget-celebration-orbit-duration: 1900ms;
+  --widget-celebration-hold-duration: 3400ms;
+  --widget-celebration-exit-duration: 1200ms;
+  --widget-celebration-enter-ease: cubic-bezier(0.2, 0.9, 0.2, 1);
+  --widget-celebration-headline-delay: 80ms;
+  --widget-celebration-panel-delay: var(--widget-celebration-headline-delay);
+  --widget-celebration-illustration-delay: 180ms;
+  --widget-celebration-subhead-delay: 280ms;
   --widget-size-transition-duration: 180ms;
   --widget-size-transition-easing: ease;
   background: var(--newtab-background-card);
@@ -6542,6 +6669,7 @@ button.arrow-button:dir(rtl) {
   flex-direction: column;
   position: relative;
   transition: height var(--widget-size-transition-duration) var(--widget-size-transition-easing);
+  --sports-view-all-return-delay: 4000ms;
 }
 .sports:hover {
   background: var(--newtab-background-color-secondary);
@@ -6560,6 +6688,216 @@ button.arrow-button:dir(rtl) {
   .sports {
     transition: none;
   }
+}
+.sports .sports-celebration {
+  animation: widget-celebration-lifecycle calc(var(--widget-celebration-hold-duration) + var(--widget-celebration-exit-duration)) linear forwards;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 3;
+}
+.sports .sports-celebration::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  background: var(--widget-celebration-tint-color);
+  opacity: 0;
+  animation: widget-celebration-tint-in 260ms var(--widget-celebration-enter-ease) forwards, widget-celebration-tint-out var(--widget-celebration-exit-duration) ease forwards;
+  animation-delay: 0ms, var(--widget-celebration-hold-duration);
+}
+.sports .sports-celebration-effects {
+  inset: 0;
+  position: absolute;
+}
+.sports .sports-celebration-effects svg {
+  display: block;
+  filter: drop-shadow(0 0 10px var(--widget-celebration-glow-color));
+  height: 100%;
+  width: 100%;
+}
+.sports .sports-celebration-stroke-track,
+.sports .sports-celebration-stroke,
+.sports .sports-celebration-stroke-orbit {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+.sports .sports-celebration-stroke-track {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  opacity: 0.22;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  stroke: var(--widget-celebration-track-color);
+}
+.sports .sports-celebration-stroke {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation-name: widget-celebration-border-draw, widget-celebration-border-fade;
+  animation-duration: var(--widget-celebration-border-draw-duration), var(--widget-celebration-exit-duration);
+  animation-timing-function: var(--widget-celebration-enter-ease), ease;
+  animation-fill-mode: forwards, forwards;
+  animation-delay: 0ms, var(--widget-celebration-hold-duration);
+}
+.sports .sports-celebration-stroke-orbit {
+  opacity: 0;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  stroke: var(--widget-celebration-orbit-color);
+  stroke-dasharray: 14 86;
+  stroke-dashoffset: 100;
+  stroke-width: 3;
+  animation: widget-celebration-border-orbit-in 240ms var(--widget-celebration-enter-ease) 160ms forwards, widget-celebration-border-orbit-loop var(--widget-celebration-orbit-duration) linear 260ms infinite, widget-celebration-border-orbit-out var(--widget-celebration-exit-duration) ease var(--widget-celebration-hold-duration) forwards;
+}
+.sports .sports-celebration-copy {
+  align-items: center;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  color: var(--widget-celebration-copy-color);
+  display: flex;
+  flex-direction: column;
+  inset-block-start: 52%;
+  inset-inline: var(--space-large);
+  padding-block: var(--space-small);
+  padding-inline: var(--space-medium);
+  position: absolute;
+  text-align: center;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+.sports .sports-celebration-copy::before {
+  display: none;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  background: color-mix(in srgb, var(--widget-celebration-surface-color) 88%, transparent);
+  border-radius: var(--border-radius-large);
+  content: "";
+  inset: 0;
+  opacity: 0;
+  position: absolute;
+  animation: widget-celebration-copy-panel-in 320ms var(--widget-celebration-enter-ease) forwards, widget-celebration-copy-panel-out var(--widget-celebration-exit-duration) ease forwards;
+  animation-delay: var(--widget-celebration-panel-delay), var(--widget-celebration-hold-duration);
+}
+.sports .sports-celebration-headline,
+.sports .sports-celebration-subhead {
+  opacity: 0;
+  position: relative;
+  transform: translateY(8px);
+  z-index: 1;
+}
+.sports .sports-celebration-headline {
+  display: inline-block;
+  background-image: linear-gradient(var(--widget-celebration-headline-gradient-angle), var(--widget-celebration-headline-gradient-start), var(--widget-celebration-headline-gradient-mid-start) 28%, var(--widget-celebration-headline-gradient-mid-end) 64%, var(--widget-celebration-headline-gradient-end));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  color: transparent;
+  font-size: var(--font-size-xlarge);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.2;
+  animation: widget-celebration-copy-in 320ms var(--widget-celebration-enter-ease) forwards, widget-celebration-copy-out var(--widget-celebration-exit-duration) ease forwards;
+  animation-delay: var(--widget-celebration-headline-delay), var(--widget-celebration-hold-duration);
+}
+.sports .sports-celebration-subhead {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  color: var(--widget-celebration-copy-color);
+  font-size: var(--font-size-large);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.2;
+  margin-block-start: var(--space-xxsmall);
+  animation: widget-celebration-copy-in 320ms var(--widget-celebration-enter-ease) forwards, widget-celebration-copy-out var(--widget-celebration-exit-duration) ease forwards;
+  animation-delay: var(--widget-celebration-subhead-delay), var(--widget-celebration-hold-duration);
+}
+.sports .sports-celebration-illustration {
+  /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+  block-size: 132px;
+  inset-block-end: var(--space-xxsmall);
+  inline-size: auto;
+  max-inline-size: 209px;
+  /* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
+  inset-inline-end: var(--space-small);
+  opacity: 0;
+  position: absolute;
+  transform: translateY(12px) scale(0.96);
+  transform-origin: bottom right;
+  animation: widget-celebration-illustration-in 360ms var(--widget-celebration-enter-ease) forwards, widget-celebration-illustration-out var(--widget-celebration-exit-duration) ease forwards;
+  animation-delay: var(--widget-celebration-illustration-delay), var(--widget-celebration-hold-duration);
+}
+.sports .sports-celebration-confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.sports .sports-celebration-confetti-defs {
+  position: absolute;
+  inline-size: 0;
+  block-size: 0;
+}
+.sports .sports-celebration-confetti-piece {
+  position: absolute;
+  inset-block-start: -12%;
+  /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+  inset-inline-start: var(--confetti-x);
+  inline-size: var(--confetti-w);
+  block-size: var(--confetti-h);
+  /* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
+  opacity: 0;
+  animation-name: widget-celebration-confetti-fall;
+  animation-duration: var(--confetti-duration);
+  animation-timing-function: cubic-bezier(0.3, 0.45, 0.55, 1);
+  animation-delay: var(--confetti-delay);
+  animation-fill-mode: forwards;
+}
+.sports i.sports-celebration-confetti-piece {
+  /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+  background-color: var(--confetti-color);
+  border-radius: var(--confetti-radius);
+  /* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
+  clip-path: var(--confetti-clip);
+}
+.sports svg.sports-celebration-confetti-piece {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  color: var(--confetti-color);
+}
+.sports .sports-celebration-illustration {
+  inset-inline: 0;
+  margin-inline: auto;
+  transform-origin: bottom center;
+  translate: -18% 0;
+}
+.sports.is-celebrating .sports-view-all {
+  animation: sports-celebration-restore-view-all var(--sports-view-all-return-delay) steps(1, jump-end) forwards;
+}
+.sports.is-followed-celebration .sports-celebration-stroke,
+.sports.is-followed-celebration .sports-celebration-stroke-track,
+.sports.is-followed-celebration .sports-celebration-stroke-orbit {
+  display: none;
+}
+.sports.is-followed-celebration.is-followed-highlight::before {
+  display: none;
+}
+.sports.is-followed-celebration::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  padding: 2px;
+  /* stylelint-disable-line declaration-property-value-disallowed-list */
+  background: var(--sports-celebration-border-gradient);
+  mask: linear-gradient(#FFF 0 0) content-box, linear-gradient(#FFF 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  pointer-events: none;
+  animation-name: sports-celebration-border-in, sports-celebration-border-out;
+  animation-duration: 260ms, var(--widget-celebration-exit-duration);
+  animation-timing-function: var(--widget-celebration-enter-ease), ease;
+  animation-fill-mode: forwards, forwards;
+  animation-delay: 0ms, var(--widget-celebration-hold-duration);
 }
 .sports:hover, .sports:has(:focus-visible) {
   outline: 1px solid var(--border-color-deemphasized);
@@ -6598,6 +6936,12 @@ button.arrow-button:dir(rtl) {
 .sports.medium-widget .match-highlight-view {
   align-self: first baseline;
   margin-block-end: auto;
+}
+.sports.medium-widget .sports-celebration-illustration {
+  block-size: 92px;
+}
+.sports.medium-widget .sports-celebration-confetti-piece {
+  --confetti-fall: 230px;
 }
 .sports.large-widget .sports-intro-wrapper {
   margin-block-start: var(--space-large);
@@ -6956,6 +7300,30 @@ button.arrow-button:dir(rtl) {
   align-self: center;
 }
 
+@keyframes sports-celebration-restore-view-all {
+  from {
+    visibility: hidden;
+  }
+  to {
+    visibility: visible;
+  }
+}
+@keyframes sports-celebration-border-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes sports-celebration-border-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */

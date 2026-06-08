@@ -26,6 +26,8 @@ import {
   getMatchSectionL10nId,
   groupMatchesBySection,
 } from "./stageLabels.mjs";
+import { WidgetCelebration } from "../WidgetCelebration";
+import { useWidgetCelebration } from "../useWidgetCelebration";
 
 const WIDGET_STATES = {
   INTRO: "sports-intro",
@@ -38,6 +40,44 @@ const MATCHES_TABS = {
   RESULTS: "results",
   NOW: "now",
   UPCOMING: "upcoming",
+};
+
+const SPORTS_CELEBRATION_ILLUSTRATION =
+  "chrome://newtab/content/data/content/assets/firefox-motion-head-pop-up-no-bg.svg";
+
+// TODO(patch2): remove once detection wires real winning-team palettes in.
+// Sample followed-team palette (Mexico: green/white/red) for the debug trigger.
+const DEBUG_TEAM_COLORS = ["#006847", "#ffffff", "#ce1126"];
+
+// TODO(patch2): remove. A finished MEX vs RSA result so the "teams playing"
+// Results layout renders locally (the real endpoint has no results pre-kickoff),
+// letting us preview the celebration over a populated card.
+const DEBUG_MOCK_SPORTS_DATA = {
+  teams: [
+    { key: "MEX", name: "Mexico", colors: ["#006847", "#ce1126"] },
+    { key: "RSA", name: "South Africa", colors: ["#007749", "#ffb612"] },
+  ],
+  matches: {
+    previous: [
+      {
+        home_team: { key: "MEX", name: "Mexico", group: "Group L" },
+        away_team: { key: "RSA", name: "South Africa", group: "Group L" },
+        date: "2026-06-12T17:00:00+00:00",
+        status_type: "ended",
+        home_score: 2,
+        away_score: 1,
+        home_extra: null,
+        away_extra: null,
+        home_penalty: null,
+        away_penalty: null,
+        stage: "Group Stage",
+        query: "Mexico vs South Africa",
+      },
+    ],
+    current: [],
+    next: [],
+  },
+  live: [],
 };
 
 function getVisibleMatchesTabs(hasLiveGames, hasPreviousResults) {
@@ -70,6 +110,9 @@ const PREF_NOVA_ENABLED = "nova.enabled";
 const PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
 const PREF_SPORTS_WIDGET_LIVE_ENABLED = "widgets.sportsWidget.live.enabled";
 const PREF_FORCE_LIVE_DATA_TRUSTABLE = "widgets.sports.forceLiveDataTrustable";
+// Kill switch for the end-of-match celebration animations.
+const PREF_SPORTS_CELEBRATIONS_ENABLED =
+  "widgets.sportsWidget.celebrations.enabled";
 
 // World Cup 2026 kickoff: June 11, 2026 at 19:00 UTC. Used as a temporary
 // guard to ignore /live data while the endpoint still serves mock matches
@@ -367,6 +410,48 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   // gate flips and the article appears for the first time). widgetRef is a
   // stable useRef and can't drive re-runs on its own.
   const [liveEl, setLiveEl] = useState(null);
+
+  // End-of-match celebration.
+  const celebrationRef = useRef(null);
+  const {
+    celebrationFrame,
+    celebrationId,
+    completeCelebration,
+    isCelebrating,
+    triggerCelebration,
+  } = useWidgetCelebration(celebrationRef);
+  const [celebrationColors, setCelebrationColors] = useState(null);
+  // Seam consumed by the detection layer (Patch 2): a followed-team win passes
+  // that team's colors; any other ended match passes none (generic). Celebrations
+  // are off by default and opt-in via the pref OR trainhopConfig, so they ship
+  // dark and can be enabled remotely without risking the rest of the widget.
+  const celebrationsEnabled =
+    prefs[PREF_SPORTS_CELEBRATIONS_ENABLED] ||
+    prefs.trainhopConfig?.sports?.celebrationsEnabled;
+  const celebrate = useCallback(
+    (kind, colors = null) => {
+      if (!celebrationsEnabled) {
+        return;
+      }
+      setCelebrationColors(kind === "followed" ? colors : null);
+      triggerCelebration();
+    },
+    [triggerCelebration, celebrationsEnabled]
+  );
+  // TODO(patch2): remove. Seeds a finished match into content state so the
+  // Results "teams playing" layout renders locally for previewing the
+  // celebration. Intentionally does not follow a team, so no followed-team
+  // border is applied to this view.
+  const seedMockMatch = useCallback(() => {
+    dispatch({
+      type: at.WIDGETS_SPORTS_SET_MATCHES_TAB,
+      data: MATCHES_TABS.RESULTS,
+    });
+    dispatch({
+      type: at.WIDGETS_SPORTS_WIDGET_SET,
+      data: DEBUG_MOCK_SPORTS_DATA,
+    });
+  }, [dispatch]);
 
   // Live polling visibility gate. Separate from the one-shot impression
   // observer above (which unobserves after the first intersect) — this one
@@ -726,18 +811,33 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
     return null;
   }
 
+  // A followed-team celebration (team colors passed) gets a 2px linear-gradient
+  // border in the followed team's colors instead of the generic animated
+  // stroke. The gradient feeds --sports-celebration-border-gradient.
+  const isFollowedCelebration = isCelebrating && !!celebrationColors?.length;
+  // `to right` keeps the gradient's midpoint centered (green left -> white
+  // center -> red right), matching the followed-highlight border.
+  const celebrationBorderGradient = celebrationColors?.length
+    ? `linear-gradient(to right, ${celebrationColors.join(", ")})`
+    : null;
+  const widgetStyle = {
+    ...(followedGradient && { "--sports-followed-gradient": followedGradient }),
+    ...(celebrationBorderGradient && {
+      "--sports-celebration-border-gradient": celebrationBorderGradient,
+    }),
+  };
+
   return (
     <article
       className={`sports widget col-4 ${displaySize}-widget ${widgetState}${
         followedGradient ? " is-followed-highlight" : ""
+      }${isCelebrating ? " is-celebrating" : ""}${
+        isFollowedCelebration ? " is-followed-celebration" : ""
       }`}
-      style={
-        followedGradient
-          ? { "--sports-followed-gradient": followedGradient }
-          : undefined
-      }
+      style={widgetStyle}
       ref={el => {
         widgetRef.current = [el];
+        celebrationRef.current = el;
         setLiveEl(el);
         // Only attach the error observer when there's something to report —
         // otherwise the first intersect with no fetchError adds the target to
@@ -754,6 +854,17 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
         activeTab === MATCHES_TABS.NOW && (rawLive?.length ?? 0) >= 2
       )}
     >
+      {isCelebrating && celebrationFrame ? (
+        <WidgetCelebration
+          classNamePrefix="sports-celebration"
+          celebrationFrame={celebrationFrame}
+          celebrationId={celebrationId}
+          confettiColors={celebrationColors ?? undefined}
+          confettiShape="soccer"
+          illustrationSrc={SPORTS_CELEBRATION_ILLUSTRATION}
+          onComplete={completeCelebration}
+        />
+      ) : null}
       {widgetState === WIDGET_STATES.INTRO && (
         <video
           ref={introVideoRef}
@@ -865,6 +976,18 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
                 onClick={handleViewResults}
                 disabled={!hasPreviousResults}
               />
+              {/* TODO(patch2): temporary celebration debug triggers; remove before submit. */}
+              <panel-item onClick={seedMockMatch}>
+                Debug: seed mock match
+              </panel-item>
+              <panel-item
+                onClick={() => celebrate("followed", DEBUG_TEAM_COLORS)}
+              >
+                Debug: followed celebration
+              </panel-item>
+              <panel-item onClick={() => celebrate("generic")}>
+                Debug: generic celebration
+              </panel-item>
               {widgetsMayBeMaximized && (
                 <panel-item submenu="sports-size-submenu">
                   <span data-l10n-id="newtab-widget-menu-change-size"></span>
@@ -1259,6 +1382,7 @@ function SportsMatchesView({
         )}
         {!!previous.length && (
           <moz-button
+            className="sports-view-all"
             type="secondary"
             size={size === "medium" ? "small" : undefined}
             data-l10n-id={
@@ -1401,6 +1525,7 @@ function SportsMatchesView({
         )}
         {!!next.length && (
           <moz-button
+            className="sports-view-all"
             type="secondary"
             size={size === "medium" ? "small" : undefined}
             data-l10n-id={

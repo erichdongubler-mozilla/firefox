@@ -1410,6 +1410,14 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.sportsWidget.celebrations.enabled",
+    {
+      title:
+        "Enables end-of-match celebration animations in the sports widget. Off by default; can also be turned on via trainhopConfig.sports.celebrationsEnabled.",
+      value: false,
+    },
+  ],
+  [
     "widgets.sports.forceLiveDataTrustable",
     {
       title:
