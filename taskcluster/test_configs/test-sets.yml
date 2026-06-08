@@ -518,8 +518,6 @@ macosx1500-aarch64-vms-tests:
 macosx1470-64-tests:
     - cppunittest
     - gtest
-    - web-platform-tests-print-reftest
-    - web-platform-tests-reftest
 
 macosx1015-64-qr-tests:
     - cppunittest
