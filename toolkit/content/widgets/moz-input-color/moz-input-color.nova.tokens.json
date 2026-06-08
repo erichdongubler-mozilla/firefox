@@ -1,0 +1,27 @@
+{
+  "background": {
+    "color": {
+      "@base": {
+        "value": "{button.background.color.@base}"
+      },
+      "active": {
+        "value": "{button.background.color.active}"
+      },
+      "hover": {
+        "value": "{button.background.color.hover}"
+      }
+    }
+  },
+  "border": {
+    "radius": {
+      "value": "{border.radius.large}"
+    }
+  },
+  "space": {
+    "padding": {
+      "inline": {
+        "value": "{space.small}"
+      }
+    }
+  }
+}

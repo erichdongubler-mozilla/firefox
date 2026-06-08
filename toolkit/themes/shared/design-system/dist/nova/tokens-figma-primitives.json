@@ -26,6 +26,8 @@
   "toolbarbutton/opacity/disabled": 0.4,
   "toolbarbutton/outline/offset": -1,
   "badge/border/radius": "{Primitives$border/radius/circle}",
+  "input-color/border/radius": "{Primitives$border/radius/large}",
+  "input-color/space/padding/inline": "{Primitives$space/small}",
   "message-bar/border/radius": 12,
   "message-bar/container/padding/inline": 8,
   "message-bar/icon/container/border": "1px solid {Primitives$message-bar/icon/container/border/color}",

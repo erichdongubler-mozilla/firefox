@@ -471,6 +471,18 @@ export const tokensTable = {
       name: "--badge-background-color-filled",
     },
     {
+      value: "var(--button-background-color-ghost)",
+      name: "--input-color-background-color",
+    },
+    {
+      value: "var(--button-background-color-ghost-active)",
+      name: "--input-color-background-color-active",
+    },
+    {
+      value: "var(--button-background-color-ghost-hover)",
+      name: "--input-color-background-color-hover",
+    },
+    {
       value: "var(--background-color-information)",
       name: "--message-bar-background-color",
     },
@@ -985,6 +997,22 @@ export const tokensTable = {
       name: "--badge-border-color-filled",
     },
     {
+      value: "var(--border-color-interactive)",
+      name: "--input-color-border-color",
+    },
+    {
+      value: "var(--border-color-interactive-active)",
+      name: "--input-color-border-color-active",
+    },
+    {
+      value: "var(--border-color-interactive-hover)",
+      name: "--input-color-border-color-hover",
+    },
+    {
+      value: "var(--border-color-deemphasized)",
+      name: "--input-color-swatch-border-color",
+    },
+    {
       value: {
         default: "oklch(from var(--message-bar-icon-color) l c h / 20%)",
         prefersContrast: "var(--border-color)",
@@ -1056,6 +1084,14 @@ export const tokensTable = {
       name: "--toolbarbutton-border-radius",
     },
     { value: "var(--border-radius-small)", name: "--badge-border-radius" },
+    {
+      value: "var(--border-radius-medium)",
+      name: "--input-color-border-radius",
+    },
+    {
+      value: "var(--border-radius-circle)",
+      name: "--input-color-swatch-border-radius",
+    },
     {
       value: "var(--border-radius-medium)",
       name: "--message-bar-border-radius",
@@ -1604,7 +1640,6 @@ export const tokensTable = {
     },
     { value: "var(--size-item-small)", name: "--checkbox-size" },
     { value: "var(--size-item-small)", name: "--input-height" },
-    { value: "var(--size-item-medium)", name: "--input-swatch-size" },
     { value: "var(--button-min-height)", name: "--input-text-min-height" },
     { value: "var(--size-item-small)", name: "--input-width" },
     {
@@ -1614,6 +1649,7 @@ export const tokensTable = {
     { value: "initial", name: "--panel-width" },
     { value: "14px", name: "--toolbarbutton-badge-min-width" },
     { value: "20px", name: "--toolbarbutton-badge-max-width" },
+    { value: "var(--size-item-medium)", name: "--input-color-swatch-size" },
     {
       value: "var(--size-item-large)",
       name: "--message-bar-container-min-height",
@@ -1693,6 +1729,12 @@ export const tokensTable = {
     { value: "9px", name: "--toolbarbutton-padding-inner-touch" },
     { value: "8px", name: "--toolbarbutton-padding-inner-touch-narrow" },
     { value: "var(--space-small)", name: "--breadcrumb-gap" },
+    { value: "var(--space-small)", name: "--input-color-gap" },
+    { value: "var(--space-small)", name: "--input-color-space-padding-block" },
+    {
+      value: "var(--space-medium)",
+      name: "--input-color-space-padding-inline",
+    },
     {
       value: "var(--space-xsmall) var(--space-large)",
       name: "--message-bar-actions-button-padding",
@@ -2175,6 +2217,15 @@ export const tokensTable = {
     {
       value: "var(--link-color-visited)",
       name: "--breadcrumb-link-color-visited",
+    },
+    { value: "var(--button-text-color)", name: "--input-color-text-color" },
+    {
+      value: "var(--button-text-color-active)",
+      name: "--input-color-text-color-active",
+    },
+    {
+      value: "var(--button-text-color-hover)",
+      name: "--input-color-text-color-hover",
     },
     { value: "var(--text-color)", name: "--message-bar-text-color" },
     {
@@ -3676,7 +3727,6 @@ export const variableLookupTable = {
   "input-border-color": "var(--border-color-interactive)",
   "input-folder-gap": "var(--space-medium)",
   "input-height": "var(--size-item-small)",
-  "input-swatch-size": "var(--size-item-medium)",
   "input-text-background-color": {
     nativeTheme: "Field",
     platform: { light: "var(--color-white)", dark: "#42414d" },
@@ -3969,6 +4019,24 @@ export const variableLookupTable = {
   "breadcrumb-link-color-hover": "var(--link-color-hover)",
   "breadcrumb-link-color-active": "var(--link-color-active)",
   "breadcrumb-link-color-visited": "var(--link-color-visited)",
+  "input-color-background-color": "var(--button-background-color-ghost)",
+  "input-color-background-color-active":
+    "var(--button-background-color-ghost-active)",
+  "input-color-background-color-hover":
+    "var(--button-background-color-ghost-hover)",
+  "input-color-border-color": "var(--border-color-interactive)",
+  "input-color-border-color-active": "var(--border-color-interactive-active)",
+  "input-color-border-color-hover": "var(--border-color-interactive-hover)",
+  "input-color-border-radius": "var(--border-radius-medium)",
+  "input-color-gap": "var(--space-small)",
+  "input-color-space-padding-block": "var(--space-small)",
+  "input-color-space-padding-inline": "var(--space-medium)",
+  "input-color-swatch-border-color": "var(--border-color-deemphasized)",
+  "input-color-swatch-border-radius": "var(--border-radius-circle)",
+  "input-color-swatch-size": "var(--size-item-medium)",
+  "input-color-text-color": "var(--button-text-color)",
+  "input-color-text-color-active": "var(--button-text-color-active)",
+  "input-color-text-color-hover": "var(--button-text-color-hover)",
   "message-bar-actions-button-padding":
     "var(--space-xsmall) var(--space-large)",
   "message-bar-actions-gap": "var(--space-small)",

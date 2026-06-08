@@ -12,11 +12,6 @@
   "height": {
     "value": "{size.item.small}"
   },
-  "swatch": {
-    "size": {
-      "value": "{size.item.medium}"
-    }
-  },
   "text": {
     "background": {
       "color": {
