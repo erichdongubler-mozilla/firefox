@@ -83,7 +83,7 @@ already_AddRefed<UnscaledFont> UnscaledFontGDI::CreateFromFontDescriptor(
   }
 
   const LOGFONT* logFont = reinterpret_cast<const LOGFONT*>(aData);
-  RefPtr<UnscaledFont> unscaledFont = new UnscaledFontGDI(*logFont);
+  RefPtr unscaledFont = MakeRefPtr<UnscaledFontGDI>(*logFont);
   return unscaledFont.forget();
 }
 
