@@ -9,47 +9,43 @@
  * The full license is in the file LICENSE, distributed with this software. *
  ****************************************************************************/
 
-#ifndef XSIMD_NEON64_REGISTER_HPP
-#define XSIMD_NEON64_REGISTER_HPP
+#ifndef XSIMD_AVX512VL_REGISTER_HPP
+#define XSIMD_AVX512VL_REGISTER_HPP
 
-#include "./xsimd_neon_register.hpp"
+#include "./xsimd_avx512cd_register.hpp"
 
 namespace xsimd
 {
+
     /**
      * @ingroup architectures
      *
-     * NEON instructions for arm64
+     * AVX512DQ instructions
      */
-    struct neon64 : neon
+    struct avx512vl : avx512cd
     {
-        static constexpr bool supported() noexcept { return XSIMD_WITH_NEON64; }
+        static constexpr bool supported() noexcept { return XSIMD_WITH_AVX512VL; }
         static constexpr bool available() noexcept { return true; }
-        static constexpr bool requires_alignment() noexcept { return true; }
-        static constexpr std::size_t alignment() noexcept { return 16; }
-        static constexpr char const* name() noexcept { return "arm64+neon"; }
+        static constexpr char const* name() noexcept { return "avx512vl"; }
     };
 
-#if XSIMD_WITH_NEON64
+#if XSIMD_WITH_AVX512VL
 
-#if !XSIMD_WITH_NEON
-#error "architecture inconsistency: neon64 requires neon"
+#if !XSIMD_WITH_AVX512CD
+#error "architecture inconsistency: avx512vl requires avx512cd"
 #endif
 
     namespace types
     {
-        XSIMD_DECLARE_SIMD_REGISTER_ALIAS(neon64, neon);
-        XSIMD_DECLARE_SIMD_REGISTER(double, neon64, float64x2_t);
-
         template <class T>
-        struct get_bool_simd_register<T, neon64>
-            : detail::neon_bool_simd_register<T, neon64>
+        struct get_bool_simd_register<T, avx512vl>
         {
+            using type = simd_avx512_bool_register<T>;
         };
+
+        XSIMD_DECLARE_SIMD_REGISTER_ALIAS(avx512vl, avx512cd);
+
     }
-
 #endif
-
 }
-
 #endif
