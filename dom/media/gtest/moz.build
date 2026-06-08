@@ -23,6 +23,7 @@ LOCAL_INCLUDES += [
 UNIFIED_SOURCES += [
     "MockMediaResource.cpp",
     "TestAOMDecoder.cpp",
+    "TestAsyncLogger.cpp",
     "TestAudioBuffer.cpp",
     "TestAudioBufferAddWithScale.cpp",
     "TestAudioBuffers.cpp",
