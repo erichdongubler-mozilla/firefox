@@ -1633,18 +1633,21 @@ auto nsWindow::Bounds::ComputeWayland(const nsWindow* aWindow) -> Bounds {
 
   Bounds result;
   result.mClientArea = GetBounds(aWindow->GetGdkWindow());
-  LOG_WIN(aWindow, "  bounds %s", ToString(result.mClientArea).c_str());
+  result.mClientMargin =
+      DesktopIntRect(DesktopIntPoint(), toplevelBounds.Size()) -
+      result.mClientArea;
+  result.mClientMargin.EnsureAtLeast(DesktopIntMargin());
+
+  LOG_WIN(aWindow, "  bounds %s margin %s",
+          ToString(result.mClientArea).c_str(),
+          ToString(result.mClientMargin).c_str());
 
   if (result.mClientArea.X() < 0 || result.mClientArea.Y() < 0 ||
       result.mClientArea.Width() <= 1 || result.mClientArea.Height() <= 1) {
     // If we don't have gdkwindow bounds yet, assume we take the whole toplevel.
     result.mClientArea = toplevelBounds;
+    result.mClientMargin = {};
   }
-
-  result.mClientMargin =
-      DesktopIntRect(DesktopIntPoint(), toplevelBounds.Size()) -
-      result.mClientArea;
-  result.mClientMargin.EnsureAtLeast(DesktopIntMargin());
   return result;
 }
 #endif
