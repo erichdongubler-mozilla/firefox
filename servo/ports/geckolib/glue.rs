@@ -142,6 +142,7 @@ use style::values::computed::length_percentage::{
     AllowAnchorPosResolutionInCalcPercentage, Unpacked,
 };
 use style::values::computed::position::{AnchorFunction, PositionArea};
+use style::values::computed::tree_counting::TreeCountingInfo;
 use style::values::computed::{self, ContentVisibility, Context, ToComputedValue};
 use style::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use style::values::generics::color::ColorMixFlags;
@@ -5175,6 +5176,7 @@ pub extern "C" fn Servo_ParseAndComputeViewTimelineInset(
         .map(|x| &**x);
     let container_size_query =
         ContainerSizeQuery::for_element(element, None, /* is_pseudo = */ false);
+    let tree_counting_info = TreeCountingInfo::for_element(element);
     let mut conditions = Default::default();
     let context = create_context_for_animation(
         &data,
@@ -5182,6 +5184,7 @@ pub extern "C" fn Servo_ParseAndComputeViewTimelineInset(
         parent_style,
         &mut conditions,
         container_size_query,
+        tree_counting_info,
     );
     *output = specified.to_computed_value(&context);
     true
@@ -7244,6 +7247,7 @@ fn create_context_for_animation<'a>(
     parent_style: Option<&'a ComputedValues>,
     rule_cache_conditions: &'a mut RuleCacheConditions,
     container_size_query: ContainerSizeQuery<'a>,
+    tree_counting_info: Option<TreeCountingInfo<'a>>,
 ) -> Context<'a> {
     Context::new_for_animation(
         StyleBuilder::for_derived_style(
@@ -7255,6 +7259,7 @@ fn create_context_for_animation<'a>(
         per_doc_data.stylist.quirks_mode(),
         rule_cache_conditions,
         container_size_query,
+        tree_counting_info,
     )
 }
 
@@ -7339,6 +7344,7 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
 
     let container_size_query =
         ContainerSizeQuery::for_element(element, parent_style, pseudo.is_some());
+    let tree_counting_info = TreeCountingInfo::for_element(element);
     let mut conditions = Default::default();
     let mut context = create_context_for_animation(
         &data,
@@ -7346,6 +7352,7 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
         parent_style,
         &mut conditions,
         container_size_query,
+        tree_counting_info,
     );
 
     let restriction = pseudo.and_then(|p| p.property_restriction());
@@ -7476,6 +7483,7 @@ pub extern "C" fn Servo_GetAnimationValues(
 
     let container_size_query =
         ContainerSizeQuery::for_element(element, None, /* is_pseudo = */ false);
+    let tree_counting_info = TreeCountingInfo::for_element(element);
     let mut conditions = Default::default();
     let mut context = create_context_for_animation(
         &data,
@@ -7483,6 +7491,7 @@ pub extern "C" fn Servo_GetAnimationValues(
         parent_style,
         &mut conditions,
         container_size_query,
+        tree_counting_info,
     );
 
     let default_values = data.default_computed_values();
@@ -7521,6 +7530,7 @@ pub extern "C" fn Servo_AnimationValue_Compute(
 
     let container_size_query =
         ContainerSizeQuery::for_element(element, None, /* is_pseudo = */ false);
+    let tree_counting_info = TreeCountingInfo::for_element(element);
     let mut conditions = Default::default();
     let mut context = create_context_for_animation(
         &data,
@@ -7528,6 +7538,7 @@ pub extern "C" fn Servo_AnimationValue_Compute(
         parent_style,
         &mut conditions,
         container_size_query,
+        tree_counting_info,
     );
 
     let default_values = data.default_computed_values();
