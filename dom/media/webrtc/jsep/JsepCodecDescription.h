@@ -827,12 +827,13 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
     // attributes on a given codec.  There is no rtcpfb to push for FEC
     // as can be seen above when REMB or TMMBR are enabled.
 
-    // Ensure we have valid payload types. This returns zero on failure, which
-    // is a valid payload type.
+    // Ensure we have valid payload types. It is valid for red/rtx to be empty,
+    // so we ignore that.
     uint16_t redPt, ulpfecPt, redRtxPt;
     if (!SdpHelper::GetPtAsInt(redPayloadType, &redPt) ||
         !SdpHelper::GetPtAsInt(ulpfecPayloadType, &ulpfecPt) ||
-        !SdpHelper::GetPtAsInt(redRtxPayloadType, &redRtxPt)) {
+        (!redRtxPayloadType.empty() &&
+         !SdpHelper::GetPtAsInt(redRtxPayloadType, &redRtxPt))) {
       return;
     }
 
