@@ -250,10 +250,8 @@ nsresult SVGTransformListSMILType::Interpolate(const SMILValue& aStartVal,
 
   // Interpolate between the params
   float newParams[3];
-  for (int i = 0; i <= 2; ++i) {
-    const float& a = startParams[i];
-    const float& b = endParams[i];
-    newParams[i] = static_cast<float>(a + (b - a) * aUnitDistance);
+  for (uint32_t i = 0; i < std::size(newParams); ++i) {
+    newParams[i] = std::lerp(startParams[i], endParams[i], aUnitDistance);
   }
 
   // Make the result

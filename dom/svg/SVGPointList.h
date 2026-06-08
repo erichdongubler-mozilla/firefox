@@ -62,6 +62,13 @@ class SVGPointList {
 
   const SVGPoint& operator[](uint32_t aIndex) const { return mItems[aIndex]; }
 
+  [[nodiscard]] FallibleTArray<SVGPoint>::const_iterator begin() const {
+    return mItems.begin();
+  }
+  [[nodiscard]] FallibleTArray<SVGPoint>::const_iterator end() const {
+    return mItems.end();
+  }
+
   bool operator==(const SVGPointList& rhs) const {
     // memcmp can be faster than |mItems == rhs.mItems|
     return mItems.Length() == rhs.mItems.Length() &&
@@ -133,6 +140,12 @@ class SVGPointList {
   }
 
  protected:
+  [[nodiscard]] FallibleTArray<SVGPoint>::iterator begin() {
+    return mItems.begin();
+  }
+  [[nodiscard]] FallibleTArray<SVGPoint>::iterator end() {
+    return mItems.end();
+  }
   /* See SVGLengthList for the rationale for using FallibleTArray<SVGPoint>
    * instead of FallibleTArray<SVGPoint, 1>.
    */
@@ -188,18 +201,11 @@ class SVGPointListAndInfo : public SVGPointList {
    * SVGPointListAndInfo objects. Note that callers should also call
    * SetElement() when using this method!
    */
-  nsresult CopyFrom(const SVGPointList& rhs) {
-    return SVGPointList::CopyFrom(rhs);
-  }
-  const SVGPoint& operator[](uint32_t aIndex) const {
-    return SVGPointList::operator[](aIndex);
-  }
-  SVGPoint& operator[](uint32_t aIndex) {
-    return SVGPointList::operator[](aIndex);
-  }
-  bool SetLength(uint32_t aNumberOfItems) {
-    return SVGPointList::SetLength(aNumberOfItems);
-  }
+  using SVGPointList::CopyFrom;
+  using SVGPointList::operator[];
+  using SVGPointList::begin;
+  using SVGPointList::end;
+  using SVGPointList::SetLength;
 
  private:
   // We must keep a weak reference to our element because we may belong to a

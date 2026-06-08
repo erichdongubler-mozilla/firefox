@@ -52,6 +52,9 @@ class SVGPoint {
   bool operator!=(const SVGPoint& rhs) const {
     return mX != rhs.mX || mY != rhs.mY;
   }
+  static SVGPoint lerp(const SVGPoint& a, const SVGPoint& b, float t) {
+    return SVGPoint(std::lerp(a.mX, b.mX, t), std::lerp(a.mY, b.mY, t));
+  }
 
   float mX;
   float mY;
