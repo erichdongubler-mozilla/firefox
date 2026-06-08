@@ -5,6 +5,7 @@
 #include "mozilla/dom/WebAuthnUtil.h"
 
 #include "hasht.h"
+#include "js/Exception.h"
 #include "mozilla/Base64.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Components.h"
@@ -617,12 +618,16 @@ nsresult SerializeWebAuthnCreationOptions(
 
   JS::Rooted<JS::Value> value(aCx);
   if (!ToJSValue(aCx, json, &value)) {
+    // Callers reject the promise with a fixed error code and have no way to
+    // forward a pending exception, so we must not leave one set.
+    JS_ClearPendingException(aCx);
     return NS_ERROR_FAILURE;
   }
 
   nsAutoString jsonString;
   if (!nsContentUtils::StringifyJSON(aCx, value, jsonString,
                                      UndefinedIsNullStringLiteral)) {
+    JS_ClearPendingException(aCx);
     return NS_ERROR_FAILURE;
   }
 
@@ -756,12 +761,16 @@ nsresult SerializeWebAuthnRequestOptions(
 
   JS::Rooted<JS::Value> value(aCx);
   if (!ToJSValue(aCx, json, &value)) {
+    // Callers reject the promise with a fixed error code and have no way to
+    // forward a pending exception, so we must not leave one set.
+    JS_ClearPendingException(aCx);
     return NS_ERROR_FAILURE;
   }
 
   nsAutoString jsonString;
   if (!nsContentUtils::StringifyJSON(aCx, value, jsonString,
                                      UndefinedIsNullStringLiteral)) {
+    JS_ClearPendingException(aCx);
     return NS_ERROR_FAILURE;
   }
 
