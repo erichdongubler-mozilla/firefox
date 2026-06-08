@@ -502,6 +502,9 @@ class PeerConnectionImpl final
   nsresult OnAlpnNegotiated(const std::string& aAlpn, bool aPrivacyRequested);
 
   void OnDtlsStateChange(const std::string& aTransportId,
+                         TransportLayer::State aState,
+                         const nsTArray<nsTArray<uint8_t>>& aRemoteCerts);
+  void OnRtcpStateChange(const std::string& aTransportId,
                          TransportLayer::State aState);
   dom::RTCPeerConnectionState GetNewConnectionState() const;
   // Returns whether we need to fire a state change event

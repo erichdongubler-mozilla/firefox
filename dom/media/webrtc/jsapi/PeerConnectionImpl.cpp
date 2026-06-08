@@ -579,7 +579,7 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
       &PeerConnectionImpl::OnDtlsStateChange);
   mRtcpStateChangeListener = mTransportHandler->GetRtcpStateChange().Connect(
       GetMainThreadSerialEventTarget(), this,
-      &PeerConnectionImpl::OnDtlsStateChange);
+      &PeerConnectionImpl::OnRtcpStateChange);
 
   return NS_OK;
 }
@@ -1901,8 +1901,9 @@ nsresult PeerConnectionImpl::OnAlpnNegotiated(const std::string& aAlpn,
   return NS_OK;
 }
 
-void PeerConnectionImpl::OnDtlsStateChange(const std::string& aTransportId,
-                                           TransportLayer::State aState) {
+void PeerConnectionImpl::OnDtlsStateChange(
+    const std::string& aTransportId, TransportLayer::State aState,
+    const nsTArray<nsTArray<uint8_t>>& aRemoteCerts) {
   MOZ_ASSERT(NS_IsMainThread(), "Wrong thread");
   RefPtr<PeerConnectionImpl> kungFuDeathGrip(this);
   if (IsClosed()) {
@@ -1916,7 +1917,12 @@ void PeerConnectionImpl::OnDtlsStateChange(const std::string& aTransportId,
     return;
   }
 
-  dtlsTransport->UpdateState(aState);
+  nsTArray<nsTArray<uint8_t>> certsCopy;
+  certsCopy.SetCapacity(aRemoteCerts.Length());
+  for (const auto& cert : aRemoteCerts) {
+    certsCopy.AppendElement(cert.Clone());
+  }
+  dtlsTransport->UpdateState(aState, std::move(certsCopy));
   // Whenever the state of an RTCDtlsTransport changes or when the [[IsClosed]]
   // slot turns true, the user agent MUST update the connection state by
   // queueing a task that runs the following steps:
@@ -1937,6 +1943,11 @@ void PeerConnectionImpl::OnDtlsStateChange(const std::string& aTransportId,
           mPCObserver->OnStateChange(PCObserverStateType::ConnectionState, jrv);
         }
       }));
+}
+
+void PeerConnectionImpl::OnRtcpStateChange(const std::string& aTransportId,
+                                           TransportLayer::State aState) {
+  OnDtlsStateChange(aTransportId, aState, {});
 }
 
 RTCPeerConnectionState PeerConnectionImpl::GetNewConnectionState() const {
