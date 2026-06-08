@@ -239,6 +239,14 @@ export function LightweightThemeConsumer(aDocument) {
 
   XPCOMUtils.defineLazyPreferenceGetter(
     this,
+    "BROWSER_NOVA_ENABLED",
+    "browser.nova.enabled",
+    false,
+    () => this._update(this._lastData)
+  );
+
+  XPCOMUtils.defineLazyPreferenceGetter(
+    this,
     "_toolbarTheme",
     "browser.theme.toolbar-theme",
     2,
@@ -374,16 +382,26 @@ LightweightThemeConsumer.prototype = {
     this._doc.forceNonNativeTheme = !!builtinThemeConfig?.nonNative;
     let root = this._doc.documentElement;
     root.toggleAttribute("lwtheme-image", !!(hasTheme && theme.headerImage));
+    // Toolbox background images go either on the `<body>` or on the toolbox
+    // itself. For most themes and pre-nova default theme, it goes on the
+    // `<body>`. For themes that align the image in the y axis, and the nova
+    // default theme, they go on the toolbox.
     root.toggleAttribute(
-      "lwtheme-image-y-align",
-      hasTheme &&
-        !!theme.backgroundsAlignment?.split(",").some(alignment => {
-          if (alignment == "center" || alignment == "bottom") {
-            return true;
-          }
-          let [, y] = alignment.split(" ");
-          return y == "center" || y == "bottom";
-        })
+      "theme-image-in-toolbox",
+      (() => {
+        if (hasTheme) {
+          // TODO(emilio): Consider adding an opt-in to lwthemes into this
+          // behavior.
+          return !!theme.backgroundsAlignment?.split(",").some(alignment => {
+            if (alignment == "center" || alignment == "bottom") {
+              return true;
+            }
+            let [, y] = alignment.split(" ");
+            return y == "center" || y == "bottom";
+          });
+        }
+        return this.BROWSER_NOVA_ENABLED;
+      })()
     );
     this._setExperiment(hasTheme, themeData.experiment, theme.experimental);
     _setImage(

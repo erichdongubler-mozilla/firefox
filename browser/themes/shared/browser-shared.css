@@ -282,35 +282,20 @@ body {
   }
 }
 
-/* Toolbox background images go either on the `<body>` or on the toolbox itself.
- * For most themes and pre-nova default theme, it goes on the `<body>`. For themes
- * that align the image in the y axis, and the nova default theme, they go on the toolbox.
- * FIXME(bug 2044711): Clean this up by using a more specific attribute or so. */
-@media not -moz-pref("browser.nova.enabled") {
-  :root:not([lwtheme-image-y-align]) body,
-  :root[lwtheme-image-y-align] #navigator-toolbox {
-    background-image: var(--toolbox-background-image);
-    background-repeat: var(--toolbox-background-repeat);
-    background-position: var(--toolbox-background-position);
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    background-size: var(--toolbox-background-size);
-  }
+:root:not([theme-image-in-toolbox]) body,
+:root[theme-image-in-toolbox] #navigator-toolbox {
+  background-image: var(--toolbox-background-image);
+  background-repeat: var(--toolbox-background-repeat);
+  background-position: var(--toolbox-background-position);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  background-size: var(--toolbox-background-size);
 }
 
 @media -moz-pref("browser.nova.enabled") {
-  :root[lwtheme]:not([lwtheme-image-y-align]) #navigator-toolbox {
+  :root[lwtheme]:not([theme-image-in-toolbox]) #navigator-toolbox {
     color: inherit;
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     background-color: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.05));
-  }
-
-  :root[lwtheme]:not([lwtheme-image-y-align]) body,
-  :root:is([lwtheme-image-y-align], :not([lwtheme])) #navigator-toolbox {
-    background-image: var(--toolbox-background-image);
-    background-repeat: var(--toolbox-background-repeat);
-    background-position: var(--toolbox-background-position);
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    background-size: var(--toolbox-background-size);
   }
 
   .chrome-block {
