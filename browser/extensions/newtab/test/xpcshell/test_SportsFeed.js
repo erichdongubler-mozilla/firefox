@@ -2871,6 +2871,39 @@ add_task(async function test_recordEndedMatches_retention_respects_window() {
   );
 });
 
+add_task(async function test_resolveCelebrationWindowMs_precedence() {
+  const feed = makeFeed();
+  const WINDOW_PREF = "widgets.sportsWidget.celebrations.windowMs";
+
+  info("Falls back to the raw pref when no trainhopConfig override is set");
+  feed.store.state.Prefs.values.trainhopConfig = {};
+  feed.store.state.Prefs.values[WINDOW_PREF] = 5000;
+  Assert.equal(feed.resolveCelebrationWindowMs(), 5000);
+
+  info("Legacy trainhopConfig.sports.celebrationsWindowMs overrides the pref");
+  feed.store.state.Prefs.values.trainhopConfig = {
+    sports: { celebrationsWindowMs: 4000 },
+  };
+  Assert.equal(feed.resolveCelebrationWindowMs(), 4000);
+
+  info(
+    "Canonical trainhopConfig.widgets window overrides the legacy sports key"
+  );
+  feed.store.state.Prefs.values.trainhopConfig = {
+    sports: { celebrationsWindowMs: 4000 },
+    widgets: { sportsWidgetCelebrationsWindowMs: 3000 },
+  };
+  Assert.equal(feed.resolveCelebrationWindowMs(), 3000);
+
+  info("Dedicated trainhopConfig.sportsCelebrations namespace wins over all");
+  feed.store.state.Prefs.values.trainhopConfig = {
+    sports: { celebrationsWindowMs: 4000 },
+    widgets: { sportsWidgetCelebrationsWindowMs: 3000 },
+    sportsCelebrations: { windowMs: 2000 },
+  };
+  Assert.equal(feed.resolveCelebrationWindowMs(), 2000);
+});
+
 add_task(async function test_recordEndedMatches_noop_on_empty() {
   const feed = makeFeed();
   const setStub = sinon.stub(feed.cache, "set").resolves();

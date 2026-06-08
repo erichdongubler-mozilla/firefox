@@ -312,6 +312,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   // ended even when it isn't the top result.
   const { celebrations } = sportsWidgetData;
   const celebrationWindowMs =
+    prefs.trainhopConfig?.sportsCelebrations?.windowMs ??
     prefs.trainhopConfig?.widgets?.sportsWidgetCelebrationsWindowMs ??
     prefs.trainhopConfig?.sports?.celebrationsWindowMs ??
     prefs[PREF_SPORTS_CELEBRATIONS_WINDOW_MS] ??
@@ -463,8 +464,8 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   // that team's colors; any other ended match passes none (generic). Celebrations
   // are off by default and opt-in via the pref OR trainhopConfig, so they ship
   // dark and can be enabled remotely without risking the rest of the widget.
-  // The canonical trainhop key is the flat, sportsWidget-prefixed
-  // widgets.sportsWidgetCelebrationsEnabled (matching liveEnabled above).
+  // Canonical trainhop key is the dedicated trainhopConfig.sportsCelebrations
+  // namespace; the widgets/sports reads remain as fallbacks.
   /**
    * @backward-compat { version 153 }
    * The trainhopConfig namespace migrated from the nested sports.* keys to the
@@ -475,6 +476,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
    */
   const celebrationsEnabled =
     prefs[PREF_SPORTS_CELEBRATIONS_ENABLED] ||
+    prefs.trainhopConfig?.sportsCelebrations?.enabled ||
     prefs.trainhopConfig?.widgets?.sportsWidgetCelebrationsEnabled ||
     prefs.trainhopConfig?.sports?.celebrationsEnabled;
   const celebrate = useCallback(

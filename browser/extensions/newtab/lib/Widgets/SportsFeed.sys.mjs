@@ -124,12 +124,13 @@ export class SportsFeed {
   }
 
   // Effective "recently ended" celebration window (trainhop > pref > default),
-  // mirroring the resolution in SportsWidget.jsx. Used as a floor for endedAt
-  // retention so a configured window longer than the default retention floor
-  // doesn't get its stamps pruned before it expires.
+  // mirroring SportsWidget.jsx; the dedicated sportsCelebrations namespace wins.
+  // Used as a floor for endedAt retention so a configured window longer than the
+  // default retention floor doesn't get its stamps pruned before it expires.
   resolveCelebrationWindowMs() {
     const prefs = this.store.getState()?.Prefs.values ?? {};
     return (
+      prefs.trainhopConfig?.sportsCelebrations?.windowMs ??
       this._trainhopSports(prefs).celebrationsWindowMs ??
       prefs[PREF_CELEBRATIONS_WINDOW_MS] ??
       DEFAULT_CELEBRATION_WINDOW_MS

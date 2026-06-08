@@ -4334,6 +4334,54 @@ describe("<SportsWidget> end-of-match celebration", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("celebrates when enabled via the dedicated trainhopConfig.sportsCelebrations namespace", () => {
+    const { container } = renderState(
+      celebrationState({
+        enabled: false,
+        followed: ["MEX"],
+        extraPrefs: {
+          trainhopConfig: { sportsCelebrations: { enabled: true } },
+        },
+      })
+    );
+    expect(container.querySelector(".sports-celebration")).toBeInTheDocument();
+  });
+
+  it("honors the dedicated trainhopConfig.sportsCelebrations window override", () => {
+    // 1h window; match ended 2h ago, so it's suppressed.
+    const { container } = renderState(
+      celebrationState({
+        followed: ["MEX"],
+        endedAt: POST_KICKOFF_MS - 2 * 60 * 60 * 1000,
+        extraPrefs: {
+          trainhopConfig: {
+            sportsCelebrations: { windowMs: 60 * 60 * 1000 },
+          },
+        },
+      })
+    );
+    expect(
+      container.querySelector(".sports-celebration")
+    ).not.toBeInTheDocument();
+  });
+
+  it("dedicated sportsCelebrations window wins over the canonical widgets window", () => {
+    // 24h dedicated admits the 2h-ended match; 1h widgets fallback would not.
+    const { container } = renderState(
+      celebrationState({
+        followed: ["MEX"],
+        endedAt: POST_KICKOFF_MS - 2 * 60 * 60 * 1000,
+        extraPrefs: {
+          trainhopConfig: {
+            sportsCelebrations: { windowMs: 24 * 60 * 60 * 1000 },
+            widgets: { sportsWidgetCelebrationsWindowMs: 60 * 60 * 1000 },
+          },
+        },
+      })
+    );
+    expect(container.querySelector(".sports-celebration")).toBeInTheDocument();
+  });
+
   it("does not celebrate under prefers-reduced-motion", () => {
     mockMatchMedia(true);
     const { container } = renderState(celebrationState({ followed: ["MEX"] }));
