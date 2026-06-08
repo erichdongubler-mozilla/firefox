@@ -76,7 +76,6 @@ const PREF_NOVA_ENABLED = "nova.enabled";
 const PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
 const PREF_SPORTS_WIDGET_LIVE_ENABLED = "widgets.sportsWidget.live.enabled";
 const PREF_FORCE_LIVE_DATA_TRUSTABLE = "widgets.sports.forceLiveDataTrustable";
-// Celebration gating + "recently ended" window (off by default; opt-in).
 const PREF_SPORTS_CELEBRATIONS_ENABLED =
   "widgets.sportsWidget.celebrations.enabled";
 const PREF_SPORTS_CELEBRATIONS_WINDOW_MS =
@@ -465,9 +464,15 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   // are off by default and opt-in via the pref OR trainhopConfig, so they ship
   // dark and can be enabled remotely without risking the rest of the widget.
   // The canonical trainhop key is the flat, sportsWidget-prefixed
-  // widgets.sportsWidgetCelebrationsEnabled (matching liveEnabled above); the
-  // nested sports.celebrationsEnabled is the legacy alias kept for in-flight
-  // rollouts.
+  // widgets.sportsWidgetCelebrationsEnabled (matching liveEnabled above).
+  /**
+   * @backward-compat { version 153 }
+   * The trainhopConfig namespace migrated from the nested sports.* keys to the
+   * flat widgets.sportsWidget* keys (D303931). This celebration ships via the
+   * newtab XPI (train-hop), so it can run on a Firefox serving either
+   * namespace — read both. Remove the legacy
+   * trainhopConfig.sports.celebrationsEnabled read once 153 reaches Release.
+   */
   const celebrationsEnabled =
     prefs[PREF_SPORTS_CELEBRATIONS_ENABLED] ||
     prefs.trainhopConfig?.widgets?.sportsWidgetCelebrationsEnabled ||
@@ -499,10 +504,31 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, []);
+  // Whether the widget itself is scrolled into view. Gating consumption on this
+  // (in addition to isPageVisible) prevents an off-screen widget from spending
+  // the one-shot celebration before the user can see it. Starts false so a
+  // never-observed widget can't fire; the observer reports the real state on
+  // attach. (isPageVisible is still needed: a backgrounded tab keeps reporting
+  // the element as intersecting.)
+  const [isWidgetVisible, setIsWidgetVisible] = useState(false);
+  useEffect(() => {
+    // Only observe when celebrations are enabled — there's nothing to gate
+    // otherwise, and it avoids an idle observer on every sports widget.
+    if (!celebrationsEnabled || !liveEl) {
+      return undefined;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsWidgetVisible(entry.isIntersecting),
+      { threshold: 0.3 }
+    );
+    observer.observe(liveEl);
+    return () => observer.disconnect();
+  }, [celebrationsEnabled, liveEl]);
   useEffect(() => {
     if (
       !celebrationsEnabled ||
       !isPageVisible ||
+      !isWidgetVisible ||
       widgetState !== WIDGET_STATES.MATCHES ||
       activeTab !== MATCHES_TABS.RESULTS ||
       showResultsList
@@ -550,6 +576,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   }, [
     celebrationsEnabled,
     isPageVisible,
+    isWidgetVisible,
     widgetState,
     activeTab,
     showResultsList,

@@ -1413,7 +1413,7 @@ export const PREFS_CONFIG = new Map([
     "widgets.sportsWidget.celebrations.enabled",
     {
       title:
-        "Enables end-of-match celebration animations in the sports widget. Off by default; can also be turned on via trainhopConfig.sports.celebrationsEnabled.",
+        "Enables end-of-match celebration animations in the sports widget. Off by default; can also be turned on via trainhopConfig.widgets.sportsWidgetCelebrationsEnabled (canonical) or the legacy trainhopConfig.sports.celebrationsEnabled alias.",
       value: false,
     },
   ],
@@ -1421,7 +1421,7 @@ export const PREFS_CONFIG = new Map([
     "widgets.sportsWidget.celebrations.windowMs",
     {
       title:
-        "How recently (in ms) a match must have ended to still trigger a celebration. Default 24h; can also be set via trainhopConfig.sports.celebrationsWindowMs.",
+        "How recently (in ms) a match must have ended to still trigger a celebration. Default 24h; can also be set via trainhopConfig.widgets.sportsWidgetCelebrationsWindowMs (canonical) or the legacy trainhopConfig.sports.celebrationsWindowMs alias.",
       value: 86400000,
     },
   ],

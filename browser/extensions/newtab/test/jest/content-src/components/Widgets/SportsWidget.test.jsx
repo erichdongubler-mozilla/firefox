@@ -3901,6 +3901,10 @@ describe("<SportsWidget> matches missing a team (bug 2044931)", () => {
 
 describe("<SportsWidget> end-of-match celebration", () => {
   let originalMatchMedia;
+  // Record IntersectionObserver instances so we can simulate the widget
+  // scrolling into view — the celebration only fires once it's on-screen.
+  let observerInstances;
+  let originalIntersectionObserver;
 
   function mockMatchMedia(matches) {
     window.matchMedia = jest.fn().mockImplementation(query => ({
@@ -3915,6 +3919,17 @@ describe("<SportsWidget> end-of-match celebration", () => {
     originalMatchMedia = window.matchMedia;
     // <WidgetCelebration> bails out under prefers-reduced-motion: reduce.
     mockMatchMedia(false);
+    observerInstances = [];
+    originalIntersectionObserver = global.IntersectionObserver;
+    global.IntersectionObserver = class {
+      constructor(callback) {
+        this.callback = callback;
+        observerInstances.push(this);
+      }
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    };
     // Another describe's afterEach (jest.restoreAllMocks) can tear down the
     // suite-wide Date.now pin before this block runs; re-establish it so the
     // celebration window math stays deterministic regardless of describe order.
@@ -3923,7 +3938,26 @@ describe("<SportsWidget> end-of-match celebration", () => {
 
   afterEach(() => {
     window.matchMedia = originalMatchMedia;
+    global.IntersectionObserver = originalIntersectionObserver;
   });
+
+  // Fires every recorded observer's callback so the widget reports as visible
+  // (the trigger gates on intersection). JSDOM never fires these on its own.
+  function markWidgetVisible(intersecting = true) {
+    act(() => {
+      observerInstances.forEach(o =>
+        o.callback?.([
+          {
+            isIntersecting: intersecting,
+            // Other observers (impression/error) add entry.target to a WeakSet,
+            // so a real element is required even though we only care about the
+            // celebration-visibility observer here.
+            target: document.createElement("div"),
+          },
+        ])
+      );
+    });
+  }
 
   const MATCH_ID = "evt-mex-rsa";
   const SCORES = {
@@ -3999,12 +4033,20 @@ describe("<SportsWidget> end-of-match celebration", () => {
     );
   }
 
-  function renderState(state, dispatch = defaultProps.dispatch) {
-    return render(
+  function renderState(
+    state,
+    dispatch = defaultProps.dispatch,
+    visible = true
+  ) {
+    const result = render(
       <WrapWithProvider state={state}>
         <SportsWidget {...defaultProps} dispatch={dispatch} />
       </WrapWithProvider>
     );
+    if (visible) {
+      markWidgetVisible();
+    }
+    return result;
   }
 
   it("celebrates a followed-team win on the Results highlight", () => {
@@ -4212,6 +4254,28 @@ describe("<SportsWidget> end-of-match celebration", () => {
         action?.data === MATCH_ID
     );
     expect(marked).toBe(true);
+  });
+
+  it("does NOT celebrate or consume while the widget is off-screen", () => {
+    const dispatch = jest.fn();
+    const { container } = renderState(
+      celebrationState({ followed: ["MEX"] }),
+      dispatch,
+      /* visible */ false
+    );
+    // Off-screen: no animation, and crucially not consumed, so it can still
+    // fire once the user scrolls it into view.
+    expect(
+      container.querySelector(".sports-celebration")
+    ).not.toBeInTheDocument();
+    const marked = dispatch.mock.calls.some(
+      ([action]) => action?.type === "WIDGETS_SPORTS_MARK_CELEBRATED"
+    );
+    expect(marked).toBe(false);
+
+    // Once it scrolls into view, it fires.
+    markWidgetVisible();
+    expect(container.querySelector(".sports-celebration")).toBeInTheDocument();
   });
 
   it("does not celebrate when celebrations are disabled (off by default)", () => {

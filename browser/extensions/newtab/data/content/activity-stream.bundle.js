@@ -17353,7 +17353,6 @@ const SportsWidget_PREF_NOVA_ENABLED = "nova.enabled";
 const SportsWidget_PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
 const PREF_SPORTS_WIDGET_LIVE_ENABLED = "widgets.sportsWidget.live.enabled";
 const PREF_FORCE_LIVE_DATA_TRUSTABLE = "widgets.sports.forceLiveDataTrustable";
-// Celebration gating + "recently ended" window (off by default; opt-in).
 const PREF_SPORTS_CELEBRATIONS_ENABLED = "widgets.sportsWidget.celebrations.enabled";
 const PREF_SPORTS_CELEBRATIONS_WINDOW_MS = "widgets.sportsWidget.celebrations.windowMs";
 const DEFAULT_CELEBRATION_WINDOW_MS = 86400000; // 24 hours
@@ -17382,6 +17381,49 @@ function sortFollowedFirst(matches, selectedTeamsSet) {
     }
     return a.index - b.index;
   }).map(entry => entry.match);
+}
+
+// The match that most recently ended and is still eligible to celebrate:
+// within the window and not yet celebrated. Keyed off the feed's `endedAt`
+// stamp rather than the display order, so the celebration targets the match
+// that actually ended even when it isn't the top result. Searches finished
+// (previous) and current matches, since a just-ended match can briefly remain
+// in `current` before the backend moves it to `previous`.
+function findCelebrationMatch(matches, celebrations, windowMs) {
+  const endedAt = celebrations?.endedAt;
+  if (!endedAt) {
+    return null;
+  }
+  const celebrated = new Set(celebrations?.celebrated ?? []);
+  const now = Date.now();
+  let best = null;
+  for (const match of matches) {
+    const id = match?.global_event_id;
+    const ts = id === null || id === undefined ? undefined : endedAt[id];
+    if (!ts || now - ts >= windowMs || celebrated.has(id)) {
+      continue;
+    }
+    if (!best || ts > endedAt[best.global_event_id]) {
+      best = match;
+    }
+  }
+  return best;
+}
+
+// Moves the match with `id` to the front of `matches` (used to surface the
+// just-ended match as the Results highlight). No-op when it isn't present.
+function bubbleMatchToFront(matches, id) {
+  if (id === null || id === undefined) {
+    return matches;
+  }
+  const index = matches.findIndex(match => match.global_event_id === id);
+  if (index <= 0) {
+    return matches;
+  }
+  const next = [...matches];
+  const [match] = next.splice(index, 1);
+  next.unshift(match);
+  return next;
 }
 
 // Returns the match shown in the highlight view for the active tab, or null
@@ -17522,8 +17564,21 @@ function SportsWidget_SportsWidget({
     return map;
   }, [teams]);
 
+  // Celebration window (trainhop > pref > default) and the match that just
+  // ended, keyed off the feed's `endedAt` stamp rather than the display order.
+  // It's surfaced as the Results highlight (below) and consumed by the
+  // celebration trigger, so the celebration targets the match that actually
+  // ended even when it isn't the top result.
+  const {
+    celebrations
+  } = sportsWidgetData;
+  const celebrationWindowMs = prefs.trainhopConfig?.widgets?.sportsWidgetCelebrationsWindowMs ?? prefs.trainhopConfig?.sports?.celebrationsWindowMs ?? prefs[PREF_SPORTS_CELEBRATIONS_WINDOW_MS] ?? DEFAULT_CELEBRATION_WINDOW_MS;
+  const celebrationMatch = (0,external_React_namespaceObject.useMemo)(() => findCelebrationMatch([...(rawMatches?.previous ?? []), ...(rawMatches?.current ?? [])], celebrations, celebrationWindowMs), [rawMatches, celebrations, celebrationWindowMs]);
+
   // Bubble followed teams to the front for the highlight view and list view
   // when the followed-only toggle is on; with it off, matches stay chronological.
+  // The just-ended celebration match always bubbles to the very front so the
+  // celebration plays over its result.
   const resultsFollowedOnly = sportsWidgetData.followedOnly?.results ?? true;
   const upcomingFollowedOnly = sportsWidgetData.followedOnly?.upcoming ?? true;
   const {
@@ -17534,11 +17589,11 @@ function SportsWidget_SportsWidget({
     const previous = rawMatches?.previous ?? [];
     const next = rawMatches?.next ?? [];
     return {
-      sortedPrevious: resultsFollowedOnly ? sortFollowedFirst(previous, selectedTeamsSet) : previous,
+      sortedPrevious: bubbleMatchToFront(resultsFollowedOnly ? sortFollowedFirst(previous, selectedTeamsSet) : previous, celebrationMatch?.global_event_id),
       sortedCurrent: sortFollowedFirst(rawLive ?? [], selectedTeamsSet),
       sortedNext: upcomingFollowedOnly ? sortFollowedFirst(next, selectedTeamsSet) : next
     };
-  }, [rawMatches, rawLive, selectedTeamsSet, resultsFollowedOnly, upcomingFollowedOnly]);
+  }, [rawMatches, rawLive, selectedTeamsSet, resultsFollowedOnly, upcomingFollowedOnly, celebrationMatch]);
 
   // List-view toggle states for the Results and Upcoming tabs are lifted up
   // here so we can tell whether a highlight match is currently visible (for
@@ -17628,9 +17683,15 @@ function SportsWidget_SportsWidget({
   // are off by default and opt-in via the pref OR trainhopConfig, so they ship
   // dark and can be enabled remotely without risking the rest of the widget.
   // The canonical trainhop key is the flat, sportsWidget-prefixed
-  // widgets.sportsWidgetCelebrationsEnabled (matching liveEnabled above); the
-  // nested sports.celebrationsEnabled is the legacy alias kept for in-flight
-  // rollouts.
+  // widgets.sportsWidgetCelebrationsEnabled (matching liveEnabled above).
+  /**
+   * @backward-compat { version 153 }
+   * The trainhopConfig namespace migrated from the nested sports.* keys to the
+   * flat widgets.sportsWidget* keys (D303931). This celebration ships via the
+   * newtab XPI (train-hop), so it can run on a Firefox serving either
+   * namespace — read both. Remove the legacy
+   * trainhopConfig.sports.celebrationsEnabled read once 153 reaches Release.
+   */
   const celebrationsEnabled = prefs[PREF_SPORTS_CELEBRATIONS_ENABLED] || prefs.trainhopConfig?.widgets?.sportsWidgetCelebrationsEnabled || prefs.trainhopConfig?.sports?.celebrationsEnabled;
   const celebrate = (0,external_React_namespaceObject.useCallback)((kind, colors = null) => {
     if (!celebrationsEnabled) {
@@ -17640,18 +17701,12 @@ function SportsWidget_SportsWidget({
     triggerCelebration();
   }, [triggerCelebration, celebrationsEnabled]);
 
-  // Celebration trigger: when the Results highlight shows a match that ended
-  // within the window and hasn't been celebrated, fire once. Followed team
-  // won/tied -> team colors; no followed team -> generic; followed loss ->
+  // Celebration trigger: fire once for the match that just ended (the freshest
+  // endedAt within the window, surfaced as the Results highlight above) when
+  // the user is viewing the Results tab with the widget on-screen. Followed
+  // team won/tied -> team colors; no followed team -> generic; followed loss ->
   // nothing. celebratedRef guards against re-firing within this session;
   // `celebrations.celebrated` (persisted by the feed) guards across reloads.
-  const {
-    celebrations
-  } = sportsWidgetData;
-  // Trainhop config wins so the window can be tuned remotely; the pref is the
-  // local fallback, then the hardcoded default. Canonical widgets key first,
-  // then the legacy sports alias, mirroring celebrationsEnabled above.
-  const celebrationWindowMs = prefs.trainhopConfig?.widgets?.sportsWidgetCelebrationsWindowMs ?? prefs.trainhopConfig?.sports?.celebrationsWindowMs ?? prefs[PREF_SPORTS_CELEBRATIONS_WINDOW_MS] ?? DEFAULT_CELEBRATION_WINDOW_MS;
   const celebratedRef = (0,external_React_namespaceObject.useRef)(new Set());
   const [isPageVisible, setIsPageVisible] = (0,external_React_namespaceObject.useState)(typeof document === "undefined" || document.visibilityState === "visible");
   (0,external_React_namespaceObject.useEffect)(() => {
@@ -17659,19 +17714,34 @@ function SportsWidget_SportsWidget({
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, []);
+  // Whether the widget itself is scrolled into view. Gating consumption on this
+  // (in addition to isPageVisible) prevents an off-screen widget from spending
+  // the one-shot celebration before the user can see it. Starts false so a
+  // never-observed widget can't fire; the observer reports the real state on
+  // attach. (isPageVisible is still needed: a backgrounded tab keeps reporting
+  // the element as intersecting.)
+  const [isWidgetVisible, setIsWidgetVisible] = (0,external_React_namespaceObject.useState)(false);
   (0,external_React_namespaceObject.useEffect)(() => {
-    if (!celebrationsEnabled || !isPageVisible || widgetState !== WIDGET_STATES.MATCHES || activeTab !== MATCHES_TABS.RESULTS || showResultsList) {
+    // Only observe when celebrations are enabled — there's nothing to gate
+    // otherwise, and it avoids an idle observer on every sports widget.
+    if (!celebrationsEnabled || !liveEl) {
+      return undefined;
+    }
+    const observer = new IntersectionObserver(([entry]) => setIsWidgetVisible(entry.isIntersecting), {
+      threshold: 0.3
+    });
+    observer.observe(liveEl);
+    return () => observer.disconnect();
+  }, [celebrationsEnabled, liveEl]);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!celebrationsEnabled || !isPageVisible || !isWidgetVisible || widgetState !== WIDGET_STATES.MATCHES || activeTab !== MATCHES_TABS.RESULTS || showResultsList) {
       return;
     }
-    const [match] = sortedPrevious;
-    const id = match?.global_event_id;
-    if (id === null || id === undefined) {
+    const match = celebrationMatch;
+    if (!match || celebratedRef.current.has(match.global_event_id)) {
       return;
     }
-    const endedAt = celebrations?.endedAt?.[id];
-    if (!endedAt || Date.now() - endedAt >= celebrationWindowMs || celebrations?.celebrated?.includes(id) || celebratedRef.current.has(id)) {
-      return;
-    }
+    const id = match.global_event_id;
     const winnerKey = getMatchWinnerKey(match);
     const homeKey = match.home_team.key;
     const awayKey = match.away_team.key;
@@ -17706,7 +17776,7 @@ function SportsWidget_SportsWidget({
     } else {
       celebrate("generic");
     }
-  }, [celebrationsEnabled, isPageVisible, widgetState, activeTab, showResultsList, sortedPrevious, celebrations, celebrationWindowMs, selectedTeams, teamColorsByKey, celebrate, dispatch]);
+  }, [celebrationsEnabled, isPageVisible, isWidgetVisible, widgetState, activeTab, showResultsList, celebrationMatch, selectedTeams, teamColorsByKey, celebrate, dispatch]);
 
   // Live polling visibility gate. Separate from the one-shot impression
   // observer above (which unobserves after the first intersect) — this one
