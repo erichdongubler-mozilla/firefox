@@ -8,8 +8,6 @@ import { UrlbarView } from "chrome://browser/content/urlbar/UrlbarView.mjs";
 import { createEditor } from "chrome://browser/content/urlbar/SmartbarInputUtils.mjs";
 import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 // eslint-disable-next-line import/no-unassigned-import
-import "chrome://browser/content/aiwindow/components/smartwindow-smartbar-glow.mjs";
-// eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/ai-website-chip.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/input-cta.mjs";
@@ -38,7 +36,6 @@ const { AppConstants } = ChromeUtils.importESModule(
  * @import { SmartbarAction } from "moz-src:///browser/components/aiwindow/ui/components/input-cta/input-cta.mjs"
  * @import { WebsiteChipContainer } from "chrome://browser/content/aiwindow/components/website-chip-container.mjs"
  * @import { AIWindow } from "moz-src:///browser/components/aiwindow/ui/components/ai-window/ai-window.mjs"
- * @import { SmartwindowSmartbarGlow } from "moz-src:///browser/components/aiwindow/ui/components/smartwindow-smartbar-glow/smartwindow-smartbar-glow.mjs"
  * @import { WindowMode } from "moz-src:///browser/components/urlbar/content/UrlbarInput.mjs"
  */
 
@@ -132,8 +129,7 @@ const MAX_CONTEXT_WEBSITES = 5;
 export class SmartbarInput extends HTMLElement {
   static get #markup() {
     return `
-      <html:smartwindow-smartbar-glow class="smartbar-glow"></html:smartwindow-smartbar-glow>
-      <html:div class="urlbar-background"></html:div>
+      <html:div class="urlbar-background"/>
       <html:website-chip-container class="smartbar-context-chips-header" hidden="true"></html:website-chip-container>
       <html:div class="urlbar-input-container"
             pageproxystate="invalid">
@@ -433,11 +429,6 @@ ${
       this.#updateContextChips();
     }
     this._inputContainer = this.querySelector(".urlbar-input-container");
-
-    const smartbarGlow = /** @type {SmartwindowSmartbarGlow} */ (
-      this.querySelector(".smartbar-glow")
-    );
-    smartbarGlow.referenceElement = this.querySelector(".urlbar-background");
 
     this.controller = new lazy.UrlbarController({ input: this });
     this.controller.addListener(this);

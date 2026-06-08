@@ -9,12 +9,11 @@
 :host,
 :root {
   --smartbar-background-color: light-dark(white, var(--color-violet-110));
-  --smartbar-inactive-background-color: color-mix(in srgb, var(--smartbar-background-color) 95%, var(--color-white));
-  /* If this changes, you must also update the tokens referenced in the render in smartbar-glow.mjs */
-  --smartbar-border-color-gradient: linear-gradient(95deg, var(--color-violet-50) 1.22%, var(--color-pink-40) 49.98%, var(--color-yellow-30) 99.68%);
   --smartbar-border-style-gradient: var(--border-width) solid;
+  --smartbar-border-color-gradient: var(--smartwindow-border-color-gradient, linear-gradient(172deg, #321bfd -18%, #cf30e2 53%, #ff9900 89%, #f5c451 109%));
+  --smartbar-border-color-gradient-dark: linear-gradient(270deg, var(--color-orange-40) 0%, var(--color-violet-50) 105.15%);
   --smartbar-box-shadow: var(--smartwindow-shadow, var(--box-shadow-level-2));
-  --smartbar-glow-color: color-mix(in srgb, var(--color-violet-40) 50%, transparent);
+  --smartbar-glow-color: color-mix(in srgb, var(--color-violet-40) 30%, transparent);
   --smartbar-max-height: 50vh;
   --smartbar-max-visible-rows: 7;
   --smartbar-max-width: calc(var(--size-item-xlarge) * 12);
@@ -60,6 +59,12 @@
       outline: var(--smartbar-outline);
       outline-offset: var(--focus-outline-offset);
     }
+
+    /* HOVER and FOCUSED states: Show gradient glow */
+    &:is(:hover, :focus-within) > .urlbar-background::before {
+      opacity: var(--opacity-deemphasized);
+      transition: opacity 0.2s ease-in;
+    }
   }
 
   display: flex;
@@ -67,22 +72,12 @@
   max-height: var(--smartbar-max-height);
   max-width: var(--smartbar-max-width);
   width: 100%;
-
   &[hidden] {
     display: none;
   }
 
   &[open] > .urlbarView {
     display: block;
-  }
-
-  &[open] > .urlbar-background::before {
-    background-color: transparent;
-    background-image: var(--smartbar-border-color-gradient);
-  }
-
-  &[open] > .smartbar-glow {
-    display: none;
   }
 
   /* Sidebar mode styles */
@@ -187,11 +182,11 @@
   border-radius: var(--border-radius-large);
 
   @media not (forced-colors) {
-    background-color: var(--smartbar-inactive-background-color);
+    background: color-mix(in srgb, var(--smartbar-background-color) 60%, transparent);
     border: var(--smartbar-border-style-gradient) transparent;
     outline: none;
     transition: background-color 0.2s ease-in;
-    /* TODO Bug 1880365: Upgrade to use background-clip instead of mask */
+    /* TODO Upgrade to use background-clip instead of mask when bug 1880365 is fixed */
     /* Gradient border via mask to keep fill semi-transparent */
     &::after {
       content: "";
@@ -216,13 +211,15 @@
       content: "";
       inset: 0;
       position: absolute;
-      filter: blur(10px);
+      filter: blur(30px);
       background-color: var(--smartbar-glow-color);
-      opacity: 1;
-      transition:
-        background-color 0.25s ease,
-        opacity 0.2s ease-out;
+      opacity: 0;
+      transition: opacity 0.2s ease-out;
       z-index: -1;
+
+      @media (prefers-color-scheme: dark) {
+        background-image: var(--smartbar-border-color-gradient-dark);
+      }
     }
   }
 }

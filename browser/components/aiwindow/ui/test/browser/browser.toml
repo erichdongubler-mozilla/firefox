@@ -170,8 +170,6 @@ skip-if = [
 
 ["browser_smartwindow_footer.js"]
 
-["browser_smartwindow_smartbar_glow.js"]
-
 ["browser_smartwindow_history_commands.js"]
 
 ["browser_smartwindow_init.js"]
