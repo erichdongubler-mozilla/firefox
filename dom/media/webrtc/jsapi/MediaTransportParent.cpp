@@ -102,10 +102,8 @@ class MediaTransportParent::Impl : public sigslot::has_slots<> {
   }
 
   void OnStateChange(const std::string& aTransportId,
-                     TransportLayer::State aState,
-                     const nsTArray<nsTArray<uint8_t>>& aRemoteCerts) {
-    NS_ENSURE_TRUE_VOID(
-        mParent->SendOnStateChange(aTransportId, aState, aRemoteCerts));
+                     TransportLayer::State aState) {
+    NS_ENSURE_TRUE_VOID(mParent->SendOnStateChange(aTransportId, aState));
   }
 
   void OnRtcpStateChange(const std::string& aTransportId,

@@ -149,9 +149,7 @@ class MediaTransportHandler {
   MediaEventSource<std::string, MediaPacket>& GetEncryptedSending() {
     return mEncryptedSending;
   }
-  MediaEventSource<std::string, TransportLayer::State,
-                   nsTArray<nsTArray<uint8_t>>>&
-  GetStateChange() {
+  MediaEventSource<std::string, TransportLayer::State>& GetStateChange() {
     return mStateChange;
   }
   MediaEventSource<std::string, TransportLayer::State>& GetRtcpStateChange() {
@@ -171,8 +169,7 @@ class MediaTransportHandler {
   void OnEncryptedSending(const std::string& aTransportId,
                           MediaPacket&& aPacket);
   void OnStateChange(const std::string& aTransportId,
-                     TransportLayer::State aState,
-                     nsTArray<nsTArray<uint8_t>>&& aRemoteCerts);
+                     TransportLayer::State aState);
   void OnRtcpStateChange(const std::string& aTransportId,
                          TransportLayer::State aState);
   virtual void Destroy() = 0;
@@ -195,9 +192,7 @@ class MediaTransportHandler {
   MediaEventProducer<std::string, dom::RTCIceTransportState>
       mConnectionStateChange;
   MediaEventProducer<std::string, MediaPacket> mEncryptedSending;
-  MediaEventProducer<std::string, TransportLayer::State,
-                     nsTArray<nsTArray<uint8_t>>>
-      mStateChange;
+  MediaEventProducer<std::string, TransportLayer::State> mStateChange;
   MediaEventProducer<std::string, TransportLayer::State> mRtcpStateChange;
 };
 

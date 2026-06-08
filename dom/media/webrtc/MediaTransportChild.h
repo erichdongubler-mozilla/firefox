@@ -31,9 +31,8 @@ class MediaTransportChild : public dom::PMediaTransportChild {
                                                MediaPacket&& packet);
   mozilla::ipc::IPCResult RecvOnEncryptedSending(const string& transportId,
                                                  MediaPacket&& packet);
-  mozilla::ipc::IPCResult RecvOnStateChange(
-      const string& transportId, const TransportLayerState& state,
-      nsTArray<nsTArray<uint8_t>>&& remoteCerts);
+  mozilla::ipc::IPCResult RecvOnStateChange(const string& transportId,
+                                            const TransportLayerState& state);
   mozilla::ipc::IPCResult RecvOnRtcpStateChange(
       const string& transportId, const TransportLayerState& state);
 

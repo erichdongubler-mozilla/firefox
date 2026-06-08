@@ -184,8 +184,7 @@ class MediaPipeline : public sigslot::has_slots<> {
   virtual void SendPacket(MediaPacket&& packet);
 
   // Process slots on transports
-  void RtpStateChange(const std::string& aTransportId, TransportLayer::State,
-                      const nsTArray<nsTArray<uint8_t>>& aRemoteCerts);
+  void RtpStateChange(const std::string& aTransportId, TransportLayer::State);
   void RtcpStateChange(const std::string& aTransportId, TransportLayer::State);
   virtual void CheckTransportStates();
   void PacketReceived(std::string& aTransportId, MediaPacket& packet);

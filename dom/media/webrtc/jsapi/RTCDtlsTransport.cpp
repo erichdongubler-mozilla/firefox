@@ -7,7 +7,6 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/EventBinding.h"
 #include "mozilla/dom/RTCDtlsTransportBinding.h"
-#include "mozilla/dom/TypedArray.h"
 
 namespace mozilla::dom {
 
@@ -56,15 +55,9 @@ void RTCDtlsTransport::UpdateStateNoEvent(TransportLayer::State aState) {
   }
 }
 
-void RTCDtlsTransport::UpdateState(TransportLayer::State aState,
-                                   nsTArray<nsTArray<uint8_t>>&& aRemoteCerts) {
+void RTCDtlsTransport::UpdateState(TransportLayer::State aState) {
   RTCDtlsTransportState oldState = mState;
   UpdateStateNoEvent(aState);
-  // Per webrtc-pc 5.5, when the DTLS transport transitions to "connected", set
-  // [[RemoteCertificates]] before firing statechange so handlers see both.
-  if (mState == RTCDtlsTransportState::Connected && !aRemoteCerts.IsEmpty()) {
-    mRemoteCertsDer = std::move(aRemoteCerts);
-  }
   if (oldState == mState) {
     return;
   }
@@ -76,19 +69,6 @@ void RTCDtlsTransport::UpdateState(TransportLayer::State aState,
   RefPtr<Event> event = Event::Constructor(this, u"statechange"_ns, init);
 
   DispatchTrustedEvent(event);
-}
-
-void RTCDtlsTransport::GetRemoteCertificates(JSContext* aCx,
-                                             nsTArray<JSObject*>& aRetval,
-                                             ErrorResult& aRv) {
-  aRetval.SetCapacity(mRemoteCertsDer.Length());
-  for (const auto& cert : mRemoteCertsDer) {
-    JS::Rooted<JSObject*> buf(aCx, ArrayBuffer::Create(aCx, cert, aRv));
-    if (aRv.Failed()) {
-      return;
-    }
-    aRetval.AppendElement(buf);
-  }
 }
 
 }  // namespace mozilla::dom

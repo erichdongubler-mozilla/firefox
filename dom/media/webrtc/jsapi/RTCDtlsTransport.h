@@ -9,7 +9,6 @@
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/RTCIceTransport.h"
-#include "nsTArray.h"
 #include "transport/transportlayer.h"
 
 class nsPIDOMWindowInner;
@@ -33,19 +32,15 @@ class RTCDtlsTransport : public DOMEventTargetHelper {
   IMPL_EVENT_HANDLER(statechange)
   RTCDtlsTransportState State() const { return mState; }
   RefPtr<RTCIceTransport> IceTransport() { return mIceTransport; }
-  void GetRemoteCertificates(JSContext* aCx, nsTArray<JSObject*>& aRetval,
-                             ErrorResult& aRv);
 
   void UpdateStateNoEvent(TransportLayer::State aState);
-  void UpdateState(TransportLayer::State aState,
-                   nsTArray<nsTArray<uint8_t>>&& aRemoteCerts);
+  void UpdateState(TransportLayer::State aState);
 
  private:
   virtual ~RTCDtlsTransport() = default;
 
   RTCDtlsTransportState mState;
   RefPtr<RTCIceTransport> mIceTransport;
-  nsTArray<nsTArray<uint8_t>> mRemoteCertsDer;
 };
 
 }  // namespace mozilla::dom

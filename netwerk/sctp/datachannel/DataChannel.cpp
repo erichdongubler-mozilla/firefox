@@ -333,8 +333,7 @@ void DataChannelConnection::SetSignals(const std::string& aTransportId) {
 }
 
 void DataChannelConnection::TransportStateChange(
-    const std::string& aTransportId, TransportLayer::State aState,
-    const nsTArray<nsTArray<uint8_t>>&) {
+    const std::string& aTransportId, TransportLayer::State aState) {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
   if (aTransportId == mTransportId) {
     if (aState == TransportLayer::TS_OPEN) {
