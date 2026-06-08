@@ -54,6 +54,7 @@ STATIC_ATOMS = [
     Atom("mozgeneratedcontentimage", "_moz_generated_content_image"),
     Atom("mozgeneratedcontentbackdrop", "_moz_generated_content_backdrop"),
     Atom("mozgeneratedcontentcheckmark", "_moz_generated_content_checkmark"),
+    Atom("mozgeneratedcontentpickericon", "_moz_generated_content_picker_icon"),
     Atom("mozquote", "_moz_quote"),
     Atom("mozsignature", "moz-signature"),  # Used by MailNews.
     Atom("_moz_bullet_font", "-moz-bullet-font"),
@@ -2117,6 +2118,7 @@ STATIC_ATOMS = [
     Atom("lower_greek", "lower-greek"),
     Atom("hiragana", "hiragana"),
     Atom("hiragana_iroha", "hiragana-iroha"),
+    Atom("fake_counter_name", "fake-counter-name"),
     Atom("katakana", "katakana"),
     Atom("katakana_iroha", "katakana-iroha"),
     Atom("cjk_ideographic", "cjk-ideographic"),
@@ -2241,6 +2243,7 @@ STATIC_ATOMS = [
     Atom("markerPseudoProperty", "markerPseudoProperty"),  # nsXMLElement*
     Atom("backdropPseudoProperty", "backdropPseudoProperty"),  # nsXMLElement*
     Atom("checkmarkPseudoProperty", "checkmarkPseudoProperty"),  # nsXMLElement*
+    Atom("pickerIconPseudoProperty", "pickerIconPseudoProperty"),  # nsXMLElement*
     # Languages for lang-specific transforms
     Atom("Japanese", "ja"),
     Atom("Chinese", "zh-CN"),
