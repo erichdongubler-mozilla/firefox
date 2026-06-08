@@ -863,9 +863,10 @@ BrowserGlue.prototype = {
         // This usually happens after the test harness is done collecting
         // test errors, thus we can't easily add a failure to it. The only
         // noticeable solution we have is crashing.
+        // See bug 2034905 for filename / fileName shenanigans.
         Cc["@mozilla.org/xpcom/debug;1"]
           .getService(Ci.nsIDebug2)
-          .abort(ex.filename, ex.lineNumber);
+          .abort(ex.filename || ex.fileName, ex.lineNumber);
       }
     }
 

@@ -735,11 +735,15 @@ export var BrowserUtils = {
           await failureHandler?.(ex);
         } catch (nestedEx) {
           console.error(`Error in handling failure: ${nestedEx}`);
-          // Crash in automation:
+          // Crash in automation.
+          // See bug 2034905 for filename / fileName shenanigans.
           if (BrowserUtils._inAutomation) {
             Cc["@mozilla.org/xpcom/debug;1"]
               .getService(Ci.nsIDebug2)
-              .abort(nestedEx.filename, nestedEx.lineNumber);
+              .abort(
+                nestedEx.filename || nestedEx.fileName,
+                nestedEx.lineNumber
+              );
           }
         }
       }
