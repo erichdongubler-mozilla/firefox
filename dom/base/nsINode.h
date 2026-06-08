@@ -911,8 +911,27 @@ class nsINode : public mozilla::dom::EventTarget {
   /**
    * Print a debugger friendly descriptor of this element. This will describe
    * the position of this element in the document.
+   *
+   * @param aOutput [output] The result value.
+   * @param aRoot [optional] The root node which should be printed at last.
    */
-  friend std::ostream& operator<<(std::ostream& aStream, const nsINode& aNode);
+  void GetDebugDescription(nsACString& aOutput,
+                           const nsINode* aRoot = nullptr) const;
+
+  /**
+   * Return nsCString instance which is converted from the result of
+   * GetDebugDescription(). This is useful to dump the node path in an specific
+   * element like contenteditable or something and print it with fmt::format()
+   * or MOZ_LOG_FMT().
+   *
+   * @param aRoot The root node which should be printed at last. Can be null.
+   */
+  nsCString FormatAs(const nsINode* aRoot) const;
+
+  friend std::ostream& operator<<(std::ostream&, const nsINode&);
+  friend nsCString format_as(const nsINode& aNode) {
+    return aNode.FormatAs(nullptr);
+  }
 
  protected:
   // These 2 methods are useful for the recursive templates IsHTMLElement,

@@ -201,8 +201,12 @@ const nsIFrame::ClassFlags nsIFrame::sLayoutFrameClassFlags[kFrameClassCount] =
 #undef ABSTRACT_FRAME_ID
 };
 
-std::ostream& operator<<(std::ostream& aStream, const nsDirection& aDirection) {
-  return aStream << (aDirection == eDirNext ? "eDirNext" : "eDirPrevious");
+std::string format_as(nsDirection aDirection) {
+  return aDirection == eDirNext ? "eDirNext" : "eDirPrevious";
+}
+
+std::ostream& operator<<(std::ostream& aStream, nsDirection aDirection) {
+  return aStream << format_as(aDirection);
 }
 
 struct nsContentAndOffset {
