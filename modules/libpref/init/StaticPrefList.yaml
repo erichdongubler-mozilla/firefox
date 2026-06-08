@@ -19550,15 +19550,6 @@
 # Prefs starting with "webgl." (for pref access from Worker threads)
 #---------------------------------------------------------------------------
 
-- name: webgl.1.allow-core-profiles
-  type: RelaxedAtomicBool
-#ifdef XP_MACOSX
-  value: true
-#else
-  value: false
-#endif
-  mirror: always
-
 - name: webgl.1.request_es2
   type: RelaxedAtomicBool
 #ifdef XP_WIN
