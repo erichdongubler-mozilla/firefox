@@ -1176,11 +1176,6 @@ class Settings(
         default = true,
     )
 
-    var shouldShowTrackingProtectionDashboard by booleanPreference(
-        appContext.getPreferenceKey(R.string.pref_key_tracking_protection_dashboard_status),
-        default = false,
-    )
-
     var shouldEnableGlobalPrivacyControl by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_privacy_enable_global_privacy_control),
         false,

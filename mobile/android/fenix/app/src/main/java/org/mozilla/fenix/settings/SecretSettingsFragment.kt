@@ -471,12 +471,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             isChecked = context.settings().enableHomepageSportsWidget
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
-
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tracking_protection_dashboard_status).apply {
-            isVisible = Config.channel.isDebug
-            isChecked = context.settings().shouldShowTrackingProtectionDashboard
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
     }
 
     override fun onDisplayPreferenceDialog(preference: Preference) {
