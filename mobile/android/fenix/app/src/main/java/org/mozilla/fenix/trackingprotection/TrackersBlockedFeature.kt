@@ -28,7 +28,9 @@ import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
 import mozilla.components.support.utils.DefaultDateTimeProvider
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
-import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateEarliestTrackingDate
+import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateTrackersBlockedCount
+import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateTrackersBlockedThisWeek
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 import mozilla.components.ui.icons.R as iconsR
@@ -58,6 +60,7 @@ class TrackersBlockedFeature(
         // Subsequent changes to the tab's blocked trackers then trigger a refresh for dynamic updates.
         withContext(Dispatchers.Main) {
             syncTrackersBlockedDetails()
+            syncEarliestData() // This cannot change for the lifetime of this class.
         }
 
         // The number of blocked trackers can change while a tab is being loaded in background.
@@ -85,7 +88,7 @@ class TrackersBlockedFeature(
     private fun syncTotalTrackerBlocked() {
         trackingProtectionUseCases.fetchTotalTrackersBlocked(
             onSuccess = {
-                appStore.dispatch(AppAction.UpdateTrackersBlockedCount(it))
+                appStore.dispatch(UpdateTrackersBlockedCount(it))
             },
         )
     }
@@ -97,7 +100,15 @@ class TrackersBlockedFeature(
             dateFrom = oneWeekAgo,
             dateTo = now,
             onSuccess = {
-                appStore.dispatch(AppAction.UpdateTrackersBlockedThisWeek(it.blockedTrackersCategories))
+                appStore.dispatch(UpdateTrackersBlockedThisWeek(it.blockedTrackersCategories))
+            },
+        )
+    }
+
+    private fun syncEarliestData() {
+        trackingProtectionUseCases.fetchEarliestTrackingDate(
+            onSuccess = {
+                appStore.dispatch(UpdateEarliestTrackingDate(it))
             },
         )
     }
@@ -107,22 +118,22 @@ class TrackersBlockedFeature(
             val events = this ?: return emptyList()
             val trackerCategories = listOf(
                 Triple(
-                    R.string.etp_cookies_title,
+                    R.plurals.trackers_blocked_panel_num_cross_site_cookies,
                     iconsR.drawable.mozac_ic_cookies_24,
                     setOf(TRACKING_COOKIES),
                 ),
                 Triple(
-                    R.string.etp_social_media_trackers_title,
+                    R.plurals.trackers_blocked_panel_num_social_media_trackers,
                     iconsR.drawable.mozac_ic_social_tracker_24,
                     setOf(SOCIAL),
                 ),
                 Triple(
-                    R.string.tracking_dashboard_fingerprinters_category_name,
+                    R.plurals.trackers_blocked_panel_num_fingerprinters,
                     iconsR.drawable.mozac_ic_fingerprinter_24,
                     setOf(FINGERPRINTERS, SUSPICIOUS_FINGERPRINTERS),
                 ),
                 Triple(
-                    R.string.etp_tracking_content_title,
+                    R.plurals.trackers_blocked_panel_num_trackers_2,
                     iconsR.drawable.mozac_ic_image_24,
                     setOf(TRACKERS),
                 ),

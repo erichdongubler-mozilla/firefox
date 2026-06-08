@@ -5,7 +5,7 @@
 package mozilla.components.feature.protection.dashboard
 
 import androidx.annotation.DrawableRes
-import androidx.annotation.StringRes
+import androidx.annotation.PluralsRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -165,15 +165,14 @@ private fun WeeklyStatsEmptyContent(
     Text(
         text = stringResource(R.string.mozac_protections_dashboard_empty_title, appName),
         modifier = Modifier.semantics { heading() },
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Medium,
+        style = AcornTheme.typography.subtitle1,
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center,
     )
 
     Text(
         text = stringResource(R.string.mozac_protections_dashboard_empty_subtitle),
-        style = MaterialTheme.typography.bodyMedium,
+        style = AcornTheme.typography.subtitle1,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
     )
@@ -208,11 +207,9 @@ private fun WeeklyStatsContent(
 
         Text(
             text = stringResource(R.string.mozac_protections_dashboard_trackers_blocked_this_week_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Normal,
+            style = AcornTheme.typography.subtitle1,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
-            letterSpacing = 0.15.sp,
         )
 
         if (sitesCount > 0) {
@@ -223,7 +220,7 @@ private fun WeeklyStatsContent(
                     sitesCount,
                     sitesCount,
                 ),
-                style = MaterialTheme.typography.bodyMedium,
+                style = AcornTheme.typography.subtitle1,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
@@ -262,7 +259,7 @@ private fun DataSavedChip(
                 horizontal = AcornTheme.layout.space.static100,
                 vertical = AcornTheme.layout.space.static25,
             ),
-            style = MaterialTheme.typography.bodyMedium,
+            style = AcornTheme.typography.subtitle1,
             color = colors.chipText,
         )
     }
@@ -328,7 +325,7 @@ private fun TotalTrackersFooter(
             .padding(top = AcornTheme.layout.space.static300)
             .padding(bottom = AcornTheme.layout.space.static200)
             .padding(horizontal = AcornTheme.layout.space.static400),
-        style = MaterialTheme.typography.bodyMedium,
+        style = AcornTheme.typography.body2,
         color = MaterialTheme.colorScheme.onSurface,
     )
 }
@@ -370,8 +367,8 @@ private fun TrackerCategoryRow(
             modifier = Modifier.weight(1f),
         ) {
             Text(
-                text = "${trackersBlocked.count} ${stringResource(trackersBlocked.name)}",
-                style = MaterialTheme.typography.bodyMedium,
+                text = pluralStringResource(trackersBlocked.name, trackersBlocked.count, trackersBlocked.count),
+                style = AcornTheme.typography.body1,
                 color = contentColor,
                 textAlign = TextAlign.Start,
                 maxLines = 3,
@@ -436,22 +433,22 @@ private fun TrackerProtectionDashboardPreview() {
     val trackersBlocked = listOf(
         TrackersBlockedCategory(
             icon = mozilla.components.ui.icons.R.drawable.mozac_ic_cookies_24,
-            name = R.string.protections_dashboard_category_cookies,
+            name = R.plurals.protections_dashboard_category_cookies,
             count = 302,
         ),
         TrackersBlockedCategory(
             icon = mozilla.components.ui.icons.R.drawable.mozac_ic_social_tracker_24,
-            name = R.string.protections_dashboard_category_social,
+            name = R.plurals.protections_dashboard_category_social,
             count = 241,
         ),
         TrackersBlockedCategory(
             icon = mozilla.components.ui.icons.R.drawable.mozac_ic_fingerprinter_24,
-            name = R.string.protections_dashboard_category_fingerprinters,
-            count = 0,
+            name = R.plurals.protections_dashboard_category_fingerprinters,
+            count = 1,
         ),
         TrackersBlockedCategory(
             icon = mozilla.components.ui.icons.R.drawable.mozac_ic_image_24,
-            name = R.string.protections_dashboard_category_tracking_content,
+            name = R.plurals.protections_dashboard_category_tracking_content,
             count = 0,
         ),
     )
@@ -506,11 +503,11 @@ private fun previewDashboardColors() = when (isSystemInDarkTheme()) {
  * Represents a category of trackers with its count.
  *
  * @property icon Drawable resource ID for the category icon.
- * @property name String resource ID for the category name.
+ * @property name Plural string resource ID for the category name.
  * @property count Number of trackers blocked in this category.
  */
 data class TrackersBlockedCategory(
     @param:DrawableRes val icon: Int,
-    @param:StringRes val name: Int,
+    @param:PluralsRes val name: Int,
     val count: Int,
 )

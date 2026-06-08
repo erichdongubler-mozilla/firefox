@@ -183,12 +183,12 @@ void SVGAnimatedTransformList::SMILAnimatedTransformList::ParseValue(
     const nsAString& aSpec, const nsAtom* aTransformType, SMILValue& aResult) {
   MOZ_ASSERT(aResult.IsNull(), "Unexpected type for SMIL value");
 
-  static_assert(SVGTransformSMILData::NUM_SIMPLE_PARAMS == 3,
+  static_assert(SVGTransformSMILData::kNumSimpleParams == 3,
                 "SVGSMILTransform constructor should be expecting array "
                 "with 3 params");
 
-  float params[3] = {0.f};
-  int32_t numParsed = ParseParameterList(aSpec, params, 3);
+  SVGTransformSMILData::SimpleParams params = {0.f};
+  int32_t numParsed = ParseParameterList(aSpec, params);
   uint16_t transformType;
 
   if (aTransformType == nsGkAtoms::translate) {
@@ -229,8 +229,8 @@ void SVGAnimatedTransformList::SMILAnimatedTransformList::ParseValue(
 }
 
 int32_t SVGAnimatedTransformList::SMILAnimatedTransformList::ParseParameterList(
-    const nsAString& aSpec, float* aVars, int32_t aNVars) {
-  int numArgsFound = 0;
+    const nsAString& aSpec, SVGTransformSMILData::SimpleParams& aParams) {
+  size_t numArgsFound = 0;
 
   for (const auto& token :
        nsCharSeparatedTokenizerTemplate<nsContentUtils::IsHTMLWhitespace,
@@ -241,8 +241,8 @@ int32_t SVGAnimatedTransformList::SMILAnimatedTransformList::ParseParameterList(
     if (!SVGContentUtils::ParseNumber(token, f)) {
       return -1;
     }
-    if (numArgsFound < aNVars) {
-      aVars[numArgsFound] = f;
+    if (numArgsFound < aParams.size()) {
+      aParams[numArgsFound] = f;
     }
     numArgsFound++;
   }

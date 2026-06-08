@@ -701,7 +701,13 @@
   }
 
   ::selection{
-    background:transparent;
+    background:color-mix(in srgb, AccentColor, transparent 50%);
+  }
+
+  &.selectionRendering{
+    ::selection{
+      background:transparent;
+    }
   }
 
   .endOfContent{

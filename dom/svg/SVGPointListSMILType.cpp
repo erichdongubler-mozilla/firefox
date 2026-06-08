@@ -163,14 +163,15 @@ nsresult SVGPointListSMILType::Interpolate(const SMILValue& aStartVal,
 
   if (start.Length() != end.Length()) {
     MOZ_ASSERT(start.Length() == 0, "Not an identity value");
-    for (uint32_t i = 0; i < end.Length(); ++i) {
-      result[i] = aUnitDistance * end[i];
-    }
+    std::transform(
+        end.begin(), end.end(), result.begin(),
+        [&aUnitDistance](const SVGPoint& e) { return e * aUnitDistance; });
     return NS_OK;
   }
-  for (uint32_t i = 0; i < end.Length(); ++i) {
-    result[i] = start[i] + (end[i] - start[i]) * aUnitDistance;
-  }
+  std::transform(start.begin(), start.end(), end.begin(), result.begin(),
+                 [&aUnitDistance](const SVGPoint& s, const SVGPoint& e) {
+                   return SVGPoint::lerp(s, e, aUnitDistance);
+                 });
   return NS_OK;
 }
 

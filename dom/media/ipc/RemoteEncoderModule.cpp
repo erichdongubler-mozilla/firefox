@@ -136,7 +136,18 @@ media::EncodeSupportSet RemoteEncoderModule::Supports(
   }
 #endif
 
-  return SupportsCodec(aConfig.mCodec);
+  media::EncodeSupportSet supports = SupportsCodec(aConfig.mCodec);
+  switch (aConfig.mHardwarePreference) {
+    case HardwarePreference::RequireHardware:
+      supports -= media::EncodeSupport::SoftwareEncode;
+      break;
+    case HardwarePreference::RequireSoftware:
+      supports -= media::EncodeSupport::HardwareEncode;
+      break;
+    default:
+      break;
+  }
+  return supports;
 }
 
 media::EncodeSupportSet RemoteEncoderModule::SupportsCodec(
@@ -146,7 +157,7 @@ media::EncodeSupportSet RemoteEncoderModule::SupportsCodec(
   MOZ_LOG_FMT(sPEMLog, LogLevel::Debug,
               "Sandbox {} encoder {} requested codec {}",
               RemoteMediaInToStr(mLocation),
-              supports.isEmpty() ? "supports" : "rejects",
+              !supports.isEmpty() ? "supports" : "rejects",
               static_cast<int>(aCodecType));
   return supports;
 }

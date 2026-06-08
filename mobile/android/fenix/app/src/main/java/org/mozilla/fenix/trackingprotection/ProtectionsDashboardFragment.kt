@@ -58,11 +58,15 @@ class ProtectionsDashboardFragment : BottomSheetDialogFragment() {
         savedInstanceState: Bundle?,
     ) = content {
         val appStore = requireComponents.appStore
-        val trackerBlockedThisWeek by appStore.observeAsComposableState { state ->
-            state.trackersBlockedThisWeek
+        val blockedTrackersState by appStore.observeAsComposableState { state ->
+            state.blockedTrackersState
         }
 
-        ProtectionsDashboardContent(trackerBlockedThisWeek) { dismiss() }
+        ProtectionsDashboardContent(
+            totalTrackersBlocked = blockedTrackersState.trackersBlockedCount,
+            trackersBlockedThisWeek = blockedTrackersState.trackersBlockedThisWeek,
+            earliestTrackingDate = blockedTrackersState.earliestTrackingDate,
+        ) { dismiss() }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

@@ -10413,6 +10413,14 @@
   value: false
   mirror: always
 
+# Whether to enable CSS tree-counting functions (sibling-index(), sibling-count()).
+# https://drafts.csswg.org/css-values-5/#tree-counting
+- name: layout.css.tree-counting-functions.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+  rust: true
+
 # Whether to enable CSS Anchor Positioning support.
 # https://drafts.csswg.org/css-anchor-position-1/
 - name: layout.css.anchor-positioning.enabled
@@ -19549,15 +19557,6 @@
 #---------------------------------------------------------------------------
 # Prefs starting with "webgl." (for pref access from Worker threads)
 #---------------------------------------------------------------------------
-
-- name: webgl.1.allow-core-profiles
-  type: RelaxedAtomicBool
-#ifdef XP_MACOSX
-  value: true
-#else
-  value: false
-#endif
-  mirror: always
 
 - name: webgl.1.request_es2
   type: RelaxedAtomicBool

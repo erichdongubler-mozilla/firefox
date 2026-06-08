@@ -8,6 +8,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/CSSMathInvert.h"
 #include "mozilla/dom/CSSMathProductBinding.h"
 #include "mozilla/dom/CSSNumericArray.h"
 #include "mozilla/dom/CSSNumericValue.h"
@@ -82,9 +83,23 @@ void CSSMathProduct::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                    aDest);
 
   for (size_t index = 1; index < values.Length(); ++index) {
+    const RefPtr<CSSNumericValue>& value = values[index];
+
+    if (value->IsCSSMathValue()) {
+      CSSMathValue& mathValue = value->GetAsCSSMathValue();
+      if (mathValue.IsCSSMathInvert()) {
+        CSSMathInvert& mathInvert = mathValue.GetAsCSSMathInvert();
+
+        aDest.Append(" / "_ns);
+        mathInvert.Value()->ToCssTextWithProperty(
+            aPropertyId, SerializationContext(Nested{}), aDest);
+        continue;
+      }
+    }
+
     aDest.Append(" * "_ns);
-    values[index]->ToCssTextWithProperty(aPropertyId,
-                                         SerializationContext(Nested{}), aDest);
+    value->ToCssTextWithProperty(aPropertyId, SerializationContext(Nested{}),
+                                 aDest);
   }
 
   if (!aContext.IsParenLess()) {

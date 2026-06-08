@@ -1176,11 +1176,6 @@ class Settings(
         default = true,
     )
 
-    var shouldShowTrackingProtectionDashboard by booleanPreference(
-        appContext.getPreferenceKey(R.string.pref_key_tracking_protection_dashboard_status),
-        default = false,
-    )
-
     var shouldEnableGlobalPrivacyControl by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_privacy_enable_global_privacy_control),
         false,
@@ -3219,7 +3214,7 @@ class Settings(
      */
     var longfoxEnabled by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_longfox),
-        default = false,
+        default = { FxNimbus.features.longfox.value().enabled },
     )
 
     /**

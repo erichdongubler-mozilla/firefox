@@ -276,9 +276,6 @@ ${
   #scrollAnimationId = null;
   #smartbarAction = "";
   #smartbarActionPending = false;
-  // Stores the smartbar action in effect before generation started, so it can
-  // be restored when generation ends or is stopped.
-  #smartbarActionSaved = "";
   #detectedIntent = "";
   #smartbarAssistantIsGenerating = false;
   #smartbarEditor = null;
@@ -791,11 +788,9 @@ ${
     }
     this.#smartbarAssistantIsGenerating = value;
     if (value) {
-      this.#smartbarActionSaved = this.#smartbarAction;
       this._inputCta.setAttribute("action", "stop");
     } else {
-      this._inputCta.setAttribute("action", this.#smartbarActionSaved || "");
-      this.#smartbarActionSaved = "";
+      this._inputCta.setAttribute("action", this.smartbarAction);
     }
   }
 
@@ -1904,7 +1899,8 @@ ${
 
     if (
       result.providerName == lazy.UrlbarProviderGlobalActions.name &&
-      this.#providesSearchMode(result)
+      this.#providesSearchMode(result) &&
+      !this.view.selectedElement?.dataset.immediateSearch
     ) {
       this.maybeConfirmSearchModeFromResult({
         result,
@@ -1921,7 +1917,8 @@ ${
     // engineering effort. See review discussion at bug 1667766.
     if (
       (this.searchMode?.isPreview &&
-        result.providerName == lazy.UrlbarProviderGlobalActions.name) ||
+        result.providerName == lazy.UrlbarProviderGlobalActions.name &&
+        !this.view.selectedElement?.dataset.immediateSearch) ||
       (result.heuristic &&
         this.searchMode?.isPreview &&
         this.view.oneOffSearchButtons?.selectedButton)

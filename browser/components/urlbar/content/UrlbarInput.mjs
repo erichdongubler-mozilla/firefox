@@ -1519,7 +1519,8 @@ ${
 
     if (
       result.providerName == lazy.UrlbarProviderGlobalActions.name &&
-      this.#providesSearchMode(result)
+      this.#providesSearchMode(result) &&
+      !this.view.selectedElement?.dataset.immediateSearch
     ) {
       this.maybeConfirmSearchModeFromResult({
         result,
@@ -1536,7 +1537,8 @@ ${
     // engineering effort. See review discussion at bug 1667766.
     if (
       (this.searchMode?.isPreview &&
-        result.providerName == lazy.UrlbarProviderGlobalActions.name) ||
+        result.providerName == lazy.UrlbarProviderGlobalActions.name &&
+        !this.view.selectedElement?.dataset.immediateSearch) ||
       (result.heuristic &&
         this.searchMode?.isPreview &&
         this.view.oneOffSearchButtons?.selectedButton)

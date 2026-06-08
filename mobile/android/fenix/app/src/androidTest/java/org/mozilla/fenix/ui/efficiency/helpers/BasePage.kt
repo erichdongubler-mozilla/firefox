@@ -286,6 +286,7 @@ abstract class BasePage(
                     if (!element.click()) throw AssertionError("Failed to click UiObject for selector: ${selector.description}")
                 }
                 is SemanticsNodeInteraction -> {
+                    composeRule.waitForIdle()
                     element.assertExists()
                     element.assertIsDisplayed()
                     element.performClick()

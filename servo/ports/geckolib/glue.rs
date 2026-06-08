@@ -142,6 +142,7 @@ use style::values::computed::length_percentage::{
     AllowAnchorPosResolutionInCalcPercentage, Unpacked,
 };
 use style::values::computed::position::{AnchorFunction, PositionArea};
+use style::values::computed::tree_counting::TreeCountingInfo;
 use style::values::computed::{self, ContentVisibility, Context, ToComputedValue};
 use style::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use style::values::generics::color::ColorMixFlags;
@@ -1555,35 +1556,55 @@ pub extern "C" fn Servo_Element_IsPrimaryStyleReusedViaRuleNode(element: &RawGec
         .contains(data::ElementDataFlags::PRIMARY_STYLE_REUSED_VIA_RULE_NODE)
 }
 
-#[no_mangle]
-pub extern "C" fn Servo_Element_ReferencesAttribute(
+fn check_element_and_eager_pseudos(
     element: &RawGeckoElement,
-    attr: *const nsAtom,
+    check_styles_fn: impl Fn(&ComputedValues) -> bool,
 ) -> bool {
     let element = GeckoElement(element);
     let Some(data) = element.borrow_data() else {
         return false;
     };
-    if let Some(ref attrs) = data.styles.primary().attribute_references {
-        if unsafe { Atom::with(attr, |attr| attrs.contains_key(AtomIdent::cast(attr))) } {
-            return true;
-        }
+
+    if check_styles_fn(data.styles.primary()) {
+        return true;
     }
 
     // Some eager pseudos (::first-letter, ::first-line) lack Gecko element nodes,
-    // so check them for attr() dependency through the originating element here.
+    // so check them through the originating element here.
     for pseudo_styles in data.styles.pseudos.as_array() {
         let Some(ref styles) = pseudo_styles else {
             continue;
         };
-        let Some(ref attrs) = styles.attribute_references else {
-            continue;
-        };
-        if unsafe { Atom::with(attr, |attr| attrs.contains_key(AtomIdent::cast(attr))) } {
+        if check_styles_fn(styles) {
             return true;
         }
     }
+
     false
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_Element_ReferencesAttribute(
+    element: &RawGeckoElement,
+    attr: *const nsAtom,
+) -> bool {
+    check_element_and_eager_pseudos(element, |styles| {
+        if let Some(ref attrs) = styles.attribute_references {
+            if unsafe { Atom::with(attr, |attr| attrs.contains_key(AtomIdent::cast(attr))) } {
+                return true;
+            }
+        }
+        false
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_Element_UsesTreeCountingFunction(element: &RawGeckoElement) -> bool {
+    check_element_and_eager_pseudos(element, |styles| {
+        styles
+            .flags
+            .intersects(ComputedValueFlags::tree_counting_function_flags())
+    })
 }
 
 #[no_mangle]
@@ -5175,6 +5196,7 @@ pub extern "C" fn Servo_ParseAndComputeViewTimelineInset(
         .map(|x| &**x);
     let container_size_query =
         ContainerSizeQuery::for_element(element, None, /* is_pseudo = */ false);
+    let tree_counting_info = TreeCountingInfo::for_element(element);
     let mut conditions = Default::default();
     let context = create_context_for_animation(
         &data,
@@ -5182,6 +5204,7 @@ pub extern "C" fn Servo_ParseAndComputeViewTimelineInset(
         parent_style,
         &mut conditions,
         container_size_query,
+        tree_counting_info,
     );
     *output = specified.to_computed_value(&context);
     true
@@ -6071,7 +6094,7 @@ pub unsafe extern "C" fn Servo_MediaList_SetText(
         CallerType::NonSystem => Origin::Author,
     };
 
-    let context = ParserContext::new(
+    let mut context = ParserContext::new(
         origin,
         url_data,
         Some(CssRuleType::Media),
@@ -6085,7 +6108,7 @@ pub unsafe extern "C" fn Servo_MediaList_SetText(
     );
 
     write_locked_arc(list, |list: &mut MediaList| {
-        *list = MediaList::parse(&context, &mut parser);
+        *list = MediaList::parse(&mut context, &mut parser);
     })
 }
 
@@ -7244,6 +7267,7 @@ fn create_context_for_animation<'a>(
     parent_style: Option<&'a ComputedValues>,
     rule_cache_conditions: &'a mut RuleCacheConditions,
     container_size_query: ContainerSizeQuery<'a>,
+    tree_counting_info: Option<TreeCountingInfo<'a>>,
 ) -> Context<'a> {
     Context::new_for_animation(
         StyleBuilder::for_derived_style(
@@ -7255,6 +7279,7 @@ fn create_context_for_animation<'a>(
         per_doc_data.stylist.quirks_mode(),
         rule_cache_conditions,
         container_size_query,
+        tree_counting_info,
     )
 }
 
@@ -7339,6 +7364,7 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
 
     let container_size_query =
         ContainerSizeQuery::for_element(element, parent_style, pseudo.is_some());
+    let tree_counting_info = TreeCountingInfo::for_element(element);
     let mut conditions = Default::default();
     let mut context = create_context_for_animation(
         &data,
@@ -7346,6 +7372,7 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
         parent_style,
         &mut conditions,
         container_size_query,
+        tree_counting_info,
     );
 
     let restriction = pseudo.and_then(|p| p.property_restriction());
@@ -7476,6 +7503,7 @@ pub extern "C" fn Servo_GetAnimationValues(
 
     let container_size_query =
         ContainerSizeQuery::for_element(element, None, /* is_pseudo = */ false);
+    let tree_counting_info = TreeCountingInfo::for_element(element);
     let mut conditions = Default::default();
     let mut context = create_context_for_animation(
         &data,
@@ -7483,6 +7511,7 @@ pub extern "C" fn Servo_GetAnimationValues(
         parent_style,
         &mut conditions,
         container_size_query,
+        tree_counting_info,
     );
 
     let default_values = data.default_computed_values();
@@ -7521,6 +7550,7 @@ pub extern "C" fn Servo_AnimationValue_Compute(
 
     let container_size_query =
         ContainerSizeQuery::for_element(element, None, /* is_pseudo = */ false);
+    let tree_counting_info = TreeCountingInfo::for_element(element);
     let mut conditions = Default::default();
     let mut context = create_context_for_animation(
         &data,
@@ -7528,6 +7558,7 @@ pub extern "C" fn Servo_AnimationValue_Compute(
         parent_style,
         &mut conditions,
         container_size_query,
+        tree_counting_info,
     );
 
     let default_values = data.default_computed_values();

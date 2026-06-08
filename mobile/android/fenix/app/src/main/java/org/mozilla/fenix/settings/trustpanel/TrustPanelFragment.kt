@@ -224,8 +224,12 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                     store.stateFlow.map { state -> state.numberOfTrackersBlocked }
                 }.collectAsState(initial = store.state.numberOfTrackersBlocked)
                 val numberOfTrackersBlockedThisWeek by remember {
-                    appStore.stateFlow.map { state -> state.trackersBlockedThisWeek.sumOf { it.count } }
-                }.collectAsState(initial = appStore.state.trackersBlockedThisWeek.sumOf { it.count })
+                    appStore.stateFlow.map { state ->
+                        state.blockedTrackersState.trackersBlockedThisWeek.sumOf { it.count }
+                    }
+                }.collectAsState(
+                    initial = appStore.state.blockedTrackersState.trackersBlockedThisWeek.sumOf { it.count },
+                )
                 val bucketedTrackers by remember {
                     store.stateFlow.map { state -> state.bucketedTrackers }
                 }.collectAsState(initial = store.state.bucketedTrackers)
@@ -392,12 +396,14 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
 
                         Route.TrackersProtectionDashboard -> {
                             val appStore = requireComponents.appStore
-                            val trackerBlockedThisWeek by appStore.observeAsComposableState { state ->
-                                state.trackersBlockedThisWeek
+                            val blockedTrackersState by appStore.observeAsComposableState { state ->
+                                state.blockedTrackersState
                             }
 
                             ProtectionsDashboardContent(
-                                trackersBlockedThisWeek = trackerBlockedThisWeek,
+                                totalTrackersBlocked = blockedTrackersState.trackersBlockedCount,
+                                trackersBlockedThisWeek = blockedTrackersState.trackersBlockedThisWeek,
+                                earliestTrackingDate = blockedTrackersState.earliestTrackingDate,
                                 onDismiss = {
                                     contentState = Route.TrackersPanel
                                 },

@@ -209,22 +209,8 @@ add_task(async function test_timepicker_wrap_midnight() {
     `data:text/html, <input type='time' value="${inputValue}" max="${maxValue}" min="${minValue}">`
   );
 
-  let hours = [
-    ...new Set(
-      helper
-        .getChildren(SPINNER_HOUR)
-        .filter(item => !item.classList.contains("disabled"))
-        .map(item => item.textContent)
-    ),
-  ];
-  const dayPeriods = [
-    ...new Set(
-      helper
-        .getChildren(SPINNER_TIME)
-        .filter(item => !item.classList.contains("disabled"))
-        .map(item => item.textContent)
-    ),
-  ];
+  let hours = helper.getSpinnerOptions(SPINNER_HOUR);
+  const dayPeriods = helper.getSpinnerOptions(SPINNER_TIME);
 
   Assert.deepEqual(
     hours,
@@ -253,14 +239,7 @@ add_task(async function test_timepicker_wrap_midnight() {
     `Should change to 12, instead got ${spinnerTime.ariaValueNow}`
   );
 
-  hours = [
-    ...new Set(
-      helper
-        .getChildren(SPINNER_HOUR)
-        .filter(item => !item.classList.contains("disabled"))
-        .map(item => item.textContent)
-    ),
-  ];
+  hours = helper.getSpinnerOptions(SPINNER_HOUR);
 
   Assert.deepEqual(
     hours,

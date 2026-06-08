@@ -246,7 +246,7 @@ internal sealed class HomepageState {
                 showCollections = settings.collections,
                 showPrivacyReport = settings.showPrivacyReportFeature,
                 showLongfoxEntryPoint = settings.longfoxEnabled,
-                trackersBlockedCount = trackersBlockedCount,
+                trackersBlockedCount = blockedTrackersState.trackersBlockedCount,
                 sportsWidgetState = sportsWidgetState,
                 headerState = buildHeaderState(
                     settings = settings,

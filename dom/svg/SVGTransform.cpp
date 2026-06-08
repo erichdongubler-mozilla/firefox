@@ -6,6 +6,7 @@
 
 #include "nsContentUtils.h"  // for NS_ENSURE_FINITE
 #include "nsError.h"
+#include "nsMathUtils.h"
 #include "nsTextFormatter.h"
 
 namespace mozilla {
@@ -124,9 +125,7 @@ SVGTransformSMILData::SVGTransformSMILData(const SVGTransform& aTransform)
                  mTransformType <= SVG_TRANSFORM_SKEWY,
              "Unexpected transform type");
 
-  for (float& mParam : mParams) {
-    mParam = 0.f;
-  }
+  mParams.fill(0.f);
 
   switch (mTransformType) {
     case SVG_TRANSFORM_MATRIX: {
@@ -201,6 +200,35 @@ SVGTransform SVGTransformSMILData::ToSVGTransform() const {
       break;
   }
   return result;
+}
+
+nsresult SVGTransformSMILData::Distance(const SVGTransformSMILData& aOther,
+                                        double& aDistance) const {
+  NS_ASSERTION(mTransformType == aOther.mTransformType,
+               "Incompatible transform types to calculate distance between");
+
+  switch (mTransformType) {
+    // We adopt the SVGT1.2 notions of distance here
+    // See: http://www.w3.org/TR/SVGTiny12/animate.html#complexDistances
+    // (As discussed in bug #469040)
+    case SVG_TRANSFORM_TRANSLATE:
+    case SVG_TRANSFORM_SCALE: {
+      aDistance = NS_hypot(mParams[0] - aOther.mParams[0],
+                           mParams[1] - aOther.mParams[1]);
+    } break;
+
+    case SVG_TRANSFORM_ROTATE:
+    case SVG_TRANSFORM_SKEWX:
+    case SVG_TRANSFORM_SKEWY: {
+      aDistance = std::abs(mParams[0] - aOther.mParams[0]);
+    } break;
+
+    default:
+      NS_ERROR("Got bad transform types for calculating distances");
+      aDistance = 1.0f;
+      return NS_ERROR_FAILURE;
+  }
+  return NS_OK;
 }
 
 }  // namespace mozilla
