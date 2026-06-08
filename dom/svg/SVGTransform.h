@@ -92,55 +92,55 @@ class SVGTransformSMILData {
  public:
   // Number of float-params required in constructor, if constructing one of the
   // 'simple' transform types (all but matrix type)
-  static constexpr uint32_t NUM_SIMPLE_PARAMS = 3;
+  static constexpr size_t kNumSimpleParams = 3;
 
   // Number of float-params required in constructor for matrix type.
   // This is also the number of params we actually store, regardless of type.
-  static constexpr uint32_t NUM_STORED_PARAMS = 6;
+  static constexpr size_t kNumStoredParams = 6;
+
+  using SimpleParams = std::array<float, kNumSimpleParams>;
+  using StoredParams = std::array<float, kNumStoredParams>;
 
   explicit SVGTransformSMILData(uint16_t aType) : mTransformType(aType) {
     MOZ_ASSERT(aType >= dom::SVGTransform_Binding::SVG_TRANSFORM_MATRIX &&
                    aType <= dom::SVGTransform_Binding::SVG_TRANSFORM_SKEWY,
                "Unexpected transform type");
-    for (float& mParam : mParams) {
-      mParam = 0.f;
-    }
+    mParams.fill(0.f);
   }
 
-  SVGTransformSMILData(uint16_t aType, float (&aParams)[NUM_SIMPLE_PARAMS])
+  SVGTransformSMILData(uint16_t aType, const SimpleParams& aParams)
       : mTransformType(aType) {
     MOZ_ASSERT(aType >= dom::SVGTransform_Binding::SVG_TRANSFORM_TRANSLATE &&
                    aType <= dom::SVGTransform_Binding::SVG_TRANSFORM_SKEWY,
                "Expected 'simple' transform type");
-    for (uint32_t i = 0; i < NUM_SIMPLE_PARAMS; ++i) {
-      mParams[i] = aParams[i];
-    }
-    for (uint32_t i = NUM_SIMPLE_PARAMS; i < NUM_STORED_PARAMS; ++i) {
-      mParams[i] = 0.f;
-    }
+    std::copy(aParams.begin(), aParams.end(), mParams.begin());
+    std::fill(mParams.begin() + kNumSimpleParams, mParams.end(), 0.f);
   }
 
   // Conversion to/from a fully-fledged SVGTransform
   explicit SVGTransformSMILData(const SVGTransform& aTransform);
   SVGTransform ToSVGTransform() const;
 
+  float operator[](uint32_t aIndex) const { return mParams[aIndex]; }
+  float& operator[](uint32_t aIndex) { return mParams[aIndex]; }
+
   bool operator==(const SVGTransformSMILData& aOther) const {
     if (mTransformType != aOther.mTransformType) return false;
 
-    for (uint32_t i = 0; i < NUM_STORED_PARAMS; ++i) {
-      if (mParams[i] != aOther.mParams[i]) {
-        return false;
-      }
-    }
-
-    return true;
+    return mParams == aOther.mParams;
   }
 
   bool operator!=(const SVGTransformSMILData& aOther) const {
     return !(*this == aOther);
   }
 
-  float mParams[NUM_STORED_PARAMS];
+  nsresult Distance(const SVGTransformSMILData& aOther,
+                    double& aDistance) const;
+
+  uint16_t TransformType() const { return mTransformType; }
+
+ private:
+  StoredParams mParams;
   uint16_t mTransformType;
 };
 
