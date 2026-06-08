@@ -8263,8 +8263,6 @@ void nsHttpChannel::MaybeStartDNSPrefetch() {
       dnsFlags |= nsIDNSService::RESOLVE_BYPASS_CACHE;
     }
 
-    (void)mDNSPrefetch->PrefetchHigh(dnsFlags);
-
     bool unused;
     if (StaticPrefs::network_dns_use_https_rr_as_altsvc() && !mHTTPSSVCRecord &&
         !(mCaps & NS_HTTP_DISALLOW_HTTPS_RR) &&
@@ -8282,6 +8280,15 @@ void nsHttpChannel::MaybeStartDNSPrefetch() {
                                       // Do nothing. This is a DNS prefetch.
                                     });
     }
+
+    // Issue per-family prefetches (A and AAAA) so Happy Eyeballs can reuse
+    // them instead of starting its own lookups. Skip a family that won't be
+    // queried; with IPv6 disabled the AAAA request collapses to A, so skip it
+    // to avoid a duplicate.
+    bool skipIPv4 = mCaps & NS_HTTP_DISABLE_IPV4;
+    bool skipIPv6 = (mCaps & NS_HTTP_DISABLE_IPV6) ||
+                    StaticPrefs::network_dns_disableIPv6();
+    (void)mDNSPrefetch->PrefetchHighPerFamily(dnsFlags, skipIPv4, skipIPv6);
   }
 }
 
