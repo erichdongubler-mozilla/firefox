@@ -47,20 +47,20 @@ android {
         }
     }
 
-    variantFilter { variant ->
-        if (variant.buildType.name == "release") {
-            // This is a sample app that we are not releasing. Save some time and do not build
-            // release versions.
-            setIgnore(true)
-        }
-    }
-
     buildFeatures {
         viewBinding = true
         compose = true
     }
 
     namespace = 'org.mozilla.samples.browser'
+}
+
+androidComponents {
+    beforeVariants(selector().withBuildType("release")) { variantBuilder ->
+        // This is a sample app that we are not releasing. Save some time and do not build
+        // release versions.
+        variantBuilder.enable = false
+    }
 }
 
 tasks.register("updateBorderifyExtensionVersion", Copy) { task ->

@@ -81,7 +81,7 @@ android {
         buildConfigField 'boolean', 'MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS', mozconfig.substs.MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS ? 'true' : 'false';
     }
 
-    lintOptions {
+    lint {
         abortOnError = false
     }
 
