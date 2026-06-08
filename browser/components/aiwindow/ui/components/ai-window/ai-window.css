@@ -41,6 +41,10 @@
   --smartbar-width: calc(100% - var(--space-large));
 }
 
+:host([mode="sidebar"]) .smartbar-glow {
+  display: none;
+}
+
 /* Expands browser to full height and removes prompts from grid when chat starts */
 :host(.chat-active) {
   grid-template-areas:
