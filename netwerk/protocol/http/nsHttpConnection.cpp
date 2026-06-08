@@ -420,6 +420,18 @@ void nsHttpConnection::StartSpdy(nsITLSSocketControl* sslControl,
   }
 }
 
+void nsHttpConnection::OnClientAuthCertificateRequested() {
+  if (mTransaction) {
+    mTransaction->OnClientAuthCertificateRequested();
+  }
+}
+
+void nsHttpConnection::OnClientAuthCertificateSelected() {
+  if (mTransaction) {
+    mTransaction->OnClientAuthCertificateSelected();
+  }
+}
+
 void nsHttpConnection::PostProcessNPNSetup(bool handshakeSucceeded,
                                            bool hasSecurityInfo,
                                            bool earlyDataUsed) {

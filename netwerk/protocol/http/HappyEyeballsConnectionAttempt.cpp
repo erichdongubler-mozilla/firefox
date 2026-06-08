@@ -236,6 +236,11 @@ nsresult HappyEyeballsConnectionAttempt::ProcessConnectionResult(
     return NS_OK;
   }
 
+  if (mPausedForClientAuth && aId == mClientAuthHolderId) {
+    mPausedForClientAuth = false;
+    mClientAuthHolderId = 0;
+  }
+
   if (mState != State::ProcessingConnectionResult) {
     Transition(State::ProcessingConnectionResult);
   }
@@ -397,6 +402,15 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
   LOG(("HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput %p", this));
 
   if (IsTerminal()) {
+    return NS_OK;
+  }
+
+  // Paused on a client-cert prompt: stop polling so no new attempts start
+  // (running ones continue). Resumed by OnClientAuthCertificateSelected or
+  // the holder's result.
+  if (mPausedForClientAuth) {
+    LOG(("  paused for client-auth (holder id=%" PRIu64 "); not polling",
+         mClientAuthHolderId));
     return NS_OK;
   }
 
@@ -846,15 +860,23 @@ bool HappyEyeballsConnectionAttempt::LockInRealTransactionFromPendingQueue() {
 
 already_AddRefed<HappyEyeballsTransaction>
 HappyEyeballsConnectionAttempt::CreateAttemptTransaction(
-    nsHttpConnectionInfo* aInfo) {
+    nsHttpConnectionInfo* aInfo, uint64_t aEstablisherId) {
   nsCOMPtr<nsIInterfaceRequestor> callbacks;
+  uint64_t browserId = 0;
   if (mTransaction) {
     mTransaction->GetSecurityCallbacks(getter_AddRefs(callbacks));
+    browserId = mTransaction->BrowserId();
   }
   RefPtr<HappyEyeballsTransaction> trans = new HappyEyeballsTransaction(
-      aInfo, callbacks, mCaps,
+      aInfo, callbacks, mCaps, browserId,
       [self = RefPtr{this}](nsITransport* t, nsresult s, int64_t p) {
         self->MaybeSendTransportStatus(s, t, p);
+      },
+      [self = RefPtr{this}, id = aEstablisherId]() {
+        self->OnClientAuthCertificateRequested(id);
+      },
+      [self = RefPtr{this}, id = aEstablisherId]() {
+        self->OnClientAuthCertificateSelected(id);
       },
       mZeroRttHandle);
   return trans.forget();
@@ -897,7 +919,8 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
         return self->CheckLNA(aTransport);
       });
 
-  RefPtr<HappyEyeballsTransaction> attempt = CreateAttemptTransaction(info);
+  RefPtr<HappyEyeballsTransaction> attempt =
+      CreateAttemptTransaction(info, aId);
   establisher->SetTransaction(attempt);
 
   auto callback = [self = RefPtr{this}, establisher,
@@ -941,7 +964,8 @@ nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
         self->MaybeSendTransportStatus(status, trans, progress);
       });
 
-  RefPtr<HappyEyeballsTransaction> attempt = CreateAttemptTransaction(info);
+  RefPtr<HappyEyeballsTransaction> attempt =
+      CreateAttemptTransaction(info, aId);
   establisher->SetTransaction(attempt);
 
   auto callback = [self = RefPtr{this}, establisher,
@@ -999,6 +1023,39 @@ void HappyEyeballsConnectionAttempt::HandleUDPConnectionResult(
   establisher->ClearResultConnection();
 
   ProcessConnectionResult(addr, NS_OK, aId);
+}
+
+void HappyEyeballsConnectionAttempt::OnClientAuthCertificateRequested(
+    uint64_t aEstablisherId) {
+  LOG(
+      ("HappyEyeballsConnectionAttempt::OnClientAuthCertificateRequested %p "
+       "id=%" PRIu64,
+       this, aEstablisherId));
+
+  if (IsTerminal()) {
+    return;
+  }
+
+  if (mPausedForClientAuth) {
+    return;
+  }
+
+  mPausedForClientAuth = true;
+  mClientAuthHolderId = aEstablisherId;
+}
+
+void HappyEyeballsConnectionAttempt::OnClientAuthCertificateSelected(
+    uint64_t aEstablisherId) {
+  LOG(
+      ("HappyEyeballsConnectionAttempt::OnClientAuthCertificateSelected %p "
+       "id=%" PRIu64,
+       this, aEstablisherId));
+  if (!mPausedForClientAuth || aEstablisherId != mClientAuthHolderId) {
+    return;
+  }
+
+  mPausedForClientAuth = false;
+  mClientAuthHolderId = 0;
 }
 
 void HappyEyeballsConnectionAttempt::CancelConnection(uint64_t aId) {

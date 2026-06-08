@@ -523,6 +523,9 @@ skip-if = [
   "os == 'android' && os_version == '14' && arch == 'x86_64'",
 ]
 
+["test_he_client_auth_pause.js"]
+skip-if = ["os == 'android'"] # pkcs11testmodule isn't built/installed on Android
+
 ["test_coaleasing_h2_and_h3_connection.js"]
 run-sequentially = ["true"] # http3server
 skip-if = [
