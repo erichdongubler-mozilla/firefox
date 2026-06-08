@@ -807,54 +807,75 @@ class TextPropertyEditor {
   #addSwatches() {
     const { tooltips } = this.ruleView;
     // Attach the color picker tooltip to the color swatches
+    const previousColorSwatchSpans = this.#colorSwatchSpans;
     this.#colorSwatchSpans = this.valueSpan.querySelectorAll(
       "." + COLOR_SWATCH_CLASS
     );
     const colorSwatchTitle = l10n("rule.colorSwatch.tooltip");
     const colorTooltip = tooltips.getTooltip("colorPicker");
-    for (const span of this.#colorSwatchSpans) {
-      colorTooltip.addSwatch(span, {
-        onShow: this.#onStartEditing,
-        onPreview: this.#onSwatchPreview,
-        onCommit: this.#onSwatchCommit,
-        onRevert: this.#onSwatchRevert,
-      });
+    for (let i = 0; i < this.#colorSwatchSpans.length; i++) {
+      const span = this.#colorSwatchSpans[i];
+      colorTooltip.addSwatch(
+        span,
+        {
+          onShow: this.#onStartEditing,
+          onPreview: this.#onSwatchPreview,
+          onCommit: this.#onSwatchCommit,
+          onRevert: this.#onSwatchRevert,
+        },
+        previousColorSwatchSpans ? previousColorSwatchSpans[i] : null
+      );
       span.setAttribute("title", colorSwatchTitle);
       span.dataset.propertyName = this.nameSpan.textContent;
     }
 
     // Attach the cubic-bezier tooltip to the bezier swatches
+    const previousBezierSwatchSpans = this.#bezierSwatchSpans;
     this.#bezierSwatchSpans = this.valueSpan.querySelectorAll(
       "." + BEZIER_SWATCH_CLASS
     );
     const bezierSwatchTitle = l10n("rule.bezierSwatch.tooltip");
     const cubicTooltip = tooltips.getTooltip("cubicBezier");
-    for (const span of this.#bezierSwatchSpans) {
-      cubicTooltip.addSwatch(span, {
-        onShow: this.#onStartEditing,
-        onPreview: this.#onSwatchPreview,
-        onCommit: this.#onSwatchCommit,
-        onRevert: this.#onSwatchRevert,
-      });
+    for (let i = 0; i < this.#bezierSwatchSpans.length; i++) {
+      const span = this.#bezierSwatchSpans[i];
+      cubicTooltip.addSwatch(
+        span,
+        {
+          onShow: this.#onStartEditing,
+          onPreview: this.#onSwatchPreview,
+          onCommit: this.#onSwatchCommit,
+          onRevert: this.#onSwatchRevert,
+        },
+        previousBezierSwatchSpans ? previousBezierSwatchSpans[i] : null
+      );
       span.setAttribute("title", bezierSwatchTitle);
     }
 
     // Attach the linear easing tooltip to the linear easing swatches
+    const previousLinearEasingSwatchSpans = this.#linearEasingSwatchSpans;
     this.#linearEasingSwatchSpans = this.valueSpan.querySelectorAll(
       "." + LINEAR_EASING_SWATCH_CLASS
     );
     const linearTooltip = tooltips.getTooltip("linearEaseFunction");
-    for (const span of this.#linearEasingSwatchSpans) {
-      linearTooltip.addSwatch(span, {
-        onShow: this.#onStartEditing,
-        onPreview: this.#onSwatchPreview,
-        onCommit: this.#onSwatchCommit,
-        onRevert: this.#onSwatchRevert,
-      });
+    for (let i = 0; i < this.#linearEasingSwatchSpans.length; i++) {
+      const span = this.#linearEasingSwatchSpans[i];
+      linearTooltip.addSwatch(
+        span,
+        {
+          onShow: this.#onStartEditing,
+          onPreview: this.#onSwatchPreview,
+          onCommit: this.#onSwatchCommit,
+          onRevert: this.#onSwatchRevert,
+        },
+        previousLinearEasingSwatchSpans
+          ? previousLinearEasingSwatchSpans[i]
+          : null
+      );
       span.setAttribute("title", bezierSwatchTitle);
     }
 
     // Attach the filter editor tooltip to the filter swatch
+    const previousFilterSwatchSpan = this.#filterSwatchSpan;
     this.#filterSwatchSpan = this.valueSpan.querySelector(
       "." + FILTER_SWATCH_CLASS
     );
@@ -868,7 +889,8 @@ class TextPropertyEditor {
           onRevert: this.#onSwatchRevert,
         },
         this.ruleView.outputParser,
-        { ...this.outputParserOptions, filterSwatch: true }
+        { ...this.outputParserOptions, filterSwatch: true },
+        previousFilterSwatchSpan
       );
       const title = l10n("rule.filterSwatch.tooltip");
       this.#filterSwatchSpan.setAttribute("title", title);
