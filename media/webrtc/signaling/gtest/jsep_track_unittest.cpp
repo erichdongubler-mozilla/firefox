@@ -18,6 +18,8 @@
 #include "sdp/SipccSdpParser.h"
 #include "sdp/SdpHelper.h"
 
+#include <tuple>
+
 using testing::UnorderedElementsAre;
 
 namespace mozilla {
@@ -37,10 +39,12 @@ struct CodecOverrides {
   bool enableRemb = true;
   bool enableTransportCC = true;
   bool enableAudioTransportCC = true;
+  bool enableRtx = true;
   void ApplyToPrefs(MockJsepCodecPreferences& aPrefs) const {
     aPrefs.mUseRemb = enableRemb;
     aPrefs.mUseTransportCC = enableTransportCC;
     aPrefs.mUseAudioTransportCC = enableAudioTransportCC;
+    aPrefs.mUseRtx = enableRtx;
   }
 };
 
@@ -255,6 +259,41 @@ class JsepTrackTest : public JsepTrackTestBase {
       return nullptr;
     }
     return UniquePtr<JsepCodecDescription>(codecs[codecIndex]->Clone());
+  }
+
+  UniquePtr<JsepCodecDescription> GetCodec(const JsepTrack& track,
+                                           const std::string& name) const {
+    if (!track.GetNegotiatedDetails() ||
+        track.GetNegotiatedDetails()->GetEncodingCount() != 1U) {
+      return nullptr;
+    }
+
+    const auto& codecs =
+        track.GetNegotiatedDetails()->GetEncoding(0).GetCodecs();
+    for (const auto& codec : codecs) {
+      if (codec->mName == name) {
+        return UniquePtr<JsepCodecDescription>(codec->Clone());
+      }
+    }
+    return nullptr;
+  }
+
+  UniquePtr<JsepAudioCodecDescription> AsAudio(
+      UniquePtr<JsepCodecDescription> codec) {
+    if (codec && codec->Type() == SdpMediaSection::kAudio) {
+      return UniquePtr<JsepAudioCodecDescription>(
+          static_cast<JsepAudioCodecDescription*>(codec.release()));
+    }
+    return nullptr;
+  }
+
+  UniquePtr<JsepVideoCodecDescription> AsVideo(
+      UniquePtr<JsepCodecDescription> codec) {
+    if (codec && codec->Type() == SdpMediaSection::kVideo) {
+      return UniquePtr<JsepVideoCodecDescription>(
+          static_cast<JsepVideoCodecDescription*>(codec.release()));
+    }
+    return nullptr;
   }
 
   UniquePtr<JsepVideoCodecDescription> GetVideoCodec(
@@ -1695,6 +1734,74 @@ TEST_F(JsepTrackTest, RtcpFbWithPayloadTypeAsymmetry) {
   ASSERT_EQ(expectedNackFbTypes, codec->mNackFbTypes);
   ASSERT_EQ(expectedCcmFbTypes, codec->mCcmFbTypes);
   ASSERT_EQ(expectedOtherFbTypes, codec->mOtherFbTypes);
+}
+
+TEST_F(JsepTrackTest, OfferRedUlpfecNoRtx) {
+  InitCodecs({.offer = {.addFecCodecs = true, .enableRtx = false},
+              .answer = {.addFecCodecs = true, .enableRtx = true}});
+  InitTracks(SdpMediaSection::kVideo);
+  InitSdp(SdpMediaSection::kVideo);
+  OfferAnswer();
+
+  CheckOffEncodingCount(1);
+  CheckAnsEncodingCount(1);
+
+  for (const auto& type : {"VP8", "AV1", "H264"}) {
+    for (const auto& [description, track] :
+         {std::tuple{"Offerer send", &mSendOff},
+          std::tuple{"Offerer recv", &mRecvOff},
+          std::tuple{"Answerer send", &mSendAns},
+          std::tuple{"Answerer recv", &mRecvAns}}) {
+      auto codec = AsVideo(GetCodec(*track, type));
+      ASSERT_TRUE(codec)
+      << description << " track has codec for " << type;
+      ASSERT_TRUE(codec->mFECEnabled)
+      << description << " " << type << " has fec";
+      ASSERT_FALSE(codec->mULPFECPayloadType.empty())
+      << description << " " << type << " has ulpfec";
+      ASSERT_FALSE(codec->mREDPayloadType.empty())
+      << description << " " << type << " has red";
+      ASSERT_TRUE(codec->mREDRTXPayloadType.empty())
+      << description << " " << type << " does not have red/rtx";
+    }
+  }
+}
+
+TEST_F(JsepTrackTest, AnswerRedUlpfecNoRtx) {
+  InitCodecs({.offer = {.addFecCodecs = true, .enableRtx = true},
+              .answer = {.addFecCodecs = true, .enableRtx = false}});
+  InitTracks(SdpMediaSection::kVideo);
+  InitSdp(SdpMediaSection::kVideo);
+  OfferAnswer();
+
+  CheckOffEncodingCount(1);
+  CheckAnsEncodingCount(1);
+
+  for (const auto& type : {"VP8", "AV1", "H264"}) {
+    for (const auto& [description, track] :
+         {std::tuple{"Offerer send", &mSendOff},
+          std::tuple{"Offerer recv", &mRecvOff},
+          std::tuple{"Answerer send", &mSendAns},
+          std::tuple{"Answerer recv", &mRecvAns}}) {
+      auto codec = AsVideo(GetCodec(*track, type));
+      ASSERT_TRUE(codec)
+      << description << " track has codec for " << type;
+      ASSERT_TRUE(codec->mFECEnabled)
+      << description << " " << type << " has fec";
+      ASSERT_FALSE(codec->mULPFECPayloadType.empty())
+      << description << " " << type << " has ulpfec";
+      ASSERT_FALSE(codec->mREDPayloadType.empty())
+      << description << " " << type << " has red";
+      if (track != &mRecvOff) {
+        ASSERT_TRUE(codec->mREDRTXPayloadType.empty())
+        << description << " " << type << " does not have red/rtx";
+      } else {
+        ASSERT_FALSE(codec->mREDRTXPayloadType.empty())
+        << description << " " << type << " has red/rtx, since it offered to receive it";
+
+      }
+    }
+  }
 }
 
 TEST_F(JsepTrackTest, AudioSdpFmtpLine) {
