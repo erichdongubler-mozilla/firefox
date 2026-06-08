@@ -4787,7 +4787,7 @@ nimbusIsReady:
 
 nimbusTelemetry:
   description: A feature that enables or disables Nimbus telemetry.
-  owner: project-nimbus@mozilla.com
+  owner: nimbus-team@mozilla.com
   hasExposure: false
   applications:
     - firefox-desktop
