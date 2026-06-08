@@ -1178,7 +1178,12 @@ main.newtab-main section {
   --row-height: calc(var(--mrec-height) / 4);
   --side-col-width: calc(2 * var(--col-width));
   --content-col-width: minmax(calc((4 * var(--col-width)) + 34px), var(--content-max-width));
-  --content-max-width: calc(16 * var(--col-width) + 15 * var(--space-medium));
+  --col-span-2: calc(2 * var(--col-width) + 1 * var(--space-medium));
+  --col-span-3: calc(3 * var(--col-width) + 2 * var(--space-medium));
+  --col-span-4: calc(4 * var(--col-width) + 3 * var(--space-medium));
+  --col-span-12: calc(12 * var(--col-width) + 11 * var(--space-medium));
+  --col-span-16: calc(16 * var(--col-width) + 15 * var(--space-medium));
+  --content-max-width: var(--col-span-16);
 }
 
 .nova-enabled.container {
@@ -11770,18 +11775,18 @@ button.arrow-button:dir(rtl) {
 .nova-enabled .ds-highlights {
   display: grid;
   grid-column: 1/-1;
-  grid-template-columns: repeat(2, calc(2 * var(--col-width) + 1 * var(--space-medium)));
+  grid-template-columns: repeat(2, var(--col-span-2));
   gap: var(--space-medium);
   justify-content: center;
 }
 @container content-grid (inline-size >= calc(8 * 75px + 7 * 0.75rem)) {
   .nova-enabled .ds-highlights {
-    grid-template-columns: repeat(4, calc(2 * var(--col-width) + 1 * var(--space-medium)));
+    grid-template-columns: repeat(4, var(--col-span-2));
   }
 }
 @container content-grid (inline-size >= calc(12 * 75px + 11 * 0.75rem)) {
   .nova-enabled .ds-highlights {
-    grid-template-columns: repeat(4, calc(3 * var(--col-width) + 2 * var(--space-medium)));
+    grid-template-columns: repeat(4, var(--col-span-3));
   }
 }
 .nova-enabled .ds-highlights .ds-highlights-title {
@@ -11887,12 +11892,12 @@ button.arrow-button:dir(rtl) {
   outline: var(--focus-outline);
 }
 .nova-enabled .content .ds-navigation {
-  grid-column: 1/-1;
   display: grid;
   grid-template-columns: repeat(auto-fill, calc(4 * var(--col-width) + 3 * var(--space-medium)));
-  justify-content: center;
-  padding-block-end: var(--space-xxlarge);
   gap: var(--space-medium);
+  justify-content: center;
+  grid-column: 1/-1;
+  padding-block-end: var(--space-xxlarge);
 }
 .nova-enabled .content .ds-navigation .ds-navigation-privacy {
   grid-column: 1/-1;
@@ -13931,7 +13936,7 @@ button.arrow-button:dir(rtl) {
 }
 
 .nova-enabled .ad-banner-wrapper .ad-banner-inner.billboard {
-  --billboard-container-width: calc(12 * var(--col-width) + 11 * var(--space-medium));
+  --billboard-container-width: var(--col-span-12);
 }
 .nova-enabled .ad-banner-wrapper .ad-banner-inner.billboard .ad-banner-link {
   display: flex;
