@@ -1,3 +1,4 @@
+// |jit-test| slow
 var N = 15000;
 var leaf = parseModule("export var x = 1;");
 registerModule("m" + (N - 1), leaf);

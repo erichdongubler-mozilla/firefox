@@ -1,3 +1,4 @@
+// |jit-test| slow
 var N = 15000;
 var mods = new Array(N + 1);
 for (var i = 0; i <= N; i++) {

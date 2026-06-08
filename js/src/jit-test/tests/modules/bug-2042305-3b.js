@@ -1,3 +1,4 @@
+// |jit-test| slow
 var N = 15000;
 var mods = new Array(N);
 mods[N - 1] = registerModule('f' + (N - 1),
