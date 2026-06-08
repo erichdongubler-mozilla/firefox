@@ -99,12 +99,12 @@ class TrackingProtectionPanelInteractorTest {
             )
         }
 
-        interactor.openDetails(TrackingProtectionCategory.REDIRECT_TRACKERS, true)
+        interactor.openDetails(TrackingProtectionCategory.CRYPTOMINERS, true)
 
         verify {
             store.dispatch(
                 ProtectionsAction.EnterDetailsMode(
-                    TrackingProtectionCategory.REDIRECT_TRACKERS,
+                    TrackingProtectionCategory.CRYPTOMINERS,
                     true,
                 ),
             )
