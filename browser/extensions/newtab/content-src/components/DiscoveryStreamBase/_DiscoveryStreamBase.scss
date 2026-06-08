@@ -120,12 +120,26 @@ $ds-width: 936px;
 // ds-section-wrapper is the centering grid: auto-fill with 4-column tracks
 // so that section headings and card grids share the same width and alignment.
 .nova-enabled .content .ds-section-wrapper {
-  @include nova-centering-grid(4);
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    calc(4 * var(--col-width) + 3 * var(--space-medium))
+  );
+  gap: var(--space-medium);
+  justify-content: center;
+  grid-column: 1 / -1;
 }
 
 // @nova-cleanup(remove-conditional): Remove .nova-enabled selector, make default behavior.
 // ds-card-grid-container is the centering grid: auto-fill with 4-column tracks
 // so that ds-header and ds-card-grid share the same width and alignment.
 .nova-enabled .content .ds-card-grid-container {
-  @include nova-centering-grid(4);
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    calc(4 * var(--col-width) + 3 * var(--space-medium))
+  );
+  gap: var(--space-medium);
+  justify-content: center;
+  grid-column: 1 / -1;
 }
