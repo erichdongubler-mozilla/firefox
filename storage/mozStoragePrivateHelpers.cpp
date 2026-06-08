@@ -47,6 +47,7 @@ nsresult convertResultCode(int aSQLiteResultCode) {
     case SQLITE_PERM:
     case SQLITE_CANTOPEN:
       return NS_ERROR_FILE_ACCESS_DENIED;
+    case SQLITE_PROTOCOL:  // WAL locking race; transient like SQLITE_BUSY.
     case SQLITE_BUSY:
       return NS_ERROR_STORAGE_BUSY;
     case SQLITE_LOCKED:
@@ -56,11 +57,14 @@ nsresult convertResultCode(int aSQLiteResultCode) {
     case SQLITE_IOERR:
       return NS_ERROR_STORAGE_IOERR;
     case SQLITE_FULL:
+    case SQLITE_NOLFS:
     case SQLITE_TOOBIG:
       return NS_ERROR_FILE_NO_DEVICE_SPACE;
     case SQLITE_NOMEM:
       return NS_ERROR_OUT_OF_MEMORY;
+    case SQLITE_MISMATCH:
     case SQLITE_MISUSE:
+    case SQLITE_RANGE:
       return NS_ERROR_UNEXPECTED;
     case SQLITE_ABORT:
     case SQLITE_INTERRUPT:
