@@ -13,6 +13,8 @@ ChromeUtils.defineLazyGetter(lazy, "fxAccounts", () =>
   ).getFxAccountsSingleton()
 );
 ChromeUtils.defineESModuleGetters(lazy, {
+  IPPProxyManager:
+    "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
   IPProtectionService:
     "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
 });
@@ -183,6 +185,10 @@ class IPPFxaAuthProviderSingleton extends IPPFxaBaseAuthProvider {
     }
 
     deferred.resolve(entitled);
+
+    if (entitled?.isEntitled) {
+      lazy.IPPProxyManager.refreshUsage();
+    }
 
     this.#entitlementPromise = null;
 
