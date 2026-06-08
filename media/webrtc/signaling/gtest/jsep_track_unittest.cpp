@@ -1797,8 +1797,8 @@ TEST_F(JsepTrackTest, AnswerRedUlpfecNoRtx) {
         << description << " " << type << " does not have red/rtx";
       } else {
         ASSERT_FALSE(codec->mREDRTXPayloadType.empty())
-        << description << " " << type << " has red/rtx, since it offered to receive it";
-
+        << description << " " << type
+        << " has red/rtx, since it offered to receive it";
       }
     }
   }
