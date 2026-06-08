@@ -38,6 +38,7 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateEarliestTrackingDate
 import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateTrackersBlockedThisWeek
 import org.mozilla.fenix.components.appstate.AppState
 import org.robolectric.Shadows.shadowOf
@@ -60,6 +61,8 @@ class TrackersBlockedFeatureTest {
     private val fetchEventsDateTo = slot<Long>()
     private val fetchTotalOnSuccess = slot<(Int) -> Unit>()
     private val fetchTotalOnError = slot<(Throwable) -> Unit>()
+    private val fetchDateOnSuccess = slot<(Long?) -> Unit>()
+    private val fetchDateOnError = slot<(Throwable) -> Unit>()
 
     @Before
     fun setup() {
@@ -79,6 +82,13 @@ class TrackersBlockedFeatureTest {
             )
         } answers { }
 
+        every {
+            trackingProtectionUseCases.fetchEarliestTrackingDate.invoke(
+                onSuccess = capture(fetchDateOnSuccess),
+                onError = capture(fetchDateOnError),
+            )
+        } answers { }
+
         browserStore = BrowserStore(
             BrowserState(
                 tabs = listOf(createTab(url = "https://mozilla.org", id = "tab1")),
@@ -95,32 +105,29 @@ class TrackersBlockedFeatureTest {
     }
 
     @Test
-    fun `GIVEN feature started WHEN there is no tracker blocked event for the current tab THEN fetch the total trackers blocked and trackers blocked this week`() = runTest(testDispatcher) {
+    fun `GIVEN feature started WHEN there is no tracker blocked event for the current tab THEN fetch trackers blocked information`() = runTest(testDispatcher) {
         startFeature()
         shadowOf(Looper.getMainLooper()).idle()
 
         verify {
             trackingProtectionUseCases.fetchTotalTrackersBlocked(any(), any())
             trackingProtectionUseCases.fetchTrackingEvents.invoke(any(), any(), any(), any())
+            trackingProtectionUseCases.fetchEarliestTrackingDate.invoke(any(), any())
         }
         val windowMs = fetchEventsDateTo.captured - fetchEventsDateFrom.captured
         assertEquals(TimeUnit.DAYS.toMillis(7), windowMs)
     }
 
     @Test
-    fun `GIVEN feature started WHEN a tracker is blocked THEN fetch the total trackers blocked and trackers blocked this week`() = runTest(testDispatcher) {
+    fun `GIVEN feature started WHEN a tracker is blocked THEN fetch the total trackers blocked and trackers blocked this week but not earliest date also`() = runTest(testDispatcher) {
         startFeature()
         shadowOf(Looper.getMainLooper()).idle()
 
         // Verify the initial sync
         verify(exactly = 1) {
             trackingProtectionUseCases.fetchTotalTrackersBlocked(any(), any())
-            trackingProtectionUseCases.fetchTrackingEvents.invoke(
-                dateFrom = any(),
-                dateTo = any(),
-                onSuccess = any(),
-                onError = any(),
-            )
+            trackingProtectionUseCases.fetchTrackingEvents.invoke(any(), any(), any(), any())
+            trackingProtectionUseCases.fetchEarliestTrackingDate.invoke(any(), any())
         }
         val windowMs = fetchEventsDateTo.captured - fetchEventsDateFrom.captured
         assertEquals(TimeUnit.DAYS.toMillis(7), windowMs)
@@ -137,6 +144,10 @@ class TrackersBlockedFeatureTest {
                 onSuccess = any(),
                 onError = any(),
             )
+        }
+        // Verify that new tracker blocked events don't cause refetching the earliest date of tracking events.
+        verify(exactly = 1) {
+            trackingProtectionUseCases.fetchEarliestTrackingDate.invoke(any(), any())
         }
         assertEquals(TimeUnit.DAYS.toMillis(7), windowMs)
     }
@@ -249,6 +260,18 @@ class TrackersBlockedFeatureTest {
         appActionsCaptorMiddleware.assertLastAction(UpdateTrackersBlockedThisWeek::class) { action ->
             assertEquals(4, action.blockedTrackerCategories.size)
             assertTrue(action.blockedTrackerCategories.all { it.count == 0 })
+        }
+    }
+
+    @Test
+    fun `GIVEN a successful response for fetching the earliest date of blocked trackers THEN update the state with this date`() = runTest(testDispatcher) {
+        startFeature()
+
+        blockNewTracker()
+        fetchDateOnSuccess.captured.invoke(431L)
+
+        appActionsCaptorMiddleware.assertLastAction(UpdateEarliestTrackingDate::class) { action ->
+            assertEquals(431L, action.date)
         }
     }
 

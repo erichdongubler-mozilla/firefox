@@ -8,6 +8,7 @@ import mozilla.components.feature.protection.dashboard.TrackersBlockedCategory
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateEarliestTrackingDate
 import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateTrackersBlockedCount
 import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateTrackersBlockedThisWeek
 import org.mozilla.fenix.components.appstate.AppState
@@ -35,6 +36,19 @@ class BlockedTrackersStateReducerTest {
 
         assertEquals(
             BlockedTrackersState(trackersBlockedThisWeek = newTrackersBlocked),
+            updatedState.blockedTrackersState,
+        )
+    }
+
+    @Test
+    fun `WHEN the earliest date from when we have tracking information is updated THEN update the state`() {
+        val initialState = AppState()
+        val newDate = 7L
+
+        val updatedState = BlockedTrackersStateReducer.reduce(initialState, UpdateEarliestTrackingDate(newDate))
+
+        assertEquals(
+            BlockedTrackersState(earliestTrackingDate = newDate),
             updatedState.blockedTrackersState,
         )
     }

@@ -835,6 +835,14 @@ sealed class AppAction : Action {
         data class UpdateTrackersBlockedThisWeek(
             val blockedTrackerCategories: List<TrackersBlockedCategory>,
         ) : BlockedTrackersAction()
+
+        /**
+         * Updates the earliest date for which we have information about blocked trackers.
+         *
+         * @property date The earliest date for which we have information about blocked trackers as a Unix time stamp.
+         * May be `null` if this information is not available.
+         */
+        data class UpdateEarliestTrackingDate(val date: Long?) : BlockedTrackersAction()
     }
 
     /**

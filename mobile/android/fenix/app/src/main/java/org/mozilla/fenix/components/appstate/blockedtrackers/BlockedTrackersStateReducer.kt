@@ -5,6 +5,7 @@
 package org.mozilla.fenix.components.appstate.blockedtrackers
 
 import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction
+import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateEarliestTrackingDate
 import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateTrackersBlockedCount
 import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateTrackersBlockedThisWeek
 import org.mozilla.fenix.components.appstate.AppState
@@ -22,6 +23,9 @@ object BlockedTrackersStateReducer {
         }
         is UpdateTrackersBlockedCount -> state.updateBlockedTrackersState {
             copy(trackersBlockedCount = action.count)
+        }
+        is UpdateEarliestTrackingDate -> state.updateBlockedTrackersState {
+            copy(earliestTrackingDate = action.date)
         }
     }
 

@@ -396,12 +396,14 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
 
                         Route.TrackersProtectionDashboard -> {
                             val appStore = requireComponents.appStore
-                            val trackerBlockedThisWeek by appStore.observeAsComposableState { state ->
-                                state.blockedTrackersState.trackersBlockedThisWeek
+                            val blockedTrackersState by appStore.observeAsComposableState { state ->
+                                state.blockedTrackersState
                             }
 
                             ProtectionsDashboardContent(
-                                trackersBlockedThisWeek = trackerBlockedThisWeek,
+                                totalTrackersBlocked = blockedTrackersState.trackersBlockedCount,
+                                trackersBlockedThisWeek = blockedTrackersState.trackersBlockedThisWeek,
+                                earliestTrackingDate = blockedTrackersState.earliestTrackingDate,
                                 onDismiss = {
                                     contentState = Route.TrackersPanel
                                 },
