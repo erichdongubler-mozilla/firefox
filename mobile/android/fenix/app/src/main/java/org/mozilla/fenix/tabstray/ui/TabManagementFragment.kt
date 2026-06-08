@@ -344,7 +344,13 @@ class TabManagementFragment : Fragment() {
                                             }
                                         }
                                     },
-                                    onItemLongClick = tabManagerInteractor::onTabLongClicked,
+                                    onItemLongClick = { item ->
+                                        tabsTrayStore.dispatch(
+                                            TabsTrayAction.TabItemLongClicked(
+                                                item,
+                                            ),
+                                        )
+                                    },
                                     onInactiveTabsHeaderClick =
                                         tabManagerInteractor::onInactiveTabsHeaderClicked,
                                     onDeleteAllInactiveTabsClick =
