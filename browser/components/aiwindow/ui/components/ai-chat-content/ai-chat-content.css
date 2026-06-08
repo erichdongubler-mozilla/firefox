@@ -89,7 +89,7 @@
   min-height: var(--content-height);
   width: 100%;
 
-  & > :last-child {
+  & > :last-child:not(.chat-bubble-user) {
     padding-block-end: var(--smart-window-fade-size);
   }
 
