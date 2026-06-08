@@ -1418,6 +1418,14 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.sportsWidget.celebrations.windowMs",
+    {
+      title:
+        "How recently (in ms) a match must have ended to still trigger a celebration. Default 24h; can also be set via trainhopConfig.sports.celebrationsWindowMs.",
+      value: 86400000,
+    },
+  ],
+  [
     "widgets.sports.forceLiveDataTrustable",
     {
       title:

@@ -315,7 +315,9 @@ for (const type of [
   "WIDGETS_SPORTS_LIVE_HIDDEN",
   "WIDGETS_SPORTS_LIVE_UPDATE",
   "WIDGETS_SPORTS_LIVE_VISIBLE",
+  "WIDGETS_SPORTS_MARK_CELEBRATED",
   "WIDGETS_SPORTS_OPEN_MATCH_SEARCH",
+  "WIDGETS_SPORTS_SET_CELEBRATIONS",
   "WIDGETS_SPORTS_SET_FOLLOWED_ONLY",
   "WIDGETS_SPORTS_SET_LIVE_INDEX",
   "WIDGETS_SPORTS_SET_MATCHES_TAB",
@@ -6815,6 +6817,10 @@ const INITIAL_STATE = {
     lastLiveUpdated: null,
     // Index into the live matches list for the Now tab's single-card pager.
     liveIndex: 0,
+    // End-of-match celebration bookkeeping (set by the feed): `endedAt` maps a
+    // just-ended match's global_event_id to the ms timestamp it left /live;
+    // `celebrated` lists ids that have already triggered a celebration.
+    celebrations: { endedAt: {}, celebrated: [] },
   },
 };
 
@@ -7840,6 +7846,8 @@ function SportsWidget(prevState = INITIAL_STATE.SportsWidget, action) {
     }
     case actionTypes.WIDGETS_SPORTS_SET_LIVE_INDEX:
       return { ...prevState, liveIndex: action.data };
+    case actionTypes.WIDGETS_SPORTS_SET_CELEBRATIONS:
+      return { ...prevState, celebrations: action.data };
     default:
       return prevState;
   }
@@ -17252,6 +17260,41 @@ function groupMatchesBySection(matches) {
   return sections;
 }
 
+;// CONCATENATED MODULE: ./content-src/components/Widgets/SportsWidget/matchResult.mjs
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+// Resolves the winning team's `key` for a finished match, or null for a draw.
+// Mirrors the score resolution used in SportsMatchRow: regular + extra time,
+// then a penalty shootout when the aggregate is level.
+const getMatchWinnerKey = match => {
+  if (!match) {
+    return null;
+  }
+  const homeScore = (match.home_score || 0) + (match.home_extra || 0);
+  const awayScore = (match.away_score || 0) + (match.away_extra || 0);
+  if (homeScore > awayScore) {
+    return match.home_team.key;
+  }
+  if (awayScore > homeScore) {
+    return match.away_team.key;
+  }
+  // Level aggregate: a shootout decides it only when both penalty scores are
+  // present (mirrors the SportsMatchRow `hasPenalties` guard).
+  const hasPenalties =
+    match.home_penalty !== null &&
+    match.home_penalty !== undefined &&
+    match.away_penalty !== null &&
+    match.away_penalty !== undefined;
+  if (hasPenalties && match.home_penalty !== match.away_penalty) {
+    return match.home_penalty > match.away_penalty
+      ? match.home_team.key
+      : match.away_team.key;
+  }
+  return null;
+};
+
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/SportsWidget/SportsWidget.jsx
 function SportsWidget_extends() { return SportsWidget_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, SportsWidget_extends.apply(null, arguments); }
 /* This Source Code Form is subject to the terms of the Mozilla Public
@@ -17259,6 +17302,7 @@ function SportsWidget_extends() { return SportsWidget_extends = Object.assign ? 
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 // eslint-disable-next-line no-unused-vars
+
 
 
 
@@ -17284,52 +17328,6 @@ const MATCHES_TABS = {
   UPCOMING: "upcoming"
 };
 const SPORTS_CELEBRATION_ILLUSTRATION = "chrome://newtab/content/data/content/assets/firefox-motion-head-pop-up-no-bg.svg";
-
-// TODO(patch2): remove once detection wires real winning-team palettes in.
-// Sample followed-team palette (Mexico: green/white/red) for the debug trigger.
-const DEBUG_TEAM_COLORS = ["#006847", "#ffffff", "#ce1126"];
-
-// TODO(patch2): remove. A finished MEX vs RSA result so the "teams playing"
-// Results layout renders locally (the real endpoint has no results pre-kickoff),
-// letting us preview the celebration over a populated card.
-const DEBUG_MOCK_SPORTS_DATA = {
-  teams: [{
-    key: "MEX",
-    name: "Mexico",
-    colors: ["#006847", "#ce1126"]
-  }, {
-    key: "RSA",
-    name: "South Africa",
-    colors: ["#007749", "#ffb612"]
-  }],
-  matches: {
-    previous: [{
-      home_team: {
-        key: "MEX",
-        name: "Mexico",
-        group: "Group L"
-      },
-      away_team: {
-        key: "RSA",
-        name: "South Africa",
-        group: "Group L"
-      },
-      date: "2026-06-12T17:00:00+00:00",
-      status_type: "ended",
-      home_score: 2,
-      away_score: 1,
-      home_extra: null,
-      away_extra: null,
-      home_penalty: null,
-      away_penalty: null,
-      stage: "Group Stage",
-      query: "Mexico vs South Africa"
-    }],
-    current: [],
-    next: []
-  },
-  live: []
-};
 function getVisibleMatchesTabs(hasLiveGames, hasPreviousResults) {
   return Object.values(MATCHES_TABS)
   // Only show the Now tab when there are live games.
@@ -17355,8 +17353,10 @@ const SportsWidget_PREF_NOVA_ENABLED = "nova.enabled";
 const SportsWidget_PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
 const PREF_SPORTS_WIDGET_LIVE_ENABLED = "widgets.sportsWidget.live.enabled";
 const PREF_FORCE_LIVE_DATA_TRUSTABLE = "widgets.sports.forceLiveDataTrustable";
-// Kill switch for the end-of-match celebration animations.
+// Celebration gating + "recently ended" window (off by default; opt-in).
 const PREF_SPORTS_CELEBRATIONS_ENABLED = "widgets.sportsWidget.celebrations.enabled";
+const PREF_SPORTS_CELEBRATIONS_WINDOW_MS = "widgets.sportsWidget.celebrations.windowMs";
+const DEFAULT_CELEBRATION_WINDOW_MS = 86400000; // 24 hours
 
 // World Cup 2026 kickoff: June 11, 2026 at 19:00 UTC. Used as a temporary
 // guard to ignore /live data while the endpoint still serves mock matches
@@ -17627,7 +17627,11 @@ function SportsWidget_SportsWidget({
   // that team's colors; any other ended match passes none (generic). Celebrations
   // are off by default and opt-in via the pref OR trainhopConfig, so they ship
   // dark and can be enabled remotely without risking the rest of the widget.
-  const celebrationsEnabled = prefs[PREF_SPORTS_CELEBRATIONS_ENABLED] || prefs.trainhopConfig?.sports?.celebrationsEnabled;
+  // The canonical trainhop key is the flat, sportsWidget-prefixed
+  // widgets.sportsWidgetCelebrationsEnabled (matching liveEnabled above); the
+  // nested sports.celebrationsEnabled is the legacy alias kept for in-flight
+  // rollouts.
+  const celebrationsEnabled = prefs[PREF_SPORTS_CELEBRATIONS_ENABLED] || prefs.trainhopConfig?.widgets?.sportsWidgetCelebrationsEnabled || prefs.trainhopConfig?.sports?.celebrationsEnabled;
   const celebrate = (0,external_React_namespaceObject.useCallback)((kind, colors = null) => {
     if (!celebrationsEnabled) {
       return;
@@ -17635,20 +17639,74 @@ function SportsWidget_SportsWidget({
     setCelebrationColors(kind === "followed" ? colors : null);
     triggerCelebration();
   }, [triggerCelebration, celebrationsEnabled]);
-  // TODO(patch2): remove. Seeds a finished match into content state so the
-  // Results "teams playing" layout renders locally for previewing the
-  // celebration. Intentionally does not follow a team, so no followed-team
-  // border is applied to this view.
-  const seedMockMatch = (0,external_React_namespaceObject.useCallback)(() => {
-    dispatch({
-      type: actionTypes.WIDGETS_SPORTS_SET_MATCHES_TAB,
-      data: MATCHES_TABS.RESULTS
-    });
-    dispatch({
-      type: actionTypes.WIDGETS_SPORTS_WIDGET_SET,
-      data: DEBUG_MOCK_SPORTS_DATA
-    });
-  }, [dispatch]);
+
+  // Celebration trigger: when the Results highlight shows a match that ended
+  // within the window and hasn't been celebrated, fire once. Followed team
+  // won/tied -> team colors; no followed team -> generic; followed loss ->
+  // nothing. celebratedRef guards against re-firing within this session;
+  // `celebrations.celebrated` (persisted by the feed) guards across reloads.
+  const {
+    celebrations
+  } = sportsWidgetData;
+  // Trainhop config wins so the window can be tuned remotely; the pref is the
+  // local fallback, then the hardcoded default. Canonical widgets key first,
+  // then the legacy sports alias, mirroring celebrationsEnabled above.
+  const celebrationWindowMs = prefs.trainhopConfig?.widgets?.sportsWidgetCelebrationsWindowMs ?? prefs.trainhopConfig?.sports?.celebrationsWindowMs ?? prefs[PREF_SPORTS_CELEBRATIONS_WINDOW_MS] ?? DEFAULT_CELEBRATION_WINDOW_MS;
+  const celebratedRef = (0,external_React_namespaceObject.useRef)(new Set());
+  const [isPageVisible, setIsPageVisible] = (0,external_React_namespaceObject.useState)(typeof document === "undefined" || document.visibilityState === "visible");
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const onVisibility = () => setIsPageVisible(document.visibilityState === "visible");
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!celebrationsEnabled || !isPageVisible || widgetState !== WIDGET_STATES.MATCHES || activeTab !== MATCHES_TABS.RESULTS || showResultsList) {
+      return;
+    }
+    const [match] = sortedPrevious;
+    const id = match?.global_event_id;
+    if (id === null || id === undefined) {
+      return;
+    }
+    const endedAt = celebrations?.endedAt?.[id];
+    if (!endedAt || Date.now() - endedAt >= celebrationWindowMs || celebrations?.celebrated?.includes(id) || celebratedRef.current.has(id)) {
+      return;
+    }
+    const winnerKey = getMatchWinnerKey(match);
+    const homeKey = match.home_team.key;
+    const awayKey = match.away_team.key;
+    // Ownership uses the raw saved selections, not selectedTeamsSet (which
+    // drops eliminated teams). A followed team's knockout loss eliminates it,
+    // so selectedTeamsSet would make it look unfollowed and fire the generic
+    // celebration instead of suppressing it.
+    const homeFollowed = selectedTeams.includes(homeKey);
+    const awayFollowed = selectedTeams.includes(awayKey);
+    let followedKey = null;
+    if (homeFollowed && awayFollowed) {
+      // Both followed: celebrate the winner (home on a draw).
+      followedKey = winnerKey || homeKey;
+    } else if (homeFollowed) {
+      followedKey = homeKey;
+    } else if (awayFollowed) {
+      followedKey = awayKey;
+    }
+    // Consume the event up front so it never re-fires (and a suppressed
+    // followed loss can't replay as a generic celebration after an unfollow).
+    celebratedRef.current.add(id);
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.WIDGETS_SPORTS_MARK_CELEBRATED,
+      data: id
+    }));
+    // A followed team that lost gets no animation (ties count as a win).
+    if (followedKey && winnerKey && winnerKey !== followedKey) {
+      return;
+    }
+    if (followedKey) {
+      celebrate("followed", teamColorsByKey.get(followedKey));
+    } else {
+      celebrate("generic");
+    }
+  }, [celebrationsEnabled, isPageVisible, widgetState, activeTab, showResultsList, sortedPrevious, celebrations, celebrationWindowMs, selectedTeams, teamColorsByKey, celebrate, dispatch]);
 
   // Live polling visibility gate. Separate from the one-shot impression
   // observer above (which unobserves after the first intersect) — this one
@@ -18052,13 +18110,7 @@ function SportsWidget_SportsWidget({
     "data-l10n-id": "newtab-sports-widget-menu-view-results",
     onClick: handleViewResults,
     disabled: !hasPreviousResults
-  }), /*#__PURE__*/external_React_default().createElement("panel-item", {
-    onClick: seedMockMatch
-  }, "Debug: seed mock match"), /*#__PURE__*/external_React_default().createElement("panel-item", {
-    onClick: () => celebrate("followed", DEBUG_TEAM_COLORS)
-  }, "Debug: followed celebration"), /*#__PURE__*/external_React_default().createElement("panel-item", {
-    onClick: () => celebrate("generic")
-  }, "Debug: generic celebration"), widgetsMayBeMaximized && /*#__PURE__*/external_React_default().createElement("panel-item", {
+  }), widgetsMayBeMaximized && /*#__PURE__*/external_React_default().createElement("panel-item", {
     submenu: "sports-size-submenu"
   }, /*#__PURE__*/external_React_default().createElement("span", {
     "data-l10n-id": "newtab-widget-menu-change-size"
