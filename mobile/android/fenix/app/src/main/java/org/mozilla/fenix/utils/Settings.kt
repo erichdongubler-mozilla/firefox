@@ -3219,7 +3219,7 @@ class Settings(
      */
     var longfoxEnabled by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_longfox),
-        default = false,
+        default = { FxNimbus.features.longfox.value().enabled },
     )
 
     /**
