@@ -7,6 +7,8 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSMathMinBinding.h"
 #include "mozilla/dom/CSSNumericArray.h"
@@ -20,6 +22,20 @@ CSSMathMin::CSSMathMin(nsCOMPtr<nsISupports> aParent,
                        RefPtr<CSSNumericArray> aValues)
     : CSSMathValue(std::move(aParent), MathValueType::MathMin),
       mValues(std::move(aValues)) {}
+
+// static
+RefPtr<CSSMathMin> CSSMathMin::Create(nsCOMPtr<nsISupports> aParent,
+                                      const StyleMathMin& aMathMin) {
+  nsTArray<RefPtr<CSSNumericValue>> values;
+
+  for (const auto& value : aMathMin) {
+    values.AppendElement(CSSNumericValue::Create(aParent, value));
+  }
+
+  auto array = MakeRefPtr<CSSNumericArray>(aParent, std::move(values));
+
+  return MakeRefPtr<CSSMathMin>(std::move(aParent), std::move(array));
+}
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSMathMin, CSSMathValue)
 NS_IMPL_CYCLE_COLLECTION_INHERITED(CSSMathMin, CSSMathValue, mValues)
@@ -86,6 +102,21 @@ void CSSMathMin::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
   }
 
   aDest.Append(")"_ns);
+}
+
+StyleMathMin CSSMathMin::ToStyleMathMin() const {
+  nsTArray<StyleNumericValue> values;
+
+  for (const RefPtr<CSSNumericValue>& value : mValues->GetValues()) {
+    Maybe<StyleNumericValue> styleNumericValue = value->ToStyleNumericValue();
+    if (styleNumericValue.isNothing()) {
+      continue;
+    }
+
+    values.AppendElement(styleNumericValue.extract());
+  }
+
+  return StyleMathMin{std::move(values)};
 }
 
 const CSSMathMin& CSSMathValue::GetAsCSSMathMin() const {

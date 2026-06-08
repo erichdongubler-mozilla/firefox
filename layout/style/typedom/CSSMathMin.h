@@ -23,6 +23,8 @@ namespace mozilla {
 
 struct CSSPropertyId;
 class ErrorResult;
+struct StyleNumericValue;
+using StyleMathMin = CopyableTArray<StyleNumericValue>;
 
 namespace dom {
 
@@ -33,6 +35,9 @@ class Sequence;
 class CSSMathMin final : public CSSMathValue {
  public:
   CSSMathMin(nsCOMPtr<nsISupports> aParent, RefPtr<CSSNumericArray> aValues);
+
+  static RefPtr<CSSMathMin> Create(nsCOMPtr<nsISupports> aParent,
+                                   const StyleMathMin& aMathMin);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CSSMathMin, CSSMathValue)
@@ -54,6 +59,8 @@ class CSSMathMin final : public CSSMathValue {
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                              const SerializationContext& aContext,
                              nsACString& aDest) const;
+
+  StyleMathMin ToStyleMathMin() const;
 
  private:
   virtual ~CSSMathMin() = default;

@@ -40,6 +40,13 @@ RefPtr<CSSMathValue> CSSMathValue::Create(nsCOMPtr<nsISupports> aParent,
       mathValue = CSSMathSum::Create(std::move(aParent), mathSum);
       break;
     }
+
+    case StyleMathValue::Tag::Min: {
+      const auto& mathMin = aMathValue.AsMin();
+
+      mathValue = CSSMathMin::Create(std::move(aParent), mathMin);
+      break;
+    }
   }
 
   return mathValue;
@@ -175,8 +182,11 @@ Maybe<StyleMathValue> CSSMathValue::ToStyleMathValue() const {
     case MathValueType::MathMax:
       return Nothing();
 
-    case MathValueType::MathMin:
-      return Nothing();
+    case MathValueType::MathMin: {
+      const CSSMathMin& mathMin = GetAsCSSMathMin();
+
+      return Some(StyleMathValue::Min(mathMin.ToStyleMathMin()));
+    }
 
     case MathValueType::MathInvert:
       return Nothing();
