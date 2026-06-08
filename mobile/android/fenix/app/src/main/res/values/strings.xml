@@ -2586,8 +2586,6 @@
     <string name="etp_suspected_fingerprinters_description">Enables fingerprinting protection to stop suspected fingerprinters.</string>
     <!-- Category of trackers (fingerprinters) that can be blocked by Enhanced Tracking Protection -->
     <string name="etp_known_fingerprinters_title">Known Fingerprinters</string>
-    <!-- Label for the fingerprinters category shown in the tracking protections dashboard breakdown -->
-    <string name="tracking_dashboard_fingerprinters_category_name">Fingerprinters</string>
     <!-- Description of the SmartBlock Enhanced Tracking Protection feature. The * symbol is intentionally hardcoded here,
          as we use it on the UI to indicate which trackers have been partially unblocked.  -->
     <string name="preference_etp_smartblock_description">Some trackers marked below have been partially unblocked on this page because you interacted with them *.</string>

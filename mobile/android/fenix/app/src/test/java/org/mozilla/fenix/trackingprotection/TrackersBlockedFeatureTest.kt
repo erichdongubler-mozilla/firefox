@@ -200,13 +200,22 @@ class TrackersBlockedFeatureTest {
 
         appActionsCaptorMiddleware.assertLastAction(UpdateTrackersBlockedThisWeek::class) { action ->
             val byName = action.blockedTrackerCategories.associateBy { it.name }
-            assertEquals(3, byName.getValue(R.string.etp_cookies_title).count)
-            assertEquals(7, byName.getValue(R.string.etp_social_media_trackers_title).count)
+            assertEquals(
+                3,
+                byName.getValue(R.plurals.trackers_blocked_panel_num_cross_site_cookies).count,
+            )
+            assertEquals(
+                7,
+                byName.getValue(R.plurals.trackers_blocked_panel_num_social_media_trackers).count,
+            )
             assertEquals(
                 4,
-                byName.getValue(R.string.tracking_dashboard_fingerprinters_category_name).count,
+                byName.getValue(R.plurals.trackers_blocked_panel_num_fingerprinters).count,
             )
-            assertEquals(11, byName.getValue(R.string.etp_tracking_content_title).count)
+            assertEquals(
+                11,
+                byName.getValue(R.plurals.trackers_blocked_panel_num_trackers_2).count,
+            )
         }
     }
 
@@ -224,7 +233,7 @@ class TrackersBlockedFeatureTest {
 
         appActionsCaptorMiddleware.assertLastAction(UpdateTrackersBlockedThisWeek::class) { action ->
             val fingerprinters = action.blockedTrackerCategories
-                .single { it.name == R.string.tracking_dashboard_fingerprinters_category_name }
+                .single { it.name == R.plurals.trackers_blocked_panel_num_fingerprinters }
             assertEquals(7, fingerprinters.count)
             assertEquals(iconsR.drawable.mozac_ic_fingerprinter_24, fingerprinters.icon)
         }

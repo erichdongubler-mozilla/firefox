@@ -33,7 +33,6 @@ import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
 import java.text.DateFormat
 import java.util.Date
-import mozilla.components.feature.protection.dashboard.R as dashboardR
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -111,22 +110,22 @@ private fun ProtectionsDashboardContentPreview(
     val trackersBlocked = listOf(
         TrackersBlockedCategory(
             icon = iconsR.drawable.mozac_ic_cookies_24,
-            name = dashboardR.string.protections_dashboard_category_cookies,
+            name = R.plurals.trackers_blocked_panel_num_cross_site_cookies,
             count = 302,
         ),
         TrackersBlockedCategory(
             icon = iconsR.drawable.mozac_ic_social_tracker_24,
-            name = dashboardR.string.protections_dashboard_category_social,
+            name = R.plurals.trackers_blocked_panel_num_social_media_trackers,
             count = 241,
         ),
         TrackersBlockedCategory(
             icon = iconsR.drawable.mozac_ic_fingerprinter_24,
-            name = dashboardR.string.protections_dashboard_category_fingerprinters,
+            name = R.plurals.trackers_blocked_panel_num_fingerprinters,
             count = 0,
         ),
         TrackersBlockedCategory(
             icon = iconsR.drawable.mozac_ic_image_24,
-            name = dashboardR.string.protections_dashboard_category_tracking_content,
+            name = R.plurals.trackers_blocked_panel_num_trackers_2,
             count = 2234,
         ),
     )
