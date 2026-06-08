@@ -722,7 +722,9 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
         90000   // clock rate (match other video codecs)
     );
     codec->mEnabled = aPrefs.RedUlpfecEnabled();
-    codec->EnableRtx("119");
+    if (aPrefs.UseRtx()) {
+      codec->EnableRtx("119");
+    }
     return ConfigureCommonVideoCodec(std::move(codec), aPrefs);
   }
 
