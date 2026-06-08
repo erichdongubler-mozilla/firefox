@@ -38,6 +38,7 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateTrackersBlockedThisWeek
 import org.mozilla.fenix.components.appstate.AppState
 import org.robolectric.Shadows.shadowOf
 import java.util.concurrent.TimeUnit
@@ -186,7 +187,7 @@ class TrackersBlockedFeatureTest {
             ),
         )
 
-        appActionsCaptorMiddleware.assertLastAction(AppAction.UpdateTrackersBlockedThisWeek::class) { action ->
+        appActionsCaptorMiddleware.assertLastAction(UpdateTrackersBlockedThisWeek::class) { action ->
             val byName = action.blockedTrackerCategories.associateBy { it.name }
             assertEquals(3, byName.getValue(R.string.etp_cookies_title).count)
             assertEquals(7, byName.getValue(R.string.etp_social_media_trackers_title).count)
@@ -210,7 +211,7 @@ class TrackersBlockedFeatureTest {
             ),
         )
 
-        appActionsCaptorMiddleware.assertLastAction(AppAction.UpdateTrackersBlockedThisWeek::class) { action ->
+        appActionsCaptorMiddleware.assertLastAction(UpdateTrackersBlockedThisWeek::class) { action ->
             val fingerprinters = action.blockedTrackerCategories
                 .single { it.name == R.string.tracking_dashboard_fingerprinters_category_name }
             assertEquals(7, fingerprinters.count)
@@ -232,7 +233,7 @@ class TrackersBlockedFeatureTest {
             ),
         )
 
-        appActionsCaptorMiddleware.assertLastAction(AppAction.UpdateTrackersBlockedThisWeek::class) { action ->
+        appActionsCaptorMiddleware.assertLastAction(UpdateTrackersBlockedThisWeek::class) { action ->
             val total = action.blockedTrackerCategories.sumOf { it.count }
             assertEquals(1, total)
         }
@@ -245,7 +246,7 @@ class TrackersBlockedFeatureTest {
         blockNewTracker()
         fetchEventsOnSuccess.captured.invoke(emptyList())
 
-        appActionsCaptorMiddleware.assertLastAction(AppAction.UpdateTrackersBlockedThisWeek::class) { action ->
+        appActionsCaptorMiddleware.assertLastAction(UpdateTrackersBlockedThisWeek::class) { action ->
             assertEquals(4, action.blockedTrackerCategories.size)
             assertTrue(action.blockedTrackerCategories.all { it.count == 0 })
         }

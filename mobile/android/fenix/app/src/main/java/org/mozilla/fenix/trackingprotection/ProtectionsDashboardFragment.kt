@@ -59,7 +59,7 @@ class ProtectionsDashboardFragment : BottomSheetDialogFragment() {
     ) = content {
         val appStore = requireComponents.appStore
         val trackerBlockedThisWeek by appStore.observeAsComposableState { state ->
-            state.trackersBlockedThisWeek
+            state.blockedTrackersState.trackersBlockedThisWeek
         }
 
         ProtectionsDashboardContent(trackerBlockedThisWeek) { dismiss() }

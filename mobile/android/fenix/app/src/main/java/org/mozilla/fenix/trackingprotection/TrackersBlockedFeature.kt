@@ -28,7 +28,8 @@ import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
 import mozilla.components.support.utils.DefaultDateTimeProvider
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
-import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateTrackersBlockedCount
+import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateTrackersBlockedThisWeek
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 import mozilla.components.ui.icons.R as iconsR
@@ -85,7 +86,7 @@ class TrackersBlockedFeature(
     private fun syncTotalTrackerBlocked() {
         trackingProtectionUseCases.fetchTotalTrackersBlocked(
             onSuccess = {
-                appStore.dispatch(AppAction.UpdateTrackersBlockedCount(it))
+                appStore.dispatch(UpdateTrackersBlockedCount(it))
             },
         )
     }
@@ -97,7 +98,7 @@ class TrackersBlockedFeature(
             dateFrom = oneWeekAgo,
             dateTo = now,
             onSuccess = {
-                appStore.dispatch(AppAction.UpdateTrackersBlockedThisWeek(it.blockedTrackersCategories))
+                appStore.dispatch(UpdateTrackersBlockedThisWeek(it.blockedTrackersCategories))
             },
         )
     }

@@ -247,7 +247,10 @@ class TabManagementFragment : Fragment() {
             val state by tabsTrayStore.stateFlow.collectAsState()
             val appState by requireComponents.appStore.stateFlow.collectAsState()
             snackbarHostState = remember { SnackbarHostState() }
-            val trackersBlockedCount = if (showPrivacyReport) appState.trackersBlockedCount else null
+            val trackersBlockedCount = when (showPrivacyReport) {
+                true -> appState.blockedTrackersState.trackersBlockedCount
+                false -> null
+            }
 
             BackHandler {
                 when {
