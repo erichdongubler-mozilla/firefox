@@ -4878,7 +4878,7 @@ ${
       this.setPageProxyState("invalid", true);
     }
 
-    this.searchModeSwitcher?.onSearchModeChanged();
+    Services.obs.notifyObservers(null, "urlbar-searchmodechanged");
   }
 
   /**
