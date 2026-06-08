@@ -319,6 +319,12 @@ add_task(async function test_status_card_connecting() {
     "Button in connecting state should be present and disabled"
   );
 
+  const locationButton = statusCard.locationButtonEl;
+  Assert.ok(
+    locationButton?.disabled,
+    "Location button in connecting state should be present and disabled"
+  );
+
   await closePanel();
   await cleanupStatusCardTest();
 });
