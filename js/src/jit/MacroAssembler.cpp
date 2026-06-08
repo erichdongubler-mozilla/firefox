@@ -9810,6 +9810,11 @@ void MacroAssembler::maybeLoadIteratorFromShape(Register obj, Register dest,
                                     NativeIterator::offsetOfFirstProperty()),
                           nativeIterator);
 
+  if constexpr (sizeof(PropertyIndex) != alignof(GCPtr<Shape*>)) {
+    addPtr(Imm32(alignof(GCPtr<Shape*>) - 1), nativeIterator);
+    andPtr(Imm32(-int32_t(alignof(GCPtr<Shape*>))), nativeIterator);
+  }
+
   Register expectedProtoShape = nativeIterator;
 
   // We have to compare the shapes in the native iterator with the shapes on the
