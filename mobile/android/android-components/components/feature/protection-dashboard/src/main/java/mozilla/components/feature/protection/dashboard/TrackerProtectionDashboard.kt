@@ -165,15 +165,14 @@ private fun WeeklyStatsEmptyContent(
     Text(
         text = stringResource(R.string.mozac_protections_dashboard_empty_title, appName),
         modifier = Modifier.semantics { heading() },
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Medium,
+        style = AcornTheme.typography.subtitle1,
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center,
     )
 
     Text(
         text = stringResource(R.string.mozac_protections_dashboard_empty_subtitle),
-        style = MaterialTheme.typography.bodyMedium,
+        style = AcornTheme.typography.subtitle1,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
     )
@@ -208,11 +207,9 @@ private fun WeeklyStatsContent(
 
         Text(
             text = stringResource(R.string.mozac_protections_dashboard_trackers_blocked_this_week_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Normal,
+            style = AcornTheme.typography.subtitle1,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
-            letterSpacing = 0.15.sp,
         )
 
         if (sitesCount > 0) {
@@ -223,7 +220,7 @@ private fun WeeklyStatsContent(
                     sitesCount,
                     sitesCount,
                 ),
-                style = MaterialTheme.typography.bodyMedium,
+                style = AcornTheme.typography.subtitle1,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
@@ -262,7 +259,7 @@ private fun DataSavedChip(
                 horizontal = AcornTheme.layout.space.static100,
                 vertical = AcornTheme.layout.space.static25,
             ),
-            style = MaterialTheme.typography.bodyMedium,
+            style = AcornTheme.typography.subtitle1,
             color = colors.chipText,
         )
     }
@@ -328,7 +325,7 @@ private fun TotalTrackersFooter(
             .padding(top = AcornTheme.layout.space.static300)
             .padding(bottom = AcornTheme.layout.space.static200)
             .padding(horizontal = AcornTheme.layout.space.static400),
-        style = MaterialTheme.typography.bodyMedium,
+        style = AcornTheme.typography.body2,
         color = MaterialTheme.colorScheme.onSurface,
     )
 }
@@ -371,7 +368,7 @@ private fun TrackerCategoryRow(
         ) {
             Text(
                 text = pluralStringResource(trackersBlocked.name, trackersBlocked.count, trackersBlocked.count),
-                style = MaterialTheme.typography.bodyMedium,
+                style = AcornTheme.typography.body1,
                 color = contentColor,
                 textAlign = TextAlign.Start,
                 maxLines = 3,
