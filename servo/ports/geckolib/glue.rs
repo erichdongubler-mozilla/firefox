@@ -6094,7 +6094,7 @@ pub unsafe extern "C" fn Servo_MediaList_SetText(
         CallerType::NonSystem => Origin::Author,
     };
 
-    let context = ParserContext::new(
+    let mut context = ParserContext::new(
         origin,
         url_data,
         Some(CssRuleType::Media),
@@ -6108,7 +6108,7 @@ pub unsafe extern "C" fn Servo_MediaList_SetText(
     );
 
     write_locked_arc(list, |list: &mut MediaList| {
-        *list = MediaList::parse(&context, &mut parser);
+        *list = MediaList::parse(&mut context, &mut parser);
     })
 }
 
