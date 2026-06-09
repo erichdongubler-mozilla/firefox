@@ -460,6 +460,10 @@ class SessionControlInteractor(
         sportsController.handleOnGetCustomWallpaperClicked()
     }
 
+    override fun onSportsWidgetShareClicked() {
+        sportsController.handleSportsWidgetShareClicked()
+    }
+
     override fun onMatchClicked(homeTeam: String?, awayTeam: String?, date: String?) {
         sportsController.handleMatchClicked(homeTeam = homeTeam, awayTeam = awayTeam, date = date)
     }

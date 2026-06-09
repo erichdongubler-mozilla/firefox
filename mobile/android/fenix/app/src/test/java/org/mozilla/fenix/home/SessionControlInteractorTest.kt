@@ -316,6 +316,12 @@ class SessionControlInteractorTest {
     }
 
     @Test
+    fun `WHEN the share menu item is clicked THEN sports controller handles the share`() {
+        interactor.onSportsWidgetShareClicked()
+        verify { sportsController.handleSportsWidgetShareClicked() }
+    }
+
+    @Test
     fun `WHEN the privacy report is tapped THEN tracking protection controller handles the action`() {
         interactor.onPrivacyReportTapped()
 

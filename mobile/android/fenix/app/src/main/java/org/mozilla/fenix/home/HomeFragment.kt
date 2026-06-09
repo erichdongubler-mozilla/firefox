@@ -1285,6 +1285,9 @@ class HomeFragment : Fragment() {
                 navController = findNavController(),
                 fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
                 browserStore = requireComponents.core.store,
+                shareUseCases = requireComponents.useCases.shareUseCases,
+                worldCupLabel = getString(R.string.customize_toggle_world_cup),
+                shareCardTitle = getString(R.string.sports_widget_card_title),
                 connectivityManager = requireContext().getSystemService<ConnectivityManager>(),
             ),
         )
