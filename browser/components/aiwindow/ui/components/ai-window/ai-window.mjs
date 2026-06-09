@@ -422,9 +422,6 @@ export class AIWindow extends MozLitElement {
       "chat-conversation:seen-urls-updated",
       this.#onSeenUrlsUpdated
     );
-    this.#conversation.setHistoryResultsDispatcher(
-      this.#dispatchHistoryResults
-    );
   }
 
   #removeConversationListeners() {
@@ -444,7 +441,6 @@ export class AIWindow extends MozLitElement {
       "chat-conversation:seen-urls-updated",
       this.#onSeenUrlsUpdated
     );
-    this.#conversation.setHistoryResultsDispatcher(null);
   }
 
   #onSeenUrlsUpdated = () => {
@@ -453,9 +449,6 @@ export class AIWindow extends MozLitElement {
       this.#dispatchSeenUrls(actor);
     }
   };
-
-  #dispatchHistoryResults = payload =>
-    this.#getAIChatContentActor()?.dispatchHistoryResultsToChatContent(payload);
 
   #onMessageUpdate = (_event, message) => {
     // In fullpage, Kit must anchor to the chrome viewport (bottom of the

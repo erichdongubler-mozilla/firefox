@@ -172,8 +172,6 @@ skip-if = [
 
 ["browser_smartwindow_history_commands.js"]
 
-["browser_smartwindow_history_thumbnails.js"]
-
 ["browser_smartwindow_init.js"]
 
 ["browser_smartwindow_jump_to_bottom.js"]
