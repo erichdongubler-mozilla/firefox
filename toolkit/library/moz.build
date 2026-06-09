@@ -158,6 +158,15 @@ USE_LIBS += [
     "sqlite",
 ]
 
+# nss-rs references FREEBL_GetVector; freebl3 is not folded into nss3, so it
+# must be an explicit dependency. This cannot go into security/moz.build,
+# because in fold_libs mode, freebl3 itself links against nspr4, which is
+# folded into nss3, creating a nss3 → freebl3 → nss3 circular dependency.
+if CONFIG["OS_TARGET"] == "Linux":
+    USE_LIBS += ["freeblpriv3"]
+else:
+    USE_LIBS += ["freebl3"]
+
 if not CONFIG["USE_LIBZ_RS"]:
     USE_LIBS += [
         "zlib",
