@@ -85,9 +85,13 @@ import org.mozilla.fenix.home.store.HomepageState
 import org.mozilla.fenix.home.store.NimbusMessageState
 import org.mozilla.fenix.home.termsofuse.PrivacyNoticeBanner
 import org.mozilla.fenix.home.termsofuse.PrivacyNoticeBannerInteractor
+import org.mozilla.fenix.home.topsites.TOP_SITES_TO_SHOW
 import org.mozilla.fenix.home.topsites.TopSiteColors
 import org.mozilla.fenix.home.topsites.TopSites
 import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
+import org.mozilla.fenix.home.topsites.store.DialogState
+import org.mozilla.fenix.home.topsites.ui.AddShortcutBottomSheet
+import org.mozilla.fenix.home.topsites.ui.AddShortcutDialog
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
@@ -115,6 +119,7 @@ internal fun Homepage(
     val scrollState = rememberScrollState()
     val browsingModeChanged = interactor::onPrivateModeButtonClicked
     var showSportsCountrySelector by remember { mutableStateOf(false) }
+    var shortcutsDialogState by remember { mutableStateOf<DialogState>(DialogState.Closed) }
 
     BoxWithConstraints(
         modifier = modifier
@@ -214,6 +219,11 @@ internal fun Homepage(
                                     showHeader = showTopSitesHeader,
                                     interactor = interactor,
                                     onTopSitesItemBound = onTopSitesItemBound,
+                                    showAddShortcut = components.settings.enableAddShortcutsImprovement &&
+                                        topSites.size < TOP_SITES_TO_SHOW,
+                                    onAddShortcutClicked = {
+                                        shortcutsDialogState = DialogState.AddShortcutBottomSheet
+                                    },
                                 )
                             }
 
@@ -343,6 +353,29 @@ internal fun Homepage(
                                 )
                             }
 
+                            when (shortcutsDialogState) {
+                                DialogState.AddShortcutBottomSheet -> {
+                                    AddShortcutBottomSheet(
+                                        onDismiss = { shortcutsDialogState = DialogState.Closed },
+                                        onAddWebsiteClicked = {
+                                            shortcutsDialogState = DialogState.AddShortcut
+                                        },
+                                    )
+                                }
+
+                                DialogState.AddShortcut -> {
+                                    AddShortcutDialog(
+                                        onDismiss = { shortcutsDialogState = DialogState.Closed },
+                                        onConfirm = { title, url ->
+                                            interactor.onSaveShortcut(title = title, url = url)
+                                            shortcutsDialogState = DialogState.Closed
+                                        },
+                                    )
+                                }
+
+                                DialogState.Closed -> Unit
+                            }
+
                             if (sportsWidgetState.isDebugToolVisible) {
                                 SportsWidgetDebugTool(
                                     state = sportsWidgetState,
@@ -403,8 +436,10 @@ internal fun TopSitesSection(
     topSites: List<TopSite>,
     topSiteColors: TopSiteColors = TopSiteColors.colors(),
     showHeader: Boolean = true,
+    showAddShortcut: Boolean = false,
     interactor: TopSiteInteractor,
     onTopSitesItemBound: () -> Unit,
+    onAddShortcutClicked: () -> Unit,
 ) {
     if (showHeader) {
         HomeSectionHeader(
@@ -421,8 +456,10 @@ internal fun TopSitesSection(
         topSites = topSites,
         interactor = interactor,
         onTopSitesItemBound = onTopSitesItemBound,
+        onAddShortcutClicked = onAddShortcutClicked,
         topSiteColors = topSiteColors,
         isPager = LocalContext.current.settings().topSitesPager,
+        showAddShortcut = showAddShortcut,
     )
 }
 

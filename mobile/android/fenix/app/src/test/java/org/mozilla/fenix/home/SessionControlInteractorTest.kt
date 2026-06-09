@@ -226,6 +226,12 @@ class SessionControlInteractorTest {
     }
 
     @Test
+    fun `WHEN save shortcut is called THEN handle the save action in the controller`() {
+        interactor.onSaveShortcut(title = "Firefox", url = "firefox.com")
+        verify { topSiteController.handleSaveShortcut(title = "Firefox", url = "firefox.com") }
+    }
+
+    @Test
     fun `GIVEN a PocketStoriesInteractor WHEN a story is shown THEN handle it in a PocketStoriesController`() {
         val shownStory: PocketStory = mockk()
         val storyPosition = Triple(1, 2, 3)

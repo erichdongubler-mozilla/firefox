@@ -274,6 +274,10 @@ class SessionControlInteractor(
         topSiteController.handleShortcutsLibraryViewed()
     }
 
+    override fun onSaveShortcut(title: String, url: String) {
+        topSiteController.handleSaveShortcut(title = title, url = url)
+    }
+
     override fun showWallpapersOnboardingDialog(state: WallpaperState): Boolean {
         return controller.handleShowWallpapersOnboardingDialog(state)
     }
