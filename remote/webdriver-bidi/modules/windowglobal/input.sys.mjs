@@ -7,12 +7,12 @@ import { WindowGlobalBiDiModule } from "chrome://remote/content/webdriver-bidi/m
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  AnimationFramePromise: "chrome://remote/content/shared/Sync.sys.mjs",
   assertTargetInViewPort:
     "chrome://remote/content/shared/webdriver/Actions.sys.mjs",
   dom: "chrome://remote/content/shared/DOM.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   event: "chrome://remote/content/shared/webdriver/Event.sys.mjs",
+  executeSoon: "chrome://remote/content/shared/Sync.sys.mjs",
   FilePickerListener:
     "chrome://remote/content/shared/listeners/FilePickerListener.sys.mjs",
   OwnershipModel: "chrome://remote/content/webdriver-bidi/RemoteValue.sys.mjs",
@@ -280,9 +280,9 @@ class InputModule extends WindowGlobalBiDiModule {
     // transactions should not live longer than a single action chain.
     await ChromeUtils.endWheelTransaction(this.messageHandler.window);
 
-    // Wait for the next animation frame to make sure the page's content
-    // was updated.
-    await lazy.AnimationFramePromise(this.messageHandler.window);
+    // Wait until the main thread has processed all already queued-up
+    // runnables to ensure that dispatched input events have been handled.
+    await new Promise(resolve => lazy.executeSoon(resolve));
   }
 
   async _getClientRects(options) {
