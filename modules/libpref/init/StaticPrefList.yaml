@@ -20176,7 +20176,7 @@
 # pref for emergency purposes.
 - name: widget.gtk.rounded-bottom-corners.enabled
   type: bool
-  value: false
+  value: true
   mirror: always
   rust: true
 
