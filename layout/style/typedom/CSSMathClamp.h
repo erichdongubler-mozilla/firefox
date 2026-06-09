@@ -22,6 +22,12 @@ namespace mozilla {
 
 struct CSSPropertyId;
 class ErrorResult;
+template <class T>
+class Maybe;
+struct StyleNumericValue;
+template <typename T, size_t N>
+struct StyleOwnedArray;
+using StyleMathClamp = StyleOwnedArray<StyleNumericValue, 3>;
 
 namespace dom {
 
@@ -31,6 +37,9 @@ class CSSMathClamp final : public CSSMathValue {
  public:
   CSSMathClamp(nsCOMPtr<nsISupports> aParent, RefPtr<CSSNumericValue> aLower,
                RefPtr<CSSNumericValue> aValue, RefPtr<CSSNumericValue> aUpper);
+
+  static RefPtr<CSSMathClamp> Create(nsCOMPtr<nsISupports> aParent,
+                                     const StyleMathClamp& aMathClamp);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CSSMathClamp, CSSMathValue)
@@ -58,6 +67,10 @@ class CSSMathClamp final : public CSSMathValue {
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                              const SerializationContext& aContext,
                              nsACString& aDest) const;
+
+  // TODO: This can be changed to return StyleMathClamp directly once the
+  // Unitialized type in CSSMathValue is removed.
+  Maybe<StyleMathClamp> ToStyleMathClamp() const;
 
  private:
   virtual ~CSSMathClamp() = default;
