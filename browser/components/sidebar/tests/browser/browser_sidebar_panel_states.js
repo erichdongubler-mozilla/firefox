@@ -14,14 +14,14 @@ add_task(async function test_enable_revamp_with_open_sidebar() {
   // so we don't potentially pollute any results in subsequent tests
   const newWin = await BrowserTestUtils.openNewBrowserWindow();
   const { document, SidebarController } = newWin;
-  const sidebarContainer = document.getElementById("sidebar-container");
+  const sidebarLauncher = document.getElementById("sidebar-main");
   const sidebarHeader = document.getElementById("sidebar-header");
 
   if (SidebarController.currentID !== "viewHistorySidebar") {
     await SidebarController.show("viewHistorySidebar");
   }
   Assert.ok(SidebarController.isOpen, "isOpen is true");
-  Assert.ok(sidebarContainer.hidden, "The sidebar launcher is hidden");
+  Assert.ok(sidebarLauncher.hidden, "The sidebar launcher is hidden");
   Assert.ok(!sidebarHeader.hidden, "The sidebar header is visible");
 
   // the new sidebar launcher element should be visible
@@ -29,9 +29,9 @@ add_task(async function test_enable_revamp_with_open_sidebar() {
   info("Waiting for sidebar main to be visible and header hidden");
   let sidebarVisibilitiesChanged = Promise.all([
     BrowserTestUtils.waitForMutationCondition(
-      sidebarContainer,
+      sidebarLauncher,
       { attributes: true, attributeFilter: ["hidden"] },
-      () => !sidebarContainer.hidden
+      () => !sidebarLauncher.hidden
     ),
     BrowserTestUtils.waitForMutationCondition(
       sidebarHeader,
@@ -44,7 +44,7 @@ add_task(async function test_enable_revamp_with_open_sidebar() {
   await SpecialPowers.popPrefEnv();
   await sidebarVisibilitiesChanged;
 
-  Assert.ok(!sidebarContainer.hidden, "The sidebar launcher is visible");
+  Assert.ok(!sidebarLauncher.hidden, "The sidebar launcher is visible");
   Assert.ok(sidebarHeader.hidden, "The sidebar header is hidden");
 
   await BrowserTestUtils.closeWindow(newWin);
