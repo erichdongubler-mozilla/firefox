@@ -369,6 +369,19 @@ struct InternalBarrierMethods<T*> {
 #endif
 };
 
+template <typename T>
+struct AtomicMethods {};
+
+template <typename T>
+struct AtomicMethods<T*> {
+  static T* atomicGet(T* const* vp) {
+    return __atomic_load_n(vp, __ATOMIC_RELAXED);
+  }
+  static void atomicSet(T** vp, T* v) {
+    __atomic_store_n(vp, v, __ATOMIC_RELAXED);
+  }
+};
+
 namespace gc {
 
 MOZ_ALWAYS_INLINE void ValuePostWriteBarrier(Value* vp, const Value& prev,
@@ -426,6 +439,14 @@ struct InternalBarrierMethods<Value> {
 };
 
 template <>
+struct AtomicMethods<Value> {
+#if JS_BITS_PER_WORD == 64
+  static Value atomicGet(Value const* vp) { return vp->atomicGet(); }
+  static void atomicSet(Value* vp, const Value& v) { vp->atomicSet(v); }
+#endif
+};
+
+template <>
 struct InternalBarrierMethods<jsid> {
   static bool isMarkable(jsid id) { return id.isGCThing(); }
   static void preBarrier(jsid id) {
@@ -434,9 +455,16 @@ struct InternalBarrierMethods<jsid> {
     }
   }
   static void postBarrier(jsid* idp, jsid prev, jsid next) {}
+
 #ifdef DEBUG
   static void assertThingIsNotGray(jsid id) { JS::AssertIdIsNotGray(id); }
 #endif
+};
+
+template <>
+struct AtomicMethods<jsid> {
+  static jsid atomicGet(jsid const* idp) { return idp->atomicGet(); }
+  static void atomicSet(jsid* idp, const jsid& id) { idp->atomicSet(id); }
 };
 
 // Specialization for JS::ArrayBufferOrView subclasses.
@@ -493,6 +521,13 @@ class MOZ_NON_MEMMOVABLE BarrieredBase {
   const T& unbarrieredGet() const { return value; }
   void unbarrieredSet(const T& newValue) { value = newValue; }
 
+#if JS_BITS_PER_WORD == 64
+  T unbarrieredAtomicGet() const { return AtomicMethods<T>::atomicGet(&value); }
+  void unbarrieredAtomicSet(const T& newValue) {
+    AtomicMethods<T>::atomicSet(&value, newValue);
+  }
+#endif
+
  public:
   using ElementType = T;
 
@@ -523,6 +558,9 @@ enum BarrierOption : uint32_t {
   // The wrapper has GC lifetime. Since it will only be destroyed by the GC no
   // pre-write barrier is necessary on destruction.
   BarrierOption_HasGCLifetime = Bit(3),
+
+  // Writes to the value are performed as relaxed atomic stores.
+  BarrierOption_AtomicWrites = Bit(4),
 };
 
 // Template class implementing the barriers specified in |barrierOptions| on a
@@ -611,7 +649,13 @@ class BarrieredPtrImpl
 
  public:
   // Public for hash table rekey operations.
-  using Base::unbarrieredSet;
+  void unbarrieredSet(const T& newValue) {
+    if constexpr (hasOption(BarrierOption_AtomicWrites)) {
+      this->unbarrieredAtomicSet(newValue);
+    } else {
+      Base::unbarrieredSet(newValue);
+    }
+  }
 
   const T& get() const {
     this->maybeReadBarrier();
@@ -623,6 +667,10 @@ class BarrieredPtrImpl
   }
 
   using Base::unbarrieredGet;
+
+#if JS_BITS_PER_WORD == 64
+  using Base::unbarrieredAtomicGet;
+#endif
 
   T release() {
     // Release skips any read or prebarrier.
