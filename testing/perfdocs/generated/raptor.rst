@@ -4305,6 +4305,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ❌
         - ❌
         - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
 
 
    .. list-table:: **test-linux2404-64-nightlyasrelease/opt**
@@ -4317,6 +4322,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - mozilla-release
         - mozilla-beta
       * - **browsertime-benchmark-firefox-speedometer3**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
         - ✅
         - ✅
         - ❌
@@ -4347,6 +4357,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ✅
         - ❌
         - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
 
 
    .. list-table:: **test-linux2404-64/opt**
@@ -4363,6 +4378,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ❌
         - ❌
         - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
 
 
    .. list-table:: **test-macosx1470-64-nightlyasrelease/opt**
@@ -4375,6 +4395,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - mozilla-release
         - mozilla-beta
       * - **browsertime-benchmark-firefox-speedometer3**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
         - ✅
         - ✅
         - ❌
@@ -4405,6 +4430,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ✅
         - ❌
         - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
 
 
    .. list-table:: **test-macosx1470-64/opt**
@@ -4417,6 +4447,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - mozilla-release
         - mozilla-beta
       * - **browsertime-benchmark-firefox-speedometer3**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
         - ❌
         - ❌
         - ❌
@@ -4443,6 +4478,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ❌
         - ❌
       * - **browsertime-benchmark-firefox-speedometer3**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
         - ✅
         - ✅
         - ❌
@@ -4483,6 +4523,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ✅
         - ❌
         - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
 
 
    .. list-table:: **test-windows11-64-24h2-hw-ref/opt**
@@ -4499,6 +4544,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ❌
         - ❌
         - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
 
 
    .. list-table:: **test-windows11-64-24h2-nightlyasrelease/opt**
@@ -4511,6 +4561,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - mozilla-release
         - mozilla-beta
       * - **browsertime-benchmark-firefox-speedometer3**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
         - ✅
         - ✅
         - ❌
@@ -4541,6 +4596,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ✅
         - ❌
         - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
 
 
    .. list-table:: **test-windows11-64-24h2/opt**
@@ -4553,6 +4613,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - mozilla-release
         - mozilla-beta
       * - **browsertime-benchmark-firefox-speedometer3**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
         - ❌
         - ❌
         - ❌
@@ -4826,6 +4891,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ❌
         - ❌
         - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
 
 
    .. list-table:: **test-linux2404-64-nightlyasrelease/opt**
@@ -4838,6 +4908,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - mozilla-release
         - mozilla-beta
       * - **browsertime-benchmark-firefox-speedometer3**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
         - ✅
         - ✅
         - ❌
@@ -4868,6 +4943,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ✅
         - ❌
         - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
 
 
    .. list-table:: **test-linux2404-64/opt**
@@ -4884,6 +4964,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ❌
         - ❌
         - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
 
 
    .. list-table:: **test-macosx1470-64-nightlyasrelease/opt**
@@ -4896,6 +4981,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - mozilla-release
         - mozilla-beta
       * - **browsertime-benchmark-firefox-speedometer3**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
         - ✅
         - ✅
         - ❌
@@ -4926,6 +5016,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ✅
         - ❌
         - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
 
 
    .. list-table:: **test-macosx1470-64/opt**
@@ -4938,6 +5033,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - mozilla-release
         - mozilla-beta
       * - **browsertime-benchmark-firefox-speedometer3**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
         - ❌
         - ❌
         - ❌
@@ -4964,6 +5064,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ❌
         - ❌
       * - **browsertime-benchmark-firefox-speedometer3**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
         - ✅
         - ✅
         - ❌
@@ -5004,6 +5109,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ✅
         - ❌
         - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
 
 
    .. list-table:: **test-windows11-64-24h2-hw-ref/opt**
@@ -5020,6 +5130,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ❌
         - ❌
         - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
 
 
    .. list-table:: **test-windows11-64-24h2-nightlyasrelease/opt**
@@ -5032,6 +5147,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - mozilla-release
         - mozilla-beta
       * - **browsertime-benchmark-firefox-speedometer3**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
         - ✅
         - ✅
         - ❌
@@ -5062,6 +5182,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - ✅
         - ❌
         - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
+        - ✅
+        - ✅
+        - ❌
+        - ❌
 
 
    .. list-table:: **test-windows11-64-24h2/opt**
@@ -5074,6 +5199,11 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
         - mozilla-release
         - mozilla-beta
       * - **browsertime-benchmark-firefox-speedometer3**
+        - ❌
+        - ❌
+        - ❌
+        - ❌
+      * - **browsertime-benchmark-firefox-speedometer3-nv**
         - ❌
         - ❌
         - ❌
