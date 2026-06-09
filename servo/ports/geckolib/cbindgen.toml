@@ -38,6 +38,7 @@ after_includes = """
 #pragma push_macro("TRANSPARENT")
 #undef TRANSPARENT
 """
+usize_is_size_t = true
 
 [parse]
 parse_deps = true
@@ -707,6 +708,39 @@ renaming_overrides_prefixing = true
 
 "GenericColorMix" = """
   bool DependsOnCurrentColor() const;
+"""
+
+"OwnedArray" = """
+  static_assert(N > 0);
+
+  StyleOwnedArray() = delete;
+
+  inline StyleOwnedArray& operator=(const StyleOwnedArray&);
+  inline StyleOwnedArray& operator=(StyleOwnedArray&&) = delete;
+
+  inline StyleOwnedArray(const StyleOwnedArray&);
+  inline StyleOwnedArray(StyleOwnedArray&&) = delete;
+  template <typename... Args>
+    requires (sizeof...(Args) == N)
+  inline explicit StyleOwnedArray(Args&&... aArgs);
+
+  inline ~StyleOwnedArray();
+
+  Span<const T> AsSpan() const {
+    return {ptr, N};
+  }
+
+  static constexpr size_t Length() {
+    return N;
+  }
+
+  bool operator==(const StyleOwnedArray& other) const {
+    return AsSpan() == other.AsSpan();
+  }
+
+  bool operator!=(const StyleOwnedArray& other) const {
+    return !(*this == other);
+  }
 """
 
 "OwnedSlice" = """

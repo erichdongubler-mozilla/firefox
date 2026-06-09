@@ -5973,6 +5973,9 @@ pub extern "C" fn Servo_NumericDeclaration_GetValue(
 }
 
 #[no_mangle]
+pub extern "C" fn Servo_OwnedArray_Test(_values: &style::OwnedArray<NumericValue, 3>) {}
+
+#[no_mangle]
 pub extern "C" fn Servo_SumValue_Create(numeric_value: &NumericValue) -> *mut SumValue {
     let sum_value = match SumValue::try_from_numeric_value(numeric_value) {
         Ok(sum_value) => sum_value,

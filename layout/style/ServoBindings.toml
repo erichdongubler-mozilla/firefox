@@ -540,6 +540,7 @@ cbindgen-types = [
     { gecko = "StyleGenericShapeCommand", servo = "crate::values::generics::basic_shape::ShapeCommand" },
     { gecko = "StyleArcSlice", servo = "style_traits::arc_slice::ArcSlice" },
     { gecko = "StyleForgottenArcSlicePtr", servo = "style_traits::arc_slice::ForgottenArcSlicePtr" },
+    { gecko = "StyleOwnedArray", servo = "style_traits::owned_array::OwnedArray" },
     { gecko = "StyleOwnedSlice", servo = "style_traits::owned_slice::OwnedSlice" },
     { gecko = "StyleMozContextProperties", servo = "crate::values::specified::svg::MozContextProperties" },
     { gecko = "StyleQuotes", servo = "crate::values::specified::list::Quotes" },
