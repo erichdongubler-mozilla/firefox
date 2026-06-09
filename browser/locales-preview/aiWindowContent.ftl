@@ -16,7 +16,7 @@ smartwindow-assistant-error-capacity-header = Smart Window is at capacity right 
 smartwindow-assistant-error-budget-body = You can still browse in this window. Chat will be available again after midnight ET.
 smartwindow-assistant-error-many-requests-header = Please wait a moment and try again. Too many messages were sent in a short time.
 smartwindow-assistant-error-max-length-header = It’s time to start a new chat. This one’s reached its length limit.
-smartwindow-assistant-error-page-content-header = This request didn’t go through because something in the page or your message was flagged as potentially unsafe. Try a different request.
+smartwindow-assistant-error-request-blocked-header = Smart Window couldn’t reach the server. Try a different network, or disable your VPN.
 # Variables:
 #   $status (Number) - HTTP status code returned by the inference back-end
 smartwindow-assistant-error-http-header = Server error (HTTP { $status }). Please try again.

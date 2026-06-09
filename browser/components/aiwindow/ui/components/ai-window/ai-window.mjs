@@ -152,10 +152,10 @@ const ERROR_TELEMETRY_NAME_BY_CODE = {
   4: "maxUsersReached",
   5: "upstreamRateLimit",
   6: "fastlyWafRateLimit",
-  7: "invalidPageContent",
+  7: "fastlyBlocked",
 };
 
-// Fastly errors don't have the error attribute; map the 406 to invalidPageContent.
+// Fastly errors don't have the error attribute; map the 406 to fastlyBlocked.
 function getErrorCode(error) {
   return (
     error.error ??
