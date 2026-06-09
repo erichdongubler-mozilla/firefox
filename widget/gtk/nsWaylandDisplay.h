@@ -172,6 +172,8 @@ class nsWaylandDisplay {
   void RequestAsyncRoundtrip();
   void WaitForAsyncRoundtrips();
 
+  void RequestRoundtrip();
+
   void RefreshScreens();
 
   struct MonitorConfig {

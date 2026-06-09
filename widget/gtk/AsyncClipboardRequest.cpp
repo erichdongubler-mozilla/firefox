@@ -40,7 +40,6 @@ AsyncClipboardRequest::~AsyncClipboardRequest() {
   }
 }
 
-#ifdef MOZ_X11
 struct DataRequestGtk : public DataRequest {
   explicit DataRequestGtk(ClipboardDataType aDataType)
       : DataRequest(aDataType) {
@@ -164,7 +163,6 @@ void DataRequestGtk::Complete(const void* aData) {
     }
   }
 }
-#endif
 
 #ifdef MOZ_WAYLAND
 struct DataRequestWayland : public DataRequest {

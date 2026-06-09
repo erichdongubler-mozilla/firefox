@@ -40,7 +40,6 @@ class MOZ_STACK_CLASS AsyncClipboardRequest {
   virtual ~AsyncClipboardRequest();
 };
 
-#ifdef MOZ_X11
 class MOZ_STACK_CLASS AsyncGtkClipboardRequest : public AsyncClipboardRequest {
   // Heap-allocated object that we give GTK as a callback.
 
@@ -57,7 +56,6 @@ class MOZ_STACK_CLASS AsyncGtkClipboardRequest : public AsyncClipboardRequest {
   // freed.
   virtual ~AsyncGtkClipboardRequest() = default;
 };
-#endif
 
 #ifdef MOZ_WAYLAND
 class DataOffer;

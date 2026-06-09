@@ -963,6 +963,7 @@ void nsWaylandDisplay::RequestAsyncRoundtrip() {
   wl_callback* callback = wl_display_sync(mDisplay);
   wl_callback_add_listener(callback, &async_roundtrip_listener, this);
   mAsyncRoundtrips = g_list_append(mAsyncRoundtrips, callback);
+  wl_display_flush(mDisplay);
 }
 
 void nsWaylandDisplay::WaitForAsyncRoundtrips() {
@@ -973,6 +974,11 @@ void nsWaylandDisplay::WaitForAsyncRoundtrips() {
       return;
     }
   }
+}
+
+void nsWaylandDisplay::RequestRoundtrip() {
+  LOG("nsWaylandDisplay::RequestRoundtrip()");
+  wl_display_roundtrip(mDisplay);
 }
 
 void nsWaylandDisplay::SessionCreate(void* aData, xx_session_v1* aSession,
