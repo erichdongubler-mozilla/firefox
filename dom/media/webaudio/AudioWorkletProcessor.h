@@ -16,7 +16,6 @@ class ErrorResult;
 
 namespace dom {
 
-class AudioWorkletGlobalScope;
 struct AudioWorkletNodeOptions;
 class GlobalObject;
 class MessagePort;
@@ -37,10 +36,9 @@ class AudioWorkletProcessor final : public nsWrapperCache {
   MessagePort* Port() const { return mPort; };
 
  private:
-  explicit AudioWorkletProcessor(RefPtr<AudioWorkletGlobalScope>&& aParent,
-                                 RefPtr<MessagePort>&& aPort);
+  explicit AudioWorkletProcessor(nsIGlobalObject* aParent, MessagePort* aPort);
   ~AudioWorkletProcessor();
-  RefPtr<AudioWorkletGlobalScope> mParent;
+  nsCOMPtr<nsIGlobalObject> mParent;
   RefPtr<MessagePort> mPort;
 };
 
