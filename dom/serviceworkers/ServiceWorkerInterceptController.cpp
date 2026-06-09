@@ -88,20 +88,16 @@ ServiceWorkerInterceptController::ShouldPrepareForIntercept(
       registration->MaybeScheduleTimeCheckAndUpdate();
     }
 
-    RequestMode requestMode =
-        InternalRequest::MapChannelToRequestMode(aChannel);
-
-    // Block ServiceWorker interception for ranged request from media, see bug
-    // 1762078. Other request with Range header would be intercepted, ex.
-    // Author-issued fetch() range request.
     RefPtr<net::HttpBaseChannel> httpChannel = do_QueryObject(aChannel);
-    if (requestMode == RequestMode::No_cors && loadInfo->GetIsMediaRequest() &&
-        httpChannel &&
+
+    if (httpChannel &&
         httpChannel->GetRequestHead()->HasHeader(net::nsHttp::Range)) {
+      RequestMode requestMode =
+          InternalRequest::MapChannelToRequestMode(aChannel);
       bool mayLoad = nsContentUtils::CheckMayLoad(
           loadInfo->GetLoadingPrincipal(), aChannel,
           /*allowIfInheritsPrincipal*/ false);
-      if (!mayLoad) {
+      if (requestMode == RequestMode::No_cors && !mayLoad) {
         *aShouldIntercept = false;
       }
     }
