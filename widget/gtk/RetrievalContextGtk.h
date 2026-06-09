@@ -8,6 +8,8 @@
 #include "mozilla/Mutex.h"
 #include "nsClipboard.h"
 
+namespace mozilla::widget {
+
 class RetrievalContextGtk final : public RetrievalContext {
  public:
   RetrievalContextGtk();
@@ -28,5 +30,7 @@ class RetrievalContextGtk final : public RetrievalContext {
   static ClipboardTargets sClipboardTargets;
   static ClipboardTargets sPrimaryTargets;
 };
+
+}  // namespace mozilla::widget
 
 #endif /* _RetrievalContextGtk_h_ */

@@ -374,11 +374,16 @@ class nsDragSession : public nsBaseDragSession, public nsIObserver {
  */
 class nsDragService : public nsBaseDragService {
  public:
+  nsDragService();
+
   static already_AddRefed<nsDragService> GetInstance();
   nsIDragSession* StartDragSession(nsISupports* aWidgetProvider) override;
 
  protected:
   already_AddRefed<nsIDragSession> CreateDragSession() override;
+#ifdef MOZ_WAYLAND
+  RefPtr<mozilla::RetrievalContext> mContext;
+#endif
 };
 
 #endif  // nsDragService_h_

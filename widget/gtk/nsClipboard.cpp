@@ -8,7 +8,6 @@
 #  include "RetrievalContextX11.h"
 #endif
 #if defined(MOZ_WAYLAND)
-#  include "RetrievalContextWayland.h"
 #  include "RetrievalContextGtk.h"
 #  include "nsWaylandDisplay.h"
 #endif
