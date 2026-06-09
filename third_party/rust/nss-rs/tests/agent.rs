@@ -1,3 +1,6 @@
+#![cfg_attr(feature = "deny-warnings", deny(warnings))]
+#![warn(clippy::pedantic)]
+
 use std::ffi::CStr;
 
 use nss_rs::{

@@ -177,7 +177,6 @@ functions = [
     "PK11_GetBlockSize",
     "PK11_GetInternalKeySlot",
     "PK11_GetInternalSlot",
-    "PK11_IsFIPS",
     "PK11_GetKeyData",
     "PK11_GetMechanism",
     "PK11_GetTokenName",

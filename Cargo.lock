@@ -4837,7 +4837,7 @@ dependencies = [
 [[package]]
 name = "mls-platform-api"
 version = "0.2.0"
-source = "git+https://github.com/mozilla/mls-platform-api?rev=2a2e344019bfc76b7e566ee6e0549cf668d90127#2a2e344019bfc76b7e566ee6e0549cf668d90127"
+source = "git+https://github.com/mozilla/mls-platform-api?rev=bbbf9d51d60e5f63ab2b791ffbfd884c4d1a317b#bbbf9d51d60e5f63ab2b791ffbfd884c4d1a317b"
 dependencies = [
  "bincode",
  "hex",
@@ -4936,8 +4936,8 @@ dependencies = [
 
 [[package]]
 name = "mls-rs-crypto-nss"
-version = "0.2.1"
-source = "git+https://github.com/mozilla/mls-platform-api?rev=2a2e344019bfc76b7e566ee6e0549cf668d90127#2a2e344019bfc76b7e566ee6e0549cf668d90127"
+version = "0.2.0"
+source = "git+https://github.com/mozilla/mls-platform-api?rev=bbbf9d51d60e5f63ab2b791ffbfd884c4d1a317b#bbbf9d51d60e5f63ab2b791ffbfd884c4d1a317b"
 dependencies = [
  "getrandom 0.2.999",
  "hex",
@@ -4980,7 +4980,7 @@ dependencies = [
 [[package]]
 name = "mls-rs-provider-sqlite"
 version = "0.22.0"
-source = "git+https://github.com/mozilla/mls-platform-api?rev=2a2e344019bfc76b7e566ee6e0549cf668d90127#2a2e344019bfc76b7e566ee6e0549cf668d90127"
+source = "git+https://github.com/mozilla/mls-platform-api?rev=bbbf9d51d60e5f63ab2b791ffbfd884c4d1a317b#bbbf9d51d60e5f63ab2b791ffbfd884c4d1a317b"
 dependencies = [
  "async-trait",
  "hex",
@@ -5300,7 +5300,7 @@ dependencies = [
 [[package]]
 name = "mtu"
 version = "0.4.1"
-source = "git+https://github.com/mozilla/neqo?tag=v0.29.0#18832752db4700df4bdbb26f655b675931b234ac"
+source = "git+https://github.com/mozilla/neqo?tag=v0.28.1#006442de909e35d9ab9d6fcb86155f77779d3090"
 dependencies = [
  "cfg_aliases",
  "libc",
@@ -5341,8 +5341,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-bin"
-version = "0.29.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.29.0#18832752db4700df4bdbb26f655b675931b234ac"
+version = "0.28.1"
+source = "git+https://github.com/mozilla/neqo?tag=v0.28.1#006442de909e35d9ab9d6fcb86155f77779d3090"
 dependencies = [
  "cfg_aliases",
  "clap",
@@ -5361,15 +5361,14 @@ dependencies = [
  "quinn-udp",
  "rustc-hash 2.1.1",
  "strum",
- "test-fixture",
  "thiserror 2.0.12",
  "tokio",
 ]
 
 [[package]]
 name = "neqo-common"
-version = "0.29.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.29.0#18832752db4700df4bdbb26f655b675931b234ac"
+version = "0.28.1"
+source = "git+https://github.com/mozilla/neqo?tag=v0.28.1#006442de909e35d9ab9d6fcb86155f77779d3090"
 dependencies = [
  "enum-map",
  "env_logger",
@@ -5382,8 +5381,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-http3"
-version = "0.29.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.29.0#18832752db4700df4bdbb26f655b675931b234ac"
+version = "0.28.1"
+source = "git+https://github.com/mozilla/neqo?tag=v0.28.1#006442de909e35d9ab9d6fcb86155f77779d3090"
 dependencies = [
  "enumset",
  "http",
@@ -5401,8 +5400,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-qpack"
-version = "0.29.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.29.0#18832752db4700df4bdbb26f655b675931b234ac"
+version = "0.28.1"
+source = "git+https://github.com/mozilla/neqo?tag=v0.28.1#006442de909e35d9ab9d6fcb86155f77779d3090"
 dependencies = [
  "log",
  "neqo-common",
@@ -5415,8 +5414,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-transport"
-version = "0.29.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.29.0#18832752db4700df4bdbb26f655b675931b234ac"
+version = "0.28.1"
+source = "git+https://github.com/mozilla/neqo?tag=v0.28.1#006442de909e35d9ab9d6fcb86155f77779d3090"
 dependencies = [
  "enum-map",
  "enumset",
@@ -5435,8 +5434,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-udp"
-version = "0.29.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.29.0#18832752db4700df4bdbb26f655b675931b234ac"
+version = "0.28.1"
+source = "git+https://github.com/mozilla/neqo?tag=v0.28.1#006442de909e35d9ab9d6fcb86155f77779d3090"
 dependencies = [
  "cfg_aliases",
  "libc",
@@ -5626,8 +5625,7 @@ dependencies = [
 
 [[package]]
 name = "nss-rs"
-version = "0.13.1"
-source = "git+https://github.com/mozilla/nss-rs#a8548a8c1de72f4f10e0928162dad82abb41c6b2"
+version = "0.9.0"
 dependencies = [
  "bindgen 0.72.0",
  "enum-map",
@@ -5642,7 +5640,6 @@ dependencies = [
  "thiserror 2.0.12",
  "toml 0.9.8",
  "windows",
- "zeroize",
 ]
 
 [[package]]
@@ -7881,15 +7878,6 @@ name = "termtree"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
-
-[[package]]
-name = "test-fixture"
-version = "0.1.0"
-source = "git+https://github.com/mozilla/nss-rs#a8548a8c1de72f4f10e0928162dad82abb41c6b2"
-dependencies = [
- "log",
- "nss-rs",
-]
 
 [[package]]
 name = "test-trust-anchors-static"

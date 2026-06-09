@@ -10,7 +10,7 @@
     reason = "Inherent in codspeed criterion_group! macro."
 )]
 
-use std::{env, hint::black_box, net::SocketAddr};
+use std::{env, hint::black_box, net::SocketAddr, path::PathBuf, str::FromStr as _};
 
 use criterion::{BatchSize, Criterion, Throughput, criterion_group, criterion_main};
 use neqo_bin::{client, server};
@@ -24,7 +24,7 @@ struct Benchmark {
 }
 
 fn transfer(c: &mut Criterion) {
-    test_fixture::fixture_init();
+    nss::init_db(PathBuf::from_str("../test-fixture/db").unwrap()).unwrap();
 
     let mtu_suffix = env::var("MTU").ok().map(|mtu| format!("/mtu-{mtu}"));
     for Benchmark {

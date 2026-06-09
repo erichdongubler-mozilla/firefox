@@ -496,7 +496,7 @@ impl From<CongestionStateTrigger> for CongestionStateUpdatedTrigger {
 
 pub fn congestion_state_updated(
     qlog: &mut Qlog,
-    old_state: Option<&'static str>,
+    old_state: &'static str,
     new_state: &'static str,
     trigger: Option<CongestionStateTrigger>,
     now: Instant,
@@ -504,7 +504,7 @@ pub fn congestion_state_updated(
     qlog.add_event_at(
         || {
             Some(EventData::CongestionStateUpdated(CongestionStateUpdated {
-                old: old_state.map(ToOwned::to_owned),
+                old: Some(old_state.to_owned()),
                 new: new_state.to_owned(),
                 trigger: trigger.map(Into::into),
             }))
@@ -514,7 +514,7 @@ pub fn congestion_state_updated(
 }
 
 /// The type of loss recovery timer that fired or was updated.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub enum LossTimerType {
     /// The reordering/loss-detection timer (ACK-based).
     Ack,

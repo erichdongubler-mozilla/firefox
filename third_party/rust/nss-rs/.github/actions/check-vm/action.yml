@@ -102,7 +102,6 @@ runs:
                         ;;
           esac
           cargo fmt --all -- --check
-          cargo install cargo-hack --locked
           case "$PLATFORM" in
             freebsd)    cargo install cargo-llvm-cov --locked
                         cargo llvm-cov test --locked --no-fail-fast --codecov --output-path codecov.json
@@ -111,7 +110,6 @@ runs:
                         cargo test --locked --no-fail-fast # We do this instead for now
                         ;;
           esac
-          cargo hack test --locked --no-fail-fast --feature-powerset --exclude-features gecko --mutually-exclusive-features blapi,disable-encryption
           cargo test --locked --no-fail-fast --release
           rm -rf target # Do not sync this back to host
         EOF
