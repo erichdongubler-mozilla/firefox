@@ -799,10 +799,10 @@ newtab-widget-menu-change-size = Endre storleik
 newtab-widget-menu-move = Flytt
 # Submenu item under "Move"; moves the widget one position to the left.
 # RTL locales should translate this as "Right".
-newtab-widget-menu-move-left = Venstre
+newtab-widget-menu-move-left = Til venstre
 # Submenu item under "Move"; moves the widget one position to the right.
 # RTL locales should translate this as "Left".
-newtab-widget-menu-move-right = Høgre
+newtab-widget-menu-move-right = Til høgre
 newtab-widget-size-small = liten
 newtab-widget-size-medium = middels
 newtab-widget-size-large = Stor
@@ -840,7 +840,7 @@ newtab-widget-lists-name-default = Sjekkliste
 
 newtab-widget-timer-notification-title = Nedteljing
 newtab-widget-timer-notification-focus = Fokustida er over. Bra jobba. Treng du ein pause?
-newtab-widget-timer-notification-break = Pausen din er over. Klar til å fokusere?
+newtab-widget-timer-notification-break = Pausen din er over. Klar for å fokusere?
 newtab-widget-timer-notification-warning = Varsel er av
 newtab-widget-timer-mode-focus =
     .label = Fokus
@@ -1053,6 +1053,11 @@ newtab-sports-widget-match-full-time = Slutt
 newtab-sports-widget-match-halftime = Pause
 newtab-sports-widget-match-extra-time = Ekstra tid
 newtab-sports-widget-match-penalties = Straffer
+# Separator shown between two teams in a placeholder match row when no upcoming
+# match details are available yet.
+newtab-sports-widget-match-vs = mot
+# Note shown in the Upcoming tab when no match details are available yet.
+newtab-sports-widget-no-upcoming-matches = Halde deg oppdatert for komande kampdetaljar
 
 ## Sports widget live-games pagination. Shown when 2+ matches are live at the same time
 
@@ -1130,6 +1135,8 @@ newtab-sports-widget-team-name-label-eng =
     .label = England
 newtab-sports-widget-team-name-label-sco =
     .label = Skottland
+# Placeholder used in a match row's aria-label for an undecided team (shown visually as "--").
+newtab-sports-widget-team-tbd = Skal bestemmast
 
 ## Sports widget OMC messages
 ## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.

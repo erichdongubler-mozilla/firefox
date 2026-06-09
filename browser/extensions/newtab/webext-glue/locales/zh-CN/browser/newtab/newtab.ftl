@@ -666,6 +666,7 @@ newtab-new-user-custom-wallpaper-cta = 现在就试试
 
 ## Strings for Nova wallpaper feature highlight
 
+newtab-wallpaper-feature-highlight-title = 新鲜壁纸到货
 newtab-wallpaper-feature-highlight-subtitle = 选择您最爱的壁纸，让每次打开新标签页都亲切如归家。
 newtab-wallpaper-feature-highlight-cta = 选择壁纸
 
@@ -737,6 +738,7 @@ newtab-widget-lists-label-beta =
 # Variables:
 #   $number (number) - Amount of list items marked complete
 newtab-widget-lists-completed-list = 已完成（{ $number }）
+newtab-widget-lists-celebration-headline = 真棒
 newtab-widget-lists-celebration-subhead = 已全部完成
 newtab-widget-task-list-menu-copy = 复制
 newtab-widget-lists-menu-edit = 编辑清单名称
@@ -823,6 +825,10 @@ newtab-widget-section-feedback = 告诉我们您的想法
 # first row, allowing users to show them.
 newtab-widget-section-show-more =
     .label = 显示更多小组件
+# Button shown when the widgets row is expanded to multiple rows,
+# allowing users to collapse it back to one row.
+newtab-widget-section-show-less =
+    .label = 折叠小组件
 newtab-widget-lists-name-default = 核对清单
 
 ## Strings introduced by the Nova redesign of the Timer widget
@@ -853,6 +859,8 @@ newtab-daily-briefing-card-timestamp = { $minutes } 分钟前更新
 newtab-widget-message-title = 借助清单和内置计时器，聚焦重点、保持专注。
 # to-dos stands for "things to do".
 newtab-widget-message-copy = 从快捷提醒到日常待办，从专注时段到放松片刻，既能帮您管理任务，又可助您把握时间。
+# One spot refers to a dedicated section on new tab to manage and use widgets
+newtab-widget-message-focus-forecasts-title = 凝神专注、查看天气预报，尽在一处。另有更多实用功能。
 newtab-widget-message-focus-forecasts-body = 借助 { -brand-product-name } 小组件，顺畅完成每日工作。查看天气预报、记录任务、掌握世界各地时间，尽在一处。
 # "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
 # is to customize the new tab page with a background image or color from
@@ -892,6 +900,8 @@ newtab-widget-timer-running-break = 休息
 # Context-menu item to hide the Timer widget. Replaces the shared "Hide widget"
 # copy with a widget-specific string per the Nova design.
 newtab-widget-timer-menu-hide = 隐藏计时器
+# Heading shown inside the Timer widget after a focus session ends.
+newtab-widget-timer-celebration-heading-focus = 辛苦了
 # Heading shown inside the Timer widget after a break session ends.
 newtab-widget-timer-celebration-heading-break = 休息时间结束
 # Message shown inside the Timer widget after a focus session ends.
@@ -909,7 +919,7 @@ newtab-sports-widget-menu-view-results = 查看比赛结果
 newtab-sports-widget-menu-key-dates = 重要日期
 newtab-sports-widget-menu-learn-more = 详细了解
 # “Keep tabs on” is an informal expression meaning to stay updated on, stay informed on, or regularly follow something (in this case, World Cup matches and updates).
-newtab-sports-widget-keep-tabs = 持续关注世界杯
+newtab-sports-widget-keep-tabs = 全程关注世界杯
 newtab-sports-widget-get-updates = 获取实时赛况等信息。
 newtab-sports-widget-view-schedule =
     .label = 查看赛程
@@ -937,6 +947,8 @@ newtab-sports-widget-done-button =
 newtab-sports-widget-team-name-eliminated = { $teamName }（已淘汰）
 newtab-sports-widget-view-all =
     .label = 查看全部
+newtab-sports-widget-show-less =
+    .label = 收起
 # Toggle that filters the list of teams the user follows
 newtab-sports-widget-followed-only-toggle =
     .label = 仅显示关注的球队
@@ -1027,6 +1039,23 @@ newtab-sports-widget-match-halftime = 中场
 newtab-sports-widget-match-extra-time = 加时赛
 newtab-sports-widget-match-penalties = 点球决胜
 
+## Sports widget live-games pagination. Shown when 2+ matches are live at the same time
+
+# arrow button that goes to the previous page of live matches.
+newtab-sports-widget-pagination-previous =
+    .aria-label = 上一页
+    .title = 上一页
+# arrow button that goes to the next page of live matches.
+newtab-sports-widget-pagination-next =
+    .aria-label = 下一页
+    .title = 下一页
+# Dot indicator that jumps directly to a given live match.
+# $index (number) - 1-based position of this dot in the list.
+# $total (number) - Total number of live matches.
+newtab-sports-widget-pagination-dot =
+    .aria-label = 进行中的比赛（第 { $index }/{ $total } 场）
+    .title = 进行中的比赛（第 { $index }/{ $total } 场）
+
 ## Accessible labels for match rows in the sports widget. These are read by
 ## screen readers to announce the match details and status.
 ## Variables shared by all messages in this group:
@@ -1086,11 +1115,14 @@ newtab-sports-widget-team-name-label-eng =
     .label = 英格兰
 newtab-sports-widget-team-name-label-sco =
     .label = 苏格兰
+# Placeholder used in a match row's aria-label for an undecided team (shown visually as "--").
+newtab-sports-widget-team-tbd = 待定
 
 ## Sports widget OMC messages
 ## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
 
 newtab-sports-widget-message-wallpapers-title = 换上新壁纸，迎接世界杯
+newtab-sports-widget-message-wallpapers-body = 赛事期间，将赛场活力注入浏览器
 newtab-sports-widget-message-wallpapers-cta = 选择壁纸
 newtab-sports-widget-message-add-widgets-cta =
     .label = 添加小组件

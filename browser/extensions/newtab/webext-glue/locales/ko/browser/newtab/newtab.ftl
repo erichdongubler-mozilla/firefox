@@ -1042,6 +1042,28 @@ newtab-sports-widget-match-full-time = 경기 종료
 newtab-sports-widget-match-halftime = 하프타임
 newtab-sports-widget-match-extra-time = 연장전
 newtab-sports-widget-match-penalties = 페널티
+# Separator shown between two teams in a placeholder match row when no upcoming
+# match details are available yet.
+newtab-sports-widget-match-vs = vs
+# Note shown in the Upcoming tab when no match details are available yet.
+newtab-sports-widget-no-upcoming-matches = 향후 경기 정보를 기대해 주세요
+
+## Sports widget live-games pagination. Shown when 2+ matches are live at the same time
+
+# arrow button that goes to the previous page of live matches.
+newtab-sports-widget-pagination-previous =
+    .aria-label = 이전
+    .title = 이전
+# arrow button that goes to the next page of live matches.
+newtab-sports-widget-pagination-next =
+    .aria-label = 다음
+    .title = 다음
+# Dot indicator that jumps directly to a given live match.
+# $index (number) - 1-based position of this dot in the list.
+# $total (number) - Total number of live matches.
+newtab-sports-widget-pagination-dot =
+    .aria-label = 라이브 경기 { $index } / { $total }
+    .title = 라이브 경기 { $index } / { $total }
 
 ## Accessible labels for match rows in the sports widget. These are read by
 ## screen readers to announce the match details and status.
@@ -1102,6 +1124,8 @@ newtab-sports-widget-team-name-label-eng =
     .label = 잉글랜드
 newtab-sports-widget-team-name-label-sco =
     .label = 스코틀랜드
+# Placeholder used in a match row's aria-label for an undecided team (shown visually as "--").
+newtab-sports-widget-team-tbd = 미정
 
 ## Sports widget OMC messages
 ## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
