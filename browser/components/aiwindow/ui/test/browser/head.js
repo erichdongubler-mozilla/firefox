@@ -283,6 +283,8 @@ async function getConversationId(browser) {
  * Call the returned async restore function to clean up stubs, pop prefs, and
  * stop the server.
  *
+ * @deprecated Please use MockEngineManager in AIWindowTestUtils.sys.mjs.
+ *   TODO (Bug 2045844): Remove and replace existing usages across test files.
  * @param {StubEngineNetworkBoundariesConfig} [config]
  * @returns {Promise<StubEngineNetworkBoundariesResult>}
  */
@@ -1028,10 +1030,6 @@ function readRequestBody(request) {
  */
 
 /**
- *
- * @deprecated - Please use MockEngineManager in AIWindowTestUtils.sys.mjs unless
- * a test is explicitly needing to test the network layer of the OpenAI chat protocol.
- *
  * Starts a local HTTP server that mimics the OpenAI chat completions API.
  *
  * Handles both streaming (SSE) and non-streaming (JSON) requests to
@@ -1039,6 +1037,9 @@ function readRequestBody(request) {
  * a tool-use round-trip: the first request returns the tool call, and the
  * follow-up request (containing the tool result) returns followupChunks.
  *
+ * @deprecated - Please use MockEngineManager in AIWindowTestUtils.sys.mjs unless
+ * a test is explicitly needing to test the network layer of the OpenAI chat protocol.
+ *   TODO (Bug 2045844): Remove and replace existing usages across test files.
  * @param {MockOpenAIServerOptions} [options]
  * @returns {{ server: HttpServer, port: number }} The running server and
  *   its port number.
