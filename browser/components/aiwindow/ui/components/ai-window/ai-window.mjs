@@ -317,6 +317,15 @@ export class AIWindow extends MozLitElement {
     await this.#syncMemoriesButtonUI();
   }
 
+  async focusSmartbar() {
+    await this.#smartbarReadyPromise;
+    if (!this.#smartbar) {
+      return false;
+    }
+    this.#smartbar.focus();
+    return true;
+  }
+
   async #refreshHasMemories() {
     try {
       const memories = await lazy.MemoriesManager.getAllMemories();

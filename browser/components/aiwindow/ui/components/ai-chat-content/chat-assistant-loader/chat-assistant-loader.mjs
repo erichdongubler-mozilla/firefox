@@ -31,7 +31,10 @@ export class ChatAssistantLoader extends MozLitElement {
           <span class="chat-assistant-loader__spinner"></span>
         `;
         textTemplate = html`
-          <p class="chat-assistant-loader__text">Analyzing web search</p>
+          <p
+            class="chat-assistant-loader__text"
+            data-l10n-id="smartwindow-search-loader-text"
+          ></p>
         `;
         break;
       case "nl":

@@ -680,6 +680,7 @@ export class RunSearch {
 
     await lazy.AIWindow.performSearch(query, win);
     await navigationPromise;
+    await lazy.AIWindow.focusSidebar(win);
 
     // Allow JS rendering to settle
     await new Promise(r => lazy.setTimeout(r, RunSearch.CONTENT_SETTLE_MS));
