@@ -6,23 +6,35 @@
 #define _nsClipboardX11_h_
 
 #include <gtk/gtk.h>
-
 #include "nsClipboard.h"
 
-class nsRetrievalContextX11 : public nsRetrievalContext {
+namespace mozilla::widget {
+
+class RetrievalContextX11 : public RetrievalContext {
  public:
   ClipboardData GetClipboardData(const char* aMimeType,
                                  int32_t aWhichClipboard) override;
   mozilla::GUniquePtr<char> GetClipboardText(int32_t aWhichClipboard) override;
-  ClipboardTargets GetTargetsImpl(int32_t aWhichClipboard) override;
+  ClipboardTargets GetTargets(int32_t aWhichClipboard) override;
 
-  nsRetrievalContextX11();
+  void ClearCachedTargets(int32_t aWhichClipboard) override;
+
+  RetrievalContextX11();
 
  private:
+  ~RetrievalContextX11();
+
+  ClipboardTargets GetTargetsImpl(int32_t aWhichClipboard);
+
   // Spins X event loop until timing out or being completed.
   ClipboardData WaitForClipboardData(ClipboardDataType aDataType,
                                      int32_t aWhichClipboard,
                                      const char* aMimeType = nullptr);
+
+  static ClipboardTargets sClipboardTargets;
+  static ClipboardTargets sPrimaryTargets;
 };
+
+};  // namespace mozilla::widget
 
 #endif /* _nsClipboardX11_h_ */
