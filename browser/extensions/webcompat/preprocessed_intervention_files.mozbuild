@@ -40,7 +40,6 @@ preprocessed_intervention_files = [
     "bug1889326-Office_365_email_handling_prompt.js",
     "bug1889505-bankmandiri.co.id.js",
     "bug1895051-www.zhihu.com-fix_unclickable_directory_buttons.css",
-    "bug1896349-vivaldi.com-unhide-text-selections.css",
     "bug1896571-gracobaby.ca-unlock-scrolling.css",
     "bug1898915-locator.dhl.com-hide_browser_notice.css",
     "bug1898929-app.sessionlinkpro.com.js",
