@@ -1769,18 +1769,6 @@ class nsINode : public mozilla::dom::EventTarget {
            mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentbackdrop;
   }
 
-  /** Whether this is the container of a ::checkmark pseudo-element. */
-  bool IsGeneratedContentContainerForCheckmark() const {
-    return IsRootOfNativeAnonymousSubtree() &&
-           mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentcheckmark;
-  }
-
-  /** Whether this is the container of a ::picker-icon pseudo-element. */
-  bool IsGeneratedContentContainerForPickerIcon() const {
-    return IsRootOfNativeAnonymousSubtree() &&
-           mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentpickericon;
-  }
-
   /**
    * Returns true if |this| node is the closest common inclusive ancestor
    * (https://dom.spec.whatwg.org/#concept-tree-inclusive-ancestor) of the

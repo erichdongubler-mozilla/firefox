@@ -2809,15 +2809,6 @@ static bool NeedsToReframeForConditionallyCreatedPseudoElement(
       return true;
     }
   }
-  if (aElement->IsHTMLElement(nsGkAtoms::select) && !aStyleFrame->IsLeaf() &&
-      !nsLayoutUtils::GetPickerIconPseudo(aElement)) {
-    RefPtr<ComputedStyle> pseudoStyle =
-        aRestyleState.StyleSet().ProbePseudoElementStyle(
-            *aElement, PseudoStyleType::PickerIcon, nullptr, aNewStyle);
-    if (pseudoStyle) {
-      return true;
-    }
-  }
   return false;
 }
 
