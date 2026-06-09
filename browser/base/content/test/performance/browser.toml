@@ -18,10 +18,6 @@ prefs = [
   "browser.chrome.disableRemoteControlCueForTests=true",
 ]
 support-files = ["head.js"]
-environment = [
-  # This blocks the skeleton UI which interferes with the startup flicker test
-  "MOZ_SKELETON_UI_RESTARTING=1",
-]
 
 ["browser_appmenu.js"]
 skip-if = [
