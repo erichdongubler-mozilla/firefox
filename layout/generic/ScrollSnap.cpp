@@ -530,24 +530,26 @@ Maybe<SnapDestination> ScrollSnapUtils::GetSnapPointForDestination(
   // NOTE: |aDestination| sometimes points outside of the scroll range, e.g.
   // by the APZC fling, so for the overflow checks we need to clamp it.
   nsPoint clampedDestination = aScrollRange.ClampPoint(aDestination);
-  for (const auto& range : aSnapInfo.mXRangeWiderThanSnapport) {
-    if (range.IsValid(clampedDestination.x, aSnapInfo.mSnapportSize.width) &&
-        calcSnapPoints.XDistanceBetweenBestAndSecondEdge() >
-            aSnapInfo.mSnapportSize.width) {
-      calcSnapPoints.AddVerticalEdge(ScrollSnapInfo::SnapTarget{
-          Some(clampedDestination.x), Nothing(), range.mSnapArea,
-          StyleScrollSnapStop::Normal, ScrollSnapTargetId::None});
-      break;
+  if (calcSnapPoints.XDistanceBetweenBestAndSecondEdge() >
+      aSnapInfo.mSnapportSize.width) {
+    for (const auto& range : aSnapInfo.mXRangeWiderThanSnapport) {
+      if (range.IsValid(clampedDestination.x, aSnapInfo.mSnapportSize.width)) {
+        calcSnapPoints.AddVerticalEdge(ScrollSnapInfo::SnapTarget{
+            Some(clampedDestination.x), Nothing(), range.mSnapArea,
+            StyleScrollSnapStop::Normal, ScrollSnapTargetId::None});
+        break;
+      }
     }
   }
-  for (const auto& range : aSnapInfo.mYRangeWiderThanSnapport) {
-    if (range.IsValid(clampedDestination.y, aSnapInfo.mSnapportSize.height) &&
-        calcSnapPoints.YDistanceBetweenBestAndSecondEdge() >
-            aSnapInfo.mSnapportSize.height) {
-      calcSnapPoints.AddHorizontalEdge(ScrollSnapInfo::SnapTarget{
-          Nothing(), Some(clampedDestination.y), range.mSnapArea,
-          StyleScrollSnapStop::Normal, ScrollSnapTargetId::None});
-      break;
+  if (calcSnapPoints.YDistanceBetweenBestAndSecondEdge() >
+      aSnapInfo.mSnapportSize.height) {
+    for (const auto& range : aSnapInfo.mYRangeWiderThanSnapport) {
+      if (range.IsValid(clampedDestination.y, aSnapInfo.mSnapportSize.height)) {
+        calcSnapPoints.AddHorizontalEdge(ScrollSnapInfo::SnapTarget{
+            Nothing(), Some(clampedDestination.y), range.mSnapArea,
+            StyleScrollSnapStop::Normal, ScrollSnapTargetId::None});
+        break;
+      }
     }
   }
 
