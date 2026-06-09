@@ -344,8 +344,6 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
 
   int64_t BodyLength() const { return mBodyLength; }
 
-  void CloneBody(nsIInputStream** aStream, int64_t* aBodySize = nullptr);
-
   void SetBodyBlobImpl(BlobImpl* aBlobImpl) { mBodyBlobImpl = aBlobImpl; }
 
   BlobImpl* BodyBlobImpl() const { return mBodyBlobImpl; }
@@ -451,8 +449,6 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
       nsContentPolicyType aContentPolicyType);
   static RequestDestination MapContentPolicyTypeToRequestDestination(
       ExtContentPolicyType aContentPolicyType);
-
-  static constexpr int64_t UNKNOWN_BODY_SIZE = -1;
 
  private:
   static bool IsNavigationContentPolicy(nsContentPolicyType aContentPolicyType);
