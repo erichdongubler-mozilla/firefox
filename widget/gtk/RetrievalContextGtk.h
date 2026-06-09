@@ -2,11 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _RetrievalContextGtk_h_
-#define _RetrievalContextGtk_h_
+#ifndef RetrievalContextGtk_h
+#define RetrievalContextGtk_h
 
 #include "mozilla/Mutex.h"
 #include "nsClipboard.h"
+
+namespace mozilla::widget {
 
 class RetrievalContextGtk final : public RetrievalContext {
  public:
@@ -29,4 +31,6 @@ class RetrievalContextGtk final : public RetrievalContext {
   static ClipboardTargets sPrimaryTargets;
 };
 
-#endif /* _RetrievalContextGtk_h_ */
+}  // namespace mozilla::widget
+
+#endif /* RetrievalContextGtk_h */

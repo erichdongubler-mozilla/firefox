@@ -651,6 +651,14 @@ already_AddRefed<nsDragService> nsDragService::GetInstance() {
   return service.forget();
 }
 
+nsDragService::nsDragService() {
+#ifdef MOZ_WAYLAND
+  if (GdkIsWaylandDisplay()) {
+    mContext = new RetrievalContextWayland(/* aIsDragContext */ true);
+  }
+#endif
+}
+
 already_AddRefed<nsIDragSession> nsDragService::CreateDragSession() {
 #ifdef MOZ_WAYLAND
   if (widget::GdkIsWaylandDisplay()) {
@@ -1386,8 +1394,9 @@ RefPtr<DragData> nsDragSession::GetDragData(GdkAtom aRequestedFlavor) {
       mCachedDragData.Get(GDK_ATOM_TO_POINTER(aRequestedFlavor));
   if (!data) {
     NS_WARNING(nsPrintfCString(
-        "nsDragSession::GetDragData() %s failed to get from cache",
-        GUniquePtr<gchar>(gdk_atom_name(aRequestedFlavor)).get()).get());
+                   "nsDragSession::GetDragData() %s failed to get from cache",
+                   GUniquePtr<gchar>(gdk_atom_name(aRequestedFlavor)).get())
+                   .get());
     return nullptr;
   }
 

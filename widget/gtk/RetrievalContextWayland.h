@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _RetrievalContextWayland_h_
-#define _RetrievalContextWayland_h_
+#ifndef RetrievalContextWayland_h
+#define RetrievalContextWayland_h
 
 #include "mozilla/Mutex.h"
 #include "nsClipboard.h"
@@ -92,7 +92,7 @@ class PrimaryDataOffer : public DataOffer {
 
 class RetrievalContextWayland : public RetrievalContext {
  public:
-  RetrievalContextWayland();
+  explicit RetrievalContextWayland(bool aIsDragContext);
 
   virtual ClipboardData GetClipboardData(const char* aMimeType,
                                          int32_t aWhichClipboard) override;
@@ -141,4 +141,4 @@ class RetrievalContextWayland : public RetrievalContext {
 
 };  // namespace mozilla::widget
 
-#endif /* _RetrievalContextWayland_h_ */
+#endif /* RetrievalContextWayland_h */

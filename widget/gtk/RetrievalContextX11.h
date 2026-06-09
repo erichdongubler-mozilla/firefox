@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _RetrievalContextX11_h_
-#define _RetrievalContextX11_h_
+#ifndef RetrievalContextX11_h
+#define RetrievalContextX11_h
 
 #include <gtk/gtk.h>
 #include "nsClipboard.h"
@@ -37,4 +37,4 @@ class RetrievalContextX11 : public RetrievalContext {
 
 };  // namespace mozilla::widget
 
-#endif /* _RetrievalContextX11_h_ */
+#endif /* RetrievalContextX11_h */

@@ -33,6 +33,7 @@ nsDragSessionWayland::DragTaskWayland::DragTaskWayland(DragTaskType aType,
       mDataOffer(aDataOffer) {};
 
 nsDragSessionWayland::nsDragSessionWayland() {
+  LOGDRAGSERVICE("nsDragSessionWayland::nsDragSessionWayland()");
   mRecentTask = MakeUnique<DragTaskWayland>();
 }
 

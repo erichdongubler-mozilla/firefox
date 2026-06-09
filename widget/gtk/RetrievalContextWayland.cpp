@@ -708,13 +708,19 @@ void RetrievalContextWayland::ClearDragAndDropDataOffer(void) {
   mDataOffer = nullptr;
 }
 
-RetrievalContextWayland::RetrievalContextWayland(void) {
+RetrievalContextWayland::RetrievalContextWayland(bool aIsDragContext) {
+  LOGDRAG("RetrievalContextWayland::RetrievalContextWayland()");
   auto* display = WaylandDisplayGet();
 
   mDataDevice =
       WUniquePtr<wl_data_device>(wl_data_device_manager_get_data_device(
           display->GetDataDeviceManager(), display->GetSeat()));
   wl_data_device_add_listener(mDataDevice.get(), &data_device_listener, this);
+
+  // Don't register middle mouse clipboard for D&D context
+  if (aIsDragContext) {
+    return;
+  }
 
   if (display->GetPrimarySelectionDeviceManagerZwpV1()) {
     zwp_primary_selection_device_v1* primaryDataDevice =
@@ -738,11 +744,17 @@ ClipboardTargets RetrievalContextWayland::GetTargets(int32_t aWhichClipboard) {
           ? mPrimaryOffer
           : mClipboardOffer;
   if (!dataOffer) {
-    MOZ_CLIPBOARD_LOG("RetrievalContextWayland::GetTargets(): Failed: DataOffer is missing.");
+    MOZ_CLIPBOARD_LOG(
+        "RetrievalContextWayland::GetTargets(): Failed: DataOffer is missing.");
     return {};
   }
 
-  MOZ_CLIPBOARD_LOG("RetrievalContextWayland::GetTargets() clipboard %s offer [%p]", (GetSelectionAtom(aWhichClipboard) == GDK_SELECTION_PRIMARY) ? "Primary" : "Selection", dataOffer.get());
+  MOZ_CLIPBOARD_LOG(
+      "RetrievalContextWayland::GetTargets() clipboard %s offer [%p]",
+      (GetSelectionAtom(aWhichClipboard) == GDK_SELECTION_PRIMARY)
+          ? "Primary"
+          : "Selection",
+      dataOffer.get());
   return dataOffer->GetTargets();
 }
 
@@ -753,11 +765,19 @@ ClipboardData RetrievalContextWayland::GetClipboardData(
           ? mPrimaryOffer
           : mClipboardOffer;
   if (!dataOffer) {
-    MOZ_CLIPBOARD_LOG("RetrievalContextWayland::GetClipboardData(): Failed: DataOffer is missing.");
+    MOZ_CLIPBOARD_LOG(
+        "RetrievalContextWayland::GetClipboardData(): Failed: DataOffer is "
+        "missing.");
     return {};
   }
 
-  MOZ_CLIPBOARD_LOG("RetrievalContextWayland::GetClipboardData() clipboard %s offer [%p] mime %s ", (GetSelectionAtom(aWhichClipboard) == GDK_SELECTION_PRIMARY) ? "Primary" : "Selection", dataOffer.get(), aMimeType);
+  MOZ_CLIPBOARD_LOG(
+      "RetrievalContextWayland::GetClipboardData() clipboard %s offer [%p] "
+      "mime %s ",
+      (GetSelectionAtom(aWhichClipboard) == GDK_SELECTION_PRIMARY)
+          ? "Primary"
+          : "Selection",
+      dataOffer.get(), aMimeType);
   if (!dataOffer->HasTarget(aMimeType)) {
     MOZ_CLIPBOARD_LOG("  Failed: DataOffer does not contain %s MIME!",
                       aMimeType);
