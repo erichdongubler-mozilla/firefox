@@ -466,6 +466,16 @@ struct InternalBarrierMethods<wasm::AnyRef> {
 };
 
 template <>
+struct AtomicMethods<wasm::AnyRef> {
+  static wasm::AnyRef atomicGet(wasm::AnyRef const* vp) {
+    return vp->atomicGet();
+  }
+  static void atomicSet(wasm::AnyRef* vp, const wasm::AnyRef& v) {
+    vp->atomicSet(v);
+  }
+};
+
+template <>
 struct InternalBarrierMethods<wasm::Val> {
   static bool isMarkable(const wasm::Val& v) { return v.isAnyRef(); }
 
