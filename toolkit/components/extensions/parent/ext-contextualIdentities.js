@@ -180,6 +180,7 @@ this.contextualIdentities = class extends ExtensionAPIPersistent {
         },
 
         async getSupportedColors() {
+          checkAPIEnabled();
           return ContextualIdentityService.containerColors.map(color => ({
             color,
             colorCode: getContainerColor(color),
@@ -187,6 +188,7 @@ this.contextualIdentities = class extends ExtensionAPIPersistent {
         },
 
         async getSupportedIcons() {
+          checkAPIEnabled();
           return ContextualIdentityService.containerIcons.map(icon => ({
             icon,
             iconUrl: getContainerIcon(icon),

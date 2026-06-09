@@ -325,6 +325,18 @@ add_task(async function test_contextualIdentity_with_permissions() {
       "Throws when containers are disabled"
     );
 
+    await browser.test.assertRejects(
+      browser.contextualIdentities.getSupportedColors(),
+      "Contextual identities are currently disabled",
+      "getSupportedColors throws when containers are disabled"
+    );
+
+    await browser.test.assertRejects(
+      browser.contextualIdentities.getSupportedIcons(),
+      "Contextual identities are currently disabled",
+      "getSupportedIcons throws when containers are disabled"
+    );
+
     await listenForMessage("containers-state-change", true);
 
     let cis = await browser.contextualIdentities.query({});
