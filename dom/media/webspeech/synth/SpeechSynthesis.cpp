@@ -13,6 +13,7 @@
 #include "nsGlobalWindowInner.h"
 #include "nsIDocShell.h"
 #include "nsISupportsPrimitives.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsSpeechTask.h"
 #include "nsSynthVoiceRegistry.h"
 

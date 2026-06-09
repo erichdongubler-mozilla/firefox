@@ -6,6 +6,7 @@
 
 #include "nsISupportsPrimitives.h"
 #include "nsArrayUtils.h"
+#include "nsComponentManagerUtils.h"
 #include "nsMenuPopupFrame.h"
 #include "nsDeviceContext.h"
 #include "mozilla/dom/XULPopupElement.h"

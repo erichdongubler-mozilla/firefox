@@ -21,6 +21,7 @@
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
 #include "nsNetUtil.h"
+#include "nsPIDOMWindowInlines.h"
 
 namespace mozilla::dom {
 

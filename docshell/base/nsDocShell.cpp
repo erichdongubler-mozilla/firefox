@@ -218,6 +218,7 @@
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
 #include "nsObjectLoadingContent.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsPingListener.h"
 #include "nsPoint.h"
 #include "nsQueryObject.h"

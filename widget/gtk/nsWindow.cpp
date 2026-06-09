@@ -94,6 +94,7 @@
 #include "nsIWidgetListener.h"
 #include "nsLayoutUtils.h"
 #include "nsMenuPopupFrame.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsPresContext.h"
 #include "nsShmImage.h"
 #include "nsString.h"

@@ -26,6 +26,7 @@
 #include "mozilla/dom/power/PowerManagerService.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
+#include "nsPIDOMWindowInlines.h"
 
 extern mozilla::LazyLogModule gAudioChannelLog;
 

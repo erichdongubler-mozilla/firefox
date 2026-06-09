@@ -86,6 +86,7 @@
 #include "nsISHistory.h"
 #include "nsJSUtils.h"
 #include "nsContentUtils.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsQueryObject.h"
 #include "nsSandboxFlags.h"
 #include "nsScreen.h"

@@ -106,6 +106,7 @@
 #include "nsIProxiedChannel.h"
 #include "nsIScriptGlobalObject.h"
 #include "nsNetUtil.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsPrintfCString.h"
 #include "nsURLHelper.h"
 #include "nsXULAppAPI.h"

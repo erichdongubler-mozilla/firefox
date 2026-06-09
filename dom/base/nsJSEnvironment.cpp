@@ -27,6 +27,7 @@
 #include "nsIXPConnect.h"
 #include "nsJSUtils.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsPresContext.h"
 #include "nsReadableUtils.h"
 #include "nsServiceManagerUtils.h"

@@ -34,6 +34,7 @@
 #include "nsInterfaceHashtable.h"
 #include "nsNameSpaceManager.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"
 #include "xpcprivate.h"
 
 namespace mozilla::dom {

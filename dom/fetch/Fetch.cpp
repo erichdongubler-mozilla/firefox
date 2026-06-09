@@ -48,6 +48,7 @@
 #include "nsIGlobalObject.h"
 #include "nsJSUtils.h"
 #include "nsNetUtil.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsProxyRelease.h"
 #include "nsReadableUtils.h"
 #include "nsStreamUtils.h"

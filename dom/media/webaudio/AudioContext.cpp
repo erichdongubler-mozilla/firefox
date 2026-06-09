@@ -76,6 +76,7 @@
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsPrintfCString.h"
 #include "nsRFPService.h"
 

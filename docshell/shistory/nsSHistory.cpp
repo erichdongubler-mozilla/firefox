@@ -22,6 +22,7 @@
 #include "nsISHistoryListener.h"
 #include "nsIURI.h"
 #include "nsIXULRuntime.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsNetUtil.h"
 #include "nsTHashMap.h"
 #include "SessionHistoryEntry.h"

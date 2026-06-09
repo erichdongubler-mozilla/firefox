@@ -43,6 +43,7 @@
 #include "nsIStructuredCloneContainer.h"
 #include "nsIXULRuntime.h"
 #include "nsNetUtil.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsTHashtable.h"
 
 mozilla::LazyLogModule gNavigationAPILog("NavigationAPI");

@@ -10,6 +10,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/MediaControlUtils.h"
 #include "mozilla/dom/WindowContext.h"
+#include "nsPIDOMWindowInlines.h"
 
 // avoid redefined macro in unified build
 #undef LOG

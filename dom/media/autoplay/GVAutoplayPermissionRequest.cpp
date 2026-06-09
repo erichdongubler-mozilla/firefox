@@ -8,6 +8,7 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "nsGlobalWindowInner.h"
+#include "nsPIDOMWindowInlines.h"
 
 mozilla::LazyLogModule gGVAutoplayRequestLog("GVAutoplay");
 

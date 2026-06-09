@@ -4,6 +4,7 @@
 
 #include "nsDragService.h"
 #include "nsArrayUtils.h"
+#include "nsComponentManagerUtils.h"
 #include "nsIObserverService.h"
 #include "nsWidgetsCID.h"
 #include "nsWindow.h"

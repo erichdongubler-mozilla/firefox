@@ -24,6 +24,7 @@
 #include "nsIPermissionManager.h"
 #include "nsIPrincipal.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"
 
 mozilla::LazyLogModule gAutoplayPermissionLog("Autoplay");
 

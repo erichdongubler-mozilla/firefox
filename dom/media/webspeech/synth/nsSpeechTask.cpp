@@ -12,6 +12,7 @@
 #include "mozilla/dom/ContentMediaController.h"
 #include "mozilla/dom/MediaControlUtils.h"
 #include "nsGlobalWindowInner.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsSynthVoiceRegistry.h"
 #include "nsXULAppAPI.h"
 

@@ -94,6 +94,7 @@
 #include "nsIWindowWatcher.h"
 #include "nsMimeTypes.h"
 #include "nsNetUtil.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsQueryObject.h"
 #include "nsReadableUtils.h"
 #include "nsSandboxFlags.h"

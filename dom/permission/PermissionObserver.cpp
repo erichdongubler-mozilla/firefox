@@ -17,6 +17,7 @@
 #include "nsIPermission.h"
 #include "nsIPermissionMonitor.h"
 #include "nsISupportsPrimitives.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsXULAppAPI.h"
 
 namespace mozilla::dom {
