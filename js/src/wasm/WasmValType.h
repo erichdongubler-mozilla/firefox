@@ -458,7 +458,11 @@ class RefType {
   }
 
   bool isRefBottom() const {
+#ifdef ENABLE_WASM_JSPI
+    return isNone() || isNoFunc() || isNoExtern() || isNoExn() || isNoCont();
+#else
     return isNone() || isNoFunc() || isNoExtern() || isNoExn();
+#endif
   }
 
   // These methods are defined in WasmTypeDef.h to avoid a cycle while allowing
@@ -852,16 +856,19 @@ class PackedType : public T {
   // Returns whether the type has a representation in JS.
   bool isExposable() const {
 #ifdef ENABLE_WASM_SIMD
-    if (kind() == Kind::V128) {
+    if (isVector()) {
       return false;
     }
 #endif
+    if (!isRefType()) {
+      return true;
+    }
 #ifdef ENABLE_WASM_JSPI
-    if (isContRef() || isNoCont()) {
+    if (refType().isContHierarchy()) {
       return false;
     }
 #endif
-    return !isExnRef() && !isNoExn();
+    return !refType().isExnHierarchy();
   }
 
   bool isNullable() const { return tc_.isNullable(); }
