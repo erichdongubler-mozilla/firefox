@@ -1,5 +1,3 @@
-#include <numeric>
-
 #include "CertVerifier.h"
 #include "CommonSocketControl.h"
 #include "SSLTokensCache.h"
@@ -51,7 +49,13 @@ static already_AddRefed<CommonSocketControl> createDummySocketControl() {
 static auto MakeTestData(const size_t aDataSize) {
   auto data = nsTArray<uint8_t>();
   data.SetLength(aDataSize);
-  std::iota(data.begin(), data.end(), 0);
+  // LCG pseudo-random fill: near-incompressible, so Size() stays close to
+  // the raw input length regardless of compression algorithm.
+  uint32_t state = 0xDEADBEEFu;
+  for (auto& b : data) {
+    state = state * 1664525u + 1013904223u;
+    b = static_cast<uint8_t>(state >> 24);
+  }
   return data;
 }
 
@@ -147,20 +151,48 @@ TEST(TestTokensCache, Eviction)
 {
   mozilla::net::SSLTokensCache::Clear();
 
-  mozilla::Preferences::SetInt("network.ssl_tokens_cache_records_per_entry", 3);
-  mozilla::Preferences::SetInt("network.ssl_tokens_cache_capacity", 8);
+  // Use a high per-entry limit so global-capacity eviction is the only
+  // mechanism under test here (per-entry eviction is already covered by
+  // MultiplePut).
+  mozilla::Preferences::SetInt("network.ssl_tokens_cache_records_per_entry",
+                               10);
 
-  putToken("anon:www.example2.com:443"_ns, 300);
-  putToken("anon:www.example2.com:443"_ns, 400);
-  putToken("anon:www.example2.com:443"_ns, 500);
-  // The one has expiration time "300" will be removed because we only allow 3
-  // records per entry.
-  putToken("anon:www.example2.com:443"_ns, 600);
+  // Two records for different peers: A is globally oldest (expiry =
+  // now+10000s), B is newer (expiry = now+20000s).
+  //
+  // Token sizes are chosen so that a capacity of 25 KB is:
+  //   > size(B)                — B alone fits after eviction
+  //   < size(A) + size(B) + T  — A+B+trigger together exceed capacity
+  //
+  // Proof: Size() = key.len() + compressedPayload.len().  MakeTestData fills
+  // tokens with pseudo-random bytes that resist compression, so the compressed
+  // payload is approximately token_size + cert_overhead + 4-byte prefix.
+  // Cert overhead: 4×333-byte DER + serialization framing ≈ 1400 bytes.
+  //   size(A) ≈ 22 + (4 + 10000 + 1400) = 11426 bytes
+  //   size(B) ≈ 22 + (4 + 20000 + 1400) = 21426 bytes
+  //   size(T) ≈ 26 + (4 +    10 + 1400) =  1440 bytes
+  //   sum     ≈ 34292 > 25600 (= 25 KB)  → eviction triggered  ✓
+  //   size(B) ≈ 21426 < 25600             → B fits after eviction ✓
+  putToken("anon:evict-old.com:443"_ns, 10000);
+  putToken("anon:evict-new.com:443"_ns, 20000);
 
-  putToken("anon:www.example3.com:443"_ns, 600);
-  putToken("anon:www.example3.com:443"_ns, 500);
-  // The one has expiration time "400" was evicted, so we get "500".
-  getAndCheckResult("anon:www.example2.com:443"_ns, 500);
+  mozilla::Preferences::SetInt("network.ssl_tokens_cache_capacity", 25);
+
+  // The trigger record's expiry (now+10s) is earlier than all other records,
+  // so EvictIfNecessary removes it first, then evict-old.com (now+10000s)
+  // second, until the total drops below 25 KB.
+  putToken("anon:evict-trigger.com:443"_ns, 10);
+
+  nsTArray<uint8_t> result;
+  mozilla::net::SessionCacheInfo unused;
+  ASSERT_EQ(mozilla::net::SSLTokensCache::Get("anon:evict-old.com:443"_ns,
+                                              result, unused),
+            NS_ERROR_NOT_AVAILABLE)
+      << "evict-old.com should have been evicted (second-oldest after trigger)";
+  ASSERT_EQ(mozilla::net::SSLTokensCache::Get("anon:evict-new.com:443"_ns,
+                                              result, unused),
+            NS_OK)
+      << "evict-new.com should survive: it fits within the 25 KB capacity";
 }
 
 static nsCString GetTempCachePath(const char* aName) {
@@ -375,11 +407,11 @@ TEST(TestTokensCache, PersistenceTruncated)
   putToken("anon:example.com:443"_ns, 100);
   mozilla::net::SSLTokensCache::TriggerWriteForTest(path);
 
-  // Overwrite with correct magic+version but no body, so zlib decompression
+  // Overwrite with correct magic+version but no body, so decompression
   // fails with a Truncated error (not BadVersion).
   FILE* f = fopen(path.get(), "wb");
   if (f) {
-    fwrite("STCF\x02", 1, 5, f);
+    fwrite("STCF\x03", 1, 5, f);
     fclose(f);
   }
 
@@ -610,4 +642,63 @@ TEST(TestTokensCache, PersistenceWriteAfterLoad)
                                               result, unused),
             NS_OK);
   ASSERT_EQ(result.Length(), (size_t)300);
+}
+
+TEST(TestTokensCache, CertBytesRoundTrip)
+{
+  // Cert bytes must round-trip through Put/Get with byte-perfect fidelity.
+  mozilla::net::SSLTokensCache::Clear();
+
+  putToken("anon:roundtrip.example.com:443"_ns, 100);
+
+  nsTArray<uint8_t> token;
+  mozilla::net::SessionCacheInfo info;
+  ASSERT_EQ(mozilla::net::SSLTokensCache::Get(
+                "anon:roundtrip.example.com:443"_ns, token, info),
+            NS_OK);
+
+  ASSERT_FALSE(info.mServerCertBytes.IsEmpty())
+  << "Server cert bytes must survive Put/Get round-trip";
+  ASSERT_TRUE(info.mSucceededCertChainBytes.isSome())
+  << "Succeeded cert chain must survive Put/Get round-trip";
+  ASSERT_EQ(info.mSucceededCertChainBytes->Length(), (size_t)3)
+      << "Succeeded cert chain length must be preserved";
+
+  // createDummySocketControl() repeats the same cert 3 times in the succeeded
+  // chain; each must equal mServerCertBytes after decompression.
+  for (const auto& chainCert : *info.mSucceededCertChainBytes) {
+    ASSERT_EQ(chainCert, info.mServerCertBytes)
+        << "Each cert in the succeeded chain must equal mServerCertBytes";
+  }
+}
+
+TEST(TestTokensCache, WithinRecordCertDedup)
+{
+  // createDummySocketControl() stores the same cert DER as the server cert
+  // and three times in the succeeded chain.  The compressor sees all four
+  // copies in one payload and encodes them once, so the stored record must
+  // be well under 2x the raw single-cert size.
+  mozilla::net::SSLTokensCache::Clear();
+
+  putToken("anon:dedup.example.com:443"_ns, 10);
+
+  // Get the token to measure the raw DER size of the fixture cert.
+  nsTArray<uint8_t> token;
+  mozilla::net::SessionCacheInfo info;
+  ASSERT_EQ(mozilla::net::SSLTokensCache::Get("anon:dedup.example.com:443"_ns,
+                                              token, info),
+            NS_OK);
+  uint32_t rawCertSize = info.mServerCertBytes.Length();
+  ASSERT_GT(rawCertSize, (uint32_t)0);
+
+  // Re-insert so there is a live record to measure.
+  putToken("anon:dedup.example.com:443"_ns, 10);
+  uint32_t cacheSize = mozilla::net::SSLTokensCache::CacheSizeForTest();
+
+  // Four identical cert blobs in one compressed payload must store to well
+  // under 2x the raw single-cert size.
+  ASSERT_LT(cacheSize, rawCertSize * 2)
+      << "4x identical cert blobs must compress to ~1x; "
+         "rawCertSize="
+      << rawCertSize << " cacheSize=" << cacheSize;
 }
