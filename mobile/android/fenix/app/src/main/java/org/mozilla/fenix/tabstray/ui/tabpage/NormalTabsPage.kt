@@ -141,6 +141,9 @@ internal fun NormalTabsPage(
                     onCFRClick = onInactiveTabsCFRClick,
                     onCFRDismiss = onInactiveTabsCFRDismiss,
                 )
+                if (!displayTabsInGrid) {
+                    Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))
+                }
             }
         }
 
