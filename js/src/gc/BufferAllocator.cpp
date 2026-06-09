@@ -964,6 +964,13 @@ void* BufferAllocator::TraceEdge(JSTracer* trc, void** bufferp,
   MOZ_ASSERT(bufferp);
 
   void* buffer = *bufferp;
+#ifdef JS_GC_CONCURRENT_MARKING
+  // Conservatively perform an atomic load even when marking is not concurrent.
+  buffer = __atomic_load_n(bufferp, __ATOMIC_RELAXED);
+#else
+  buffer = *bufferp;
+#endif
+
   if (!buffer) {
     return nullptr;
   }
