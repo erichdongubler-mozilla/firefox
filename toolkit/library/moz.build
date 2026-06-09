@@ -389,6 +389,9 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
         "oleaut32",
     ]
 
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
+    OS_LIBS += ["mediandk"]
+
 # The buildid is refreshed on every (incremental) build. But we want to avoid
 # rebuilding libxul every time, so instead of having a source file that
 # #include's buildid.h, which would have a dependency on it, and that would
