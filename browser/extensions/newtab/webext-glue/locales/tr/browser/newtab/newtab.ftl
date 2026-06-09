@@ -863,6 +863,7 @@ newtab-widget-message-title = Listeler ve sayaçla işinize daha iyi odaklanın
 newtab-widget-message-copy = Küçük anımsatıcılar ve günlük görev listeleriyle, odaklanma oturumları ve molalarla zamanınızı daha iyi yönetin.
 # One spot refers to a dedicated section on new tab to manage and use widgets
 newtab-widget-message-focus-forecasts-title = Odaklanma, hava durumu ve daha fazlası tek noktada
+newtab-widget-message-focus-forecasts-body = { -brand-product-name } araçlarıyla gününüz daha akıcı olsun. İster hava durumunu kontrol edin, ister işinize odaklanın, ister dünya saatlerini takip edin.
 # "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
 # is to customize the new tab page with a background image or color from
 # the built-in wallpaper collection or uploading your own image.
@@ -1051,6 +1052,28 @@ newtab-sports-widget-match-full-time = Maç sonu
 newtab-sports-widget-match-halftime = Devre arası
 newtab-sports-widget-match-extra-time = Uzatmalar
 newtab-sports-widget-match-penalties = Penaltılar
+# Separator shown between two teams in a placeholder match row when no upcoming
+# match details are available yet.
+newtab-sports-widget-match-vs = -
+# Note shown in the Upcoming tab when no match details are available yet.
+newtab-sports-widget-no-upcoming-matches = Yaklaşan maç bilgileri için beklemede kalın
+
+## Sports widget live-games pagination. Shown when 2+ matches are live at the same time
+
+# arrow button that goes to the previous page of live matches.
+newtab-sports-widget-pagination-previous =
+    .aria-label = Önceki
+    .title = Önceki
+# arrow button that goes to the next page of live matches.
+newtab-sports-widget-pagination-next =
+    .aria-label = Sonraki
+    .title = Sonraki
+# Dot indicator that jumps directly to a given live match.
+# $index (number) - 1-based position of this dot in the list.
+# $total (number) - Total number of live matches.
+newtab-sports-widget-pagination-dot =
+    .aria-label = Canlı maç { $index }/{ $total }
+    .title = Canlı maç { $index }/{ $total }
 
 ## Accessible labels for match rows in the sports widget. These are read by
 ## screen readers to announce the match details and status.
@@ -1111,14 +1134,19 @@ newtab-sports-widget-team-name-label-eng =
     .label = İngiltere
 newtab-sports-widget-team-name-label-sco =
     .label = İskoçya
+# Placeholder used in a match row's aria-label for an undecided team (shown visually as "--").
+newtab-sports-widget-team-tbd = Belli değil
 
 ## Sports widget OMC messages
 ## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
 
 newtab-sports-widget-message-wallpapers-title = Dünya Kupası’na yeni duvar kâğıtlarıyla başlayın
+newtab-sports-widget-message-wallpapers-body = Maçların heyecanını tarayıcınıza taşıyın.
 newtab-sports-widget-message-wallpapers-cta = Duvar kâğıdı seçin
 newtab-sports-widget-message-add-widgets-cta =
     .label = Araç ekleyin
+newtab-sports-widget-message-day-in-play-title = { -brand-product-name } araçlarıyla gününüze keyif katın
+newtab-sports-widget-message-day-in-play-body = Dünya Kupası’nı takip edin, işinize odaklanın, dünya saatlerini takip edin ve daha fazlasını yapın.
 newtab-sports-widget-message-explore-widgets-cta =
     .label = Araçları keşfedin
 

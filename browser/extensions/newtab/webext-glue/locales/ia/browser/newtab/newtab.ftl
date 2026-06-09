@@ -1052,6 +1052,11 @@ newtab-sports-widget-match-full-time = Incontro terminate
 newtab-sports-widget-match-halftime = Intervallo
 newtab-sports-widget-match-extra-time = Prorogation
 newtab-sports-widget-match-penalties = Penalties
+# Separator shown between two teams in a placeholder match row when no upcoming
+# match details are available yet.
+newtab-sports-widget-match-vs = contra
+# Note shown in the Upcoming tab when no match details are available yet.
+newtab-sports-widget-no-upcoming-matches = Resta syntonisate pro le detalios del matches imminente
 
 ## Sports widget live-games pagination. Shown when 2+ matches are live at the same time
 
@@ -1063,6 +1068,12 @@ newtab-sports-widget-pagination-previous =
 newtab-sports-widget-pagination-next =
     .aria-label = Sequente
     .title = Sequente
+# Dot indicator that jumps directly to a given live match.
+# $index (number) - 1-based position of this dot in the list.
+# $total (number) - Total number of live matches.
+newtab-sports-widget-pagination-dot =
+    .aria-label = Match in vivo { $index } sur { $total }
+    .title = Match in vivo { $index } sur { $total }
 
 ## Accessible labels for match rows in the sports widget. These are read by
 ## screen readers to announce the match details and status.
@@ -1123,6 +1134,8 @@ newtab-sports-widget-team-name-label-eng =
     .label = Anglaterra
 newtab-sports-widget-team-name-label-sco =
     .label = Scotia
+# Placeholder used in a match row's aria-label for an undecided team (shown visually as "--").
+newtab-sports-widget-team-tbd = A definir
 
 ## Sports widget OMC messages
 ## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.

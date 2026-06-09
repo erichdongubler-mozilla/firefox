@@ -869,6 +869,9 @@ newtab-daily-briefing-card-timestamp = Päivitetty { $minutes } min sitten
 newtab-widget-message-title = Pysy keskittyneenä listojen ja sisäänrakennetun ajastimen avulla
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Nopeista muistutuksista päivittäisiin tehtäviin, keskittymisharjoituksista venyttelytaukoihin – pysy tehtävässäsi ja aikataulussa.
+# One spot refers to a dedicated section on new tab to manage and use widgets
+newtab-widget-message-focus-forecasts-title = Yksi paikka keskittymiselle, ennusteille ja muulle
+newtab-widget-message-focus-forecasts-body = Pidä päiväsi liikkeessä { -brand-product-name }in pienoisohjelmien avulla. Tarkista sääennuste, pysy tehtävissäsi tai seuraa aikaa ympäri maailmaa.
 # "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
 # is to customize the new tab page with a background image or color from
 # the built-in wallpaper collection or uploading your own image.
@@ -960,6 +963,10 @@ newtab-sports-widget-back-button =
     .aria-label = Takaisin
 newtab-sports-widget-done-button =
     .label = Valmis
+# Shown in the follow-teams list for a team that has been knocked out of the tournament.
+# Variables:
+#   $teamName (string) - the localized team name (e.g. "Canada").
+newtab-sports-widget-team-name-eliminated = { $teamName } (tiputettu)
 newtab-sports-widget-view-all =
     .label = Näytä kaikki
 newtab-sports-widget-show-less =
@@ -986,6 +993,8 @@ newtab-sports-widget-watch-stream-free-trial = Ilmainen kokeilujakso
 newtab-sports-widget-watch-stream-free-paid = Ilmainen ja maksullinen
 # Tag: user must pay to watch (subscription, TV provider, premium plan, or add-on).
 newtab-sports-widget-watch-stream-paid = Maksullinen
+# Note: provider only streams some matches, not the full tournament.
+newtab-sports-widget-watch-stream-select-games-only = Vain valitut pelit
 # Heading for the list of streaming services available in the user’s country/region.
 newtab-sports-widget-watch-available-region = Saatavilla alueellasi
 # Heading for the list of streaming services available outside the user’s country/region.
@@ -1047,7 +1056,27 @@ newtab-sports-widget-world-cup-champions = Vuoden 2026 MM-kilpailujen mestarit
 # Variables:
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
+newtab-sports-widget-match-full-time = Täysi aika
 newtab-sports-widget-match-halftime = Puoliaika
+newtab-sports-widget-match-extra-time = Jatkoaika
+newtab-sports-widget-match-penalties = Rangaistuspotkut
+
+## Sports widget live-games pagination. Shown when 2+ matches are live at the same time
+
+# arrow button that goes to the previous page of live matches.
+newtab-sports-widget-pagination-previous =
+    .aria-label = Edellinen
+    .title = Edellinen
+# arrow button that goes to the next page of live matches.
+newtab-sports-widget-pagination-next =
+    .aria-label = Seuraava
+    .title = Seuraava
+# Dot indicator that jumps directly to a given live match.
+# $index (number) - 1-based position of this dot in the list.
+# $total (number) - Total number of live matches.
+newtab-sports-widget-pagination-dot =
+    .aria-label = Suora ottelu { $index }/{ $total }
+    .title = Suora ottelu { $index }/{ $total }
 
 ## Accessible labels for match rows in the sports widget. These are read by
 ## screen readers to announce the match details and status.
@@ -1087,6 +1116,9 @@ newtab-sports-widget-match-aria-label-upcoming-delayed =
 # An upcoming match row whose status is "postponed".
 newtab-sports-widget-match-aria-label-upcoming-postponed =
     .aria-label = { $homeTeam } vastaan { $awayTeam }, siirretty
+# An upcoming match row whose status is "suspended".
+newtab-sports-widget-match-aria-label-upcoming-suspended =
+    .aria-label = { $homeTeam } vastaan { $awayTeam }, keskeytetty
 # An upcoming match row whose status is "cancelled".
 newtab-sports-widget-match-aria-label-upcoming-cancelled =
     .aria-label = { $homeTeam } vastaan { $awayTeam }, peruttu
@@ -1099,6 +1131,8 @@ newtab-sports-widget-team-name-label-bih =
     .label = Bosnia ja Hertsegovina
 newtab-sports-widget-team-name-label-civ =
     .label = Norsunluurannikko
+newtab-sports-widget-team-name-label-cod =
+    .label = Kongon demokraattinen tasavalta
 newtab-sports-widget-team-name-label-eng =
     .label = Englanti
 newtab-sports-widget-team-name-label-sco =
@@ -1112,6 +1146,7 @@ newtab-sports-widget-message-wallpapers-body = Tuo ottelupäivän energiaa selai
 newtab-sports-widget-message-wallpapers-cta = Valitse taustakuva
 newtab-sports-widget-message-add-widgets-cta =
     .label = Lisää pienoisohjelmia
+newtab-sports-widget-message-day-in-play-title = Pidä päiväsi käynnissä { -brand-product-name }in pienoisohjelmien avulla
 newtab-sports-widget-message-day-in-play-body = Seuraa jalkapallon MM-kisoja, pysy tehtävissäsi, seuraa aikaa ympäri maailmaa ja paljon muuta.
 newtab-sports-widget-message-explore-widgets-cta =
     .label = Tutustu pienoisohjelmiin
@@ -1183,6 +1218,12 @@ newtab-clock-widget-button-remove-clock =
 #   $city (string) - The city name displayed in the row.
 newtab-clock-widget-edit-item =
     .aria-label = { $city }
+# Accessible name for a clock row when a user nickname has been set.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+#   $nickname (string) - The user-provided nickname for the row.
+newtab-clock-widget-edit-item-with-nickname =
+    .aria-label = { $city }, kutsumanimi: { $nickname }
 newtab-clock-widget-add-clock-form =
     .aria-label = Lisää kello
 newtab-clock-widget-edit-clock-form =

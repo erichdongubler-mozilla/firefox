@@ -373,6 +373,8 @@ newtab-custom-widget-sports-toggle =
     .label = Кубак свету
 newtab-custom-widget-clock-toggle =
     .label = Гадзіннік
+newtab-custom-widget-sports-toggle2 =
+    .label = Спорт
 newtab-custom-widget-section-title = Віджэты
 newtab-custom-widget-section-toggle =
     .label = Віджэты
@@ -768,6 +770,9 @@ newtab-widget-lists-input-menu-delete = Выдаліць
 newtab-widget-lists-input-menu-edit = Змяніць
 newtab-widget-lists-input-menu-edit2 =
     .aria-label = Змяніць элемент
+newtab-widget-lists-edit-clear =
+    .aria-label = Скасаваць
+    .title = Скасаваць
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
     .label = + Стварыць новы спіс
@@ -824,6 +829,14 @@ newtab-widget-section-menu-manage = Кіраванне віджэтамі
 newtab-widget-section-menu-hide-all = Схаваць віджэты
 newtab-widget-section-menu-learn-more = Падрабязней
 newtab-widget-section-feedback = Раскажыце нам, што вы думаеце
+# Button shown when additional widgets are hidden beyond the
+# first row, allowing users to show them.
+newtab-widget-section-show-more =
+    .label = Паказаць больш віджэтаў
+# Button shown when the widgets row is expanded to multiple rows,
+# allowing users to collapse it back to one row.
+newtab-widget-section-show-less =
+    .label = Паказваць менш віджэтаў
 newtab-widget-lists-name-default = Кантрольны спіс
 
 ## Strings introduced by the Nova redesign of the Timer widget
@@ -854,6 +867,9 @@ newtab-daily-briefing-card-timestamp = Абноўлена { $minutes } хв. т�
 newtab-widget-message-title = Заставайцеся сканцэнтраванымі з дапамогай спісаў і ўбудаванага таймера
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Паспявайце ўсё з дапамогай хуткіх напамінаў, спісаў задач, заняткаў па канцэнтрацыі ўвагі ды перапынкаў на размінку.
+# One spot refers to a dedicated section on new tab to manage and use widgets
+newtab-widget-message-focus-forecasts-title = Адзінае месца для факусіроўкі, прагнозаў і іншага
+newtab-widget-message-focus-forecasts-body = Забяспечце сабе плынь дня з дапамогай віджэтаў { -brand-product-name }. Праверце прагноз надвор'я, засяродзьцеся на задачах або сачыце за часам у розных месцах зямной кулі.
 # "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
 # is to customize the new tab page with a background image or color from
 # the built-in wallpaper collection or uploading your own image.
@@ -948,7 +964,59 @@ newtab-sports-widget-back-button =
     .aria-label = Назад
 newtab-sports-widget-done-button =
     .label = Гатова
+# Shown in the follow-teams list for a team that has been knocked out of the tournament.
+# Variables:
+#   $teamName (string) - the localized team name (e.g. "Canada").
+newtab-sports-widget-team-name-eliminated = { $teamName } (выбылі)
+newtab-sports-widget-view-all =
+    .label = Паглядзець усе
+newtab-sports-widget-show-less =
+    .label = Паказаць менш
+# Toggle that filters the list of teams the user follows
+newtab-sports-widget-followed-only-toggle =
+    .label = Толькі каманды, за якімі вы сочыце
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch =
+    .label = Глядзець
+    .title = Глядзець у прамым эфіры
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch-icon =
+    .aria-label = Глядзець у прамым эфіры
+    .title = Глядзець у прамым эфіры
+newtab-sports-widget-watch-dialog-close =
+    .aria-label = Закрыць
+    .title = Закрыць
+# Tag: user can watch without paying (sign-in may still be required).
+newtab-sports-widget-watch-stream-free = Бясплатна
+# Tag: user can start watching via a trial; continued access may require payment after it ends.
+newtab-sports-widget-watch-stream-free-trial = Бясплатны пробны перыяд
+# Tag: provider offers both a no-cost or trial path and a paid path.
+newtab-sports-widget-watch-stream-free-paid = Бясплатна і платна
+# Tag: user must pay to watch (subscription, TV provider, premium plan, or add-on).
+newtab-sports-widget-watch-stream-paid = Платна
+# Note: provider only streams some matches, not the full tournament.
+newtab-sports-widget-watch-stream-select-games-only = Толькі выбраныя гульні
+# Heading for the list of streaming services available in the user’s country/region.
+newtab-sports-widget-watch-available-region = Даступна ў вашым рэгіёне
+# Heading for the list of streaming services available outside the user’s country/region.
+newtab-sports-widget-watch-available-other-regions = Іншыя рэгіёны
+# Button that opens the provider’s stream page in a new tab.
+newtab-sports-widget-watch-play =
+    .aria-label = Адкрыць трансляцыю
+    .title = Адкрыць трансляцыю
 newtab-sports-widget-group-stage = Групавы этап
+newtab-sports-widget-group-a = Група A
+newtab-sports-widget-group-b = Група B
+newtab-sports-widget-group-c = Група C
+newtab-sports-widget-group-d = Група D
+newtab-sports-widget-group-e = Група E
+newtab-sports-widget-group-f = Група F
+newtab-sports-widget-group-g = Група G
+newtab-sports-widget-group-h = Група H
+newtab-sports-widget-group-i = Група I
+newtab-sports-widget-group-j = Група J
+newtab-sports-widget-group-k = Група K
+newtab-sports-widget-group-l = Група L
 newtab-sports-widget-round-32 = 1/16 фіналу
 newtab-sports-widget-round-16 = 1/8 фіналу
 newtab-sports-widget-quarter-finals = Чвэрцьфіналы
@@ -986,6 +1054,110 @@ newtab-sports-widget-third-place = Трэцяе месца
 newtab-sports-widget-runner-up = Другое месца
 newtab-sports-widget-champions = Чэмпіёны
 newtab-sports-widget-world-cup-champions = Чэмпіёны свету 2026
+# Variables:
+#   $date (Date) - The match start time
+newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
+newtab-sports-widget-match-full-time = Поўны час
+newtab-sports-widget-match-halftime = Перапынак
+newtab-sports-widget-match-extra-time = Дадатковы час
+newtab-sports-widget-match-penalties = Пенальці
+# Separator shown between two teams in a placeholder match row when no upcoming
+# match details are available yet.
+newtab-sports-widget-match-vs = супраць
+# Note shown in the Upcoming tab when no match details are available yet.
+newtab-sports-widget-no-upcoming-matches = Сачыце за падрабязнасцямі будучага матчу
+
+## Sports widget live-games pagination. Shown when 2+ matches are live at the same time
+
+# arrow button that goes to the previous page of live matches.
+newtab-sports-widget-pagination-previous =
+    .aria-label = Папярэдняя
+    .title = Папярэдняя
+# arrow button that goes to the next page of live matches.
+newtab-sports-widget-pagination-next =
+    .aria-label = Наступная
+    .title = Наступная
+# Dot indicator that jumps directly to a given live match.
+# $index (number) - 1-based position of this dot in the list.
+# $total (number) - Total number of live matches.
+newtab-sports-widget-pagination-dot =
+    .aria-label = Прамы эфір матчу { $index } з { $total }
+    .title = Прамы эфір матчу { $index } з { $total }
+
+## Accessible labels for match rows in the sports widget. These are read by
+## screen readers to announce the match details and status.
+## Variables shared by all messages in this group:
+##   $homeTeam (String) - The full name of the home team (e.g. "Mexico")
+##   $awayTeam (String) - The full name of the away team (e.g. "Russia")
+
+# A finished match row (regular full-time result).
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+newtab-sports-widget-match-aria-label-results =
+    .aria-label = { $homeTeam }, { $homeScore } супраць { $awayTeam }, { $awayScore }
+# A finished match row that went to a penalty shootout.
+# Parenthesized values are the shootout score.
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+#   $homePenalty (number) - The home team's penalty shootout score
+#   $awayPenalty (number) - The away team's penalty shootout score
+newtab-sports-widget-match-aria-label-results-penalties =
+    .aria-label = { $homeTeam }, { $homeScore } ({ $homePenalty }) супраць { $awayTeam }, { $awayScore } ({ $awayPenalty })
+# A match that is currently in progress.
+# Variables:
+#   $homeScore (number) - The home team's current score
+#   $awayScore (number) - The away team's current score
+newtab-sports-widget-match-aria-label-now =
+    .aria-label = Прамы эфір: { $homeTeam }, { $homeScore } супраць { $awayTeam }, { $awayScore }
+# An upcoming scheduled match row. Announces kickoff time and date.
+# Variables:
+#   $date (Date) - The scheduled kickoff date/time
+newtab-sports-widget-match-aria-label-upcoming =
+    .aria-label = { $homeTeam } супраць { $awayTeam }, { DATETIME($date, hour: "numeric", minute: "numeric") }, { DATETIME($date, day: "numeric", month: "long") }
+# An upcoming match row whose status is "delayed".
+newtab-sports-widget-match-aria-label-upcoming-delayed =
+    .aria-label = { $homeTeam } супраць { $awayTeam }, адкладзена
+# An upcoming match row whose status is "postponed".
+newtab-sports-widget-match-aria-label-upcoming-postponed =
+    .aria-label = { $homeTeam } супраць { $awayTeam }, перанесена
+# An upcoming match row whose status is "suspended".
+newtab-sports-widget-match-aria-label-upcoming-suspended =
+    .aria-label = { $homeTeam } супраць { $awayTeam }, прыпынена
+# An upcoming match row whose status is "cancelled".
+newtab-sports-widget-match-aria-label-upcoming-cancelled =
+    .aria-label = { $homeTeam } супраць { $awayTeam }, адменена
+
+## Sports widget — team names (FIFA country codes)
+## Only includes names not adequately covered by standard country-code
+## internationalization tooling.
+
+newtab-sports-widget-team-name-label-bih =
+    .label = Боснія і Герцагавіна
+newtab-sports-widget-team-name-label-civ =
+    .label = Кот-д'Івуар
+newtab-sports-widget-team-name-label-cod =
+    .label = ДР Конга
+newtab-sports-widget-team-name-label-eng =
+    .label = Англія
+newtab-sports-widget-team-name-label-sco =
+    .label = Шатландыя
+# Placeholder used in a match row's aria-label for an undecided team (shown visually as "--").
+newtab-sports-widget-team-tbd = Падлягае вызначэнню
+
+## Sports widget OMC messages
+## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
+
+newtab-sports-widget-message-wallpapers-title = Пачніце чэмпіянат свету з новымі шпалерамі
+newtab-sports-widget-message-wallpapers-body = Захапіцеся энергіяй матчавага дня ў сваім браўзеры ў час турніру.
+newtab-sports-widget-message-wallpapers-cta = Абраць шпалеры
+newtab-sports-widget-message-add-widgets-cta =
+    .label = Дадаць віджэты
+newtab-sports-widget-message-day-in-play-title = Не выходзьце з гульні з дапамогай віджэтаў { -brand-product-name }
+newtab-sports-widget-message-day-in-play-body = Сачыце за чэмпіянатам свету, засяроджвайцеся на задачах, асочвайце час па ўсім свеце і многае іншае.
+newtab-sports-widget-message-explore-widgets-cta =
+    .label = Азнаёмцеся з віджэтамі
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
@@ -1047,6 +1219,19 @@ newtab-clock-widget-button-save = Захаваць
 newtab-clock-widget-button-remove-clock =
     .title = Выдаліць гадзіннік
     .aria-label = Выдаліць гадзіннік
+# Accessible name for a clock row in the "Your clocks" management panel
+# when the row has no user-provided nickname. Read aloud by screen
+# readers when focus lands on the row.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+newtab-clock-widget-edit-item =
+    .aria-label = { $city }
+# Accessible name for a clock row when a user nickname has been set.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+#   $nickname (string) - The user-provided nickname for the row.
+newtab-clock-widget-edit-item-with-nickname =
+    .aria-label = { $city }, назва: { $nickname }
 newtab-clock-widget-add-clock-form =
     .aria-label = Дадаць гадзіннік
 newtab-clock-widget-edit-clock-form =
