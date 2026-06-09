@@ -435,7 +435,6 @@ Preferences.addAll([
   { id: "network.trr.uri", type: "string" },
   { id: "network.trr.default_provider_uri", type: "string" },
   { id: "network.trr.custom_uri", type: "string" },
-  { id: "network.trr.excluded-domains", type: "string" },
   { id: "network.trr_ui.fallback_was_checked", type: "bool" },
   { id: "doh-rollout.disable-heuristics", type: "bool" },
 
@@ -3106,9 +3105,6 @@ Preferences.addSetting({
 
 Preferences.addSetting({
   id: "dohExceptionsButton",
-  deps: ["dohMode", "dohExcludedDomains"],
-  disabled: ({ dohMode, dohExcludedDomains }) =>
-    dohMode.locked || dohExcludedDomains.locked,
   onUserClick: () => PrivacySettingHelpers.showDoHExceptions(),
 });
 
@@ -3146,11 +3142,6 @@ Preferences.addSetting({
 Preferences.addSetting({
   id: "dohDisableHeuristics",
   pref: "doh-rollout.disable-heuristics",
-});
-
-Preferences.addSetting({
-  id: "dohExcludedDomains",
-  pref: "network.trr.excluded-domains",
 });
 
 Preferences.addSetting({
@@ -3291,7 +3282,6 @@ Preferences.addSetting({
   // Therefore, we set dohMode and dohURL as deps here. This is a smell, but needed
   // for the mismatch of control-to-pref.
   deps: ["dohFallbackIfCustom", "dohMode", "dohURL"],
-  disabled: ({ dohMode }) => dohMode.locked,
   onUserChange: (val, deps) => {
     let value = null;
     if (val == "default") {
@@ -3374,7 +3364,6 @@ Preferences.addSetting({
   // Therefore, we set dohMode as a dep here. This is a smell, but needed
   // for the mismatch of control-to-pref.
   deps: ["dohMode"],
-  disabled: ({ dohMode }) => dohMode.locked,
   onUserChange: val => {
     if (val) {
       Glean.securityDohSettings.modeChangedButton.record({
@@ -3414,11 +3403,10 @@ Preferences.addSetting({
 
 Preferences.addSetting({
   id: "dohCustomProvider",
-  deps: ["dohProviderSelect", "dohURL", "dohMode"],
+  deps: ["dohProviderSelect", "dohURL"],
   visible: deps => {
     return deps.dohProviderSelect.value == "custom";
   },
-  disabled: ({ dohMode, dohURL }) => dohMode.locked || dohURL.locked,
   get(_val, deps) {
     return deps.dohURL.value;
   },
@@ -3429,9 +3417,8 @@ Preferences.addSetting({
 
 Preferences.addSetting({
   id: "dohProviderSelect",
-  deps: ["dohURL", "dohDefaultURL", "dohMode"],
+  deps: ["dohURL", "dohDefaultURL"],
   _custom: false,
-  disabled: ({ dohMode, dohURL }) => dohMode.locked || dohURL.locked,
   onUserChange: value => {
     Glean.securityDohSettings.providerChoiceValue.record({
       value,
