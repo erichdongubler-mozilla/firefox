@@ -13968,6 +13968,9 @@ button.arrow-button:dir(rtl) {
 .nova-enabled .omc-highlight-slot {
   grid-column: 1/-1;
 }
+.nova-enabled .omc-highlight-slot .feature-highlight {
+  z-index: 4;
+}
 .nova-enabled .feature-highlight .widgets-callout {
   --nova-highlight-border-gradient-start: light-dark(#B58CFF, #A67CE5);
   --nova-highlight-border-gradient-end: light-dark(#FF8A5B, #764EDD);
