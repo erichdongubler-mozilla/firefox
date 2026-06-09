@@ -558,6 +558,11 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
             }
 
             // Only displayed when secret settings are enabled
+            resources.getString(R.string.pref_key_secret_debug_info) -> {
+                SettingsFragmentDirections.actionSettingsFragmentToSecretInfoSettingsFragment()
+            }
+
+            // Only displayed when secret settings are enabled
             resources.getString(R.string.pref_key_nimbus_experiments) -> {
                 SettingsFragmentDirections.actionSettingsFragmentToNimbusExperimentsFragment()
             }
@@ -615,6 +620,9 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
             )?.isVisible = showSecretDebugMenuThisSession
             findPreference<Preference>(
                 getPreferenceKey(R.string.pref_key_debug_settings),
+            )?.isVisible = showSecretDebugMenuThisSession
+            findPreference<Preference>(
+                getPreferenceKey(R.string.pref_key_secret_debug_info),
             )?.isVisible = showSecretDebugMenuThisSession
             findPreference<Preference>(
                 getPreferenceKey(R.string.pref_key_sync_debug),

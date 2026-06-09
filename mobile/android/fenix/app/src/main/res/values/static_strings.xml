@@ -37,6 +37,8 @@
     <string name="secret_settings_category_features_title" translatable="false">Features</string>
     <string name="secret_settings_category_debug_title" translatable="false">Debug</string>
 
+    <!-- Label for the secret settings preference -->
+    <string name="preferences_debug_info" translatable="false">Secret Debug Info</string>
     <!-- Label for remote settings server preference -->
     <string name="preferences_debug_settings_remote_settings_server_label" translatable="false">Remote Settings Server (requires restart)</string>
     <!-- Label for Production server option -->
@@ -223,6 +225,13 @@
     <!-- Content description (not visible, for screen readers etc.) used to announce [LinkTextView]. -->
     <string name="link_text_view_type_announcement" translatable="false">link</string>
 
+    <!-- Secret debug info strings -->
+    <string name="debug_info_region_home" translatable="false">Home region</string>
+    <string name="debug_info_region_current" translatable="false">Current region</string>
+    <string name="debug_info_distribution_id" translatable="false">Distribution ID</string>
+    <string name="debug_info_play_referrer" translatable="false">Play install referrer</string>
+    <string name="debug_info_run_query_provider_test" translatable="false">Run query provider test</string>
+
     <!-- Profiler settings -->
     <string name="preferences_start_profiler">Start Profiler</string>
     <string name="profiler_stop">Stop Profiler</string>
@@ -266,12 +275,6 @@
     <string name="debug_drawer_sports_widget_tool_use_mock_server">Use mock World Cup server</string>
     <string name="debug_drawer_sports_widget_tool_mock_server_session">Mock server session</string>
     <string name="debug_drawer_sports_widget_tool_apply_session">Apply</string>
-
-    <!-- Debug drawer Distribution tools -->
-    <string name="debug_drawer_distribution_tools_title">Distribution Tools</string>
-    <string name="debug_drawer_distribution_id" translatable="false">Distribution ID</string>
-    <string name="debug_drawer_play_referrer" translatable="false">Play install referrer</string>
-    <string name="debug_drawer_run_query_provider_test" translatable="false">Run query provider test</string>
 
     <!-- Debug drawer "contextual feature recommendation" (CFR) tools -->
     <!-- The description of the reset CFR section in CFR Tools -->
