@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AsyncClipboardRequest.h"
-#include "nsClipboardX11.h"
+#include "RetrievalContextX11.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WidgetUtilsGtk.h"
 

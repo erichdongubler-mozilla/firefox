@@ -5,16 +5,15 @@
 #include "AsyncClipboardRequest.h"
 
 #ifdef MOZ_WAYLAND
-#  include "nsClipboardWayland.h"
 #  include <sys/mman.h>
 #  include <fcntl.h>
 #  include <gio/gunixinputstream.h>
 #  include <glib.h>
 #  include <glib-unix.h>
+#  include "RetrievalContextWayland.h"
 #endif
 
-using namespace mozilla;
-using namespace mozilla::widget;
+namespace mozilla::widget {
 
 ClipboardData AsyncClipboardRequest::TakeResult() {
   if (!HasCompleted() || HasFailed()) {
@@ -290,3 +289,5 @@ AsyncWaylandClipboardRequest::AsyncWaylandClipboardRequest(
       MakeUnique<DataRequestWayland>(aDataType, aDataOffer, aMimeType);
 }
 #endif
+
+}  // namespace mozilla::widget

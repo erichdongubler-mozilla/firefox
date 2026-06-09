@@ -30,19 +30,12 @@
 #ifdef ACCESSIBILITY
 #  include "mozilla/a11y/LocalAccessible.h"
 #endif
-
 #ifdef MOZ_X11
 #  include <gdk/gdkx.h>
 #  include "X11UndefineNone.h"
 #endif
-#ifdef MOZ_WAYLAND
-#  include <gdk/gdkwayland.h>
-#  include "base/thread.h"
-#  include "nsClipboardWayland.h"
-#endif
 
 #ifdef MOZ_LOGGING
-
 #  undef LOG
 #  undef LOGVERBOSE
 

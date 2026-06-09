@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsClipboard.h"
+#include "RetrievalContextGtk.h"
 
 #include "AsyncClipboardRequest.h"
 #include "mozilla/TimeStamp.h"
@@ -18,16 +18,15 @@ constinit ClipboardTargets RetrievalContextGtk::sPrimaryTargets;
 
 RetrievalContextGtk::RetrievalContextGtk() = default;
 
-ClipboardTargets RetrievalContextGtk::GetTargetsImpl(
-    int32_t aWhichClipboard) {
+ClipboardTargets RetrievalContextGtk::GetTargetsImpl(int32_t aWhichClipboard) {
   MOZ_CLIPBOARD_LOG("RetrievalContextGtk::GetTargetsImpl()\n");
 
   return WaitForClipboardData(ClipboardDataType::Targets, aWhichClipboard)
       .ExtractTargets();
 }
 
-ClipboardData RetrievalContextGtk::GetClipboardData(
-    const char* aMimeType, int32_t aWhichClipboard) {
+ClipboardData RetrievalContextGtk::GetClipboardData(const char* aMimeType,
+                                                    int32_t aWhichClipboard) {
   MOZ_CLIPBOARD_LOG("RetrievalContextGtk::GetClipboardData() mime %s\n",
                     aMimeType);
 
@@ -50,8 +49,8 @@ GUniquePtr<char> RetrievalContextGtk::GetClipboardText(
 ClipboardData RetrievalContextGtk::WaitForClipboardData(
     ClipboardDataType aDataType, int32_t aWhichClipboard,
     const char* aMimeType) {
-  MOZ_CLIPBOARD_LOG(
-      "RetrievalContextGtk::WaitForClipboardData, MIME %s\n", aMimeType);
+  MOZ_CLIPBOARD_LOG("RetrievalContextGtk::WaitForClipboardData, MIME %s\n",
+                    aMimeType);
 
   AsyncGtkClipboardRequest request(aDataType, aWhichClipboard, aMimeType);
   int iteration = 1;
