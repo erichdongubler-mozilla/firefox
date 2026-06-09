@@ -715,6 +715,9 @@ bool js::jit::AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
       }
     }
   }
+  if (newReader.more() || stubReader.more()) {
+    return false;
+  }
 
   if (shapeFieldOffset.isNothing()) {
     // The stub did not contain the GuardMultipleShapes op. This can happen if a
