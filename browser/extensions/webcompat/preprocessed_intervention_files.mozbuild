@@ -134,7 +134,6 @@ preprocessed_intervention_files = [
     "bug2004610-character.ai-fix_broken_italics.css",
     "bug2005520-portal.adtpulse.com-hide_browser_notice.css",
     "bug2006036-fbo.fubon.com.js",
-    "bug2007641-papajohns.com.js",
     "bug2008115-pge.com-hide_browser_notice.css",
     "bug2009358-stgguaiba.com.br-fix_table_layout.css",
     "bug2010102-osmosis.org-center_pages.css",
