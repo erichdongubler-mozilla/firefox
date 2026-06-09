@@ -18,9 +18,6 @@ MappedFileReader::MappedFileReader(base::File file) {
   }
   if (!buffer_.Initialize(std::move(file))) {
     error_ = "Can't map file to memory.";
-#if defined(MOZ_ZUCCHINI)
-    error_is_oom_ = buffer_.is_mapping_oom();
-#endif  // defined(MOZ_ZUCCHINI)
   }
 }
 
@@ -59,9 +56,6 @@ MappedFileWriter::MappedFileWriter(const base::FilePath& file_path,
                                   base::MemoryMappedFile::READ_WRITE_EXTEND);
   if (!is_ok) {
     error_ = "Can't map file to memory.";
-#if defined(MOZ_ZUCCHINI)
-    error_is_oom_ = buffer_.is_mapping_oom();
-#endif  // defined(MOZ_ZUCCHINI)
   }
 }
 
