@@ -1,6 +1,6 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: moz.l10n
-Version: 0.9.0
+Version: 0.11.3
 Summary: Mozilla tools for localization
 Author-email: Mozilla <l10n-drivers@mozilla.org>, Eemeli Aro <eemeli@mozilla.com>
 License: Apache-2.0
@@ -12,23 +12,24 @@ Classifier: License :: OSI Approved :: Apache Software License
 Classifier: Operating System :: OS Independent
 Classifier: Programming Language :: Python
 Classifier: Programming Language :: Python :: 3
-Classifier: Programming Language :: Python :: 3.8
 Classifier: Programming Language :: Python :: 3.9
 Classifier: Programming Language :: Python :: 3.10
 Classifier: Programming Language :: Python :: 3.11
 Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Programming Language :: Python :: 3.14
 Classifier: Topic :: Software Development :: Libraries :: Python Modules
 Classifier: Topic :: Software Development :: Localization
 Classifier: Topic :: Software Development :: Testing
-Requires-Python: ~=3.8
+Requires-Python: <4,>=3.9
 Description-Content-Type: text/markdown
-Requires-Dist: fluent.syntax ~=0.19.0
-Requires-Dist: gitignorant ~=0.3.1
-Requires-Dist: iniparse ~=0.5
-Requires-Dist: polib ~=1.2
-Requires-Dist: tomli >=1.1.0 ; python_version < "3.11"
+Requires-Dist: fluent.syntax~=0.19.0
+Requires-Dist: gitignorant~=0.3.1
+Requires-Dist: iniparse~=0.5
+Requires-Dist: polib~=1.2
+Requires-Dist: tomli>=1.1.0; python_version < "3.11"
 Provides-Extra: xml
-Requires-Dist: lxml <=5.4.0,>=5.0.0 ; extra == 'xml'
+Requires-Dist: lxml<6.1.0,>=6.0.0; extra == "xml"
 
 # moz.l10n
 
@@ -136,18 +137,31 @@ and/or contents.
 
 Returns a `Format` enum value, or `None` if the input is not recognized.
 
-### moz.l10n.message: from_json() and to_json()
+### moz.l10n.message: entry_from_json() and entry_to_json()
 
 ```python
-from moz.l10n.message import from_json, to_json
+from moz.l10n.message import entry_from_json, entry_to_json
+
+def entry_from_json(key: str, json: dict[str, Any]) -> Entry[Message]
+def entry_to_json(entry: Entry[Message]) -> tuple[str, dict[str, Any]]
+```
+
+Converters to and from a JSON-serializable representation of an `Entry`.
+The format of the output is defined by the [`entry.json`](../schemas/entry.json) JSON Schema.
+Note that the stringified message identifier is handled separately from the other fields,
+as it's meant to be used as a mapping key.
+
+### moz.l10n.message: message_from_json() and message_to_json()
+
+```python
+from moz.l10n.message import message_from_json, message_to_json
 
 def message_from_json(json: list[Any] | dict[str, Any]) -> Message
-
 def message_to_json(msg: Message) -> list[Any] | dict[str, Any]
 ```
 
 Converters to and from a JSON-serializable representation of a `Message`.
-The format of the output is defined by the [`schema.json`](./moz/l10n/message/schema.json) JSON Schema.
+The format of the output is defined by the [`message.json`](../schemas/message.json) JSON Schema.
 
 ### moz.l10n.message.parse_message
 
@@ -166,33 +180,150 @@ def parse_message(
 
 Parse a `Message` from its string representation.
 
-Custom parsers are used for `android`, `mf2`, `webext`, and `xliff` formats.
-Other formats may include printf specifiers if `printf_placeholders` is enabled.
+Custom parsers are used for `android`, `fluent`, `mf2`, `properties`, `webext`, and `xliff` formats.
+`properties` and other formats not listed may include printf specifiers if `printf_placeholders` is enabled.
 
 Parsing a `webext` message that contains named placeholders requires
 providing the message's `webext_placeholders` dict.
 
 To parse an `xliff` message with XCode customizations, enable `xliff_is_xcode`.
 
-Parsing `fluent` messages is not supported,
-as their parsing may result in multiple `Entry` values.
-
 ### moz.l10n.message.serialize_message
 
 ```python
 from moz.l10n.message import serialize_message
 
-def serialize_message(format: Format, msg: Message) -> str
+def serialize_message(format: Format, msg: Message | Pattern) -> str
 ```
 
-Serialize a `Message` to its string representation.
+Serialize a `Message` or `Pattern` to its string representation.
 
-Custom serialisers are used for `android`, `mf2`, `webext`, and `xliff` formats.
+Custom serialisers are used for `android`, `fluent`, `mf2`, `properties`, `webext`, and `xliff` formats.
 Many formats rely on non-string message parts including an appropriate `source` attribute.
 
-SelectMessage serialization is only supported for `mf2`.
+SelectMessage serialization is only supported for `fluent` and `mf2`.
 
-Serializing `fluent` messages is not supported.
+### moz.l10n.migrate.Migrate
+
+```python
+from moz.l10n.migrate import Migrate, MigrationFunction, MigrationResult
+
+(type) MigrationResult = str | Message | Entry[Message]
+
+(type) MigrationFunction = (
+    Resource[Message], MigrationContext
+) -> (
+    MigrationResult | tuple[MigrationResult, set[str] | set[Id]] | None
+)
+
+class Migrate(
+    map: dict[
+        str,
+        dict[tuple[str, ...] | str, MigrationFunction],
+    ],
+    paths: str | L10nConfigPaths | L10nDiscoverPaths | None = None,
+)
+```
+
+Define a migration that adds entries according to `map` to resources in `paths`.
+
+This is primarily intended to be called from a migration script,
+which is then processed with the `l10n-migrate` CLI command.
+
+`map` is a mapping of resource reference paths to target entry identifiers
+to functions that define their values;
+the MigrationFunction will be called with two arguments
+`(resource, context: MigrationContext)`.
+
+Functions defining new entries should return a Message, an Entry,
+or a tuple consisting of one of those along with a set of identifiers
+for entries after which the new entry should be inserted.
+
+If an entry already exists with the target identifier, it is not modified.
+
+If no resource exists for a target locale, one is created.
+For .ini, JSON, and XML-based resources,
+the reference resource must exist to create a new resource.
+
+### moz.l10n.migrate.copy
+
+```python
+from moz.l10n.migrate import MigrationFunction, copy
+
+def copy(
+    ref_path: None | str,
+    id: tuple[str, ...] | str,
+    *,
+    property: str | None = None,
+    replace: Callable[[Expression | Markup | str], Expression | Markup | str | None]
+    | None = None,
+    value_only: bool = False,
+    variant: tuple[str | CatchallKey, ...] | str | None = None,
+) -> MigrationFunction
+```
+
+Create a copy migration function, from entry `id` in `ref_path`.
+
+If `ref_path` is None, the entry is copied from the current Resource.
+
+If `property` is set, the Message of the specified property is copied.
+Similarly, if `value_only` is set, only the `.value` Message is copied.
+
+If `variant` is set and the Message is a SelectMessage,
+the pattern of the specified variant is copied (or the default one).
+
+To change a message during the copy, define a `replace` function.
+It may mutate each placeholder directly,
+or return a non-None value to use as its replacement.
+To remove a placeholder, return an empty string.
+
+### moz.l10n.migrate.entry
+
+```python
+from moz.l10n.migrate import MigrationFunction, MigrationResult, entry
+
+def entry(
+    value: MigrationFunction | MigrationResult | None = None,
+    properties: dict[str, MigrationFunction | MigrationResult] | None = None,
+    *,
+    allow_partial: bool = False,
+    comment: str | None = None,
+    meta: list[Metadata] | None = None,
+) -> MigrationFunction
+```
+
+Create a new Entry, from any number of source messages.
+
+With non-callable `value` and `properties`,
+the same message will be used for all locales.
+
+If `allow_partial` is False,
+None will be returned if any MigrationFunction return None.
+
+If `comment` and `meta` are None and `value` resolves to an Entry,
+its `comment` and `meta` (if any) are included in the result.
+
+### moz.l10n.migrate.utils
+
+```python
+from moz.l10n.migrate.utils import (
+    MigrationContext,
+    get_entry,
+    get_pattern,
+    plural_message,
+)
+
+def make_plural_x(res, ctx: MigrationContext):
+    x_other = get_pattern(res, "x-other")
+    x_one = get_pattern(res, "x-one", default=x_other)
+    x_two = get_pattern(res, "x-two", default=x_other)
+    msg = plural_message("quantity", one=x_one, two=x_two, other=x_other)
+    return msg, {"x-one", "x-two", "x-other"}
+```
+
+Utilities for putting together more complex message migrations.
+See individual [doc comments](moz/l10n/migrate/utils.py) for more information,
+and the [test suite](tests/test_migrate.py) for example usage.
 
 ### moz.l10n.model
 
@@ -310,7 +441,7 @@ an attempt is made to detect the appropriate format.
 
 If the first argument is a string path,
 the `source` argument is optional,
-as the file will be opened and read.
+as the file will be opened and read if `source` is not set.
 
 ### moz.l10n.resource.serialize_resource
 
