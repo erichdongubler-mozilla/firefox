@@ -50,6 +50,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -62,6 +63,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import mozilla.components.compose.base.BottomSheetHandle
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.FilledButton
@@ -79,12 +81,14 @@ import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
+import kotlin.time.Duration.Companion.milliseconds
 
 private val formFieldShape: Shape
     @Composable
     get() = MaterialTheme.shapes.large
 private const val COLOR_PICKER_MAX_ITEMS_PER_ROW = 5
 internal const val MAX_TAB_GROUP_NAME_LENGTH = 256
+private val FOCUS_REQUEST_DELAY = 50.milliseconds
 
 /**
  * Prompt to edit a tab group.
@@ -323,9 +327,14 @@ private fun TabGroupNameTextField(
     modifier: Modifier = Modifier,
 ) {
     val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(Unit) {
+        // On some devices (e.g. Samsung/HTC), the keyboard is not automatically triggered.
+        // A small delay ensures the view is ready to receive focus and show the keyboard.
+        delay(FOCUS_REQUEST_DELAY)
         focusRequester.requestFocus()
+        keyboardController?.show()
     }
 
     val selectionColors = TextSelectionColors(
