@@ -69,7 +69,6 @@ import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.ext.registerForActivityResult
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.home.HomeScreenViewModel
 import org.mozilla.fenix.navigation.DefaultNavControllerProvider
 import org.mozilla.fenix.navigation.NavControllerProvider
@@ -196,7 +195,7 @@ class TabManagementFragment : Fragment() {
             onSuccess = {
                 PrivateBrowsingLocked.authSuccess.record()
                 PrivateBrowsingLocked.featureEnabled.record()
-                requireContext().settings().privateBrowsingModeLocked = true
+                requireComponents.settings.privateBrowsingModeLocked = true
             },
             onFailure = {
                 PrivateBrowsingLocked.authFailure.record()
@@ -219,7 +218,7 @@ class TabManagementFragment : Fragment() {
             appStore = requireComponents.appStore,
             tabsTrayStore = tabsTrayStore,
             browserStore = requireComponents.core.store,
-            settings = requireContext().settings(),
+            settings = requireComponents.settings,
             browsingModeManager = (activity as HomeActivity).browsingModeManager,
             navController = findNavController(),
             navigateToHomeAndDeleteSession = ::navigateToHomeAndDeleteSession,
@@ -240,7 +239,7 @@ class TabManagementFragment : Fragment() {
 
         tabManagerInteractor = DefaultTabManagerInteractor(controller = tabManagerController)
 
-        val settings = requireContext().settings()
+        val settings = requireComponents.settings
         val showPrivacyReport = settings.showPrivacyReportInTabManager
 
         return content {
@@ -394,20 +393,20 @@ class TabManagementFragment : Fragment() {
                                         tabManagerInteractor::onForceSelectedTabsAsInactiveClicked,
                                     onTabsTrayPbmLockedClick = ::onTabsTrayPbmLockedClick,
                                     onTabsTrayPbmLockedDismiss = {
-                                        requireContext().settings().shouldShowLockPbmBanner = false
+                                        requireComponents.settings.shouldShowLockPbmBanner = false
                                         PrivateBrowsingLocked.bannerNegativeClicked.record()
                                     },
                                     onTabAutoCloseBannerViewOptionsClick = {
                                         tabManagerController.onTabSettingsClicked()
-                                        requireContext().settings().shouldShowAutoCloseTabsBanner =
+                                        requireComponents.settings.shouldShowAutoCloseTabsBanner =
                                             false
-                                        requireContext().settings().lastCfrShownTimeInMillis =
+                                        requireComponents.settings.lastCfrShownTimeInMillis =
                                             System.currentTimeMillis()
                                     },
                                     onTabAutoCloseBannerDismiss = {
-                                        requireContext().settings().shouldShowAutoCloseTabsBanner =
+                                        requireComponents.settings.shouldShowAutoCloseTabsBanner =
                                             false
-                                        requireContext().settings().lastCfrShownTimeInMillis =
+                                        requireComponents.settings.lastCfrShownTimeInMillis =
                                             System.currentTimeMillis()
                                     },
                                     onTabAutoCloseBannerShown = {},
@@ -416,17 +415,17 @@ class TabManagementFragment : Fragment() {
                                         TabsTray.inactiveTabsCfrVisible.record(NoExtras())
                                     },
                                     onInactiveTabsCFRClick = {
-                                        requireContext().settings().shouldShowInactiveTabsOnboardingPopup =
+                                        requireComponents.settings.shouldShowInactiveTabsOnboardingPopup =
                                             false
-                                        requireContext().settings().lastCfrShownTimeInMillis =
+                                        requireComponents.settings.lastCfrShownTimeInMillis =
                                             System.currentTimeMillis()
                                         tabManagerController.onTabSettingsClicked()
                                         TabsTray.inactiveTabsCfrSettings.record(NoExtras())
                                     },
                                     onInactiveTabsCFRDismiss = {
-                                        requireContext().settings().shouldShowInactiveTabsOnboardingPopup =
+                                        requireComponents.settings.shouldShowInactiveTabsOnboardingPopup =
                                             false
-                                        requireContext().settings().lastCfrShownTimeInMillis =
+                                        requireComponents.settings.lastCfrShownTimeInMillis =
                                             System.currentTimeMillis()
                                         TabsTray.inactiveTabsCfrDismissed.record(NoExtras())
                                     },
@@ -564,7 +563,7 @@ class TabManagementFragment : Fragment() {
 
     private fun setupStore(): TabsTrayStore {
         val args by navArgs<TabManagementFragmentArgs>()
-        val settings = requireContext().settings()
+        val settings = requireComponents.settings
 
         args.accessPoint.takeIf { it != AccessPoint.None }?.let {
             TabsTray.accessPoint[it.name.lowercase()].add()
@@ -650,7 +649,7 @@ class TabManagementFragment : Fragment() {
                 val newTabPosition = getTabPositionFromId(normalTabs, tab.id)
 
                 if (abs(currentTabPosition - newTabPosition) == 1) {
-                    requireContext().settings().shouldShowTabSwipeCFR =
+                    requireComponents.settings.shouldShowTabSwipeCFR =
                         true
                 }
             }
@@ -662,7 +661,7 @@ class TabManagementFragment : Fragment() {
         )
     }
 
-    private fun shouldConsiderShowingTabSwipeCFR(settings: Settings = requireContext().settings()) =
+    private fun shouldConsiderShowingTabSwipeCFR(settings: Settings = requireComponents.settings) =
         with(settings) {
             !hasShownTabSwipeCFR && !isTabStripEnabled && isSwipeToolbarToSwitchTabsEnabled
         }
@@ -733,7 +732,7 @@ class TabManagementFragment : Fragment() {
             view = view,
         )
 
-        if (requireContext().settings().showPrivacyReportInTabManager) {
+        if (requireComponents.settings.showPrivacyReportInTabManager) {
             trackersBlockedFeature.set(
                 feature = TrackersBlockedFeature(
                     browserStore = requireComponents.core.store,
@@ -795,7 +794,7 @@ class TabManagementFragment : Fragment() {
             snackbarHostState.displaySnackbar(
                 message = getString(R.string.snackbar_tab_closed),
                 actionLabel = getString(R.string.snackbar_deleted_undo),
-                timeout = requireContext().getSnackbarTimeout(hasAction = true),
+                timeout = requireComponents.settings.getSnackbarTimeout(hasAction = true),
                 onActionPerformed = { closeOperation.undo() },
             )
         }
@@ -814,7 +813,7 @@ class TabManagementFragment : Fragment() {
             snackbarHostState.displaySnackbar(
                 message = snackbarMessage,
                 actionLabel = getString(R.string.snackbar_deleted_undo),
-                timeout = requireContext().getSnackbarTimeout(hasAction = true),
+                timeout = requireComponents.settings.getSnackbarTimeout(hasAction = true),
                 onActionPerformed = {
                     undoUseCases.invoke()
                     runIfFragmentIsAttached {
@@ -836,7 +835,7 @@ class TabManagementFragment : Fragment() {
             snackbarHostState.displaySnackbar(
                 message = snackbarMessage,
                 actionLabel = getString(R.string.snackbar_deleted_undo),
-                timeout = requireContext().getSnackbarTimeout(hasAction = true),
+                timeout = requireComponents.settings.getSnackbarTimeout(hasAction = true),
                 onActionPerformed = {
                     requireComponents.useCases.tabsUseCases.undo.invoke()
                     tabsTrayStore.dispatch(TabsTrayAction.PageSelected(Page.NormalTabs))
@@ -905,7 +904,7 @@ class TabManagementFragment : Fragment() {
         lifecycleScope.launch {
             snackbarHostState.displaySnackbar(
                 message = getString(messageResId),
-                timeout = requireContext().getSnackbarTimeout(hasAction = false),
+                timeout = requireComponents.settings.getSnackbarTimeout(hasAction = false),
             )
         }
     }
@@ -928,7 +927,7 @@ class TabManagementFragment : Fragment() {
             snackbarHostState.displaySnackbar(
                 message = getString(displayResId, displayFolderTitle),
                 actionLabel = getString(R.string.create_collection_view),
-                timeout = requireContext().getSnackbarTimeout(hasAction = true),
+                timeout = requireComponents.settings.getSnackbarTimeout(hasAction = true),
                 onActionPerformed = {
                     findNavController().navigate(
                         TabManagementFragmentDirections.actionGlobalBookmarkFragment(BookmarkRoot.Mobile.id),
@@ -947,7 +946,7 @@ class TabManagementFragment : Fragment() {
         lifecycleScope.launch {
             snackbarHostState.displaySnackbar(
                 message = getString(R.string.inactive_tabs_auto_close_message_snackbar),
-                timeout = requireContext().getSnackbarTimeout(hasAction = false),
+                timeout = requireComponents.settings.getSnackbarTimeout(hasAction = false),
             )
         }
     }
@@ -972,8 +971,8 @@ class TabManagementFragment : Fragment() {
                     PrivateBrowsingLocked.bannerPositiveClicked.record()
                     PrivateBrowsingLocked.authSuccess.record()
                     PrivateBrowsingLocked.featureEnabled.record()
-                    requireContext().settings().privateBrowsingModeLocked = true
-                    requireContext().settings().shouldShowLockPbmBanner = false
+                    requireComponents.settings.privateBrowsingModeLocked = true
+                    requireComponents.settings.shouldShowLockPbmBanner = false
                 },
                 onAuthFailure = {
                     PrivateBrowsingLocked.authFailure.record()
@@ -1013,7 +1012,7 @@ class TabManagementFragment : Fragment() {
         mode: TabsTrayState.Mode,
         tabState: TabsTrayItem.Tab?,
     ): Boolean {
-        return requireContext().settings().tabManagerOpeningAnimationEnabled &&
+        return requireComponents.settings.tabManagerOpeningAnimationEnabled &&
             tabMatchesPage(selectedPage, tabState) &&
             mode is TabsTrayState.Mode.Normal
     }

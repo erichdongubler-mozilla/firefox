@@ -36,7 +36,6 @@ import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.share.QR_CODE_URI_KEY
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getIntentSource
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.helpers.perf.TestStrictModeManager
 import org.mozilla.fenix.utils.Settings
@@ -59,7 +58,7 @@ class HomeActivityTest {
         settings = mockk(relaxed = true)
         appStore = mockk(relaxed = true)
 
-        every { testContext.settings() } returns settings
+        every { testContext.components.settings } returns settings
         every { testContext.components.appStore } returns appStore
     }
 

@@ -15,7 +15,6 @@ import kotlinx.coroutines.launch
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.nimbus.FxNimbus
 import java.net.URLDecoder
 
@@ -70,9 +69,12 @@ class InstallReferrerHandlingService(
 
                             if (!installReferrerResponse.isNullOrBlank()) {
                                 response = installReferrerResponse
-                                context.settings().isUserMetaAttributed = isMetaAttribution(installReferrerResponse)
-                                context.settings().isUserTikTokAttributed = isTikTokAttribution(installReferrerResponse)
-                                context.settings().isUserRedditAttributed = isRedditAttribution(installReferrerResponse)
+                                context.components.settings.isUserMetaAttributed =
+                                    isMetaAttribution(installReferrerResponse)
+                                context.components.settings.isUserTikTokAttributed =
+                                    isTikTokAttribution(installReferrerResponse)
+                                context.components.settings.isUserRedditAttributed =
+                                    isRedditAttribution(installReferrerResponse)
                                 distributionIdManager.updateDistributionIdFromUtmParams(
                                     UTMParams.parseUTMParameters(installReferrerResponse),
                                 )
@@ -82,7 +84,7 @@ class InstallReferrerHandlingService(
                             }
 
                             scope.launch {
-                                context.settings().shouldShowMarketingOnboarding =
+                                context.components.settings.shouldShowMarketingOnboarding =
                                     shouldShowMarketingOnboarding(
                                         installReferrerResponse,
                                         distributionIdManager,
@@ -99,7 +101,7 @@ class InstallReferrerHandlingService(
                         InstallReferrerClient.InstallReferrerResponse.SERVICE_UNAVAILABLE,
                         InstallReferrerClient.InstallReferrerResponse.SERVICE_DISCONNECTED,
                             -> {
-                            context.settings().shouldShowMarketingOnboarding = false
+                            context.components.settings.shouldShowMarketingOnboarding = false
                             safeEndConnection(client)
                             return
                         }
@@ -107,7 +109,7 @@ class InstallReferrerHandlingService(
                 }
 
                 override fun onInstallReferrerServiceDisconnected() {
-                    context.settings().shouldShowMarketingOnboarding = false
+                    context.components.settings.shouldShowMarketingOnboarding = false
                     safeEndConnection(client)
                 }
             },

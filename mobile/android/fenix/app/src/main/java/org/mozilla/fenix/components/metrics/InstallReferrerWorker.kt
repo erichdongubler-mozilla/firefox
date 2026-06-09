@@ -19,7 +19,7 @@ import org.json.JSONObject
 import org.mozilla.fenix.GleanMetrics.MetaAttribution
 import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.GleanMetrics.PlayStoreAttribution
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.utils.Settings
 import java.io.UnsupportedEncodingException
 import java.net.URLDecoder
@@ -40,7 +40,7 @@ class InstallReferrerWorker(
     workerParameters: WorkerParameters,
 ) : CoroutineWorker(context, workerParameters) {
 
-    private val settings = context.settings()
+    private val settings = context.components.settings
 
     override suspend fun doWork(): Result {
         val referrerClient = DefaultInstallReferrerClient(applicationContext)

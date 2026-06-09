@@ -79,8 +79,8 @@ import org.mozilla.fenix.components.appstate.search.SearchState
 import org.mozilla.fenix.components.appstate.search.SelectedSearchEngine
 import org.mozilla.fenix.components.menu.MenuAccessPoint
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.nav
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.home.toolbar.BrowserToolbarMiddleware.Companion.toHomeToolbarAction
 import org.mozilla.fenix.home.toolbar.BrowserToolbarMiddleware.HomeToolbarAction
@@ -117,10 +117,10 @@ class BrowserToolbarMiddlewareTest {
     @Before
     fun setup() = runTest {
         appStore = spyk(AppStore())
-        every { testContext.settings().shouldUseExpandedToolbar } returns false
-        every { testContext.settings().isTabStripEnabled } returns false
-        every { testContext.settings().toolbarExpandedShortcutKey } returns ShortcutType.BOOKMARK.value
-        every { testContext.settings().showVoiceSearchInDisplayToolbar } returns false
+        every { testContext.components.settings.shouldUseExpandedToolbar } returns false
+        every { testContext.components.settings.isTabStripEnabled } returns false
+        every { testContext.components.settings.toolbarExpandedShortcutKey } returns ShortcutType.BOOKMARK.value
+        every { testContext.components.settings.showVoiceSearchInDisplayToolbar } returns false
     }
 
     @Test
@@ -137,7 +137,7 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `WHEN initializing the toolbar AND should use expanded toolbar THEN don't add browser end actions`() = runTest {
-        every { testContext.settings().shouldUseExpandedToolbar } returns true
+        every { testContext.components.settings.shouldUseExpandedToolbar } returns true
 
         val (_, toolbarStore) = buildMiddlewareAndAddToStore()
 
@@ -147,7 +147,7 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `WHEN initializing the navigation bar AND should use expanded toolbar THEN add navigation bar actions`() = runTest {
-        every { testContext.settings().shouldUseExpandedToolbar } returns true
+        every { testContext.components.settings.shouldUseExpandedToolbar } returns true
 
         val (_, toolbarStore) = buildMiddlewareAndAddToStore()
 
@@ -170,7 +170,7 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `WHEN initializing the navigation bar AND should use expanded toolbar AND window is short THEN add no navigation bar actions`() = runTest {
-        every { testContext.settings().shouldUseExpandedToolbar } returns true
+        every { testContext.components.settings.shouldUseExpandedToolbar } returns true
 
         val (_, toolbarStore) = buildMiddlewareAndAddToStore(
             isWideScreen = { true },
@@ -190,7 +190,7 @@ class BrowserToolbarMiddlewareTest {
                 orientation = Portrait,
             ),
         )
-        every { testContext.settings().shouldUseExpandedToolbar } returns true
+        every { testContext.components.settings.shouldUseExpandedToolbar } returns true
 
         var isWideScreen = false
         var isTallScreen = true
@@ -284,7 +284,7 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN voice search in display toolbar is disabled WHEN initializing the toolbar THEN no end page actions are shown and the long search hint is used`() {
-        every { testContext.settings().showVoiceSearchInDisplayToolbar } returns false
+        every { testContext.components.settings.showVoiceSearchInDisplayToolbar } returns false
 
         val (_, toolbarStore) = buildMiddlewareAndAddToStore()
 
@@ -294,7 +294,7 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN voice search is enabled AND speech recognition is available WHEN initializing the toolbar THEN a voice search button is shown and the short search hint is used`() {
-        every { testContext.settings().showVoiceSearchInDisplayToolbar } returns true
+        every { testContext.components.settings.showVoiceSearchInDisplayToolbar } returns true
         registerSpeechRecognizer()
 
         val (_, toolbarStore) = buildMiddlewareAndAddToStore()
@@ -310,7 +310,7 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN voice search is enabled AND speech recognition is unavailable WHEN initializing the toolbar THEN no voice search button is shown`() {
-        every { testContext.settings().showVoiceSearchInDisplayToolbar } returns true
+        every { testContext.components.settings.showVoiceSearchInDisplayToolbar } returns true
 
         val (_, toolbarStore) = buildMiddlewareAndAddToStore()
 
@@ -320,7 +320,7 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN voice search button is shown WHEN it is clicked THEN VoiceInputRequested is dispatched and SearchStarted is dispatched after the toolbar edit delay`() = runTest {
-        every { testContext.settings().showVoiceSearchInDisplayToolbar } returns true
+        every { testContext.components.settings.showVoiceSearchInDisplayToolbar } returns true
         registerSpeechRecognizer()
         val (_, toolbarStore) = buildMiddlewareAndAddToStore()
         val voiceSearchButton = toolbarStore.state.displayState.pageActionsEnd[0] as ActionButtonRes
@@ -392,8 +392,8 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN expanded toolbar with tabstrip and tall window WHEN changing to short window THEN show tab counter and menu`() = runTest {
-        every { testContext.settings().shouldUseExpandedToolbar } returns true
-        every { testContext.settings().isTabStripEnabled } returns true
+        every { testContext.components.settings.shouldUseExpandedToolbar } returns true
+        every { testContext.components.settings.isTabStripEnabled } returns true
         var isWideScreen = false
         var isTallScreen = true
         val (_, toolbarStore) = buildMiddlewareAndAddToStore(
@@ -869,8 +869,8 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN expanded toolbar use translate shortcut WHEN initializing toolbar THEN show DISABLED Translate in navigation actions`() = runTest {
-        every { testContext.settings().shouldUseExpandedToolbar } returns true
-        every { testContext.settings().toolbarExpandedShortcutKey } returns ShortcutType.TRANSLATE.value
+        every { testContext.components.settings.shouldUseExpandedToolbar } returns true
+        every { testContext.components.settings.toolbarExpandedShortcutKey } returns ShortcutType.TRANSLATE.value
 
         val (_, toolbarStore) = buildMiddlewareAndAddToStore()
 
@@ -880,8 +880,8 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN expanded toolbar use homepage shortcut WHEN initializing toolbar THEN show DISABLED Homepage in navigation actions`() = runTest {
-        every { testContext.settings().shouldUseExpandedToolbar } returns true
-        every { testContext.settings().toolbarExpandedShortcutKey } returns ShortcutType.HOMEPAGE.value
+        every { testContext.components.settings.shouldUseExpandedToolbar } returns true
+        every { testContext.components.settings.toolbarExpandedShortcutKey } returns ShortcutType.HOMEPAGE.value
 
         val (_, toolbarStore) = buildMiddlewareAndAddToStore()
 
@@ -891,8 +891,8 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN expanded toolbar use back shortcut WHEN initializing toolbar THEN show DISABLED Back in navigation actions`() = runTest {
-        every { testContext.settings().shouldUseExpandedToolbar } returns true
-        every { testContext.settings().toolbarExpandedShortcutKey } returns ShortcutType.BACK.value
+        every { testContext.components.settings.shouldUseExpandedToolbar } returns true
+        every { testContext.components.settings.toolbarExpandedShortcutKey } returns ShortcutType.BACK.value
 
         val (_, toolbarStore) = buildMiddlewareAndAddToStore()
 
@@ -936,7 +936,7 @@ class BrowserToolbarMiddlewareTest {
         useCases: UseCases = mockk(),
         navController: NavController = mockk(),
         browsingModeManager: BrowsingModeManager = this.browsingModeManager,
-        settings: Settings = testContext.settings(),
+        settings: Settings = testContext.components.settings,
         isWideScreen: () -> Boolean = { false },
         isTallScreen: () -> Boolean = { true },
     ): Pair<BrowserToolbarMiddleware, BrowserToolbarStore> {
@@ -967,7 +967,7 @@ class BrowserToolbarMiddlewareTest {
         useCases: UseCases = mockk(),
         navController: NavController = mockk(),
         browsingModeManager: BrowsingModeManager = this.browsingModeManager,
-        settings: Settings = testContext.settings(),
+        settings: Settings = testContext.components.settings,
         isWideScreen: () -> Boolean = { false },
         isTallScreen: () -> Boolean = { true },
     ) = BrowserToolbarMiddleware(

@@ -13,7 +13,7 @@ import androidx.fragment.compose.content
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import org.mozilla.fenix.components.metrics.installSourcePackage
 import org.mozilla.fenix.ext.application
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.onboarding.ManagePrivacyPreferencesDialog
 import org.mozilla.fenix.onboarding.store.DefaultPrivacyPreferencesRepository
 import org.mozilla.fenix.onboarding.store.PreferenceType
@@ -39,7 +39,7 @@ class ManagePrivacyPreferencesDialogFragment : DialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        val repository = DefaultPrivacyPreferencesRepository(requireContext().settings())
+        val repository = DefaultPrivacyPreferencesRepository(requireComponents.settings)
         val store by fragmentStore(
             PrivacyPreferencesState(
                 crashReportingEnabled = repository.getPreference(PreferenceType.CrashReporting),

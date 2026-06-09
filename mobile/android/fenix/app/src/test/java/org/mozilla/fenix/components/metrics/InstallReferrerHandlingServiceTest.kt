@@ -31,7 +31,6 @@ import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.distributions.DistributionProviderChecker
 import org.mozilla.fenix.distributions.DistributionSettings
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.nimbus.MarketingOnboardingCard
 import org.mozilla.fenix.utils.Settings
@@ -79,7 +78,7 @@ internal class InstallReferrerHandlingServiceTest {
     fun setUp() {
         every { testContext.components.settings } returns Settings(testContext)
         InstallReferrerHandlingService.response = null
-        testContext.settings().shouldShowMarketingOnboarding = true
+        testContext.components.settings.shouldShowMarketingOnboarding = true
         FxNimbus.features.marketingOnboardingCard.withCachedValue(MarketingOnboardingCard(enabled = true))
     }
 
@@ -96,7 +95,7 @@ internal class InstallReferrerHandlingServiceTest {
             advanceUntilIdle()
 
             assertNull(InstallReferrerHandlingService.response)
-            assertFalse(testContext.settings().shouldShowMarketingOnboarding)
+            assertFalse(testContext.components.settings.shouldShowMarketingOnboarding)
         }
 
     @Test
@@ -116,7 +115,7 @@ internal class InstallReferrerHandlingServiceTest {
         service.start()
 
         assertNull(InstallReferrerHandlingService.response)
-        assertFalse(testContext.settings().shouldShowMarketingOnboarding)
+        assertFalse(testContext.components.settings.shouldShowMarketingOnboarding)
     }
 
     @Test
@@ -125,7 +124,7 @@ internal class InstallReferrerHandlingServiceTest {
 
         service.start()
 
-        assertFalse(testContext.settings().shouldShowMarketingOnboarding)
+        assertFalse(testContext.components.settings.shouldShowMarketingOnboarding)
     }
 
     @Test
@@ -134,7 +133,7 @@ internal class InstallReferrerHandlingServiceTest {
 
         service.start()
 
-        assertFalse(testContext.settings().shouldShowMarketingOnboarding)
+        assertFalse(testContext.components.settings.shouldShowMarketingOnboarding)
     }
 
     @Test
@@ -143,7 +142,7 @@ internal class InstallReferrerHandlingServiceTest {
 
         service.start()
 
-        assertFalse(testContext.settings().shouldShowMarketingOnboarding)
+        assertFalse(testContext.components.settings.shouldShowMarketingOnboarding)
     }
 
     @Test
@@ -152,7 +151,7 @@ internal class InstallReferrerHandlingServiceTest {
 
         service.start()
 
-        assertFalse(testContext.settings().shouldShowMarketingOnboarding)
+        assertFalse(testContext.components.settings.shouldShowMarketingOnboarding)
     }
 
     private fun fakeService(
@@ -299,12 +298,12 @@ internal class InstallReferrerHandlingServiceTest {
 
         service.start()
 
-        assertTrue(testContext.settings().isUserMetaAttributed)
+        assertTrue(testContext.components.settings.isUserMetaAttributed)
     }
 
     @Test
     fun `GIVEN a non-Meta referrer on OK response WHEN start is called THEN isUserMetaAttributed is false`() {
-        testContext.settings().isUserMetaAttributed = true
+        testContext.components.settings.isUserMetaAttributed = true
         val service = fakeService(
             responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
             referrerResponse = "utm_source=google&utm_medium=cpc",
@@ -312,7 +311,7 @@ internal class InstallReferrerHandlingServiceTest {
 
         service.start()
 
-        assertFalse(testContext.settings().isUserMetaAttributed)
+        assertFalse(testContext.components.settings.isUserMetaAttributed)
     }
 
     @Test
@@ -382,12 +381,12 @@ internal class InstallReferrerHandlingServiceTest {
 
         service.start()
 
-        assertTrue(testContext.settings().isUserTikTokAttributed)
+        assertTrue(testContext.components.settings.isUserTikTokAttributed)
     }
 
     @Test
     fun `GIVEN a non-TikTok referrer on OK response WHEN start is called THEN isUserTikTokAttributed is false`() {
-        testContext.settings().isUserTikTokAttributed = true
+        testContext.components.settings.isUserTikTokAttributed = true
         val service = fakeService(
             responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
             referrerResponse = "utm_source=google&utm_medium=cpc",
@@ -395,7 +394,7 @@ internal class InstallReferrerHandlingServiceTest {
 
         service.start()
 
-        assertFalse(testContext.settings().isUserTikTokAttributed)
+        assertFalse(testContext.components.settings.isUserTikTokAttributed)
     }
 
     @Test
@@ -462,12 +461,12 @@ internal class InstallReferrerHandlingServiceTest {
 
         service.start()
 
-        assertTrue(testContext.settings().isUserRedditAttributed)
+        assertTrue(testContext.components.settings.isUserRedditAttributed)
     }
 
     @Test
     fun `GIVEN a non-Reddit referrer on OK response WHEN start is called THEN isUserRedditAttributed is false`() {
-        testContext.settings().isUserRedditAttributed = true
+        testContext.components.settings.isUserRedditAttributed = true
         val service = fakeService(
             responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
             referrerResponse = "utm_source=google&utm_medium=cpc",
@@ -475,7 +474,7 @@ internal class InstallReferrerHandlingServiceTest {
 
         service.start()
 
-        assertFalse(testContext.settings().isUserRedditAttributed)
+        assertFalse(testContext.components.settings.isUserRedditAttributed)
     }
 
     @Test

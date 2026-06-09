@@ -9,7 +9,7 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.AppAndSystemHelper.runWithCondition
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
@@ -40,7 +40,7 @@ class CookieBannerBlockerTest {
     @SmokeTest
     @Test
     fun verifyCookieBannerBlockerSettingsOptionTest() {
-        runWithCondition(appContext.settings().shouldUseCookieBannerPrivateMode) {
+        runWithCondition(appContext.components.settings.shouldUseCookieBannerPrivateMode) {
             homeScreen(composeTestRule) {
             }.openThreeDotMenu {
             }.clickSettingsButton {
@@ -53,7 +53,7 @@ class CookieBannerBlockerTest {
     @SmokeTest
     @Test
     fun verifyCFRAfterBlockingTheCookieBanner() {
-        runWithCondition(appContext.settings().shouldUseCookieBannerPrivateMode) {
+        runWithCondition(appContext.components.settings.shouldUseCookieBannerPrivateMode) {
             homeScreen(composeTestRule) {
             }.togglePrivateBrowsingMode()
 

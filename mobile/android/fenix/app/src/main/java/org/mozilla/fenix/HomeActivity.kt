@@ -138,7 +138,6 @@ import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.openSetDefaultBrowserOption
 import org.mozilla.fenix.ext.recordEventInNimbus
 import org.mozilla.fenix.ext.setNavigationIcon
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.extension.WebExtensionPromptFeature
 import org.mozilla.fenix.home.HomeFragment
 import org.mozilla.fenix.home.TopSitesRefresher
@@ -272,7 +271,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         DefaultTopSitesBinding(
             browserStore = components.core.store,
             topSitesStorage = components.core.topSitesStorage,
-            settings = settings(),
+            settings = components.settings,
             resources = resources,
             crashReporter = components.analytics.crashReporter,
         )
@@ -301,7 +300,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
 
     private val externalAppLinkStatusBinding by lazy {
         ExternalAppLinkStatusBinding(
-            settings = settings(),
+            settings = components.settings,
             appLinksUseCases = components.useCases.appLinksUseCases,
             browserStore = components.core.store,
             appStore = components.appStore,
@@ -337,7 +336,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             appStore = components.appStore,
             browserStore = components.core.store,
             storage = DefaultPrivateBrowsingLockStorage(
-                preferences = settings().preferences,
+                preferences = components.settings.preferences,
                 privateBrowsingLockPrefKey = getString(R.string.pref_key_private_browsing_locked),
             ),
         )
@@ -455,7 +454,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         binding = ActivityHomeBinding.inflate(layoutInflater)
         val isLauncherIntent = intent.toSafeIntent().isLauncherIntent
 
-        val shouldShowOnboarding = settings().shouldShowOnboarding(
+        val shouldShowOnboarding = components.settings.shouldShowOnboarding(
             hasUserBeenOnboarded = components.fenixOnboarding.userHasBeenOnboarded(),
             isLauncherIntent = isLauncherIntent,
         )
@@ -498,7 +497,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                             setContent {
                                 FenixOverlay(
                                     browserStore = components.core.store,
-                                    inactiveTabsEnabled = settings().inactiveTabsAreEnabled,
+                                    inactiveTabsEnabled = components.settings.inactiveTabsAreEnabled,
                                     loginsStorage = components.core.passwordsStorage,
                                     tabGroupRepository = components.core.tabGroupRepository,
                                 )
@@ -548,7 +547,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
 
         // This will record an event in Nimbus' internal event store. Used for behavioral targeting
         recordEventInNimbus("app_opened")
-        if (settings().isTelemetryEnabled) {
+        if (components.settings.isTelemetryEnabled) {
             lifecycle.addObserver(
                 BreadcrumbsRecorder(
                     components.analytics.crashReporter,
@@ -584,8 +583,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             crashReporterBinding,
             defaultTopSitesBinding,
             TopSitesRefresher(
-                settings = settings(),
-                topSitesProvider = if (settings().enableMozillaAdsClient) {
+                settings = components.settings,
+                topSitesProvider = if (components.settings.enableMozillaAdsClient) {
                     components.core.macTopSitesProvider
                 } else {
                     components.core.marsTopSitesProvider
@@ -622,16 +621,16 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         components.core.requestInterceptor.setNavigationController(navHost.navController)
 
         supportFragmentManager.registerFragmentLifecycleCallbacks(
-            StatusBarColorManager(themeManager, this, settings().isTabStripEnabled),
+            StatusBarColorManager(themeManager, this, components.settings.isTabStripEnabled),
             true,
         )
 
-        if (settings().showContileFeature) {
+        if (components.settings.showContileFeature) {
             components.core.contileTopSitesUpdater.startPeriodicWork()
         }
 
-        if (!settings().hiddenEnginesRestored) {
-            settings().hiddenEnginesRestored = true
+        if (!components.settings.hiddenEnginesRestored) {
+            components.settings.hiddenEnginesRestored = true
             components.useCases.searchUseCases.restoreHiddenSearchEngines.invoke()
         }
 
@@ -670,7 +669,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
 
     @VisibleForTesting
     internal fun maybeShowSetAsDefaultBrowserPrompt(
-        shouldShowSetAsDefaultPrompt: Boolean = settings().shouldShowSetAsDefaultPrompt(),
+        shouldShowSetAsDefaultPrompt: Boolean = components.settings.shouldShowSetAsDefaultPrompt(),
         isDefaultBrowser: Boolean = Browsers.isDefaultBrowser(applicationContext),
         isTheCorrectBuildVersion: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q,
     ) {
@@ -680,7 +679,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                 components.appStore.dispatch(AppAction.UpdateWasNativeDefaultBrowserPromptShown(true))
                 showSetDefaultBrowserPrompt()
                 Metrics.setAsDefaultBrowserNativePromptShown.record()
-                settings().setAsDefaultPromptCalled()
+                components.settings.setAsDefaultPromptCalled()
             }
         }
     }
@@ -746,7 +745,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         }
 
         lifecycleScope.launch(IO) {
-            if (settings().checkIfFenixIsDefaultBrowserOnAppResume()) {
+            if (components.settings.checkIfFenixIsDefaultBrowserOnAppResume()) {
                 if (components.appStore.state.wasNativeDefaultBrowserPromptShown) {
                     Metrics.defaultBrowserChangedViaNativeSystemPrompt.record(NoExtras())
                 }
@@ -841,7 +840,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
 
     final override fun onPause() {
         // We should return to the browser if there were normal tabs when we left the app
-        settings().shouldReturnToBrowser =
+        components.settings.shouldReturnToBrowser =
             components.core.store.state.getNormalOrPrivateTabs(private = false).isNotEmpty()
 
         lifecycleScope.launch(IO) {
@@ -849,9 +848,9 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                 applicationContext,
                 showMobileRoot = false,
             )
-            settings().desktopBookmarksSize = desktopFolders.count()
+            components.settings.desktopBookmarksSize = desktopFolders.count()
 
-            settings().mobileBookmarksSize = components.core.bookmarksStorage.countBookmarksInTrees(
+            components.settings.mobileBookmarksSize = components.core.bookmarksStorage.countBookmarksInTrees(
                 listOf(BookmarkRoot.Mobile.id),
             ).toInt()
         }
@@ -1006,7 +1005,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                 listOf(
                     CrashReporterIntentProcessor(components.appStore),
                 ) + externalSourceIntentProcessors
-            intentProcessors.forEach { it.process(intent, navHost.navController, this.intent, settings()) }
+            intentProcessors.forEach { it.process(intent, navHost.navController, this.intent, components.settings) }
             browsingModeManager.updateMode(intent)
         }
     }
@@ -1395,7 +1394,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
 
         // Normal tabs + cold start -> Should go back to browser if we had any tabs open when we left last
         // except for PBM + Cold Start there won't be any tabs since they're evicted so we never will navigate
-        if (settings().shouldReturnToBrowser && !browsingModeManager.mode.isPrivate) {
+        if (components.settings.shouldReturnToBrowser && !browsingModeManager.mode.isPrivate) {
             // Navigate to home first (without rendering it) to add it to the back stack.
             openToBrowser(BrowserDirection.FromGlobal, null)
         }
@@ -1447,7 +1446,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
     }
 
     private fun updateSecureWindowFlags(mode: BrowsingMode = browsingModeManager.mode) {
-        if (mode == BrowsingMode.Private && !settings().shouldSecureModeBeOverridden) {
+        if (mode == BrowsingMode.Private && !components.settings.shouldSecureModeBeOverridden) {
             window.addFlags(FLAG_SECURE)
         } else {
             window.clearFlags(FLAG_SECURE)
@@ -1544,13 +1543,13 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                 intent,
                 navHost.navController,
                 this.intent,
-                settings(),
+                components.settings,
             )
         }
     }
 
     @VisibleForTesting
-    internal fun getSettings(): Settings = settings()
+    internal fun getSettings(): Settings = components.settings
 
     private fun shouldNavigateToBrowserOnColdStart(savedInstanceState: Bundle?): Boolean {
         return isActivityColdStarted(intent, savedInstanceState) &&
@@ -1596,7 +1595,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
     }
 
     private fun showCrashReporter(crashIDs: List<String>?) {
-        if (!settings().useNewCrashReporterFlow) {
+        if (!components.settings.useNewCrashReporterFlow) {
             return
         }
 

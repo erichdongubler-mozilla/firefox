@@ -53,7 +53,6 @@ import org.mozilla.fenix.components.components
 import org.mozilla.fenix.compose.MessageCard
 import org.mozilla.fenix.compose.home.HomeSectionHeader
 import org.mozilla.fenix.debugsettings.sportswidget.SportsWidgetDebugTool
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.home.bookmarks.Bookmark
 import org.mozilla.fenix.home.bookmarks.interactor.BookmarksInteractor
 import org.mozilla.fenix.home.bookmarks.view.Bookmarks
@@ -458,7 +457,7 @@ internal fun TopSitesSection(
         onTopSitesItemBound = onTopSitesItemBound,
         onAddShortcutClicked = onAddShortcutClicked,
         topSiteColors = topSiteColors,
-        isPager = LocalContext.current.settings().topSitesPager,
+        isPager = components.settings.topSitesPager,
         showAddShortcut = showAddShortcut,
     )
 }

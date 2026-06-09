@@ -19,6 +19,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.ext.actualInactiveTabs
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.tabClosedUndoMessage
 import org.mozilla.fenix.ext.tabsClosedUndoMessage
 import org.mozilla.fenix.home.HomeScreenViewModel.Companion.ALL_NORMAL_TABS
@@ -86,7 +87,7 @@ class TabsCleanupFeature(
             undoActionTitle = context.getString(R.string.snackbar_deleted_undo),
             onCancel = onCancel,
             operation = {},
-            undoDelay = context.getUndoDelay(),
+            undoDelay = context.components.settings.getUndoDelay(),
         )
     }
 

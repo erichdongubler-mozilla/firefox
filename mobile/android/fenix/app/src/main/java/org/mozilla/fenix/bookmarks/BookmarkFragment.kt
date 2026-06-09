@@ -42,7 +42,6 @@ import org.mozilla.fenix.ext.bookmarkStorage
 import org.mozilla.fenix.ext.hideToolbar
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.requireComponents
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.pbmlock.registerForVerification
 import org.mozilla.fenix.pbmlock.verifyUser
 import org.mozilla.fenix.search.BrowserStoreToFenixSearchMapperMiddleware
@@ -107,9 +106,9 @@ class BookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
 
                 val store by fragmentStore(
                     BookmarksState.default.copy(
-                        showBookmarksImport = requireContext().settings().importBookmarksFeatureFlagEnabled,
+                        showBookmarksImport = requireComponents.settings.importBookmarksFeatureFlagEnabled,
                         sortOrder = BookmarksListSortOrder.fromString(
-                            value = requireContext().settings().bookmarkListSortOrder,
+                            value = requireComponents.settings.bookmarkListSortOrder,
                             default = BookmarksListSortOrder.Alphabetical(true),
                         ),
                     ),
@@ -136,7 +135,7 @@ class BookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
                                 bookmarksStorage = requireContext().bookmarkStorage,
                                 addNewTabUseCase = requireComponents.useCases.tabsUseCases.addTab,
                                 fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
-                                openBookmarksInNewTab = if (settings().enableHomepageAsNewTab) {
+                                openBookmarksInNewTab = if (requireComponents.settings.enableHomepageAsNewTab) {
                                     false
                                 } else {
                                     navController
@@ -187,7 +186,7 @@ class BookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
                                     appStore.state.mode
                                 },
                                 saveBookmarkSortOrder = {
-                                    requireContext().settings().bookmarkListSortOrder =
+                                    requireComponents.settings.bookmarkListSortOrder =
                                         it.asString
                                 },
                                 editBookmarkUseCase = requireComponents.useCases.bookmarksUseCases.editBookmark,

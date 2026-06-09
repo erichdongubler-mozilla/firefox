@@ -5,7 +5,6 @@
 package org.mozilla.fenix.home.logo
 
 import android.view.ViewGroup
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.longfox.LongFoxFeatureApi
 
 /**
@@ -14,7 +13,7 @@ import org.mozilla.fenix.longfox.LongFoxFeatureApi
 class LogoController(
     private val longFoxFeature: LongFoxFeatureApi,
     private val container: ViewGroup?,
-    private val longFoxEnabled: Boolean = container?.context?.settings()?.longfoxEnabled == true,
+    private val longFoxEnabled: Boolean,
 ) {
 
     /**

@@ -28,7 +28,6 @@ import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.bookmarkStorage
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.requireComponents
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.search.SearchFragmentState
 import org.mozilla.fenix.search.SearchFragmentStore
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -66,7 +65,7 @@ class EditBookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
                                     bookmarksStorage = requireContext().bookmarkStorage,
                                     addNewTabUseCase = requireComponents.useCases.tabsUseCases.addTab,
                                     fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
-                                    openBookmarksInNewTab = if (settings().enableHomepageAsNewTab) {
+                                    openBookmarksInNewTab = if (requireComponents.settings.enableHomepageAsNewTab) {
                                         false
                                     } else {
                                         appStore.state.mode.isPrivate

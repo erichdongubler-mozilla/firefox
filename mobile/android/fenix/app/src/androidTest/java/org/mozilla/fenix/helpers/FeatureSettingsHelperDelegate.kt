@@ -11,7 +11,6 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getPreferenceKey
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.ETPPolicy.CUSTOM
 import org.mozilla.fenix.helpers.ETPPolicy.STANDARD
@@ -248,7 +247,7 @@ internal fun getFeaturePermission(feature: PhoneFeature, settings: Settings): Si
 private fun setPermissions(feature: PhoneFeature, action: SitePermissionsRules.Action) {
     runBlocking {
         Log.i(TAG, "setPermissions: Trying to set $action permission for $feature.")
-        appContext.settings().setSitePermissionsPhoneFeatureAction(feature, action)
+        appContext.components.settings.setSitePermissionsPhoneFeatureAction(feature, action)
         Log.i(TAG, "setPermissions: Set $action permission for $feature.")
     }
 }

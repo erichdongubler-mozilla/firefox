@@ -40,7 +40,7 @@ import org.mozilla.fenix.components.share.DefaultShareSheetLauncher
 import org.mozilla.fenix.components.share.ShareSheetLauncher
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.components.usecases.ShareUseCases
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.home.mars.MARSUseCases
 import org.mozilla.fenix.pbmlock.PrivateBrowsingLockUseCases
 import org.mozilla.fenix.perf.StrictModeManager
@@ -114,7 +114,7 @@ class UseCases(
             downloadFileUtils = DefaultDownloadFileUtils(
                 context = context.applicationContext,
                 downloadLocation = {
-                    DownloadLocationManager(context.applicationContext).defaultLocation
+                    DownloadLocationManager(context.components.settings, context.contentResolver).defaultLocation
                 },
             ),
         )
@@ -149,7 +149,14 @@ class UseCases(
                 ?: LocaleManager.getSystemDefault().toLanguageTag()
             rootStorageDirectory to currentLocale
         }
-        WallpapersUseCases(context, appStore.value, client.value, rootStorageDirectory, currentLocale)
+        WallpapersUseCases(
+            context.components.settings,
+            rootStorageDirectory,
+            appStore.value,
+            client.value,
+            rootStorageDirectory,
+            currentLocale,
+        )
     }
 
     val closeSyncedTabsUseCases by lazyMonitored { CloseTabsUseCases(syncedTabsCommands.value) }
@@ -190,7 +197,7 @@ class UseCases(
         ShareUseCases(
             browserStore = store.value,
             shareSheetLauncher = shareSheetLauncher,
-            settings = context.settings(),
+            settings = context.components.settings,
         )
     }
 

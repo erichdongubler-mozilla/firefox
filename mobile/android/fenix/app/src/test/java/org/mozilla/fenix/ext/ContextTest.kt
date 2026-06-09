@@ -172,7 +172,7 @@ class ContextTest {
     @Test
     fun `GIVEN context WHEN toolbar position is bottom THEN isToolbarAtBottom returns true`() {
         val settings: Settings = mockk()
-        every { testContext.settings() } returns settings
+        every { testContext.components.settings } returns settings
         every { settings.toolbarPosition } returns ToolbarPosition.BOTTOM
 
         assertTrue(testContext.isToolbarAtBottom())
@@ -181,7 +181,7 @@ class ContextTest {
     @Test
     fun `GIVEN context WHEN toolbar position is top THEN isToolbarAtBottom returns false`() {
         val settings: Settings = mockk()
-        every { testContext.settings() } returns settings
+        every { testContext.components.settings } returns settings
         every { settings.toolbarPosition } returns ToolbarPosition.TOP
 
         assertFalse(testContext.isToolbarAtBottom())

@@ -70,7 +70,6 @@ import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.ext.navigateToNotificationsSettings
 import org.mozilla.fenix.ext.openInNewTab
 import org.mozilla.fenix.ext.requireComponents
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.ext.showToolbarWithIconButton
 import org.mozilla.fenix.home.maybeNavigateToSystemSetToDefaultAction
@@ -198,7 +197,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
 
         findPreference<Preference>(
             getPreferenceKey(R.string.pref_key_ai_controls),
-        )?.isVisible = requireContext().settings().aiControlsFeatureFlagEnabled
+        )?.isVisible = requireComponents.settings.aiControlsFeatureFlagEnabled
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -263,7 +262,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
         // update it here if we're not going through the `onCreate->onStart->onResume` lifecycle chain.
         update(
             shouldUpdateAccountUIState = !creatingFragment,
-            settings = requireContext().settings(),
+            settings = requireComponents.settings,
         )
 
         requireView().findViewById<RecyclerView>(R.id.recycler_view)
@@ -490,8 +489,8 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
                     }
 
                     setPositiveButton(R.string.customize_addon_collection_ok) { _, _ ->
-                        context.settings().overrideAmoUser = binding.customAmoUser.text.toString()
-                        context.settings().overrideAmoCollection =
+                        context.components.settings.overrideAmoUser = binding.customAmoUser.text.toString()
+                        context.components.settings.overrideAmoCollection =
                             binding.customAmoCollection.text.toString()
 
                         Toast.makeText(
@@ -508,8 +507,8 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
                         )
                     }
 
-                    binding.customAmoCollection.setText(context.settings().overrideAmoCollection)
-                    binding.customAmoUser.setText(context.settings().overrideAmoUser)
+                    binding.customAmoCollection.setText(context.components.settings.overrideAmoCollection)
+                    binding.customAmoUser.setText(context.components.settings.overrideAmoUser)
                     binding.customAmoUser.requestFocus()
                     binding.customAmoUser.showKeyboard()
                     create().withCenterAlignedButtons()
@@ -658,7 +657,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
     private val setToDefaultPromptRequestLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             with(requireContext()) {
-                maybeNavigateToSystemSetToDefaultAction(result.resultCode, settings(), dateTimeProvider) {
+                maybeNavigateToSystemSetToDefaultAction(result.resultCode, components.settings, dateTimeProvider) {
                     navigateToDefaultBrowserAppsSettings(BuildManufacturerChecker())
                 }
             }

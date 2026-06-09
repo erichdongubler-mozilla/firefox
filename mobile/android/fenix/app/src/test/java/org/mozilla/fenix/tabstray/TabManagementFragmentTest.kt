@@ -21,7 +21,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.NavGraphDirections
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.helpers.MockkRetryTestRule
 import org.mozilla.fenix.home.HomeScreenViewModel
@@ -129,7 +129,7 @@ class TabManagementFragmentTest {
     fun `GIVEN transition animation setting is disabled THEN tabManagerOpeningAnimationEnabled returns false`() {
         val mockSettings = mockk<Settings>()
         every { mockSettings.tabManagerOpeningAnimationEnabled } returns false
-        every { context.settings() } returns mockSettings
+        every { context.components.settings } returns mockSettings
         assertFalse(
             fragment.shouldPerformTransitionAnimation(
                 selectedPage = Page.NormalTabs,
@@ -143,7 +143,7 @@ class TabManagementFragmentTest {
     fun `GIVEN TabTray mode is multi-select THEN tabManagerOpeningAnimationEnabled returns false`() {
         val mockSettings = mockk<Settings>()
         every { mockSettings.tabManagerOpeningAnimationEnabled } returns true
-        every { context.settings() } returns mockSettings
+        every { context.components.settings } returns mockSettings
         assertFalse(
             fragment.shouldPerformTransitionAnimation(
                 selectedPage = Page.NormalTabs,
@@ -157,7 +157,7 @@ class TabManagementFragmentTest {
     fun `GIVEN transition to normal tab on normal TabsTray page THEN tabManagerOpeningAnimationEnabled returns true`() {
         val mockSettings = mockk<Settings>()
         every { mockSettings.tabManagerOpeningAnimationEnabled } returns true
-        every { context.settings() } returns mockSettings
+        every { context.components.settings } returns mockSettings
         assertTrue(
             fragment.shouldPerformTransitionAnimation(
                 selectedPage = Page.NormalTabs,
@@ -171,7 +171,7 @@ class TabManagementFragmentTest {
     fun `GIVEN transition to private tab on private TabsTray page THEN tabManagerOpeningAnimationEnabled returns true`() {
         val mockSettings = mockk<Settings>()
         every { mockSettings.tabManagerOpeningAnimationEnabled } returns true
-        every { context.settings() } returns mockSettings
+        every { context.components.settings } returns mockSettings
         assertTrue(
             fragment.shouldPerformTransitionAnimation(
                 selectedPage = Page.PrivateTabs,
@@ -185,7 +185,7 @@ class TabManagementFragmentTest {
     fun `GIVEN transition to private tab on normal TabsTray page THEN tabManagerOpeningAnimationEnabled returns false`() {
         val mockSettings = mockk<Settings>()
         every { mockSettings.tabManagerOpeningAnimationEnabled } returns true
-        every { context.settings() } returns mockSettings
+        every { context.components.settings } returns mockSettings
         assertFalse(
             fragment.shouldPerformTransitionAnimation(
                 selectedPage = Page.NormalTabs,
@@ -199,7 +199,7 @@ class TabManagementFragmentTest {
     fun `GIVEN transition to normal tab on private TabsTray page THEN tabManagerOpeningAnimationEnabled returns false`() {
         val mockSettings = mockk<Settings>()
         every { mockSettings.tabManagerOpeningAnimationEnabled } returns true
-        every { context.settings() } returns mockSettings
+        every { context.components.settings } returns mockSettings
         assertFalse(
             fragment.shouldPerformTransitionAnimation(
                 selectedPage = Page.PrivateTabs,
@@ -213,7 +213,7 @@ class TabManagementFragmentTest {
     fun `GIVEN transition to normal tab on synced TabsTray page THEN tabManagerOpeningAnimationEnabled returns false`() {
         val mockSettings = mockk<Settings>()
         every { mockSettings.tabManagerOpeningAnimationEnabled } returns true
-        every { context.settings() } returns mockSettings
+        every { context.components.settings } returns mockSettings
         assertFalse(
             fragment.shouldPerformTransitionAnimation(
                 selectedPage = Page.SyncedTabs,
@@ -227,7 +227,7 @@ class TabManagementFragmentTest {
     fun `GIVEN transition to private tab on synced TabsTray page THEN tabManagerOpeningAnimationEnabled returns false`() {
         val mockSettings = mockk<Settings>()
         every { mockSettings.tabManagerOpeningAnimationEnabled } returns true
-        every { context.settings() } returns mockSettings
+        every { context.components.settings } returns mockSettings
         assertFalse(
             fragment.shouldPerformTransitionAnimation(
                 selectedPage = Page.SyncedTabs,

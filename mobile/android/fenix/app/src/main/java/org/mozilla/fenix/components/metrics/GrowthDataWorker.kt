@@ -11,8 +11,8 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import mozilla.components.support.utils.ext.packageManagerCompatHelper
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.metrics
-import org.mozilla.fenix.ext.settings
 import java.util.concurrent.TimeUnit
 
 /**
@@ -24,7 +24,7 @@ class GrowthDataWorker(
 ) : CoroutineWorker(context, workerParameters) {
 
     override suspend fun doWork(): Result {
-        val settings = applicationContext.settings()
+        val settings = applicationContext.components.settings
 
         if (!System.currentTimeMillis().isAfterFirstWeekFromInstall(applicationContext) ||
             settings.growthUserActivatedSent
@@ -48,7 +48,7 @@ class GrowthDataWorker(
         fun sendActivatedSignalIfNeeded(context: Context) {
             val instanceWorkManager = WorkManager.getInstance(context)
 
-            if (context.settings().growthUserActivatedSent) {
+            if (context.components.settings.growthUserActivatedSent) {
                 return
             }
 
