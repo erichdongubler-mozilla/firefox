@@ -9574,14 +9574,6 @@
   mirror: always
   set_spidermonkey_pref: startup
 
-# Whether the non-standard object.toSource() path is enabled in ValueToSource
-# for realms without the toSource/uneval builtins.
-- name: javascript.options.legacy_tosource_lookup
-  type: bool
-  value: false
-  mirror: always
-  set_spidermonkey_pref: startup
-
 - name: javascript.options.wasm_caching
   type: bool
   value: true
