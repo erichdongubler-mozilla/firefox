@@ -277,6 +277,24 @@ IPCResult CookieServiceParent::RecvGetCookieList(
     return IPC_FAIL(this, "aHost must not be null");
   }
 
+  // When storage access is granted, evict Partitioned cookies that shadow
+  // HttpOnly cookies in the unpartitioned jar.
+  if (aStorageAccessPermissionGranted) {
+    for (const auto& attrs : aAttrsList) {
+      if (attrs.mPartitionKey.IsEmpty()) {
+        nsAutoCString baseDomain;
+        bool requireHostMatch = false;
+        nsresult rv = CookieCommons::GetBaseDomain(
+            mTLDService, aHost, baseDomain, requireHostMatch);
+        if (NS_SUCCEEDED(rv)) {
+          mCookieService->EvictPartitionedCookiesShadowingHttpOnly(baseDomain,
+                                                                   attrs);
+        }
+        break;
+      }
+    }
+  }
+
   // we append outgoing cookie info into a list here so the ContentParent can
   // filter cookies that do not need to go to certain ContentProcesses
   for (const auto& attrs : aAttrsList) {

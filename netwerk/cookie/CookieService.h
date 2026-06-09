@@ -106,6 +106,9 @@ class CookieService final : public nsICookieService,
       const nsTArray<CookieStruct>& aCookies,
       dom::BrowsingContext* aBrowsingContext);
 
+  void EvictPartitionedCookiesShadowingHttpOnly(const nsACString& aBaseDomain,
+                                                const OriginAttributes& aAttrs);
+
  protected:
   virtual ~CookieService();
 

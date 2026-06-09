@@ -1808,6 +1808,15 @@ bool CookieService::HasExistingCookies(
                                          aOriginAttributes.mPrivateBrowsingId);
 }
 
+void CookieService::EvictPartitionedCookiesShadowingHttpOnly(
+    const nsACString& aBaseDomain, const OriginAttributes& aAttrs) {
+  if (!IsInitialized()) {
+    return;
+  }
+  CookieStorage* storage = PickStorage(aAttrs);
+  storage->EvictPartitionedCookiesShadowingHttpOnly(aBaseDomain, aAttrs);
+}
+
 void CookieService::AddCookieFromDocument(
     CookieParser& aCookieParser, const nsACString& aBaseDomain,
     const OriginAttributes& aOriginAttributes, Cookie& aCookie,
