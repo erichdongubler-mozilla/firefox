@@ -38,8 +38,8 @@ async def test_evaluate_parent_process_context(configuration, geckodriver):
         assert page_context is not None, f"No context found with URL {url}"
 
         with pytest.raises(UnsupportedOperationException):
-            await bidi_session.script.evaluate(
-                expression="1 + 1",
+            await bidi_session.script.call_function(
+                function_declaration="() => 1 + 1",
                 target=ContextTarget(page_context["context"]),
                 await_promise=False,
             )
@@ -55,8 +55,8 @@ async def test_evaluate_parent_process_context_with_system_access(
         context=new_tab["context"], url="about:about", wait="complete"
     )
 
-    result = await bidi_session.script.evaluate(
-        expression="1 + 1",
+    result = await bidi_session.script.call_function(
+        function_declaration="() => 1 + 1",
         target=ContextTarget(new_tab["context"]),
         await_promise=False,
     )
