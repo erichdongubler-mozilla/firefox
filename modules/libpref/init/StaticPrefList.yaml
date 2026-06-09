@@ -4003,7 +4003,13 @@
 # Enable the Picture-in-Picture API
 - name: dom.media-pip.enabled
   type: RelaxedAtomicBool
+#ifdef ANDROID
+# Not yet supported on Android (Fenix), so keep it disabled to avoid
+# webpages successfully feature-detecting an API that fails on use.
+  value: false
+#else
   value: true
+#endif
   mirror: always
   rust: true
 

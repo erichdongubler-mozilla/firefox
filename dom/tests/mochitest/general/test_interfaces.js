@@ -1167,9 +1167,9 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "Permissions", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
-  { name: "PictureInPictureEvent", insecureContext: true },
+  { name: "PictureInPictureEvent", insecureContext: true, android: false },
   // IMPORTANT: Do not change this list without review from a DOM peer!
-  { name: "PictureInPictureWindow", insecureContext: true },
+  { name: "PictureInPictureWindow", insecureContext: true, android: false },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "Plugin", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
