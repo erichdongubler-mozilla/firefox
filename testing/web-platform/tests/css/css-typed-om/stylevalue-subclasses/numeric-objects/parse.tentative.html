@@ -47,6 +47,11 @@ test(() => {
 }, 'Parsing calc() with incompatible length units does not simplify the expression');
 
 test(() => {
+  const expected = new CSSMathSum(CSS.em(9), new CSSMathNegate(CSS.px(8)), CSS.vh(1));
+  assert_style_value_equals(CSSNumericValue.parse('calc(9em - 8px + 1vh)'), expected);
+}, 'Parsing calc() with subtraction is successful');
+
+test(() => {
   const expected = new CSSMathMin(CSS.px(10), CSS.percent(10));
   assert_style_value_equals(CSSNumericValue.parse('min(10px, 10%)'), expected);
 }, 'Parsing min() is successful');
@@ -70,4 +75,5 @@ test(() => {
   const expected = new CSSMathProduct(...[1, 2, 3].map(x => new CSSMathMin(CSS.number(x))));
   assert_style_value_equals('calc(min(1) * min(2) * min(3))', expected.toString());
 }, 'Parsing product of multiple min() is successful');
+
 </script>
