@@ -28,7 +28,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -126,7 +125,7 @@ private fun ReadOnlyUrlFieldPreview() {
                     onClick = {},
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))
 
                 ReadOnlyUrlField(
                     url = "example.com/missing-scheme",

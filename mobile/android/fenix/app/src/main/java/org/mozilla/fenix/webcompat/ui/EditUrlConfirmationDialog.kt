@@ -30,11 +30,10 @@ import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags
 /**
  * This dialog is used to prompt the user to edit the website URL in the broken site reporter.
  *
- * @param url The current draft URL being edited.
+ * @param url The current url being edited.
  * @param onUrlChange Callback invoked when the user types in the text field.
  * @param isError Whether the current [url] is invalid.
  * @param onSave Callback invoked when the user saves their edited url.
- * @param onReset Callback invoked when the user wants to revert the url to its original state.
  * @param onDismiss Callback invoked when the dialog is dismissed.
  */
 @Composable
@@ -43,7 +42,6 @@ fun EditUrlConfirmationDialog(
     onUrlChange: (String) -> Unit,
     isError: Boolean,
     onSave: () -> Unit,
-    onReset: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
@@ -73,10 +71,10 @@ fun EditUrlConfirmationDialog(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 TextButton(
-                    text = stringResource(id = R.string.webcompat_reporter_edit_url_dialog_reset),
-                    onClick = onReset,
+                    text = stringResource(id = R.string.webcompat_reporter_edit_url_dialog_dismiss),
+                    onClick = onDismiss,
                     modifier = Modifier.testTag(
-                        tag = BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_EDIT_URL_DIALOG_RESET_BUTTON,
+                        tag = BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_EDIT_URL_DIALOG_DISMISS_BUTTON,
                     ),
                 )
 
@@ -97,7 +95,7 @@ fun EditUrlConfirmationDialog(
 
 @Preview
 @Composable
-private fun PreviewEditUrlConfirmationDialog(
+private fun EditUrlConfirmationDialogPreview(
     @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
@@ -107,7 +105,6 @@ private fun PreviewEditUrlConfirmationDialog(
                 onUrlChange = {},
                 isError = false,
                 onSave = {},
-                onReset = {},
                 onDismiss = {},
             )
         }

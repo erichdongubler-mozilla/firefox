@@ -4,7 +4,7 @@
 
 package org.mozilla.fenix.ui
 
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -33,7 +33,6 @@ class WebCompatReporterEditUrlDialogTest {
                     onUrlChange = {},
                     isError = false,
                     onSave = { saveInvoked = true },
-                    onReset = {},
                     onDismiss = {},
                 )
             }
@@ -47,31 +46,7 @@ class WebCompatReporterEditUrlDialogTest {
     }
 
     @Test
-    fun resetButtonClickedTest() {
-        var resetInvoked = false
-
-        composeTestRule.setContent {
-            FirefoxTheme {
-                EditUrlConfirmationDialog(
-                    url = "https://www.example.com",
-                    onUrlChange = {},
-                    isError = false,
-                    onSave = {},
-                    onReset = { resetInvoked = true },
-                    onDismiss = {},
-                )
-            }
-        }
-
-        composeTestRule
-            .onNodeWithTag(BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_EDIT_URL_DIALOG_RESET_BUTTON)
-            .performClick()
-
-        assertTrue(resetInvoked)
-    }
-
-    @Test
-    fun dismissDialogTest() {
+    fun dismissButtonClickedTest() {
         var dismissInvoked = false
 
         composeTestRule.setContent {
@@ -81,11 +56,14 @@ class WebCompatReporterEditUrlDialogTest {
                     onUrlChange = {},
                     isError = false,
                     onSave = {},
-                    onReset = {},
                     onDismiss = { dismissInvoked = true },
                 )
             }
         }
+
+        composeTestRule
+            .onNodeWithTag(BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_EDIT_URL_DIALOG_DISMISS_BUTTON)
+            .performClick()
 
         assertTrue(dismissInvoked)
     }

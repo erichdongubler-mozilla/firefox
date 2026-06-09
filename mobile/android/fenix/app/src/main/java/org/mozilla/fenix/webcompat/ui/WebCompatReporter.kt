@@ -132,34 +132,11 @@ fun WebCompatReporter(
                 .width(FirefoxTheme.layout.size.containerMaxWidth),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            LinkText(
-                text = stringResource(
-                    R.string.webcompat_reporter_description_3,
-                    stringResource(R.string.app_name),
-                    stringResource(R.string.webcompat_reporter_learn_more),
-                ),
-                linkTextStates = listOf(
-                    LinkTextState(
-                        text = stringResource(R.string.webcompat_reporter_learn_more),
-                        url = "",
-                        onClick = {
-                            store.dispatch(WebCompatReporterAction.LearnMoreClicked)
-                        },
-                    ),
-                ),
-                style = FirefoxTheme.typography.body2.copy(color = MaterialTheme.colorScheme.onSurface),
-                linkTextColor = MaterialTheme.colorScheme.tertiary,
-                linkTextDecoration = TextDecoration.Underline,
-                textAlign = TextAlign.Start,
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
             ReadOnlyUrlField(
                 url = state.enteredUrl,
                 label = stringResource(id = R.string.webcompat_reporter_label_url),
                 onClick = {
-                    // TODO (Bug 2038684): Add logic to edit website URL dialog and validate the URL
+                    store.dispatch(WebCompatReporterAction.EditUrlClicked)
                 },
                 modifier = Modifier.fillMaxWidth(),
                 baseDomain = baseDomain,
@@ -350,6 +327,16 @@ fun WebCompatReporter(
                 modifier = Modifier.padding(bottom = FirefoxTheme.layout.space.static150),
             )
         }
+    }
+
+    if (state.showEditUrlDialog) {
+        EditUrlConfirmationDialog(
+            url = state.editedUrl,
+            onUrlChange = { newUrl -> store.dispatch(WebCompatReporterAction.EditUrlChanged(newUrl = newUrl)) },
+            isError = state.hasEditedUrlError,
+            onSave = { store.dispatch(WebCompatReporterAction.SaveEditedUrlClicked) },
+            onDismiss = { store.dispatch(WebCompatReporterAction.DismissEditUrlDialog) },
+        )
     }
 
     if (previewSheetVisible) {

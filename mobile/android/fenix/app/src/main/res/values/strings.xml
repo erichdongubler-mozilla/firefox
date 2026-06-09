@@ -1909,8 +1909,8 @@
     <string name="webcompat_reporter_edit_url_dialog_title">Edit website URL</string>
     <!-- Text shown on the save button for the Edit URL confirmation dialog in the WebCompatReporter. -->
     <string name="webcompat_reporter_edit_url_dialog_save">Save</string>
-    <!-- Text shown on the reset button for the Edit URL confirmation dialog in the WebCompatReporter. This will restore the text field to the original URL and undoes any manual edits made by the user.-->
-    <string name="webcompat_reporter_edit_url_dialog_reset">Reset</string>
+    <!-- Text shown on the dismiss button for the Edit URL confirmation dialog in the WebCompatReporter.-->
+    <string name="webcompat_reporter_edit_url_dialog_dismiss">Dismiss</string>
 
     <!-- These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site. -->
     <!-- Broken site reason text for site doesn’t load -->
