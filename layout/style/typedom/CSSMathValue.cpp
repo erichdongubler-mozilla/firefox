@@ -48,6 +48,13 @@ RefPtr<CSSMathValue> CSSMathValue::Create(nsCOMPtr<nsISupports> aParent,
       break;
     }
 
+    case StyleMathValue::Tag::Invert: {
+      const auto& mathInvert = aMathValue.AsInvert();
+
+      mathValue = CSSMathInvert::Create(std::move(aParent), mathInvert);
+      break;
+    }
+
     case StyleMathValue::Tag::Min: {
       const auto& mathMin = aMathValue.AsMin();
 
@@ -220,8 +227,16 @@ Maybe<StyleMathValue> CSSMathValue::ToStyleMathValue() const {
       return Some(StyleMathValue::Min(mathMin.ToStyleMathMin()));
     }
 
-    case MathValueType::MathInvert:
-      return Nothing();
+    case MathValueType::MathInvert: {
+      const CSSMathInvert& mathInvert = GetAsCSSMathInvert();
+
+      auto styleMathInvert = mathInvert.ToStyleMathInvert();
+      if (styleMathInvert.isNothing()) {
+        return Nothing();
+      }
+
+      return Some(StyleMathValue::Invert(styleMathInvert.extract()));
+    }
 
     case MathValueType::MathNegate: {
       const CSSMathNegate& mathNegate = GetAsCSSMathNegate();

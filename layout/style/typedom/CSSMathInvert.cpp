@@ -6,6 +6,9 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/ServoStyleConsts.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSMathInvertBinding.h"
 #include "mozilla/dom/CSSNumericValue.h"
@@ -18,6 +21,15 @@ CSSMathInvert::CSSMathInvert(nsCOMPtr<nsISupports> aParent,
                              RefPtr<CSSNumericValue> aValue)
     : CSSMathValue(std::move(aParent), MathValueType::MathInvert),
       mValue(std::move(aValue)) {}
+
+// static
+RefPtr<CSSMathInvert> CSSMathInvert::Create(
+    nsCOMPtr<nsISupports> aParent, const StyleMathInvert& aMathInvert) {
+  RefPtr<CSSNumericValue> value =
+      CSSNumericValue::Create(aParent, *aMathInvert);
+
+  return MakeRefPtr<CSSMathInvert>(std::move(aParent), std::move(value));
+}
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSMathInvert, CSSMathValue)
 NS_IMPL_CYCLE_COLLECTION_INHERITED(CSSMathInvert, CSSMathValue, mValue)
@@ -62,6 +74,17 @@ void CSSMathInvert::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
   if (!aContext.IsParenLess()) {
     aDest.Append(")"_ns);
   }
+}
+
+Maybe<StyleMathInvert> CSSMathInvert::ToStyleMathInvert() const {
+  auto styleNumericValue = mValue->ToStyleNumericValue();
+  if (styleNumericValue.isNothing()) {
+    return Nothing();
+  }
+
+  auto value = MakeUnique<StyleNumericValue>(styleNumericValue.extract());
+
+  return Some(StyleMathInvert{std::move(value)});
 }
 
 const CSSMathInvert& CSSMathValue::GetAsCSSMathInvert() const {
