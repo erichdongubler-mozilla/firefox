@@ -5,11 +5,11 @@
 #include "nsArrayUtils.h"
 #include "nsClipboard.h"
 #if defined(MOZ_X11)
-#  include "nsClipboardX11.h"
+#  include "RetrievalContextX11.h"
 #endif
 #if defined(MOZ_WAYLAND)
-#  include "nsClipboardWayland.h"
-#  include "nsClipboardGtk.h"
+#  include "RetrievalContextWayland.h"
+#  include "RetrievalContextGtk.h"
 #  include "nsWaylandDisplay.h"
 #endif
 #include "nsGtkUtils.h"
