@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,6 +62,8 @@ import mozilla.components.compose.base.text.Text.Resource
 import mozilla.components.compose.base.textfield.TextField
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.components
+import org.mozilla.fenix.ext.getBaseDomainUrl
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.ThemedValue
 import org.mozilla.fenix.theme.ThemedValueProvider
@@ -91,6 +94,20 @@ fun WebCompatReporter(
 
     val scrollState = rememberScrollState()
 
+    var baseDomain by remember { mutableStateOf("") }
+
+    val appComponents = components
+
+    LaunchedEffect(state.enteredUrl) {
+        baseDomain = if (state.enteredUrl.isNotEmpty()) {
+            state.enteredUrl.getBaseDomainUrl(
+                publicSuffixList = appComponents.publicSuffixList,
+            )
+        } else {
+            ""
+        }
+    }
+
     BackHandler {
         store.dispatch(WebCompatReporterAction.BackPressed)
     }
@@ -115,17 +132,37 @@ fun WebCompatReporter(
                 .width(FirefoxTheme.layout.size.containerMaxWidth),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            TextField(
-                value = state.enteredUrl,
-                onValueChange = {
-                    store.dispatch(WebCompatReporterAction.BrokenSiteChanged(newUrl = it))
-                },
-                placeholder = "",
-                errorText = stringResource(id = R.string.webcompat_reporter_url_error_invalid),
-                modifier = Modifier.fillMaxWidth(),
+            LinkText(
+                text = stringResource(
+                    R.string.webcompat_reporter_description_3,
+                    stringResource(R.string.app_name),
+                    stringResource(R.string.webcompat_reporter_learn_more),
+                ),
+                linkTextStates = listOf(
+                    LinkTextState(
+                        text = stringResource(R.string.webcompat_reporter_learn_more),
+                        url = "",
+                        onClick = {
+                            store.dispatch(WebCompatReporterAction.LearnMoreClicked)
+                        },
+                    ),
+                ),
+                style = FirefoxTheme.typography.body2.copy(color = MaterialTheme.colorScheme.onSurface),
+                linkTextColor = MaterialTheme.colorScheme.tertiary,
+                linkTextDecoration = TextDecoration.Underline,
+                textAlign = TextAlign.Start,
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            ReadOnlyUrlField(
+                url = state.enteredUrl,
                 label = stringResource(id = R.string.webcompat_reporter_label_url),
-                isError = state.hasUrlTextError,
-                singleLine = true,
+                onClick = {
+                    // TODO (Bug 2038684): Add logic to edit website URL dialog and validate the URL
+                },
+                modifier = Modifier.fillMaxWidth(),
+                baseDomain = baseDomain,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
