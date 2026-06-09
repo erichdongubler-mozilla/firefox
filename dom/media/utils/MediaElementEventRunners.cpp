@@ -60,7 +60,6 @@ void nsMediaEventRunner::ReportProfilerMarker() {
       }
     }
   } else if (mEventName.EqualsLiteral("resize")) {
-    MOZ_ASSERT(mElement->HasVideo());
     auto mediaInfo = mElement->GetMediaInfo();
     profiler_add_marker("resize", geckoprofiler::category::MEDIA_PLAYBACK, {},
                         VideoResizeMarker{}, mediaInfo.mVideo.mDisplay.width,
