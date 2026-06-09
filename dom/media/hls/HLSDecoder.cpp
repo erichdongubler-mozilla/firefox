@@ -23,6 +23,7 @@
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/glean/DomMediaHlsMetrics.h"
+#include "mozilla/java/GeckoAppShellWrappers.h"
 #include "mozilla/java/GeckoHLSResourceWrapperNatives.h"
 #include "mozilla/java/GeckoResultWrappers.h"
 #include "mozilla/java/WebMessageWrappers.h"
@@ -317,7 +318,10 @@ already_AddRefed<MediaDecoderStateMachineBase> HLSDecoder::CreateStateMachine(
   return MakeAndAddRef<MediaDecoderStateMachine>(this, mReader);
 }
 
-bool HLSDecoder::IsEnabled() { return StaticPrefs::media_hls_enabled(); }
+bool HLSDecoder::IsEnabled() {
+  return StaticPrefs::media_hls_enabled() &&
+         !java::GeckoAppShell::IsIsolatedProcess();
+}
 
 bool HLSDecoder::IsSupportedType(const MediaContainerType& aContainerType) {
   return IsEnabled() && DecoderTraits::IsHttpLiveStreamingType(aContainerType);
