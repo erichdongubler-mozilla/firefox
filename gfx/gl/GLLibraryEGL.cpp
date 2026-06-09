@@ -646,14 +646,17 @@ bool GLLibraryEGL::Init(nsACString* const out_failureId) {
   // Client exts are ready. (But not display exts!)
 
   if (mIsANGLE) {
-    MOZ_ASSERT(IsExtensionSupported(EGLLibExtension::ANGLE_platform_angle_d3d));
     const SymLoadStruct angleSymbols[] = {SYMBOL(GetPlatformDisplay),
                                           END_OF_SYMBOLS};
     if (!fnLoadSymbols(angleSymbols)) {
       gfxCriticalError() << "Failed to load ANGLE symbols!";
       return false;
     }
+
+#ifdef XP_WIN
     MOZ_ASSERT(IsExtensionSupported(EGLLibExtension::ANGLE_platform_angle_d3d));
+#endif
+
     const SymLoadStruct createDeviceSymbols[] = {
         SYMBOL(CreateDeviceANGLE), SYMBOL(ReleaseDeviceANGLE), END_OF_SYMBOLS};
     if (!fnLoadSymbols(createDeviceSymbols)) {
