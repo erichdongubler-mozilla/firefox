@@ -766,11 +766,22 @@ void MarkingTracerT<opts>::markEphemeronEdges(EphemeronEdgeVector& edges,
   // 'edges' to be appended to while iterating.
   MOZ_ASSERT(edges.length() == initialLength);
 
-  // This is not just an optimization. When nuking a CCW, we conservatively
-  // mark through the related edges and then lose the CCW->target connection
+  // During the black marking Zone::enterWeakMarkingMode, erase black ephemerons
+  // whose sources are black. These have now been handled and are no longer
+  // needed.
+  //
+  // This is required for correctness because (1) nuking a CCW conservatively
+  // marks through the related edges and then loses the CCW->target connection
   // that induces a sweep group edge. As a result, it is possible for the
-  // delegate zone to get marked later, look up an edge in this table, and
-  // then try to mark something in a Zone that is no longer marking.
+  // delegate zone to get marked later, look up an edge in this table, and then
+  // try to mark something in a Zone that is no longer marking.
+  //
+  // (2), the gray pass only wants to visit things that will be marked gray. If
+  // a gray src in a black ephemeron got barrier-marked black, then we'd end up
+  // visiting a value that should be marked black. We could skip such things,
+  // but since they need to be removed anyway as per (1), we rely on that
+  // removal and assert above that we don't need to mark darker than the current
+  // mark color.
   if (srcColor == MarkColor::Black && markColor() == MarkColor::Black) {
     edges.eraseIf([](auto& edge) { return edge.color() == MarkColor::Black; });
   }
@@ -816,11 +827,15 @@ void MarkingTracerT<opts>::markImplicitEdges(T* markedThing) {
   // marking values that are in a different compartment.
   AutoClearTracingSource acts(this);
 
-  MarkColor thingColor = markColor();
-  MOZ_ASSERT(CellColor(thingColor) ==
-             gc::detail::GetEffectiveColor(gcMarker(), markedThing));
+  // If markedThing is now gray, then it won't be on the black mark stack, so we
+  // won't see it while marking black. But we could have the other way around:
+  // markedThing was gray when it was pushed on the (gray) mark stack, but was
+  // later marked black, and we're marking gray.
+  MOZ_ASSERT(CellColor(markColor()) <= markedThing->color());
 
-  markEphemeronEdges(edges, thingColor);
+  // No need to consider EffectiveColor; we know it's on the mark stack, so it
+  // must be in a collected zone (asserted above).
+  markEphemeronEdges(edges, AsMarkColor(markedThing->color()));
 
   if (edges.empty()) {
     ephemeronTable.remove(p);
