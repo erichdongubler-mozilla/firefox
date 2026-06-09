@@ -111,6 +111,16 @@ if CONFIG["OS_TARGET"] != "Android":
         "TestGMPRemoveAndDelete.cpp",
     ]
 
+if CONFIG["OS_TARGET"] == "WINNT":
+    LOCAL_INCLUDES += [
+        "/dom/media/platforms/wmf",
+    ]
+    # Not in UNIFIED_SOURCES: WMF.h pulls in <windows.h> which defines a
+    # StrCat macro that conflicts with absl::StrCat in WebRTC unified units.
+    SOURCES += [
+        "TestWMFDeadlock.cpp",
+    ]
+
 if CONFIG["MOZ_WEBRTC"] and CONFIG["OS_TARGET"] != "Android":
     UNIFIED_SOURCES += [
         "TestAudioDeviceEnumerator.cpp",
