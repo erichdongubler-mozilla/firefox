@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.305
- * pdfjsBuild = fadd201c0
+ * pdfjsVersion = 6.0.321
+ * pdfjsBuild = c541d24ac
  */
 
 ;// ./web/ui_utils.js
@@ -981,7 +981,7 @@ const {
 } = globalThis.pdfjsLib;
 
 ;// ./web/internal_evt.js
-const INTERNAL_EVT = "de2e5afb-66a3-406f-81a5-951c7a82fdc3";
+const INTERNAL_EVT = "4a4fdba8-8dae-471a-b5ef-a8f199b70e82";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -4861,8 +4861,7 @@ class PDFAttachmentViewer extends BaseTreeViewer {
     const ul = document.createElement("ul");
     fragment.append(ul);
     let attachmentsCount = 0;
-    for (const name in attachments) {
-      const item = attachments[name];
+    for (const [name, item] of attachments) {
       const li = document.createElement("li");
       ul.append(li);
       const element = document.createElement("a");
@@ -4882,13 +4881,11 @@ class PDFAttachmentViewer extends BaseTreeViewer {
       if (renderedPromise !== this._renderedCapability.promise) {
         return;
       }
-      const attachments = this._attachments || Object.create(null);
-      for (const name in attachments) {
-        if (item.filename === name) {
-          return;
-        }
+      const attachments = new Map(this._attachments);
+      if (attachments.has(item.filename)) {
+        return;
       }
-      attachments[item.filename] = item;
+      attachments.set(item.filename, item);
       this.render({
         attachments,
         keepRenderedCapability: true
@@ -13161,7 +13158,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.0.305";
+    const viewerVersion = "6.0.321";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -13428,6 +13425,13 @@ class PDFViewer {
       }
     });
   }
+  #setPrintingAllowed(isAllowed) {
+    this.#printingAllowed = isAllowed;
+    this.eventBus.dispatch("printingallowed", {
+      source: this,
+      isAllowed
+    });
+  }
   #initializePermissions(permissions) {
     const params = {
       annotationEditorMode: this.#annotationEditorMode,
@@ -13435,18 +13439,10 @@ class PDFViewer {
       textLayerMode: this.#textLayerMode
     };
     if (!permissions) {
-      this.#printingAllowed = true;
-      this.eventBus.dispatch("printingallowed", {
-        source: this,
-        isAllowed: this.#printingAllowed
-      });
+      this.#setPrintingAllowed(true);
       return params;
     }
-    this.#printingAllowed = permissions.includes(PermissionFlag.PRINT_HIGH_QUALITY) || permissions.includes(PermissionFlag.PRINT);
-    this.eventBus.dispatch("printingallowed", {
-      source: this,
-      isAllowed: this.#printingAllowed
-    });
+    this.#setPrintingAllowed(permissions.includes(PermissionFlag.PRINT_HIGH_QUALITY) || permissions.includes(PermissionFlag.PRINT));
     if (!permissions.includes(PermissionFlag.COPY) && this.#textLayerMode === TextLayerMode.ENABLE) {
       params.textLayerMode = TextLayerMode.ENABLE_PERMISSIONS;
     }

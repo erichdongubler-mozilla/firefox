@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.305
- * pdfjsBuild = fadd201c0
+ * pdfjsVersion = 6.0.321
+ * pdfjsBuild = c541d24ac
  */
 
 ;// ./src/shared/util.js
@@ -34706,9 +34706,15 @@ class PartialEvaluator {
           }
           break;
         case "TR":
-          const transferMaps = this.handleTransferFunction(value);
-          gStateObj.push([key, transferMaps]);
-          break;
+        case "TR2":
+          {
+            if (key === "TR" && gState.has("TR2")) {
+              break;
+            }
+            const transferMaps = this.handleTransferFunction(value);
+            gStateObj.push(["TR", transferMaps]);
+            break;
+          }
         case "OP":
         case "op":
         case "OPM":
@@ -34716,7 +34722,6 @@ class PartialEvaluator {
         case "BG2":
         case "UCR":
         case "UCR2":
-        case "TR2":
         case "HT":
         case "SM":
         case "SA":
@@ -40939,9 +40944,7 @@ class Catalog {
     if (obj instanceof Dict && obj.has("EmbeddedFiles")) {
       const nameTree = new NameTree(obj.getRaw("EmbeddedFiles"), this.xref);
       for (const [key, value] of nameTree.getAll()) {
-        const fs = new FileSpec(value);
-        attachments ??= Object.create(null);
-        attachments[stringToPDFString(key, true)] = fs.serializable;
+        (attachments ??= new Map()).set(stringToPDFString(key, true), new FileSpec(value).serializable);
       }
     }
     return shadow(this, "attachments", attachments);
@@ -41498,7 +41501,7 @@ class Catalog {
           }
           if (docAttachments && id) {
             resultObj.attachmentId = id;
-            resultObj.attachment = docAttachments[id];
+            resultObj.attachment = docAttachments.get(id);
             const attachmentDest = fetchRemoteDest(action);
             if (attachmentDest) {
               resultObj.attachmentDest = attachmentDest;
@@ -63312,7 +63315,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "6.0.305";
+    const workerVersion = "6.0.321";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }

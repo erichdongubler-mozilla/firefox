@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.305
- * pdfjsBuild = fadd201c0
+ * pdfjsVersion = 6.0.321
+ * pdfjsBuild = c541d24ac
  */
 
 ;// ./src/shared/util.js
@@ -1997,7 +1997,7 @@ class FloatingToolbar {
 }
 
 ;// ./src/shared/internal_evt.js
-const INTERNAL_EVT = "de2e5afb-66a3-406f-81a5-951c7a82fdc3";
+const INTERNAL_EVT = "4a4fdba8-8dae-471a-b5ef-a8f199b70e82";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -14217,7 +14217,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.0.305",
+    apiVersion: "6.0.321",
     data,
     password,
     disableAutoFetch,
@@ -15866,8 +15866,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.0.305";
-const build = "fadd201c0";
+const version = "6.0.321";
+const build = "c541d24ac";
 
 ;// ./src/display/editor/color_picker.js
 
@@ -17337,14 +17337,6 @@ class WidgetAnnotationElement extends AnnotationElement {
   render() {
     return this.container;
   }
-  showElementAndHideCanvas(element) {
-    if (this.data.hasOwnCanvas) {
-      if (element.previousSibling?.nodeName === "CANVAS") {
-        element.previousSibling.hidden = true;
-      }
-      element.hidden = false;
-    }
-  }
   _getKeyModifier(event) {
     return FeatureTest.platform.isMac ? event.metaKey : event.ctrlKey;
   }
@@ -17504,7 +17496,10 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         }
       }
       if (this.data.hasOwnCanvas) {
-        element.hidden = true;
+        this.container.classList.add("hasOwnCanvas");
+        if (storage.has(id)) {
+          this.container.classList.add("sandboxModified");
+        }
       }
       GetElementsByNameSet.add(element);
       this.contentElement = element;
@@ -17581,7 +17576,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           }
         });
         element.addEventListener("updatefromsandbox", jsEvent => {
-          this.showElementAndHideCanvas(jsEvent.target);
+          this.container.classList.add("sandboxModified");
           const actions = {
             value(event) {
               elementData.userValue = event.detail.value ?? "";
