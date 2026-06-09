@@ -23,10 +23,10 @@ index a25ce9e5a90..5fb2f7d7e7b 100644
          StackProbeType::None => return None,
          // Request LLVM to generate the probes inline. If the given LLVM version does not support
 diff --git a/compiler/rustc_codegen_llvm/src/back/write.rs b/compiler/rustc_codegen_llvm/src/back/write.rs
-index b131de1df8b..845dd993b7b 100644
+index bcadb6f0de9..691c53f5782 100644
 --- a/compiler/rustc_codegen_llvm/src/back/write.rs
 +++ b/compiler/rustc_codegen_llvm/src/back/write.rs
-@@ -761,6 +761,7 @@ fn handle_offload<'ll>(cx: &'ll SimpleCx<'_>, old_fn: &llvm::Value) {
+@@ -762,6 +762,7 @@ fn handle_offload<'ll>(cx: &'ll SimpleCx<'_>, old_fn: &llvm::Value) {
              pgo_use_path.as_ref().map_or(std::ptr::null(), |s| s.as_ptr()),
              config.instrument_coverage,
              instr_profile_output_path.as_ref().map_or(std::ptr::null(), |s| s.as_ptr()),
@@ -35,9 +35,18 @@ index b131de1df8b..845dd993b7b 100644
              config.debug_info_for_profiling,
              llvm_selfprofiler,
 diff --git a/compiler/rustc_codegen_llvm/src/debuginfo/metadata.rs b/compiler/rustc_codegen_llvm/src/debuginfo/metadata.rs
-index 5535ebe6585..13ae40b3724 100644
+index e11ed796887..ee21a6d3644 100644
 --- a/compiler/rustc_codegen_llvm/src/debuginfo/metadata.rs
 +++ b/compiler/rustc_codegen_llvm/src/debuginfo/metadata.rs
+@@ -1,7 +1,7 @@
+ use std::borrow::Cow;
+ use std::fmt::{self, Write};
+ use std::hash::{Hash, Hasher};
+-use std::path::PathBuf;
++use std::path::{Path, PathBuf};
+ use std::sync::Arc;
+ use std::{iter, ptr};
+ 
 @@ -9,6 +9,7 @@
  use rustc_abi::{Align, Size};
  use rustc_codegen_ssa::debuginfo::type_names::{VTableNameKind, cpp_like_debuginfo};
@@ -46,7 +55,7 @@ index 5535ebe6585..13ae40b3724 100644
  use rustc_hir::def::{CtorKind, DefKind};
  use rustc_hir::def_id::{DefId, LOCAL_CRATE};
  use rustc_middle::bug;
-@@ -988,8 +989,33 @@ pub(crate) fn build_compile_unit_di_node<'ll, 'tcx>(
+@@ -939,8 +940,33 @@ pub(crate) fn build_compile_unit_di_node<'ll, 'tcx>(
              debug_name_table_kind,
          );
  
@@ -81,10 +90,10 @@ index 5535ebe6585..13ae40b3724 100644
  
  /// Creates a `DW_TAG_member` entry inside the DIE represented by the given `type_di_node`.
 diff --git a/compiler/rustc_codegen_llvm/src/debuginfo/mod.rs b/compiler/rustc_codegen_llvm/src/debuginfo/mod.rs
-index c2c55ee2b64..f09c904d421 100644
+index 1c63bbcd171..74f563e7470 100644
 --- a/compiler/rustc_codegen_llvm/src/debuginfo/mod.rs
 +++ b/compiler/rustc_codegen_llvm/src/debuginfo/mod.rs
-@@ -54,6 +54,7 @@
+@@ -55,6 +55,7 @@
  
  /// A context object for maintaining all state needed by the debuginfo module.
  pub(crate) struct CodegenUnitDebugContext<'ll, 'tcx> {
@@ -92,7 +101,7 @@ index c2c55ee2b64..f09c904d421 100644
      llmod: &'ll llvm::Module,
      builder: DIBuilderBox<'ll>,
      created_files: RefCell<UnordMap<Option<(StableSourceFileId, SourceFileHash)>, &'ll DIFile>>,
-@@ -69,7 +70,9 @@ pub(crate) fn new(llmod: &'ll llvm::Module) -> Self {
+@@ -70,7 +71,9 @@ pub(crate) fn new(llmod: &'ll llvm::Module) -> Self {
          debug!("CodegenUnitDebugContext::new");
          let builder = DIBuilderBox::new(llmod);
          // DIBuilder inherits context from the module, so we'd better use the same one
@@ -103,10 +112,10 @@ index c2c55ee2b64..f09c904d421 100644
              builder,
              created_files: Default::default(),
 diff --git a/compiler/rustc_codegen_llvm/src/llvm/ffi.rs b/compiler/rustc_codegen_llvm/src/llvm/ffi.rs
-index c5cbc92ae77..dcccec583dc 100644
+index a90013801c8..a42d6d9a243 100644
 --- a/compiler/rustc_codegen_llvm/src/llvm/ffi.rs
 +++ b/compiler/rustc_codegen_llvm/src/llvm/ffi.rs
-@@ -933,6 +933,7 @@ pub(crate) fn LLVMModuleCreateWithNameInContext(
+@@ -876,6 +876,7 @@ pub(crate) fn LLVMModuleCreateWithNameInContext(
          ModuleID: *const c_char,
          C: &Context,
      ) -> &Module;
@@ -114,7 +123,7 @@ index c5cbc92ae77..dcccec583dc 100644
      pub(crate) safe fn LLVMCloneModule(M: &Module) -> &Module;
  
      /// Data layout. See Module::getDataLayout.
-@@ -2420,6 +2421,7 @@ pub(crate) fn LLVMRustOptimize<'a>(
+@@ -2382,6 +2383,7 @@ pub(crate) fn LLVMRustOptimize<'a>(
          PGOUsePath: *const c_char,
          InstrumentCoverage: bool,
          InstrProfileOutput: *const c_char,
@@ -180,10 +189,10 @@ index 3e36bd8552b..e64a0110a08 100644
      let (shared_emitter, shared_emitter_main) = SharedEmitter::new();
      let (codegen_worker_send, codegen_worker_receive) = channel();
 diff --git a/compiler/rustc_interface/src/tests.rs b/compiler/rustc_interface/src/tests.rs
-index 6752ddbc570..18d4174ce36 100644
+index a78b0e8e1ed..b2fefc50806 100644
 --- a/compiler/rustc_interface/src/tests.rs
 +++ b/compiler/rustc_interface/src/tests.rs
-@@ -852,6 +852,8 @@ macro_rules! tracked {
+@@ -851,6 +851,8 @@ macro_rules! tracked {
      tracked!(plt, Some(true));
      tracked!(polonius, Polonius::Legacy);
      tracked!(precise_enum_drop_elaboration, false);
@@ -193,10 +202,10 @@ index 6752ddbc570..18d4174ce36 100644
      tracked!(profiler_runtime, "abc".to_string());
      tracked!(reg_struct_return, true);
 diff --git a/compiler/rustc_llvm/llvm-wrapper/PassWrapper.cpp b/compiler/rustc_llvm/llvm-wrapper/PassWrapper.cpp
-index 714ba0f177a..4aef2905e0d 100644
+index 733f5fd0df0..664940af30c 100644
 --- a/compiler/rustc_llvm/llvm-wrapper/PassWrapper.cpp
 +++ b/compiler/rustc_llvm/llvm-wrapper/PassWrapper.cpp
-@@ -38,6 +38,7 @@
+@@ -42,6 +42,7 @@
  #include "llvm/Transforms/IPO/ThinLTOBitcodeWriter.h"
  #include "llvm/Transforms/Instrumentation/AddressSanitizer.h"
  #include "llvm/Transforms/Instrumentation/DataFlowSanitizer.h"
@@ -204,8 +213,8 @@ index 714ba0f177a..4aef2905e0d 100644
  #include "llvm/Transforms/Instrumentation/HWAddressSanitizer.h"
  #include "llvm/Transforms/Instrumentation/InstrProfiling.h"
  #include "llvm/Transforms/Instrumentation/MemorySanitizer.h"
-@@ -573,8 +574,9 @@ extern "C" LLVMRustResult LLVMRustOptimize(
-     bool PrintAfterEnzyme, bool PrintPasses,
+@@ -568,8 +569,9 @@ extern "C" LLVMRustResult LLVMRustOptimize(
+     bool PrintBeforeEnzyme, bool PrintAfterEnzyme, bool PrintPasses,
      LLVMRustSanitizerOptions *SanitizerOptions, const char *PGOGenPath,
      const char *PGOUsePath, bool InstrumentCoverage,
 -    const char *InstrProfileOutput, const char *PGOSampleUsePath,
@@ -216,7 +225,7 @@ index 714ba0f177a..4aef2905e0d 100644
      LLVMRustSelfProfileBeforePassCallback BeforePassCallback,
      LLVMRustSelfProfileAfterPassCallback AfterPassCallback,
      const char *ExtraPasses, size_t ExtraPassesLen, const char *LLVMPlugins,
-@@ -716,6 +718,13 @@ extern "C" LLVMRustResult LLVMRustOptimize(
+@@ -711,6 +713,13 @@ extern "C" LLVMRustResult LLVMRustOptimize(
      });
    }
  
@@ -231,10 +240,10 @@ index 714ba0f177a..4aef2905e0d 100644
      PipelineStartEPCallbacks.push_back(
          [InstrProfileOutput](ModulePassManager &MPM, OptimizationLevel Level) {
 diff --git a/compiler/rustc_metadata/src/creader.rs b/compiler/rustc_metadata/src/creader.rs
-index 95862ce0168..097fa8caee7 100644
+index 4000f12459a..cf1abd3f8c9 100644
 --- a/compiler/rustc_metadata/src/creader.rs
 +++ b/compiler/rustc_metadata/src/creader.rs
-@@ -1055,7 +1055,7 @@ fn inject_panic_runtime(&mut self, tcx: TyCtxt<'_>, krate: &ast::Crate) {
+@@ -1003,7 +1003,7 @@ fn inject_panic_runtime(&mut self, tcx: TyCtxt<'_>, krate: &ast::Crate) {
  
      fn inject_profiler_runtime(&mut self, tcx: TyCtxt<'_>) {
          let needs_profiler_runtime =
@@ -244,10 +253,10 @@ index 95862ce0168..097fa8caee7 100644
              return;
          }
 diff --git a/compiler/rustc_session/src/config.rs b/compiler/rustc_session/src/config.rs
-index f97a29e064b..6063a1f1b37 100644
+index f0dc5b9ac48..f6a1c9858e9 100644
 --- a/compiler/rustc_session/src/config.rs
 +++ b/compiler/rustc_session/src/config.rs
-@@ -2524,7 +2524,7 @@ pub fn build_session_options(early_dcx: &mut EarlyDiagCtxt, matches: &getopts::M
+@@ -2474,7 +2474,7 @@ pub fn build_session_options(early_dcx: &mut EarlyDiagCtxt, matches: &getopts::M
      let output_types = parse_output_types(early_dcx, &unstable_opts, matches);
  
      let mut cg = CodegenOptions::build(early_dcx, matches, &mut target_modifiers);
@@ -256,7 +265,7 @@ index f97a29e064b..6063a1f1b37 100644
          early_dcx,
          &output_types,
          matches,
-@@ -2543,6 +2543,18 @@ pub fn build_session_options(early_dcx: &mut EarlyDiagCtxt, matches: &getopts::M
+@@ -2493,6 +2493,18 @@ pub fn build_session_options(early_dcx: &mut EarlyDiagCtxt, matches: &getopts::M
  
      let assert_incr_state = parse_assert_incr_state(early_dcx, &unstable_opts.assert_incr_state);
  
@@ -276,10 +285,10 @@ index f97a29e064b..6063a1f1b37 100644
          early_dcx.early_fatal("options `-C profile-generate` and `-C profile-use` are exclusive");
      }
 diff --git a/compiler/rustc_session/src/options.rs b/compiler/rustc_session/src/options.rs
-index 872a48efa36..3b650fc925b 100644
+index 96bdcf8beff..a506b494232 100644
 --- a/compiler/rustc_session/src/options.rs
 +++ b/compiler/rustc_session/src/options.rs
-@@ -2572,8 +2572,13 @@ pub(crate) fn parse_align(slot: &mut Option<Align>, v: Option<&str>) -> bool {
+@@ -2591,8 +2591,13 @@ pub(crate) fn parse_align(slot: &mut Option<Align>, v: Option<&str>) -> bool {
      proc_macro_execution_strategy: ProcMacroExecutionStrategy = (ProcMacroExecutionStrategy::SameThread,
          parse_proc_macro_execution_strategy, [UNTRACKED],
          "how to run proc-macro code (default: same-thread)"),
