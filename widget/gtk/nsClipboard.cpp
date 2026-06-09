@@ -9,6 +9,7 @@
 #endif
 #if defined(MOZ_WAYLAND)
 #  include "nsClipboardWayland.h"
+#  include "nsClipboardGtk.h"
 #  include "nsWaylandDisplay.h"
 #endif
 #include "nsGtkUtils.h"
@@ -185,7 +186,7 @@ nsresult nsClipboard::Init(void) {
 #endif
 #if defined(MOZ_WAYLAND)
   if (widget::GdkIsWaylandDisplay()) {
-    mContext = new RetrievalContextWayland();
+    mContext = new RetrievalContextGtk();
   }
 #endif
 

@@ -119,6 +119,7 @@ if CONFIG["MOZ_WAYLAND"]:
     UNIFIED_SOURCES += [
         "FileTransferPortal.cpp",
         "MozContainerWayland.cpp",
+        "nsClipboardGtk.cpp",
         "nsClipboardWayland.cpp",
         "nsDragServiceWayland.cpp",
         "nsWaylandDisplay.cpp",
