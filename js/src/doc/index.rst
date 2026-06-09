@@ -24,7 +24,6 @@ Specific documentation on a few topics is available at:
    feature_checklist
    bytecode_checklist
    use_counter
-   how-we-optimize
    Debugger API </devtools-user/debugger-api/index>
 
 
