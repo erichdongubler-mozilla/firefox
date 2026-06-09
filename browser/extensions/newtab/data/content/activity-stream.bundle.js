@@ -1092,7 +1092,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
       id: "inferred-personalization-overrides",
       pressed: overridesEnabled || null,
-      onToggle: this.handleDebugOverridesToggle,
+      ontoggle: this.handleDebugOverridesToggle,
       label: "Enable overrides"
     })))), /*#__PURE__*/external_React_default().createElement(Row, {
       className: "inferred-overrides-refresh-row"
@@ -1240,7 +1240,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       id: "sections-toggle",
       disabled: !unifiedAdsSpocsEnabled || null,
       pressed: allizomEnabled || null,
-      onToggle: this.handleAllizomToggle,
+      ontoggle: this.handleAllizomToggle,
       label: "Toggle allizom"
     }))), /*#__PURE__*/external_React_default().createElement(Row, null, /*#__PURE__*/external_React_default().createElement("td", {
       className: "min"
@@ -1331,7 +1331,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
       id: "sections-toggle",
       pressed: sectionsEnabled || null,
-      onToggle: this.handleSectionsToggle,
+      ontoggle: this.handleSectionsToggle,
       label: "Toggle DS Sections"
     })), /*#__PURE__*/external_React_default().createElement("details", {
       className: "details-section"
@@ -1340,21 +1340,21 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
       id: "newtab_leaderboard",
       pressed: leaderboardPressed || null,
-      onToggle: this.toggleIABBanners,
+      ontoggle: this.toggleIABBanners,
       label: "Enable IAB Leaderboard"
     })), /*#__PURE__*/external_React_default().createElement("div", {
       className: "toggle-wrapper"
     }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
       id: "newtab_billboard",
       pressed: billboardPressed || null,
-      onToggle: this.toggleIABBanners,
+      ontoggle: this.toggleIABBanners,
       label: "Enable IAB Billboard"
     })), /*#__PURE__*/external_React_default().createElement("div", {
       className: "toggle-wrapper"
     }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
       id: "newtab_rectangle",
       pressed: mediumRectangleEnabledPressed || null,
-      onToggle: this.toggleIABBanners,
+      ontoggle: this.toggleIABBanners,
       label: "Enable IAB Medium Rectangle (MREC)"
     }))), /*#__PURE__*/external_React_default().createElement("button", {
       className: "button",
@@ -18434,15 +18434,11 @@ function SportsMatchesView({
     className: "sports-matches-tab-panel",
     hidden: matchesTab !== MATCHES_TABS.RESULTS,
     ref: resultsPanelRef
-  }, showResultsList ? /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, hasFollowedTeams &&
-  /*#__PURE__*/
-  /** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */
-  external_React_default().createElement("moz-toggle", {
+  }, showResultsList ? /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, hasFollowedTeams && /*#__PURE__*/external_React_default().createElement("moz-toggle", {
     className: "sports-followed-only-toggle",
     pressed: resultsFollowedOnly || null,
     "data-l10n-id": "newtab-sports-widget-followed-only-toggle",
-    ontoggle: e => setFollowedOnly("results", !!e.target.pressed),
-    onToggle: e => setFollowedOnly("results", !!e.target.pressed)
+    ontoggle: e => setFollowedOnly("results", !!e.target.pressed)
   }), /*#__PURE__*/external_React_default().createElement("div", {
     className: "sports-matches-list"
   }, groupMatchesBySection(displayedPrevious).map((section, idx) => /*#__PURE__*/external_React_default().createElement("div", {
@@ -18512,15 +18508,11 @@ function SportsMatchesView({
     className: "sports-matches-tab-panel",
     hidden: matchesTab !== MATCHES_TABS.UPCOMING,
     ref: upcomingPanelRef
-  }, showUpcomingList ? /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, hasFollowedTeams &&
-  /*#__PURE__*/
-  /** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */
-  external_React_default().createElement("moz-toggle", {
+  }, showUpcomingList ? /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, hasFollowedTeams && /*#__PURE__*/external_React_default().createElement("moz-toggle", {
     className: "sports-followed-only-toggle",
     pressed: upcomingFollowedOnly || null,
     "data-l10n-id": "newtab-sports-widget-followed-only-toggle",
-    ontoggle: e => setFollowedOnly("upcoming", !!e.target.pressed),
-    onToggle: e => setFollowedOnly("upcoming", !!e.target.pressed)
+    ontoggle: e => setFollowedOnly("upcoming", !!e.target.pressed)
   }), /*#__PURE__*/external_React_default().createElement("div", {
     className: "sports-matches-list"
   }, groupMatchesBySection(displayedNext).map((section, idx) => /*#__PURE__*/external_React_default().createElement("div", {
@@ -22530,7 +22522,7 @@ function WidgetsManagementPanel({
   }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
     id: "weather-toggle",
     pressed: weatherEnabled || null,
-    onToggle: onToggleWidget,
+    ontoggle: onToggleWidget,
     "data-preference": "widgets.weather.enabled",
     "data-event-source": "WEATHER",
     "data-l10n-id": "newtab-custom-widget-weather-toggle"
@@ -22540,7 +22532,7 @@ function WidgetsManagementPanel({
   }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
     id: "timer-toggle",
     pressed: timerEnabled || null,
-    onToggle: onToggleWidget,
+    ontoggle: onToggleWidget,
     "data-preference": "widgets.focusTimer.enabled",
     "data-event-source": "WIDGET_TIMER",
     "data-l10n-id": "newtab-custom-widget-timer-toggle"
@@ -22550,7 +22542,7 @@ function WidgetsManagementPanel({
   }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
     id: "lists-toggle",
     pressed: listsEnabled || null,
-    onToggle: onToggleWidget,
+    ontoggle: onToggleWidget,
     "data-preference": "widgets.lists.enabled",
     "data-event-source": "WIDGET_LISTS",
     "data-l10n-id": "newtab-custom-widget-lists-toggle"
@@ -22561,7 +22553,6 @@ function WidgetsManagementPanel({
     id: "sports-widget-toggle",
     pressed: sportsWidgetEnabled || null,
     ontoggle: onToggleWidget,
-    onToggle: onToggleWidget,
     "data-preference": "widgets.sportsWidget.enabled",
     "data-event-source": "WIDGET_SPORTS",
     "data-l10n-id": "newtab-custom-widget-sports-toggle2"
@@ -22572,7 +22563,6 @@ function WidgetsManagementPanel({
     id: "clocks-toggle",
     pressed: clocksEnabled || null,
     ontoggle: onToggleWidget,
-    onToggle: onToggleWidget,
     "data-preference": "widgets.clocks.enabled",
     "data-event-source": "WIDGET_CLOCKS",
     "data-l10n-id": "newtab-custom-widget-clock-toggle"
@@ -22780,7 +22770,7 @@ class ContentSection extends (external_React_default()).PureComponent {
     }, novaEnabled && /*#__PURE__*/external_React_default().createElement("moz-toggle", {
       id: "wallpapers-toggle",
       pressed: wallpapersUserEnabled && !!activeWallpaper || null,
-      onToggle: this.onPreferenceSelect,
+      ontoggle: this.onPreferenceSelect,
       "data-preference": "newtabWallpapers.user.enabled",
       "data-event-source": "WALLPAPERS",
       "data-l10n-id": "newtab-wallpaper-toggle-title"
@@ -22803,7 +22793,7 @@ class ContentSection extends (external_React_default()).PureComponent {
     }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
       id: "weather-toggle",
       pressed: weatherEnabled || null,
-      onToggle: this.onPreferenceSelect,
+      ontoggle: this.onPreferenceSelect,
       "data-preference": "showWeather",
       "data-event-source": "WEATHER",
       "data-l10n-id": "newtab-custom-widget-weather-toggle"
@@ -22813,7 +22803,7 @@ class ContentSection extends (external_React_default()).PureComponent {
     }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
       id: "lists-toggle",
       pressed: listsEnabled || null,
-      onToggle: this.onPreferenceSelect,
+      ontoggle: this.onPreferenceSelect,
       "data-preference": "widgets.lists.enabled",
       "data-event-source": "WIDGET_LISTS",
       "data-l10n-id": "newtab-custom-widget-lists-toggle"
@@ -22823,7 +22813,7 @@ class ContentSection extends (external_React_default()).PureComponent {
     }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
       id: "timer-toggle",
       pressed: timerEnabled || null,
-      onToggle: this.onPreferenceSelect,
+      ontoggle: this.onPreferenceSelect,
       "data-preference": "widgets.focusTimer.enabled",
       "data-event-source": "WIDGET_TIMER",
       "data-l10n-id": "newtab-custom-widget-timer-toggle"
@@ -22834,7 +22824,6 @@ class ContentSection extends (external_React_default()).PureComponent {
       id: "clocks-toggle",
       pressed: !!clocksEnabled,
       ontoggle: this.onPreferenceSelect,
-      onToggle: this.onPreferenceSelect,
       "data-preference": "widgets.clocks.enabled",
       "data-event-source": "WIDGET_CLOCKS",
       "data-l10n-id": "newtab-custom-widget-clock-toggle"
@@ -22848,7 +22837,7 @@ class ContentSection extends (external_React_default()).PureComponent {
     }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
       id: "weather-toggle",
       pressed: weatherEnabled || null,
-      onToggle: this.onPreferenceSelect,
+      ontoggle: this.onPreferenceSelect,
       "data-preference": novaEnabled ? "widgets.weather.enabled" : "showWeather",
       "data-event-source": "WEATHER",
       "data-l10n-id": "newtab-custom-weather-toggle"
@@ -22861,7 +22850,7 @@ class ContentSection extends (external_React_default()).PureComponent {
     }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
       id: "shortcuts-toggle",
       pressed: topSitesEnabled || null,
-      onToggle: this.onPreferenceSelect,
+      ontoggle: this.onPreferenceSelect,
       "data-preference": "feeds.topsites",
       "data-event-source": "TOP_SITES",
       "data-l10n-id": novaEnabled ? "newtab-custom-shortcuts-nova" : "newtab-custom-shortcuts-toggle"
@@ -22908,7 +22897,7 @@ class ContentSection extends (external_React_default()).PureComponent {
     }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
       id: "widgets-system-toggle",
       pressed: widgetsEnabled || null,
-      onToggle: this.onPreferenceSelect,
+      ontoggle: this.onPreferenceSelect,
       "data-preference": "widgets.enabled",
       "data-event-source": "WIDGETS_SYSTEM",
       "data-l10n-id": "newtab-custom-widget-section-toggle"
@@ -22945,7 +22934,7 @@ class ContentSection extends (external_React_default()).PureComponent {
     }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
       id: "pocket-toggle",
       pressed: pocketEnabled || null,
-      onToggle: this.onPreferenceSelect,
+      ontoggle: this.onPreferenceSelect,
       "data-preference": "feeds.section.topstories",
       "data-event-source": "TOP_STORIES",
       "data-l10n-id": pocketToggleL10nId
