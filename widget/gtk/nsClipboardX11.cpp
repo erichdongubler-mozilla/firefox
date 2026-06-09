@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "AsyncGtkClipboardRequest.h"
+#include "AsyncClipboardRequest.h"
 #include "nsClipboardX11.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WidgetUtilsGtk.h"
@@ -20,8 +20,17 @@
 #include "X11UndefineNone.h"
 
 using namespace mozilla;
+using namespace mozilla::widget;
 
-nsRetrievalContextX11::nsRetrievalContextX11() = default;
+constinit ClipboardTargets RetrievalContextX11::sClipboardTargets;
+constinit ClipboardTargets RetrievalContextX11::sPrimaryTargets;
+
+RetrievalContextX11::RetrievalContextX11() = default;
+
+RetrievalContextX11::~RetrievalContextX11() {
+  sClipboardTargets.Clear();
+  sPrimaryTargets.Clear();
+}
 
 static void DispatchSelectionNotifyEvent(GtkWidget* widget, XEvent* xevent) {
   GdkWindow* window = gtk_widget_get_window(widget);
@@ -80,7 +89,7 @@ static Bool checkEventProc(Display* display, XEvent* event, XPointer arg) {
   return X11False;
 }
 
-ClipboardData nsRetrievalContextX11::WaitForClipboardData(
+ClipboardData RetrievalContextX11::WaitForClipboardData(
     ClipboardDataType aDataType, int32_t aWhichClipboard,
     const char* aMimeType) {
   AsyncGtkClipboardRequest request(aDataType, aWhichClipboard, aMimeType);
@@ -136,9 +145,8 @@ ClipboardData nsRetrievalContextX11::WaitForClipboardData(
   return {};
 }
 
-ClipboardTargets nsRetrievalContextX11::GetTargetsImpl(
-    int32_t aWhichClipboard) {
-  MOZ_CLIPBOARD_LOG("nsRetrievalContextX11::GetTargetsImpl(%s)\n",
+ClipboardTargets RetrievalContextX11::GetTargetsImpl(int32_t aWhichClipboard) {
+  MOZ_CLIPBOARD_LOG("RetrievalContextX11::GetTargetsImpl(%s)\n",
                     aWhichClipboard == nsClipboard::kSelectionClipboard
                         ? "primary"
                         : "clipboard");
@@ -146,9 +154,38 @@ ClipboardTargets nsRetrievalContextX11::GetTargetsImpl(
       .ExtractTargets();
 }
 
-ClipboardData nsRetrievalContextX11::GetClipboardData(const char* aMimeType,
-                                                      int32_t aWhichClipboard) {
-  MOZ_CLIPBOARD_LOG("nsRetrievalContextX11::GetClipboardData(%s) MIME %s\n",
+ClipboardTargets RetrievalContextX11::GetTargets(int32_t aWhichClipboard) {
+  MOZ_CLIPBOARD_LOG("RetrievalContextX11::GetTargets(%s)\n",
+                    aWhichClipboard == nsClipboard::kSelectionClipboard
+                        ? "primary"
+                        : "clipboard");
+  ClipboardTargets& storedTargets =
+      (aWhichClipboard == nsClipboard::kSelectionClipboard) ? sPrimaryTargets
+                                                            : sClipboardTargets;
+  if (!storedTargets) {
+    MOZ_CLIPBOARD_LOG("  getting targets from system");
+    storedTargets.Set(GetTargetsImpl(aWhichClipboard));
+  } else {
+    MOZ_CLIPBOARD_LOG("  using cached targets");
+  }
+  return storedTargets.Clone();
+}
+
+void RetrievalContextX11::ClearCachedTargets(int32_t aWhichClipboard) {
+  MOZ_CLIPBOARD_LOG("RetrievalContextX11::ClearCachedTargets(%s)",
+                    aWhichClipboard == nsClipboard::kSelectionClipboard
+                        ? "primary"
+                        : "clipboard");
+  if (aWhichClipboard == nsClipboard::kSelectionClipboard) {
+    sPrimaryTargets.Clear();
+  } else {
+    sClipboardTargets.Clear();
+  }
+}
+
+ClipboardData RetrievalContextX11::GetClipboardData(const char* aMimeType,
+                                                    int32_t aWhichClipboard) {
+  MOZ_CLIPBOARD_LOG("RetrievalContextX11::GetClipboardData(%s) MIME %s\n",
                     aWhichClipboard == nsClipboard::kSelectionClipboard
                         ? "primary"
                         : "clipboard",
@@ -158,9 +195,9 @@ ClipboardData nsRetrievalContextX11::GetClipboardData(const char* aMimeType,
                               aMimeType);
 }
 
-GUniquePtr<char> nsRetrievalContextX11::GetClipboardText(
+GUniquePtr<char> RetrievalContextX11::GetClipboardText(
     int32_t aWhichClipboard) {
-  MOZ_CLIPBOARD_LOG("nsRetrievalContextX11::GetClipboardText(%s)\n",
+  MOZ_CLIPBOARD_LOG("RetrievalContextX11::GetClipboardText(%s)\n",
                     aWhichClipboard == nsClipboard::kSelectionClipboard
                         ? "primary"
                         : "clipboard");
