@@ -1328,6 +1328,8 @@ skip-if = [
 
 ["test_mismatch_last-modified.js"]
 
+["test_moz_http2_exception_handling.js"]
+
 ["test_mozTXTToHTMLConv.js"]
 
 ["test_multipart_byteranges.js"]
