@@ -511,8 +511,7 @@ partial interface Window {
   [Replaceable, Throws] readonly attribute long   scrollMaxX;
   [Replaceable, Throws] readonly attribute long   scrollMaxY;
 
-  // XXX This should be a ChromeOnly attribute
-  [Throws, NeedsCallerType] attribute boolean fullScreen;
+  [Throws, Deprecated=FullscreenAttribute] attribute boolean fullScreen;
 
   undefined                 updateCommands(DOMString action);
 
