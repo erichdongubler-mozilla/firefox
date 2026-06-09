@@ -169,7 +169,7 @@ class PeerConnectionImpl final
  public:
   explicit PeerConnectionImpl(const dom::GlobalObject* aGlobal = nullptr);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(PeerConnectionImpl)
 
   struct RtpExtensionHeader {
