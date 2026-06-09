@@ -2193,15 +2193,12 @@ class Settings(
      *
      * @param featureEnabled Boolean to indicate whether the feature is enabled.
      * @param hasUserBeenOnboarded Boolean to indicate whether the user has been onboarded.
-     * @param isLauncherIntent Boolean to indicate whether the app was launched on tapping on the
-     * app icon.
      */
     fun shouldShowOnboarding(
         featureEnabled: Boolean = onboardingFeatureEnabled,
         hasUserBeenOnboarded: Boolean,
-        isLauncherIntent: Boolean,
     ): Boolean {
-        val shouldShowByDefaultConditions = featureEnabled && !hasUserBeenOnboarded && isLauncherIntent
+        val shouldShowByDefaultConditions = featureEnabled && !hasUserBeenOnboarded
 
         val shouldShow = shouldShowByDefaultConditions || enablePersistentOnboarding
 
