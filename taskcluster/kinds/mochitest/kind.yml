@@ -328,8 +328,6 @@ tasks:
             - inc-origin-init
             - trainhop-beta
             - trainhop-release
-            - nova
-            - nova+vertical-tabs
         run-on-projects:
             by-variant:
                 trainhop-beta:
@@ -386,24 +384,6 @@ tasks:
                         windows1.*-64.*(-shippable)?/.*: ['autoland', 'mozilla-central']
                         default: []
                 inc-origin-init: []
-                nova:
-                    by-test-platform:
-                        .*-artifact.*: []
-                        .*-asan.*: []
-                        .*-ccov.*: []
-                        linux.*64(-shippable)?/opt: ['mozilla-central']
-                        macosx1[45].*64(-shippable)?(-qr)?/opt: ['mozilla-central']
-                        windows11.*-64.*(-shippable)?/opt: ['mozilla-central']
-                        default: []
-                nova+vertical-tabs:
-                    by-test-platform:
-                        .*-artifact.*: []
-                        .*-asan.*: []
-                        .*-ccov.*: []
-                        linux.*64(-shippable)?/opt: ['mozilla-central']
-                        macosx1[45].*64(-shippable)?(-qr)?/opt: ['mozilla-central']
-                        windows11.*-64.*(-shippable)?/opt: ['mozilla-central']
-                        default: []
                 default:
                     by-test-platform:
                         android.*: []
@@ -629,7 +609,6 @@ tasks:
             - webrender-sw+1proc
             - standalone
             - inc-origin-init
-            - nova
         run-on-projects:
             by-variant:
                 webrender-sw+1proc:
@@ -655,15 +634,6 @@ tasks:
                         windows.*-64-[^-/]+/opt: ['autoland']
                         default: []
                 inc-origin-init: []
-                nova:
-                    by-test-platform:
-                        .*-artifact.*: []
-                        .*-asan.*: []
-                        .*-ccov.*: []
-                        linux.*64(-shippable)?/opt: ['mozilla-central']
-                        macosx1[45].*64(-shippable)?(-qr)?/opt: ['mozilla-central']
-                        windows11.*-64.*(-shippable)?/opt: ['mozilla-central']
-                        default: []
         chunks: dynamic
         default-chunks:
             by-variant:

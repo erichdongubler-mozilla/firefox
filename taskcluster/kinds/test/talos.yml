@@ -56,7 +56,6 @@ talos-chrome:
     treeherder-symbol: T(c)
     variants:
         - webrender-sw
-        - nova
     run-on-projects:
         by-test-platform:
             linux(?!.*shippable).*: []
@@ -425,7 +424,6 @@ talos-other:
     treeherder-symbol: T(o)
     variants:
         - webrender-sw
-        - nova
     run-on-projects:
         by-variant:
             webrender-sw:
@@ -463,7 +461,6 @@ talos-sessionrestore-many-windows:
     treeherder-symbol: T(smw)
     variants:
         - webrender-sw
-        - nova
     run-on-projects:
         by-variant:
             webrender-sw:
@@ -639,7 +636,6 @@ talos-tabswitch:
     treeherder-symbol: T(tabswitch)
     variants:
         - webrender-sw
-        - nova
     run-on-projects: []
     max-run-time: 2100
     mozharness:
