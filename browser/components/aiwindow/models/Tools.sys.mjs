@@ -424,6 +424,21 @@ export async function searchBrowsingHistory(toolParams, conversation) {
   });
 
   conversation.addSeenUrls(result.results.map(({ url }) => url));
+  // Await delivery to the content page so its history results pool is populated
+  // before this tool returns and the model streams the response listing them.
+  await conversation.addHistoryResults(
+    result.results.map(
+      ({ url, title, favicon, thumbnail, visitDate, visitCount }) => ({
+        url,
+        title,
+        favicon,
+        thumbnail,
+        visitDate,
+        visitCount,
+      })
+    )
+  );
+
   conversation.securityProperties.setPrivateData();
   lazy.console.log("[Tool] searchBrowsingHistory", result);
   return result;
