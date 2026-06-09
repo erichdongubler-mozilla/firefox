@@ -23,9 +23,7 @@
 #include "nsSound.h"
 #include "nsGTKToolkit.h"
 #include "WakeLockListener.h"
-#ifdef MOZ_WAYLAND
-#  include "FileTransferPortal.h"
-#endif
+
 #include "DMABufDevice.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/widget/ScreenManager.h"
@@ -55,9 +53,7 @@ void nsWidgetGtk2ModuleDtor() {
   // Shutdown all XP level widget classes.
   DMABufDeviceLock::Shutdown();
   WidgetUtils::Shutdown();
-#ifdef MOZ_WAYLAND
-  FileTransferPortal::Shutdown();
-#endif
+
   NativeKeyBindings::Shutdown();
   nsLookAndFeel::Shutdown();
   nsFilePicker::Shutdown();

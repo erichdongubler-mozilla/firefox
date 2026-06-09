@@ -6,7 +6,6 @@
 
 #include "WakeLockListener.h"
 #include "WidgetUtilsGtk.h"
-#include "prenv.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Services.h"
 #include "nsIStringBundle.h"

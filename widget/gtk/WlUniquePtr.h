@@ -2,18 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef WUniquePtr_h_
-#define WUniquePtr_h_
+#ifndef WlUniquePtr_h_
+#define WlUniquePtr_h_
 
-// Provides WUniquePtr to wayland classes.
-
+// Provides WlUniquePtr to wayland classes.
 #include "mozilla/UniquePtr.h"
 #include "nsWaylandDisplay.h"
 
 namespace mozilla {
 
-struct WFreeDeleter {
-  constexpr WFreeDeleter() = default;
+struct WDeleter {
+  constexpr WDeleter() = default;
   void operator()(wl_data_device* aPtr) const { wl_data_device_destroy(aPtr); }
   void operator()(zwp_primary_selection_device_v1* aPtr) const {
     zwp_primary_selection_device_v1_destroy(aPtr);
@@ -24,7 +23,7 @@ struct WFreeDeleter {
 };
 
 template <typename T>
-using WUniquePtr = UniquePtr<T, WFreeDeleter>;
+using WlUniquePtr = UniquePtr<T, WDeleter>;
 
 }  // namespace mozilla
 

@@ -14,71 +14,80 @@
 #include "GUniquePtr.h"
 #include <gtk/gtk.h>
 
-namespace mozilla {
-
 class ClipboardTargets {
   friend class ClipboardData;
-  nsTArray<GdkAtom> mTargets;
+
+  mozilla::GUniquePtr<GdkAtom> mTargets;
+  uint32_t mCount = 0;
 
  public:
   ClipboardTargets() = default;
-  ClipboardTargets(GUniquePtr<GdkAtom> aTargets, int aTargetsNum);
-  explicit ClipboardTargets(nsTArray<GdkAtom> aTargets)
-      : mTargets(std::move(aTargets)) {}
-  explicit ClipboardTargets(GList* aTargets);
+  ClipboardTargets(mozilla::GUniquePtr<GdkAtom> aTargets, uint32_t aCount)
+      : mTargets(std::move(aTargets)), mCount(aCount) {}
 
-  bool Contains(GdkAtom aTarget) const;
   void Set(ClipboardTargets);
-  ClipboardTargets Clone() const;
-  void Clear() { mTargets.Clear(); };
+  ClipboardTargets Clone();
+  void Clear() {
+    mTargets = nullptr;
+    mCount = 0;
+  };
 
-  mozilla::Span<GdkAtom> AsSpan() { return mTargets; }
-  explicit operator bool() const { return !mTargets.IsEmpty(); }
+  mozilla::Span<GdkAtom> AsSpan() const { return {mTargets.get(), mCount}; }
+  explicit operator bool() const { return bool(mTargets); }
 };
 
 class ClipboardData {
-  GUniquePtr<char> mData;
+  mozilla::GUniquePtr<char> mData;
   uint32_t mLength = 0;
 
  public:
   ClipboardData() = default;
 
-  void SetData(Span<const uint8_t>);
-  void SetText(Span<const char>);
-  void SetTargets(GUniquePtr<GdkAtom> aTarget, int aTargetsNum);
+  void SetData(mozilla::Span<const uint8_t>);
+  void SetText(mozilla::Span<const char>);
+  void SetTargets(ClipboardTargets);
 
   ClipboardTargets ExtractTargets();
-  GUniquePtr<char> ExtractText() {
+  mozilla::GUniquePtr<char> ExtractText() {
     mLength = 0;
     return std::move(mData);
   }
 
-  Span<char> AsSpan() const { return {mData.get(), mLength}; }
+  mozilla::Span<char> AsSpan() const { return {mData.get(), mLength}; }
   explicit operator bool() const { return bool(mData); }
 };
 
 enum class ClipboardDataType { Data, Text, Targets };
 
-class RetrievalContext {
+class nsRetrievalContext {
  public:
   // We intentionally use unsafe thread refcount as clipboard is used in
   // main thread only.
-  NS_INLINE_DECL_REFCOUNTING(RetrievalContext)
+  NS_INLINE_DECL_REFCOUNTING(nsRetrievalContext)
 
   // Get actual clipboard content (GetClipboardData/GetClipboardText).
   virtual ClipboardData GetClipboardData(const char* aMimeType,
                                          int32_t aWhichClipboard) = 0;
-  virtual GUniquePtr<char> GetClipboardText(int32_t aWhichClipboard) = 0;
+  virtual mozilla::GUniquePtr<char> GetClipboardText(
+      int32_t aWhichClipboard) = 0;
 
   // Get data mime types which can be obtained from clipboard.
-  virtual ClipboardTargets GetTargets(int32_t aWhichClipboard) = 0;
+  ClipboardTargets GetTargets(int32_t aWhichClipboard);
 
-  virtual void ClearCachedTargets(int32_t aWhichClipboard) {}
+  // Clipboard/Primary selection owner changed. Clear internal cached data.
+  static void ClearCachedTargetsClipboard(GtkClipboard* aClipboard,
+                                          GdkEvent* aEvent, gpointer data);
+  static void ClearCachedTargetsPrimary(GtkClipboard* aClipboard,
+                                        GdkEvent* aEvent, gpointer data);
 
-  RetrievalContext() = default;
+  nsRetrievalContext() = default;
 
  protected:
-  virtual ~RetrievalContext() = default;
+  virtual ClipboardTargets GetTargetsImpl(int32_t aWhichClipboard) = 0;
+  virtual ~nsRetrievalContext();
+
+  static ClipboardTargets sClipboardTargets;
+  static ClipboardTargets sPrimaryTargets;
 };
 
 class nsClipboard final : public nsBaseClipboard, public nsIObserver {
@@ -101,21 +110,21 @@ class nsClipboard final : public nsBaseClipboard, public nsIObserver {
   void OwnerChangedEvent(GtkClipboard* aGtkClipboard,
                          GdkEventOwnerChange* aEvent);
 
-  Result<int32_t, nsresult> GetNativeClipboardSequenceNumber(
+  mozilla::Result<int32_t, nsresult> GetNativeClipboardSequenceNumber(
       ClipboardType aWhichClipboard) override;
 
  protected:
   // Implement the native clipboard behavior.
   NS_IMETHOD SetNativeClipboardData(nsITransferable* aTransferable,
                                     ClipboardType aWhichClipboard) override;
-  Result<nsCOMPtr<nsISupports>, nsresult> GetNativeClipboardData(
+  mozilla::Result<nsCOMPtr<nsISupports>, nsresult> GetNativeClipboardData(
       const nsACString& aFlavor, ClipboardType aWhichClipboard,
       uint64_t aThreshold = 0) override;
   void AsyncGetNativeClipboardData(const nsACString& aFlavor,
                                    ClipboardType aWhichClipboard,
                                    GetNativeDataCallback&& aCallback) override;
   nsresult EmptyNativeClipboardData(ClipboardType aWhichClipboard) override;
-  Result<bool, nsresult> HasNativeClipboardDataMatchingFlavors(
+  mozilla::Result<bool, nsresult> HasNativeClipboardDataMatchingFlavors(
       const nsTArray<nsCString>& aFlavorList,
       ClipboardType aWhichClipboard) override;
   void AsyncHasNativeClipboardDataMatchingFlavors(
@@ -137,7 +146,7 @@ class nsClipboard final : public nsBaseClipboard, public nsIObserver {
   // Hang on to our transferables so we can transfer data when asked.
   nsCOMPtr<nsITransferable> mSelectionTransferable;
   nsCOMPtr<nsITransferable> mGlobalTransferable;
-  RefPtr<RetrievalContext> mContext;
+  RefPtr<nsRetrievalContext> mContext;
 
   void IncrementSequenceNumber(int32_t aWhichClipboard) {
     if (aWhichClipboard == kSelectionClipboard) {
@@ -175,9 +184,7 @@ extern const int kClipboardTimeout;
 extern const int kClipboardFastIterationNum;
 
 GdkAtom GetSelectionAtom(int32_t aWhichClipboard);
-Maybe<nsIClipboard::ClipboardType> GetGeckoClipboardType(
+mozilla::Maybe<nsIClipboard::ClipboardType> GetGeckoClipboardType(
     GtkClipboard* aGtkClipboard);
-
-};  // namespace mozilla
 
 #endif /* _nsClipboard_h_ */

@@ -2,39 +2,27 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _RetrievalContextX11_h_
-#define _RetrievalContextX11_h_
+#ifndef _nsClipboardX11_h_
+#define _nsClipboardX11_h_
 
 #include <gtk/gtk.h>
+
 #include "nsClipboard.h"
 
-namespace mozilla::widget {
-
-class RetrievalContextX11 : public RetrievalContext {
+class nsRetrievalContextX11 : public nsRetrievalContext {
  public:
   ClipboardData GetClipboardData(const char* aMimeType,
                                  int32_t aWhichClipboard) override;
   mozilla::GUniquePtr<char> GetClipboardText(int32_t aWhichClipboard) override;
-  ClipboardTargets GetTargets(int32_t aWhichClipboard) override;
+  ClipboardTargets GetTargetsImpl(int32_t aWhichClipboard) override;
 
-  void ClearCachedTargets(int32_t aWhichClipboard) override;
-
-  RetrievalContextX11();
+  nsRetrievalContextX11();
 
  private:
-  ~RetrievalContextX11();
-
-  ClipboardTargets GetTargetsImpl(int32_t aWhichClipboard);
-
   // Spins X event loop until timing out or being completed.
   ClipboardData WaitForClipboardData(ClipboardDataType aDataType,
                                      int32_t aWhichClipboard,
                                      const char* aMimeType = nullptr);
-
-  static ClipboardTargets sClipboardTargets;
-  static ClipboardTargets sPrimaryTargets;
 };
 
-};  // namespace mozilla::widget
-
-#endif /* _RetrievalContextX11_h_ */
+#endif /* _nsClipboardX11_h_ */

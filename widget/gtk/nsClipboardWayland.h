@@ -2,35 +2,24 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _RetrievalContextGtk_h_
-#define _RetrievalContextGtk_h_
+#ifndef _nsClipboardWayland_h_
+#define _nsClipboardWayland_h_
 
 #include "mozilla/Mutex.h"
 #include "nsClipboard.h"
 
-namespace mozilla::widget {
-
-class RetrievalContextGtk final : public RetrievalContext {
+class nsRetrievalContextWayland final : public nsRetrievalContext {
  public:
-  RetrievalContextGtk();
+  nsRetrievalContextWayland();
 
   ClipboardData GetClipboardData(const char* aMimeType,
                                  int32_t aWhichClipboard) override;
   mozilla::GUniquePtr<char> GetClipboardText(int32_t aWhichClipboard) override;
-  ClipboardTargets GetTargets(int32_t aWhichClipboard) override;
-
-  void ClearCachedTargets(int32_t aWhichClipboard) override;
+  ClipboardTargets GetTargetsImpl(int32_t aWhichClipboard) override;
 
  private:
-  ClipboardTargets GetTargetsImpl(int32_t aWhichClipboard);
-
   ClipboardData WaitForClipboardData(ClipboardDataType, int32_t aWhichClipboard,
                                      const char* aMimeType = nullptr);
-
-  static ClipboardTargets sClipboardTargets;
-  static ClipboardTargets sPrimaryTargets;
 };
 
-}  // namespace mozilla::widget
-
-#endif /* _RetrievalContextGtk_h_ */
+#endif /* _nsClipboardWayland_h_ */
