@@ -439,12 +439,18 @@ static std::shared_ptr<EglDisplay> GetAndInitDisplayForAccelANGLE(
 
 // -
 
-#if defined(XP_UNIX)
+#if defined(XP_DARWIN)
+#  define EGL_LIB "libEGL.dylib"
+#  define GLES2_LIB "libGLESv2.dylib"
+#elif defined(XP_UNIX)
+#  define EGL_LIB "libEGL.so"
+#  define EGL_LIB2 "libEGL.so.1"
 #  define GLES2_LIB "libGLESv2.so"
 #  define GLES2_LIB2 "libGLESv2.so.2"
 #  define GL_LIB "libGL.so"
 #  define GL_LIB2 "libGL.so.1"
 #elif defined(XP_WIN)
+#  define EGL_LIB "libEGL.dll"
 #  define GLES2_LIB "libGLESv2.dll"
 #else
 #  error "Platform not recognized"
@@ -512,11 +518,12 @@ bool GLLibraryEGL::Init(nsACString* const out_failureId) {
 #  endif
 
   if (!mEGLLibrary) {
-    mEGLLibrary = PR_LoadLibrary("libEGL.so");
+    mEGLLibrary = PR_LoadLibrary(EGL_LIB);
   }
-#  if defined(XP_UNIX)
+
+#  ifdef EGL_LIB2
   if (!mEGLLibrary) {
-    mEGLLibrary = PR_LoadLibrary("libEGL.so.1");
+    mEGLLibrary = PR_LoadLibrary(EGL_LIB2);
   }
 #  endif
 
