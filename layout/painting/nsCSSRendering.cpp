@@ -486,7 +486,8 @@ static bool GetRadii(nsIFrame* aForFrame, const nsStyleBorder& aBorder,
     haveRoundedCorners = aForFrame->GetBorderRadii(sz, sz, Sides(), aRadii);
   } else {
     haveRoundedCorners = nsIFrame::ComputeBorderRadii(
-        aBorder.mBorderRadius, frameSize, sz, Sides(), aRadii);
+        aBorder.mBorderRadius, aBorder.mCornerShape, frameSize, sz, Sides(),
+        aRadii);
   }
 
   return haveRoundedCorners;
@@ -595,6 +596,7 @@ void nsCSSRendering::ComputePixelRadii(const nsRectCornerRadii& aRadii,
     (*oBorderRadii)[corner] =
         LayoutDeviceSize::FromAppUnits(aRadii[corner], aAppUnitsPerPixel)
             .ToUnknownSize();
+    oBorderRadii->mShapeK[corner] = aRadii.mShapeK[corner];
   }
 }
 
