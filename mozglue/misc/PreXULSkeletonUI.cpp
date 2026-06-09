@@ -178,7 +178,6 @@ MOZ_DECL_IMPORTED_WIN32_FN(DeleteObject);
 MOZ_DECL_IMPORTED_WIN32_FN(ReleaseDC);
 MOZ_DECL_IMPORTED_WIN32_FN(MonitorFromWindow);
 MOZ_DECL_IMPORTED_WIN32_FN(GetMonitorInfoW);
-MOZ_DECL_IMPORTED_WIN32_FN(SetWindowLongPtrW);
 MOZ_DECL_IMPORTED_WIN32_FN(StretchDIBits);
 MOZ_DECL_IMPORTED_WIN32_FN(CreateSolidBrush);
 MOZ_DECL_IMPORTED_WIN32_FN(DwmGetWindowAttribute);
@@ -1465,7 +1464,6 @@ Result<Ok, PreXULSkeletonUIError> LoadGdi32AndUser32Procedures() {
   MOZ_LOAD_OR_FAIL(user32Dll, LoadCursorW);
   MOZ_LOAD_OR_FAIL(user32Dll, MonitorFromWindow);
   MOZ_LOAD_OR_FAIL(user32Dll, GetMonitorInfoW);
-  MOZ_LOAD_OR_FAIL(user32Dll, SetWindowLongPtrW);
   MOZ_LOAD_OR_FAIL(gdi32Dll, StretchDIBits);
   MOZ_LOAD_OR_FAIL(gdi32Dll, CreateSolidBrush);
   MOZ_LOAD_OR_FAIL(gdi32Dll, DeleteObject);
@@ -1624,6 +1622,7 @@ static Result<Ok, PreXULSkeletonUIError> ValidateCmdlineArguments(
     }
 
     bool approved = false;
+    int j = 0;
     for (const char* approvedArg : approvedArguments) {
       // We do a case-insensitive compare here with _stricmp. Even though some
       // of these arguments are *not* read as case-insensitive, others *are*.
@@ -1635,11 +1634,12 @@ static Result<Ok, PreXULSkeletonUIError> ValidateCmdlineArguments(
       if (!_stricmp(flag, approvedArg)) {
         approved = true;
 
-        if (i == profileArgIndex) {
+        if (j == profileArgIndex) {
           *explicitProfile = true;
         }
         break;
       }
+      ++j;
     }
 
     if (!approved) {
@@ -2054,6 +2054,7 @@ static Result<Ok, PreXULSkeletonUIError> CreateAndStorePreXULSkeletonUIImpl(
       "CreatePreXULSkeletonUI", OTHER,
       MarkerTiming::IntervalUntilNowFrom(skeletonStart));
 
+  sPreXULSkeletonUIShown = true;
   return Ok();
 }
 
