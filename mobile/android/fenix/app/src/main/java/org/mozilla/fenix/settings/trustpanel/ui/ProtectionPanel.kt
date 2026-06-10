@@ -484,7 +484,9 @@ private fun ProtectionPanelGradientBanner(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .padding(vertical = FirefoxTheme.layout.space.static150)
+                    .weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 BannerTexts(title = title, description = description)

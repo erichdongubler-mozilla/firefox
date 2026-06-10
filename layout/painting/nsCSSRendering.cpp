@@ -2013,38 +2013,36 @@ static StyleGeometryBox ComputeBoxValueForOrigin(nsIFrame* aForFrame,
   return aBox;
 }
 
+// Resolves a background-clip/mask-clip value into the geometry box it paints
+// against. The mapping for mask-clip is from
+// https://drafts.fxtf.org/css-masking/#the-mask-clip
 static StyleGeometryBox ComputeBoxValueForClip(const nsIFrame* aForFrame,
-                                               StyleGeometryBox aBox) {
-  // The mapping for mask-clip is from
-  // https://drafts.fxtf.org/css-masking/#the-mask-clip
-  if (aForFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
-    // For SVG elements without associated CSS layout box, the used values for
-    // content-box and padding-box compute to fill-box and for border-box and
-    // margin-box compute to stroke-box.
-    switch (aBox) {
-      case StyleGeometryBox::ContentBox:
-      case StyleGeometryBox::PaddingBox:
-        return StyleGeometryBox::FillBox;
-      case StyleGeometryBox::BorderBox:
-      case StyleGeometryBox::MarginBox:
-        return StyleGeometryBox::StrokeBox;
-      default:
-        return aBox;
-    }
+                                               StyleBackgroundClip aClip) {
+  // For SVG elements without an associated CSS layout box, content-box and
+  // padding-box compute to fill-box and border-box computes to stroke-box.
+  // For elements with an associated CSS layout box, fill-box computes to
+  // content-box and stroke-box and view-box compute to border-box.
+  const bool svg = aForFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT);
+  switch (aClip) {
+    case StyleBackgroundClip::ContentBox:
+    case StyleBackgroundClip::FillBox:
+      return svg ? StyleGeometryBox::FillBox : StyleGeometryBox::ContentBox;
+    case StyleBackgroundClip::PaddingBox:
+      return svg ? StyleGeometryBox::FillBox : StyleGeometryBox::PaddingBox;
+    case StyleBackgroundClip::BorderBox:
+    case StyleBackgroundClip::StrokeBox:
+      return svg ? StyleGeometryBox::StrokeBox : StyleGeometryBox::BorderBox;
+    case StyleBackgroundClip::ViewBox:
+      return svg ? StyleGeometryBox::ViewBox : StyleGeometryBox::BorderBox;
+    case StyleBackgroundClip::NoClip:
+      return StyleGeometryBox::NoClip;
+    case StyleBackgroundClip::Text:
+      return StyleGeometryBox::Text;
+    case StyleBackgroundClip::BorderArea:
+      return StyleGeometryBox::BorderArea;
   }
-
-  // For elements with associated CSS layout box, the used values for fill-box
-  // compute to content-box and for stroke-box and view-box compute to
-  // border-box.
-  switch (aBox) {
-    case StyleGeometryBox::FillBox:
-      return StyleGeometryBox::ContentBox;
-    case StyleGeometryBox::StrokeBox:
-    case StyleGeometryBox::ViewBox:
-      return StyleGeometryBox::BorderBox;
-    default:
-      return aBox;
-  }
+  MOZ_ASSERT_UNREACHABLE("Unknown background-clip/mask-clip value");
+  return StyleGeometryBox::BorderBox;
 }
 
 bool nsCSSRendering::ImageLayerClipState::IsValid() const {
@@ -2179,8 +2177,12 @@ void nsCSSRendering::GetImageLayerClip(
   MOZ_ASSERT(layerClip != StyleGeometryBox::MarginBox,
              "StyleGeometryBox::MarginBox rendering is not supported yet.\n");
 
+  // 'border-area' uses the border box (like 'border-box') for the outer clip;
+  // the padding box is then clipped out by the background display item itself
+  // (see PushBorderAreaClipOut / ClipBackgroundToBorderArea).
   if (layerClip != StyleGeometryBox::BorderBox &&
-      layerClip != StyleGeometryBox::Text) {
+      layerClip != StyleGeometryBox::Text &&
+      layerClip != StyleGeometryBox::BorderArea) {
     nsMargin border = aForFrame->GetUsedBorder();
     if (layerClip == StyleGeometryBox::MozAlmostPadding) {
       // Reduce |border| by 1px (device pixels) on all sides, if
@@ -2566,7 +2568,7 @@ ImgDrawResult nsCSSRendering::PaintStyleImageLayerWithSC(
       aParams.frame, aParams.borderArea, skipSides, &aBorder);
 
   ImgDrawResult result = ImgDrawResult::SUCCESS;
-  StyleGeometryBox currentBackgroundClip = StyleGeometryBox::BorderBox;
+  StyleBackgroundClip currentBackgroundClip = StyleBackgroundClip::BorderBox;
   const bool drawAllLayers = (aParams.layer < 0);
   uint32_t count = drawAllLayers
                        ? layers.mImageCount  // iterate all image layers.

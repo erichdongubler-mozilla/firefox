@@ -857,7 +857,15 @@ bool WebGLContext::DoReadPixelsAndConvert(
   const auto& x = desc.srcOffset.x;
   const auto& y = desc.srcOffset.y;
   const auto size = *ivec2::From(desc.size);
-  const auto& pi = desc.pi;
+  auto pi = desc.pi;
+
+  // Gecko normalizes WebGL 1's GL_HALF_FLOAT_OES to GL_HALF_FLOAT internally,
+  // but GLES 2 glReadPixels() still requires GL_HALF_FLOAT_OES rather than
+  // GL_HALF_FLOAT.
+  if (!IsWebGL2() && gl->IsGLES() && gl->Version() < 300 &&
+      pi.type == LOCAL_GL_HALF_FLOAT) {
+    pi.type = LOCAL_GL_HALF_FLOAT_OES;
+  }
 
   // On at least Win+NV, we'll get PBO errors if we don't have at least
   // `rowStride * height` bytes available to read into.

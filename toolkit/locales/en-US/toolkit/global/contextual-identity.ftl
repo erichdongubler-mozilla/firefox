@@ -20,8 +20,8 @@ user-context-shopping =
 
 ##
 
-user-context-none =
-    .label = No Container
+user-context-new-tab =
+    .label = New Tab
     .accesskey = N
 user-context-manage-containers =
     .label = Manage containers

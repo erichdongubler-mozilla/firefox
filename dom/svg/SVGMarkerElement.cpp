@@ -168,7 +168,8 @@ gfx::Matrix SVGMarkerElement::GetMarkerTransform(float aStrokeWidth,
   }
 
   return gfx::Matrix(cos(angle) * scale, sin(angle) * scale,
-                     -sin(angle) * scale, cos(angle) * scale, aMark.x, aMark.y);
+                     -sin(angle) * scale, cos(angle) * scale, aMark.pos.x,
+                     aMark.pos.y);
 }
 
 SVGViewBox SVGMarkerElement::GetViewBox() {

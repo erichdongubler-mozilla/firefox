@@ -104,6 +104,7 @@ include = [
   "AnimationRangeStart",
   "AnimationIterationCount",
   "AnimationDirection",
+  "BackgroundClip",
   "AnimationFillMode",
   "AnimationPlayState",
   "AnimationComposition",

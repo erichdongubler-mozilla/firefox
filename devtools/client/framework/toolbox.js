@@ -91,6 +91,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
+  LocalModeMappings:
+    "resource://devtools/client/framework/LocalModeMappings.sys.mjs",
 });
 loader.lazyRequireGetter(this, "flags", "resource://devtools/shared/flags.js");
 loader.lazyRequireGetter(
@@ -1136,6 +1138,12 @@ class Toolbox extends EventEmitter {
       }
 
       await this.initHarAutomation();
+      // Local Mode mappings only work with local tab debugging.
+      // It sounds irrelevant for workers/add-ons, and would require
+      // some very specific work to be functional for remote tabs debugging.
+      if (this._descriptorFront.isLocalTab) {
+        await lazy.LocalModeMappings.setup(this);
+      }
 
       this.emit("ready");
       this._resolveIsOpen();
@@ -4369,6 +4377,7 @@ class Toolbox extends EventEmitter {
       BROWSERTOOLBOX_SCOPE_PREF,
       this._refreshHostTitle
     );
+    lazy.LocalModeMappings.destroy(this);
 
     // We normally handle toolClosed from selectTool() but in the event of the
     // toolbox closing we need to handle it here instead.

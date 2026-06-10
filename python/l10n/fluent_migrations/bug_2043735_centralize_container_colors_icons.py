@@ -62,3 +62,40 @@ user-context-icon-fence =
             from_path=source,
         ),
     )
+
+    preferences = "browser/browser/preferences/preferences.ftl"
+
+    ctx.add_transforms(
+        preferences,
+        preferences,
+        transforms_from(
+            """
+containers-add-button2 =
+    .label = {COPY_PATTERN(from_path, "containers-add-button.label")}
+    .accesskey = {COPY_PATTERN(from_path, "containers-add-button.accesskey")}
+containers-settings-button2 =
+    .title = {COPY_PATTERN(from_path, "containers-settings-button.label")}
+containers-remove-button2 =
+    .title = {COPY_PATTERN(from_path, "containers-remove-button.label")}
+""",
+            from_path=preferences,
+        ),
+    )
+
+    containers = "browser/browser/preferences/containers.ftl"
+
+    ctx.add_transforms(
+        containers,
+        containers,
+        transforms_from(
+            """
+containers-window-new3 =
+    .title = {COPY_PATTERN(from_path, "containers-window-new2.title")}
+    .style = min-width: 32em
+containers-window-update-settings3 =
+    .title = {COPY_PATTERN(from_path, "containers-window-update-settings2.title")}
+    .style = min-width: 32em
+""",
+            from_path=containers,
+        ),
+    )

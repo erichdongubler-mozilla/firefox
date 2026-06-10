@@ -421,7 +421,7 @@ export function createScriptSourceActor(sourceResource, sourceObject) {
     // we have to go through the target to retrieve the related ThreadActor's ID.
     // TODO: Remove this when we move to depend on targets. See Bug 2041750
     thread: sourceResource.targetFront.getCachedFront("thread").actorID,
-    target: sourceResource.targetFront.actorID,
+    targetFront: sourceResource.targetFront,
     sourceObject,
     sourceMapBaseURL: sourceResource.sourceMapBaseURL,
     sourceMapURL: sourceResource.sourceMapURL,
@@ -446,7 +446,7 @@ export function createStyleSheetActor(stylesheetResource, styleSheetObject) {
   return {
     id: stylesheetResource.resourceId,
     actor: stylesheetResource.resourceId,
-    target: stylesheetResource.targetFront.actorID,
+    targetFront: stylesheetResource.targetFront,
     // TODO: Remove this when we move to depend on targets. See Bug 2041750
     thread: stylesheetResource.targetFront.getCachedFront("thread").actorID,
     // `source` is the reducer source ID

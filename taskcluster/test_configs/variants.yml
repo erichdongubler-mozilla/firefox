@@ -670,7 +670,7 @@ nova:
     expiration: "2026-12-31"
     suffix: "nv"
     replace:
-        tier: 2
+        tier: 3
     merge:
         mozharness:
             extra-options:

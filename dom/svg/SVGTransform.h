@@ -18,31 +18,21 @@ namespace mozilla {
 class SVGTransform {
  public:
   // Default ctor initialises to matrix type with identity matrix
-  SVGTransform()
-      : mAngle(0.f),
-        mOriginX(0.f),
-        mOriginY(0.f),
-        mType(dom::SVGTransform_Binding::SVG_TRANSFORM_MATRIX) {}
+  SVGTransform() = default;
 
-  explicit SVGTransform(const gfxMatrix& aMatrix)
-      : mMatrix(aMatrix),
-        mAngle(0.f),
-        mOriginX(0.f),
-        mOriginY(0.f),
-        mType(dom::SVGTransform_Binding::SVG_TRANSFORM_MATRIX) {}
+  explicit SVGTransform(const gfxMatrix& aMatrix) : mMatrix(aMatrix) {}
 
   bool operator==(const SVGTransform& rhs) const {
-    return mType == rhs.mType && MatricesEqual(mMatrix, rhs.mMatrix) &&
-           mAngle == rhs.mAngle && mOriginX == rhs.mOriginX &&
-           mOriginY == rhs.mOriginY;
+    return mType == rhs.mType && mMatrix.ExactlyEquals(rhs.mMatrix) &&
+           mAngle == rhs.mAngle && mOrigin == rhs.mOrigin;
   }
 
   void GetValueAsString(nsAString& aValue) const;
 
   float Angle() const { return mAngle; }
   void GetRotationOrigin(float& aOriginX, float& aOriginY) const {
-    aOriginX = mOriginX;
-    aOriginY = mOriginY;
+    aOriginX = mOrigin.x;
+    aOriginY = mOrigin.y;
   }
   uint16_t Type() const { return mType; }
 
@@ -54,15 +44,13 @@ class SVGTransform {
   nsresult SetSkewX(float aAngle);
   nsresult SetSkewY(float aAngle);
 
-  static bool MatricesEqual(const gfxMatrix& a, const gfxMatrix& b) {
-    return a._11 == b._11 && a._12 == b._12 && a._21 == b._21 &&
-           a._22 == b._22 && a._31 == b._31 && a._32 == b._32;
-  }
+  static uint16_t GetTransformTypeForString(const nsAString& aTransformType);
 
  protected:
   gfxMatrix mMatrix;
-  float mAngle, mOriginX, mOriginY;
-  uint16_t mType;
+  gfx::Point mOrigin;
+  float mAngle = 0.f;
+  uint16_t mType = dom::SVGTransform_Binding::SVG_TRANSFORM_MATRIX;
 };
 
 /*

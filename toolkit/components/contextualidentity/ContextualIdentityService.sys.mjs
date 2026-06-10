@@ -25,7 +25,7 @@ export const CONTAINER_COLORS = [
   {
     name: "gray",
     code: "#7c7c7d",
-    codeNova: "#e3e2e7",
+    codeNova: "#b7b6ba",
     l10nId: "user-context-color-gray",
   },
   {

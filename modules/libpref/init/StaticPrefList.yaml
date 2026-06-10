@@ -10612,6 +10612,16 @@
   value: -1.0f
   mirror: always
 
+# Is support for CSS background-clip: border-area enabled?
+#
+# NOTE(emilio): Before enabling on content, we need to add support for dotted /
+# dashed / double borders to the codepath, see bug 2046372.
+- name: layout.css.background-clip.border-area.enabled
+  type: bool
+  value: false
+  mirror: always
+  rust: true
+
 # Is support for CSS backdrop-filter enabled?
 - name: layout.css.backdrop-filter.enabled
   type: bool

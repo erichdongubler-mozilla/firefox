@@ -659,19 +659,6 @@ export const LoginHelper = {
   },
 
   /**
-   * Helper to avoid the property bags when calling
-   * Services.logins.searchLogins from JS.
-   *
-   * @deprecated Use Services.logins.searchLoginsAsync instead.
-   *
-   * @param {object} aSearchOptions - A regular JS object to copy to a property bag before searching
-   * @return {nsILoginInfo[]} - The result of calling searchLogins.
-   */
-  searchLoginsWithObject(aSearchOptions) {
-    return Services.logins.searchLogins(this.newPropertyBag(aSearchOptions));
-  },
-
-  /**
    * @param {string} aURL
    * @returns {string} which is the hostPort of aURL if supported by the scheme
    *                   otherwise, returns the original aURL.

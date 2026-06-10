@@ -158,6 +158,7 @@ export let RemotePageAccessManager = {
       RPMRemoveMessageListener: ["*"],
       RPMGetFormatURLPref: ["app.support.baseURL"],
       RPMIsWindowPrivate: ["*"],
+      RPMGetBoolPref: ["browser.nova.enabled"],
     },
     "about:deleteprofile": {
       RPMSendQuery: ["Profiles:GetDeleteProfileContent"],

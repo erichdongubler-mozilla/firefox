@@ -83,6 +83,8 @@ skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1783491
 ]
 
+["browser_urlbarContainerMenu.js"]
+
 ["browser_usercontext.js"]
 
 ["browser_usercontextid_new_window.js"]

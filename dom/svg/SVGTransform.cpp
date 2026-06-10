@@ -24,9 +24,9 @@ void SVGTransform::GetValueAsString(nsAString& aValue) const {
         nsTextFormatter::ssprintf(aValue, u"translate(%g)", mMatrix._31);
       break;
     case SVG_TRANSFORM_ROTATE:
-      if (mOriginX != 0.0f || mOriginY != 0.0f)
+      if (mOrigin != gfx::Point())
         nsTextFormatter::ssprintf(aValue, u"rotate(%g, %g, %g)", mAngle,
-                                  mOriginX, mOriginY);
+                                  mOrigin.x, mOrigin.y);
       else
         nsTextFormatter::ssprintf(aValue, u"rotate(%g)", mAngle);
       break;
@@ -61,24 +61,21 @@ void SVGTransform::SetMatrix(const gfxMatrix& aMatrix) {
   // We set the other members here too, since operator== requires it and
   // the DOM requires it for mAngle.
   mAngle = 0.f;
-  mOriginX = 0.f;
-  mOriginY = 0.f;
+  mOrigin = gfx::Point();
 }
 
 void SVGTransform::SetTranslate(float aTx, float aTy) {
   mType = SVG_TRANSFORM_TRANSLATE;
   mMatrix = gfxMatrix::Translation(aTx, aTy);
   mAngle = 0.f;
-  mOriginX = 0.f;
-  mOriginY = 0.f;
+  mOrigin = gfx::Point();
 }
 
 void SVGTransform::SetScale(float aSx, float aSy) {
   mType = SVG_TRANSFORM_SCALE;
   mMatrix = gfxMatrix::Scaling(aSx, aSy);
   mAngle = 0.f;
-  mOriginX = 0.f;
-  mOriginY = 0.f;
+  mOrigin = gfx::Point();
 }
 
 void SVGTransform::SetRotate(float aAngle, float aCx, float aCy) {
@@ -87,8 +84,7 @@ void SVGTransform::SetRotate(float aAngle, float aCx, float aCy) {
                 .PreRotate(aAngle * kRadPerDegree)
                 .PreTranslate(-aCx, -aCy);
   mAngle = aAngle;
-  mOriginX = aCx;
-  mOriginY = aCy;
+  mOrigin.MoveTo(aCx, aCy);
 }
 
 nsresult SVGTransform::SetSkewX(float aAngle) {
@@ -100,8 +96,7 @@ nsresult SVGTransform::SetSkewX(float aAngle) {
   mMatrix = gfxMatrix();
   mMatrix._21 = ta;
   mAngle = aAngle;
-  mOriginX = 0.f;
-  mOriginY = 0.f;
+  mOrigin = gfx::Point();
   return NS_OK;
 }
 
@@ -114,9 +109,31 @@ nsresult SVGTransform::SetSkewY(float aAngle) {
   mMatrix = gfxMatrix();
   mMatrix._12 = ta;
   mAngle = aAngle;
-  mOriginX = 0.f;
-  mOriginY = 0.f;
+  mOrigin = gfx::Point();
   return NS_OK;
+}
+
+uint16_t SVGTransform::GetTransformTypeForString(
+    const nsAString& aTransformType) {
+  if (aTransformType.EqualsLiteral("translate")) {
+    return SVG_TRANSFORM_TRANSLATE;
+  }
+  if (aTransformType.EqualsLiteral("scale")) {
+    return SVG_TRANSFORM_SCALE;
+  }
+  if (aTransformType.EqualsLiteral("rotate")) {
+    return SVG_TRANSFORM_ROTATE;
+  }
+  if (aTransformType.EqualsLiteral("skewX")) {
+    return SVG_TRANSFORM_SKEWX;
+  }
+  if (aTransformType.EqualsLiteral("skewY")) {
+    return SVG_TRANSFORM_SKEWY;
+  }
+  if (aTransformType.EqualsLiteral("matrix")) {
+    return SVG_TRANSFORM_MATRIX;
+  }
+  return SVG_TRANSFORM_UNKNOWN;
 }
 
 SVGTransformSMILData::SVGTransformSMILData(const SVGTransform& aTransform)

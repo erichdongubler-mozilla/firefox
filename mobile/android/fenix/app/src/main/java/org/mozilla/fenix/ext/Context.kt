@@ -22,7 +22,6 @@ import mozilla.components.support.locale.LocaleManager
 import org.mozilla.fenix.FenixApplication
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.Components
-import org.mozilla.fenix.components.metrics.MetricController
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.settings.advanced.getSelectedLocale
 import org.mozilla.fenix.utils.isLargeScreenSize
@@ -40,12 +39,6 @@ val Context.application: FenixApplication
  */
 val Context.components: Components
     get() = application.components
-
-/**
- * Helper function to get the MetricController off of context.
- */
-val Context.metrics: MetricController
-    get() = this.components.analytics.metrics
 
 fun Context.asActivity() = (this as? ContextThemeWrapper)?.baseContext as? Activity
     ?: this as? Activity
