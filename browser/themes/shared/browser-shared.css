@@ -1402,6 +1402,27 @@ popupnotificationcontent {
   }
 }
 
+@media -moz-pref("browser.nova.enabled") {
+  .reusable-relay-masks {
+    gap: var(--space-small);
+
+    > button {
+      padding: var(--space-xsmall) var(--space-medium);
+      margin: 0;
+      align-items: center;
+      min-height: var(--size-item-large);
+      border-radius: var(--border-radius-circle);
+      border: 1px solid var(--border-color-deemphasized);
+      background-color: transparent;
+
+      &:hover {
+        background-color: var(--button-background-color-hover);
+        border-color: var(--border-color-selected);
+      }
+    }
+  }
+}
+
 /* History swipe navigation animation */
 
 #historySwipeAnimationContainer {
