@@ -803,12 +803,7 @@ function transformToken({ token, originalVal, dictionary, surface }) {
   let value = originalVal;
   if (dictionary.usesReference(value)) {
     dictionary.getReferences(value).forEach(ref => {
-      try {
-        value = value.replace(`{${ref.path.join(".")}}`, `var(--${ref.name})`);
-      } catch (ex) {
-        console.debug(`Error processing token ref: ${originalVal}`);
-        throw ex;
-      }
+      value = value.replace(`{${ref.path.join(".")}}`, `var(--${ref.name})`);
     });
   }
 

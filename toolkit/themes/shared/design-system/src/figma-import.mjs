@@ -9,7 +9,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from "fs";
-import { basename, join } from "path";
+import { join } from "path";
 
 // eslint-disable-next-line mozilla/reject-import-system-module-from-non-system
 import { ObjectUtils } from "../../../../modules/ObjectUtils.sys.mjs";
@@ -22,7 +22,8 @@ const WIDGETS_PATH = "../../../../content/widgets".split("/");
 const TOKEN_DIRS = [
   joinRelativePath("tokens", "base"),
   joinRelativePath("tokens", "components"),
-  joinRelativePath(...WIDGETS_PATH),
+  joinRelativePath(...WIDGETS_PATH, "moz-badge"),
+  joinRelativePath(...WIDGETS_PATH, "moz-toggle"),
 ];
 const FIGMA_VALUE_MAP = {
   Light: "/light",
@@ -90,12 +91,12 @@ function transformValue(val, tokenNames, figmaName) {
 function getTokenFiles(globalDirs) {
   let files = {};
   for (const group of globalDirs) {
-    const tokenFiles = readdirSync(group, { recursive: true }).filter(path =>
+    const tokenFiles = readdirSync(group).filter(path =>
       path.endsWith(".tokens.json")
     );
     for (const file of tokenFiles) {
       const path = join(group, file);
-      let [prop, remainder] = basename(file).split(".", 2);
+      let [prop, remainder] = file.split(".", 2);
       if (prop.startsWith("moz-")) {
         prop = prop.substring(4);
       }
@@ -251,17 +252,12 @@ function walkUpdateNovaTokens(tokens, vars, tokenNames, path = []) {
         tokens.value = newValue;
       }
     } else {
-      try {
-        tokens[tokenProp] = walkUpdateNovaTokens(
-          tokens[tokenProp],
-          vars,
-          tokenNames,
-          [...path, tokenProp]
-        );
-      } catch (ex) {
-        console.debug(`Error process token: ${[...path, tokenProp].join(".")}`);
-        throw ex;
-      }
+      tokens[tokenProp] = walkUpdateNovaTokens(
+        tokens[tokenProp],
+        vars,
+        tokenNames,
+        [...path, tokenProp]
+      );
     }
   }
   return tokens;

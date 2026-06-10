@@ -1124,21 +1124,6 @@
     "dark": "{Theme$button/text/color/hover}",
     "forcedColors": "{Theme$button/text/color/hover}"
   },
-  "input-color/nova/background/color": {
-    "light": "{Theme$button/background/color}",
-    "dark": "{Theme$button/background/color}",
-    "forcedColors": "{Theme$button/background/color}"
-  },
-  "input-color/nova/background/color/active": {
-    "light": "{Theme$button/background/color/active}",
-    "dark": "{Theme$button/background/color/active}",
-    "forcedColors": "{Theme$button/background/color/active}"
-  },
-  "input-color/nova/background/color/hover": {
-    "light": "{Theme$button/background/color/hover}",
-    "dark": "{Theme$button/background/color/hover}",
-    "forcedColors": "{Theme$button/background/color/hover}"
-  },
   "message-bar/background/color": {
     "light": "{Theme$background/color/information}",
     "dark": "{Theme$background/color/information}",
@@ -1193,26 +1178,6 @@
     "light": "{Theme$text/color}",
     "dark": "{Theme$text/color}",
     "forcedColors": "{Theme$text/color}"
-  },
-  "message-bar/nova/background/color/warning": {
-    "light": "{Theme$message-bar/background/color}",
-    "dark": "{Theme$message-bar/background/color}",
-    "forcedColors": "{Theme$message-bar/background/color}"
-  },
-  "message-bar/nova/background/color/success": {
-    "light": "{Theme$message-bar/background/color}",
-    "dark": "{Theme$message-bar/background/color}",
-    "forcedColors": "{Theme$message-bar/background/color}"
-  },
-  "message-bar/nova/background/color/critical": {
-    "light": "{Theme$message-bar/background/color}",
-    "dark": "{Theme$message-bar/background/color}",
-    "forcedColors": "{Theme$message-bar/background/color}"
-  },
-  "message-bar/nova/icon/container/border/color": {
-    "light": "transparent",
-    "dark": "transparent",
-    "forcedColors": "{Theme$message-bar/icon/color}"
   },
   "page-nav/border/color": {
     "light": "{Theme$border/color/transparent}",

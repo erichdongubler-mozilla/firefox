@@ -4,14 +4,14 @@
       "@base": {
         "value": {
           "light": "{color.white.@base}",
-          "dark": "{color.gray.70}",
+          "dark": "{color.gray.75}",
           "forcedColors": "{background.color.canvas}"
         }
       },
       "info": {
         "value": {
           "light": "{color.gray.15}",
-          "dark": "{color.gray.65}",
+          "dark": "{color.gray.60}",
           "forcedColors": "{background.color.canvas}"
         }
       }

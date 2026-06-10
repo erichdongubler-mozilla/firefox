@@ -65,14 +65,14 @@ function formatColor({ r, g, b, a }) {
   return `rgba(${R}, ${G}, ${B}, ${a})`;
 }
 
-const VariableAliasError = Symbol("VariableAliasError");
-
 function formatValue(value) {
   if (value && typeof value === "object") {
     if (value.type === "VARIABLE_ALIAS") {
       const target = variables[value.id];
       if (!target) {
-        return VariableAliasError;
+        // eslint-disable-next-line no-console
+        console.warn(`Alias target missing for id=${value.id}; skipping.`);
+        return undefined;
       }
       return `{${target.name}}`;
     }
@@ -105,10 +105,7 @@ for (const collection of Object.values(variableCollections)) {
   const bucket = result[collection.name];
   for (const variableId of collection.variableIds) {
     const variable = variables[variableId];
-    if (!variable || variable.deletedButReferenced) {
-      console.debug(
-        `Deleted but referenced variable name=${variable?.name}; skipping.`
-      );
+    if (!variable) {
       continue;
     }
     const segments = variable.name.split("/");
@@ -118,13 +115,6 @@ for (const collection of Object.values(variableCollections)) {
         continue;
       }
       const formatted = formatValue(raw);
-      if (formatted === VariableAliasError) {
-        // eslint-disable-next-line no-console
-        console.debug(
-          `Alias target missing for parentName=${variable.name}; aliasId=${raw.id}; skipping.`
-        );
-        continue;
-      }
       if (formatted === undefined) {
         continue;
       }
