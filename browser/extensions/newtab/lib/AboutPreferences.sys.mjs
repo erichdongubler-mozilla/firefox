@@ -292,8 +292,6 @@ export class AboutPreferences {
     if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
       const { SettingGroupManager } = window;
 
-      window.MozXULElement.insertFTLIfNeeded("browser/newtab/newtab.ftl");
-
       // We observe 2 signals that about:settings is loading - the
       // PREFERENCES_LOADED_EVENT and PREFERENCES_LOADED_EVENT_SUBPANE
       // observer notifications. The first is fired anytime about:settings
@@ -819,10 +817,10 @@ export class AboutPreferences {
           options: [
             {
               value: "home",
-              l10nId: "home-mode-choice-default-fx-srd",
+              l10nId: "home-mode-choice-default-fx",
             },
-            { value: "blank", l10nId: "home-mode-choice-blank-srd" },
-            { value: "custom", l10nId: "home-mode-choice-custom-srd" },
+            { value: "blank", l10nId: "home-mode-choice-blank" },
+            { value: "custom", l10nId: "home-mode-choice-custom" },
           ],
         },
         {
@@ -839,16 +837,16 @@ export class AboutPreferences {
           options: [
             {
               value: "home",
-              l10nId: "home-mode-choice-default-fx-srd",
+              l10nId: "home-mode-choice-default-fx",
             },
-            { value: "blank", l10nId: "home-mode-choice-blank-srd" },
+            { value: "blank", l10nId: "home-mode-choice-blank" },
           ],
         },
         {
           id: "homepageRestoreDefaults",
           control: "moz-button",
           iconSrc: "chrome://global/skin/icons/arrow-counterclockwise-16.svg",
-          l10nId: "home-restore-defaults-srd",
+          l10nId: "home-restore-defaults",
           controlAttrs: { id: "restoreDefaultHomePageBtn" },
         },
       ],
@@ -1482,7 +1480,7 @@ export class AboutPreferences {
         {
           id: "weather",
           subcategory: "weather",
-          l10nId: "home-prefs-weather-header-srd",
+          l10nId: "home-prefs-weather-header",
           control: "moz-toggle",
         },
         {
@@ -1511,7 +1509,7 @@ export class AboutPreferences {
         {
           id: "shortcuts",
           subcategory: "topsites",
-          l10nId: "home-prefs-shortcuts-header-srd",
+          l10nId: "home-prefs-shortcuts-header",
           control: "moz-toggle",
           items: [
             {
@@ -1562,16 +1560,16 @@ export class AboutPreferences {
         {
           id: "supportFirefox",
           subcategory: "support-firefox",
-          l10nId: "home-prefs-support-firefox-header-srd",
+          l10nId: "home-prefs-support-firefox-header",
           control: "moz-toggle",
           items: [
             {
               id: "sponsoredShortcuts",
-              l10nId: "home-prefs-shortcuts-by-option-sponsored-srd",
+              l10nId: "home-prefs-shortcuts-by-option-sponsored",
             },
             {
               id: "sponsoredStories",
-              l10nId: "home-prefs-recommended-by-option-sponsored-stories-srd",
+              l10nId: "home-prefs-recommended-by-option-sponsored-stories",
             },
             {
               id: "supportFirefoxPromo",
@@ -1580,7 +1578,7 @@ export class AboutPreferences {
               options: [
                 {
                   control: "a",
-                  l10nId: "home-prefs-mission-message-learn-more-link-srd",
+                  l10nId: "home-prefs-mission-message-learn-more-link",
                   slot: "support-link",
                   controlAttrs: {
                     is: "moz-support-link",
@@ -1595,7 +1593,7 @@ export class AboutPreferences {
         {
           id: "recentActivity",
           subcategory: "highlights",
-          l10nId: "home-prefs-recent-activity-header-srd",
+          l10nId: "home-prefs-recent-activity-header",
           control: "moz-toggle",
           items: [
             {
@@ -1627,15 +1625,15 @@ export class AboutPreferences {
             },
             {
               id: "recentActivityVisited",
-              l10nId: "home-prefs-highlights-option-visited-pages-srd",
+              l10nId: "home-prefs-highlights-option-visited-pages",
             },
             {
               id: "recentActivityBookmarks",
-              l10nId: "home-prefs-highlights-options-bookmarks-srd",
+              l10nId: "home-prefs-highlights-options-bookmarks",
             },
             {
               id: "recentActivityDownloads",
-              l10nId: "home-prefs-highlights-option-most-recent-download-srd",
+              l10nId: "home-prefs-highlights-option-most-recent-download",
             },
           ],
         },
@@ -1672,9 +1670,7 @@ export class AboutPreferences {
 
   /**
    * We can remove this eslint exception once the Settings redesign is complete.
-   * In fact, we can probably remove this entire method. When removing, also
-   * drop the `pref:` blocks on the `highlights` and `topstories` sections in
-   * SectionsManager.sys.mjs — they exist only to feed this renderer.
+   * In fact, we can probably remove this entire method.
    */
   // eslint-disable-next-line max-statements
   renderPreferenceSection(sectionData, document, Preferences) {

@@ -154,7 +154,6 @@ describe("AboutPreferences Feed", () => {
     describe("when browser.settings-redesign.enabled is true", () => {
       let registerGroups;
       let getSettingGroup;
-      let insertFTLIfNeeded;
 
       beforeEach(() => {
         sandbox.stub(Services.prefs, "getBoolPref").returns(true);
@@ -165,24 +164,16 @@ describe("AboutPreferences Feed", () => {
           .onFirstCall()
           .throws(new Error("Not yet registered"));
         getSettingGroup.withArgs("homepage").onSecondCall().returns(true);
-        insertFTLIfNeeded = sandbox.stub();
         // SettingGroupManager lives on the preferences window object.
         globals.set("SettingGroupManager", {
           registerGroups,
           get: getSettingGroup,
         });
-        globals.set("MozXULElement", { insertFTLIfNeeded });
         // Stub the setup methods so we can focus on the routing logic in observe().
         sandbox.stub(instance, "_registerPreferences");
         sandbox.stub(instance, "_setupHomepageGroup").returns({});
         sandbox.stub(instance, "_setupCustomHomepageGroup").returns({});
         sandbox.stub(instance, "_setupHomeGroup").returns({});
-      });
-
-      it("should register newtab.ftl with the preferences document", () => {
-        instance.observe(window);
-
-        assert.calledWith(insertFTLIfNeeded, "browser/newtab/newtab.ftl");
       });
 
       it("should call SettingGroupManager.registerGroups with homepage, customHomepage, and home", async () => {
