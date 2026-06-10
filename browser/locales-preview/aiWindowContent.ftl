@@ -52,6 +52,10 @@ aiwindow-applied-memories-popover =
     .aria-label = Memories panel
 aiwindow-applied-memories-list =
     .aria-label = Memories
+# Variables:
+#   $summary (String) - The memory text that will be deleted
+aiwindow-delete-memory-button =
+    .aria-label = Delete { $summary }
 
 ## Jump to Bottom Button
 
@@ -67,6 +71,8 @@ smartwindow-nl-retry-tool-button =
 smartwindow-nl-retry-message = If you still want to close tabs, choose <strong>Retry</strong> and make your selection in the card that opens.
 
 smartwindow-nl-thinking = Looking for matching tabs…
+smartwindow-loading-assistant-response =
+    .aria-label = Loading assistant response
 smartwindow-nl-undo-button =
     .label = Undo
 
