@@ -11650,6 +11650,14 @@ template <class ParseHandler, typename Unit>
 bool GeneralParser<ParseHandler, Unit>::checkDestructuringAssignmentTarget(
     Node expr, TokenPos exprPos, PossibleError* exprPossibleError,
     PossibleError* possibleError, TargetBehavior behavior) {
+  // |arguments.length| is reported as a property access by the check below, so
+  // the property-access early-return would otherwise swallow it before the
+  // ArgumentsLength optimization is disabled. Mirror the
+  // isArgumentsLength-first pattern used by assignExpr.
+  if (handler_.isArgumentsLength(expr)) {
+    pc_->sc()->setIneligibleForArgumentsLength();
+  }
+
   // Report any pending expression error if we're definitely not in a
   // destructuring context or the possible destructuring target is a
   // property accessor.
