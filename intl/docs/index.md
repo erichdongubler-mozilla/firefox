@@ -1,6 +1,4 @@
-====================
-Internationalization
-====================
+# Internationalization
 
 Internationalization (`"i18n"`) is a domain of computer science focused on making
 software accessible across languages, regions and cultures.
@@ -18,10 +16,11 @@ platform and front-end.
 Below is a list of articles that introduce the concepts necessary to understand and
 use Mozilla's I18n APIs.
 
-.. toctree::
-   :maxdepth: 1
+```{toctree}
+:maxdepth: 1
 
-   locale
-   dataintl
-   icu
-   icu4x
+locale
+dataintl
+icu
+icu4x
+```
