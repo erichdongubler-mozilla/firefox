@@ -687,7 +687,7 @@ async function typeInSmartbar(browser, text) {
       "Wait for Smartbar to be rendered"
     );
     info("typeInSmartbar: smartbar found, calling focus()");
-    smartbar.inputField.focus();
+    smartbar.focus();
     await ContentTaskUtils.waitForCondition(
       () => smartbar.matches(":focus-within"),
       "Wait for smartbar to receive focus"
@@ -1020,102 +1020,6 @@ async function getSidebarChatMessages(sidebarBrowser) {
       };
     });
   });
-}
-
-/**
- * Checks for presence of a selector within the chat messages, either at a
- * specific message element or in any message element
- *
- * @param {MozBrowser} browser - browser that the messages are in
- * @param {string} selector - The selector to look for
- * @param {number} [nthElement] - Which message index to check for the selector,
- *                                defaults to last item
- *
- * @returns {boolean} Whether the selector was found
- */
-async function checkForElementInChatMessage(
-  browser,
-  selector,
-  nthElement = -1
-) {
-  const aiWindow = await TestUtils.waitForCondition(
-    () => browser.contentDocument?.querySelector("ai-window"),
-    "Wait for ai-window element"
-  );
-
-  const aiChatBrowser = await TestUtils.waitForCondition(
-    () => aiWindow.shadowRoot?.querySelector("#aichat-browser"),
-    "Wait for #aichat-browser element"
-  );
-
-  return SpecialPowers.spawn(
-    aiChatBrowser,
-    [selector, nthElement],
-    async (sel, nthEl) => {
-      const contentEl = await ContentTaskUtils.waitForCondition(
-        () => content.document.querySelector("ai-chat-content"),
-        "Wait for ai-chat-content element"
-      );
-      await contentEl.updateComplete;
-      const messageEls =
-        contentEl.shadowRoot.querySelectorAll("ai-chat-message");
-
-      const messages = Array.from(messageEls);
-      const el = messages.at(nthEl);
-
-      await ContentTaskUtils.waitForMutationCondition(
-        el,
-        { childList: true, subtree: true },
-        () => ContentTaskUtils.querySelectorDeep(content.document, sel)
-      ).catch(() => {});
-
-      return !!ContentTaskUtils.querySelectorDeep(el, sel);
-    }
-  );
-}
-
-async function checkForNumberOfElementsInChatMessage(
-  browser,
-  selector,
-  amount,
-  nthElement = -1
-) {
-  const aiWindow = await TestUtils.waitForCondition(
-    () => browser.contentDocument?.querySelector("ai-window"),
-    "Wait for ai-window element"
-  );
-
-  const aiChatBrowser = await TestUtils.waitForCondition(
-    () => aiWindow.shadowRoot?.querySelector("#aichat-browser"),
-    "Wait for #aichat-browser element"
-  );
-
-  return SpecialPowers.spawn(
-    aiChatBrowser,
-    [selector, nthElement, amount],
-    async (sel, nthEl, amt) => {
-      const contentEl = await ContentTaskUtils.waitForCondition(
-        () => content.document.querySelector("ai-chat-content"),
-        "Wait for ai-chat-content element"
-      );
-      await contentEl.updateComplete;
-      const messageEls =
-        contentEl.shadowRoot.querySelectorAll("ai-chat-message");
-
-      const messages = Array.from(messageEls);
-      const el = messages.at(nthEl);
-
-      await ContentTaskUtils.waitForMutationCondition(
-        el,
-        { childList: true, subtree: true },
-        () => ContentTaskUtils.querySelectorDeep(content.document, sel)
-      ).catch(() => {});
-
-      const scrollArea = ContentTaskUtils.querySelectorDeep(el, sel);
-
-      return scrollArea.children.length === amt;
-    }
-  );
 }
 
 /**

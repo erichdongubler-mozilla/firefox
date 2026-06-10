@@ -37,9 +37,8 @@ describe("chat message table rendering", () => {
         const message = content.document.createElement("ai-chat-message");
         content.document.body.appendChild(message);
 
-        // `role` reflects to the `data-message-role` attribute (it can't use the
-        // `role` attribute, which is the native ARIA role), so drive it via that.
-        message.setAttribute("data-message-role", "assistant");
+        message.role = "assistant";
+        message.setAttribute("role", "assistant");
         message.message = tableMarkdown;
         message.setAttribute("message", tableMarkdown);
 
@@ -91,7 +90,8 @@ describe("chat message table rendering", () => {
       const invalidTableMarkdown = `| Header 1 | Header 2 |
 | A        | B        |`;
 
-      message.setAttribute("data-message-role", "assistant");
+      message.role = "assistant";
+      message.setAttribute("role", "assistant");
       message.message = invalidTableMarkdown;
       message.setAttribute("message", invalidTableMarkdown);
 

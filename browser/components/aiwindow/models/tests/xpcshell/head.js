@@ -31,7 +31,6 @@ function makeConversation({
     securityProperties,
     serpUrlsForAnonymousFetch: new Set(),
     addSeenUrls() {},
-    async addHistoryResults() {},
     getAllMentionURLs() {
       return new Set();
     },
