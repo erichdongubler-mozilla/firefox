@@ -469,31 +469,6 @@ void CookieServiceChild::AddCookieFromDocument(
     }
   }
 
-  // When setting a Partitioned cookie from script and the context has
-  // unpartitioned cookie access, also check the unpartitioned jar: a
-  // same-named HttpOnly cookie there must not be shadowed.
-  if (!aOriginAttributes.mPartitionKey.IsEmpty() &&
-      aDocument->EffectiveCookiePrincipal()
-          ->OriginAttributesRef()
-          .mPartitionKey.IsEmpty()) {
-    OriginAttributes unpartitionedAttrs = aOriginAttributes;
-    unpartitionedAttrs.mPartitionKey.Truncate();
-    CookieKey unpartitionedKey(aBaseDomain, unpartitionedAttrs);
-    CookiesList* unpartitionedCookies = mCookiesMap.Get(unpartitionedKey);
-    if (unpartitionedCookies) {
-      for (uint32_t i = 0; i < unpartitionedCookies->Length(); ++i) {
-        RefPtr<Cookie> existingCookie = unpartitionedCookies->ElementAt(i);
-        if (existingCookie->KeyHash() == aCookie.KeyHash() &&
-            existingCookie->Name().Equals(aCookie.Name()) &&
-            existingCookie->Host().Equals(aCookie.Host()) &&
-            existingCookie->Path().Equals(aCookie.Path()) &&
-            existingCookie->IsHttpOnly()) {
-          return;
-        }
-      }
-    }
-  }
-
   CookieNotificationAction action =
       RecordDocumentCookie(&aCookie, aOriginAttributes);
   NotifyObservers(&aCookie, aOriginAttributes, action);
