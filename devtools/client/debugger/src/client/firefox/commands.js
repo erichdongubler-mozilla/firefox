@@ -73,13 +73,6 @@ function releaseActor(actor) {
   return objFront.release().catch(() => {});
 }
 
-function getTargeFront(actorID) {
-  const targets = commands.targetCommand.getAllTargets(
-    commands.targetCommand.ALL_TYPES
-  );
-  return targets.find(target => target.actorID == actorID);
-}
-
 function lookupTarget(thread) {
   if (thread == currentThreadFront().actor) {
     return currentTarget();
@@ -144,8 +137,7 @@ function breakOnNext(thread) {
 }
 
 async function sourceContents(sourceActor) {
-  const { target, sourceObject, id } = sourceActor;
-  const targetFront = getTargeFront(target);
+  const { targetFront, sourceObject, id } = sourceActor;
   switch (sourceObject.type) {
     case ResourceCommand.TYPES.STYLESHEET: {
       const stylesheetsFront = await targetFront.getFront("stylesheets");
@@ -444,17 +436,19 @@ function getMainThread() {
   return currentThreadFront().actor;
 }
 
-async function getSourceActorBreakpointPositions({ thread, actor }, range) {
-  const sourceThreadFront = lookupThreadFront(thread);
-  const sourceFront = sourceThreadFront.source({ actor });
+async function getSourceActorBreakpointPositions(sourceActor, range) {
+  const sourceFront = sourceActor.targetFront.threadFront.source({
+    actor: sourceActor.id,
+  });
   return sourceFront.getBreakpointPositionsCompressed(range);
 }
 
-async function getSourceActorBreakableLines({ thread, actor }) {
+async function getSourceActorBreakableLines(sourceActor) {
   let actorLines = [];
   try {
-    const sourceThreadFront = lookupThreadFront(thread);
-    const sourceFront = sourceThreadFront.source({ actor });
+    const sourceFront = sourceActor.targetFront.threadFront.source({
+      actor: sourceActor.id,
+    });
     actorLines = await sourceFront.getBreakableLines();
   } catch (e) {
     // Exceptions could be due to the target thread being shut down.
