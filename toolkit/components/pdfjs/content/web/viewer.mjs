@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.321
- * pdfjsBuild = c541d24ac
+ * pdfjsVersion = 6.0.327
+ * pdfjsBuild = ce08a803c
  */
 
 ;// ./web/ui_utils.js
@@ -981,7 +981,7 @@ const {
 } = globalThis.pdfjsLib;
 
 ;// ./web/internal_evt.js
-const INTERNAL_EVT = "4a4fdba8-8dae-471a-b5ef-a8f199b70e82";
+const INTERNAL_EVT = "4af4a565-e9fb-48a2-b258-044e2880b6a5";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -7826,9 +7826,9 @@ class FirefoxPrintService {
     if (!hasEqualPageSizes) {
       console.warn("Not all pages have the same size. The printed result may be incorrect!");
     }
-    this.pageStyleSheet = document.createElement("style");
-    this.pageStyleSheet.textContent = `@page { size: ${width}pt ${height}pt;}`;
-    body.append(this.pageStyleSheet);
+    this.pageStyleSheet = new CSSStyleSheet();
+    this.pageStyleSheet.replaceSync(`@page { size: ${width}pt ${height}pt;}`);
+    document.adoptedStyleSheets.push(this.pageStyleSheet);
     if (pdfDocument.isPureXfa) {
       getXfaHtmlForPrinting(printContainer, pdfDocument);
       return;
@@ -7843,7 +7843,7 @@ class FirefoxPrintService {
     const body = document.querySelector("body");
     body.removeAttribute("data-pdfjsprinting");
     if (this.pageStyleSheet) {
-      this.pageStyleSheet.remove();
+      document.adoptedStyleSheets = document.adoptedStyleSheets.filter(styleSheet => styleSheet !== this.pageStyleSheet);
       this.pageStyleSheet = null;
     }
   }
@@ -13158,7 +13158,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.0.321";
+    const viewerVersion = "6.0.327";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
