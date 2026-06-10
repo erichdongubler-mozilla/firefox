@@ -91,11 +91,20 @@
     z-index: 1;
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     border-bottom: var(--border-width) solid var(--urlbarView-separator-color);
+    /* Match the frame's rounded corners so the scrollbar is clipped inside it. */
+    border-start-start-radius: var(--border-radius-large);
+    border-start-end-radius: var(--border-radius-large);
+  }
+
+  &[suggestions-position="bottom"] > .urlbarView {
+    /* Match the frame's rounded corners so the scrollbar is clipped inside it. */
+    border-end-start-radius: var(--border-radius-large);
+    border-end-end-radius: var(--border-radius-large);
   }
 
   > .urlbarView {
     overflow-y: auto;
-    margin-inline: 0;
+    margin: 0;
     width: 100%;
     /*
      * Limit to `--smartbar-max-visible-rows` non-rich results. Fewer results
@@ -313,6 +322,10 @@
       );
       --link-color: var(--color-accent-primary);
     }
+  }
+
+  .smartbar .urlbarView-results {
+    padding-block: calc(var(--space-medium) - var(--urlbarView-row-gutter));
   }
 
   .urlbarView-row {
