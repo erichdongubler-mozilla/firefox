@@ -9568,7 +9568,7 @@
   # Experimental support for source phase imports in JavaScript.
 - name: javascript.options.experimental.source_phase_imports
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
   set_spidermonkey_pref: always
 
