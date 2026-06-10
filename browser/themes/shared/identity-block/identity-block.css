@@ -12,6 +12,8 @@
 }
 
 #identity-box {
+  margin-inline-end: var(--identity-box-margin-inline);
+
   &[pageproxystate="invalid"] {
     pointer-events: none;
     -moz-user-focus: ignore;
@@ -94,6 +96,17 @@
 #identity-icon-label {
   padding-inline-start: 4px;
   margin: 0;
+}
+
+#identity-box[pageproxystate="valid"]:is(.notSecureText, .chromeUI, .extensionPage),
+#urlbar-label-box {
+  margin-inline-end: 8px;
+  @media -moz-pref("browser.urlbar.searchModeSwitcher.featureGate") or -moz-pref("browser.urlbar.scotchBonnet.enableOverride") {
+    margin-inline-end: var(--urlbar-searchmodeswitcher-margin-inline-end);
+  }
+  @media -moz-pref("browser.urlbar.trustPanel.featureGate") {
+    margin-inline-end: 0;
+  }
 }
 
 #identity-box[pageproxystate="valid"]:is(.notSecureText, .chromeUI, .extensionPage) > .identity-box-button,
@@ -314,17 +327,20 @@
 }
 
 @media -moz-pref("browser.urlbar.trustPanel.featureGate") {
-  #tracking-protection-icon-container {
+  #tracking-protection-icon-container,
+  /* Keep displaying the moz-extension or chrome UI chicklet */
+  #identity-box[pageproxystate="valid"]:not(.chromeUI, .extensionPage) #identity-icon-box {
     display: none;
   }
 
+  .searchmode-switcher,
   #identity-box {
-    /* Keep displaying the moz-extension or chrome UI chicklet */
-    &[pageproxystate="valid"]:not(.chromeUI, .extensionPage) {
-      #identity-icon-box {
-        display: none;
-      }
-    }
+    margin-inline-end: 0;
+  }
+
+  #urlbar-label-box,
+  .urlbar-input-box {
+    margin-inline-start: var(--identity-box-margin-inline);
   }
 
   #trust-icon-container {
