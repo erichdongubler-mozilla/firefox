@@ -1793,9 +1793,9 @@ export class AIWindow extends MozLitElement {
           skipUserDispatch
         );
 
-        // @todo
-        // fill out these assistant message flags
-        const assistantRoleOpts = new lazy.AssistantRoleOpts();
+        const assistantRoleOpts = new lazy.AssistantRoleOpts(
+          engineInstance.model
+        );
         conversation.addAssistantMessage("text", "", assistantRoleOpts);
 
         this.#sendModelRequestTelemetryEvent();

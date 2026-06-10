@@ -4,7 +4,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-import { ToolRoleOpts } from "moz-src:///browser/components/aiwindow/ui/modules/ChatMessage.sys.mjs";
+import {
+  ToolRoleOpts,
+  AssistantRoleOpts,
+} from "moz-src:///browser/components/aiwindow/ui/modules/ChatMessage.sys.mjs";
 import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
 import {
   toolsConfig,
@@ -415,9 +418,13 @@ Object.assign(Chat, {
             arguments: tc.function.arguments || "{}",
           },
         }));
-        conversation.addAssistantMessage("function", {
-          tool_calls: blockedCalls,
-        });
+        conversation.addAssistantMessage(
+          "function",
+          {
+            tool_calls: blockedCalls,
+          },
+          new AssistantRoleOpts(engineInstance.model)
+        );
 
         for (const tc of pendingToolCalls.slice(0, 1)) {
           const content = {
@@ -467,9 +474,13 @@ Object.assign(Chat, {
         conversation.tokenToUrl
       );
 
-      conversation.addAssistantMessage("function", {
-        tool_calls: [lastToolCall],
-      });
+      conversation.addAssistantMessage(
+        "function",
+        {
+          tool_calls: [lastToolCall],
+        },
+        new AssistantRoleOpts(engineInstance.model)
+      );
 
       lazy.AIWindow.chatStore?.updateConversation(conversation).catch(() => {});
 
