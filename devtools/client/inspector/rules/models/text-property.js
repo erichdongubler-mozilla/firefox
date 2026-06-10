@@ -228,9 +228,6 @@ class TextProperty {
     }
 
     await this.rule.setPropertyValue(this, value, priority);
-
-    this.updateUsedVariables();
-    this.updateEditor();
   }
 
   /**
