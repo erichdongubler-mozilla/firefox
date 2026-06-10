@@ -12,6 +12,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.ext.metrics
 import java.util.concurrent.TimeUnit
 
 /**
@@ -24,7 +25,6 @@ class GrowthDataWorker(
 
     override suspend fun doWork(): Result {
         val settings = applicationContext.components.settings
-        val metrics = applicationContext.components.analytics.metrics
 
         if (!System.currentTimeMillis().isAfterFirstWeekFromInstall(applicationContext) ||
             settings.growthUserActivatedSent
@@ -32,7 +32,7 @@ class GrowthDataWorker(
             return Result.success()
         }
 
-        metrics.track(Event.GrowthData.ConversionEvent7(fromSearch = false))
+        applicationContext.metrics.track(Event.GrowthData.ConversionEvent7(fromSearch = false))
 
         return Result.success()
     }
