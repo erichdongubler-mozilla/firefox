@@ -441,10 +441,6 @@ export class LoginManagerRustStorage {
     return result;
   }
 
-  modifyLogin(_oldLogin, _newLoginData, _fromSync) {
-    throw Components.Exception("modifyLogin", Cr.NS_ERROR_NOT_IMPLEMENTED);
-  }
-
   async modifyLoginAsync(oldLogin, newLoginData, _fromSync) {
     const oldStoredLogin = await this.#storageAdapter.get(oldLogin.guid);
 
@@ -500,13 +496,6 @@ export class LoginManagerRustStorage {
     return updatedLogin;
   }
 
-  recordPasswordUse(_login) {
-    throw Components.Exception(
-      "recordPasswordUse",
-      Cr.NS_ERROR_NOT_IMPLEMENTED
-    );
-  }
-
   async recordPasswordUseAsync(login) {
     const oldStoredLogin = await this.#storageAdapter.findLoginToUpdate(login);
 
@@ -541,10 +530,6 @@ export class LoginManagerRustStorage {
       );
     }
     return await this.#storageAdapter.list();
-  }
-
-  searchLogins(_matchData, _includeDeleted) {
-    throw Components.Exception("searchLogins", Cr.NS_ERROR_NOT_IMPLEMENTED);
   }
 
   async searchLoginsAsync(matchData, includeDeleted) {
@@ -698,10 +683,6 @@ export class LoginManagerRustStorage {
     return [foundLogins, foundIds];
   }
 
-  removeLogin(_login, _fromSync) {
-    throw Components.Exception("removeLogin", Cr.NS_ERROR_NOT_IMPLEMENTED);
-  }
-
   async removeLoginAsync(login, _fromSync) {
     const deleted = await this.#storageAdapter.delete(login.guid);
     if (!deleted) {
@@ -719,10 +700,6 @@ export class LoginManagerRustStorage {
    * NOTE: You probably want removeAllUserFacingLogins instead of this function.
    *
    */
-  removeAllLogins() {
-    throw Components.Exception("removeLogin", Cr.NS_ERROR_NOT_IMPLEMENTED);
-  }
-
   async removeAllLoginsAsync() {
     const removed = await this.#removeLogins(false, true);
     if (this.#isActive) {
@@ -738,13 +715,6 @@ export class LoginManagerRustStorage {
    *
    * @param fullyRemove remove the logins rather than mark them deleted.
    */
-  removeAllUserFacingLogins(_fullyRemove) {
-    throw Components.Exception(
-      "removeAllUserFacingLogins",
-      Cr.NS_ERROR_NOT_IMPLEMENTED
-    );
-  }
-
   async removeAllUserFacingLoginsAsync(fullyRemove) {
     return await this.#removeLogins(fullyRemove, true);
   }
@@ -781,14 +751,6 @@ export class LoginManagerRustStorage {
     if (idsToDelete.length) {
       await this.#storageAdapter.deleteMany(idsToDelete);
     }
-  }
-
-  findLogins(_origin, _formActionOrigin, _httpRealm) {
-    throw Components.Exception("findLogins", Cr.NS_ERROR_NOT_IMPLEMENTED);
-  }
-
-  countLogins(_origin, _formActionOrigin, _httpRealm) {
-    throw Components.Exception("countLogins", Cr.NS_ERROR_NOT_IMPLEMENTED);
   }
 
   async countLoginsAsync(origin, formActionOrigin, httpRealm) {
