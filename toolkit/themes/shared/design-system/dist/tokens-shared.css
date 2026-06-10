@@ -425,7 +425,7 @@
     --panel-box-shadow-margin: 4px;
     --panel-menuitem-border-radius: var(--border-radius-small);
     --panel-menuitem-margin: var(--panel-menuitem-margin-block) var(--panel-menuitem-margin-inline);
-    --panel-menuitem-margin-block: 0px;
+    --panel-menuitem-margin-block: 0;
     --panel-menuitem-margin-inline: 8px;
     --panel-menuitem-padding: var(--panel-menuitem-padding-block) var(--panel-menuitem-padding-inline);
     --panel-menuitem-padding-block: 8px;
@@ -914,8 +914,6 @@
       --color-purple-70: #4f216b;
       --color-purple-80: #311842;
       --color-purple-90: #1a1220;
-      --color-purple-desaturated-30: #c0a7d4;
-      --color-purple-desaturated-50: #816297;
       --color-red-0: #fcf2f3;
       --color-red-10: #ffd9df;
       --color-red-20: #ffb6bf;
@@ -984,6 +982,7 @@
       --panel-background-color: Field;
       --panel-border-color: ThreeDShadow;
       --panel-border-radius: 16px;
+      --panel-menuitem-border-radius: var(--border-radius-xxlarge);
       --panel-padding: var(--panel-padding-block);
       --panel-padding-block: 8px;
       --panel-text-color: FieldText;

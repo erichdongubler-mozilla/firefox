@@ -18,6 +18,7 @@
   "icon/size/xlarge": "{Primitives$size/item/large}",
   "input/text/border/radius": "{Primitives$border/radius/large}",
   "page/main/content/width": 664,
+  "panel-menuitem/border/radius": "{Primitives$border/radius/xxlarge}",
   "panel/border/radius": 16,
   "panel/padding": "{Primitives$panel/padding/block}",
   "panel/padding/block": 8,

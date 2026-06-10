@@ -172,8 +172,6 @@
   --color-purple-70: #4F216B;
   --color-purple-80: #311842;
   --color-purple-90: #1A1220;
-  --color-purple-desaturated-30: #C0A7D4;
-  --color-purple-desaturated-50: #816297;
   --color-red-0: #FCF2F3;
   --color-red-10: #FFD9DF;
   --color-red-20: #FFB6BF;
@@ -237,6 +235,7 @@
   --panel-background-color: Field;
   --panel-border-color: ThreeDShadow;
   --panel-border-radius: 16px;
+  --panel-menuitem-border-radius: var(--border-radius-xxlarge);
   --panel-padding: var(--panel-padding-block);
   --panel-padding-block: 8px;
   --panel-text-color: FieldText;

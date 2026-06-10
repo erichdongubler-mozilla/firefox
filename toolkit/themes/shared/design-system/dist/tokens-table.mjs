@@ -1679,7 +1679,7 @@ export const tokensTable = {
         "var(--panel-menuitem-margin-block) var(--panel-menuitem-margin-inline)",
       name: "--panel-menuitem-margin",
     },
-    { value: "0px", name: "--panel-menuitem-margin-block" },
+    { value: "0", name: "--panel-menuitem-margin-block" },
     { value: "8px", name: "--panel-menuitem-margin-inline" },
     {
       value:
@@ -3784,7 +3784,7 @@ export const variableLookupTable = {
   "panel-menuitem-border-radius": "var(--border-radius-small)",
   "panel-menuitem-margin":
     "var(--panel-menuitem-margin-block) var(--panel-menuitem-margin-inline)",
-  "panel-menuitem-margin-block": "0px",
+  "panel-menuitem-margin-block": "0",
   "panel-menuitem-margin-inline": "8px",
   "panel-menuitem-padding":
     "var(--panel-menuitem-padding-block) var(--panel-menuitem-padding-inline)",
