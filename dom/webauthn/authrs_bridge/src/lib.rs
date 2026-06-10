@@ -182,7 +182,7 @@ impl WebAuthnRegisterResult {
     xpcom_method!(get_attestation_object => GetAttestationObject() -> ThinVec<u8>);
     fn get_attestation_object(&self) -> Result<ThinVec<u8>, nsresult> {
         let mut out = ThinVec::new();
-        serde_cbor::to_writer(&mut out, &self.result.borrow().att_obj).or(Err(NS_ERROR_FAILURE))?;
+        serde_cbor_2::to_writer(&mut out, &self.result.borrow().att_obj).or(Err(NS_ERROR_FAILURE))?;
         Ok(out)
     }
 
@@ -313,7 +313,7 @@ impl WebAuthnAttObj {
     xpcom_method!(get_attestation_object => GetAttestationObject() -> ThinVec<u8>);
     fn get_attestation_object(&self) -> Result<ThinVec<u8>, nsresult> {
         let mut out = ThinVec::new();
-        serde_cbor::to_writer(&mut out, &self.att_obj).or(Err(NS_ERROR_FAILURE))?;
+        serde_cbor_2::to_writer(&mut out, &self.att_obj).or(Err(NS_ERROR_FAILURE))?;
         Ok(out)
     }
 
@@ -577,6 +577,9 @@ fn status_callback(
             }
             Ok(StatusUpdate::InteractiveManagement(_)) => {
                 debug!("STATUS: interactive management");
+            }
+            Ok(StatusUpdate::LargeBlobData(_, _)) => {
+                debug!("STATUS: large blob data");
             }
             Ok(StatusUpdate::SelectResultNotice(sender, entities)) => {
                 debug!("STATUS: select result notice");
@@ -1707,7 +1710,7 @@ pub unsafe extern "C" fn authrs_webauthn_att_obj_constructor(
         return NS_ERROR_NULL_POINTER;
     }
 
-    let mut att_obj: AttestationObject = match serde_cbor::from_slice(att_obj_bytes) {
+    let mut att_obj: AttestationObject = match serde_cbor_2::from_slice(att_obj_bytes) {
         Ok(att_obj) => att_obj,
         Err(_) => return NS_ERROR_INVALID_ARG,
     };
