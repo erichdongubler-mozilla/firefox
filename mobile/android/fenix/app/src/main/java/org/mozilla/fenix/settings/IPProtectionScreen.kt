@@ -294,6 +294,7 @@ private fun VpnLocationSection() {
     TextListItem(
         label = stringResource(R.string.ip_protection_location_recommended_label),
         description = stringResource(R.string.ip_protection_location_recommended_description),
+        maxDescriptionLines = Int.MAX_VALUE,
     )
 }
 
