@@ -5,7 +5,7 @@
 package mozilla.components.compose.browser.toolbar.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -14,7 +14,9 @@ import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -69,16 +71,16 @@ internal fun FullDisplayToolbar(
     pageActionsEndModifier: Modifier = Modifier,
     browserActionsEndModifier: Modifier = Modifier,
 ) {
+    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+    val isSmallWidthScreen = remember(windowSizeClass) {
+        windowSizeClass.minWidthDp < WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND
+    }
+
     Surface(color = backgroundColor) {
-        BoxWithConstraints(
+        Box(
             modifier = modifier
                 .semantics { testTagsAsResourceId = true },
         ) {
-            // NOTE: We use BoxWithConstraints 'maxWidth' instead of currentWindowAdaptiveInfo()
-            // as an interim fix for https://issuetracker.google.com/issues/515098186.
-            // BoxWithConstraints forces evaluation during the synchronous View.onMeasure pass.
-            val isSmallWidthScreen = maxWidth < WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND.dp
-
             Row(
                 modifier = Modifier.padding(
                     horizontal = when (isSmallWidthScreen) {
@@ -195,11 +197,11 @@ internal fun FullDisplayToolbar(
                             testTag = ADDRESSBAR_PROGRESSBAR
                         }
                         .align(
-                            when (gravity) {
-                                Top -> Alignment.BottomCenter
-                                Bottom -> Alignment.TopCenter
-                            },
-                        ),
+                        when (gravity) {
+                            Top -> Alignment.BottomCenter
+                            Bottom -> Alignment.TopCenter
+                        },
+                    ),
                 )
             }
         }
