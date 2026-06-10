@@ -64,6 +64,7 @@
     <ID>ForbiddenSuppress:InlineAutocompleteEditText.kt$InlineAutocompleteEditText$@Suppress("NestedBlockDepth", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:InlineAutocompleteTextField.kt$@Suppress("CognitiveComplexMethod", "ReturnCount")</ID>
     <ID>ForbiddenSuppress:InlineAutocompleteTextField.kt$@Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")</ID>
+    <ID>ForbiddenSuppress:InlineAutocompleteTextField.kt$@Suppress("LongParameterList", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:InputResultDetail.kt$InputResultDetail$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:LanguageModel.kt$LanguageModel.Companion$@Suppress("CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:Lexer.kt$Lexer$@Suppress("CyclomaticComplexMethod")</ID>

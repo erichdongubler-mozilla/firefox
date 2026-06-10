@@ -7,6 +7,7 @@ package mozilla.components.compose.browser.toolbar.ui
 import android.content.Context
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.Magnifier
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,10 +22,12 @@ import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextInputSelection
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.text.TextRange
@@ -44,6 +47,9 @@ import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.Implementation
+import org.robolectric.annotation.Implements
 
 @RunWith(RobolectricTestRunner::class)
 class InlineAutocompleteTextFieldTest {
@@ -211,6 +217,67 @@ class InlineAutocompleteTextFieldTest {
         composeTestRule.waitForIdle()
 
         verify(contextualMenuToolbar, atLeastOnce()).hide()
+    }
+
+    @Test
+    @Config(shadows = [ShadowMagnifier::class])
+    fun `GIVEN an autocomplete suggestion is shown WHEN a selection is started THEN the typed query and the suggestion are selected`() {
+        val suggestion = AutocompleteResult(
+            input = "wiki",
+            text = "wikipedia.org",
+            url = "https://wikipedia.org",
+            source = "test",
+            totalItems = 1,
+        )
+
+        composeTestRule.setContent {
+            InlineAutocompleteTextField(
+                query = "wiki",
+                hint = "",
+                suggestion = suggestion,
+                showQueryAsPreselected = false,
+                usePrivateModeQueries = false,
+                onUrlEdit = {},
+            )
+        }
+
+        // Simulate a long press on the currently typed text to select it + its shown suggestion
+        composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).performTouchInput { longClick(position = centerLeft) }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).assertTextEquals("wikipedia.org")
+    }
+
+    @Test
+    fun `GIVEN an autocomplete suggestion is shown WHEN the text is selected and deleted via the IME THEN delete the typed text without committing the suggestion`() {
+        val onUrlEdit: (BrowserToolbarQuery) -> Unit = mock()
+        val suggestion = AutocompleteResult(
+            input = "wiki",
+            text = "wikipedia.org",
+            url = "https://wikipedia.org",
+            source = "test",
+            totalItems = 1,
+        )
+
+        composeTestRule.setContent {
+            InlineAutocompleteTextField(
+                query = "wiki",
+                hint = "",
+                suggestion = suggestion,
+                showQueryAsPreselected = false,
+                usePrivateModeQueries = false,
+                onUrlEdit = onUrlEdit,
+            )
+        }
+
+        composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX)
+            .performTextInputSelection(TextRange(0, "wiki".length))
+        composeTestRule.waitForIdle()
+        verify(onUrlEdit, never()).invoke(any())
+
+        composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).performTextReplacement("")
+        composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).assertTextEquals("")
+        verify(onUrlEdit).invoke(BrowserToolbarQuery(previous = "wiki", current = ""))
     }
 
     @Test
@@ -510,4 +577,19 @@ class InlineAutocompleteTextFieldTest {
         composeTestRule.waitForIdle()
         assertFalse(imm.isSoftInputVisible)
     }
+}
+
+@Implements(Magnifier::class)
+private class ShadowMagnifier {
+    @Implementation
+    fun show(
+        @Suppress("UNUSED_PARAMETER") sourceCenterX: Float,
+        @Suppress("UNUSED_PARAMETER") sourceCenterY: Float,
+    ) { }
+
+    @Implementation
+    fun dismiss() { }
+
+    @Implementation
+    fun update() { }
 }

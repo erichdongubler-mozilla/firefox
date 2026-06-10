@@ -18,6 +18,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
@@ -488,7 +489,7 @@ private class AutocompleteOutputTransformation(
  * - commits the suggestion if cursor is placed in the suggestion or after it.
  */
 @Composable
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "CognitiveComplexMethod")
 private fun AutocompleteDecorator(
     hint: String,
     suggestion: AutocompleteResult?,
@@ -517,18 +518,36 @@ private fun AutocompleteDecorator(
                 awaitEachGesture {
                     val downEvent = awaitFirstDown(requireUnconsumed = false)
                     val suggestionText = suggestion?.text
-                    if (suggestionBounds != null && suggestionText != null &&
-                        suggestionBounds.right < downEvent.position.x
-                    ) {
-                        onUrlEdit(
-                            BrowserToolbarQuery(
-                                previous = textFieldState.text.toString(),
-                                current = suggestionText,
-                            ),
-                        )
-                        textFieldState.edit {
-                            replace(0, length, suggestionText)
-                            selection = TextRange(suggestionText.length)
+                    val currentText = textFieldState.text.toString()
+                    when {
+                        suggestionText == null -> {
+                            // No suggestion shown, nothing to commit.
+                        }
+
+                        // Tapping outside the typed text, to the right, commits the suggestion
+                        // and places the cursor at the end.
+                        suggestionBounds != null && suggestionBounds.right < downEvent.position.x -> {
+                            onUrlEdit(
+                                BrowserToolbarQuery(previous = currentText, current = suggestionText),
+                            )
+                            textFieldState.edit {
+                                replace(0, length, suggestionText)
+                                selection = TextRange(suggestionText.length)
+                            }
+                        }
+
+                        // A long press over the typed text commits the suggestion and selects the whole URL
+                        // so the contextual menu operates on the full text.
+                        suggestionText.startsWith(currentText) && suggestionText.length > currentText.length -> {
+                            if (awaitLongPressOrCancellation(downEvent.id) != null) {
+                                onUrlEdit(
+                                    BrowserToolbarQuery(previous = currentText, current = suggestionText),
+                                )
+                                textFieldState.edit {
+                                    replace(0, length, suggestionText)
+                                    selection = TextRange(0, suggestionText.length)
+                                }
+                            }
                         }
                     }
                 }
