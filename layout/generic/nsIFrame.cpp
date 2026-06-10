@@ -3051,7 +3051,7 @@ static Maybe<nsRect> ComputeClipForMaskItem(
                 .ToUnknownRect());
       } else {
         const auto& layer = svgReset->mMask.mLayers[i];
-        if (layer.mClip == StyleGeometryBox::NoClip) {
+        if (layer.mClip == StyleBackgroundClip::NoClip) {
           return Nothing();
         }
 

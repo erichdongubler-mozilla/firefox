@@ -6762,7 +6762,7 @@ widget::TransparencyMode nsLayoutUtils::GetFrameTransparency(
   const nsStyleBackground* bg = bgSC->StyleBackground();
   if (NS_GET_A(bg->BackgroundColor(bgSC)) < 255 ||
       // bottom layer's clip is used for the color
-      bg->BottomLayer().mClip != StyleGeometryBox::BorderBox) {
+      bg->BottomLayer().mClip != StyleBackgroundClip::BorderBox) {
     return TransparencyMode::Transparent;
   }
   return TransparencyMode::Opaque;

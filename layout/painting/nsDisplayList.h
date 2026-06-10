@@ -4478,7 +4478,7 @@ class nsDisplayBackgroundColor : public nsPaintedDisplayItem {
 
   bool HasBackgroundClipText() const {
     MOZ_ASSERT(mHasStyle);
-    return mBottomLayerClip == StyleGeometryBox::Text;
+    return mBottomLayerClip == StyleBackgroundClip::Text;
   }
 
   void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
@@ -4506,6 +4506,10 @@ class nsDisplayBackgroundColor : public nsPaintedDisplayItem {
 
   bool CanPaintWithClip(const DisplayItemClip& aClip) override {
     if (HasBackgroundClipText()) {
+      return false;
+    }
+
+    if (mBottomLayerClip == StyleBackgroundClip::BorderArea) {
       return false;
     }
 
@@ -4562,7 +4566,7 @@ class nsDisplayBackgroundColor : public nsPaintedDisplayItem {
  protected:
   const nsRect mBackgroundRect;
   const bool mHasStyle;
-  StyleGeometryBox mBottomLayerClip;
+  StyleBackgroundClip mBottomLayerClip = StyleBackgroundClip::BorderBox;
   nsIFrame* mDependentFrame;
   gfx::sRGBColor mColor;
 };
