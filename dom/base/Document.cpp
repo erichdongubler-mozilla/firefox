@@ -1616,6 +1616,13 @@ void Document::ReloadWithHttpsOnlyException() {
   }
 }
 
+void Document::ForceSkipDTDSecurityChecks() {
+  MOZ_ASSERT(StaticPrefs::dom_fetch_allow_force_allowed_dtd(),
+             "Loading DTDs that skip security checks requires "
+             "dom.fetch.allow_force_allowed_dtd to be enabled");
+  mSkipDTDSecurityChecks = true;
+}
+
 // Given an nsresult that is assumed to be synthesized by PSM and describes a
 // certificate or TLS error, attempts to convert it into a string
 // representation of the underlying NSS error.
