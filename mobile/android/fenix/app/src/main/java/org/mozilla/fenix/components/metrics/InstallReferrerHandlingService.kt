@@ -75,6 +75,8 @@ class InstallReferrerHandlingService(
                                     isTikTokAttribution(installReferrerResponse)
                                 context.components.settings.isUserRedditAttributed =
                                     isRedditAttribution(installReferrerResponse)
+                                context.components.settings.isUserXTwitterAttributed =
+                                    isXTwitterAttribution(installReferrerResponse)
                                 distributionIdManager.updateDistributionIdFromUtmParams(
                                     UTMParams.parseUTMParameters(installReferrerResponse),
                                 )
@@ -151,6 +153,7 @@ class InstallReferrerHandlingService(
         private const val ADJUST_EXTERNAL_CLICK_ID = "adjust_external_click_id"
         private val TIKTOK_EXTERNAL_CLICK_ID_PREFIXES = listOf("E.C.P.C", "E_C_P_C")
         private const val REDDIT_EXTERNAL_CLICK_ID_PREFIX = "reddit_"
+        private const val X_TWITTER_UTM_SOURCE = "x"
 
         @VisibleForTesting
         internal fun isTikTokAttribution(installReferrerResponse: String?): Boolean {
@@ -188,6 +191,21 @@ class InstallReferrerHandlingService(
             return clickId.startsWith(REDDIT_EXTERNAL_CLICK_ID_PREFIX, ignoreCase = true)
         }
 
+        @VisibleForTesting
+        internal fun isXTwitterAttribution(installReferrerResponse: String?): Boolean {
+            if (installReferrerResponse.isNullOrBlank()) return false
+
+            val decoded = try {
+                URLDecoder.decode(installReferrerResponse, "UTF-8")
+            } catch (e: IllegalArgumentException) {
+                Logger.error("isXTwitterAttribution() - bad installReferrerResponse", e)
+
+                installReferrerResponse
+            }
+
+            return UTMParams.parseUTMParameters(decoded).source.equals(X_TWITTER_UTM_SOURCE, ignoreCase = true)
+        }
+
         @Suppress("ReturnCount")
         @VisibleForTesting
         internal suspend fun shouldShowMarketingOnboarding(
@@ -215,6 +233,10 @@ class InstallReferrerHandlingService(
             }
 
             if (isRedditAttribution(installReferrerResponse)) {
+                return true
+            }
+
+            if (isXTwitterAttribution(installReferrerResponse)) {
                 return true
             }
 
