@@ -1,15 +1,14 @@
-.. _apz:
+(apz)=
 
-Asynchronous Panning and Zooming
-================================
+# Asynchronous Panning and Zooming
 
 **This document is a work in progress. Some information may be missing
 or incomplete.**
 
-.. image:: AsyncPanZoomArchitecture.png
+```{image} AsyncPanZoomArchitecture.png
+```
 
-Goals
------
+## Goals
 
 We need to be able to provide a visual response to user input with
 minimal latency. In particular, on devices with touch input, content
@@ -17,20 +16,19 @@ must track the finger exactly while panning, or the user experience is
 very poor. According to the UX team, 120ms is an acceptable latency
 between user input and response.
 
-Context and surrounding architecture
-------------------------------------
+## Context and surrounding architecture
 
 The fundamental problem we are trying to solve with the Asynchronous
 Panning and Zooming (APZ) code is that of responsiveness. By default,
 web browsers operate in a “game loop” that looks like this:
 
-::
-
-       while true:
-           process input
-           do computations
-           repaint content
-           display repainted content
+```
+while true:
+    process input
+    do computations
+    repaint content
+    display repainted content
+```
 
 In browsers the “do computation” step can be arbitrarily expensive
 because it can involve running event handlers in web content. Therefore,
@@ -42,21 +40,21 @@ even more important than with mouse or keyboard input. In order to
 ensure responsiveness, we split the “game loop” model of the browser
 into a multithreaded variant which looks something like this:
 
-::
+```
+Thread 1 (compositor thread)
+while true:
+    receive input
+    send a copy of input to thread 2
+    adjust rendered content based on input
+    display adjusted rendered content
 
-       Thread 1 (compositor thread)
-       while true:
-           receive input
-           send a copy of input to thread 2
-           adjust rendered content based on input
-           display adjusted rendered content
-
-       Thread 2 (main thread)
-       while true:
-           receive input from thread 1
-           do computations
-           rerender content
-           update the copy of rendered content in thread 1
+Thread 2 (main thread)
+while true:
+    receive input from thread 1
+    do computations
+    rerender content
+    update the copy of rendered content in thread 1
+```
 
 This multithreaded model is called off-main-thread compositing (OMTC),
 because the compositing (where the content is displayed on-screen)
@@ -94,16 +92,14 @@ matrices are applied to the rendered content at composite time, so that
 what the user sees on-screen reflects what they are trying to do as
 closely as possible.
 
-Technical overview
-------------------
+## Technical overview
 
 As per the heavily simplified model described above, the fundamental
 purpose of the APZ code is to take input events and produce
 transformation matrices. This section attempts to break that down and
 identify the different problems that make this task non-trivial.
 
-Checkerboarding
-~~~~~~~~~~~~~~~
+### Checkerboarding
 
 The area of page content for which a display list is built and sent to
 the compositor is called the “displayport”. The APZ code is responsible
@@ -132,8 +128,7 @@ area. This calculation is done in the APZ code, and a new desired
 displayport is frequently sent to the main thread as the user is panning
 around.
 
-Multiple scrollable elements
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Multiple scrollable elements
 
 Consider, for example, a scrollable page that contains an iframe which
 itself is scrollable. The iframe can be scrolled independently of the
@@ -149,8 +144,7 @@ object. Each APZC is relatively independent and handles the scrolling for
 its associated scrollable element, but there are some cases in which they
 need to interact; these cases are described in the sections below.
 
-Hit detection
-~~~~~~~~~~~~~
+### Hit detection
 
 Consider again the case where we have a scrollable page that contains an
 iframe which itself is scrollable. As described above, we will have two
@@ -163,7 +157,7 @@ the appropriate APZC instance needs to handle the input.
 This hit detection is done by APZCTreeManager in collaboration with
 WebRender, which has more detailed information about the structure of
 the page content than is stored in APZ directly. See
-:ref:`this section <wr-hit-test-details>` for more details.
+{ref}`this section <wr-hit-test-details>` for more details.
 
 Also note that for some types of input (e.g. when the user puts two
 fingers down to do a pinch) we do not want the input to be “split”
@@ -172,8 +166,7 @@ example, we find a “common ancestor” APZC instance - one that is
 zoomable and contains all of the touch input points, and direct the
 input to that APZC instance.
 
-Scroll Handoff
-~~~~~~~~~~~~~~
+### Scroll Handoff
 
 Consider yet again the case where we have a scrollable page that
 contains an iframe which itself is scrollable. Say the user scrolls the
@@ -187,10 +180,9 @@ top-level page. This behaviour is referred to as “scroll handoff” (or
 “fling handoff” in the case where analogous behaviour results from the
 scrolling momentum of the page after the user has lifted their finger).
 
-.. _input-event-untransformation:
+(input-event-untransformation)=
 
-Input event untransformation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Input event untransformation
 
 The APZC architecture by definition results in two copies of a “scroll
 position” for each scrollable element. There is the original copy on the
@@ -241,8 +233,7 @@ user touched at a document-relative position of y=310.
 Analogous input event transformations need to be done for horizontal
 scrolling and zooming.
 
-Content independently adjusting scrolling
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Content independently adjusting scrolling
 
 As described above, there are two copies of the scroll position in the
 APZ architecture - one on the main thread and one on the compositor
@@ -266,8 +257,7 @@ with their finger and content does a scrollTo in the middle, then some
 of the async scroll would occur before the “jump” and the rest after the
 “jump”.
 
-Content preventing default behaviour of input events
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Content preventing default behaviour of input events
 
 Another problem that we need to deal with is that web content is allowed
 to intercept touch events and prevent the “default behaviour” of
@@ -321,18 +311,17 @@ preventDefault():
    their behaviour via preventDefault(). The presence of passive event
    listeners does not cause APZ to perform the content round-trip.
 2. If page authors wish to disable certain types of touch interactions
-   completely, they can use the ``touch-action`` CSS property from the
+   completely, they can use the `touch-action` CSS property from the
    pointer-events spec to do so declaratively, instead of registering
    event listeners that call preventDefault(). Touch-action flags are
    also included in the hit-test information sent to the compositor, and
-   APZ uses this information to respect ``touch-action``. (Note that the
+   APZ uses this information to respect `touch-action`. (Note that the
    touch-action information sent to the compositor is not always 100%
    accurate, and sometimes APZ needs to fall back on asking the main
    thread for touch-action information, which again involves a
    round-trip.)
 
-Other event types
-~~~~~~~~~~~~~~~~~
+### Other event types
 
 The above sections talk mostly about touch events, but over time APZ has
 been extended to handle a variety of other event types, such as trackpad
@@ -345,9 +334,7 @@ for event types which are not handled in APZ, such as mouse click events,
 since async scrolling can still affect the correct targeting of such
 events.
 
-
-Technical details
------------------
+## Technical details
 
 This section describes various pieces of the APZ code, and goes into
 more specific detail on APIs and code than the previous sections. The
@@ -355,8 +342,7 @@ primary purpose of this section is to help people who plan on making
 changes to the code, while also not going into so much detail that it
 needs to be updated with every patch.
 
-Overall flow of input events
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Overall flow of input events
 
 This section describes how input events flow through the APZ code.
 
@@ -365,11 +351,11 @@ it assumes the case where the main thread and compositor thread are
 in the same process, which is rarely the case these days, so in practice
 e.g. steps 6 and 8 involve IPC, not just "stack unwinding").
 
-1.  Input events arrive from the hardware/widget code into the APZ via
+01. Input events arrive from the hardware/widget code into the APZ via
     APZCTreeManager::ReceiveInputEvent. The thread that invokes this is
     called the "controller thread", and may or may not be the same as the
     Gecko main thread.
-2.  Conceptually the first thing that the APZCTreeManager does is to
+02. Conceptually the first thing that the APZCTreeManager does is to
     associate these events with “input blocks”. An input block is a set
     of events that share certain properties, and generally are intended
     to represent a single gesture. For example with touch events, all
@@ -377,7 +363,7 @@ e.g. steps 6 and 8 involve IPC, not just "stack unwinding").
     touchstart are in the same block. All of the events in a given block
     will go to the same APZC instance and will either all be processed
     or all be dropped.
-3.  Using the first event in the input block, the APZCTreeManager does a
+03. Using the first event in the input block, the APZCTreeManager does a
     hit-test to see which APZC it hits. If no APZC is hit, the events are
     discarded and we jump to step 6. Otherwise, the input block is tagged
     with the hit APZC as a tentative target and put into a global APZ
@@ -385,33 +371,30 @@ e.g. steps 6 and 8 involve IPC, not just "stack unwinding").
     also includes whether the input event landed on a "dispatch-to-content"
     region. These are regions of the page where there is something going
     on that requires dispatching the event to content and waiting for
-    a response _before_ processing the event in APZ; an example of this
+    a response \_before\_ processing the event in APZ; an example of this
     is a region containing an element with a non-passive event listener,
     as described above. (TODO: Add a section that talks about the other
     uses of the dispatch-to-content mechanism.)
-4.
-
-    i.  If the input events landed outside a dispatch-to-content region,
-        any available events in the input block are processed. These may
-        trigger behaviours like scrolling or tap gestures.
-    ii. If the input events landed inside a dispatch-to-content region,
-        the events are left in the queue and a timeout is initiated. If
-        the timeout expires before step 9 is completed, the APZ assumes
-        the input block was not cancelled and the tentative target is
-        correct, and processes them as part of step 10.
-
-5.  The call stack unwinds back to APZCTreeManager::ReceiveInputEvent,
+04. 1. If the input events landed outside a dispatch-to-content region,
+       any available events in the input block are processed. These may
+       trigger behaviours like scrolling or tap gestures.
+    2. If the input events landed inside a dispatch-to-content region,
+       the events are left in the queue and a timeout is initiated. If
+       the timeout expires before step 9 is completed, the APZ assumes
+       the input block was not cancelled and the tentative target is
+       correct, and processes them as part of step 10.
+05. The call stack unwinds back to APZCTreeManager::ReceiveInputEvent,
     which does an in-place modification of the input event so that any
     async transforms are removed.
-6.  The call stack unwinds back to the widget code that called
+06. The call stack unwinds back to the widget code that called
     ReceiveInputEvent. This code now has the event in the coordinate
     space Gecko is expecting, and so can dispatch it to the Gecko main
     thread.
-7.  Gecko performs its own usual hit-testing and event dispatching for
+07. Gecko performs its own usual hit-testing and event dispatching for
     the event. As part of this, it records whether any touch listeners
     cancelled the input block by calling preventDefault(). It also
     activates inactive scrollframes that were hit by the input events.
-8.  The call stack unwinds back to the widget code, which sends two
+08. The call stack unwinds back to the widget code, which sends two
     notifications to the APZ code on the controller thread. The first
     notification is via APZCTreeManager::ContentReceivedInputBlock, and
     informs the APZ whether the input block was cancelled. The second
@@ -422,17 +405,14 @@ e.g. steps 6 and 8 involve IPC, not just "stack unwinding").
     once per input block, while the ContentReceivedInputBlock
     notification may happen once per block, or multiple times per block,
     depending on the input type.
-9.
-
-    i.   If the events were processed as part of step 4(i), the
-         notifications from step 8 are ignored and step 10 is skipped.
-    ii.  If events were queued as part of step 4(ii), and steps 5-8
-         complete before the timeout, the arrival of both notifications
-         from step 8 will mark the input block ready for processing.
-    iii. If events were queued as part of step 4(ii), but steps 5-8 take
-         longer than the timeout, the notifications from step 8 will be
-         ignored and step 10 will already have happened.
-
+09. 1. If the events were processed as part of step 4(i), the
+       notifications from step 8 are ignored and step 10 is skipped.
+    2. If events were queued as part of step 4(ii), and steps 5-8
+       complete before the timeout, the arrival of both notifications
+       from step 8 will mark the input block ready for processing.
+    3. If events were queued as part of step 4(ii), but steps 5-8 take
+       longer than the timeout, the notifications from step 8 will be
+       ignored and step 10 will already have happened.
 10. If events were queued as part of step 4(ii) they are now either
     processed (if the input block was not cancelled and Gecko detected a
     scrollframe under the input event, or if the timeout expired) or
@@ -444,18 +424,17 @@ e.g. steps 6 and 8 involve IPC, not just "stack unwinding").
 If the CSS touch-action property is enabled, the above steps are
 modified as follows:
 
-* In step 4, the APZC also requires the allowed touch-action behaviours
+- In step 4, the APZC also requires the allowed touch-action behaviours
   for the input event. This might have been determined as part of the
   hit-test in APZCTreeManager; if not, the events are queued.
-* In step 6, the widget code determines the content element at the point
+- In step 6, the widget code determines the content element at the point
   under the input element, and notifies the APZ code of the allowed
   touch-action behaviours. This notification is sent via a call to
   APZCTreeManager::SetAllowedTouchBehavior on the input thread.
-* In step 9(ii), the input block will only be marked ready for processing
+- In step 9(ii), the input block will only be marked ready for processing
   once all three notifications arrive.
 
-Threading considerations
-^^^^^^^^^^^^^^^^^^^^^^^^
+#### Threading considerations
 
 The bulk of the input processing in the APZ code happens on what we call
 “the controller thread”. In practice the controller thread could be the
@@ -476,8 +455,7 @@ operations, for example. As a result, the APZ code itself does not assume
 that the controller thread will be the same as the Gecko main thread or
 the compositor thread.
 
-Active vs. inactive scrollframes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#### Active vs. inactive scrollframes
 
 The number of scrollframes on a page is potentially unbounded. However,
 we do not want to create a separate displayport for each scrollframe
@@ -520,7 +498,7 @@ scroll normally.
 
 Note: with Fission (where inactive scroll frames would make it impossible
 to target the correct process in all situations; see
-:ref:`this section <fission-hit-testing>` for more details) and WebRender
+{ref}`this section <fission-hit-testing>` for more details) and WebRender
 (which makes displayports more lightweight as the actual rendering is
 offloaded to the compositor and can be done on demand), inactive scroll
 frames are being phased out, and we are moving towards a model where all
@@ -529,8 +507,7 @@ displayport and an APZC. To conserve memory, displayports for scroll
 frames which have not been recently scrolled are kept to a "minimal" size
 equal to the viewport size.
 
-WebRender Integration
-~~~~~~~~~~~~~~~~~~~~~
+### WebRender Integration
 
 This section describes how APZ interacts with the WebRender graphics
 backend.
@@ -541,9 +518,7 @@ influenced APZ significantly, and this still shows in some places in the
 code. Now that the Layers backend has been removed, there may be
 opportunities to streamline the interaction between APZ and WebRender.
 
-
-HitTestingTree
-^^^^^^^^^^^^^^
+#### HitTestingTree
 
 The APZCTreeManager keeps as part of its internal state a tree of
 HitTestingTreeNode instances. This is referred to as the HitTestingTree.
@@ -552,12 +527,12 @@ The main purpose of the HitTestingTree is to model the spatial
 relationships between content that's affected by async scrolling. Tree
 nodes fall roughly into the following categories:
 
-* Nodes representing scrollable content in an active scroll frame. These
+- Nodes representing scrollable content in an active scroll frame. These
   nodes are associated with the scroll frame's APZC.
-* Nodes representing other content that may move in special ways in
+- Nodes representing other content that may move in special ways in
   response to async scrolling, such as fixed content, sticky content, and
   scrollbars.
-* (Non-leaf) nodes which do not represent any content, just metadata
+- (Non-leaf) nodes which do not represent any content, just metadata
   (e.g. a transform) that applies to its descendant nodes.
 
 An APZC may be associated with multiple nodes, if e.g. a scroll frame
@@ -571,7 +546,7 @@ transforms.
 
 An additional use of the HitTestingTree is to allow APZ to keep content
 processes up to date about enclosing transforms that they are subject to.
-See :ref:`this section <sending-transforms-to-content-processes>` for
+See {ref}`this section <sending-transforms-to-content-processes>` for
 more details.
 
 (In the past, with the Layers backend, the HitTestingTree was also used
@@ -581,8 +556,8 @@ and there may be opportunities to simplify the tree as a result.)
 The HitTestingTree is created from another tree data structure called
 WebRenderScrollData. The relevant types here are:
 
-* WebRenderScrollData which stores the entire tree.
-* WebRenderLayerScrollData, which represents a single "layer" of content,
+- WebRenderScrollData which stores the entire tree.
+- WebRenderLayerScrollData, which represents a single "layer" of content,
   i.e. a group of display items that move together when scrolling (or
   metadata applying to a subtree of such layers). In the Layers backend,
   such content would be rendered into a single texture which could then
@@ -590,7 +565,7 @@ WebRenderScrollData. The relevant types here are:
   be scrolled by multiple (nested) scroll frames, a
   WebRenderLayerScrollData may contain scroll metadata for more than one
   scroll frame.
-* WebRenderScrollDataWrapper, which wraps WebRenderLayerScrollData
+- WebRenderScrollDataWrapper, which wraps WebRenderLayerScrollData
   but "expanded" in a way that each node only stores metadata for
   a single scroll frame. WebRenderScrollDataWrapper nodes have a
   1:1 correspondence with HitTestingTreeNodes.
@@ -610,10 +585,10 @@ same traversal of the Gecko display list that is used to build the
 WebRender display list. As of this writing, the architecture for this is
 that, as we walk the Gecko display list, we query it to see if it
 contains any information that APZ might need to know (e.g. CSS
-transforms) via a call to ``nsDisplayItem::UpdateScrollData(nullptr,
-nullptr)``. If this call returns true, we create a
+transforms) via a call to `nsDisplayItem::UpdateScrollData(nullptr,
+nullptr)`. If this call returns true, we create a
 WebRenderLayerScrollData instance for the item, and populate it with the
-necessary information in ``WebRenderLayerScrollData::Initialize``. We also
+necessary information in `WebRenderLayerScrollData::Initialize`. We also
 create WebRenderLayerScrollData instances if we detect (via ASR changes)
 that we are now processing a Gecko display item that is in a different
 scrollframe than the previous item.
@@ -625,20 +600,19 @@ The main sources of complexity in this code come from:
    WebRenderLayerScrollData node to the root has a consistent ordering of
    scrollframes without duplications).
 2. The deferred-transform optimization that is described in more detail
-   at the declaration of ``StackingContextHelper::mDeferredTransformItem``.
+   at the declaration of `StackingContextHelper::mDeferredTransformItem`.
 
-.. _wr-hit-test-details:
+(wr-hit-test-details)=
 
-Hit-testing
-^^^^^^^^^^^
+#### Hit-testing
 
 Since the HitTestingTree is not used for actual hit-testing purposes
 with the WebRender backend (see previous section), this section describes
 how hit-testing actually works with WebRender.
 
 The Gecko display list contains display items
-(``nsDisplayCompositorHitTestInfo``) that store hit-testing state. These
-items implement the ``CreateWebRenderCommands`` method and generate a "hit-test
+(`nsDisplayCompositorHitTestInfo`) that store hit-testing state. These
+items implement the `CreateWebRenderCommands` method and generate a "hit-test
 item" into the WebRender display list. This is basically just a rectangle
 item in the WebRender display list that is no-op for painting purposes,
 but contains information that should be returned by the hit-test (specifically
@@ -652,9 +626,9 @@ taking into account the current clips and transforms, adjusted for the
 most recent async scroll/zoom, and determines which hit-test item(s) are under
 the target point, and returns those items. APZ can then take the frontmost
 item from that list (or skip over it if it happens to be inside a OOP
-subdocument that's ``pointer-events:none``) and use that as the hit target.
+subdocument that's `pointer-events:none`) and use that as the hit target.
 Note that the hit-test uses the last transform provided by the
-``SampleForWebRender`` API (see next section) which generally reflects the
+`SampleForWebRender` API (see next section) which generally reflects the
 last composite, and doesn't take into account further changes to the
 transforms that have occurred since then. In practice, we should be
 compositing frequently enough that this doesn't matter much.
@@ -678,13 +652,12 @@ event. APZ can then take actions such as scrolling the target node's
 associated APZC, or other appropriate actions (e.g. initiating a scrollbar
 drag if a scrollbar thumb node was targeted by a mouse-down event).
 
-Sampling
-^^^^^^^^
+#### Sampling
 
 The compositing step needs to read the latest async transforms from APZ
 in order to ensure scrollframes are rendered at the right position. The API for this is
-exposed via the ``APZSampler`` class. When WebRender is ready to do a composite,
-it invokes ``APZSampler::SampleForWebRender``. In here, APZ gathers all async
+exposed via the `APZSampler` class. When WebRender is ready to do a composite,
+it invokes `APZSampler::SampleForWebRender`. In here, APZ gathers all async
 transforms that WebRender needs to know about, including transforms to apply
 to scrolled content, fixed and sticky content, and scrollbar thumbs.
 
@@ -692,14 +665,12 @@ Along with sampling the APZ transforms, the compositor also triggers APZ
 animations to advance to the next timestep (usually the next vsync). This
 happens just before reading the APZ transforms.
 
-Fission Integration
-~~~~~~~~~~~~~~~~~~~
+### Fission Integration
 
 This section describes how APZ interacts with the Fission (Site Isolation)
 project.
 
-Introduction
-^^^^^^^^^^^^
+#### Introduction
 
 Fission is an architectural change motivated by security considerations,
 where web content from each origin is isolated in its own process. Since
@@ -709,10 +680,9 @@ contain an iframe with content from origin B), that means that rendering
 and interacting with a page can now involve coordination between APZ and
 multiple content processes.
 
-.. _fission-hit-testing:
+(fission-hit-testing)=
 
-Content Process Selection for Input Events
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#### Content Process Selection for Input Events
 
 Input events are initially received in the browser's parent process.
 With Fission, the browser needs to decide which of possibly several
@@ -729,13 +699,12 @@ APZ's hit test was therefore expanded to serve this purpose as well. This
 mostly required only minor modifications, such as making sure that APZ
 knows about the root scroll frames of iframes even if they're not
 scrollable. Since APZ already needs to process all input events to
-potentially apply :ref:`untransformations <input-event-untransformation>`
+potentially apply {ref}`untransformations <input-event-untransformation>`
 related to async scrolling, as part of this process it now also labels
 input events with information identifying which content process they
 target.
 
-Hit Testing Accuracy
-^^^^^^^^^^^^^^^^^^^^
+#### Hit Testing Accuracy
 
 Prior to Fission, APZ's hit test could afford to be somewhat inaccurate,
 as it could fall back on the dispatch-to-content mechanism to wait for
@@ -760,10 +729,9 @@ One consequence of this is that the dispatch-to-content mechanism is now
 used less often than before (its primary remaining use is handling
 `preventDefault()`).
 
-.. _sending-transforms-to-content-processes:
+(sending-transforms-to-content-processes)=
 
-Sending Transforms To Content Processes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#### Sending Transforms To Content Processes
 
 Content processes sometimes need to be able to convert between screen
 coordinates and their local coordinates. To do this, they need to know
@@ -775,107 +743,89 @@ APZ has information about these transforms in its HitTestingTree. With
 Fission, APZ periodically sends content processes information about these
 transforms so that they are kept relatively up to date.
 
-Testing
--------
+## Testing
 
 APZ makes use of several test frameworks to verify the expected behavior
 is seen.
 
-Mochitest
-~~~~~~~~~
+### Mochitest
 
 The APZ specific mochitests are useful when specific gestures or events need to be tested
-with specific content. The APZ mochitests are located in :searchfox:`gfx/layers/apz/test/mochitest`.
+with specific content. The APZ mochitests are located in {searchfox}`gfx/layers/apz/test/mochitest`.
 To run all of the APZ mochitests, run something like the following:
 
-::
-
-    ./mach mochitest ./gfx/layers/apz/test/mochitest
+```
+./mach mochitest ./gfx/layers/apz/test/mochitest
+```
 
 The APZ mochitests are often organized as subtests that run in a group. For example,
-the :searchfox:`test_group_hittest-2.html <gfx/layers/apz/test/mochitest/test_group_hittest-2.html>` contains >20 subtests like
-:searchfox:`helper_hittest_overscroll.html <gfx/layers/apz/test/mochitest/helper_hittest_overscroll.html>`. When working on a specific subtest, it is often
+the {searchfox}`test_group_hittest-2.html <gfx/layers/apz/test/mochitest/test_group_hittest-2.html>` contains >20 subtests like
+{searchfox}`helper_hittest_overscroll.html <gfx/layers/apz/test/mochitest/helper_hittest_overscroll.html>`. When working on a specific subtest, it is often
 helpful to use the `apz.subtest` preference to filter the subtests run to just the
 tests you are working on. For example, the following would only run the
-:searchfox:`helper_hittest_overscroll.html <gfx/layers/apz/test/mochitest/helper_hittest_overscroll.html>` subtest of the :searchfox:`test_group_hittest-2.html <gfx/layers/apz/test/mochitest/test_group_hittest-2.html>` group.
+{searchfox}`helper_hittest_overscroll.html <gfx/layers/apz/test/mochitest/helper_hittest_overscroll.html>` subtest of the {searchfox}`test_group_hittest-2.html <gfx/layers/apz/test/mochitest/test_group_hittest-2.html>` group.
 
-::
+```
+./mach mochitest --setpref apz.subtest=helper_hittest_overscroll.html \
+    ./gfx/layers/apz/test/mochitest/test_group_hittest-2.html
+```
 
-    ./mach mochitest --setpref apz.subtest=helper_hittest_overscroll.html \
-        ./gfx/layers/apz/test/mochitest/test_group_hittest-2.html
+For more information on mochitest, see the [Mochitest Documentation].
 
-For more information on mochitest, see the `Mochitest Documentation`_.
+### GTest
 
-.. _Mochitest Documentation: /testing/mochitest-plain/index.html
-
-GTest
-~~~~~
-
-The APZ specific GTests can be found in :searchfox:`gfx/layers/apz/test/gtest/`. To run
+The APZ specific GTests can be found in {searchfox}`gfx/layers/apz/test/gtest/`. To run
 these tests, run something like the following:
 
-::
+```
+./mach gtest "APZ*"
+```
 
-    ./mach gtest "APZ*"
+For more information, see the [GTest Documentation].
 
-For more information, see the `GTest Documentation`_.
+### Reftests
 
-.. _GTest Documentation: /gtest/index.html
-
-Reftests
-~~~~~~~~
-
-The APZ reftests can be found in :searchfox:`layout/reftests/async-scrolling/` and
-:searchfox:`gfx/layers/apz/test/reftest <gfx/layers/apz/test/reftest/>`. To run the relevant reftests for APZ, run
+The APZ reftests can be found in {searchfox}`layout/reftests/async-scrolling/` and
+{searchfox}`gfx/layers/apz/test/reftest <gfx/layers/apz/test/reftest/>`. To run the relevant reftests for APZ, run
 a large portion of the APZ reftests, run something like the following:
 
-::
+```
+./mach reftest ./layout/reftests/async-scrolling/
+```
 
-    ./mach reftest ./layout/reftests/async-scrolling/
-
-Useful information about the reftests can be found in the `Reftest Documentation`_.
+Useful information about the reftests can be found in the [Reftest Documentation].
 
 There is no defined process for choosing which directory the APZ reftests
 should be placed in, but in general reftests should exist where other
 similar tests do.
 
-.. _Reftest Documentation: /layout/Reftest.html
+## Threading / Locking Overview
 
-Threading / Locking Overview
-----------------------------
-
-Threads
-~~~~~~~
+### Threads
 
 There are three threads relevant to APZ: the **controller thread**,
 the **updater thread**, and the **sampler thread**. This table lists
 which threads play these roles on each platform / configuration:
 
-===================== ============= ============== =============
-APZ Thread Name       Desktop       Desktop+GPU    Android
-===================== ============= ============== =============
-**controller thread** UI main       GPU main       Java UI
-**updater thread**    SceneBuilder  SceneBuilder   SceneBuilder
-**sampler thread**    RenderBackend RenderBackend  RenderBackend
-===================== ============= ============== =============
+| APZ Thread Name       | Desktop       | Desktop+GPU   | Android       |
+| --------------------- | ------------- | ------------- | ------------- |
+| **controller thread** | UI main       | GPU main      | Java UI       |
+| **updater thread**    | SceneBuilder  | SceneBuilder  | SceneBuilder  |
+| **sampler thread**    | RenderBackend | RenderBackend | RenderBackend |
 
-Locks
-~~~~~
+### Locks
 
 There are also a number of locks used in APZ code:
 
-======================= ==============================
-Lock type               How many instances
-======================= ==============================
-APZ tree lock           one per APZCTreeManager
-APZC map lock           one per APZCTreeManager
-APZC instance lock      one per AsyncPanZoomController
-APZ test lock           one per APZCTreeManager
-Checkerboard event lock one per AsyncPanZoomController
-======================= ==============================
+| Lock type               | How many instances             |
+| ----------------------- | ------------------------------ |
+| APZ tree lock           | one per APZCTreeManager        |
+| APZC map lock           | one per APZCTreeManager        |
+| APZC instance lock      | one per AsyncPanZoomController |
+| APZ test lock           | one per APZCTreeManager        |
+| Checkerboard event lock | one per AsyncPanZoomController |
 
-Thread / Lock Ordering
-~~~~~~~~~~~~~~~~~~~~~~
+### Thread / Lock Ordering
 
 To avoid deadlocks, the threads and locks have a global **ordering**
 which must be respected.
@@ -889,35 +839,38 @@ Respecting the ordering means the following:
 
 **The lock ordering is as follows**:
 
-1. UI main
-2. GPU main (only if GPU process enabled)
-3. Compositor thread
-4. SceneBuilder thread
-5. **APZ tree lock**
-6. RenderBackend thread
-7. **APZC map lock**
-8. **APZC instance lock**
-9. **APZ test lock**
+01. UI main
+02. GPU main (only if GPU process enabled)
+03. Compositor thread
+04. SceneBuilder thread
+05. **APZ tree lock**
+06. RenderBackend thread
+07. **APZC map lock**
+08. **APZC instance lock**
+09. **APZ test lock**
 10. **Checkerboard event lock**
 
-Example workflows
-^^^^^^^^^^^^^^^^^
+#### Example workflows
 
 Here are some example APZ workflows. Observe how they all obey
 the global thread/lock ordering. Feel free to add others:
 
 - **Input handling** (with GPU process): UI main -> GPU main -> APZ tree lock -> RenderBackend thread
-- **Sync messages** in ``PCompositorBridge.ipdl``: UI main thread -> Compositor thread
+- **Sync messages** in `PCompositorBridge.ipdl`: UI main thread -> Compositor thread
 - **GetAPZTestData**: Compositor thread -> SceneBuilder thread -> test lock
 - **Scene swap**: SceneBuilder thread -> APZ tree lock -> RenderBackend thread
 - **Updating hit-testing tree**: SceneBuilder thread -> APZ tree lock -> APZC instance lock
 - **Updating APZC map**: SceneBuilder thread -> APZ tree lock -> APZC map lock
-- **Sampling and animation deferred tasks** [1]_: RenderBackend thread -> APZC map lock -> APZC instance lock
+- **Sampling and animation deferred tasks** [^footnote-1]: RenderBackend thread -> APZC map lock -> APZC instance lock
 - **Advancing animations**: RenderBackend thread -> APZC instance lock
 
-.. [1] It looks like there are two deferred tasks that actually need the tree lock,
-   ``AsyncPanZoomController::HandleSmoothScrollOverscroll`` and
-   ``AsyncPanZoomController::HandleFlingOverscroll``. We should be able to rewrite
-   these to use the map lock instead of the tree lock.
-   This will allow us to continue running the deferred tasks on the sampler
-   thread rather than having to bounce them to another thread.
+[^footnote-1]: It looks like there are two deferred tasks that actually need the tree lock,
+    `AsyncPanZoomController::HandleSmoothScrollOverscroll` and
+    `AsyncPanZoomController::HandleFlingOverscroll`. We should be able to rewrite
+    these to use the map lock instead of the tree lock.
+    This will allow us to continue running the deferred tasks on the sampler
+    thread rather than having to bounce them to another thread.
+
+[gtest documentation]: /gtest/index.html
+[mochitest documentation]: /testing/mochitest-plain/index.html
+[reftest documentation]: /layout/Reftest.html

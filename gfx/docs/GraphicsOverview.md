@@ -1,17 +1,13 @@
-Graphics Overview
-=========================
+# Graphics Overview
 
-Work in progress. Possibly incorrect or incomplete.
----------------------------------------------------
+## Work in progress. Possibly incorrect or incomplete.
 
-Jargon
-------
+## Jargon
 
 There's a lot of jargon in the graphics stack. We try to maintain a list
-of common words and acronyms `here <https://wiki.mozilla.org/Platform/GFX/Jargon>`__.
+of common words and acronyms [here](https://wiki.mozilla.org/Platform/GFX/Jargon).
 
-Overview
---------
+## Overview
 
 The graphics systems is responsible for rendering (painting, drawing)
 the frame tree (rendering tree) elements as created by the layout
@@ -40,8 +36,7 @@ hardware, or multi-core computers. If you recall from the previous
 sections, the frame tree is only accessible from the UI thread, so while
 we’re doing all this work, the UI is basically blocked.
 
-(Retained) Layers
-~~~~~~~~~~~~~~~~~
+### (Retained) Layers
 
 Layers framework was introduced to address the above performance issues,
 by having a part of the design address each item. At the high level:
@@ -53,8 +48,7 @@ by having a part of the design address each item. At the high level:
 
 Let’s examine each of these steps, in reverse order.
 
-Compositing
-~~~~~~~~~~~
+### Compositing
 
 We use the term composite as it implies that the order is important. If
 the elements being composited overlap, whether there is transparency
@@ -81,8 +75,7 @@ It is important to note that the number of operations in this step is
 proportional to the number of layer tree (leaf) elements, so there is
 additional work and complexity involved, when the layer tree is large.
 
-Render and retain layer elements
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Render and retain layer elements
 
 As we saw, the compositing step benefits from caching the intermediate
 result. This does result in the extra memory usage, so needs to be
@@ -93,8 +86,7 @@ available platform APIs (e.g., Direct2D, CoreGraphics, even some of the
 through a platform independent API (see Moz2D) below, but is important
 to realize it does get accelerated appropriately.
 
-Creating the layer tree
-~~~~~~~~~~~~~~~~~~~~~~~
+### Creating the layer tree
 
 We need to create a layer tree (from the frames tree), which will give
 us the correct result while striking the right balance between a layer
@@ -105,45 +97,35 @@ improvements. Some of the performance improvements are only noticed when
 something changes (e.g., one element is moving, we only need to redo the
 compositing step).
 
-Refresh Driver
-~~~~~~~~~~~~~~
+### Refresh Driver
 
-Layers
-~~~~~~
+### Layers
 
-Rendering each layer
-~~~~~~~~~~~~~~~~~~~~
+### Rendering each layer
 
-Tiling vs. Buffer Rotation vs. Full paint
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Tiling vs. Buffer Rotation vs. Full paint
 
-Compositing for the final result
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Compositing for the final result
 
-Graphics API
-~~~~~~~~~~~~
+### Graphics API
 
-Compositing
-~~~~~~~~~~~
+### Compositing
 
-Image Decoding
-~~~~~~~~~~~~~~
+### Image Decoding
 
-Image Animation
-~~~~~~~~~~~~~~~
+### Image Animation
 
-`Historical Documents <http://www.youtube.com/watch?v=lLZQz26-kms>`__
----------------------------------------------------------------------
+## [Historical Documents](http://www.youtube.com/watch?v=lLZQz26-kms)
 
 A number of posts and blogs that will give you more details or more
 background, or reasoning that led to different solutions and approaches.
 
--  2010-01 `Layers: Cross Platform Acceleration <http://www.basschouten.com/blog1.php/layers-cross-platform-acceleration>`__
--  2010-04 `Layers <http://robert.ocallahan.org/2010/04/layers_01.html>`__
--  2010-07 `Retained Layers <http://robert.ocallahan.org/2010/07/retained-layers_16.html>`__
--  2011-04 `Introduction <https://web.archive.org/web/20140604005804/https://blog.mozilla.org/joe/2011/04/26/introducing-the-azure-project/>`__
--  2011-07 `Layers <http://chrislord.net/index.php/2011/07/25/shadow-layers-and-learning-by-failing/%20Shadow>`__
--  2011-09 `Graphics API Design <http://robert.ocallahan.org/2011/09/graphics-api-design.html>`__
--  2012-04 `Moz2D Canvas on OSX <http://muizelaar.blogspot.ca/2012/04/azure-canvas-on-os-x.html>`__
--  2012-05 `Mask Layers <http://featherweightmusings.blogspot.co.uk/2012/05/mask-layers_26.html>`__
--  2013-07 `Graphics related <http://www.basschouten.com/blog1.php>`__
+- 2010-01 [Layers: Cross Platform Acceleration](http://www.basschouten.com/blog1.php/layers-cross-platform-acceleration)
+- 2010-04 [Layers](http://robert.ocallahan.org/2010/04/layers_01.html)
+- 2010-07 [Retained Layers](http://robert.ocallahan.org/2010/07/retained-layers_16.html)
+- 2011-04 [Introduction](https://web.archive.org/web/20140604005804/https://blog.mozilla.org/joe/2011/04/26/introducing-the-azure-project/)
+- 2011-07 [Layers](http://chrislord.net/index.php/2011/07/25/shadow-layers-and-learning-by-failing/%20Shadow)
+- 2011-09 [Graphics API Design](http://robert.ocallahan.org/2011/09/graphics-api-design.html)
+- 2012-04 [Moz2D Canvas on OSX](http://muizelaar.blogspot.ca/2012/04/azure-canvas-on-os-x.html)
+- 2012-05 [Mask Layers](http://featherweightmusings.blogspot.co.uk/2012/05/mask-layers_26.html)
+- 2013-07 [Graphics related](http://www.basschouten.com/blog1.php)
