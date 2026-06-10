@@ -198,10 +198,6 @@ class NetworkEventWatcher {
     this.listener.removeOverride(url);
   }
 
-  setLocalModeMappings(mappings) {
-    this.listener.setLocalModeMappings(mappings);
-  }
-
   /**
    * Watch for previous document being unloaded in order to clear
    * all related network events, in case persist is disabled.
