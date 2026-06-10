@@ -117,7 +117,7 @@ function test_read_gooddb() {
 
   Assert.throws(
     () => db.executeSimpleSQL("INSERT INTO Foo (rowid) VALUES ('test');"),
-    /NS_ERROR_FAILURE/,
+    /NS_ERROR_UNEXPECTED/,
     "Executing sql should fail."
   );
   Assert.equal(
