@@ -139,6 +139,8 @@ dependencies {
     implementation project(':components:support-utils')
     implementation project(':components:support-webextensions')
     implementation project(':components:ui-autocomplete')
+    implementation project(':components:ui-colors')
+    implementation project(':components:ui-icons')
     implementation project(':components:ui-tabcounter')
     implementation project(':components:ui-widgets')
 
