@@ -438,6 +438,10 @@ export const LinkMenuOptions = {
       type: at.OPEN_LINK,
       data: { url: learnMoreUrl },
     }),
+    impression: ac.OnlyToMain({
+      type: at.CLICK_SECTION_LEARN_MORE,
+      data: {},
+    }),
     userEvent: "CLICK_SECTION_LEARN_MORE",
   }),
   // eslint-disable-next-line max-params

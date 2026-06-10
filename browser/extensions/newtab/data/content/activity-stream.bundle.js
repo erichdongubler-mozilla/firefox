@@ -112,6 +112,7 @@ for (const type of [
   "BOOKMARK_URL",
   "CARD_SECTION_IMPRESSION",
   "CLEAR_PREF",
+  "CLICK_SECTION_LEARN_MORE",
   "COPY_DOWNLOAD_LINK",
   "DELETE_BOOKMARK_BY_ID",
   "DELETE_HISTORY_URL",
@@ -2376,6 +2377,10 @@ const LinkMenuOptions = {
     action: actionCreators.OnlyToMain({
       type: actionTypes.OPEN_LINK,
       data: { url: learnMoreUrl },
+    }),
+    impression: actionCreators.OnlyToMain({
+      type: actionTypes.CLICK_SECTION_LEARN_MORE,
+      data: {},
     }),
     userEvent: "CLICK_SECTION_LEARN_MORE",
   }),
