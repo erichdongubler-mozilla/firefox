@@ -3286,7 +3286,8 @@ class UnwrapKeyTask : public KeyEncryptTask {
  public:
   UnwrapKeyTask(JSContext* aCx, const ArrayBufferViewOrArrayBuffer& aWrappedKey,
                 CryptoKey& aUnwrappingKey,
-                const ObjectOrString& aUnwrapAlgorithm, ImportKeyTask* aTask)
+                const ObjectOrString& aUnwrapAlgorithm,
+                already_AddRefed<ImportKeyTask> aTask)
       : KeyEncryptTask(aCx, aUnwrapAlgorithm, aUnwrappingKey, aWrappedKey,
                        false),
         mTask(aTask) {}
@@ -3739,13 +3740,16 @@ already_AddRefed<WebCryptoTask> WebCryptoTask::CreateUnwrapKeyTask(
       unwrapAlgName.EqualsLiteral(WEBCRYPTO_ALG_AES_CTR) ||
       unwrapAlgName.EqualsLiteral(WEBCRYPTO_ALG_AES_GCM)) {
     return MakeAndAddRef<UnwrapKeyTask<AesTask>>(
-        aCx, aWrappedKey, aUnwrappingKey, aUnwrapAlgorithm, importTask);
+        aCx, aWrappedKey, aUnwrappingKey, aUnwrapAlgorithm,
+        importTask.forget());
   } else if (unwrapAlgName.EqualsLiteral(WEBCRYPTO_ALG_AES_KW)) {
     return MakeAndAddRef<UnwrapKeyTask<AesKwTask>>(
-        aCx, aWrappedKey, aUnwrappingKey, aUnwrapAlgorithm, importTask);
+        aCx, aWrappedKey, aUnwrappingKey, aUnwrapAlgorithm,
+        importTask.forget());
   } else if (unwrapAlgName.EqualsLiteral(WEBCRYPTO_ALG_RSA_OAEP)) {
     return MakeAndAddRef<UnwrapKeyTask<RsaOaepTask>>(
-        aCx, aWrappedKey, aUnwrappingKey, aUnwrapAlgorithm, importTask);
+        aCx, aWrappedKey, aUnwrappingKey, aUnwrapAlgorithm,
+        importTask.forget());
   }
 
   return MakeAndAddRef<FailureTask>(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
