@@ -587,11 +587,7 @@ static bool GetBuildConfiguration(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   value = BooleanValue(true);
-#else
-  value = BooleanValue(false);
-#endif
   if (!JS_SetProperty(cx, info, "source-phase-imports", value)) {
     return false;
   }

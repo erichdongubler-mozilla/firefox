@@ -591,7 +591,6 @@ static bool ReportCompileWarnings(JSContext* cx,
   return true;
 }
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
 // https://webassembly.github.io/esm-integration/js-api/index.html#esm-integration
 bool js::wasm::CompileForESM(JSContext* cx,
                              const JS::ReadOnlyCompileOptions& options,
@@ -753,7 +752,6 @@ bool js::wasm::CompileForESM(JSContext* cx,
   moduleObj.set(wasmModuleObject);
   return true;
 }
-#endif
 
 // ============================================================================
 // Common functions
@@ -1063,7 +1061,6 @@ static JSObject* CreateWasmConstructor(JSContext* cx, JSProtoKey key) {
     return nullptr;
   }
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   if (JS::Prefs::experimental_source_phase_imports()) {
     if constexpr (std::is_same_v<Class, WasmModuleObject>) {
       RootedObject proto(cx, GlobalObject::getOrCreateConstructor(
@@ -1076,7 +1073,6 @@ static JSObject* CreateWasmConstructor(JSContext* cx, JSProtoKey key) {
           className, proto, gc::AllocKind::FUNCTION, TenuredObject);
     }
   }
-#endif
 
   return NewNativeConstructor(cx, Class::construct, 1, className);
 }
@@ -1329,7 +1325,6 @@ const JSClass& WasmModuleObject::protoClass_ = PlainObject::class_;
 
 static constexpr char WasmModuleName[] = "Module";
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
 // https://webassembly.github.io/esm-integration/js-api/index.html#modules
 static JSObject* CreateWasmModulePrototype(JSContext* cx, JSProtoKey key) {
   if (JS::Prefs::experimental_source_phase_imports()) {
@@ -1345,15 +1340,10 @@ static JSObject* CreateWasmModulePrototype(JSContext* cx, JSProtoKey key) {
   return GlobalObject::createBlankPrototype(cx, cx->global(),
                                             &WasmModuleObject::protoClass_);
 }
-#endif
 
 const ClassSpec WasmModuleObject::classSpec_ = {
     CreateWasmConstructor<WasmModuleObject, WasmModuleName>,
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     CreateWasmModulePrototype,
-#else
-    GenericCreatePrototype<WasmModuleObject>,
-#endif
     WasmModuleObject::static_methods,
     nullptr,
     WasmModuleObject::methods,

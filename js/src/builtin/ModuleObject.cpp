@@ -769,7 +769,6 @@ void AsyncEvaluationOrder::setDone(JSRuntime* rt) {
   value = ASYNC_EVALUATING_POST_ORDER_DONE;
 }
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
 ///////////////////////////////////////////////////////////////////////////
 // AbstractModuleSourceObject
 
@@ -852,7 +851,6 @@ static const ClassSpec AbstractModuleSourceObjectClassSpec = {
     JS_NULL_CLASS_OPS,
     &AbstractModuleSourceObjectClassSpec,
 };
-#endif
 
 ///////////////////////////////////////////////////////////////////////////
 // SyntheticModuleFields
@@ -1155,7 +1153,6 @@ ScriptSourceObject* ModuleObject::scriptSourceObject() const {
   return cyclicModuleFields()->scriptSourceObject;
 }
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
 JSObject* ModuleObject::moduleSource() const {
   Value value = getReservedSlot(ModuleSourceSlot);
   if (value.isUndefined()) {
@@ -1163,7 +1160,6 @@ JSObject* ModuleObject::moduleSource() const {
   }
   return &value.toObject();
 }
-#endif
 
 void ModuleObject::initAsyncSlots(JSContext* cx, bool hasTopLevelAwait,
                                   Handle<ListObject*> asyncParentModules) {
@@ -1179,7 +1175,6 @@ void ModuleObject::initScriptSlots(HandleScript script) {
   cyclicModuleFields()->scriptSourceObject = script->sourceObject();
 }
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
 void ModuleObject::initModuleSourceSlot(HandleObject moduleSource) {
   initReservedSlot(ModuleSourceSlot, ObjectValue(*moduleSource));
 }
@@ -1187,7 +1182,6 @@ void ModuleObject::initModuleSourceSlot(HandleObject moduleSource) {
 void ModuleObject::initScriptSourceObject(ScriptSourceObject* sso) {
   cyclicModuleFields()->scriptSourceObject = sso;
 }
-#endif
 
 void ModuleObject::setInitialEnvironment(
     Handle<ModuleEnvironmentObject*> initialEnvironment) {
@@ -1619,7 +1613,6 @@ bool ModuleObject::createSyntheticEnvironment(JSContext* cx,
   return true;
 }
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
 /* static */
 bool ModuleObject::createWasmEnvironment(JSContext* cx,
                                          Handle<ModuleObject*> self) {
@@ -1631,7 +1624,6 @@ bool ModuleObject::createWasmEnvironment(JSContext* cx,
   self->setInitialEnvironment(env);
   return true;
 }
-#endif
 
 ///////////////////////////////////////////////////////////////////////////
 // GraphLoadingStateRecordObject
@@ -1848,13 +1840,9 @@ bool ModuleBuilder::buildTables(frontend::StencilModuleMetadata& metadata) {
         }
       } else {
         // All names should have already been marked as used-by-stencil.
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
         bool isSourcePhase =
             metadata.moduleRequests[importEntry->moduleRequest.value()].phase ==
             ImportPhase::Source;
-#else
-        bool isSourcePhase = false;
-#endif
         if (isSourcePhase) {
           // A source-phase import binds the module-source object as a local
           // lexical, so re-exporting it is a local export.
@@ -1952,11 +1940,7 @@ ModuleRequestObject* frontend::StencilModuleMetadata::createModuleRequestObject(
 
   Rooted<ModuleRequestObject*> moduleRequestObject(
       cx,
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
       ModuleRequestObject::create(cx, specifier, attributes, request.phase));
-#else
-      ModuleRequestObject::create(cx, specifier, attributes));
-#endif
   if (!moduleRequestObject) {
     return nullptr;
   }
@@ -2170,11 +2154,8 @@ bool ModuleBuilder::processAttributes(frontend::StencilModuleRequest& request,
 bool ModuleBuilder::processImport(frontend::BinaryNode* importNode) {
   using namespace js::frontend;
 
-  MOZ_ASSERT(importNode->isKind(ParseNodeKind::ImportDecl)
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-             || importNode->isKind(ParseNodeKind::ImportSourceDecl)
-#endif
-  );
+  MOZ_ASSERT(importNode->isKind(ParseNodeKind::ImportDecl) ||
+             importNode->isKind(ParseNodeKind::ImportSourceDecl));
 
   auto* moduleRequest = &importNode->right()->as<BinaryNode>();
   MOZ_ASSERT(moduleRequest->isKind(ParseNodeKind::ImportModuleRequest));
@@ -2184,7 +2165,6 @@ bool ModuleBuilder::processImport(frontend::BinaryNode* importNode) {
 
   auto specifier = moduleSpec->atom();
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   if (importNode->isKind(ParseNodeKind::ImportSourceDecl)) {
     auto* localNameNode = &importNode->left()->as<NameNode>();
     MOZ_ASSERT(localNameNode->isKind(ParseNodeKind::Name));
@@ -2212,7 +2192,6 @@ bool ModuleBuilder::processImport(frontend::BinaryNode* importNode) {
 
     return importEntries_.put(localName, entry);
   }
-#endif
 
   auto* specList = &importNode->left()->as<ListNode>();
   MOZ_ASSERT(specList->isKind(ParseNodeKind::ImportSpecList));
@@ -2567,11 +2546,8 @@ frontend::MaybeModuleRequestIndex ModuleBuilder::appendModuleRequest(
   markUsedByStencil(specifier);
   auto request = frontend::StencilModuleRequest(specifier);
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   request.phase = phase;
-  if (phase == ImportPhase::Evaluation)
-#endif
-  {
+  if (phase == ImportPhase::Evaluation) {
     if (!processAttributes(request, attributeList)) {
       return MaybeModuleRequestIndex();
     }
