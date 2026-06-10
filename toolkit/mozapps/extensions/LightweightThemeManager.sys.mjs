@@ -224,6 +224,8 @@ function loadDetails(details, experiment, baseURI, id, version, logger) {
 export var LightweightThemeManager = {
   aiThemeData: null,
   _aiThemeDataPromise: null,
+  privateThemeData: null,
+  _privateThemeDataPromise: null,
 
   async promiseAIThemeData() {
     if (this.aiThemeData) {
@@ -243,6 +245,26 @@ export var LightweightThemeManager = {
     });
 
     return this._aiThemeDataPromise;
+  },
+
+  async promisePrivateThemeData() {
+    if (this.privateThemeData) {
+      return this.privateThemeData;
+    }
+
+    if (this._privateThemeDataPromise) {
+      return this._privateThemeDataPromise;
+    }
+
+    this._privateThemeDataPromise = this._fetchThemeDataFromBuiltinManifest(
+      "resource://builtin-themes/privatewindow/"
+    ).then(data => {
+      this.privateThemeData = data;
+      this._privateThemeDataPromise = null;
+      return data;
+    });
+
+    return this._privateThemeDataPromise;
   },
   async _fetchThemeDataFromBuiltinManifest(baseURI) {
     let baseURIObj = Services.io.newURI(baseURI);
