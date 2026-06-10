@@ -6,7 +6,6 @@
 #define GECKO_LAYOUT_STYLE_FONTLOADERUTILS_H_
 
 #include "ErrorList.h"
-#include "mozilla/Maybe.h"
 #include "nsContentSecurityManager.h"
 
 class gfxUserFontEntry;
@@ -20,7 +19,6 @@ struct gfxFontFaceSrc;
 namespace mozilla {
 enum CORSMode : uint8_t;
 namespace dom {
-class ClientInfo;
 class Document;
 class WorkerPrivate;
 enum class ReferrerPolicy : uint8_t;
@@ -39,12 +37,14 @@ class FontLoaderUtils {
                                nsIInterfaceRequestor* aCallbacks,
                                bool aIsPreload, int32_t aSupportsPriorityValue);
 
-  static nsresult BuildChannel(
-      nsIChannel** aChannel, nsIURI* aURI, const CORSMode aCORSMode,
-      const dom::ReferrerPolicy& aReferrerPolicy,
-      gfxUserFontEntry* aUserFontEntry, const gfxFontFaceSrc* aFontFaceSrc,
-      dom::WorkerPrivate* aWorkerPrivate, const dom::ClientInfo& aClientInfo,
-      nsILoadGroup* aLoadGroup, nsIInterfaceRequestor* aCallbacks);
+  static nsresult BuildChannel(nsIChannel** aChannel, nsIURI* aURI,
+                               const CORSMode aCORSMode,
+                               const dom::ReferrerPolicy& aReferrerPolicy,
+                               gfxUserFontEntry* aUserFontEntry,
+                               const gfxFontFaceSrc* aFontFaceSrc,
+                               dom::WorkerPrivate* aWorkerPrivate,
+                               nsILoadGroup* aLoadGroup,
+                               nsIInterfaceRequestor* aCallbacks);
 
  private:
   static void BuildChannelFlags(

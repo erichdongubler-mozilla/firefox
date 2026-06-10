@@ -5,10 +5,8 @@
 #include "mozilla/FontLoaderUtils.h"
 
 #include "gfxUserFontSet.h"
-#include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/ReferrerInfo.h"
-#include "mozilla/dom/ServiceWorkerDescriptor.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "nsCOMPtr.h"
 #include "nsIChannel.h"
@@ -147,8 +145,8 @@ nsresult FontLoaderUtils::BuildChannel(
     nsIChannel** aChannel, nsIURI* aURI, const CORSMode aCORSMode,
     const dom::ReferrerPolicy& aReferrerPolicy,
     gfxUserFontEntry* aUserFontEntry, const gfxFontFaceSrc* aFontFaceSrc,
-    dom::WorkerPrivate* aWorkerPrivate, const dom::ClientInfo& aClientInfo,
-    nsILoadGroup* aLoadGroup, nsIInterfaceRequestor* aCallbacks) {
+    dom::WorkerPrivate* aWorkerPrivate, nsILoadGroup* aLoadGroup,
+    nsIInterfaceRequestor* aCallbacks) {
   nsresult rv;
 
   nsIPrincipal* principal =
@@ -166,8 +164,8 @@ nsresult FontLoaderUtils::BuildChannel(
   nsCOMPtr<nsIChannel> channel;
   rv = NS_NewChannelWithTriggeringPrincipal(
       getter_AddRefs(channel), aURI, aWorkerPrivate->GetLoadingPrincipal(),
-      principal, aClientInfo, Maybe<dom::ServiceWorkerDescriptor>(),
-      securityFlags, contentPolicyType, nullptr, nullptr, aLoadGroup);
+      principal, securityFlags, contentPolicyType, nullptr, nullptr,
+      aLoadGroup);
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(channel));
