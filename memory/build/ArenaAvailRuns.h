@@ -21,15 +21,20 @@ struct ArenaAvailTreeTrait {
   }
 };
 
-// Wrap a doubly linked list.
 class ArenaAvailRunsSize {
  private:
-  // The list is ordered by memory availability, runs with dirty pages are
-  // at the front with all other runs inserted at the back.
+  using RunList =
+      mozilla::DoublyLinkedList<arena_chunk_map_t, ArenaAvailTreeTrait>;
+  // The list is ordered by memory availability, runs with with dirty
+  // pages are at the front, then runs with fresh pages and finally runs
+  // with decommitted/madvised pages.  Pages without flags are considered
+  // "fresh".
   //
-  // We could use 2 separate lists but that would require removals to know
-  // which list to remove an item from.
-  mozilla::DoublyLinkedList<arena_chunk_map_t, ArenaAvailTreeTrait> mRuns;
+  // This order is maintained with constant time insertions using
+  // "bookmarks" into the list.  We could use 3 separate lists but that
+  // would require removals to know which list to remove an item from.
+  RunList mRuns;
+  arena_chunk_map_t* mFirstFreshRun = nullptr;
 
   // Try to categorise a run.  This is fast but inaccurate.
   //
@@ -76,12 +81,36 @@ class ArenaAvailRunsSize {
     unsigned bits = CategoriseRun(aElem);
     if (bits & CHUNK_MAP_DIRTY) {
       mRuns.pushFront(aElem);
+#ifndef XP_LINUX
+    } else if (bits & CHUNK_MAP_MADVISED_OR_DECOMMITTED) {
+      mRuns.pushBack(aElem);
+      if (!mFirstFreshRun) {
+        // The run isn't fresh but this is the correct insertion point.
+        mFirstFreshRun = aElem;
+      }
+    } else {
+      // When the list is empty this will insert at the end,  This tested
+      // well on MacOS and Windows, but not on Linux, hence the ifdef above.
+      mRuns.insertBefore(RunList::Iterator(mFirstFreshRun), aElem);
+      mFirstFreshRun = aElem;
+    }
+#else
     } else {
       mRuns.pushBack(aElem);
     }
+#endif
   }
 
-  void Remove(arena_chunk_map_t* aElem) { mRuns.remove(aElem); }
+  void Remove(arena_chunk_map_t* aElem) {
+    MOZ_ASSERT(aElem);
+    if (aElem == mFirstFreshRun) {
+      // Move mFirstFreshRun to the next run, or clear it if this is the
+      // last run.  We can't get mNext directly because it's private,
+      // instead construct then advance an iterator.
+      mFirstFreshRun = &(*(++RunList::Iterator(aElem)));
+    }
+    mRuns.remove(aElem);
+  }
 };
 
 class ArenaAvailRuns {
