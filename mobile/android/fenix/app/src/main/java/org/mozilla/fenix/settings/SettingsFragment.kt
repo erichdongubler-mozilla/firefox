@@ -534,6 +534,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
             }
 
             resources.getString(R.string.pref_key_firefox_labs) -> {
+                SettingsMetrics.firefoxLabs.record()
                 SettingsFragmentDirections.actionSettingsFragmentToFirefoxLabsFragment()
             }
 
