@@ -39,7 +39,11 @@ class ManagePrivacyPreferencesDialogFragment : DialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        val repository = DefaultPrivacyPreferencesRepository(requireComponents.settings)
+        val repository = DefaultPrivacyPreferencesRepository(
+            settings = requireComponents.settings,
+            nimbusSdk = requireComponents.nimbus.sdk,
+            crashReporter = requireComponents.analytics.crashReporter,
+        )
         val store by fragmentStore(
             PrivacyPreferencesState(
                 crashReportingEnabled = repository.getPreference(PreferenceType.CrashReporting),
