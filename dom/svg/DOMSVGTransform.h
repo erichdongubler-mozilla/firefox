@@ -57,12 +57,11 @@ class DOMSVGTransform final : public nsWrapperCache {
   explicit DOMSVGTransform(const SVGTransform& aTransform);
 
   /**
-   * Create an unowned copy of an owned transform. The caller is responsible for
-   * the first AddRef().
+   * Create an unowned copy of an owned transform.
    */
-  DOMSVGTransform* Clone() {
+  already_AddRefed<DOMSVGTransform> Clone() {
     NS_ASSERTION(mList, "unexpected caller");
-    return new DOMSVGTransform(InternalItem());
+    return MakeAndAddRef<DOMSVGTransform>(InternalItem());
   }
 
   bool IsInList() const { return !!mList; }

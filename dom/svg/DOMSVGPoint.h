@@ -147,7 +147,9 @@ class DOMSVGPoint final : public nsWrapperCache {
   JSObject* WrapObject(JSContext* cx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
-  DOMSVGPoint* Copy() { return new DOMSVGPoint(InternalItem()); }
+  already_AddRefed<DOMSVGPoint> Copy() {
+    return MakeAndAddRef<DOMSVGPoint>(InternalItem());
+  }
 
  private:
 #ifdef DEBUG
