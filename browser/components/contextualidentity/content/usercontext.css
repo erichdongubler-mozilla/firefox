@@ -217,4 +217,18 @@
 .menuitem-iconic[data-usercontextid] {
   --menuitem-icon: var(--identity-icon);
   --menuitem-icon-fill: var(--identity-icon-color);
+
+  /* When nova is enabled the container icon sits inside a round tinted
+     background, mirroring the about:preferences#containers list. */
+  @media -moz-pref("browser.nova.enabled") {
+    --menuitem-icon-fill: var(--identity-pill-color);
+
+    > .menu-icon {
+      width: var(--icon-size-large);
+      height: var(--icon-size-large);
+      padding: var(--space-xsmall);
+      border-radius: var(--border-radius-circle);
+      background-color: color-mix(in srgb, var(--identity-pill-color) 15%, transparent);
+    }
+  }
 }
