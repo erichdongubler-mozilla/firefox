@@ -316,8 +316,9 @@ void MFMediaEngineParent::NotifyError(MF_MEDIA_ENGINE_ERR aError,
     ENGINE_MARKER("MFMediaEngineParent,HardwareContextReset");
     sPendingHDCPCheck = nullptr;
     mHardwareResetInProgress = true;
-    if (MFCDMParent* cdmParent =
-            mProxyId ? MFCDMParent::GetCDMById(*mProxyId) : nullptr) {
+    RefPtr<MFCDMParent> cdmParent =
+        mProxyId ? MFCDMParent::GetCDMById(*mProxyId) : nullptr;
+    if (cdmParent) {
       cdmParent->OnHardwareContextReset();
       sPendingHDCPCheck = cdmParent->WaitForHDCPSettleAfterReset();
     }
@@ -623,8 +624,13 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvSetCDMProxyId(
 #ifdef MOZ_WMF_CDM
   LOG("SetCDMProxy, Id={}", aProxyId);
   mProxyId = Some(aProxyId);
-  MFCDMParent* cdmParent = MFCDMParent::GetCDMById(aProxyId);
-  MOZ_DIAGNOSTIC_ASSERT(cdmParent);
+  RefPtr<MFCDMParent> cdmParent = MFCDMParent::GetCDMById(aProxyId);
+  if (!cdmParent) {
+    LOG("No CDM found for Id={}", aProxyId);
+    (void)SendNotifyError(MediaResult(NS_ERROR_DOM_MEDIA_CDM_NOT_FOUND_ERR,
+                                      "No CDM for proxy id"));
+    return IPC_OK();
+  }
   if (IsWMFClearKeySystemAndSupported(cdmParent->GetKeySystem())) {
     LOG("WMFClearKey CDM detected, enabling frame server mode");
     mIsFrameServerMode = true;

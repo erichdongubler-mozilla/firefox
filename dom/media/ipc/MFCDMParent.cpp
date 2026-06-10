@@ -394,16 +394,26 @@ void MFCDMParent::SetWidevineL1Path(const char* aPath) {
                     NS_ConvertUTF16toUTF8(sWidevineL1Path).get());
 }
 
+/* static */
+already_AddRefed<MFCDMParent> MFCDMParent::GetCDMById(uint64_t aId) {
+  StaticMutexAutoLock lock(sRegistryMutex);
+  RefPtr<MFCDMParent> cdm = sRegisteredCDMs.Get(aId);
+  return cdm.forget();
+}
+
 void MFCDMParent::Register() {
+  StaticMutexAutoLock lock(sRegistryMutex);
   MOZ_ASSERT(!sRegisteredCDMs.Contains(this->mId));
   sRegisteredCDMs.InsertOrUpdate(this->mId, this);
   MFCDM_PARENT_LOG("Registered!");
 }
 
 void MFCDMParent::Unregister() {
-  MOZ_ASSERT(sRegisteredCDMs.Contains(this->mId));
-  sRegisteredCDMs.Remove(this->mId);
-  MFCDM_PARENT_LOG("Unregistered!");
+  StaticMutexAutoLock lock(sRegistryMutex);
+  if (sRegisteredCDMs.Contains(this->mId)) {
+    sRegisteredCDMs.Remove(this->mId);
+    MFCDM_PARENT_LOG("Unregistered!");
+  }
 }
 
 MFCDMParent::MFCDMParent(const nsAString& aKeySystem,
@@ -560,6 +570,7 @@ void MFCDMParent::ActorDestroy(ActorDestroyReason aWhy) {
     iter.second->Close(dom::MediaKeySessionClosedReason::Closed_by_application);
   }
   mSessions.clear();
+  Unregister();
 }
 
 MFCDMParent::~MFCDMParent() {
@@ -1545,15 +1556,19 @@ mozilla::ipc::IPCResult MFCDMParent::RecvGetStatusForPolicy(
   }
   using HDCPPromise = MozPromise<nsresult, nsresult, /* IsExclusive = */ true>;
   RefPtr<HDCPPromise::Private> p = new HDCPPromise::Private(__func__);
+  // Capture key system and manager thread by value so this check runs
+  // independently of the MFCDMParent lifetime.
+  nsString keySystem = mKeySystem;
+  RefPtr<nsISerialEventTarget> managerThread = mManagerThread;
   (void)backgroundTaskQueue->Dispatch(NS_NewRunnableFunction(
-      __func__, [self = RefPtr<MFCDMParent>(this), this, aMinHdcpVersion, p] {
+      __func__, [keySystem, managerThread, aMinHdcpVersion, p] {
         auto rv =
-            IsHDCPVersionSupported(mKeySystem, aMinHdcpVersion, mManagerThread);
+            IsHDCPVersionSupported(keySystem, aMinHdcpVersion, managerThread);
         if (IsBeingProfiledOrLogEnabled()) {
           nsPrintfCString msg("HDCP version=%u, support=%s",
                               static_cast<uint8_t>(aMinHdcpVersion),
                               rv == NS_OK ? "true" : "false");
-          MFCDM_PARENT_LOG("{}", msg.get());
+          MFCDM_PARENT_SLOG("{}", msg.get());
           PROFILER_MARKER_TEXT("MFCDMParent::RecvGetStatusForPolicy",
                                MEDIA_PLAYBACK, {}, msg);
         }
