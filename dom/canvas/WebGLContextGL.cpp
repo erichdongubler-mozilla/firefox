@@ -252,7 +252,7 @@ RefPtr<WebGLProgram> WebGLContext::CreateProgram() {
   const FuncScope funcScope(*this, "createProgram");
   if (IsContextLost()) return nullptr;
 
-  return new WebGLProgram(this);
+  return MakeRefPtr<WebGLProgram>(this);
 }
 
 RefPtr<WebGLShader> WebGLContext::CreateShader(GLenum type) {
@@ -264,7 +264,7 @@ RefPtr<WebGLShader> WebGLContext::CreateShader(GLenum type) {
     return nullptr;
   }
 
-  return new WebGLShader(this, type);
+  return MakeRefPtr<WebGLShader>(this, type);
 }
 
 void WebGLContext::CullFace(GLenum face) {
@@ -584,7 +584,7 @@ RefPtr<WebGLTexture> WebGLContext::CreateTexture() {
   GLuint tex = 0;
   gl->fGenTextures(1, &tex);
 
-  return new WebGLTexture(this, tex);
+  return MakeRefPtr<WebGLTexture>(this, tex);
 }
 
 GLenum WebGLContext::GetError() {
@@ -1446,7 +1446,7 @@ RefPtr<WebGLFramebuffer> WebGLContext::CreateFramebuffer() {
   GLuint fbo = 0;
   gl->fGenFramebuffers(1, &fbo);
 
-  return new WebGLFramebuffer(this, fbo);
+  return MakeRefPtr<WebGLFramebuffer>(this, fbo);
 }
 
 RefPtr<WebGLFramebuffer> WebGLContext::CreateOpaqueFramebuffer(
@@ -1464,14 +1464,14 @@ RefPtr<WebGLFramebuffer> WebGLContext::CreateOpaqueFramebuffer(
     return nullptr;
   }
 
-  return new WebGLFramebuffer(this, std::move(fbo));
+  return MakeRefPtr<WebGLFramebuffer>(this, std::move(fbo));
 }
 
 RefPtr<WebGLRenderbuffer> WebGLContext::CreateRenderbuffer() {
   const FuncScope funcScope(*this, "createRenderbuffer");
   if (IsContextLost()) return nullptr;
 
-  return new WebGLRenderbuffer(this);
+  return MakeRefPtr<WebGLRenderbuffer>(this);
 }
 
 void WebGLContext::Viewport(GLint x, GLint y, GLsizei width, GLsizei height) {
