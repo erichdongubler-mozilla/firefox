@@ -21,6 +21,7 @@ export class ChatAssistantLoader extends MozLitElement {
   }
 
   render() {
+    let ariaLabel = "";
     let iconTemplate;
     let textTemplate = nothing;
 
@@ -48,6 +49,7 @@ export class ChatAssistantLoader extends MozLitElement {
         `;
         break;
       default:
+        ariaLabel = "Loading assistant response";
         iconTemplate = html`
           <span class="chat-assistant-loader__spinner"></span>
         `;
@@ -61,10 +63,7 @@ export class ChatAssistantLoader extends MozLitElement {
       <div
         class="chat-assistant-loader"
         role="status"
-        data-l10n-id=${this.mode === "default"
-          ? "smartwindow-loading-assistant-response"
-          : nothing}
-        data-l10n-attrs=${this.mode === "default" ? "aria-label" : nothing}
+        aria-label=${ariaLabel || nothing}
       >
         ${iconTemplate}${textTemplate}
       </div>
