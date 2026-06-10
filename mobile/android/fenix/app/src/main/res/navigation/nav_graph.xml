@@ -59,6 +59,11 @@
       app:launchSingleTop="true" />
 
     <action
+      android:id="@+id/action_global_ip_protection_unavailable_dialog"
+      app:destination="@+id/ipProtectionUnavailableDialogFragment"
+      app:launchSingleTop="true" />
+
+    <action
         android:id="@+id/action_global_recently_closed"
         app:destination="@id/recentlyClosedFragment" />
 
@@ -362,6 +367,10 @@
             app:argType="org.mozilla.fenix.ipprotection.store.Surface"
             app:nullable="false" />
     </dialog>
+
+    <dialog
+      android:id="@+id/ipProtectionUnavailableDialogFragment"
+      android:name="org.mozilla.fenix.ipprotection.ui.IPProtectionUnavailableDialogFragment" />
 
     <fragment
         android:id="@+id/recentlyClosedFragment"

@@ -4835,7 +4835,7 @@ who = [
     "Jim Blandy <jimb@red-bean.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "29.0.0 -> 29.0.0@git:e4e2c451d2d4f7585820260a728f7a14eacdf415"
+delta = "29.0.0 -> 29.0.0@git:6e8d0bd149fc6de7799755a4b9ee1ecd5fa63cb3"
 importable = false
 
 [[audits.net2]]
@@ -7691,7 +7691,7 @@ who = [
     "Jim Blandy <jimb@red-bean.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "29.0.0 -> 29.0.0@git:e4e2c451d2d4f7585820260a728f7a14eacdf415"
+delta = "29.0.0 -> 29.0.0@git:6e8d0bd149fc6de7799755a4b9ee1ecd5fa63cb3"
 importable = false
 
 [[audits.wgpu-core-deps-apple]]
@@ -7741,7 +7741,7 @@ who = [
     "Jim Blandy <jimb@red-bean.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "29.0.0 -> 29.0.0@git:e4e2c451d2d4f7585820260a728f7a14eacdf415"
+delta = "29.0.0 -> 29.0.0@git:6e8d0bd149fc6de7799755a4b9ee1ecd5fa63cb3"
 importable = false
 
 [[audits.wgpu-core-deps-windows-linux-android]]
@@ -7791,7 +7791,7 @@ who = [
     "Jim Blandy <jimb@red-bean.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "29.0.0 -> 29.0.0@git:e4e2c451d2d4f7585820260a728f7a14eacdf415"
+delta = "29.0.0 -> 29.0.0@git:6e8d0bd149fc6de7799755a4b9ee1ecd5fa63cb3"
 importable = false
 
 [[audits.wgpu-hal]]
@@ -7919,7 +7919,7 @@ who = [
     "Jim Blandy <jimb@red-bean.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "29.0.0 -> 29.0.0@git:e4e2c451d2d4f7585820260a728f7a14eacdf415"
+delta = "29.0.0 -> 29.0.0@git:6e8d0bd149fc6de7799755a4b9ee1ecd5fa63cb3"
 importable = false
 
 [[audits.wgpu-naga-bridge]]
@@ -7939,7 +7939,7 @@ who = [
     "Jim Blandy <jimb@red-bean.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "29.0.0 -> 29.0.0@git:e4e2c451d2d4f7585820260a728f7a14eacdf415"
+delta = "29.0.0 -> 29.0.0@git:6e8d0bd149fc6de7799755a4b9ee1ecd5fa63cb3"
 importable = false
 
 [[audits.wgpu-types]]
@@ -8062,7 +8062,7 @@ who = [
     "Jim Blandy <jimb@red-bean.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "29.0.0 -> 29.0.0@git:e4e2c451d2d4f7585820260a728f7a14eacdf415"
+delta = "29.0.0 -> 29.0.0@git:6e8d0bd149fc6de7799755a4b9ee1ecd5fa63cb3"
 importable = false
 
 [[audits.whatsys]]

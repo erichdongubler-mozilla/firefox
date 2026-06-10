@@ -118,6 +118,16 @@ function deep(n) {
 function caller() { return deep(5); }
 assertEq(countFrames(caller()), 1);
 
+// With stackTraceLimit=1 and a constructorOpt that skips the topmost
+// JS frame, we must still capture one frame (the global frame).
+Error.stackTraceLimit = 1;
+function smallLimitCaller() {
+    const target = {};
+    Error.captureStackTrace(target, smallLimitCaller);
+    return target;
+}
+assertEq(countFrames(smallLimitCaller()), 1);
+
 delete Error.stackTraceLimit;
 assertEq("stackTraceLimit" in Error, false);
 try { rec(0); } catch (e) { assertEq(countFrames(e), 0); }

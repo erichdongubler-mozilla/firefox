@@ -346,6 +346,16 @@ export const AIWindow = {
     );
   },
 
+  shouldOpenAsSmartWindow() {
+    if (
+      !this.isDefaultWindow ||
+      lazy.PrivateBrowsingUtils.permanentPrivateBrowsing
+    ) {
+      return false;
+    }
+    return true;
+  },
+
   /**
    * Registered under the `browser-first-window-ready` category, so it runs
    * exactly once per session after the first browser window finishes loading.
@@ -356,14 +366,23 @@ export const AIWindow = {
    */
   async onFirstWindowReady(win) {
     if (
-      !this.isDefaultWindow ||
+      !this.shouldOpenAsSmartWindow() ||
       lazy.PrivateBrowsingUtils.isWindowPrivate(win) ||
-      this.isAIWindowActive(win) ||
       lazy.SessionStartup.willRestore()
     ) {
       return;
     }
-
+    if (this.isAIWindowActive(win)) {
+      // Window already opened as Smart via the BrowserContentHandler
+      // startup gate, which uses ToS consentTime as a synchronous proxy for
+      // "previously signed in". Verify the actual FxA state now and prompt
+      // sign-in if the user has since logged out — without this, signed-out
+      // users would get a Smart Window with broken auth-gated features.
+      await lazy.AIWindowAccountAuth.ensureAIWindowAccess(
+        win.gBrowser.selectedBrowser
+      );
+      return;
+    }
     await this._authorizeAndToggleWindow(win, "startup");
   },
 
@@ -407,10 +426,17 @@ export const AIWindow = {
         Ci.nsISupportsString
       );
       if (!restoreSessionURL) {
-        initialURL = lazy.hasFirstrunCompleted ? AIWINDOW_URL : FIRSTRUN_URL;
+        initialURL = this.initialStartupURL;
       }
       aiWindowURI.data = initialURL;
       args.appendElement(aiWindowURI);
+    } else if (!restoreSessionURL) {
+      // args was already populated by the caller (e.g. BrowserContentHandler
+      // at startup). Extract the URL so willOpenImmersive can match it.
+      try {
+        const firstArg = args.queryElementAt(0, Ci.nsISupportsString);
+        initialURL = firstArg.data.split("|")[0] ?? "";
+      } catch (e) {}
     }
 
     let propBag;
@@ -591,6 +617,17 @@ export const AIWindow = {
   },
 
   /**
+   * The URL to load when opening an AI Window from scratch — either the
+   * firstrun page (if the user hasn't been through it yet) or the regular
+   * Smart Window new tab.
+   *
+   * @returns {string}
+   */
+  get initialStartupURL() {
+    return lazy.hasFirstrunCompleted ? AIWINDOW_URL : FIRSTRUN_URL;
+  },
+
+  /**
    * Performs a search in the default search engine with
    * passed query in the current tab.
    *
@@ -618,7 +655,9 @@ export const AIWindow = {
       engine,
       searchUrlType: null,
       sapSource: "smartwindow_assistant",
+      avoidBrowserFocus: true,
     });
+    await lazy.AIWindowUI.focusSidebar(window);
   },
 
   /**
@@ -632,6 +671,10 @@ export const AIWindow = {
     return lazy.AIWindowUI.moveFullPageToSidebar(win, tab);
   },
 
+  focusSidebar(win) {
+    return lazy.AIWindowUI.focusSidebar(win);
+  },
+
   /**
    * Opens the sidebar with the given conversation and continues streaming
    * the model response after a tool result.
@@ -641,6 +684,7 @@ export const AIWindow = {
    */
   openSidebarAndContinue(win, conversation) {
     lazy.AIWindowUI.openSidebar(win, conversation);
+    lazy.AIWindowUI.focusSidebar(win);
 
     try {
       const sidebar = win.document.getElementById("ai-window-box");

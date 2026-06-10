@@ -23,22 +23,10 @@ const CONTEXTUAL_IDENTITY_ENABLED_PREF = "privacy.userContext.enabled";
 // the pref.
 export const CONTAINER_COLORS = [
   {
-    name: "blue",
-    code: "#37adff",
-    codeNova: "#7bb2ff",
-    l10nId: "user-context-color-blue",
-  },
-  {
-    name: "cyan",
-    code: "#00c79a",
-    codeNova: "#4cc4e1",
-    l10nId: "user-context-color-cyan",
-  },
-  {
-    name: "green",
-    code: "#51cd00",
-    codeNova: "#4acca6",
-    l10nId: "user-context-color-green",
+    name: "gray",
+    code: "#7c7c7d",
+    codeNova: "#e3e2e7",
+    l10nId: "user-context-color-gray",
   },
   {
     name: "yellow",
@@ -77,10 +65,22 @@ export const CONTAINER_COLORS = [
     l10nId: "user-context-color-violet",
   },
   {
-    name: "gray",
-    code: "#7c7c7d",
-    codeNova: "#e3e2e7",
-    l10nId: "user-context-color-gray",
+    name: "blue",
+    code: "#37adff",
+    codeNova: "#7bb2ff",
+    l10nId: "user-context-color-blue",
+  },
+  {
+    name: "cyan",
+    code: "#00c79a",
+    codeNova: "#4cc4e1",
+    l10nId: "user-context-color-cyan",
+  },
+  {
+    name: "green",
+    code: "#51cd00",
+    codeNova: "#4acca6",
+    l10nId: "user-context-color-green",
   },
 ];
 

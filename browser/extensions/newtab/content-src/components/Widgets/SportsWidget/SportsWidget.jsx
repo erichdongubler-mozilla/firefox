@@ -1451,13 +1451,11 @@ function SportsMatchesView({
         {showResultsList ? (
           <>
             {hasFollowedTeams && (
-              /** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */
               <moz-toggle
                 className="sports-followed-only-toggle"
                 pressed={resultsFollowedOnly || null}
                 data-l10n-id="newtab-sports-widget-followed-only-toggle"
                 ontoggle={e => setFollowedOnly("results", !!e.target.pressed)}
-                onToggle={e => setFollowedOnly("results", !!e.target.pressed)}
               ></moz-toggle>
             )}
             <div className="sports-matches-list">
@@ -1582,13 +1580,11 @@ function SportsMatchesView({
         {showUpcomingList ? (
           <>
             {hasFollowedTeams && (
-              /** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */
               <moz-toggle
                 className="sports-followed-only-toggle"
                 pressed={upcomingFollowedOnly || null}
                 data-l10n-id="newtab-sports-widget-followed-only-toggle"
                 ontoggle={e => setFollowedOnly("upcoming", !!e.target.pressed)}
-                onToggle={e => setFollowedOnly("upcoming", !!e.target.pressed)}
               ></moz-toggle>
             )}
             <div className="sports-matches-list">

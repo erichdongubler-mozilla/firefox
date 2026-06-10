@@ -7,7 +7,6 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   accessibility:
     "chrome://remote/content/shared/webdriver/Accessibility.sys.mjs",
-  AnimationFramePromise: "chrome://remote/content/shared/Sync.sys.mjs",
   assertTargetInViewPort:
     "chrome://remote/content/shared/webdriver/Actions.sys.mjs",
   atom: "chrome://remote/content/marionette/atom.sys.mjs",
@@ -133,9 +132,9 @@ export class MarionetteCommandsChild extends JSWindowActorChild {
     // transactions should not live longer than a single action chain.
     await ChromeUtils.endWheelTransaction(this.contentWindow);
 
-    // Wait for the next animation frame to make sure the page's content
-    // was updated.
-    await lazy.AnimationFramePromise(this.contentWindow);
+    // Wait until the main thread has processed all already queued-up
+    // runnables to ensure that dispatched input events have been handled.
+    await new Promise(resolve => lazy.executeSoon(resolve));
   }
 
   #getClientRects(options, _context) {

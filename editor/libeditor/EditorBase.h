@@ -242,6 +242,9 @@ class EditorBase : public nsIEditor,
    */
   Element* GetExposedRoot() const;
 
+  /** Get EditContext used for this editor. */
+  virtual dom::EditContext* GetEditContext() const { return nullptr; }
+
   /**
    * Set or unset TextInputListener.  If setting non-nullptr when the editor
    * already has a TextInputListener, this will crash in debug build.
@@ -2657,8 +2660,6 @@ class EditorBase : public nsIEditor,
   };
   MOZ_CAN_RUN_SCRIPT void NotifyEditorObservers(
       NotificationForEditorObservers aNotification);
-
-  virtual dom::EditContext* GetEditContext() const { return nullptr; }
 
   /**
    * HowToHandleCollapsedRange indicates how collapsed range should be treated.

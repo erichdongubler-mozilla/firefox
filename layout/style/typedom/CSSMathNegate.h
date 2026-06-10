@@ -21,6 +21,12 @@ class nsISupports;
 namespace mozilla {
 
 struct CSSPropertyId;
+template <class T>
+class Maybe;
+template <typename T>
+struct StyleBox;
+struct StyleNumericValue;
+using StyleMathNegate = StyleBox<StyleNumericValue>;
 
 namespace dom {
 
@@ -29,6 +35,9 @@ class GlobalObject;
 class CSSMathNegate final : public CSSMathValue {
  public:
   CSSMathNegate(nsCOMPtr<nsISupports> aParent, RefPtr<CSSNumericValue> aValue);
+
+  static RefPtr<CSSMathNegate> Create(nsCOMPtr<nsISupports> aParent,
+                                      const StyleMathNegate& aMathNegate);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CSSMathNegate, CSSMathValue)
@@ -49,6 +58,10 @@ class CSSMathNegate final : public CSSMathValue {
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                              const SerializationContext& aContext,
                              nsACString& aDest) const;
+
+  // TODO: This can be changed to return StyleMathNegate directly once the
+  // Unitialized type in CSSMathValue is removed.
+  Maybe<StyleMathNegate> ToStyleMathNegate() const;
 
  private:
   virtual ~CSSMathNegate() = default;

@@ -119,6 +119,19 @@ pub struct UnitValue {
 /// a `NumericValue`, allowing nested sums if needed.
 pub type MathSum = ThinVec<NumericValue>;
 
+/// A negated numeric value.
+///
+/// This corresponds to `CSSMathNegate` in the Typed OM specification. A negate
+/// expression represents constructs such as `-10px` or `-(10px + 2em)`.
+pub type MathNegate = Box<NumericValue>;
+
+/// An inverted numeric value.
+///
+/// This corresponds to `CSSMathInvert` in the Typed OM specification. An
+/// invert expression represents constructs such as `1 / 2`, `1 / 10px`, or
+/// more generally the reciprocal of another numeric value.
+pub type MathInvert = Box<NumericValue>;
+
 /// A minimum expression over numeric values.
 ///
 /// This corresponds to `CSSMathMin` in the Typed OM specification. A minimum
@@ -153,6 +166,16 @@ pub enum MathValue {
     ///
     /// This corresponds to `CSSMathSum`.
     Sum(MathSum),
+
+    /// A negated numeric value.
+    ///
+    /// This corresponds to `CSSMathNegate`.
+    Negate(MathNegate),
+
+    /// An inverted numeric value.
+    ///
+    /// This corresponds to `CSSMathInvert`.
+    Invert(MathInvert),
 
     /// A minimum expression over numeric values.
     ///

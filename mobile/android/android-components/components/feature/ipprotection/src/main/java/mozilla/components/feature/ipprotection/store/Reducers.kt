@@ -98,13 +98,14 @@ internal fun iPProtectionReducer(
                         state.copy(activate = true)
                     }
 
-                    Authorized.Active -> {
+                    Authorized.ConnectionError,
+                    Authorized.Active,
+                    -> {
                         state.copy(activate = false)
                     }
 
                     Authorized.Activating,
                     Authorized.DataLimitReached,
-                    Authorized.ConnectionError,
                     Uninitialized,
                         -> state
                 }

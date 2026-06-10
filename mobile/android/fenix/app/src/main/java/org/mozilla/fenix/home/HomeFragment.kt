@@ -59,6 +59,7 @@ import mozilla.components.concept.sync.AccountObserver
 import mozilla.components.concept.sync.AuthType
 import mozilla.components.concept.sync.OAuthAccount
 import mozilla.components.feature.accounts.push.SendTabUseCases
+import mozilla.components.feature.ipprotection.IPProtectionWarningBinding
 import mozilla.components.feature.tab.collections.TabCollection
 import mozilla.components.feature.top.sites.presenter.DefaultTopSitesPresenter
 import mozilla.components.lib.state.ext.flow
@@ -258,6 +259,7 @@ class HomeFragment : Fragment() {
     private val showReviewPromptBinding = ViewBoundFeatureWrapper<ShowReviewPromptBinding>()
     private val topSitesBinding = ViewBoundFeatureWrapper<TopSitesBinding>()
     private val trackersBlockedFeature = ViewBoundFeatureWrapper<TrackersBlockedFeature>()
+    private val ipProtectionWarningBinding = ViewBoundFeatureWrapper<IPProtectionWarningBinding>()
 
     private val homepageEdgeToEdgeFeature = ViewBoundFeatureWrapper<HomepageEdgeToEdgeFeature>()
     private var qrScanFenixFeature: ViewBoundFeatureWrapper<QrScanFenixFeature>? =
@@ -519,6 +521,7 @@ class HomeFragment : Fragment() {
         initReviewPromptBinding(view = view)
         initTabsCleanupFeature(view = view)
         initSnackbarBinding(view = view)
+        initIpProtectionWarningBinding(view = view)
 
         privacyNoticeBannerStore = PrivacyNoticeBannerStore(
             initialState = PrivacyNoticeBannerState(
@@ -1205,6 +1208,21 @@ class HomeFragment : Fragment() {
                 tabsUseCases = requireComponents.useCases.tabsUseCases,
                 sendTabUseCases = SendTabUseCases(requireComponents.backgroundServices.accountManager),
                 customTabSessionId = null,
+            ),
+            owner = this,
+            view = view,
+        )
+    }
+
+    private fun initIpProtectionWarningBinding(view: View) {
+        ipProtectionWarningBinding.set(
+            feature = IPProtectionWarningBinding(
+                store = requireComponents.ipProtection.store,
+                proxyUnavailable = {
+                    findNavController().navigate(
+                        HomeFragmentDirections.actionGlobalIpProtectionUnavailableDialog(),
+                    )
+                },
             ),
             owner = this,
             view = view,

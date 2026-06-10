@@ -1137,6 +1137,8 @@ if CONFIG["OS_TARGET"] == "Android":
         "media/IOMX.h",
         "media/MediaProfiles.h",
         "media/MediaRecorderBase.h",
+        "media/NdkImage.h",
+        "media/NdkImageReader.h",
         "media/NdkMediaCodec.h",
         "media/NdkMediaCrypto.h",
         "media/NdkMediaDrm.h",

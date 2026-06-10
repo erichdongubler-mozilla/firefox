@@ -1171,14 +1171,6 @@ browsertime-webcodecs:
                             - [ve-vp8-q-i420, ve-v8q420]
                             - [ve-vp9-rt-i420, ve-v9rt420]
                             - [ve-vp9-q-i420, ve-v9q420]
-                            - [ve-av1-rt-cam, ve-a1rtcam]
-                            - [ve-av1-q-cam, ve-a1qcam]
-                            - [ve-h264-rt-sd-cam, ve-24rscam]
-                            - [ve-h264-q-sd-cam, ve-24qscam]
-                            - [ve-vp8-rt-cam, ve-v8rtcam]
-                            - [ve-vp8-q-cam, ve-v8qcam]
-                            - [ve-vp9-rt-cam, ve-v9rtcam]
-                            - [ve-vp9-q-cam, ve-v9qcam]
                         custom-car:
                             - ve-av1-rt
                             - ve-av1-q
@@ -1194,14 +1186,6 @@ browsertime-webcodecs:
                             - [ve-vp8-q-i420, ve-v8q420]
                             - [ve-vp9-rt-i420, ve-v9rt420]
                             - [ve-vp9-q-i420, ve-v9q420]
-                            - [ve-av1-rt-cam, ve-a1rtcam]
-                            - [ve-av1-q-cam, ve-a1qcam]
-                            - [ve-h264-rt-sd-cam, ve-24rscam]
-                            - [ve-h264-q-sd-cam, ve-24qscam]
-                            - [ve-vp8-rt-cam, ve-v8rtcam]
-                            - [ve-vp8-q-cam, ve-v8qcam]
-                            - [ve-vp9-rt-cam, ve-v9rtcam]
-                            - [ve-vp9-q-cam, ve-v9qcam]
                         default:
                             - ve-av1-rt
                             - ve-av1-q

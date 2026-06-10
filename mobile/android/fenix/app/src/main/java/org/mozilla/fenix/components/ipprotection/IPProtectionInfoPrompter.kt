@@ -8,6 +8,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import mozilla.components.feature.ipprotection.IPProtectionWarningBinding
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.ipprotection.store.state.Authorized
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
@@ -49,19 +50,14 @@ class IPProtectionInfoPrompter(
         }
     }
 
+    /**
+     * Simplifying it for now - the proxy error will be handled by [IPProtectionWarningBinding].
+     * In the future, the Prompter should also show a snackbar when proxy activation fails due to no internet.
+     * Tracked in https://bugzilla.mozilla.org/show_bug.cgi?id=2044623
+     */
     private fun processStateForSnackbar(state: IPProtectionState) {
-        if (state.eligibilityStatus == EligibilityStatus.Eligible) {
-            when (state.proxyStatus) {
-                Authorized.DataLimitReached -> {
-                    appStore.dispatch(AppAction.SnackbarAction.ShowSnackbar(errorMessages.dataLimitReached))
-                }
-                Authorized.ConnectionError -> {
-                    appStore.dispatch(AppAction.SnackbarAction.ShowSnackbar(errorMessages.connectionError))
-                }
-                else -> {
-                    // no-op
-                }
-            }
+        if (state.eligibilityStatus == EligibilityStatus.Eligible && state.proxyStatus == Authorized.DataLimitReached) {
+            appStore.dispatch(AppAction.SnackbarAction.ShowSnackbar(errorMessages.dataLimitReached))
         }
     }
 }
