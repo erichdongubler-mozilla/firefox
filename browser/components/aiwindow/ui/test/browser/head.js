@@ -552,6 +552,38 @@ async function selectExplicitSmartbarAction(browser, action) {
 }
 
 /**
+ * Select the first search engine from the smartbar CTA "Search with…" submenu.
+ *
+ * @param {MozBrowser} browser - The browser element
+ */
+async function selectSmartbarSearchEngine(browser) {
+  const inputCta = BrowserTestUtils.querySelectorDeep(
+    browser.contentDocument,
+    "input-cta"
+  );
+  const mozButton = BrowserTestUtils.querySelectorDeep(inputCta, "moz-button");
+
+  const chevronButton = await BrowserTestUtils.waitForCondition(() =>
+    mozButton.shadowRoot.querySelector("#chevron-button")
+  );
+  const [mainPanel, searchSubpanel] =
+    inputCta.shadowRoot.querySelectorAll("panel-list");
+
+  const mainShown = BrowserTestUtils.waitForEvent(mainPanel, "shown");
+  chevronButton.click();
+  await mainShown;
+
+  const subpanelShown = BrowserTestUtils.waitForEvent(searchSubpanel, "shown");
+  mainPanel.querySelector('panel-item[icon="search-with"]').click();
+  await subpanelShown;
+
+  const engineItem = await BrowserTestUtils.waitForCondition(() =>
+    searchSubpanel.querySelector('panel-item[icon="engine"]')
+  );
+  engineItem.click();
+}
+
+/**
  * Wait for the smartbar action to be set.
  *
  * @param {MozBrowser} browser - The browser element
