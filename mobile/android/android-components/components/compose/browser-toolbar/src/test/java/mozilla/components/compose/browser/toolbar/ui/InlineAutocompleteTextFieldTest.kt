@@ -7,7 +7,10 @@ package mozilla.components.compose.browser.toolbar.ui
 import android.view.inputmethod.EditorInfo
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.SoftwareKeyboardController
+import androidx.compose.ui.platform.TextToolbar
+import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertTextEquals
@@ -23,10 +26,12 @@ import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags
 import mozilla.components.concept.toolbar.AutocompleteResult
 import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
+import mozilla.components.support.test.whenever
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.atLeastOnce
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.robolectric.RobolectricTestRunner
@@ -175,6 +180,28 @@ class InlineAutocompleteTextFieldTest {
         composeTestRule.onNodeWithText("mo").assertIsDisplayed()
         composeTestRule.onNodeWithText("moz").assertDoesNotExist()
         verify(onUrlEdit).invoke(BrowserToolbarQuery(previous = "moz", current = "mo"))
+    }
+
+    @Test
+    fun `GIVEN the contextual menu is shown WHEN the query is edited THEN hide the contextual menu`() {
+        val contextualMenuToolbar: TextToolbar = mock()
+        whenever(contextualMenuToolbar.status).thenReturn(TextToolbarStatus.Shown)
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalTextToolbar provides contextualMenuToolbar) {
+                InlineAutocompleteTextField(
+                    query = "moz",
+                    hint = "",
+                    suggestion = null,
+                    showQueryAsPreselected = false,
+                    usePrivateModeQueries = false,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).performTextInput("a")
+        composeTestRule.waitForIdle()
+
+        verify(contextualMenuToolbar, atLeastOnce()).hide()
     }
 
     @Test
