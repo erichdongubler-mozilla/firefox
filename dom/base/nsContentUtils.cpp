@@ -12955,7 +12955,8 @@ Maybe<int32_t> nsContentUtils::GetIndexInParent(const nsINode* aParent,
   }
 
   // Handle pseudo-element and anonymous node ordering:
-  //   ::marker -> ::before -> regular siblings -> all other NAC -> ::after
+  //   ::backdrop -> ::marker -> ::checkmark -> ::before -> regular siblings ->
+  //   all other NAC -> ::after -> ::picker-icon
   // This matches the order of AllChildrenIterator.
   if (NS_WARN_IF(!aNode->IsRootOfNativeAnonymousSubtree())) {
     // If aNode is mid unbind, we can reach this.
@@ -12968,10 +12969,14 @@ Maybe<int32_t> nsContentUtils::GetIndexInParent(const nsINode* aParent,
   }
 
   if (aNode->IsGeneratedContentContainerForBackdrop()) {
-    return Some(-4);
+    return Some(-5);
   }
 
   if (aNode->IsGeneratedContentContainerForMarker()) {
+    return Some(-4);
+  }
+
+  if (aNode->IsGeneratedContentContainerForCheckmark()) {
     return Some(-3);
   }
 
@@ -12993,6 +12998,11 @@ Maybe<int32_t> nsContentUtils::GetIndexInParent(const nsINode* aParent,
   if (aNode->IsGeneratedContentContainerForAfter()) {
     return Some(int32_t(siblingCount + anonKids.Length()));
   }
+
+  if (aNode->IsGeneratedContentContainerForPickerIcon()) {
+    return Some(int32_t(siblingCount + anonKids.Length()) + 1);
+  }
+
   auto index = anonKids.IndexOf(aNode);
   if (index == anonKids.NoIndex) {
     MOZ_ASSERT_UNREACHABLE(
