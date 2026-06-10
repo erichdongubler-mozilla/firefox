@@ -145,7 +145,7 @@ class SVGAnimatedTransformList {
     nsresult SetAnimValue(const SMILValue& aNewAnimValue) override;
 
    protected:
-    static void ParseValue(const nsAString& aSpec, const nsAtom* aTransformType,
+    static void ParseValue(const nsAString& aSpec, uint16_t aTransformType,
                            SMILValue& aResult);
     static int32_t ParseParameterList(
         const nsAString& aSpec, SVGTransformSMILData::SimpleParams& aParams);
