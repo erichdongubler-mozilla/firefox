@@ -1256,15 +1256,11 @@ void* GetPromiseResults(Instance* instance, void* promiseRef,
   JSContext* cx = instance->cx();
 
   JSObject* promiseObj = &AnyRef::fromCompiledCode(promiseRef).toJSObject();
-  if (IsWrapper(promiseObj)) {
-    promiseObj = UncheckedUnwrap(promiseObj);
-    if (JS_IsDeadWrapper(promiseObj)) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_DEAD_OBJECT);
-      return nullptr;
-    }
+  Rooted<PromiseObject*> promise(
+      cx, UnwrapAndDowncastObject<PromiseObject>(cx, promiseObj));
+  if (!promise) {
+    return nullptr;
   }
-  Rooted<PromiseObject*> promise(cx, &promiseObj->as<PromiseObject>());
   bool promiseRejected = promise->state() == JS::PromiseState::Rejected;
   RootedValue promiseReasonOrValue(cx, promise->valueOrReason());
   if (!cx->compartment()->wrap(cx, &promiseReasonOrValue)) {
@@ -1345,12 +1341,10 @@ int32_t AddPromiseReactions(Instance* instance, void* promiseRef, void* contRef,
   JSContext* cx = instance->cx();
   RootedObject promiseObject(
       cx, &AnyRef::fromCompiledCode(promiseRef).toJSObject());
-  if (IsWrapper(promiseObject)) {
-    if (JS_IsDeadWrapper(UncheckedUnwrap(promiseObject))) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_DEAD_OBJECT);
-      return -1;
-    }
+  if (IsProxy(promiseObject) &&
+      JS_IsDeadWrapper(UncheckedUnwrap(promiseObject))) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEAD_OBJECT);
+    return -1;
   }
   Rooted<ContObject*> contObject(
       cx, &AnyRef::fromCompiledCode(contRef).toJSObject().as<ContObject>());
