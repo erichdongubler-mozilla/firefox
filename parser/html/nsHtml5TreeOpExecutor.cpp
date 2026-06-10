@@ -526,7 +526,7 @@ void nsHtml5TreeOpExecutor::ContinueInterruptedParsingAsync() {
     gBackgroundFlushRunner = IdleTaskRunner::Create(
         &BackgroundFlushCallback,
         "nsHtml5TreeOpExecutor::BackgroundFlushCallback"_ns,
-        0,  // Start looking for idle time immediately.
+        nullptr,  // Start looking for idle time immediately.
         TimeDuration::FromMilliseconds(250),  // The hard deadline.
         TimeDuration::FromMicroseconds(
             StaticPrefs::content_sink_interactive_parse_time()),  // Required
