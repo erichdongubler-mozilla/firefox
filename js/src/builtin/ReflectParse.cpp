@@ -515,10 +515,12 @@ class NodeBuilder {
   [[nodiscard]] bool importDeclaration(NodeVector& elts, HandleValue moduleSpec,
                                        TokenPos* pos, MutableHandleValue dst);
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   [[nodiscard]] bool importSourceDeclaration(HandleValue bindingName,
                                              HandleValue moduleSpec,
                                              TokenPos* pos,
                                              MutableHandleValue dst);
+#endif
 
   [[nodiscard]] bool importSpecifier(HandleValue importName,
                                      HandleValue bindingName, TokenPos* pos,
@@ -1175,6 +1177,7 @@ bool NodeBuilder::importDeclaration(NodeVector& elts, HandleValue moduleRequest,
                  moduleRequest, dst);
 }
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
 bool NodeBuilder::importSourceDeclaration(HandleValue bindingName,
                                           HandleValue moduleRequest,
                                           TokenPos* pos,
@@ -1182,6 +1185,7 @@ bool NodeBuilder::importSourceDeclaration(HandleValue bindingName,
   return newNode(AST_IMPORT_SOURCE_DECL, pos, "binding", bindingName,
                  "moduleRequest", moduleRequest, dst);
 }
+#endif
 
 bool NodeBuilder::importSpecifier(HandleValue importName,
                                   HandleValue bindingName, TokenPos* pos,
@@ -1456,7 +1460,9 @@ class ASTSerializer {
                            MutableHandleValue dst);
   bool variableDeclarator(ParseNode* pn, MutableHandleValue dst);
   bool importDeclaration(BinaryNode* importNode, MutableHandleValue dst);
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   bool importSourceDeclaration(BinaryNode* importNode, MutableHandleValue dst);
+#endif
   bool importSpecifier(BinaryNode* importSpec, MutableHandleValue dst);
   bool importNamespaceSpecifier(UnaryNode* importSpec, MutableHandleValue dst);
   bool exportDeclaration(ParseNode* exportNode, MutableHandleValue dst);
@@ -1901,6 +1907,7 @@ bool ASTSerializer::importDeclaration(BinaryNode* importNode,
                                    &importNode->pn_pos, dst);
 }
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
 bool ASTSerializer::importSourceDeclaration(BinaryNode* importNode,
                                             MutableHandleValue dst) {
   MOZ_ASSERT(importNode->isKind(ParseNodeKind::ImportSourceDecl));
@@ -1937,6 +1944,7 @@ bool ASTSerializer::importSourceDeclaration(BinaryNode* importNode,
   return builder.importSourceDeclaration(bindingNameValue, moduleRequestValue,
                                          &importNode->pn_pos, dst);
 }
+#endif
 
 bool ASTSerializer::importSpecifier(BinaryNode* importSpec,
                                     MutableHandleValue dst) {
@@ -2313,8 +2321,10 @@ bool ASTSerializer::statement(ParseNode* pn, MutableHandleValue dst) {
     case ParseNodeKind::ImportDecl:
       return importDeclaration(&pn->as<BinaryNode>(), dst);
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     case ParseNodeKind::ImportSourceDecl:
       return importSourceDeclaration(&pn->as<BinaryNode>(), dst);
+#endif
 
     case ParseNodeKind::ExportStmt:
     case ParseNodeKind::ExportDefaultStmt:
@@ -3278,7 +3288,9 @@ bool ASTSerializer::expression(ParseNode* pn, MutableHandleValue dst) {
              builder.metaProperty(firstIdent, secondIdent, &node->pn_pos, dst);
     }
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     case ParseNodeKind::CallImportSourceExpr:
+#endif
     case ParseNodeKind::CallImportExpr: {
       BinaryNode* node = &pn->as<BinaryNode>();
       ParseNode* identNode = node->left();
@@ -3303,12 +3315,15 @@ bool ASTSerializer::expression(ParseNode* pn, MutableHandleValue dst) {
         return false;
       }
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
       if (pn->isKind(ParseNodeKind::CallImportSourceExpr)) {
         Rooted<JSAtom*> sourceStr(cx, cx->names().source);
         if (!identifier(sourceStr, &identNode->pn_pos, &property)) {
           return false;
         }
-      } else {
+      } else
+#endif
+      {
         property = NullValue();
       }
 
@@ -3333,7 +3348,9 @@ bool ASTSerializer::expression(ParseNode* pn, MutableHandleValue dst) {
       }
 
       bool isImportSource = false;
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
       isImportSource = pn->isKind(ParseNodeKind::CallImportSourceExpr);
+#endif
 
       return builder.callImportExpression(meta, property, args, &pn->pn_pos,
                                           dst, isImportSource);

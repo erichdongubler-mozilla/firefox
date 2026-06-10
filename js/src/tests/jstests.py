@@ -617,10 +617,7 @@ def load_wpt_tests(xul_tester, requested_paths, excluded_paths, update_manifest=
     ]
 
     pref_prefix = "javascript.options."
-    recognized_prefs = set([
-        "wasm_js_promise_integration",
-        "experimental.wasm_esm_integration",
-    ])
+    recognized_prefs = set(["wasm_js_promise_integration"])
 
     def resolve(test_path, script):
         if script.startswith("/"):

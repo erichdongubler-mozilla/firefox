@@ -5247,8 +5247,10 @@ GeneralParser<ParseHandler, Unit>::importDeclaration() {
   ListNodeType importSpecSet =
       MOZ_TRY(handler_.newList(ParseNodeKind::ImportSpecList, pos()));
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   bool isSourcePhaseImport = false;
   NameNodeType importSourceBinding;
+#endif
   if (tt == TokenKind::String) {
     // Handle the form |import 'a'| by leaving the list empty. This is
     // equivalent to |import {} from 'a'|.
@@ -5267,6 +5269,7 @@ GeneralParser<ParseHandler, Unit>::importDeclaration() {
       // specifier to the list, with 'default' as the import name and
       // 'a' as the binding name. This is equivalent to
       // |import { default as a } from 'b'|.
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
       if (options().sourcePhaseImports() && tt == TokenKind::Source) {
         isSourcePhaseImport = true;
         // Handle the form |import source a from 'b'|
@@ -5320,7 +5323,9 @@ GeneralParser<ParseHandler, Unit>::importDeclaration() {
               ->setClosedOver();
         }
       }
-      if (!isSourcePhaseImport) {
+      if (!isSourcePhaseImport)
+#endif
+      {
         NameNodeType importName =
             MOZ_TRY(newName(TaggedParserAtomIndex::WellKnown::default_()));
 
@@ -5385,10 +5390,13 @@ GeneralParser<ParseHandler, Unit>::importDeclaration() {
   }
 
   Node importAttributeList;
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   if (isSourcePhaseImport) {
     // Source phase imports do not support import attributes
     importAttributeList = MOZ_TRY(handler_.newPosHolder(pos()));
-  } else {
+  } else
+#endif
+  {
     ListNodeType attributeList =
         MOZ_TRY(handler_.newList(ParseNodeKind::ImportAttributeList, pos()));
 
@@ -5410,6 +5418,7 @@ GeneralParser<ParseHandler, Unit>::importDeclaration() {
   BinaryNodeType moduleRequest = MOZ_TRY(handler_.newModuleRequest(
       moduleSpec, importAttributeList, TokenPos(begin, pos().end)));
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   if (isSourcePhaseImport) {
     BinaryNodeType node = MOZ_TRY(handler_.newImportSourceDeclaration(
         importSourceBinding, moduleRequest, TokenPos(begin, pos().end)));
@@ -5419,6 +5428,7 @@ GeneralParser<ParseHandler, Unit>::importDeclaration() {
 
     return node;
   }
+#endif
 
   BinaryNodeType node = MOZ_TRY(handler_.newImportDeclaration(
       importSpecSet, moduleRequest, TokenPos(begin, pos().end)));
@@ -12522,7 +12532,9 @@ GeneralParser<ParseHandler, Unit>::importExpr(YieldHandling yieldHandling,
     return errorResult();
   }
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   bool isSourcePhaseImport = false;
+#endif
 
   if (next == TokenKind::Dot) {
     if (!tokenStream.getToken(&next)) {
@@ -12539,6 +12551,7 @@ GeneralParser<ParseHandler, Unit>::importExpr(YieldHandling yieldHandling,
       return handler_.newImportMeta(importHolder, metaHolder);
     }
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     if (options().sourcePhaseImports()) {
       if (next != TokenKind::Source) {
         error(JSMSG_UNEXPECTED_TOKEN, "meta or source", TokenKindToDesc(next));
@@ -12552,6 +12565,10 @@ GeneralParser<ParseHandler, Unit>::importExpr(YieldHandling yieldHandling,
       error(JSMSG_UNEXPECTED_TOKEN, "meta", TokenKindToDesc(next));
       return errorResult();
     }
+#else
+    error(JSMSG_UNEXPECTED_TOKEN, "meta", TokenKindToDesc(next));
+    return errorResult();
+#endif
   }
 
   if (next == TokenKind::LeftParen && allowCallSyntax) {
@@ -12564,8 +12581,11 @@ GeneralParser<ParseHandler, Unit>::importExpr(YieldHandling yieldHandling,
 
     Node optionalArg;
     if (next == TokenKind::Comma
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
         // Unlike `import`, `import.source` does not have an optional parameter.
-        && !isSourcePhaseImport) {
+        && !isSourcePhaseImport
+#endif
+    ) {
       tokenStream.consumeKnownToken(TokenKind::Comma,
                                     TokenStream::SlashIsRegExp);
 
@@ -12601,9 +12621,11 @@ GeneralParser<ParseHandler, Unit>::importExpr(YieldHandling yieldHandling,
     Node spec = MOZ_TRY(handler_.newCallImportSpec(arg, optionalArg));
 
     ParseNodeKind kind = ParseNodeKind::CallImportExpr;
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     if (isSourcePhaseImport) {
       kind = ParseNodeKind::CallImportSourceExpr;
     }
+#endif
     return handler_.newCallImport(importHolder, spec, kind);
   }
 

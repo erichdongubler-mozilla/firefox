@@ -498,6 +498,7 @@ ModuleEnvironmentObject* ModuleEnvironmentObject::createSynthetic(
   return env;
 }
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
 /* static */
 ModuleEnvironmentObject* ModuleEnvironmentObject::createForWasmModule(
     JSContext* cx, Handle<ModuleObject*> module) {
@@ -530,6 +531,7 @@ ModuleEnvironmentObject* ModuleEnvironmentObject::createForWasmModule(
 
   return env;
 }
+#endif
 
 ModuleObject& ModuleEnvironmentObject::module() const {
   return getReservedSlot(MODULE_SLOT).toObject().as<ModuleObject>();

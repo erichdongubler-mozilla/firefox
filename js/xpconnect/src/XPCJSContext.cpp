@@ -838,8 +838,11 @@ void xpc::SetPrefableCompileOptions(JS::PrefableCompileOptions& options) {
       .setAsmJS(StaticPrefs::javascript_options_asmjs())
       .setThrowOnAsmJSValidationFailure(
           StaticPrefs::javascript_options_throw_on_asmjs_validation_failure())
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
       .setSourcePhaseImports(
-          StaticPrefs::javascript_options_experimental_source_phase_imports());
+          StaticPrefs::javascript_options_experimental_source_phase_imports())
+#endif
+      ;
 }
 
 void xpc::SetPrefableContextOptions(JS::ContextOptions& options) {
