@@ -163,7 +163,7 @@ class RustLoginsStoreAdapter {
     // otherwise throw first error
     const error = results.find(l => l instanceof BulkResultEntry.Error);
     if (error) {
-      throw error;
+      throw new Error(error.message);
     }
     // and return login info objects
     return results
