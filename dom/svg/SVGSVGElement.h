@@ -138,9 +138,9 @@ class SVGSVGElement final : public SVGSVGElementBase {
 
   // public helpers:
 
-  const SVGPoint& GetCurrentTranslate() const { return mCurrentTranslate; }
+  const gfx::Point& GetCurrentTranslate() const { return mCurrentTranslate; }
   bool IsScaledOrTranslated() const {
-    return mCurrentTranslate != SVGPoint() || mCurrentScale != 1.0f;
+    return mCurrentTranslate != gfx::Point() || mCurrentScale != 1.0f;
   }
 
   LengthPercentage GetIntrinsicWidth();
@@ -207,7 +207,7 @@ class SVGSVGElement final : public SVGSVGElementBase {
   nsString mCurrentViewID = VoidString();
   std::unique_ptr<SVGView> mSVGView;
 
-  SVGPoint mCurrentTranslate;
+  gfx::Point mCurrentTranslate;
   float mCurrentScale = 1.0f;
 
   enum { ZOOMANDPAN };

@@ -21,10 +21,11 @@ struct SVGMark {
     End,
   };
 
-  float x, y, angle;
+  gfx::Point pos;
+  float angle;
   Type type;
-  SVGMark(float aX, float aY, float aAngle, Type aType)
-      : x(aX), y(aY), angle(aAngle), type(aType) {}
+  SVGMark(const gfx::Point& aPos, float aAngle, Type aType)
+      : pos(aPos), angle(aAngle), type(aType) {}
 };
 
 // Glue to make EnumeratedArray work with SVGMark::Type.
