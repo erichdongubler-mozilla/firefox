@@ -90,7 +90,12 @@ export class UrlbarView {
     // We cache l10n strings to avoid Fluent's async lookup.
     this.#l10nCache = new lazy.L10nCache(this.document.l10n);
 
-    this.input.addEventListener("contextmenu", this);
+    let contextMenu = this.document.querySelector("#urlbarView-context-menu");
+    if (contextMenu) {
+      contextMenu.addEventListener("command", this);
+      contextMenu.addEventListener("popupshowing", this);
+      contextMenu.addEventListener("popuphiding", this);
+    }
   }
 
   get oneOffSearchButtons() {
@@ -1038,7 +1043,7 @@ export class UrlbarView {
   // Private properties and methods below.
   #announceTabToSearchOnSelection;
   #blobUrlsByResultUrl = null;
-  #contextMenu;
+  #tail150 = null;
   #containerWidthOnLastClose = 0;
   #l10nCache;
   #mousedownSelectedElement;
@@ -1053,7 +1058,6 @@ export class UrlbarView {
   #resultMenuCommands;
   #rows;
   #rawSelectedElement;
-  #tail150 = null;
 
   /**
    * #rawSelectedElement may be disconnected from the DOM (e.g. it was remove()d)
@@ -4193,42 +4197,6 @@ export class UrlbarView {
         .closest(".urlbarView-row")
         ?.toggleAttribute("context-menu-trigger", false);
     }
-  }
-
-  on_contextmenu(event) {
-    // The context menu associated with this event is either for something above
-    // the urlbar in the DOM, like the toolbar, or for something specific in the
-    // input, like the `<html:input>`. We want to suppress the former, propagate
-    // the latter, and open our own context menu for events on rows.
-    if (event.target.closest(".urlbar-input-container")) {
-      return;
-    }
-
-    event.preventDefault();
-
-    if (
-      !lazy.UrlbarPrefs.get("contextMenu.featureGate") ||
-      !event.target.closest(".urlbarView-row")
-    ) {
-      // Don't show the context menu from the background or the group label etc.
-      return;
-    }
-
-    if (!this.#contextMenu) {
-      this.#contextMenu = this.document.querySelector(
-        "#urlbarView-context-menu"
-      );
-      this.#contextMenu.addEventListener("command", this);
-      this.#contextMenu.addEventListener("popupshowing", this);
-      this.#contextMenu.addEventListener("popuphiding", this);
-    }
-
-    this.#contextMenu.openPopupAtScreen(
-      event.screenX,
-      event.screenY,
-      true,
-      event
-    );
   }
 }
 
