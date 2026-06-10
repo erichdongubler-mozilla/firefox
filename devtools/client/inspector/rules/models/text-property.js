@@ -221,9 +221,18 @@ class TextProperty {
    *        and so the property should no longer be considerd as modified by the user..
    */
   async setValue(value, priority, force = false, reverting = false) {
+    if (
+      value === this.value &&
+      priority == this.priority &&
+      !force &&
+      !reverting
+    ) {
+      return;
+    }
+
     if (reverting) {
       this.userProperties.clearProperty(this.rule.domRule, this.name);
-    } else if (value !== this.value || priority != this.priority || force) {
+    } else {
       this.userProperties.setProperty(this.rule.domRule, this.name, value);
     }
 
