@@ -537,13 +537,6 @@
         "Dark": "{color/gray/45}",
         "HCM": "{CanvasText}",
         "Private": "{color/gray/45}",
-        "overlay": {
-          "Light": "{color/gray/05}",
-          "Dark": "{color/gray/25}",
-          "HCM": "{CanvasText}",
-          "Private": "{color/gray/25}",
-          "Smart Light (WIP)": "#F0F0F4"
-        },
         "transparent": {
           "Light": "rgba(0, 0, 0, 0)",
           "Dark": "rgba(0, 0, 0, 0)",
@@ -658,15 +651,6 @@
             "HCM": "{background/color/canvas}",
             "Private": "{color/gray/65}",
             "Smart Light (WIP)": "{color/gray/15}"
-          },
-          "accent": {
-            "primary": {
-              "Light": "{color/violet-desaturated/10}",
-              "Dark": "{color/violet-desaturated/70}",
-              "HCM": "{background/color/canvas}",
-              "Private": "{color/violet-desaturated/70}",
-              "Smart Light (WIP)": "{color/violet-desaturated/10}"
-            }
           },
           "Smart Light (WIP)": "{color/white}"
         }
@@ -2114,15 +2098,6 @@
           "Smart Light (WIP)": "rgba(255, 255, 255, 0.800000011920929)"
         }
       },
-      "button": {
-        "text": {
-          "color": {
-            "Dark": "{color/violet/0}",
-            "HCM": "{ButtonText}",
-            "Private": "#F0F0FF"
-          }
-        }
-      },
       "field": {
         "border": {
           "color": {
@@ -2570,21 +2545,21 @@
             "Dark": "{color/violet-desaturated/0}",
             "HCM": "{button/text/color/ghost/active}",
             "Private": "{button/text/color/ghost/active}",
-            "Smart Light (WIP)": "{toolbar/button/text/color}"
+            "Smart Light (WIP)": "{button/text/color/ghost/active}"
           },
           "disabled": {
             "Light": "{toolbarbutton/icon/fill}",
             "Dark": "{toolbarbutton/icon/fill}",
             "HCM": "{button/text/color/ghost/disabled}",
             "Private": "{button/text/color/disabled}",
-            "Smart Light (WIP)": "{toolbar/button/text/color}"
+            "Smart Light (WIP)": "{button/text/color/ghost/disabled}"
           },
           "ghost": {
             "Light": "{toolbarbutton/icon/fill}",
             "Dark": "{toolbarbutton/icon/fill}",
             "HCM": "{button/text/color/ghost}",
             "Private": "{button/text/color/ghost}",
-            "Smart Light (WIP)": "{toolbar/button/text/color}"
+            "Smart Light (WIP)": "{button/text/color/ghost}"
           },
           "selected": {
             "Light": "{toolbarbutton/icon/fill/active}",
@@ -3039,11 +3014,6 @@
         },
         "90": {
           "Value": "#1A1220"
-        }
-      },
-      "purple-desaturated": {
-        "30": {
-          "Value": "#C0A7D4"
         }
       },
       "pink": {
