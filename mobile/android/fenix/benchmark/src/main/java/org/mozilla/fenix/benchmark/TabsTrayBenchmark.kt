@@ -24,7 +24,6 @@ import org.mozilla.fenix.benchmark.utils.FENIX_HOME_DEEP_LINK
 import org.mozilla.fenix.benchmark.utils.HtmlAsset
 import org.mozilla.fenix.benchmark.utils.MockWebServerRule
 import org.mozilla.fenix.benchmark.utils.TARGET_PACKAGE
-import org.mozilla.fenix.benchmark.utils.completeOnboarding
 import org.mozilla.fenix.benchmark.utils.enterSearchMode
 import org.mozilla.fenix.benchmark.utils.loadSite
 import org.mozilla.fenix.benchmark.utils.measureRepeatedDefault
@@ -79,7 +78,7 @@ class TabsTrayBenchmark {
     fun switchTabsAnimationOff() =
         switchTabsBenchmark(
             compilationMode = CompilationMode.Partial(baselineProfileMode = BaselineProfileMode.Require),
-            animationsEnabled = false,
+            animationsEnabled = true,
         )
 
     @OptIn(ExperimentalMetricApi::class)
@@ -116,7 +115,6 @@ class TabsTrayBenchmark {
 
         intent.setPackage(packageName)
         startActivityAndWait(intent = intent)
-        device.completeOnboarding()
 
         device.enterSearchMode()
         device.loadSite(url = mockRule.url(HtmlAsset.SIMPLE))

@@ -452,9 +452,11 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         window.decorView.layoutDirection = Locale.getDefault().layoutDirection
 
         binding = ActivityHomeBinding.inflate(layoutInflater)
+        val isLauncherIntent = intent.toSafeIntent().isLauncherIntent
 
         val shouldShowOnboarding = components.settings.shouldShowOnboarding(
             hasUserBeenOnboarded = components.fenixOnboarding.userHasBeenOnboarded(),
+            isLauncherIntent = isLauncherIntent,
         )
 
         SplashScreenManager(
