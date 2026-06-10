@@ -36,13 +36,7 @@ class BeetmoverDescriptionSchema(Schema, kw_only=True):
     bucket_scope: Optional[
         optionally_keyed_by("release-level", str, use_msgspec=True)
     ] = None  # type: ignore
-    shipping_phase: Optional[  # type: ignore
-        optionally_keyed_by(
-            "project",
-            TaskDescriptionSchema.__annotations__["shipping_phase"],
-            use_msgspec=True,
-        )
-    ] = None
+    shipping_phase: TaskDescriptionSchema.__annotations__["shipping_phase"] = None
     shipping_product: TaskDescriptionSchema.__annotations__["shipping_product"] = None
     attributes: TaskDescriptionSchema.__annotations__["attributes"] = None
     task_from: TaskDescriptionSchema.__annotations__["task_from"] = None
@@ -66,18 +60,6 @@ transforms.add_validate(BeetmoverDescriptionSchema)
 @transforms.add
 def resolve_keys(config, jobs):
     for job in jobs:
-        resolve_keyed_by(
-            job,
-            "run-on-hg-branches",
-            item_name=job["label"],
-            project=config.params["project"],
-        )
-        resolve_keyed_by(
-            job,
-            "shipping-phase",
-            item_name=job["label"],
-            project=config.params["project"],
-        )
         resolve_keyed_by(
             job,
             "bucket-scope",

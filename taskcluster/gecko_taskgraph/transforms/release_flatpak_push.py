@@ -49,12 +49,6 @@ def make_task_description(config, jobs):
 
         resolve_keyed_by(
             job,
-            "worker.channel",
-            item_name=job["name"],
-            **{"release-type": config.params["release_type"]},
-        )
-        resolve_keyed_by(
-            job,
             "worker-type",
             item_name=job["name"],
             **{"release-level": release_level(config.params)},

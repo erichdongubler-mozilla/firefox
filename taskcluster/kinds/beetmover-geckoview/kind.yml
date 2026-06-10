@@ -7,6 +7,7 @@ loader: taskgraph.loader.transform:loader
 transforms:
     - taskgraph.transforms.from_deps
     - gecko_taskgraph.transforms.name_sanity
+    - taskgraph.transforms.task_context
     - gecko_taskgraph.transforms.beetmover_geckoview
     - gecko_taskgraph.transforms.task
 
@@ -37,6 +38,12 @@ not-for-build-platforms:
 
 task-defaults:
     run-on-repo-type: [hg]
+    task-context:
+        from-parameters:
+            project: project
+        substitution-fields:
+            - run-on-hg-branches
+            - shipping-phase
 
 tasks:
     beetmover-geckoview:
