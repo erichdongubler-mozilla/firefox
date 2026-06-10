@@ -163,7 +163,6 @@ allowed_warnings:
     - "devtools-user/tips/index\\.rst:.*: WARNING: unknown document"
     - "devtools-user/tools_toolbox/index\\.rst:.*: WARNING: unknown document"
     # Undefined label warnings.
-    - "uriloader/exthandler/docs/.*\\.(rst|md):.*: WARNING: undefined label"
     - "code-quality/.*\\.rst:.*: WARNING: undefined label"
     - "contributing/.*\\.rst:.*: WARNING: undefined label"
     - "crash-reporting/index\\.rst:.*: WARNING: undefined label"
