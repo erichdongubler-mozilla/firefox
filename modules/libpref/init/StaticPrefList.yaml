@@ -11098,7 +11098,7 @@
 
 # Whether the "modern" uppercase mapping of ß to ẞ (rather than SS) is used.
 - name: layout.css.text-transform.uppercase-eszett.enabled
-  type: bool
+  type: RelaxedAtomicBool
   value: false
   mirror: always
 
