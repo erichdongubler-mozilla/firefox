@@ -649,7 +649,7 @@ async function setupTestSubPane({
   });
   win.SettingPaneManager.registerPane("testSubPane", {
     parent: "testTopLevel",
-    l10nId: "containers-section-header",
+    l10nId: "containers-section-header2",
     groupIds: ["testSubGroup"],
   });
 
