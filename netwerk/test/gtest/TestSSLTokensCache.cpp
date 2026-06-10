@@ -15,6 +15,7 @@
 #include "nsServiceManagerUtils.h"
 #include "prtime.h"
 #include "sslproto.h"
+#include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/net/ssl_tokens_cache.h"
 
 static already_AddRefed<CommonSocketControl> createDummySocketControl() {
@@ -49,8 +50,8 @@ static already_AddRefed<CommonSocketControl> createDummySocketControl() {
 static auto MakeTestData(const size_t aDataSize) {
   auto data = nsTArray<uint8_t>();
   data.SetLength(aDataSize);
-  // LCG pseudo-random fill: near-incompressible, so Size() stays close to
-  // the raw input length regardless of compression algorithm.
+  // LCG pseudo-random fill: near-incompressible, so the compressed record
+  // size stays close to key.len() + 4 + tokenSize + cert overhead.
   uint32_t state = 0xDEADBEEFu;
   for (auto& b : data) {
     state = state * 1664525u + 1013904223u;
@@ -59,14 +60,17 @@ static auto MakeTestData(const size_t aDataSize) {
   return data;
 }
 
-static void putToken(const nsACString& aKey, uint32_t aSize) {
+static void putTokenWithExpiry(const nsACString& aKey, uint32_t aSize,
+                               PRTime aExpiry) {
   RefPtr<CommonSocketControl> socketControl = createDummySocketControl();
   nsTArray<uint8_t> token = MakeTestData(aSize);
-  PRTime now = PR_Now();
-  nsresult rv = mozilla::net::SSLTokensCache::Put(
-      aKey, token.Elements(), aSize, socketControl,
-      now + (aSize * PR_USEC_PER_SEC));
+  nsresult rv = mozilla::net::SSLTokensCache::Put(aKey, token.Elements(), aSize,
+                                                  socketControl, aExpiry);
   ASSERT_EQ(rv, NS_OK);
+}
+
+static void putToken(const nsACString& aKey, uint32_t aSize) {
+  putTokenWithExpiry(aKey, aSize, PR_Now() + PRTime(aSize) * PR_USEC_PER_SEC);
 }
 
 static void ClearAll() { mozilla::net::SSLTokensCache::Clear(); }
@@ -149,7 +153,7 @@ TEST(TestTokensCache, RemoveAll)
 
 TEST(TestTokensCache, Eviction)
 {
-  mozilla::net::SSLTokensCache::Clear();
+  ClearAll();
 
   // Use a high per-entry limit so global-capacity eviction is the only
   // mechanism under test here (per-entry eviction is already covered by
@@ -157,30 +161,15 @@ TEST(TestTokensCache, Eviction)
   mozilla::Preferences::SetInt("network.ssl_tokens_cache_records_per_entry",
                                10);
 
-  // Two records for different peers: A is globally oldest (expiry =
-  // now+10000s), B is newer (expiry = now+20000s).
-  //
-  // Token sizes are chosen so that a capacity of 25 KB is:
-  //   > size(B)                — B alone fits after eviction
-  //   < size(A) + size(B) + T  — A+B+trigger together exceed capacity
-  //
-  // Proof: Size() = key.len() + compressedPayload.len().  MakeTestData fills
-  // tokens with pseudo-random bytes that resist compression, so the compressed
-  // payload is approximately token_size + cert_overhead + 4-byte prefix.
-  // Cert overhead: 4×333-byte DER + serialization framing ≈ 1400 bytes.
-  //   size(A) ≈ 22 + (4 + 10000 + 1400) = 11426 bytes
-  //   size(B) ≈ 22 + (4 + 20000 + 1400) = 21426 bytes
-  //   size(T) ≈ 26 + (4 +    10 + 1400) =  1440 bytes
-  //   sum     ≈ 34292 > 25600 (= 25 KB)  → eviction triggered  ✓
-  //   size(B) ≈ 21426 < 25600             → B fits after eviction ✓
-  putToken("anon:evict-old.com:443"_ns, 10000);
-  putToken("anon:evict-new.com:443"_ns, 20000);
+  // Token sizes dominate cert overhead, making record sizes predictable.
+  // Capacity of 5 KB holds new alone but not old+new+trigger together.
+  putToken("anon:evict-old.com:443"_ns, 2000);
+  putToken("anon:evict-new.com:443"_ns, 4000);
 
-  mozilla::Preferences::SetInt("network.ssl_tokens_cache_capacity", 25);
+  mozilla::Preferences::SetInt("network.ssl_tokens_cache_capacity", 5);
 
-  // The trigger record's expiry (now+10s) is earlier than all other records,
-  // so EvictIfNecessary removes it first, then evict-old.com (now+10000s)
-  // second, until the total drops below 25 KB.
+  // Trigger has the earliest expiry, so EvictIfNecessary removes it first,
+  // then evict-old.com, until the cache drops below 5 KB.
   putToken("anon:evict-trigger.com:443"_ns, 10);
 
   nsTArray<uint8_t> result;
@@ -192,7 +181,48 @@ TEST(TestTokensCache, Eviction)
   ASSERT_EQ(mozilla::net::SSLTokensCache::Get("anon:evict-new.com:443"_ns,
                                               result, unused),
             NS_OK)
-      << "evict-new.com should survive: it fits within the 25 KB capacity";
+      << "evict-new.com should survive: it fits within the 5 KB capacity";
+}
+
+// Verify that ssl_token_cache_evictions only counts evictions of still-valid
+// tokens. Already-expired tokens removed under capacity pressure must not
+// be counted (they are tracked by ssl_token_cache_expired instead).
+TEST(TestTokensCache, EvictionCountsOnlyValidTokens)
+{
+  ClearAll();
+
+  mozilla::Preferences::SetInt("network.ssl_tokens_cache_records_per_entry",
+                               10);
+
+  // 2 KB tokens dominate cert overhead, so capacity 3 KB holds one record
+  // but not two — each insertion past the first triggers exactly one eviction.
+  mozilla::Preferences::SetInt("network.ssl_tokens_cache_capacity", 3);
+
+  auto evictionCount = []() {
+    return mozilla::glean::network::ssl_token_cache_evictions.TestGetValue()
+        .unwrap()
+        .valueOr(0);
+  };
+
+  PRTime now = PR_Now();
+  int32_t before = evictionCount();
+
+  // Step 1: expired token fits; no eviction yet.
+  putTokenWithExpiry("anon:evict-expired.com:443"_ns, 2000,
+                     now - PRTime(PR_USEC_PER_SEC));
+
+  // Step 2: exceeds capacity → expired record evicted first (smallest expiry).
+  // Must NOT be counted.
+  putTokenWithExpiry("anon:evict-valid1.com:443"_ns, 2000,
+                     now + PRTime(2000) * PR_USEC_PER_SEC);
+
+  // Step 3: exceeds capacity again → valid_1 evicted (next smallest expiry).
+  // MUST be counted.
+  putTokenWithExpiry("anon:evict-valid2.com:443"_ns, 2000,
+                     now + PRTime(4000) * PR_USEC_PER_SEC);
+
+  // One expired eviction (not counted) + one valid eviction (counted) = 1.
+  ASSERT_EQ(evictionCount() - before, 1);
 }
 
 static nsCString GetTempCachePath(const char* aName) {
