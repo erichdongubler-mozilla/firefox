@@ -5056,8 +5056,9 @@ ${
    * @param {boolean} available If true Unified Search Button will be available.
    */
   setUnifiedSearchButtonAvailability(available) {
-    this.toggleAttribute("unifiedsearchbutton-available", available);
+    available ||= lazy.UrlbarPrefs.get("unifiedSearchButton.always");
     const switcher = this.querySelector(".searchmode-switcher");
+    switcher.toggleAttribute("offscreen", !available);
     if (available) {
       switcher.removeAttribute("aria-hidden");
     } else {
