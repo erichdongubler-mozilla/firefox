@@ -18,19 +18,19 @@
  */
 :root.nova-tokens {
   /** background-color **/
-  --background-color-box: light-dark(var(--color-white), var(--color-gray-75));
-  --background-color-box-info: light-dark(var(--color-gray-15), var(--color-gray-60));
+  --background-color-box: light-dark(var(--color-white), var(--color-gray-70));
+  --background-color-box-info: light-dark(var(--color-gray-15), var(--color-gray-65));
   --background-color-canvas: light-dark(var(--color-gray-05), var(--color-gray-90));
   --background-color-critical: light-dark(var(--color-red-10), var(--color-red-70));
   --background-color-information: light-dark(var(--color-violet-10), var(--color-violet-70));
   --background-color-success: light-dark(var(--color-green-10), var(--color-green-70));
   --background-color-warning: light-dark(var(--color-yellow-10), var(--color-yellow-70));
   /** border **/
-  --border-color: light-dark(var(--color-gray-30), var(--color-gray-50));
-  --border-color-deemphasized: light-dark(var(--color-gray-20), var(--color-gray-60));
+  --border-color: light-dark(var(--color-gray-30), var(--color-gray-45));
+  --border-color-deemphasized: light-dark(var(--color-gray-20), var(--color-gray-55));
   --border-color-error: light-dark(var(--color-red-50), var(--color-red-20));
-  --border-color-interactive: var(--color-gray-40);
-  --border-color-interactive-disabled: light-dark(var(--color-gray-25), var(--color-gray-50));
+  --border-color-interactive: light-dark(var(--color-gray-35), var(--color-gray-45));
+  --border-color-interactive-disabled: light-dark(var(--color-gray-25), var(--color-gray-60));
   --border-color-transparent: transparent;
   --border-radius-large: 12px;
   --border-radius-xlarge: 16px;

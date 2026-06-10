@@ -1730,7 +1730,7 @@ export const tokensTable = {
       value: "calc(var(--space-small) + 2px)",
       name: "--message-bar-icon-container-margin-block-start",
     },
-    { value: "0px", name: "--message-bar-icon-container-padding" },
+    { value: "0", name: "--message-bar-icon-container-padding" },
     {
       value: "var(--space-xsmall)",
       name: "--message-bar-message-margin-inline-end",
@@ -4072,7 +4072,7 @@ export const variableLookupTable = {
   "message-bar-icon-container-height": "min-content",
   "message-bar-icon-container-margin-block-start":
     "calc(var(--space-small) + 2px)",
-  "message-bar-icon-container-padding": "0px",
+  "message-bar-icon-container-padding": "0",
   "message-bar-icon-size": "var(--icon-size)",
   "message-bar-message-margin-inline-end": "var(--space-xsmall)",
   "message-bar-text-color": "var(--text-color)",

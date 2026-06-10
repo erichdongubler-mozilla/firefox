@@ -491,9 +491,9 @@
           "Smart Light (WIP)": "rgba(0, 0, 0, 0)",
           "disabled": {
             "Light": "{color/gray/30}",
-            "Dark": "{color/gray/50}",
+            "Dark": "{color/gray/45}",
             "HCM": "{GrayText}",
-            "Private": "{color/gray/50}",
+            "Private": "{color/gray/45}",
             "Smart Light (WIP)": "{color/gray/30}"
           }
         }
@@ -534,9 +534,9 @@
     "border": {
       "color": {
         "Light": "{color/gray/30}",
-        "Dark": "{color/gray/50}",
+        "Dark": "{color/gray/45}",
         "HCM": "{CanvasText}",
-        "Private": "{color/gray/35}",
+        "Private": "{color/gray/45}",
         "overlay": {
           "Light": "{color/gray/05}",
           "Dark": "{color/gray/25}",
@@ -553,16 +553,16 @@
         },
         "deemphasized": {
           "Light": "{color/gray/20}",
-          "Dark": "{color/gray/60}",
+          "Dark": "{color/gray/55}",
           "HCM": "{CanvasText}",
-          "Private": "{color/gray/45}",
-          "Smart Light (WIP)": "{color/gray/15}"
+          "Private": "{color/gray/55}",
+          "Smart Light (WIP)": "{color/gray/20}"
         },
         "interactive": {
-          "Light": "{color/gray/40}",
-          "Dark": "{color/gray/40}",
+          "Light": "{color/gray/35}",
+          "Dark": "{color/gray/45}",
           "HCM": "{ButtonText}",
-          "Private": "{color/gray/35}",
+          "Private": "{color/gray/45}",
           "hover": {
             "Light": "{border/color/interactive}",
             "Dark": "{border/color/interactive}",
@@ -579,12 +579,12 @@
           },
           "disabled": {
             "Light": "{color/gray/25}",
-            "Dark": "{color/gray/50}",
+            "Dark": "{color/gray/60}",
             "HCM": "{GrayText}",
-            "Private": "{border/color/interactive}",
+            "Private": "{color/gray/60}",
             "Smart Light (WIP)": "{border/color/interactive}"
           },
-          "Smart Light (WIP)": "{color/gray/40}"
+          "Smart Light (WIP)": "{color/gray/35}"
         },
         "selected": {
           "Light": "{color/accent/primary}",
@@ -593,7 +593,7 @@
           "Private": "{color/accent/primary}",
           "Smart Light (WIP)": "{color/accent/primary}"
         },
-        "Smart Light (WIP)": "{color/gray/25}",
+        "Smart Light (WIP)": "{color/gray/30}",
         "error": {
           "Light": "{color/red/50}",
           "Dark": "{color/red/20}",
@@ -649,14 +649,14 @@
         },
         "box": {
           "Light": "{color/white}",
-          "Dark": "{color/gray/75}",
+          "Dark": "{color/gray/70}",
           "HCM": "{background/color/canvas}",
-          "Private": "{color/gray/75}",
+          "Private": "{color/gray/70}",
           "info": {
             "Light": "{color/gray/15}",
-            "Dark": "{color/gray/60}",
+            "Dark": "{color/gray/65}",
             "HCM": "{background/color/canvas}",
-            "Private": "{color/gray/60}",
+            "Private": "{color/gray/65}",
             "Smart Light (WIP)": "{color/gray/15}"
           },
           "accent": {
@@ -2783,7 +2783,7 @@
               "selected": {
                 "Light": "{color/accent/primary}",
                 "Dark": "{color/accent/primary}",
-                "HCM": "{color/accent/primary}",
+                "HCM": "{SelectedItem}",
                 "Private": "{color/accent/primary}",
                 "Smart Light (WIP)": "#FFFFFF"
               }
@@ -2805,6 +2805,17 @@
               "Smart Light (WIP)": "#FFFFFF"
             }
           }
+        }
+      }
+    },
+    "message-bar": {
+      "background": {
+        "color": {
+          "Light": "{background/color/box}",
+          "Dark": "{background/color/box}",
+          "HCM": "{background/color/box}",
+          "Private": "{background/color/box}",
+          "Smart Light (WIP)": "{background/color/box}"
         }
       }
     }
@@ -3847,6 +3858,20 @@
       "border": {
         "radius": {
           "Value": "{border/radius/xxlarge}"
+        }
+      }
+    },
+    "message-bar": {
+      "border": {
+        "radius": {
+          "Value": "{border/radius/large}"
+        }
+      }
+    },
+    "input-color": {
+      "border": {
+        "radius": {
+          "Value": "{border/radius/large}"
         }
       }
     }
