@@ -70,8 +70,10 @@ EncodeSupportSet CanCreateWMFEncoder(const EncoderConfig& aConfig) {
                     EnumValueToString(aConfig.mCodec));
       }
     }
-    if (aConfig.mHardwarePreference != HardwarePreference::RequireHardware) {
-      // Try SW encoder if not disallowed by the caller.
+    // Try SW encoder if not disallowed by the caller, only for H264. We
+    // otherwise prefer to use SW encoders from ffvpx.
+    if (aConfig.mHardwarePreference != HardwarePreference::RequireHardware &&
+        aConfig.mCodec == CodecType::H264) {
       auto swEnc =
           MakeRefPtr<MFTEncoder>(MFTEncoder::HWPreference::SoftwareOnly);
       if (SUCCEEDED(swEnc->Create(CodecToSubtype(aConfig.mCodec), aConfig.mSize,
