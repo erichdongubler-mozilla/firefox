@@ -1061,7 +1061,7 @@ static JSObject* CreateWasmConstructor(JSContext* cx, JSProtoKey key) {
     return nullptr;
   }
 
-  if (JS::Prefs::experimental_source_phase_imports()) {
+  if (JS::Prefs::experimental_wasm_esm_integration()) {
     if constexpr (std::is_same_v<Class, WasmModuleObject>) {
       RootedObject proto(cx, GlobalObject::getOrCreateConstructor(
                                  cx, JSProto_AbstractModuleSource));
@@ -1327,7 +1327,7 @@ static constexpr char WasmModuleName[] = "Module";
 
 // https://webassembly.github.io/esm-integration/js-api/index.html#modules
 static JSObject* CreateWasmModulePrototype(JSContext* cx, JSProtoKey key) {
-  if (JS::Prefs::experimental_source_phase_imports()) {
+  if (JS::Prefs::experimental_wasm_esm_integration()) {
     RootedObject abstractModuleSourceProto(
         cx,
         GlobalObject::getOrCreatePrototype(cx, JSProto_AbstractModuleSource));
