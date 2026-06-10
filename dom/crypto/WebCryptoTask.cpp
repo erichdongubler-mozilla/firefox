@@ -351,7 +351,7 @@ void WebCryptoTask::DispatchWithPromise(Promise* aResultPromise) {
     if (NS_WARN_IF(!workerRef)) {
       mEarlyRv = NS_BINDING_ABORTED;
     } else {
-      mWorkerRef = new ThreadSafeWorkerRef(workerRef);
+      mWorkerRef = MakeRefPtr<ThreadSafeWorkerRef>(workerRef);
     }
   }
   MAYBE_EARLY_FAIL(mEarlyRv);
@@ -1372,7 +1372,7 @@ class ImportKeyTask : public WebCryptoTask {
     mDataIsJwk = false;
 
     // This stuff pretty much always happens, so we'll do it here
-    mKey = new CryptoKey(aGlobal);
+    mKey = MakeRefPtr<CryptoKey>(aGlobal);
     mKey->SetExtractable(aExtractable);
     mKey->ClearUsages();
     for (uint32_t i = 0; i < aKeyUsages.Length(); ++i) {
@@ -2376,7 +2376,7 @@ class GenerateSymmetricKeyTask : public WebCryptoTask {
                            const ObjectOrString& aAlgorithm, bool aExtractable,
                            const Sequence<nsString>& aKeyUsages) {
     // Create an empty key and set easy attributes
-    mKey = new CryptoKey(aGlobal);
+    mKey = MakeRefPtr<CryptoKey>(aGlobal);
     mKey->SetExtractable(aExtractable);
     mKey->SetType(CryptoKey::SECRET);
 
@@ -2596,7 +2596,7 @@ class DeriveX25519BitsTask : public ReturnArrayBufferViewTask {
 GenerateAsymmetricKeyTask::GenerateAsymmetricKeyTask(
     nsIGlobalObject* aGlobal, JSContext* aCx, const ObjectOrString& aAlgorithm,
     bool aExtractable, const Sequence<nsString>& aKeyUsages)
-    : mKeyPair(new CryptoKeyPair()),
+    : mKeyPair(MakeUnique<CryptoKeyPair>()),
       mMechanism(CKM_INVALID_MECHANISM),
       mRsaParams(),
       mDhParams() {
@@ -2607,8 +2607,8 @@ GenerateAsymmetricKeyTask::GenerateAsymmetricKeyTask(
   }
 
   // Create an empty key pair and set easy attributes
-  mKeyPair->mPrivateKey = new CryptoKey(aGlobal);
-  mKeyPair->mPublicKey = new CryptoKey(aGlobal);
+  mKeyPair->mPrivateKey = MakeRefPtr<CryptoKey>(aGlobal);
+  mKeyPair->mPublicKey = MakeRefPtr<CryptoKey>(aGlobal);
 
   // Extract algorithm name
   mEarlyRv = GetAlgorithmName(aCx, aAlgorithm, mAlgName);
@@ -3115,8 +3115,8 @@ class DeriveKeyTask : public DeriveBitsTask {
 
     constexpr auto format =
         NS_LITERAL_STRING_FROM_CSTRING(WEBCRYPTO_KEY_FORMAT_RAW);
-    mTask = new ImportSymmetricKeyTask(aGlobal, aCx, format, aDerivedKeyType,
-                                       aExtractable, aKeyUsages);
+    mTask = MakeRefPtr<ImportSymmetricKeyTask>(
+        aGlobal, aCx, format, aDerivedKeyType, aExtractable, aKeyUsages);
   }
 
  protected:
@@ -3250,7 +3250,7 @@ class WrapKeyTask : public ExportKeyTask {
       return;
     }
 
-    mTask = new KeyEncryptTask(aCx, aWrapAlgorithm, aWrappingKey, true);
+    mTask = MakeRefPtr<KeyEncryptTask>(aCx, aWrapAlgorithm, aWrappingKey, true);
   }
 
  private:
