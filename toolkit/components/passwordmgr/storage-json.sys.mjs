@@ -233,9 +233,6 @@ export class LoginManagerStorage_json {
   async #addLogin(login) {
     this._store.ensureDataReady();
 
-    // Throws if there are bogus values.
-    lazy.LoginHelper.checkLoginValues(login);
-
     // Clone the login, so we don't modify the caller's object.
     let loginClone = login.clone();
 

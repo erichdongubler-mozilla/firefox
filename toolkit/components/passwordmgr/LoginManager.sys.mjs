@@ -221,6 +221,8 @@ LoginManager.prototype = {
         throw new Error("Can't add a login with invalid date properties.");
       }
     }
+
+    lazy.LoginHelper.checkLoginValues(login);
   },
 
   /* ---------- Primary Public interfaces ---------- */
