@@ -695,7 +695,7 @@ class FontInspector {
     const textProperty = this.getTextProperty(name, value);
     if (textProperty) {
       try {
-        await textProperty.setValue(value, "", true);
+        await textProperty.setValue(value, "");
         this.ruleView.on("property-value-updated", this.onRulePropertyUpdated);
       } catch (error) {
         // Because setValue() does an asynchronous call to the server, there is a chance
