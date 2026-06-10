@@ -372,13 +372,15 @@ export class IPPChannelFilter {
         return true;
       }
 
-      // Only get the principal from the channel URI when both loadingPrincipal
-      // and triggeringPrincipal are system principals.
+      // Prefer a non-system loadingPrincipal, falling back to the channel URI
+      // principal. For downloads, use the triggeringPrincipal instead so the
+      // exclusion is attributed to the originating page.
       let { loadingPrincipal, triggeringPrincipal } = channel.loadInfo ?? {};
       let principal;
       if (loadingPrincipal && !loadingPrincipal.isSystemPrincipal) {
         principal = loadingPrincipal;
       } else if (
+        channel.loadInfo?.isUserTriggeredSave &&
         triggeringPrincipal &&
         !triggeringPrincipal.isSystemPrincipal
       ) {

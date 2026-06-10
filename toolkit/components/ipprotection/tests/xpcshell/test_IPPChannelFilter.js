@@ -949,9 +949,20 @@ add_task(async function test_shouldExclude_ipp_exception() {
     loadUsingSystemPrincipal: true,
     triggeringPrincipal: excludedPrincipal,
   });
+  downloadChannel.loadInfo.isUserTriggeredSave = true;
   Assert.ok(
     filter.shouldExclude(downloadChannel),
-    "System-principal channel with excluded triggeringPrincipal should be excluded"
+    "Download with excluded triggeringPrincipal should be excluded"
+  );
+
+  const nonDownloadChannel = NetUtil.newChannel({
+    uri: "http://cdn.example.com/file.bin",
+    loadUsingSystemPrincipal: true,
+    triggeringPrincipal: excludedPrincipal,
+  });
+  Assert.ok(
+    !filter.shouldExclude(nonDownloadChannel),
+    "Non-download channel with excluded triggeringPrincipal should not be excluded"
   );
 
   // After removing the exclusion, the channel should no longer be excluded.
