@@ -15,7 +15,6 @@
 #include "nsServiceManagerUtils.h"
 #include "prtime.h"
 #include "sslproto.h"
-#include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/net/ssl_tokens_cache.h"
 
 static already_AddRefed<CommonSocketControl> createDummySocketControl() {
@@ -194,54 +193,6 @@ TEST(TestTokensCache, Eviction)
                                               result, unused),
             NS_OK)
       << "evict-new.com should survive: it fits within the 25 KB capacity";
-}
-
-// Verify that ssl_token_cache_evictions only counts evictions of still-valid
-// tokens. Already-expired tokens removed under capacity pressure must not
-// be counted (they are tracked by ssl_token_cache_expired instead).
-TEST(TestTokensCache, EvictionCountsOnlyValidTokens)
-{
-  mozilla::net::SSLTokensCache::Clear();
-
-  // Use a small capacity (3 KB) and a generous per-entry limit so per-entry
-  // eviction does not interfere.  With cert overhead (~1100-1500 bytes per
-  // record), 2 tokens fit comfortably but 3 exceed the limit.
-  mozilla::Preferences::SetInt("network.ssl_tokens_cache_records_per_entry",
-                               10);
-  mozilla::Preferences::SetInt("network.ssl_tokens_cache_capacity", 3);
-
-  PRTime now = PR_Now();
-  RefPtr<CommonSocketControl> socketControl = createDummySocketControl();
-  nsTArray<uint8_t> tokenData = MakeTestData(500);
-
-  auto putWithExpiry = [&](PRTime aExpiry) {
-    nsresult rv = mozilla::net::SSLTokensCache::Put(
-        "anon:www.example4.com:443"_ns, tokenData.Elements(), 500,
-        socketControl, aExpiry);
-    ASSERT_EQ(rv, NS_OK);
-  };
-
-  auto evictionCount = []() {
-    return mozilla::glean::network::ssl_token_cache_evictions.TestGetValue()
-        .unwrap()
-        .valueOr(0);
-  };
-
-  int32_t before = evictionCount();
-
-  // Add one expired token (expiry in the past).
-  putWithExpiry(now - PRTime(PR_USEC_PER_SEC));
-
-  // Adding valid_1 pushes total over capacity.  The expired token (smallest
-  // mExpirationTime) is evicted first and must NOT be counted.
-  putWithExpiry(now + PRTime(PR_USEC_PER_SEC));
-
-  // Adding valid_2 pushes total over capacity again.  valid_1 (next smallest
-  // mExpirationTime) is evicted and MUST be counted.
-  putWithExpiry(now + (PRTime(2) * PRTime(PR_USEC_PER_SEC)));
-
-  // One expired eviction (not counted) + one valid eviction (counted) = 1.
-  ASSERT_EQ(evictionCount() - before, 1);
 }
 
 static nsCString GetTempCachePath(const char* aName) {

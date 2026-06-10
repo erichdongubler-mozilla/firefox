@@ -924,16 +924,10 @@ void SSLTokensCache::EvictIfNecessary() {
 
   mExpirationArray.Sort(ExpirationComparator());
 
-  PRTime now = PR_Now();
   while (mCacheSize > capacity && mExpirationArray.Length() > 0) {
-    auto* rec = mExpirationArray[0];
-    // Only count evictions of tokens that are still valid; already-expired
-    // tokens would be discarded on lookup anyway and are tracked separately
-    // by ssl_token_cache_expired.
-    if (rec->mExpirationTime > now) {
-      mozilla::glean::network::ssl_token_cache_evictions.Add(1);
-    }
-    DebugOnly<nsresult> rv = RemoveLocked(rec->mKey, rec->mId);
+    mozilla::glean::network::ssl_token_cache_evictions.Add(1);
+    DebugOnly<nsresult> rv =
+        RemoveLocked(mExpirationArray[0]->mKey, mExpirationArray[0]->mId);
     MOZ_ASSERT(NS_SUCCEEDED(rv),
                "mExpirationArray and mTokenCacheRecords are out of sync!");
   }
