@@ -95,7 +95,9 @@ impl Metrics {
             i.alpn_http_versions
                 .contains(&happy_eyeballs::HttpVersion::H3)
         });
-        self.https_rr_ech |= infos.iter().any(|i| i.ech_config.is_some());
+        self.https_rr_ech |= infos
+            .iter()
+            .any(|i| i.ech_config.as_ref().is_some_and(|e| !e.as_ref().is_empty()));
         self.https_rr_ipv4hint |= infos.iter().any(|i| !i.ipv4_hints.is_empty());
         self.https_rr_ipv6hint |= infos.iter().any(|i| !i.ipv6_hints.is_empty());
         self.dns_response(id);
