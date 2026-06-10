@@ -128,7 +128,6 @@ class AllChildrenIterator : private FlattenedChildIterator {
     AtFlatTreeKids,
     AtAnonKids,
     AtAfterKid,
-    AtPickerIconKid,
     AtEnd
   };
 
