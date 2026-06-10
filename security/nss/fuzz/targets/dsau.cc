@@ -5,20 +5,27 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "scoped_ptrs_smime.h"
-#include "smime.h"
+#include "cryptohi.h"
+#include "nss_scoped_ptrs.h"
 
 #include "asn1/mutators.h"
-#include "base/database.h"
+
+// Representative raw signature lengths for DecodeDerSigToLen:
+// DSA1 = 40, P-256 = 64, P-384 = 96, P-521 = 132.
+const unsigned int kDecodeLens[] = {40, 64, 96, 132};
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  static NSSDatabase db = NSSDatabase();
+  SECItem input = {siBuffer, (unsigned char*)data, (unsigned int)size};
 
-  SECItem buffer = {siBuffer, (unsigned char*)data, (unsigned int)size};
-
-  ScopedNSSCMSMessage cmsg(NSS_CMSMessage_CreateFromDER(
-      &buffer, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr));
-  (void)NSS_CMSMessage_IsSigned(cmsg.get());
+  // Decode as variable-length (ECDSA / DSA2) signature.
+  // len=40 also covers the DSAU_DecodeDerSig (DSA1) path since both
+  // funnel into common_DecodeDerSig with the same component length.
+  unsigned int len = kDecodeLens[size % 4];
+  ScopedSECItem decoded(DSAU_DecodeDerSigToLen(&input, len));
+  if (decoded) {
+    StackSECItem encoded;
+    (void)DSAU_EncodeDerSigWithLen(&encoded, decoded.get(), decoded->len);
+  }
 
   return 0;
 }

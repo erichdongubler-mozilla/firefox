@@ -379,7 +379,9 @@ CERT_MergeExtensions(void *exthandle, CERTCertExtension **extensions)
             }
         }
         if (node == NULL) {
-            PRBool critical = (ext->critical.len != 0 &&
+            PORT_Assert(ext->critical.len == 0 || ext->critical.data != NULL);
+            PRBool critical = (ext->critical.data != NULL &&
+                               ext->critical.len != 0 &&
                                ext->critical.data[ext->critical.len - 1] != 0);
             if (critical && tag == SEC_OID_UNKNOWN) {
                 PORT_SetError(SEC_ERROR_UNKNOWN_CRITICAL_EXTENSION);
