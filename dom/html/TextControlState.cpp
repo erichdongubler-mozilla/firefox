@@ -241,7 +241,7 @@ class TextInputSelectionController final : public nsSupportsWeakReference,
   ~TextInputSelectionController() = default;
 
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(TextInputSelectionController,
                                            nsISelectionController)
 
