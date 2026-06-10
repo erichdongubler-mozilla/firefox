@@ -838,7 +838,8 @@ static Element* GetPseudo(const nsIContent* aContent, nsAtom* aPseudoProperty) {
              aPseudoProperty == nsGkAtoms::afterPseudoProperty ||
              aPseudoProperty == nsGkAtoms::markerPseudoProperty ||
              aPseudoProperty == nsGkAtoms::backdropPseudoProperty ||
-             aPseudoProperty == nsGkAtoms::checkmarkPseudoProperty);
+             aPseudoProperty == nsGkAtoms::checkmarkPseudoProperty ||
+             aPseudoProperty == nsGkAtoms::pickerIconPseudoProperty);
   if (!aContent->MayHaveAnonymousChildren()) {
     return nullptr;
   }
@@ -899,6 +900,17 @@ nsIFrame* nsLayoutUtils::GetCheckmarkFrame(const nsIContent* aContent) {
 }
 
 /*static*/
+Element* nsLayoutUtils::GetPickerIconPseudo(const nsIContent* aContent) {
+  return GetPseudo(aContent, nsGkAtoms::pickerIconPseudoProperty);
+}
+
+/*static*/
+nsIFrame* nsLayoutUtils::GetPickerIconFrame(const nsIContent* aContent) {
+  Element* pseudo = GetPickerIconPseudo(aContent);
+  return pseudo ? pseudo->GetPrimaryFrame() : nullptr;
+}
+
+/*static*/
 void nsLayoutUtils::AppendGeneratedContentPseudos(
     const Element* aElement, nsTArray<nsIContent*>& aPseudos) {
   if (aElement->HasProperties()) {
@@ -916,6 +928,9 @@ void nsLayoutUtils::AppendGeneratedContentPseudos(
     }
     if (auto* after = nsLayoutUtils::GetAfterPseudo(aElement)) {
       aPseudos.AppendElement(after);
+    }
+    if (auto* pickerIcon = nsLayoutUtils::GetPickerIconPseudo(aElement)) {
+      aPseudos.AppendElement(pickerIcon);
     }
   }
 }
