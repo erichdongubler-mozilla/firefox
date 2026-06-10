@@ -9,6 +9,7 @@
 #include <stdarg.h>
 
 #include <algorithm>
+#include <cmath>
 
 #include "AnchorPositioningUtils.h"
 #include "LayoutLogging.h"
