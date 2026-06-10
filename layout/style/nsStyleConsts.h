@@ -74,10 +74,7 @@ enum class StyleGeometryBox : uint8_t {
   ContentBox,  // Used by everything, except transform-box.
   PaddingBox,  // Used by everything, except transform-box.
   BorderBox,
-  MarginBox,   // XXX Bug 1260094 comment 9.
-               // Although margin-box is required by mask-origin and mask-clip,
-               // we do not implement that due to lack of support in other
-               // browsers. clip-path reference-box only.
+  MarginBox,   // clip-path reference-box only.
   FillBox,     // Used by everything, except shape-box.
   StrokeBox,   // mask-clip, mask-origin and clip-path reference-box only.
   ViewBox,     // Used by everything, except shape-box.
