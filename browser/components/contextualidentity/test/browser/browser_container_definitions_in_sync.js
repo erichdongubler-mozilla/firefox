@@ -12,13 +12,14 @@ function computedVar(className, varName) {
   return value;
 }
 
-// `gray` is intentionally excluded: when nova is off the CSS uses
-// `currentColor` to follow the theme, while the API exposes a fixed hex code
-// for extensions.
+// `gray` is only excluded when nova is off: the CSS then uses `currentColor` to
+// follow the theme, while the API exposes a fixed hex code for extensions. When
+// nova is on, gray uses the `--color-gray-30` token like every other color and
+// is compared normally.
 add_task(async function container_color_codes_match_css() {
-  const SKIP = new Set(["gray"]);
+  const novaEnabled = Services.prefs.getBoolPref("browser.nova.enabled", false);
   for (const color of ContextualIdentityService.containerColors) {
-    if (SKIP.has(color)) {
+    if (color === "gray" && !novaEnabled) {
       continue;
     }
     let cssColor = computedVar(

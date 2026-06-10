@@ -110,8 +110,8 @@
   --identity-icon-color: currentColor;
 
   @media -moz-pref("browser.nova.enabled") {
-    --identity-tab-color: var(--color-gray-15);
-    --identity-icon-color: var(--color-gray-15);
+    --identity-tab-color: var(--color-gray-30);
+    --identity-icon-color: var(--color-gray-30);
     --identity-pill-color: light-dark(var(--color-gray-50), var(--color-gray-20));
   }
 }
