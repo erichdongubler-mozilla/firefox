@@ -1592,7 +1592,7 @@ void nsXULPopupManager::PaintPopups(nsRefreshDriver* aRefreshDriver) {
   AutoTArray<std::pair<RefPtr<nsIWidget>, WeakFrame>, 32> popupsToPaint;
   for (nsMenuChainItem* item = mPopups.get(); item; item = item->GetParent()) {
     nsMenuPopupFrame* frame = item->Frame();
-    if (frame->PopupState() == ePopupInvisible ||
+    if (!frame->IsVisibleOrHiding() ||
         frame->PresContext()->GetRootPresContext()->RefreshDriver() !=
             aRefreshDriver) {
       continue;
