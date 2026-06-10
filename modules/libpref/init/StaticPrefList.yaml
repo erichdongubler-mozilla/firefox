@@ -3147,18 +3147,6 @@
   value: true
   mirror: always
 
-# Whether to allow the TYPE_INTERNAL_FORCE_ALLOWED_DTD content policy type on
-# fetch requests received from a content process. Only consumers such as
-# Thunderbird that still rely on DTD loads should enable this.
-- name: dom.fetch.allow_force_allowed_dtd
-  type: RelaxedAtomicBool
-#if defined(MOZ_THUNDERBIRD)
-  value: true
-#else
-  value: false
-#endif
-  mirror: always
-
 - name: dom.fetchObserver.enabled
   type: RelaxedAtomicBool
   value: false

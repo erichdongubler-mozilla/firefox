@@ -3066,7 +3066,7 @@ class Document : public nsINode,
 
   void ForceEnableXULXBL() { mAllowXULXBL = eTriTrue; }
 
-  void ForceSkipDTDSecurityChecks();
+  void ForceSkipDTDSecurityChecks() { mSkipDTDSecurityChecks = true; }
 
   /**
    * Returns the template content owner document that owns the content of

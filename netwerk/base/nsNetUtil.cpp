@@ -17,7 +17,6 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/StaticPrefs_browser.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_privacy.h"
@@ -287,13 +286,6 @@ nsresult NS_NewChannelInternal(
   // loadinfo attached.
   NS_ENSURE_ARG_POINTER(outChannel);
 
-  if (aLoadInfo &&
-      aLoadInfo->InternalContentPolicyType() ==
-          nsIContentPolicy::TYPE_INTERNAL_FORCE_ALLOWED_DTD &&
-      !mozilla::StaticPrefs::dom_fetch_allow_force_allowed_dtd()) {
-    return NS_ERROR_CONTENT_BLOCKED;
-  }
-
   nsCOMPtr<nsIIOService> grip;
   nsresult rv = net_EnsureIOService(&aIoService, grip);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -459,11 +451,6 @@ nsresult NS_NewChannelInternal(
     nsIIOService* aIoService /* = nullptr */,
     uint32_t aSandboxFlags /* = 0 */) {
   NS_ENSURE_ARG_POINTER(outChannel);
-
-  if (aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_FORCE_ALLOWED_DTD &&
-      !mozilla::StaticPrefs::dom_fetch_allow_force_allowed_dtd()) {
-    return NS_ERROR_CONTENT_BLOCKED;
-  }
 
   nsCOMPtr<nsIIOService> grip;
   nsresult rv = net_EnsureIOService(&aIoService, grip);
