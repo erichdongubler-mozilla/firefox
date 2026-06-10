@@ -421,6 +421,8 @@ run-if = [
 
 ["browser_ext_runtime_openOptionsPage.js"]
 
+["browser_ext_runtime_openOptionsPage_containers.js"]
+
 ["browser_ext_runtime_openOptionsPage_uninstall.js"]
 
 ["browser_ext_runtime_setUninstallURL.js"]
