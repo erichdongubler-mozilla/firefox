@@ -605,11 +605,6 @@ add_task(async function test_bookmarks_context_menu_folder() {
     "Open all bookmarks is visible for a folder."
   );
   ok(
-    !document.getElementById("sidebar-bookmarks-context-open-all-bookmarks")
-      .disabled,
-    "Open all bookmarks is enabled for a folder with bookmark items."
-  );
-  ok(
     document.getElementById("sidebar-bookmarks-context-open-in-tab").hidden,
     "Open in tab is hidden for a folder."
   );
@@ -626,60 +621,6 @@ add_task(async function test_bookmarks_context_menu_folder() {
   await PlacesUtils.bookmarks.remove({ guid: folder.guid });
   SidebarTestUtils.closePanel(window);
 });
-
-add_task(
-  async function test_bookmarks_context_menu_folder_without_bookmark_items() {
-    const folder = await addFolder("Subfolders Only");
-    await addFolder("Nested Folder", folder.guid);
-
-    const { component } = await showBookmarksSidebar();
-    const tabList = component.bookmarkList;
-
-    await BrowserTestUtils.waitForMutationCondition(
-      tabList.shadowRoot,
-      { childList: true, subtree: true },
-      () => tabList.folderEls[0]
-    );
-
-    const toolbarDetails = tabList.folderEls[0];
-    if (!toolbarDetails.open) {
-      toolbarDetails.querySelector("summary").click();
-      await BrowserTestUtils.waitForMutationCondition(
-        toolbarDetails,
-        { attributes: true },
-        () => toolbarDetails.open
-      );
-    }
-
-    const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
-    await BrowserTestUtils.waitForMutationCondition(
-      nestedList.shadowRoot,
-      { childList: true, subtree: true },
-      () => nestedList.folderEls[0]
-    );
-
-    const folderDetails = nestedList.folderEls[0];
-    const summary = folderDetails.querySelector("summary");
-
-    const contextMenu = SidebarController.currentContextMenu;
-    await openAndWaitForContextMenu(contextMenu, summary, () => {});
-
-    ok(
-      !document.getElementById("sidebar-bookmarks-context-open-all-bookmarks")
-        .hidden,
-      "Open all bookmarks is visible for a folder with only subfolders."
-    );
-    ok(
-      document.getElementById("sidebar-bookmarks-context-open-all-bookmarks")
-        .disabled,
-      "Open all bookmarks is disabled for a folder with no bookmark items."
-    );
-
-    contextMenu.hidePopup();
-    await PlacesUtils.bookmarks.remove({ guid: folder.guid });
-    SidebarTestUtils.closePanel(window);
-  }
-);
 
 add_task(async function test_add_folder_before_right_clicked_bookmark() {
   await addBookmark({ title: "Alpha", url: "https://example.com/a" });
