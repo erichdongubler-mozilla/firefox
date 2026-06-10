@@ -24274,7 +24274,8 @@ class _Weather extends (external_React_default()).PureComponent {
     this.state = {
       url: "https://example.com",
       impressionSeen: false,
-      errorSeen: false
+      errorSeen: false,
+      isMenuEnabled: false
     };
     this.setImpressionRef = element => {
       this.impressionElement = element;
@@ -24283,7 +24284,13 @@ class _Weather extends (external_React_default()).PureComponent {
       this.errorElement = element;
     };
     this.setPanelRef = element => {
+      if (this.panelElement) {
+        this.panelElement.removeEventListener("toggle", this.handlePanelToggle);
+      }
       this.panelElement = element;
+      if (element) {
+        element.addEventListener("toggle", this.handlePanelToggle);
+      }
     };
     this.setSizeSubmenuRef = element => {
       if (this.sizeSubmenuElement) {
@@ -24298,6 +24305,7 @@ class _Weather extends (external_React_default()).PureComponent {
     this.onProviderClick = this.onProviderClick.bind(this);
     this.onMenuButtonClick = this.onMenuButtonClick.bind(this);
     this.onMenuButtonKeyDown = this.onMenuButtonKeyDown.bind(this);
+    this.handlePanelToggle = this.handlePanelToggle.bind(this);
   }
   onSizeSubmenuClick(e) {
     // The size submenu panel-list is moved into the panel-item's shadow DOM by
@@ -24443,6 +24451,9 @@ class _Weather extends (external_React_default()).PureComponent {
   handleChangeLocation = () => {
     if (this.panelElement) {
       this.panelElement.hide();
+      this.setState({
+        isMenuEnabled: false
+      });
     }
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       this.props.dispatch(actionCreators.BroadcastToContent({
@@ -24674,6 +24685,12 @@ class _Weather extends (external_React_default()).PureComponent {
     const experimentValue = values.trainhopConfig?.weather?.enabled;
     return systemValue || experimentValue;
   }
+  handlePanelToggle(e) {
+    const isOpen = e.newState === "open";
+    this.setState({
+      isMenuEnabled: isOpen
+    });
+  }
   render() {
     // Check if weather should be rendered
     if (!this.isEnabled()) {
@@ -24739,6 +24756,7 @@ class _Weather extends (external_React_default()).PureComponent {
       className: "weatherButtonContextMenuWrapper"
     }, /*#__PURE__*/external_React_default().createElement("button", {
       "aria-haspopup": "true",
+      "aria-expanded": this.state.isMenuEnabled,
       onKeyDown: this.onMenuButtonKeyDown,
       onClick: this.onMenuButtonClick,
       "data-l10n-id": "newtab-menu-section-tooltip",
