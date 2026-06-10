@@ -2371,6 +2371,14 @@ const LinkMenuOptions = {
     action: actionCreators.OnlyToMain({ type: actionTypes.SETTINGS_OPEN }),
     userEvent: "OPEN_NEWTAB_PREFS",
   }),
+  SectionLearnMore: ({ learnMoreUrl }) => ({
+    id: "newtab-menu-section-learn-more",
+    action: actionCreators.OnlyToMain({
+      type: actionTypes.OPEN_LINK,
+      data: { url: learnMoreUrl },
+    }),
+    userEvent: "CLICK_SECTION_LEARN_MORE",
+  }),
   // eslint-disable-next-line max-params
   OurSponsorsAndYourPrivacy: (
     site,
@@ -10681,13 +10689,16 @@ function SectionContextMenu({
   sectionKey,
   following,
   sectionPersonalization,
-  sectionPosition
+  sectionPosition,
+  learnMoreUrl
 }) {
   const SECTIONS_CONTEXT_MENU_OPTIONS = [];
   if (following) {
     SECTIONS_CONTEXT_MENU_OPTIONS.push("SectionUnfollow");
   }
   SECTIONS_CONTEXT_MENU_OPTIONS.push("SectionBlock");
+  SECTIONS_CONTEXT_MENU_OPTIONS.push("Separator");
+  SECTIONS_CONTEXT_MENU_OPTIONS.push("SectionLearnMore");
   const [showContextMenu, setShowContextMenu] = (0,external_React_namespaceObject.useState)(false);
   const onClick = e => {
     e.preventDefault();
@@ -10716,7 +10727,8 @@ function SectionContextMenu({
       sectionPersonalization,
       sectionKey,
       sectionPosition,
-      title
+      title,
+      learnMoreUrl
     }
   }));
 }
@@ -11855,7 +11867,8 @@ function CardSection({
     sectionKey: sectionKey,
     title: title,
     type: type,
-    sectionPosition: sectionPosition
+    sectionPosition: sectionPosition,
+    learnMoreUrl: prefs["sectionsLearnMore.url"]
   }));
   return /*#__PURE__*/external_React_default().createElement("section", {
     className: "ds-section",
@@ -11884,7 +11897,8 @@ function CardSection({
     title: title,
     type: type,
     sectionPosition: sectionPosition,
-    buttonType: "ghost"
+    buttonType: "ghost",
+    learnMoreUrl: prefs["sectionsLearnMore.url"]
   }) : sectionContextWrapper)), /*#__PURE__*/external_React_default().createElement("div", {
     ref: gridRef,
     className: `ds-section-grid ds-card-grid`,
