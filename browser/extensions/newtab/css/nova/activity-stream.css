@@ -15050,32 +15050,19 @@ hr {
   align-self: end;
   box-shadow: var(--card-box-shadow);
   border: var(--border-width) solid var(--button-border-color-ghost);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .nova-enabled .top-site-outer .tile {
-    transition: width 100ms ease-out, height 100ms ease-out;
-  }
+  transition: width 100ms ease-out, height 100ms ease-out;
 }
 .nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .tile {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  width: var(--col-width);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  height: var(--col-width);
   border-color: var(--button-border-color-ghost-hover);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .tile {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    width: var(--col-width);
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    height: var(--col-width);
-  }
 }
 .nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .icon-pin-small,
 .nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .context-menu-button {
   opacity: 1;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .icon-pin-small,
-.nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .context-menu-button {
-    transition: opacity 100ms ease-out 50ms;
-  }
+  transition: opacity 100ms ease-out 50ms;
 }
 .nova-enabled .top-site-outer:active .tile {
   border-color: var(--button-border-color-ghost-active);
@@ -15141,17 +15128,6 @@ hr {
   width: calc(var(--col-width) + 8px);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .nova-enabled .top-site-outer .context-menu-button {
-    inset-inline-end: calc(var(--space-xsmall) + var(--space-xxsmall) / 2);
-    inset-block-start: var(--space-small);
-  }
-
-  .nova-enabled .top-site-outer .icon-pin-small {
-    inset-block-start: calc(var(--space-medium) + var(--space-xxsmall));
-    inset-inline-start: calc(var(--space-small));
-  }
-}
 @media (forced-colors: active) {
   .nova-enabled .top-site-outer .tile {
     background-color: var(--button-background-color);
