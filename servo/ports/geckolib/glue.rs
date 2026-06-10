@@ -10780,11 +10780,11 @@ fn get_byte_index_from_line_and_column(css_text: &str, line: u32, column: u32) -
 
     let line_byte_index = line_byte_index.unwrap();
     let mut current_column = 1;
-    for (byte_index, _char) in css_text[line_byte_index..].char_indices() {
-        if current_column == column {
+    for (byte_index, char) in css_text[line_byte_index..].char_indices() {
+        if current_column >= column {
             return Some(line_byte_index + byte_index);
         }
-        current_column += 1;
+        current_column += char.len_utf16() as u32;
     }
 
     None
