@@ -9,7 +9,6 @@
 #include <stdarg.h>
 
 #include <algorithm>
-#include <cmath>
 
 #include "AnchorPositioningUtils.h"
 #include "LayoutLogging.h"
@@ -1828,12 +1827,12 @@ bool nsIFrame::ComputeBorderRadii(const BorderRadius& aBorderRadius,
   aRadii.mShapeK[mozilla::eCornerBottomRight] = aCornerShape.bottom_right.k;
 
   bool isTopLeftSquare =
-      isinf(aCornerShape.top_left.k) && (aCornerShape.top_left.k > 0.0f);
+      std::isinf(aCornerShape.top_left.k) && (aCornerShape.top_left.k > 0.0f);
   bool isTopRightSquare =
-      isinf(aCornerShape.top_right.k) && (aCornerShape.top_right.k > 0.0f);
-  bool isBottomLeftSquare =
-      isinf(aCornerShape.bottom_left.k) && (aCornerShape.bottom_left.k > 0.0f);
-  bool isBottomRightSquare = isinf(aCornerShape.bottom_right.k) &&
+      std::isinf(aCornerShape.top_right.k) && (aCornerShape.top_right.k > 0.0f);
+  bool isBottomLeftSquare = std::isinf(aCornerShape.bottom_left.k) &&
+                            (aCornerShape.bottom_left.k > 0.0f);
+  bool isBottomRightSquare = std::isinf(aCornerShape.bottom_right.k) &&
                              (aCornerShape.bottom_right.k > 0.0f);
 
   if (aSkipSides.Intersects(SideBits::eTop | SideBits::eLeft) ||
