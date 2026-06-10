@@ -19,7 +19,11 @@ task-defaults:
     task-context:
         from-parameters:
             release-type: release_type
+        from-custom:
+            - release-level
         substitution-fields:
+            - worker-type
+            - scopes
             - bouncer-products-per-alias
     worker-type: bouncer
     worker:

@@ -22,8 +22,11 @@ task-defaults:
     task-context:
         from-parameters:
             release-type: release_type
+        from-custom:
+            - release-level
         substitution-fields:
             - worker.channel
+            - worker-type
     treeherder:
         kind: build
         tier: 2

@@ -23,9 +23,12 @@ task-defaults:
     task-context:
         from-parameters:
             release-type: release_type
+        from-custom:
+            - release-level
         substitution-fields:
             - worker.channel
             - worker.publish-mode
+            - worker-type
     treeherder:
         platform: win32-shippable/opt
         kind: build

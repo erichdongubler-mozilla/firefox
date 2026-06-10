@@ -41,9 +41,12 @@ task-defaults:
     task-context:
         from-parameters:
             project: project
+        from-custom:
+            - release-level
         substitution-fields:
             - run-on-hg-branches
             - shipping-phase
+            - bucket-scope
 
 tasks:
     beetmover-geckoview:
