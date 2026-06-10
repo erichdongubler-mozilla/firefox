@@ -184,8 +184,6 @@
     <string name="lens_camera_mode_lens">Lens</string>
     <!-- Content description for the QR scanner half of the camera mode toggle -->
     <string name="lens_camera_mode_qr">QR scanner</string>
-    <!-- Toast shown when the user picks an image from the gallery in QR mode but no QR code is found in it -->
-    <string name="lens_camera_qr_no_code_found">No QR code found in image</string>
 
     <!--  Voice Search in Display Mode toolbar strings  -->
     <!-- Label for toggling voice search visibility in the display-mode toolbar -->
