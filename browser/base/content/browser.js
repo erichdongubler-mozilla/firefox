@@ -3168,62 +3168,19 @@ var gUIDensity = {
   MODE_TOUCH: 2,
   uiDensityPref: "browser.uidensity",
   autoTouchModePref: "browser.touchmode.auto",
-  autoCompactThresholdPref: "browser.compactmode.auto.threshold",
-  knownPrefs: new Set([
-    "browser.uidensity",
-    "browser.touchmode.auto",
-    "browser.compactmode.auto.threshold",
-  ]),
-
-  // Natural (non-compact) tabstrip height in CSS pixels. Used as the
-  // numerator of the auto-compact ratio so the trigger doesn't flap when
-  // compact mode itself shrinks the tabstrip.
-  AUTO_COMPACT_REFERENCE_TABSTRIP_HEIGHT: 40,
-
-  // Natural (non-compact) collapsed sidebar.revamp launcher width in CSS
-  // pixels: icon button width (--button-size-icon, 32px) plus outer inline
-  // padding on each side (--space-medium, 12px). Used as the numerator of
-  // the auto-compact width ratio so the trigger doesn't flap when compact
-  // mode shrinks the launcher (see sidebar-main.css).
-  AUTO_COMPACT_REFERENCE_SIDEBAR_LAUNCHER_WIDTH: 56,
+  knownPrefs: new Set(["browser.uidensity", "browser.touchmode.auto"]),
 
   init() {
     this.update();
     Services.obs.addObserver(this, "tablet-mode-change");
     Services.prefs.addObserver(this.uiDensityPref, this);
     Services.prefs.addObserver(this.autoTouchModePref, this);
-    Services.prefs.addObserver(this.autoCompactThresholdPref, this);
-    window.addEventListener("resize", this);
-
-    // Re-evaluate auto-compact when the sidebar.revamp launcher opens,
-    // closes, or toggles between collapsed and expanded, since the
-    // collapsed launcher width feeds into the auto-compact ratio.
-    let sidebarMainContainer = document.getElementById("sidebar-main");
-    if (sidebarMainContainer) {
-      this._sidebarStateObserver = new MutationObserver(() => this.update());
-      this._sidebarStateObserver.observe(sidebarMainContainer, {
-        attributes: true,
-        attributeFilter: ["hidden", "sidebar-launcher-expanded"],
-      });
-    }
   },
 
   uninit() {
     Services.obs.removeObserver(this, "tablet-mode-change");
     Services.prefs.removeObserver(this.uiDensityPref, this);
     Services.prefs.removeObserver(this.autoTouchModePref, this);
-    Services.prefs.removeObserver(this.autoCompactThresholdPref, this);
-    window.removeEventListener("resize", this);
-    if (this._sidebarStateObserver) {
-      this._sidebarStateObserver.disconnect();
-      this._sidebarStateObserver = null;
-    }
-  },
-
-  handleEvent(event) {
-    if (event.type == "resize") {
-      this.update();
-    }
   },
 
   observe(aSubject, aTopic, aPrefName) {
@@ -3243,44 +3200,6 @@ var gUIDensity = {
     this.update();
   },
 
-  _shouldAutoCompact() {
-    const threshold = parseFloat(
-      Services.prefs.getCharPref(this.autoCompactThresholdPref, "0.05")
-    );
-    if (!(threshold > 0)) {
-      return false;
-    }
-    if (
-      window.innerHeight &&
-      this.AUTO_COMPACT_REFERENCE_TABSTRIP_HEIGHT / window.innerHeight >
-        threshold
-    ) {
-      return true;
-    }
-    if (
-      window.innerWidth &&
-      this._isSidebarLauncherCollapsed() &&
-      this.AUTO_COMPACT_REFERENCE_SIDEBAR_LAUNCHER_WIDTH / window.innerWidth >
-        threshold
-    ) {
-      return true;
-    }
-    return false;
-  },
-
-  // Whether the sidebar.revamp launcher is currently visible (sidebar is
-  // "open") but not expanded.
-  _isSidebarLauncherCollapsed() {
-    if (!Services.prefs.getBoolPref("sidebar.revamp", false)) {
-      return false;
-    }
-    if (!SidebarController.initialized) {
-      return false;
-    }
-    const state = SidebarController._state;
-    return Boolean(state && state.launcherVisible && !state.launcherExpanded);
-  },
-
   getCurrentDensity() {
     // Automatically override the uidensity to touch in Windows tablet mode
     // (either Win10 or Win11).
@@ -3290,15 +3209,6 @@ var gUIDensity = {
       if (inTablet && Services.prefs.getBoolPref(this.autoTouchModePref)) {
         return { mode: this.MODE_TOUCH, overridden: true };
       }
-    }
-    // Under nova, auto-compact in small windows, but only when the user
-    // hasn't explicitly chosen a uidensity value.
-    if (
-      Services.prefs.getBoolPref("browser.nova.enabled", false) &&
-      !Services.prefs.prefHasUserValue(this.uiDensityPref) &&
-      this._shouldAutoCompact()
-    ) {
-      return { mode: this.MODE_COMPACT, overridden: true };
     }
     return {
       mode: Services.prefs.getIntPref(this.uiDensityPref),
