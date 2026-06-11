@@ -114,8 +114,8 @@ class MacroAssemblerRiscv64 : public Assembler {
   static bool SupportsFloatingPoint() { return true; }
   static bool SupportsUnalignedAccesses() { return true; }
   static bool SupportsFastUnalignedFPAccesses() { return true; }
-  static bool SupportsFloat64To16() { return false; }
-  static bool SupportsFloat32To16() { return false; }
+  static bool SupportsFloat64To16() { return HasZfhminExtension(); }
+  static bool SupportsFloat32To16() { return HasZfhminExtension(); }
 
   void haltingAlign(int alignment) {
     // TODO(loong64): Implement a proper halting align.
@@ -125,6 +125,9 @@ class MacroAssemblerRiscv64 : public Assembler {
   int32_t GetOffset(Label* L, OffsetSize bits) {
     return Assembler::branchOffsetHelper(L, bits);
   }
+
+  std::pair<Register, int16_t> computeAddress(Address address,
+                                              UseScratchRegisterScope& temps);
 
   // load
   FaultingCodeOffset ma_load(Register dest, Address address,
@@ -137,6 +140,8 @@ class MacroAssemblerRiscv64 : public Assembler {
   FaultingCodeOffset ma_loadDouble(FloatRegister dest, const BaseIndex& src);
   FaultingCodeOffset ma_loadFloat(FloatRegister dest, Address address);
   FaultingCodeOffset ma_loadFloat(FloatRegister dest, const BaseIndex& src);
+  FaultingCodeOffset ma_loadFloat16(FloatRegister dest, Address address);
+  FaultingCodeOffset ma_loadFloat16(FloatRegister dest, const BaseIndex& src);
 
   // store
   FaultingCodeOffset ma_store(Register data, Address address,
@@ -155,6 +160,8 @@ class MacroAssemblerRiscv64 : public Assembler {
   FaultingCodeOffset ma_storeDouble(FloatRegister src, const BaseIndex& dest);
   FaultingCodeOffset ma_storeFloat(FloatRegister src, Address address);
   FaultingCodeOffset ma_storeFloat(FloatRegister src, const BaseIndex& dest);
+  FaultingCodeOffset ma_storeFloat16(FloatRegister src, Address address);
+  FaultingCodeOffset ma_storeFloat16(FloatRegister src, const BaseIndex& dest);
 
   // immediates
   BufferOffset ma_liPatchable(Register dest, Imm32 imm);
@@ -549,19 +556,27 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   void convertInt32ToFloat32(const Address& src, FloatRegister dest);
 
   void convertDoubleToFloat16(FloatRegister src, FloatRegister dest) {
-    MOZ_CRASH("Not supported for this target");
+    MOZ_ASSERT(HasZfhminExtension());
+    fcvt_h_d(dest, src);
   }
   void convertFloat16ToDouble(FloatRegister src, FloatRegister dest) {
-    MOZ_CRASH("Not supported for this target");
+    MOZ_ASSERT(HasZfhminExtension());
+    fcvt_d_h(dest, src);
   }
   void convertFloat32ToFloat16(FloatRegister src, FloatRegister dest) {
-    MOZ_CRASH("Not supported for this target");
+    MOZ_ASSERT(HasZfhminExtension());
+    fcvt_h_s(dest, src);
   }
   void convertFloat16ToFloat32(FloatRegister src, FloatRegister dest) {
-    MOZ_CRASH("Not supported for this target");
+    MOZ_ASSERT(HasZfhminExtension());
+    fcvt_s_h(dest, src);
   }
   void convertInt32ToFloat16(Register src, FloatRegister dest) {
-    MOZ_CRASH("Not supported for this target");
+    MOZ_ASSERT(HasZfhminExtension());
+    // `fcvt.h.w` requires full Zfh support, not just Zfhmin. Therefore we need
+    // to perform the sequence `fcvt.d.w` followed by `fcvt.h.d`.
+    fcvt_d_w(dest, src);
+    fcvt_h_d(dest, dest);
   }
 
   void truncateFloat32ModUint32(FloatRegister src, Register dest);
@@ -1059,11 +1074,11 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
 
   FaultingCodeOffset loadFloat16(const Address& addr, FloatRegister dest,
                                  Register) {
-    MOZ_CRASH("Not supported for this target");
+    return ma_loadFloat16(dest, addr);
   }
   FaultingCodeOffset loadFloat16(const BaseIndex& src, FloatRegister dest,
                                  Register) {
-    MOZ_CRASH("Not supported for this target");
+    return ma_loadFloat16(dest, src);
   }
 
   template <typename S>

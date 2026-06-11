@@ -1192,11 +1192,10 @@ void MacroAssemblerRiscv64Compat::truncateFloat32ModUint32(FloatRegister src,
 }
 
 // Memory.
-FaultingCodeOffset MacroAssemblerRiscv64::ma_loadDouble(FloatRegister dest,
-                                                        Address address) {
-  UseScratchRegisterScope temps(this);
-  int16_t encodedOffset;
+std::pair<Register, int16_t> MacroAssemblerRiscv64::computeAddress(
+    Address address, UseScratchRegisterScope& temps) {
   Register base;
+  int16_t encodedOffset;
 
   if (!is_int12(address.offset)) {
     Register scratch = temps.Acquire();
@@ -1205,9 +1204,17 @@ FaultingCodeOffset MacroAssemblerRiscv64::ma_loadDouble(FloatRegister dest,
     base = scratch;
     encodedOffset = 0;
   } else {
-    encodedOffset = address.offset;
     base = address.base;
+    encodedOffset = address.offset;
   }
+
+  return {base, encodedOffset};
+}
+
+FaultingCodeOffset MacroAssemblerRiscv64::ma_loadDouble(FloatRegister dest,
+                                                        Address address) {
+  UseScratchRegisterScope temps(this);
+  auto [base, encodedOffset] = computeAddress(address, temps);
 
   AutoForbidPoolsAndNops afp(this, 1);
   FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
@@ -1226,19 +1233,7 @@ FaultingCodeOffset MacroAssemblerRiscv64::ma_loadDouble(FloatRegister dest,
 FaultingCodeOffset MacroAssemblerRiscv64::ma_loadFloat(FloatRegister dest,
                                                        Address address) {
   UseScratchRegisterScope temps(this);
-  int16_t encodedOffset;
-  Register base;
-
-  if (!is_int12(address.offset)) {
-    Register scratch = temps.Acquire();
-    ma_li(scratch, Imm32(address.offset));
-    add(scratch, address.base, scratch);
-    base = scratch;
-    encodedOffset = 0;
-  } else {
-    encodedOffset = address.offset;
-    base = address.base;
-  }
+  auto [base, encodedOffset] = computeAddress(address, temps);
 
   AutoForbidPoolsAndNops afp(this, 1);
   FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
@@ -1254,23 +1249,32 @@ FaultingCodeOffset MacroAssemblerRiscv64::ma_loadFloat(FloatRegister dest,
   return ma_loadFloat(dest, Address(scratch, src.offset));
 }
 
+FaultingCodeOffset MacroAssemblerRiscv64::ma_loadFloat16(FloatRegister dest,
+                                                         Address address) {
+  MOZ_ASSERT(HasZfhminExtension());
+
+  UseScratchRegisterScope temps(this);
+  auto [base, encodedOffset] = computeAddress(address, temps);
+
+  AutoForbidPoolsAndNops afp(this, 1);
+  FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
+  flh(dest, base, encodedOffset);
+  return fco;
+}
+
+FaultingCodeOffset MacroAssemblerRiscv64::ma_loadFloat16(FloatRegister dest,
+                                                         const BaseIndex& src) {
+  UseScratchRegisterScope temps(this);
+  Register scratch = temps.Acquire();
+  computeScaledAddress(src, scratch);
+  return ma_loadFloat16(dest, Address(scratch, src.offset));
+}
+
 FaultingCodeOffset MacroAssemblerRiscv64::ma_load(
     Register dest, Address address, LoadStoreSize size,
     LoadStoreExtension extension) {
   UseScratchRegisterScope temps(this);
-  int16_t encodedOffset;
-  Register base;
-
-  if (!is_int12(address.offset)) {
-    Register scratch = temps.Acquire();
-    ma_li(scratch, Imm32(address.offset));
-    add(scratch, address.base, scratch);
-    base = scratch;
-    encodedOffset = 0;
-  } else {
-    encodedOffset = address.offset;
-    base = address.base;
-  }
+  auto [base, encodedOffset] = computeAddress(address, temps);
 
   AutoForbidPoolsAndNops afp(this, 1);
   FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
@@ -1343,20 +1347,7 @@ FaultingCodeOffset MacroAssemblerRiscv64::ma_store(
     Register data, Address address, LoadStoreSize size,
     LoadStoreExtension extension) {
   UseScratchRegisterScope temps(this);
-
-  int16_t encodedOffset;
-  Register base;
-
-  if (!is_int12(address.offset)) {
-    Register scratch = temps.Acquire();
-    ma_li(scratch, Imm32(address.offset));
-    add(scratch, address.base, scratch);
-    base = scratch;
-    encodedOffset = 0;
-  } else {
-    encodedOffset = address.offset;
-    base = address.base;
-  }
+  auto [base, encodedOffset] = computeAddress(address, temps);
 
   AutoForbidPoolsAndNops afp(this, 1);
   FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
@@ -1383,19 +1374,7 @@ FaultingCodeOffset MacroAssemblerRiscv64::ma_store(
 FaultingCodeOffset MacroAssemblerRiscv64::ma_storeDouble(FloatRegister src,
                                                          Address address) {
   UseScratchRegisterScope temps(this);
-  int16_t encodedOffset;
-  Register base;
-
-  if (!is_int12(address.offset)) {
-    Register scratch = temps.Acquire();
-    ma_li(scratch, Imm32(address.offset));
-    add(scratch, address.base, scratch);
-    base = scratch;
-    encodedOffset = 0;
-  } else {
-    encodedOffset = address.offset;
-    base = address.base;
-  }
+  auto [base, encodedOffset] = computeAddress(address, temps);
 
   AutoForbidPoolsAndNops afp(this, 1);
   FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
@@ -1414,19 +1393,7 @@ FaultingCodeOffset MacroAssemblerRiscv64::ma_storeDouble(
 FaultingCodeOffset MacroAssemblerRiscv64::ma_storeFloat(FloatRegister src,
                                                         Address address) {
   UseScratchRegisterScope temps(this);
-  int16_t encodedOffset;
-  Register base;
-
-  if (!is_int12(address.offset)) {
-    Register scratch = temps.Acquire();
-    ma_li(scratch, Imm32(address.offset));
-    add(scratch, address.base, scratch);
-    base = scratch;
-    encodedOffset = 0;
-  } else {
-    encodedOffset = address.offset;
-    base = address.base;
-  }
+  auto [base, encodedOffset] = computeAddress(address, temps);
 
   AutoForbidPoolsAndNops afp(this, 1);
   FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
@@ -1440,6 +1407,27 @@ FaultingCodeOffset MacroAssemblerRiscv64::ma_storeFloat(FloatRegister src,
   Register scratch = temps.Acquire();
   computeScaledAddress(dest, scratch);
   return ma_storeFloat(src, Address(scratch, dest.offset));
+}
+
+FaultingCodeOffset MacroAssemblerRiscv64::ma_storeFloat16(FloatRegister src,
+                                                          Address address) {
+  MOZ_ASSERT(HasZfhminExtension());
+
+  UseScratchRegisterScope temps(this);
+  auto [base, encodedOffset] = computeAddress(address, temps);
+
+  AutoForbidPoolsAndNops afp(this, 1);
+  FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
+  fsh(src, base, encodedOffset);
+  return fco;
+}
+
+FaultingCodeOffset MacroAssemblerRiscv64::ma_storeFloat16(
+    FloatRegister src, const BaseIndex& dest) {
+  UseScratchRegisterScope temps(this);
+  Register scratch = temps.Acquire();
+  computeScaledAddress(dest, scratch);
+  return ma_storeFloat16(src, Address(scratch, dest.offset));
 }
 
 void MacroAssemblerRiscv64::computeScaledAddress(const BaseIndex& address,
