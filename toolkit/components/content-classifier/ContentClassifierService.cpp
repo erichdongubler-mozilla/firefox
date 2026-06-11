@@ -59,7 +59,7 @@ constexpr ContentClassifierFeature kFeatures[] = {
      nsIWebProgressListener::STATE_LOADED_LEVEL_1_TRACKING_CONTENT,
      nsIWebProgressListener::STATE_REPLACED_TRACKING_CONTENT,
      nsIWebProgressListener::STATE_ALLOWED_TRACKING_CONTENT,
-     NS_ERROR_TRACKING_URI},
+     NS_ERROR_TRACKING_URI, false},
     // The annotation variant adds content-track-digest256, which mirrors
     // url-classifier's promotion to STATE_LOADED_LEVEL_2_TRACKING_CONTENT
     // when a content-track-* table matches.
@@ -69,39 +69,39 @@ constexpr ContentClassifierFeature kFeatures[] = {
      nsIWebProgressListener::STATE_LOADED_LEVEL_2_TRACKING_CONTENT,
      nsIWebProgressListener::STATE_REPLACED_TRACKING_CONTENT,
      nsIWebProgressListener::STATE_ALLOWED_TRACKING_CONTENT,
-     NS_ERROR_TRACKING_URI},
+     NS_ERROR_TRACKING_URI, false},
     {"social-trackers"_ns, Span<const nsLiteralCString>(kSocialTrackersListIds),
      nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_SOCIALTRACKING,
      nsIWebProgressListener::STATE_LOADED_SOCIALTRACKING_CONTENT,
      nsIWebProgressListener::STATE_REPLACED_TRACKING_CONTENT,
      nsIWebProgressListener::STATE_ALLOWED_TRACKING_CONTENT,
-     NS_ERROR_SOCIALTRACKING_URI},
+     NS_ERROR_SOCIALTRACKING_URI, false},
     {"fingerprinters"_ns, Span<const nsLiteralCString>(kFingerprintersListIds),
      nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_FINGERPRINTING,
      nsIWebProgressListener::STATE_LOADED_FINGERPRINTING_CONTENT,
      nsIWebProgressListener::STATE_REPLACED_FINGERPRINTING_CONTENT,
      nsIWebProgressListener::STATE_ALLOWED_FINGERPRINTING_CONTENT,
-     NS_ERROR_FINGERPRINTING_URI},
+     NS_ERROR_FINGERPRINTING_URI, false},
     {"email-trackers"_ns, Span<const nsLiteralCString>(kEmailTrackersListIds),
      nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_EMAILTRACKING,
      nsIWebProgressListener::STATE_LOADED_EMAILTRACKING_LEVEL_1_CONTENT,
      nsIWebProgressListener::STATE_REPLACED_TRACKING_CONTENT,
      nsIWebProgressListener::STATE_ALLOWED_TRACKING_CONTENT,
-     NS_ERROR_EMAILTRACKING_URI},
+     NS_ERROR_EMAILTRACKING_URI, false},
     {"cryptominers"_ns, Span<const nsLiteralCString>(kCryptominersListIds),
      nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_CRYPTOMINING,
      nsIWebProgressListener::STATE_LOADED_CRYPTOMINING_CONTENT,
      nsIWebProgressListener::STATE_REPLACED_TRACKING_CONTENT,
      nsIWebProgressListener::STATE_ALLOWED_TRACKING_CONTENT,
-     NS_ERROR_CRYPTOMINING_URI},
+     NS_ERROR_CRYPTOMINING_URI, false},
     {"minor-exceptions"_ns,
      Span<const nsLiteralCString>(kMinorExceptionListIds),
      nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_TRACKING, 0, 0, 0,
-     NS_OK},
+     NS_OK, true},
     {"major-exceptions"_ns,
      Span<const nsLiteralCString>(kMajorExceptionListIds),
      nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_TRACKING, 0, 0, 0,
-     NS_OK},
+     NS_OK, true},
     // Test-only features. Their list data is not fetched from
     // RemoteSettings; instead, the HTTP test loader (driven by the
     // *.test_list_urls prefs) writes the downloaded rule text into
@@ -112,12 +112,12 @@ constexpr ContentClassifierFeature kFeatures[] = {
      nsIWebProgressListener::STATE_LOADED_LEVEL_1_TRACKING_CONTENT,
      nsIWebProgressListener::STATE_REPLACED_TRACKING_CONTENT,
      nsIWebProgressListener::STATE_ALLOWED_TRACKING_CONTENT,
-     NS_ERROR_TRACKING_URI},
+     NS_ERROR_TRACKING_URI, false},
     {"test_annotate"_ns, Span<const nsLiteralCString>(kTestAnnotateListIds),
      nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_TRACKING,
      nsIWebProgressListener::STATE_LOADED_LEVEL_1_TRACKING_CONTENT,
      nsIWebProgressListener::STATE_REPLACED_TRACKING_CONTENT,
-     nsIWebProgressListener::STATE_ALLOWED_TRACKING_CONTENT, NS_OK},
+     nsIWebProgressListener::STATE_ALLOWED_TRACKING_CONTENT, NS_OK, false},
 };
 
 // Prefs that name feature engines built into mEngines.
@@ -585,7 +585,7 @@ void ContentClassifierResult::Accumulate(
 
 ContentClassifierResult ContentClassifierService::ClassifyWithEngines(
     const nsTArray<RefPtr<ContentClassifierEngine>>& aEngines,
-    const ContentClassifierRequest& aRequest) {
+    const ContentClassifierRequest& aRequest, bool aIndependentEngines) {
   MOZ_ASSERT(!NS_IsMainThread());
   mLock.AssertCurrentThreadOwns();
   ContentClassifierResult result;
@@ -599,11 +599,19 @@ ContentClassifierResult ContentClassifierService::ClassifyWithEngines(
             ("ClassifyWithEngines - invalid request; returning Miss"));
     return result;
   }
+  bool matchedSoFar = false;
   for (const auto& engine : aEngines) {
-    result.Accumulate(engine->CheckNetworkRequest(aRequest));
-    if (result.GetStatus() ==
-        ContentClassifierResult::Status::ImportantException) {
+    ContentClassifierEngineResult er = engine->CheckNetworkRequest(
+        aRequest, aIndependentEngines ? false : matchedSoFar);
+    result.Accumulate(er);
+    const auto status = result.GetStatus();
+    if (!aIndependentEngines &&
+        (status == ContentClassifierResult::Status::ImportantException ||
+         status == ContentClassifierResult::Status::ImportantHit)) {
       break;
+    }
+    if (er.Matched() && !er.Exception()) {
+      matchedSoFar = true;
     }
   }
   return result;
@@ -624,7 +632,8 @@ ContentClassifierResult ContentClassifierService::ClassifyForAnnotate(
   MutexAutoLock lock(mLock);
   const nsTArray<RefPtr<ContentClassifierEngine>>& engines =
       aRequest.PrivateBrowsing() ? mAnnotateEnginesPBM : mAnnotateEngines;
-  ContentClassifierResult result = ClassifyWithEngines(engines, aRequest);
+  ContentClassifierResult result =
+      ClassifyWithEngines(engines, aRequest, /* aIndependentEngines */ true);
   MOZ_LOG(gContentClassifierLog, LogLevel::Debug,
           ("ClassifyForAnnotate - url=%s hit=%d exception=%d",
            aRequest.Url().get(), result.Hit(), result.Exception()));
@@ -636,9 +645,12 @@ ContentClassifierResult ContentClassifierService::ClassifyForCancel(
   MutexAutoLock lock(mLock);
   const nsTArray<RefPtr<ContentClassifierEngine>>& engines =
       aRequest.PrivateBrowsing() ? mCancelEnginesPBM : mCancelEngines;
-  // Note: this processes all engines, even when we get an early block, out of
-  // caution.
-  ContentClassifierResult result = ClassifyWithEngines(engines, aRequest);
+  // Cancel mode threads matchedSoFar across engines so trailing exception
+  // engines can suppress an earlier hit, but ClassifyWithEngines bails out
+  // as soon as the aggregated status reaches ImportantHit / ImportantException
+  // because either pins the outcome.
+  ContentClassifierResult result =
+      ClassifyWithEngines(engines, aRequest, /* aIndependentEngines */ false);
   MOZ_LOG(gContentClassifierLog, LogLevel::Debug,
           ("ClassifyForCancel - url=%s hit=%d exception=%d",
            aRequest.Url().get(), result.Hit(), result.Exception()));
@@ -816,9 +828,21 @@ void ContentClassifierService::PopulateEngineListFromPref(
   mLock.AssertCurrentThreadOwns();
   nsTArray<nsCString> names;
   AppendFeatureNamesFromPref(aPref, names);
+  bool sawExceptionOnly = false;
   for (const auto& name : names) {
     auto entry = mEngines.Lookup(name);
     if (entry) {
+      const ContentClassifierEngine* engine = entry.Data();
+      if (sawExceptionOnly && !engine->Feature().mExceptionOnly) {
+        MOZ_LOG_FMT(gContentClassifierLog, LogLevel::Warning,
+                    "PopulateEngineListFromPref - pref \"{}\" lists "
+                    "non-exception feature \"{}\" after an exception-only "
+                    "feature; matched_rule state will not reach it",
+                    aPref, name);
+      }
+      if (engine->Feature().mExceptionOnly) {
+        sawExceptionOnly = true;
+      }
       aOut.AppendElement(entry.Data());
     }
   }

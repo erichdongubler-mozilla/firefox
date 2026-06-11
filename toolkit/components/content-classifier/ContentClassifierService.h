@@ -67,6 +67,11 @@ struct ContentClassifierFeature {
   // must check this before attempting to use the feature in blocking
   // mode.
   nsresult mBlockingErrorCode;
+
+  // True if this feature only contains exception/allowlist rules. Used to
+  // sanity-check that such features are listed after the features they may
+  // except in the engines pref.
+  bool mExceptionOnly;
 };
 
 enum class InitPhase {
@@ -175,9 +180,14 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   void RemoveBlocker();
   already_AddRefed<nsIAsyncShutdownClient> GetAsyncShutdownBarrier() const;
 
+  // aIndependentEngines makes every engine evaluate its own rules in
+  // isolation; matched_rule is not threaded across engines. Used by the
+  // annotate phase so MaybeAnnotateChannel can attribute matches to every
+  // feature whose rules actually fired. The cancel phase passes false so
+  // trailing exception engines see the propagated matched_rule.
   ContentClassifierResult ClassifyWithEngines(
       const nsTArray<RefPtr<ContentClassifierEngine>>& aEngines,
-      const ContentClassifierRequest& aRequest);
+      const ContentClassifierRequest& aRequest, bool aIndependentEngines);
 
   // Feature names referenced by any of the new "engines" prefs. Used at
   // engine-rebuild time to decide which feature engines to construct in
