@@ -103,6 +103,9 @@
 1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
 1111111111111 1
 </p>
+  <!-- Test case for Bug 2043347. A range-based text directive where start==end and nothing in between
+       should match, because the search for the end term must not include the start term itself. -->
+  <p id="rangeBasedStartEqualsEndStart">rangeBasedStartEqualsEnd</p><p id="rangeBasedStartEqualsEndEnd">rangeBasedStartEqualsEnd</p>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const empty = document.createTextNode("");
@@ -507,6 +510,15 @@
           content: "test",
           textDirective: "text=test,-1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
         },
+        {
+          name: "Range-based matching where start and end are the same and end can't expand",
+          startContainer: rangeBasedStartEqualsEndStart.firstChild,
+          startOffset: 0,
+          endContainer: rangeBasedStartEqualsEndEnd.firstChild,
+          endOffset: rangeBasedStartEqualsEndEnd.firstChild.length,
+          content: "rangeBasedStartEqualsEndrangeBasedStartEqualsEnd",
+          textDirective: "text=rangeBasedStartEqualsEnd,rangeBasedStartEqualsEnd"
+        }
       ]) {
         const range = document.createRange();
         range.setStart(testCase.startContainer, testCase.startOffset);
