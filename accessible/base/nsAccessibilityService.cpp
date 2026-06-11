@@ -101,7 +101,7 @@ using namespace mozilla::dom;
  * If the element has an ARIA attribute that requires a specific Accessible
  * class, create and return it. Otherwise, return null.
  */
-static LocalAccessible* MaybeCreateSpecificARIAAccessible(
+static already_AddRefed<LocalAccessible> MaybeCreateSpecificARIAAccessible(
     const nsRoleMapEntry* aRoleMapEntry, const LocalAccessible* aContext,
     nsIContent* aContent, DocAccessible* aDocument) {
   if (aRoleMapEntry && aRoleMapEntry->accTypes & eTableCell) {
@@ -132,7 +132,7 @@ static LocalAccessible* MaybeCreateSpecificARIAAccessible(
       }
     }
     if (parent->IsTable()) {
-      return new ARIAGridCellAccessible(aContent, aDocument);
+      return MakeAndAddRef<ARIAGridCellAccessible>(aContent, aDocument);
     }
   }
   return nullptr;
@@ -308,7 +308,7 @@ static bool MustSVGElementBeAccessible(nsIContent* aContent,
  * Return an accessible for the content if the SVG element requires the creation
  * of an Accessible.
  */
-static RefPtr<LocalAccessible> MaybeCreateSVGAccessible(
+static already_AddRefed<LocalAccessible> MaybeCreateSVGAccessible(
     nsIContent* aContent, DocAccessible* aDocument) {
   if (aContent->IsSVGGeometryElement() ||
       aContent->IsSVGElement(nsGkAtoms::image)) {
@@ -318,24 +318,25 @@ static RefPtr<LocalAccessible> MaybeCreateSVGAccessible(
       // Any accessible that could have TextLeafAccessible children must be a
       // HyperTextAccessible to satisfy the invariant in
       // GetTextAttributesLocalAcc.
-      return new EnumRoleHyperTextAccessible<roles::GRAPHIC>(aContent,
-                                                             aDocument);
+      return MakeAndAddRef<EnumRoleHyperTextAccessible<roles::GRAPHIC>>(
+          aContent, aDocument);
     }
   } else if (aContent->IsSVGElement(nsGkAtoms::text)) {
-    return new HyperTextAccessible(aContent->AsElement(), aDocument);
+    return MakeAndAddRef<HyperTextAccessible>(aContent->AsElement(), aDocument);
   } else if (aContent->IsSVGElement(nsGkAtoms::svg)) {
     // An <svg> element could contain <foreignObject>, which contains HTML but
     // does not normally create its own Accessible. This means that the <svg>
     // Accessible could have TextLeafAccessible children, so it must be a
     // HyperTextAccessible.
-    return new EnumRoleHyperTextAccessible<roles::DIAGRAM>(aContent, aDocument);
+    return MakeAndAddRef<EnumRoleHyperTextAccessible<roles::DIAGRAM>>(
+        aContent, aDocument);
   } else if (aContent->IsSVGElement(nsGkAtoms::g) &&
              MustSVGElementBeAccessible(aContent, aDocument)) {
     // <g> can also contain <foreignObject>.
-    return new EnumRoleHyperTextAccessible<roles::GROUPING>(aContent,
-                                                            aDocument);
+    return MakeAndAddRef<EnumRoleHyperTextAccessible<roles::GROUPING>>(
+        aContent, aDocument);
   } else if (aContent->IsSVGElement(nsGkAtoms::a)) {
-    return new HTMLLinkAccessible(aContent, aDocument);
+    return MakeAndAddRef<HTMLLinkAccessible>(aContent, aDocument);
   }
   return nullptr;
 }
@@ -1336,7 +1337,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
         !roleMapEntry->Is(nsGkAtoms::none);
     if (!newAcc &&
         (hasNonPresentationalARIARole || MustBeAccessible(content, document))) {
-      newAcc = new HyperTextAccessible(content, document);
+      newAcc = MakeRefPtr<HyperTextAccessible>(content, document);
     }
 
     // If there's still no Accessible but we do have an entry in the markup
@@ -1344,7 +1345,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     // HyperTextAccessible.
     if (!newAcc && markupMap &&
         (!roleMapEntry || hasNonPresentationalARIARole)) {
-      newAcc = new HyperTextAccessible(content, document);
+      newAcc = MakeRefPtr<HyperTextAccessible>(content, document);
     }
 
     if (newAcc) {
@@ -1460,7 +1461,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       return nullptr;
     }
 
-    newAcc = new HyperTextAccessible(content, document);
+    newAcc = MakeRefPtr<HyperTextAccessible>(content, document);
     document->BindToDocument(newAcc, aria::GetRoleMap(content->AsElement()));
     return newAcc;
   }
@@ -1479,8 +1480,8 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       // Otherwise, we'd expose roles::NOTHING as specified for presentation in
       // ARIAMap.
       roleMapEntry = nullptr;
-      newAcc = new EnumRoleHyperTextAccessible<roles::TEXT_CONTAINER>(content,
-                                                                      document);
+      newAcc = MakeRefPtr<EnumRoleHyperTextAccessible<roles::TEXT_CONTAINER>>(
+          content, document);
     } else {
       return nullptr;
     }
@@ -1567,7 +1568,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       // FIXME(emilio): Why only these frame types?
       if (frameType == LayoutFrameType::FlexContainer ||
           frameType == LayoutFrameType::ScrollContainer) {
-        newAcc = new XULTabpanelAccessible(content, document);
+        newAcc = MakeRefPtr<XULTabpanelAccessible>(content, document);
       }
     }
   }
@@ -1588,11 +1589,11 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
               nsGkAtoms::annotation, nsGkAtoms::annotation_xml,
               nsGkAtoms::mpadded, nsGkAtoms::mphantom, nsGkAtoms::maligngroup,
               nsGkAtoms::malignmark, nsGkAtoms::mspace, nsGkAtoms::semantics)) {
-        newAcc = new HyperTextAccessible(content, document);
+        newAcc = MakeRefPtr<HyperTextAccessible>(content, document);
       }
     } else if (content->IsGeneratedContentContainerForMarker()) {
       if (aContext->IsHTMLListItem()) {
-        newAcc = new HTMLListBulletAccessible(content, document);
+        newAcc = MakeRefPtr<HTMLListBulletAccessible>(content, document);
       }
       if (aIsSubtreeHidden) {
         *aIsSubtreeHidden = true;
@@ -1605,7 +1606,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       // expose the alt text on the pseudo-element itself, since we don't have a
       // child to use. We create a TextLeafAccessible with the pseudo-element as
       // the backing DOM node.
-      newAcc = new TextLeafAccessible(content, document);
+      newAcc = MakeRefPtr<TextLeafAccessible>(content, document);
       nsAutoString text;
       cssAlt.AppendToString(text);
       newAcc->AsTextLeaf()->SetText(text);
@@ -1627,10 +1628,10 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     // Interesting container which may have selectable text and/or embedded
     // objects. Must be a HyperTextAccessible because children might include
     // TextLeafAccessibles.
-    newAcc = new HyperTextAccessible(content, document);
+    newAcc = MakeRefPtr<HyperTextAccessible>(content, document);
   } else if (!newAcc && MustBeGenericAccessible(content, document)) {
-    newAcc = new EnumRoleHyperTextAccessible<roles::TEXT_CONTAINER>(content,
-                                                                    document);
+    newAcc = MakeRefPtr<EnumRoleHyperTextAccessible<roles::TEXT_CONTAINER>>(
+        content, document);
   }
 
   if (newAcc) {
@@ -1824,77 +1825,77 @@ nsAccessibilityService::CreateAccessibleByFrameType(nsIFrame* aFrame,
     case eNoType:
       return nullptr;
     case eHTMLBRType:
-      newAcc = new HTMLBRAccessible(aContent, document);
+      newAcc = MakeRefPtr<HTMLBRAccessible>(aContent, document);
       break;
     case eHTMLButtonType:
-      newAcc = new HTMLButtonAccessible(aContent, document);
+      newAcc = MakeRefPtr<HTMLButtonAccessible>(aContent, document);
       break;
     case eHTMLCanvasType:
-      newAcc = new HTMLCanvasAccessible(aContent, document);
+      newAcc = MakeRefPtr<HTMLCanvasAccessible>(aContent, document);
       break;
     case eHTMLCaptionType:
       if (aContext->IsTable() &&
           aContext->GetContent() == aContent->GetParent()) {
-        newAcc = new HTMLCaptionAccessible(aContent, document);
+        newAcc = MakeRefPtr<HTMLCaptionAccessible>(aContent, document);
       }
       break;
     case eHTMLCheckboxType:
-      newAcc = new CheckboxAccessible(aContent, document);
+      newAcc = MakeRefPtr<CheckboxAccessible>(aContent, document);
       break;
     case eHTMLComboboxType:
-      newAcc = new HTMLComboboxAccessible(aContent, document);
+      newAcc = MakeRefPtr<HTMLComboboxAccessible>(aContent, document);
       break;
     case eHTMLFileInputType:
-      newAcc = new HTMLFileInputAccessible(aContent, document);
+      newAcc = MakeRefPtr<HTMLFileInputAccessible>(aContent, document);
       break;
     case eHTMLGroupboxType:
-      newAcc = new HTMLGroupboxAccessible(aContent, document);
+      newAcc = MakeRefPtr<HTMLGroupboxAccessible>(aContent, document);
       break;
     case eHTMLHRType:
-      newAcc = new HTMLHRAccessible(aContent, document);
+      newAcc = MakeRefPtr<HTMLHRAccessible>(aContent, document);
       break;
     case eHTMLImageMapType:
-      newAcc = new HTMLImageMapAccessible(aContent, document);
+      newAcc = MakeRefPtr<HTMLImageMapAccessible>(aContent, document);
       break;
     case eHTMLLiType:
       if (aContext->IsList() &&
           aContext->GetContent() == aContent->GetParent()) {
-        newAcc = new HTMLLIAccessible(aContent, document);
+        newAcc = MakeRefPtr<HTMLLIAccessible>(aContent, document);
       } else {
         // Otherwise create a generic text accessible to avoid text jamming.
-        newAcc = new HyperTextAccessible(aContent, document);
+        newAcc = MakeRefPtr<HyperTextAccessible>(aContent, document);
       }
       break;
     case eHTMLSelectListType:
-      newAcc = new HTMLSelectListAccessible(aContent, document);
+      newAcc = MakeRefPtr<HTMLSelectListAccessible>(aContent, document);
       break;
     case eHTMLMediaType:
       // The video Accessible can have TextLeafAccessibles as direct children;
       // e.g. if there are captions. Therefore, it must be a
       // HyperTextAccessible.
-      newAcc =
-          new EnumRoleHyperTextAccessible<roles::GROUPING>(aContent, document);
+      newAcc = MakeRefPtr<EnumRoleHyperTextAccessible<roles::GROUPING>>(
+          aContent, document);
       break;
     case eHTMLRadioButtonType:
-      newAcc = new HTMLRadioButtonAccessible(aContent, document);
+      newAcc = MakeRefPtr<HTMLRadioButtonAccessible>(aContent, document);
       break;
     case eHTMLRangeType:
-      newAcc = new HTMLRangeAccessible(aContent, document);
+      newAcc = MakeRefPtr<HTMLRangeAccessible>(aContent, document);
       break;
     case eHTMLSpinnerType:
-      newAcc = new HTMLSpinnerAccessible(aContent, document);
+      newAcc = MakeRefPtr<HTMLSpinnerAccessible>(aContent, document);
       break;
     case eHTMLTableType:
     case eHTMLTableCellType:
       // We handle markup and ARIA tables elsewhere. If we reach here, this is
       // a CSS table part. Just create a generic text container.
-      newAcc = new HyperTextAccessible(aContent, document);
+      newAcc = MakeRefPtr<HyperTextAccessible>(aContent, document);
       break;
     case eHTMLTableRowType:
       // This is a CSS table row. Don't expose it at all.
       break;
     case eHTMLTextFieldType:
-      newAcc = new HTMLTextFieldAccessible(aContent, document);
+      newAcc = MakeRefPtr<HTMLTextFieldAccessible>(aContent, document);
       break;
     case eHyperTextType: {
       if (aContext->IsTable() || aContext->IsTableRow()) {
@@ -1906,21 +1907,21 @@ nsAccessibilityService::CreateAccessibleByFrameType(nsIFrame* aFrame,
       if (!aContent->IsAnyOfHTMLElements(nsGkAtoms::dt, nsGkAtoms::dd,
                                          nsGkAtoms::div, nsGkAtoms::thead,
                                          nsGkAtoms::tfoot, nsGkAtoms::tbody)) {
-        newAcc = new HyperTextAccessible(aContent, document);
+        newAcc = MakeRefPtr<HyperTextAccessible>(aContent, document);
       }
       break;
     }
     case eImageType:
       if (aContent->IsElement() &&
           ShouldCreateImgAccessible(aContent->AsElement(), document)) {
-        newAcc = new ImageAccessible(aContent, document);
+        newAcc = MakeRefPtr<ImageAccessible>(aContent, document);
       }
       break;
     case eOuterDocType:
-      newAcc = new OuterDocAccessible(aContent, document);
+      newAcc = MakeRefPtr<OuterDocAccessible>(aContent, document);
       break;
     case eTextLeafType:
-      newAcc = new TextLeafAccessible(aContent, document);
+      newAcc = MakeRefPtr<TextLeafAccessible>(aContent, document);
       break;
     default:
       MOZ_ASSERT(false);
