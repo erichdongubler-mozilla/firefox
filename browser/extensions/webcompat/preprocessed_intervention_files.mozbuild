@@ -154,4 +154,5 @@ preprocessed_intervention_files = [
     "bug2029246-discord.com-fix_scrollbars.css",
     "bug2034409-www.wanyiwan.top.js",
     "bug2041215-vitra.com.tr-fix_zero_width_product_images.css",
+    "bug2044261-doubao.com-hide_browser_notice.css",
 ]
