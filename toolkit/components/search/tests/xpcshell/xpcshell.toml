@@ -249,6 +249,8 @@ support-files = ["settings/v7-loadPath-migration.json"]
 ["test_settings_migration_renames.js"]
 support-files = ["settings/v6-migration-renames.json"]
 
+["test_settings_no_duplicate_after_rename.js"]
+
 ["test_settings_none.js"]
 
 ["test_settings_obsolete.js"]
