@@ -114,6 +114,10 @@
   <!-- Test case for Bug 2043347. A range-based text directive where start==end and nothing in between
        should match, because the search for the end term must not include the start term itself. -->
   <p id="rangeBasedStartEqualsEndStart">rangeBasedStartEqualsEnd</p><p id="rangeBasedStartEqualsEndEnd">rangeBasedStartEqualsEnd</p>
+  <!-- Test case for Bug 2043329: <br> should act as a block boundary for text
+       fragment purposes. Without this, text across <br> gets concatenated
+       (e.g. "test<br>test" becomes "testtest"). -->
+  <p id="brWordBoundary">unique_br_start<br id="brWordBoundaryBr">unique_br_end</p>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const empty = document.createTextNode("");
@@ -517,6 +521,24 @@
           endOffset: beforeBugSecond.firstChild.length,
           content: "By default, using this method will delay the browser's scroll restoration logic for \"traverse\" or \"reload\" navigations, or its scroll-reset/scroll-to-a-fragment logic for \"push\" or \"replace\" navigations, until any handlers' returned promises settle",
           textDirective: "text=behavior%2E-,By,settle",
+        },
+        {
+          name: "Word boundary extension must stop at <br> element",
+          startContainer: brWordBoundaryBr.nextSibling,
+          startOffset: 0,
+          endContainer: brWordBoundaryBr.nextSibling,
+          endOffset: brWordBoundaryBr.nextSibling.length,
+          content: "unique_br_end",
+          textDirective: "text=unique%5Fbr%5Fend",
+        },
+        {
+          name: "Selection across <br> produces range-based text directive",
+          startContainer: brWordBoundary.firstChild,
+          startOffset: 0,
+          endContainer: brWordBoundaryBr.nextSibling,
+          endOffset: brWordBoundaryBr.nextSibling.length,
+          content: "unique_br_startunique_br_end",
+          textDirective: "text=unique%5Fbr%5Fstart,unique%5Fbr%5Fend",
         },
         {
           name: "Prefix and suffix hit max length at whitespace",
