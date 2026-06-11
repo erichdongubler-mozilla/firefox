@@ -85,6 +85,7 @@ import org.mozilla.fenix.tabgroups.EditTabGroup
 import org.mozilla.fenix.tabgroups.ExpandedTabGroup
 import org.mozilla.fenix.tabstray.InactiveTabsBinding
 import org.mozilla.fenix.tabstray.PbmLockStatusBinding
+import org.mozilla.fenix.tabstray.TabManagerCfrController
 import org.mozilla.fenix.tabstray.TabsTrayTelemetryMiddleware
 import org.mozilla.fenix.tabstray.binding.SecureTabManagerBinding
 import org.mozilla.fenix.tabstray.controller.DefaultTabManagerController
@@ -115,7 +116,6 @@ import org.mozilla.fenix.theme.ThemeManager
 import org.mozilla.fenix.trackingprotection.TrackersBlockedFeature
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.getSnackbarTimeout
-import kotlin.math.abs
 
 /**
  * The fullscreen fragment for displaying the tabs management UI.
@@ -125,6 +125,7 @@ class TabManagementFragment : Fragment() {
 
     private lateinit var tabManagerInteractor: TabManagerInteractor
     private lateinit var tabManagerController: TabManagerController
+    private lateinit var tabManagerCfrController: TabManagerCfrController
     private lateinit var enablePbmPinLauncher: ActivityResultLauncher<Intent>
 
     @VisibleForTesting
@@ -235,6 +236,11 @@ class TabManagementFragment : Fragment() {
             showCancelledDownloadWarning = ::showCancelledDownloadWarning,
             showBookmarkSnackbar = ::showBookmarkSnackbar,
             showCollectionSnackbar = ::showCollectionSnackbar,
+        )
+
+        tabManagerCfrController = TabManagerCfrController(
+            settings = requireComponents.settings,
+            tabsTrayStore = tabsTrayStore,
         )
 
         tabManagerInteractor = DefaultTabManagerInteractor(controller = tabManagerController)
@@ -397,38 +403,20 @@ class TabManagementFragment : Fragment() {
                                         PrivateBrowsingLocked.bannerNegativeClicked.record()
                                     },
                                     onTabAutoCloseBannerViewOptionsClick = {
+                                        tabManagerCfrController.onTabAutoCloseBannerDismiss()
                                         tabManagerController.onTabSettingsClicked()
-                                        requireComponents.settings.shouldShowAutoCloseTabsBanner =
-                                            false
-                                        requireComponents.settings.lastCfrShownTimeInMillis =
-                                            System.currentTimeMillis()
                                     },
-                                    onTabAutoCloseBannerDismiss = {
-                                        requireComponents.settings.shouldShowAutoCloseTabsBanner =
-                                            false
-                                        requireComponents.settings.lastCfrShownTimeInMillis =
-                                            System.currentTimeMillis()
-                                    },
+                                    onTabAutoCloseBannerDismiss = tabManagerCfrController::onTabAutoCloseBannerDismiss,
                                     onTabAutoCloseBannerShown = {},
                                     tabInteractionHandler = tabInteractionHandler,
                                     onInactiveTabsCFRShown = {
                                         TabsTray.inactiveTabsCfrVisible.record(NoExtras())
                                     },
                                     onInactiveTabsCFRClick = {
-                                        requireComponents.settings.shouldShowInactiveTabsOnboardingPopup =
-                                            false
-                                        requireComponents.settings.lastCfrShownTimeInMillis =
-                                            System.currentTimeMillis()
+                                        tabManagerCfrController.onInactiveTabsCfrClick()
                                         tabManagerController.onTabSettingsClicked()
-                                        TabsTray.inactiveTabsCfrSettings.record(NoExtras())
                                     },
-                                    onInactiveTabsCFRDismiss = {
-                                        requireComponents.settings.shouldShowInactiveTabsOnboardingPopup =
-                                            false
-                                        requireComponents.settings.lastCfrShownTimeInMillis =
-                                            System.currentTimeMillis()
-                                        TabsTray.inactiveTabsCfrDismissed.record(NoExtras())
-                                    },
+                                    onInactiveTabsCFRDismiss = tabManagerCfrController::onInactiveTabsCfrDismiss,
                                     onTabGroupOnboardingDismiss = {
                                         // TODO (Bug 2038234): Persistence will be handled later by the middleware.
                                         tabsTrayStore.dispatch(TabGroupAction.OnboardingDismissed)
@@ -640,31 +628,13 @@ class TabManagementFragment : Fragment() {
      * onTabClick() in that an animation may play prior to handling the user action.
      */
     private fun performTabClick(tab: TabsTrayItem.Tab) {
-        if (shouldConsiderShowingTabSwipeCFR()) {
-            val normalTabs = tabsTrayStore.state.normalTabsState.items
-            val currentTabId = tabsTrayStore.state.selectedTabId
-
-            if (normalTabs.size >= 2 && currentTabId != null) {
-                val currentTabPosition = getTabPositionFromId(normalTabs, currentTabId)
-                val newTabPosition = getTabPositionFromId(normalTabs, tab.id)
-
-                if (abs(currentTabPosition - newTabPosition) == 1) {
-                    requireComponents.settings.shouldShowTabSwipeCFR =
-                        true
-                }
-            }
-        }
+        tabManagerCfrController.maybeMarkTabSwipeCfrReady(tab)
 
         tabManagerInteractor.onTabSelected(
             tab = tab,
             source = TAB_MANAGER_FEATURE_NAME,
         )
     }
-
-    private fun shouldConsiderShowingTabSwipeCFR(settings: Settings = requireComponents.settings) =
-        with(settings) {
-            !hasShownTabSwipeCFR && !isTabStripEnabled && isSwipeToolbarToSwitchTabsEnabled
-        }
 
     override fun onPause() {
         super.onPause()
@@ -855,14 +825,6 @@ class TabManagementFragment : Fragment() {
         navControllerProvider
             .getNavController(this)
             .navigate(TabManagementFragmentDirections.actionGlobalHome())
-    }
-
-    @VisibleForTesting
-    internal fun getTabPositionFromId(tabsList: List<TabsTrayItem>, tabId: String): Int {
-        tabsList.forEachIndexed { index, tab ->
-            if (tab is TabsTrayItem.Tab && tab.id == tabId) return index
-        }
-        return -1
     }
 
     /**
