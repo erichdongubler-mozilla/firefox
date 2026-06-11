@@ -310,9 +310,13 @@ export class SidebarBookmarks extends SidebarPage {
             folderEl.textContent?.trim() ??
             "";
           const folderKind = folderEl.dataset.folderKind;
+          const children = folderEl.querySelector(
+            "sidebar-bookmark-list"
+          )?.tabItems;
           this.triggerNode = {
             guid: folderEl.guid,
             title,
+            children,
             isFolder: true,
             isEmpty,
             isRootFolder: lazy.PlacesUtils.isRootItem(folderEl.guid),
@@ -413,7 +417,14 @@ export class SidebarBookmarks extends SidebarPage {
       addSeparator.hidden = false;
     }
 
-    openAllBookmarks.disabled = isEmpty;
+    if (isFolder) {
+      const hasBookmarkItems = !!this.triggerNode.children?.some(
+        child => child.url && !child.isPlaceContainer
+      );
+      openAllBookmarks.disabled = isEmpty || !hasBookmarkItems;
+    } else {
+      openAllBookmarks.disabled = isEmpty;
+    }
     openAllBookmarks.setAttribute("data-l10n-id", "places-open-all-bookmarks");
     sortByName.disabled = isEmpty;
 
@@ -887,8 +898,6 @@ export class SidebarBookmarks extends SidebarPage {
     for (const child of node.children ?? []) {
       if (child.uri) {
         urls.push(child.uri);
-      } else if (child.children) {
-        urls.push(...this.#collectBookmarkUrls(child));
       }
     }
     return urls;
