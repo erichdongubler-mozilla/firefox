@@ -1612,23 +1612,24 @@ ${
         }
       }
 
-      if (
-        where == "tab" &&
-        Services.prefs.getBoolPref("browser.tabs.loadInBackground")
-      ) {
-        openParams.avoidBrowserFocus = true;
-        openParams.keepView = true;
-        openParams.inBackground = true;
-      }
+      openParams.forceForeground = false;
     } else {
       where = this._whereToOpen(event);
       if (resultUrl && where == "current") {
         // Open help links in a new tab.
         where = "tab";
       }
+
+      openParams.forceForeground = true;
     }
 
-    if (!this.#providesSearchMode(result)) {
+    let keepViewOpen = lazy.BrowserUtils.willLoadInBackground(
+      where,
+      openParams
+    );
+    openParams.avoidBrowserFocus = keepViewOpen;
+
+    if (!this.#providesSearchMode(result) && !keepViewOpen) {
       this.view.close({ elementPicked: true });
     }
 
@@ -2082,7 +2083,8 @@ ${
         type: result.type,
         searchTerm: result.payload.suggestion ?? result.payload.query,
       },
-      browser
+      browser,
+      keepViewOpen
     );
   }
 
@@ -4279,6 +4281,8 @@ ${
    * @param {Values<typeof lazy.UrlbarUtils.RESULT_SOURCE>} [resultDetails.source]
    *   Details of the result source, if any.
    * @param {object} browser [optional] the browser to use for the load.
+   * @param {boolean} keepViewOpen [optional]
+   *   Whether the view should remain open.
    */
   _loadURL(
     url,
@@ -4286,7 +4290,8 @@ ${
     openUILinkWhere,
     params,
     resultDetails = null,
-    browser = this.window.gBrowser.selectedBrowser
+    browser = this.window.gBrowser.selectedBrowser,
+    keepViewOpen = false
   ) {
     if (this.#isAddressbar) {
       this.#prepareAddressbarLoad(
@@ -4358,9 +4363,11 @@ ${
       }
     }
 
-    // If we show the focus border after closing the view, it would appear to
-    // flash since this._on_blur would remove it immediately after.
-    this.view.close({ showFocusBorder: false });
+    if (!keepViewOpen) {
+      // If we show the focus border after closing the view, it would appear to
+      // flash since this._on_blur would remove it immediately after.
+      this.view.close({ showFocusBorder: false });
+    }
   }
 
   /**

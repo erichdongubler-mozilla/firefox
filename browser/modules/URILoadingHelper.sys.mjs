@@ -537,12 +537,11 @@ export const URILoadingHelper = {
     w.focus();
 
     let targetBrowser;
-    let loadInBackground;
     let uriObj;
+    let loadInBackground = BrowserUtils.willLoadInBackground(where, params);
 
     if (where == "current") {
       targetBrowser = params.targetBrowser || w.gBrowser.selectedBrowser;
-      loadInBackground = false;
       uriObj = URL.parse(url)?.URI;
 
       // In certain tabs, we restrict what if anything may replace the loaded
@@ -579,14 +578,6 @@ export const URILoadingHelper = {
           targetBrowser = null;
         }
       }
-    } else {
-      // `where` is "tab" or "tabshifted", so we'll load the link in a new tab.
-      loadInBackground = params.inBackground;
-      if (loadInBackground == null) {
-        loadInBackground = params.forceForeground
-          ? false
-          : Services.prefs.getBoolPref("browser.tabs.loadInBackground");
-      }
     }
 
     let focusUrlBar = false;
@@ -601,10 +592,8 @@ export const URILoadingHelper = {
           w.document.activeElement == w.gURLBar.inputField &&
           w.isBlankPageURL(url);
         break;
-      case "tabshifted":
-        loadInBackground = !loadInBackground;
-      // fall through
-      case "tab": {
+      case "tab":
+      case "tabshifted": {
         focusUrlBar =
           !loadInBackground &&
           w.isBlankPageURL(url) &&
