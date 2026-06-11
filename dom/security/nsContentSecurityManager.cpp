@@ -281,7 +281,8 @@ static nsresult DoCheckLoadURIChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
   // In practice, these DTDs are just used for localization, so applying the
   // same principal check as Fluent.
   if (aLoadInfo->InternalContentPolicyType() ==
-      nsIContentPolicy::TYPE_INTERNAL_DTD) {
+          nsIContentPolicy::TYPE_INTERNAL_DTD &&
+      mozilla::StaticPrefs::dom_fetch_allow_force_allowed_dtd()) {
     RefPtr<Document> doc;
     aLoadInfo->GetLoadingDocument(getter_AddRefs(doc));
     bool allowed = false;
@@ -295,7 +296,8 @@ static nsresult DoCheckLoadURIChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
   // that need to access localization DTDs. We just allow through
   // TYPE_INTERNAL_FORCE_ALLOWED_DTD no matter what the triggering principal is.
   if (aLoadInfo->InternalContentPolicyType() ==
-      nsIContentPolicy::TYPE_INTERNAL_FORCE_ALLOWED_DTD) {
+          nsIContentPolicy::TYPE_INTERNAL_FORCE_ALLOWED_DTD &&
+      mozilla::StaticPrefs::dom_fetch_allow_force_allowed_dtd()) {
     return NS_OK;
   }
 

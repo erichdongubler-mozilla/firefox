@@ -416,14 +416,6 @@ user-id = 83100 # Max Inden (mxinden)
 start = "2025-01-29"
 end = "2026-09-24"
 
-[[wildcard-audits.nss-gk-api]]
-who = "John M. Schanck <jschanck@mozilla.com>"
-criteria = "safe-to-deploy"
-user-id = 175410 # John Schanck (jschanck)
-start = "2022-11-14"
-end = "2024-06-20"
-notes = "Maintained by the CryptoEng team at Mozilla."
-
 [[wildcard-audits.ohttp]]
 who = "Martin Thomson <mt@lowentropy.net>"
 criteria = "safe-to-deploy"
@@ -6209,6 +6201,11 @@ version = "0.11.1"
 who = "John M. Schanck <jschanck@mozilla.com>"
 criteria = "safe-to-deploy"
 delta = "0.11.1 -> 0.11.2"
+
+[[audits.serde_cbor_2]]
+who = "John M. Schanck <jschanck@mozilla.com>"
+criteria = "safe-to-deploy"
+version = "0.13.0"
 
 [[audits.serde_core]]
 who = "Erich Gubler <erichdongubler@gmail.com>"

@@ -421,6 +421,7 @@ export const URILoadingHelper = {
    *                  Force allow a data URI to load as a toplevel load.
    * @param {number}  params.userContextId
    *                  The userContextId (container identifier) to use for the load.
+   *                  If where is "current" and the specified userContextId differs, a new tab is opened instead.
    * @param {boolean} params.allowInheritPrincipal
    *                  Allow the load to inherit the triggering principal.
    * @param {boolean} params.forceAboutBlankViewerInCurrent
@@ -549,6 +550,13 @@ export const URILoadingHelper = {
       // we'll open a new tab instead.
       let tab = w.gBrowser.getTabForBrowser(targetBrowser);
       if (tab == w.FirefoxViewHandler.tab) {
+        where = "tab";
+        targetBrowser = null;
+      } else if (
+        params.userContextId != null &&
+        params.userContextId !==
+          targetBrowser.browsingContext.originAttributes.userContextId
+      ) {
         where = "tab";
         targetBrowser = null;
       } else if (

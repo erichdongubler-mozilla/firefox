@@ -228,6 +228,7 @@ export function LightweightThemeConsumer(aDocument) {
   this._win = aDocument.defaultView;
   this._winId = this._win.docShell.outerWindowID;
   this._isAIWindow = this._doc.documentElement.hasAttribute("ai-window");
+  this._isPrivateWindow = lazy.PrivateBrowsingUtils.isWindowPrivate(this._win);
 
   XPCOMUtils.defineLazyPreferenceGetter(
     this,
@@ -255,6 +256,15 @@ export function LightweightThemeConsumer(aDocument) {
         this._update(this._lastData);
       }
     }
+  );
+
+  // Whether we should switch to a dark theme variant in private windows
+  XPCOMUtils.defineLazyPreferenceGetter(
+    this,
+    "BROWSER_THEME_DARK_PRIVATE_WINDOWS",
+    "browser.theme.dark-private-windows",
+    true,
+    () => this._update(this._lastData)
   );
 
   Services.obs.addObserver(this, "lightweight-theme-styling-update");
@@ -320,15 +330,47 @@ LightweightThemeConsumer.prototype = {
   _update(themeData) {
     const manager = lazy.LightweightThemeManager;
 
-    // Store user's theme before replacing with aiThemeData.
+    // Store user's theme before replacing with aiThemeData or privateThemeData.
     this._lastData = themeData;
+    let isPrivateThemeActive = false;
+
+    const shouldMakePrivateWindowDark =
+      this._isPrivateWindow &&
+      !lazy.PrivateBrowsingUtils.permanentPrivateBrowsing &&
+      this.BROWSER_THEME_DARK_PRIVATE_WINDOWS;
+    const themeId = themeData.theme?.id ?? DEFAULT_THEME_ID;
+    // Used to set a `theme-in-app` attribute to allow rules to apply to default/in-app themes only
+    let isDefaultOrInApp =
+      DEFAULT_THEME_ID === themeId ||
+      !!lazy.BuiltInThemeConfig.get(themeId)?.inApp;
 
     if (this._isAIWindow) {
       if (manager.aiThemeData) {
         themeData = manager.aiThemeData;
+        isDefaultOrInApp = true;
       } else {
         manager.promiseAIThemeData().then(() => {
           if (this._isAIWindow && this._win && !this._win.closed) {
+            this._update(this._lastData);
+          }
+        });
+        return;
+      }
+    } else if (
+      shouldMakePrivateWindowDark &&
+      this.BROWSER_NOVA_ENABLED &&
+      DEFAULT_THEME_ID === themeId
+    ) {
+      // When in a private window, with nova enabled and the default theme active,
+      // substitute the built-in private-window theme.
+      // Other themes (including built-ins like light, dark, alpenglow) are unchanged.
+      if (manager.privateThemeData) {
+        themeData = manager.privateThemeData;
+        isPrivateThemeActive = true;
+        isDefaultOrInApp = true;
+      } else {
+        manager.promisePrivateThemeData().then(() => {
+          if (this._win && !this._win.closed) {
             this._update(this._lastData);
           }
         });
@@ -352,11 +394,7 @@ LightweightThemeConsumer.prototype = {
       }
 
       // If enabled, apply the dark theme variant to private browsing windows.
-      if (
-        !Services.prefs.getBoolPref("browser.theme.dark-private-windows") ||
-        !lazy.PrivateBrowsingUtils.isWindowPrivate(this._win) ||
-        lazy.PrivateBrowsingUtils.permanentPrivateBrowsing
-      ) {
+      if (!shouldMakePrivateWindowDark) {
         return false;
       }
       // When applying the dark theme for a PBM window we need to skip setting
@@ -366,7 +404,7 @@ LightweightThemeConsumer.prototype = {
       return true;
     })();
 
-    if (this._isAIWindow) {
+    if (this._isAIWindow || isPrivateThemeActive) {
       updateGlobalThemeData = false;
     }
 
@@ -380,8 +418,12 @@ LightweightThemeConsumer.prototype = {
     let builtinThemeConfig = lazy.BuiltInThemeConfig.get(theme.id);
     let hasTheme = theme.id != DEFAULT_THEME_ID && !builtinThemeConfig?.inApp;
     this._doc.forceNonNativeTheme = !!builtinThemeConfig?.nonNative;
+
     let root = this._doc.documentElement;
     root.toggleAttribute("lwtheme-image", !!(hasTheme && theme.headerImage));
+    root.toggleAttribute("theme-in-app", isDefaultOrInApp);
+    // Expose the effective (post-substitution) theme id.
+    root.setAttribute("theme-effective-id", theme.id);
     // Toolbox background images go either on the `<body>` or on the toolbox
     // itself. For most themes and pre-nova default theme, it goes on the
     // `<body>`. For themes that align the image in the y axis, and the nova

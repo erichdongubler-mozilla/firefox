@@ -458,7 +458,17 @@ static std::shared_ptr<EglDisplay> GetAndInitDisplayForAccelANGLE(
 
 Maybe<SymbolLoader> GLLibraryEGL::GetSymbolLoader() const {
   auto ret = SymbolLoader(mSymbols.fGetProcAddress);
-  ret.mLib = mGLLibrary;
+  // For ANGLE, use ANGLE's eglGetProcAddress as the only source for GL entry
+  // points, avoiding raw library symbol lookups. In particular, dlsym on macOS
+  // may resolve missing symbols from another GL implementation, such as the
+  // system libGL.dylib, resulting in crashes.
+  //
+  // For non-ANGLE, we must prefer to use the library lookup. Some older EGL
+  // implementations do not reliably return core GL entry points from
+  // eglGetProcAddress. See bug 1420745.
+  if (!IsANGLE()) {
+    ret.mLib = mGLLibrary;
+  }
   return Some(ret);
 }
 

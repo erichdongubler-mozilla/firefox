@@ -18,19 +18,19 @@
  */
 :root.nova-tokens {
   /** background-color **/
-  --background-color-box: light-dark(var(--color-white), var(--color-gray-75));
-  --background-color-box-info: light-dark(var(--color-gray-15), var(--color-gray-60));
+  --background-color-box: light-dark(var(--color-white), var(--color-gray-70));
+  --background-color-box-info: light-dark(var(--color-gray-15), var(--color-gray-65));
   --background-color-canvas: light-dark(var(--color-gray-05), var(--color-gray-90));
   --background-color-critical: light-dark(var(--color-red-10), var(--color-red-70));
   --background-color-information: light-dark(var(--color-violet-10), var(--color-violet-70));
   --background-color-success: light-dark(var(--color-green-10), var(--color-green-70));
   --background-color-warning: light-dark(var(--color-yellow-10), var(--color-yellow-70));
   /** border **/
-  --border-color: light-dark(var(--color-gray-30), var(--color-gray-50));
-  --border-color-deemphasized: light-dark(var(--color-gray-20), var(--color-gray-60));
+  --border-color: light-dark(var(--color-gray-30), var(--color-gray-45));
+  --border-color-deemphasized: light-dark(var(--color-gray-20), var(--color-gray-55));
   --border-color-error: light-dark(var(--color-red-50), var(--color-red-20));
-  --border-color-interactive: var(--color-gray-40);
-  --border-color-interactive-disabled: light-dark(var(--color-gray-25), var(--color-gray-50));
+  --border-color-interactive: light-dark(var(--color-gray-35), var(--color-gray-45));
+  --border-color-interactive-disabled: light-dark(var(--color-gray-25), var(--color-gray-60));
   --border-color-transparent: transparent;
   --border-radius-large: 12px;
   --border-radius-xlarge: 16px;
@@ -172,8 +172,6 @@
   --color-purple-70: #4F216B;
   --color-purple-80: #311842;
   --color-purple-90: #1A1220;
-  --color-purple-desaturated-30: #C0A7D4;
-  --color-purple-desaturated-50: #816297;
   --color-red-0: #FCF2F3;
   --color-red-10: #FFD9DF;
   --color-red-20: #FFB6BF;
@@ -237,6 +235,7 @@
   --panel-background-color: Field;
   --panel-border-color: ThreeDShadow;
   --panel-border-radius: 16px;
+  --panel-menuitem-border-radius: var(--border-radius-xxlarge);
   --panel-padding: var(--panel-padding-block);
   --panel-padding-block: 8px;
   --panel-text-color: FieldText;
@@ -15050,19 +15049,32 @@ hr {
   align-self: end;
   box-shadow: var(--card-box-shadow);
   border: var(--border-width) solid var(--button-border-color-ghost);
-  transition: width 100ms ease-out, height 100ms ease-out;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nova-enabled .top-site-outer .tile {
+    transition: width 100ms ease-out, height 100ms ease-out;
+  }
 }
 .nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .tile {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  width: var(--col-width);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  height: var(--col-width);
   border-color: var(--button-border-color-ghost-hover);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .tile {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    width: var(--col-width);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    height: var(--col-width);
+  }
 }
 .nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .icon-pin-small,
 .nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .context-menu-button {
   opacity: 1;
-  transition: opacity 100ms ease-out 50ms;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .icon-pin-small,
+.nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .context-menu-button {
+    transition: opacity 100ms ease-out 50ms;
+  }
 }
 .nova-enabled .top-site-outer:active .tile {
   border-color: var(--button-border-color-ghost-active);
@@ -15128,6 +15140,17 @@ hr {
   width: calc(var(--col-width) + 8px);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .nova-enabled .top-site-outer .context-menu-button {
+    inset-inline-end: calc(var(--space-xsmall) + var(--space-xxsmall) / 2);
+    inset-block-start: var(--space-small);
+  }
+
+  .nova-enabled .top-site-outer .icon-pin-small {
+    inset-block-start: calc(var(--space-medium) + var(--space-xxsmall));
+    inset-inline-start: var(--space-small);
+  }
+}
 @media (forced-colors: active) {
   .nova-enabled .top-site-outer .tile {
     background-color: var(--button-background-color);

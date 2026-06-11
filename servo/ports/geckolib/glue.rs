@@ -30,10 +30,13 @@ use style::color::mix::ColorInterpolationMethod;
 use style::color::{AbsoluteColor, ColorComponents, ColorSpace};
 use style::computed_value_flags::ComputedValueFlags;
 use style::context::ThreadLocalStyleContext;
-use style::context::{CascadeInputs, QuirksMode, SharedStyleContext, StyleContext};
+use style::context::{
+    CascadeInputs, QuirksMode, SharedStyleContext, StyleContext, TreeCountingCaches,
+};
 use style::counter_style::{self, DescriptorId as CounterStyleDescriptorId};
 use style::custom_properties::DeferFontRelativeCustomPropertyResolution;
 use style::data::{self, ElementStyles};
+use style::dom::ElementContext;
 use style::dom::{AttributeTracker, ShowSubtreeData, TDocument, TElement, TNode, TShadowRoot};
 use style::driver;
 use style::error_reporting::{ParseErrorReporter, SelectorWarningKind};
@@ -142,7 +145,6 @@ use style::values::computed::length_percentage::{
     AllowAnchorPosResolutionInCalcPercentage, Unpacked,
 };
 use style::values::computed::position::{AnchorFunction, PositionArea};
-use style::values::computed::tree_counting::TreeCountingInfo;
 use style::values::computed::{self, ContentVisibility, Context, ToComputedValue};
 use style::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use style::values::generics::color::ColorMixFlags;
@@ -5196,15 +5198,16 @@ pub extern "C" fn Servo_ParseAndComputeViewTimelineInset(
         .map(|x| &**x);
     let container_size_query =
         ContainerSizeQuery::for_element(element, None, /* is_pseudo = */ false);
-    let tree_counting_info = TreeCountingInfo::for_element(element);
     let mut conditions = Default::default();
+    let mut tree_counting_caches = TreeCountingCaches::default();
     let context = create_context_for_animation(
         &data,
         &style,
         parent_style,
         &mut conditions,
         container_size_query,
-        tree_counting_info,
+        &element,
+        &mut tree_counting_caches,
     );
     *output = specified.to_computed_value(&context);
     true
@@ -7245,6 +7248,7 @@ pub extern "C" fn Servo_ReparentStyle(
             /* try_tactic = */ &Default::default(),
             /* rule_cache = */ None,
             &mut RuleCacheConditions::default(),
+            &mut TreeCountingCaches::default(),
         )
         .into()
 }
@@ -7267,7 +7271,8 @@ fn create_context_for_animation<'a>(
     parent_style: Option<&'a ComputedValues>,
     rule_cache_conditions: &'a mut RuleCacheConditions,
     container_size_query: ContainerSizeQuery<'a>,
-    tree_counting_info: Option<TreeCountingInfo<'a>>,
+    element_context: &'a dyn ElementContext,
+    tree_counting_caches: &'a mut TreeCountingCaches,
 ) -> Context<'a> {
     Context::new_for_animation(
         StyleBuilder::for_derived_style(
@@ -7279,7 +7284,8 @@ fn create_context_for_animation<'a>(
         per_doc_data.stylist.quirks_mode(),
         rule_cache_conditions,
         container_size_query,
-        tree_counting_info,
+        element_context,
+        tree_counting_caches,
     )
 }
 
@@ -7364,15 +7370,16 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
 
     let container_size_query =
         ContainerSizeQuery::for_element(element, parent_style, pseudo.is_some());
-    let tree_counting_info = TreeCountingInfo::for_element(element);
     let mut conditions = Default::default();
+    let mut tree_counting_caches = TreeCountingCaches::default();
     let mut context = create_context_for_animation(
         &data,
         &style,
         parent_style,
         &mut conditions,
         container_size_query,
-        tree_counting_info,
+        &element,
+        &mut tree_counting_caches,
     );
 
     let restriction = pseudo.and_then(|p| p.property_restriction());
@@ -7503,15 +7510,16 @@ pub extern "C" fn Servo_GetAnimationValues(
 
     let container_size_query =
         ContainerSizeQuery::for_element(element, None, /* is_pseudo = */ false);
-    let tree_counting_info = TreeCountingInfo::for_element(element);
     let mut conditions = Default::default();
+    let mut tree_counting_caches = TreeCountingCaches::default();
     let mut context = create_context_for_animation(
         &data,
         &style,
         parent_style,
         &mut conditions,
         container_size_query,
-        tree_counting_info,
+        &element,
+        &mut tree_counting_caches,
     );
 
     let default_values = data.default_computed_values();
@@ -7550,15 +7558,16 @@ pub extern "C" fn Servo_AnimationValue_Compute(
 
     let container_size_query =
         ContainerSizeQuery::for_element(element, None, /* is_pseudo = */ false);
-    let tree_counting_info = TreeCountingInfo::for_element(element);
     let mut conditions = Default::default();
+    let mut tree_counting_caches = TreeCountingCaches::default();
     let mut context = create_context_for_animation(
         &data,
         style,
         parent_style,
         &mut conditions,
         container_size_query,
-        tree_counting_info,
+        &element,
+        &mut tree_counting_caches,
     );
 
     let default_values = data.default_computed_values();

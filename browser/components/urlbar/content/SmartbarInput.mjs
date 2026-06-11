@@ -1503,7 +1503,8 @@ ${
     const action = event.detail.action;
     this.smartbarAction = action;
     const isExplicitAction =
-      event.type === "aiwindow-input-cta:on-action-change";
+      event.type === "aiwindow-input-cta:on-action-change" ||
+      event.type === "aiwindow-input-cta:on-search-engine-select";
 
     // For non-explicit actions, forward to handleNavigation.
     if (!isExplicitAction) {

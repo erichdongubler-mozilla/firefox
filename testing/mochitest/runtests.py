@@ -3484,7 +3484,21 @@ toolbar#nav-bar {
                 self.countretry += len(self.failedTests)
                 self.log.info("Retrying tests that failed during initial run.")
                 self.log.group_start(name="retry")
-                res = self.doTests(options, self.failedTests, manifestToFilter)
+                if options.restartBetweenTests:
+                    # Restart the browser between each retried test, as on the
+                    # initial run, so the retry still isolates the failures.
+                    res = 0
+                    for test in self.getActiveTests(options):
+                        if test["path"] not in self.failedTests:
+                            continue
+                        testRes = self.doTests(
+                            options, {test["path"]}, manifestToFilter
+                        )
+                        if testRes == TBPL_RETRY:
+                            return testRes
+                        res = res or testRes
+                else:
+                    res = self.doTests(options, self.failedTests, manifestToFilter)
                 self.log.group_end(name="retry")
                 if res == TBPL_RETRY:
                     return res

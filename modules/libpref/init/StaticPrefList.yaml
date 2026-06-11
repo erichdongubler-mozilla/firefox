@@ -3147,6 +3147,18 @@
   value: true
   mirror: always
 
+# Whether to allow the TYPE_INTERNAL_FORCE_ALLOWED_DTD content policy type on
+# fetch requests received from a content process. Only consumers such as
+# Thunderbird that still rely on DTD loads should enable this.
+- name: dom.fetch.allow_force_allowed_dtd
+  type: RelaxedAtomicBool
+#if defined(MOZ_THUNDERBIRD)
+  value: true
+#else
+  value: false
+#endif
+  mirror: always
+
 - name: dom.fetchObserver.enabled
   type: RelaxedAtomicBool
   value: false
@@ -4941,6 +4953,12 @@
 - name: dom.security.sanitizer.enabled
   type: bool
   value: true
+  mirror: always
+
+# Disabled until the HTML parser produces PI nodes (bug 2044714)
+- name: dom.security.sanitizer.processing-instructions
+  type: bool
+  value: false
   mirror: always
 
 # pref controls credential chooser UI for testing. When true, UI is not shown and
@@ -9784,7 +9802,7 @@
 
 -   name: javascript.options.wasm_js_promise_integration
     type: bool
-    value: @IS_NIGHTLY_BUILD@
+    value: true
     mirror: always
     set_spidermonkey_pref: always
 
@@ -11086,7 +11104,7 @@
 
 # Whether the "modern" uppercase mapping of ß to ẞ (rather than SS) is used.
 - name: layout.css.text-transform.uppercase-eszett.enabled
-  type: bool
+  type: RelaxedAtomicBool
   value: false
   mirror: always
 

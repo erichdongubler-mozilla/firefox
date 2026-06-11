@@ -8,9 +8,9 @@
 #![deny(missing_docs)]
 
 use crate::applicable_declarations::ApplicableDeclarationBlock;
-use crate::context::SharedStyleContext;
 #[cfg(feature = "gecko")]
 use crate::context::UpdateAnimationsTasks;
+use crate::context::{SharedStyleContext, TreeCountingCaches};
 use crate::data::{ElementData, ElementDataMut, ElementDataRef};
 use crate::device::Device;
 use crate::properties::{AnimationDeclarations, ComputedValues, PropertyDeclarationBlock};
@@ -19,7 +19,7 @@ use crate::selector_parser::{AttrValue, Lang, PseudoElement, RestyleDamage, Sele
 use crate::shared_lock::{Locked, SharedRwLock};
 use crate::stylesheets::scope_rule::ImplicitScopeRoot;
 use crate::stylist::CascadeData;
-use crate::values::computed::Display;
+use crate::values::computed::{Display, TreeCountingResult};
 use crate::values::AtomIdent;
 use crate::{LocalName, Namespace, WeakAtom};
 use dom::ElementState;
@@ -415,7 +415,7 @@ pub trait TElement:
     + Copy
     + Clone
     + SelectorsElement<Impl = SelectorImpl>
-    + AttributeProvider
+    + ElementContext
 {
     /// The concrete node type.
     type ConcreteNode: TNode<ConcreteElement = Self>;
@@ -827,34 +827,6 @@ pub trait TElement:
         cur
     }
 
-    /// Returns the sibling-index() and sibling-count() for this element in a single pass.
-    /// Returns (1, 1) for elements without a parent.
-    ///
-    // TODO(Bug 2045138) - This should use caching similar to the NthIndexCache. Currently,
-    // this performs a full traversal of the requested element's siblings. In the worst case
-    // where all siblings use a tree-counting function, this results in quadratic behavior.
-    fn tree_counting_info(&self) -> (u32, u32) {
-        let target = self.ultimate_originating_element();
-        let Some(parent) = target.as_node().parent_node() else {
-            return (1, 1);
-        };
-
-        let mut curr = parent.first_child();
-        let mut index = 0u32;
-        let mut count = 0u32;
-        while let Some(node) = curr {
-            if let Some(element) = node.as_element() {
-                count += 1;
-                if element == target {
-                    index = count;
-                }
-            }
-            curr = node.next_sibling();
-        }
-        debug_assert!(index != 0, "Element was not a child of its parent?");
-        (index, count)
-    }
-
     /// Executes the callback for each applicable style rule data which isn't
     /// the main document's data (which stores UA / author rules).
     ///
@@ -1014,36 +986,47 @@ pub trait TElement:
     }
 }
 
-/// The attribute provider trait
-pub trait AttributeProvider {
-    /// Return the value of the given custom attibute if it exists.
+/// Provides element-level context needed during style computation.
+pub trait ElementContext {
+    /// Opaque handle to the element.
+    fn opaque_element(&self) -> Option<OpaqueElement>;
+
+    /// Opaque handle to the element's parent node.
+    fn opaque_parent(&self) -> Option<OpaqueNode>;
+
+    /// Return the value of the given custom attribute if it exists.
     fn get_attr(&self, attr: &LocalName, namespace: &Namespace) -> Option<String>;
+
+    /// Traverse the siblings of the element, returning the element's sibling-index()
+    /// and sibling-count(). Also populates `caches` with the sibling-index() and
+    /// sibling-count() values for all siblings of this element.
+    fn get_tree_counting_result(&self, caches: &mut TreeCountingCaches) -> TreeCountingResult;
 }
 
 /// A set of the attributes used to compute a style that uses `attr()`
 pub type AttributeReferences = Option<Box<PrecomputedHashMap<LocalName, SmallVec<[Namespace; 1]>>>>;
 
-/// A data structure to keep track of the names queried from a provider.
+/// A data structure to keep track of the names queried from an element.
 pub struct AttributeTracker<'a> {
     /// The element that queries for attributes.
-    pub provider: &'a dyn AttributeProvider,
+    pub context: &'a dyn ElementContext,
     /// The set of attributes we have queried.
     pub references: AttributeReferences,
 }
 
 impl<'a> AttributeTracker<'a> {
     /// Construct a new attribute tracker trivially.
-    pub fn new(provider: &'a dyn AttributeProvider) -> Self {
+    pub fn new(context: &'a dyn ElementContext) -> Self {
         Self {
-            provider,
+            context,
             references: None,
         }
     }
 
-    /// Consstruct a new dummy attribute tracker
+    /// Construct a new dummy attribute tracker
     pub fn new_dummy() -> Self {
         Self {
-            provider: &DummyAttributeProvider {},
+            context: &DummyElementContext {},
             references: None,
         }
     }
@@ -1065,17 +1048,29 @@ impl<'a> AttributeTracker<'a> {
             .entry(name.clone())
             .or_default()
             .push(namespace.clone());
-        self.provider.get_attr(name, namespace)
+        self.context.get_attr(name, namespace)
     }
 }
 
-/// A dummy AttributeProvider that returns none to any attribute query.
+/// A dummy ElementContext that returns default values to any query.
 #[derive(Clone, Debug, PartialEq)]
-struct DummyAttributeProvider;
+pub struct DummyElementContext;
 
-impl AttributeProvider for DummyAttributeProvider {
+impl ElementContext for DummyElementContext {
     fn get_attr(&self, _attr: &LocalName, _namespace: &Namespace) -> Option<String> {
         None
+    }
+
+    fn opaque_element(&self) -> Option<OpaqueElement> {
+        None
+    }
+
+    fn opaque_parent(&self) -> Option<OpaqueNode> {
+        None
+    }
+
+    fn get_tree_counting_result(&self, _: &mut TreeCountingCaches) -> TreeCountingResult {
+        TreeCountingResult::default()
     }
 }
 

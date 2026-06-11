@@ -1753,6 +1753,20 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "sectionsLearnMore.url",
+    {
+      title: "Link to HNT's personalization page",
+      getValue: () => {
+        // Services.urlFormatter completes the in-product SUMO page URL:
+        // https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/firefox-new-tab-personalization
+        const baseUrl = Services.urlFormatter.formatURLPref(
+          "app.support.baseURL"
+        );
+        return `${baseUrl}firefox-new-tab-personalization`;
+      },
+    },
+  ],
+  [
     "caretBlinkCount",
     {
       title:

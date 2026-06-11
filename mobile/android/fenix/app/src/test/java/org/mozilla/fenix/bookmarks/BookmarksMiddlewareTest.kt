@@ -3380,8 +3380,9 @@ class BookmarksMiddlewareTest {
     ) = BookmarksStore(
         initialState = initialState,
         middleware = listOf(this),
-        bookmarkToLoad = bookmarkToLoad,
-    )
+    ).also {
+        it.dispatch(ViewAppeared(bookmarkToLoad = bookmarkToLoad))
+    }
 
     private fun generateBookmarkFolders(parentGuid: String) = List(5) {
         generateBookmarkFolder(

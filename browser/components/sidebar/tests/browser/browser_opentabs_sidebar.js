@@ -265,3 +265,53 @@ add_task(async function test_keyboard_shortcut_toggles_open_tabs_panel() {
   );
   Assert.ok(!SidebarController.isOpen, "Sidebar is closed.");
 });
+
+add_task(async function test_multiple_windows_render_separate_cards() {
+  const component = await showOpenTabsPanel();
+
+  // Wait for the initial card (current window) to render.
+  await BrowserTestUtils.waitForMutationCondition(
+    component.shadowRoot,
+    { childList: true, subtree: true },
+    () => component.shadowRoot.querySelectorAll("moz-card").length === 1
+  );
+
+  const secondWindow = await BrowserTestUtils.openNewBrowserWindow();
+
+  await BrowserTestUtils.waitForMutationCondition(
+    component.shadowRoot,
+    { childList: true, subtree: true },
+    () => component.shadowRoot.querySelectorAll("moz-card").length === 2
+  );
+
+  let cards = component.shadowRoot.querySelectorAll("moz-card");
+  Assert.equal(cards.length, 2, "Two cards rendered for two open windows.");
+
+  // The current window's card should be rendered first.
+  Assert.equal(
+    cards[0].getAttribute("data-inner-id"),
+    String(window.windowGlobalChild.innerWindowId),
+    "Current window's card is rendered first."
+  );
+  Assert.equal(
+    cards[1].getAttribute("data-inner-id"),
+    String(secondWindow.windowGlobalChild.innerWindowId),
+    "Second window's card uses its own inner window id."
+  );
+
+  await BrowserTestUtils.closeWindow(secondWindow);
+
+  await BrowserTestUtils.waitForMutationCondition(
+    component.shadowRoot,
+    { childList: true, subtree: true },
+    () => component.shadowRoot.querySelectorAll("moz-card").length === 1
+  );
+
+  Assert.equal(
+    component.shadowRoot.querySelectorAll("moz-card").length,
+    1,
+    "Closing the second window removes its card."
+  );
+
+  SidebarController.hide();
+});

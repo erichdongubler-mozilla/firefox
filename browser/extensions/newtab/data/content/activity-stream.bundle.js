@@ -112,6 +112,7 @@ for (const type of [
   "BOOKMARK_URL",
   "CARD_SECTION_IMPRESSION",
   "CLEAR_PREF",
+  "CLICK_SECTION_LEARN_MORE",
   "COPY_DOWNLOAD_LINK",
   "DELETE_BOOKMARK_BY_ID",
   "DELETE_HISTORY_URL",
@@ -2370,6 +2371,18 @@ const LinkMenuOptions = {
     id: "newtab-menu-manage-sponsored-content",
     action: actionCreators.OnlyToMain({ type: actionTypes.SETTINGS_OPEN }),
     userEvent: "OPEN_NEWTAB_PREFS",
+  }),
+  SectionLearnMore: ({ learnMoreUrl }) => ({
+    id: "newtab-menu-section-learn-more",
+    action: actionCreators.OnlyToMain({
+      type: actionTypes.OPEN_LINK,
+      data: { url: learnMoreUrl },
+    }),
+    impression: actionCreators.OnlyToMain({
+      type: actionTypes.CLICK_SECTION_LEARN_MORE,
+      data: {},
+    }),
+    userEvent: "CLICK_SECTION_LEARN_MORE",
   }),
   // eslint-disable-next-line max-params
   OurSponsorsAndYourPrivacy: (
@@ -10681,13 +10694,16 @@ function SectionContextMenu({
   sectionKey,
   following,
   sectionPersonalization,
-  sectionPosition
+  sectionPosition,
+  learnMoreUrl
 }) {
   const SECTIONS_CONTEXT_MENU_OPTIONS = [];
   if (following) {
     SECTIONS_CONTEXT_MENU_OPTIONS.push("SectionUnfollow");
   }
   SECTIONS_CONTEXT_MENU_OPTIONS.push("SectionBlock");
+  SECTIONS_CONTEXT_MENU_OPTIONS.push("Separator");
+  SECTIONS_CONTEXT_MENU_OPTIONS.push("SectionLearnMore");
   const [showContextMenu, setShowContextMenu] = (0,external_React_namespaceObject.useState)(false);
   const onClick = e => {
     e.preventDefault();
@@ -10716,7 +10732,8 @@ function SectionContextMenu({
       sectionPersonalization,
       sectionKey,
       sectionPosition,
-      title
+      title,
+      learnMoreUrl
     }
   }));
 }
@@ -11855,7 +11872,8 @@ function CardSection({
     sectionKey: sectionKey,
     title: title,
     type: type,
-    sectionPosition: sectionPosition
+    sectionPosition: sectionPosition,
+    learnMoreUrl: prefs["sectionsLearnMore.url"]
   }));
   return /*#__PURE__*/external_React_default().createElement("section", {
     className: "ds-section",
@@ -11884,7 +11902,8 @@ function CardSection({
     title: title,
     type: type,
     sectionPosition: sectionPosition,
-    buttonType: "ghost"
+    buttonType: "ghost",
+    learnMoreUrl: prefs["sectionsLearnMore.url"]
   }) : sectionContextWrapper)), /*#__PURE__*/external_React_default().createElement("div", {
     ref: gridRef,
     className: `ds-section-grid ds-card-grid`,

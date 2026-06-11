@@ -1012,13 +1012,25 @@
   }
 
   .textWidgetAnnotation input.comb{
+    --comb-width:0px;
+    --comb-letter-spacing:calc(var(--comb-width) - 1ch);
+
     font-family:monospace;
-    padding-left:2px;
-    padding-right:0;
+    letter-spacing:var(--comb-letter-spacing);
+    overflow-x:hidden;
+    padding:0;
+    text-indent:calc(
+      var(--comb-offset, 0) * var(--comb-width) + var(--comb-letter-spacing) / 2
+    );
   }
 
   .textWidgetAnnotation input.comb:focus{
-    width:103%;
+    background-image:repeating-linear-gradient(
+      to right,
+      transparent 0 calc(var(--comb-width) - 1px),
+      var(--input-focus-border-color) calc(var(--comb-width) - 1px)
+        var(--comb-width)
+    );
   }
 
   .buttonWidgetAnnotation:is(.checkBox, .radioButton) input{

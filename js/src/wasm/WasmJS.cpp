@@ -4273,7 +4273,7 @@ bool WasmExceptionObject::construct(JSContext* cx, unsigned argc, Value* vp) {
   RootedObject stack(cx);
   bool captureStack =
       options.traceStack || JS::Prefs::wasm_exception_force_stack_trace();
-  if (captureStack && !CaptureStack(cx, &stack)) {
+  if (captureStack && !CaptureStack(cx, &stack, MAX_REPORTED_STACK_DEPTH)) {
     ReportOutOfMemory(cx);
     return false;
   }

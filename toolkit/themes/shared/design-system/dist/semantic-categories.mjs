@@ -1706,7 +1706,7 @@ export const tokensTable = {
         "var(--panel-menuitem-margin-block) var(--panel-menuitem-margin-inline)",
       name: "--panel-menuitem-margin",
     },
-    { value: "0px", name: "--panel-menuitem-margin-block" },
+    { value: "0", name: "--panel-menuitem-margin-block" },
     { value: "8px", name: "--panel-menuitem-margin-inline" },
     {
       value:
@@ -1757,7 +1757,7 @@ export const tokensTable = {
       value: "calc(var(--space-small) + 2px)",
       name: "--message-bar-icon-container-margin-block-start",
     },
-    { value: "0px", name: "--message-bar-icon-container-padding" },
+    { value: "0", name: "--message-bar-icon-container-padding" },
     {
       value: "var(--space-xsmall)",
       name: "--message-bar-message-margin-inline-end",
@@ -3782,7 +3782,7 @@ export const variableLookupTable = {
   "panel-menuitem-border-radius": "var(--border-radius-small)",
   "panel-menuitem-margin":
     "var(--panel-menuitem-margin-block) var(--panel-menuitem-margin-inline)",
-  "panel-menuitem-margin-block": "0px",
+  "panel-menuitem-margin-block": "0",
   "panel-menuitem-margin-inline": "8px",
   "panel-menuitem-padding":
     "var(--panel-menuitem-padding-block) var(--panel-menuitem-padding-inline)",
@@ -4070,7 +4070,7 @@ export const variableLookupTable = {
   "message-bar-icon-container-height": "min-content",
   "message-bar-icon-container-margin-block-start":
     "calc(var(--space-small) + 2px)",
-  "message-bar-icon-container-padding": "0px",
+  "message-bar-icon-container-padding": "0",
   "message-bar-icon-size": "var(--icon-size)",
   "message-bar-message-margin-inline-end": "var(--space-xsmall)",
   "message-bar-text-color": "var(--text-color)",
