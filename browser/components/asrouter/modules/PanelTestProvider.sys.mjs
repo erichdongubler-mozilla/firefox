@@ -2391,6 +2391,13 @@ const MESSAGES = () => [
                 callout_attachment: "topright",
               },
             },
+            {
+              selector: "#PanelUI-menu-button",
+              panel_position: {
+                anchor_attachment: "leftcenter",
+                callout_attachment: "rightcenter",
+              },
+            },
           ],
           content: {
             position: "callout",
