@@ -349,6 +349,23 @@ describe("AboutPreferences Feed", () => {
       );
     });
 
+    it("shows a widget toggle when revealed via widgetsSettings even if its system pref is off", () => {
+      sandbox.stub(Services.prefs, "getBoolPref").returns(false);
+      instance.store.getState = () => ({
+        Prefs: {
+          values: {
+            trainhopConfig: { widgetsSettings: { listsVisible: true } },
+          },
+        },
+      });
+
+      instance._setupHomeGroup({ Preferences });
+
+      assert.isTrue(
+        findSetting("lists").visible({ listsEnabled: { value: false } })
+      );
+    });
+
     it("shows the widgets group when the container is enabled via trainhopConfig even if the system pref is off", () => {
       sandbox.stub(Services.prefs, "getBoolPref").returns(false);
       instance.store.getState = () => ({
@@ -380,6 +397,21 @@ describe("AboutPreferences Feed", () => {
       instance._setupHomeGroup({ Preferences });
 
       assert.isFalse(
+        findSetting("widgets").visible({ widgetsEnabled: { value: false } })
+      );
+    });
+
+    it("shows the widgets group when revealed via widgetsSettings even if the system pref is off", () => {
+      sandbox.stub(Services.prefs, "getBoolPref").returns(false);
+      instance.store.getState = () => ({
+        Prefs: {
+          values: { trainhopConfig: { widgetsSettings: { enabled: true } } },
+        },
+      });
+
+      instance._setupHomeGroup({ Preferences });
+
+      assert.isTrue(
         findSetting("widgets").visible({ widgetsEnabled: { value: false } })
       );
     });
