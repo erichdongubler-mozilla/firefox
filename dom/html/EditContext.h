@@ -80,9 +80,6 @@ class EditContext final : public DOMEventTargetHelper {
 
   MOZ_CAN_RUN_SCRIPT void UpdateTextAndFireEvent(uint32_t aStart, uint32_t aEnd,
                                                  const nsAString& aString);
-  MOZ_CAN_RUN_SCRIPT void StartComposition(
-      const WidgetCompositionEvent& aEvent);
-  MOZ_CAN_RUN_SCRIPT void EndComposition(const WidgetCompositionEvent& aEvent);
 
  private:
   EditContext(nsIGlobalObject* aGlobalObject, const EditContextInit& aInit,

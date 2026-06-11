@@ -6,11 +6,9 @@
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/EventDispatcher.h"
-#include "mozilla/TextEvents.h"
 #include "mozilla/dom/AnonymousContent.h"
+#include "mozilla/dom/CompositionEvent.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/dom/TextUpdateEvent.h"
@@ -217,20 +215,6 @@ void EditContext::UpdateTextAndFireEvent(uint32_t aStart, uint32_t aEnd,
       TextUpdateEvent::Constructor(this, u"textupdate"_ns, options);
   e->SetTrusted(true);
   DispatchEvent(*e);
-}
-
-void EditContext::StartComposition(const WidgetCompositionEvent& aEvent) {
-  MOZ_ASSERT(!mIsComposing);
-  WidgetCompositionEvent event(aEvent);
-  EventDispatcher::Dispatch(this, mText->OwnerDoc()->GetPresContext(), &event);
-  mIsComposing = true;
-}
-
-void EditContext::EndComposition(const WidgetCompositionEvent& aEvent) {
-  MOZ_ASSERT(mIsComposing);
-  WidgetCompositionEvent event(aEvent);
-  EventDispatcher::Dispatch(this, mText->OwnerDoc()->GetPresContext(), &event);
-  mIsComposing = false;
 }
 
 }  // namespace mozilla::dom

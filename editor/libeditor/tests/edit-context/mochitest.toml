@@ -1,6 +1,0 @@
-[DEFAULT]
-prefs = [
-  "dom.editcontext.enabled=true",
-]
-
-["test_editcontext_composition.html"]
