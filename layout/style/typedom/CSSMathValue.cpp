@@ -41,6 +41,13 @@ RefPtr<CSSMathValue> CSSMathValue::Create(nsCOMPtr<nsISupports> aParent,
       break;
     }
 
+    case StyleMathValue::Tag::Product: {
+      const auto& mathProduct = aMathValue.AsProduct();
+
+      mathValue = CSSMathProduct::Create(std::move(aParent), mathProduct);
+      break;
+    }
+
     case StyleMathValue::Tag::Negate: {
       const auto& mathNegate = aMathValue.AsNegate();
 
@@ -249,8 +256,11 @@ Maybe<StyleMathValue> CSSMathValue::ToStyleMathValue() const {
       return Some(StyleMathValue::Negate(styleMathNegate.extract()));
     }
 
-    case MathValueType::MathProduct:
-      return Nothing();
+    case MathValueType::MathProduct: {
+      const CSSMathProduct& mathProduct = GetAsCSSMathProduct();
+
+      return Some(StyleMathValue::Product(mathProduct.ToStyleMathProduct()));
+    }
 
     case MathValueType::MathSum: {
       const CSSMathSum& mathSum = GetAsCSSMathSum();

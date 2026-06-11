@@ -23,6 +23,8 @@ namespace mozilla {
 
 struct CSSPropertyId;
 class ErrorResult;
+struct StyleNumericValue;
+using StyleMathProduct = CopyableTArray<StyleNumericValue>;
 
 namespace dom {
 
@@ -35,6 +37,9 @@ class CSSMathProduct final : public CSSMathValue {
  public:
   CSSMathProduct(nsCOMPtr<nsISupports> aParent,
                  RefPtr<CSSNumericArray> aValues);
+
+  static RefPtr<CSSMathProduct> Create(nsCOMPtr<nsISupports> aParent,
+                                       const StyleMathProduct& aMathProduct);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CSSMathProduct, CSSMathValue)
@@ -56,6 +61,8 @@ class CSSMathProduct final : public CSSMathValue {
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                              const SerializationContext& aContext,
                              nsACString& aDest) const;
+
+  StyleMathProduct ToStyleMathProduct() const;
 
  private:
   virtual ~CSSMathProduct() = default;
