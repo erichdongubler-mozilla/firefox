@@ -35,6 +35,9 @@ import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.hideToolbar
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.home.HomeFragmentDirections
+import org.mozilla.fenix.ipprotection.helpers.IsoPromoDeadline
+import org.mozilla.fenix.ipprotection.helpers.formatPromoDateOrCatch
+import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /** Fragment hosting the IP Protection settings screen. */
@@ -67,11 +70,15 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
         // To make the transition smoother, we prevent the fragment from drawing UI in that case.
         if (shouldHideUi(state)) return@content
 
+        val promoDate = IsoPromoDeadline(FxNimbus.features.ipProtection.value().promoDeadline)
+            .formatPromoDateOrCatch { requireComponents.analytics.crashReporter.submitCaughtException(it) }
+
         FirefoxTheme {
             IPProtectionScreen(
                 state = state,
                 readyToUse = state.readyToUse(),
                 syncingData = state.syncingData(),
+                promoDate = promoDate,
                 onVpnToggle = { enabled ->
                     if (enabled) {
                         requireComponents.settings.hasAlreadyUsedVpn = true
