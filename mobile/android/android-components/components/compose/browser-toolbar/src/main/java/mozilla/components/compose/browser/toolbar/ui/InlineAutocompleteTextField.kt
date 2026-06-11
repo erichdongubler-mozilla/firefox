@@ -154,6 +154,7 @@ internal fun InlineAutocompleteTextField(
     val scrollState = rememberScrollState()
 
     val context = LocalContext.current
+    val localView = LocalView.current
     val defaultTextToolbar = LocalTextToolbar.current
     val clipboard = LocalClipboard.current
     val coroutineScope = rememberCoroutineScope()
@@ -172,7 +173,15 @@ internal fun InlineAutocompleteTextField(
         }
     }
     DisposableEffect(Unit) {
-        onDispose { pasteInterceptorToolbar.hide() }
+        onDispose {
+            pasteInterceptorToolbar.hide()
+            // Ensure the IME is dismissed if this field leaves composition while still focused,
+            // which can otherwise race with the focus-loss handler and leave the keyboard open.
+            // Using the InputMethodManager will ensure the IME is hidden regardless of whether the
+            // Compose text input session is still active, which `keyboardController.hide()` relies on.
+            val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(localView.windowToken, 0)
+        }
     }
 
     // Dismiss the text selection/contextual menu as soon as the user edits the text.
@@ -194,7 +203,6 @@ internal fun InlineAutocompleteTextField(
         }
     }
 
-    val localView = LocalView.current
     LaunchedEffect(suggestion) {
         if (useSuggestion) {
             suggestion?.text?.let {
@@ -270,6 +278,8 @@ internal fun InlineAutocompleteTextField(
                     .onFocusChanged { focusState ->
                         if (focusState.isFocused) {
                             keyboardController?.show()
+                        } else {
+                            keyboardController?.hide()
                         }
                     }
                     .focusRequester(focusRequester)

@@ -4,8 +4,13 @@
 
 package mozilla.components.compose.browser.toolbar.ui
 
+import android.content.Context
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.SoftwareKeyboardController
@@ -27,6 +32,7 @@ import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags
 import mozilla.components.concept.toolbar.AutocompleteResult
 import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
+import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.whenever
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -37,6 +43,7 @@ import org.mockito.Mockito.atLeastOnce
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 
 @RunWith(RobolectricTestRunner::class)
 class InlineAutocompleteTextFieldTest {
@@ -267,7 +274,7 @@ class InlineAutocompleteTextFieldTest {
 
         composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).performImeAction()
 
-        verify(keyboardController).hide()
+        verify(keyboardController, atLeastOnce()).hide()
         verify(urlCommitedCallback).invoke(userQuery)
     }
 
@@ -298,7 +305,7 @@ class InlineAutocompleteTextFieldTest {
 
         composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).performImeAction()
 
-        verify(keyboardController).hide()
+        verify(keyboardController, atLeastOnce()).hide()
         verify(urlCommitedCallback).invoke(suggestion.text)
     }
 
@@ -322,7 +329,7 @@ class InlineAutocompleteTextFieldTest {
 
         composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).performImeAction()
 
-        verify(keyboardController).hide()
+        verify(keyboardController, atLeastOnce()).hide()
         verify(urlCommitedCallback).invoke(userQuery)
     }
 
@@ -476,4 +483,31 @@ class InlineAutocompleteTextFieldTest {
     }
 
     // End of autocompleteInputConnection specific tests
+
+    @Test
+    fun `WHEN the text field is removed from composition THEN the keyboard is hidden`() {
+        val imm = shadowOf(testContext.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+        var isTextFieldShown by mutableStateOf(true)
+
+        // `setContent` can only be called once, so toggle the field in/out of composition with state.
+        composeTestRule.setContent {
+            if (isTextFieldShown) {
+                InlineAutocompleteTextField(
+                    query = "",
+                    hint = "test",
+                    suggestion = null, // No suggestion
+                    showQueryAsPreselected = false,
+                    usePrivateModeQueries = false,
+                    onUrlCommitted = {},
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+        assertTrue(imm.isSoftInputVisible)
+
+        // Remove the text field from composition.
+        composeTestRule.runOnIdle { isTextFieldShown = false }
+        composeTestRule.waitForIdle()
+        assertFalse(imm.isSoftInputVisible)
+    }
 }
