@@ -81,10 +81,6 @@ aiwindow-input-cta-menu-label-search-with = Search with…
 
 aiwindow-input-cta-search-submenu-header = Search
 
-aiwindow-input-cta-stop-button =
-    .aria-label = Stop response generation
-    .title = Stop response
-
 ## Smartbar
 
 smartbar-placeholder =
