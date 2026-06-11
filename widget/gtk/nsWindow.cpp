@@ -1657,7 +1657,15 @@ void nsWindow::RecomputeBounds(bool aScaleChange) {
   mPendingBoundsChange = false;
 
   auto* toplevel = GetToplevelGdkWindow();
-  if (!toplevel || mIsDestroyed) {
+  // Don't recompute bounds while the toplevel is unmapped (e.g. while hiding
+  // during shutdown). After we unmap the window, the window manager may take
+  // the titlebar away. Recomputing then shrinks mClientMargin (the titlebar
+  // height) to 0, so GetScreenBounds()/outerHeight report the size without the
+  // titlebar. SessionStore saves that too-short value, and on the next startup
+  // the window comes back one titlebar shorter -- shrinking a little more on
+  // every session restore (bug 2034108). Keep the last mapped bounds instead;
+  // they're refreshed on the next map.
+  if (!toplevel || mIsDestroyed || !mIsMapped) {
     return;
   }
 
