@@ -3421,17 +3421,63 @@ template <TreeKind aKind>
 Maybe<int32_t> nsContentUtils::CompareChildNodes(
     const nsINode* aChild1, const nsINode* aChild2,
     NodeIndexCache* aIndexCache /* = nullptr */) {
-  if (MOZ_UNLIKELY(
-          (aChild1 && (NS_WARN_IF(aChild1->IsRootOfNativeAnonymousSubtree()) ||
-                       NS_WARN_IF(aChild1->IsDocumentFragment()))) ||
-          (aChild2 && (NS_WARN_IF(aChild2->IsRootOfNativeAnonymousSubtree()) ||
-                       NS_WARN_IF(aChild2->IsDocumentFragment()))))) {
+  // FIXME: bug 1946003 and bug 1946008.
+  if (MOZ_UNLIKELY((aChild1 && NS_WARN_IF(aChild1->IsDocumentFragment())) ||
+                   (aChild2 && NS_WARN_IF(aChild2->IsDocumentFragment())))) {
     return Nothing();
   }
   if (MOZ_UNLIKELY(aChild1 == aChild2)) {
     return Some(0);
   }
   MOZ_ASSERT(aChild1 || aChild2);
+  // Native anonymous content (e.g. ::before/::after pseudo-elements) is not in
+  // the regular child list, so the sibling/index fast paths below cannot order
+  // it against regular children or the end-of-children boundary (a null child).
+  // GetIndexInParent assigns flat-tree-consistent indices to NAC roots, so use
+  // it to order the points instead.
+  if (MOZ_UNLIKELY((aChild1 && aChild1->IsRootOfNativeAnonymousSubtree()) ||
+                   (aChild2 && aChild2->IsRootOfNativeAnonymousSubtree()))) {
+    const nsINode& parent = aChild1
+                                ? *GetParentFuncForComparison<aKind>(aChild1)
+                                : *GetParentFuncForComparison<aKind>(aChild2);
+    // A null child is the boundary at the end of the parent's regular child
+    // list (offset == number of regular children). Regular children occupy
+    // indices [0, regularCount) in the index space assigned by
+    // GetIndexInParent, while trailing NAC (other anonymous subtrees and
+    // ::after) start at regularCount. The discriminator here must match the
+    // one in GetIndexInParent so the boundary lands in the same index space:
+    // only the flat tree indexes regular children via the flattened iterator;
+    // DOM and ShadowIncludingDOM both index them via ComputeIndexOf.
+    const int32_t regularCount =
+        aKind == TreeKind::Flat
+            ? int32_t(FlattenedChildIterator::GetLength(&parent))
+            : int32_t(parent.GetChildCount());
+    const auto indexOf = [&](const nsINode* aChild) -> Maybe<int32_t> {
+      if (!aChild) {
+        return Some(regularCount);
+      }
+      return aIndexCache ? aIndexCache->ComputeIndexOf<aKind>(&parent, aChild)
+                         : GetIndexInParent<aKind>(&parent, aChild);
+    };
+    const Maybe<int32_t> child1Index = indexOf(aChild1);
+    const Maybe<int32_t> child2Index = indexOf(aChild2);
+    if (MOZ_LIKELY(child1Index.isSome() && child2Index.isSome())) {
+      if (*child1Index != *child2Index) {
+        return Some(*child1Index < *child2Index ? -1 : 1);
+      }
+      // Equal indices only happen when one child is the end-of-children
+      // boundary (null) and the other is the first trailing NAC subtree at the
+      // same index. The boundary precedes trailing NAC in tree order.
+      if (!aChild1) {
+        return Some(-1);
+      }
+      if (!aChild2) {
+        return Some(1);
+      }
+    }
+    // XXX Keep the odd traditional behavior for now.
+    return Some(1);
+  }
   if (!aChild1) {  // i.e., end of parent vs aChild2
     MOZ_ASSERT_IF(aKind == TreeKind::DOM, aChild2->GetParentNode());
     MOZ_ASSERT_IF(aKind != TreeKind::DOM, aChild2->GetParentOrShadowHostNode());
@@ -3571,11 +3617,9 @@ Maybe<int32_t> nsContentUtils::CompareClosestCommonAncestorChildren(
       return Some(1);
     }
   }
-  // FIXME: bug 1946001, bug 1946003 and bug 1946008.
-  if (MOZ_UNLIKELY((aChild1 && (aChild1->IsRootOfNativeAnonymousSubtree() ||
-                                aChild1->IsDocumentFragment())) ||
-                   (aChild2 && (aChild2->IsRootOfNativeAnonymousSubtree() ||
-                                aChild2->IsDocumentFragment())))) {
+  // FIXME: bug 1946003 and bug 1946008.
+  if (MOZ_UNLIKELY((aChild1 && aChild1->IsDocumentFragment()) ||
+                   (aChild2 && aChild2->IsDocumentFragment()))) {
     // XXX Keep the odd traditional behavior for now.  I think that we should
     // return Nothing in this case.
     return Some(1);
@@ -3591,16 +3635,24 @@ Maybe<int32_t> nsContentUtils::CompareClosestCommonAncestorChildren(
     return Some(1);
   }
   MOZ_ASSERT_IF(!*comp, aChild1 == aChild2);
-  MOZ_ASSERT_IF(*comp < 0 && !AreNodesInSameSlot(aChild1, aChild2),
-                (aChild1 ? *aChild1->ComputeIndexInParentNode()
-                         : aParent.GetChildCount()) <
-                    (aChild2 ? *aChild2->ComputeIndexInParentNode()
-                             : aParent.GetChildCount()));
-  MOZ_ASSERT_IF(*comp > 0 && !AreNodesInSameSlot(aChild1, aChild2),
-                (aChild2 ? *aChild2->ComputeIndexInParentNode()
-                         : aParent.GetChildCount()) <
-                    (aChild1 ? *aChild1->ComputeIndexInParentNode()
-                             : aParent.GetChildCount()));
+  // ComputeIndexInParentNode() is the index in the regular child list, which
+  // native anonymous content is not part of. CompareChildNodes already ordered
+  // NAC via GetIndexInParent, so skip the regular-index sanity checks for it.
+  const DebugOnly<bool> eitherIsNAC =
+      (aChild1 && aChild1->IsRootOfNativeAnonymousSubtree()) ||
+      (aChild2 && aChild2->IsRootOfNativeAnonymousSubtree());
+  MOZ_ASSERT_IF(
+      !eitherIsNAC && *comp < 0 && !AreNodesInSameSlot(aChild1, aChild2),
+      (aChild1 ? *aChild1->ComputeIndexInParentNode()
+               : aParent.GetChildCount()) <
+          (aChild2 ? *aChild2->ComputeIndexInParentNode()
+                   : aParent.GetChildCount()));
+  MOZ_ASSERT_IF(
+      !eitherIsNAC && *comp > 0 && !AreNodesInSameSlot(aChild1, aChild2),
+      (aChild2 ? *aChild2->ComputeIndexInParentNode()
+               : aParent.GetChildCount()) <
+          (aChild1 ? *aChild1->ComputeIndexInParentNode()
+                   : aParent.GetChildCount()));
   return comp;
 }
 
@@ -3609,12 +3661,26 @@ template <TreeKind aKind>
 Maybe<int32_t> nsContentUtils::CompareChildOffsetAndChildNode(
     uint32_t aOffset1, const nsINode& aChild2,
     NodeIndexCache* aIndexCache /* = nullptr */) {
-  if (NS_WARN_IF(aChild2.IsRootOfNativeAnonymousSubtree()) ||
-      NS_WARN_IF(aChild2.IsDocumentFragment())) {
+  if (NS_WARN_IF(aChild2.IsDocumentFragment())) {
     return Nothing();
   }
   const nsINode* parentNode = GetParentFuncForComparison<aKind>(&aChild2);
   MOZ_ASSERT(parentNode);
+  // Native anonymous content (e.g. ::before/::after) is not in the regular
+  // child list, so order it against the [parentNode, aOffset1] boundary using
+  // the flat-tree index space from GetIndexInParent. aOffset1 indexes regular
+  // children [0, N); the NAC child sits at child2Index in the same space, and
+  // the boundary precedes it iff aOffset1 <= child2Index.
+  if (MOZ_UNLIKELY(aChild2.IsRootOfNativeAnonymousSubtree())) {
+    const Maybe<int32_t> child2Index =
+        aIndexCache ? aIndexCache->ComputeIndexOf<aKind>(parentNode, &aChild2)
+                    : GetIndexInParent<aKind>(parentNode, &aChild2);
+    if (NS_WARN_IF(child2Index.isNothing())) {
+      // XXX Keep the odd traditional behavior for now.
+      return Some(1);
+    }
+    return Some(int32_t(aOffset1) <= *child2Index ? -1 : 1);
+  }
 
   const uint32_t parentNodeChildCount = [parentNode]() -> uint32_t {
     if constexpr (aKind == TreeKind::Flat) {
@@ -3740,10 +3806,8 @@ Maybe<int32_t> nsContentUtils::ComparePointsWithIndices(
       return aOffset1 > 0 ? Some(1) : Some(-1);
     }
 
-    // FIXME: bug 1946001, bug 1946003 and bug 1946008.
-    if (MOZ_UNLIKELY(
-            closestCommonAncestorChild2->IsRootOfNativeAnonymousSubtree() ||
-            closestCommonAncestorChild2->IsDocumentFragment())) {
+    // FIXME: bug 1946003 and bug 1946008.
+    if (MOZ_UNLIKELY(closestCommonAncestorChild2->IsDocumentFragment())) {
       // XXX Keep the odd traditional behavior for now.
       return Some(1);
     }
@@ -3778,10 +3842,8 @@ Maybe<int32_t> nsContentUtils::ComparePointsWithIndices(
     return aOffset2 > 0 ? Some(-1) : Some(1);
   }
 
-  // FIXME: bug 1946001, bug 1946003 and bug 1946008.
-  if (MOZ_UNLIKELY(
-          closestCommonAncestorChild1->IsRootOfNativeAnonymousSubtree() ||
-          closestCommonAncestorChild1->IsDocumentFragment())) {
+  // FIXME: bug 1946003 and bug 1946008.
+  if (MOZ_UNLIKELY(closestCommonAncestorChild1->IsDocumentFragment())) {
     // XXX Keep the odd traditional behavior for now.
     return Some(-1);
   }
@@ -3940,10 +4002,8 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
   if (closestCommonAncestorChild2) {
     MOZ_ASSERT(closestCommonAncestorChild2->GetParentOrShadowHostNode() ==
                aBoundary1.GetContainer());
-    // FIXME: bug 1946001, bug 1946003 and bug 1946008.
-    if (MOZ_UNLIKELY(
-            closestCommonAncestorChild2->IsRootOfNativeAnonymousSubtree() ||
-            closestCommonAncestorChild2->IsDocumentFragment())) {
+    // FIXME: bug 1946003 and bug 1946008.
+    if (MOZ_UNLIKELY(closestCommonAncestorChild2->IsDocumentFragment())) {
       // XXX Keep the odd traditional behavior for now.
       return Some(1);
     }
@@ -3966,10 +4026,16 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
                  *aBoundary1.Offset(kValidOrInvalidOffsets1));
       return Some(-1);
     }
-    MOZ_ASSERT_IF(*comp < 0,
+    // ComputeIndexInParentNode() is the index in the regular child list, which
+    // native anonymous content is not part of. CompareChildNodes already
+    // ordered NAC via GetIndexInParent, so skip the regular-index sanity checks
+    // for it.
+    const DebugOnly<bool> child2IsNAC =
+        closestCommonAncestorChild2->IsRootOfNativeAnonymousSubtree();
+    MOZ_ASSERT_IF(!child2IsNAC && *comp < 0,
                   *aBoundary1.Offset(kValidOrInvalidOffsets1) <
                       *closestCommonAncestorChild2->ComputeIndexInParentNode());
-    MOZ_ASSERT_IF(*comp > 0,
+    MOZ_ASSERT_IF(!child2IsNAC && *comp > 0,
                   *closestCommonAncestorChild2->ComputeIndexInParentNode() <
                       *aBoundary1.Offset(kValidOrInvalidOffsets1));
     return comp;
@@ -3978,10 +4044,8 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
   MOZ_ASSERT(closestCommonAncestorChild1);
   MOZ_ASSERT(closestCommonAncestorChild1->GetParentOrShadowHostNode() ==
              aBoundary2.GetContainer());
-  // FIXME: bug 1946001, bug 1946003 and bug 1946008.
-  if (MOZ_UNLIKELY(
-          closestCommonAncestorChild1->IsRootOfNativeAnonymousSubtree() ||
-          closestCommonAncestorChild1->IsDocumentFragment())) {
+  // FIXME: bug 1946003 and bug 1946008.
+  if (MOZ_UNLIKELY(closestCommonAncestorChild1->IsDocumentFragment())) {
     // XXX Keep the odd traditional behavior for now.
     return Some(-1);
   }
@@ -4002,10 +4066,15 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
                *aBoundary2.Offset(kValidOrInvalidOffsets2));
     return Some(1);
   }
-  MOZ_ASSERT_IF(*comp < 0,
+  // ComputeIndexInParentNode() is the index in the regular child list, which
+  // native anonymous content is not part of. CompareChildNodes already ordered
+  // NAC via GetIndexInParent, so skip the regular-index sanity checks for it.
+  const DebugOnly<bool> child1IsNAC =
+      closestCommonAncestorChild1->IsRootOfNativeAnonymousSubtree();
+  MOZ_ASSERT_IF(!child1IsNAC && *comp < 0,
                 *closestCommonAncestorChild1->ComputeIndexInParentNode() <
                     *aBoundary2.Offset(kValidOrInvalidOffsets2));
-  MOZ_ASSERT_IF(*comp > 0,
+  MOZ_ASSERT_IF(!child1IsNAC && *comp > 0,
                 *aBoundary2.Offset(kValidOrInvalidOffsets2) <
                     *closestCommonAncestorChild1->ComputeIndexInParentNode());
   return comp;
@@ -12981,9 +13050,13 @@ Maybe<int32_t> nsContentUtils::GetIndexInParent(const nsINode* aParent,
 
   AutoTArray<nsIContent*, 8> anonKids;
 
-  int32_t siblingCount = aKind == TreeKind::DOM
-                             ? aParent->GetChildCount()
-                             : FlattenedChildIterator::GetLength(aParent);
+  // Regular children are indexed via ComputeIndexOf (range [0, GetChildCount))
+  // for both DOM and ShadowIncludingDOM above; only the flat tree indexes them
+  // via the flattened iterator. Trailing NAC must be based at the matching
+  // count so it lands after the regular children in the same index space.
+  int32_t siblingCount = aKind == TreeKind::Flat
+                             ? FlattenedChildIterator::GetLength(aParent)
+                             : aParent->GetChildCount();
 
   MOZ_ASSERT(aParent->MayHaveAnonymousChildren());
   MOZ_ASSERT(aParent->IsContent());
