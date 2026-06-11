@@ -753,33 +753,13 @@ SettingGroupManager.registerGroups({
             items: [
               {
                 id: "statusPrimaryPassword",
+                l10nId: "forms-primary-pw-on",
                 control: "moz-box-item",
+                controlAttrs: {
+                  iconsrc: "chrome://global/skin/icons/check-filled.svg",
+                },
                 options: [
                   {
-                    key: "primaryPasswordOnStatus",
-                    control: "span",
-                    controlAttrs: {
-                      class: "primary-pw-status",
-                    },
-                    options: [
-                      {
-                        key: "primaryPasswordOnIcon",
-                        control: "img",
-                        controlAttrs: {
-                          src: "chrome://global/skin/icons/check-filled.svg",
-                          alt: "",
-                          class: "primary-pw-status-icon",
-                        },
-                      },
-                      {
-                        key: "primaryPasswordOnLabel",
-                        control: "span",
-                        l10nId: "forms-primary-pw-on-2",
-                      },
-                    ],
-                  },
-                  {
-                    key: "turnOffPrimaryPassword",
                     id: "turnOffPrimaryPassword",
                     l10nId: "forms-primary-pw-turn-off",
                     control: "moz-button",
