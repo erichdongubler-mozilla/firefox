@@ -340,14 +340,7 @@ export class LoginManagerRustStorage {
             this.#storageAdapter = new RustLoginsStoreAdapter(store);
             this.log("Rust login storage ready.");
 
-            // All LoginManager storage backends must have their own shutdown
-            // blocker to ensure that they finalize properly.
-            lazy.AsyncShutdown.profileChangeTeardown.addBlocker(
-              "LoginManagerRustStorage: Interrupt IO operations on login store",
-              async () => this.finalize()
-            );
-
-            resolve(this);
+            this._registerShutdownBlocker().then(() => resolve(this));
           });
         });
       } catch (e) {
@@ -369,6 +362,28 @@ export class LoginManagerRustStorage {
 
     // Note: This is a synchronous call.
     this.#storageAdapter.shutdown();
+    return Promise.resolve();
+  }
+
+  /**
+   * Ensure the storage is finalized at shutdown. All LoginManager storage
+   * backends must have their own shutdown blocker to finalize properly.
+   *
+   * In the corner case where the shutdown phase has already passed by the time
+   * we get here, registering a blocker would throw, so we call `finalize()`
+   * immediately instead.
+   *
+   * @param {object} phase An `AsyncShutdown` phase object. Exposed as a
+   *   parameter for testing.
+   */
+  _registerShutdownBlocker(phase = lazy.AsyncShutdown.profileChangeTeardown) {
+    if (phase.isClosed) {
+      return this.finalize();
+    }
+    phase.addBlocker(
+      "LoginManagerRustStorage: Interrupt IO operations on login store",
+      async () => this.finalize()
+    );
     return Promise.resolve();
   }
 
