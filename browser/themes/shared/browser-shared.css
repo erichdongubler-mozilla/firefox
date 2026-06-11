@@ -1286,39 +1286,6 @@ popupnotificationcontent {
   fill: var(--input-text-color);
 }
 
-.ac-has-end-icon {
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
-
-.popup-notification-body input.ac-has-end-icon {
-  --input-padding-from-arrow-side: calc(2 * var(--space-small) + var(--icon-size)); /* spacing on either side + arrow element width */
-  padding-inline-end: var(--input-padding-from-arrow-side);
-}
-
-/* Avoid overlapping the text on the arrow icon when switching input text direction */
-.popup-notification-body:-moz-locale-dir(rtl) input.ac-has-end-icon:dir(ltr) {
-  padding-left: var(--input-padding-from-arrow-side);
-  padding-right: var(--space-small);
-}
-.popup-notification-body:-moz-locale-dir(ltr) input.ac-has-end-icon:dir(rtl) {
-  padding-right: var(--input-padding-from-arrow-side);
-  padding-left: var(--space-small);
-}
-
-.password-notification-label {
-  margin-block-start: var(--space-large);
-
-  /**
-   * There's already a margin-block-start of 8px on popupnotificationcontent,
-   * so the first label only needs 8px of margin-block-start to match the
-   * spec.
-   */
-  &:first-of-type {
-    margin-block-start: var(--space-small);
-  }
-}
-
 #tab-notification-deck {
   display: block;
 }

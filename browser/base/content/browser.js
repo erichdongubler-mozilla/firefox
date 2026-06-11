@@ -627,6 +627,16 @@ customElements.setElementCreationCallback("webrtc-preview", () => {
   );
 });
 
+customElements.setElementCreationCallback(
+  "login-doorhanger-username-field",
+  () => {
+    ChromeUtils.importESModule(
+      "chrome://browser/content/passwordmgr/login-doorhanger-username-field.mjs",
+      { global: "current" }
+    );
+  }
+);
+
 var gBrowser;
 var gContextMenu = null; // nsContextMenu instance
 var gMultiProcessBrowser = window.docShell.QueryInterface(
