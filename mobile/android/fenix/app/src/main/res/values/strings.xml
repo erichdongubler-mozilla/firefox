@@ -2949,6 +2949,8 @@
     <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
         %1$d is the total monthly allowance in GB (for example "50"). -->
     <string name="ip_protection_data_limit_reached_snackbar">%1$d GB of VPN data used. Access will reset next month.</string>
+    <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
+    <string name="ip_protection_data_limit_reached_snackbar_action">Settings</string>
 
     <!-- Autofill -->
     <!-- Preference and title for managing the autofill settings -->

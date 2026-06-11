@@ -57,7 +57,11 @@ class IPProtectionInfoPrompter(
      */
     private fun processStateForSnackbar(state: IPProtectionState) {
         if (state.eligibilityStatus == EligibilityStatus.Eligible && state.proxyStatus == Authorized.DataLimitReached) {
-            appStore.dispatch(AppAction.SnackbarAction.ShowSnackbar(errorMessages.dataLimitReached))
+            appStore.dispatch(
+                AppAction.SnackbarAction.ShowIPProtectionDataLimitReachedSnackbar(
+                    errorMessages.dataLimitReached,
+                ),
+            )
         }
     }
 }
