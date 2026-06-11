@@ -1697,13 +1697,13 @@ already_AddRefed<gfxFontFamily> CoreTextFontList::CreateFontFamily(
   return MakeAndAddRef<CTFontFamily>(aName, aVisibility);
 }
 
-gfxFontEntry* CoreTextFontList::CreateFontEntry(
+already_AddRefed<gfxFontEntry> CoreTextFontList::CreateFontEntry(
     fontlist::Face* aFace, const fontlist::Family* aFamily) {
-  CTFontEntry* fe = new CTFontEntry(
+  RefPtr fe = MakeRefPtr<CTFontEntry>(
       aFace->mDescriptor.AsString(SharedFontList()), aFace->mWeight, false,
       0.0);  // XXX standardFace, sizeHint
   fe->InitializeFrom(aFace, aFamily);
-  return fe;
+  return fe.forget();
 }
 
 void CoreTextFontList::AddFaceInitData(

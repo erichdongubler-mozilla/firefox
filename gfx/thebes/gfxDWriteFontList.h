@@ -377,7 +377,7 @@ class gfxDWriteFontList final : public gfxPlatformFontList {
   already_AddRefed<gfxFontFamily> CreateFontFamily(
       const nsACString& aName, FontVisibility aVisibility) const override;
 
-  gfxFontEntry* CreateFontEntry(
+  already_AddRefed<gfxFontEntry> CreateFontEntry(
       mozilla::fontlist::Face* aFace,
       const mozilla::fontlist::Family* aFamily) override;
 

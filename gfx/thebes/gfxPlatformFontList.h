@@ -969,7 +969,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   virtual nsresult InitFontListForPlatform() MOZ_REQUIRES(mLock) = 0;
   virtual void InitSharedFontListForPlatform() MOZ_REQUIRES(mLock) {}
 
-  virtual gfxFontEntry* CreateFontEntry(
+  virtual already_AddRefed<gfxFontEntry> CreateFontEntry(
       mozilla::fontlist::Face* aFace,
       const mozilla::fontlist::Family* aFamily) {
     return nullptr;

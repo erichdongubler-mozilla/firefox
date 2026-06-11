@@ -252,7 +252,7 @@ class CoreTextFontList : public gfxPlatformFontList {
       const nsACString& aDir,
       nsTHashSet<nsCStringHashKey>* aLoadedFamilies = nullptr);
 
-  gfxFontEntry* CreateFontEntry(
+  already_AddRefed<gfxFontEntry> CreateFontEntry(
       mozilla::fontlist::Face* aFace,
       const mozilla::fontlist::Family* aFamily) override;
 

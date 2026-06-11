@@ -1832,15 +1832,15 @@ void gfxFT2FontList::InitSharedFontListForPlatform() {
   mFaceInitData.Clear();
 }
 
-gfxFontEntry* gfxFT2FontList::CreateFontEntry(fontlist::Face* aFace,
-                                              const fontlist::Family* aFamily) {
+already_AddRefed<gfxFontEntry> gfxFT2FontList::CreateFontEntry(
+    fontlist::Face* aFace, const fontlist::Family* aFamily) {
   fontlist::FontList* list = SharedFontList();
   nsAutoCString desc(aFace->mDescriptor.AsString(list));
-  FT2FontEntry* fe =
+  RefPtr<FT2FontEntry> fe =
       FT2FontEntry::CreateFontEntry(desc, desc.get(), aFace->mIndex, nullptr);
   fe->InitializeFrom(aFace, aFamily);
   fe->CheckForBrokenFont(aFamily->Key().AsString(list));
-  return fe;
+  return fe.forget();
 }
 
 // called for each family name, based on the assumption that the
