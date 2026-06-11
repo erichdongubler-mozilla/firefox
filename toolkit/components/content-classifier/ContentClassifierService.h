@@ -8,6 +8,7 @@
 #include <cstdint>
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/Span.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/RefPtr.h"
@@ -135,6 +136,45 @@ class ContentClassifierResult {
   nsTArray<ContentClassifierEngineResult> mEngineResults;
 };
 
+// Snapshot of the four engines prefs (cancel/annotate x normal/PBM)
+// captured on the main thread. UpdateFeatures threads this snapshot
+// through the main-thread fetch step, the build-thread engine build,
+// and the lock-holding install/populate/prune step so every stage in
+// the rebuild pipeline sees a consistent view of the pref state, even
+// if a later pref change races the rebuild.
+struct EnginesPrefsSnapshot {
+  EnginesPrefsSnapshot() {
+    AppendFeatureNamesFromPref(
+        "privacy.trackingprotection.content.protection.engines", mCancel);
+    AppendFeatureNamesFromPref(
+        "privacy.trackingprotection.content.protection.engines.pbmode",
+        mCancelPBM);
+    AppendFeatureNamesFromPref(
+        "privacy.trackingprotection.content.annotation.engines", mAnnotate);
+    AppendFeatureNamesFromPref(
+        "privacy.trackingprotection.content.annotation.engines.pbmode",
+        mAnnotatePBM);
+  }
+
+  static void AppendFeatureNamesFromPref(const char* aPref,
+                                         nsTArray<nsCString>& aOut) {
+    nsAutoCString value;
+    Preferences::GetCString(aPref, value);
+    for (const auto& part : value.Split(',')) {
+      nsAutoCString name(part);
+      name.Trim("\b\t\r\n ");
+      if (!name.IsEmpty() && !aOut.Contains(name)) {
+        aOut.AppendElement(name);
+      }
+    }
+  }
+
+  nsTArray<nsCString> mCancel;
+  nsTArray<nsCString> mCancelPBM;
+  nsTArray<nsCString> mAnnotate;
+  nsTArray<nsCString> mAnnotatePBM;
+};
+
 class ContentClassifierService final : public nsIAsyncShutdownBlocker,
                                        public nsIContentClassifierService {
  public:
@@ -173,8 +213,6 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
 
   void Init();
   static void OnPrefChange(const char* aPref, void* aData);
-  void LoadFilterLists();
-  void RebuildEnginesFromStoredData();
   void InitRSClient();
   void ShutdownRSClient();
   void RemoveBlocker();
@@ -189,22 +227,60 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
       const nsTArray<RefPtr<ContentClassifierEngine>>& aEngines,
       const ContentClassifierRequest& aRequest, bool aIndependentEngines);
 
-  // Feature names referenced by any of the new "engines" prefs. Used at
-  // engine-rebuild time to decide which feature engines to construct in
-  // mEngines. Reads prefs; main thread only.
-  static nsTArray<nsCString> ActiveFeatureNames();
+  // Take a fresh pref snapshot, decide which active features need to be
+  // (re)built — either because they have no engine yet, or because one of
+  // their mListIds appears in aUpdated/aRemoved — and hand the result to
+  // UpdateFeatures. Main thread only.
+  void ProcessListChanges(const nsTArray<nsCString>& aUpdated,
+                          const nsTArray<nsCString>& aRemoved);
 
-  // Repopulate the four per-mode engine pointer arrays from the current
-  // engines prefs and mEngines. Reads prefs; main thread only. Holds mLock.
-  void RefreshActiveEngineLists() MOZ_REQUIRES(mLock);
+  // This rebuilds the given features,
+  // according to that preference snapshot. This also means that features that
+  // aren't referenced by the current pref snapshot are going to have their
+  // engine destroyed.
+  void UpdateFeatures(
+      const nsTArray<const ContentClassifierFeature*>& aFeatures,
+      EnginesPrefsSnapshot aPreferenceSnapshot);
 
-  // Populate aOut with engines in mEngines named by the comma-separated
-  // feature names in aPref. Unknown / unbuilt features are skipped
-  // silently (they are already logged at engine-build time). Reads prefs;
-  // main thread only. Holds mLock.
-  void PopulateEngineListFromPref(
-      const char* aPref, nsTArray<RefPtr<ContentClassifierEngine>>& aOut)
+  // Put the given engine into the authoritative map. Doesn't update references
+  // to this feature's engine elsewhere. See
+  // PopulateAllActiveEnginesFromPreferenceSnapshot.
+  nsresult InstallEngine(const nsACString& aFeatureName,
+                         RefPtr<ContentClassifierEngine>&& aEngine)
       MOZ_REQUIRES(mLock);
+
+  // Get the pointers in each of the arrays used in classification to point to
+  // the latest version in the authoritative mEngines map.
+  void PopulateAllActiveEnginesFromPreferenceSnapshot(
+      const EnginesPrefsSnapshot& aPreferenceSnapshot) MOZ_REQUIRES(mLock);
+
+  // Helper for PopulateAllActiveEnginesFromPreferenceSnapshot.
+  void PopulateActiveEngineListFromFeatureNames(
+      const nsTArray<nsCString>& aFeatureNames,
+      nsTArray<RefPtr<ContentClassifierEngine>>& aEngineList)
+      MOZ_REQUIRES(mLock);
+
+  // Remove engines from mEngines that aren't being used by any of the arrays
+  // used in classification.
+  void PruneInactiveEngines(const EnginesPrefsSnapshot& aPreferenceSnapshot)
+      MOZ_REQUIRES(mLock);
+
+  // Get a set of which features are being used in classification
+  nsTHashSet<nsCString> ActiveFeatureNames(
+      const EnginesPrefsSnapshot& aPreferenceSnapshot);
+
+  // Helper type to grab a list of rules to be built into an engine
+  using EngineRulesPromise = MozPromise<nsTArray<nsCString>, nsresult,
+                                        /* IsExclusive = */ true>;
+  // Grab the list of rules for a given feature. Hits remote settings, unless it
+  // is a test_* feature, then it delegates to FetchEngineDataForTestFeature.
+  RefPtr<EngineRulesPromise> FetchEngineDataForFeature(
+      const ContentClassifierFeature& aFeature);
+
+  // Fetch and parse the resourses for a test_* feature, returning a list of
+  // rules to build
+  RefPtr<EngineRulesPromise> FetchEngineDataForTestFeature(
+      const ContentClassifierFeature& aFeature);
 
   static StaticRefPtr<ContentClassifierService> sInstance;
   static bool sEnabled;
@@ -228,12 +304,6 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   nsTArray<RefPtr<ContentClassifierEngine>> mAnnotateEngines
       MOZ_GUARDED_BY(mLock);
   nsTArray<RefPtr<ContentClassifierEngine>> mAnnotateEnginesPBM
-      MOZ_GUARDED_BY(mLock);
-
-  // Raw filter list data stored by list name. Populated by the RS client
-  // for normal features, and by the HTTP test loader for the synthetic
-  // "test_block" / "test_annotate" list IDs.
-  nsTHashMap<nsCStringHashKey, nsTArray<uint8_t>> mFilterListData
       MOZ_GUARDED_BY(mLock);
 
   // RemoteSettings client for fetching filter lists. All reads and
