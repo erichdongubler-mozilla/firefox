@@ -464,6 +464,10 @@ class GCMarker {
     // Like RegularMarking but with multiple threads running in parallel.
     ParallelMarking,
 
+    // Same as above, but there is a single thread running (possibly not the
+    // main marker thread).
+    ParallelMarkingSingleThread,
+
     // Like RegularMarking but with a single thread running in the background.
     ConcurrentMarking,
 
@@ -513,7 +517,12 @@ class GCMarker {
 
   bool isActive() const { return state != NotActive; }
   bool isRegularMarking() const { return state == RegularMarking; }
-  bool isParallelMarking() const { return state == ParallelMarking; }
+  bool isParallelMarking() const {
+    return state == ParallelMarking || state == ParallelMarkingSingleThread;
+  }
+  bool isParallelMarkingMultipleThreads() const {
+    return state == ParallelMarking;
+  }
   bool isWeakMarking() const { return state == WeakMarking; }
   bool isConcurrentMarking() const { return state == ConcurrentMarking; }
 
@@ -550,6 +559,11 @@ class GCMarker {
 
   void enterConcurrentMarkingMode();
   void leaveConcurrentMarkingMode();
+
+  // Only relevant when parallel marking: transition to a mode where it is known
+  // that a single thread is running.
+  void enterSingleThreadedMode();
+  void leaveSingleThreadedMode();
 
   // Do not use linear-time weak marking for the rest of this collection.
   // Currently, this will only be triggered by an OOM when updating needed data
