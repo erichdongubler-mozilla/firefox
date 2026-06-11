@@ -182,8 +182,8 @@ class gfxFT2FontList final : public gfxPlatformFontList {
         gfxPlatformFontList::PlatformFontList());
   }
 
-  gfxFontFamily* CreateFontFamily(const nsACString& aName,
-                                  FontVisibility aVisibility) const override;
+  already_AddRefed<gfxFontFamily> CreateFontFamily(
+      const nsACString& aName, FontVisibility aVisibility) const override;
 
   void WillShutdown();
 

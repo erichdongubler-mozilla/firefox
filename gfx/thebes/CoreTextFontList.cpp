@@ -1691,9 +1691,9 @@ already_AddRefed<FontInfoData> CoreTextFontList::CreateFontInfoData() {
   return fi.forget();
 }
 
-gfxFontFamily* CoreTextFontList::CreateFontFamily(
+already_AddRefed<gfxFontFamily> CoreTextFontList::CreateFontFamily(
     const nsACString& aName, FontVisibility aVisibility) const {
-  return new CTFontFamily(aName, aVisibility);
+  return MakeAndAddRef<CTFontFamily>(aName, aVisibility);
 }
 
 gfxFontEntry* CoreTextFontList::CreateFontEntry(

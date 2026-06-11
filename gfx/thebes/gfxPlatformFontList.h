@@ -987,8 +987,8 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   // Create a new gfxFontFamily of the appropriate subclass for the platform,
   // used when AddWithLegacyFamilyName needs to create a new family.
-  virtual gfxFontFamily* CreateFontFamily(const nsACString& aName,
-                                          FontVisibility aVisibility) const = 0;
+  virtual already_AddRefed<gfxFontFamily> CreateFontFamily(
+      const nsACString& aName, FontVisibility aVisibility) const = 0;
 
   /**
    * For the post-startup font info loader task.

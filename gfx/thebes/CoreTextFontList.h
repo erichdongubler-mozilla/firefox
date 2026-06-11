@@ -160,8 +160,8 @@ class CoreTextFontList : public gfxPlatformFontList {
   using FontFamilyListEntry = mozilla::dom::SystemFontListEntry;
 
  public:
-  gfxFontFamily* CreateFontFamily(const nsACString& aName,
-                                  FontVisibility aVisibility) const override;
+  already_AddRefed<gfxFontFamily> CreateFontFamily(
+      const nsACString& aName, FontVisibility aVisibility) const override;
 
   static int32_t AppleWeightToCSSWeight(int32_t aAppleWeight);
 

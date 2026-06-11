@@ -360,8 +360,8 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
 
   FontVisibility GetVisibilityForFamily(const nsACString& aName) const;
 
-  gfxFontFamily* CreateFontFamily(const nsACString& aName,
-                                  FontVisibility aVisibility) const override;
+  already_AddRefed<gfxFontFamily> CreateFontFamily(
+      const nsACString& aName, FontVisibility aVisibility) const override;
 
   // helper method for finding an appropriate lang string
   bool TryLangForGroup(const nsACString& aOSLang, nsAtom* aLangGroup,

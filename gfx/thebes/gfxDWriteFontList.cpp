@@ -2576,9 +2576,9 @@ already_AddRefed<FontInfoData> gfxDWriteFontList::CreateFontInfoData() {
   return fi.forget();
 }
 
-gfxFontFamily* gfxDWriteFontList::CreateFontFamily(
+already_AddRefed<gfxFontFamily> gfxDWriteFontList::CreateFontFamily(
     const nsACString& aName, FontVisibility aVisibility) const {
-  return new gfxDWriteFontFamily(aName, aVisibility, nullptr);
+  return MakeAndAddRef<gfxDWriteFontFamily>(aName, aVisibility, nullptr);
 }
 
 #ifdef MOZ_BUNDLED_FONTS

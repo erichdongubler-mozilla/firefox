@@ -1942,9 +1942,9 @@ already_AddRefed<gfxFontEntry> gfxFT2FontList::MakePlatformFont(
       aLength));
 }
 
-gfxFontFamily* gfxFT2FontList::CreateFontFamily(
+already_AddRefed<gfxFontFamily> gfxFT2FontList::CreateFontFamily(
     const nsACString& aName, FontVisibility aVisibility) const {
-  return new FT2FontFamily(aName, aVisibility);
+  return MakeAndAddRef<FT2FontFamily>(aName, aVisibility);
 }
 
 void gfxFT2FontList::WillShutdown() {

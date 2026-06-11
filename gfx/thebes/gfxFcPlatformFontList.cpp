@@ -2839,9 +2839,9 @@ void gfxFcPlatformFontList::CheckFontUpdates(nsITimer* aTimer, void* aThis) {
   }
 }
 
-gfxFontFamily* gfxFcPlatformFontList::CreateFontFamily(
+already_AddRefed<gfxFontFamily> gfxFcPlatformFontList::CreateFontFamily(
     const nsACString& aName, FontVisibility aVisibility) const {
-  return new gfxFontconfigFontFamily(aName, aVisibility);
+  return MakeAndAddRef<gfxFontconfigFontFamily>(aName, aVisibility);
 }
 
 // mapping of moz lang groups ==> default lang
