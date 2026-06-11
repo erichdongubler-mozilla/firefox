@@ -6,7 +6,11 @@ import {
   actionTypes as at,
   actionCreators as ac,
 } from "resource://newtab/common/Actions.mjs";
-import { WIDGET_REGISTRY } from "resource://newtab/common/WidgetsRegistry.mjs";
+import {
+  WIDGET_REGISTRY,
+  isWidgetToggleVisible,
+  isWidgetsContainerVisible,
+} from "resource://newtab/common/WidgetsRegistry.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -1178,20 +1182,21 @@ export class AboutPreferences {
     // dep id matches the registry trainhopEnabledKey by convention.
     const widgetPrefs = this.store.getState()?.Prefs?.values ?? {};
     const widgetToggleVisible = registryId => {
-      const { trainhopEnabledKey } = WIDGET_REGISTRY.find(
-        widget => widget.id === registryId
-      );
+      const widget = WIDGET_REGISTRY.find(w => w.id === registryId);
+      // Resolve via the shared registry helper, but feed the LIVE system-pref
+      // value from deps so the toggle still reacts to about:config changes
+      // without a page refresh; the trainhop/widgetsSettings terms are a snapshot.
       return deps =>
-        Boolean(deps[trainhopEnabledKey]?.value) ||
-        Boolean(widgetPrefs.trainhopConfig?.widgets?.[trainhopEnabledKey]);
+        isWidgetToggleVisible(widget, {
+          ...widgetPrefs,
+          [widget.systemEnabledPref]: deps[widget.trainhopEnabledKey]?.value,
+        });
     };
 
-    // Build-time snapshot of whether the Widgets container is on (system pref OR
-    // trainhop), used only to decide Weather's placement in the items list
-    // below. The Widgets group's own visibility is resolved reactively inline.
-    const widgetsSystemEnabled =
-      Boolean(widgetPrefs.trainhopConfig?.widgets?.enabled) ||
-      Boolean(widgetPrefs["widgets.system.enabled"]);
+    // Build-time snapshot of whether the Widgets container is shown, used only
+    // to decide Weather's placement in the items list below. The Widgets group's
+    // own visibility is resolved reactively inline.
+    const widgetsSystemEnabled = isWidgetsContainerVisible(widgetPrefs);
 
     // The Firefox Home section should be disabled when neither "New windows"
     // nor "New tabs" is set to Firefox Home.
@@ -1278,8 +1283,10 @@ export class AboutPreferences {
       pref: "browser.newtabpage.activity-stream.widgets.enabled",
       deps: ["widgetsEnabled", ...firefoxHomeDeps],
       visible: ({ widgetsEnabled }) =>
-        widgetsEnabled.value ||
-        Boolean(widgetPrefs.trainhopConfig?.widgets?.enabled),
+        isWidgetsContainerVisible({
+          ...widgetPrefs,
+          "widgets.system.enabled": widgetsEnabled.value,
+        }),
       disabled: deps => !firefoxHomeActive(deps),
     });
 
