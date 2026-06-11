@@ -426,13 +426,18 @@ async function searchBrowsingHistorySemantic({
   const results = await conn.executeCached(
     `
     WITH matches AS (
-      SELECT m.url_hash, v.distance AS distance
+      SELECT m.rowid AS vec_rowid, m.url_hash
       FROM vec_history v
       JOIN vec_history_mapping m USING (rowid)
       WHERE v.embedding MATCH :vector
         AND k = :limit
-        AND v.distance <= :distanceThreshold
       ORDER BY v.distance
+    ),
+    scored AS (
+      SELECT matches.url_hash,
+             vec_distance_cosine(vec_history.embedding, :vector) AS distance
+      FROM matches
+      JOIN vec_history ON vec_history.rowid = matches.vec_rowid
     )
     SELECT id,
            title,
@@ -443,9 +448,10 @@ async function searchBrowsingHistorySemantic({
            last_visit_date,
            preview_image_url
     FROM moz_places
-    JOIN matches USING (url_hash)
+    JOIN scored USING (url_hash)
     WHERE frecency <> 0
     AND hidden = 0
+    AND distance <= :distanceThreshold
     AND (:startTs IS NULL OR last_visit_date >= :startTs)
     AND (:endTs IS NULL OR last_visit_date <= :endTs)
     ORDER BY distance
