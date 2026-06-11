@@ -40,12 +40,9 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -295,32 +292,13 @@ private fun TotalTrackersFooter(
     trackingSinceDate: String,
     modifier: Modifier = Modifier,
 ) {
-    val trackersPhrase = pluralStringResource(
-        R.plurals.mozac_protections_dashboard_trackers_count,
-        totalTrackersBlockedAllTime,
-        totalTrackersBlockedAllTime,
-    )
-    val fullText = pluralStringResource(
-        R.plurals.mozac_protections_dashboard_total_blocked_since,
-        totalTrackersBlockedAllTime,
-        trackersPhrase,
-        trackingSinceDate,
-    )
-    val annotatedText = buildAnnotatedString {
-        val accentStart = fullText.indexOf(trackersPhrase)
-        if (accentStart >= 0) {
-            append(fullText.take(accentStart))
-            withStyle(SpanStyle(color = MaterialTheme.colorScheme.tertiary)) {
-                append(trackersPhrase)
-            }
-            append(fullText.substring(accentStart + trackersPhrase.length))
-        } else {
-            append(fullText)
-        }
-    }
-
     Text(
-        text = annotatedText,
+        text = pluralStringResource(
+            R.plurals.mozac_protections_dashboard_total_blocked_since_2,
+            totalTrackersBlockedAllTime,
+            totalTrackersBlockedAllTime,
+            trackingSinceDate,
+        ),
         modifier = modifier
             .padding(top = AcornTheme.layout.space.static300)
             .padding(bottom = AcornTheme.layout.space.static200)
