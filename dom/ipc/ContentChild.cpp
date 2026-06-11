@@ -3617,6 +3617,14 @@ mozilla::ipc::IPCResult ContentChild::RecvCrossProcessRedirect(
     nsHashPropertyBag::CopyFrom(bag, aArgs.properties());
   }
 
+  // Track the provided parent-process channel handle on our channel.
+  if (aArgs.channelHandle()) {
+    rv = newChannel->SetParentProcessChannelHandle(aArgs.channelHandle());
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return IPC_OK();
+    }
+  }
+
   RefPtr<nsDocShellLoadState> loadState;
   rv = nsDocShellLoadState::CreateFromPendingChannel(
       newChannel, aArgs.loadIdentifier(), aArgs.registrarId(),

@@ -13,6 +13,7 @@
 #include "mozilla/dom/JSWindowActorChild.h"
 #include "mozilla/dom/JSWindowActorParent.h"
 #include "mozilla/dom/JSWindowActorProtocol.h"
+#include "mozilla/dom/ParentProcessChannelHandle.h"
 #include "mozilla/dom/PopupBlocker.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalChild.h"
@@ -94,6 +95,9 @@ WindowGlobalInit WindowGlobalActor::WindowInitializer(
   Document* doc = aWindow->GetDocument();
 
   init.isInitialDocument() = doc->IsInitialDocument();
+  if (Document* original = doc->GetOriginalDocument()) {
+    init.staticCloneOf() = original->GetWindowContext();
+  }
   init.isUncommittedInitialDocument() = doc->IsUncommittedInitialDocument();
   init.blockAllMixedContent() = doc->GetBlockAllMixedContent(false);
   init.upgradeInsecureRequests() = doc->GetUpgradeInsecureRequests(false);
@@ -101,6 +105,15 @@ WindowGlobalInit WindowGlobalActor::WindowInitializer(
   net::CookieJarSettings::Cast(doc->CookieJarSettings())
       ->Serialize(init.cookieJarSettings());
   init.httpsOnlyStatus() = doc->HttpsOnlyStatus();
+
+  if (nsIChannel* chan = doc->GetChannel()) {
+    (void)chan->GetParentProcessChannelHandle(
+        getter_AddRefs(init.documentChannelHandle()));
+  }
+  if (nsIChannel* chan = doc->GetFailedChannel()) {
+    (void)chan->GetParentProcessChannelHandle(
+        getter_AddRefs(init.failedChannelHandle()));
+  }
 
   using Indexes = WindowContext::FieldIndexes;
 

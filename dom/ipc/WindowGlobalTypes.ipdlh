@@ -11,6 +11,8 @@ include DOMTypes;
 
 using mozilla::dom::WindowContextInitializer from "mozilla/dom/WindowContext.h";
 [RefCounted] using class nsITransportSecurityInfo from "nsITransportSecurityInfo.h";
+[RefCounted] using mozilla::dom::ParentProcessChannelHandle from "mozilla/dom/ParentProcessChannelHandle.h";
+using mozilla::dom::MaybeDiscardedWindowContext from "mozilla/dom/WindowContext.h";
 
 namespace mozilla {
 namespace dom {
@@ -24,6 +26,12 @@ struct WindowGlobalInit
   nullable nsIPrincipal principal;
   nullable nsIPrincipal storagePrincipal;
   nullable nsIURI documentURI;
+  nullable ParentProcessChannelHandle documentChannelHandle;
+  nullable ParentProcessChannelHandle failedChannelHandle;
+
+  // If this window is for a static clone (i.e. print-preview), the window
+  // global it was cloned from.
+  MaybeDiscardedWindowContext staticCloneOf;
 
   bool isInitialDocument;
   bool isUncommittedInitialDocument;
