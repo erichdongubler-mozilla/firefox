@@ -1423,11 +1423,13 @@ bool MarkingTracerT<opts>::doMarking(SliceBudget& budget,
 
   // This method leaves the mark color as it found it.
 
-  if (marker->hasBlackEntries() && !markOneColor<MarkColor::Black>(budget)) {
-    return false;
+  if (marker->hasBlackEntries() || gc.hasDeferredWeakMaps(MarkColor::Black)) {
+    if (!markOneColor<MarkColor::Black>(budget)) {
+      return false;
+    }
   }
 
-  if (marker->hasGrayEntries()) {
+  if (marker->hasGrayEntries() || gc.hasDeferredWeakMaps(MarkColor::Gray)) {
     mozilla::Maybe<gcstats::AutoPhase> ap;
     if (reportTime) {
       auto& stats = this->runtime()->gc.stats();
@@ -1463,13 +1465,31 @@ bool MarkingTracerT<opts>::markOneColor(SliceBudget& budget) {
 template <uint32_t opts>
 bool MarkingTracerT<opts>::markCurrentColor(SliceBudget& budget) {
   GCMarker* marker = gcMarker();
-  while (processMarkStackTop(budget)) {
-    if (marker->stack.isEmpty()) {
-      return true;
+  while (true) {
+    if (marker->hasEntriesForCurrentColor()) {
+      if (!processMarkStackTop(budget)) {
+        return false;
+      }
+    } else {
+      marker->markDeferredWeakMapChildren(
+          marker->runtime()->gc.deferredMapsList(marker->markColor()));
+      if (!marker->hasEntriesForCurrentColor()) {
+        return true;
+      }
     }
   }
+}
 
-  return false;
+void GCMarker::markDeferredWeakMapChildren(WeakMapList& deferred) {
+  mozilla::Maybe<AutoLockGC> lock;
+  if (isParallelMarking()) {
+    lock.emplace(runtime());
+  }
+  while (js::WeakMapBase* map = deferred.popFirst()) {
+    (void)map->markEntries(this);
+    MOZ_ASSERT(!map->isSystem());
+    map->zone()->gcMarkedUserWeakMaps().pushBack(map);
+  }
 }
 
 bool GCMarker::markCurrentColorInParallel(ParallelMarkTask* task,
@@ -1497,21 +1517,25 @@ bool GCMarker::markCurrentColorInParallel(ParallelMarkTask* task,
 }
 
 #ifdef DEBUG
-bool GCMarker::markOneObjectForTest(JSObject* obj) {
+void GCMarker::markOneObjectForTest(JSObject* obj) {
+  MOZ_ASSERT(this == &runtime()->gc.marker());
   MOZ_ASSERT(obj->zone()->isGCMarking());
   MOZ_ASSERT(!obj->isMarked(markColor()));
 
-  return matchTracer([this, obj](auto& trc) {
+  // Mark the object and put it on the stack for traversal. Note that if obj is
+  // a weakmap, it will be added to the deferred maps list instead.
+  matchTracer([this, obj](auto& trc) {
     size_t oldPosition = stack.position();
     trc.markAndTraverse(obj);
+    MOZ_ASSERT(obj->isMarked(markColor()));
     if (stack.position() == oldPosition) {
-      return false;
+      return;
     }
 
+    // Process the top of the mark stack, ie the object that was just pushed.
     AutoUpdateMarkStackRanges updateRanges(*this);
     SliceBudget unlimited = SliceBudget::unlimited();
     trc.processMarkStackTop(unlimited);
-    return true;
   });
 }
 #endif
@@ -2547,6 +2571,16 @@ void GCMarker::stop() {
   deactivate();
 }
 
+void GCRuntime::resetDeferredWeakMaps() {
+  for (auto* list : {&blackDeferredMaps, &grayDeferredMaps}) {
+    // Move deferred weakmaps back to their per-Zone lists.
+    while (auto* map = list->ref().popFirst()) {
+      MOZ_ASSERT(!map->isSystem());
+      map->zone()->gcMarkedUserWeakMaps().pushBack(map);
+    }
+  }
+}
+
 void GCMarker::reset() {
   state = NotActive;
 
@@ -2823,7 +2857,7 @@ void GCRuntime::processDelayedMarkingList(MarkColor color) {
         markDelayedChildren(arena, color);
       }
     }
-    if (marker().hasEntriesForCurrentColor()) {
+    if (marker().hasEntriesForCurrentColor() || hasDeferredWeakMaps(color)) {
       MOZ_ALWAYS_TRUE(marker().matchTracer([](auto& trc) {
         SliceBudget budget = SliceBudget::unlimited();
         return trc.markCurrentColor(budget);
@@ -2832,11 +2866,14 @@ void GCRuntime::processDelayedMarkingList(MarkColor color) {
   } while (delayedMarkingWorkAdded);
 
   MOZ_ASSERT(marker().isDrained());
+  MOZ_ASSERT(blackDeferredMaps.ref().isEmpty());
+  MOZ_ASSERT_IF(color == MarkColor::Gray, grayDeferredMaps.ref().isEmpty());
 }
 
 void GCRuntime::markAllDelayedChildren(ShouldReportMarkTime reportTime) {
   MOZ_ASSERT(CurrentThreadIsMainThread() || CurrentThreadIsPerformingGC());
-  MOZ_ASSERT(marker().isMarkStackEmpty());
+  MOZ_ASSERT(marker().isDrained());
+  MOZ_ASSERT(!hasAnyDeferredWeakMaps());
   MOZ_ASSERT(hasDelayedMarking());
 
   mozilla::Maybe<gcstats::AutoPhase> ap;
@@ -2855,6 +2892,7 @@ void GCRuntime::markAllDelayedChildren(ShouldReportMarkTime reportTime) {
   }
 
   MOZ_ASSERT(!hasDelayedMarking());
+  MOZ_ASSERT(!hasAnyDeferredWeakMaps());
 }
 
 void GCRuntime::rebuildDelayedMarkingList() {

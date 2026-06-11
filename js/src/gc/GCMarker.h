@@ -10,6 +10,7 @@
 
 #include "gc/Barrier.h"
 #include "gc/Cell.h"
+#include "gc/WeakMap.h"
 #include "js/HashTable.h"
 #include "js/TracingAPI.h"
 #include "js/TypeDecls.h"
@@ -562,13 +563,17 @@ class GCMarker {
 
   bool shouldCheckCompartments() { return strictCompartmentChecking; }
 
-  bool markOneObjectForTest(JSObject* obj);
+  void markOneObjectForTest(JSObject* obj);
 
   bool isRootMarking() const { return state == RootMarking; }
 #endif
 
   bool markCurrentColorInParallel(gc::ParallelMarkTask* task,
                                   JS::SliceBudget& budget);
+
+  // Trace the children of WeakMaps that were marked while draining the mark
+  // stack (on any thread).
+  void markDeferredWeakMapChildren(WeakMapList& deferred);
 
   static void moveAllWork(GCMarker* dst, GCMarker* src);
   static size_t moveSomeWork(GCMarker* dst, GCMarker* src,
