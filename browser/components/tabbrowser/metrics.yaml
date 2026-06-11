@@ -943,7 +943,7 @@ splitview:
         description: The layout of the tab strip (horizontal or vertical)
         type: string
       trigger:
-        description: The method used to end the split view (menu_separate, icon_separate, icon_close, tab_close, footer_separate, footer_close)
+        description: The method used to end the split view (menu_separate, icon_separate, icon_close, tab_close, footer_separate, footer_close, keyboard_shortcut)
         type: string
 
   reverse:
