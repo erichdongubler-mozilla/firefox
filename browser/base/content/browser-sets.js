@@ -186,6 +186,9 @@ document.addEventListener(
           case "Browser:AddTabSplitView":
             BrowserCommands.addTabSplitView();
             break;
+          case "Browser:SeparateTabSplitView":
+            BrowserCommands.separateTabSplitView();
+            break;
           case "cmd_fullZoomReduce":
             FullZoom.reduce();
             break;
