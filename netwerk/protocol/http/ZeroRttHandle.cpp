@@ -10,6 +10,7 @@
 
 #include "HappyEyeballsConnectionAttempt.h"
 #include "HappyEyeballsTransaction.h"
+#include "HttpConnectionBase.h"
 #include "nsAHttpTransaction.h"
 #include "nsHttpRequestHead.h"
 #include "nsHttpTransaction.h"
@@ -237,8 +238,16 @@ nsresult ZeroRttHandle::Finish0RTT(HappyEyeballsTransaction* aCaller,
   if (!realTxn) {
     LOG(("ZeroRttHandle::Finish0RTT %p real txn gone; closing caller=%p", this,
          aCaller));
+    RefPtr<HttpConnectionBase> base;
+    if (nsAHttpConnection* conn = aCaller->Connection()) {
+      base = conn->HttpConnection();
+    }
     Cleanup();
+    if (base) {
+      base->Close(NS_ERROR_ABORT);
+    } else {
     aCaller->Close(NS_ERROR_ABORT);
+    }
     return NS_OK;
   }
 
