@@ -23,11 +23,6 @@ if (findProject(":geckoview") != null) {
 }
 apply from: versionCodeGradle
 
-// Generated sources location for LocalesList.kt
-def generatedLocaleListBaseDir = project.layout.buildDirectory.dir("generated/source/locales").get().asFile
-def generatedLocaleListDir = new File(generatedLocaleListBaseDir, "org/mozilla/focus/generated")
-def generatedLocaleListFilename = "LocalesList.kt"
-
 import com.android.build.api.variant.FilterConfiguration
 
 android {
@@ -173,10 +168,6 @@ android {
                 // and do not need to rely on Robolectric.
                 srcDir "${projectDir}/src/main/assets/"
             }
-        }
-
-        main {
-            java.srcDir generatedLocaleListBaseDir
         }
 
         // Release
@@ -544,16 +535,18 @@ android.buildTypes.debug.with {
     }
 }
 
-def enabledLocales = project.provider { getEnabledLocales() }
+abstract class GenerateLocaleList extends DefaultTask {
+    @Input
+    abstract ListProperty<String> getEnabledLocales()
 
-tasks.register('generateLocaleList') {
-    def localeList = file(new File(generatedLocaleListDir, generatedLocaleListFilename))
+    @OutputDirectory
+    abstract DirectoryProperty getOutputDir()
 
-    inputs.property("enabledLocales", enabledLocales)
-    outputs.file(localeList)
-
-    doLast {
-        generatedLocaleListDir.mkdir()
+    @TaskAction
+    void generate() {
+        def dir = new File(outputDir.get().asFile, "org/mozilla/focus/generated")
+        dir.mkdirs()
+        def localeList = new File(dir, "LocalesList.kt")
         localeList.delete()
         localeList.createNewFile()
         localeList << "/* This Source Code Form is subject to the terms of the Mozilla Public" << "\n"
@@ -582,15 +575,24 @@ tasks.register('generateLocaleList') {
     }
 }
 
-tasks.configureEach { task ->
-    if (task.name.contains("compile")) {
-        task.dependsOn(tasks.named("generateLocaleList"))
+// Built at script scope so the closure resolves getEnabledLocales() to the script method rather
+// than the task's same-named property accessor.
+def enabledLocalesProvider = project.provider { getEnabledLocales() }
+
+def generateLocaleList = tasks.register('generateLocaleList', GenerateLocaleList) {
+    enabledLocales.set(enabledLocalesProvider)
+}
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.sources.java.addGeneratedSourceDirectory(generateLocaleList) { it.outputDir }
     }
 }
 
-// Make sure DAGP code-source exploding happens after we generate LocalesList.kt
+// The variant Sources API wires compilation automatically, but DAGP's source exploder
+// consumes the sources separately, so make it depend on the generator.
 tasks.matching { it.name.startsWith("explodeCodeSource") }.configureEach { t ->
-    t.dependsOn(tasks.named("generateLocaleList"))
+    t.dependsOn(generateLocaleList)
 }
 
 if (project.hasProperty("coverage")) {
