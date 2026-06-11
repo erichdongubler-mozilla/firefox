@@ -79,7 +79,7 @@ void AbortStream(JSContext* aCx, ReadableStream* aReadableStream,
 
 class AbortSignalMainThread final : public AbortSignalImpl {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(AbortSignalMainThread)
 
   explicit AbortSignalMainThread(SignalAborted aAborted)
