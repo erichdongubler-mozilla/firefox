@@ -77,6 +77,13 @@ export let RemotePageAccessManager = {
     "about:certificate": {
       RPMSendQuery: ["getCertificates"],
     },
+    "about:pdf": {
+      RPMCanSetDefaultPDFHandler: ["*"],
+      RPMGetBoolPref: ["browser.aboutpdf.promo.dismissed"],
+      RPMOpenPDFFile: ["*"],
+      RPMSetDefaultPDFHandler: ["*"],
+      RPMSetPref: ["browser.aboutpdf.promo.dismissed"],
+    },
     "about:keyboard": {
       RPMAddMessageListener: ["CustomKeys:CapturedKey"],
       RPMSendAsyncMessage: ["CustomKeys:CaptureKey"],
