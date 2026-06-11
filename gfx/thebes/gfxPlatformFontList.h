@@ -495,7 +495,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
    * selecting the platform font, which is looked up by name only; these are
    * values to be recorded in the new font entry.
    */
-  virtual gfxFontEntry* LookupLocalFont(
+  virtual already_AddRefed<gfxFontEntry> LookupLocalFont(
       FontVisibilityProvider* aFontVisibilityProvider,
       const nsACString& aFontName, WeightRange aWeightForEntry,
       StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry) = 0;
@@ -904,7 +904,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   virtual gfxFontEntry* LookupInFaceNameLists(const nsACString& aFaceName)
       MOZ_REQUIRES(mLock);
 
-  gfxFontEntry* LookupInSharedFaceNameList(
+  already_AddRefed<gfxFontEntry> LookupInSharedFaceNameList(
       FontVisibilityProvider* aFontVisibilityProvider,
       const nsACString& aFaceName, WeightRange aWeightForEntry,
       StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry)

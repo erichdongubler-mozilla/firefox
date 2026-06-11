@@ -1418,7 +1418,7 @@ gfxFontEntry* CoreTextFontList::PlatformGlobalFontFallback(
   return fontEntry;
 }
 
-gfxFontEntry* CoreTextFontList::LookupLocalFont(
+already_AddRefed<gfxFontEntry> CoreTextFontList::LookupLocalFont(
     FontVisibilityProvider* aFontVisibilityProvider,
     const nsACString& aFontName, WeightRange aWeightForEntry,
     StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry) {
@@ -1482,8 +1482,9 @@ gfxFontEntry* CoreTextFontList::LookupLocalFont(
     return nullptr;
   }
 
-  return new CTFontEntry(aFontName, fontRef, aWeightForEntry, aStretchForEntry,
-                         aStyleForEntry, false, true);
+  return MakeAndAddRef<CTFontEntry>(aFontName, fontRef, aWeightForEntry,
+                                    aStretchForEntry, aStyleForEntry, false,
+                                    true);
 }
 
 static void ReleaseData(void* info, const void* data, size_t size) {

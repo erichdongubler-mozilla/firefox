@@ -397,14 +397,13 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   /**
    * Look up a local platform font using the full font face name.
    * (Needed to support @font-face src local().)
-   * Ownership of the returned gfxFontEntry is passed to the caller,
-   * who must either AddRef() or delete.
+   * Ownership of the returned gfxFontEntry is passed to the caller.
    */
-  gfxFontEntry* LookupLocalFont(FontVisibilityProvider* aFontVisibilityProvider,
-                                const nsACString& aFontName,
-                                const WeightRange& aWeightForEntry,
-                                const StretchRange& aStretchForEntry,
-                                const SlantStyleRange& aStyleForEntry);
+  already_AddRefed<gfxFontEntry> LookupLocalFont(
+      FontVisibilityProvider* aFontVisibilityProvider,
+      const nsACString& aFontName, const WeightRange& aWeightForEntry,
+      const StretchRange& aStretchForEntry,
+      const SlantStyleRange& aStyleForEntry);
 
   /**
    * Activate a platform font.  (Needed to support @font-face src url().)
