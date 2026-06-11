@@ -1798,7 +1798,7 @@ void FetchDriver::SetController(
   mController = aController;
 }
 
-PerformanceTimingData* FetchDriver::GetPerformanceTimingData(
+UniquePtr<PerformanceTimingData> FetchDriver::GetPerformanceTimingData(
     nsAString& aInitiatorType, nsAString& aEntryName) {
   MOZ_ASSERT(XRE_IsParentProcess());
   if (!mChannel) {
