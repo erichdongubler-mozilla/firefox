@@ -611,6 +611,34 @@ export class ChatConversation extends EventEmitter {
   }
 
   /**
+   * Resolves the pending tool-confirmation message for UI actions.
+   * Called by ToolUI when the user confirms or cancels via the UI.
+   *
+   * @param {object} outcomeBody - The new body for the tool message.
+   * @param {string} toolCallId - Only resolve when the message's tool_call_id matches.
+   * @returns {boolean} True if a pending message was resolved.
+   */
+  resolvePendingToolConfirmation(outcomeBody, toolCallId) {
+    const message = this.#messages.at(-1);
+
+    const isResolvableToolMessage =
+      message?.role === MESSAGE_ROLE.TOOL &&
+      message.content?.tool_call_id === toolCallId &&
+      message.content?.body?.pending;
+
+    if (!isResolvableToolMessage) {
+      return false;
+    }
+
+    message.content = { ...message.content, body: outcomeBody };
+    this.emit("chat-conversation:message-update", message);
+    lazy.ChatStore.updateConversation(this).catch(e => {
+      lazy.console.error("Failed to persist resolved tool confirmation", e);
+    });
+    return true;
+  }
+
+  /**
    * Mark the most recent ai-action-result toolUIData with
    * properties.undoDismissed: true. Called when a user message
    * is added, signalling the previous action is no longer available.
