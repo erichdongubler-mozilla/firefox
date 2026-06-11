@@ -6094,46 +6094,6 @@
     "description": "Input device that triggered the zoom gesture (InputData::PinchGestureSource)",
     "releaseChannelCollection": "opt-out"
   },
-  "SQLITE_STORE_OPEN": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": ["dtownsend@mozilla.com", "mbonardo@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "categorical",
-    "keyed": true,
-    "releaseChannelCollection": "opt-out",
-    "bug_numbers": [1635489, 1977614],
-    "description": "The result of attempting to open a sqlite file.",
-    "labels": [
-      "failure",
-      "access",
-      "diskio",
-      "corrupt",
-      "busy",
-      "misuse",
-      "diskspace"
-    ]
-  },
-  "SQLITE_STORE_QUERY": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": ["dtownsend@mozilla.com", "mbonardo@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "categorical",
-    "keyed": true,
-    "releaseChannelCollection": "opt-out",
-    "bug_numbers": [1635489, 1977614],
-    "description": "The result of attempting to query a sqlite file.",
-    "labels": [
-      "failure",
-      "access",
-      "diskio",
-      "corrupt",
-      "busy",
-      "misuse",
-      "diskspace"
-    ]
-  },
   "REL_PRELOAD_MISS_RATIO": {
     "record_in_processes": ["content"],
     "products": ["firefox"],
