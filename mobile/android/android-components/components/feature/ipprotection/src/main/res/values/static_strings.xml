@@ -19,9 +19,4 @@
     <string name="mozac_feature_ipprotection_resetdate">resetDate</string>
     <string name="mozac_feature_ipprotection_account">Account</string>
     <string name="mozac_feature_ipprotection_account_status">status</string>
-    <string name="mozac_feature_ipprotection_unavaliable_dialog_title">VPN is unavailable</string>
-    <string name="mozac_feature_ipprotection_unavaliable_dialog_body">Your location might be visible. Turn off VPN or choose which tabs to close to continue without VPN.</string>
-    <string name="mozac_feature_ipprotection_unavaliable_dialog_confirm_button">Manage Tabs</string>
-    <string name="mozac_feature_ipprotection_unavaliable_dialog_dismiss_button">Turn off VPN</string>
-
 </resources>
