@@ -227,6 +227,7 @@ class SuspendingFunctionModuleFactory {
 
     MutableModuleMetadata moduleMeta = js_new<ModuleMetadata>();
     if (!moduleMeta || !moduleMeta->init(*compileArgs)) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
     MutableCodeMetadata codeMeta = moduleMeta->codeMeta;
@@ -282,6 +283,7 @@ class SuspendingFunctionModuleFactory {
     }
     MOZ_ASSERT(codeMeta->types->length() == baseTypeIndex_ + ResultsTypeIndex);
     if (!codeMeta->types->addType(std::move(boxedResultType))) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
@@ -294,6 +296,7 @@ class SuspendingFunctionModuleFactory {
     MOZ_ASSERT(codeMeta->types->length() == baseTypeIndex_ + TagFuncTypeIndex);
     if (!codeMeta->types->addType(
             FuncType(std::move(tagParams), std::move(tagResults)))) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
@@ -301,9 +304,11 @@ class SuspendingFunctionModuleFactory {
     MutableTagType tagType = js_new<TagType>();
     if (!tagType || !tagType->initialize(&(
                         *codeMeta->types)[baseTypeIndex_ + TagFuncTypeIndex])) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
     if (!codeMeta->tags.emplaceBack(TagKind::Exception, tagType)) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
@@ -317,6 +322,7 @@ class SuspendingFunctionModuleFactory {
     MOZ_ASSERT(codeMeta->funcs.length() == WrappedFnIndex);
     if (!moduleMeta->addDefinedFunc(std::move(wrappedParams),
                                     std::move(wrappedResults))) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
@@ -332,16 +338,19 @@ class SuspendingFunctionModuleFactory {
     if (!moduleMeta->addDefinedFuncWithType(funcTypeIndex,
                                             /*declareForRef = */ true,
                                             mozilla::Some(CacheableName()))) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
     if (!moduleMeta->prepareForCompile(compilerEnv.mode())) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
     ModuleGenerator mg(*codeMeta, compilerEnv, compilerEnv.initialState(),
                        nullptr, nullptr, nullptr);
     if (!mg.initializeCompleteTier()) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
@@ -358,15 +367,23 @@ class SuspendingFunctionModuleFactory {
     if (!mg.compileFuncDef(ExportedFnIndex, funcBytecodeOffset,
                            bytecode.begin(),
                            bytecode.begin() + bytecode.length())) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
     if (!mg.finishFuncDefs()) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
-    return mg.finishModule(BytecodeBufferOrSource(), *moduleMeta,
-                           /*maybeCompleteTier2Listener=*/nullptr);
+    SharedModule module =
+        mg.finishModule(BytecodeBufferOrSource(), *moduleMeta,
+                        /*maybeCompleteTier2Listener=*/nullptr);
+    if (!module) {
+      ReportOutOfMemory(cx);
+      return nullptr;
+    }
+    return module;
   }
 };
 
@@ -881,6 +898,7 @@ class PromisingFunctionModuleFactory {
 
     MutableModuleMetadata moduleMeta = js_new<ModuleMetadata>();
     if (!moduleMeta || !moduleMeta->init(*compileArgs)) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
     MutableCodeMetadata codeMeta = moduleMeta->codeMeta;
@@ -915,6 +933,7 @@ class PromisingFunctionModuleFactory {
     }
     MOZ_ASSERT(codeMeta->types->length() == baseTypeIndex_ + ParamsTypeIndex);
     if (!codeMeta->types->addType(std::move(boxedParamsStruct))) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
@@ -926,6 +945,7 @@ class PromisingFunctionModuleFactory {
     }
     MOZ_ASSERT(codeMeta->types->length() == baseTypeIndex_ + ResultsTypeIndex);
     if (!codeMeta->types->addType(std::move(boxedResultType))) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
@@ -936,6 +956,7 @@ class PromisingFunctionModuleFactory {
     MOZ_ASSERT((*codeMeta->types)[funcTypeIndex].isFuncType());
     MOZ_ASSERT(codeMeta->funcs.length() == WrappedFnIndex);
     if (!moduleMeta->addDefinedFuncWithType(funcTypeIndex)) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
@@ -953,6 +974,7 @@ class PromisingFunctionModuleFactory {
     if (!moduleMeta->addDefinedFunc(
             std::move(exportedParams), std::move(exportedResults),
             /* declareForRef = */ true, mozilla::Some(CacheableName()))) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
@@ -961,6 +983,7 @@ class PromisingFunctionModuleFactory {
     MOZ_ASSERT(codeMeta->types->length() ==
                baseTypeIndex_ + TrampolineFuncTypeIndex);
     if (!codeMeta->types->addType(FuncType(ValTypeVector(), ValTypeVector()))) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
@@ -971,6 +994,7 @@ class PromisingFunctionModuleFactory {
     if (!moduleMeta->addDefinedFunc(std::move(trampolineParams),
                                     std::move(trampolineResults),
                                     /* declareForRef = */ true)) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
@@ -978,6 +1002,7 @@ class PromisingFunctionModuleFactory {
     MOZ_ASSERT(codeMeta->types->length() == baseTypeIndex_ + ContTypeIndex);
     if (!codeMeta->types->addType(ContType(&codeMeta->types->type(
             baseTypeIndex_ + TrampolineFuncTypeIndex)))) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
@@ -990,6 +1015,7 @@ class PromisingFunctionModuleFactory {
     MOZ_ASSERT(codeMeta->types->length() == baseTypeIndex_ + TagFuncTypeIndex);
     if (!codeMeta->types->addType(
             FuncType(std::move(tagParams), std::move(tagResults)))) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
@@ -1006,6 +1032,7 @@ class PromisingFunctionModuleFactory {
                baseTypeIndex_ + SuspendBlockTypeIndex);
     if (!codeMeta->types->addType(FuncType(std::move(suspendBlockParams),
                                            std::move(suspendBlockResults)))) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
@@ -1022,6 +1049,7 @@ class PromisingFunctionModuleFactory {
     if (!moduleMeta->addDefinedFunc(std::move(reactionParams),
                                     std::move(reactionResults),
                                     /* declareForRef = */ true)) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
@@ -1029,9 +1057,11 @@ class PromisingFunctionModuleFactory {
     MutableTagType tagType = js_new<TagType>();
     if (!tagType || !tagType->initialize(&(
                         *codeMeta->types)[baseTypeIndex_ + TagFuncTypeIndex])) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
     if (!codeMeta->tags.emplaceBack(TagKind::Exception, tagType)) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
@@ -1039,6 +1069,7 @@ class PromisingFunctionModuleFactory {
     if (!codeMeta->globals.append(
             GlobalDesc(InitExpr(LitVal(ValType(RefType::extern_()))),
                        /* isMutable = */ true))) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
@@ -1048,16 +1079,19 @@ class PromisingFunctionModuleFactory {
                 &codeMeta->types->type(baseTypeIndex_ + ParamsTypeIndex),
                 true)))),
             /* isMutable = */ true))) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
     if (!moduleMeta->prepareForCompile(compilerEnv.mode())) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
     ModuleGenerator mg(*codeMeta, compilerEnv, compilerEnv.initialState(),
                        nullptr, nullptr, nullptr);
     if (!mg.initializeCompleteTier()) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
@@ -1071,6 +1105,7 @@ class PromisingFunctionModuleFactory {
     if (!mg.compileFuncDef(ExportedFnIndex, funcBytecodeOffset,
                            bytecode.begin(),
                            bytecode.begin() + bytecode.length())) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
     funcBytecodeOffset += bytecode.length();
@@ -1083,6 +1118,7 @@ class PromisingFunctionModuleFactory {
     if (!mg.compileFuncDef(TrampolineFnIndex, funcBytecodeOffset,
                            bytecode2.begin(),
                            bytecode2.begin() + bytecode2.length())) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
     funcBytecodeOffset += bytecode2.length();
@@ -1095,15 +1131,21 @@ class PromisingFunctionModuleFactory {
     if (!mg.compileFuncDef(ReactionFnIndex, funcBytecodeOffset,
                            bytecode3.begin(),
                            bytecode3.begin() + bytecode3.length())) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
     if (!mg.finishFuncDefs()) {
+      ReportOutOfMemory(cx);
       return nullptr;
     }
 
     SharedModule m = mg.finishModule(BytecodeBufferOrSource(), *moduleMeta,
                                      /*maybeCompleteTier2Listener=*/nullptr);
+    if (!m) {
+      ReportOutOfMemory(cx);
+      return nullptr;
+    }
     return m;
   }
 };
