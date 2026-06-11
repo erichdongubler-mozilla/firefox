@@ -209,12 +209,6 @@ void WindowGlobalChild::OnNewDocument(Document* aDocument) {
   SetDocumentPrincipal(aDocument->NodePrincipal(),
                        aDocument->EffectiveStoragePrincipal());
 
-  nsCOMPtr<nsITransportSecurityInfo> securityInfo;
-  if (nsCOMPtr<nsIChannel> channel = aDocument->GetChannel()) {
-    channel->GetSecurityInfo(getter_AddRefs(securityInfo));
-  }
-  SendUpdateDocumentSecurityInfo(securityInfo);
-
   RefPtr<ParentProcessChannelHandle> documentChannelHandle;
   if (nsIChannel* chan = aDocument->GetChannel()) {
     (void)chan->GetParentProcessChannelHandle(

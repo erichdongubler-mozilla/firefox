@@ -3,14 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include "mozilla/dom/PermissionMessageUtils.h";
-include "mozilla/ipc/TransportSecurityInfoUtils.h";
 include "mozilla/ipc/URIUtils.h";
 
 include NeckoChannelParams;
 include DOMTypes;
 
 using mozilla::dom::WindowContextInitializer from "mozilla/dom/WindowContext.h";
-[RefCounted] using class nsITransportSecurityInfo from "nsITransportSecurityInfo.h";
 [RefCounted] using mozilla::dom::ParentProcessChannelHandle from "mozilla/dom/ParentProcessChannelHandle.h";
 using mozilla::dom::MaybeDiscardedWindowContext from "mozilla/dom/WindowContext.h";
 
@@ -40,7 +38,6 @@ struct WindowGlobalInit
   uint32_t sandboxFlags;
   CookieJarSettingsArgs cookieJarSettings;
   uint32_t httpsOnlyStatus;
-  nullable nsITransportSecurityInfo securityInfo;
 };
 
 } // namespace dom

@@ -159,10 +159,13 @@ bool IsWebAuthnAllowedInContext(WindowGlobalParent* aContext) {
 
   WindowGlobalParent* windowContext = aContext;
   while (windowContext) {
-    nsITransportSecurityInfo* securityInfo = windowContext->GetSecurityInfo();
-    if (securityInfo &&
-        !IsWebAuthnAllowedForTransportSecurityInfo(securityInfo)) {
-      return false;
+    if (nsCOMPtr<nsIChannel> chan = windowContext->GetDocumentChannel()) {
+      nsCOMPtr<nsITransportSecurityInfo> securityInfo;
+      nsresult rv = chan->GetSecurityInfo(getter_AddRefs(securityInfo));
+      if (NS_SUCCEEDED(rv) && securityInfo &&
+          !IsWebAuthnAllowedForTransportSecurityInfo(securityInfo)) {
+        return false;
+      }
     }
     windowContext = windowContext->GetParentWindowContext();
   }

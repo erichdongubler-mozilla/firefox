@@ -79,7 +79,6 @@
 #include "nsISharePicker.h"
 #include "nsISiteIntegrityService.h"
 #include "nsITimer.h"
-#include "nsITransportSecurityInfo.h"
 #include "nsIURIMutator.h"
 #include "nsIWebProgressListener.h"
 #include "nsIXPConnect.h"
@@ -154,7 +153,6 @@ already_AddRefed<WindowGlobalParent> WindowGlobalParent::CreateDisconnected(
   wgp->mUpgradeInsecureRequests = aInit.upgradeInsecureRequests();
   wgp->mSandboxFlags = aInit.sandboxFlags();
   wgp->mHttpsOnlyStatus = aInit.httpsOnlyStatus();
-  wgp->mSecurityInfo = aInit.securityInfo();
   net::CookieJarSettings::Deserialize(aInit.cookieJarSettings(),
                                       getter_AddRefs(wgp->mCookieJarSettings));
   MOZ_RELEASE_ASSERT(wgp->mDocumentPrincipal, "Must have a valid principal");
@@ -782,12 +780,6 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvUpdateCookieJarSettings(
     const CookieJarSettingsArgs& aCookieJarSettingsArgs) {
   net::CookieJarSettings::Deserialize(aCookieJarSettingsArgs,
                                       getter_AddRefs(mCookieJarSettings));
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult WindowGlobalParent::RecvUpdateDocumentSecurityInfo(
-    nsITransportSecurityInfo* aSecurityInfo) {
-  mSecurityInfo = aSecurityInfo;
   return IPC_OK();
 }
 

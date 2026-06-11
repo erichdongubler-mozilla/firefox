@@ -154,7 +154,6 @@ WindowGlobalInit WindowGlobalActor::WindowInitializer(
   fields.Get<Indexes::IDX_IsSecure>() =
       innerDocURI && innerDocURI->SchemeIs("https");
 
-  nsCOMPtr<nsITransportSecurityInfo> securityInfo;
   if (nsCOMPtr<nsIChannel> channel = doc->GetChannel()) {
     nsCOMPtr<nsILoadInfo> loadInfo(channel->LoadInfo());
     fields.Get<Indexes::IDX_IsOriginalFrameSource>() =
@@ -165,10 +164,7 @@ WindowGlobalInit WindowGlobalActor::WindowInitializer(
     fields.Get<Indexes::IDX_UsingStorageAccess>() =
         storageAccess == nsILoadInfo::HasStoragePermission ||
         storageAccess == nsILoadInfo::StoragePermissionAllowListed;
-
-    channel->GetSecurityInfo(getter_AddRefs(securityInfo));
   }
-  init.securityInfo() = securityInfo;
 
   fields.Get<Indexes::IDX_IsLocalIP>() =
       init.principal()->GetIsLocalIpAddress();
