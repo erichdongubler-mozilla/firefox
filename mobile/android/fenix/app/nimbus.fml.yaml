@@ -795,6 +795,16 @@ features:
           pref: "network.http.happy_eyeballs_connection_attempt_delay"
           branch: "default"
 
+  tracking-protection-experimentation:
+    description: "Experimental controls for tracking protection behavior"
+    variables:
+      defer-annotation-enabled:
+        description: Whether to defer tracking protection classification annotation until the data is being handled
+        type: Option<Boolean>
+        gecko-pref:
+          pref: "privacy.trackingprotection.defer_annotation.enabled"
+          branch: "default"
+
   pki:
     description: Certificate verification configuration
     variables:
