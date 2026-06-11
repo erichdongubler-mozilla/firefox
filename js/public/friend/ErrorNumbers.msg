@@ -976,4 +976,7 @@ MSG_DEF(JSMSG_ITERATOR_RANGE_STEP_NOT_BIGINT, 0, JSEXN_TYPEERR, "The 'step' argu
 MSG_DEF(JSMSG_SUMPRECISE_TOO_MANY_VALUES, 0, JSEXN_RANGEERR, "too many values passed to Math.sumPrecise")
 MSG_DEF(JSMSG_SUMPRECISE_EXPECTED_NUMBER, 0, JSEXN_TYPEERR, "values passed to Math.sumPrecise must be numbers")
 
+// Error.prototype.stack
+MSG_DEF(JSMSG_ERROR_STACK_NOT_STRING, 0, JSEXN_TYPEERR, "Error.prototype.stack setter requires a string value")
+
 //clang-format on
