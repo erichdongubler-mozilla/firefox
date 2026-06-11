@@ -343,9 +343,6 @@ add_task(async function test_backoffTimeout() {
   // Failing a ping send now should trigger backoff behavior.
   let now = fakeNow(2010, 1, 1, 11, 0, 0);
   await TelemetrySend.reset();
-  // The repeated sends below all fail against the stopped server; use the IPv4
-  // loopback so each connection is refused immediately rather than timing out.
-  TelemetrySend.setServer(PingServer.ipv4URL);
   PingServer.stop();
 
   histSuccess.clear();
@@ -824,9 +821,6 @@ add_task(async function test_persistCurrentPingsOnShutdown() {
   const TEST_TYPE = "test-persistCurrentPingsOnShutdown";
   const PING_COUNT = 5;
   await TelemetrySend.reset();
-  // These pings fail to send against the stopped server; use the IPv4 loopback
-  // so each connection is refused immediately rather than timing out.
-  TelemetrySend.setServer(PingServer.ipv4URL);
   PingServer.stop();
   Assert.equal(
     TelemetrySend.pendingPingCount,
