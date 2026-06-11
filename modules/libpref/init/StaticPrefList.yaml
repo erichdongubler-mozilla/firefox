@@ -16174,6 +16174,13 @@
   value: true
   mirror: always
 
+# When true, ZeroRttHandle::Finish0RTT treats the real transaction as gone to
+# simulate a transaction is cancelled during 0RTT handshake.
+- name: network.http.0rtt_force_txn_gone_for_testing
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 # Maximum time (ms) a session can remain in ZERORTT state before being
 # considered stuck. If a Http3Session doesn't transition to CONNECTED within
 # this timeout, it will be closed.

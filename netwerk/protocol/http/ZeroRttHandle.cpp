@@ -11,6 +11,7 @@
 #include "HappyEyeballsConnectionAttempt.h"
 #include "HappyEyeballsTransaction.h"
 #include "HttpConnectionBase.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "nsAHttpTransaction.h"
 #include "nsHttpRequestHead.h"
 #include "nsHttpTransaction.h"
@@ -235,6 +236,10 @@ nsresult ZeroRttHandle::Finish0RTT(HappyEyeballsTransaction* aCaller,
   }
 
   nsHttpTransaction* realTxn = ResolveRealTxn(mHet);
+  if (realTxn && StaticPrefs::network_http_0rtt_force_txn_gone_for_testing()) {
+    realTxn->Close(NS_ERROR_ABORT);
+    realTxn = nullptr;
+  }
   if (!realTxn) {
     LOG(("ZeroRttHandle::Finish0RTT %p real txn gone; closing caller=%p", this,
          aCaller));
@@ -246,7 +251,7 @@ nsresult ZeroRttHandle::Finish0RTT(HappyEyeballsTransaction* aCaller,
     if (base) {
       base->Close(NS_ERROR_ABORT);
     } else {
-    aCaller->Close(NS_ERROR_ABORT);
+      aCaller->Close(NS_ERROR_ABORT);
     }
     return NS_OK;
   }
