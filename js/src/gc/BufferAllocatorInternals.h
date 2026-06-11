@@ -370,6 +370,7 @@ struct BufferChunk
   MainThreadOrGCTaskData<Zone*> zone;
 
   MainThreadOrGCTaskData<bool> allocatedDuringCollection;
+  MainThreadOrGCTaskData<bool> stolenFromSweepList;
   MainThreadOrGCTaskData<bool> hasNurseryOwnedAllocs;
   MainThreadOrGCTaskData<bool> hasNurseryOwnedAllocsAfterSweep;
 
@@ -413,6 +414,9 @@ struct BufferChunk
   bool isSmallBufferRegion(const void* alloc) const;
 
   size_t sizeClassForAvailableLists() const;
+
+  void clearMarkBits();
+  void clearMarkBitsIfStolenChunk();
 
   bool isPointerWithinAllocation(void* ptr) const;
 

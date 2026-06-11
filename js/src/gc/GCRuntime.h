@@ -489,8 +489,8 @@ class GCRuntime {
 
   bool hasForegroundWork() const;
 
+  bool isNormalGC() const { return gcOptions() == JS::GCOptions::Normal; }
   bool isShrinkingGC() const { return gcOptions() == JS::GCOptions::Shrink; }
-
   bool isShutdownGC() const { return gcOptions() == JS::GCOptions::Shutdown; }
 
 #ifdef DEBUG
