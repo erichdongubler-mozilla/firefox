@@ -71,22 +71,6 @@
 namespace js {
 namespace jit {
 
-class RVFlags final {
- public:
-  static void Init();
-
-  static bool FlagsHaveBeenComputed() { return sComputed; }
-
-  static bool HasZbaExtension() { return sZbaExtension; }
-
-  static bool HasZbbExtension() { return sZbbExtension; }
-
- private:
-  static inline bool sZbaExtension = false;
-  static inline bool sZbbExtension = false;
-  static inline bool sComputed = false;
-};
-
 struct ScratchFloat32Scope : public AutoFloatRegisterScope {
   explicit ScratchFloat32Scope(MacroAssembler& masm)
       : AutoFloatRegisterScope(masm, ScratchFloat32Reg) {}

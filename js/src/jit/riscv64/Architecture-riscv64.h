@@ -514,6 +514,22 @@ static const uint32_t SpillSlotSize =
     std::max(sizeof(Registers::RegisterContent),
              sizeof(FloatRegisters::RegisterContent));
 
+class RVFlags final {
+ public:
+  static void Init();
+
+  static bool FlagsHaveBeenComputed() { return sComputed; }
+
+  static bool HasZbaExtension() { return sZbaExtension; }
+
+  static bool HasZbbExtension() { return sZbbExtension; }
+
+ private:
+  static inline bool sZbaExtension = false;
+  static inline bool sZbbExtension = false;
+  static inline bool sComputed = false;
+};
+
 inline uint32_t GetRISCV64Flags() { return 0; }
 
 }  // namespace jit

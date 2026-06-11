@@ -4,10 +4,22 @@
 
 #include "jit/riscv64/Architecture-riscv64.h"
 
+#include <cstdlib>
+
 #include "jit/FlushICache.h"  // js::jit::FlushICache
 #include "jit/RegisterSets.h"
 #include "jit/riscv64/Assembler-riscv64.h"
 #include "jit/Simulator.h"
+
+#if defined(__linux__) && !defined(JS_SIMULATOR_RISCV64) && \
+    __has_include(<asm/hwprobe.h>)
+#  define USE_HWPROBE
+#endif
+
+#ifdef USE_HWPROBE
+#  include <asm/hwprobe.h>
+#  include <sys/syscall.h>
+#endif
 
 namespace js {
 namespace jit {
@@ -90,7 +102,36 @@ void FlushICache(void* code, size_t size) {
 #endif
 }
 
+// static
+void RVFlags::Init() {
+  MOZ_ASSERT(!sComputed);
+#ifdef USE_HWPROBE
+  riscv_hwprobe probe[1] = {{RISCV_HWPROBE_KEY_IMA_EXT_0, 0}};
+  if (syscall(__NR_riscv_hwprobe, probe, 1, 0, nullptr, 0) == 0) {
+    if (probe[0].value & RISCV_HWPROBE_EXT_ZBA) {
+      sZbaExtension = true;
+    }
+    if (probe[0].value & RISCV_HWPROBE_EXT_ZBB) {
+      sZbbExtension = true;
+    }
+  }
+#else
+  if (std::getenv("RISCV_EXT_ZBA")) {
+    // Force on Zba extension for testing purposes or on non-linux platforms.
+    sZbaExtension = true;
+  }
+  if (std::getenv("RISCV_EXT_ZBB")) {
+    // Force on Zbb extension for testing purposes or on non-linux platforms.
+    sZbbExtension = true;
+  }
+#endif
+
+  sComputed = true;
+}
+
 bool CPUFlagsHaveBeenComputed() { return RVFlags::FlagsHaveBeenComputed(); }
 
 }  // namespace jit
 }  // namespace js
+
+#undef USE_HWPROBE
