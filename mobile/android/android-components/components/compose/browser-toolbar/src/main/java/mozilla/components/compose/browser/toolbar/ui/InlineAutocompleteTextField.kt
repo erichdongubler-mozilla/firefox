@@ -170,6 +170,12 @@ internal fun InlineAutocompleteTextField(
         onDispose { pasteInterceptorToolbar.hide() }
     }
 
+    // Dismiss the text selection/contextual menu as soon as the user edits the text.
+    LaunchedEffect(Unit) {
+        snapshotFlow { textFieldState.text.toString() }
+            .collect { pasteInterceptorToolbar.hide() }
+    }
+
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
