@@ -118,6 +118,28 @@
     <button data-next slot="d">button 4</button>
   </div>
 </template>
+<template data-description="Focus navigation starting point should be used when it's a descendant of the focused element.">
+  <div tabindex="0" data-focus>
+    <button data-prev id="button1">button 1</button>
+    <span data-click>in between</span>
+    <button data-next id="button2">button 2</button>
+  </div>
+</template>
+<template data-description="Backwards focus navigation should not be stuck when starting point is inside focused element but before any other focusable areas.">
+  <button data-prev id="button1">button 1</button>
+  <div tabindex="0" id="focusable" data-focus>
+    <span data-click>in between</span>
+    <button data-next id="button2">button 2</button>
+  </div>
+</template>
+<template data-description="Should start from focused element if it was focused after the selection was set.">
+  <button id="button1">button 1</button>
+  <span data-click>in between</span>
+  <button id="button2">button 2</button>
+  <button id="button3" data-prev>button 3</button>
+  <div tabindex="0" id="focusable" data-focus2>focusable</div>
+  <button id="button4" data-next>button 4</button>
+</template>
 
 <script>
 "use strict";
@@ -132,7 +154,17 @@ function forEachMatching(selector, callback, root) {
     callback(element);
   }
   for (let element of root.querySelectorAll("[data-shadow]")) {
-    forEachMatching(selector, callback, element.shadowRoot);
+    if (element.shadowRoot) {
+      forEachMatching(selector, callback, element.shadowRoot);
+    }
+  }
+}
+
+async function forEachMatchingAsync(selector, callback) {
+  let elements = [];
+  forEachMatching(selector, e => elements.push(e));
+  for (let element of elements) {
+    await callback(element);
   }
 }
 
@@ -142,6 +174,11 @@ for (let template of document.querySelectorAll("template")) {
       container.replaceChildren();
       let test = document.importNode(template.content, true);
       container.append(test);
+      // Ensure buttons are keyboard-focusable
+      // (They aren't by default on Safari)
+      for (let button of document.querySelectorAll("button")) {
+        button.tabIndex = 0;
+      }
       forEachMatching("[data-shadow]", element => {
         let shadow = element.attachShadow({mode: "open"});
         shadow.append(element.querySelector("template").content);
@@ -149,6 +186,7 @@ for (let template of document.querySelectorAll("template")) {
       forEachMatching("[data-focus]", element => {
         element.focus();
       });
+      await forEachMatchingAsync("[data-click]", test_driver.click);
       forEachMatching("[data-blur]", element => {
         element.blur();
       });
@@ -175,6 +213,9 @@ for (let template of document.querySelectorAll("template")) {
       });
       forEachMatching("[data-reenable]", element => {
         element.disabled = false;
+      });
+      forEachMatching("[data-focus2]", element => {
+        element.focus();
       });
 
       let actions = new test_driver.Actions();
