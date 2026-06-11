@@ -60,6 +60,9 @@
 #include "jit/riscv64/extension/extension-riscv-f.h"
 #include "jit/riscv64/extension/extension-riscv-m.h"
 #include "jit/riscv64/extension/extension-riscv-v.h"
+#include "jit/riscv64/extension/extension-riscv-zfa.h"
+#include "jit/riscv64/extension/extension-riscv-zfh.h"
+#include "jit/riscv64/extension/extension-riscv-zicond.h"
 #include "jit/riscv64/extension/extension-riscv-zicsr.h"
 #include "jit/riscv64/extension/extension-riscv-zifencei.h"
 #include "jit/riscv64/Register-riscv64.h"
@@ -130,6 +133,9 @@ class Assembler : public AssemblerShared,
                   public AssemblerRISCVD,
                   public AssemblerRISCVM,
                   public AssemblerRISCVC,
+                  public AssemblerRISCVZfa,
+                  public AssemblerRISCVZfh,
+                  public AssemblerRISCVZicond,
                   public AssemblerRISCVZicsr,
                   public AssemblerRISCVZifencei {
   GeneralRegisterSet scratch_register_list_;
