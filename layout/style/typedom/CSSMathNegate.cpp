@@ -6,7 +6,6 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -77,15 +76,10 @@ void CSSMathNegate::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
   }
 }
 
-Maybe<StyleMathNegate> CSSMathNegate::ToStyleMathNegate() const {
-  auto styleNumericValue = mValue->ToStyleNumericValue();
-  if (styleNumericValue.isNothing()) {
-    return Nothing();
-  }
+StyleMathNegate CSSMathNegate::ToStyleMathNegate() const {
+  auto value = MakeUnique<StyleNumericValue>(mValue->ToStyleNumericValue());
 
-  auto value = MakeUnique<StyleNumericValue>(styleNumericValue.extract());
-
-  return Some(StyleMathNegate{std::move(value)});
+  return StyleMathNegate{std::move(value)};
 }
 
 const CSSMathNegate& CSSMathValue::GetAsCSSMathNegate() const {

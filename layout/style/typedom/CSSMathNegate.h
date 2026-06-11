@@ -21,8 +21,6 @@ class nsISupports;
 namespace mozilla {
 
 struct CSSPropertyId;
-template <class T>
-class Maybe;
 template <typename T>
 struct StyleBox;
 struct StyleNumericValue;
@@ -59,9 +57,7 @@ class CSSMathNegate final : public CSSMathValue {
                              const SerializationContext& aContext,
                              nsACString& aDest) const;
 
-  // TODO: This can be changed to return StyleMathNegate directly once the
-  // Unitialized type in CSSMathValue is removed.
-  Maybe<StyleMathNegate> ToStyleMathNegate() const;
+  StyleMathNegate ToStyleMathNegate() const;
 
  private:
   virtual ~CSSMathNegate() = default;

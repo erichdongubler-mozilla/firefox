@@ -7,7 +7,6 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSMathMaxBinding.h"
@@ -108,12 +107,7 @@ StyleMathMin CSSMathMax::ToStyleMathMax() const {
   nsTArray<StyleNumericValue> values;
 
   for (const RefPtr<CSSNumericValue>& value : mValues->GetValues()) {
-    Maybe<StyleNumericValue> styleNumericValue = value->ToStyleNumericValue();
-    if (styleNumericValue.isNothing()) {
-      continue;
-    }
-
-    values.AppendElement(styleNumericValue.extract());
+    values.AppendElement(value->ToStyleNumericValue());
   }
 
   return StyleMathMax{std::move(values)};

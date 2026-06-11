@@ -7,7 +7,6 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/UniquePtr.h"
@@ -131,12 +130,8 @@ already_AddRefed<CSSUnitValue> CSSNumericValue::To(const nsACString& aUnit,
 
   // Step 2.
   auto styleNumericValue = ToStyleNumericValue();
-  if (styleNumericValue.isNothing()) {
-    aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-    return nullptr;
-  }
 
-  auto sumValue = WrapUnique(Servo_SumValue_Create(styleNumericValue.ptr()));
+  auto sumValue = WrapUnique(Servo_SumValue_Create(&styleNumericValue));
   if (!sumValue) {
     aRv.ThrowTypeError("Failed to create a sum value");
     return nullptr;
@@ -225,23 +220,18 @@ void CSSNumericValue::ToCssTextWithProperty(
   }
 }
 
-Maybe<StyleNumericValue> CSSNumericValue::ToStyleNumericValue() const {
+StyleNumericValue CSSNumericValue::ToStyleNumericValue() const {
   switch (GetNumericValueType()) {
     case NumericValueType::MathValue: {
       const CSSMathValue& mathValue = GetAsCSSMathValue();
 
-      auto styleMathValue = mathValue.ToStyleMathValue();
-      if (styleMathValue.isNothing()) {
-        return Nothing();
-      }
-
-      return Some(StyleNumericValue::Math(styleMathValue.extract()));
+      return StyleNumericValue::Math(mathValue.ToStyleMathValue());
     }
 
     case NumericValueType::UnitValue: {
       const CSSUnitValue& unitValue = GetAsCSSUnitValue();
 
-      return Some(StyleNumericValue::Unit(unitValue.ToStyleUnitValue()));
+      return StyleNumericValue::Unit(unitValue.ToStyleUnitValue());
     }
   }
   MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Bad numeric value type!");

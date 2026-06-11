@@ -7,7 +7,6 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSMathClampBinding.h"
@@ -101,24 +100,10 @@ void CSSMathClamp::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
   aDest.Append(")"_ns);
 }
 
-Maybe<StyleMathClamp> CSSMathClamp::ToStyleMathClamp() const {
-  auto lower = mLower->ToStyleNumericValue();
-  if (lower.isNothing()) {
-    return Nothing();
-  }
-
-  auto value = mValue->ToStyleNumericValue();
-  if (value.isNothing()) {
-    return Nothing();
-  }
-
-  auto upper = mUpper->ToStyleNumericValue();
-  if (upper.isNothing()) {
-    return Nothing();
-  }
-
-  return Some(
-      StyleMathClamp(lower.extract(), value.extract(), upper.extract()));
+StyleMathClamp CSSMathClamp::ToStyleMathClamp() const {
+  return StyleMathClamp(mLower->ToStyleNumericValue(),
+                        mValue->ToStyleNumericValue(),
+                        mUpper->ToStyleNumericValue());
 }
 
 const CSSMathClamp& CSSMathValue::GetAsCSSMathClamp() const {

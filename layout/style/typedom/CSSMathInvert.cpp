@@ -6,7 +6,6 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -76,15 +75,10 @@ void CSSMathInvert::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
   }
 }
 
-Maybe<StyleMathInvert> CSSMathInvert::ToStyleMathInvert() const {
-  auto styleNumericValue = mValue->ToStyleNumericValue();
-  if (styleNumericValue.isNothing()) {
-    return Nothing();
-  }
+StyleMathInvert CSSMathInvert::ToStyleMathInvert() const {
+  auto value = MakeUnique<StyleNumericValue>(mValue->ToStyleNumericValue());
 
-  auto value = MakeUnique<StyleNumericValue>(styleNumericValue.extract());
-
-  return Some(StyleMathInvert{std::move(value)});
+  return StyleMathInvert{std::move(value)};
 }
 
 const CSSMathInvert& CSSMathValue::GetAsCSSMathInvert() const {
