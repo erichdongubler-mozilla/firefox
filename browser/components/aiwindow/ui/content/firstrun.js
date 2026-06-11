@@ -20,7 +20,7 @@ const MEMORIES_FROM_HISTORY_PREF =
   "browser.smartwindow.memories.generateFromHistory";
 const IS_DEFAULT_WINDOW_PREF = "browser.smartwindow.isDefaultWindow";
 const { getAllModelsData } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs"
+  "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
 );
 
 const autoAdvanceMS = Services.prefs.getIntPref(AUTO_ADVANCE_PREF);

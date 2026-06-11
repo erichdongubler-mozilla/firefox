@@ -57,7 +57,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   getCurrentModelChoiceId:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs",
   getCurrentModelName:
-    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs",
+    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   ToolUI: "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
   ACTION_LOG_UI_TYPE:
     "moz-src:///browser/components/aiwindow/ui/modules/ToolActionLog.sys.mjs",
