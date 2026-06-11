@@ -1850,12 +1850,9 @@ void CoreTextFontList::ReadFaceNamesForFamily(
     // of the macOS UI font; see CTFontEntry::GetFontRef(). We pass 16.0 in
     // order to get a standard text-size face in this case, although it's
     // unlikely to matter for the purpose of just reading family names.
-    auto fe = MakeUnique<CTFontEntry>(name, WeightRange(FontWeight::NORMAL),
-                                      false, 16.0);
-    if (!fe) {
-      continue;
-    }
-    gfxFontEntry::AutoTable nameTable(fe.get(), kNAME);
+    RefPtr fe = MakeRefPtr<CTFontEntry>(name, WeightRange(FontWeight::NORMAL),
+                                        false, 16.0);
+    gfxFontEntry::AutoTable nameTable(fe, kNAME);
     if (!nameTable) {
       continue;
     }
