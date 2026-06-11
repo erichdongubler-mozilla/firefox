@@ -247,6 +247,38 @@ class IPProtectionReducerTest {
         assertEquals(AccountStatus.NeedsAuthorization, resultState.accountState.status)
     }
 
+    @Test
+    fun `WHEN AccountManagerStateChanged to Uninitialized is dispatched THEN data and proxy flags are reset to defaults`() {
+        val dirtyState = defaultState.copy(
+            eligibilityStatus = EligibilityStatus.Eligible,
+            proxyStatus = Authorized.Active,
+            serviceStatus = ServiceState.Ready,
+            remainingDataBytes = 1000L,
+            maxDataBytes = 5000L,
+            resetDate = "2026-06-01T00:00:00Z",
+            accountState = AccountState(AccountStatus.EnrolledAndEntitled),
+            proxyActiveShown = true,
+            activate = true,
+        )
+
+        val resultState = iPProtectionReducer(
+            dirtyState,
+            InternalAction.AccountManagerStateChanged(AccountStatus.Uninitialized),
+        )
+
+        assertEquals(
+            dirtyState.copy(
+                remainingDataBytes = -1L,
+                maxDataBytes = -1L,
+                resetDate = null,
+                proxyActiveShown = false,
+                activate = false,
+                accountState = AccountState(AccountStatus.Uninitialized),
+            ),
+            resultState,
+        )
+    }
+
     private fun buildIPProtectionState(
         accountStatus: AccountStatus = AccountStatus.Uninitialized,
     ): IPProtectionState {
