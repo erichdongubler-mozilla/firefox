@@ -282,6 +282,10 @@ allowlist-types = [
     "AnchorPosOffsetResolutionParams",
 ]
 opaque-types = [
+    "mozilla::dom::CustomElementRegistry",
+    "mozilla::dom::UnionMember",
+    "JS::GCHashMap",
+    "JS::StackGCVector",
     "mozilla::StyleThinArc", # https://github.com/rust-lang/rust-bindgen/issues/1557
     "mozilla::gfx::.*Point",
     "mozilla::gfx::.*Rect",
