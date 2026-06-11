@@ -94,7 +94,7 @@ internal fun IPProtectionMenuItem(
                         maxLines = 1,
                     )
 
-                    if (state.status == IPProtectionMenuStatus.DataLimitReached) {
+                    if (state.status == IPProtectionMenuStatus.DataLimitReached && state.dataLimitGb > 0) {
                         Text(
                             text = stringResource(R.string.ip_protection_menu_limit_reached, state.dataLimitGb),
                             color = MaterialTheme.colorScheme.error,

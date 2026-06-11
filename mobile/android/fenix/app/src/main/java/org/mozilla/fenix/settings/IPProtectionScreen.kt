@@ -131,9 +131,11 @@ fun IPProtectionScreen(
                 HorizontalDivider()
 
                 if (readyToUse) {
-                    DataLimitSection(state = state, onLearnMoreClick = onLearnMoreClick)
+                    if (state.maxDataBytes > 0) {
+                        DataLimitSection(state = state, onLearnMoreClick = onLearnMoreClick)
 
-                    HorizontalDivider()
+                        HorizontalDivider()
+                    }
 
                     VpnLocationSection()
                 } else {
