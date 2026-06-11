@@ -39,6 +39,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executor
+import kotlin.test.assertIs
 
 @RunWith(RobolectricTestRunner::class)
 class PlayStoreReviewPromptControllerTest {
@@ -88,7 +89,7 @@ class PlayStoreReviewPromptControllerTest {
     }
 
     @Test
-    fun `WHEN the reviews API fails THEN runs the error callback`() = runTest {
+    fun `WHEN the reviews API fails THEN returns Error result`() = runTest {
         val controller = PlayStoreReviewPromptController(
             manager = FailingReviewManager(),
             numberOfAppLaunches = { 5 },
@@ -96,14 +97,9 @@ class PlayStoreReviewPromptControllerTest {
         launchActivity<ComponentActivity>().use { scenario ->
             scenario.onActivity { activity ->
                 activity.lifecycleScope.launch {
-                    var onErrorRan = false
+                    val result = controller.tryPromptReview(activity)
 
-                    controller.tryPromptReview(
-                        activity = activity,
-                        onError = { onErrorRan = true },
-                    )
-
-                    assertTrue(onErrorRan)
+                    assertIs<Error>(result)
                 }
             }
         }
@@ -146,7 +142,7 @@ class PlayStoreReviewPromptControllerTest {
 
     @Test
     fun reviewPromptDisplayStateError() {
-        testRecordReviewPromptEventRecordsTheExpectedData(Error, "error")
+        testRecordReviewPromptEventRecordsTheExpectedData(Error(RuntimeException()), "error")
     }
 
     @Test
