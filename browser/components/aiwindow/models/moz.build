@@ -20,6 +20,7 @@ MOZ_SRC_FILES += [
     "ConversationSuggestions.sys.mjs",
     "HistoryThumbnails.sys.mjs",
     "IntentClassifier.sys.mjs",
+    "ManageTabs.sys.mjs",
     "PreferencesNavMap.sys.mjs",
     "PromptLoader.sys.mjs",
     "PromptOptimizer.sys.mjs",

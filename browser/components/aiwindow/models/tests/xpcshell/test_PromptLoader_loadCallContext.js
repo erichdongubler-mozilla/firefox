@@ -35,7 +35,7 @@ add_task(async function test_loadCallContext_returns_expected_shape() {
     const fakeRecords = [
       {
         feature: MODEL_FEATURES.CHAT,
-        version: "5.0",
+        version: "6.0",
         model_choice_id: "",
         model: "gpt-oss-120b",
         is_default: true,
@@ -138,7 +138,7 @@ add_task(async function test_loadPrompt_returns_prompt_text() {
     const fakeRecords = [
       {
         feature: MODEL_FEATURES.CHAT,
-        version: "5.0",
+        version: "6.0",
         model_choice_id: "",
         model: "gpt-oss-120b",
         is_default: true,
@@ -153,7 +153,7 @@ add_task(async function test_loadPrompt_returns_prompt_text() {
 
     Assert.deepEqual(
       result,
-      { prompt: "You are a helpful assistant.", version: "5.0" },
+      { prompt: "You are a helpful assistant.", version: "6.0" },
       "loadPrompt should return the prompts field from the record"
     );
   } finally {
@@ -191,7 +191,7 @@ add_task(async function test_loadPrompt_honors_custom_prompt_pref() {
     const fakeRecords = [
       {
         feature: MODEL_FEATURES.CHAT,
-        version: "5.0",
+        version: "6.0",
         model_choice_id: "",
         model: "gpt-oss-120b",
         is_default: true,
@@ -275,7 +275,7 @@ add_task(async function test_loadPrompt_promptLoadFailure_clientReason() {
     const fakeRecords = [
       {
         feature: MODEL_FEATURES.CHAT,
-        version: "5.0",
+        version: "6.0",
         model: "generic",
         is_default: true,
       },

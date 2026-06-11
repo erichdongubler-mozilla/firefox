@@ -20,14 +20,12 @@ import {
   RUN_SEARCH,
   GET_USER_MEMORIES,
   GET_NAVIGATION_INFO,
+  MANAGE_TABS,
   WORLD_CUP_MATCHES,
   WORLD_CUP_LIVE,
   WORLD_CUP_TOOLS,
   WORLD_CUP_PREF,
 } from "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs";
-
-// TODO: move this to Tools.sys.mjs when able to define tool UI data there
-const CONFIRM_CLOSE_TABS = "confirm_close_tabs";
 
 import {
   expandUrlTokensInToolParams,
@@ -104,13 +102,17 @@ export async function executeToolByName(
     case GET_NAVIGATION_INFO:
       result = await toolFns.getNavigationInfo(toolParams);
       break;
-    case CONFIRM_CLOSE_TABS:
-      // Add the specific uiType for close tabs confirmation
-      result = executeAddUITool(conversation, toolCallId, {
-        ...toolParams,
-        uiType: "website-confirmation",
-      });
+    case MANAGE_TABS: {
+      const { toolResult, uiData } = await toolFns.manageTabs(
+        toolParams,
+        conversation
+      );
+      if (uiData) {
+        conversation.addUIToolToCurrentMessage(toolCallId, uiData);
+      }
+      result = toolResult;
       break;
+    }
     default: {
       const err = new Error(`No such tool: ${toolName}`);
       err.clientReason = "unknownTool";
@@ -118,28 +120,6 @@ export async function executeToolByName(
     }
   }
   return result;
-}
-
-/**
- * Handles the ADD_UI_TOOL execution for testing UI components in conversations.
- * Creates a text assistant message with embedded UI data that can be rendered.
- *
- * @param {ChatConversation} conversation - The current conversation
- * @param {string} toolCallId - The ID of the tool call
- * @param {object} toolParams - The parameters containing the UI data
- * @returns {object} Result object with success status and message
- */
-function executeAddUITool(conversation, toolCallId, toolParams) {
-  // Extract the UI data from toolParams provided by the model
-  if (!toolParams.uiType) {
-    return {
-      success: false,
-      message: "No UI type provided in tool parameters",
-      dataAdded: null,
-    };
-  }
-
-  return conversation.addUIToolToCurrentMessage(toolCallId, toolParams);
 }
 
 // Hard limit on how many times run_search can execute per conversation turn.
@@ -587,8 +567,8 @@ Object.assign(Chat, {
           ?.updateConversation(conversation)
           .catch(() => {});
 
-        // CONFIRM_CLOSE_TABS is terminal - UI handles the interaction
-        if (toolName === CONFIRM_CLOSE_TABS) {
+        // MANAGE_TABS is terminal - UI handles the interaction.
+        if (toolName === MANAGE_TABS) {
           conversation.securityProperties.commit();
           return;
         }
