@@ -246,20 +246,20 @@ gfxFont* FT2FontEntry::CreateFontInstance(const gfxFontStyle* aStyle) {
 }
 
 /* static */
-FT2FontEntry* FT2FontEntry::CreateFontEntry(
+already_AddRefed<FT2FontEntry> FT2FontEntry::CreateFontEntry(
     const nsACString& aFontName, WeightRange aWeight, StretchRange aStretch,
     SlantStyleRange aStyle, const uint8_t* aFontData, uint32_t aLength) {
   // Ownership of aFontData is passed in here; the fontEntry must
   // retain it as long as the FT_Face needs it, and ensure it is
   // eventually deleted.
-  RefPtr<FTUserFontData> ufd = new FTUserFontData(aFontData, aLength);
+  RefPtr<FTUserFontData> ufd = MakeRefPtr<FTUserFontData>(aFontData, aLength);
   RefPtr<SharedFTFace> face = ufd->CloneFace();
   if (!face) {
     return nullptr;
   }
   // Create our FT2FontEntry, which inherits the name of the userfont entry
   // as it's not guaranteed that the face has valid names (bug 737315)
-  FT2FontEntry* fe =
+  RefPtr<FT2FontEntry> fe =
       FT2FontEntry::CreateFontEntry(aFontName, nullptr, 0, nullptr);
   if (fe) {
     fe->mFTFace = face.forget().take();  // mFTFace takes ownership.
@@ -268,7 +268,7 @@ FT2FontEntry* FT2FontEntry::CreateFontEntry(
     fe->mStretchRange = aStretch;
     fe->mIsDataUserFont = true;
   }
-  return fe;
+  return fe.forget();
 }
 
 /* static */
@@ -1937,9 +1937,9 @@ already_AddRefed<gfxFontEntry> gfxFT2FontList::MakePlatformFont(
   // The FT2 font needs the font data to persist, so we do NOT free it here
   // but instead pass ownership to the font entry.
   // Deallocation will happen later, when the font face is destroyed.
-  return do_AddRef(FT2FontEntry::CreateFontEntry(
-      aFontName, aWeightForEntry, aStretchForEntry, aStyleForEntry, aFontData,
-      aLength));
+  return FT2FontEntry::CreateFontEntry(aFontName, aWeightForEntry,
+                                       aStretchForEntry, aStyleForEntry,
+                                       aFontData, aLength);
 }
 
 already_AddRefed<gfxFontFamily> gfxFT2FontList::CreateFontFamily(

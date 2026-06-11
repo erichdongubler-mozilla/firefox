@@ -39,19 +39,23 @@ class FT2FontEntry final : public gfxFT2FontEntryBase {
   const nsCString& GetName() const { return Name(); }
 
   // create a font entry for a downloaded font
-  static FT2FontEntry* CreateFontEntry(
+  static already_AddRefed<FT2FontEntry> CreateFontEntry(
       const nsACString& aFontName, WeightRange aWeight, StretchRange aStretch,
       SlantStyleRange aStyle, const uint8_t* aFontData, uint32_t aLength);
 
   // create a font entry representing an installed font, identified by
   // a FontListEntry; the freetype and cairo faces will not be instantiated
   // until actually needed
+  // TODO(dholbert) Ideally this should return already_AddRefed like the
+  // one for downloaded fonts does. See bug 2046683.
   static FT2FontEntry* CreateFontEntry(const FontListEntry& aFLE);
 
   // Create a font entry with the given name; if it is an installed font,
   // also record the filename and index.
   // If a non-null harfbuzz face is passed, also set style/weight/stretch
   // properties of the entry from the values in the face.
+  // TODO(dholbert) Ideally this should return already_AddRefed like the
+  // one for downloaded fonts does. See bug 2046683.
   static FT2FontEntry* CreateFontEntry(const nsACString& aName,
                                        const char* aFilename, uint8_t aIndex,
                                        const hb_face_t* aFace);
