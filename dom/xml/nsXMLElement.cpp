@@ -36,6 +36,12 @@ void nsXMLElement::UnbindFromTree(UnbindContext& aContext) {
     case PseudoStyleType::Backdrop:
       property = nsGkAtoms::backdropPseudoProperty;
       break;
+    case PseudoStyleType::Checkmark:
+      property = nsGkAtoms::checkmarkPseudoProperty;
+      break;
+    case PseudoStyleType::PickerIcon:
+      property = nsGkAtoms::pickerIconPseudoProperty;
+      break;
     default:
       property = nullptr;
   }

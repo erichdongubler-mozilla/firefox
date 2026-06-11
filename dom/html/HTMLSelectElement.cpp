@@ -139,6 +139,8 @@ void HTMLSelectElement::SetupShadowTree() {
     sr->AppendChildTo(slot, false, IgnoreErrors());
   }
 
+  // A select fallback button text, which is a div element. It is appended to
+  // the select button slot.
   {
     RefPtr label = doc->CreateHTMLElement(nsGkAtoms::label);
     label->SetPseudoElementType(PseudoStyleType::MozSelectContent);
@@ -149,16 +151,10 @@ void HTMLSelectElement::SetupShadowTree() {
     sr->AppendChildTo(label, false, IgnoreErrors());
   }
 
-  {
-    RefPtr icon = doc->CreateHTMLElement(nsGkAtoms::span);
-    icon->SetPseudoElementType(PseudoStyleType::PickerIcon);
-    {
-      RefPtr text = doc->CreateTextNode(u"\ufeff"_ns);
-      icon->AppendChildTo(text, false, IgnoreErrors());
-    }
-    sr->AppendChildTo(icon, false, IgnoreErrors());
-  }
-
+  // A select popover, which is a div element. It is appended to the select's
+  // shadow root as the second child, after the select button slot. The select
+  // element's '::picker' pseudo-element is the select popover if the provided
+  // argument is select.
   RefPtr picker = doc->CreateHTMLElement(nsGkAtoms::div);
   picker->SetPseudoElementType(PseudoStyleType::Picker);
   picker->SetAttr(nsGkAtoms::name, u"select"_ns, IgnoreErrors());
@@ -166,6 +162,10 @@ void HTMLSelectElement::SetupShadowTree() {
     nsAutoString popoverstate;
     picker->SetAttr(kNameSpaceID_None, nsGkAtoms::popover, popoverstate, false);
 
+    // A select popover slot, which is a slot element. It is appended to the
+    // select popover. It is expected to take all child nodes of the select
+    // except for the first child button, which is taken by the select button
+    // slot.
     RefPtr pickerSlot = doc->CreateHTMLElement(nsGkAtoms::slot);
     picker->AppendChildTo(pickerSlot, false, IgnoreErrors());
   }

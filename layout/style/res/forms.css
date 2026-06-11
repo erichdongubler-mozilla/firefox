@@ -239,6 +239,7 @@ select::picker-icon {
   display: inline-block;
   appearance: auto;
   -moz-default-appearance: -moz-menulist-arrow-button;
+  content: "\feff";
   pointer-events: none;
   -webkit-text-security: none;
   max-block-size: 100%;
@@ -247,6 +248,11 @@ select::picker-icon {
    * baseline of the combobox to match the baseline of the label, so the
    * dropmarker is what gets the vertical-align. */
   vertical-align: top;
+}
+
+/* stylelint-disable-next-line selector-pseudo-element-no-unknown */
+select:-moz-select-list-box::picker-icon {
+  display: none;
 }
 
 select:-moz-select-list-box {
@@ -978,6 +984,14 @@ textarea:autofill {
     /* stylelint-disable-next-line selector-pseudo-element-no-unknown */
     select option:not(:checked)::checkmark {
       visibility: hidden;
+    }
+
+    /* stylelint-disable-next-line selector-pseudo-element-no-unknown */
+    select::picker-icon {
+      -moz-default-appearance: none;
+      content: counter(fake-counter-name, disclosure-open) / "";
+      display: block;
+      margin-inline-start: auto;
     }
   }
 }
