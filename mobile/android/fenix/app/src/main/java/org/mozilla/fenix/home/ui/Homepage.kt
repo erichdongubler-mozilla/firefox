@@ -22,6 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -40,6 +41,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.History
@@ -89,6 +92,7 @@ import org.mozilla.fenix.home.topsites.TopSiteColors
 import org.mozilla.fenix.home.topsites.TopSites
 import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
 import org.mozilla.fenix.home.topsites.store.DialogState
+import org.mozilla.fenix.home.topsites.store.toPopularSite
 import org.mozilla.fenix.home.topsites.ui.AddShortcutBottomSheet
 import org.mozilla.fenix.home.topsites.ui.AddShortcutDialog
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE
@@ -98,6 +102,8 @@ import org.mozilla.fenix.trackingprotection.TrackersBlockedCard
 import org.mozilla.fenix.utils.isLargeScreenSize
 import org.mozilla.fenix.wallpapers.WallpaperState
 import mozilla.components.ui.icons.R as iconsR
+
+private const val POPULAR_SITES_TO_SHOW = 8
 
 /**
  * Top level composable for the homepage.
@@ -355,10 +361,26 @@ internal fun Homepage(
 
                             when (shortcutsDialogState) {
                                 DialogState.AddShortcutBottomSheet -> {
+                                    val merinoManifestProvider = components.core.merinoManifestProvider
+                                    val popularSites by produceState(
+                                        initialValue = emptyList(),
+                                        key1 = merinoManifestProvider,
+                                    ) {
+                                        value = withContext(Dispatchers.IO) {
+                                            merinoManifestProvider.getTopDomains(limit = POPULAR_SITES_TO_SHOW)
+                                                .map { it.toPopularSite() }
+                                        }
+                                    }
+
                                     AddShortcutBottomSheet(
+                                        popularSites = popularSites,
                                         onDismiss = { shortcutsDialogState = DialogState.Closed },
                                         onAddWebsiteClicked = {
                                             shortcutsDialogState = DialogState.AddShortcut
+                                        },
+                                        onAddPopularSiteClick = { site ->
+                                            interactor.onSaveShortcut(title = site.title, url = site.url)
+                                            shortcutsDialogState = DialogState.Closed
                                         },
                                     )
                                 }

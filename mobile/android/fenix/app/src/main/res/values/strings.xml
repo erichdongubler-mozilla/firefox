@@ -3243,6 +3243,8 @@
     <string name="homepage_shortcuts_add_website">Add website</string>
     <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
     <string name="homepage_shortcuts_add_website_title">Enter a Website URL</string>
+    <!-- Title for the "Popular sites" section in the "Add to homepage" bottom sheet. -->
+    <string name="homepage_shortcuts_popular_sites">Popular sites</string>
     <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
     <string name="shortcut_max_limit_title">Shortcut limit reached</string>
     <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
