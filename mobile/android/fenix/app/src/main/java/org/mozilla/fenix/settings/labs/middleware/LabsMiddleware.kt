@@ -12,8 +12,8 @@ import kotlinx.coroutines.launch
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import org.mozilla.fenix.R
-import org.mozilla.fenix.settings.labs.FeatureKey
-import org.mozilla.fenix.settings.labs.LabsFeature
+import org.mozilla.fenix.settings.labs.LabsItem
+import org.mozilla.fenix.settings.labs.LabsItemSlugs
 import org.mozilla.fenix.settings.labs.store.LabsAction
 import org.mozilla.fenix.settings.labs.store.LabsState
 import org.mozilla.fenix.utils.Settings
@@ -42,9 +42,9 @@ class LabsMiddleware(
             is LabsAction.InitAction -> initialize(store = store)
             is LabsAction.RestartApplication -> restartApplication()
             is LabsAction.RestoreDefaults -> restoreDefaults(store = store)
-            is LabsAction.ToggleFeature -> toggleFeature(
+            is LabsAction.ToggleLabsItem -> toggleLabsItem(
                 store = store,
-                feature = action.feature,
+                item = action.item,
             )
 
             else -> Unit
@@ -56,40 +56,41 @@ class LabsMiddleware(
     private fun initialize(
         store: Store<LabsState, LabsAction>,
     ) = scope.launch {
-        val features = listOf(
-            LabsFeature(
-                key = FeatureKey.HOMEPAGE_AS_A_NEW_TAB,
-                name = R.string.firefox_labs_homepage_as_a_new_tab,
+        val items = listOf(
+            LabsItem(
+                slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
+                title = R.string.firefox_labs_homepage_as_a_new_tab,
                 description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-                enabled = settings.enableHomepageAsNewTab,
+                enrolled = settings.enableHomepageAsNewTab,
+                requiresRestart = true,
             ),
         )
 
-        store.dispatch(LabsAction.UpdateFeatures(features))
+        store.dispatch(LabsAction.UpdateLabsItems(items))
     }
 
-    private fun toggleFeature(
+    private fun toggleLabsItem(
         store: Store<LabsState, LabsAction>,
-        feature: LabsFeature,
+        item: LabsItem,
     ) = scope.launch {
-        setFeatureEnabled(key = feature.key, enabled = !feature.enabled)
+        setItemEnrolled(slug = item.slug, enrolled = !item.enrolled)
         store.dispatch(LabsAction.RestartApplication)
     }
 
     private fun restoreDefaults(
         store: Store<LabsState, LabsAction>,
     ) = scope.launch {
-        for (key in FeatureKey.entries) {
-            setFeatureEnabled(key = key, enabled = false)
+        for (item in store.state.labsItems) {
+            setItemEnrolled(slug = item.slug, enrolled = false)
         }
 
         store.dispatch(LabsAction.RestartApplication)
     }
 
-    private fun setFeatureEnabled(key: FeatureKey, enabled: Boolean) = scope.launch {
-        when (key) {
-            FeatureKey.HOMEPAGE_AS_A_NEW_TAB -> {
-                settings.enableHomepageAsNewTab = enabled
+    private fun setItemEnrolled(slug: String, enrolled: Boolean) = scope.launch {
+        when (slug) {
+            LabsItemSlugs.HOMEPAGE_AS_NEW_TAB -> {
+                settings.enableHomepageAsNewTab = enrolled
             }
         }
     }
