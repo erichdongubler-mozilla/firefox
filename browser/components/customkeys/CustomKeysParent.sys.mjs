@@ -97,6 +97,7 @@ export class CustomKeysParent extends JSWindowActorParent {
       "key_togglePictureInPicture",
       "customkeys-view-picture-in-picture"
     );
+    add(cat, "key_addTabSplitView", "customkeys-view-add-split-view");
     const editCat = topWin.document.getElementById("edit-menu").label;
     cat = keys[editCat];
     add(
