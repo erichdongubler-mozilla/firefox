@@ -1219,6 +1219,12 @@ void MacroAssembler::branchToComputedAddress(const BaseIndex& addr) {
 void MacroAssembler::branchTruncateDoubleMaybeModUint32(FloatRegister src,
                                                         Register dest,
                                                         Label* fail) {
+  // The Zfa fcvtmod.w.d instruction handles exactly this conversion.
+  if (HasZfaExtension()) {
+    fcvtmod_w_d(dest, src);
+    return;
+  }
+
   UseScratchRegisterScope temps(this);
 
   // Convert scalar to signed 64-bit fixed-point, rounding toward zero.

@@ -364,8 +364,7 @@ class MacroAssemblerRiscv64 : public Assembler {
   void ExtractBits(Register rd, Register rs, uint16_t pos, uint16_t size);
 
   template <typename F_TYPE>
-  void RoundHelper(FPURegister dst, FPURegister src, FPURegister fpu_scratch,
-                   FPURoundingMode mode);
+  void RoundHelper(FPURegister dst, FPURegister src, FPURoundingMode mode);
 
   template <typename CvtFunc>
   void RoundFloatingPointToInteger(Register rd, FPURegister fs, Register result,
@@ -408,16 +407,16 @@ class MacroAssemblerRiscv64 : public Assembler {
                  bool Inexact = false);
 
   // Round double functions
-  void Trunc_d_d(FPURegister fd, FPURegister fs, FPURegister fpu_scratch);
-  void Round_d_d(FPURegister fd, FPURegister fs, FPURegister fpu_scratch);
-  void Floor_d_d(FPURegister fd, FPURegister fs, FPURegister fpu_scratch);
-  void Ceil_d_d(FPURegister fd, FPURegister fs, FPURegister fpu_scratch);
+  void Trunc_d_d(FPURegister fd, FPURegister fs);
+  void Round_d_d(FPURegister fd, FPURegister fs);
+  void Floor_d_d(FPURegister fd, FPURegister fs);
+  void Ceil_d_d(FPURegister fd, FPURegister fs);
 
   // Round float functions
-  void Trunc_s_s(FPURegister fd, FPURegister fs, FPURegister fpu_scratch);
-  void Round_s_s(FPURegister fd, FPURegister fs, FPURegister fpu_scratch);
-  void Floor_s_s(FPURegister fd, FPURegister fs, FPURegister fpu_scratch);
-  void Ceil_s_s(FPURegister fd, FPURegister fs, FPURegister fpu_scratch);
+  void Trunc_s_s(FPURegister fd, FPURegister fs);
+  void Round_s_s(FPURegister fd, FPURegister fs);
+  void Floor_s_s(FPURegister fd, FPURegister fs);
+  void Ceil_s_s(FPURegister fd, FPURegister fs);
 
   // Round single to signed word.
   void Round_w_s(Register rd, FPURegister fs, Register result = InvalidReg,
