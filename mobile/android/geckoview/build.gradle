@@ -534,10 +534,6 @@ apiLint {
     // TODO: Change this to `org` after hiding org.mozilla.gecko
     packageFilter = 'org.mozilla.geckoview'
     changelogFileName = 'src/main/java/org/mozilla/geckoview/doc-files/CHANGELOG.md'
-    // Put those files in ${buildDir}/intermediates/javac/<variant>
-    // instead of ${buildDir}/intermediates/javac/<variant>/compile<Variant>JavaWithJavac/classes
-    jsonResultFileName = '../../apilint-result.json'
-    apiOutputFileName = '../../api.txt'
     skipClassesRegex = [
         '^org.mozilla.geckoview.BuildConfig$',
         '^org.mozilla.geckoview.R$',
