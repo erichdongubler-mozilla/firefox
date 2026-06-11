@@ -2372,6 +2372,7 @@ static bool CreateMappedArrayBuffer(JSContext* cx, unsigned argc, Value* vp) {
   RootedObject obj(cx,
                    JS::NewMappedArrayBufferWithContents(cx, size, contents));
   if (!obj) {
+    JS::ReleaseMappedArrayBufferContents(contents, size);
     return false;
   }
 
