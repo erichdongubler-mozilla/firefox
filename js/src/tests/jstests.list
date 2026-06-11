@@ -688,6 +688,9 @@ skip script test262/staging/sm/Error/constructor-proto.js
 skip script test262/staging/sm/Error/prototype.js
 skip script test262/staging/sm/Error/prototype-properties.js
 
+# Bug 2046885
+skip script test262/built-ins/Error/prototype/stack/getter-cross-realm.js
+
 ###########################################################
 # Tests disabled due to issues in test262 importer script #
 ###########################################################
