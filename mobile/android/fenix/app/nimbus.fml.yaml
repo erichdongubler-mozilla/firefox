@@ -1102,6 +1102,10 @@ features:
         description: Country codes whose users are eligible for IP Protection.
         type: List<String>
         default: ["US", "CA", "DE", "FR", "GB"]
+      promo-deadline:
+        description: The final date for the promotion to end. This needs to be an ISO 8601 formatted date (i.e. YYYY-MM-DD).
+        type: String
+        default: "2026-08-31"
 
   native-share-sheet:
     description: Feature to enable the Native Share Sheet for users on Firefox on Android.
