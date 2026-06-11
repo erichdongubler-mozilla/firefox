@@ -343,8 +343,8 @@ static RefPtr<LocalAccessible> MaybeCreateSVGAccessible(
 /**
  * Used by XULMap.inc to map both menupopup and popup elements
  */
-LocalAccessible* CreateMenupopupAccessible(Element* aElement,
-                                           LocalAccessible* aContext) {
+already_AddRefed<LocalAccessible> CreateMenupopupAccessible(
+    Element* aElement, LocalAccessible* aContext) {
 #ifdef MOZ_ACCESSIBILITY_ATK
   // ATK considers this node to be redundant when within menubars, and it makes
   // menu navigation with assistive technologies more difficult
@@ -356,7 +356,7 @@ LocalAccessible* CreateMenupopupAccessible(Element* aElement,
   if (parent && parent->IsXULElement(nsGkAtoms::menu)) return nullptr;
 #endif
 
-  return new XULMenupopupAccessible(aElement, aContext->Document());
+  return MakeAndAddRef<XULMenupopupAccessible>(aElement, aContext->Document());
 }
 
 static uint64_t GetCacheDomainsForKnownClients(uint64_t aCacheDomains) {
@@ -371,14 +371,14 @@ static uint64_t GetCacheDomainsForKnownClients(uint64_t aCacheDomains) {
 ////////////////////////////////////////////////////////////////////////////////
 // LocalAccessible constructors
 
-static LocalAccessible* New_HyperText(Element* aElement,
-                                      LocalAccessible* aContext) {
-  return new HyperTextAccessible(aElement, aContext->Document());
+static already_AddRefed<LocalAccessible> New_HyperText(
+    Element* aElement, LocalAccessible* aContext) {
+  return MakeAndAddRef<HyperTextAccessible>(aElement, aContext->Document());
 }
 
 template <typename AccClass>
-static LocalAccessible* New_HTMLDtOrDd(Element* aElement,
-                                       LocalAccessible* aContext) {
+static already_AddRefed<LocalAccessible> New_HTMLDtOrDd(
+    Element* aElement, LocalAccessible* aContext) {
   nsIContent* parent = aContext->GetContent();
   if (parent->IsHTMLElement(nsGkAtoms::div)) {
     // It is conforming in HTML to use a div to group dt/dd elements.
@@ -386,7 +386,7 @@ static LocalAccessible* New_HTMLDtOrDd(Element* aElement,
   }
 
   if (parent && parent->IsHTMLElement(nsGkAtoms::dl)) {
-    return new AccClass(aElement, aContext->Document());
+    return MakeAndAddRef<AccClass>(aElement, aContext->Document());
   }
 
   return nullptr;
@@ -423,12 +423,12 @@ static const MarkupMapInfo sMathMLMarkupMapList[] = {
 
 #define XULMAP(atom, ...) {nsGkAtoms::atom, __VA_ARGS__},
 
-#define XULMAP_TYPE(atom, new_type)                                          \
-  XULMAP(                                                                    \
-      atom,                                                                  \
-      [](Element* aElement, LocalAccessible* aContext) -> LocalAccessible* { \
-        return new new_type(aElement, aContext->Document());                 \
-      })
+#define XULMAP_TYPE(atom, new_type)                                           \
+  XULMAP(atom,                                                                \
+         [](Element* aElement,                                                \
+            LocalAccessible* aContext) -> already_AddRefed<LocalAccessible> { \
+           return MakeAndAddRef<new_type>(aElement, aContext->Document());    \
+         })
 
 static const XULMarkupMapInfo sXULMarkupMapList[] = {
 #include "XULMap.inc"
