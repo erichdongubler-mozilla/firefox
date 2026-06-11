@@ -272,6 +272,11 @@ toolbar[inactive="true"] .urlbar,
     width: 100%;
     height: 100%;
   }
+
+  > :is([urlbar-slot="site-info"]:not(#trust-icon-container):not(#tracking-protection-icon-container)):not([hidden]),
+  &[pageproxystate="invalid"] > .searchmode-switcher:not([offscreen]) {
+    margin-inline-end: var(--urlbar-input-gap);
+  }
 }
 
 .urlbar:not([open]) > .urlbarView,
@@ -1279,7 +1284,6 @@ toolbar[inactive="true"] .urlbar,
 }
 
 .searchmode-switcher {
-  margin-inline-end: var(--urlbar-searchmodeswitcher-margin-inline-end);
   height: var(--urlbar-basic-component-size);
   --button-border: none;
   --button-padding: 0 var(--space-small);
@@ -1311,9 +1315,10 @@ toolbar[inactive="true"] .urlbar,
     --button-background-color: var(--urlbar-box-background-color-focus);
   }
 
-  /* No need space if page information icons such as lock and shield is shown */
-  .urlbar[pageproxystate="valid"] & {
-    margin-inline-end: 0;
+  &[offscreen] {
+    /* Display as off-screen to get focus */
+    position: fixed;
+    top: -999px;
   }
 
   .urlbar[searchmode] & {
@@ -1458,13 +1463,5 @@ toolbar[inactive="true"] .urlbar,
     #urlbar[pageproxystate="invalid"]:not([persistsearchterms]) #identity-box {
       display: none;
     }
-  }
-}
-
-@media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
-  .urlbar:not([unifiedsearchbutton-available]) > .urlbar-input-container > .searchmode-switcher {
-    /* Display as off-screen to get focus */
-    position: fixed;
-    top: -999px;
   }
 }
