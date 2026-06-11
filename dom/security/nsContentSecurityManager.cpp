@@ -1452,25 +1452,19 @@ nsresult nsContentSecurityManager::doContentSecurityCheck(
     DebugDoContentSecurityCheck(aChannel, loadInfo);
   }
 
-  nsresult rv = CheckAllowLoadInSystemPrivilegedContext(aChannel);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(CheckAllowLoadInSystemPrivilegedContext(aChannel));
 
-  rv = CheckAllowLoadInPrivilegedAboutContext(aChannel);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(CheckAllowLoadInPrivilegedAboutContext(aChannel));
 
   // We want to also check redirected requests to ensure
   // the target maintains the proper javascript file extensions.
-  rv = CheckAllowExtensionProtocolScriptLoad(aChannel);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(CheckAllowExtensionProtocolScriptLoad(aChannel));
 
-  rv = CheckChannelHasProtocolSecurityFlag(aChannel);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(CheckChannelHasProtocolSecurityFlag(aChannel));
 
-  rv = CheckAllowLoadByTriggeringRemoteType(aChannel);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(CheckAllowLoadByTriggeringRemoteType(aChannel));
 
-  rv = CheckForIncoherentResultPrincipal(aChannel);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(CheckForIncoherentResultPrincipal(aChannel));
 
   // if dealing with a redirected channel then we have already installed
   // streamlistener and redirect proxies and so we are done.
@@ -1480,24 +1474,19 @@ nsresult nsContentSecurityManager::doContentSecurityCheck(
 
   // make sure that only one of the five security flags is set in the loadinfo
   // e.g. do not require same origin and allow cross origin at the same time
-  rv = ValidateSecurityFlags(loadInfo);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(ValidateSecurityFlags(loadInfo));
 
   if (loadInfo->GetSecurityMode() ==
       nsILoadInfo::SEC_REQUIRE_CORS_INHERITS_SEC_CONTEXT) {
-    rv = DoCORSChecks(aChannel, loadInfo, aInAndOutListener);
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_TRY(DoCORSChecks(aChannel, loadInfo, aInAndOutListener));
   }
 
-  rv = CheckChannel(aChannel);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(CheckChannel(aChannel));
 
   // Perform all ContentPolicy checks (MixedContent, CSP, ...)
-  rv = DoContentSecurityChecks(aChannel, loadInfo);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(DoContentSecurityChecks(aChannel, loadInfo));
 
-  rv = CheckAllowFileProtocolScriptLoad(aChannel);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(CheckAllowFileProtocolScriptLoad(aChannel));
 
   // now lets set the initialSecurityFlag for subsequent calls
   loadInfo->SetInitialSecurityCheckDone(true);
