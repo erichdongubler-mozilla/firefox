@@ -1977,52 +1977,6 @@ static const JSFunctionSpec iterator_methods[] = {
     JS_FS_END,
 };
 
-// https://tc39.es/proposal-iterator-helpers/#sec-SetterThatIgnoresPrototypeProperties
-static bool SetterThatIgnoresPrototypeProperties(JSContext* cx,
-                                                 Handle<Value> thisv,
-                                                 Handle<PropertyKey> prop,
-                                                 Handle<Value> value) {
-  // Step 1.
-  Rooted<JSObject*> thisObj(cx,
-                            RequireObject(cx, JSMSG_OBJECT_REQUIRED, thisv));
-  if (!thisObj) {
-    return false;
-  }
-
-  // Step 2.
-  JSObject* home = GlobalObject::getOrCreateIteratorPrototype(cx, cx->global());
-  if (!home) {
-    return false;
-  }
-  if (thisObj == home) {
-    UniqueChars propName =
-        IdToPrintableUTF8(cx, prop, IdToPrintableBehavior::IdIsPropertyKey);
-    if (!propName) {
-      return false;
-    }
-
-    // Step 2.b.
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_READ_ONLY,
-                              propName.get());
-    return false;
-  }
-
-  // Step 3.
-  Rooted<Maybe<PropertyDescriptor>> desc(cx);
-  if (!GetOwnPropertyDescriptor(cx, thisObj, prop, &desc)) {
-    return false;
-  }
-
-  // Step 4.
-  if (desc.isNothing()) {
-    // Step 4.a.
-    return DefineDataProperty(cx, thisObj, prop, value, JSPROP_ENUMERATE);
-  }
-
-  // Step 5.
-  return SetProperty(cx, thisObj, prop, value);
-}
-
 // https://tc39.es/proposal-iterator-helpers/#sec-get-iteratorprototype-@@tostringtag
 static bool toStringTagGetter(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -2037,9 +1991,14 @@ static bool toStringTagSetter(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   // Step 1.
+  Rooted<JSObject*> home(
+      cx, GlobalObject::getOrCreateIteratorPrototype(cx, cx->global()));
+  if (!home) {
+    return false;
+  }
   Rooted<PropertyKey> prop(
       cx, PropertyKey::Symbol(cx->wellKnownSymbols().toStringTag));
-  if (!SetterThatIgnoresPrototypeProperties(cx, args.thisv(), prop,
+  if (!SetterThatIgnoresPrototypeProperties(cx, args.thisv(), home, prop,
                                             args.get(0))) {
     return false;
   }
@@ -2068,8 +2027,13 @@ static bool constructorSetter(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   // Step 1.
+  Rooted<JSObject*> home(
+      cx, GlobalObject::getOrCreateIteratorPrototype(cx, cx->global()));
+  if (!home) {
+    return false;
+  }
   Rooted<PropertyKey> prop(cx, NameToId(cx->names().constructor));
-  if (!SetterThatIgnoresPrototypeProperties(cx, args.thisv(), prop,
+  if (!SetterThatIgnoresPrototypeProperties(cx, args.thisv(), home, prop,
                                             args.get(0))) {
     return false;
   }
