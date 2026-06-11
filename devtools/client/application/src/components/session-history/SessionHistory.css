@@ -38,11 +38,11 @@
   width: 5px;
 }
 
-#diagram-container td.same-document-nav {
+#diagram-container-table tbody td.same-document-nav {
   border-inline-start-style: dotted;
 }
 
-#diagram-container td:has(+ td.same-document-nav) {
+#diagram-container-table tbody td:has(+ td.same-document-nav) {
   border-inline-end-style: dotted;
 }
 
