@@ -995,7 +995,7 @@ gfxFontEntry* gfxDWriteFontList::LookupLocalFont(
   return fe;
 }
 
-gfxFontEntry* gfxDWriteFontList::MakePlatformFont(
+already_AddRefed<gfxFontEntry> gfxDWriteFontList::MakePlatformFont(
     const nsACString& aFontName, WeightRange aWeightForEntry,
     StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry,
     const uint8_t* aFontData, uint32_t aLength) {
@@ -1021,7 +1021,7 @@ gfxFontEntry* gfxDWriteFontList::MakePlatformFont(
   DWRITE_FONT_FILE_TYPE fileType;
   UINT32 numFaces;
 
-  auto entry = MakeUnique<gfxDWriteFontEntry>(
+  RefPtr entry = MakeRefPtr<gfxDWriteFontEntry>(
       NS_ConvertUTF16toUTF8(uniqueName), fontFile, fontFileStream,
       aWeightForEntry, aStretchForEntry, aStyleForEntry);
 
@@ -1040,7 +1040,7 @@ gfxFontEntry* gfxDWriteFontList::MakePlatformFont(
     return nullptr;
   }
 
-  return entry.release();
+  return entry.forget();
 }
 
 bool gfxDWriteFontList::UseGDIFontTableAccess() const {

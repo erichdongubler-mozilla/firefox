@@ -746,7 +746,7 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
   // it can be reported via the InspectorUtils API.
   nsAutoCString originalFullName;
 
-  gfxFontEntry* fe = nullptr;
+  RefPtr<gfxFontEntry> fe;
   uint32_t fontCompressionRatio = 0;
 
   if (aSanitizedFontData) {

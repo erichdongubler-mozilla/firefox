@@ -2326,7 +2326,7 @@ gfxFontEntry* gfxFcPlatformFontList::LookupLocalFont(
                                     aStretchForEntry, aStyleForEntry);
 }
 
-gfxFontEntry* gfxFcPlatformFontList::MakePlatformFont(
+already_AddRefed<gfxFontEntry> gfxFcPlatformFontList::MakePlatformFont(
     const nsACString& aFontName, WeightRange aWeightForEntry,
     StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry,
     const uint8_t* aFontData, uint32_t aLength) {
@@ -2335,9 +2335,9 @@ gfxFontEntry* gfxFcPlatformFontList::MakePlatformFont(
   if (!face) {
     return nullptr;
   }
-  return new gfxFontconfigFontEntry(aFontName, aWeightForEntry,
-                                    aStretchForEntry, aStyleForEntry,
-                                    std::move(face));
+  return MakeAndAddRef<gfxFontconfigFontEntry>(aFontName, aWeightForEntry,
+                                               aStretchForEntry, aStyleForEntry,
+                                               std::move(face));
 }
 
 static bool UseCustomFontconfigLookupsForLocale(const Locale& aLocale) {

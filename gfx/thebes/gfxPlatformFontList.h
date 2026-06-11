@@ -511,12 +511,10 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
    * This method takes ownership of the data block passed in as aFontData,
    * and must ensure it is free()'d when no longer required.
    */
-  virtual gfxFontEntry* MakePlatformFont(const nsACString& aFontName,
-                                         WeightRange aWeightForEntry,
-                                         StretchRange aStretchForEntry,
-                                         SlantStyleRange aStyleForEntry,
-                                         const uint8_t* aFontData,
-                                         uint32_t aLength) = 0;
+  virtual already_AddRefed<gfxFontEntry> MakePlatformFont(
+      const nsACString& aFontName, WeightRange aWeightForEntry,
+      StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry,
+      const uint8_t* aFontData, uint32_t aLength) = 0;
 
   // get the standard family name on the platform for a given font name
   // (platforms may override, eg Mac)

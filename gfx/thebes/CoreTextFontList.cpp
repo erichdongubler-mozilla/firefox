@@ -1492,12 +1492,10 @@ static void ReleaseData(void* info, const void* data, size_t size) {
 
 MOZ_DEFINE_MALLOC_SIZE_OF_ON_ALLOC(UserFontMallocSizeOfOnAlloc)
 
-gfxFontEntry* CoreTextFontList::MakePlatformFont(const nsACString& aFontName,
-                                                 WeightRange aWeightForEntry,
-                                                 StretchRange aStretchForEntry,
-                                                 SlantStyleRange aStyleForEntry,
-                                                 const uint8_t* aFontData,
-                                                 uint32_t aLength) {
+already_AddRefed<gfxFontEntry> CoreTextFontList::MakePlatformFont(
+    const nsACString& aFontName, WeightRange aWeightForEntry,
+    StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry,
+    const uint8_t* aFontData, uint32_t aLength) {
   NS_ASSERTION(aFontData, "MakePlatformFont called with null data");
 
   // create the font entry
@@ -1518,7 +1516,7 @@ gfxFontEntry* CoreTextFontList::MakePlatformFont(const nsACString& aFontName,
     return nullptr;
   }
 
-  auto newFontEntry = MakeUnique<CTFontEntry>(
+  RefPtr newFontEntry = MakeRefPtr<CTFontEntry>(
       NS_ConvertUTF16toUTF8(uniqueName), fontRef, aWeightForEntry,
       aStretchForEntry, aStyleForEntry, true, false);
 
@@ -1528,7 +1526,7 @@ gfxFontEntry* CoreTextFontList::MakePlatformFont(const nsACString& aFontName,
   newFontEntry->mComputedSizeOfUserFont =
       UserFontMallocSizeOfOnAlloc(aFontData);
 
-  return newFontEntry.release();
+  return newFontEntry.forget();
 }
 
 // Webkit code uses a system font meta name, so mimic that here

@@ -168,12 +168,10 @@ class gfxFT2FontList final : public gfxPlatformFontList {
                                 StretchRange aStretchForEntry,
                                 SlantStyleRange aStyleForEntry) override;
 
-  gfxFontEntry* MakePlatformFont(const nsACString& aFontName,
-                                 WeightRange aWeightForEntry,
-                                 StretchRange aStretchForEntry,
-                                 SlantStyleRange aStyleForEntry,
-                                 const uint8_t* aFontData,
-                                 uint32_t aLength) override;
+  already_AddRefed<gfxFontEntry> MakePlatformFont(
+      const nsACString& aFontName, WeightRange aWeightForEntry,
+      StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry,
+      const uint8_t* aFontData, uint32_t aLength) override;
 
   void WriteCache();
 

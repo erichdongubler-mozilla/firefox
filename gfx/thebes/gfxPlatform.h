@@ -411,14 +411,13 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
    * aFontData is a NS_Malloc'ed block that must be freed by this function
    * (or responsibility passed on) when it is no longer needed; the caller
    * will NOT free it.
-   * Ownership of the returned gfxFontEntry is passed to the caller,
-   * who must either AddRef() or delete.
+   * Ownership of the returned gfxFontEntry is passed to the caller.
    */
-  gfxFontEntry* MakePlatformFont(const nsACString& aFontName,
-                                 const WeightRange& aWeightForEntry,
-                                 const StretchRange& aStretchForEntry,
-                                 const SlantStyleRange& aStyleForEntry,
-                                 const uint8_t* aFontData, uint32_t aLength);
+  already_AddRefed<gfxFontEntry> MakePlatformFont(
+      const nsACString& aFontName, const WeightRange& aWeightForEntry,
+      const StretchRange& aStretchForEntry,
+      const SlantStyleRange& aStyleForEntry, const uint8_t* aFontData,
+      uint32_t aLength);
 
   /**
    * Whether to allow downloadable fonts via @font-face rules
