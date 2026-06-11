@@ -10,7 +10,8 @@
         "*://*.office365.us/*",
         "*://*.outlook.cn/*",
         "*://*.outlook.com/*",
-        "*://*.sharepoint.com/*"
+        "*://*.sharepoint.com/*",
+        "*://outlook.cloud.microsoft/*"
       ]
     }
   },
