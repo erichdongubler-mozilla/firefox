@@ -435,7 +435,7 @@ void NavigateEvent::PotentiallyResetFocus() {
       }
     }
     // Step 12
-    document->SetPreviouslyFocusedContent(nullptr);
+    document->SetFocusNavigationStartingPoint(nullptr);
   }
 }
 
