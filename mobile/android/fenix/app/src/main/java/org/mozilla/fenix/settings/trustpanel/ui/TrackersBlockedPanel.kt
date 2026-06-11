@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.compose.MenuGroup
 import org.mozilla.fenix.components.menu.compose.MenuItem
-import org.mozilla.fenix.components.menu.compose.MenuItemState
 import org.mozilla.fenix.components.menu.compose.MenuScaffold
 import org.mozilla.fenix.components.menu.compose.header.SubmenuHeader
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -36,7 +35,7 @@ import org.mozilla.fenix.trackingprotection.TrackingProtectionCategory.CRYPTOMIN
 import org.mozilla.fenix.trackingprotection.TrackingProtectionCategory.FINGERPRINTERS
 import org.mozilla.fenix.trackingprotection.TrackingProtectionCategory.SOCIAL_MEDIA_TRACKERS
 import org.mozilla.fenix.trackingprotection.TrackingProtectionCategory.TRACKING_CONTENT
-import mozilla.components.feature.protection.dashboard.R as protectionDashboardR
+import mozilla.components.ui.icons.R as iconsR
 
 @Composable
 internal fun TrackersBlockedPanel(
@@ -100,10 +99,7 @@ internal fun TrackersBlockedPanel(
                         numberOfTrackersBlockedThisWeek,
                         numberOfTrackersBlockedThisWeek,
                     ),
-                    beforeIconPainter = painterResource(
-                        protectionDashboardR.drawable.firefox_pictorgram_shield_check_rgb_2,
-                    ),
-                    state = MenuItemState.CRITICAL, // ensure no tint is applied for the icon.
+                    beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_shield_checkmark_24),
                     onClick = { onTrackersBlockedThisWeekClicked() },
                 )
             }
