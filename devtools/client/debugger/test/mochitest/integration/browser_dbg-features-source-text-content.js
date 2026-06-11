@@ -63,7 +63,6 @@ const INDEX_PAGE_CONTENT = `<!DOCTYPE html>
             new Function("a\\n", "b" +inFunctionIncrement++, "debugger;")();
           }
         </script>
-        <link rel="stylesheet" href="/style.css">
       </head>
       <body>
         <iframe src="iframe.html"></iframe>
@@ -127,16 +126,9 @@ httpServer.registerPathHandler("/iframe.html", (request, response) => {
   response.setHeader("Content-Type", "text/html");
   response.write(IFRAME_CONTENT);
 });
-
-httpServer.registerPathHandler("/style.css", (request, response) => {
-  response.setHeader("Content-Type", "text/css");
-  response.write("body { background-color: powderblue; }");
-});
 add_task(async function testSourceTextContent() {
   const dbg = await initDebuggerWithAbsoluteURL("about:blank");
-  const isStylesheetsInDebuggerEnabled = Services.prefs.getBoolPref(
-    "devtools.debugger.features.stylesheets-in-debugger"
-  );
+
   const waitForSources = [
     "index.html",
     "normal-script.js",
@@ -145,10 +137,6 @@ add_task(async function testSourceTextContent() {
     "new-function.js",
     "iframe.html",
   ];
-
-  if (isStylesheetsInDebuggerEnabled) {
-    waitForSources.push("style.css");
-  }
 
   // Load the document *once* the debugger is opened
   // in order to avoid having any source being GC-ed.
@@ -210,21 +198,6 @@ add_task(async function testSourceTextContent() {
     "We get an arbitrary content for same-url, the first loaded one"
   );
 
-  if (isStylesheetsInDebuggerEnabled) {
-    await selectSourceFromSourceTreeWithIndex(
-      dbg,
-      "style.css",
-      9,
-      "Select `style.css` in the Main Thread"
-    );
-
-    is(
-      getEditorContent(dbg),
-      `body { background-color: powderblue; }`,
-      "We get the expected content for style.css"
-    );
-  }
-
   const sameUrlSource = findSource(dbg, "same-url.js");
   const sourceActors = dbg.selectors.getSourceActorsForSource(sameUrlSource.id);
 
@@ -242,35 +215,28 @@ add_task(async function testSourceTextContent() {
   await closeTab(dbg, "same-url.js");
 
   info("Click on the iframe tree node to show sources in the iframe");
-
-  await clickElement(
+  await clickElement(dbg, "sourceDirectoryLabel", 9);
+  await waitForSourcesInSourceTree(
     dbg,
-    "sourceDirectoryLabel",
-    isStylesheetsInDebuggerEnabled ? 10 : 9
+    [
+      "index.html",
+      "named-eval.js",
+      "normal-script.js",
+      "slow-loading-script.js",
+      "same-url.js",
+      "iframe.html",
+      "same-url.js",
+      "new-function.js",
+    ],
+    {
+      noExpand: true,
+    }
   );
-  const treeSources = [
-    "index.html",
-    "named-eval.js",
-    "normal-script.js",
-    "slow-loading-script.js",
-    "same-url.js",
-    "iframe.html",
-    "same-url.js",
-    "new-function.js",
-  ];
-
-  if (isStylesheetsInDebuggerEnabled) {
-    treeSources.push("style.css");
-  }
-
-  await waitForSourcesInSourceTree(dbg, treeSources, {
-    noExpand: true,
-  });
 
   await selectSourceFromSourceTreeWithIndex(
     dbg,
     "same-url.js",
-    isStylesheetsInDebuggerEnabled ? 13 : 12,
+    12,
     "Select `same-url.js` in the iframe"
   );
 
@@ -294,11 +260,7 @@ add_task(async function testSourceTextContent() {
 
   info("Click on the worker tree node to show sources in the worker");
 
-  await clickElement(
-    dbg,
-    "sourceDirectoryLabel",
-    isStylesheetsInDebuggerEnabled ? 14 : 13
-  );
+  await clickElement(dbg, "sourceDirectoryLabel", 13);
 
   const workerSources = [
     "index.html",
@@ -312,10 +274,6 @@ add_task(async function testSourceTextContent() {
     "same-url.js",
   ];
 
-  if (isStylesheetsInDebuggerEnabled) {
-    workerSources.push("style.css");
-  }
-
   await waitForSourcesInSourceTree(dbg, workerSources, {
     noExpand: true,
   });
@@ -323,7 +281,7 @@ add_task(async function testSourceTextContent() {
   await selectSourceFromSourceTreeWithIndex(
     dbg,
     "same-url.js",
-    isStylesheetsInDebuggerEnabled ? 16 : 15,
+    15,
     "Select `same-url.js` in the worker"
   );
 

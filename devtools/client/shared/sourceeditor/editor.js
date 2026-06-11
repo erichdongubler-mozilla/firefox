@@ -800,7 +800,6 @@ class Editor extends EventEmitter {
       domEventHandlersCompartment: new Compartment(),
       foldGutterCompartment: new Compartment(),
       languageCompartment: new Compartment(),
-      readOnlyCompartment: new Compartment(),
     };
 
     const { lineContentMarkerEffect, lineContentMarkerExtension } =
@@ -836,9 +835,7 @@ class Editor extends EventEmitter {
       this.#compartments.lineWrapCompartment.of(
         this.config.lineWrapping ? EditorView.lineWrapping : []
       ),
-      this.#compartments.readOnlyCompartment.of(
-        EditorState.readOnly.of(this.config.readOnly)
-      ),
+      EditorState.readOnly.of(this.config.readOnly),
       this.#compartments.lineNumberCompartment.of(
         this.config.lineNumbers ? lineNumbers() : []
       ),
@@ -3600,22 +3597,6 @@ class Editor extends EventEmitter {
       cm.setOption("lineWrapping", value);
     }
     this.config.lineWrapping = value;
-  }
-
-  setReadOnly(readOnly) {
-    const cm = editors.get(this);
-    if (!this.config.cm6) {
-      return;
-    }
-    const {
-      codemirrorState: { EditorState },
-    } = this.#CodeMirror6;
-
-    cm.dispatch({
-      effects: this.#compartments.readOnlyCompartment.reconfigure(
-        EditorState.readOnly.of(readOnly)
-      ),
-    });
   }
 
   /**
