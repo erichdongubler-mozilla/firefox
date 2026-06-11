@@ -276,6 +276,12 @@
     <string name="debug_drawer_sports_widget_tool_mock_server_session">Mock server session</string>
     <string name="debug_drawer_sports_widget_tool_apply_session">Apply</string>
 
+    <!-- Debug drawer Distribution tools -->
+    <string name="debug_drawer_distribution_tools_title">Distribution Tools</string>
+    <string name="debug_drawer_distribution_id" translatable="false">Distribution ID</string>
+    <string name="debug_drawer_play_referrer" translatable="false">Play install referrer</string>
+    <string name="debug_drawer_run_query_provider_test" translatable="false">Run query provider test</string>
+
     <!-- Debug drawer "contextual feature recommendation" (CFR) tools -->
     <!-- The description of the reset CFR section in CFR Tools -->
     <string name="debug_drawer_cfr_tools_reset_cfr_description">Toggle off a CFR to reset it. Toggle on a CFR to mark it as shown.</string>
