@@ -3294,40 +3294,40 @@ double DateLocalTimeToUTC(JSContext* cx, int64_t localTime) {
   return JS::CanonicalizeNaN(js::LocalTimeToUTC(cx, localTime).toDouble());
 }
 
-void DateYearFromTime(JSContext* cx, double utcTime, JS::Value* result) {
+double DateYearFromTime(JSContext* cx, double utcTime) {
   AutoUnsafeCallWithABI unsafe;
 
   auto clipped = JS::TimeClip(utcTime);
   if (!clipped.isValid()) {
-    *result = JS::NaNValue();
-  } else {
-    int64_t localTime = js::UTCToLocalTime(cx, int64_t(clipped.toDouble()));
-    *result = JS::Int32Value(ToYearMonthDay(localTime).year);
+    return JS::GenericNaN();
   }
+
+  int64_t localTime = js::UTCToLocalTime(cx, int64_t(clipped.toDouble()));
+  return double(ToYearMonthDay(localTime).year);
 }
 
-void DateMonthFromTime(JSContext* cx, double utcTime, JS::Value* result) {
+double DateMonthFromTime(JSContext* cx, double utcTime) {
   AutoUnsafeCallWithABI unsafe;
 
   auto clipped = JS::TimeClip(utcTime);
   if (!clipped.isValid()) {
-    *result = JS::NaNValue();
-  } else {
-    int64_t localTime = js::UTCToLocalTime(cx, int64_t(clipped.toDouble()));
-    *result = JS::Int32Value(ToYearMonthDay(localTime).month);
+    return JS::GenericNaN();
   }
+
+  int64_t localTime = js::UTCToLocalTime(cx, int64_t(clipped.toDouble()));
+  return double(ToYearMonthDay(localTime).month);
 }
 
-void DateDateFromTime(JSContext* cx, double utcTime, JS::Value* result) {
+double DateDateFromTime(JSContext* cx, double utcTime) {
   AutoUnsafeCallWithABI unsafe;
 
   auto clipped = JS::TimeClip(utcTime);
   if (!clipped.isValid()) {
-    *result = JS::NaNValue();
-  } else {
-    int64_t localTime = js::UTCToLocalTime(cx, int64_t(clipped.toDouble()));
-    *result = JS::Int32Value(ToYearMonthDay(localTime).day);
+    return JS::GenericNaN();
   }
+
+  int64_t localTime = js::UTCToLocalTime(cx, int64_t(clipped.toDouble()));
+  return double(ToYearMonthDay(localTime).day);
 }
 
 JSObject* NewDateObject(JSContext* cx, double utcTime) {
