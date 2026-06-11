@@ -1129,9 +1129,7 @@ restart:
 
     // These affect visible names in this code, or in other code.
     case ParseNodeKind::ImportDecl:
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     case ParseNodeKind::ImportSourceDecl:
-#endif
     case ParseNodeKind::ExportFromStmt:
     case ParseNodeKind::ExportDefaultStmt:
       MOZ_ASSERT(pn->is<BinaryNode>());
@@ -1145,9 +1143,7 @@ restart:
       return true;
 
     case ParseNodeKind::CallImportExpr:
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     case ParseNodeKind::CallImportSourceExpr:
-#endif
     case ParseNodeKind::CallImportSpec:
       MOZ_ASSERT(pn->is<BinaryNode>());
       *answer = true;
@@ -9055,11 +9051,8 @@ bool BytecodeEmitter::emitOptionalTree(
                                 kind == ParseNodeKind::ImportMetaExpr;
 
       bool isCallExpression = kind == ParseNodeKind::SetThis ||
-                              kind == ParseNodeKind::CallImportExpr
-#  ifdef ENABLE_SOURCE_PHASE_IMPORTS
-                              || kind == ParseNodeKind::CallImportSourceExpr
-#  endif
-          ;
+                              kind == ParseNodeKind::CallImportExpr ||
+                              kind == ParseNodeKind::CallImportSourceExpr;
 
       MOZ_ASSERT(isMemberExpression || isCallExpression,
                  "Unknown ParseNodeKind for OptionalChain");
@@ -12951,11 +12944,9 @@ bool BytecodeEmitter::emitTree(
       MOZ_ASSERT(sc->isModuleContext());
       break;
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     case ParseNodeKind::ImportSourceDecl:
       MOZ_ASSERT(sc->isModuleContext());
       break;
-#endif
 
     case ParseNodeKind::ExportStmt: {
       MOZ_ASSERT(sc->isModuleContext());
@@ -13131,7 +13122,6 @@ bool BytecodeEmitter::emitTree(
       break;
     }
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     case ParseNodeKind::CallImportSourceExpr: {
       BinaryNode* spec = &pn->as<BinaryNode>().right()->as<BinaryNode>();
 
@@ -13153,7 +13143,6 @@ bool BytecodeEmitter::emitTree(
       }
       break;
     }
-#endif
 
     case ParseNodeKind::SetThis:
       if (!emitSetThis(&pn->as<BinaryNode>())) {

@@ -100,12 +100,10 @@ struct ImportValues;
 
 bool IsSharedWasmMemoryObject(JSObject* obj);
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
 [[nodiscard]] bool CompileForESM(JSContext* cx,
                                  const JS::ReadOnlyCompileOptions& options,
                                  const BytecodeSource& source,
                                  MutableHandleObject moduleObj);
-#endif
 
 }  // namespace wasm
 

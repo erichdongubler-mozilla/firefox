@@ -9565,20 +9565,19 @@
     set_spidermonkey_pref: always
 #endif  // ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   # Experimental support for source phase imports in JavaScript.
 - name: javascript.options.experimental.source_phase_imports
   type: RelaxedAtomicBool
   value: false
   mirror: always
   set_spidermonkey_pref: always
+
   # Enable support for <module source> module used in test262
 - name: javascript.options.experimental.source_phase_imports.test262_module_source
   type: bool
   value: false
   mirror: always
   set_spidermonkey_pref: startup
-#endif
 
 - name: javascript.options.experimental.error_capture_stack_trace
   type: bool
