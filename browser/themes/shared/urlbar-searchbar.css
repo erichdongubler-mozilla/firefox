@@ -1445,11 +1445,6 @@ toolbar[inactive="true"] .urlbar,
   position: absolute;
 }
 
-/* Hide footer separator if there are no menuitems between both separators */
-.searchmode-switcher-panel-installed-engine-separator + .searchmode-switcher-panel-footer-separator {
-  display: none;
-}
-
 @media -moz-pref("browser.urlbar.searchModeSwitcher.featureGate") or -moz-pref("browser.urlbar.scotchBonnet.enableOverride") {
   #urlbar[searchmode] > .urlbar-input-container > #urlbar-search-mode-indicator {
     display: none;

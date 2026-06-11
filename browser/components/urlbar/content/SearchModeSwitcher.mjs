@@ -620,6 +620,13 @@ export class SearchModeSwitcher {
       this.#panelList.focusWalker.currentNode = this.#panelList;
       this.#panelList.focusWalker.nextNode();
     }
+
+    // Hide footer separator if there are no menuitems between both separators.
+    footerSeparator.toggleAttribute(
+      "hidden",
+      footerSeparator.previousElementSibling == installedEngineSeparator
+    );
+
     this.#panelList.dispatchEvent(new Event("rebuild"));
   }
 
