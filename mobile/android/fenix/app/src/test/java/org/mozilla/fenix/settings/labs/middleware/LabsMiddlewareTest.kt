@@ -17,8 +17,8 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.R
-import org.mozilla.fenix.settings.labs.FeatureKey
-import org.mozilla.fenix.settings.labs.LabsFeature
+import org.mozilla.fenix.settings.labs.LabsItem
+import org.mozilla.fenix.settings.labs.LabsItemSlugs
 import org.mozilla.fenix.settings.labs.store.DialogState
 import org.mozilla.fenix.settings.labs.store.LabsAction
 import org.mozilla.fenix.settings.labs.store.LabsState
@@ -41,7 +41,7 @@ class LabsMiddlewareTest {
     }
 
     @Test
-    fun `WHEN InitAction is dispatched THEN features are initialized from settings`() = runTest(UnconfinedTestDispatcher()) {
+    fun `WHEN InitAction is dispatched THEN items are initialized from settings`() = runTest(UnconfinedTestDispatcher()) {
         val captureMiddleware = CaptureActionsMiddleware<LabsState, LabsAction>()
         createStore(
             captureMiddleware = captureMiddleware,
@@ -49,12 +49,12 @@ class LabsMiddlewareTest {
         )
 
         // InitAction is dispatched on store creation.
-        // The middleware then dispatches UpdateFeatures.
-        captureMiddleware.assertLastAction(LabsAction.UpdateFeatures::class) { action ->
-            assertEquals(1, action.features.size)
-            val feature = action.features.first()
-            assertEquals(FeatureKey.HOMEPAGE_AS_A_NEW_TAB, feature.key)
-            assertEquals(settings.enableHomepageAsNewTab, feature.enabled)
+        // The middleware then dispatches UpdateLabsItems.
+        captureMiddleware.assertLastAction(LabsAction.UpdateLabsItems::class) { action ->
+            assertEquals(1, action.items.size)
+            val item = action.items.first()
+            assertEquals(LabsItemSlugs.HOMEPAGE_AS_NEW_TAB, item.slug)
+            assertEquals(settings.enableHomepageAsNewTab, item.enrolled)
         }
     }
 
@@ -68,7 +68,7 @@ class LabsMiddlewareTest {
     }
 
     @Test
-    fun `WHEN RestoreDefaults action is dispatched THEN all features are disabled and app restart is requested`() = runTest(UnconfinedTestDispatcher()) {
+    fun `WHEN RestoreDefaults action is dispatched THEN all items are unenrolled and app restart is requested`() = runTest(UnconfinedTestDispatcher()) {
         settings.enableHomepageAsNewTab = true
         val captureMiddleware = CaptureActionsMiddleware<LabsState, LabsAction>()
         val store = createStore(
@@ -83,17 +83,18 @@ class LabsMiddlewareTest {
     }
 
     @Test
-    fun `WHEN ToggleFeature action is dispatched THEN feature is toggled and app restart is requested`() = runTest(UnconfinedTestDispatcher()) {
-        val feature = LabsFeature(
-            key = FeatureKey.HOMEPAGE_AS_A_NEW_TAB,
-            name = R.string.firefox_labs_homepage_as_a_new_tab,
+    fun `WHEN ToggleLabsItem action is dispatched THEN item is toggled and app restart is requested`() = runTest(UnconfinedTestDispatcher()) {
+        val item = LabsItem(
+            slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
+            title = R.string.firefox_labs_homepage_as_a_new_tab,
             description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-            enabled = false,
+            enrolled = false,
+            requiresRestart = true,
         )
         val captureMiddleware = CaptureActionsMiddleware<LabsState, LabsAction>()
         val store = createStore(
             initialState = LabsState(
-                labsFeatures = listOf(feature),
+                labsItems = listOf(item),
                 dialogState = DialogState.Closed,
             ),
             captureMiddleware = captureMiddleware,
@@ -102,7 +103,7 @@ class LabsMiddlewareTest {
 
         assertFalse(settings.enableHomepageAsNewTab)
 
-        store.dispatch(LabsAction.ToggleFeature(feature))
+        store.dispatch(LabsAction.ToggleLabsItem(item))
 
         assertTrue(settings.enableHomepageAsNewTab)
         captureMiddleware.assertLastAction(LabsAction.RestartApplication::class)
