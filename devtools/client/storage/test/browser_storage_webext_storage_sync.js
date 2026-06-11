@@ -1,7 +1,8 @@
-/* Any copyright is dedicated to the Public Domain.
-http://creativecommons.org/publicdomain/zero/1.0/ */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* globals browser BigInt */
+/* globals browser */
 
 "use strict";
 
@@ -12,22 +13,21 @@ add_setup(async function () {
 });
 
 /**
- * Since storage item values are represented in the client as strings in textboxes, not all
- * JavaScript object types supported by the WE storage local API and its IndexedDB backend
- * can be successfully stringified for display in the table much less parsed correctly when
- * the user tries to edit a value in the panel. This test is expected to change over time
- * as more and more value types are supported.
+ * storage.sync serializes item values with JSON before persisting them, so the
+ * panel always receives plain JSON. This test verifies that those values are
+ * displayed as expected in the table and sidebar, and that they can be edited
+ * unless their parsed structure is nested too deeply for the panel to handle.
  */
 add_task(
-  async function test_extension_toolbox_only_supported_values_editable_in_local() {
+  async function test_extension_toolbox_only_supported_values_editable_in_sync() {
     async function background() {
       browser.test.onMessage.addListener(async (msg, ...args) => {
         switch (msg) {
-          case "storage-local-set":
-            await browser.storage.local.set(args[0]);
+          case "storage-sync-set":
+            await browser.storage.sync.set(args[0]);
             break;
-          case "storage-local-get": {
-            const items = await browser.storage.local.get(args[0]);
+          case "storage-sync-get": {
+            const items = await browser.storage.sync.get(args[0]);
             for (const [key, val] of Object.entries(items)) {
               browser.test.assertTrue(
                 val === args[1],
@@ -36,10 +36,10 @@ add_task(
             }
             break;
           }
-          case "storage-local-fireOnChanged": {
+          case "storage-sync-fireOnChanged": {
             const listener = () => {
               browser.storage.onChanged.removeListener(listener);
-              browser.test.sendMessage("storage-local-onChanged");
+              browser.test.sendMessage("storage-sync-onChanged");
             };
             browser.storage.onChanged.addListener(listener);
             // Call an API method implemented in the parent process
@@ -59,6 +59,10 @@ add_task(
     const extension = ExtensionTestUtils.loadExtension({
       manifest: {
         permissions: ["storage"],
+        // The storage.sync API requires an explicit add-on ID.
+        browser_specific_settings: {
+          gecko: { id: "webext-storage-sync@mochitest" },
+        },
       },
       background,
       useAddonManager: "temporary",
@@ -83,14 +87,15 @@ add_task(
         "c",
       ],
       nestedObj: {
-        a: [1, 2, "long-".repeat(10000)],
+        a: [1, 2, "long-".repeat(500)],
         b: 3,
       },
-    };
-
-    const itemsUnsupported = {
+      // Unlike the IndexedDB backend used by storage.local, the storage.sync
+      // backend serializes values with JSON.stringify before storing them (see
+      // ExtensionStorageSync.callRustStoreFn). These complex types are therefore
+      // reduced to plain JSON by the time they reach the panel, which makes them
+      // editable.
       arrBuffer: new ArrayBuffer(8),
-      bigint: BigInt(1),
       blob: new Blob(
         [
           JSON.stringify(
@@ -109,11 +114,14 @@ add_task(
       map: new Map().set("a", "b"),
       regexp: /regexp/,
       set: new Set().add(1).add("a"),
-      undef: undefined,
-      // Arrays and object literals with non-JSONifiable values should not be editable
       arrWithMap: [1, new Map().set("a", 1)],
       objWithArrayBuffer: { a: new ArrayBuffer(8) },
-      // Nested objects or arrays more than 2 levels deep should not be editable
+    };
+
+    // storage.local also exercises BigInt and undefined values here, but neither
+    // can be stored via storage.sync: JSON.stringify throws on a BigInt and silently
+    // drops undefined entries. They are therefore omitted.
+    const itemsUnsupported = {
       deepNestedArr: [[{ a: "b" }, 3], 4],
       deepNestedObj: {
         a: {
@@ -124,23 +132,20 @@ add_task(
 
     info("Add storage items from the extension");
     const allItems = { ...itemsSupported, ...itemsUnsupported };
-    extension.sendMessage("storage-local-fireOnChanged");
-    await extension.awaitMessage("storage-local-fireOnChanged:done");
-    extension.sendMessage("storage-local-set", allItems);
+    extension.sendMessage("storage-sync-fireOnChanged");
+    await extension.awaitMessage("storage-sync-fireOnChanged:done");
+    extension.sendMessage("storage-sync-set", allItems);
     info(
       "Wait for the extension to add storage items and receive the 'onChanged' event"
     );
-    await extension.awaitMessage("storage-local-set:done");
-    await extension.awaitMessage("storage-local-onChanged");
+    await extension.awaitMessage("storage-sync-set:done");
+    await extension.awaitMessage("storage-sync-onChanged");
 
     info("Open the addon toolbox storage panel");
     const { toolbox } = await openStoragePanelForAddon(extension.id);
 
     await selectTreeItem(["extensionStorage", host]);
-    await waitForStorageData(
-      getExtensionStorageUniqueKey("local", "str"),
-      "hi"
-    );
+    await waitForStorageData(getExtensionStorageUniqueKey("sync", "str"), "hi");
 
     info("Verify that values are displayed as expected in the sidebar");
     const expectedRenderedData = {
@@ -164,7 +169,6 @@ add_task(
         ],
         parsed: true,
       },
-      bigint: { sidebarItems: [{ name: "bigint", value: "1n" }] },
       blob: { sidebarItems: [{ name: "blob", value: "Object" }], parsed: true },
       bool: {
         sidebarItems: [{ name: "bool", value: "true" }],
@@ -204,7 +208,8 @@ add_task(
           { name: "nestedObj.a", value: "Array" },
           { name: "nestedObj.a.0", value: "1" },
           { name: "nestedObj.a.1", value: "2" },
-          { name: "nestedObj.a.2", value: "long-".repeat(10000) },
+          // sync storage has a quota, so this value is smaller than in storage.local.
+          { name: "nestedObj.a.2", value: "long-".repeat(500) },
           { name: "nestedObj.b", value: "3" },
         ],
         parsed: true,
@@ -237,15 +242,13 @@ add_task(
       str: {
         sidebarItems: [{ name: "str", value: itemsSupported.str }],
       },
-
-      undef: { sidebarItems: [{ name: "undef", value: "undefined" }] },
     };
 
     for (const [id, { sidebarItems, parsed }] of Object.entries(
       expectedRenderedData
     )) {
       info(`Verify "${id}" entry`);
-      await selectTableItem(getExtensionStorageUniqueKey("local", id));
+      await selectTableItem(getExtensionStorageUniqueKey("sync", id));
       await findVariableViewProperties(sidebarItems, parsed);
     }
 
@@ -253,7 +256,7 @@ add_task(
     let validate = true;
     const newValue = "anotherValue";
     const supportedIds = Object.keys(itemsSupported).map(key =>
-      getExtensionStorageUniqueKey("local", key)
+      getExtensionStorageUniqueKey("sync", key)
     );
 
     for (const id of supportedIds) {
@@ -263,32 +266,22 @@ add_task(
 
     info("Verify that associated values have been changed in the extension");
     extension.sendMessage(
-      "storage-local-get",
+      "storage-sync-get",
       Object.keys(itemsSupported),
       newValue
     );
-    await extension.awaitMessage("storage-local-get:done");
+    await extension.awaitMessage("storage-sync-get:done");
 
     info(
       "Verify that value types not supported by the storage actor are uneditable"
     );
     const expectedValStrings = {
-      arrBuffer: "{}",
-      bigint: "1n",
-      blob: "{}",
-      date: "1970-01-01T00:00:00.000Z",
-      map: "{}",
-      regexp: "{}",
-      set: "{}",
-      undef: "undefined",
-      arrWithMap: "[1,{}]",
-      objWithArrayBuffer: '{"a":{}}',
       deepNestedArr: '[[{"a":"b"},3],4]',
       deepNestedObj: '{"a":{"b":[1,2]}}',
     };
     validate = false;
     for (const id of Object.keys(itemsUnsupported)) {
-      const rowId = getExtensionStorageUniqueKey("local", id);
+      const rowId = getExtensionStorageUniqueKey("sync", id);
       startCellEdit(rowId, "value", validate);
       checkCellUneditable(rowId, "value");
       checkCell(rowId, "value", expectedValStrings[id]);
