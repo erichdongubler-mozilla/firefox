@@ -1559,14 +1559,6 @@ void Decoder::DecodeRFPType(Instruction* instr) {
       }
       break;
     }
-    case RO_FCVTMOD_W_D: {
-      if (instr->Rs2Value() == 0b01000) {
-        Format(instr, "fcvtmod.w.d ['frm] 'rd, 'fs1");
-      } else {
-        UNSUPPORTED_RISCV();
-      }
-      break;
-    }
     case RO_FMV_D_X: {
       if (instr->Funct3Value() == 0b000) {
         if (instr->Rs2Value() == 0b00000) {
@@ -1657,19 +1649,15 @@ void Decoder::DecodeRFPType(Instruction* instr) {
       }
       break;
     }
-    case RO_FCVT_S_H: {
-      if (instr->Rs2Value() == 0b00010) {
-        Format(instr, "fcvt.s.h ['frm] 'fd, 'fs1");
-      } else {
-        UNSUPPORTED_RISCV();
-      }
-      break;
-    }
     case RO_FCVT_H_S: {
       if (instr->Rs2Value() == 0b00000) {
         Format(instr, "fcvt.h.s ['frm] 'fd, 'fs1");
       } else if (instr->Rs2Value() == 0b00001) {
         Format(instr, "fcvt.h.d ['frm] 'fd, 'fs1");
+      } else if (instr->Rs2Value() == 0b00100) {
+        Format(instr, "fround.h ['frm] 'fd, 'fs1");
+      } else if (instr->Rs2Value() == 0b00101) {
+        Format(instr, "froundnx.h ['frm] 'fd, 'fs1");
       } else {
         UNSUPPORTED_RISCV();
       }
@@ -1729,7 +1717,14 @@ void Decoder::DecodeRFPType(Instruction* instr) {
     }
     case RO_FMV_H_X: {
       if (instr->Funct3Value() == 0b000) {
-        Format(instr, "fmv.h.x   'fd, 'rs1");
+        if (instr->Rs2Value() == 0b00000) {
+          Format(instr, "fmv.h.x   'fd, 'rs1");
+        } else if (instr->Rs2Value() == 0b00001) {
+          // fli.h not supported
+          UNSUPPORTED_RISCV();
+        } else {
+          UNSUPPORTED_RISCV();
+        }
       } else {
         UNSUPPORTED_RISCV();
       }
