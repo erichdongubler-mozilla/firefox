@@ -737,8 +737,8 @@ nsresult nsHttpConnection::AddTransaction(nsAHttpTransaction* httpTransaction,
   // Let the transaction know that the tunnel is already established and we
   // don't need to setup the tunnel again.
   if (transCI->UsingConnect()) {
-    MOZ_ASSERT(mProxyConnectResponseHead.isSome());
-    httpTransaction->OnProxyConnectComplete(*mProxyConnectResponseHead);
+    MOZ_ASSERT(mProxyConnectResponseHead);
+    httpTransaction->OnProxyConnectComplete(mProxyConnectResponseHead);
   }
 
   LOG(("nsHttpConnection::AddTransaction [this=%p] for %s%s", this,
@@ -1181,7 +1181,8 @@ void nsHttpConnection::HandleTunnelResponse(
   // the socket connection if using SSL. Finally, we have to wake up the
   // socket write request.
 
-  mProxyConnectResponseHead = Some(responseHead);
+  mProxyConnectResponseHead =
+      MakeRefPtr<ProxyConnectResponseHead>(responseHead);
   if (responseHead.Status() == 200) {
     ChangeState(HttpConnectionState::REQUEST);
   }
@@ -1190,7 +1191,7 @@ void nsHttpConnection::HandleTunnelResponse(
                               : mConnInfo->EndToEndSSL();
   bool onlyConnect = mTransactionCaps & NS_HTTP_CONNECT_ONLY;
 
-  mTransaction->OnProxyConnectComplete(responseHead);
+  mTransaction->OnProxyConnectComplete(mProxyConnectResponseHead);
   if (responseHead.Status() == 200) {
     LOG(("proxy CONNECT succeeded! endtoendssl=%d onlyconnect=%d\n", isHttps,
          onlyConnect));

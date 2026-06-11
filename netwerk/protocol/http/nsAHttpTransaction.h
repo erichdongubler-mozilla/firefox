@@ -35,6 +35,7 @@ class nsAHttpSegmentWriter;
 class nsHttpTransaction;
 class nsHttpRequestHead;
 class nsHttpResponseHead;
+class ProxyConnectResponseHead;
 class nsHttpConnectionInfo;
 class NullHttpTransaction;
 
@@ -236,7 +237,7 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
     return 0;
   }
 
-  virtual void OnProxyConnectComplete(const nsHttpResponseHead& aResponseHead) {
+  virtual void OnProxyConnectComplete(ProxyConnectResponseHead* aResponseHead) {
   }
 
   // TLS handshake saw the server's CertificateRequest / the user's selection.

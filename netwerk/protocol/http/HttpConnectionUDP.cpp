@@ -794,13 +794,14 @@ void HttpConnectionUDP::HandleTunnelResponse(
   MOZ_ASSERT(TunnelSetupInProgress());
   MOZ_ASSERT(mIsInTunnel);
 
-  mProxyConnectResponseHead = Some(responseHead);
+  mProxyConnectResponseHead =
+      MakeRefPtr<ProxyConnectResponseHead>(responseHead);
   if (responseHead.Status() == 200) {
     ChangeState(HttpConnectionState::REQUEST);
   }
 
   bool onlyConnect = mTransactionCaps & NS_HTTP_CONNECT_ONLY;
-  aHttpTransaction->OnProxyConnectComplete(responseHead);
+  aHttpTransaction->OnProxyConnectComplete(mProxyConnectResponseHead);
   if (responseHead.Status() == 200) {
     LOG(("proxy CONNECT succeeded! onlyconnect=%d mIsInTunnel=%d\n",
          onlyConnect, mIsInTunnel));
