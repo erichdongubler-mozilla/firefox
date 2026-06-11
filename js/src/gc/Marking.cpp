@@ -2520,6 +2520,21 @@ static void ClearEphemeronEdges(JSRuntime* rt) {
   }
 }
 
+void GCMarker::deactivate() {
+  if (haveSwappedStacks) {
+    swapMarkStacks();
+  }
+  MOZ_ASSERT(markColor() == MarkColor::Black);
+  MOZ_ASSERT(!haveSwappedStacks);
+
+  state = NotActive;
+
+  MOZ_ASSERT(isDrained());
+  ClearEphemeronEdges(runtime());
+  otherStack.clearAndFreeStack();
+  unmarkGrayStack.clearAndFree();
+}
+
 void GCMarker::stop() {
   MOZ_ASSERT(isDrained());
   MOZ_ASSERT(markColor() == MarkColor::Black);
@@ -2528,37 +2543,22 @@ void GCMarker::stop() {
     MOZ_ASSERT(!haveSwappedStacks);
     return;
   }
-  state = NotActive;
 
-  if (haveSwappedStacks) {
-    swapMarkStacks();
-  }
-  otherStack.clearAndFreeStack();
-  ClearEphemeronEdges(runtime());
-  unmarkGrayStack.clearAndFree();
+  deactivate();
 }
 
 void GCMarker::reset() {
   state = NotActive;
 
-  setMarkColor(MarkColor::Black);
-  if (haveSwappedStacks) {
-    swapMarkStacks();
-  }
-
   stack.clearAndResetCapacity();
-  otherStack.clearAndFreeStack();
-  ClearEphemeronEdges(runtime());
+  setMarkColor(MarkColor::Black);
 
 #ifdef JS_GC_CONCURRENT_MARKING
   blackMainThreadBuffer_.ref().clearAndFree();
   grayMainThreadBuffer_.ref().clearAndFree();
 #endif
 
-  MOZ_ASSERT(isDrained());
-  MOZ_ASSERT(!haveSwappedStacks);
-
-  unmarkGrayStack.clearAndFree();
+  deactivate();
 }
 
 void GCMarker::setMarkColor(gc::MarkColor newColor) {
