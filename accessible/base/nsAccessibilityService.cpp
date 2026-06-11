@@ -446,10 +446,12 @@ static const XULMarkupMapInfo sXULMarkupMapList[] = {
 // nsAccessibilityService
 ////////////////////////////////////////////////////////////////////////////////
 
-nsAccessibilityService* nsAccessibilityService::gAccessibilityService = nullptr;
-ApplicationAccessible* nsAccessibilityService::gApplicationAccessible = nullptr;
-xpcAccessibleApplication* nsAccessibilityService::gXPCApplicationAccessible =
-    nullptr;
+StaticRefPtr<nsAccessibilityService>
+    nsAccessibilityService::gAccessibilityService;
+StaticRefPtr<ApplicationAccessible>
+    nsAccessibilityService::gApplicationAccessible;
+StaticRefPtr<xpcAccessibleApplication>
+    nsAccessibilityService::gXPCApplicationAccessible;
 uint32_t nsAccessibilityService::gConsumers = 0;
 uint64_t nsAccessibilityService::gCacheDomains =
     nsAccessibilityService::kDefaultCacheDomains;
@@ -1699,15 +1701,13 @@ bool nsAccessibilityService::Init(uint64_t aCacheDomains, uint32_t aConsumer) {
 #endif
 
   gAccessibilityService = this;
-  NS_ADDREF(gAccessibilityService);  // will release in Shutdown()
 
   if (XRE_IsParentProcess()) {
-    gApplicationAccessible = new ApplicationAccessibleWrap();
+    gApplicationAccessible = MakeRefPtr<ApplicationAccessibleWrap>();
   } else {
-    gApplicationAccessible = new ApplicationAccessible();
+    gApplicationAccessible = MakeRefPtr<ApplicationAccessible>();
   }
 
-  NS_ADDREF(gApplicationAccessible);  // will release in Shutdown()
   CrashReporter::RecordAnnotationCString(
       CrashReporter::Annotation::Accessibility, "Active");
 
@@ -1793,10 +1793,7 @@ void nsAccessibilityService::Shutdown() {
   if (XRE_IsParentProcess()) PlatformShutdown();
 
   gApplicationAccessible->Shutdown();
-  NS_RELEASE(gApplicationAccessible);
   gApplicationAccessible = nullptr;
-
-  NS_IF_RELEASE(gXPCApplicationAccessible);
   gXPCApplicationAccessible = nullptr;
 
 #if defined(ANDROID)
@@ -1804,7 +1801,6 @@ void nsAccessibilityService::Shutdown() {
   // in the UI thread, as the request may depend on state from the service.
   MonitorAutoLock mal(GetAndroidMonitor());
 #endif
-  NS_RELEASE(gAccessibilityService);
   gAccessibilityService = nullptr;
 
   if (observerService) {
@@ -2224,9 +2220,8 @@ xpcAccessibleApplication* XPCApplicationAcc() {
   if (!nsAccessibilityService::gXPCApplicationAccessible &&
       nsAccessibilityService::gApplicationAccessible) {
     nsAccessibilityService::gXPCApplicationAccessible =
-        new xpcAccessibleApplication(
+        MakeRefPtr<xpcAccessibleApplication>(
             nsAccessibilityService::gApplicationAccessible);
-    NS_ADDREF(nsAccessibilityService::gXPCApplicationAccessible);
   }
 
   return nsAccessibilityService::gXPCApplicationAccessible;
