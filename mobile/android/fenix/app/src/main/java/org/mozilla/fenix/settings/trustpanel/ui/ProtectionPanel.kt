@@ -123,14 +123,19 @@ internal fun ProtectionPanel(
             )
         },
     ) {
-        TrackingProtectionMenuGroup(
+        TrackingProtectionHeader(
             websiteIsSecured = websiteInfoState.isSecured,
             isLocalPdf = isLocalPdf,
             isTrackingProtectionEnabled = isTrackingProtectionEnabled,
             isGlobalTrackingProtectionEnabled = isGlobalTrackingProtectionEnabled,
-            isSiteProtectionEnabled = isSiteProtectionEnabled,
             numberOfTrackersBlocked = numberOfTrackersBlocked,
             onTrackerBlockedMenuClick = onTrackerBlockedMenuClick,
+        )
+
+        TrackingProtectionMenuGroup(
+            isLocalPdf = isLocalPdf,
+            isGlobalTrackingProtectionEnabled = isGlobalTrackingProtectionEnabled,
+            isSiteProtectionEnabled = isSiteProtectionEnabled,
             onTrackingProtectionToggleClick = onTrackingProtectionToggleClick,
         )
 
@@ -181,27 +186,32 @@ internal fun ProtectionPanel(
     }
 }
 
-@Suppress("LongParameterList")
 @Composable
-private fun TrackingProtectionMenuGroup(
-    websiteIsSecured: Boolean,
+private fun TrackingProtectionHeader(
     isLocalPdf: Boolean,
-    isTrackingProtectionEnabled: Boolean,
     isGlobalTrackingProtectionEnabled: Boolean,
-    isSiteProtectionEnabled: Boolean,
+    websiteIsSecured: Boolean,
+    isTrackingProtectionEnabled: Boolean,
     numberOfTrackersBlocked: Int,
     onTrackerBlockedMenuClick: () -> Unit,
+) {
+    ProtectionPanelBanner(
+        isSecured = websiteIsSecured || isLocalPdf,
+        isTrackingProtectionEnabled = isGlobalTrackingProtectionEnabled &&
+            (isTrackingProtectionEnabled || isLocalPdf),
+        numberOfTrackersBlocked = numberOfTrackersBlocked,
+        onClick = onTrackerBlockedMenuClick.takeIf { numberOfTrackersBlocked > 0 },
+    )
+}
+
+@Composable
+private fun TrackingProtectionMenuGroup(
+    isLocalPdf: Boolean,
+    isGlobalTrackingProtectionEnabled: Boolean,
+    isSiteProtectionEnabled: Boolean,
     onTrackingProtectionToggleClick: () -> Unit,
 ) {
     MenuGroup {
-        ProtectionPanelBanner(
-            isSecured = websiteIsSecured || isLocalPdf,
-            isTrackingProtectionEnabled = isGlobalTrackingProtectionEnabled &&
-                    (isTrackingProtectionEnabled || isLocalPdf),
-            numberOfTrackersBlocked = numberOfTrackersBlocked,
-            onClick = onTrackerBlockedMenuClick.takeIf { numberOfTrackersBlocked > 0 },
-        )
-
         if (!isLocalPdf) {
             TrackingProtectionToggleItem(
                 isSiteProtectionEnabled = isSiteProtectionEnabled,
@@ -471,7 +481,6 @@ private fun ProtectionPanelGradientBanner(
     }
     Box(
         modifier = Modifier
-            .padding(bottom = FirefoxTheme.layout.space.static200)
             .clip(MaterialTheme.shapes.extraLarge)
             .background(
                 brush = Brush.horizontalGradient(listOf(stop2, stop3)),
