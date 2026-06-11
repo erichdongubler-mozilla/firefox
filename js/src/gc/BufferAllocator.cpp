@@ -1379,6 +1379,7 @@ void BufferAllocator::sweepForMajorCollection(bool shouldDecommit) {
   while (!largeTenuredAllocsToSweep.ref().isEmpty()) {
     LargeBuffer* buffer = largeTenuredAllocsToSweep.ref().popFirst();
     if (isLargeTenuredMarked(buffer)) {
+      buffer->isMarked = false;
       sweptLargeAllocs.pushBack(buffer);
     } else {
       PushLargeAllocToFree(&largeAllocsToFree, buffer);
@@ -1466,18 +1467,18 @@ void BufferAllocator::abortMajorSweeping(const AutoLock& lock) {
     majorFinishedWhileMinorSweeping = true;
   }
 
-  for (BufferChunk* chunk : tenuredChunksToSweep.ref()) {
-    MOZ_ASSERT(chunk->ownsFreeLists);
-
-    // Clear mark bits for chunks we didn't end up sweeping.
-    clearChunkMarkBits(chunk);
-  }
-
+  // Clear mark bits for chunks we didn't end up sweeping.
   while (BufferChunk* chunk = tenuredChunksToSweep.ref().popFirst()) {
+    MOZ_ASSERT(chunk->ownsFreeLists);
+    clearChunkMarkBits(chunk);
     availableTenuredChunks.ref().pushBack(chunk);
   }
 
-  largeTenuredAllocs.ref().prepend(std::move(largeTenuredAllocsToSweep.ref()));
+  // Clear mark bits for large allocations we didn't end up sweeping.
+  while (LargeBuffer* buffer = largeTenuredAllocsToSweep.ref().popLast()) {
+    buffer->isMarked = false;
+    largeTenuredAllocs.ref().pushFront(buffer);
+  }
 
   majorState = State::NotCollecting;
 }
@@ -3368,19 +3369,17 @@ bool BufferAllocator::markLargeTenuredBuffer(LargeBuffer* buffer) {
     return false;
   }
 
-  // Bug 1961755: This method can return false positives. A fully atomic version
-  // would be preferable in this case.
-  auto* region = SmallBufferRegion::from(buffer);
-  return region->setMarked(buffer);
+  // Also mark the allocation containing the LargeBuffer.
+  markSmallTenuredAlloc(buffer);
+
+  return buffer->isMarked.compareExchange(false, true);
 }
 
 bool BufferAllocator::isLargeTenuredMarked(LargeBuffer* buffer) {
   MOZ_ASSERT(!buffer->isNurseryOwned);
   MOZ_ASSERT(buffer->zoneFromAnyThread() == zone);
   MOZ_ASSERT(!buffer->isInList());
-
-  auto* region = SmallBufferRegion::from(buffer);
-  return region->isMarked(buffer);
+  return buffer->isMarked;
 }
 
 void BufferAllocator::freeLarge(void* alloc) {

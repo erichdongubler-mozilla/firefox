@@ -492,6 +492,7 @@ struct BufferAllocator::FreeRegion
 struct LargeBuffer : public SlimLinkedListElement<LargeBuffer> {
   void* alloc;
   size_t bytes;
+  mozilla::Atomic<bool, mozilla::Relaxed> isMarked;
   bool isNurseryOwned;
   bool allocatedDuringCollection = false;
 
