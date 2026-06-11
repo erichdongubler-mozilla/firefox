@@ -297,4 +297,85 @@ class HomeActivityTest {
 
         assertNull(activity.createOpenOptionsPageDirections(activeOptionsPage))
     }
+
+    @Test
+    fun `GIVEN the user is in the extension management UI WHEN opening an options page THEN suppress the request and clear activeOptionsPage`() {
+        val activeOptionsPage = ActiveOptionsPage(
+            instanceId = "instanceId",
+            url = "moz-extension://extensionId/options.html",
+            name = "Test extension",
+        )
+        val extension = WebExtensionState(
+            id = "extensionId",
+            activeOptionsPage = activeOptionsPage,
+        )
+        val browserStore = BrowserStore(
+            BrowserState(extensions = mapOf(extension.id to extension)),
+        )
+        every { activity.applicationContext } returns testContext
+        every { testContext.components.core.store } returns browserStore
+
+        val suppressed = activity.suppressOptionsPageInAddonManagement(
+            currentDestinationId = R.id.installedAddonDetailsFragment,
+            activeOptionsPage = activeOptionsPage,
+        )
+
+        assertTrue(suppressed)
+        assertNull(browserStore.state.extensions[extension.id]?.activeOptionsPage)
+    }
+
+    @Test
+    fun `GIVEN the user is on an addon options page WHEN opening an options page THEN suppress the request and clear activeOptionsPage`() {
+        val activeOptionsPage = ActiveOptionsPage(
+            instanceId = "instanceId",
+            url = "moz-extension://extensionId/options.html",
+            name = "Test extension",
+        )
+        val extension = WebExtensionState(
+            id = "extensionId",
+            activeOptionsPage = activeOptionsPage,
+        )
+        val browserStore = BrowserStore(
+            BrowserState(extensions = mapOf(extension.id to extension)),
+        )
+        every { activity.applicationContext } returns testContext
+        every { testContext.components.core.store } returns browserStore
+
+        val suppressed = activity.suppressOptionsPageInAddonManagement(
+            currentDestinationId = R.id.addonInternalSettingsFragment,
+            activeOptionsPage = activeOptionsPage,
+        )
+
+        assertTrue(suppressed)
+        assertNull(browserStore.state.extensions[extension.id]?.activeOptionsPage)
+    }
+
+    @Test
+    fun `GIVEN the user is not in the extension management UI WHEN opening an options page THEN do not suppress the request`() {
+        val activeOptionsPage = ActiveOptionsPage(
+            instanceId = "instanceId",
+            url = "moz-extension://extensionId/options.html",
+            name = "Test extension",
+        )
+        val extension = WebExtensionState(
+            id = "extensionId",
+            activeOptionsPage = activeOptionsPage,
+        )
+        val browserStore = BrowserStore(
+            BrowserState(extensions = mapOf(extension.id to extension)),
+        )
+        every { activity.applicationContext } returns testContext
+        every { testContext.components.core.store } returns browserStore
+
+        val suppressed = activity.suppressOptionsPageInAddonManagement(
+            currentDestinationId = R.id.browserFragment,
+            activeOptionsPage = activeOptionsPage,
+        )
+
+        assertFalse(suppressed)
+        assertEquals(
+            activeOptionsPage,
+            browserStore.state.extensions[extension.id]?.activeOptionsPage,
+        )
+    }
 }

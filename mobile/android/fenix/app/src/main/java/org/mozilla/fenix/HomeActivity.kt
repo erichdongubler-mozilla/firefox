@@ -54,6 +54,7 @@ import kotlinx.coroutines.withContext
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.browser.state.action.MediaSessionAction
 import mozilla.components.browser.state.action.SearchAction
+import mozilla.components.browser.state.action.WebExtensionAction
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.selector.getNormalOrPrivateTabs
 import mozilla.components.browser.state.selector.selectedTab
@@ -1466,16 +1467,37 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
     }
 
     private fun openOptionsPage(activeOptionsPage: ActiveOptionsPage) {
-        createOpenOptionsPageDirections(activeOptionsPage)?.let {
-            navHost.navController.navigate(it)
+        if (!suppressOptionsPageInAddonManagement(
+                navHost.navController.currentDestination?.id,
+                activeOptionsPage,
+            )
+        ) {
+            createOpenOptionsPageDirections(activeOptionsPage)?.let {
+                navHost.navController.navigate(it)
+            }
         }
     }
 
     @VisibleForTesting
-    internal fun createOpenOptionsPageDirections(activeOptionsPage: ActiveOptionsPage): NavDirections? {
-        val extensionState = components.core.store.state.extensions.values.firstOrNull {
-            it.activeOptionsPage == activeOptionsPage
+    internal fun suppressOptionsPageInAddonManagement(
+        currentDestinationId: Int?,
+        activeOptionsPage: ActiveOptionsPage,
+    ): Boolean {
+        if (currentDestinationId !in ADDON_MANAGEMENT_DESTINATIONS) {
+            return false
         }
+        findExtensionForOptionsPage(activeOptionsPage)
+            ?.let {
+                components.core.store.dispatch(
+                    WebExtensionAction.ClearOptionsPageSession(it.id),
+                )
+            }
+        return true
+    }
+
+    @VisibleForTesting
+    internal fun createOpenOptionsPageDirections(activeOptionsPage: ActiveOptionsPage): NavDirections? {
+        val extensionState = findExtensionForOptionsPage(activeOptionsPage)
 
         return extensionState?.let {
             NavGraphDirections.actionGlobalWebExtensionActionOptionsPageFragment(
@@ -1485,6 +1507,10 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             )
         }
     }
+
+    private fun findExtensionForOptionsPage(activeOptionsPage: ActiveOptionsPage): WebExtensionState? =
+        components.core.store.state.extensions.values
+            .firstOrNull { it.activeOptionsPage == activeOptionsPage }
 
     /**
      * The root container is null at this point, so let the HomeActivity know that
@@ -1617,5 +1643,13 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         private const val PWA_RECENTLY_USED_THRESHOLD = DateUtils.DAY_IN_MILLIS * 30L
 
         private const val REQUEST_CODE_CAMERA_PERMISSIONS = 1
+
+        private val ADDON_MANAGEMENT_DESTINATIONS = setOf(
+            R.id.addonsManagementFragment,
+            R.id.installedAddonDetailsFragment,
+            R.id.addonInternalSettingsFragment,
+            R.id.addonDetailsFragment,
+            R.id.addonPermissionsDetailFragment,
+        )
     }
 }
