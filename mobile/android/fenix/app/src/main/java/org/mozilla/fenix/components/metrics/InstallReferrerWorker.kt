@@ -13,7 +13,9 @@ import com.android.installreferrer.api.InstallReferrerClient
 import com.android.installreferrer.api.InstallReferrerStateListener
 import kotlinx.coroutines.suspendCancellableCoroutine
 import mozilla.components.support.base.log.logger.Logger
+import mozilla.telemetry.glean.Glean
 import mozilla.telemetry.glean.GleanTimerId
+import mozilla.telemetry.glean.internal.AttributionMetrics
 import org.json.JSONException
 import org.json.JSONObject
 import org.mozilla.fenix.GleanMetrics.MetaAttribution
@@ -307,6 +309,16 @@ data class UTMParams(
         PlayStoreAttribution.campaign.set(campaign)
         PlayStoreAttribution.content.set(content)
         PlayStoreAttribution.term.set(term)
+
+        Glean.updateAttribution(
+            AttributionMetrics(
+                source = source,
+                medium = medium,
+                campaign = campaign,
+                term = term,
+                content = content,
+            ),
+        )
     }
 }
 
