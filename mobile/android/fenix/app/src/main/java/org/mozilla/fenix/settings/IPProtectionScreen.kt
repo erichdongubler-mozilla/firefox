@@ -8,6 +8,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -139,24 +140,10 @@ fun IPProtectionScreen(
 
                     VpnLocationSection()
                 } else {
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    val text = if (syncingData) {
-                        stringResource(R.string.ip_protection_connecting)
-                    } else {
-                        stringResource(R.string.ip_protection_get_started)
-                    }
-
-                    FilledButton(
-                        text = text,
-                        enabled = !syncingData,
-                        modifier = Modifier
-                            .padding(horizontal = FirefoxTheme.layout.space.static200)
-                            .fillMaxWidth(),
-                        onClick = onGetStartedClick,
+                    GetStartedSection(
+                        syncingData = syncingData,
+                        onGetStartedClick = onGetStartedClick,
                     )
-
-                    Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static400))
                 }
             }
         }
@@ -279,6 +266,31 @@ private fun DataLimitSection(
                 vertical = FirefoxTheme.layout.space.static150,
             ),
     )
+}
+
+@Composable
+private fun ColumnScope.GetStartedSection(
+    syncingData: Boolean,
+    onGetStartedClick: () -> Unit,
+) {
+    Spacer(modifier = Modifier.weight(1f))
+
+    val text = if (syncingData) {
+        stringResource(R.string.ip_protection_connecting)
+    } else {
+        stringResource(R.string.ip_protection_get_started)
+    }
+
+    FilledButton(
+        text = text,
+        enabled = !syncingData,
+        modifier = Modifier
+            .padding(horizontal = FirefoxTheme.layout.space.static200)
+            .fillMaxWidth(),
+        onClick = onGetStartedClick,
+    )
+
+    Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static400))
 }
 
 @Composable
