@@ -19,10 +19,6 @@
 
 namespace mozilla::dom {
 
-CSSMathValue::CSSMathValue(nsCOMPtr<nsISupports> aParent)
-    : CSSNumericValue(std::move(aParent), NumericValueType::MathValue),
-      mMathValueType(MathValueType::Uninitialized) {}
-
 CSSMathValue::CSSMathValue(nsCOMPtr<nsISupports> aParent,
                            MathValueType aMathValueType)
     : CSSNumericValue(std::move(aParent), NumericValueType::MathValue),
@@ -113,10 +109,6 @@ CSSMathOperator CSSMathValue::Operator() const {
 
     case MathValueType::MathSum:
       return CSSMathOperator::Sum;
-
-    case MathValueType::Uninitialized:
-      // This is only a temporary variant, return Sum for now.
-      return CSSMathOperator::Sum;
   }
   MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Bad math value type!");
 }
@@ -203,9 +195,6 @@ void CSSMathValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
       mathSum.ToCssTextWithProperty(aPropertyId, aContext, aDest);
       break;
     }
-
-    case MathValueType::Uninitialized:
-      break;
   }
 }
 
@@ -267,9 +256,6 @@ Maybe<StyleMathValue> CSSMathValue::ToStyleMathValue() const {
 
       return Some(StyleMathValue::Sum(mathSum.ToStyleMathSum()));
     }
-
-    case MathValueType::Uninitialized:
-      return Nothing();
   }
   MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Bad math value type!");
 }

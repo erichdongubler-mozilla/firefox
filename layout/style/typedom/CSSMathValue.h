@@ -33,7 +33,6 @@ enum class CSSMathOperator : uint8_t;
 class CSSMathValue : public CSSNumericValue {
  public:
   enum class MathValueType {
-    Uninitialized,  // TODO: Remove once the implementation is complete.
     MathSum,
     MathProduct,
     MathNegate,
@@ -42,8 +41,6 @@ class CSSMathValue : public CSSNumericValue {
     MathMax,
     MathClamp,
   };
-
-  explicit CSSMathValue(nsCOMPtr<nsISupports> aParent);
 
   CSSMathValue(nsCOMPtr<nsISupports> aParent, MathValueType aMathValueType);
 
