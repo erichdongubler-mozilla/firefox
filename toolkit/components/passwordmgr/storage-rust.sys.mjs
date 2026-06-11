@@ -59,19 +59,21 @@ const loginInfoToLoginEntry = loginInfo =>
 
 // Convert a LoginInfo to a LoginEntryWithMeta, to be used for migrating
 // records between legacy and Rust storage.
-const loginInfoToLoginEntryWithMeta = loginInfo =>
-  new LoginEntryWithMeta({
+const loginInfoToLoginEntryWithMeta = loginInfo => {
+  const now = Date.now();
+  return new LoginEntryWithMeta({
     entry: loginInfoToLoginEntry(loginInfo),
     meta: new LoginMeta({
       id: loginInfo.guid || Services.uuid.generateUUID().toString(),
-      timesUsed: loginInfo.timesUsed,
-      timeCreated: loginInfo.timeCreated,
-      timeLastUsed: loginInfo.timeLastUsed,
-      timePasswordChanged: loginInfo.timePasswordChanged,
+      timesUsed: loginInfo.timesUsed || 1,
+      timeCreated: loginInfo.timeCreated || now,
+      timeLastUsed: loginInfo.timeLastUsed || now,
+      timePasswordChanged: loginInfo.timePasswordChanged || now,
       timeLastBreachAlertDismissed:
         loginInfo.timeLastBreachAlertDismissed || null,
     }),
   });
+};
 
 // Convert a Login instance, as returned from Rust Logins, to a LoginInfo
 const loginToLoginInfo = login => {
@@ -430,6 +432,9 @@ export class LoginManagerRustStorage {
     );
 
     if (this.#isActive) {
+      Glean.pwmgr.numSavedPasswords.set(
+        await this.countLoginsAsync("", "", "")
+      );
       for (const item of result) {
         const login = continueOnDuplicates ? item.login : item;
         if (login) {
@@ -690,6 +695,9 @@ export class LoginManagerRustStorage {
     }
 
     if (this.#isActive) {
+      Glean.pwmgr.numSavedPasswords.set(
+        await this.countLoginsAsync("", "", "")
+      );
       lazy.LoginHelper.notifyStorageChanged("removeLogin", login);
     }
   }
