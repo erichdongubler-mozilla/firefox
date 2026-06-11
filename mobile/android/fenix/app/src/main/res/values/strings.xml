@@ -2936,6 +2936,12 @@
     <string name="ip_protection_onboarding_body">%1$s by hiding your location, even on public Wi-Fi. Get %2$d GB free every month.</string>
     <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
     <string name="ip_protection_onboarding_body_link">Browse with extra protection</string>
+    <!-- The body of the VPN onboarding card for a promotion that provides unlimited data bandwidth for a certain time.
+      %1$s is a localized date (for example "Jun 9") indicating the end of the promotional period.
+      %2$s is a link using ip_protection_onboarding_body_link_promo (“Learn more”) as text. It links to a support article about VPN on Firefox. -->
+    <string name="ip_protection_onboarding_body_promo">Turn it on to make your browsing more private and harder to trace. Try it now to get unlimited bandwidth through %1$s. %2$s</string>
+    <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+    <string name="ip_protection_onboarding_body_link_promo">Learn more</string>
     <!-- Label for the dismiss button on the onboarding bottom sheet. -->
     <string name="ip_protection_onboarding_not_now_button">Not now</string>
     <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
