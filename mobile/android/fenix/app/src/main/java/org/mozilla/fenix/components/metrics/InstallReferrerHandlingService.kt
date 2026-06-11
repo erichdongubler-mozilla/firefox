@@ -155,17 +155,19 @@ class InstallReferrerHandlingService(
         private const val REDDIT_EXTERNAL_CLICK_ID_PREFIX = "reddit_"
         private const val X_TWITTER_UTM_SOURCE = "x"
 
-        @VisibleForTesting
-        internal fun isTikTokAttribution(installReferrerResponse: String?): Boolean {
-            if (installReferrerResponse.isNullOrBlank()) return false
-
-            val decoded = try {
+        private fun decodeInstallReferrer(installReferrerResponse: String): String =
+            try {
                 URLDecoder.decode(installReferrerResponse, "UTF-8")
             } catch (e: IllegalArgumentException) {
-                Logger.error("isTikTokAttribution() - bad installReferrerResponse", e)
+                Logger.error("decodeInstallReferrer() - bad installReferrerResponse", e)
 
                 installReferrerResponse
             }
+
+        @VisibleForTesting
+        internal fun isTikTokAttribution(installReferrerResponse: String?): Boolean {
+            if (installReferrerResponse.isNullOrBlank()) return false
+            val decoded = decodeInstallReferrer(installReferrerResponse)
 
             val clickId = UTMParams.parseInstallReferrer(decoded)[ADJUST_EXTERNAL_CLICK_ID]
                 ?: return false
@@ -176,14 +178,7 @@ class InstallReferrerHandlingService(
         @VisibleForTesting
         internal fun isRedditAttribution(installReferrerResponse: String?): Boolean {
             if (installReferrerResponse.isNullOrBlank()) return false
-
-            val decoded = try {
-                URLDecoder.decode(installReferrerResponse, "UTF-8")
-            } catch (e: IllegalArgumentException) {
-                Logger.error("isRedditAttribution() - bad installReferrerResponse", e)
-
-                installReferrerResponse
-            }
+            val decoded = decodeInstallReferrer(installReferrerResponse)
 
             val clickId = UTMParams.parseInstallReferrer(decoded)[ADJUST_EXTERNAL_CLICK_ID]
                 ?: return false
@@ -194,14 +189,7 @@ class InstallReferrerHandlingService(
         @VisibleForTesting
         internal fun isXTwitterAttribution(installReferrerResponse: String?): Boolean {
             if (installReferrerResponse.isNullOrBlank()) return false
-
-            val decoded = try {
-                URLDecoder.decode(installReferrerResponse, "UTF-8")
-            } catch (e: IllegalArgumentException) {
-                Logger.error("isXTwitterAttribution() - bad installReferrerResponse", e)
-
-                installReferrerResponse
-            }
+            val decoded = decodeInstallReferrer(installReferrerResponse)
 
             return UTMParams.parseUTMParameters(decoded).source.equals(X_TWITTER_UTM_SOURCE, ignoreCase = true)
         }
