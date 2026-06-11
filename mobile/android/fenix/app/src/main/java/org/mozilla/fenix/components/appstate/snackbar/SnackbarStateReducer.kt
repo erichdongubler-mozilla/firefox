@@ -20,6 +20,10 @@ internal object SnackbarStateReducer {
             snackbarState = SnackbarState.ShowSnackbar(action.title, action.duration),
         )
 
+        is SnackbarAction.ShowIPProtectionDataLimitReachedSnackbar -> state.copy(
+            snackbarState = SnackbarState.IPProtectionDataLimitReached(action.message),
+        )
+
         is SnackbarAction.SnackbarShown,
         is SnackbarAction.Reset,
         -> state.copy(

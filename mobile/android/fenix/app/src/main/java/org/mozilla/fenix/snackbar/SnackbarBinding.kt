@@ -31,6 +31,7 @@ import org.mozilla.fenix.bookmarks.BookmarksGlobalResultReport
 import org.mozilla.fenix.bookmarks.friendlyRootTitle
 import org.mozilla.fenix.browser.BrowserFragmentDirections
 import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.ShareAction
 import org.mozilla.fenix.components.appstate.AppAction.SnackbarAction
@@ -95,6 +96,22 @@ class SnackbarBinding(
                             text = state.title,
                             duration = state.duration,
                         )
+
+                        appStore.dispatch(SnackbarAction.SnackbarShown)
+                    }
+
+                    is SnackbarState.IPProtectionDataLimitReached -> {
+                        snackbarDelegate.show(
+                            text = state.message,
+                            duration = Snackbar.LENGTH_LONG,
+                            action = context.getString(R.string.ip_protection_data_limit_reached_snackbar_action),
+                        ) {
+                            navController.navigate(
+                                BrowserFragmentDirections.actionGlobalIpProtectionFragment(
+                                    entrypoint = FenixFxAEntryPoint.IPProtectionSettings,
+                                ),
+                            )
+                        }
 
                         appStore.dispatch(SnackbarAction.SnackbarShown)
                     }

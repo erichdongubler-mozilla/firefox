@@ -511,6 +511,13 @@ sealed class AppAction : Action {
          * @property duration The length of time for the snackbar to show.
          */
         data class ShowSnackbar(val title: String, val duration: Int = LENGTH_SHORT) : SnackbarAction()
+
+        /**
+         * [SnackbarAction] dispatched to show the IP protection data-limit-reached snackbar.
+         *
+         * @property message The message to display in the snackbar.
+         */
+        data class ShowIPProtectionDataLimitReachedSnackbar(val message: String) : SnackbarAction()
     }
 
     /**

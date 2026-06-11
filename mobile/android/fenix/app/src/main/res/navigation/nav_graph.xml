@@ -128,6 +128,9 @@
         android:id="@+id/action_global_downloadsFragment"
         app:destination="@id/downloadsFragment" />
     <action
+      android:id="@+id/action_global_IpProtectionFragment"
+      app:destination="@id/ipProtectionFragment" />
+    <action
         android:id="@+id/action_global_accountProblemFragment"
         app:destination="@id/accountProblemFragment" />
     <action

@@ -53,8 +53,8 @@ class IPProtectionInfoPrompterTest {
             testDispatcher.scheduler.advanceUntilIdle()
 
             val snackbarState = appStore.state.snackbarState
-            assertIs<SnackbarState.ShowSnackbar>(snackbarState)
-            assertEquals(errorMessages.dataLimitReached, snackbarState.title)
+            assertIs<SnackbarState.IPProtectionDataLimitReached>(snackbarState)
+            assertEquals(errorMessages.dataLimitReached, snackbarState.message)
         }
 
     @Test
