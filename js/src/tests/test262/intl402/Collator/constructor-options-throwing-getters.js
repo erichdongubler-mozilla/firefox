@@ -2,9 +2,8 @@
 // This code is governed by the BSD license found in the LICENSE file.
 
 /*---
-esid: sec-intl.collator
+esid: sec-initializecollator
 description: Checks the propagation of exceptions from the options for the Collator constructor.
-locale: [en]
 ---*/
 
 function CustomError() {}

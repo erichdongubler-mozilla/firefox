@@ -16,7 +16,7 @@ const expectedOptionsReading = [
   "call options.overflow.toString",
 ];
 
-const expectedOpsForPrimitiveOptions = [
+const expected = [
   // GetTemporalCalendarSlotValueWithISODefault
   "get fields.calendar",
   // PrepareTemporalFields
@@ -50,8 +50,7 @@ const expectedOpsForPrimitiveOptions = [
   "get fields.year",
   "get fields.year.valueOf",
   "call fields.year.valueOf",
-];
-const expected = expectedOpsForPrimitiveOptions.concat(expectedOptionsReading);
+].concat(expectedOptionsReading);
 const actual = [];
 
 const fields = TemporalHelpers.propertyBagObserver(actual, {
@@ -95,13 +94,5 @@ actual.splice(0);
 
 Temporal.PlainDateTime.from("2001-05-02", options);
 assert.compareArray(actual, expectedOptionsReading, "order of operations when parsing a string");
-
-actual.splice(0);
-
-assert.throws(TypeError, () => Temporal.PlainDateTime.from(fields, null));
-assert.compareArray(actual, expectedOpsForPrimitiveOptions,
-  "item fields are read before TypeError is thrown for primitive options");
-
-actual.splice(0); // clear
 
 reportCompare(0, 0);

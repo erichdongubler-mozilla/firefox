@@ -27,9 +27,9 @@ testWithTypedArrayConstructors((TA, makeCtorArg) => {
   res = ta.with(0, 0);
   assert.compareArray(res, [0, 1, 2]);
   assert.sameValue(res.length, 3);
-});
+}, null, ["passthrough"]);
 
-function setLengthOnPrototype(length) {
+function setLength(length) {
     Object.defineProperty(TypedArray.prototype, "length", {
         get: () => length,
     });
@@ -38,14 +38,14 @@ function setLengthOnPrototype(length) {
 testWithTypedArrayConstructors((TA, makeCtorArg) => {
   var ta = new TA(makeCtorArg([3, 1, 2]));
 
-  setLengthOnPrototype(2);
+  setLength(2);
   var res = ta.with(0, 0);
-  setLengthOnPrototype(3);
+  setLength(3);
   assert.compareArray(res, [0, 1, 2]);
 
-  setLengthOnPrototype(5);
+  setLength(5);
   res = ta.with(0, 0);
-  setLengthOnPrototype(3);
+  setLength(3);
   assert.compareArray(res, [0, 1, 2]);
 }, null, ["passthrough"]);
 

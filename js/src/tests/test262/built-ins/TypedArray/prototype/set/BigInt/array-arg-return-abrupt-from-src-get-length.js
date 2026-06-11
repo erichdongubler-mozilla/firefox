@@ -30,6 +30,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   assert.throws(Test262Error, function() {
     sample.set(obj);
   });
-}, null, null, ["immutable"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

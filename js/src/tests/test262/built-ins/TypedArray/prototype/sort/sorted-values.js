@@ -25,27 +25,22 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
 
   sample = new TA(makeCtorArg([3, 4, 3, 1, 0, 1, 2])).sort();
   assert(compareArray(sample, [0, 1, 1, 2, 3, 3, 4]), "repeating numbers");
-}, null, null, ["immutable"]);
+});
 
 testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   var sample = new TA(makeCtorArg([1, 0, -0, 2])).sort();
   assert(compareArray(sample, [-0, 0, 1, 2]), "0s");
-}, floatArrayConstructors, null, ["immutable"]);
+}, floatArrayConstructors);
 
 testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   var sample = new TA(makeCtorArg([1, 0, -0, 2])).sort();
   assert(compareArray(sample, [0, 0, 1, 2]), "0s");
-}, intArrayConstructors, null, ["immutable"]);
+}, intArrayConstructors);
 
-testWithTypedArrayConstructors(
-  function(TA, makeCtorArg) {
-    var sample = new TA(makeCtorArg([-4, 3, 4, -3, 2, -2, 1, 0])).sort();
-    assert(compareArray(sample, [-4, -3, -2, 0, 1, 2, 3, 4]), "negative values");
-  },
-  floatArrayConstructors.concat([Int8Array, Int16Array, Int32Array]),
-  null,
-  ["immutable"]
-);
+testWithTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg([-4, 3, 4, -3, 2, -2, 1, 0])).sort();
+  assert(compareArray(sample, [-4, -3, -2, 0, 1, 2, 3, 4]), "negative values");
+}, floatArrayConstructors.concat([Int8Array, Int16Array, Int32Array]));
 
 testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   var sample;
@@ -59,6 +54,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   sample = new TA(makeCtorArg([3, 4, Infinity, -Infinity, 1, 2])).sort();
   assert(compareArray(sample, [-Infinity, 1, 2, 3, 4, Infinity]), "infinities");
 
-}, floatArrayConstructors, null, ["immutable"]);
+}, floatArrayConstructors);
 
 reportCompare(0, 0);

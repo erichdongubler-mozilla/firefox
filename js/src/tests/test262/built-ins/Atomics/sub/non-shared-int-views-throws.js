@@ -5,17 +5,17 @@
 /*---
 esid: sec-atomics.sub
 description: >
-  Atomics.sub throws when operating on incompatible TypedArrays
+  Atomics.sub throws when operating on non-sharable integer TypedArrays
 includes: [testTypedArray.js]
 features: [ArrayBuffer, Atomics, TypedArray]
 ---*/
-testWithNonAtomicsFriendlyTypedArrayConstructors((TA, makeCtorArg) => {
-  const buffer = makeCtorArg(4);
+testWithNonAtomicsFriendlyTypedArrayConstructors(TA => {
+  const buffer = new ArrayBuffer(16);
   const view = new TA(buffer);
 
   assert.throws(TypeError, function() {
     Atomics.sub(view, 0, 1);
   }, `Atomics.sub(new ${TA.name}(buffer), 0, 1) throws TypeError`);
-}, ["arraybuffer"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

@@ -9,7 +9,7 @@ includes: [compareArray.js, temporalHelpers.js]
 features: [Temporal]
 ---*/
 
-const expectedOpsForPrimitiveOptions = [
+const expected = [
   // ToTemporalDuration on first argument
   "get one.days",
   "get one.days.valueOf",
@@ -72,11 +72,9 @@ const expectedOpsForPrimitiveOptions = [
   "get two.years",
   "get two.years.valueOf",
   "call two.years.valueOf",
-];
-const expected = expectedOpsForPrimitiveOptions.concat([
   // ToRelativeTemporalObject
   "get options.relativeTo",
-]);
+];
 const actual = [];
 
 // basic order of observable operations with no relativeTo
@@ -86,15 +84,6 @@ Temporal.Duration.compare(
   createOptionsObserver(undefined)
 );
 assert.compareArray(actual, expected, "order of operations");
-actual.splice(0); // clear
-
-assert.throws(TypeError, () => Temporal.Duration.compare(
-  createDurationPropertyBagObserver("one", 0, 0, 0, 7),
-  createDurationPropertyBagObserver("two", 0, 0, 0, 6),
-  null
-));
-assert.compareArray(actual, expectedOpsForPrimitiveOptions,
-  "duration fields are read before TypeError is thrown for primitive options");
 actual.splice(0); // clear
 
 // Check fast path for temporal objects.

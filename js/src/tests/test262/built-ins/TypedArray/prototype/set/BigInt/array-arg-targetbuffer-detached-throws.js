@@ -29,8 +29,8 @@ Object.defineProperty(obj, "length", {
   }
 });
 
-testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
-  var sample = new TA(makeCtorArg(2));
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var sample = new TA(2);
   $DETACHBUFFER(sample.buffer);
 
   assert.throws(TypeError, function() {
@@ -40,6 +40,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   assert.throws(TypeError, function() {
     sample.set(obj);
   }, "IsDetachedBuffer happens before Get(src.length)");
-}, null, null, ["immutable"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

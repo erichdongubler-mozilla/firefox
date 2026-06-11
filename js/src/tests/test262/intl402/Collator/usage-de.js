@@ -2,7 +2,7 @@
 // This code is governed by the BSD license found in the LICENSE file.
 
 /*---
-esid: sec-intl.collator
+esid: sec-initializecollator
 description: Checks the behavior of search and sort in German.
 includes: [compareArray.js]
 locale: [de]

@@ -105,6 +105,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   result = sample.set(src, 2);
   assert(compareArray(sample, [1, 2, 42, 43]), "src and sample are SAB-backed, offset: 2, result: " + sample);
   assert.sameValue(result, undefined, "returns undefined");
-}, int_views, null, ["immutable"]);
+}, int_views);
 
 reportCompare(0, 0);

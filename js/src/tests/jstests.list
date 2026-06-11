@@ -680,16 +680,6 @@ skip script test262/staging/top-level-await/tla-hang-entry.js
 # Missing localizations for Before Hijri era: <https://unicode-org.atlassian.net/browse/CLDR-19320>
 skip script test262/intl402/DateTimeFormat/prototype/formatToParts/era.js
 
-# Bug 2046165 (Source phase imports)
-skip script test262/language/module-code/ambiguous-export-bindings/namespace-unambiguous-if-import-source-and-export.js
-
-# Will be removed in https://github.com/tc39/test262/pull/5070
-skip script test262/staging/sm/Error/constructor-proto.js
-skip script test262/staging/sm/Error/prototype.js
-skip script test262/staging/sm/Error/prototype-properties.js
-
-# Bug 2046885
-skip script test262/built-ins/Error/prototype/stack/getter-cross-realm.js
 
 ###########################################################
 # Tests disabled due to issues in test262 importer script #

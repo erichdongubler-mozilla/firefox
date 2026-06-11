@@ -36,8 +36,8 @@ includes: [testTypedArray.js, detachArrayBuffer.js]
 features: [align-detached-buffer-semantics-with-web-reality, TypedArray]
 ---*/
 
-testWithTypedArrayConstructors(function(TA, makeCtorArg) {
-  const sample = new TA(makeCtorArg(1));
+testWithTypedArrayConstructors(function(TA) {
+  const sample = new TA(1);
   const fromIndex = {
     valueOf() {
       $DETACHBUFFER(sample.buffer);
@@ -46,6 +46,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   };
 
   assert.sameValue(sample.indexOf(undefined, fromIndex), -1);
-}, null, null, ["immutable"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

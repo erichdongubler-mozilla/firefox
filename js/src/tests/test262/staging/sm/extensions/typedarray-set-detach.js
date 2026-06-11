@@ -4,7 +4,6 @@
  */
 
 /*---
-includes: [detachArrayBuffer.js]
 description: |
   Uint8Array.prototype.set issues when this array changes during setting
 info: bugzilla.mozilla.org/show_bug.cgi?id=983344
@@ -29,7 +28,7 @@ var src = [ 10, 20, 30, 40,
             ];
 Object.defineProperty(src, 4, {
   get: function () {
-    $DETACHBUFFER(ab);
+    $262.detachArrayBuffer(ab);
     $262.gc();
     return 200;
   }

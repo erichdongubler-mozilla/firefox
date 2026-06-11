@@ -33,11 +33,11 @@ var start = {
   }
 };
 
-testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
-  var sample = new TA(makeCtorArg(0));
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var sample = new TA();
   assert.throws(Test262Error, function() {
     sample.fill(1n, start);
   });
-}, null, null, ["immutable"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

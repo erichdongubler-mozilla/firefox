@@ -2,18 +2,18 @@
 // This code is governed by the BSD license found in the LICENSE file.
 
 /*---
-includes: [sm/non262-TypedArray-shell.js, detachArrayBuffer.js]
+includes: [sm/non262-TypedArray-shell.js]
 description: |
   pending
 esid: pending
 ---*/
 for (var constructor of typedArrayConstructors) {
     var buf = new constructor();
-    $DETACHBUFFER(buf.buffer);
+    $262.detachArrayBuffer(buf.buffer);
     assert.throws(TypeError, () => new constructor(buf));
 
     var buffer = new ArrayBuffer();
-    $DETACHBUFFER(buffer);
+    $262.detachArrayBuffer(buffer);
     assert.throws(TypeError, () => new constructor(buffer));
 }
 

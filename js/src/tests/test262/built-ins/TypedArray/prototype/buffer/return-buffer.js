@@ -14,11 +14,11 @@ includes: [testTypedArray.js]
 features: [TypedArray]
 ---*/
 
-testWithTypedArrayConstructors(function(TA, makeCtorArg) {
-  var buffer = makeCtorArg(1);
+testWithTypedArrayConstructors(function(TA) {
+  var buffer = new ArrayBuffer(TA.BYTES_PER_ELEMENT);
   var ta = new TA(buffer);
 
   assert.sameValue(ta.buffer, buffer);
-}, null, ["arraybuffer"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

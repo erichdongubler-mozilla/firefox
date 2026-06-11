@@ -21,17 +21,16 @@ includes: [testTypedArray.js]
 features: [BigInt, TypedArray]
 ---*/
 
-testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+testWithBigIntTypedArrayConstructors(function(TA) {
   var called = 0;
 
-  var ta = new TA(makeCtorArg(0));
   assert.throws(TypeError, function() {
-    ta.reduce(function() {
+    new TA().reduce(function() {
       called++;
     });
   });
 
   assert.sameValue(called, 0);
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

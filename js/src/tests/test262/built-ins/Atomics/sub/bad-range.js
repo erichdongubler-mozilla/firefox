@@ -20,6 +20,6 @@ testWithTypedArrayConstructors(function(TA) {
       Atomics.sub(view, IdxGen(view), 10);
     });
   });
-}, views, ["passthrough"]);
+}, views);
 
 reportCompare(0, 0);

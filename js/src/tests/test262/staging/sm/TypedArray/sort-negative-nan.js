@@ -6,7 +6,6 @@ includes: [sm/non262-TypedArray-shell.js]
 description: |
   pending
 esid: pending
-features: [Float16Array, Float32Array, Float64Array]
 ---*/
 // Test with all floating point typed arrays.
 const floatConstructors = anyTypedArrayConstructors.filter(isFloatConstructor);
@@ -137,5 +136,6 @@ for (const [TA, taLength] of prod(floatConstructors, typedArrayLengths)) {
         assert.sameValue(fta[nanOffset + i], NaN, `At offset: ${nanOffset + i}`);
     }
 }
+
 
 reportCompare(0, 0);

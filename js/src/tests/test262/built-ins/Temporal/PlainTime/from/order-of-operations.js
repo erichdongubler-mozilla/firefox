@@ -16,7 +16,7 @@ const expectedOptionsReading = [
   "call options.overflow.toString",
 ];
 
-const expectedOpsForPrimitiveOptions = [
+const expected = [
   // ToTemporalTimeRecord
   "get fields.hour",
   "get fields.hour.valueOf",
@@ -36,8 +36,7 @@ const expectedOpsForPrimitiveOptions = [
   "get fields.second",
   "get fields.second.valueOf",
   "call fields.second.valueOf",
-];
-const expected = expectedOpsForPrimitiveOptions.concat(expectedOptionsReading);
+].concat(expectedOptionsReading);
 const actual = [];
 
 const fields = TemporalHelpers.propertyBagObserver(actual, {
@@ -76,13 +75,5 @@ actual.splice(0);
 
 Temporal.PlainTime.from("12:34", options);
 assert.compareArray(actual, expectedOptionsReading, "order of operations when parsing a string");
-
-actual.splice(0);
-
-assert.throws(TypeError, () => Temporal.PlainTime.from(fields, null));
-assert.compareArray(actual, expectedOpsForPrimitiveOptions,
-  "item fields are read before TypeError is thrown for primitive options");
-
-actual.splice(0); // clear
 
 reportCompare(0, 0);

@@ -12,7 +12,9 @@ features: [intl-normative-optional]
 let object = new Intl.DateTimeFormat();
 let newObject = Intl.DateTimeFormat.call(object);
 let symbols = Object.getOwnPropertySymbols(newObject);
-
-assert(symbols.some((symbol) => symbol.description === "IntlLegacyConstructedSymbol"));
+if (symbols.length !== 0) {
+    assert.sameValue(symbols.length, 1);
+    assert.sameValue(symbols[0].description, "IntlLegacyConstructedSymbol");
+}
 
 reportCompare(0, 0);

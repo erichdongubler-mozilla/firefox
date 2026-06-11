@@ -2,9 +2,8 @@
 // This code is governed by the BSD license found in the LICENSE file.
 
 /*---
-esid: sec-intl.numberformat
+esid: sec-initializenumberformat
 description: Checks the propagation of exceptions from the options for the NumberFormat constructor.
-features: [Intl.NumberFormat-v3]
 ---*/
 
 function CustomError() {}
@@ -15,22 +14,12 @@ const options = [
   "style",
   "currency",
   "currencyDisplay",
-  "currencySign",
-  "unit",
-  "unitDisplay",
-  "notation",
   "minimumIntegerDigits",
   "minimumFractionDigits",
   "maximumFractionDigits",
   "minimumSignificantDigits",
   "maximumSignificantDigits",
-  "roundingIncrement",
-  "roundingMode",
-  "roundingPriority",
-  "trailingZeroDisplay",
   "useGrouping",
-  "compactDisplay",
-  "signDisplay",
 ];
 
 for (const option of options) {

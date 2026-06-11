@@ -2,16 +2,15 @@
 // This code is governed by the BSD license found in the LICENSE file.
 
 /*---
-esid: sec-intl.numberformat
+esid: sec-initializenumberformat
 description: >
     Checks error cases for the options argument to the NumberFormat constructor.
 info: |
-  ResolveOptions ( constructor, localeData, locales, options [ , specialBehaviours [ , modifyResolutionOptions ] ] )
+    InitializeNumberFormat ( numberFormat, locales, options )
 
-  1. If _value_ is not *undefined*, then
-    1. ...
-    1. If _value_ cannot be matched by the `type` Unicode locale nonterminal,
-       throw a *RangeError* exception.
+    ...
+    8. If numberingSystem is not undefined, then
+        a. If numberingSystem does not match the Unicode Locale Identifier type nonterminal, throw a RangeError exception.
 ---*/
 
 /*

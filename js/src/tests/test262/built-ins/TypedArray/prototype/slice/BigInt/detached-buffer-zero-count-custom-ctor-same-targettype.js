@@ -16,18 +16,18 @@ includes: [testTypedArray.js, detachArrayBuffer.js]
 features: [align-detached-buffer-semantics-with-web-reality, BigInt, Symbol.species, TypedArray]
 ---*/
 
-testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+testWithBigIntTypedArrayConstructors(function(TA) {
   let counter = 0;
   let sample, result, other;
   let ctor = {};
   ctor[Symbol.species] = function(count) {
-    $DETACHBUFFER(sample.buffer);
     counter++;
-    other = new TA(makeCtorArg(count));
+    $DETACHBUFFER(sample.buffer);
+    other = new TA(count);
     return other;
   };
 
-  sample = new TA(makeCtorArg(0));
+  sample = new TA(0);
   sample.constructor = ctor;
   result = sample.slice();
   assert.sameValue(result.length, 0, 'The value of result.length is 0');
@@ -35,7 +35,7 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   assert.sameValue(result, other, 'The value of `result` is expected to equal the value of other');
   assert.sameValue(counter, 1, 'The value of `counter` is 1');
 
-  sample = new TA(makeCtorArg(4));
+  sample = new TA(4);
   sample.constructor = ctor;
   result = sample.slice(1, 1); // count = 0;
   assert.sameValue(result.length, 0, 'The value of result.length is 0');
@@ -46,6 +46,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   );
   assert.sameValue(result.constructor, TA, 'The value of result.constructor is expected to equal the value of TA');
   assert.sameValue(counter, 2, 'The value of `counter` is 2');
-}, null, null, ["immutable"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

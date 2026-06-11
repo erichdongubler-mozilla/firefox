@@ -2,7 +2,6 @@
 // This code is governed by the BSD license found in the LICENSE file.
 
 /*---
-includes: [detachArrayBuffer.js]
 description: |
   pending
 esid: pending
@@ -29,7 +28,7 @@ function* createTypedArrays(lengths = [0, 1, 4, 4096]) {
 
 // ArrayBuffer is detached when entering slice().
 for (let {typedArray, buffer} of createTypedArrays()) {
-    $DETACHBUFFER(buffer());
+    $262.detachArrayBuffer(buffer());
     assert.throws(TypeError, () => {
         typedArray.slice(0);
     }, "ArrayBuffer is detached on function entry");
@@ -41,7 +40,7 @@ for (let {typedArray, length, buffer} of createTypedArrays()) {
     let start = {
         valueOf() {
             assert.sameValue(detached, false);
-            $DETACHBUFFER(buffer());
+            $262.detachArrayBuffer(buffer());
             assert.sameValue(detached, false);
             detached = true;
             return 0;
@@ -65,7 +64,7 @@ for (let {typedArray, length, buffer} of createTypedArrays()) {
     let end = {
         valueOf() {
             assert.sameValue(detached, false);
-            $DETACHBUFFER(buffer());
+            $262.detachArrayBuffer(buffer());
             assert.sameValue(detached, false);
             detached = true;
             return length;
@@ -89,7 +88,7 @@ for (let {typedArray, length, buffer} of createTypedArrays()) {
     typedArray.constructor = {
         [Symbol.species]: function(...args) {
             assert.sameValue(detached, false);
-            $DETACHBUFFER(buffer());
+            $262.detachArrayBuffer(buffer());
             assert.sameValue(detached, false);
             detached = true;
             return new Int32Array(...args);

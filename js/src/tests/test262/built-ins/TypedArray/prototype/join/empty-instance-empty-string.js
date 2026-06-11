@@ -21,11 +21,11 @@ includes: [testTypedArray.js]
 features: [TypedArray]
 ---*/
 
-testWithTypedArrayConstructors(function(TA, makeCtorArg) {
-  var sample = new TA(makeCtorArg(0));
+testWithTypedArrayConstructors(function(TA) {
+  var sample = new TA();
 
   assert.sameValue(sample.join(), "");
   assert.sameValue(sample.join("test262"), "");
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

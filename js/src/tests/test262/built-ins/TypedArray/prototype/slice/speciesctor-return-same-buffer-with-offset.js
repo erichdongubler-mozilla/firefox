@@ -17,19 +17,19 @@ info: |
         1. Let value be GetValueFromBuffer(srcBuffer, srcByteIndex, uint8, true, unordered).
         2. Perform SetValueInBuffer(targetBuffer, targetByteIndex, uint8, value, true, unordered).
         ...
-features: [Symbol.species, TypedArray]
+features: [TypedArray]
 includes: [testTypedArray.js, compareArray.js]
 ---*/
 
-testWithTypedArrayConstructors(function(TA, makeCtorArg) {
-  var ta = new TA(makeCtorArg([
+testWithTypedArrayConstructors(function(TA) {
+  var ta = new TA([
     10,
     20,
     30,
     40,
     50,
     60,
-  ]));
+  ]);
 
   ta.constructor = {
     [Symbol.species]: function() {
@@ -42,6 +42,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   assert.compareArray(result, [
     20, 20, 20, 60,
   ]);
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

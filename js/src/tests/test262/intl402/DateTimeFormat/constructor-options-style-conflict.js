@@ -6,15 +6,16 @@ esid: sec-createdatetimeformat
 description: >
     Conflicting properties of dateStyle/timeStyle must be rejected with a TypeError for the options argument to the DateTimeFormat constructor.
 info: |
-  CreateDateTimeFormat ( newTarget, locales, options, required, defaults )
+    InitializeDateTimeFormat ( dateTimeFormat, locales, options )
 
-  1. If _dateStyle_ is not *undefined* or _timeStyle_ is not *undefined*, then
-    1. If _hasExplicitFormatComponents_ is *true*, then
-      1. Throw a *TypeError* exception.
-    1. If _required_ is ~date~ and _timeStyle_ is not *undefined*, then
-      1. Throw a *TypeError* exception.
-    1. If _required_ is ~time~ and _dateStyle_ is not *undefined*, then
-      1. Throw a *TypeError* exception.
+    ...
+    43. If dateStyle is not undefined or timeStyle is not undefined, then
+      a. If hasExplicitFormatComponents is true, then
+        i. Throw a TypeError exception.
+      b. If required is date and timeStyle is not undefined, then
+        i. Throw a TypeError exception.
+      c. If required is time and dateStyle is not undefined, then
+        i. Throw a TypeError exception.
 ---*/
 
 

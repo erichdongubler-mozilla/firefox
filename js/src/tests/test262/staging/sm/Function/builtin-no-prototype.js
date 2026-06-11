@@ -7,7 +7,6 @@
 description: |
   pending
 esid: pending
-includes: [nativeErrors.js]
 ---*/
 assert.sameValue(undefined, void 0);
 
@@ -15,8 +14,9 @@ assert.sameValue(Function.prototype.hasOwnProperty('prototype'), false);
 assert.sameValue(Function.prototype.prototype, undefined);
 
 var builtin_ctors = [
-    Object, Function, Array, String, Boolean, Number, Date, RegExp
-].concat(nativeErrors);
+    Object, Function, Array, String, Boolean, Number, Date, RegExp, Error,
+    EvalError, RangeError, ReferenceError, SyntaxError, TypeError, URIError
+];
 
 for (var i = 0; i < builtin_ctors.length; i++) {
     var c = builtin_ctors[i];

@@ -23,8 +23,8 @@ includes: [testTypedArray.js]
 features: [BigInt, TypedArray]
 ---*/
 
-testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
-  var sample = new TA(makeCtorArg(0));
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var sample = new TA();
   assert.throws(TypeError, function() {
     sample.findIndex({});
   }, "{}");
@@ -60,6 +60,7 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   assert.throws(TypeError, function() {
     sample.findIndex(/./);
   }, "/./");
-});
+}, null, ["passthrough"]);
+
 
 reportCompare(0, 0);

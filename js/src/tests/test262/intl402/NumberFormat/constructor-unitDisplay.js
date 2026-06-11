@@ -2,9 +2,14 @@
 // This code is governed by the BSD license found in the LICENSE file.
 
 /*---
-esid: sec-intl.numberformat
-description: >
-  Checks handling of the unitDisplay option to the NumberFormat constructor.
+esid: sec-initializenumberformat
+description: Checks handling of the compactDisplay option to the NumberFormat constructor.
+info: |
+    InitializeNumberFormat ( numberFormat, locales, options )
+
+    23. Let signDisplay be ? GetOption(options, "signDisplay", "string", « "auto", "never", "always", "exceptZero" », "auto").
+    24. Set numberFormat.[[SignDisplay]] to signDisplay.
+
 features: [Intl.NumberFormat-unified]
 ---*/
 

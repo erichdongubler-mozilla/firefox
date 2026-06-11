@@ -41,6 +41,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   sample.set(src3);
 
   assert.sameValue(getCalls, 0, "ignores byteoffset properties");
-}, null, null, ["immutable"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

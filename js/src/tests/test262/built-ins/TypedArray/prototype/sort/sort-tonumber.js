@@ -16,8 +16,8 @@ includes: [testTypedArray.js, detachArrayBuffer.js]
 features: [TypedArray]
 ---*/
 
-testWithTypedArrayConstructors(function(TA, makeCtorArg) {
-  var ta = new TA(makeCtorArg(4));
+testWithTypedArrayConstructors(function(TA) {
+  var ta = new TA(4);
   var ab = ta.buffer;
 
   var called = false;
@@ -30,6 +30,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   });
 
   assert.sameValue(true, called);
-}, null, null, ["immutable"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

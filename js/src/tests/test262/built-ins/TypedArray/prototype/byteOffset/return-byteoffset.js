@@ -14,20 +14,20 @@ includes: [testTypedArray.js]
 features: [TypedArray]
 ---*/
 
-testWithTypedArrayConstructors(function(TA, makeCtorArg) {
+testWithTypedArrayConstructors(function(TA) {
   var ta1 = new TA();
   assert.sameValue(ta1.byteOffset, 0, "Regular typedArray");
 
   var offset = 4 * TA.BYTES_PER_ELEMENT;
 
-  var buffer1 = makeCtorArg(8);
+  var buffer1 = new ArrayBuffer(8 * TA.BYTES_PER_ELEMENT);
   var ta2 = new TA(buffer1, offset);
   assert.sameValue(ta2.byteOffset, offset, "TA(buffer, offset)");
 
-  var buffer2 = makeCtorArg(8);
+  var buffer2 = new ArrayBuffer(8 * TA.BYTES_PER_ELEMENT);
   var sample = new TA(buffer2, offset);
   var ta3 = new TA(sample);
   assert.sameValue(ta3.byteOffset, 0, "TA(typedArray)");
-}, null, ["arraybuffer"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

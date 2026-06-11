@@ -34,8 +34,8 @@ includes: [testTypedArray.js, detachArrayBuffer.js]
 features: [BigInt, TypedArray]
 ---*/
 
-testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
-  var sample = new TA(makeCtorArg(2));
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var sample = new TA(2);
   var loops = 0;
 
   sample.findIndex(function() {
@@ -45,6 +45,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
     loops++;
   });
   assert.sameValue(loops, 2, "predicate is called once");
-}, null, null, ["immutable"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

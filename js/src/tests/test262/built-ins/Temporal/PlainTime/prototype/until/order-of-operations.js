@@ -9,7 +9,7 @@ includes: [compareArray.js, temporalHelpers.js]
 features: [Temporal]
 ---*/
 
-const expectedOpsForPrimitiveOptions = [
+const expected = [
   // ToTemporalTime
   "get other.hour",
   "get other.hour.valueOf",
@@ -29,8 +29,6 @@ const expectedOpsForPrimitiveOptions = [
   "get other.second",
   "get other.second.valueOf",
   "call other.second.valueOf",
-];
-const expected = expectedOpsForPrimitiveOptions.concat([
   // GetDifferenceSettings
   "get options.largestUnit",
   "get options.largestUnit.toString",
@@ -44,7 +42,7 @@ const expected = expectedOpsForPrimitiveOptions.concat([
   "get options.smallestUnit",
   "get options.smallestUnit.toString",
   "call options.smallestUnit.toString",
-]);
+];
 const actual = [];
 
 const instance = new Temporal.PlainTime(12, 34, 56, 987, 654, 321);
@@ -83,12 +81,6 @@ const identicalPropertyBag = TemporalHelpers.propertyBagObserver(actual, {
 }, "other");
 instance.until(identicalPropertyBag, options);
 assert.compareArray(actual, expected, "order of operations with identical times");
-
-actual.splice(0); // clear
-
-assert.throws(TypeError, () => instance.until(other, null));
-assert.compareArray(actual, expectedOpsForPrimitiveOptions,
-  "other time fields are read before TypeError is thrown for primitive options");
 
 actual.splice(0); // clear
 

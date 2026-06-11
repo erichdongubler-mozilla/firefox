@@ -14,8 +14,8 @@ includes: [testTypedArray.js]
 features: [BigInt, TypedArray, array-find-from-last]
 ---*/
 
-testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
-  var sample = new TA(makeCtorArg(0));
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var sample = new TA();
   assert.throws(TypeError, function() {
     sample.findLastIndex({});
   }, "{}");
@@ -51,6 +51,7 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   assert.throws(TypeError, function() {
     sample.findLastIndex(/./);
   }, "/./");
-});
+}, null, ["passthrough"]);
+
 
 reportCompare(0, 0);

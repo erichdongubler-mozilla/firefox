@@ -741,6 +741,43 @@ JSErrorReport* js::ErrorObject::getOrCreateErrorReport(JSContext* cx) {
   return copy.release();
 }
 
+static bool FindErrorInstanceOrPrototype(JSContext* cx, HandleObject obj,
+                                         MutableHandleObject result) {
+  // Walk up the prototype chain until we find an error object instance or
+  // prototype object. This allows code like:
+  //  Object.create(Error.prototype).stack
+  // or
+  //   function NYI() { }
+  //   NYI.prototype = new Error;
+  //   (new NYI).stack
+  // to continue returning stacks that are useless, but at least don't throw.
+
+  RootedObject curr(cx, obj);
+  RootedObject target(cx);
+  do {
+    target = CheckedUnwrapStatic(curr);
+    if (!target) {
+      ReportAccessDenied(cx);
+      return false;
+    }
+    if (IsErrorProtoKey(StandardProtoKeyOrNull(target))) {
+      result.set(target);
+      return true;
+    }
+
+    if (!GetPrototype(cx, curr, &curr)) {
+      return false;
+    }
+  } while (curr);
+
+  // We walked the whole prototype chain and did not find an Error
+  // object.
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                            JSMSG_INCOMPATIBLE_PROTO, "Error", "(get stack)",
+                            obj->getClass()->name);
+  return false;
+}
+
 static MOZ_ALWAYS_INLINE bool IsObject(HandleValue v) { return v.isObject(); }
 
 /* static */
@@ -752,27 +789,23 @@ bool js::ErrorObject::getStack(JSContext* cx, unsigned argc, Value* vp) {
 
 /* static */
 bool js::ErrorObject::getStack_impl(JSContext* cx, const CallArgs& args) {
-  // Step 1. Let E be the this value.
   RootedObject thisObj(cx, &args.thisv().toObject());
 
-  // Step 2. If E is not an Object, throw a TypeError exception.
-  // (Handled in getStack)
+  RootedObject obj(cx);
+  if (!FindErrorInstanceOrPrototype(cx, thisObj, &obj)) {
+    return false;
+  }
 
-  // Step 3: If E does not have an [[ErrorData]] internal slot, return
-  //         undefined.
-  if (!thisObj->is<ErrorObject>()) {
-    args.rval().setUndefined();
+  if (!obj->is<ErrorObject>()) {
+    args.rval().setString(cx->runtime()->emptyString);
     return true;
   }
 
-  // Step 4. Return an implementation-defined string that represents the
-  //         stack trace of E.
-
   // Do frame filtering based on the ErrorObject's principals. This ensures we
   // don't see chrome frames when chrome code accesses .stack over Xrays.
-  JSPrincipals* principals = thisObj->as<ErrorObject>().realm()->principals();
+  JSPrincipals* principals = obj->as<ErrorObject>().realm()->principals();
 
-  RootedObject savedFrameObj(cx, thisObj->as<ErrorObject>().stack());
+  RootedObject savedFrameObj(cx, obj->as<ErrorObject>().stack());
   RootedString stackString(cx);
   if (!BuildStackString(cx, principals, savedFrameObj, &stackString)) {
     return false;
@@ -810,36 +843,13 @@ bool js::ErrorObject::setStack(JSContext* cx, unsigned argc, Value* vp) {
 
 /* static */
 bool js::ErrorObject::setStack_impl(JSContext* cx, const CallArgs& args) {
-  // Step 1. Let E be the this value.
-  // Step 2. If E is not an Object, throw a TypeError exception.
-  // (Handled in setStack)
+  RootedObject thisObj(cx, &args.thisv().toObject());
 
-  // Step 3. If v is not a String, throw a TypeError.
   if (!args.requireAtLeast(cx, "(set stack)", 1)) {
     return false;
   }
-  if (!args[0].isString()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_ERROR_STACK_NOT_STRING);
-    return false;
-  }
 
-  // Step 4. Perform ? SetterThatIgnoresPrototypeProperties(this value,
-  //                   %Error.prototype%, "stack", v).
-  Rooted<JSObject*> home(
-      cx, GlobalObject::getOrCreateErrorPrototype(cx, cx->global()));
-  if (!home) {
-    return false;
-  }
-  RootedId id(cx, NameToId(cx->names().stack));
-  if (!SetterThatIgnoresPrototypeProperties(cx, args.thisv(), home, id,
-                                            args[0])) {
-    return false;
-  }
-
-  // Step 5. Return undefined.
-  args.rval().setUndefined();
-  return true;
+  return DefineDataProperty(cx, thisObj, cx->names().stack, args[0]);
 }
 
 void js::ErrorObject::setFromWasmTrap() {

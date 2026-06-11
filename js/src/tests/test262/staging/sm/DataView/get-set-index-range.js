@@ -2,7 +2,6 @@
 // This code is governed by the BSD license found in the LICENSE file.
 
 /*---
-includes: [detachArrayBuffer.js]
 description: |
   pending
 esid: pending
@@ -32,7 +31,7 @@ for (let fun of ['getInt8', 'getInt16']) {
 
 // ToIndex is called before detachment check, so we can tell the difference
 // between a ToIndex failure and a real out of bounds failure.
-$DETACHBUFFER(buffer);
+$262.detachArrayBuffer(buffer);
 
 check(view);
 

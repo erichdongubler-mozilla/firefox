@@ -14,11 +14,11 @@ includes: [testTypedArray.js, detachArrayBuffer.js]
 features: [BigInt, TypedArray]
 ---*/
 
-testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
-  var buffer = makeCtorArg(128);
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var buffer = new ArrayBuffer(128);
   var sample = new TA(buffer, 8, 1);
   $DETACHBUFFER(sample.buffer);
   assert.sameValue(sample.byteOffset, 0);
-}, null, ["arraybuffer"], ["immutable"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

@@ -2,7 +2,7 @@
 // This code is governed by the BSD license found in the LICENSE file.
 
 /*---
-esid: sec-createdatetimeformat
+esid: sec-initializedatetimeformat
 description: Checks basic handling of dayPeriod, short format.
 features: [Intl.DateTimeFormat-dayPeriod]
 locale: [en]

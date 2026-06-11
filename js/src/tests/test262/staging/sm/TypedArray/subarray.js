@@ -2,7 +2,7 @@
 // This code is governed by the BSD license found in the LICENSE file.
 
 /*---
-includes: [sm/non262-TypedArray-shell.js, detachArrayBuffer.js]
+includes: [sm/non262-TypedArray-shell.js]
 description: |
   pending
 esid: pending
@@ -23,7 +23,7 @@ for (let constructor of typedArrayConstructors) {
 
     let beginIndex = {
         valueOf() {
-            $DETACHBUFFER(buffer);
+            $262.detachArrayBuffer(buffer);
             return 0;
         }
     };

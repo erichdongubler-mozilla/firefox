@@ -28,8 +28,8 @@ var obj2 = {
   }
 };
 
-testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
-  var sample = new TA(makeCtorArg(0));
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var sample = new TA();
 
   assert.throws(Test262Error, function() {
     sample.set([], obj1);
@@ -38,6 +38,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   assert.throws(Test262Error, function() {
     sample.set([], obj2);
   }, "abrupt from toString");
-}, null, null, ["immutable"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

@@ -16,8 +16,8 @@ includes: [testTypedArray.js]
 features: [BigInt, TypedArray]
 ---*/
 
-testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
-  var sample = new TA(makeCtorArg(0));
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var sample = new TA();
 
   assert.throws(RangeError, function() {
     sample.set(sample, -1);
@@ -30,6 +30,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   assert.throws(RangeError, function() {
     sample.set(sample, -Infinity);
   }, "-Infinity");
-}, null, null, ["immutable"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

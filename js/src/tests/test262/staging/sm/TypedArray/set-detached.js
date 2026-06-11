@@ -2,7 +2,6 @@
 // This code is governed by the BSD license found in the LICENSE file.
 
 /*---
-includes: [detachArrayBuffer.js]
 description: |
   pending
 esid: pending
@@ -23,7 +22,7 @@ class ExpectedError extends Error {}
 
 // No detached check on function entry.
 for (let {typedArray, buffer} of createTypedArrays()) {
-    $DETACHBUFFER(buffer);
+    $262.detachArrayBuffer(buffer);
 
     assert.throws(ExpectedError, () => typedArray.set(null, {
         valueOf() {
@@ -41,7 +40,7 @@ for (let [offset, error] of [[0, TypeError], [1000000, TypeError], [-1, RangeErr
         for (let {typedArray, buffer} of createTypedArrays()) {
             assert.throws(error, () => typedArray.set(source, {
                 valueOf() {
-                    $DETACHBUFFER(buffer);
+                    $262.detachArrayBuffer(buffer);
                     return offset;
                 }
             }));
@@ -52,7 +51,7 @@ for (let [offset, error] of [[0, TypeError], [1000000, TypeError], [-1, RangeErr
 // Tests when called with detached typed array as source.
 for (let {typedArray} of createTypedArrays()) {
     for (let {typedArray: source, buffer: sourceBuffer} of createTypedArrays()) {
-        $DETACHBUFFER(sourceBuffer);
+        $262.detachArrayBuffer(sourceBuffer);
 
         assert.throws(ExpectedError, () => typedArray.set(source, {
             valueOf() {
@@ -71,7 +70,7 @@ for (let [offset, error] of [[0, TypeError], [1000000, TypeError], [-1, RangeErr
         for (let {typedArray: source, buffer: sourceBuffer} of createTypedArrays()) {
             assert.throws(error, () => typedArray.set(source, {
                 valueOf() {
-                    $DETACHBUFFER(sourceBuffer);
+                    $262.detachArrayBuffer(sourceBuffer);
                     return offset;
                 }
             }));
@@ -89,7 +88,7 @@ for (let src of [ta => ta, ta => new Int32Array(ta.buffer), ta => new Float32Arr
         let source = src(typedArray);
         assert.throws(TypeError, () => typedArray.set(source, {
             valueOf() {
-                $DETACHBUFFER(buffer);
+                $262.detachArrayBuffer(buffer);
                 return 0;
             }
         }));
@@ -103,7 +102,7 @@ for (let offset of [() => 0, ta => Math.min(1, ta.length), ta => Math.max(0, ta.
     for (let {typedArray, buffer} of createTypedArrays()) {
         let source = {
             get length() {
-                $DETACHBUFFER(buffer);
+                $262.detachArrayBuffer(buffer);
                 return 0;
             }
         };
@@ -119,7 +118,7 @@ for (let offset of [() => 0, ta => Math.min(1, ta.length), ta => Math.max(0, ta.
         let source = {
             length: {
                 valueOf() {
-                    $DETACHBUFFER(buffer);
+                    $262.detachArrayBuffer(buffer);
                     return 0;
                 }
             }
@@ -134,7 +133,7 @@ for (let {typedArray, buffer} of createTypedArrays()) {
     let source = {
         length: {
             valueOf() {
-                $DETACHBUFFER(buffer);
+                $262.detachArrayBuffer(buffer);
                 return 1;
             }
         }
@@ -154,7 +153,7 @@ for (let {typedArray, buffer} of createTypedArrays()) {
         },
         length: {
             valueOf() {
-                $DETACHBUFFER(buffer);
+                $262.detachArrayBuffer(buffer);
                 return 1;
             }
         }
@@ -175,7 +174,7 @@ for (let {typedArray, buffer} of createTypedArrays()) {
         },
         length: {
             valueOf() {
-                $DETACHBUFFER(buffer);
+                $262.detachArrayBuffer(buffer);
                 return 1;
             }
         }
@@ -189,7 +188,7 @@ for (let {typedArray, buffer} of createTypedArrays()) {
     let source = Object.defineProperties([], {
         0: {
             get() {
-                $DETACHBUFFER(buffer);
+                $262.detachArrayBuffer(buffer);
                 return 1;
             }
         }
@@ -208,7 +207,7 @@ for (let {typedArray, buffer} of createTypedArrays()) {
     let source = Object.defineProperties([], {
         0: {
             get() {
-                $DETACHBUFFER(buffer);
+                $262.detachArrayBuffer(buffer);
                 return 1;
             }
         },
@@ -233,7 +232,7 @@ for (let {typedArray, buffer} of createTypedArrays()) {
 for (let {typedArray, buffer} of createTypedArrays()) {
     let source = [{
         valueOf() {
-            $DETACHBUFFER(buffer);
+            $262.detachArrayBuffer(buffer);
             return 1;
         }
     }];
@@ -250,7 +249,7 @@ for (let {typedArray, buffer} of createTypedArrays()) {
     let accessed = false;
     let source = [{
         valueOf() {
-            $DETACHBUFFER(buffer);
+            $262.detachArrayBuffer(buffer);
             return 1;
         }
     }, {

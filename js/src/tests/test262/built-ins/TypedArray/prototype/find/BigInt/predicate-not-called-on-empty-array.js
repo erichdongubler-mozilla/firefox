@@ -27,8 +27,8 @@ includes: [testTypedArray.js]
 features: [BigInt, TypedArray]
 ---*/
 
-testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
-  var sample = new TA(makeCtorArg(0));
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var sample = new TA();
   var called = false;
 
   var result = sample.find(function() {
@@ -46,6 +46,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
     undefined,
     "find returns undefined when predicate is not called"
   );
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

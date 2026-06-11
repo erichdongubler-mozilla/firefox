@@ -2,45 +2,55 @@
 // This code is governed by the BSD license found in the LICENSE file.
 
 /*---
-esid: sec-intl.numberformat
-description: Checks the order of options read.
-features: [Intl.NumberFormat-unified, Intl.NumberFormat-v3]
-includes: [compareArray.js, temporalHelpers.js]
+esid: sec-initializenumberformat
+description: Checks the order of option read.
+features: [Intl.NumberFormat-v3]
+includes: [compareArray.js]
 ---*/
 
 let optionKeys = [
-    // Inside new NumberFormat()
-    "get options.localeMatcher",
-    "get options.numberingSystem",
+    // Inside InitializeNumberFormat
+    "localeMatcher",
+    "numberingSystem",
     // Inside SetNumberFormatUnitOptions
-        "get options.style",
-        "get options.currency",
-        "get options.currencyDisplay",
-        "get options.currencySign",
-        "get options.unit",
-        "get options.unitDisplay",
+        "style",
+        "currency",
+        "currencyDisplay",
+        "currencySign",
+        "unit",
+        "unitDisplay",
     // End of SetNumberFormatUnitOptions
-    // Back to new NumberFormat()
-    "get options.notation",
+    // Back to InitializeNumberFormat
+    "notation",
     // Inside SetNumberFormatDigitOptions
-        "get options.minimumIntegerDigits",
-        "get options.minimumFractionDigits",
-        "get options.maximumFractionDigits",
-        "get options.minimumSignificantDigits",
-        "get options.maximumSignificantDigits",
-        "get options.roundingIncrement",
-        "get options.roundingMode",
-        "get options.roundingPriority",
-        "get options.trailingZeroDisplay",
+        "minimumIntegerDigits",
+        "minimumFractionDigits",
+        "maximumFractionDigits",
+        "minimumSignificantDigits",
+        "maximumSignificantDigits",
+        "roundingIncrement",
+        "roundingMode",
+        "roundingPriority",
+        "trailingZeroDisplay",
     // End of SetNumberFormatDigitOptions
-    // Back to new NumberFormat()
-    "get options.compactDisplay",
-    "get options.useGrouping",
-    "get options.signDisplay"
+    // Back to InitializeNumberFormat
+    "compactDisplay",
+    "useGrouping",
+    "signDisplay"
 ];
 
-let reads = [];
-let options = TemporalHelpers.propertyBagObserver(reads, {}, "options");
+// Use getters to track the order of reading known properties.
+// TODO: Should we use a Proxy to detect *unexpected* property reads?
+let reads = new Array();
+let options = {};
+optionKeys.forEach((key) => {
+    Object.defineProperty(options, key, {
+        get() {
+            reads.push(key);
+            return undefined;
+        },
+    });
+});
 new Intl.NumberFormat(undefined, options);
 assert.compareArray(reads, optionKeys, "Intl.NumberFormat options read order");
 

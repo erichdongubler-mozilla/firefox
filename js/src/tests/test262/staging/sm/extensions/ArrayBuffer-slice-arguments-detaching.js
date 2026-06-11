@@ -4,7 +4,6 @@
  */
 
 /*---
-includes: [detachArrayBuffer.js]
 description: |
   ArrayBuffer.prototype.slice shouldn't misbehave horribly if index-argument conversion detaches the ArrayBuffer being sliced
 info: bugzilla.mozilla.org/show_bug.cgi?id=991981
@@ -20,7 +19,7 @@ function testStart()
     {
       valueOf: function()
       {
-        $DETACHBUFFER(ab);
+        $262.detachArrayBuffer(ab);
         $262.gc();
         return 0x800;
       }
@@ -41,7 +40,7 @@ function testEnd()
     {
       valueOf: function()
       {
-        $DETACHBUFFER(ab);
+        $262.detachArrayBuffer(ab);
         $262.gc();
         return 0x1000;
       }

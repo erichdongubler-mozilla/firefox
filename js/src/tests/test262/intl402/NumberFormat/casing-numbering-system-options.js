@@ -2,7 +2,7 @@
 // This code is governed by the BSD license found in the LICENSE file.
 
 /*---
-esid: sec-intl.numberformat
+esid: sec-initializenumberformat
 description: >
     Tests that the options numberingSystem are mapped to lower case.
 author: Caio Lima

@@ -2,7 +2,7 @@
 // This code is governed by the BSD license found in the LICENSE file.
 
 /*---
-esid: sec-intl.numberformat
+esid: sec-initializenumberformat
 description: >
   Tests that HasProperty(O, Pk) is properly called within the constructor for
   Intl.NumberFormat

@@ -31,14 +31,14 @@ includes: [testTypedArray.js]
 features: [BigInt, TypedArray]
 ---*/
 
-testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
+testWithBigIntTypedArrayConstructors(function(TA) {
   var called = false;
-  var result = new TA(makeCtorArg(0)).reduceRight(function() {
+  var result = new TA().reduceRight(function() {
     called = true;
   }, 42);
 
   assert.sameValue(result, 42);
   assert.sameValue(called, false);
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

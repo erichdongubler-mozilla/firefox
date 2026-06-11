@@ -14,8 +14,8 @@ features: [BigInt, TypedArray]
 
 var sample = [0n, 42n, 64n];
 
-testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
-  var typedArray = new TA(makeCtorArg(sample));
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var typedArray = new TA(sample);
   var itor = typedArray.keys();
 
   var next = itor.next();
@@ -33,6 +33,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   next = itor.next();
   assert.sameValue(next.value, undefined);
   assert.sameValue(next.done, true);
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

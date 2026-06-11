@@ -72,6 +72,6 @@ testWithTypedArrayConstructors(function(TA) {
       'Atomics.compareExchange(view, Idx, 37, 0) returns 37'
     );
   });
-}, views, ["passthrough"]);
+}, views);
 
 reportCompare(0, 0);

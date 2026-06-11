@@ -25,8 +25,8 @@ var o2 = {
   }
 };
 
-testWithTypedArrayConstructors(function(TA, makeCtorArg) {
-  var sample = new TA(makeCtorArg(0));
+testWithTypedArrayConstructors(function(TA) {
+  var sample = new TA();
   
   assert.throws(Test262Error, function() {
     sample.subarray(o1);
@@ -35,6 +35,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   assert.throws(Test262Error, function() {
     sample.subarray(o2);
   });
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

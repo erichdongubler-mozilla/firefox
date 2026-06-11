@@ -1639,10 +1639,9 @@ description: |
 defines: [allowProxyTraps]
 ---*/
 
-function allowProxyTraps(overrides, label) {
-  var prefix = typeof label === 'string' && label.length > 0 ? label + ': ' : '';
+function allowProxyTraps(overrides) {
   function throwTest262Error(msg) {
-    return function () { Test262Error.thrower(prefix + msg); };
+    return function () { throw new Test262Error(msg); };
   }
   if (!overrides) { overrides = {}; }
   return {
@@ -1745,6 +1744,10 @@ var allTypedArrayConstructors = typedArrayConstructors.concat(bigIntArrayConstru
  */
 var TypedArray = Object.getPrototypeOf(Int8Array);
 
+function isPrimitive(val) {
+  return !val || (typeof val !== "object" && typeof val !== "function");
+}
+
 function makePassthrough(TA, primitiveOrIterable) {
   return primitiveOrIterable;
 }
@@ -1784,7 +1787,7 @@ function makeArrayBuffer(TA, primitiveOrIterable) {
   return new TA(arr).buffer;
 }
 
-var makeResizableArrayBuffer, makeGrownArrayBuffer, makeShrunkArrayBuffer, makeImmutableArrayBuffer;
+var makeResizableArrayBuffer, makeGrownArrayBuffer, makeShrunkArrayBuffer;
 if (ArrayBuffer.prototype.resize) {
   var copyIntoArrayBuffer = function(destBuffer, srcBuffer) {
     var destView = new Uint8Array(destBuffer);
@@ -1834,17 +1837,6 @@ if (ArrayBuffer.prototype.resize) {
     return shrunk;
   };
 }
-if (ArrayBuffer.prototype.transferToImmutable) {
-  makeImmutableArrayBuffer = function makeImmutableArrayBuffer(TA, primitiveOrIterable) {
-    if (isPrimitive(primitiveOrIterable)) {
-      var n = Number(primitiveOrIterable) * TA.BYTES_PER_ELEMENT;
-      if (!(n >= 0 && n < 9007199254740992)) return primitiveOrIterable;
-      return (new ArrayBuffer(n)).transferToImmutable();
-    }
-    var mutable = makeArrayBuffer(TA, primitiveOrIterable);
-    return mutable.transferToImmutable();
-  };
-}
 
 var typedArrayCtorArgFactories = [makePassthrough, makeArray, makeArrayLike];
 if (makeIterable) typedArrayCtorArgFactories.push(makeIterable);
@@ -1852,10 +1844,9 @@ typedArrayCtorArgFactories.push(makeArrayBuffer);
 if (makeResizableArrayBuffer) typedArrayCtorArgFactories.push(makeResizableArrayBuffer);
 if (makeGrownArrayBuffer) typedArrayCtorArgFactories.push(makeGrownArrayBuffer);
 if (makeShrunkArrayBuffer) typedArrayCtorArgFactories.push(makeShrunkArrayBuffer);
-if (makeImmutableArrayBuffer) typedArrayCtorArgFactories.push(makeImmutableArrayBuffer);
 
 /**
- * @typedef {"passthrough" | "arraylike" | "iterable" | "arraybuffer" | "resizable" | "immutable"} typedArrayArgFactoryFeature
+ * @typedef {"passthrough" | "arraylike" | "iterable" | "arraybuffer" | "resizable"} typedArrayArgFactoryFeature
  */
 
 /**
@@ -1883,8 +1874,7 @@ function ctorArgFactoryMatchesSome(argFactory, features) {
           argFactory === makeArrayBuffer ||
           argFactory === makeResizableArrayBuffer ||
           argFactory === makeGrownArrayBuffer ||
-          argFactory === makeShrunkArrayBuffer ||
-          argFactory === makeImmutableArrayBuffer
+          argFactory === makeShrunkArrayBuffer
         ) {
           return true;
         }
@@ -1897,9 +1887,6 @@ function ctorArgFactoryMatchesSome(argFactory, features) {
         ) {
           return true;
         }
-        break;
-      case "immutable":
-        if (argFactory === makeImmutableArrayBuffer) return true;
         break;
       default:
         throw Test262Error("unknown feature: " + features[i]);
@@ -2015,19 +2002,9 @@ var nonAtomicsFriendlyTypedArrayConstructors = floatArrayConstructors.concat([Ui
  *
  * @param {typedArrayConstructorCallback} f - the function to call for each typed array constructor.
  * @param {Array} selected - An optional Array with filtered typed arrays
- * @param {typedArrayArgFactoryFeature[]} [includeArgFactories] - for selecting
- *   initial constructor argument factory functions, rather than starting with
- *   all argument factories
- * @param {typedArrayArgFactoryFeature[]} [excludeArgFactories] - for excluding
- *   constructor argument factory functions, after an initial selection
  */
-function testWithNonAtomicsFriendlyTypedArrayConstructors(f, includeArgFactories, excludeArgFactories) {
-  testWithAllTypedArrayConstructors(
-    f,
-    nonAtomicsFriendlyTypedArrayConstructors,
-    includeArgFactories,
-    excludeArgFactories
-  );
+function testWithNonAtomicsFriendlyTypedArrayConstructors(f) {
+  testWithTypedArrayConstructors(f, nonAtomicsFriendlyTypedArrayConstructors);
 }
 
 /**
@@ -2035,26 +2012,16 @@ function testWithNonAtomicsFriendlyTypedArrayConstructors(f, includeArgFactories
  *
  * @param {typedArrayConstructorCallback} f - the function to call for each typed array constructor.
  * @param {Array} selected - An optional Array with filtered typed arrays
- * @param {typedArrayArgFactoryFeature[]} [includeArgFactories] - for selecting
- *   initial constructor argument factory functions, rather than starting with
- *   all argument factories
- * @param {typedArrayArgFactoryFeature[]} [excludeArgFactories] - for excluding
- *   constructor argument factory functions, after an initial selection
  */
-function testWithAtomicsFriendlyTypedArrayConstructors(f, includeArgFactories, excludeArgFactories) {
-  testWithAllTypedArrayConstructors(
-    f,
-    [
-      Int32Array,
-      Int16Array,
-      Int8Array,
-      Uint32Array,
-      Uint16Array,
-      Uint8Array,
-    ],
-    includeArgFactories,
-    excludeArgFactories
-  );
+function testWithAtomicsFriendlyTypedArrayConstructors(f) {
+  testWithTypedArrayConstructors(f, [
+    Int32Array,
+    Int16Array,
+    Int8Array,
+    Uint32Array,
+    Uint16Array,
+    Uint8Array,
+  ]);
 }
 
 /**
@@ -2081,7 +2048,7 @@ function testTypedArrayConversions(byteConversionValues, fn) {
       }
       fn(TA, value, exp, initial);
     });
-  }, null, ["passthrough"]);
+  });
 }
 
 /**

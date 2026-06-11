@@ -2,7 +2,6 @@
 // This code is governed by the BSD license found in the LICENSE file.
 
 /*---
-includes: [detachArrayBuffer.js]
 description: |
   pending
 esid: pending
@@ -12,7 +11,7 @@ esid: pending
 function DetachArrayBufferValue(buffer, value) {
     return {
         valueOf() {
-            $DETACHBUFFER(buffer);
+            $262.detachArrayBuffer(buffer);
             return value;
         }
     };
@@ -21,7 +20,7 @@ function DetachArrayBufferValue(buffer, value) {
 function DetachTypedArrayValue(ta, value) {
     return {
         valueOf() {
-            $DETACHBUFFER(ta.buffer);
+            $262.detachArrayBuffer(ta.buffer);
             return value;
         }
     };

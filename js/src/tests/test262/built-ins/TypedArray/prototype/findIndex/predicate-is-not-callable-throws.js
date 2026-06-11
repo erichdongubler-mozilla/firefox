@@ -23,8 +23,8 @@ includes: [testTypedArray.js]
 features: [TypedArray]
 ---*/
 
-testWithTypedArrayConstructors(function(TA, makeCtorArg) {
-  var sample = new TA(makeCtorArg(0));
+testWithTypedArrayConstructors(function(TA) {
+  var sample = new TA();
   assert.throws(TypeError, function() {
     sample.findIndex({});
   }, "{}");
@@ -60,6 +60,7 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   assert.throws(TypeError, function() {
     sample.findIndex(/./);
   }, "/./");
-});
+}, null, ["passthrough"]);
+
 
 reportCompare(0, 0);

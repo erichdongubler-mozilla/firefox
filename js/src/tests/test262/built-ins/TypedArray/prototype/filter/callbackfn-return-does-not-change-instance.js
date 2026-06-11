@@ -9,7 +9,9 @@ features: [TypedArray]
 ---*/
 
 testWithTypedArrayConstructors(function(TA, makeCtorArg) {
-  var sample1 = new TA(makeCtorArg(["0", "1", "0"]));
+  var sample1 = new TA(makeCtorArg(3));
+
+  sample1[1] = 1;
 
   sample1.filter(function() {
     return 42;

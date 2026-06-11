@@ -5,16 +5,16 @@
 /*---
 esid: sec-atomics.load
 description: >
-  Atomics.load throws when operating on incompatible TypedArrays
+  Atomics.load throws when operating on non-sharable integer TypedArrays
 includes: [testTypedArray.js]
 features: [ArrayBuffer, Atomics, TypedArray]
 ---*/
-testWithNonAtomicsFriendlyTypedArrayConstructors((TA, makeCtorArg) => {
-  const buffer = makeCtorArg(4);
+testWithNonAtomicsFriendlyTypedArrayConstructors(TA => {
+  const buffer = new ArrayBuffer(TA.BYTES_PER_ELEMENT * 4);
   const view = new TA(buffer);
   assert.throws(TypeError, function() {
     Atomics.load(view, 0);
   }, `Atomics.load(new ${TA.name}(buffer), 0) throws TypeError`);
-}, ["arraybuffer"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

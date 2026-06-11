@@ -15,9 +15,9 @@ includes: [testTypedArray.js]
 features: [Symbol.toStringTag, TypedArray]
 ---*/
 
-testWithTypedArrayConstructors(function(TA, makeCtorArg) {
-  var ta = new TA(makeCtorArg(0));
+testWithTypedArrayConstructors(function(TA) {
+  var ta = new TA();
   assert.sameValue(ta[Symbol.toStringTag], TA.name, "property value");
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

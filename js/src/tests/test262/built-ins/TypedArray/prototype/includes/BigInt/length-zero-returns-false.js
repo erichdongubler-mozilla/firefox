@@ -28,14 +28,14 @@ var fromIndex = {
   }
 };
 
-testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
-  var sample = new TA(makeCtorArg(0));
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var sample = new TA();
   assert.sameValue(sample.includes(0), false, "returns false");
   assert.sameValue(sample.includes(), false, "returns false - no arg");
   assert.sameValue(
     sample.includes(0n, fromIndex), false,
     "length is checked before ToInteger(fromIndex)"
   );
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

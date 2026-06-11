@@ -26,8 +26,8 @@ includes: [testTypedArray.js]
 features: [TypedArray]
 ---*/
 
-testWithTypedArrayConstructors(function(TA, makeCtorArg) {
-  var sample = new TA(makeCtorArg(0));
+testWithTypedArrayConstructors(function(TA) {
+  var sample = new TA();
   var called = false;
 
   var predicate = function() {
@@ -45,6 +45,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
     result, -1,
     "returns -1 on an empty instance"
   );
-});
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

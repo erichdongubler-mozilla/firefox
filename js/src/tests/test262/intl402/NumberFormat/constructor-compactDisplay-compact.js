@@ -2,16 +2,16 @@
 // This code is governed by the BSD license found in the LICENSE file.
 
 /*---
-esid: sec-intl.numberformat
+esid: sec-initializenumberformat
 description: Checks handling of the compactDisplay option to the NumberFormat constructor.
 info: |
-  Intl.NumberFormat ( [ locales [ , options ] ] )
+    InitializeNumberFormat ( numberFormat, locales, options )
 
-  1. Let _compactDisplay_ be ? GetOption(_options_, *"compactDisplay"*,
-     ~string~, « *"short"*, *"long"* », *"short"*).
-  1. If _notation_ is *"compact"*, then
-    1. Set _numberFormat_.[[CompactDisplay]] to _compactDisplay_.
+    19. Let compactDisplay be ? GetOption(options, "compactDisplay", "string", « "short", "long" », "short").
+    20. If notation is "compact", then
+        a. Set numberFormat.[[CompactDisplay]] to compactDisplay.
 
+includes: [compareArray.js]
 features: [Intl.NumberFormat-unified]
 ---*/
 
@@ -22,10 +22,25 @@ const values = [
 ];
 
 for (const [value, expected = value] of values) {
-  const nf = new Intl.NumberFormat([], { notation: "compact", compactDisplay: value });
+  const callOrder = [];
+  const nf = new Intl.NumberFormat([], {
+    get notation() {
+      callOrder.push("notation");
+      return "compact";
+    },
+    get compactDisplay() {
+      callOrder.push("compactDisplay");
+      return value;
+    }
+  });
   const resolvedOptions = nf.resolvedOptions();
   assert.sameValue("compactDisplay" in resolvedOptions, true);
   assert.sameValue(resolvedOptions.compactDisplay, expected);
+
+  assert.compareArray(callOrder, [
+    "notation",
+    "compactDisplay",
+  ]);
 }
 
 reportCompare(0, 0);

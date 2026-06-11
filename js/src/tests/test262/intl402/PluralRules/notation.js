@@ -2,7 +2,7 @@
 // This code is governed by the BSD license found in the LICENSE file.
 
 /*---
-esid: sec-intl.pluralrules
+esid: sec-initializepluralrules
 description: Checks that the notation option is picked up correctly.
 info: |
   Intl.PluralRules ( [ _locales_ [ , _options_ ] ] )

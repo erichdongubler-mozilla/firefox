@@ -232,17 +232,6 @@ inline bool PutProperty(JSContext* cx, JS::Handle<JSObject*> obj,
                         bool strict);
 
 /*
- * ECMA-262 SetterThatIgnoresPrototypeProperties abstract operation.
- *
- * https://tc39.es/ecma262/#sec-SetterThatIgnoresPrototypeProperties
- */
-extern bool SetterThatIgnoresPrototypeProperties(JSContext* cx,
-                                                 JS::Handle<JS::Value> thisv,
-                                                 JS::Handle<JSObject*> home,
-                                                 JS::Handle<jsid> prop,
-                                                 JS::Handle<JS::Value> value);
-
-/*
  * ES6 [[Delete]]. Equivalent to the JS code `delete obj[id]`.
  */
 inline bool DeleteProperty(JSContext* cx, JS::Handle<JSObject*> obj,

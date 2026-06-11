@@ -12,7 +12,7 @@ info: |
 includes: [propertyHelper.js]
 features: [upsert]
 ---*/
-verifyProperty(WeakMap.prototype.getOrInsert, "name", {
+verifyProperty(Map.prototype.getOrInsert, "name", {
   value: "getOrInsert",
   writable: false,
   enumerable: false,

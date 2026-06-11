@@ -2,7 +2,6 @@
 // This code is governed by the BSD license found in the LICENSE file.
 
 /*---
-includes: [detachArrayBuffer.js]
 description: |
   pending
 esid: pending
@@ -12,7 +11,7 @@ esid: pending
 // all relevant functions.
 let buffer = new ArrayBuffer(32);
 let array  = new Int32Array(buffer);
-$DETACHBUFFER(buffer);
+$262.detachArrayBuffer(buffer);
 
 // A nice poisoned callable to ensure that we fail on a detached buffer check
 // before a method attempts to do anything with its arguments.

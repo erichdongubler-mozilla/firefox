@@ -25,12 +25,12 @@ var obj = {
   }
 };
 
-testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
-  var sample = new TA(makeCtorArg(1));
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var sample = new TA(1);
   $DETACHBUFFER(sample.buffer);
   assert.throws(TypeError, function() {
     sample.fill(obj);
   });
-}, null, null, ["immutable"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

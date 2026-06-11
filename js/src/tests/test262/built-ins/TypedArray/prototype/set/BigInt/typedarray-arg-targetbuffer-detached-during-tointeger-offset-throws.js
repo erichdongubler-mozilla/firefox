@@ -20,9 +20,9 @@ includes: [testTypedArray.js, detachArrayBuffer.js]
 features: [BigInt, TypedArray]
 ---*/
 
-testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
-  var sample = new TA(makeCtorArg(2));
-  var src = new TA(makeCtorArg(1));
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var sample = new TA(2);
+  var src = new TA(1);
   var calledOffset = 0;
   var obj = {
     valueOf: function() {
@@ -36,6 +36,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   });
 
   assert.sameValue(calledOffset, 1);
-}, null, null, ["immutable"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

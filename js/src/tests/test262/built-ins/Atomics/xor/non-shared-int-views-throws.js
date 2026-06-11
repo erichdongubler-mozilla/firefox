@@ -5,17 +5,17 @@
 /*---
 esid: sec-atomics.xor
 description: >
-  Atomics.xor throws when operating on incompatible TypedArrays
+  Atomics.xor throws when operating on non-sharable integer TypedArrays
 includes: [testTypedArray.js]
 features: [ArrayBuffer, Atomics, TypedArray]
 ---*/
-testWithNonAtomicsFriendlyTypedArrayConstructors((TA, makeCtorArg) => {
-  const buffer = makeCtorArg(4);
+testWithNonAtomicsFriendlyTypedArrayConstructors(TA => {
+  const buffer = new ArrayBuffer(TA.BYTES_PER_ELEMENT * 4);
   const view = new TA(buffer);
 
   assert.throws(TypeError, function() {
     Atomics.xor(view, 0, 1);
   }, `Atomics.xor(new ${TA.name}(buffer), 0, 1) throws TypeError`);
-}, ["arraybuffer"]);
+}, null, ["passthrough"]);
 
 reportCompare(0, 0);

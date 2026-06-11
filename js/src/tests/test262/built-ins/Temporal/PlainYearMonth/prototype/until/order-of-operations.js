@@ -9,7 +9,7 @@ includes: [compareArray.js, temporalHelpers.js]
 features: [Temporal]
 ---*/
 
-const expectedOpsForPrimitiveOptions = [
+const expected = [
   // ToTemporalYearMonth
   "get other.calendar",
   "get other.month",
@@ -21,8 +21,6 @@ const expectedOpsForPrimitiveOptions = [
   "get other.year",
   "get other.year.valueOf",
   "call other.year.valueOf",
-];
-const expected = expectedOpsForPrimitiveOptions.concat([
   // GetDifferenceSettings
   "get options.largestUnit",
   "get options.largestUnit.toString",
@@ -36,7 +34,7 @@ const expected = expectedOpsForPrimitiveOptions.concat([
   "get options.smallestUnit",
   "get options.smallestUnit.toString",
   "call options.smallestUnit.toString",
-]);
+];
 const actual = [];
 
 const instance = new Temporal.PlainYearMonth(2000, 5, "iso8601", 1);
@@ -60,11 +58,5 @@ function createOptionsObserver({ smallestUnit = "months", largestUnit = "auto", 
 
 instance.until(otherYearMonthPropertyBag, createOptionsObserver({ smallestUnit: "months", roundingIncrement: 1 }));
 assert.compareArray(actual, expected, "order of operations");
-actual.splice(0); // clear
-
-assert.throws(TypeError, () => instance.until(otherYearMonthPropertyBag, null));
-assert.compareArray(actual, expectedOpsForPrimitiveOptions,
-  "other year-month fields are read before TypeError is thrown for primitive options");
-actual.splice(0); // clear
 
 reportCompare(0, 0);
