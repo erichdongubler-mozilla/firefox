@@ -183,6 +183,9 @@ document.addEventListener(
           case "Browser:ShowAllTabs":
             gTabsPanel.showAllTabsPanel();
             break;
+          case "Browser:AddTabSplitView":
+            BrowserCommands.addTabSplitView();
+            break;
           case "cmd_fullZoomReduce":
             FullZoom.reduce();
             break;
