@@ -1,7 +1,7 @@
 {
   "label": "alaskawifi.com",
   "bugs": {
-    "1287715": {
+    "2038076": {
       "issue": "broken-interactive-elements",
       "matches": ["https://alaskawifi.com/*"]
     }

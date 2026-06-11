@@ -508,6 +508,12 @@ def generate_run_js(
             final_interventions[bug_number] = config
 
             # Do some sanity checks first
+            listed_bugs = config.get("bugs", {}).keys()
+            if len(listed_bugs) < 2 and bug_number.split("_")[0] not in listed_bugs:
+                raise ValueError(
+                    f"Bug number in the filename ({bug_number}) does not match bugs section of {json_filename}"
+                )
+
             for intervention in config["interventions"]:
                 content_scripts = intervention.get("content_scripts", {})
                 listed_files = set()
