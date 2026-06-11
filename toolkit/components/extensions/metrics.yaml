@@ -528,8 +528,10 @@ extensions.data:
       - https://bugzilla.mozilla.org/1915183
       - https://bugzilla.mozilla.org/1958156
       - https://bugzilla.mozilla.org/1994599
+      - https://bugzilla.mozilla.org/2041170/
     data_reviews:
       - https://phabricator.services.mozilla.com/D222442
+      - https://bugzilla.mozilla.org/2041170/
     data_sensitivity:
       - technical
     notification_emails:
@@ -550,7 +552,7 @@ extensions.data:
       backend:
         description: Backend engine used, currently either "kinto" or "rust"
         type: string
-    expires: 154
+    expires: 161
 
   migrate_result_count:
     type: labeled_counter
