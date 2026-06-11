@@ -489,6 +489,14 @@ class Assembler : public AssemblerShared,
 
   static bool HasZbbExtension() { return RVFlags::HasZbbExtension(); }
 
+  static bool HasZbsExtension() { return RVFlags::HasZbsExtension(); }
+
+  static bool HasZfhminExtension() { return RVFlags::HasZfhminExtension(); }
+
+  static bool HasZfaExtension() { return RVFlags::HasZfaExtension(); }
+
+  static bool HasZicondExtension() { return RVFlags::HasZicondExtension(); }
+
   void verifyHeapAccessDisassembly(uint32_t begin, uint32_t end,
                                    const Disassembler::HeapAccess& heapAccess) {
     MOZ_CRASH();
