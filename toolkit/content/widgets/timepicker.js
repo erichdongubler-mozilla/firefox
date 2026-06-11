@@ -108,6 +108,22 @@ function TimePicker(context) {
         format: format || "12",
       });
       timeKeeper.setState({ hour: timerHour, minute: timerMinute });
+      if (timeKeeper.state.isInvalid) {
+        // Value is set to min if it's first opened and time state is invalid
+        // Work from largest to smallest component to find the lowest valid time
+        const validPeriods = timeKeeper.ranges.dayPeriod.filter(m => m.enabled);
+        if (validPeriods.length) {
+          timeKeeper.setDayPeriod(validPeriods[0].value);
+        }
+        const validHours = timeKeeper.ranges.hours.filter(h => h.enabled);
+        if (validHours.length) {
+          timeKeeper.setHour(validHours[0].value);
+        }
+        const validMinutes = timeKeeper.ranges.minutes.filter(m => m.enabled);
+        if (validMinutes.length) {
+          timeKeeper.setMinute(validMinutes[0].value);
+        }
+      }
 
       this.state = { timeKeeper };
     },
@@ -213,14 +229,9 @@ function TimePicker(context) {
     _setComponentStates() {
       const { timeKeeper, isHourSet, isMinuteSet, isDayPeriodSet } = this.state;
       const isInvalid = timeKeeper.state.isInvalid;
-      // Value is set to min if it's first opened and time state is invalid
-      const setToMinValue =
-        !isHourSet && !isMinuteSet && !isDayPeriodSet && isInvalid;
 
       this.components.hour.setState({
-        value: setToMinValue
-          ? timeKeeper.ranges.hours[0].value
-          : timeKeeper.hour,
+        value: timeKeeper.hour,
         items: timeKeeper.ranges.hours,
         isInfiniteScroll: true,
         isValueSet: isHourSet,
@@ -228,9 +239,7 @@ function TimePicker(context) {
       });
 
       this.components.minute.setState({
-        value: setToMinValue
-          ? timeKeeper.ranges.minutes[0].value
-          : timeKeeper.minute,
+        value: timeKeeper.minute,
         items: timeKeeper.ranges.minutes,
         isInfiniteScroll: true,
         isValueSet: isMinuteSet,
@@ -240,9 +249,7 @@ function TimePicker(context) {
       // The AM/PM spinner is only available in 12hr mode
       if (this.props.format == "12") {
         this.components.dayPeriod.setState({
-          value: setToMinValue
-            ? timeKeeper.ranges.dayPeriod[0].value
-            : timeKeeper.dayPeriod,
+          value: timeKeeper.dayPeriod,
           items: timeKeeper.ranges.dayPeriod,
           isInfiniteScroll: false,
           isValueSet: isDayPeriodSet,

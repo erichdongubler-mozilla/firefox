@@ -249,3 +249,35 @@ add_task(async function test_timepicker_wrap_midnight() {
 
   await helper.tearDown();
 });
+
+/**
+ * Test that the time picker selects the minimum valid value when opened with an invalid value.
+ */
+add_task(async function test_timepicker_select_min_valid_when_invalid() {
+  info(
+    "Test that the time picker selects the minimum valid value when opened with an invalid value"
+  );
+  const minValue = "02:30";
+  const inputValue = "00:10";
+
+  await helper.openPicker(
+    `data:text/html, <input type='time' value="${inputValue}" min="${minValue}">`
+  );
+
+  const spinnerHour = helper.getElement(SPINNER_HOUR);
+  const spinnerMin = helper.getElement(SPINNER_MIN);
+
+  Assert.equal(
+    spinnerHour.ariaValueNow,
+    "2",
+    "The minimum valid hour is selected in the picker"
+  );
+
+  Assert.equal(
+    spinnerMin.ariaValueNow,
+    "30",
+    "The minimum valid minute is selected in the picker"
+  );
+
+  await helper.tearDown();
+});
