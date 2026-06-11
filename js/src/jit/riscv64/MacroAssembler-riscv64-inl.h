@@ -1413,18 +1413,12 @@ void MacroAssembler::cmp32LoadPtr(Condition cond, const Address& lhs, Imm32 rhs,
 
 void MacroAssembler::cmp32Move32(Condition cond, Register lhs, Imm32 rhs,
                                  Register src, Register dest) {
-  UseScratchRegisterScope temps(this);
-  Register scratch2 = temps.Acquire();
-  cmp32Set(cond, lhs, rhs, scratch2);
-  moveIfNotZero(dest, src, scratch2);
+  ma_cmp_mv(dest, lhs, rhs, src, cond);
 }
 
 void MacroAssembler::cmp32Move32(Condition cond, Register lhs, Register rhs,
                                  Register src, Register dest) {
-  UseScratchRegisterScope temps(this);
-  Register scratch2 = temps.Acquire();
-  cmp32Set(cond, lhs, rhs, scratch2);
-  moveIfNotZero(dest, src, scratch2);
+  ma_cmp_mv(dest, lhs, rhs, src, cond);
 }
 
 void MacroAssembler::cmp32Move32(Condition cond, Register lhs,
@@ -1438,10 +1432,7 @@ void MacroAssembler::cmp32Move32(Condition cond, Register lhs,
 }
 void MacroAssembler::cmp32MovePtr(Condition cond, Register lhs, Imm32 rhs,
                                   Register src, Register dest) {
-  UseScratchRegisterScope temps(this);
-  Register scratch2 = temps.Acquire();
-  cmp32Set(cond, lhs, rhs, scratch2);
-  moveIfNotZero(dest, src, scratch2);
+  ma_cmp_mv(dest, lhs, rhs, src, cond);
 }
 void MacroAssembler::cmp64Set(Condition cond, Register64 lhs, Register64 rhs,
                               Register dest) {

@@ -370,6 +370,128 @@ void MacroAssemblerRiscv64::ma_cmp_set(Register dst, Register lhs, Register rhs,
   }
 }
 
+void MacroAssemblerRiscv64::ma_cmp_mv(Register dst, Register lhs, Register rhs,
+                                      Register src, Condition c) {
+  UseScratchRegisterScope temps(this);
+  Register scratch = temps.Acquire();
+
+  ma_cmp_set(scratch, lhs, rhs, c);
+
+  // Inlined moveIfNotZero to avoid allocating a new scratch register if
+  // "Zicond" is available.
+  if (HasZicondExtension()) {
+    ma_cselnz(dst, src, dst, scratch, scratch);
+  } else {
+    Label done;
+    ma_b(scratch, scratch, &done, Zero, ShortJump);
+    mv(dst, src);
+    bind(&done);
+  }
+}
+
+void MacroAssemblerRiscv64::ma_cmp_mv(Register dst, Register lhs, Imm32 rhs,
+                                      Register src, Condition c) {
+  UseScratchRegisterScope temps(this);
+  Register scratch = temps.Acquire();
+
+  ma_cmp_set(scratch, lhs, rhs, c);
+
+  // Inlined moveIfNotZero to avoid allocating a new scratch register if
+  // "Zicond" is available.
+  if (HasZicondExtension()) {
+    ma_cselnz(dst, src, dst, scratch, scratch);
+  } else {
+    Label done;
+    ma_b(scratch, scratch, &done, Zero, ShortJump);
+    mv(dst, src);
+    bind(&done);
+  }
+}
+
+void MacroAssemblerRiscv64::ma_cselz(Register rd, Register rs1, Register rs2,
+                                     Register rc, Register rtmp) {
+  MOZ_ASSERT(HasZicondExtension());
+  MOZ_ASSERT(rd != rtmp);
+
+  // From
+  // <https://riscv.github.io/riscv-isa-manual/snapshot/spec/#_instruction_sequences>:
+  //
+  // Conditional select, if zero
+  // rd = (rc == 0) ? rs1 : rs2
+  //
+  // czero.nez  rd, rs1, rc
+  // czero.eqz  rtmp, rs2, rc
+  // add        rd, rd, rtmp
+
+  if (rs1 == rs2) {
+    if (rd != rs1) {
+      mv(rd, rs1);
+    }
+    return;
+  }
+
+  if (rd == rc) {
+    if (rs1 != rtmp) {
+      czero_eqz(rtmp, rs2, rc);
+      czero_nez(rd, rs1, rc);
+    } else {
+      czero_nez(rtmp, rs1, rc);
+      czero_eqz(rd, rs2, rc);
+    }
+  } else {
+    if (rd == rs2) {
+      czero_eqz(rd, rs2, rc);
+      czero_nez(rtmp, rs1, rc);
+    } else {
+      czero_nez(rd, rs1, rc);
+      czero_eqz(rtmp, rs2, rc);
+    }
+  }
+  add(rd, rd, rtmp);
+}
+
+void MacroAssemblerRiscv64::ma_cselnz(Register rd, Register rs1, Register rs2,
+                                      Register rc, Register rtmp) {
+  MOZ_ASSERT(HasZicondExtension());
+  MOZ_ASSERT(rd != rtmp);
+
+  // From
+  // <https://riscv.github.io/riscv-isa-manual/snapshot/spec/#_instruction_sequences>:
+  //
+  // Conditional select, if non-zero
+  // rd = (rc != 0) ? rs1 : rs2
+  //
+  // czero.eqz  rd, rs1, rc
+  // czero.nez  rtmp, rs2, rc
+  // add        rd, rd, rtmp
+
+  if (rs1 == rs2) {
+    if (rd != rs1) {
+      mv(rd, rs1);
+    }
+    return;
+  }
+
+  if (rd == rc) {
+    if (rs1 != rtmp) {
+      czero_nez(rtmp, rs2, rc);
+      czero_eqz(rd, rs1, rc);
+    } else {
+      czero_eqz(rtmp, rs1, rc);
+      czero_nez(rd, rs2, rc);
+    }
+  } else {
+    if (rd == rs2) {
+      czero_nez(rd, rs2, rc);
+      czero_eqz(rtmp, rs1, rc);
+    } else {
+      czero_eqz(rd, rs1, rc);
+      czero_nez(rtmp, rs2, rc);
+    }
+  }
+  add(rd, rd, rtmp);
+}
+
 void MacroAssemblerRiscv64::ma_compareF32(Register rd, DoubleCondition cc,
                                           FloatRegister cmp1,
                                           FloatRegister cmp2) {
@@ -614,8 +736,6 @@ void MacroAssemblerRiscv64Compat::minMax32(Register lhs, Imm32 rhs,
     return;
   }
 
-  // Uses branches because "Zicond" extension isn't yet supported.
-
   auto cond =
       isMax ? Assembler::GreaterThanOrEqual : Assembler::LessThanOrEqual;
   if (lhs != dest) {
@@ -688,8 +808,6 @@ void MacroAssemblerRiscv64Compat::minMaxPtr(Register lhs, ImmWord rhs,
     }
     return;
   }
-
-  // Uses branches because "Zicond" extension isn't yet supported.
 
   auto cond =
       isMax ? Assembler::GreaterThanOrEqual : Assembler::LessThanOrEqual;

@@ -336,6 +336,18 @@ class MacroAssemblerRiscv64 : public Assembler {
   void ma_cmp_set(Register dst, Register lhs, Register rhs, Condition c);
   void ma_cmp_set(Register dst, Register lhs, Imm32 imm, Condition c);
 
+  // Conditional moves.
+  void ma_cmp_mv(Register dst, Register lhs, Register rhs, Register src,
+                 Condition c);
+  void ma_cmp_mv(Register dst, Register lhs, Imm32 rhs, Register src,
+                 Condition c);
+
+  // Conditional select.
+  void ma_cselz(Register rd, Register rs1, Register rs2, Register rc,
+                Register rtmp);
+  void ma_cselnz(Register rd, Register rs1, Register rs2, Register rc,
+                 Register rtmp);
+
   void computeScaledAddress(const BaseIndex& address, Register dest);
   void computeScaledAddress32(const BaseIndex& address, Register dest);
 
@@ -760,6 +772,14 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   }
 
   void moveIfZero(Register dst, Register src, Register cond) {
+    if (HasZicondExtension()) {
+      UseScratchRegisterScope temps(this);
+      Register scratch = temps.Acquire();
+
+      ma_cselz(dst, src, dst, cond, scratch);
+      return;
+    }
+
     Label done;
     ma_b(cond, cond, &done, NonZero, ShortJump);
     mv(dst, src);
@@ -767,6 +787,14 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   }
 
   void moveIfNotZero(Register dst, Register src, Register cond) {
+    if (HasZicondExtension()) {
+      UseScratchRegisterScope temps(this);
+      Register scratch = temps.Acquire();
+
+      ma_cselnz(dst, src, dst, cond, scratch);
+      return;
+    }
+
     Label done;
     ma_b(cond, cond, &done, Zero, ShortJump);
     mv(dst, src);
