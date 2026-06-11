@@ -3330,9 +3330,13 @@ void MacroAssembler::branchTestNaNValue(Condition cond, const ValueOperand& val,
   MOZ_ASSERT(val.valueReg() != scratch);
 
   // When testing for NaN, we want to ignore the sign bit.
-  // Clear the top bit by shifting left and then right.
-  slli(temp, val.valueReg(), 1);
-  srli(temp, temp, 1);
+  if (HasZbsExtension()) {
+    bclri(temp, val.valueReg(), 63);
+  } else {
+    // Clear the top bit by shifting left and then right.
+    slli(temp, val.valueReg(), 1);
+    srli(temp, temp, 1);
+  }
 
   // Compare against a NaN with sign bit 0.
   static_assert(JS::detail::CanonicalizedNaNSignBit == 0);
@@ -5294,12 +5298,36 @@ void MacroAssemblerRiscv64::ma_sub64(Register rd, Register rs, Imm64 rt) {
   }
 }
 
+/**
+ * Return the index of the highest non-zero bit and the value with the highest
+ * non-zero bit cleared. For example: 0x1234 returns {12, 0x234}.
+ */
+static std::pair<uint32_t, uint64_t> SingleBitInstructionParts(uint64_t imm) {
+  MOZ_ASSERT(!is_int12(imm));
+  uint32_t bit = 63 - std::countl_zero(imm);
+  uint64_t rest = imm & ~(uint64_t(1) << bit);
+  return {bit, rest};
+}
+
 void MacroAssemblerRiscv64::ma_and(Register rd, Register rs, Imm64 rt) {
   if (is_int12(rt.value)) {
     andi(rd, rs, rt.value);
   } else {
     int shift = std::bit_width(uint64_t(rt.value));
     if (shift < 64 && (uint64_t(1) << shift) - 1 == uint64_t(rt.value)) {
+      if (HasZbbExtension()) {
+        if (rt.value == 0xffff) {
+          zext_h(rd, rs);
+          return;
+        }
+      }
+      if (HasZbaExtension()) {
+        if (rt.value == 0xffff'ffff) {
+          zext_w(rd, rs);
+          return;
+        }
+      }
+
       // `x & ((1 << shift) - 1)` can be expressed as two shifts.
       //  For example: `x & 0xffff` is `slli rd, rs, 48; srli rd, rd, 48`.
       slli(rd, rs, 64 - shift);
@@ -5313,6 +5341,32 @@ void MacroAssemblerRiscv64::ma_and(Register rd, Register rs, Imm64 rt) {
       srli(rd, rs, 63);
       slli(rd, rd, 63);
     } else {
+      // Loading an immediate and then performing an `and` requires at least two
+      // instructions. Instead prefer to emit two single bit instructions.
+      //
+      // This handles common bit-clear patterns like:
+      // -------------------------------------------------------------
+      // | Source            | Instructions                          |
+      // |-------------------|---------------------------------------|
+      // | rd = rs & ~0x1000 | bclri rd, rs, 12                      |
+      // | rd = rs & ~0x1100 | bclri rd, rs, 12; bclri rd, rd, 8     |
+      // | rd = rs & ~0x1011 | bclri rd, rs, 12; andi  rd, rd, ~0x11 |
+      // -------------------------------------------------------------
+      if (HasZbsExtension()) {
+        auto [bit, rest] = SingleBitInstructionParts(~rt.value);
+        if (rest == 0 || std::has_single_bit(rest) || is_int12(~rest)) {
+          bclri(rd, rs, bit);
+          if (rest) {
+            if (std::has_single_bit(rest)) {
+              bclri(rd, rd, 63 - std::countl_zero(rest));
+            } else {
+              andi(rd, rd, ~rest);
+            }
+          }
+          return;
+        }
+      }
+
       UseScratchRegisterScope temps(this);
       Register scratch = temps.Acquire();
       ma_li(scratch, rt);
@@ -5325,6 +5379,32 @@ void MacroAssemblerRiscv64::ma_or(Register rd, Register rs, Imm64 rt) {
   if (is_int12(rt.value)) {
     ori(rd, rs, rt.value);
   } else {
+    // Loading an immediate and then performing an `or` requires at least two
+    // instructions. Instead prefer to emit two single bit instructions.
+    //
+    // This handles common bit-set patterns like:
+    // -----------------------------------------------------------
+    // | Source           | Instructions                         |
+    // |------------------|--------------------------------------|
+    // | rd = rs | 0x1000 | bseti rd, rs, 12                     |
+    // | rd = rs | 0x1100 | bseti rd, rs, 12; bseti rd, rd, 8    |
+    // | rd = rs | 0x1011 | bseti rd, rs, 12; ori   rd, rd, 0x11 |
+    // -----------------------------------------------------------
+    if (HasZbsExtension()) {
+      auto [bit, rest] = SingleBitInstructionParts(rt.value);
+      if (std::has_single_bit(rest) || is_int12(rest)) {
+        bseti(rd, rs, bit);
+        if (rest) {
+          if (std::has_single_bit(rest)) {
+            bseti(rd, rd, 63 - std::countl_zero(rest));
+          } else {
+            ori(rd, rd, rest);
+          }
+        }
+        return;
+      }
+    }
+
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
     ma_li(scratch, rt);
@@ -5336,6 +5416,32 @@ void MacroAssemblerRiscv64::ma_xor(Register rd, Register rs, Imm64 rt) {
   if (is_int12(rt.value)) {
     xori(rd, rs, rt.value);
   } else {
+    // Loading an immediate and then performing a `xor` requires at least two
+    // instructions. Instead prefer to emit two single bit instructions.
+    //
+    // This handles common bit-invert patterns like:
+    // -----------------------------------------------------------
+    // | Source           | Instructions                         |
+    // |------------------|--------------------------------------|
+    // | rd = rs ^ 0x1000 | binvi rd, rs, 12                     |
+    // | rd = rs ^ 0x1100 | binvi rd, rs, 12; binvi rd, rd, 8    |
+    // | rd = rs ^ 0x1011 | binvi rd, rs, 12; xori  rd, rd, 0x11 |
+    // -----------------------------------------------------------
+    if (HasZbsExtension()) {
+      auto [bit, rest] = SingleBitInstructionParts(rt.value);
+      if (std::has_single_bit(rest) || is_int12(rest)) {
+        binvi(rd, rs, bit);
+        if (rest) {
+          if (std::has_single_bit(rest)) {
+            binvi(rd, rd, 63 - std::countl_zero(rest));
+          } else {
+            xori(rd, rd, rest);
+          }
+        }
+        return;
+      }
+    }
+
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
     ma_li(scratch, rt);
