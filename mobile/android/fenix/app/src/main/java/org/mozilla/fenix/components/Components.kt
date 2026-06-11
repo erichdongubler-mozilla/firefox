@@ -450,6 +450,13 @@ class Components(private val context: Context) {
     val settingsIndexer by lazyMonitored {
         DefaultFenixSettingsIndexer(
             context = context,
+            excludedPreferenceKeys = {
+                if (!settings.enableHomepageSportsWidget) {
+                    setOf(context.getString(R.string.pref_key_show_homepage_sports_widget))
+                } else {
+                    emptySet()
+                }
+            },
             additionalProviders = listOf(
                 DataChoicesSearchProvider,
                 AIControlsSearchProvider,
