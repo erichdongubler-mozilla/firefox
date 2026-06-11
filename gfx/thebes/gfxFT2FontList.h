@@ -34,8 +34,6 @@ class FT2FontEntry final : public gfxFT2FontEntryBase {
   explicit FT2FontEntry(const nsACString& aFaceName)
       : gfxFT2FontEntryBase(aFaceName), mFTFontIndex(0) {}
 
-  ~FT2FontEntry();
-
   gfxFontEntry* Clone() const override;
 
   const nsCString& GetName() const { return Name(); }
@@ -111,6 +109,9 @@ class FT2FontEntry final : public gfxFT2FontEntryBase {
   uint8_t mFTFontIndex;
 
  protected:
+  // Protected destructor, to discourage deletion outside of Release():
+  ~FT2FontEntry();
+
   FontTableCache* GetFontTableCache(bool aCreate) override;
 
   mozilla::Atomic<FontTableCache*> mFontTableCache;

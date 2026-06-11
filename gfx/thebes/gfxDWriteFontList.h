@@ -177,8 +177,6 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
 
   gfxFontEntry* Clone() const override;
 
-  virtual ~gfxDWriteFontEntry();
-
   hb_blob_t* GetFontTable(uint32_t aTableTag) override;
 
   nsresult ReadCMAP(FontInfoData* aFontInfoData = nullptr) override;
@@ -205,6 +203,9 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
   friend class gfxDWriteFont;
   friend class gfxDWriteFontList;
   friend class gfxDWriteFontFamily;
+
+  // Protected destructor, to discourage deletion outside of Release():
+  virtual ~gfxDWriteFontEntry();
 
   virtual nsresult CopyFontTable(uint32_t aTableTag,
                                  nsTArray<uint8_t>& aBuffer) override;
