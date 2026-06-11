@@ -210,15 +210,6 @@ static bool moz_container_wayland_ensure_surface(MozContainer* container,
   nsWindow* window = moz_container_get_nsWindow(container);
   MOZ_RELEASE_ASSERT(window);
 
-  if (!surface->MapLocked(lock, parentSurface,
-                          aPosition ? *aPosition : DesktopIntPoint())) {
-    return false;
-  }
-
-  surface->SetViewportFollowsSizeChangesLocked(lock);
-  surface->AddOpaqueSurfaceHandlerLocked(lock, gdkWindow,
-                                         /* aRegisterCommitHandler */ true);
-
   GtkWindow* parent =
       gtk_window_get_transient_for(GTK_WINDOW(window->GetGtkWidget()));
   if (parent) {
@@ -228,6 +219,15 @@ static bool moz_container_wayland_ensure_surface(MozContainer* container,
     surface->SetParentLocked(lock,
                              MOZ_WL_SURFACE(parentWindow->GetMozContainer()));
   }
+
+  if (!surface->MapLocked(lock, parentSurface,
+                          aPosition ? *aPosition : DesktopIntPoint())) {
+    return false;
+  }
+
+  surface->SetViewportFollowsSizeChangesLocked(lock);
+  surface->AddOpaqueSurfaceHandlerLocked(lock, gdkWindow,
+                                         /* aRegisterCommitHandler */ true);
 
   bool fractionalScale = StaticPrefs::widget_wayland_fractional_scale_enabled();
   if (surface->IsToplevelSurface() && fractionalScale) {
