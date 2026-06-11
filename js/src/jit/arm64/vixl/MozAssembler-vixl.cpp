@@ -535,7 +535,7 @@ void MozBaseAssembler::InsertIndexIntoTag(uint8_t* load, uint32_t index) {
 }
 
 
-bool MozBaseAssembler::PatchConstantPoolLoad(void* loadAddr, void* constPoolAddr) {
+void MozBaseAssembler::PatchConstantPoolLoad(void* loadAddr, void* constPoolAddr) {
   Instruction* load = reinterpret_cast<Instruction*>(loadAddr);
 
   // The load currently contains the pool entry's index,
@@ -548,7 +548,6 @@ bool MozBaseAssembler::PatchConstantPoolLoad(void* loadAddr, void* constPoolAddr
   Instruction* source = reinterpret_cast<Instruction*>(&constPool[index]);
 
   load->SetImmLLiteral(source);
-  return false; // Nothing uses the return value.
 }
 
 void

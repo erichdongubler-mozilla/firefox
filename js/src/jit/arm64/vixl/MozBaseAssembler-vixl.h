@@ -318,7 +318,7 @@ class MozBaseAssembler : public js::jit::AssemblerShared {
  public:
   // Static interface used by IonAssemblerBufferWithConstantPools.
   static void InsertIndexIntoTag(uint8_t* load, uint32_t index);
-  static bool PatchConstantPoolLoad(void* loadAddr, void* constPoolAddr);
+  static void PatchConstantPoolLoad(void* loadAddr, void* constPoolAddr);
   static void PatchShortRangeBranchToVeneer(ARMBuffer*, unsigned rangeIdx, BufferOffset deadline,
                                             BufferOffset veneer);
   static uint32_t PlaceConstantPoolBarrier(int offset);
