@@ -858,7 +858,7 @@
     <fragment
         android:id="@+id/settingsSearchFragment"
         android:name="org.mozilla.fenix.settings.settingssearch.SettingsSearchFragment"
-        android:label="@string/settings_search_title" />
+        android:label="@string/settings_title" />
     <fragment
         android:id="@+id/tabsSettingsFragment"
         android:name="org.mozilla.fenix.settings.TabsSettingsFragment"
