@@ -260,9 +260,11 @@ tasks:
                                 extraArgs:
                                     $switch:
                                         'tasks_for == "cron"': '${cron.quoted_args}'
-                                        'repository.project == "autoland"': '--no-verify'
-                                        'repository.project == "try"': '--no-verify --allow-parameter-override'
-                                        $default: ''
+                                        $default:
+                                            $switch:
+                                                'repository.project == "autoland"': '--no-verify'
+                                                'repository.project == "try"': '--no-verify --allow-parameter-override'
+                                                $default: ''
                             in:
                                 $if: 'tasks_for == "action"'
                                 then: >
@@ -573,8 +575,10 @@ tasks:
                                             extraArgs:
                                                 $switch:
                                                     'tasks_for == "cron"': '${cron.quoted_args}'
-                                                    'repoType == "dev"': '--allow-parameter-override'
-                                                    $default: ''
+                                                    $default:
+                                                        $switch:
+                                                            'repoType == "dev"': '--allow-parameter-override'
+                                                            $default: ''
                                         in:
                                             $if: 'eventType == "action"'
                                             then: >
