@@ -2536,22 +2536,25 @@ void FFmpegVideoDecoder<LIBAV_VER>::ProcessShutdown() {
 #if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
   mVideoFramePool = nullptr;
 #endif
-  // ProcessShutdown() calls ReleaseCodecContext() which frees mCodecContext via
-  // avcodec_free_context(), dropping FFmpeg's internal hw device references.
-  // av_buffer_unref() is reference-counted so its ordering here does not
-  // matter, but mVulkanDecoder.Cleanup() directly destroys Vulkan objects with
-  // no reference counting — it must run after the codec context is freed,
-  // otherwise FFmpeg internals may still reference those destroyed objects.
+  // Shutdown order for Vulkan hw decode:
+  // 1. avcodec_free_context() via ProcessShutdown() — FFmpeg created the
+  //    VkDevice (av_hwdevice_ctx_create) and must finish its own teardown
+  //    (ff_vk_uninit) before we touch Firefox-owned Vulkan objects.
+  // 2. mVulkanDecoder.Cleanup() — uses mDeviceWaitIdle and destroys our
+  //    command pools/fences; must run while mVulkanDeviceContext still keeps
+  //    the AVHWDeviceContext alive.
+  // 3. av_buffer_unref(&mVulkanDeviceContext) — may be the last ref and call
+  //    vkDestroyDevice, so it must come after Cleanup().
   FFmpegDataDecoder<LIBAV_VER>::ProcessShutdown();
 #if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
   if (IsHardwareAccelerated()) {
-    mLib->av_buffer_unref(&mVAAPIDeviceContext);
-    mLib->av_buffer_unref(&mVulkanDeviceContext);
 #  if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
     if (mVulkanDecoder.mDevice) {
       mVulkanDecoder.Cleanup();
     }
 #  endif
+    mLib->av_buffer_unref(&mVAAPIDeviceContext);
+    mLib->av_buffer_unref(&mVulkanDeviceContext);
   }
 #endif
 #ifdef MOZ_ENABLE_D3D11VA
