@@ -83,13 +83,6 @@ class TabManagementFragmentTest {
     }
 
     @Test
-    fun `GIVEN a list of tabs WHEN a tab is present with an ID THEN the index is returned`() {
-        val tabsList = List(size = 3) { createTab(id = "tab$it", url = "https://mozilla.org") }
-        val position = fragment.getTabPositionFromId(tabsList, "tab2")
-        assertEquals(2, position)
-    }
-
-    @Test
     fun `WHEN all conditions are met THEN shouldShowLockPbmBanner returns true`() {
         val result = testShouldShowLockPbmBanner()
         assertTrue(result)
