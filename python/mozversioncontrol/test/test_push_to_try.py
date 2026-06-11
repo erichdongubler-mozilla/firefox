@@ -236,7 +236,6 @@ def test_push_to_try(repo, monkeypatch):
                 "mach_tryserver",
                 "--change",
                 None,
-                "--allow-new",
                 "--allow-empty-description",
             ),
             (str(tool), "--quiet", "operation", "restore", ""),

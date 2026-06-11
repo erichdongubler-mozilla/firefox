@@ -439,7 +439,6 @@ class JujutsuRepository(Repository):
                 "mach_tryserver",
                 "--change",
                 head,
-                "--allow-new",
                 "--allow-empty-description",
             )
             if allow_log_capture:
@@ -706,7 +705,7 @@ class JujutsuRepository(Repository):
                     updated_author = True
 
             if updated_author:
-                self._run("describe", "--reset-author", "--no-edit")
+                self._run("metaedit", "--update-author")
 
             immutable_heads_key = 'revset-aliases."immutable_heads()"'
             immutable_heads_default_value = "builtin_immutable_heads() | remote_bookmarks(glob:'*', remote=exact:'origin')"
