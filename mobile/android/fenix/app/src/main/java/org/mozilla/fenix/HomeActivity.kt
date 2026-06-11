@@ -455,6 +455,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
 
         binding = ActivityHomeBinding.inflate(layoutInflater)
 
+        Performance.processIntentIfPerformanceTest(intent, this)
+
         val shouldShowOnboarding = !intent.isAllowedDuringOnboardingIntent(packageName) &&
             with(components) {
                 settings.shouldShowOnboarding(fenixOnboarding.userHasBeenOnboarded())
@@ -467,7 +469,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             storage = DefaultSplashScreenStorage(components.settings),
             showSplashScreen = { installSplashScreen().setKeepOnScreenCondition(it) },
             onSplashScreenFinished = { result ->
-                // Before the slashscreen ends the application has a different theme not supporting edge to edge.
+                // Before the splashscreen ends the application has a different theme not supporting edge to edge.
                 EdgeToEdgeFragmentLifecycleCallbacks.register(supportFragmentManager, window)
 
                 if (result.sendTelemetry) {
@@ -543,8 +545,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                 StartOnHome.enterHomeScreen.record(NoExtras())
             }
         }
-
-        Performance.processIntentIfPerformanceTest(intent, this)
 
         // This will record an event in Nimbus' internal event store. Used for behavioral targeting
         recordEventInNimbus("app_opened")
