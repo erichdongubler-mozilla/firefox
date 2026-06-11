@@ -36,6 +36,9 @@ function makeConversation({
       return new Set();
     },
     addSerpUrlsForAnonymousFetch() {},
+    getLatestUserMentionCount() {
+      return 0;
+    },
   };
 }
 const { PlacesUtils } = ChromeUtils.importESModule(
