@@ -687,6 +687,8 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   void UpdateSharedWorkersLanguageOverride(const nsCString& aLanguageOverride);
 
+  void UpdateSharedWorkerTimezoneOverride(const nsAString& aTimezoneOverride);
+
  public:
   void Alert(nsIPrincipal& aSubjectPrincipal, mozilla::ErrorResult& aError);
   void Alert(const nsAString& aMessage, nsIPrincipal& aSubjectPrincipal,

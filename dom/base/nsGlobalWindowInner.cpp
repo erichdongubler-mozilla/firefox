@@ -7770,6 +7770,13 @@ void nsGlobalWindowInner::UpdateSharedWorkersLanguageOverride(
   }
 }
 
+void nsGlobalWindowInner::UpdateSharedWorkerTimezoneOverride(
+    const nsAString& aTimezoneOverride) {
+  for (RefPtr<SharedWorker> pinnedWorker : mSharedWorkers.ForwardRange()) {
+    pinnedWorker->UpdateTimezoneOverride(aTimezoneOverride);
+  }
+}
+
 RefPtr<GenericPromise> nsGlobalWindowInner::StorageAccessPermissionChanged(
     bool aGranted) {
   // Invalidate cached StorageAllowed field so that calls to GetLocalStorage
