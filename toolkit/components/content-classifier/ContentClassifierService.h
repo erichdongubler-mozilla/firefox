@@ -26,6 +26,8 @@
 
 #include "mozilla/ContentClassifierEngine.h"
 
+class nsISerialEventTarget;
+
 namespace mozilla {
 
 enum class ClassifyMode { Annotate, Cancel };
@@ -294,6 +296,24 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   nsTHashMap<nsCStringHashKey, RefPtr<ContentClassifierEngine>> mEngines
       MOZ_GUARDED_BY(mLock);
 
+  // Per-feature monotonic version counter, bumped each time
+  // UpdateFeatures decides to rebuild that feature's engine. The
+  // version is captured into the build closure at dispatch time;
+  // when the closure later runs it skips installation for any feature
+  // whose recorded version no longer matches the current one (i.e. a
+  // newer rebuild has been issued since), so two racing rebuilds
+  // can't write each other's stale results.
+  nsTHashMap<nsCStringHashKey, uint64_t> mFeatureVersions MOZ_GUARDED_BY(mLock);
+
+  // Global update generation. Bumped under mLock on every UpdateFeatures
+  // call (including the empty-features path). Each closure captures
+  // its generation at dispatch time and only runs Populate / Prune /
+  // Notify when its generation equals mUpdateGeneration — i.e., no
+  // newer UpdateFeatures has been issued. This prevents an older
+  // closure with a stale snapshot from clobbering active-engine lists
+  // populated by a newer call's snapshot.
+  uint64_t mUpdateGeneration MOZ_GUARDED_BY(mLock) = 0;
+
   // Engines to consult at classify time, split by phase (Cancel/Annotate)
   // and PBM-ness. Refreshed alongside mEngines whenever the engines
   // selection changes.
@@ -309,6 +329,12 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   // RemoteSettings client for fetching filter lists. All reads and
   // writes must happen on the main thread; each call site asserts.
   nsCOMPtr<nsIContentClassifierRemoteSettingsClient> mRSClient;
+
+  // Serial background task queue used for the CPU-heavy half of engine
+  // rebuilds (BuildEngineFromRules) plus the lock-holding install /
+  // populate / prune phase. Created in Init(); drained and cleared in
+  // BlockShutdown before RemoveBlocker runs.
+  nsCOMPtr<nsISerialEventTarget> mBuildThread;
 };
 
 }  // namespace mozilla
