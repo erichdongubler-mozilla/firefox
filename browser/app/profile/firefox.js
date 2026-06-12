@@ -2276,9 +2276,6 @@ pref("browser.smartwindow.sidebar.openByDefault", true);
 pref("browser.smartwindow.isDefaultWindow", false);
 pref("browser.smartwindow.firstrun.explainerURL", "https://www.firefox.com/en-US/smart-window/?v=product");
 pref("places.semanticHistory.smartwindow.featureGate", false);
-// Allow markdown tables in Smart Window responses
-// TODO (Bug 2039835): Remove pref and cleanup deprecated code paths.
-pref("browser.smartwindow.allowTables", true);
 
 // Smart Window: Merino World Cup Soccer tool call (bug 2038266)
 pref("browser.smartwindow.worldcup.enabled", true);

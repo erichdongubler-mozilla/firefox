@@ -44,7 +44,7 @@ let gRemoteClientStub;
 // Minimal RS records returned by the global getRemoteClient stub.
 // Version numbers must match FEATURE_MAJOR_VERSIONS in models/Utils.sys.mjs.
 const MOCK_RS_RECORDS = [
-  ["chat", 6],
+  ["chat", 7],
   ["title-generation", 1],
   ["conversation-starters-sidebar-system", 1],
   ["conversation-suggestions-sidebar-starter", 2],
@@ -87,7 +87,7 @@ const MOCK_RS_RECORDS = [
       purpose: "chat",
       parameters: {},
       prompts: "Test system prompt.",
-      version: "v6.0",
+      version: "v7.0",
     },
     {
       feature: "chat",
@@ -97,7 +97,7 @@ const MOCK_RS_RECORDS = [
       purpose: "chat",
       parameters: {},
       prompts: "Test system prompt.",
-      version: "v6.0",
+      version: "v7.0",
     },
     {
       feature: "chat",
@@ -107,7 +107,7 @@ const MOCK_RS_RECORDS = [
       purpose: "chat",
       parameters: {},
       prompts: "Test system prompt.",
-      version: "v6.0",
+      version: "v7.0",
     },
   ]);
 

@@ -84,8 +84,6 @@ export const MODEL_FEATURES = Object.freeze({
   REAL_TIME_CONTEXT_TAB: "real-time-context-tab",
   REAL_TIME_CONTEXT_MENTIONS: "real-time-context-mentions",
   MEMORIES_RELEVANT_CONTEXT: "memories-relevant-context",
-  DISABLE_TABLE_INSTRUCTIONS: "disable-table-instructions",
-  ENABLE_TABLE_INSTRUCTIONS: "enable-table-instructions",
 });
 
 /** @typedef {(typeof MODEL_FEATURES)[keyof typeof MODEL_FEATURES]} ModelFeature */
@@ -118,7 +116,7 @@ export const PURPOSES = Object.freeze({
  * Keep ui/test/browser/head.js MOCK_RS_RECORDS aligned with this table.
  */
 export const FEATURE_MAJOR_VERSIONS = Object.freeze({
-  [MODEL_FEATURES.CHAT]: 6,
+  [MODEL_FEATURES.CHAT]: 7,
   [MODEL_FEATURES.TITLE_GENERATION]: 1,
   [MODEL_FEATURES.CONVERSATION_STARTERS_SIDEBAR_SYSTEM]: 1,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER]: 2,
@@ -136,12 +134,10 @@ export const FEATURE_MAJOR_VERSIONS = Object.freeze({
   [MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM]: 1,
   [MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_USER]: 1,
   [MODEL_FEATURES.MEMORIES_RELEVANT_CONTEXT]: 2,
-  // real-time-context fragments and table-instructions fragments
+  // real-time-context fragments
   [MODEL_FEATURES.REAL_TIME_CONTEXT_DATE]: 1,
   [MODEL_FEATURES.REAL_TIME_CONTEXT_TAB]: 1,
   [MODEL_FEATURES.REAL_TIME_CONTEXT_MENTIONS]: 1,
-  [MODEL_FEATURES.ENABLE_TABLE_INSTRUCTIONS]: 1,
-  [MODEL_FEATURES.DISABLE_TABLE_INSTRUCTIONS]: 1,
 });
 
 /**
