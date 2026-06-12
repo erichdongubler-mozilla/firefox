@@ -36,6 +36,7 @@ const CHECK_FOR_UNSUBMITTED_CRASH_REPORTS_DELAY_MS = 60 * 10000; // 10 minutes
 const CRASH_FILE_CLEANUP_DELAY_MS = (23 + 5 * 60) * 1000; // A little past 5mn
 const CLEANUP_INTERVAL_DAYS = 7;
 const INSTALL_TIME_MAX_AGE_MS = 90 * DAY; // ~3 months
+const REPORT_MAX_AGE_MS = 180 * DAY; // ~6 months
 
 // This is SIGUSR1 and indicates a user-invoked crash
 const EXIT_CODE_CONTENT_CRASHED = 245;
@@ -1345,6 +1346,19 @@ export var CrashFileCleaner = {
     await lazy.CrashReports.pruneInstallTimeFiles(INSTALL_TIME_MAX_AGE_MS);
   },
 
+  async pruneOldReports() {
+    const cutoff = Date.now() - REPORT_MAX_AGE_MS;
+    for (const report of lazy.CrashReports.getReports()) {
+      if (report.date < cutoff) {
+        if (report.pending) {
+          lazy.CrashReports.deletePendingReport(report.id);
+        } else {
+          lazy.CrashReports.deleteSubmittedReport(report.id);
+        }
+      }
+    }
+  },
+
   async runCleanup() {
     if (!this.enabled) {
       return;
@@ -1358,6 +1372,7 @@ export var CrashFileCleaner = {
 
     try {
       await this.pruneInstallTimeMarkers();
+      await this.pruneOldReports();
       lazy.cleanerPrefs.setCharPref("lastDate", new Date().toISOString());
     } catch (e) {
       lazy.cleanerLog.error(e);

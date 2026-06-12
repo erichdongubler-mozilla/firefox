@@ -163,6 +163,38 @@ add_task(async function test_pruneInstallTimeMarkers() {
   Assert.ok(await IOUtils.exists(recentFile));
 });
 
+add_task(async function test_pruneOldReports() {
+  await clearAllCrashFiles();
+
+  const now = Date.now();
+  const oldSubmittedId = newUuid();
+  const oldPendingId = newUuid();
+  const recentSubmittedId = newUuid();
+  const recentPendingId = newUuid();
+  const oldFiles = await createPendingReport(oldPendingId, now - 200 * DAY);
+  oldFiles.submitted = await createSubmittedReport(
+    oldSubmittedId,
+    now - 200 * DAY
+  );
+  const recentFiles = await createPendingReport(
+    recentPendingId,
+    now - 10 * DAY
+  );
+  recentFiles.submitted = await createSubmittedReport(
+    recentSubmittedId,
+    now - 10 * DAY
+  );
+
+  await CrashFileCleaner.pruneOldReports();
+
+  for (const key in oldFiles) {
+    Assert.ok(!(await IOUtils.exists(oldFiles[key])));
+  }
+  for (const key in recentFiles) {
+    Assert.ok(await IOUtils.exists(recentFiles[key]));
+  }
+});
+
 add_task(async function test_runCleanup_skipped_when_recent_run() {
   await clearAllCrashFiles();
   resetCleaner();

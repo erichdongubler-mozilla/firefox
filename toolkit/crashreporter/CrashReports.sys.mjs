@@ -101,6 +101,35 @@ export var CrashReports = {
       }
     }
   },
+
+  /**
+   * Deletes all files belonging to a single pending crash report:
+   * the minidump (`.dmp`), the annotations file (`.extra`), the optional
+   * ignore marker (`.dmp.ignore`), and the optional memory report
+   * (`.memory.json.gz`). Missing files are tolerated.
+   *
+   * @param {string} id The crash report's UUID (without any file extension).
+   */
+  async deletePendingReport(id) {
+    const base = PathUtils.join(this.pendingDir.path, id);
+    for (const suffix of [".dmp", ".extra", ".dmp.ignore", ".memory.json.gz"]) {
+      await IOUtils.remove(base + suffix, { ignoreAbsent: true });
+    }
+  },
+
+  /**
+   * Deletes the `bp-<id>.txt` record of a successfully submitted crash
+   * report. Missing file is tolerated.
+   *
+   * @param {string} id The submitted report identifier as it appears in
+   *                    `bp-<id>.txt` (i.e. the full `bp-<UUID>` string
+   *                    without the `.txt` extension).
+   */
+  async deleteSubmittedReport(id) {
+    await IOUtils.remove(PathUtils.join(this.submittedDir.path, id + ".txt"), {
+      ignoreAbsent: true,
+    });
+  },
 };
 
 function CrashReports_pendingDir() {
