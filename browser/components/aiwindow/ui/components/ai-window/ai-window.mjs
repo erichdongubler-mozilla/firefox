@@ -726,6 +726,9 @@ export class AIWindow extends MozLitElement {
     this.#starterPromptsAbortController?.abort();
     this.#starterPromptsAbortController = null;
 
+    this.#abortController?.abort();
+    this.#abortController = null;
+
     // Clean up visibility change handler
     if (this.#visibilityChangeHandler) {
       this.ownerDocument.removeEventListener(
@@ -1759,6 +1762,9 @@ export class AIWindow extends MozLitElement {
     this.#abortController?.abort();
     this.#abortController = new AbortController();
     const { signal } = this.#abortController;
+    const stopWatchingTabClose =
+      this.#watchTabCloseForAbort(browsingContext, this.#abortController) ??
+      (() => {});
     this.isGenerating = true;
 
     const requestStart = ChromeUtils.now();
@@ -1836,11 +1842,38 @@ export class AIWindow extends MozLitElement {
       }
       this.requestUpdate?.();
     } finally {
+      stopWatchingTabClose();
       if (this.#abortController?.signal === signal) {
         this.isGenerating = false;
         this.#abortController = null;
       }
     }
+  }
+
+  /**
+   * Aborts the given controller when the tab that owns the captured
+   * browsingContext is closed. Sidebar mode only — in fullpage mode the AI
+   * window itself owns the browsingContext, and tearing down the element
+   * already stops generation. Returns a cleanup function, or null if no
+   * watcher was installed.
+   *
+   * @param {BrowsingContext} browsingContext
+   * @param {AbortController} controller
+   * @returns {(() => void) | null}
+   */
+  #watchTabCloseForAbort(browsingContext, controller) {
+    if (this.mode != MODE.SIDEBAR || !browsingContext) {
+      return null;
+    }
+    const browser = browsingContext.embedderElement;
+    const chromeWin = window.browsingContext?.topChromeWindow;
+    const tab = browser && chromeWin?.gBrowser?.getTabForBrowser(browser);
+    if (!tab) {
+      return null;
+    }
+    const onTabClose = () => controller.abort();
+    tab.addEventListener("TabClose", onTabClose);
+    return () => tab.removeEventListener("TabClose", onTabClose);
   }
 
   updated(changedProps) {
