@@ -150,6 +150,7 @@ use style::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use style::values::generics::color::ColorMixFlags;
 use style::values::generics::easing::BeforeFlag;
 use style::values::generics::length::GenericAnchorSizeFunction;
+use style::values::generics::Optional;
 use style::values::resolved;
 use style::values::resolved::ToResolvedValue;
 use style::values::specified::align::AlignFlags;
@@ -5990,36 +5991,25 @@ pub unsafe extern "C" fn Servo_SumValue_Drop(sum_value: *mut SumValue) {
     let _ = Box::from_raw(sum_value);
 }
 
-/// A result of attempting to convert a sum value to a concrete unit.
+/// Attempts to convert a sum value to a concrete unit.
 ///
-/// Unlike `NumericValueResult`, the `Unsupported` case here is a valid and
-/// expected outcome. It indicates that the sum value cannot be converted to
-/// the requested unit, for example because the value contains multiple items,
-/// or incompatible units.
-#[repr(C)]
-pub enum UnitValueResult {
-    /// The sum value could not be converted to the requested unit.
-    ///
-    /// This represents a valid conversion failure, such as attempting to
-    /// convert a multi-item sum value or converting between incompatible
-    /// units. In this case, the caller is expected to throw an error.
-    Unsupported,
-
-    /// The sum value was successfully converted to a `UnitValue`.
-    Unit(UnitValue),
-}
-
+/// Returns `Optional::Some` if the sum value can be converted to the
+/// requested unit, or `Optional::None` if conversion is not possible.
+///
+/// Conversion may fail for valid reasons, such as:
+/// - the sum value containing multiple items
+/// - converting between incompatible units
 #[no_mangle]
 pub extern "C" fn Servo_SumValue_ToUnit(
     sum_value: &SumValue,
     unit: &nsACString,
-    result: &mut UnitValueResult,
+    result: &mut Optional<UnitValue>,
 ) {
     let unit = unsafe { unit.as_str_unchecked() };
 
-    *result = match sum_value.resolve_to_unit(unit) {
-        Ok(unit_value) => UnitValueResult::Unit(unit_value),
-        Err(..) => UnitValueResult::Unsupported,
+    *result = match sum_value.to_unit(unit) {
+        Ok(unit_value) => Optional::Some(unit_value),
+        Err(..) => Optional::None,
     };
 }
 

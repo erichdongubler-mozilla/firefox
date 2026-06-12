@@ -138,17 +138,16 @@ already_AddRefed<CSSUnitValue> CSSNumericValue::To(const nsACString& aUnit,
   }
 
   // Step 3.
-  StyleUnitValueResult styleUnitValueResult =
-      StyleUnitValueResult::Unsupported();
-  Servo_SumValue_ToUnit(sumValue.get(), &aUnit, &styleUnitValueResult);
-  if (styleUnitValueResult.IsUnsupported()) {
+  auto styleUnitValue = StyleOptional<StyleUnitValue>::None();
+  Servo_SumValue_ToUnit(sumValue.get(), &aUnit, &styleUnitValue);
+  if (styleUnitValue.IsNone()) {
     aRv.ThrowTypeError("Failed to convert to "_ns + aUnit);
     return nullptr;
   }
 
   // Step 4.
   RefPtr<CSSUnitValue> unitValue =
-      CSSUnitValue::Create(mParent, styleUnitValueResult.AsUnit());
+      CSSUnitValue::Create(mParent, styleUnitValue.AsSome());
   return unitValue.forget();
 }
 
