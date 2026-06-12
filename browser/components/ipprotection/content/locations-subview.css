@@ -65,14 +65,6 @@
       color: var(--text-color-deemphasized);
     }
   }
-
-  @media (prefers-contrast) {
-    border: var(--button-border);
-  }
-
-  @media (forced-colors) {
-    border: var(--button-border);
-  }
 }
 
 .location-check {
