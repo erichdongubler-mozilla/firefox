@@ -839,6 +839,8 @@ def write_mozbuild_files(
     all_mozbuild_results,
     write_mozbuild_variables,
 ):
+    print("Writing moz.build files")
+
     # Translate {config -> {dirs -> build info}} into
     #           {dirs -> [(config, build_info)]}
     configs_by_dir = defaultdict(list)
@@ -1008,7 +1010,7 @@ def generate_gn_config(
                 input_variables,
                 gn_target,
             )
-            gn_config = process_gn_config(
+            mozbuild_result = process_gn_config(
                 gn_config,
                 resolved_tempdir,
                 topsrcdir,
@@ -1018,22 +1020,13 @@ def generate_gn_config(
                 mozilla_flags,
                 mozilla_add_override_dir,
             )
-            return gn_config
+            return gn_config, mozbuild_result
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("config", help="configuration in json format")
-    args = parser.parse_args()
-
+def generate_gn_configs(topsrcdir, config):
     gn_binary = bootstrap_toolchain("gn/gn") or which("gn")
     if not gn_binary:
         raise Exception("The GN program must be present to generate GN configs.")
-
-    with open(args.config) as fh:
-        config = mozfile_json.load(fh)
-
-    topsrcdir = Path(__file__).parent.parent.resolve()
 
     vars_set = []
     for is_debug in (True, False):
@@ -1107,11 +1100,25 @@ def main():
 
         print("All generation tasks have been processed.")
 
-    print("Writing moz.build files")
+    return gn_configs
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("config", help="configuration in json format")
+    args = parser.parse_args()
+
+    with open(args.config) as fh:
+        config = mozfile_json.load(fh)
+
+    topsrcdir = Path(__file__).parent.parent.resolve()
+
+    _, mozbuild_results = zip(*generate_gn_configs(topsrcdir, config))
+
     write_mozbuild_files(
         topsrcdir,
         topsrcdir / config["build_root_dir"] / config["target_dir"],
-        gn_configs,
+        mozbuild_results,
         config["write_mozbuild_variables"],
     )
 
