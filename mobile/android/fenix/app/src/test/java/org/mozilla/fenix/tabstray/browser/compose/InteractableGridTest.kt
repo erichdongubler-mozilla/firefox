@@ -40,7 +40,6 @@ class InteractableGridTest {
     private val scope = TestScope(testDispatcher)
     private val defaultIgnoredItems = setOf(TabKeys.HEADER, TabKeys.SPAN)
 
-
     @Test
     fun `GIVEN a point is inside the Rect THEN closestDistanceTo returns 0`() {
         val rect = Rect(
@@ -271,7 +270,7 @@ class InteractableGridTest {
         )
 
         reorderState.onTouchSlopPassed(dragItemOffset.toOffset(), false)
-        reorderState.dragRight(distance = 20f, preserveSelectMode = false)  // 20 to the right
+        reorderState.dragRight(distance = 20f, preserveSelectMode = false) // 20 to the right
         reorderState.onDragEnd()
 
         verify { handler.onDrop(TabKeys.TAB_ALPHA, TabKeys.TAB_BETA) }
@@ -532,13 +531,6 @@ class InteractableGridTest {
 
     private fun mockHeaderItem(): LazyGridItemInfo =
         mockGridItem(key = TabKeys.HEADER, index = 0, size = IntSize(1000, 100), offset = IntOffset(0, 0))
-
-    private object TabKeys {
-        val HEADER = "header"
-        val TAB_ALPHA = "alpha"
-        val TAB_BETA = "beta"
-        val SPAN = "span"
-    }
 
     private fun twoTabReorderState(
         handler: TabInteractionHandler,
