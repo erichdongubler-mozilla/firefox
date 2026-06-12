@@ -1233,7 +1233,8 @@ already_AddRefed<ScriptLoadRequest> ScriptLoader::CreateLoadRequest(
   }
 
   MOZ_ASSERT(aKind == ScriptKind::eClassic || aKind == ScriptKind::eImportMap ||
-             aKind == ScriptKind::eSpeculationRules);
+             (StaticPrefs::dom_speculation_rules_enabled() &&
+              aKind == ScriptKind::eSpeculationRules));
 
   RefPtr<ScriptLoadRequest> request =
       new ScriptLoadRequest(aKind, aIntegrity, referrer, context);
@@ -1890,6 +1891,8 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
   }
 
   if (request->IsSpeculationRulesRequest()) {
+    MOZ_ASSERT(StaticPrefs::dom_speculation_rules_enabled());
+
     // https://html.spec.whatwg.org/#prepare-the-script-element
     // Step 34.2. Switch on el's type:
     //  ...

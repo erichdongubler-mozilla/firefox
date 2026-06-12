@@ -111,7 +111,8 @@ void nsIScriptElement::DetermineKindFromType(
     // Step 12. Otherwise, if the script block's type string is an ASCII
     // case-insensitive match for the string "speculationrules", then set el's
     // type to "speculationrules".
-    if (type.LowerCaseEqualsASCII("speculationrules")) {
+    if (mozilla::StaticPrefs::dom_speculation_rules_enabled() &&
+        type.LowerCaseEqualsASCII("speculationrules")) {
       mKind = ScriptKind::eSpeculationRules;
     }
   }
