@@ -400,3 +400,45 @@ add_task(async function test_autodetected_uri() {
   // reset the default URI
   defaultPrefBranch.setCharPref("network.trr.default_provider_uri", defaultURI);
 });
+
+add_task(async function confirm_start_in_failed_state() {
+  // Use a clean, reachable TRR config independent of the preceding tests.
+  Services.prefs.setIntPref(
+    "network.trr.mode",
+    Ci.nsIDNSService.MODE_NATIVEONLY
+  );
+  Services.prefs.setCharPref(
+    "network.trr.confirmationNS",
+    "confirm.example.com"
+  );
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${trrServer.port()}/dns-query`
+  );
+  await registerNS(0);
+  equal(Services.dns.currentTrrConfirmationState, CONFIRM_OFF);
+
+  Services.prefs.setBoolPref(
+    "network.trr.start-confirmation-in-failed-state",
+    true
+  );
+  Services.prefs.setIntPref("network.trr.mode", Ci.nsIDNSService.MODE_TRRFIRST);
+  // With the pref set the confirmation context starts in CONFIRM_FAILED, so the
+  // pending confirmation is CONFIRM_TRYING_FAILED instead of the optimistic
+  // CONFIRM_TRYING_OK. While in this state TRRService::Enabled() returns false,
+  // so lookups fall back to native DNS instead of blocking on the TRR
+  // connection until the first confirmation succeeds.
+  equal(
+    Services.dns.currentTrrConfirmationState,
+    CONFIRM_TRYING_FAILED,
+    "Should be CONFIRM_TRYING_FAILED"
+  );
+
+  Services.prefs.clearUserPref(
+    "network.trr.start-confirmation-in-failed-state"
+  );
+  Services.prefs.setIntPref(
+    "network.trr.mode",
+    Ci.nsIDNSService.MODE_NATIVEONLY
+  );
+});
