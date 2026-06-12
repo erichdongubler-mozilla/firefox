@@ -953,7 +953,7 @@ static bool CyclicModuleResolveExport(JSContext* cx,
       // detect ambiguity.
       result.setNull();
       if (errorInfoOut) {
-        errorInfoOut->setCircularImport(cx, module);
+        errorInfoOut->setCircularImport(module);
       }
       return true;
     }
@@ -1028,7 +1028,7 @@ static bool CyclicModuleResolveExport(JSContext* cx,
     //           "mod" declaration.
     result.setNull();
     if (errorInfoOut) {
-      errorInfoOut->setImportedModule(cx, module);
+      errorInfoOut->setImportedModule(module);
     }
     return true;
   }
@@ -1114,7 +1114,7 @@ static bool CyclicModuleResolveExport(JSContext* cx,
           if (errorInfoOut) {
             ModuleObject* module1 = starResolution->module();
             ModuleObject* module2 = binding->module();
-            errorInfoOut->setForAmbiguousImport(cx, module, module1, module2);
+            errorInfoOut->setForAmbiguousImport(module, module1, module2);
           }
           return true;
         }
@@ -1126,9 +1126,9 @@ static bool CyclicModuleResolveExport(JSContext* cx,
   result.setObjectOrNull(starResolution);
   if (!starResolution && errorInfoOut) {
     if (hadCircular) {
-      errorInfoOut->setCircularImport(cx, module);
+      errorInfoOut->setCircularImport(module);
     } else {
-      errorInfoOut->setImportedModule(cx, module);
+      errorInfoOut->setImportedModule(module);
     }
   }
   return true;
@@ -1144,7 +1144,7 @@ static bool SyntheticModuleResolveExport(JSContext* cx,
   if (!ContainsElement(module->syntheticExportNames(), exportName)) {
     result.setNull();
     if (errorInfoOut) {
-      errorInfoOut->setImportedModule(cx, module);
+      errorInfoOut->setImportedModule(module);
     }
     return true;
   }
@@ -1286,8 +1286,7 @@ static ModuleNamespaceObject* ModuleNamespaceCreate(
   return ns;
 }
 
-void ModuleErrorInfo::setImportedModule(JSContext* cx,
-                                        ModuleObject* importedModule) {
+void ModuleErrorInfo::setImportedModule(ModuleObject* importedModule) {
   imported = importedModule->filename();
 }
 
@@ -1296,11 +1295,10 @@ void ModuleErrorInfo::setCircularImport(ModuleObject* importedModule) {
   isCircular = true;
 }
 
-void ModuleErrorInfo::setForAmbiguousImport(JSContext* cx,
-                                            ModuleObject* importedModule,
+void ModuleErrorInfo::setForAmbiguousImport(ModuleObject* importedModule,
                                             ModuleObject* module1,
                                             ModuleObject* module2) {
-  setImportedModule(cx, importedModule);
+  setImportedModule(importedModule);
   entry1 = module1->filename();
   entry2 = module2->filename();
 }
