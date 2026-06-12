@@ -4,7 +4,7 @@
 
 import { createSelector } from "devtools/client/shared/vendor/reselect";
 
-import { getPrettySourceURL, isNotPrettyPrintable } from "../utils/source";
+import { getPrettySourceURL, isJavaScript } from "../utils/source";
 
 import { findPosition } from "../utils/breakpoint/breakpointPositions";
 import { isFulfilled } from "../utils/async-value";
@@ -255,7 +255,10 @@ export function canPrettyPrintSource(state, source, sourceActor) {
   const content = getSourceTextContentForSource(state, source, sourceActor);
   const sourceContent = content && isFulfilled(content) ? content.value : null;
 
-  if (!sourceContent || isNotPrettyPrintable(source, sourceContent)) {
+  if (
+    !sourceContent ||
+    (!isJavaScript(source, sourceContent) && !source.isHTML)
+  ) {
     return false;
   }
 
@@ -287,10 +290,8 @@ export function getPrettyPrintMessage(state, location) {
     return L10N.getStr("sourceFooter.prettyPrint.noContentMessage");
   }
 
-  if (isNotPrettyPrintable(source, sourceContent)) {
-    return L10N.getStr(
-      "sourceFooter.prettyPrint.isNotPrettyPrintableSourceMessage"
-    );
+  if (!isJavaScript(source, sourceContent) && !source.isHTML) {
+    return L10N.getStr("sourceFooter.prettyPrint.isNotJavascriptMessage");
   }
 
   return L10N.getStr("sourceTabs.prettyPrint");

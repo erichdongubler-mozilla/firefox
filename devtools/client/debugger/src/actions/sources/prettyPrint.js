@@ -10,12 +10,10 @@ import {
   updateBreakpointPositionsForNewPrettyPrintedSource,
   updateBreakpointsForNewPrettyPrintedSource,
 } from "../breakpoints/index";
-const {
-  prettifyCSS,
-} = require("resource://devtools/shared/inspector/css-logic.js");
+
 import {
   getPrettySourceURL,
-  isNotPrettyPrintable,
+  isJavaScript,
   isMinified,
 } from "../../utils/source";
 import { isFulfilled, fulfilled } from "../../utils/async-value";
@@ -81,11 +79,11 @@ export async function prettyPrintSourceTextContent(
 
   const contentValue = content.value;
   if (
-    isNotPrettyPrintable(generatedSource, contentValue) ||
+    (!isJavaScript(generatedSource, contentValue) && !generatedSource.isHTML) ||
     contentValue.type !== "text"
   ) {
     throw new Error(
-      `Can't prettify ${contentValue.contentType} files, only HTML, Javascript and CSS.`
+      `Can't prettify ${contentValue.contentType} files, only HTML and Javascript.`
     );
   }
 
@@ -99,12 +97,6 @@ export async function prettyPrintSourceTextContent(
       content,
       actors,
     });
-  } else if (generatedSource.isStyleSheet) {
-    const { result } = prettifyCSS(contentValue.value, null);
-    return {
-      text: result,
-      contentType: contentValue.contentType,
-    };
   } else {
     prettyPrintWorkerResult = await prettyPrintWorker.prettyPrint({
       sourceText: contentValue.value,

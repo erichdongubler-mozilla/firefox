@@ -8,5 +8,4 @@ export * from "./loadSourceText";
 export * from "./newSources";
 export * from "./prettyPrint";
 export * from "./select";
-export * from "./stylesheets";
 export * from "./symbols";

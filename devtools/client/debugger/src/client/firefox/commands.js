@@ -153,15 +153,6 @@ async function sourceContents(sourceActor) {
   return null;
 }
 
-async function updateStyleSheetContent(sourceActor, text, isTransitionEnabled) {
-  const { targetFront, id } = sourceActor;
-  if (!targetFront) {
-    return null;
-  }
-  const stylesheetsFront = await targetFront.getFront("stylesheets");
-  return stylesheetsFront.update(id, text, isTransitionEnabled, "debugger");
-}
-
 async function setXHRBreakpoint(path, method) {
   const hasWatcherSupport = commands.targetCommand.hasTargetWatcherSupport();
   if (!hasWatcherSupport) {
@@ -512,7 +503,6 @@ const clientCommands = {
   getFrontByID,
   fetchAncestorFramePositions,
   toggleJavaScriptEnabled,
-  updateStyleSheetContent,
 };
 
 export { setupCommands, clientCommands };
