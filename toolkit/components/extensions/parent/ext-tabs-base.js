@@ -19,6 +19,12 @@ var { DefaultMap, DefaultWeakMap, ExtensionError, parseMatchPatterns } =
 
 var { defineLazyGetter } = ExtensionCommon;
 
+const BLACK_1PX_PNG =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAANSURBVBhXY2BgYPgPAAEEAQBwIGULAAAAAElFTkSuQmCC";
+
+const GRAY_1PX_JPEG =
+  "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAALCAABAAEBAREA/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/ACj/2Q==";
+
 /**
  * The platform-specific type of native tab objects, which are wrapped by
  * TabBase instances.
@@ -100,8 +106,7 @@ class TabBase {
       resetScrollPosition = !!options?.resetScrollPosition;
     }
 
-    // The purpose of this getBoundingClientRect() call is to force a dimension
-    // update to propagate to the child, so that the drawSnapshot() call below
+    // Propagate a layout flush to the child, so drawSnapshot()
     // does not fail with NS_ERROR_LOSS_OF_SIGNIFICANT_DATA.
     let parentRect = this.browser.getBoundingClientRect();
 
@@ -112,6 +117,16 @@ class TabBase {
     }
 
     let wgp = this.browsingContext.currentWindowGlobal;
+
+    let blur =
+      wgp.documentPrincipal.isSystemPrincipal ||
+      (wgp.documentPrincipal.addonId &&
+        wgp.documentPrincipal.addonId !== this.extension.id);
+
+    if (blur && options?.rect) {
+      return options.format === "jpeg" ? GRAY_1PX_JPEG : BLACK_1PX_PNG;
+    }
+
     let image = await wgp.drawSnapshot(
       rect,
       scale * zoom,
@@ -120,9 +135,29 @@ class TabBase {
     );
 
     let canvas = new OffscreenCanvas(image.width, image.height);
-
     let ctx = canvas.getContext("bitmaprenderer", { alpha: false });
     ctx.transferFromImageBitmap(image);
+
+    if (blur) {
+      // Cap result dimensions at 300px, preserving aspect ratio.
+      let cap = Math.min(300 / canvas.width, 300 / canvas.height);
+      let width = Math.ceil(canvas.width * cap);
+      let height = Math.ceil(canvas.height * cap);
+      let blurred = new win.OffscreenCanvas(width, height);
+
+      ctx = blurred.getContext("2d", { alpha: false });
+      ctx.filter = "blur(5px)";
+      ctx.drawImage(canvas, 0, 0, width, height);
+
+      // Bake in JPEG degradation artifacts.
+      let jpeg = await win.createImageBitmap(
+        await blurred.convertToBlob({ type: "image/jpeg", quality: 0.2 })
+      );
+
+      canvas = new OffscreenCanvas(jpeg.width, jpeg.height);
+      ctx = canvas.getContext("bitmaprenderer", { alpha: false });
+      ctx.transferFromImageBitmap(jpeg);
+    }
 
     let blob = await canvas.convertToBlob({
       type: `image/${options?.format ?? "png"}`,

@@ -517,6 +517,8 @@ https_first_disabled = true
 
 ["browser_ext_tabs_autoDiscardable.js"]
 
+["browser_ext_tabs_capture_blur.js"]
+
 ["browser_ext_tabs_containerIsolation.js"]
 https_first_disabled = true
 
