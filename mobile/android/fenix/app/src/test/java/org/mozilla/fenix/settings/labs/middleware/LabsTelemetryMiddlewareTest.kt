@@ -15,6 +15,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.settings.labs.LabsItem
 import org.mozilla.fenix.settings.labs.LabsItemSlugs
+import org.mozilla.fenix.settings.labs.store.DialogState
 import org.mozilla.fenix.settings.labs.store.LabsAction
 import org.mozilla.fenix.settings.labs.store.LabsState
 import org.mozilla.fenix.settings.labs.store.LabsStore
@@ -41,6 +42,16 @@ class LabsTelemetryMiddlewareTest {
         requiresRestart = true,
     )
 
+    private fun stateWithItems(items: List<LabsItem>) = LabsState(
+        labsItems = items,
+        dialogState = DialogState.Closed,
+    )
+
+    private fun stateWithDialog(item: LabsItem, dialog: DialogState) = LabsState(
+        labsItems = listOf(item),
+        dialogState = dialog,
+    )
+
     @Test
     fun `WHEN UpdateLabsItems is dispatched with an empty list THEN empty_state_shown is recorded`() {
         val store = buildStore()
@@ -57,6 +68,96 @@ class LabsTelemetryMiddlewareTest {
         store.dispatch(LabsAction.UpdateLabsItems(listOf(homepageItem())))
 
         assertNull(FirefoxLabs.emptyStateShown.testGetValue())
+    }
+
+    @Test
+    fun `WHEN ToggleLabsItem is dispatched from the dialog flow THEN toggled_dialog is recorded with did_user_confirm true`() {
+        val item = homepageItem()
+        val store = buildStore(
+            initialState = stateWithDialog(item, DialogState.ToggleLabsItem(item)),
+        )
+
+        store.dispatch(LabsAction.ToggleLabsItem(item))
+
+        val extra = FirefoxLabs.toggledDialog.testGetValue()!!.single().extra
+        assertEquals("homepage-as-new-tab", extra?.get("slug_id"))
+        assertEquals("true", extra?.get("did_user_confirm"))
+    }
+
+    @Test
+    fun `WHEN ToggleLabsItem is dispatched outside the dialog flow THEN toggled_dialog is not recorded`() {
+        val item = homepageItem()
+        val store = buildStore(initialState = stateWithDialog(item, DialogState.Closed))
+
+        store.dispatch(LabsAction.ToggleLabsItem(item))
+
+        assertNull(FirefoxLabs.toggledDialog.testGetValue())
+    }
+
+    @Test
+    fun `WHEN RestoreDefaults is dispatched THEN restore_defaults_dialog is recorded with the pre-flip enrolled count and did_user_confirm true`() {
+        val store = buildStore(
+            initialState = stateWithItems(listOf(homepageItem(enrolled = true))),
+        )
+
+        store.dispatch(LabsAction.RestoreDefaults)
+
+        val extra = FirefoxLabs.restoreDefaultsDialog.testGetValue()!!.single().extra
+        assertEquals("1", extra?.get("items_changed_count"))
+        assertEquals("true", extra?.get("did_user_confirm"))
+    }
+
+    @Test
+    fun `WHEN ShowToggleLabsItemDialog is dispatched THEN toggle_button_pressed is recorded with attempted enabled`() {
+        val item = homepageItem(enrolled = false)
+        val store = buildStore()
+
+        store.dispatch(LabsAction.ShowToggleLabsItemDialog(item))
+
+        val extra = FirefoxLabs.toggleButtonPressed.testGetValue()!!.single().extra
+        assertEquals("homepage-as-new-tab", extra?.get("slug_id"))
+        assertEquals("true", extra?.get("enabled"))
+    }
+
+    @Test
+    fun `WHEN ShowRestoreDefaultsDialog is dispatched THEN restore_defaults_button_pressed is recorded`() {
+        val store = buildStore()
+
+        store.dispatch(LabsAction.ShowRestoreDefaultsDialog)
+
+        assertEquals(1, FirefoxLabs.restoreDefaultsButtonPressed.testGetValue()!!.size)
+    }
+
+    @Test
+    fun `WHEN CloseDialog is dispatched while the toggle dialog is open THEN toggled_dialog is recorded with did_user_confirm false`() {
+        val item = homepageItem()
+        val store = buildStore(
+            initialState = stateWithDialog(item, DialogState.ToggleLabsItem(item)),
+        )
+
+        store.dispatch(LabsAction.CloseDialog)
+
+        val extra = FirefoxLabs.toggledDialog.testGetValue()!!.single().extra
+        assertEquals("homepage-as-new-tab", extra?.get("slug_id"))
+        assertEquals("false", extra?.get("did_user_confirm"))
+    }
+
+    @Test
+    fun `WHEN CloseDialog is dispatched while the restore dialog is open THEN restore_defaults_dialog is recorded with did_user_confirm false`() {
+        val store = buildStore(
+            initialState = LabsState(
+                labsItems = listOf(homepageItem(enrolled = true)),
+                dialogState = DialogState.RestoreDefaults,
+            ),
+        )
+
+        store.dispatch(LabsAction.CloseDialog)
+
+        val extra = FirefoxLabs.restoreDefaultsDialog.testGetValue()!!.single().extra
+        assertEquals("0", extra?.get("items_changed_count"))
+        assertEquals("false", extra?.get("did_user_confirm"))
+        assertNull(FirefoxLabs.toggledDialog.testGetValue())
+        assertNull(FirefoxLabs.toggleButtonPressed.testGetValue())
     }
 
     @Test
