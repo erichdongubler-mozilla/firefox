@@ -202,14 +202,13 @@ WebrtcVideoEncoderFactory::InternalFactory::Create(
     switch (webrtc::PayloadStringToCodecType(aFormat.name)) {
       case webrtc::VideoCodecType::kVideoCodecH264: {
         // get an external encoder
-        auto gmpEncoder =
-            WrapUnique(GmpVideoCodec::CreateEncoder(aFormat, mPCHandle));
+        auto gmpEncoder = GmpVideoCodec::CreateEncoder(aFormat, mPCHandle);
         {
           MutexAutoLock lock(mGmpPluginMutex);
           mCreatedGmpPluginEvent.Forward(*gmpEncoder->InitPluginEvent());
           mReleasedGmpPluginEvent.Forward(*gmpEncoder->ReleasePluginEvent());
         }
-        encoder.reset(gmpEncoder.release());
+        encoder = std::move(gmpEncoder);
         break;
       }
       // libvpx fallbacks.

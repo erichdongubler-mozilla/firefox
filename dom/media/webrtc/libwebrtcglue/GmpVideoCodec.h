@@ -5,6 +5,7 @@
 #ifndef GMPVIDEOCODEC_H_
 #define GMPVIDEOCODEC_H_
 
+#include <memory>
 #include <string>
 
 #include "PerformanceRecorder.h"
@@ -20,7 +21,7 @@ class WebrtcVideoEncoder;
 
 class GmpVideoCodec {
  public:
-  static WebrtcVideoEncoder* CreateEncoder(
+  static std::unique_ptr<WebrtcVideoEncoder> CreateEncoder(
       const webrtc::SdpVideoFormat& aFormat, std::string aPCHandle);
   static WebrtcVideoDecoder* CreateDecoder(std::string aPCHandle,
                                            TrackingId aTrackingId);
