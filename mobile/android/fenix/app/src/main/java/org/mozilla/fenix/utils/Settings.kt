@@ -71,7 +71,7 @@ import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_BLOCK_ALL
 import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_BLOCK_AUDIBLE
 import org.mozilla.fenix.tabstray.DefaultTabManagementFeatureHelper
 import org.mozilla.fenix.termsofuse.TOU_VERSION
-import org.mozilla.fenix.utils.Settings.Companion.LONGFOX_ENTRY_POINT_MAX_SHOWS
+import org.mozilla.fenix.utils.Settings.Companion.LONGFOX_PEEK_ANIMATION_MAX_SHOWS
 import org.mozilla.fenix.wallpapers.Wallpaper
 import java.security.InvalidParameterException
 import java.util.concurrent.TimeUnit.MILLISECONDS
@@ -103,8 +103,8 @@ class Settings(
         private const val ALLOWED_INT = 2
         private const val INACTIVE_TAB_MINIMUM_TO_SHOW_AUTO_CLOSE_DIALOG = 20
 
-        const val LONGFOX_ENTRY_POINT_MAX_SHOWS = 5
-        const val LONGFOX_ENTRY_POINT_LAUNCH_INTERVAL = 3
+        const val LONGFOX_PEEK_ANIMATION_MAX_SHOWS = 5
+        const val LONGFOX_PEEK_ANIMATION_LAUNCH_INTERVAL = 3
 
         const val THIRTY_SECONDS_MS = 30 * 1000L
         const val FOUR_HOURS_MS = 60 * 60 * 4 * 1000L
@@ -3225,7 +3225,7 @@ class Settings(
 
     /**
      * Number of times the app has been foregrounded (cold start or returned from background).
-     * Used to gate the longfox entry point animation.
+     * Used to gate the longfox peek animation.
      */
     var appLaunchCount by intPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_app_launch_count),
@@ -3233,23 +3233,23 @@ class Settings(
     )
 
     /**
-     * Number of times the longfox entry point animation has been shown on the homepage.
-     * Capped at [LONGFOX_ENTRY_POINT_MAX_SHOWS]; once reached the animation is no longer shown.
+     * Number of times the longfox peek animation has been shown on the homepage.
+     * Capped at [LONGFOX_PEEK_ANIMATION_MAX_SHOWS]; once reached the animation is no longer shown.
      */
-    var longfoxEntryPointShownCount by intPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_longfox_entry_point_shown_count),
+    var longfoxPeekAnimationShownCount by intPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_longfox_peek_animation_shown_count),
         default = 0,
     )
 
     /**
-     * Returns true when the longfox entry point animation should be armed for the current
+     * Returns true when the longfox peek animation should be armed for the current
      * app foreground: feature enabled, not yet reached the show cap, and on every Nth launch.
      */
     fun shouldShowLongfoxPeekAnimationThisTime(): Boolean =
         longfoxEnabled &&
-            longfoxEntryPointShownCount < LONGFOX_ENTRY_POINT_MAX_SHOWS &&
+            longfoxPeekAnimationShownCount < LONGFOX_PEEK_ANIMATION_MAX_SHOWS &&
             appLaunchCount > 0 &&
-            appLaunchCount % LONGFOX_ENTRY_POINT_LAUNCH_INTERVAL == 0
+            appLaunchCount % LONGFOX_PEEK_ANIMATION_LAUNCH_INTERVAL == 0
 
     /**
      * Indicates whether the app should automatically clean up downloaded files.

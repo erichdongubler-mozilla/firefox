@@ -220,12 +220,19 @@ internal fun Homepage(
                         is HomepageState.Normal -> {
                             val settings = components.settings
                             val appStore = components.appStore
-                            LaunchedEffect(showLongfoxEntryPoint) {
-                                if (showLongfoxEntryPoint) {
-                                    settings.longfoxEntryPointShownCount++
+                            LaunchedEffect(showLongfoxAnimation) {
+                                if (showLongfoxAnimation) {
+                                    settings.longfoxPeekAnimationShownCount++
                                     appStore.dispatch(
                                         AppAction.UpdateShowFoxPeekAnimation(false),
                                     )
+                                }
+                            }
+
+                            val longfoxEntryPointShown = longfoxEnabled && showPrivacyReport
+                            LaunchedEffect(longfoxEntryPointShown) {
+                                if (longfoxEntryPointShown) {
+                                    interactor.onLongfoxEntryPointShown()
                                 }
                             }
 
@@ -250,7 +257,8 @@ internal fun Homepage(
                                     onPrivacyReportTapped = interactor::onPrivacyReportTapped,
                                     onLongfoxEntryPointClicked = interactor::onLongfoxEntryPointClicked,
                                     modifier = Modifier.padding(top = 16.dp),
-                                    showLongfoxEntryPoint = showLongfoxEntryPoint,
+                                    longfoxEnabled = longfoxEnabled,
+                                    showLongfoxAnimation = showLongfoxAnimation,
                                 )
                             }
 
@@ -284,7 +292,7 @@ internal fun Homepage(
                                     interactor = interactor,
                                     cardBackgroundColor = cardBackgroundColor,
                                     recentTabs = recentTabs,
-                                    reducedTopSpacing = showPrivacyReport && showLongfoxEntryPoint,
+                                    reducedTopSpacing = showPrivacyReport && showLongfoxAnimation,
                                 )
 
                                 if (showRecentSyncedTab) {
@@ -672,7 +680,8 @@ private fun HomepagePreview() {
                     showPocketStoriesCarousel = true,
                     showCollections = true,
                     showPrivacyReport = true,
-                    showLongfoxEntryPoint = false,
+                    longfoxEnabled = false,
+                    showLongfoxAnimation = false,
                     trackersBlockedCount = 754,
                     sportsWidgetState = SportsWidgetState(),
                     headerState = HeaderState.Normal(
@@ -727,7 +736,8 @@ private fun HomepageBannerPreview() {
                     showPocketStoriesCarousel = true,
                     showCollections = true,
                     showPrivacyReport = true,
-                    showLongfoxEntryPoint = false,
+                    longfoxEnabled = false,
+                    showLongfoxAnimation = false,
                     trackersBlockedCount = 754,
                     sportsWidgetState = SportsWidgetState(),
                     headerState = HeaderState.Normal(
@@ -782,7 +792,8 @@ private fun HomepagePreviewCollections() {
                     showPocketStoriesCarousel = true,
                     showCollections = true,
                     showPrivacyReport = true,
-                    showLongfoxEntryPoint = false,
+                    longfoxEnabled = false,
+                    showLongfoxAnimation = false,
                     trackersBlockedCount = 754,
                     sportsWidgetState = SportsWidgetState(),
                     headerState = HeaderState.Normal(
@@ -837,7 +848,8 @@ private fun MinimalHomepagePreview() {
                     showPocketStoriesCarousel = true,
                     showCollections = false,
                     showPrivacyReport = true,
-                    showLongfoxEntryPoint = false,
+                    longfoxEnabled = false,
+                    showLongfoxAnimation = false,
                     trackersBlockedCount = 754,
                     sportsWidgetState = SportsWidgetState(),
                     headerState = HeaderState.Normal(
