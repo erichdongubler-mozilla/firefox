@@ -347,12 +347,7 @@ void Http3Session::Shutdown() {
     }
   }
 
-  nsTArray<RefPtr<Http3StreamBase>> streams;
-  streams.SetCapacity(mStreamTransactionHash.Count());
-  for (const auto& s : mStreamTransactionHash.Values()) {
-    streams.AppendElement(s);
-  }
-  for (const auto& stream : streams) {
+  for (const auto& stream : mStreamTransactionHash.Values()) {
     if (mBeforeConnectedError) {
       // We have an error before we were connected, just restart transactions.
       // The transaction restart code path will remove AltSvc mapping and the
@@ -721,18 +716,12 @@ nsresult Http3Session::ProcessEvents() {
       } break;
       case Http3Event::Tag::ConnectionConnected: {
         LOG(("Http3Session::ProcessEvents - ConnectionConnected"));
-        if (IsClosing()) {
-          break;
-        }
         bool was0RTT = mState == ZERORTT;
         mState = CONNECTED;
         SetSecInfo();
         mSocketControl->HandshakeCompleted();
         if (was0RTT) {
           Finish0Rtt(false);
-          if (IsClosing()) {
-            break;
-          }
           ZeroRttTelemetry(ZeroRttOutcome::USED_SUCCEEDED);
         }
 
@@ -2072,8 +2061,6 @@ nsresult Http3Session::WriteSegments(nsAHttpSegmentWriter* writer,
 nsresult Http3Session::RecvData(nsIUDPSocket* socket) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
-  RefPtr<Http3Session> self(this);
-
   // Process slow consumers.
   nsresult rv = ProcessSlowConsumers();
   if (NS_FAILED(rv)) {
@@ -2951,25 +2938,19 @@ void Http3Session::CloseConnectionTelemetry(CloseError& aError, bool aClosing) {
 }
 
 void Http3Session::Finish0Rtt(bool aRestart) {
-  nsTArray<RefPtr<Http3StreamBase>> streams;
-  for (const auto& weak : m0RTTStreams) {
-    if (RefPtr<Http3StreamBase> s = weak.get()) {
-      streams.AppendElement(std::move(s));
-    }
-  }
-  m0RTTStreams.Clear();
-
-  for (const auto& stream : streams) {
-    if (aRestart) {
-      // When we need to restart transactions remove them from all lists.
-      if (stream->HasStreamId()) {
-        mStreamIdHash.Remove(stream->StreamId());
+  for (size_t i = 0; i < m0RTTStreams.Length(); ++i) {
+    if (m0RTTStreams[i]) {
+      if (aRestart) {
+        // When we need to restart transactions remove them from all lists.
+        if (m0RTTStreams[i]->HasStreamId()) {
+          mStreamIdHash.Remove(m0RTTStreams[i]->StreamId());
+        }
+        RemoveStreamFromQueues(m0RTTStreams[i]);
+        // The stream is ready to write again.
+        mReadyForWrite.Push(m0RTTStreams[i]);
       }
-      RemoveStreamFromQueues(stream);
-      // The stream is ready to write again.
-      mReadyForWrite.Push(stream);
+      m0RTTStreams[i]->Finish0RTT(aRestart);
     }
-    stream->Finish0RTT(aRestart);
   }
 
   for (size_t i = 0; i < mCannotDo0RTTStreams.Length(); ++i) {
@@ -2977,6 +2958,7 @@ void Http3Session::Finish0Rtt(bool aRestart) {
       mReadyForWrite.Push(mCannotDo0RTTStreams[i]);
     }
   }
+  m0RTTStreams.Clear();
   mCannotDo0RTTStreams.Clear();
   MaybeResumeSend();
 }
