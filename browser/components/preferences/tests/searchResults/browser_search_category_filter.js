@@ -24,21 +24,6 @@ async function openSearchWithQuery(query) {
   return doc;
 }
 
-async function clearSearch(doc) {
-  let searchInput = doc.getElementById("searchInput");
-  searchInput.focus();
-  let searchCompletedPromise = BrowserTestUtils.waitForEvent(
-    gBrowser.contentWindow,
-    "PreferencesSearchCompleted",
-    evt => evt.detail == ""
-  );
-  let count = searchInput.value.length;
-  while (count--) {
-    EventUtils.sendKey("BACK_SPACE");
-  }
-  await searchCompletedPromise;
-}
-
 /**
  * Entering a query navigates to paneSearchResults (URL hash changes)
  * and the "Search results" header is shown.

@@ -663,8 +663,12 @@ var gSearchResultsPane = {
       nodeObject.getAttribute("data-hidden-from-search") !== "true"
     ) {
       result = await this.searchWithinNode(child, searchPhrase);
-      // Creating tooltips for menulist element
-      if (result && nodeObject.localName === "menulist") {
+      // Creating tooltips for menulist and moz-select elements
+      if (
+        result &&
+        (nodeObject.localName === "menulist" ||
+          nodeObject.localName === "moz-select")
+      ) {
         this.listSearchTooltips.add(nodeObject);
       }
 
@@ -808,7 +812,14 @@ var gSearchResultsPane = {
     // putting tooltips on, we have to flush layout intentionally. Once
     // menulists don't use XUL layout we can remove this and use plain CSS to
     // position them, see bug 1363730.
-    let anchorRect = anchorNode.getBoundingClientRect();
+    let positioningNode = anchorNode;
+    if (anchorNode.localName == "moz-select") {
+      // Position relative to the visible select control rather than the
+      // full-width moz-select host element so the tooltip is centered on it.
+      positioningNode =
+        anchorNode.shadowRoot?.querySelector(".select-wrapper") ?? anchorNode;
+    }
+    let anchorRect = positioningNode.getBoundingClientRect();
     let tooltipContainerRect =
       this.searchTooltipContainer.getBoundingClientRect();
     let tooltipRect = searchTooltip.getBoundingClientRect();
