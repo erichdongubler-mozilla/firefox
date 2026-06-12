@@ -19,7 +19,15 @@ document.addEventListener(
       .addEventListener("command", event => {
         switch (event.target.id) {
           case "cmd_newNavigator":
-            OpenBrowserWindow();
+            if (AIWindow.isDefaultWindow) {
+              AIWindow.launchWindow(
+                gBrowser?.selectedBrowser,
+                true,
+                "keyboard_shortcut"
+              );
+            } else {
+              OpenBrowserWindow();
+            }
             break;
           case "cmd_handleBackspace":
             BrowserCommands.handleBackspace();

@@ -841,11 +841,21 @@ export const AIWindow = {
 
     this.toggleAIWindow(win, true, trigger);
 
+    const triggeringPrincipal =
+      Services.scriptSecurityManager.getSystemPrincipal();
+
     if (!lazy.hasFirstrunCompleted) {
-      win.gBrowser.loadURI(FIRSTRUN_URI, {
-        triggeringPrincipal:
-          Services.scriptSecurityManager.getSystemPrincipal(),
-      });
+      win.gBrowser.loadURI(FIRSTRUN_URI, { triggeringPrincipal });
+    } else if (trigger === "startup") {
+      // Startup navigation to about:newtab may still be pending when
+      // _reconcileNewTabPages runs. Redirect any affected tabs to the
+      // AI window URL to ensure they open as Smart Windows.
+      const aiWindowURI = Services.io.newURI(AIWINDOW_URL);
+      for (const tab of win.gBrowser.tabs) {
+        if (tab.linkedBrowser?.currentURI?.spec === "about:blank") {
+          tab.linkedBrowser.loadURI(aiWindowURI, { triggeringPrincipal });
+        }
+      }
     }
 
     return true;
