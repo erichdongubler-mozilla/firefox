@@ -84,13 +84,13 @@ media::DecodeSupportSet MediaDataCodec::SupportsDecoderCodec(
   return support;
 }
 
-WebrtcVideoDecoder* MediaDataCodec::CreateDecoder(
+std::unique_ptr<WebrtcVideoDecoder> MediaDataCodec::CreateDecoder(
     webrtc::VideoCodecType aCodecType, TrackingId aTrackingId) {
   if (SupportsDecoderCodec(aCodecType).isEmpty()) {
     return nullptr;
   }
   nsDependentCString codec = MimeTypeFor(aCodecType);
-  return new WebrtcMediaDataDecoder(codec, aTrackingId);
+  return std::make_unique<WebrtcMediaDataDecoder>(codec, aTrackingId);
 }
 
 }  // namespace mozilla

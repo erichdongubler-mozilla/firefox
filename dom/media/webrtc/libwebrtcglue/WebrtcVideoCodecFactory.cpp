@@ -97,7 +97,7 @@ std::unique_ptr<webrtc::VideoDecoder> WebrtcVideoDecoderFactory::Create(
   auto type = webrtc::PayloadStringToCodecType(aFormat.name);
 
   // Attempt to create a decoder using MediaDataDecoder.
-  decoder.reset(MediaDataCodec::CreateDecoder(type, mTrackingId));
+  decoder = MediaDataCodec::CreateDecoder(type, mTrackingId);
   if (decoder) {
     return decoder;
   }
