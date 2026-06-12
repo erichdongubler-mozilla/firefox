@@ -435,6 +435,18 @@ add_task(async function testRequestMIDIAccess() {
     ["site_warning", "cancelled"],
     "sitepermission"
   );
+
+  Assert.deepEqual(
+    Array.from(
+      new Set(
+        AddonTestUtils.getAMGleanEvents("install").map(
+          evt => evt.site_permission
+        )
+      )
+    ).sort(),
+    ["midi", "midi-sysex"],
+    "Install telemetry events distinguish the midi and midi-sysex site permissions"
+  );
 });
 
 add_task(async function testIframeRequestMIDIAccess() {

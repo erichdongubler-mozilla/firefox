@@ -5903,6 +5903,8 @@ AMTelemetry = {
         updated_from: extra.updated_from,
         install_origins: extra.install_origins,
         step: extra.step,
+        // will be undefined for non-site permission addons
+        site_permission: install.newSitePerm,
       })
     );
   },

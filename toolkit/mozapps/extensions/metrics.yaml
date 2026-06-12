@@ -237,9 +237,11 @@ addons_manager:
       - https://bugzilla.mozilla.org/1912166
       - https://bugzilla.mozilla.org/1958151
       - https://bugzilla.mozilla.org/1994595
+      - https://bugzilla.mozilla.org/2014567
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1433335#c8
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1820153#c3
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2014567
     data_sensitivity:
       - interaction
     notification_emails:
@@ -313,6 +315,12 @@ addons_manager:
           postponed, cancelled, failed, permissions_prompt, completed,
           site_warning, site_blocked,install_disabled_warning,
           download_started, download_completed, download_failed
+        type: string
+      site_permission:
+        description: |
+          Only set for site permission add-on installs. The gated
+          permission being granted by this install flow, currently one of
+          "serial", "midi", "midi-sysex".
         type: string
     expires: 154
 
