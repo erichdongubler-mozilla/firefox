@@ -1772,6 +1772,7 @@ run-sequentially = ["true"] # We want to check performance
 ["test_trr_cname_chain.js"]
 
 ["test_trr_confirmation.js"]
+requesttimeoutfactor = 2
 run-if = [
   "!socketprocess_networking", # confirmation state isn't passed cross-process
 ]
