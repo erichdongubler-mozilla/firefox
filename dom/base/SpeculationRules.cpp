@@ -4,6 +4,8 @@
 
 #include "mozilla/dom/SpeculationRules.h"
 
+#include "js/friend/ErrorMessages.h"
+#include "mozilla/dom/ScriptSettings.h"
 #include "nsIURI.h"
 
 namespace mozilla::dom {
@@ -32,6 +34,33 @@ SpeculationRules::Parse(const nsACString& aSource, nsIURI* aDocumentBaseUri,
     return Err(parseError);
   }
   return UniquePtr<SpeculationRules>(parsedRules);
+}
+
+/* static */ void SpeculationRules::ReportParseError(
+    nsIGlobalObject* aGlobal, SpeculationRuleParseError aError) {
+  MOZ_ASSERT(aGlobal);
+  MOZ_ASSERT(aError != SpeculationRuleParseError::None);
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(aGlobal)) {
+    return;
+  }
+  JSErrNum errorNumber = JSMSG_SPECULATION_RULES_NOT_A_MAP;
+  switch (aError) {
+    case SpeculationRuleParseError::TopLevelValueMustBeJsonObject:
+      errorNumber = JSMSG_SPECULATION_RULES_NOT_A_MAP;
+      break;
+    case SpeculationRuleParseError::InvalidTag:
+      errorNumber = JSMSG_SPECULATION_RULES_INVALID_TAG;
+      break;
+    case SpeculationRuleParseError::InvalidBaseUrl:
+      errorNumber = JSMSG_SPECULATION_RULES_INVALID_BASE_URL;
+      break;
+    case SpeculationRuleParseError::None:
+      MOZ_ASSERT_UNREACHABLE();
+      return;
+  }
+  JS_ReportErrorNumberASCII(jsapi.cx(), js::GetErrorMessage, nullptr,
+                            errorNumber);
 }
 
 }  // namespace mozilla::dom

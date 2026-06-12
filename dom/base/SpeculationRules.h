@@ -11,6 +11,7 @@
 #include "mozilla/dom/speculationrules_ffi_generated.h"
 #include "nsStringFwd.h"
 
+class nsIGlobalObject;
 class nsIURI;
 
 namespace mozilla {
@@ -30,6 +31,9 @@ class SpeculationRules final {
 
   static Result<UniquePtr<SpeculationRules>, SpeculationRuleParseError> Parse(
       const nsACString& aSource, nsIURI* aDocumentBaseUri, nsIURI* aBaseUri);
+
+  static void ReportParseError(nsIGlobalObject* aGlobal,
+                               SpeculationRuleParseError aError);
 };
 
 }  // namespace mozilla::dom
