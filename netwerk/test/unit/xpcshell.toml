@@ -829,8 +829,6 @@ skip-if = [
   "os == 'win'",
 ]
 
-["test_happy_eyeballs_websocket_https_rr.js"]
-
 ["test_head.js"]
 
 ["test_head_request_no_response_body.js"]

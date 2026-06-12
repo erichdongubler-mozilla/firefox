@@ -1205,15 +1205,9 @@ nsresult nsHttpChannel::ContinueOnBeforeConnect(bool aShouldUpgrade,
     // TODO: When mUpgradeProtocolCallback is not null, we should allow HTTP/3
     // for connect-udp.
     mCaps |= NS_HTTP_DISALLOW_HTTP3;
-    // NS_HTTP_STICKY_CONNECTION breaks the (non-Happy-Eyeballs) HTTPS RR
-    // fallback mechanism, which restarts the transaction to fall back. Happy
-    // Eyeballs instead races endpoints (honoring the HTTPS RR port, hints and
-    // ALPN) and dispatches the sticky upgrade onto the winner with no restart,
-    // so it can safely use HTTPS RR. Only disallow HTTPS RR for upgrades that
-    // are not handled by Happy Eyeballs.
-    if (!(mCaps & NS_HTTP_USE_HAPPY_EYEBALLS)) {
-      DisallowHTTPSRR(mCaps);
-    }
+    // Because NS_HTTP_STICKY_CONNECTION breaks HTTPS RR fallabck mecnahism, we
+    // can not use HTTPS RR for upgrade requests.
+    DisallowHTTPSRR(mCaps);
   }
 
   if (LoadIsTRRServiceChannel()) {
@@ -1243,7 +1237,6 @@ nsresult nsHttpChannel::ContinueOnBeforeConnect(bool aShouldUpgrade,
   mConnectionInfo->SetTRRMode(nsIRequest::GetTRRMode());
   mConnectionInfo->SetIPv4Disabled(mCaps & NS_HTTP_DISABLE_IPV4);
   mConnectionInfo->SetIPv6Disabled(mCaps & NS_HTTP_DISABLE_IPV6);
-  mConnectionInfo->SetHttp3Disabled(mCaps & NS_HTTP_DISALLOW_HTTP3);
   mConnectionInfo->SetAnonymousAllowClientCert(
       (mLoadFlags & LOAD_ANONYMOUS_ALLOW_CLIENT_CERT) != 0);
 
@@ -8074,17 +8067,11 @@ nsresult nsHttpChannel::BeginConnect() {
       return false;
     }
 
-    // WebSocket and WebTransport upgrades share the same rollout pref.
-    if ((mUpgradeProtocolCallback || mWebTransportSessionEventListener) &&
-        !StaticPrefs::network_http_happy_eyeballs_upgrade_enabled()) {
+    if (mWebTransportSessionEventListener) {
       return false;
     }
 
-    // Connect-only requests need the extended-CONNECT tunnel path, which is
-    // untested with Happy Eyeballs. These only reach us via a proxy today
-    // (already excluded above), but guard explicitly against a future
-    // non-proxied consumer.
-    if (mCaps & NS_HTTP_CONNECT_ONLY) {
+    if (mUpgradeProtocolCallback) {
       return false;
     }
 

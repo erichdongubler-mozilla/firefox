@@ -81,33 +81,6 @@ void HappyEyeballsTransaction::OnTransportStatus(nsITransport* aTransport,
   }
 }
 
-bool HappyEyeballsTransaction::Do0RTT(bool aCanSendEarlyData) {
-  if (!mZeroRttHandle) {
-    return false;
-  }
-
-  // WebSocket / WebTransport upgrades over HTTP/2 (or HTTP/3) use extended
-  // CONNECT, which can't be issued before the peer's
-  // SETTINGS_ENABLE_CONNECT_PROTOCOL is known — i.e. it can't be sent as TLS
-  // early data — and the 0-RTT adoption path can't graft the real transaction
-  // onto a muxed session as a tunnel. Decline 0-RTT for an upgrade on a
-  // multiplexed racer; the connection still resumes TLS and the upgrade is
-  // dispatched through the tunnel post-handshake. Over HTTP/1 the upgrade is a
-  // plain request, so 0-RTT is safe.
-  if (nsHttpTransaction* real = mZeroRttHandle->RealTxn()) {
-    if (real->IsWebsocketUpgrade() || real->IsForWebTransport()) {
-      nsAHttpConnection* handle = Connection();
-      RefPtr<HttpConnectionBase> base =
-          handle ? handle->HttpConnection() : nullptr;
-      if (base && (base->UsingSpdy() || base->UsingHttp3())) {
-        return false;
-      }
-    }
-  }
-
-  return mZeroRttHandle->Do0RTT(this, aCanSendEarlyData);
-}
-
 nsresult HappyEyeballsTransaction::ReadSegments(nsAHttpSegmentReader* aReader,
                                                 uint32_t aCount,
                                                 uint32_t* aCountRead) {

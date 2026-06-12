@@ -474,7 +474,6 @@ struct HttpConnectionInfoCloneArgs
   uint8_t trrMode;
   bool isIPv4Disabled;
   bool isIPv6Disabled;
-  bool isHttp3Disabled;
   nsCString topWindowOrigin;
   bool isHttp3;
   bool webTransport;

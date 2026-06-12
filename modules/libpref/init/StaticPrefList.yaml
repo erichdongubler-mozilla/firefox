@@ -16664,14 +16664,6 @@
   value: @IS_NIGHTLY_BUILD@
   mirror: always
 
-# When true, Happy Eyeballs is also used for requests carrying an HTTP
-# upgrade (e.g. WebSocket). Gated separately so the upgrade path can be
-# rolled out independently of the main Happy Eyeballs pref.
-- name: network.http.happy_eyeballs_upgrade_enabled
-  type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
-  mirror: always
-
 # The time to wait after receiving the first DNS response before moving on
 # to the connection phase (ms).
 - name: network.http.happy_eyeballs_resolution_delay
