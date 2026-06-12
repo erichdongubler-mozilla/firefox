@@ -16973,6 +16973,15 @@ function LivePagination({
 
 
 
+// Stream URLs come from an untrusted backend, so only allow http(s) through to
+// the href; anything else (e.g. javascript:) renders as a non-navigating link.
+function safeStreamUrl(url) {
+  try {
+    return ["http:", "https:"].includes(new URL(url).protocol) ? url : "";
+  } catch (e) {
+    return "";
+  }
+}
 
 // Map known backend entitlement strings to localized tag IDs. Anything not in
 // this map falls back to the raw string from `stream.entitlement`.
@@ -17010,10 +17019,12 @@ function StreamRow({
   };
   return /*#__PURE__*/external_React_default().createElement("li", {
     className: "watch-live-modal-row"
-  }, /*#__PURE__*/external_React_default().createElement(SafeAnchor, {
+  }, /*#__PURE__*/external_React_default().createElement("a", {
     className: "watch-live-modal-row-link",
-    url: stream.url,
-    onLinkClick: handleClick
+    href: safeStreamUrl(stream.url),
+    target: "_blank",
+    rel: "noopener noreferrer",
+    onClick: handleClick
   }, /*#__PURE__*/external_React_default().createElement("span", {
     className: "watch-live-modal-row-text"
   }, /*#__PURE__*/external_React_default().createElement("span", {
