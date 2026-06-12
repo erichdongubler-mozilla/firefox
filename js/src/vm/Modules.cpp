@@ -947,6 +947,10 @@ static bool CyclicModuleResolveExport(JSContext* cx,
     if (entry.module() == module && entry.exportName() == exportName) {
       // Step 3.a.i. Assert: This is a circular import request.
       // Step 3.a.ii. Return null.
+      //
+      // Note: null here does not necessarily indicate a resolution failure.
+      // The caller may still find a concrete binding via another star path, or
+      // detect ambiguity.
       result.setNull();
       if (errorInfoOut) {
         errorInfoOut->setCircularImport(cx, module);
@@ -1031,6 +1035,7 @@ static bool CyclicModuleResolveExport(JSContext* cx,
 
   // Step 8. Let starResolution be null.
   Rooted<ResolvedBindingObject*> starResolution(cx);
+  bool hadCircular = false;
 
   // Step 9. For each ExportEntry Record e of module.[[StarExportEntries]], do:
   Rooted<Value> resolution(cx);
@@ -1050,16 +1055,31 @@ static bool CyclicModuleResolveExport(JSContext* cx,
 
     // Step 9.c. Let resolution be ? importedModule.ResolveExport(exportName,
     //           resolveSet).
+    //
+    // Use a separate local ModuleErrorInfo so that a circular or ambiguous
+    // result from one star path does not prematurely update the caller's error
+    // information. We copy the relevant fields to errorInfoOut only once we
+    // decide to use this resolution (step 9.d) or at step 10.
+    ModuleErrorInfo localErrorInfo{e.lineNumber(), e.columnNumber()};
     if (!ModuleResolveExportWithResolveSet(cx, importedModule, exportName,
                                            resolveSet, &resolution,
-                                           errorInfoOut)) {
+                                           &localErrorInfo)) {
       return false;
     }
 
     // Step 9.d. If resolution is AMBIGUOUS, return AMBIGUOUS.
     if (resolution == StringValue(cx->names().ambiguous)) {
       result.set(resolution);
+      if (errorInfoOut) {
+        errorInfoOut->imported = localErrorInfo.imported;
+        errorInfoOut->entry1 = localErrorInfo.entry1;
+        errorInfoOut->entry2 = localErrorInfo.entry2;
+      }
       return true;
+    }
+
+    if (resolution.isNull() && localErrorInfo.isCircular) {
+      hadCircular = true;
     }
 
     // Step 9.e. If resolution is not null, then:
@@ -1105,7 +1125,11 @@ static bool CyclicModuleResolveExport(JSContext* cx,
   // Step 10. Return starResolution.
   result.setObjectOrNull(starResolution);
   if (!starResolution && errorInfoOut) {
-    errorInfoOut->setImportedModule(cx, module);
+    if (hadCircular) {
+      errorInfoOut->setCircularImport(cx, module);
+    } else {
+      errorInfoOut->setImportedModule(cx, module);
+    }
   }
   return true;
 }
@@ -1267,9 +1291,8 @@ void ModuleErrorInfo::setImportedModule(JSContext* cx,
   imported = importedModule->filename();
 }
 
-void ModuleErrorInfo::setCircularImport(JSContext* cx,
-                                        ModuleObject* importedModule) {
-  setImportedModule(cx, importedModule);
+void ModuleErrorInfo::setCircularImport(ModuleObject* importedModule) {
+  setImportedModule(importedModule);
   isCircular = true;
 }
 
