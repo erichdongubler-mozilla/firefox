@@ -11354,6 +11354,20 @@ pub extern "C" fn Servo_GetShadowRootForScoped(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn Servo_GetComputationStepsSupportedCSSFunctions(
+    out: &mut nsTArray<nsCString>,
+) {
+    use style::values::specified::calc::MathFunction;
+
+    out.push(nsCString::from("var"));
+    out.push(nsCString::from("attr"));
+    out.push(nsCString::from("env"));
+    for func in MathFunction::variants() {
+        out.push(nsCString::from(func.as_ref()));
+    }
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn Servo_GetComputationSteps(
     str: &nsAString,
     element: &RawGeckoElement,

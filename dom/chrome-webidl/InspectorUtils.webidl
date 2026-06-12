@@ -155,6 +155,10 @@ namespace InspectorUtils {
   // Given a DOM element, return a list of valid anchor anchor names.
   sequence<DOMString> getAnchorNamesFor(Element element);
 
+
+  // Returns the list of functions we support in getComputationSteps
+  sequence<UTF8String> getComputationStepsSupportedCSSFunctions();
+
   // Given a "CSS expression" (e.g. `calc(12vw + 25%)`), return a list of string that represent
   // the steps from it to the computed value
   sequence<DOMString> getComputationSteps(DOMString expression,
