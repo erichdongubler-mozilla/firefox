@@ -132,7 +132,9 @@ use style::traversal::DomTraversal;
 use style::traversal_flags::{self, TraversalFlags};
 use style::typed_om::numeric_declaration::NumericDeclaration;
 use style::typed_om::sum_value::SumValue;
-use style::typed_om::{ImageValue, NumericValue, ToTyped, TypedValue, TypedValueList, UnitValue};
+use style::typed_om::{
+    ImageValue, MathSum, NumericValue, ToTyped, TypedValue, TypedValueList, UnitValue,
+};
 use style::url;
 use style::use_counters::{CustomUseCounter, UseCounters};
 use style::values::animated::{Animate, Procedure, ToAnimatedZero};
@@ -6009,6 +6011,31 @@ pub extern "C" fn Servo_SumValue_ToUnit(
 
     *result = match sum_value.to_unit(unit) {
         Ok(unit_value) => Optional::Some(unit_value),
+        Err(..) => Optional::None,
+    };
+}
+
+/// Attempts to convert a sum value to concrete units.
+///
+/// Returns `Optional::Some` if the sum value can be converted to the
+/// requested units, or `Optional::None` if conversion is not possible.
+///
+/// Conversion may fail for valid reasons, such as:
+/// - converting between incompatible units
+/// - requested units not accounting for all items in the sum value
+#[no_mangle]
+pub extern "C" fn Servo_SumValue_ToUnits(
+    sum_value: &SumValue,
+    units: &nsTArray<nsCString>,
+    result: &mut Optional<MathSum>,
+) {
+    let units = units
+        .iter()
+        .map(|unit| unsafe { unit.as_str_unchecked() })
+        .collect::<Vec<_>>();
+
+    *result = match sum_value.to_units(&units) {
+        Ok(math_sum) => Optional::Some(math_sum),
         Err(..) => Optional::None,
     };
 }

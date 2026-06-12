@@ -151,10 +151,39 @@ already_AddRefed<CSSUnitValue> CSSNumericValue::To(const nsACString& aUnit,
   return unitValue.forget();
 }
 
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-tosum
 already_AddRefed<CSSMathSum> CSSNumericValue::ToSum(
     const Sequence<nsCString>& aUnits, ErrorResult& aRv) const {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+  // Step 1.
+  // TODO: For each unit in units, if the result of creating a type from unit
+  // is failure, throw a SyntaxError.
+
+  // TODO: The toSum() algorithm should also verify that the requested units
+  // are addable with each other (file a spec issue).
+
+  // Step 2.
+  auto styleNumericValue = ToStyleNumericValue();
+
+  auto sumValue = WrapUnique(Servo_SumValue_Create(&styleNumericValue));
+  if (!sumValue) {
+    aRv.ThrowTypeError("Failed to create a sum value");
+    return nullptr;
+  }
+
+  // Step 3-6.
+  auto styleMathSum = StyleOptional<StyleMathSum>::None();
+  Servo_SumValue_ToUnits(sumValue.get(),
+                         &static_cast<const nsTArray<nsCString>&>(aUnits),
+                         &styleMathSum);
+  if (styleMathSum.IsNone()) {
+    aRv.ThrowTypeError("Failed to convert to requested units");
+    return nullptr;
+  }
+
+  // Step 7.
+  RefPtr<CSSMathSum> mathSum =
+      CSSMathSum::Create(mParent, styleMathSum.AsSome());
+  return mathSum.forget();
 }
 
 void CSSNumericValue::Type(CSSNumericType& aRetVal) {}
