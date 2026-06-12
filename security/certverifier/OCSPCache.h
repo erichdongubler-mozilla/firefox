@@ -87,6 +87,9 @@ class OCSPCache {
   // Removes everything from the cache.
   void Clear();
 
+  // Removes all private-browsing entries from the cache.
+  void ClearPrivateBrowsing();
+
  private:
   class Entry {
    public:
@@ -101,6 +104,7 @@ class OCSPCache {
     mozilla::pkix::Result mResult;
     mozilla::pkix::Time mThisUpdate;
     mozilla::pkix::Time mValidThrough;
+    bool mIsPrivateBrowsing = false;
     // The SHA-384 hash of the concatenation of the DER encodings of the
     // issuer name and issuer key, followed by the length of the serial number,
     // the serial number, the length of the origin attributes suffix, and the
