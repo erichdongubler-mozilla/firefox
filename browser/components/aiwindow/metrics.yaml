@@ -733,7 +733,7 @@ smart_window:
       trigger:
         type: string
         description: >
-          The reason the Smart Window was opened. One of: switch, menu, new_window, open_browser, or undo_close
+          The reason the Smart Window was opened. One of: switch, menu, new_window, open_browser, undo_close, or keyboard_shortcut
       fxa:
         type: boolean
         description: >
