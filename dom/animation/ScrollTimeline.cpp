@@ -4,6 +4,7 @@
 
 #include "ScrollTimeline.h"
 
+#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/AnimationTarget.h"
 #include "mozilla/DisplayPortUtils.h"
 #include "mozilla/ElementAnimationData.h"
@@ -89,7 +90,12 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::Constructor(
   }
 
   // Step 1 -- create the new ScrollTimeline object.
-  return MakeAndAddRef<ScrollTimeline>(doc, scroller, axis);
+  RefPtr<ScrollTimeline> result =
+      MakeAndAddRef<ScrollTimeline>(doc, scroller, axis);
+  if (source) {
+    result->UpdateCachedCurrentTime();
+  }
+  return result.forget();
 }
 
 Element* ScrollTimeline::GetSource() const { return SourceElement(); }
