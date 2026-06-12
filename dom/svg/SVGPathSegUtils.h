@@ -43,6 +43,14 @@ struct MOZ_STACK_CLASS SVGPathTraversalState {
 
   enum class TraversalMode { UpdateAll, UpdateOnlyStartAndCurrentPos };
 
+  SVGPathTraversalState()
+      : start(0.0, 0.0),
+        pos(0.0, 0.0),
+        cp1(0.0, 0.0),
+        cp2(0.0, 0.0),
+        length(0.0),
+        mode(TraversalMode::UpdateAll) {}
+
   bool ShouldUpdateLengthAndControlPoints() const {
     return mode == TraversalMode::UpdateAll;
   }
@@ -59,11 +67,9 @@ struct MOZ_STACK_CLASS SVGPathTraversalState {
               // bezier curve then this is set to the absolute position of
               // its second control point, otherwise it's set to pos
 
-  // accumulated path length
-  double length = 0.0;
+  float length;  // accumulated path length
 
-  // indicates what to track while traversing a path
-  TraversalMode mode = TraversalMode::UpdateAll;
+  TraversalMode mode;  // indicates what to track while traversing a path
 };
 
 /**
@@ -90,22 +96,21 @@ class SVGPathSegUtils {
    */
   static void TraversePathSegment(const StylePathCommand&,
                                   SVGPathTraversalState&);
-
-  /// Detect whether the path represents a rectangle (for both filling AND
-  /// stroking) and if so returns it.
-  ///
-  /// This is typically useful for google slides which has many of these
-  /// rectangle shaped paths. It handles the same scenarios as skia's
-  /// SkPathPriv::IsRectContour which it is inspired from, including zero-length
-  /// edges and multiple points on edges of the rectangle, and doesn't attempt
-  /// to detect flat curves (that could easily be added but the expectation is
-  /// that since skia doesn't fast path it we're not likely to run into it in
-  /// practice).
-  ///
-  /// We could implement something similar for polygons.
-  static Maybe<gfx::Rect> SVGPathToAxisAlignedRect(
-      Span<const StylePathCommand>);
 };
+
+/// Detect whether the path represents a rectangle (for both filling AND
+/// stroking) and if so returns it.
+///
+/// This is typically useful for google slides which has many of these rectangle
+/// shaped paths. It handles the same scenarios as skia's
+/// SkPathPriv::IsRectContour which it is inspired from, including zero-length
+/// edges and multiple points on edges of the rectangle, and doesn't attempt to
+/// detect flat curves (that could easily be added but the expectation is that
+/// since skia doesn't fast path it we're not likely to run into it in
+/// practice).
+///
+/// We could implement something similar for polygons.
+Maybe<gfx::Rect> SVGPathToAxisAlignedRect(Span<const StylePathCommand>);
 
 }  // namespace mozilla
 

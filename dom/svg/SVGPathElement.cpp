@@ -252,10 +252,12 @@ void SVGPathElement::GetAsSimplePath(SimplePath* aSimplePath) {
     const nsStyleSVGReset* styleSVGReset = s->StyleSVGReset();
     if (styleSVGReset->mD.IsPath()) {
       auto pathData = styleSVGReset->mD.AsPath()._0.AsSpan();
-      auto maybeRect = SVGPathSegUtils::SVGPathToAxisAlignedRect(pathData);
+      auto maybeRect = SVGPathToAxisAlignedRect(pathData);
       if (maybeRect.isSome()) {
-        maybeRect->Scale(s->EffectiveZoom().ToFloat());
-        aSimplePath->SetRect(*maybeRect);
+        const Rect& r = *maybeRect;
+        float zoom = s->EffectiveZoom().ToFloat();
+        aSimplePath->SetRect(r.x * zoom, r.y * zoom, r.width * zoom,
+                             r.height * zoom);
       }
     }
   };
