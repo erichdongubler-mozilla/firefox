@@ -11,7 +11,7 @@ namespace mozilla {
 std::unique_ptr<WebrtcVideoEncoder> GmpVideoCodec::CreateEncoder(
     const webrtc::SdpVideoFormat& aFormat, std::string aPCHandle) {
   return std::make_unique<WebrtcVideoEncoderProxy>(
-      new WebrtcGmpVideoEncoder(aFormat, std::move(aPCHandle)));
+      MakeRefPtr<WebrtcGmpVideoEncoder>(aFormat, std::move(aPCHandle)));
 }
 
 std::unique_ptr<WebrtcVideoDecoder> GmpVideoCodec::CreateDecoder(

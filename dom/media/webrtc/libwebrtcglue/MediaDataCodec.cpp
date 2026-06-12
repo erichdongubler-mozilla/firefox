@@ -49,7 +49,7 @@ std::unique_ptr<WebrtcVideoEncoder> MediaDataCodec::CreateEncoder(
     return nullptr;
   }
   return std::make_unique<WebrtcVideoEncoderProxy>(
-      new WebrtcMediaDataEncoder(aFormat));
+      MakeRefPtr<WebrtcMediaDataEncoder>(aFormat));
 }
 
 static inline nsDependentCString MimeTypeFor(
