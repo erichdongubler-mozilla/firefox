@@ -704,12 +704,108 @@ ${
    * Note that it might be called before #init has finished.
    */
   #onContextMenuRebuilt() {
-    // Skip context menu initialization for smartbar mode.
     if (this.#isSmartbarMode) {
+      this.#initSmartbarContextMenuPaste();
       return;
     }
     this._initStripOnShare();
     this._initPasteAndGo();
+  }
+
+  // A right-click inside the multiline editor's contenteditable lands in the
+  // editor's shadow DOM, so the moz-input-box context menu isn't shown
+  // automatically. Open it explicitly at the cursor position.
+  #initSmartbarContextMenu() {
+    const inputBox = this.querySelector("moz-input-box");
+    const menupopup = inputBox?.menupopup;
+    if (!menupopup) {
+      return;
+    }
+    this.inputField.addEventListener("contextmenu", event => {
+      this.#maybeSelectAll();
+      event.preventDefault();
+      if (event.button) {
+        menupopup.openPopupAtScreen(event.screenX, event.screenY, true, event);
+      } else {
+        menupopup.openPopup(
+          this.inputField,
+          "after_start",
+          0,
+          0,
+          true,
+          false,
+          event
+        );
+      }
+    });
+  }
+
+  // TODO(Bug 2047067): the multiline editor is a ProseMirror contenteditable.
+  // The native cmd_paste command the moz-input-box context menu dispatches
+  // does not reliably reach it inside a shadow DOM on Windows, even though
+  // Ctrl+V works (it fires a native paste event ProseMirror handles).
+  // Intercept cmd_paste on the menupopup and route it through the editor
+  // directly. Remove this workaround once the platform bug is fixed.
+  #initSmartbarContextMenuPaste() {
+    const inputBox = this.querySelector("moz-input-box");
+    const menupopup = inputBox?.menupopup;
+    if (!menupopup) {
+      return;
+    }
+    menupopup.addEventListener(
+      "command",
+      event => {
+        const menuitem =
+          event.target?.localName == "menuitem"
+            ? event.target
+            : event.originalTarget;
+        if (menuitem?.getAttribute("cmd") != "cmd_paste") {
+          return;
+        }
+        this.#ensureSmartbarEditor();
+        const editor = /** @type {any} */ (
+          this.#smartbarInputController?.input
+        );
+        const dt = this.#readClipboardData();
+        if (editor && dt) {
+          editor.paste(dt);
+        }
+        event.stopImmediatePropagation();
+      },
+      true
+    );
+  }
+
+  #readClipboardData() {
+    try {
+      const xferable = Cc["@mozilla.org/widget/transferable;1"].createInstance(
+        Ci.nsITransferable
+      );
+      xferable.init(null);
+      xferable.addDataFlavor("text/plain");
+      const windowContext =
+        this.documentGlobal?.browsingContext?.currentWindowContext;
+      if (windowContext) {
+        Services.clipboard.getData(
+          xferable,
+          Ci.nsIClipboard.kGlobalClipboard,
+          windowContext
+        );
+      } else {
+        Services.clipboard.getData(xferable, Ci.nsIClipboard.kGlobalClipboard);
+      }
+      const data = {};
+      xferable.getTransferData("text/plain", data);
+      const text = data.value?.QueryInterface(Ci.nsISupportsString).data;
+      if (!text) {
+        return null;
+      }
+      const dt = new DataTransfer();
+      dt.setData("text/plain", text);
+      return dt;
+    } catch (e) {
+      return null;
+    }
   }
 
   addGBrowserListeners() {
@@ -740,6 +836,7 @@ ${
     this.#smartbarInputController = new lazy.SmartbarInputController(adapter);
     this.inputField = adapter.input;
     this.#smartbarEditor = adapter.editor;
+    this.#initSmartbarContextMenu();
   }
 
   #ensureSmartbarEditor() {

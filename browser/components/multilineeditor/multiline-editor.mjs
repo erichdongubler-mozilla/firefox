@@ -399,6 +399,37 @@ export class MultilineEditor extends MozLitElement {
   }
 
   /**
+   * Run ProseMirror's normal paste pipeline with the given DataTransfer's
+   * contents. Used by the context-menu cmd_paste route, which on some
+   * platforms (e.g. Windows) does not reliably reach a contenteditable
+   * inside a shadow DOM — TODO(Bug 2047067), remove once that is fixed.
+   *
+   * `new ClipboardEvent("paste", { clipboardData })` can't be used because
+   * Firefox's ClipboardEventInit dictionary has no clipboardData member, so
+   * the field is dropped and the event arrives at ProseMirror with null
+   * clipboardData. EditorView.pasteText / pasteHTML invoke the same paste
+   * machinery (plugins, history entry) directly.
+   *
+   * @param {DataTransfer} dataTransfer - Clipboard data to paste.
+   */
+  paste(dataTransfer) {
+    if (!this.#view || !dataTransfer) {
+      return;
+    }
+    const htmlData = dataTransfer.getData("text/html");
+    const textData = dataTransfer.getData("text/plain");
+    if (!htmlData && !textData) {
+      return;
+    }
+    this.#view.focus();
+    if (htmlData) {
+      this.#view.pasteHTML(htmlData);
+    } else {
+      this.#view.pasteText(textData);
+    }
+  }
+
+  /**
    * Called when the element is added to the DOM.
    */
   connectedCallback() {
@@ -569,6 +600,24 @@ export class MultilineEditor extends MozLitElement {
       attributes: this.#viewAttributes(),
       editable: () => !this.readOnly,
       dispatchTransaction: this.#dispatchTransaction,
+      handleDOMEvents: {
+        contextmenu: (view, event) => {
+          if (this.readOnly) {
+            return false;
+          }
+          // TODO(Bug 2047067): right-clicks on the inner contenteditable show
+          // a native context menu on Windows whose Paste command does not
+          // reach ProseMirror. Forward the event to the host so moz-input-box
+          // can show its menu. Remove this workaround once the platform bug
+          // is fixed.
+          event.preventDefault();
+          const host = view.dom.getRootNode().host;
+          if (host && host != view.dom) {
+            host.dispatchEvent(new MouseEvent("contextmenu", event));
+          }
+          return true;
+        },
+      },
       nodeViews: Object.assign(
         {},
         ...this.plugins.map(plugin => plugin.nodeViews).filter(Boolean)
