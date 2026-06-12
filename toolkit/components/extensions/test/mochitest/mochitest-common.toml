@@ -496,6 +496,8 @@ skip-if = [
   "http3",
 ]
 
+["test_ext_tabs_connect.html"]
+
 ["test_ext_tabs_create_cookieStoreId.html"]
 
 ["test_ext_tabs_detectLanguage.html"]

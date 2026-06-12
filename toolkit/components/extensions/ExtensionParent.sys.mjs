@@ -307,6 +307,12 @@ const ProxyMessenger = {
         sender.frameId = source.frameId;
       }
 
+      if (currentWindowContext?.innerWindowId) {
+        sender.documentId = lazy.ExtensionDocumentId.getDocumentId(
+          currentWindowContext.innerWindowId
+        );
+      }
+
       let principal = currentWindowContext.documentPrincipal;
       // We intend the serialization of null principals *and* file scheme to be
       // "null".
@@ -341,6 +347,17 @@ const ProxyMessenger = {
 
     arg.sender = this.getSender(extension, sender);
     arg.topBC = arg.tabId && this.getTopBrowsingContextId(arg.tabId);
+
+    if (arg.documentId) {
+      let innerWindowId =
+        lazy.ExtensionDocumentId.getInnerWindowIdForDocumentId(arg.documentId);
+      if (!innerWindowId) {
+        throw new ExtensionError(ERROR_NO_RECEIVERS);
+      }
+      arg.innerWindowId = innerWindowId;
+      return "frame";
+    }
+
     return arg.tabId ? "tab" : "messenger";
   },
 

@@ -154,6 +154,11 @@
             "optional": true,
             "description": "The $(topic:frame_ids)[frame] that opened the connection. 0 for top-level frames, positive for child frames. This will only be set when <code>tab</code> is set."
           },
+          "documentId": {
+            "type": "string",
+            "optional": true,
+            "description": "A UUID of the document that opened the connection."
+          },
           "id": {
             "type": "string",
             "optional": true,
