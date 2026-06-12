@@ -429,17 +429,19 @@ add_task(async function test_fetchSportsData_dispatches_teams_and_matches() {
 });
 
 add_task(
-  async function test_fetchSportsData_filters_live_to_status_type_live() {
+  async function test_fetchSportsData_filters_live_to_in_progress_statuses() {
     // The /live endpoint is meant to be pre-filtered by the backend, but the
-    // feed re-filters on `status_type === "live"` as a defensive guard so the
-    // Now tab only ever surfaces actually-live matches.
+    // feed re-filters against the in-progress allowlist (live/halftime/extra
+    // time) as a defensive guard so the Now tab only ever surfaces actually-
+    // live matches.
     const feed = makeFeed();
     const mockLive = {
       matches: [
         { id: "live1", status_type: "live", query: "team1 vs team2" },
-        { id: "scheduled1", status_type: "scheduled", query: "team3 vs team4" },
-        { id: "ended1", status_type: "ended", query: "team5 vs team6" },
-        { id: "live2", status_type: "live", query: "team7 vs team8" },
+        { id: "halftime1", status_type: "Halftime", query: "team3 vs team4" },
+        { id: "extra1", status_type: "extra time", query: "team5 vs team6" },
+        { id: "scheduled1", status_type: "scheduled", query: "team7 vs team8" },
+        { id: "ended1", status_type: "ended", query: "team9 vs team10" },
       ],
     };
     sinon
@@ -464,8 +466,8 @@ add_task(
     const [dispatchedAction] = feed.store.dispatch.firstCall.args;
     Assert.deepEqual(
       dispatchedAction.data.live.map(m => m.id),
-      ["live1", "live2"],
-      "only matches with status_type === 'live' survive the filter"
+      ["live1", "halftime1", "extra1"],
+      "only in-progress matches (live/halftime/extra time, case-insensitive) survive the filter"
     );
   }
 );

@@ -7401,26 +7401,31 @@ button.arrow-button:dir(rtl) {
   fill: var(--color-accent-primary);
 }
 .sports-match-row .sports-match-upcoming,
-.sports-match-row .sports-match-result {
+.sports-match-row .sports-match-result,
+.sports-match-row .sports-match-live {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 .sports-match-row .sports-match-upcoming .sports-match-time,
-.sports-match-row .sports-match-result .sports-match-time {
+.sports-match-row .sports-match-result .sports-match-time,
+.sports-match-row .sports-match-live .sports-match-time {
   font-size: var(--font-size-xlarge);
   font-weight: var(--font-weight-semibold);
 }
 .sports-match-row .sports-match-upcoming .sports-match-date,
-.sports-match-row .sports-match-result .sports-match-date {
+.sports-match-row .sports-match-result .sports-match-date,
+.sports-match-row .sports-match-live .sports-match-date {
   color: var(--text-color-deemphasized);
 }
 .sports-match-row .sports-match-upcoming .sports-match-vs,
-.sports-match-row .sports-match-result .sports-match-vs {
+.sports-match-row .sports-match-result .sports-match-vs,
+.sports-match-row .sports-match-live .sports-match-vs {
   font-size: var(--font-size-xxlarge);
 }
-.sports-match-row .sports-match-result {
-  gap: var(--space-xsmall);
+.sports-match-row .sports-match-result,
+.sports-match-row .sports-match-live {
+  gap: var(--space-small);
 }
 .sports-match-row .sports-score-pill {
   display: flex;
@@ -7440,14 +7445,19 @@ button.arrow-button:dir(rtl) {
 .sports-match-row .sports-score-pill.sports-score-pill-results {
   background: var(--background-color-box-info);
 }
-.sports-match-row .sports-match-result-footer {
+.sports-match-row .sports-match-live > .sports-score-pill-now {
+  align-self: center;
+}
+.sports-match-row .sports-match-result-footer,
+.sports-match-row .sports-match-live-footer {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   column-gap: calc(var(--space-xsmall) + var(--space-xxsmall));
   color: var(--text-color-deemphasized);
 }
-.sports-match-row .sports-match-result-footer > span {
+.sports-match-row .sports-match-result-footer > span,
+.sports-match-row .sports-match-live-footer > span {
   white-space: nowrap;
 }
 .sports-match-row .sports-score-penalty {
@@ -7471,7 +7481,9 @@ button.arrow-button:dir(rtl) {
   /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
   text-align: center;
 }
-.sports-match-row.sports-match-row-medium .sports-match-result-footer, .sports-match-row.sports-match-row-list .sports-match-result-footer {
+.sports-match-row.sports-match-row-medium .sports-match-result-footer,
+.sports-match-row.sports-match-row-medium .sports-match-live-footer, .sports-match-row.sports-match-row-list .sports-match-result-footer,
+.sports-match-row.sports-match-row-list .sports-match-live-footer {
   font-size: var(--font-size-small);
   column-gap: var(--space-xsmall);
 }
