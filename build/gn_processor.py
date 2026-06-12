@@ -200,7 +200,11 @@ def filter_gn_config(path, gn_result, sandbox_vars, input_vars, gn_target):
     gen_path = path / "gen"
     # Translates the raw output of gn into just what we'll need to generate a
     # mozbuild configuration.
-    gn_out = {"targets": {}, "sandbox_vars": sandbox_vars}
+    gn_out = {
+        "targets": {},
+        "sandbox_vars": sandbox_vars,
+        "gen_input_files": gn_result["build_settings"]["gen_input_files"],
+    }
 
     cpus = {
         "arm64": "aarch64",
@@ -238,6 +242,7 @@ def filter_gn_config(path, gn_result, sandbox_vars, input_vars, gn_target):
             for spec_attr in (
                 "type",
                 "args",
+                "inputs",
                 "script",
                 "outputs",
                 "response_file_contents",
