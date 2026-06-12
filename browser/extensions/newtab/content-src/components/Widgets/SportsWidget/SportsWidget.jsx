@@ -79,6 +79,10 @@ const USER_ACTION_TYPES = {
 // surface as a no-op click.
 const LIVE_REFRESH_COOLDOWN_MS = 15000;
 
+// Minimum time the refresh icon spins after a click, so even an instant /live
+// response still reads as "something happened" rather than a flicker.
+const LIVE_REFRESH_MIN_SPIN_MS = 2000;
+
 const PREF_NOVA_ENABLED = "nova.enabled";
 const PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
 const PREF_SPORTS_WIDGET_LIVE_ENABLED = "widgets.sportsWidget.live.enabled";
@@ -1178,6 +1182,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
             current={sortedCurrent}
             next={sortedNext}
             liveIndex={liveIndex}
+            lastLiveUpdated={sportsWidgetData.lastLiveUpdated}
             handleInteraction={handleInteraction}
             selectedTeamsSet={selectedTeamsSet}
             tbdTeamName={tbdTeamName}
@@ -1333,12 +1338,15 @@ function SportsWidgetFollowTeams({ teams, initialSelectedTeams, onSave }) {
   );
 }
 
-// Controlled: `isCoolingDown` and `onClick` are owned by SportsMatchesView so
-// the disabled state persists across the medium and large widget size changes
-function LiveRefreshButton({ isCoolingDown, onClick }) {
+// Controlled: `isCoolingDown`, `isSpinning` and `onClick` are owned by
+// SportsMatchesView so both the disabled state and the spin persist across the
+// medium and large widget size changes.
+function LiveRefreshButton({ isCoolingDown, isSpinning, onClick }) {
   return (
     <moz-button
-      className="sports-live-refresh-button"
+      className={`sports-live-refresh-button${
+        isSpinning ? " is-spinning" : ""
+      }`}
       type="icon ghost"
       size="small"
       iconSrc="chrome://browser/skin/sync.svg"
@@ -1387,6 +1395,7 @@ function SportsMatchesView({
   current,
   next,
   liveIndex,
+  lastLiveUpdated,
   handleInteraction,
   selectedTeamsSet,
   tbdTeamName,
@@ -1469,23 +1478,70 @@ function SportsMatchesView({
   // Flipped to true when clicked. While true, the button is disabled.
   // Flips back to false when LIVE_REFRESH_COOLDOWN_MS finishes, and gets re-enabled again.
   const [liveRefreshCoolingDown, setLiveRefreshCoolingDown] = useState(false);
+  // Spins the refresh icon while a manual fetch is in flight. Set on click,
+  // cleared when fresh /live data lands (`lastLiveUpdated` changes) — but never
+  // before LIVE_REFRESH_MIN_SPIN_MS — or when the cooldown ends as a safety cap
+  // (e.g. the feed dropped the click as too-soon).
+  const [liveRefreshSpinning, setLiveRefreshSpinning] = useState(false);
   const liveRefreshTimerRef = useRef(null);
+  // Click timestamp, non-null only while a manual refresh's spin is in flight.
+  // Doubles as the guard that makes the stop-on-update effect ignore its mount
+  // run and any automatic-poll updates that happen while no refresh is pending.
+  const liveRefreshSpinStartRef = useRef(null);
+  const liveRefreshStopTimerRef = useRef(null);
+  const stopLiveRefreshSpin = useCallback(() => {
+    if (liveRefreshStopTimerRef.current) {
+      clearTimeout(liveRefreshStopTimerRef.current);
+      liveRefreshStopTimerRef.current = null;
+    }
+    liveRefreshSpinStartRef.current = null;
+    setLiveRefreshSpinning(false);
+  }, []);
   useEffect(
     () => () => {
       if (liveRefreshTimerRef.current) {
         clearTimeout(liveRefreshTimerRef.current);
       }
+      if (liveRefreshStopTimerRef.current) {
+        clearTimeout(liveRefreshStopTimerRef.current);
+      }
     },
     []
   );
+  // Stop the spin once a new /live response arrives, but hold it for at least
+  // LIVE_REFRESH_MIN_SPIN_MS so a fast response still reads as an action. The
+  // start-ref guard skips the mount run and idle auto-poll updates.
+  useEffect(() => {
+    // Ignore the mount run / idle auto-poll updates, and don't reschedule once
+    // a floor-stop is already pending (the floor is anchored to the click).
+    if (
+      liveRefreshSpinStartRef.current === null ||
+      liveRefreshStopTimerRef.current
+    ) {
+      return;
+    }
+    const remaining =
+      LIVE_REFRESH_MIN_SPIN_MS - (Date.now() - liveRefreshSpinStartRef.current);
+    if (remaining <= 0) {
+      stopLiveRefreshSpin();
+    } else {
+      liveRefreshStopTimerRef.current = setTimeout(
+        stopLiveRefreshSpin,
+        remaining
+      );
+    }
+  }, [lastLiveUpdated, stopLiveRefreshSpin]);
   const handleLiveRefreshClick = useCallback(() => {
     if (liveRefreshCoolingDown) {
       return;
     }
     setLiveRefreshCoolingDown(true);
+    setLiveRefreshSpinning(true);
+    liveRefreshSpinStartRef.current = Date.now();
     liveRefreshTimerRef.current = setTimeout(() => {
       liveRefreshTimerRef.current = null;
       setLiveRefreshCoolingDown(false);
+      stopLiveRefreshSpin();
     }, LIVE_REFRESH_COOLDOWN_MS);
     batch(() => {
       dispatch(
@@ -1502,7 +1558,13 @@ function SportsMatchesView({
       dispatch(ac.OnlyToMain({ type: at.WIDGETS_SPORTS_LIVE_REFRESH }));
     });
     handleInteraction?.();
-  }, [dispatch, handleInteraction, liveRefreshCoolingDown, widgetSize]);
+  }, [
+    dispatch,
+    handleInteraction,
+    liveRefreshCoolingDown,
+    stopLiveRefreshSpin,
+    widgetSize,
+  ]);
 
   return (
     <div className="sports-matches-view">
@@ -1594,6 +1656,7 @@ function SportsMatchesView({
                   />
                   <LiveRefreshButton
                     isCoolingDown={liveRefreshCoolingDown}
+                    isSpinning={liveRefreshSpinning}
                     onClick={handleLiveRefreshClick}
                   />
                 </div>
@@ -1630,6 +1693,7 @@ function SportsMatchesView({
               {size === "medium" && (
                 <LiveRefreshButton
                   isCoolingDown={liveRefreshCoolingDown}
+                  isSpinning={liveRefreshSpinning}
                   onClick={handleLiveRefreshClick}
                 />
               )}

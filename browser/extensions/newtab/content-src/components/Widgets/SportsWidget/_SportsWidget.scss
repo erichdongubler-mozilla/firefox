@@ -509,6 +509,18 @@
   inset-block-end: var(--space-xxsmall);
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .sports-live-refresh-button.is-spinning::part(button) {
+    animation: sports-live-refresh-spin 1s linear infinite;
+  }
+}
+
+@keyframes sports-live-refresh-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .large-widget
 .sports-matches-tab-panel:has(.match-highlight-view)
 > .match-highlight-view {

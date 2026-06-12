@@ -2168,6 +2168,126 @@ describe("<SportsWidget> live refresh button", () => {
     ).toBe(true);
     expect(largeButton.hasAttribute("disabled")).toBe(true);
   });
+
+  it("spins the refresh icon on click", () => {
+    const { container } = renderLiveLarge();
+    const button = findRefreshButton(container);
+    expect(button.classList.contains("is-spinning")).toBe(false);
+    fireEvent.click(button);
+    expect(button.classList.contains("is-spinning")).toBe(true);
+  });
+
+  it("stops the spin when fresh /live data lands, but not before the 2s minimum", () => {
+    // Needs a real store so dispatching WIDGETS_SPORTS_LIVE_UPDATE actually
+    // bumps `lastLiveUpdated` through the reducer — the signal the spin watches.
+    const { createStore, combineReducers } = require("redux");
+    const { Provider } = require("react-redux");
+    const { reducers } = require("common/Reducers.sys.mjs");
+
+    const store = createStore(
+      combineReducers(reducers),
+      makeState(
+        { [PREF_SPORTS_WIDGET_SIZE]: "large" },
+        {
+          widgetState: "sports-matches",
+          matchesTab: "now",
+          data: { teams: [], matches: emptyMatches, live: [mockMatch] },
+        }
+      )
+    );
+    const { container } = render(
+      <Provider store={store}>
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </Provider>
+    );
+
+    jest.useFakeTimers();
+    try {
+      const button = container.querySelector(".sports-live-refresh-button");
+      fireEvent.click(button);
+      expect(button.classList.contains("is-spinning")).toBe(true);
+
+      // A fresh /live response lands well within the 2s floor.
+      act(() => {
+        jest.advanceTimersByTime(500);
+        store.dispatch({
+          type: at.WIDGETS_SPORTS_LIVE_UPDATE,
+          data: { live: [mockMatch], lastLiveUpdated: Date.now() },
+        });
+      });
+      // Still spinning — the minimum spin window hasn't elapsed yet.
+      expect(button.classList.contains("is-spinning")).toBe(true);
+
+      // Advance past the 2s floor — the spin stops.
+      act(() => {
+        jest.advanceTimersByTime(1500);
+      });
+      expect(button.classList.contains("is-spinning")).toBe(false);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("stops the spin at the cooldown cap when no fresh /live data arrives", () => {
+    // Mocked dispatch never updates `lastLiveUpdated`, mirroring the feed
+    // silently dropping a too-soon click — the 15s cooldown caps the spin.
+    const { container } = renderLiveLarge({ dispatch: jest.fn() });
+    jest.useFakeTimers();
+    try {
+      const button = findRefreshButton(container);
+      fireEvent.click(button);
+      expect(button.classList.contains("is-spinning")).toBe(true);
+
+      act(() => {
+        jest.advanceTimersByTime(15000);
+      });
+      expect(button.classList.contains("is-spinning")).toBe(false);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("preserves the spinning state across a size flip (medium <-> large)", () => {
+    // Spin state is lifted to SportsMatchesView alongside the cooldown, so it
+    // survives the button's size-driven remount the same way `disabled` does.
+    const { createStore, combineReducers } = require("redux");
+    const { Provider } = require("react-redux");
+    const { reducers } = require("common/Reducers.sys.mjs");
+
+    const store = createStore(
+      combineReducers(reducers),
+      makeState(
+        { [PREF_SPORTS_WIDGET_SIZE]: "medium" },
+        {
+          widgetState: "sports-matches",
+          matchesTab: "now",
+          data: { teams: [], matches: emptyMatches, live: [mockMatch] },
+        }
+      )
+    );
+    const { container } = render(
+      <Provider store={store}>
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </Provider>
+    );
+
+    const mediumButton = container.querySelector(".sports-live-refresh-button");
+    fireEvent.click(mediumButton);
+    expect(mediumButton.classList.contains("is-spinning")).toBe(true);
+
+    act(() => {
+      store.dispatch({
+        type: at.PREF_CHANGED,
+        data: { name: PREF_SPORTS_WIDGET_SIZE, value: "large" },
+      });
+    });
+
+    const largeButton = container.querySelector(".sports-live-refresh-button");
+    expect(
+      largeButton.parentElement.classList.contains("sports-now-header")
+    ).toBe(true);
+    expect(largeButton.classList.contains("is-spinning")).toBe(true);
+  });
 });
 
 describe("<SportsWidget> followed teams matches view", () => {
