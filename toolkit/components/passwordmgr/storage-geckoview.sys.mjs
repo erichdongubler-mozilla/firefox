@@ -18,17 +18,16 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 export class LoginManagerStorage extends LoginManagerStorage_json {
   static #storage = null;
-  static #initializationPromise = null;
 
-  static create() {
-    if (!LoginManagerStorage.#initializationPromise) {
+  static create(callback) {
+    if (!LoginManagerStorage.#storage) {
       LoginManagerStorage.#storage = new LoginManagerStorage();
-      LoginManagerStorage.#initializationPromise = LoginManagerStorage.#storage
-        .initialize()
-        .then(() => LoginManagerStorage.#storage);
+      LoginManagerStorage.#storage.initialize().then(callback);
+    } else if (callback) {
+      callback();
     }
 
-    return LoginManagerStorage.#initializationPromise;
+    return LoginManagerStorage.#storage;
   }
 
   get _crypto() {

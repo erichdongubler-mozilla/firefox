@@ -96,27 +96,19 @@ LoginManager.prototype = {
   },
 
   _initStorage() {
-    this.initializationPromise = LoginManagerStorage.create().then(store => {
-      this._storage = store;
+    this.initializationPromise = new Promise(resolve => {
+      this._storage = LoginManagerStorage.create(() => {
+        resolve();
 
-      lazy.log.debug(
-        "initializationPromise is resolved, updating isPrimaryPasswordSet in sharedData"
-      );
-      Services.ppmm.sharedData.set(
-        "isPrimaryPasswordSet",
-        lazy.LoginHelper.isPrimaryPasswordSet()
-      );
+        lazy.log.debug(
+          "initializationPromise is resolved, updating isPrimaryPasswordSet in sharedData"
+        );
+        Services.ppmm.sharedData.set(
+          "isPrimaryPasswordSet",
+          lazy.LoginHelper.isPrimaryPasswordSet()
+        );
+      });
     });
-  },
-
-  /**
-   * Awaits storage initialization and returns the active storage backend.
-   * Async callers must obtain `_storage` through this so they never access it
-   * before `initializationPromise` has resolved.
-   */
-  async _getStorage() {
-    await this.initializationPromise;
-    return this._storage;
   },
 
   /* ---------- Utility objects ---------- */
@@ -246,11 +238,10 @@ LoginManager.prototype = {
    * Add a new login to login storage.
    */
   async addLoginAsync(login) {
-    const storage = await this._getStorage();
     this._checkLogin(login);
 
     lazy.log.debug("Adding login");
-    const [resultLogin] = await storage.addLoginsAsync([login]);
+    const [resultLogin] = await this._storage.addLoginsAsync([login]);
     return resultLogin;
   },
 
@@ -259,7 +250,6 @@ LoginManager.prototype = {
    * TODO: rename to `addLoginsAsync` https://bugzilla.mozilla.org/show_bug.cgi?id=1832757
    */
   async addLogins(logins) {
-    const storage = await this._getStorage();
     if (logins.length === 0) {
       return logins;
     }
@@ -274,31 +264,29 @@ LoginManager.prototype = {
       }
     });
     lazy.log.debug("Adding logins");
-    return storage.addLoginsAsync(validLogins, true);
+    return this._storage.addLoginsAsync(validLogins, true);
   },
 
   /**
    * Remove the specified login from the stored logins.
    */
   async removeLoginAsync(login) {
-    const storage = await this._getStorage();
     lazy.log.debug(
       "Removing login",
       login.QueryInterface(Ci.nsILoginMetaInfo).guid
     );
-    return storage.removeLoginAsync(login);
+    return this._storage.removeLoginAsync(login);
   },
 
   /**
    * Async: Change the specified login to match the new login or new properties.
    */
   async modifyLoginAsync(oldLogin, newLogin) {
-    const storage = await this._getStorage();
     lazy.log.debug(
       "Modifying login",
       oldLogin.QueryInterface(Ci.nsILoginMetaInfo).guid
     );
-    await storage.modifyLoginAsync(oldLogin, newLogin);
+    await this._storage.modifyLoginAsync(oldLogin, newLogin);
   },
 
   async recordPasswordUseAsync(
@@ -307,7 +295,6 @@ LoginManager.prototype = {
     loginType,
     filled
   ) {
-    const storage = await this._getStorage();
     lazy.log.debug(
       "Recording password use",
       loginType,
@@ -315,7 +302,7 @@ LoginManager.prototype = {
     );
     if (!privateContextWithoutExplicitConsent) {
       // don't record non-interactive use in private browsing
-      await storage.recordPasswordUseAsync(login);
+      await this._storage.recordPasswordUseAsync(login);
     }
 
     Glean.pwmgr["savedLoginUsed" + loginType].record({ filled });
@@ -327,9 +314,8 @@ LoginManager.prototype = {
    * @return {nsILoginInfo[]} - If there are no logins, the array is empty.
    */
   async getAllLogins() {
-    const storage = await this._getStorage();
     lazy.log.debug("Getting a list of all logins asynchronously.");
-    return storage.getAllLogins();
+    return this._storage.getAllLogins();
   },
 
   /**
@@ -337,11 +323,9 @@ LoginManager.prototype = {
    */
   getAllLoginsWithCallback(aCallback) {
     lazy.log.debug("Searching a list of all logins asynchronously.");
-    this._getStorage()
-      .then(storage => storage.getAllLogins())
-      .then(logins => {
-        aCallback.onSearchComplete(logins);
-      });
+    this._storage.getAllLogins().then(logins => {
+      aCallback.onSearchComplete(logins);
+    });
   },
 
   /**
@@ -350,9 +334,8 @@ LoginManager.prototype = {
    * This will not remove the FxA Sync key, which is stored with the rest of a user's logins.
    */
   async removeAllUserFacingLoginsAsync() {
-    const storage = await this._getStorage();
     lazy.log.debug("Removing all user facing logins.");
-    await storage.removeAllUserFacingLoginsAsync();
+    await this._storage.removeAllUserFacingLoginsAsync();
   },
 
   /**
@@ -363,9 +346,8 @@ LoginManager.prototype = {
    * e.g. bookmarks, history, open tabs, logins and passwords, add-ons, and options
    */
   async removeAllLoginsAsync() {
-    const storage = await this._getStorage();
     lazy.log.debug("Removing all logins from local store, including FxA key.");
-    await storage.removeAllLoginsAsync();
+    await this._storage.removeAllLoginsAsync();
   },
 
   /**
@@ -404,7 +386,6 @@ LoginManager.prototype = {
   },
 
   async searchLoginsAsync(matchData) {
-    const storage = await this._getStorage();
     lazy.log.debug(
       `Searching for matching logins for origin: ${matchData.origin}`
     );
@@ -415,12 +396,11 @@ LoginManager.prototype = {
       );
     }
 
-    return storage.searchLoginsAsync(matchData);
+    return this._storage.searchLoginsAsync(matchData);
   },
 
   async countLoginsAsync(origin, formActionOrigin, httpRealm) {
-    const storage = await this._getStorage();
-    const loginsCount = await storage.countLoginsAsync(
+    const loginsCount = await this._storage.countLoginsAsync(
       origin,
       formActionOrigin,
       httpRealm
@@ -435,23 +415,19 @@ LoginManager.prototype = {
 
   /* Sync metadata functions */
   async getSyncID() {
-    const storage = await this._getStorage();
-    return storage.getSyncID();
+    return this._storage.getSyncID();
   },
 
   async setSyncID(id) {
-    const storage = await this._getStorage();
-    await storage.setSyncID(id);
+    await this._storage.setSyncID(id);
   },
 
   async getLastSync() {
-    const storage = await this._getStorage();
-    return storage.getLastSync();
+    return this._storage.getLastSync();
   },
 
   async setLastSync(timestamp) {
-    const storage = await this._getStorage();
-    await storage.setLastSync(timestamp);
+    await this._storage.setLastSync(timestamp);
   },
 
   async ensureCurrentSyncID(newSyncID) {
@@ -469,33 +445,27 @@ LoginManager.prototype = {
   },
 
   async addPotentiallyVulnerablePassword(login) {
-    const storage = await this._getStorage();
-    return storage.addPotentiallyVulnerablePassword(login);
+    return this._storage.addPotentiallyVulnerablePassword(login);
   },
 
   async isPotentiallyVulnerablePassword(login) {
-    const storage = await this._getStorage();
-    return storage.isPotentiallyVulnerablePassword(login);
+    return this._storage.isPotentiallyVulnerablePassword(login);
   },
 
   async recordBreachAlertDismissal(loginGUID) {
-    const storage = await this._getStorage();
-    return storage.recordBreachAlertDismissal(loginGUID);
+    return this._storage.recordBreachAlertDismissal(loginGUID);
   },
 
   async getBreachAlertDismissalsByLoginGUID() {
-    const storage = await this._getStorage();
-    return storage.getBreachAlertDismissalsByLoginGUID();
+    return this._storage.getBreachAlertDismissalsByLoginGUID();
   },
 
   async arePotentiallyVulnerablePasswords(logins) {
-    const storage = await this._getStorage();
-    return storage.arePotentiallyVulnerablePasswords(logins);
+    return this._storage.arePotentiallyVulnerablePasswords(logins);
   },
 
   async clearAllPotentiallyVulnerablePasswords() {
-    const storage = await this._getStorage();
-    return storage.clearAllPotentiallyVulnerablePasswords();
+    return this._storage.clearAllPotentiallyVulnerablePasswords();
   },
 
   get uiBusy() {
@@ -570,9 +540,8 @@ LoginManager.prototype = {
    * For migration purposes, asynchronously reencrypt all logins in the
    * background.
    */
-  async reencryptAllLogins() {
-    const storage = await this._getStorage();
-    return storage.reencryptAllLogins();
+  reencryptAllLogins() {
+    return this._storage.reencryptAllLogins();
   },
 
   /**
