@@ -5929,6 +5929,7 @@ class Document : public nsINode,
   void RegisterSpeculationRulesFromScript(
       nsIScriptElement* aScriptElement,
       UniquePtr<SpeculationRules> aSpeculationRules);
+  void UnregisterSpeculationRules(nsIScriptElement* aScriptElement);
 
   nsIURI* GetTlsCertificateBindingURI() const {
     return mTLSCertificateBindingURI;
