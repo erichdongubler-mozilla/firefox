@@ -59,7 +59,7 @@ const MR_ABOUT_WELCOME_DEFAULT = {
         position: "split",
         split_narrow_bkg_position: "-42px",
         background:
-          "url('chrome://activity-stream/content/data/content/assets/fox-doodle-backup-restore.svg') var(--mr-secondary-position) no-repeat var(--mr-screen-background-color)",
+          "url('chrome://activity-stream/content/data/content/assets/br-backup-fox-in-box.svg') var(--mr-secondary-position) no-repeat light-dark(rgba(252, 245, 240, 1), rgba(33, 3, 64, 1))",
         progress_bar: true,
         hide_secondary_section: "responsive",
         backup_show_filepicker: {
@@ -118,7 +118,7 @@ const MR_ABOUT_WELCOME_DEFAULT = {
         position: "split",
         split_narrow_bkg_position: "-42px",
         background:
-          "url('chrome://activity-stream/content/data/content/assets/fox-doodle-backup-restore.svg') var(--mr-secondary-position) no-repeat var(--mr-screen-background-color)",
+          "url('chrome://activity-stream/content/data/content/assets/br-backup-fox-in-box.svg') var(--mr-secondary-position) no-repeat light-dark(rgba(252, 245, 240, 1), rgba(33, 3, 64, 1))",
         progress_bar: true,
         hide_secondary_section: "responsive",
         backup_show_filepicker: {
@@ -145,7 +145,7 @@ const MR_ABOUT_WELCOME_DEFAULT = {
           string_id: "onboarding-device-migration-image-alt",
         },
         background:
-          "url('chrome://activity-stream/content/data/content/assets/device-migration.svg') var(--mr-secondary-position) no-repeat var(--mr-screen-background-color)",
+          "url('chrome://activity-stream/content/data/content/assets/br-migration-fox-juggle.svg') var(--mr-secondary-position) no-repeat light-dark(rgba(252, 245, 240, 1), rgba(33, 3, 64, 1))",
         progress_bar: true,
         logo: {},
         title: {
@@ -1069,7 +1069,7 @@ const MR_ABOUT_WELCOME_DEFAULT = {
         position: "split",
         split_narrow_bkg_position: "-42px",
         background:
-          "url('chrome://activity-stream/content/data/content/assets/fox-doodle-backup-restore.svg') var(--mr-secondary-position) no-repeat var(--mr-screen-background-color)",
+          "url('chrome://activity-stream/content/data/content/assets/br-backup-fox-in-box.svg') var(--mr-secondary-position) no-repeat light-dark(rgba(252, 245, 240, 1), rgba(33, 3, 64, 1))",
         progress_bar: true,
         hide_secondary_section: "responsive",
         backup_show_filepicker: {
