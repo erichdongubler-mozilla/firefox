@@ -66,7 +66,6 @@
 #include "nsDebug.h"
 #include "nsGkAtoms.h"
 #include "nsHashKeys.h"
-#include "nsHashtablesFwd.h"
 #include "nsIChannel.h"
 #include "nsIChannelEventSink.h"
 #include "nsIClassifiedChannel.h"
@@ -275,7 +274,6 @@ class Selection;
 class ServiceWorkerDescriptor;
 class ShadowRoot;
 class SimpleContentList;
-class SpeculationRules;
 class SVGDocument;
 class SVGElement;
 class SVGSVGElement;
@@ -5899,10 +5897,6 @@ class Document : public nsINode,
 
   nsCOMPtr<nsIURI> mTLSCertificateBindingURI;
 
-  // https://html.spec.whatwg.org/#document-sr-sets
-  nsClassHashtable<nsRefPtrHashKey<nsIScriptElement>, SpeculationRules>
-      mSpeculationRulesFromScript;
-
  public:
   // Needs to be public because the bindings code pokes at it.
   JS::ExpandoAndGeneration mExpandoAndGeneration;
@@ -5925,11 +5919,6 @@ class Document : public nsINode,
                                               const nsAString& aHTML,
                                               const SetHTMLOptions& aOptions,
                                               ErrorResult& aError);
-
-  void RegisterSpeculationRulesFromScript(
-      nsIScriptElement* aScriptElement,
-      UniquePtr<SpeculationRules> aSpeculationRules);
-  void UnregisterSpeculationRules(nsIScriptElement* aScriptElement);
 
   nsIURI* GetTlsCertificateBindingURI() const {
     return mTLSCertificateBindingURI;

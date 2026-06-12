@@ -103,9 +103,6 @@ class ScriptLoadRequest : public nsISupports,
 
   bool IsModuleRequest() const { return mKind == ScriptKind::eModule; }
   bool IsImportMapRequest() const { return mKind == ScriptKind::eImportMap; }
-  bool IsSpeculationRulesRequest() const {
-    return mKind == ScriptKind::eSpeculationRules;
-  }
 
   ModuleLoadRequest* AsModuleRequest();
   const ModuleLoadRequest* AsModuleRequest() const;
@@ -342,8 +339,7 @@ class ScriptLoadRequest : public nsISupports,
  public:
   // Fields.
 
-  // Whether this is a classic script, a module script, an import map, or a
-  // speculation rule set.
+  // Whether this is a classic script, a module script, or an import map.
   const ScriptKind mKind;
 
   // Are we still waiting for a load to complete?

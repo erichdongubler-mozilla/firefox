@@ -27,7 +27,6 @@ extern crate cubeb_coreaudio;
 extern crate cubeb_pulse;
 extern crate data_storage;
 extern crate dom_fragmentdirectives;
-extern crate dom_speculationrules;
 extern crate encoding_glue;
 extern crate fog_control;
 extern crate gecko_profiler;

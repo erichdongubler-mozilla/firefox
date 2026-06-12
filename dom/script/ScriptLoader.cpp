@@ -62,7 +62,6 @@
 #include "mozilla/dom/SRILogHelper.h"
 #include "mozilla/dom/ScriptDecoding.h"  // mozilla::dom::ScriptDecoding
 #include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/SpeculationRules.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/glean/DomMetrics.h"
 #include "mozilla/net/ChannelClassifierUtils.h"
@@ -1232,9 +1231,7 @@ already_AddRefed<ScriptLoadRequest> ScriptLoader::CreateLoadRequest(
     return request.forget();
   }
 
-  MOZ_ASSERT(aKind == ScriptKind::eClassic || aKind == ScriptKind::eImportMap ||
-             (StaticPrefs::dom_speculation_rules_enabled() &&
-              aKind == ScriptKind::eSpeculationRules));
+  MOZ_ASSERT(aKind == ScriptKind::eClassic || aKind == ScriptKind::eImportMap);
 
   RefPtr<ScriptLoadRequest> request =
       new ScriptLoadRequest(aKind, aIntegrity, referrer, context);
@@ -1400,8 +1397,6 @@ bool ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement,
     scriptKind = ScriptKind::eModule;
   } else if (aElement->GetScriptIsImportMap()) {
     scriptKind = ScriptKind::eImportMap;
-  } else if (aElement->GetScriptIsSpeculationRules()) {
-    scriptKind = ScriptKind::eSpeculationRules;
   } else {
     scriptKind = ScriptKind::eClassic;
   }
@@ -1441,20 +1436,16 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
        aElement));
 
   // https://html.spec.whatwg.org/multipage/scripting.html#prepare-the-script-element
-  // Step 33.1. If el's type is "importmap" or "speculationrules", then queue an
-  // element task on the DOM manipulation task source given el to fire an event
-  // named error at el, and return.
-  if (aScriptKind == ScriptKind::eImportMap ||
-      aScriptKind == ScriptKind::eSpeculationRules) {
+  // Step 30.1. If el's type is "importmap", then queue an element task on the
+  // DOM manipulation task source given el to fire an event named error at el,
+  // and return.
+  if (aScriptKind == ScriptKind::eImportMap) {
     NS_DispatchToCurrentThread(
         NewRunnableMethod("nsIScriptElement::FireErrorEvent", aElement,
                           &nsIScriptElement::FireErrorEvent));
     nsContentUtils::ReportToConsole(
         nsIScriptError::warningFlag, "Script Loader"_ns, mDocument,
-        PropertiesFile::DOM_PROPERTIES,
-        aScriptKind == ScriptKind::eImportMap
-            ? "ImportMapExternalNotSupported"
-            : "SpeculationRulesExternalNotSupported");
+        PropertiesFile::DOM_PROPERTIES, "ImportMapExternalNotSupported");
     return false;
   }
 
@@ -1887,46 +1878,6 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
     // 'preparation-time document check' will never fail for import maps.
     // So we simply call 'register an import map' here.
     mModuleLoader->RegisterImportMap(std::move(importMap), request);
-    return false;
-  }
-
-  if (request->IsSpeculationRulesRequest()) {
-    MOZ_ASSERT(StaticPrefs::dom_speculation_rules_enabled());
-
-    // https://html.spec.whatwg.org/#prepare-the-script-element
-    // Step 34.2. Switch on el's type:
-    //  ...
-    //  "speculationrules":
-    //    1. Let result be the result of creating a speculation rules parse
-    //    result given source text and el's node document.
-    nsAutoString source;
-    aElement->GetScriptText(source);
-    auto speculationRulesResult = SpeculationRules::Parse(
-        NS_ConvertUTF16toUTF8(source), request->BaseURL(), request->BaseURL());
-
-    // Like in the import map case above, we register the speculation rules here
-    // instead of later in EvaluateScriptElement.
-
-    // https://html.spec.whatwg.org/#execute-the-script-element
-    // Step 6. Switch on el's type:
-    //  ...
-    //  "speculationrules":
-    //    1. Register speculation rules given el's relevant global object and
-    //    el's result.
-    if (speculationRulesResult.isErr()) {
-      // https://html.spec.whatwg.org/#register-speculation-rules
-      // Step 1.2.
-      nsCOMPtr<nsIScriptGlobalObject> global = GetScriptGlobalObject();
-      if (!global) {
-        return false;
-      }
-      SpeculationRules::ReportParseError(global,
-                                         speculationRulesResult.unwrapErr());
-      return false;
-    }
-
-    mDocument->RegisterSpeculationRulesFromScript(
-        aElement, speculationRulesResult.unwrap());
     return false;
   }
 
