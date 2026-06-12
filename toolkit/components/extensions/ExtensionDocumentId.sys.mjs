@@ -85,4 +85,25 @@ export const ExtensionDocumentId = {
       return undefined;
     }
   },
+
+  /**
+   * Returns BrowsingContext for a documentId, if still the current document.
+   *
+   * @param {string} documentId
+   * @returns {BrowsingContext|null}
+   */
+  getBrowsingContextForDocumentId(documentId) {
+    const innerWindowId = this.getInnerWindowIdForDocumentId(documentId);
+    if (!innerWindowId) {
+      return null;
+    }
+    const wgp = WindowGlobalParent.getByInnerWindowId(innerWindowId);
+    if (!wgp) {
+      return null;
+    }
+    if (!wgp.isCurrentGlobal) {
+      return null;
+    }
+    return wgp.browsingContext;
+  },
 };

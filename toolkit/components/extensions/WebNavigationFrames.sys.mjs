@@ -80,6 +80,7 @@ export var WebNavigationFrames = {
     return null;
   },
 
+  getFrameDetail,
   getFrameId,
   getParentFrameId,
   getDocumentId,

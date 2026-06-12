@@ -184,6 +184,96 @@ add_task(async function test_onCommitted_documentId_in_subframe() {
   await extension.unload();
 });
 
+// Tests the documentId parameter of webNavigation.getFrame.
+add_task(async function test_webNavigation_getFrame_by_documentId() {
+  const extension = ExtensionTestUtils.loadExtension({
+    manifest: { permissions: ["webNavigation", "tabs", "<all_urls>"] },
+
+    async background() {
+      const BASE =
+        "https://example.com/tests/toolkit/components/extensions/test/mochitest/";
+      const PAGE_URL = BASE + "file_webNavigation_manualSubframe.html";
+      const FRAME_URL = BASE + "file_webNavigation_manualSubframe_page1.html";
+
+      const loadedPromise = new Promise(resolve => {
+        browser.webNavigation.onCompleted.addListener(details => {
+          if (details.url === FRAME_URL) {
+            resolve(details);
+          }
+        });
+      });
+
+      const { id: tabId } = await browser.tabs.create({ url: PAGE_URL });
+      const eventDetails = await loadedPromise;
+      const expectedFrameDetails = {
+        tabId,
+        frameId: eventDetails.frameId,
+        parentFrameId: 0,
+        documentId: eventDetails.documentId,
+        parentDocumentId: eventDetails.parentDocumentId,
+        url: FRAME_URL,
+      };
+      const { documentId, frameId } = eventDetails;
+
+      browser.test.assertDeepEq(
+        expectedFrameDetails,
+        await browser.webNavigation.getFrame({ documentId }),
+        "getFrame for a given documentId returns the expected frame"
+      );
+
+      browser.test.assertDeepEq(
+        expectedFrameDetails,
+        await browser.webNavigation.getFrame({ documentId, tabId, frameId }),
+        "getFrame with all matching params returns the expected frame"
+      );
+
+      // Mismatches and unknown IDs return null.
+      browser.test.assertEq(
+        null,
+        await browser.webNavigation.getFrame({ documentId, tabId: tabId + 1 }),
+        "getFrame with mismatched tabId returns null"
+      );
+      browser.test.assertEq(
+        null,
+        await browser.webNavigation.getFrame({ documentId, frameId: 0 }),
+        "getFrame with mismatched frameId returns null"
+      );
+      browser.test.assertEq(
+        null,
+        await browser.webNavigation.getFrame({ documentId, tabId: tabId + 1, frameId: 0  }),
+        "getFrame with mismatched tabId and frameId returns null"
+      );
+      browser.test.assertEq(
+        null,
+        await browser.webNavigation.getFrame({ documentId: "00000000-0000-0000-0000-000000000000" }),
+        "getFrame with unknown documentId returns null"
+      );
+
+      // No parameters: should throw (actually: reject because validation is
+      // implemented in the parent instead of the child).
+      await browser.test.assertRejects(
+        browser.webNavigation.getFrame({}),
+        "Either documentId or both tabId and frameId must be specified.",
+        "getFrame with no identifiers throws"
+      );
+
+      const bgDocumentId = browser.runtime.getDocumentId(window);
+      browser.test.assertDeepEq(
+        null,
+        await browser.webNavigation.getFrame({ documentId: bgDocumentId }),
+        "getFrame for documentId of non-tab (background page) returns null"
+      );
+
+      await browser.tabs.remove(tabId);
+      browser.test.sendMessage("done");
+    },
+  });
+
+  await extension.startup();
+  await extension.awaitMessage("done");
+  await extension.unload();
+});
+
 </script>
 </body>
 </html>

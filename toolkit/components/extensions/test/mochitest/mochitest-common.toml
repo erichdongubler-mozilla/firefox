@@ -565,6 +565,11 @@ skip-if = [
 
 ["test_ext_webnavigation_documentId.html"]
 
+["test_ext_webnavigation_documentId_incognito.html"]
+skip-if = [
+  "os == 'android'" # Cannot open tabs in private browsing on Android (bug 1372178)
+]
+
 ["test_ext_webnavigation_filters.html"]
 skip-if = [
   "http2",
