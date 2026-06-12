@@ -50,7 +50,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 ChromeUtils.defineESModuleGetters(lazy, {
   getModelForChoice:
-    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs",
 });
 
 export const SmartWindowTelemetry = {

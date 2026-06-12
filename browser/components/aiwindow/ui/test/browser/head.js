@@ -14,7 +14,7 @@ ChromeUtils.defineESModuleGetters(this, {
   ChatConversation:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs",
   getModelForChoice:
-    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs",
   IntentClassifier:
     "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
   openAIEngine: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",

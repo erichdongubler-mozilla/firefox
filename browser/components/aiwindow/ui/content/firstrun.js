@@ -23,7 +23,7 @@ const MEMORIES_CHATS_CHECKBOX_ID = "memories-chats";
 const MEMORIES_BROWSING_CHECKBOX_ID = "memories-browsing";
 const SET_DEFAULT_CHECKBOX_ID = "set-default-window";
 const { getAllModelsData } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
+  "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs"
 );
 
 const autoAdvanceMS = Services.prefs.getIntPref(AUTO_ADVANCE_PREF);
