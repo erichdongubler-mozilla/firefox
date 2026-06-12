@@ -5990,11 +5990,6 @@ pub unsafe extern "C" fn Servo_SumValue_Drop(sum_value: *mut SumValue) {
     let _ = Box::from_raw(sum_value);
 }
 
-#[no_mangle]
-pub extern "C" fn Servo_ImageValue_ToCss(image_value: &ImageValue, value: &mut nsACString) {
-    image_value.to_css(&mut CssWriter::new(value)).unwrap();
-}
-
 /// A result of attempting to convert a sum value to a concrete unit.
 ///
 /// Unlike `NumericValueResult`, the `Unsupported` case here is a valid and
@@ -6026,6 +6021,11 @@ pub extern "C" fn Servo_SumValue_ToUnit(
         Ok(unit_value) => UnitValueResult::Unit(unit_value),
         Err(..) => UnitValueResult::Unsupported,
     };
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_ImageValue_ToCss(image_value: &ImageValue, value: &mut nsACString) {
+    image_value.to_css(&mut CssWriter::new(value)).unwrap();
 }
 
 #[no_mangle]
