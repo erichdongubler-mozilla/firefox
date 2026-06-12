@@ -1208,6 +1208,7 @@ class HomeFragment : Fragment() {
                 tabsUseCases = requireComponents.useCases.tabsUseCases,
                 sendTabUseCases = SendTabUseCases(requireComponents.backgroundServices.accountManager),
                 customTabSessionId = null,
+                viewHasFocus = { view.hasWindowFocus() },
             ),
             owner = this,
             view = view,
