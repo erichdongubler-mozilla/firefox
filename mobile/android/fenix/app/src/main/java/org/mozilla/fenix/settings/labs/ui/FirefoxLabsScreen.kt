@@ -101,8 +101,20 @@ fun FirefoxLabsScreen(
             FirefoxLabsScreenContent(
                 labsItems = labsItems,
                 paddingValues = paddingValues,
-                onToggleLabsItem = { item -> store.dispatch(LabsAction.ShowToggleLabsItemDialog(item)) },
-                onRestoreDefaultsButtonClick = { store.dispatch(LabsAction.ShowRestoreDefaultsDialog) },
+                onToggleLabsItem = { item ->
+                    if (item.requiresRestart) {
+                        store.dispatch(LabsAction.ShowToggleLabsItemDialog(item))
+                    } else {
+                        store.dispatch(LabsAction.ToggleLabsItem(item))
+                    }
+                },
+                onRestoreDefaultsButtonClick = {
+                    if (labsItems.any { it.enrolled && it.requiresRestart }) {
+                        store.dispatch(LabsAction.ShowRestoreDefaultsDialog)
+                    } else {
+                        store.dispatch(LabsAction.RestoreDefaults)
+                    }
+                },
                 onShareFeedbackClick = onShareFeedbackClick,
             )
         }

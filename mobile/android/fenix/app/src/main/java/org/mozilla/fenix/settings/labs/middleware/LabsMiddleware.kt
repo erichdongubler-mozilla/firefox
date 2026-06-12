@@ -74,17 +74,24 @@ class LabsMiddleware(
         item: LabsItem,
     ) = scope.launch {
         setItemEnrolled(slug = item.slug, enrolled = !item.enrolled)
-        store.dispatch(LabsAction.RestartApplication)
+        if (item.requiresRestart) {
+            store.dispatch(LabsAction.RestartApplication)
+        }
     }
 
     private fun restoreDefaults(
         store: Store<LabsState, LabsAction>,
     ) = scope.launch {
-        for (item in store.state.labsItems) {
+        val items = store.state.labsItems
+        val anyRequiresRestart = items.any { it.enrolled && it.requiresRestart }
+
+        for (item in items) {
             setItemEnrolled(slug = item.slug, enrolled = false)
         }
 
-        store.dispatch(LabsAction.RestartApplication)
+        if (anyRequiresRestart) {
+            store.dispatch(LabsAction.RestartApplication)
+        }
     }
 
     private fun setItemEnrolled(slug: String, enrolled: Boolean) = scope.launch {
