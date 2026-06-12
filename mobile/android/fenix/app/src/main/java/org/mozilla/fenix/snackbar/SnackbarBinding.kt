@@ -56,9 +56,6 @@ import org.mozilla.fenix.utils.getSnackbarTimeout
  * @param sendTabUseCases [SendTabUseCases] used to send tabs to other devices.
  * @param customTabSessionId Optional custom tab session ID if navigating from a custom tab or null
  * if the selected session should be used.
- * @param viewHasFocus Whether the host view is currently focused. Used to determine if the binding should consume the
- * snackbar in case there are multiple bindings active (e.g., menu is shown on top of the home fragment, and both host
- * snackbar bindings).
  * @param downloadFileUtils [DownloadFileUtils] used for file-related operations in download snackbars.
  * @param ioDispatcher The [CoroutineDispatcher] used for background operations executed when
  * the user starts a snackbar action.
@@ -75,7 +72,6 @@ class SnackbarBinding(
     private val tabsUseCases: TabsUseCases,
     private val sendTabUseCases: SendTabUseCases?,
     private val customTabSessionId: String?,
-    private val viewHasFocus: () -> Boolean = { true },
     private val downloadFileUtils: DownloadFileUtils = DefaultDownloadFileUtils(
         context = context,
         downloadLocation = {
@@ -100,6 +96,22 @@ class SnackbarBinding(
                             text = state.title,
                             duration = state.duration,
                         )
+
+                        appStore.dispatch(SnackbarAction.SnackbarShown)
+                    }
+
+                    is SnackbarState.IPProtectionDataLimitReached -> {
+                        snackbarDelegate.show(
+                            text = state.message,
+                            duration = Snackbar.LENGTH_LONG,
+                            action = context.getString(R.string.ip_protection_data_limit_reached_snackbar_action),
+                        ) {
+                            navController.navigate(
+                                BrowserFragmentDirections.actionGlobalIpProtectionFragment(
+                                    entrypoint = FenixFxAEntryPoint.IPProtectionSettings,
+                                ),
+                            )
+                        }
 
                         appStore.dispatch(SnackbarAction.SnackbarShown)
                     }
@@ -363,45 +375,6 @@ class SnackbarBinding(
                     }
 
                     is SnackbarState.None -> Unit
-
-                    /**
-                     * The state could be consumed by [org.mozilla.fenix.ipprotection.ui.IPProtectionSnackbarBinding]
-                     * as well (e.g. three dot menu or trust panel opened), in which case, to avoid showing snackbar
-                     * twice, we only show it here if the view is active.
-                     */
-                    is SnackbarState.IPProtectionDataLimitReached -> {
-                        if (viewHasFocus()) {
-                            snackbarDelegate.show(
-                                text = state.title,
-                                duration = Snackbar.LENGTH_LONG,
-                                action = context.getString(R.string.ip_protection_data_limit_reached_snackbar_action),
-                            ) {
-                                navController.navigate(
-                                    BrowserFragmentDirections.actionGlobalIpProtectionFragment(
-                                        entrypoint = FenixFxAEntryPoint.IPProtectionSettings,
-                                    ),
-                                )
-                            }
-
-                            appStore.dispatch(SnackbarAction.SnackbarShown)
-                        }
-                    }
-
-                    /**
-                     * The state could be consumed by [org.mozilla.fenix.ipprotection.ui.IPProtectionSnackbarBinding]
-                     * as well (e.g. three dot menu or trust panel opened), in which case, to avoid showing snackbar
-                     * twice, we only show it here if the view is active.
-                     */
-                    is SnackbarState.IPProtectionConnectionError -> {
-                        if (viewHasFocus()) {
-                            snackbarDelegate.show(
-                                text = state.title,
-                                duration = Snackbar.LENGTH_SHORT,
-                            )
-
-                            appStore.dispatch(SnackbarAction.SnackbarShown)
-                        }
-                    }
                 }
             }
     }

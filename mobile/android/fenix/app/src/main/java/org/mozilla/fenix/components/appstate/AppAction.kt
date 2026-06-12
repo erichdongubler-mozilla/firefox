@@ -516,6 +516,13 @@ sealed class AppAction : Action {
          * @property duration The length of time for the snackbar to show.
          */
         data class ShowSnackbar(val title: String, val duration: Int = LENGTH_SHORT) : SnackbarAction()
+
+        /**
+         * [SnackbarAction] dispatched to show the IP protection data-limit-reached snackbar.
+         *
+         * @property message The message to display in the snackbar.
+         */
+        data class ShowIPProtectionDataLimitReachedSnackbar(val message: String) : SnackbarAction()
     }
 
     /**
@@ -949,24 +956,5 @@ sealed class AppAction : Action {
          * @property isOneWeekToWorldCupOverride Whether it's one week to the World Cup.
          */
         data class OneWeekToWorldCupOverrideUpdated(val isOneWeekToWorldCupOverride: Boolean) : SportsWidgetAction()
-    }
-
-    /**
-     * [SnackbarAction]s related to the IP Protection feature.
-     */
-    sealed class IPProtectionSnackbarAction : SnackbarAction() {
-        /**
-         * Dispatched when IP Protection feature experienced a connection error.
-         *
-         * @property title The title to display in the snackbar.
-         */
-        data class ConnectionError(val title: String) : IPProtectionSnackbarAction()
-
-        /**
-         * Dispatched when IP Protection feature experienced a connection error.
-         *
-         * @property title The title to display in the snackbar.
-         */
-        data class DataLimitReached(val title: String) : IPProtectionSnackbarAction()
     }
 }
