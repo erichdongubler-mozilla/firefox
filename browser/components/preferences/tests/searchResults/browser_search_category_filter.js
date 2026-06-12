@@ -83,7 +83,7 @@ add_task(async function per_group_filtering_and_heading_levels() {
     );
 
     let searchableGroups = pane.querySelectorAll(
-      "setting-group:not([data-hidden-from-search])"
+      "setting-group:not([data-hidden-from-search]):not([hidden]):not([data-hidden-by-setting-group])"
     );
     let matchedGroups = [...searchableGroups].filter(
       g => !g.classList.contains("visually-hidden")
