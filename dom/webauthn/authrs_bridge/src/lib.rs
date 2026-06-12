@@ -1613,7 +1613,7 @@ impl AuthrsService {
         .inspect_err(|_| self.discard_transaction())?;
         if static_prefs::pref!("security.webauth.webauthn_enable_usbtoken") {
             self.usb_token_manager.lock().unwrap().manage(
-                60 * 1000 * 1000,
+                60 * 1000,
                 status_tx,
                 state_callback,
             );
