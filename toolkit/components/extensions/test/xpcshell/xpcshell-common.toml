@@ -879,9 +879,6 @@ skip-if = [
 ]
 
 ["test_ext_webRequest_style_cache.js"]
-skip-if = [
-  "os == 'android'", # bug 1848398 - style cache miss on Android.
-]
 
 ["test_ext_webRequest_suspend.js"]
 
