@@ -4,6 +4,7 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
+  ExtensionDocumentId: "resource://gre/modules/ExtensionDocumentId.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });
 
@@ -731,46 +732,68 @@ class TabBase {
 
   /**
    * Query each content process hosting subframes of the tab, return results.
+   * Targets all frames in a tab by default, unless options.frameIds or
+   * options.documentIds are set. These options are mutually exclusive.
    *
    * @param {string} message
    * @param {object} options
    *        These options are also sent to the message handler in the
    *        `ExtensionContentChild`.
-   * @param {number[]} options.frameIds
-   *        When omitted, all frames will be queried.
+   * @param {number[]} [options.frameIds]
+   *        List of frameId to target instead of all frames.
+   * @param {number[]} [options.documentIds]
+   *        List of documentIds to target instead of all frames.
    * @param {boolean} options.returnResultsWithFrameIds
    * @returns {Promise[]}
    */
-  async queryContent(message, options) {
-    let { frameIds } = options;
+  async queryContent(message, { documentIds, frameIds, ...options }) {
+    if (documentIds && frameIds) {
+      // Verify precondition; if ever triggered this is an internal bug.
+      throw new Error("frameIds and documentIds are mutually exclusive");
+    }
 
     /** @type {Map<nsIDOMProcessParent, innerWindowId[]>} */
     let byProcess = new DefaultMap(() => []);
-    // We use this set to know which frame IDs are potentially invalid (as in
-    // not found when visiting the tab's BC tree below) when frameIds is a
-    // non-empty list of frame IDs.
-    let frameIdsSet = new Set(frameIds);
 
-    // Recursively walk the tab's BC tree, find all frames, group by process.
-    function visit(bc) {
-      let win = bc.currentWindowGlobal;
-      let frameId = bc.parent ? bc.id : 0;
-
-      if (win?.domProcess && (!frameIds || frameIdsSet.has(frameId))) {
+    if (documentIds) {
+      const topBrowsingContext = this.browsingContext;
+      for (const documentId of new Set(documentIds)) {
+        let bc =
+          ExtensionDocumentId.getBrowsingContextForDocumentId(documentId);
+        if (!bc || bc.top !== topBrowsingContext) {
+          throw new ExtensionError(`Invalid documentId: ${documentId}`);
+        }
+        // getBrowsingContextForDocumentId ensures that bc is current global.
+        const win = bc.currentWindowGlobal;
         byProcess.get(win.domProcess).push(win.innerWindowId);
-        frameIdsSet.delete(frameId);
       }
+    } else {
+      // We use this set to know which frame IDs are potentially invalid (as in
+      // not found when visiting the tab's BC tree below) when frameIds is a
+      // non-empty list of frame IDs.
+      let frameIdsSet = new Set(frameIds);
 
-      if (!frameIds || frameIdsSet.size > 0) {
-        bc.children.forEach(visit);
+      // Recursively walk the tab's BC tree, find all frames, group by process.
+      function visit(bc) {
+        let win = bc.currentWindowGlobal;
+        let frameId = bc.parent ? bc.id : 0;
+
+        if (win?.domProcess && (!frameIds || frameIdsSet.has(frameId))) {
+          byProcess.get(win.domProcess).push(win.innerWindowId);
+          frameIdsSet.delete(frameId);
+        }
+
+        if (!frameIds || frameIdsSet.size > 0) {
+          bc.children.forEach(visit);
+        }
       }
-    }
-    visit(this.browsingContext);
+      visit(this.browsingContext);
 
-    if (frameIdsSet.size > 0) {
-      throw new ExtensionError(
-        `Invalid frame IDs: [${Array.from(frameIdsSet).join(", ")}].`
-      );
+      if (frameIdsSet.size > 0) {
+        throw new ExtensionError(
+          `Invalid frame IDs: [${Array.from(frameIdsSet).join(", ")}].`
+        );
+      }
     }
 
     let promises = Array.from(byProcess.entries(), ([proc, windows]) =>
@@ -789,6 +812,8 @@ class TabBase {
     results = results.flat();
 
     if (!results.length) {
+      // TODO bug 2047009: This error is misleading when the reason for the
+      // lack of results is navigation/removal of all targets.
       let errorMessage = "Missing host permission for the tab";
       if (!frameIds || frameIds.length > 1 || frameIds[0] !== 0) {
         errorMessage += " or frames";
