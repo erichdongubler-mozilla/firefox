@@ -43,12 +43,13 @@ media::EncodeSupportSet MediaDataCodec::SupportsEncoderCodec(
 }
 
 /* static */
-WebrtcVideoEncoder* MediaDataCodec::CreateEncoder(
+std::unique_ptr<WebrtcVideoEncoder> MediaDataCodec::CreateEncoder(
     const webrtc::SdpVideoFormat& aFormat) {
   if (SupportsEncoderCodec(aFormat).isEmpty()) {
     return nullptr;
   }
-  return new WebrtcVideoEncoderProxy(new WebrtcMediaDataEncoder(aFormat));
+  return std::make_unique<WebrtcVideoEncoderProxy>(
+      new WebrtcMediaDataEncoder(aFormat));
 }
 
 static inline nsDependentCString MimeTypeFor(

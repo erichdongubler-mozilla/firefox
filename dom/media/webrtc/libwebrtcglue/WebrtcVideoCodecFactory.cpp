@@ -190,9 +190,7 @@ WebrtcVideoEncoderFactory::InternalFactory::Create(
   std::unique_ptr<webrtc::VideoEncoder> platformEncoder;
 
   auto createPlatformEncoder = [&]() -> std::unique_ptr<webrtc::VideoEncoder> {
-    std::unique_ptr<webrtc::VideoEncoder> platformEncoder;
-    platformEncoder.reset(MediaDataCodec::CreateEncoder(aFormat));
-    return platformEncoder;
+    return MediaDataCodec::CreateEncoder(aFormat);
   };
 
   auto createWebRTCEncoder =
