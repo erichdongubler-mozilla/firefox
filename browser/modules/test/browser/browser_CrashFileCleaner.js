@@ -195,6 +195,37 @@ add_task(async function test_pruneOldReports() {
   }
 });
 
+add_task(async function test_enforcePendingCap() {
+  await clearAllCrashFiles();
+
+  const now = Date.now();
+  const created = [];
+  for (let i = 0; i < 35; i++) {
+    // All recent enough to escape the age sweep; vary mtime so we can
+    // identify which 30 should survive.
+    created.push({
+      id: newUuid(),
+      mtime: now - i * 60 * 1000, // 1 minute apart, descending
+    });
+  }
+  for (const { id, mtime } of created) {
+    await createPendingReport(id, mtime);
+  }
+
+  await CrashFileCleaner.enforcePendingCap();
+
+  // The 30 newest should survive (the first 30 in `created`, since later
+  // indices have older mtimes).
+  for (let i = 0; i < 30; i++) {
+    const dmp = PathUtils.join(getPendingDir().path, created[i].id + ".dmp");
+    Assert.ok(await IOUtils.exists(dmp));
+  }
+  for (let i = 30; i < 35; i++) {
+    const dmp = PathUtils.join(getPendingDir().path, created[i].id + ".dmp");
+    Assert.ok(!(await IOUtils.exists(dmp)));
+  }
+});
+
 add_task(async function test_runCleanup_skipped_when_recent_run() {
   await clearAllCrashFiles();
   resetCleaner();
