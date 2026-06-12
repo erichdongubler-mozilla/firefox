@@ -776,6 +776,10 @@ html|dialog,
   margin-inline-end: 0;
 }
 
+#fxaAccountDisabled {
+  margin-bottom: calc(-1 * var(--space-large));
+}
+
 #noFxaAccount > label:first-child {
   margin-bottom: 0.6em;
 }
