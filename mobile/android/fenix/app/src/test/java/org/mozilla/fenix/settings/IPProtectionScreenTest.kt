@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.settings
 
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.hasContentDescription
@@ -50,7 +49,6 @@ class IPProtectionScreenTest {
             FirefoxTheme(theme = Theme.Light) {
                 IPProtectionScreen(
                     state = state,
-                    snackbarHostState = SnackbarHostState(),
                     readyToUse = true,
                     syncingData = false,
                     promoDate = null,
@@ -104,7 +102,6 @@ class IPProtectionScreenTest {
             FirefoxTheme(theme = Theme.Light) {
                 IPProtectionScreen(
                     state = state,
-                    snackbarHostState = SnackbarHostState(),
                     readyToUse = true,
                     syncingData = false,
                     promoDate = PROMO_DATE,
@@ -140,7 +137,6 @@ class IPProtectionScreenTest {
             FirefoxTheme(theme = Theme.Light) {
                 IPProtectionScreen(
                     state = state,
-                    snackbarHostState = SnackbarHostState(),
                     readyToUse = true,
                     syncingData = false,
                     promoDate = null,
