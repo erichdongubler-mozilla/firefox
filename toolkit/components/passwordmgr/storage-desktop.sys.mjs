@@ -6,14 +6,21 @@ import { LoginManagerStorage_json } from "resource://gre/modules/storage-json.sy
 import { LoginManagerRustStorage } from "resource://gre/modules/storage-rust.sys.mjs";
 import { LoginManagerRustMirror } from "resource://gre/modules/LoginManagerRustMirror.sys.mjs";
 
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
+});
+
 export class LoginManagerStorage extends LoginManagerStorage_json {
   static #jsonStorage = null;
   static #rustStorage = null;
-  static #activeStore = null;
+  static #logger = lazy.LoginHelper.createLogger("LoginManagerStorage");
   static #initializationPromise = null;
 
-  static create() {
-    if (!this.#initializationPromise) {
+  static create(callback) {
+    if (this.#initializationPromise) {
+      this.#logger.log("json storage already initialized");
+    } else {
       this.#jsonStorage = new LoginManagerStorage_json();
       this.#rustStorage = new LoginManagerRustStorage();
 
@@ -22,15 +29,11 @@ export class LoginManagerStorage extends LoginManagerStorage_json {
         .then(() => this.#rustStorage.initialize())
         .then(() => {
           new LoginManagerRustMirror(this.#jsonStorage, this.#rustStorage);
-          this.#activeStore = this.#jsonStorage;
-          return this.#jsonStorage;
         });
     }
 
-    return this.#initializationPromise;
-  }
+    this.#initializationPromise.then(() => callback?.());
 
-  static getActiveStore() {
-    return this.#activeStore;
+    return this.#jsonStorage;
   }
 }
