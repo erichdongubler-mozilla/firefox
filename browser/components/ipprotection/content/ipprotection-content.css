@@ -136,7 +136,12 @@ hr {
 
 #unauthenticated-get-started {
   --button-padding: var(--space-medium);
-  width: 100%;
+  margin: 0 auto;
+  width: var(--size-layout-small);
+
+  @media not -moz-pref("browser.nova.enabled") {
+    width: 100%;
+  }
 }
 
 #unauthenticated-footer {
