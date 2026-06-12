@@ -416,7 +416,6 @@ const CONFIG_PANES = Object.freeze({
     iconSrc: "chrome://browser/skin/fxa/avatar-empty.svg",
     groupIds: [
       "defaultBrowserSync",
-      "accountDisabled",
       "account",
       "sync",
       "importBrowserData",
