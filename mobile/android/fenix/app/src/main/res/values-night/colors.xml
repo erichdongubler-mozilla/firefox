@@ -17,11 +17,11 @@
     <color name="fx_mobile_on_tertiary">@color/novaGray80</color>
     <color name="fx_mobile_tertiary_container">@color/novaVioletDesaturated90</color>
     <color name="fx_mobile_on_tertiary_container">@color/novaVioletDesaturated0</color>
-    <color name="fx_mobile_background">@color/novaGray80</color>
+    <color name="fx_mobile_background">@color/novaGray75</color>
     <color name="fx_mobile_on_background">@color/novaVioletDesaturated0</color>
-    <color name="fx_mobile_surface">@color/novaGray80</color>
+    <color name="fx_mobile_surface">@color/novaGray75</color>
     <color name="fx_mobile_on_surface">@color/novaVioletDesaturated0</color>
-    <color name="fx_mobile_surface_variant">@color/novaGray70</color>
+    <color name="fx_mobile_surface_variant">@color/novaGray65</color>
     <color name="fx_mobile_on_surface_variant">@color/novaVioletDesaturated0A70</color>
     <color name="fx_mobile_surface_inverse">@color/novaGray30</color>
     <color name="fx_mobile_on_surface_inverse">@color/novaGray80</color>
@@ -38,15 +38,16 @@
     <color name="fx_mobile_on_warning_container">@color/novaVioletDesaturated0</color>
     <color name="fx_mobile_outline">@color/novaGray45</color>
     <color name="fx_mobile_outline_variant">@color/novaGray65</color>
-    <color name="fx_mobile_surface_bright">@color/novaGray70</color>
-    <color name="fx_mobile_surface_dim">@color/novaGray90</color>
-    <color name="fx_mobile_surface_container">@color/novaGray80</color>
-    <color name="fx_mobile_surface_container_high">@color/novaGray75</color>
-    <color name="fx_mobile_surface_container_highest">@color/novaGray70</color>
-    <color name="fx_mobile_surface_container_low">@color/novaGray85</color>
-    <color name="fx_mobile_surface_container_lowest">@color/novaGray90</color>
+    <color name="fx_mobile_surface_bright">@color/novaGray65</color>
+    <color name="fx_mobile_surface_dim">@color/novaGray85</color>
+    <color name="fx_mobile_surface_container">@color/novaGray75</color>
+    <color name="fx_mobile_surface_container_high">@color/novaGray70</color>
+    <color name="fx_mobile_surface_container_highest">@color/novaGray65</color>
+    <color name="fx_mobile_surface_container_low">@color/novaGray80</color>
+    <color name="fx_mobile_surface_container_lowest">@color/novaGray85</color>
     <color name="fx_mobile_autofill_text">@color/novaVioletDesaturated30A55</color>
     <color name="fx_mobile_selected_text">@color/novaGray45A80</color>
+    <color name="fx_mobile_scrim">@color/novaBlackA50</color>
 
     <color name="fx_mobile_splashscreen_background">#210340</color>
 
@@ -57,7 +58,6 @@
     <color name="fx_mobile_layer_color_2">@color/photonDarkGrey30</color>
     <!-- Search -->
     <color name="fx_mobile_layer_color_3">@color/photonDarkGrey80</color>
-    <color name="fx_mobile_layer_color_scrim">@color/photonDarkGrey90A95</color>
     <!-- Tooltip -->
     <color name="fx_mobile_layer_color_gradient_start">@color/photonViolet70</color>
     <!-- Tooltip -->

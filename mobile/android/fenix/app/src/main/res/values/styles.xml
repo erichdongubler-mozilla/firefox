@@ -94,6 +94,7 @@
         <item name="colorSurfaceContainerLowest">@color/fx_mobile_surface_container_lowest</item>
         <item name="colorAutofillText">@color/fx_mobile_autofill_text</item>
         <item name="colorSelectedText">@color/fx_mobile_selected_text</item>
+        <item name="scrim">@color/fx_mobile_scrim</item>
 
         <!-- Design system color attributes -->
 
@@ -102,7 +103,6 @@
         <item name="layer2">@color/fx_mobile_layer_color_2</item>
         <!-- Search -->
         <item name="layer3">@color/fx_mobile_layer_color_3</item>
-        <item name="scrim">@color/fx_mobile_layer_color_scrim</item>
 
         <!-- Action -->
         <!-- Primary button in a disabled state -->
@@ -370,6 +370,7 @@
         <item name="colorSurfaceContainerLowest">@color/fx_mobile_private_surface_container_lowest</item>
         <item name="colorAutofillText">@color/fx_mobile_private_autofill_text</item>
         <item name="colorSelectedText">@color/fx_mobile_private_selected_text</item>
+        <item name="scrim">@color/fx_mobile_private_scrim</item>
 
         <!-- Design system color attributes -->
 
@@ -378,7 +379,6 @@
         <item name="layer2">@color/fx_mobile_private_layer_color_2</item>
         <!-- Search -->
         <item name="layer3">@color/fx_mobile_private_layer_color_3</item>
-        <item name="scrim">@color/fx_mobile_private_layer_color_scrim</item>
 
         <!-- Action -->
         <!-- Primary button in a disabled state -->
