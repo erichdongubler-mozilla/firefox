@@ -20,7 +20,7 @@
   /** background-color **/
   --background-color-box: light-dark(var(--color-white), var(--color-gray-70));
   --background-color-box-info: light-dark(var(--color-gray-15), var(--color-gray-65));
-  --background-color-canvas: light-dark(var(--color-gray-05), var(--color-gray-90));
+  --background-color-canvas: light-dark(var(--color-gray-0), var(--color-gray-90));
   --background-color-critical: light-dark(var(--color-red-10), var(--color-red-70));
   --background-color-information: light-dark(var(--color-violet-10), var(--color-violet-70));
   --background-color-success: light-dark(var(--color-green-10), var(--color-green-70));
@@ -114,7 +114,6 @@
   --color-cyan-80: #002D38;
   --color-cyan-90: #011C23;
   --color-gray-0: #FCFBFF;
-  --color-gray-05: #F7F6FB;
   --color-gray-10: #EFEDF2;
   --color-gray-15: #E3E2E7;
   --color-gray-20: #D6D5DA;
@@ -4908,7 +4907,7 @@ button.arrow-button:dir(rtl) {
   position: absolute;
   inset-inline-end: var(--space-medium);
   inset-block-start: var(--space-medium);
-  --button-icon-fill: var(--color-gray-05);
+  --button-icon-fill: var(--color-gray-0);
 }
 .feature-highlight .feature-highlight-modal.widget-highlight-wrapper.no-image {
   min-width: 370px;

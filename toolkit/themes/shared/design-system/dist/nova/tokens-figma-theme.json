@@ -10,7 +10,7 @@
     "forcedColors": "{Theme$background/color/canvas}"
   },
   "background/color/canvas": {
-    "light": "{Colors$color/gray/05}",
+    "light": "{Colors$color/gray/0}",
     "dark": "{Colors$color/gray/90}",
     "forcedColors": "{HCM Theme$Canvas}"
   },
