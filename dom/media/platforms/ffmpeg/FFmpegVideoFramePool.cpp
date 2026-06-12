@@ -620,12 +620,15 @@ VideoFramePool<LIBAV_VER>::GetVideoFrameSurface(AVDRMFrameDescriptor& aDesc,
                                        /* aRecycleSurface */ false);
   RefPtr<DMABufSurfaceYUV> surface = videoSurface->GetDMABufSurface();
 
-  AVHWDeviceType hwdeviceType =
-      ((AVHWDeviceContext*)((AVHWFramesContext*)aAVFrame->hw_frames_ctx->data)
-           ->device_ref->data)
-          ->type;
-  DMABUF_LOG("Using {} DMABufSurface UID {}",
-             aLib->av_hwdevice_get_type_name(hwdeviceType), surface->GetUID());
+  if (aAVFrame->hw_frames_ctx) {
+    AVHWDeviceType hwdeviceType =
+        ((AVHWDeviceContext*)((AVHWFramesContext*)aAVFrame->hw_frames_ctx->data)
+             ->device_ref->data)
+            ->type;
+    DMABUF_LOG("Using {} DMABufSurface UID {}",
+               aLib->av_hwdevice_get_type_name(hwdeviceType),
+               surface->GetUID());
+  }
 
   bool copySurface = mTextureCopyWorks && ShouldCopySurface();
   if (!surface->UpdateYUVData(layerDesc.value(), crop_width, crop_height,
