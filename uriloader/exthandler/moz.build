@@ -97,11 +97,6 @@ elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
         "win/nsMIMEInfoWin.cpp",
     ]
 
-if CONFIG["MOZ_ENABLE_DBUS"]:
-    EXPORTS.mozilla += [
-        "DBusHelpers.h",
-    ]
-
 EXTRA_JS_MODULES += [
     "ExtHandlerService.sys.mjs",
     "WebHandlerApp.sys.mjs",
