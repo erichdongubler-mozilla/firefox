@@ -136,6 +136,12 @@ this.webNavigation = class extends ExtensionAPIPersistent {
         if (data.frameId != undefined) {
           data2.frameId = data.frameId;
           data2.parentFrameId = data.parentFrameId;
+          if (data.documentId != undefined) {
+            data2.documentId = data.documentId;
+          }
+          if (data.parentDocumentId != undefined) {
+            data2.parentDocumentId = data.parentDocumentId;
+          }
         }
 
         if (data.sourceFrameId != undefined) {

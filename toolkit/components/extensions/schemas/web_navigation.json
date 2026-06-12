@@ -117,6 +117,15 @@
                   "parentFrameId": {
                     "type": "integer",
                     "description": "ID of frame that wraps the frame. Set to -1 of no parent frame exists."
+                  },
+                  "documentId": {
+                    "type": "string",
+                    "description": "A UUID of the document loaded."
+                  },
+                  "parentDocumentId": {
+                    "type": "string",
+                    "optional": true,
+                    "description": "A UUID of the parent document owning this frame. This is not set if there is no parent."
                   }
                 }
               }
@@ -176,6 +185,15 @@
                       "type": "integer",
                       "description": "ID of frame that wraps the frame. Set to -1 of no parent frame exists."
                     },
+                    "documentId": {
+                      "type": "string",
+                      "description": "A UUID of the document loaded."
+                    },
+                    "parentDocumentId": {
+                      "type": "string",
+                      "optional": true,
+                      "description": "A UUID of the parent document owning this frame. This is not set if there is no parent."
+                    },
                     "url": {
                       "type": "string",
                       "description": "The URL currently associated with this frame."
@@ -216,6 +234,11 @@
                 "type": "integer",
                 "description": "ID of frame that wraps the frame. Set to -1 of no parent frame exists."
               },
+              "parentDocumentId": {
+                "type": "string",
+                "optional": true,
+                "description": "A UUID of the parent document owning this frame. This is not set if there is no parent."
+              },
               "timeStamp": {
                 "type": "number",
                 "description": "The time when the browser was about to start the navigation, in milliseconds since the epoch."
@@ -254,6 +277,15 @@
               "frameId": {
                 "type": "integer",
                 "description": "0 indicates the navigation happens in the tab content window; a positive value indicates navigation in a subframe. Frame IDs are unique within a tab."
+              },
+              "documentId": {
+                "type": "string",
+                "description": "A UUID of the document loaded."
+              },
+              "parentDocumentId": {
+                "type": "string",
+                "optional": true,
+                "description": "A UUID of the parent document owning this frame. This is not set if there is no parent."
               },
               "transitionType": {
                 "$ref": "TransitionType",
@@ -303,6 +335,15 @@
                 "type": "integer",
                 "description": "0 indicates the navigation happens in the tab content window; a positive value indicates navigation in a subframe. Frame IDs are unique within a tab."
               },
+              "documentId": {
+                "type": "string",
+                "description": "A UUID of the document loaded."
+              },
+              "parentDocumentId": {
+                "type": "string",
+                "optional": true,
+                "description": "A UUID of the parent document owning this frame. This is not set if there is no parent."
+              },
               "timeStamp": {
                 "type": "number",
                 "description": "The time when the page's DOM was fully constructed, in milliseconds since the epoch."
@@ -342,6 +383,15 @@
                 "type": "integer",
                 "description": "0 indicates the navigation happens in the tab content window; a positive value indicates navigation in a subframe. Frame IDs are unique within a tab."
               },
+              "documentId": {
+                "type": "string",
+                "description": "A UUID of the document loaded."
+              },
+              "parentDocumentId": {
+                "type": "string",
+                "optional": true,
+                "description": "A UUID of the parent document owning this frame. This is not set if there is no parent."
+              },
               "timeStamp": {
                 "type": "number",
                 "description": "The time when the document finished loading, in milliseconds since the epoch."
@@ -380,6 +430,15 @@
               "frameId": {
                 "type": "integer",
                 "description": "0 indicates the navigation happens in the tab content window; a positive value indicates navigation in a subframe. Frame IDs are unique within a tab."
+              },
+              "documentId": {
+                "type": "string",
+                "description": "A UUID of the document loaded."
+              },
+              "parentDocumentId": {
+                "type": "string",
+                "optional": true,
+                "description": "A UUID of the parent document owning this frame. This is not set if there is no parent."
               },
               "error": {
                 "unsupported": true,
@@ -470,6 +529,15 @@
                 "type": "integer",
                 "description": "0 indicates the navigation happens in the tab content window; a positive value indicates navigation in a subframe. Frame IDs are unique within a tab."
               },
+              "documentId": {
+                "type": "string",
+                "description": "A UUID of the document loaded."
+              },
+              "parentDocumentId": {
+                "type": "string",
+                "optional": true,
+                "description": "A UUID of the parent document owning this frame. This is not set if there is no parent."
+              },
               "transitionType": {
                 "$ref": "TransitionType",
                 "description": "Cause of the navigation."
@@ -542,6 +610,15 @@
               "frameId": {
                 "type": "integer",
                 "description": "0 indicates the navigation happens in the tab content window; a positive value indicates navigation in a subframe. Frame IDs are unique within a tab."
+              },
+              "documentId": {
+                "type": "string",
+                "description": "A UUID of the document loaded."
+              },
+              "parentDocumentId": {
+                "type": "string",
+                "optional": true,
+                "description": "A UUID of the parent document owning this frame. This is not set if there is no parent."
               },
               "transitionType": {
                 "$ref": "TransitionType",

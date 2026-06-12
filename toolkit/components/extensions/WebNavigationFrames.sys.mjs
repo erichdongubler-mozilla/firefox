@@ -2,6 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
+const lazy = XPCOMUtils.declareLazy({
+  ExtensionDocumentId: "resource://gre/modules/ExtensionDocumentId.sys.mjs",
+});
+
 /**
  * The FrameDetail object which represents a frame in WebExtensions APIs.
  *
@@ -42,6 +48,12 @@ function getParentFrameId(bc) {
   return bc.parent ? getFrameId(bc.parent) : -1;
 }
 
+function getDocumentId(bc) {
+  return lazy.ExtensionDocumentId.getDocumentId(
+    bc?.currentWindowContext?.innerWindowId
+  );
+}
+
 /**
  * Convert a BrowsingContext into internal FrameDetail json.
  *
@@ -52,6 +64,8 @@ function getFrameDetail(bc) {
   return {
     frameId: getFrameId(bc),
     parentFrameId: getParentFrameId(bc),
+    documentId: getDocumentId(bc),
+    parentDocumentId: getDocumentId(bc.parent),
     url: bc.currentURI?.spec,
   };
 }
@@ -68,6 +82,7 @@ export var WebNavigationFrames = {
 
   getFrameId,
   getParentFrameId,
+  getDocumentId,
 
   getAllFrames(bc) {
     let frames = [];
