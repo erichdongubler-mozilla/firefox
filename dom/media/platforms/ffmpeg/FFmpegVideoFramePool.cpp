@@ -429,12 +429,15 @@ static Maybe<VADRMPRIMESurfaceDescriptor> FFmpegDescToVA(
   VADRMPRIMESurfaceDescriptor vaDesc{};
 
   if (aAVFrame->format != AV_PIX_FMT_DRM_PRIME) {
-    AVHWDeviceType hwdeviceType =
-        ((AVHWDeviceContext*)((AVHWFramesContext*)aAVFrame->hw_frames_ctx->data)
-             ->device_ref->data)
-            ->type;
-    DMABUF_LOG("Got non-DRM-PRIME frame from FFmpeg AVHWDeviceType {}",
-               static_cast<int>(hwdeviceType));
+    if (aAVFrame->hw_frames_ctx) {
+      AVHWDeviceType hwdeviceType =
+          ((AVHWDeviceContext*)((AVHWFramesContext*)
+                                    aAVFrame->hw_frames_ctx->data)
+               ->device_ref->data)
+              ->type;
+      DMABUF_LOG("Got non-DRM-PRIME frame from FFmpeg AVHWDeviceType {}",
+                 static_cast<int>(hwdeviceType));
+    }
     return Nothing();
   }
 
