@@ -25,11 +25,13 @@ import org.mozilla.fenix.utils.Settings
  * @param settings An instance of [Settings] to read and write to the [SharedPreferences]
  * properties.
  * @param onRestart Callback invoked to restart the application.
+ * @param onOpenFeedback Callback invoked to open a Labs item's feedback URL.
  * @param scope [CoroutineScope] used to launch coroutines.
  */
 class LabsMiddleware(
     private val settings: Settings,
     private val onRestart: () -> Unit,
+    private val onOpenFeedback: (String) -> Unit,
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
 ) : Middleware<LabsState, LabsAction> {
 
@@ -46,7 +48,9 @@ class LabsMiddleware(
                 store = store,
                 item = action.item,
             )
-
+            is LabsAction.ShareFeedbackClicked -> {
+                action.item.feedbackUrl?.let(onOpenFeedback)
+            }
             else -> Unit
         }
 

@@ -33,11 +33,14 @@ class LabsMiddlewareTest {
     private lateinit var settings: Settings
     private var onRestartCount = 0
     private val onRestart: () -> Unit = { onRestartCount++ }
+    private val openedFeedbackUrls = mutableListOf<String>()
+    private val onOpenFeedback: (String) -> Unit = { openedFeedbackUrls.add(it) }
 
     @Before
     fun setup() {
         settings = Settings(testContext)
         settings.enableHomepageAsNewTab = false
+        openedFeedbackUrls.clear()
     }
 
     @Test
@@ -169,6 +172,23 @@ class LabsMiddlewareTest {
         captureMiddleware.assertNotDispatched(LabsAction.RestartApplication::class)
     }
 
+    @Test
+    fun `WHEN ShareFeedbackClicked is dispatched THEN onOpenFeedback is called with the item feedback URL`() = runTest(UnconfinedTestDispatcher()) {
+        val item = LabsItem(
+            slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
+            title = R.string.firefox_labs_homepage_as_a_new_tab,
+            description = R.string.firefox_labs_homepage_as_a_new_tab_description,
+            enrolled = false,
+            requiresRestart = true,
+            feedbackUrl = "https://connect.mozilla.org/",
+        )
+        val store = createStore(scope = backgroundScope)
+
+        store.dispatch(LabsAction.ShareFeedbackClicked(item))
+
+        assertEquals(listOf("https://connect.mozilla.org/"), openedFeedbackUrls)
+    }
+
     private fun createStore(
         initialState: LabsState = LabsState.INITIAL,
         captureMiddleware: CaptureActionsMiddleware<LabsState, LabsAction> = CaptureActionsMiddleware(),
@@ -177,6 +197,7 @@ class LabsMiddlewareTest {
         val middleware = LabsMiddleware(
             settings = settings,
             onRestart = onRestart,
+            onOpenFeedback = onOpenFeedback,
             scope = scope,
         )
         return LabsStore(
