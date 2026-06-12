@@ -50,6 +50,7 @@ amContentHandler.prototype = {
     // an addon install even when called from inside a event listener triggered by
     // user input.
     if (
+      !triggeringPrincipal.isSystemPrincipal &&
       !loadInfo.hasValidUserGestureActivation &&
       Services.prefs.getBoolPref("xpinstall.userActivation.required", true)
     ) {
@@ -84,6 +85,14 @@ amContentHandler.prototype = {
       sourceURL,
       method: "link",
     };
+    if (uri.scheme == "file") {
+      telemetryInfo.source = "file-url";
+      if (triggeringPrincipal.isSystemPrincipal) {
+        delete telemetryInfo.sourceURL; // delete - undefined anyway.
+        // Delete to distinguish between "link" and direct navigation.
+        delete telemetryInfo.method;
+      }
+    }
 
     lazy.AddonManager.getInstallForURL(uri.spec, {
       browser,
