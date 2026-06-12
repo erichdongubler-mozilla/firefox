@@ -1900,10 +1900,6 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
     aElement->GetScriptText(source);
     auto speculationRulesResult = SpeculationRules::Parse(
         NS_ConvertUTF16toUTF8(source), request->BaseURL(), request->BaseURL());
-    if (speculationRulesResult.isErr()) {
-      // TODO(avandolder): Throw parse error.
-      return false;
-    }
 
     // Like in the import map case above, we register the speculation rules here
     // instead of later in EvaluateScriptElement.
@@ -1914,6 +1910,18 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
     //  "speculationrules":
     //    1. Register speculation rules given el's relevant global object and
     //    el's result.
+    if (speculationRulesResult.isErr()) {
+      // https://html.spec.whatwg.org/#register-speculation-rules
+      // Step 1.2.
+      nsCOMPtr<nsIScriptGlobalObject> global = GetScriptGlobalObject();
+      if (!global) {
+        return false;
+      }
+      SpeculationRules::ReportParseError(global,
+                                         speculationRulesResult.unwrapErr());
+      return false;
+    }
+
     mDocument->RegisterSpeculationRulesFromScript(
         aElement, speculationRulesResult.unwrap());
     return false;
