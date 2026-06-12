@@ -1189,7 +1189,8 @@ bool Animation::TryTriggerNow() {
                          ? mTimeline->GetCurrentTimeAsDuration()
                          : mTimeline->ToTimelineTime(mPendingReadyTime);
   mPendingReadyTime = {};
-  if (NS_WARN_IF(currentTime.IsNull())) {
+  if (currentTime.IsNull()) {
+    (void)NS_WARN_IF(!HasFiniteTimeline());
     return false;
   }
   FinishPendingAt(currentTime.Value());
