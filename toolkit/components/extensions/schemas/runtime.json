@@ -88,7 +88,6 @@
           },
           "documentId": {
             "type": "string",
-            "unsupported": true,
             "optional": true,
             "description": "An UUID for the document associated with this context, or undefined if it is not hosted in a document"
           },

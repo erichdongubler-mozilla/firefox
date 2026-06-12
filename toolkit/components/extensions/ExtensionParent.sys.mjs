@@ -20,6 +20,7 @@ const lazy = XPCOMUtils.declareLazy({
   DevToolsShim: "chrome://devtools-startup/content/DevToolsShim.sys.mjs",
   ExtensionActivityLog: "resource://gre/modules/ExtensionActivityLog.sys.mjs",
   ExtensionData: "resource://gre/modules/Extension.sys.mjs",
+  ExtensionDocumentId: "resource://gre/modules/ExtensionDocumentId.sys.mjs",
   GeckoViewConnection: "resource://gre/modules/GeckoViewWebExtension.sys.mjs",
   MessageManagerProxy: "resource://gre/modules/MessageManagerProxy.sys.mjs",
   NativeApp: "resource://gre/modules/NativeMessaging.sys.mjs",
@@ -797,7 +798,9 @@ class ExtensionPageContextParent extends ProxyContextParent {
       // contextType property (which should be one of the values part of the
       // runtime.ContextType enum).
       contextType: this.contextType,
-      // TODO(Bug 1891478): add documentId.
+      documentId: windowContext?.innerWindowId
+        ? lazy.ExtensionDocumentId.getDocumentId(windowContext.innerWindowId)
+        : undefined,
       // TODO(Bug 1890739): consider switching this to use webExposedOriginSerialization when available
       // Using nsIPrincipal.originNoSuffix to avoid including the
       // private browsing (or contextual identity ones)
