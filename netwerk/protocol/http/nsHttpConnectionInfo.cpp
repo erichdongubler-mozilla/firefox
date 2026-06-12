@@ -102,6 +102,7 @@ void nsHttpConnectionInfo::Init(const nsACString& host, int32_t port,
   mTRRMode = nsIRequest::TRR_DEFAULT_MODE;
   mIPv4Disabled = false;
   mIPv6Disabled = false;
+  mHttp3Disabled = false;
   mHasIPHintAddress = false;
   mIsWildCard = host.Equals("*"_ns);
 
@@ -264,6 +265,10 @@ void nsHttpConnectionInfo::BuildHashKey() {
     mHashKey.AppendLiteral("[!v6]");
   }
 
+  if (GetHttp3Disabled()) {
+    mHashKey.AppendLiteral("[!h3]");
+  }
+
   if (mProxyInfo) {
     const nsCString& connectionIsolationKey =
         mProxyInfo->ConnectionIsolationKey();
@@ -352,6 +357,7 @@ already_AddRefed<nsHttpConnectionInfo> nsHttpConnectionInfo::Clone() const {
   clone->SetTRRMode(GetTRRMode());
   clone->SetIPv4Disabled(GetIPv4Disabled());
   clone->SetIPv6Disabled(GetIPv6Disabled());
+  clone->SetHttp3Disabled(GetHttp3Disabled());
   clone->SetHasIPHintAddress(HasIPHintAddress());
   clone->SetEchConfig(GetEchConfig());
   clone->SetWebTransportId(GetWebTransportId());
@@ -410,6 +416,7 @@ nsHttpConnectionInfo::CloneAndAdoptHTTPSSVCRecord(
   clone->SetTRRMode(GetTRRMode());
   clone->SetIPv4Disabled(GetIPv4Disabled());
   clone->SetIPv6Disabled(GetIPv6Disabled());
+  clone->SetHttp3Disabled(GetHttp3Disabled());
   clone->SetHappyEyeballsEnabled(GetHappyEyeballsEnabled());
 
   bool hasIPHint = false;
@@ -454,6 +461,7 @@ nsHttpConnectionInfo::CloneAndAdoptPortAndAlpn(
   clone->SetTRRMode(GetTRRMode());
   clone->SetIPv4Disabled(GetIPv4Disabled());
   clone->SetIPv6Disabled(GetIPv6Disabled());
+  clone->SetHttp3Disabled(GetHttp3Disabled());
   clone->SetHappyEyeballsEnabled(GetHappyEyeballsEnabled());
 
   // IPHints and echConfig are handled in HappyEyeballsConnectionAttempt.
@@ -482,6 +490,7 @@ void nsHttpConnectionInfo::SerializeHttpConnectionInfo(
   aArgs.trrMode() = aInfo->GetTRRMode();
   aArgs.isIPv4Disabled() = aInfo->GetIPv4Disabled();
   aArgs.isIPv6Disabled() = aInfo->GetIPv6Disabled();
+  aArgs.isHttp3Disabled() = aInfo->GetHttp3Disabled();
   aArgs.isHttp3() = aInfo->IsHttp3();
   aArgs.hasIPHintAddress() = aInfo->HasIPHintAddress();
   aArgs.echConfig() = aInfo->GetEchConfig();
@@ -535,6 +544,7 @@ nsHttpConnectionInfo::DeserializeHttpConnectionInfoCloneArgs(
   cinfo->SetTRRMode(static_cast<nsIRequest::TRRMode>(aInfoArgs.trrMode()));
   cinfo->SetIPv4Disabled(aInfoArgs.isIPv4Disabled());
   cinfo->SetIPv6Disabled(aInfoArgs.isIPv6Disabled());
+  cinfo->SetHttp3Disabled(aInfoArgs.isHttp3Disabled());
   cinfo->SetHasIPHintAddress(aInfoArgs.hasIPHintAddress());
   cinfo->SetEchConfig(aInfoArgs.echConfig());
   cinfo->SetHappyEyeballsEnabled(aInfoArgs.happyEyeballsEnabled());
@@ -564,6 +574,7 @@ void nsHttpConnectionInfo::CloneAsDirectRoute(nsHttpConnectionInfo** outCI,
   clone->SetTRRMode(GetTRRMode());
   clone->SetIPv4Disabled(GetIPv4Disabled());
   clone->SetIPv6Disabled(GetIPv6Disabled());
+  clone->SetHttp3Disabled(GetHttp3Disabled());
   clone->SetHasIPHintAddress(HasIPHintAddress());
   clone->SetEchConfig(GetEchConfig());
   clone->SetHappyEyeballsEnabled(GetHappyEyeballsEnabled());
@@ -621,6 +632,13 @@ void nsHttpConnectionInfo::SetIPv4Disabled(bool aNoIPv4) {
 void nsHttpConnectionInfo::SetIPv6Disabled(bool aNoIPv6) {
   if (mIPv6Disabled != aNoIPv6) {
     mIPv6Disabled = aNoIPv6;
+    RebuildHashKey();
+  }
+}
+
+void nsHttpConnectionInfo::SetHttp3Disabled(bool aHttp3Disabled) {
+  if (mHttp3Disabled != aHttp3Disabled) {
+    mHttp3Disabled = aHttp3Disabled;
     RebuildHashKey();
   }
 }
