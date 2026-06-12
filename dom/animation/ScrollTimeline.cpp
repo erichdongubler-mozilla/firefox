@@ -265,9 +265,7 @@ bool ScrollTimeline::UpdateIfStale() {
   // RenderingPhase::AnimationFrameCallbacks and RenderingPhase::Layout.
   // We have to check if the ranges are still valid.
   // https://drafts.csswg.org/scroll-animations-1/#event-loop
-  if (MOZ_LIKELY(!UpdateCachedCurrentTime())) {
-    return false;
-  }
+  const bool currentTimeUpdated = UpdateCachedCurrentTime();
 
   if (mAnimations.IsEmpty()) {
     return false;
@@ -276,8 +274,12 @@ bool ScrollTimeline::UpdateIfStale() {
   // Check all animations and request restyle.
   // NOTE: Even if the animation doesn't have the target, it would be okay to
   // post update. We can optimize the case later.
-  for (const auto& animation : mAnimations) {
-    animation->PostUpdate();
+  for (const auto& animation :
+       ToTArray<AutoTArray<RefPtr<Animation>, 32>>(mAnimationOrder)) {
+    const bool triggered = animation->MakeReadyAndMaybeTrigger();
+    if (currentTimeUpdated || triggered) {
+      animation->PostUpdate();
+    }
   }
   return true;
 }

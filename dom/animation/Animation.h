@@ -461,6 +461,7 @@ class Animation : public DOMEventTargetHelper,
   DocGroup* GetDocGroup();
 
   void PostUpdate();
+  bool MakeReadyAndMaybeTrigger();
 
   void AutoAlignStartTime();
 

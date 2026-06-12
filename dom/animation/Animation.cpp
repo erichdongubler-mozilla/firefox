@@ -1123,23 +1123,7 @@ void Animation::SetCurrentTime(const Nullable<CSSNumberish>& aCurrentTime,
 // ---------------------------------------------------------------------------
 
 void Animation::Tick(AnimationTimeline::TickState& aTickState) {
-  // FIXME: We probably need to do this only if the timeline data or range is
-  // changed. For now we always call the procedure per spec.
-  AutoAlignStartTime();
-
-  if (Pending()) {
-    if (!mPendingReadyTime.IsNull() || HasFiniteTimeline()) {
-      // mPendingReadyTime is only meaningful for monotonic timelines (see its
-      // declaration comment). For finite timelines, trigger directly using the
-      // timeline's current time.
-      TryTriggerNow();
-    } else if (MOZ_LIKELY(mTimeline)) {
-      // Monotonic timeline with no ready time yet — schedule the trigger for
-      // the next tick, but with this tick's timestamp.
-      mPendingReadyTime = mTimeline->GetCurrentTimeAsTimeStamp();
-    }
-  }
-
+  MakeReadyAndMaybeTrigger();
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Sync);
 
   // Check for changes to whether or not this animation is replaceable.
@@ -1160,6 +1144,27 @@ void Animation::Tick(AnimationTimeline::TickState& aTickState) {
       PlayState() == AnimationPlayState::Finished) {
     PostUpdate();
   }
+}
+
+bool Animation::MakeReadyAndMaybeTrigger() {
+  // FIXME: We probably need to do this only if the timeline data or range is
+  // changed. For now we always call the procedure per spec.
+  AutoAlignStartTime();
+  if (!Pending()) {
+    return false;
+  }
+  // mPendingReadyTime is only meaningful for monotonic timelines (see its
+  // declaration comment). For finite timelines, trigger directly using the
+  // timeline's current time.
+  if (mPendingReadyTime.IsNull() && !HasFiniteTimeline()) {
+    if (MOZ_LIKELY(mTimeline)) {
+      // Monotonic timeline with no ready time yet — schedule the trigger for
+      // the next tick, but with this tick's timestamp.
+      mPendingReadyTime = mTimeline->GetCurrentTimeAsTimeStamp();
+    }
+    return false;
+  }
+  return TryTriggerNow();
 }
 
 bool Animation::TryTriggerNow() {
