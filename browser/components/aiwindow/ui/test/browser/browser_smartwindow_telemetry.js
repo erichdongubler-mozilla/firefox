@@ -540,6 +540,131 @@ add_task(async function test_search_handoff_telemetry() {
   }
 });
 
+add_task(async function test_run_search_toolcall_telemetry() {
+  const sb = this.sinon.createSandbox();
+  let win;
+
+  try {
+    Services.fog.testResetFOG();
+    const { SearchService } = ChromeUtils.importESModule(
+      "moz-src:///toolkit/components/search/SearchService.sys.mjs"
+    );
+    await SearchService.init();
+    sb.stub(RunSearch, "runSearch").resolves("Mock search results");
+
+    await withServer(
+      {
+        toolCall: {
+          name: "run_search",
+          args: JSON.stringify({ query: "test search query" }),
+        },
+      },
+      async () => {
+        win = await openAIWindow();
+        const browser = win.gBrowser.selectedBrowser;
+
+        const conversationId = await getConversationId(browser);
+        await dispatchSmartbarCommit(
+          browser,
+          "search the web for something",
+          "chat"
+        );
+
+        await TestUtils.waitForCondition(
+          () => Glean.smartWindow.toolCall.testGetValue()?.length,
+          "tool_call telemetry should be recorded"
+        );
+
+        const events = Glean.smartWindow.toolCall.testGetValue();
+        Assert.equal(events?.length, 1, "One tool_call event recorded");
+
+        const extra = events[0].extra;
+        Assert.deepEqual(
+          extra,
+          {
+            tool_name: "run_search",
+            chat_id: conversationId,
+            error: "",
+            location: "fullpage",
+            // prompt_version and model come from the engine config loaded
+            // at test time; assert presence by mirroring the recorded value.
+            prompt_version: extra.prompt_version,
+            model: extra.model,
+          },
+          "tool_call event has the expected extras"
+        );
+      }
+    );
+  } finally {
+    if (win) {
+      await BrowserTestUtils.closeWindow(win);
+    }
+    sb.restore();
+  }
+});
+
+add_task(async function test_run_search_toolcall_failure_telemetry() {
+  const sb = this.sinon.createSandbox();
+  let win;
+
+  try {
+    Services.fog.testResetFOG();
+    const { SearchService } = ChromeUtils.importESModule(
+      "moz-src:///toolkit/components/search/SearchService.sys.mjs"
+    );
+    await SearchService.init();
+    sb.stub(RunSearch, "runSearch").rejects(
+      new Error("simulated tool failure")
+    );
+
+    await withServer(
+      {
+        toolCall: {
+          name: "run_search",
+          args: JSON.stringify({ query: "test search query" }),
+        },
+      },
+      async () => {
+        win = await openAIWindow();
+        const browser = win.gBrowser.selectedBrowser;
+
+        await dispatchSmartbarCommit(
+          browser,
+          "search the web for something",
+          "chat"
+        );
+
+        await TestUtils.waitForCondition(
+          () => Glean.smartWindow.toolCall.testGetValue()?.length,
+          "tool_call telemetry should be recorded on failure"
+        );
+
+        const events = Glean.smartWindow.toolCall.testGetValue();
+        Assert.equal(
+          events?.length,
+          1,
+          "One tool_call event recorded on failure"
+        );
+        Assert.equal(
+          events[0].extra.tool_name,
+          "run_search",
+          "tool_call event names the invoked tool"
+        );
+        Assert.equal(
+          events[0].extra.error,
+          "execution_failed",
+          "tool_call event marks failed execution with error code"
+        );
+      }
+    );
+  } finally {
+    if (win) {
+      await BrowserTestUtils.closeWindow(win);
+    }
+    sb.restore();
+  }
+});
+
 add_task(async function test_chat_retrieved_telemetry() {
   Services.fog.testResetFOG();
 
