@@ -81,10 +81,10 @@ export var WebNavigationFrames = {
     return frames.map(getFrameDetail);
   },
 
-  getFromWindow(target) {
+  getBrowsingContextFromWindow(target) {
     if (Window.isInstance(target)) {
-      return getFrameId(BrowsingContext.getFromWindow(target));
+      return BrowsingContext.getFromWindow(target);
     }
-    return -1;
+    return null;
   },
 };
