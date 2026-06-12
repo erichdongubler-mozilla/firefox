@@ -2829,6 +2829,11 @@ pref("signon.suggestImportCount", 3);
 pref("browser.crashReports.unsubmittedCheck.chancesUntilSuppress", 4);
 pref("browser.crashReports.unsubmittedCheck.autoSubmit2", false);
 
+// Whether the browser should periodically prune stale crash-related files
+// (InstallTime markers, old submitted/pending reports, and the pending-report
+// cap).
+pref("browser.crashReports.cleanupCheck.enabled", true);
+
 // Preferences for the form autofill toolkit component.
 // Checkbox in sync options for credit card data sync service
 pref("services.sync.engine.creditcards.available", true);

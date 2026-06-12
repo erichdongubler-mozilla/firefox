@@ -190,7 +190,7 @@ function submitPendingReport(reportId, row, button, buttonText, dateFormatter) {
 }
 
 /**
- * Deletes unsubmitted and old crash reports from the user's device.
+ * Deletes unsubmitted crash reports from the user's device.
  * Then, hides the list of unsubmitted crash reports.
  */
 async function clearUnsubmittedReports() {
@@ -203,7 +203,6 @@ async function clearUnsubmittedReports() {
   }
 
   await enqueueCleanup(() => cleanupFolder(CrashReports.pendingDir.path));
-  await enqueueCleanup(() => CrashReports.pruneInstallTimeFiles(31586000000));
   document.getElementById("reportListUnsubmitted").classList.add("hidden");
 }
 
@@ -224,7 +223,7 @@ async function submitAllUnsubmittedReports() {
 }
 
 /**
- * Deletes submitted and old crash reports from the user's device.
+ * Deletes submitted crash reports from the user's device.
  * Then, hides the list of submitted crash reports.
  */
 async function clearSubmittedReports() {
@@ -242,7 +241,6 @@ async function clearSubmittedReports() {
       async entry => entry.name.startsWith("bp-") && entry.name.endsWith(".txt")
     )
   );
-  await enqueueCleanup(() => CrashReports.pruneInstallTimeFiles(31586000000));
   document.getElementById("reportListSubmitted").classList.add("hidden");
   document.getElementById("noSubmittedReports").classList.remove("hidden");
 }
