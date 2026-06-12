@@ -741,43 +741,6 @@ JSErrorReport* js::ErrorObject::getOrCreateErrorReport(JSContext* cx) {
   return copy.release();
 }
 
-static bool FindErrorInstanceOrPrototype(JSContext* cx, HandleObject obj,
-                                         MutableHandleObject result) {
-  // Walk up the prototype chain until we find an error object instance or
-  // prototype object. This allows code like:
-  //  Object.create(Error.prototype).stack
-  // or
-  //   function NYI() { }
-  //   NYI.prototype = new Error;
-  //   (new NYI).stack
-  // to continue returning stacks that are useless, but at least don't throw.
-
-  RootedObject curr(cx, obj);
-  RootedObject target(cx);
-  do {
-    target = CheckedUnwrapStatic(curr);
-    if (!target) {
-      ReportAccessDenied(cx);
-      return false;
-    }
-    if (IsErrorProtoKey(StandardProtoKeyOrNull(target))) {
-      result.set(target);
-      return true;
-    }
-
-    if (!GetPrototype(cx, curr, &curr)) {
-      return false;
-    }
-  } while (curr);
-
-  // We walked the whole prototype chain and did not find an Error
-  // object.
-  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                            JSMSG_INCOMPATIBLE_PROTO, "Error", "(get stack)",
-                            obj->getClass()->name);
-  return false;
-}
-
 static MOZ_ALWAYS_INLINE bool IsObject(HandleValue v) { return v.isObject(); }
 
 /* static */
@@ -791,21 +754,16 @@ bool js::ErrorObject::getStack(JSContext* cx, unsigned argc, Value* vp) {
 bool js::ErrorObject::getStack_impl(JSContext* cx, const CallArgs& args) {
   RootedObject thisObj(cx, &args.thisv().toObject());
 
-  RootedObject obj(cx);
-  if (!FindErrorInstanceOrPrototype(cx, thisObj, &obj)) {
-    return false;
-  }
-
-  if (!obj->is<ErrorObject>()) {
+  if (!thisObj->is<ErrorObject>()) {
     args.rval().setString(cx->runtime()->emptyString);
     return true;
   }
 
   // Do frame filtering based on the ErrorObject's principals. This ensures we
   // don't see chrome frames when chrome code accesses .stack over Xrays.
-  JSPrincipals* principals = obj->as<ErrorObject>().realm()->principals();
+  JSPrincipals* principals = thisObj->as<ErrorObject>().realm()->principals();
 
-  RootedObject savedFrameObj(cx, obj->as<ErrorObject>().stack());
+  RootedObject savedFrameObj(cx, thisObj->as<ErrorObject>().stack());
   RootedString stackString(cx);
   if (!BuildStackString(cx, principals, savedFrameObj, &stackString)) {
     return false;
