@@ -72,7 +72,7 @@ bool SVGPathData::GetDistancesFromOriginToEndsOfVisibleSegments(
 /* static */
 already_AddRefed<dom::SVGPathSegment> SVGPathData::GetPathSegmentAtLength(
     dom::SVGPathElement* aPathElement, Span<const StylePathCommand> aPath,
-    float aDistance) {
+    double aDistance) {
   SVGPathTraversalState state;
 
   for (const auto& cmd : aPath) {

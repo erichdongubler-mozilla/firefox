@@ -67,7 +67,7 @@ class SVGPathData {
 
   static already_AddRefed<dom::SVGPathSegment> GetPathSegmentAtLength(
       dom::SVGPathElement* aPathElement, Span<const StylePathCommand> aPath,
-      float aDistance);
+      double aDistance);
 
   void GetMarkerPositioningData(float aZoom, nsTArray<SVGMark>* aMarks) const;
 
