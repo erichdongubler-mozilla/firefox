@@ -73,6 +73,8 @@ const lazy = XPCOMUtils.declareLazy({
     "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   UrlbarProviderGlobalActions:
     "moz-src:///browser/components/urlbar/UrlbarProviderGlobalActions.sys.mjs",
+  UrlbarProviderHeuristicFallback:
+    "moz-src:///browser/components/urlbar/UrlbarProviderHeuristicFallback.sys.mjs",
   UrlbarProviderOpenTabs:
     "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
   UrlbarSearchUtils:
@@ -1474,6 +1476,27 @@ ${
   }
 
   /**
+   * Routes Enter-key submissions in smartbar mode when queries are suppressed.
+   * The suppressed branch of startQuery() has already cached a heuristic URL
+   * UrlbarResult for URL-shaped input, so reuse it via pickResult() to share
+   * the engagement telemetry and load path with the non-suppressed flow.
+   * Otherwise the input is a chat prompt.
+   *
+   * @param {Event} event - The triggering event.
+   */
+  #handleSuppressedNavigation(event) {
+    if (this._resultForCurrentValue?.type == lazy.UrlbarUtils.RESULT_TYPE.URL) {
+      // pickResult() reads _lastSearchString for engagement telemetry. The
+      // suppressed branch of startQuery() intentionally leaves it untouched
+      // during typing, so set it here for the committed value only.
+      this._lastSearchString = this.value;
+      this.pickResult(this._resultForCurrentValue, event);
+      return;
+    }
+    this.submitChat(event, this.untrimmedValue);
+  }
+
+  /**
    * @typedef {object} HandleNavigationOneOffParams
    *
    * @property {string} openWhere
@@ -1574,9 +1597,12 @@ ${
    *   The principal that the action was triggered from.
    */
   handleNavigation({ event, oneOffParams, triggeringPrincipal }) {
-    // When queries are suppressed, submit directly to chat.
+    // When queries are suppressed (e.g. while a chat is active), no provider
+    // results are available to decide the action, so route based on the
+    // smartbar action that #updateSmartbarCTAButton inferred from the typed
+    // value.
     if (this.#isSmartbarMode && this._permanentlySuppressStartQuery) {
-      this.submitChat(event, this.untrimmedValue);
+      this.#handleSuppressedNavigation(event);
       return;
     }
 
@@ -2774,7 +2800,17 @@ ${
     }
 
     if (this._suppressStartQuery) {
-      this.#updateSmartbarCTAButton();
+      // Provider results are skipped in this branch (e.g. while a chat is
+      // active in the Smart Window). Reuse UrlbarProviderHeuristicFallback's
+      // URL detection so URL-shaped input is still recognized as a navigation,
+      // and so pickResult() can drive the engagement telemetry + load path
+      // used everywhere else. Leave _lastSearchString alone — callers (and
+      // tests) rely on it preserving the last actually-run search;
+      // #handleSuppressedNavigation sets it just before pickResult().
+      const result =
+        lazy.UrlbarProviderHeuristicFallback.matchUnknownUrl(queryContext);
+      this.setResultForCurrentValue(result);
+      this.#updateSmartbarCTAButton(result);
       return;
     }
 
