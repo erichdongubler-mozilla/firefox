@@ -463,6 +463,10 @@ nsHttpConnectionInfo::CloneAndAdoptPortAndAlpn(
   clone->SetIPv6Disabled(GetIPv6Disabled());
   clone->SetHttp3Disabled(GetHttp3Disabled());
   clone->SetHappyEyeballsEnabled(GetHappyEyeballsEnabled());
+  // Preserve the WebTransport id so the clone hashes to the same connection
+  // entry as the origin connection info — WebTransport server cert hashes are
+  // stored under that entry and looked up by Http3Session::Init.
+  clone->SetWebTransportId(GetWebTransportId());
 
   // IPHints and echConfig are handled in HappyEyeballsConnectionAttempt.
   return clone.forget();
