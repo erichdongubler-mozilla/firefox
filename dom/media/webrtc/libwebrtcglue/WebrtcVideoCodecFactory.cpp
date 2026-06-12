@@ -105,14 +105,13 @@ std::unique_ptr<webrtc::VideoDecoder> WebrtcVideoDecoderFactory::Create(
   switch (type) {
     case webrtc::VideoCodecType::kVideoCodecH264: {
       // Get an external decoder
-      auto gmpDecoder =
-          WrapUnique(GmpVideoCodec::CreateDecoder(mPCHandle, mTrackingId));
+      auto gmpDecoder = GmpVideoCodec::CreateDecoder(mPCHandle, mTrackingId);
       {
         MutexAutoLock lock(mGmpPluginMutex);
         mCreatedGmpPluginEvent.Forward(*gmpDecoder->InitPluginEvent());
         mReleasedGmpPluginEvent.Forward(*gmpDecoder->ReleasePluginEvent());
       }
-      decoder.reset(gmpDecoder.release());
+      decoder = std::move(gmpDecoder);
       break;
     }
 

@@ -23,8 +23,8 @@ class GmpVideoCodec {
  public:
   static std::unique_ptr<WebrtcVideoEncoder> CreateEncoder(
       const webrtc::SdpVideoFormat& aFormat, std::string aPCHandle);
-  static WebrtcVideoDecoder* CreateDecoder(std::string aPCHandle,
-                                           TrackingId aTrackingId);
+  static std::unique_ptr<WebrtcVideoDecoder> CreateDecoder(
+      std::string aPCHandle, TrackingId aTrackingId);
 };
 
 }  // namespace mozilla

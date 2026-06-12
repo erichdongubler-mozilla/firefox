@@ -14,10 +14,10 @@ std::unique_ptr<WebrtcVideoEncoder> GmpVideoCodec::CreateEncoder(
       new WebrtcGmpVideoEncoder(aFormat, std::move(aPCHandle)));
 }
 
-WebrtcVideoDecoder* GmpVideoCodec::CreateDecoder(std::string aPCHandle,
-                                                 TrackingId aTrackingId) {
-  return new WebrtcVideoDecoderProxy(std::move(aPCHandle),
-                                     std::move(aTrackingId));
+std::unique_ptr<WebrtcVideoDecoder> GmpVideoCodec::CreateDecoder(
+    std::string aPCHandle, TrackingId aTrackingId) {
+  return std::make_unique<WebrtcVideoDecoderProxy>(std::move(aPCHandle),
+                                                   std::move(aTrackingId));
 }
 
 }  // namespace mozilla
