@@ -20,6 +20,7 @@
 #include "nsDNSService2.h"
 #include "nsHttpConnectionMgr.h"
 #include "nsHttpHandler.h"
+#include "NetworkConnectivityService.h"
 #include "nsQueryObject.h"
 #include "nsSocketTransport2.h"
 #include "nsSocketTransportService2.h"
@@ -83,6 +84,20 @@ HappyEyeballsConnectionAttempt::~HappyEyeballsConnectionAttempt() {
   LOG(("HappyEyeballsConnectionAttempt dtor %p", this));
 }
 
+// Returns true if the network connectivity service has positively determined
+// that IPv6 is unreachable on the current network while IPv4 works. The UNKNOWN
+// state (probes still in flight) is intentionally treated as "no signal" so we
+// stay optimistic.
+static bool ShouldPreferIPv4DueToNoIPv6Connectivity() {
+  RefPtr<NetworkConnectivityService> ncs =
+      NetworkConnectivityService::GetSingleton();
+  if (!ncs) {
+    return false;
+  }
+  return ncs->GetIPv6() == nsINetworkConnectivityService::NOT_AVAILABLE &&
+         ncs->GetIPv4() == nsINetworkConnectivityService::OK;
+}
+
 nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
     ConnectionEntry* ent) {
   happy_eyeballs::IpPreference ipPref =
@@ -90,6 +105,9 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
   if (mConnInfo->GetIPv6Disabled()) {
     ipPref = happy_eyeballs::IpPreference::Ipv4Only;
   } else if (ent->PreferenceKnown() && ent->mPreferIPv4) {
+    ipPref = happy_eyeballs::IpPreference::DualStackPreferV4;
+  } else if (!ent->PreferenceKnown() &&
+             ShouldPreferIPv4DueToNoIPv6Connectivity()) {
     ipPref = happy_eyeballs::IpPreference::DualStackPreferV4;
   }
 
