@@ -10,6 +10,19 @@ tab_width = 2
 language = "C++"
 include_guard = "speculationrules_ffi_generated_h"
 includes = ["nsStringFwd.h", "nsTArrayForwardDeclare.h"]
+namespaces = ["mozilla", "dom"]
+after_includes = """
+namespace mozilla::dom {
+class SpeculationRules;
+}
+"""
+
+[export]
+item_types = ["functions", "enums"]
 
 [export.rename]
 "ThinVec" = "nsTArray"
+"SpeculationRuleSet" = "mozilla::dom::SpeculationRules"
+
+[fn]
+rename_args = "GeckoCase"

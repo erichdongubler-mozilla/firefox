@@ -1951,6 +1951,17 @@ dependencies = [
 [[package]]
 name = "dom_speculationrules"
 version = "0.1.0"
+dependencies = [
+ "env_logger",
+ "log",
+ "nsstring",
+ "regex",
+ "serde",
+ "serde_json",
+ "thin-vec",
+ "url",
+ "urlpattern",
+]
 
 [[package]]
 name = "downcast"
@@ -7906,6 +7917,9 @@ name = "thin-vec"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "259cdf8ed4e4aca6f1e9d011e10bd53f524a2d0637d7b28450f6c64ac298c4c6"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "thiserror"
