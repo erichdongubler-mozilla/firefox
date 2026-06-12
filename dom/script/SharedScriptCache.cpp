@@ -105,9 +105,6 @@ void ScriptHashKey::ToStringForLookup(nsACString& aResult) {
     case JS::loader::ScriptKind::eImportMap:
       aResult.Append('i');
       break;
-    case JS::loader::ScriptKind::eSpeculationRules:
-      aResult.Append('s');
-      break;
   }
 
   switch (mCORSMode) {
@@ -179,8 +176,6 @@ Maybe<ScriptHashKey> ScriptHashKey::FromStringsForLookup(
     kind = JS::loader::ScriptKind::eEvent;
   } else if (kindChar == 'i') {
     kind = JS::loader::ScriptKind::eImportMap;
-  } else if (kindChar == 's') {
-    kind = JS::loader::ScriptKind::eSpeculationRules;
   } else {
     return Nothing();
   }

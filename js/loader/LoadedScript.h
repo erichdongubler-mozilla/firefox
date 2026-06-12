@@ -151,9 +151,6 @@ class LoadedScript final : public nsISupports {
   bool IsClassicScript() const { return mKind == ScriptKind::eClassic; }
   bool IsModuleScript() const { return mKind == ScriptKind::eModule; }
   bool IsImportMapScript() const { return mKind == ScriptKind::eImportMap; }
-  bool IsSpeculationRulesScript() const {
-    return mKind == ScriptKind::eSpeculationRules;
-  }
 
   nsIURI* GetURI() const { return mURI; }
 

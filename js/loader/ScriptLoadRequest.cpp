@@ -209,13 +209,6 @@ void ScriptLoadRequest::SetCacheEntry(LoadedScript* aLoadedScript,
 
       mState = State::Ready;
       break;
-    case ScriptKind::eSpeculationRules:
-      MOZ_ASSERT(aLoadedScript->IsSpeculationRulesScript());
-
-      mLoadedScript = aLoadedScript;
-
-      mState = State::Ready;
-      break;
     case ScriptKind::eModule:
       MOZ_ASSERT(aLoadedScript->IsModuleScript());
 
