@@ -1,0 +1,55 @@
+From: Johannes Kron <kron@webrtc.org>
+Date: Fri, 15 May 2026 10:21:29 +0000
+Subject: (cherry-pick-branch-heads/7827) [M149] Validate CGImage dimensions in
+ MouseCursorMonitorMac
+
+Original change's description:
+> Validate CGImage dimensions in MouseCursorMonitorMac
+>
+> This adds missing height checks alongside the existing width checks
+> when processing and scaling the cursor image.
+>
+> Fixed: chromium:513268100
+> Change-Id: Ida1e58334a9d3bda429819e4af51b33afbd0a95d
+> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/472700
+> Reviewed-by: Alexander Cooper <alcooper@chromium.org>
+> Auto-Submit: Johannes Kron <kron@webrtc.org>
+> Commit-Queue: Alexander Cooper <alcooper@chromium.org>
+> Cr-Commit-Position: refs/heads/main@{#47715}
+
+(cherry picked from commit b343cd4e280980f26b4feb80684f57d5b4324e12)
+
+Bug: chromium:514928856,chromium:513268100
+Change-Id: Ida1e58334a9d3bda429819e4af51b33afbd0a95d
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/473981
+Auto-Submit: Chrome Cherry Picker <chrome-cherry-picker@chops-service-accounts.iam.gserviceaccount.com>
+Bot-Commit: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
+Commit-Queue: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
+Cr-Commit-Position: refs/branch-heads/7827@{#1}
+Cr-Branched-From: d606bc991592fbf4dcbe85e9d05db5e501a5ad42-refs/heads/main@{#47595}
+---
+ modules/desktop_capture/mouse_cursor_monitor_mac.mm | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/modules/desktop_capture/mouse_cursor_monitor_mac.mm b/modules/desktop_capture/mouse_cursor_monitor_mac.mm
+index 248a782762..3e6a6cb3c6 100644
+--- a/modules/desktop_capture/mouse_cursor_monitor_mac.mm
++++ b/modules/desktop_capture/mouse_cursor_monitor_mac.mm
+@@ -154,7 +154,8 @@ void MouseCursorMonitorMac::CaptureImage(float scale) {
+   // crbug.com/632995.) After 10.12, OSX may report 2X cursor on non-Retina
+   // screen. (See crbug.com/671436.) So scaling the cursor if needed.
+   CGImageRef scaled_cg_image = nil;
+-  if (CGImageGetWidth(cg_image) != static_cast<size_t>(size.width())) {
++  if (CGImageGetWidth(cg_image) != static_cast<size_t>(size.width()) ||
++      CGImageGetHeight(cg_image) != static_cast<size_t>(size.height())) {
+     scaled_cg_image =
+         CreateScaledCGImage(cg_image, size.width(), size.height());
+     if (scaled_cg_image != nil) {
+@@ -163,6 +164,7 @@ void MouseCursorMonitorMac::CaptureImage(float scale) {
+   }
+   if (CGImageGetBitsPerPixel(cg_image) != DesktopFrame::kBytesPerPixel * 8 ||
+       CGImageGetWidth(cg_image) != static_cast<size_t>(size.width()) ||
++      CGImageGetHeight(cg_image) != static_cast<size_t>(size.height()) ||
+       CGImageGetBitsPerComponent(cg_image) != 8) {
+     if (scaled_cg_image != nil) CGImageRelease(scaled_cg_image);
+     return;
