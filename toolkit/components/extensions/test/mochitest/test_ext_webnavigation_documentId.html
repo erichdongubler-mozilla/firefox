@@ -49,8 +49,11 @@ add_task(async function test_webNavigation_documentId() {
         }
       }, filter);
 
-      // Round-trip to ensure that webNavigation listeners have been processed.
-      await browser.tabs.query({});
+      // Ensure that webNavigation listeners are registered before we trigger
+      // navigations (work-around for bug 1300234). Not doing so could cause
+      // intermittent test failures when the file is run in isolation with
+      // --verify due to missing a webNavigation.onBeforeNavigate event.
+      await browser.webNavigation.getAllFrames({ tabId: 123 }).catch(() => {});
 
       const { id: tabId } = await browser.tabs.create({ url: PAGE_URL });
       const completedPage = await pageLoaded;
