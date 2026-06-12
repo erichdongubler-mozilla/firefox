@@ -70,7 +70,14 @@ const USER_ACTION_TYPES = {
   CHANGE_TAB: "change_tab",
   LEARN_MORE: "learn_more",
   TOGGLE_FOLLOWED_ONLY: "toggle_followed_only",
+  REFRESH_LIVE: "refresh_live",
 };
+
+// UI-side cooldown between successive clicks of the live refresh button. Must
+// match (or exceed) the MIN_MANUAL_REFRESH_MS floor enforced by SportsFeed —
+// the feed silently drops faster requests, so a shorter button cooldown would
+// surface as a no-op click.
+const LIVE_REFRESH_COOLDOWN_MS = 15000;
 
 const PREF_NOVA_ENABLED = "nova.enabled";
 const PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
@@ -1326,6 +1333,22 @@ function SportsWidgetFollowTeams({ teams, initialSelectedTeams, onSave }) {
   );
 }
 
+// Controlled: `isCoolingDown` and `onClick` are owned by SportsMatchesView so
+// the disabled state persists across the medium and large widget size changes
+function LiveRefreshButton({ isCoolingDown, onClick }) {
+  return (
+    <moz-button
+      className="sports-live-refresh-button"
+      type="icon ghost"
+      size="small"
+      iconSrc="chrome://browser/skin/sync.svg"
+      data-l10n-id="newtab-custom-widget-live-refresh"
+      disabled={isCoolingDown || undefined}
+      onClick={onClick}
+    />
+  );
+}
+
 function SportsSectionLabel({ match, withLiveBadge = false }) {
   const l10nId = getMatchSectionL10nId(match);
   const stageContent = l10nId ? (
@@ -1441,6 +1464,46 @@ function SportsMatchesView({
     }
   }, [showUpcomingList]);
 
+  // Tracks whether the live-refresh button is in its post-click cooldown
+  // window.
+  // Flipped to true when clicked. While true, the button is disabled.
+  // Flips back to false when LIVE_REFRESH_COOLDOWN_MS finishes, and gets re-enabled again.
+  const [liveRefreshCoolingDown, setLiveRefreshCoolingDown] = useState(false);
+  const liveRefreshTimerRef = useRef(null);
+  useEffect(
+    () => () => {
+      if (liveRefreshTimerRef.current) {
+        clearTimeout(liveRefreshTimerRef.current);
+      }
+    },
+    []
+  );
+  const handleLiveRefreshClick = useCallback(() => {
+    if (liveRefreshCoolingDown) {
+      return;
+    }
+    setLiveRefreshCoolingDown(true);
+    liveRefreshTimerRef.current = setTimeout(() => {
+      liveRefreshTimerRef.current = null;
+      setLiveRefreshCoolingDown(false);
+    }, LIVE_REFRESH_COOLDOWN_MS);
+    batch(() => {
+      dispatch(
+        ac.OnlyToMain({
+          type: at.WIDGETS_USER_EVENT,
+          data: {
+            widget_name: "sports",
+            widget_source: "now",
+            user_action: USER_ACTION_TYPES.REFRESH_LIVE,
+            widget_size: widgetSize,
+          },
+        })
+      );
+      dispatch(ac.OnlyToMain({ type: at.WIDGETS_SPORTS_LIVE_REFRESH }));
+    });
+    handleInteraction?.();
+  }, [dispatch, handleInteraction, liveRefreshCoolingDown, widgetSize]);
+
   return (
     <div className="sports-matches-view">
       <div
@@ -1524,10 +1587,16 @@ function SportsMatchesView({
           {current[liveIndex] && (
             <>
               {size === "large" && (
-                <SportsSectionLabel
-                  match={current[liveIndex]}
-                  withLiveBadge={true}
-                />
+                <div className="sports-now-header">
+                  <SportsSectionLabel
+                    match={current[liveIndex]}
+                    withLiveBadge={true}
+                  />
+                  <LiveRefreshButton
+                    isCoolingDown={liveRefreshCoolingDown}
+                    onClick={handleLiveRefreshClick}
+                  />
+                </div>
               )}
               <div
                 className="match-highlight-view"
@@ -1558,6 +1627,12 @@ function SportsMatchesView({
                 }
                 onClick={onWatchClick}
               ></moz-button>
+              {size === "medium" && (
+                <LiveRefreshButton
+                  isCoolingDown={liveRefreshCoolingDown}
+                  onClick={handleLiveRefreshClick}
+                />
+              )}
               {current.length >= 2 && (
                 <LivePagination
                   dispatch={dispatch}

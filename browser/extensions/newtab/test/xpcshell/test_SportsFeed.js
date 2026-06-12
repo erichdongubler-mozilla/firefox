@@ -2950,6 +2950,99 @@ add_task(async function test_MARK_CELEBRATED_ignores_duplicates() {
   Assert.ok(setStub.notCalled, "cache.set not called for a duplicate");
 });
 
+// =============================================================================
+// Manual live refresh (refresh button on the Now tab)
+// =============================================================================
+
+add_task(async function test_LIVE_REFRESH_calls_fetchNow_when_due() {
+  const feed = makeLiveFeed();
+  feed.pollingState = "LIVE";
+  // lastLiveUpdated far enough in the past that the manual cap has elapsed.
+  feed.lastLiveUpdated = Date.now() - 60000;
+  const fetchNowStub = sinon.stub(feed, "fetchNow");
+
+  await feed.onAction({ type: actionTypes.WIDGETS_SPORTS_LIVE_REFRESH });
+
+  Assert.ok(
+    fetchNowStub.calledOnce,
+    "fetchNow called when the manual refresh cap has elapsed"
+  );
+});
+
+add_task(async function test_LIVE_REFRESH_calls_fetchNow_when_never_fetched() {
+  const feed = makeLiveFeed();
+  feed.pollingState = "LIVE";
+  // No live fetch has happened yet — the cap is keyed off lastLiveUpdated, so
+  // a null timestamp must NOT block the very first manual refresh.
+  feed.lastLiveUpdated = null;
+  const fetchNowStub = sinon.stub(feed, "fetchNow");
+
+  await feed.onAction({ type: actionTypes.WIDGETS_SPORTS_LIVE_REFRESH });
+
+  Assert.ok(
+    fetchNowStub.calledOnce,
+    "fetchNow called when no prior live fetch has happened"
+  );
+});
+
+add_task(async function test_LIVE_REFRESH_throttled_within_15s() {
+  const feed = makeLiveFeed();
+  feed.pollingState = "LIVE";
+  // A live fetch landed 5 seconds ago — well under the 15s hard floor.
+  feed.lastLiveUpdated = Date.now() - 5000;
+  const fetchNowStub = sinon.stub(feed, "fetchNow");
+
+  await feed.onAction({ type: actionTypes.WIDGETS_SPORTS_LIVE_REFRESH });
+
+  Assert.ok(
+    fetchNowStub.notCalled,
+    "fetchNow suppressed when last live fetch was inside the 15s cap"
+  );
+});
+
+add_task(async function test_LIVE_REFRESH_skipped_when_live_disabled() {
+  const feed = makeLiveFeed({ liveEnabled: false });
+  feed.pollingState = "LIVE";
+  feed.lastLiveUpdated = null;
+  const fetchNowStub = sinon.stub(feed, "fetchNow");
+
+  await feed.onAction({ type: actionTypes.WIDGETS_SPORTS_LIVE_REFRESH });
+
+  Assert.ok(
+    fetchNowStub.notCalled,
+    "fetchNow skipped when live polling is disabled"
+  );
+});
+
+add_task(async function test_LIVE_REFRESH_skipped_when_not_in_LIVE_state() {
+  const feed = makeLiveFeed();
+  feed.pollingState = "IDLE";
+  feed.lastLiveUpdated = null;
+  const fetchNowStub = sinon.stub(feed, "fetchNow");
+
+  await feed.onAction({ type: actionTypes.WIDGETS_SPORTS_LIVE_REFRESH });
+
+  Assert.ok(
+    fetchNowStub.notCalled,
+    "fetchNow skipped outside the LIVE polling state"
+  );
+});
+
+add_task(async function test_LIVE_REFRESH_skipped_when_tick_in_flight() {
+  const feed = makeLiveFeed();
+  feed.pollingState = "LIVE";
+  feed.lastLiveUpdated = null;
+  feed.ticking = true;
+  const fetchNowStub = sinon.stub(feed, "fetchNow");
+
+  await feed.onAction({ type: actionTypes.WIDGETS_SPORTS_LIVE_REFRESH });
+
+  Assert.ok(
+    fetchNowStub.notCalled,
+    "fetchNow skipped while a tick is already in flight"
+  );
+});
+
 add_task(async function test_MARK_CELEBRATED_caps_celebrated_list() {
   const feed = makeFeed();
   // 100 already-celebrated ids (the cap). Adding one more must drop the oldest.

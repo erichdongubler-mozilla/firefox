@@ -66,6 +66,10 @@ const MAX_RETRY_DELAY_MS = 300000; // 5 minutes
 // value from producing a tight network loop. Pregame lead allows 0 (= disabled)
 // but no negatives.
 const MIN_POLL_INTERVAL_MS = 10000; // 10 seconds
+// Capping the time between /live refreshes to 15 seconds.
+// The button will also be disabled for this duration on the client side
+// but enforcing the cap here keeps a user from spamming from the endpoint regardless of UI state.
+const MIN_MANUAL_REFRESH_MS = 15000; // 15 seconds
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /**
@@ -964,6 +968,25 @@ export class SportsFeed {
             this.fetchNow();
           }
         }
+        break;
+      }
+      // User clicked the refresh button on a live match row, this will pull data from the /live endpoint
+      // while enforcing a hard-coded MIN_MANUAL_REFRESH_MS cap between successive manual fetches.
+      case at.WIDGETS_SPORTS_LIVE_REFRESH: {
+        if (
+          !this.liveEnabled ||
+          this.pollingState !== POLLING_STATE_LIVE ||
+          this.ticking
+        ) {
+          break;
+        }
+        if (
+          this.lastLiveUpdated !== null &&
+          Date.now() - this.lastLiveUpdated < MIN_MANUAL_REFRESH_MS
+        ) {
+          break;
+        }
+        this.fetchNow();
         break;
       }
       // User clicked a match row — run a search for the match's `query` using
