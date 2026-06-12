@@ -50,6 +50,7 @@ import org.mozilla.fenix.GleanMetrics.HomeBookmarks
 import org.mozilla.fenix.GleanMetrics.RecentlyVisitedHomepage
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.setup.checklist.SetupChecklistState
 import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
 import org.mozilla.fenix.components.components
@@ -217,6 +218,17 @@ internal fun Homepage(
                         }
 
                         is HomepageState.Normal -> {
+                            val settings = components.settings
+                            val appStore = components.appStore
+                            LaunchedEffect(showLongfoxEntryPoint) {
+                                if (showLongfoxEntryPoint) {
+                                    settings.longfoxEntryPointShownCount++
+                                    appStore.dispatch(
+                                        AppAction.UpdateShowFoxPeekAnimation(false),
+                                    )
+                                }
+                            }
+
                             if (showTopSites) {
                                 TopSitesSection(
                                     topSites = topSites,

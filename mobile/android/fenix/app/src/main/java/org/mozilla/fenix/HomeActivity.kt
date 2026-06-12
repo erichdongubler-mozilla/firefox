@@ -796,6 +796,14 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         )
 
         ProfilerMarkers.homeActivityOnStart(binding.rootContainer, components.core.engine.profiler)
+
+        if (components.settings.longfoxEntryPointShownCount < Settings.LONGFOX_ENTRY_POINT_MAX_SHOWS) {
+            components.settings.appLaunchCount++
+            components.appStore.dispatch(
+                AppAction.UpdateShowFoxPeekAnimation(components.settings.shouldShowLongfoxPeekAnimationThisTime()),
+            )
+        }
+
         components.core.engine.profiler?.addMarker(
             MarkersActivityLifecycleCallbacks.MARKER_NAME,
             startProfilerTime,

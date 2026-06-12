@@ -384,6 +384,10 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
         val context = requireContext()
         val settings = context.components.settings
 
+        if (context.components.appStore.state.longfoxEntryPointReady) {
+            context.components.appStore.dispatch(AppAction.UpdateShowFoxPeekAnimation(false))
+        }
+
         if (!settings.userKnowsAboutPwas) {
             pwaOnboardingObserver = PwaOnboardingObserver(
                 store = context.components.core.store,

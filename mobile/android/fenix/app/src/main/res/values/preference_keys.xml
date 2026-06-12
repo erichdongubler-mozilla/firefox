@@ -609,6 +609,8 @@
 
     <!-- Longfox -->
     <string name="pref_key_enable_longfox" translatable="false">pref_key_enable_longfox</string>
+    <string name="pref_key_app_launch_count" translatable="false">pref_key_app_launch_count</string>
+    <string name="pref_key_longfox_entry_point_shown_count" translatable="false">pref_key_longfox_entry_point_shown_count</string>
 
     <!-- Sports Widget -->
     <string name="pref_key_sports_selected_countries" translatable="false">pref_key_sports_selected_countries</string>

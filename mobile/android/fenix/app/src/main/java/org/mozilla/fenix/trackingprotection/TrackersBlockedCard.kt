@@ -36,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -60,6 +61,8 @@ private const val CURSOR_BLINK_MS = 500L
 private const val DISPLAY_DURATION_MS = 3000L
 private const val TYPEWRITER_REVERSE_DELAY_MS = 1200L
 
+internal const val LONGFOX_FOX_IMAGE_TEST_TAG = "trackersBlockedCard.longfoxFox"
+
 /**
  * A card that displays the number of trackers blocked with an animated fox.
  *
@@ -77,11 +80,21 @@ fun TrackersBlockedCard(
     onLongfoxEntryPointClicked: () -> Unit = {},
     showLongfoxEntryPoint: Boolean = false,
 ) {
+    var isPlayingAnimation by remember { mutableStateOf(false) }
     val foxOffsetY = remember { Animatable(1f) }
     var isReversing by remember { mutableStateOf(false) }
 
+    // Latch the entry point becoming visible into isPlayingAnimation. showLongfoxEntryPoint is
+    // cleared as soon as the homepage consumes it, so the animation is driven off the latch below
+    // to ensure it runs to completion rather than being cancelled mid-flight.
     LaunchedEffect(showLongfoxEntryPoint) {
         if (showLongfoxEntryPoint) {
+            isPlayingAnimation = true
+        }
+    }
+
+    LaunchedEffect(isPlayingAnimation) {
+        if (isPlayingAnimation) {
             isReversing = false
             foxOffsetY.animateTo(
                 targetValue = 0f,
@@ -89,16 +102,12 @@ fun TrackersBlockedCard(
             )
             delay(DISPLAY_DURATION_MS)
             isReversing = true
-        }
-    }
-
-    LaunchedEffect(isReversing) {
-        if (isReversing) {
             delay(TYPEWRITER_REVERSE_DELAY_MS)
             foxOffsetY.animateTo(
                 targetValue = 1f,
                 animationSpec = tween(durationMillis = FOX_ANIMATION_DURATION, easing = Ease),
             )
+            isPlayingAnimation = false
         }
     }
 
@@ -112,16 +121,18 @@ fun TrackersBlockedCard(
         Box(
             contentAlignment = Alignment.TopStart,
         ) {
-            if (showLongfoxEntryPoint) {
+            if (isPlayingAnimation) {
                 Image(
                     painter = painterResource(R.drawable.expressive_firefox),
                     contentDescription = null,
-                    modifier = Modifier.offset {
-                        IntOffset(
-                            x = foxHorizontalOffset.toPx().roundToInt(),
-                            y = ((-peekHeight.toPx()) + (foxOffsetY.value * peekHeight.toPx())).roundToInt(),
-                        )
-                    },
+                    modifier = Modifier
+                        .testTag(LONGFOX_FOX_IMAGE_TEST_TAG)
+                        .offset {
+                            IntOffset(
+                                x = foxHorizontalOffset.toPx().roundToInt(),
+                                y = ((-peekHeight.toPx()) + (foxOffsetY.value * peekHeight.toPx())).roundToInt(),
+                            )
+                        },
                 )
             }
 
@@ -131,7 +142,7 @@ fun TrackersBlockedCard(
             )
         }
 
-        if (showLongfoxEntryPoint && foxOffsetY.value < 1f) {
+        if (isPlayingAnimation && foxOffsetY.value < 1f) {
             Spacer(modifier = Modifier.height(6.dp))
 
             TypewriterText(
