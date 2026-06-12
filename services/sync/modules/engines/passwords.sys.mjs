@@ -90,6 +90,11 @@ PasswordEngine.prototype = {
     return new PasswordsChangeset();
   },
 
+  async initialize() {
+    await SyncEngine.prototype.initialize.call(this);
+    await Services.logins.initializationPromise;
+  },
+
   async ensureCurrentSyncID(newSyncID) {
     return Services.logins.ensureCurrentSyncID(newSyncID);
   },
@@ -195,7 +200,6 @@ function PasswordStore(name, engine) {
     Ci.nsILoginInfo,
     "init"
   );
-  this.storage = LoginManagerStorage.create();
 }
 PasswordStore.prototype = {
   _newPropertyBag() {
@@ -434,6 +438,11 @@ PasswordStore.prototype = {
   },
 };
 Object.setPrototypeOf(PasswordStore.prototype, Store.prototype);
+Object.defineProperty(PasswordStore.prototype, "storage", {
+  get() {
+    return LoginManagerStorage.getActiveStore();
+  },
+});
 
 function PasswordTracker(name, engine) {
   Tracker.call(this, name, engine);
