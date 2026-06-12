@@ -242,17 +242,14 @@ add_task(async function test_keyboard_shortcut_toggles_open_tabs_panel() {
   SidebarController.hide();
   Assert.ok(!SidebarController.isOpen, "Sidebar starts closed.");
 
-  // On macOS the shortcut is literal Ctrl+U; on Windows/Linux it is Ctrl+Alt+U.
-  const isMac = AppConstants.platform === "macosx";
-  const modifiers = isMac ? { ctrlKey: true } : { ctrlKey: true, altKey: true };
-
-  EventUtils.synthesizeKey("u", modifiers);
+  // Press Ctrl+Shift+L (accelKey maps to Ctrl on Win/Linux and Cmd on Mac).
+  EventUtils.synthesizeKey("l", { accelKey: true, shiftKey: true });
 
   await BrowserTestUtils.waitForCondition(
     () =>
       SidebarController.isOpen &&
       SidebarController.currentID === "viewOpenTabsSidebar",
-    "The Open Tabs sidebar shortcut opens the panel."
+    "Ctrl+Shift+L opens the Open Tabs sidebar panel."
   );
   Assert.equal(
     SidebarController.currentID,
@@ -261,10 +258,10 @@ add_task(async function test_keyboard_shortcut_toggles_open_tabs_panel() {
   );
 
   // Press the shortcut again — toggle should close the sidebar.
-  EventUtils.synthesizeKey("u", modifiers);
+  EventUtils.synthesizeKey("l", { accelKey: true, shiftKey: true });
   await BrowserTestUtils.waitForCondition(
     () => !SidebarController.isOpen,
-    "Pressing the shortcut again closes the sidebar."
+    "Pressing Ctrl+Shift+L again closes the sidebar."
   );
   Assert.ok(!SidebarController.isOpen, "Sidebar is closed.");
 });
