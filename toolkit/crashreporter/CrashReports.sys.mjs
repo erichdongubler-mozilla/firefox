@@ -70,6 +70,37 @@ export var CrashReports = {
     // Sort reports descending by date
     return Object.values(reports).sort((a, b) => b.date - a.date);
   },
+
+  /**
+   * Deletes `InstallTime<BuildID>` marker files from the crash reports
+   * directory whose last-modified time is older than `maxAgeMs`. Tolerates
+   * a missing crash reports directory (e.g. on a fresh profile).
+   *
+   * @param {number} maxAgeMs Maximum age in milliseconds; files older than
+   *                          this (relative to `Date.now()`) are removed.
+   */
+  async pruneInstallTimeFiles(maxAgeMs) {
+    const threshold = Date.now() - maxAgeMs;
+    let children;
+    try {
+      children = await IOUtils.getChildren(this.reportsDir.path);
+    } catch (e) {
+      if (!DOMException.isInstance(e) || e.name !== "NotFoundError") {
+        throw e;
+      }
+      return;
+    }
+
+    for (const childPath of children) {
+      if (!PathUtils.filename(childPath).startsWith("InstallTime")) {
+        continue;
+      }
+      const stat = await IOUtils.stat(childPath);
+      if (stat.lastModified < threshold) {
+        await IOUtils.remove(childPath);
+      }
+    }
+  },
 };
 
 function CrashReports_pendingDir() {

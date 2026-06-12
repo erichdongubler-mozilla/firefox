@@ -80,6 +80,25 @@ function clear_crash_dirs() {
   }
 }
 
+/**
+ * Removes every file directly under the crash reports root (`reportsDir`)
+ * without descending into subdirectories. Used to clean InstallTime markers
+ * to ensure stable conditions.
+ */
+function clear_reports_dir() {
+  const dir = CrashReports.reportsDir;
+  if (!dir.exists() || !dir.isDirectory()) {
+    return;
+  }
+  let entries = dir.directoryEntries;
+  while (entries.hasMoreElements()) {
+    let entry = entries.nextFile;
+    if (entry.isFile()) {
+      entry.remove(false);
+    }
+  }
+}
+
 add_setup(async function () {
   do_get_profile();
   Services.prefs.setCharPref(
@@ -87,6 +106,8 @@ add_setup(async function () {
     "https://example.com/report"
   );
   registerCleanupFunction(() => {
+    clear_reports_dir();
+    clear_crash_dirs();
     Services.prefs.clearUserPref("breakpad.reportURL");
   });
 
@@ -216,5 +237,48 @@ add_task(async function test_getReports_nohttp() {
       "breakpad.reportURL",
       "https://example.com/report"
     );
+  }
+});
+
+// `pruneInstallTimeFiles` only deletes `InstallTime*` files older than the
+// supplied threshold and ignores everything else in the directory.
+add_task(async function test_pruneInstallTimeFiles() {
+  clear_crash_dirs();
+  clear_reports_dir();
+  const now = Date.now();
+  const old = now - 365 * 24 * 60 * 60 * 1000; // 1 year ago
+  const recent = now - 10 * 60 * 1000; // 10 minutes ago
+
+  const oldInstall = _create_file(
+    CrashReports.reportsDir,
+    "InstallTime20200101000000",
+    old
+  );
+  const recentInstall = _create_file(
+    CrashReports.reportsDir,
+    "InstallTime20240101000000",
+    recent
+  );
+  const unrelated = _create_file(CrashReports.reportsDir, "foo.txt", old);
+
+  await CrashReports.pruneInstallTimeFiles(30 * 24 * 60 * 60 * 1000); // 30 days
+
+  Assert.ok(!oldInstall.exists(), "Old InstallTime file was removed");
+  Assert.ok(recentInstall.exists(), "Recent InstallTime file was preserved");
+  Assert.ok(unrelated.exists(), "Non-InstallTime file was preserved");
+});
+
+// `pruneInstallTimeFiles` is a no-op when the crash reports directory does
+// not exist (fresh profile case).
+add_task(async function test_pruneInstallTimeFiles_missingDir() {
+  const savedReportsDir = CrashReports.reportsDir;
+  const missingDir = savedReportsDir.clone();
+  missingDir.append("nonexistent-subdir");
+
+  CrashReports.reportsDir = missingDir;
+  try {
+    await CrashReports.pruneInstallTimeFiles(30 * 24 * 60 * 60 * 1000);
+  } finally {
+    CrashReports.reportsDir = savedReportsDir;
   }
 });

@@ -31,8 +31,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
-const buildID = Services.appinfo.appBuildID;
-
 /**
  * Adds the crash reports with submission buttons and links
  * to the unsubmitted and submitted crash report lists.
@@ -205,7 +203,7 @@ async function clearUnsubmittedReports() {
   }
 
   await enqueueCleanup(() => cleanupFolder(CrashReports.pendingDir.path));
-  await enqueueCleanup(clearOldReports);
+  await enqueueCleanup(() => CrashReports.pruneInstallTimeFiles(31586000000));
   document.getElementById("reportListUnsubmitted").classList.add("hidden");
 }
 
@@ -244,27 +242,9 @@ async function clearSubmittedReports() {
       async entry => entry.name.startsWith("bp-") && entry.name.endsWith(".txt")
     )
   );
-  await enqueueCleanup(clearOldReports);
+  await enqueueCleanup(() => CrashReports.pruneInstallTimeFiles(31586000000));
   document.getElementById("reportListSubmitted").classList.add("hidden");
   document.getElementById("noSubmittedReports").classList.remove("hidden");
-}
-
-/**
- * Deletes old crash reports from the user's device.
- */
-async function clearOldReports() {
-  const oneYearAgo = Date.now() - 31586000000;
-  await cleanupFolder(CrashReports.reportsDir.path, async entry => {
-    if (
-      !entry.name.startsWith("InstallTime") ||
-      entry.name == "InstallTime" + buildID
-    ) {
-      return false;
-    }
-
-    const stat = await IOUtils.stat(entry.path);
-    return stat.lastModified < oneYearAgo;
-  });
 }
 
 /**
