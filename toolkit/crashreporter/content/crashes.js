@@ -266,9 +266,10 @@ async function cleanupFolder(path, filter) {
   try {
     children = await IOUtils.getChildren(path);
   } catch (e) {
-    if (DOMException.isInstance(e) || e.name !== "NotFoundError") {
+    if (!DOMException.isInstance(e) || e.name !== "NotFoundError") {
       throw e;
     }
+    return;
   }
 
   for (const childPath of children) {
