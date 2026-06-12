@@ -11352,3 +11352,164 @@ pub extern "C" fn Servo_GetShadowRootForScoped(
         .get_shadow_root_for_scoped(element)
         .map_or(ptr::null(), |sr| sr.0 as *const _)
 }
+
+#[no_mangle]
+pub unsafe extern "C" fn Servo_GetComputationSteps(
+    str: &nsAString,
+    element: &RawGeckoElement,
+    pseudo_type: PseudoStyleType,
+    style: &ComputedValues,
+    raw_data: &PerDocumentStyleData,
+    out: &mut nsTArray<nsString>,
+) {
+    use style::values::generics::calc::{CalcUnits, SimplificationResult};
+    use style::values::specified::calc::{CalcNode, CalcParseFlags, Leaf};
+
+    let parser_context = ParserContext::new(
+        Origin::Author,
+        dummy_url_data(),
+        Some(CssRuleType::Style),
+        ParsingMode::DEFAULT,
+        QuirksMode::NoQuirks,
+        /* namespaces = */ Default::default(),
+        None,
+        None,
+        /* attr_taint */ Default::default(),
+    );
+
+    let string = str.to_string();
+    let mut input = ParserInput::new(&string);
+    let mut parser = Parser::new(&mut input);
+
+    // At the moment, we're only supporting top-level Math function
+    // TODO: we should handle others like env()/var()/attr() (See Bug 2041622)
+    let math_func = match parser.next() {
+        Ok(Token::Function(ref name)) => {
+            match CalcNode::math_function(
+                &parser_context,
+                name,
+                // we don't need to have a valid location here, it's only used to report errors
+                SourceLocation { line: 0, column: 0 },
+            ) {
+                Ok(f) => f,
+                Err(_) => {
+                    return;
+                },
+            }
+        },
+        _ => {
+            return;
+        },
+    };
+
+    let mut flags = CalcParseFlags::new(CalcUnits::ALL);
+    flags = flags.new_without_in_place_operations();
+    // Initial parsing
+    let mut node = match CalcNode::parse(&parser_context, &mut parser, math_func, flags) {
+        Ok(n) => n,
+        Err(_) => {
+            return;
+        },
+    };
+
+    let mut value = match node.as_leaf() {
+        Some(l) => l.to_css_string(),
+        None => node.to_css_string(),
+    };
+    // `value` is the serialized version of `string`, which can be different from the
+    // authored expression (for example `round(Infinity) will serialize as `round(infinity, 1)`).
+    // We only want to put `string` in the array if it's significantly different (as in, it
+    // should have more differences than juste whitespace/casing).
+    if value.replace(" ", "").to_lowercase() != string.replace(" ", "").to_lowercase() {
+        out.push(nsString::from(&string));
+    }
+    out.push(nsString::from(&value));
+
+    let data = raw_data.borrow();
+    let element = GeckoElement(element);
+    let pseudo = PseudoElement::from_pseudo_type(pseudo_type, None);
+    let parent_element = if pseudo.is_none() {
+        element.inheritance_parent()
+    } else {
+        Some(element)
+    };
+    let parent_data = parent_element.as_ref().and_then(|e| e.borrow_data());
+    let parent_style = parent_data
+        .as_ref()
+        .map(|d| d.styles.primary())
+        .map(|x| &**x);
+
+    let container_size_query =
+        ContainerSizeQuery::for_element(element, parent_style, pseudo.is_some());
+    let mut conditions = Default::default();
+    let mut tree_counting_caches = TreeCountingCaches::default();
+    let context = create_context_for_animation(
+        &data,
+        &style,
+        parent_style,
+        &mut conditions,
+        container_size_query,
+        &element,
+        &mut tree_counting_caches,
+    );
+
+    // Go through the leaves so we have consistent units to run the computation
+    node = node.map_leaves(|leaf| match *leaf {
+        // TODO: Percentages should be replaced by the appropriate value (See Bug 2041621)
+        // Leaf::Percentage(p) => { },
+        Leaf::Length(l) => {
+            let result = l.to_computed_value(&context);
+            Leaf::Length(NoCalcLength::from_computed_value(&result))
+        },
+        ref l => l.clone(),
+    });
+
+    let mut new_value = match node.as_leaf() {
+        Some(l) => l.to_css_string(),
+        None => node.to_css_string(),
+    };
+    if new_value != value {
+        value = new_value;
+        out.push(nsString::from(&value));
+    }
+
+    // We don't want to call node.simplify_and_sort() since it simplifies the whole tree
+    // in one swoop. We do want to have it done incrementally to have the different steps.
+    // So until we get a single leaf…
+    while node.as_leaf().is_none() {
+        // …use visit_depth_first to get to the first inner non-leaf node
+        let mut res = SimplificationResult::Unchanged;
+        node.visit_depth_first(|n| {
+            // we don't have a way to stop this function to be called, so just bail
+            // out when we already handled a node
+            match res {
+                SimplificationResult::Simplified => return,
+                _ => {},
+            }
+
+            match n.as_leaf() {
+                None => {
+                    res = n.simplify_and_sort_direct_children();
+                },
+                _ => {},
+            }
+        });
+
+        // If we didn't simplify any node during the last call to visit_depth_first,
+        // consider we can't do better and break out of the loop
+        match res {
+            SimplificationResult::Unchanged => return,
+            SimplificationResult::Simplified => {
+                // If we did simplify something, we have a new step to put in our output.
+                new_value = match node.as_leaf() {
+                    Some(l) => l.to_css_string(),
+                    None => node.to_css_string(),
+                };
+                if new_value != value {
+                    value = new_value;
+                    out.push(nsString::from(&value));
+                }
+            },
+        }
+    }
+}

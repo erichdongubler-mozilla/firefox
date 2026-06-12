@@ -331,6 +331,10 @@ class InspectorUtils {
                            Nullable<InspectorAnchorElement>&);
   static void GetAnchorNamesFor(GlobalObject& aGlobal, Element&,
                                 nsTArray<nsString>& aResult);
+  static void GetComputationSteps(GlobalObject& aGlobal,
+                                  const nsAString& aExpression, Element&,
+                                  const nsAString& aPseudo,
+                                  nsTArray<nsString>& aResult);
 };
 
 }  // namespace mozilla::dom
