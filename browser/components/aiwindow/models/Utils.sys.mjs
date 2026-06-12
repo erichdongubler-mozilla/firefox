@@ -18,15 +18,17 @@ import {
 } from "resource://gre/modules/FxAccountsCommon.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = XPCOMUtils.declareLazy({
-  RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
-  getFxAccountsSingleton: "resource://gre/modules/FxAccounts.sys.mjs",
-});
-
 const APIKEY_PREF = "browser.smartwindow.apiKey";
 export const MODEL_PREF = "browser.smartwindow.model";
 const ENDPOINT_PREF = "browser.smartwindow.endpoint";
 const GENERIC_MODEL_NAME = "generic";
+const MODEL_CHOICE_PREF = "browser.smartwindow.firstrun.modelChoice";
+
+const lazy = XPCOMUtils.declareLazy({
+  RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
+  getFxAccountsSingleton: "resource://gre/modules/FxAccounts.sys.mjs",
+  modelChoice: { pref: MODEL_CHOICE_PREF, default: "" },
+});
 
 /**
  * Default engine ID used for all AI Window features
@@ -189,6 +191,26 @@ export function checkMajorVersion(recordVersion, comparisonVersion) {
   const parsed = parseVersion(recordVersion);
   return parsed && parsed.major == comparisonVersion;
 }
+
+/*
+ * Fallback model data - matches Remote Settings shape
+ * Used when Remote Settings lookup fails
+ */
+export const FALLBACK_MODELS = {
+  0: { model: "custom-model", ownerName: "" },
+  1: {
+    model: "gemini-3.1-flash-lite",
+    ownerName: "Google",
+  },
+  2: {
+    model: "qwen3-235b-a22b-instruct-2507-maas",
+    ownerName: "Alibaba",
+  },
+  3: {
+    model: "gpt-oss-120b",
+    ownerName: "OpenAI",
+  },
+};
 
 /**
  * Selects the main configuration for a feature based on version and model preferences.
@@ -363,6 +385,13 @@ export class openAIEngine {
 
     const client = lazy.RemoteSettings(openAIEngine.RS_AI_WINDOW_COLLECTION, {
       bucketName: "main",
+    });
+    client.on("sync", async () => {
+      try {
+        await refreshModelsDataCache();
+      } catch (e) {
+        console.error("Failed to refresh models cache on sync", e);
+      }
     });
 
     openAIEngine._remoteClient = client;
@@ -728,6 +757,88 @@ export async function resolveChatModelChoice(
     );
     return null;
   }
+}
+
+/**
+ * Gets model metadata for a choice ID, with fallback
+ *
+ * @param {string} choiceId - Model choice ID (e.g., "1", "2", "3", "0")
+ * @returns {Promise<{model: string, ownerName: string}|null>} null if choiceId is falsy
+ */
+export async function getModelForChoice(choiceId = lazy.modelChoice) {
+  if (!choiceId) {
+    return null;
+  }
+
+  const resolved = await resolveChatModelChoice(choiceId);
+  if (resolved) {
+    return resolved;
+  }
+
+  if (choiceId in FALLBACK_MODELS) {
+    return FALLBACK_MODELS[choiceId];
+  }
+
+  return { model: "unknown", ownerName: "unknown" };
+}
+
+/**
+ *
+ * @type {{[key: string]: {model: string, ownerName: string}}|null}
+ * holds model metadata -- this should replace FALLBACK_MODELS where sync calls are needed
+ * see getCachedModelsData() below
+ */
+let _modelsDataCache = null;
+
+export async function refreshModelsDataCache() {
+  _modelsDataCache = null;
+  await getAllModelsData();
+}
+
+/**
+ * Gets metadata for all models, with fallback. Result is cached after first call.
+ *
+ * @returns {Promise<{[key: string]: {model: string, ownerName: string}}>}
+ */
+export async function getAllModelsData() {
+  if (_modelsDataCache) {
+    return _modelsDataCache;
+  }
+  const modelData = { ...FALLBACK_MODELS };
+  // RS reads from a local dump. Only the first call sets up RS state,
+  // subsequent calls are cached
+  const entries = await Promise.all(
+    ["1", "2", "3"].map(async id => [id, await getModelForChoice(id)])
+  );
+  for (const [id, data] of entries) {
+    modelData[id] = data;
+  }
+  _modelsDataCache = modelData;
+  return _modelsDataCache;
+}
+
+/**
+ * Returns cached model data synchronously, or FALLBACK_MODELS if not yet fetched.
+ *
+ * @returns {{[key: string]: {model: string, ownerName: string}}}
+ */
+export function getCachedModelsData() {
+  return _modelsDataCache ?? FALLBACK_MODELS;
+}
+
+export function getCurrentModelName() {
+  return getCachedModelsData()[lazy.modelChoice]?.model ?? "";
+}
+
+export function getCurrentModelChoiceId() {
+  return lazy.modelChoice;
+}
+
+/**
+ * Clearls ModelsDataCache -- mostly used for testing
+ */
+export function _clearModelsDataCacheForTesting() {
+  _modelsDataCache = null;
 }
 
 /**
