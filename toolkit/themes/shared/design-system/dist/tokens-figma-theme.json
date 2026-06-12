@@ -1390,6 +1390,11 @@
     "dark": "{Theme$background/color/canvas}",
     "forcedColors": "{Theme$button/background/color}"
   },
+  "toggle/opacity/disabled": {
+    "light": "{Theme$button/opacity/disabled}",
+    "dark": "{Theme$button/opacity/disabled}",
+    "forcedColors": "{Theme$button/opacity/disabled}"
+  },
   "visual-picker-item/border/color": {
     "light": "{Theme$border/color/interactive}",
     "dark": "{Theme$border/color/interactive}",
