@@ -155,7 +155,8 @@ already_AddRefed<ViewTimeline> ViewTimeline::Constructor(
   RefPtr<ViewTimeline> result = MakeAndAddRef<ViewTimeline>(
       doc, scroller, axis, subject, PseudoStyleType::NotPseudo, inset);
   if (subject) {
-    // Maybe our nearested scroller already exists, try to compute the current time.
+    // Maybe our nearested scroller already exists, try to compute the current
+    // time.
     result->UpdateCachedCurrentTime();
   }
 
