@@ -37,7 +37,6 @@ class ExpandedTabGroupTest {
         override val tabGroupsDragAndDropEnabled: Boolean = false
         override val shareTabGroupEnabled: Boolean = true
         override val tabGroupsOnboardingEnabled: Boolean = false
-        override val tabGroupsLiveReorderEnabled: Boolean = false
     }
 
     @Test

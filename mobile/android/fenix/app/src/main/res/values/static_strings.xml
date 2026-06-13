@@ -192,7 +192,6 @@
     <!-- Label for toggling the Tab Groups feature -->
     <string name="preferences_tab_groups_feature" translatable="false">Enable Tab Groups</string>
     <string name="preferences_tab_groups_drag_and_drop" translatable="false">Enable Tab Groups Drag and Drop</string>
-    <string name="preferences_tab_groups_live_reorder" translatable="false">Enable Live Reorder for Drag and Drop</string>
     <string name="preferences_tab_groups_onboarding" translatable="false">Enable Tab Groups Onboarding</string>
 
     <!-- Label for toggling the Tab Manager opening animation -->

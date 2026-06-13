@@ -93,7 +93,6 @@ fun ExpandedTabGroup(
             dragAndDropEnabled = false,
             reorderingEnabled = false,
             displayTabGroupOnboarding = false,
-            liveReorderEnabled = false,
             selectedItemIndex = group.initialScrollIndex,
             selectionMode = TabsTrayState.Mode.Normal,
             tabInteractionHandler = NoOpTabInteractionHandler, // todo Bug 2032255: Inject interaction handling

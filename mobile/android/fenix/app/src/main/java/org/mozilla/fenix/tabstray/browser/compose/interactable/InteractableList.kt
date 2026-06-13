@@ -48,7 +48,6 @@ import kotlin.math.pow
  *
  * @param listState State of the list.
  * @param ignoredItems Set of keys for non-draggable items.
- * @param liveReorderEnabled Whether reordering should happen 'live' while a drag is active.
  * @param onLongPress Callback to be invoked when long pressing an item.
  * @param tabInteractionHandler Handler for tab interactions.
  * @param dragAndDropEnabled Whether the drag and drop feature is enabled for tab groups.
@@ -57,7 +56,6 @@ import kotlin.math.pow
 fun createListInteractionState(
     listState: LazyListState,
     ignoredItems: Set<Any>,
-    liveReorderEnabled: Boolean,
     onLongPress: (LazyListItemInfo) -> Unit = {},
     tabInteractionHandler: TabInteractionHandler,
     dragAndDropEnabled: Boolean = true,
@@ -75,7 +73,6 @@ fun createListInteractionState(
             onLongPress = onLongPress,
             tabInteractionHandler = tabInteractionHandler,
             dragAndDropEnabled = dragAndDropEnabled,
-            liveReorderEnabled = liveReorderEnabled,
         )
     }
     return state
@@ -151,7 +148,6 @@ interface ListInteractionState {
  * @param ignoredItems List of keys for non-draggable items.
  * @param tabInteractionHandler Handler for tab interactions.
  * @param dragAndDropEnabled Whether the drag and drop feature is enabled for tab groups.
- * @param liveReorderEnabled Whether reordering should happen 'live' while a drag is active.
  * @param onLongPress Optional callback to be invoked when long pressing an item.
  */
 @Suppress("LongParameterList")
@@ -163,7 +159,6 @@ class ListInteractionStateImpl internal constructor(
     private val ignoredItems: Set<Any>,
     private val tabInteractionHandler: TabInteractionHandler,
     private val dragAndDropEnabled: Boolean,
-    private val liveReorderEnabled: Boolean,
     private val onLongPress: (LazyListItemInfo) -> Unit = {},
 ) : ListInteractionState {
     override var draggedItem by mutableStateOf<InteractionState.List>(InteractionState.List.None)
@@ -223,19 +218,6 @@ class ListInteractionStateImpl internal constructor(
         resetState()
     }
 
-    private fun doReorder(mode: InteractionMode.List.Reordering) {
-        if (draggedItem.index == listState.firstVisibleItemIndex) {
-            itemSize?.let { height ->
-                autoScroll(height.toFloat())
-            }
-        }
-        tabInteractionHandler.onMove(
-            sourceKey = mode.source.key,
-            targetKey = mode.target.key,
-            placeAfter = mode.placeAfter,
-        )
-    }
-
     private fun handleDragEnd(mode: InteractionMode.List) {
         when (mode) {
             is InteractionMode.List.DragAndDrop -> {
@@ -246,10 +228,16 @@ class ListInteractionStateImpl internal constructor(
             }
 
             is InteractionMode.List.Reordering -> {
-                if (!liveReorderEnabled) {
-                    doReorder(mode)
+                if (draggedItem.index == listState.firstVisibleItemIndex) {
+                    itemSize?.let { height ->
+                        autoScroll(height.toFloat())
+                    }
                 }
-                tabInteractionHandler.onDragCancel()
+                tabInteractionHandler.onMove(
+                    sourceKey = mode.source.key,
+                    targetKey = mode.target.key,
+                    placeAfter = mode.placeAfter,
+                )
             }
 
             is InteractionMode.List.Scroll, is InteractionMode.List.None -> {
@@ -310,16 +298,7 @@ class ListInteractionStateImpl internal constructor(
 
     private fun handleReorderingModeOnDrag(mode: InteractionMode.List.Reordering) {
         hoveredItem = InteractionState.List.None
-        if (liveReorderEnabled) {
-            doReorder(mode)
-            // Update the dragged item's index as reorders happen
-            val newIndex = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == draggedItem.key }?.index ?: -1
-            if (newIndex != -1) {
-                draggedItem = draggedItem.copyWithNewIndex(newIndex)
-            }
-        } else {
-            highlightedRect = mode.rect
-        }
+        highlightedRect = mode.rect
     }
 
     private fun handleDragAndDropModeOnDrag(mode: InteractionMode.List.DragAndDrop) {
@@ -367,11 +346,6 @@ class ListInteractionStateImpl internal constructor(
             ignoredItems = ignoredItems,
             dragAndDropEnabled = dragAndDropEnabled,
         )
-        // Debounce duplicate reorder events.
-        // Note that multiple duplicate scroll events are valid
-        if (mode == interactionMode && interactionMode is InteractionMode.List.Reordering) {
-            return
-        }
         interactionMode = mode
         when (mode) {
             is InteractionMode.List.DragAndDrop -> {

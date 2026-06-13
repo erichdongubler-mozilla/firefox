@@ -37,11 +37,6 @@ interface TabManagementFeatureHelper {
      * Whether onboarding is enabled for the Tab Groups feature.
      */
     val tabGroupsOnboardingEnabled: Boolean
-
-    /**
-     * Control whether reorder happens live during a drag and drop action for Tab Groups.
-     */
-    val tabGroupsLiveReorderEnabled: Boolean
 }
 
 /**
@@ -57,9 +52,6 @@ data object DefaultTabManagementFeatureHelper : TabManagementFeatureHelper {
 
     override val tabGroupsDragAndDropEnabled: Boolean
         get() = Config.channel.isDebug || FxNimbus.features.tabGroupsDragAndDrop.value().enabled
-
-    override val tabGroupsLiveReorderEnabled: Boolean
-        get() = FxNimbus.features.tabGroupsLiveReorder.value().enabled
 
     override val shareTabGroupEnabled: Boolean
         get() = false

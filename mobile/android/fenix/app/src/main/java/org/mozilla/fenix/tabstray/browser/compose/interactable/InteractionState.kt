@@ -41,11 +41,6 @@ sealed interface InteractionState {
         fun incrementCumulatedOffset(offset: Offset): Grid
 
         /**
-         * Return a copy of the item with an updated index.
-         */
-        fun copyWithNewIndex(newIndex: Int): Grid
-
-        /**
          * Data object to represent no active interaction.
          * @property index of the item, always null
          * @property key of the item, always null
@@ -62,10 +57,6 @@ sealed interface InteractionState {
             }
 
             override fun incrementCumulatedOffset(offset: Offset): Grid {
-                return this
-            }
-
-            override fun copyWithNewIndex(newIndex: Int): Grid {
                 return this
             }
         }
@@ -92,12 +83,6 @@ sealed interface InteractionState {
                     cumulatedOffset = cumulatedOffset + offset,
                 )
             }
-
-            override fun copyWithNewIndex(newIndex: Int): Grid {
-                return this.copy(
-                    index = newIndex,
-                )
-            }
         }
     }
 
@@ -122,11 +107,6 @@ sealed interface InteractionState {
         fun markAsMoved(): List
 
         /**
-         * Return a copy of the item with an updated index.
-         */
-        fun copyWithNewIndex(newIndex: Int): List
-
-        /**
          * Data object to represent no active interaction.
          * @property index of the item, always null
          * @property key of the item, always null
@@ -149,10 +129,6 @@ sealed interface InteractionState {
             }
 
             override fun markAsMoved(): List {
-                return this
-            }
-
-            override fun copyWithNewIndex(newIndex: Int): List {
                 return this
             }
         }
@@ -186,10 +162,6 @@ sealed interface InteractionState {
                 return this.copy(
                     moved = true,
                 )
-            }
-
-            override fun copyWithNewIndex(newIndex: Int): List {
-                return this.copy(index = newIndex)
             }
         }
     }

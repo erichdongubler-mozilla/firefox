@@ -176,7 +176,6 @@ class TabGroupOnboardingItemTest {
                         onEditTabGroupClick = {},
                         onCloseTabGroupClick = {},
                         onTabGroupOnboardingDismiss = {},
-                        liveReorderEnabled = false,
                     )
                 }
             }

@@ -51,10 +51,3 @@ fun fakeDraggedListItemOffset(): ListItemOffset {
         itemSize = 2,
     )
 }
-
-object TabKeys {
-    const val HEADER = "header"
-    const val TAB_ALPHA = "alpha"
-    const val TAB_BETA = "beta"
-    const val SPAN = "span"
-}

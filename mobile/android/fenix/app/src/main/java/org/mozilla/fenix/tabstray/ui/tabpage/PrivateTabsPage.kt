@@ -87,7 +87,6 @@ internal fun PrivateTabsPage(
                 dragAndDropEnabled = false,
                 displayTabGroupOnboarding = false,
                 focusEnabled = true, // Drag and drop is not possible, so there's no reason to hide the focus state
-                liveReorderEnabled = true, // Technically, trivially true as it uses ReorderableGrid today
             )
         }
     }

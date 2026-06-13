@@ -983,24 +983,6 @@ features:
       - channel: nightly
         value:
           enabled: false
-  tab-groups-live-reorder:
-    description: Control whether reorder happens live during a drag and drop action for Tab Groups.
-    variables:
-      enabled:
-        description: >
-          Whether or not to enable live reorder for tab groups drag and drop.
-        type: Boolean
-        default: false
-    defaults:
-      - channel: release
-        value:
-          enabled: false
-      - channel: beta
-        value:
-          enabled: false
-      - channel: nightly
-        value:
-          enabled: false
 
   marketing-onboarding-card:
     description: A temporary feature to control the marketing onboarding card shown during the onboarding flow.

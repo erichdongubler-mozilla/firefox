@@ -3177,14 +3177,6 @@ class Settings(
     )
 
     /**
-     * Control whether reorder happens live during a drag and drop action for Tab Groups.
-     */
-    var tabGroupsLiveReorderEnabled by booleanPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_tab_groups_live_reorder),
-        default = { DefaultTabManagementFeatureHelper.tabGroupsLiveReorderEnabled },
-    )
-
-    /**
      * Whether onboarding is enabled for the Tab Groups feature.
      */
     var tabGroupsOnboardingEnabled by booleanPreference(

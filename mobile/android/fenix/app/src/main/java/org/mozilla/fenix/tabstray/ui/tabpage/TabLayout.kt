@@ -166,7 +166,6 @@ private val ignoredItems = setOf(HEADER_ITEM_KEY, SPAN_ITEM_KEY, TAB_GROUP_ONBOA
  * @param displayTabsInGrid Whether the tabs should be displayed in a grid.
  * @param dragAndDropEnabled Whether drag and drop is enabled for tab groups.
  * @param displayTabGroupOnboarding Whether onboarding for tab groups should be shown.
- * @param liveReorderEnabled Whether tab reorders should happen 'live' during a drag.
  * @param selectedItemIndex The index of the currently selected tab. This will be scrolled to on first-render.
  * @param selectionMode [TabsTrayState.Mode] indicating whether the Tabs Tray is in single selection
  * or multi-selection and contains the set of selected tabs.
@@ -193,7 +192,6 @@ fun TabLayout(
     displayTabsInGrid: Boolean,
     dragAndDropEnabled: Boolean,
     displayTabGroupOnboarding: Boolean,
-    liveReorderEnabled: Boolean,
     selectedItemIndex: Int,
     selectionMode: TabsTrayState.Mode,
     focusEnabled: Boolean,
@@ -234,7 +232,6 @@ fun TabLayout(
             reorderingEnabled = reorderingEnabled,
             onPrivacyReportTapped = onPrivacyReportTapped,
             displayTabGroupOnboarding = displayTabGroupOnboarding,
-            liveReorderEnabled = liveReorderEnabled,
         )
     } else {
         TabList(
@@ -257,7 +254,6 @@ fun TabLayout(
             reorderingEnabled = reorderingEnabled,
             onPrivacyReportTapped = onPrivacyReportTapped,
             displayTabGroupOnboarding = displayTabGroupOnboarding,
-            liveReorderEnabled = liveReorderEnabled,
         )
     }
 }
@@ -268,7 +264,6 @@ private fun TabList(
     tabs: List<TabsTrayItem>,
     dragAndDropEnabled: Boolean,
     displayTabGroupOnboarding: Boolean,
-    liveReorderEnabled: Boolean,
     selectedItemIndex: Int,
     selectionMode: TabsTrayState.Mode,
     focusEnabled: Boolean,
@@ -306,7 +301,6 @@ private fun TabList(
             dragAndDropEnabled = dragAndDropEnabled,
             onPrivacyReportTapped = onPrivacyReportTapped,
             displayTabGroupOnboarding = displayTabGroupOnboarding,
-            liveReorderEnabled = liveReorderEnabled,
         )
     } else {
         ReorderableTabList(
@@ -338,7 +332,6 @@ private fun TabGrid(
     tabs: List<TabsTrayItem>,
     dragAndDropEnabled: Boolean,
     displayTabGroupOnboarding: Boolean,
-    liveReorderEnabled: Boolean,
     selectedItemIndex: Int,
     selectionMode: TabsTrayState.Mode,
     focusEnabled: Boolean,
@@ -377,7 +370,6 @@ private fun TabGrid(
             contentPadding = contentPadding,
             focusEnabled = focusEnabled,
             onPrivacyReportTapped = onPrivacyReportTapped,
-            liveReorderEnabled = liveReorderEnabled,
         )
     } else {
         ReorderableTabGrid(
@@ -497,6 +489,7 @@ private fun ReorderableTabGrid(
         bottomPadding = contentPadding.calculateBottomPadding() + spacing + tabGridBottomPadding + navigationBarPadding,
         isHeaderPresent = header != null,
     )
+
     var isInMultiSelectMode by remember { mutableStateOf(selectionMode is TabsTrayState.Mode.Select) }
     val reorderState = createGridReorderState(
         gridState = gridState,
@@ -585,7 +578,6 @@ private fun ReorderableTabGrid(
 private fun InteractableTabGrid(
     tabs: List<TabsTrayItem>,
     displayTabGroupOnboarding: Boolean,
-    liveReorderEnabled: Boolean,
     selectedItemIndex: Int,
     focusEnabled: Boolean,
     selectionMode: TabsTrayState.Mode,
@@ -617,14 +609,11 @@ private fun InteractableTabGrid(
         isHeaderPresent = header != null,
     )
 
-    // Don't show the onboarding card while a drag is active
-    var showOnboardingCardInGrid by remember { mutableStateOf(displayTabGroupOnboarding) }
     var isInMultiSelectMode by remember { mutableStateOf(selectionMode is TabsTrayState.Mode.Select) }
     val gridInteractionState = createGridInteractionState(
         gridState = gridState,
         tabInteractionHandler = tabInteractionHandler,
         onLongPress = rememberReactiveLongPressGrid(tabs = tabs, onItemLongClick = onItemLongClick),
-        liveReorderEnabled = liveReorderEnabled,
         ignoredItems = ignoredItems,
     )
     // Prevent a race between multi-select and drag by updating the select mode only if the dragging key is null
@@ -632,7 +621,6 @@ private fun InteractableTabGrid(
         if (gridInteractionState.draggedItem.key == null) {
             isInMultiSelectMode = selectionMode is TabsTrayState.Mode.Select
         }
-        showOnboardingCardInGrid = displayTabGroupOnboarding && (gridInteractionState.draggedItem.key == null)
     }
     BoxWithConstraints(
         modifier = Modifier
@@ -666,7 +654,7 @@ private fun InteractableTabGrid(
 
             tabGridItems(
                 tabs = tabs,
-                showTabGroupOnboarding = showOnboardingCardInGrid,
+                showTabGroupOnboarding = displayTabGroupOnboarding,
                 selectedItemIndex = selectedItemIndex,
                 columns = columns,
                 onTabGroupOnboardingDismiss = onTabGroupOnboardingDismiss,
@@ -1029,7 +1017,6 @@ private fun InteractableTabList(
     tabs: List<TabsTrayItem>,
     displayTabGroupOnboarding: Boolean,
     selectedItemIndex: Int,
-    liveReorderEnabled: Boolean,
     selectionMode: TabsTrayState.Mode,
     tabInteractionHandler: TabInteractionHandler,
     modifier: Modifier = Modifier,
@@ -1061,9 +1048,7 @@ private fun InteractableTabList(
         onLongPress = rememberReactiveLongPressList(tabs = tabs, onItemLongClick = onItemLongClick),
         tabInteractionHandler = tabInteractionHandler,
         dragAndDropEnabled = dragAndDropEnabled,
-        liveReorderEnabled = liveReorderEnabled,
     )
-    var showOnboardingCardInList by remember { mutableStateOf(displayTabGroupOnboarding) }
     var isInMultiSelectMode by remember {
         mutableStateOf(
             selectionMode is TabsTrayState.Mode.Select,
@@ -1074,7 +1059,6 @@ private fun InteractableTabList(
         if (listInteractionState.draggedItem.key == null) {
             isInMultiSelectMode = selectionMode is TabsTrayState.Mode.Select
         }
-        showOnboardingCardInList = displayTabGroupOnboarding && (listInteractionState.draggedItem.key == null)
     }
     Box(
         modifier = Modifier
@@ -1104,7 +1088,7 @@ private fun InteractableTabList(
             interactableTabListContent(
                 header = header,
                 tabs = tabs,
-                displayTabGroupOnboarding = showOnboardingCardInList,
+                displayTabGroupOnboarding = displayTabGroupOnboarding,
                 selectedItemIndex = selectedItemIndex,
                 listInteractionState = listInteractionState,
                 isInMultiSelectMode = isInMultiSelectMode,
@@ -1573,7 +1557,6 @@ private fun TabListPreview(
                 displayTabsInGrid = false,
                 dragAndDropEnabled = false,
                 displayTabGroupOnboarding = false,
-                liveReorderEnabled = false,
                 onTabClose = tabs::remove,
                 onItemClick = {},
                 onItemLongClick = {},
@@ -1611,7 +1594,6 @@ private fun TabGridPreview(
             displayTabsInGrid = true,
             dragAndDropEnabled = false,
             displayTabGroupOnboarding = false,
-            liveReorderEnabled = false,
             onTabClose = tabs::remove,
             onItemClick = {},
             onItemLongClick = {},
@@ -1646,7 +1628,6 @@ private fun TabListWindowSizePreview() {
                 displayTabsInGrid = false,
                 dragAndDropEnabled = false,
                 displayTabGroupOnboarding = false,
-                liveReorderEnabled = false,
                 onTabClose = tabs::remove,
                 onItemClick = {},
                 onItemLongClick = {},
@@ -1682,7 +1663,6 @@ private fun TabGridWindowSizePreview() {
             displayTabsInGrid = true,
             dragAndDropEnabled = false,
             displayTabGroupOnboarding = false,
-            liveReorderEnabled = false,
             onTabClose = tabs::remove,
             onItemClick = {},
             onItemLongClick = {},
@@ -1772,7 +1752,6 @@ private fun MultiSelectPreview(
             onCloseTabGroupClick = {},
             onTabGroupOnboardingDismiss = {},
             focusEnabled = true,
-            liveReorderEnabled = false,
         )
     }
 }
