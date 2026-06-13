@@ -1341,6 +1341,7 @@ static nsRect ComputeInlineAbsoluteCBRect(const nsInlineFrame* aInlineFrame) {
 void nsBlockFrame::ReflowAbsoluteDescendantsInInlineFrame(
     nsPresContext* aPresContext, const ReflowInput& aReflowInput,
     ReflowOutput& aReflowOutput, nsReflowStatus& aStatus) {
+  bool foundAbspos = false;
   for (auto& line : Lines()) {
     if (line.IsBlock()) {
       // The block frame in this line is responsible for reflowing its abspos
@@ -1354,6 +1355,7 @@ void nsBlockFrame::ReflowAbsoluteDescendantsInInlineFrame(
     for (nsIFrame* kid : line.ChildFrames()) {
       if (auto kidOverflow = WalkInlineDescendantsToReflowAbsoluteFrames(
               kid, aPresContext, aReflowInput, aStatus)) {
+        foundAbspos = true;
         lineAbsposOverflow.UnionWithAbsoluteOverflowAreas(*kidOverflow +
                                                           kid->GetPosition());
       }
@@ -1371,6 +1373,12 @@ void nsBlockFrame::ReflowAbsoluteDescendantsInInlineFrame(
       aReflowOutput.mOverflowAreas.UnionWithAbsoluteOverflowAreas(
           lineAbsposOverflow);
     }
+  }
+
+  if (!foundAbspos) {
+    // Remove NS_BLOCK_HAS_INLINE_ABSPOS_DESCENDANT bit if we didn't find any
+    // abspos descendants after a full walk over all our inline lines.
+    RemoveStateBits(NS_BLOCK_HAS_INLINE_ABSPOS_DESCENDANT);
   }
 }
 
@@ -1804,7 +1812,17 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
   // Reflow absolute descendants of inline absolute containing blocks after all
   // the lines are reflowed and placed.
+  //
+  // NS_BLOCK_HAS_INLINE_ABSPOS_DESCENDANT would have been set on us, if
+  // appropriate, when we reflowed our inline lines, by
+  // nsInlineFrame::MarkBlockAncestorHavingAbsoluteDescendants() (called from
+  // the Reflow() of an inline/ruby descendant that has abspos children), so it
+  // is up to date here. At the end of ReflowAbsoluteDescendantsInInlineFrame(),
+  // the bit will be cleared when no abspos descendant is found (we do not
+  // proactively traverse this block's subtree to clear the bit when an abspos
+  // frame is removed).
   if (StaticPrefs::layout_abspos_fragment_aware_inline_cb_enabled() &&
+      HasAnyStateBits(NS_BLOCK_HAS_INLINE_ABSPOS_DESCENDANT) &&
       !aReflowInput.WillReflowAgainForClearance() &&
       !aPresContext->HasPendingInterrupt()) {
     ReflowAbsoluteDescendantsInInlineFrame(aPresContext, aReflowInput, aMetrics,
@@ -8321,7 +8339,8 @@ void nsBlockFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   // NS_BLOCK_FLAGS_NON_INHERITED_MASK bits below.
   constexpr nsFrameState NS_BLOCK_FLAGS_MASK =
       NS_BLOCK_BFC | NS_BLOCK_HAS_FIRST_LETTER_STYLE |
-      NS_BLOCK_HAS_FIRST_LETTER_CHILD | NS_BLOCK_HAS_MARKER;
+      NS_BLOCK_HAS_FIRST_LETTER_CHILD | NS_BLOCK_HAS_MARKER |
+      NS_BLOCK_HAS_INLINE_ABSPOS_DESCENDANT;
 
   // This is the subset of NS_BLOCK_FLAGS_MASK that is NOT inherited
   // by default.  They should only be set on the first-in-flow.
