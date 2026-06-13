@@ -48,8 +48,8 @@ class FakeUuidGenerator : public mozilla::JsepUuidGenerator {
     return true;
   }
 
-  mozilla::JsepUuidGenerator* Clone() const {
-    return new FakeUuidGenerator(*this);
+  mozilla::UniquePtr<mozilla::JsepUuidGenerator> Clone() const {
+    return mozilla::MakeUnique<FakeUuidGenerator>(*this);
   }
 
  private:
