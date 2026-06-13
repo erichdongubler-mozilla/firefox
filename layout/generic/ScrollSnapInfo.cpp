@@ -111,8 +111,8 @@ nscoord ScrollSnapRange::FindNearestSnapPoint(nscoord aDestination,
   const nscoord tolerance = StaticPrefs::layout_disable_pixel_alignment()
                                 ? 0
                                 : CSSPixel::ToAppUnits(CSSCoord(0.5f));
-  return std::clamp(aDestination,
-                    Start(), std::max(Start(), End() - aSnapportSize + tolerance));
+  return std::clamp(aDestination, Start(),
+                    std::max(Start(), End() - aSnapportSize + tolerance));
 }
 
 std::ostream& operator<<(std::ostream& aStream,
