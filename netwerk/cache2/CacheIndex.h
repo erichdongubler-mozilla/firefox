@@ -64,12 +64,20 @@ using CacheIndexHeader = struct {
   // kTelemetryReportBytesLimit a telemetry report is sent and the counter is
   // reset.
   uint32_t mKBWritten;
+
+  // Whether the entries on disk are encrypted at rest (see
+  // browser.cache.disk.encryption.enabled). Stored so that a change to the
+  // encryption setting can be detected at startup: when it no longer matches
+  // the pref the whole cache is purged, since it would otherwise hold a mix of
+  // encrypted and plaintext entries.
+  uint32_t mIsEncrypted;
 };
 
 static_assert(sizeof(CacheIndexHeader::mVersion) +
                       sizeof(CacheIndexHeader::mTimeStamp) +
                       sizeof(CacheIndexHeader::mIsDirty) +
-                      sizeof(CacheIndexHeader::mKBWritten) ==
+                      sizeof(CacheIndexHeader::mKBWritten) +
+                      sizeof(CacheIndexHeader::mIsEncrypted) ==
                   sizeof(CacheIndexHeader),
               "Unexpected sizeof(CacheIndexHeader)!");
 
