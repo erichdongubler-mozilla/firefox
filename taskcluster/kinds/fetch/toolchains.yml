@@ -844,7 +844,7 @@ windowsappsdk-redist:
     description: Windows App SDK Redistributable
     fetch:
         type: static-url
-        url: https://aka.ms/windowsappsdk/2.1/2.1.3/Microsoft.WindowsAppRuntime.Redist.2.1.zip
-        sha256: fe5d0ce5f329f4c242da878220f7bb52310501b0f8a980b72743fdb1415ac89a
-        size: 470169456
+        url: https://aka.ms/windowsappsdk/2.2/2.2.0/Microsoft.WindowsAppRuntime.Redist.2.2.zip
+        sha256: ab078d5b1d730f093ed4e1a33d0e709d1dbca85fa4a10f546cc6824e3b48057f
+        size: 478796379
         artifact-name: Microsoft.WindowsAppRuntime.Redist.tar.zst
