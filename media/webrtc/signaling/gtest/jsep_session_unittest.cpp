@@ -3938,10 +3938,10 @@ static void GetCodec(JsepSession& session, size_t transceiverIndex,
                             ->GetEncoding(encodingIndex)
                             .GetCodecs()
                             .size());
-  codecOut->reset(track.GetNegotiatedDetails()
-                      ->GetEncoding(encodingIndex)
-                      .GetCodecs()[codecIndex]
-                      ->Clone());
+  *codecOut = track.GetNegotiatedDetails()
+                       ->GetEncoding(encodingIndex)
+                       .GetCodecs()[codecIndex]
+                       ->Clone();
 }
 
 static void ForceH264(JsepSession& session, uint32_t profileLevelId) {
