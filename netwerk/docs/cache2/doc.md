@@ -545,6 +545,91 @@ checking - the memory cache pool is controlled by
 described above. The pool can be accessed and modified only on the cache
 background thread.
 
+## On-disk entry format
+
+Each disk cache entry is stored as a single file under
+`<profile>/cache2/entries/`, named by the uppercase hex of the SHA-1 hash of the
+entry's key.
+
+A file has two parts: the **data**, split into fixed-size chunks, followed by a
+**metadata block** at the very end. Data comes first so that it can be appended
+as the entry is written; the metadata — whose size depends on the number of
+chunks and the amount of stored metadata — is written last. A reader seeks to
+the end of the file, reads the trailing offset, and uses it both to locate the
+metadata block and to learn the total data size.
+
+```
+            +================================================+  offset 0
+            |  chunk 0                  (kChunkSize bytes)    |
+            +------------------------------------------------+  1 * kChunkSize
+            |  chunk 1                  (kChunkSize bytes)    |
+            +------------------------------------------------+  2 * kChunkSize
+            |  ...                                           |
+            +------------------------------------------------+  (N-1) * kChunkSize
+            |  chunk N-1                (<= kChunkSize bytes) |
+            +================================================+  dataSize  <--+
+            |  metadata block                                |              |
+            +================================================+              |
+                            the trailing metadata offset points here -------+
+```
+
+### Data chunks
+
+The data is divided into chunks of `kChunkSize` (256 KiB). Chunk *N* lives at
+file offset `N * kChunkSize`; only the last chunk may be shorter than
+`kChunkSize`. Chunks are read and written independently and are the unit of
+in-memory caching (see {ref}`intermediate-memory-caching <intermediate-memory-caching>`). A
+16-bit hash of each chunk is stored in the metadata and verified when the chunk
+is read back from disk.
+
+### Metadata block
+
+The metadata block holds everything about the entry other than its data:
+
+```
+            +---------------------------+
+            |  metadata hash     (4 B)  |   32-bit hash of the rest of the block
+            +---------------------------+
+            |  chunk hashes   (2 B * N) |   one 16-bit hash per data chunk
+            +---------------------------+
+            |  header                   |   fixed-size CacheFileMetadataHeader
+            +---------------------------+
+            |  key + '\0'               |   the entry's key, null-terminated
+            +---------------------------+
+            |  elements                 |   name\0value\0 pairs
+            +---------------------------+
+            |  metadata offset   (4 B)  |   file offset where this block begins
+            +---------------------------+
+```
+
+- **Metadata hash** — a 32-bit hash computed over everything from the chunk-hash
+  array through the elements, used to detect on-disk corruption.
+- **Chunk hashes** — one 16-bit hash per data chunk; the chunk count is
+  `ceil(dataSize / kChunkSize)`.
+- **Header** — a fixed-size, tightly packed `CacheFileMetadataHeader`:
+
+  | field | type | meaning |
+  | --- | --- | --- |
+  | version | uint32 | metadata format version |
+  | fetch count | uint32 | number of times the entry has been opened |
+  | last fetched | uint32 | last access time, in seconds |
+  | last modified | uint32 | last modification time, in seconds |
+  | frecency | uint32 | eviction score (see above) |
+  | expiration time | uint32 | when the entry expires |
+  | key size | uint32 | length in bytes of the key that follows |
+  | flags | uint32 | entry flags (e.g. pinned) |
+
+- **Key** — the entry's key (the `<enhance-id:><uri>` string, scoped by context),
+  null-terminated.
+- **Elements** — the entry's metadata stored as a sequence of null-terminated
+  `name\0value\0` pairs (HTTP response headers, security info, alternative-data
+  information, and so on).
+- **Metadata offset** — a trailing 32-bit value giving the file offset at which
+  the metadata block begins, which is also the total size of the data.
+
+All multi-byte integers in the metadata are stored big-endian (network byte
+order).
+
 ## Compression Dictionaries
 
 Compression Dictionaries are specced by the IETF:
