@@ -1,985 +1,152 @@
 From: Nicolas Grunbaum <ngrunbaum@mozilla.com>
-Date: Fri, 12 Jun 2026 17:43:18 -0700
-Subject: (tmp-cherry-pick) Revert "Migrate test_support_unittests to
- rtc_test_suite" (0313e6a15e)
+Date: Fri, 12 Jun 2026 17:41:44 -0700
+Subject: (tmp-cherry-pick) Revert "Support std::string_view in RTC_LOG macros"
+ (1507782ef5)
 
-This reverts commit 6af5020dc6ee4025df294d90d21bdb88aa0c4635.
+This reverts commit 90ef797418efc68bdd4299b3c9b090fe238dbb8f.
 
-Reason for revert: Breaks upstream
+Reason for revert: breaks downstream
+new LogArgType should be handled in logging.cc
 
 Original change's description:
-> Migrate test_support_unittests to rtc_test_suite
+> Support std::string_view in RTC_LOG macros
 >
-> This keeps some larger test groups around, these can be further split
-> later.
+> Update the logging framework to handle std::string_view as a distinct
+> type to prevent memory safety issues.
 >
-> Test count remains the same as before.
+> On certain toolchains, such as the Android NDK, std::string_view and
+> absl::string_view are separate types. Relying on implicit conversions
+> between them within logging macros can lead to the creation of temporary
+> objects. Capturing the address of these temporaries results in dangling
+> pointers, which causes undefined behavior or crashes during logging.
 >
-> Before:
-> test_support_unittests / TotalTestCount= {mean=500, stddev=-} Count (BiggerIsBetter)
-> test_support_unittests / RunTestCount= {mean=492, stddev=-} Count (BiggerIsBetter)
-> test_support_unittests / DisabledTestCount= {mean=8, stddev=-} Count (SmallerIsBetter)
+> This change introduces a dedicated MakeVal overload for std::string_view
+> and updates internal type traits to:
+> * Explicitly support std::string_view when it differs from
+>   absl::string_view.
+> * Prevent std::string_view from matching generic stringify or class
+>   templates that may handle it incorrectly.
+> * Ensure stable references to string data across different platforms
+>   and compiler configurations.
 >
-> After:
-> RESULT: test_support_unittests / TotalTestCount= {mean=500, stddev=-} Count (BiggerIsBetter)
-> RESULT: test_support_unittests / RunTestCount= {mean=492, stddev=-} Count (BiggerIsBetter)
-> RESULT: test_support_unittests / DisabledTestCount= {mean=8, stddev=-} Count (SmallerIsBetter)
+> Previously, this was implicitly (and not explicitly intentionally) been
+> handled by the deprecated stringstream MakeVal implementation.
 >
-> Bug: webrtc:498394143
-> Change-Id: I552f65f6e5e6708a132393fd05cd329c6a6a6964
-> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/468621
-> Commit-Queue: Evan Shrubsole <eshr@webrtc.org>
-> Reviewed-by: Jeremy Leconte <jleconte@google.com>
-> Cr-Commit-Position: refs/heads/main@{#47603}
+> Bug: webrtc:42234461
+> Change-Id: I1d4fd044837e8ac2b117a12e8da351ce5502953e
+> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/468860
+> Commit-Queue: Tomas Gunnarsson <tommi@webrtc.org>
+> Reviewed-by: Danil Chapovalov <danilchap@webrtc.org>
+> Cr-Commit-Position: refs/heads/main@{#47602}
 
-Bug: webrtc:498394143
+Bug: webrtc:42234461
 No-Presubmit: true
 No-Tree-Checks: true
 No-Try: true
-Change-Id: I8056d2aeb6202810ddb616a33092bee4d1c61c60
-Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/469700
+Change-Id: I9604b0ab373dc58355f9b58704e322d1ee52f91d
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/469261
 Bot-Commit: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
-Commit-Queue: Evan Shrubsole <eshr@webrtc.org>
-Cr-Commit-Position: refs/heads/main@{#47605}
+Commit-Queue: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
+Auto-Submit: Danil Chapovalov <danilchap@webrtc.org>
+Cr-Commit-Position: refs/heads/main@{#47606}
 ---
- BUILD.gn                                      |   1 -
- test/BUILD.gn                                 | 636 ++++--------------
- test/fuzzers/BUILD.gn                         |   3 +-
- test/jitter/BUILD.gn                          |   3 +-
- test/pc/e2e/BUILD.gn                          |   4 +-
- test/pc/e2e/analyzer/video/BUILD.gn           |   4 +-
- test/pc/e2e/analyzer/video/dvqa/BUILD.gn      |  56 +-
- .../bwe_integration_tests/BUILD.gn            |   2 +-
- test/peer_scenario/tests/BUILD.gn             |   2 +-
- test/scenario/BUILD.gn                        |   2 +-
- test/time_controller/BUILD.gn                 |   2 +-
- 11 files changed, 174 insertions(+), 541 deletions(-)
+ rtc_base/logging.h           | 21 ++-------------------
+ rtc_base/logging_unittest.cc | 18 ------------------
+ 2 files changed, 2 insertions(+), 37 deletions(-)
 
-diff --git a/BUILD.gn b/BUILD.gn
-index 317acec103..b6d3d04654 100644
---- a/BUILD.gn
-+++ b/BUILD.gn
-@@ -134,7 +134,6 @@ if (rtc_include_tests) {
-       "//call:call_tests",
-       "//call/adaptation:resource_adaptation_tests",
-       "//pc:peerconnection_unittests",
--      "//test:test_support_unittests",
-       "//video:video_tests",
-       "//video/adaptation:video_adaptation_tests",
-     ]
-diff --git a/test/BUILD.gn b/test/BUILD.gn
-index 0825d6f2b6..97bfc939f3 100644
---- a/test/BUILD.gn
-+++ b/test/BUILD.gn
-@@ -681,7 +681,8 @@ if (rtc_include_tests) {
-       }
-     }
- 
--    rtc_cc_test("fixed_fps_video_frame_writer_adapter_test") {
-+    rtc_library("fixed_fps_video_frame_writer_adapter_test") {
-+      testonly = true
-       sources = [ "testsupport/fixed_fps_video_frame_writer_adapter_test.cc" ]
-       deps = [
-         ":fixed_fps_video_frame_writer_adapter",
-@@ -698,572 +699,152 @@ if (rtc_include_tests) {
-       ]
-     }
- 
--    rtc_cc_test("call_config_utils_unittest") {
--      sources = [ "call_config_utils_unittest.cc" ]
-+    rtc_test("test_support_unittests") {
-       deps = [
-         ":call_config_utils",
--        ":test_support",
--        "../api:rtp_headers",
--        "../call:video_receive_stream_api",
--      ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--      }
--    }
--
--    rtc_cc_test("create_test_field_trials_unittest") {
--      sources = [ "create_test_field_trials_unittest.cc" ]
--      deps = [
-+        ":copy_to_file_audio_capturer_unittest",
-+        ":create_frame_generator_capturer",
-+        ":create_test_environment",
-         ":create_test_field_trials",
--        ":test_support",
--        "../api:field_trials",
--        "//third_party/abseil-cpp/absl/flags:flag",
--        "//third_party/abseil-cpp/absl/strings:string_view",
--      ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--      }
--    }
--
--    rtc_cc_test("direct_transport_unittest") {
--      sources = [ "direct_transport_unittest.cc" ]
--      deps = [
-         ":direct_transport",
--        ":test_support",
--        "../api:rtp_parameters",
--      ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--      }
--    }
--
--    rtc_cc_test("fake_vp8_encoder_unittest") {
--      sources = [ "fake_vp8_encoder_unittest.cc" ]
--      deps = [
-         ":fake_video_codecs",
--        ":test_support",
--        "../api:create_simulcast_test_fixture_api",
--        "../api:simulcast_test_fixture_api",
--        "../api/environment",
--        "../api/test/video:function_video_factory",
--        "../api/video_codecs:video_codecs_api",
--      ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--      }
--    }
--
--    rtc_cc_test("frame_generator_capturer_unittest") {
--      sources = [ "frame_generator_capturer_unittest.cc" ]
--      deps = [
--        ":create_frame_generator_capturer",
--        ":frame_generator_capturer",
--        ":test_support",
--        "../api/units:time_delta",
--        "../api/units:timestamp",
--        "../api/video:video_frame",
--        "time_controller",
--      ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--      }
--    }
--
--    rtc_cc_test("frame_generator_unittest") {
--      sources = [ "frame_generator_unittest.cc" ]
--      deps = [
-         ":fileutils",
--        ":test_support",
--        "../api:create_frame_generator",
--        "../api:frame_generator_api",
--        "../api:scoped_refptr",
--        "../api/video:video_frame",
--        "../rtc_base:checks",
--      ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--      }
--    }
--
--    rtc_cc_test("near_matcher_unittest") {
--      sources = [ "near_matcher_unittest.cc" ]
--      deps = [
-+        ":fileutils_unittests",
-+        ":fixed_fps_video_frame_writer_adapter_test",
-+        ":frame_generator_capturer",
-+        ":frame_generator_impl",
-         ":near_matcher",
--        ":test_support",
--        "../api/units:data_rate",
--        "../api/units:time_delta",
--        "../api/units:timestamp",
--      ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--      }
--    }
--
--    rtc_cc_test("rtp_file_reader_unittest") {
--      sources = [ "rtp_file_reader_unittest.cc" ]
--      deps = [
--        ":fileutils",
--        ":rtp_test_utils",
--        ":test_support",
--        "../modules/rtp_rtcp:rtp_rtcp_format",
--      ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--      }
--    }
--
--    rtc_cc_test("rtp_file_writer_unittest") {
--      sources = [ "rtp_file_writer_unittest.cc" ]
--      deps = [
--        ":fileutils",
-+        ":perf_test",
-+        ":rtc_expect_death",
-         ":rtp_test_utils",
--        ":test_support",
--      ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--      }
--    }
--
--    rtc_cc_test("run_loop_unittest") {
--      sources = [ "run_loop_unittest.cc" ]
--      deps = [
--        ":create_test_environment",
-         ":run_loop",
-         ":test_support",
--        "../api/environment",
--        "../api/task_queue",
--        "../api/units:time_delta",
--        "../api/units:timestamp",
--      ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--      }
--    }
--
--    rtc_cc_test("ivf_frame_reader_unittest") {
--      sources = [ "testsupport/ivf_frame_reader_unittest.cc" ]
--      deps = [
--        ":create_test_environment",
--        ":fileutils",
--        ":test_support",
-+        ":test_support_test_artifacts",
-+        ":video_codec_tester",
-+        ":video_frame_matcher",
-+        ":video_frame_writer",
-         ":video_test_common",
-         ":video_test_support",
-+        ":wait_until",
-+        ":y4m_frame_generator",
-         "../api:create_frame_generator",
-+        "../api:create_simulcast_test_fixture_api",
-+        "../api:create_time_controller",
-+        "../api:field_trials",
-         "../api:frame_generator_api",
-+        "../api:mock_video_codec_factory",
-+        "../api:mock_video_decoder",
-+        "../api:mock_video_encoder",
-+        "../api:rtc_error",
-+        "../api:rtc_error_matchers",
-+        "../api:rtp_headers",
-+        "../api:rtp_parameters",
-         "../api:scoped_refptr",
-+        "../api:simulcast_test_fixture_api",
-+        "../api:time_controller",
-         "../api/environment",
-+        "../api/environment:environment_factory",
-+        "../api/numerics",
-+        "../api/task_queue",
-+        "../api/task_queue:task_queue_test",
-+        "../api/test/video:function_video_factory",
-+        "../api/test/video:video_frame_writer",
-+        "../api/units:data_rate",
-+        "../api/units:data_size",
-+        "../api/units:frequency",
-         "../api/units:time_delta",
-+        "../api/units:timestamp",
-         "../api/video:encoded_image",
-         "../api/video:resolution",
-         "../api/video:video_bitrate_allocation",
-         "../api/video:video_frame",
-+        "../api/video:video_frame_type",
-+        "../api/video_codecs:builtin_video_decoder_factory",
-+        "../api/video_codecs:builtin_video_encoder_factory",
-+        "../api/video_codecs:scalability_mode",
-         "../api/video_codecs:video_codecs_api",
--        "../modules/rtp_rtcp:rtp_rtcp_format",
--        "../modules/video_coding:video_codec_interface",
--        "../modules/video_coding:video_coding_utility",
--        "../modules/video_coding:webrtc_h264",
--        "../modules/video_coding:webrtc_vp8",
--        "../modules/video_coding:webrtc_vp9",
--        "../modules/video_coding/codecs/av1:libaom_av1_encoder",
--        "../rtc_base:checks",
--        "../rtc_base:macromagic",
--        "../rtc_base:rtc_event",
--        "../rtc_base/synchronization:mutex",
--      ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--      }
--    }
--
--    rtc_cc_test("ivf_video_frame_generator_unittest") {
--      sources = [ "testsupport/ivf_video_frame_generator_unittest.cc" ]
--      deps = [
--        ":create_test_environment",
--        ":fileutils",
--        ":frame_generator_impl",
--        ":test_support",
--        ":video_test_common",
--        "../api:create_frame_generator",
--        "../api:frame_generator_api",
--        "../api:scoped_refptr",
--        "../api/environment",
--        "../api/units:time_delta",
--        "../api/video:encoded_image",
--        "../api/video:video_bitrate_allocation",
--        "../api/video:video_frame",
--        "../api/video_codecs:video_codecs_api",
-+        "../call:video_receive_stream_api",
-         "../common_video",
-+        "../media:codec",
-+        "../media:media_constants",
-         "../modules/rtp_rtcp:rtp_rtcp_format",
-+        "../modules/video_coding:simulcast_test_fixture_impl",
-         "../modules/video_coding:video_codec_interface",
-         "../modules/video_coding:video_coding_utility",
-         "../modules/video_coding:webrtc_h264",
-         "../modules/video_coding:webrtc_vp8",
-         "../modules/video_coding:webrtc_vp9",
-+        "../modules/video_coding/codecs/av1:libaom_av1_encoder",
-+        "../modules/video_coding/svc:scalability_mode_util",
-         "../rtc_base:checks",
-+        "../rtc_base:criticalsection",
-         "../rtc_base:macromagic",
-+        "../rtc_base:rtc_base_tests_utils",
-         "../rtc_base:rtc_event",
-+        "../rtc_base:threading",
-         "../rtc_base/synchronization:mutex",
--      ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--      }
--    }
--
--    rtc_cc_test("perf_test_unittest") {
--      sources = [ "testsupport/perf_test_unittest.cc" ]
--      deps = [
--        ":perf_test",
--        ":rtc_expect_death",
--        ":test_support",
--        "../api/numerics",
--        "../api/units:timestamp",
--        "//third_party/catapult/tracing/tracing:histogram",
--      ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--      }
--    }
--
--    rtc_cc_test("test_artifacts_unittest") {
--      sources = [ "testsupport/test_artifacts_unittest.cc" ]
--      deps = [
--        ":fileutils",
--        ":test_support",
--        ":test_support_test_artifacts",
-         "../rtc_base/system:file_wrapper",
-+        "../system_wrappers",
-+        "fuzzers:fuzz_data_helper_unittest",
-+        "jitter:jitter_unittests",
-+        "pc/e2e:e2e_unittests",
-+        "pc/e2e/analyzer/video:video_analyzer_unittests",
-+        "pc/e2e/analyzer/video/dvqa:dvqa_unittests",
-+        "peer_scenario/bwe_integration_tests",
-+        "peer_scenario/tests",
-+        "scenario:scenario_unittests",
-+        "time_controller",
-+        "time_controller:time_controller_unittests",
-         "//third_party/abseil-cpp/absl/flags:flag",
--      ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--      }
--    }
--
--    rtc_cc_test("video_frame_writer_unittest") {
--      sources = [ "testsupport/video_frame_writer_unittest.cc" ]
--      deps = [
--        ":fileutils",
--        ":test_support",
--        ":video_frame_writer",
--        ":video_test_support",
--        "../api:scoped_refptr",
--        "../api/test/video:video_frame_writer",
--        "../api/video:resolution",
--        "../api/video:video_frame",
-         "//third_party/abseil-cpp/absl/strings:string_view",
-+        "//third_party/libyuv",
-       ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--      }
--    }
--
--    rtc_cc_test("y4m_frame_generator_test") {
--      sources = [ "testsupport/y4m_frame_generator_test.cc" ]
--      deps = [
--        ":fileutils",
--        ":test_support",
--        ":y4m_frame_generator",
--        "../api:frame_generator_api",
--        "//third_party/abseil-cpp/absl/strings:string_view",
--      ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--      }
--    }
--
--    rtc_cc_test("y4m_frame_reader_unittest") {
--      sources = [ "testsupport/y4m_frame_reader_unittest.cc" ]
--      deps = [
--        ":fileutils",
--        ":test_support",
--        ":video_test_support",
--        "../api:scoped_refptr",
--        "../api/video:resolution",
--        "../api/video:video_frame",
--        "//third_party/abseil-cpp/absl/strings:string_view",
--      ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--      }
--    }
--
--    rtc_cc_test("y4m_frame_writer_unittest") {
--      sources = [ "testsupport/y4m_frame_writer_unittest.cc" ]
--      deps = [
--        ":fileutils",
--        ":test_support",
--        ":video_frame_writer",
--      ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--      }
--    }
--
--    rtc_cc_test("yuv_frame_reader_unittest") {
--      sources = [ "testsupport/yuv_frame_reader_unittest.cc" ]
--      deps = [
--        ":fileutils",
--        ":test_support",
--        ":video_test_support",
--        "../api:scoped_refptr",
--        "../api/video:resolution",
--        "../api/video:video_frame",
-+      sources = [
-+        "call_config_utils_unittest.cc",
-+        "create_test_field_trials_unittest.cc",
-+        "direct_transport_unittest.cc",
-+        "fake_vp8_encoder_unittest.cc",
-+        "frame_generator_capturer_unittest.cc",
-+        "frame_generator_unittest.cc",
-+        "near_matcher_unittest.cc",
-+        "rtp_file_reader_unittest.cc",
-+        "rtp_file_writer_unittest.cc",
-+        "run_loop_unittest.cc",
-+        "testsupport/ivf_frame_reader_unittest.cc",
-+        "testsupport/ivf_video_frame_generator_unittest.cc",
-+        "testsupport/perf_test_unittest.cc",
-+        "testsupport/test_artifacts_unittest.cc",
-+        "testsupport/video_frame_writer_unittest.cc",
-+        "testsupport/y4m_frame_generator_test.cc",
-+        "testsupport/y4m_frame_reader_unittest.cc",
-+        "testsupport/y4m_frame_writer_unittest.cc",
-+        "testsupport/yuv_frame_reader_unittest.cc",
-+        "testsupport/yuv_frame_writer_unittest.cc",
-+        "video_codec_tester_unittest.cc",
-+        "video_frame_matcher_unittest.cc",
-+        "wait_until_unittest.cc",
-       ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--      }
--    }
- 
--    rtc_cc_test("yuv_frame_writer_unittest") {
--      sources = [ "testsupport/yuv_frame_writer_unittest.cc" ]
--      deps = [
--        ":fileutils",
--        ":test_support",
--        ":video_frame_writer",
--      ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
-+      if (rtc_enable_protobuf) {
-+        sources += [ "testsupport/perf_test_histogram_writer_unittest.cc" ]
-+        deps += [ "//third_party/catapult/tracing/tracing:histogram" ]
-       }
--    }
- 
--    rtc_cc_test("video_codec_tester_unittest") {
--      sources = [ "video_codec_tester_unittest.cc" ]
--      deps = [
--        ":create_test_environment",
--        ":fileutils",
--        ":test_support",
--        ":video_codec_tester",
--        "../api:mock_video_codec_factory",
--        "../api:mock_video_decoder",
--        "../api:mock_video_encoder",
--        "../api:scoped_refptr",
--        "../api/environment",
--        "../api/units:data_rate",
--        "../api/units:data_size",
--        "../api/units:frequency",
--        "../api/units:time_delta",
--        "../api/video:encoded_image",
--        "../api/video:video_frame",
--        "../api/video:video_frame_type",
--        "../api/video_codecs:builtin_video_decoder_factory",
--        "../api/video_codecs:builtin_video_encoder_factory",
--        "../api/video_codecs:scalability_mode",
--        "../api/video_codecs:video_codecs_api",
--        "../modules/video_coding:video_codec_interface",
--        "../modules/video_coding/svc:scalability_mode_util",
--        "//third_party/libyuv",
--      ]
-       data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
-+      if (is_android) {
-+        shard_timeout = 900
-       }
--    }
- 
--    rtc_cc_test("video_frame_matcher_unittest") {
--      sources = [ "video_frame_matcher_unittest.cc" ]
--      deps = [
--        ":test_support",
--        ":video_frame_matcher",
--        "../api/video:video_frame",
--      ]
--      data = test_support_unittests_resources
-       if (is_ios) {
-         deps += [ ":test_support_unittests_bundle_data" ]
-       }
--      if (!is_android) {
--        deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--      }
--    }
- 
--    rtc_cc_test("wait_until_unittest") {
--      sources = [ "wait_until_unittest.cc" ]
--      deps = [
--        ":run_loop",
--        ":test_support",
--        ":wait_until",
--        "../api:create_time_controller",
--        "../api:rtc_error",
--        "../api:rtc_error_matchers",
--        "../api:time_controller",
--        "../api/task_queue",
--        "../api/units:time_delta",
--        "../api/units:timestamp",
--        "../rtc_base:rtc_base_tests_utils",
--        "../system_wrappers",
--      ]
--      data = test_support_unittests_resources
--      if (is_ios) {
--        deps += [ ":test_support_unittests_bundle_data" ]
--      }
-       if (!is_android) {
-+        # This is needed in order to avoid:
-+        # undefined symbol: webrtc::videocapturemodule::VideoCaptureImpl::Create
-         deps += [ "../modules/video_capture:video_capture_internal_impl" ]
-       }
-     }
--
--    if (rtc_enable_protobuf) {
--      rtc_cc_test("perf_test_histogram_writer_unittest") {
--        sources = [ "testsupport/perf_test_histogram_writer_unittest.cc" ]
--        deps = [
--          ":perf_test",
--          ":test_support",
--          "//third_party/catapult/tracing/tracing:histogram",
--        ]
--        data = test_support_unittests_resources
--        if (is_ios) {
--          deps += [ ":test_support_unittests_bundle_data" ]
--        }
--        if (!is_android) {
--          deps += [ "../modules/video_capture:video_capture_internal_impl" ]
--        }
--      }
--    }
--
--    rtc_cc_test("fileutils_unittests") {
--      sources = [ "testsupport/file_utils_unittest.cc" ]
--      deps = [
--        ":fileutils",
--        ":test_support",
--        "../rtc_base:checks",
--        "../rtc_base:crypto_random",
--        "//third_party/abseil-cpp/absl/strings:string_view",
--      ]
--    }
--
--    rtc_cc_test("copy_to_file_audio_capturer_unittest") {
--      sources = [ "testsupport/copy_to_file_audio_capturer_unittest.cc" ]
--      deps = [
--        ":copy_to_file_audio_capturer",
--        ":fileutils",
--        ":test_support",
--        "../modules/audio_device:test_audio_device_module",
--        "../rtc_base:buffer",
--      ]
--    }
--
--    rtc_test_suite("test_support_unittests") {
--      tests = [
--        ":call_config_utils_unittest",
--        ":create_test_field_trials_unittest",
--        ":direct_transport_unittest",
--        ":fake_vp8_encoder_unittest",
--        ":frame_generator_capturer_unittest",
--        ":frame_generator_unittest",
--        ":near_matcher_unittest",
--        ":rtp_file_reader_unittest",
--        ":rtp_file_writer_unittest",
--        ":run_loop_unittest",
--        ":ivf_frame_reader_unittest",
--        ":ivf_video_frame_generator_unittest",
--        ":perf_test_unittest",
--        ":test_artifacts_unittest",
--        ":video_frame_writer_unittest",
--        ":y4m_frame_generator_test",
--        ":y4m_frame_reader_unittest",
--        ":y4m_frame_writer_unittest",
--        ":yuv_frame_reader_unittest",
--        ":yuv_frame_writer_unittest",
--        ":video_codec_tester_unittest",
--        ":video_frame_matcher_unittest",
--        ":wait_until_unittest",
--        ":copy_to_file_audio_capturer_unittest",
--        ":fileutils_unittests",
--        ":fixed_fps_video_frame_writer_adapter_test",
--        "fuzzers:fuzz_data_helper_unittest",
--        "jitter:jitter_unittests",
--        "pc/e2e:e2e_unittests",
--        "pc/e2e/analyzer/video:video_analyzer_unittests",
--        "pc/e2e/analyzer/video/dvqa:dvqa_unittests",
--        "peer_scenario/bwe_integration_tests",
--        "peer_scenario/tests",
--        "scenario:scenario_unittests",
--        "time_controller:time_controller_unittests",
--      ]
--      if (rtc_enable_protobuf) {
--        tests += [ ":perf_test_histogram_writer_unittest" ]
--      }
--    }
-   }
+diff --git a/rtc_base/logging.h b/rtc_base/logging.h
+index 1efe379217..d7521b307c 100644
+--- a/rtc_base/logging.h
++++ b/rtc_base/logging.h
+@@ -56,7 +56,6 @@
+ #include <span>
+ #include <sstream>  // no-presubmit-check TODO(webrtc:8982)
+ #include <string>
+-#include <string_view>
+ #include <type_traits>
+ #include <utility>
+ #include <vector>
+@@ -315,8 +314,7 @@ enum class LogArgType : int8_t {
+   kLongDouble,
+   kCharP,
+   kStdString,
+-  kStdStringView,  // std::string_view, for downstream compatibility.
+-  kStringView,     // absl::string_view
++  kStringView,
+   kVoidP,
+   kLogMetadata,
+   kLogMetadataErr,
+@@ -383,18 +381,6 @@ inline Val<LogArgType::kStringView, const absl::string_view*> MakeVal(
+   return {&x};
  }
  
-@@ -1385,6 +966,19 @@ rtc_library("run_test_generic") {
-   deps = [ ":run_test_interface" ]
+-// `std::string_view` must be supported separately from `absl::string_view`
+-// because they are distinct types on certain toolchains (e.g., Android NDKs),
+-// and this separate overload prevents dangling references across implicit
+-// conversions.
+-template <typename T>
+-  requires(std::is_same_v<T, std::string_view> &&
+-           !std::is_same_v<T, absl::string_view>)
+-inline Val<LogArgType::kStdStringView, const std::string_view*> MakeVal(
+-    const T& x) {
+-  return {&x};
+-}
+-
+ inline Val<LogArgType::kVoidP, const void*> MakeVal(const void* x) {
+   return {x};
+ }
+@@ -426,9 +412,7 @@ inline Val<LogArgType::kLogMetadataTag, LogMetadataTag> MakeVal(
+ #endif
+ 
+ template <typename T,
+-          std::enable_if_t<absl::HasAbslStringify<T>::value &&
+-                           !std::is_same<std::decay_t<T>,
+-                                         std::string_view>::value>* = nullptr>
++          std::enable_if_t<absl::HasAbslStringify<T>::value>* = nullptr>
+ ToStringVal MakeVal(const T& x) {
+   return {absl::StrCat(x)};
+ }
+@@ -440,7 +424,6 @@ template <typename T,
+           typename T1 = std::decay_t<T>,
+           std::enable_if_t<std::is_class<T1>::value &&               //
+                            !std::is_same<T1, std::string>::value &&  //
+-                           !std::is_same<T1, std::string_view>::value &&
+                            !std::is_same<T1, LogMetadata>::value &&  //
+                            !absl::HasAbslStringify<T1>::value &&
+ #ifdef WEBRTC_ANDROID
+diff --git a/rtc_base/logging_unittest.cc b/rtc_base/logging_unittest.cc
+index 780659c2fb..d31d9e57a9 100644
+--- a/rtc_base/logging_unittest.cc
++++ b/rtc_base/logging_unittest.cc
+@@ -19,7 +19,6 @@
+ #include <cstdlib>
+ #include <memory>
+ #include <string>
+-#include <string_view>
+ #include <utility>
+ 
+ #include "absl/cleanup/cleanup.h"
+@@ -158,23 +157,6 @@ TEST(LogTest, SingleStream) {
+   EXPECT_EQ(sev, LogMessage::GetLogToStream(nullptr));
  }
  
-+rtc_library("fileutils_unittests") {
-+  testonly = true
-+  visibility = [ ":*" ]  # Only targets in this file can depend on this.
-+  sources = [ "testsupport/file_utils_unittest.cc" ]
-+  deps = [
-+    ":fileutils",
-+    ":test_support",
-+    "../rtc_base:checks",
-+    "../rtc_base:crypto_random",
-+    "//third_party/abseil-cpp/absl/strings:string_view",
-+  ]
-+}
-+
- rtc_library("direct_transport") {
-   visibility = [ "*" ]
-   testonly = true
-@@ -1690,6 +1284,18 @@ if (!build_with_chromium) {
-     ]
-   }
- 
-+  rtc_library("copy_to_file_audio_capturer_unittest") {
-+    testonly = true
-+    sources = [ "testsupport/copy_to_file_audio_capturer_unittest.cc" ]
-+    deps = [
-+      ":copy_to_file_audio_capturer",
-+      ":fileutils",
-+      ":test_support",
-+      "../modules/audio_device:test_audio_device_module",
-+      "../rtc_base:buffer",
-+    ]
-+  }
-+
-   rtc_library("test_flags") {
-     testonly = true
-     sources = [
-diff --git a/test/fuzzers/BUILD.gn b/test/fuzzers/BUILD.gn
-index 011242336d..f68cf156e6 100644
---- a/test/fuzzers/BUILD.gn
-+++ b/test/fuzzers/BUILD.gn
-@@ -41,7 +41,8 @@ rtc_library("fuzz_data_helper") {
-   ]
- }
- 
--rtc_cc_test("fuzz_data_helper_unittest") {
-+rtc_library("fuzz_data_helper_unittest") {
-+  testonly = true
-   sources = [ "fuzz_data_helper_unittest.cc" ]
-   deps = [
-     ":fuzz_data_helper",
-diff --git a/test/jitter/BUILD.gn b/test/jitter/BUILD.gn
-index 20cda40044..08d298b4b9 100644
---- a/test/jitter/BUILD.gn
-+++ b/test/jitter/BUILD.gn
-@@ -47,7 +47,8 @@ rtc_library("logging_delay_variation_calculator") {
- }
- 
- if (rtc_include_tests) {
--  rtc_cc_test("jitter_unittests") {
-+  rtc_library("jitter_unittests") {
-+    testonly = true
-     sources = [
-       "delay_variation_calculator_unittest.cc",
-       "logging_delay_variation_calculator_unittest.cc",
-diff --git a/test/pc/e2e/BUILD.gn b/test/pc/e2e/BUILD.gn
-index 0230409b51..d52cae5c5b 100644
---- a/test/pc/e2e/BUILD.gn
-+++ b/test/pc/e2e/BUILD.gn
-@@ -27,7 +27,9 @@ if (!build_with_chromium) {
-   }
- 
-   if (rtc_include_tests) {
--    rtc_cc_test("e2e_unittests") {
-+    group("e2e_unittests") {
-+      testonly = true
-+
-       deps = [
-         ":peer_connection_e2e_smoke_test",
-         ":peer_connection_quality_test_metric_names_test",
-diff --git a/test/pc/e2e/analyzer/video/BUILD.gn b/test/pc/e2e/analyzer/video/BUILD.gn
-index 5afc2b92ef..96b5faf913 100644
---- a/test/pc/e2e/analyzer/video/BUILD.gn
-+++ b/test/pc/e2e/analyzer/video/BUILD.gn
-@@ -35,7 +35,9 @@ if (!build_with_chromium) {
-   }
- 
-   if (rtc_include_tests) {
--    rtc_cc_test("video_analyzer_unittests") {
-+    group("video_analyzer_unittests") {
-+      testonly = true
-+
-       deps = [
-         ":analyzing_video_sink_test",
-         ":analyzing_video_sinks_helper_test",
-diff --git a/test/pc/e2e/analyzer/video/dvqa/BUILD.gn b/test/pc/e2e/analyzer/video/dvqa/BUILD.gn
-index 3a16a639d4..26d3ad9228 100644
---- a/test/pc/e2e/analyzer/video/dvqa/BUILD.gn
-+++ b/test/pc/e2e/analyzer/video/dvqa/BUILD.gn
-@@ -19,22 +19,12 @@ if (!build_with_chromium) {
-   }
- 
-   if (rtc_include_tests) {
--    rtc_cc_test("dvqa_unittests") {
--      sources = [
--        "frames_storage_test.cc",
--        "pausable_state_test.cc",
--      ]
-+    group("dvqa_unittests") {
-+      testonly = true
-+
-       deps = [
--        ":frames_storage",
--        ":pausable_state",
--        "../../../../..:test_support",
--        "../../../../../../api:scoped_refptr",
--        "../../../../../../api:time_controller",
--        "../../../../../../api/units:time_delta",
--        "../../../../../../api/units:timestamp",
--        "../../../../../../api/video:video_frame",
--        "../../../../../../system_wrappers",
--        "../../../../../time_controller",
-+        ":frames_storage_test",
-+        ":pausable_state_test",
-       ]
-     }
-   }
-@@ -46,7 +36,7 @@ if (!build_with_chromium) {
- rtc_library("pausable_state") {
-   visibility = [
-     ":dvqa",
--    ":dvqa_unittests",
-+    ":pausable_state_test",
-     "..:default_video_quality_analyzer_internal",
-   ]
- 
-@@ -67,7 +57,7 @@ rtc_library("pausable_state") {
- rtc_library("frames_storage") {
-   visibility = [
-     ":dvqa",
--    ":dvqa_unittests",
-+    ":frames_storage_test",
-     "..:default_video_quality_analyzer",
-   ]
- 
-@@ -85,3 +75,35 @@ rtc_library("frames_storage") {
-     "../../../../../../system_wrappers",
-   ]
- }
-+
-+if (rtc_include_tests) {
-+  rtc_library("pausable_state_test") {
-+    testonly = true
-+    sources = [ "pausable_state_test.cc" ]
-+    deps = [
-+      ":pausable_state",
-+      "../../../../..:test_support",
-+      "../../../../../../api:time_controller",
-+      "../../../../../../api/units:time_delta",
-+      "../../../../../../api/units:timestamp",
-+      "../../../../../../system_wrappers",
-+      "../../../../../time_controller",
-+    ]
-+  }
-+
-+  rtc_library("frames_storage_test") {
-+    testonly = true
-+    sources = [ "frames_storage_test.cc" ]
-+    deps = [
-+      ":frames_storage",
-+      "../../../../..:test_support",
-+      "../../../../../../api:scoped_refptr",
-+      "../../../../../../api:time_controller",
-+      "../../../../../../api/units:time_delta",
-+      "../../../../../../api/units:timestamp",
-+      "../../../../../../api/video:video_frame",
-+      "../../../../../../system_wrappers",
-+      "../../../../../time_controller",
-+    ]
-+  }
-+}
-diff --git a/test/peer_scenario/bwe_integration_tests/BUILD.gn b/test/peer_scenario/bwe_integration_tests/BUILD.gn
-index 240dbfb15c..8badef618c 100644
---- a/test/peer_scenario/bwe_integration_tests/BUILD.gn
-+++ b/test/peer_scenario/bwe_integration_tests/BUILD.gn
-@@ -9,7 +9,7 @@
- import("../../../webrtc.gni")
- 
- if (rtc_include_tests) {
--  rtc_cc_test("bwe_integration_tests") {
-+  rtc_library("bwe_integration_tests") {
-     testonly = true
-     sources = []
- 
-diff --git a/test/peer_scenario/tests/BUILD.gn b/test/peer_scenario/tests/BUILD.gn
-index 164738ef35..6eeedcd388 100644
---- a/test/peer_scenario/tests/BUILD.gn
-+++ b/test/peer_scenario/tests/BUILD.gn
-@@ -9,7 +9,7 @@
- import("../../../webrtc.gni")
- 
- if (rtc_include_tests) {
--  rtc_cc_test("tests") {
-+  rtc_library("tests") {
-     testonly = true
-     sources = [
-       "peer_scenario_quality_test.cc",
-diff --git a/test/scenario/BUILD.gn b/test/scenario/BUILD.gn
-index 3e30a4a464..ec99e60ba7 100644
---- a/test/scenario/BUILD.gn
-+++ b/test/scenario/BUILD.gn
-@@ -193,7 +193,7 @@ if (rtc_include_tests && !build_with_chromium) {
-       deps += [ ":scenario_resources_bundle_data" ]
-     }
-   }
--  rtc_cc_test("scenario_unittests") {
-+  rtc_library("scenario_unittests") {
-     testonly = true
-     sources = [
-       "performance_stats_unittest.cc",
-diff --git a/test/time_controller/BUILD.gn b/test/time_controller/BUILD.gn
-index 1186734748..808bdd5bb1 100644
---- a/test/time_controller/BUILD.gn
-+++ b/test/time_controller/BUILD.gn
-@@ -84,7 +84,7 @@ rtc_library("simulated_time_task_queue_controller") {
- }
- 
- if (rtc_include_tests) {
--  rtc_cc_test("time_controller_unittests") {
-+  rtc_library("time_controller_unittests") {
-     testonly = true
-     sources = [
-       "simulated_time_controller_unittest.cc",
+-TEST(LogTest, LogStdStringView) {
+-  std::string str;
+-  LogSinkImpl stream(&str);
+-  LogMessage::AddLogToStream(&stream, LS_INFO);
+-
+-  constexpr std::string_view kLongPath =
+-      "/a/very/long/path/string/that/exceeds/the/small/string/optimization/"
+-      "buffer/size/which/is/typically/around/fifteen/to/twenty/two/characters/"
+-      "and/this/is/definitely/longer/than/one/hundred/characters/to/trigger/"
+-      "any/potential/asan/errors";
+-  RTC_LOG(LS_INFO) << kLongPath;
+-
+-  EXPECT_THAT(str, HasSubstr(kLongPath));
+-
+-  LogMessage::RemoveLogToStream(&stream);
+-}
+-
+ TEST(LogTest, LogIfLogIfConditionIsTrue) {
+   std::string str;
+   LogSinkImpl stream(&str);

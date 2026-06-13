@@ -1,93 +1,155 @@
-From: Alexander Cooper <alcooper@chromium.org>
-Date: Thu, 14 May 2026 13:26:42 -0700
-Subject: (cherry-pick-branch-heads/7827) [M149] Guard RestoreTokenManager
- add/reads with Mutex
+From: Danil Chapovalov <danilchap@webrtc.org>
+Date: Tue, 5 May 2026 17:44:03 +0200
+Subject: (cherry-pick-branch-heads/7827) [M149] In SctpDataChannel use plain
+ bool as safety flag.
 
 Original change's description:
-> Guard RestoreTokenManager add/reads with Mutex
+> In SctpDataChannel use plain bool as safety flag.
 >
-> The RestoreTokenManager is a singleton who's adds and reads could be
-> accessed by multiple threads simultaneously. To prevent any potential
-> issues/collisions, ensure that such accesses happen behind a lock.
+> SctpDataChannel can be destroyed on various threads and thus safety flag
+> couldn't be properly invalidated in the destructor. Instead of relying
+> on it when posting async send, rely on reference counting of the full
+> object
 >
-> Bug: chromium:513049286
-> Change-Id: I44c1c7977a6d02e1ac3fbe00e6ffc7bc22e41e46
-> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/472480
-> Reviewed-by: Mark Foltz <mfoltz@chromium.org>
-> Auto-Submit: Alexander Cooper <alcooper@chromium.org>
-> Commit-Queue: Mark Foltz <mfoltz@chromium.org>
-> Cr-Commit-Position: refs/heads/main@{#47711}
+> Bug: chromium:504716948
+> Change-Id: I1246fecac26d0761be006b069658d072183546bf
+> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/469980
+> Reviewed-by: Tomas Gunnarsson <tommi@webrtc.org>
+> Commit-Queue: Danil Chapovalov <danilchap@webrtc.org>
+> Cr-Commit-Position: refs/heads/main@{#47635}
 
-(cherry picked from commit b9f0b184cb5a487fcb4910efaf4f84483ddba284)
+(cherry picked from commit 9b4ffb3281c02327968ed07389082fcb2dd77baa)
 
-Bug: chromium:514929759,chromium:513049286
-Change-Id: I44c1c7977a6d02e1ac3fbe00e6ffc7bc22e41e46
-Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/474080
-Commit-Queue: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
+Bug: chromium:514928086,chromium:504716948
+Change-Id: I1246fecac26d0761be006b069658d072183546bf
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/474801
 Auto-Submit: Chrome Cherry Picker <chrome-cherry-picker@chops-service-accounts.iam.gserviceaccount.com>
-Bot-Commit: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
-Cr-Commit-Position: refs/branch-heads/7827@{#2}
+Commit-Queue: Tomas Gunnarsson <tommi@webrtc.org>
+Reviewed-by: Tomas Gunnarsson <tommi@webrtc.org>
+Reviewed-by: Danil Chapovalov <danilchap@webrtc.org>
+Cr-Commit-Position: refs/branch-heads/7827@{#3}
 Cr-Branched-From: d606bc991592fbf4dcbe85e9d05db5e501a5ad42-refs/heads/main@{#47595}
 ---
- .../linux/wayland/restore_token_manager.cc                | 4 ++++
- .../desktop_capture/linux/wayland/restore_token_manager.h | 8 ++++++--
- 2 files changed, 10 insertions(+), 2 deletions(-)
+ pc/sctp_data_channel.cc          | 29 +++++++++++++++--------------
+ pc/sctp_data_channel.h           |  5 ++---
+ pc/sctp_data_channel_unittest.cc | 16 ++++++++++++++++
+ 3 files changed, 33 insertions(+), 17 deletions(-)
 
-diff --git a/modules/desktop_capture/linux/wayland/restore_token_manager.cc b/modules/desktop_capture/linux/wayland/restore_token_manager.cc
-index ff843c2047..101a5af4b3 100644
---- a/modules/desktop_capture/linux/wayland/restore_token_manager.cc
-+++ b/modules/desktop_capture/linux/wayland/restore_token_manager.cc
-@@ -13,6 +13,7 @@
- #include <string>
+diff --git a/pc/sctp_data_channel.cc b/pc/sctp_data_channel.cc
+index a7338aa4d4..6d7305aadb 100644
+--- a/pc/sctp_data_channel.cc
++++ b/pc/sctp_data_channel.cc
+@@ -344,16 +344,14 @@ SctpDataChannel::SctpDataChannel(
+       negotiated_(config.negotiated),
+       ordered_(config.ordered),
+       observer_(nullptr),
+-      controller_(std::move(controller)) {
++      controller_(std::move(controller)),
++      connected_to_transport_(connected_to_transport) {
+   RTC_DCHECK_RUN_ON(network_thread_);
+   // Since we constructed on the network thread we can't (yet) check the
+   // `controller_` pointer since doing so will trigger a thread check.
+   RTC_UNUSED(network_thread_);
+   RTC_DCHECK(config.IsValid());
  
- #include "modules/desktop_capture/desktop_capturer.h"
-+#include "rtc_base/synchronization/mutex.h"
- 
- namespace webrtc {
- 
-@@ -24,15 +25,18 @@ RestoreTokenManager& RestoreTokenManager::GetInstance() {
- 
- void RestoreTokenManager::AddToken(DesktopCapturer::SourceId id,
-                                    const std::string& token) {
-+  MutexLock lock(&mutex_);
-   restore_tokens_.insert({id, token});
+-  if (connected_to_transport)
+-    network_safety_->SetAlive();
+-
+   switch (config.open_handshake_role) {
+     case InternalDataChannelInit::kNone:  // pre-negotiated
+       handshake_state_ = kHandshakeReady;
+@@ -611,14 +609,17 @@ void SctpDataChannel::SendAsync(
+   // thread. So we always post to the network thread (even if the current thread
+   // might be the network thread - in theory a call could even come from within
+   // the `on_complete` callback).
+-  network_thread_->PostTask(SafeTask(
+-      network_safety_, [this, buffer = std::move(buffer),
+-                        on_complete = std::move(on_complete)]() mutable {
+-        RTC_DCHECK_RUN_ON(network_thread_);
+-        RTCError err = SendImpl(std::move(buffer));
+-        if (on_complete)
+-          std::move(on_complete)(err);
+-      }));
++  scoped_refptr<SctpDataChannel> me(this);
++  network_thread_->PostTask([me = std::move(me), buffer = std::move(buffer),
++                             on_complete = std::move(on_complete)]() mutable {
++    RTC_DCHECK_RUN_ON(me->network_thread_);
++    if (!me->connected_to_transport()) {
++      return;
++    }
++    RTCError err = me->SendImpl(std::move(buffer));
++    if (on_complete)
++      std::move(on_complete)(err);
++  });
  }
  
- std::string RestoreTokenManager::GetToken(DesktopCapturer::SourceId id) {
-+  MutexLock lock(&mutex_);
-   const std::string token = restore_tokens_[id];
-   return token;
+ void SctpDataChannel::SetSctpSid_n(StreamId sid) {
+@@ -661,7 +662,7 @@ void SctpDataChannel::OnClosingProcedureComplete() {
+ 
+ void SctpDataChannel::OnTransportChannelCreated() {
+   RTC_DCHECK_RUN_ON(network_thread_);
+-  network_safety_->SetAlive();
++  connected_to_transport_ = true;
  }
  
- DesktopCapturer::SourceId RestoreTokenManager::GetUnusedId() {
-+  MutexLock lock(&mutex_);
-   return ++last_source_id_;
- }
+ void SctpDataChannel::OnTransportChannelClosed(RTCError error) {
+@@ -782,7 +783,7 @@ void SctpDataChannel::CloseAbruptlyWithError(RTCError error) {
+     return;
+   }
  
-diff --git a/modules/desktop_capture/linux/wayland/restore_token_manager.h b/modules/desktop_capture/linux/wayland/restore_token_manager.h
-index 06d3071565..120a4b2fe8 100644
---- a/modules/desktop_capture/linux/wayland/restore_token_manager.h
-+++ b/modules/desktop_capture/linux/wayland/restore_token_manager.h
-@@ -15,6 +15,8 @@
- #include <unordered_map>
+-  network_safety_->SetNotAlive();
++  connected_to_transport_ = false;
  
- #include "modules/desktop_capture/desktop_capturer.h"
-+#include "rtc_base/synchronization/mutex.h"
-+#include "rtc_base/thread_annotations.h"
+   // Still go to "kClosing" before "kClosed", since observers may be expecting
+   // that.
+diff --git a/pc/sctp_data_channel.h b/pc/sctp_data_channel.h
+index 2ac0a3e29a..693661b0ba 100644
+--- a/pc/sctp_data_channel.h
++++ b/pc/sctp_data_channel.h
+@@ -273,7 +273,7 @@ class SctpDataChannel : public DataChannelInterface {
+       RTC_RUN_ON(network_thread_);
  
- namespace webrtc {
+   bool connected_to_transport() const RTC_RUN_ON(network_thread_) {
+-    return network_safety_->alive();
++    return connected_to_transport_;
+   }
+   void MaybeSendOnBufferedAmountChanged() RTC_RUN_ON(network_thread_);
  
-@@ -35,9 +37,11 @@ class RestoreTokenManager {
-   RestoreTokenManager() = default;
-   ~RestoreTokenManager() = default;
- 
--  DesktopCapturer::SourceId last_source_id_ = 0;
-+  Mutex mutex_;
-+  DesktopCapturer::SourceId last_source_id_ RTC_GUARDED_BY(mutex_) = 0;
- 
--  std::unordered_map<DesktopCapturer::SourceId, std::string> restore_tokens_;
-+  std::unordered_map<DesktopCapturer::SourceId, std::string> restore_tokens_
-+      RTC_GUARDED_BY(mutex_);
+@@ -306,9 +306,8 @@ class SctpDataChannel : public DataChannelInterface {
+       kHandshakeInit;
+   // Did we already start the graceful SCTP closing procedure?
+   bool started_closing_procedure_ RTC_GUARDED_BY(network_thread_) = false;
++  bool connected_to_transport_ RTC_GUARDED_BY(network_thread_) = false;
+   PacketQueue queued_received_data_ RTC_GUARDED_BY(network_thread_);
+-  scoped_refptr<PendingTaskSafetyFlag> network_safety_ =
+-      PendingTaskSafetyFlag::CreateDetachedInactive();
  };
  
  }  // namespace webrtc
+diff --git a/pc/sctp_data_channel_unittest.cc b/pc/sctp_data_channel_unittest.cc
+index 06b4a8851f..c4e30ee0b6 100644
+--- a/pc/sctp_data_channel_unittest.cc
++++ b/pc/sctp_data_channel_unittest.cc
+@@ -613,6 +613,22 @@ TEST_F(SctpDataChannelTest, TransportDestroyedWhileDataBuffered) {
+   EXPECT_EQ(RTCErrorDetailType::SCTP_FAILURE, channel_->error().error_detail());
+ }
+ 
++TEST_F(SctpDataChannelTest, ChannelDeletedWhileDataBuffered) {
++  AddObserver();
++  SetChannelReady();
++
++  CopyOnWriteBuffer buffer(100 * 1024);
++  memset(buffer.MutableData(), 0, buffer.size());
++  DataBuffer packet(buffer, true);
++
++  // Send a very large packet, forcing the message to become buffered.
++  channel_->SendAsync(packet, nullptr);
++
++  // Delete the channel, expect no crashes.
++  inner_channel_ = nullptr;
++  channel_ = nullptr;
++}
++
+ TEST_F(SctpDataChannelTest, TransportGotErrorCode) {
+   SetChannelReady();
+ 
