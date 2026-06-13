@@ -519,12 +519,12 @@ fix-stacks:
         revision: 1fb1bcc8cb4dd65fbe342853954651563a0a88e7
 
 7zz:
-    description: 7-zip 26.00 source code
+    description: 7-zip 26.01 source code
     fetch:
         type: static-url
-        url: https://www.7-zip.org/a/7z2600-src.tar.xz
-        sha256: 3e596155744af055a77fc433c703d54e3ea9212246287b5b1436a6beac060f16
-        size: 1538112
+        url: https://github.com/ip7z/7zip/releases/download/26.01/7z2601-src.tar.xz
+        sha256: b2389e0e930b2f9a348cf0fe7d9870a46482a8ec044ee0bdf42e2136db31c3d6
+        size: 1543032
         artifact-name: 7z-src.tar.zst
         add-prefix: 7zz/
 
