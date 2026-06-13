@@ -602,7 +602,7 @@ index 886f787831..6cc10b9d6e 100644
  
  if (rtc_build_libsrtp) {
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 7ae96d65f4..07630c1623 100644
+index 3328567b85..98b2b1605a 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
 @@ -9,8 +9,8 @@
@@ -616,7 +616,7 @@ index 7ae96d65f4..07630c1623 100644
  }
  
  rtc_source_set("protobuf_utils") {
-@@ -1925,8 +1925,8 @@ if (!rtc_rusty_base64) {
+@@ -1932,8 +1932,8 @@ if (!rtc_rusty_base64) {
      ]
    }
  } else {
@@ -688,7 +688,7 @@ index 9da8b4ef4c..9a89320eb2 100644
      output_extension = "so"
    }
 diff --git a/sdk/BUILD.gn b/sdk/BUILD.gn
-index a4ba1541de..d6e6bba112 100644
+index f8f58061da..b1fd395ffe 100644
 --- a/sdk/BUILD.gn
 +++ b/sdk/BUILD.gn
 @@ -9,12 +9,12 @@
@@ -717,7 +717,7 @@ index a4ba1541de..d6e6bba112 100644
      }
    }
  
-@@ -1286,7 +1286,7 @@ if (is_ios || is_mac) {
+@@ -1299,7 +1299,7 @@ if (is_ios || is_mac) {
            }
  
            public_deps = [

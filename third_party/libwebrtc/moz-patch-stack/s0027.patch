@@ -1019,7 +1019,7 @@ index 5a6fab0b74..b8d65383e3 100644
          "/config/external/nspr",
          "/nsprpub/lib/ds",
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 8a47c4b667..d08325dfbd 100644
+index 978cf2d5d8..0f3d0f6c96 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
 @@ -363,6 +363,7 @@ rtc_library("sample_counter") {
@@ -1166,7 +1166,7 @@ index 8a47c4b667..d08325dfbd 100644
  
  rtc_source_set("ssl_header") {
    visibility = [ "*" ]
-@@ -1589,6 +1611,7 @@ rtc_library("crypto_random") {
+@@ -1596,6 +1618,7 @@ rtc_library("crypto_random") {
  }
  
  rtc_library("ssl") {
@@ -1174,7 +1174,7 @@ index 8a47c4b667..d08325dfbd 100644
    visibility = [ "*" ]
    sources = [
      "openssl_key_pair.cc",
-@@ -1661,6 +1684,7 @@ rtc_library("ssl") {
+@@ -1668,6 +1691,7 @@ rtc_library("ssl") {
      deps += [ ":win32" ]
    }
  }
@@ -1182,7 +1182,7 @@ index 8a47c4b667..d08325dfbd 100644
  
  rtc_library("ssl_adapter") {
    visibility = [ "*" ]
-@@ -2421,7 +2445,7 @@ if (rtc_include_tests) {
+@@ -2428,7 +2452,7 @@ if (rtc_include_tests) {
    }
  }
  
