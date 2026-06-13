@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.332
- * pdfjsBuild = 2466a76ba
+ * pdfjsVersion = 6.0.346
+ * pdfjsBuild = e75a7cfd6
  */
 
 ;// ./web/ui_utils.js
@@ -981,7 +981,7 @@ const {
 } = globalThis.pdfjsLib;
 
 ;// ./web/internal_evt.js
-const INTERNAL_EVT = "54dbd631-958c-4a33-bbab-3f812f99da6f";
+const INTERNAL_EVT = "ba480cbc-beb0-4b9d-9c8e-d0795f27ee33";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -6191,6 +6191,9 @@ class AnnotationLayerBuilder {
     this.#eventAC?.abort();
     this.#eventAC = null;
   }
+  refreshCanvases() {
+    this.annotationLayer?.refreshCanvases();
+  }
   hide() {
     if (!this.div) {
       return;
@@ -6875,6 +6878,7 @@ class PDFPageDetailView extends BasePDFPageView {
       this.canvas?.remove();
       this.canvas = prevCanvas;
     }, () => {
+      this.pageView._refreshAnnotationLayer();
       this.dispatchPageRendered(false, true);
     });
     div.setAttribute("data-loaded", true);
@@ -7966,6 +7970,11 @@ class PDFPageView extends BasePDFPageView {
       this.#injectLinkAnnotations(textLayerPromise, annotationLayer, textLayer);
     }
   }
+  _refreshAnnotationLayer() {
+    if (this._annotationCanvasMap?.size) {
+      this.annotationLayer?.refreshCanvases();
+    }
+  }
   async #renderAnnotationEditorLayer() {
     let error = null;
     try {
@@ -8660,7 +8669,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.0.332";
+    const viewerVersion = "6.0.346";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
