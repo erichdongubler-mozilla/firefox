@@ -1117,6 +1117,29 @@
   value: ""
   mirror: never
 
+# Minimum number of unwritten changes before the disk cache index is written
+# back to disk. Lowering it (e.g. to 1) forces the index to be persisted
+# eagerly; intended for tests.
+- name: browser.cache.disk.index.min_unwritten_changes
+  type: RelaxedAtomicUint32
+  value: 300
+  mirror: always
+
+# Minimum delay in milliseconds between two disk cache index writes. Lowering it
+# (e.g. to 0) forces the index to be persisted eagerly; intended for tests.
+- name: browser.cache.disk.index.min_dump_interval_ms
+  type: RelaxedAtomicUint32
+  value: 20000
+  mirror: always
+
+# Delay in milliseconds after startup before the disk cache index build/update
+# process is started. Lowering it (e.g. to 0) makes the index reach the ready
+# state sooner; intended for tests.
+- name: browser.cache.disk.index.update_start_delay_ms
+  type: RelaxedAtomicUint32
+  value: 50000
+  mirror: always
+
 - name: browser.cache.memory.enable
   type: RelaxedAtomicBool
   value: true
