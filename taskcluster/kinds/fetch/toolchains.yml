@@ -322,7 +322,7 @@ gn:
     fetch:
         type: git
         repo: https://gn.googlesource.com/gn
-        revision: f98b6d7275c2e823e0983fa7f874facfe6980778
+        revision: 6f8c0328ee29c76e3566a216f2f0cf2992daa6ed
 
 grcov:
     description: grcov source code
