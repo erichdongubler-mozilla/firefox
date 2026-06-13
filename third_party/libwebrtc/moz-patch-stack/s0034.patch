@@ -19,7 +19,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/58f47eacaf10d12e2
  10 files changed, 24 insertions(+), 24 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index cb1f8b3de5..dd9d9e0b04 100644
+index 9a5c686eda..7128288606 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -435,12 +435,12 @@ config("common_config") {
@@ -254,7 +254,7 @@ index a5d4544dd8..1db919f987 100644
  config("x11_config") {
    if (rtc_use_x11_extensions) {
 diff --git a/webrtc.gni b/webrtc.gni
-index 11073facef..37eb06b356 100644
+index f3165747ed..9970316c51 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -155,7 +155,7 @@ declare_args() {

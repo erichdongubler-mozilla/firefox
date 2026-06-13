@@ -16,7 +16,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/4527c41ef71d7683c
  4 files changed, 24 insertions(+), 12 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index 2c2279af50..3df305f0d2 100644
+index 6e14bae787..8665225531 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -514,6 +514,9 @@ if (!rtc_build_ssl) {
@@ -148,7 +148,7 @@ index 07630c1623..7cd3acce9e 100644
  rtc_library("ssl") {
  if (!build_with_mozilla) {
 diff --git a/webrtc.gni b/webrtc.gni
-index eb963f146f..366755e02f 100644
+index 1ed18758e8..70c9695b07 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -112,7 +112,7 @@ declare_args() {
