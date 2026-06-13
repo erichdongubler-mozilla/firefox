@@ -1,55 +1,2292 @@
-From: Johannes Kron <kron@webrtc.org>
-Date: Fri, 15 May 2026 10:21:29 +0000
-Subject: (cherry-pick-branch-heads/7827) [M149] Validate CGImage dimensions in
- MouseCursorMonitorMac
+From: Nicolas Grunbaum <ngrunbaum@mozilla.com>
+Date: Fri, 12 Jun 2026 18:27:12 -0700
+Subject: (tmp-cherry-pick) Revert "Add rust versions of Timestamp and
+ TimeDelta" (4ed56ee3a7)
+
+This reverts commit cc81bf903c1768722cae0408ffe1328be129cfc7.
+
+Reason for revert: Breaks Chromium iOS FYI
 
 Original change's description:
-> Validate CGImage dimensions in MouseCursorMonitorMac
+> Add rust versions of Timestamp and TimeDelta
 >
-> This adds missing height checks alongside the existing width checks
-> when processing and scaling the cursor image.
+> This exercises C++ -> Rust binding and adds unit test support to the CQ.
 >
-> Fixed: chromium:513268100
-> Change-Id: Ida1e58334a9d3bda429819e4af51b33afbd0a95d
-> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/472700
-> Reviewed-by: Alexander Cooper <alcooper@chromium.org>
-> Auto-Submit: Johannes Kron <kron@webrtc.org>
-> Commit-Queue: Alexander Cooper <alcooper@chromium.org>
-> Cr-Commit-Position: refs/heads/main@{#47715}
+> This also implement webrtc::import! rust macro. This is backed by the
+> chromium::import! macro but allows for path remapping based on the
+> webrtc_root variable.
+>
+> Rust tests have been disabled on Fuchsia and iOS because their test
+> runners don't work with Rust yet. Android does not support rust tests at
+> all.
+>
+> Bug: webrtc:416446214
+> Change-Id: I3c65d3f8526f1a498829ca8f4f2d8a086a6a6964
+> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/452580
+> Commit-Queue: Evan Shrubsole <eshr@webrtc.org>
+> Reviewed-by: Mirko Bonadei <mbonadei@webrtc.org>
+> Cr-Commit-Position: refs/heads/main@{#47630}
 
-(cherry picked from commit b343cd4e280980f26b4feb80684f57d5b4324e12)
-
-Bug: chromium:514928856,chromium:513268100
-Change-Id: Ida1e58334a9d3bda429819e4af51b33afbd0a95d
-Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/473981
-Auto-Submit: Chrome Cherry Picker <chrome-cherry-picker@chops-service-accounts.iam.gserviceaccount.com>
+Bug: webrtc:416446214
+No-Presubmit: true
+No-Tree-Checks: true
+No-Try: true
+Change-Id: I7ca9b9fca200bfcc00c81e57326198147dd93072
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/470300
 Bot-Commit: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
-Commit-Queue: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
-Cr-Commit-Position: refs/branch-heads/7827@{#1}
-Cr-Branched-From: d606bc991592fbf4dcbe85e9d05db5e501a5ad42-refs/heads/main@{#47595}
+Reviewed-by: Mirko Bonadei <mbonadei@webrtc.org>
+Commit-Queue: Evan Shrubsole <eshr@webrtc.org>
+Cr-Commit-Position: refs/heads/main@{#47636}
 ---
- modules/desktop_capture/mouse_cursor_monitor_mac.mm | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ BUILD.gn                                      |  19 -
+ api/DEPS                                      |   1 -
+ api/units/BUILD.gn                            | 104 -----
+ api/units/demo_unit_interop.rs                |  37 --
+ api/units/time_delta.rs                       | 161 -------
+ api/units/timestamp.rs                        | 114 -----
+ api/units/units_ffi.rs                        |  23 -
+ api/units/units_rs_bridge_unittest.cc         |  29 --
+ infra/specs/client.webrtc.json                | 308 --------------
+ infra/specs/gn_isolate_map.pyl                |   4 -
+ infra/specs/test_suites.pyl                   |   8 +-
+ infra/specs/tryserver.webrtc.json             | 399 ------------------
+ rust/webrtc_import/BUILD.gn                   |  88 ----
+ rust/webrtc_import/import.rs                  | 102 -----
+ rust/webrtc_import/lib.rs                     |   9 -
+ rust/webrtc_import/path_utils.rs              |  96 -----
+ rust/webrtc_import/test_subdir/BUILD.gn       |  41 --
+ .../test_subdir/webrtc_import_prefix_lib.rs   |  11 -
+ .../test_subdir/webrtc_import_prefix_test.rs  |  17 -
+ rust/webrtc_import/webrtc_import_test.rs      |  15 -
+ rust/webrtc_import/webrtc_import_test_lib.rs  |  11 -
+ tools_webrtc/mb/mb.py                         |   5 +-
+ webrtc.gni                                    | 116 -----
+ 23 files changed, 3 insertions(+), 1715 deletions(-)
+ delete mode 100644 api/units/demo_unit_interop.rs
+ delete mode 100644 api/units/time_delta.rs
+ delete mode 100644 api/units/timestamp.rs
+ delete mode 100644 api/units/units_ffi.rs
+ delete mode 100644 api/units/units_rs_bridge_unittest.cc
+ delete mode 100644 rust/webrtc_import/BUILD.gn
+ delete mode 100644 rust/webrtc_import/import.rs
+ delete mode 100644 rust/webrtc_import/lib.rs
+ delete mode 100644 rust/webrtc_import/path_utils.rs
+ delete mode 100644 rust/webrtc_import/test_subdir/BUILD.gn
+ delete mode 100644 rust/webrtc_import/test_subdir/webrtc_import_prefix_lib.rs
+ delete mode 100644 rust/webrtc_import/test_subdir/webrtc_import_prefix_test.rs
+ delete mode 100644 rust/webrtc_import/webrtc_import_test.rs
+ delete mode 100644 rust/webrtc_import/webrtc_import_test_lib.rs
 
-diff --git a/modules/desktop_capture/mouse_cursor_monitor_mac.mm b/modules/desktop_capture/mouse_cursor_monitor_mac.mm
-index 248a782762..3e6a6cb3c6 100644
---- a/modules/desktop_capture/mouse_cursor_monitor_mac.mm
-+++ b/modules/desktop_capture/mouse_cursor_monitor_mac.mm
-@@ -154,7 +154,8 @@ void MouseCursorMonitorMac::CaptureImage(float scale) {
-   // crbug.com/632995.) After 10.12, OSX may report 2X cursor on non-Retina
-   // screen. (See crbug.com/671436.) So scaling the cursor if needed.
-   CGImageRef scaled_cg_image = nil;
--  if (CGImageGetWidth(cg_image) != static_cast<size_t>(size.width())) {
-+  if (CGImageGetWidth(cg_image) != static_cast<size_t>(size.width()) ||
-+      CGImageGetHeight(cg_image) != static_cast<size_t>(size.height())) {
-     scaled_cg_image =
-         CreateScaledCGImage(cg_image, size.width(), size.height());
-     if (scaled_cg_image != nil) {
-@@ -163,6 +164,7 @@ void MouseCursorMonitorMac::CaptureImage(float scale) {
+diff --git a/BUILD.gn b/BUILD.gn
+index 1f8c92da48..b6d3d04654 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -23,13 +23,7 @@
+ 
+ import("//build/config/linux/pkg_config.gni")
+ import("//build/config/sanitizers/sanitizers.gni")
+-import("//testing/test.gni")
+ import("webrtc.gni")
+-
+-if (rtc_rust) {
+-  import("//build/rust/rust_unit_tests_group.gni")
+-}
+-
+ if (rtc_enable_protobuf) {
+   import("//third_party/protobuf/proto_library.gni")
+ }
+@@ -100,9 +94,6 @@ if (!build_with_chromium) {
+         # see bugs.webrtc.org/11027#c5.
+         deps += [ ":webrtc_lib_link_test" ]
+       }
+-      if (rtc_rust) {
+-        deps += [ ":rust_tests" ]
+-      }
+       if (is_ios) {
+         deps += [
+           "examples:apprtcmobile_tests",
+@@ -779,16 +770,6 @@ if (rtc_include_tests && !build_with_chromium) {
+       "audio/voip/test:voip_core_unittests",
+     ]
    }
-   if (CGImageGetBitsPerPixel(cg_image) != DesktopFrame::kBytesPerPixel * 8 ||
-       CGImageGetWidth(cg_image) != static_cast<size_t>(size.width()) ||
-+      CGImageGetHeight(cg_image) != static_cast<size_t>(size.height()) ||
-       CGImageGetBitsPerComponent(cg_image) != 8) {
-     if (scaled_cg_image != nil) CGImageRelease(scaled_cg_image);
-     return;
+-
+-  if (rtc_rust) {
+-    rtc_rust_test_suite("rust_tests") {
+-      testonly = true
+-      deps = [
+-        "api/units:units_rust_unit_tests",
+-        "rust/webrtc_import:tests",
+-      ]
+-    }
+-  }
+ }
+ 
+ # Build target for standalone dcsctp
+diff --git a/api/DEPS b/api/DEPS
+index 1d58c6ebb3..90b81d2dee 100644
+--- a/api/DEPS
++++ b/api/DEPS
+@@ -27,7 +27,6 @@ include_rules = [
+   "-resources",
+   "-rtc_base",
+   "-rtc_tools",
+-  "-rust",
+   "-sdk",
+   "-stats",
+   "-style-guide",
+diff --git a/api/units/BUILD.gn b/api/units/BUILD.gn
+index f48cd0bfe6..681884487f 100644
+--- a/api/units/BUILD.gn
++++ b/api/units/BUILD.gn
+@@ -107,109 +107,5 @@ if (rtc_include_tests) {
+       "../../test:test_support",
+       "//third_party/abseil-cpp/absl/strings",
+     ]
+-    if (rtc_rust) {
+-      deps += [ ":units_rs_bridge_unittests" ]
+-    }
+-  }
+-}
+-
+-if (rtc_rust) {
+-  rtc_rust_cxx_bridge("units_ffi") {
+-    source = "units_ffi.rs"
+-    deps = [
+-      ":time_delta",
+-      ":time_delta_rs",
+-      ":timestamp",
+-      ":timestamp_rs",
+-      "//build/rust:cxx_rustdeps",
+-    ]
+-  }
+-
+-  rtc_rust_library("time_delta_rs") {
+-    allow_unsafe = true
+-    crate_root = "time_delta.rs"
+-    sources = [ "time_delta.rs" ]
+-    deps = [
+-      ":time_delta",
+-      "//build/rust:cxx_rustdeps",
+-    ]
+-  }
+-
+-  rtc_rust_library("timestamp_rs") {
+-    allow_unsafe = true
+-    crate_root = "timestamp.rs"
+-    sources = [ "timestamp.rs" ]
+-    deps = [
+-      ":time_delta_rs",
+-      ":timestamp",
+-      "//build/rust:cxx_rustdeps",
+-    ]
+-  }
+-
+-  if (rtc_include_tests) {
+-    rtc_rust_unittest("time_delta_rs_unittests") {
+-      allow_unsafe = true
+-      crate_root = "time_delta.rs"
+-      sources = [ "time_delta.rs" ]
+-      deps = [
+-        ":time_delta",
+-        "//build/rust:cxx_cppdeps",
+-        "//build/rust:cxx_rustdeps",
+-      ]
+-    }
+-
+-    rtc_rust_unittest("timestamp_rs_unittests") {
+-      allow_unsafe = true
+-      crate_root = "timestamp.rs"
+-      sources = [ "timestamp.rs" ]
+-      deps = [
+-        ":time_delta_rs",
+-        ":timestamp",
+-        "//build/rust:cxx_cppdeps",
+-        "//build/rust:cxx_rustdeps",
+-      ]
+-    }
+-
+-    rtc_rust_test_suite("units_rust_unit_tests") {
+-      deps = [
+-        ":time_delta_rs_unittests",
+-        ":timestamp_rs_unittests",
+-      ]
+-    }
+-
+-    rtc_rust_library("demo_unit_interop_impl") {
+-      allow_unsafe = true
+-      crate_root = "demo_unit_interop.rs"
+-      sources = [ "demo_unit_interop.rs" ]
+-      deps = [
+-        ":time_delta_rs",
+-        ":timestamp_rs",
+-        "//build/rust:cxx_rustdeps",
+-      ]
+-    }
+-
+-    rtc_rust_cxx_bridge("demo_unit_interop") {
+-      allow_unsafe = true
+-      source = "demo_unit_interop.rs"
+-      deps = [
+-        ":demo_unit_interop_impl",
+-        ":time_delta",
+-        ":time_delta_rs",
+-        ":timestamp",
+-        ":timestamp_rs",
+-        "//third_party/abseil-cpp/absl/strings",
+-      ]
+-    }
+-
+-    rtc_library("units_rs_bridge_unittests") {
+-      testonly = true
+-      sources = [ "units_rs_bridge_unittest.cc" ]
+-      deps = [
+-        ":demo_unit_interop",
+-        ":time_delta",
+-        ":timestamp",
+-        "../../test:test_support",
+-      ]
+-    }
+   }
+ }
+diff --git a/api/units/demo_unit_interop.rs b/api/units/demo_unit_interop.rs
+deleted file mode 100644
+index c9a730ddc6..0000000000
+--- a/api/units/demo_unit_interop.rs
++++ /dev/null
+@@ -1,37 +0,0 @@
+-// Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+-//
+-// Use of this source code is governed by a BSD-style license
+-// that can be found in the LICENSE file in the root of the source
+-// tree. An additional intellectual property rights grant can be found
+-// in the file PATENTS.  All contributing project authors may
+-// be found in the AUTHORS file in the root of the source tree.
+-
+-webrtc::import! {
+-  "//api/units:time_delta_rs" as time_delta;
+-  "//api/units:timestamp_rs" as timestamp;
+-}
+-
+-use time_delta::TimeDelta;
+-use timestamp::Timestamp;
+-
+-#[cxx::bridge(namespace = "webrtc")]
+-mod ffi {
+-    unsafe extern "C++" {
+-        include!("api/units/timestamp.h");
+-        type Timestamp = super::timestamp::Timestamp;
+-        include!("api/units/time_delta.h");
+-        type TimeDelta = super::time_delta::TimeDelta;
+-    }
+-    extern "Rust" {
+-        fn add_timestamp_with_time_delta(ts: Timestamp, td: TimeDelta) -> Timestamp;
+-        fn half_time_delta(td: TimeDelta) -> TimeDelta;
+-    }
+-}
+-
+-pub fn add_timestamp_with_time_delta(ts: Timestamp, td: TimeDelta) -> Timestamp {
+-    ts + td
+-}
+-
+-pub fn half_time_delta(td: TimeDelta) -> TimeDelta {
+-    td / 2
+-}
+diff --git a/api/units/time_delta.rs b/api/units/time_delta.rs
+deleted file mode 100644
+index 510f9329ce..0000000000
+--- a/api/units/time_delta.rs
++++ /dev/null
+@@ -1,161 +0,0 @@
+-// Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+-//
+-// Use of this source code is governed by a BSD-style license
+-// that can be found in the LICENSE file in the root of the source
+-// tree. An additional intellectual property rights grant can be found
+-// in the file PATENTS.  All contributing project authors may
+-// be found in the AUTHORS file in the root of the source tree.
+-
+-use cxx::{type_id, ExternType};
+-
+-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+-#[repr(transparent)]
+-pub struct TimeDelta {
+-    pub(crate) microseconds: i64,
+-}
+-
+-unsafe impl ExternType for TimeDelta {
+-    type Id = type_id!("webrtc::TimeDelta");
+-    type Kind = cxx::kind::Trivial;
+-}
+-
+-impl Default for TimeDelta {
+-    fn default() -> Self {
+-        Self::zero()
+-    }
+-}
+-
+-impl TimeDelta {
+-    pub fn ms(&self) -> i64 {
+-        self.microseconds / 1000
+-    }
+-
+-    pub fn us(&self) -> i64 {
+-        self.microseconds
+-    }
+-
+-    pub fn from_millis(value: i64) -> Self {
+-        Self { microseconds: value * 1000 }
+-    }
+-
+-    pub fn from_micros(value: i64) -> Self {
+-        Self { microseconds: value }
+-    }
+-
+-    pub fn zero() -> Self {
+-        Self { microseconds: 0 }
+-    }
+-
+-    pub fn seconds_f64(&self) -> f64 {
+-        self.microseconds as f64 / 1_000_000.0
+-    }
+-}
+-
+-impl std::ops::Add for TimeDelta {
+-    type Output = Self;
+-
+-    fn add(self, rhs: Self) -> Self {
+-        Self { microseconds: self.microseconds + rhs.microseconds }
+-    }
+-}
+-
+-impl std::ops::Sub for TimeDelta {
+-    type Output = Self;
+-
+-    fn sub(self, rhs: Self) -> Self {
+-        Self { microseconds: self.microseconds - rhs.microseconds }
+-    }
+-}
+-
+-impl std::ops::Mul<i64> for TimeDelta {
+-    type Output = Self;
+-
+-    fn mul(self, rhs: i64) -> Self {
+-        Self { microseconds: self.microseconds * rhs }
+-    }
+-}
+-
+-impl std::ops::Mul<usize> for TimeDelta {
+-    type Output = Self;
+-
+-    fn mul(self, rhs: usize) -> Self {
+-        Self {
+-            microseconds: self.microseconds * i64::try_from(rhs).expect("usize too large for i64"),
+-        }
+-    }
+-}
+-
+-impl std::ops::Div<TimeDelta> for TimeDelta {
+-    type Output = i64;
+-
+-    fn div(self, rhs: Self) -> i64 {
+-        assert!(rhs.microseconds != 0);
+-        self.microseconds / rhs.microseconds
+-    }
+-}
+-
+-impl std::ops::Div<i64> for TimeDelta {
+-    type Output = Self;
+-
+-    fn div(self, rhs: i64) -> Self {
+-        assert!(rhs != 0);
+-        Self { microseconds: self.microseconds / rhs }
+-    }
+-}
+-
+-impl std::ops::Rem<TimeDelta> for TimeDelta {
+-    type Output = Self;
+-
+-    fn rem(self, rhs: Self) -> Self {
+-        assert!(rhs.microseconds != 0);
+-        Self { microseconds: self.microseconds % rhs.microseconds }
+-    }
+-}
+-
+-impl std::ops::Shr<i32> for TimeDelta {
+-    type Output = Self;
+-
+-    fn shr(self, rhs: i32) -> Self {
+-        Self { microseconds: self.microseconds >> rhs }
+-    }
+-}
+-
+-#[cfg(test)]
+-mod tests {
+-    use super::*;
+-
+-    #[test]
+-    fn test_millis() {
+-        let td = TimeDelta::from_millis(42);
+-        assert_eq!(td.ms(), 42);
+-        assert_eq!(td.us(), 42000);
+-    }
+-
+-    #[test]
+-    fn test_micros() {
+-        let td = TimeDelta::from_micros(42);
+-        assert_eq!(td.us(), 42);
+-    }
+-
+-    #[test]
+-    fn test_zero() {
+-        let td = TimeDelta::zero();
+-        assert_eq!(td.us(), 0);
+-    }
+-
+-    #[test]
+-    fn test_add() {
+-        let td1 = TimeDelta::from_millis(10);
+-        let td2 = TimeDelta::from_millis(20);
+-        let td3 = td1 + td2;
+-        assert_eq!(td3.ms(), 30);
+-    }
+-
+-    #[test]
+-    fn test_sub() {
+-        let td1 = TimeDelta::from_millis(30);
+-        let td2 = TimeDelta::from_millis(10);
+-        let td3 = td1 - td2;
+-        assert_eq!(td3.ms(), 20);
+-    }
+-}
+diff --git a/api/units/timestamp.rs b/api/units/timestamp.rs
+deleted file mode 100644
+index f3a00d7f8b..0000000000
+--- a/api/units/timestamp.rs
++++ /dev/null
+@@ -1,114 +0,0 @@
+-// Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+-//
+-// Use of this source code is governed by a BSD-style license
+-// that can be found in the LICENSE file in the root of the source
+-// tree. An additional intellectual property rights grant can be found
+-// in the file PATENTS.  All contributing project authors may
+-// be found in the AUTHORS file in the root of the source tree.
+-
+-webrtc::import! {
+-  "//api/units:time_delta_rs" as time_delta;
+-}
+-use cxx::{type_id, ExternType};
+-use time_delta::TimeDelta;
+-
+-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+-#[repr(transparent)]
+-pub struct Timestamp {
+-    pub(crate) microseconds: i64,
+-}
+-
+-unsafe impl ExternType for Timestamp {
+-    type Id = type_id!("webrtc::Timestamp");
+-    type Kind = cxx::kind::Trivial;
+-}
+-
+-impl Timestamp {
+-    pub fn ms(&self) -> i64 {
+-        self.microseconds / 1000
+-    }
+-
+-    pub fn us(&self) -> i64 {
+-        self.microseconds
+-    }
+-
+-    pub fn from_millis(value: i64) -> Self {
+-        Self { microseconds: value * 1000 }
+-    }
+-
+-    pub fn from_micros(value: i64) -> Self {
+-        Self { microseconds: value }
+-    }
+-}
+-
+-impl std::ops::Add<TimeDelta> for Timestamp {
+-    type Output = Self;
+-
+-    fn add(self, rhs: TimeDelta) -> Self {
+-        Self { microseconds: self.microseconds + rhs.us() }
+-    }
+-}
+-
+-impl std::ops::AddAssign<TimeDelta> for Timestamp {
+-    fn add_assign(&mut self, rhs: TimeDelta) {
+-        self.microseconds += rhs.us();
+-    }
+-}
+-
+-impl std::ops::Sub<TimeDelta> for Timestamp {
+-    type Output = Self;
+-
+-    fn sub(self, rhs: TimeDelta) -> Self {
+-        Self { microseconds: self.microseconds - rhs.us() }
+-    }
+-}
+-
+-impl std::ops::Sub for Timestamp {
+-    type Output = TimeDelta;
+-
+-    fn sub(self, rhs: Self) -> TimeDelta {
+-        TimeDelta::from_micros(self.microseconds - rhs.microseconds)
+-    }
+-}
+-
+-#[cfg(test)]
+-mod tests {
+-    use super::*;
+-
+-    #[test]
+-    fn test_millis() {
+-        let ts = Timestamp::from_millis(42);
+-        assert_eq!(ts.ms(), 42);
+-        assert_eq!(ts.us(), 42000);
+-    }
+-
+-    #[test]
+-    fn test_micros() {
+-        let ts = Timestamp::from_micros(42);
+-        assert_eq!(ts.us(), 42);
+-    }
+-
+-    #[test]
+-    fn test_add_time_delta() {
+-        let ts = Timestamp::from_millis(10);
+-        let td = TimeDelta::from_millis(20);
+-        let ts2 = ts + td;
+-        assert_eq!(ts2.ms(), 30);
+-    }
+-
+-    #[test]
+-    fn test_sub_time_delta() {
+-        let ts = Timestamp::from_millis(30);
+-        let td = TimeDelta::from_millis(10);
+-        let ts2 = ts - td;
+-        assert_eq!(ts2.ms(), 20);
+-    }
+-
+-    #[test]
+-    fn test_sub_timestamp() {
+-        let ts1 = Timestamp::from_millis(30);
+-        let ts2 = Timestamp::from_millis(10);
+-        let td = ts1 - ts2;
+-        assert_eq!(td.ms(), 20);
+-    }
+-}
+diff --git a/api/units/units_ffi.rs b/api/units/units_ffi.rs
+deleted file mode 100644
+index 18093274e3..0000000000
+--- a/api/units/units_ffi.rs
++++ /dev/null
+@@ -1,23 +0,0 @@
+-// Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+-//
+-// Use of this source code is governed by a BSD-style license
+-// that can be found in the LICENSE file in the root of the source
+-// tree. An additional intellectual property rights grant can be found
+-// in the file PATENTS.  All contributing project authors may
+-// be found in the AUTHORS file in the root of the source tree.
+-
+-webrtc::import! {
+-  "//api/units:time_delta_rs" as time_delta;
+-  "//api/units:timestamp_rs" as timestamp;
+-}
+-
+-#[cxx::bridge(namespace = "webrtc")]
+-pub mod ffi {
+-    unsafe extern "C++" {
+-        include!("api/units/time_delta.h");
+-        include!("api/units/timestamp.h");
+-
+-        type TimeDelta = super::time_delta::TimeDelta;
+-        type Timestamp = super::timestamp::Timestamp;
+-    }
+-}
+diff --git a/api/units/units_rs_bridge_unittest.cc b/api/units/units_rs_bridge_unittest.cc
+deleted file mode 100644
+index c0b6b5b7af..0000000000
+--- a/api/units/units_rs_bridge_unittest.cc
++++ /dev/null
+@@ -1,29 +0,0 @@
+-/*
+- *  Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+- *
+- *  Use of this source code is governed by a BSD-style license
+- *  that can be found in the LICENSE file in the root of the source
+- *  tree. An additional intellectual property rights grant can be found
+- *  in the file PATENTS.  All contributing project authors may
+- *  be found in the AUTHORS file in the root of the source tree.
+- */
+-
+-#include <cstddef>
+-
+-#include "api/units/demo_unit_interop.rs.h"
+-#include "api/units/time_delta.h"
+-#include "api/units/timestamp.h"
+-#include "test/gtest.h"
+-
+-namespace webrtc {
+-namespace {
+-
+-TEST(UnitsRustBridgeTest, TimestampInterop) {
+-  Timestamp ts = Timestamp::Millis(100);
+-  TimeDelta td = TimeDelta::Micros(20);
+-  EXPECT_EQ(ts + td, add_timestamp_with_time_delta(ts, td));
+-  EXPECT_EQ(td / 2, half_time_delta(td));
+-}
+-
+-}  // namespace
+-}  // namespace webrtc
+diff --git a/infra/specs/client.webrtc.json b/infra/specs/client.webrtc.json
+index ed71da2e94..8c83c95ccb 100644
+--- a/infra/specs/client.webrtc.json
++++ b/infra/specs/client.webrtc.json
+@@ -2022,24 +2022,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Ubuntu-22.04"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -2518,24 +2500,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Ubuntu-22.04"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -3014,24 +2978,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Ubuntu-22.04"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -3510,24 +3456,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Ubuntu-22.04"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -4006,24 +3934,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Ubuntu-22.04"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -4502,24 +4412,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Ubuntu-22.04"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -4981,24 +4873,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Ubuntu-22.04"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -5461,24 +5335,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Ubuntu-22.04"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -5958,24 +5814,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Ubuntu-22.04"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -6471,25 +6309,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cores": "12",
+-            "cpu": "x86-64",
+-            "os": "Mac-15"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -6975,25 +6794,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cores": "12",
+-            "cpu": "x86-64",
+-            "os": "Mac-15"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -7464,24 +7264,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Mac-15"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -7942,24 +7724,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "arm64-64-Apple_M1",
+-            "os": "Mac-15"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -8446,24 +8210,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Windows-10-19045"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -8924,24 +8670,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Windows-10-19045"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -9402,24 +9130,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Windows-10-19045"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -9880,24 +9590,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Windows-10-19045"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+diff --git a/infra/specs/gn_isolate_map.pyl b/infra/specs/gn_isolate_map.pyl
+index 8453999d2e..ce18c1b546 100644
+--- a/infra/specs/gn_isolate_map.pyl
++++ b/infra/specs/gn_isolate_map.pyl
+@@ -120,10 +120,6 @@
+     "label": "//:rtc_unittests",
+     "type": "console_test_launcher",
+   },
+-  "rust_tests": {
+-    "label": "//:rust_tests",
+-    "type": "generated_script",
+-  },
+   "sdk_framework_unittests": {
+     "label": "//sdk:sdk_framework_unittests",
+     "type": "console_test_launcher",
+diff --git a/infra/specs/test_suites.pyl b/infra/specs/test_suites.pyl
+index d35a47cec6..bd937fb99d 100644
+--- a/infra/specs/test_suites.pyl
++++ b/infra/specs/test_suites.pyl
+@@ -60,8 +60,6 @@
+       'voip_unittests': {},
+       'webrtc_nonparallel_tests': {},
+       # keep-sorted end
+-      # rust_tests don't work on android yet. See crbug.com/40809974.
+-      # 'rust_tests': {},
+     },
+     'android_tests_tryserver_specific': {
+       'video_codec_perf_tests': {
+@@ -96,7 +94,6 @@
+       'rtc_unittests': {
+         'mixins': ['shards-6'],
+       },
+-      'rust_tests': {},
+       'slow_peer_connection_unittests': {},
+       'svc_tests': {
+         'mixins': ['shards-4'],
+@@ -155,8 +152,7 @@
+       # 'test_support_unittests': {},
+       # TODO(bugs.webrtc.org/14707): chromium.test component needs to allow creating listening ports.
+       # 'tools_unittests': {},
+-      # TODO(bugs.webrtc.org/416446214): Determine how to get rust test runner working on Fuchsia.
+-      # 'rust_tests': {},
++      #
+     },
+     'ios_simulator_tests': {
+       # keep-sorted start block=yes
+@@ -204,8 +200,6 @@
+       'voip_unittests': {},
+       'webrtc_nonparallel_tests': {},
+       # keep-sorted end
+-      # TODO(bugs.webrtc.org/416446214): Determine how to get rust test runner working on iOS.
+-      # 'rust_tests': {},
+     },
+     'more_configs_tests': {
+       'peerconnection_unittests': {
+diff --git a/infra/specs/tryserver.webrtc.json b/infra/specs/tryserver.webrtc.json
+index 7d24ab5adf..66934927c6 100644
+--- a/infra/specs/tryserver.webrtc.json
++++ b/infra/specs/tryserver.webrtc.json
+@@ -5992,24 +5992,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Ubuntu-22.04"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -6509,25 +6491,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "isolate_profile_data": true,
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Ubuntu-22.04"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "isolate_profile_data": true,
+         "merge": {
+@@ -7067,24 +7030,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Ubuntu-22.04"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -7587,24 +7532,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Ubuntu-22.04"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -8083,24 +8010,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Ubuntu-22.04"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -8627,24 +8536,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Ubuntu-22.04"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -9123,24 +9014,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Ubuntu-22.04"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -9619,24 +9492,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Ubuntu-22.04"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -10115,24 +9970,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Ubuntu-22.04"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -10593,24 +10430,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Ubuntu-22.04"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -11086,25 +10905,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cores": "12",
+-            "cpu": "x86-64",
+-            "os": "Mac-15"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -11592,25 +11392,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cores": "12",
+-            "cpu": "x86-64",
+-            "os": "Mac-15"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -12081,24 +11862,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "arm64-64-Apple_M1",
+-            "os": "Mac-15"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -12559,24 +12322,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Mac-15"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -13085,24 +12830,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "arm64-64-Apple_M1",
+-            "os": "Mac-15"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -13563,24 +13290,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Windows-11-22000"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -14041,24 +13750,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Windows-11-22000"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -14567,24 +14258,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Windows-10-19045"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -15049,24 +14722,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Windows-10-19045"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -15527,24 +15182,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Windows-10-19045"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -16005,24 +15642,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Windows-10-19045"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+@@ -16483,24 +16102,6 @@
+         "test": "rtc_unittests",
+         "test_id_prefix": "ninja://:rtc_unittests/"
+       },
+-      {
+-        "merge": {
+-          "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+-        },
+-        "module_name": "//:rust_tests",
+-        "name": "rust_tests",
+-        "resultdb": {
+-          "result_format": "json"
+-        },
+-        "swarming": {
+-          "dimensions": {
+-            "cpu": "x86-64",
+-            "os": "Windows-10-19045"
+-          }
+-        },
+-        "test": "rust_tests",
+-        "test_id_prefix": "ninja://:rust_tests/"
+-      },
+       {
+         "merge": {
+           "script": "//testing/merge_scripts/standard_isolated_script_merge.py"
+diff --git a/rust/webrtc_import/BUILD.gn b/rust/webrtc_import/BUILD.gn
+deleted file mode 100644
+index fd14db210f..0000000000
+--- a/rust/webrtc_import/BUILD.gn
++++ /dev/null
+@@ -1,88 +0,0 @@
+-# Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+-#
+-# Use of this source code is governed by a BSD-style license
+-# that can be found in the LICENSE file in the root of the source
+-# tree. An additional intellectual property rights grant can be found
+-# in the file PATENTS.  All contributing project authors may
+-# be found in the AUTHORS file in the root of the source tree.
+-
+-import("//build/config/rust.gni")
+-import("//build/rust/rust_macro.gni")
+-import("//build/rust/rust_static_library.gni")
+-import("//build/rust/rust_unit_test.gni")
+-import("../../webrtc.gni")
+-
+-# These provide the base import macros for webrtc, and thus use the templates
+-# from //build and not webrtc's macros.
+-if (enable_rust) {
+-  rust_macro("webrtc_import_macro") {
+-    crate_name = "import"
+-    crate_root = "import.rs"
+-    sources = [
+-      "import.rs",
+-      "path_utils.rs",
+-    ]
+-    deps = [
+-      "//third_party/rust/proc_macro2/v1:lib",
+-      "//third_party/rust/quote/v1:lib",
+-      "//third_party/rust/syn/v2:lib",
+-    ]
+-
+-    # Don't depend on ourselves.
+-    no_chromium_prelude = true
+-  }
+-
+-  rust_static_library("webrtc_import") {
+-    crate_name = "webrtc"
+-    crate_root = "lib.rs"
+-    sources = [ "lib.rs" ]
+-
+-    deps = [ ":webrtc_import_macro" ]
+-
+-    # Don't depend on ourselves.
+-    no_chromium_prelude = true
+-  }
+-
+-  if (rtc_include_tests) {
+-    # Dummy library crate utilized by the standalone macro verification test.
+-    rust_static_library("webrtc_import_test_lib") {
+-      testonly = true
+-      crate_root = "webrtc_import_test_lib.rs"
+-      sources = [ "webrtc_import_test_lib.rs" ]
+-    }
+-
+-    # Native target-platform unit tests for the core path transformation string logic.
+-    #
+-    # NOTE: Because `import.rs` is a proc-macro crate that relies on the host compiler's
+-    # built-in `proc_macro` package, it cannot be native target-tested directly without causing
+-    # cross-compilation errors or breaking the main `rust_unit_tests_group` script generator.
+-    # By splitting the string arithmetic out into `path_utils.rs` (which has no proc_macro deps),
+-    # we can target-compile and run these core rules natively in the automated runner suite.
+-    rtc_rust_unittest("webrtc_import_utils_unittests") {
+-      crate_root = "path_utils.rs"
+-      sources = [ "path_utils.rs" ]
+-    }
+-
+-    # Integration test validating the macro expansion behavior in Standalone mode.
+-    # Confirms that absolute first-party paths are preserved correctly when `WEBRTC_GN_PREFIX = //`.
+-    rtc_rust_unittest("webrtc_import_test") {
+-      testonly = true
+-      crate_root = "webrtc_import_test.rs"
+-      sources = [ "webrtc_import_test.rs" ]
+-      deps = [
+-        ":webrtc_import",
+-        ":webrtc_import_test_lib",
+-      ]
+-      rustenv = [ "WEBRTC_GN_PREFIX=//" ]
+-    }
+-
+-    rtc_rust_test_suite("tests") {
+-      testonly = true
+-      deps = [
+-        ":webrtc_import_test",
+-        ":webrtc_import_utils_unittests",
+-        "test_subdir:webrtc_import_prefix_test",
+-      ]
+-    }
+-  }
+-}
+diff --git a/rust/webrtc_import/import.rs b/rust/webrtc_import/import.rs
+deleted file mode 100644
+index 73c6052314..0000000000
+--- a/rust/webrtc_import/import.rs
++++ /dev/null
+@@ -1,102 +0,0 @@
+-// Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+-//
+-// Use of this source code is governed by a BSD-style license
+-// that can be found in the LICENSE file in the root of the source
+-// tree. An additional intellectual property rights grant can be found
+-// in the file PATENTS.  All contributing project authors may
+-// be found in the AUTHORS file in the root of the source tree.
+-
+-//! WebRTC Rust Portability Import Proc-Macro Wrapper.
+-//!
+-//! This crate provides the `import!` macro which serves as a layer of
+-//! indirection over Chromium's `chromium::import!`. It rewrites source-relative
+-//! GN paths dynamically based on whether WebRTC is built standalone or embedded
+-//! inside a vendor directory tree (like `//third_party/webrtc`).
+-
+-extern crate proc_macro;
+-use proc_macro::TokenStream;
+-use quote::quote;
+-use syn::parse::{Parse, ParseStream};
+-use syn::punctuated::Punctuated;
+-use syn::{parse_macro_input, Ident, LitStr, Token, Visibility};
+-
+-mod path_utils;
+-
+-/// Represents a single dependency import line item inside the macro.
+-///
+-/// Example syntax: `pub "//api/units:time_delta_rs" as time_delta;`
+-struct ImportItem {
+-    /// Optional visibility prefix (e.g., `pub`, `pub(crate)`).
+-    vis: Option<Visibility>,
+-    /// Quoted string literal containing the absolute or relative GN target
+-    /// label.
+-    path: LitStr,
+-    /// Optional custom crate rename alias (e.g., `as renamed_crate`).
+-    alias: Option<(Token![as], Ident)>,
+-}
+-
+-impl Parse for ImportItem {
+-    /// Parses a single import entry matching: `[vis] "path" [as alias]`
+-    fn parse(input: ParseStream) -> syn::Result<Self> {
+-        let vis = input.parse::<Visibility>().ok();
+-        let path = input.parse::<LitStr>()?;
+-        let alias = if input.peek(Token![as]) {
+-            Some((input.parse::<Token![as]>()?, input.parse::<Ident>()?))
+-        } else {
+-            None
+-        };
+-        Ok(ImportItem { vis, path, alias })
+-    }
+-}
+-
+-/// Represents the full body of the macro invocation, containing
+-/// semicolon-separated entries.
+-struct ImportList {
+-    imports: Punctuated<ImportItem, Token![;]>,
+-}
+-
+-impl Parse for ImportList {
+-    /// Parses a full stream of semicolon-terminated `ImportItem` entries.
+-    fn parse(input: ParseStream) -> syn::Result<Self> {
+-        Ok(ImportList { imports: Punctuated::parse_terminated(input)? })
+-    }
+-}
+-
+-/// The entry point for `webrtc::import!`.
+-///
+-/// This proc-macro executes during host compile time. It scans the list of
+-/// absolute GN path strings, prepends the build context's `WEBRTC_GN_PREFIX`
+-/// (injected via GN `rustenv`), and forwards the rewritten token tree onto
+-/// Chromium's canonical `chromium::import!` macro.
+-#[proc_macro]
+-pub fn import(input: TokenStream) -> TokenStream {
+-    // Read the build root prefix provided by GN's `rustenv` definition.
+-    // Defaults to standalone root "//" if not set.
+-    let prefix = std::env::var("WEBRTC_GN_PREFIX").unwrap_or_else(|_| "//".to_string());
+-    let list = parse_macro_input!(input as ImportList);
+-
+-    let mut adjusted_tokens = quote! {};
+-
+-    for item in list.imports {
+-        let vis = item.vis;
+-        let path_str = item.path.value();
+-
+-        // Delegate the string manipulation logic to the shared, unittested path_utils
+-        // module.
+-        let adjusted_path = path_utils::adjust_path(&prefix, &path_str);
+-
+-        let new_path = LitStr::new(&adjusted_path, item.path.span());
+-        let alias_tokens = item.alias.map(|(as_tok, ident)| quote! { #as_tok #ident });
+-
+-        // Reassemble the item with the new path literal token
+-        adjusted_tokens.extend(quote! {
+-            #vis #new_path #alias_tokens ;
+-        });
+-    }
+-
+-    // Expand into a call to Chromium's macro backend, passing the modified paths.
+-    let expanded = quote! {
+-        ::chromium::import! { #adjusted_tokens }
+-    };
+-    expanded.into()
+-}
+diff --git a/rust/webrtc_import/lib.rs b/rust/webrtc_import/lib.rs
+deleted file mode 100644
+index eadd384b77..0000000000
+--- a/rust/webrtc_import/lib.rs
++++ /dev/null
+@@ -1,9 +0,0 @@
+-// Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+-//
+-// Use of this source code is governed by a BSD-style license
+-// that can be found in the LICENSE file in the root of the source
+-// tree. An additional intellectual property rights grant can be found
+-// in the file PATENTS.  All contributing project authors may
+-// be found in the AUTHORS file in the root of the source tree.
+-
+-pub use import::import;
+diff --git a/rust/webrtc_import/path_utils.rs b/rust/webrtc_import/path_utils.rs
+deleted file mode 100644
+index e8a5112bda..0000000000
+--- a/rust/webrtc_import/path_utils.rs
++++ /dev/null
+@@ -1,96 +0,0 @@
+-// Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+-//
+-// Use of this source code is governed by a BSD-style license
+-// that can be found in the LICENSE file in the root of the source
+-// tree. An additional intellectual property rights grant can be found
+-// in the file PATENTS.  All contributing project authors may
+-// be found in the AUTHORS file in the root of the source tree.
+-
+-//! Path manipulation utilities for the WebRTC Rust macro.
+-//!
+-//! This module contains the pure string transformation logic used by the import
+-//! macro. It is deliberately separated from the `proc_macro` crate file so that
+-//! it can be cross-compiled and validated via native target-platform unit
+-//! tests.
+-
+-/// Re-routes a source-relative GN absolute path string based on the build root
+-/// prefix.
+-///
+-/// # Arguments
+-/// * `prefix` - The current build context prefix (e.g., `"//"` or
+-///   `"//third_party/webrtc"`).
+-/// * `path_str` - The raw GN label string literal passed into the macro.
+-///
+-/// # Behavior
+-/// - If `path_str` is a first-party absolute label (starts with `"//"`):
+-///   - If `prefix` is `"//"`, the project is standalone; the path is left
+-///     untouched.
+-///   - If `prefix` is a subfolder (e.g., `"//third_party/webrtc"`):
+-///     - If the remainder starts with a colon (e.g., `"//:target"`), it maps
+-///       directly to the parent directory, so it concatenates without adding a
+-///       slash (`//prefix:target`).
+-///     - Otherwise, it maps down a nested subdirectory folder
+-///       (`//prefix/path/to/target`).
+-/// - Third-party or relative paths are returned completely unmodified.
+-pub fn adjust_path(prefix: &str, path_str: &str) -> String {
+-    if path_str.starts_with("//") {
+-        if prefix == "//" {
+-            path_str.to_string()
+-        } else {
+-            let remainder = &path_str[2..];
+-            if remainder.starts_with(':') {
+-                format!("{}{}", prefix, remainder)
+-            } else {
+-                format!("{}/{}", prefix, remainder)
+-            }
+-        }
+-    } else {
+-        path_str.to_string()
+-    }
+-}
+-
+-#[cfg(test)]
+-mod tests {
+-    use super::*;
+-
+-    /// Checks Standalone mode behavior where `WEBRTC_GN_PREFIX = "//"`.
+-    /// Verifies that absolute paths remain completely untouched.
+-    #[test]
+-    fn test_adjust_path_standalone() {
+-        assert_eq!(adjust_path("//", "//api/units:time_delta_rs"), "//api/units:time_delta_rs");
+-    }
+-
+-    /// Checks Vendor Prefix mode behavior (e.g., nested under Chromium).
+-    /// Verifies that `//third_party/webrtc` is successfully prepended onto
+-    /// first-party paths.
+-    #[test]
+-    fn test_adjust_path_chromium() {
+-        assert_eq!(
+-            adjust_path("//third_party/webrtc", "//api/units:time_delta_rs"),
+-            "//third_party/webrtc/api/units:time_delta_rs"
+-        );
+-    }
+-
+-    /// Checks third-party crate or target-relative imports.
+-    /// Verifies that paths not beginning with `//` pass through without
+-    /// alterations.
+-    #[test]
+-    fn test_adjust_path_relative() {
+-        assert_eq!(
+-            adjust_path("//third_party/webrtc", "api/units:time_delta_rs"),
+-            "api/units:time_delta_rs"
+-        );
+-    }
+-
+-    /// Checks the open-source explicit root-colon syntax (e.g., `"//:target"`).
+-    /// Verifies that the trailing slash is omitted right before the colon,
+-    /// avoiding invalid GN path expansion errors in the underlying token
+-    /// parser.
+-    #[test]
+-    fn test_adjust_path_with_colon() {
+-        assert_eq!(
+-            adjust_path("//third_party/webrtc", "//:webrtc_import_prefix_lib"),
+-            "//third_party/webrtc:webrtc_import_prefix_lib"
+-        );
+-    }
+-}
+diff --git a/rust/webrtc_import/test_subdir/BUILD.gn b/rust/webrtc_import/test_subdir/BUILD.gn
+deleted file mode 100644
+index 242f0b62ee..0000000000
+--- a/rust/webrtc_import/test_subdir/BUILD.gn
++++ /dev/null
+@@ -1,41 +0,0 @@
+-# Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+-#
+-# Use of this source code is governed by a BSD-style license
+-# that can be found in the LICENSE file in the root of the source
+-# tree. An additional intellectual property rights grant can be found
+-# in the file PATENTS.  All contributing project authors may
+-# be found in the AUTHORS file in the root of the source tree.
+-
+-import("//build/rust/rust_static_library.gni")
+-import("//build/rust/rust_unit_test.gni")
+-import("../../../webrtc.gni")
+-
+-# These provide the base import macros for webrtc, and thus use the templates
+-# from //build and not webrtc's macros.
+-if (enable_rust && rtc_include_tests) {
+-  # Co-located dummy library crate used to validate explicit target colon matching.
+-  # Since it lives in the same `test_subdir` directory, we can validate that the macro
+-  # correctly strips the extra trailing slash right before the colon when injecting the prefix.
+-  rust_static_library("webrtc_import_prefix_lib") {
+-    testonly = true
+-    crate_root = "webrtc_import_prefix_lib.rs"
+-    sources = [ "webrtc_import_prefix_lib.rs" ]
+-
+-    # Don't depend on ourselves.
+-    no_chromium_prelude = true
+-  }
+-
+-  # Integration test validating the macro expansion behavior in Vendor Prefix mode.
+-  # Sets `WEBRTC_GN_PREFIX = //rust/webrtc_import/test_subdir` to simulate embedded layout configurations.
+-  # Utilizes the root-colon syntax (`//:webrtc_import_prefix_lib`) to import targets
+-  # without forcing redundant child directory layouts.
+-  rtc_rust_unittest("webrtc_import_prefix_test") {
+-    crate_root = "webrtc_import_prefix_test.rs"
+-    sources = [ "webrtc_import_prefix_test.rs" ]
+-    deps = [
+-      ":webrtc_import_prefix_lib",
+-      "../:webrtc_import",
+-    ]
+-    rustenv = [ "WEBRTC_GN_PREFIX=//rust/webrtc_import/test_subdir" ]
+-  }
+-}
+diff --git a/rust/webrtc_import/test_subdir/webrtc_import_prefix_lib.rs b/rust/webrtc_import/test_subdir/webrtc_import_prefix_lib.rs
+deleted file mode 100644
+index 317ed29140..0000000000
+--- a/rust/webrtc_import/test_subdir/webrtc_import_prefix_lib.rs
++++ /dev/null
+@@ -1,11 +0,0 @@
+-// Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+-//
+-// Use of this source code is governed by a BSD-style license
+-// that can be found in the LICENSE file in the root of the source
+-// tree. An additional intellectual property rights grant can be found
+-// in the file PATENTS.  All contributing project authors may
+-// be found in the AUTHORS file in the root of the source tree.
+-
+-pub fn hello_from_subdir() -> &'static str {
+-    "hello from subdir"
+-}
+diff --git a/rust/webrtc_import/test_subdir/webrtc_import_prefix_test.rs b/rust/webrtc_import/test_subdir/webrtc_import_prefix_test.rs
+deleted file mode 100644
+index 8bfb563b3a..0000000000
+--- a/rust/webrtc_import/test_subdir/webrtc_import_prefix_test.rs
++++ /dev/null
+@@ -1,17 +0,0 @@
+-// Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+-//
+-// Use of this source code is governed by a BSD-style license
+-// that can be found in the LICENSE file in the root of the source
+-// tree. An additional intellectual property rights grant can be found
+-// in the file PATENTS.  All contributing project authors may
+-// be found in the AUTHORS file in the root of the source tree.
+-
+-#[test]
+-fn test_import_prefix() {
+-    webrtc::import! {
+-        // The macro will see WEBRTC_GN_PREFIX=//rust/webrtc_import/test_subdir
+-        // and turn this into "//rust/webrtc_import/test_subdir:webrtc_import_prefix_lib" via the fixed colon logic
+-        "//:webrtc_import_prefix_lib";
+-    }
+-    assert_eq!(webrtc_import_prefix_lib::hello_from_subdir(), "hello from subdir");
+-}
+diff --git a/rust/webrtc_import/webrtc_import_test.rs b/rust/webrtc_import/webrtc_import_test.rs
+deleted file mode 100644
+index 5dcbf5b360..0000000000
+--- a/rust/webrtc_import/webrtc_import_test.rs
++++ /dev/null
+@@ -1,15 +0,0 @@
+-// Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+-//
+-// Use of this source code is governed by a BSD-style license
+-// that can be found in the LICENSE file in the root of the source
+-// tree. An additional intellectual property rights grant can be found
+-// in the file PATENTS.  All contributing project authors may
+-// be found in the AUTHORS file in the root of the source tree.
+-
+-#[test]
+-fn test_import_standalone() {
+-    webrtc::import! {
+-        "//rust/webrtc_import:webrtc_import_test_lib";
+-    }
+-    assert_eq!(webrtc_import_test_lib::hello(), 42);
+-}
+diff --git a/rust/webrtc_import/webrtc_import_test_lib.rs b/rust/webrtc_import/webrtc_import_test_lib.rs
+deleted file mode 100644
+index d059ae8e61..0000000000
+--- a/rust/webrtc_import/webrtc_import_test_lib.rs
++++ /dev/null
+@@ -1,11 +0,0 @@
+-// Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+-//
+-// Use of this source code is governed by a BSD-style license
+-// that can be found in the LICENSE file in the root of the source
+-// tree. An additional intellectual property rights grant can be found
+-// in the file PATENTS.  All contributing project authors may
+-// be found in the AUTHORS file in the root of the source tree.
+-
+-pub fn hello() -> i32 {
+-    42
+-}
+diff --git a/tools_webrtc/mb/mb.py b/tools_webrtc/mb/mb.py
+index 3f9b2d74ca..6c77b9a7d4 100755
+--- a/tools_webrtc/mb/mb.py
++++ b/tools_webrtc/mb/mb.py
+@@ -60,7 +60,7 @@ class WebRTCMetaBuildWrapper(mb.MetaBuildWrapper):
+ 
+         if test_type not in ('console_test_launcher', 'windowed_test_launcher',
+                              'non_parallel_console_test_launcher', 'raw',
+-                             'additional_compile_target', 'generated_script'):
++                             'additional_compile_target'):
+             self.WriteFailureAndRaise('No command line for '
+                                       '%s found (test type %s).' %
+                                       (target, test_type),
+@@ -72,8 +72,7 @@ class WebRTCMetaBuildWrapper(mb.MetaBuildWrapper):
+         ]
+         vpython_exe = 'vpython3'
+ 
+-        if (is_ios or is_fuchsia or test_type == 'raw'
+-                or test_type == 'generated_script'):
++        if is_ios or is_fuchsia or test_type == 'raw':
+             if is_win:
+                 cmdline = ['bin\\run_{}.bat'.format(target)]
+             else:
+diff --git a/webrtc.gni b/webrtc.gni
+index ce8ffc41b5..48237e0221 100644
+--- a/webrtc.gni
++++ b/webrtc.gni
+@@ -310,9 +310,6 @@ declare_args() {
+   # Set this to true to disable webrtc metrics.
+   rtc_disable_metrics = false
+ 
+-  # Allows for rust targets.
+-  rtc_rust = true
+-
+   # Enables an experimental rust version of base64 for building and testing.
+   rtc_rusty_base64 = false
+ 
+@@ -367,11 +364,6 @@ if (build_with_chromium) {
+   rtc_use_perfetto = true
+ }
+ 
+-if (rtc_rust) {
+-  import("//build/config/rust.gni")
+-  import("//build/rust/rust_static_library.gni")
+-}
+-
+ # Global public configuration that should be applied to all WebRTC targets. You
+ # normally shouldn't need to include this in your target as it's automatically
+ # included when using the rtc_* templates. It set the defines, include paths and
+@@ -1433,111 +1425,3 @@ template("rtc_test_suite") {
+     }
+   }
+ }
+-
+-# Defines a Rust library.
+-#
+-# This template wraps rust_static_library from Chromium, restricting the
+-# arguments to a safe subset.
+-template("rtc_rust_library") {
+-  assert(
+-      !defined(invoker.crate_name),
+-      "Custom crate_name is not allowed in WebRTC. Use webrtc::import! instead.")
+-  rust_static_library(target_name) {
+-    forward_variables_from(invoker,
+-                           "*",
+-                           [
+-                             "deps",
+-                             "rustenv",
+-                           ])
+-
+-    rustenv = [ "WEBRTC_GN_PREFIX=$webrtc_root" ]
+-    if (defined(invoker.rustenv)) {
+-      rustenv += invoker.rustenv
+-    }
+-
+-    deps = [ "$webrtc_root/rust/webrtc_import" ]
+-    if (defined(invoker.deps)) {
+-      deps += invoker.deps
+-    }
+-
+-    build_native_rust_unit_tests = false
+-  }
+-}
+-
+-# Defines a Rust unit test.
+-template("rtc_rust_unittest") {
+-  if (can_build_rust_unit_tests) {
+-    rust_unit_test(target_name) {
+-      forward_variables_from(invoker,
+-                             "*",
+-                             [
+-                               "deps",
+-                               "rustenv",
+-                             ])
+-
+-      rustenv = [ "WEBRTC_GN_PREFIX=$webrtc_root" ]
+-      if (defined(invoker.rustenv)) {
+-        rustenv += invoker.rustenv
+-      }
+-
+-      deps = [ "$webrtc_root/rust/webrtc_import" ]
+-      if (defined(invoker.deps)) {
+-        deps += invoker.deps
+-      }
+-    }
+-  } else {
+-    group(target_name) {
+-      testonly = true
+-      not_needed(invoker, "*")
+-    }
+-  }
+-}
+-
+-# Defines a Rust CXX bridge.
+-#
+-# This template wraps rust_static_library but takes a single `source` file
+-# instead of a list of sources, enforcing the pattern of one bridge per target.
+-template("rtc_rust_cxx_bridge") {
+-  assert(defined(invoker.source), "source must be specified")
+-  assert(!defined(invoker.sources), "Use source instead of sources")
+-
+-  rust_static_library(target_name) {
+-    forward_variables_from(invoker,
+-                           [
+-                             "allow_unsafe",
+-                             "features",
+-                             "edition",
+-                             "crate_root",
+-                             "crate_name",
+-                             "testonly",
+-                             "visibility",
+-                           ])
+-    rustenv = [ "WEBRTC_GN_PREFIX=$webrtc_root" ]
+-    if (defined(invoker.rustenv)) {
+-      rustenv += invoker.rustenv
+-    }
+-    deps = [ "$webrtc_root/rust/webrtc_import" ]
+-    if (defined(invoker.deps)) {
+-      deps += invoker.deps
+-    }
+-    if (!defined(crate_root)) {
+-      crate_root = invoker.source
+-    }
+-    sources = [ invoker.source ]
+-    cxx_bindings = [ invoker.source ]
+-  }
+-}
+-
+-# Defines a suite of Rust unit tests.
+-template("rtc_rust_test_suite") {
+-  if (can_build_rust_unit_tests) {
+-    rust_unit_tests_group(target_name) {
+-      forward_variables_from(invoker, "*")
+-    }
+-  } else {
+-    group(target_name) {
+-      testonly = true
+-      not_needed(invoker, "*")
+-    }
+-  }
+-}
