@@ -55,6 +55,7 @@ import mozilla.components.browser.state.selector.findTabOrCustomTab
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
+import mozilla.components.feature.ipprotection.store.state.isEligible
 import mozilla.components.lib.state.ext.consumeFlow
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
@@ -250,7 +251,7 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                     store.stateFlow.map { state -> state.websitePermissionsState.values }
                 }.collectAsState(initial = listOf())
                 val isGlobalTrackingProtectionEnabled = settings.shouldUseTrackingProtection
-                val showIpProtection = settings.isIPProtectionAvailable
+                val showIpProtection = components.ipProtection.store.state.isEligible
                 val ipProtectionMenuState by remember {
                     store.stateFlow.map { state -> state.ipProtectionMenuState }
                 }.collectAsState(initial = store.state.ipProtectionMenuState)

@@ -41,6 +41,8 @@ import mozilla.components.concept.sync.AuthType
 import mozilla.components.concept.sync.OAuthAccount
 import mozilla.components.concept.sync.Profile
 import mozilla.components.feature.addons.ui.AddonFilePicker
+import mozilla.components.feature.ipprotection.store.IPProtectionStore
+import mozilla.components.feature.ipprotection.store.state.isEligible
 import mozilla.components.service.fxrelay.eligibility.Eligible
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.ktx.android.view.showKeyboard
@@ -634,7 +636,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
         )
         setupGeckoLogsPreference(settings)
         setupHttpsOnlyPreferences(settings)
-        setupIPProtectionPreferences(settings)
+        setupIPProtectionPreferences(components.ipProtection.store)
         setupNotificationPreference(
             NotificationManagerCompat.from(requireContext()).areNotificationsEnabled(),
         )
@@ -863,11 +865,12 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
             }
     }
 
-    private fun setupIPProtectionPreferences(settings: Settings) {
+    @VisibleForTesting
+    internal fun setupIPProtectionPreferences(ipProtectionStore: IPProtectionStore) {
         findPreference<IPProtectionPreference>(
             getPreferenceKey(R.string.pref_key_ip_protection_settings),
         )?.apply {
-            isVisible = settings.isIPProtectionAvailable
+            isVisible = ipProtectionStore.state.isEligible
             showBetaBadge = FxNimbus.features.ipProtection.value().showBetaBadge
         }
     }
