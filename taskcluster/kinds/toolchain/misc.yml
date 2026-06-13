@@ -774,7 +774,7 @@ win64-aarch64-vs2026:
         toolchain-artifact: project/gecko/vs/vs.tar.zst
         toolchain-alias: win64-aarch64-vs
 
-linux64-afl-instrumentation:
+linux64-afl-instrumentation-4.0:
     description: "AFL++ instrumentation toolchain build"
     treeherder:
         symbol: TL(afl++)
@@ -785,9 +785,10 @@ linux64-afl-instrumentation:
         resources:
             - taskcluster/scripts/misc/afl-nyx.patch
         toolchain-artifact: public/build/afl-instrumentation.tar.zst
+        toolchain-alias: linux64-afl-instrumentation
     fetches:
         fetch:
-            - afl-plus-plus
+            - afl-plus-plus-4.0
         toolchain:
             - linux64-clang
             - linux64-toolchain-sysroot
