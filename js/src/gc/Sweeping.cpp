@@ -1333,6 +1333,7 @@ IncrementalProgress GCRuntime::markGray(JS::GCContext* gcx,
   auto [mainThreadBudget, helperThreadBudget] = budgetConcurrentMarking(budget);
 
   if (markSynchronously(mainThreadBudget, useParallelMarking) == NotFinished) {
+    MOZ_ASSERT(hasMarkingWork());
     MOZ_ASSERT(isIncremental);
     MOZ_ASSERT(safeToYield);
 
