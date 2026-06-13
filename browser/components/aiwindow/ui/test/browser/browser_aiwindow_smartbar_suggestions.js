@@ -427,3 +427,57 @@ add_task(
     }
   }
 );
+
+add_task(
+  async function test_smartbar_no_duplicate_firefox_suggest_group_labels() {
+    const FIREFOX_SUGGEST_LABEL = "Firefox Suggest";
+    const searchQuery = "test";
+
+    // Add two Places visits. The first stays in the GENERAL result group and
+    // the second is promoted to an INPUT_HISTORY result. Both render with a
+    // “Firefox Suggest” label and a duplicate label was created when the AiChat
+    // search fallback result lands between the groups.
+    await PlacesTestUtils.addVisits([
+      { uri: "https://example.com/one", title: "Test Page One" },
+      { uri: "https://example.com/two", title: "Test Page Two" },
+    ]);
+    await UrlbarUtils.addToInputHistory("https://example.com/two", searchQuery);
+
+    const win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+
+    await promiseSmartbarSuggestionsOpen(browser, () =>
+      typeInSmartbar(browser, searchQuery)
+    );
+
+    const labelCount = await SpecialPowers.spawn(
+      browser,
+      [FIREFOX_SUGGEST_LABEL],
+      async groupLabel => {
+        const smartbar = content.document
+          .querySelector("ai-window")
+          .shadowRoot.querySelector("#ai-window-smartbar");
+        // Wait for the history results
+        await ContentTaskUtils.waitForCondition(
+          () =>
+            smartbar.querySelector(
+              '.urlbarView-row[type="history"], .urlbarView-row[type="adaptive-history"]'
+            ),
+          "Wait for rows to render"
+        );
+        return [...smartbar.querySelectorAll(".urlbarView-row")].filter(
+          row => row.getAttribute("label") === groupLabel
+        ).length;
+      }
+    );
+
+    Assert.equal(
+      labelCount,
+      1,
+      `"${FIREFOX_SUGGEST_LABEL}" should appear exactly once`
+    );
+
+    await PlacesUtils.history.clear();
+    await BrowserTestUtils.closeWindow(win);
+  }
+);
