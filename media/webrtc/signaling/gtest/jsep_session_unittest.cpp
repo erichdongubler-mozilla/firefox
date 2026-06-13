@@ -48,8 +48,8 @@ class FakeUuidGenerator : public mozilla::JsepUuidGenerator {
     return true;
   }
 
-  mozilla::UniquePtr<mozilla::JsepUuidGenerator> Clone() const {
-    return mozilla::MakeUnique<FakeUuidGenerator>(*this);
+  mozilla::JsepUuidGenerator* Clone() const {
+    return new FakeUuidGenerator(*this);
   }
 
  private:
@@ -3938,10 +3938,10 @@ static void GetCodec(JsepSession& session, size_t transceiverIndex,
                             ->GetEncoding(encodingIndex)
                             .GetCodecs()
                             .size());
-  *codecOut = track.GetNegotiatedDetails()
-                  ->GetEncoding(encodingIndex)
-                  .GetCodecs()[codecIndex]
-                  ->Clone();
+  codecOut->reset(track.GetNegotiatedDetails()
+                      ->GetEncoding(encodingIndex)
+                      .GetCodecs()[codecIndex]
+                      ->Clone());
 }
 
 static void ForceH264(JsepSession& session, uint32_t profileLevelId) {

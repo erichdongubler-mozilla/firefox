@@ -23,7 +23,7 @@ class RsdparsaSdp final : public Sdp {
  public:
   explicit RsdparsaSdp(RsdparsaSessionHandle session, const SdpOrigin& origin);
 
-  UniquePtr<Sdp> Clone() const override;
+  Sdp* Clone() const override;
 
   const SdpOrigin& GetOrigin() const override;
 

@@ -64,7 +64,6 @@
 #include <ostream>
 #include <sstream>
 
-#include "mozilla/UniquePtr.h"
 #include "sdp/SdpAttributeList.h"
 #include "sdp/SdpEnum.h"
 #include "sdp/SdpMediaSection.h"
@@ -83,7 +82,7 @@ class Sdp {
   Sdp() = default;
   virtual ~Sdp() = default;
 
-  virtual UniquePtr<Sdp> Clone() const = 0;
+  virtual Sdp* Clone() const = 0;
 
   virtual const SdpOrigin& GetOrigin() const = 0;
   // Note: connection information is always retrieved from media sections

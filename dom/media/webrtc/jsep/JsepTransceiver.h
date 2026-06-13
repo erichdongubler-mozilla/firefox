@@ -9,7 +9,6 @@
 
 #include "jsep/JsepTrack.h"
 #include "jsep/JsepTransport.h"
-#include "mozilla/UniquePtr.h"
 #include "nsError.h"
 #include "sdp/Sdp.h"
 #include "sdp/SdpAttribute.h"
@@ -21,7 +20,7 @@ class JsepUuidGenerator {
  public:
   virtual ~JsepUuidGenerator() = default;
   virtual bool Generate(std::string* id) = 0;
-  virtual UniquePtr<JsepUuidGenerator> Clone() const = 0;
+  virtual JsepUuidGenerator* Clone() const = 0;
 };
 
 class JsepTransceiver {

@@ -75,9 +75,7 @@ class JsepSessionImpl : public JsepSession, public JsepSessionCopyableStuff {
 
   JsepSessionImpl(const JsepSessionImpl& aOrig);
 
-  UniquePtr<JsepSession> Clone() const override {
-    return MakeUnique<JsepSessionImpl>(*this);
-  }
+  JsepSession* Clone() const override { return new JsepSessionImpl(*this); }
 
   // Implement JsepSession methods.
   virtual nsresult Init() override;
