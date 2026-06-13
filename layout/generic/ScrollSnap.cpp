@@ -521,8 +521,7 @@ static void ProcessSnapOverflowForAxis(
 
   for (const auto& range : aRanges) {
     if (range.IsValid(aClampedDestination, aSnapportSize)) {
-      addEdge(range.FindNearestSnapPoint(aClampedDestination, aSnapportSize),
-              range.mSnapArea);
+      addEdge(aClampedDestination, range.mSnapArea);
       break;
     }
   }
