@@ -1409,10 +1409,10 @@ index 15a55bdb3a..8a47c4b667 100644
      # Dependency on chromium's logging (in //base).
      deps += [ "//base" ]
 diff --git a/rtc_base/logging.cc b/rtc_base/logging.cc
-index 076167c9bf..8c9b8aae1d 100644
+index dea1035afc..22cca54623 100644
 --- a/rtc_base/logging.cc
 +++ b/rtc_base/logging.cc
-@@ -25,6 +25,7 @@
+@@ -26,6 +26,7 @@
  #include "absl/strings/string_view.h"
  #include "api/task_queue/task_queue_base.h"
  #include "api/units/timestamp.h"
@@ -1420,7 +1420,7 @@ index 076167c9bf..8c9b8aae1d 100644
  #include "rtc_base/checks.h"
  #include "rtc_base/platform_thread_types.h"
  #include "rtc_base/string_encode.h"
-@@ -53,6 +54,24 @@ static const int kMaxLogLineSize = 1024 - 60;
+@@ -54,6 +55,24 @@ static const int kMaxLogLineSize = 1024 - 60;
  #endif  // WEBRTC_MAC && !defined(WEBRTC_IOS) || WEBRTC_ANDROID
  
  namespace webrtc {
@@ -1445,7 +1445,7 @@ index 076167c9bf..8c9b8aae1d 100644
  namespace {
  
  // By default, release builds don't log, debug builds at info level
-@@ -167,7 +186,7 @@ std::string LogLineRef::DefaultLogLine() const {
+@@ -168,7 +187,7 @@ std::string LogLineRef::DefaultLogLine() const {
  // LogMessage
  /////////////////////////////////////////////////////////////////////////////
  
@@ -1455,10 +1455,10 @@ index 076167c9bf..8c9b8aae1d 100644
  // The list of logging streams currently configured.
  // Note: we explicitly do not clean this up, because of the uncertain ordering
 diff --git a/rtc_base/logging.h b/rtc_base/logging.h
-index d7521b307c..823c2a2b90 100644
+index ccd396c1c0..8e7c120f5f 100644
 --- a/rtc_base/logging.h
 +++ b/rtc_base/logging.h
-@@ -654,6 +654,12 @@ class LogMessage {
+@@ -671,6 +671,12 @@ class LogMessage {
    }
  #endif  // RTC_LOG_ENABLED()
  
@@ -1471,7 +1471,7 @@ index d7521b307c..823c2a2b90 100644
   private:
    friend class LogMessageForTesting;
  
-@@ -701,6 +707,9 @@ class LogMessage {
+@@ -718,6 +724,9 @@ class LogMessage {
  
    // The stringbuilder that buffers the formatted message before output
    StringBuilder print_stream_;
