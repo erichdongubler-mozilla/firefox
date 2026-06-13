@@ -29,9 +29,6 @@ EXPORTS.mozilla.net += [
 ]
 
 SOURCES += [
-    # Not unified: pulls in NSS headers (pk11pub.h) that can clash in a unified
-    # build.
-    "CacheCrypto.cpp",
     "CacheStorage.cpp",
 ]
 

@@ -7,7 +7,6 @@ UNIFIED_SOURCES += [
     "TestBind.cpp",
     "TestBufferedInputStream.cpp",
     "TestCacheControlParser.cpp",
-    "TestCacheCrypto.cpp",
     "TestCacheIndex.cpp",
     "TestCapsule.cpp",
     "TestCommon.cpp",
