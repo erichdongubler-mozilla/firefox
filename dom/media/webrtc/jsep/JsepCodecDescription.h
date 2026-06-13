@@ -92,8 +92,10 @@ class JsepCodecPreferences {
   }
 };
 
-#define JSEP_CODEC_CLONE(T) \
-  JsepCodecDescription* Clone() const override { return new T(*this); }
+#define JSEP_CODEC_CLONE(T)                                \
+  UniquePtr<JsepCodecDescription> Clone() const override { \
+    return MakeUnique<T>(*this);                           \
+  }
 
 // A single entry in our list of known codecs.
 class JsepCodecDescription {
@@ -112,7 +114,7 @@ class JsepCodecDescription {
 
   virtual SdpMediaSection::MediaType Type() const = 0;
 
-  virtual JsepCodecDescription* Clone() const = 0;
+  virtual UniquePtr<JsepCodecDescription> Clone() const = 0;
 
   bool GetPtAsInt(uint16_t* ptOutparam) const {
     return SdpHelper::GetPtAsInt(mDefaultPt, ptOutparam);
