@@ -463,7 +463,7 @@ index c40c481a7a..cb35bf1839 100644
  rtc_library("default_task_queue_factory") {
    visibility = [ "*" ]
 diff --git a/api/transport/BUILD.gn b/api/transport/BUILD.gn
-index e0f7e527ed..9cf1090189 100644
+index 407a99eb29..a939fbb8ac 100644
 --- a/api/transport/BUILD.gn
 +++ b/api/transport/BUILD.gn
 @@ -98,6 +98,7 @@ rtc_source_set("sctp_transport_factory_interface") {
