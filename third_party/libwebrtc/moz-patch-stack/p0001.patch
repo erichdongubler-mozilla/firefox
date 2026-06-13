@@ -1,152 +1,55 @@
-From: Nicolas Grunbaum <ngrunbaum@mozilla.com>
-Date: Fri, 12 Jun 2026 17:41:44 -0700
-Subject: (tmp-cherry-pick) Revert "Support std::string_view in RTC_LOG macros"
- (1507782ef5)
-
-This reverts commit 90ef797418efc68bdd4299b3c9b090fe238dbb8f.
-
-Reason for revert: breaks downstream
-new LogArgType should be handled in logging.cc
+From: Johannes Kron <kron@webrtc.org>
+Date: Fri, 15 May 2026 10:21:29 +0000
+Subject: (cherry-pick-branch-heads/7827) [M149] Validate CGImage dimensions in
+ MouseCursorMonitorMac
 
 Original change's description:
-> Support std::string_view in RTC_LOG macros
+> Validate CGImage dimensions in MouseCursorMonitorMac
 >
-> Update the logging framework to handle std::string_view as a distinct
-> type to prevent memory safety issues.
+> This adds missing height checks alongside the existing width checks
+> when processing and scaling the cursor image.
 >
-> On certain toolchains, such as the Android NDK, std::string_view and
-> absl::string_view are separate types. Relying on implicit conversions
-> between them within logging macros can lead to the creation of temporary
-> objects. Capturing the address of these temporaries results in dangling
-> pointers, which causes undefined behavior or crashes during logging.
->
-> This change introduces a dedicated MakeVal overload for std::string_view
-> and updates internal type traits to:
-> * Explicitly support std::string_view when it differs from
->   absl::string_view.
-> * Prevent std::string_view from matching generic stringify or class
->   templates that may handle it incorrectly.
-> * Ensure stable references to string data across different platforms
->   and compiler configurations.
->
-> Previously, this was implicitly (and not explicitly intentionally) been
-> handled by the deprecated stringstream MakeVal implementation.
->
-> Bug: webrtc:42234461
-> Change-Id: I1d4fd044837e8ac2b117a12e8da351ce5502953e
-> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/468860
-> Commit-Queue: Tomas Gunnarsson <tommi@webrtc.org>
-> Reviewed-by: Danil Chapovalov <danilchap@webrtc.org>
-> Cr-Commit-Position: refs/heads/main@{#47602}
+> Fixed: chromium:513268100
+> Change-Id: Ida1e58334a9d3bda429819e4af51b33afbd0a95d
+> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/472700
+> Reviewed-by: Alexander Cooper <alcooper@chromium.org>
+> Auto-Submit: Johannes Kron <kron@webrtc.org>
+> Commit-Queue: Alexander Cooper <alcooper@chromium.org>
+> Cr-Commit-Position: refs/heads/main@{#47715}
 
-Bug: webrtc:42234461
-No-Presubmit: true
-No-Tree-Checks: true
-No-Try: true
-Change-Id: I9604b0ab373dc58355f9b58704e322d1ee52f91d
-Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/469261
+(cherry picked from commit b343cd4e280980f26b4feb80684f57d5b4324e12)
+
+Bug: chromium:514928856,chromium:513268100
+Change-Id: Ida1e58334a9d3bda429819e4af51b33afbd0a95d
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/473981
+Auto-Submit: Chrome Cherry Picker <chrome-cherry-picker@chops-service-accounts.iam.gserviceaccount.com>
 Bot-Commit: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
 Commit-Queue: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
-Auto-Submit: Danil Chapovalov <danilchap@webrtc.org>
-Cr-Commit-Position: refs/heads/main@{#47606}
+Cr-Commit-Position: refs/branch-heads/7827@{#1}
+Cr-Branched-From: d606bc991592fbf4dcbe85e9d05db5e501a5ad42-refs/heads/main@{#47595}
 ---
- rtc_base/logging.h           | 21 ++-------------------
- rtc_base/logging_unittest.cc | 18 ------------------
- 2 files changed, 2 insertions(+), 37 deletions(-)
+ modules/desktop_capture/mouse_cursor_monitor_mac.mm | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/rtc_base/logging.h b/rtc_base/logging.h
-index 1efe379217..d7521b307c 100644
---- a/rtc_base/logging.h
-+++ b/rtc_base/logging.h
-@@ -56,7 +56,6 @@
- #include <span>
- #include <sstream>  // no-presubmit-check TODO(webrtc:8982)
- #include <string>
--#include <string_view>
- #include <type_traits>
- #include <utility>
- #include <vector>
-@@ -315,8 +314,7 @@ enum class LogArgType : int8_t {
-   kLongDouble,
-   kCharP,
-   kStdString,
--  kStdStringView,  // std::string_view, for downstream compatibility.
--  kStringView,     // absl::string_view
-+  kStringView,
-   kVoidP,
-   kLogMetadata,
-   kLogMetadataErr,
-@@ -383,18 +381,6 @@ inline Val<LogArgType::kStringView, const absl::string_view*> MakeVal(
-   return {&x};
- }
- 
--// `std::string_view` must be supported separately from `absl::string_view`
--// because they are distinct types on certain toolchains (e.g., Android NDKs),
--// and this separate overload prevents dangling references across implicit
--// conversions.
--template <typename T>
--  requires(std::is_same_v<T, std::string_view> &&
--           !std::is_same_v<T, absl::string_view>)
--inline Val<LogArgType::kStdStringView, const std::string_view*> MakeVal(
--    const T& x) {
--  return {&x};
--}
--
- inline Val<LogArgType::kVoidP, const void*> MakeVal(const void* x) {
-   return {x};
- }
-@@ -426,9 +412,7 @@ inline Val<LogArgType::kLogMetadataTag, LogMetadataTag> MakeVal(
- #endif
- 
- template <typename T,
--          std::enable_if_t<absl::HasAbslStringify<T>::value &&
--                           !std::is_same<std::decay_t<T>,
--                                         std::string_view>::value>* = nullptr>
-+          std::enable_if_t<absl::HasAbslStringify<T>::value>* = nullptr>
- ToStringVal MakeVal(const T& x) {
-   return {absl::StrCat(x)};
- }
-@@ -440,7 +424,6 @@ template <typename T,
-           typename T1 = std::decay_t<T>,
-           std::enable_if_t<std::is_class<T1>::value &&               //
-                            !std::is_same<T1, std::string>::value &&  //
--                           !std::is_same<T1, std::string_view>::value &&
-                            !std::is_same<T1, LogMetadata>::value &&  //
-                            !absl::HasAbslStringify<T1>::value &&
- #ifdef WEBRTC_ANDROID
-diff --git a/rtc_base/logging_unittest.cc b/rtc_base/logging_unittest.cc
-index 780659c2fb..d31d9e57a9 100644
---- a/rtc_base/logging_unittest.cc
-+++ b/rtc_base/logging_unittest.cc
-@@ -19,7 +19,6 @@
- #include <cstdlib>
- #include <memory>
- #include <string>
--#include <string_view>
- #include <utility>
- 
- #include "absl/cleanup/cleanup.h"
-@@ -158,23 +157,6 @@ TEST(LogTest, SingleStream) {
-   EXPECT_EQ(sev, LogMessage::GetLogToStream(nullptr));
- }
- 
--TEST(LogTest, LogStdStringView) {
--  std::string str;
--  LogSinkImpl stream(&str);
--  LogMessage::AddLogToStream(&stream, LS_INFO);
--
--  constexpr std::string_view kLongPath =
--      "/a/very/long/path/string/that/exceeds/the/small/string/optimization/"
--      "buffer/size/which/is/typically/around/fifteen/to/twenty/two/characters/"
--      "and/this/is/definitely/longer/than/one/hundred/characters/to/trigger/"
--      "any/potential/asan/errors";
--  RTC_LOG(LS_INFO) << kLongPath;
--
--  EXPECT_THAT(str, HasSubstr(kLongPath));
--
--  LogMessage::RemoveLogToStream(&stream);
--}
--
- TEST(LogTest, LogIfLogIfConditionIsTrue) {
-   std::string str;
-   LogSinkImpl stream(&str);
+diff --git a/modules/desktop_capture/mouse_cursor_monitor_mac.mm b/modules/desktop_capture/mouse_cursor_monitor_mac.mm
+index 248a782762..3e6a6cb3c6 100644
+--- a/modules/desktop_capture/mouse_cursor_monitor_mac.mm
++++ b/modules/desktop_capture/mouse_cursor_monitor_mac.mm
+@@ -154,7 +154,8 @@ void MouseCursorMonitorMac::CaptureImage(float scale) {
+   // crbug.com/632995.) After 10.12, OSX may report 2X cursor on non-Retina
+   // screen. (See crbug.com/671436.) So scaling the cursor if needed.
+   CGImageRef scaled_cg_image = nil;
+-  if (CGImageGetWidth(cg_image) != static_cast<size_t>(size.width())) {
++  if (CGImageGetWidth(cg_image) != static_cast<size_t>(size.width()) ||
++      CGImageGetHeight(cg_image) != static_cast<size_t>(size.height())) {
+     scaled_cg_image =
+         CreateScaledCGImage(cg_image, size.width(), size.height());
+     if (scaled_cg_image != nil) {
+@@ -163,6 +164,7 @@ void MouseCursorMonitorMac::CaptureImage(float scale) {
+   }
+   if (CGImageGetBitsPerPixel(cg_image) != DesktopFrame::kBytesPerPixel * 8 ||
+       CGImageGetWidth(cg_image) != static_cast<size_t>(size.width()) ||
++      CGImageGetHeight(cg_image) != static_cast<size_t>(size.height()) ||
+       CGImageGetBitsPerComponent(cg_image) != 8) {
+     if (scaled_cg_image != nil) CGImageRelease(scaled_cg_image);
+     return;
