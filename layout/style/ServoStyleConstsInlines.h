@@ -1535,11 +1535,6 @@ StyleTreeScoped<StyleAnchorNameIdent>::AsSpan() const {
 inline StyleNumericType::StyleNumericType()
     : exponents{}, percent_hint(StyleOptional<StyleNumericBaseType>::None()) {}
 
-inline int32_t StyleNumericType::Exponent(
-    StyleNumericBaseType aBaseType) const {
-  return exponents[static_cast<size_t>(aBaseType)];
-}
-
 }  // namespace mozilla
 
 #endif
