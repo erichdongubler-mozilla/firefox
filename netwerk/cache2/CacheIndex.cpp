@@ -4,6 +4,7 @@
 
 #include "CacheIndex.h"
 
+#include "CacheCrypto.h"
 #include "CacheLog.h"
 #include "CacheFileIOManager.h"
 #include "CacheFileMetadata.h"
@@ -25,7 +26,7 @@
 #define kMinUnwrittenChanges 300
 #define kMinDumpInterval 20000  // in milliseconds
 #define kMaxBufSize 16384
-#define kIndexVersion 0x0000000B
+#define kIndexVersion 0x0000000C
 #define kUpdateIndexStartDelay 50000  // in milliseconds
 #define kTelemetryReportBytesLimit (2U * 1024U * 1024U * 1024U)  // 2GB
 
@@ -1804,6 +1805,13 @@ void CacheIndex::WriteIndexToDisk(const StaticMutexAutoLock& aProofOfLock) {
   NetworkEndian::writeUint32(mRWBuf + mRWBufPos,
                              static_cast<uint32_t>(mTotalBytesWritten >> 10));
   mRWBufPos += sizeof(uint32_t);
+  // Whether the entries on disk are encrypted at rest. This reflects the
+  // session's actual encryption state (fixed at startup when CacheCrypto is
+  // initialized), not the live pref, so that a mid-session pref flip -- which
+  // only takes effect on the next restart -- is not masked here.
+  NetworkEndian::writeUint32(mRWBuf + mRWBufPos,
+                             CacheCrypto::IsActive() ? 1 : 0);
+  mRWBufPos += sizeof(uint32_t);
 
   mSkipEntries = 0;
 }
@@ -2282,6 +2290,24 @@ void CacheIndex::ParseRecords(const StaticMutexAutoLock& aProofOfLock) {
     pos += sizeof(uint32_t);
     dataWritten <<= 10;
     mTotalBytesWritten += dataWritten;
+
+    bool wasEncrypted = !!NetworkEndian::readUint32(mRWBuf + pos);
+    pos += sizeof(uint32_t);
+    bool nowEncrypted = CacheCrypto::IsActive();
+    if (wasEncrypted != nowEncrypted) {
+      // The at-rest encryption setting changed since the cache was written, so
+      // the entries on disk no longer match the current setting. Purge the
+      // whole cache rather than keep a mix of encrypted and plaintext entries.
+      // EvictAll() dooms open handles, trashes the entries directory and drives
+      // the index back to a clean (empty) state via RemoveAll(), so we just
+      // hand off and return.
+      LOG(
+          ("CacheIndex::ParseRecords() - Encryption setting changed "
+           "[wasEncrypted=%d, nowEncrypted=%d], purging cache",
+           wasEncrypted, nowEncrypted));
+      CacheFileIOManager::EvictAll();
+      return;
+    }
   }
 
   uint32_t hashOffset = pos;

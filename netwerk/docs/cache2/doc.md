@@ -727,6 +727,15 @@ The header is:
 | timestamp | uint32 | when the last successful index write started |
 | dirty flag | uint32 | set while running, cleared only on a clean shutdown |
 | KB written | uint32 | bytes written to the cache, for telemetry |
+| encrypted | uint32 | whether the entries are encrypted at rest |
+
+The **encrypted** flag records whether the on-disk entries were written with
+at-rest encryption (see `browser.cache.disk.encryption.enabled`). At startup it
+is compared against the current pref; if they differ the whole cache is purged,
+since flipping encryption on or off would otherwise leave a mix of encrypted and
+plaintext entries. It reflects the session's actual encryption state (fixed at
+startup), so a mid-session pref change — which only takes effect on restart — is
+not masked.
 
 All multi-byte integers are big-endian. Records are tightly packed (`#pragma
 pack(1)`), so the entry count is simply
