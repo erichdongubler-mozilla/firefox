@@ -23,6 +23,14 @@ CSSNumericValue::CSSNumericValue(nsCOMPtr<nsISupports> aParent,
     : CSSStyleValue(std::move(aParent), StyleValueType::NumericValue),
       mNumericValueType(aNumericValueType) {}
 
+CSSNumericValue::CSSNumericValue(
+    nsCOMPtr<nsISupports> aParent,
+    MovingNotNull<UniquePtr<StyleNumericType>> aNumericType,
+    NumericValueType aNumericValueType)
+    : CSSStyleValue(std::move(aParent), StyleValueType::NumericValue),
+      mNumericType(std::move(aNumericType)),
+      mNumericValueType(aNumericValueType) {}
+
 // https://drafts.css-houdini.org/css-typed-om-1/#rectify-a-numberish-value
 //
 // static
