@@ -280,7 +280,7 @@ function SportsMatchRow({
             />
             <div className="sports-match-result-footer">
               <span data-l10n-id={resultsStatusL10nId} />
-              {hasPenalties && (
+              {hasPenalties && size !== "list" && (
                 <>
                   <span aria-hidden="true">•</span>
                   <span data-l10n-id="newtab-sports-widget-match-penalties" />

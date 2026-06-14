@@ -16915,7 +16915,7 @@ function SportsMatchRow({
             className: "sports-match-result-footer"
           }, /*#__PURE__*/external_React_default().createElement("span", {
             "data-l10n-id": resultsStatusL10nId
-          }), hasPenalties && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("span", {
+          }), hasPenalties && size !== "list" && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("span", {
             "aria-hidden": "true"
           }, "\u2022"), /*#__PURE__*/external_React_default().createElement("span", {
             "data-l10n-id": "newtab-sports-widget-match-penalties"

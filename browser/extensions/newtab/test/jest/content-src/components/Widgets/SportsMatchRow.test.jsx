@@ -253,6 +253,24 @@ describe("<SportsMatchRow> results variant", () => {
     ).toBeInTheDocument();
   });
 
+  it("does not render the penalties footer label for list-size rows", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={{ ...baseMatch, home_penalty: 4, away_penalty: 3 }}
+        variant="results"
+        size="list"
+      />
+    );
+    // Penalty scores still render inside the score pill.
+    expect(container.querySelectorAll(".sports-score-penalty")).toHaveLength(2);
+    // The footer label is suppressed in list view.
+    expect(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-match-penalties']"
+      )
+    ).not.toBeInTheDocument();
+  });
+
   it("does not render penalty elements when no penalties", () => {
     const { container } = renderWithDispatch(
       <SportsMatchRow match={baseMatch} variant="results" />
