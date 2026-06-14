@@ -249,7 +249,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             store = components.ipProtection.store,
             appStore = components.appStore,
             errorMessages = ErrorMessages(
-                connectionError = this.getString(R.string.ip_protection_connection_error_snackbar),
                 dataLimitReached = this.getString(
                     R.string.ip_protection_data_limit_reached_snackbar,
                     FxNimbus.features.ipProtection.value().dataLimitGigabyte,

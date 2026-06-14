@@ -25,7 +25,6 @@ class IPProtectionInfoPrompterTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var appStore: AppStore
     private val errorMessages = ErrorMessages(
-        connectionError = "Connection error",
         dataLimitReached = "Data limit reached",
     )
 
