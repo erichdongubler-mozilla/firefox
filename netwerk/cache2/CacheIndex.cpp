@@ -20,14 +20,12 @@
 #include "nsNetUtil.h"
 #include "mozilla/AutoRestore.h"
 #include <algorithm>
+#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/NetwerkCache2Metrics.h"
 
-#define kMinUnwrittenChanges 300
-#define kMinDumpInterval 20000  // in milliseconds
 #define kMaxBufSize 16384
 #define kIndexVersion 0x0000000C
-#define kUpdateIndexStartDelay 50000  // in milliseconds
 #define kTelemetryReportBytesLimit (2U * 1024U * 1024U * 1024U)  // 2GB
 
 #define INDEX_NAME "index"
@@ -1744,11 +1742,12 @@ bool CacheIndex::WriteIndexToDiskIfNeeded(
 
   if (!mLastDumpTime.IsNull() &&
       (TimeStamp::NowLoRes() - mLastDumpTime).ToMilliseconds() <
-          kMinDumpInterval) {
+          StaticPrefs::browser_cache_disk_index_min_dump_interval_ms()) {
     return false;
   }
 
-  if (mIndexStats.Dirty() < kMinUnwrittenChanges) {
+  if (mIndexStats.Dirty() <
+      StaticPrefs::browser_cache_disk_index_min_unwritten_changes()) {
     return false;
   }
 
@@ -3022,12 +3021,14 @@ void CacheIndex::StartUpdatingIndex(bool aRebuild,
   }
 
   uint32_t elapsed = (TimeStamp::NowLoRes() - mStartTime).ToMilliseconds();
-  if (elapsed < kUpdateIndexStartDelay) {
+  uint32_t startDelay =
+      StaticPrefs::browser_cache_disk_index_update_start_delay_ms();
+  if (elapsed < startDelay) {
     LOG(
         ("CacheIndex::StartUpdatingIndex() - %u ms elapsed since startup, "
          "scheduling timer to fire in %u ms.",
-         elapsed, kUpdateIndexStartDelay - elapsed));
-    rv = ScheduleUpdateTimer(kUpdateIndexStartDelay - elapsed);
+         elapsed, startDelay - elapsed));
+    rv = ScheduleUpdateTimer(startDelay - elapsed);
     if (NS_SUCCEEDED(rv)) {
       return;
     }

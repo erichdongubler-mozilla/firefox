@@ -916,10 +916,10 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   // Following methods perform writing of the index file.
   //
   // The index is written periodically, but not earlier than once in
-  // kMinDumpInterval and there must be at least kMinUnwrittenChanges
-  // differences between index on disk and in memory. Index is always first
-  // written to a temporary file and the old index file is replaced when the
-  // writing process succeeds.
+  // browser.cache.disk.index.min_dump_interval_ms and there must be at least
+  // browser.cache.disk.index.min_unwritten_changes differences between index on
+  // disk and in memory. Index is always first written to a temporary file and
+  // the old index file is replaced when the writing process succeeds.
   //
   // Starts writing of index when both limits (minimal delay between writes and
   // minimum number of changes in index) were exceeded.
