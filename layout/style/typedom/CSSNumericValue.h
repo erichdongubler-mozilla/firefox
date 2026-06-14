@@ -6,6 +6,8 @@
 #define LAYOUT_STYLE_TYPEDOM_CSSNUMERICVALUE_H_
 
 #include "js/TypeDecls.h"
+#include "mozilla/NotNull.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/CSSMathSumBindingFwd.h"
 #include "mozilla/dom/CSSMathValueBindingFwd.h"
 #include "mozilla/dom/CSSNumericValueBindingFwd.h"
@@ -23,6 +25,7 @@ namespace mozilla {
 
 struct CSSPropertyId;
 class ErrorResult;
+struct StyleNumericType;
 struct StyleNumericValue;
 
 namespace dom {
@@ -90,6 +93,8 @@ class CSSNumericValue : public CSSStyleValue {
   already_AddRefed<CSSMathSum> ToSum(const Sequence<nsCString>& aUnits,
                                      ErrorResult& aRv) const;
 
+  // Step 2-3 of:
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-type
   void Type(CSSNumericType& aRetVal);
 
   // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-parse
@@ -153,6 +158,8 @@ class CSSNumericValue : public CSSStyleValue {
 
  protected:
   virtual ~CSSNumericValue() = default;
+
+  NotNull<UniquePtr<StyleNumericType>> mNumericType;
 
   const NumericValueType mNumericValueType;
 };
