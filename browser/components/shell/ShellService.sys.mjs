@@ -12,6 +12,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
   ScheduledTask: "resource://gre/modules/ScheduledTask.sys.mjs",
   Subprocess: "resource://gre/modules/Subprocess.sys.mjs",
+  WindowsSetDefaultRedirect:
+    "moz-src:///browser/components/shell/WindowsSetDefaultRedirect.sys.mjs",
   WindowsVersionInfo:
     "resource://gre/modules/components-utils/WindowsVersionInfo.sys.mjs",
 });
@@ -422,7 +424,36 @@ let ShellServiceInternal = {
     );
   },
 
-  async setAsDefaultPDFHandler(onlyIfKnownBrowser = false) {
+  /**
+   * Returns the on-disk nsIFile for a PDF bundled under the browser directory
+   * in NS_GRE_DIR.
+   *
+   * @param {string} aLeafName - The bundled PDF's file name, e.g.
+   * "confused_fox.pdf".
+   * @returns {nsIFile} The bundled file (which may not exist on disk).
+   */
+  getBundledPdfFile(aLeafName) {
+    const file = Services.dirsvc.get("GreD", Ci.nsIFile);
+    file.append("browser");
+    file.append(aLeafName);
+    return file;
+  },
+
+  /**
+   * Set Firefox as the Windows default PDF handler.
+   *
+   * @param {boolean} [onlyIfKnownBrowser] - When true, only proceed if the
+   * current default PDF handler is a known browser.
+   * @param {boolean} [openInFirefox] - Only meaningful on the "Open with"
+   * picker code path. After the user picks Firefox, the OS relaunches Firefox
+   * with the bundled stub PDF; this flag decides whether we then open a PDF in
+   * a new tab (true), to land the user in Firefox, or silently absorb that
+   * relaunch (false).
+   */
+  async setAsDefaultPDFHandler(
+    onlyIfKnownBrowser = false,
+    openInFirefox = false
+  ) {
     if (AppConstants.platform != "win") {
       throw new Error("Windows-only");
     }
@@ -453,10 +484,6 @@ let ShellServiceInternal = {
       );
     }
 
-    const winShell = this.shellService.QueryInterface(
-      Ci.nsIWindowsShellService
-    );
-
     // Optional second attempt via the undocumented IOpenWithLauncher API,
     // which surfaces the OS "Open with" picker so the user can pick Firefox
     // themselves. Gated by a pref so it can be remotely disabled if it
@@ -469,10 +496,27 @@ let ShellServiceInternal = {
       )
     ) {
       method = "open_with";
+      const openWithArg = this.getBundledPdfFile("confused_fox.pdf").path;
+      // Arm the round-trip: the OS hands `openWithArg` back to Firefox if the user
+      // selects us. We redirect that launch to the bundled PDF); otherwise overrideUri
+      // is null and the launch is suppressed.
+      const overrideUri = openInFirefox
+        ? Services.io.newFileURI(this.getBundledPdfFile("blank.pdf")).spec
+        : null;
+      lazy.WindowsSetDefaultRedirect.arm(
+        openWithArg,
+        overrideUri,
+        lazy.WindowsSetDefaultRedirect.TYPE.FILE
+      );
+
       try {
-        winShell.launchOpenWithDefaultPickerForFileType(".pdf");
+        const flags = this._isWindows11()
+          ? Ci.nsIWindowsShellService.OPEN_WITH_SET_HANDLER
+          : Ci.nsIWindowsShellService.OPEN_WITH_SET_HANDLER_WIN10;
+        this.shellService.launchSetDefaultAppPicker(openWithArg, flags);
         success = true;
       } catch (e) {
+        lazy.WindowsSetDefaultRedirect.clear();
         // The picker API itself failed (e.g. COM error). Fall through to the
         // modern settings dialog rather than leaving the user without any
         // default-handler UI.
@@ -487,7 +531,7 @@ let ShellServiceInternal = {
     if (!success && this._isWindows11()) {
       method = "settings";
       try {
-        winShell.launchModernSettingsDialogDefaultApps();
+        this.shellService.launchModernSettingsDialogDefaultApps();
         Glean.browser.setDefaultPdfHandlerModernSettingsResult.Success.add(1);
         success = true;
       } catch (e) {
@@ -524,9 +568,7 @@ let ShellServiceInternal = {
    */
   isDefaultHandlerFor(aFileExtensionOrProtocol) {
     if (AppConstants.platform == "win") {
-      return this.shellService
-        .QueryInterface(Ci.nsIWindowsShellService)
-        .isDefaultHandlerFor(aFileExtensionOrProtocol);
+      return this.shellService.isDefaultHandlerFor(aFileExtensionOrProtocol);
     }
     return false;
   },
