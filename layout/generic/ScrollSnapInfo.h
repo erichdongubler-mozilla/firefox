@@ -12,7 +12,6 @@
 #include "mozilla/ScrollSnapTargetId.h"
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/ServoStyleConsts.h"
-#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/WritingModes.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "nsPoint.h"
@@ -75,11 +74,13 @@ struct ScrollSnapRange {
   // Returns true if |aPoint| is a valid snap position in this range.
   bool IsValid(nscoord aPoint, nscoord aSnapportSize) const {
     MOZ_ASSERT(End() - Start() > aSnapportSize);
-    const nscoord tolerance = StaticPrefs::layout_disable_pixel_alignment()
-                                  ? 0
-                                  : CSSPixel::ToAppUnits(CSSCoord(0.5f));
-    return Start() <= aPoint && aPoint <= End() - aSnapportSize + tolerance;
+    return Start() <= aPoint && aPoint <= End();
   }
+
+  // Returns the scroll offset nearest to |aDestination| that keeps the snapport
+  // (of size |aSnapportSize|) within this range's snap area.
+  nscoord FindNearestSnapPoint(nscoord aDestination,
+                               nscoord aSnapportSize) const;
 };
 
 struct ScrollSnapInfo {
