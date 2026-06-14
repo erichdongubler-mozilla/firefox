@@ -125,8 +125,11 @@ bool CSSNumericValue::Equals(const Sequence<OwningCSSNumberish>& aValue) {
 already_AddRefed<CSSUnitValue> CSSNumericValue::To(const nsACString& aUnit,
                                                    ErrorResult& aRv) const {
   // Step 1.
-  // TODO: Let type be the result of creating a type from unit. If type is
-  // failure, throw a SyntaxError.
+  StyleNumericType numericType;
+  if (!Servo_NumericType_Create(&aUnit, &numericType)) {
+    aRv.ThrowSyntaxError("Invalid unit: "_ns + aUnit);
+    return nullptr;
+  }
 
   // Step 2.
   auto styleNumericValue = ToStyleNumericValue();
