@@ -7103,6 +7103,7 @@ version = "0.26.0"
 dependencies = [
  "bitflags 2.10.0",
  "cssparser",
+ "derive_more",
  "log",
  "new_debug_unreachable",
  "phf",
