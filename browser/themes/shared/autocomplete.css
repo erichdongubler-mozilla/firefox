@@ -20,6 +20,16 @@
   min-width: 22em;
 }
 
+#PopupAutoComplete:is(
+    [resultstyles~="autofill"],
+    [resultstyles~="loginsFooter"],
+    [resultstyles~="insecureWarning"],
+    [resultstyles~="importableLogins"],
+    [resultstyles~="generatedPassword"]
+  )::part(content) {
+  min-width: 250px;
+}
+
 #PopupAutoComplete > richlistbox > richlistitem {
   min-height: var(--size-item-medium);
   border: 0;
@@ -241,6 +251,12 @@
 
   &[originaltype="action"] {
     text-align: center;
+  }
+
+  /* The "Manage addresses"/"Manage payment methods" footer is always the last
+     action row; align it to the start rather than centering it. */
+  &[originaltype="action"]:last-child {
+    text-align: start;
   }
 
   /* status items */
