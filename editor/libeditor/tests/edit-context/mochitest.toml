@@ -1,6 +1,9 @@
 [DEFAULT]
 prefs = [
   "dom.editcontext.enabled=true",
+  "dom.editcontext.allow_canvas=true",
 ]
+
+["test_editcontext_allow_canvas_pref.html"]
 
 ["test_editcontext_composition.html"]
