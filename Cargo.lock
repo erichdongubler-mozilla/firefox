@@ -5855,7 +5855,7 @@ dependencies = [
 [[package]]
 name = "ohttp"
 version = "0.7.2"
-source = "git+https://github.com/martinthomson/ohttp#600931b5a1e947776cbaad931ed78f1e89005352"
+source = "git+https://github.com/martinthomson/ohttp?rev=600931b5a1e947776cbaad931ed78f1e89005352#600931b5a1e947776cbaad931ed78f1e89005352"
 dependencies = [
  "bindgen 0.72.0",
  "byteorder",

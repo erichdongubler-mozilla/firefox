@@ -60,8 +60,9 @@ git = "https://github.com/libjxl/jxl-rs"
 rev = "c41cbfaf34c2c8ebc3fb6655c885fe427ab9542a"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/martinthomson/ohttp"]
+[source."git+https://github.com/martinthomson/ohttp?rev=600931b5a1e947776cbaad931ed78f1e89005352"]
 git = "https://github.com/martinthomson/ohttp"
+rev = "600931b5a1e947776cbaad931ed78f1e89005352"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/audioipc?rev=042d48dc5932ced772c2bf20a2aef2845fd6ec85"]
