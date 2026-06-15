@@ -4,6 +4,8 @@
  */
 
 add_task(async function testSteps() {
+  const url = "http://example.com";
+
   info("Setting pref");
 
   Services.prefs.setBoolPref("dom.storage.snapshot_reusing", false);
@@ -140,7 +142,7 @@ add_task(async function testSteps() {
 
       info("Getting storage");
 
-      let storage = getLocalStorage(getDefaultPrincipal());
+      let storage = getLocalStorage(getPrincipal(url));
 
       // 1st snapshot
 

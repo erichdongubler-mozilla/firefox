@@ -88,9 +88,9 @@ const getSurrogateCombinations = () => {
 };
 
 const fetchFrom = async (itemKey, sample, meanwhile) => {
-  const principal = getDefaultPrincipal();
+  const principal = getPrincipal("http://example.com/", {});
 
-  let request = clearOrigin(principal, persistenceFor(principal));
+  let request = clearOrigin(principal);
   await requestFinished(request);
 
   const storage = getLocalStorage(principal);

@@ -8,19 +8,6 @@
 
 const NS_ERROR_DOM_QUOTA_EXCEEDED_ERR = 22;
 
-// Whether the current xpcshell run should default to private-browsing principals.
-// Set MOZ_PRIVATE_BROWSING=1 in the environment to run these tests against the
-// private-browsing localStorage code paths. The xpcshell.toml `privatebrowsing`
-// variant in dom/localstorage/test/unit/ sets this automatically for the CI
-// "privatebrowsing" variant; when running tests locally or via mach try, the
-// env var must be set manually (e.g. `MOZ_PRIVATE_BROWSING=1 ./mach test ...`).
-const RUN_IN_PRIVATE_BROWSING =
-  Services.env.get("MOZ_PRIVATE_BROWSING") === "1";
-
-function persistenceFor(principal) {
-  return principal.privateBrowsingId > 0 ? "private" : "default";
-}
-
 function is(a, b, msg) {
   Assert.equal(a, b, msg);
 }
@@ -59,11 +46,6 @@ function enableTesting() {
   Services.prefs.setBoolPref("dom.storage.client_validation", false);
 
   Services.prefs.setBoolPref("dom.quotaManager.testing", true);
-
-  const { ensureNSSInitialized } = ChromeUtils.importESModule(
-    "resource://testing-common/dom/quota/test/modules/Utils.sys.mjs"
-  );
-  ensureNSSInitialized();
 }
 
 function resetTesting() {
@@ -181,11 +163,7 @@ function reset() {
 }
 
 function resetClient(principal) {
-  let request = Services.qms.resetStoragesForClient(
-    principal,
-    "ls",
-    persistenceFor(principal)
-  );
+  let request = Services.qms.resetStoragesForClient(principal, "ls", "default");
 
   return request;
 }
@@ -279,7 +257,7 @@ function repeatChar(count, ch) {
 function getPrincipal(url, attrs) {
   let uri = Services.io.newURI(url);
   if (!attrs) {
-    attrs = RUN_IN_PRIVATE_BROWSING ? { privateBrowsingId: 1 } : {};
+    attrs = {};
   }
   return Services.scriptSecurityManager.createContentPrincipal(uri, attrs);
 }
@@ -289,10 +267,7 @@ function getCurrentPrincipal() {
 }
 
 function getDefaultPrincipal() {
-  return getPrincipal(
-    "http://example.com",
-    RUN_IN_PRIVATE_BROWSING ? { privateBrowsingId: 1 } : {}
-  );
+  return getPrincipal("http://example.com");
 }
 
 function getSimpleDatabase(principal, persistence) {
