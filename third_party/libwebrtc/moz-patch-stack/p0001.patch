@@ -1,407 +1,55 @@
-From: Nicolas Grunbaum <ngrunbaum@mozilla.com>
-Date: Mon, 15 Jun 2026 13:16:54 -0700
-Subject: (tmp-cherry-pick) Revert "Move signaling safety flag into
- SctpDataChannel and clarify its purpose" (a4a2793f5a)
-
-This reverts commit 81d438a4fb11bc0de35229bd3894db6712935319.
-
-Reason for revert: Breaks downstream tests.
+From: Johannes Kron <kron@webrtc.org>
+Date: Fri, 15 May 2026 10:21:29 +0000
+Subject: (cherry-pick-branch-heads/7827) [M149] Validate CGImage dimensions in
+ MouseCursorMonitorMac
 
 Original change's description:
-> Move signaling safety flag into SctpDataChannel and clarify its purpose
+> Validate CGImage dimensions in MouseCursorMonitorMac
 >
-> Encapsulate the signaling thread safety flag within SctpDataChannel and
-> rename to `controller_safety` to clarify its purpose. Remove details
-> about the flag from the CreateProxy() interface. The observer previously
-> received this flag via the CreateProxy method, but the observer is
-> associated with the channel (not the proxy). Basically, the proxy
-> creation layer should not need to know about the flag mechanism and the
-> channel object was out of the loop, so this was a bit awkward.
+> This adds missing height checks alongside the existing width checks
+> when processing and scaling the cursor image.
 >
-> Bug: webrtc:510487699
-> Change-Id: I57638ade52305b6479a9a9165747336c679631cd
-> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/304841
-> Reviewed-by: Danil Chapovalov <danilchap@webrtc.org>
-> Commit-Queue: Tomas Gunnarsson <tommi@webrtc.org>
-> Cr-Commit-Position: refs/heads/main@{#47649}
+> Fixed: chromium:513268100
+> Change-Id: Ida1e58334a9d3bda429819e4af51b33afbd0a95d
+> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/472700
+> Reviewed-by: Alexander Cooper <alcooper@chromium.org>
+> Auto-Submit: Johannes Kron <kron@webrtc.org>
+> Commit-Queue: Alexander Cooper <alcooper@chromium.org>
+> Cr-Commit-Position: refs/heads/main@{#47715}
 
-Bug: webrtc:510487699
-No-Presubmit: true
-No-Tree-Checks: true
-No-Try: true
-Change-Id: I363214309a2e98359c4d9c63660b858413264ce9
-Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/470560
+(cherry picked from commit b343cd4e280980f26b4feb80684f57d5b4324e12)
+
+Bug: chromium:514928856,chromium:513268100
+Change-Id: Ida1e58334a9d3bda429819e4af51b33afbd0a95d
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/473981
+Auto-Submit: Chrome Cherry Picker <chrome-cherry-picker@chops-service-accounts.iam.gserviceaccount.com>
 Bot-Commit: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
-Commit-Queue: Johannes Kron <kron@webrtc.org>
-Owners-Override: Johannes Kron <kron@webrtc.org>
-Cr-Commit-Position: refs/heads/main@{#47651}
+Commit-Queue: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
+Cr-Commit-Position: refs/branch-heads/7827@{#1}
+Cr-Branched-From: d606bc991592fbf4dcbe85e9d05db5e501a5ad42-refs/heads/main@{#47595}
 ---
- pc/data_channel_controller.cc            |  7 ++++---
- pc/rtc_stats_collector_unittest.cc       |  6 ++----
- pc/sctp_data_channel.cc                  | 26 +++++++++++++-----------
- pc/sctp_data_channel.h                   | 16 +++++++--------
- pc/sctp_data_channel_unittest.cc         | 20 ++++++++++--------
- pc/test/fake_data_channel_controller.h   |  5 +----
- pc/test/fake_peer_connection_for_stats.h |  4 ++--
- pc/test/mock_data_channel.h              |  2 --
- 8 files changed, 42 insertions(+), 44 deletions(-)
+ modules/desktop_capture/mouse_cursor_monitor_mac.mm | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/pc/data_channel_controller.cc b/pc/data_channel_controller.cc
-index 3ce3c26a26..c8a4e1acb8 100644
---- a/pc/data_channel_controller.cc
-+++ b/pc/data_channel_controller.cc
-@@ -343,7 +343,7 @@ void DataChannelController::OnDataChannelOpenMessage(
-     scoped_refptr<SctpDataChannel> channel,
-     bool ready_to_send) {
-   channel_usage_ = DataChannelUsage::kInUse;
--  auto proxy = SctpDataChannel::CreateProxy(channel);
-+  auto proxy = SctpDataChannel::CreateProxy(channel, signaling_safety_.flag());
- 
-   pc_->RunWithObserver([&](auto observer) { observer->OnDataChannel(proxy); });
-   pc_->NoteDataAddedEvent();
-@@ -408,7 +408,7 @@ DataChannelController::CreateDataChannel(absl::string_view label,
- 
-   scoped_refptr<SctpDataChannel> channel = SctpDataChannel::Create(
-       weak_factory_.GetWeakPtr(), label, data_channel_transport_ != nullptr,
--      config, signaling_safety_.flag(), signaling_thread(), network_thread());
-+      config, signaling_thread(), network_thread());
-   RTC_DCHECK(channel);
- 
-   // If we have an id already, notify the transport.
-@@ -465,7 +465,8 @@ DataChannelController::InternalCreateDataChannelWithProxy(
-     return ret.MoveError();
- 
-   channel_usage_ = DataChannelUsage::kInUse;
--  return SctpDataChannel::CreateProxy(ret.MoveValue());
-+  return SctpDataChannel::CreateProxy(ret.MoveValue(),
-+                                      signaling_safety_.flag());
- }
- 
- void DataChannelController::AllocateSctpSids(SSLRole role) {
-diff --git a/pc/rtc_stats_collector_unittest.cc b/pc/rtc_stats_collector_unittest.cc
-index 988329338e..57f7e84727 100644
---- a/pc/rtc_stats_collector_unittest.cc
-+++ b/pc/rtc_stats_collector_unittest.cc
-@@ -2201,15 +2201,13 @@ TEST_P(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
-     EXPECT_EQ(expected, report->Get("P")->cast_to<RTCPeerConnectionStats>());
+diff --git a/modules/desktop_capture/mouse_cursor_monitor_mac.mm b/modules/desktop_capture/mouse_cursor_monitor_mac.mm
+index 248a782762..3e6a6cb3c6 100644
+--- a/modules/desktop_capture/mouse_cursor_monitor_mac.mm
++++ b/modules/desktop_capture/mouse_cursor_monitor_mac.mm
+@@ -154,7 +154,8 @@ void MouseCursorMonitorMac::CaptureImage(float scale) {
+   // crbug.com/632995.) After 10.12, OSX may report 2X cursor on non-Retina
+   // screen. (See crbug.com/671436.) So scaling the cursor if needed.
+   CGImageRef scaled_cg_image = nil;
+-  if (CGImageGetWidth(cg_image) != static_cast<size_t>(size.width())) {
++  if (CGImageGetWidth(cg_image) != static_cast<size_t>(size.width()) ||
++      CGImageGetHeight(cg_image) != static_cast<size_t>(size.height())) {
+     scaled_cg_image =
+         CreateScaledCGImage(cg_image, size.width(), size.height());
+     if (scaled_cg_image != nil) {
+@@ -163,6 +164,7 @@ void MouseCursorMonitorMac::CaptureImage(float scale) {
    }
- 
--  ScopedTaskSafety signaling_safety;
--
-   FakeDataChannelController controller(pc_->network_thread());
-   scoped_refptr<SctpDataChannel> dummy_channel_a = SctpDataChannel::Create(
-       controller.weak_ptr(), "DummyChannelA", false, InternalDataChannelInit(),
--      signaling_safety.flag(), Thread::Current(), Thread::Current());
-+      Thread::Current(), Thread::Current());
-   scoped_refptr<SctpDataChannel> dummy_channel_b = SctpDataChannel::Create(
-       controller.weak_ptr(), "DummyChannelB", false, InternalDataChannelInit(),
--      signaling_safety.flag(), Thread::Current(), Thread::Current());
-+      Thread::Current(), Thread::Current());
- 
-   stats_->stats_collector().OnSctpDataChannelStateChanged(
-       dummy_channel_a->internal_id(), DataChannelInterface::DataState::kOpen);
-diff --git a/pc/sctp_data_channel.cc b/pc/sctp_data_channel.cc
-index 6aab956083..6d7305aadb 100644
---- a/pc/sctp_data_channel.cc
-+++ b/pc/sctp_data_channel.cc
-@@ -179,7 +179,10 @@ void SctpSidAllocator::ReleaseSid(StreamId sid) {
- // and the ObserverAdapter no longer be necessary.
- class SctpDataChannel::ObserverAdapter : public DataChannelObserver {
-  public:
--  explicit ObserverAdapter(SctpDataChannel* channel) : channel_(channel) {}
-+  explicit ObserverAdapter(
-+      SctpDataChannel* channel,
-+      scoped_refptr<PendingTaskSafetyFlag> signaling_safety)
-+      : channel_(channel), signaling_safety_(std::move(signaling_safety)) {}
- 
-   bool IsInsideCallback() const {
-     RTC_DCHECK_RUN_ON(signaling_thread());
-@@ -234,8 +237,7 @@ class SctpDataChannel::ObserverAdapter : public DataChannelObserver {
-       RTC_DCHECK(was_dropped_);
-       was_dropped_ = false;
-       adapter_->cached_getters_ = this;
--      return adapter_->delegate_ &&
--             adapter_->channel_->controller_safety_->alive();
-+      return adapter_->delegate_ && adapter_->signaling_safety_->alive();
-     }
- 
-     RTCError error() { return cached_error_; }
-@@ -292,6 +294,7 @@ class SctpDataChannel::ObserverAdapter : public DataChannelObserver {
-   // `channel_` in the `RTC_DCHECK_RUN_ON` checks on the signaling thread.
-   Thread* const signaling_thread_{channel_->signaling_thread_};
-   ScopedTaskSafety safety_;
-+  scoped_refptr<PendingTaskSafetyFlag> signaling_safety_;
-   CachedGetters* cached_getters_ RTC_GUARDED_BY(signaling_thread()) = nullptr;
- };
- 
-@@ -301,22 +304,23 @@ scoped_refptr<SctpDataChannel> SctpDataChannel::Create(
-     absl::string_view label,
-     bool connected_to_transport,
-     const InternalDataChannelInit& config,
--    scoped_refptr<PendingTaskSafetyFlag> controller_safety,
-     Thread* signaling_thread,
-     Thread* network_thread) {
-   RTC_DCHECK(config.IsValid());
--  return make_ref_counted<SctpDataChannel>(
--      config, std::move(controller), label, connected_to_transport,
--      std::move(controller_safety), signaling_thread, network_thread);
-+  return make_ref_counted<SctpDataChannel>(config, std::move(controller), label,
-+                                           connected_to_transport,
-+                                           signaling_thread, network_thread);
- }
- 
- // static
- scoped_refptr<DataChannelInterface> SctpDataChannel::CreateProxy(
--    scoped_refptr<SctpDataChannel> channel) {
-+    scoped_refptr<SctpDataChannel> channel,
-+    scoped_refptr<PendingTaskSafetyFlag> signaling_safety) {
-   // Copy thread params to local variables before `std::move()`.
-   auto* signaling_thread = channel->signaling_thread_;
-   auto* network_thread = channel->network_thread_;
--  channel->observer_adapter_ = std::make_unique<ObserverAdapter>(channel.get());
-+  channel->observer_adapter_ = std::make_unique<ObserverAdapter>(
-+      channel.get(), std::move(signaling_safety));
-   return DataChannelProxy::Create(signaling_thread, network_thread,
-                                   std::move(channel));
- }
-@@ -326,7 +330,6 @@ SctpDataChannel::SctpDataChannel(
-     WeakPtr<SctpDataChannelControllerInterface> controller,
-     absl::string_view label,
-     bool connected_to_transport,
--    scoped_refptr<PendingTaskSafetyFlag> controller_safety,
-     Thread* signaling_thread,
-     Thread* network_thread)
-     : signaling_thread_(signaling_thread),
-@@ -342,8 +345,7 @@ SctpDataChannel::SctpDataChannel(
-       ordered_(config.ordered),
-       observer_(nullptr),
-       controller_(std::move(controller)),
--      connected_to_transport_(connected_to_transport),
--      controller_safety_(std::move(controller_safety)) {
-+      connected_to_transport_(connected_to_transport) {
-   RTC_DCHECK_RUN_ON(network_thread_);
-   // Since we constructed on the network thread we can't (yet) check the
-   // `controller_` pointer since doing so will trigger a thread check.
-diff --git a/pc/sctp_data_channel.h b/pc/sctp_data_channel.h
-index 70280226bd..693661b0ba 100644
---- a/pc/sctp_data_channel.h
-+++ b/pc/sctp_data_channel.h
-@@ -140,24 +140,24 @@ class SctpSidAllocator {
- //    OnClosingProcedureComplete callback and transition to kClosed.
- class SctpDataChannel : public DataChannelInterface {
-  public:
--  // The `controller_safety` flag is used for the ObserverAdapter callback proxy
--  // which delivers callbacks on the `signaling_thread` but must not deliver
--  // such callbacks after the peerconnection has been closed. The data
--  // controller will update the flag when closed, which will cancel any pending
--  // event notifications.
-   static scoped_refptr<SctpDataChannel> Create(
-       WeakPtr<SctpDataChannelControllerInterface> controller,
-       absl::string_view label,
-       bool connected_to_transport,
-       const InternalDataChannelInit& config,
--      scoped_refptr<PendingTaskSafetyFlag> controller_safety,
-       Thread* signaling_thread,
-       Thread* network_thread);
- 
-   // Instantiates an API proxy for a SctpDataChannel instance that will be
-   // handed out to external callers.
-+  // The `signaling_safety` flag is used for the ObserverAdapter callback proxy
-+  // which delivers callbacks on the signaling thread but must not deliver such
-+  // callbacks after the peerconnection has been closed. The data controller
-+  // will update the flag when closed, which will cancel any pending event
-+  // notifications.
-   static scoped_refptr<DataChannelInterface> CreateProxy(
--      scoped_refptr<SctpDataChannel> channel);
-+      scoped_refptr<SctpDataChannel> channel,
-+      scoped_refptr<PendingTaskSafetyFlag> signaling_safety);
- 
-   void RegisterObserver(DataChannelObserver* observer) override;
-   void UnregisterObserver() override;
-@@ -244,7 +244,6 @@ class SctpDataChannel : public DataChannelInterface {
-                   WeakPtr<SctpDataChannelControllerInterface> controller,
-                   absl::string_view label,
-                   bool connected_to_transport,
--                  scoped_refptr<PendingTaskSafetyFlag> controller_safety,
-                   Thread* signaling_thread,
-                   Thread* network_thread);
-   ~SctpDataChannel() override;
-@@ -309,7 +308,6 @@ class SctpDataChannel : public DataChannelInterface {
-   bool started_closing_procedure_ RTC_GUARDED_BY(network_thread_) = false;
-   bool connected_to_transport_ RTC_GUARDED_BY(network_thread_) = false;
-   PacketQueue queued_received_data_ RTC_GUARDED_BY(network_thread_);
--  scoped_refptr<PendingTaskSafetyFlag> controller_safety_;
- };
- 
- }  // namespace webrtc
-diff --git a/pc/sctp_data_channel_unittest.cc b/pc/sctp_data_channel_unittest.cc
-index 1223f9e540..c4e30ee0b6 100644
---- a/pc/sctp_data_channel_unittest.cc
-+++ b/pc/sctp_data_channel_unittest.cc
-@@ -24,6 +24,7 @@
- #include "api/scoped_refptr.h"
- #include "api/sctp_transport_interface.h"
- #include "api/sequence_checker.h"
-+#include "api/task_queue/pending_task_safety_flag.h"
- #include "api/test/rtc_error_matchers.h"
- #include "api/transport/data_channel_transport_interface.h"
- #include "pc/sctp_utils.h"
-@@ -87,10 +88,11 @@ class SctpDataChannelTest : public ::testing::Test {
-         controller_(new FakeDataChannelController(&network_thread_)) {
-     network_thread_.Start();
-     inner_channel_ = controller_->CreateDataChannel("test", init_);
--    channel_ = SctpDataChannel::CreateProxy(inner_channel_);
-+    channel_ = SctpDataChannel::CreateProxy(inner_channel_, signaling_safety_);
-   }
-   ~SctpDataChannelTest() override {
-     run_loop_.Flush();
-+    signaling_safety_->SetNotAlive();
-     inner_channel_ = nullptr;
-     channel_ = nullptr;
-     controller_.reset();
-@@ -148,6 +150,8 @@ class SctpDataChannelTest : public ::testing::Test {
-   test::RunLoop run_loop_;
-   Thread network_thread_;
-   InternalDataChannelInit init_;
-+  scoped_refptr<PendingTaskSafetyFlag> signaling_safety_ =
-+      PendingTaskSafetyFlag::Create();
-   std::unique_ptr<FakeDataChannelController> controller_;
-   std::unique_ptr<FakeDataChannelObserver> observer_;
-   scoped_refptr<SctpDataChannel> inner_channel_;
-@@ -245,7 +249,7 @@ TEST_F(SctpDataChannelTest, LateCreatedChannelTransitionToOpen) {
-   InternalDataChannelInit init;
-   init.id = 1;
-   auto dc = SctpDataChannel::CreateProxy(
--      controller_->CreateDataChannel("test1", init));
-+      controller_->CreateDataChannel("test1", init), signaling_safety_);
-   EXPECT_EQ(DataChannelInterface::kOpen, dc->state());
- }
- 
-@@ -258,7 +262,7 @@ TEST_F(SctpDataChannelTest, SendUnorderedAfterReceivesOpenAck) {
-   init.ordered = false;
-   scoped_refptr<SctpDataChannel> dc =
-       controller_->CreateDataChannel("test1", init);
--  auto proxy = SctpDataChannel::CreateProxy(dc);
-+  auto proxy = SctpDataChannel::CreateProxy(dc, signaling_safety_);
- 
-   EXPECT_THAT(WaitUntil([&] { return proxy->state(); },
-                         Eq(DataChannelInterface::kOpen)),
-@@ -289,7 +293,7 @@ TEST_F(SctpDataChannelTest, DeprecatedSendUnorderedAfterReceivesOpenAck) {
-   init.ordered = false;
-   scoped_refptr<SctpDataChannel> dc =
-       controller_->CreateDataChannel("test1", init);
--  auto proxy = SctpDataChannel::CreateProxy(dc);
-+  auto proxy = SctpDataChannel::CreateProxy(dc, signaling_safety_);
- 
-   EXPECT_THAT(WaitUntil([&] { return proxy->state(); },
-                         Eq(DataChannelInterface::kOpen)),
-@@ -320,7 +324,7 @@ TEST_F(SctpDataChannelTest, SendUnorderedAfterReceiveData) {
-   init.ordered = false;
-   scoped_refptr<SctpDataChannel> dc =
-       controller_->CreateDataChannel("test1", init);
--  auto proxy = SctpDataChannel::CreateProxy(dc);
-+  auto proxy = SctpDataChannel::CreateProxy(dc, signaling_safety_);
- 
-   EXPECT_THAT(WaitUntil([&] { return proxy->state(); },
-                         Eq(DataChannelInterface::kOpen)),
-@@ -345,7 +349,7 @@ TEST_F(SctpDataChannelTest, DeprecatedSendUnorderedAfterReceiveData) {
-   init.ordered = false;
-   scoped_refptr<SctpDataChannel> dc =
-       controller_->CreateDataChannel("test1", init);
--  auto proxy = SctpDataChannel::CreateProxy(dc);
-+  auto proxy = SctpDataChannel::CreateProxy(dc, signaling_safety_);
- 
-   EXPECT_THAT(WaitUntil([&] { return proxy->state(); },
-                         Eq(DataChannelInterface::kOpen)),
-@@ -406,7 +410,7 @@ TEST_F(SctpDataChannelTest, NoMsgSentIfNegotiatedAndNotFromOpenMsg) {
-   SetChannelReady();
-   scoped_refptr<SctpDataChannel> dc =
-       controller_->CreateDataChannel("test1", config);
--  auto proxy = SctpDataChannel::CreateProxy(dc);
-+  auto proxy = SctpDataChannel::CreateProxy(dc, signaling_safety_);
- 
-   EXPECT_THAT(WaitUntil([&] { return proxy->state(); },
-                         Eq(DataChannelInterface::kOpen)),
-@@ -473,7 +477,7 @@ TEST_F(SctpDataChannelTest, OpenAckSentIfCreatedFromOpenMessage) {
-   SetChannelReady();
-   scoped_refptr<SctpDataChannel> dc =
-       controller_->CreateDataChannel("test1", config);
--  auto proxy = SctpDataChannel::CreateProxy(dc);
-+  auto proxy = SctpDataChannel::CreateProxy(dc, signaling_safety_);
- 
-   EXPECT_THAT(WaitUntil([&] { return proxy->state(); },
-                         Eq(DataChannelInterface::kOpen)),
-diff --git a/pc/test/fake_data_channel_controller.h b/pc/test/fake_data_channel_controller.h
-index c003f4abf8..f6368a5c03 100644
---- a/pc/test/fake_data_channel_controller.h
-+++ b/pc/test/fake_data_channel_controller.h
-@@ -23,7 +23,6 @@
- #include "api/rtc_error.h"
- #include "api/scoped_refptr.h"
- #include "api/sequence_checker.h"
--#include "api/task_queue/pending_task_safety_flag.h"
- #include "api/transport/data_channel_transport_interface.h"
- #include "pc/sctp_data_channel.h"
- #include "pc/sctp_utils.h"
-@@ -71,8 +70,7 @@ class FakeDataChannelController : public SctpDataChannelControllerInterface {
- 
-           scoped_refptr<SctpDataChannel> channel = SctpDataChannel::Create(
-               std::move(my_weak_ptr), std::string(label), transport_available_,
--              init, signaling_safety_.flag(), signaling_thread_,
--              network_thread_);
-+              init, signaling_thread_, network_thread_);
-           if (transport_available_ && channel->sid_n().has_value()) {
-             AddSctpDataStream(*channel->sid_n(), channel->priority());
-           }
-@@ -238,7 +236,6 @@ class FakeDataChannelController : public SctpDataChannelControllerInterface {
-  private:
-   Thread* const signaling_thread_;
-   Thread* const network_thread_;
--  ScopedTaskSafety signaling_safety_;
-   StreamId last_sid_ RTC_GUARDED_BY(network_thread_);
-   SendDataParams last_send_data_params_ RTC_GUARDED_BY(network_thread_);
-   bool send_blocked_ RTC_GUARDED_BY(network_thread_);
-diff --git a/pc/test/fake_peer_connection_for_stats.h b/pc/test/fake_peer_connection_for_stats.h
-index 18fce8503a..0de9786b99 100644
---- a/pc/test/fake_peer_connection_for_stats.h
-+++ b/pc/test/fake_peer_connection_for_stats.h
-@@ -505,9 +505,10 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase,
- 
-   void AddSctpDataChannel(const std::string& label,
-                           const InternalDataChannelInit& init) {
-+    // TODO(bugs.webrtc.org/11547): Supply a separate network thread.
-     AddSctpDataChannel(SctpDataChannel::Create(
-         data_channel_controller_.weak_ptr(), label, false, init,
--        signaling_safety_.flag(), signaling_thread_, network_thread_));
-+        Thread::Current(), Thread::Current()));
-   }
- 
-   void AddSctpDataChannel(scoped_refptr<SctpDataChannel> data_channel) {
-@@ -769,7 +770,6 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase,
-   Thread* const network_thread_;
-   Thread* const worker_thread_;
-   Thread* const signaling_thread_;
--  ScopedTaskSafety signaling_safety_;
- 
-   PeerConnectionFactoryDependencies dependencies_;
-   scoped_refptr<ConnectionContext> context_;
-diff --git a/pc/test/mock_data_channel.h b/pc/test/mock_data_channel.h
-index fdc554cfdf..f2822cb6e2 100644
---- a/pc/test/mock_data_channel.h
-+++ b/pc/test/mock_data_channel.h
-@@ -15,7 +15,6 @@
- #include <string>
- #include <utility>
- 
--#include "api/task_queue/pending_task_safety_flag.h"
- #include "pc/sctp_data_channel.h"
- #include "rtc_base/thread.h"
- #include "rtc_base/weak_ptr.h"
-@@ -54,7 +53,6 @@ class MockSctpDataChannel : public SctpDataChannel {
-                         std::move(controller),
-                         label,
-                         false,
--                        PendingTaskSafetyFlag::Create(),
-                         signaling_thread,
-                         network_thread) {
-     EXPECT_CALL(*this, id()).WillRepeatedly(::testing::Return(id));
+   if (CGImageGetBitsPerPixel(cg_image) != DesktopFrame::kBytesPerPixel * 8 ||
+       CGImageGetWidth(cg_image) != static_cast<size_t>(size.width()) ||
++      CGImageGetHeight(cg_image) != static_cast<size_t>(size.height()) ||
+       CGImageGetBitsPerComponent(cg_image) != 8) {
+     if (scaled_cg_image != nil) CGImageRelease(scaled_cg_image);
+     return;
