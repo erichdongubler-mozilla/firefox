@@ -1535,9 +1535,29 @@ StyleTreeScoped<StyleAnchorNameIdent>::AsSpan() const {
 inline StyleNumericType::StyleNumericType()
     : exponents{}, percent_hint(StyleOptional<StyleNumericBaseType>::None()) {}
 
+inline StyleNumericType StyleNumericType::Empty() { return StyleNumericType(); }
+
+inline StyleNumericType StyleNumericType::WithBaseType(
+    StyleNumericBaseType aBaseType) {
+  auto result = Empty();
+  result.exponents[static_cast<size_t>(aBaseType)] = 1;
+  return result;
+}
+
+inline StyleNumericType StyleNumericType::Number() { return Empty(); }
+
+inline StyleNumericType StyleNumericType::Length() {
+  return WithBaseType(StyleNumericBaseType::Length);
+}
+
 inline int32_t StyleNumericType::Exponent(
     StyleNumericBaseType aBaseType) const {
   return exponents[static_cast<size_t>(aBaseType)];
+}
+
+inline bool StyleNumericType::operator==(const StyleNumericType& aOther) const {
+  return ArrayEqual(exponents, aOther.exponents) &&
+         percent_hint == aOther.percent_hint;
 }
 
 }  // namespace mozilla

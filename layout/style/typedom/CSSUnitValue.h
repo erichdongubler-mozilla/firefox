@@ -40,6 +40,7 @@ class CSSUnitValue final : public CSSNumericValue {
                double aValue, const nsACString& aUnit);
 
   static RefPtr<CSSUnitValue> Create(nsCOMPtr<nsISupports> aParent,
+                                     const StyleNumericType& aNumericType,
                                      double aValue, const nsACString& aUnit);
 
   static RefPtr<CSSUnitValue> Create(nsCOMPtr<nsISupports> aParent,
