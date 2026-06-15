@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.346
- * pdfjsBuild = e75a7cfd6
+ * pdfjsVersion = 6.0.366
+ * pdfjsBuild = 3a0932911
  */
 
 ;// ./src/scripting_api/constants.js
@@ -1599,10 +1599,7 @@ class EventDispatcher {
       source.obj.value = event.value;
       this.runCalculate(source, event);
       const savedValue = event.value = source.obj._getValue();
-      let formattedValue = null;
-      if (this.runActions(source, source, event, "Format")) {
-        formattedValue = event.value?.toString?.();
-      }
+      const formattedValue = this.runActions(source, source, event, "Format") ? event.value?.toString?.() : null;
       source.obj._send({
         id: source.obj._id,
         siblings: source.obj._siblings,
@@ -1674,10 +1671,7 @@ class EventDispatcher {
         event.value = target.obj._getValue();
       }
       savedValue = target.obj._getValue();
-      let formattedValue = null;
-      if (this.runActions(target, target, event, "Format")) {
-        formattedValue = event.value?.toString?.();
-      }
+      const formattedValue = this.runActions(target, target, event, "Format") ? event.value?.toString?.() : null;
       target.obj._send({
         id: target.obj._id,
         siblings: target.obj._siblings,
