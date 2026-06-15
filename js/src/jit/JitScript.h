@@ -346,7 +346,7 @@ class alignas(uintptr_t) JitScript final
   // Profile string used by the profiler for Baseline Interpreter frames.
   const char* profileString_ = nullptr;
 
-  HeapPtr<JSScript*> owningScript_;
+  GCPtr<JSScript*> owningScript_;
 
   // Baseline code for the script. Either nullptr, BaselineDisabledScriptPtr,
   // BaselineQueuedScriptPtr, BaselineCompilingScriptPtr,
@@ -363,7 +363,7 @@ class alignas(uintptr_t) JitScript final
   // linked via the call object's enclosing environment. This field is set the
   // first time the Baseline JIT compiles this script and
   // |initializedTemplateEnv| records whether this has happened.
-  HeapPtr<EnvironmentObject*> templateEnv_;
+  GCPtr<EnvironmentObject*> templateEnv_;
 
   // The size of this allocation.
   Offset endOffset_ = 0;

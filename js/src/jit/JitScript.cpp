@@ -417,6 +417,7 @@ void JitScript::prepareForDestruction(Zone* zone) {
   owningScript_ = nullptr;
   baselineScript_.set(zone, nullptr);
   ionScript_.set(zone, nullptr);
+  templateEnv_ = nullptr;
 }
 
 struct FallbackStubs {
