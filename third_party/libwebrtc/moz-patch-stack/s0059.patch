@@ -188,7 +188,7 @@ index 2fa1093c5b..f593436351 100644
      }
      reference_finder_->ClearTo(seq_num);
 diff --git a/video/video_stream_buffer_controller.cc b/video/video_stream_buffer_controller.cc
-index 838539b28c..2e0d371e06 100644
+index dd77de3d2c..aef0c772b1 100644
 --- a/video/video_stream_buffer_controller.cc
 +++ b/video/video_stream_buffer_controller.cc
 @@ -36,6 +36,7 @@
