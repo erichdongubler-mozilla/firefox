@@ -488,44 +488,22 @@ export async function searchBrowsingHistory(toolParams, conversation) {
     )
   );
 
+  // The model only needs link metadata. thumbnail is a heavy, page-controlled
+  // field the UI renders from the history grid above, so keep it out of the
+  // model-facing payload.
+  result.results = result.results.map(
+    ({ url, title, visitDate, visitCount, relevanceScore }) => ({
+      url,
+      title,
+      visitDate,
+      visitCount,
+      relevanceScore,
+    })
+  );
+
   conversation.securityProperties.setPrivateData();
   lazy.console.log("[Tool] searchBrowsingHistory", result);
   return result;
-}
-
-/**
- * Strips heavy or unnecessary fields from a browser history search result.
- *
- * @param {string} result
- *  A JSON string representing the history search response.
- * @returns {string}
- *  The sanitized JSON string with large fields (e.g., favicon, thumbnail)
- *  removed, or the original string if parsing fails.
- */
-export function stripSearchBrowsingHistoryFields(result) {
-  try {
-    const data = JSON.parse(result);
-    if (
-      data.error ||
-      !Array.isArray(data.results) ||
-      data.results.length === 0
-    ) {
-      return result;
-    }
-
-    // Remove large or unnecessary fields to save tokens
-    const OMIT_KEYS = ["favicon", "thumbnail"];
-    for (const item of data.results) {
-      if (item && typeof item === "object") {
-        for (const k of OMIT_KEYS) {
-          delete item[k];
-        }
-      }
-    }
-    return JSON.stringify(data);
-  } catch {
-    return result;
-  }
 }
 
 /**
