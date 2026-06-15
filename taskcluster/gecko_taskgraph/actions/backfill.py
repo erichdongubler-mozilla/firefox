@@ -173,7 +173,14 @@ def backfill_action(parameters, graph_config, input, task_group_id, task_id):
 
     planned_pushes = plan_pushes_to_trigger(pushes, strategy, slices)
     failed = False
-    for push_id in planned_pushes:
+    logger.info(
+        "Backfill started: label=%s, strategy=%s, slices=%d, target_pushes=%s",
+        input_for_action.get("label", ""),
+        strategy,
+        slices,
+        planned_pushes,
+    )
+    for i, push_id in enumerate(planned_pushes, 1):
         try:
             # The Gecko decision task can sometimes fail on a push and we need to handle
             # the exception that this call will produce
@@ -184,6 +191,18 @@ def backfill_action(parameters, graph_config, input, task_group_id, task_id):
             # don't want to report an error for it.
             continue
 
+        logger.info(
+            "BACKFILL_DATA: %s",
+            json.dumps({
+                "push_id": push_id,
+                "decision_task_id": push_decision_task_id,
+                "label": input_for_action.get("label", ""),
+                "strategy": strategy,
+                "slices": slices,
+                "push_count": i,
+                "total_pushes": len(planned_pushes),
+            }),
+        )
         try:
             trigger_action(
                 action_name="backfill-task",
