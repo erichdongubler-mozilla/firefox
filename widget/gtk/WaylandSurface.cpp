@@ -1042,7 +1042,7 @@ void WaylandSurface::SetViewPortDestLocked(
 }
 
 void WaylandSurface::SetViewPortSourceRectLocked(
-    const WaylandSurfaceLock& aProofOfLock, const DesktopIntRect& aRect) {
+    const WaylandSurfaceLock& aProofOfLock, const DesktopRect& aRect) {
   MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
 
   // Silently ignore missing viewport to allow broken compositors to show
@@ -1053,7 +1053,7 @@ void WaylandSurface::SetViewPortSourceRectLocked(
   mViewportSourceRect = aRect;
 
   LOGWAYLAND(
-      "WaylandSurface::SetViewPortSourceRectLocked(): [%d, %d] -> [%d x %d]",
+      "WaylandSurface::SetViewPortSourceRectLocked(): [%f, %f] -> [%f x %f]",
       mViewportSourceRect.x, mViewportSourceRect.y, mViewportSourceRect.width,
       mViewportSourceRect.height);
 
@@ -1064,13 +1064,13 @@ void WaylandSurface::SetViewPortSourceRectLocked(
                                ": Wrong coordinates!",
                                ToString(aRect).c_str())
                    .get());
-    mViewportSourceRect = DesktopIntRect(-1, -1, -1, -1);
+    mViewportSourceRect = DesktopRect(-1, -1, -1, -1);
   }
 
-  wp_viewport_set_source(mViewport, wl_fixed_from_int(mViewportSourceRect.x),
-                         wl_fixed_from_int(mViewportSourceRect.y),
-                         wl_fixed_from_int(mViewportSourceRect.width),
-                         wl_fixed_from_int(mViewportSourceRect.height));
+  wp_viewport_set_source(mViewport, wl_fixed_from_double(mViewportSourceRect.x),
+                         wl_fixed_from_double(mViewportSourceRect.y),
+                         wl_fixed_from_double(mViewportSourceRect.width),
+                         wl_fixed_from_double(mViewportSourceRect.height));
   mSurfaceNeedsCommit = true;
 }
 

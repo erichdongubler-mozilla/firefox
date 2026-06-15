@@ -197,7 +197,7 @@ class WaylandSurface final {
   void SetViewportFollowsSizeChangesLocked(
       const WaylandSurfaceLock& aProofOfLock);
   void SetViewPortSourceRectLocked(const WaylandSurfaceLock& aProofOfLock,
-                                   const DesktopIntRect& aRect);
+                                   const DesktopRect& aRect);
   void SetViewPortDestLocked(const WaylandSurfaceLock& aProofOfLock,
                              const DesktopIntSize& aDestSize);
   void SetTransformFlippedLocked(const WaylandSurfaceLock& aProofOfLock,
@@ -473,7 +473,7 @@ class WaylandSurface final {
 
   bool mViewportFollowsSizeChanges = false;
   wp_viewport* mViewport = nullptr;
-  DesktopIntRect mViewportSourceRect{-1, -1, -1, -1};
+  DesktopRect mViewportSourceRect{-1, -1, -1, -1};
   DesktopIntSize mViewportDestinationSize{-1, -1};
 
   // Surface flip state on X/Y asix
