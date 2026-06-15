@@ -1296,14 +1296,16 @@ int32_t Assembler::branchOffset(Label* L, OffsetSize bits,
   return kEndOfJumpChain;
 }
 
-int32_t Assembler::branchLongOffsetHelper(Label* L) {
+int32_t Assembler::branchOffset(Label* L) {
+  // Two instructions (auipc + jalr), without any new deadlines.
   BufferOffset next_instr_offset = nextInstrOffset(2, 0);
   return branchOffset(L, OffsetSize::kOffset32, next_instr_offset);
 }
 
-int32_t Assembler::branchOffsetHelper(Label* L, OffsetSize bits) {
+int32_t Assembler::branchOffset(Label* L, OffsetSize bits) {
   MOZ_ASSERT(bits < OffsetSize::kOffset32);
 
+  // One instruction (jal, branch, etc), possibly one new deadline.
   BufferOffset next_instr_offset = nextInstrOffset(1, 1);
   return branchOffset(L, bits, next_instr_offset);
 }

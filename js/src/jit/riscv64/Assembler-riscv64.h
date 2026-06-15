@@ -400,8 +400,11 @@ class Assembler : public AssemblerShared,
                        BufferOffset next_instr_offset);
 
  public:
-  int32_t branchOffsetHelper(Label* L, OffsetSize bits);
-  int32_t branchLongOffsetHelper(Label* L);
+  // Branch offset for short branches (jal, branch, etc.).
+  int32_t branchOffset(Label* L, OffsetSize bits);
+
+  // Branch offset for long branches (auipc + jalr).
+  int32_t branchOffset(Label* L);
 
   void nopAlign(int m) { m_buffer.align(m); }
 

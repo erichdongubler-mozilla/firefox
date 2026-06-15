@@ -122,10 +122,6 @@ class MacroAssemblerRiscv64 : public Assembler {
     nopAlign(alignment);
   }
 
-  int32_t GetOffset(Label* L, OffsetSize bits) {
-    return Assembler::branchOffsetHelper(L, bits);
-  }
-
   std::pair<Register, int16_t> computeAddress(Address address,
                                               UseScratchRegisterScope& temps);
 
