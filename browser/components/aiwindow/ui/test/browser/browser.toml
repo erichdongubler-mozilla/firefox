@@ -98,6 +98,8 @@ skip-if = [
 
 ["browser_aiwindow_smartbar_context_chips.js"]
 
+["browser_aiwindow_smartbar_context_paste.js"]
+
 ["browser_aiwindow_smartbar_focus.js"]
 
 ["browser_aiwindow_smartbar_inline_mentions.js"]
