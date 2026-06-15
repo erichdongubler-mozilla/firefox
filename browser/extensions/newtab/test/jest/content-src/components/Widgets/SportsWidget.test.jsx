@@ -1310,6 +1310,64 @@ describe("<SportsWidget> matches view", () => {
     ).toBe("newtab-sports-widget-now");
   });
 
+  it("falls back to Upcoming when the persisted tab is Now but live games have ended", () => {
+    // Reproduces the bug where matchesTab is cached as "now" (from a prior
+    // click or session) but live games have since ended: without the fallback,
+    // every tab panel is hidden and no tab shows as selected.
+    const { container } = renderInMatchesState({
+      matchesTab: "now",
+      data: {
+        teams: [],
+        matches: { current: [], previous: [], next: [mockMatch] },
+        live: [],
+      },
+    });
+    expect(
+      container
+        .querySelector(".sports-matches-tab.is-active")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-sports-widget-upcoming");
+    const panel = getVisibleTabPanel(container);
+    expect(panel).toBeTruthy();
+    expect(panel.querySelector(".sports-match-row")).toBeTruthy();
+  });
+
+  it("keeps Results selected after live games end when the user had picked Results", () => {
+    // The Now-only fallback shouldn't override an explicit Results choice:
+    // when the user is on Results and a game ends, they should stay on Results.
+    const { container } = renderInMatchesState({
+      matchesTab: "results",
+      data: {
+        teams: [],
+        matches: { current: [], previous: [mockMatch], next: [] },
+        live: [],
+      },
+    });
+    expect(
+      container
+        .querySelector(".sports-matches-tab.is-active")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-sports-widget-results");
+  });
+
+  it("keeps Now selected while live games are still in progress", () => {
+    // Guards against the fallback firing too eagerly: matchesTab="now" plus
+    // an active live game must continue to render the Now tab.
+    const { container } = renderInMatchesState({
+      matchesTab: "now",
+      data: {
+        teams: [],
+        matches: emptyMatches,
+        live: [mockMatch],
+      },
+    });
+    expect(
+      container
+        .querySelector(".sports-matches-tab.is-active")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-sports-widget-now");
+  });
+
   it("disables the results tab and prevents dispatch when there are no previous results", () => {
     const { container } = renderInMatchesState();
     const resultsTab = container.querySelector(

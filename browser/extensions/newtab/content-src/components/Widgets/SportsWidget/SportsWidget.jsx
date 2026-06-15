@@ -276,8 +276,18 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   const teams = useMemo(() => rawTeams ?? [], [rawTeams]);
   const { matchesTab } = sportsWidgetData;
   const hasUserSelectedTab = useRef(false);
+  // When the Now tab disappears (live games ended), the persisted `matchesTab`
+  // may still be "now". That would hide every panel and leave the widget
+  // blank with no tab visibly selected. Fall back to "Upcoming" so the next
+  // matches show by default.
+  const resolvedMatchesTab =
+    matchesTab === MATCHES_TABS.NOW && !hasLiveGames
+      ? MATCHES_TABS.UPCOMING
+      : matchesTab;
   const activeTab =
-    hasLiveGames && !hasUserSelectedTab.current ? MATCHES_TABS.NOW : matchesTab;
+    hasLiveGames && !hasUserSelectedTab.current
+      ? MATCHES_TABS.NOW
+      : resolvedMatchesTab;
 
   // Defensive clamp on the persisted live-pager index. The feed re-clamps
   // after every fetch, but the restored cached index may briefly exceed the
