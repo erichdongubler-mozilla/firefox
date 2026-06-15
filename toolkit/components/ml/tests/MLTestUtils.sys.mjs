@@ -461,6 +461,8 @@ export const MLTestUtils = {
    * @returns {Promise<{
    *   openTab: (opts?: { title?: string, body?: string, browser?: object }) => Promise<{ tab: object, url: string }>,
    *   cleanup: () => Promise<void>,
+   *   registerPathHandler: (path: string, handler: (request: object, response: object) => void) => void,
+   *   origin: string,
    * }>}
    */
   async serveSharedHTMLInTab(options) {
@@ -541,6 +543,27 @@ export const MLTestUtils = {
       await new Promise(resolve => server.stop(resolve));
     }
 
-    return { openTab, cleanup };
+    return {
+      openTab,
+      cleanup,
+      /**
+       * Register a custom path handler on the shared HttpServer, e.g. to serve
+       * a body parameterised by query string.
+       *
+       * @param {string} path - The path to handle (e.g. "/serp.html").
+       * @param {(request: object, response: object) => void} handler
+       */
+      registerPathHandler(path, handler) {
+        server.registerPathHandler(path, handler);
+      },
+      /**
+       * Origin (e.g. http://localhost:PORT) of the shared HttpServer, for
+       * building absolute URLs to registered path handlers.
+       *
+       * @type {string}
+       */
+      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      origin: `http://${primaryHost}:${primaryPort}`,
+    };
   },
 };
