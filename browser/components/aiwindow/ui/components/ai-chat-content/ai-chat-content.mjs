@@ -61,6 +61,7 @@ export class AIChatContent extends MozLitElement {
   #scrollRafId = null;
   #pendingAnnouncementMessageId = null;
   #scrollPositions = new Map();
+  #actionResultExpandState = new Map();
 
   /**
    * Content-side mirror of the current conversation's history results pool,
@@ -952,7 +953,6 @@ export class AIChatContent extends MozLitElement {
       summaryL10nId: "smart-window-closed-tabs-summary",
       summaryL10nArgs: { count: tabCount },
       rows,
-      isExpanded: false,
     };
   }
 
@@ -979,7 +979,6 @@ export class AIChatContent extends MozLitElement {
       summaryL10nId: "smart-window-restore-success-summary",
       summaryL10nArgs: { count: restoredCount },
       rows,
-      isExpanded: true,
     };
   }
 
@@ -988,8 +987,9 @@ export class AIChatContent extends MozLitElement {
    *
    * @param {Array<object>} toolMsgs - one entry per tool call this turn
    * @param {boolean} isComplete - whether the turn has finished
+   * @param {number} groupIndex - this group's index in the render items
    */
-  #renderActionLogGroup(toolMsgs, isComplete) {
+  #renderActionLogGroup(toolMsgs, isComplete, groupIndex) {
     const finalMessage = {
       l10nId: "action-log-completed-steps",
       l10nArgs: { count: toolMsgs.length },
@@ -997,12 +997,15 @@ export class AIChatContent extends MozLitElement {
     const summary = isComplete
       ? finalMessage
       : toolMsgs[toolMsgs.length - 1]?.pendingLabel;
+    const key = `action-log:${toolMsgs[0]?.id ?? toolMsgs[0]?.messageId ?? groupIndex}`;
     return html`
       <ai-action-result
         .labelL10nId=${summary?.l10nId}
         .labelL10nArgs=${summary?.l10nArgs}
         .rows=${this.#buildGroupedActionLogRows(toolMsgs)}
-        .isExpanded=${false}
+        .isExpanded=${this.#actionResultExpandState.get(key) ?? false}
+        @action-result-toggle=${e =>
+          this.#actionResultExpandState.set(key, !!e.detail?.isExpanded)}
       ></ai-action-result>
     `;
   }
@@ -1119,7 +1122,9 @@ export class AIChatContent extends MozLitElement {
         .summaryL10nArgs=${actionResultData.summaryL10nArgs}
         .rows=${actionResultData.rows}
         .canUndo=${canUndo}
-        .isExpanded=${actionResultData.isExpanded}
+        .isExpanded=${this.#actionResultExpandState.get(messageId) ?? false}
+        @action-result-toggle=${e =>
+          this.#actionResultExpandState.set(messageId, !!e.detail?.isExpanded)}
         @action-result-undo=${onUndo}
       ></ai-action-result>
     `;
@@ -1351,10 +1356,10 @@ export class AIChatContent extends MozLitElement {
   }
 
   #renderMessages() {
-    return this.#buildTurnRenderItems().map(item => {
+    return this.#buildTurnRenderItems().map((item, i) => {
       const { type, msgs, msg, isComplete, contextPageUrl } = item;
       if (type === "action-log") {
-        return this.#renderActionLogGroup(msgs, isComplete);
+        return this.#renderActionLogGroup(msgs, isComplete, i);
       }
 
       const chips = this.#getVisibleChips(msg, contextPageUrl);

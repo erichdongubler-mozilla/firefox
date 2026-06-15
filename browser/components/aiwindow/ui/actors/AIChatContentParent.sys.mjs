@@ -156,7 +156,7 @@ export class AIChatContentParent extends JSWindowActorParent {
     aiWindow?.onOpenLink();
 
     try {
-      const { url } = data;
+      const { url, preferSwitchToTab } = data;
       if (!url) {
         return;
       }
@@ -195,8 +195,25 @@ export class AIChatContentParent extends JSWindowActorParent {
         window.gBrowser.selectedBrowser.browsingContext.originAttributes;
       const triggeringPrincipal =
         Services.scriptSecurityManager.createNullPrincipal({ userContextId });
-      const where = lazy.BrowserUtils.whereToOpenLink(data);
 
+      if (preferSwitchToTab) {
+        // Switch to an existing tab if one matches, otherwise
+        // open in a new tab
+        if (
+          lazy.URILoadingHelper.switchToTabHavingURI(window, url, false, {})
+        ) {
+          return;
+        }
+
+        lazy.URILoadingHelper.openWebLinkIn(window, url, "tab", {
+          triggeringPrincipal,
+          userContextId,
+          forceForeground: false,
+        });
+        return;
+      }
+
+      const where = lazy.BrowserUtils.whereToOpenLink(data);
       if (where === "current") {
         const tabFound = lazy.URILoadingHelper.switchToTabHavingURI(
           window,
