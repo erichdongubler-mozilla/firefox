@@ -979,7 +979,7 @@ add_task(async function test_bandwidth_usage_sub_gb_precision_in_preferences() {
       );
       Assert.equal(
         bandwidthEl.description.getAttribute("data-l10n-id"),
-        "ip-protection-bandwidth-left-mb",
+        "ip-protection-bandwidth-left-mb-1",
         "Should use the MB l10n string when remaining is less than 1 GB"
       );
     }
