@@ -74,7 +74,7 @@ index 20bf4afc44..697bedadb9 100644
  #endif  // defined(WEBRTC_POSIX)
  }
 diff --git a/webrtc.gni b/webrtc.gni
-index 17f2a65aae..b3117cf3fc 100644
+index 6bff55438e..baa6fef0ef 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -342,7 +342,7 @@ rtc_opus_dir = "//third_party/opus"

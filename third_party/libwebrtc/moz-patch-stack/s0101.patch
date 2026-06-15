@@ -117,10 +117,10 @@ index 87df2e4bd0..c458282f5a 100644
    public_configs = []
    if (!build_with_chromium) {
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 2690dbeea6..9e2b659279 100644
+index 4f13ce5235..6eefcd6ab1 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
-@@ -1585,6 +1585,7 @@ rtc_source_set("ssl_header") {
+@@ -1650,6 +1650,7 @@ rtc_source_set("ssl_header") {
  }
  
  rtc_library("digest") {
@@ -128,7 +128,7 @@ index 2690dbeea6..9e2b659279 100644
    visibility = [ "*" ]
    sources = [
      "message_digest.cc",
-@@ -1606,8 +1607,10 @@ rtc_library("digest") {
+@@ -1671,8 +1672,10 @@ rtc_library("digest") {
      configs += [ "..:external_ssl_library" ]
    }
  }
@@ -139,7 +139,7 @@ index 2690dbeea6..9e2b659279 100644
    visibility = [ "*" ]
    sources = [
      "crypto_random.cc",
-@@ -1628,6 +1631,7 @@ rtc_library("crypto_random") {
+@@ -1693,6 +1696,7 @@ rtc_library("crypto_random") {
      configs += [ "..:external_ssl_library" ]
    }
  }
@@ -148,7 +148,7 @@ index 2690dbeea6..9e2b659279 100644
  rtc_library("ssl") {
  if (!build_with_mozilla) {
 diff --git a/webrtc.gni b/webrtc.gni
-index d6b00fae5b..0ec325ab1d 100644
+index 7416d4b176..f6a4f3e66c 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -112,7 +112,7 @@ declare_args() {
