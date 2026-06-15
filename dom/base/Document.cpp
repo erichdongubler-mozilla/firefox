@@ -21308,4 +21308,9 @@ void Document::RegisterSpeculationRulesFromScript(
                                              std::move(aSpeculationRules));
 }
 
+// html.spec.whatwg.org/#unregister-speculation-rules
+void Document::UnregisterSpeculationRules(nsIScriptElement* aScriptElement) {
+  mSpeculationRulesFromScript.Remove(aScriptElement);
+}
+
 }  // namespace mozilla::dom
