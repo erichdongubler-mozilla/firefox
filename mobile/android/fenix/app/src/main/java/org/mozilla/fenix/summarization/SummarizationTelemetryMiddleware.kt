@@ -6,8 +6,10 @@ package org.mozilla.fenix.summarization
 
 import mozilla.components.concept.llm.Llm
 import mozilla.components.feature.summarize.ContentExtracted
+import mozilla.components.feature.summarize.LlmProviderAction
 import mozilla.components.feature.summarize.OffDeviceSummarizationShakeConsentAction
 import mozilla.components.feature.summarize.OnDeviceSummarizationShakeConsentAction
+import mozilla.components.feature.summarize.ReceivedParsedDocument
 import mozilla.components.feature.summarize.SummarizationAction
 import mozilla.components.feature.summarize.SummarizationCompleted
 import mozilla.components.feature.summarize.SummarizationFailed
@@ -34,6 +36,7 @@ private data class SummarizationSessionTelemetry(
     val model: String? = null,
     val startTimeMillis: Long = System.currentTimeMillis(),
     val contentMetrics: ContentMetrics? = null,
+    val receivedFirstChunk: Boolean = false,
 )
 
 /**
@@ -85,6 +88,8 @@ class SummarizationTelemetryMiddleware(
                 sessionTelemetry = sessionTelemetry.copy(model = action.info.modelId?.value)
             }
             is ContentExtracted -> handleExtractedContent(action.content)
+            is LlmProviderAction.ProviderInitialized -> recordProviderInitialized()
+            is ReceivedParsedDocument -> handleReceivedParsedDocument()
             is SummarizationCompleted -> recordSummarizationCompleted()
             is SummarizationFailed -> recordSummarizationCompleted(success = false, action.exception)
             is ViewDismissed -> {
@@ -172,6 +177,29 @@ class SummarizationTelemetryMiddleware(
                 lengthWords = sessionTelemetry.contentMetrics?.wordCount,
                 model = sessionTelemetry.model,
                 trigger = sessionTelemetry.trigger?.toString(),
+                sessionId = sessionTelemetry.sessionId,
+            ),
+        )
+    }
+
+    private fun recordProviderInitialized() {
+        AiSummarize.providerInitialized.record(
+            AiSummarize.ProviderInitializedExtra(
+                model = sessionTelemetry.model,
+                sessionId = sessionTelemetry.sessionId,
+            ),
+        )
+    }
+
+    private fun handleReceivedParsedDocument() {
+        if (sessionTelemetry.receivedFirstChunk) {
+            return
+        }
+        sessionTelemetry = sessionTelemetry.copy(receivedFirstChunk = true)
+
+        AiSummarize.firstResponse.record(
+            AiSummarize.FirstResponseExtra(
+                model = sessionTelemetry.model,
                 sessionId = sessionTelemetry.sessionId,
             ),
         )
