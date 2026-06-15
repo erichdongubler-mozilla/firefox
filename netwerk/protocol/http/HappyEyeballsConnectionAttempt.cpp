@@ -116,24 +116,32 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
        "connectionAttemptDelay=%u",
        static_cast<uint32_t>(ipPref), resolutionDelay, connectionAttemptDelay));
 
-  if (mConnInfo->GetRoutedHost().IsEmpty()) {
-    nsTArray<happy_eyeballs::AltSvc> emptyAltSvc;
-    return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
-                               static_cast<uint16_t>(mConnInfo->OriginPort()),
-                               &emptyAltSvc, ipPref, httpVersions,
-                               resolutionDelay, connectionAttemptDelay);
-  }
-
+  // An explicit HTTP/3 connection info (an alt-svc HTTP/3 route, or a direct
+  // HTTP/3 connection such as WebTransport) must race HTTP/3. When there's an
+  // alt-svc route the HTTP/3 port is the routed port; for a direct HTTP/3
+  // connection (no routed host) it's the origin port. This is checked before
+  // the routed-host-empty case below so direct HTTP/3 connections aren't
+  // mistakenly raced over TCP.
   if (mConnInfo->IsHttp3()) {
     LOG(("HappyEyeballsConnectionAttempt for HTTP/3"));
     nsTArray<happy_eyeballs::AltSvc> altSvcArray;
     happy_eyeballs::AltSvc altsvc{};
     altsvc.http_version = happy_eyeballs::HttpVersion::H3;
-    altsvc.port = static_cast<uint16_t>(mConnInfo->RoutedPort());
+    altsvc.port = mConnInfo->GetRoutedHost().IsEmpty()
+                      ? static_cast<uint16_t>(mConnInfo->OriginPort())
+                      : static_cast<uint16_t>(mConnInfo->RoutedPort());
     altSvcArray.AppendElement(altsvc);
     return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
                                static_cast<uint16_t>(mConnInfo->OriginPort()),
                                &altSvcArray, ipPref, httpVersions,
+                               resolutionDelay, connectionAttemptDelay);
+  }
+
+  if (mConnInfo->GetRoutedHost().IsEmpty()) {
+    nsTArray<happy_eyeballs::AltSvc> emptyAltSvc;
+    return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
+                               static_cast<uint16_t>(mConnInfo->OriginPort()),
+                               &emptyAltSvc, ipPref, httpVersions,
                                resolutionDelay, connectionAttemptDelay);
   }
 
