@@ -391,7 +391,7 @@ class Assembler : public AssemblerShared,
   static int jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
                                Instruction* instruction2 = nullptr);
   BufferOffset jumpChainGetNextLink(BufferOffset pos);
-  uint32_t jumpChainUseNextLink(Label* label);
+
   // Returns true if the target was successfully assembled and spewed.
   bool jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos);
 

@@ -1109,83 +1109,85 @@ BufferOffset Assembler::jumpChainGetNextLink(BufferOffset pos) {
   return link == kEndOfChain ? BufferOffset() : BufferOffset(link);
 }
 
-uint32_t Assembler::jumpChainUseNextLink(Label* L) {
-  MOZ_ASSERT(L->used());
-  BufferOffset link = jumpChainGetNextLink(BufferOffset(L));
-  if (!link.assigned()) {
-    L->reset();
-    return LabelBase::INVALID_OFFSET;
-  }
-  int offset = link.getOffset();
-  DEBUG_PRINTF("next: %p to offset %d\n", L, offset);
-  L->use(offset);
-  return offset;
-}
-
 void Assembler::bind(Label* label, BufferOffset boff) {
   JitSpew(JitSpew_Codegen, ".set Llabel %p %u", label, currentOffset());
   DEBUG_PRINTF(".set Llabel %p %u\n", label, currentOffset());
+
   // If our caller didn't give us an explicit target to bind to
   // then we want to bind to the location of the next instruction
-  BufferOffset dest = boff.assigned() ? boff : nextOffset();
-  if (label->used()) {
-    uint32_t next;
+  BufferOffset targetOffset = boff.assigned() ? boff : nextOffset();
 
-    do {
-      // A used label holds a link to branch that uses it.
-      // It's okay we use it here since jumpChainUseNextLink() mutates `label`.
-      BufferOffset b(label);
-      DEBUG_PRINTF("\tbind next:%d\n", b.getOffset());
-      // Even a 0 offset may be invalid if we're out of memory.
-      if (oom()) {
-        return;
-      }
-      int fixup_pos = b.getOffset();
-      int dist = dest.getOffset() - fixup_pos;
-      next = jumpChainUseNextLink(label);
-      DEBUG_PRINTF(
-          "\t%p fixup: %d next: %u dest: %d dist: %d nextOffset: %d "
-          "currOffset: %d\n",
-          label, fixup_pos, next, dest.getOffset(), dist,
-          nextOffset().getOffset(), currentOffset());
-      Instruction* instr = getInstructionAt(b);
-      if (instr->IsBranch()) {
-        if (!is_intn(dist, kBranchOffsetBits)) {
-          MOZ_ASSERT(next != LabelBase::INVALID_OFFSET);
-          MOZ_RELEASE_ASSERT(
-              is_intn(static_cast<int>(next) - fixup_pos, kJumpOffsetBits));
-          MOZ_ASSERT(getInstructionAt(BufferOffset(next))->IsAuipc());
-          MOZ_ASSERT(
-              getInstructionAt(BufferOffset(next + kInstrSize))->IsJalr());
-          DEBUG_PRINTF("\t\ttrampolining: %d\n", next);
-        } else {
-          jumpChainPutTargetAt(b, dest);
-          BufferOffset deadline(b.getOffset() +
-                                ImmBranchMaxForwardOffset(CondBranchRangeType));
-          m_buffer.unregisterBranchDeadline(CondBranchRangeType, deadline);
-        }
-      } else if (instr->IsJal()) {
-        if (!is_intn(dist, kJumpOffsetBits)) {
-          MOZ_ASSERT(next != LabelBase::INVALID_OFFSET);
-          MOZ_RELEASE_ASSERT(
-              is_intn(static_cast<int>(next) - fixup_pos, kJumpOffsetBits));
-          MOZ_ASSERT(getInstructionAt(BufferOffset(next))->IsAuipc());
-          MOZ_ASSERT(
-              getInstructionAt(BufferOffset(next + kInstrSize))->IsJalr());
-          DEBUG_PRINTF("\t\ttrampolining: %d\n", next);
-        } else {
-          jumpChainPutTargetAt(b, dest);
-          BufferOffset deadline(
-              b.getOffset() + ImmBranchMaxForwardOffset(UncondBranchRangeType));
-          m_buffer.unregisterBranchDeadline(UncondBranchRangeType, deadline);
-        }
-      } else {
-        MOZ_ASSERT(instr->IsAuipc());
-        jumpChainPutTargetAt(b, dest);
-      }
-    } while (next != LabelBase::INVALID_OFFSET);
+  // Nothing has seen the label yet: just mark the location.
+  //
+  // If we've run out of memory, don't attempt to modify the buffer which may
+  // not be there. Just mark the label as bound to the (possibly bogus)
+  // targetOffset.
+  if (!label->used() || oom()) {
+    label->bind(targetOffset.getOffset());
+    return;
   }
-  label->bind(dest.getOffset());
+
+  // Get the most recent instruction that used the label, as stored in the
+  // label. This instruction is the head of an implicit linked list of label
+  // uses.
+  BufferOffset branchOffset(label);
+
+  while (branchOffset.assigned()) {
+    // Before overwriting the offset in this instruction, get the offset of
+    // the next link in the implicit branch list.
+    BufferOffset nextOffset = jumpChainGetNextLink(branchOffset);
+
+    // Linking against the actual (Instruction*) would be invalid, since that
+    // Instruction could be anywhere in memory. Instead, just link against the
+    // correct relative offset, assuming no constant pools, which will be taken
+    // into consideration during finalization.
+    ptrdiff_t relativeByteOffset =
+        targetOffset.getOffset() - branchOffset.getOffset();
+
+    Instruction* link = getInstructionAt(branchOffset);
+    OffsetSize offsetSize;
+    if (link->IsBranch() || link->IsJal()) {
+      offsetSize = link->GetOffsetSize();
+    } else {
+      MOZ_ASSERT(link->IsAuipc());
+      offsetSize = OffsetSize::kOffset32;
+    }
+
+    // This branch may still be registered for callbacks. Stop tracking it.
+    if (offsetSize < OffsetSize::kOffset32) {
+      ImmBranchRangeType branchRange =
+          OffsetSizeToImmBranchRangeType(offsetSize);
+      BufferOffset deadline(branchOffset.getOffset() +
+                            ImmBranchMaxForwardOffset(branchRange));
+      m_buffer.unregisterBranchDeadline(branchRange, deadline);
+    }
+
+    // Is link able to reach the label?
+    if (is_intn(relativeByteOffset, offsetSize)) {
+      // Write a new relative offset into the instruction.
+      jumpChainPutTargetAt(branchOffset, targetOffset);
+    } else {
+      // This is a short-range branch, and it can't reach the label directly.
+      // Verify that it branches to a veneer: an unconditional branch.
+      MOZ_ASSERT(offsetSize < OffsetSize::kOffset32);
+
+      // |nextOffset| is a veneer branch (auipc; jalr).
+      MOZ_ASSERT(nextOffset.assigned());
+      MOZ_ASSERT(getInstructionAt(nextOffset)->IsAuipc());
+      MOZ_ASSERT(
+          getInstructionAt(BufferOffset(nextOffset.getOffset() + kInstrSize))
+              ->IsJalr());
+
+      // The veneer must be reachable from the branch.
+      MOZ_RELEASE_ASSERT(is_intn(
+          nextOffset.getOffset() - branchOffset.getOffset(), offsetSize));
+    }
+
+    branchOffset = nextOffset;
+  }
+
+  // Bind the label, so that future uses may encode the offset immediately.
+  label->bind(targetOffset.getOffset());
 }
 
 void Assembler::Bind(uint8_t* rawCode, const CodeLabel& label) {
