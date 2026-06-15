@@ -485,6 +485,8 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 1932653
 ]
 
+["browser_selectMRUOnClose.js"]
+
 ["browser_selectTabAtIndex.js"]
 tags = "vertical-tabs"
 

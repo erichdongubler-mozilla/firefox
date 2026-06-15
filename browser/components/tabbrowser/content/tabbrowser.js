@@ -6293,6 +6293,19 @@
         tab => !excludeTabs.has(tab)
       );
 
+      if (Services.prefs.getBoolPref("browser.tabs.selectMRUOnClose", false)) {
+        let mruTab = remainingTabs
+          .filter(t => t !== aTab)
+          .reduce(
+            (best, t) =>
+              !best || t.lastAccessed > best.lastAccessed ? t : best,
+            null
+          );
+        if (mruTab) {
+          return mruTab;
+        }
+      }
+
       let tab = this.tabContainer.findNextTab(aTab, {
         direction: 1,
         filter: _tab => remainingTabs.includes(_tab),
