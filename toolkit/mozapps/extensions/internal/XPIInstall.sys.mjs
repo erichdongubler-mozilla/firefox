@@ -935,16 +935,24 @@ function shouldVerifySignedState(aAddonType, aLocation) {
  *        or undefined if the file wasn't signed.
  */
 export var verifyBundleSignedState = async function (aBundle, aAddon) {
-  let pkg = Package.get(aBundle);
   try {
-    let { signedState, signedTypes } = await pkg.verifySignedState(
-      aAddon.id,
-      aAddon.type,
-      aAddon.location
-    );
-    return { signedState, signedTypes };
-  } finally {
-    pkg.close();
+    let pkg = Package.get(aBundle);
+    try {
+      let { signedState, signedTypes } = await pkg.verifySignedState(
+        aAddon.id,
+        aAddon.type,
+        aAddon.location
+      );
+      return { signedState, signedTypes };
+    } finally {
+      pkg.close();
+    }
+  } catch (e) {
+    logger.warn(`verifyBundleSignedState failed for ${aAddon.id}`, e);
+    if (!shouldVerifySignedState(aAddon.type, aAddon.location)) {
+      return { signedState: AddonManager.SIGNEDSTATE_NOT_REQUIRED };
+    }
+    return { signedState: AddonManager.SIGNEDSTATE_BROKEN };
   }
 };
 
