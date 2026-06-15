@@ -442,12 +442,20 @@ nsHttpConnectionInfo::CloneAndAdoptPortAndAlpn(
       aProtocol == happy_eyeballs::ConnectionAttemptHttpVersions::H3
           ? "h3"_ns
           : EmptyCString());
+  bool isHttp3 = aProtocol == happy_eyeballs::ConnectionAttemptHttpVersions::H3;
   int32_t port = aPort != 0 ? aPort : mOriginPort;
-  RefPtr<nsHttpConnectionInfo> clone = new nsHttpConnectionInfo(
-      mOrigin, port, alpnStr, mUsername, mProxyInfo, mOriginAttributes,
-      mEndToEndSSL,
-      aProtocol == happy_eyeballs::ConnectionAttemptHttpVersions::H3,
-      mWebTransport);
+  RefPtr<nsHttpConnectionInfo> clone;
+  if (mEndToEndSSL && port != mOriginPort) {
+    const nsACString& routedHost =
+        mRoutedHost.IsEmpty() ? mOrigin : mRoutedHost;
+    clone = new nsHttpConnectionInfo(mOrigin, mOriginPort, alpnStr, mUsername,
+                                     mProxyInfo, mOriginAttributes, routedHost,
+                                     port, isHttp3, mWebTransport);
+  } else {
+    clone = new nsHttpConnectionInfo(mOrigin, port, alpnStr, mUsername,
+                                     mProxyInfo, mOriginAttributes,
+                                     mEndToEndSSL, isHttp3, mWebTransport);
+  }
 
   clone->SetAnonymous(GetAnonymous());
   clone->SetPrivate(GetPrivate());

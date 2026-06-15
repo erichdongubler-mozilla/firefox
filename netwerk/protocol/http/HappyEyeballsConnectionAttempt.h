@@ -270,6 +270,9 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   RefPtr<HappyEyeballsTransaction> mOutputTrans;
   uint64_t mOutputConnId{0};
   uint16_t mAddrFamily{0};
+  // Single-address DNS record of the winning establisher, used to build
+  // connection-coalescing keys for the winner only.
+  nsCOMPtr<nsIDNSAddrRecord> mWinnerAddrRecord;
 
   nsCOMPtr<nsITimer> mTimer;
   WeakPtr<ConnectionEntry> mEntry;

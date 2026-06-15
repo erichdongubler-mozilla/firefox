@@ -172,8 +172,19 @@ SingleDNSAddrRecord::GetNextAddr(uint16_t aPort, NetAddr* aAddr) {
 
 NS_IMETHODIMP
 SingleDNSAddrRecord::GetAddresses(nsTArray<NetAddr>& aAddressArray) {
-  MOZ_ASSERT_UNREACHABLE("unexpected to be called");
-  return NS_ERROR_NOT_IMPLEMENTED;
+  // Match a regular DNS address record, which stores port-less addresses (the
+  // port is applied later via GetNextAddr). Connection coalescing compares the
+  // stored addresses against a connection's peer address with the port zeroed
+  // (see FindCoalescableConnection), so a non-zero port here would prevent the
+  // match.
+  NetAddr addr = mAddress;
+  if (addr.raw.family == AF_INET) {
+    addr.inet.port = 0;
+  } else if (addr.raw.family == AF_INET6) {
+    addr.inet6.port = 0;
+  }
+  aAddressArray.AppendElement(addr);
+  return NS_OK;
 }
 
 // -------------------- ConnectionEstablisher --------------------
@@ -275,7 +286,6 @@ void ConnectionEstablisher::FinishInternal(nsresult aResult) {
   MaybeSetConnectingDone();
   mTransportStatusCallback = nullptr;
   mLnaCheckCallback = nullptr;
-  mAddrRecord = nullptr;
 
   if (mTransaction) {
     // Detach the connected-callback so later Close/cleanup on the
@@ -324,6 +334,13 @@ void ConnectionEstablisher::FinishInternal(nsresult aResult) {
       cb(Err(NS_FAILED(aResult) ? aResult : NS_ERROR_ABORT));
     }
   }
+
+  mAddrRecord = nullptr;
+}
+
+already_AddRefed<nsIDNSAddrRecord> ConnectionEstablisher::AddrRecord() const {
+  nsCOMPtr<nsIDNSAddrRecord> record = mAddrRecord;
+  return record.forget();
 }
 
 NS_IMETHODIMP

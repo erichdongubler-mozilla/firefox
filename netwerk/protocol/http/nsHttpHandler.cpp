@@ -2829,6 +2829,9 @@ bool nsHttpHandler::IsBeforeLastActiveTabLoadOptimization(
 
 void nsHttpHandler::ExcludeHttp2OrHttp3Internal(
     const nsHttpConnectionInfo* ci) {
+  if (ci->GetHappyEyeballsEnabled()) {
+    return;
+  }
   LOG(("nsHttpHandler::ExcludeHttp2OrHttp3Internal ci=%s",
        ci->HashKey().get()));
   // The excluded list needs to be stayed synced between parent process and

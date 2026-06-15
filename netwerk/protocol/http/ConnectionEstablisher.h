@@ -69,6 +69,7 @@ class ConnectionEstablisher : public nsITransportEventSink,
   }
   HappyEyeballsTransaction* Transaction() const { return mTransaction; }
   const NetAddr& Addr() const { return mAddr; }
+  already_AddRefed<nsIDNSAddrRecord> AddrRecord() const;
   void ClearResultConnection();
   HttpConnectionBase* ResultConn() const { return mResultConn; }
   virtual bool IsUDP() const { return false; }

@@ -812,6 +812,7 @@ void HappyEyeballsConnectionAttempt::HandleTCPConnectionResult(
   mOutputTrans = establisher->Transaction();
   mOutputConnId = aId;
   mAddrFamily = addr.raw.family;
+  mWinnerAddrRecord = establisher->AddrRecord();
   // The winner is the first connection to fully succeed.
   mFirstConnectEnd = TimeStamp::Now();
   // The ownership of connection is moved to HappyEyeballsConnectionAttempt now.
@@ -1037,6 +1038,7 @@ void HappyEyeballsConnectionAttempt::HandleUDPConnectionResult(
   mOutputTrans = establisher->Transaction();
   mOutputConnId = aId;
   mAddrFamily = addr.raw.family;
+  mWinnerAddrRecord = establisher->AddrRecord();
   // The winner is the first connection to fully succeed.
   mFirstConnectEnd = TimeStamp::Now();
   // The ownership of connection is moved to HappyEyeballsConnectionAttempt now.
@@ -1137,6 +1139,18 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(
   LOG(("Got connTCP:%p transactionAlreadyOnConn=%d", connTCP.get(),
        aTransactionAlreadyOnConn));
 
+  // Build coalescing keys for the winning connection and reprocess the pending
+  // queue before inserting connTCP into the active list. If our pending
+  // transaction can coalesce onto an existing connection, ProcessSpdyPendingQ
+  // dispatches it there now (and ReportSpdyConnection below closes the now
+  // redundant connTCP for coalescing).
+  if (mWinnerAddrRecord && StaticPrefs::network_http_http2_enabled() &&
+      StaticPrefs::network_http_http2_coalesce_hostnames()) {
+    if (entry->MaybeProcessCoalescingKeys(mWinnerAddrRecord)) {
+      gHttpHandler->ConnMgr()->ProcessSpdyPendingQ(entry);
+    }
+  }
+
   entry->InsertIntoActiveConns(connTCP);
 
   bool isHttp2 = connTCP->UsingSpdy();
@@ -1230,6 +1244,13 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
         FillConnectTimings(/* aIsQuic = */ true, timings);
         trans->BootstrapTimings(timings);
       }
+    }
+  }
+
+  if (mWinnerAddrRecord && nsHttpHandler::IsHttp3Enabled() &&
+      StaticPrefs::network_http_http2_coalesce_hostnames()) {
+    if (entry->MaybeProcessCoalescingKeys(mWinnerAddrRecord, true)) {
+      gHttpHandler->ConnMgr()->ProcessSpdyPendingQ(entry);
     }
   }
 
