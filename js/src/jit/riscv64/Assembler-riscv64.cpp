@@ -1205,7 +1205,8 @@ void Assembler::Bind(uint8_t* rawCode, const CodeLabel& label) {
   }
 }
 
-int32_t Assembler::branchLongOffsetHelper(Label* L) {
+int32_t Assembler::branchOffset(Label* L, OffsetSize bits,
+                                BufferOffset next_instr_offset) {
   if (oom()) {
     return kEndOfJumpChain;
   }
@@ -1213,103 +1214,27 @@ int32_t Assembler::branchLongOffsetHelper(Label* L) {
   // Prevent nop sequences in branch instructions.
   AutoForbidNops afn(this);
 
-  BufferOffset next_instr_offset = nextInstrOffset(2, 0);
-  DEBUG_PRINTF("\tbranchLongOffsetHelper: %p to (%d)\n", L,
-               next_instr_offset.getOffset());
+  DEBUG_PRINTF("\branchOffset: %p to %d\n", L, next_instr_offset.getOffset());
 
   if (L->bound()) {
     // The label is bound: all uses are already linked.
     JitSpew(JitSpew_Codegen, ".use Llabel %p on %d", L,
             next_instr_offset.getOffset());
     int32_t offset = L->offset() - next_instr_offset.getOffset();
-    MOZ_ASSERT((offset & 3) == 0);
-    return offset;
-  }
-
-  // The label is unbound and previously unused: Store the offset in the label
-  // itself for patching by bind().
-  if (!L->used()) {
-    JitSpew(JitSpew_Codegen, ".use Llabel %p on %d", L,
-            next_instr_offset.getOffset());
-    L->use(next_instr_offset.getOffset());
-    DEBUG_PRINTF("\tLabel %p added to link: %d\n", L,
-                 next_instr_offset.getOffset());
-    if (!label_cache_.putNew(L->offset(), next_instr_offset)) {
-      NoEnoughLabelCache();
-    }
-    return kEndOfJumpChain;
-  }
-
-  LabelCache::Ptr p = label_cache_.lookup(L->offset());
-  MOZ_ASSERT(p);
-  MOZ_ASSERT(p->key() == L->offset());
-  const int32_t target_pos = p->value().getOffset();
-
-  // If the existing instruction at the head of the list is within reach of the
-  // new branch, we can simply insert the new branch at the front of the list.
-  if (jumpChainPutTargetAt(BufferOffset(target_pos), next_instr_offset)) {
-    DEBUG_PRINTF("\tLabel %p added to link: %d\n", L,
-                 next_instr_offset.getOffset());
-    if (!label_cache_.put(L->offset(), next_instr_offset)) {
-      NoEnoughLabelCache();
-    }
-  } else {
-    DEBUG_PRINTF("\tLabel  %p can't be added to link: %d -> %d\n", L,
-                 BufferOffset(target_pos).getOffset(),
-                 next_instr_offset.getOffset());
-
-    // The label already has a linked list of uses, but we can't reach the head
-    // of the list with the allowed branch range. Insert this branch at a
-    // different position in the list. We need to find an existing branch
-    // `exbr`.
-    //
-    // In particular, the end of the list is always a viable candidate, so we'll
-    // just get that.
-    //
-    // See also vixl::MozBaseAssembler::LinkAndGetOffsetTo.
-
-    BufferOffset next(L);
-    BufferOffset exbr;
-    do {
-      exbr = next;
-      next = jumpChainGetNextLink(next);
-    } while (next.assigned());
-    mozilla::DebugOnly<bool> ok = jumpChainPutTargetAt(exbr, next_instr_offset);
-    MOZ_ASSERT(ok, "Still can't reach list head");
-  }
-
-  return kEndOfJumpChain;
-}
-
-int32_t Assembler::branchOffsetHelper(Label* L, OffsetSize bits) {
-  if (oom()) {
-    return kEndOfJumpChain;
-  }
-
-  // Prevent nop sequences in branch instructions.
-  AutoForbidNops afn(this);
-
-  BufferOffset next_instr_offset = nextInstrOffset(1, 1);
-  DEBUG_PRINTF("\tbranchOffsetHelper: %p to %d\n", L,
-               next_instr_offset.getOffset());
-
-  if (L->bound()) {
-    // The label is bound: all uses are already linked.
-    JitSpew(JitSpew_Codegen, ".use Llabel %p on %d", L,
-            next_instr_offset.getOffset());
-    int32_t offset = L->offset() - next_instr_offset.getOffset();
-    DEBUG_PRINTF("\toffset = %d\n", offset);
     MOZ_ASSERT(is_intn(offset, bits));
     MOZ_ASSERT((offset & 1) == 0);
+    MOZ_ASSERT_IF(bits == OffsetSize::kOffset32, (offset & 3) == 0);
     return offset;
   }
 
-  BufferOffset deadline(next_instr_offset.getOffset() +
-                        ImmBranchMaxForwardOffset(bits));
-  DEBUG_PRINTF("\tregisterBranchDeadline %d type %d\n", deadline.getOffset(),
-               OffsetSizeToImmBranchRangeType(bits));
-  m_buffer.registerBranchDeadline(OffsetSizeToImmBranchRangeType(bits),
-                                  deadline);
+  if (bits < OffsetSize::kOffset32) {
+    BufferOffset deadline(next_instr_offset.getOffset() +
+                          ImmBranchMaxForwardOffset(bits));
+    DEBUG_PRINTF("\tregisterBranchDeadline %d type %d\n", deadline.getOffset(),
+                 OffsetSizeToImmBranchRangeType(bits));
+    m_buffer.registerBranchDeadline(OffsetSizeToImmBranchRangeType(bits),
+                                    deadline);
+  }
 
   // The label is unbound and previously unused: Store the offset in the label
   // itself for patching by bind().
@@ -1338,13 +1263,13 @@ int32_t Assembler::branchOffsetHelper(Label* L, OffsetSize bits) {
   // If the existing instruction at the head of the list is within reach of the
   // new branch, we can simply insert the new branch at the front of the list.
   if (jumpChainPutTargetAt(BufferOffset(target_pos), next_instr_offset)) {
-    DEBUG_PRINTF("\tLabel  %p added to link: %d\n", L,
-                 next_instr_offset.getOffset());
     if (!label_cache_.put(L->offset(), next_instr_offset)) {
       NoEnoughLabelCache();
     }
+    DEBUG_PRINTF("\tLabel %p added to link: %d\n", L,
+                 next_instr_offset.getOffset());
   } else {
-    DEBUG_PRINTF("\tLabel  %p can't be added to link: %d -> %d\n", L,
+    DEBUG_PRINTF("\tLabel %p can't be added to link: %d -> %d\n", L,
                  BufferOffset(target_pos).getOffset(),
                  next_instr_offset.getOffset());
 
@@ -1369,6 +1294,18 @@ int32_t Assembler::branchOffsetHelper(Label* L, OffsetSize bits) {
   }
 
   return kEndOfJumpChain;
+}
+
+int32_t Assembler::branchLongOffsetHelper(Label* L) {
+  BufferOffset next_instr_offset = nextInstrOffset(2, 0);
+  return branchOffset(L, OffsetSize::kOffset32, next_instr_offset);
+}
+
+int32_t Assembler::branchOffsetHelper(Label* L, OffsetSize bits) {
+  MOZ_ASSERT(bits < OffsetSize::kOffset32);
+
+  BufferOffset next_instr_offset = nextInstrOffset(1, 1);
+  return branchOffset(L, bits, next_instr_offset);
 }
 
 Assembler::Condition Assembler::InvertCondition(Condition cond) {

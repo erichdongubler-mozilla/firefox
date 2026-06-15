@@ -394,6 +394,12 @@ class Assembler : public AssemblerShared,
   uint32_t jumpChainUseNextLink(Label* label);
   // Returns true if the target was successfully assembled and spewed.
   bool jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos);
+
+ private:
+  int32_t branchOffset(Label* L, OffsetSize bits,
+                       BufferOffset next_instr_offset);
+
+ public:
   int32_t branchOffsetHelper(Label* L, OffsetSize bits);
   int32_t branchLongOffsetHelper(Label* L);
 
