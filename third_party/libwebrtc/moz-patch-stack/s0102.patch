@@ -16,7 +16,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/4527c41ef71d7683c
  4 files changed, 24 insertions(+), 12 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index 7f00251707..65e6d91866 100644
+index 5a29a5778f..895593be36 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -523,6 +523,9 @@ if (!rtc_build_ssl) {
@@ -117,7 +117,7 @@ index 87df2e4bd0..c458282f5a 100644
    public_configs = []
    if (!build_with_chromium) {
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 98b2b1605a..7d0fbb0053 100644
+index 2690dbeea6..9e2b659279 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
 @@ -1585,6 +1585,7 @@ rtc_source_set("ssl_header") {
@@ -148,7 +148,7 @@ index 98b2b1605a..7d0fbb0053 100644
  rtc_library("ssl") {
  if (!build_with_mozilla) {
 diff --git a/webrtc.gni b/webrtc.gni
-index 2ffe2aa9cf..aa3bc91e85 100644
+index d6b00fae5b..0ec325ab1d 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -112,7 +112,7 @@ declare_args() {
@@ -160,7 +160,7 @@ index 2ffe2aa9cf..aa3bc91e85 100644
  
    # Selects whether debug dumps for the audio processing module
    # should be generated.
-@@ -336,7 +336,7 @@ declare_args() {
+@@ -333,7 +333,7 @@ declare_args() {
  }
  
  # Enable liboam only on non-mozilla builds.

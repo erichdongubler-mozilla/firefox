@@ -44,7 +44,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/a342f5eca8622c8b9
  modules/portal/BUILD.gn                       |  2 +-
  modules/video_coding/BUILD.gn                 |  2 +-
  pc/BUILD.gn                                   |  4 +--
- rtc_base/BUILD.gn                             |  8 +++---
+ rtc_base/BUILD.gn                             |  4 +--
  rtc_base/memory/BUILD.gn                      |  4 +--
  rtc_base/synchronization/BUILD.gn             |  4 +--
  rtc_base/system/BUILD.gn                      |  4 +--
@@ -54,7 +54,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/a342f5eca8622c8b9
  test/BUILD.gn                                 |  6 ++--
  test/fuzzers/BUILD.gn                         |  4 +--
  webrtc.gni                                    | 28 +++++++++----------
- 41 files changed, 104 insertions(+), 104 deletions(-)
+ 41 files changed, 102 insertions(+), 102 deletions(-)
 
 diff --git a/.gn b/.gn
 index a97e2f18b4..e03aab02cf 100644
@@ -74,7 +74,7 @@ index a97e2f18b4..e03aab02cf 100644
  # The python interpreter to use by default. On Windows, this will look
  # for python3.exe and python3.bat.
 diff --git a/BUILD.gn b/BUILD.gn
-index 9741a55e03..ad9d5000a0 100644
+index 0bd2576bc3..7fe113499a 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -21,8 +21,8 @@
@@ -604,7 +604,7 @@ index 886f787831..6cc10b9d6e 100644
  
  if (rtc_build_libsrtp) {
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 3328567b85..98b2b1605a 100644
+index 4d5060a694..2690dbeea6 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
 @@ -9,8 +9,8 @@
@@ -618,17 +618,6 @@ index 3328567b85..98b2b1605a 100644
  }
  
  rtc_source_set("protobuf_utils") {
-@@ -1932,8 +1932,8 @@ if (!rtc_rusty_base64) {
-     ]
-   }
- } else {
--  import("//build/config/rust.gni")
--  import("//build/rust/rust_static_library.gni")
-+  import("//chromium/build/config/rust.gni")
-+  import("//chromium/build/rust/rust_static_library.gni")
- 
-   rust_static_library("base64_rust_bridge") {
-     allow_unsafe = true  # Needed for FFI with cxx crate.
 diff --git a/rtc_base/memory/BUILD.gn b/rtc_base/memory/BUILD.gn
 index 9682dae9fe..4aede9e8ba 100644
 --- a/rtc_base/memory/BUILD.gn
@@ -792,7 +781,7 @@ index f68cf156e6..7728a7e52a 100644
    }
  }
 diff --git a/webrtc.gni b/webrtc.gni
-index 235ba28bd5..2be18ed547 100644
+index b34eb4de14..712ba936b8 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -5,12 +5,12 @@
@@ -840,7 +829,7 @@ index 235ba28bd5..2be18ed547 100644
  }
  
  if (build_with_chromium) {
-@@ -368,8 +368,8 @@ rtc_common_configs = [ webrtc_root + ":common_config" ]
+@@ -365,8 +365,8 @@ rtc_common_configs = [ webrtc_root + ":common_config" ]
  
  if (is_mac || is_ios) {
    if (filter_include(default_compiler_configs,
@@ -851,7 +840,7 @@ index 235ba28bd5..2be18ed547 100644
    }
  }
  
-@@ -392,7 +392,7 @@ rtc_common_inherited_config = webrtc_root + ":common_inherited_config"
+@@ -389,7 +389,7 @@ rtc_common_inherited_config = webrtc_root + ":common_inherited_config"
  # Common configs to remove or add in all rtc targets.
  rtc_remove_configs = []
  if (!build_with_chromium && is_clang) {
