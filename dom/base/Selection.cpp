@@ -159,7 +159,7 @@ static void LogSelectionAPI(const dom::Selection* aSelection,
                             const nsINode* aNode) {
   MOZ_LOG_FMT(sSelectionAPILog, LogLevel::Info, "{} Selection::{}({}={})",
               static_cast<const void*>(aSelection), aFuncName, aArgName,
-              ToString(RefPtr{aNode}));
+              RefPtr{aNode});
 }
 
 static void LogSelectionAPI(const dom::Selection* aSelection,
@@ -177,7 +177,7 @@ static void LogSelectionAPI(const dom::Selection* aSelection,
   MOZ_LOG_FMT(sSelectionAPILog, LogLevel::Info,
               "{} Selection::{}({}={}, {}={})",
               static_cast<const void*>(aSelection), aFuncName, aArgName1,
-              ToString(RefPtr{aNode}), aArgName2, aOffset);
+              RefPtr{aNode}, aArgName2, aOffset);
 }
 
 static void LogSelectionAPI(const dom::Selection* aSelection,
@@ -3155,12 +3155,10 @@ void Selection::ExtendInternal(nsINode& aContainer, uint32_t aOffset,
   if (aContainer.GetFrameSelection() != mFrameSelection) {
     NS_ASSERTION(
         false,
-        nsFmtCString(
-            "mFrameSelection is {} which is expected as "
-            "aContainer.GetFrameSelection() ({})",
-            mozilla::ToString(mFrameSelection).c_str(),
-            mozilla::ToString(RefPtr{aContainer.GetFrameSelection()}).c_str())
-            .get());
+        fmt::format("mFrameSelection is {} which is expected as "
+                    "aContainer.GetFrameSelection() ({})",
+                    mFrameSelection, RefPtr{aContainer.GetFrameSelection()})
+            .c_str());
     aRv.Throw(NS_ERROR_FAILURE);
     return;
   }
