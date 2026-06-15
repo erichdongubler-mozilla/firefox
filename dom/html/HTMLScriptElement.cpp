@@ -339,7 +339,8 @@ bool HTMLScriptElement::Supports(const GlobalObject& aGlobal,
   nsAutoString type(aType);
   return aType.EqualsLiteral("classic") || aType.EqualsLiteral("module") ||
 
-         aType.EqualsLiteral("importmap");
+         aType.EqualsLiteral("importmap") ||
+         aType.EqualsLiteral("speculationrules");
 }
 
 nsDOMTokenList* HTMLScriptElement::Blocking() {
