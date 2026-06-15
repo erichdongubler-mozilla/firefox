@@ -101,11 +101,14 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
 
   // Restrict the protocols the Happy Eyeballs engine may attempt to those
   // enabled by prefs, so disabled protocols are never raced (from HTTPS
-  // records, IP hints, or alt-svc).
+  // records, IP hints, or alt-svc). NS_HTTP_DISALLOW_HTTP3 is set for
+  // transactions that can't use HTTP/3 (e.g. WebSocket upgrades), so honor it
+  // here too.
   happy_eyeballs::HttpVersions httpVersions{
       /* h1 */ true,
       /* h2 */ StaticPrefs::network_http_http2_enabled(),
-      /* h3 */ nsHttpHandler::IsHttp3Enabled(),
+      /* h3 */ nsHttpHandler::IsHttp3Enabled() &&
+          !(mCaps & NS_HTTP_DISALLOW_HTTP3),
   };
 
   LOG(
@@ -1130,7 +1133,29 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(
 
   bool isHttp2 = connTCP->UsingSpdy();
 
-  if (!aTransactionAlreadyOnConn) {
+  nsHttpTransaction* realTrans =
+      mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
+  // WebSocket / WebTransport upgrades on an HTTP/2 connection must be
+  // dispatched through the extended CONNECT tunnel (Http2StreamTunnel)
+  // instead of being activated directly on the Http2Session.
+  bool deferExtendedConnect =
+      isHttp2 && realTrans &&
+      (realTrans->IsWebsocketUpgrade() || realTrans->IsForWebTransport());
+
+  if (!aTransactionAlreadyOnConn && deferExtendedConnect) {
+    LOG(
+        ("ProcessTCPConn deferring extended CONNECT upgrade trans=%p to "
+         "ProcessPendingQ\n",
+         realTrans));
+
+    RefPtr<PendingTransactionInfo> existing =
+        gHttpHandler->ConnMgr()->FindTransactionHelper(
+            /* removeWhenFound = */ false, entry, realTrans);
+    if (!existing) {
+      gHttpHandler->ConnMgr()->AddTransaction(realTrans, realTrans->Priority());
+    }
+    mTransaction = nullptr;
+  } else if (!aTransactionAlreadyOnConn) {
     RefPtr<PendingTransactionInfo> pendingTransInfo =
         gHttpHandler->ConnMgr()->FindTransactionHelper(true, entry,
                                                        mTransaction);

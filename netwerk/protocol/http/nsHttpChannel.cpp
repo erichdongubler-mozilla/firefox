@@ -1237,6 +1237,7 @@ nsresult nsHttpChannel::ContinueOnBeforeConnect(bool aShouldUpgrade,
   mConnectionInfo->SetTRRMode(nsIRequest::GetTRRMode());
   mConnectionInfo->SetIPv4Disabled(mCaps & NS_HTTP_DISABLE_IPV4);
   mConnectionInfo->SetIPv6Disabled(mCaps & NS_HTTP_DISABLE_IPV6);
+  mConnectionInfo->SetHttp3Disabled(mCaps & NS_HTTP_DISALLOW_HTTP3);
   mConnectionInfo->SetAnonymousAllowClientCert(
       (mLoadFlags & LOAD_ANONYMOUS_ALLOW_CLIENT_CERT) != 0);
 
@@ -8071,7 +8072,16 @@ nsresult nsHttpChannel::BeginConnect() {
       return false;
     }
 
-    if (mUpgradeProtocolCallback) {
+    if (mUpgradeProtocolCallback &&
+        !StaticPrefs::network_http_happy_eyeballs_upgrade_enabled()) {
+      return false;
+    }
+
+    // Connect-only requests need the extended-CONNECT tunnel path, which is
+    // untested with Happy Eyeballs. These only reach us via a proxy today
+    // (already excluded above), but guard explicitly against a future
+    // non-proxied consumer.
+    if (mCaps & NS_HTTP_CONNECT_ONLY) {
       return false;
     }
 
