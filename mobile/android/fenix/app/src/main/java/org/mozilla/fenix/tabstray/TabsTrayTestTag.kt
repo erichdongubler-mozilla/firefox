@@ -86,4 +86,7 @@ internal object TabsTrayTestTag {
     // Tab Search
     const val TAB_SEARCH_ROOT = "$TABS_TRAY.tab_search"
     const val TAB_SEARCH_BACK_BUTTON = "$TAB_SEARCH_ROOT.back_button"
+
+    // Tab grid
+    const val TAB_GRID = "$TABS_TRAY.grid"
 }
