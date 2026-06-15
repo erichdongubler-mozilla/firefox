@@ -8186,36 +8186,37 @@ DocGroup* Document::GetDocGroupOrCreate() {
 
 void Document::SetScopeObject(nsIGlobalObject* aGlobal) {
   mScopeObject = do_GetWeakReference(aGlobal);
-  if (aGlobal) {
-    mHasHadScriptHandlingObject = true;
+  if (!aGlobal) {
+    return;
+  }
+  mHasHadScriptHandlingObject = true;
 
-    nsPIDOMWindowInner* window = aGlobal->GetAsInnerWindow();
-    if (!window) {
-      return;
-    }
+  nsPIDOMWindowInner* window = aGlobal->GetAsInnerWindow();
+  if (!window) {
+    return;
+  }
 
-    // Attempt to join a DocGroup based on our global and container now that our
-    // principal is locked in (due to being added to a window).
-    DocGroup* docGroup = GetDocGroupOrCreate();
-    if (!docGroup) {
-      // If we failed to join a DocGroup, inherit from our parent window.
-      //
-      // NOTE: It is possible for Document to be cross-origin to window while
-      // loading a cross-origin data document over XHR with CORS. In that case,
-      // the DocGroup can have a key which does not match NodePrincipal().
-      MOZ_ASSERT(!mDocumentContainer,
-                 "Must have DocGroup if loaded in a DocShell");
-      mDocGroup = window->GetDocGroup();
-      mDocGroup->AddDocument(this);
-    }
+  // Attempt to join a DocGroup based on our global and container now that our
+  // principal is locked in (due to being added to a window).
+  DocGroup* docGroup = GetDocGroupOrCreate();
+  if (!docGroup) {
+    // If we failed to join a DocGroup, inherit from our parent window.
+    //
+    // NOTE: It is possible for Document to be cross-origin to window while
+    // loading a cross-origin data document over XHR with CORS. In that case,
+    // the DocGroup can have a key which does not match NodePrincipal().
+    MOZ_ASSERT(!mDocumentContainer,
+               "Must have DocGroup if loaded in a DocShell");
+    mDocGroup = window->GetDocGroup();
+    mDocGroup->AddDocument(this);
+  }
 
 #ifdef DEBUG
-    AssertDocGroupMatchesKey();
+  AssertDocGroupMatchesKey();
 #endif
-    MOZ_ASSERT_IF(
-        mNodeInfoManager->GetArenaAllocator(),
-        mNodeInfoManager->GetArenaAllocator() == mDocGroup->ArenaAllocator());
-  }
+  MOZ_ASSERT_IF(
+      mNodeInfoManager->GetArenaAllocator(),
+      mNodeInfoManager->GetArenaAllocator() == mDocGroup->ArenaAllocator());
 }
 
 bool Document::ContainsEMEContent() {
