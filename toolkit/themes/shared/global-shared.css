@@ -30,8 +30,6 @@
     --panel-box-shadow-margin: 0px;
   }
 
-  --panel-separator-color: color-mix(in srgb, currentColor 25%, transparent);
-
   --popup-notification-body-width: calc(31em - calc(2 * var(--panel-padding)));
 
   &[lwtheme] {
@@ -52,10 +50,6 @@
   }
   &[lwt-toolbar="dark"] {
     --toolbar-color-scheme: dark;
-  }
-
-  @media (prefers-contrast) {
-    --panel-separator-color: currentColor;
   }
 
   background-color: -moz-Dialog;
