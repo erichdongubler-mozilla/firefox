@@ -219,7 +219,6 @@
 
   /** icon **/
   --icon-color: var(--text-color);
-  --icon-color-accent-primary-desaturated: light-dark(var(--color-violet-desaturated-60), var(--color-violet-desaturated-50));
   --icon-color-critical: light-dark(var(--color-red-50), var(--color-red-20));
   --icon-color-information: light-dark(var(--color-violet-50), var(--color-violet-20));
   --icon-color-success: light-dark(var(--color-green-50), var(--color-green-20));
@@ -248,7 +247,6 @@
   --panel-menuitem-border-radius: var(--border-radius-xxlarge);
   --panel-padding: var(--panel-padding-block);
   --panel-padding-block: 8px;
-  --panel-separator-color: light-dark(rgba(24, 14, 48, 25%), rgba(242, 240, 248, 25%));
   --panel-text-color: FieldText;
 
   /** size **/
@@ -381,7 +379,6 @@
     --color-accent-primary-selected: SelectedItem;
 
     /** icon **/
-    --icon-color-accent-primary-desaturated: CanvasText;
     --icon-color-critical: var(--icon-color);
     --icon-color-information: var(--icon-color);
     --icon-color-success: var(--icon-color);
@@ -394,7 +391,6 @@
 
     /** panel **/
     --panel-border-color: var(--border-color);
-    --panel-separator-color: var(--border-color);
 
     /** table **/
 

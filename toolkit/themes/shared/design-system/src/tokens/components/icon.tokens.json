@@ -7,14 +7,6 @@
         "prefersContrast": "{text.color.@base}"
       }
     },
-    "accent": {
-      "primary": {
-        "desaturated": {
-          "override": true,
-          "value": "unset"
-        }
-      }
-    },
     "information": {
       "value": {
         "light": "{color.blue.60}",

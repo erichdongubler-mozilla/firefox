@@ -19,19 +19,6 @@ appmenuitem-banner-update-unsupported =
 appmenuitem-banner-update-restart =
     .label = Update available — restart now
 
-# Fresh Firefox refers to the new updated UI
-appmenu-nova-update-promo =
-    .message = Get a fresh { -brand-short-name }. Keep all your tabs.
-
-appmenu-nova-update-link = Restart to update
-
-appmenu-nova-fxa-sign-in = Sign in
-
-appmenu-nova-switch-device-promo =
-    .message = Getting a new device soon? Take { -brand-short-name } with you!
-
-appmenu-nova-switch-device-link = How to migrate your data
-
 appmenuitem-new-tab =
     .label = New Tab
 appmenuitem-new-window =

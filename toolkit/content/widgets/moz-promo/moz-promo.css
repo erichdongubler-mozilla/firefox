@@ -63,8 +63,6 @@
   img {
     width: 100%;
     height: auto;
-    -moz-context-properties: fill;
-    fill: var(--promo-image-fill, currentColor);
   }
 }
 

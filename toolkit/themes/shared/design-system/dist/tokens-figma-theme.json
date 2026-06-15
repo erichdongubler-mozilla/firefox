@@ -859,11 +859,6 @@
     "dark": "rgb(251, 251, 254)",
     "forcedColors": "transparent"
   },
-  "panel/separator/color": {
-    "light": "color-mix(in srgb, currentColor 25%, transparent)",
-    "dark": "color-mix(in srgb, currentColor 25%, transparent)",
-    "forcedColors": "currentColor"
-  },
   "sidebar/background/color": {
     "light": "white",
     "dark": "rgb(28, 27, 34)",

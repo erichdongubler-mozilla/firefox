@@ -654,21 +654,12 @@ var gSync = {
     // due to a timing error. The fluent label attribute was being applied
     // after we had updated appMenuLabel and thus displayed an incorrect
     // label for signed in users.
-    const novaFxaLabel = PanelMultiView.getViewNode(
-      document,
-      "appMenu-nova-fxa-label"
-    );
-    const [headerDesc, headerText, novaSignIn] =
-      this.fluentStrings.formatValuesSync([
-        "appmenu-fxa-signed-in-label",
-        "appmenu-fxa-sync-and-save-data2",
-        "appmenu-nova-fxa-sign-in",
-      ]);
+    const [headerDesc, headerText] = this.fluentStrings.formatValuesSync([
+      "appmenu-fxa-signed-in-label",
+      "appmenu-fxa-sync-and-save-data2",
+    ]);
     appMenuHeaderDescription.value = headerDesc;
     appMenuHeaderText.textContent = headerText;
-    if (novaFxaLabel) {
-      novaFxaLabel.label = novaSignIn;
-    }
 
     for (let topic of this._obs) {
       Services.obs.addObserver(this, topic, true);
@@ -1164,10 +1155,7 @@ var gSync = {
     if (fxaStatus == "not_configured") {
       // sign in button in app (hamburger) menu
       // should take you straight to fxa sign in page
-      if (
-        anchor.id == "appMenu-fxa-label2" ||
-        anchor.id == "appMenu-nova-fxa-label"
-      ) {
+      if (anchor.id == "appMenu-fxa-label2") {
         this.openFxAEmailFirstPageFromFxaMenu(anchor);
         PanelUI.hide();
         return;
@@ -2944,9 +2932,7 @@ var gSync = {
     // do not show this CTA panel
     if (
       !this.FXA_CTA_MENU_ENABLED ||
-      (anchor &&
-        (anchor.id === "appMenu-fxa-label2" ||
-          anchor.id === "appMenu-nova-fxa-label"))
+      (anchor && anchor.id === "appMenu-fxa-label2")
     ) {
       // If we've previously shown this but got disabled
       // we should ensure we hide the panel

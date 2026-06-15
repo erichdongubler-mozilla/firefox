@@ -10,18 +10,6 @@
       <toolbarbutton id="appMenu-update-banner" class="panel-banner-item subviewbutton"
                      wrap="true"
                      hidden="true"/>
-      <html:moz-promo id="appMenu-nova-update-promo"
-                      type="vibrant"
-                      imagedisplay="padded"
-                      imagesrc="chrome://browser/skin/update-badge.svg"
-                      data-l10n-id="appmenu-nova-update-promo"
-                      data-l10n-attrs="message"
-                      hidden="true">
-        <html:a id="appMenu-nova-update-link"
-                slot="support-link"
-                href="#"
-                data-l10n-id="appmenu-nova-update-link"></html:a>
-      </html:moz-promo>
 
       <toolbaritem id="appMenu-menu-message"
                    closemenu="none">
@@ -31,7 +19,8 @@
                    class="subviewbutton toolbaritem-combined-buttons">
         <html:div id="appMenu-fxa-text" data-l10n-id="appmenu-fxa-sync-and-save-data2"/>
         <toolbarbutton id="appMenu-fxa-label2"
-                       class="subviewbutton">
+                      class="subviewbutton"
+                      >
           <vbox flex="1">
             <label id="appMenu-header-title"
                    crop="end"/>
@@ -39,7 +28,6 @@
                    crop="end"/>
           </vbox>
         </toolbarbutton>
-        <html:moz-button id="appMenu-nova-fxa-label"/>
       </toolbaritem>
       <toolbarbutton id="appMenu-empty-profiles-button"
                      class="subviewbutton subviewbutton-nav"
