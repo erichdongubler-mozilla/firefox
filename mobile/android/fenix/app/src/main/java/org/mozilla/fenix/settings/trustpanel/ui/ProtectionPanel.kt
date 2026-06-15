@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -78,13 +77,6 @@ import org.mozilla.fenix.settings.trustpanel.store.WebsiteInfoState
 import org.mozilla.fenix.settings.trustpanel.store.WebsitePermission
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
-
-private val BANNER_ROUNDED_CORNER_SHAPE = RoundedCornerShape(
-    topStart = 28.dp,
-    topEnd = 28.dp,
-    bottomStart = 4.dp,
-    bottomEnd = 4.dp,
-)
 
 private val BANNER_IMAGE_SIZE = 80.dp
 private val GradientAISubtleStop2Light = Color(0xFFE9DAFB)
@@ -420,7 +412,7 @@ private fun ProtectionPanelBanner(
         Card(
             modifier = bannerModifier,
             colors = CardDefaults.cardColors(containerColor = content.backgroundColor),
-            shape = BANNER_ROUNDED_CORNER_SHAPE,
+            shape = MaterialTheme.shapes.extraLarge,
         ) {
             ProtectionPanelBannerRow(content = content, showChevron = onClick != null)
         }
@@ -667,19 +659,21 @@ private fun AutoplayDropdownMenu(
 
 @PreviewLightDark
 @Composable
-private fun ProtectionPanelPreview() {
+private fun ProtectionPanelPreview(
+    @PreviewParameter(ProtectionPanelBannerPreviewProvider::class) state: ProtectionPanelBannerPreviewState,
+) {
     FirefoxTheme {
         Surface {
             ProtectionPanel(
                 websiteInfoState = WebsiteInfoState(
-                    isSecured = true,
+                    isSecured = state.isSecured,
                     websiteUrl = "https://www.mozilla.org",
                     websiteTitle = "Mozilla",
                     certificate = null,
                 ),
                 ipProtectionMenuState = IPProtectionMenuState(),
                 icon = null,
-                isTrackingProtectionEnabled = true,
+                isTrackingProtectionEnabled = state.isTrackingProtectionEnabled,
                 isGlobalTrackingProtectionEnabled = true,
                 isLocalPdf = false,
                 showIPProtection = true,
