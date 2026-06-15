@@ -227,7 +227,8 @@ DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::RTCCodecStats, mTimestamp,
                                   mChannels, mSdpFmtpLine)
 
 DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS_AND_FIELDS(
-    mozilla::dom::RTCTransportStats, mozilla::dom::RTCStats, mIceRole,
+    mozilla::dom::RTCTransportStats, mozilla::dom::RTCStats, mPacketsSent,
+    mPacketsReceived, mBytesSent, mBytesReceived, mIceRole,
     mIceLocalUsernameFragment, mDtlsState, mIceState, mSelectedCandidatePairId,
     mTlsVersion, mDtlsCipher, mDtlsRole, mSrtpCipher)
 

@@ -233,6 +233,10 @@ enum RTCDtlsRole {
 };
 
 dictionary RTCTransportStats : RTCStats {
+  unsigned long long packetsSent;
+  unsigned long long packetsReceived;
+  unsigned long long bytesSent;
+  unsigned long long bytesReceived;
   RTCIceRole iceRole;
   DOMString iceLocalUsernameFragment;
   required RTCDtlsTransportState dtlsState;

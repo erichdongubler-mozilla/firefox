@@ -129,6 +129,13 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
   struct Transport {
     RefPtr<TransportFlow> mFlow;
     RefPtr<TransportFlow> mRtcpFlow;
+    // Counts of the (decrypted) payload that traverses this transport, used to
+    // populate RTCTransportStats. These exclude STUN connectivity checks and
+    // DTLS/SRTP protection overhead, both of which are added below this point.
+    uint64_t mBytesSent = 0;
+    uint64_t mBytesReceived = 0;
+    uint64_t mPacketsSent = 0;
+    uint64_t mPacketsReceived = 0;
   };
 
   using MediaTransportHandler::OnAlpnNegotiated;
@@ -942,6 +949,12 @@ void MediaTransportHandlerSTS::SendPacket(const std::string& aTransportId,
           CSFLogError(LOGTAG,
                       "%s: Transport flow (%s) failed to send packet. error=%d",
                       mIceCtx->name().c_str(), aTransportId.c_str(), error);
+        } else if (auto it = mTransports.find(aTransportId);
+                   it != mTransports.end()) {
+          // On success the layer returns the number of (unencrypted) payload
+          // bytes it was handed.
+          it->second.mBytesSent += error;
+          it->second.mPacketsSent += 1;
         }
       },
       [](const std::string& aError) {});
@@ -1143,6 +1156,13 @@ RefPtr<dom::RTCStatsPromise> MediaTransportHandlerSTS::GetIceStats(
                     }
                   }
                 }
+                transport.mBytesSent.Construct(transportIt->second.mBytesSent);
+                transport.mBytesReceived.Construct(
+                    transportIt->second.mBytesReceived);
+                transport.mPacketsSent.Construct(
+                    transportIt->second.mPacketsSent);
+                transport.mPacketsReceived.Construct(
+                    transportIt->second.mPacketsReceived);
               }
               // XXX(Bug 2037532) Fill missing fields on the transport.
               GetIceStats(*stream, aNow, stats.get(), transport);
@@ -1598,6 +1618,10 @@ void MediaTransportHandlerSTS::OnRtcpStateChange(TransportLayer* aLayer,
 void MediaTransportHandlerSTS::PacketReceived(TransportLayer* aLayer,
                                               MediaPacket& aPacket) {
   MEDIA_TRANSPORT_HANDLER_PACKET_RECEIVED(aPacket);
+  if (auto it = mTransports.find(aLayer->flow_id()); it != mTransports.end()) {
+    it->second.mBytesReceived += aPacket.len();
+    it->second.mPacketsReceived += 1;
+  }
   OnPacketReceived(std::string(aLayer->flow_id()), std::move(aPacket));
 }
 
