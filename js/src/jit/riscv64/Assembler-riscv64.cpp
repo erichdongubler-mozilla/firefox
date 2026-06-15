@@ -900,7 +900,7 @@ ABIArg ABIArgGenerator::next(MIRType type) {
 
 bool Assembler::oom() const {
   return AssemblerShared::oom() || m_buffer.oom() || jumpRelocations_.oom() ||
-         dataRelocations_.oom() || !enoughLabelCache_;
+         dataRelocations_.oom();
 }
 
 #ifdef JS_DISASM_RISCV64
@@ -996,117 +996,105 @@ void Assembler::PatchWrite_Imm32(CodeLocationLabel label, Imm32 imm) {
   *(raw - 1) = imm.value;
 }
 
-bool Assembler::jumpChainPutTargetAt(BufferOffset pos,
-                                     BufferOffset target_pos) {
-  if (m_buffer.oom()) {
-    return true;
+// Unbound Label Representation.
+//
+// We can have multiple branches using the same label before it is bound.
+// Assembler::bind() must then be able to enumerate all the branches and patch
+// them to target the final label location.
+//
+// When a Label is unbound with uses, its offset is pointing to the tip of a
+// linked list of uses. The uses can be branch, jal, or auipc+jalr instructions.
+//
+// The end of the list is encoded as a 0 pc offset, i.e. the tail is pointing to
+// itself.
+
+static constexpr int32_t kEndOfJumpChain = 0;
+
+static int32_t ImmPCRawOffset(const Instruction* instr) {
+  if (instr->IsBranch()) {
+    return instr->BranchOffset();
   }
-
-  Instruction* instruction = getInstructionAt(pos);
-  DEBUG_PRINTF("\tjumpChainPutTargetAt: %p (%d) to %p (%d)\n", instruction,
-               pos.getOffset(),
-               instruction + target_pos.getOffset() - pos.getOffset(),
-               target_pos.getOffset());
-  switch (instruction->InstructionOpcodeType()) {
-    case BRANCH: {
-      int32_t offset = target_pos.getOffset() - pos.getOffset();
-      if (!is_intn(offset, kBranchOffsetBits)) {
-        return false;
-      }
-      instruction->SetBranchOffset(offset);
-    } break;
-    case JAL: {
-      MOZ_ASSERT(instruction->IsJal());
-      int32_t offset = target_pos.getOffset() - pos.getOffset();
-      if (!is_intn(offset, kJumpOffsetBits)) {
-        return false;
-      }
-      instruction->SetImm20JValue(offset);
-    } break;
-    case AUIPC: {
-      Instruction* instruction2 =
-          getInstructionAt(BufferOffset(pos.getOffset() + kInstrSize));
-      MOZ_ASSERT(instruction2->IsJalr() || instruction2->IsAddi());
-      MOZ_ASSERT(instruction->RdValue() == instruction2->Rs1Value());
-
-      int32_t offset = target_pos.getOffset() - pos.getOffset();
-      auto [Hi20, Lo12] = ToHigh20Low12(offset);
-
-      instruction->SetImm20UValue(Hi20);
-      instruction2->SetImm12Value(Lo12);
-    } break;
-    default:
-      MOZ_CRASH("unexpected jump instruction");
+  if (instr->IsJal()) {
+    return instr->Imm20JValue();
   }
-  return true;
+  MOZ_CRASH("unexpected jump instruction");
 }
 
-const int kEndOfChain = -1;
-const int32_t kEndOfJumpChain = 0;
+static int32_t ImmPCRawOffset(const Instruction* auipc,
+                              const Instruction* jalr) {
+  MOZ_ASSERT(auipc->IsAuipc());
+  MOZ_ASSERT(jalr->IsJalr());
 
-int Assembler::jumpChainTargetAt(BufferOffset pos) {
-  if (oom()) {
-    return kEndOfChain;
-  }
-  Instruction* instruction = getInstructionAt(pos);
-  Instruction* instruction2 = nullptr;
-  if (instruction->IsAuipc()) {
-    instruction2 = getInstructionAt(BufferOffset(pos.getOffset() + kInstrSize));
-  }
-  return jumpChainTargetAt(instruction, pos, instruction2);
-}
-
-int Assembler::jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
-                                 Instruction* instruction2) {
-  DEBUG_PRINTF("\t jumpChainTargetAt: %p(%x)\n\t",
-               reinterpret_cast<Instr*>(instruction), pos.getOffset());
-#ifdef JS_DISASM_RISCV64
-  disassembleInstr(instruction);
-#endif /* JS_DISASM_RISCV64 */
-
-  switch (instruction->InstructionOpcodeType()) {
-    case BRANCH: {
-      int32_t imm13 = instruction->BranchOffset();
-      if (imm13 == kEndOfJumpChain) {
-        // EndOfChain sentinel is returned directly, not relative to pc or pos.
-        return kEndOfChain;
-      }
-      DEBUG_PRINTF("\t jumpChainTargetAt: %d %d\n", imm13,
-                   pos.getOffset() + imm13);
-      return pos.getOffset() + imm13;
-    }
-    case JAL: {
-      int32_t imm21 = instruction->Imm20JValue();
-      if (imm21 == kEndOfJumpChain) {
-        // EndOfChain sentinel is returned directly, not relative to pc or pos.
-        return kEndOfChain;
-      }
-      DEBUG_PRINTF("\t jumpChainTargetAt: %d %d\n", imm21,
-                   pos.getOffset() + imm21);
-      return pos.getOffset() + imm21;
-    }
-    case AUIPC: {
-      MOZ_ASSERT(instruction2 != nullptr);
-      MOZ_ASSERT(instruction2->IsJalr() || instruction2->IsAddi());
-
-      int32_t imm_auipc = instruction->Imm20UValue() << kImm20Shift;
-      int32_t imm12 = instruction2->Imm12Value();
-      int32_t offset = imm_auipc + imm12;
-      if (offset == kEndOfJumpChain) {
-        return kEndOfChain;
-      }
-      DEBUG_PRINTF("\t jumpChainTargetAt: %d %d\n", offset,
-                   pos.getOffset() + offset);
-      return offset + pos.getOffset();
-    }
-    default:
-      MOZ_CRASH("unexpected jump instruction");
-  }
+  int32_t imm_auipc = auipc->Imm20UValue() << kImm20Shift;
+  int32_t imm12 = jalr->Imm12Value();
+  return imm_auipc + imm12;
 }
 
 BufferOffset Assembler::jumpChainGetNextLink(BufferOffset pos) {
-  int link = jumpChainTargetAt(pos);
-  return link == kEndOfChain ? BufferOffset() : BufferOffset(link);
+  if (oom()) {
+    return BufferOffset();
+  }
+
+  Instruction* link = getInstructionAt(pos);
+  MOZ_ASSERT(link->IsBranch() || link->IsJal() || link->IsAuipc());
+
+  // Raw encoded offset.
+  int32_t offset;
+  if (link->IsAuipc()) {
+    Instruction* instr1 =
+        getInstructionAt(BufferOffset(pos.getOffset() + kInstrSize));
+    offset = ImmPCRawOffset(link, instr1);
+  } else {
+    offset = ImmPCRawOffset(link);
+  }
+
+  // End of the list is encoded as 0.
+  if (offset == kEndOfJumpChain) {
+    return BufferOffset();
+  }
+
+  // The encoded offset is the number of instructions to move.
+  return BufferOffset(pos.getOffset() + offset);
+}
+
+void Assembler::jumpChainPutTargetAt(BufferOffset pos,
+                                     BufferOffset target_pos) {
+  if (oom()) {
+    return;
+  }
+
+  int32_t offset = target_pos.getOffset() - pos.getOffset();
+  MOZ_ASSERT((offset & 1) == 0);
+
+  Instruction* instruction = getInstructionAt(pos);
+  DEBUG_PRINTF("\tjumpChainPutTargetAt: %p (%d) to %p (%d)\n", instruction,
+               pos.getOffset(), instruction + offset, target_pos.getOffset());
+
+  switch (instruction->InstructionOpcodeType()) {
+    case BRANCH: {
+      MOZ_ASSERT(is_intn(offset, kBranchOffsetBits));
+      instruction->SetBranchOffset(offset);
+      break;
+    }
+    case JAL: {
+      MOZ_ASSERT(is_intn(offset, kJumpOffsetBits));
+      instruction->SetImm20JValue(offset);
+      break;
+    }
+    case AUIPC: {
+      Instruction* jalr =
+          getInstructionAt(BufferOffset(pos.getOffset() + kInstrSize));
+      MOZ_ASSERT(jalr->IsJalr());
+      MOZ_ASSERT(instruction->RdValue() == jalr->Rs1Value());
+
+      auto [Hi20, Lo12] = ToHigh20Low12(offset);
+      instruction->SetImm20UValue(Hi20);
+      jalr->SetImm12Value(Lo12);
+      break;
+    }
+    default:
+      MOZ_CRASH("unexpected jump instruction");
+  }
 }
 
 void Assembler::bind(Label* label, BufferOffset boff) {
@@ -1259,9 +1247,6 @@ int32_t Assembler::branchOffset(Label* L, OffsetSize bits,
     JitSpew(JitSpew_Codegen, ".use Llabel %p on %d", L,
             next_instr_offset.getOffset());
     L->use(next_instr_offset.getOffset());
-    if (!label_cache_.putNew(L->offset(), next_instr_offset)) {
-      NoEnoughLabelCache();
-    }
     DEBUG_PRINTF("\tLabel  %p added to link: %d\n", L,
                  next_instr_offset.getOffset());
     return kEndOfJumpChain;
@@ -1272,43 +1257,40 @@ int32_t Assembler::branchOffset(Label* L, OffsetSize bits,
   // not always trivial since the branches in the linked list have limited
   // ranges.
 
-  LabelCache::Ptr p = label_cache_.lookup(L->offset());
-  MOZ_ASSERT(p);
-  MOZ_ASSERT(p->key() == L->offset());
-  const int32_t target_pos = p->value().getOffset();
+  // What is the earliest buffer offset that would be reachable by the branch
+  // we're about to add?
+  int32_t earliestReachable =
+      next_instr_offset.getOffset() + ImmBranchMinBackwardOffset(bits);
 
   // If the existing instruction at the head of the list is within reach of the
   // new branch, we can simply insert the new branch at the front of the list.
-  if (jumpChainPutTargetAt(BufferOffset(target_pos), next_instr_offset)) {
-    if (!label_cache_.put(L->offset(), next_instr_offset)) {
-      NoEnoughLabelCache();
-    }
-    DEBUG_PRINTF("\tLabel %p added to link: %d\n", L,
-                 next_instr_offset.getOffset());
-  } else {
-    DEBUG_PRINTF("\tLabel %p can't be added to link: %d -> %d\n", L,
-                 BufferOffset(target_pos).getOffset(),
-                 next_instr_offset.getOffset());
+  if (L->offset() >= earliestReachable) {
+    int32_t offset = L->offset() - next_instr_offset.getOffset();
+    MOZ_ASSERT(offset != kEndOfJumpChain);
+    MOZ_ASSERT(is_intn(offset, bits));
+    MOZ_ASSERT((offset & 1) == 0);
 
-    // The label already has a linked list of uses, but we can't reach the head
-    // of the list with the allowed branch range. Insert this branch at a
-    // different position in the list. We need to find an existing branch
-    // `exbr`.
-    //
-    // In particular, the end of the list is always a viable candidate, so we'll
-    // just get that.
-    //
-    // See also vixl::MozBaseAssembler::LinkAndGetOffsetTo.
-
-    BufferOffset next(L);
-    BufferOffset exbr;
-    do {
-      exbr = next;
-      next = jumpChainGetNextLink(next);
-    } while (next.assigned());
-    mozilla::DebugOnly<bool> ok = jumpChainPutTargetAt(exbr, next_instr_offset);
-    MOZ_ASSERT(ok, "Still can't reach list head");
+    L->use(next_instr_offset.getOffset());
+    return offset;
   }
+
+  // The label already has a linked list of uses, but we can't reach the head
+  // of the list with the allowed branch range. Insert this branch at a
+  // different position in the list. We need to find an existing branch
+  // `exbr`.
+  //
+  // In particular, the end of the list is always a viable candidate, so we'll
+  // just get that.
+  //
+  // See also vixl::MozBaseAssembler::LinkAndGetOffsetTo.
+
+  BufferOffset next(L);
+  BufferOffset exbr;
+  do {
+    exbr = next;
+    next = jumpChainGetNextLink(next);
+  } while (next.assigned());
+  jumpChainPutTargetAt(exbr, next_instr_offset);
 
   return kEndOfJumpChain;
 }
@@ -1590,9 +1572,6 @@ void Assembler::ToggleCall(CodeLocationLabel inst_, bool enabled) {
 void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
                                               BufferOffset deadline,
                                               BufferOffset veneer) {
-  if (buffer->oom()) {
-    return;
-  }
   DEBUG_PRINTF("\tPatchShortRangeBranchToVeneer\n");
 
   // Reconstruct the position of the branch from (rangeIdx, deadline).
@@ -1600,35 +1579,36 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
   BufferOffset branch(deadline.getOffset() -
                       ImmBranchMaxForwardOffset(branchRange));
   Instruction* branchInst = buffer->getInst(branch);
+  MOZ_ASSERT(branchInst->IsBranch() || branchInst->IsJal());
+
   Instruction* veneerInst_1 = buffer->getInst(veneer);
   Instruction* veneerInst_2 =
       buffer->getInst(BufferOffset(veneer.getOffset() + kInstrSize));
 
-  // Verify that the branch range matches what's encoded.
   DEBUG_PRINTF("\t%p(%x): ", branchInst, branch.getOffset());
 #ifdef JS_DISASM_RISCV64
   disassembleInstr(branchInst, JitSpew_Codegen);
 #endif /* JS_DISASM_RISCV64 */
   DEBUG_PRINTF("\t insert veneer %x, branch: %x deadline: %x\n",
                veneer.getOffset(), branch.getOffset(), deadline.getOffset());
+
+  // Verify that the branch range matches what's encoded.
   MOZ_ASSERT(branchRange <= UncondBranchRangeType);
   MOZ_ASSERT(branchInst->GetImmBranchRangeType() == branchRange);
 
   // We want to insert veneer after branch in the linked list of instructions
   // that use the same unbound label.
   // The veneer should be an unconditional branch.
-  int32_t nextElemOffset = jumpChainTargetAt(buffer->getInst(branch), branch);
-  int32_t dist;
-  // If offset is kEndOfChain, this is the end of the linked list.
-  if (nextElemOffset != kEndOfChain) {
+  int32_t nextElemOffset = ImmPCRawOffset(branchInst);
+
+  // If nextElemOffset is 0, this is the end of the linked list.
+  if (nextElemOffset != kEndOfJumpChain) {
     // Make the offset relative to veneer so it targets the same instruction
     // as branchInst.
-    dist = nextElemOffset - veneer.getOffset();
-  } else {
-    dist = kEndOfJumpChain;
+    nextElemOffset += branch.getOffset() - veneer.getOffset();
   }
 
-  auto [Hi20, Lo12] = ToHigh20Low12(dist);
+  auto [Hi20, Lo12] = ToHigh20Low12(nextElemOffset);
 
   // Insert veneer as a long jump.
   veneerInst_1->SetUFormat(RO_AUIPC, t6.code(), Hi20);
@@ -1642,6 +1622,7 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
     MOZ_ASSERT(branchInst->IsJal());
     branchInst->SetImm20JValue(offset);
   }
+
 #ifdef JS_DISASM_RISCV64
   DEBUG_PRINTF("\tfix to veneer:");
   disassembleInstr(branchInst);

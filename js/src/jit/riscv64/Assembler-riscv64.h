@@ -140,20 +140,11 @@ class Assembler : public AssemblerShared,
                   public AssemblerRISCVZifencei {
   GeneralRegisterSet scratch_register_list_;
 
-  static constexpr int kInvalidSlotPos = -1;
-
 #ifdef JS_JITSPEW
   Sprinter* printer;
 #endif
-  bool enoughLabelCache_ = true;
 
  protected:
-  using LabelOffset = int32_t;
-  using LabelCache =
-      HashMap<LabelOffset, BufferOffset, js::DefaultHasher<LabelOffset>,
-              js::SystemAllocPolicy>;
-  LabelCache label_cache_;
-  void NoEnoughLabelCache() { enoughLabelCache_ = false; }
   CompactBufferWriter jumpRelocations_;
   CompactBufferWriter dataRelocations_;
   Buffer m_buffer;
@@ -387,13 +378,10 @@ class Assembler : public AssemblerShared,
 #ifdef JS_DISASM_RISCV64
   static int disassembleInstr(Instruction* instr, bool enable_spew = false);
 #endif /* JS_DISASM_RISCV64 */
-  int jumpChainTargetAt(BufferOffset pos);
-  static int jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
-                               Instruction* instruction2 = nullptr);
+
   BufferOffset jumpChainGetNextLink(BufferOffset pos);
 
-  // Returns true if the target was successfully assembled and spewed.
-  bool jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos);
+  void jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos);
 
  private:
   int32_t branchOffset(Label* L, OffsetSize bits,
