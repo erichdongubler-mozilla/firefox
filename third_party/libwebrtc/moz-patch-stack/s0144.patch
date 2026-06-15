@@ -1,21 +1,22 @@
 From: Nico Grunbaum <ngrunbaum@mozilla.com>
-Date: Mon, 15 Jun 2026 11:02:00 -0700
+Date: Mon, 15 Jun 2026 11:16:00 -0700
 Subject: Bug 2047265 - (fix-0751415722) disable rtc_rust
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b4df73705cf0855de2938aadaef93e12b1a3b153
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/1b78d3bc576fe50dd46567248927641633c9f008
 ---
- .gn | 1 +
- 1 file changed, 1 insertion(+)
+ .gn | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/.gn b/.gn
-index 87e2c7af7b..0eca4684f3 100644
+index 0eca4684f3..556b621e01 100644
 --- a/.gn
 +++ b/.gn
-@@ -92,6 +92,7 @@ default_args = {
+@@ -92,7 +92,7 @@ default_args = {
    enable_rust = false # Mozilla
    enable_rust_cxx = true
    enable_chromium_prelude = true
-+  enable_rtc_rust = false
+-  enable_rtc_rust = false
++  rtc_rust = false
  
    # See context on https://issues.chromium.org/issues/415076048.
    enable_js_protobuf = false
