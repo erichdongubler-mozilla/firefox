@@ -1205,6 +1205,18 @@ void Assembler::Bind(uint8_t* rawCode, const CodeLabel& label) {
   }
 }
 
+// A common implementation for the public branchOffset methods.
+//
+// If the label is bound, returns the offset to the label. Otherwise, links the
+// instruction to the label and returns |kEndOfJumpChain|.
+//
+// The offset is calculated by the difference between the PC and the label
+// address.
+//
+// For an unbound label, the returned offset will be encodable in the provided
+// branch range. If the label is already bound, the caller is expected to make
+// sure that it is in range, and emit the necessary branch instructions if it
+// isn't.
 int32_t Assembler::branchOffset(Label* L, OffsetSize bits,
                                 BufferOffset next_instr_offset) {
   if (oom()) {
@@ -1227,7 +1239,10 @@ int32_t Assembler::branchOffset(Label* L, OffsetSize bits,
     return offset;
   }
 
+  // Keep track of short-range branches targeting unbound labels. We may need
+  // to insert veneers in PatchShortRangeBranchToVeneer() below.
   if (bits < OffsetSize::kOffset32) {
+    // This is the last possible branch target.
     BufferOffset deadline(next_instr_offset.getOffset() +
                           ImmBranchMaxForwardOffset(bits));
     DEBUG_PRINTF("\tregisterBranchDeadline %d type %d\n", deadline.getOffset(),
