@@ -221,6 +221,25 @@ sidebar:
       sidebar_open:
         type: boolean
         description: Whether the sidebar is expanded or collapsed.
+  open_tabs_icon_click:
+    type: event
+    description: >
+      The open tabs icon was clicked.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039574
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039574
+    data_sensitivity:
+      - interaction
+    expires: never
+    notification_emails:
+      - vsabino@mozilla.com
+    send_in_pings:
+      - events
+    extra_keys:
+      sidebar_open:
+        type: boolean
+        description: Whether the sidebar is expanded or collapsed.
   addon_icon_click:
     type: event
     description: >

@@ -249,6 +249,7 @@ var SidebarController = {
           menuL10nId: "menu-view-open-tabs",
           revampL10nId: "sidebar-menu-open-tabs-label",
           iconUrl: "chrome://browser/content/firefoxview/view-opentabs.svg",
+          gleanClickEvent: Glean.sidebar.openTabsIconClick,
         }
       );
     }
