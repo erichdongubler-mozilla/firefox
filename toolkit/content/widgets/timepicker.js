@@ -13,8 +13,7 @@ function TimePicker(context) {
 }
 
 {
-  const DAY_PERIOD_IN_HOURS = 12,
-    DAY_IN_MS = 86400000,
+  const DAY_IN_MS = 86400000,
     // The min value is 0001-01-01 based on HTML spec:
     // https://html.spec.whatwg.org/#valid-date-string
     MIN_DATE = -62135596800000,
@@ -142,65 +141,74 @@ function TimePicker(context) {
           this._dispatchState();
         };
       };
-      const numberFormat = new Intl.NumberFormat(locale).format;
-
-      this.components = {
-        hour: new Spinner(
-          {
-            setValue: wrapSetValueFn(value => {
-              timeKeeper.setHour(value);
-              this.state.isHourSet = true;
-            }),
-            getDisplayString: hour => {
-              if (format == "24") {
-                return numberFormat(hour);
-              }
-              // Hour 0 in 12 hour format is displayed as 12.
-              const hourIn12 = hour % DAY_PERIOD_IN_HOURS;
-              return hourIn12 == 0 ? numberFormat(12) : numberFormat(hourIn12);
-            },
-          },
-          this.context
-        ),
-        minute: new Spinner(
-          {
-            setValue: wrapSetValueFn(value => {
-              timeKeeper.setMinute(value);
-              this.state.isMinuteSet = true;
-            }),
-            getDisplayString: minute => numberFormat(minute),
-          },
-          this.context
-        ),
-      };
-
-      this._insertLayoutElement({
-        tag: "div",
-        textContent: ":",
-        className: "colon",
-        insertBefore: this.components.minute.elements.container,
+      const dateTimeFormat = new Intl.DateTimeFormat(locale, {
+        hour: "numeric",
+        minute: "numeric",
+        hour12: format == "12",
       });
+      const getPartValue = (date, type) =>
+        dateTimeFormat.formatToParts(date).find(f => f.type == type).value;
 
-      // The AM/PM spinner is only available in 12hr mode
-      // TODO: Replace AM & PM string with localized string
-      if (format == "12") {
-        this.components.dayPeriod = new Spinner(
-          {
-            setValue: wrapSetValueFn(value => {
-              timeKeeper.setDayPeriod(value);
-              this.state.isDayPeriodSet = true;
-            }),
-            getDisplayString: dayPeriod => (dayPeriod == 0 ? "AM" : "PM"),
-            hideButtons: true,
-          },
-          this.context
-        );
+      this.components = {};
 
-        this._insertLayoutElement({
-          tag: "div",
-          className: "spacer",
-          insertBefore: this.components.dayPeriod.elements.container,
-        });
+      // Insert components as defined by the current locale.
+      for (const timePart of dateTimeFormat.formatToParts(new Date(0))) {
+        switch (timePart.type) {
+          case "minute":
+            this.components.minute = new Spinner(
+              {
+                setValue: wrapSetValueFn(value => {
+                  timeKeeper.setMinute(value);
+                  this.state.isMinuteSet = true;
+                }),
+                getDisplayString: minute =>
+                  getPartValue(new Date(0).setMinutes(minute), "minute"),
+              },
+              this.context
+            );
+            break;
+          case "hour":
+            this.components.hour = new Spinner(
+              {
+                setValue: wrapSetValueFn(value => {
+                  timeKeeper.setHour(value);
+                  this.state.isHourSet = true;
+                }),
+                getDisplayString: hour =>
+                  getPartValue(new Date(0).setHours(hour), "hour"),
+              },
+              this.context
+            );
+            break;
+          case "dayPeriod":
+            this.components.dayPeriod = new Spinner(
+              {
+                setValue: wrapSetValueFn(value => {
+                  timeKeeper.setDayPeriod(value);
+                  this.state.isDayPeriodSet = true;
+                }),
+                getDisplayString: dayPeriod =>
+                  getPartValue(new Date(0).setHours(dayPeriod), "dayPeriod"),
+                hideButtons: true,
+              },
+              this.context
+            );
+            break;
+          case "literal":
+            if (timePart.value == " ") {
+              this._insertLayoutElement({
+                tag: "div",
+                className: "spacer",
+              });
+              break;
+            }
+            this._insertLayoutElement({
+              tag: "div",
+              textContent: timePart.value,
+              className: "colon",
+            });
+            break;
+        }
       }
       this._updateButtonIds();
     },
@@ -211,16 +219,15 @@ function TimePicker(context) {
      * @param {object}
      *        {
      *          {String} tag: The tag to create
-     *          {DOMElement} insertBefore: The DOM node to insert before
      *          {String} className [optional]: Class name
      *          {String} textContent [optional]: Text content
      *        }
      */
-    _insertLayoutElement({ tag, insertBefore, className, textContent }) {
+    _insertLayoutElement({ tag, className, textContent }) {
       let el = document.createElement(tag);
       el.textContent = textContent;
       el.className = className;
-      this.context.insertBefore(el, insertBefore);
+      this.context.appendChild(el);
     },
 
     /**
@@ -247,15 +254,13 @@ function TimePicker(context) {
       });
 
       // The AM/PM spinner is only available in 12hr mode
-      if (this.props.format == "12") {
-        this.components.dayPeriod.setState({
-          value: timeKeeper.dayPeriod,
-          items: timeKeeper.ranges.dayPeriod,
-          isInfiniteScroll: false,
-          isValueSet: isDayPeriodSet,
-          isInvalid,
-        });
-      }
+      this.components.dayPeriod?.setState({
+        value: timeKeeper.dayPeriod,
+        items: timeKeeper.ranges.dayPeriod,
+        isInfiniteScroll: false,
+        isValueSet: isDayPeriodSet,
+        isInvalid,
+      });
     },
 
     /**
@@ -413,7 +418,7 @@ function TimePicker(context) {
      * Update attributes, localizable IDs of spinners and their Prev/Next buttons:
      */
     _updateButtonIds() {
-      const buttons = [
+      let buttons = [
         [
           this.components.hour.elements.prev,
           "spinner-hour-previous",
@@ -444,22 +449,29 @@ function TimePicker(context) {
           "spinner-minute-next",
           "time-spinner-minute-next",
         ],
-        [
-          this.components.dayPeriod.elements.prev,
-          "spinner-time-previous",
-          "time-spinner-day-period-previous",
-        ],
-        [
-          this.components.dayPeriod.elements.spinner,
-          "spinner-time",
-          "time-spinner-day-period-label",
-        ],
-        [
-          this.components.dayPeriod.elements.next,
-          "spinner-time-next",
-          "time-spinner-day-period-next",
-        ],
       ];
+
+      // The AM/PM spinner is only available in 12hr mode
+      if (this.components.dayPeriod) {
+        buttons = [
+          ...buttons,
+          [
+            this.components.dayPeriod.elements.prev,
+            "spinner-time-previous",
+            "time-spinner-day-period-previous",
+          ],
+          [
+            this.components.dayPeriod.elements.spinner,
+            "spinner-time",
+            "time-spinner-day-period-label",
+          ],
+          [
+            this.components.dayPeriod.elements.next,
+            "spinner-time-next",
+            "time-spinner-day-period-next",
+          ],
+        ];
+      }
 
       for (const [btn, id, l10nId] of buttons) {
         btn.setAttribute("id", id);

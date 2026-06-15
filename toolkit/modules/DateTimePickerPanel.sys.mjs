@@ -79,6 +79,9 @@ export class DateTimePickerPanel extends InputPickerPanelCommon {
     locale = locale.replace(/^pt-PT/i, "pt");
 
     const dir = Services.locale.isAppLocaleRTL ? "rtl" : "ltr";
+    const { hour12 } = new Services.intl.DateTimeFormat(locale, {
+      hour: "numeric",
+    }).resolvedOptions();
 
     const { year, month, day, hour, minute } = detail.value;
     const flattenDetail = {
@@ -91,7 +94,7 @@ export class DateTimePickerPanel extends InputPickerPanelCommon {
       minute,
       locale,
       dir,
-      format: detail.format || "12",
+      format: hour12 ? "12" : "24",
       min: detail.min,
       max: detail.max,
       step: detail.step,
