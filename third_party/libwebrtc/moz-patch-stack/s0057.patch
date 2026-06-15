@@ -284,7 +284,7 @@ index 7aa7e31b29..e49de3f3bb 100644
                                   std::move(config_.frame_decryptor),
                                   std::move(config_.frame_transformer)),
 diff --git a/video/video_stream_buffer_controller.cc b/video/video_stream_buffer_controller.cc
-index edf78d1e99..40f2353b18 100644
+index 713fac6c9b..838539b28c 100644
 --- a/video/video_stream_buffer_controller.cc
 +++ b/video/video_stream_buffer_controller.cc
 @@ -260,6 +260,7 @@ void VideoStreamBufferController::OnFrameReady(
