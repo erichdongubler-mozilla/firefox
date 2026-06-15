@@ -114,6 +114,7 @@ export class SidebarBookmarks extends SidebarPage {
         copyLink,
       ],
       alwaysShownItems: [sepCutCopy, cut, copy],
+      disabledForRootItems: [editBookmark, cut, deleteBookmark],
       openAllBookmarks,
       sepOpenAll,
       sortByName,
@@ -364,6 +365,7 @@ export class SidebarBookmarks extends SidebarPage {
       folderItems,
       bookmarkItems,
       alwaysShownItems,
+      disabledForRootItems,
       openAllBookmarks,
       sortByName,
       openInContainerTab,
@@ -389,6 +391,9 @@ export class SidebarBookmarks extends SidebarPage {
     for (const el of alwaysShownItems) {
       el.hidden = false;
     }
+    for (const el of disabledForRootItems) {
+      el.disabled = isRootFolder;
+    }
 
     openInContainerTab.hidden =
       !isBookmark ||
@@ -397,7 +402,6 @@ export class SidebarBookmarks extends SidebarPage {
     openInPrivateWindow.hidden =
       !isBookmark || !lazy.PrivateBrowsingUtils.enabled;
     editBookmark.hidden = isSeparator;
-    editBookmark.disabled = isRootFolder;
     paste.hidden = !this.#hasClipboardData();
 
     const isSearchResult = isBookmark && !!this.searchQuery;
@@ -709,6 +713,9 @@ export class SidebarBookmarks extends SidebarPage {
   }
 
   async #editBookmarkOrFolder(bookmark) {
+    if (bookmark.isRootFolder) {
+      throw new Error("It's not possible to edit Places root folders.");
+    }
     const fetchInfo = await lazy.PlacesUtils.bookmarks.fetch({
       guid: bookmark.guid,
     });
@@ -731,6 +738,9 @@ export class SidebarBookmarks extends SidebarPage {
   }
 
   async #deleteBookmarks(bookmarks) {
+    if (bookmarks.some(({ isRootFolder }) => isRootFolder)) {
+      throw new Error("It's not possible to delete Places root folders.");
+    }
     await lazy.PlacesTransactions.Remove({
       guids: bookmarks.map(b => b.guid),
     }).transact();
@@ -929,6 +939,11 @@ export class SidebarBookmarks extends SidebarPage {
           });
         }
         if (item.isFolder) {
+          if (lazy.PlacesUtils.isRootItem(item.guid)) {
+            return JSON.stringify(
+              lazy.PlacesUtils.bookmarks.createVirtualLinkToRoot(item)
+            );
+          }
           return JSON.stringify({
             type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER,
             itemGuid: item.guid,
@@ -1208,7 +1223,11 @@ export class SidebarBookmarks extends SidebarPage {
     const wasOpen = result.root.containerOpen;
     result.root.containerOpen = true;
     try {
-      node.children = this.#collectPlaceChildren(result.root, new Set());
+      const { targetFolderGuid } = lazy.PlacesUtils.asQuery(result.root);
+      const ancestors = targetFolderGuid
+        ? new Set([targetFolderGuid])
+        : new Set();
+      node.children = this.#collectPlaceChildren(result.root, ancestors);
       node.isPlaceContainer = true;
       node.isTagsRoot =
         optionsRef.value.resultType ===
@@ -1250,18 +1269,7 @@ export class SidebarBookmarks extends SidebarPage {
           type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE,
           isPlaceChild: true,
         };
-      case RESULT_TYPE_FOLDER_SHORTCUT: {
-        // Folder shortcuts are symlinks (place:parentGuid=...) to a concrete
-        // folder. Render them as a leaf reference rather than recursing, so
-        // deletion targets the shortcut rather than the linked folder.
-        return {
-          title: placeNode.title,
-          uri: placeNode.uri,
-          guid: placeNode.bookmarkGuid || placeNode.uri,
-          type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE,
-          isPlaceChild: true,
-        };
-      }
+      case RESULT_TYPE_FOLDER_SHORTCUT:
       case RESULT_TYPE_QUERY:
       case RESULT_TYPE_FOLDER: {
         const isTagContainer =
@@ -1278,14 +1286,22 @@ export class SidebarBookmarks extends SidebarPage {
           isPlaceChild: true,
           isTagContainer,
         };
-        // Guard against query results that loop back into an ancestor.
-        if (ancestorGuids.has(guid)) {
+        // Guard against query results or folder shortcuts that loop back into
+        // an ancestor.
+        const targetGuid =
+          placeNode.type === RESULT_TYPE_FOLDER_SHORTCUT
+            ? lazy.PlacesUtils.asQuery(placeNode).targetFolderGuid
+            : null;
+        if (ancestorGuids.has(guid) || ancestorGuids.has(targetGuid)) {
           node.children = [];
           return node;
         }
         const container = lazy.PlacesUtils.asContainer(placeNode);
         if (container) {
           ancestorGuids.add(guid);
+          if (targetGuid) {
+            ancestorGuids.add(targetGuid);
+          }
           const wasOpen = container.containerOpen;
           container.containerOpen = true;
           try {
@@ -1298,6 +1314,7 @@ export class SidebarBookmarks extends SidebarPage {
               container.containerOpen = false;
             }
             ancestorGuids.delete(guid);
+            ancestorGuids.delete(targetGuid);
           }
         } else {
           node.children = [];

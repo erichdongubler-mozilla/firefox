@@ -23,6 +23,8 @@ skip-if = [
 
 ["browser_bookmarks_sidebar_glean.js"]
 
+["browser_bookmarks_sidebar_root_folders.js"]
+
 ["browser_customize_sidebar.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1968564
