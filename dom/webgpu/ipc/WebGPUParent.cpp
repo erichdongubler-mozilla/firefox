@@ -124,6 +124,27 @@ extern int32_t wgpu_server_get_dma_buf_fd(WGPUWebGPUParentPtr aParent,
   // fd should be closed by the caller.
   return fd.release();
 }
+
+extern "C" bool wgpu_server_get_linux_dmabuf_modifiers(
+    const uint64_t** aModifiers, uint32_t* aModifierCount) {
+  if (!aModifiers || !aModifierCount) {
+    return false;
+  }
+
+  *aModifiers = nullptr;
+  *aModifierCount = 0;
+
+  // Vulkan B8G8R8A8_UNORM maps to the exported ARGB dmabuf format on
+  // little-endian Linux.
+  const auto& modifiers = mozilla::gfx::gfxVars::DMABufModifiersARGB();
+  if (modifiers.IsEmpty()) {
+    return false;
+  }
+
+  *aModifiers = modifiers.Elements();
+  *aModifierCount = static_cast<uint32_t>(modifiers.Length());
+  return true;
+}
 #endif
 
 #if defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
