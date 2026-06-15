@@ -80,9 +80,6 @@
 // AXChildren
 - (NSArray* _Nullable)moxUnignoredChildren;
 
-// AXChildrenInNavigationOrder
-- (NSArray* _Nullable)moxChildrenInNavigationOrder;
-
 // AXParent
 - (id _Nullable)moxUnignoredParent;
 
