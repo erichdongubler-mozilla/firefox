@@ -96,8 +96,32 @@ void nsDragSessionGtk::UpdateDragAction(GdkDragContext* aDragContext) {
   // dataTransfer.effectAllowed, which doesn't currently happen with
   // external sources.
   LOGDRAGSERVICE("nsDragSession::UpdateDragAction(%p)", aDragContext);
-  SetDragActionGtk(aDragContext ? gdk_drag_context_get_actions(aDragContext)
-                                : GDK_ACTION_DEFAULT);
+
+  GdkDragAction gdkAction = GDK_ACTION_DEFAULT;
+  if (aDragContext) {
+    gdkAction = gdk_drag_context_get_actions(aDragContext);
+    LOGDRAGSERVICE("  gdk_drag_context_get_actions() returns 0x%X", gdkAction);
+
+    // When D&D modifiers (CTRL/SHIFT) are involved,
+    // gdk_drag_context_get_actions() on X11 returns selected action but
+    // Wayland returns all allowed actions.
+
+    // So we need to call gdk_drag_context_get_selected_action() on Wayland
+    // to get potential D&D modifier.
+    // gdk_drag_context_get_selected_action() is also affected by
+    // gdk_drag_status(), see nsDragSession::ReplyToDragMotion().
+    if (widget::GdkIsWaylandDisplay()) {
+      GdkDragAction gdkActionSelected =
+          gdk_drag_context_get_selected_action(aDragContext);
+      LOGDRAGSERVICE("  gdk_drag_context_get_selected_action() returns 0x%X",
+                     gdkActionSelected);
+      if (gdkActionSelected) {
+        gdkAction = gdkActionSelected;
+      }
+    }
+  }
+
+  SetDragActionGtk(gdkAction);
 }
 
 // The following methods handle responding to GTK drag signals and
