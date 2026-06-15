@@ -1595,10 +1595,13 @@ export class _ASRouter {
     ];
   }
 
-  routeCFRMessage(message, browser, trigger, force = false) {
-    if (!message) {
+  routeCFRMessage(originalMessage, browser, trigger, force = false) {
+    if (!originalMessage) {
       return { message: {} };
     }
+    const message = force
+      ? MessageLoaderUtils._delocalizeValues(originalMessage)
+      : originalMessage;
 
     switch (message.template) {
       case "cfr_doorhanger":
@@ -2602,6 +2605,7 @@ export class _ASRouter {
   }
 
   async forcePBWindow(browser, msg) {
+    const delocalizedMsg = MessageLoaderUtils._delocalizeValues(msg);
     const privateBrowserOpener = await new Promise(
       (
         resolveOnContentBrowserCreated // wrap this in a promise to give back the right browser
@@ -2623,7 +2627,7 @@ export class _ASRouter {
       // setTimeout is necessary to make sure the private browsing window has a chance to open before the message is sent
       privateBrowserOpener.browsingContext.currentWindowGlobal
         .getActor("AboutPrivateBrowsing")
-        .sendAsyncMessage("ShowDevToolsMessage", msg);
+        .sendAsyncMessage("ShowDevToolsMessage", delocalizedMsg);
     }, 200);
 
     return privateBrowserOpener;
