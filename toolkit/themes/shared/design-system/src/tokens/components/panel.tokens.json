@@ -59,5 +59,13 @@
   },
   "width": {
     "value": "initial"
+  },
+  "separator": {
+    "color": {
+      "value": {
+        "default": "color-mix(in srgb, currentColor 25%, transparent)",
+        "prefersContrast": "currentColor"
+      }
+    }
   }
 }

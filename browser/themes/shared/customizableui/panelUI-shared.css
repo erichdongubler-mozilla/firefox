@@ -563,6 +563,30 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 
 /* Main menu banner menuitems */
 
+@media -moz-pref("browser.nova.enabled") {
+  #appMenu-update-banner {
+    display: none !important;
+  }
+
+  #appMenu-nova-update-promo[hidden] {
+    display: none;
+  }
+}
+
+@media not -moz-pref("browser.nova.enabled") {
+  #appMenu-nova-update-promo {
+    display: none !important;
+  }
+}
+
+#appMenu-nova-update-promo,
+#appMenu-nova-switch-device-promo {
+  --promo-image-size: var(--icon-size-small);
+  --promo-image-fill: var(--icon-color-accent-primary-desaturated);
+  margin: var(--panel-menuitem-margin);
+  margin-bottom: 4px;
+}
+
 #appMenu-popup {
   .panel-banner-item,
   .addon-banner-item {
@@ -688,6 +712,10 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 
 /* Error states */
 
+#appMenu-nova-fxa-label {
+  display: none;
+}
+
 #appMenu-fxa-status2 {
   display: flex;
 
@@ -699,20 +727,32 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   &:not([fxastatus]) {
     padding-block: 0 2px;
 
-    > #appMenu-fxa-label2 {
-      padding: 6px 12px;
-      color: var(--button-text-color);
-      background-color: var(--button-background-color);
-      font-weight: var(--font-weight-semibold);
+    @media not -moz-pref("browser.nova.enabled") {
+      > #appMenu-fxa-label2 {
+        padding: 6px 12px;
+        color: var(--button-text-color);
+        background-color: var(--button-background-color);
+        font-weight: var(--font-weight-semibold);
 
-      &:hover {
-        color: var(--button-text-color-hover);
-        background-color: var(--button-background-color-hover);
+        &:hover {
+          color: var(--button-text-color-hover);
+          background-color: var(--button-background-color-hover);
+        }
+
+        &:hover:active {
+          color: var(--button-text-color-active);
+          background-color: var(--button-background-color-active);
+        }
+      }
+    }
+
+    @media -moz-pref("browser.nova.enabled") {
+      > #appMenu-fxa-label2 {
+        display: none;
       }
 
-      &:hover:active {
-        color: var(--button-text-color-active);
-        background-color: var(--button-background-color-active);
+      > #appMenu-nova-fxa-label {
+        display: flex;
       }
     }
   }
@@ -1382,6 +1422,10 @@ panelview .toolbarbutton-1,
 
   toolbarseparator.proton-zap::before {
     border-image: var(--panel-separator-zap-gradient, none) 1;
+
+    @media -moz-pref("browser.nova.enabled") {
+      border-image: var(--tab-border-color-accent) 1;
+    }
   }
 }
 
