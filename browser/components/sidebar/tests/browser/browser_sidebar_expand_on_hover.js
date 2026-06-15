@@ -98,6 +98,13 @@ add_task(async function test_enable_expand_on_hover() {
 
   info("Sidebar panel is visible and input is displayed");
 
+  // The click below toggles expand-on-hover, so it must start disabled; assert
+  // that to fail fast instead of timing out if a previous test leaked it on.
+  ok(
+    !panel.expandOnHoverInput.checked,
+    "Expand-on-hover should be disabled before this test enables it"
+  );
+
   // Enable expand on hover
   panel.expandOnHoverInput.click();
   EventUtils.synthesizeMouseAtCenter(SidebarController.contentArea, {

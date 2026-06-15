@@ -374,6 +374,13 @@ void nsGenericHTMLElement::SetEditContext(mozilla::dom::EditContext* aContext,
   // 1. If this's local name is neither a valid shadow host name nor "canvas",
   //    then throw a "NotSupportedError" DOMException.
   nsAtom* name = NodeInfo()->NameAtom();
+  if (name == nsGkAtoms::canvas &&
+      !StaticPrefs::dom_editcontext_allow_canvas()) {
+    aRv.ThrowNotSupportedError(
+        "<canvas>-based EditContext is currently disabled in Firefox due to "
+        "accessibility concerns.");
+    return;
+  }
   if (name != nsGkAtoms::canvas &&
       !nsContentUtils::IsValidShadowHostName(name)) {
     aRv.ThrowNotSupportedError(

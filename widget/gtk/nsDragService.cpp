@@ -3,11 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsDragService.h"
+#include "nsDragServiceGtk.h"
 #ifdef MOZ_WAYLAND
 #  include "nsDragServiceWayland.h"
-#endif
-#ifdef MOZ_X11
-#  include "nsDragServiceX11.h"
 #endif
 #include "nsArrayUtils.h"
 #include "nsComponentManagerUtils.h"
@@ -653,7 +651,8 @@ already_AddRefed<nsDragService> nsDragService::GetInstance() {
 
 nsDragService::nsDragService() {
 #ifdef MOZ_WAYLAND
-  if (GdkIsWaylandDisplay()) {
+  if (StaticPrefs::widget_wayland_native_data_session_AtStartup() &&
+      GdkIsWaylandDisplay()) {
     mContext = MakeRefPtr<RetrievalContextWayland>(/* aIsDragContext */ true);
   }
 #endif
@@ -661,16 +660,12 @@ nsDragService::nsDragService() {
 
 already_AddRefed<nsIDragSession> nsDragService::CreateDragSession() {
 #ifdef MOZ_WAYLAND
-  if (widget::GdkIsWaylandDisplay()) {
+  if (StaticPrefs::widget_wayland_native_data_session_AtStartup() &&
+      widget::GdkIsWaylandDisplay()) {
     return MakeAndAddRef<nsDragSessionWayland>();
   }
 #endif
-#ifdef MOZ_X11
-  if (widget::GdkIsX11Display()) {
-    return MakeAndAddRef<nsDragSessionX11>();
-  }
-#endif
-  return nullptr;
+  return MakeAndAddRef<nsDragSessionGtk>();
 }
 
 // nsIObserver
@@ -2548,6 +2543,14 @@ gboolean nsDragSession::Schedule(UniquePtr<DragTask> aTask) {
     // from mTaskSource.
     mTaskSource = g_timeout_add_full(G_PRIORITY_HIGH, 0,
                                      RunScheduledTaskCallback, this, nullptr);
+  }
+
+  // We need to reply to drag_motion event on Wayland immediately,
+  // see Bug 1730203.
+  if (widget::GdkIsWaylandDisplay() &&
+      mNextScheduledTask->mType == eDragTaskMotion) {
+    UpdateDragAction();
+    ReplyToDragMotion();
   }
 
   return TRUE;

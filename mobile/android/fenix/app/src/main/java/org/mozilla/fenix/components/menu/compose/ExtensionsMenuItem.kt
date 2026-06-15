@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,6 +27,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import mozilla.components.feature.addons.Addon
 import mozilla.components.support.base.log.logger.Logger
@@ -273,6 +277,106 @@ internal fun WebExtensionMenuItems(
                     null
                 },
             )
+        }
+    }
+}
+
+private fun previewWebExtensionMenuItems(): Map<WebExtensionMenuItem, Addon?> = mapOf(
+    WebExtensionMenuItem(
+        id = "",
+        label = "Block some popups",
+        enabled = true,
+        icon = null,
+        badgeText = "3",
+        badgeTextColor = null,
+        badgeBackgroundColor = null,
+        onClick = {},
+    ) to null,
+    WebExtensionMenuItem(
+        id = "",
+        label = "Hello world",
+        enabled = true,
+        icon = null,
+        badgeText = null,
+        badgeTextColor = null,
+        badgeBackgroundColor = null,
+        onClick = {},
+    ) to null,
+)
+
+private data class ExtensionsMenuItemPreviewState(
+    val isExtensionsProcessDisabled: Boolean,
+    val isAllWebExtensionsDisabled: Boolean,
+    val isExtensionsExpanded: Boolean,
+    val webExtensionMenuCount: Int,
+    val description: String,
+)
+
+private class ExtensionsMenuItemPreviewProvider :
+    PreviewParameterProvider<ExtensionsMenuItemPreviewState> {
+    private val data = listOf(
+        "Collapsed" to ExtensionsMenuItemPreviewState(
+            isExtensionsProcessDisabled = false,
+            isAllWebExtensionsDisabled = false,
+            isExtensionsExpanded = false,
+            webExtensionMenuCount = 3,
+            description = "3 extensions enabled",
+        ),
+        "Expanded with submenu" to ExtensionsMenuItemPreviewState(
+            isExtensionsProcessDisabled = false,
+            isAllWebExtensionsDisabled = false,
+            isExtensionsExpanded = true,
+            webExtensionMenuCount = 2,
+            description = "2 extensions enabled",
+        ),
+        "Extensions process disabled" to ExtensionsMenuItemPreviewState(
+            isExtensionsProcessDisabled = true,
+            isAllWebExtensionsDisabled = false,
+            isExtensionsExpanded = false,
+            webExtensionMenuCount = 0,
+            description = "Extensions are turned off",
+        ),
+    )
+
+    override val values: Sequence<ExtensionsMenuItemPreviewState>
+        get() = data.map { it.second }.asSequence()
+
+    override fun getDisplayName(index: Int): String {
+        return data[index].first
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun ExtensionsMenuItemPreview(
+    @PreviewParameter(ExtensionsMenuItemPreviewProvider::class) state: ExtensionsMenuItemPreviewState,
+) {
+    FirefoxTheme {
+        Surface {
+            Column(
+                modifier = Modifier.padding(all = FirefoxTheme.layout.space.static200),
+            ) {
+                ExtensionsMenuItem(
+                    inCustomTab = false,
+                    isPrivate = false,
+                    isExtensionsProcessDisabled = state.isExtensionsProcessDisabled,
+                    isAllWebExtensionsDisabled = state.isAllWebExtensionsDisabled,
+                    isExtensionsExpanded = state.isExtensionsExpanded,
+                    webExtensionMenuCount = state.webExtensionMenuCount,
+                    extensionsMenuItemDescription = state.description,
+                    onExtensionsMenuClick = {},
+                    extensionSubmenu = {
+                        if (state.isExtensionsExpanded) {
+                            WebExtensionMenuItems(
+                                accessPoint = MenuAccessPoint.Browser,
+                                webExtensionMenuItems = previewWebExtensionMenuItems(),
+                                onWebExtensionMenuItemClick = {},
+                                onWebExtensionMenuItemSettingsClick = {},
+                            )
+                        }
+                    },
+                )
+            }
         }
     }
 }

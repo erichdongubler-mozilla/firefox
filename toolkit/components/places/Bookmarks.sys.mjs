@@ -170,6 +170,50 @@ export var Bookmarks = Object.freeze({
   },
 
   /**
+   * Builds a transfer payload to represent a bookmark which acts as a symbolic
+   * link to the given root folder.
+   *
+   * Only invoke after checking the guid is for a root. Otherwise, it will
+   * produce a null guid.
+   *
+   * @param {object} info
+   * @param {string} info.guid - The root folder guid.
+   * @param {string} info.title - Title to use on the resulting bookmark.
+   * @returns {object} The symlink payload.
+   */
+  createVirtualLinkToRoot({ guid, title }) {
+    return {
+      type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE,
+      itemGuid: lazy.PlacesUtils.bookmarks._virtualGuidForRoot(guid),
+      concreteGuid: guid,
+      uri: `place:parent=${guid}`,
+      instanceId: lazy.PlacesUtils.instanceId,
+      title,
+    };
+  },
+
+  /**
+   * Find the virtual root guid that wraps a root folder.
+   *
+   * @param {string} guid - The root folder guid.
+   * @returns {string} The virtual guid, or `null` if folder is not a root.
+   */
+  _virtualGuidForRoot(guid) {
+    switch (guid) {
+      case lazy.PlacesUtils.bookmarks.menuGuid:
+        return lazy.PlacesUtils.bookmarks.virtualMenuGuid;
+      case lazy.PlacesUtils.bookmarks.toolbarGuid:
+        return lazy.PlacesUtils.bookmarks.virtualToolbarGuid;
+      case lazy.PlacesUtils.bookmarks.unfiledGuid:
+        return lazy.PlacesUtils.bookmarks.virtualUnfiledGuid;
+      case lazy.PlacesUtils.bookmarks.mobileGuid:
+        return lazy.PlacesUtils.bookmarks.virtualMobileGuid;
+      default:
+        return null;
+    }
+  },
+
+  /**
    * Returns the title to use on the UI for a bookmark item. Root folders
    * in the database don't store fully localised versions of the title. To
    * get those this function should be called.

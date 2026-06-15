@@ -40,6 +40,7 @@ The `references/` directory in this skill contains real profiling investigations
 Before starting an analysis, use `Glob` to list available case studies, then read the `-cli.md` file that most closely matches the current scenario:
 
 - **Lock contention / mutex blocking during startup**: `firefox-macos-startup-font-initialization-cli.md`
+- **Test timeout / idle hang (main thread parked in a wait primitive, deadlocked on an event or message that never fires — often a cross-process race)**: `windows-test-timeout-cross-process-race-cli.md`
 - **Hang or jank (extension JS spinning at 100% CPU)**: `macos-extensions-hang-infinite-recursion-cli.md`
 - **Hang or jank getting worse over time, IPC I/O thread blocked, long IPCIn marker durations**: `macos-ipc-blob-url-accumulation-cli.md`
 - **Android startup performance**: `simpleperf-non-rooted-firefox-startup-cli.md`

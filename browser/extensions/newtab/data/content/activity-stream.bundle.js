@@ -17759,6 +17759,7 @@ function SportsWidget_SportsWidget({
   // WIDGETS_SPORTS_LIVE_VISIBLE.
   const liveEnabled = prefs[PREF_SPORTS_WIDGET_LIVE_ENABLED] || prefs.trainhopConfig?.widgets?.sportsWidgetLiveEnabled || prefs.trainhopConfig?.sports?.liveEnabled;
   const widgetsMayBeMaximized = prefs["widgets.system.maximized"];
+  const widgetsMaximized = prefs["widgets.maximized"];
   // /live currently serves mock data pre-kickoff, so ignore its contents
   // until the kickoff timestamp. Drop this guard once the backend returns
   // empty pre-kickoff.
@@ -17784,7 +17785,12 @@ function SportsWidget_SportsWidget({
     matchesTab
   } = sportsWidgetData;
   const hasUserSelectedTab = (0,external_React_namespaceObject.useRef)(false);
-  const activeTab = hasLiveGames && !hasUserSelectedTab.current ? MATCHES_TABS.NOW : matchesTab;
+  // When the Now tab disappears (live games ended), the persisted `matchesTab`
+  // may still be "now". That would hide every panel and leave the widget
+  // blank with no tab visibly selected. Fall back to "Upcoming" so the next
+  // matches show by default.
+  const resolvedMatchesTab = matchesTab === MATCHES_TABS.NOW && !hasLiveGames ? MATCHES_TABS.UPCOMING : matchesTab;
+  const activeTab = hasLiveGames && !hasUserSelectedTab.current ? MATCHES_TABS.NOW : resolvedMatchesTab;
 
   // Defensive clamp on the persisted live-pager index. The feed re-clamps
   // after every fetch, but the restored cached index may briefly exceed the
@@ -17857,6 +17863,16 @@ function SportsWidget_SportsWidget({
   // can force the widget into the large size while the list view is open.
   const [showResultsList, setShowResultsList] = (0,external_React_namespaceObject.useState)(false);
   const [showUpcomingList, setShowUpcomingList] = (0,external_React_namespaceObject.useState)(false);
+
+  // Close any open "View All" when the user minimizes the widgets section,
+  // so the Sports widget size also changes from Large to Medium. The Follow
+  // teams flow stays open — closing it would discard in-progress selections.
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!widgetsMaximized) {
+      setShowResultsList(false);
+      setShowUpcomingList(false);
+    }
+  }, [widgetsMaximized]);
 
   // Expand the widget to the large size when the user opens the match list
   // view ("View all") on either the Results or Upcoming tab, and restore the

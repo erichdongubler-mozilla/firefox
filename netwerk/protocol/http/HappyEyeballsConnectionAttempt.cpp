@@ -101,11 +101,14 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
 
   // Restrict the protocols the Happy Eyeballs engine may attempt to those
   // enabled by prefs, so disabled protocols are never raced (from HTTPS
-  // records, IP hints, or alt-svc).
+  // records, IP hints, or alt-svc). NS_HTTP_DISALLOW_HTTP3 is set for
+  // transactions that can't use HTTP/3 (e.g. WebSocket upgrades), so honor it
+  // here too.
   happy_eyeballs::HttpVersions httpVersions{
       /* h1 */ true,
       /* h2 */ StaticPrefs::network_http_http2_enabled(),
-      /* h3 */ nsHttpHandler::IsHttp3Enabled(),
+      /* h3 */ nsHttpHandler::IsHttp3Enabled() &&
+          !(mCaps & NS_HTTP_DISALLOW_HTTP3),
   };
 
   LOG(
@@ -113,24 +116,32 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
        "connectionAttemptDelay=%u",
        static_cast<uint32_t>(ipPref), resolutionDelay, connectionAttemptDelay));
 
-  if (mConnInfo->GetRoutedHost().IsEmpty()) {
-    nsTArray<happy_eyeballs::AltSvc> emptyAltSvc;
-    return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
-                               static_cast<uint16_t>(mConnInfo->OriginPort()),
-                               &emptyAltSvc, ipPref, httpVersions,
-                               resolutionDelay, connectionAttemptDelay);
-  }
-
+  // An explicit HTTP/3 connection info (an alt-svc HTTP/3 route, or a direct
+  // HTTP/3 connection such as WebTransport) must race HTTP/3. When there's an
+  // alt-svc route the HTTP/3 port is the routed port; for a direct HTTP/3
+  // connection (no routed host) it's the origin port. This is checked before
+  // the routed-host-empty case below so direct HTTP/3 connections aren't
+  // mistakenly raced over TCP.
   if (mConnInfo->IsHttp3()) {
     LOG(("HappyEyeballsConnectionAttempt for HTTP/3"));
     nsTArray<happy_eyeballs::AltSvc> altSvcArray;
     happy_eyeballs::AltSvc altsvc{};
     altsvc.http_version = happy_eyeballs::HttpVersion::H3;
-    altsvc.port = static_cast<uint16_t>(mConnInfo->RoutedPort());
+    altsvc.port = mConnInfo->GetRoutedHost().IsEmpty()
+                      ? static_cast<uint16_t>(mConnInfo->OriginPort())
+                      : static_cast<uint16_t>(mConnInfo->RoutedPort());
     altSvcArray.AppendElement(altsvc);
     return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
                                static_cast<uint16_t>(mConnInfo->OriginPort()),
                                &altSvcArray, ipPref, httpVersions,
+                               resolutionDelay, connectionAttemptDelay);
+  }
+
+  if (mConnInfo->GetRoutedHost().IsEmpty()) {
+    nsTArray<happy_eyeballs::AltSvc> emptyAltSvc;
+    return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
+                               static_cast<uint16_t>(mConnInfo->OriginPort()),
+                               &emptyAltSvc, ipPref, httpVersions,
                                resolutionDelay, connectionAttemptDelay);
   }
 
@@ -801,6 +812,7 @@ void HappyEyeballsConnectionAttempt::HandleTCPConnectionResult(
   mOutputTrans = establisher->Transaction();
   mOutputConnId = aId;
   mAddrFamily = addr.raw.family;
+  mWinnerAddrRecord = establisher->AddrRecord();
   // The winner is the first connection to fully succeed.
   mFirstConnectEnd = TimeStamp::Now();
   // The ownership of connection is moved to HappyEyeballsConnectionAttempt now.
@@ -1026,6 +1038,7 @@ void HappyEyeballsConnectionAttempt::HandleUDPConnectionResult(
   mOutputTrans = establisher->Transaction();
   mOutputConnId = aId;
   mAddrFamily = addr.raw.family;
+  mWinnerAddrRecord = establisher->AddrRecord();
   // The winner is the first connection to fully succeed.
   mFirstConnectEnd = TimeStamp::Now();
   // The ownership of connection is moved to HappyEyeballsConnectionAttempt now.
@@ -1126,11 +1139,45 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(
   LOG(("Got connTCP:%p transactionAlreadyOnConn=%d", connTCP.get(),
        aTransactionAlreadyOnConn));
 
+  // Build coalescing keys for the winning connection and reprocess the pending
+  // queue before inserting connTCP into the active list. If our pending
+  // transaction can coalesce onto an existing connection, ProcessSpdyPendingQ
+  // dispatches it there now (and ReportSpdyConnection below closes the now
+  // redundant connTCP for coalescing).
+  if (mWinnerAddrRecord && StaticPrefs::network_http_http2_enabled() &&
+      StaticPrefs::network_http_http2_coalesce_hostnames()) {
+    if (entry->MaybeProcessCoalescingKeys(mWinnerAddrRecord)) {
+      gHttpHandler->ConnMgr()->ProcessSpdyPendingQ(entry);
+    }
+  }
+
   entry->InsertIntoActiveConns(connTCP);
 
   bool isHttp2 = connTCP->UsingSpdy();
 
-  if (!aTransactionAlreadyOnConn) {
+  nsHttpTransaction* realTrans =
+      mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
+  // WebSocket / WebTransport upgrades on an HTTP/2 connection must be
+  // dispatched through the extended CONNECT tunnel (Http2StreamTunnel)
+  // instead of being activated directly on the Http2Session.
+  bool deferExtendedConnect =
+      isHttp2 && realTrans &&
+      (realTrans->IsWebsocketUpgrade() || realTrans->IsForWebTransport());
+
+  if (!aTransactionAlreadyOnConn && deferExtendedConnect) {
+    LOG(
+        ("ProcessTCPConn deferring extended CONNECT upgrade trans=%p to "
+         "ProcessPendingQ\n",
+         realTrans));
+
+    RefPtr<PendingTransactionInfo> existing =
+        gHttpHandler->ConnMgr()->FindTransactionHelper(
+            /* removeWhenFound = */ false, entry, realTrans);
+    if (!existing) {
+      gHttpHandler->ConnMgr()->AddTransaction(realTrans, realTrans->Priority());
+    }
+    mTransaction = nullptr;
+  } else if (!aTransactionAlreadyOnConn) {
     RefPtr<PendingTransactionInfo> pendingTransInfo =
         gHttpHandler->ConnMgr()->FindTransactionHelper(true, entry,
                                                        mTransaction);
@@ -1197,6 +1244,13 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
         FillConnectTimings(/* aIsQuic = */ true, timings);
         trans->BootstrapTimings(timings);
       }
+    }
+  }
+
+  if (mWinnerAddrRecord && nsHttpHandler::IsHttp3Enabled() &&
+      StaticPrefs::network_http_http2_coalesce_hostnames()) {
+    if (entry->MaybeProcessCoalescingKeys(mWinnerAddrRecord, true)) {
+      gHttpHandler->ConnMgr()->ProcessSpdyPendingQ(entry);
     }
   }
 

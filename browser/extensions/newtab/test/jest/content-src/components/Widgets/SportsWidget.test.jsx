@@ -1310,6 +1310,64 @@ describe("<SportsWidget> matches view", () => {
     ).toBe("newtab-sports-widget-now");
   });
 
+  it("falls back to Upcoming when the persisted tab is Now but live games have ended", () => {
+    // Reproduces the bug where matchesTab is cached as "now" (from a prior
+    // click or session) but live games have since ended: without the fallback,
+    // every tab panel is hidden and no tab shows as selected.
+    const { container } = renderInMatchesState({
+      matchesTab: "now",
+      data: {
+        teams: [],
+        matches: { current: [], previous: [], next: [mockMatch] },
+        live: [],
+      },
+    });
+    expect(
+      container
+        .querySelector(".sports-matches-tab.is-active")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-sports-widget-upcoming");
+    const panel = getVisibleTabPanel(container);
+    expect(panel).toBeTruthy();
+    expect(panel.querySelector(".sports-match-row")).toBeTruthy();
+  });
+
+  it("keeps Results selected after live games end when the user had picked Results", () => {
+    // The Now-only fallback shouldn't override an explicit Results choice:
+    // when the user is on Results and a game ends, they should stay on Results.
+    const { container } = renderInMatchesState({
+      matchesTab: "results",
+      data: {
+        teams: [],
+        matches: { current: [], previous: [mockMatch], next: [] },
+        live: [],
+      },
+    });
+    expect(
+      container
+        .querySelector(".sports-matches-tab.is-active")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-sports-widget-results");
+  });
+
+  it("keeps Now selected while live games are still in progress", () => {
+    // Guards against the fallback firing too eagerly: matchesTab="now" plus
+    // an active live game must continue to render the Now tab.
+    const { container } = renderInMatchesState({
+      matchesTab: "now",
+      data: {
+        teams: [],
+        matches: emptyMatches,
+        live: [mockMatch],
+      },
+    });
+    expect(
+      container
+        .querySelector(".sports-matches-tab.is-active")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-sports-widget-now");
+  });
+
   it("disables the results tab and prevents dispatch when there are no previous results", () => {
     const { container } = renderInMatchesState();
     const resultsTab = container.querySelector(
@@ -1883,6 +1941,162 @@ describe("<SportsWidget> match list view expands widget to large", () => {
     expect(
       container.querySelector(".sports.large-widget")
     ).not.toBeInTheDocument();
+  });
+
+  it("resets the View All Results list when the widgets container is collapsed", () => {
+    const matchesData = {
+      teams: [],
+      matches: {
+        previous: [mockMatch],
+        current: [],
+        next: [],
+      },
+    };
+    const { container, rerender } = render(
+      <WrapWithProvider
+        state={makeState(
+          {
+            [PREF_SPORTS_WIDGET_SIZE]: "medium",
+            "widgets.maximized": true,
+          },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "results",
+            data: matchesData,
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+
+    fireEvent.click(getVisibleViewAllButton(container));
+    expect(
+      getVisibleTabPanel(container).querySelector(".match-highlight-view")
+    ).toBeNull();
+
+    rerender(
+      <WrapWithProvider
+        state={makeState(
+          {
+            [PREF_SPORTS_WIDGET_SIZE]: "medium",
+            "widgets.maximized": false,
+          },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "results",
+            data: matchesData,
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+
+    expect(
+      getVisibleTabPanel(container).querySelector(".match-highlight-view")
+    ).not.toBeNull();
+  });
+
+  it("resets the View All Upcoming list when the widgets container is collapsed", () => {
+    const matchesData = {
+      teams: [],
+      matches: {
+        previous: [],
+        current: [],
+        next: [{ ...mockMatch, status_type: "scheduled" }],
+      },
+    };
+    const { container, rerender } = render(
+      <WrapWithProvider
+        state={makeState(
+          {
+            [PREF_SPORTS_WIDGET_SIZE]: "medium",
+            "widgets.maximized": true,
+          },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "upcoming",
+            data: matchesData,
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+
+    fireEvent.click(getVisibleViewAllButton(container));
+    expect(
+      getVisibleTabPanel(container).querySelector(".match-highlight-view")
+    ).toBeNull();
+
+    rerender(
+      <WrapWithProvider
+        state={makeState(
+          {
+            [PREF_SPORTS_WIDGET_SIZE]: "medium",
+            "widgets.maximized": false,
+          },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "upcoming",
+            data: matchesData,
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+
+    expect(
+      getVisibleTabPanel(container).querySelector(".match-highlight-view")
+    ).not.toBeNull();
+  });
+
+  it("re-maximising after the reset shows the highlight view, not the previously-open list", () => {
+    const matchesData = {
+      teams: [],
+      matches: {
+        previous: [mockMatch],
+        current: [],
+        next: [],
+      },
+    };
+    function renderAt(maximized) {
+      return (
+        <WrapWithProvider
+          state={makeState(
+            {
+              [PREF_SPORTS_WIDGET_SIZE]: "medium",
+              "widgets.maximized": maximized,
+            },
+            {
+              widgetState: "sports-matches",
+              matchesTab: "results",
+              data: matchesData,
+            }
+          )}
+        >
+          <SportsWidget
+            dispatch={jest.fn()}
+            handleUserInteraction={jest.fn()}
+          />
+        </WrapWithProvider>
+      );
+    }
+
+    const { container, rerender } = render(renderAt(true));
+    fireEvent.click(getVisibleViewAllButton(container));
+    expect(
+      getVisibleTabPanel(container).querySelector(".match-highlight-view")
+    ).toBeNull();
+
+    rerender(renderAt(false));
+    rerender(renderAt(true));
+
+    expect(
+      getVisibleTabPanel(container).querySelector(".match-highlight-view")
+    ).not.toBeNull();
   });
 });
 

@@ -43,7 +43,7 @@ PromiseTestUtils.allowMatchingRejectionsGlobally(
   /Message manager disconnected/
 );
 PromiseTestUtils.allowMatchingRejectionsGlobally(
-  /sendRemoveListener on closed conduit/
+  /Cannot send "RemoveListener" because conduit .* is already closed/
 );
 
 const { createAppInfo, promiseStartupManager } = AddonTestUtils;

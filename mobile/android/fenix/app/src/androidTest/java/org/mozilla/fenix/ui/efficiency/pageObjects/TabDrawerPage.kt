@@ -37,6 +37,12 @@ class TabDrawerPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRu
             to = "HomePage",
             steps = listOf(NavigationStep.PressBack),
         )
+
+        NavigationRegistry.register(
+            from = pageName,
+            to = "BrowserPage",
+            steps = listOf(NavigationStep.PressBack),
+        )
     }
 
     override fun mozGetSelectorsByGroup(group: String): List<Selector> {

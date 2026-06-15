@@ -2859,6 +2859,12 @@
   value: false
   mirror: always
 
+# Whether to allow attaching EditContext to <canvas> elements.
+- name: dom.editcontext.allow_canvas
+  type: bool
+  value: false
+  mirror: always
+
 # HTMLDialogElement.prototype.requestClose
 # See https://html.spec.whatwg.org/#dom-dialog-requestclose
 - name: dom.element.dialog.request_close.enabled
@@ -10463,6 +10469,14 @@
   mirror: always
   rust: true
 
+# Whether to enable the CSS alpha() color function.
+# https://drafts.csswg.org/css-values-5/#attr-notation
+- name: layout.css.alpha-color-function.enabled
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+  rust: true
+
 # Whether to enable CSS Anchor Positioning support.
 # https://drafts.csswg.org/css-anchor-position-1/
 - name: layout.css.anchor-positioning.enabled
@@ -16704,6 +16718,14 @@
   value: @IS_NIGHTLY_BUILD@
   mirror: always
 
+# When true, Happy Eyeballs is also used for requests carrying an HTTP
+# upgrade (e.g. WebSocket). Gated separately so the upgrade path can be
+# rolled out independently of the main Happy Eyeballs pref.
+- name: network.http.happy_eyeballs_upgrade_enabled
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+
 # The time to wait after receiving the first DNS response before moving on
 # to the connection phase (ms).
 - name: network.http.happy_eyeballs_resolution_delay
@@ -20353,6 +20375,13 @@
   type: bool
   value: false
   mirror: always
+
+# Use native D&D session type on Wayland instead of Gtk.
+# Recently disabled due compositor bugs (Bug 2046911).
+- name: widget.wayland.native-data-session
+  type: bool
+  value: false
+  mirror: once
 #endif
 
 #ifdef MOZ_WIDGET_GTK

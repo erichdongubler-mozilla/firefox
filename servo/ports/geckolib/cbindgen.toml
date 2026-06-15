@@ -1327,11 +1327,29 @@ renaming_overrides_prefixing = true
   inline Span<const mozilla::StyleAtom> AsSpan() const;
 """
 
+"Optional" = """
+  explicit operator bool() const { return IsSome(); }
+
+  const T& operator*() const { return AsSome(); }
+"""
+
 "NumericType" = """
   static_assert(static_cast<size_t>(StyleNumericBaseType::Percent) + 1 ==
                 StyleNUMERIC_BASE_TYPE_COUNT);
 
   inline StyleNumericType();
+
+ private:
+  inline static StyleNumericType Empty();
+  inline static StyleNumericType WithBaseType(StyleNumericBaseType aBaseType);
+
+ public:
+  inline static StyleNumericType Number();
+  inline static StyleNumericType Length();
+
+  inline int32_t Exponent(StyleNumericBaseType aBaseType) const;
+
+  inline bool operator==(const StyleNumericType& aOther) const;
 """
 
 "PropertyTypedValueList" = """

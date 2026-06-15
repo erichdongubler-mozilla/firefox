@@ -528,7 +528,6 @@ class Core(
             context = context,
             httpClient = client,
             manifestProvider = merinoManifestProvider,
-            useMerinoManifest = context.components.settings.enableMerinoManifest,
         )
     }
 

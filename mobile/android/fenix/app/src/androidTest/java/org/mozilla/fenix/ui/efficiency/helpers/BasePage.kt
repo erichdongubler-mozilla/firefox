@@ -12,6 +12,8 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.filter
+import androidx.compose.ui.test.hasAnyChild
 import androidx.compose.ui.test.hasAnySibling
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
@@ -646,6 +648,18 @@ abstract class BasePage(
                     composeRule.onAllNodesWithTag(selector.value).onFirst()
                 } catch (_: Exception) {
                     Log.i("mozGetElement", "Compose node not found for tag: ${selector.value}"); null
+                }
+            }
+
+            SelectorStrategy.COMPOSE_ON_ALL_NODES_BY_TAG_WITH_CHILD_TEXT_ON_FIRST -> {
+                val textToMatch = selector.secondaryValue ?: ""
+                try {
+                    composeRule.onAllNodesWithTag(selector.value)
+                        .filter(hasAnyChild(hasText(textToMatch)))
+                        .onFirst()
+                } catch (_: Exception) {
+                    Log.i("mozGetElement", "Compose node not found for tag: ${selector.value} with child text: $textToMatch")
+                    null
                 }
             }
 

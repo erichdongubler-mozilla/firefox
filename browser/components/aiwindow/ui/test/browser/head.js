@@ -172,6 +172,21 @@ async function openAIWindow({ waitForTabURL = AIWINDOW_URL } = {}) {
 }
 
 /**
+ * Waits for the sidebar ai-window element to connect.
+ *
+ * @param {Window} win - Window reference
+ * @returns {Promise<MozBrowser>} - The sidebar browser element
+ */
+async function waitForSidebarReady(win) {
+  const sidebarBrowser = win.document.getElementById("ai-window-browser");
+  await BrowserTestUtils.waitForCondition(
+    () => sidebarBrowser.contentDocument?.querySelector("ai-window:defined"),
+    "Sidebar ai-window should be loaded"
+  );
+  return sidebarBrowser;
+}
+
+/**
  * Opens a new AI Window with about:blank
  * and the chat assistant sidebar open
  *
@@ -179,6 +194,16 @@ async function openAIWindow({ waitForTabURL = AIWINDOW_URL } = {}) {
  */
 async function openAIWindowWithSidebar() {
   const win = await openAIWindow();
+  return openAIWindowSidebar(win);
+}
+
+/**
+ * Navigates an AI Window to about:blank and opens the sidebar.
+ *
+ * @param {Window} win
+ * @returns {Promise<{win: Window, sidebarBrowser: MozBrowser}>}
+ */
+async function openAIWindowSidebar(win) {
   BrowserTestUtils.startLoadingURIString(
     win.gBrowser.selectedBrowser,
     "about:blank"
@@ -190,11 +215,7 @@ async function openAIWindowWithSidebar() {
     info("Opening sidebar");
     AIWindowUI.toggleSidebar(win);
   }
-  const sidebarBrowser = win.document.getElementById("ai-window-browser");
-  await BrowserTestUtils.waitForCondition(
-    () => sidebarBrowser.contentDocument?.querySelector("ai-window:defined"),
-    "Sidebar ai-window should be loaded"
-  );
+  const sidebarBrowser = await waitForSidebarReady(win);
   return { win, sidebarBrowser };
 }
 
@@ -954,13 +975,13 @@ async function getSmartbarModelSelectData(browser) {
 }
 
 /**
- * Switches to a different model in the smartbar.
+ * Switches to a model in the smartbar by choice ID.
  *
  * @param {MozBrowser} browser - The browser element
- * @param {number} modelIndex - Model index to switch to
+ * @param {string} modelChoiceId - Model choice id to switch to
  */
-async function switchSmartbarModel(browser, modelIndex) {
-  return SpecialPowers.spawn(browser, [modelIndex], async index => {
+async function switchSmartbarModel(browser, modelChoiceId) {
+  return SpecialPowers.spawn(browser, [modelChoiceId], async choiceId => {
     const aiWindowElement = content.document.querySelector("ai-window");
     const smartbar = aiWindowElement.shadowRoot.querySelector(
       "#ai-window-smartbar"
@@ -977,7 +998,11 @@ async function switchSmartbarModel(browser, modelIndex) {
     );
 
     const modelKeys = Object.keys(modelSelect.availableModels);
-    const targetModelId = modelSelect.availableModels[modelKeys[index]].model;
+    const index = modelKeys.indexOf(choiceId);
+    if (index === -1) {
+      throw new Error(`Model choice "${choiceId}" not available`);
+    }
+    const targetModelId = modelSelect.availableModels[choiceId].model;
     panelList.querySelectorAll("button.model-item")[index].click();
 
     await ContentTaskUtils.waitForMutationCondition(
@@ -1542,7 +1567,10 @@ async function getUserMessageChipLabels(sidebarBrowser, messageIndex = 0) {
 async function withServer(serverOptions, task) {
   const { server, port } = startMockOpenAI(serverOptions);
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.smartwindow.endpoint", `http://localhost:${port}/v1`]],
+    set: [
+      ["browser.smartwindow.endpoint", `http://localhost:${port}/v1`],
+      ["browser.smartwindow.customEndpoint", `http://localhost:${port}/v1`],
+    ],
   });
 
   const getFxAccountTokenStub = sinon

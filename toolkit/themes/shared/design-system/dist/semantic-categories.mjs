@@ -1413,6 +1413,13 @@ export const tokensTable = {
       name: "--button-attention-dot-color",
     },
     {
+      value: {
+        default: "color-mix(in srgb, currentColor 25%, transparent)",
+        prefersContrast: "currentColor",
+      },
+      name: "--panel-separator-color",
+    },
+    {
       value: "var(--text-color-deemphasized)",
       name: "--toolbarseparator-color",
     },
@@ -3816,6 +3823,10 @@ export const variableLookupTable = {
     nativeTheme: "FieldText",
   },
   "panel-width": "initial",
+  "panel-separator-color": {
+    default: "color-mix(in srgb, currentColor 25%, transparent)",
+    prefersContrast: "currentColor",
+  },
   "popup-box-shadow": "var(--box-shadow-level-3)",
   "sidebar-background-color": {
     light: "white",

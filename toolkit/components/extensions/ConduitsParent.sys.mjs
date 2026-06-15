@@ -295,7 +295,10 @@ export class BroadcastConduit extends BaseConduit {
    */
   _send(method, query, target, arg = {}) {
     if (!this.open) {
-      throw new Error(`send${method} on closed conduit ${this.id}`);
+      throw new Error(
+        `Cannot send "${method}" because conduit ${this.id} is already closed ` +
+          `(this usually means the extension context was unloaded)`
+      );
     }
 
     let sender = this.id;

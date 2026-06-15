@@ -254,6 +254,13 @@ class nsHttpConnectionInfo final : public ARefBase {
   void SetIPv6Disabled(bool aNoIPv6);
   bool GetIPv6Disabled() const { return mIPv6Disabled; }
 
+  // When set, this connection info uses a separate connection entry that never
+  // holds an HTTP/3 connection. Used for transactions that can't use HTTP/3
+  // (e.g. WebSocket upgrades) so they aren't blocked by, or coalesced onto, an
+  // HTTP/3 connection established for regular requests to the same host.
+  void SetHttp3Disabled(bool aHttp3Disabled);
+  bool GetHttp3Disabled() const { return mHttp3Disabled; }
+
   void SetWebTransport(bool aWebTransport);
   bool GetWebTransport() const { return mWebTransport; }
 
@@ -345,6 +352,7 @@ class nsHttpConnectionInfo final : public ARefBase {
   uint16_t mIsTrrServiceChannel : 1;
   uint16_t mIPv4Disabled : 1;
   uint16_t mIPv6Disabled : 1;
+  uint16_t mHttp3Disabled : 1;
 
   bool mLessThanTls13;  // This will be set to true if we negotiate less than
                         // tls1.3. If the tls version is till not know or it

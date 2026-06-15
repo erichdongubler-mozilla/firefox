@@ -81,6 +81,7 @@
 #include "mozilla/dom/Document.h"          // for Document
 #include "mozilla/dom/DocumentInlines.h"   // for GetObservingPresShell
 #include "mozilla/dom/DragEvent.h"         // for DragEvent
+#include "mozilla/dom/EditContext.h"       // for EditContext
 #include "mozilla/dom/Element.h"           // for Element, nsINode::AsElement
 #include "mozilla/dom/EventTarget.h"       // for EventTarget
 #include "mozilla/dom/HTMLBodyElement.h"
@@ -4152,6 +4153,19 @@ nsresult EditorBase::OnCompositionChange(
 
     if (caret) {
       caret->SetSelection(&SelectionRef());
+    }
+  }
+
+  if (RefPtr<EditContext> editContext = GetEditContext()) {
+    RefPtr<TextRangeArray> ranges = mComposition->GetRanges();
+    editContext->FireTextFormatUpdate(ranges,
+                                      mComposition->XPOffsetInTextNode());
+    if (NS_WARN_IF(Destroyed())) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (editContext != GetEditContext()) {
+      // textformatupdate handler deactivated this EditContext
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
     }
   }
 

@@ -969,20 +969,19 @@ void NativeLayerWayland::UpdateLayerPlacementLocked(
 
   auto transform2DInversed = transform2D.Inverse();
   Rect bufferClip = transform2DInversed.TransformBounds(surfaceRectClipped);
-  auto unscaledViewportRect =
+  Rect unscaledViewportRect =
       bufferClip.Intersect(Rect(0, 0, mSize.width, mSize.height));
-  auto viewportRect =
+  Rect scaledViewportRect =
       useCoordinatesScale
-          ? gfx::RoundedToInt(
-                unscaledViewportRect *
-                UnknownScaleFactor(mSurface->GetCoordinatesScaleRounded()))
-          : gfx::RoundedToInt(unscaledViewportRect);
+          ? unscaledViewportRect *
+                UnknownScaleFactor(mSurface->GetCoordinatesScaleRounded())
+          : unscaledViewportRect;
+  DesktopRect viewportRect = DesktopRect::FromUnknownRect(scaledViewportRect);
 
-  LOGVERBOSE("  source [%d, %d] -> [%d x %d] coordinate scale [%f]",
+  LOGVERBOSE("  source [%f, %f] -> [%f x %f] coordinate scale [%f]",
              viewportRect.x, viewportRect.y, viewportRect.width,
              viewportRect.height, mSurface->GetCoordinatesScaleRounded());
-  mSurface->SetViewPortSourceRectLocked(
-      aProofOfLock, DesktopIntRect::FromUnknownRect(viewportRect));
+  mSurface->SetViewPortSourceRectLocked(aProofOfLock, viewportRect);
 }
 
 void NativeLayerWayland::RenderLayer(double aScale) {

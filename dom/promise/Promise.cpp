@@ -580,7 +580,7 @@ class PromiseNativeHandlerShim final : public PromiseNativeHandler {
     return PromiseNativeHandler_Binding::Wrap(aCx, this, aGivenProto, aWrapper);
   }
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(PromiseNativeHandlerShim)
 };
 
