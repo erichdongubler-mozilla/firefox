@@ -49,8 +49,6 @@ using mozilla::DebugOnly;
 namespace js {
 namespace jit {
 
-#define UNIMPLEMENTED_RISCV() MOZ_CRASH("RISC_V not implemented");
-
 bool Assembler::FLAG_riscv_debug = false;
 
 // Size of the instruction stream, in bytes.
@@ -1025,11 +1023,6 @@ bool Assembler::jumpChainPutTargetAt(BufferOffset pos,
       }
       instruction->SetImm20JValue(offset);
     } break;
-    case LUI: {
-      uintptr_t target =
-          reinterpret_cast<uintptr_t>(getInstructionAt(target_pos));
-      UpdateLiPtrInstructions(instruction, target);
-    } break;
     case AUIPC: {
       Instruction* instruction2 =
           getInstructionAt(BufferOffset(pos.getOffset() + kInstrSize));
@@ -1043,8 +1036,7 @@ bool Assembler::jumpChainPutTargetAt(BufferOffset pos,
       instruction2->SetImm12Value(Lo12);
     } break;
     default:
-      UNIMPLEMENTED_RISCV();
-      break;
+      MOZ_CRASH("unexpected jump instruction");
   }
   return true;
 }
@@ -1093,27 +1085,6 @@ int Assembler::jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
                    pos.getOffset() + imm21);
       return pos.getOffset() + imm21;
     }
-    case JALR: {
-      int32_t imm12 = instruction->Imm12Value();
-      if (imm12 == kEndOfJumpChain) {
-        // EndOfChain sentinel is returned directly, not relative to pc or pos.
-        return kEndOfChain;
-      }
-      DEBUG_PRINTF("\t jumpChainTargetAt: %d %d\n", imm12,
-                   pos.getOffset() + imm12);
-      return pos.getOffset() + imm12;
-    }
-    case LUI: {
-      uintptr_t imm = LoadLiPtrInstructions(instruction);
-      uintptr_t instr_address = reinterpret_cast<uintptr_t>(instruction);
-      if (imm == kEndOfJumpChain) {
-        return kEndOfChain;
-      }
-      MOZ_ASSERT(instr_address - imm < INT32_MAX);
-      int32_t delta = static_cast<int32_t>(instr_address - imm);
-      MOZ_ASSERT(pos.getOffset() > delta);
-      return pos.getOffset() - delta;
-    }
     case AUIPC: {
       MOZ_ASSERT(instruction2 != nullptr);
       MOZ_ASSERT(instruction2->IsJalr() || instruction2->IsAddi());
@@ -1128,9 +1099,8 @@ int Assembler::jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
                    pos.getOffset() + offset);
       return offset + pos.getOffset();
     }
-    default: {
-      UNIMPLEMENTED_RISCV();
-    }
+    default:
+      MOZ_CRASH("unexpected jump instruction");
   }
 }
 
