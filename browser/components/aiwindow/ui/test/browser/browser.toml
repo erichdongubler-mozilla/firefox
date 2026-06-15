@@ -155,6 +155,8 @@ skip-if = [
 
 ["browser_security_get_open_tabs.js"]
 
+["browser_security_get_user_memories.js"]
+
 ["browser_security_run_search.js"]
 
 ["browser_security_search_browsing_history.js"]
