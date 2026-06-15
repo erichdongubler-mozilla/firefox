@@ -7,17 +7,7 @@
     <vbox class="panel-subview-body">
       <toolbarbutton id="allTabsMenu-searchTabs"
                      class="subviewbutton"
-                     data-l10n-id="all-tabs-menu-search-tabs"/>
-      <toolbarbutton id="allTabsMenu-syncedTabs"
-                     class="subviewbutton"
-                     data-l10n-id="all-tabs-menu-synced-tabs"/>
-      <toolbarbutton id="allTabsMenu-closeDuplicateTabs"
-                     class="subviewbutton"
-                     data-l10n-id="all-tabs-menu-close-all-duplicate-tabs"/>
-      <toolbarbutton id="allTabsMenu-containerTabsButton"
-                     class="subviewbutton subviewbutton-nav"
-                     closemenu="none"
-                     data-l10n-id="all-tabs-menu-new-user-context"/>
+                     data-l10n-id="all-tabs-menu-search-all-tabs"/>
       <toolbarseparator/>
       <vbox id="allTabsMenu-groupsView"/>
       <toolbarseparator id="allTabsMenu-groupsSeparator"/>
@@ -31,7 +21,15 @@
       <vbox id="allTabsMenu-dropIndicatorHolder">
         <vbox id="allTabsMenu-dropIndicator" collapsed="true"/>
       </vbox>
-      <vbox id="allTabsMenu-allTabsView-tabs" class="panel-subview-body"/>
+      <vbox id="allTabsMenu-allTabsView-tabs" class="panel-subview-body">
+        <toolbarbutton id="allTabsMenu-containerTabsButton"
+                       class="subviewbutton subviewbutton-nav"
+                       closemenu="none"
+                       data-l10n-id="all-tabs-menu-new-user-context"/>
+        <toolbarbutton id="allTabsMenu-closeDuplicateTabs"
+                       class="subviewbutton"
+                       data-l10n-id="all-tabs-menu-close-duplicate-tabs"/>
+      </vbox>
     </vbox>
   </panelview>
 
