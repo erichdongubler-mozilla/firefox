@@ -179,6 +179,16 @@ async function openAIWindow({ waitForTabURL = AIWINDOW_URL } = {}) {
  */
 async function openAIWindowWithSidebar() {
   const win = await openAIWindow();
+  return openAIWindowSidebar(win);
+}
+
+/**
+ * Navigates an AI Window to about:blank and opens the sidebar.
+ *
+ * @param {Window} win
+ * @returns {Promise<{win: Window, sidebarBrowser: MozBrowser}>}
+ */
+async function openAIWindowSidebar(win) {
   BrowserTestUtils.startLoadingURIString(
     win.gBrowser.selectedBrowser,
     "about:blank"

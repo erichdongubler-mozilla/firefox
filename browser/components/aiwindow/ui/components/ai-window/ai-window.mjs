@@ -1718,7 +1718,8 @@ export class AIWindow extends MozLitElement {
     this.#updateBrowserTabbable();
     this.#smartbar?.unsuppressStartQuery();
     if (this.#smartbar?.inputField) {
-      this.#smartbar.inputField.showPlaceholderAnimation = true;
+      this.#smartbar.inputField.showPlaceholderAnimation =
+        this.mode === MODE.FULLPAGE;
     }
   }
 
