@@ -1205,9 +1205,15 @@ nsresult nsHttpChannel::ContinueOnBeforeConnect(bool aShouldUpgrade,
     // TODO: When mUpgradeProtocolCallback is not null, we should allow HTTP/3
     // for connect-udp.
     mCaps |= NS_HTTP_DISALLOW_HTTP3;
-    // Because NS_HTTP_STICKY_CONNECTION breaks HTTPS RR fallabck mecnahism, we
-    // can not use HTTPS RR for upgrade requests.
-    DisallowHTTPSRR(mCaps);
+    // NS_HTTP_STICKY_CONNECTION breaks the (non-Happy-Eyeballs) HTTPS RR
+    // fallback mechanism, which restarts the transaction to fall back. Happy
+    // Eyeballs instead races endpoints (honoring the HTTPS RR port, hints and
+    // ALPN) and dispatches the sticky upgrade onto the winner with no restart,
+    // so it can safely use HTTPS RR. Only disallow HTTPS RR for upgrades that
+    // are not handled by Happy Eyeballs.
+    if (!(mCaps & NS_HTTP_USE_HAPPY_EYEBALLS)) {
+      DisallowHTTPSRR(mCaps);
+    }
   }
 
   if (LoadIsTRRServiceChannel()) {
