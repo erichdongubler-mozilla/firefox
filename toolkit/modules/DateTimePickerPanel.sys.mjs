@@ -13,6 +13,9 @@ const DATE_PICKER_HEIGHT = "26.9em";
 const DATETIME_PICKER_WIDTH = "39.8em";
 const DATETIME_PICKER_HEIGHT = "26.9em";
 
+const MS_PER_SECOND = 1000;
+const MS_PER_MINUTE = 60 * MS_PER_SECOND;
+
 export class DateTimePickerPanel extends InputPickerPanelCommon {
   constructor(element) {
     super(element, "chrome://global/content/datetimepicker.xhtml");
@@ -83,7 +86,8 @@ export class DateTimePickerPanel extends InputPickerPanelCommon {
       hour: "numeric",
     }).resolvedOptions();
 
-    const { year, month, day, hour, minute } = detail.value;
+    const { year, month, day, hour, minute, second, millisecond } =
+      detail.value;
     const flattenDetail = {
       type,
       year,
@@ -92,6 +96,8 @@ export class DateTimePickerPanel extends InputPickerPanelCommon {
       day,
       hour,
       minute,
+      second,
+      millisecond,
       locale,
       dir,
       format: hour12 ? "12" : "24",
@@ -100,6 +106,20 @@ export class DateTimePickerPanel extends InputPickerPanelCommon {
       step: detail.step,
       stepBase: detail.stepBase,
     };
+
+    if (
+      type !== "date" &&
+      Services.prefs.getBoolPref("dom.forms.datetime.timepicker")
+    ) {
+      flattenDetail.showSeconds =
+        second != undefined ||
+        detail.stepBase % MS_PER_MINUTE != 0 ||
+        detail.step % MS_PER_MINUTE != 0;
+      flattenDetail.showMilliseconds =
+        millisecond != undefined ||
+        detail.stepBase % MS_PER_SECOND != 0 ||
+        detail.step % MS_PER_SECOND != 0;
+    }
 
     if (type !== "time") {
       const { firstDayOfWeek, weekends } = this.getCalendarInfo(locale);
@@ -139,20 +159,20 @@ export class DateTimePickerPanel extends InputPickerPanelCommon {
    * @param {object} pickerState
    */
   sendPickerValueChangedImpl(type, pickerState) {
-    let { year, month, day, hour, minute } = pickerState;
+    let { year, month, day, hour, minute, second, millisecond } = pickerState;
     if (month !== undefined) {
       // Month value from input box starts from 1 instead of 0
       month += 1;
     }
     switch (type) {
       case "time": {
-        return { hour, minute };
+        return { hour, minute, second, millisecond };
       }
       case "date": {
         return { year, month, day };
       }
       case "datetime-local": {
-        return { year, month, day, hour, minute };
+        return { year, month, day, hour, minute, second, millisecond };
       }
     }
     throw new Error(`Unexpected type ${type}`);

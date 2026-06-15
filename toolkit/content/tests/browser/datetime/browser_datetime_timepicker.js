@@ -28,7 +28,7 @@ add_setup(async function setPrefsReducedMotion() {
 add_task(async function test_time_spinner_markup() {
   info("Test that the time picker opens with an accessible markup");
 
-  await helper.openPicker(`data:text/html, <input type="time">`);
+  await helper.openPicker(`data:text/html, <input type="time" step=".001">`);
 
   Assert.equal(helper.panel.state, "open", "Panel should be opened");
   Assert.equal(
@@ -51,14 +51,40 @@ add_task(async function test_time_spinner_markup() {
   const spinnerMin = helper.getElement(SPINNER_MIN);
   const spinnerMinPrev = helper.getElement(BTN_PREV_MIN);
   const spinnerMinNext = helper.getElement(BTN_NEXT_MIN);
+  // Second (ss):
+  const spinnerSec = helper.getElement(SPINNER_SEC);
+  const spinnerSecPrev = helper.getElement(BTN_PREV_SEC);
+  const spinnerSecNext = helper.getElement(BTN_NEXT_SEC);
+  // Millisecond (mmm):
+  const spinnerMs = helper.getElement(SPINNER_MSEC);
+  const spinnerMsPrev = helper.getElement(BTN_PREV_MSEC);
+  const spinnerMsNext = helper.getElement(BTN_NEXT_MSEC);
   // Time of the day (AM/PM):
   const spinnerTime = helper.getElement(SPINNER_TIME);
   const spinnerTimePrev = helper.getElement(BTN_PREV_TIME);
   const spinnerTimeNext = helper.getElement(BTN_NEXT_TIME);
 
-  const spinners = [spinnerHour, spinnerMin, spinnerTime];
-  const prevBtns = [spinnerHourPrev, spinnerMinPrev, spinnerTimePrev];
-  const nextBtns = [spinnerHourNext, spinnerMinNext, spinnerTimeNext];
+  const spinners = [
+    spinnerHour,
+    spinnerMin,
+    spinnerSec,
+    spinnerMs,
+    spinnerTime,
+  ];
+  const prevBtns = [
+    spinnerHourPrev,
+    spinnerMinPrev,
+    spinnerSecPrev,
+    spinnerMsPrev,
+    spinnerTimePrev,
+  ];
+  const nextBtns = [
+    spinnerHourNext,
+    spinnerMinNext,
+    spinnerSecNext,
+    spinnerMsNext,
+    spinnerTimeNext,
+  ];
 
   // Check spinner controls:
   for (const el of spinners) {
@@ -79,7 +105,9 @@ add_task(async function test_time_spinner_markup() {
     );
     Assert.ok(
       /* "0" and "12" are the only values for Time of the day spinners */
-      ["11", "23", "59", "12"].includes(el.getAttribute("aria-valuemax")),
+      ["11", "23", "59", "12", "999"].includes(
+        el.getAttribute("aria-valuemax")
+      ),
       `Spinner control ${el.id} has a max value set`
     );
 
