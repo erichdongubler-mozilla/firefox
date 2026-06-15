@@ -153,6 +153,8 @@ skip-if = [
 
 ["browser_security_chat.js"]
 
+["browser_security_get_open_tabs.js"]
+
 ["browser_sidebar_aiwindow.js"]
 
 ["browser_smartwindow_abort_on_tab_close.js"]
