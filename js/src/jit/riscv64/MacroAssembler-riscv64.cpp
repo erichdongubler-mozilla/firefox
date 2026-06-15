@@ -882,8 +882,6 @@ void MacroAssemblerRiscv64::RoundHelper(FPURegister dst, FPURegister src,
   }
   {
     Label not_NaN;
-    UseScratchRegisterScope temps2(this);
-    Register scratch = temps2.Acquire();
     // According to the wasm spec
     // (https://webassembly.github.io/spec/core/exec/numerics.html#aux-nans)
     // if input is canonical NaN, then output is canonical NaN, and if input is
@@ -892,12 +890,10 @@ void MacroAssemblerRiscv64::RoundHelper(FPURegister dst, FPURegister src,
     // src is not a NaN, branch to the label and do nothing, but if it is,
     // fmin_d will set dst to the canonical NaN.
     if (std::is_same<F, double>::value) {
-      feq_d(scratch, src, src);
-      bnez(scratch, &not_NaN);
+      BranchFloat64(Assembler::DoubleOrdered, src, src, &not_NaN, ShortJump);
       fmin_d(dst, src, src);
     } else {
-      feq_s(scratch, src, src);
-      bnez(scratch, &not_NaN);
+      BranchFloat32(Assembler::DoubleOrdered, src, src, &not_NaN, ShortJump);
       fmin_s(dst, src, src);
     }
     bind(&not_NaN);
