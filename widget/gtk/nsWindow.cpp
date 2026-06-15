@@ -4503,9 +4503,9 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
 
   if (GdkIsX11Display()
 #ifdef MOZ_WAYLAND
-    || !StaticPrefs::widget_wayland_native_data_session_AtStartup()
+      || !StaticPrefs::widget_wayland_native_data_session_AtStartup()
 #endif
-      ) {
+  ) {
     gtk_drag_dest_set((GtkWidget*)mShell, (GtkDestDefaults)0, nullptr, 0,
                       (GdkDragAction)0);
     g_signal_connect(mShell, "drag_motion", G_CALLBACK(drag_motion_event_cb),
