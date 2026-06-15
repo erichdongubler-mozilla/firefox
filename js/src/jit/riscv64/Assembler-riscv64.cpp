@@ -1531,26 +1531,26 @@ bool UseScratchRegisterScope::hasAvailable() const {
 
 void Assembler::retarget(Label* label, Label* target) {
   spew("retarget %p -> %p", label, target);
-  if (label->used() && !oom()) {
+
+  if (label->used()) {
     if (target->bound()) {
       bind(label, BufferOffset(target));
     } else if (target->used()) {
       // The target is not bound but used. Prepend label's branch list
       // onto target's.
-      int32_t next;
       BufferOffset labelBranchOffset(label);
 
       // Find the head of the use chain for label.
-      do {
-        next = jumpChainUseNextLink(label);
-        labelBranchOffset = BufferOffset(next);
-      } while (next != LabelBase::INVALID_OFFSET);
+      BufferOffset next = jumpChainGetNextLink(labelBranchOffset);
+      while (next.assigned()) {
+        labelBranchOffset = next;
+        next = jumpChainGetNextLink(next);
+      }
 
       // Then patch the head of label's use chain to the tail of
       // target's use chain, prepending the entire use chain of target.
-      target->use(label->offset());
       jumpChainPutTargetAt(labelBranchOffset, BufferOffset(target));
-      MOZ_CRASH("check");
+      target->use(label->offset());
     } else {
       // The target is unbound and unused.  We can just take the head of
       // the list hanging off of label, and dump that into target.
