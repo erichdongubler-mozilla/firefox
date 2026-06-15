@@ -24,6 +24,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -51,6 +52,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.LinkText
 import mozilla.components.compose.base.LinkTextState
@@ -666,10 +669,7 @@ private fun AutoplayDropdownMenu(
 @Composable
 private fun ProtectionPanelPreview() {
     FirefoxTheme {
-        Column(
-            modifier = Modifier
-                .background(color = MaterialTheme.colorScheme.surface),
-        ) {
+        Surface {
             ProtectionPanel(
                 websiteInfoState = WebsiteInfoState(
                     isSecured = true,
@@ -702,6 +702,55 @@ private fun ProtectionPanelPreview() {
                 onIPProtectionToggle = {},
                 onIPProtectionNavigate = {},
             )
+        }
+    }
+}
+
+private data class ProtectionPanelBannerPreviewState(
+    val isSecured: Boolean,
+    val isTrackingProtectionEnabled: Boolean,
+)
+
+private class ProtectionPanelBannerPreviewProvider : PreviewParameterProvider<ProtectionPanelBannerPreviewState> {
+    private val data = listOf(
+        "Not secure" to ProtectionPanelBannerPreviewState(
+            isSecured = false,
+            isTrackingProtectionEnabled = true,
+        ),
+        "Not protected" to ProtectionPanelBannerPreviewState(
+            isSecured = true,
+            isTrackingProtectionEnabled = false,
+        ),
+        "Protected" to ProtectionPanelBannerPreviewState(
+            isSecured = true,
+            isTrackingProtectionEnabled = true,
+        ),
+    )
+
+    override val values: Sequence<ProtectionPanelBannerPreviewState>
+        get() = data.map { it.second }.asSequence()
+
+    override fun getDisplayName(index: Int): String {
+        return data[index].first
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun ProtectionPanelBannerPreview(
+    @PreviewParameter(ProtectionPanelBannerPreviewProvider::class) state: ProtectionPanelBannerPreviewState,
+) {
+    FirefoxTheme {
+        Surface {
+            Column(
+                modifier = Modifier.padding(all = FirefoxTheme.layout.space.static200),
+            ) {
+                ProtectionPanelBanner(
+                    isSecured = state.isSecured,
+                    isTrackingProtectionEnabled = state.isTrackingProtectionEnabled,
+                    numberOfTrackersBlocked = 5,
+                )
+            }
         }
     }
 }
