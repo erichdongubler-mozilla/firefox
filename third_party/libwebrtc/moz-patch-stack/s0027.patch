@@ -116,10 +116,10 @@ index 4706638e3e..675807743a 100644
    # TODO(https://bugs.webrtc.org/14437):  Remove this section if general
    # Chromium fix resolves the problem.
 diff --git a/BUILD.gn b/BUILD.gn
-index b6d3d04654..9a5c686eda 100644
+index 1f8c92da48..8c6183304f 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -33,7 +33,7 @@ if (is_android) {
+@@ -39,7 +39,7 @@ if (is_android) {
    import("//third_party/jni_zero/jni_zero.gni")
  }
  
@@ -128,7 +128,7 @@ index b6d3d04654..9a5c686eda 100644
    # This target should (transitively) cause everything to be built; if you run
    # 'ninja default' and then 'ninja all', the second build should do no work.
    group("default") {
-@@ -177,6 +177,10 @@ config("common_inherited_config") {
+@@ -186,6 +186,10 @@ config("common_inherited_config") {
      defines += [ "WEBRTC_ENABLE_OBJC_SYMBOL_EXPORT" ]
    }
  
@@ -139,7 +139,7 @@ index b6d3d04654..9a5c686eda 100644
    if (!rtc_builtin_ssl_root_certificates) {
      defines += [ "WEBRTC_EXCLUDE_BUILT_IN_SSL_ROOT_CERTS" ]
    }
-@@ -492,9 +496,11 @@ config("common_config") {
+@@ -501,9 +505,11 @@ config("common_config") {
    }
  }
  
@@ -151,7 +151,7 @@ index b6d3d04654..9a5c686eda 100644
  
  if (!rtc_build_ssl) {
    config("external_ssl_library") {
-@@ -556,6 +562,32 @@ if (!build_with_chromium) {
+@@ -565,6 +571,32 @@ if (!build_with_chromium) {
        "pc:rtc_pc",
        "video",
      ]
@@ -184,7 +184,7 @@ index b6d3d04654..9a5c686eda 100644
  
      if (rtc_include_builtin_audio_codecs) {
        deps += [
-@@ -566,8 +598,22 @@ if (!build_with_chromium) {
+@@ -575,8 +607,22 @@ if (!build_with_chromium) {
  
      if (build_with_mozilla) {
        deps += [
@@ -1286,7 +1286,7 @@ index 2c90b4c6a5..c37d384910 100644
      "../api:sequence_checker",
      "../api/adaptation:resource_adaptation_api",
 diff --git a/webrtc.gni b/webrtc.gni
-index 48eded27a4..f3165747ed 100644
+index d099250224..352aff5dd8 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -35,6 +35,11 @@ if (is_mac) {
@@ -1376,7 +1376,7 @@ index 48eded27a4..f3165747ed 100644
  
    # Set this to true to enable the avx2 support in webrtc.
    # TODO: Make sure that AVX2 works also for non-clang compilers.
-@@ -325,6 +332,9 @@ declare_args() {
+@@ -328,6 +335,9 @@ declare_args() {
    rtc_enable_grpc = rtc_enable_protobuf && (is_linux || is_mac)
  }
  
@@ -1386,7 +1386,7 @@ index 48eded27a4..f3165747ed 100644
  # Make it possible to provide custom locations for some libraries (move these
  # up into declare_args should we need to actually use them for the GN build).
  rtc_libvpx_dir = "//third_party/libvpx"
-@@ -1230,7 +1240,7 @@ if (is_mac || is_ios) {
+@@ -1238,7 +1248,7 @@ if (is_mac || is_ios) {
    }
  }
  

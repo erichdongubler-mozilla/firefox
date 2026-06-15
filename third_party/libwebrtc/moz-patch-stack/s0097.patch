@@ -1,5 +1,5 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Thu, 10 Oct 2024 13:42:00 +0000
+From: Nicolas Grunbaum <ngrunbaum@mozilla.com>
+Date: Mon, 15 Jun 2026 10:42:56 -0700
 Subject: Bug 1921707 - point to new build directory location in
  third_party/libwebrtc r=ng,webrtc-reviewers
 
@@ -74,10 +74,10 @@ index a97e2f18b4..e03aab02cf 100644
  # The python interpreter to use by default. On Windows, this will look
  # for python3.exe and python3.bat.
 diff --git a/BUILD.gn b/BUILD.gn
-index 27bdbeca17..b2ba8e49a2 100644
+index 9741a55e03..ad9d5000a0 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -21,15 +21,15 @@
+@@ -21,8 +21,8 @@
  # - visibility = [ ":*" ] - directory private.
  # As a general guideline, only targets in api/ should have public visibility.
  
@@ -85,8 +85,10 @@ index 27bdbeca17..b2ba8e49a2 100644
 -import("//build/config/sanitizers/sanitizers.gni")
 +import("//chromium/build/config/linux/pkg_config.gni")
 +import("//chromium/build/config/sanitizers/sanitizers.gni")
+ import("//testing/test.gni")
  import("webrtc.gni")
- if (rtc_enable_protobuf) {
+ 
+@@ -34,8 +34,8 @@ if (rtc_enable_protobuf) {
    import("//third_party/protobuf/proto_library.gni")
  }
  if (is_android) {
@@ -97,7 +99,7 @@ index 27bdbeca17..b2ba8e49a2 100644
    import("//third_party/jni_zero/jni_zero.gni")
  }
  
-@@ -529,7 +529,7 @@ if (!build_with_chromium) {
+@@ -538,7 +538,7 @@ if (!build_with_chromium) {
      sources = []
  
      complete_static_lib = true
@@ -106,7 +108,7 @@ index 27bdbeca17..b2ba8e49a2 100644
      defines = []
  
      deps = [
-@@ -832,7 +832,7 @@ rtc_static_library("dcsctp") {
+@@ -851,7 +851,7 @@ rtc_static_library("dcsctp") {
    visibility = [ "//:default" ]
    sources = []
    complete_static_lib = true
@@ -115,7 +117,7 @@ index 27bdbeca17..b2ba8e49a2 100644
    defines = []
    deps = [
      "net/dcsctp/public:factory",
-@@ -870,7 +870,7 @@ group("poison_default_neural_residual_echo_estimator") {
+@@ -889,7 +889,7 @@ group("poison_default_neural_residual_echo_estimator") {
  if (!build_with_chromium) {
    # Write debug logs to gn_logs.txt.
    # This is also required for Siso builds.
@@ -790,7 +792,7 @@ index f68cf156e6..7728a7e52a 100644
    }
  }
 diff --git a/webrtc.gni b/webrtc.gni
-index c0765d4ccb..19c80fe4b4 100644
+index 235ba28bd5..2be18ed547 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -5,12 +5,12 @@
@@ -838,7 +840,7 @@ index c0765d4ccb..19c80fe4b4 100644
  }
  
  if (build_with_chromium) {
-@@ -365,8 +365,8 @@ rtc_common_configs = [ webrtc_root + ":common_config" ]
+@@ -368,8 +368,8 @@ rtc_common_configs = [ webrtc_root + ":common_config" ]
  
  if (is_mac || is_ios) {
    if (filter_include(default_compiler_configs,
@@ -849,7 +851,7 @@ index c0765d4ccb..19c80fe4b4 100644
    }
  }
  
-@@ -384,7 +384,7 @@ rtc_common_inherited_config = webrtc_root + ":common_inherited_config"
+@@ -392,7 +392,7 @@ rtc_common_inherited_config = webrtc_root + ":common_inherited_config"
  # Common configs to remove or add in all rtc targets.
  rtc_remove_configs = []
  if (!build_with_chromium && is_clang) {

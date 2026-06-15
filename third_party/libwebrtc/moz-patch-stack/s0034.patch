@@ -19,10 +19,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/58f47eacaf10d12e2
  10 files changed, 24 insertions(+), 24 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index 9a5c686eda..7128288606 100644
+index 8c6183304f..936b408328 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -435,12 +435,12 @@ config("common_config") {
+@@ -444,12 +444,12 @@ config("common_config") {
      }
    }
  
@@ -37,7 +37,7 @@ index 9a5c686eda..7128288606 100644
      defines += [ "WEBRTC_ARCH_ARM" ]
      if (arm_version >= 7) {
        defines += [ "WEBRTC_ARCH_ARM_V7" ]
-@@ -450,7 +450,7 @@ config("common_config") {
+@@ -459,7 +459,7 @@ config("common_config") {
      }
    }
  
@@ -254,7 +254,7 @@ index a5d4544dd8..1db919f987 100644
  config("x11_config") {
    if (rtc_use_x11_extensions) {
 diff --git a/webrtc.gni b/webrtc.gni
-index f3165747ed..9970316c51 100644
+index 352aff5dd8..a2724114da 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -155,7 +155,7 @@ declare_args() {
