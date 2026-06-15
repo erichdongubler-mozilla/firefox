@@ -10463,6 +10463,14 @@
   mirror: always
   rust: true
 
+# Whether to enable the CSS alpha() color function.
+# https://drafts.csswg.org/css-values-5/#attr-notation
+- name: layout.css.alpha-color-function.enabled
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+  rust: true
+
 # Whether to enable CSS Anchor Positioning support.
 # https://drafts.csswg.org/css-anchor-position-1/
 - name: layout.css.anchor-positioning.enabled
