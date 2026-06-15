@@ -13,12 +13,15 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Text.h"
+#include "mozilla/dom/TextFormatUpdateEvent.h"
 #include "mozilla/dom/TextUpdateEvent.h"
 #include "nsDOMCSSDeclaration.h"
 #include "nsGenericHTMLElement.h"
 #include "nsTextNode.h"
 
 namespace mozilla::dom {
+
+using LineStyle = TextRangeStyle::LineStyle;
 
 NS_IMPL_ADDREF_INHERITED(EditContext, DOMEventTargetHelper)
 NS_IMPL_RELEASE_INHERITED(EditContext, DOMEventTargetHelper)
@@ -233,6 +236,63 @@ void EditContext::EndComposition(const WidgetCompositionEvent& aEvent) {
   RefPtr presContext = mText->OwnerDoc()->GetPresContext();
   EventDispatcher::Dispatch(this, presContext, &event);
   mIsComposing = false;
+}
+
+static UnderlineStyle ToDOMStyle(LineStyle aStyle) {
+  switch (aStyle) {
+    case LineStyle::None:
+      return UnderlineStyle::None;
+    case LineStyle::Dashed:
+      return UnderlineStyle::Dashed;
+    case LineStyle::Dotted:
+      return UnderlineStyle::Dotted;
+    case LineStyle::Wavy:
+      return UnderlineStyle::Wavy;
+    case LineStyle::Solid:
+      return UnderlineStyle::Solid;
+    case LineStyle::Double:
+      // Current EditContext spec doesn't have "double" style.
+      return UnderlineStyle::Solid;
+  }
+  MOZ_CRASH("Invalid LineStyle.");
+  return UnderlineStyle::None;
+}
+
+void EditContext::FireTextFormatUpdate(const TextRangeArray* aRanges,
+                                       uint32_t aCompositionOffset) {
+  TextFormatUpdateEventInit eventOptions;
+  eventOptions.mBubbles = false;
+  eventOptions.mCancelable = true;
+  if (aRanges) {
+    for (const TextRange& range : *aRanges) {
+      if (range.Length() == 0) {
+        // Empty ranges probably aren't useful?
+        continue;
+      }
+      TextFormatInit formatOptions;
+      formatOptions.mRangeStart = range.mStartOffset + aCompositionOffset;
+      formatOptions.mRangeEnd = range.mEndOffset + aCompositionOffset;
+      // TODO: Check ShouldResistFingerprinting here?
+      // See https://w3c.github.io/edit-context/#h-note-3
+      if (range.mRangeStyle.IsLineStyleDefined() &&
+          range.mRangeStyle.mLineStyle != LineStyle::None) {
+        formatOptions.mUnderlineStyle =
+            ToDOMStyle(range.mRangeStyle.mLineStyle);
+        formatOptions.mUnderlineThickness = range.mRangeStyle.mIsBoldLine
+                                                ? UnderlineThickness::Thick
+                                                : UnderlineThickness::Thin;
+      }
+      OwningNonNull<TextFormat> format =
+          MakeRefPtr<TextFormat>(GetRelevantGlobal(), formatOptions);
+      [[maybe_unused]] auto* element =
+          eventOptions.mTextFormats.AppendElement(std::move(format), fallible);
+      NS_WARNING_ASSERTION(element, "TextFormat array allocation failed");
+    }
+  }
+  RefPtr<TextFormatUpdateEvent> e = MakeRefPtr<TextFormatUpdateEvent>(
+      this, u"textformatupdate"_ns, eventOptions);
+  e->SetTrusted(true);
+  DispatchEvent(*e);
 }
 
 }  // namespace mozilla::dom

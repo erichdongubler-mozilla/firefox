@@ -84,6 +84,9 @@ class EditContext final : public DOMEventTargetHelper {
       const WidgetCompositionEvent& aEvent);
   MOZ_CAN_RUN_SCRIPT void EndComposition(const WidgetCompositionEvent& aEvent);
 
+  MOZ_CAN_RUN_SCRIPT void FireTextFormatUpdate(const TextRangeArray* aRanges,
+                                               uint32_t aCompositionOffset);
+
  private:
   EditContext(nsIGlobalObject* aGlobalObject, const EditContextInit& aInit,
               ErrorResult& aRv);
