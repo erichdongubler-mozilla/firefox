@@ -39,10 +39,50 @@ object BrowserPageSelectors {
         groups = listOf("requiredForPage"),
     )
 
+    val TAB_CRASH_REPORTER_IMAGE = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
+        value = "crash_tab_image",
+        description = "Tab crash reporter image",
+        groups = listOf("tabCrashReporter"),
+    )
+
+    val TAB_CRASH_REPORTER_TITLE = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+        value = getStringResource(R.string.tab_crash_title_2),
+        description = "Tab crash reporter title",
+        groups = listOf("tabCrashReporter"),
+    )
+
+    val TAB_CRASH_REPORTER_MESSAGE = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+        value = getStringResource(R.string.tab_crash_send_report),
+        description = "Tab crash reporter send crash message",
+        groups = listOf("tabCrashReporter"),
+    )
+
+    val TAB_CRASH_REPORTER_RESTORE_BUTTON = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
+        value = "restoreTabButton",
+        description = "Tab crash reporter restore button",
+        groups = listOf("tabCrashReporter"),
+    )
+
+    val TAB_CRASH_REPORTER_CLOSE_BUTTON = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
+        value = "closeTabButton",
+        description = "Tab crash reporter close button",
+        groups = listOf("tabCrashReporter"),
+    )
+
     val all = listOf(
         ENGINE_VIEW,
         PAGE_CONTENT,
         SNACKBAR_EDIT_BUTTON,
         MAIN_MENU_BUTTON,
+        TAB_CRASH_REPORTER_IMAGE,
+        TAB_CRASH_REPORTER_TITLE,
+        TAB_CRASH_REPORTER_MESSAGE,
+        TAB_CRASH_REPORTER_RESTORE_BUTTON,
+        TAB_CRASH_REPORTER_CLOSE_BUTTON,
     )
 }

@@ -48,14 +48,7 @@ class TabbedBrowsingTest : BaseTest() {
         on.tabDrawer.mozVerifyElementIsNotSelected(TabDrawerSelectors.SYNCED_TABS_BUTTON)
         on.tabDrawer.mozVerify(TabDrawerSelectors.THREE_DOT_BUTTON)
         on.tabDrawer.mozVerify(TabDrawerSelectors.PRIVATE_TABS_LIST)
-        on.tabDrawer.mozVerify(
-                Selector(
-                    strategy = SelectorStrategy.COMPOSE_BY_TEXT,
-                    value = website.title,
-                    description = "Tab with title '${website.title}'",
-                    groups = listOf(),
-                ),
-            )
+        on.tabDrawer.mozVerify(TabDrawerSelectors.TAB_ITEM_WITH_TITLE(website.title))
         on.tabDrawer.mozVerify(TabDrawerSelectors.TAB_ITEM_CLOSE)
         on.tabDrawer.mozVerify(TabDrawerSelectors.TAB_ITEM_THUMBNAIL)
         on.tabDrawer.mozVerify(TabDrawerSelectors.FAB)

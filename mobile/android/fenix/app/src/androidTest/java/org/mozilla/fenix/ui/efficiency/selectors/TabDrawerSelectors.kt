@@ -103,6 +103,15 @@ object TabDrawerSelectors {
         groups = listOf("tabItem"),
     )
 
+    @Suppress("ktlint:standard:function-naming")
+    fun TAB_ITEM_WITH_TITLE(tabTitle: String = "") = Selector(
+        strategy = SelectorStrategy.COMPOSE_ON_ALL_NODES_BY_TAG_WITH_CHILD_TEXT_ON_FIRST,
+        value = TabsTrayTestTag.TAB_ITEM_ROOT,
+        secondaryValue = tabTitle,
+        description = "Tab with title: $tabTitle",
+        groups = listOf("tabItem"),
+    )
+
     val all = listOf(
         NORMAL_BROWSING_OPEN_TABS_BUTTON,
         SYNCED_TABS_BUTTON,
@@ -117,5 +126,6 @@ object TabDrawerSelectors {
         PRIVATE_TABS_LIST,
         TAB_ITEM_CLOSE,
         TAB_ITEM_THUMBNAIL,
+        TAB_ITEM_WITH_TITLE(),
     )
 }
