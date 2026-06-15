@@ -98,31 +98,6 @@ export class AIWebsiteChip extends MozLitElement {
     );
   }
 
-  #handleAnchorClick(e) {
-    if (!this.href) {
-      return;
-    }
-    e.preventDefault();
-    const hasModifier =
-      e.shiftKey || e.metaKey || e.ctrlKey || e.altKey || e.button !== 0;
-
-    this.dispatchEvent(
-      new CustomEvent("AIChatContent:OpenLink", {
-        bubbles: true,
-        composed: true,
-        detail: {
-          url: this.href,
-          preferSwitchToTab: !hasModifier,
-          shiftKey: e.shiftKey,
-          metaKey: e.metaKey,
-          ctrlKey: e.ctrlKey,
-          altKey: e.altKey,
-          button: e.button,
-        },
-      })
-    );
-  }
-
   render() {
     const isEmpty = this.#isEmpty;
     const isRemovable = this.#isRemovable;
@@ -171,7 +146,7 @@ export class AIWebsiteChip extends MozLitElement {
           class="chip"
           ?data-removable=${isRemovable}
           href=${this.href}
-          @click=${this.#handleAnchorClick}
+          target="_blank"
         >
           ${chipContent}
         </a>`
