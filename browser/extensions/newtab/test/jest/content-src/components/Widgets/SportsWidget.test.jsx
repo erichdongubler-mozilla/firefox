@@ -1942,6 +1942,162 @@ describe("<SportsWidget> match list view expands widget to large", () => {
       container.querySelector(".sports.large-widget")
     ).not.toBeInTheDocument();
   });
+
+  it("resets the View All Results list when the widgets container is collapsed", () => {
+    const matchesData = {
+      teams: [],
+      matches: {
+        previous: [mockMatch],
+        current: [],
+        next: [],
+      },
+    };
+    const { container, rerender } = render(
+      <WrapWithProvider
+        state={makeState(
+          {
+            [PREF_SPORTS_WIDGET_SIZE]: "medium",
+            "widgets.maximized": true,
+          },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "results",
+            data: matchesData,
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+
+    fireEvent.click(getVisibleViewAllButton(container));
+    expect(
+      getVisibleTabPanel(container).querySelector(".match-highlight-view")
+    ).toBeNull();
+
+    rerender(
+      <WrapWithProvider
+        state={makeState(
+          {
+            [PREF_SPORTS_WIDGET_SIZE]: "medium",
+            "widgets.maximized": false,
+          },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "results",
+            data: matchesData,
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+
+    expect(
+      getVisibleTabPanel(container).querySelector(".match-highlight-view")
+    ).not.toBeNull();
+  });
+
+  it("resets the View All Upcoming list when the widgets container is collapsed", () => {
+    const matchesData = {
+      teams: [],
+      matches: {
+        previous: [],
+        current: [],
+        next: [{ ...mockMatch, status_type: "scheduled" }],
+      },
+    };
+    const { container, rerender } = render(
+      <WrapWithProvider
+        state={makeState(
+          {
+            [PREF_SPORTS_WIDGET_SIZE]: "medium",
+            "widgets.maximized": true,
+          },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "upcoming",
+            data: matchesData,
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+
+    fireEvent.click(getVisibleViewAllButton(container));
+    expect(
+      getVisibleTabPanel(container).querySelector(".match-highlight-view")
+    ).toBeNull();
+
+    rerender(
+      <WrapWithProvider
+        state={makeState(
+          {
+            [PREF_SPORTS_WIDGET_SIZE]: "medium",
+            "widgets.maximized": false,
+          },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "upcoming",
+            data: matchesData,
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+
+    expect(
+      getVisibleTabPanel(container).querySelector(".match-highlight-view")
+    ).not.toBeNull();
+  });
+
+  it("re-maximising after the reset shows the highlight view, not the previously-open list", () => {
+    const matchesData = {
+      teams: [],
+      matches: {
+        previous: [mockMatch],
+        current: [],
+        next: [],
+      },
+    };
+    function renderAt(maximized) {
+      return (
+        <WrapWithProvider
+          state={makeState(
+            {
+              [PREF_SPORTS_WIDGET_SIZE]: "medium",
+              "widgets.maximized": maximized,
+            },
+            {
+              widgetState: "sports-matches",
+              matchesTab: "results",
+              data: matchesData,
+            }
+          )}
+        >
+          <SportsWidget
+            dispatch={jest.fn()}
+            handleUserInteraction={jest.fn()}
+          />
+        </WrapWithProvider>
+      );
+    }
+
+    const { container, rerender } = render(renderAt(true));
+    fireEvent.click(getVisibleViewAllButton(container));
+    expect(
+      getVisibleTabPanel(container).querySelector(".match-highlight-view")
+    ).toBeNull();
+
+    rerender(renderAt(false));
+    rerender(renderAt(true));
+
+    expect(
+      getVisibleTabPanel(container).querySelector(".match-highlight-view")
+    ).not.toBeNull();
+  });
 });
 
 describe("<SportsWidget> Watch button (live tab)", () => {

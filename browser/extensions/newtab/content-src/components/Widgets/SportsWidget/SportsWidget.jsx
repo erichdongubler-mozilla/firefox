@@ -244,6 +244,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
     prefs.trainhopConfig?.widgets?.sportsWidgetLiveEnabled ||
     prefs.trainhopConfig?.sports?.liveEnabled;
   const widgetsMayBeMaximized = prefs["widgets.system.maximized"];
+  const widgetsMaximized = prefs["widgets.maximized"];
   // /live currently serves mock data pre-kickoff, so ignore its contents
   // until the kickoff timestamp. Drop this guard once the backend returns
   // empty pre-kickoff.
@@ -384,6 +385,16 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   // can force the widget into the large size while the list view is open.
   const [showResultsList, setShowResultsList] = useState(false);
   const [showUpcomingList, setShowUpcomingList] = useState(false);
+
+  // Close any open "View All" when the user minimizes the widgets section,
+  // so the Sports widget size also changes from Large to Medium. The Follow
+  // teams flow stays open — closing it would discard in-progress selections.
+  useEffect(() => {
+    if (!widgetsMaximized) {
+      setShowResultsList(false);
+      setShowUpcomingList(false);
+    }
+  }, [widgetsMaximized]);
 
   // Expand the widget to the large size when the user opens the match list
   // view ("View all") on either the Results or Upcoming tab, and restore the
