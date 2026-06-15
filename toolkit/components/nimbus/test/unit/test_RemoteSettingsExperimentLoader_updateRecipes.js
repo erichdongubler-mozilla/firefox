@@ -111,7 +111,7 @@ add_task(async function test_updateRecipes_invalidFeatureId() {
   sandbox.spy(manager, "enroll");
   loader.remoteSettingsClients.experiments.get.resolves([badRecipe]);
 
-  await loader.updateRecipes();
+  await loader.updateRecipes("test");
 
   Assert.ok(
     manager.onRecipe.calledOnceWith(badRecipe, "rs-loader", {
@@ -708,7 +708,19 @@ add_task(async function test_updateRecipes_appId() {
   info("Testing updateRecipes() with the default application ID");
 
   loader.remoteSettingsClients.experiments.get.resolves([recipe]);
-  await loader.updateRecipes();
+
+  await GleanPings.nimbusTargetingContext.testSubmission(
+    () => {
+      Assert.deepEqual(
+        Glean.nimbusEvents.enrollmentStatus
+          .testGetValue("nimbus-targeting-context")
+          ?.map(ev => ev.extra) ?? [],
+        [],
+        "No enrollment status events submitted"
+      );
+    },
+    () => loader.updateRecipes()
+  );
 
   Assert.ok(
     manager.onRecipe.calledOnceWith(recipe, "rs-loader", {
