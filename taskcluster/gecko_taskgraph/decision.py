@@ -69,29 +69,24 @@ PER_PROJECT_PARAMETERS = {
         "target_tasks_method": "graphics_tasks",
     },
     "autoland": {
-        "head_git_repository": "https://github.com/mozilla-firefox/firefox",
         "optimize_strategies": "gecko_taskgraph.optimize:project.autoland",
         "target_tasks_method": "autoland_tasks",
         "test_manifest_loader": "bugbug",  # Remove this line to disable "manifest scheduling".
     },
     "mozilla-central": {
-        "head_git_repository": "https://github.com/mozilla-firefox/firefox",
         "target_tasks_method": "mozilla_central_tasks",
         "release_type": "nightly",
     },
     "mozilla-beta": {
-        "head_git_repository": "https://github.com/mozilla-firefox/firefox",
         "optimize_strategies": "gecko_taskgraph.optimize:project.beta",
         "target_tasks_method": "mozilla_beta_tasks",
         "release_type": "beta",
     },
     "mozilla-release": {
-        "head_git_repository": "https://github.com/mozilla-firefox/firefox",
         "target_tasks_method": "mozilla_release_tasks",
         "release_type": "release",
     },
     "mozilla-esr140": {
-        "head_git_repository": "https://github.com/mozilla-firefox/firefox",
         "target_tasks_method": "mozilla_esr140_tasks",
         "release_type": "esr140",
     },
