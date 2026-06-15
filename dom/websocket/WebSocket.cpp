@@ -2120,9 +2120,9 @@ nsresult WebSocket::CreateAndDispatchCloseEvent(bool aWasClean, uint16_t aCode,
 
 nsresult WebSocketImpl::ParseURL(const nsAString& aURL, nsIURI* aBaseURI) {
   AssertIsOnMainThread();
-  NS_ENSURE_TRUE(!aURL.IsEmpty(), NS_ERROR_DOM_SYNTAX_ERR);
 
   if (mIsServerSide) {
+    NS_ENSURE_TRUE(!aURL.IsEmpty(), NS_ERROR_DOM_SYNTAX_ERR);
     mWebSocket->mURI = aURL;
     CopyUTF16toUTF8(mWebSocket->mURI, mURI);
 
