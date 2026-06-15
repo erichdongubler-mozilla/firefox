@@ -5156,6 +5156,13 @@
   value: false
   mirror: always
 
+# Whether support for Speculation Rules is enabled.
+# https://html.spec.whatwg.org/#speculation-rules
+- name: dom.speculation_rules.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 - name: dom.storage.enabled
   type: RelaxedAtomicBool
   value: true

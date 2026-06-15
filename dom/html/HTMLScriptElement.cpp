@@ -351,7 +351,8 @@ bool HTMLScriptElement::Supports(const GlobalObject& aGlobal,
   return aType.EqualsLiteral("classic") || aType.EqualsLiteral("module") ||
 
          aType.EqualsLiteral("importmap") ||
-         aType.EqualsLiteral("speculationrules");
+         (StaticPrefs::dom_speculation_rules_enabled() &&
+          aType.EqualsLiteral("speculationrules"));
 }
 
 nsDOMTokenList* HTMLScriptElement::Blocking() {
