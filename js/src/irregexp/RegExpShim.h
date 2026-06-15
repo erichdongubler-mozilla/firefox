@@ -251,11 +251,6 @@ constexpr T RoundUp(T x) {
   return RoundDown<m, T>(static_cast<T>(x + (m - 1)));
 }
 
-// The USE(x, ...) template is used to silence C++ compiler warnings
-// issued for (yet) unused variables (typically parameters).
-template <typename... Args>
-void USE([[maybe_unused]] Args&&...) {};
-
 namespace base {
 
 // Latin1/UTF-16 constants
@@ -265,6 +260,21 @@ using uc16 = char16_t;
 using uc32 = uint32_t;
 
 constexpr int kUC16Size = sizeof(base::uc16);
+
+// Origin:
+// https://github.com/v8/v8/blob/855591a54d160303349a5f0a32fab15825c708d1/src/base/macros.h#L247-L258
+// The USE(x, ...) template is used to silence C++ compiler warnings
+// issued for (yet) unused variables (typically parameters).
+// The arguments are guaranteed to be evaluated from left to right.
+struct Use {
+  template <typename T>
+  Use(T&&) {}  // NOLINT(runtime/explicit)
+};
+#define USE(...)                                                   \
+  do {                                                             \
+    ::v8::base::Use unused_tmp_array_for_use_macro[]{__VA_ARGS__}; \
+    (void)unused_tmp_array_for_use_macro;                          \
+  } while (false)
 
 // Origin:
 // https://github.com/v8/v8/blob/855591a54d160303349a5f0a32fab15825c708d1/src/base/safe_conversions.h#L35-L39
