@@ -1,236 +1,55 @@
-From: Nicolas Grunbaum <ngrunbaum@mozilla.com>
-Date: Mon, 15 Jun 2026 16:01:34 -0700
-Subject: (tmp-cherry-pick) Revert "Detect codec collisions between audio and
- video sections" (e5ca0edb63)
-
-This reverts commit a8aae89f379e36cd418bf4ef194115d2ca231a1c.
-
-Reason for revert: The test is failing on downstream bots:
-
-pc/test/integration_test_helpers.h:900
-Value of: SetRemoteDescription(std::move(desc))
-  Actual: false
-Expected: true
+From: Johannes Kron <kron@webrtc.org>
+Date: Fri, 15 May 2026 10:21:29 +0000
+Subject: (cherry-pick-branch-heads/7827) [M149] Validate CGImage dimensions in
+ MouseCursorMonitorMac
 
 Original change's description:
-> Detect codec collisions between audio and video sections
+> Validate CGImage dimensions in MouseCursorMonitorMac
 >
-> This bug was reproduced as a side effect of fixing
-> issues.chromium.org/395077842
+> This adds missing height checks alongside the existing width checks
+> when processing and scaling the cursor image.
 >
-> Bug: webrtc:42224689
-> Change-Id: I41c2bb02a6ec9fb9e9c057d64255dd7896da4f4d
-> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/377460
-> Reviewed-by: Danil Chapovalov <danilchap@webrtc.org>
-> Commit-Queue: Harald Alvestrand <hta@webrtc.org>
-> Auto-Submit: Harald Alvestrand <hta@webrtc.org>
-> Commit-Queue: Danil Chapovalov <danilchap@webrtc.org>
-> Cr-Commit-Position: refs/heads/main@{#47664}
+> Fixed: chromium:513268100
+> Change-Id: Ida1e58334a9d3bda429819e4af51b33afbd0a95d
+> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/472700
+> Reviewed-by: Alexander Cooper <alcooper@chromium.org>
+> Auto-Submit: Johannes Kron <kron@webrtc.org>
+> Commit-Queue: Alexander Cooper <alcooper@chromium.org>
+> Cr-Commit-Position: refs/heads/main@{#47715}
 
-Bug: webrtc:42224689
-Change-Id: Iefc1872c330a03ea2b6e9ef12aee1fcdfeceba9e
-Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/471260
-Reviewed-by: Harald Alvestrand <hta@webrtc.org>
+(cherry picked from commit b343cd4e280980f26b4feb80684f57d5b4324e12)
+
+Bug: chromium:514928856,chromium:513268100
+Change-Id: Ida1e58334a9d3bda429819e4af51b33afbd0a95d
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/473981
+Auto-Submit: Chrome Cherry Picker <chrome-cherry-picker@chops-service-accounts.iam.gserviceaccount.com>
 Bot-Commit: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
-Commit-Queue: Harald Alvestrand <hta@webrtc.org>
-Cr-Commit-Position: refs/heads/main@{#47670}
+Commit-Queue: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
+Cr-Commit-Position: refs/branch-heads/7827@{#1}
+Cr-Branched-From: d606bc991592fbf4dcbe85e9d05db5e501a5ad42-refs/heads/main@{#47595}
 ---
- pc/BUILD.gn                           |  4 --
- pc/peer_connection_integrationtest.cc | 35 --------------
- pc/test/integration_test_helpers.cc   | 68 ---------------------------
- pc/test/integration_test_helpers.h    |  4 --
- 4 files changed, 111 deletions(-)
+ modules/desktop_capture/mouse_cursor_monitor_mac.mm | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/pc/BUILD.gn b/pc/BUILD.gn
-index 434d0889e5..886f787831 100644
---- a/pc/BUILD.gn
-+++ b/pc/BUILD.gn
-@@ -4222,7 +4222,6 @@ if (rtc_include_tests && !build_with_chromium) {
-       "../api:make_ref_counted",
-       "../api:media_stream_interface",
-       "../api:mock_async_dns_resolver",
--      "../api:payload_type",
-       "../api:peer_connection_interface",
-       "../api:rtc_error",
-       "../api:rtc_error_matchers",
-@@ -4247,11 +4246,9 @@ if (rtc_include_tests && !build_with_chromium) {
-       "../api/units:timestamp",
-       "../api/video:video_rtp_headers",
-       "../logging:fake_rtc_event_log",
--      "../media:codec",
-       "../media:stream_params",
-       "../p2p:fake_ice_transport",
-       "../p2p:ice_transport_internal",
--      "../p2p:p2p_constants",
-       "../p2p:p2p_test_utils",
-       "../p2p:port",
-       "../p2p:port_allocator",
-@@ -4267,7 +4264,6 @@ if (rtc_include_tests && !build_with_chromium) {
-       "../rtc_base:ssl_adapter",
-       "../rtc_base:task_queue_for_test",
-       "../rtc_base:threading",
--      "../rtc_base/containers:flat_map",
-       "../rtc_base/system:plan_b_only",
-       "../system_wrappers",
-       "../system_wrappers:metrics",
-diff --git a/pc/peer_connection_integrationtest.cc b/pc/peer_connection_integrationtest.cc
-index 54c81d9bd7..87646be38a 100644
---- a/pc/peer_connection_integrationtest.cc
-+++ b/pc/peer_connection_integrationtest.cc
-@@ -5356,41 +5356,6 @@ TEST_P(PeerConnectionIntegrationTest,
- 
- #endif  // WEBRTC_HAVE_SCTP
- 
--TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
--       MungeOfferCodecAndReOfferCausesNoDuplicateId) {
--  ASSERT_TRUE(CreatePeerConnectionWrappers());
--  ConnectFakeSignaling();
--  caller()->AddVideoTrack();
--  caller()->AddAudioTrack();
--  auto munger = [](std::unique_ptr<SessionDescriptionInterface>& sdp) {
--    VideoContentDescription* video =
--        GetFirstVideoContentDescription(sdp->description());
--    std::vector<Codec> codecs = video->codecs();
--    for (auto& codec : codecs) {
--      if (codec.name == "VP9") {
--        RTC_LOG(LS_ERROR) << "Remapping VP9 codec " << codec << " to AV1";
--        codec.name = "AV1";
--      }
--    }
--    video->set_codecs(codecs);
--  };
--  caller()->SetGeneratedSdpMunger(munger);
--  caller()->CreateAndSetAndSignalOffer();
--  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
--  EXPECT_TRUE(ValidateBundledPayloadTypes(
--                  *caller()->pc()->local_description()->description())
--                  .ok());
--  EXPECT_TRUE(ValidateBundledPayloadTypes(
--                  *caller()->pc()->remote_description()->description())
--                  .ok());
--  caller()->SetGeneratedSdpMunger(nullptr);
--  auto offer = caller()->CreateOfferAndWait();
--  ASSERT_THAT(offer, NotNull());
--  // The offer should be acceptable.
--  EXPECT_TRUE(ValidateBundledPayloadTypes(*offer->description()).ok());
--  EXPECT_TRUE(caller()->SetLocalDescriptionAndSendSdpMessage(std::move(offer)));
--}
--
- }  // namespace
- 
- }  // namespace webrtc
-diff --git a/pc/test/integration_test_helpers.cc b/pc/test/integration_test_helpers.cc
-index 2ec0877b57..2728edb33d 100644
---- a/pc/test/integration_test_helpers.cc
-+++ b/pc/test/integration_test_helpers.cc
-@@ -28,12 +28,9 @@
- #include "api/jsep.h"
- #include "api/make_ref_counted.h"
- #include "api/media_stream_interface.h"
--#include "api/media_types.h"
--#include "api/payload_type.h"
- #include "api/peer_connection_interface.h"
- #include "api/rtc_error.h"
- #include "api/rtc_event_log/rtc_event_log_factory.h"
--#include "api/rtp_parameters.h"
- #include "api/scoped_refptr.h"
- #include "api/sequence_checker.h"
- #include "api/stats/rtc_stats_report.h"
-@@ -45,15 +42,12 @@
- #include "api/units/time_delta.h"
- #include "api/units/timestamp.h"
- #include "logging/rtc_event_log/fake_rtc_event_log_factory.h"
--#include "media/base/codec.h"
- #include "media/base/stream_params.h"
--#include "p2p/base/p2p_constants.h"
- #include "pc/peer_connection_factory.h"
- #include "pc/session_description.h"
- #include "pc/test/fake_audio_capture_module.h"
- #include "pc/test/mock_peer_connection_observers.h"
- #include "rtc_base/checks.h"
--#include "rtc_base/containers/flat_map.h"
- #include "rtc_base/fake_network.h"
- #include "rtc_base/firewall_socket_server.h"
- #include "rtc_base/logging.h"
-@@ -569,66 +563,4 @@ PeerConnectionIntegrationTestWithSimulatedTime::
-           time_controller.get()),
-       time_controller_(std::move(time_controller)) {}
- 
--// Tests whether a parameter set contains duplicate payload types.
--// Copied from sdp_offer_answer.cc
--RTCError FindDuplicateCodecParameters(
--    const RtpCodecParameters codec_parameters,
--    flat_map<PayloadType, RtpCodecParameters>& payload_to_codec_parameters) {
--  auto existing_codec_parameters =
--      payload_to_codec_parameters.find(codec_parameters.payload_type);
--  if (existing_codec_parameters != payload_to_codec_parameters.end() &&
--      codec_parameters != existing_codec_parameters->second) {
--    return LOG_ERROR(RTCError(RTCErrorType::INVALID_PARAMETER)
--                     << "A BUNDLE group contains a codec collision for "
--                     << "payload_type='" << codec_parameters.payload_type
--                     << ". All codecs must share the same type, "
--                     << "encoding name, clock rate and parameters.");
--  }
--  payload_to_codec_parameters.try_emplace(codec_parameters.payload_type,
--                                          codec_parameters);
--  return RTCError::OK();
--}
--
--// Tests whether a session description contains conflicting descriptions
--// for a payload type.
--// Copied from sdp_offer_answer.cc
--RTCError ValidateBundledPayloadTypes(const SessionDescription& description) {
--  // https://www.rfc-editor.org/rfc/rfc8843#name-payload-type-pt-value-reuse
--  // ... all codecs associated with the payload type number MUST share an
--  // identical codec configuration. This means that the codecs MUST share
--  // the same media type, encoding name, clock rate, and any parameter
--  // that can affect the codec configuration and packetization.
--  std::vector<const ContentGroup*> bundle_groups =
--      description.GetGroupsByName(GROUP_TYPE_BUNDLE);
--  for (const ContentGroup* bundle_group : bundle_groups) {
--    flat_map<PayloadType, RtpCodecParameters> payload_to_codec_parameters;
--    for (const std::string& content_name : bundle_group->content_names()) {
--      const ContentInfo* content_description =
--          description.GetContentByName(content_name);
--      if (content_description == nullptr) {
--        return LOG_ERROR(RTCError(RTCErrorType::INVALID_PARAMETER)
--                         << "A BUNDLE group contains a MID='" << content_name
--                         << "' matching no m= section.");
--      }
--      const MediaContentDescription* media_description =
--          content_description->media_description();
--      RTC_DCHECK(media_description);
--      if (content_description->rejected || !media_description->has_codecs()) {
--        continue;
--      }
--      const MediaType type = media_description->type();
--      if (type == MediaType::AUDIO || type == MediaType::VIDEO) {
--        for (const Codec& c : media_description->codecs()) {
--          RTCError error = FindDuplicateCodecParameters(
--              c.ToCodecParameters(), payload_to_codec_parameters);
--          if (!error.ok()) {
--            return error;
--          }
--        }
--      }
--    }
--  }
--  return RTCError::OK();
--}
--
- }  // namespace webrtc
-diff --git a/pc/test/integration_test_helpers.h b/pc/test/integration_test_helpers.h
-index d6f2566fcd..28d393f81d 100644
---- a/pc/test/integration_test_helpers.h
-+++ b/pc/test/integration_test_helpers.h
-@@ -172,10 +172,6 @@ int FindFirstMediaStatsIndexByKind(
-     const std::string& kind,
-     const std::vector<const RTCInboundRtpStreamStats*>& inbound_rtps);
- 
--// Tests whether a session description contains conflicting descriptions
--// for a payload type within a bundle.
--RTCError ValidateBundledPayloadTypes(const SessionDescription& description);
--
- class TaskQueueMetronome : public Metronome {
-  public:
-   explicit TaskQueueMetronome(TimeDelta tick_period);
+diff --git a/modules/desktop_capture/mouse_cursor_monitor_mac.mm b/modules/desktop_capture/mouse_cursor_monitor_mac.mm
+index 248a782762..3e6a6cb3c6 100644
+--- a/modules/desktop_capture/mouse_cursor_monitor_mac.mm
++++ b/modules/desktop_capture/mouse_cursor_monitor_mac.mm
+@@ -154,7 +154,8 @@ void MouseCursorMonitorMac::CaptureImage(float scale) {
+   // crbug.com/632995.) After 10.12, OSX may report 2X cursor on non-Retina
+   // screen. (See crbug.com/671436.) So scaling the cursor if needed.
+   CGImageRef scaled_cg_image = nil;
+-  if (CGImageGetWidth(cg_image) != static_cast<size_t>(size.width())) {
++  if (CGImageGetWidth(cg_image) != static_cast<size_t>(size.width()) ||
++      CGImageGetHeight(cg_image) != static_cast<size_t>(size.height())) {
+     scaled_cg_image =
+         CreateScaledCGImage(cg_image, size.width(), size.height());
+     if (scaled_cg_image != nil) {
+@@ -163,6 +164,7 @@ void MouseCursorMonitorMac::CaptureImage(float scale) {
+   }
+   if (CGImageGetBitsPerPixel(cg_image) != DesktopFrame::kBytesPerPixel * 8 ||
+       CGImageGetWidth(cg_image) != static_cast<size_t>(size.width()) ||
++      CGImageGetHeight(cg_image) != static_cast<size_t>(size.height()) ||
+       CGImageGetBitsPerComponent(cg_image) != 8) {
+     if (scaled_cg_image != nil) CGImageRelease(scaled_cg_image);
+     return;
