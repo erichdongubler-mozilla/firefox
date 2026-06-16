@@ -282,6 +282,9 @@ nsresult HTMLEditor::InsertHTMLAsAction(const nsAString& aInString,
   if (IsReadonly()) {
     return NS_OK;
   }
+  if (GetEditContext()) {
+    return NS_SUCCESS_DOM_NO_OPERATION;
+  }
 
   AutoEditActionDataSetter editActionData(*this, EditAction::eInsertHTML,
                                           aPrincipal);
@@ -4012,8 +4015,8 @@ bool HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
   return false;
 }
 
-class MOZ_STACK_CLASS HTMLEditor::HTMLWithContextInserter::FragmentParser
-    final {
+class MOZ_STACK_CLASS
+HTMLEditor::HTMLWithContextInserter::FragmentParser final {
  public:
   FragmentParser(const Document& aDocument, SafeToInsertData aSafeToInsertData);
 

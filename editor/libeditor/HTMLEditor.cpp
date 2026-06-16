@@ -480,17 +480,22 @@ void HTMLEditor::PreDestroy() {
   PreDestroyInternal();
 }
 
-bool HTMLEditor::IsStyleEditable() const {
+bool HTMLEditor::IsStyleEditable(const Element* aEditingHost) const {
   if (IsInDesignMode()) {
     return true;
   }
   if (IsPlaintextMailComposer()) {
     return false;
   }
-  const Element* const editingHost = ComputeEditingHost(LimitInBodyElement::No);
+  const Element* const editingHost =
+      aEditingHost ? aEditingHost : ComputeEditingHost(LimitInBodyElement::No);
   // Let's return true if there is no focused editing host for the backward
   // compatibility.
-  return !editingHost || !editingHost->IsContentEditablePlainTextOnly();
+  if (!editingHost) {
+    return true;
+  }
+  return !editingHost->IsContentEditablePlainTextOnly() &&
+         !editingHost->HasFlag(ELEMENT_HAS_EDIT_CONTEXT);
 }
 
 NS_IMETHODIMP HTMLEditor::GetDocumentCharacterSet(nsACString& aCharacterSet) {
@@ -2314,7 +2319,7 @@ nsresult HTMLEditor::FormatBlockAsAction(const nsAString& aParagraphFormat,
 
   const RefPtr<Element> editingHost =
       ComputeEditingHost(LimitInBodyElement::No);
-  if (!editingHost || editingHost->IsContentEditablePlainTextOnly()) {
+  if (!editingHost || !IsStyleEditable(editingHost)) {
     return NS_SUCCESS_DOM_NO_OPERATION;
   }
 
@@ -2367,7 +2372,7 @@ nsresult HTMLEditor::SetParagraphStateAsAction(
 
   const RefPtr<Element> editingHost =
       ComputeEditingHost(LimitInBodyElement::No);
-  if (!editingHost || editingHost->IsContentEditablePlainTextOnly()) {
+  if (!editingHost || !IsStyleEditable(editingHost)) {
     return NS_SUCCESS_DOM_NO_OPERATION;
   }
 
@@ -2817,7 +2822,7 @@ nsresult HTMLEditor::MakeOrChangeListAsAction(
 
   const RefPtr<Element> editingHost =
       ComputeEditingHost(LimitInBodyElement::No);
-  if (!editingHost || editingHost->IsContentEditablePlainTextOnly()) {
+  if (!editingHost || !IsStyleEditable(editingHost)) {
     return NS_SUCCESS_DOM_NO_OPERATION;
   }
 
@@ -3053,7 +3058,7 @@ nsresult HTMLEditor::IndentAsAction(nsIPrincipal* aPrincipal) {
 
   const RefPtr<Element> editingHost =
       ComputeEditingHost(LimitInBodyElement::No);
-  if (!editingHost || editingHost->IsContentEditablePlainTextOnly()) {
+  if (!editingHost || !IsStyleEditable(editingHost)) {
     return NS_SUCCESS_DOM_NO_OPERATION;
   }
 
@@ -3085,7 +3090,7 @@ nsresult HTMLEditor::OutdentAsAction(nsIPrincipal* aPrincipal) {
 
   const RefPtr<Element> editingHost =
       ComputeEditingHost(LimitInBodyElement::No);
-  if (!editingHost || editingHost->IsContentEditablePlainTextOnly()) {
+  if (!editingHost || !IsStyleEditable(editingHost)) {
     return NS_SUCCESS_DOM_NO_OPERATION;
   }
 
@@ -3116,7 +3121,7 @@ nsresult HTMLEditor::AlignAsAction(const nsAString& aAlignType,
 
   const RefPtr<Element> editingHost =
       ComputeEditingHost(LimitInBodyElement::No);
-  if (!editingHost || editingHost->IsContentEditablePlainTextOnly()) {
+  if (!editingHost || !IsStyleEditable(editingHost)) {
     return NS_SUCCESS_DOM_NO_OPERATION;
   }
 
@@ -3726,8 +3731,7 @@ nsresult HTMLEditor::InsertLinkAroundSelectionAsAction(
     return NS_ERROR_FAILURE;
   }
 
-  if (IsPlaintextMailComposer() ||
-      editingHost->IsContentEditablePlainTextOnly()) {
+  if (!IsStyleEditable(editingHost)) {
     return NS_SUCCESS_DOM_NO_OPERATION;
   }
 

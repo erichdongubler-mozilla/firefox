@@ -1121,7 +1121,7 @@ StaticRefPtr<InsertHTMLCommand> InsertHTMLCommand::sInstance;
 bool InsertHTMLCommand::IsCommandEnabled(Command aCommand,
                                          EditorBase* aEditorBase) const {
   HTMLEditor* htmlEditor = HTMLEditor::GetFrom(aEditorBase);
-  if (!htmlEditor) {
+  if (!htmlEditor || htmlEditor->GetEditContext()) {
     return false;
   }
   return htmlEditor->IsModifiable() && htmlEditor->IsSelectionEditable();
@@ -1197,6 +1197,9 @@ nsresult InsertTagCommand::DoCommand(Command aCommand, EditorBase& aEditorBase,
   if (NS_WARN_IF(!htmlEditor)) {
     return NS_ERROR_FAILURE;
   }
+  if (!htmlEditor->IsStyleEditable()) {
+    return NS_SUCCESS_DOM_NO_OPERATION;
+  }
 
   RefPtr<Element> newElement =
       MOZ_KnownLive(htmlEditor)
@@ -1238,6 +1241,9 @@ nsresult InsertTagCommand::DoCommandParam(Command aCommand,
   HTMLEditor* htmlEditor = aEditorBase.GetAsHTMLEditor();
   if (NS_WARN_IF(!htmlEditor)) {
     return NS_ERROR_FAILURE;
+  }
+  if (!htmlEditor->IsStyleEditable()) {
+    return NS_SUCCESS_DOM_NO_OPERATION;
   }
 
   // filter out tags we don't know how to insert
