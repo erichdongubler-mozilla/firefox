@@ -4686,7 +4686,7 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor final
     }
   }
 
-  class PropertyProvider : public gfxTextRun::PropertyProvider {
+  class PropertyProvider final : public gfxTextRun::PropertyProvider {
    public:
     explicit PropertyProvider(const CanvasBidiProcessor& aProcessor)
         : mProcessor(aProcessor) {}
@@ -4726,6 +4726,10 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor final
 
     mozilla::StyleHyphens GetHyphensOption() const {
       return mozilla::StyleHyphens::None;
+    }
+
+    nscoord LetterSpacing() const {
+      return NSToCoordRound(mProcessor.mLetterSpacing);
     }
 
     // Methods only used when hyphenation is active, not relevant to canvas2d:

@@ -146,7 +146,7 @@ void MergeCharactersInTextRun(gfxTextRun* aDest, gfxTextRun* aSrc,
                               const bool* aDeletedChars) {
   MOZ_ASSERT(!aDest->TrailingGlyphRun(), "unexpected glyphRuns in aDest!");
   uint32_t offset = 0;
-  AutoTArray<gfxTextRun::DetailedGlyph, 2> glyphs;
+  AutoTArray<gfxTextRun::DetailedGlyph, 4> glyphs;
   const gfxTextRun::CompressedGlyph continuationGlyph =
       gfxTextRun::CompressedGlyph::MakeComplex(false, false);
   const gfxTextRun::CompressedGlyph* srcGlyphs = aSrc->GetCharacterGlyphs();
@@ -204,6 +204,21 @@ void MergeCharactersInTextRun(gfxTextRun* aDest, gfxTextRun* aSrc,
           // Otherwise set up complex glyph record and store detailed glyphs.
           mergedGlyph.SetComplex(mergedGlyph.IsClusterStart(),
                                  mergedGlyph.IsLigatureGroupStart());
+          // If the original character decomposed to multiple base glyphs,
+          // like German es-zet being uppercased to "SS", or presentation-form
+          // ligatures like U+FB01 being uppercased to "FI", then any letter-
+          // spacing needs to be applied between these components. But most
+          // multi-character mappings generate a base glyph and diacritic(s),
+          // in which case internal letter-spacing should NOT be applied.
+          // We distinguish the cases here by checking if all the component
+          // glyphs have non-zero advance; if so, set the letter-spacing flag.
+          if (glyphs.Length() > 1 &&
+              std::all_of(glyphs.cbegin(), glyphs.cend(),
+                          [](const gfxTextRun::DetailedGlyph& g) -> bool {
+                            return g.mAdvance > 0;
+                          })) {
+            mergedGlyph.SetApplyLetterSpacingBetweenDetailedGlyphs();
+          }
           destGlyphs[offset] = mergedGlyph;
           aDest->SetDetailedGlyphs(offset, glyphs.Length(), glyphs.Elements());
           if (anyMissing) {

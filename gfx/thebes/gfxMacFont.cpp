@@ -189,10 +189,11 @@ gfxFont::RunMetrics gfxMacFont::Measure(const gfxTextRun* aTextRun,
                                         BoundingBoxType aBoundingBoxType,
                                         DrawTarget* aRefDrawTarget,
                                         Spacing* aSpacing,
+                                        nscoord aLetterSpacing,
                                         gfx::ShapedTextFlags aOrientation) {
   gfxFont::RunMetrics metrics =
       gfxFont::Measure(aTextRun, aStart, aEnd, aBoundingBoxType, aRefDrawTarget,
-                       aSpacing, aOrientation);
+                       aSpacing, aLetterSpacing, aOrientation);
 
   // if aBoundingBoxType is not TIGHT_HINTED_OUTLINE_EXTENTS then we need to add
   // a pixel column each side of the bounding box in case of antialiasing

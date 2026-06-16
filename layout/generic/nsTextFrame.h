@@ -229,6 +229,8 @@ class nsTextFrame : public nsIFrame {
       return mLetterSpacing || mWordSpacing || mTextAutospace;
     }
 
+    nscoord LetterSpacing() const { return mLetterSpacing; }
+
    protected:
     void SetupJustificationSpacing(bool aPostReflow);
 

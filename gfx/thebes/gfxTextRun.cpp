@@ -253,7 +253,8 @@ gfxTextRun::LigatureData gfxTextRun::ComputeLigatureData(
   }
   result.mRange.end = i;
 
-  int32_t ligatureWidth = GetAdvanceForGlyphs(result.mRange);
+  int32_t ligatureWidth = GetAdvanceForGlyphs(
+      result.mRange, aProvider ? aProvider->LetterSpacing() : 0);
   // Count the number of started clusters we have seen
   uint32_t totalClusterCount = 0;
   uint32_t partClusterIndex = 0;
@@ -324,10 +325,11 @@ gfxFloat gfxTextRun::ComputePartialLigatureWidth(
   return data.mPartWidth;
 }
 
-int32_t gfxTextRun::GetAdvanceForGlyphs(Range aRange) const {
+int32_t gfxTextRun::GetAdvanceForGlyphs(Range aRange,
+                                        nscoord aLetterSpacing) const {
   int32_t advance = 0;
   for (auto i = aRange.start; i < aRange.end; ++i) {
-    advance += GetAdvanceForGlyph(i);
+    advance += GetAdvanceForGlyph(i, aLetterSpacing);
   }
   return advance;
 }
@@ -619,6 +621,8 @@ void gfxTextRun::Draw(const Range aRange, const gfx::Point aPt,
     params.clipRect = textDrawer->GeckoClipRect();
   }
   params.allowGDI = aParams.allowGDI;
+  params.letterSpacing =
+      aParams.provider ? aParams.provider->LetterSpacing() : 0;
 
   gfxFloat advance = 0.0;
   gfx::Point pt = aPt;
@@ -746,7 +750,8 @@ void gfxTextRun::AccumulateMetricsForRun(
       GetAdjustedSpacingArray(aRange, aProvider, aSpacingRange, &spacingBuffer);
   Metrics metrics = aFont->Measure(
       this, aRange.start, aRange.end, aBoundingBoxType, aRefDrawTarget,
-      haveSpacing ? spacingBuffer.Elements() : nullptr, aOrientation);
+      haveSpacing ? spacingBuffer.Elements() : nullptr,
+      aProvider ? aProvider->LetterSpacing() : 0, aOrientation);
   aMetrics->CombineWith(metrics, IsRightToLeft());
 }
 
@@ -831,7 +836,7 @@ void gfxTextRun::GetLineHeightMetrics(Range aRange, gfxFloat& aAscent,
     gfxFont* font = iter.GlyphRun()->mFont;
     auto metrics =
         font->Measure(this, 0, 0, gfxFont::LOOSE_INK_EXTENTS, nullptr, nullptr,
-                      iter.GlyphRun()->mOrientation);
+                      0, iter.GlyphRun()->mOrientation);
     accumulatedMetrics.CombineWith(metrics, false);
   }
   aAscent = accumulatedMetrics.mAscent;
@@ -1107,7 +1112,8 @@ uint32_t gfxTextRun::BreakAndMeasureText(
 
     gfxFloat charAdvance;
     if (i >= ligatureRange.start && i < ligatureRange.end) {
-      charAdvance = GetAdvanceForGlyphs(Range(i, i + 1));
+      charAdvance =
+          GetAdvanceForGlyphs(Range(i, i + 1), aProvider.LetterSpacing());
       if (haveSpacing) {
         PropertyProvider::Spacing* space =
             &spacingBuffer[i - bufferRange.start];
@@ -1219,10 +1225,13 @@ gfxFloat gfxTextRun::GetAdvanceWidth(
     }
   }
 
-  return result + GetAdvanceForGlyphs(ligatureRange);
+  return result +
+         GetAdvanceForGlyphs(ligatureRange,
+                             aProvider ? aProvider->LetterSpacing() : 0);
 }
 
-gfxFloat gfxTextRun::GetMinAdvanceWidth(Range aRange) const {
+gfxFloat gfxTextRun::GetMinAdvanceWidth(Range aRange,
+                                        nscoord aLetterSpacing) const {
   MOZ_ASSERT(aRange.end <= GetLength(), "Substring out of range");
 
   Range ligatureRange = aRange;
@@ -1245,7 +1254,7 @@ gfxFloat gfxTextRun::GetMinAdvanceWidth(Range aRange) const {
       // result. That is, don't consider a space can be in its own line.
       continue;
     }
-    clusterAdvance += GetAdvanceForGlyph(i);
+    clusterAdvance += GetAdvanceForGlyph(i, aLetterSpacing);
     if (i + 1 == ligatureRange.end || IsClusterStart(i + 1)) {
       result = std::max(result, clusterAdvance);
       clusterAdvance = 0;

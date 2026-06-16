@@ -108,6 +108,7 @@ class StubPropertyProvider final : public gfxTextRun::PropertyProvider {
     NS_ERROR("This shouldn't be called because we never enable hyphens");
     return gfx::ShapedTextFlags();
   }
+  nscoord LetterSpacing() const override { return 0; }
 };
 
 }  // namespace

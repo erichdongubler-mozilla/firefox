@@ -2128,6 +2128,16 @@ bool gfxFont::DrawGlyphs(const gfxShapedText* aShapedText,
           if (!aBuffer.mRunParams.isRTL) {
             inlineCoord += advance;
           }
+          if (S == SpacingT::HasSpacing) {
+            // Account for letter-spacing between "SS" glyphs of an uppercased
+            // es-zet, or glyphs arising from a ligature like U+FB01.
+            if (glyphData->ApplyLetterSpacingBetweenDetailedGlyphs() &&
+                j < glyphCount - 1) {
+              float space = aBuffer.mRunParams.letterSpacing;
+              space *= aBuffer.mFontParams.advanceDirection;
+              inlineCoord += space;
+            }
+          }
         }
       }
     }
@@ -2930,9 +2940,10 @@ bool gfxFont::IsSpaceGlyphInvisible(DrawTarget* aRefDrawTarget,
 bool gfxFont::MeasureGlyphs(const gfxTextRun* aTextRun, uint32_t aStart,
                             uint32_t aEnd, BoundingBoxType aBoundingBoxType,
                             DrawTarget* aRefDrawTarget, Spacing* aSpacing,
-                            gfxGlyphExtents* aExtents, bool aIsRTL,
-                            bool aNeedsGlyphExtents, RunMetrics& aMetrics,
-                            gfxFloat* aAdvanceMin, gfxFloat* aAdvanceMax) {
+                            nscoord aLetterSpacing, gfxGlyphExtents* aExtents,
+                            bool aIsRTL, bool aNeedsGlyphExtents,
+                            RunMetrics& aMetrics, gfxFloat* aAdvanceMin,
+                            gfxFloat* aAdvanceMax) {
   const gfxTextRun::CompressedGlyph* charGlyphs =
       aTextRun->GetCharacterGlyphs();
   uint32_t spaceGlyph = GetSpaceGlyph();
@@ -3028,6 +3039,10 @@ bool gfxFont::MeasureGlyphs(const gfxTextRun* aTextRun, uint32_t aStart,
           glyphRect.MoveByY(details->mOffset.y);
           aMetrics.mBoundingBox = aMetrics.mBoundingBox.Union(glyphRect);
           x += advance;
+          if (glyphData->ApplyLetterSpacingBetweenDetailedGlyphs() &&
+              j < glyphCount - 1) {
+            x += aLetterSpacing;
+          }
         }
       }
     }
@@ -3044,7 +3059,8 @@ bool gfxFont::MeasureGlyphs(const gfxTextRun* aTextRun, uint32_t aStart,
 bool gfxFont::MeasureGlyphs(const gfxTextRun* aTextRun, uint32_t aStart,
                             uint32_t aEnd, BoundingBoxType aBoundingBoxType,
                             DrawTarget* aRefDrawTarget, Spacing* aSpacing,
-                            bool aIsRTL, RunMetrics& aMetrics) {
+                            nscoord aLetterSpacing, bool aIsRTL,
+                            RunMetrics& aMetrics) {
   const gfxTextRun::CompressedGlyph* charGlyphs =
       aTextRun->GetCharacterGlyphs();
   double x = 0;
@@ -3090,6 +3106,10 @@ bool gfxFont::MeasureGlyphs(const gfxTextRun* aTextRun, uint32_t aStart,
           glyphRect.MoveByY(details->mOffset.y);
           aMetrics.mBoundingBox = aMetrics.mBoundingBox.Union(glyphRect);
           x += advance;
+          if (glyphData->ApplyLetterSpacingBetweenDetailedGlyphs() &&
+              j < glyphCount - 1) {
+            x += aLetterSpacing;
+          }
         }
       }
     }
@@ -3110,7 +3130,7 @@ gfxFont::RunMetrics gfxFont::Measure(const gfxTextRun* aTextRun,
                                      uint32_t aStart, uint32_t aEnd,
                                      BoundingBoxType aBoundingBoxType,
                                      DrawTarget* aRefDrawTarget,
-                                     Spacing* aSpacing,
+                                     Spacing* aSpacing, nscoord aLetterSpacing,
                                      gfx::ShapedTextFlags aOrientation) {
   // If aBoundingBoxType is TIGHT_HINTED_OUTLINE_EXTENTS
   // and the underlying cairo font may be antialiased,
@@ -3133,7 +3153,7 @@ gfxFont::RunMetrics gfxFont::Measure(const gfxTextRun* aTextRun,
     if (nonAA) {
       return nonAA->Measure(aTextRun, aStart, aEnd,
                             TIGHT_HINTED_OUTLINE_EXTENTS, aRefDrawTarget,
-                            aSpacing, aOrientation);
+                            aSpacing, aLetterSpacing, aOrientation);
     }
   }
 
@@ -3184,13 +3204,14 @@ gfxFont::RunMetrics gfxFont::Measure(const gfxTextRun* aTextRun,
 
   bool allGlyphsInvisible;
   if (extents) {
-    allGlyphsInvisible = MeasureGlyphs(
-        aTextRun, aStart, aEnd, aBoundingBoxType, aRefDrawTarget, aSpacing,
-        extents, isRTL, needsGlyphExtents, metrics, &advanceMin, &advanceMax);
+    allGlyphsInvisible =
+        MeasureGlyphs(aTextRun, aStart, aEnd, aBoundingBoxType, aRefDrawTarget,
+                      aSpacing, aLetterSpacing, extents, isRTL,
+                      needsGlyphExtents, metrics, &advanceMin, &advanceMax);
   } else {
     allGlyphsInvisible =
         MeasureGlyphs(aTextRun, aStart, aEnd, aBoundingBoxType, aRefDrawTarget,
-                      aSpacing, isRTL, metrics);
+                      aSpacing, aLetterSpacing, isRTL, metrics);
   }
 
   if (allGlyphsInvisible) {

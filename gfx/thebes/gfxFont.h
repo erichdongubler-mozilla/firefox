@@ -809,7 +809,17 @@ class gfxShapedText {
       FLAG_NOT_MISSING = 0x010000U,
       FLAG_NOT_CLUSTER_START = 0x020000U,
       FLAG_NOT_LIGATURE_GROUP_START = 0x040000U,
-      // Flag bit 0x080000 is currently unused.
+
+      // This is a "merged glyph" representing multiple characters that result
+      // from text-run transformation; if there is letter-spacing, it should be
+      // applied between the detailed-glyph components.
+      // Currently the only use of this is when es-zet is uppercased as SS.
+      //
+      // Note that in general, letter-spacing does not depend on this flag; it
+      // is applied *between* CompressedGlyph records by textrun drawing and
+      // measuring code. This flag only refers to letter-spacing between the
+      // individual DetailedGlyph components of a single CompressedGlyph.
+      FLAG_APPLY_LETTER_SPACING_BETWEEN_DETAILED_GLYPHS = 0x080000U,
 
       // Certain types of characters are marked so that they can be given
       // special treatment in rendering. This may require use of a "complex"
@@ -1007,6 +1017,15 @@ class gfxShapedText {
     void SetIsFormattingControl() {
       MOZ_ASSERT(!IsSimpleGlyph());
       mValue |= FLAG_CHAR_IS_FORMATTING_CONTROL;
+    }
+
+    void SetApplyLetterSpacingBetweenDetailedGlyphs() {
+      MOZ_ASSERT(!IsSimpleGlyph());
+      mValue |= FLAG_APPLY_LETTER_SPACING_BETWEEN_DETAILED_GLYPHS;
+    }
+    bool ApplyLetterSpacingBetweenDetailedGlyphs() const {
+      return !IsSimpleGlyph() &&
+             (mValue & FLAG_APPLY_LETTER_SPACING_BETWEEN_DETAILED_GLYPHS);
     }
 
    private:
@@ -1806,7 +1825,7 @@ class gfxFont {
   virtual RunMetrics Measure(const gfxTextRun* aTextRun, uint32_t aStart,
                              uint32_t aEnd, BoundingBoxType aBoundingBoxType,
                              DrawTarget* aDrawTargetForTightBoundingBox,
-                             Spacing* aSpacing,
+                             Spacing* aSpacing, nscoord aLetterSpacing,
                              mozilla::gfx::ShapedTextFlags aOrientation);
   /**
    * Line breaks have been changed at the beginning and/or end of a substring
@@ -2022,14 +2041,14 @@ class gfxFont {
   bool MeasureGlyphs(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
                      BoundingBoxType aBoundingBoxType,
                      DrawTarget* aRefDrawTarget, Spacing* aSpacing,
-                     gfxGlyphExtents* aExtents, bool aIsRTL,
-                     bool aNeedsGlyphExtents, RunMetrics& aMetrics,
+                     nscoord aLetterSpacing, gfxGlyphExtents* aExtents,
+                     bool aIsRTL, bool aNeedsGlyphExtents, RunMetrics& aMetrics,
                      gfxFloat* aAdvanceMin, gfxFloat* aAdvanceMax);
 
   bool MeasureGlyphs(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
                      BoundingBoxType aBoundingBoxType,
-                     DrawTarget* aRefDrawTarget, Spacing* aSpacing, bool aIsRTL,
-                     RunMetrics& aMetrics);
+                     DrawTarget* aRefDrawTarget, Spacing* aSpacing,
+                     nscoord aLetterSpacing, bool aIsRTL, RunMetrics& aMetrics);
 
   // Template parameters for DrawGlyphs/DrawOneGlyph, used to select
   // simplified versions of the methods in the most common cases.
@@ -2411,6 +2430,7 @@ struct MOZ_STACK_CLASS TextRunDrawParams {
   mozilla::layout::TextDrawTarget* textDrawer = nullptr;
   mozilla::LayoutDeviceRect clipRect;
   mozilla::gfx::Float direction = 1.0f;
+  nscoord letterSpacing = 0;
   double devPerApp = 1.0;
   nscolor textStrokeColor = 0;
   gfxPattern* textStrokePattern = nullptr;
