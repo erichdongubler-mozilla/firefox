@@ -38,6 +38,8 @@ nsresult SetupExtraData(nsIFile* aAppDataDirectory, nsIFile* aXreDirectory) {
 
 nsresult UnsetExceptionHandler() { return NS_ERROR_NOT_IMPLEMENTED; }
 
+uint32_t GetCrashHelperPid() { return 0; }
+
 const bool* RegisterAnnotationBool(Annotation aKey, const bool* aData) {
   return nullptr;
 }
