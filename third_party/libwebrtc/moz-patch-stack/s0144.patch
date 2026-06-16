@@ -1,0 +1,30 @@
+From: Nico Grunbaum <ngrunbaum@mozilla.com>
+Date: Tue, 16 Jun 2026 15:40:00 -0700
+Subject: Bug 2047265 - (fix-9e2b7a8448) disable new testonly av1 qp parser
+ library
+
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/8e18fa212189c66b060f0217757c99eea14c3883
+---
+ modules/video_coding/BUILD.gn | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/modules/video_coding/BUILD.gn b/modules/video_coding/BUILD.gn
+index cd1bc28035..d47f5f084e 100644
+--- a/modules/video_coding/BUILD.gn
++++ b/modules/video_coding/BUILD.gn
+@@ -380,12 +380,15 @@ rtc_library("av1_qp_parser") {
+     "utility/av1_qp_parser.cc",
+     "utility/av1_qp_parser.h",
+   ]
++  sources -= sources
+   deps = [
+     "../../api/video:video_frame",
+     "../../api/video:video_frame_type",
+     "//third_party/libgav1:libgav1_parser",
+   ]
++  deps -= deps
+   public_configs = [ "//third_party/libgav1:libgav1_public_config" ]
++  public_configs -= public_configs
+ }
+ 
+ rtc_library("encoder_speed_controller_impl") {
