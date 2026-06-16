@@ -422,7 +422,7 @@ class StringToAtomCache {
   struct AtomTableKey {
     explicit AtomTableKey(const JS::Latin1Char* str, size_t len)
         : string_(str), length_(len) {
-      hash_ = mozilla::HashString(string_, length_);
+      hash_ = mozilla::HashLatin1AsUTF16(string_, length_);
     }
 
     const JS::Latin1Char* string_;

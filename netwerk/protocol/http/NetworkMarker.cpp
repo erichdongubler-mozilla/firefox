@@ -271,7 +271,7 @@ void EmitPerfettoTrackEvent<mozilla::net::NetworkMarker, mozilla::TimeStamp,
 
   // Create a unique id for each marker.
   mozilla::HashNumber hash =
-      mozilla::HashStringKnownLength(nameStr, aName.StringView().length());
+      mozilla::HashString(nameStr, aName.StringView().length());
   hash = mozilla::AddToHash(hash,
                             startTime.RawClockMonotonicNanosecondsSinceBoot());
   hash =

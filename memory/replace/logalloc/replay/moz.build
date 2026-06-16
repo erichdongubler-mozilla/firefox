@@ -33,11 +33,6 @@ elif CONFIG["OS_TARGET"] == "Android":
     SOURCES["Replay.cpp"].flags += ["-Wno-unguarded-availability"]
 
 
-if CONFIG["MOZ_REPLACE_MALLOC_STATIC"] and (CONFIG["MOZ_DMD"] or CONFIG["MOZ_PHC"]):
-    UNIFIED_SOURCES += [
-        "/mfbt/HashFunctions.cpp",
-    ]
-
 if CONFIG["OS_ARCH"] == "WINNT":
     OS_LIBS += [
         "advapi32",

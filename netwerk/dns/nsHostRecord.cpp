@@ -85,8 +85,8 @@ bool nsHostKey::operator==(const nsHostKey& other) const {
 }
 
 PLDHashNumber nsHostKey::Hash() const {
-  return AddToHash(HashString(host.get()), HashString(mTrrServer.get()), type,
-                   RES_KEY_FLAGS(flags), af, HashString(originSuffix.get()));
+  return AddToHash(HashString(host), HashString(mTrrServer), type,
+                   RES_KEY_FLAGS(flags), af, HashString(originSuffix));
 }
 
 size_t nsHostKey::SizeOfExcludingThis(

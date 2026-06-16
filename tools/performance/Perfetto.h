@@ -296,8 +296,7 @@ void EmitPerfettoTrackEvent(const mozilla::ProfilerString8View& aName,
   }
 
   // Create a unique id for each marker so it has it's own track.
-  mozilla::HashNumber hash =
-      mozilla::HashStringKnownLength(nameStr, nameSv.length());
+  mozilla::HashNumber hash = mozilla::HashString(nameStr, nameSv.length());
 
   switch (phase) {
     case mozilla::MarkerTiming::Phase::Interval: {
