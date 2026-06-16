@@ -2809,7 +2809,13 @@ static void AtomicExchange(MacroAssembler& masm,
   masm.slliw(offsetTemp, offsetTemp, 3);
   masm.ma_li(maskTemp, Imm32(UINT32_MAX >> ((4 - nbytes) * 8)));
   masm.sllw(maskTemp, maskTemp, offsetTemp);
-  masm.not_(maskTemp, maskTemp);
+  if (masm.HasZbbExtension()) {
+    // This is handled by the andn below.
+    ;
+  } else {
+    masm.not_(maskTemp, maskTemp);
+  }
+
   switch (nbytes) {
     case 1:
       masm.andi(valueTemp, value, 0xff);
@@ -2838,7 +2844,13 @@ static void AtomicExchange(MacroAssembler& masm,
   }
 
   masm.lr_w(true, true, output, scratch);
-  masm.and_(scratch2, output, maskTemp);
+  if (masm.HasZbbExtension()) {
+    masm.andn(scratch2, output, maskTemp);
+  } else {
+    // Inverted by not_ above.
+    masm.and_(scratch2, output, maskTemp);
+  }
+
   masm.or_(scratch2, scratch2, valueTemp);
 
   masm.sc_w(true, true, scratch2, scratch, scratch2);
@@ -3037,7 +3049,12 @@ static void AtomicEffectOp(MacroAssembler& masm,
   masm.slliw(offsetTemp, offsetTemp, 3);
   masm.ma_li(maskTemp, Imm32(UINT32_MAX >> ((4 - nbytes) * 8)));
   masm.sllw(maskTemp, maskTemp, offsetTemp);
-  masm.not_(maskTemp, maskTemp);
+  if (masm.HasZbbExtension()) {
+    // This is handled by the andn below.
+    ;
+  } else {
+    masm.not_(maskTemp, maskTemp);
+  }
 
   masm.memoryBarrierBefore(sync);
 
@@ -3083,7 +3100,12 @@ static void AtomicEffectOp(MacroAssembler& masm,
 
   masm.sllw(valueTemp, valueTemp, offsetTemp);
 
-  masm.and_(scratch2, scratch2, maskTemp);
+  if (masm.HasZbbExtension()) {
+    masm.andn(scratch2, scratch2, maskTemp);
+  } else {
+    // Inverted by not_ above.
+    masm.and_(scratch2, scratch2, maskTemp);
+  }
   masm.or_(scratch2, scratch2, valueTemp);
 
   masm.sc_w(true, true, scratch2, scratch, scratch2);
@@ -3171,7 +3193,12 @@ static void AtomicFetchOp(MacroAssembler& masm,
   masm.slliw(offsetTemp, offsetTemp, 3);
   masm.ma_li(maskTemp, Imm32(UINT32_MAX >> ((4 - nbytes) * 8)));
   masm.sllw(maskTemp, maskTemp, offsetTemp);
-  masm.not_(maskTemp, maskTemp);
+  if (masm.HasZbbExtension()) {
+    // This is handled by the andn below.
+    ;
+  } else {
+    masm.not_(maskTemp, maskTemp);
+  }
 
   masm.memoryBarrierBefore(sync);
 
@@ -3217,7 +3244,12 @@ static void AtomicFetchOp(MacroAssembler& masm,
 
   masm.sllw(valueTemp, valueTemp, offsetTemp);
 
-  masm.and_(scratch2, scratch2, maskTemp);
+  if (masm.HasZbbExtension()) {
+    masm.andn(scratch2, scratch2, maskTemp);
+  } else {
+    // Inverted by not_ above.
+    masm.and_(scratch2, scratch2, maskTemp);
+  }
   masm.or_(scratch2, scratch2, valueTemp);
 
   masm.sc_w(true, true, scratch2, scratch, scratch2);
@@ -4631,7 +4663,12 @@ static void CompareExchange(MacroAssembler& masm,
   masm.slli(offsetTemp, offsetTemp, 3);
   masm.ma_li(maskTemp, Imm32(UINT32_MAX >> ((4 - nbytes) * 8)));
   masm.sll(maskTemp, maskTemp, offsetTemp);
-  masm.not_(maskTemp, maskTemp);
+  if (masm.HasZbbExtension()) {
+    // This is handled by the andn below.
+    ;
+  } else {
+    masm.not_(maskTemp, maskTemp);
+  }
 
   masm.memoryBarrierBefore(sync);
 
@@ -4678,7 +4715,12 @@ static void CompareExchange(MacroAssembler& masm,
   masm.ma_b(output, valueTemp, &end, Assembler::NotEqual, ShortJump);
 
   masm.sllw(valueTemp, newval, offsetTemp);
-  masm.and_(scratch1, scratch1, maskTemp);
+  if (masm.HasZbbExtension()) {
+    masm.andn(scratch1, scratch1, maskTemp);
+  } else {
+    // Inverted by not_ above.
+    masm.and_(scratch1, scratch1, maskTemp);
+  }
   masm.or_(scratch1, scratch1, valueTemp);
   masm.sc_w(true, true, scratch1, scratch2, scratch1);
 
