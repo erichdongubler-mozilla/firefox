@@ -1,0 +1,187 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+"""Symbol-server I/O and breakpad ``.sym`` parsing for BHR aggregation.
+
+Ported from python_mozetl/mozetl/bhr_collection/bhr_collection.py as part of
+the bhr_collection migration. Pure-stdlib relocation; semantics are
+unchanged.
+
+The Mozilla symbol server returns text in breakpad's ``.sym`` format. Each
+file describes one module: ``PUBLIC`` lines map exported names to addresses,
+``FUNC`` lines map function symbols to address ranges. ``make_sym_map``
+parses one ``.sym`` blob into a ``{address: symbol}`` dict (plus a sorted
+key list for bisecting). ``process_module`` is the per-module pipeline:
+fetch the ``.sym``, parse it, resolve each requested offset.
+"""
+
+import contextlib
+import gzip
+import urllib.parse
+import urllib.request
+from bisect import bisect
+from io import BytesIO
+
+UNSYMBOLICATED = "<unsymbolicated>"
+SYMBOL_TRUNCATE_LENGTH = 200
+
+
+def make_sym_map(data, url=None):
+    public_symbols = {}
+    func_symbols = {}
+
+    for raw_line in data.splitlines():
+        line = raw_line.decode("utf-8")
+        if line.startswith("PUBLIC "):
+            stripped = line.rstrip()
+            fields = stripped.split(" ", 3)
+            m_offset = 0
+            if fields[1] == "m":
+                m_offset = 1
+                fields = stripped.split(" ", 4)
+            if len(fields) < 4 + m_offset:
+                print(f"Skipping malformed PUBLIC line from {url}: {stripped!r}")
+                continue
+            try:
+                address = int(fields[1 + m_offset], 16)
+            except ValueError:
+                print(
+                    f"Skipping PUBLIC line with non-hex address from {url}: {stripped!r}"
+                )
+                continue
+            symbol = fields[3 + m_offset]
+            public_symbols[address] = symbol[:SYMBOL_TRUNCATE_LENGTH]
+        elif line.startswith("FUNC "):
+            stripped = line.rstrip()
+            fields = stripped.split(" ", 4)
+            m_offset = 0
+            if fields[1] == "m":
+                m_offset = 1
+                fields = stripped.split(" ", 5)
+            if len(fields) == 4 + m_offset:
+                symbol = "(no symbol)"
+            elif len(fields) < 4 + m_offset:
+                print(f"Skipping malformed FUNC line from {url}: {stripped!r}")
+                continue
+            else:
+                symbol = fields[4 + m_offset]
+            try:
+                address = int(fields[1 + m_offset], 16)
+            except ValueError:
+                print(
+                    f"Skipping FUNC line with non-hex address from {url}: {stripped!r}"
+                )
+                continue
+            func_symbols[address] = symbol[:SYMBOL_TRUNCATE_LENGTH]
+    # Prioritize PUBLIC symbols over FUNC ones
+    sym_map = func_symbols
+    sym_map.update(public_symbols)
+
+    return sorted(sym_map), sym_map
+
+
+def get_file_url(module, config):
+    lib_name, breakpad_id = module
+    if lib_name is None or breakpad_id is None:
+        return None
+    if lib_name.endswith(".pdb"):
+        file_name = lib_name[:-4] + ".sym"
+    else:
+        file_name = lib_name + ".sym"
+
+    try:
+        return config["symbol_server_url"] + "/".join([
+            urllib.parse.quote_plus(lib_name),
+            urllib.parse.quote_plus(breakpad_id),
+            urllib.parse.quote_plus(file_name),
+        ])
+    except KeyError:
+        # urllib throws with unicode strings. TODO: investigate why
+        # any of these values (lib_name, breakpad_id, file_name) would
+        # have unicode strings, or if this is just bad pings.
+        return None
+
+
+def fetch_url(url):
+    result = False, ""
+    try:
+        with contextlib.closing(urllib.request.urlopen(url)) as response:
+            response_code = response.getcode()
+            if response_code == 404:
+                return False, ""
+            if response_code != 200:
+                result = False, ""
+            return True, decode_response(response)
+    except OSError:
+        result = False, ""
+
+    if not result[0]:
+        try:
+            with contextlib.closing(urllib.request.urlopen(url)) as response:
+                response_code = response.getcode()
+                if response_code == 404:
+                    return False, ""
+                if response_code != 200:
+                    result = False, ""
+                return True, decode_response(response)
+        except OSError:
+            result = False, ""
+
+    return result
+
+
+def decode_response(response):
+    headers = response.info()
+    content_encoding = headers.get("Content-Encoding", "").lower()
+    if content_encoding in ("gzip", "x-gzip", "deflate"):
+        with contextlib.closing(BytesIO(response.read())) as data_stream:
+            try:
+                with gzip.GzipFile(fileobj=data_stream) as f:
+                    return f.read()
+            except OSError:
+                data_stream.seek(0)
+                return data_stream.read().decode("zlib")
+    return response.read()
+
+
+def process_module(module, offsets, config):
+    result = []
+    if module is None or module[0] is None:
+        return [((module, offset), (UNSYMBOLICATED, "unknown")) for offset in offsets]
+    if module[0] == "pseudo":
+        return [
+            ((module, offset), ("" if offset is None else offset, ""))
+            for offset in offsets
+        ]
+    file_url = get_file_url(module, config)
+    module_name = module[0]
+    if file_url:
+        success, response = fetch_url(file_url)
+    else:
+        success = False
+
+    if success:
+        sorted_keys, sym_map = make_sym_map(response, file_url)
+        if not sym_map:
+            print(f"Warning: Empty sym map from {file_url}; treating as failure")
+            success = False
+
+    if success:
+        for offset in offsets:
+            try:
+                i = bisect(sorted_keys, int(offset, 16))
+                key = sorted_keys[i - 1] if i else None
+                symbol = sym_map.get(key)
+            except UnicodeEncodeError:
+                symbol = None
+            except ValueError:
+                symbol = None
+            if symbol is not None:
+                result.append(((module, offset), (symbol, module_name)))
+            else:
+                result.append(((module, offset), (UNSYMBOLICATED, module_name)))
+    else:
+        for offset in offsets:
+            result.append(((module, offset), (UNSYMBOLICATED, module_name)))
+    return result
