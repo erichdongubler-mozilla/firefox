@@ -1,55 +1,600 @@
-From: Johannes Kron <kron@webrtc.org>
-Date: Fri, 15 May 2026 10:21:29 +0000
-Subject: (cherry-pick-branch-heads/7827) [M149] Validate CGImage dimensions in
- MouseCursorMonitorMac
+From: Nicolas Grunbaum <ngrunbaum@mozilla.com>
+Date: Tue, 16 Jun 2026 09:59:53 -0700
+Subject: (tmp-cherry-pick) Revert "srtp: add UseCryptex API to SrtpSession and
+ SrtpTransport" (264b57cf94)
+
+This reverts commit b9386f3f09ba0f38320f6a9e65dfe2992f433cb5.
+
+Reason for revert: Downstream libSRTP is not updated yet
 
 Original change's description:
-> Validate CGImage dimensions in MouseCursorMonitorMac
+> srtp: add UseCryptex API to SrtpSession and SrtpTransport
 >
-> This adds missing height checks alongside the existing width checks
-> when processing and scaling the cursor image.
+> Adds the UseCryptex(enable, require, sending_session) API on SrtpSession
+> and UseCryptex(enable, require) on SrtpTransport. Wires libsrtp's
+> srtp_set_stream_use_cryptex through DoSetKey, and adds a require-cryptex
+> post-decrypt check via ParseRtpExtensionProfile (new helper in
+> modules/rtp_rtcp/source/rtp_util) for the cases libsrtp does not yet
+> enforce; see https://github.com/cisco/libsrtp/pull/805.
 >
-> Fixed: chromium:513268100
-> Change-Id: Ida1e58334a9d3bda429819e4af51b33afbd0a95d
-> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/472700
-> Reviewed-by: Alexander Cooper <alcooper@chromium.org>
-> Auto-Submit: Johannes Kron <kron@webrtc.org>
-> Commit-Queue: Alexander Cooper <alcooper@chromium.org>
-> Cr-Commit-Position: refs/heads/main@{#47715}
+> No callers yet; the cryptex SDP negotiation wires this up in a follow-up.
+>
+> Bug: webrtc:455813732
+> Change-Id: I407400d42912fb303c93c715e7110dafcc3d0cab
+> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/470600
+> Reviewed-by: Harald Alvestrand <hta@webrtc.org>
+> Reviewed-by: Tomas Gunnarsson <tommi@webrtc.org>
+> Commit-Queue: Philipp Hancke <philipp.hancke@googlemail.com>
+> Cr-Commit-Position: refs/heads/main@{#47707}
 
-(cherry picked from commit b343cd4e280980f26b4feb80684f57d5b4324e12)
-
-Bug: chromium:514928856,chromium:513268100
-Change-Id: Ida1e58334a9d3bda429819e4af51b33afbd0a95d
-Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/473981
-Auto-Submit: Chrome Cherry Picker <chrome-cherry-picker@chops-service-accounts.iam.gserviceaccount.com>
+Bug: webrtc:455813732
+No-Presubmit: true
+No-Tree-Checks: true
+No-Try: true
+Change-Id: I496ebf60d95e1bbd3d117f5b30b4e4fe69e9a2ea
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/472440
+Commit-Queue: Harald Alvestrand <hta@webrtc.org>
 Bot-Commit: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
-Commit-Queue: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
-Cr-Commit-Position: refs/branch-heads/7827@{#1}
-Cr-Branched-From: d606bc991592fbf4dcbe85e9d05db5e501a5ad42-refs/heads/main@{#47595}
+Cr-Commit-Position: refs/heads/main@{#47708}
 ---
- modules/desktop_capture/mouse_cursor_monitor_mac.mm | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ modules/rtp_rtcp/source/rtp_util.cc |  19 ---
+ modules/rtp_rtcp/source/rtp_util.h  |   9 --
+ pc/srtp_session.cc                  |  48 +------
+ pc/srtp_session.h                   |   8 --
+ pc/srtp_session_unittest.cc         | 211 ----------------------------
+ pc/srtp_transport.cc                |  53 +------
+ pc/srtp_transport.h                 |   6 -
+ 7 files changed, 8 insertions(+), 346 deletions(-)
 
-diff --git a/modules/desktop_capture/mouse_cursor_monitor_mac.mm b/modules/desktop_capture/mouse_cursor_monitor_mac.mm
-index 248a782762..3e6a6cb3c6 100644
---- a/modules/desktop_capture/mouse_cursor_monitor_mac.mm
-+++ b/modules/desktop_capture/mouse_cursor_monitor_mac.mm
-@@ -154,7 +154,8 @@ void MouseCursorMonitorMac::CaptureImage(float scale) {
-   // crbug.com/632995.) After 10.12, OSX may report 2X cursor on non-Retina
-   // screen. (See crbug.com/671436.) So scaling the cursor if needed.
-   CGImageRef scaled_cg_image = nil;
--  if (CGImageGetWidth(cg_image) != static_cast<size_t>(size.width())) {
-+  if (CGImageGetWidth(cg_image) != static_cast<size_t>(size.width()) ||
-+      CGImageGetHeight(cg_image) != static_cast<size_t>(size.height())) {
-     scaled_cg_image =
-         CreateScaledCGImage(cg_image, size.width(), size.height());
-     if (scaled_cg_image != nil) {
-@@ -163,6 +164,7 @@ void MouseCursorMonitorMac::CaptureImage(float scale) {
+diff --git a/modules/rtp_rtcp/source/rtp_util.cc b/modules/rtp_rtcp/source/rtp_util.cc
+index 392f5551c7..0c62a31b6b 100644
+--- a/modules/rtp_rtcp/source/rtp_util.cc
++++ b/modules/rtp_rtcp/source/rtp_util.cc
+@@ -12,7 +12,6 @@
+ 
+ #include <cstddef>
+ #include <cstdint>
+-#include <optional>
+ #include <span>
+ 
+ #include "modules/rtp_rtcp/source/byte_io.h"
+@@ -61,22 +60,4 @@ uint32_t ParseRtpSsrc(std::span<const uint8_t> rtp_packet) {
+   return ByteReader<uint32_t>::ReadBigEndian(rtp_packet.data() + 8);
+ }
+ 
+-std::optional<uint16_t> ParseRtpExtensionProfile(
+-    std::span<const uint8_t> rtp_packet) {
+-  if (!IsRtpPacket(rtp_packet)) {
+-    return std::nullopt;
+-  }
+-  bool has_extension = rtp_packet[0] & 0b00010000;
+-  if (!has_extension) {
+-    return std::nullopt;
+-  }
+-  size_t csrc_count = rtp_packet[0] & 0b00001111;
+-  size_t extension_start = kMinRtpPacketLen + csrc_count * 4;
+-  if (rtp_packet.size() < extension_start + 2) {
+-    return std::nullopt;
+-  }
+-  return ByteReader<uint16_t>::ReadBigEndian(rtp_packet.data() +
+-                                             extension_start);
+-}
+-
+ }  // namespace webrtc
+diff --git a/modules/rtp_rtcp/source/rtp_util.h b/modules/rtp_rtcp/source/rtp_util.h
+index a6ab688e10..90de009add 100644
+--- a/modules/rtp_rtcp/source/rtp_util.h
++++ b/modules/rtp_rtcp/source/rtp_util.h
+@@ -12,7 +12,6 @@
+ #define MODULES_RTP_RTCP_SOURCE_RTP_UTIL_H_
+ 
+ #include <cstdint>
+-#include <optional>
+ #include <span>
+ 
+ namespace webrtc {
+@@ -26,14 +25,6 @@ int ParseRtpPayloadType(std::span<const uint8_t> rtp_packet);
+ uint16_t ParseRtpSequenceNumber(std::span<const uint8_t> rtp_packet);
+ uint32_t ParseRtpSsrc(std::span<const uint8_t> rtp_packet);
+ 
+-// Parses the RTP header extension "defined by profile" field from
+-// https://datatracker.ietf.org/doc/html/rfc3550#section-5.3.1
+-// Used to indicate the format of RTP header extension. In WebRTC
+-// that means RFC 5285, RFC 8285 and RFC 9335.
+-// Returns std::nullopt if the packet does not have an extension.
+-std::optional<uint16_t> ParseRtpExtensionProfile(
+-    std::span<const uint8_t> rtp_packet);
+-
+ }  // namespace webrtc
+ 
+ #endif  // MODULES_RTP_RTCP_SOURCE_RTP_UTIL_H_
+diff --git a/pc/srtp_session.cc b/pc/srtp_session.cc
+index c905165bb9..613b4a6b63 100644
+--- a/pc/srtp_session.cc
++++ b/pc/srtp_session.cc
+@@ -12,7 +12,6 @@
+ 
+ #include <cstdint>
+ #include <cstring>
+-#include <optional>
+ #include <vector>
+ 
+ #include "absl/strings/string_view.h"
+@@ -38,9 +37,6 @@
+ 
+ namespace webrtc {
+ 
+-constexpr uint16_t kRtpOneByteHeaderExtensionProfile = 0xBEDE;
+-constexpr uint16_t kRtpTwoByteHeaderExtensionProfile = 0x1000;
+-
+ namespace {
+ class LibSrtpInitializer {
+  public:
+@@ -147,7 +143,7 @@ void LibSrtpInitializer::DecrementLibsrtpUsageCountAndMaybeDeinit() {
+ // One more than the maximum libsrtp error code. Required by
+ // RTC_HISTOGRAM_ENUMERATION. Keep this in sync with srtp_error_status_t defined
+ // in srtp.h.
+-constexpr int kSrtpErrorCodeBoundary = 29;
++constexpr int kSrtpErrorCodeBoundary = 28;
+ 
+ SrtpSession::SrtpSession() {}
+ 
+@@ -164,23 +160,6 @@ SrtpSession::~SrtpSession() {
    }
-   if (CGImageGetBitsPerPixel(cg_image) != DesktopFrame::kBytesPerPixel * 8 ||
-       CGImageGetWidth(cg_image) != static_cast<size_t>(size.width()) ||
-+      CGImageGetHeight(cg_image) != static_cast<size_t>(size.height()) ||
-       CGImageGetBitsPerComponent(cg_image) != 8) {
-     if (scaled_cg_image != nil) CGImageRelease(scaled_cg_image);
-     return;
+ }
+ 
+-bool SrtpSession::UseCryptex(bool enable, bool require, bool sending_session) {
+-  RTC_DCHECK_RUN_ON(&thread_checker_);
+-  if (session_) {
+-    srtp_ssrc_t ssrc;
+-    ssrc.type = sending_session ? ssrc_any_outbound : ssrc_any_inbound;
+-    int err = srtp_set_stream_use_cryptex(session_, &ssrc, enable);
+-    // Should not fail given the usage in libWebRTC.
+-    RTC_DCHECK(err == srtp_err_status_ok);
+-    if (err != srtp_err_status_ok) {
+-      return false;
+-    }
+-  }
+-  use_cryptex_ = enable;
+-  require_cryptex_ = require;
+-  return true;
+-}
+-
+ bool SrtpSession::SetSend(int crypto_suite,
+                           const ZeroOnFreeBuffer<uint8_t>& key,
+                           const std::vector<int>& extension_ids) {
+@@ -290,22 +269,7 @@ bool SrtpSession::UnprotectRtp(CopyOnWriteBuffer& buffer) {
+   }
+   int out_len = buffer.size();
+ 
+-  std::optional<uint16_t> extension_profile;
+-  if (require_cryptex_) {
+-    // After decryption this will be set to 0xBEDE or 0x1000 for one/two byte
+-    // extensions so must be parsed before decryption. If no extensions are
+-    // present this returns std::nullopt.
+-    extension_profile = ParseRtpExtensionProfile(buffer);
+-  }
+   int err = srtp_unprotect(session_, buffer.MutableData<char>(), &out_len);
+-  if (err == srtp_err_status_ok && require_cryptex_ &&
+-      (extension_profile == kRtpOneByteHeaderExtensionProfile ||
+-       extension_profile == kRtpTwoByteHeaderExtensionProfile)) {
+-    // An additional check whether cryptex is used when required.
+-    // TODO: bugs.webrtc.org/455813732 - libSRTP wіll be doing this check
+-    // after https://github.com/cisco/libsrtp/pull/805
+-    err = srtp_err_status_cryptex_err;
+-  }
+   if (err != srtp_err_status_ok) {
+     // Limit the error logging to avoid excessive logs when there are lots of
+     // bad packets.
+@@ -410,10 +374,7 @@ bool SrtpSession::DoSetKey(int type,
+   // TODO(astor) parse window size from WSH session-param
+   policy.window_size = 1024;
+   policy.allow_repeat_tx = 1;
+-  // If both encrypted extension ids and cryptex are in use,
+-  // cryptex takes precedence and encrypted extensions remain
+-  // empty for libSRTP.
+-  if (!extension_ids.empty() && !use_cryptex_) {
++  if (!extension_ids.empty()) {
+     policy.enc_xtn_hdr = const_cast<int*>(&extension_ids[0]);
+     policy.enc_xtn_hdr_count = static_cast<int>(extension_ids.size());
+   }
+@@ -434,11 +395,6 @@ bool SrtpSession::DoSetKey(int type,
+       return false;
+     }
+   }
+-  int err = srtp_set_stream_use_cryptex(session_, &policy.ssrc, use_cryptex_);
+-  if (err != srtp_err_status_ok) {
+-    RTC_LOG(LS_ERROR) << "Failed to update SRTP session cryptex, err=" << err;
+-    return false;
+-  }
+ 
+   rtp_auth_tag_len_ = policy.rtp.auth_tag_len;
+   rtcp_auth_tag_len_ = policy.rtcp.auth_tag_len;
+diff --git a/pc/srtp_session.h b/pc/srtp_session.h
+index ffba066b5c..4a2764433a 100644
+--- a/pc/srtp_session.h
++++ b/pc/srtp_session.h
+@@ -44,9 +44,6 @@ class SrtpSession {
+   SrtpSession(const SrtpSession&) = delete;
+   SrtpSession& operator=(const SrtpSession&) = delete;
+ 
+-  // Enable or disable cryptex. May update existing session.
+-  bool UseCryptex(bool enabled, bool require, bool sending_session);
+-
+   // Configures the session for sending data using the specified
+   // crypto suite and key. Receiving must be done by a separate session.
+   bool SetSend(int crypto_suite,
+@@ -123,11 +120,6 @@ class SrtpSession {
+   bool inited_ RTC_GUARDED_BY(thread_checker_) = false;
+   int last_send_seq_num_ RTC_GUARDED_BY(thread_checker_) = -1;
+   int decryption_failure_count_ RTC_GUARDED_BY(thread_checker_) = 0;
+-
+-  // Supported since libsrtp v2.8.0.
+-  bool use_cryptex_ RTC_GUARDED_BY(thread_checker_) = false;
+-  bool require_cryptex_ RTC_GUARDED_BY(thread_checker_) = false;
+-
+   const bool dump_plain_rtp_ = false;
+ };
+ 
+diff --git a/pc/srtp_session_unittest.cc b/pc/srtp_session_unittest.cc
+index f430ec92b2..743fd12d18 100644
+--- a/pc/srtp_session_unittest.cc
++++ b/pc/srtp_session_unittest.cc
+@@ -10,7 +10,6 @@
+ 
+ #include "pc/srtp_session.h"
+ 
+-#include <array>
+ #include <cstdint>
+ #include <cstring>
+ #include <limits>
+@@ -32,7 +31,6 @@
+ 
+ using ::testing::ElementsAre;
+ using ::testing::Pair;
+-using ::testing::SizeIs;
+ 
+ namespace webrtc {
+ 
+@@ -406,213 +404,4 @@ TEST_F(SrtpSessionTest, ProtectGetPacketIndex) {
+   EXPECT_EQ(index, 0x10001000000);  // ntohl(65537 << 16)
+ }
+ 
+-static inline constexpr std::array<uint8_t, 30> kCryptexKeyRaw = {
+-    0xe1, 0xf9, 0x7a, 0x0d, 0x3e, 0x01, 0x8b, 0xe0, 0xd6, 0x4f,
+-    0xa3, 0x2c, 0x06, 0xde, 0x41, 0x39, 0x0e, 0xc6, 0x75, 0xad,
+-    0x49, 0x8a, 0xfe, 0xeb, 0xb6, 0x96, 0x0b, 0x3a, 0xab, 0xe6};
+-static const ZeroOnFreeBuffer<uint8_t> kCryptexKey{kCryptexKeyRaw.data(),
+-                                                   kCryptexKeyRaw.size()};
+-class SrtpSessionTestCryptex : public SrtpSessionTest {};
+-
+-TEST_F(SrtpSessionTestCryptex, TestCryptexRfc9335_A_1_1) {
+-  // Test vector from RFC 9335 Appendix A.1.1:
+-  // RTP Packet with One-Byte Header Extension
+-  const uint8_t kPacket[] = {
+-      0x90, 0x0f, 0x12, 0x35, 0xde, 0xca, 0xfb, 0xad, 0xca, 0xfe, 0xba, 0xbe,
+-      0xbe, 0xde, 0x00, 0x01, 0x51, 0x00, 0x02, 0x00, 0xab, 0xab, 0xab, 0xab,
+-      0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab};
+-  const uint8_t kEncrypted[] = {
+-      0x90, 0x0f, 0x12, 0x35, 0xde, 0xca, 0xfb, 0xad, 0xca, 0xfe, 0xba, 0xbe,
+-      0xc0, 0xde, 0x00, 0x01, 0xeb, 0x92, 0x36, 0x52, 0x51, 0xc3, 0xe0, 0x36,
+-      0xf8, 0xde, 0x27, 0xe9, 0xc2, 0x7e, 0xe3, 0xe0, 0xb4, 0x65, 0x1d, 0x9f,
+-      0xbc, 0x42, 0x18, 0xa7, 0x02, 0x44, 0x52, 0x2f, 0x34, 0xa5};
+-
+-  EXPECT_TRUE(s1_.UseCryptex(true, true, true));
+-  EXPECT_TRUE(s1_.SetSend(kSrtpAes128CmSha1_80, kCryptexKey, {}));
+-
+-  CopyOnWriteBuffer packet(kPacket, sizeof(kPacket), sizeof(kEncrypted));
+-  EXPECT_TRUE(s1_.ProtectRtp(packet));
+-  EXPECT_THAT(packet, SizeIs(sizeof(kEncrypted)));
+-  EXPECT_EQ(0, std::memcmp(packet.data(), kEncrypted, packet.size()));
+-
+-  EXPECT_TRUE(s2_.UseCryptex(true, true, false));
+-  EXPECT_TRUE(s2_.SetReceive(kSrtpAes128CmSha1_80, kCryptexKey, {}));
+-  EXPECT_TRUE(s2_.UnprotectRtp(packet));
+-  EXPECT_THAT(packet, SizeIs(sizeof(kPacket)));
+-  EXPECT_EQ(0, std::memcmp(packet.data(), kPacket, packet.size()));
+-}
+-
+-TEST_F(SrtpSessionTestCryptex, TestCryptexRfc9335_A_1_2) {
+-  // Test vector from RFC 9335 Appendix A.1.2:
+-  // RTP Packet with Two-Byte Header Extension
+-  const uint8_t kPacket[] = {
+-      0x90, 0x0f, 0x12, 0x36, 0xde, 0xca, 0xfb, 0xad, 0xca, 0xfe, 0xba, 0xbe,
+-      0x10, 0x00, 0x00, 0x01, 0x05, 0x02, 0x00, 0x02, 0xab, 0xab, 0xab, 0xab,
+-      0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab};
+-  const uint8_t kEncrypted[] = {
+-      0x90, 0x0f, 0x12, 0x36, 0xde, 0xca, 0xfb, 0xad, 0xca, 0xfe, 0xba, 0xbe,
+-      0xc2, 0xde, 0x00, 0x01, 0x4e, 0xd9, 0xcc, 0x4e, 0x6a, 0x71, 0x2b, 0x30,
+-      0x96, 0xc5, 0xca, 0x77, 0x33, 0x9d, 0x42, 0x04, 0xce, 0x0d, 0x77, 0x39,
+-      0x6c, 0xab, 0x69, 0x58, 0x5f, 0xbc, 0xe3, 0x81, 0x94, 0xa5};
+-
+-  EXPECT_TRUE(s1_.UseCryptex(true, true, true));
+-  EXPECT_TRUE(s1_.SetSend(kSrtpAes128CmSha1_80, kCryptexKey, {}));
+-
+-  CopyOnWriteBuffer packet(kPacket, sizeof(kPacket), sizeof(kEncrypted));
+-  EXPECT_TRUE(s1_.ProtectRtp(packet));
+-  EXPECT_THAT(packet, SizeIs(sizeof(kEncrypted)));
+-  EXPECT_EQ(0, std::memcmp(packet.data(), kEncrypted, packet.size()));
+-
+-  EXPECT_TRUE(s2_.UseCryptex(true, true, false));
+-  EXPECT_TRUE(s2_.SetReceive(kSrtpAes128CmSha1_80, kCryptexKey, {}));
+-
+-  EXPECT_TRUE(s2_.UnprotectRtp(packet));
+-  EXPECT_THAT(packet, SizeIs(sizeof(kPacket)));
+-  EXPECT_EQ(0, std::memcmp(packet.data(), kPacket, packet.size()));
+-}
+-
+-TEST_F(SrtpSessionTestCryptex, TestCryptexRfc9335_A_1_3) {
+-  // Test vector from RFC 9335 Appendix A.1.3:
+-  // RTP Packet with One-Byte Header Extension and CSRC Fields
+-  const uint8_t kPacket[] = {
+-      0x92, 0x0f, 0x12, 0x38, 0xde, 0xca, 0xfb, 0xad, 0xca, 0xfe, 0xba,
+-      0xbe, 0x00, 0x01, 0xe2, 0x40, 0x00, 0x00, 0xb2, 0x6e, 0xbe, 0xde,
+-      0x00, 0x01, 0x51, 0x00, 0x02, 0x00, 0xab, 0xab, 0xab, 0xab, 0xab,
+-      0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab};
+-  const uint8_t kEncrypted[] = {
+-      0x92, 0x0f, 0x12, 0x38, 0xde, 0xca, 0xfb, 0xad, 0xca, 0xfe, 0xba,
+-      0xbe, 0x8b, 0xb6, 0xe1, 0x2b, 0x5c, 0xff, 0x16, 0xdd, 0xc0, 0xde,
+-      0x00, 0x01, 0x92, 0x83, 0x8c, 0x8c, 0x09, 0xe5, 0x83, 0x93, 0xe1,
+-      0xde, 0x3a, 0x9a, 0x74, 0x73, 0x4d, 0x67, 0x45, 0x67, 0x13, 0x38,
+-      0xc3, 0xac, 0xf1, 0x1d, 0xa2, 0xdf, 0x84, 0x23, 0xbe, 0xe0};
+-
+-  EXPECT_TRUE(s1_.UseCryptex(true, true, true));
+-  EXPECT_TRUE(s1_.SetSend(kSrtpAes128CmSha1_80, kCryptexKey, {}));
+-
+-  CopyOnWriteBuffer packet(kPacket, sizeof(kPacket), sizeof(kEncrypted));
+-  EXPECT_TRUE(s1_.ProtectRtp(packet));
+-  EXPECT_THAT(packet, SizeIs(sizeof(kEncrypted)));
+-  EXPECT_EQ(0, std::memcmp(packet.data(), kEncrypted, packet.size()));
+-
+-  EXPECT_TRUE(s2_.UseCryptex(true, true, false));
+-  EXPECT_TRUE(s2_.SetReceive(kSrtpAes128CmSha1_80, kCryptexKey, {}));
+-
+-  EXPECT_TRUE(s2_.UnprotectRtp(packet));
+-  EXPECT_THAT(packet, SizeIs(sizeof(kPacket)));
+-  EXPECT_EQ(0, std::memcmp(packet.data(), kPacket, packet.size()));
+-}
+-
+-TEST_F(SrtpSessionTestCryptex, TestCryptexRfc9335_A_1_4) {
+-  // Test vector from RFC 9335 Appendix A.1.4:
+-  // RTP Packet with Two-Byte Header Extension and CSRC Fields
+-  const uint8_t kPacket[] = {
+-      0x92, 0x0f, 0x12, 0x39, 0xde, 0xca, 0xfb, 0xad, 0xca, 0xfe, 0xba,
+-      0xbe, 0x00, 0x01, 0xe2, 0x40, 0x00, 0x00, 0xb2, 0x6e, 0x10, 0x00,
+-      0x00, 0x01, 0x05, 0x02, 0x00, 0x02, 0xab, 0xab, 0xab, 0xab, 0xab,
+-      0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab};
+-  const uint8_t kEncrypted[] = {
+-      0x92, 0x0f, 0x12, 0x39, 0xde, 0xca, 0xfb, 0xad, 0xca, 0xfe, 0xba,
+-      0xbe, 0xf7, 0x0e, 0x51, 0x3e, 0xb9, 0x0b, 0x9b, 0x25, 0xc2, 0xde,
+-      0x00, 0x01, 0xbb, 0xed, 0x48, 0x48, 0xfa, 0xa6, 0x44, 0x66, 0x5f,
+-      0x3d, 0x7f, 0x34, 0x12, 0x59, 0x14, 0xe9, 0xf4, 0xd0, 0xae, 0x92,
+-      0x3c, 0x6f, 0x47, 0x9b, 0x95, 0xa0, 0xf7, 0xb5, 0x31, 0x33};
+-
+-  EXPECT_TRUE(s1_.UseCryptex(true, true, true));
+-  EXPECT_TRUE(s1_.SetSend(kSrtpAes128CmSha1_80, kCryptexKey, {}));
+-
+-  CopyOnWriteBuffer packet(kPacket, sizeof(kPacket), sizeof(kEncrypted));
+-  EXPECT_TRUE(s1_.ProtectRtp(packet));
+-  EXPECT_THAT(packet, SizeIs(sizeof(kEncrypted)));
+-  EXPECT_EQ(0, std::memcmp(packet.data(), kEncrypted, packet.size()));
+-
+-  EXPECT_TRUE(s2_.UseCryptex(true, true, false));
+-  EXPECT_TRUE(s2_.SetReceive(kSrtpAes128CmSha1_80, kCryptexKey, {}));
+-
+-  EXPECT_TRUE(s2_.UnprotectRtp(packet));
+-  EXPECT_THAT(packet, SizeIs(sizeof(kPacket)));
+-  EXPECT_EQ(0, std::memcmp(packet.data(), kPacket, packet.size()));
+-}
+-
+-TEST_F(SrtpSessionTestCryptex, TestCryptexRfc9335_A_1_5) {
+-  // Test vector from RFC 9335 Appendix A.1.5:
+-  // RTP Packet with Empty One-Byte Header Extension and CSRC Fields
+-  const uint8_t kPacket[] = {0x92, 0x0f, 0x12, 0x3a, 0xde, 0xca, 0xfb, 0xad,
+-                             0xca, 0xfe, 0xba, 0xbe, 0x00, 0x01, 0xe2, 0x40,
+-                             0x00, 0x00, 0xb2, 0x6e, 0xbe, 0xde, 0x00, 0x00,
+-                             0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab,
+-                             0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab};
+-  const uint8_t kEncrypted[] = {
+-      0x92, 0x0f, 0x12, 0x3a, 0xde, 0xca, 0xfb, 0xad, 0xca, 0xfe,
+-      0xba, 0xbe, 0x71, 0x30, 0xb6, 0xab, 0xfe, 0x2a, 0xb0, 0xe3,
+-      0xc0, 0xde, 0x00, 0x00, 0xe3, 0xd9, 0xf6, 0x4b, 0x25, 0xc9,
+-      0xe7, 0x4c, 0xb4, 0xcf, 0x8e, 0x43, 0xfb, 0x92, 0xe3, 0x78,
+-      0x1c, 0x2c, 0x0c, 0xea, 0xb6, 0xb3, 0xa4, 0x99, 0xa1, 0x4c};
+-
+-  EXPECT_TRUE(s1_.UseCryptex(true, true, true));
+-  EXPECT_TRUE(s1_.SetSend(kSrtpAes128CmSha1_80, kCryptexKey, {}));
+-
+-  CopyOnWriteBuffer packet(kPacket, sizeof(kPacket), sizeof(kEncrypted));
+-  EXPECT_TRUE(s1_.ProtectRtp(packet));
+-  EXPECT_THAT(packet, SizeIs(sizeof(kEncrypted)));
+-  EXPECT_EQ(0, std::memcmp(packet.data(), kEncrypted, packet.size()));
+-
+-  EXPECT_TRUE(s2_.UseCryptex(true, true, false));
+-  EXPECT_TRUE(s2_.SetReceive(kSrtpAes128CmSha1_80, kCryptexKey, {}));
+-
+-  EXPECT_TRUE(s2_.UnprotectRtp(packet));
+-  EXPECT_THAT(packet, SizeIs(sizeof(kPacket)));
+-  EXPECT_EQ(0, std::memcmp(packet.data(), kPacket, packet.size()));
+-}
+-
+-TEST_F(SrtpSessionTestCryptex, TestCryptexRfc9335_A_1_6) {
+-  // Test vector from RFC 9335 Appendix A.1.6:
+-  // RTP Packet with Empty Two-Byte Header Extension and CSRC Fields
+-  const uint8_t kPacket[] = {0x92, 0x0f, 0x12, 0x3b, 0xde, 0xca, 0xfb, 0xad,
+-                             0xca, 0xfe, 0xba, 0xbe, 0x00, 0x01, 0xe2, 0x40,
+-                             0x00, 0x00, 0xb2, 0x6e, 0x10, 0x00, 0x00, 0x00,
+-                             0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab,
+-                             0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab};
+-  const uint8_t kEncrypted[] = {
+-      0x92, 0x0f, 0x12, 0x3b, 0xde, 0xca, 0xfb, 0xad, 0xca, 0xfe,
+-      0xba, 0xbe, 0xcb, 0xf2, 0x4c, 0x12, 0x43, 0x30, 0xe1, 0xc8,
+-      0xc2, 0xde, 0x00, 0x00, 0x59, 0x9d, 0xd4, 0x5b, 0xc9, 0xd6,
+-      0x87, 0xb6, 0x03, 0xe8, 0xb5, 0x9d, 0x77, 0x1f, 0xd3, 0x8e,
+-      0x88, 0xb1, 0x70, 0xe0, 0xcd, 0x31, 0xe1, 0x25, 0xea, 0xbe};
+-
+-  EXPECT_TRUE(s1_.UseCryptex(true, true, true));
+-  EXPECT_TRUE(s1_.SetSend(kSrtpAes128CmSha1_80, kCryptexKey, {}));
+-
+-  CopyOnWriteBuffer packet(kPacket, sizeof(kPacket), sizeof(kEncrypted));
+-  EXPECT_TRUE(s1_.ProtectRtp(packet));
+-  EXPECT_THAT(packet, SizeIs(sizeof(kEncrypted)));
+-  EXPECT_EQ(0, std::memcmp(packet.data(), kEncrypted, packet.size()));
+-
+-  EXPECT_TRUE(s2_.UseCryptex(true, true, false));
+-  EXPECT_TRUE(s2_.SetReceive(kSrtpAes128CmSha1_80, kCryptexKey, {}));
+-
+-  EXPECT_TRUE(s2_.UnprotectRtp(packet));
+-  EXPECT_THAT(packet, SizeIs(sizeof(kPacket)));
+-  EXPECT_EQ(0, std::memcmp(packet.data(), kPacket, packet.size()));
+-}
+-
+-TEST_F(SrtpSessionTestCryptex, TestCryptexRequire) {
+-  // Test vector from RFC 9335 Appendix A.1.1:
+-  // RTP Packet with One-Byte Header Extension
+-  const uint8_t kPacket[] = {
+-      0x90, 0x0f, 0x12, 0x35, 0xde, 0xca, 0xfb, 0xad, 0xca, 0xfe, 0xba, 0xbe,
+-      0xbe, 0xde, 0x00, 0x01, 0x51, 0x00, 0x02, 0x00, 0xab, 0xab, 0xab, 0xab,
+-      0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab};
+-
+-  // Sender is not enabling or requiring cryptex.
+-  EXPECT_TRUE(s1_.SetSend(kSrtpAes128CmSha1_80, kCryptexKey, {}));
+-
+-  CopyOnWriteBuffer packet(kPacket, sizeof(kPacket), sizeof(kPacket) + 10);
+-  EXPECT_TRUE(s1_.ProtectRtp(packet));
+-
+-  // Sender is enabling and requiring cryptex.
+-  EXPECT_TRUE(s2_.UseCryptex(true, true, false));
+-  EXPECT_TRUE(s2_.SetReceive(kSrtpAes128CmSha1_80, kCryptexKey, {}));
+-  EXPECT_FALSE(s2_.UnprotectRtp(packet));
+-}
+-
+ }  // namespace webrtc
+diff --git a/pc/srtp_transport.cc b/pc/srtp_transport.cc
+index 669b39ff76..ae843d6110 100644
+--- a/pc/srtp_transport.cc
++++ b/pc/srtp_transport.cc
+@@ -148,28 +148,6 @@ void SrtpTransport::OnWritableState(PacketTransportInternal* packet_transport) {
+   SendWritableState(IsWritable(/*rtcp=*/false) && IsWritable(/*rtcp=*/true));
+ }
+ 
+-bool SrtpTransport::UseCryptex(bool enable, bool require) {
+-  enable_cryptex_ = enable;
+-  require_cryptex_ = require;
+-  if (send_session_) {
+-    if (!send_session_->UseCryptex(enable_cryptex_, require_cryptex_,
+-                                   /*send=*/true)) {
+-      RTC_LOG(LS_ERROR) << "Updating send session cryptex failed";
+-      return false;
+-    }
+-  }
+-  if (recv_session_) {
+-    // TODO: bugs.webrtc.org/455813732 - never disable receiving cryptex.
+-    if (!recv_session_->UseCryptex(enable_cryptex_, require_cryptex_,
+-                                   /*send=*/false)) {
+-      RTC_LOG(LS_ERROR) << "Updating recv session cryptex failed";
+-      return false;
+-    }
+-  }
+-
+-  return true;
+-}
+-
+ bool SrtpTransport::SetRtpParams(int send_crypto_suite,
+                                  const ZeroOnFreeBuffer<uint8_t>& send_key,
+                                  const std::vector<int>& send_extension_ids,
+@@ -186,11 +164,6 @@ bool SrtpTransport::SetRtpParams(int send_crypto_suite,
+     CreateSrtpSessions();
+     new_sessions = true;
+   }
+-  if (!send_session_->UseCryptex(enable_cryptex_, require_cryptex_,
+-                                 /*send=*/true)) {
+-    RTC_LOG(LS_ERROR) << "Updating send session cryptex failed";
+-    return false;
+-  }
+   bool ret = new_sessions
+                  ? send_session_->SetSend(send_crypto_suite, send_key,
+                                           send_extension_ids)
+@@ -201,11 +174,6 @@ bool SrtpTransport::SetRtpParams(int send_crypto_suite,
+     return false;
+   }
+ 
+-  if (!recv_session_->UseCryptex(enable_cryptex_, require_cryptex_,
+-                                 /*send=*/false)) {
+-    RTC_LOG(LS_ERROR) << "Updating recv session cryptex failed";
+-    return false;
+-  }
+   ret = new_sessions ? recv_session_->SetReceive(recv_crypto_suite, recv_key,
+                                                  recv_extension_ids)
+                      : recv_session_->UpdateReceive(recv_crypto_suite, recv_key,
+@@ -216,10 +184,9 @@ bool SrtpTransport::SetRtpParams(int send_crypto_suite,
+   }
+ 
+   RTC_LOG(LS_INFO) << "SRTP " << (new_sessions ? "activated" : "updated")
+-                   << " with negotiated parameters:"
+-                   << " send crypto_suite " << send_crypto_suite
+-                   << " recv crypto_suite " << recv_crypto_suite << " cryptex "
+-                   << enable_cryptex_ << "/" << require_cryptex_;
++                   << " with negotiated parameters: send crypto_suite "
++                   << send_crypto_suite << " recv crypto_suite "
++                   << recv_crypto_suite;
+   MaybeUpdateWritableState();
+   return true;
+ }
+@@ -238,29 +205,21 @@ bool SrtpTransport::SetRtcpParams(int send_crypto_suite,
+   }
+ 
+   send_rtcp_session_.reset(new SrtpSession(field_trials_));
+-  if (!send_rtcp_session_->UseCryptex(enable_cryptex_, require_cryptex_,
+-                                      /*send=*/true)) {
+-    return false;
+-  }
+   if (!send_rtcp_session_->SetSend(send_crypto_suite, send_key,
+                                    send_extension_ids)) {
+     return false;
+   }
+ 
+   recv_rtcp_session_.reset(new SrtpSession(field_trials_));
+-  if (!recv_rtcp_session_->UseCryptex(enable_cryptex_, require_cryptex_,
+-                                      /*send=*/false)) {
+-    return false;
+-  }
+   if (!recv_rtcp_session_->SetReceive(recv_crypto_suite, recv_key,
+                                       recv_extension_ids)) {
+     return false;
+   }
+ 
+   RTC_LOG(LS_INFO) << "SRTCP activated with negotiated parameters:"
+-                   << " send crypto_suite " << send_crypto_suite
+-                   << " recv crypto_suite " << recv_crypto_suite << " cryptex "
+-                   << enable_cryptex_ << "/" << require_cryptex_;
++                      " send crypto_suite "
++                   << send_crypto_suite << " recv crypto_suite "
++                   << recv_crypto_suite;
+   MaybeUpdateWritableState();
+   return true;
+ }
+diff --git a/pc/srtp_transport.h b/pc/srtp_transport.h
+index c42c1c279e..e8b10d78c0 100644
+--- a/pc/srtp_transport.h
++++ b/pc/srtp_transport.h
+@@ -55,9 +55,6 @@ class SrtpTransport : public RtpTransport {
+ 
+   bool IsWritable(bool rtcp) const override;
+ 
+-  // Enable or disable cryptex.
+-  bool UseCryptex(bool enable, bool require);
+-
+   // Create new send/recv sessions and set the negotiated crypto keys for RTP
+   // packet encryption. The keys can either come from SDES negotiation or DTLS
+   // handshake.
+@@ -131,9 +128,6 @@ class SrtpTransport : public RtpTransport {
+ 
+   int decryption_failure_count_ = 0;
+ 
+-  bool enable_cryptex_ = false;
+-  bool require_cryptex_ = false;
+-
+   const FieldTrialsView& field_trials_;
+ };
+ 
