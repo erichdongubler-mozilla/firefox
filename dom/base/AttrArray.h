@@ -25,10 +25,6 @@ struct StyleLockedDeclarationBlock;
 namespace dom {
 class Element;
 class ElementInternals;
-
-// Caller-supplied assertion that an attribute does not already exist, used
-// to skip redundant scans on the addition path.
-enum class IsKnownNewAttr : bool { No, Yes };
 }  // namespace dom
 }  // namespace mozilla
 
@@ -102,14 +98,7 @@ class AttrArray {
   // Otherwise, crash.
   const nsAttrName* GetSafeAttrNameAt(uint32_t aPos) const;
 
-  // Find an existing attribute by qualified name.
-  //
-  // When aOutAtom is non-null and no matching attribute is found, *aOutAtom
-  // is set to the atomized lookup name so callers can reuse it without
-  // re-atomizing. In all other cases (match found, or the element has no
-  // attributes), *aOutAtom is set to nullptr.
-  const nsAttrName* GetExistingAttrNameFromQName(
-      const nsAString& aName, RefPtr<nsAtom>* aOutAtom = nullptr) const;
+  const nsAttrName* GetExistingAttrNameFromQName(const nsAString& aName) const;
   int32_t IndexOfAttr(const nsAtom* aLocalName) const;
   int32_t IndexOfAttr(const nsAtom* aLocalName, int32_t aNamespaceID) const;
 
@@ -380,11 +369,9 @@ class AttrArray {
   // aValue and aHadValue will be set to false. Otherwise, aHadValue will be set
   // to true.
   nsresult SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
-                          bool* aHadValue,
-                          mozilla::dom::IsKnownNewAttr aIsKnownNew);
+                          bool* aHadValue);
   nsresult SetAndSwapAttr(mozilla::dom::NodeInfo* aName, nsAttrValue& aValue,
-                          bool* aHadValue,
-                          mozilla::dom::IsKnownNewAttr aIsKnownNew);
+                          bool* aHadValue);
 
   // mImpl serves dual purposes using pointer tagging:
   //
