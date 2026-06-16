@@ -275,6 +275,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
     [rawSelectedTeams]
   );
   const teams = useMemo(() => rawTeams ?? [], [rawTeams]);
+  const localizedNames = useLocalizedTeamNames(teams);
   const { matchesTab } = sportsWidgetData;
   const hasUserSelectedTab = useRef(false);
   // When the Now tab disappears (live games ended), the persisted `matchesTab`
@@ -1187,6 +1188,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
             teams={teams}
             initialSelectedTeams={selectedTeams}
             onSave={handleSaveSelection}
+            localizedNames={localizedNames}
           />
         )}
         {widgetState === WIDGET_STATES.MATCHES && (
@@ -1207,6 +1209,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
             handleInteraction={handleInteraction}
             selectedTeamsSet={selectedTeamsSet}
             tbdTeamName={tbdTeamName}
+            localizedNames={localizedNames}
             followedOnly={sportsWidgetData.followedOnly}
             showResultsList={showResultsList}
             setShowResultsList={setShowResultsList}
@@ -1255,10 +1258,14 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   );
 }
 
-function SportsWidgetFollowTeams({ teams, initialSelectedTeams, onSave }) {
+function SportsWidgetFollowTeams({
+  teams,
+  initialSelectedTeams,
+  onSave,
+  localizedNames,
+}) {
   const [selectedTeams, setSelectedTeams] = useState(initialSelectedTeams);
   const [searchQuery, setSearchQuery] = useState("");
-  const localizedNames = useLocalizedTeamNames(teams);
   // Eliminated teams stay in the list (shown disabled with an "(eliminated)"
   // badge) but don't count toward the 3-team cap and aren't persisted on save
   // — otherwise the user could be stuck following a team they can no longer
@@ -1420,6 +1427,7 @@ function SportsMatchesView({
   handleInteraction,
   selectedTeamsSet,
   tbdTeamName,
+  localizedNames,
   followedOnly,
   showResultsList,
   setShowResultsList,
@@ -1623,6 +1631,7 @@ function SportsMatchesView({
                           handleInteraction={handleInteraction}
                           followedTeams={selectedTeamsSet}
                           tbdTeamName={tbdTeamName}
+                          localizedNames={localizedNames}
                         />
                       </li>
                     ))}
@@ -1643,6 +1652,7 @@ function SportsMatchesView({
                   handleInteraction={handleInteraction}
                   followedTeams={selectedTeamsSet}
                   tbdTeamName={tbdTeamName}
+                  localizedNames={localizedNames}
                 />
               </div>
             </>
@@ -1696,6 +1706,7 @@ function SportsMatchesView({
                   handleInteraction={handleInteraction}
                   followedTeams={selectedTeamsSet}
                   tbdTeamName={tbdTeamName}
+                  localizedNames={localizedNames}
                 />
               </div>
               {/* TODO: Replace play icon when finalized */}
@@ -1770,6 +1781,7 @@ function SportsMatchesView({
                           handleInteraction={handleInteraction}
                           followedTeams={selectedTeamsSet}
                           tbdTeamName={tbdTeamName}
+                          localizedNames={localizedNames}
                         />
                       </li>
                     ))}
@@ -1791,6 +1803,7 @@ function SportsMatchesView({
                     handleInteraction={handleInteraction}
                     followedTeams={selectedTeamsSet}
                     tbdTeamName={tbdTeamName}
+                    localizedNames={localizedNames}
                   />
                 </div>
               </>

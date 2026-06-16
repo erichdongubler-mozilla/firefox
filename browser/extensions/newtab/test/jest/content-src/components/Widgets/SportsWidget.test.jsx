@@ -1518,6 +1518,68 @@ describe("<SportsWidget> matches view", () => {
       })
     );
   });
+
+  it("renders the localized team name in the flag title across the match list", () => {
+    // Mock the Fluent override for England as something other than "England"
+    // so the test proves the widget uses the localised name, not team.name.
+    document.l10n = {
+      formatMessages: jest.fn(async ids =>
+        ids.map(({ id }) => ({
+          value: null,
+          attributes: [
+            {
+              name: "label",
+              value:
+                id === "newtab-sports-widget-team-name-label-eng"
+                  ? "Inglaterra"
+                  : "fallback",
+            },
+          ],
+        }))
+      ),
+    };
+    const matchesData = {
+      teams: makeTeams(),
+      matches: {
+        previous: [],
+        current: [],
+        next: [
+          {
+            home_team: makeTeams().find(t => t.key === "ENG"),
+            away_team: makeTeams().find(t => t.key === "AUS"),
+            home_score: null,
+            away_score: null,
+            home_extra: null,
+            away_extra: null,
+            home_penalty: null,
+            away_penalty: null,
+            date: new Date().toISOString(),
+            status_type: "scheduled",
+            query: null,
+          },
+        ],
+      },
+      live: [],
+    };
+    const { container, findByTitle } = render(
+      <WrapWithProvider
+        state={makeState(
+          { [PREF_SPORTS_WIDGET_SIZE]: "medium" },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "upcoming",
+            data: matchesData,
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+    return findByTitle("Inglaterra").then(flag => {
+      expect(flag).toBeTruthy();
+      expect(container.querySelector("[title='England']")).toBeNull();
+    });
+  });
 });
 
 describe("<SportsWidget> keyboard accessibility", () => {

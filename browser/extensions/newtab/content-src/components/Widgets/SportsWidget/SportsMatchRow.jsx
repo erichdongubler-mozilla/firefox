@@ -72,7 +72,7 @@ function ScorePill({
 
 // Renders one side of a match row: the team flag and code, or a placeholder
 // when the team is not yet decided.
-function MatchTeam({ team, isFollowed }) {
+function MatchTeam({ team, isFollowed, localizedName }) {
   if (!team) {
     return (
       <div className="sports-match-team">
@@ -86,6 +86,7 @@ function MatchTeam({ team, isFollowed }) {
       </div>
     );
   }
+  const displayName = localizedName ?? team.name;
   return (
     <div className="sports-match-team">
       <span
@@ -94,8 +95,8 @@ function MatchTeam({ team, isFollowed }) {
         <img
           className="sports-match-flag"
           src={team.icon_url}
-          alt={team.name}
-          title={team.name}
+          alt={displayName}
+          title={displayName}
         />
         {isFollowed && (
           <span className="sports-match-flag-check" aria-hidden="true" />
@@ -145,6 +146,7 @@ function SportsMatchRow({
   handleInteraction,
   followedTeams,
   tbdTeamName = "",
+  localizedNames,
 }) {
   const dispatch = useDispatch();
   // Read the widget size pref (not `size`, which can be "list" when the
@@ -168,8 +170,12 @@ function SportsMatchRow({
   } = match;
   const isHomeFollowed = !!(home_team && followedTeams?.has(home_team.key));
   const isAwayFollowed = !!(away_team && followedTeams?.has(away_team.key));
-  const homeTeamName = home_team ? home_team.name : tbdTeamName;
-  const awayTeamName = away_team ? away_team.name : tbdTeamName;
+  const homeTeamName = home_team
+    ? (localizedNames?.[home_team.key] ?? home_team.name)
+    : tbdTeamName;
+  const awayTeamName = away_team
+    ? (localizedNames?.[away_team.key] ?? away_team.name)
+    : tbdTeamName;
   const dateTimestamp = new Date(date).getTime();
   // (developer note): Assumes home_score/away_score exclude extra time goals
   const displayHomeScore = home_score + (home_extra || 0);
@@ -382,9 +388,17 @@ function SportsMatchRow({
       })}
     >
       {/* (developer note): Replace href with SERP link. */}
-      <MatchTeam team={home_team} isFollowed={isHomeFollowed} />
+      <MatchTeam
+        team={home_team}
+        isFollowed={isHomeFollowed}
+        localizedName={localizedNames?.[home_team?.key]}
+      />
       {renderMiddle()}
-      <MatchTeam team={away_team} isFollowed={isAwayFollowed} />
+      <MatchTeam
+        team={away_team}
+        isFollowed={isAwayFollowed}
+        localizedName={localizedNames?.[away_team?.key]}
+      />
     </a>
   );
 }

@@ -680,6 +680,74 @@ describe("<SportsMatchRow> followed teams", () => {
   });
 });
 
+describe("<SportsMatchRow> localized team names", () => {
+  it("renders the localized name in the flag's title and alt when localizedName is provided", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={{ ...baseMatch }}
+        variant="results"
+        localizedNames={{
+          [baseMatch.home_team.key]: "Deutschland",
+          [baseMatch.away_team.key]: "Brasilien",
+        }}
+      />
+    );
+    const flags = container.querySelectorAll(".sports-match-flag");
+    expect(flags[0].getAttribute("title")).toBe("Deutschland");
+    expect(flags[0].getAttribute("alt")).toBe("Deutschland");
+    expect(flags[1].getAttribute("title")).toBe("Brasilien");
+    expect(flags[1].getAttribute("alt")).toBe("Brasilien");
+  });
+
+  it("falls back to team.name when localizedNames is undefined or missing a key", () => {
+    const { container: undefinedContainer } = renderWithDispatch(
+      <SportsMatchRow match={{ ...baseMatch }} variant="results" />
+    );
+    const undefinedFlags =
+      undefinedContainer.querySelectorAll(".sports-match-flag");
+    expect(undefinedFlags[0].getAttribute("title")).toBe(
+      baseMatch.home_team.name
+    );
+    expect(undefinedFlags[0].getAttribute("alt")).toBe(
+      baseMatch.home_team.name
+    );
+
+    const { container: partialContainer } = renderWithDispatch(
+      <SportsMatchRow
+        match={{ ...baseMatch }}
+        variant="results"
+        localizedNames={{ [baseMatch.home_team.key]: "Deutschland" }}
+      />
+    );
+    const partialFlags =
+      partialContainer.querySelectorAll(".sports-match-flag");
+    expect(partialFlags[0].getAttribute("title")).toBe("Deutschland");
+    expect(partialFlags[1].getAttribute("title")).toBe(
+      baseMatch.away_team.name
+    );
+    expect(partialFlags[1].getAttribute("alt")).toBe(baseMatch.away_team.name);
+  });
+
+  it("uses localized team names in the row aria-label args when localizedNames is provided", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={{ ...baseMatch }}
+        variant="results"
+        localizedNames={{
+          [baseMatch.home_team.key]: "Deutschland",
+          [baseMatch.away_team.key]: "Brasilien",
+        }}
+      />
+    );
+    const anchor = container.querySelector(".sports-match-row");
+    const argsJson = anchor.getAttribute("data-l10n-args");
+    expect(argsJson).toBeTruthy();
+    const args = JSON.parse(argsJson);
+    expect(args.homeTeam).toBe("Deutschland");
+    expect(args.awayTeam).toBe("Brasilien");
+  });
+});
+
 describe("<SportsMatchRow> flag accessibility", () => {
   it("sets alt and title on the home team flag image to the team name", () => {
     const { container } = renderWithDispatch(
