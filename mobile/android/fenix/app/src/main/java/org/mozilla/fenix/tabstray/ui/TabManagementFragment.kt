@@ -612,6 +612,7 @@ class TabManagementFragment : Fragment() {
             config = TabsTrayState.TabsTrayConfig(
                 tabGroupsEnabled = settings.tabGroupsEnabled,
                 tabGroupsDragAndDropEnabled = settings.tabGroupsDragAndDropEnabled,
+                tabGroupsLiveReorderEnabled = settings.tabGroupsLiveReorderEnabled,
                 tabGroupsOnboardingEnabled = settings.tabGroupsOnboardingEnabled,
                 displayTabsInGrid = settings.gridTabView,
                 isInDebugMode = Config.channel.isDebug || requireComponents.settings.showSecretDebugMenuThisSession,

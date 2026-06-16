@@ -428,6 +428,12 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tab_groups_live_reorder).apply {
+            isVisible = Config.channel.isNightlyOrDebug
+            isChecked = settings.tabGroupsLiveReorderEnabled
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tab_groups_onboarding).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.components.settings.tabGroupsOnboardingEnabled

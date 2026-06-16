@@ -7,6 +7,7 @@ package org.mozilla.fenix.tabstray.redux.state
 import mozilla.components.lib.state.State
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Companion.MIN_TABS_FOR_TAB_GROUP_ONBOARDING
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 
 /**
@@ -180,6 +181,7 @@ data class TabsTrayState(
      * @property tabGroupsEnabled Whether the Tab Groups feature is enabled.
      * @property tabGroupsDragAndDropEnabled:  Whether drag and drop is enabled for Tab Groups.
      * @property tabGroupsOnboardingEnabled Whether the onboarding card for Tab Groups is enabled.
+     * @property tabGroupsLiveReorderEnabled Whether or not to enable live reorder for Tab Groups drag and drop.
      * @property isInDebugMode Whether the app is in a debug state or has secret menu enabled.
      * @property showTabAutoCloseBanner Whether the banner for the tab auto-closer feature is visible.
      */
@@ -188,6 +190,7 @@ data class TabsTrayState(
         val tabGroupsEnabled: Boolean = false,
         val tabGroupsDragAndDropEnabled: Boolean = false,
         val tabGroupsOnboardingEnabled: Boolean = false,
+        val tabGroupsLiveReorderEnabled: Boolean = false,
         val isInDebugMode: Boolean = false,
         val showTabAutoCloseBanner: Boolean = false,
     )
