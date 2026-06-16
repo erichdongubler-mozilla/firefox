@@ -64,8 +64,8 @@ const BASE_MESSAGES = () => [
   {
     id: "MENU_MESSAGE_DEFAULT_CTA_ILLUSTRATION_LAYOUT",
     template: "menu_message",
-    layout: "column",
     content: {
+      layout: "column",
       messageType: "default_cta",
       imageURL:
         "chrome://browser/content/asrouter/assets/fox-with-checkmark.svg",
@@ -98,7 +98,7 @@ const BASE_MESSAGES = () => [
       },
     },
     targeting:
-      "source == 'app_menu' && os.isWindows && os.windowsVersion >= 10 && !isDefaultBrowserUncached && !hasActiveEnterprisePolicies && 'browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features' | preferenceValue != false",
+      "'browser.nova.enabled'|preferenceValue != true && source == 'app_menu' && os.isWindows && os.windowsVersion >= 10 && !isDefaultBrowserUncached && !hasActiveEnterprisePolicies && 'browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features' | preferenceValue != false",
     trigger: {
       id: "menuOpened",
     },
@@ -108,8 +108,8 @@ const BASE_MESSAGES = () => [
   {
     id: "MENU_MESSAGE_DEFAULT_CTA_ILLUSTRATION_LAYOUT",
     template: "menu_message",
-    layout: "column",
     content: {
+      layout: "column",
       imageURL:
         "chrome://browser/content/asrouter/assets/fox-with-checkmark.svg",
       imageWidth: 68,
@@ -145,7 +145,104 @@ const BASE_MESSAGES = () => [
       },
     },
     targeting:
-      "source == 'app_menu' && os.isMac && !isDefaultBrowserUncached && !hasActiveEnterprisePolicies && 'browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features' | preferenceValue != false",
+      "'browser.nova.enabled'|preferenceValue != true && source == 'app_menu' && os.isMac && !isDefaultBrowserUncached && !hasActiveEnterprisePolicies && 'browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features' | preferenceValue != false",
+    trigger: {
+      id: "menuOpened",
+    },
+    groups: [],
+    skip_in_tests: "it's covered by browser_asrouter_menu_messages.js",
+  },
+  // Nova variant of MENU_MESSAGE_DEFAULT_CTA messaging:
+  {
+    id: "MENU_MESSAGE_DEFAULT_CTA_ILLUSTRATION_LAYOUT",
+    template: "menu_message",
+    content: {
+      layout: "split",
+      imageURL: "chrome://browser/content/asrouter/assets/kit-checkmark.svg",
+      rtlImageURL:
+        "chrome://browser/content/asrouter/assets/kit-checkmark-flipped.svg",
+      imageWidth: 92,
+      imageVerticalTopOffset: -16,
+      messageType: "default_cta",
+      primaryText: {
+        string_id: "set-default-menu-message-row-layout-title",
+      },
+      secondaryText: {
+        string_id: "set-default-menu-message-row-layout-subtitle",
+      },
+      primaryActionText: {
+        string_id: "set-default-menu-message-primary-button-variant",
+      },
+      primaryAction: {
+        type: "MULTI_ACTION",
+        data: {
+          actions: [
+            {
+              type: "SET_DEFAULT_BROWSER",
+            },
+            {
+              type: "PIN_FIREFOX_TO_TASKBAR",
+            },
+          ],
+        },
+      },
+      closeAction: {
+        type: "BLOCK_MESSAGE",
+        data: {
+          id: "MENU_MESSAGE_DEFAULT_CTA_ILLUSTRATION_LAYOUT",
+        },
+      },
+    },
+    targeting:
+      "'browser.nova.enabled'|preferenceValue == true && source == 'app_menu' && os.isWindows && os.windowsVersion >= 10 && !isDefaultBrowserUncached && !hasActiveEnterprisePolicies && 'browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features'| preferenceValue != false",
+    trigger: {
+      id: "menuOpened",
+    },
+    groups: [],
+    skip_in_tests: "it's covered by browser_asrouter_menu_messages.js",
+  },
+  {
+    id: "MENU_MESSAGE_DEFAULT_CTA_ILLUSTRATION_LAYOUT",
+    template: "menu_message",
+    content: {
+      layout: "split",
+      imageURL: "chrome://browser/content/asrouter/assets/kit-checkmark.svg",
+      rtlImageURL:
+        "chrome://browser/content/asrouter/assets/kit-checkmark-flipped.svg",
+      imageWidth: 92,
+      imageVerticalTopOffset: -16,
+      messageType: "default_cta",
+      primaryText: {
+        string_id: "set-default-menu-message-row-layout-title",
+      },
+      secondaryText: {
+        string_id: "set-default-menu-message-row-layout-subtitle-variant",
+      },
+      primaryActionText: {
+        string_id: "set-default-menu-message-primary-button-variant",
+      },
+      primaryAction: {
+        type: "MULTI_ACTION",
+        data: {
+          actions: [
+            {
+              type: "SET_DEFAULT_BROWSER",
+            },
+            {
+              type: "PIN_FIREFOX_TO_TASKBAR",
+            },
+          ],
+        },
+      },
+      closeAction: {
+        type: "BLOCK_MESSAGE",
+        data: {
+          id: "MENU_MESSAGE_DEFAULT_CTA_ILLUSTRATION_LAYOUT",
+        },
+      },
+    },
+    targeting:
+      "'browser.nova.enabled'|preferenceValue == true && source == 'app_menu' && os.isMac && !isDefaultBrowserUncached && !hasActiveEnterprisePolicies && 'browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features'| preferenceValue != false",
     trigger: {
       id: "menuOpened",
     },

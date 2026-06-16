@@ -48,6 +48,8 @@ var gExceptionPaths = [
   "chrome://browser/content/asrouter/assets/desktop-to-mobile-non-eu-QR.svg",
   "chrome://browser/content/asrouter/assets/desktop-to-mobile-eu-QR.svg",
   "chrome://activity-stream/content/data/content/assets/fox-doodle-backup-restore.svg",
+  "chrome://browser/content/asrouter/assets/kit-peek-bottom.svg",
+  "chrome://browser/content/asrouter/assets/kit-peek.svg",
 
   // toolkit/components/pdfjs/content/build/pdf.js
   "resource://pdf.js/web/images/",

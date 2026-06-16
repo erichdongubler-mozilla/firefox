@@ -40,3 +40,7 @@ browser.jar:
   content/browser/asrouter/assets/subtract-16.svg                        (content/assets/subtract-16.svg)
   content/browser/asrouter/assets/fox-with-checkmark.svg                 (content/assets/fox-with-checkmark.svg)
   content/browser/asrouter/assets/hero-relay-email-masks.svg            (content/assets/hero-relay-email-masks.svg)
+  content/browser/asrouter/assets/kit-checkmark.svg                 (content/assets/kit-checkmark.svg)
+  content/browser/asrouter/assets/kit-checkmark-flipped.svg                 (content/assets/kit-checkmark-flipped.svg)
+  content/browser/asrouter/assets/kit-peek-bottom.svg                 (content/assets/kit-peek-bottom.svg)
+  content/browser/asrouter/assets/kit-peek.svg                 (content/assets/kit-peek.svg)
