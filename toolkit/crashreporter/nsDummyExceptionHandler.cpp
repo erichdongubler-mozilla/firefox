@@ -14,7 +14,7 @@ void AnnotatePendingIPC(size_t aNumOfPendingIPC, uint32_t aTopPendingIPCCount,
                         const char* aTopPendingIPCName,
                         uint32_t aTopPendingIPCType) {}
 
-nsresult OOPInit(nsIFile* aXREDirectory, bool force /*=false*/) {
+nsresult OOPInit(nsIFile* aXREDirectory) {
   return nsresult::NS_ERROR_NOT_AVAILABLE;
 }
 
@@ -37,8 +37,6 @@ nsresult SetupExtraData(nsIFile* aAppDataDirectory, nsIFile* aXreDirectory) {
 }
 
 nsresult UnsetExceptionHandler() { return NS_ERROR_NOT_IMPLEMENTED; }
-
-uint32_t GetCrashHelperPid() { return 0; }
 
 const bool* RegisterAnnotationBool(Annotation aKey, const bool* aData) {
   return nullptr;
