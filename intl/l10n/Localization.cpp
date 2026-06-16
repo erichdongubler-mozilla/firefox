@@ -12,7 +12,6 @@
 #include "mozilla/dom/PromiseNativeHandler.h"
 
 #define INTL_APP_LOCALES_CHANGED "intl:app-locales-changed"
-#define INTL_L10N_SOURCES_CHANGED "intl:l10n-sources-changed"
 #define L10N_PSEUDO_PREF "intl.l10n.pseudo"
 
 using namespace mozilla;
@@ -222,8 +221,7 @@ Localization::~Localization() = default;
 NS_IMETHODIMP
 Localization::Observe(nsISupports* aSubject, const char* aTopic,
                       const char16_t* aData) {
-  if (!strcmp(aTopic, INTL_APP_LOCALES_CHANGED) ||
-      !strcmp(aTopic, INTL_L10N_SOURCES_CHANGED)) {
+  if (!strcmp(aTopic, INTL_APP_LOCALES_CHANGED)) {
     OnChange();
   } else {
     MOZ_ASSERT(!strcmp("nsPref:changed", aTopic));
@@ -243,7 +241,6 @@ void Localization::RegisterObservers() {
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
   if (obs) {
     obs->AddObserver(this, INTL_APP_LOCALES_CHANGED, true);
-    obs->AddObserver(this, INTL_L10N_SOURCES_CHANGED, true);
   }
 }
 
