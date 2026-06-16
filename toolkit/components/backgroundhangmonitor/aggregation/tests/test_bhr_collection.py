@@ -12,7 +12,6 @@ import datetime
 import json
 import os
 import sys
-from unittest.mock import MagicMock
 
 import mozunit
 
@@ -131,13 +130,49 @@ def test_query_sql_targets_the_glean_hang_report_table():
     assert "moz-fx-data-shared-prod.firefox_desktop_stable.hang_report_v1" in sql
 
 
+def test_query_sql_filters_build_date_in_sql():
+    # The build-date window is filtered server-side (on app_build's leading
+    # YYYYMMDD), not in Python.
+    sql = bhr_collection.build_query_sql(
+        datetime.date(2026, 5, 1), datetime.date(2026, 5, 7), 100
+    )
+    assert (
+        "SUBSTR(client_info.app_build, 1, 8) BETWEEN '20260501' AND '20260507'" in sql
+    )
+
+
+def test_query_sql_does_not_select_unused_ping_info():
+    sql = bhr_collection.build_query_sql(
+        datetime.date(2026, 5, 1), datetime.date(2026, 5, 1), 1
+    )
+    assert "ping_info" not in sql
+
+
+def test_query_sql_selects_only_needed_nested_fields():
+    # Only the handful of fields the pipeline reads are selected (not the whole
+    # client_info/metrics records), rebuilt as STRUCTs that keep the nested
+    # client_info.<f> / metrics.object.<f> shape get_prop walks.
+    sql = bhr_collection.build_query_sql(
+        datetime.date(2026, 5, 1), datetime.date(2026, 5, 1), 1
+    )
+    for field in (
+        "client_info.os AS os",
+        "client_info.os_version AS os_version",
+        "client_info.architecture AS architecture",
+        "client_info.app_build AS app_build",
+        "metrics.object.hangs_modules AS hangs_modules",
+        "metrics.object.hangs_reports AS hangs_reports",
+    ):
+        assert field in sql
+
+
 # --- get_data end-to-end with mocked BQ client -----------------------------
 
 
 def _make_row(os_name, os_version, arch, app_build, hangs_reports, hangs_modules=""):
     """Build a fake BQ row as a nested dict — same shape google-cloud-bigquery
-    returns for our SELECT (top-level columns are client_info, ping_info,
-    metrics; each is a nested record/dict)."""
+    returns for our SELECT (top-level columns are client_info and metrics, each
+    a nested record/dict)."""
     return {
         "client_info": {
             "os": os_name,
@@ -145,7 +180,6 @@ def _make_row(os_name, os_version, arch, app_build, hangs_reports, hangs_modules
             "architecture": arch,
             "app_build": app_build,
         },
-        "ping_info": {},
         "metrics": {
             "object": {
                 "hangs_reports": hangs_reports,
@@ -156,10 +190,11 @@ def _make_row(os_name, os_version, arch, app_build, hangs_reports, hangs_modules
 
 
 def _install_fake_client(monkeypatch, rows):
-    fake_client = MagicMock()
-    fake_client.query.return_value.result.return_value = iter(rows)
-    monkeypatch.setattr(bhr_collection, "_make_client", lambda _project: fake_client)
-    return fake_client
+    # _query_bigquery is the single BigQuery touchpoint; stub it to return our
+    # fake rows so the tests stay offline and don't need google-cloud-bigquery.
+    monkeypatch.setattr(
+        bhr_collection, "_query_bigquery", lambda sql, billing_project: iter(rows)
+    )
 
 
 def test_get_data_yields_ping_for_valid_row_in_build_window(monkeypatch):
@@ -199,57 +234,44 @@ def test_get_data_drops_rows_with_missing_required_fields(monkeypatch):
     assert len(pings) == 1
 
 
-def test_get_data_drops_rows_outside_build_date_range(monkeypatch):
-    rows = [
-        # In range — build_date starts with 20260501.
-        _make_row("Linux", "5.10", "x86_64", "20260501123456", "[]"),
-        # Too early.
-        _make_row("Linux", "5.10", "x86_64", "20260101000000", "[]"),
-        # Too late.
-        _make_row("Linux", "5.10", "x86_64", "20271231235959", "[]"),
-    ]
-    _install_fake_client(monkeypatch, rows)
+def _capture_sql(monkeypatch):
+    """Stub _query_bigquery, recording the SQL it's handed (returns no rows).
 
-    pings = list(
-        bhr_collection.get_data(
-            date=datetime.date(2026, 5, 1),
-            sample_size=0.001,
-            billing_project="test-project",
-        )
-    )
-    assert len(pings) == 1
-    assert pings[0]["client_info/app_build"] == "20260501123456"
+    Build-date filtering lives only in the SQL, so get_data's date handling is
+    verified by checking the query it builds rather than by filtering rows.
+    """
+    captured = {}
+
+    def fake_query(sql, billing_project):
+        captured["sql"] = sql
+        return iter([])
+
+    monkeypatch.setattr(bhr_collection, "_query_bigquery", fake_query)
+    return captured
 
 
 def test_get_data_default_end_date_is_same_as_start(monkeypatch):
-    # When end_date isn't passed, the build window collapses to one day.
-    rows = [
-        _make_row("Linux", "5.10", "x86_64", "20260501010000", "[]"),
-        # Next day — should be dropped because end_date == date.
-        _make_row("Linux", "5.10", "x86_64", "20260502010000", "[]"),
-    ]
-    _install_fake_client(monkeypatch, rows)
+    # When end_date isn't passed, the build window collapses to one day, which
+    # is what the SQL build-date filter should use.
+    captured = _capture_sql(monkeypatch)
 
-    pings = list(
+    list(
         bhr_collection.get_data(
             date=datetime.date(2026, 5, 1),
             sample_size=0.001,
             billing_project="test-project",
         )
     )
-    assert len(pings) == 1
+    assert (
+        "SUBSTR(client_info.app_build, 1, 8) BETWEEN '20260501' AND '20260501'"
+        in captured["sql"]
+    )
 
 
 def test_get_data_explicit_end_date_widens_window(monkeypatch):
-    rows = [
-        _make_row("Linux", "5.10", "x86_64", "20260501010000", "[]"),
-        _make_row("Linux", "5.10", "x86_64", "20260502010000", "[]"),
-        # Outside window.
-        _make_row("Linux", "5.10", "x86_64", "20260601010000", "[]"),
-    ]
-    _install_fake_client(monkeypatch, rows)
+    captured = _capture_sql(monkeypatch)
 
-    pings = list(
+    list(
         bhr_collection.get_data(
             date=datetime.date(2026, 5, 1),
             end_date=datetime.date(2026, 5, 2),
@@ -257,7 +279,10 @@ def test_get_data_explicit_end_date_widens_window(monkeypatch):
             billing_project="test-project",
         )
     )
-    assert len(pings) == 2
+    assert (
+        "SUBSTR(client_info.app_build, 1, 8) BETWEEN '20260501' AND '20260502'"
+        in captured["sql"]
+    )
 
 
 def test_get_data_exclude_modules_omits_hangs_modules_property(monkeypatch):
@@ -289,16 +314,14 @@ def test_get_data_exclude_modules_omits_hangs_modules_property(monkeypatch):
     assert "metrics/object/hangs_modules" not in pings[0]
 
 
-def test_get_data_passes_billing_project_to_client(monkeypatch):
+def test_get_data_passes_billing_project_to_query(monkeypatch):
     captured = {}
 
-    def fake_make_client(project):
-        captured["project"] = project
-        client = MagicMock()
-        client.query.return_value.result.return_value = iter([])
-        return client
+    def fake_query(sql, billing_project):
+        captured["billing_project"] = billing_project
+        return iter([])
 
-    monkeypatch.setattr(bhr_collection, "_make_client", fake_make_client)
+    monkeypatch.setattr(bhr_collection, "_query_bigquery", fake_query)
 
     list(
         bhr_collection.get_data(
@@ -307,7 +330,7 @@ def test_get_data_passes_billing_project_to_client(monkeypatch):
             billing_project="my-bill-here",
         )
     )
-    assert captured["project"] == "my-bill-here"
+    assert captured["billing_project"] == "my-bill-here"
 
 
 def test_get_data_is_lazy_generator(monkeypatch):
@@ -322,9 +345,9 @@ def test_get_data_is_lazy_generator(monkeypatch):
             rows_seen.append(row)
             yield row
 
-    fake_client = MagicMock()
-    fake_client.query.return_value.result.return_value = make_iterator()
-    monkeypatch.setattr(bhr_collection, "_make_client", lambda _project: fake_client)
+    monkeypatch.setattr(
+        bhr_collection, "_query_bigquery", lambda sql, billing_project: make_iterator()
+    )
 
     gen = bhr_collection.get_data(
         date=datetime.date(2026, 5, 1),
@@ -773,38 +796,6 @@ def test_aggregate_end_to_end_offline(monkeypatch, tmp_path):
     # The written file round-trips to the same profile.
     with open(tmp_path / "hangs_main_current.json") as f:
         assert json.load(f)["usageHoursByDate"] == {"20260502": 1.0}
-
-
-def test_aggregate_drops_pings_outside_build_window(monkeypatch, tmp_path):
-    import symbolication
-
-    hang = {
-        "thread": "Gecko",
-        "process": "main",
-        "duration": 500,
-        "stack": [{"frame": "1000", "module": 0}],
-        "annotations": [],
-    }
-    # app_build is 20260101 but we aggregate for 20260502 -> dropped by the
-    # build-date filter in get_data, so no threads come out.
-    row = _make_row(
-        "Linux",
-        "5.10",
-        "x86_64",
-        "20260101000000",
-        json.dumps([hang]),
-        json.dumps([["xul.pdb", "ABC"]]),
-    )
-    _install_fake_client(monkeypatch, [row])
-    monkeypatch.setattr(symbolication, "fetch_url", lambda _url: (False, ""))
-
-    profile = bhr_collection.aggregate(
-        date=datetime.date(2026, 5, 2),
-        sample_size=0.001,
-        billing_project="test-project",
-        output_dir=str(tmp_path),
-    )
-    assert profile["threads"] == []
 
 
 if __name__ == "__main__":

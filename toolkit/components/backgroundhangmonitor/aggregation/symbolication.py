@@ -21,11 +21,23 @@ import gzip
 import urllib.parse
 import urllib.request
 from bisect import bisect
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import BytesIO
 
 UNSYMBOLICATED = "<unsymbolicated>"
 SYMBOL_TRUNCATE_LENGTH = 200
+
+# Per-socket timeout for symbol-server requests. urlopen with no timeout blocks
+# forever on a stalled connection, which deadlocks the whole thread pool (one
+# stuck worker never returns, so symbolicate_modules never completes). The
+# timeout fires only when a connection delivers no data for this long, so a
+# slow-but-progressing download of a large .sym isn't affected; a genuinely
+# stalled connection raises, gets retried, and finally falls back to
+# unsymbolicated.
+_FETCH_TIMEOUT_SECONDS = 60
+
+# How often symbolicate_modules prints progress, so a long run is legible.
+_SYMBOLICATE_PROGRESS_EVERY = 500
 
 
 def make_sym_map(data, url=None):
@@ -107,7 +119,9 @@ def get_file_url(module, config):
 def fetch_url(url):
     result = False, ""
     try:
-        with contextlib.closing(urllib.request.urlopen(url)) as response:
+        with contextlib.closing(
+            urllib.request.urlopen(url, timeout=_FETCH_TIMEOUT_SECONDS)
+        ) as response:
             response_code = response.getcode()
             if response_code == 404:
                 return False, ""
@@ -119,7 +133,9 @@ def fetch_url(url):
 
     if not result[0]:
         try:
-            with contextlib.closing(urllib.request.urlopen(url)) as response:
+            with contextlib.closing(
+                urllib.request.urlopen(url, timeout=_FETCH_TIMEOUT_SECONDS)
+            ) as response:
                 response_code = response.getcode()
                 if response_code == 404:
                     return False, ""
@@ -164,6 +180,7 @@ def process_module(module, offsets, config):
 
     if success:
         sorted_keys, sym_map = make_sym_map(response, file_url)
+        response = None
         if not sym_map:
             print(f"Warning: Empty sym map from {file_url}; treating as failure")
             success = False
@@ -217,13 +234,24 @@ def symbolicate_modules(frames_by_module, config, max_workers=16):
     if not frames_by_module:
         return {}
 
+    total = len(frames_by_module)
     result = {}
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = [
             executor.submit(process_module, module, list(offsets), config)
             for module, offsets in frames_by_module.items()
         ]
-        for future in futures:
+        # Collect in completion order (not submission order) so progress
+        # reflects work actually finishing, and one slow module doesn't make
+        # the whole phase look stalled. Result keys are unique per module, so
+        # ordering doesn't affect the output.
+        for done, future in enumerate(as_completed(futures), 1):
             for key, value in future.result():
                 result[key] = value
+            if done % _SYMBOLICATE_PROGRESS_EVERY == 0 or done == total:
+                print(
+                    f"  ...symbolicated {done}/{total} modules "
+                    f"({len(result)} frames resolved)",
+                    flush=True,
+                )
     return result

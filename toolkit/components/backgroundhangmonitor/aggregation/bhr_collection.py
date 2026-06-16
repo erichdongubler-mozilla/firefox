@@ -34,6 +34,21 @@ from symbolication import UNSYMBOLICATED, symbolicate_modules
 _BQ_TABLE = "moz-fx-data-shared-prod.firefox_desktop_stable.hang_report_v1"
 _MAX_SAMPLE_SLICES = 10000
 
+# Project/dataset where query results are materialized before being read back.
+# Large result sets cannot be returned inline, so the query writes to a temp
+# table here first. We pin this to mozdata.tmp (independent of the billing
+# project) to match the old job, which always materialized to mozdata.tmp while
+# billing the query to a separately configured project.
+_MATERIALIZATION_PROJECT = "mozdata"
+_MATERIALIZATION_DATASET = "tmp"
+# Lifetime of the temp result table. Set as an OPTION at table-creation time so
+# it applies even if this process dies before it can clean anything up.
+_MATERIALIZATION_EXPIRY_HOURS = 6
+
+# How often to print a heartbeat while streaming rows, so a long production run
+# visibly makes progress instead of sitting silent.
+_PROGRESS_EVERY_ROWS = 10000
+
 # Pipeline defaults. The production CLI in python_mozetl overrode the stale
 # 16000 upper bound with 65536, so we use that here for parity. uuid is added
 # fresh per run in aggregate().
@@ -125,33 +140,88 @@ def build_query_sql(date, end_date, sample_slices):
 
     Exposed (rather than inlined into get_data) so tests can verify the
     SQL shape without mocking the BQ client.
+
+    The submission window is the build-date window padded by 5 days on each
+    side (a build's pings keep arriving for a few days). The build-date filter
+    itself is done here in SQL rather than in Python: the old python_mozetl job
+    fetched the whole submission window and filtered build dates client-side,
+    which means streaming ~10 days of builds just to keep one day's worth.
+    Filtering in SQL cuts the result set (and the runtime) by roughly that
+    factor.
+
+    Only the handful of fields the pipeline actually reads are selected, not the
+    whole client_info/metrics records (metrics in particular is large). They're
+    rebuilt as STRUCTs so the rows keep the same nested shape get_prop expects
+    (client_info.os, metrics.object.hangs_reports, ...).
     """
     submission_start = date - timedelta(days=5)
     submission_end = end_date + timedelta(days=5)
+    date_str = date.strftime("%Y%m%d")
+    end_date_str = end_date.strftime("%Y%m%d")
     return f"""
     SELECT
-      client_info,
-      ping_info,
-      metrics
+      STRUCT(
+        client_info.os AS os,
+        client_info.os_version AS os_version,
+        client_info.architecture AS architecture,
+        client_info.app_build AS app_build
+      ) AS client_info,
+      STRUCT(
+        STRUCT(
+          metrics.object.hangs_modules AS hangs_modules,
+          metrics.object.hangs_reports AS hangs_reports
+        ) AS object
+      ) AS metrics
     FROM
       `{_BQ_TABLE}`
     WHERE
       -- Use document_id to sample
       ABS(MOD(FARM_FINGERPRINT(document_id), {_MAX_SAMPLE_SLICES})) < {sample_slices}
       AND submission_timestamp BETWEEN '{submission_start}' AND '{submission_end}'
+      -- Keep only pings whose build date is in the requested window. app_build
+      -- starts with YYYYMMDD; compare those first 8 characters.
+      AND SUBSTR(client_info.app_build, 1, 8) BETWEEN '{date_str}' AND '{end_date_str}'
     """
 
 
-def _make_client(billing_project):
-    """Construct a google-cloud-bigquery client. This replaces the legacy PySpark.
+def _query_bigquery(sql, billing_project):
+    """Run sql against BigQuery and return an iterator over the result rows.
 
-    Imported lazily so the rest of this module can be imported without
-    google-cloud-bigquery installed (useful for unit tests, which mock the
-    client). Production runs need the package available.
+    Selecting production-scale results back inline fails with "Response too
+    large to return" (BigQuery's getQueryResults path is capped). So instead of
+    selecting rows directly, we wrap the query in a CREATE OR REPLACE TABLE ...
+    AS SELECT that writes the rows to a temp table, then read that table with
+    list_rows (paginated tabledata.list) so memory stays bounded.
+
+    Because the job is a CREATE TABLE statement, query_job.result() returns an
+    empty result (the rows went to the table, not inline), so it is safe to
+    block on and never hits the large-result limit.
+
+    The table is created with OPTIONS(expiration_timestamp=...), so BigQuery
+    reclaims it on schedule even if this process is killed right afterwards (and
+    the mozdata.tmp dataset has a default expiration as a further backstop).
+
+    google-cloud-bigquery is imported lazily and this whole function is the
+    single BigQuery touchpoint, so the module imports without the package and
+    unit tests can stub it.
     """
     from google.cloud import bigquery
 
-    return bigquery.Client(project=billing_project)
+    client = bigquery.Client(project=billing_project)
+    destination = (
+        f"{_MATERIALIZATION_PROJECT}.{_MATERIALIZATION_DATASET}"
+        f".bhr_aggregate_{uuid.uuid4().hex}"
+    )
+    create_table_sql = (
+        f"CREATE OR REPLACE TABLE `{destination}`\n"
+        f"OPTIONS (expiration_timestamp = TIMESTAMP_ADD("
+        f"CURRENT_TIMESTAMP(), INTERVAL {_MATERIALIZATION_EXPIRY_HOURS} HOUR))\n"
+        f"AS\n{sql}"
+    )
+    query_job = client.query(create_table_sql)
+    print(f"BigQuery job {query_job.job_id} writing to {destination}", flush=True)
+    query_job.result()  # Block until the table is built; empty result, raises on failure.
+    return client.list_rows(destination)
 
 
 def get_data(date, sample_size, billing_project, end_date=None, exclude_modules=False):
@@ -172,31 +242,27 @@ def get_data(date, sample_size, billing_project, end_date=None, exclude_modules=
     if end_date is None:
         end_date = date
 
-    date_str = date.strftime("%Y%m%d")
-    end_date_str = end_date.strftime("%Y%m%d")
-
     sample_slices = compute_sample_slices(sample_size)
     sql = build_query_sql(date, end_date, sample_slices)
     properties = _properties_for(exclude_modules)
 
-    client = _make_client(billing_project)
-    query_job = client.query(sql)
-
+    # The build-date window is filtered in SQL (see build_query_sql), so every
+    # row that comes back is already in-window. Here we only drop rows that are
+    # missing a required field.
     total = 0
     kept = 0
-    for row in query_job.result():
+    for row in _query_bigquery(sql, billing_project):
         total += 1
+        if total % _PROGRESS_EVERY_ROWS == 0:
+            print(f"  ...read {total:,} rows ({kept:,} kept)", flush=True)
         ping = get_ping_properties(row, properties)
         if not properties_are_not_none(ping, properties):
-            continue
-        build_date = ping["client_info/app_build"][:8]
-        if build_date < date_str or build_date > end_date_str:
             continue
         kept += 1
         yield ping
 
-    print(f"{total} results total")
-    print(f"{kept} results after build-date filter")
+    print(f"{total} results total", flush=True)
+    print(f"{kept} results after field filter", flush=True)
 
 
 def collect_offsets_by_module(hangs):
