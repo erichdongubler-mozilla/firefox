@@ -47,7 +47,7 @@ void MediaDrmCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
           NS_ConvertUTF16toUTF8(aTopLevelOrigin).get(),
           NS_ConvertUTF16toUTF8(aName).get());
 
-  GetEMEOriginID(mKeys->GetPrincipal())
+  GetEMEOriginID(mKeys->GetStoragePrincipal())
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
           [self = RefPtr{this}, aPromiseId](
