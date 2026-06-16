@@ -17,10 +17,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/bc8a96604aaa6f1fb
  6 files changed, 23 insertions(+), 24 deletions(-)
 
 diff --git a/audio/audio_receive_stream.cc b/audio/audio_receive_stream.cc
-index 959fab1e9d..6a6d6af3d6 100644
+index 157504b506..d35cf141e6 100644
 --- a/audio/audio_receive_stream.cc
 +++ b/audio/audio_receive_stream.cc
-@@ -93,7 +93,7 @@ std::unique_ptr<voe::ChannelReceiveInterface> CreateChannelReceive(
+@@ -94,7 +94,7 @@ std::unique_ptr<voe::ChannelReceiveInterface> CreateChannelReceive(
        config.jitter_buffer_min_delay_ms, config.enable_non_sender_rtt,
        config.decoder_factory, std::move(config.frame_decryptor),
        config.crypto_options, std::move(config.frame_transformer),
@@ -30,7 +30,7 @@ index 959fab1e9d..6a6d6af3d6 100644
  }  // namespace
  
 diff --git a/audio/channel_receive.cc b/audio/channel_receive.cc
-index 7ae8ca9f57..43ea82e4c5 100644
+index 7f2826c3ea..8f29b7a07e 100644
 --- a/audio/channel_receive.cc
 +++ b/audio/channel_receive.cc
 @@ -158,7 +158,8 @@ class ChannelReceive : public ChannelReceiveInterface,
@@ -86,10 +86,10 @@ index 7ae8ca9f57..43ea82e4c5 100644
  
  }  // namespace voe
 diff --git a/audio/channel_receive.h b/audio/channel_receive.h
-index 6240bf2ca3..94f9fc9d48 100644
+index 7881277ebb..26ed76d6a9 100644
 --- a/audio/channel_receive.h
 +++ b/audio/channel_receive.h
-@@ -185,7 +185,8 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
+@@ -186,7 +186,8 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
      scoped_refptr<FrameDecryptorInterface> frame_decryptor,
      const webrtc::CryptoOptions& crypto_options,
      scoped_refptr<FrameTransformerInterface> frame_transformer,

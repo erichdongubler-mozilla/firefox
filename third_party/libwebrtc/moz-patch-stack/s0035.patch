@@ -20,10 +20,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d0b311007c033e838
  11 files changed, 58 insertions(+), 9 deletions(-)
 
 diff --git a/audio/audio_receive_stream.cc b/audio/audio_receive_stream.cc
-index b5c0496156..ab8c8a61b5 100644
+index 72c4ab9062..984f6b9721 100644
 --- a/audio/audio_receive_stream.cc
 +++ b/audio/audio_receive_stream.cc
-@@ -59,6 +59,8 @@ std::string AudioReceiveStreamInterface::Config::Rtp::ToString() const {
+@@ -60,6 +60,8 @@ std::string AudioReceiveStreamInterface::Config::Rtp::ToString() const {
       << (rtcp_mode == RtcpMode::kCompound
               ? "compound"
               : (rtcp_mode == RtcpMode::kReducedSize ? "reducedSize" : "off"));
@@ -32,7 +32,7 @@ index b5c0496156..ab8c8a61b5 100644
    ss << '}';
    return ss.Release();
  }
-@@ -90,7 +92,8 @@ std::unique_ptr<voe::ChannelReceiveInterface> CreateChannelReceive(
+@@ -91,7 +93,8 @@ std::unique_ptr<voe::ChannelReceiveInterface> CreateChannelReceive(
        config.jitter_buffer_max_packets, config.jitter_buffer_fast_accelerate,
        config.jitter_buffer_min_delay_ms, config.enable_non_sender_rtt,
        config.decoder_factory, std::move(config.frame_decryptor),
@@ -43,10 +43,10 @@ index b5c0496156..ab8c8a61b5 100644
  }  // namespace
  
 diff --git a/audio/channel_receive.cc b/audio/channel_receive.cc
-index 69810f2f97..7ae8ca9f57 100644
+index 01c961bd0a..7f2826c3ea 100644
 --- a/audio/channel_receive.cc
 +++ b/audio/channel_receive.cc
-@@ -121,12 +121,14 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
+@@ -122,12 +122,14 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
      RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
      bool enable_non_sender_rtt,
      uint32_t remote_ssrc,
@@ -107,10 +107,10 @@ index 69810f2f97..7ae8ca9f57 100644
  
  }  // namespace voe
 diff --git a/audio/channel_receive.h b/audio/channel_receive.h
-index 0a1df9baa6..6240bf2ca3 100644
+index c4e5099c69..7881277ebb 100644
 --- a/audio/channel_receive.h
 +++ b/audio/channel_receive.h
-@@ -38,6 +38,7 @@
+@@ -39,6 +39,7 @@
  #include "call/rtp_packet_sink_interface.h"
  #include "call/syncable.h"
  #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
@@ -118,7 +118,7 @@ index 0a1df9baa6..6240bf2ca3 100644
  #include "system_wrappers/include/ntp_time.h"
  
  namespace webrtc {
-@@ -183,7 +184,8 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
+@@ -184,7 +185,8 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
      scoped_refptr<AudioDecoderFactory> decoder_factory,
      scoped_refptr<FrameDecryptorInterface> frame_decryptor,
      const webrtc::CryptoOptions& crypto_options,
