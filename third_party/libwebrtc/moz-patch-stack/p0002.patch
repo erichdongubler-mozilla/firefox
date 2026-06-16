@@ -1,55 +1,93 @@
-From: Johannes Kron <kron@webrtc.org>
-Date: Fri, 15 May 2026 10:21:29 +0000
-Subject: (cherry-pick-branch-heads/7827) [M149] Validate CGImage dimensions in
- MouseCursorMonitorMac
+From: Alexander Cooper <alcooper@chromium.org>
+Date: Thu, 14 May 2026 13:26:42 -0700
+Subject: (cherry-pick-branch-heads/7827) [M149] Guard RestoreTokenManager
+ add/reads with Mutex
 
 Original change's description:
-> Validate CGImage dimensions in MouseCursorMonitorMac
+> Guard RestoreTokenManager add/reads with Mutex
 >
-> This adds missing height checks alongside the existing width checks
-> when processing and scaling the cursor image.
+> The RestoreTokenManager is a singleton who's adds and reads could be
+> accessed by multiple threads simultaneously. To prevent any potential
+> issues/collisions, ensure that such accesses happen behind a lock.
 >
-> Fixed: chromium:513268100
-> Change-Id: Ida1e58334a9d3bda429819e4af51b33afbd0a95d
-> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/472700
-> Reviewed-by: Alexander Cooper <alcooper@chromium.org>
-> Auto-Submit: Johannes Kron <kron@webrtc.org>
-> Commit-Queue: Alexander Cooper <alcooper@chromium.org>
-> Cr-Commit-Position: refs/heads/main@{#47715}
+> Bug: chromium:513049286
+> Change-Id: I44c1c7977a6d02e1ac3fbe00e6ffc7bc22e41e46
+> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/472480
+> Reviewed-by: Mark Foltz <mfoltz@chromium.org>
+> Auto-Submit: Alexander Cooper <alcooper@chromium.org>
+> Commit-Queue: Mark Foltz <mfoltz@chromium.org>
+> Cr-Commit-Position: refs/heads/main@{#47711}
 
-(cherry picked from commit b343cd4e280980f26b4feb80684f57d5b4324e12)
+(cherry picked from commit b9f0b184cb5a487fcb4910efaf4f84483ddba284)
 
-Bug: chromium:514928856,chromium:513268100
-Change-Id: Ida1e58334a9d3bda429819e4af51b33afbd0a95d
-Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/473981
+Bug: chromium:514929759,chromium:513049286
+Change-Id: I44c1c7977a6d02e1ac3fbe00e6ffc7bc22e41e46
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/474080
+Commit-Queue: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
 Auto-Submit: Chrome Cherry Picker <chrome-cherry-picker@chops-service-accounts.iam.gserviceaccount.com>
 Bot-Commit: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
-Commit-Queue: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
-Cr-Commit-Position: refs/branch-heads/7827@{#1}
+Cr-Commit-Position: refs/branch-heads/7827@{#2}
 Cr-Branched-From: d606bc991592fbf4dcbe85e9d05db5e501a5ad42-refs/heads/main@{#47595}
 ---
- modules/desktop_capture/mouse_cursor_monitor_mac.mm | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ .../linux/wayland/restore_token_manager.cc                | 4 ++++
+ .../desktop_capture/linux/wayland/restore_token_manager.h | 8 ++++++--
+ 2 files changed, 10 insertions(+), 2 deletions(-)
 
-diff --git a/modules/desktop_capture/mouse_cursor_monitor_mac.mm b/modules/desktop_capture/mouse_cursor_monitor_mac.mm
-index 248a782762..3e6a6cb3c6 100644
---- a/modules/desktop_capture/mouse_cursor_monitor_mac.mm
-+++ b/modules/desktop_capture/mouse_cursor_monitor_mac.mm
-@@ -154,7 +154,8 @@ void MouseCursorMonitorMac::CaptureImage(float scale) {
-   // crbug.com/632995.) After 10.12, OSX may report 2X cursor on non-Retina
-   // screen. (See crbug.com/671436.) So scaling the cursor if needed.
-   CGImageRef scaled_cg_image = nil;
--  if (CGImageGetWidth(cg_image) != static_cast<size_t>(size.width())) {
-+  if (CGImageGetWidth(cg_image) != static_cast<size_t>(size.width()) ||
-+      CGImageGetHeight(cg_image) != static_cast<size_t>(size.height())) {
-     scaled_cg_image =
-         CreateScaledCGImage(cg_image, size.width(), size.height());
-     if (scaled_cg_image != nil) {
-@@ -163,6 +164,7 @@ void MouseCursorMonitorMac::CaptureImage(float scale) {
-   }
-   if (CGImageGetBitsPerPixel(cg_image) != DesktopFrame::kBytesPerPixel * 8 ||
-       CGImageGetWidth(cg_image) != static_cast<size_t>(size.width()) ||
-+      CGImageGetHeight(cg_image) != static_cast<size_t>(size.height()) ||
-       CGImageGetBitsPerComponent(cg_image) != 8) {
-     if (scaled_cg_image != nil) CGImageRelease(scaled_cg_image);
-     return;
+diff --git a/modules/desktop_capture/linux/wayland/restore_token_manager.cc b/modules/desktop_capture/linux/wayland/restore_token_manager.cc
+index ff843c2047..101a5af4b3 100644
+--- a/modules/desktop_capture/linux/wayland/restore_token_manager.cc
++++ b/modules/desktop_capture/linux/wayland/restore_token_manager.cc
+@@ -13,6 +13,7 @@
+ #include <string>
+ 
+ #include "modules/desktop_capture/desktop_capturer.h"
++#include "rtc_base/synchronization/mutex.h"
+ 
+ namespace webrtc {
+ 
+@@ -24,15 +25,18 @@ RestoreTokenManager& RestoreTokenManager::GetInstance() {
+ 
+ void RestoreTokenManager::AddToken(DesktopCapturer::SourceId id,
+                                    const std::string& token) {
++  MutexLock lock(&mutex_);
+   restore_tokens_.insert({id, token});
+ }
+ 
+ std::string RestoreTokenManager::GetToken(DesktopCapturer::SourceId id) {
++  MutexLock lock(&mutex_);
+   const std::string token = restore_tokens_[id];
+   return token;
+ }
+ 
+ DesktopCapturer::SourceId RestoreTokenManager::GetUnusedId() {
++  MutexLock lock(&mutex_);
+   return ++last_source_id_;
+ }
+ 
+diff --git a/modules/desktop_capture/linux/wayland/restore_token_manager.h b/modules/desktop_capture/linux/wayland/restore_token_manager.h
+index 06d3071565..120a4b2fe8 100644
+--- a/modules/desktop_capture/linux/wayland/restore_token_manager.h
++++ b/modules/desktop_capture/linux/wayland/restore_token_manager.h
+@@ -15,6 +15,8 @@
+ #include <unordered_map>
+ 
+ #include "modules/desktop_capture/desktop_capturer.h"
++#include "rtc_base/synchronization/mutex.h"
++#include "rtc_base/thread_annotations.h"
+ 
+ namespace webrtc {
+ 
+@@ -35,9 +37,11 @@ class RestoreTokenManager {
+   RestoreTokenManager() = default;
+   ~RestoreTokenManager() = default;
+ 
+-  DesktopCapturer::SourceId last_source_id_ = 0;
++  Mutex mutex_;
++  DesktopCapturer::SourceId last_source_id_ RTC_GUARDED_BY(mutex_) = 0;
+ 
+-  std::unordered_map<DesktopCapturer::SourceId, std::string> restore_tokens_;
++  std::unordered_map<DesktopCapturer::SourceId, std::string> restore_tokens_
++      RTC_GUARDED_BY(mutex_);
+ };
+ 
+ }  // namespace webrtc
