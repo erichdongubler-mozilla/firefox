@@ -160,18 +160,20 @@ export const WEATHER_OPTIN_REGIONS = [
   "CH", // Switzerland
 ];
 
+export function csvHasValue(csvString, value) {
+  return (csvString || "")
+    .split(",")
+    .map(s => s.trim())
+    .filter(item => item)
+    .includes(value);
+}
+
 export function csvPrefHasValue(stringPrefName, value) {
   if (typeof stringPrefName !== "string") {
     throw new Error(`The stringPrefName argument is not a string`);
   }
 
-  const pref = Services.prefs.getStringPref(stringPrefName, "") || "";
-  const prefValues = pref
-    .split(",")
-    .map(s => s.trim())
-    .filter(item => item);
-
-  return prefValues.includes(value);
+  return csvHasValue(Services.prefs.getStringPref(stringPrefName, ""), value);
 }
 
 export function shouldInitializeFeeds(defaultValue = true) {
@@ -199,11 +201,19 @@ function useSov({ geo, locale }) {
   );
 }
 
-function useContextualAds({ geo, locale }) {
-  return (
-    csvPrefHasValue(REGION_CONTEXTUAL_AD_CONFIG, geo) &&
-    csvPrefHasValue(LOCALE_CONTEXTUAL_AD_CONFIG, locale)
-  );
+/**
+ * @backward-compat { version 154 }
+ * We are turning this on in US/en-US,en-GB,en-CA, but doing it in here so it
+ * can trainhop. Drop the `|| "US"` / `|| "en-US,en-GB,en-CA"` fallbacks once
+ * 154 hits Release.
+ */
+export function useContextualAds({ geo, locale }) {
+  const regions =
+    Services.prefs.getStringPref(REGION_CONTEXTUAL_AD_CONFIG, "") || "US";
+  const locales =
+    Services.prefs.getStringPref(LOCALE_CONTEXTUAL_AD_CONFIG, "") ||
+    "en-US,en-GB,en-CA";
+  return csvHasValue(regions, geo) && csvHasValue(locales, locale);
 }
 
 // Determine if spocs should be shown for a geo/locale

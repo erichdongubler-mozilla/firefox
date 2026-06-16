@@ -13,6 +13,8 @@ prefs = [
 ["test_AboutHomeStartupCacheWorker.js"]
 support-files = ["topstories.json"]
 
+["test_ActivityStream_contextualAds.js"]
+
 ["test_AdsFeed.js"]
 
 ["test_ExternalComponentsFeed.js"]
