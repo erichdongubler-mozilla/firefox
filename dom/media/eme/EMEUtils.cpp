@@ -272,4 +272,13 @@ Maybe<nsCString> GetOrigin(const dom::Document* aDocument) {
   return Some(origin);
 }
 
+nsCString DeriveMediaDrmOriginId(const nsACString& aOriginKey) {
+  nsAutoString id;
+  id.AssignLiteral(u"mediadrm-origin-id");
+  if (NS_FAILED(nsContentUtils::AnonymizeId(id, aOriginKey))) {
+    return nsCString();
+  }
+  return NS_ConvertUTF16toUTF8(id);
+}
+
 }  // namespace mozilla
