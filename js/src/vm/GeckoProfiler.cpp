@@ -332,7 +332,7 @@ UniqueChars GeckoProfilerRuntime::allocProfileString(JSContext* cx,
                                                      BaseScript* script) {
   // Note: this profiler string is regexp-matched by
   // profiler code. Most recently at
-  // https://github.com/firefox-devtools/profiler/blob/245b1a400c5c368ccc13641d0335398bafa0e870/src/profile-logic/process-profile.js#L520-L525
+  // https://github.com/firefox-devtools/profiler/blob/8f4935823ec06507c3125d4c6c1e78eef31361f3/src/profile-logic/process-profile.ts#L407-L415
 
   // If the script has a function, try calculating its name.
   JSAtom* name = nullptr;

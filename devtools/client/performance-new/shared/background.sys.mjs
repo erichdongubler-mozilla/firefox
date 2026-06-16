@@ -35,7 +35,7 @@ const POPUP_FEATURE_FLAG_PREF = "devtools.performance.popup.feature-flag";
 // This is reported from the STATUS_QUERY message, and identifies the
 // capabilities of the WebChannel. The front-end can handle old WebChannel
 // versions and has a full list of versions and capabilities here:
-// https://github.com/firefox-devtools/profiler/blob/main/src/app-logic/web-channel.js
+// https://github.com/firefox-devtools/profiler/blob/main/src/app-logic/web-channel.ts
 const CURRENT_WEBCHANNEL_VERSION = 7;
 
 const lazyRequire = {};

@@ -644,7 +644,7 @@ following in the Firefox Profiler's Marker Chart:
  * "Marker Name – 25.204KB"
  * "Marker Name – 512.54MB"
 
-For implementation details on this processing, see `src/profiler-logic/marker-schema.js <https://github.com/firefox-devtools/profiler/blob/main/src/profile-logic/marker-schema.js>`_
+For implementation details on this processing, see `src/profiler-logic/marker-schema.js <https://github.com/firefox-devtools/profiler/blob/main/src/profile-logic/marker-schema.ts>`_
 in the profiler's front-end.
 
 Any other ``struct`` member function is ignored. There could be utility functions used by the above

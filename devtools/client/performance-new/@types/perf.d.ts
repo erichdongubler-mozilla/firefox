@@ -430,7 +430,7 @@ export type ProfilerViewMode = "full" | "active-tab" | "origins";
  * Panel string identifier in the profiler frontend.
  *
  * To be synchronized with:
- * https://github.com/firefox-devtools/profiler/blob/b7fe97217b5d3ae770e2b7025738a075eba9ec34/src/app-logic/tabs-handling.js#L12
+ * https://github.com/firefox-devtools/profiler/blob/efb21b91b6d95f2566079426f62e0040c5214fb8/src/app-logic/tabs-handling.ts#L10
  */
 export type ProfilerPanel =
   | "calltree"
@@ -465,7 +465,7 @@ export interface Presets {
   [presetName: string]: PresetDefinition;
 }
 
-// Should be kept in sync with the types in https://github.com/firefox-devtools/profiler/blob/main/src/app-logic/web-channel.js .
+// Should be kept in sync with the types in https://github.com/firefox-devtools/profiler/blob/main/src/app-logic/web-channel.ts .
 // Compatibility is handled as follows:
 //  - The front-end needs to worry about compatibility and handle older browser versions.
 //  - The browser can require the latest front-end version and does not need to keep any legacy functionality for older front-end versions.
