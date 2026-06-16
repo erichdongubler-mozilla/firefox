@@ -839,7 +839,9 @@ struct StoreCopyPassByConstLRef {
   using stored_type = std::decay_t<T>;
   typedef const stored_type& passed_type;
   stored_type m;
+
   template <typename A>
+    requires(!std::is_same_v<std::decay_t<A>, StoreCopyPassByConstLRef>)
   MOZ_IMPLICIT StoreCopyPassByConstLRef(A&& a) : m(std::forward<A>(a)) {}
   passed_type PassAsParameter() { return m; }
 };
@@ -852,7 +854,9 @@ struct StoreCopyPassByRRef {
   using stored_type = std::decay_t<T>;
   typedef stored_type&& passed_type;
   stored_type m;
+
   template <typename A>
+    requires(!std::is_same_v<std::decay_t<A>, StoreCopyPassByRRef>)
   MOZ_IMPLICIT StoreCopyPassByRRef(A&& a) : m(std::forward<A>(a)) {}
   passed_type PassAsParameter() { return std::move(m); }
 };
@@ -891,7 +895,9 @@ struct StoreRefPtrPassByPtr {
   typedef RefPtr<T> stored_type;
   typedef T* passed_type;
   stored_type m;
+
   template <typename A>
+    requires(!std::is_same_v<std::decay_t<A>, StoreRefPtrPassByPtr>)
   MOZ_IMPLICIT StoreRefPtrPassByPtr(A&& a) : m(std::forward<A>(a)) {}
   passed_type PassAsParameter() { return m.get(); }
 };
