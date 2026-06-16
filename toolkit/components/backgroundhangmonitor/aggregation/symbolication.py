@@ -21,6 +21,7 @@ import gzip
 import urllib.parse
 import urllib.request
 from bisect import bisect
+from concurrent.futures import ThreadPoolExecutor
 from io import BytesIO
 
 UNSYMBOLICATED = "<unsymbolicated>"
@@ -184,4 +185,45 @@ def process_module(module, offsets, config):
     else:
         for offset in offsets:
             result.append(((module, offset), (UNSYMBOLICATED, module_name)))
+    return result
+
+
+def symbolicate_modules(frames_by_module, config, max_workers=16):
+    """Symbolicate (module, offset) pairs in parallel via a thread pool.
+
+    Calls process_module() once per module, dispatching the calls to a
+    ThreadPoolExecutor. Symbol fetching is I/O-bound (HTTP requests to
+    symbols.mozilla.org), so threads are the right tool: the GIL doesn't
+    matter on network I/O, and threads are cheaper than processes.
+
+    Replaces the PySpark RDD.flatMap(process_module) pattern from the
+    python_mozetl version with plain Python parallelism.
+
+    Args:
+        frames_by_module: dict mapping module to an iterable of offsets.
+            Modules are the (debug_name, breakpad_id) tuples produced by
+            process_frame, or None / ("pseudo", None) for special cases.
+        config: dict with symbol_server_url; forwarded to process_module.
+        max_workers: thread pool size. Kept modest because each concurrent
+            worker may hold a large .sym file (xul is ~1 GB uncompressed)
+            plus its parsed symbol map, so the pool size is the main lever
+            on peak memory.
+
+    Returns:
+        dict mapping (module, offset) to (symbol, module_name). Missing
+        symbols are represented as (UNSYMBOLICATED, module_name) entries,
+        matching process_module's failure mode.
+    """
+    if not frames_by_module:
+        return {}
+
+    result = {}
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(process_module, module, list(offsets), config)
+            for module, offsets in frames_by_module.items()
+        ]
+        for future in futures:
+            for key, value in future.result():
+                result[key] = value
     return result

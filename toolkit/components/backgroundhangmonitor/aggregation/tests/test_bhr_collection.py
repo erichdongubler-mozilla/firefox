@@ -338,5 +338,58 @@ def test_get_data_is_lazy_generator(monkeypatch):
     assert len(rows_seen) == 1
 
 
+# --- collect_offsets_by_module ----------------------------------------------
+
+
+def _make_hang(stack):
+    # process_hangs builds 8-tuples; only the stack matters for collection.
+    return (stack, 100.0, "Gecko", "", "main", [], "20260101", "Linux")
+
+
+def _old_get_frames_by_module_reference(hangs):
+    """Pure-Python mirror of the old Spark RDD grouping pipeline.
+
+    The original code did:
+        flatMap(stack frames) -> map(module, (offset,)) -> distinct()
+        -> reduceByKey(tuple concatenation)
+
+    The new helper returns sets instead of offset tuples, but the observable
+    grouping/deduping semantics should be the same.
+    """
+    distinct_frames = set()
+    for hang in hangs:
+        for module, offset in hang[0]:
+            distinct_frames.add((module, offset))
+
+    by_module = {}
+    for module, offset in distinct_frames:
+        by_module.setdefault(module, set()).add(offset)
+    return by_module
+
+
+def test_collect_offsets_by_module_empty_input():
+    assert bhr_collection.collect_offsets_by_module([]) == {}
+
+
+def test_collect_offsets_by_module_matches_old_rdd_semantics():
+    hangs = [
+        _make_hang([
+            (("xul.pdb", "ABC"), "100"),
+            (("xul.pdb", "ABC"), "100"),
+            (("xul.pdb", "ABC"), "200"),
+            (("kernel32.pdb", "XYZ"), "500"),
+        ]),
+        _make_hang([
+            (("kernel32.pdb", "XYZ"), "500"),
+            (("pseudo", None), "PseudoFrame"),
+            (None, "deadbeef"),
+        ]),
+    ]
+
+    assert bhr_collection.collect_offsets_by_module(
+        hangs
+    ) == _old_get_frames_by_module_reference(hangs)
+
+
 if __name__ == "__main__":
     mozunit.main()

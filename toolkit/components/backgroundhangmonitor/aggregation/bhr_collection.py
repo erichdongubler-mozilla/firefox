@@ -173,3 +173,25 @@ def get_data(date, sample_size, billing_project, end_date=None, exclude_modules=
 
     print(f"{total} results total")
     print(f"{kept} results after build-date filter")
+
+
+def collect_offsets_by_module(hangs):
+    """Group unique (module, offset) frames by module across a set of hangs.
+
+    Each hang is expected to be a tuple whose first element is a list of
+    (module, offset) frames as produced by process_frame. The returned
+    dict has one entry per distinct module, mapping it to the set of
+    distinct offsets seen for that module across all hangs.
+
+    This is the input shape symbolication.symbolicate_modules() consumes:
+    one symbol-server fetch per module, then bisect-resolve every offset
+    against the parsed symbol map.
+
+    Replaces the PySpark RDD pattern from the python_mozetl version:
+        hangs.flatMap(...).map(...).distinct().reduceByKey(...)
+    """
+    by_module = {}
+    for hang in hangs:
+        for module, offset in hang[0]:
+            by_module.setdefault(module, set()).add(offset)
+    return by_module

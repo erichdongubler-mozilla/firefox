@@ -143,5 +143,86 @@ def test_process_module_returns_unsymbolicated_when_fetch_fails(monkeypatch):
     assert all(entry[1] == (UNSYMBOLICATED, "missing.pdb") for entry in result)
 
 
+# --- symbolicate_modules (parallel dispatcher) -----------------------------
+
+
+def test_symbolicate_modules_empty_input_returns_empty_dict():
+    import symbolication
+
+    assert symbolication.symbolicate_modules({}, _CONFIG) == {}
+
+
+def test_symbolicate_modules_calls_process_module_per_module(monkeypatch):
+    import symbolication
+
+    calls = []
+
+    def fake_process_module(module, offsets, config):
+        calls.append((module, list(offsets)))
+        return [((module, o), (f"sym-{o}", module[0])) for o in offsets]
+
+    monkeypatch.setattr(symbolication, "process_module", fake_process_module)
+
+    frames_by_module = {
+        ("a.pdb", "1"): ["100"],
+        ("b.pdb", "2"): ["200", "300"],
+    }
+    result = symbolication.symbolicate_modules(frames_by_module, _CONFIG)
+
+    # Both modules dispatched.
+    called_modules = {call[0] for call in calls}
+    assert called_modules == {("a.pdb", "1"), ("b.pdb", "2")}
+
+    # Every offset shows up in the result with the right symbol mapping.
+    assert result[(("a.pdb", "1"), "100")] == ("sym-100", "a.pdb")
+    assert result[(("b.pdb", "2"), "200")] == ("sym-200", "b.pdb")
+    assert result[(("b.pdb", "2"), "300")] == ("sym-300", "b.pdb")
+
+
+def test_symbolicate_modules_runs_in_parallel(monkeypatch):
+    # If the dispatcher were serial, the barrier would deadlock (only one
+    # thread reaches it, never enough parties to release). The timeout
+    # turns that into a BrokenBarrierError, which would propagate out of
+    # symbolicate_modules and fail the test.
+    import threading
+
+    import symbolication
+
+    parties = 3
+    barrier = threading.Barrier(parties, timeout=5.0)
+
+    def fake_process_module(module, offsets, config):
+        barrier.wait()
+        return [((module, o), (f"sym-{o}", "")) for o in offsets]
+
+    monkeypatch.setattr(symbolication, "process_module", fake_process_module)
+
+    frames_by_module = {
+        ("a.pdb", "1"): ["100"],
+        ("b.pdb", "2"): ["200"],
+        ("c.pdb", "3"): ["300"],
+    }
+    result = symbolication.symbolicate_modules(
+        frames_by_module, _CONFIG, max_workers=parties
+    )
+    assert len(result) == 3
+
+
+def test_symbolicate_modules_propagates_exceptions(monkeypatch):
+    import symbolication
+
+    def raises(_module, _offsets, _config):
+        raise RuntimeError("simulated symbol-server outage")
+
+    monkeypatch.setattr(symbolication, "process_module", raises)
+
+    try:
+        symbolication.symbolicate_modules({("x.pdb", "1"): ["100"]}, _CONFIG)
+    except RuntimeError as exc:
+        assert "simulated symbol-server outage" in str(exc)
+    else:
+        raise AssertionError("expected RuntimeError to propagate")
+
+
 if __name__ == "__main__":
     mozunit.main()
