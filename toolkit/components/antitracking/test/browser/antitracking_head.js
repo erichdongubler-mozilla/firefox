@@ -10,18 +10,6 @@ var gFeatures = undefined;
 var gTestTrackersCleanedUp = false;
 var gTestTrackersCleanupRegistered = false;
 
-/**
- * Force garbage collection.
- */
-function forceGC() {
-  SpecialPowers.gc();
-  SpecialPowers.forceShrinkingGC();
-  SpecialPowers.forceCC();
-  SpecialPowers.gc();
-  SpecialPowers.forceShrinkingGC();
-  SpecialPowers.forceCC();
-}
-
 this.AntiTracking = {
   runTestInNormalAndPrivateMode(
     name,
@@ -961,10 +949,6 @@ this.AntiTracking = {
       if (cleanupFunction) {
         await cleanupFunction();
       }
-
-      // While running these tests we typically do not have enough idle time to do
-      // GC reliably, so force it here.
-      forceGC();
     });
   },
 
