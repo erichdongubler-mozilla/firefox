@@ -1,0 +1,342 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+"""Tests for the BigQuery reader (bhr_collection.get_data and helpers).
+
+The BQ client is fully mocked — no network access, no google-cloud-bigquery
+install required.
+"""
+
+import datetime
+import os
+import sys
+from unittest.mock import MagicMock
+
+import mozunit
+
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_AGGREGATION_DIR = os.path.dirname(_HERE)
+if _AGGREGATION_DIR not in sys.path:
+    sys.path.insert(0, _AGGREGATION_DIR)
+
+import bhr_collection  # noqa: E402
+
+# --- Pure helpers (no client) ----------------------------------------------
+
+
+def test_get_prop_walks_slash_delimited_path():
+    obj = {"client_info": {"os": "Linux", "os_version": "5.10"}}
+    assert bhr_collection.get_prop(obj, "client_info/os") == "Linux"
+    assert bhr_collection.get_prop(obj, "client_info/os_version") == "5.10"
+
+
+def test_get_prop_returns_none_for_none_input():
+    assert bhr_collection.get_prop(None, "anything") is None
+
+
+def test_get_prop_returns_none_when_intermediate_is_none():
+    obj = {"client_info": None}
+    assert bhr_collection.get_prop(obj, "client_info/os") is None
+
+
+def test_get_ping_properties_flattens_into_slash_keys():
+    ping = {
+        "client_info": {"os": "Linux", "app_build": "20260501123456"},
+        "metrics": {"object": {"hangs_reports": "[]"}},
+    }
+    out = bhr_collection.get_ping_properties(
+        ping,
+        ["client_info/os", "client_info/app_build", "metrics/object/hangs_reports"],
+    )
+    assert out == {
+        "client_info/os": "Linux",
+        "client_info/app_build": "20260501123456",
+        "metrics/object/hangs_reports": "[]",
+    }
+
+
+def test_properties_are_not_none_true_when_all_present():
+    ping = {"a": 1, "b": "x"}
+    assert bhr_collection.properties_are_not_none(ping, ["a", "b"]) is True
+
+
+def test_properties_are_not_none_false_when_any_missing():
+    ping = {"a": 1, "b": None}
+    assert bhr_collection.properties_are_not_none(ping, ["a", "b"]) is False
+
+
+def test_ping_is_valid_requires_string_typed_metadata():
+    valid = {
+        "client_info/os_version": "5.10",
+        "client_info/os": "Linux",
+        "client_info/app_build": "20260501",
+        "metrics/object/hangs_reports": "[]",
+    }
+    assert bhr_collection.ping_is_valid(valid) is True
+
+    not_string_os = dict(valid, **{"client_info/os": 42})
+    assert bhr_collection.ping_is_valid(not_string_os) is False
+
+    missing_reports = dict(valid, **{"metrics/object/hangs_reports": None})
+    assert bhr_collection.ping_is_valid(missing_reports) is False
+
+
+# --- Sample-size to slice math ---------------------------------------------
+
+
+def test_sample_slice_count_for_common_sample_sizes():
+    assert bhr_collection.compute_sample_slices(1.0) == 10000
+    assert bhr_collection.compute_sample_slices(0.5) == 5000
+    assert bhr_collection.compute_sample_slices(0.001) == 10
+    assert bhr_collection.compute_sample_slices(0.0002) == 2
+
+
+def test_sample_slice_count_clamped_to_at_least_one():
+    # A misconfigured 0 should still read at least one slice rather than
+    # silently producing no rows.
+    assert bhr_collection.compute_sample_slices(0) == 1
+    assert bhr_collection.compute_sample_slices(0.00001) == 1
+
+
+def test_sample_slice_count_clamped_above_max():
+    # If someone passes 5.0, we still cap at 10000 — the SQL is bounded by
+    # MOD(..., 10000), so values above that wouldn't do anything anyway.
+    assert bhr_collection.compute_sample_slices(5.0) == 10000
+
+
+# --- SQL construction ------------------------------------------------------
+
+
+def test_query_sql_includes_correct_submission_window():
+    # date - 5 days = 2026-04-26, end_date + 5 days = 2026-05-12.
+    sql = bhr_collection.build_query_sql(
+        datetime.date(2026, 5, 1), datetime.date(2026, 5, 7), 100
+    )
+    assert "BETWEEN '2026-04-26' AND '2026-05-12'" in sql
+
+
+def test_query_sql_includes_correct_sample_slices():
+    sql = bhr_collection.build_query_sql(
+        datetime.date(2026, 5, 1), datetime.date(2026, 5, 1), 42
+    )
+    assert "FARM_FINGERPRINT(document_id), 10000)) < 42" in sql
+
+
+def test_query_sql_targets_the_glean_hang_report_table():
+    sql = bhr_collection.build_query_sql(
+        datetime.date(2026, 5, 1), datetime.date(2026, 5, 1), 1
+    )
+    assert "moz-fx-data-shared-prod.firefox_desktop_stable.hang_report_v1" in sql
+
+
+# --- get_data end-to-end with mocked BQ client -----------------------------
+
+
+def _make_row(os_name, os_version, arch, app_build, hangs_reports, hangs_modules=""):
+    """Build a fake BQ row as a nested dict — same shape google-cloud-bigquery
+    returns for our SELECT (top-level columns are client_info, ping_info,
+    metrics; each is a nested record/dict)."""
+    return {
+        "client_info": {
+            "os": os_name,
+            "os_version": os_version,
+            "architecture": arch,
+            "app_build": app_build,
+        },
+        "ping_info": {},
+        "metrics": {
+            "object": {
+                "hangs_reports": hangs_reports,
+                "hangs_modules": hangs_modules,
+            }
+        },
+    }
+
+
+def _install_fake_client(monkeypatch, rows):
+    fake_client = MagicMock()
+    fake_client.query.return_value.result.return_value = iter(rows)
+    monkeypatch.setattr(bhr_collection, "_make_client", lambda _project: fake_client)
+    return fake_client
+
+
+def test_get_data_yields_ping_for_valid_row_in_build_window(monkeypatch):
+    rows = [
+        _make_row("Linux", "5.10", "x86_64", "20260501123456", "[]"),
+    ]
+    _install_fake_client(monkeypatch, rows)
+
+    pings = list(
+        bhr_collection.get_data(
+            date=datetime.date(2026, 5, 1),
+            sample_size=0.001,
+            billing_project="test-project",
+        )
+    )
+
+    assert len(pings) == 1
+    assert pings[0]["client_info/os"] == "Linux"
+    assert pings[0]["client_info/app_build"] == "20260501123456"
+
+
+def test_get_data_drops_rows_with_missing_required_fields(monkeypatch):
+    rows = [
+        _make_row("Linux", "5.10", "x86_64", "20260501123456", "[]"),
+        # OS missing — should be dropped.
+        _make_row(None, "5.10", "x86_64", "20260501123456", "[]"),
+    ]
+    _install_fake_client(monkeypatch, rows)
+
+    pings = list(
+        bhr_collection.get_data(
+            date=datetime.date(2026, 5, 1),
+            sample_size=0.001,
+            billing_project="test-project",
+        )
+    )
+    assert len(pings) == 1
+
+
+def test_get_data_drops_rows_outside_build_date_range(monkeypatch):
+    rows = [
+        # In range — build_date starts with 20260501.
+        _make_row("Linux", "5.10", "x86_64", "20260501123456", "[]"),
+        # Too early.
+        _make_row("Linux", "5.10", "x86_64", "20260101000000", "[]"),
+        # Too late.
+        _make_row("Linux", "5.10", "x86_64", "20271231235959", "[]"),
+    ]
+    _install_fake_client(monkeypatch, rows)
+
+    pings = list(
+        bhr_collection.get_data(
+            date=datetime.date(2026, 5, 1),
+            sample_size=0.001,
+            billing_project="test-project",
+        )
+    )
+    assert len(pings) == 1
+    assert pings[0]["client_info/app_build"] == "20260501123456"
+
+
+def test_get_data_default_end_date_is_same_as_start(monkeypatch):
+    # When end_date isn't passed, the build window collapses to one day.
+    rows = [
+        _make_row("Linux", "5.10", "x86_64", "20260501010000", "[]"),
+        # Next day — should be dropped because end_date == date.
+        _make_row("Linux", "5.10", "x86_64", "20260502010000", "[]"),
+    ]
+    _install_fake_client(monkeypatch, rows)
+
+    pings = list(
+        bhr_collection.get_data(
+            date=datetime.date(2026, 5, 1),
+            sample_size=0.001,
+            billing_project="test-project",
+        )
+    )
+    assert len(pings) == 1
+
+
+def test_get_data_explicit_end_date_widens_window(monkeypatch):
+    rows = [
+        _make_row("Linux", "5.10", "x86_64", "20260501010000", "[]"),
+        _make_row("Linux", "5.10", "x86_64", "20260502010000", "[]"),
+        # Outside window.
+        _make_row("Linux", "5.10", "x86_64", "20260601010000", "[]"),
+    ]
+    _install_fake_client(monkeypatch, rows)
+
+    pings = list(
+        bhr_collection.get_data(
+            date=datetime.date(2026, 5, 1),
+            end_date=datetime.date(2026, 5, 2),
+            sample_size=0.001,
+            billing_project="test-project",
+        )
+    )
+    assert len(pings) == 2
+
+
+def test_get_data_exclude_modules_omits_hangs_modules_property(monkeypatch):
+    rows = [
+        # hangs_modules is None — this would normally drop the ping via
+        # properties_are_not_none. With exclude_modules=True, hangs_modules
+        # isn't required so the ping passes.
+        {
+            "client_info": {
+                "os": "Linux",
+                "os_version": "5.10",
+                "architecture": "x86_64",
+                "app_build": "20260501123456",
+            },
+            "metrics": {"object": {"hangs_reports": "[]", "hangs_modules": None}},
+        },
+    ]
+    _install_fake_client(monkeypatch, rows)
+
+    pings = list(
+        bhr_collection.get_data(
+            date=datetime.date(2026, 5, 1),
+            sample_size=0.001,
+            billing_project="test-project",
+            exclude_modules=True,
+        )
+    )
+    assert len(pings) == 1
+    assert "metrics/object/hangs_modules" not in pings[0]
+
+
+def test_get_data_passes_billing_project_to_client(monkeypatch):
+    captured = {}
+
+    def fake_make_client(project):
+        captured["project"] = project
+        client = MagicMock()
+        client.query.return_value.result.return_value = iter([])
+        return client
+
+    monkeypatch.setattr(bhr_collection, "_make_client", fake_make_client)
+
+    list(
+        bhr_collection.get_data(
+            date=datetime.date(2026, 5, 1),
+            sample_size=0.001,
+            billing_project="my-bill-here",
+        )
+    )
+    assert captured["project"] == "my-bill-here"
+
+
+def test_get_data_is_lazy_generator(monkeypatch):
+    # Calling get_data must NOT consume the iterator — yielding stays lazy.
+    rows_seen = []
+
+    def make_iterator():
+        for row in [
+            _make_row("Linux", "5.10", "x86_64", "20260501123456", "[]"),
+            _make_row("Linux", "5.10", "x86_64", "20260501123456", "[]"),
+        ]:
+            rows_seen.append(row)
+            yield row
+
+    fake_client = MagicMock()
+    fake_client.query.return_value.result.return_value = make_iterator()
+    monkeypatch.setattr(bhr_collection, "_make_client", lambda _project: fake_client)
+
+    gen = bhr_collection.get_data(
+        date=datetime.date(2026, 5, 1),
+        sample_size=0.001,
+        billing_project="test-project",
+    )
+    # Generator created but not yet consumed.
+    assert rows_seen == []
+
+    # Pull one ping, that should pull exactly one row from upstream.
+    next(gen)
+    assert len(rows_seen) == 1
+
+
+if __name__ == "__main__":
+    mozunit.main()
