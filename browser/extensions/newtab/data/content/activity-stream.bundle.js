@@ -19870,6 +19870,7 @@ function EditClocksPanel({
 
 
 
+
 const Clocks_USER_ACTION_TYPES = {
   ADD_CLOCK: "add_clock",
   ADD_NICKNAME: "add_nickname",
@@ -19893,6 +19894,7 @@ const CLOCK_WIDGET_SOURCE = {
   ROW: "row",
   TOOLBAR: "toolbar"
 };
+const CLOCKS_WIDGET = WIDGET_REGISTRY.find(widget => widget.id === "clocks");
 function getClockWidgetDisplayState({
   activePanel,
   hourFormatPref,
@@ -19927,7 +19929,6 @@ function Clocks({
   const clocksZonesPref = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values[PREF_CLOCKS_ZONES]);
   const hourFormatPref = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values[PREF_CLOCKS_HOUR_FORMAT]);
   const [now, setNow] = (0,external_React_namespaceObject.useState)(null);
-  const impressionFired = (0,external_React_namespaceObject.useRef)(false);
   const contextMenuRef = (0,external_React_namespaceObject.useRef)(null);
   const contextMenuButtonRef = (0,external_React_namespaceObject.useRef)(null);
   // Suppress hover-reveal after a menu action; cleared on mouseleave.
@@ -19960,10 +19961,15 @@ function Clocks({
     hourFormatPref,
     size
   });
-  const currentSizeRef = (0,external_React_namespaceObject.useRef)(currentSize);
-  (0,external_React_namespaceObject.useEffect)(() => {
-    currentSizeRef.current = currentSize;
-  }, [currentSize]);
+  const {
+    impressionRef,
+    recordUserAction,
+    recordEnabled
+  } = useWidgetTelemetry({
+    dispatch,
+    widget: CLOCKS_WIDGET,
+    widgetSize: currentSize
+  });
 
   // Each tick realigns to the next minute, so paused tabs or device sleep
   // can't compound drift. `now` starts null so the first render stays
@@ -19977,20 +19983,6 @@ function Clocks({
     tick();
     return () => clearTimeout(timeoutId);
   }, []);
-  const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
-    if (impressionFired.current) {
-      return;
-    }
-    impressionFired.current = true;
-    dispatch(actionCreators.AlsoToMain({
-      type: actionTypes.WIDGETS_IMPRESSION,
-      data: {
-        widget_name: "clocks",
-        widget_size: currentSizeRef.current
-      }
-    }));
-  }, [dispatch]);
-  const clocksRef = useIntersectionObserver(handleIntersection);
   const handleChangeSize = (0,external_React_namespaceObject.useCallback)(newSize => {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
@@ -20000,19 +19992,14 @@ function Clocks({
           value: newSize
         }
       }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "clocks",
-          widget_source: CLOCK_WIDGET_SOURCE.CONTEXT_MENU,
-          user_action: Clocks_USER_ACTION_TYPES.CHANGE_SIZE,
-          action_value: newSize,
-          widget_size: newSize
-        }
-      }));
+      recordUserAction(Clocks_USER_ACTION_TYPES.CHANGE_SIZE, {
+        source: CLOCK_WIDGET_SOURCE.CONTEXT_MENU,
+        value: newSize,
+        size: newSize
+      });
     });
     closeContextMenu();
-  }, [dispatch, closeContextMenu]);
+  }, [dispatch, recordUserAction, closeContextMenu]);
   const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
   const handleToggleHourFormat = (0,external_React_namespaceObject.useCallback)(() => {
     const nextFormat = use12HourFormat ? "24" : "12";
@@ -20024,19 +20011,13 @@ function Clocks({
           value: nextFormat
         }
       }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "clocks",
-          widget_source: CLOCK_WIDGET_SOURCE.CONTEXT_MENU,
-          user_action: Clocks_USER_ACTION_TYPES.CHANGE_HOUR_FORMAT,
-          action_value: nextFormat,
-          widget_size: currentSize
-        }
-      }));
+      recordUserAction(Clocks_USER_ACTION_TYPES.CHANGE_HOUR_FORMAT, {
+        source: CLOCK_WIDGET_SOURCE.CONTEXT_MENU,
+        value: nextFormat
+      });
     });
     closeContextMenu();
-  }, [use12HourFormat, dispatch, currentSize, closeContextMenu]);
+  }, [use12HourFormat, dispatch, recordUserAction, closeContextMenu]);
   const handleHide = (0,external_React_namespaceObject.useCallback)(() => {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
@@ -20046,18 +20027,12 @@ function Clocks({
           value: false
         }
       }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_ENABLED,
-        data: {
-          widget_name: "clocks",
-          widget_source: CLOCK_WIDGET_SOURCE.CONTEXT_MENU,
-          enabled: false,
-          widget_size: currentSize
-        }
-      }));
+      recordEnabled(false, {
+        source: CLOCK_WIDGET_SOURCE.CONTEXT_MENU
+      });
     });
     closeContextMenu();
-  }, [dispatch, currentSize, closeContextMenu]);
+  }, [dispatch, recordEnabled, closeContextMenu]);
   const handleLearnMore = (0,external_React_namespaceObject.useCallback)(() => {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
@@ -20066,18 +20041,12 @@ function Clocks({
           url: "https://support.mozilla.org/kb/firefox-new-tab-widgets"
         }
       }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "clocks",
-          widget_source: CLOCK_WIDGET_SOURCE.CONTEXT_MENU,
-          user_action: Clocks_USER_ACTION_TYPES.LEARN_MORE,
-          widget_size: currentSize
-        }
-      }));
+      recordUserAction(Clocks_USER_ACTION_TYPES.LEARN_MORE, {
+        source: CLOCK_WIDGET_SOURCE.CONTEXT_MENU
+      });
     });
     closeContextMenu();
-  }, [dispatch, currentSize, closeContextMenu]);
+  }, [dispatch, recordUserAction, closeContextMenu]);
   const clockZones = (0,external_React_namespaceObject.useMemo)(() => parseClockZonesPref(clocksZonesPref) || buildDefaultZones(), [clocksZonesPref]);
   (0,external_React_namespaceObject.useEffect)(() => {
     if (!clockZones.some(clock => clock.label && !clock.labelColor)) {
@@ -20106,34 +20075,22 @@ function Clocks({
     setActivePanel(CLOCKS_PANEL.EDIT);
     setPanelOpenSource(source);
     setIsDismissed(false);
-    dispatch(actionCreators.OnlyToMain({
-      type: actionTypes.WIDGETS_USER_EVENT,
-      data: {
-        widget_name: "clocks",
-        widget_source: source,
-        user_action: Clocks_USER_ACTION_TYPES.EXPAND,
-        widget_size: currentSize
-      }
-    }));
-  }, [currentSize, dispatch]);
+    recordUserAction(Clocks_USER_ACTION_TYPES.EXPAND, {
+      source
+    });
+  }, [recordUserAction]);
   const handleCloseDisplayPanel = (0,external_React_namespaceObject.useCallback)(() => {
     if (activePanel === CLOCKS_PANEL.EDIT) {
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "clocks",
-          widget_source: panelOpenSource,
-          user_action: Clocks_USER_ACTION_TYPES.COLLAPSE,
-          widget_size: currentSize
-        }
-      }));
+      recordUserAction(Clocks_USER_ACTION_TYPES.COLLAPSE, {
+        source: panelOpenSource
+      });
     }
     setActivePanel(null);
     resetAddClockForm();
     requestAnimationFrame(() => {
       (addButtonRef.current ?? contextMenuButtonRef.current)?.focus();
     });
-  }, [activePanel, panelOpenSource, currentSize, dispatch, resetAddClockForm]);
+  }, [activePanel, panelOpenSource, recordUserAction, resetAddClockForm]);
   const handleCloseClockForm = (0,external_React_namespaceObject.useCallback)(() => {
     if (formSource === CLOCK_WIDGET_SOURCE.MANAGE) {
       setActivePanel(CLOCKS_PANEL.EDIT);
@@ -20158,25 +20115,13 @@ function Clocks({
           value: JSON.stringify(buildNextClockZones(clockZones, editingClockIndex, zone))
         }
       }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "clocks",
-          widget_source: formSource,
-          user_action: editingClockIndex !== null ? Clocks_USER_ACTION_TYPES.EDIT_CLOCK : Clocks_USER_ACTION_TYPES.ADD_CLOCK,
-          widget_size: currentSize
-        }
-      }));
+      recordUserAction(editingClockIndex !== null ? Clocks_USER_ACTION_TYPES.EDIT_CLOCK : Clocks_USER_ACTION_TYPES.ADD_CLOCK, {
+        source: formSource
+      });
       if (zone.label && !existingClock?.label) {
-        dispatch(actionCreators.OnlyToMain({
-          type: actionTypes.WIDGETS_USER_EVENT,
-          data: {
-            widget_name: "clocks",
-            widget_source: formSource,
-            user_action: Clocks_USER_ACTION_TYPES.ADD_NICKNAME,
-            widget_size: currentSize
-          }
-        }));
+        recordUserAction(Clocks_USER_ACTION_TYPES.ADD_NICKNAME, {
+          source: formSource
+        });
       }
     });
     if (formSource === CLOCK_WIDGET_SOURCE.MANAGE) {
@@ -20185,7 +20130,7 @@ function Clocks({
       return;
     }
     handleCloseDisplayPanel();
-  }, [clockZones, formSource, currentSize, editingClockIndex, handleCloseDisplayPanel, resetAddClockForm, dispatch]);
+  }, [clockZones, formSource, editingClockIndex, handleCloseDisplayPanel, resetAddClockForm, dispatch, recordUserAction]);
   const handleRemoveClock = (0,external_React_namespaceObject.useCallback)((index, source = CLOCK_WIDGET_SOURCE.ROW) => {
     if (clockZones.length <= 1) {
       return;
@@ -20198,17 +20143,11 @@ function Clocks({
           value: JSON.stringify(removeClockZoneAtIndex(clockZones, index))
         }
       }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "clocks",
-          widget_source: source,
-          user_action: Clocks_USER_ACTION_TYPES.REMOVE_CLOCK,
-          widget_size: currentSize
-        }
-      }));
+      recordUserAction(Clocks_USER_ACTION_TYPES.REMOVE_CLOCK, {
+        source
+      });
     });
-  }, [clockZones, currentSize, dispatch]);
+  }, [clockZones, dispatch, recordUserAction]);
   const isClockFormOpen = activePanel === CLOCKS_PANEL.FORM;
   const isEditingClocks = activePanel === CLOCKS_PANEL.EDIT;
   const hasAnyLabel = clockZones.some(c => !!c.label);
@@ -20216,10 +20155,7 @@ function Clocks({
     className: `clocks-widget col-4 ${panelDisplaySize}-widget${clockZones.length === 1 ? " is-hero" : ""}${isDismissed ? " is-dismissed" : ""}${isClockFormOpen ? " is-clock-form-open" : ""}${isEditingClocks ? " is-editing-clocks" : ""}${activePanel ? " is-panel-open" : ""}${hasAnyLabel ? "" : " has-no-labels"}`,
     "data-clock-count": clockZones.length,
     onMouseLeave: () => setIsDismissed(false),
-    ref: el => {
-      // useIntersectionObserver expects ref.current to be an array of targets.
-      clocksRef.current = [el];
-    }
+    ref: impressionRef
   }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "widget-toolbar",
     inert: !!activePanel
