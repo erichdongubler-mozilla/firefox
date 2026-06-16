@@ -57,7 +57,7 @@ class WebCompatReporterStoreTest {
     }
 
     @Test
-    fun `WHEN the broken URL is updated with an extension URL THEN the state should hzave an input error`() {
+    fun `WHEN the broken URL is updated with an extension URL THEN the state should have an input error`() {
         store.dispatch(WebCompatReporterAction.BrokenSiteChanged(newUrl = "moz-extension://test"))
         assertTrue(store.state.hasUrlTextError)
     }
@@ -71,10 +71,12 @@ class WebCompatReporterStoreTest {
     @Test
     fun `WHEN the reason is not empty THEN the state should not have an input error`() {
         assertNull(store.state.reason)
+        assertTrue(store.state.hasReasonDropdownError)
 
         store.dispatch(WebCompatReporterAction.ReasonChanged(WebCompatReporterState.BrokenSiteReason.Slow))
 
         assertNotNull(store.state.reason)
+        assertFalse(store.state.hasReasonDropdownError)
     }
 
     @Test
@@ -86,6 +88,7 @@ class WebCompatReporterStoreTest {
         )
 
         assertNull(store.state.reason)
+        assertTrue(store.state.hasReasonDropdownError)
     }
 
     @Test
@@ -98,6 +101,7 @@ class WebCompatReporterStoreTest {
         )
 
         assertFalse(store.state.hasUrlTextError)
+        assertFalse(store.state.hasReasonDropdownError)
         assertTrue(store.state.isSubmitEnabled)
     }
 
@@ -111,6 +115,7 @@ class WebCompatReporterStoreTest {
         )
 
         assertTrue(store.state.hasUrlTextError)
+        assertFalse(store.state.hasReasonDropdownError)
         assertFalse(store.state.isSubmitEnabled)
     }
 
@@ -124,6 +129,7 @@ class WebCompatReporterStoreTest {
         )
 
         assertFalse(store.state.hasUrlTextError)
+        assertTrue(store.state.hasReasonDropdownError)
         assertFalse(store.state.isSubmitEnabled)
     }
 
