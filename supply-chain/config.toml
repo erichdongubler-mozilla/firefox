@@ -130,7 +130,7 @@ notes = "Vendored from libjxl/jxl-rs git, a few commits past the 0.4.3 tag."
 
 [policy.jxl_simd]
 audit-as-crates-io = true
-notes = "Vendored from libjxl/jxl-rs git, a few commits past the 0.4.3 tag."
+notes = "Vendored from libjxl/jxl-rs git, a few commits past the 0.4.3 tag, with a local Mac/x86_64 workaround patched in (see bug 2043090) and path-sourced via a [patch] block in the root Cargo.toml."
 
 [policy.jxl_transforms]
 audit-as-crates-io = true
