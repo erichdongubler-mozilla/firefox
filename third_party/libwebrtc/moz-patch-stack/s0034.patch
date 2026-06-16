@@ -171,7 +171,7 @@ index ac862c65a8..e66ed2796e 100644
    } else {
      sources += [ "spl_sqrt_floor.c" ]
 diff --git a/modules/audio_processing/aec3/BUILD.gn b/modules/audio_processing/aec3/BUILD.gn
-index 26168b1ab8..59e30cbc24 100644
+index 2f2d349514..ca958eb0c8 100644
 --- a/modules/audio_processing/aec3/BUILD.gn
 +++ b/modules/audio_processing/aec3/BUILD.gn
 @@ -125,7 +125,7 @@ rtc_library("aec3") {
@@ -202,7 +202,7 @@ index 26168b1ab8..59e30cbc24 100644
      configs += [ "..:apm_debug_dump" ]
      sources = [
 diff --git a/modules/audio_processing/agc/BUILD.gn b/modules/audio_processing/agc/BUILD.gn
-index 498971fbe6..a4eefcfcef 100644
+index d84073a77b..3407eeff7c 100644
 --- a/modules/audio_processing/agc/BUILD.gn
 +++ b/modules/audio_processing/agc/BUILD.gn
 @@ -77,7 +77,7 @@ rtc_library("legacy_agc") {

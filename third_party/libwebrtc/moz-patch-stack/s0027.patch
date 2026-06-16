@@ -729,7 +729,7 @@ index cb74a2710e..b1c02c5025 100644
      : content_hint(VideoTrackInterface::ContentHint::kNone) {}
  VideoOptions::~VideoOptions() = default;
 diff --git a/modules/audio_coding/BUILD.gn b/modules/audio_coding/BUILD.gn
-index dd4e7bdebd..90a8bfd415 100644
+index afe73786df..c759878059 100644
 --- a/modules/audio_coding/BUILD.gn
 +++ b/modules/audio_coding/BUILD.gn
 @@ -338,7 +338,7 @@ rtc_library("webrtc_opus_wrapper") {
@@ -827,7 +827,7 @@ index e62ce13dd8..ceea41532c 100644
      testonly = true
  
 diff --git a/modules/audio_processing/aec3/BUILD.gn b/modules/audio_processing/aec3/BUILD.gn
-index f52017d935..26168b1ab8 100644
+index 22b5419168..2f2d349514 100644
 --- a/modules/audio_processing/aec3/BUILD.gn
 +++ b/modules/audio_processing/aec3/BUILD.gn
 @@ -260,14 +260,11 @@ if (current_cpu == "x86" || current_cpu == "x64") {
