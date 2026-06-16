@@ -4754,6 +4754,10 @@ void MacroAssemblerRiscv64::Clear_if_nan_d(Register rd, FPURegister fs) {
   Register scratch = temps.Acquire();
 
   feq_d(scratch, fs, fs);
+  if (HasZicondExtension()) {
+    czero_eqz(rd, rd, scratch);
+    return;
+  }
   neg(scratch, scratch);
   and_(rd, rd, scratch);
 }
@@ -4763,6 +4767,10 @@ void MacroAssemblerRiscv64::Clear_if_nan_s(Register rd, FPURegister fs) {
   Register scratch = temps.Acquire();
 
   feq_s(scratch, fs, fs);
+  if (HasZicondExtension()) {
+    czero_eqz(rd, rd, scratch);
+    return;
+  }
   neg(scratch, scratch);
   and_(rd, rd, scratch);
 }
