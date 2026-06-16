@@ -802,6 +802,8 @@ acorn-detekt-rules:
     active: true
   AcornThemeUsage:
     active: false
+  MaterialOutlinedButtonUsage:
+    active: false
   MaterialSwitchUsage:
     active: false
   MaterialTextButtonUsage:
