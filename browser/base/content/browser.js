@@ -3346,6 +3346,19 @@ var gUIDensity = {
           break;
       }
     }
+    // The attribute-setting above must run on every call: update() also fires
+    // when the sidebar opens with a fresh content document that needs the
+    // uidensity attribute applied even when the window's resolved mode is
+    // unchanged. Only the change-dependent work below is gated on an actual
+    // density change. update() now runs on every window resize (and on
+    // sidebar-state changes) to evaluate auto-compact; dispatching
+    // uidensitychanged on every resize made the urlbar view and tabstrip
+    // flicker continuously while resizing the window (bug 2047330).
+    if (mode == this._appliedMode) {
+      return;
+    }
+    this._appliedMode = mode;
+
     if (sidebarContentDoc) {
       let tree = sidebarContentDoc.querySelector(".sidebar-placesTree");
       if (tree) {

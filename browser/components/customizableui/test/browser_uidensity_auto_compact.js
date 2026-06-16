@@ -231,6 +231,78 @@ add_task(async function test_resize_event_triggers_update() {
   });
 });
 
+// Regression test for bug 2047330: update() runs on every window resize, but
+// must only notify consumers (the urlbar view and tabstrip listen for
+// uidensitychanged) when the resolved density actually changes. Otherwise the
+// view and tabstrip flicker continuously while the window is resized.
+add_task(async function test_uidensitychanged_only_on_actual_change() {
+  await withNewWindow(async win => {
+    win.gUIDensity.update(win.gUIDensity.MODE_NORMAL);
+
+    let count = 0;
+    let listener = () => count++;
+    win.addEventListener("uidensitychanged", listener);
+    try {
+      // Re-applying the same mode must not notify consumers.
+      win.gUIDensity.update(win.gUIDensity.MODE_NORMAL);
+      Assert.equal(count, 0, "No uidensitychanged when the mode is unchanged");
+
+      // An actual change notifies exactly once.
+      win.gUIDensity.update(win.gUIDensity.MODE_COMPACT);
+      Assert.equal(
+        count,
+        1,
+        "uidensitychanged fires once when the mode changes"
+      );
+
+      // Re-applying the new mode must not notify again.
+      win.gUIDensity.update(win.gUIDensity.MODE_COMPACT);
+      Assert.equal(
+        count,
+        1,
+        "No uidensitychanged when re-applying the same mode"
+      );
+    } finally {
+      win.removeEventListener("uidensitychanged", listener);
+      win.gUIDensity.update(win.gUIDensity.MODE_NORMAL);
+    }
+  });
+});
+
+// Resize events that don't change the resolved density must not re-dispatch
+// uidensitychanged. This reproduces the bug 2047330 STR (resizing the window)
+// at the event level.
+add_task(async function test_resize_without_change_does_not_redispatch() {
+  await SpecialPowers.pushPrefEnv({
+    set: [[PREF_NOVA, false]],
+    clear: [[PREF_UI_DENSITY]],
+  });
+
+  await withNewWindow(async win => {
+    // Settle on a stable density that a resize cannot change (nova off).
+    win.gUIDensity.update();
+
+    let dispatched = false;
+    let listener = () => {
+      dispatched = true;
+    };
+    win.addEventListener("uidensitychanged", listener);
+    try {
+      for (let i = 0; i < 5; i++) {
+        win.dispatchEvent(new win.Event("resize"));
+      }
+      Assert.ok(
+        !dispatched,
+        "uidensitychanged is not dispatched on resize when density is unchanged"
+      );
+    } finally {
+      win.removeEventListener("uidensitychanged", listener);
+    }
+  });
+
+  await SpecialPowers.popPrefEnv();
+});
+
 add_task(async function test_sidebar_launcher_collapsed_requires_revamp() {
   await withNewWindow(async win => {
     await SpecialPowers.pushPrefEnv({
