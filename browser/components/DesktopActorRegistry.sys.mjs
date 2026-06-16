@@ -264,6 +264,7 @@ let JSWINDOWACTORS = {
     includeChrome: true,
     allFrames: true,
     enablePreference: "browser.smartwindow.enabled",
+    remoteTypes: ["parent"],
   },
 
   BackupUI: {
