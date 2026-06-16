@@ -12,7 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import mozilla.components.browser.state.ext.getUrl
+import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.concept.engine.webextension.InstallationMethod
 import mozilla.components.concept.storage.BookmarksStorage
@@ -44,7 +44,6 @@ import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityChecker
 import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
 import org.mozilla.fenix.summarization.onboarding.SummarizeDiscoveryEvent
-import org.mozilla.fenix.tabstray.ext.isNormalTab
 import org.mozilla.fenix.utils.Settings
 
 /**
@@ -136,7 +135,7 @@ class MenuDialogMiddleware(
             is MenuAction.RequestDesktopSite,
             is MenuAction.RequestMobileSite,
             -> requestSiteMode(
-                tabId = currentState.customTabSessionId ?: currentState.browserMenuState?.selectedTab?.id,
+                tabId = currentState.browserMenuState?.selectedTab?.id,
                 shouldRequestDesktopMode = !currentState.isDesktopMode,
             )
 
@@ -179,7 +178,7 @@ class MenuDialogMiddleware(
         }
     }
 
-    private suspend fun TabSessionState?.checkSummarizationEligibility(): Boolean =
+    private suspend fun SessionState?.checkSummarizationEligibility(): Boolean =
         this@checkSummarizationEligibility?.engineState?.engineSession?.let { session ->
             summarizationEligibilityChecker.checkLanguage(session).getOrDefault(false)
         } ?: false
@@ -206,7 +205,9 @@ class MenuDialogMiddleware(
     private suspend fun setupPinnedState(
         store: Store<MenuState, MenuAction>,
     ) {
-        val url = store.state.browserMenuState?.selectedTab?.content?.url ?: return
+        val selectedTab = store.state.browserMenuState?.selectedTab
+        if (selectedTab.isCustomTab()) return
+        val url = selectedTab?.content?.url ?: return
         pinnedSiteStorage.getPinnedSites()
             .firstOrNull { it.url == url } ?: return
 
@@ -256,7 +257,7 @@ class MenuDialogMiddleware(
         }
 
         val selectedTab = browserMenuState.selectedTab
-        val url = selectedTab.getUrl() ?: return@launch
+        val url = selectedTab.getTabUrl() ?: return@launch
 
         val result = addBookmarkUseCase(
             url = url,
@@ -272,6 +273,13 @@ class MenuDialogMiddleware(
         )
 
         onDismiss()
+    }
+
+    private fun SessionState.isNormalTab(): Boolean {
+        return when (this) {
+            is TabSessionState -> !content.private
+            else -> false
+        }
     }
 
     private fun addShortcut(
@@ -302,7 +310,7 @@ class MenuDialogMiddleware(
         }
 
         val selectedTab = browserMenuState.selectedTab
-        val url = selectedTab.getUrl() ?: return@launch
+        val url = selectedTab.getTabUrl() ?: return@launch
 
         addPinnedSiteUseCase(
             title = selectedTab.content.title,
@@ -326,7 +334,7 @@ class MenuDialogMiddleware(
         }
 
         val selectedTab = browserMenuState.selectedTab
-        val url = selectedTab.getUrl() ?: return@launch
+        val url = selectedTab.getTabUrl() ?: return@launch
         val topSite = pinnedSiteStorage.getPinnedSites()
             .firstOrNull { it.url == url } ?: return@launch
 

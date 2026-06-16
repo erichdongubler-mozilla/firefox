@@ -59,6 +59,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import mozilla.components.browser.state.selector.findCustomTab
 import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.browser.state.state.SessionState
 import mozilla.components.concept.engine.translate.TranslationSupport
 import mozilla.components.concept.engine.translate.findLanguage
 import mozilla.components.feature.addons.Addon
@@ -263,10 +264,11 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                 val appStore = components.appStore
                 val browserStore = components.core.store
 
-                val selectedTab = browserStore.state.selectedTab
+                val browserTab = browserStore.state.selectedTab
                 val customTab = args.customTabSessionId?.let {
                     browserStore.state.findCustomTab(it)
                 }
+                val selectedTab: SessionState? = customTab ?: browserTab
 
                 val appLinksUseCases = components.useCases.appLinksUseCases
                 val webAppUseCases = components.useCases.webAppUseCases
@@ -296,13 +298,12 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                             } else {
                                 null
                             },
-                            customTabSessionId = args.customTabSessionId,
                             isDesktopMode = when (args.accesspoint) {
                                 MenuAccessPoint.Home -> {
                                     false // this is not supported on Home
                                 }
                                 MenuAccessPoint.External -> {
-                                    customTab?.content?.desktopMode ?: false
+                                    selectedTab?.content?.desktopMode ?: false
                                 }
                                 else -> {
                                     selectedTab?.content?.desktopMode ?: false
@@ -360,7 +361,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                     }
                                 },
                                 scope = coroutineScope,
-                                customTab = customTab,
                                 webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,
                             ),
                             MenuTelemetryMiddleware(
@@ -493,8 +493,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                     val isReaderViewActive by remember {
                         store.stateFlow
                             .map { state ->
-                                state.browserMenuState != null &&
-                                    state.browserMenuState.selectedTab.readerState.active
+                                state.isReaderModeActive
                             }
                     }.collectAsState(initial = false)
 

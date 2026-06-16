@@ -19,6 +19,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.appservices.places.BookmarkRoot
+import mozilla.components.browser.state.state.createCustomTab
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.webextension.InstallationMethod
@@ -355,6 +356,29 @@ class MenuDialogMiddlewareTest {
 
         val browserMenuState = BrowserMenuState(
             selectedTab = createTab(
+                url = url,
+                title = title,
+            ),
+        )
+        val store = createStore(
+            menuState = MenuState(
+                browserMenuState = browserMenuState,
+            ),
+        )
+        testScheduler.advanceUntilIdle()
+
+        assertFalse(store.state.browserMenuState!!.isPinned)
+    }
+
+    @Test
+    fun `GIVEN selected tab is a custom tab WHEN init action is dispatched THEN initial pinned state is not updated`() = runTest(testDispatcher) {
+        val url = "https://www.mozilla.org"
+        val title = "Mozilla"
+
+        coEvery { pinnedSiteStorage.getPinnedSites() } returns listOf(TopSite.Pinned(id = 0, title = title, url = url, createdAt = 0))
+
+        val browserMenuState = BrowserMenuState(
+            selectedTab = createCustomTab(
                 url = url,
                 title = title,
             ),
