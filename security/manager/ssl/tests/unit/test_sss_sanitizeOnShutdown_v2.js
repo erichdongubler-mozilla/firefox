@@ -23,7 +23,10 @@ Cc["@mozilla.org/serviceworkers/manager;1"].getService(
 );
 
 add_task(async function run_test() {
-  do_get_profile();
+  // Pass `true` to emit "profile-after-change" so the bounce tracking
+  // protection service can initialize when sanitize-on-shutdown clears its
+  // state (see bug 1991526).
+  do_get_profile(true);
   let SSService = Cc["@mozilla.org/ssservice;1"].getService(
     Ci.nsISiteSecurityService
   );
