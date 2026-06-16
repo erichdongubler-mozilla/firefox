@@ -21,7 +21,7 @@ class NetworkConnectivityService : public nsINetworkConnectivityService,
                                    public nsIDNSListener,
                                    public nsIStreamListener {
  public:
-  NS_DECL_ISUPPORTS
+  NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSINETWORKCONNECTIVITYSERVICE
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIDNSLISTENER
