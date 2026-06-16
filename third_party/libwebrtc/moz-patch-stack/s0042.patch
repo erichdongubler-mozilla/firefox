@@ -139,7 +139,7 @@ index d0054d3a70..4ee9330a51 100644
  
  std::optional<RtpRtcpInterface::SenderReportStats>
 diff --git a/video/rtp_video_stream_receiver2.h b/video/rtp_video_stream_receiver2.h
-index cfe182d755..8402497391 100644
+index 9f74357d02..8d790dad0d 100644
 --- a/video/rtp_video_stream_receiver2.h
 +++ b/video/rtp_video_stream_receiver2.h
 @@ -232,7 +232,8 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
@@ -153,10 +153,10 @@ index cfe182d755..8402497391 100644
   private:
    // Implements RtpVideoFrameReceiver.
 diff --git a/video/video_receive_stream2.cc b/video/video_receive_stream2.cc
-index c274dec4ff..7aa7e31b29 100644
+index 9f9d4ab838..3f801110c8 100644
 --- a/video/video_receive_stream2.cc
 +++ b/video/video_receive_stream2.cc
-@@ -602,7 +602,8 @@ VideoReceiveStreamInterface::Stats VideoReceiveStream2::GetStats() const {
+@@ -620,7 +620,8 @@ VideoReceiveStreamInterface::Stats VideoReceiveStream2::GetStats() const {
    // seem to be any support for these stats right now. So, we hack this in.
    rtp_video_stream_receiver_.RemoteRTCPSenderInfo(
        &stats.rtcp_sender_packets_sent, &stats.rtcp_sender_octets_sent,
