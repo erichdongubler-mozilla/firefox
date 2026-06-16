@@ -490,7 +490,6 @@ mozilla::LazyLogModule gSHIPBFCacheLog("SHIPBFCache");
 mozilla::LazyLogModule gTimeoutDeferralLog("TimeoutDefer");
 mozilla::LazyLogModule gUseCountersLog("UseCounters");
 static mozilla::LazyLogModule gFingerprinterDetection("FingerprinterDetection");
-extern mozilla::LazyLogModule gFocusNavigationLog;
 
 namespace mozilla {
 
@@ -1399,7 +1398,6 @@ Document::Document(const char* aContentType,
       mHasBeenRevealed(false),
       mAutoSizesEnabled(StaticPrefs::dom_image_sizes_auto_enabled()),
       mWasFocusedElementRemoved(false),
-      mSelectionMoreRecentThanFocus(false),
       mXMLDeclarationBits(0),
       mOnloadBlockCount(0),
       mWriteLevel(0),
@@ -2541,7 +2539,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCachedAncestorOrigins)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDisplayDocument)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFontFaceSet)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPreviouslyFocusedContent)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFocusNavigationStartingPoint)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mReadyForIdle)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocumentL10n)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFragmentDirective)
@@ -2701,7 +2699,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mElementsObservedForLastRememberedSize);
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mActiveEditContext)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFontFaceSet)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPreviouslyFocusedContent)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mFocusNavigationStartingPoint)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mReadyForIdle)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocumentL10n)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFragmentDirective)
@@ -6810,18 +6808,15 @@ void Document::SetLastFocusTime(const TimeStamp& aFocusTime) {
   mLastFocusTime = aFocusTime;
 }
 
-void Document::SetPreviouslyFocusedContent(nsIContent* aContent,
-                                           bool aWillBeRemoved) {
-  MOZ_LOG_FMT(gFocusNavigationLog, LogLevel::Debug,
-              "Set previously-focused content to {} (will be removed = {})",
-              aContent ? ToString(*aContent).c_str() : "null", aWillBeRemoved);
+void Document::SetFocusNavigationStartingPoint(nsIContent* aContent,
+                                               bool aWillBeRemoved) {
   mWasFocusedElementRemoved = aWillBeRemoved;
   if (!aWillBeRemoved) {
-    mPreviouslyFocusedContent = aContent;
+    mFocusNavigationStartingPoint = aContent;
     return;
   }
   if (!aContent) {
-    mPreviouslyFocusedContent = nullptr;
+    mFocusNavigationStartingPoint = nullptr;
     return;
   }
 
@@ -6832,15 +6827,15 @@ void Document::SetPreviouslyFocusedContent(nsIContent* aContent,
        aContent = parent, parent = aContent->GetFlattenedTreeParent()) {
     FlattenedChildIterator iterator(parent);
     if (NS_WARN_IF(!iterator.Seek(aContent))) {
-      mPreviouslyFocusedContent = nullptr;
+      mFocusNavigationStartingPoint = nullptr;
       return;
     }
     if (auto* sibling = iterator.GetPreviousChild()) {
-      mPreviouslyFocusedContent = sibling;
+      mFocusNavigationStartingPoint = sibling;
       return;
     }
   }
-  mPreviouslyFocusedContent = nullptr;
+  mFocusNavigationStartingPoint = nullptr;
 }
 
 void Document::GetReferrer(nsACString& aReferrer) const {
