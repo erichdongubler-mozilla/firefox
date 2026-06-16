@@ -41,6 +41,11 @@ sealed interface InteractionState {
         fun incrementCumulatedOffset(offset: Offset): Grid
 
         /**
+         * Return a copy of the item with an updated index.
+         */
+        fun copyWithNewIndex(newIndex: Int): Grid
+
+        /**
          * Data object to represent no active interaction.
          * @property index of the item, always null
          * @property key of the item, always null
@@ -57,6 +62,10 @@ sealed interface InteractionState {
             }
 
             override fun incrementCumulatedOffset(offset: Offset): Grid {
+                return this
+            }
+
+            override fun copyWithNewIndex(newIndex: Int): Grid {
                 return this
             }
         }
@@ -81,6 +90,12 @@ sealed interface InteractionState {
             override fun incrementCumulatedOffset(offset: Offset): Grid {
                 return this.copy(
                     cumulatedOffset = cumulatedOffset + offset,
+                )
+            }
+
+            override fun copyWithNewIndex(newIndex: Int): Grid {
+                return this.copy(
+                    index = newIndex,
                 )
             }
         }

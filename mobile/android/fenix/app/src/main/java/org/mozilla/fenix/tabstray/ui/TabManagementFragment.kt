@@ -158,9 +158,6 @@ class TabManagementFragment : Fragment() {
                         placeAfter = placeAfter,
                     ),
                 )
-                tabsTrayStore.dispatch(
-                    TabsTrayAction.TabDragCancel,
-                )
             }
 
             override fun onDrop(sourceKey: String, targetKey: String) {

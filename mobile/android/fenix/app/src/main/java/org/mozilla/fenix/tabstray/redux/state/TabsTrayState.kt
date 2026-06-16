@@ -181,7 +181,7 @@ data class TabsTrayState(
      * @property tabGroupsEnabled Whether the Tab Groups feature is enabled.
      * @property tabGroupsDragAndDropEnabled:  Whether drag and drop is enabled for Tab Groups.
      * @property tabGroupsOnboardingEnabled Whether the onboarding card for Tab Groups is enabled.
-     * @property tabGroupsLiveReorderEnabled Whether or not to enable live reorder for Tab Groups drag and drop.
+     * @property tabGroupsLiveReorderEnabled Whether in-place reorder is enabled for drag and drop.
      * @property isInDebugMode Whether the app is in a debug state or has secret menu enabled.
      * @property showTabAutoCloseBanner Whether the banner for the tab auto-closer feature is visible.
      */
