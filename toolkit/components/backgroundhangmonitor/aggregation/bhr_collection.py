@@ -356,10 +356,6 @@ def process_hangs(ping, config):
         (stack, duration, thread, runnable_name, process, annotations,
          build_date, platform)
     where stack is a list of (module, offset) pairs from process_frame.
-
-    A hang annotated with PaintWhileInterruptingJS is emitted twice: once
-    under its real thread and once under a synthetic "Gecko_Child_ForcePaint"
-    thread, matching the python_mozetl behaviour.
     """
     build_date = ping["client_info/app_build"][:8]  # "YYYYMMDD"
     platform = "{}".format(ping["client_info/os"])
@@ -395,18 +391,6 @@ def process_hangs(ping, config):
             platform,
         )
         result.append(row)
-
-        if "PaintWhileInterruptingJS" in annotations:
-            result.append((
-                stack,
-                h["duration"],
-                "Gecko_Child_ForcePaint",
-                "",
-                h["process"],
-                annotations,
-                build_date,
-                platform,
-            ))
 
     return result
 
@@ -511,7 +495,7 @@ def group_hangs(hangs, config):
                 grouped[key] = merge_hang_data(grouped[key], value)
             else:
                 grouped[key] = value
-    return [key + value for key, value in grouped.items()]
+    return [(*key, *value) for key, value in grouped.items()]
 
 
 def write_file(name, data, output_dir):

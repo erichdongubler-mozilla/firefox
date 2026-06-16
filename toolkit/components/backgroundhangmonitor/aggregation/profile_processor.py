@@ -153,9 +153,7 @@ def get_default_thread(name, minimal_sample_table):
         "pruneStackCache": prune_stack_cache,
         "sampleTable": sample_table,
         "stringArray": strings_table,
-        "processType": "tab"
-        if name in {"Gecko_Child", "Gecko_Child_ForcePaint"}
-        else "default",
+        "processType": "tab" if name == "Gecko_Child" else "default",
         "dates": UniqueKeyedTable(
             lambda date: ({
                 "date": date,
