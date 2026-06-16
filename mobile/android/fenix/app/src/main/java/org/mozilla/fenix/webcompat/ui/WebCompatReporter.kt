@@ -7,6 +7,7 @@ package org.mozilla.fenix.webcompat.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,9 +19,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -36,11 +39,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -48,18 +50,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.Dropdown
 import mozilla.components.compose.base.LinkText
 import mozilla.components.compose.base.LinkTextState
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.button.OutlinedButton
 import mozilla.components.compose.base.button.TextButton
-import mozilla.components.compose.base.menu.MenuItem
-import mozilla.components.compose.base.modifier.thenConditional
-import mozilla.components.compose.base.text.Text.Resource
 import mozilla.components.compose.base.textfield.TextField
+import mozilla.components.compose.base.theme.AcornCorners
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.components
@@ -67,7 +67,6 @@ import org.mozilla.fenix.ext.getBaseDomainUrl
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.ThemedValue
 import org.mozilla.fenix.theme.ThemedValueProvider
-import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_CHOOSE_REASON_BUTTON
 import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_DESCRIPTION_INPUT
 import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_SEND_BUTTON
 import org.mozilla.fenix.webcompat.store.WebCompatReporterAction
@@ -142,37 +141,21 @@ fun WebCompatReporter(
                 baseDomain = baseDomain,
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))
 
-            val reasonErrorText = stringResource(R.string.webcompat_reporter_choose_reason_error)
+            HorizontalDivider()
 
-            Dropdown(
-                label = stringResource(id = R.string.webcompat_reporter_label_whats_broken_2),
-                placeholder = stringResource(id = R.string.webcompat_reporter_choose_reason_2),
-                dropdownItems = state.toDropdownItems(
-                    onDropdownItemClick = {
-                        store.dispatch(WebCompatReporterAction.ReasonChanged(newReason = it))
-                    },
-                ),
-                modifier = Modifier.thenConditional(
-                    modifier = Modifier.semantics { error(reasonErrorText) },
-                ) { state.hasReasonDropdownError },
+            Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))
+
+            BrokenSiteReasonSection(
+                selectedReason = state.reason,
+                onReasonSelected = { reason ->
+                    store.dispatch(WebCompatReporterAction.ReasonChanged(reason))
+                },
+                onReasonCleared = {
+                    store.dispatch(WebCompatReporterAction.ReasonCleared)
+                },
             )
-
-            if (state.hasReasonDropdownError) {
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = reasonErrorText,
-                    // The a11y for this is handled via the `Dropdown` modifier
-                    modifier = Modifier.clearAndSetSemantics {
-                        testTagsAsResourceId = true
-                        testTag = BROKEN_SITE_REPORTER_CHOOSE_REASON_BUTTON
-                    },
-                    style = FirefoxTheme.typography.caption,
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -199,7 +182,7 @@ fun WebCompatReporter(
                     )
                 },
                 placeholder = stringResource(id = R.string.webcompat_reporter_problem_description_placeholder_text_2),
-                errorText = "",
+                errorText = "", // TODO (Bug 2038709)
                 singleLine = false,
                 maxLines = PROBLEM_DESCRIPTION_MAX_LINES,
                 modifier = Modifier
@@ -349,26 +332,6 @@ fun WebCompatReporter(
     }
 }
 
-/**
- * Helper function used to obtain the list of dropdown menu items derived from [BrokenSiteReason].
- *
- * @param onDropdownItemClick Callback invoked when the particular dropdown item is selected.
- * @return The list of [MenuItem.CheckableItem] to display in the dropdown.
- */
-private fun WebCompatReporterState.toDropdownItems(
-    onDropdownItemClick: (BrokenSiteReason) -> Unit,
-): List<MenuItem.CheckableItem> {
-    return BrokenSiteReason.entries.map { reason ->
-        MenuItem.CheckableItem(
-            text = Resource(reason.displayStringId),
-            isChecked = this.reason == reason,
-            onClick = {
-                onDropdownItemClick(reason)
-            },
-        )
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TempAppBar(
@@ -405,6 +368,100 @@ private fun TempAppBar(
             },
         ),
     )
+}
+
+@Composable
+private fun BrokenSiteReasonSection(
+    selectedReason: BrokenSiteReason?,
+    onReasonSelected: (BrokenSiteReason) -> Unit,
+    onReasonCleared: () -> Unit,
+) {
+    Text(
+        text = stringResource(id = R.string.webcompat_reporter_label_whats_broken_3),
+        style = FirefoxTheme.typography.headline7,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.fillMaxWidth(),
+    )
+
+    Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static100))
+
+    if (selectedReason == null) {
+        BrokenSiteReasonList(
+            onReasonSelected = onReasonSelected,
+        )
+    } else {
+        BrokenSiteReasonListItem(
+            text = stringResource(selectedReason.displayStringId),
+            shape = RoundedCornerShape(AcornCorners.extraSmall),
+            onClick = onReasonCleared,
+        )
+    }
+
+    // TODO (Bug 2038709): Make problem description mandatory for "Something else" dropdown reason
+}
+
+@Composable
+private fun BrokenSiteReasonList(
+    onReasonSelected: (BrokenSiteReason) -> Unit,
+) {
+    val reasons = BrokenSiteReason.entries
+    val outerCornerRadius = AcornCorners.extraLarge
+    val middleCornerRadius = AcornCorners.extraSmall
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static25),
+    ) {
+        reasons.forEachIndexed { index, reason ->
+            BrokenSiteReasonListItem(
+                text = stringResource(reason.displayStringId),
+                shape = getReasonListItemShape(
+                    index = index,
+                    lastIndex = reasons.lastIndex,
+                    outerCornerRadius = outerCornerRadius,
+                    middleCornerRadius = middleCornerRadius,
+                ),
+                onClick = {
+                    onReasonSelected(reason)
+                },
+            )
+        }
+    }
+}
+
+/**
+ * Helper that returns the shape for a broken site reason list item based on its position in the list.
+ *
+ * The first item receives rounded top corners, the last item receives rounded bottom corners,
+ * middle items receive a smaller rounded shape, and a single item receives rounded corners on all
+ * sides.
+ *
+ * @param index The position of the item in the reason list.
+ * @param lastIndex The index of the last item in the reason list.
+ * @param outerCornerRadius The corner radius used for the outer edges of the first and last items.
+ * @param middleCornerRadius The corner radius used for items between the first and last items.
+ * @return The [Shape] to apply to the reason list item.
+ */
+private fun getReasonListItemShape(
+    index: Int,
+    lastIndex: Int,
+    outerCornerRadius: Dp,
+    middleCornerRadius: Dp,
+): Shape {
+    return when {
+        lastIndex == 0 -> RoundedCornerShape(outerCornerRadius)
+
+        index == 0 -> RoundedCornerShape(
+            topStart = outerCornerRadius,
+            topEnd = outerCornerRadius,
+        )
+
+        index == lastIndex -> RoundedCornerShape(
+            bottomStart = outerCornerRadius,
+            bottomEnd = outerCornerRadius,
+        )
+
+        else -> RoundedCornerShape(middleCornerRadius)
+    }
 }
 
 private class WebCompatPreviewParameterProvider : ThemedValueProvider<WebCompatReporterState>(
