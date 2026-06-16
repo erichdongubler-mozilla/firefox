@@ -14,5 +14,11 @@ DIST_SUBDIR = ""
 # meant to be packaged in the add-on XPI file.
 
 FINAL_TARGET_FILES += [
-    "../extension/*",
+    "../extension/bg.js",
+    "../extension/manifest.json",
 ]
+
+FINAL_TARGET_FILES.breakages += ["../extension/breakages/**"]
+FINAL_TARGET_FILES.conditions += ["../extension/conditions/**"]
+FINAL_TARGET_FILES.api.parent += ["../extension/api/parent/**"]
+FINAL_TARGET_FILES.api.schemas += ["../extension/api/schemas/**"]
