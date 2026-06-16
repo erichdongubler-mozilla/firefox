@@ -12298,14 +12298,22 @@
 # in the RDD or utility processes.
 - name: media.use-remote-encoder.audio
   type: RelaxedAtomicBool
+#ifdef NIGHTLY_BUILD
+  value: @IS_NOT_ANDROID@
+#else
   value: false
+#endif
   mirror: always
 
 # Specifies whether the PEMFactory can create PEMs for remote video encoding
 # in the RDD or GPU process.
 - name: media.use-remote-encoder.video
   type: RelaxedAtomicBool
+#ifdef NIGHTLY_BUILD
+  value: @IS_NOT_ANDROID@
+#else
   value: false
+#endif
   mirror: always
 
 - name: media.gpu-process-decoder
@@ -12319,7 +12327,11 @@
 
 - name: media.gpu-process-encoder
   type: RelaxedAtomicBool
+#ifdef NIGHTLY_BUILD
+  value: @IS_XP_WIN@
+#else
   value: false
+#endif
   mirror: always
 
 - name: media.ffvpx-hw.enabled
