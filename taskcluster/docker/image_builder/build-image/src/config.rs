@@ -39,6 +39,7 @@ pub struct Config {
     #[serde(default, deserialize_with = "from_json")]
     pub docker_build_args: HashMap<String, String>,
     pub chown_output: Option<String>,
+    pub target_arch: Option<String>,
 }
 
 impl Config {
@@ -72,6 +73,7 @@ mod test {
                 debug: false,
                 docker_build_args: Default::default(),
                 chown_output: None,
+                target_arch: None,
             }
         );
         Ok(())
@@ -108,6 +110,7 @@ mod test {
                     .cloned()
                     .collect(),
                 chown_output: None,
+                target_arch: None,
             }
         );
         Ok(())
@@ -135,6 +138,7 @@ mod test {
                 debug: false,
                 docker_build_args: Default::default(),
                 chown_output: Some("1000:1000".into()),
+                target_arch: None,
             }
         );
         Ok(())
