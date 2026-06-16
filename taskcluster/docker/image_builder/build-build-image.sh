@@ -3,6 +3,7 @@
 set -ex
 
 ARCH=$1
+BUILDARCH=$(dpkg --print-architecture)
 TOOLCHAIN=1.96.0
 if [ "$ARCH" = arm64 ]; then
     TARGET=aarch64-unknown-linux-musl
@@ -33,3 +34,9 @@ export PATH="/home/rust/.cargo/bin:$PATH"
 export RUSTC_BOOTSTRAP=1
 # Build our application.
 cargo build --target $TARGET --artifact-dir=bin --release -Zunstable-options
+
+# Run the unit tests, but only for a native build: when cross-compiling the
+# resulting test binaries can't be executed on the build host.
+if [ "$ARCH" = "$BUILDARCH" ]; then
+    cargo test --target $TARGET --release
+fi
