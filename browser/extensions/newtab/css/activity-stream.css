@@ -8820,10 +8820,15 @@ dialog:dir(rtl)::after {
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   block-size: 276px;
   padding: var(--space-medium);
-  background: var(--newtab-background-card);
+  background: var(--newtab-background-color-secondary);
   border: var(--border-width) solid var(--border-color);
   border-radius: var(--border-radius-large);
   box-shadow: var(--box-shadow-level-4);
+}
+@media (prefers-contrast) {
+  .nova-enabled .clocks-widget .clocks-panel {
+    background-color: var(--background-color-box);
+  }
 }
 .nova-enabled .clocks-widget .clocks-location-wrapper {
   position: relative;
@@ -8844,10 +8849,15 @@ dialog:dir(rtl)::after {
   max-block-size: 180px;
   overflow-y: auto;
   padding: var(--space-xsmall);
-  background: var(--newtab-background-card);
+  background: var(--newtab-background-color-secondary);
   border: var(--border-width) solid var(--border-color);
   border-radius: var(--border-radius-medium);
   box-shadow: var(--box-shadow-level-4);
+}
+@media (prefers-contrast) {
+  .nova-enabled .clocks-widget .clocks-search-results {
+    background-color: var(--background-color-box);
+  }
 }
 .nova-enabled .clocks-widget .clocks-search-no-results {
   color: var(--text-color-deemphasized);
