@@ -111,7 +111,7 @@ class MediaKeys final : public nsIObserver,
 
   CDMProxy* GetCDMProxy() { return mProxy; }
 
-  nsIPrincipal* GetStoragePrincipal() const { return mStoragePrincipal; }
+  nsIPrincipal* GetPrincipal() const { return mPrincipal; }
 
   // Makes a new promise, or nullptr on failure.
   already_AddRefed<DetailedPromise> MakePromise(ErrorResult& aRv,
@@ -211,8 +211,6 @@ class MediaKeys final : public nsIObserver,
 
   // The principal of the relevant settings object.
   RefPtr<nsIPrincipal> mPrincipal;
-  // The storage principal of the relevant settings object.
-  RefPtr<nsIPrincipal> mStoragePrincipal;
   // The principal of the top level page. This can differ from mPrincipal if
   // we're in an iframe.
   RefPtr<nsIPrincipal> mTopLevelPrincipal;

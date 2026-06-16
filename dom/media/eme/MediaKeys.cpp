@@ -483,7 +483,6 @@ already_AddRefed<DetailedPromise> MediaKeys::Init(ErrorResult& aRv) {
     return promise.forget();
   }
   mPrincipal = sop->GetPrincipal();
-  mStoragePrincipal = sop->GetEffectiveStoragePrincipal();
 
   // Begin figuring out the top level principal.
   nsCOMPtr<nsPIDOMWindowInner> window = GetParentObject();

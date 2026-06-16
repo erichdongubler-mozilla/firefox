@@ -913,11 +913,6 @@ void MediaDrmRemoteCDMParent::UnprovisionMediaDrmOrigins(
           aOriginKeys.Length());
 
   for (const auto& originKey : aOriginKeys) {
-    const nsCString derivedId = DeriveMediaDrmOriginId(originKey);
-    if (derivedId.IsEmpty()) {
-      continue;
-    }
-
     AMediaDrm* drm = AMediaDrm_createByUUID(WIDEVINE_UUID);
     if (!drm) {
       EME_LOG("UnprovisionMediaDrmOrigins: failed to create AMediaDrm");
@@ -925,7 +920,7 @@ void MediaDrmRemoteCDMParent::UnprovisionMediaDrmOrigins(
     }
 
     media_status_t status =
-        AMediaDrm_setPropertyString(drm, "origin", derivedId.get());
+        AMediaDrm_setPropertyString(drm, "origin", originKey.get());
     if (status != AMEDIA_OK) {
       EME_LOG("UnprovisionMediaDrmOrigins: setPropertyString origin failed: {}",
               static_cast<int>(status));

@@ -126,7 +126,7 @@ void RemoteCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
   RefPtr<GenericNonExclusivePromise> ipdlPromise = mIPDLPromise;
   mIPDLPromise = nullptr;
 
-  GetEMEOriginID(mKeys->GetStoragePrincipal())
+  GetEMEOriginID(mKeys->GetPrincipal())
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
           [self = RefPtr{this}, aPromiseId, ipdlPromise](

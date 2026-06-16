@@ -5,7 +5,6 @@
 #ifndef DOM_MEDIA_EME_EMEORIGINID_H_
 #define DOM_MEDIA_EME_EMEORIGINID_H_
 
-#include "mozilla/EMEUtils.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/media/MediaChild.h"
 #include "nsIPrincipal.h"
@@ -35,22 +34,7 @@ inline RefPtr<media::PrincipalKeyPromise> GetEMEOriginID(
   // The OriginKeyStore infrastructure already routes private browsing
   // principals to a separate in-memory-only table, so the persist flag is
   // irrelevant for private browsing.
-  return media::GetPrincipalKey(principalInfo, /*aPersist*/ true)
-      ->Then(
-          GetMainThreadSerialEventTarget(), __func__,
-          [](const media::PrincipalKeyPromise::ResolveOrRejectValue& aValue) {
-            if (aValue.IsReject()) {
-              return media::PrincipalKeyPromise::CreateAndReject(
-                  aValue.RejectValue(), __func__);
-            }
-            const nsCString& key = aValue.ResolveValue();
-            if (key.IsEmpty()) {
-              return media::PrincipalKeyPromise::CreateAndResolve(key,
-                                                                  __func__);
-            }
-            return media::PrincipalKeyPromise::CreateAndResolve(
-                DeriveMediaDrmOriginId(key), __func__);
-          });
+  return media::GetPrincipalKey(principalInfo, /*aPersist*/ true);
 }
 
 }  // namespace mozilla

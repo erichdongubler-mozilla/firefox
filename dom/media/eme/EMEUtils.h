@@ -110,8 +110,6 @@ void DeprecationWarningLog(const dom::Document* aDocument,
 
 Maybe<nsCString> GetOrigin(const dom::Document* aDocument);
 
-nsCString DeriveMediaDrmOriginId(const nsACString& aOriginKey);
-
 }  // namespace mozilla
 
 #endif  // EME_LOG_H_
