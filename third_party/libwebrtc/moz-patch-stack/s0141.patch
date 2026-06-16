@@ -17,7 +17,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/bc8a96604aaa6f1fb
  6 files changed, 23 insertions(+), 24 deletions(-)
 
 diff --git a/audio/audio_receive_stream.cc b/audio/audio_receive_stream.cc
-index 157504b506..d35cf141e6 100644
+index cd55a7e5c1..165c6e232e 100644
 --- a/audio/audio_receive_stream.cc
 +++ b/audio/audio_receive_stream.cc
 @@ -94,7 +94,7 @@ std::unique_ptr<voe::ChannelReceiveInterface> CreateChannelReceive(
