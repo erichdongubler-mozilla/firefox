@@ -124,7 +124,7 @@ mod test {
                 "CONTEXT_PATH".into(),
                 "public/docker-contexts/image.tar.gz".into(),
             ),
-            ("USER".into(), "1000:1000".into()),
+            ("CHOWN_OUTPUT".into(), "1000:1000".into()),
         ];
         let config: super::Config = envy::from_iter(env.into_iter())?;
         assert_eq!(
