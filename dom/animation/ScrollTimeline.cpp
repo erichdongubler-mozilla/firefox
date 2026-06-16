@@ -242,8 +242,8 @@ void ScrollTimeline::GetCurrentTime(
   const double progress =
       static_cast<double>(std::abs(data->mPosition) - data->mStart) /
       static_cast<double>(data->mEnd - data->mStart);
-  aRetVal.SetValue().SetAsCSSNumericValue() =
-      MakeRefPtr<CSSUnitValue>(mWindow, progress * 100.0, "percent"_ns);
+  aRetVal.SetValue().SetAsCSSNumericValue() = MakeCSSUnitValue(
+      mWindow, StyleNumericType::Percent(), progress * 100.0, "percent"_ns);
 }
 
 void ScrollTimeline::WillRefresh() {

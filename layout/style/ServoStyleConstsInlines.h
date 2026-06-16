@@ -1546,8 +1546,32 @@ inline StyleNumericType StyleNumericType::WithBaseType(
 
 inline StyleNumericType StyleNumericType::Number() { return Empty(); }
 
+inline StyleNumericType StyleNumericType::Percent() {
+  return WithBaseType(StyleNumericBaseType::Percent);
+}
+
 inline StyleNumericType StyleNumericType::Length() {
   return WithBaseType(StyleNumericBaseType::Length);
+}
+
+inline StyleNumericType StyleNumericType::Angle() {
+  return WithBaseType(StyleNumericBaseType::Angle);
+}
+
+inline StyleNumericType StyleNumericType::Time() {
+  return WithBaseType(StyleNumericBaseType::Time);
+}
+
+inline StyleNumericType StyleNumericType::Frequency() {
+  return WithBaseType(StyleNumericBaseType::Frequency);
+}
+
+inline StyleNumericType StyleNumericType::Resolution() {
+  return WithBaseType(StyleNumericBaseType::Resolution);
+}
+
+inline StyleNumericType StyleNumericType::Flex() {
+  return WithBaseType(StyleNumericBaseType::Flex);
 }
 
 inline int32_t StyleNumericType::Exponent(

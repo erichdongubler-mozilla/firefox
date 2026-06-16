@@ -192,8 +192,8 @@ void AnimationUtils::DoubleToCSSNumberish(double aMs, bool aProgressBased,
   if (aProgressBased) {
     const double progress =
         aMs / static_cast<double>(PROGRESS_TIMELINE_DURATION_MILLISEC) * 100.0;
-    aRetVal.SetAsCSSNumericValue() =
-        MakeRefPtr<CSSUnitValue>(aGlobal, progress, "percent"_ns);
+    aRetVal.SetAsCSSNumericValue() = MakeCSSUnitValue(
+        aGlobal, StyleNumericType::Percent(), progress, "percent"_ns);
     return;
   }
   aRetVal.SetAsDouble() = aMs;

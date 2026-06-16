@@ -17,12 +17,6 @@
 
 namespace mozilla::dom {
 
-CSSUnitValue::CSSUnitValue(nsCOMPtr<nsISupports> aParent, double aValue,
-                           const nsACString& aUnit)
-    : CSSNumericValue(std::move(aParent), NumericValueType::UnitValue),
-      mValue(aValue),
-      mUnit(aUnit) {}
-
 CSSUnitValue::CSSUnitValue(
     nsCOMPtr<nsISupports> aParent,
     MovingNotNull<UniquePtr<StyleNumericType>> aNumericType, double aValue,
@@ -226,6 +220,13 @@ CSSUnitValue& CSSNumericValue::GetAsCSSUnitValue() {
   MOZ_DIAGNOSTIC_ASSERT(mNumericValueType == NumericValueType::UnitValue);
 
   return *static_cast<CSSUnitValue*>(this);
+}
+
+already_AddRefed<CSSUnitValue> MakeCSSUnitValue(
+    nsCOMPtr<nsISupports> aParent, const StyleNumericType& aNumericType,
+    double aValue, const nsACString& aUnit) {
+  return CSSUnitValue::Create(std::move(aParent), aNumericType, aValue, aUnit)
+      .forget();
 }
 
 }  // namespace mozilla::dom

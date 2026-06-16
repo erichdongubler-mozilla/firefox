@@ -174,9 +174,9 @@ already_AddRefed<CSSNumericValue> ViewTimeline::GetStartOffset(
     aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
     return nullptr;
   }
-  return MakeAndAddRef<CSSUnitValue>(
-      GetParentObject(), nsPresContext::AppUnitsToDoubleCSSPixels(data->mStart),
-      "px"_ns);
+  return MakeCSSUnitValue(
+      GetParentObject(), StyleNumericType::Length(),
+      nsPresContext::AppUnitsToDoubleCSSPixels(data->mStart), "px"_ns);
 }
 
 already_AddRefed<CSSNumericValue> ViewTimeline::GetEndOffset(
@@ -190,9 +190,9 @@ already_AddRefed<CSSNumericValue> ViewTimeline::GetEndOffset(
     aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
     return nullptr;
   }
-  return MakeAndAddRef<CSSUnitValue>(
-      GetParentObject(), nsPresContext::AppUnitsToDoubleCSSPixels(data->mEnd),
-      "px"_ns);
+  return MakeCSSUnitValue(GetParentObject(), StyleNumericType::Length(),
+                          nsPresContext::AppUnitsToDoubleCSSPixels(data->mEnd),
+                          "px"_ns);
 }
 
 void ViewTimeline::ReplacePropertiesWith(

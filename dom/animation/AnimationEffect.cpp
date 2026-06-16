@@ -350,8 +350,8 @@ void AnimationEffect::GetComputedTimingAsDict(
       hasProgressTimeline ? mAnimation->GetParentObject() : nullptr;
 
   if (progressGlobal) {
-    aRetVal.mDuration.SetAsCSSNumericValue() = MakeRefPtr<CSSUnitValue>(
-        progressGlobal,
+    aRetVal.mDuration.SetAsCSSNumericValue() = MakeCSSUnitValue(
+        progressGlobal, StyleNumericType::Percent(),
         computedTiming.mDuration.ToMilliseconds() /
             static_cast<double>(PROGRESS_TIMELINE_DURATION_MILLISEC) * 100.0,
         "percent"_ns);

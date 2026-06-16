@@ -266,8 +266,9 @@ void AnimationEventInfo::Dispatch(nsPresContext* aPresContext) {
             data.mCurrentTime.Value() /
             static_cast<double>(PROGRESS_TIMELINE_DURATION_MILLISEC) * 100.0;
         init.mCurrentTime.SetValue().SetAsCSSNumericValue() =
-            MakeRefPtr<dom::CSSUnitValue>(mAnimation->GetParentObject(),
-                                          progress, "percent"_ns);
+            dom::MakeCSSUnitValue(mAnimation->GetParentObject(),
+                                  StyleNumericType::Percent(), progress,
+                                  "percent"_ns);
       } else {
         init.mCurrentTime.SetValue().SetAsDouble() = data.mCurrentTime.Value();
       }
