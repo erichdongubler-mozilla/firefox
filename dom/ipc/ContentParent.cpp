@@ -3800,7 +3800,7 @@ ContentParent::BlockShutdown(nsIAsyncShutdownClient* aClient) {
 NS_IMETHODIMP
 ContentParent::GetName(nsAString& aName) {
   aName.AssignLiteral("ContentParent:");
-  aName.AppendPrintf(" id=%p", this);
+  aName.AppendPrintf(" id=%" PRIu64, (uint64_t)ChildID());
   return NS_OK;
 }
 

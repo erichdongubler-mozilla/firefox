@@ -810,6 +810,9 @@ function Barrier(name) {
         name,
         fetchState,
         getOrigin: () => getOrigin(topFrame, filename, lineNumber, stack),
+        // Time at which this blocker was registered, used as the start time of
+        // the profiler marker emitted when the blocker is removed.
+        addTime: ChromeUtils.now(),
       };
 
       this._waitForMe.add(promise);
@@ -1023,6 +1026,21 @@ Barrier.prototype = Object.freeze({
           // Report the problem as best as we can, then crash.
           let state = this.state;
 
+          // Emit a profiler marker for each blocker that is still pending, so
+          // the blockers responsible for the hang are visible in a profile
+          // captured at the timeout. The marker spans from when the blocker was
+          // registered to now.
+          for (let blocker of this._promiseToBlocker.values()) {
+            let { filename, lineNumber } = blocker.getOrigin();
+            ChromeUtils.addProfilerMarker(
+              "AsyncShutdown timeout",
+              { startTime: blocker.addTime },
+              `${topic}: ${blocker.name} (${filename}:${lineNumber}) - ${JSON.stringify(
+                safeGetState(blocker.fetchState)
+              )}`
+            );
+          }
+
           // If you change the following message, please make sure
           // that any information on the topic and state appears
           // within the first 200 characters of the message. This
@@ -1103,6 +1121,16 @@ Barrier.prototype = Object.freeze({
       // The blocker has already been removed
       return false;
     }
+
+    // Emit an interval profiler marker spanning the lifetime of the blocker, so
+    // we can see in profiles when each blocker was added and removed.
+    let blocker = this._promiseToBlocker.get(promise);
+    ChromeUtils.addProfilerMarker(
+      "AsyncShutdown blocker",
+      { startTime: blocker.addTime },
+      `${this._name}: ${blocker.name}`
+    );
+
     this._conditionToPromise.delete(condition);
     this._promiseToBlocker.delete(promise);
     return this._waitForMe.delete(promise);
