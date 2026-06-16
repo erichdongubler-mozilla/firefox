@@ -9,15 +9,15 @@ Differential Revision: https://phabricator.services.mozilla.com/D297529
 Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/bc8a96604aaa6f1fbcd58261bf4bd6692cca3d3f
 ---
  audio/audio_receive_stream.cc       |  2 +-
- audio/channel_receive.cc            | 21 +++++++++------------
+ audio/channel_receive.cc            | 19 ++++++++-----------
  audio/channel_receive.h             |  3 ++-
  call/flexfec_receive_stream_impl.cc |  4 ++++
  call/receive_stream.h               |  4 +++-
  video/rtp_video_stream_receiver2.cc | 15 +++++----------
- 6 files changed, 24 insertions(+), 25 deletions(-)
+ 6 files changed, 23 insertions(+), 24 deletions(-)
 
 diff --git a/audio/audio_receive_stream.cc b/audio/audio_receive_stream.cc
-index 3ecfc8e67b..78274314c8 100644
+index 959fab1e9d..6a6d6af3d6 100644
 --- a/audio/audio_receive_stream.cc
 +++ b/audio/audio_receive_stream.cc
 @@ -93,7 +93,7 @@ std::unique_ptr<voe::ChannelReceiveInterface> CreateChannelReceive(
@@ -30,10 +30,10 @@ index 3ecfc8e67b..78274314c8 100644
  }  // namespace
  
 diff --git a/audio/channel_receive.cc b/audio/channel_receive.cc
-index 6b4d0e30a2..b913acd88e 100644
+index c53c0a3a0e..60f19976d1 100644
 --- a/audio/channel_receive.cc
 +++ b/audio/channel_receive.cc
-@@ -130,7 +130,8 @@ class ChannelReceive : public ChannelReceiveInterface,
+@@ -159,7 +159,8 @@ class ChannelReceive : public ChannelReceiveInterface,
                   scoped_refptr<FrameDecryptorInterface> frame_decryptor,
                   const CryptoOptions& crypto_options,
                   scoped_refptr<FrameTransformerInterface> frame_transformer,
@@ -43,7 +43,7 @@ index 6b4d0e30a2..b913acd88e 100644
    ~ChannelReceive() override;
  
    void SetSink(AudioSinkInterface* sink) override;
-@@ -559,7 +560,8 @@ ChannelReceive::ChannelReceive(
+@@ -590,7 +591,8 @@ ChannelReceive::ChannelReceive(
      scoped_refptr<FrameDecryptorInterface> frame_decryptor,
      const CryptoOptions& crypto_options,
      scoped_refptr<FrameTransformerInterface> frame_transformer,
@@ -53,24 +53,22 @@ index 6b4d0e30a2..b913acd88e 100644
      : env_(env),
        worker_thread_(TaskQueueBase::Current()),
        rtp_receive_statistics_(ReceiveStatistics::Create(&env_.clock())),
-@@ -595,14 +597,8 @@ ChannelReceive::ChannelReceive(
-   if (frame_transformer)
-     InitFrameTransformerDelegate(std::move(frame_transformer));
- 
--  rtp_rtcp_ =
--      ModuleRtpRtcpImpl2::CreateReceiveModule(env_, configuration, [this] {
--        if (packet_router_ == nullptr) {
--          return kFallbackRtcpSsrcForAudio;
--        }
--        return packet_router_->SsrcOfFirstSender().value_or(
--            kFallbackRtcpSsrcForAudio);
--      });
-+  rtp_rtcp_ = ModuleRtpRtcpImpl2::CreateReceiveModule(
-+      env_, configuration, [local_ssrc] { return local_ssrc; });
-   rtp_rtcp_->SetRemoteSSRC(remote_ssrc_);
- 
-   // Ensure that RTCP is enabled for the created channel.
-@@ -1207,13 +1203,14 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
+@@ -602,13 +604,7 @@ ChannelReceive::ChannelReceive(
+           enable_non_sender_rtt,
+           remote_ssrc,
+           rtcp_event_observer,
+-          [this] {
+-            if (packet_router_ == nullptr) {
+-              return kFallbackRtcpSsrcForAudio;
+-            }
+-            return packet_router_->SsrcOfFirstSender().value_or(
+-                kFallbackRtcpSsrcForAudio);
+-          })),
++          [local_ssrc] { return local_ssrc; })),
+       remote_ssrc_(remote_ssrc),
+       source_tracker_(&env_.clock()),
+       neteq_(CreateNetEq(neteq_factory,
+@@ -1236,13 +1232,14 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
      scoped_refptr<FrameDecryptorInterface> frame_decryptor,
      const CryptoOptions& crypto_options,
      scoped_refptr<FrameTransformerInterface> frame_transformer,
@@ -88,10 +86,10 @@ index 6b4d0e30a2..b913acd88e 100644
  
  }  // namespace voe
 diff --git a/audio/channel_receive.h b/audio/channel_receive.h
-index 952784c168..baa3dffb4a 100644
+index 6240bf2ca3..94f9fc9d48 100644
 --- a/audio/channel_receive.h
 +++ b/audio/channel_receive.h
-@@ -183,7 +183,8 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
+@@ -185,7 +185,8 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
      scoped_refptr<FrameDecryptorInterface> frame_decryptor,
      const webrtc::CryptoOptions& crypto_options,
      scoped_refptr<FrameTransformerInterface> frame_transformer,
