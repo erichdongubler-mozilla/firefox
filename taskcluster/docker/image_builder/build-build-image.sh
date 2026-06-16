@@ -3,7 +3,7 @@
 set -ex
 
 ARCH=$1
-TOOLCHAIN=1.76.0
+TOOLCHAIN=1.96.0
 if [ "$ARCH" = arm64 ]; then
     TARGET=aarch64-unknown-linux-musl
     # there's no aarch64-linux-musl-gcc, use the gnu one
@@ -29,7 +29,7 @@ curl https://sh.rustup.rs -sSf | \
 # musl-gcc toolchain and for our Rust toolchain.
 export PATH="/home/rust/.cargo/bin:$PATH"
 
-# --out-dir is not yet stable
+# --artifact-dir is not yet stable
 export RUSTC_BOOTSTRAP=1
 # Build our application.
-cargo build --target $TARGET --out-dir=bin --release -Zunstable-options
+cargo build --target $TARGET --artifact-dir=bin --release -Zunstable-options
