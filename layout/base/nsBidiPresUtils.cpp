@@ -1652,9 +1652,7 @@ void nsBidiPresUtils::IsFirstOrLast(nsIFrame* aFrame,
   // Reduce number of remaining frames of the continuation chain on the line.
   firstFrameState->mFrameCount--;
 
-  nsInlineFrame* testFrame = do_QueryFrame(aFrame);
-
-  if (testFrame) {
+  if (aFrame->IsInlineFrameOrSubclass()) {
     aFrame->AddStateBits(NS_INLINE_FRAME_BIDI_VISUAL_STATE_IS_SET);
 
     if (aIsFirst) {

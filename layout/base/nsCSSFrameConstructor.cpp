@@ -362,8 +362,8 @@ static void ReparentFrames(nsCSSFrameConstructor* aFrameConstructor,
 
 static inline bool IsFramePartOfIBSplit(nsIFrame* aFrame) {
   bool result = aFrame->HasAnyStateBits(NS_FRAME_PART_OF_IBSPLIT);
-  MOZ_ASSERT(!result || static_cast<nsBlockFrame*>(do_QueryFrame(aFrame)) ||
-                 static_cast<nsInlineFrame*>(do_QueryFrame(aFrame)),
+  MOZ_ASSERT(!result || aFrame->IsBlockFrameOrSubclass() ||
+                 aFrame->IsInlineFrameOrSubclass(),
              "only block/inline frames can have NS_FRAME_PART_OF_IBSPLIT");
   return result;
 }

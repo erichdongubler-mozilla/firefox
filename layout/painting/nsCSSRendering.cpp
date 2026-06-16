@@ -95,7 +95,7 @@ struct InlineBackgroundData {
    * This is used when painting backgrounds.
    */
   nsRect GetContinuousRect(nsIFrame* aFrame) {
-    MOZ_ASSERT(static_cast<nsInlineFrame*>(do_QueryFrame(aFrame)));
+    MOZ_ASSERT(aFrame->IsInlineFrameOrSubclass());
 
     SetFrame(aFrame);
 
@@ -540,7 +540,7 @@ static nsRect JoinBoxesForBlockAxisSlice(nsIFrame* aFrame,
 enum InlineBoxOrder { eForBorder, eForBackground };
 static nsRect JoinBoxesForSlice(nsIFrame* aFrame, const nsRect& aBorderArea,
                                 InlineBoxOrder aOrder) {
-  if (static_cast<nsInlineFrame*>(do_QueryFrame(aFrame))) {
+  if (aFrame->IsInlineFrameOrSubclass()) {
     return (aOrder == eForBorder
                 ? gInlineBGData->GetBorderContinuousRect(aFrame, aBorderArea)
                 : gInlineBGData->GetContinuousRect(aFrame)) +

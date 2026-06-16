@@ -3694,9 +3694,17 @@ class nsIFrame : public nsQueryFrame {
 
   /**
    * Returns true if the frame is an instance of nsBlockFrame or one of its
-   * subclasses.
+   * subclasses. Note: This uses a slow do_QueryFrame call when |this| is not
+   * nsBlockFrame itself, but a subclass of nsBlockFrame.
    */
   bool IsBlockFrameOrSubclass() const;
+
+  /**
+   * Returns true if the frame is an instance of nsInlineFrame or one of its
+   * subclasses. Note: This uses a slow do_QueryFrame call when |this| is not
+   * nsInlineFrame itself, but a subclass of nsInlineFrame.
+   */
+  bool IsInlineFrameOrSubclass() const;
 
   /**
    * Returns true if the frame is an instance of nsImageFrame or one of its
