@@ -10,7 +10,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/1eae5aad7a7622115
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/call/payload_type_picker.cc b/call/payload_type_picker.cc
-index 4930a68cfc..a930bc5624 100644
+index ed62a0057c..2062ac5a34 100644
 --- a/call/payload_type_picker.cc
 +++ b/call/payload_type_picker.cc
 @@ -369,7 +369,7 @@ void PayloadTypeRecorder::Rollback() {
