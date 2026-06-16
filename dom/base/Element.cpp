@@ -1794,20 +1794,20 @@ void Element::SetAttribute(const nsAString& aName, const nsAString& aValue,
   }
 
   nsAutoString nameToUse;
-  const nsAttrName* name = InternalGetAttrNameFromQName(aName, &nameToUse);
+  RefPtr<nsAtom> nameAtom;
+  const nsAttrName* name =
+      InternalGetAttrNameFromQName(aName, &nameToUse, &nameAtom);
   if (!name) {
-    RefPtr<nsAtom> nameAtom = NS_AtomizeMainThread(nameToUse);
     if (!nameAtom) {
-      aError.Throw(NS_ERROR_OUT_OF_MEMORY);
-      return;
+      nameAtom = NS_AtomizeMainThread(nameToUse);
     }
-    aError = SetAttr(kNameSpaceID_None, nameAtom, aValue, aTriggeringPrincipal,
-                     true);
+    aError = SetAttr(kNameSpaceID_None, nameAtom, nullptr, aValue,
+                     aTriggeringPrincipal, true, IsKnownNewAttr::Yes);
     return;
   }
 
   aError = SetAttr(name->NamespaceID(), name->LocalName(), name->GetPrefix(),
-                   aValue, aTriggeringPrincipal, true);
+                   aValue, aTriggeringPrincipal, true, IsKnownNewAttr::No);
 }
 
 void Element::RemoveAttribute(const nsAString& aName, ErrorResult& aError) {
@@ -1884,7 +1884,7 @@ void Element::SetAttributeNS(const nsAString& aNamespaceURI,
   }
 
   aError = SetAttr(ni->NamespaceID(), ni->NameAtom(), ni->GetPrefixAtom(),
-                   aValue, aTriggeringPrincipal, true);
+                   aValue, aTriggeringPrincipal, true, IsKnownNewAttr::No);
 }
 
 already_AddRefed<nsIPrincipal> Element::CreateDevtoolsPrincipal() {
@@ -1920,10 +1920,15 @@ void Element::SetAttribute(
   }
 
   nsAutoString nameToUse;
-  const nsAttrName* name = InternalGetAttrNameFromQName(aName, &nameToUse);
+  RefPtr<nsAtom> nameAtom;
+  const nsAttrName* name =
+      InternalGetAttrNameFromQName(aName, &nameToUse, &nameAtom);
   if (!name) {
-    RefPtr<nsAtom> nameAtom = NS_AtomizeMainThread(nameToUse);
+    if (!nameAtom) {
+      nameAtom = NS_AtomizeMainThread(nameToUse);
+    }
     Maybe<nsAutoString> compliantStringHolder;
+    nsMutationGuard guard;
     const nsAString* compliantString =
         TrustedTypeUtils::GetTrustedTypesCompliantAttributeValue(
             *this, nameAtom, kNameSpaceID_None, aValue, aTriggeringPrincipal,
@@ -1931,8 +1936,12 @@ void Element::SetAttribute(
     if (aError.Failed()) {
       return;
     }
-    aError = SetAttr(kNameSpaceID_None, nameAtom, *compliantString,
-                     aTriggeringPrincipal, true);
+    // The fast path is only safe if nothing script-runnable above mutated
+    // mAttrs out from under us.
+    const IsKnownNewAttr isKnownNew =
+        guard.Mutated(0) ? IsKnownNewAttr::No : IsKnownNewAttr::Yes;
+    aError = SetAttr(kNameSpaceID_None, nameAtom, nullptr, *compliantString,
+                     aTriggeringPrincipal, true, isKnownNew);
     return;
   }
 
@@ -1948,7 +1957,8 @@ void Element::SetAttribute(
   }
   if (!guard.Mutated(0)) {
     aError = SetAttr(name->NamespaceID(), name->LocalName(), name->GetPrefix(),
-                     *compliantString, aTriggeringPrincipal, true);
+                     *compliantString, aTriggeringPrincipal, true,
+                     IsKnownNewAttr::No);
     return;
   }
 
@@ -1980,8 +1990,9 @@ void Element::SetAttributeNS(
   if (aError.Failed()) {
     return;
   }
-  aError = SetAttr(ni->NamespaceID(), ni->NameAtom(), ni->GetPrefixAtom(),
-                   *compliantString, aTriggeringPrincipal, true);
+  aError =
+      SetAttr(ni->NamespaceID(), ni->NameAtom(), ni->GetPrefixAtom(),
+              *compliantString, aTriggeringPrincipal, true, IsKnownNewAttr::No);
 }
 
 void Element::SetAttributeDevtools(const nsAString& aName,
@@ -3489,19 +3500,20 @@ void Element::SetEventHandler(nsAtom* aEventName, const nsAString& aValue,
 //----------------------------------------------------------------------
 
 const nsAttrName* Element::InternalGetAttrNameFromQName(
-    const nsAString& aStr, nsAutoString* aNameToUse) const {
+    const nsAString& aStr, nsAutoString* aNameToUse,
+    RefPtr<nsAtom>* aOutAtom) const {
   MOZ_ASSERT(!aNameToUse || aNameToUse->IsEmpty());
   const nsAttrName* val = nullptr;
   if (IsHTMLElement() && IsInHTMLDocument()) {
     nsAutoString lower;
     nsAutoString& outStr = aNameToUse ? *aNameToUse : lower;
     nsContentUtils::ASCIIToLower(aStr, outStr);
-    val = mAttrs.GetExistingAttrNameFromQName(outStr);
+    val = mAttrs.GetExistingAttrNameFromQName(outStr, aOutAtom);
     if (val) {
       outStr.Truncate();
     }
   } else {
-    val = mAttrs.GetExistingAttrNameFromQName(aStr);
+    val = mAttrs.GetExistingAttrNameFromQName(aStr, aOutAtom);
     if (!val && aNameToUse) {
       *aNameToUse = aStr;
     }
@@ -3586,28 +3598,32 @@ nsresult Element::SetClassAttrFromParser(nsAtom* aValue) {
                           nullptr,  // old value
                           value, nullptr, AttrModType::Addition,
                           false,  // notify
-                          kCallAfterSetAttr, document, updateBatch);
+                          kCallAfterSetAttr, document, updateBatch,
+                          IsKnownNewAttr::Yes);
 }
 
 nsresult Element::SetAttr(int32_t aNamespaceID, nsAtom* aName, nsAtom* aPrefix,
                           const nsAString& aValue,
-                          nsIPrincipal* aSubjectPrincipal, bool aNotify) {
+                          nsIPrincipal* aSubjectPrincipal, bool aNotify,
+                          IsKnownNewAttr aIsKnownNew) {
   // Keep this in sync with SetParsedAttr below and SetSingleClassFromParser
   // above.
   const nsAttrValueOrString valueForComparison(aValue);
-  return SetAttrInternal(aNamespaceID, aName, aPrefix, valueForComparison,
-                         aSubjectPrincipal, aNotify,
-                         [&](nsAttrValue& attrValue) {
-                           if (!ParseAttribute(aNamespaceID, aName, aValue,
-                                               aSubjectPrincipal, attrValue)) {
-                             attrValue.SetTo(aValue);
-                           }
-                         });
+  return SetAttrInternal(
+      aNamespaceID, aName, aPrefix, valueForComparison, aSubjectPrincipal,
+      aNotify,
+      [&](nsAttrValue& attrValue) {
+        if (!ParseAttribute(aNamespaceID, aName, aValue, aSubjectPrincipal,
+                            attrValue)) {
+          attrValue.SetTo(aValue);
+        }
+      },
+      aIsKnownNew);
 }
 
 nsresult Element::SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
-                                 bool* aHadValue) {
-  MOZ_TRY(mAttrs.SetAndSwapAttr(aLocalName, aValue, aHadValue));
+                                 bool* aHadValue, IsKnownNewAttr aIsKnownNew) {
+  MOZ_TRY(mAttrs.SetAndSwapAttr(aLocalName, aValue, aHadValue, aIsKnownNew));
 
   if (aLocalName == nsGkAtoms::_class) {
     UpdateSubtreeBloomFilterForClass(GetClasses());
@@ -3619,8 +3635,9 @@ nsresult Element::SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
 }
 
 nsresult Element::SetAndSwapAttr(mozilla::dom::NodeInfo* aName,
-                                 nsAttrValue& aValue, bool* aHadValue) {
-  MOZ_TRY(mAttrs.SetAndSwapAttr(aName, aValue, aHadValue));
+                                 nsAttrValue& aValue, bool* aHadValue,
+                                 IsKnownNewAttr aIsKnownNew) {
+  MOZ_TRY(mAttrs.SetAndSwapAttr(aName, aValue, aHadValue, aIsKnownNew));
 
   // Only update bloom filter for null-namespace attributes, since the
   // querySelector bloom filter optimization only applies to those.
@@ -3643,14 +3660,16 @@ nsresult Element::SetAttr(int32_t aNamespaceID, nsAtom* aName, nsAtom* aPrefix,
   // above.
   const nsDependentAtomString valueString(aValue);
   const nsAttrValueOrString valueForComparison(valueString);
-  return SetAttrInternal(aNamespaceID, aName, aPrefix, valueForComparison,
-                         aSubjectPrincipal, aNotify,
-                         [&](nsAttrValue& attrValue) {
-                           if (!ParseAttribute(aNamespaceID, aName, valueString,
-                                               aSubjectPrincipal, attrValue)) {
-                             attrValue.SetTo(aValue);
-                           }
-                         });
+  return SetAttrInternal(
+      aNamespaceID, aName, aPrefix, valueForComparison, aSubjectPrincipal,
+      aNotify,
+      [&](nsAttrValue& attrValue) {
+        if (!ParseAttribute(aNamespaceID, aName, valueString, aSubjectPrincipal,
+                            attrValue)) {
+          attrValue.SetTo(aValue);
+        }
+      },
+      IsKnownNewAttr::No);
 }
 
 template <typename ParseFunc>
@@ -3658,17 +3677,23 @@ nsresult Element::SetAttrInternal(int32_t aNamespaceID, nsAtom* aName,
                                   nsAtom* aPrefix,
                                   const nsAttrValueOrString& aValue,
                                   nsIPrincipal* aSubjectPrincipal, bool aNotify,
-                                  ParseFunc&& aParseFn) {
+                                  ParseFunc&& aParseFn,
+                                  IsKnownNewAttr aIsKnownNew) {
   NS_ENSURE_ARG_POINTER(aName);
   NS_ASSERTION(aNamespaceID != kNameSpaceID_Unknown,
                "Don't call SetAttr with unknown namespace");
 
   AttrModType modType{0};  // NOTE: Initialized with invalid value.
   nsAttrValue oldValue;
-  bool oldValueSet;
+  bool oldValueSet = false;
 
-  if (OnlyNotifySameValueSet(aNamespaceID, aName, aPrefix, aValue, aNotify,
-                             oldValue, &modType, &oldValueSet)) {
+  if (aIsKnownNew == IsKnownNewAttr::Yes) {
+    MOZ_ASSERT(mAttrs.IndexOfAttr(aName, aNamespaceID) == -1,
+               "Caller asserted attribute is new but it already exists");
+    modType = AttrModType::Addition;
+  } else if (OnlyNotifySameValueSet(aNamespaceID, aName, aPrefix, aValue,
+                                    aNotify, oldValue, &modType,
+                                    &oldValueSet)) {
     return NS_OK;
   }
 
@@ -3689,15 +3714,15 @@ nsresult Element::SetAttrInternal(int32_t aNamespaceID, nsAtom* aName,
 
   PreIdMaybeChange(aNamespaceID, aName, &attrValue);
 
-  return SetAttrAndNotify(aNamespaceID, aName, aPrefix,
-                          oldValueSet ? &oldValue : nullptr, attrValue,
-                          aSubjectPrincipal, modType, aNotify,
-                          kCallAfterSetAttr, document, updateBatch);
+  return SetAttrAndNotify(
+      aNamespaceID, aName, aPrefix, oldValueSet ? &oldValue : nullptr,
+      attrValue, aSubjectPrincipal, modType, aNotify, kCallAfterSetAttr,
+      document, updateBatch, aIsKnownNew);
 }
 
 nsresult Element::SetParsedAttr(int32_t aNamespaceID, nsAtom* aName,
                                 nsAtom* aPrefix, nsAttrValue& aParsedValue,
-                                bool aNotify) {
+                                bool aNotify, IsKnownNewAttr aIsKnownNew) {
   // Keep this in sync with SetAttr and SetSingleClassFromParser above
 
   NS_ENSURE_ARG_POINTER(aName);
@@ -3706,9 +3731,13 @@ nsresult Element::SetParsedAttr(int32_t aNamespaceID, nsAtom* aName,
 
   AttrModType modType{0};  // NOTE: Initialized with invalid value.
   nsAttrValue oldValue;
-  bool oldValueSet;
+  bool oldValueSet = false;
 
-  {
+  if (aIsKnownNew == IsKnownNewAttr::Yes) {
+    MOZ_ASSERT(mAttrs.IndexOfAttr(aName, aNamespaceID) == -1,
+               "Caller asserted attribute is new but it already exists");
+    modType = AttrModType::Addition;
+  } else {
     const nsAttrValueOrString value(aParsedValue);
     if (OnlyNotifySameValueSet(aNamespaceID, aName, aPrefix, value, aNotify,
                                oldValue, &modType, &oldValueSet)) {
@@ -3731,7 +3760,7 @@ nsresult Element::SetParsedAttr(int32_t aNamespaceID, nsAtom* aName,
   return SetAttrAndNotify(aNamespaceID, aName, aPrefix,
                           oldValueSet ? &oldValue : nullptr, aParsedValue,
                           nullptr, modType, aNotify, kCallAfterSetAttr,
-                          document, updateBatch);
+                          document, updateBatch, aIsKnownNew);
 }
 
 static MOZ_ALWAYS_INLINE void SetLifecycleCallbackNamespaceURI(
@@ -3930,7 +3959,7 @@ nsresult Element::SetAttrAndNotify(
     const nsAttrValue* aOldValue, nsAttrValue& aParsedValue,
     nsIPrincipal* aSubjectPrincipal, AttrModType aModType, bool aNotify,
     bool aCallAfterSetAttr, Document* aComposedDocument,
-    const mozAutoDocUpdate& aGuard) {
+    const mozAutoDocUpdate& aGuard, IsKnownNewAttr aIsKnownNew) {
   // NOTE: Please keep changes to this method in sync with
   // `SetNoNameSpaceAttrOnNewlyCreatedElement`!
   nsMutationGuard::DidMutate();
@@ -3952,7 +3981,7 @@ nsresult Element::SetAttrAndNotify(
       hadDirAuto = HasDirAuto();  // already takes bdi into account
     }
 
-    MOZ_TRY(SetAndSwapAttr(aName, aParsedValue, &oldValueSet));
+    MOZ_TRY(SetAndSwapAttr(aName, aParsedValue, &oldValueSet, aIsKnownNew));
     if (IsAttributeMapped(aName) && !IsPendingMappedAttributeEvaluation()) {
       mAttrs.InfallibleMarkAsPendingPresAttributeEvaluation();
       if (Document* doc = GetComposedDoc()) {
@@ -3962,7 +3991,7 @@ nsresult Element::SetAttrAndNotify(
   } else {
     RefPtr<mozilla::dom::NodeInfo> ni = NodeInfoManager()->GetNodeInfo(
         aName, aPrefix, aNamespaceID, ATTRIBUTE_NODE);
-    MOZ_TRY(SetAndSwapAttr(ni, aParsedValue, &oldValueSet));
+    MOZ_TRY(SetAndSwapAttr(ni, aParsedValue, &oldValueSet, aIsKnownNew));
   }
 
   PostIdMaybeChange(aNamespaceID, aName, &valueForAfterSetAttr);
@@ -4770,14 +4799,18 @@ nsresult Element::CopyInnerTo(Element* aDst) {
     } else if (isSVG) {
       nsAutoString valStr;
       value->ToString(valStr);
+      // aDst started empty via EnsureCapacityToClone, so every attribute here
+      // is a fresh addition and the fast path is safe.
       MOZ_TRY(aDst->SetAttr(name->NamespaceID(), name->LocalName(),
-                            name->GetPrefix(), valStr, false));
+                            name->GetPrefix(), valStr, nullptr, false,
+                            IsKnownNewAttr::Yes));
       continue;
     }
     MOZ_ASSERT(value->StoresOwnData());
     nsAttrValue valueCopy(*info.mValue);
     MOZ_TRY(aDst->SetParsedAttr(name->NamespaceID(), name->LocalName(),
-                                name->GetPrefix(), valueCopy, false));
+                                name->GetPrefix(), valueCopy, false,
+                                IsKnownNewAttr::Yes));
   }
 
   // https://dom.spec.whatwg.org/#clone-a-single-node
