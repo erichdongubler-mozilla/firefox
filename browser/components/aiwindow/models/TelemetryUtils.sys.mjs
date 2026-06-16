@@ -132,6 +132,7 @@ export class TelemetryPromptEngine {
       modelRevision: "main",
       taskName: "text-generation",
       serviceType: promptRecord.service_type ?? "ai",
+      purpose: promptRecord.purpose ?? "chat",
       extraHeaders,
     });
 
