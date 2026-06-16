@@ -1774,6 +1774,11 @@ nsXULAppInfo::SetEnabled(bool aEnabled) {
       return NS_ERROR_FAILURE;
     }
 
+    nsresult rv = CrashReporter::OOPInit(xreBinDirectory, true);
+    if (rv != NS_OK) {
+      return rv;
+    }
+
     return CrashReporter::SetExceptionHandler(xreBinDirectory, true);
   }
 
@@ -1782,7 +1787,9 @@ nsXULAppInfo::SetEnabled(bool aEnabled) {
     return NS_OK;
   }
 
-  return CrashReporter::UnsetExceptionHandler();
+  nsresult rv = CrashReporter::UnsetExceptionHandler();
+  CrashReporter::OOPDeinit();
+  return rv;
 }
 
 NS_IMETHODIMP
