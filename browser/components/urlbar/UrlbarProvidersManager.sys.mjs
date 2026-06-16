@@ -79,7 +79,7 @@ var localProviderModules = [
     name: "UrlbarProviderCalculator",
     module:
       "moz-src:///browser/components/urlbar/UrlbarProviderCalculator.sys.mjs",
-    supportedSAPs: ["searchbar", "urlbar"],
+    supportedSAPs: ["searchbar", "smartbar", "urlbar"],
   },
   {
     name: "UrlbarProviderAiChat",
@@ -149,7 +149,7 @@ var localProviderModules = [
     name: "UrlbarProviderRecentSearches",
     module:
       "moz-src:///browser/components/urlbar/UrlbarProviderRecentSearches.sys.mjs",
-    supportedSAPs: ["searchbar", "urlbar"],
+    supportedSAPs: ["searchbar", "smartbar", "urlbar"],
   },
   {
     name: "UrlbarProviderRemoteTabs",
@@ -209,7 +209,7 @@ var localProviderModules = [
     name: "UrlbarProviderUnitConversion",
     module:
       "moz-src:///browser/components/urlbar/UrlbarProviderUnitConversion.sys.mjs",
-    supportedSAPs: ["searchbar", "urlbar"],
+    supportedSAPs: ["searchbar", "smartbar", "urlbar"],
   },
 ];
 
