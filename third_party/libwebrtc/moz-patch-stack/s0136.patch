@@ -10,7 +10,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/dbd090975384251d8
  1 file changed, 1 deletion(-)
 
 diff --git a/call/call.h b/call/call.h
-index e64b878e22..0233850e55 100644
+index e97a8ee4ec..53a1cf0636 100644
 --- a/call/call.h
 +++ b/call/call.h
 @@ -27,7 +27,6 @@
