@@ -484,7 +484,8 @@ export type RequestFromFrontend =
   | QuerySymbolicationApiRequest
   | GetPageFaviconsRequest
   | OpenScriptInTabDebuggerRequest
-  | GetJSSourcesRequest;
+  | GetJSSourcesRequest
+  | GetSourceMapRequest;
 
 type StatusQueryRequest = { type: "STATUS_QUERY" };
 type EnableMenuButtonRequest = { type: "ENABLE_MENU_BUTTON" };
@@ -522,7 +523,11 @@ type OpenScriptInTabDebuggerRequest = {
 };
 type GetJSSourcesRequest = {
   type: "GET_JS_SOURCES";
-  sourceUuids: Array<string>;
+  sourceIds: Array<string>;
+};
+type GetSourceMapRequest = {
+  type: "GET_SOURCE_MAP";
+  sourceId: string;
 };
 
 export type MessageToFrontend<R> =
@@ -557,7 +562,8 @@ export type ResponseToFrontend =
   | QuerySymbolicationApiResponse
   | GetPageFaviconsResponse
   | OpenScriptInTabDebuggerResponse
-  | GetJSSourcesResponse;
+  | GetJSSourcesResponse
+  | GetSourceMapResponse;
 
 type StatusQueryResponse = {
   menuButtonIsEnabled: boolean;
@@ -577,6 +583,11 @@ type StatusQueryResponse = {
   //   Shipped in Firefox 121.
   //   Adds support for the following message types:
   //    - GET_EXTERNAL_POWER_TRACKS
+  // Version 7:
+  //   Adds support for the following message types:
+  //    - GET_SOURCE_MAP
+  //   Renames the following message parameters:
+  //    - GET_JS_SOURCES: sourceUuids -> sourceIds
   version: number;
 };
 type EnableMenuButtonResponse = void;
@@ -590,6 +601,9 @@ type GetPageFaviconsResponse = Array<ProfilerFaviconData | null>;
 type OpenScriptInTabDebuggerResponse = void;
 type GetJSSourceReponseItem = { sourceText: string } | { error: string };
 type GetJSSourcesResponse = Array<GetJSSourceReponseItem>;
+// The response is a parsed source map object. The exact shape follows the
+// source map spec and is intentionally left untyped here.
+type GetSourceMapResponse = object;
 
 /**
  * This represents an event channel that can talk to a content page on the web.
@@ -614,8 +628,14 @@ export class ProfilerWebChannel {
   ) => void;
 }
 
+type JSSourceInfo = {
+  sourceText?: string;
+  url?: string;
+  sourceMapURL?: string;
+};
+
 type JSSources = Partial<{
-  [sourceUuid: string]: string;
+  [sourceId: string]: JSSourceInfo;
 }>;
 
 /**

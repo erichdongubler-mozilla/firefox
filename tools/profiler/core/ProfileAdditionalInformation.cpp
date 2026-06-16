@@ -97,17 +97,55 @@ void mozilla::ProfileGenerationAdditionalInformation::ToJSValue(
                                  buffer16.Length(), &sharedLibrariesVal));
   }
 
-  // Create jsSources object, which is ID to source text mapping for
-  // WebChannel.
+  // Create jsSources object, mapping source ID to an object with sourceText,
+  // url, and sourceMapURL fields for WebChannel.
   JS::Rooted<JSObject*> jsSourcesObj(aCx, JS_NewPlainObject(aCx));
   if (jsSourcesObj) {
     for (const auto& entry : mJSSourceEntries) {
+      JS::Rooted<JSObject*> entryObj(aCx, JS_NewPlainObject(aCx));
+      if (!entryObj) {
+        continue;
+      }
+
+      // Only emit an entry if it has sourceText (for GET_JS_SOURCES) or
+      // sourceMapURL (for GET_SOURCE_MAP). A url alone is not useful to
+      // either webchannel operation.
+      bool hasData = false;
+
       JSString* sourceStr =
           MaybeCreateJSStringFromSourceData(aCx, entry.sourceData);
       if (sourceStr) {
         JS::Rooted<JS::Value> sourceVal(aCx, JS::StringValue(sourceStr));
+        JS_SetProperty(aCx, entryObj, "sourceText", sourceVal);
+        hasData = true;
+      }
+
+      if (entry.sourceData.filePathLength() > 0) {
+        JSString* urlStr = JS_NewStringCopyUTF8N(
+            aCx, JS::UTF8Chars(entry.sourceData.filePath(),
+                               entry.sourceData.filePathLength()));
+        if (urlStr) {
+          JS::Rooted<JS::Value> urlVal(aCx, JS::StringValue(urlStr));
+          JS_SetProperty(aCx, entryObj, "url", urlVal);
+        }
+      }
+
+      if (entry.sourceData.sourceMapURLLength() > 0) {
+        JSString* sourceMapURLStr =
+            JS_NewUCStringCopyN(aCx, entry.sourceData.sourceMapURL(),
+                                entry.sourceData.sourceMapURLLength());
+        if (sourceMapURLStr) {
+          JS::Rooted<JS::Value> sourceMapURLVal(
+              aCx, JS::StringValue(sourceMapURLStr));
+          JS_SetProperty(aCx, entryObj, "sourceMapURL", sourceMapURLVal);
+          hasData = true;
+        }
+      }
+
+      if (hasData) {
+        JS::Rooted<JS::Value> entryVal(aCx, JS::ObjectValue(*entryObj));
         JS_SetProperty(aCx, jsSourcesObj, PromiseFlatCString(entry.id).get(),
-                       sourceVal);
+                       entryVal);
       }
     }
   }
