@@ -87,6 +87,8 @@ skip-if = [
 
 ["test_input_datetime_tabindex.html"]
 
+["test_input_datetime_timepicker_disabled.html"]
+
 ["test_input_defaultValue.html"]
 
 ["test_input_email.html"]
