@@ -131,7 +131,7 @@ android {
                 if (!mozconfig.substs.MOZ_ANDROID_FAT_AAR_ARCHITECTURES) {
                     srcDir "${topobjdir}/dist/geckoview/lib"
                 } else {
-                    srcDir "${topobjdir}/dist/fat-aar/output/jni"
+                    srcDir "${topobjdir}/dist/fat-aar/output/geckoview/jni"
                 }
             }
 
