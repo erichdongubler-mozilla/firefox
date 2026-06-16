@@ -21,6 +21,7 @@ present in the runtime — that's handled by the TaskCluster Docker image
 in a later phase of the migration.
 """
 
+import json
 from datetime import timedelta
 
 _BQ_TABLE = "moz-fx-data-shared-prod.firefox_desktop_stable.hang_report_v1"
@@ -195,3 +196,127 @@ def collect_offsets_by_module(hangs):
         for module, offset in hang[0]:
             by_module.setdefault(module, set()).add(offset)
     return by_module
+
+
+def process_frame(frame, modules):
+    """Turn one raw stack frame into a (module, offset) pair.
+
+    Glean delivers frames as {"frame": offset, "module": index} dicts. A
+    missing module index means a pseudo (label) frame; an out-of-range
+    index means the module table didn't have an entry, so we keep the
+    offset but drop the module. The list form and the bare-value fallback
+    handle legacy/odd shapes the python_mozetl version also accepted.
+    """
+    # Glean format: {"frame": "...", "module": 0}
+    if isinstance(frame, dict):
+        module_index = frame.get("module")
+        offset = frame.get("frame")
+
+        if module_index is None:
+            return (("pseudo", None), offset)
+
+        if module_index < 0 or module_index >= len(modules):
+            return (None, offset)
+
+        debug_name, breakpad_id = modules[module_index]
+        return ((debug_name, breakpad_id), offset)
+
+    # Legacy telemetry format: [module_index, offset]
+    if isinstance(frame, list):
+        module_index, offset = frame
+        if module_index is None or module_index < 0 or module_index >= len(modules):
+            return (None, offset)
+        debug_name, breakpad_id = modules[module_index]
+        return ((debug_name, breakpad_id), offset)
+
+    # Pseudo frame fallback.
+    return (("pseudo", None), frame)
+
+
+def filter_hang(hang, config):
+    """Keep only hangs on the thread we care about with a sane stack length.
+
+    Uses .get() rather than indexing because some Glean hang records arrive
+    without a stack field (see the python_mozetl follow-up that fixed the
+    crash on larger samples).
+    """
+    stack = hang.get("stack")
+    return (
+        hang.get("thread") == config["thread_filter"]
+        and isinstance(stack, list)
+        and len(stack) > 0
+        and len(stack) < 300
+    )
+
+
+def process_hang(hang):
+    """Normalise a hang record to a plain dict.
+
+    BigQuery rows come back as Row objects with an asDict() method; plain
+    dicts (used in tests) are returned unchanged.
+    """
+    if hasattr(hang, "asDict"):
+        return hang.asDict(recursive=True)
+    return hang
+
+
+def process_hangs(ping, config):
+    """Expand one ping into a list of per-hang tuples.
+
+    Each returned tuple is:
+        (stack, duration, thread, runnable_name, process, annotations,
+         build_date, platform)
+    where stack is a list of (module, offset) pairs from process_frame.
+
+    A hang annotated with PaintWhileInterruptingJS is emitted twice: once
+    under its real thread and once under a synthetic "Gecko_Child_ForcePaint"
+    thread, matching the python_mozetl behaviour.
+    """
+    build_date = ping["client_info/app_build"][:8]  # "YYYYMMDD"
+    platform = "{}".format(ping["client_info/os"])
+
+    modules = ping["metrics/object/hangs_modules"]
+    if isinstance(modules, str):
+        modules = json.loads(modules)
+
+    raw_hangs = ping["metrics/object/hangs_reports"]
+    if isinstance(raw_hangs, str):
+        raw_hangs = json.loads(raw_hangs)
+
+    hangs = [process_hang(h) for h in raw_hangs]
+
+    result = []
+    for h in hangs:
+        if not filter_hang(h, config):
+            continue
+        stack = [
+            process_frame(frame, modules)
+            for frame in h["stack"]
+            if not isinstance(frame, list) or len(frame) == 2
+        ]
+        annotations = h.get("annotations") or []
+        row = (
+            stack,
+            h["duration"],
+            h["thread"],
+            "",
+            h["process"],
+            annotations,
+            build_date,
+            platform,
+        )
+        result.append(row)
+
+        if "PaintWhileInterruptingJS" in annotations:
+            result.append((
+                stack,
+                h["duration"],
+                "Gecko_Child_ForcePaint",
+                "",
+                h["process"],
+                annotations,
+                build_date,
+                platform,
+            ))
+
+    return result

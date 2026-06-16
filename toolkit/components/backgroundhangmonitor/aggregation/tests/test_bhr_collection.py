@@ -9,6 +9,7 @@ install required.
 """
 
 import datetime
+import json
 import os
 import sys
 from unittest.mock import MagicMock
@@ -389,6 +390,169 @@ def test_collect_offsets_by_module_matches_old_rdd_semantics():
     assert bhr_collection.collect_offsets_by_module(
         hangs
     ) == _old_get_frames_by_module_reference(hangs)
+
+
+# --- process_frame ----------------------------------------------------------
+
+_MODULES = [["xul.pdb", "ABC"], ["kernel32.pdb", "XYZ"]]
+
+
+def test_process_frame_glean_dict_with_valid_module():
+    frame = {"frame": "1000", "module": 0}
+    assert bhr_collection.process_frame(frame, _MODULES) == (("xul.pdb", "ABC"), "1000")
+
+
+def test_process_frame_glean_dict_without_module_is_pseudo():
+    frame = {"frame": "labelText"}
+    assert bhr_collection.process_frame(frame, _MODULES) == (
+        ("pseudo", None),
+        "labelText",
+    )
+
+
+def test_process_frame_glean_dict_out_of_range_module_drops_module():
+    frame = {"frame": "1000", "module": 99}
+    assert bhr_collection.process_frame(frame, _MODULES) == (None, "1000")
+
+
+def test_process_frame_legacy_list_format():
+    assert bhr_collection.process_frame([1, "2000"], _MODULES) == (
+        ("kernel32.pdb", "XYZ"),
+        "2000",
+    )
+
+
+def test_process_frame_bare_value_fallback_is_pseudo():
+    assert bhr_collection.process_frame("rawlabel", _MODULES) == (
+        ("pseudo", None),
+        "rawlabel",
+    )
+
+
+# --- filter_hang ------------------------------------------------------------
+
+_FILTER_CONFIG = {"thread_filter": "Gecko"}
+
+
+def test_filter_hang_keeps_matching_thread_with_valid_stack():
+    hang = {"thread": "Gecko", "stack": [{"frame": "0", "module": 0}]}
+    assert bhr_collection.filter_hang(hang, _FILTER_CONFIG) is True
+
+
+def test_filter_hang_drops_wrong_thread():
+    hang = {"thread": "Compositor", "stack": [{"frame": "0"}]}
+    assert bhr_collection.filter_hang(hang, _FILTER_CONFIG) is False
+
+
+def test_filter_hang_drops_missing_stack():
+    # Some Glean records arrive without a stack field.
+    hang = {"thread": "Gecko"}
+    assert bhr_collection.filter_hang(hang, _FILTER_CONFIG) is False
+
+
+def test_filter_hang_drops_empty_stack():
+    hang = {"thread": "Gecko", "stack": []}
+    assert bhr_collection.filter_hang(hang, _FILTER_CONFIG) is False
+
+
+def test_filter_hang_drops_overlong_stack():
+    hang = {"thread": "Gecko", "stack": [{"frame": "0"}] * 300}
+    assert bhr_collection.filter_hang(hang, _FILTER_CONFIG) is False
+
+
+# --- process_hang -----------------------------------------------------------
+
+
+def test_process_hang_plain_dict_unchanged():
+    hang = {"thread": "Gecko", "duration": 100}
+    assert bhr_collection.process_hang(hang) is hang
+
+
+def test_process_hang_row_like_object_is_converted():
+    class FakeRow:
+        def asDict(self, recursive=False):
+            return {"thread": "Gecko", "recursive": recursive}
+
+    assert bhr_collection.process_hang(FakeRow()) == {
+        "thread": "Gecko",
+        "recursive": True,
+    }
+
+
+# --- process_hangs ----------------------------------------------------------
+
+
+def _make_ping(hangs_reports, hangs_modules, os_name="Linux", app_build="20260501x"):
+    return {
+        "client_info/app_build": app_build,
+        "client_info/os": os_name,
+        "metrics/object/hangs_modules": hangs_modules,
+        "metrics/object/hangs_reports": hangs_reports,
+    }
+
+
+def test_process_hangs_expands_one_hang_into_a_tuple():
+    ping = _make_ping(
+        hangs_reports=[
+            {
+                "thread": "Gecko",
+                "process": "main",
+                "duration": 250,
+                "stack": [
+                    {"frame": "1000", "module": 0},
+                    {"frame": "2000", "module": 1},
+                ],
+                "annotations": [],
+            }
+        ],
+        hangs_modules=[["xul.pdb", "ABC"], ["kernel32.pdb", "XYZ"]],
+    )
+    out = bhr_collection.process_hangs(ping, {"thread_filter": "Gecko"})
+
+    assert len(out) == 1
+    stack, duration, thread, runnable, process, annotations, build_date, platform = out[
+        0
+    ]
+    assert stack == [(("xul.pdb", "ABC"), "1000"), (("kernel32.pdb", "XYZ"), "2000")]
+    assert duration == 250
+    assert thread == "Gecko"
+    assert build_date == "20260501"
+    assert platform == "Linux"
+
+
+def test_process_hangs_parses_json_string_payloads():
+    # Glean object metrics sometimes arrive as JSON strings.
+    ping = _make_ping(
+        hangs_reports=json.dumps([
+            {
+                "thread": "Gecko",
+                "process": "main",
+                "duration": 100,
+                "stack": [{"frame": "1000", "module": 0}],
+                "annotations": [],
+            }
+        ]),
+        hangs_modules=json.dumps([["xul.pdb", "ABC"]]),
+    )
+    out = bhr_collection.process_hangs(ping, {"thread_filter": "Gecko"})
+    assert len(out) == 1
+    assert out[0][0] == [(("xul.pdb", "ABC"), "1000")]
+
+
+def test_process_hangs_drops_hangs_on_other_threads():
+    ping = _make_ping(
+        hangs_reports=[
+            {
+                "thread": "Compositor",
+                "process": "main",
+                "duration": 100,
+                "stack": [{"frame": "1000", "module": 0}],
+                "annotations": [],
+            }
+        ],
+        hangs_modules=[["xul.pdb", "ABC"]],
+    )
+    assert bhr_collection.process_hangs(ping, {"thread_filter": "Gecko"}) == []
 
 
 if __name__ == "__main__":
