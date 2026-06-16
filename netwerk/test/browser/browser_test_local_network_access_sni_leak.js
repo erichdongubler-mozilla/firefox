@@ -144,12 +144,13 @@ function waitForFetchComplete(port) {
 
 let gServer;
 
-const kExpectedConnsBeforePromptResponse = Services.prefs.getBoolPref(
-  "network.http.happy_eyeballs_enabled",
-  false
-)
-  ? 0
-  : 1;
+// With HappyEyeballs, the pre-connect CheckLNAForAddr call was removed from
+// EstablishTCPConnection. The LNA check now fires post-TCP-connect via
+// SetLnaCheckCallback, so one TCP connection is always established before the
+// prompt appears regardless of whether HappyEyeballs is enabled or not.
+// If CheckLNAForAddr is re-added pre-connect for HappyEyeballs, this value
+// should revert to a conditional: HappyEyeballs ? 0 : 1.
+const kExpectedConnsBeforePromptResponse = 1;
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({

@@ -817,6 +817,13 @@ skip-if = [
   "os == 'win'",
 ]
 
+["test_happy_eyeballs_zero_ip_blocked.js"]
+run-sequentially = ["true"] # node server exceptions dont replay well
+skip-if = [
+  "os == 'android'",
+  "os == 'win'",
+]
+
 ["test_happy_eyeballs_ip_preference.js"]
 run-sequentially = ["true"] # node server exceptions dont replay well
 
