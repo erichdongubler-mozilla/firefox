@@ -1274,12 +1274,7 @@ export const GenAI = {
       context.window.document
     );
 
-    // Pass the prompt via GET url ?q= param or request header. When the
-    // provider supports auto-submit, deliver the prompt through the textarea
-    // instead so the request URI stays short — long ?q= values combined with
-    // the user's cookies can otherwise exceed the server's request-line/header
-    // size limit (e.g. ChatGPT/CloudFlare returns 431 Request Header Fields
-    // Too Large for long page summaries from a logged-in profile).
+    // Pass the prompt via GET url ?q= param or request header
     const {
       header,
       queryParam = "q",
@@ -1301,7 +1296,7 @@ export const GenAI = {
       options.headers.setByteStringData(
         `${header}: ${encodeURIComponent(prompt)}\r\n`
       );
-    } else if (!supportAutoSubmit) {
+    } else {
       url.searchParams.set(queryParam, prompt);
     }
 
