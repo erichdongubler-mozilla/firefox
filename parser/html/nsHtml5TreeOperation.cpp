@@ -797,14 +797,11 @@ void nsHtml5TreeOperation::SetFormElement(nsIContent* aNode, nsIContent* aForm,
   if (formControl &&
       formControl->ControlType() !=
           FormControlType::FormAssociatedCustomElement &&
-      !formControl->GetFormInternal() &&
       !aNode->AsElement()->HasAttr(nsGkAtoms::form) &&
       aForm->SubtreeRoot() == aParent->SubtreeRoot()) {
     formControl->SetForm(formElement);
   } else if (auto* image = HTMLImageElement::FromNodeOrNull(aNode)) {
-    if (!image->GetFormInternal()) {
-      image->SetForm(formElement);
-    }
+    image->SetForm(formElement);
   }
 }
 

@@ -2872,8 +2872,8 @@ mozilla::dom::Element* nsGenericHTMLFormControlElement::GetFormForBindings()
 
 void nsGenericHTMLFormControlElement::SetForm(HTMLFormElement* aForm) {
   MOZ_ASSERT(aForm, "Don't pass null here");
-  MOZ_ASSERT(!mForm && !HasFlag(ADDED_TO_FORM),
-             "We don't support switching from one non-null form to another.");
+  NS_ASSERTION(!mForm,
+               "We don't support switching from one non-null form to another.");
 
   SetFormInternal(aForm, false);
 }
