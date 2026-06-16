@@ -171,6 +171,7 @@ class TabLayoutTest {
             onCloseTabGroupClick = { _ -> },
             onTabGroupOnboardingDismiss = { },
             onPrivacyReportTapped = {},
+            liveReorderEnabled = false,
         )
     }
 

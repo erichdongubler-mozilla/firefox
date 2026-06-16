@@ -532,13 +532,6 @@ class InteractableGridTest {
     private fun mockHeaderItem(): LazyGridItemInfo =
         mockGridItem(key = TabKeys.HEADER, index = 0, size = IntSize(1000, 100), offset = IntOffset(0, 0))
 
-    private object TabKeys {
-        val HEADER = "header"
-        val TAB_ALPHA = "alpha"
-        val TAB_BETA = "beta"
-        val SPAN = "span"
-    }
-
     private fun twoTabReorderState(
         handler: TabInteractionHandler,
         alphaTabOffset: IntOffset,

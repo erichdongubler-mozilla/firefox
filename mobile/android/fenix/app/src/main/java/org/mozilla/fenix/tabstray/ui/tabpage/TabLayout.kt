@@ -263,6 +263,7 @@ fun TabLayout(
             reorderingEnabled = reorderingEnabled,
             onPrivacyReportTapped = onPrivacyReportTapped,
             displayTabGroupOnboarding = displayTabGroupOnboarding,
+            liveReorderEnabled = liveReorderEnabled,
         )
     }
 }
@@ -273,6 +274,7 @@ private fun TabList(
     tabs: List<TabsTrayItem>,
     dragAndDropEnabled: Boolean,
     displayTabGroupOnboarding: Boolean,
+    liveReorderEnabled: Boolean,
     selectedItemIndex: Int,
     selectionMode: TabsTrayState.Mode,
     focusEnabled: Boolean,
@@ -310,6 +312,7 @@ private fun TabList(
             dragAndDropEnabled = dragAndDropEnabled,
             onPrivacyReportTapped = onPrivacyReportTapped,
             displayTabGroupOnboarding = displayTabGroupOnboarding,
+            liveReorderEnabled = liveReorderEnabled,
         )
     } else {
         ReorderableTabList(
@@ -1041,6 +1044,7 @@ private fun InteractableTabList(
     tabs: List<TabsTrayItem>,
     displayTabGroupOnboarding: Boolean,
     selectedItemIndex: Int,
+    liveReorderEnabled: Boolean,
     selectionMode: TabsTrayState.Mode,
     tabInteractionHandler: TabInteractionHandler,
     modifier: Modifier = Modifier,
@@ -1072,7 +1076,9 @@ private fun InteractableTabList(
         onLongPress = rememberReactiveLongPressList(tabs = tabs, onItemLongClick = onItemLongClick),
         tabInteractionHandler = tabInteractionHandler,
         dragAndDropEnabled = dragAndDropEnabled,
+        liveReorderEnabled = liveReorderEnabled,
     )
+    var showOnboardingCardInList by remember { mutableStateOf(displayTabGroupOnboarding) }
     var isInMultiSelectMode by remember {
         mutableStateOf(
             selectionMode is TabsTrayState.Mode.Select,
@@ -1083,6 +1089,7 @@ private fun InteractableTabList(
         if (listInteractionState.draggedItem.key == null) {
             isInMultiSelectMode = selectionMode is TabsTrayState.Mode.Select
         }
+        showOnboardingCardInList = displayTabGroupOnboarding && (listInteractionState.draggedItem.key == null)
     }
     Box(
         modifier = Modifier
@@ -1112,7 +1119,7 @@ private fun InteractableTabList(
             interactableTabListContent(
                 header = header,
                 tabs = tabs,
-                displayTabGroupOnboarding = displayTabGroupOnboarding,
+                displayTabGroupOnboarding = showOnboardingCardInList,
                 selectedItemIndex = selectedItemIndex,
                 listInteractionState = listInteractionState,
                 isInMultiSelectMode = isInMultiSelectMode,
