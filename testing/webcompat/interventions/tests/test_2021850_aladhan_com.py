@@ -3,7 +3,7 @@ import pytest
 URL = "https://aladhan.com/calendar"
 INPUT_CSS = "[placeholder='Example: London, UK']"
 LOADED_CONTENT_CSS = "table.w-full > tbody:not(:empty)"
-ERROR_MSG = "AlAdhan SDK request failed"
+ERROR_TEXT = "unable to find this location"
 
 
 async def type_in_search(client):
@@ -28,6 +28,5 @@ async def test_enabled(client):
 @pytest.mark.asyncio
 @pytest.mark.without_interventions
 async def test_disabled(client):
-    error_message = await client.promise_console_message_listener(ERROR_MSG)
     await type_in_search(client)
-    assert await error_message
+    assert client.await_text(ERROR_TEXT, is_displayed=True)
