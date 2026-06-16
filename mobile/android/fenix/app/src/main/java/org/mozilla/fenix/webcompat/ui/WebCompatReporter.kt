@@ -40,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -67,6 +68,7 @@ import org.mozilla.fenix.ext.getBaseDomainUrl
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.ThemedValue
 import org.mozilla.fenix.theme.ThemedValueProvider
+import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags
 import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_DESCRIPTION_INPUT
 import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_SEND_BUTTON
 import org.mozilla.fenix.webcompat.store.WebCompatReporterAction
@@ -392,8 +394,12 @@ private fun BrokenSiteReasonSection(
     } else {
         BrokenSiteReasonListItem(
             text = stringResource(selectedReason.displayStringId),
-            shape = RoundedCornerShape(AcornCorners.extraSmall),
-            onClick = onReasonCleared,
+            shape = RoundedCornerShape(AcornCorners.extraLarge), // Kept this rounded!
+            modifier = Modifier.testTag(BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_SELECTED_REASON),
+            onClick = null,
+            iconPainter = painterResource(id = iconsR.drawable.mozac_ic_cross_circle_24),
+            iconDescription = stringResource(R.string.webcompat_reporter_clear_reason_content_description),
+            onIconClick = onReasonCleared,
         )
     }
 

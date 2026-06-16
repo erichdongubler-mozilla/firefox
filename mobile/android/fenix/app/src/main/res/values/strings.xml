@@ -1881,6 +1881,8 @@
     <string name="webcompat_reporter_url_error_invalid">Please enter a valid URL</string>
     <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
     <string name="webcompat_reporter_label_whats_broken_3">What’s not working?</string>
+    <!-- Content description for the icon button that clears the selected broken site reason in the WebCompat Reporter. -->
+    <string name="webcompat_reporter_clear_reason_content_description">Clear selected reason</string>
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
     <string name="webcompat_reporter_label_description_2">Describe the problem in detail to help us investigate the issue (optional)</string>
     <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->

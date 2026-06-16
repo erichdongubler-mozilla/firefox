@@ -11,14 +11,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
@@ -38,24 +42,32 @@ import org.mozilla.fenix.webcompat.store.WebCompatReporterState.BrokenSiteReason
  * A clickable list item used to display a single reason in the webcompat reporter.
  *
  * @param text The text to display inside the list item.
+ * @param modifier [Modifier] applied to the list item content.
  * @param onClick Callback invoked when the user clicks on this item.
  * @param shape The shape applied to the list item container.
+ * @param iconPainter Optional icon displayed at the end of the list item.
+ * @param iconDescription Content description for the optional trailing icon.
+ * @param onIconClick Callback invoked when the optional trailing icon is clicked.
  */
 @Composable
 fun BrokenSiteReasonListItem(
     text: String,
-    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
     shape: Shape = RoundedCornerShape(AcornCorners.extraSmall),
+    iconPainter: Painter? = null,
+    iconDescription: String? = null,
+    onIconClick: (() -> Unit)? = null,
 ) {
     Surface(
         shape = shape,
         color = MaterialTheme.colorScheme.surfaceDimVariant,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onClick)
+                .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
                 .semantics {
                     testTagsAsResourceId = true
                     testTag = "$BROKEN_SITE_REPORTER_REASON_OPTION-$text"
@@ -71,7 +83,24 @@ fun BrokenSiteReasonListItem(
                 text = text,
                 style = FirefoxTheme.typography.body1,
                 color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
             )
+
+            if (iconPainter != null) {
+                Icon(
+                    painter = iconPainter,
+                    contentDescription = iconDescription,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .padding(start = FirefoxTheme.layout.space.static100)
+                        .clip(CircleShape)
+                        .clickable(
+                            enabled = onIconClick != null,
+                            onClick = { onIconClick?.invoke() },
+                        )
+                        .padding(FirefoxTheme.layout.space.static100),
+                )
+            }
         }
     }
 }
