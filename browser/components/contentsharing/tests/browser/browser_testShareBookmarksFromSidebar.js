@@ -10,13 +10,7 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-add_setup(async function () {
-  // withSidebarTree opens the legacy bookmarks sidebar panel and inspects its
-  // tree view, so opt out of the updated bookmarks panel here.
-  // TODO(Bug 2039395): adapt this test to the new bookmarks sidebar panel and remove this sidebar.updateBookmarks.enabled pushPrefEnv)
-  await SpecialPowers.pushPrefEnv({
-    set: [["sidebar.updatedBookmarks.enabled", false]],
-  });
+add_setup(function () {
   registerCleanupFunction(async () => {
     await PlacesUtils.bookmarks.eraseEverything();
   });
