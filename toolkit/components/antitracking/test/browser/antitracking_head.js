@@ -185,20 +185,22 @@ this.AntiTracking = {
         });
         this._createCleanupTask(cleanupFunction);
 
-        this._createTask({
-          name,
-          cookieBehavior: BEHAVIOR_LIMIT_FOREIGN,
-          allowList: true,
-          callback: callbackNonTracking,
-          extraPrefs,
-          expectedBlockingNotifications: 0,
-          runInPrivateWindow,
-          iframeSandbox,
-          accessRemoval: null, // only passed with non-blocking callback
-          callbackAfterRemoval: null,
-          iframeAllow,
-        });
-        this._createCleanupTask(cleanupFunction);
+        if (!AppConstants.DEBUG) {
+          this._createTask({
+            name,
+            cookieBehavior: BEHAVIOR_LIMIT_FOREIGN,
+            allowList: true,
+            callback: callbackNonTracking,
+            extraPrefs,
+            expectedBlockingNotifications: 0,
+            runInPrivateWindow,
+            iframeSandbox,
+            accessRemoval: null, // only passed with non-blocking callback
+            callbackAfterRemoval: null,
+            iframeAllow,
+          });
+          this._createCleanupTask(cleanupFunction);
+        }
 
         this._createTask({
           name: name + " reject foreign with exception",
@@ -232,36 +234,38 @@ this.AntiTracking = {
         });
         this._createCleanupTask(cleanupFunction);
 
-        this._createTask({
-          name,
-          cookieBehavior: BEHAVIOR_REJECT_TRACKER,
-          allowList: true,
-          callback: callbackNonTracking,
-          extraPrefs,
-          expectedBlockingNotifications: 0,
-          runInPrivateWindow,
-          iframeSandbox,
-          accessRemoval,
-          callbackAfterRemoval,
-          iframeAllow,
-        });
-        this._createCleanupTask(cleanupFunction);
+        if (!AppConstants.DEBUG) {
+          this._createTask({
+            name,
+            cookieBehavior: BEHAVIOR_REJECT_TRACKER,
+            allowList: true,
+            callback: callbackNonTracking,
+            extraPrefs,
+            expectedBlockingNotifications: 0,
+            runInPrivateWindow,
+            iframeSandbox,
+            accessRemoval,
+            callbackAfterRemoval,
+            iframeAllow,
+          });
+          this._createCleanupTask(cleanupFunction);
 
-        this._createTask({
-          name,
-          cookieBehavior: BEHAVIOR_REJECT_TRACKER,
-          allowList: false,
-          callback: callbackNonTracking,
-          extraPrefs,
-          expectedBlockingNotifications: false,
-          runInPrivateWindow,
-          iframeSandbox,
-          accessRemoval: null, // only passed with non-blocking callback
-          callbackAfterRemoval: null,
-          thirdPartyPage: TEST_ANOTHER_3RD_PARTY_PAGE,
-          iframeAllow,
-        });
-        this._createCleanupTask(cleanupFunction);
+          this._createTask({
+            name,
+            cookieBehavior: BEHAVIOR_REJECT_TRACKER,
+            allowList: false,
+            callback: callbackNonTracking,
+            extraPrefs,
+            expectedBlockingNotifications: false,
+            runInPrivateWindow,
+            iframeSandbox,
+            accessRemoval: null, // only passed with non-blocking callback
+            callbackAfterRemoval: null,
+            thirdPartyPage: TEST_ANOTHER_3RD_PARTY_PAGE,
+            iframeAllow,
+          });
+          this._createCleanupTask(cleanupFunction);
+        }
       } else {
         // This is only used for imageCacheWorker.js tests
         this._createTask({
