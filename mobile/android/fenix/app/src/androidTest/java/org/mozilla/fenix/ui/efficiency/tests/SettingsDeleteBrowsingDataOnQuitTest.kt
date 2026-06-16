@@ -64,6 +64,7 @@ class SettingsDeleteBrowsingDataOnQuitTest : BaseTest() {
 
         on.settingsDeleteBrowsingDataOnQuit.navigateToPage()
             .mozClick(SettingsDeleteBrowsingDataOnQuitSelectors.DELETE_BROWSING_DATA_ON_QUIT_TOGGLE)
+        on.home.navigateToPage()
         on.browserPage.navigateToPage(testPage)
             .verifyPageContent("Open microphone")
             .clickPageContent("Open microphone")
