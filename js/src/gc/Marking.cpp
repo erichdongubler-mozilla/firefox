@@ -1481,10 +1481,15 @@ bool MarkingTracerT<opts>::markCurrentColor(SliceBudget& budget) {
         return false;
       }
     } else {
-      marker->markDeferredWeakMapChildren(
-          marker->runtime()->gc.deferredMapsList(marker->markColor()));
-      if (!marker->hasEntriesForCurrentColor()) {
+      if constexpr (hasOption(MarkingOptions::ConcurrentMarking)) {
+        // Deferred weak maps will be marked synchronously on the main thread.
         return true;
+      } else {
+        marker->markDeferredWeakMapChildren(
+            marker->runtime()->gc.deferredMapsList(marker->markColor()));
+        if (!marker->hasEntriesForCurrentColor()) {
+          return true;
+        }
       }
     }
   }
