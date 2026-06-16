@@ -525,6 +525,9 @@ tasks:
             by-test-platform:
                 .*-tsan.*: 2700
                 linux.*/debug: 2700
+                windows.*-ccov.*: 2700
+                windows.*-asan.*: 2700
+                windows.*/debug: 2700
                 default: 1800
         mozharness:
             mochitest-flavor: browser
