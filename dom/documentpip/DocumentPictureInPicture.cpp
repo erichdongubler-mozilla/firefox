@@ -11,7 +11,6 @@
 #include "mozilla/dom/DocumentPictureInPictureEvent.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/widget/Screen.h"
-#include "nsContentUtils.h"
 #include "nsDocShell.h"
 #include "nsDocShellLoadState.h"
 #include "nsGlobalWindowOuter.h"
@@ -246,14 +245,7 @@ CSSIntRect DocumentPictureInPicture::DetermineExtent(
 }
 
 already_AddRefed<Promise> DocumentPictureInPicture::RequestWindow(
-    const DocumentPictureInPictureOptions& aOptions,
-    nsIPrincipal& aCallerPrincipal, ErrorResult& aRv) {
-  if (aCallerPrincipal.GetIsExpandedPrincipal()) {
-    aRv.ThrowNotAllowedError(
-        "Document Picture-in-Picture is not available in isolated world");
-    return nullptr;
-  }
-
+    const DocumentPictureInPictureOptions& aOptions, ErrorResult& aRv) {
   // Not part of the spec, but check the document is active
   RefPtr<nsPIDOMWindowInner> ownerWin = GetOwnerWindow();
   if (!ownerWin || !ownerWin->IsFullyActive()) {
@@ -277,7 +269,6 @@ already_AddRefed<Promise> DocumentPictureInPicture::RequestWindow(
   }
 
   // 4, 7. Require transient activation
-  // XXX maybe exempt extensions, see bug 2047870.
   WindowContext* wc = ownerWin->GetWindowContext();
   if (!wc || !wc->ConsumeTransientUserGestureActivation()) {
     aRv.ThrowNotAllowedError(
