@@ -129,6 +129,7 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
     PacketRouter* packet_router,
     bool non_sender_rtt_measurement,
     RtcpEventObserver* rtcp_event_observer,
+    std::optional<uint32_t> remote_ssrc,
     uint32_t local_ssrc) {
   RtpRtcpInterface::Configuration configuration;
   configuration.audio = false;
@@ -141,10 +142,11 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
   configuration.rtcp_cname_callback = rtcp_cname_callback;
   configuration.rtcp_event_observer = rtcp_event_observer;
   configuration.non_sender_rtt_measurement = non_sender_rtt_measurement;
+  configuration.rtcp_mode = RtcpMode::kCompound;
+  configuration.remote_ssrc = remote_ssrc;
 
   auto rtp_rtcp = ModuleRtpRtcpImpl2::CreateReceiveModule(
       env, configuration, [local_ssrc] { return local_ssrc; });
-  rtp_rtcp->SetRTCPStatus(RtcpMode::kCompound);
 
   return rtp_rtcp;
 }
@@ -317,6 +319,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
           packet_router,
           config_.rtp.rtcp_xr.receiver_reference_time_report,
           config_.rtp.rtcp_event_observer,
+          config->rtp.remote_ssrc,
           config_.rtp.local_ssrc)),
       nack_periodic_processor_(nack_periodic_processor),
       complete_frame_callback_(complete_frame_callback),
@@ -350,7 +353,6 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
          "reserved for internal usage.";
 
   rtp_rtcp_->SetRTCPStatus(config_.rtp.rtcp_mode);
-  rtp_rtcp_->SetRemoteSSRC(config_.rtp.remote_ssrc);
 
   if (config_.rtp.nack.rtp_history_ms > 0) {
     rtp_receive_statistics_->SetMaxReorderingThreshold(config_.rtp.remote_ssrc,
