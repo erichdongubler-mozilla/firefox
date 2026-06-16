@@ -317,10 +317,50 @@ class NavigationToolbarRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     /**
-     * Asserts that the navigation bar compose node is positioned below the view
+     * Verifies navigation bar exists and is correctly positioned when Edge-to-Edge is enabled.
+     * Edge-to-Edge mode extends content to screen edges, so we verify it's at the very edge.
+     */
+    fun verifyNavBarPositionForEdgeToEdge(isAtBottom: Boolean = true) {
+        Log.i(TAG, "verifyNavBarPositionForEdgeToEdge: Verifying navbar is docked to the edge (isAtBottom=$isAtBottom)")
+
+        composeTestRule.waitForIdle()
+        mDevice.waitForIdle()
+
+        val navBarBounds = composeTestRule.onNodeWithTag(NAVIGATION_BAR)
+            .fetchSemanticsNode()
+            .boundsInWindow
+
+        val displayHeight = mDevice.displayHeight
+
+        // Allows enough pixels to account for the System Navigation Bar or Status Bar
+        val maxSystemInsetsPx = 150
+
+        if (isAtBottom) {
+            val bottomEdge = navBarBounds.bottom.toInt()
+            val distanceToBottom = displayHeight - bottomEdge
+
+            assertTrue(
+                "Navigation bar should be docked at the bottom, accounting for system insets. " +
+                    "Distance to bottom was $distanceToBottom px (expected <= $maxSystemInsetsPx px). Bounds: $navBarBounds",
+                distanceToBottom in 0..maxSystemInsetsPx,
+            )
+        } else {
+            val topEdge = navBarBounds.top.toInt()
+
+            assertTrue(
+                "Navigation bar should be docked at the top, accounting for system insets. " +
+                    "Distance to top was $topEdge px (expected <= $maxSystemInsetsPx px). Bounds: $navBarBounds",
+                topEdge in 0..maxSystemInsetsPx,
+            )
+        }
+        Log.i(TAG, "verifyNavBarPositionForEdgeToEdge: Verified navbar is at the expected edge within safe insets")
+    }
+
+    /**
+     * Asserts that the navigation bar compose node is positioned relative to the view
      * identified by [referenceResourceId].
      */
-    private fun assertNavBarIsPositioned(referenceResourceId: String) {
+    private fun assertNavBarIsPositioned(referenceResourceId: String, isAtBottom: Boolean = true) {
         val navBarBounds = composeTestRule.onNodeWithTag(NAVIGATION_BAR)
             .fetchSemanticsNode()
             .boundsInWindow
