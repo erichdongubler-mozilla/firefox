@@ -1474,8 +1474,7 @@ Maybe<OverflowAreas> nsBlockFrame::ReflowAbsoluteFramesInInlineFrame(
 void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
                           const ReflowInput& aReflowInput,
                           nsReflowStatus& aStatus) {
-  if (IsHiddenByContentVisibilityOfInFlowParentForLayout() &&
-      !GetNextInFlow()) {
+  if (IsHiddenByContentVisibilityOfInFlowParentForLayout()) {
     FinishAndStoreOverflow(&aMetrics, aReflowInput.mStyleDisplay);
     return;
   }
@@ -3955,7 +3954,6 @@ bool nsBlockFrame::ReflowLine(BlockReflowState& aState, LineIterator aLine,
   // so we don't skip reflow this line.
   nsIFrame* firstChild = aLine->mFirstChild;
   if (firstChild->IsHiddenByContentVisibilityOfInFlowParentForLayout() &&
-      !firstChild->GetNextInFlow() &&
       !HasAnyStateBits(NS_FRAME_OWNS_ANON_BOXES)) {
     return false;
   }
