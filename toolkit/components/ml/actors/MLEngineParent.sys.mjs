@@ -50,8 +50,6 @@ const RS_RUNTIME_COLLECTION = "ml-onnx-runtime";
 const RS_INFERENCE_OPTIONS_COLLECTION = "ml-inference-options";
 const RS_ALLOW_DENY_COLLECTION = "ml-model-allow-deny-list";
 const TERMINATE_TIMEOUT = 5000;
-const RS_FALLBACK_BASE_URL =
-  "https://firefox-settings-attachments.cdn.mozilla.net";
 
 const RUNTIME_ROOT_IN_OPFS = "mlRuntimeFiles";
 
@@ -781,14 +779,14 @@ export class MLEngineParent extends JSProcessActorParent {
   static async downloadRSAttachment({ wasmRecord, localRoot }) {
     const { attachment, version } = wasmRecord;
     const { location, filename, hash, size } = attachment;
-    let baseURL = RS_FALLBACK_BASE_URL;
+
+    // If the base URL cannot be obtained from Remote Settings, no need to go further.
+    let baseURL;
     try {
       baseURL = await lazy.Utils.baseAttachmentsURL();
     } catch (error) {
-      console.error(
-        `Error fetching remote settings base url from CDN. Falling back to ${RS_FALLBACK_BASE_URL}`,
-        error
-      );
+      console.error("Error fetching content from Remote settings:", error);
+      throw error;
     }
 
     // Validate inputs
