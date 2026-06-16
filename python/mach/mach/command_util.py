@@ -60,6 +60,9 @@ MACH_COMMANDS = {
         "python/mozbuild/mozbuild/artifact_commands.py",
     ),
     "awsy-test": MachCommandReference("testing/awsy/mach_commands.py"),
+    "bhr-aggregate": MachCommandReference(
+        "toolkit/components/backgroundhangmonitor/mach_commands.py"
+    ),
     "bootstrap": MachCommandReference(
         "python/mozboot/mozboot/mach_commands.py",
     ),
