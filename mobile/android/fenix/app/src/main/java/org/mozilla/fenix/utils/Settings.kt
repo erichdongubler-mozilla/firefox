@@ -3258,7 +3258,7 @@ class Settings(
     )
 
     /**
-     * Whether WebCompat Reporter enhancements is enabled.Í
+     * Whether WebCompat Reporter enhancements is enabled.
      */
     var webCompatReporterEnhancementsEnabled by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_webcompat_reporter_enhancements),
