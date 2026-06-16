@@ -299,6 +299,10 @@ list of acceptable features is given below:
      - 11.0
      - 13.0
      - **No** (see notes)
+   * - ``std::source_location`` (C++20)
+     - 11.0
+     - 16.0
+     - **No** (see notes)
 
 
 Sources
@@ -359,6 +363,9 @@ Coroutines
 ``using enum``
   Not supported until GCC 11 and we still support GCC 10. In the meantime, use
   ``mozilla/UsingEnum.h``'s ``MOZ_USING_ENUM`` macro.
+
+``std::source_location``
+  C++20's ``std::source_location`` is not supported until libstdc++11 (GCC 11).
 
 
 C++ and Mozilla standard libraries
