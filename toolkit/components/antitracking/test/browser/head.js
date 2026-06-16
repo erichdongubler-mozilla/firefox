@@ -232,18 +232,6 @@ async function remoteSettingsSync(
  * @param {object} db - The Remote Settings collections database.
  * @param {object} collectionName The remote setting collection name
  */
-function clearSiteTestData() {
-  return new Promise(resolve => {
-    Services.clearData.deleteData(
-      Ci.nsIClearDataService.CLEAR_COOKIES |
-        Ci.nsIClearDataService.CLEAR_DOM_STORAGES |
-        Ci.nsIClearDataService.CLEAR_PERMISSIONS |
-        Ci.nsIClearDataService.CLEAR_DOM_QUOTA,
-      resolve
-    );
-  });
-}
-
 async function setExceptions(entries, db, collectionName) {
   info("Set exceptions via RemoteSettings");
   if (!entries.length) {

@@ -179,7 +179,9 @@ async function runClearSiteDataTest(
   info("Cleaning up.");
   BrowserTestUtils.removeTab(tabA);
   BrowserTestUtils.removeTab(tabB);
-  await clearSiteTestData();
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, resolve);
+  });
 }
 
 /**

@@ -58,7 +58,7 @@ add_task(async function test_noAutoGrant_thirdPartyTracker() {
     requestStorageAccessAndExpectFailure
   );
 
-  await clearSiteTestData();
+  await cleanUpData();
 });
 
 add_task(async function test_autoGrant_entityList() {
@@ -85,5 +85,5 @@ add_task(async function test_autoGrant_entityList() {
     requestStorageAccessAndExpectSuccess
   );
 
-  await clearSiteTestData();
+  await cleanUpData();
 });

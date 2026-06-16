@@ -14,7 +14,11 @@ add_setup(async function () {
   });
 
   registerCleanupFunction(async () => {
-    await clearSiteTestData();
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
   });
 });
 

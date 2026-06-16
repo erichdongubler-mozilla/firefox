@@ -16,7 +16,14 @@ AntiTracking.runTest(
     ok(!threw, "requestStorageAccess should not throw");
     ok(!rejected, "requestStorageAccess should be available");
   },
-  clearSiteTestData, // cleanup function
+  // cleanup function
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  },
   [], // extra prefs
   false, // no window open test
   false, // no user-interaction test

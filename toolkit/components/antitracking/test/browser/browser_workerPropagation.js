@@ -1,9 +1,7 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-add_setup(function () {
-  registerCleanupFunction(clearSiteTestData);
-});
+/* eslint-disable mozilla/no-arbitrary-setTimeout */
 
 add_task(async function () {
   info("Starting subResources test");
@@ -78,4 +76,13 @@ add_task(async function () {
   BrowserTestUtils.removeTab(tab);
 
   UrlClassifierTestUtils.cleanupTestTrackers();
+});
+
+add_task(async function () {
+  info("Cleaning up.");
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      resolve()
+    );
+  });
 });

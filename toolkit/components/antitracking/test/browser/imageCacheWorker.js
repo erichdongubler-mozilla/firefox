@@ -70,5 +70,9 @@ add_task(async _ => {
       is(text, "2", "The image should be loaded correctly.");
     });
 
-  await clearSiteTestData();
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      resolve()
+    );
+  });
 });

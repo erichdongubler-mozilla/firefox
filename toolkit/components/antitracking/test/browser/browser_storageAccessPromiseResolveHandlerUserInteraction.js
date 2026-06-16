@@ -23,7 +23,14 @@ AntiTracking.runTest(
   },
 
   null, // non-blocking callback
-  clearSiteTestData, // cleanup function
+  // cleanup function
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  },
   null, // extra prefs
   false, // no window open test
   false // no user-interaction test

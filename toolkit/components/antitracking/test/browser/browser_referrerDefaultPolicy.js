@@ -7,10 +7,6 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-add_setup(function () {
-  registerCleanupFunction(clearSiteTestData);
-});
-
 async function openAWindow(usePrivate) {
   info("Creating a new " + (usePrivate ? "private" : "normal") + " window");
   let win = OpenBrowserWindow({ private: usePrivate });
@@ -249,7 +245,6 @@ async function executeTests() {
   gRecording = false;
   for (let mode in gTests) {
     info(`Open a ${mode} window`);
-    let win = await openAWindow(mode == "private");
     while (gTests[mode].length) {
       let test = gTests[mode].shift();
       info(`Running test ${test.toSource()}`);
@@ -264,9 +259,12 @@ async function executeTests() {
         ],
       });
 
+      let win = await openAWindow(mode == "private");
+
       await testOnWindowBody(win, test.expectedReferrer, test.rp);
+
+      await closeAWindow(win);
     }
-    await closeAWindow(win);
   }
 
   Services.prefs.clearUserPref(kPBPref);
@@ -674,4 +672,13 @@ add_task(async function () {
   await executeTests();
 
   UrlClassifierTestUtils.cleanupTestTrackers();
+});
+
+add_task(async function () {
+  info("Cleaning up.");
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      resolve()
+    );
+  });
 });

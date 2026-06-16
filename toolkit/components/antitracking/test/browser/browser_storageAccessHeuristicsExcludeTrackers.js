@@ -12,6 +12,14 @@
 const TEST_TRACKER_DOMAIN = "https://itisatracker.org/";
 const TEST_TRACK_TOP_PAGE = TEST_TRACKER_DOMAIN + TEST_PATH + "page.html";
 
+async function cleanup() {
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      resolve()
+    );
+  });
+}
+
 /**
  * A helper function to check the storage access permission.
  *
@@ -53,7 +61,7 @@ add_setup(async function () {
   await UrlClassifierTestUtils.addTestTrackers();
 
   registerCleanupFunction(async _ => {
-    await clearSiteTestData();
+    await cleanup();
     await UrlClassifierTestUtils.cleanupTestTrackers();
   });
 

@@ -1,7 +1,3 @@
-add_setup(function () {
-  registerCleanupFunction(clearSiteTestData);
-});
-
 function altSvcCacheKeyIsolated(parsed) {
   return parsed.length > 5 && parsed[5] == "I";
 }
@@ -107,4 +103,13 @@ add_task(async function () {
   info("Removing the tabs");
   BrowserTestUtils.removeTab(tab);
   BrowserTestUtils.removeTab(tab2);
+});
+
+add_task(async function () {
+  info("Cleaning up.");
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      resolve()
+    );
+  });
 });

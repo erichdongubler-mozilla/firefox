@@ -1,7 +1,3 @@
-add_setup(function () {
-  registerCleanupFunction(clearSiteTestData);
-});
-
 async function runTests(topPage, limitForeignContexts) {
   info("Creating a new tab");
   let tab = BrowserTestUtils.addTab(gBrowser, topPage);
@@ -302,4 +298,13 @@ add_task(async function () {
 
   SpecialPowers.clearUserPref("privacy.dynamic_firstparty.limitForeign");
   SpecialPowers.clearUserPref("network.cookie.sameSite.laxByDefault");
+});
+
+add_task(async function () {
+  info("Cleaning up.");
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      resolve()
+    );
+  });
 });

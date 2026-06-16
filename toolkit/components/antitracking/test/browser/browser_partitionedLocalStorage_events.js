@@ -993,7 +993,15 @@ function runAllTests(prefValue) {
     BrowserTestUtils.removeTab(normalTab2);
 
     UrlClassifierTestUtils.cleanupTestTrackers();
-    await clearSiteTestData();
+  });
+
+  // Cleanup data.
+  add_task(async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
   });
 }
 

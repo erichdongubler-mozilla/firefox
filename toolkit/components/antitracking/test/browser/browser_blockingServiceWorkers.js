@@ -14,8 +14,13 @@ AntiTracking.runTest(
       .catch(e => ok(false, "Promise rejected: " + e));
   },
   null,
-  // Cleanup callback
-  clearSiteTestData,
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  },
   [
     ["dom.serviceWorkers.exemptFromPerDomainMax", true],
     ["dom.ipc.processCount", 1],

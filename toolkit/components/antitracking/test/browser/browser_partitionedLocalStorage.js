@@ -72,9 +72,13 @@ AntiTracking.runTestInNormalAndPrivateMode(
     is(localStorage.foo, "42", "The value matches");
     ok(true, "LocalStorage is allowed");
   },
-
-  // Cleanup callback
-  clearSiteTestData,
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  },
   [
     [
       "privacy.restrict3rdpartystorage.partitionedHosts",
@@ -101,5 +105,11 @@ PartitionedStorageHelper.runPartitioningTestInNormalAndPrivateMode(
   },
 
   // cleanup
-  clearSiteTestData
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  }
 );

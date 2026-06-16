@@ -22,7 +22,11 @@ function clearTelemetry() {
 }
 
 async function cleanup() {
-  await clearSiteTestData();
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      resolve()
+    );
+  });
 }
 
 function getExpectedExpiredDaysFromPref(pref) {

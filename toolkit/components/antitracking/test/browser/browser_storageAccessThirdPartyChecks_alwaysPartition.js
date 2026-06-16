@@ -1,7 +1,3 @@
-add_setup(function () {
-  registerCleanupFunction(clearSiteTestData);
-});
-
 const allBlocked = Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_ALL;
 const foreignBlocked = Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_FOREIGN;
 
@@ -58,7 +54,13 @@ AntiTracking._createTask({
   ],
 });
 
-add_task(clearSiteTestData);
+add_task(async _ => {
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      resolve()
+    );
+  });
+});
 
 AntiTracking._createTask({
   name: "Test that we never grant access to cookieBehavior=2",
@@ -80,7 +82,13 @@ AntiTracking._createTask({
   errorMessageDomains: ["http://example.net", "https://tracking.example.org"],
 });
 
-add_task(clearSiteTestData);
+add_task(async _ => {
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      resolve()
+    );
+  });
+});
 
 AntiTracking._createTask({
   name: "Test that we never grant access to cookieBehavior=3",
@@ -100,4 +108,12 @@ AntiTracking._createTask({
   callbackAfterRemoval: null,
   thirdPartyPage: TEST_3RD_PARTY_PAGE,
   errorMessageDomains: ["https://tracking.example.org"],
+});
+
+add_task(async _ => {
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      resolve()
+    );
+  });
 });

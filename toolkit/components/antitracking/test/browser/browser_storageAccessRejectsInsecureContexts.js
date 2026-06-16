@@ -12,12 +12,9 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-add_setup(async function () {
-  await setPreferences();
-  registerCleanupFunction(clearSiteTestData);
-});
-
 add_task(async function testInsecureContext() {
+  await setPreferences();
+
   await openPageAndRunCode(
     TEST_TOP_PAGE_HTTPS,
     getExpectPopupAndClick("accept"),
@@ -31,4 +28,7 @@ add_task(async function testInsecureContext() {
     TEST_3RD_PARTY_PAGE_HTTP,
     requestStorageAccessAndExpectFailure
   );
+
+  await cleanUpData();
+  await SpecialPowers.flushPrefEnv();
 });

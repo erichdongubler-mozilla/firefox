@@ -9,7 +9,18 @@
 var gFeatures = undefined;
 var gTestTrackersCleanedUp = false;
 var gTestTrackersCleanupRegistered = false;
-let gPrivateWindow = null;
+
+/**
+ * Force garbage collection.
+ */
+function forceGC() {
+  SpecialPowers.gc();
+  SpecialPowers.forceShrinkingGC();
+  SpecialPowers.forceCC();
+  SpecialPowers.gc();
+  SpecialPowers.forceShrinkingGC();
+  SpecialPowers.forceCC();
+}
 
 this.AntiTracking = {
   runTestInNormalAndPrivateMode(
@@ -108,10 +119,6 @@ this.AntiTracking = {
       options.callbackAfterRemoval = null;
     }
 
-    if (runInPrivateWindow) {
-      this._openPrivateWindowTask();
-    }
-
     // Here we want to test that a 3rd party context is simply blocked.
     this._createTask({
       name,
@@ -185,22 +192,20 @@ this.AntiTracking = {
         });
         this._createCleanupTask(cleanupFunction);
 
-        if (!AppConstants.DEBUG) {
-          this._createTask({
-            name,
-            cookieBehavior: BEHAVIOR_LIMIT_FOREIGN,
-            allowList: true,
-            callback: callbackNonTracking,
-            extraPrefs,
-            expectedBlockingNotifications: 0,
-            runInPrivateWindow,
-            iframeSandbox,
-            accessRemoval: null, // only passed with non-blocking callback
-            callbackAfterRemoval: null,
-            iframeAllow,
-          });
-          this._createCleanupTask(cleanupFunction);
-        }
+        this._createTask({
+          name,
+          cookieBehavior: BEHAVIOR_LIMIT_FOREIGN,
+          allowList: true,
+          callback: callbackNonTracking,
+          extraPrefs,
+          expectedBlockingNotifications: 0,
+          runInPrivateWindow,
+          iframeSandbox,
+          accessRemoval: null, // only passed with non-blocking callback
+          callbackAfterRemoval: null,
+          iframeAllow,
+        });
+        this._createCleanupTask(cleanupFunction);
 
         this._createTask({
           name: name + " reject foreign with exception",
@@ -234,38 +239,36 @@ this.AntiTracking = {
         });
         this._createCleanupTask(cleanupFunction);
 
-        if (!AppConstants.DEBUG) {
-          this._createTask({
-            name,
-            cookieBehavior: BEHAVIOR_REJECT_TRACKER,
-            allowList: true,
-            callback: callbackNonTracking,
-            extraPrefs,
-            expectedBlockingNotifications: 0,
-            runInPrivateWindow,
-            iframeSandbox,
-            accessRemoval,
-            callbackAfterRemoval,
-            iframeAllow,
-          });
-          this._createCleanupTask(cleanupFunction);
+        this._createTask({
+          name,
+          cookieBehavior: BEHAVIOR_REJECT_TRACKER,
+          allowList: true,
+          callback: callbackNonTracking,
+          extraPrefs,
+          expectedBlockingNotifications: 0,
+          runInPrivateWindow,
+          iframeSandbox,
+          accessRemoval,
+          callbackAfterRemoval,
+          iframeAllow,
+        });
+        this._createCleanupTask(cleanupFunction);
 
-          this._createTask({
-            name,
-            cookieBehavior: BEHAVIOR_REJECT_TRACKER,
-            allowList: false,
-            callback: callbackNonTracking,
-            extraPrefs,
-            expectedBlockingNotifications: false,
-            runInPrivateWindow,
-            iframeSandbox,
-            accessRemoval: null, // only passed with non-blocking callback
-            callbackAfterRemoval: null,
-            thirdPartyPage: TEST_ANOTHER_3RD_PARTY_PAGE,
-            iframeAllow,
-          });
-          this._createCleanupTask(cleanupFunction);
-        }
+        this._createTask({
+          name,
+          cookieBehavior: BEHAVIOR_REJECT_TRACKER,
+          allowList: false,
+          callback: callbackNonTracking,
+          extraPrefs,
+          expectedBlockingNotifications: false,
+          runInPrivateWindow,
+          iframeSandbox,
+          accessRemoval: null, // only passed with non-blocking callback
+          callbackAfterRemoval: null,
+          thirdPartyPage: TEST_ANOTHER_3RD_PARTY_PAGE,
+          iframeAllow,
+        });
+        this._createCleanupTask(cleanupFunction);
       } else {
         // This is only used for imageCacheWorker.js tests
         this._createTask({
@@ -345,10 +348,6 @@ this.AntiTracking = {
         );
         this._createCleanupTask(cleanupFunction);
       }
-    }
-
-    if (runInPrivateWindow) {
-      this._closePrivateWindowTask();
     }
   },
 
@@ -512,16 +511,10 @@ this.AntiTracking = {
         "callbackAfterRemoval must be passed when accessRemoval is non-null"
       );
 
-      let ownedPrivateWindow = false;
       let win = window;
       if (options.runInPrivateWindow) {
-        if (gPrivateWindow) {
-          win = gPrivateWindow;
-        } else {
-          win = OpenBrowserWindow({ private: true });
-          await TestUtils.topicObserved("browser-delayed-startup-finished");
-          ownedPrivateWindow = true;
-        }
+        win = OpenBrowserWindow({ private: true });
+        await TestUtils.topicObserved("browser-delayed-startup-finished");
       }
 
       await AntiTracking._setupTest(
@@ -956,7 +949,7 @@ this.AntiTracking = {
       info("Removing the tab");
       BrowserTestUtils.removeTab(tab);
 
-      if (ownedPrivateWindow) {
+      if (options.runInPrivateWindow) {
         win.close();
       }
     });
@@ -969,28 +962,9 @@ this.AntiTracking = {
         await cleanupFunction();
       }
 
-      if (gPrivateWindow) {
-        await new Promise(resolve => {
-          Services.clearData.deleteDataFromOriginAttributesPattern(
-            { privateBrowsingId: 1 },
-            () => resolve()
-          );
-        });
-      }
-    });
-  },
-
-  _openPrivateWindowTask() {
-    add_task(async function () {
-      gPrivateWindow = OpenBrowserWindow({ private: true });
-      await TestUtils.topicObserved("browser-delayed-startup-finished");
-    });
-  },
-
-  _closePrivateWindowTask() {
-    add_task(async function () {
-      await BrowserTestUtils.closeWindow(gPrivateWindow);
-      gPrivateWindow = null;
+      // While running these tests we typically do not have enough idle time to do
+      // GC reliably, so force it here.
+      forceGC();
     });
   },
 
@@ -1012,16 +986,10 @@ this.AntiTracking = {
         } test ${name}`
       );
 
-      let ownedPrivateWindow = false;
       let win = window;
       if (runInPrivateWindow) {
-        if (gPrivateWindow) {
-          win = gPrivateWindow;
-        } else {
-          win = OpenBrowserWindow({ private: true });
-          await TestUtils.topicObserved("browser-delayed-startup-finished");
-          ownedPrivateWindow = true;
-        }
+        win = OpenBrowserWindow({ private: true });
+        await TestUtils.topicObserved("browser-delayed-startup-finished");
       }
 
       // Enable SA heuristics for trackers because the test depends on it.
@@ -1127,7 +1095,7 @@ this.AntiTracking = {
       info("Removing the tab");
       BrowserTestUtils.removeTab(tab);
 
-      if (ownedPrivateWindow) {
+      if (runInPrivateWindow) {
         win.close();
       }
     });
@@ -1151,16 +1119,10 @@ this.AntiTracking = {
         } test ${name}`
       );
 
-      let ownedPrivateWindow = false;
       let win = window;
       if (runInPrivateWindow) {
-        if (gPrivateWindow) {
-          win = gPrivateWindow;
-        } else {
-          win = OpenBrowserWindow({ private: true });
-          await TestUtils.topicObserved("browser-delayed-startup-finished");
-          ownedPrivateWindow = true;
-        }
+        win = OpenBrowserWindow({ private: true });
+        await TestUtils.topicObserved("browser-delayed-startup-finished");
       }
 
       // Enable SA heuristics for trackers because the test depends on it.
@@ -1428,7 +1390,7 @@ this.AntiTracking = {
       info("Removing the tab");
       BrowserTestUtils.removeTab(tab);
 
-      if (ownedPrivateWindow) {
+      if (runInPrivateWindow) {
         win.close();
       }
     });

@@ -1,7 +1,3 @@
-add_setup(function () {
-  registerCleanupFunction(clearSiteTestData);
-});
-
 AntiTracking._createTask({
   name: "Test that after a storage access grant we have full first-party access",
   cookieBehavior: BEHAVIOR_REJECT_TRACKER,
@@ -59,7 +55,13 @@ AntiTracking._createTask({
   ],
 });
 
-add_task(clearSiteTestData);
+add_task(async _ => {
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      resolve()
+    );
+  });
+});
 
 AntiTracking._createTask({
   name: "Test that we never grant access to cookieBehavior=2",
@@ -83,7 +85,13 @@ AntiTracking._createTask({
   ],
 });
 
-add_task(clearSiteTestData);
+add_task(async _ => {
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      resolve()
+    );
+  });
+});
 
 AntiTracking._createTask({
   name: "Test that we never grant access to cookieBehavior=3",
@@ -102,4 +110,12 @@ AntiTracking._createTask({
   callbackAfterRemoval: null,
   thirdPartyPage: TEST_3RD_PARTY_PAGE,
   errorMessageDomains: ["https://tracking.example.org"],
+});
+
+add_task(async _ => {
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      resolve()
+    );
+  });
 });

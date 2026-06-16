@@ -15,8 +15,13 @@ AntiTracking.runTestInNormalAndPrivateMode(
     localStorage.foo = 42;
     ok(true, "LocalStorage is allowed");
   },
-  // Cleanup callback
-  clearSiteTestData
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  }
 );
 
 AntiTracking.runTestInNormalAndPrivateMode(
@@ -76,8 +81,13 @@ AntiTracking.runTestInNormalAndPrivateMode(
     localStorage.foo = 42;
     ok(true, "LocalStorage is allowed");
   },
-  // Cleanup callback
-  clearSiteTestData,
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  },
   null,
   false,
   false

@@ -1,10 +1,6 @@
 // This test works by setting up an exception for the tracker domain, which
 // disables all the anti-tracking tests.
 
-add_setup(function () {
-  registerCleanupFunction(clearSiteTestData);
-});
-
 add_task(async _ => {
   PermissionTestUtils.add(
     "https://tracking.example.org",
@@ -57,4 +53,12 @@ AntiTracking._createTask({
   iframeSandbox: null,
   accessRemoval: null,
   callbackAfterRemoval: null,
+});
+
+add_task(async _ => {
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      resolve()
+    );
+  });
 });

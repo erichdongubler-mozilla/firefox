@@ -1,10 +1,3 @@
-add_setup(function () {
-  registerCleanupFunction(async function () {
-    SpecialPowers.clearUserPref("network.cookie.sameSite.laxByDefault");
-    await clearSiteTestData();
-  });
-});
-
 add_task(async function () {
   info("Starting subResources test");
 
@@ -275,4 +268,14 @@ add_task(async function () {
   BrowserTestUtils.removeTab(tab);
 
   UrlClassifierTestUtils.cleanupTestTrackers();
+});
+
+add_task(async function () {
+  info("Cleaning up.");
+  SpecialPowers.clearUserPref("network.cookie.sameSite.laxByDefault");
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      resolve()
+    );
+  });
 });

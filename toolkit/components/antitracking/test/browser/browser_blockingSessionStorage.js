@@ -34,8 +34,13 @@ AntiTracking.runTestInNormalAndPrivateMode(
     sessionStorage.foo = 42;
     ok(true, "SessionStorage is always allowed");
   },
-  // Cleanup callback
-  clearSiteTestData,
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  },
   [],
   true,
   true
@@ -108,8 +113,13 @@ AntiTracking.runTestInNormalAndPrivateMode(
       "SessionStorage is allowed after calling the storage access API too"
     );
   },
-  // Cleanup callback
-  clearSiteTestData,
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  },
   null,
   false,
   false

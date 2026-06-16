@@ -12,20 +12,6 @@ Services.scriptloader.loadSubScript(
 );
 
 this.PartitionedStorageHelper = {
-  _gPrivateWindow: null,
-
-  async _getPrivateWindow() {
-    if (!this._gPrivateWindow) {
-      this._gPrivateWindow = OpenBrowserWindow({ private: true });
-      await TestUtils.topicObserved("browser-delayed-startup-finished");
-      registerCleanupFunction(async () => {
-        await BrowserTestUtils.closeWindow(this._gPrivateWindow);
-        this._gPrivateWindow = null;
-      });
-    }
-    return this._gPrivateWindow;
-  },
-
   runTestInNormalAndPrivateMode(
     name,
     callback,
@@ -171,7 +157,8 @@ this.PartitionedStorageHelper = {
 
       let win = window;
       if (runInPrivateWindow) {
-        win = await PartitionedStorageHelper._getPrivateWindow();
+        win = OpenBrowserWindow({ private: true });
+        await TestUtils.topicObserved("browser-delayed-startup-finished");
       }
 
       info("Creating the first tab");
@@ -455,6 +442,10 @@ this.PartitionedStorageHelper = {
       BrowserTestUtils.removeTab(tab2);
       BrowserTestUtils.removeTab(tab3);
       BrowserTestUtils.removeTab(tab4);
+
+      if (runInPrivateWindow) {
+        win.close();
+      }
     });
 
     add_task(async _ => {
@@ -463,14 +454,10 @@ this.PartitionedStorageHelper = {
         await cleanupFunction();
       }
 
-      if (PartitionedStorageHelper._gPrivateWindow) {
-        await new Promise(resolve => {
-          Services.clearData.deleteDataFromOriginAttributesPattern(
-            { privateBrowsingId: 1 },
-            () => resolve()
-          );
-        });
-      }
+      // While running these tests we typically do not have enough idle time to do
+      // GC reliably, so force it here.
+      /* import-globals-from antitracking_head.js */
+      forceGC();
     });
   },
 };

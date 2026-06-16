@@ -18,7 +18,13 @@ AntiTracking.runTestInNormalAndPrivateMode(
     ok(true, "IDB should be allowed");
   },
   // Cleanup callback
-  clearSiteTestData,
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  },
   [["network.lna.block_trackers", false]]
 );
 
@@ -83,7 +89,13 @@ AntiTracking.runTestInNormalAndPrivateMode(
     ok(true, "IDB should be allowed");
   },
   // Cleanup callback
-  clearSiteTestData,
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  },
   [["network.lna.block_trackers", false]],
   false,
   false

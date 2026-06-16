@@ -43,8 +43,14 @@ PartitionedStorageHelper.runTestInNormalAndPrivateMode(
         }
       });
   },
-  // Cleanup callback
-  clearSiteTestData
+
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  }
 );
 
 PartitionedStorageHelper.runTestInNormalAndPrivateMode(
@@ -75,8 +81,14 @@ PartitionedStorageHelper.runTestInNormalAndPrivateMode(
       );
     }
   },
-  // Cleanup callback
-  clearSiteTestData
+
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  }
 );
 
 PartitionedStorageHelper.runPartitioningTestInNormalAndPrivateMode(
@@ -95,7 +107,13 @@ PartitionedStorageHelper.runPartitioningTestInNormalAndPrivateMode(
   },
 
   // cleanup
-  clearSiteTestData,
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  },
   true
 );
 
@@ -122,6 +140,12 @@ PartitionedStorageHelper.runPartitioningTestInNormalAndPrivateMode(
   },
 
   // cleanup
-  clearSiteTestData,
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  },
   true
 );

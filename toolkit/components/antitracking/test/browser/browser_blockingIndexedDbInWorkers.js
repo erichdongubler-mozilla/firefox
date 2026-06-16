@@ -62,7 +62,12 @@ AntiTracking.runTestInNormalAndPrivateMode(
       };
     });
   },
-  // Cleanup callback
-  clearSiteTestData,
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  },
   [["network.lna.block_trackers", false]]
 );

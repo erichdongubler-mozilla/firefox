@@ -303,8 +303,13 @@ async function preparePermissionsFromOtherSites(topPage) {
 }
 
 async function cleanUp() {
+  info("Cleaning up.");
   SpecialPowers.clearUserPref("network.cookie.sameSite.laxByDefault");
-  await clearSiteTestData();
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      resolve()
+    );
+  });
 }
 
 async function runRound(topPage, showPrompt, maxConcurrent, disableWebcompat) {

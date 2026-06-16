@@ -28,9 +28,13 @@ AntiTracking.runTest(
     localStorage.foo = 42;
     ok(true, "LocalStorage is allowed");
   },
-
-  // Cleanup callback
-  clearSiteTestData,
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  },
   [
     ["urlclassifier.trackingAnnotationSkipURLs", "*://tracking.example.org/*"],
     ["privacy.trackingprotection.allow_list.baseline.enabled", true],
@@ -72,9 +76,13 @@ AntiTracking.runTest(
     localStorage.foo = 42;
     ok(true, "LocalStorage is allowed");
   },
-
-  // Cleanup callback
-  clearSiteTestData,
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  },
   [
     [
       "urlclassifier.trackingAnnotationSkipURLs",
@@ -104,9 +112,13 @@ AntiTracking.runTest(
     localStorage.foo = 42;
     ok(true, "LocalStorage is allowed");
   },
-
-  // Cleanup callback
-  clearSiteTestData,
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  },
   [
     [
       "urlclassifier.trackingAnnotationSkipURLs",
@@ -136,9 +148,13 @@ AntiTracking.runTest(
     localStorage.foo = 42;
     ok(true, "LocalStorage is allowed");
   },
-
-  // Cleanup callback
-  clearSiteTestData,
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+  },
   [
     ["urlclassifier.trackingAnnotationSkipURLs", "*://tracking.example.org/*"],
     ["privacy.antitracking.enableWebcompat", false],

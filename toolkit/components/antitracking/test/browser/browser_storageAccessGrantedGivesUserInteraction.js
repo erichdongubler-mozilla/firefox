@@ -8,11 +8,6 @@ Services.scriptloader.loadSubScript(
 );
 /* import-globals-from storageAccessAPIHelpers.js */
 
-add_setup(async function () {
-  await setPreferences();
-  registerCleanupFunction(clearSiteTestData);
-});
-
 async function testEmbeddedPageBehavior() {
   SpecialPowers.wrap(document).notifyUserGestureActivation();
   var p = document.requestStorageAccess();
@@ -31,10 +26,15 @@ async function testEmbeddedPageBehavior() {
 }
 
 add_task(async function testGrantGivesPermission() {
+  await setPreferences();
+
   await openPageAndRunCode(
     TEST_TOP_PAGE,
     getExpectPopupAndClick("accept"),
     TEST_3RD_PARTY_PAGE,
     testEmbeddedPageBehavior
   );
+
+  await cleanUpData();
+  await SpecialPowers.flushPrefEnv();
 });

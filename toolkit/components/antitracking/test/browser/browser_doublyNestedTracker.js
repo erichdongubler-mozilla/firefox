@@ -1,6 +1,17 @@
-add_setup(async function () {
+add_task(async function () {
+  info("Starting doubly nested tracker test");
+
+  await SpecialPowers.flushPrefEnv();
   await SpecialPowers.pushPrefEnv({
     set: [
+      [
+        "network.cookie.cookieBehavior",
+        Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
+      ],
+      [
+        "network.cookie.cookieBehavior.pbmode",
+        Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
+      ],
       ["privacy.trackingprotection.enabled", false],
       ["privacy.trackingprotection.pbmode.enabled", false],
       ["privacy.trackingprotection.annotate_channels", true],
@@ -14,13 +25,6 @@ add_setup(async function () {
     ],
   });
 
-  registerCleanupFunction(async () => {
-    UrlClassifierTestUtils.cleanupTestTrackers();
-    await clearSiteTestData();
-  });
-});
-
-add_task(async function () {
   await UrlClassifierTestUtils.addTestTrackers();
 
   let tab = BrowserTestUtils.addTab(gBrowser, TEST_3RD_PARTY_PAGE);
@@ -113,4 +117,16 @@ add_task(async function () {
   );
 
   BrowserTestUtils.removeTab(tab);
+
+  UrlClassifierTestUtils.cleanupTestTrackers();
+});
+
+add_task(async function () {
+  info("Cleaning up.");
+  SpecialPowers.clearUserPref("network.cookie.sameSite.laxByDefault");
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+      resolve()
+    );
+  });
 });
