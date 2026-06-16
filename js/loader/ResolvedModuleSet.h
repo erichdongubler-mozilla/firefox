@@ -36,11 +36,8 @@ struct SpecifierResolutionRecord {
   bool IsSpecialScheme() const { return mIsSpecialScheme; }
 
   mozilla::HashNumber Hash() const {
-    return mozilla::AddToHash(
-        mozilla::HashString(mSerializedBaseURL.get(),
-                            mSerializedBaseURL.Length()),
-        mozilla::HashString(mNormalizedSpecifier.get(),
-                            mNormalizedSpecifier.Length()));
+    return mozilla::AddToHash(mozilla::HashString(mSerializedBaseURL.get()),
+                              mozilla::HashString(mNormalizedSpecifier.get()));
   }
 
   bool Match(const mozilla::UniquePtr<SpecifierResolutionRecord>& aLookup) {

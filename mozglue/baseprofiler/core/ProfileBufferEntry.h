@@ -126,8 +126,7 @@ class UniqueStacks {
         const FrameKey::NormalFrameData& data =
             aLookup.mData.as<FrameKey::NormalFrameData>();
         if (!data.mLocation.empty()) {
-          hash = AddToHash(hash, HashString(data.mLocation.c_str(),
-                                            data.mLocation.length()));
+          hash = AddToHash(hash, HashString(data.mLocation.c_str()));
         }
         hash = AddToHash(hash, data.mRelevantForJS);
         hash = mozilla::AddToHash(hash, data.mInnerWindowID);

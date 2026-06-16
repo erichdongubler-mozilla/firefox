@@ -66,7 +66,7 @@ class nsCertOverrideEntry final : public PLDHashEntryHdr {
   static KeyTypePointer KeyToPointer(KeyType aKey) { return aKey; }
 
   static PLDHashNumber HashKey(KeyTypePointer aKey) {
-    return mozilla::HashString(aKey, strlen(aKey));
+    return mozilla::HashString(aKey);
   }
 
   enum { ALLOW_MEMMOVE = false };

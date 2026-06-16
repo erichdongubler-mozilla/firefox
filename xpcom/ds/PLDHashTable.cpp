@@ -62,8 +62,7 @@ class AutoDestructorOp {
 
 /* static */
 PLDHashNumber PLDHashTable::HashStringKey(const void* aKey) {
-  auto* str = static_cast<const char*>(aKey);
-  return HashString(str, strlen(str));
+  return HashString(static_cast<const char*>(aKey));
 }
 
 /* static */

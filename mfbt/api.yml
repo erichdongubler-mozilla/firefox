@@ -384,7 +384,8 @@ HashFunctions.h:
     - ScrambleHashCode
     - AddToHash
     - HashGeneric
-    - HashLatin1AsUTF16
+    - HashStringUntilZero
+    - HashStringKnownLength
     - HashString
     - HashBytes
 

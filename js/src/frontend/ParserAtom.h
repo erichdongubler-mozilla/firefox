@@ -801,7 +801,8 @@ class ParserAtomsTable {
                                Length3StaticParserString index);
 #endif
 
-  static void getLength1Content(Length1StaticParserString s, char contents[1]) {
+  static void getLength1Content(Length1StaticParserString s,
+                                Latin1Char contents[1]) {
     contents[0] = Latin1Char(s);
   }
 

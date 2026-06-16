@@ -10,7 +10,6 @@
 #include "nsClassHashtable.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
-#include "nsHashKeys.h"
 #include "nsServiceManagerUtils.h"
 #include "plhash.h"
 #include "prio.h"
@@ -308,7 +307,7 @@ class GMPDiskStorage : public GMPStorage {
       return rv;
     }
 
-    uint64_t recordNameHash = HashString(aRecordName);
+    uint64_t recordNameHash = HashString(PromiseFlatCString(aRecordName).get());
     for (int i = 0; i < 1000000; i++) {
       nsCOMPtr<nsIFile> f;
       rv = storageDir->Clone(getter_AddRefs(f));
