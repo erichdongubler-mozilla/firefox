@@ -54,6 +54,7 @@ ADD https://mkcert.org/generate/ /kaniko-bootstrap/ssl/certs/ca-certificats.crt
 ENV SSL_CERT_DIR=/kaniko/ssl/certs
 
 ADD policy.json /kaniko-bootstrap/containers/policy.json
+ENV CONTAINERS_POLICY_JSON /kaniko/containers/policy.json
 
 ENV HOME /root
 ENV USER /root
