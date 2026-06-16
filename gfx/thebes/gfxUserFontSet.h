@@ -202,12 +202,12 @@ class gfxUserFontFamily : public gfxFontFamily {
     // an existing entry here.)
     mAvailableFonts.AppendElement(aFontEntry);
 
-    nsCString entryName = aFontEntry->FamilyName();
-    if (entryName.IsEmpty()) {
-      aFontEntry->SetFamilyName(Name());
+    if (aFontEntry->mFamilyName.IsEmpty()) {
+      aFontEntry->mFamilyName = Name();
     } else {
 #ifdef DEBUG
       nsCString thisName = Name();
+      nsCString entryName = aFontEntry->mFamilyName;
       ToLowerCase(thisName);
       ToLowerCase(entryName);
       MOZ_ASSERT(thisName.Equals(entryName));
@@ -446,7 +446,7 @@ class gfxUserFontSet {
             principalHash + int(aKey->mPrivate), aKey->mURI->Hash(),
             HashFeatures(aKey->mFontEntry->mFeatureSettings),
             HashVariations(aKey->mFontEntry->mVariationSettings),
-            mozilla::HashString(aKey->mFontEntry->FamilyName()),
+            mozilla::HashString(aKey->mFontEntry->mFamilyName),
             aKey->mFontEntry->Weight().AsScalar(),
             aKey->mFontEntry->SlantStyle().AsScalar(),
             aKey->mFontEntry->Stretch().AsScalar(),
