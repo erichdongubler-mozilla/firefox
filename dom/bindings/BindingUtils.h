@@ -1589,6 +1589,20 @@ inline Maybe<Enum> StringToEnum(const StringT& aString) {
 }
 
 template <typename Enum>
+inline Maybe<Enum> CaseInsensitiveStringToEnum(const nsACString& aString) {
+  nsAutoCString lowercased;
+  ToLowerCase(aString, lowercased);
+  const Span<const nsLiteralCString> values =
+      binding_detail::EnumStrings<Enum>::Values;
+  for (size_t i = 0; i < values.Length(); ++i) {
+    if (values[i].LowerCaseEqualsASCII(lowercased.get())) {
+      return Some(static_cast<Enum>(i));
+    }
+  }
+  return Nothing();
+}
+
+template <typename Enum>
 inline constexpr const nsLiteralCString& GetEnumString(Enum stringId) {
   MOZ_RELEASE_ASSERT(static_cast<size_t>(stringId) <
                      std::size(binding_detail::EnumStrings<Enum>::Values));
