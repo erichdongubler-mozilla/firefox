@@ -177,7 +177,7 @@ class TestSwitchToWindowContent(WindowManagerMixin, MarionetteTestCase):
 
     @unittest.skipIf(
         _MACOS_VM,
-        "Bug 2037084 - in-app restart times out on no-display VM workers",
+        "Bug 2047574 - in-app restart times out on no-display VM workers",
     )
     def test_switch_to_unloaded_tab(self):
         first_page = inline("<p>foo")

@@ -142,7 +142,7 @@ class TestAccessibility(MarionetteTestCase):
 
     @unittest.skipIf(
         _MACOS_VM,
-        "Bug 2037084 - accessibility API depends on a real display",
+        "Bug 2047574 - accessibility API depends on a real display",
     )
     def test_click_raises_element_not_accessible(self):
         self.setup_accessibility()
