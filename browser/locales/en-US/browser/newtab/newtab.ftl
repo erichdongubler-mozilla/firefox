@@ -921,6 +921,9 @@ newtab-sports-widget-third-place = Third place
 newtab-sports-widget-runner-up = Runner-up
 newtab-sports-widget-champions = Champions
 newtab-sports-widget-world-cup-champions = 2026 World Cup Champions
+# Compact champions label for the medium-size widget result card; the larger
+# card uses newtab-sports-widget-world-cup-champions.
+newtab-sports-widget-world-cup-champions-short = 2026 Champions
 
 # Variables:
 #   $date (Date) - The match start time
