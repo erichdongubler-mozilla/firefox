@@ -24,6 +24,9 @@ in a later phase of the migration.
 import json
 from datetime import timedelta
 
+from heuristics import apply_hang_signature_heuristics
+from symbolication import UNSYMBOLICATED
+
 _BQ_TABLE = "moz-fx-data-shared-prod.firefox_desktop_stable.hang_report_v1"
 _MAX_SAMPLE_SLICES = 10000
 
@@ -320,3 +323,106 @@ def process_hangs(ping, config):
             ))
 
     return result
+
+
+def symbolicate_stacks(stack, symbol_map):
+    """Replace (module, offset) frames with (symbol, lib_name) frames.
+
+    symbol_map is the dict returned by symbolication.symbolicate_modules,
+    keyed by (module, offset). A frame with no module, no map entry, or a
+    None symbol falls back to the UNSYMBOLICATED sentinel. Ported verbatim
+    from python_mozetl, including the tuple() coercion on the lookup key
+    and the processed[0] is not None guard.
+    """
+    symbolicated = []
+    for module, offset in stack:
+        if module is not None:
+            debug_name = module[0]
+            processed = symbol_map.get((tuple(module), offset), None)
+            if processed is not None and processed[0] is not None:
+                symbolicated.append(processed)
+            else:
+                symbolicated.append((UNSYMBOLICATED, debug_name))
+        else:
+            symbolicated.append((UNSYMBOLICATED, "unknown"))
+    return symbolicated
+
+
+def symbolicate_hang(hang, symbol_map):
+    """Symbolicate a raw hang's stack and apply the signature heuristics.
+
+    Takes a raw hang tuple (stack of (module, offset) frames, then the
+    metadata fields) and returns the same tuple with its stack replaced by
+    a symbolicated, heuristic-trimmed stack. Mirrors process_hang_key from
+    python_mozetl.
+    """
+    stack = hang[0]
+    symbolicated = symbolicate_stacks(stack, symbol_map)
+    symbolicated = apply_hang_signature_heuristics(symbolicated)
+    return (symbolicated,) + tuple(hang[1:])
+
+
+def tupleize_annotation_list(annotations):
+    """Sort annotations by key and freeze them into a hashable tuple.
+
+    Annotations become part of the aggregation key, so they need a stable,
+    hashable representation.
+    """
+    return tuple((k, v) for k, v in sorted(annotations, key=lambda x: x[0]))
+
+
+def map_to_hang_data(hang, config):
+    """Turn one symbolicated hang into a (key, (duration, count)) pair.
+
+    The key bundles everything that makes two hangs "the same" for
+    aggregation: the stack, runnable name, thread, build date, annotations,
+    and platform. Hangs outside the configured duration bounds are dropped
+    (returns an empty list so the caller can flat-map over it).
+    """
+    (
+        stack,
+        duration,
+        thread,
+        runnable_name,
+        process,
+        annotations,
+        build_date,
+        platform,
+    ) = hang
+    if duration < config["hang_lower_bound"]:
+        return []
+    if duration >= config["hang_upper_bound"]:
+        return []
+
+    key = (
+        tuple((a, b) for a, b in stack),
+        runnable_name,
+        thread,
+        build_date,
+        tupleize_annotation_list(annotations),
+        platform,
+    )
+    return [(key, (float(duration), 1.0))]
+
+
+def merge_hang_data(a, b):
+    """Sum the (duration, count) values of two hangs that share a key."""
+    return (a[0] + b[0], a[1] + b[1])
+
+
+def group_hangs(hangs, config):
+    """Aggregate symbolicated hangs by key, summing duration and count.
+
+    Replaces the python_mozetl Spark chain
+    flatMap(map_to_hang_data).reduceByKey(merge_hang_data).collect().
+    Returns a list of (key fields..., duration_sum, count_sum) tuples, the
+    8-element shape ProfileProcessor.ingest consumes.
+    """
+    grouped = {}
+    for hang in hangs:
+        for key, value in map_to_hang_data(hang, config):
+            if key in grouped:
+                grouped[key] = merge_hang_data(grouped[key], value)
+            else:
+                grouped[key] = value
+    return [key + value for key, value in grouped.items()]

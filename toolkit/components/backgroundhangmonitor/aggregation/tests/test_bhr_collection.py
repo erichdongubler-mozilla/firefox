@@ -555,5 +555,168 @@ def test_process_hangs_drops_hangs_on_other_threads():
     assert bhr_collection.process_hangs(ping, {"thread_filter": "Gecko"}) == []
 
 
+# --- symbolicate_stacks -----------------------------------------------------
+
+
+def test_symbolicate_stacks_resolves_known_frames():
+    stack = [(("xul.pdb", "ABC"), "1000"), (("kernel32.pdb", "XYZ"), "2000")]
+    symbol_map = {
+        (("xul.pdb", "ABC"), "1000"): ("nsThread::ProcessNextEvent(bool)", "xul.pdb"),
+        (("kernel32.pdb", "XYZ"), "2000"): ("WaitForSingleObjectEx", "kernel32.pdb"),
+    }
+    assert bhr_collection.symbolicate_stacks(stack, symbol_map) == [
+        ("nsThread::ProcessNextEvent(bool)", "xul.pdb"),
+        ("WaitForSingleObjectEx", "kernel32.pdb"),
+    ]
+
+
+def test_symbolicate_stacks_unknown_frame_falls_back_to_debug_name():
+    stack = [(("xul.pdb", "ABC"), "9999")]
+    assert bhr_collection.symbolicate_stacks(stack, {}) == [
+        ("<unsymbolicated>", "xul.pdb")
+    ]
+
+
+def test_symbolicate_stacks_none_module_falls_back_to_unknown():
+    stack = [(None, "1000")]
+    assert bhr_collection.symbolicate_stacks(stack, {}) == [
+        ("<unsymbolicated>", "unknown")
+    ]
+
+
+# --- symbolicate_hang (symbolicate + heuristics) ----------------------------
+
+
+def test_symbolicate_hang_applies_symbols_then_heuristics():
+    # Two xul frames plus a nested event-loop frame the heuristic trims away.
+    raw_hang = (
+        [
+            (("xul.pdb", "ABC"), "1"),
+            (("xul.pdb", "ABC"), "2"),
+            (("xul.pdb", "ABC"), "3"),
+        ],
+        100.0,
+        "Gecko",
+        "",
+        "main",
+        [],
+        "20260101",
+        "Linux",
+    )
+    symbol_map = {
+        (("xul.pdb", "ABC"), "1"): ("nsThread::ProcessNextEvent(bool, bool*)", "xul"),
+        (("xul.pdb", "ABC"), "2"): ("HandlerFunc", "xul"),
+        (("xul.pdb", "ABC"), "3"): ("LeafFunc", "xul"),
+    }
+    out = bhr_collection.symbolicate_hang(raw_hang, symbol_map)
+    # The heuristic stops at ProcessNextEvent, leaving the two inner frames.
+    assert out[0] == [("HandlerFunc", "xul"), ("LeafFunc", "xul")]
+    # Metadata fields are preserved.
+    assert out[1:] == raw_hang[1:]
+
+
+# --- map_to_hang_data / merge_hang_data -------------------------------------
+
+_BOUNDS_CONFIG = {"hang_lower_bound": 128, "hang_upper_bound": 65536}
+
+
+def _symbolicated_hang(stack, duration, annotations=()):
+    return (
+        stack,
+        duration,
+        "Gecko",
+        "",
+        "main",
+        list(annotations),
+        "20260101",
+        "Linux",
+    )
+
+
+def test_map_to_hang_data_builds_key_and_value():
+    hang = _symbolicated_hang([("FooFunc", "xul")], 250)
+    out = bhr_collection.map_to_hang_data(hang, _BOUNDS_CONFIG)
+    assert len(out) == 1
+    key, value = out[0]
+    assert key[0] == (("FooFunc", "xul"),)  # stack frozen to tuple of pairs
+    assert key[2] == "Gecko"  # thread
+    assert value == (250.0, 1.0)
+
+
+def test_map_to_hang_data_drops_below_lower_bound():
+    hang = _symbolicated_hang([("FooFunc", "xul")], 100)  # < 128
+    assert bhr_collection.map_to_hang_data(hang, _BOUNDS_CONFIG) == []
+
+
+def test_map_to_hang_data_drops_at_or_above_upper_bound():
+    hang = _symbolicated_hang([("FooFunc", "xul")], 65536)  # >= 65536
+    assert bhr_collection.map_to_hang_data(hang, _BOUNDS_CONFIG) == []
+
+
+def test_merge_hang_data_sums_duration_and_count():
+    assert bhr_collection.merge_hang_data((100.0, 1.0), (250.0, 2.0)) == (350.0, 3.0)
+
+
+# --- group_hangs (aggregation) ----------------------------------------------
+
+
+def test_group_hangs_merges_identical_stacks():
+    hangs = [
+        _symbolicated_hang([("FooFunc", "xul")], 200),
+        _symbolicated_hang([("FooFunc", "xul")], 300),
+    ]
+    grouped = bhr_collection.group_hangs(hangs, _BOUNDS_CONFIG)
+    assert len(grouped) == 1
+    # 8-element row: key fields + (duration_sum, count_sum).
+    row = grouped[0]
+    assert row[-2:] == (500.0, 2.0)
+
+
+def test_group_hangs_keeps_distinct_stacks_separate():
+    hangs = [
+        _symbolicated_hang([("FooFunc", "xul")], 200),
+        _symbolicated_hang([("BarFunc", "xul")], 300),
+    ]
+    grouped = bhr_collection.group_hangs(hangs, _BOUNDS_CONFIG)
+    assert len(grouped) == 2
+
+
+def test_group_hangs_output_shape_matches_profile_processor_input():
+    # ProfileProcessor.ingest unpacks rows as:
+    #   (stack, runnable, thread, build_date, annotations, platform,
+    #    hang_ms, hang_count)
+    hangs = [_symbolicated_hang([("FooFunc", "xul")], 200)]
+    (row,) = bhr_collection.group_hangs(hangs, _BOUNDS_CONFIG)
+    assert len(row) == 8
+    stack, runnable, thread, build_date, annotations, platform, hang_ms, count = row
+    assert thread == "Gecko"
+    assert build_date == "20260101"
+    assert platform == "Linux"
+    assert hang_ms == 200.0
+    assert count == 1.0
+
+
+# --- end-to-end: symbolicate -> group --------------------------------------
+
+
+def test_symbolicate_then_group_full_chain():
+    # Two raw hangs whose stacks symbolicate to the same frames should merge.
+    symbol_map = {
+        (("xul.pdb", "ABC"), "1"): ("FooFunc", "xul"),
+        (("xul.pdb", "ABC"), "2"): ("BarFunc", "xul"),
+    }
+    raw_hangs = [
+        _symbolicated_hang([(("xul.pdb", "ABC"), "1"), (("xul.pdb", "ABC"), "2")], 200),
+        _symbolicated_hang([(("xul.pdb", "ABC"), "1"), (("xul.pdb", "ABC"), "2")], 300),
+    ]
+    symbolicated = [bhr_collection.symbolicate_hang(h, symbol_map) for h in raw_hangs]
+    grouped = bhr_collection.group_hangs(symbolicated, _BOUNDS_CONFIG)
+
+    assert len(grouped) == 1
+    row = grouped[0]
+    assert row[0] == (("FooFunc", "xul"), ("BarFunc", "xul"))
+    assert row[-2:] == (500.0, 2.0)
+
+
 if __name__ == "__main__":
     mozunit.main()
