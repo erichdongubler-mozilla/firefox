@@ -39,6 +39,10 @@ nav {
   overflow-y: auto;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
+  /* overflow can cut off focus outlines when they're not inset, so this makes space for them */
+  padding: var(--page-nav-focus-padding);
+  margin-inline-start: calc(var(--page-nav-focus-padding) * -1);
+  margin-block-start: calc(var(--page-nav-focus-padding) * -1);
 }
 
 .page-nav-heading-wrapper {

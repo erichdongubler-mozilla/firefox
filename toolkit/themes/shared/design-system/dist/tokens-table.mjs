@@ -498,6 +498,26 @@ export const tokensTable = {
       value: "var(--background-color-critical)",
       name: "--message-bar-icon-background-color-critical",
     },
+    {
+      value: "var(--button-background-color-ghost)",
+      name: "--page-nav-button-background-color",
+    },
+    {
+      value: "var(--button-background-color-ghost-hover)",
+      name: "--page-nav-button-background-color-hover",
+    },
+    {
+      value: "var(--button-background-color-ghost-active)",
+      name: "--page-nav-button-background-color-active",
+    },
+    {
+      value: "color-mix(in srgb, currentColor 8%, transparent)",
+      name: "--page-nav-button-background-color-selected",
+    },
+    {
+      value: "var(--color-accent-primary)",
+      name: "--page-nav-button-indicator-background-color",
+    },
     { value: "var(--border-color)", name: "--page-nav-hr-background-color" },
     {
       value: {
@@ -1001,6 +1021,15 @@ export const tokensTable = {
       value: "var(--border-color-transparent)",
       name: "--page-nav-border-color",
     },
+    { value: "unset", name: "--page-nav-button-border-color" },
+    {
+      value: "var(--button-border-color-ghost-hover)",
+      name: "--page-nav-button-border-color-hover",
+    },
+    {
+      value: "var(--button-border-color-ghost-active)",
+      name: "--page-nav-button-border-color-active",
+    },
     {
       value: {
         default: "color-mix(in lch, currentColor 8%, transparent)",
@@ -1076,6 +1105,14 @@ export const tokensTable = {
     {
       value: "var(--border-radius-circle)",
       name: "--message-bar-icon-container-border-radius",
+    },
+    {
+      value: "var(--button-border-radius)",
+      name: "--page-nav-button-border-radius",
+    },
+    {
+      value: "var(--border-radius-small)",
+      name: "--page-nav-button-border-radius-focused",
     },
     { value: "var(--border-radius-medium)", name: "--promo-border-radius" },
     { value: "var(--button-border-radius)", name: "--select-border-radius" },
@@ -1507,7 +1544,7 @@ export const tokensTable = {
     },
     {
       value: "var(--focus-outline-inset)",
-      name: "--page-nav-focus-outline-inset",
+      name: "--page-nav-focus-outline-offset",
     },
     {
       value: { default: "transparent", prefersContrast: "currentColor" },
@@ -1635,6 +1672,7 @@ export const tokensTable = {
       name: "--message-bar-container-min-height",
     },
     { value: "min-content", name: "--message-bar-icon-container-height" },
+    { value: "4px", name: "--page-nav-button-indicator-width" },
     { value: "var(--icon-size-large)", name: "--page-nav-heading-logo-size" },
     { value: "var(--size-image-xlarge)", name: "--promo-image-size" },
     {
@@ -1756,6 +1794,12 @@ export const tokensTable = {
       name: "--message-bar-text-content-gap",
     },
     { value: "var(--space-xsmall)", name: "--page-nav-button-gap" },
+    {
+      value: "var(--space-small) var(--space-medium)",
+      name: "--page-nav-button-padding",
+    },
+    { value: "var(--space-small)", name: "--page-nav-button-padding-small" },
+    { value: "0px", name: "--page-nav-focus-padding" },
     { value: "var(--space-large)", name: "--page-nav-gap" },
     {
       value: "var(--page-space-block-start)",
@@ -2196,6 +2240,22 @@ export const tokensTable = {
       name: "--input-color-text-color-hover",
     },
     { value: "var(--text-color)", name: "--message-bar-text-color" },
+    {
+      value: "var(--button-text-color-ghost)",
+      name: "--page-nav-button-text-color",
+    },
+    {
+      value: "var(--button-text-color-ghost-hover)",
+      name: "--page-nav-button-text-color-hover",
+    },
+    {
+      value: "var(--button-text-color-ghost-active)",
+      name: "--page-nav-button-text-color-active",
+    },
+    {
+      value: "var(--color-accent-primary)",
+      name: "--page-nav-button-text-color-selected",
+    },
     {
       value: "var(--promo-message-text-color)",
       name: "--promo-heading-text-color",
@@ -4096,8 +4156,31 @@ export const variableLookupTable = {
     "calc((var(--message-bar-container-min-height) - var(--message-bar-icon-size)) / 2)",
   "message-bar-text-content-gap": "var(--space-xsmall) var(--space-small)",
   "page-nav-border-color": "var(--border-color-transparent)",
+  "page-nav-button-background-color": "var(--button-background-color-ghost)",
+  "page-nav-button-background-color-hover":
+    "var(--button-background-color-ghost-hover)",
+  "page-nav-button-background-color-active":
+    "var(--button-background-color-ghost-active)",
+  "page-nav-button-background-color-selected":
+    "color-mix(in srgb, currentColor 8%, transparent)",
+  "page-nav-button-border-color": "unset",
+  "page-nav-button-border-color-hover":
+    "var(--button-border-color-ghost-hover)",
+  "page-nav-button-border-color-active":
+    "var(--button-border-color-ghost-active)",
+  "page-nav-button-border-radius": "var(--button-border-radius)",
+  "page-nav-button-border-radius-focused": "var(--border-radius-small)",
   "page-nav-button-gap": "var(--space-xsmall)",
-  "page-nav-focus-outline-inset": "var(--focus-outline-inset)",
+  "page-nav-button-indicator-background-color": "var(--color-accent-primary)",
+  "page-nav-button-indicator-width": "4px",
+  "page-nav-button-padding": "var(--space-small) var(--space-medium)",
+  "page-nav-button-padding-small": "var(--space-small)",
+  "page-nav-button-text-color": "var(--button-text-color-ghost)",
+  "page-nav-button-text-color-hover": "var(--button-text-color-ghost-hover)",
+  "page-nav-button-text-color-active": "var(--button-text-color-ghost-active)",
+  "page-nav-button-text-color-selected": "var(--color-accent-primary)",
+  "page-nav-focus-outline-offset": "var(--focus-outline-inset)",
+  "page-nav-focus-padding": "0px",
   "page-nav-gap": "var(--space-large)",
   "page-nav-heading-logo-size": "var(--icon-size-large)",
   "page-nav-hr-background-color": "var(--border-color)",
