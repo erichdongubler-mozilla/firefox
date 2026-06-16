@@ -920,7 +920,8 @@ class Element : public FragmentOrElement {
   // aParsedValue receives the old value of the attribute. That's useful if
   // either the input or output value of aParsedValue is StoresOwnData.
   nsresult SetParsedAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
-                         nsAttrValue& aParsedValue, bool aNotify);
+                         nsAttrValue& aParsedValue, bool aNotify,
+                         IsKnownNewAttr aIsKnownNew);
 
   /**
    * This is meant to be called only by the HTML parser and, at this time,
@@ -1064,16 +1065,18 @@ class Element : public FragmentOrElement {
    */
   nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, const nsAString& aValue,
                    bool aNotify) {
-    return SetAttr(aNameSpaceID, aName, nullptr, aValue, aNotify);
+    return SetAttr(aNameSpaceID, aName, nullptr, aValue, nullptr, aNotify,
+                   IsKnownNewAttr::No);
   }
   nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
                    const nsAString& aValue, bool aNotify) {
-    return SetAttr(aNameSpaceID, aName, aPrefix, aValue, nullptr, aNotify);
+    return SetAttr(aNameSpaceID, aName, aPrefix, aValue, nullptr, aNotify,
+                   IsKnownNewAttr::No);
   }
   nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, const nsAString& aValue,
                    nsIPrincipal* aTriggeringPrincipal, bool aNotify) {
     return SetAttr(aNameSpaceID, aName, nullptr, aValue, aTriggeringPrincipal,
-                   aNotify);
+                   aNotify, IsKnownNewAttr::No);
   }
 
   /**
@@ -1098,7 +1101,8 @@ class Element : public FragmentOrElement {
    */
   nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
                    const nsAString& aValue,
-                   nsIPrincipal* aMaybeScriptedPrincipal, bool aNotify);
+                   nsIPrincipal* aMaybeScriptedPrincipal, bool aNotify,
+                   IsKnownNewAttr aIsKnownNew);
 
   nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
                    nsAtom* aValue, nsIPrincipal* aMaybeScriptedPrincipal,
@@ -1125,7 +1129,7 @@ class Element : public FragmentOrElement {
    * @param aHadValue set to true if attribute existed, false otherwise
    */
   nsresult SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
-                          bool* aHadValue);
+                          bool* aHadValue, IsKnownNewAttr aIsKnownNew);
 
   /**
    * Swap an attribute value. This is a public wrapper that ensures bloom
@@ -1138,7 +1142,7 @@ class Element : public FragmentOrElement {
    * @param aHadValue set to true if attribute existed, false otherwise
    */
   nsresult SetAndSwapAttr(mozilla::dom::NodeInfo* aName, nsAttrValue& aValue,
-                          bool* aHadValue);
+                          bool* aHadValue, IsKnownNewAttr aIsKnownNew);
 
   /**
    * Get the namespace / name / prefix of a given attribute.
@@ -2282,7 +2286,7 @@ class Element : public FragmentOrElement {
   nsresult SetAttrInternal(int32_t aNamespaceID, nsAtom* aName, nsAtom* aPrefix,
                            const nsAttrValueOrString& aValueForComparison,
                            nsIPrincipal* aSubjectPrincipal, bool aNotify,
-                           ParseFunc&& aParseFn);
+                           ParseFunc&& aParseFn, IsKnownNewAttr aIsKnownNew);
 
   /**
    * Set attribute and (if needed) notify documentobservers.  This will send the
@@ -2330,7 +2334,8 @@ class Element : public FragmentOrElement {
                             nsIPrincipal* aSubjectPrincipal,
                             AttrModType aModType, bool aNotify,
                             bool aCallAfterSetAttr, Document* aComposedDocument,
-                            const mozAutoDocUpdate& aGuard);
+                            const mozAutoDocUpdate& aGuard,
+                            IsKnownNewAttr aIsKnownNew);
 
   /**
    * Convert an attribute string value to attribute type based on the type of
@@ -2467,9 +2472,15 @@ class Element : public FragmentOrElement {
    * Internal hook for converting an attribute name-string to nsAttrName in
    * case there is such existing attribute. aNameToUse can be passed to get
    * name which was used for looking for the attribute (lowercase in HTML).
+   *
+   * When aOutAtom is non-null and no matching attribute is found, *aOutAtom
+   * is set to the atomized lookup name so callers can reuse it without
+   * re-atomizing. In all other cases (match found, or the element has no
+   * attributes), *aOutAtom is set to nullptr.
    */
   const nsAttrName* InternalGetAttrNameFromQName(
-      const nsAString& aStr, nsAutoString* aNameToUse = nullptr) const;
+      const nsAString& aStr, nsAutoString* aNameToUse = nullptr,
+      RefPtr<nsAtom>* aOutAtom = nullptr) const;
 
   virtual Element* GetNameSpaceElement() override { return this; }
 

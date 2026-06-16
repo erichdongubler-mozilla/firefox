@@ -997,7 +997,8 @@ nsresult nsXULElement::MakeHeavyweight(nsXULPrototypeElement* aPrototype) {
     nsAttrValue value(protoattr.mValue);
     MOZ_TRY(SetParsedAttr(
         protoattr.mName.NamespaceID(), protoattr.mName.LocalName(),
-        protoattr.mName.GetPrefix(), value, /* aNotify = */ false));
+        protoattr.mName.GetPrefix(), value,
+        /* aNotify = */ false, mozilla::dom::IsKnownNewAttr::No));
   }
   return NS_OK;
 }
