@@ -159,90 +159,94 @@ fun WebCompatReporter(
                 },
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            if (state.reason != null) {
+                Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static150))
 
-            Text(
-                text = stringResource(id = R.string.webcompat_reporter_label_description_2),
-                style = FirefoxTheme.typography.headline7,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        start = FirefoxTheme.layout.space.static50,
-                        bottom = FirefoxTheme.layout.space.static100,
-                        end = FirefoxTheme.layout.space.static50,
-                    ),
-            )
-
-            TextField(
-                value = state.problemDescription,
-                onValueChange = {
-                    store.dispatch(
-                        WebCompatReporterAction.ProblemDescriptionChanged(
-                            newProblemDescription = it,
+                Text(
+                    text = stringResource(id = R.string.webcompat_reporter_label_description_2),
+                    style = FirefoxTheme.typography.headline7,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            start = FirefoxTheme.layout.space.static50,
+                            bottom = FirefoxTheme.layout.space.static100,
+                            end = FirefoxTheme.layout.space.static50,
                         ),
-                    )
-                },
-                placeholder = stringResource(id = R.string.webcompat_reporter_problem_description_placeholder_text_2),
-                errorText = "", // TODO (Bug 2038709)
-                singleLine = false,
-                maxLines = PROBLEM_DESCRIPTION_MAX_LINES,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(225.dp)
-                    .semantics {
-                        testTagsAsResourceId = true
-                        testTag = BROKEN_SITE_REPORTER_DESCRIPTION_INPUT
-                    },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier
-                    .toggleable(
-                        value = state.includeEtpBlockedUrls,
-                        role = Role.Checkbox,
-                        onValueChange = { isChecked ->
-                            store.dispatch(
-                                WebCompatReporterAction.IncludeEtpBlockedUrlsChanged(
-                                    include = isChecked,
-                                ),
-                            )
-                        },
-                    )
-                    .padding(vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Checkbox(
-                    checked = state.includeEtpBlockedUrls,
-                    onCheckedChange = null,
-                    modifier = Modifier,
                 )
 
-                Spacer(modifier = Modifier.width(16.dp))
+                TextField(
+                    value = state.problemDescription,
+                    onValueChange = {
+                        store.dispatch(
+                            WebCompatReporterAction.ProblemDescriptionChanged(
+                                newProblemDescription = it,
+                            ),
+                        )
+                    },
+                    placeholder = stringResource(
+                        id = R.string.webcompat_reporter_problem_description_placeholder_text_2,
+                    ),
+                    errorText = "", // TODO (Bug 2038709)
+                    singleLine = false,
+                    maxLines = PROBLEM_DESCRIPTION_MAX_LINES,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(225.dp)
+                        .semantics {
+                            testTagsAsResourceId = true
+                            testTag = BROKEN_SITE_REPORTER_DESCRIPTION_INPUT
+                        },
+                )
 
-                Column {
-                    Text(
-                        text = stringResource(id = R.string.webcompat_reporter_etp_checkbox_text_2),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = FirefoxTheme.typography.body1,
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier
+                        .toggleable(
+                            value = state.includeEtpBlockedUrls,
+                            role = Role.Checkbox,
+                            onValueChange = { isChecked ->
+                                store.dispatch(
+                                    WebCompatReporterAction.IncludeEtpBlockedUrlsChanged(
+                                        include = isChecked,
+                                    ),
+                                )
+                            },
+                        )
+                        .padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(
+                        checked = state.includeEtpBlockedUrls,
+                        onCheckedChange = null,
+                        modifier = Modifier,
                     )
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column {
+                        Text(
+                            text = stringResource(id = R.string.webcompat_reporter_etp_checkbox_text_2),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = FirefoxTheme.typography.body1,
+                        )
+                    }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedButton(
+                    text = stringResource(id = R.string.webcompat_reporter_preview_report),
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    onClick = {
+                        previewSheetVisible = true
+                        store.dispatch(WebCompatReporterAction.OpenPreviewClicked)
+                    },
+                )
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedButton(
-                text = stringResource(id = R.string.webcompat_reporter_preview_report),
-                modifier = Modifier
-                    .fillMaxWidth(),
-                contentColor = MaterialTheme.colorScheme.primary,
-                onClick = {
-                    previewSheetVisible = true
-                    store.dispatch(WebCompatReporterAction.OpenPreviewClicked)
-                },
-            )
 
             Spacer(modifier = Modifier.height(16.dp))
 

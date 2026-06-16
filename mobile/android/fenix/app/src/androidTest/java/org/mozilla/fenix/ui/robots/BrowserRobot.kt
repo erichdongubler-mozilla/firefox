@@ -1243,15 +1243,10 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
         this@BrowserRobot.composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_label_whats_broken_3))
             .performScrollTo().assertIsDisplayed()
         Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the \"What’s not working?\" header is displayed")
-        Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the \"Describe the problem in detail to help us investigate the issue (optional)\" field is displayed")
-        this@BrowserRobot.composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_label_description_2))
-            .performScrollTo().assertIsDisplayed()
-        Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the \"Describe the problem in detail to help us investigate the issue (optional)\" field is displayed")
         Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the \"Send\" button is displayed")
         this@BrowserRobot.composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_send))
             .performScrollTo().assertIsDisplayed()
         Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the \"Send \" button is displayed")
-        // cancel Button
         Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the \"Cancel\" button is displayed")
         this@BrowserRobot.composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_cancel))
             .performScrollTo().assertIsDisplayed()
@@ -1287,6 +1282,29 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyChooseReasonErrorMessageIsNotDisplayed: Trying to verify that the \"Please choose a reason\" error message is not displayed")
         composeTestRule.onNodeWithTag(BROKEN_SITE_REPORTER_CHOOSE_REASON_BUTTON).assertDoesNotExist()
         Log.i(TAG, "verifyChooseReasonErrorMessageIsNotDisplayed: Verified that the \"Please choose a reason\" error message is not displayed")
+    }
+
+    fun verifyBrokenSiteProblemDescriptionField(isDisplayed: Boolean) {
+        val descriptionLabel = getStringResource(R.string.webcompat_reporter_label_description_2)
+
+        if (isDisplayed) {
+            Log.i(TAG, "verifyBrokenSiteProblemDescriptionField: Verifying description field is displayed")
+            this@BrowserRobot.composeTestRule.onNodeWithText(descriptionLabel)
+                .performScrollTo()
+                .assertIsDisplayed()
+        } else {
+            Log.i(TAG, "verifyBrokenSiteProblemDescriptionField: Verifying description field does not exist")
+            this@BrowserRobot.composeTestRule.onNodeWithText(descriptionLabel)
+                .assertDoesNotExist()
+        }
+    }
+
+    fun clickClearSelectedReason(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "clickClearSelectedReason: Trying to clear the selected reason")
+        composeTestRule.onNodeWithTag(BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_SELECTED_REASON)
+            .performScrollTo()
+            .performClick()
+        Log.i(TAG, "clickClearSelectedReason: Cleared the selected reason")
     }
 
     fun clickSiteDoesNotLoadReason(composeTestRule: ComposeTestRule) {
@@ -1345,9 +1363,9 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
             this@BrowserRobot.composeTestRule.onNodeWithText(problemDescription).assertIsDisplayed()
             Log.i(TAG, "verifyBrokenSiteProblem: Verified that the $problemDescription broken site problem is displayed")
         } else {
-            Log.i(TAG, "verifyBrokenSiteProblem: Trying to verify that the $problemDescription broken site problem is not displayed")
-            this@BrowserRobot.composeTestRule.onNodeWithText(problemDescription).assertIsNotDisplayed()
-            Log.i(TAG, "verifyBrokenSiteProblem: Verified that the $problemDescription broken site problem is not displayed")
+            Log.i(TAG, "verifyBrokenSiteProblem: Trying to verify that the $problemDescription broken site problem does not exist")
+            this@BrowserRobot.composeTestRule.onNodeWithText(problemDescription).assertDoesNotExist()
+            Log.i(TAG, "verifyBrokenSiteProblem: Verified that the $problemDescription broken site problem does not exist")
         }
     }
 

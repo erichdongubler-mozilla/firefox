@@ -67,4 +67,48 @@ class WebCompatReporterBrokenSiteReasonTest {
             .onNodeWithTag(selectedReasonListItemTag)
             .assertExists()
     }
+
+    @Test
+    fun optionalFieldsVisibleOnlyWhenReasonSelectedTest() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val reasonToSelect = BrokenSiteReason.Slow
+        val reasonToSelectText = context.getString(reasonToSelect.displayStringId)
+        val reasonListItemTag =
+            "${BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_REASON_OPTION}-$reasonToSelectText"
+
+        val clearIconDescription = context.getString(org.mozilla.fenix.R.string.webcompat_reporter_clear_reason_content_description)
+
+        val store = WebCompatReporterStore(
+            initialState = WebCompatReporterState(
+                enteredUrl = "https://www.example.com",
+                reason = null,
+            ),
+        )
+
+        composeTestRule.setContent {
+            FirefoxTheme {
+                WebCompatReporter(store = store)
+            }
+        }
+
+        composeTestRule
+            .onNodeWithTag(BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_DESCRIPTION_INPUT)
+            .assertDoesNotExist()
+
+        composeTestRule
+            .onNodeWithTag(reasonListItemTag)
+            .performClick()
+
+        composeTestRule
+            .onNodeWithTag(BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_DESCRIPTION_INPUT)
+            .assertExists()
+
+        composeTestRule
+            .onNodeWithContentDescription(clearIconDescription)
+            .performClick()
+
+        composeTestRule
+            .onNodeWithTag(BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_DESCRIPTION_INPUT)
+            .assertDoesNotExist()
+    }
 }
