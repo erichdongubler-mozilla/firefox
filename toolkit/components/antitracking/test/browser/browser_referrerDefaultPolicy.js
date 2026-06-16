@@ -7,6 +7,10 @@ Services.scriptloader.loadSubScript(
   this
 );
 
+add_setup(function () {
+  registerCleanupFunction(clearSiteTestData);
+});
+
 async function openAWindow(usePrivate) {
   info("Creating a new " + (usePrivate ? "private" : "normal") + " window");
   let win = OpenBrowserWindow({ private: usePrivate });
@@ -670,13 +674,4 @@ add_task(async function () {
   await executeTests();
 
   UrlClassifierTestUtils.cleanupTestTrackers();
-});
-
-add_task(async function () {
-  info("Cleaning up.");
-  await new Promise(resolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-      resolve()
-    );
-  });
 });
