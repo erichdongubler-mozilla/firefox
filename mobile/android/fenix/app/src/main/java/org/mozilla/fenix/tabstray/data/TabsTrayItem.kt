@@ -20,16 +20,23 @@ private const val MEDIUM_LARGE_WINDOW_FULL_EXPAND_TAB_COUNT = 8
 
 /**
  * Data entity representing items in the Tabs Tray.
- *
- * @property id The ID of the item.
- * @property isHomepageItem Whether the entity represents a Homepage item.
- * @property isFocused Whether the entity is focused.
  */
-sealed class TabsTrayItem(
-    open val id: String,
-    val isHomepageItem: Boolean,
-    open val isFocused: Boolean,
-) {
+sealed interface TabsTrayItem {
+    /**
+     * The ID of the item.
+     */
+    val id: String
+
+    /**
+     * Whether the entity represents a Homepage item.
+     */
+    val isHomepageItem: Boolean
+
+    /**
+     * Whether the entity is focused.
+     */
+    val isFocused: Boolean
+
     /**
      * Data entity representing a tab in the Tabs Tray.
      *
@@ -51,11 +58,9 @@ sealed class TabsTrayItem(
         val icon: Bitmap?,
         val lastAccess: Long,
         override val isFocused: Boolean,
-    ) : TabsTrayItem(
-        id = id,
-        isFocused = isFocused,
-        isHomepageItem = url.equals(ABOUT_HOME_URL, ignoreCase = true),
-    ) {
+    ) : TabsTrayItem {
+        override val isHomepageItem: Boolean = url.equals(ABOUT_HOME_URL, ignoreCase = true)
+
         constructor(
             tab: TabSessionState,
             isFocused: Boolean = false,
@@ -103,11 +108,9 @@ sealed class TabsTrayItem(
         val lastModified: Long = 0L,
         override var isFocused: Boolean = false,
         var initialScrollIndex: Int = 0,
-    ) : TabsTrayItem(
-        id = id,
-        isHomepageItem = false,
-        isFocused = isFocused,
-    ) {
+    ) : TabsTrayItem {
+        override val isHomepageItem: Boolean = false
+
         /**
          * Retrieves the thumbnail image data for the first 4 tabs in the group's tab collection.
          */
