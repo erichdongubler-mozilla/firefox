@@ -245,43 +245,6 @@ static void RemoveScreenWakeLockListener() {
   }
 }
 
-class SingleNativeEventPump final : public nsIThreadObserver {
- public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSITHREADOBSERVER
-
-  SingleNativeEventPump() {
-    MOZ_ASSERT(!XRE_UseNativeEventProcessing(),
-               "Should only be used when not properly processing events.");
-  }
-
- private:
-  ~SingleNativeEventPump() {}
-};
-
-NS_IMPL_ISUPPORTS(SingleNativeEventPump, nsIThreadObserver)
-
-NS_IMETHODIMP
-SingleNativeEventPump::OnDispatchedEvent() { return NS_OK; }
-
-NS_IMETHODIMP
-SingleNativeEventPump::OnProcessNextEvent(nsIThreadInternal* aThread,
-                                          bool aMayWait) {
-  MSG msg;
-  bool gotMessage = WinUtils::PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE);
-  if (gotMessage) {
-    ::TranslateMessage(&msg);
-    ::DispatchMessageW(&msg);
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-SingleNativeEventPump::AfterProcessNextEvent(nsIThreadInternal* aThread,
-                                             bool aMayWait) {
-  return NS_OK;
-}
-
 // RegisterWindowMessage values
 // Native event callback message
 const wchar_t* kAppShellGeckoEventId = L"nsAppShell:EventID";
@@ -630,20 +593,6 @@ nsresult nsAppShell::Init() {
     // Load winmm.dll because it is still needed by our event loop and might not
     // get loaded before we lower the sandbox.
     ::LoadLibraryW(L"winmm.dll");
-
-    if (XRE_IsContentProcess() && !IsWin32kLockedDown()) {
-      // We're not generally processing native events, but still using GDI and
-      // we still have some internal windows, e.g. from calling CoInitializeEx.
-      // So we use a class that will do a single event pump where previously we
-      // might have processed multiple events to make sure any occasional
-      // messages to these windows are processed. This also allows any internal
-      // Windows messages to be processed to ensure the GDI data remains fresh.
-      nsCOMPtr<nsIThreadInternal> threadInt =
-          do_QueryInterface(NS_GetCurrentThread());
-      if (threadInt) {
-        threadInt->SetObserver(new SingleNativeEventPump());
-      }
-    }
   }
 
   if (XRE_IsParentProcess()) {
