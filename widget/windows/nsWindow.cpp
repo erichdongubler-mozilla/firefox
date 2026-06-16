@@ -781,21 +781,6 @@ class InitializeVirtualDesktopManagerTask : public Task {
   }
 };
 
-// Ground-truth query: does Windows claim the window is cloaked right now?
-static bool IsCloaked(HWND hwnd) {
-  DWORD cloakedState;
-  HRESULT hr = ::DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, &cloakedState,
-                                       sizeof(cloakedState));
-
-  if (FAILED(hr)) {
-    MOZ_LOG(sCloakingLog, LogLevel::Warning,
-            ("failed (%08lX) to query cloaking state for HWND %p", hr, hwnd));
-    return false;
-  }
-
-  return cloakedState != 0;
-}
-
 }  // namespace mozilla
 
 /**************************************************************
@@ -1073,7 +1058,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
       // If we successfully consumed the pre-XUL skeleton UI, just update
       // our internal state to match what is currently being displayed.
       mIsVisible = true;
-      mIsCloaked = mozilla::IsCloaked(mWnd);
+      mIsCloaked = WinUtils::QueryCloaked(mWnd);
       mFrameState->ConsumePreXULSkeletonState(WasPreXULSkeletonUIMaximized());
 
       mBounds = mLastPaintBounds = GetBounds();
@@ -7070,7 +7055,7 @@ void nsWindow::OnCloakEvent(HWND aWnd, bool aCloaked) {
   }
 
   const char* const kWasCloakedStr = pWin->mIsCloaked ? "cloaked" : "uncloaked";
-  if (mozilla::IsCloaked(aWnd) == pWin->mIsCloaked) {
+  if (WinUtils::QueryCloaked(aWnd) == pWin->mIsCloaked) {
     MOZ_LOG(sCloakingLog, LogLevel::Debug,
             ("Received redundant %s event for %s HWND %p; discarding",
              kEventName, kWasCloakedStr, aWnd));
@@ -7097,7 +7082,7 @@ void nsWindow::OnCloakEvent(HWND aWnd, bool aCloaked) {
       return;
     }
 
-    const bool isCloaked = mozilla::IsCloaked(hwnd);
+    const bool isCloaked = WinUtils::QueryCloaked(hwnd);
     if (isCloaked != pWin->mIsCloaked) {
       changedWindows.AppendElement(Item{pWin, isCloaked});
     }

@@ -335,6 +335,17 @@ class WinUtils {
   static nsWindow* GetNSWindowPtr(HWND aWnd);
 
   /**
+   * QueryCloaked() performs a live DWM query of whether Windows currently
+   * considers aWnd cloaked: a window with the WS_VISIBLE attribute that is not
+   * actually displayed (e.g. because it lives on another virtual desktop). A
+   * failed query is treated as not cloaked.
+   *
+   * This is the ground-truth syscall. nsWindow caches its own cloaked state
+   * (updated from cloak events) and exposes it via nsWindow::IsCloaked().
+   */
+  static bool QueryCloaked(HWND aWnd);
+
+  /**
    * IsOurProcessWindow() returns TRUE if aWnd belongs our process.
    * Otherwise, FALSE.
    */

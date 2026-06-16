@@ -495,6 +495,23 @@ nsWindow* WinUtils::GetNSWindowPtr(HWND aWnd) {
 }
 
 /* static */
+bool WinUtils::QueryCloaked(HWND aWnd) {
+  // Safe to call off the main thread: this is a standalone DWM query that does
+  // not touch any nsWindow state. The window occlusion calculator relies on it
+  // from its own thread.
+  DWORD cloakedState = 0;
+  HRESULT hr = ::DwmGetWindowAttribute(aWnd, DWMWA_CLOAKED, &cloakedState,
+                                       sizeof(cloakedState));
+  if (FAILED(hr)) {
+    static mozilla::LazyLogModule sCloakingLog("DWMCloaking");
+    MOZ_LOG(sCloakingLog, LogLevel::Warning,
+            ("failed (%08lX) to query cloaking state for HWND %p", hr, aWnd));
+    return false;
+  }
+  return cloakedState != 0;
+}
+
+/* static */
 bool WinUtils::IsOurProcessWindow(HWND aWnd) {
   if (!aWnd) {
     return false;

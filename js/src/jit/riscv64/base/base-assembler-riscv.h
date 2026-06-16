@@ -85,8 +85,6 @@ constexpr auto ToHigh20Low12(int32_t imm) {
 
 class AssemblerRiscvBase {
  protected:
-  virtual int32_t branchOffsetHelper(Label* L, OffsetSize bits) = 0;
-
   virtual BufferOffset emit(Instr x) = 0;
   virtual BufferOffset emit(ShortInstr x) = 0;
   virtual BufferOffset emit(uint64_t x) = 0;

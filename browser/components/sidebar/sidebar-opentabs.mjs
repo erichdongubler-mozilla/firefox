@@ -108,6 +108,7 @@ export class SidebarOpenTabs extends SidebarPage {
 
   onPrimaryAction(e) {
     this.#activateTab(e.originalTarget.tabElement);
+    Glean.sidebar.link.open_tabs.add(1);
   }
 
   onSecondaryAction(e) {

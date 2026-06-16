@@ -140,20 +140,11 @@ class Assembler : public AssemblerShared,
                   public AssemblerRISCVZifencei {
   GeneralRegisterSet scratch_register_list_;
 
-  static constexpr int kInvalidSlotPos = -1;
-
 #ifdef JS_JITSPEW
   Sprinter* printer;
 #endif
-  bool enoughLabelCache_ = true;
 
  protected:
-  using LabelOffset = int32_t;
-  using LabelCache =
-      HashMap<LabelOffset, BufferOffset, js::DefaultHasher<LabelOffset>,
-              js::SystemAllocPolicy>;
-  LabelCache label_cache_;
-  void NoEnoughLabelCache() { enoughLabelCache_ = false; }
   CompactBufferWriter jumpRelocations_;
   CompactBufferWriter dataRelocations_;
   Buffer m_buffer;
@@ -387,15 +378,21 @@ class Assembler : public AssemblerShared,
 #ifdef JS_DISASM_RISCV64
   static int disassembleInstr(Instruction* instr, bool enable_spew = false);
 #endif /* JS_DISASM_RISCV64 */
-  int jumpChainTargetAt(BufferOffset pos);
-  static int jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
-                               Instruction* instruction2 = nullptr);
+
   BufferOffset jumpChainGetNextLink(BufferOffset pos);
-  uint32_t jumpChainUseNextLink(Label* label);
-  // Returns true if the target was successfully assembled and spewed.
-  bool jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos);
-  int32_t branchOffsetHelper(Label* L, OffsetSize bits);
-  int32_t branchLongOffsetHelper(Label* L);
+
+  void jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos);
+
+ private:
+  int32_t branchOffset(Label* L, OffsetSize bits,
+                       BufferOffset next_instr_offset);
+
+ public:
+  // Branch offset for short branches (jal, branch, etc.).
+  int32_t branchOffset(Label* L, OffsetSize bits);
+
+  // Branch offset for long branches (auipc + jalr).
+  int32_t branchOffset(Label* L);
 
   void nopAlign(int m) { m_buffer.align(m); }
 

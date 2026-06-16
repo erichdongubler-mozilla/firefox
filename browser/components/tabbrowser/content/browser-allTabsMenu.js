@@ -95,12 +95,8 @@ var gTabsPanel = {
       let closeDuplicateTabsItem = document.getElementById(
         "allTabsMenu-closeDuplicateTabs"
       );
-      closeDuplicateTabsItem.disabled =
+      closeDuplicateTabsItem.hidden =
         !gBrowser.getAllDuplicateTabsToClose().length;
-
-      let syncedTabs = document.getElementById("allTabsMenu-syncedTabs");
-      syncedTabs.hidden =
-        !PlacesUIUtils.shouldShowTabsFromOtherComputersMenuitem();
     });
 
     this.allTabsView.addEventListener("ViewShown", () =>
@@ -128,10 +124,6 @@ var gTabsPanel = {
           break;
         case "allTabsMenu-hiddenTabsButton":
           PanelUI.showSubView(this.kElements.hiddenTabsView, target);
-          break;
-        case "allTabsMenu-syncedTabs":
-          Glean.browserUiInteraction.listAllTabsAction.tabs_from_devices.add(1);
-          SidebarController.show("viewTabsSidebar");
           break;
         case "allTabsMenu-groupsViewShowMore":
           PanelUI.showSubView(this.kElements.groupsSubView, target);

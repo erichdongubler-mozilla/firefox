@@ -7,6 +7,7 @@
 package org.mozilla.fenix.tabstray.ui.tabpage
 
 import android.content.res.Configuration
+import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.background
@@ -69,8 +70,9 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.Dp
@@ -85,6 +87,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.SwipeToDismissState2
 import org.mozilla.fenix.tabgroups.TabGroupCard
 import org.mozilla.fenix.tabgroups.TabGroupRow
+import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.browser.compose.ReorderableDragItemContainer
 import org.mozilla.fenix.tabstray.browser.compose.TabItemInteractionState
 import org.mozilla.fenix.tabstray.browser.compose.createListReorderState
@@ -121,6 +124,7 @@ import org.mozilla.fenix.tabstray.ui.tabitems.TabListTabItem
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemClickHandler
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemSelectionState
 import org.mozilla.fenix.tabstray.ui.tabitems.gridItemAspectRatio
+import org.mozilla.fenix.tabstray.ui.tabitems.tabGridColumnCount
 import org.mozilla.fenix.tabstray.ui.tabitems.tabItemListInteractionAnimation
 import org.mozilla.fenix.tabstray.ui.tabitems.tabListItemShapeStyling
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -143,15 +147,17 @@ private const val TAB_GRID_PORTRAIT_WIDTH_THRESHOLD_1 = 320
 private const val TAB_GRID_PORTRAIT_WIDTH_THRESHOLD_2 = 480
 private const val TAB_GRID_PORTRAIT_WIDTH_THRESHOLD_3 = 800
 
-private const val TAB_GRID_LANDSCAPE_WIDTH_THRESHOLD_1 = 917
-private const val TAB_GRID_LANDSCAPE_WIDTH_THRESHOLD_2 = 1280
+private const val TAB_GRID_LANDSCAPE_WIDTH_THRESHOLD_1 = 600
+private const val TAB_GRID_LANDSCAPE_WIDTH_THRESHOLD_2 = 917
+private const val TAB_GRID_LANDSCAPE_WIDTH_THRESHOLD_3 = 1280
 
 private const val NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_1 = 2
 private const val NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_2 = 3
 private const val NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_3 = 4
 
-private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_1 = 4
-private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_2 = 5
+private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_1 = 3
+private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_2 = 4
+private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_3 = 5
 
 private val tabListPadding
     @Composable
@@ -527,7 +533,11 @@ private fun ReorderableTabGrid(
                         reorderState = reorderState,
                         isInMultiSelectMode = isInMultiSelectMode,
                     ),
-                ) { reorderingEnabled },
+                ) { reorderingEnabled }
+                .semantics {
+                    tabGridColumnCount = columns
+                    testTag = TabsTrayTestTag.TAB_GRID
+                },
             state = gridState,
             contentPadding = contentPadding,
             verticalArrangement = Arrangement.spacedBy(space = spacing),
@@ -639,7 +649,11 @@ private fun InteractableTabGrid(
         LazyVerticalGrid(
             columns = GridCells.Fixed(count = columns),
             modifier = modifier
-                .fillMaxSize(),
+                .fillMaxSize()
+                .semantics {
+                    tabGridColumnCount = columns
+                    testTag = TabsTrayTestTag.TAB_GRID
+                },
             state = gridState,
             userScrollEnabled = gridInteractionState.draggedItem == InteractionState.Grid.None,
             contentPadding = contentPadding,
@@ -925,12 +939,13 @@ internal val horizontalGridPadding: Dp
     get() = FirefoxTheme.layout.space.static200
 
 private val BoxWithConstraintsScope.thumbnailSizePx: Int
-    @ReadOnlyComposable
     @Composable
+    @ReadOnlyComposable
     get() {
+        val columns = numberOfGridColumns
         val density = LocalDensity.current
-        val totalSpacing = horizontalGridPadding * (numberOfGridColumns - 1) +
-            FirefoxTheme.layout.space.static50 * numberOfGridColumns * 2
+        val totalSpacing = horizontalGridPadding * (columns - 1) +
+            FirefoxTheme.layout.space.static50 * columns * 2
         val thumbnailWidth = constraints.maxWidth - with(density) { totalSpacing.roundToPx() }
         val thumbnailHeight = (thumbnailWidth / gridItemAspectRatio).toInt()
         return max(thumbnailWidth, thumbnailHeight)
@@ -1459,30 +1474,40 @@ private fun ReorderableTabList(
 /**
  * Returns the number of grid columns we can fit on the screen in the tabs tray.
  */
-private val numberOfGridColumns: Int
+
+private val BoxWithConstraintsScope.numberOfGridColumns: Int
     @Composable
     @ReadOnlyComposable
     get() {
         val configuration = LocalConfiguration.current
-        val screenWidthDp = with(LocalDensity.current) {
-            LocalWindowInfo.current.containerSize.width.toDp().value
-        }
-
         return if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            numberOfGridColumnsLandscape(screenWidthDp = screenWidthDp)
+            numberOfGridColumnsLandscape(screenWidthDp = maxWidth.value)
         } else {
-            numberOfGridColumnsPortrait(screenWidthDp = screenWidthDp)
+            numberOfGridColumnsPortrait(screenWidthDp = maxWidth.value)
         }
     }
 
-private fun numberOfGridColumnsPortrait(screenWidthDp: Float): Int = when {
+/**
+ * Returns the number of columns to be rendered for a grid in portrait mode
+ * given the screen width.
+ * @param screenWidthDp Float representation of screenWidth dp
+ */
+@VisibleForTesting
+internal fun numberOfGridColumnsPortrait(screenWidthDp: Float): Int = when {
     screenWidthDp >= TAB_GRID_PORTRAIT_WIDTH_THRESHOLD_3 -> NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_3
     screenWidthDp >= TAB_GRID_PORTRAIT_WIDTH_THRESHOLD_2 -> NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_2
     screenWidthDp >= TAB_GRID_PORTRAIT_WIDTH_THRESHOLD_1 -> NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_1
     else -> NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_1
 }
 
-private fun numberOfGridColumnsLandscape(screenWidthDp: Float): Int = when {
+/**
+ * Returns the number of columns to be rendered for a grid in landscape mode
+ * given the screen width.
+ * @param screenWidthDp Float representation of screenWidth dp
+ */
+@VisibleForTesting
+internal fun numberOfGridColumnsLandscape(screenWidthDp: Float): Int = when {
+    screenWidthDp >= TAB_GRID_LANDSCAPE_WIDTH_THRESHOLD_3 -> NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_3
     screenWidthDp >= TAB_GRID_LANDSCAPE_WIDTH_THRESHOLD_2 -> NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_2
     screenWidthDp >= TAB_GRID_LANDSCAPE_WIDTH_THRESHOLD_1 -> NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_1
     else -> NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_1

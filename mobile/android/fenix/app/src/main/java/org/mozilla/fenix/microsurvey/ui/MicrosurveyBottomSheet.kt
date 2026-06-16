@@ -5,6 +5,7 @@
 package org.mozilla.fenix.microsurvey.ui
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.res.stringResource
@@ -64,69 +66,73 @@ fun MicrosurveyBottomSheet(
     var selectedAnswer by remember { mutableStateOf<String?>(null) }
     var isSubmitted by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .padding(top = 8.dp)
-                    .nestedScroll(rememberNestedScrollInteropConnection())
-                    .verticalScroll(rememberScrollState()),
-            ) {
-                BottomSheetHandle(
-                    onRequestDismiss = {},
-                    contentDescription = stringResource(R.string.microsurvey_close_handle_content_description),
+    val cornerShape: Shape = MaterialTheme.shapes.large.copy(
+        bottomStart = CornerSize(0.dp),
+        bottomEnd = CornerSize(0.dp),
+    )
+
+    Surface(shape = cornerShape) {
+        Scaffold(
+            topBar = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
-                        .padding(bottom = 2.dp)
-                        .fillMaxWidth(BOTTOM_SHEET_HANDLE_WIDTH_PERCENT)
-                        .semantics { traversalIndex = -1f },
-                )
+                        .padding(top = 8.dp)
+                        .nestedScroll(rememberNestedScrollInteropConnection())
+                        .verticalScroll(rememberScrollState()),
+                ) {
+                    BottomSheetHandle(
+                        onRequestDismiss = {},
+                        contentDescription = stringResource(R.string.microsurvey_close_handle_content_description),
+                        modifier = Modifier
+                            .padding(bottom = 2.dp)
+                            .fillMaxWidth(BOTTOM_SHEET_HANDLE_WIDTH_PERCENT)
+                            .semantics { traversalIndex = -1f },
+                    )
 
-                MicrosurveyHeader(title = stringResource(id = R.string.micro_survey_survey_header_2)) {
-                    onCloseButtonClicked()
+                    MicrosurveyHeader(title = stringResource(id = R.string.micro_survey_survey_header_2)) {
+                        onCloseButtonClicked()
+                    }
                 }
-            }
-        },
-        bottomBar = {
-            Column(
-                modifier = Modifier
-                    .padding(bottom = 8.dp),
-            ) {
-                Spacer(modifier = Modifier.height(24.dp))
+            },
+            bottomBar = {
+                Column(
+                    modifier = Modifier
+                        .padding(bottom = 8.dp),
+                ) {
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                MicrosurveyFooter(
-                    isSubmitted = isSubmitted,
-                    isContentAnswerSelected = selectedAnswer != null,
-                    onPrivacyPolicyLinkClick = onPrivacyPolicyLinkClick,
-                    onButtonClick = {
-                        selectedAnswer?.let {
-                            onSubmitButtonClicked(it)
-                            isSubmitted = true
-                        }
-                    },
-                )
-            }
-        },
-    ) { innerPadding ->
-        Surface(
-            modifier = Modifier
-                .wrapContentHeight()
-                .padding(innerPadding),
-            shape = MaterialTheme.shapes.large.copy(
-                bottomStart = CornerSize(0.dp),
-                bottomEnd = CornerSize(0.dp),
-            ),
-        ) {
-            if (isSubmitted) {
-                MicrosurveyCompleted()
-            } else {
-                MicrosurveyContent(
-                    question = question,
-                    icon = icon,
-                    answers = answers,
-                    selectedAnswer = selectedAnswer,
-                    onSelectionChange = { selectedAnswer = it },
-                )
+                    MicrosurveyFooter(
+                        isSubmitted = isSubmitted,
+                        isContentAnswerSelected = selectedAnswer != null,
+                        onPrivacyPolicyLinkClick = onPrivacyPolicyLinkClick,
+                        onButtonClick = {
+                            selectedAnswer?.let {
+                                onSubmitButtonClicked(it)
+                                isSubmitted = true
+                            }
+                        },
+                    )
+                }
+            },
+        ) { innerPadding ->
+            Surface(
+                modifier = Modifier
+                    .wrapContentHeight()
+                    .padding(innerPadding),
+                shape = cornerShape,
+            ) {
+                if (isSubmitted) {
+                    MicrosurveyCompleted()
+                } else {
+                    MicrosurveyContent(
+                        question = question,
+                        icon = icon,
+                        answers = answers,
+                        selectedAnswer = selectedAnswer,
+                        onSelectionChange = { selectedAnswer = it },
+                    )
+                }
             }
         }
     }
@@ -142,20 +148,23 @@ private fun MicrosurveyBottomSheetPreview(
     @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
-        MicrosurveyBottomSheet(
-            question = "How satisfied are you with printing in Firefox?",
-            icon = iconsR.drawable.mozac_ic_print_24,
-            onPrivacyPolicyLinkClick = {},
-            onCloseButtonClicked = {},
-            onSubmitButtonClicked = {},
-            answers = listOf(
-                stringResource(id = R.string.likert_scale_option_1),
-                stringResource(id = R.string.likert_scale_option_2),
-                stringResource(id = R.string.likert_scale_option_3),
-                stringResource(id = R.string.likert_scale_option_4),
-                stringResource(id = R.string.likert_scale_option_5),
-                stringResource(id = R.string.likert_scale_option_6),
-            ),
-        )
+        val padding = 16.dp
+        Box(modifier = Modifier.padding(padding)) {
+            MicrosurveyBottomSheet(
+                question = "How satisfied are you with printing in Firefox?",
+                icon = iconsR.drawable.mozac_ic_print_24,
+                onPrivacyPolicyLinkClick = {},
+                onCloseButtonClicked = {},
+                onSubmitButtonClicked = {},
+                answers = listOf(
+                    stringResource(id = R.string.likert_scale_option_1),
+                    stringResource(id = R.string.likert_scale_option_2),
+                    stringResource(id = R.string.likert_scale_option_3),
+                    stringResource(id = R.string.likert_scale_option_4),
+                    stringResource(id = R.string.likert_scale_option_5),
+                    stringResource(id = R.string.likert_scale_option_6),
+                ),
+            )
+        }
     }
 }

@@ -79,8 +79,8 @@ add_task(async function test_tab_manager_close_button() {
 
   let list = win.document.getElementById("allTabsMenu-allTabsView-tabs");
 
-  let pinnedTabRow = list.firstElementChild;
-  Assert.ok(tabOf(pinnedTabRow).pinned, "first item is for the pinned tab");
+  let [pinnedTabRow] = list.querySelectorAll(".all-tabs-item");
+  Assert.ok(tabOf(pinnedTabRow).pinned, "first tab row is for the pinned tab");
   Assert.ok(
     !pinnedTabRow.querySelector(".all-tabs-close-button"),
     "row for pinned tab doesn't have a close button"

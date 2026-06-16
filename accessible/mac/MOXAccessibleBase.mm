@@ -515,6 +515,12 @@ mozilla::LogModule* GetMacAccessibilityLog() {
   return unignoredChildren;
 }
 
+- (NSArray*)moxChildrenInNavigationOrder {
+  // Match WebKit's behaviour and expose this attribute
+  // on every acc as a mirror of AXChildren
+  return [self moxUnignoredChildren];
+}
+
 - (id<mozAccessible>)moxParent {
   return nil;
 }

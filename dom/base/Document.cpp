@@ -245,6 +245,7 @@
 #include "mozilla/dom/ServiceWorkerManager.h"
 #include "mozilla/dom/ShadowIncludingTreeIterator.h"
 #include "mozilla/dom/ShadowRoot.h"
+#include "mozilla/dom/SpeculationRules.h"
 #include "mozilla/dom/StyleSheetApplicableStateChangeEvent.h"
 #include "mozilla/dom/StyleSheetApplicableStateChangeEventBinding.h"
 #include "mozilla/dom/StyleSheetList.h"
@@ -2626,6 +2627,10 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   }
 
   // XXX: This should be not needed once bug 1569185 lands.
+  for (const auto& entry : tmp->mSpeculationRulesFromScript) {
+    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mSpeculationRulesFromScript key");
+    cb.NoteXPCOMChild(entry.GetKey());
+  }
   for (const auto& entry : tmp->mL10nProtoElements) {
     NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mL10nProtoElements key");
     cb.NoteXPCOMChild(entry.GetKey());
@@ -2812,6 +2817,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
 
   tmp->UnregisterFromMemoryReportingForDataDocument();
 
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mSpeculationRulesFromScript)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mL10nProtoElements)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR
   NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_REFERENCE
@@ -8186,36 +8192,37 @@ DocGroup* Document::GetDocGroupOrCreate() {
 
 void Document::SetScopeObject(nsIGlobalObject* aGlobal) {
   mScopeObject = do_GetWeakReference(aGlobal);
-  if (aGlobal) {
-    mHasHadScriptHandlingObject = true;
+  if (!aGlobal) {
+    return;
+  }
+  mHasHadScriptHandlingObject = true;
 
-    nsPIDOMWindowInner* window = aGlobal->GetAsInnerWindow();
-    if (!window) {
-      return;
-    }
+  nsPIDOMWindowInner* window = aGlobal->GetAsInnerWindow();
+  if (!window) {
+    return;
+  }
 
-    // Attempt to join a DocGroup based on our global and container now that our
-    // principal is locked in (due to being added to a window).
-    DocGroup* docGroup = GetDocGroupOrCreate();
-    if (!docGroup) {
-      // If we failed to join a DocGroup, inherit from our parent window.
-      //
-      // NOTE: It is possible for Document to be cross-origin to window while
-      // loading a cross-origin data document over XHR with CORS. In that case,
-      // the DocGroup can have a key which does not match NodePrincipal().
-      MOZ_ASSERT(!mDocumentContainer,
-                 "Must have DocGroup if loaded in a DocShell");
-      mDocGroup = window->GetDocGroup();
-      mDocGroup->AddDocument(this);
-    }
+  // Attempt to join a DocGroup based on our global and container now that our
+  // principal is locked in (due to being added to a window).
+  DocGroup* docGroup = GetDocGroupOrCreate();
+  if (!docGroup) {
+    // If we failed to join a DocGroup, inherit from our parent window.
+    //
+    // NOTE: It is possible for Document to be cross-origin to window while
+    // loading a cross-origin data document over XHR with CORS. In that case,
+    // the DocGroup can have a key which does not match NodePrincipal().
+    MOZ_ASSERT(!mDocumentContainer,
+               "Must have DocGroup if loaded in a DocShell");
+    mDocGroup = window->GetDocGroup();
+    mDocGroup->AddDocument(this);
+  }
 
 #ifdef DEBUG
-    AssertDocGroupMatchesKey();
+  AssertDocGroupMatchesKey();
 #endif
-    MOZ_ASSERT_IF(
-        mNodeInfoManager->GetArenaAllocator(),
-        mNodeInfoManager->GetArenaAllocator() == mDocGroup->ArenaAllocator());
-  }
+  MOZ_ASSERT_IF(
+      mNodeInfoManager->GetArenaAllocator(),
+      mNodeInfoManager->GetArenaAllocator() == mDocGroup->ArenaAllocator());
 }
 
 bool Document::ContainsEMEContent() {
@@ -21291,6 +21298,19 @@ FullscreenKeyboardLock Document::GetFullscreenKeyboardLockStatus() const {
 bool Document::HasFullscreenKeyboardLockEnabled() {
   Element* elem = GetUnretargetedFullscreenElement();
   return elem && elem->State().HasState(ElementState::FULLSCREEN_KEYBOARD_LOCK);
+}
+
+// https://html.spec.whatwg.org/#register-speculation-rules
+void Document::RegisterSpeculationRulesFromScript(
+    nsIScriptElement* aScriptElement,
+    UniquePtr<SpeculationRules> aSpeculationRules) {
+  mSpeculationRulesFromScript.InsertOrUpdate(aScriptElement,
+                                             std::move(aSpeculationRules));
+}
+
+// html.spec.whatwg.org/#unregister-speculation-rules
+void Document::UnregisterSpeculationRules(nsIScriptElement* aScriptElement) {
+  mSpeculationRulesFromScript.Remove(aScriptElement);
 }
 
 }  // namespace mozilla::dom

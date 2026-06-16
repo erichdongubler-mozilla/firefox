@@ -66,6 +66,29 @@ fn emit_critical_invalid_note(what: &'static str) {
     unsafe { gfx_critical_note(msg.as_ptr()) }
 }
 
+#[cfg(target_os = "linux")]
+fn get_linux_dmabuf_modifiers() -> Option<Vec<u64>> {
+    let mut modifiers_ptr: *const u64 = ptr::null();
+    let mut modifier_count = 0u32;
+
+    let ok =
+        unsafe { wgpu_server_get_linux_dmabuf_modifiers(&mut modifiers_ptr, &mut modifier_count) };
+    if !ok {
+        return None;
+    }
+    if modifier_count == 0 {
+        return Some(Vec::new());
+    }
+    if modifiers_ptr.is_null() {
+        return None;
+    }
+
+    // The pointer is owned by gfxVars storage and copied immediately.
+    let modifiers =
+        unsafe { std::slice::from_raw_parts(modifiers_ptr, modifier_count as usize) };
+    Some(modifiers.to_vec())
+}
+
 fn restrict_limits(limits: wgt::Limits) -> wgt::Limits {
     wgt::Limits {
         max_buffer_size: limits.max_buffer_size.min(MAX_BUFFER_SIZE),
@@ -1268,18 +1291,33 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
         usage_flags |= vk::ImageUsageFlags::COLOR_ATTACHMENT;
 
         modifier_props.retain(|modifier_prop| {
-            let support = is_dmabuf_supported(
+            is_dmabuf_supported(
                 instance,
                 physical_device,
                 vk::Format::B8G8R8A8_UNORM,
                 modifier_prop.drm_format_modifier,
                 usage_flags,
-            );
-            support
+            )
         });
 
         if modifier_props.is_empty() {
             let msg = c"format not supported for dmabuf import";
+            gfx_critical_note(msg.as_ptr());
+            return ptr::null_mut();
+        }
+
+        let Some(consumer_modifiers) = get_linux_dmabuf_modifiers() else {
+            let msg = c"failed to get consumer dmabuf modifiers";
+            gfx_critical_note(msg.as_ptr());
+            return ptr::null_mut();
+        };
+
+        modifier_props.retain(|modifier_prop| {
+            consumer_modifiers.contains(&modifier_prop.drm_format_modifier)
+        });
+
+        if modifier_props.is_empty() {
+            let msg = c"no common dmabuf modifier found for WebGPU shared-texture swapchain";
             gfx_critical_note(msg.as_ptr());
             return ptr::null_mut();
         }
@@ -1600,6 +1638,11 @@ extern "C" {
     ) -> *const VkImageHandle;
     #[cfg(target_os = "linux")]
     fn wgpu_server_get_dma_buf_fd(parent: WebGPUParentPtr, id: id::TextureId) -> i32;
+    #[cfg(target_os = "linux")]
+    fn wgpu_server_get_linux_dmabuf_modifiers(
+        modifiers: *mut *const u64,
+        modifier_count: *mut u32,
+    ) -> bool;
     #[cfg(target_os = "macos")]
     fn wgpu_server_get_external_io_surface_id(parent: WebGPUParentPtr, id: id::TextureId) -> u32;
     fn wgpu_server_remove_shared_texture(parent: WebGPUParentPtr, id: id::TextureId);

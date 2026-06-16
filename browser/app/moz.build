@@ -21,6 +21,8 @@ with Files("moz.build"):
     BUG_COMPONENT = ("Firefox Build System", "General")
 with Files("Makefile.in"):
     BUG_COMPONENT = ("Firefox Build System", "General")
+with Files("generate_channel_prefs.py"):
+    BUG_COMPONENT = ("Firefox Build System", "General")
 
 with Files("profile/channel-prefs.js"):
     BUG_COMPONENT = ("Firefox", "Installer")
@@ -28,6 +30,14 @@ with Files("profile/firefox.js"):
     BUG_COMPONENT = ("Firefox", "General")
 
 DIRS += ["distribution"]
+
+if CONFIG["MOZ_WIDGET_TOOLKIT"] != "cocoa":
+    GeneratedFile(
+        "channel-prefs.js",
+        script="generate_channel_prefs.py",
+        inputs=["profile/channel-prefs.js"],
+    )
+    FINAL_TARGET_FILES.defaults.pref += ["!channel-prefs.js"]
 
 if CONFIG["MOZ_MACBUNDLE_NAME"]:
     DIRS += ["macbuild/Contents"]

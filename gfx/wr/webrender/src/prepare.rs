@@ -6,7 +6,7 @@
 //!
 //! TODO: document this!
 
-use api::{BoxShadowClipMode, ColorF, DebugFlags, ExtendMode, GradientStop, ImageBufferKind, RepeatMode};
+use api::{BoxShadowClipMode, ColorF, DebugFlags, ExtendMode, ExternalImageData, ExternalImageType, GradientStop, ImageBufferKind, RepeatMode};
 use api::ClipMode;
 use crate::pattern::cutout::Cutout;
 use crate::util::clamp_to_scale_factor;
@@ -24,6 +24,7 @@ use crate::command_buffer::{CommandBufferIndex, PrimitiveCommand};
 use crate::border;
 use crate::clip::{ClipStore, ClipNodeRange};
 use crate::pattern::image::ImagePattern;
+use crate::pattern::yuv::YuvPattern;
 use crate::render_task_graph::RenderTaskId;
 use crate::renderer::{GpuBufferAddress, GpuBufferWriterF};
 use crate::spatial_tree::SpatialNodeIndex;
@@ -213,6 +214,24 @@ fn can_use_clip_chain_for_quad_path(
     true
 }
 
+/// Returns the texture sampler kind used by a YUV image's planes, which selects
+/// the matching ps_quad_yuv shader variant. All planes are expected to share the
+/// same kind. Texture-cache backed images (raw/blob/buffer) are always Texture2D.
+fn yuv_planes_sampler_kind(
+    yuv_image_data: &crate::prim_store::image::YuvImageData,
+    resource_cache: &crate::resource_cache::ResourceCache,
+) -> ImageBufferKind {
+    let plane_count = yuv_image_data.format.get_plane_num();
+    for key in &yuv_image_data.yuv_key[.. plane_count] {
+        if let Some(ExternalImageData { image_type: ExternalImageType::TextureHandle(kind), .. }) =
+            resource_cache.get_image_properties(*key).and_then(|props| props.external_image)
+        {
+            return kind;
+        }
+    }
+    ImageBufferKind::Texture2D
+}
+
 fn prepare_prim_for_render(
     store: &mut PrimitiveStore,
     prim_instance_index: usize,
@@ -275,10 +294,6 @@ fn prepare_prim_for_render(
             | PrimitiveKind::LineDecoration { .. }
             => {
                 use_legacy_path = false;
-            }
-            PrimitiveKind::YuvImage { .. } => {
-                let prim_info = scratch.frame.draws[prim_instance_index];
-                use_legacy_path = prim_info.compositor_surface_kind != CompositorSurfaceKind::Underlay;
             }
             _ => {}
         };
@@ -1073,47 +1088,61 @@ fn prepare_interned_prim_for_render(
             let common_data = &mut prim_data.common;
             let yuv_image_data = &mut prim_data.kind;
 
-            if !use_legacy_path {
-                if prim_info.compositor_surface_kind == CompositorSurfaceKind::Underlay {
-                    quad::prepare_quad(
-                        &Cutout,
-                        &prim_info.snapped_local_rect,
-                        &prim_info.clip_chain.local_clip_rect,
-                        common_data.aligned_aa_edges,
-                        common_data.transformed_aa_edges,
-                        prim_instance_index,
-                        &None,
-                        &prim_info.clip_chain,
-                        quad_transform,
-                        frame_context,
-                        pic_context,
-                        targets,
-                        &data_stores.clip,
-                        frame_state,
-                        scratch,
-                    );
+            if prim_info.compositor_surface_kind == CompositorSurfaceKind::Underlay {
+                quad::prepare_quad(
+                    &Cutout,
+                    &prim_info.snapped_local_rect,
+                    &prim_info.clip_chain.local_clip_rect,
+                    common_data.aligned_aa_edges,
+                    common_data.transformed_aa_edges,
+                    prim_instance_index,
+                    &None,
+                    &prim_info.clip_chain,
+                    quad_transform,
+                    frame_context,
+                    pic_context,
+                    targets,
+                    &data_stores.clip,
+                    frame_state,
+                    scratch,
+                );
 
-                    return;
-                }
+                return;
             }
 
-            // Update the template this instane references, which may refresh the GPU
-            // cache with any shared template data.
-            yuv_image_data.update(
-                common_data,
+            // Non-composited: draw the YUV image directly through the quad path.
+            let planes = yuv_image_data.update(
                 prim_info.compositor_surface_kind.is_composited(),
                 frame_state,
             );
 
-            write_segment(
-                prim_info.segment_instance_index,
+            let pattern = YuvPattern {
+                planes,
+                format: yuv_image_data.format,
+                color_space: yuv_image_data.color_space.with_range(yuv_image_data.color_range),
+                channel_bit_depth: yuv_image_data.color_depth.bit_depth(),
+                sampler_kind: yuv_planes_sampler_kind(yuv_image_data, frame_state.resource_cache),
+            };
+
+            quad::prepare_quad(
+                &pattern,
+                &prim_info.snapped_local_rect,
+                &prim_info.clip_chain.local_clip_rect,
+                common_data.aligned_aa_edges,
+                common_data.transformed_aa_edges,
+                prim_instance_index,
+                &None,
+                &prim_info.clip_chain,
+                quad_transform,
+                frame_context,
+                pic_context,
+                targets,
+                &data_stores.clip,
                 frame_state,
-                &mut scratch.frame.segments,
-                &mut scratch.frame.segment_instances,
-                |writer| {
-                    yuv_image_data.write_prim_gpu_blocks(writer);
-                }
+                scratch,
             );
+
+            return;
         }
         PrimitiveKind::Image { data_handle, .. } => {
             profile_scope!("Image");

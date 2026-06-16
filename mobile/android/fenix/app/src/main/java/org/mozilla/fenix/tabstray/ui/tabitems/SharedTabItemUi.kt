@@ -567,6 +567,12 @@ internal val AlphaKey = SemanticsPropertyKey<Float>("Alpha")
 internal var SemanticsPropertyReceiver.alpha by AlphaKey
 
 /**
+ * Semantic property for accessing a tab grid's column count.
+ */
+internal val TabGridColumnCountKey = SemanticsPropertyKey<Int>("TabGridColumnCount")
+internal var SemanticsPropertyReceiver.tabGridColumnCount by TabGridColumnCountKey
+
+/**
  * Elevation parameters for interactable tab items.
  */
 object Elevation {

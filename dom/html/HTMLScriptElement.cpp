@@ -68,6 +68,17 @@ nsresult HTMLScriptElement::BindToTree(BindContext& aContext,
   return NS_OK;
 }
 
+void HTMLScriptElement::UnbindFromTree(UnbindContext& aContext) {
+  // https://html.spec.whatwg.org/#script-processing-model:html-element-removing-steps
+  if (mFrozen && GetScriptIsSpeculationRules()) {
+    if (auto* doc = GetComposedDoc()) {
+      doc->UnregisterSpeculationRules(this);
+    }
+  }
+
+  nsGenericHTMLElement::UnbindFromTree(aContext);
+}
+
 bool HTMLScriptElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
                                        const nsAString& aValue,
                                        nsIPrincipal* aMaybeScriptedPrincipal,
@@ -339,7 +350,9 @@ bool HTMLScriptElement::Supports(const GlobalObject& aGlobal,
   nsAutoString type(aType);
   return aType.EqualsLiteral("classic") || aType.EqualsLiteral("module") ||
 
-         aType.EqualsLiteral("importmap");
+         aType.EqualsLiteral("importmap") ||
+         (StaticPrefs::dom_speculation_rules_enabled() &&
+          aType.EqualsLiteral("speculationrules"));
 }
 
 nsDOMTokenList* HTMLScriptElement::Blocking() {

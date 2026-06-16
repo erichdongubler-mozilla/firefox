@@ -166,6 +166,14 @@ export const NimbusTelemetry = {
     conflict_slug,
     migration,
   }) {
+    // Do not record unsupported feature telemetry.
+    if (
+      reason === EnrollmentStatusReason.ERROR &&
+      error_string === ValidationFailureReason.UNSUPPORTED_FEATURES
+    ) {
+      return;
+    }
+
     Glean.nimbusEvents.enrollmentStatus.record({
       slug,
       status,

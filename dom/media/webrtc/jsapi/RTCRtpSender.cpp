@@ -159,6 +159,7 @@ RTCRtpSender::RTCRtpSender(nsPIDOMWindowInner* aWindow, PeerConnectionImpl* aPc,
   }
 
   mParameters.mCodecs.Construct();
+  UpdateParametersRtcp();
 
   if (mDtmf) {
     mWatchManager.Watch(mTransmitting, &RTCRtpSender::UpdateDtmfSender);
@@ -805,9 +806,21 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
     return codecs;
   };
 
-  // TODO: Verify remaining read-only parameters
-  // headerExtensions (bug 1765851)
-  // rtcp (bug 1765852)
+  if (mLastReturnedParameters.isSome() &&
+      paramsCopy.mTransactionId.WasPassed()) {
+    // We check mPastReturnedParameters and presence of transaction id because
+    // if these aren't right and we're letting it slide, we do not expect these
+    // read-only members to be present.
+
+    // TODO: Verify remaining read-only parameters
+    // headerExtensions (bug 1765851)
+
+    if (oldParams->mRtcp != paramsCopy.mRtcp) {
+      p->MaybeRejectWithInvalidModificationError(
+          "RTCRtpParameters.rtcp is a read-only parameter");
+      return p.forget();
+    }
+  }
 
   // CheckAndRectifyEncodings handles the following steps:
   // If transceiver kind is "audio", remove the scaleResolutionDownBy member
@@ -1317,13 +1330,7 @@ void RTCRtpSender::GetParameters(RTCRtpSendParameters& aParameters) {
   // TODO(bug 1765851): We do not support this yet
   // aParameters.mHeaderExtensions.Construct();
 
-  // rtcp.cname is set to the CNAME of the associated RTCPeerConnection.
-  // rtcp.reducedSize is set to true if reduced-size RTCP has been negotiated
-  // for sending, and false otherwise.
-  // TODO(bug 1765852): We do not support this yet
-  aParameters.mRtcp.Construct();
-  aParameters.mRtcp.Value().mCname.Construct();
-  aParameters.mRtcp.Value().mReducedSize.Construct(false);
+  aParameters.mRtcp.Construct(mParameters.mRtcp.Value());
   if (mParameters.mDegradationPreference.WasPassed()) {
     aParameters.mDegradationPreference.Construct(
         mParameters.mDegradationPreference.Value());
@@ -1353,6 +1360,11 @@ bool operator==(const RTCRtpEncodingParameters& a1,
          a1.mMaxFramerate == a2.mMaxFramerate && a1.mPriority == a2.mPriority &&
          a1.mRid == a2.mRid &&
          a1.mScaleResolutionDownBy == a2.mScaleResolutionDownBy;
+}
+
+bool operator==(const RTCRtcpParameters& a1, const RTCRtcpParameters& a2) {
+  // webidl does not generate types that are equality comparable
+  return a1.mCname == a2.mCname && a1.mReducedSize == a2.mReducedSize;
 }
 
 // static
@@ -1795,6 +1807,16 @@ void RTCRtpSender::UpdateParametersCodecs() {
   }
 }
 
+void RTCRtpSender::UpdateParametersRtcp() {
+  mParameters.mRtcp.Reset();
+  mParameters.mRtcp.Construct();
+
+  mParameters.mRtcp.Value().mCname.Construct(
+      NS_ConvertUTF8toUTF16(GetJsepTransceiver().mSendTrack.GetCNAME()));
+  // TODO(bug 1765852): We do not support reduced size yet
+  mParameters.mRtcp.Value().mReducedSize.Construct(false);
+}
+
 void RTCRtpSender::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {
   if (!mSimulcastEnvelopeSet) {
     // JSEP is establishing the simulcast envelope for the first time, right now
@@ -1821,6 +1843,7 @@ void RTCRtpSender::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {
     }
   }
   UpdateParametersCodecs();
+  UpdateParametersRtcp();
 
   MaybeUpdateConduit();
 }
