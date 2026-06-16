@@ -22,13 +22,33 @@ in a later phase of the migration.
 """
 
 import json
+import os
+import time
+import uuid
 from datetime import timedelta
 
 from heuristics import apply_hang_signature_heuristics
-from symbolication import UNSYMBOLICATED
+from profile_processor import ProfileProcessor
+from symbolication import UNSYMBOLICATED, symbolicate_modules
 
 _BQ_TABLE = "moz-fx-data-shared-prod.firefox_desktop_stable.hang_report_v1"
 _MAX_SAMPLE_SLICES = 10000
+
+# Pipeline defaults. The production CLI in python_mozetl overrode the stale
+# 16000 upper bound with 65536, so we use that here for parity. uuid is added
+# fresh per run in aggregate().
+DEFAULT_CONFIG = {
+    "thread_filter": "Gecko",
+    "hang_lower_bound": 128,
+    "hang_upper_bound": 65536,
+    "stack_acceptance_threshold": 0.0,
+    "symbol_server_url": "https://symbols.mozilla.org/",
+    "print_debug_info": False,
+    "split_threads_in_out_file": False,
+    "use_minimal_sample_table": False,
+    "post_sample_size": 1.0,
+    "exclude_modules": False,
+}
 
 # Top-level ping fields fetched from BigQuery. Returned in `slash/key` form
 # because downstream code (process_hangs, process_module, etc.) expects this
@@ -426,3 +446,88 @@ def group_hangs(hangs, config):
             else:
                 grouped[key] = value
     return [key + value for key, value in grouped.items()]
+
+
+def write_file(name, data, output_dir):
+    """Write `data` as JSON to output_dir/<name>.json, creating the dir."""
+    os.makedirs(output_dir, exist_ok=True)
+    path = os.path.join(output_dir, name + ".json")
+    with open(path, "w", encoding="utf8") as json_file:
+        json.dump(data, json_file, ensure_ascii=False)
+    return path
+
+
+def aggregate(
+    date,
+    sample_size,
+    billing_project,
+    output_dir="output",
+    output_tag="main",
+    end_date=None,
+    config_overrides=None,
+):
+    """Run the full BHR aggregation for one build-date window.
+
+    Wires together the whole pipeline:
+        get_data         -> stream pings from BigQuery
+        process_hangs    -> expand each ping into hang tuples
+        collect_offsets_by_module + symbolicate_modules -> symbol lookup table
+        symbolicate_hang -> symbolicate + trim each hang's stack
+        group_hangs      -> aggregate by signature
+        ProfileProcessor -> build the columnar output
+        write_file       -> hangs_<tag>_<date>.json and hangs_<tag>_current.json
+
+    `date` is the build date to process. usageHoursByDate is set to a dummy
+    1.0 because Glean doesn't provide usage hours in the legacy shape (the
+    frontend only needs a non-null value here).
+
+    Returns the profile dict that was written.
+    """
+    config = dict(DEFAULT_CONFIG)
+    config["uuid"] = uuid.uuid4().hex
+    if config_overrides:
+        config.update(config_overrides)
+
+    date_str = date.strftime("%Y%m%d")
+    job_start = time.time()
+
+    def _phase(message):
+        print(f"[{int(time.time() - job_start):>4}s] {message}", flush=True)
+
+    # Stream pings and expand each valid one into hang tuples. The pings
+    # themselves are not retained; only the (much smaller) hang set is.
+    _phase(f"Fetching pings from BigQuery for build date {date_str}...")
+    hangs = []
+    for ping in get_data(
+        date,
+        sample_size,
+        billing_project,
+        end_date=end_date,
+        exclude_modules=config["exclude_modules"],
+    ):
+        if not ping_is_valid(ping):
+            continue
+        hangs.extend(process_hangs(ping, config))
+    _phase(f"Collected {len(hangs)} hangs.")
+
+    # Symbolicate: one symbol-server fetch per unique module, then resolve
+    # every hang's stack and apply the signature heuristics.
+    frames_by_module = collect_offsets_by_module(hangs)
+    _phase(f"Symbolicating {len(frames_by_module)} unique modules...")
+    symbol_map = symbolicate_modules(frames_by_module, config)
+    _phase(f"Resolved {len(symbol_map)} (module, offset) frames.")
+    symbolicated = [symbolicate_hang(hang, symbol_map) for hang in hangs]
+
+    # Aggregate by signature and build the columnar profile.
+    grouped = group_hangs(symbolicated, config)
+    _phase(f"Aggregated into {len(grouped)} hang signatures.")
+    _phase("Building profile...")
+    processor = ProfileProcessor(config)
+    processor.ingest(grouped, {date_str: 1.0})
+    profile = processor.process_into_profile()
+
+    base = "hangs_" + output_tag
+    written = write_file(f"{base}_{date_str}", profile, output_dir)
+    write_file(f"{base}_current", profile, output_dir)
+    _phase(f"Wrote {written}")
+    return profile

@@ -718,5 +718,94 @@ def test_symbolicate_then_group_full_chain():
     assert row[-2:] == (500.0, 2.0)
 
 
+# --- aggregate() end-to-end (offline) ---------------------------------------
+
+
+def test_aggregate_end_to_end_offline(monkeypatch, tmp_path):
+    # One fake ping carrying one Gecko hang. Everything is mocked so the test
+    # runs offline: the BQ client yields our row, and symbol fetching always
+    # fails (so frames come back unsymbolicated, which is fine for a wiring
+    # smoke test).
+    import symbolication
+
+    hang = {
+        "thread": "Gecko",
+        "process": "main",
+        "duration": 500,  # within [128, 65536)
+        "stack": [
+            {"frame": "1000", "module": 0},
+            {"frame": "2000", "module": 1},
+        ],
+        # Real BHR hangs always carry at least one annotation; an empty list
+        # would leave the annotationsTable empty and make process_thread raise
+        # (a python_mozetl quirk we preserve).
+        "annotations": [["UserInteracting", "true"]],
+    }
+    row = _make_row(
+        "Linux",
+        "5.10",
+        "x86_64",
+        "20260502123456",
+        json.dumps([hang]),
+        json.dumps([["xul.pdb", "ABC"], ["kernel32.pdb", "XYZ"]]),
+    )
+    _install_fake_client(monkeypatch, [row])
+    monkeypatch.setattr(symbolication, "fetch_url", lambda _url: (False, ""))
+
+    profile = bhr_collection.aggregate(
+        date=datetime.date(2026, 5, 2),
+        sample_size=0.001,
+        billing_project="test-project",
+        output_dir=str(tmp_path),
+    )
+
+    # Profile shape the frontend expects.
+    assert set(profile.keys()) == {"threads", "usageHoursByDate", "uuid"}
+    assert profile["usageHoursByDate"] == {"20260502": 1.0}
+    assert len(profile["threads"]) == 1
+    assert profile["threads"][0]["name"] == "Gecko"
+    assert profile["threads"][0]["sampleTable"]["length"] == 1
+
+    # Both output files were written.
+    assert (tmp_path / "hangs_main_20260502.json").exists()
+    assert (tmp_path / "hangs_main_current.json").exists()
+
+    # The written file round-trips to the same profile.
+    with open(tmp_path / "hangs_main_current.json") as f:
+        assert json.load(f)["usageHoursByDate"] == {"20260502": 1.0}
+
+
+def test_aggregate_drops_pings_outside_build_window(monkeypatch, tmp_path):
+    import symbolication
+
+    hang = {
+        "thread": "Gecko",
+        "process": "main",
+        "duration": 500,
+        "stack": [{"frame": "1000", "module": 0}],
+        "annotations": [],
+    }
+    # app_build is 20260101 but we aggregate for 20260502 -> dropped by the
+    # build-date filter in get_data, so no threads come out.
+    row = _make_row(
+        "Linux",
+        "5.10",
+        "x86_64",
+        "20260101000000",
+        json.dumps([hang]),
+        json.dumps([["xul.pdb", "ABC"]]),
+    )
+    _install_fake_client(monkeypatch, [row])
+    monkeypatch.setattr(symbolication, "fetch_url", lambda _url: (False, ""))
+
+    profile = bhr_collection.aggregate(
+        date=datetime.date(2026, 5, 2),
+        sample_size=0.001,
+        billing_project="test-project",
+        output_dir=str(tmp_path),
+    )
+    assert profile["threads"] == []
+
+
 if __name__ == "__main__":
     mozunit.main()
