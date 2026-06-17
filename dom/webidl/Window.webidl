@@ -264,7 +264,9 @@ Window includes WindowLocalStorage;
 
 // http://www.whatwg.org/specs/web-apps/current-work/
 partial interface Window {
+  [Deprecated=UseOfCaptureEvents]
   undefined captureEvents();
+  [Deprecated=UseOfReleaseEvents]
   undefined releaseEvents();
 };
 

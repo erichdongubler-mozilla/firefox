@@ -7224,11 +7224,11 @@ void Document::SetFgColor(const nsAString& aFgColor) {
 }
 
 void Document::CaptureEvents() {
-  WarnOnceAbout(DeprecatedOperations::eUseOfCaptureEvents);
+  // Intentionally a no-op, as this API is deprecated.
 }
 
 void Document::ReleaseEvents() {
-  WarnOnceAbout(DeprecatedOperations::eUseOfReleaseEvents);
+  // Intentionally a no-op, as this API is deprecated.
 }
 
 HTMLAllCollection* Document::All() {

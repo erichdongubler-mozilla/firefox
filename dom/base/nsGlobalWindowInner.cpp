@@ -4248,15 +4248,11 @@ void nsGlobalWindowInner::SetResizable(bool aResizable) const {
 }
 
 void nsGlobalWindowInner::CaptureEvents() {
-  if (mDoc) {
-    mDoc->WarnOnceAbout(DeprecatedOperations::eUseOfCaptureEvents);
-  }
+  // Intentionally a no-op, as this API is deprecated.
 }
 
 void nsGlobalWindowInner::ReleaseEvents() {
-  if (mDoc) {
-    mDoc->WarnOnceAbout(DeprecatedOperations::eUseOfReleaseEvents);
-  }
+  // Intentionally a no-op, as this API is deprecated.
 }
 
 Nullable<WindowProxyHolder> nsGlobalWindowInner::Open(const nsAString& aUrl,
