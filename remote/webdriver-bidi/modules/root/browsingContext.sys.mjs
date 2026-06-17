@@ -2213,6 +2213,7 @@ class BrowsingContextModule extends RootBiDiModule {
           : DownloadEndStatus.complete,
         timestamp,
         url,
+        userContext: lazy.UserContextManager.getIdByNavigableId(navigableId),
       };
 
       if (!canceled) {
@@ -2246,6 +2247,7 @@ class BrowsingContextModule extends RootBiDiModule {
         suggestedFilename,
         timestamp,
         url,
+        userContext: lazy.UserContextManager.getIdByNavigableId(navigableId),
       };
 
       this.#emitContextEventForBrowsingContext(
@@ -2265,6 +2267,7 @@ class BrowsingContextModule extends RootBiDiModule {
         navigation: navigationId,
         timestamp: Date.now(),
         url,
+        userContext: lazy.UserContextManager.getIdByNavigableId(navigableId),
       };
 
       this.#emitContextEventForBrowsingContext(
@@ -2283,6 +2286,7 @@ class BrowsingContextModule extends RootBiDiModule {
         context: navigableId,
         timestamp: Date.now(),
         url,
+        userContext: lazy.UserContextManager.getIdByNavigableId(navigableId),
       };
 
       this.#emitContextEventForBrowsingContext(
@@ -2315,6 +2319,7 @@ class BrowsingContextModule extends RootBiDiModule {
         context: navigableId,
         accepted: detail.accepted,
         type: detail.promptType,
+        userContext: lazy.UserContextManager.getIdByNavigableId(navigableId),
         userText: detail.userText,
       };
 
@@ -2364,6 +2369,7 @@ class BrowsingContextModule extends RootBiDiModule {
         handler: handlerConfig.handler,
         message,
         type,
+        userContext: lazy.UserContextManager.getIdByNavigableId(navigableId),
       };
 
       if (defaultValue !== null) {
@@ -2387,6 +2393,7 @@ class BrowsingContextModule extends RootBiDiModule {
         navigation: navigationId,
         timestamp: Date.now(),
         url,
+        userContext: lazy.UserContextManager.getIdByNavigableId(navigableId),
       };
 
       this.#emitContextEventForBrowsingContext(
@@ -2406,6 +2413,7 @@ class BrowsingContextModule extends RootBiDiModule {
         navigation: navigationId,
         timestamp: Date.now(),
         url,
+        userContext: lazy.UserContextManager.getIdByNavigableId(navigableId),
       };
 
       this.#emitContextEventForBrowsingContext(
@@ -2425,6 +2433,7 @@ class BrowsingContextModule extends RootBiDiModule {
         navigation: navigationId,
         timestamp: Date.now(),
         url,
+        userContext: lazy.UserContextManager.getIdByNavigableId(navigableId),
       };
 
       this.#emitContextEventForBrowsingContext(

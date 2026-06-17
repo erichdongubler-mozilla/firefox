@@ -12,6 +12,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ContextualIdentityListener:
     "chrome://remote/content/shared/listeners/ContextualIdentityListener.sys.mjs",
   generateUUID: "chrome://remote/content/shared/UUID.sys.mjs",
+  NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
   TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
 });
 
@@ -133,6 +134,24 @@ export class UserContextManagerClass {
   getIdByInternalId(internalId) {
     if (this.#userContextIds.has(internalId)) {
       return this.#userContextIds.get(internalId);
+    }
+    return null;
+  }
+
+  /**
+   * Retrieve the user context id corresponding to the provided navigable id.
+   *
+   * @param {number} navigableId
+   *     The navigable id.
+   *
+   * @returns {string|null}
+   *     The corresponding user context id or null if the user context does not
+   *     exist.
+   */
+  getIdByNavigableId(navigableId) {
+    const context = lazy.NavigableManager.getBrowsingContextById(navigableId);
+    if (context) {
+      return this.getIdByBrowsingContext(context);
     }
     return null;
   }
