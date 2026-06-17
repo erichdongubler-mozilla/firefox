@@ -43,7 +43,7 @@ static char sccsid[] = "@(#)realpath.c	8.1 (Berkeley) 2/16/94";
 #include <string.h>
 #include <unistd.h>
 
-#include "base/string_util.h"
+#include "base/strings/string_util.h"
 #include "SandboxBroker.h"
 #include "SandboxLogging.h"
 
