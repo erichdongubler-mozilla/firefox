@@ -156,6 +156,7 @@ preprocessed_intervention_files = [
     "bug2031646-www.interview.micro1.ai.js",
     "bug2034409-www.wanyiwan.top.js",
     "bug2038272-wowow.co.jp-fix_partly_offscreen_searchbar.css",
+    "bug2040371-keywords.smarthr.jp-hide_browser_notice.css",
     "bug2041215-vitra.com.tr-fix_zero_width_product_images.css",
     "bug2044261-doubao.com-hide_browser_notice.css",
     "bug2044288-www.kuaishou.com-fix_missing_video_thumbnails.css",
