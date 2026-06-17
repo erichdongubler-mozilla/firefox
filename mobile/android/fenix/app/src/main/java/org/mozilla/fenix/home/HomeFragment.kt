@@ -889,8 +889,9 @@ class HomeFragment : Fragment() {
     }
 
     private fun initStoriesState() {
+        val components = context?.components ?: return
         lifecycleScope.launch(IO) {
-            val settings = requireComponents.settings
+            val settings = components.settings
 
             val showStories =
                 settings.showPocketRecommendationsFeature ||
@@ -899,19 +900,19 @@ class HomeFragment : Fragment() {
             val showSponsoredStories = showStories && settings.showPocketSponsoredStories
 
             if (showStories) {
-                requireComponents.appStore.dispatch(
+                components.appStore.dispatch(
                     ContentRecommendationsAction.ContentRecommendationsFetched(
-                        recommendations = requireComponents.core.pocketStoriesService.getContentRecommendations(),
+                        recommendations = components.core.pocketStoriesService.getContentRecommendations(),
                     ),
                 )
             } else {
-                requireComponents.appStore.dispatch(ContentRecommendationsAction.PocketStoriesClean)
+                components.appStore.dispatch(ContentRecommendationsAction.PocketStoriesClean)
             }
 
             if (showSponsoredStories) {
-                requireComponents.appStore.dispatch(
+                components.appStore.dispatch(
                     ContentRecommendationsAction.SponsoredContentsChange(
-                        sponsoredContents = requireComponents.core.pocketStoriesService.getSponsoredContents(),
+                        sponsoredContents = components.core.pocketStoriesService.getSponsoredContents(),
                     ),
                 )
             }
