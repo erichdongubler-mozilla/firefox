@@ -802,7 +802,8 @@ already_AddRefed<SourceSurface> ImageBitmap::PrepareForDrawTarget(
   // PersistentBufferProvider for the canvas, and not for individual
   // SourceSurfaceRecording objects. In such situations, the only thing we can
   // do is clear our cache and extract a new SourceSurface from mData.
-  if (mSurface && mSurface->GetType() == gfx::SurfaceType::RECORDING &&
+  if (mSurface &&
+      mSurface->GetUnderlyingType() == gfx::SurfaceType::RECORDING &&
       !aTarget->IsRecording()) {
     RefPtr<gfx::DataSourceSurface> dataSurface = mSurface->GetDataSurface();
     if (!dataSurface) {
