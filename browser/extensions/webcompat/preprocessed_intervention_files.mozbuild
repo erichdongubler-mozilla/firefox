@@ -152,6 +152,7 @@ preprocessed_intervention_files = [
     "bug2021019-rudder.taleez.com-fix_overlapping_content.css",
     "bug2025249-infyspringboard.onwingspan.com-hide_browser_notice.css",
     "bug2029246-discord.com-fix_scrollbars.css",
+    "bug2031646-www.interview.micro1.ai.js",
     "bug2034409-www.wanyiwan.top.js",
     "bug2038272-wowow.co.jp-fix_partly_offscreen_searchbar.css",
     "bug2041215-vitra.com.tr-fix_zero_width_product_images.css",
