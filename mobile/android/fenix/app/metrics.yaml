@@ -16321,7 +16321,7 @@ native_share_sheet:
           The surface from which the native share sheet was opened.
           Current values: browser_menu, custom_tab_menu, browser_toolbar,
           tabs_tray, home, bookmarks, history, history_metadata_group,
-          recently_closed, deep_link, web_share.
+          recently_closed, deep_link, web_share, context_menu_link.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010859
     data_reviews:
