@@ -161,7 +161,7 @@ index 2292d91bce..f1f47b1726 100644
      base_mininum_playout_delay_ms_ = delay_ms;
      return true;
 diff --git a/media/engine/webrtc_voice_engine.cc b/media/engine/webrtc_voice_engine.cc
-index 920d7ccd90..9954e24f56 100644
+index 215b6b084b..02d0459a84 100644
 --- a/media/engine/webrtc_voice_engine.cc
 +++ b/media/engine/webrtc_voice_engine.cc
 @@ -129,21 +129,6 @@ const int kMaxTelephoneEventCode = 255;
@@ -226,7 +226,7 @@ index 920d7ccd90..9954e24f56 100644
  void WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
    RTC_DCHECK_RUN_ON(&worker_thread_checker_);
    RTC_LOG(LS_INFO) << "WebRtcVoiceEngine::ApplyOptions: "
-@@ -1306,6 +1299,7 @@ bool WebRtcVoiceSendChannel::SetOptions(const AudioOptions& options) {
+@@ -1309,6 +1302,7 @@ bool WebRtcVoiceSendChannel::SetOptions(const AudioOptions& options) {
    // on top.  This means there is no way to "clear" options such that
    // they go back to the engine default.
    options_.SetAll(options);
@@ -234,7 +234,7 @@ index 920d7ccd90..9954e24f56 100644
  
    std::optional<std::string> audio_network_adaptor_config =
        GetAudioNetworkAdaptorConfig(options_);
-@@ -1569,6 +1563,8 @@ bool WebRtcVoiceSendChannel::SetSend(bool send) {
+@@ -1572,6 +1566,8 @@ bool WebRtcVoiceSendChannel::SetSend(bool send) {
  
    // Apply channel specific options.
    if (send) {
@@ -243,7 +243,7 @@ index 920d7ccd90..9954e24f56 100644
      // Initialize the ADM for recording (this may take time on some platforms,
      // e.g. Android).
      if (options_.init_recording_on_send.value_or(true) &&
-@@ -2264,6 +2260,7 @@ bool WebRtcVoiceReceiveChannel::SetOptions(const AudioOptions& options) {
+@@ -2267,6 +2263,7 @@ bool WebRtcVoiceReceiveChannel::SetOptions(const AudioOptions& options) {
    // on top.  This means there is no way to "clear" options such that
    // they go back to the engine default.
    options_.SetAll(options);
