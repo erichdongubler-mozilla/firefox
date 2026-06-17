@@ -1,15 +1,15 @@
 This surfaces the memory page count for the maximum policy size as a constant,
 so that we can rely on it in our code. It also changes it to 22 to allow for
-uesrs that need large numbers of GPU process font rules.
+users that need large numbers of GPU process font rules.
 
 diff --git a/sandbox/win/src/sandbox_policy.h b/sandbox/win/src/sandbox_policy.h
 index 4d9d8f270890..bffab2fae890 100644
 --- a/sandbox/win/src/sandbox_policy.h
 +++ b/sandbox/win/src/sandbox_policy.h
-@@ -10,16 +10,19 @@
+@@ -9,16 +9,19 @@
+ #include <stdint.h>
  
  #include "base/containers/span.h"
- #include "base/memory/scoped_refptr.h"
  #include "sandbox/win/src/sandbox_types.h"
  #include "sandbox/win/src/security_level.h"
  
@@ -30,7 +30,7 @@ diff --git a/sandbox/win/src/sandbox_policy_base.cc b/sandbox/win/src/sandbox_po
 index 2559133d772b..3395e9cadc07 100644
 --- a/sandbox/win/src/sandbox_policy_base.cc
 +++ b/sandbox/win/src/sandbox_policy_base.cc
-@@ -44,17 +44,17 @@
+@@ -50,17 +50,17 @@
  
  namespace sandbox {
  namespace {
