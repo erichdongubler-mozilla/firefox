@@ -72,7 +72,20 @@ already_AddRefed<CSSMathSum> CSSMathSum::Constructor(
     return nullptr;
   }
 
-  // XXX Step 3 is not yet implemented!
+  // Step 3.
+
+  nsTArray<const StyleNumericType*> numericTypes;
+  numericTypes.SetCapacity(values.Length());
+
+  for (const auto& value : values) {
+    numericTypes.AppendElement(&value->GetNumericType());
+  }
+
+  StyleNumericType numericType;
+  if (!Servo_NumericType_AddTypes(&numericTypes, &numericType)) {
+    aRv.ThrowTypeError("Incompatible types");
+    return nullptr;
+  }
 
   // Step 4.
 

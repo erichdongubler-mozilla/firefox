@@ -5993,6 +5993,20 @@ pub extern "C" fn Servo_NumericType_Create(unit: &nsACString, result: &mut Numer
 }
 
 #[no_mangle]
+pub extern "C" fn Servo_NumericType_AddTypes(
+    numeric_types: &nsTArray<&NumericType>,
+    result: &mut NumericType,
+) -> bool {
+    match NumericType::add_types(numeric_types) {
+        Ok(numeric_type) => {
+            *result = numeric_type;
+            true
+        },
+        Err(..) => false,
+    }
+}
+
+#[no_mangle]
 pub extern "C" fn Servo_SumValue_Create(numeric_value: &NumericValue) -> *mut SumValue {
     let sum_value = match SumValue::try_from_numeric_value(numeric_value) {
         Ok(sum_value) => sum_value,
