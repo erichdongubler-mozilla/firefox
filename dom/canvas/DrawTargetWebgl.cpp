@@ -1249,7 +1249,7 @@ bool SharedContextWebgl::ReadInto(uint8_t* aDstData, int32_t aDstStride,
   if (aBuffer) {
     mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, aBuffer);
     mWebgl->ReadPixelsPbo(desc, 0);
-    mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, 0);
+    mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, nullptr);
   } else {
     Range<uint8_t> range = {aDstData, size_t(aDstStride) * aBounds.height};
     mWebgl->ReadPixelsInto(desc, range);
@@ -1339,7 +1339,7 @@ already_AddRefed<WebGLBuffer> SharedContextWebgl::ReadSnapshotIntoPBO(
   mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, pbo);
   mWebgl->UninitializedBufferData_SizeOnly(LOCAL_GL_PIXEL_PACK_BUFFER, bufSize,
                                            LOCAL_GL_STREAM_READ);
-  mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, 0);
+  mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, nullptr);
   if (!ReadInto(nullptr, pboStride.value(), format, bounds, aHandle, pbo)) {
     return nullptr;
   }
@@ -1387,7 +1387,7 @@ already_AddRefed<DataSourceSurface> SharedContextWebgl::ReadSnapshotFromPBO(
       LOCAL_GL_PIXEL_PACK_BUFFER, 0, range, aSize.height,
       BytesPerPixel(aFormat) * aSize.width, pboStride.value(),
       dstMap.GetStride());
-  mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, 0);
+  mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, nullptr);
   if (success) {
     return surface.forget();
   }
@@ -2666,7 +2666,7 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
     mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, mLastTexture);
   }
   if (!aData && aZero) {
-    mWebgl->BindBuffer(LOCAL_GL_PIXEL_UNPACK_BUFFER, 0);
+    mWebgl->BindBuffer(LOCAL_GL_PIXEL_UNPACK_BUFFER, nullptr);
   }
   return true;
 }

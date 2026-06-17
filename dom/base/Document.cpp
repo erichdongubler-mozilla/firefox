@@ -4769,7 +4769,7 @@ bool Document::AllowsL10n() const {
 
 DocumentTimeline* Document::Timeline() {
   if (!mDocumentTimeline) {
-    mDocumentTimeline = new DocumentTimeline(this, TimeDuration(0));
+    mDocumentTimeline = new DocumentTimeline(this, TimeDuration());
   }
 
   return mDocumentTimeline;
@@ -11836,7 +11836,7 @@ void Document::RetrieveRelevantHeaders(nsIChannel* aChannel) {
         // add more http headers if you need
         // XXXbz don't add content-location support without reading bug
         // 238654 and its dependencies/dups first.
-        0};
+        nullptr};
 
     nsAutoCString headerVal;
     const char* const* name = headers;
