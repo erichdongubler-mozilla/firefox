@@ -19,12 +19,13 @@ const FRECENCY_DEFAULT = 1000;
 // The result is notified on a delay, to avoid rebuilding the panel at every match.
 const NOTIFYRESULT_DELAY_MS = 16;
 
-// This SQL query fragment provides the following:
-//   - whether the entry is bookmarked (QUERYINDEX_BOOKMARKED)
-//   - the bookmark title, if it is a bookmark (QUERYINDEX_BOOKMARKTITLE)
-//   - the tags associated with a bookmarked entry (QUERYINDEX_TAGS)
+// This SQL query fragment provides the following if a row is bookmarked:
+//   - bookmarkDate: The date the bookmark was added. A `PRTime`, microseconds
+//     since epoch. Zero if not bookmarked.
+//   - btitle: The bookmark title
+//   - tags: The bookmark tags
 const SQL_BOOKMARK_TAGS_FRAGMENT = `
-   EXISTS(SELECT 1 FROM moz_bookmarks WHERE fk = h.id) AS bookmarked,
+   ( SELECT dateAdded FROM moz_bookmarks WHERE fk = h.id ) AS bookmarkDate,
    ( SELECT title FROM moz_bookmarks WHERE fk = h.id AND title NOTNULL
      ORDER BY lastModified DESC LIMIT 1
    ) AS btitle,
@@ -51,7 +52,7 @@ function defaultQuery(conditions = "") {
         (:switchTabsEnabled AND t.open_count > 0) OR
         ${lazy.PAGES_FRECENCY_FIELD} <> 0
        )
-       AND CASE WHEN bookmarked
+       AND CASE WHEN bookmarkDate
          THEN
            AUTOCOMPLETE_MATCH(:searchString, h.url,
                               IFNULL(btitle, h.title), tags,
@@ -72,7 +73,7 @@ function defaultQuery(conditions = "") {
 }
 
 const SQL_SWITCHTAB_QUERY = `
-    SELECT t.url, t.url AS title, 0 AS bookmarked, NULL AS btitle,
+   SELECT t.url, t.url AS title, 0 AS bookmarkDate, NULL AS btitle,
            NULL AS tags, NULL AS id, t.open_count, NULL AS frecency,
            t.userContextId, NULL AS last_visit_date, NULLIF(t.groupId, '') groupId
    FROM moz_openpages_temp t
@@ -282,6 +283,7 @@ function convertLegacyMatches(context, matches, urls) {
       title: match.comment,
       userContextId: match.userContextId,
       lastVisit: match.lastVisit,
+      bookmarkDateMs: match.bookmarkDateMs,
       tabGroup: match.tabGroup,
       frecency: match.frecency,
     });
@@ -305,6 +307,7 @@ function convertLegacyMatches(context, matches, urls) {
  * @param {string} info.icon
  * @param {number} info.userContextId
  * @param {number} info.lastVisit
+ * @param {number} info.bookmarkDateMs
  * @param {number} info.tabGroup
  * @param {number} info.frecency
  * @param {string} info.style
@@ -344,6 +347,7 @@ function makeUrlbarResult(queryContext, info) {
             icon: info.icon,
             userContextId: info.userContextId,
             lastVisit: info.lastVisit,
+            bookmarkDateMs: info.bookmarkDateMs,
             tabGroup: info.tabGroup,
             frecency: info.frecency,
             action: lazy.UrlbarPrefs.get("secondaryActions.switchToTab")
@@ -419,6 +423,7 @@ function makeUrlbarResult(queryContext, info) {
       blockL10n,
       helpUrl,
       lastVisit: info.lastVisit,
+      bookmarkDateMs: info.bookmarkDateMs,
       frecency: info.frecency,
     },
     highlights: {
@@ -1183,8 +1188,14 @@ class Search {
     let url = row.getResultByName("url");
     let openPageCount = row.getResultByName("open_count") || 0;
     let historyTitle = row.getResultByName("title") || "";
-    let bookmarked = row.getResultByName("bookmarked");
-    let bookmarkTitle = bookmarked ? row.getResultByName("btitle") : null;
+
+    let bookmarkDatePRTime = row.getResultByName("bookmarkDate");
+    let bookmarkTitle = bookmarkDatePRTime
+      ? row.getResultByName("btitle")
+      : null;
+    let bookmarkDateMs = bookmarkDatePRTime
+      ? lazy.PlacesUtils.toDate(bookmarkDatePRTime).getTime()
+      : undefined;
     let tags = row.getResultByName("tags") || "";
     let frecency = row.getResultByName("frecency");
     let userContextId = row.getResultByName("userContextId");
@@ -1203,6 +1214,7 @@ class Search {
       userContextId,
       lastVisit,
       tabGroup,
+      bookmarkDateMs,
     };
     if (openPageCount > 0 && this.hasBehavior("openpage")) {
       if (
@@ -1228,7 +1240,7 @@ class Search {
       match.comment += UrlbarUtils.TITLE_TAGS_SEPARATOR + tags;
       // If we're not suggesting bookmarks, then this shouldn't display as one.
       match.style = this.hasBehavior("bookmark") ? "bookmark-tag" : "tag";
-    } else if (bookmarked) {
+    } else if (bookmarkDateMs) {
       match.style = "bookmark";
     }
 
@@ -1302,7 +1314,7 @@ class Search {
         conditions.push("+h.visit_count > 0");
       }
       if (this.hasBehavior("bookmark")) {
-        conditions.push("bookmarked");
+        conditions.push("bookmarkDate");
       }
       if (this.hasBehavior("tag")) {
         conditions.push("tags NOTNULL");

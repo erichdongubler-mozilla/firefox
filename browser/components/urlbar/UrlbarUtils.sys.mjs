@@ -2661,6 +2661,9 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
           },
         },
       },
+      bookmarkDateMs: {
+        type: "number",
+      },
       frecency: {
         type: "number",
       },
@@ -2774,6 +2777,9 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
     required: ["url"],
     properties: {
       blockL10n: L10N_SCHEMA,
+      bookmarkDateMs: {
+        type: "number",
+      },
       bottomTextL10n: L10N_SCHEMA,
       description: {
         type: "string",
