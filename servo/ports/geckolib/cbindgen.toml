@@ -1341,6 +1341,9 @@ renaming_overrides_prefixing = true
 
  private:
   inline static StyleNumericType Empty();
+
+  // Keep in sync with NumericType::with_base_type() in Stylo.
+  // This is a manual C++ duplicate to avoid FFI calls.
   inline static StyleNumericType WithBaseType(StyleNumericBaseType aBaseType);
 
  public:

@@ -1533,14 +1533,24 @@ StyleTreeScoped<StyleAnchorNameIdent>::AsSpan() const {
 }
 
 inline StyleNumericType::StyleNumericType()
-    : exponents{}, percent_hint(StyleOptional<StyleNumericBaseType>::None()) {}
+    : exponents{},
+      percent_hint(StyleOptional<StyleNumericBaseType>::None()),
+      non_zero_count(0),
+      non_zero_except_percent_count(0) {}
 
 inline StyleNumericType StyleNumericType::Empty() { return StyleNumericType(); }
 
+// See declaration for synchronization requirements.
 inline StyleNumericType StyleNumericType::WithBaseType(
     StyleNumericBaseType aBaseType) {
   auto result = Empty();
   result.exponents[static_cast<size_t>(aBaseType)] = 1;
+  result.non_zero_count = 1;
+
+  if (aBaseType != StyleNumericBaseType::Percent) {
+    result.non_zero_except_percent_count = 1;
+  }
+
   return result;
 }
 
