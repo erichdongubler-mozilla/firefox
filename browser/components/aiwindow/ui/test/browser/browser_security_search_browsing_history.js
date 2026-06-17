@@ -119,7 +119,7 @@ function assertUiChannelCarriesThumbnailFavicon(conversation, expectedUrls) {
  */
 function assertModelHistoryPayloadSanitized(conversation) {
   const toolMessage = conversation
-    .getMessagesInOpenAiFormat()
+    .getMessagesInChatCompletionsFormat()
     .find(m => m.role === "tool" && m.name === SEARCH_BROWSING_HISTORY);
   Assert.ok(
     toolMessage,
