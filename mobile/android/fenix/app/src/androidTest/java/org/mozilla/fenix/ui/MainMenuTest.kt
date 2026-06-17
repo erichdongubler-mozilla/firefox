@@ -520,6 +520,11 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080131
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifyDesktopSiteModeOnOffIsEnabledTest"],
+        bug = 2048234,
+        since = "2026-06",
+    )
     @SmokeTest
     @Test
     fun verifyDesktopSiteModeOnOffIsEnabledTest() {
