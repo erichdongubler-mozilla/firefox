@@ -161,7 +161,7 @@ use style::values::specified::intersection_observer::IntersectionObserverMargin;
 use style::values::specified::position::PositionTryFallbacksItem;
 use style::values::specified::source_size_list::SourceSizeList;
 use style::values::specified::svg_path::PathCommand;
-use style::values::specified::{LengthUnit, NoCalcLength};
+use style::values::specified::{LengthUnit, NoCalcLength, NoCalcNumber};
 use style::values::{specified, AtomIdent, CustomIdent, KeyframesName};
 use style_traits::{CssWriter, ParseError, ParsingMode, SpecifiedValueInfo, ToCss};
 use thin_vec::ThinVec as nsTArray;
@@ -11519,6 +11519,10 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
         Leaf::Length(l) => {
             let result = l.to_computed_value(&context);
             Leaf::Length(NoCalcLength::from_computed_value(&result))
+        },
+        Leaf::TreeCountingFunction(t) => {
+            let result = t.to_computed_value(&context) as f32;
+            Leaf::Number(NoCalcNumber::from_computed_value(&result))
         },
         ref l => l.clone(),
     });
