@@ -461,7 +461,7 @@ def push_to_lando_try(
         raise ValueError(f"Try push via Lando is not supported for `{vcs.name}`.")
 
     # Load Auth0 config from `.lando.ini`.
-    lando_api = get_lando_api_config(vcs.path)
+    lando_api = get_lando_api_config(vcs)
 
     # Get the time when the push was initiated, not including Auth0 login time.
     push_start_time = time.perf_counter()
@@ -517,24 +517,33 @@ def push_to_lando_try(
     }
 
 
-def get_lando_instance_id(vcs_path: str, section_name: str | None = None) -> str:
+def get_lando_instance_id(
+    vcs: SupportedVcsRepository, section_name: str | None = None
+) -> str:
     """Return the lando instance ID from the given config section, with default."""
-    lando_api = get_lando_api_config(vcs_path, section_name)
+    lando_api = get_lando_api_config(vcs, section_name)
     return lando_api.instance_id
 
 
-def get_lando_api_config(vcs_path: str, section_name: str | None = None) -> LandoAPI:
+def get_lando_api_config(
+    vcs: SupportedVcsRepository, section_name: str | None = None
+) -> LandoAPI:
     """Initialise a LandoAPI object from the .lando.ini for the given section_name"""
-    lando_ini_path = Path(vcs_path) / ".lando.ini"
-    section_name = section_name or get_lando_config_section_name()
+    lando_ini_path = Path(vcs.path) / ".lando.ini"
+    section_name = section_name or get_lando_config_section_name(vcs)
 
     return LandoAPI.from_lando_config_file(lando_ini_path, section_name)
 
 
-def get_lando_config_section_name() -> str:
+def get_lando_config_section_name(vcs: SupportedVcsRepository) -> str:
     """Determine which lando config section to use.
 
     This is based on defaults and overrides such as the LANDO_TRY_CONFIG env variable.
+
+    The new Lando does not support pushing to try from a Mercurial checkout, so
+    Mercurial repos default to the old `lando-prod` instance.
     """
-    default_lando_config_section = "lando-prod-new"
-    return os.getenv("LANDO_TRY_CONFIG", default_lando_config_section)
+    if "LANDO_TRY_CONFIG" in os.environ:
+        return os.environ["LANDO_TRY_CONFIG"]
+
+    return "lando-prod" if vcs.name == "hg" else "lando-prod-new"
