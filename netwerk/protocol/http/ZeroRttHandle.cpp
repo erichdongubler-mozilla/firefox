@@ -248,10 +248,10 @@ nsresult ZeroRttHandle::Finish0RTT(HappyEyeballsTransaction* aCaller,
       base = conn->HttpConnection();
     }
     Cleanup();
+
+    aCaller->Close(NS_ERROR_ABORT);
     if (base) {
       base->Close(NS_ERROR_ABORT);
-    } else {
-      aCaller->Close(NS_ERROR_ABORT);
     }
     return NS_OK;
   }

@@ -350,3 +350,97 @@ add_task(
     }
   }
 );
+
+add_task(
+  {
+    skip_if: () =>
+      AppConstants.MOZ_SYSTEM_NSS ||
+      !gServerStarted ||
+      mozinfo.os == "android" ||
+      mozinfo.socketprocess_networking,
+  },
+  async function test_he_0rtt_h1_reject_txn_gone_no_assert() {
+    // Regression test for bug 2047480: an H1 0-RTT request whose real
+    // transaction is gone by the time 0-RTT finishes (early data rejected)
+    // must fail cleanly.
+
+    const host = "0rtt-reject-h1.example.com";
+    const TLS_PORT = 8443;
+    const url = `https://${host}:${TLS_PORT}/`;
+
+    let nss = Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
+    await nss.asyncClearSSLExternalAndInternalSessionCache();
+
+    override.clearOverrides();
+    override.addIPOverride(host, "127.0.0.1");
+    Services.prefs.setBoolPref("network.dns.disableIPv6", true);
+
+    try {
+      // Warm-up: full H1 handshake, PSK ticket written to SSLTokensCache.
+      const wu = fetchNoThrow(url);
+      const wuResult = await wu.promise;
+      Assert.ok(wuResult.ok, "H1 warm-up must succeed");
+
+      // Let NSS persist the ticket, then drop the connection so the next
+      // request opens a fresh one and attempts 0-RTT.
+      // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+      await new Promise(r => setTimeout(r, 500));
+      Services.obs.notifyObservers(null, "net:cancel-all-connections");
+      // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+      await new Promise(r => setTimeout(r, 200));
+
+      // Force the real transaction to be gone when 0-RTT finishes.
+      Services.prefs.setBoolPref(
+        "network.http.0rtt_force_txn_gone_for_testing",
+        true
+      );
+
+      const TIMEOUT_MS = 10000;
+      let timedOut = false;
+      const f = fetchNoThrow(url);
+      const result = await Promise.race([
+        f.promise,
+        new Promise(r =>
+          // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+          setTimeout(() => {
+            timedOut = true;
+            r(null);
+          }, TIMEOUT_MS)
+        ),
+      ]);
+
+      Services.prefs.clearUserPref(
+        "network.http.0rtt_force_txn_gone_for_testing"
+      );
+
+      Assert.ok(!timedOut, "request must complete (no hang / no crash)");
+      if (timedOut) {
+        try {
+          f.chan.cancel(Cr.NS_ERROR_ABORT);
+        } catch (_) {}
+        await f.promise;
+      } else {
+        Assert.ok(!result.ok, "request should fail when the real txn is gone");
+      }
+
+      // Recovery: the networking stack must still work.
+      Services.obs.notifyObservers(null, "net:cancel-all-connections");
+      // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+      await new Promise(r => setTimeout(r, 200));
+
+      const r3 = fetchNoThrow(url);
+      const r3Result = await r3.promise;
+      Assert.ok(r3Result.ok, "recovery request should succeed");
+      Assert.equal(r3Result.status, 200, "recovery request should return 200");
+    } finally {
+      Services.prefs.clearUserPref(
+        "network.http.0rtt_force_txn_gone_for_testing"
+      );
+      Services.prefs.clearUserPref("network.dns.disableIPv6");
+      Services.obs.notifyObservers(null, "net:cancel-all-connections");
+      // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+      await new Promise(r => setTimeout(r, 200));
+      override.clearOverrides();
+    }
+  }
+);
