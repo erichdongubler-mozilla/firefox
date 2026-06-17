@@ -2961,7 +2961,7 @@ nsresult nsStandardURL::SetRef(const nsACString& input) {
     mRef.mLen = 0;
   }
 
-  // If precent encoding is necessary, `ref` will point to `buf`'s content.
+  // If percent encoding is necessary, `ref` will point to `buf`'s content.
   // `buf` needs to outlive any use of the `ref` pointer.
   nsAutoCString buf;
   // encode ref if necessary
