@@ -19,8 +19,14 @@
       "chrome://browser/content/aiwindow/components/ai-action-result.mjs": [
         "../../../browser/components/aiwindow/ui/components/ai-action-result/ai-action-result.mjs"
       ],
+      "chrome://browser/content/aiwindow/components/ai-chat-card.mjs": [
+        "../../../browser/components/aiwindow/ui/components/ai-chat-card/ai-chat-card.mjs"
+      ],
       "chrome://browser/content/aiwindow/components/ai-chat-content.mjs": [
         "../../../browser/components/aiwindow/ui/components/ai-chat-content/ai-chat-content.mjs"
+      ],
+      "chrome://browser/content/aiwindow/components/ai-chat-grid.mjs": [
+        "../../../browser/components/aiwindow/ui/components/ai-chat-grid/ai-chat-grid.mjs"
       ],
       "chrome://browser/content/aiwindow/components/ai-chat-message.mjs": [
         "../../../browser/components/aiwindow/ui/components/ai-chat-message/ai-chat-message.mjs"
@@ -78,6 +84,9 @@
       ],
       "chrome://browser/content/aiwindow/components/smartwindow-prompts.mjs": [
         "../../../browser/components/aiwindow/ui/components/smartwindow-prompts/smartwindow-prompts.mjs"
+      ],
+      "chrome://browser/content/aiwindow/components/smartwindow-smartbar-glow.mjs": [
+        "../../../browser/components/aiwindow/ui/components/smartwindow-smartbar-glow/smartwindow-smartbar-glow.mjs"
       ],
       "chrome://browser/content/aiwindow/components/website-chip-container.mjs": [
         "../../../browser/components/aiwindow/ui/components/website-chip-container/website-chip-container.mjs"
@@ -210,6 +219,9 @@
       ],
       "chrome://browser/content/nsContextMenu.sys.mjs": [
         "../../../browser/base/content/nsContextMenu.sys.mjs"
+      ],
+      "chrome://browser/content/passwordmgr/login-doorhanger-username-field.mjs": [
+        "../../../browser/components/passwordmgr/content/login-doorhanger-username-field.mjs"
       ],
       "chrome://browser/content/preferences/OnDeviceModelManager.mjs": [
         "../../../browser/components/preferences/OnDeviceModelManager.mjs"
@@ -1213,6 +1225,9 @@
       "chrome://remote/content/webdriver-bidi/modules/root/log.sys.mjs": [
         "../../../remote/webdriver-bidi/modules/root/log.sys.mjs"
       ],
+      "chrome://remote/content/webdriver-bidi/modules/root/moz/debugging.sys.mjs": [
+        "../../../remote/webdriver-bidi/modules/root/moz/debugging.sys.mjs"
+      ],
       "chrome://remote/content/webdriver-bidi/modules/root/network.sys.mjs": [
         "../../../remote/webdriver-bidi/modules/root/network.sys.mjs"
       ],
@@ -1240,6 +1255,9 @@
       "chrome://remote/content/webdriver-bidi/modules/windowglobal-in-root/log.sys.mjs": [
         "../../../remote/webdriver-bidi/modules/windowglobal-in-root/log.sys.mjs"
       ],
+      "chrome://remote/content/webdriver-bidi/modules/windowglobal-in-root/moz/debugging.sys.mjs": [
+        "../../../remote/webdriver-bidi/modules/windowglobal-in-root/moz/debugging.sys.mjs"
+      ],
       "chrome://remote/content/webdriver-bidi/modules/windowglobal-in-root/network.sys.mjs": [
         "../../../remote/webdriver-bidi/modules/windowglobal-in-root/network.sys.mjs"
       ],
@@ -1260,6 +1278,9 @@
       ],
       "chrome://remote/content/webdriver-bidi/modules/windowglobal/log.sys.mjs": [
         "../../../remote/webdriver-bidi/modules/windowglobal/log.sys.mjs"
+      ],
+      "chrome://remote/content/webdriver-bidi/modules/windowglobal/moz/debugging.sys.mjs": [
+        "../../../remote/webdriver-bidi/modules/windowglobal/moz/debugging.sys.mjs"
       ],
       "chrome://remote/content/webdriver-bidi/modules/windowglobal/network.sys.mjs": [
         "../../../remote/webdriver-bidi/modules/windowglobal/network.sys.mjs"
@@ -2431,6 +2452,9 @@
       "resource://devtools/client/dom/panel.js": [
         "../../../devtools/client/dom/panel.js"
       ],
+      "resource://devtools/client/framework/LocalModeMappings.sys.mjs": [
+        "../../../devtools/client/framework/LocalModeMappings.sys.mjs"
+      ],
       "resource://devtools/client/framework/actions/dom-mutation-breakpoints.js": [
         "../../../devtools/client/framework/actions/dom-mutation-breakpoints.js"
       ],
@@ -3102,6 +3126,9 @@
       ],
       "resource://devtools/client/jsonview/components/HeadersToolbar.mjs": [
         "../../../devtools/client/jsonview/components/HeadersToolbar.mjs"
+      ],
+      "resource://devtools/client/jsonview/components/JsonBreadcrumb.mjs": [
+        "../../../devtools/client/jsonview/components/JsonBreadcrumb.mjs"
       ],
       "resource://devtools/client/jsonview/components/JsonPanel.mjs": [
         "../../../devtools/client/jsonview/components/JsonPanel.mjs"
@@ -5260,6 +5287,9 @@
       "resource://devtools/shared/network-observer/NetworkHelper.sys.mjs": [
         "../../../devtools/shared/network-observer/NetworkHelper.sys.mjs"
       ],
+      "resource://devtools/shared/network-observer/NetworkLocalMode.sys.mjs": [
+        "../../../devtools/shared/network-observer/NetworkLocalMode.sys.mjs"
+      ],
       "resource://devtools/shared/network-observer/NetworkObserver.sys.mjs": [
         "../../../devtools/shared/network-observer/NetworkObserver.sys.mjs"
       ],
@@ -5910,6 +5940,9 @@
       ],
       "resource://gre/modules/ExtensionDNRStore.sys.mjs": [
         "../../../toolkit/components/extensions/ExtensionDNRStore.sys.mjs"
+      ],
+      "resource://gre/modules/ExtensionDocumentId.sys.mjs": [
+        "../../../toolkit/components/extensions/ExtensionDocumentId.sys.mjs"
       ],
       "resource://gre/modules/ExtensionMenus.sys.mjs": [
         "../../../toolkit/components/extensions/ExtensionMenus.sys.mjs"
