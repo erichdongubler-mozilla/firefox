@@ -95,6 +95,10 @@ class TransportLayerDtls final : public TransportLayer {
   // while the layer is in TS_OPEN; must be called on the STS thread.
   nsTArray<nsTArray<uint8_t>> GetPeerCertChainDer() const;
 
+  // Returns the DER-encoded local certificate, or an empty array if no
+  // identity has been set. Must be called on the STS thread.
+  nsTArray<uint8_t> GetLocalCertDer() const;
+
   nsresult SetSrtpCiphers(const std::vector<uint16_t>& ciphers);
   nsresult GetSrtpCipher(uint16_t* cipher) const;
   static std::vector<uint16_t> GetDefaultSrtpCiphers();
