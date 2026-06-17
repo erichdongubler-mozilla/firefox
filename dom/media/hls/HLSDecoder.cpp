@@ -109,7 +109,7 @@ class GeckoHttpChannelListener final : public GeckoViewStreamListener {
 
   void SendWebResponse(java::WebResponse::Param aResponse) override {
     MOZ_ASSERT(mResult);
-    HLS_DEBUG("GeckoHttpChannelListener", "Status code=%" PRIi32,
+    HLS_DEBUG("GeckoHttpChannelListener", "Status code={}",
               aResponse->StatusCode());
     mResult->Complete(aResponse);
     mResult = nullptr;
@@ -117,7 +117,7 @@ class GeckoHttpChannelListener final : public GeckoViewStreamListener {
 
   void CompleteWithError(nsresult aStatus, nsIChannel* aChannel) override {
     MOZ_ASSERT(mResult);
-    HLS_DEBUG("GeckoHttpChannelListener", "error=%s", format_as(aStatus).get());
+    HLS_DEBUG("GeckoHttpChannelListener", "error={}", aStatus);
     widget::WebExecutorSupport::CompleteWithError(mResult, aStatus, aChannel);
     mResult = nullptr;
   }
@@ -246,12 +246,12 @@ void HLSResourceCallbacksSupport::DoOpenChannel(
       java::WebMessage::LocalRef(aRequest.Cast<java::WebMessage>());
   const nsCString uriStr = requestBase->Uri()->ToCString();
 
-  HLS_DEBUG("HLSResourceCallbacksSupport", "URI=%s", uriStr.get());
+  HLS_DEBUG("HLSResourceCallbacksSupport", "URI={}", uriStr.get());
   nsCOMPtr<nsIURI> uri;
   nsresult rv = NS_NewURI(getter_AddRefs(uri), uriStr);
   if (NS_FAILED(rv)) {
     HLS_DEBUG("HLSResourceCallbacksSupport",
-              "FAIL: cannot create URI, error=%s", format_as(rv).get());
+              "FAIL: cannot create URI, error={}", rv);
     widget::WebExecutorSupport::CompleteWithError(aResult, rv);
     return;
   }
@@ -275,7 +275,7 @@ void HLSResourceCallbacksSupport::DoOpenChannel(
                                             secFlags, contentType);
   if (NS_FAILED(rv)) {
     HLS_DEBUG("HLSResourceCallbacksSupport",
-              "FAIL: cannot create channel, error=%s", format_as(rv).get());
+              "FAIL: cannot create channel, error={}", rv);
     widget::WebExecutorSupport::CompleteWithError(aResult, rv);
     return;
   }
@@ -292,8 +292,8 @@ void HLSResourceCallbacksSupport::DoOpenChannel(
       rv = httpChannel->SetRequestHeader(name, value, false);
       if (NS_FAILED(rv)) {
         HLS_DEBUG("HLSResourceCallbacksSupport",
-                  "WARN: cannot set header '%s: %s', error=%s", name.get(),
-                  value.get(), format_as(rv).get());
+                  "WARN: cannot set header '{}: {}', error={}", name.get(),
+                  value.get(), rv);
       }
     }
   }
@@ -305,8 +305,7 @@ void HLSResourceCallbacksSupport::DoOpenChannel(
   newChannel->SetNotificationCallbacks(listener);
   rv = newChannel->AsyncOpen(listener);
   if (NS_FAILED(rv)) {
-    HLS_DEBUG("HLSResourceCallbacksSupport", "FAIL: cannot open, error=%s",
-              format_as(rv).get());
+    HLS_DEBUG("HLSResourceCallbacksSupport", "FAIL: cannot open, error={}", rv);
     widget::WebExecutorSupport::CompleteWithError(aResult, rv, newChannel);
   }
 }
