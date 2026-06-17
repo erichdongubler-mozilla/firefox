@@ -12,8 +12,7 @@ https://hg.mozilla.org/mozilla-central/rev/0f763c186855
 diff --git a/sandbox/win/src/filesystem_interception.cc b/sandbox/win/src/filesystem_interception.cc
 --- a/sandbox/win/src/filesystem_interception.cc
 +++ b/sandbox/win/src/filesystem_interception.cc
-@@ -10,16 +10,17 @@
- #include "sandbox/win/src/filesystem_policy.h"
+@@ -12,16 +12,17 @@
  #include "sandbox/win/src/ipc_tags.h"
  #include "sandbox/win/src/policy_params.h"
  #include "sandbox/win/src/policy_target.h"
@@ -21,6 +20,7 @@ diff --git a/sandbox/win/src/filesystem_interception.cc b/sandbox/win/src/filesy
  #include "sandbox/win/src/sandbox_nt_util.h"
  #include "sandbox/win/src/sharedmem_ipc_client.h"
  #include "sandbox/win/src/target_services.h"
+ #include "sandbox/win/src/win_utils.h"
 +#include "mozilla/sandboxing/sandboxLogging.h"
  
  // This status occurs when trying to access a network share on the machine from
@@ -29,8 +29,8 @@ diff --git a/sandbox/win/src/filesystem_interception.cc b/sandbox/win/src/filesy
  
  namespace sandbox {
  
- NTSTATUS WINAPI TargetNtCreateFile(NtCreateFileFunction orig_CreateFile,
-@@ -75,16 +76,20 @@ NTSTATUS WINAPI TargetNtCreateFile(NtCre
+ namespace {
+@@ -90,16 +91,20 @@ NTSTATUS WINAPI TargetNtCreateFile(NtCre
    NTSTATUS status = orig_CreateFile(
        file, desired_access, object_attributes, io_status, allocation_size,
        file_attributes, sharing, disposition, options, ea_buffer, ea_length);
@@ -51,7 +51,7 @@ diff --git a/sandbox/win/src/filesystem_interception.cc b/sandbox/win/src/filesy
    do {
      if (!ValidParameter(file, sizeof(HANDLE), WRITE)) {
        break;
-@@ -96,16 +101,19 @@ NTSTATUS WINAPI TargetNtCreateFile(NtCre
+@@ -149,16 +154,19 @@ NTSTATUS WINAPI TargetNtCreateFile(NtCre
  
      __try {
        *file = answer.handle;
@@ -71,7 +71,7 @@ diff --git a/sandbox/win/src/filesystem_interception.cc b/sandbox/win/src/filesy
  NTSTATUS WINAPI TargetNtOpenFile(NtOpenFileFunction orig_OpenFile,
                                   PHANDLE file,
                                   ACCESS_MASK desired_access,
-@@ -115,16 +123,20 @@ NTSTATUS WINAPI TargetNtOpenFile(NtOpenF
+@@ -168,16 +176,20 @@ NTSTATUS WINAPI TargetNtOpenFile(NtOpenF
                                   ULONG options) {
    // Check if the process can open it first.
    NTSTATUS status = orig_OpenFile(file, desired_access, object_attributes,
@@ -92,7 +92,7 @@ diff --git a/sandbox/win/src/filesystem_interception.cc b/sandbox/win/src/filesy
      if (!ValidParameter(file, sizeof(HANDLE), WRITE))
        break;
      if (!ValidParameter(io_status, sizeof(IO_STATUS_BLOCK), WRITE))
-@@ -171,31 +183,38 @@ NTSTATUS WINAPI TargetNtOpenFile(NtOpenF
+@@ -210,31 +222,38 @@ NTSTATUS WINAPI TargetNtOpenFile(NtOpenF
  
      __try {
        *file = answer.handle;
@@ -131,8 +131,8 @@ diff --git a/sandbox/win/src/filesystem_interception.cc b/sandbox/win/src/filesy
      if (!ValidParameter(file_attributes, sizeof(FILE_BASIC_INFORMATION), WRITE))
        break;
  
-@@ -227,32 +246,39 @@ TargetNtQueryAttributesFile(NtQueryAttri
-     ResultCode code = CrossCall(ipc, IpcTag::NTQUERYATTRIBUTESFILE, name.get(),
+@@ -258,32 +277,41 @@ TargetNtQueryAttributesFile(NtQueryAttri
+     ResultCode code = CrossCall(ipc, IpcTag::NTQUERYATTRIBUTESFILE, name,
                                  attributes, file_info, &answer);
  
      if (SBOX_ALL_OK != code)
@@ -140,9 +140,11 @@ diff --git a/sandbox/win/src/filesystem_interception.cc b/sandbox/win/src/filesy
  
      status = answer.nt_status;
  
-+    mozilla::sandboxing::LogAllowed("NtQueryAttributesFile",
-+                                    object_attributes->ObjectName->Buffer,
-+                                    object_attributes->ObjectName->Length);
++    if (NT_SUCCESS(answer.nt_status)) {
++      mozilla::sandboxing::LogAllowed("NtQueryAttributesFile",
++                                      object_attributes->ObjectName->Buffer,
++                                      object_attributes->ObjectName->Length);
++    }
    } while (false);
  
    return status;
@@ -171,19 +173,21 @@ diff --git a/sandbox/win/src/filesystem_interception.cc b/sandbox/win/src/filesy
      if (!ValidParameter(file_attributes, sizeof(FILE_NETWORK_OPEN_INFORMATION),
                          WRITE))
        break;
-@@ -284,16 +310,20 @@ NTSTATUS WINAPI TargetNtQueryFullAttribu
+@@ -307,16 +335,22 @@ NTSTATUS WINAPI TargetNtQueryFullAttribu
      CrossCallReturn answer = {0};
-     ResultCode code = CrossCall(ipc, IpcTag::NTQUERYFULLATTRIBUTESFILE,
-                                 name.get(), attributes, file_info, &answer);
+     ResultCode code = CrossCall(ipc, IpcTag::NTQUERYFULLATTRIBUTESFILE, name,
+                                 attributes, file_info, &answer);
  
      if (SBOX_ALL_OK != code)
        break;
  
      status = answer.nt_status;
 +
-+    mozilla::sandboxing::LogAllowed("NtQueryFullAttributesFile",
-+                                    object_attributes->ObjectName->Buffer,
-+                                    object_attributes->ObjectName->Length);
++    if (NT_SUCCESS(answer.nt_status)) {
++      mozilla::sandboxing::LogAllowed("NtQueryFullAttributesFile",
++                                      object_attributes->ObjectName->Buffer,
++                                      object_attributes->ObjectName->Length);
++    }
    } while (false);
  
    return status;
@@ -192,7 +196,7 @@ diff --git a/sandbox/win/src/filesystem_interception.cc b/sandbox/win/src/filesy
  NTSTATUS WINAPI
  TargetNtSetInformationFile(NtSetInformationFileFunction orig_SetInformationFile,
                             HANDLE file,
-@@ -302,16 +332,18 @@ TargetNtSetInformationFile(NtSetInformat
+@@ -325,16 +355,18 @@ TargetNtSetInformationFile(NtSetInformat
                             ULONG length,
                             FILE_INFORMATION_CLASS file_info_class) {
    // Check if the process can open it first.
@@ -211,7 +215,7 @@ diff --git a/sandbox/win/src/filesystem_interception.cc b/sandbox/win/src/filesy
      void* memory = GetGlobalIPCMemory();
      if (!memory)
        break;
-@@ -366,14 +398,15 @@ TargetNtSetInformationFile(NtSetInformat
+@@ -375,14 +411,18 @@ TargetNtSetInformationFile(NtSetInformat
      ResultCode code =
          CrossCall(ipc, IpcTag::NTSETINFO_RENAME, file, io_status_buffer,
                    file_info_buffer, length, file_info_class, &answer);
@@ -220,7 +224,10 @@ diff --git a/sandbox/win/src/filesystem_interception.cc b/sandbox/win/src/filesy
        break;
  
      status = answer.nt_status;
-+    mozilla::sandboxing::LogAllowed("NtSetInformationFile");
++
++    if (NT_SUCCESS(answer.nt_status)) {
++      mozilla::sandboxing::LogAllowed("NtSetInformationFile");
++    }
    } while (false);
  
    return status;
@@ -231,6 +238,7 @@ diff --git a/sandbox/win/src/process_thread_interception.cc b/sandbox/win/src/pr
 --- a/sandbox/win/src/process_thread_interception.cc
 +++ b/sandbox/win/src/process_thread_interception.cc
 @@ -10,16 +10,17 @@
+ #include "sandbox/win/src/crosscall_client.h"
  #include "sandbox/win/src/ipc_tags.h"
  #include "sandbox/win/src/policy_params.h"
  #include "sandbox/win/src/policy_target.h"
@@ -238,7 +246,6 @@ diff --git a/sandbox/win/src/process_thread_interception.cc b/sandbox/win/src/pr
  #include "sandbox/win/src/sandbox_nt_util.h"
  #include "sandbox/win/src/sharedmem_ipc_client.h"
  #include "sandbox/win/src/target_services.h"
- #include "third_party/abseil-cpp/absl/types/optional.h"
 +#include "mozilla/sandboxing/sandboxLogging.h"
  
  namespace sandbox {
@@ -275,7 +282,7 @@ diff --git a/sandbox/win/src/process_thread_interception.cc b/sandbox/win/src/pr
      return status;
    }
  
-+    mozilla::sandboxing::LogAllowed("NtOpenProcessTokenEx");
++  mozilla::sandboxing::LogAllowed("NtOpenProcessTokenEx");
    return answer.nt_status;
  }
  
@@ -323,7 +330,7 @@ diff --git a/sandbox/win/src/process_thread_interception.cc b/sandbox/win/src/pr
 diff --git a/sandbox/win/src/signed_interception.cc b/sandbox/win/src/signed_interception.cc
 --- a/sandbox/win/src/signed_interception.cc
 +++ b/sandbox/win/src/signed_interception.cc
-@@ -10,16 +10,17 @@
+@@ -11,16 +11,17 @@
  #include "sandbox/win/src/crosscall_client.h"
  #include "sandbox/win/src/ipc_tags.h"
  #include "sandbox/win/src/policy_params.h"
@@ -341,7 +348,7 @@ diff --git a/sandbox/win/src/signed_interception.cc b/sandbox/win/src/signed_int
  // is enabled.
  NTSTATUS WINAPI
  TargetNtCreateSection(NtCreateSectionFunction orig_CreateSection,
-@@ -38,16 +39,18 @@ TargetNtCreateSection(NtCreateSectionFun
+@@ -42,16 +43,18 @@ TargetNtCreateSection(NtCreateSectionFun
        break;
      if (maximum_size)
        break;
@@ -360,7 +367,7 @@ diff --git a/sandbox/win/src/signed_interception.cc b/sandbox/win/src/signed_int
      // As mentioned at the top of the function, we need to use the stack here
      // because the heap may not be available.
      constexpr ULONG path_buffer_size =
-@@ -90,16 +93,17 @@ TargetNtCreateSection(NtCreateSectionFun
+@@ -93,16 +96,17 @@ TargetNtCreateSection(NtCreateSectionFun
      if (code != SBOX_ALL_OK)
        break;
  
