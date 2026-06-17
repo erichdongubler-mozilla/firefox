@@ -3437,7 +3437,7 @@ void Debugger::forEachOnStackDebuggerFrame(AbstractFramePtr frame,
 
 template <typename FrameFn>
 /* static */
-void Debugger::forEachOnStackOrSuspendedDebuggerFrame(
+void Debugger::forEachOnStackOrSuspendedGeneratorDebuggerFrame(
     JSContext* cx, AbstractFramePtr frame, const JS::AutoRequireNoGC& nogc,
     FrameFn fn) {
   Rooted<AbstractGeneratorObject*> genObj(
@@ -6773,7 +6773,7 @@ bool Debugger::CallData::adoptFrame() {
     if (!dbg->getFrame(cx, iter, &adoptedFrame)) {
       return false;
     }
-  } else if (frameObj->isSuspended()) {
+  } else if (frameObj->isSuspendedGeneratorFrame()) {
     Rooted<AbstractGeneratorObject*> gen(cx, &frameObj->unwrappedGenerator());
     if (!dbg->observesGlobal(&gen->global())) {
       JS_ReportErrorASCII(cx, "Debugger.Frame's global is not a debuggee");
@@ -7154,7 +7154,7 @@ void Debugger::suspendGeneratorDebuggerFrames(JSContext* cx,
         MOZ_ASSERT(p->value() == dbgFrame);
 #endif
 
-        dbgFrame->suspend(gcx);
+        dbgFrame->suspendGeneratorFrame(gcx);
       });
 }
 
@@ -7163,7 +7163,7 @@ void Debugger::terminateDebuggerFrames(JSContext* cx, AbstractFramePtr frame) {
   JS::GCContext* gcx = cx->gcContext();
 
   JS::AutoAssertNoGC nogc;
-  forEachOnStackOrSuspendedDebuggerFrame(
+  forEachOnStackOrSuspendedGeneratorDebuggerFrame(
       cx, frame, nogc, [&](Debugger* dbg, DebuggerFrame* dbgFrame) {
         Debugger::terminateDebuggerFrame(gcx, dbg, dbgFrame, frame);
       });

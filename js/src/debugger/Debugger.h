@@ -986,7 +986,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
                                           const JS::AutoRequireNoGC& nogc,
                                           FrameFn fn);
   template <typename FrameFn /* void (Debugger*, DebuggerFrame*) */>
-  static void forEachOnStackOrSuspendedDebuggerFrame(
+  static void forEachOnStackOrSuspendedGeneratorDebuggerFrame(
       JSContext* cx, AbstractFramePtr frame, const JS::AutoRequireNoGC& nogc,
       FrameFn fn);
 
