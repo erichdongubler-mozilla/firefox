@@ -22,6 +22,7 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -30,6 +31,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import androidx.core.net.toUri
 import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.espresso.Espresso.onView
@@ -56,6 +58,7 @@ import org.junit.Assert.fail
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.AppAndSystemHelper.registerAndCleanupIdlingResources
+import org.mozilla.fenix.helpers.Constants.LONG_CLICK_DURATION
 import org.mozilla.fenix.helpers.Constants.RETRY_COUNT
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
@@ -1139,9 +1142,24 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     fun longClickToolbar() {
-        Log.i(TAG, "longClickToolbar: Trying to long click the toolbar")
-        onView(withId(toolbarR.id.mozac_browser_toolbar_url_view)).perform(longClick())
-        Log.i(TAG, "longClickToolbar: Long clicked the toolbar")
+        Log.i(TAG, "longClickToolbar: Waiting for compose rule to be idle")
+        composeTestRule.waitForIdle()
+        Log.i(TAG, "longClickToolbar: Waited for compose rule to be idle")
+
+        Log.i(TAG, "longClickToolbar: Trying to long click the navigation toolbar")
+        composeTestRule.onAllNodesWithTag(ADDRESSBAR_URL_BOX, useUnmergedTree = true)
+            .onLast()
+            .assertExists()
+            .performTouchInput {
+                longClick()
+            }
+        Log.i(TAG, "longClickToolbar: Long clicked the navigation toolbar")
+    }
+
+    fun clickDisplayModeToolbarContextMenuItem(contextMenuItemDescription: String) {
+        Log.i(TAG, "clickDisplayModeToolbarContextMenuItem: Trying to click context menu item: $contextMenuItemDescription")
+        composeTestRule.onNodeWithContentDescription(contextMenuItemDescription).performClick()
+        Log.i(TAG, "clickDisplayModeToolbarContextMenuItem: Clicked context menu item: $contextMenuItemDescription")
     }
 
     fun verifyDownloadPromptIsDismissed() =

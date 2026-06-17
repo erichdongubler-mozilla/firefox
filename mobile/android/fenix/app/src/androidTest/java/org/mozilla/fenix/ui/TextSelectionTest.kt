@@ -311,7 +311,6 @@ class TextSelectionTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/414316
-    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
     @Test
     fun urlBarQuickActionsTest() {
         val firstWebsite = mockWebServer.getGenericAsset(1)
@@ -320,12 +319,12 @@ class TextSelectionTest {
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(firstWebsite.url) {
             longClickToolbar()
-            clickContextMenuItem("Copy")
+            clickDisplayModeToolbarContextMenuItem("Copy")
         }
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(secondWebsite.url) {
             longClickToolbar()
-            clickContextMenuItem("Paste")
+            clickDisplayModeToolbarContextMenuItem("Paste")
         }
         searchScreen(composeTestRule) {
             verifyTypedToolbarText(firstWebsite.url.toString(), exists = true)
@@ -334,7 +333,7 @@ class TextSelectionTest {
         browserScreen(composeTestRule) {
             verifyUrl(secondWebsite.url.toString())
             longClickToolbar()
-            clickContextMenuItem("Paste & Go")
+            clickDisplayModeToolbarContextMenuItem("Paste & Go")
             verifyUrl(firstWebsite.url.toString())
         }
     }
