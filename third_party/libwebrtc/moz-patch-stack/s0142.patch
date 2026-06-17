@@ -8,14 +8,14 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b4df73705cf0855de
  1 file changed, 1 insertion(+)
 
 diff --git a/.gn b/.gn
-index 87e2c7af7b..0eca4684f3 100644
+index 87e2c7af7b..556b621e01 100644
 --- a/.gn
 +++ b/.gn
 @@ -92,6 +92,7 @@ default_args = {
    enable_rust = false # Mozilla
    enable_rust_cxx = true
    enable_chromium_prelude = true
-+  enable_rtc_rust = false
++  rtc_rust = false
  
    # See context on https://issues.chromium.org/issues/415076048.
    enable_js_protobuf = false
