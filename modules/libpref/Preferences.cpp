@@ -624,10 +624,6 @@ class Pref;
 static bool IsPreferenceSanitized(const Pref* const aPref);
 static bool ShouldSanitizePreference(const Pref* const aPref);
 
-// Note that this never changes in the parent process, and is only read in
-// content processes.
-static bool gContentProcessPrefsAreInited = false;
-
 class Pref {
  public:
   explicit Pref(const nsACString& aName)
@@ -1534,9 +1530,11 @@ class PreferencesImpl {
   // We wait a bit after prefs are dirty before writing them. In this period,
   // mDirty and mSavePending will both be true.
   bool mSavePending = false;
+  int32_t mAllowOMTPrefWrite = -1;
 
   nsCOMPtr<nsIPrefBranch> mRootBranch;
   nsCOMPtr<nsIPrefBranch> mDefaultRootBranch;
+
 
   nsresult NotifyServiceObservers(const char* aSubject);
   // Loads the prefs.js file from the profile, or creates a new one. Returns
@@ -1631,6 +1629,13 @@ class PreferencesImpl {
 static StaticRefPtr<PreferencesImpl> sPImpl;
 
 }  // namespace mozilla
+
+// These must be accessible before sPImpl is created (child process early init).
+// Note that this never changes in the parent process, and is only read in
+// content processes.
+static bool gContentProcessPrefsAreInited = false;
+// A list of changed prefs sent from the parent via shared memory.
+static mozilla::StaticAutoPtr<nsTArray<mozilla::dom::Pref>> gChangedDomPrefs;
 
 using PrefsHashTable = HashSet<UniquePtr<Pref>, PrefHasher>;
 
@@ -1948,7 +1953,8 @@ static PrefSaveData pref_savePrefs(const nsIPrefOverrideMap* aPrefOverrideMap) {
 static Pref* pref_HashTableLookup(const char* aPrefName) {
   MOZ_ASSERT(NS_IsMainThread() || ServoStyleSet::IsInServoTraversal());
 
-  MOZ_ASSERT_IF(!XRE_IsParentProcess(), gContentProcessPrefsAreInited);
+  MOZ_ASSERT_IF(!XRE_IsParentProcess(),
+                Preferences::ArePrefsInitedInContentProcess());
 
   // We use readonlyThreadsafeLookup() because we often have concurrent lookups
   // from multiple Stylo threads. This is safe because those threads cannot
@@ -3532,9 +3538,6 @@ static nsresult parsePrefData(const nsCString& aData, PrefValueKind aKind);
 StaticRefPtr<Preferences> Preferences::sPreferences;
 bool Preferences::sShutdown = false;
 
-// This globally enables or disables OMT pref writing, both sync and async.
-static int32_t sAllowOMTPrefWrite = -1;
-
 // Write the preference data to a file.
 class PreferencesWriter final {
  public:
@@ -3933,9 +3936,6 @@ class AddPreferencesMemoryReporterRunnable : public Runnable {
 };
 
 }  // namespace
-
-// A list of changed prefs sent from the parent via shared memory.
-static StaticAutoPtr<nsTArray<dom::Pref>> gChangedDomPrefs;
 
 static const char kTelemetryPref[] = "toolkit.telemetry.enabled";
 #if !(defined(MOZ_WIDGET_ANDROID) && defined(MOZ_TELEMETRY_ON_BY_DEFAULT))
@@ -4545,13 +4545,13 @@ nsresult PreferencesImpl::ResetUserPrefs() {
 bool Preferences::AllowOffMainThreadSave() {
   // Put in a preference that allows us to disable off main thread preference
   // file save.
-  if (sAllowOMTPrefWrite < 0) {
+  if (sPImpl->mAllowOMTPrefWrite < 0) {
     bool value = false;
     Preferences::GetBool("preferences.allow.omt-write", &value);
-    sAllowOMTPrefWrite = value ? 1 : 0;
+    sPImpl->mAllowOMTPrefWrite = value ? 1 : 0;
   }
 
-  return !!sAllowOMTPrefWrite;
+  return !!sPImpl->mAllowOMTPrefWrite;
 }
 
 nsresult Preferences::SavePrefFileBlocking() {
