@@ -29,7 +29,6 @@ import org.mozilla.fenix.ext.isIntentInternal
 import org.mozilla.fenix.perf.MarkersActivityLifecycleCallbacks
 import org.mozilla.fenix.perf.StartupTimeline
 import org.mozilla.fenix.shortcut.NewTabShortcutIntentProcessor
-import org.mozilla.fenix.shortcut.UninstallShortcutIntentProcessor
 
 /**
  * Processes incoming intents and sends them to the corresponding activity.
@@ -153,8 +152,7 @@ class IntentReceiverActivity : Activity() {
             components.intentProcessors.webNotificationsIntentProcessor +
             components.intentProcessors.passwordManagerIntentProcessor +
             modeDependentProcessors +
-            NewTabShortcutIntentProcessor() +
-            UninstallShortcutIntentProcessor()
+            NewTabShortcutIntentProcessor()
     }
 
     private fun addReferrerInformation(intent: Intent) {
