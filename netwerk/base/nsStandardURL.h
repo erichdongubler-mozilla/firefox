@@ -17,6 +17,7 @@
 #include "nsURLHelper.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/LinkedList.h"
+#include "URIHasher.h"
 #include "nsISensitiveInfoHiddenURI.h"
 #include "nsIURIMutator.h"
 #include "nsIURIWithSizeOf.h"
@@ -113,7 +114,8 @@ class nsStandardURL : public nsIFileURL,
                       public nsISerializable,
                       public nsISensitiveInfoHiddenURI,
                       public nsIIPCSerializableURI,
-                      public nsIURIWithSizeOf
+                      public nsIURIWithSizeOf,
+                      public URIHasher
 #ifdef DEBUG_DUMP_URLS_AT_SHUTDOWN
     ,
                       public LinkedListElement<nsStandardURL>

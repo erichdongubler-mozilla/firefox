@@ -78,6 +78,10 @@ NS_IMETHODIMP DefaultURI::GetSpec(nsACString& aSpec) {
   return NS_OK;
 }
 
+uint32_t DefaultURI::SpecHash() {
+  return CachedSpecHash(mURL->Spec());
+}
+
 NS_IMETHODIMP DefaultURI::GetPrePath(nsACString& aPrePath) {
   aPrePath = mURL->PrePath();
   return NS_OK;

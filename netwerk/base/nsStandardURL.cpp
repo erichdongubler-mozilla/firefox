@@ -382,6 +382,7 @@ void nsStandardURL::ShutdownGlobalObjects() {
 
 void nsStandardURL::Clear() {
   mSpec.Truncate();
+  ResetSpecHash();
 
   mPort = -1;
 
@@ -787,6 +788,7 @@ nsresult nsStandardURL::BuildNormalizedSpec(const char* spec,
     CoalescePath(buf + mDirectory.mPos);
   }
   mSpec.Truncate(strlen(buf));
+  ResetSpecHash();
   NS_ASSERTION(mSpec.Length() <= approxLen,
                "We've overflowed the mSpec buffer!");
   MOZ_ASSERT(mSpec.Length() <= StaticPrefs::network_standard_url_max_length(),
@@ -1165,6 +1167,8 @@ nsStandardURL::GetSpec(nsACString& result) {
   result = mSpec;
   return NS_OK;
 }
+
+uint32_t nsStandardURL::SpecHash() { return CachedSpecHash(mSpec); }
 
 // result may contain unescaped UTF-8 characters
 NS_IMETHODIMP
@@ -3678,6 +3682,7 @@ bool nsStandardURL::Deserialize(const URIParams& aParams) {
   mPort = params.port();
   mDefaultPort = params.defaultPort();
   mSpec = params.spec();
+  ResetSpecHash();
   NS_ENSURE_TRUE(
       mSpec.Length() <= StaticPrefs::network_standard_url_max_length(), false);
   NS_ENSURE_TRUE(FromIPCSegment(mSpec, params.scheme(), mScheme), false);

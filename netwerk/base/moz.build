@@ -146,6 +146,7 @@ EXPORTS += [
     "nsURLHelper.h",
     "nsURLParsers.h",
     "SimpleChannel.h",
+    "URIHasher.h",
 ]
 
 EXPORTS.mozilla += [

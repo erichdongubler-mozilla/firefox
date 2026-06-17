@@ -14,6 +14,7 @@
 #include "nsIURIMutator.h"
 #include "nsIURIWithSizeOf.h"
 #include "nsISerializable.h"
+#include "URIHasher.h"
 
 #define NS_THIS_ICONURI_IMPLEMENTATION_CID    \
   {/* 0b9bb0c2-fee6-470b-b9b9-9fd9462b5e19 */ \
@@ -30,7 +31,8 @@ class nsMozIconURI final : public nsIMozIconURI,
                            public nsINestedURI,
                            public nsISerializable,
                            public nsIIPCSerializableURI,
-                           public nsIURIWithSizeOf {
+                           public nsIURIWithSizeOf,
+                           public mozilla::net::URIHasher {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIURI

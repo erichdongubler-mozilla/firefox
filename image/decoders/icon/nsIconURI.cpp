@@ -111,6 +111,12 @@ nsMozIconURI::GetSpec(nsACString& aSpec) {
   return NS_OK;
 }
 
+uint32_t nsMozIconURI::SpecHash() {
+  nsAutoCString spec;
+  (void)GetSpec(spec);
+  return CachedSpecHash(spec);
+}
+
 NS_IMETHODIMP
 nsMozIconURI::GetSpecIgnoringRef(nsACString& result) { return GetSpec(result); }
 

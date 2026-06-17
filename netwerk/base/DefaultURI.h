@@ -11,6 +11,7 @@
 #include "nsISerializable.h"
 #include "nsIURIMutator.h"
 #include "mozilla/net/MozURL.h"
+#include "URIHasher.h"
 
 namespace mozilla {
 namespace net {
@@ -18,7 +19,8 @@ namespace net {
 class DefaultURI : public nsIURI,
                    public nsISerializable,
                    public nsIIPCSerializableURI,
-                   public nsIURIWithSizeOf {
+                   public nsIURIWithSizeOf,
+                   public URIHasher {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIURI

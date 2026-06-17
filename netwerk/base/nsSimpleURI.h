@@ -13,6 +13,7 @@
 #include "nsIClassInfo.h"
 #include "nsIURIMutator.h"
 #include "nsISimpleURIMutator.h"
+#include "URIHasher.h"
 
 namespace mozilla {
 namespace net {
@@ -27,7 +28,8 @@ namespace net {
 class nsSimpleURI : public nsIURI,
                     public nsISerializable,
                     public nsIIPCSerializableURI,
-                    public nsIURIWithSizeOf {
+                    public nsIURIWithSizeOf,
+                    public URIHasher {
  protected:
   nsSimpleURI() = default;
   virtual ~nsSimpleURI() = default;
