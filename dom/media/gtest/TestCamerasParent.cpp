@@ -350,4 +350,21 @@ TEST_F(TestAggregateCapturerNoCapabilities, StartStream) {
                            NormalizedConstraints{},
                            dom::VideoResizeModeEnum::None);
 }
+
+TEST(TestVideoEngine, DeregistersInputFeedBackOnDestruction)
+{
+  Preferences::SetBool("media.getusermedia.camera.fake.force", true);
+
+  std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo> info;
+  {
+    RefPtr<VideoEngine> engine = VideoEngine::Create(
+        CaptureDeviceType::Camera, MakeRefPtr<VideoCaptureFactory>());
+    info = engine->GetOrCreateVideoCaptureDeviceInfo();
+    ASSERT_TRUE(info);
+  }
+
+  info->DeviceChange();
+
+  Preferences::ClearUser("media.getusermedia.camera.fake.force");
+}
 }  // namespace mozilla::camera
