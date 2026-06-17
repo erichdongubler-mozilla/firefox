@@ -1044,28 +1044,39 @@ TEST(H264, RejectsInvalidPicHeightMapUnitsRegardlessOfFlag)
   EXPECT_FALSE(H264::DecodeSPS(sps, spsdata));
 }
 
-TEST(H264, AcceptsBoundaryPicWidth)
+TEST(H264, CheckBoundaryPicWidth)
 {
-  // Tightest pic_width_in_mbs_minus1 input whose computed pic_width still
-  // fits in uint32_t. With frame_cropping_flag=false the helper writes,
-  // pic_width = pic_width_in_mbs * 16.
-  constexpr uint32_t kMaxMbs = std::numeric_limits<uint32_t>::max() / 16;
+  // Largest pic_width_in_mbs_minus1 whose computed pic_width still fits the
+  // supported size limit. The helper sets frame_cropping_flag=false, so
+  // DecodeSPS computes pic_width = pic_width_in_mbs * 16 with no crop.
+  constexpr uint32_t kMaxMbs = std::numeric_limits<int32_t>::max() / 16;
   SPSData spsdata;
   RefPtr<MediaByteBuffer> sps = BuildSPSWithRawWidthMBS(kMaxMbs - 1);
   EXPECT_TRUE(H264::DecodeSPS(sps, spsdata));
   EXPECT_EQ(spsdata.pic_width, kMaxMbs * 16);
+
+  // One macroblock past the boundary makes pic_width exceed the supported
+  // size limit (still a valid uint32_t), so DecodeSPS rejects it.
+  RefPtr<MediaByteBuffer> tooWide = BuildSPSWithRawWidthMBS(kMaxMbs);
+  EXPECT_FALSE(H264::DecodeSPS(tooWide, spsdata));
 }
 
-TEST(H264, AcceptsBoundaryPicHeight)
+TEST(H264, CheckBoundaryPicHeight)
 {
-  // Same tight boundary for the frame-coded path (frame_mbs_only_flag=true).
-  // Field-coded mode (flag=false) would have a tighter limit of
-  // UINT32_MAX/32 due to the *= 2 step; not exercised here.
-  constexpr uint32_t kMaxMbs = std::numeric_limits<uint32_t>::max() / 16;
+  // Same size limit for the frame-coded path
+  // (frame_mbs_only_flag=true): pic_height = pic_height_in_map_units * 16.
+  // Field-coded mode (flag=false) has a tighter limit because of the *= 2
+  // step; not exercised here.
+  constexpr uint32_t kMaxMbs = std::numeric_limits<int32_t>::max() / 16;
   SPSData spsdata;
   RefPtr<MediaByteBuffer> sps = BuildSPSWithRawFields(79, kMaxMbs - 1, true);
   EXPECT_TRUE(H264::DecodeSPS(sps, spsdata));
   EXPECT_EQ(spsdata.pic_height, kMaxMbs * 16);
+
+  // One map-unit past the boundary makes pic_height exceed the supported
+  // size limit (still a valid uint32_t), so DecodeSPS rejects it.
+  RefPtr<MediaByteBuffer> tooTall = BuildSPSWithRawFields(79, kMaxMbs, true);
+  EXPECT_FALSE(H264::DecodeSPS(tooTall, spsdata));
 }
 
 TEST(H265, HVCCParsingSuccess)

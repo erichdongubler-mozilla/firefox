@@ -520,12 +520,20 @@ class SPSNALIterator {
   return rbsp.forget();
 }
 
+// ConditionDimension and IsDimensionValid enforce a Firefox-internal
+// constraint, not an H.264 spec rule.
 static int32_t ConditionDimension(double aValue) {
   // This will exclude NaNs and too-big values.
   if (aValue > 1.0 && aValue <= double(INT32_MAX) / 2) {
     return int32_t(aValue);
   }
   return 0;
+}
+
+static bool IsDimensionValid(uint32_t aDimension) {
+  return aDimension <=
+         static_cast<uint32_t>(
+             std::numeric_limits<decltype(gfx::IntSize::width)>::max());
 }
 
 /* static */
@@ -706,6 +714,15 @@ bool H264::DecodeSPS(const mozilla::MediaByteBuffer* aSPS, SPSData& aDest) {
     aDest.display_width = aDest.pic_width;
     aDest.display_height = ConditionDimension(
         AssertedCast<double>(aDest.pic_height) / aDest.sample_ratio);
+  }
+
+  if (!IsDimensionValid(aDest.pic_width)) {
+    LOG("Aborting parsing, pic_width ({}) is out of range", aDest.pic_width);
+    return false;
+  }
+  if (!IsDimensionValid(aDest.pic_height)) {
+    LOG("Aborting parsing, pic_height ({}) is out of range", aDest.pic_height);
+    return false;
   }
 
   aDest.valid = true;
