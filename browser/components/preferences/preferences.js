@@ -244,12 +244,7 @@ const CONFIG_PANES = Object.freeze({
   },
   appearance: {
     l10nId: "preferences-appearance-header",
-    groupIds: [
-      "appearance",
-      "browserTheme",
-      "windowDensity",
-      "relatedSettings",
-    ],
+    groupIds: ["appearance", "browserTheme", "relatedSettings"],
     module: "chrome://browser/content/preferences/config/appearance.mjs",
     iconSrc: "chrome://global/skin/icons/eye.svg",
     visible: () => srdSectionPrefs.all,
