@@ -2747,25 +2747,6 @@ bool MPhi::markIteratorPhis(const PhiVector& iterators) {
   return true;
 }
 
-bool MPhi::typeIncludes(MDefinition* def) {
-  MOZ_ASSERT(!IsMagicType(def->type()));
-
-  if (def->type() == this->type()) {
-    return true;
-  }
-
-  // This phi must be able to be any value.
-  if (this->type() == MIRType::Value) {
-    return true;
-  }
-
-  if (def->type() == MIRType::Int32 && this->type() == MIRType::Double) {
-    return true;
-  }
-
-  return false;
-}
-
 void MCallBase::addArg(size_t argnum, MDefinition* arg) {
   // The operand vector is initialized in reverse order by WarpBuilder.
   // It cannot be checked for consistency until all arguments are added.

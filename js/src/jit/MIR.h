@@ -6008,9 +6008,6 @@ class MPhi final : public MDefinition,
   // the phi operand along the loop backedge.
   MDefinition* getLoopBackedgeOperand() const;
 
-  // Whether this phi's type already includes information for def.
-  bool typeIncludes(MDefinition* def);
-
   // Mark all phis in |iterators|, and the phis they flow into, as having
   // implicit uses.
   [[nodiscard]] static bool markIteratorPhis(const PhiVector& iterators);
