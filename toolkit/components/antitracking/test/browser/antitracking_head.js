@@ -9,6 +9,7 @@
 var gFeatures = undefined;
 var gTestTrackersCleanedUp = false;
 var gTestTrackersCleanupRegistered = false;
+let gPrivateWindow = null;
 
 this.AntiTracking = {
   runTestInNormalAndPrivateMode(
@@ -105,6 +106,10 @@ this.AntiTracking = {
       callbackNonTracking = options.callback;
       options.accessRemoval = null;
       options.callbackAfterRemoval = null;
+    }
+
+    if (runInPrivateWindow) {
+      this._openPrivateWindowTask();
     }
 
     // Here we want to test that a 3rd party context is simply blocked.
@@ -337,6 +342,10 @@ this.AntiTracking = {
         this._createCleanupTask(cleanupFunction);
       }
     }
+
+    if (runInPrivateWindow) {
+      this._closePrivateWindowTask();
+    }
   },
 
   _waitObserver(targetTopic, expectedCount) {
@@ -499,10 +508,16 @@ this.AntiTracking = {
         "callbackAfterRemoval must be passed when accessRemoval is non-null"
       );
 
+      let ownedPrivateWindow = false;
       let win = window;
       if (options.runInPrivateWindow) {
-        win = OpenBrowserWindow({ private: true });
-        await TestUtils.topicObserved("browser-delayed-startup-finished");
+        if (gPrivateWindow) {
+          win = gPrivateWindow;
+        } else {
+          win = OpenBrowserWindow({ private: true });
+          await TestUtils.topicObserved("browser-delayed-startup-finished");
+          ownedPrivateWindow = true;
+        }
       }
 
       await AntiTracking._setupTest(
@@ -937,7 +952,7 @@ this.AntiTracking = {
       info("Removing the tab");
       BrowserTestUtils.removeTab(tab);
 
-      if (options.runInPrivateWindow) {
+      if (ownedPrivateWindow) {
         win.close();
       }
     });
@@ -949,6 +964,29 @@ this.AntiTracking = {
       if (cleanupFunction) {
         await cleanupFunction();
       }
+
+      if (gPrivateWindow) {
+        await new Promise(resolve => {
+          Services.clearData.deleteDataFromOriginAttributesPattern(
+            { privateBrowsingId: 1 },
+            () => resolve()
+          );
+        });
+      }
+    });
+  },
+
+  _openPrivateWindowTask() {
+    add_task(async function () {
+      gPrivateWindow = OpenBrowserWindow({ private: true });
+      await TestUtils.topicObserved("browser-delayed-startup-finished");
+    });
+  },
+
+  _closePrivateWindowTask() {
+    add_task(async function () {
+      await BrowserTestUtils.closeWindow(gPrivateWindow);
+      gPrivateWindow = null;
     });
   },
 
@@ -970,10 +1008,16 @@ this.AntiTracking = {
         } test ${name}`
       );
 
+      let ownedPrivateWindow = false;
       let win = window;
       if (runInPrivateWindow) {
-        win = OpenBrowserWindow({ private: true });
-        await TestUtils.topicObserved("browser-delayed-startup-finished");
+        if (gPrivateWindow) {
+          win = gPrivateWindow;
+        } else {
+          win = OpenBrowserWindow({ private: true });
+          await TestUtils.topicObserved("browser-delayed-startup-finished");
+          ownedPrivateWindow = true;
+        }
       }
 
       // Enable SA heuristics for trackers because the test depends on it.
@@ -1079,7 +1123,7 @@ this.AntiTracking = {
       info("Removing the tab");
       BrowserTestUtils.removeTab(tab);
 
-      if (runInPrivateWindow) {
+      if (ownedPrivateWindow) {
         win.close();
       }
     });
@@ -1103,10 +1147,16 @@ this.AntiTracking = {
         } test ${name}`
       );
 
+      let ownedPrivateWindow = false;
       let win = window;
       if (runInPrivateWindow) {
-        win = OpenBrowserWindow({ private: true });
-        await TestUtils.topicObserved("browser-delayed-startup-finished");
+        if (gPrivateWindow) {
+          win = gPrivateWindow;
+        } else {
+          win = OpenBrowserWindow({ private: true });
+          await TestUtils.topicObserved("browser-delayed-startup-finished");
+          ownedPrivateWindow = true;
+        }
       }
 
       // Enable SA heuristics for trackers because the test depends on it.
@@ -1374,7 +1424,7 @@ this.AntiTracking = {
       info("Removing the tab");
       BrowserTestUtils.removeTab(tab);
 
-      if (runInPrivateWindow) {
+      if (ownedPrivateWindow) {
         win.close();
       }
     });
