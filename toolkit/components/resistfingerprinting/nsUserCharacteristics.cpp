@@ -941,7 +941,8 @@ void PopulateTextAntiAliasing() {
 // across platforms: 0 = disabled, 1 = grayscale (standard), 2 = subpixel. This
 // is distinct from text_anti_aliasing, which carries the smoothing *level* /
 // strength (Windows ClearType level, macOS AppleFontSmoothing). macOS has no
-// subpixel/grayscale type (grayscale-only since 10.14) and is not reported here.
+// subpixel/grayscale type (grayscale-only since 10.14) and is not reported
+// here.
 void PopulateFontSmoothingType() {
   int32_t type = -1;  // -1 = not applicable / undetermined on this platform
 
@@ -961,7 +962,8 @@ void PopulateFontSmoothingType() {
       type = 0;  // disabled
     } else {
       UINT smoothingType = 0;
-      if (SystemParametersInfo(SPI_GETFONTSMOOTHINGTYPE, 0, &smoothingType, 0) &&
+      if (SystemParametersInfo(SPI_GETFONTSMOOTHINGTYPE, 0, &smoothingType,
+                               0) &&
           smoothingType == FE_FONTSMOOTHINGCLEARTYPE) {
         type = 2;  // subpixel (ClearType)
       } else {
@@ -1003,8 +1005,8 @@ void PopulateFontSmoothingType() {
 void PopulateFontRenderingSettings() {
 #if defined(MOZ_WIDGET_GTK)
   nsAutoCString hinting;
-  if (mozilla::widget::GSettings::GetString(
-          "org.gnome.desktop.interface"_ns, "font-hinting"_ns, hinting) &&
+  if (mozilla::widget::GSettings::GetString("org.gnome.desktop.interface"_ns,
+                                            "font-hinting"_ns, hinting) &&
       !hinting.IsEmpty()) {
     glean::characteristics::font_hinting.Set(hinting);
   }
