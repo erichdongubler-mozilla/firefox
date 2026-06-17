@@ -397,7 +397,19 @@ nsresult nsSimpleURI::SetPathQueryRefInternal() {
   MOZ_ASSERT(mRefSep == kNotFound);
 
   // Initialize `mQuerySep` and `mRefSep` if those components are present.
-  int32_t pathEnd = mSpec.FindCharInSet("?#", PathStart());
+  // Two single-char FindChar scans are used instead of FindCharInSet("?#")
+  // because each is SIMD-accelerated, which outperforms the set lookup. See
+  // bug 2045537 for the discussion and profiling.
+  const int32_t queryPos = mSpec.FindChar('?', PathStart());
+  const int32_t refPos = mSpec.FindChar('#', PathStart());
+  int32_t pathEnd;
+  if (queryPos == kNotFound) {
+    pathEnd = refPos;
+  } else if (refPos == kNotFound) {
+    pathEnd = queryPos;
+  } else {
+    pathEnd = queryPos < refPos ? queryPos : refPos;
+  }
   if (pathEnd != kNotFound) {
     if (mSpec.CharAt(pathEnd) == '?') {
       mQuerySep = pathEnd;
