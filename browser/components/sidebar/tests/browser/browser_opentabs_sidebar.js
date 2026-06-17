@@ -318,3 +318,55 @@ add_task(async function test_multiple_windows_render_separate_cards() {
 
   SidebarController.hide();
 });
+
+add_task(async function test_nova_current_tab_marker() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.nova.enabled", true]],
+  });
+
+  const tabA = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:blank"
+  );
+  const tabB = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:blank"
+  );
+
+  const component = await showOpenTabsPanel();
+  const tabList = getTabList(component);
+  await waitForRowCount(tabList, getVisibleTabCount());
+
+  const rowFor = tab =>
+    [...tabList.rowEls].find(rowEl => rowEl.tabElement === tab);
+
+  Assert.ok(
+    rowFor(tabB).hasAttribute("current"),
+    "The currently-selected tab's row carries the [current] attribute."
+  );
+  Assert.ok(
+    !rowFor(tabA).hasAttribute("current"),
+    "A non-selected tab's row does not carry the [current] attribute."
+  );
+
+  gBrowser.selectedTab = tabA;
+  await BrowserTestUtils.waitForMutationCondition(
+    tabList.shadowRoot,
+    { subtree: true, attributes: true, attributeFilter: ["current"] },
+    () => rowFor(tabA)?.hasAttribute("current")
+  );
+
+  Assert.ok(
+    rowFor(tabA).hasAttribute("current"),
+    "Switching gBrowser.selectedTab moves the [current] attribute."
+  );
+  Assert.ok(
+    !rowFor(tabB).hasAttribute("current"),
+    "The previously-selected tab no longer has the [current] attribute."
+  );
+
+  BrowserTestUtils.removeTab(tabA);
+  BrowserTestUtils.removeTab(tabB);
+  SidebarController.hide();
+  await SpecialPowers.popPrefEnv();
+});
