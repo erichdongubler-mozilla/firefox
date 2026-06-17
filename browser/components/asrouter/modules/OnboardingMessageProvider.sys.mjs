@@ -3187,6 +3187,7 @@ const BASE_MESSAGES = () => [
           content: {
             position: "callout",
             width: "280px",
+            padding: "16px",
             logo: {
               imageURL:
                 "chrome://browser/content/asrouter/assets/hero-relay-email-masks.svg",
