@@ -40,7 +40,6 @@
 #include "mozilla/UseCounter.h"
 #include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/DOMException.h"
-#include "mozilla/dom/DeprecationReportBody.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/Exceptions.h"
@@ -52,7 +51,6 @@
 #include "mozilla/dom/MaybeCrossOriginObject.h"
 #include "mozilla/dom/ObservableArrayProxyHandler.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/dom/ReportingUtils.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/WebIDLGlobalNameHash.h"
 #include "mozilla/dom/WindowProxyHolder.h"
@@ -3972,50 +3970,6 @@ void SetUseCounter(UseCounterWorker aUseCounter) {
 
 namespace {
 
-#define DEPRECATED_OPERATION(_op) #_op,
-static const char* kDeprecatedOperations[] = {
-#include "nsDeprecatedOperationList.inc"
-    nullptr};
-#undef DEPRECATED_OPERATION
-
-void ReportDeprecation(nsIGlobalObject* aGlobal, Document* aDoc, nsIURI* aURI,
-                       DeprecatedOperations aOperation,
-                       const nsACString& aFileName,
-                       const Nullable<uint32_t>& aLineNumber,
-                       const Nullable<uint32_t>& aColumnNumber) {
-  MOZ_ASSERT(aURI);
-
-  // If the URI has the data scheme, report that instead of the spec,
-  // as the spec may be arbitrarily long and we would like to avoid
-  // copying it.
-  nsAutoCString specOrScheme;
-  nsresult rv = nsContentUtils::AnonymizeURI(aURI, specOrScheme);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  nsAutoString type;
-  type.AssignASCII(kDeprecatedOperations[static_cast<size_t>(aOperation)]);
-
-  nsAutoCString key;
-  key.AssignASCII(kDeprecatedOperations[static_cast<size_t>(aOperation)]);
-  key.AppendASCII("Warning");
-
-  nsAutoString msg;
-  rv = nsContentUtils::GetMaybeLocalizedString(PropertiesFile::DOM_PROPERTIES,
-                                               key.get(), aDoc, msg);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  RefPtr<DeprecationReportBody> body =
-      new DeprecationReportBody(aGlobal, type, nullptr /* date */, msg,
-                                aFileName, aLineNumber, aColumnNumber);
-
-  ReportingUtils::Report(aGlobal, nsGkAtoms::deprecation, u"default"_ns,
-                         NS_ConvertUTF8toUTF16(specOrScheme), body);
-}
-
 // This runnable is used to write a deprecation message from a worker to the
 // console running on the main-thread.
 class DeprecationWarningRunnable final
@@ -4089,19 +4043,11 @@ void MaybeReportDeprecation(const GlobalObject& aGlobal,
     return;
   }
 
-  auto location = JSCallingLocation::Get(aGlobal.Context());
-  Nullable<uint32_t> lineNumber;
-  Nullable<uint32_t> columnNumber;
-  if (location) {
-    lineNumber.SetValue(location.mLine);
-    columnNumber.SetValue(location.mColumn);
-  }
-
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
   MOZ_ASSERT(global);
 
-  ReportDeprecation(global, doc, uri, aOperation, location.FileName(),
-                    lineNumber, columnNumber);
+  nsContentUtils::ReportDeprecation(global, doc, uri, aOperation,
+                                    JSCallingLocation::Get(aGlobal.Context()));
 }
 
 }  // anonymous namespace
