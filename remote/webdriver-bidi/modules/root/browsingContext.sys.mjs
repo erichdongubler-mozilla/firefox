@@ -834,6 +834,9 @@ class BrowsingContextModule extends RootBiDiModule {
 
     return {
       context: lazy.NavigableManager.getIdForBrowser(browser),
+      userContext: lazy.UserContextManager.getIdByBrowsingContext(
+        browser.browsingContext
+      ),
     };
   }
 
