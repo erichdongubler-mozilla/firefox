@@ -25,7 +25,8 @@ class DocumentPictureInPicture final : public DOMEventTargetHelper,
                        JS::Handle<JSObject*> aGivenProto) override;
 
   already_AddRefed<Promise> RequestWindow(
-      const DocumentPictureInPictureOptions& aOptions, ErrorResult& aRv);
+      const DocumentPictureInPictureOptions& aOptions,
+      nsIPrincipal& aCallerPrincipal, ErrorResult& aRv);
 
   // Get the current PiP window, exposed as webidl property
   nsGlobalWindowInner* GetWindow() const;

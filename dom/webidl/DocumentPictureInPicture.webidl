@@ -8,7 +8,7 @@
 
 [Exposed=(Window), SecureContext, Pref="dom.documentpip.enabled"]
 interface DocumentPictureInPicture : EventTarget {
-  [NewObject] Promise<Window> requestWindow(
+  [NewObject,NeedsSubjectPrincipal] Promise<Window> requestWindow(
     optional DocumentPictureInPictureOptions options = {});
   readonly attribute Window? window;
   attribute EventHandler onenter;
