@@ -241,6 +241,10 @@ void InspectorUtils::GetChildrenForNode(nsINode& aNode,
   if (auto* node = nsLayoutUtils::GetAfterPseudo(parent)) {
     aResult.AppendElement(node);
   }
+
+  if (auto* node = nsLayoutUtils::GetPickerIconPseudo(parent)) {
+    aResult.AppendElement(node);
+  }
 }
 
 class ReadOnlyInspectorDeclaration final : public nsDOMCSSDeclaration {
