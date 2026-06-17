@@ -9,10 +9,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/8e18fa212189c66b0
  1 file changed, 3 insertions(+)
 
 diff --git a/modules/video_coding/BUILD.gn b/modules/video_coding/BUILD.gn
-index 83b70daf77..6a49e9737f 100644
+index 5d2b795f6b..2a056ed207 100644
 --- a/modules/video_coding/BUILD.gn
 +++ b/modules/video_coding/BUILD.gn
-@@ -380,13 +380,16 @@ rtc_library("av1_qp_parser") {
+@@ -396,13 +396,16 @@ rtc_library("av1_qp_parser") {
      "utility/av1_qp_parser.cc",
      "utility/av1_qp_parser.h",
    ]
