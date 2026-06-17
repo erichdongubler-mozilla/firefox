@@ -684,7 +684,7 @@ nsresult nsXMLContentSink::AddContentAsLeaf(nsIContent* aContent) {
 nsresult nsXMLContentSink::LoadXSLStyleSheet(nsIURI* aUrl) {
   nsCOMPtr<nsIDocumentTransformer> processor = new txMozillaXSLTProcessor();
   mDocument->SetUseCounter(eUseCounter_custom_XSLStylesheet);
-  mDocument->WarnOnceAbout(DeprecatedOperations::eXSLTDeprecated);
+  mDocument->WarnOnceAndReportAbout(DeprecatedOperations::eXSLTDeprecated);
 
   processor->SetTransformObserver(this);
 

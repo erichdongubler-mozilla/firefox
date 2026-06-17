@@ -2501,7 +2501,8 @@ bool ReportLenientThisUnwrappingFailure(JSContext* cx, JSObject* obj) {
   nsCOMPtr<nsPIDOMWindowInner> window =
       do_QueryInterface(global.GetAsSupports());
   if (window && window->GetDoc()) {
-    window->GetDoc()->WarnOnceAbout(DeprecatedOperations::eLenientThis);
+    window->GetDoc()->WarnOnceAndReportAbout(
+        DeprecatedOperations::eLenientThis);
   }
   return true;
 }

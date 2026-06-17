@@ -1434,7 +1434,7 @@ already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
     return nullptr;
   }
 
-  window->GetExtantDoc()->WarnOnceAbout(
+  window->GetExtantDoc()->WarnOnceAndReportAbout(
       DeprecatedOperations::eCreateImageBitmapCanvasRenderingContext2D);
 
   // Check write-only mode.
