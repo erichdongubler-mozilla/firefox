@@ -57,7 +57,6 @@ void RTCStatsIdGenerator::RewriteIds(
   using RIRSS = dom::RTCRemoteInboundRtpStreamStats;
   using RORSS = dom::RTCRemoteOutboundRtpStreamStats;
   using TS = dom::RTCTransportStats;
-  using CertS = dom::RTCCertificateStats;
 
   rewriteIds(stats->mIceCandidatePairStats, &S::mId, &ICPS::mTransportId,
              &ICPS::mLocalCandidateId, &ICPS::mRemoteCandidateId);
@@ -74,9 +73,7 @@ void RTCStatsIdGenerator::RewriteIds(
   rewriteIds(stats->mRtpContributingSourceStats, &S::mId);
   rewriteIds(stats->mTrickledIceCandidateStats, &S::mId, &ICS::mTransportId);
   rewriteIds(stats->mDataChannelStats, &S::mId);
-  rewriteIds(stats->mTransportStats, &S::mId, &TS::mSelectedCandidatePairId,
-             &TS::mLocalCertificateId, &TS::mRemoteCertificateId);
-  rewriteIds(stats->mCertificateStats, &S::mId, &CertS::mIssuerCertificateId);
+  rewriteIds(stats->mTransportStats, &S::mId, &TS::mSelectedCandidatePairId);
 
   dom::MergeStats(std::move(stats), aIntoReport);
 }

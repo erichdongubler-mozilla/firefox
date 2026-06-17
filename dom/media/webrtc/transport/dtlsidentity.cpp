@@ -291,15 +291,6 @@ nsresult DtlsIdentity::ComputeFingerprint(const UniqueCERTCertificate& cert,
                                           DtlsDigest* digest) {
   MOZ_ASSERT(cert);
 
-  return ComputeFingerprint(cert->derCert.data, cert->derCert.len, digest);
-}
-
-nsresult DtlsIdentity::ComputeFingerprint(const uint8_t* aDerCert,
-                                          size_t aDerLen, DtlsDigest* digest) {
-  if (!aDerCert || !aDerLen || !digest) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
   HASH_HashType ht;
 
   if (digest->algorithm_ == "sha-1") {
@@ -325,8 +316,8 @@ nsresult DtlsIdentity::ComputeFingerprint(const uint8_t* aDerCert,
   MOZ_ASSERT(ho->length >= 20);  // Double check
   digest->value_.resize(ho->length);
 
-  SECStatus rv =
-      HASH_HashBuf(ho->type, digest->value_.data(), aDerCert, aDerLen);
+  SECStatus rv = HASH_HashBuf(ho->type, digest->value_.data(),
+                              cert->derCert.data, cert->derCert.len);
   if (rv != SECSuccess) {
     return NS_ERROR_FAILURE;
   }

@@ -859,21 +859,6 @@ nsTArray<nsTArray<uint8_t>> TransportLayerDtls::GetPeerCertChainDer() const {
   return result;
 }
 
-nsTArray<uint8_t> TransportLayerDtls::GetLocalCertDer() const {
-  CheckThread();
-  nsTArray<uint8_t> result;
-  if (!identity_) {
-    return result;
-  }
-  const UniqueCERTCertificate& cert = identity_->cert();
-  if (!cert) {
-    return result;
-  }
-  const SECItem& der = cert->derCert;
-  result.AppendElements(der.data, der.len);
-  return result;
-}
-
 nsresult TransportLayerDtls::GetCipherSuite(uint16_t* cipherSuite) const {
   if (!cipherSuite) {
     MOZ_MTLOG(ML_ERROR, LAYER_INFO << "GetCipherSuite passed a nullptr");
