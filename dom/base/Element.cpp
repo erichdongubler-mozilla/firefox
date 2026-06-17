@@ -2863,6 +2863,12 @@ void Element::VerifySubtreeBloomFilter() const {
   // Hash class names
   expectedBloom |= HashClassesForBloom(GetClasses());
 
+  // Hash our local name
+  uint64_t localNameHash = NodeInfo()->NameBloomFilterHash();
+  MOZ_ASSERT(localNameHash ==
+             AttrArray::HashForBloomFilter(NodeInfo()->NameAtom()));
+  expectedBloom |= localNameHash;
+
   // Include children's bloom filters
   for (Element* child = GetFirstElementChild(); child;
        child = child->GetNextElementSibling()) {
