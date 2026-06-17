@@ -239,7 +239,7 @@ class Browsertime(Perftest, metaclass=ABCMeta):
                 if not os.path.exists(self.browsertime_chromedriver):
                     raise Exception(
                         "Cannot find the chromedriver for the chrome version "
-                        "being tested: %s" % self.browsertime_chromedriver
+                        f"being tested: {self.browsertime_chromedriver}"
                     )
 
             self.driver_paths.extend([

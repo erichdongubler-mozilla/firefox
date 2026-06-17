@@ -152,5 +152,5 @@ class RaptorProfiling:
                     "type": __get_test_type(),
                 })
 
-        LOG.info("Found %s profiles: %s" % (len(res), str(res)))
+        LOG.info(f"Found {len(res)} profiles: {res}")
         return res
