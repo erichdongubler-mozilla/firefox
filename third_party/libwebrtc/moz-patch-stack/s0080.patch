@@ -18,10 +18,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d92a578327f524ec3
  4 files changed, 24 insertions(+), 7 deletions(-)
 
 diff --git a/call/rtp_video_sender.cc b/call/rtp_video_sender.cc
-index 7267add42b..ef3a0a5538 100644
+index 08953a1634..68fbb233e7 100644
 --- a/call/rtp_video_sender.cc
 +++ b/call/rtp_video_sender.cc
-@@ -528,6 +528,7 @@ void RtpVideoSender::SetModuleIsActive(bool sending,
+@@ -529,6 +529,7 @@ void RtpVideoSender::SetModuleIsActive(bool sending,
      return;
    }
  
@@ -84,10 +84,10 @@ index 40f7c92c9d..3086393f5e 100644
  
  TEST_F(RtcpSenderTest, SendFir) {
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_interface.h b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-index ff1c779ea9..518a34d66a 100644
+index acb78a515a..a14bba19e4 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_interface.h
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-@@ -275,7 +275,7 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
+@@ -282,7 +282,7 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
    // Returns the FlexFEC SSRC, if there is one.
    virtual std::optional<uint32_t> FlexfecSsrc() const = 0;
  

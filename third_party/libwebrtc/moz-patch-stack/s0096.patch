@@ -127,7 +127,7 @@ index 0bd2576bc3..7fe113499a 100644
              "Generated during 'gn gen' by //BUILD.gn.",
              "",
 diff --git a/api/BUILD.gn b/api/BUILD.gn
-index 01b6b521a3..08a2398b3c 100644
+index fffc79b43c..8ae5124077 100644
 --- a/api/BUILD.gn
 +++ b/api/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -277,7 +277,7 @@ index 07d343db5d..ea1e89704a 100644
  
  rtc_library("scalability_mode") {
 diff --git a/audio/BUILD.gn b/audio/BUILD.gn
-index 097a6e22e2..02ca97e8af 100644
+index 62b41511ee..fe90585a9c 100644
 --- a/audio/BUILD.gn
 +++ b/audio/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -413,7 +413,7 @@ index c26d2b2b50..14a8e16c55 100644
      deps = [
        ":generated_jni",
 diff --git a/logging/BUILD.gn b/logging/BUILD.gn
-index 40914333eb..e6cbd42d6b 100644
+index 3a5c1d48b7..c9ad4b0031 100644
 --- a/logging/BUILD.gn
 +++ b/logging/BUILD.gn
 @@ -11,8 +11,8 @@ if (rtc_enable_protobuf) {
@@ -428,7 +428,7 @@ index 40914333eb..e6cbd42d6b 100644
  
  group("logging") {
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index 79628ef416..310dedf21f 100644
+index b5f7fb10f7..1dbb0b98a4 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -6,7 +6,7 @@
@@ -589,7 +589,7 @@ index 7abef9cb0d..83b70daf77 100644
  import("../../webrtc.gni")
  
 diff --git a/pc/BUILD.gn b/pc/BUILD.gn
-index 8a77ad7b77..5d804ca5e1 100644
+index 8e937824d7..7f3573e5fa 100644
 --- a/pc/BUILD.gn
 +++ b/pc/BUILD.gn
 @@ -30,8 +30,8 @@
