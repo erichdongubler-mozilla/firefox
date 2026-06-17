@@ -2,7 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+#include <limits>
+
 #include "AnnexB.h"
+#include "BitWriter.h"
 #include "BufferReader.h"
 #include "ByteWriter.h"
 #include "H264.h"
@@ -980,6 +983,89 @@ TEST(H264, DecodeSPSFromExtraData)
   testOutput(0x42, 0x40, 0x1E, {1920, 1080}, "Constrained Baseline Profile");
   testOutput(0x4D, 0x00, 0x0B, {300, 300}, "Main Profile");
   testOutput(0x64, 0x0C, 0x33, {1280, 720}, "Constrained High Profile");
+}
+
+static RefPtr<MediaByteBuffer> BuildSPSWithRawFields(
+    uint32_t aPicWidthInMBSMinus1, uint32_t aPicHeightInMapUnitsMinus1,
+    bool aFrameMbsOnlyFlag) {
+  RefPtr<MediaByteBuffer> sps = new MediaByteBuffer();
+  BitWriter bw(sps);
+  bw.WriteU8(0);       // profile_idc (no High Profile chroma section)
+  bw.WriteU8(0);       // constraint_set flags + reserved
+  bw.WriteU8(0);       // level_idc
+  bw.WriteUE(0);       // seq_parameter_set_id
+  bw.WriteUE(0);       // log2_max_frame_num_minus4
+  bw.WriteUE(0);       // pic_order_cnt_type
+  bw.WriteUE(0);       // log2_max_pic_order_cnt_lsb_minus4
+  bw.WriteUE(0);       // max_num_ref_frames
+  bw.WriteBit(false);  // gaps_in_frame_num_value_allowed_flag
+  bw.WriteUE(aPicWidthInMBSMinus1);
+  bw.WriteUE(aPicHeightInMapUnitsMinus1);
+  bw.WriteBit(aFrameMbsOnlyFlag);
+  if (!aFrameMbsOnlyFlag) {
+    bw.WriteBit(false);  // mb_adaptive_frame_field_flag
+  }
+  bw.WriteBit(false);  // direct_8x8_inference_flag
+  bw.WriteBit(false);  // frame_cropping_flag
+  bw.WriteBit(false);  // vui_parameters_present_flag
+  bw.CloseWithRbspTrailing();
+  return sps;
+}
+
+static RefPtr<MediaByteBuffer> BuildSPSWithRawWidthMBS(
+    uint32_t aPicWidthInMBSMinus1) {
+  return BuildSPSWithRawFields(aPicWidthInMBSMinus1, 44, true);
+}
+
+TEST(H264, RejectsInvalidPicWidthMbs)
+{
+  // pic_width_in_mbs_minus1 = 0x0FFFFFFF makes pic_width_in_mbs * 16 exceed
+  // the uint32_t range.
+  SPSData spsdata;
+  RefPtr<MediaByteBuffer> sps = BuildSPSWithRawWidthMBS(0x0FFFFFFF);
+  EXPECT_FALSE(H264::DecodeSPS(sps, spsdata));
+}
+
+TEST(H264, RejectsInvalidPicHeightMapUnits)
+{
+  // pic_height_in_map_units_minus1 above the uint32-safe bound for * 16.
+  SPSData spsdata;
+  RefPtr<MediaByteBuffer> sps = BuildSPSWithRawFields(79, 0x0FFFFFFF, true);
+  EXPECT_FALSE(H264::DecodeSPS(sps, spsdata));
+}
+
+TEST(H264, RejectsInvalidPicHeightMapUnitsRegardlessOfFlag)
+{
+  // Same height value as above but with frame_mbs_only_flag=false in the
+  // payload. Verifies rejection happens at the picture-dimension
+  // multiplication regardless of the field-coded *= 2 step.
+  SPSData spsdata;
+  RefPtr<MediaByteBuffer> sps = BuildSPSWithRawFields(79, 0x0FFFFFFF, false);
+  EXPECT_FALSE(H264::DecodeSPS(sps, spsdata));
+}
+
+TEST(H264, AcceptsBoundaryPicWidth)
+{
+  // Tightest pic_width_in_mbs_minus1 input whose computed pic_width still
+  // fits in uint32_t. With frame_cropping_flag=false the helper writes,
+  // pic_width = pic_width_in_mbs * 16.
+  constexpr uint32_t kMaxMbs = std::numeric_limits<uint32_t>::max() / 16;
+  SPSData spsdata;
+  RefPtr<MediaByteBuffer> sps = BuildSPSWithRawWidthMBS(kMaxMbs - 1);
+  EXPECT_TRUE(H264::DecodeSPS(sps, spsdata));
+  EXPECT_EQ(spsdata.pic_width, kMaxMbs * 16);
+}
+
+TEST(H264, AcceptsBoundaryPicHeight)
+{
+  // Same tight boundary for the frame-coded path (frame_mbs_only_flag=true).
+  // Field-coded mode (flag=false) would have a tighter limit of
+  // UINT32_MAX/32 due to the *= 2 step; not exercised here.
+  constexpr uint32_t kMaxMbs = std::numeric_limits<uint32_t>::max() / 16;
+  SPSData spsdata;
+  RefPtr<MediaByteBuffer> sps = BuildSPSWithRawFields(79, kMaxMbs - 1, true);
+  EXPECT_TRUE(H264::DecodeSPS(sps, spsdata));
+  EXPECT_EQ(spsdata.pic_height, kMaxMbs * 16);
 }
 
 TEST(H265, HVCCParsingSuccess)
