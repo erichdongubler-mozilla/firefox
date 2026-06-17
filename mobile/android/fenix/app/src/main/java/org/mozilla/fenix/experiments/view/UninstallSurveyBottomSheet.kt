@@ -37,7 +37,6 @@ import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import org.mozilla.fenix.R
 import org.mozilla.fenix.microsurvey.ui.MicrosurveyCompleted
 import org.mozilla.fenix.microsurvey.ui.MicrosurveyContent
-import org.mozilla.fenix.microsurvey.ui.MicrosurveyFooter
 import org.mozilla.fenix.microsurvey.ui.MicrosurveyHeader
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
@@ -55,6 +54,8 @@ private const val BOTTOM_SHEET_HANDLE_WIDTH_PERCENT = 0.1f
  * @param onPrivacyPolicyLinkClick Invoked when the privacy policy link is clicked.
  * @param onCloseButtonClicked Invoked when the close button is clicked.
  * @param onSubmitButtonClicked Invoked when the submit button is clicked.
+ * @param isSubmitAlwaysEnabled Whether the submit button should remain enabled even if no option is selected.
+ * @param buttonLabel The custom label text for the submission button.
  */
 @Composable
 fun UninstallSurveyBottomSheet(
@@ -64,6 +65,8 @@ fun UninstallSurveyBottomSheet(
     onPrivacyPolicyLinkClick: () -> Unit,
     onCloseButtonClicked: () -> Unit,
     onSubmitButtonClicked: (String) -> Unit,
+    isSubmitAlwaysEnabled: Boolean = false,
+    buttonLabel: String? = null,
 ) {
     var selectedAnswer by remember { mutableStateOf<String?>(null) }
     var isSubmitted by remember { mutableStateOf(false) }
@@ -98,13 +101,14 @@ fun UninstallSurveyBottomSheet(
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
 
-                MicrosurveyFooter(
+                UninstallSurveyFooter(
+                    buttonLabel = buttonLabel,
                     isSubmitted = isSubmitted,
-                    isContentAnswerSelected = selectedAnswer != null,
+                    isContentAnswerSelected = isSubmitAlwaysEnabled || selectedAnswer != null,
                     onPrivacyPolicyLinkClick = onPrivacyPolicyLinkClick,
                     onButtonClick = {
-                        selectedAnswer?.let {
-                            onSubmitButtonClicked(it)
+                        if (isSubmitAlwaysEnabled || selectedAnswer != null) {
+                            onSubmitButtonClicked(selectedAnswer ?: "")
                             isSubmitted = true
                         }
                     },
@@ -160,6 +164,8 @@ private fun UninstallSurveyBottomSheetPreview(
                 stringResource(id = R.string.likert_scale_option_5),
                 stringResource(id = R.string.likert_scale_option_6),
             ),
+            isSubmitAlwaysEnabled = true,
+            buttonLabel = stringResource(id = R.string.uninstall_survey_button_label),
         )
     }
 }

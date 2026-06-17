@@ -30,6 +30,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * @param isContentAnswerSelected Whether the user clicked on one of the answers or not.
  * @param onPrivacyPolicyLinkClick Invoked when the privacy policy link is clicked.
  * @param onButtonClick Invoked when the "Submit"/"Close" button is clicked.
+ * @param buttonLabel The custom label text for the submission button.
  */
 @Composable
 fun UninstallSurveyFooter(
@@ -37,6 +38,7 @@ fun UninstallSurveyFooter(
     isContentAnswerSelected: Boolean,
     onPrivacyPolicyLinkClick: () -> Unit,
     onButtonClick: () -> Unit,
+    buttonLabel: String? = null,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -44,7 +46,7 @@ fun UninstallSurveyFooter(
     ) {
         if (!isSubmitted) {
             FilledButton(
-                text = stringResource(id = R.string.micro_survey_submit_button_label),
+                text = buttonLabel ?: stringResource(id = R.string.micro_survey_submit_button_label),
                 modifier = Modifier.fillMaxWidth(),
                 enabled = isContentAnswerSelected,
                 onClick = { onButtonClick() },
@@ -70,7 +72,7 @@ fun UninstallSurveyFooter(
 
 @FlexibleWindowLightDarkPreview
 @Composable
-private fun MicrosurveyFooterPreview() {
+private fun UninstallSurveyFooterPreview() {
     FirefoxTheme {
         Surface {
             Column(
