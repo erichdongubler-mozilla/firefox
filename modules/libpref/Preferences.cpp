@@ -1407,17 +1407,22 @@ void Pref::FromWrapper(PrefWrapper& aWrapper) {
   }
 }
 
+enum MatchKind {
+  ExactMatch = 0,
+  PrefixMatch = 1,
+};
+
 class CallbackNode {
  public:
   CallbackNode(const nsACString& aDomain, PrefChangedFunc aFunc, void* aData,
-               Preferences::MatchKind aMatchKind)
+               MatchKind aMatchKind)
       : mDomain(AsVariant(nsCString(aDomain))),
         mFunc(aFunc),
         mData(aData),
         mNextAndMatchKind(aMatchKind) {}
 
   CallbackNode(const char* const* aDomains, PrefChangedFunc aFunc, void* aData,
-               Preferences::MatchKind aMatchKind)
+               MatchKind aMatchKind)
       : mDomain(AsVariant(aDomains)),
         mFunc(aFunc),
         mData(aData),
@@ -1438,9 +1443,8 @@ class CallbackNode {
 
   void* Data() const { return mData; }
 
-  Preferences::MatchKind MatchKind() const {
-    return static_cast<Preferences::MatchKind>(mNextAndMatchKind &
-                                               kMatchKindMask);
+  enum MatchKind GetMatchKind() const {
+    return static_cast<enum MatchKind>(mNextAndMatchKind & kMatchKindMask);
   }
 
   bool DomainIs(const nsACString& aDomain) const {
@@ -1453,9 +1457,8 @@ class CallbackNode {
 
   bool Matches(const nsACString& aPrefName) const {
     auto match = [&](const nsACString& aStr) {
-      return MatchKind() == Preferences::ExactMatch
-                 ? aPrefName == aStr
-                 : StringBeginsWith(aPrefName, aStr);
+      return GetMatchKind() == ExactMatch ? aPrefName == aStr
+                                          : StringBeginsWith(aPrefName, aStr);
     };
 
     if (mDomain.is<nsCString>()) {
@@ -1503,7 +1506,7 @@ class CallbackNode {
 
   // Conceptually this is two fields:
   // - CallbackNode* mNext;
-  // - Preferences::MatchKind mMatchKind;
+  // - MatchKind mMatchKind;
   // They are combined into a tagged pointer to save memory.
   uintptr_t mNextAndMatchKind;
 };
@@ -2294,6 +2297,7 @@ class nsPrefBranch final : public nsIPrefBranch,
                            public nsIObserver,
                            public nsSupportsWeakReference {
   friend class mozilla::PreferenceServiceReporter;
+  friend class mozilla::Preferences;
 
  public:
   NS_DECL_ISUPPORTS
@@ -2995,8 +2999,8 @@ nsPrefBranch::AddObserverImpl(const nsACString& aDomain, nsIObserver* aObserver,
       mozilla::UniquePtr<PrefCallback> existing;
       mObservers.Remove(&weakKey, &existing);
       if (existing) {
-        Preferences::UnregisterCallback(
-            NotifyObserver, prefName, existing.get(), Preferences::PrefixMatch);
+        Preferences::UnregisterCallback(NotifyObserver, prefName,
+                                        existing.get(), true);
       }
     }
   }
@@ -3011,7 +3015,7 @@ nsPrefBranch::AddObserverImpl(const nsACString& aDomain, nsIObserver* aObserver,
       // aDomain == nullptr is the only possible failure, and we trapped it with
       // NS_ENSURE_ARG above.
       Preferences::RegisterCallback(NotifyObserver, prefName, pCallback.get(),
-                                    Preferences::PrefixMatch,
+                                    true,
                                     /* isPriority */ false);
 
       p.Insert(std::move(pCallback));
@@ -3059,8 +3063,8 @@ nsPrefBranch::RemoveObserverImpl(const nsACString& aDomain,
   }
 
   if (pCallback) {
-    rv = Preferences::UnregisterCallback(
-        NotifyObserver, prefName, pCallback.get(), Preferences::PrefixMatch);
+    rv = Preferences::UnregisterCallback(NotifyObserver, prefName,
+                                         pCallback.get(), true);
   }
 
   return rv;
@@ -5107,10 +5111,86 @@ struct Internals {
   template <typename T>
   static nsresult RegisterCallback(void* aMirror, const nsACString& aPref) {
     return Preferences::RegisterCallback(UpdateMirror<T>, aPref, aMirror,
-                                         Preferences::ExactMatch,
-                                         /* isPriority */ true);
+                                         /* aPrefixMatch */ false,
+                                         /* aIsPriority */ true);
   }
+
+  template <typename T>
+  static nsresult RegisterCallbackImpl(PrefChangedFunc aCallback, T& aPrefNode,
+                                       void* aData, MatchKind aMatchKind,
+                                       bool aIsPriority = false);
+
+  template <typename T>
+  static nsresult UnregisterCallbackImpl(PrefChangedFunc aCallback,
+                                         T& aPrefNode, void* aData,
+                                         MatchKind aMatchKind);
 };
+
+template <typename T>
+nsresult Internals::RegisterCallbackImpl(PrefChangedFunc aCallback,
+                                         T& aPrefNode, void* aData,
+                                         MatchKind aMatchKind,
+                                         bool aIsPriority) {
+  MOZ_ASSERT(NS_IsMainThread());
+  NS_ENSURE_ARG(aCallback);
+  NS_ENSURE_TRUE(Preferences::InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
+
+  auto node = new CallbackNode(aPrefNode, aCallback, aData, aMatchKind);
+
+  if (aIsPriority) {
+    node->SetNext(gFirstCallback);
+    gFirstCallback = node;
+    if (!gLastPriorityNode) {
+      gLastPriorityNode = node;
+    }
+  } else {
+    if (gLastPriorityNode) {
+      node->SetNext(gLastPriorityNode->Next());
+      gLastPriorityNode->SetNext(node);
+    } else {
+      node->SetNext(gFirstCallback);
+      gFirstCallback = node;
+    }
+  }
+
+  return NS_OK;
+}
+
+template <typename T>
+nsresult Internals::UnregisterCallbackImpl(PrefChangedFunc aCallback,
+                                           T& aPrefNode, void* aData,
+                                           MatchKind aMatchKind) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aCallback);
+  if (Preferences::sShutdown) {
+    MOZ_ASSERT(!Preferences::sPreferences);
+    return NS_OK;
+  }
+  NS_ENSURE_TRUE(Preferences::sPreferences, NS_ERROR_NOT_AVAILABLE);
+
+  nsresult rv = NS_ERROR_FAILURE;
+  CallbackNode* node = gFirstCallback;
+  CallbackNode* prev_node = nullptr;
+
+  while (node) {
+    if (node->Func() == aCallback && node->Data() == aData &&
+        node->GetMatchKind() == aMatchKind && node->DomainIs(aPrefNode)) {
+      if (gCallbacksInProgress) {
+        node->ClearFunc();
+        gShouldCleanupDeadNodes = true;
+        prev_node = node;
+        node = node->Next();
+      } else {
+        node = pref_RemoveCallbackNode(node, prev_node);
+      }
+      rv = NS_OK;
+    } else {
+      prev_node = node;
+      node = node->Next();
+    }
+  }
+  return rv;
+}
 
 // Initialize default preference JavaScript buffers from appropriate TEXT
 // resources.
@@ -5765,66 +5845,21 @@ nsresult Preferences::RemoveObservers(nsIObserver* aObserver,
   return NS_OK;
 }
 
-template <typename T>
-/* static */
-nsresult Preferences::RegisterCallbackImpl(PrefChangedFunc aCallback,
-                                           T& aPrefNode, void* aData,
-                                           MatchKind aMatchKind,
-                                           bool aIsPriority) {
-  MOZ_ASSERT(NS_IsMainThread());
-  NS_ENSURE_ARG(aCallback);
-
-  NS_ENSURE_TRUE(InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
-
-  auto node = new CallbackNode(aPrefNode, aCallback, aData, aMatchKind);
-
-  if (aIsPriority) {
-    // Add to the start of the list.
-    node->SetNext(gFirstCallback);
-    gFirstCallback = node;
-    if (!gLastPriorityNode) {
-      gLastPriorityNode = node;
-    }
-  } else {
-    // Add to the start of the non-priority part of the list.
-    if (gLastPriorityNode) {
-      node->SetNext(gLastPriorityNode->Next());
-      gLastPriorityNode->SetNext(node);
-    } else {
-      node->SetNext(gFirstCallback);
-      gFirstCallback = node;
-    }
-  }
-
-  return NS_OK;
-}
-
 /* static */
 nsresult Preferences::RegisterCallback(PrefChangedFunc aCallback,
                                        const nsACString& aPrefNode, void* aData,
-                                       MatchKind aMatchKind, bool aIsPriority) {
-  return RegisterCallbackImpl(aCallback, aPrefNode, aData, aMatchKind,
-                              aIsPriority);
+                                       bool aPrefixMatch, bool aIsPriority) {
+  return Internals::RegisterCallbackImpl(
+      aCallback, aPrefNode, aData, aPrefixMatch ? PrefixMatch : ExactMatch,
+      aIsPriority);
 }
 
 /* static */
 nsresult Preferences::RegisterCallbacks(PrefChangedFunc aCallback,
                                         const char* const* aPrefs, void* aData,
-                                        MatchKind aMatchKind) {
-  return RegisterCallbackImpl(aCallback, aPrefs, aData, aMatchKind);
-}
-
-/* static */
-nsresult Preferences::RegisterCallbackAndCall(PrefChangedFunc aCallback,
-                                              const nsACString& aPref,
-                                              void* aClosure,
-                                              MatchKind aMatchKind) {
-  MOZ_ASSERT(aCallback);
-  nsresult rv = RegisterCallback(aCallback, aPref, aClosure, aMatchKind);
-  if (NS_SUCCEEDED(rv)) {
-    (*aCallback)(PromiseFlatCString(aPref).get(), aClosure);
-  }
-  return rv;
+                                        bool aPrefixMatch) {
+  return Internals::RegisterCallbackImpl(
+      aCallback, aPrefs, aData, aPrefixMatch ? PrefixMatch : ExactMatch);
 }
 
 /* static */
@@ -5833,8 +5868,7 @@ nsresult Preferences::RegisterCallbacksAndCall(PrefChangedFunc aCallback,
                                                void* aClosure) {
   MOZ_ASSERT(aCallback);
 
-  nsresult rv =
-      RegisterCallbacks(aCallback, aPrefs, aClosure, MatchKind::ExactMatch);
+  nsresult rv = RegisterCallbacks(aCallback, aPrefs, aClosure, false);
   if (NS_SUCCEEDED(rv)) {
     for (const char* const* ptr = aPrefs; *ptr; ptr++) {
       (*aCallback)(*ptr, aClosure);
@@ -5843,58 +5877,20 @@ nsresult Preferences::RegisterCallbacksAndCall(PrefChangedFunc aCallback,
   return rv;
 }
 
-template <typename T>
-/* static */
-nsresult Preferences::UnregisterCallbackImpl(PrefChangedFunc aCallback,
-                                             T& aPrefNode, void* aData,
-                                             MatchKind aMatchKind) {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aCallback);
-  if (sShutdown) {
-    MOZ_ASSERT(!sPreferences);
-    return NS_OK;  // Observers have been released automatically.
-  }
-  NS_ENSURE_TRUE(sPreferences, NS_ERROR_NOT_AVAILABLE);
-
-  nsresult rv = NS_ERROR_FAILURE;
-  CallbackNode* node = gFirstCallback;
-  CallbackNode* prev_node = nullptr;
-
-  while (node) {
-    if (node->Func() == aCallback && node->Data() == aData &&
-        node->MatchKind() == aMatchKind && node->DomainIs(aPrefNode)) {
-      if (gCallbacksInProgress) {
-        // Postpone the node removal until after callbacks enumeration is
-        // finished.
-        node->ClearFunc();
-        gShouldCleanupDeadNodes = true;
-        prev_node = node;
-        node = node->Next();
-      } else {
-        node = pref_RemoveCallbackNode(node, prev_node);
-      }
-      rv = NS_OK;
-    } else {
-      prev_node = node;
-      node = node->Next();
-    }
-  }
-  return rv;
-}
-
 /* static */
 nsresult Preferences::UnregisterCallback(PrefChangedFunc aCallback,
                                          const nsACString& aPrefNode,
-                                         void* aData, MatchKind aMatchKind) {
-  return UnregisterCallbackImpl<const nsACString&>(aCallback, aPrefNode, aData,
-                                                   aMatchKind);
+                                         void* aData, bool aPrefixMatch) {
+  return Internals::UnregisterCallbackImpl<const nsACString&>(
+      aCallback, aPrefNode, aData, aPrefixMatch ? PrefixMatch : ExactMatch);
 }
 
 /* static */
 nsresult Preferences::UnregisterCallbacks(PrefChangedFunc aCallback,
                                           const char* const* aPrefs,
-                                          void* aData, MatchKind aMatchKind) {
-  return UnregisterCallbackImpl(aCallback, aPrefs, aData, aMatchKind);
+                                          void* aData, bool aPrefixMatch) {
+  return Internals::UnregisterCallbackImpl(
+      aCallback, aPrefs, aData, aPrefixMatch ? PrefixMatch : ExactMatch);
 }
 
 /* static */
