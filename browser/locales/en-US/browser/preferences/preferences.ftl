@@ -1763,6 +1763,10 @@ history-clear-on-close-settings =
     .label = Settings…
     .accesskey = t
 
+history-shutdown-exceptions =
+    .label = Manage Exceptions
+    .accesskey = x
+
 history-clear-button =
     .label = Clear History…
     .accesskey = s

@@ -1461,7 +1461,7 @@ const AuthCacheCleaner = {
 };
 
 // Type of the shutdown exception permission.
-const SHUTDOWN_EXCEPTION_PERMISSION = "cookie";
+const SHUTDOWN_EXCEPTION_PERMISSION = "persist-data-on-shutdown";
 
 const ShutdownExceptionsCleaner = {
   async _deleteInternal(filter) {
@@ -1534,7 +1534,8 @@ const ShutdownExceptionsCleaner = {
 const PermissionsCleaner = {
   async _deleteInternal(filter) {
     Services.perms.all
-      // Skip shutdown exception permission because it is handled by ShutDownExceptionsCleaner
+      // Skip persist-data-on-shutdown because it is handled by
+      // ShutdownExceptionsCleaner.
       .filter(({ type }) => type != SHUTDOWN_EXCEPTION_PERMISSION)
       .filter(filter)
       .forEach(perm => {

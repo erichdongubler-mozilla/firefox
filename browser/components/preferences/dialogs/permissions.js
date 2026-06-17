@@ -48,6 +48,10 @@ const permissionExceptionsL10n = {
     window: "ip-protection-exceptions-dialog-window",
     description: "ip-protection-exclusions-desc",
   },
+  "persist-data-on-shutdown": {
+    window: "permissions-exceptions-shutdown-clearing-window",
+    description: "permissions-exceptions-shutdown-clearing-desc",
+  },
 };
 
 function Permission(principal, type, capability) {

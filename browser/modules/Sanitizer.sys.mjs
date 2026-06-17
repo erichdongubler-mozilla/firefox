@@ -678,11 +678,18 @@ export var Sanitizer = {
     },
 
     siteSettings: {
-      async clear(range) {
+      async clear(range, _options, clearHonoringExceptions) {
         let timerId = Glean.browserSanitizer.sitesettings.start();
+        // On shutdown, use CLEAR_SITE_PERMISSIONS so PermissionsCleaner
+        // keeps persist-data-on-shutdown exceptions intact. For a manual
+        // Clear Now the user has explicitly asked to wipe everything, so
+        // fall through to CLEAR_PERMISSIONS which clears that type too.
+        let permissionsFlag = clearHonoringExceptions
+          ? Ci.nsIClearDataService.CLEAR_SITE_PERMISSIONS
+          : Ci.nsIClearDataService.CLEAR_PERMISSIONS;
         await clearData(
           range,
-          Ci.nsIClearDataService.CLEAR_SITE_PERMISSIONS |
+          permissionsFlag |
             Ci.nsIClearDataService.CLEAR_CONTENT_PREFERENCES |
             Ci.nsIClearDataService.CLEAR_DOM_PUSH_NOTIFICATIONS |
             Ci.nsIClearDataService.CLEAR_CLIENT_AUTH_REMEMBER_SERVICE |
@@ -1174,20 +1181,40 @@ async function maybeSanitizeSessionPrincipals(progress, principals, flags) {
   log("Sanitizing " + principals.length + " principals");
 
   let promises = [];
-  let permissions = new Map();
-  Services.perms.getAllWithTypePrefix("cookie").forEach(perm => {
-    permissions.set(perm.principal.origin, perm);
-  });
+  let shutdownExceptions = Services.perms.getAllByTypes([
+    "persist-data-on-shutdown",
+  ]);
 
   principals.forEach(principal => {
     progress.step = "checking-principal";
-    let cookieAllowed = cookiesAllowedForDomainOrSubDomain(
-      principal,
-      permissions
-    );
-    progress.step = "principal-checked:" + cookieAllowed;
+    // Both isCookieSession and isShutdownExceptionAllowed use
+    // testPermissionFromPrincipal, which walks from the principal up to its
+    // base domain, so each predicate finds a permission set on the principal
+    // itself or on any ancestor.
+    //
+    // Decision order:
+    //   1. A cookie SESSION found on the principal or any ancestor forces
+    //      clearing. The user has explicitly asked for session-only cookies;
+    //      this takes priority over a shutdown exception.
+    //   2. A shutdown exception found on the principal or any ancestor (via
+    //      the same walk), OR on any descendant within the base domain (via
+    //      anyMatchingPermission), preserves the data.
+    //   3. Otherwise clear.
+    let preserve;
+    if (isCookieSession(principal)) {
+      preserve = false;
+    } else {
+      preserve =
+        isShutdownExceptionAllowed(principal) ||
+        anyMatchingPermission(
+          principal,
+          shutdownExceptions,
+          isShutdownExceptionAllowed
+        );
+    }
+    progress.step = "principal-checked:" + preserve;
 
-    if (!cookieAllowed) {
+    if (!preserve) {
       promises.push(sanitizeSessionPrincipal(progress, principal, flags));
     }
   });
@@ -1199,70 +1226,39 @@ async function maybeSanitizeSessionPrincipals(progress, principals, flags) {
   progress.step = "promises resolved";
 }
 
-function cookiesAllowedForDomainOrSubDomain(principal, permissions) {
-  log("Checking principal: " + principal.asciiSpec);
-
-  // If we have the 'cookie' permission for this principal, let's return
-  // immediately.
-  let cookiePermission = checkIfCookiePermissionIsSet(principal);
-  if (cookiePermission != null) {
-    return cookiePermission;
-  }
-
-  for (let perm of permissions.values()) {
-    if (perm.type != "cookie") {
-      permissions.delete(perm.principal.origin);
-      continue;
-    }
-    // We consider just permissions set for http, https and file URLs.
+// Returns true if `predicate(perm.principal)` holds for any permission in
+// `perms` whose host is equal to or a subdomain of `principal.host`.
+function anyMatchingPermission(principal, perms, predicate) {
+  for (let perm of perms) {
     if (!isSupportedPrincipal(perm.principal)) {
-      permissions.delete(perm.principal.origin);
       continue;
     }
-
-    // We don't care about scheme, port, and anything else.
-    if (Services.eTLD.hasRootDomain(perm.principal.host, principal.host)) {
-      log("Cookie check on principal: " + perm.principal.asciiSpec);
-      let rootDomainCookiePermission = checkIfCookiePermissionIsSet(
-        perm.principal
-      );
-      if (rootDomainCookiePermission != null) {
-        return rootDomainCookiePermission;
-      }
+    if (
+      Services.eTLD.hasRootDomain(perm.principal.host, principal.host) &&
+      predicate(perm.principal)
+    ) {
+      return true;
     }
   }
-
-  log("Cookie not allowed.");
   return false;
 }
 
-/**
- * Checks if a cookie permission is set for a given principal
- *
- * @returns {boolean} - true: cookie permission "ACCESS_ALLOW", false: cookie permission "ACCESS_DENY"/"ACCESS_SESSION"
- * @returns {null} - No cookie permission is set for this principal
- */
-function checkIfCookiePermissionIsSet(principal) {
-  let p = Services.perms.testPermissionFromPrincipal(principal, "cookie");
+// persist-data-on-shutdown only has one meaningful state: ALLOW, set via the
+// "Manage Exceptions…" dialog. Anything else means no exception is in effect.
+function isShutdownExceptionAllowed(principal) {
+  return (
+    Services.perms.testPermissionFromPrincipal(
+      principal,
+      "persist-data-on-shutdown"
+    ) == Ci.nsIPermissionManager.ALLOW_ACTION
+  );
+}
 
-  if (p == Ci.nsICookiePermission.ACCESS_ALLOW) {
-    log("Cookie allowed!");
-    return true;
-  }
-
-  if (
-    p == Ci.nsICookiePermission.ACCESS_DENY ||
-    p == Ci.nsICookiePermission.ACCESS_SESSION
-  ) {
-    log("Cookie denied or session!");
-    return false;
-  }
-  // This is an old profile with unsupported permission values
-  if (p != Ci.nsICookiePermission.ACCESS_DEFAULT) {
-    log("Not supported cookie permission: " + p);
-    return false;
-  }
-  return null;
+function isCookieSession(principal) {
+  return (
+    Services.perms.testPermissionFromPrincipal(principal, "cookie") ==
+    Ci.nsICookiePermission.ACCESS_SESSION
+  );
 }
 
 async function sanitizeSessionPrincipal(progress, principal, flags) {

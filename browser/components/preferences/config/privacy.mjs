@@ -905,23 +905,46 @@ SettingGroupManager.registerGroups({
         l10nId: "history-clear-on-close-option",
       },
       {
-        id: "clearDataSettings",
-        l10nId: "history-clear-on-close-settings",
-        control: "moz-box-button",
+        id: "clearOnCloseGroup",
+        control: "moz-box-group",
         controlAttrs: {
-          "search-l10n-ids": `
-            clear-data-settings-label,
-            history-section-label,
-            item-history-and-downloads.label,
-            item-cookies.label,
-            item-active-logins.label,
-            item-cache.label,
-            item-form-search-history.label,
-            data-section-label,
-            item-site-settings.label,
-            item-offline-apps.label
-          `,
+          type: "default",
         },
+        items: [
+          {
+            id: "clearDataSettings",
+            l10nId: "history-clear-on-close-settings",
+            control: "moz-box-button",
+            controlAttrs: {
+              "search-l10n-ids": `
+                clear-data-settings-label,
+                history-section-label,
+                item-history-and-downloads.label,
+                item-cookies.label,
+                item-active-logins.label,
+                item-cache.label,
+                item-form-search-history.label,
+                data-section-label,
+                item-site-settings.label,
+                item-offline-apps.label
+              `,
+            },
+          },
+          {
+            id: "shutdownClearingExceptions",
+            l10nId: "history-shutdown-exceptions",
+            control: "moz-box-button",
+            controlAttrs: {
+              "search-l10n-ids": `
+                permissions-address,
+                permissions-allow.label,
+                permissions-remove.label,
+                permissions-remove-all.label,
+                permissions-exceptions-shutdown-clearing-desc
+              `,
+            },
+          },
+        ],
       },
       {
         id: "clearHistoryButton",
@@ -1001,23 +1024,46 @@ SettingGroupManager.registerGroups({
         l10nId: "history-clear-on-close-option",
         items: [
           {
-            id: "clearDataSettings",
-            l10nId: "history-clear-on-close-settings",
-            control: "moz-box-button",
+            id: "clearOnCloseGroup",
+            control: "moz-box-group",
             controlAttrs: {
-              "search-l10n-ids": `
-                    clear-data-settings-label,
-                    history-section-label,
-                    item-history-and-downloads.label,
-                    item-cookies.label,
-                    item-active-logins.label,
-                    item-cache.label,
-                    item-form-search-history.label,
-                    data-section-label,
-                    item-site-settings.label,
-                    item-offline-apps.label
-                  `,
+              type: "default",
             },
+            items: [
+              {
+                id: "clearDataSettings",
+                l10nId: "history-clear-on-close-settings",
+                control: "moz-box-button",
+                controlAttrs: {
+                  "search-l10n-ids": `
+                        clear-data-settings-label,
+                        history-section-label,
+                        item-history-and-downloads.label,
+                        item-cookies.label,
+                        item-active-logins.label,
+                        item-cache.label,
+                        item-form-search-history.label,
+                        data-section-label,
+                        item-site-settings.label,
+                        item-offline-apps.label
+                      `,
+                },
+              },
+              {
+                id: "shutdownClearingExceptions",
+                l10nId: "history-shutdown-exceptions",
+                control: "moz-box-button",
+                controlAttrs: {
+                  "search-l10n-ids": `
+                        permissions-address,
+                        permissions-allow.label,
+                        permissions-remove.label,
+                        permissions-remove-all.label,
+                        permissions-exceptions-shutdown-clearing-desc
+                      `,
+                },
+              },
+            ],
           },
         ],
       },
@@ -3013,6 +3059,10 @@ Preferences.addSetting({
 });
 
 Preferences.addSetting({
+  id: "clearOnCloseGroup",
+});
+
+Preferences.addSetting({
   id: "clearDataSettings",
   deps: ["historyMode", "alwaysClear"],
   visible({ historyMode }) {
@@ -3029,6 +3079,30 @@ Preferences.addSetting({
       },
       {
         mode: "clearOnShutdown",
+      }
+    );
+  },
+});
+
+Preferences.addSetting({
+  id: "shutdownClearingExceptions",
+  deps: ["historyMode", "alwaysClear"],
+  visible({ historyMode }) {
+    return historyMode.value == "custom";
+  },
+  disabled({ alwaysClear }) {
+    return !alwaysClear.value || alwaysClear.disabled;
+  },
+  onUserClick() {
+    gSubDialog.open(
+      "chrome://browser/content/preferences/dialogs/permissions.xhtml",
+      {},
+      {
+        blockVisible: false,
+        sessionVisible: false,
+        allowVisible: true,
+        prefilledHost: "",
+        permissionType: "persist-data-on-shutdown",
       }
     );
   },
