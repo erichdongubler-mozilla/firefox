@@ -303,9 +303,9 @@
     "forcedColors": "{Theme$button/background/color/primary}"
   },
   "button/background/color/menu/selected": {
-    "light": "{Theme$button/background/color/ghost/active}",
-    "dark": "{Theme$button/background/color/ghost/active}",
-    "forcedColors": "{Theme$button/background/color/ghost/active}"
+    "light": "{Theme$button/background/color/ghost/selected}",
+    "dark": "{Theme$button/background/color/ghost/selected}",
+    "forcedColors": "{Theme$button/background/color/primary/selected}"
   },
   "button/background/color/selected": {
     "light": "{Theme$button/background/color/active}",
@@ -580,9 +580,9 @@
     "forcedColors": "{Theme$button/text/color/primary}"
   },
   "button/text/color/menu/selected": {
-    "light": "{Theme$button/text/color/ghost/active}",
-    "dark": "{Theme$button/text/color/ghost/active}",
-    "forcedColors": "{Theme$button/text/color/ghost/active}"
+    "light": "{Theme$button/text/color/ghost/selected}",
+    "dark": "{Theme$button/text/color/ghost/selected}",
+    "forcedColors": "{Theme$button/text/color/primary/selected}"
   },
   "button/text/color/primary": {
     "light": "{Colors$color/white}",

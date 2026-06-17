@@ -264,7 +264,10 @@ export const tokensTable = {
       name: "--button-background-color-menu-hover",
     },
     {
-      value: "var(--button-background-color-ghost-active)",
+      value: {
+        default: "var(--button-background-color-ghost-selected)",
+        forcedColors: "var(--button-background-color-primary-selected)",
+      },
       name: "--button-background-color-menu-selected",
     },
     {
@@ -2019,7 +2022,10 @@ export const tokensTable = {
       name: "--button-text-color-menu-hover",
     },
     {
-      value: "var(--button-text-color-ghost-active)",
+      value: {
+        default: "var(--button-text-color-ghost-selected)",
+        forcedColors: "var(--button-text-color-primary-selected)",
+      },
       name: "--button-text-color-menu-selected",
     },
     {
@@ -3473,8 +3479,10 @@ export const variableLookupTable = {
     default: "var(--button-background-color-ghost-hover)",
     forcedColors: "var(--button-background-color-primary)",
   },
-  "button-background-color-menu-selected":
-    "var(--button-background-color-ghost-active)",
+  "button-background-color-menu-selected": {
+    default: "var(--button-background-color-ghost-selected)",
+    forcedColors: "var(--button-background-color-primary-selected)",
+  },
   "button-background-color-selected": "var(--button-background-color-active)",
   "button-background-color-toolbar": {
     default: "transparent",
@@ -3670,7 +3678,10 @@ export const variableLookupTable = {
     default: "var(--button-text-color-ghost-hover)",
     forcedColors: "var(--button-text-color-primary)",
   },
-  "button-text-color-menu-selected": "var(--button-text-color-ghost-active)",
+  "button-text-color-menu-selected": {
+    default: "var(--button-text-color-ghost-selected)",
+    forcedColors: "var(--button-text-color-primary-selected)",
+  },
   "button-text-color-primary": {
     forcedColors: "ButtonFace",
     brand: {
