@@ -1424,7 +1424,11 @@ class CallbackNode {
       : mDomain(AsVariant(CopyStrippingTrailingDot(aDomain))),
         mFunc(aFunc),
         mData(aData),
-        mIsPrefix(aIsPrefix) {}
+        mIsPrefix(aIsPrefix) {
+#ifdef DEBUG
+    mRawDomain = aDomain;
+#endif
+  }
 
   CallbackNode(const char* const* aDomains, PrefChangedFunc aFunc, void* aData,
                bool aIsPrefix)
@@ -1447,6 +1451,17 @@ class CallbackNode {
   void* Data() const { return mData; }
 
   bool IsPrefix() const { return mIsPrefix; }
+
+#ifdef DEBUG
+  // Domain exactly as registered, before trailing-dot stripping (single-string
+  // registrations only). Used by CallbackTrie's prefix-divergence audit to
+  // reconstruct the old StringBeginsWith matching semantics.
+  const nsCString& RawDomain() const { return mRawDomain; }
+
+  // The trie this node belongs to is the only record of its priority; this
+  // mirror exists purely to assert that registration routing stays consistent.
+  bool IsPriority() const { return mIsPriority; }
+#endif
 
   bool DomainIs(const nsACString& aDomain) const {
     if (!mDomain.is<nsCString>()) {
@@ -1471,6 +1486,14 @@ class CallbackNode {
           mDomain.as<nsCString>().SizeOfExcludingThisIfUnshared(aMallocSizeOf);
     }
   }
+
+#ifdef DEBUG
+  // DEBUG-only diagnostics, set externally (see RegisterCallbackImpl); left
+  // public deliberately. mRawDomain is the pre-strip domain for the divergence
+  // audit; mIsPriority mirrors the owning trie for a routing assertion.
+  nsCString mRawDomain;
+  bool mIsPriority = false;
+#endif
 
  private:
   ~CallbackNode() = default;
@@ -5497,6 +5520,53 @@ nsresult PreferencesImpl::GetSharedPrefValue(const char* aName, T* aResult) {
   return rv;
 }
 
+#ifdef DEBUG
+// Congruence check: a prefix observer is congruent with the pref database if,
+// for every existing pref it matches under the old StringBeginsWith rule, it
+// also matches under the trie's segment-bounded walk. An observer that matches
+// no existing pref is fine (it simply never fires, e.g. a not-yet-created
+// pref); a "partial" / mid-segment match (domain "a.b" vs existing pref "a.bc")
+// is a behavior change. These arise where pref names use '_' or camelCase as a
+// soft separator under a dot-segment (e.g. observing "network.proxy.socks"
+// when "network.proxy.socks_port" exists): the old string-prefix match was
+// separator-blind and caught them; the trie only honors '.'. Whether that
+// matters depends on whether the observer wanted the pseudo-subtree, so this
+// is a heads-up, not a hard error. Opt in with MOZ_PREF_TRIE_AUDIT=1; the
+// warning fires at registration time, where the stack identifies the caller.
+static void WarnIfPrefixObserverDiverges(const nsACString& aRawDomain) {
+  if (aRawDomain.IsEmpty() || !HashTable()) {
+    // An empty domain registers at the root and matches every pref, so it
+    // never diverges.
+    return;
+  }
+  // segLen is the domain length without any trailing dot -- the trie strips it,
+  // so it bounds the segment-bounded (new) match below.
+  size_t segLen = aRawDomain.Length();
+  if (aRawDomain.CharAt(segLen - 1) == '.') {
+    --segLen;
+  }
+  for (auto& pref : PrefsIter(HashTable(), gSharedMap)) {
+    nsDependentCString prefName(pref->Name());
+    // Old matching used StringBeginsWith on the domain exactly as registered;
+    // it did NOT strip a trailing dot (that is new in this part), so a
+    // trailing-dot domain like "network.proxy." never fired for
+    // "network.proxyX".
+    if (!StringBeginsWith(prefName, aRawDomain)) {
+      continue;  // old semantics would not have fired for this pref
+    }
+    bool firesUnderTrie =
+        prefName.Length() == segLen || prefName.CharAt(segLen) == '.';
+    if (!firesUnderTrie) {
+      printf_stderr(
+          "[pref-trie-audit] prefix observer domain '%s' partial-matches "
+          "existing pref '%s': fired under the old StringBeginsWith rule but "
+          "not under the segment-bounded trie\n",
+          PromiseFlatCString(aRawDomain).get(), pref->Name());
+    }
+  }
+}
+#endif
+
 template <typename T>
 nsresult PreferencesImpl::RegisterCallbackImpl(PrefChangedFunc aCallback,
                                                T& aPrefNode, void* aData,
@@ -5508,11 +5578,28 @@ nsresult PreferencesImpl::RegisterCallbackImpl(PrefChangedFunc aCallback,
 
   RefPtr<CallbackNode> node =
       MakeRefPtr<CallbackNode>(aPrefNode, aCallback, aData, aIsPrefix);
+#ifdef DEBUG
+  node->mIsPriority = aIsPriority;
+#endif
   if (aIsPriority) {
     sPImpl->mPriorityCallbacks.Register(node);
   } else {
     sPImpl->mCallbacks.Register(node);
   }
+
+#ifdef DEBUG
+  static const bool sTriePrefAudit = !!getenv("MOZ_PREF_TRIE_AUDIT");
+  if (aIsPrefix && sTriePrefAudit) {
+    if (node->Domain().is<nsCString>()) {
+      WarnIfPrefixObserverDiverges(node->RawDomain());
+    } else {
+      for (const char* const* p = node->Domain().as<const char* const*>(); *p;
+           ++p) {
+        WarnIfPrefixObserverDiverges(nsDependentCString(*p));
+      }
+    }
+  }
+#endif
 
   return NS_OK;
 }
@@ -5538,6 +5625,8 @@ nsresult PreferencesImpl::UnregisterCallbackImpl(PrefChangedFunc aCallback,
     table->CollectMatchingForUnregister(aCallback, aPrefNode, aData, aIsPrefix,
                                         matches);
     for (CallbackNode* node : matches) {
+      MOZ_ASSERT(node->IsPriority() == (table == &sPImpl->mPriorityCallbacks),
+                 "callback found in a trie that disagrees with its priority");
       table->MarkDead(node);
       sPImpl->mShouldCleanupDeadNodes = true;
       found = true;
