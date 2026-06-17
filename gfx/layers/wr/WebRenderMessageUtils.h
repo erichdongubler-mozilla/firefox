@@ -9,7 +9,6 @@
 
 #include "ipc/EnumSerializer.h"
 #include "ipc/IPCMessageUtils.h"
-#include "mozilla/ParamTraits_TiedFields.h"
 #include "mozilla/webrender/webrender_ffi.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "mozilla/dom/MediaIPCUtils.h"

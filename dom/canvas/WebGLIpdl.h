@@ -10,7 +10,6 @@
 #include "ipc/EnumSerializer.h"
 #include "ipc/IPCMessageUtils.h"
 #include "mozilla/GfxMessageUtils.h"
-#include "mozilla/ParamTraits_TiedFields.h"
 #include "mozilla/dom/BindingIPCUtils.h"
 #include "mozilla/ipc/Shmem.h"
 #include "mozilla/layers/LayersSurfaces.h"

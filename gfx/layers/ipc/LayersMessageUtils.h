@@ -18,7 +18,6 @@
 #include "mozilla/RelativeTo.h"
 #include "mozilla/ScrollSnapInfo.h"
 #include "mozilla/ServoBindings.h"
-#include "mozilla/ParamTraits_TiedFields.h"
 #include "mozilla/ipc/ByteBuf.h"
 #include "mozilla/ipc/ProtocolMessageUtils.h"
 #include "mozilla/ipc/RustMessageUtils.h"

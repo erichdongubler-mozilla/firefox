@@ -808,6 +808,14 @@ TextUtils.h:
     - IsAsciiAlphanumeric
     - AsciiAlphanumericToNumber
 
+TiedFields.h:
+  types:
+    - PaddingField
+  functions:
+    - AreAllBytesTiedFields
+    - AssertTiedFieldsAreExhaustive
+    - TiedFields
+
 ThreadLocal.h:
   macros:
     - MOZ_THREAD_LOCAL

@@ -113,6 +113,7 @@ EXPORTS.mozilla = [
     "ThreadLocal.h",
     "ThreadSafety.h",
     "ThreadSafeWeakPtr.h",
+    "TiedFields.h",
     "ToString.h",
     "Try.h",
     "TypedEnumBits.h",
