@@ -50,6 +50,7 @@ UNIFIED_SOURCES += [
     "TestDeviceInputTrack.cpp",
     "TestDriftCompensation.cpp",
     "TestGMPUtils.cpp",
+    "TestGMPVideoEncodedFrame.cpp",
     "TestGMPVideoi420Frame.cpp",
     "TestGroupId.cpp",
     "TestHDRUtils.cpp",
