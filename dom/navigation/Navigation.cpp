@@ -2285,9 +2285,7 @@ void Navigation::CreateNavigationActivationFrom(
   } else {
     mActivation->SetNewEntry(currentEntry);
     mActivation->SetNavigationType(navigationType);
-    if (oldEntry) {
-      mActivation->SetOldEntry(oldEntry);
-    }
+    mActivation->SetOldEntry(oldEntry);
   }
 }
 
