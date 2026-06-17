@@ -84,10 +84,10 @@ index 40f7c92c9d..3086393f5e 100644
  
  TEST_F(RtcpSenderTest, SendFir) {
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_interface.h b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-index acb78a515a..a14bba19e4 100644
+index cccf681fb7..78b78178ab 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_interface.h
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-@@ -282,7 +282,7 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
+@@ -284,7 +284,7 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
    // Returns the FlexFEC SSRC, if there is one.
    virtual std::optional<uint32_t> FlexfecSsrc() const = 0;
  
