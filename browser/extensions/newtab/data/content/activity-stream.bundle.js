@@ -9144,8 +9144,11 @@ class _TopSiteList extends (external_React_default()).PureComponent {
     // (there should only be one of these)
     const addButtonIndex = topSites.findIndex(site => site?.isAddButton);
 
-    // Find the position right after the last regular shortcut
-    let targetPosition = topSites.length - 1;
+    // Find the position right after the last regular shortcut. Defaults to the
+    // first slot so that with no shortcuts the Add button sits at the front
+    // (a length-1 default would place it in the last slot, and adding the first
+    // shortcut there would push the button out of bounds and hide it).
+    let targetPosition = 0;
     for (let i = topSites.length - 1; i >= 0; i--) {
       if (topSites[i] && !topSites[i].isAddButton) {
         targetPosition = i + 1;
