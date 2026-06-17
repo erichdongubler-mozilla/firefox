@@ -3995,61 +3995,6 @@ class DeprecationWarningRunnable final
   }
 };
 
-void MaybeShowDeprecationWarning(const GlobalObject& aGlobal,
-                                 DeprecatedOperations aOperation) {
-  if (NS_IsMainThread()) {
-    nsCOMPtr<nsPIDOMWindowInner> window =
-        do_QueryInterface(aGlobal.GetAsSupports());
-    if (window && window->GetExtantDoc()) {
-      window->GetExtantDoc()->WarnOnceAbout(aOperation);
-    }
-    return;
-  }
-
-  WorkerPrivate* workerPrivate = GetWorkerPrivateFromContext(aGlobal.Context());
-  if (!workerPrivate) {
-    return;
-  }
-
-  RefPtr<DeprecationWarningRunnable> runnable =
-      new DeprecationWarningRunnable(aOperation);
-  runnable->Dispatch(workerPrivate);
-}
-
-void MaybeReportDeprecation(const GlobalObject& aGlobal,
-                            DeprecatedOperations aOperation) {
-  nsCOMPtr<nsIURI> uri;
-  nsCOMPtr<Document> doc;
-  if (NS_IsMainThread()) {
-    nsCOMPtr<nsPIDOMWindowInner> window =
-        do_QueryInterface(aGlobal.GetAsSupports());
-    if (!window || !window->GetExtantDoc()) {
-      return;
-    }
-
-    doc = window->GetExtantDoc();
-    uri = doc->GetDocumentURI();
-  } else {
-    WorkerPrivate* workerPrivate =
-        GetWorkerPrivateFromContext(aGlobal.Context());
-    if (!workerPrivate) {
-      return;
-    }
-
-    uri = workerPrivate->GetResolvedScriptURI();
-  }
-
-  if (NS_WARN_IF(!uri)) {
-    return;
-  }
-
-  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
-  MOZ_ASSERT(global);
-
-  nsContentUtils::ReportDeprecation(global, doc, uri, aOperation,
-                                    JSCallingLocation::Get(aGlobal.Context()));
-}
-
 }  // anonymous namespace
 
 void DeprecationWarning(JSContext* aCx, JSObject* aObject,
@@ -4060,13 +4005,37 @@ void DeprecationWarning(JSContext* aCx, JSObject* aObject,
     return;
   }
 
-  DeprecationWarning(global, aOperation);
-}
+  if (NS_IsMainThread()) {
+    nsCOMPtr<nsPIDOMWindowInner> window =
+        do_QueryInterface(global.GetAsSupports());
+    if (window && window->GetExtantDoc()) {
+      window->GetExtantDoc()->WarnOnceAndReportAbout(
+          aOperation, false, nsTArray<nsString>(),
+          JSCallingLocation::Get(global.Context()));
+    }
+    return;
+  }
 
-void DeprecationWarning(const GlobalObject& aGlobal,
-                        DeprecatedOperations aOperation) {
-  MaybeShowDeprecationWarning(aGlobal, aOperation);
-  MaybeReportDeprecation(aGlobal, aOperation);
+  WorkerPrivate* workerPrivate = GetWorkerPrivateFromContext(global.Context());
+  if (!workerPrivate) {
+    return;
+  }
+
+  RefPtr<DeprecationWarningRunnable> runnable =
+      new DeprecationWarningRunnable(aOperation);
+  runnable->Dispatch(workerPrivate);
+
+  nsCOMPtr<nsIURI> uri = workerPrivate->GetResolvedScriptURI();
+  if (NS_WARN_IF(!uri)) {
+    return;
+  }
+
+  nsCOMPtr<nsIGlobalObject> globalObject =
+      do_QueryInterface(global.GetAsSupports());
+  MOZ_ASSERT(globalObject);
+
+  nsContentUtils::ReportDeprecation(globalObject, nullptr, uri, aOperation,
+                                    JSCallingLocation::Get(global.Context()));
 }
 
 namespace binding_detail {

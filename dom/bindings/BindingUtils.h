@@ -3360,9 +3360,6 @@ void SetUseCounter(UseCounterWorker aUseCounter);
 void DeprecationWarning(JSContext* aCx, JSObject* aObject,
                         DeprecatedOperations aOperation);
 
-void DeprecationWarning(const GlobalObject& aGlobal,
-                        DeprecatedOperations aOperation);
-
 namespace binding_detail {
 // Get a JS global object that can be used for some temporary allocations.  The
 // idea is that this should be used for situations when you need to operate in
