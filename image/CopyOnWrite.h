@@ -32,7 +32,7 @@ class CopyOnWriteValue final {
       : mValue(aValue), mReaders(0), mWriter(false) {}
   explicit CopyOnWriteValue(already_AddRefed<T>& aValue)
       : mValue(aValue), mReaders(0), mWriter(false) {}
-  explicit CopyOnWriteValue(already_AddRefed<T>&& aValue)
+  explicit CopyOnWriteValue(already_AddRefed<T> aValue)
       : mValue(aValue), mReaders(0), mWriter(false) {}
   explicit CopyOnWriteValue(const RefPtr<T>& aValue)
       : mValue(aValue), mReaders(0), mWriter(false) {}
@@ -122,7 +122,7 @@ class CopyOnWrite final {
   explicit CopyOnWrite(already_AddRefed<T>& aValue)
       : mValue(new CopyOnWriteValue(aValue)) {}
 
-  explicit CopyOnWrite(already_AddRefed<T>&& aValue)
+  explicit CopyOnWrite(already_AddRefed<T> aValue)
       : mValue(new CopyOnWriteValue(aValue)) {}
 
   explicit CopyOnWrite(const RefPtr<T>& aValue)
