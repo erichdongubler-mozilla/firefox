@@ -4053,6 +4053,127 @@ Preferences::~Preferences() {
 NS_IMPL_ISUPPORTS(Preferences, nsIPrefService, nsIObserver, nsIPrefBranch,
                   nsISupportsWeakReference)
 
+// nsIPrefBranch forwarding to mRootBranch.
+NS_IMETHODIMP Preferences::GetRoot(nsACString& aRoot) {
+  return mRootBranch->GetRoot(aRoot);
+}
+NS_IMETHODIMP Preferences::GetPrefType(const char* aPrefName,
+                                        nsIPrefBranch::PreferenceType* aRetVal) {
+  return mRootBranch->GetPrefType(aPrefName, aRetVal);
+}
+NS_IMETHODIMP Preferences::GetBoolPrefWithDefault(const char* aPrefName,
+                                                   bool aDefaultValue,
+                                                   uint8_t aArgc,
+                                                   bool* aRetVal) {
+  return mRootBranch->GetBoolPrefWithDefault(aPrefName, aDefaultValue, aArgc,
+                                             aRetVal);
+}
+NS_IMETHODIMP Preferences::GetBoolPref(const char* aPrefName, bool* aRetVal) {
+  return mRootBranch->GetBoolPref(aPrefName, aRetVal);
+}
+NS_IMETHODIMP Preferences::SetBoolPref(const char* aPrefName, bool aValue) {
+  return mRootBranch->SetBoolPref(aPrefName, aValue);
+}
+NS_IMETHODIMP Preferences::GetFloatPrefWithDefault(const char* aPrefName,
+                                                    float aDefaultValue,
+                                                    uint8_t aArgc,
+                                                    float* aRetVal) {
+  return mRootBranch->GetFloatPrefWithDefault(aPrefName, aDefaultValue, aArgc,
+                                              aRetVal);
+}
+NS_IMETHODIMP Preferences::GetFloatPref(const char* aPrefName,
+                                         float* aRetVal) {
+  return mRootBranch->GetFloatPref(aPrefName, aRetVal);
+}
+NS_IMETHODIMP Preferences::GetCharPrefWithDefault(
+    const char* aPrefName, const nsACString& aDefaultValue, uint8_t aArgc,
+    nsACString& aRetVal) {
+  return mRootBranch->GetCharPrefWithDefault(aPrefName, aDefaultValue, aArgc,
+                                             aRetVal);
+}
+NS_IMETHODIMP Preferences::GetCharPref(const char* aPrefName,
+                                        nsACString& aRetVal) {
+  return mRootBranch->GetCharPref(aPrefName, aRetVal);
+}
+NS_IMETHODIMP Preferences::SetCharPref(const char* aPrefName,
+                                        const nsACString& aValue) {
+  return mRootBranch->SetCharPref(aPrefName, aValue);
+}
+NS_IMETHODIMP Preferences::GetStringPref(const char* aPrefName,
+                                          const nsACString& aDefaultValue,
+                                          uint8_t aArgc, nsACString& aRetVal) {
+  return mRootBranch->GetStringPref(aPrefName, aDefaultValue, aArgc, aRetVal);
+}
+NS_IMETHODIMP Preferences::SetStringPref(const char* aPrefName,
+                                          const nsACString& aValue) {
+  return mRootBranch->SetStringPref(aPrefName, aValue);
+}
+NS_IMETHODIMP Preferences::GetIntPrefWithDefault(const char* aPrefName,
+                                                   int32_t aDefaultValue,
+                                                   uint8_t aArgc,
+                                                   int32_t* aRetVal) {
+  return mRootBranch->GetIntPrefWithDefault(aPrefName, aDefaultValue, aArgc,
+                                            aRetVal);
+}
+NS_IMETHODIMP Preferences::GetIntPref(const char* aPrefName,
+                                       int32_t* aRetVal) {
+  return mRootBranch->GetIntPref(aPrefName, aRetVal);
+}
+NS_IMETHODIMP Preferences::SetIntPref(const char* aPrefName, int32_t aValue) {
+  return mRootBranch->SetIntPref(aPrefName, aValue);
+}
+NS_IMETHODIMP Preferences::GetComplexValue(const char* aPrefName,
+                                            const nsIID& aType,
+                                            void** aValue) {
+  return mRootBranch->GetComplexValue(aPrefName, aType, aValue);
+}
+NS_IMETHODIMP Preferences::SetComplexValue(const char* aPrefName,
+                                            const nsIID& aType,
+                                            nsISupports* aValue) {
+  return mRootBranch->SetComplexValue(aPrefName, aType, aValue);
+}
+NS_IMETHODIMP Preferences::ClearUserPref(const char* aPrefName) {
+  return mRootBranch->ClearUserPref(aPrefName);
+}
+NS_IMETHODIMP Preferences::LockPref(const char* aPrefName) {
+  return mRootBranch->LockPref(aPrefName);
+}
+NS_IMETHODIMP Preferences::PrefHasUserValue(const char* aPrefName,
+                                             bool* aRetVal) {
+  return mRootBranch->PrefHasUserValue(aPrefName, aRetVal);
+}
+NS_IMETHODIMP Preferences::PrefHasDefaultValue(const char* aPrefName,
+                                                bool* aRetVal) {
+  return mRootBranch->PrefHasDefaultValue(aPrefName, aRetVal);
+}
+NS_IMETHODIMP Preferences::PrefIsLocked(const char* aPrefName,
+                                         bool* aRetVal) {
+  return mRootBranch->PrefIsLocked(aPrefName, aRetVal);
+}
+NS_IMETHODIMP Preferences::PrefIsSanitized(const char* aPrefName,
+                                            bool* aRetVal) {
+  return mRootBranch->PrefIsSanitized(aPrefName, aRetVal);
+}
+NS_IMETHODIMP Preferences::UnlockPref(const char* aPrefName) {
+  return mRootBranch->UnlockPref(aPrefName);
+}
+NS_IMETHODIMP Preferences::DeleteBranch(const char* aStartingAt) {
+  return mRootBranch->DeleteBranch(aStartingAt);
+}
+NS_IMETHODIMP Preferences::GetChildList(const char* aStartingAt,
+                                         nsTArray<nsCString>& aRetVal) {
+  return mRootBranch->GetChildList(aStartingAt, aRetVal);
+}
+NS_IMETHODIMP Preferences::AddObserverImpl(const nsACString& aDomain,
+                                            nsIObserver* aObserver,
+                                            bool aHoldWeak) {
+  return mRootBranch->AddObserverImpl(aDomain, aObserver, aHoldWeak);
+}
+NS_IMETHODIMP Preferences::RemoveObserverImpl(const nsACString& aDomain,
+                                               nsIObserver* aObserver) {
+  return mRootBranch->RemoveObserverImpl(aDomain, aObserver);
+}
+
 /* static */
 void Preferences::SerializePreferences(nsCString& aStr,
                                        bool aIsDestinationWebContentProcess) {

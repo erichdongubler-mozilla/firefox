@@ -98,7 +98,7 @@ class Preferences final : public nsIPrefService,
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIPREFSERVICE
-  NS_FORWARD_NSIPREFBRANCH(mRootBranch->)
+  NS_DECL_NSIPREFBRANCH
   NS_DECL_NSIOBSERVER
 
   Preferences();
