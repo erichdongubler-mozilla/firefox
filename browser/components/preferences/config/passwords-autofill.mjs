@@ -650,12 +650,12 @@ Preferences.addSetting({
     }
   },
   getControlConfig(config) {
-    config.options[0].controlAttrs = {
-      ...config.options[0].controlAttrs,
-      ...(!Services.policies.isAllowed("removeMasterPassword")
-        ? { disabled: "" }
-        : {}),
-    };
+    const button = config.options?.find(
+      o => o.key === "turnOffPrimaryPassword"
+    );
+    if (button && !Services.policies.isAllowed("removeMasterPassword")) {
+      button.controlAttrs = { ...button.controlAttrs, disabled: "" };
+    }
     return config;
   },
 });
@@ -753,13 +753,33 @@ SettingGroupManager.registerGroups({
             items: [
               {
                 id: "statusPrimaryPassword",
-                l10nId: "forms-primary-pw-on",
                 control: "moz-box-item",
-                controlAttrs: {
-                  iconsrc: "chrome://global/skin/icons/check-filled.svg",
-                },
                 options: [
                   {
+                    key: "primaryPasswordOnStatus",
+                    control: "span",
+                    controlAttrs: {
+                      class: "primary-pw-status",
+                    },
+                    options: [
+                      {
+                        key: "primaryPasswordOnIcon",
+                        control: "img",
+                        controlAttrs: {
+                          src: "chrome://global/skin/icons/check-filled.svg",
+                          alt: "",
+                          class: "primary-pw-status-icon",
+                        },
+                      },
+                      {
+                        key: "primaryPasswordOnLabel",
+                        control: "span",
+                        l10nId: "forms-primary-pw-on-2",
+                      },
+                    ],
+                  },
+                  {
+                    key: "turnOffPrimaryPassword",
                     id: "turnOffPrimaryPassword",
                     l10nId: "forms-primary-pw-turn-off",
                     control: "moz-button",

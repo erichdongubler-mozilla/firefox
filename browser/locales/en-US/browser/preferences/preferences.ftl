@@ -1589,8 +1589,7 @@ forms-primary-pw-use-2 =
     .accesskey = U
 forms-primary-pw-set =
     .label = Set primary password
-forms-primary-pw-on =
-    .label = Primary password is ON
+forms-primary-pw-on-2 = Primary password is <strong>ON</strong>
 forms-primary-pw-change-2 =
     .label = Change primary password
 # Label for button to disable primary password.
