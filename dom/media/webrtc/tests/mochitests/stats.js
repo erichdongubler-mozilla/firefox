@@ -102,6 +102,7 @@ const statsExpectedByType = {
     localAudioOnly: [],
     localVideoOnly: [
       "framesEncoded",
+      "keyFramesEncoded",
       "firCount",
       "pliCount",
       "frameWidth",
@@ -1142,6 +1143,17 @@ function pedanticChecks(report) {
           stat.framesEncoded >= 0 && stat.framesEncoded < 100000,
           `${stat.type}.framesEncoded is a sane number for a short ` +
             `${stat.kind} test. value=${stat.framesEncoded}`
+        );
+
+        // keyFramesEncoded
+        ok(
+          stat.keyFramesEncoded >= 0 && stat.keyFramesEncoded < 1000000,
+          `${stat.type}.keyFramesEncoded is a sane number for a short ` +
+            `${stat.kind} test. value=${stat.keyFramesEncoded}`
+        );
+        ok(
+          stat.keyFramesEncoded <= stat.framesEncoded,
+          `${stat.type}.keyFramesEncoded is less than or equal to ${stat.type}.framesEncoded`
         );
 
         // frameWidth
