@@ -10,10 +10,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b6b37905a574e7706
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/modules/desktop_capture/mac/screen_capturer_sck.mm b/modules/desktop_capture/mac/screen_capturer_sck.mm
-index 49c923e56b..0d0750f63e 100644
+index 6a31c6a56f..0691aba3e4 100644
 --- a/modules/desktop_capture/mac/screen_capturer_sck.mm
 +++ b/modules/desktop_capture/mac/screen_capturer_sck.mm
-@@ -444,7 +444,7 @@ bool ScreenCapturerSck::GetSourceList(SourceList* sources) {
+@@ -442,7 +442,7 @@ bool ScreenCapturerSck::GetSourceList(SourceList* sources) {
    sources->clear();
    EnsurePickerHandle();
    if (picker_handle_) {

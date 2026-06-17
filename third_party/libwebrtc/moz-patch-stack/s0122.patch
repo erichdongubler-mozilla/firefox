@@ -10,10 +10,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/330a55d5a7ff5e7c6
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/modules/desktop_capture/mac/screen_capturer_sck.mm b/modules/desktop_capture/mac/screen_capturer_sck.mm
-index 0d0750f63e..8ec1d182a3 100644
+index 0691aba3e4..e429f2c635 100644
 --- a/modules/desktop_capture/mac/screen_capturer_sck.mm
 +++ b/modules/desktop_capture/mac/screen_capturer_sck.mm
-@@ -590,7 +590,8 @@ void ScreenCapturerSck::StartWithFilter(SCContentFilter* __strong filter) {
+@@ -588,7 +588,8 @@ void ScreenCapturerSck::StartWithFilter(SCContentFilter* __strong filter) {
          // this handler.
          permanent_error_ = true;
          RTC_LOG(LS_ERROR) << "ScreenCapturerSck " << this
