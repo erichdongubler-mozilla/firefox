@@ -78,7 +78,7 @@ index 98e5e5e298..f9863069be 100644
  }
  
 diff --git a/modules/video_coding/codecs/av1/libaom_av1_encoder.cc b/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
-index 6e369c1c09..9bfd37f49a 100644
+index 0540ed96ca..a6429bbed7 100644
 --- a/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
 +++ b/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
 @@ -282,7 +282,7 @@ LibaomAv1Encoder::LibaomAv1Encoder(const Environment& env,
