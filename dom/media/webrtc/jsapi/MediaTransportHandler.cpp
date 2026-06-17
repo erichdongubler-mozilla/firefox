@@ -5,7 +5,6 @@
 #include "MediaTransportHandler.h"
 
 #include "MediaTransportHandlerIPC.h"
-#include "transport/dtlsidentity.h"
 #include "transport/nricemediastream.h"
 #include "transport/nriceresolver.h"
 #include "transport/sigslot.h"
@@ -31,10 +30,8 @@
 #include <string>
 #include <vector>
 
-#include "mozilla/Base64.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/PublicSSL.h"  // For psm::InitializeCipherSuite
-#include "mozilla/ReverseIterator.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"
 #include "nsDNSService2.h"
 #include "nsFmtString.h"
@@ -1063,57 +1060,6 @@ static uint16_t ToDtlsWireVersion(uint16_t aProtocolVersion) {
   }
 }
 
-// BuildCertificateStats returns the issuerCertificateId.
-// https://w3c.github.io/webrtc-stats/#dom-rtccertificatestats-issuercertificateid
-// "The issuerCertificateId refers to the stats object that contains the next
-// certificate in the certificate chain."
-static nsString BuildCertificateStats(const nsTArray<uint8_t>& aDerCert,
-                                      const nsAString& aIssuerId,
-                                      DOMHighResTimeStamp aNow,
-                                      dom::RTCStatsCollection* aStats) {
-  if (aDerCert.IsEmpty()) {
-    return nsString();
-  }
-
-  DtlsDigest digest(DtlsIdentity::DEFAULT_HASH_ALGORITHM);
-  if (NS_FAILED(DtlsIdentity::ComputeFingerprint(aDerCert.Elements(),
-                                                 aDerCert.Length(), &digest))) {
-    return nsString();
-  }
-  NS_ConvertUTF8toUTF16 fingerprint(
-      SdpFingerprintAttributeList::FormatFingerprint(digest.value_).c_str());
-
-  nsFmtString id(u"certificate_{}", fingerprint);
-
-  for (const auto& existing : aStats->mCertificateStats) {
-    if (existing.mId.WasPassed() && existing.mId.Value() == id) {
-      return id;
-    }
-  }
-
-  nsCString base64Cert;
-  if (NS_FAILED(Base64Encode(reinterpret_cast<const char*>(aDerCert.Elements()),
-                             aDerCert.Length(), base64Cert))) {
-    return nsString();
-  }
-
-  dom::RTCCertificateStats cert;
-  cert.mId.Construct(id);
-  cert.mTimestamp.Construct(aNow);
-  cert.mType.Construct(dom::RTCStatsType::Certificate);
-  cert.mFingerprint = fingerprint;
-  cert.mFingerprintAlgorithm = NS_ConvertUTF8toUTF16(digest.algorithm_);
-  cert.mBase64Certificate = NS_ConvertUTF8toUTF16(base64Cert);
-  if (!aIssuerId.IsEmpty()) {
-    cert.mIssuerCertificateId.Construct(aIssuerId);
-  }
-
-  if (!aStats->mCertificateStats.AppendElement(cert, fallible)) {
-    mozalloc_handle_oom(0);
-  }
-  return id;
-}
-
 RefPtr<dom::RTCStatsPromise> MediaTransportHandlerSTS::GetIceStats(
     const std::string& aTransportId, DOMHighResTimeStamp aNow) {
   MOZ_RELEASE_ASSERT(mInitPromise);
@@ -1207,40 +1153,6 @@ RefPtr<dom::RTCStatsPromise> MediaTransportHandlerSTS::GetIceStats(
                         info.cipherSuiteName) {
                       transport.mDtlsCipher.Construct(
                           NS_ConvertASCIItoUTF16(info.cipherSuiteName));
-                    }
-                  }
-
-                  if (dtlsLayer->state() == TransportLayer::TS_OPEN) {
-                    {
-                      nsString localId =
-                          BuildCertificateStats(dtlsLayer->GetLocalCertDer(),
-                                                u""_ns, aNow, stats.get());
-                      if (!localId.IsEmpty()) {
-                        transport.mLocalCertificateId.Construct(localId);
-                      }
-                    }
-
-                    {
-                      nsTArray<nsTArray<uint8_t>> remoteChain =
-                          dtlsLayer->GetPeerCertChainDer();
-                      nsString issuerId;
-                      // The chain is leaf-first. Here we start with the root;
-                      // for the root the issuerId is empty. In WebRTC the chain
-                      // often consists of a single certificate, i.e. it is
-                      // self-signed:
-                      // https://w3c.github.io/webrtc-stats/#dom-rtccertificatestats-issuercertificateid
-                      // "If the current certificate is at the end of the chain
-                      // (i.e. a self-signed certificate), this will not be
-                      // set."
-                      for (const auto& der : Reversed(remoteChain)) {
-                        issuerId = BuildCertificateStats(der, issuerId, aNow,
-                                                         stats.get());
-                      }
-                      // Having walked the chain root-first, issuerId now holds
-                      // the leaf certificate's id.
-                      if (!issuerId.IsEmpty()) {
-                        transport.mRemoteCertificateId.Construct(issuerId);
-                      }
                     }
                   }
                 }

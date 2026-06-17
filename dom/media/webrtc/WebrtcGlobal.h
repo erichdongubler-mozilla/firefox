@@ -37,7 +37,7 @@ static auto ForAllPublicRTCStatsCollectionMembers(Collection& aStats,
       aStats.mPeerConnectionStats, aStats.mRtpContributingSourceStats,
       aStats.mIceCandidatePairStats, aStats.mIceCandidateStats,
       aStats.mTrickledIceCandidateStats, aStats.mDataChannelStats,
-      aStats.mCodecStats, aStats.mTransportStats, aStats.mCertificateStats);
+      aStats.mCodecStats, aStats.mTransportStats);
 }
 
 // Calls aFunction with all members of aStats, including internal ones.
@@ -230,12 +230,7 @@ DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS_AND_FIELDS(
     mozilla::dom::RTCTransportStats, mozilla::dom::RTCStats, mPacketsSent,
     mPacketsReceived, mBytesSent, mBytesReceived, mIceRole,
     mIceLocalUsernameFragment, mDtlsState, mIceState, mSelectedCandidatePairId,
-    mLocalCertificateId, mRemoteCertificateId, mTlsVersion, mDtlsCipher,
-    mDtlsRole, mSrtpCipher)
-
-DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS_AND_FIELDS(
-    mozilla::dom::RTCCertificateStats, mozilla::dom::RTCStats, mFingerprint,
-    mFingerprintAlgorithm, mBase64Certificate, mIssuerCertificateId)
+    mTlsVersion, mDtlsCipher, mDtlsRole, mSrtpCipher)
 
 template <>
 struct ParamTraits<mozilla::dom::RTCIceRole>
