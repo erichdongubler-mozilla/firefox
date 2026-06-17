@@ -236,8 +236,6 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
   MOZ_CAN_RUN_SCRIPT void FocusCandidate(Element*, bool aClearUpFocus);
 
-  Element* FindShadowPseudo(mozilla::PseudoStyleType aType) const;
-
   void SetNonce(const nsAString& aNonce) {
     SetProperty(nsGkAtoms::nonce, new nsString(aNonce),
                 nsINode::DeleteProperty<nsString>, /* aTransfer = */ true);
