@@ -159,7 +159,9 @@ class CamerasParent : public PCamerasParent {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_EVENT_TARGET(
       CamerasParent, mPBackgroundEventTarget.GetEventTarget())
 
-  class VideoEngineArray;
+  class VideoEngineArray
+      : public media::Refcountable<nsTArray<RefPtr<VideoEngine>>> {};
+
   friend DeliverFrameRunnable;
 
   static already_AddRefed<CamerasParent> Create();
@@ -228,7 +230,6 @@ class CamerasParent : public PCamerasParent {
  protected:
   virtual ~CamerasParent();
 
- private:
   struct GetOrCreateAggregatorResult {
     AggregateCapturer* mAggregator{};
     int mStreamId{};

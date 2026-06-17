@@ -94,9 +94,6 @@ uint32_t FeasibilityDistance(int32_t candidate, int32_t requested) {
          std::max(candidate, requested);
 }
 
-class CamerasParent::VideoEngineArray
-    : public media::Refcountable<nsTArray<RefPtr<VideoEngine>>> {};
-
 // Singleton video engines. The sEngines RefPtr is IPC background thread only
 // and outlives the CamerasParent instances. The array elements are video
 // capture thread only.
