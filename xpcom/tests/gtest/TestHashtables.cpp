@@ -117,7 +117,7 @@ class EntityToUnicodeEntry : public PLDHashEntryHdr {
   }
   static const char* KeyToPointer(const char* aEntity) { return aEntity; }
   static PLDHashNumber HashKey(const char* aEntity) {
-    return mozilla::HashString(aEntity);
+    return mozilla::HashString(aEntity, strlen(aEntity));
   }
   enum { ALLOW_MEMMOVE = true };
 

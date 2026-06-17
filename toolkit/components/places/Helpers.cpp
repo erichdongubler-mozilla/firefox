@@ -250,7 +250,7 @@ PRTime RoundedPRNow() { return RoundToMilliseconds(PR_Now()); }
 
 // NOTE(emilio): This can't match mozilla::HashString() because we persist
 // this hash in the places database. We'd need a migration to switch to regular
-// HashString().
+// HashString(). See bug 2048255.
 static constexpr HashNumber PlacesHashString(const char* aStr, uint32_t aLen) {
   HashNumber hash = 0;
   for (uint32_t i = 0; i < aLen; i++) {

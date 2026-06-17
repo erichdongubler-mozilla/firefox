@@ -8,6 +8,7 @@
 #include "nsUnicharUtils.h"
 #include "mozilla/HashFunctions.h"
 #include "nsUTF8Utils.h"
+#include "nsHashKeys.h"
 
 #include "gtest/gtest.h"
 
@@ -90,7 +91,7 @@ TEST(UTF, Hash16)
   for (unsigned int i = 0; i < std::size(ValidStrings); ++i) {
     nsDependentCString str8(ValidStrings[i].m8);
     bool err;
-    EXPECT_EQ(HashString(ValidStrings[i].m16),
+    EXPECT_EQ(HashString(nsDependentString(ValidStrings[i].m16)),
               HashUTF8AsUTF16(str8.get(), str8.Length(), &err));
     EXPECT_FALSE(err);
   }

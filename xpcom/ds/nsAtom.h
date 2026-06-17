@@ -9,6 +9,7 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/Char16.h"
+#include "mozilla/TextUtils.h"
 #include "mozilla/MemoryReporting.h"
 #include "nsISupports.h"
 #include "nsString.h"
@@ -34,6 +35,19 @@ class nsDynamicAtom;
 //
 class nsAtom {
  public:
+  // Returns true if ToLowercaseASCII would return the string unchanged.
+  static constexpr bool ComputeIsAsciiLowercase(const char16_t* aString,
+                                                const uint32_t aLength) {
+    return std::all_of(aString, aString + aLength, [](char16_t c) {
+      return !mozilla::IsAsciiUppercaseAlpha(c);
+    });
+  }
+
+  template <size_t N>
+  static constexpr bool ComputeIsAsciiLowercase(const char16_t (&aString)[N]) {
+    return ComputeIsAsciiLowercase(aString, N - 1);
+  }
+
   void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                               mozilla::AtomsSizes& aSizes) const;
 

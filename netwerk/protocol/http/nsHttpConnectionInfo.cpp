@@ -696,7 +696,7 @@ bool nsHttpConnectionInfo::HostIsLocalIPLiteral() const {
 // static
 HashNumber nsHttpConnectionInfo::BuildOriginFrameHashKey(
     nsHttpConnectionInfo* ci, const nsACString& host, int32_t port) {
-  static const HashNumber kViaOriginFrame = HashString("viaORIGIN.FRAME");
+  static const HashNumber kViaOriginFrame = HashString("viaORIGIN.FRAME"_ns);
   return AddToHash(HashString(host), ci->GetAnonymous(),
                    ci->GetFallbackConnection(), port,
                    ci->GetOriginAttributes().Hash(), kViaOriginFrame);
