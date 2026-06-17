@@ -45,7 +45,7 @@ add_task(async function test_tab_manager_close_middle_click() {
 
   let list = win.document.getElementById("allTabsMenu-allTabsView-tabs");
   while (win.gBrowser.tabs.length > 1) {
-    let row = list.lastElementChild;
+    let row = [...list.querySelectorAll(".all-tabs-item")].at(-1);
     let tabClosing = BrowserTestUtils.waitForTabClosing(tabOf(row));
     EventUtils.synthesizeMouseAtCenter(row, { button: 1 }, win);
     await tabClosing;
@@ -89,7 +89,7 @@ add_task(async function test_tab_manager_close_button() {
   // Disable the tab closing animation so tabs are removed immediately. This simplifies the test.
   win.gReduceMotionOverride = true;
   while (win.gBrowser.tabs.length > 1) {
-    let row = list.lastElementChild;
+    let row = [...list.querySelectorAll(".all-tabs-item")].at(-1);
     let tab = tabOf(row);
     Assert.ok(!tab.pinned, "Tab for last row is not pinned");
     let tabClosing = BrowserTestUtils.waitForTabClosing(tab);
