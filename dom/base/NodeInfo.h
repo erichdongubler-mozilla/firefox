@@ -267,8 +267,9 @@ class NodeInfo final {
 
     uint32_t Hash() const {
       if (!mHash) {
-        mHash.emplace(mName ? mName->hash()
-                            : mozilla::HashString(*mNameString));
+        uint32_t nameHash =
+            mName ? mName->hash() : mozilla::HashString(*mNameString);
+        mHash.emplace(mozilla::AddToHash(nameHash, mNamespaceID, mNodeType));
       }
       return mHash.value();
     }
