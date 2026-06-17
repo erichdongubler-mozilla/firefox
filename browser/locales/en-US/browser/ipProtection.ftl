@@ -28,11 +28,20 @@ ipprotection-title = VPN
 # Original strings
 
 ipprotection-feature-introduction-title = Introducing VPN, now right inside your browser
+ipprotection-feature-introduction-title-1 = Try { -brand-product-name }’s built-in VPN
 ipprotection-feature-introduction-link-text-2 = Use our new <a data-l10n-name="learn-more-vpn">built-in VPN</a> to hide your location and protect your data.
 
 # Used for callout for users who expressed interest in privacy in onboarding
 ipprotection-feature-introduction-title-privacy = Add another layer of privacy
 ipprotection-feature-introduction-link-text-privacy-1 = <a data-l10n-name="learn-more-vpn">{ -brand-product-name }’s built-in VPN</a> helps protect your browsing. Choose from several locations to keep where you browse more private.
+ipprotection-feature-introduction-link-text-privacy-2 = <a data-l10n-name="learn-more-vpn">{ -brand-product-name }’s built-in VPN</a> helps protect your browsing. Choose from multiple locations to keep where you browse more private.
+ipprotection-feature-introduction-link-text-privacy-3 = Get <a data-l10n-name="learn-more-vpn">extra privacy</a> by choosing from multiple locations to hide where you browse.
+
+# Unlimited bandwidth summer promotion
+
+ipprotection-feature-introduction-text-summer-promo-1 = Turn it on to keep your browsing more private. <a data-l10n-name="summer-promo-link">Get unlimited bandwidth</a> and more locations to browse from. Now until August 31.
+ipprotection-feature-introduction-title-summer-promo = Got travel plans? Take privacy with you.
+ipprotection-feature-introduction-description-summer-promo = Go farther with { -brand-product-name }’s built-in VPN: more locations, unlimited bandwidth. Now until August 31.
 
 # Original strings for private browsing callout
 
@@ -58,6 +67,8 @@ ipprotection-feature-introduction-button-secondary-no-thanks-menuitem =
 ipprotection-feature-introduction-button-secondary-remove = Remove VPN from toolbar
 ipprotection-feature-introduction-button-secondary-remove-1 =
     .label = Remove VPN from toolbar
+ipprotection-feature-introduction-button-open-vpn = Open VPN
+ipprotection-feature-introduction-button-get-started = Get started
 
 ## Site settings callout
 
@@ -187,6 +198,10 @@ ipprotection-message-continuous-onboarding-autostart = <a data-l10n-name="settin
 ipprotection-message-continuous-onboarding-site-settings = { -brand-short-name } will remember which websites you’ve set to use VPN. Update these in <a data-l10n-name="setting-link">settings</a> anytime.
 
 confirmation-hint-ipprotection-navigated-to-excluded-site = VPN is off for this site
+
+ipprotection-open-button = Open { -brand-product-name }
+ipprotection-come-back-title = Come back to try built-in VPN
+ipprotection-message-body-hide-location = Hide your location when you browse in { -brand-product-name } for more privacy and control.
 
 ## IP Protection bandwidth callouts
 
