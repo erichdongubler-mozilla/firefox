@@ -103,6 +103,10 @@ static_assert(F_LINUX_SPECIFIC_BASE == 1024);
 #ifndef F_ADD_SEALS
 #  define F_ADD_SEALS (F_LINUX_SPECIFIC_BASE + 9)
 #  define F_GET_SEALS (F_LINUX_SPECIFIC_BASE + 10)
+#  define F_SEAL_SEAL 0x0001
+#  define F_SEAL_SHRINK 0x0002
+#  define F_SEAL_GROW 0x0004
+#  define F_SEAL_WRITE 0x0008
 #else
 static_assert(F_ADD_SEALS == (F_LINUX_SPECIFIC_BASE + 9));
 static_assert(F_GET_SEALS == (F_LINUX_SPECIFIC_BASE + 10));
@@ -1070,14 +1074,23 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
       CASES_FOR_fcntl: {
         Arg<int> cmd(1);
         Arg<int> flags(2);
+
         // Typical use of F_SETFL is to modify the flags returned by
         // F_GETFL and write them back, including some flags that
         // F_SETFL ignores.  This is a default-deny policy in case any
         // new SETFL-able flags are added.  (In particular we want to
         // forbid O_ASYNC; see bug 1328896, but also see bug 1408438.)
-        static const int ignored_flags =
+        static constexpr int kIgnoredFlags =
             O_ACCMODE | O_LARGEFILE_REAL | O_CLOEXEC | FMODE_NONOTIFY;
-        static const int allowed_flags = ignored_flags | O_APPEND | O_NONBLOCK;
+        static constexpr int kAllowedFlags =
+            kIgnoredFlags | O_APPEND | O_NONBLOCK;
+
+        // Limiting file seals may be an excess of caution; more can be added if
+        // needed. (E.g., F_SEAL_WRITE would be useful so that child-to-parent
+        // IPC can prevent races, but we don't have a cross-platform solution
+        // for that use case.)
+        static constexpr int kAllowedSeals = F_SEAL_SHRINK | F_SEAL_GROW;
+
         return Switch(cmd)
             // Close-on-exec is meaningless when execve isn't allowed, but
             // NSPR reads the bit and asserts that it has the expected value.
@@ -1087,7 +1100,7 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
                 If((flags & ~FD_CLOEXEC) == 0, Allow()).Else(InvalidSyscall()))
             // F_GETFL is also used by fdopen
             .Case(F_GETFL, Allow())
-            .Case(F_SETFL, If((flags & ~allowed_flags) == 0, Allow())
+            .Case(F_SETFL, If((flags & ~kAllowedFlags) == 0, Allow())
                                .Else(InvalidSyscall()))
 #if defined(MOZ_PROFILE_GENERATE)
             .Case(F_SETLKW, Allow())
@@ -1097,6 +1110,10 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
             // Used by Mesa, generally useful, and harmless: tests if
             // two file descriptors refer to the same file description.
             .Case(F_DUPFD_QUERY, Allow())
+            // Allow sealing size for shared memory; see above.
+            .Case(F_GET_SEALS, Allow())
+            .Case(F_ADD_SEALS, If((flags & ~kAllowedSeals) == 0, Allow())
+                                   .Else(InvalidSyscall()))
             .Default(SandboxPolicyBase::EvaluateSyscall(sysno));
       }
 
