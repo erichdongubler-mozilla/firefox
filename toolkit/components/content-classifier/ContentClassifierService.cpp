@@ -5,6 +5,7 @@
 #include "ContentClassifierService.h"
 
 #include "ErrorList.h"
+#include "ContentClassifierPrefMirror.h"
 #include "mozilla/Logging.h"
 #include "mozilla/net/HttpBaseChannel.h"
 #include "mozilla/net/ChannelClassifierUtils.h"
@@ -422,6 +423,8 @@ void ContentClassifierService::Init() {
   if (sEnabled && HasAnyActiveRemoteSettingsFeatures()) {
     InitRSClient();
   }
+
+  ContentClassifierPrefMirror::Init();
 }
 
 void ContentClassifierService::InitRSClient() {

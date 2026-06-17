@@ -17519,6 +17519,13 @@
   value: ""
   mirror: never
 
+# When true, mirror the classic tracking-protection prefs onto the
+# ContentClassifier engine prefs. See ContentClassifierPrefMirror.h.
+- name: privacy.trackingprotection.content.mirror.enabled
+  type: bool
+  value: false
+  mirror: never
+
 # When true, fire an observer notification when filter lists finish loading.
 - name: privacy.trackingprotection.content.testing
   type: bool
