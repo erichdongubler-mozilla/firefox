@@ -133,26 +133,47 @@ netwerk:
       - necko@mozilla.com
     expires: never
 
-  happy_eyeballs_connection_establishment_time:
-    type: labeled_custom_distribution
+  happy_eyeballs_end_to_end_time_succeeded:
+    type: custom_distribution
     description: >
-      Happy Eyeballs: end-to-end time in milliseconds from algorithm start
-      to a successful connection or final failure, keyed by whether the
-      algorithm ultimately succeeded or failed.
+      Happy Eyeballs: end-to-end time in milliseconds for the whole algorithm
+      run, from algorithm start to a successful connection.
     range_min: 1
     range_max: 10000
     bucket_count: 100
     histogram_type: exponential
     unit: ms
-    labels:
-      - succeeded
-      - failed
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2046018
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2048168
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2046018
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2048168
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+
+  happy_eyeballs_end_to_end_time_failed:
+    type: custom_distribution
+    description: >
+      Happy Eyeballs: end-to-end time in milliseconds for the whole algorithm
+      run, from algorithm start to final failure (all connection attempts
+      failed).
+    range_min: 1
+    range_max: 10000
+    bucket_count: 100
+    histogram_type: exponential
+    unit: ms
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046018
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2048168
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046018
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2048168
     notification_emails:
       - necko@mozilla.com
     expires: never

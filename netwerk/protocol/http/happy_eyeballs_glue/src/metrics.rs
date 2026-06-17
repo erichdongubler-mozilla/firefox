@@ -157,9 +157,12 @@ impl Drop for Metrics {
             Outcome::Succeeded { elapsed, .. } | Outcome::Failed { elapsed } => *elapsed,
         };
         let elapsed_ms = elapsed.as_millis() as i64;
-        glean::happy_eyeballs_connection_establishment_time
-            .get(outcome_label)
-            .accumulate_single_sample_signed(elapsed_ms);
+        match outcome {
+            Outcome::Succeeded { .. } => glean::happy_eyeballs_end_to_end_time_succeeded
+                .accumulate_single_sample_signed(elapsed_ms),
+            Outcome::Failed { .. } => glean::happy_eyeballs_end_to_end_time_failed
+                .accumulate_single_sample_signed(elapsed_ms),
+        }
 
         glean::happy_eyeballs_connection_attempt_count
             .get(outcome_label)
