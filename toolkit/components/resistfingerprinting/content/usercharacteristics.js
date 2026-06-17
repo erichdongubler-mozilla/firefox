@@ -957,10 +957,6 @@ async function populateCSSSystemColors() {
 }
 
 async function populateCSSSystemFonts() {
-  // The CSS `font` shorthand accepts six system-font keywords which the browser
-  // resolves to the platform's actual native UI font (e.g. "Segoe UI" on
-  // Windows, "-apple-system" on macOS, "Cantarell" on GNOME). Setting them via
-  // `font-family` would not trigger this resolution; the shorthand is required.
   const systemFonts = [
     "caption",
     "icon",
@@ -968,6 +964,18 @@ async function populateCSSSystemFonts() {
     "message-box",
     "small-caption",
     "status-bar",
+    "serif",
+    "sans-serif",
+    "monospace",
+    "cursive",
+    "fantasy",
+    "system-ui",
+    "Arial",
+    "Helvetica",
+    "Times New Roman",
+    "Courier New",
+    "Verdana",
+    "Georgia",
   ];
 
   const div = document.createElement("div");
@@ -976,7 +984,7 @@ async function populateCSSSystemFonts() {
 
   const results = [];
   for (const fontName of systemFonts) {
-    div.setAttribute("style", `font: ${fontName} !important`);
+    div.style.fontFamily = fontName;
     const computed = getComputedStyle(div);
     const value = computed.fontSize + " " + computed.fontFamily;
     results.push({ [fontName]: value });
@@ -1604,18 +1612,10 @@ function getCanvasSources() {
 // =======================================================================
 // Setup & Populating
 
-/* A small subset of Fira Sans Italic (OFL, see FiraSans.LICENSE) covering
- * exactly the glyphs the canvas text recipes draw. The face must actually
- * cover those glyphs: an earlier revision pointed this at a 2-glyph probe
- * font, so the text canvases silently measured each platform's default
- * serif fallback instead of a bundled font. Note the canvas recipes render
- * in a different document (UserCharacteristicsCanvasRenderingChild), which
- * loads this font itself; this registration only covers canvases drawn in
- * this page (e.g. WebGL helpers) and any future text probes here. */
+/* Pick any local font, we just don't want to needlessly increase binary size */
 const LocalFiraSans = new FontFace(
   "LocalFiraSans",
-  "url('chrome://global/content/usercharacteristics/usercharacteristics.woff') format('woff')",
-  { style: "italic" }
+  "url('chrome://global/content/usercharacteristics/usercharacteristics.woff') format('woff')"
 );
 
 if (document.readyState === "loading") {
