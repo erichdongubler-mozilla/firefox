@@ -1022,6 +1022,22 @@ export let ProfileDataUpgrader = {
       Services.prefs.setBoolPref("signon.rustMirror.migrationNeeded", true);
     }
 
+    if (existingDataVersion < 176) {
+      // Bug 1767271: cookie ALLOW permissions used to exempt sites from
+      // clear-on-shutdown. That exception is now its own permission type,
+      // persist-data-on-shutdown. Duplicate existing ALLOW exceptions over
+      // so users keep their shutdown protection after the split.
+      Services.perms.getAllByTypes(["cookie"]).forEach(p => {
+        if (p.capability == Ci.nsICookiePermission.ACCESS_ALLOW) {
+          Services.perms.addFromPrincipal(
+            p.principal,
+            "persist-data-on-shutdown",
+            Ci.nsICookiePermission.ACCESS_ALLOW
+          );
+        }
+      });
+    }
+
     // Update the migration version.
     Services.prefs.setIntPref("browser.migration.version", newVersion);
   },
