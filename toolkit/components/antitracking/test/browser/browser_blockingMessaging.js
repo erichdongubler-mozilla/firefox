@@ -19,13 +19,8 @@ AntiTracking.runTestInNormalAndPrivateMode(
     new BroadcastChannel("hello");
     ok(true, "BroadcastChannel be used");
   },
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  }
+  // Cleanup callback
+  clearSiteTestData
 );
 
 AntiTracking.runTestInNormalAndPrivateMode(
@@ -92,13 +87,8 @@ AntiTracking.runTestInNormalAndPrivateMode(
       };
     });
   },
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  }
+  // Cleanup callback
+  clearSiteTestData
 );
 
 AntiTracking.runTestInNormalAndPrivateMode(
@@ -157,13 +147,8 @@ AntiTracking.runTestInNormalAndPrivateMode(
     new BroadcastChannel("hello");
     ok(true, "BroadcastChannel can be used");
   },
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  // Cleanup callback
+  clearSiteTestData,
   null,
   false,
   false
@@ -309,13 +294,8 @@ AntiTracking.runTestInNormalAndPrivateMode(
       };
     });
   },
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  // Cleanup callback
+  clearSiteTestData,
   null,
   false,
   false

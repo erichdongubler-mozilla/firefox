@@ -66,13 +66,7 @@ AntiTracking.runTestInNormalAndPrivateMode(
   },
 
   // Cleanup callback
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  }
+  clearSiteTestData
 );
 
 AntiTracking.runTestInNormalAndPrivateMode(
@@ -172,13 +166,7 @@ AntiTracking.runTestInNormalAndPrivateMode(
   },
 
   // Cleanup callback
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  clearSiteTestData,
   null,
   false,
   false
