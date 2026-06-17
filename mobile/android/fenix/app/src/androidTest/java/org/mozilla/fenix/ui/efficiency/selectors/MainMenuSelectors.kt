@@ -161,6 +161,13 @@ object MainMenuSelectors {
         groups = listOf(),
     )
 
+    val CHANGE_WALLPAPER_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.browser_menu_change_wallpaper),
+        description = "Change wallpaper Settings button",
+        groups = listOf("requiredForPage", "homePageMainMenuItems", "browserViewMainMenuItems"),
+    )
+
     val all = listOf(
         NEW_PRIVATE_TAB_BUTTON,
         EXTENSIONS_BUTTON,
@@ -182,5 +189,6 @@ object MainMenuSelectors {
         SHARE_BUTTON,
         DESKTOP_SITE_BUTTON,
         MORE_BUTTON,
+        CHANGE_WALLPAPER_BUTTON,
     )
 }
