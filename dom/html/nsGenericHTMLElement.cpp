@@ -26,6 +26,7 @@
 #include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/TextControlElement.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/dom/AncestorIterator.h"
@@ -51,6 +52,7 @@
 #include "mozilla/dom/HTMLHeadingElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLLabelElement.h"
+#include "mozilla/dom/HTMLSelectElement.h"
 #include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/dom/InputEvent.h"
 #include "mozilla/dom/Link.h"
@@ -4011,6 +4013,26 @@ void nsGenericHTMLElement::FocusCandidate(Element* aControl,
       }
     }
   }
+}
+
+Element* nsGenericHTMLElement::FindShadowPseudo(
+    mozilla::PseudoStyleType aType) const {
+  MOZ_ASSERT(TextControlElement::FromNodeOrNull(this) ||
+             HTMLSelectElement::FromNodeOrNull(this));
+  auto* sr = GetShadowRoot();
+  if (!sr) {
+    return nullptr;
+  }
+  MOZ_ASSERT(sr->IsUAWidget(),
+             "Why are we looking for a pseudo on an author shadow tree?");
+  for (auto* child = sr->GetFirstChild(); child;
+       child = child->GetNextSibling()) {
+    auto* el = Element::FromNodeOrNull(child);
+    if (el && el->GetPseudoElementType() == aType) {
+      return el;
+    }
+  }
+  return nullptr;
 }
 
 already_AddRefed<ElementInternals> nsGenericHTMLElement::AttachInternals(

@@ -256,6 +256,26 @@ select::picker-icon {
 }
 
 /* stylelint-disable-next-line selector-pseudo-element-no-unknown */
+select::picker(select) {
+  box-sizing: border-box;
+  border: 1px solid;
+  padding: 0;
+  color: CanvasText;
+  background-color: Canvas;
+  margin: 0;
+  inset: auto;
+  min-inline-size: anchor-size(self-inline);
+  max-block-size: -moz-available;
+  overflow: auto;
+  position-area: self-block-end span-self-inline-end;
+  position-try-order: most-block-size;
+  position-try-fallbacks:
+    self-block-start span-self-inline-end,
+    self-block-end span-self-inline-start,
+    self-block-start span-self-inline-start;
+}
+
+/* stylelint-disable-next-line selector-pseudo-element-no-unknown */
 select:-moz-select-list-box::picker-icon {
   display: none;
 }
@@ -273,12 +293,6 @@ select:-moz-select-list-box {
   @media (-moz-platform: macos) {
     scrollbar-width: thin;
   }
-}
-
-/* stylelint-disable-next-line selector-pseudo-element-no-unknown */
-select::picker(select) {
-  /* TODO(custom-select): Remove when making the picker a proper popover */
-  display: none;
 }
 
 /* stylelint-disable-next-line selector-pseudo-element-no-unknown */
