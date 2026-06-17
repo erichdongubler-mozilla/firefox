@@ -6,6 +6,7 @@ package org.mozilla.geckoview;
 
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.os.Build;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
@@ -486,7 +487,7 @@ public class Autofill {
       ThreadUtils.assertOnUiThread();
 
       if (DEBUG) {
-        Log.d(LOGTAG, "fillViewStructure");
+        Log.d(LOGTAG, "fillViewStructure: node=" + node);
       }
 
       final NodeData data = dataFor(node);
@@ -595,6 +596,17 @@ public class Autofill {
             break;
           }
         case InputType.TEXT:
+          {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O_MR1 || node.getHint() != Hint.NONE) {
+              break;
+            }
+            final String[] datalist = node.getDatalist();
+            if (datalist != null && datalist.length > 0) {
+              structure.setInputType(android.text.InputType.TYPE_CLASS_TEXT);
+              structure.setAutofillOptions(datalist);
+            }
+            break;
+          }
         case InputType.NONE:
           // Nothing to do.
           break;
@@ -621,6 +633,7 @@ public class Autofill {
     private final @NonNull String mTag;
     private final @NonNull String mDomain;
     private final String mSessionId;
+    private final @Nullable String[] mDatalist;
 
     /**
      * Gets the UUID of this node.
@@ -798,6 +811,16 @@ public class Autofill {
     }
 
     /**
+     * Get data list values of this node if available.
+     *
+     * @return The data list values of this node, or null if not available.
+     */
+    @AnyThread
+    public @Nullable String[] getDatalist() {
+      return mDatalist;
+    }
+
+    /**
      * Creates a new dummy root node for a session.
      *
      * @param dimensions The dimensions for the root node
@@ -829,6 +852,7 @@ public class Autofill {
       mTag = "";
       mDomain = "";
       mChildren = new HashMap<>();
+      mDatalist = null;
     }
 
     @Override
@@ -869,8 +893,17 @@ public class Autofill {
           .append(", tag=")
           .append(mTag)
           .append(", domain=")
-          .append(mDomain)
-          .append("}");
+          .append(mDomain);
+
+      if (mDatalist != null) {
+        builder.append(", datalist=[");
+        for (final String item : mDatalist) {
+          builder.append("\"").append(item).append("\", ");
+        }
+        builder.append("]");
+      }
+
+      builder.append("}");
 
       return builder.toString();
     }
@@ -957,6 +990,13 @@ public class Autofill {
       final String hint = bundle.getString("autofillhint", "").toLowerCase(Locale.ROOT);
       mInputType = typeFromBundle(type, hint);
       mHint = hintFromBundle(type, hint);
+
+      final String[] datalist = bundle.getStringArray("datalist");
+      if (datalist != null && datalist.length > 0) {
+        mDatalist = datalist;
+      } else {
+        mDatalist = null;
+      }
     }
 
     private boolean enabledFromBundle(

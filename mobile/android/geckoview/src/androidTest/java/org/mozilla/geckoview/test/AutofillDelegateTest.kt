@@ -729,4 +729,29 @@ class AutofillDelegateTest : BaseSessionTest() {
             }
         })
     }
+
+    @WithDisplay(width = 100, height = 100)
+    @Test
+    fun autofillDatalist() {
+        mainSession.loadTestPath(FORMS_DATALIST_HTML_PATH)
+        mainSession.waitForPageStop()
+
+        mainSession.evaluateJS("document.querySelector('input').focus()")
+        sessionRule.waitUntilCalled(object : Autofill.Delegate {
+            @AssertCalled(count = 1)
+            override fun onNodeFocus(
+                session: GeckoSession,
+                node: Autofill.Node,
+                data: Autofill.NodeData,
+            ) {
+                assertThat("Should have HTML tag", node.tag, equalTo("input"))
+                assertThat("Datalist should be valid", node.getDatalist(), notNullValue())
+                assertThat(
+                    "Datalist should have options",
+                    node.getDatalist()!!.asList(),
+                    equalTo(listOf("foo", "bar", "baz")),
+                )
+            }
+        })
+    }
 }

@@ -13,6 +13,12 @@ exclude: true
 
 ⚠️  breaking change and deprecation notices
 
+## v154
+- Added [`Autofill.Node.getDatalist`][154.1] to expose predefined values by [`datalist`][154.2] elements for input fields.
+
+[154.1]: {{javadoc_uri}}/Autofill.Node.html#getDatalist()
+[154.2]: https://developer.mozilla.org/en/docs/Web/HTML/Reference/Elements/datalist
+
 ## v153
 - Added [`SourceType`][153.1] annotation to [`ScrollPositionUpdate.source`][153.2]
   ([bug 1994860]({{bugzilla}}1994860))
@@ -1987,4 +1993,4 @@ to allow adding gecko profiler markers.
 [65.24]: {{javadoc_uri}}/CrashReporter.html#sendCrashReport(android.content.Context,android.os.Bundle,java.lang.String)
 [65.25]: {{javadoc_uri}}/GeckoResult.html
 
-[api-version]: 668d400dbe2cfd7bcb1f80c7d30af45f06851531
+[api-version]: b00f7c23560c58a7684b4cd3ab7d2fdc4a16bde1
