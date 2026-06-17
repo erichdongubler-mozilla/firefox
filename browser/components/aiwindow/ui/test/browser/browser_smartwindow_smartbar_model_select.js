@@ -22,6 +22,7 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.smartwindow.firstrun.modelChoice", DEFAULT_MODEL_CHOICE_ID],
+      ["places.semanticHistory.smartwindow.featureGate", false],
     ],
   });
 });
