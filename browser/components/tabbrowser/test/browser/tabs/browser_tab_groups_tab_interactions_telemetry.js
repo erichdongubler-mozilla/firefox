@@ -220,10 +220,16 @@ add_task(async function test_tabInteractionsClose() {
     "Test that closing a tab via firefox view calls tab_interactions.close_tab_other"
   );
   await openFirefoxViewTab(window).then(async viewTab => {
-    const openTabs = viewTab.linkedBrowser.contentDocument
+    const openTabsCard = viewTab.linkedBrowser.contentDocument
       .querySelector("named-deck > view-recentbrowsing view-opentabs")
-      .shadowRoot.querySelector("view-opentabs-card").tabList.rowEls;
-    const tabElement = Array.from(openTabs).find(t => t.__tabElement.group);
+      .shadowRoot.querySelector("view-opentabs-card");
+    let tabElement;
+    await BrowserTestUtils.waitForCondition(() => {
+      tabElement = Array.from(openTabsCard.tabList.rowEls).find(
+        t => t.__tabElement?.group
+      );
+      return !!tabElement;
+    }, "Wait for grouped tab to appear in Firefox View open tabs");
     tabElement.shadowRoot.querySelector("moz-button.dismiss-button").click();
     await assertMetricFoundFor("close_tab_other", 3);
   });
