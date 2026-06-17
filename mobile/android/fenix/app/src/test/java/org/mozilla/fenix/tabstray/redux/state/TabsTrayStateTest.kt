@@ -159,6 +159,7 @@ class TabsTrayStateTest {
     @Test
     fun `WHEN all onboarding conditions are met THEN shouldShowTabGroupOnboarding returns true`() {
         val state = onboardingEligibleState()
+
         assertTrue(state.shouldShowTabGroupOnboarding)
     }
 
@@ -222,6 +223,39 @@ class TabsTrayStateTest {
                 selectedItemIndex = 0,
             ),
         )
+        assertFalse(state.shouldShowTabGroupOnboarding)
+    }
+
+    @Test
+    fun `GIVEN the user already has tab groups WHEN the persisted UI state updates THEN the tab group onboarding is not visible`() {
+        val state = onboardingEligibleState().copy(
+            tabGroupState = onboardingEligibleState().tabGroupState.copy(
+                hasUserEverHadOneTabGroup = true,
+            ),
+        )
+
+        assertFalse(state.shouldShowTabGroupOnboarding)
+    }
+
+    @Test
+    fun `GIVEN the user has dismissed tab group onboarding WHEN the persisted UI state updates THEN the tab group onboarding is not visible`() {
+        val state = onboardingEligibleState().copy(
+            tabGroupState = onboardingEligibleState().tabGroupState.copy(
+                hasUserDismissedTabGroupOnboarding = true,
+            ),
+        )
+
+        assertFalse(state.shouldShowTabGroupOnboarding)
+    }
+
+    @Test
+    fun `GIVEN the user has seen the onboarding the maximum times WHEN the persisted UI state updates THEN the tab group onboarding is not visible`() {
+        val state = onboardingEligibleState().copy(
+            tabGroupState = onboardingEligibleState().tabGroupState.copy(
+                tabGroupOnboardingImpressionCount = TAB_GROUP_ONBOARDING_IMPRESSION_LIMIT,
+            ),
+        )
+
         assertFalse(state.shouldShowTabGroupOnboarding)
     }
 
@@ -325,7 +359,12 @@ class TabsTrayStateTest {
             items = listOf(createTab(url = ""), createTab(url = "")),
             selectedItemIndex = 0,
         ),
-        tabGroupState = TabsTrayState.TabGroupState(groups = emptyList()),
+        tabGroupState = TabsTrayState.TabGroupState(
+            groups = emptyList(),
+            hasUserDismissedTabGroupOnboarding = false,
+            tabGroupOnboardingImpressionCount = 0,
+            hasUserEverHadOneTabGroup = false,
+        ),
         config = TabsTrayState.TabsTrayConfig(
             tabGroupsDragAndDropEnabled = true,
             tabGroupsOnboardingEnabled = true,

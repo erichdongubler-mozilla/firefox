@@ -133,5 +133,5 @@ sealed interface TabGroupAction : TabsTrayAction {
     /**
      * Invoked when the user dismisses the tab group onboarding card.
      */
-    data object OnboardingDismissed : TabGroupAction
+    data object OnboardingDismissed : TabGroupAction, TabManagerUiStateStorageAction
 }

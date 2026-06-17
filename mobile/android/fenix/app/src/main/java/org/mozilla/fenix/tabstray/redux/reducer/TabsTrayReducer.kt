@@ -38,6 +38,7 @@ internal object TabsTrayReducer {
             // Tab Update Actions
             is TabsTrayAction.UpdateSelectedTabId,
             is TabsTrayAction.TabDataUpdateReceived,
+            is TabsTrayAction.PersistedUiStateUpdateReceived,
                 -> handleTabUpdates(state, action)
 
             // Inactive Tabs Actions
@@ -251,6 +252,14 @@ internal object TabsTrayReducer {
                 ),
                 hasTabDataLoaded = true,
             )
+            is TabsTrayAction.PersistedUiStateUpdateReceived ->
+                state.copy(
+                    tabGroupState = state.tabGroupState.copy(
+                        hasUserDismissedTabGroupOnboarding = action.update.hasUserDismissedTabGroupOnboarding,
+                        tabGroupOnboardingImpressionCount = action.update.tabGroupOnboardingImpressionCount,
+                        hasUserEverHadOneTabGroup = action.update.hasUserEverHadOneTabGroup,
+                    ),
+                )
 
             else -> state
         }

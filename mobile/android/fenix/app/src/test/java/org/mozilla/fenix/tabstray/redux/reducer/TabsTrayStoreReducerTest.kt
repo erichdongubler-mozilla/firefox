@@ -16,6 +16,7 @@ import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.state.TabSearchState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
+import org.mozilla.fenix.tabstray.repository.uistate.data.PersistedUIState
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 import org.mozilla.fenix.tabstray.syncedtabs.generateFakeTab
 import org.mozilla.fenix.tabstray.syncedtabs.getFakeSyncedTabList
@@ -291,7 +292,7 @@ class TabsTrayStoreReducerTest {
     @Test
     fun `WHEN navigating back from create tab group in multiselect mode THEN only the sheet is dismissed`() {
         val initialState = TabsTrayState(
-            mode = TabsTrayState.Mode.Select(selectedTabs = setOf(createTab("https://mozilla.org"))),
+            mode = Mode.Select(selectedTabs = setOf(createTab("https://mozilla.org"))),
             backStack = listOf(
                 TabManagerNavDestination.Root,
                 TabManagerNavDestination.AddToTabGroup,
@@ -317,7 +318,7 @@ class TabsTrayStoreReducerTest {
     @Test
     fun `WHEN navigating back from add to tab group in drag and drop mode then mode is set to normal`() {
         val initialState = TabsTrayState(
-            mode = TabsTrayState.Mode.DragAndDrop(
+            mode = Mode.DragAndDrop(
                 sourceId = "123",
                 destinationId = "321",
             ),
@@ -333,7 +334,7 @@ class TabsTrayStoreReducerTest {
         )
 
         val expectedState = initialState.copy(
-            mode = TabsTrayState.Mode.Normal,
+            mode = Mode.Normal,
             backStack = listOf(TabManagerNavDestination.Root),
         )
 
@@ -343,7 +344,7 @@ class TabsTrayStoreReducerTest {
     @Test
     fun `WHEN navigating back from edit tab group in drag and drop mode then mode is set to normal`() {
         val initialState = TabsTrayState(
-            mode = TabsTrayState.Mode.DragAndDrop(
+            mode = Mode.DragAndDrop(
                 sourceId = "123",
                 destinationId = "321",
             ),
@@ -359,7 +360,7 @@ class TabsTrayStoreReducerTest {
         )
 
         val expectedState = initialState.copy(
-            mode = TabsTrayState.Mode.Normal,
+            mode = Mode.Normal,
             backStack = listOf(TabManagerNavDestination.Root),
         )
 
@@ -369,7 +370,7 @@ class TabsTrayStoreReducerTest {
     @Test
     fun `WHEN navigating back from add to tab group in multiselect mode THEN only the sheet is dismissed`() {
         val initialState = TabsTrayState(
-            mode = TabsTrayState.Mode.Select(selectedTabs = setOf(createTab("https://mozilla.org"))),
+            mode = Mode.Select(selectedTabs = setOf(createTab("https://mozilla.org"))),
             backStack = listOf(
                 TabManagerNavDestination.Root,
                 TabManagerNavDestination.AddToTabGroup,
@@ -392,7 +393,7 @@ class TabsTrayStoreReducerTest {
     fun `WHEN navigating back from expanded tab group THEN only the sheet is dismissed`() {
         val group = createTabGroup()
         val initialState = TabsTrayState(
-            mode = TabsTrayState.Mode.Normal,
+            mode = Mode.Normal,
             backStack = listOf(
                 TabManagerNavDestination.Root,
                 TabManagerNavDestination.ExpandedTabGroup(group),
@@ -664,7 +665,7 @@ class TabsTrayStoreReducerTest {
     @Test
     fun `WHEN tab drag is started GIVEN preserveSelectMode is false GIVEN mode is Select THEN the mode is set to Normal`() {
         val initialState = TabsTrayState(
-            mode = TabsTrayState.Mode.Select(
+            mode = Mode.Select(
                 selectedTabs = setOf(
                     createTab("www.mozilla.org"),
                     createTab("www.example.com"),
@@ -678,13 +679,13 @@ class TabsTrayStoreReducerTest {
                 preserveSelectMode = false,
             ),
         )
-        assertEquals(resultState.mode, TabsTrayState.Mode.Normal)
+        assertEquals(resultState.mode, Mode.Normal)
     }
 
     @Test
     fun `WHEN tab drag is started GIVEN preserveSelectMode is true GIVEN mode is Select THEN the mode is unchanged`() {
         val initialState = TabsTrayState(
-            mode = TabsTrayState.Mode.Select(
+            mode = Mode.Select(
                 selectedTabs = setOf(
                     createTab("www.mozilla.org"),
                     createTab("www.example.com"),
@@ -818,5 +819,26 @@ class TabsTrayStoreReducerTest {
             expected = initialState.mode,
             actual = result.mode,
         )
+    }
+
+    @Test
+    fun `WHEN the persisted UI state updates THEN the data is passed to the State`() {
+        val expectedState = TabsTrayState.TabGroupState(
+            hasUserDismissedTabGroupOnboarding = true,
+            tabGroupOnboardingImpressionCount = 10,
+            hasUserEverHadOneTabGroup = true,
+        )
+        val result = TabsTrayReducer.reduce(
+            state = TabsTrayState(),
+            action = TabsTrayAction.PersistedUiStateUpdateReceived(
+                update = PersistedUIState(
+                    hasUserDismissedTabGroupOnboarding = expectedState.hasUserDismissedTabGroupOnboarding,
+                    tabGroupOnboardingImpressionCount = expectedState.tabGroupOnboardingImpressionCount,
+                    hasUserEverHadOneTabGroup = expectedState.hasUserEverHadOneTabGroup,
+                ),
+            ),
+        )
+
+        assertEquals(expectedState, result.tabGroupState)
     }
 }

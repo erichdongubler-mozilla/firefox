@@ -362,6 +362,8 @@
     <string name="debug_drawer_tab_group_tools_creation_button_auto_populate">Auto-populate tab groups</string>
     <!--  The button text to close all tab groups in the tab group creation tool. -->
     <string name="debug_drawer_tab_group_tools_creation_button_remove_all">Remove all tab groups</string>
+  <!--  The button text to reset the tab group onboarding state in the tab group creation tool. -->
+  <string name="debug_drawer_tab_group_tools_creation_button_reset_onboarding">Reset tab group onboarding</string>
 
     <!-- Debug drawer tab process tools -->
     <!-- The title of the Tab Process Exits feature in the Debug Drawer. -->
