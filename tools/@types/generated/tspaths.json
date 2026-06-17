@@ -223,6 +223,9 @@
       "chrome://browser/content/passwordmgr/login-doorhanger-username-field.mjs": [
         "../../../browser/components/passwordmgr/content/login-doorhanger-username-field.mjs"
       ],
+      "chrome://browser/content/preferences/FocusHistory.mjs": [
+        "../../../browser/components/preferences/FocusHistory.mjs"
+      ],
       "chrome://browser/content/preferences/OnDeviceModelManager.mjs": [
         "../../../browser/components/preferences/OnDeviceModelManager.mjs"
       ],
