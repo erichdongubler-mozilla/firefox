@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.372
- * pdfjsBuild = 7f7b38b42
+ * pdfjsVersion = 6.0.386
+ * pdfjsBuild = 2ed018ec2
  */
 
 ;// ./web/ui_utils.js
@@ -981,7 +981,7 @@ const {
 } = globalThis.pdfjsLib;
 
 ;// ./web/internal_evt.js
-const INTERNAL_EVT = "5f790b80-85a4-4bd7-ad9a-0c5fb0c46d37";
+const INTERNAL_EVT = "7af9a25e-3ac3-4887-b8f2-534d0931fadf";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -6277,7 +6277,7 @@ class AnnotationLayerBuilder {
     return inferredLinks.filter(link => {
       let linkAreaRects;
       for (const annotation of this.#annotations) {
-        if (annotation.annotationType !== AnnotationType.LINK || !annotation.url) {
+        if (annotation.annotationType !== AnnotationType.LINK) {
           continue;
         }
         const intersections = intersectAnnotations(annotation, link);
@@ -8669,7 +8669,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.0.372";
+    const viewerVersion = "6.0.386";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }

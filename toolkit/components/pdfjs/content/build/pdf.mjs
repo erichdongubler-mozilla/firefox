@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.372
- * pdfjsBuild = 7f7b38b42
+ * pdfjsVersion = 6.0.386
+ * pdfjsBuild = 2ed018ec2
  */
 
 ;// ./src/shared/util.js
@@ -1990,7 +1990,7 @@ class FloatingToolbar {
 }
 
 ;// ./src/shared/internal_evt.js
-const INTERNAL_EVT = "5f790b80-85a4-4bd7-ad9a-0c5fb0c46d37";
+const INTERNAL_EVT = "7af9a25e-3ac3-4887-b8f2-534d0931fadf";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -11641,10 +11641,7 @@ class CanvasGraphics {
       this.current.activeSMask = null;
     }
     const currentCtx = this.ctx;
-    if (!group.isolated && !group.knockout && this.#knockoutGroupLevel === 0) {
-      info("TODO: Fully support non-isolated non-knockout groups.");
-    }
-    if (!group.needsIsolation && !group.knockout && !group.isGray && this.#knockoutGroupLevel === 0 && currentCtx.globalAlpha === 1 && currentCtx.globalCompositeOperation === "source-over" && !inSMaskMode) {
+    if ((!group.needsIsolation || !group.isolated && !group.hasSoftMask) && !group.knockout && !group.isGray && this.#knockoutGroupLevel === 0 && currentCtx.globalAlpha === 1 && currentCtx.globalCompositeOperation === "source-over" && !inSMaskMode) {
       if (group.bbox) {
         let clip = new Path2D();
         const [x0, y0, x1, y1] = group.bbox;
@@ -11660,6 +11657,9 @@ class CanvasGraphics {
       this.#groupStackMeta.push(null);
       this.groupLevel++;
       return;
+    }
+    if (!group.isolated && !group.knockout && this.#knockoutGroupLevel === 0) {
+      info("TODO: Fully support non-isolated non-knockout groups.");
     }
     const currentTransform = getCurrentTransform(currentCtx);
     if (group.matrix) {
@@ -14212,7 +14212,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.0.372",
+    apiVersion: "6.0.386",
     data,
     password,
     disableAutoFetch,
@@ -15861,8 +15861,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.0.372";
-const build = "7f7b38b42";
+const version = "6.0.386";
+const build = "2ed018ec2";
 
 ;// ./src/display/editor/color_picker.js
 
