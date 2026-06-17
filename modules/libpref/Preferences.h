@@ -94,8 +94,6 @@ class Preferences final : public nsIPrefService,
   friend class ::nsPrefBranch;
 
  public:
-  using WritePrefFilePromise = MozPromise<bool, nsresult, false>;
-
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIPREFSERVICE
   NS_DECL_NSIPREFBRANCH
@@ -124,11 +122,7 @@ class Preferences final : public nsIPrefService,
 
   // Returns shared pref branch instance. NOTE: not addreffed.
   static nsIPrefBranch* GetRootBranch(
-      PrefValueKind aKind = PrefValueKind::User) {
-    NS_ENSURE_TRUE(InitStaticMembers(), nullptr);
-    return (aKind == PrefValueKind::Default) ? sPreferences->mDefaultRootBranch
-                                             : sPreferences->mRootBranch;
-  }
+      PrefValueKind aKind = PrefValueKind::User);
 
   // Gets the type of the pref.
   static nsIPrefBranch::PreferenceType GetType(const char* aPrefName);
@@ -463,36 +457,9 @@ class Preferences final : public nsIPrefService,
   bool AllowOffMainThreadSave();
 
  private:
+  friend class PreferencesImpl;
+
   ~Preferences();
-
-  nsresult NotifyServiceObservers(const char* aSubject);
-
-  // Loads the prefs.js file from the profile, or creates a new one. Returns
-  // the prefs file if successful, or nullptr on failure.
-  already_AddRefed<nsIFile> ReadSavedPrefs();
-
-  // Loads the user.js file from the profile if present.
-  void ReadUserOverridePrefs();
-
-  nsresult MakeBackupPrefFile(nsIFile* aFile);
-
-  // Default pref file save can be blocking or not.
-  enum class SaveMethod { Blocking, Asynchronous };
-
-  // Off main thread is only respected for the default aFile value (nullptr).
-  nsresult SavePrefFileInternal(nsIFile* aFile, SaveMethod aSaveMethod);
-
-  nsresult WritePrefFile(
-      nsIFile* aFile, SaveMethod aSaveMethod,
-      UniquePtr<MozPromiseHolder<WritePrefFilePromise>> aPromise = nullptr,
-      const nsIPrefOverrideMap* aPrefOverrideMap = nullptr);
-
-  nsresult ResetUserPrefs();
-
-  static void SetupTelemetryPref();
-  static nsresult InitInitialObjects(bool aIsStartup);
-
-  friend struct Internals;
 
   static nsresult RegisterCallback(PrefChangedFunc aCallback,
                                    const nsACString& aPref, void* aClosure,
@@ -508,20 +475,6 @@ class Preferences final : public nsIPrefService,
                                       bool aPrefixMatch);
 
   static uint32_t UnregisterCallbacksForBranch(nsPrefBranch* aBranch);
-
- private:
-  nsCOMPtr<nsIFile> mCurrentFile;
-  nsCOMPtr<nsISerialEventTarget> mAsyncTarget;
-  // Time since unix epoch in ms (JS Date compatible)
-  PRTime mUserPrefsFileLastModifiedAtStartup = 0;
-  bool mDirty = false;
-  bool mProfileShutdown = false;
-  // We wait a bit after prefs are dirty before writing them. In this period,
-  // mDirty and mSavePending will both be true.
-  bool mSavePending = false;
-
-  nsCOMPtr<nsIPrefBranch> mRootBranch;
-  nsCOMPtr<nsIPrefBranch> mDefaultRootBranch;
 
   static StaticRefPtr<Preferences> sPreferences;
   static bool sShutdown;
