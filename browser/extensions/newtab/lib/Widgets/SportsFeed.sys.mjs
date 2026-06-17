@@ -66,6 +66,10 @@ const MAX_RETRY_DELAY_MS = 300000; // 5 minutes
 // value from producing a tight network loop. Pregame lead allows 0 (= disabled)
 // but no negatives.
 const MIN_POLL_INTERVAL_MS = 10000; // 10 seconds
+// When the widget becomes visible again, data is stale if older than
+// poll interval / this. 3 makes the threshold long enough to ignore
+// quick returns but short enough to catch real absences.
+const FRESHNESS_THRESHOLD_DIVISOR = 3;
 // Capping the time between /live refreshes to 15 seconds.
 // The button will also be disabled for this duration on the client side
 // but enforcing the cap here keeps a user from spamming from the endpoint regardless of UI state.
@@ -94,6 +98,7 @@ export class SportsFeed {
     this.pollingState = POLLING_STATE_IDLE;
     this.visibleTabs = new Set();
     this.lastLiveUpdated = null;
+    this.lastFetchAt = null;
     this.nextKickoffDeltaMs = null;
     // Reentrancy guard: stops a second tick() from racing the first when
     // fetchNow() is called back-to-back (e.g. a WIDGETS_SPORTS_LIVE_VISIBLE
@@ -600,6 +605,13 @@ export class SportsFeed {
     return Math.max(0, raw);
   }
 
+  resolveFreshnessThresholdMs() {
+    return Math.max(
+      MIN_POLL_INTERVAL_MS,
+      this.resolvePollIntervalMs() / FRESHNESS_THRESHOLD_DIVISOR
+    );
+  }
+
   // Fetch the /wcs/live endpoint. Returns the parsed response, or null on
   // disallowed endpoint / fetch error so the caller can arm a retry.
   async fetchLive() {
@@ -764,6 +776,7 @@ export class SportsFeed {
       if (!this.liveEnabled || this.visibleTabs.size === 0) {
         return;
       }
+      this.lastFetchAt = Date.now();
       this.scheduleNext();
     } finally {
       this.ticking = false;
@@ -774,9 +787,9 @@ export class SportsFeed {
     this.clearTimeout(this.pollTimer);
     this.clearTimeout(this.retryTimer);
     this.retryTimer = null;
-    // Null the ID inside the callback so `this.pollTimer` is a reliable
-    // "a poll is still scheduled" signal — visibility resume logic depends
-    // on this to avoid preempting an already-armed timer.
+    // When the timer fires, clear pollTimer. Then when a tab becomes
+    // visible, we can tell whether a poll is still scheduled: if it's
+    // null, fetch right away; if it's set, wait for the scheduled poll.
     this.pollTimer = this.setTimeout(() => {
       this.pollTimer = null;
       this.tick();
@@ -902,31 +915,35 @@ export class SportsFeed {
       // ---------------------------------------------------------------------
       // How live polling decides when to fetch /live (during a live game)
       //
-      // The rule is simple: we poll only while the widget is actually being
-      // looked at. A tab counts as "looking" when the widget is on-screen in
-      // the foreground tab. The content side already enforces this — it only
-      // reports a tab visible when the widget is scrolled into view and the
-      // tab is in front (isIntersecting && !document.hidden). We keep the set
-      // of those tabs in `visibleTabs`. If the set is empty, we stop polling.
-      // There is no timestamp or "last fetched" tracking — just this set and
-      // the poll timer.
+      // We poll only while the widget is actually being looked at. A tab
+      // counts as "looking" when the widget is on-screen in the foreground
+      // tab; the content side reports a tab visible when the widget is
+      // scrolled into view and the tab is in front (isIntersecting &&
+      // !document.hidden). We keep the set of those tabs in `visibleTabs`.
+      // If the set is empty, we stop polling.
+      //
+      // When a tab becomes visible we fetch if either no poll is
+      // scheduled (bootstrap) or `lastFetchAt` is older than
+      // `resolveFreshnessThresholdMs()`. Otherwise the pending poll
+      // covers us and we wait it out.
       //
       // What that means in practice:
-      //  1. You open New Tab on a live game: the widget shows up, we fetch
+      //  1. You open New Tab on a live game: lastFetchAt is null, we fetch
       //     /live right away, and start the timer.
       //  2. The timer runs out while you're looking at it: we fetch /live
-      //     again and restart the timer.
-      //  3. You scroll the widget off-screen: we stop, but we leave the timer
-      //     running. If it runs out while it's off-screen, we just skip that
-      //     fetch. When you scroll back, we fetch again only if the timer
-      //     already ran out; if it hasn't, we wait for it. (This is why
-      //     quickly scrolling away and back does NOT fire extra requests.)
+      //     again, restart the timer, and stamp lastFetchAt.
+      //  3. You scroll the widget off-screen: we stop, but the timer
+      //     keeps running. If it fires while you're off-screen, we skip
+      //     that fetch and don't schedule the next one. On scroll-back
+      //     we fetch if no poll is scheduled or the data has aged past
+      //     the freshness threshold.
       //  4. Two tabs are open and a background tab has the widget on-screen:
-      //     it does not count, because it isn't the active tab. Only the tab
-      //     you're actually looking at drives a fetch.
-      //  5. You open a new tab while the timer is still running: the new tab
-      //     does not fetch on its own — it waits for the timer that's already
-      //     going.
+      //     it does not count, because it isn't the active tab. Only the
+      //     tab you're actually looking at drives a fetch.
+      //  5. You open a new tab while a poll is pending and the data is
+      //     still fresh: the new tab waits for the running timer. Open
+      //     it after a long absence and it fetches, because `lastFetchAt`
+      //     is now stale.
       // ---------------------------------------------------------------------
 
       // A tab going hidden, or closing, just drops its port. NEW_TAB_UNLOAD is
@@ -952,19 +969,18 @@ export class SportsFeed {
         const portId = au.getPortIdOfSender(action);
         if (portId) {
           this.visibleTabs.add(portId);
-          // Resume polling only when it is actually paused. A pending timer
-          // (or in-flight tick) means the current interval has not elapsed,
-          // so we wait for it rather than firing an immediate /live — this
-          // is what keeps scroll-off-and-back, and opening new tabs, from
-          // issuing extra requests. The null-in-callback bookkeeping in
-          // scheduleNext/scheduleRetry makes these handle checks reliable
-          // after a timer has fired.
-          if (
+          // When the tab becomes visible, fetch if either no poll is
+          // scheduled (bootstrap) or the data is stale. Preempting a
+          // pending pollTimer is safe because fetchNow() clears it first.
+          const stale =
+            this.lastFetchAt === null ||
+            Date.now() - this.lastFetchAt > this.resolveFreshnessThresholdMs();
+          const shouldFetchNow =
             this.liveEnabled &&
             !this.ticking &&
-            !this.pollTimer &&
-            !this.retryTimer
-          ) {
+            !this.retryTimer &&
+            (!this.pollTimer || stale);
+          if (shouldFetchNow) {
             this.fetchNow();
           }
         }
