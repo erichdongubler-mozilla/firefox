@@ -20,6 +20,25 @@
 
 using mozilla::CheckedUint32;
 
+// static
+uint64_t AttrArray::HashForBloomFilter(const nsAtom* aAtom) {
+  if (!aAtom) {
+    return 1ULL;  // Just the tag bit
+  }
+  // On 32-bit platforms, we have 31 bits for bloom + 1 tag bit
+  // On 64-bit platforms, we have 63 bits for bloom + 1 tag bit
+  constexpr int kAttrBloomBits = std::numeric_limits<uintptr_t>::digits - 1;
+
+  uint32_t hash = aAtom->hash();
+  uint64_t filter = 1ULL;
+  // Set 2 bits in the available range (bits 1-31 on 32-bit, 1-63 on 64-bit)
+  uint32_t bit1 = hash % kAttrBloomBits;
+  uint32_t bit2 = (hash >> 6) % kAttrBloomBits;
+  filter |= 1ULL << (1 + bit1);
+  filter |= 1ULL << (1 + bit2);
+  return filter;
+}
+
 AttrArray::Impl::~Impl() {
   for (InternalAttr& attr : Attrs()) {
     attr.~InternalAttr();
@@ -136,7 +155,10 @@ nsresult AttrArray::SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
                                    mozilla::dom::IsKnownNewAttr aIsKnownNew) {
   *aHadValue = false;
 
-  if (aIsKnownNew == mozilla::dom::IsKnownNewAttr::No) {
+  const bool knownNew = aIsKnownNew == mozilla::dom::IsKnownNewAttr::Yes ||
+                        !HasAttrs() ||
+                        !BloomMayHave(HashForBloomFilter(aLocalName));
+  if (!knownNew) {
     for (InternalAttr& attr : Attrs()) {
       if (attr.mName.Equals(aLocalName)) {
         attr.mValue.SwapValueWith(aValue);
@@ -144,11 +166,9 @@ nsresult AttrArray::SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
         return NS_OK;
       }
     }
-  } else {
-    MOZ_ASSERT(IndexOfAttr(aLocalName) == -1,
-               "Caller asserted attribute is new but it already exists");
   }
-
+  MOZ_ASSERT(IndexOfAttr(aLocalName) == -1,
+             "Attribute thought to be new but it already exists");
   return AddNewAttribute(aLocalName, aValue);
 }
 
@@ -162,7 +182,10 @@ nsresult AttrArray::SetAndSwapAttr(mozilla::dom::NodeInfo* aName,
   }
 
   *aHadValue = false;
-  if (aIsKnownNew == mozilla::dom::IsKnownNewAttr::No) {
+  const bool knownNew = aIsKnownNew == mozilla::dom::IsKnownNewAttr::Yes ||
+                        !HasAttrs() ||
+                        !BloomMayHave(HashForBloomFilter(localName));
+  if (!knownNew) {
     for (InternalAttr& attr : Attrs()) {
       if (attr.mName.Equals(localName, namespaceID)) {
         attr.mName.SetTo(aName);
@@ -171,11 +194,9 @@ nsresult AttrArray::SetAndSwapAttr(mozilla::dom::NodeInfo* aName,
         return NS_OK;
       }
     }
-  } else {
-    MOZ_ASSERT(IndexOfAttr(localName, namespaceID) == -1,
-               "Caller asserted attribute is new but it already exists");
   }
-
+  MOZ_ASSERT(IndexOfAttr(localName, namespaceID) == -1,
+             "Attribute thought to be new but it already exists");
   return AddNewAttribute(aName, aValue);
 }
 

@@ -372,6 +372,10 @@ class AttrArray {
     return (bloom & aHash) == aHash;
   }
 
+  // Hash function for bloom filter (k=2). Returns a 64-bit value with bit 0
+  // set to 1 (tag bit) and 2 bits set in the available bloom range.
+  static uint64_t HashForBloomFilter(const nsAtom* aAtom);
+
  private:
   // Internal method that swaps the current attribute value with aValue.
   // Does NOT update bloom filters - external code should always use
