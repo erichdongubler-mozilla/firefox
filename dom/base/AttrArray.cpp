@@ -136,10 +136,7 @@ nsresult AttrArray::SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
                                    mozilla::dom::IsKnownNewAttr aIsKnownNew) {
   *aHadValue = false;
 
-  const bool knownNew = aIsKnownNew == mozilla::dom::IsKnownNewAttr::Yes ||
-                        !HasAttrs() ||
-                        !BloomMayHave(HashForBloomFilter(aLocalName));
-  if (!knownNew) {
+  if (aIsKnownNew == mozilla::dom::IsKnownNewAttr::No) {
     for (InternalAttr& attr : Attrs()) {
       if (attr.mName.Equals(aLocalName)) {
         attr.mValue.SwapValueWith(aValue);
@@ -147,9 +144,11 @@ nsresult AttrArray::SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
         return NS_OK;
       }
     }
+  } else {
+    MOZ_ASSERT(IndexOfAttr(aLocalName) == -1,
+               "Caller asserted attribute is new but it already exists");
   }
-  MOZ_ASSERT(IndexOfAttr(aLocalName) == -1,
-             "Attribute thought to be new but it already exists");
+
   return AddNewAttribute(aLocalName, aValue);
 }
 
@@ -163,10 +162,7 @@ nsresult AttrArray::SetAndSwapAttr(mozilla::dom::NodeInfo* aName,
   }
 
   *aHadValue = false;
-  const bool knownNew = aIsKnownNew == mozilla::dom::IsKnownNewAttr::Yes ||
-                        !HasAttrs() ||
-                        !BloomMayHave(HashForBloomFilter(localName));
-  if (!knownNew) {
+  if (aIsKnownNew == mozilla::dom::IsKnownNewAttr::No) {
     for (InternalAttr& attr : Attrs()) {
       if (attr.mName.Equals(localName, namespaceID)) {
         attr.mName.SetTo(aName);
@@ -175,9 +171,11 @@ nsresult AttrArray::SetAndSwapAttr(mozilla::dom::NodeInfo* aName,
         return NS_OK;
       }
     }
+  } else {
+    MOZ_ASSERT(IndexOfAttr(localName, namespaceID) == -1,
+               "Caller asserted attribute is new but it already exists");
   }
-  MOZ_ASSERT(IndexOfAttr(localName, namespaceID) == -1,
-             "Attribute thought to be new but it already exists");
+
   return AddNewAttribute(aName, aValue);
 }
 
