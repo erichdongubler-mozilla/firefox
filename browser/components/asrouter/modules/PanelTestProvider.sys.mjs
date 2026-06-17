@@ -1687,9 +1687,6 @@ const MESSAGES = () => [
               action: {
                 dismiss: true,
               },
-              background: true,
-              marginInline: "0 24px",
-              marginBlock: "24px 0",
             },
           },
         },
@@ -2407,7 +2404,7 @@ const MESSAGES = () => [
             title: { raw: "Panel Feature Callout" },
             subtitle: { raw: "Hello!" },
             secondary_button: {
-              label: { raw: "Cancel" },
+              label: { raw: "Advance" },
               action: { advance_screens: { direction: 1 } },
             },
             submenu_button: {
@@ -2449,10 +2446,6 @@ const MESSAGES = () => [
                 },
               ],
               attached_to: "secondary_button",
-            },
-            primary_button: {
-              label: { raw: "Advance" },
-              action: { advance_screens: { direction: 1 } },
             },
             dismiss_button: { action: { dismiss: true } },
           },
@@ -3834,6 +3827,103 @@ const MESSAGES = () => [
         },
       ],
       transitions: true,
+    },
+  },
+  {
+    id: "TEST_NEW_TAB_DIV_FEATURE_TOUR",
+    groups: [],
+    template: "feature_callout",
+    content: {
+      id: "TEST_NEW_TAB_MESSAGE_FEATURE_TOUR",
+      template: "multistage",
+      backdrop: "transparent",
+      transitions: true,
+      disableHistoryUpdates: true,
+      screens: [
+        {
+          id: "FIRST_NEW_TAB_SCREEN",
+          force_hide_steps_indicator: true,
+          anchors: [
+            {
+              selector: "hbox#browser",
+              hide_arrow: true,
+              absolute_position: {
+                right: "20px",
+                bottom: "20px",
+              },
+            },
+          ],
+          content: {
+            position: "callout",
+            width: "320px",
+            padding: "0 16px 16px 16px",
+            title: {
+              raw: "Test Message",
+            },
+            logo: null,
+            subtitle: {
+              raw: "Test Screen message",
+            },
+            secondary_button: {
+              label: {
+                raw: "Next",
+              },
+              style: "primary",
+              action: {
+                type: "MULTI_ACTION",
+                advance_screens: {
+                  id: "SECOND_NEW_TAB_SCREEN",
+                },
+                data: {
+                  actions: [],
+                },
+              },
+            },
+          },
+        },
+        {
+          id: "SECOND_NEW_TAB_SCREEN",
+          force_hide_steps_indicator: true,
+          anchors: [
+            {
+              selector: "hbox#browser",
+              hide_arrow: true,
+              absolute_position: {
+                right: "20px",
+                bottom: "20px",
+              },
+            },
+          ],
+          content: {
+            position: "callout",
+            width: "320px",
+            padding: "0 16px 16px 16px",
+            title: {
+              raw: "Test Message ",
+            },
+            logo: null,
+            subtitle: {
+              raw: "Test Screen 2 message.",
+            },
+            secondary_button: {
+              label: {
+                raw: "Done",
+              },
+              style: "primary",
+              action: {
+                dismiss: true,
+              },
+            },
+          },
+        },
+      ],
+    },
+    frequency: {
+      lifetime: 1,
+    },
+    targeting: "!activeNotifications",
+    trigger: {
+      id: "newtabFeatureCalloutCheck",
     },
   },
   {
