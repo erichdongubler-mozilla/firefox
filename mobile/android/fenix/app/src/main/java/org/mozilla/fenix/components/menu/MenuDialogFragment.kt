@@ -905,6 +905,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                     isBottomToolbar = settings.shouldUseBottomToolbar,
                                     isSiteLoading = isSiteLoading,
                                     scrollState = scrollState,
+                                    isBookmarked = isBookmarked,
                                     isPdf = customTab?.content?.isPdf == true,
                                     isDesktopMode = isDesktopMode,
                                     isSandboxCustomTab = args.isSandboxCustomTab,
@@ -930,6 +931,12 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                         } else {
                                             store.dispatch(MenuAction.RequestDesktopSite)
                                         }
+                                    },
+                                    onBookmarkPageMenuClick = {
+                                        store.dispatch(MenuAction.AddBookmark)
+                                    },
+                                    onEditBookmarkMenuClick = {
+                                        store.dispatch(MenuAction.Navigate.EditBookmark)
                                     },
                                     onFindInPageMenuClick = {
                                         store.dispatch(MenuAction.FindInPage)
