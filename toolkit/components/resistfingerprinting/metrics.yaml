@@ -5512,6 +5512,30 @@ characteristics:
     data_sensitivity:
       - interaction
 
+  font_smoothing_type:
+    type: quantity
+    unit: int
+    description: >
+      The system font-smoothing type, normalized across platforms: 0 = disabled,
+      1 = grayscale (standard), 2 = subpixel. On Windows this is the
+      subpixel-vs-grayscale type (SPI_GETFONTSMOOTHINGTYPE), distinct from
+      text_anti_aliasing (which records the ClearType contrast level). On Linux
+      it is the GNOME org.gnome.desktop.interface font-antialiasing setting
+      (rgba/grayscale/none). Not set on macOS (grayscale-only, no subpixel type)
+      or where the value cannot be determined.
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1898586
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1898586#c5
+    expires: never
+    data_sensitivity:
+      - interaction
+
   audio_fingerprint:
     type: quantity
     unit: int
