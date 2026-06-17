@@ -2521,6 +2521,7 @@ static void ForeachObservedPref(const Function& aFunction) {
   aFunction("media.getusermedia.audio.processing.aec"_ns);
   aFunction("media.getusermedia.audio.processing.agc.enabled"_ns);
   aFunction("media.getusermedia.audio.processing.agc"_ns);
+  aFunction("media.getusermedia.audio.processing.agc2.forced"_ns);
   aFunction("media.getusermedia.audio.processing.hpf.enabled"_ns);
   aFunction("media.getusermedia.audio.processing.noise.enabled"_ns);
   aFunction("media.getusermedia.audio.processing.noise"_ns);
