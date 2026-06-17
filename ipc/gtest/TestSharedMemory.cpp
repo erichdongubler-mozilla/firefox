@@ -35,6 +35,17 @@ struct SharedMemoryInternalTest : public testing::Test {
   void UnsafeSetSize(shared_memory::HandleBase& aHandle, uint64_t aSize) {
     aHandle.SetSize(aSize);
   }
+
+  template <shared_memory::Type T>
+  shared_memory::Handle<T> UnsafeConvertTo(
+      shared_memory::HandleBase&& aHandle) {
+    return std::move(aHandle).ConvertTo<T>();
+  }
+
+  shared_memory::MutableHandle UnsafeThaw(
+      shared_memory::ReadOnlyHandle&& aHandle) {
+    return UnsafeConvertTo<shared_memory::Type::Mutable>(std::move(aHandle));
+  }
 };
 
 #define ASSERT_SHMEM(handle, size)            \
@@ -264,10 +275,9 @@ TEST(IPCSharedMemoryMapping, FreezableUnmap)
 
 // Try to map a frozen shm for writing.  Threat model: the process is
 // compromised and then receives a frozen handle.
-TEST(IPCSharedMemory, FreezeAndMapRW)
-{
+TEST_F(SharedMemoryInternalTest, FreezeAndMapRW) {
   // Create
-  auto handle = ipc::shared_memory::CreateFreezable(1);
+  auto handle = shared_memory::CreateFreezable(1);
   ASSERT_TRUE(handle);
 
   // Initialize
@@ -278,10 +288,19 @@ TEST(IPCSharedMemory, FreezeAndMapRW)
   *mem = 'A';
 
   // Freeze
-  auto [roHandle, rwMapping] = std::move(mapping).FreezeWithMutableMapping();
-  ASSERT_TRUE(rwMapping);
+  auto roHandle = std::move(mapping).Freeze();
   ASSERT_TRUE(roHandle);
 
+  // Bypass the type system
+  auto rwHandle = UnsafeThaw(std::move(roHandle));
+  ASSERT_TRUE(rwHandle);
+
+  // Fail to write
+  auto rwMapping = rwHandle.Map();
+  EXPECT_FALSE(rwMapping);
+
+  // But it's still the same handle, for whatever that's worth
+  roHandle = std::move(rwHandle).ToReadOnly();
   auto roMapping = roHandle.Map();
   ASSERT_TRUE(roMapping);
   const auto* roMem = roMapping.DataAs<char>();
@@ -328,10 +347,8 @@ TEST(IPCSharedMemory, FreezeAndReprotect)
 // It doesn't work on Windows: VirtualProtect can't exceed the permissions set
 // in MapViewOfFile regardless of the security status of the original handle.
 //
-// It doesn't work on MacOS: we can set a higher max_protection for the memory
-// when creating the handle, but we wouldn't want to do this for freezable
-// handles (to prevent creating additional RW mappings that break the memory
-// freezing invariants).
+// It doesn't work on MacOS: we passed the same value as cur_prot and max_prot
+// when calling mach_vm_map, so the permissions can't be increased.
 TEST(IPCSharedMemory, Reprotect)
 {
   // Create
