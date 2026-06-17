@@ -13,10 +13,14 @@ const { sinon } = ChromeUtils.importESModule(
 const { MemoriesManager } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs"
 );
-const { HISTORY: SOURCE_HISTORY, CONVERSATION: SOURCE_CONVERSATION } =
-  ChromeUtils.importESModule(
-    "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs"
-  );
+const {
+  HISTORY: SOURCE_HISTORY,
+  CONVERSATION: SOURCE_CONVERSATION,
+  CONVERSATION_USER_REQUEST: SOURCE_USER_REQUEST,
+  MAX_MEMORY_SUMMARY_LENGTH,
+} = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs"
+);
 const { MemoryStore } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs"
 );
@@ -35,6 +39,9 @@ const { AIWindowAccountAuth } = ChromeUtils.importESModule(
 );
 const { EveryWindow } = ChromeUtils.importESModule(
   "resource:///modules/EveryWindow.sys.mjs"
+);
+const { ChatStore } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs"
 );
 /**
  * Constants for test memories
@@ -1373,5 +1380,114 @@ add_task(async function test_shouldEnableMemoriesFromSchedulers_firstrunGate() {
     sb.restore();
     Services.prefs.clearUserPref(PREF_GENERATE_MEMORIES_FROM_HISTORY);
     Services.prefs.clearUserPref(PREF_FIRSTRUN_HAS_COMPLETED);
+  }
+});
+
+// --- saveRequestedMemory tests ---
+add_task(async function test_saveRequestedMemory_rejects_empty_summary() {
+  try {
+    const result = await MemoriesManager.saveRequestedMemory("");
+    Assert.equal(result.ok, false, "Should reject empty summary");
+  } finally {
+    await deleteAllMemories();
+  }
+});
+
+add_task(async function test_saveRequestedMemory_rejects_whitespace_summary() {
+  try {
+    const result = await MemoriesManager.saveRequestedMemory("   ");
+    Assert.equal(result.ok, false, "Should reject whitespace-only summary");
+  } finally {
+    await deleteAllMemories();
+  }
+});
+
+add_task(async function test_saveRequestedMemory_truncates_long_summary() {
+  const sandbox = sinon.createSandbox();
+  sandbox
+    .stub(ChatStore, "getMostRecentMessages")
+    .resolves([{ content: { body: "remember I prefer Walmart" } }]);
+  sandbox.stub(MemoriesManager, "getRelevantMemories").resolves([]);
+  try {
+    await deleteAllMemories();
+    const result = await MemoriesManager.saveRequestedMemory(
+      "a".repeat(MAX_MEMORY_SUMMARY_LENGTH + 50)
+    );
+    Assert.equal(result.ok, true, "Truncated summary should be accepted");
+    Assert.equal(
+      result.memory.memory_summary.length,
+      MAX_MEMORY_SUMMARY_LENGTH,
+      `Summary not truncated to ${MAX_MEMORY_SUMMARY_LENGTH} characters`
+    );
+  } finally {
+    sandbox.restore();
+    await deleteAllMemories();
+  }
+});
+
+add_task(async function test_saveRequestedMemory_blocks_pii_in_summary() {
+  const sandbox = sinon.createSandbox();
+  sandbox
+    .stub(ChatStore, "getMostRecentMessages")
+    .resolves([{ content: { body: "contact me" } }]);
+  try {
+    const result = await MemoriesManager.saveRequestedMemory(
+      "My email is jane.doe@example.com"
+    );
+    Assert.equal(result.ok, false, "PII should be blocked in summary");
+  } finally {
+    sandbox.restore();
+    await deleteAllMemories();
+  }
+});
+
+add_task(async function test_saveRequestedMemory_blocks_pii_in_message() {
+  const sandbox = sinon.createSandbox();
+  sandbox
+    .stub(ChatStore, "getMostRecentMessages")
+    .resolves([{ content: { body: "remember my card 4111 1111 1111 1111" } }]);
+  try {
+    const result =
+      await MemoriesManager.saveRequestedMemory("Has a credit card");
+    Assert.equal(
+      result.ok,
+      false,
+      "PII should be blocked in originating message"
+    );
+  } finally {
+    sandbox.restore();
+    await deleteAllMemories();
+  }
+});
+
+add_task(async function test_saveRequestedMemory_happy_path_creates() {
+  const sandbox = sinon.createSandbox();
+  sandbox
+    .stub(ChatStore, "getMostRecentMessages")
+    .resolves([{ content: { body: "remember I prefer Walmart" } }]);
+  sandbox.stub(MemoriesManager, "getRelevantMemories").resolves([]);
+  try {
+    await deleteAllMemories();
+    const result = await MemoriesManager.saveRequestedMemory(
+      "Prefers Walmart for shopping"
+    );
+    Assert.equal(result.ok, true, "save succeeded");
+    Assert.equal(result.action, "created", "action is created");
+    Assert.equal(
+      result.memory.memory_summary,
+      "Prefers Walmart for shopping",
+      "memory_summary should match the input summary"
+    );
+    Assert.equal(result.memory.category, "", "category defaults to empty");
+    Assert.equal(result.memory.intent, "", "intent defaults to empty");
+    Assert.equal(
+      result.memory.source,
+      SOURCE_USER_REQUEST,
+      `Source should be ${SOURCE_USER_REQUEST}`
+    );
+    // Assert.equal(result.memory.score, 5, "Score should be 5"); #??
+  } finally {
+    sandbox.restore();
+    await deleteAllMemories();
   }
 });

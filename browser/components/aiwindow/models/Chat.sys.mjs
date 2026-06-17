@@ -22,6 +22,7 @@ import {
   WORLD_CUP_LIVE,
   WORLD_CUP_TOOLS,
   WORLD_CUP_PREF,
+  ADD_MEMORY,
 } from "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs";
 
 import { expandUrlTokensInToolParams } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
@@ -104,6 +105,10 @@ export async function executeToolByName(
         conversation.addUIToolToCurrentMessage(toolCallId, uiData);
       }
       result = toolResult;
+      break;
+    }
+    case ADD_MEMORY: {
+      result = await toolFns.addMemory(toolParams, conversation);
       break;
     }
     default: {
