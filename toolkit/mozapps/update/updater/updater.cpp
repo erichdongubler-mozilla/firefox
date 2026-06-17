@@ -1088,7 +1088,7 @@ static int remove_recursive_on_reboot(const NS_tchar* path,
     return rv;
   }
 
-  while ((entry = NS_treaddir(dir)) != 0) {
+  while ((entry = NS_treaddir(dir)) != nullptr) {
     if (NS_tstrcmp(entry->d_name, NS_T(".")) &&
         NS_tstrcmp(entry->d_name, NS_T(".."))) {
       NS_tchar childPath[MAXPATHLEN];
@@ -3398,7 +3398,7 @@ int NS_main(int argc, NS_tchar** argv) {
       isAdmin.unwrap() || isLocalSystem.unwrap();
 #elif defined(XP_MACOSX)
         strstr(argv[0], "/Library/PrivilegedHelperTools/org.mozilla.updater") !=
-        0;
+        nullptr;
 #else
       false;
 #endif
@@ -3412,7 +3412,7 @@ int NS_main(int argc, NS_tchar** argv) {
     }
   }
 
-  if (argc == 4 && (strstr(argv[1], "-dmgInstall") != 0)) {
+  if (argc == 4 && (strstr(argv[1], "-dmgInstall") != nullptr)) {
     isDMGInstall = true;
     if (isElevated) {
       freeArguments(argc, argv);

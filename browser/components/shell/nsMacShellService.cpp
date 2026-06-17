@@ -259,10 +259,10 @@ nsMacShellService::ShowSecurityPreferences(const nsACString& aPaneID) {
     CFStringRef format =
         CFSTR("x-apple.systempreferences:com.apple.preference.security?%@");
     if (format) {
-      CFStringRef urlStr =
-          CFStringCreateWithFormat(kCFAllocatorDefault, NULL, format, paneID);
+      CFStringRef urlStr = CFStringCreateWithFormat(kCFAllocatorDefault,
+                                                    nullptr, format, paneID);
       if (urlStr) {
-        CFURLRef url = ::CFURLCreateWithString(NULL, urlStr, NULL);
+        CFURLRef url = ::CFURLCreateWithString(nullptr, urlStr, nullptr);
         rv = CocoaFileUtils::OpenURL(url);
 
         ::CFRelease(urlStr);
@@ -292,7 +292,7 @@ nsMacShellService::GetAvailableApplicationsForProtocol(
    public:
     explicit CFTypeRefAutoDeleter(CFTypeRef ref) : mRef(ref) {}
     ~CFTypeRefAutoDeleter() {
-      if (mRef != NULL) ::CFRelease(mRef);
+      if (mRef != nullptr) ::CFRelease(mRef);
     }
 
    private:
@@ -305,34 +305,34 @@ nsMacShellService::GetAvailableApplicationsForProtocol(
       kCFAllocatorDefault, (const UInt8*)protocolSep.BeginReading(),
       protocolSep.Length(), kCFStringEncodingUTF8, false);
   CFTypeRefAutoDeleter cfProtocolAuto((CFTypeRef)cfProtocol);
-  if (cfProtocol == NULL) {
+  if (cfProtocol == nullptr) {
     return NS_ERROR_ILLEGAL_VALUE;
   }
   CFURLRef protocolURL =
-      ::CFURLCreateWithString(kCFAllocatorDefault, cfProtocol, NULL);
+      ::CFURLCreateWithString(kCFAllocatorDefault, cfProtocol, nullptr);
   CFTypeRefAutoDeleter cfProtocolURLAuto((CFTypeRef)protocolURL);
-  if (protocolURL == NULL) {
+  if (protocolURL == nullptr) {
     return NS_ERROR_MALFORMED_URI;
   }
   CFArrayRef appURLs = ::LSCopyApplicationURLsForURL(protocolURL, kLSRolesAll);
   CFTypeRefAutoDeleter cfAppURLsAuto((CFTypeRef)appURLs);
-  if (appURLs == NULL) {
+  if (appURLs == nullptr) {
     return NS_ERROR_NOT_AVAILABLE;
   }
   for (CFIndex i = 0; i < ::CFArrayGetCount(appURLs); i++) {
     CFURLRef appURL = (CFURLRef)::CFArrayGetValueAtIndex(appURLs, i);
     CFBundleRef appBundle = ::CFBundleCreate(kCFAllocatorDefault, appURL);
     CFTypeRefAutoDeleter cfAppBundleAuto((CFTypeRef)appBundle);
-    if (appBundle == NULL) {
+    if (appBundle == nullptr) {
       continue;
     }
     CFDictionaryRef appInfo = ::CFBundleGetInfoDictionary(appBundle);
-    if (appInfo == NULL) {
+    if (appInfo == nullptr) {
       continue;
     }
     CFStringRef displayName =
         (CFStringRef)::CFDictionaryGetValue(appInfo, kCFBundleNameKey);
-    if (displayName == NULL) {
+    if (displayName == nullptr) {
       continue;
     }
     CFStringRef appPath = ::CFURLGetString(appURL);

@@ -620,7 +620,7 @@ void logging::SelChange(dom::Selection* aSelection, DocAccessible* aDocument,
                         int16_t aReason) {
   SelectionType type = aSelection->GetType();
 
-  const char* strType = 0;
+  const char* strType = nullptr;
   if (type == SelectionType::eNormal) {
     strType = "normal";
   } else if (type == SelectionType::eSpellCheck) {

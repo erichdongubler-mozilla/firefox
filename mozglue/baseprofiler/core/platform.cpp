@@ -2079,7 +2079,7 @@ void SamplerThread::Run() {
 
   // This will be positive if we are running behind schedule (sampling less
   // frequently than desired) and negative if we are ahead of schedule.
-  TimeDuration lastSleepOvershoot = 0;
+  TimeDuration lastSleepOvershoot{};
   TimeStamp sampleStart = TimeStamp::Now();
 
   while (true) {

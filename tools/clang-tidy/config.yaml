@@ -65,6 +65,8 @@ clang_checkers:
     reliability: high
   - name: performance-trivially-destructible
     reliability: high
+  - name: modernize-use-nullptr
+    reliability: high
 
 # clang_checkers:
 #   - name: -*

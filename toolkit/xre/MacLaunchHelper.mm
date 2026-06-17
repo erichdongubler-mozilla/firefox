@@ -136,7 +136,7 @@ void LaunchMacApp(int aArgc, char** aArgv) {
 
   NSString* launchPath = [NSString stringWithUTF8String:aArgv[0]];
   if (![launchPath hasSuffix:@".app"]) {
-    LaunchChildMac(aArgc, aArgv, 0);
+    LaunchChildMac(aArgc, aArgv, nullptr);
     return;
   }
   NSMutableArray* arguments = [NSMutableArray arrayWithCapacity:aArgc - 1];
@@ -147,9 +147,9 @@ void LaunchMacApp(int aArgc, char** aArgv) {
 }
 
 bool InstallPrivilegedHelper() {
-  AuthorizationRef authRef = NULL;
+  AuthorizationRef authRef = nullptr;
   OSStatus status = AuthorizationCreate(
-      NULL, kAuthorizationEmptyEnvironment,
+      nullptr, kAuthorizationEmptyEnvironment,
       kAuthorizationFlagDefaults | kAuthorizationFlagInteractionAllowed,
       &authRef);
   if (status != errAuthorizationSuccess) {
@@ -160,15 +160,15 @@ bool InstallPrivilegedHelper() {
   }
 
   BOOL result = NO;
-  AuthorizationItem authItem = {kSMRightBlessPrivilegedHelper, 0, NULL, 0};
+  AuthorizationItem authItem = {kSMRightBlessPrivilegedHelper, 0, nullptr, 0};
   AuthorizationRights authRights = {1, &authItem};
   AuthorizationFlags flags =
       kAuthorizationFlagDefaults | kAuthorizationFlagInteractionAllowed |
       kAuthorizationFlagPreAuthorize | kAuthorizationFlagExtendRights;
 
   // Obtain the right to install our privileged helper tool.
-  status = AuthorizationCopyRights(authRef, &authRights,
-                                   kAuthorizationEmptyEnvironment, flags, NULL);
+  status = AuthorizationCopyRights(
+      authRef, &authRights, kAuthorizationEmptyEnvironment, flags, nullptr);
   if (status != errAuthorizationSuccess) {
     NSLog(@"AuthorizationCopyRights failed! NSOSStatusErrorDomain / %d",
           (int)status);

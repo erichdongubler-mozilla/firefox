@@ -264,7 +264,7 @@ static
 #elif defined(XP_WIN)  // defined(XP_UNIX)
     DWORD
 #endif                 // defined(XP_WIN)
-        gMainThreadId = 0;
+        gMainThreadId;
 
 // Avoid a race during application termination.
 static Mutex* dumpSafetyLock;

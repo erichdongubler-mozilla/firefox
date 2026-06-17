@@ -1182,7 +1182,7 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
   if (UAZoomEnabled()) {
     UAZoomChangeFocus(
         &objectRect,
-        focusType == kUAZoomFocusTypeInsertionPoint ? &highlightRect : NULL,
+        focusType == kUAZoomFocusTypeInsertionPoint ? &highlightRect : nullptr,
         focusType);
   }
 }

@@ -73,7 +73,7 @@ static const gchar* getActionDescriptionCB(AtkAction* aAction,
   Accessible* acc = GetInternalObj(atkObject);
   if (!acc) {
     // If we don't have an Accessible, we can't have any actions.
-    return 0;
+    return nullptr;
   }
 
   if (aActionIndex < acc->ActionCount()) {
@@ -108,7 +108,7 @@ static const gchar* getActionNameCB(AtkAction* aAction, gint aActionIndex) {
   Accessible* acc = GetInternalObj(atkObject);
   if (!acc) {
     // If we don't have an Accessible, we can't have any actions.
-    return 0;
+    return nullptr;
   }
 
   if (aActionIndex < acc->ActionCount()) {

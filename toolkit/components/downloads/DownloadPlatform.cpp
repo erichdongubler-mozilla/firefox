@@ -75,10 +75,10 @@ CFURLRef CreateCFURLFromNSIURI(nsIURI* aURI) {
   CFStringRef urlStr = ::CFStringCreateWithCString(
       kCFAllocatorDefault, spec.get(), kCFStringEncodingUTF8);
   if (!urlStr) {
-    return NULL;
+    return nullptr;
   }
 
-  CFURLRef url = ::CFURLCreateWithString(kCFAllocatorDefault, urlStr, NULL);
+  CFURLRef url = ::CFURLCreateWithString(kCFAllocatorDefault, urlStr, nullptr);
 
   ::CFRelease(urlStr);
 
@@ -195,7 +195,7 @@ nsresult DownloadPlatform::DownloadDone(nsIURI* aSource, nsIURI* aReferrer,
     ::CFRelease(observedObject);
 
     // Add OS X origin and referrer file metadata
-    CFStringRef pathCFStr = NULL;
+    CFStringRef pathCFStr = nullptr;
     if (!path.IsEmpty()) {
       pathCFStr = ::CFStringCreateWithCharacters(
           kCFAllocatorDefault, (const UniChar*)path.get(), path.Length());

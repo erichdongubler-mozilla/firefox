@@ -24,9 +24,9 @@ extern "C" {
  * process to terminate. When the process terminates, aPid will be set to the
  * pid of the terminated process to confirm that it executed successfully.
  */
-void LaunchChildMac(int aArgc, char** aArgv, pid_t* aPid = 0);
+void LaunchChildMac(int aArgc, char** aArgv, pid_t* aPid = nullptr);
 void LaunchMacApp(int aArgc, char** aArgv);
-bool LaunchElevatedUpdate(int aArgc, char** aArgv, pid_t* aPid = 0);
+bool LaunchElevatedUpdate(int aArgc, char** aArgv, pid_t* aPid = nullptr);
 bool InstallPrivilegedHelper();
 void AbortElevatedUpdate();
 }
