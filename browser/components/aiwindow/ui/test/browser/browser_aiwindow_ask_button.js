@@ -73,6 +73,11 @@ add_task(async function test_ask_button() {
       "Ask button is initially visible for AI Window"
     );
 
+    const focusAskButton = () => {
+      askButton.focus();
+      Services.focus.setFocus(askButton, Services.focus.FLAG_BYKEY);
+    };
+
     // Navigation away from aiWindow.html may auto-open the sidebar via
     // AIWindowTabStatesManager, wait for it to settle then ensure closed.
     await TestUtils.waitForCondition(
@@ -128,8 +133,7 @@ add_task(async function test_ask_button() {
     Assert.ok(sidebar.collapsed, "AI Sidebar is hidden after second click");
 
     askButton.setAttribute("tabindex", "-1");
-    askButton.focus();
-    Services.focus.setFocus(askButton, Services.focus.FLAG_BYKEY);
+    focusAskButton();
     EventUtils.synthesizeKey("KEY_Enter", {}, win);
 
     await BrowserTestUtils.waitForMutationCondition(
@@ -144,6 +148,7 @@ add_task(async function test_ask_button() {
     );
     Assert.ok(!sidebar.hidden, "AI Sidebar is not hidden after tab enter");
 
+    focusAskButton();
     EventUtils.synthesizeKey("KEY_Enter", {}, win);
 
     await BrowserTestUtils.waitForMutationCondition(
@@ -158,6 +163,7 @@ add_task(async function test_ask_button() {
     );
     Assert.ok(sidebar.collapsed, "AI Sidebar is hidden after second tab enter");
 
+    focusAskButton();
     EventUtils.synthesizeKey(" ", {}, win);
 
     await BrowserTestUtils.waitForMutationCondition(
@@ -172,6 +178,7 @@ add_task(async function test_ask_button() {
     );
     Assert.ok(!sidebar.hidden, "AI Sidebar is not hidden after space");
 
+    focusAskButton();
     EventUtils.synthesizeKey(" ", {}, win);
 
     await BrowserTestUtils.waitForMutationCondition(

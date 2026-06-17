@@ -291,6 +291,8 @@ export const AIWindowUI = {
       })
     );
 
+    this.focusSidebar(win);
+
     return true;
   },
 
