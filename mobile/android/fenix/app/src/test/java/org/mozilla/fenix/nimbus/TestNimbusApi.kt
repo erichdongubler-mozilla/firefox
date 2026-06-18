@@ -46,7 +46,7 @@ abstract class TestNimbusApi(
         return false
     }
 
-    override fun applyPendingExperiments(initial: Boolean): Job {
+    override fun applyPendingExperiments(): Job {
         return Job()
     }
 
