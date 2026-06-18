@@ -168,9 +168,9 @@ DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS_AND_FIELDS(
 
 DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS_AND_FIELDS(
     mozilla::dom::RTCOutboundRtpStreamStats,
-    mozilla::dom::RTCSentRtpStreamStats, mRemoteId, mFramesEncoded, mQpSum,
-    mNackCount, mFirCount, mPliCount, mHeaderBytesSent,
-    mRetransmittedPacketsSent, mRetransmittedBytesSent,
+    mozilla::dom::RTCSentRtpStreamStats, mRemoteId, mFramesEncoded,
+    mKeyFramesEncoded, mQpSum, mNackCount, mFirCount, mPliCount,
+    mHeaderBytesSent, mRetransmittedPacketsSent, mRetransmittedBytesSent,
     mTotalEncodedBytesTarget, mFrameWidth, mFrameHeight, mFramesPerSecond,
     mFramesSent, mHugeFramesSent, mTotalEncodeTime);
 
