@@ -127,7 +127,7 @@
 //
 //   veneer
 //     Space for a branch veneer, guaranteed to be <= deadline. At this
-//     position, guardSize_ * InstSize bytes are allocated. They should be
+//     position, veneerSize_ * InstSize bytes are allocated. They should be
 //     initialized to the proper unconditional branch instruction.
 //
 //   Unbound branches to the same unbound label are organized as a linked list:
@@ -514,6 +514,9 @@ struct AssemblerBufferSettings {
   // instruction sized units.
   unsigned headerSize;
 
+  // The size of a veneer branch, in instructions.
+  unsigned veneerSize;
+
   // The bias on pc relative addressing mode offsets, in units of bytes. The
   // ARM has a bias of 8 bytes.
   unsigned pcBias;
@@ -562,8 +565,8 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   // The size of a pool guard, in instructions. A branch around the pool.
   static constexpr unsigned GuardSize = settings.guardSize;
 
-  // Veneer branch is expected to have the same size as a pool guard branch.
-  static constexpr unsigned VeneerSize = settings.guardSize;
+  // The size of a veneer branch, in instructions.
+  static constexpr unsigned VeneerSize = settings.veneerSize;
 
   // The size of the header that is put at the beginning of a full pool, in
   // instruction sized units.
