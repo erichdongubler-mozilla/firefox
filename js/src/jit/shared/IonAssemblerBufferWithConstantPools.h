@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <bit>
 #include <deque>
+#include <type_traits>
 
 #include "jit/JitSpewer.h"
 #include "jit/shared/IonAssemblerBuffer.h"
@@ -446,8 +447,6 @@ struct Pool {
 
   size_t getPoolSize() const { return numEntries() * sizeof(PoolAllocUnit); }
 
-  bool oom() const { return oom_; }
-
   // Update the instruction/pool-entry pair that limits the position of the
   // pool. The nextInst is the actual offset of the new instruction being
   // allocated.
@@ -504,6 +503,25 @@ struct Pool {
 
     limitingUser = BufferOffset();
     limitingUsee = -1;
+  }
+};
+
+// Empty pool optimisation for assembler buffers which don't use constant pools.
+//
+// Implements only a subset of the Pool interface.
+struct EmptyPool final {
+  EmptyPool(size_t maxOffset, unsigned bias, LifoAlloc& lifoAlloc) {}
+
+  unsigned numEntries() const {
+    // Always zero entries.
+    return 0;
+  }
+
+  size_t getPoolSize() const { return numEntries() * sizeof(PoolAllocUnit); }
+
+  bool checkFull(size_t poolOffset) const {
+    // Never full.
+    return false;
   }
 };
 
@@ -582,8 +600,13 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   // ARM has a bias of 8 bytes.
   static constexpr unsigned PcBias = settings.pcBias;
 
+  // Constant pool support can be disabled by setting the header size to zero.
+  static constexpr bool UseConstantPools = HeaderSize > 0;
+
+  using PoolImpl = std::conditional_t<UseConstantPools, Pool, EmptyPool>;
+
   // The current working pool. Copied out as needed before resetting.
-  Pool pool_;
+  [[no_unique_address]] PoolImpl pool_;
 
   // Set of short-range forward branches that have not yet been bound.
   // We may need to insert veneers if the final label turns out to be out of
@@ -762,10 +785,14 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 
   unsigned insertEntryForwards(unsigned numInst, unsigned numPoolEntries,
                                uint8_t* inst, uint8_t* data) {
-    // If inserting pool entries then find a new limiter before we do the
-    // range check.
-    if (numPoolEntries) {
-      pool_.updateLimiter(BufferOffset(sizeExcludingCurrentPool()));
+    if constexpr (UseConstantPools) {
+      // If inserting pool entries then find a new limiter before we do the
+      // range check.
+      if (numPoolEntries) {
+        pool_.updateLimiter(BufferOffset(sizeExcludingCurrentPool()));
+      }
+    } else {
+      MOZ_ASSERT(numPoolEntries == 0);
     }
 
     if (!hasSpaceForInsts(numInst, numPoolEntries)) {
@@ -782,14 +809,17 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
       }
       return insertEntryForwards(numInst, numPoolEntries, inst, data);
     }
-    if (numPoolEntries) {
-      unsigned result = pool_.insertEntry(numPoolEntries, data,
-                                          this->nextOffset(), this->lifoAlloc_);
-      if (result == Pool::OOM_FAIL) {
-        this->fail_oom();
-        return OOM_FAIL;
+
+    if constexpr (UseConstantPools) {
+      if (numPoolEntries) {
+        unsigned result = pool_.insertEntry(
+            numPoolEntries, data, this->nextOffset(), this->lifoAlloc_);
+        if (result == Pool::OOM_FAIL) {
+          this->fail_oom();
+          return OOM_FAIL;
+        }
+        return result;
       }
-      return result;
     }
 
     // The pool entry index is returned above when allocating an entry, but
@@ -848,11 +878,14 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     }
 
     // Now to get an instruction to write.
-    if (numPoolEntries) {
-      JitSpew(JitSpew_Pools, "Entry has index %u, offset %zu", index,
-              sizeExcludingCurrentPool());
-      Asm::InsertIndexIntoTag(inst, index);
+    if constexpr (UseConstantPools) {
+      if (numPoolEntries) {
+        JitSpew(JitSpew_Pools, "Entry has index %u, offset %zu", index,
+                sizeExcludingCurrentPool());
+        Asm::InsertIndexIntoTag(inst, index);
+      }
     }
+
     // Now inst is a valid thing to insert into the instruction stream.
     return this->putBytes(numInst * InstSize, inst);
   }
@@ -989,9 +1022,13 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 
     // Dump the pool with a guard branch around the pool.
     BufferOffset guard = this->putBytes(GuardSize * InstSize, nullptr);
-    BufferOffset header = this->putBytes(HeaderSize * InstSize, nullptr);
-    BufferOffset data =
-        this->putBytes(pool_.getPoolSize(), (const uint8_t*)pool_.poolData());
+    BufferOffset header;
+    BufferOffset data;
+    if constexpr (UseConstantPools) {
+      header = this->putBytes(HeaderSize * InstSize, nullptr);
+      data =
+          this->putBytes(pool_.getPoolSize(), (const uint8_t*)pool_.poolData());
+    }
     if (this->oom()) {
       return;
     }
@@ -1022,34 +1059,37 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     // Fill them in.
     BufferOffset afterPool = this->nextOffset();
     Asm::WritePoolGuard(guard, this->getInst(guard), afterPool);
-    Asm::WritePoolHeader((uint8_t*)this->getInst(header), &pool_, false);
+    if constexpr (UseConstantPools) {
+      Asm::WritePoolHeader((uint8_t*)this->getInst(header), &pool_, false);
 
-    // With the pool's final position determined it is now possible to patch
-    // the instructions that reference entries in this pool, and this is
-    // done incrementally as each pool is finished.
-    size_t poolOffset = data.getOffset();
+      // With the pool's final position determined it is now possible to patch
+      // the instructions that reference entries in this pool, and this is
+      // done incrementally as each pool is finished.
+      size_t poolOffset = data.getOffset();
 
-    unsigned idx = 0;
-    for (BufferOffset* iter = pool_.loadOffsets.begin();
-         iter != pool_.loadOffsets.end(); ++iter, ++idx) {
-      // All entries should be before the pool.
-      MOZ_ASSERT(iter->getOffset() < guard.getOffset());
+      unsigned idx = 0;
+      for (BufferOffset* iter = pool_.loadOffsets.begin();
+           iter != pool_.loadOffsets.end(); ++iter, ++idx) {
+        // All entries should be before the pool.
+        MOZ_ASSERT(iter->getOffset() < guard.getOffset());
 
-      // Everything here is known so we can safely do the necessary
-      // substitutions.
-      Inst* inst = this->getInst(*iter);
-      size_t codeOffset = poolOffset - iter->getOffset();
+        // Everything here is known so we can safely do the necessary
+        // substitutions.
+        Inst* inst = this->getInst(*iter);
+        size_t codeOffset = poolOffset - iter->getOffset();
 
-      // That is, PatchConstantPoolLoad wants to be handed the address of
-      // the pool entry that is being loaded.  We need to do a non-trivial
-      // amount of math here, since the pool that we've made does not
-      // actually reside there in memory.
-      JitSpew(JitSpew_Pools, "Fixing entry %d offset to %zu", idx, codeOffset);
-      Asm::PatchConstantPoolLoad(inst, (uint8_t*)inst + codeOffset);
+        // That is, PatchConstantPoolLoad wants to be handed the address of
+        // the pool entry that is being loaded.  We need to do a non-trivial
+        // amount of math here, since the pool that we've made does not
+        // actually reside there in memory.
+        JitSpew(JitSpew_Pools, "Fixing entry %d offset to %zu", idx,
+                codeOffset);
+        Asm::PatchConstantPoolLoad(inst, (uint8_t*)inst + codeOffset);
+      }
+
+      // Reset everything to the state that it was in when we started.
+      pool_.reset();
     }
-
-    // Reset everything to the state that it was in when we started.
-    pool_.reset();
   }
 
  public:
