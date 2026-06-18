@@ -3702,6 +3702,13 @@
   mirror: always
 #endif
 
+# If this is true, any JS actor with safeForUntrustedWebProcess set to false
+# won't be allowed in a process that can hold web content.
+- name: dom.jsipc.check_safeForUntrustedWebProcess
+  type: bool
+  value: false
+  mirror: always
+
 # This controls whether JS IPC messages are sent from child to parent using
 # the typeable JSIPCValue encoding, or simply sent using structured cloning.
 # This being true is necessary to type check messages.

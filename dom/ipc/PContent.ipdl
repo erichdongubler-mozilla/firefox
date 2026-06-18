@@ -322,6 +322,7 @@ struct JSWindowActorInfo
 {
   nsCString name;
   bool allFrames;
+  bool safeForUntrustedWebProcess;
 
   // This is to align with JSProcessActorInfo.
   // This attribute isn't used for JSWindow Actors.
@@ -350,6 +351,8 @@ struct JSProcessActorInfo
 
     // True if the actor should be loaded in the distinct loader dedicated to DevTools.
     bool loadInDevToolsLoader;
+
+    bool safeForUntrustedWebProcess;
 
     // The module of the url.
     nsCString? url;
