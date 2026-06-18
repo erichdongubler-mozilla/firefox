@@ -408,6 +408,19 @@ void MediaController::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
   }
 }
 
+void MediaController::NotifyBrowsingContextDiscarded(
+    uint64_t aBrowsingContextId) {
+  if (mShutdown) {
+    return;
+  }
+  LOG("NotifyBrowsingContextDiscarded %" PRIu64, aBrowsingContextId);
+  const bool oldAudible = IsAudible();
+  MediaStatusManager::NotifyBrowsingContextDiscarded(aBrowsingContextId);
+  if (IsAudible() != oldAudible) {
+    DispatchAsyncEvent(u"audiblechange"_ns);
+  }
+}
+
 bool MediaController::ShouldActivateController() const {
   MOZ_ASSERT(!mShutdown);
   // After media is successfully loaded and match our critiera, such as its

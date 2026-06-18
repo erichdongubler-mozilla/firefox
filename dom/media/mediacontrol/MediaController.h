@@ -131,6 +131,7 @@ class MediaController final : public DOMEventTargetHelper,
       uint64_t aBrowsingContextId, MediaAudibleState aState,
       ControlType aType = ControlType::eControllable,
       AudioSessionType aSessionType = AudioSessionType::Playback) override;
+  void NotifyBrowsingContextDiscarded(uint64_t aBrowsingContextId) override;
   void SetIsInPictureInPictureMode(uint64_t aBrowsingContextId,
                                    bool aIsInPictureInPictureMode) override;
   void NotifyMediaFullScreenState(uint64_t aBrowsingContextId,
