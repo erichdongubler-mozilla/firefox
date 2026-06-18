@@ -58,7 +58,7 @@
 
     /** panel **/
     --panel-background-color: Field;
-    --panel-border-color: ThreeDShadow;
+    --panel-border-color: var(--border-color-deemphasized);
     --panel-text-color: FieldText;
 
     /** sidebar **/
@@ -185,7 +185,7 @@
 
       /** panel **/
       --panel-background-color: Field;
-      --panel-border-color: ThreeDShadow;
+      --panel-border-color: var(--border-color-deemphasized);
       --panel-text-color: FieldText;
 
       /** toolbar **/

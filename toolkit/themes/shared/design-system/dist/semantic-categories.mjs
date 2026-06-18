@@ -1087,9 +1087,9 @@ export const tokensTable = {
       value: {
         light: "rgb(240, 240, 244)",
         dark: "rgb(82, 82, 94)",
-        nativeTheme: "ThreeDShadow",
+        nativeTheme: "var(--border-color-deemphasized)",
         platform: {
-          default: "ThreeDShadow",
+          default: "var(--border-color-deemphasized)",
           browserTheme: {
             light: "rgb(240, 240, 244)",
             dark: "rgb(82, 82, 94)",
@@ -4251,9 +4251,9 @@ export const variableLookupTable = {
   "panel-border-color": {
     light: "rgb(240, 240, 244)",
     dark: "rgb(82, 82, 94)",
-    nativeTheme: "ThreeDShadow",
+    nativeTheme: "var(--border-color-deemphasized)",
     platform: {
-      default: "ThreeDShadow",
+      default: "var(--border-color-deemphasized)",
       browserTheme: {
         light: "rgb(240, 240, 244)",
         dark: "rgb(82, 82, 94)",
