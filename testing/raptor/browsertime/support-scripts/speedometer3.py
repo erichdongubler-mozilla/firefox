@@ -21,7 +21,8 @@ class Speedometer3Support(BasePythonSupport):
 
         if args.etw_profile:
             test["etw_profile"] = True
-            test["browser_cycles"] = 20
+            if args.browser_cycles is None:
+                test["browser_cycles"] = 20
             test["browsertime_args"] = (
                 f"{test.get('browsertime_args', '')} --browsertime.post_startup_delay=2000".strip()
             )
