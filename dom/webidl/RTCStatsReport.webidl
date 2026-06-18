@@ -198,13 +198,15 @@ dictionary RTCIceCandidatePairStats : RTCStats {
   RTCStatsIceCandidatePairState state;
   unsigned long long priority;
   boolean nominated;
-  boolean writable;
-  boolean readable;
+  boolean writable; // removed from standard
+  boolean readable; // removed from standard
+  unsigned long long packetsSent;
+  unsigned long long packetsReceived;
   unsigned long long bytesSent;
   unsigned long long bytesReceived;
   DOMHighResTimeStamp lastPacketSentTimestamp;
   DOMHighResTimeStamp lastPacketReceivedTimestamp;
-  boolean selected;
+  boolean selected; // removed from standard
   double totalRoundTripTime;
   double currentRoundTripTime;
   unsigned long long responsesReceived;

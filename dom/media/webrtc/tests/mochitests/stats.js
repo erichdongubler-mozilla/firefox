@@ -185,7 +185,6 @@ const statsExpectedByType = {
     optional: [],
     deprecated: [],
   },
-  csrc: { skip: true },
   codec: {
     expected: [
       "timestamp",
@@ -202,7 +201,6 @@ const statsExpectedByType = {
   },
   "peer-connection": { skip: true },
   "data-channel": { skip: true },
-  track: { skip: true },
   "candidate-pair": {
     expected: [
       "id",
@@ -218,6 +216,8 @@ const statsExpectedByType = {
       "readable",
       "bytesSent",
       "bytesReceived",
+      "packetsSent",
+      "packetsReceived",
       "lastPacketSentTimestamp",
       "lastPacketReceivedTimestamp",
       "totalRoundTripTime",
@@ -1615,6 +1615,19 @@ function pedanticChecks(report) {
           stat.bytesReceived >= recvExpectation,
           `${stat.type}.bytesReceived is a sane number (>${recvExpectation}) if media is flowing. ` +
             `value=${stat.bytesReceived}`
+        );
+
+        // packetsSent
+        ok(
+          stat.packetsSent > 0 && stat.packetsSent < 10000,
+          `${stat.type}.packetsSent is a sane number for a short ` +
+            `test. value=${stat.packetsSent}`
+        );
+
+        ok(
+          stat.packetsReceived >= 0 && stat.packetsReceived < 10000,
+          `${stat.type}.packetsReceived is a sane number for a short ` +
+            `test. value=${stat.packetsReceived}`
         );
 
         // lastPacketSentTimestamp
