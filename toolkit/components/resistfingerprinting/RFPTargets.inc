@@ -112,8 +112,8 @@ ITEM_VALUE(WebGLVendorSanitize,         77)
 ITEM_VALUE(WebGLVendorConstant,         78)
 ITEM_VALUE(WebGLVendorRandomize,        79)
 ITEM_VALUE(WebGLRendererConstant,       80)
-// How IME software in use chooses to style composition (exposed via EditContext)
-ITEM_VALUE(IMEStyle,                    81)
+
+// !!! Adding a new target? Rename PointerId and repurpose it.
 
 /*
  * In certain cases, we precompute the value of ShouldRFP for e.g. a Document.
