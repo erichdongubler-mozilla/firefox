@@ -383,6 +383,10 @@
     <!-- Debug info -->
     <!-- The title of the Debug info bottom sheet. -->
     <string name="debug_info_title">Debug info</string>
+    <!-- Status badge label shown when a debug info item is enabled. -->
+    <string name="debug_info_enabled" translatable="false">Enabled</string>
+    <!-- Status badge label shown when a debug info item is disabled. -->
+    <string name="debug_info_disabled" translatable="false">Disabled</string>
 
     <!-- Label for the secret settings preference to enable Import Passwords -->
     <string name="preferences_debug_settings_import_passwords">Enable Import Passwords</string>

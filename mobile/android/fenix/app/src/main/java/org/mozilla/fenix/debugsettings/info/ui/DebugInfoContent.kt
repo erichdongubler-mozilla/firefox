@@ -4,25 +4,40 @@
 
 package org.mozilla.fenix.debugsettings.info.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
+import mozilla.components.compose.base.badge.StatusBadge
+import mozilla.components.compose.base.theme.success
 import org.mozilla.fenix.R
+import org.mozilla.fenix.debugsettings.info.DebugInfoItem
+import org.mozilla.fenix.debugsettings.info.DebugInfoSection
+import org.mozilla.fenix.debugsettings.info.DebugInfoValue
+import org.mozilla.fenix.debugsettings.info.displayText
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
 
 @Composable
-internal fun DebugInfoContent() {
+internal fun DebugInfoContent(
+    sections: List<DebugInfoSection>,
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -31,8 +46,71 @@ internal fun DebugInfoContent() {
     ) {
         Text(
             text = stringResource(id = R.string.debug_info_title),
-            style = FirefoxTheme.typography.headline7,
+            style = FirefoxTheme.typography.headline5,
         )
+
+        sections.forEach { section ->
+            DebugInfoSectionView(section = section)
+        }
+    }
+}
+
+@Composable
+private fun DebugInfoSectionView(section: DebugInfoSection) {
+    Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))
+
+    Text(
+        text = section.title,
+        style = FirefoxTheme.typography.headline8,
+    )
+
+    Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static50))
+
+    HorizontalDivider()
+
+    section.items.forEach { item ->
+        DebugInfoRow(item = item)
+    }
+}
+
+@Composable
+private fun DebugInfoRow(item: DebugInfoItem) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = FirefoxTheme.layout.space.static100),
+        horizontalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static200),
+    ) {
+        Text(
+            text = item.label,
+            style = FirefoxTheme.typography.body2,
+            modifier = Modifier.weight(1f),
+        )
+
+        when (val value = item.value) {
+            is DebugInfoValue.State -> {
+                StatusBadge(
+                    status = value.displayText(LocalContext.current),
+                    containerColor = if (value.enabled) {
+                        MaterialTheme.colorScheme.success
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    },
+                    contentColor = if (value.enabled) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                )
+            }
+
+            is DebugInfoValue.Text -> {
+                Text(
+                    text = value.text,
+                    style = FirefoxTheme.typography.body2,
+                )
+            }
+        }
     }
 }
 
@@ -43,7 +121,26 @@ private fun DebugInfoContentPreview(
 ) {
     FirefoxTheme(theme = theme) {
         Surface {
-            DebugInfoContent()
+            DebugInfoContent(
+                sections = previewSections,
+            )
         }
     }
 }
+
+private val previewSections = listOf(
+    DebugInfoSection(
+        title = "Device",
+        items = listOf(
+            DebugInfoItem(label = "Android", value = DebugInfoValue.Text("Android 15")),
+            DebugInfoItem(label = "Model", value = DebugInfoValue.Text("Medium Phone")),
+        ),
+    ),
+    DebugInfoSection(
+        title = "Secret settings",
+        items = listOf(
+            DebugInfoItem(label = "enableHomepageSearchBar", value = DebugInfoValue.State(enabled = true)),
+            DebugInfoItem(label = "tabGroupsEnabled", value = DebugInfoValue.State(enabled = false)),
+        ),
+    ),
+)
