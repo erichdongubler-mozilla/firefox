@@ -24,6 +24,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import mozilla.components.compose.base.badge.StatusBadge
+import mozilla.components.compose.base.button.OutlinedButton
 import mozilla.components.compose.base.theme.success
 import org.mozilla.fenix.R
 import org.mozilla.fenix.debugsettings.info.DebugInfoItem
@@ -37,6 +38,7 @@ import org.mozilla.fenix.theme.Theme
 @Composable
 internal fun DebugInfoContent(
     sections: List<DebugInfoSection>,
+    onViewJsonClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -47,6 +49,14 @@ internal fun DebugInfoContent(
         Text(
             text = stringResource(id = R.string.debug_info_title),
             style = FirefoxTheme.typography.headline5,
+        )
+
+        Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static150))
+
+        OutlinedButton(
+            text = stringResource(id = R.string.debug_info_view_json_report),
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onViewJsonClick,
         )
 
         sections.forEach { section ->
@@ -123,6 +133,7 @@ private fun DebugInfoContentPreview(
         Surface {
             DebugInfoContent(
                 sections = previewSections,
+                onViewJsonClick = {},
             )
         }
     }

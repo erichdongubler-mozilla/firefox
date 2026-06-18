@@ -383,6 +383,10 @@
     <!-- Debug info -->
     <!-- The title of the Debug info bottom sheet. -->
     <string name="debug_info_title">Debug info</string>
+    <!-- The title of the Debug info JSON report bottom sheet. -->
+    <string name="debug_info_json_title">Debug info JSON</string>
+    <!-- Button label that opens the JSON report view in the debug info bottom sheet. -->
+    <string name="debug_info_view_json_report" translatable="false">View JSON report</string>
     <!-- Status badge label shown when a debug info item is enabled. -->
     <string name="debug_info_enabled" translatable="false">Enabled</string>
     <!-- Status badge label shown when a debug info item is disabled. -->

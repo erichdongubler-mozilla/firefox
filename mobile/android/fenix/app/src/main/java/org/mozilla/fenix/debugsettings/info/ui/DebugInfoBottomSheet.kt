@@ -9,12 +9,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import org.mozilla.fenix.debugsettings.info.DebugInfoSection
+import org.mozilla.fenix.debugsettings.info.toJson
 
 private const val DEBUG_INFO_ROUTE = "debug_info"
+private const val DEBUG_INFO_JSON_ROUTE = "debug_info_json"
 
 /**
  * The debug info bottom sheet.
@@ -44,6 +47,16 @@ fun DebugInfoBottomSheet(
             composable(route = DEBUG_INFO_ROUTE) {
                 DebugInfoContent(
                     sections = sections,
+                    onViewJsonClick = { navController.navigate(DEBUG_INFO_JSON_ROUTE) },
+                )
+            }
+
+            composable(route = DEBUG_INFO_JSON_ROUTE) {
+                val json = remember(sections) { sections.toJson() }
+
+                DebugInfoJsonReport(
+                    json = json,
+                    onBackClick = { navController.popBackStack() },
                 )
             }
         }

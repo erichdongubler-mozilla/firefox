@@ -5,6 +5,7 @@
 package org.mozilla.fenix.debugsettings.info
 
 import android.content.res.Resources
+import android.content.res.XmlResourceParser
 import org.mozilla.fenix.R
 import org.xmlpull.v1.XmlPullParser
 
@@ -18,27 +19,34 @@ private const val SWITCH_PREFERENCE_TAG = "SwitchPreferenceCompat"
  * @param resources [Resources] used to read the preference XML.
  */
 internal fun getSecretSettingsPreferenceKeys(resources: Resources): List<String> {
-    val keys = mutableListOf<String>()
-    val parser = resources.getXml(R.xml.secret_settings_preferences)
+    val result = mutableListOf<String>()
 
-    parser.use { parser ->
+    resources.getXml(R.xml.secret_settings_preferences).use { parser ->
         var eventType = parser.eventType
 
         while (eventType != XmlPullParser.END_DOCUMENT) {
-            if (eventType == XmlPullParser.START_TAG && parser.name.contains(SWITCH_PREFERENCE_TAG)) {
-                for (i in 0 until parser.attributeCount) {
-                    if (parser.getAttributeName(i) == KEY_ATTRIBUTE_NAME) {
-                        val resourceId = parser.getAttributeResourceValue(i, 0)
-                        if (resourceId != 0) {
-                            keys += resources.getString(resourceId)
-                        }
-                    }
-                }
+            val keyResourceId = parser.switchPreferenceKeyResourceId()
+            if (keyResourceId != 0) {
+                result += resources.getString(keyResourceId)
             }
 
             eventType = parser.next()
         }
     }
 
-    return keys
+    return result
+}
+
+private fun XmlResourceParser.switchPreferenceKeyResourceId(): Int {
+    if (eventType != XmlPullParser.START_TAG || !name.contains(SWITCH_PREFERENCE_TAG)) {
+        return 0
+    }
+
+    for (i in 0 until attributeCount) {
+        if (getAttributeName(i) == KEY_ATTRIBUTE_NAME) {
+            return getAttributeResourceValue(i, 0)
+        }
+    }
+
+    return 0
 }
