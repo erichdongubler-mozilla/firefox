@@ -1240,10 +1240,9 @@ containers-add-button2 =
     .label = Add new container
     .accesskey = A
 
-containers-new-tab-check2 =
+containers-new-tab-check3 =
     .label = Select a container for each new tab
     .accesskey = S
-    .description = This will open the containers menu every time you press the open new tab button.
 
 containers-settings-button2 =
     .title = Settings
