@@ -20,6 +20,7 @@
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/glean/DomMediaPlatformsWmfMetrics.h"
 #include "nsPrintfCString.h"
 #include "nsThreadUtils.h"
@@ -1563,6 +1564,16 @@ void ExternalEngineStateMachine::ReportTelemetry(const MediaResult& aError) {
   }
   if (auto platformErrorCode = aError.GetPlatformErrorCode()) {
     extraData.platformError = platformErrorCode;
+  }
+  // These gfxVars are populated once in the parent process before any content
+  // process starts and are not modified afterwards. This runs on the state
+  // machine task queue rather than the main thread, so copy the values out
+  // instead of holding a reference into the gfxVars singleton.
+  const nsCString adapterVendorID = gfx::gfxVars::AdapterVendorID();
+  if (!adapterVendorID.IsEmpty()) {
+    extraData.adapterVendorId = Some(adapterVendorID);
+    extraData.adapterDeviceId = Some(gfx::gfxVars::AdapterDeviceID());
+    extraData.adapterDriverVersion = Some(gfx::gfxVars::AdapterDriverVersion());
   }
   glean::mfcdm::error.Record(Some(extraData));
   if (MOZ_LOG_TEST(gMediaDecoderLog, LogLevel::Debug)) {

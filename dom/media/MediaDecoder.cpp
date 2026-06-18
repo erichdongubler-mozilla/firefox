@@ -25,6 +25,7 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/DOMTypes.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/glean/DomMediaMetrics.h"
 #include "mozilla/glean/DomMediaPlatformsWmfMetrics.h"
 #include "nsComponentManagerUtils.h"
@@ -443,6 +444,16 @@ bool MediaDecoder::SwitchStateMachine(const MediaResult& aError) {
         DetermineResolutionForTelemetry(*mInfo, resolution);
         extraData.resolution = Some(resolution);
       }
+    }
+    // These gfxVars are populated once in the parent process before any content
+    // process starts and are not modified afterwards; copy the values out
+    // rather than holding a reference into the gfxVars singleton.
+    const nsCString adapterVendorID = gfx::gfxVars::AdapterVendorID();
+    if (!adapterVendorID.IsEmpty()) {
+      extraData.adapterVendorId = Some(adapterVendorID);
+      extraData.adapterDeviceId = Some(gfx::gfxVars::AdapterDeviceID());
+      extraData.adapterDriverVersion =
+          Some(gfx::gfxVars::AdapterDriverVersion());
     }
     glean::mfcdm::error.Record(Some(extraData));
     if (MOZ_LOG_TEST(gMediaDecoderLog, LogLevel::Debug)) {

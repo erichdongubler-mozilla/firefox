@@ -91,8 +91,16 @@ mfcdm:
       platform_error:
         description: The platform specific error code, eg. HResult on Windows
         type: quantity
+      adapter_vendor_id:
+        description: The primary GPU adapter vendor id, eg. 0x10de
+        type: string
+      adapter_device_id:
+        description: The primary GPU adapter device id
+        type: string
+      adapter_driver_version:
+        description: The primary GPU adapter driver version
+        type: string
     expires: 165
-    telemetry_mirror: Mfcdm_Error_Gecko
 
 media:
   wmf_codec_no_extension:
