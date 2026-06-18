@@ -6,7 +6,6 @@ package org.mozilla.gecko.crashhelper;
 
 import android.app.Service;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Binder;
@@ -141,7 +140,7 @@ public final class CrashHelper extends Service {
   // google_breakpad::CrashGenerationServer::CreateReportChannel(), so we can
   // use them Breakpad's crash generation server & clients. The rest are
   // specific to the crash helper process.
-  public static Pipes createCrashHelperPipes(final Context context) {
+  public static Pipes createCrashHelperPipes() {
     try {
       final FileDescriptor breakpad_client_fd = new FileDescriptor();
       final FileDescriptor breakpad_server_fd = new FileDescriptor();
