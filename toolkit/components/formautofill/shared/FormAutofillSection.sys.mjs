@@ -25,7 +25,7 @@ class FormSection {
 
     // The section type is the data type of its first recognized field.
     for (const fieldDetail of fieldDetails) {
-      const typeId = lazy.FormAutofillUtils.typeIdFromFieldName(
+      const typeId = lazy.AutofillDataTypes.typeIdForFieldName(
         fieldDetail.fieldName
       );
       if (typeId) {
@@ -160,7 +160,7 @@ export class FormAutofillSection {
     );
     let current = fieldsByType.get(lazy.AutofillDataTypes.ADDRESS);
     for (const fieldDetail of fieldDetails) {
-      const typeId = lazy.FormAutofillUtils.typeIdFromFieldName(
+      const typeId = lazy.AutofillDataTypes.typeIdForFieldName(
         fieldDetail.fieldName
       );
       if (typeId) {
@@ -295,8 +295,7 @@ export class FormAutofillSection {
             if (last.fieldName == cur.fieldName) {
               isDuplicate = false;
             } else if (
-              lazy.FormAutofillUtils.getCategoryFromFieldName(cur.fieldName) ==
-              "name"
+              lazy.AutofillDataTypes.fieldToSubCategory[cur.fieldName] == "name"
             ) {
               // If the duplicate field is in the "name" category (e.g., family-name, given-name),
               // we check whether all fields starting from the first duplicate also belong to the
@@ -306,9 +305,8 @@ export class FormAutofillSection {
                 .slice(dupIndex)
                 .every(
                   f =>
-                    lazy.FormAutofillUtils.getCategoryFromFieldName(
-                      f.fieldName
-                    ) === "name"
+                    lazy.AutofillDataTypes.fieldToSubCategory[f.fieldName] ===
+                    "name"
                 );
             }
           }
@@ -562,7 +560,7 @@ export class FormAutofillAddressSection extends FormAutofillSection {
     // the number of fields exceed the valid address secton threshold
     const categories = Object.entries(record)
       .filter(e => !!e[1])
-      .map(e => lazy.FormAutofillUtils.getCategoryFromFieldName(e[0]));
+      .map(e => lazy.AutofillDataTypes.fieldToSubCategory[e[0]]);
 
     return (
       categories.reduce(

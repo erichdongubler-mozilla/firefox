@@ -135,7 +135,7 @@ export class FormAutofillChild extends JSWindowActorChild {
       let fields = [];
       const addressFields = [];
       for (const fd of handler.fieldDetails) {
-        const typeId = lazy.FormAutofillUtils.typeIdFromFieldName(fd.fieldName);
+        const typeId = lazy.AutofillDataTypes.typeIdForFieldName(fd.fieldName);
         if (!typeId) {
           continue;
         }
@@ -304,7 +304,7 @@ export class FormAutofillChild extends JSWindowActorChild {
         if (
           !detectedFields.some(
             fd =>
-              lazy.FormAutofillUtils.typeIdFromFieldName(fd.fieldName) != null
+              lazy.AutofillDataTypes.typeIdForFieldName(fd.fieldName) != null
           )
         ) {
           handler.setIdentifiedFieldDetails(detectedFields);
@@ -1117,7 +1117,7 @@ export class FormAutofillChild extends JSWindowActorChild {
       return false;
     }
     const fieldName = fieldDetail.fieldName;
-    const typeId = lazy.FormAutofillUtils.typeIdFromFieldName(fieldName);
+    const typeId = lazy.AutofillDataTypes.typeIdForFieldName(fieldName);
     // If the field's autofill feature is pref off, do not search.
     if (!lazy.FormAutofill.isAutofillTypeEnabled(typeId)) {
       return false;
@@ -1160,7 +1160,7 @@ export class FormAutofillChild extends JSWindowActorChild {
     const isInputAutofilled =
       input.autofillState == lazy.FormAutofillUtils.FIELD_STATES.AUTO_FILLED;
 
-    const typeId = lazy.FormAutofillUtils.typeIdFromFieldName(
+    const typeId = lazy.AutofillDataTypes.typeIdForFieldName(
       fieldDetail.fieldName
     );
     const acResult = lazy.ProfileAutoCompleteResult.createResult(

@@ -131,50 +131,6 @@ FormAutofillUtils = {
   ELIGIBLE_ELEMENT_TYPES,
   ELIGIBLE_INPUT_TYPES,
 
-  _fieldNameInfo: {
-    name: "name",
-    "given-name": "name",
-    "additional-name": "name",
-    "family-name": "name",
-    organization: "organization",
-    "street-address": "address",
-    "address-line1": "address",
-    "address-line2": "address",
-    "address-line3": "address",
-    "address-level1": "address",
-    "address-level2": "address",
-    "address-level3": "address",
-    // DE addresses are often split into street name and house number;
-    // combined they form address-line1
-    "address-streetname": "address",
-    "address-housenumber": "address",
-    // NL forms often split the suffix from the house number;
-    // for example 35B becomes '35' as the number and 'B' as the suffix.
-    "address-extra-housesuffix": "address",
-    "postal-code": "address",
-    country: "address",
-    "country-name": "address",
-    tel: "tel",
-    "tel-country-code": "tel",
-    "tel-national": "tel",
-    "tel-area-code": "tel",
-    "tel-local": "tel",
-    "tel-local-prefix": "tel",
-    "tel-local-suffix": "tel",
-    "tel-extension": "tel",
-    email: "email",
-    "cc-name": "creditCard",
-    "cc-given-name": "creditCard",
-    "cc-additional-name": "creditCard",
-    "cc-family-name": "creditCard",
-    "cc-number": "creditCard",
-    "cc-exp-month": "creditCard",
-    "cc-exp-year": "creditCard",
-    "cc-exp": "creditCard",
-    "cc-type": "creditCard",
-    "cc-csc": "creditCard",
-  },
-
   // This list includes autocomplete attributes that indicate that the field
   // is an address or credit-card field, but the field name is not one we
   // currently support for autofill. In these cases, we ignore the field
@@ -185,29 +141,17 @@ FormAutofillUtils = {
   _collators: {},
   _reAlternativeCountryNames: {},
 
-  /**
-   * Return the data type id (e.g. "address", "creditCard") that a field belongs
-   * to, or null if the field name is not recognized. The type is derived from
-   * the field's sub-category via the AutofillDataTypes registry.
-   *
-   * @param {string} fieldName
-   * @returns {?string}
-   */
-  typeIdFromFieldName(fieldName) {
-    return lazy.AutofillDataTypes.typeIdForSubCategory(
-      this._fieldNameInfo?.[fieldName]
-    );
-  },
-
   isAddressField(fieldName) {
     return (
-      this.typeIdFromFieldName(fieldName) == lazy.AutofillDataTypes.ADDRESS
+      lazy.AutofillDataTypes.typeIdForFieldName(fieldName) ==
+      lazy.AutofillDataTypes.ADDRESS
     );
   },
 
   isCreditCardField(fieldName) {
     return (
-      this.typeIdFromFieldName(fieldName) == lazy.AutofillDataTypes.CREDIT_CARD
+      lazy.AutofillDataTypes.typeIdForFieldName(fieldName) ==
+      lazy.AutofillDataTypes.CREDIT_CARD
     );
   },
 
@@ -321,12 +265,8 @@ FormAutofillUtils = {
     return lazy.CreditCard.getSupportedNetworks();
   },
 
-  getCategoryFromFieldName(fieldName) {
-    return this._fieldNameInfo[fieldName];
-  },
-
   getCollectionNameFromFieldName(fieldName) {
-    const typeId = this.typeIdFromFieldName(fieldName);
+    const typeId = lazy.AutofillDataTypes.typeIdForFieldName(fieldName);
     return (
       lazy.AutofillDataTypes.get(typeId)?.collectionName ??
       ADDRESSES_COLLECTION_NAME
@@ -451,7 +391,10 @@ FormAutofillUtils = {
     }
 
     for (let field in address) {
-      if (field != "tel" && this.getCategoryFromFieldName(field) == "tel") {
+      if (
+        field != "tel" &&
+        lazy.AutofillDataTypes.fieldToSubCategory[field] == "tel"
+      ) {
         delete address[field];
       }
     }

@@ -16,7 +16,7 @@ class AutofillDataTypeRegistry {
   /** @type {Map<string, AutofillDataType>} */
   #byId;
 
-  /** Maps a `_fieldNameInfo` sub-category to the id of the type that owns it. */
+  /** Maps a field sub-category to the id of the type that owns it. */
   #subCategoryToTypeId;
 
   /**
@@ -27,6 +27,10 @@ class AutofillDataTypeRegistry {
       descriptors.map(type =>
         Object.freeze({
           ...type,
+          fields: Object.freeze(type.fields),
+          // Derived from `fields` so each field name and its owning
+          // sub-category are declared in exactly one place.
+          subCategories: Object.freeze(Object.keys(type.fields)),
           // The feature prefs all live under
           // `extensions.formautofill.<prefKey>.*`, so they are derived from
           // prefKey.
@@ -43,6 +47,17 @@ class AutofillDataTypeRegistry {
         type.subCategories.map(subCategory => [subCategory, type.id])
       )
     );
+    // Flat field-name -> sub-category map across all types, used for field
+    // classification.
+    this.fieldToSubCategory = Object.freeze(
+      Object.fromEntries(
+        this.all.flatMap(type =>
+          Object.entries(type.fields).flatMap(([subCategory, fieldNames]) =>
+            fieldNames.map(fieldName => [fieldName, subCategory])
+          )
+        )
+      )
+    );
     this.ADDRESS = AutofillDataTypeRegistry.ADDRESS;
     this.CREDIT_CARD = AutofillDataTypeRegistry.CREDIT_CARD;
     Object.freeze(this);
@@ -57,11 +72,19 @@ class AutofillDataTypeRegistry {
   }
 
   /**
-   * @param {string} subCategory A `_fieldNameInfo` sub-category.
+   * @param {string} subCategory A field sub-category.
    * @returns {string} The owning type id, or null if the sub-category is unknown.
    */
   typeIdForSubCategory(subCategory) {
     return this.#subCategoryToTypeId.get(subCategory) ?? null;
+  }
+
+  /**
+   * @param {string} fieldName A field name (e.g. "street-address", "cc-number").
+   * @returns {string} The owning type id, or null if the field is unknown.
+   */
+  typeIdForFieldName(fieldName) {
+    return this.typeIdForSubCategory(this.fieldToSubCategory[fieldName]);
   }
 }
 
@@ -70,12 +93,58 @@ export const AutofillDataTypes = new AutofillDataTypeRegistry([
     id: AutofillDataTypeRegistry.ADDRESS,
     collectionName: "addresses",
     prefKey: "addresses",
-    subCategories: ["name", "organization", "address", "tel", "email"],
+    fields: {
+      name: ["name", "given-name", "additional-name", "family-name"],
+      organization: ["organization"],
+      address: [
+        "street-address",
+        "address-line1",
+        "address-line2",
+        "address-line3",
+        "address-level1",
+        "address-level2",
+        "address-level3",
+        // DE addresses are often split into street name and house number;
+        // combined they form address-line1
+        "address-streetname",
+        "address-housenumber",
+        // NL forms often split the suffix from the house number;
+        // for example 35B becomes '35' as the number and 'B' as the suffix.
+        "address-extra-housesuffix",
+        "postal-code",
+        "country",
+        "country-name",
+      ],
+      tel: [
+        "tel",
+        "tel-country-code",
+        "tel-national",
+        "tel-area-code",
+        "tel-local",
+        "tel-local-prefix",
+        "tel-local-suffix",
+        "tel-extension",
+      ],
+      email: ["email"],
+    },
   },
   {
     id: AutofillDataTypeRegistry.CREDIT_CARD,
     collectionName: "creditCards",
     prefKey: "creditCards",
-    subCategories: ["creditCard"],
+    fields: {
+      creditCard: [
+        "cc-name",
+        "cc-given-name",
+        "cc-additional-name",
+        "cc-family-name",
+        "cc-number",
+        "cc-exp-month",
+        "cc-exp-year",
+        "cc-exp",
+        "cc-type",
+        "cc-csc",
+      ],
+    },
   },
 ]);

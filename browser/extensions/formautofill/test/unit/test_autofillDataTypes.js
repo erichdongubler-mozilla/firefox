@@ -26,15 +26,12 @@ const { FieldDetail } = ChromeUtils.importESModule(
 );
 
 add_task(async function test_every_subcategory_is_owned_by_one_type() {
-  // Every sub-category produced by _fieldNameInfo must map to a data type.
-  const subCategories = new Set(
-    Object.values(FormAutofillUtils._fieldNameInfo)
-  );
-  for (const subCategory of subCategories) {
+  // Every field name declared in the registry resolves to a data type.
+  for (const fieldName of Object.keys(AutofillDataTypes.fieldToSubCategory)) {
     Assert.notEqual(
-      AutofillDataTypes.typeIdForSubCategory(subCategory),
+      AutofillDataTypes.typeIdForFieldName(fieldName),
       null,
-      `sub-category "${subCategory}" is owned by a data type`
+      `field "${fieldName}" is owned by a data type`
     );
   }
 
@@ -51,18 +48,15 @@ add_task(async function test_every_subcategory_is_owned_by_one_type() {
   }
 });
 
-add_task(async function test_typeIdFromFieldName() {
+add_task(async function test_typeIdForFieldName() {
   Assert.equal(
-    FormAutofillUtils.typeIdFromFieldName("street-address"),
+    AutofillDataTypes.typeIdForFieldName("street-address"),
     "address"
   );
-  Assert.equal(FormAutofillUtils.typeIdFromFieldName("tel"), "address");
-  Assert.equal(FormAutofillUtils.typeIdFromFieldName("email"), "address");
-  Assert.equal(
-    FormAutofillUtils.typeIdFromFieldName("cc-number"),
-    "creditCard"
-  );
-  Assert.equal(FormAutofillUtils.typeIdFromFieldName("not-a-field"), null);
+  Assert.equal(AutofillDataTypes.typeIdForFieldName("tel"), "address");
+  Assert.equal(AutofillDataTypes.typeIdForFieldName("email"), "address");
+  Assert.equal(AutofillDataTypes.typeIdForFieldName("cc-number"), "creditCard");
+  Assert.equal(AutofillDataTypes.typeIdForFieldName("not-a-field"), null);
 });
 
 add_task(async function test_is_field_helpers_match_registry() {

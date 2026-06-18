@@ -372,7 +372,7 @@ export class AutofillTelemetry {
   }
 
   static #getTelemetryByFieldDetail(fieldDetail) {
-    const typeId = FormAutofillUtils.typeIdFromFieldName(fieldDetail.fieldName);
+    const typeId = AutofillDataTypes.typeIdForFieldName(fieldDetail.fieldName);
     return this.#getTelemetryByType(typeId);
   }
 
