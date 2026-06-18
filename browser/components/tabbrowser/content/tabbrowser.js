@@ -8134,6 +8134,25 @@
           this.moveTabForward();
           aEvent.preventDefault();
           return;
+        case ShortcutUtils.MOVE_TAB_TO_START:
+        case ShortcutUtils.MOVE_TAB_TO_END: {
+          let userIsInputtingText =
+            window.windowUtils.IMEStatus !=
+            Ci.nsIDOMWindowUtils.IME_STATUS_DISABLED;
+          if (aEvent.defaultPrevented || userIsInputtingText) {
+            return;
+          }
+          if (
+            ShortcutUtils.getSystemActionForEvent(aEvent) ==
+            ShortcutUtils.MOVE_TAB_TO_START
+          ) {
+            this.moveTabToStart();
+          } else {
+            this.moveTabToEnd();
+          }
+          aEvent.preventDefault();
+          return;
+        }
         case ShortcutUtils.CLOSE_TAB:
           if (gBrowser.multiSelectedTabsCount) {
             gBrowser.removeMultiSelectedTabs();
