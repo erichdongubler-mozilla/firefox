@@ -39,7 +39,6 @@ const METRICS = [
     ["test-ping"],
     `"ping"`,
     false,
-    false,
   ],
   // TODO - bug 1965930 - Test the rest of the metric types
 ];

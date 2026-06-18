@@ -50,11 +50,10 @@ pub extern "C" fn jog_test_register_metric(
     send_in_pings: &ThinVec<nsCString>,
     lifetime: &nsACString,
     disabled: bool,
-    in_session: bool,
     extra_args: &nsACString,
 ) -> u32 {
-    log::warn!("Type: {:?}, Category: {:?}, Name: {:?}, SendInPings: {:?}, Lifetime: {:?}, Disabled: {}, InSession: {}, ExtraArgs: {}",
-      metric_type, category, name, send_in_pings, lifetime, disabled, in_session, extra_args);
+    log::warn!("Type: {:?}, Category: {:?}, Name: {:?}, SendInPings: {:?}, Lifetime: {:?}, Disabled: {}, ExtraArgs: {}",
+      metric_type, category, name, send_in_pings, lifetime, disabled, extra_args);
     let metric_type = &metric_type.to_utf8();
     let category = category.to_string();
     let name = name.to_string();
@@ -75,7 +74,6 @@ pub extern "C" fn jog_test_register_metric(
         send_in_pings,
         lifetime,
         disabled,
-        in_session,
         extra_args,
     )
     .expect("Creation/Registration of metric failed") // ok to panic in test-only method
@@ -97,7 +95,6 @@ pub extern "C" fn jog_test_register_metric(
 /// * `send_in_pings` - The pings this metric should be included in
 /// * `lifetime` - The lifetime of the metric (e.g., "ping", "application", "user")
 /// * `disabled` - Whether the metric is disabled
-/// * `in_session` - Whether the metric should be considered for automatic session handling.
 /// * `extra_args` - Optional JSON string with additional configuration
 ///
 /// # Returns
@@ -112,7 +109,6 @@ pub extern "C" fn jog_register_metric(
     send_in_pings: &ThinVec<nsCString>,
     lifetime: &nsACString,
     disabled: bool,
-    in_session: bool,
     extra_args: &nsACString,
 ) -> nsresult {
     // Validate inputs
@@ -157,7 +153,6 @@ pub extern "C" fn jog_register_metric(
         send_in_pings,
         lifetime,
         disabled,
-        in_session,
         extra_args,
     ) {
         Ok((_, metric_id)) => {
@@ -178,7 +173,6 @@ fn create_and_register_metric(
     send_in_pings: Vec<String>,
     lifetime: Lifetime,
     disabled: bool,
-    in_session: bool,
     extra_args: ExtraMetricArgs,
 ) -> Result<(u32, u32), Box<dyn std::error::Error>> {
     let ns_name = nsCString::from(&name);
@@ -190,7 +184,6 @@ fn create_and_register_metric(
         send_in_pings,
         lifetime,
         disabled,
-        in_session,
         extra_args.time_unit,
         extra_args.memory_unit,
         extra_args.allowed_extra_keys.or_else(|| Some(Vec::new())),
@@ -418,7 +411,6 @@ struct MetricDefinitionData {
     send_in_pings: Vec<String>,
     lifetime: Lifetime,
     disabled: bool,
-    in_session: bool,
     #[serde(default)]
     extra_args: Option<ExtraMetricArgs>,
 }
@@ -493,7 +485,6 @@ fn jog_register_jogfile(j: Jogfile) -> bool {
                 metric.send_in_pings,
                 metric.lifetime,
                 metric.disabled,
-                metric.in_session,
                 metric.extra_args.unwrap_or_else(Default::default),
             );
         }

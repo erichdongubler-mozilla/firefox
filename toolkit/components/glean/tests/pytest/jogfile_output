@@ -8,7 +8,6 @@
           "metrics"
         ],
         "application",
-        false,
         false
       ],
       [
@@ -18,7 +17,6 @@
           "metrics"
         ],
         "application",
-        false,
         false
       ],
       [
@@ -28,7 +26,6 @@
           "metrics"
         ],
         "ping",
-        false,
         false,
         {
           "bucket_count": 100,
@@ -45,7 +42,6 @@
         ],
         "application",
         false,
-        false,
         {
           "ordered_labels": null
         }
@@ -57,7 +53,6 @@
           "metrics"
         ],
         "application",
-        false,
         false,
         {
           "ordered_labels": [
@@ -82,7 +77,6 @@
         ],
         "application",
         false,
-        false,
         {
           "ordered_labels": null
         }
@@ -94,7 +88,6 @@
           "metrics"
         ],
         "application",
-        false,
         false,
         {
           "ordered_labels": [
@@ -111,7 +104,6 @@
         ],
         "application",
         false,
-        false,
         {
           "ordered_labels": null
         }
@@ -123,7 +115,6 @@
           "metrics"
         ],
         "application",
-        false,
         false,
         {
           "ordered_labels": [
@@ -140,7 +131,6 @@
         ],
         "ping",
         false,
-        false,
         {
           "memory_unit": "kilobyte"
         }
@@ -152,7 +142,6 @@
           "metrics"
         ],
         "application",
-        false,
         false
       ],
       [
@@ -162,7 +151,6 @@
           "metrics"
         ],
         "application",
-        false,
         false
       ],
       [
@@ -172,7 +160,6 @@
           "metrics"
         ],
         "application",
-        false,
         false
       ],
       [
@@ -182,7 +169,6 @@
           "metrics"
         ],
         "application",
-        false,
         false,
         {
           "time_unit": "millisecond"
@@ -196,7 +182,6 @@
         ],
         "ping",
         false,
-        false,
         {
           "time_unit": "nanosecond"
         }
@@ -209,7 +194,6 @@
         ],
         "ping",
         false,
-        false,
         {
           "permit_non_commutative_operations_over_ipc": true
         }
@@ -221,7 +205,6 @@
           "metrics"
         ],
         "ping",
-        false,
         false,
         {
           "ordered_labels": null,
@@ -237,7 +220,6 @@
           "metrics"
         ],
         "ping",
-        false,
         false,
         {
           "ordered_categories": [
@@ -256,7 +238,6 @@
           "metrics"
         ],
         "ping",
-        false,
         false
       ],
       [
@@ -266,7 +247,6 @@
           "metrics"
         ],
         "application",
-        false,
         false,
         {
           "time_unit": "millisecond"
@@ -280,7 +260,6 @@
         ],
         "ping",
         false,
-        true,
         {
           "allowed_extra_keys": []
         }
@@ -293,7 +272,6 @@
         ],
         "ping",
         false,
-        true,
         {
           "allowed_extra_keys": [
             "an_extra_key",
@@ -311,7 +289,6 @@
         ],
         "ping",
         false,
-        false,
         {
           "numerators": [
             [
@@ -322,8 +299,7 @@
               ],
               "ping",
               false,
-              null,
-              false
+              null
             ]
           ]
         }
@@ -335,7 +311,6 @@
           "metrics"
         ],
         "ping",
-        false,
         false
       ],
       [
@@ -345,8 +320,7 @@
           "metrics"
         ],
         "ping",
-        true,
-        false
+        true
       ],
       [
         "quantity",
@@ -355,7 +329,6 @@
           "metrics"
         ],
         "ping",
-        false,
         false
       ],
       [
@@ -365,7 +338,6 @@
           "metrics"
         ],
         "ping",
-        false,
         false
       ],
       [
@@ -375,7 +347,6 @@
           "metrics"
         ],
         "ping",
-        false,
         false
       ],
       [
@@ -385,7 +356,6 @@
           "metrics"
         ],
         "ping",
-        false,
         false,
         {
           "permit_non_commutative_operations_over_ipc": true
@@ -398,7 +368,6 @@
           "metrics"
         ],
         "application",
-        false,
         false
       ]
     ]

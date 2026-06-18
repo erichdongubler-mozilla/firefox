@@ -56,7 +56,6 @@ pub mod metrics {
                     lifetime: Lifetime::Ping,
                     disabled: false,
                     dynamic_label: None,
-                    ..Default::default()
                 },
                 TimeUnit::Millisecond,
             )
@@ -72,7 +71,6 @@ pub mod metrics {
                     lifetime: Lifetime::Ping,
                     disabled: false,
                     dynamic_label: None,
-                    ..Default::default()
                 },
                 TimeUnit::Millisecond,
             )
@@ -88,7 +86,6 @@ pub mod metrics {
                     lifetime: Lifetime::Ping,
                     disabled: false,
                     dynamic_label: None,
-                    ..Default::default()
                 },
                 TimeUnit::Millisecond,
             )

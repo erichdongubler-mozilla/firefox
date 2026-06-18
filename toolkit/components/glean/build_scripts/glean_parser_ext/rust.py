@@ -25,7 +25,6 @@ common_metric_data_args = [
     "send_in_pings",
     "lifetime",
     "disabled",
-    "in_session",
     "dynamic_label",
 ]
 

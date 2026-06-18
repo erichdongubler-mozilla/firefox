@@ -40,32 +40,15 @@ const INVALID_COUNTERS = 7;
 // It is CRUCIAL that we register metrics in the same order in the parent and
 // in the child or their metric ids will not line up and ALL WILL EXPLODE.
 const METRICS = [
-  ["counter", "jog_ipc", "jog_counter", ["test-ping"], `"ping"`, false, false],
-  [
-    "string_list",
-    "jog_ipc",
-    "jog_string_list",
-    ["test-ping"],
-    `"ping"`,
-    false,
-    false,
-  ],
-  [
-    "event",
-    "jog_ipc",
-    "jog_event_no_extra",
-    ["test-ping"],
-    `"ping"`,
-    false,
-    false,
-  ],
+  ["counter", "jog_ipc", "jog_counter", ["test-ping"], `"ping"`, false],
+  ["string_list", "jog_ipc", "jog_string_list", ["test-ping"], `"ping"`, false],
+  ["event", "jog_ipc", "jog_event_no_extra", ["test-ping"], `"ping"`, false],
   [
     "event",
     "jog_ipc",
     "jog_event",
     ["test-ping"],
     `"ping"`,
-    false,
     false,
     JSON.stringify({ allowed_extra_keys: ["extra1"] }),
   ],
@@ -76,7 +59,6 @@ const METRICS = [
     ["test-ping"],
     `"ping"`,
     false,
-    false,
     JSON.stringify({ memory_unit: "megabyte" }),
   ],
   [
@@ -86,7 +68,6 @@ const METRICS = [
     ["test-ping"],
     `"ping"`,
     false,
-    false,
     JSON.stringify({ time_unit: "nanosecond" }),
   ],
   [
@@ -95,7 +76,6 @@ const METRICS = [
     "jog_custom_dist",
     ["test-ping"],
     `"ping"`,
-    false,
     false,
     JSON.stringify({
       range_min: 1,
@@ -111,7 +91,6 @@ const METRICS = [
     ["test-ping"],
     `"ping"`,
     false,
-    false,
   ],
   [
     "labeled_counter",
@@ -120,7 +99,6 @@ const METRICS = [
     ["test-ping"],
     `"ping"`,
     false,
-    false,
   ],
   [
     "labeled_counter",
@@ -128,7 +106,6 @@ const METRICS = [
     "jog_labeled_counter_with_labels",
     ["test-ping"],
     `"ping"`,
-    false,
     false,
     JSON.stringify({ ordered_labels: ["label_1", "label_2"] }),
   ],
@@ -139,17 +116,15 @@ const METRICS = [
     ["test-ping"],
     `"ping"`,
     false,
-    false,
     JSON.stringify({ ordered_labels: ["label_1", "label_2"] }),
   ],
-  ["rate", "jog_ipc", "jog_rate", ["test-ping"], `"ping"`, false, false],
+  ["rate", "jog_ipc", "jog_rate", ["test-ping"], `"ping"`, false],
   [
     "labeled_custom_distribution",
     "jog_ipc",
     "jog_labeled_custom_dist",
     ["test-ping"],
     `"ping"`,
-    false,
     false,
     JSON.stringify({
       range_min: 1,
@@ -165,7 +140,6 @@ const METRICS = [
     ["test-ping"],
     `"ping"`,
     false,
-    false,
     JSON.stringify({ memory_unit: "megabyte" }),
   ],
   [
@@ -174,7 +148,6 @@ const METRICS = [
     "jog_labeled_timing_dist",
     ["test-ping"],
     `"ping"`,
-    false,
     false,
     JSON.stringify({ time_unit: "nanosecond" }),
   ],
@@ -185,7 +158,6 @@ const METRICS = [
     ["test-ping"],
     `"ping"`,
     false,
-    false,
     JSON.stringify({ permit_non_commutative_operations_over_ipc: true }),
   ],
   [
@@ -194,7 +166,6 @@ const METRICS = [
     "jog_unordered_labeled_bool",
     ["test-ping"],
     `"ping"`,
-    false,
     false,
     JSON.stringify({ permit_non_commutative_operations_over_ipc: true }),
   ],
@@ -205,7 +176,6 @@ const METRICS = [
     ["test-ping"],
     `"ping"`,
     false,
-    false,
     JSON.stringify({ permit_non_commutative_operations_over_ipc: true }),
   ],
   [
@@ -214,7 +184,6 @@ const METRICS = [
     "jog_dual_labeled_counter",
     ["test-ping"],
     `"ping"`,
-    false,
     false,
     JSON.stringify({ ordered_categories: ["cat1", "cat2"] }),
   ],

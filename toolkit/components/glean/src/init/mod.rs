@@ -6,6 +6,7 @@ use std::env;
 use std::ffi::{c_char, CStr, CString};
 use std::ops::DerefMut;
 use std::path::PathBuf;
+use std::time::Duration;
 
 use firefox_on_glean::{metrics, pings};
 use nserror::{nsresult, NS_ERROR_FAILURE};
@@ -15,7 +16,7 @@ use xpcom::interfaces::{
 };
 use xpcom::{RefPtr, XpCom};
 
-use glean::{ClientInfoMetrics, Configuration, ConfigurationBuilder};
+use glean::{ClientInfoMetrics, Configuration};
 
 #[cfg(not(target_os = "android"))]
 mod upload_pref;
@@ -144,7 +145,6 @@ fn build_configuration(
         app_display_version,
         channel: Some(channel),
         locale: Some(locale),
-        os_version: None, // TODO: bug 2017277
     };
     log::debug!("Client Info: {:#?}", client_info);
 
@@ -181,17 +181,25 @@ fn build_configuration(
         pings_per_interval,
     });
 
-    // TODO: bug 2046960 and/or bug 2046958, consolidate on either Builder pattern or
-    // struct initialization syntax.
-    let builder = ConfigurationBuilder::new(false, data_path, application_id)
-        .with_delay_ping_lifetime_io(true)
-        .with_server_endpoint(server)
-        .with_use_core_mps(true)
-        .with_trim_data_to_registered_pings(true)
-        .with_ping_schedule(pings::ping_schedule());
-
-    let mut configuration = builder.build();
-    configuration.rate_limit = rate_limit;
+    let configuration = Configuration {
+        upload_enabled: false,
+        data_path,
+        application_id,
+        max_events: None,
+        delay_ping_lifetime_io: true,
+        server_endpoint: Some(server),
+        uploader: None,
+        use_core_mps: true,
+        trim_data_to_registered_pings: true,
+        log_level: None,
+        rate_limit,
+        enable_event_timestamps: true,
+        experimentation_id: None,
+        enable_internal_pings: true,
+        ping_schedule: pings::ping_schedule(),
+        ping_lifetime_threshold: 0,
+        ping_lifetime_max_time: Duration::ZERO,
+    };
 
     Ok((configuration, client_info))
 }

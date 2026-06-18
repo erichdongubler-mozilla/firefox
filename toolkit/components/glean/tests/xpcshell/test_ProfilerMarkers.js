@@ -160,7 +160,6 @@ add_task(async function test_jog_counter_markers() {
     "jog_counter",
     ["test-ping"],
     `"ping"`,
-    false,
     false
   );
 
@@ -263,7 +262,6 @@ add_task(async function test_jog_labeled_counter_markers() {
     "jog_labeled_counter",
     ["test-ping"],
     `"ping"`,
-    false,
     false
   );
 
@@ -305,7 +303,6 @@ add_task(async function test_jog_labeled_counter_with_static_labels_markers() {
     "jog_labeled_counter_with_labels",
     ["test-ping"],
     `"ping"`,
-    false,
     false,
     JSON.stringify({ ordered_labels: ["label_1", "label_2"] })
   );
@@ -454,7 +451,6 @@ add_task(async function test_jog_string_markers() {
     "jog_string",
     ["test-ping"],
     `"ping"`,
-    false,
     false
   );
   let markers = await runWithProfilerAndGetMarkers("StringLikeMetric", () => {
@@ -478,7 +474,6 @@ add_task(async function test_jog_labeled_string_markers() {
     "jog_labeled_string",
     ["test-ping"],
     `"ping"`,
-    false,
     false
   );
 
@@ -520,7 +515,6 @@ add_task(async function test_jog_labeled_string_with_labels() {
     "jog_labeled_string_with_labels",
     ["test-ping"],
     `"ping"`,
-    false,
     false,
     JSON.stringify({ ordered_labels: ["label_1", "label_2"] })
   );
@@ -596,7 +590,6 @@ add_task(async function test_jog_string_list_markers() {
     "jog_string_list",
     ["test-ping"],
     `"ping"`,
-    false,
     false
   );
 
@@ -663,7 +656,6 @@ add_task(async function test_jog_timespan_markers() {
     "jog_timespan",
     ["test-ping"],
     `"ping"`,
-    false,
     false,
     JSON.stringify({ time_unit: "millisecond" })
   );
@@ -743,7 +735,6 @@ add_task(async function test_jog_uuid_markers() {
     "jog_uuid",
     ["test-ping"],
     `"ping"`,
-    false,
     false
   );
 
@@ -794,7 +785,6 @@ add_task(async function test_jog_datetime_markers() {
     "jog_datetime",
     ["test-ping"],
     `"ping"`,
-    false,
     false,
     JSON.stringify({ time_unit: "nanosecond" })
   );
@@ -868,7 +858,6 @@ add_task(async function test_jog_boolean_markers() {
     "jog_bool",
     ["test-ping"],
     `"ping"`,
-    false,
     false
   );
 
@@ -918,7 +907,6 @@ add_task(async function test_jog_labeled_boolean_markers() {
     "jog_labeled_bool",
     ["test-ping"],
     `"ping"`,
-    false,
     false
   );
 
@@ -968,7 +956,6 @@ add_task(async function test_jog_labeled_boolean_with_static_labels_markers() {
     "jog_labeled_bool_with_labels",
     ["test-ping"],
     `"ping"`,
-    false,
     false,
     JSON.stringify({ ordered_labels: ["label_1", "label_2"] })
   );
@@ -1164,7 +1151,6 @@ add_task(async function test_jog_memory_distribution_markers() {
     ["test-ping"],
     `"ping"`,
     false,
-    false,
     JSON.stringify({ memory_unit: "megabyte" })
   );
 
@@ -1186,7 +1172,6 @@ add_task(async function test_jog_labeled_memory_distribution_markers() {
     "jog_labeled_memory_dist",
     ["test-ping"],
     `"ping"`,
-    false,
     false,
     JSON.stringify({ memory_unit: "megabyte" })
   );
@@ -1285,7 +1270,6 @@ add_task(async function test_jog_custom_distribution_markers() {
     "jog_custom_dist",
     ["test-ping"],
     `"ping"`,
-    false,
     false,
     JSON.stringify({
       range_min: 1,
@@ -1471,7 +1455,6 @@ add_task(async function test_jog_timing_distribution() {
     ["test-ping"],
     `"ping"`,
     false,
-    false,
     JSON.stringify({ time_unit: "microsecond" })
   );
   let markers = await runWithProfilerAndGetMarkers("TimingDist", async () => {
@@ -1520,7 +1503,6 @@ add_task(async function test_jog_labeled_timing_distribution() {
     "jog_labeled_timing_dist",
     ["test-ping"],
     `"ping"`,
-    false,
     false,
     JSON.stringify({ time_unit: "microsecond" })
   );
@@ -1629,7 +1611,6 @@ add_task(async function test_jog_quantity_markers() {
     "jog_quantity",
     ["test-ping"],
     `"ping"`,
-    false,
     false
   );
 
@@ -1649,7 +1630,6 @@ add_task(async function test_jog_labeled_quantity_markers() {
     "jog_labeled_quantity",
     ["test-ping"],
     `"ping"`,
-    false,
     false
   );
   Assert.equal(
@@ -1734,7 +1714,6 @@ add_task(async function test_jog_rate_markers() {
     "jog_rate",
     ["test-ping"],
     `"ping"`,
-    false,
     false
   );
 
@@ -1745,7 +1724,6 @@ add_task(async function test_jog_rate_markers() {
     ["test-ping"],
     `"ping"`,
     false,
-    false,
     JSON.stringify({
       numerators: [
         {
@@ -1754,7 +1732,6 @@ add_task(async function test_jog_rate_markers() {
           send_in_pings: ["test-ping"],
           lifetime: "ping",
           disabled: false,
-          in_session: false,
         },
       ],
     })
@@ -1765,7 +1742,6 @@ add_task(async function test_jog_rate_markers() {
     "jog_rate_ext",
     ["test-ping"],
     `"ping"`,
-    false,
     false
   );
 
@@ -1828,7 +1804,6 @@ add_task(async function test_jog_text() {
     "a_text",
     ["test-ping"],
     `"ping"`,
-    false,
     false
   );
 
@@ -2119,7 +2094,6 @@ add_task(async function test_jog_dual_labeled_counter_markers() {
     "jog_dlc",
     ["test-ping"],
     `"ping"`,
-    false,
     false
   );
 
@@ -2154,7 +2128,6 @@ add_task(
       "jog_dlc_keys",
       ["test-ping"],
       `"ping"`,
-      false,
       false,
       JSON.stringify({ ordered_keys: ["raising heck", "duke of pop"] })
     );

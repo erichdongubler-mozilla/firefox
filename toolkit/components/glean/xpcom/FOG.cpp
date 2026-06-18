@@ -483,12 +483,11 @@ NS_IMETHODIMP
 FOG::TestRegisterRuntimeMetric(
     const nsACString& aType, const nsACString& aCategory,
     const nsACString& aName, const nsTArray<nsCString>& aPings,
-    const nsACString& aLifetime, const bool aDisabled, const bool aInSession,
+    const nsACString& aLifetime, const bool aDisabled,
     const nsACString& aExtraArgs, uint32_t* aMetricIdOut) {
   *aMetricIdOut = 0;
   *aMetricIdOut = glean::jog::jog_test_register_metric(
-      &aType, &aCategory, &aName, &aPings, &aLifetime, aDisabled, aInSession,
-      &aExtraArgs);
+      &aType, &aCategory, &aName, &aPings, &aLifetime, aDisabled, &aExtraArgs);
   return NS_OK;
 }
 
@@ -497,12 +496,10 @@ FOG::RegisterRuntimeMetric(const nsACString& aType, const nsACString& aCategory,
                            const nsACString& aName,
                            const nsTArray<nsCString>& aPings,
                            const nsACString& aLifetime, const bool aDisabled,
-                           const bool aInSession,
                            const nsACString& aExtraArgs) {
   MOZ_ASSERT(XRE_IsParentProcess());
   return glean::jog::jog_register_metric(&aType, &aCategory, &aName, &aPings,
-                                         &aLifetime, aDisabled, aInSession,
-                                         &aExtraArgs);
+                                         &aLifetime, aDisabled, &aExtraArgs);
 }
 
 NS_IMETHODIMP
@@ -535,13 +532,6 @@ FOG::RegisterRuntimePing(const nsACString& aName, const bool aIncludeClientId,
       &aName, aIncludeClientId, aSendIfEmpty, aPreciseTimestamps,
       aIncludeInfoSections, aEnabled, &aSchedulesPings, &aReasonCodes,
       aFollowsCollectionEnabled, &aUploaderCapabilities);
-}
-
-NS_IMETHODIMP
-FOG::ClearAttribution() {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  glean::impl::fog_clear_attribution();
-  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -635,13 +625,6 @@ FOG::TestGetAttribution(JSContext* aCx, JS::MutableHandleValue aResult) {
   aResult.setObject(*jsAttr);
   return NS_OK;
 #endif  // MOZ_GLEAN_ANDROID
-}
-
-NS_IMETHODIMP
-FOG::ClearDistribution() {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  glean::impl::fog_clear_distribution();
-  return NS_OK;
 }
 
 NS_IMETHODIMP
