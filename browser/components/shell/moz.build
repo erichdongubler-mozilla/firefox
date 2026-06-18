@@ -74,6 +74,11 @@ elif CONFIG["OS_ARCH"] == "WINNT":
         "crypt32",
         "propsys",
     ]
+
+    FINAL_TARGET_FILES.components.shell.assets += [
+        "assets/kit.gif",
+    ]
+
     FINAL_TARGET_FILES += ["content/blank.pdf", "content/confused_fox.pdf"]
 
     MOZ_SRC_FILES += [
