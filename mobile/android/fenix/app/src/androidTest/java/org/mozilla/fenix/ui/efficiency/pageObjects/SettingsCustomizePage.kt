@@ -5,6 +5,14 @@
 package org.mozilla.fenix.ui.efficiency.pageObjects
 
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
+import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.ViewMatchers.hasSibling
+import androidx.test.espresso.matcher.ViewMatchers.isChecked
+import androidx.test.espresso.matcher.ViewMatchers.withId
+import androidx.test.espresso.matcher.ViewMatchers.withText
+import org.hamcrest.Matchers.allOf
+import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
@@ -30,7 +38,8 @@ class SettingsCustomizePage(composeRule: AndroidComposeTestRule<HomeActivityInte
     }
 
     fun verifyOptionIsSelected(selector: Selector): SettingsCustomizePage {
-        mozVerifyElementHasCheckedSiblingByResName(selector, "radio_button")
+        onView(withText(selector.value))
+            .check(matches(hasSibling(allOf(withId(R.id.radio_button), isChecked()))))
         return this
     }
 

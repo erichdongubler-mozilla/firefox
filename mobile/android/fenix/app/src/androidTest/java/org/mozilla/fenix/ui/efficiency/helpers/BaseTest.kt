@@ -9,9 +9,6 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.test.espresso.IdlingResourceTimeoutException
 import androidx.test.espresso.NoMatchingViewException
 import androidx.test.uiautomator.UiObjectNotFoundException
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import leakcanary.NoLeakAssertionFailedError
 import org.junit.After
 import org.junit.Before
@@ -19,7 +16,6 @@ import org.junit.Rule
 import org.junit.rules.TestRule
 import org.junit.runners.model.Statement
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.helpers.AppAndSystemHelper.deleteBookmarksStorage
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.IdlingResourceHelper.unregisterAllIdlingResources
@@ -91,13 +87,6 @@ abstract class BaseTest(
                     ) { it.activity }
                     try {
                         Log.i("BaseTest", "RetryTestRule: Started try #${attempt + 1}.")
-                        runBlocking {
-                            deleteBookmarksStorage()
-                            withContext(Dispatchers.IO) {
-                                appContext.components.core.sessionStorage.clear()
-                            }
-                        }
-                        appContext.components.useCases.tabsUseCases.removeAllTabs()
                         _composeRule!!.apply(base, description).evaluate()
                         return // success, exit early
                     } catch (t: NoLeakAssertionFailedError) {
@@ -107,7 +96,7 @@ abstract class BaseTest(
                     } catch (t: Throwable) {
                         if (!t.isRetryable() || attempt >= MAX_RETRIES) throw t
                         Log.i("BaseTest", "RetryTestRule: ${t::class.simpleName} caught, retrying.")
-                        cleanup(removeTabs = true)
+                        cleanup()
                     }
                 }
             }
@@ -139,7 +128,7 @@ abstract class BaseTest(
         if (java.lang.Boolean.getBoolean("logPageCatalog")) {
             val pages = PageCatalog.discoverPages()
 
-            Log.i("PageCatalog", "Discovered ${pages.size} pages from PageContext")
+            Log.i("PageCatalog", "📚 Discovered ${pages.size} pages from PageContext")
 
             pages.forEachIndexed { index, pageRef ->
                 val page = pageRef.getter(on)
@@ -154,6 +143,7 @@ abstract class BaseTest(
         // State tracker is a lightweight breadcrumb used by navigation helpers.
         // Source-of-truth remains selector-based verification (mozIsOnPageNow / mozWaitForPageToLoad).
         PageStateTracker.currentPageName = "AppEntry"
+        Log.i("BaseTest", "🚀 Starting test with page: AppEntry")
     }
 
     /**
@@ -167,11 +157,6 @@ abstract class BaseTest(
      * - "Wall time" is overall elapsed real-world time for the test (start -> end).
      * - STEP/CMD/LOC totals sum only the instrumented scopes.
      */
-    @After
-    fun tearDown() {
-        appContext.components.useCases.tabsUseCases.removeAllTabs()
-    }
-
     @After
     fun tearDownLogging() {
         try {

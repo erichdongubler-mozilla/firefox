@@ -53,10 +53,6 @@ class BookmarksTest {
     val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833690
-    @Converted(
-        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.BookmarksTest#deleteBookmarkFoldersTest"],
-        since = "2026-05",
-    )
     @SmokeTest
     @Test
     fun deleteBookmarkFoldersTest() {
@@ -134,10 +130,6 @@ class BookmarksTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833693
-    @Converted(
-        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.BookmarksTest#shareBookmarkTest"],
-        since = "2026-05",
-    )
     @SmokeTest
     @Test
     fun shareBookmarkTest() {
@@ -161,10 +153,6 @@ class BookmarksTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833702
-    @Converted(
-        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.BookmarksTest#openMultipleSelectedBookmarksInANewTabTest"],
-        since = "2026-05",
-    )
     @SmokeTest
     @Test
     fun openMultipleSelectedBookmarksInANewTabTest() {
@@ -195,10 +183,6 @@ class BookmarksTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833704
-    @Converted(
-        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.BookmarksTest#deleteMultipleSelectedBookmarksTest"],
-        since = "2026-05",
-    )
     @SmokeTest
     @Test
     fun deleteMultipleSelectedBookmarksTest() {
@@ -245,10 +229,6 @@ class BookmarksTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833712
-    @Converted(
-        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.BookmarksTest#verifySearchForBookmarkedItemsTest"],
-        since = "2026-05",
-    )
     @SmokeTest
     @Test
     fun verifySearchForBookmarkedItemsTest() {
