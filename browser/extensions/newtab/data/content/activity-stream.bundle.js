@@ -20512,7 +20512,7 @@ function WidgetWrapper({
 // Elements where mousedown should start an interaction, not a widget reorder.
 // Anchors are excluded so clicking still navigates, and dragging an anchor
 // drags the widget.
-const INTERACTIVE_DESCENDANT_SELECTOR = ["button", "moz-button", "moz-checkbox", "moz-toggle", "moz-radio", "moz-select", "moz-input-text", "moz-input-password", "moz-input-search", "input", "textarea", "select", "[contenteditable='true']", "[role='button']", "[role='checkbox']", "[role='switch']", "[role='textbox']"].join(", ");
+const INTERACTIVE_DESCENDANT_SELECTOR = ["button", "moz-button", "moz-checkbox", "moz-toggle", "moz-radio", "moz-select", "moz-input-text", "moz-input-password", "moz-input-search", "input", "textarea", "select", "dialog", "[contenteditable='true']", "[role='button']", "[role='checkbox']", "[role='switch']", "[role='textbox']"].join(", ");
 
 /**
  * Builds a high-DPI drag image clone anchored at the cursor's grab point.
