@@ -66,7 +66,7 @@ MOZ_DEFINE_MALLOC_SIZE_OF(StartupCacheMallocSizeOf)
 NS_IMETHODIMP
 StartupCache::CollectReports(nsIHandleReportCallback* aHandleReport,
                              nsISupports* aData, bool aAnonymize) {
-  MutexAutoLock lock(mTableLock);
+  AssertIsOnMainThread();
   MOZ_COLLECT_REPORT(
       "explicit/startup-cache/mapping", KIND_NONHEAP, UNITS_BYTES,
       mCacheData.nonHeapSizeOfExcludingThis(),
@@ -168,9 +168,10 @@ NS_IMPL_ISUPPORTS(StartupCache, nsIMemoryReporter)
 
 StartupCache::StartupCache()
     : mTableLock("StartupCache::mTableLock"),
-      mDirty(false),
-      mRegularWriteDone(false),
+      mIOLock("StartupCache::mIOLock"),
       mCurTableReferenced(false),
+      mTableDirty(false),
+      mRegularWriteDone(false),
       mRequestedCount(0),
       mCacheEntriesBaseOffset(0) {}
 
@@ -258,6 +259,7 @@ nsresult StartupCache::Init() {
 }
 
 void StartupCache::StartPrefetchMemory() {
+  AssertIsOnMainThread();
   {
     MonitorAutoLock lock(mPrefetchComplete);
     mPrefetchInProgress = true;
@@ -267,12 +269,11 @@ void StartupCache::StartPrefetchMemory() {
       mCacheData.get<uint8_t>().get(), mCacheData.size()));
 }
 
-/**
- * LoadArchive can only be called from the main thread.
- */
 Result<Ok, nsresult> StartupCache::LoadArchive() {
-  MOZ_ASSERT(NS_IsMainThread(), "Can only load startup cache on main thread");
-  if (gIgnoreDiskCache) return Err(NS_ERROR_FAILURE);
+  AssertIsOnMainThread();
+  if (gIgnoreDiskCache) {
+    return Err(NS_ERROR_FAILURE);
+  }
 
   MOZ_TRY(mCacheData.init(mFile));
   auto size = mCacheData.size();
@@ -312,6 +313,7 @@ Result<Ok, nsresult> StartupCache::LoadArchive() {
       return Err(NS_ERROR_UNEXPECTED);
     }
     auto cleanup = MakeScopeExit([&]() {
+      AssertIsOnMainThread();
       mTableLock.AssertCurrentThreadOwns();
       WaitOnPrefetch();
       mTable.clear();
@@ -350,9 +352,9 @@ Result<Ok, nsresult> StartupCache::LoadArchive() {
         return Err(NS_ERROR_UNEXPECTED);
       }
 
-      if (!mTable.add(
-              p, key,
-              StartupCacheEntry(offset, compressedSize, uncompressedSize))) {
+      if (!mTable.add(p, key,
+                      MakeRefPtr<StartupCacheEntry>(offset, compressedSize,
+                                                    uncompressedSize))) {
         return Err(NS_ERROR_UNEXPECTED);
       }
     }
@@ -396,7 +398,7 @@ nsresult StartupCache::GetBuffer(const char* id, const char** outbuf,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  auto& value = p->value();
+  auto& value = *p->value();
   if (value.mData) {
     label = glean::startup_cache::RequestsLabel::eHitmemory;
   } else {
@@ -409,9 +411,6 @@ nsresult StartupCache::GetBuffer(const char* id, const char** outbuf,
     // LoadArchive(), either from Init() (which must have already happened) or
     // InvalidateCache(). InvalidateCache() locks the mutex, so a write can't be
     // happening.
-    // Also, WriteToDisk() requires mTableLock, so while it's writing we can't
-    // be here.
-
     size_t totalRead = 0;
     size_t totalWritten = 0;
     Span<const char> compressed = Span(
@@ -484,8 +483,9 @@ nsresult StartupCache::PutBuffer(const char* id, UniqueFreePtr<char[]>&& inbuf,
   // putNew returns false on alloc failure - in the very unlikely event we hit
   // that and aren't going to crash elsewhere, there's no reason we need to
   // crash here.
-  if (mTable.putNew(nsCString(id), StartupCacheEntry(std::move(inbuf), len,
-                                                     ++mRequestedCount))) {
+  if (mTable.putNew(nsCString(id),
+                    MakeRefPtr<StartupCacheEntry>(std::move(inbuf), len,
+                                                  ++mRequestedCount))) {
     return ResetStartupWriteTimer();
   }
   MOZ_DIAGNOSTIC_ASSERT(mTable.count() < STARTUP_CACHE_MAX_CAPACITY,
@@ -495,15 +495,15 @@ nsresult StartupCache::PutBuffer(const char* id, UniqueFreePtr<char[]>&& inbuf,
 
 size_t StartupCache::HeapSizeOfIncludingThis(
     mozilla::MallocSizeOf aMallocSizeOf) const {
+  MutexAutoLock l(mTableLock);
   // This function could measure more members, but they haven't been found by
   // DMD to be significant.  They can be added later if necessary.
-
   size_t n = aMallocSizeOf(this);
 
   n += mTable.shallowSizeOfExcludingThis(aMallocSizeOf);
   for (auto iter = mTable.iter(); !iter.done(); iter.next()) {
-    if (iter.get().value().mData) {
-      n += aMallocSizeOf(iter.get().value().mData.get());
+    if (iter.get().value()->mData) {
+      n += aMallocSizeOf(iter.get().value()->mData.get());
     }
     n += iter.get().key().SizeOfExcludingThisIfUnshared(aMallocSizeOf);
   }
@@ -511,51 +511,69 @@ size_t StartupCache::HeapSizeOfIncludingThis(
   return n;
 }
 
-/**
- * WriteToDisk writes the cache out to disk.
- * We own the mTableLock here.
- */
+struct StartupCacheEntryWriteData {
+  nsCString key;
+  RefPtr<StartupCacheEntry> value;
+  uint32_t mHeaderOffsetInFile;
+  int32_t mRequestedOrder;
+};
+
+struct WriteDataComparator {
+  using Value = StartupCacheEntryWriteData;
+
+  bool Equals(const Value& a, const Value& b) const {
+    return a.mRequestedOrder == b.mRequestedOrder;
+  }
+
+  bool LessThan(const Value& a, const Value& b) const {
+    return a.mRequestedOrder < b.mRequestedOrder;
+  }
+};
+
 Result<Ok, nsresult> StartupCache::WriteToDisk(WriteType aWriteType) {
-  if (!mDirty || mRegularWriteDone) {
+  if (!mTableDirty || mRegularWriteDone) {
     return Ok();
   }
-
-  if (!mFile) {
-    return Err(NS_ERROR_UNEXPECTED);
-  }
-
-  AutoFDClose raiiFd;
-  MOZ_TRY(mFile->OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE | PR_TRUNCATE,
-                                  0644, getter_Transfers(raiiFd)));
-  const auto fd = raiiFd.get();
-
-  nsTArray<StartupCacheEntry::KeyValuePair> entries(mTable.count());
-  for (auto iter = mTable.iter(); !iter.done(); iter.next()) {
-    if (iter.get().value().mRequested) {
-      StartupCacheEntry::KeyValuePair kv(&iter.get().key(),
-                                         &iter.get().value());
-      entries.AppendElement(kv);
+  nsTArray<StartupCacheEntryWriteData> entries;
+  {
+    MutexAutoLock lock(mTableLock);
+    entries.SetCapacity(mTable.count());
+    for (auto iter = mTable.iter(); !iter.done(); iter.next()) {
+      if (iter.get().value()->mRequested) {
+        entries.EmplaceBack(
+            StartupCacheEntryWriteData{iter.get().key(), iter.get().value(), 0,
+                                       iter.get().value()->mRequestedOrder});
+      }
     }
+    mTableDirty = false;
   }
 
   if (entries.IsEmpty()) {
     return Ok();
   }
+  MutexAutoLock ioLock(mIOLock);
+  AutoFDClose raiiFd;
+  if (!mFile) {
+    return Err(NS_ERROR_UNEXPECTED);
+  }
+  MOZ_TRY(mFile->OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE | PR_TRUNCATE,
+                                  0644, getter_Transfers(raiiFd)));
+  const auto fd = raiiFd.get();
 
-  entries.Sort(StartupCacheEntry::Comparator());
+  entries.Sort(WriteDataComparator());
   loader::OutputBuffer buf;
   for (auto& e : entries) {
-    auto* key = e.first;
-    auto* value = e.second;
+    auto& key = e.key;
+    auto& value = e.value;
     auto uncompressedSize = value->mUncompressedSize;
     // Set the mHeaderOffsetInFile so we can go back and edit the offset.
-    value->mHeaderOffsetInFile = buf.cursor();
+    e.mHeaderOffsetInFile = buf.cursor();
     // Write a 0 offset/compressed size as a placeholder until we get the real
     // offset after compressing.
     buf.codeUint32(0);
     buf.codeUint32(0);
     buf.codeUint32(uncompressedSize);
-    buf.codeString(*key);
+    buf.codeString(key);
   }
 
   uint8_t headerSize[4];
@@ -579,7 +597,7 @@ Result<Ok, nsresult> StartupCache::WriteToDisk(WriteType aWriteType) {
   auto writeSpan = Span(writeBuffer.get(), writeBufLen);
 
   for (auto& e : entries) {
-    auto value = e.second;
+    auto& value = e.value;
     value->mOffset = offset;
     Span<const char> result =
         MOZ_TRY(ctx.BeginCompressing(writeSpan).mapErr(MapLZ4ErrorToNsresult));
@@ -603,8 +621,8 @@ Result<Ok, nsresult> StartupCache::WriteToDisk(WriteType aWriteType) {
   }
 
   for (auto& e : entries) {
-    auto value = e.second;
-    uint8_t* headerEntry = buf.Get() + value->mHeaderOffsetInFile;
+    auto& value = e.value;
+    uint8_t* headerEntry = buf.Get() + e.mHeaderOffsetInFile;
     LittleEndian::writeUint32(headerEntry, value->mOffset);
     LittleEndian::writeUint32(headerEntry + sizeof(value->mOffset),
                               value->mCompressedSize);
@@ -612,7 +630,6 @@ Result<Ok, nsresult> StartupCache::WriteToDisk(WriteType aWriteType) {
   MOZ_TRY(Seek(fd, headerStart));
   MOZ_TRY(Write(fd, buf.Get(), buf.cursor()));
 
-  mDirty = false;
   if (aWriteType == WriteType::RegularWrite) {
     mRegularWriteDone = true;
   }
@@ -620,13 +637,12 @@ Result<Ok, nsresult> StartupCache::WriteToDisk(WriteType aWriteType) {
   return Ok();
 }
 
-void StartupCache::InvalidateCache(bool memoryOnly) {
+void StartupCache::InvalidateCache(bool aMemoryOnly) {
+  AssertIsOnMainThread();
   WaitOnPrefetch();
-  // Ensure we're not writing using mTable...
-  MutexAutoLock lock(mTableLock);
 
-  mRegularWriteDone = false;
-  if (memoryOnly) {
+  if (aMemoryOnly) {
+    mRegularWriteDone = false;
     // This should only be called in tests.
     auto writeResult = WriteToDisk(WriteType::RegularWrite);
     if (NS_WARN_IF(writeResult.isErr())) {
@@ -634,6 +650,13 @@ void StartupCache::InvalidateCache(bool memoryOnly) {
       return;
     }
   }
+
+  // Ensure we're not writing using mTable...
+  MutexAutoLock ioLock(mIOLock);
+  MutexAutoLock tableLock(mTableLock);
+
+  mRegularWriteDone = false;
+
   if (mCurTableReferenced) {
     // There should be no way for this assert to fail other than a user manually
     // sending startupcache-invalidate messages through the Browser Toolbox. If
@@ -653,7 +676,7 @@ void StartupCache::InvalidateCache(bool memoryOnly) {
     mTable.clear();
   }
   mRequestedCount = 0;
-  if (!memoryOnly) {
+  if (!aMemoryOnly) {
     mCacheData.reset();
     nsresult rv = mFile->Remove(false);
     if (NS_FAILED(rv) && rv != NS_ERROR_FILE_NOT_FOUND) {
@@ -691,7 +714,7 @@ void StartupCache::MaybeKickOffShutdownWrite() {
 }
 
 void StartupCache::EnsureShutdownWriteComplete() {
-  MutexAutoLock lock(mTableLock);
+  AssertIsOnMainThread();
   // If we've already written or there's nothing to write,
   // we don't need to do anything. This is the common case.
   if (mRegularWriteDone ||
@@ -701,10 +724,9 @@ void StartupCache::EnsureShutdownWriteComplete() {
   // Otherwise, ensure the write happens. The timer should have been cancelled
   // already in MaybeInitShutdownWrite.
 
-  // We got the lock. Keep the following in sync with
-  // MaybeWriteOffMainThread:
+  // Keep the following in sync with MaybeWriteOffMainThread:
   WaitOnPrefetch();
-  mDirty = true;
+  mTableDirty = true;
   mCacheData.reset();
   // Most of this should be redundant given MaybeWriteOffMainThread should
   // have run before now.
@@ -744,11 +766,11 @@ void StartupCache::ThreadedPrefetch(uint8_t* aStart, size_t aSize) {
   MMAP_FAULT_HANDLER_CATCH()
 }
 
-// mTableLock must be held
 bool StartupCache::ShouldCompactCache() {
   // If we've requested less than 4/5 of the startup cache, then we should
   // probably compact it down. This can happen quite easily after the first run,
   // which seems to request quite a few more things than subsequent runs.
+  MutexAutoLock lock(mTableLock);
   CheckedInt<uint32_t> threshold = CheckedInt<uint32_t>(mTable.count()) * 4 / 5;
   MOZ_RELEASE_ASSERT(threshold.isValid(), "Runaway StartupCache size");
   return mRequestedCount < threshold.value();
@@ -775,29 +797,26 @@ void StartupCache::WriteTimeout(nsITimer* aTimer, void* aClosure) {
  */
 void StartupCache::MaybeWriteOffMainThread(WriteType aWriteType,
                                            bool aUseLowPriorityIO) {
-  {
-    MutexAutoLock lock(mTableLock);
-    if (mRegularWriteDone ||
-        (mCacheData.initialized() && !ShouldCompactCache())) {
-      return;
-    }
+  AssertIsOnMainThread();
+  if (mRegularWriteDone) {
+    return;
+  }
+  if (mCacheData.initialized() && !ShouldCompactCache()) {
+    return;
   }
   // Keep this code in sync with EnsureShutdownWriteComplete.
   WaitOnPrefetch();
-  {
-    MutexAutoLock lock(mTableLock);
-    mDirty = true;
-    mCacheData.reset();
-  }
 
-  RefPtr<StartupCache> self = this;
+  mTableDirty = true;
+  mCacheData.reset();
+
   nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
-      "StartupCache::Write", [self, aWriteType, aUseLowPriorityIO]() mutable {
+      "StartupCache::Write",
+      [self = RefPtr{this}, aWriteType, aUseLowPriorityIO]() mutable {
         Maybe<nsAutoLowPriorityIO> lowPriority;
         if (aUseLowPriorityIO) {
           lowPriority.emplace();
         }
-        MutexAutoLock lock(self->mTableLock);
         auto result = self->WriteToDisk(aWriteType);
         (void)NS_WARN_IF(result.isErr());
       });
@@ -870,7 +889,7 @@ nsresult StartupCache::ResetStartupWriteTimerAndLock() {
 }
 
 nsresult StartupCache::ResetStartupWriteTimer() {
-  mDirty = true;
+  mTableDirty = true;
   nsresult rv = NS_OK;
   if (!mTimer)
     mTimer = NS_NewTimer();
@@ -887,8 +906,7 @@ nsresult StartupCache::ResetStartupWriteTimer() {
 // Used only in tests:
 bool StartupCache::StartupWriteComplete() {
   // Need to have written to disk and not added new things since;
-  MutexAutoLock lock(mTableLock);
-  return !mDirty && mRegularWriteDone;
+  return !mTableDirty && mRegularWriteDone;
 }
 
 // StartupCacheDebugOutputStream implementation
