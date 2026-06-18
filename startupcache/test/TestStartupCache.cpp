@@ -24,7 +24,6 @@
 #include "mozilla/UniquePtrExtensions.h"
 #include "nsNetCID.h"
 #include "nsIURIMutator.h"
-#include "nsComponentManagerUtils.h"
 
 using namespace JS;
 
