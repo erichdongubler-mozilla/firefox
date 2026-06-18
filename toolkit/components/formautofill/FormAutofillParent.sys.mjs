@@ -30,6 +30,7 @@
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { FormAutofill } from "resource://autofill/FormAutofill.sys.mjs";
 import { FormAutofillUtils } from "resource://gre/modules/shared/FormAutofillUtils.sys.mjs";
+import { AutofillDataTypes } from "resource://gre/modules/shared/AutofillDataTypes.sys.mjs";
 
 const lazy = {};
 
@@ -99,7 +100,7 @@ export let FormAutofillStatus = {
     Services.obs.addObserver(this, "formautofill-storage-changed");
 
     // Only listen to credit card related preference if it is available
-    if (FormAutofill.isAutofillCreditCardsAvailable) {
+    if (FormAutofill.isAutofillTypeAvailable(AutofillDataTypes.CREDIT_CARD)) {
       Services.prefs.addObserver(ENABLED_AUTOFILL_CREDITCARDS_PREF, this);
     }
   },
@@ -125,7 +126,7 @@ export let FormAutofillStatus = {
     Services.obs.removeObserver(this, "formautofill-storage-changed");
     Services.wm.removeListener(this);
 
-    if (FormAutofill.isAutofillCreditCardsAvailable) {
+    if (FormAutofill.isAutofillTypeAvailable(AutofillDataTypes.CREDIT_CARD)) {
       Services.prefs.removeObserver(ENABLED_AUTOFILL_CREDITCARDS_PREF, this);
     }
   },
@@ -184,7 +185,7 @@ export let FormAutofillStatus = {
       await lazy.gFormAutofillStorage.addresses.getSavedFieldNames();
 
     // Don't access the credit cards store unless it is enabled.
-    if (FormAutofill.isAutofillCreditCardsAvailable) {
+    if (FormAutofill.isAutofillTypeAvailable(AutofillDataTypes.CREDIT_CARD)) {
       const creditCardNames =
         await lazy.gFormAutofillStorage.creditCards.getSavedFieldNames();
       savedFieldNames = new Set([...addressNames, ...creditCardNames]);
@@ -204,10 +205,7 @@ export let FormAutofillStatus = {
   async observe(subject, topic, data) {
     lazy.log.debug("observe:", topic, "with data:", data);
 
-    if (
-      !FormAutofill.isAutofillCreditCardsAvailable &&
-      !FormAutofill.isAutofillAddressesAvailable
-    ) {
+    if (!FormAutofill.isAnyAutofillFeatureAvailable) {
       return;
     }
 
@@ -320,10 +318,7 @@ export class FormAutofillParent extends JSWindowActorParent {
    * @param   {object} message.data The data of the message.
    */
   async receiveMessage({ name, data }) {
-    if (
-      !FormAutofill.isAutofillCreditCardsAvailable &&
-      !FormAutofill.isAutofillAddressesAvailable
-    ) {
+    if (!FormAutofill.isAnyAutofillFeatureAvailable) {
       return undefined;
     }
 
@@ -823,7 +818,10 @@ export class FormAutofillParent extends JSWindowActorParent {
 
       if (
         collectionName == ADDRESSES_COLLECTION_NAME &&
-        !FormAutofill.isAutofillAddressesAvailableInCountry(record.country)
+        !FormAutofill.isAutofillTypeAvailableInCountry(
+          AutofillDataTypes.ADDRESS,
+          record.country
+        )
       ) {
         // Address autofill isn't supported for the record's country so we don't
         // want to attempt to potentially incorrectly fill the address fields.
@@ -842,7 +840,7 @@ export class FormAutofillParent extends JSWindowActorParent {
    */
 
   async _onAddressSubmit(address, browser) {
-    if (!FormAutofill.isAutofillAddressesEnabled) {
+    if (!FormAutofill.isAutofillTypeEnabled(AutofillDataTypes.ADDRESS)) {
       return false;
     }
 
@@ -966,7 +964,7 @@ export class FormAutofillParent extends JSWindowActorParent {
     }
 
     // Suppress the pending doorhanger from showing up if user disabled credit card in previous doorhanger.
-    if (!FormAutofill.isAutofillCreditCardsEnabled) {
+    if (!FormAutofill.isAutofillTypeEnabled(AutofillDataTypes.CREDIT_CARD)) {
       return false;
     }
 
@@ -990,7 +988,12 @@ export class FormAutofillParent extends JSWindowActorParent {
     }
 
     // Do not save address for regions that we don't support
-    if (!FormAutofill.isAutofillAddressesAvailableInCountry(record.country)) {
+    if (
+      !FormAutofill.isAutofillTypeAvailableInCountry(
+        AutofillDataTypes.ADDRESS,
+        record.country
+      )
+    ) {
       lazy.log.debug(
         `Do not show the address capture prompt for unsupported regions - ${record.country}`
       );

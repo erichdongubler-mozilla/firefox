@@ -460,10 +460,7 @@ export class FormAutofillChild extends JSWindowActorChild {
       return true;
     }
 
-    if (
-      !lazy.FormAutofill.isAutofillCreditCardsAvailable &&
-      !lazy.FormAutofill.isAutofillAddressesAvailable
-    ) {
+    if (!lazy.FormAutofill.isAnyAutofillFeatureAvailable) {
       return true;
     }
 

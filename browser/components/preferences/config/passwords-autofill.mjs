@@ -29,6 +29,7 @@ const lazy = XPCOMUtils.declareLazy({
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
   FormAutofillPreferences:
     "resource://autofill/FormAutofillPreferences.sys.mjs",
+  AutofillDataTypes: "resource://gre/modules/shared/AutofillDataTypes.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "AboutLoginsL10n", () => {
@@ -266,12 +267,14 @@ Preferences.addAll([
 Preferences.addSetting({
   id: "saveAndFillAddresses",
   pref: ENABLED_AUTOFILL_ADDRESSES_PREF,
-  visible: () => FormAutofill.isAutofillAddressesAvailable,
+  visible: () =>
+    FormAutofill.isAutofillTypeAvailable(lazy.AutofillDataTypes.ADDRESS),
 });
 Preferences.addSetting({
   id: "savedAddressesButton",
   pref: null,
-  visible: () => FormAutofill.isAutofillAddressesAvailable,
+  visible: () =>
+    FormAutofill.isAutofillTypeAvailable(lazy.AutofillDataTypes.ADDRESS),
   onUserClick: e => {
     e.preventDefault();
     if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
@@ -285,12 +288,14 @@ Preferences.addSetting({
 Preferences.addSetting({
   id: "saveAndFillPayments",
   pref: ENABLED_AUTOFILL_CREDITCARDS_PREF,
-  visible: () => FormAutofill.isAutofillCreditCardsAvailable,
+  visible: () =>
+    FormAutofill.isAutofillTypeAvailable(lazy.AutofillDataTypes.CREDIT_CARD),
 });
 Preferences.addSetting({
   id: "savedPaymentsButton",
   pref: null,
-  visible: () => FormAutofill.isAutofillCreditCardsAvailable,
+  visible: () =>
+    FormAutofill.isAutofillTypeAvailable(lazy.AutofillDataTypes.CREDIT_CARD),
   onUserClick: e => {
     e.preventDefault();
 

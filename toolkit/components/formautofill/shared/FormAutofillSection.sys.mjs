@@ -4,6 +4,7 @@
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  AutofillDataTypes: "resource://gre/modules/shared/AutofillDataTypes.sys.mjs",
   AutofillTelemetry: "resource://gre/modules/shared/AutofillTelemetry.sys.mjs",
   FormAutofillUtils: "resource://gre/modules/shared/FormAutofillUtils.sys.mjs",
   FormAutofill: "resource://autofill/FormAutofill.sys.mjs",
@@ -528,7 +529,9 @@ export class FormAutofillAddressSection extends FormAutofillSection {
   }
 
   isEnabled() {
-    return lazy.FormAutofill.isAutofillAddressesEnabled;
+    return lazy.FormAutofill.isAutofillTypeEnabled(
+      lazy.AutofillDataTypes.ADDRESS
+    );
   }
 
   isRecordCreatable(record) {
@@ -537,7 +540,10 @@ export class FormAutofillAddressSection extends FormAutofillSection {
     );
     if (
       country &&
-      !lazy.FormAutofill.isAutofillAddressesAvailableInCountry(country)
+      !lazy.FormAutofill.isAutofillTypeAvailableInCountry(
+        lazy.AutofillDataTypes.ADDRESS,
+        country
+      )
     ) {
       // We don't want to save data in the wrong fields due to not having proper
       // heuristic regexes in countries we don't yet support.
@@ -634,7 +640,9 @@ export class FormAutofillCreditCardSection extends FormAutofillSection {
   }
 
   isEnabled() {
-    return lazy.FormAutofill.isAutofillCreditCardsEnabled;
+    return lazy.FormAutofill.isAutofillTypeEnabled(
+      lazy.AutofillDataTypes.CREDIT_CARD
+    );
   }
 
   isRecordCreatable(record) {
