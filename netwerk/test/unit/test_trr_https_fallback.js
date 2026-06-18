@@ -852,6 +852,17 @@ add_task(async function testHttp3ExcludedList() {
 });
 
 add_task(async function testAllRecordsInHttp3ExcludedList() {
+  // This test exercises the legacy (non-Happy-Eyeballs-v3) behavior where a
+  // request is not retried against the origin when all HTTPS RRs are in the
+  // HTTP/3 excluded list. HE-v3 handles this case differently and the load
+  // succeeds, so the test only applies to the legacy path.
+  if (
+    Services.prefs.getBoolPref("network.http.happy_eyeballs_enabled", false)
+  ) {
+    info("Skipping testAllRecordsInHttp3ExcludedList: not applicable to HE-v3");
+    return;
+  }
+
   trrServer = new TRRServer();
   await trrServer.start();
   Services.dns.clearCache(true);
