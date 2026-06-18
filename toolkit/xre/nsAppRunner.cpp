@@ -6171,6 +6171,7 @@ nsresult XREMain::XRE_mainRun() {
       for (const auto& name : kStartupTokenNames) {
         g_unsetenv(name.get());
       }
+      nsAppShell::InitSessionRestore();
 #endif
 
 #ifdef XP_MACOSX
