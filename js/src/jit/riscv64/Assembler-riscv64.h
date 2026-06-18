@@ -116,8 +116,9 @@ using Buffer =
     js::jit::AssemblerBufferWithConstantPools<Instruction, Assembler,
                                               js::jit::AssemblerBufferSettings{
                                                   .instSize = kInstrSize,
-                                                  .guardSize = 2,
-                                                  .headerSize = 2,
+                                                  .guardSize = 1,
+                                                  .headerSize = 1,
+                                                  .veneerSize = 2,
                                                   .pcBias = 8,
                                                   .alignFillInst = kNopByte,
                                                   .nopFillInst = kNopByte,
