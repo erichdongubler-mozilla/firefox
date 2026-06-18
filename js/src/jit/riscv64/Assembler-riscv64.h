@@ -117,9 +117,9 @@ using Buffer =
                                               js::jit::AssemblerBufferSettings{
                                                   .instSize = kInstrSize,
                                                   .guardSize = 1,
-                                                  .headerSize = 1,
+                                                  .headerSize = 0,
                                                   .veneerSize = 2,
-                                                  .pcBias = 8,
+                                                  .pcBias = 0,
                                                   .alignFillInst = kNopByte,
                                                   .nopFillInst = kNopByte,
                                                   .numShortBranchRanges =
@@ -234,64 +234,13 @@ class Assembler : public AssemblerShared,
   // Copy the assembly code to the given buffer, and perform any pending
   // relocations relying on the target address.
   void executableCopy(uint8_t* buffer);
-  // API for speaking with the IonAssemblerBufferWithConstantPools generate an
-  // initial placeholder instruction that we want to later fix up.
-  static void InsertIndexIntoTag(uint8_t* load, uint32_t index);
-  static void PatchConstantPoolLoad(void* loadAddr, void* constPoolAddr);
-  // We're not tracking short-range branches for ARM for now.
+
   static void PatchShortRangeBranchToVeneer(Buffer*, unsigned rangeIdx,
                                             BufferOffset deadline,
                                             BufferOffset veneer);
-  struct PoolHeader {
-    uint32_t data;
-
-    struct Header {
-      // The size should take into account the pool header.
-      // The size is in units of Instruction (4bytes), not byte.
-      union {
-        struct {
-          uint32_t size : 15;
-
-          // "Natural" guards are part of the normal instruction stream,
-          // while "non-natural" guards are inserted for the sole purpose
-          // of skipping around a pool.
-          uint32_t isNatural : 1;
-          uint32_t ONES : 16;
-        };
-        uint32_t data;
-      };
-
-      Header(int size_, bool isNatural_)
-          : size(size_), isNatural(isNatural_), ONES(0xffff) {}
-
-      explicit Header(uint32_t data) : data(data) {
-        static_assert(sizeof(Header) == sizeof(uint32_t));
-        MOZ_ASSERT(ONES == 0xffff);
-      }
-
-      uint32_t raw() const {
-        static_assert(sizeof(Header) == sizeof(uint32_t));
-        return data;
-      }
-    };
-
-    PoolHeader(int size_, bool isNatural_)
-        : data(Header(size_, isNatural_).raw()) {}
-
-    uint32_t size() const {
-      Header tmp(data);
-      return tmp.size;
-    }
-
-    uint32_t isNatural() const {
-      Header tmp(data);
-      return tmp.isNatural;
-    }
-  };
-
-  static void WritePoolHeader(uint8_t* start, Pool* p, bool isNatural);
   static void WritePoolGuard(BufferOffset branch, Instruction* inst,
                              BufferOffset dest);
+
   void processCodeLabels(uint8_t* rawCode);
 
   // Get the next usable buffer offset. Note that a constant pool may be placed

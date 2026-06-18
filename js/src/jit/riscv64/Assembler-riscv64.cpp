@@ -100,15 +100,6 @@ uint32_t Assembler::GetPoolMaxOffset() {
   return AsmPoolMaxOffset;
 }
 
-// Pool callbacks stuff:
-void Assembler::InsertIndexIntoTag(uint8_t* load_, uint32_t index) {
-  MOZ_CRASH("Unimplement");
-}
-
-void Assembler::PatchConstantPoolLoad(void* loadAddr, void* constPoolAddr) {
-  MOZ_CRASH("Unimplement");
-}
-
 void Assembler::processCodeLabels(uint8_t* rawCode) {
   for (const CodeLabel& label : codeLabels_) {
     Bind(rawCode, label);
@@ -127,14 +118,11 @@ void Assembler::WritePoolGuard(BufferOffset branch, Instruction* inst,
 #ifdef JS_DISASM_RISCV64
   if (JitSpewEnabled(JitSpew_Codegen)) {
     disassembleInstr(inst, JitSpew_Codegen);
-    inst += 1 * kInstrSize;
-
-    // Skip over pool header, which doesn't represent a valid instruction.
-    inst += 1 * kInstrSize;
+    inst += kInstrSize;
 
     // Disassemble veneer branches after spewing the pool guard, so all
     // instructions appear in order.
-    BufferOffset bo(branch.getOffset() + kInstrSize * 2);
+    BufferOffset bo(branch.getOffset() + kInstrSize);
     while (bo < dest) {
       disassembleInstr(inst, JitSpew_Codegen);
       inst += kInstrSize;
@@ -142,20 +130,6 @@ void Assembler::WritePoolGuard(BufferOffset branch, Instruction* inst,
     }
   }
 #endif /* JS_DISASM_RISCV64 */
-}
-
-void Assembler::WritePoolHeader(uint8_t* start, Pool* p, bool isNatural) {
-  static_assert(sizeof(PoolHeader) == 4);
-
-  // Get the total size of the pool.
-  const uintptr_t totalPoolSize = sizeof(PoolHeader) + p->getPoolSize();
-  const uintptr_t totalPoolInstructions = totalPoolSize / kInstrSize;
-
-  MOZ_ASSERT((totalPoolSize & 0x3) == 0);
-  MOZ_ASSERT(totalPoolInstructions < (1 << 15));
-
-  PoolHeader header(totalPoolInstructions, isNatural);
-  *(PoolHeader*)start = header;
 }
 
 void Assembler::copyJumpRelocationTable(uint8_t* dest) {
