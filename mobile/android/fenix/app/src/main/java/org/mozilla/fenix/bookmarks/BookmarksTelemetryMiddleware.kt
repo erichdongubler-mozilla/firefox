@@ -284,8 +284,5 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
                 extra = BookmarksManagement.ImportSuccessfulExtra(bookmarksCount = action.count),
             )
         }
-        is ImportAction.ImportStarted -> {
-            BookmarksManagement.importStarted.record(NoExtras())
-        }
     }
 }

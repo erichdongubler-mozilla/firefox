@@ -3370,7 +3370,7 @@ class BookmarksMiddlewareTest {
         saveBookmarkSortOrder = saveSortOrder,
         editBookmarkUseCase = BookmarksUseCase.EditBookmarkUseCase(bookmarksStorage, lastSavedFolderCache),
         reportResultGlobally = reportResultGlobally,
-        importEvents = { emptyFlow() },
+        importResults = { emptyFlow() },
         lifecycleScope = scope,
     )
 
