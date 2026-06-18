@@ -61,13 +61,6 @@ void MediaPlaybackStatus::MaybeDestroyContextInfo(
   DestroyContextInfo(aContextId);
 }
 
-void MediaPlaybackStatus::ClearBrowsingContext(uint64_t aContextId) {
-  MOZ_ASSERT(NS_IsMainThread());
-  if (mContextInfoMap.Contains(aContextId)) {
-    DestroyContextInfo(aContextId);
-  }
-}
-
 bool MediaPlaybackStatus::UpdateMediaAudibleState(
     uint64_t aContextId, MediaAudibleState aState, ControlType aControlType,
     AudioSessionType aSessionType) {

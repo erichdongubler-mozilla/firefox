@@ -189,8 +189,6 @@ class MediaStatusManager : public IMediaInfoUpdater {
   // session doesn't exist or doesn't have any state, Nothing is returned.
   Maybe<PositionState> GetCurrentPositionState() const;
 
-  virtual void NotifyBrowsingContextDiscarded(uint64_t aBrowsingContextId);
-
   bool IsMediaAudible() const;
   bool IsMediaPlaying() const;
   bool IsAnyMediaBeingControlled() const;

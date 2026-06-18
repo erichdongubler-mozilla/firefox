@@ -1716,23 +1716,9 @@ void CanonicalBrowsingContext::DispatchWheelZoomChange(bool aIncrease) {
 }
 
 void CanonicalBrowsingContext::CanonicalDiscard() {
-  // Top (tab) BC case: mTabMediaController is only ever created on the
-  // top-level BC, so this tears down the tab's own controller.
   if (mTabMediaController) {
     mTabMediaController->Shutdown();
     mTabMediaController = nullptr;
-  }
-
-  // Child BC case: a child never owns mTabMediaController, but the tab's
-  // controller may still hold audibility state for this context. Clear it now
-  // so audiblechange fires correctly when an audible iframe is removed.
-  // GetMediaController() forwards to Top() for a child, so it returns the tab's
-  // controller (the one handled above for a top BC) rather than recreating a
-  // controller for this child.
-  if (!IsTop()) {
-    if (RefPtr<MediaController> mc = GetMediaController()) {
-      mc->NotifyBrowsingContextDiscarded(Id());
-    }
   }
 
   if (mCurrentLoad) {
