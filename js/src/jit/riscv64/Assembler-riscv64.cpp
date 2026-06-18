@@ -84,22 +84,6 @@ void Assembler::executableCopy(uint8_t* buffer) {
   m_buffer.executableCopy(buffer);
 }
 
-uint32_t Assembler::AsmPoolMaxOffset = 1024;
-
-uint32_t Assembler::GetPoolMaxOffset() {
-  static bool isSet = false;
-  if (!isSet) {
-    char* poolMaxOffsetStr = getenv("ASM_POOL_MAX_OFFSET");
-    uint32_t poolMaxOffset;
-    if (poolMaxOffsetStr &&
-        sscanf(poolMaxOffsetStr, "%u", &poolMaxOffset) == 1) {
-      AsmPoolMaxOffset = poolMaxOffset;
-    }
-    isSet = true;
-  }
-  return AsmPoolMaxOffset;
-}
-
 void Assembler::processCodeLabels(uint8_t* rawCode) {
   for (const CodeLabel& label : codeLabels_) {
     Bind(rawCode, label);
