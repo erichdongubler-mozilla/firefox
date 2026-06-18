@@ -15,7 +15,7 @@ DIST_SUBDIR = ""
 
 FINAL_TARGET_FILES += [
     "../extension/bg.js",
-    "../extension/manifest.json",
+    "../manifest.json",
 ]
 
 FINAL_TARGET_FILES.breakages += [
