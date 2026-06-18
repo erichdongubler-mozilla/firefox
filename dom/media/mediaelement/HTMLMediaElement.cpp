@@ -304,13 +304,28 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(HTMLMediaElement::EventBlocker)
 NS_INTERFACE_MAP_END
 
 /**
- * We use MediaControlKeyListener to listen to media control key in order to
- * play and pause media element when user press media control keys and update
- * media's playback and audible state to the media controller.
+ * MediaControlKeyListener registers each HTMLMediaElement with the
+ * ContentMediaAgent so it can report playback and audible state to the
+ * parent-process MediaController, and receive media control keys.  The
+ * listener is always started for playable media so all elements — controllable
+ * or not — can receive keys such as Mute/Unmute that affect any source.
+ * Playback-state notifications (eStarted/ePlayed/ePaused/eStopped) and
+ * full-control keys (Play/Pause/Seek/Stop) are only issued when the source is
+ * controllable; audibility is always reported regardless.  Doing so causes the
+ * OS media-control interface (media keys, lock-screen widget, etc.) to appear
+ * only for media that qualifies for full control.
  *
- * Use `Start()` to start listening event and use `Stop()` to stop listening
- * event. In addition, notifying any change to media controller MUST be done
- * after successfully calling `Start()`.
+ * The listener starts when media first becomes audible (for controllable
+ * sources — e.g. a video longer than the duration threshold that is not a
+ * real-time stream) or immediately on play() (for non-controllable sources and
+ * PiP/fullscreen media).  An inaudible video that is used purely as a
+ * background gif, for example, would never trigger Start() because it never
+ * produces sound and does not meet the controllable threshold.  The listener
+ * stops when StopIfNeeded() is called, which happens when the element stops
+ * playing or its browsing context changes.
+ *
+ * Use `Start()` to begin and `StopIfNeeded()` to end; any state notifications
+ * to the controller MUST be made after a successful `Start()`.
  */
 class HTMLMediaElement::MediaControlKeyListener final
     : public ContentMediaControlKeyReceiver {
@@ -342,11 +357,21 @@ class HTMLMediaElement::MediaControlKeyListener final
       return;
     }
 
+    if (mControlType == ControlType::eUncontrollable) {
+      MEDIACONTROL_LOG("Non-controllable source; reporting audibility only");
+      if (mIsOwnerAudible) {
+        NotifyAudibleStateChanged(MediaAudibleState::eAudible);
+      }
+      return;
+    }
+
     NotifyPlaybackStateChanged(MediaPlaybackState::eStarted);
     // If owner has started playing before the listener starts, we should update
-    // the playing state as well. Eg. media starts inaudily and becomes audible
+    // the playing state as well. Eg. media starts inaudibly and becomes audible
     // later.
     if (!Owner()->Paused()) {
+      // This may have been cleared on pause so resync it.
+      mIsOwnerAudible = Owner()->IsAudible();
       NotifyMediaStartedPlaying();
     }
     if (StaticPrefs::media_mediacontrol_testingevents_enabled()) {
@@ -368,15 +393,22 @@ class HTMLMediaElement::MediaControlKeyListener final
       // We have already been stopped, do not notify stop twice.
       return;
     }
-    NotifyMediaStoppedPlaying();
-    NotifyPlaybackStateChanged(MediaPlaybackState::eStopped);
-
+    if (mControlType == ControlType::eUncontrollable) {
+      MEDIACONTROL_LOG("Stopping non-controllable source");
+      if (mIsOwnerAudible) {
+        NotifyAudibleStateChanged(MediaAudibleState::eInaudible);
+      }
+    } else {
+      MEDIACONTROL_LOG("Stopping controllable source");
+      NotifyMediaStoppedPlaying();
+      NotifyPlaybackStateChanged(MediaPlaybackState::eStopped);
+    }
     // Remove ourselves from media agent, which would stop receiving event.
-    mControlAgent->RemoveReceiver(this);
+    mControlAgent->RemoveReceiver(this, mControlType);
     mControlAgent = nullptr;
   }
 
-  bool IsStarted() const { return mState != MediaPlaybackState::eStopped; }
+  bool IsStarted() const { return mControlAgent != nullptr; }
 
   bool IsPlaying() const override {
     return Owner() ? !Owner()->Paused() : false;
@@ -450,13 +482,15 @@ class HTMLMediaElement::MediaControlKeyListener final
     mIsOwnerAudible = aIsOwnerAudible;
     MEDIACONTROL_LOG("Media becomes {}",
                      mIsOwnerAudible ? "audible" : "inaudible");
-    // If media hasn't started playing, it doesn't make sense to update media
-    // audible state. Therefore, in that case we would noitfy the audible state
-    // when media starts playing.
-    if (mState == MediaPlaybackState::ePlayed) {
-      NotifyAudibleStateChanged(mIsOwnerAudible
-                                    ? MediaAudibleState::eAudible
-                                    : MediaAudibleState::eInaudible);
+    const MediaAudibleState newState = mIsOwnerAudible
+                                           ? MediaAudibleState::eAudible
+                                           : MediaAudibleState::eInaudible;
+    // Controllable sources only report audibility once they reach the playing
+    // state; non-controllable sources report it whenever the listener is
+    // started, since they never reach the playing state.
+    if (mState == MediaPlaybackState::ePlayed ||
+        (IsStarted() && mControlType == ControlType::eUncontrollable)) {
+      NotifyAudibleStateChanged(newState);
     }
   }
 
@@ -584,9 +618,12 @@ class HTMLMediaElement::MediaControlKeyListener final
     }
     MOZ_ASSERT(currentBC);
     mOwnerBrowsingContextId = currentBC->Id();
+    mControlType = Owner()->IsControllableMediaSource()
+                       ? ControlType::eControllable
+                       : ControlType::eUncontrollable;
     MEDIACONTROL_LOG("Init agent in browsing context {}",
                      mOwnerBrowsingContextId);
-    mControlAgent->AddReceiver(this);
+    mControlAgent->AddReceiver(this, mControlType);
     return true;
   }
 
@@ -617,7 +654,7 @@ class HTMLMediaElement::MediaControlKeyListener final
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT(IsStarted());
     mControlAgent->NotifyMediaAudibleChanged(mOwnerBrowsingContextId, aState,
-                                             ControlType::eControllable,
+                                             mControlType,
                                              AudioSessionType::Playback);
   }
 
@@ -626,6 +663,10 @@ class HTMLMediaElement::MediaControlKeyListener final
   RefPtr<ContentMediaAgent> mControlAgent;
   bool mIsPictureInPictureEnabled = false;
   bool mIsOwnerAudible = false;
+  // The control type the listener registered with; set when the agent is
+  // initialized and used to route audibility notifications and receiver
+  // removal. Uncontrollable sources report audibility but not playback state.
+  ControlType mControlType = ControlType::eControllable;
   MOZ_INIT_OUTSIDE_CTOR uint64_t mOwnerBrowsingContextId = 0;
   const nsID mElementId;
 };
@@ -3701,6 +3742,8 @@ void HTMLMediaElement::PauseInternal() {
   if (mAudioChannelWrapper) {
     mAudioChannelWrapper->NotifyPlayStateChanged();
   }
+  NotifyAudioPlaybackChanged(
+      AudioChannelService::AudibleChangedReasons::ePauseStateChanged);
 
   // We don't need to resume media which is paused explicitly by user.
   ClearResumeDelayedMediaPlaybackAgentIfNeeded();
@@ -5117,6 +5160,8 @@ void HTMLMediaElement::PlayInternal(bool aHandlingUserInput) {
   UpdatePreloadAction(JSCallingLocation::Get());
   UpdateSrcMediaStreamPlaying();
   StartMediaControlKeyListenerIfNeeded();
+  NotifyAudioPlaybackChanged(
+      AudioChannelService::AudibleChangedReasons::ePauseStateChanged);
 
   // Once play() has been called in a user generated event handler,
   // it is allowed to autoplay. Note: we can reach here when not in
@@ -8080,8 +8125,11 @@ void HTMLMediaElement::NotifyAudioPlaybackChanged(
   if (mAudioChannelWrapper) {
     mAudioChannelWrapper->NotifyAudioPlaybackChanged(aReason);
   }
-  // We would start the listener after media becomes audible.
-  const bool isAudible = IsAudible();
+  // The listener starts on first audibility (or immediately for PiP/fullscreen
+  // controllable sources and all non-controllable sources). It stops only when
+  // the element is fully stopped. Paused media produces no sound so we treat
+  // it as inaudible here.
+  const bool isAudible = !mPaused && IsAudible();
   if (isAudible && !mMediaControlKeyListener->IsStarted()) {
     StartMediaControlKeyListenerIfNeeded();
   }
@@ -8570,52 +8618,49 @@ bool HTMLMediaElement::IsPlayable() const {
   return (mDecoder || mSrcStream) && !HasError();
 }
 
-bool HTMLMediaElement::ShouldStartMediaControlKeyListener() const {
+bool HTMLMediaElement::IsControllableMediaSource() const {
   if (!IsPlayable()) {
-    MEDIACONTROL_LOG("Not start listener because media is not playable");
+    MEDIACONTROL_LOG("Uncontrollable: media is not playable");
     return false;
   }
 
   if (mSrcStream) {
-    MEDIACONTROL_LOG("Not listening because media is real-time");
+    MEDIACONTROL_LOG("Uncontrollable: real-time stream source");
     return false;
   }
 
   if (IsBeingUsedInPictureInPictureMode()) {
-    MEDIACONTROL_LOG("Start listener because of being used in PiP mode");
+    MEDIACONTROL_LOG("Controllable: media is in picture-in-picture mode");
     return true;
   }
 
   if (IsInFullScreen()) {
-    MEDIACONTROL_LOG("Start listener because of being used in fullscreen");
+    MEDIACONTROL_LOG("Controllable: media is in fullscreen");
     return true;
   }
 
-  // In order to filter out notification-ish sound, we use this pref to set the
-  // eligible media duration to prevent showing media control for those short
-  // sound.
-  if (Duration() <
-      StaticPrefs::media_mediacontrol_eligible_media_duration_s()) {
-    MEDIACONTROL_LOG("Not listening because media's duration {} is too short.",
-                     Duration());
-    return false;
-  }
-
-  // This includes cases such like `video is muted`, `video has zero volume`,
-  // `video's audio track is still inaudible` and `tab is muted by audio channel
-  // (tab sound indicator)`, all these cases would make media inaudible.
-  // `ComputedVolume()` would return the final volume applied the affection made
-  // by audio channel, which is used to detect if the tab is muted by audio
-  // channel.
-  if (!IsAudible() || ComputedVolume() == 0.0f) {
-    MEDIACONTROL_LOG("Not listening because media is inaudible");
-    return false;
-  }
-  return true;
+  // Short sounds (e.g. notifications) are excluded to avoid triggering the OS
+  // media-control interface for them.
+  const bool meetsThreshold =
+      Duration() >= StaticPrefs::media_mediacontrol_eligible_media_duration_s();
+  MEDIACONTROL_LOG("{}: duration {} vs threshold",
+                   meetsThreshold ? "Controllable" : "Uncontrollable",
+                   Duration());
+  return meetsThreshold;
 }
 
 void HTMLMediaElement::StartMediaControlKeyListenerIfNeeded() {
-  if (!ShouldStartMediaControlKeyListener()) {
+  if (!IsPlayable()) {
+    return;
+  }
+  // For controllable sources, delay starting until the media is audible (or in
+  // PiP/fullscreen) so we don't register silent media with the controller.
+  // ComputedVolume() catches the cases IsAudible() misses, e.g. the tab being
+  // silenced by an audio-channel volume factor of zero without an explicit mute.
+  if (IsControllableMediaSource() &&
+      (!IsAudible() || ComputedVolume() == 0.0f) &&
+      !IsBeingUsedInPictureInPictureMode() && !IsInFullScreen()) {
+    MEDIACONTROL_LOG("Delay starting: controllable source not yet audible");
     return;
   }
   mMediaControlKeyListener->Start();

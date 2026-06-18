@@ -1982,9 +1982,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   // error.
   bool IsPlayable() const;
 
-  // Return true if the media qualifies for being controlled by media control
-  // keys.
-  bool ShouldStartMediaControlKeyListener() const;
+  // Return true if the media source qualifies for full media-key control,
+  // meaning the OS media-control interface (media keys, lock-screen widget,
+  // etc.) will be activated for this element.
+  bool IsControllableMediaSource() const;
 
   // Start the listener if media fits the requirement of being able to be
   // controlled be media control keys.
