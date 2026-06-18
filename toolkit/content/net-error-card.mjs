@@ -179,11 +179,6 @@ export class NetErrorCard extends MozLitElement {
   init() {
     this.hostname = HOST_NAME;
     this.errorInfo = this.getErrorInfo();
-    if (!gIsCertError && !this.errorInfo.errorCodeString) {
-      this.errorInfo = Object.assign({}, this.errorInfo, {
-        errorCodeString: gErrorCode,
-      });
-    }
     // isSupported() gates component creation, so resolvedErrorId should never
     // be null here. getErrorConfig() guards against it defensively regardless.
     this.resolvedErrorId = resolveErrorID({
@@ -215,10 +210,14 @@ export class NetErrorCard extends MozLitElement {
 
     // nssFailure2 are TLS errors which are tracked by load_abouttlserror
     if (!gIsCertError && gErrorCode !== "nssFailure2" && !isCaptive()) {
+      let neterrorInfo = Object.assign({}, this.errorInfo);
+      if (!neterrorInfo.errorCodeString) {
+        neterrorInfo.errorCodeString = gErrorCode;
+      }
       recordSecurityUITelemetry(
         "securityUiNeterror",
         "loadAboutneterror",
-        this.errorInfo
+        neterrorInfo
       );
     }
 
@@ -678,7 +677,9 @@ export class NetErrorCard extends MozLitElement {
       whatCanYouDoItems: customNetError.whatCanYouDoItems,
       learnMoreL10nId: customNetError.learnMoreL10nId,
       learnMoreSupportPage: customNetError.learnMoreSupportPage,
-      errorCode: customNetError.showErrorCode ? config.errorCode : null,
+      errorCode:
+        this.errorInfo?.errorCodeString ||
+        (customNetError.showErrorCode ? config.errorCode : null),
       buttons: {
         tryAgain: config.buttons?.showTryAgain,
         goBack: config.buttons?.showGoBack && window.self === window.top,
