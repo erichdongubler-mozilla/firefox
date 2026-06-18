@@ -7,12 +7,12 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  AddressResult: "resource://autofill/ProfileAutoCompleteResult.sys.mjs",
   AutofillFormFactory:
     "resource://gre/modules/shared/AutofillFormFactory.sys.mjs",
   AutofillTelemetry: "resource://gre/modules/shared/AutofillTelemetry.sys.mjs",
-  CreditCardResult: "resource://autofill/ProfileAutoCompleteResult.sys.mjs",
   GenericAutocompleteItem: "resource://gre/modules/FillHelpers.sys.mjs",
+  ProfileAutoCompleteResult:
+    "resource://autofill/ProfileAutoCompleteResult.sys.mjs",
   InsecurePasswordUtils: "resource://gre/modules/InsecurePasswordUtils.sys.mjs",
   FieldDetail: "resource://gre/modules/shared/FieldScanner.sys.mjs",
   FormAutofill: "resource://autofill/FormAutofill.sys.mjs",
@@ -1104,12 +1104,9 @@ export class FormAutofillChild extends JSWindowActorChild {
       return false;
     }
     const fieldName = fieldDetail.fieldName;
-    const isAddressField = lazy.FormAutofillUtils.isAddressField(fieldName);
-    const searchPermitted = isAddressField
-      ? lazy.FormAutofill.isAutofillAddressesEnabled
-      : lazy.FormAutofill.isAutofillCreditCardsEnabled;
-    // If the specified autofill feature is pref off, do not search
-    if (!searchPermitted) {
+    const typeId = lazy.FormAutofillUtils.typeIdFromFieldName(fieldName);
+    // If the field's autofill feature is pref off, do not search.
+    if (!lazy.FormAutofill.isAutofillTypeEnabled(typeId)) {
       return false;
     }
 
@@ -1150,13 +1147,11 @@ export class FormAutofillChild extends JSWindowActorChild {
     const isInputAutofilled =
       input.autofillState == lazy.FormAutofillUtils.FIELD_STATES.AUTO_FILLED;
 
-    const AutocompleteResult = lazy.FormAutofillUtils.isAddressField(
+    const typeId = lazy.FormAutofillUtils.typeIdFromFieldName(
       fieldDetail.fieldName
-    )
-      ? lazy.AddressResult
-      : lazy.CreditCardResult;
-
-    const acResult = new AutocompleteResult(
+    );
+    const acResult = lazy.ProfileAutoCompleteResult.createResult(
+      typeId,
       searchString,
       fieldDetail,
       records.allFieldNames,
