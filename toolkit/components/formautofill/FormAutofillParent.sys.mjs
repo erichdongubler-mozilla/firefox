@@ -176,17 +176,17 @@ export let FormAutofillStatus = {
   async updateSavedFieldNames() {
     lazy.log.debug("updateSavedFieldNames");
 
-    let savedFieldNames;
-    const addressNames =
-      await lazy.gFormAutofillStorage.addresses.getSavedFieldNames();
-
-    // Don't access the credit cards store unless it is enabled.
-    if (FormAutofill.isAutofillTypeAvailable(AutofillDataTypes.CREDIT_CARD)) {
-      const creditCardNames =
-        await lazy.gFormAutofillStorage.creditCards.getSavedFieldNames();
-      savedFieldNames = new Set([...addressNames, ...creditCardNames]);
-    } else {
-      savedFieldNames = addressNames;
+    const savedFieldNames = new Set();
+    for (const type of AutofillDataTypes.all) {
+      // Don't access a data type's store unless it is available.
+      if (!FormAutofill.isAutofillTypeAvailable(type.id)) {
+        continue;
+      }
+      const names =
+        await lazy.gFormAutofillStorage[
+          type.collectionName
+        ].getSavedFieldNames();
+      names.forEach(name => savedFieldNames.add(name));
     }
 
     Services.ppmm.sharedData.set(
