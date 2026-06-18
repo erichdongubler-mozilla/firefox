@@ -299,6 +299,7 @@ DIRS += [
     "/third_party/libwebrtc/modules/congestion_controller/rtp/control_handler_gn",
     "/third_party/libwebrtc/modules/congestion_controller/rtp/transport_feedback_gn",
     "/third_party/libwebrtc/modules/congestion_controller/scream/delay_based_congestion_control_gn",
+    "/third_party/libwebrtc/modules/congestion_controller/scream/loss_rate_estimator_gn",
     "/third_party/libwebrtc/modules/congestion_controller/scream/scream_network_controller_gn",
     "/third_party/libwebrtc/modules/congestion_controller/scream/scream_v2_gn",
     "/third_party/libwebrtc/modules/congestion_controller/scream/scream_v2_parameters_gn",
