@@ -117,19 +117,20 @@ class CopyOnWrite final {
   typedef detail::CopyOnWriteValue<T> CopyOnWriteValue;
 
  public:
-  explicit CopyOnWrite(T* aValue) : mValue(new CopyOnWriteValue(aValue)) {}
+  explicit CopyOnWrite(T* aValue)
+      : mValue(MakeRefPtr<CopyOnWriteValue>(aValue)) {}
 
   explicit CopyOnWrite(already_AddRefed<T>& aValue)
-      : mValue(new CopyOnWriteValue(aValue)) {}
+      : mValue(MakeRefPtr<CopyOnWriteValue>(aValue)) {}
 
   explicit CopyOnWrite(already_AddRefed<T> aValue)
-      : mValue(new CopyOnWriteValue(aValue)) {}
+      : mValue(MakeRefPtr<CopyOnWriteValue>(aValue)) {}
 
   explicit CopyOnWrite(const RefPtr<T>& aValue)
-      : mValue(new CopyOnWriteValue(aValue)) {}
+      : mValue(MakeRefPtr<CopyOnWriteValue>(aValue)) {}
 
   explicit CopyOnWrite(RefPtr<T>&& aValue)
-      : mValue(new CopyOnWriteValue(aValue)) {}
+      : mValue(MakeRefPtr<CopyOnWriteValue>(aValue)) {}
 
   /// @return true if it's safe to read at this time.
   bool CanRead() const { return !mValue->HasWriter(); }
@@ -198,7 +199,7 @@ class CopyOnWrite final {
 
     // If there are readers, we need to copy first.
     if (mValue->HasReaders()) {
-      mValue = new CopyOnWriteValue(new T(*mValue->get()));
+      mValue = MakeRefPtr<CopyOnWriteValue>(MakeRefPtr<T>(*mValue->get()));
     }
 
     // Run the provided function while holding a write lock.
