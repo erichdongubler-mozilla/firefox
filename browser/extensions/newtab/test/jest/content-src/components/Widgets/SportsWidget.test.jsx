@@ -4983,3 +4983,286 @@ describe("<SportsWidget> end-of-match celebration", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+describe("<SportsWidget> load more (Upcoming + Results)", () => {
+  let observerInstances;
+  let originalIntersectionObserver;
+
+  beforeEach(() => {
+    observerInstances = [];
+    originalIntersectionObserver = global.IntersectionObserver;
+    global.IntersectionObserver = class MockIntersectionObserver {
+      constructor(callback, options) {
+        this.callback = callback;
+        this.options = options;
+        this.observed = [];
+        this.disconnected = false;
+        observerInstances.push(this);
+      }
+      observe(el) {
+        this.observed.push(el);
+      }
+      unobserve(el) {
+        this.observed = this.observed.filter(e => e !== el);
+      }
+      disconnect() {
+        this.disconnected = true;
+      }
+    };
+  });
+
+  afterEach(() => {
+    global.IntersectionObserver = originalIntersectionObserver;
+  });
+
+  // Returns the observer instance attached to a sentinel matching the given
+  // CSS class (e.g. ".sports-upcoming-load-more-sentinel").
+  function findSentinelObserver(selector) {
+    const className = selector.replace(/^\./, "");
+    return observerInstances.find(o =>
+      o.observed.some(el => el?.classList?.contains(className))
+    );
+  }
+
+  function renderForDirection(
+    direction,
+    { dispatch = jest.fn(), loadMore = {} } = {}
+  ) {
+    return render(
+      <WrapWithProvider
+        state={makeState(
+          {},
+          {
+            widgetState: "sports-matches",
+            matchesTab: direction,
+            data: {
+              teams: [],
+              matches: {
+                previous: [
+                  mockMatch,
+                  {
+                    ...mockMatch,
+                    date: "2026-05-09T14:00:00+00:00",
+                    home_score: 2,
+                  },
+                ],
+                current: [],
+                next: [
+                  { ...mockMatch, status_type: "scheduled" },
+                  {
+                    ...mockMatch,
+                    date: "2026-05-10T14:00:00+00:00",
+                    status_type: "scheduled",
+                  },
+                ],
+              },
+            },
+            loadMore: {
+              upcoming: {
+                loading: false,
+                exhausted: false,
+                lastFetchedDate: null,
+              },
+              results: {
+                loading: false,
+                exhausted: false,
+                lastFetchedDate: null,
+              },
+              [direction]: {
+                loading: false,
+                exhausted: false,
+                lastFetchedDate: null,
+                ...loadMore,
+              },
+            },
+          }
+        )}
+      >
+        <SportsWidget dispatch={dispatch} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+  }
+
+  function expandVisibleList(container) {
+    // Both Results and Upcoming tab panels render a "View all" button when
+    // they have matches; only the visible-panel one is the active list.
+    const visiblePanel = getVisibleTabPanel(container);
+    fireEvent.click(
+      visiblePanel.querySelector(
+        "[data-l10n-id='newtab-sports-widget-view-all']"
+      )
+    );
+  }
+
+  // ---- Upcoming ----
+
+  it("does not render the upcoming sentinel in the collapsed highlight view", () => {
+    const { container } = renderForDirection("upcoming");
+    expect(
+      container.querySelector(".sports-upcoming-load-more-sentinel")
+    ).toBeNull();
+  });
+
+  it("renders the upcoming sentinel when the list is expanded", () => {
+    const { container } = renderForDirection("upcoming");
+    expandVisibleList(container);
+    expect(
+      container.querySelector(".sports-upcoming-load-more-sentinel")
+    ).toBeInTheDocument();
+  });
+
+  it("does not render the upcoming sentinel when exhausted", () => {
+    const { container } = renderForDirection("upcoming", {
+      loadMore: { exhausted: true },
+    });
+    expandVisibleList(container);
+    expect(
+      container.querySelector(".sports-upcoming-load-more-sentinel")
+    ).toBeNull();
+  });
+
+  it("renders the upcoming loading row while a fetch is in flight", () => {
+    const { container } = renderForDirection("upcoming", {
+      loadMore: { loading: true },
+    });
+    expandVisibleList(container);
+    expect(
+      container.querySelector(".sports-upcoming-loading-more")
+    ).toBeInTheDocument();
+  });
+
+  it("dispatches FETCH_MORE_MATCHES (upcoming) when the upcoming sentinel becomes visible", () => {
+    const dispatch = jest.fn();
+    const { container } = renderForDirection("upcoming", { dispatch });
+    expandVisibleList(container);
+    const observer = findSentinelObserver(
+      ".sports-upcoming-load-more-sentinel"
+    );
+    expect(observer).toBeDefined();
+
+    act(() => {
+      observer.callback([{ isIntersecting: true }]);
+    });
+
+    const fetchCalls = dispatch.mock.calls.filter(
+      ([action]) =>
+        action?.type === at.WIDGETS_SPORTS_FETCH_MORE_MATCHES &&
+        action?.data?.direction === "upcoming"
+    );
+    expect(fetchCalls).toHaveLength(1);
+  });
+
+  it("does not dispatch upcoming while already loading", () => {
+    const dispatch = jest.fn();
+    const { container } = renderForDirection("upcoming", {
+      dispatch,
+      loadMore: { loading: true },
+    });
+    expandVisibleList(container);
+    const observer = findSentinelObserver(
+      ".sports-upcoming-load-more-sentinel"
+    );
+
+    act(() => {
+      observer.callback([{ isIntersecting: true }]);
+    });
+
+    const fetchCalls = dispatch.mock.calls.filter(
+      ([action]) => action?.type === at.WIDGETS_SPORTS_FETCH_MORE_MATCHES
+    );
+    expect(fetchCalls).toHaveLength(0);
+  });
+
+  it("does not dispatch upcoming when the sentinel leaves the viewport", () => {
+    const dispatch = jest.fn();
+    const { container } = renderForDirection("upcoming", { dispatch });
+    expandVisibleList(container);
+    const observer = findSentinelObserver(
+      ".sports-upcoming-load-more-sentinel"
+    );
+
+    act(() => {
+      observer.callback([{ isIntersecting: false }]);
+    });
+
+    const fetchCalls = dispatch.mock.calls.filter(
+      ([action]) => action?.type === at.WIDGETS_SPORTS_FETCH_MORE_MATCHES
+    );
+    expect(fetchCalls).toHaveLength(0);
+  });
+
+  // ---- Results ----
+
+  it("does not render the results sentinel in the collapsed highlight view", () => {
+    const { container } = renderForDirection("results");
+    expect(
+      container.querySelector(".sports-results-load-more-sentinel")
+    ).toBeNull();
+  });
+
+  it("renders the results sentinel when the list is expanded", () => {
+    const { container } = renderForDirection("results");
+    expandVisibleList(container);
+    expect(
+      container.querySelector(".sports-results-load-more-sentinel")
+    ).toBeInTheDocument();
+  });
+
+  it("does not render the results sentinel when exhausted", () => {
+    const { container } = renderForDirection("results", {
+      loadMore: { exhausted: true },
+    });
+    expandVisibleList(container);
+    expect(
+      container.querySelector(".sports-results-load-more-sentinel")
+    ).toBeNull();
+  });
+
+  it("renders the results loading row while a fetch is in flight", () => {
+    const { container } = renderForDirection("results", {
+      loadMore: { loading: true },
+    });
+    expandVisibleList(container);
+    expect(
+      container.querySelector(".sports-results-loading-more")
+    ).toBeInTheDocument();
+  });
+
+  it("dispatches FETCH_MORE_MATCHES (results) when the results sentinel becomes visible", () => {
+    const dispatch = jest.fn();
+    const { container } = renderForDirection("results", { dispatch });
+    expandVisibleList(container);
+    const observer = findSentinelObserver(".sports-results-load-more-sentinel");
+    expect(observer).toBeDefined();
+
+    act(() => {
+      observer.callback([{ isIntersecting: true }]);
+    });
+
+    const fetchCalls = dispatch.mock.calls.filter(
+      ([action]) =>
+        action?.type === at.WIDGETS_SPORTS_FETCH_MORE_MATCHES &&
+        action?.data?.direction === "results"
+    );
+    expect(fetchCalls).toHaveLength(1);
+  });
+
+  it("does not dispatch results while already loading", () => {
+    const dispatch = jest.fn();
+    const { container } = renderForDirection("results", {
+      dispatch,
+      loadMore: { loading: true },
+    });
+    expandVisibleList(container);
+    const observer = findSentinelObserver(".sports-results-load-more-sentinel");
+
+    act(() => {
+      observer.callback([{ isIntersecting: true }]);
+    });
+
+    const fetchCalls = dispatch.mock.calls.filter(
+      ([action]) => action?.type === at.WIDGETS_SPORTS_FETCH_MORE_MATCHES
+    );
+    expect(fetchCalls).toHaveLength(0);
+  });
+});

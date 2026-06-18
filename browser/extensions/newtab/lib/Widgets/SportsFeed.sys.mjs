@@ -76,6 +76,18 @@ const FRESHNESS_THRESHOLD_DIVISOR = 3;
 const MIN_MANUAL_REFRESH_MS = 15000; // 15 seconds
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+// Load-more (infinite scroll) for the Upcoming and Results expanded lists.
+// The backend currently returns a ±21 day window around the requested
+// `date`, so stepping the date by 21 days advances the window forward or
+// backward without leaving gaps (the reducer drops any matches we already
+// have when consecutive windows overlap).
+const LOAD_MORE_STEP_DAYS = 21;
+
+// 2026 World Cup tournament bounds -- used as hard stops for load-more so
+// we don't keep asking for dates outside the tournament's range.
+const TOURNAMENT_START_MS = Date.UTC(2026, 5, 11); // 2026-06-11
+const TOURNAMENT_END_MS = Date.UTC(2026, 6, 19); // 2026-07-19
+
 /**
  * Manages persistent state for the Sports widget (selected teams and widget
  * state), syncing with PersistentCache so state survives page refreshes.
@@ -461,6 +473,102 @@ export class SportsFeed {
     }
   }
 
+  // Fetches the next page of matches in the given direction by adding a
+  // `date` query param to /matches. Direction "upcoming" steps the date
+  // forward and reads `next[]` from the response; direction "results"
+  // steps backward and reads `previous[]`.
+  async fetchMoreMatches(direction) {
+    if (direction !== "upcoming" && direction !== "results") {
+      return;
+    }
+    const state = this.store.getState()?.SportsWidget;
+    const loadMore = state?.loadMore?.[direction] || {};
+    if (loadMore.loading || loadMore.exhausted) {
+      return;
+    }
+
+    const broadcast = data =>
+      this.store.dispatch(
+        ac.BroadcastToContent({
+          type: at.WIDGETS_SPORTS_SET_LOAD_MORE,
+          data: { direction, ...data },
+        })
+      );
+
+    const prefs = this.store.getState()?.Prefs.values;
+    const trainhop = this._trainhopSports(prefs);
+    const matchesEndpoint =
+      trainhop.matchesEndpoint || prefs?.["sports.worldCup.matchesEndpoint"];
+    const allowedEndpoints = (prefs?.["discoverystream.endpoints"] ?? "")
+      .split(",")
+      .map(item => item.trim())
+      .filter(item => item);
+    const allowlistError = this.getAllowlistError({
+      matchesEndpoint,
+      allowedEndpoints,
+    });
+    if (!matchesEndpoint || allowlistError) {
+      broadcast({ exhausted: true });
+      return;
+    }
+
+    // Step from the last requested date, or from "today" on the first call
+    // (the initial /matches fetch uses no date param, which the backend
+    // treats as today). All math in UTC to keep the YYYY-MM-DD stable
+    // across timezones.
+    const baseMs = loadMore.lastFetchedDate
+      ? Date.parse(`${loadMore.lastFetchedDate}T00:00:00Z`)
+      : Date.UTC(
+          new Date().getUTCFullYear(),
+          new Date().getUTCMonth(),
+          new Date().getUTCDate()
+        );
+    const stepMs = LOAD_MORE_STEP_DAYS * MS_PER_DAY;
+    const nextMs = direction === "upcoming" ? baseMs + stepMs : baseMs - stepMs;
+    const pastTournamentBounds =
+      direction === "upcoming"
+        ? nextMs > TOURNAMENT_END_MS
+        : nextMs < TOURNAMENT_START_MS;
+    if (pastTournamentBounds) {
+      broadcast({ exhausted: true });
+      return;
+    }
+    const next = new Date(nextMs);
+    const nextDate =
+      `${next.getUTCFullYear()}-` +
+      `${String(next.getUTCMonth() + 1).padStart(2, "0")}-` +
+      `${String(next.getUTCDate()).padStart(2, "0")}`;
+
+    // Flip the loading flag before awaiting so a second scroll-trigger
+    // can't race a fetch already in flight.
+    broadcast({ loading: true });
+
+    const result = await this.merino.fetchSportsMatches({
+      source: "newtab",
+      endpointUrl: matchesEndpoint,
+      date: nextDate,
+    });
+
+    const responseField = direction === "upcoming" ? "next" : "previous";
+    const newMatches = Array.isArray(result.data?.[responseField])
+      ? result.data[responseField]
+      : [];
+    // Mark exhausted only when the request succeeded and returned zero
+    // matches. If the request errored, leave exhausted false so a later
+    // scroll can try again.
+    const exhausted = !result.error && newMatches.length === 0;
+
+    // Only advance lastFetchedDate when the request succeeded. On error,
+    // leave it as-is so the next scroll retries the same date instead of
+    // stepping past a window we never actually loaded.
+    broadcast({
+      loading: false,
+      ...(result.error ? {} : { lastFetchedDate: nextDate }),
+      exhausted,
+      matches: newMatches,
+    });
+  }
+
   // End-of-match celebration bookkeeping, persisted so a celebration fires at
   // most once per match even across reloads. `endedAt` maps a just-ended
   // match's global_event_id to the ms it dropped out of /live; `celebrated`
@@ -559,18 +667,24 @@ export class SportsFeed {
     );
   }
 
-  // Write the current SportsWidget state to PersistentCache. Used by the
-  // LIVE-tick path so live scores survive browser shutdown; fetchSportsData
-  // caches directly from the fetched payload before dispatching.
+  // Save the latest live-scores snapshot to PersistentCache from the
+  // LIVE-tick path so live scores survive browser shutdown. Only updates
+  // the `live` field of the cached blob; `teams` and `matches` are kept
+  // as whatever `fetchSportsData` last wrote. That keeps the cached
+  // `matches` aligned with the backend's fresh ±21 day window and stops
+  // load-more's appended matches from being persisted across sessions.
   async persistSportsData() {
     const data = this.store.getState()?.SportsWidget?.data;
-    if (data?.teams?.length || data?.matches || data?.live) {
-      await this.cache.set("sportsData", {
-        teams: data.teams,
-        matches: data.matches,
-        live: data.live,
-      });
+    if (!data?.live?.length && !data?.teams?.length && !data?.matches) {
+      return;
     }
+    const cached = (await this.cache.get()) || {};
+    const existing = cached.sportsData || {};
+    await this.cache.set("sportsData", {
+      teams: existing.teams ?? data.teams,
+      matches: existing.matches ?? data.matches,
+      live: data.live,
+    });
   }
 
   // Resolve the next poll interval from trainhopConfig, then the raw pref
@@ -1094,6 +1208,12 @@ export class SportsFeed {
       }
       case at.WIDGETS_SPORTS_WATCH_LIVE_REQUEST:
         await this.fetchWatchLive();
+        break;
+      // User scrolled past the bottom of an expanded "View all" list —
+      // fetch the next 21-day window of matches in the requested direction
+      // (forward for "upcoming", backward for "results").
+      case at.WIDGETS_SPORTS_FETCH_MORE_MATCHES:
+        await this.fetchMoreMatches(action.data?.direction);
         break;
     }
   }

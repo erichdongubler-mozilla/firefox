@@ -7201,6 +7201,19 @@ button.arrow-button:dir(rtl) {
   margin-block-end: var(--space-small);
 }
 
+.sports-upcoming-loading-more,
+.sports-results-loading-more {
+  text-align: center;
+  color: var(--text-color-deemphasized);
+  font-size: var(--font-size-small);
+  padding-block: var(--space-medium);
+}
+
+.sports-upcoming-load-more-sentinel,
+.sports-results-load-more-sentinel {
+  height: 1px;
+}
+
 .sports-matches-tab-panel:not(:has(.match-highlight-view)) > moz-button {
   margin-block-start: var(--space-medium);
   padding-block-end: var(--space-small);

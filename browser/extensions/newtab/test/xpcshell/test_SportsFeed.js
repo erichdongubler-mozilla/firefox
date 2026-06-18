@@ -2308,6 +2308,54 @@ add_task(async function test_persistSportsData_called_after_live_update() {
   Assert.equal(setStub.firstCall.args[0], "sportsData");
 });
 
+// persistSportsData must NOT overwrite cached matches with the current
+// redux matches, because load-more appends are kept in redux only — they
+// should not be persisted across sessions. The cached `matches` field is
+// the source of truth for the backend's fresh ±21 day window.
+add_task(
+  async function test_persistSportsData_preserves_cached_matches_over_redux() {
+    const feed = makeFeed();
+    const cachedMatches = {
+      previous: [{ global_event_id: 1 }],
+      current: [],
+      next: [{ global_event_id: 2 }],
+    };
+    const cachedTeams = [{ key: "ENG" }];
+    // Redux has appended matches via load-more that are NOT in the cache.
+    const reduxNextWithAppends = [
+      { global_event_id: 2 },
+      { global_event_id: 999, _appended: true },
+    ];
+    feed.store.state.SportsWidget = {
+      data: {
+        teams: cachedTeams,
+        matches: { previous: [], current: [], next: reduxNextWithAppends },
+        live: [{ global_event_id: 7, home_score: 3 }],
+      },
+    };
+    sinon.stub(feed.cache, "get").resolves({
+      sportsData: { teams: cachedTeams, matches: cachedMatches, live: [] },
+    });
+    const setStub = sinon.stub(feed.cache, "set").resolves();
+
+    await feed.persistSportsData();
+
+    Assert.ok(setStub.calledOnce, "cache.set called once");
+    const [key, written] = setStub.firstCall.args;
+    Assert.equal(key, "sportsData");
+    Assert.deepEqual(
+      written.matches,
+      cachedMatches,
+      "cached matches are preserved; redux's appended matches are dropped"
+    );
+    Assert.deepEqual(
+      written.live,
+      [{ global_event_id: 7, home_score: 3 }],
+      "live snapshot is updated from redux as before"
+    );
+  }
+);
+
 // #10: reentrancy guard — two back-to-back tick() calls (e.g. a poll timer
 // firing just as a WIDGETS_SPORTS_LIVE_VISIBLE resume lands) must not stack
 // parallel tick()s issuing duplicate /wcs/live requests.
@@ -3240,3 +3288,248 @@ add_task(async function test_MARK_CELEBRATED_caps_celebrated_list() {
     "newest id appended at the end"
   );
 });
+
+// --- fetchMoreMatches (Upcoming + Results) ---
+
+const ENDPOINT = "https://merino.services.mozilla.com/api/v1/wcs/matches";
+
+function makeLoadMoreFeed({
+  direction = "upcoming",
+  loadMore = {},
+  matchesEndpoint = ENDPOINT,
+} = {}) {
+  const feed = makeFeed();
+  feed.store.state.SportsWidget = {
+    loadMore: {
+      upcoming: { loading: false, exhausted: false, lastFetchedDate: null },
+      results: { loading: false, exhausted: false, lastFetchedDate: null },
+    },
+  };
+  feed.store.state.SportsWidget.loadMore[direction] = {
+    ...feed.store.state.SportsWidget.loadMore[direction],
+    ...loadMore,
+  };
+  if (matchesEndpoint !== undefined) {
+    feed.store.state.Prefs.values["sports.worldCup.matchesEndpoint"] =
+      matchesEndpoint;
+  }
+  return feed;
+}
+
+add_task(async function test_fetchMoreMatches_ignores_unknown_direction() {
+  const feed = makeLoadMoreFeed();
+  const matchesStub = sinon.stub(feed.merino, "fetchSportsMatches");
+
+  await feed.fetchMoreMatches("sideways");
+
+  Assert.ok(matchesStub.notCalled, "unknown direction is a no-op");
+  Assert.ok(feed.store.dispatch.notCalled, "no broadcast either");
+});
+
+add_task(async function test_fetchMoreMatches_upcoming_bails_when_loading() {
+  const feed = makeLoadMoreFeed({
+    direction: "upcoming",
+    loadMore: { loading: true },
+  });
+  const matchesStub = sinon.stub(feed.merino, "fetchSportsMatches");
+
+  await feed.fetchMoreMatches("upcoming");
+
+  Assert.ok(matchesStub.notCalled, "no fetch fired while already loading");
+  Assert.ok(
+    feed.store.dispatch.notCalled,
+    "no broadcast while already loading"
+  );
+});
+
+add_task(async function test_fetchMoreMatches_results_bails_when_loading() {
+  const feed = makeLoadMoreFeed({
+    direction: "results",
+    loadMore: { loading: true },
+  });
+  const matchesStub = sinon.stub(feed.merino, "fetchSportsMatches");
+
+  await feed.fetchMoreMatches("results");
+
+  Assert.ok(matchesStub.notCalled, "no fetch fired while already loading");
+});
+
+add_task(async function test_fetchMoreMatches_bails_when_exhausted() {
+  const feed = makeLoadMoreFeed({
+    direction: "upcoming",
+    loadMore: { exhausted: true },
+  });
+  const matchesStub = sinon.stub(feed.merino, "fetchSportsMatches");
+
+  await feed.fetchMoreMatches("upcoming");
+
+  Assert.ok(matchesStub.notCalled, "no fetch fired when exhausted");
+});
+
+add_task(async function test_fetchMoreMatches_upcoming_exhausts_past_final() {
+  // lastFetchedDate already at the tournament's final day — stepping
+  // forward by 21 days lands past the final and must short-circuit to
+  // exhausted without firing a fetch.
+  const feed = makeLoadMoreFeed({
+    direction: "upcoming",
+    loadMore: { lastFetchedDate: "2026-07-19" },
+  });
+  const matchesStub = sinon.stub(feed.merino, "fetchSportsMatches");
+
+  await feed.fetchMoreMatches("upcoming");
+
+  Assert.ok(matchesStub.notCalled, "no fetch past the tournament's final day");
+  const [dispatched] = feed.store.dispatch.firstCall.args;
+  Assert.equal(dispatched.type, actionTypes.WIDGETS_SPORTS_SET_LOAD_MORE);
+  Assert.equal(dispatched.data.direction, "upcoming");
+  Assert.equal(dispatched.data.exhausted, true);
+});
+
+add_task(async function test_fetchMoreMatches_results_exhausts_before_start() {
+  // lastFetchedDate already at the tournament's first day — stepping
+  // backward by 21 days lands before the start and must short-circuit to
+  // exhausted without firing a fetch.
+  const feed = makeLoadMoreFeed({
+    direction: "results",
+    loadMore: { lastFetchedDate: "2026-06-11" },
+  });
+  const matchesStub = sinon.stub(feed.merino, "fetchSportsMatches");
+
+  await feed.fetchMoreMatches("results");
+
+  Assert.ok(matchesStub.notCalled, "no fetch before the tournament's start");
+  const [dispatched] = feed.store.dispatch.firstCall.args;
+  Assert.equal(dispatched.data.direction, "results");
+  Assert.equal(dispatched.data.exhausted, true);
+});
+
+add_task(async function test_fetchMoreMatches_upcoming_steps_date_forward() {
+  const feed = makeLoadMoreFeed({
+    direction: "upcoming",
+    loadMore: { lastFetchedDate: "2026-06-01" },
+  });
+  const newMatches = [{ global_event_id: 1 }, { global_event_id: 2 }];
+  const matchesStub = sinon
+    .stub(feed.merino, "fetchSportsMatches")
+    .resolves({ data: { next: newMatches }, error: null });
+
+  await feed.fetchMoreMatches("upcoming");
+
+  Assert.ok(
+    matchesStub.calledWith({
+      source: "newtab",
+      endpointUrl: ENDPOINT,
+      date: "2026-06-22",
+    }),
+    "stepped 21 days forward from lastFetchedDate"
+  );
+  const [finalCall] = feed.store.dispatch.lastCall.args;
+  Assert.equal(finalCall.type, actionTypes.WIDGETS_SPORTS_SET_LOAD_MORE);
+  Assert.equal(finalCall.data.direction, "upcoming");
+  Assert.equal(finalCall.data.loading, false);
+  Assert.equal(finalCall.data.lastFetchedDate, "2026-06-22");
+  Assert.equal(finalCall.data.exhausted, false);
+  Assert.deepEqual(finalCall.data.matches, newMatches);
+});
+
+add_task(async function test_fetchMoreMatches_results_steps_date_backward() {
+  const feed = makeLoadMoreFeed({
+    direction: "results",
+    loadMore: { lastFetchedDate: "2026-07-05" },
+  });
+  const olderMatches = [{ global_event_id: 9 }, { global_event_id: 10 }];
+  const matchesStub = sinon
+    .stub(feed.merino, "fetchSportsMatches")
+    .resolves({ data: { previous: olderMatches }, error: null });
+
+  await feed.fetchMoreMatches("results");
+
+  Assert.ok(
+    matchesStub.calledWith({
+      source: "newtab",
+      endpointUrl: ENDPOINT,
+      date: "2026-06-14",
+    }),
+    "stepped 21 days backward from lastFetchedDate"
+  );
+  const [finalCall] = feed.store.dispatch.lastCall.args;
+  Assert.equal(finalCall.data.direction, "results");
+  Assert.equal(finalCall.data.lastFetchedDate, "2026-06-14");
+  Assert.equal(finalCall.data.exhausted, false);
+  Assert.deepEqual(finalCall.data.matches, olderMatches);
+});
+
+add_task(async function test_fetchMoreMatches_exhausts_on_empty_response() {
+  const feed = makeLoadMoreFeed({
+    direction: "upcoming",
+    loadMore: { lastFetchedDate: "2026-06-01" },
+  });
+  sinon
+    .stub(feed.merino, "fetchSportsMatches")
+    .resolves({ data: { next: [] }, error: null });
+
+  await feed.fetchMoreMatches("upcoming");
+
+  const [finalCall] = feed.store.dispatch.lastCall.args;
+  Assert.equal(finalCall.data.exhausted, true);
+  Assert.deepEqual(finalCall.data.matches, []);
+});
+
+add_task(async function test_fetchMoreMatches_does_not_exhaust_on_error() {
+  // A transient fetch error shouldn't permanently end load-more — the user
+  // should be able to scroll and retry next time. For the retry to hit
+  // the same window we missed, lastFetchedDate also needs to stay put;
+  // otherwise the next attempt would step past a window we never loaded.
+  const feed = makeLoadMoreFeed({
+    direction: "upcoming",
+    loadMore: { lastFetchedDate: "2026-06-01" },
+  });
+  sinon
+    .stub(feed.merino, "fetchSportsMatches")
+    .resolves({ data: null, error: "load_error" });
+
+  await feed.fetchMoreMatches("upcoming");
+
+  const [finalCall] = feed.store.dispatch.lastCall.args;
+  Assert.equal(finalCall.data.exhausted, false);
+  Assert.equal(finalCall.data.loading, false);
+  Assert.ok(
+    !("lastFetchedDate" in finalCall.data),
+    "lastFetchedDate is NOT included in the broadcast on error so the " +
+      "reducer leaves the previous value alone"
+  );
+});
+
+add_task(async function test_fetchMoreMatches_skips_when_endpoint_missing() {
+  const feed = makeLoadMoreFeed({
+    direction: "upcoming",
+    loadMore: { lastFetchedDate: "2026-06-01" },
+    matchesEndpoint: undefined,
+  });
+  // Clear out the matchesEndpoint default that makeLoadMoreFeed set.
+  delete feed.store.state.Prefs.values["sports.worldCup.matchesEndpoint"];
+  const matchesStub = sinon.stub(feed.merino, "fetchSportsMatches");
+
+  await feed.fetchMoreMatches("upcoming");
+
+  Assert.ok(
+    matchesStub.notCalled,
+    "no fetch when matches endpoint not configured"
+  );
+  const [dispatched] = feed.store.dispatch.firstCall.args;
+  Assert.equal(dispatched.data.exhausted, true);
+});
+
+add_task(
+  async function test_onAction_FETCH_MORE_MATCHES_calls_fetchMoreMatches() {
+    const feed = makeLoadMoreFeed({ direction: "upcoming" });
+    const stub = sinon.stub(feed, "fetchMoreMatches").resolves(undefined);
+
+    await feed.onAction({
+      type: actionTypes.WIDGETS_SPORTS_FETCH_MORE_MATCHES,
+      data: { direction: "results" },
+    });
+
+    Assert.ok(stub.calledOnceWith("results"), "feed forwards direction");
+  }
+);
