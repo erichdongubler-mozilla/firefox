@@ -1269,9 +1269,9 @@ namespace {
 // Returns zero, either as a TimeUnit or as a double.
 template <typename T>
 constexpr T Zero() {
-  if constexpr (std::is_same<T, double>::value) {
+  if constexpr (std::is_same_v<T, double>) {
     return 0.0;
-  } else if constexpr (std::is_same<T, TimeUnit>::value) {
+  } else if constexpr (std::is_same_v<T, TimeUnit>) {
     return TimeUnit::Zero();
   }
   MOZ_RELEASE_ASSERT(false);
@@ -1280,9 +1280,9 @@ constexpr T Zero() {
 // Returns Infinity either as a TimeUnit or as a double.
 template <typename T>
 constexpr T Infinity() {
-  if constexpr (std::is_same<T, double>::value) {
+  if constexpr (std::is_same_v<T, double>) {
     return std::numeric_limits<double>::infinity();
-  } else if constexpr (std::is_same<T, TimeUnit>::value) {
+  } else if constexpr (std::is_same_v<T, TimeUnit>) {
     return TimeUnit::FromInfinity();
   }
   MOZ_RELEASE_ASSERT(false);
@@ -1313,7 +1313,7 @@ IntervalType MediaDecoder::GetSeekableImpl() {
   // avoid rounding the value differently. When dealing with TimeUnit, it's
   // returned directly.
   typename IntervalType::InnerType duration;
-  if constexpr (std::is_same<typename IntervalType::InnerType, double>::value) {
+  if constexpr (std::is_same_v<typename IntervalType::InnerType, double>) {
     duration = GetDuration();
   } else {
     duration = mDuration.as<TimeUnit>();

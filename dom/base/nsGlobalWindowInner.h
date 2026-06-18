@@ -1070,17 +1070,16 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   // Helper to convert a void returning child method into an implicit
   // CallState::Continue value.
   template <typename Return, typename Method, typename... Args>
-  typename std::enable_if<std::is_void<Return>::value, mozilla::CallState>::type
-  CallDescendant(nsGlobalWindowInner* aWindow, Method aMethod,
-                 Args&&... aArgs) {
+  std::enable_if_t<std::is_void_v<Return>, mozilla::CallState> CallDescendant(
+      nsGlobalWindowInner* aWindow, Method aMethod, Args&&... aArgs) {
     (aWindow->*aMethod)(aArgs...);
     return mozilla::CallState::Continue;
   }
 
   // Helper that passes through the CallState value from a child method.
   template <typename Return, typename Method, typename... Args>
-  typename std::enable_if<std::is_same<Return, mozilla::CallState>::value,
-                          mozilla::CallState>::type
+  std::enable_if_t<std::is_same_v<Return, mozilla::CallState>,
+                   mozilla::CallState>
   CallDescendant(nsGlobalWindowInner* aWindow, Method aMethod,
                  Args&&... aArgs) {
     return (aWindow->*aMethod)(aArgs...);
