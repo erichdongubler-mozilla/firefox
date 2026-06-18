@@ -5322,6 +5322,12 @@ void Element::GetAnimationsWithoutFlush(
     } else if (IsGeneratedContentContainerForBackdrop()) {
       elem = GetParentElement();
       pseudoRequest.mType = PseudoStyleType::Backdrop;
+    } else if (IsGeneratedContentContainerForCheckmark()) {
+      elem = GetParentElement();
+      pseudoRequest.mType = PseudoStyleType::Checkmark;
+    } else if (IsGeneratedContentContainerForPickerIcon()) {
+      elem = GetParentElement();
+      pseudoRequest.mType = PseudoStyleType::PickerIcon;
     }
 
     if (!elem) {
@@ -5807,6 +5813,8 @@ Element* Element::GetPseudoElement(const PseudoStyleRequest& aRequest) const {
       return nsLayoutUtils::GetBackdropPseudo(this);
     case PseudoStyleType::Checkmark:
       return nsLayoutUtils::GetCheckmarkPseudo(this);
+    case PseudoStyleType::PickerIcon:
+      return nsLayoutUtils::GetPickerIconPseudo(this);
     case PseudoStyleType::ViewTransition:
     case PseudoStyleType::ViewTransitionGroup:
     case PseudoStyleType::ViewTransitionImagePair:
