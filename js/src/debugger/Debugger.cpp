@@ -556,6 +556,9 @@ Debugger::Debugger(JSContext* cx, NativeObject* dbg)
       allocationsLogOverflowed(false),
       frames(cx->zone()),
       generatorFrames(cx),
+#ifdef ENABLE_WASM_JSPI
+      wasmContFrames(cx->zone()),
+#endif
       scripts(cx),
       sources(cx),
       objects(cx),
@@ -713,6 +716,17 @@ bool Debugger::getFrame(JSContext* cx, const FrameIter& iter,
       ReportOutOfMemory(cx);
       return false;
     }
+
+#ifdef ENABLE_WASM_JSPI
+    if (frame->isWasmContFrame()) {
+      if (!wasmContFrames.append(referent)) {
+        // terminateDebuggerFrameGuard is still armed and will remove the
+        // entry from `frames` on return.
+        ReportOutOfMemory(cx);
+        return false;
+      }
+    }
+#endif
 
     terminateDebuggerFrameGuard.release();
   }
@@ -4136,6 +4150,34 @@ void DebugAPI::sweepAll(JS::GCContext* gcx) {
                                            nullptr, &iter);
         }
       }
+
+#ifdef ENABLE_WASM_JSPI
+      // Wasm continuation frames whose wasm instance is dying must be
+      // terminated here, before finalization. Without this,
+      // ContObject::finalize would call onLeaveWasmCont ->
+      // DebuggerFrame::terminate, which would call
+      // IsAboutToBeFinalizedUnbarriered on the instance object - forbidden
+      // during finalization. Terminating those frames now removes them from
+      // dbg->frames so that onLeaveWasmCont will skip them.
+      for (size_t i = 0; i < dbg->wasmContFrames.length();) {
+        AbstractFramePtr fp = dbg->wasmContFrames[i];
+        wasm::Instance* inst = fp.asWasmDebugFrame()->instance();
+        if (!IsAboutToBeFinalizedUnbarriered(inst->objectUnbarriered())) {
+          i++;
+          continue;
+        }
+        auto p = dbg->frames.lookup(fp);
+        MOZ_ASSERT(p);
+        // terminateDebuggerFrame erases fp from wasmContFrames, shifting any
+        // later entries down into index i, so we don't advance i here. Assert
+        // it removed exactly the entry at i so the loop makes progress and
+        // cannot spin forever.
+        mozilla::DebugOnly<size_t> lengthBefore = dbg->wasmContFrames.length();
+        Debugger::terminateDebuggerFrame(gcx, dbg, p->value(), fp, nullptr,
+                                         nullptr);
+        MOZ_ASSERT(dbg->wasmContFrames.length() == lengthBefore - 1);
+      }
+#endif
     }
 
     // Detach dying debuggers and debuggees from each other. Since this
@@ -7195,6 +7237,10 @@ void Debugger::terminateDebuggerFrame(
     } else {
       dbg->frames.remove(frame);
     }
+#ifdef ENABLE_WASM_JSPI
+    dbg->wasmContFrames.eraseIf(
+        [&frame](const AbstractFramePtr& fp) { return fp == frame; });
+#endif
   }
 
   if (dbgFrame->hasGeneratorInfo()) {

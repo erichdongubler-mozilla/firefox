@@ -204,6 +204,10 @@ class DebuggerFrame : public NativeObject {
   bool isOnStack(JSContext* cx) const;
   bool isOnStackOrSuspendedWasmStack() const;
 
+  // True if this frame is on a wasm::ContStack (has WASM_CONT_FRAME_PTR_SLOT
+  // set). Note this does not imply the frame is currently suspended.
+  bool isWasmContFrame() const;
+
   // True if this frame is a suspended generator/async frame, i.e. it has
   // generator info and the generator object reports itself as suspended. This
   // only covers JS generator/async suspension, not wasm continuations; see
