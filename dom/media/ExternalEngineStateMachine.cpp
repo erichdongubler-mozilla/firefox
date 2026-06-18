@@ -279,6 +279,7 @@ void ExternalEngineStateMachine::OnEngineInitSuccess() {
     return;
   }
   // We just recovered from CDM process crash, seek to previous position.
+  ReportRecoveryTelemetry(true);
   SeekTarget target(mCurrentPosition.Ref(), SeekTarget::Type::Accurate);
   Seek(target);
 }
@@ -289,6 +290,9 @@ void ExternalEngineStateMachine::OnEngineInitFailure() {
   LOGE("Failed to initialize the external playback engine");
   PROFILER_MARKER_UNTYPED("EESM::OnEngineInitFailure", MEDIA_PLAYBACK);
   mIsEngineReady = false;
+  if (mState.IsRecoverEngine()) {
+    ReportRecoveryTelemetry(false);
+  }
   auto* state = mState.AsInitEngine();
   state->mEngineInitRequest.Complete();
   state->mInitPromise = nullptr;
@@ -1413,6 +1417,7 @@ void ExternalEngineStateMachine::RecoverFromHardwareReset() {
     LOG("In the recover state already");
     return;
   }
+  mRecoveryAttempts++;
   if (IsBeingProfiledOrLogEnabled()) {
     nsPrintfCString msg(
         "Hardware context reset, recovering engine (pos=%" PRId64 ")",
@@ -1598,6 +1603,25 @@ void ExternalEngineStateMachine::ReportTelemetry(const MediaResult& aError) {
     }
     LOG("%s", logMessage.get());
   }
+}
+
+void ExternalEngineStateMachine::ReportRecoveryTelemetry(bool aRecovered) {
+  glean::mfcdm::RecoveryExtra extraData;
+  extraData.recovered = Some(aRecovered);
+  extraData.attempts = Some(mRecoveryAttempts);
+  if (mHardwareResetError) {
+    extraData.platformError = mHardwareResetError;
+  }
+  if (!mKeySystem.IsEmpty()) {
+    extraData.keySystem = Some(mKeySystem);
+  }
+  extraData.currentState = Some(nsAutoCString{StateToStr(mState.mName)});
+  glean::mfcdm::recovery.Record(Some(extraData));
+  LOG("MFCDM Recovery event, recovered=%d, attempts=%u", aRecovered,
+      mRecoveryAttempts);
+
+  mRecoveryAttempts = 0;
+  mHardwareResetError = Nothing();
 }
 
 void ExternalEngineStateMachine::DecodeError(const MediaResult& aError) {

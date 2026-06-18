@@ -106,6 +106,39 @@ mfcdm:
         description: The primary GPU adapter driver version
         type: string
     expires: 165
+  recovery:
+    type: event
+    description:
+      Record an attempt to recover the media engine after a hardware context
+      reset, and whether the engine became ready again afterwards.
+    metadata:
+      tags:
+        - 'Core :: Audio/Video: Playback'
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2047749
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2047749
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - media-alerts@mozilla.com
+    extra_keys:
+      recovered:
+        description: Whether the engine became ready again after the recovery attempt
+        type: boolean
+      attempts:
+        description: The number of recovery attempts made in this recovery sequence
+        type: quantity
+      platform_error:
+        description: The platform specific error code that triggered the reset, eg. HResult on Windows
+        type: quantity
+      key_system:
+        description: The key system being used when the recovery happened
+        type: string
+      current_state:
+        description: The state of the external state machine when the recovery happened
+        type: string
+    expires: 165
 
 media:
   wmf_codec_no_extension:
