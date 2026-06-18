@@ -6337,8 +6337,7 @@ class nsDisplayTransform final : public nsPaintedDisplayItem {
 
   bool ShouldSkipTransform(nsDisplayListBuilder* aBuilder) const;
   Matrix4x4 GetTransformForRendering(
-      LayoutDevicePoint* aOutOrigin = nullptr,
-      const nsDisplayListBuilder* aBuilder = nullptr) const;
+      LayoutDevicePoint* aOutOrigin = nullptr) const;
 
   /**
    * Return the transform that is aggregation of all transform on the
