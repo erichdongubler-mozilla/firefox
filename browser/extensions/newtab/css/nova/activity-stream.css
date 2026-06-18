@@ -13284,6 +13284,10 @@ button.arrow-button:dir(rtl) {
   background-size: var(--placeholderBackgroundScale);
 }
 
+.nova-enabled .ds-image .broken-image {
+  border-radius: var(--border-radius-medium);
+}
+
 .impression-observer {
   position: absolute;
   inset-block-start: 0;
@@ -15957,4 +15961,8 @@ hr {
 }
 .nova-enabled .ds-card.ds-spoc .story-footer .ds-spoc-sponsored {
   font-size: var(--font-size-small);
+}
+
+.nova-enabled .ds-card .img-wrapper {
+  color: var(--newtab-primary-action-background);
 }
