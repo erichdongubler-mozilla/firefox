@@ -51,6 +51,7 @@
 #include "nsXULAppAPI.h"
 #include "Windows11TaskbarPinning.h"
 #include "WindowsDefaultBrowser.h"
+#include "WindowsUIElement.h"
 #include "WindowsUserChoice.h"
 #include "WinUtils.h"
 
@@ -536,8 +537,10 @@ static void FocusSetDefaultBrowserButton() {
     }
     auto [window, button]{FindSetDefaultBrowserButton()};
     if (window && button) {
-      FocusElement(window, button);
       aTimer->Cancel();
+      RefPtr<mozilla::WindowsUIElement> element{
+          new mozilla::WindowsUIElement(window, button)};
+      element->Focus();
     }
   }};
   const uint32_t kRetryDelayMs{500};
