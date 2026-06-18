@@ -152,6 +152,7 @@ this.formautofill = class extends ExtensionAPI {
         },
       },
       allFrames: true,
+      safeForUntrustedWebProcess: true,
     });
   }
 

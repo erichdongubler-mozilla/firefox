@@ -736,6 +736,7 @@ if (!Services.prefs.getBoolPref("browser.pagedata.enabled", false)) {
     },
 
     messageManagerGroups: ["browsers"],
+    safeForUntrustedWebProcess: true,
   };
 }
 
@@ -757,6 +758,7 @@ if (AppConstants.platform != "android") {
 
     includeChrome: true,
     allFrames: true,
+    safeForUntrustedWebProcess: true,
   };
 
   // Note that GeckoView handles MozOpenDateTimePicker in GeckoViewPrompt.
@@ -775,6 +777,7 @@ if (AppConstants.platform != "android") {
 
     includeChrome: true,
     allFrames: true,
+    safeForUntrustedWebProcess: true,
   };
 
   JSWINDOWACTORS.PictureInPictureLauncher = {
@@ -789,6 +792,7 @@ if (AppConstants.platform != "android") {
     },
     messageManagerGroups: ["browsers"],
     allFrames: true,
+    safeForUntrustedWebProcess: true,
   };
 
   JSWINDOWACTORS.PictureInPicture = {
@@ -800,6 +804,7 @@ if (AppConstants.platform != "android") {
     },
     messageManagerGroups: ["browsers", "pip-player"],
     allFrames: true,
+    safeForUntrustedWebProcess: true,
   };
 
   JSWINDOWACTORS.PictureInPictureToggle = {
@@ -815,6 +820,7 @@ if (AppConstants.platform != "android") {
     },
     messageManagerGroups: ["browsers"],
     allFrames: true,
+    safeForUntrustedWebProcess: true,
   };
 
   JSWINDOWACTORS.AboutPDF = {
@@ -862,6 +868,7 @@ if (AppConstants.platform != "android") {
 
     includeChrome: true,
     allFrames: true,
+    safeForUntrustedWebProcess: true,
   };
 }
 

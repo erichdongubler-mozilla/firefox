@@ -25,6 +25,7 @@ function registerActor() {
       esModuleURI:
         "resource://gre/actors/UserCharacteristicsCanvasRenderingChild.sys.mjs",
     },
+    safeForUntrustedWebProcess: true,
   });
 }
 

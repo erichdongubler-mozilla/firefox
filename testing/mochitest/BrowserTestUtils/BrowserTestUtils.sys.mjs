@@ -55,6 +55,7 @@ function registerActors() {
     },
     allFrames: true,
     includeChrome: true,
+    safeForUntrustedWebProcess: true,
   });
 
   ChromeUtils.registerWindowActor("ContentEventListener", {
@@ -72,6 +73,7 @@ function registerActors() {
       },
     },
     allFrames: true,
+    safeForUntrustedWebProcess: true,
   });
 }
 
