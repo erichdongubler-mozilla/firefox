@@ -32,7 +32,6 @@ add_setup(async function setup() {
   Assert.notEqual(h3NoResponsePort, null);
   Assert.notEqual(h3NoResponsePort, "");
 
-  Services.prefs.setBoolPref("network.http.happy_eyeballs_enabled", true);
   Services.prefs.setBoolPref("network.dns.upgrade_with_https_rr", true);
   Services.prefs.setBoolPref("network.dns.use_https_rr_as_altsvc", true);
   Services.prefs.setBoolPref("network.dns.echconfig.enabled", true);
@@ -43,7 +42,6 @@ add_setup(async function setup() {
 
   registerCleanupFunction(async () => {
     trr_clear_prefs();
-    Services.prefs.clearUserPref("network.http.happy_eyeballs_enabled");
     Services.prefs.clearUserPref("network.dns.upgrade_with_https_rr");
     Services.prefs.clearUserPref("network.dns.use_https_rr_as_altsvc");
     Services.prefs.clearUserPref("network.dns.echconfig.enabled");
@@ -405,8 +403,6 @@ add_task(async function testFallbackToTheOrigin2() {
     ],
   });
 
-  Services.dns.clearCache(true);
-
   chan = makeChan(`https://test.example.com:${h2Port}/server-timing`);
   await channelOpenPromise(chan);
 
@@ -573,8 +569,6 @@ add_task(async function testResetExclusionList() {
     "network.dns.httpssvc.reset_exclustion_list",
     true
   );
-
-  Services.dns.clearCache(true);
 
   // After enable network.dns.httpssvc.reset_exclustion_list and register
   // A record for test.reset1.com, this request should be succeeded.

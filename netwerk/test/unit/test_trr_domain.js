@@ -66,7 +66,6 @@ add_task(async function intermittent_dns_mode3() {
       },
     ],
   });
-  Services.dns.clearCache(true);
   override.addIPOverride("foo.example.com", "127.0.0.1");
   await new TRRDNSListener("example.org", { expectedAnswer: "1.2.3.4" });
   await trrServer.stop();
@@ -117,7 +116,6 @@ add_task(async function intermittent_dns_mode2() {
       },
     ],
   });
-  Services.dns.clearCache(true);
   override.addIPOverride("example.org", "3.3.3.3");
   override.addIPOverride("foo.example.com", "127.0.0.1");
   await new TRRDNSListener("example.org", { expectedAnswer: "1.2.3.4" });
