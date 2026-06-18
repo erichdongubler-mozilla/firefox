@@ -125,7 +125,22 @@ void Assembler::WritePoolGuard(BufferOffset branch, Instruction* inst,
 
   DEBUG_PRINTF("%p(%x): ", inst, branch.getOffset());
 #ifdef JS_DISASM_RISCV64
-  disassembleInstr(inst, JitSpew_Codegen);
+  if (JitSpewEnabled(JitSpew_Codegen)) {
+    disassembleInstr(inst, JitSpew_Codegen);
+    inst += 1 * kInstrSize;
+
+    // Skip over pool header, which doesn't represent a valid instruction.
+    inst += 1 * kInstrSize;
+
+    // Disassemble veneer branches after spewing the pool guard, so all
+    // instructions appear in order.
+    BufferOffset bo(branch.getOffset() + kInstrSize * 2);
+    while (bo < dest) {
+      disassembleInstr(inst, JitSpew_Codegen);
+      inst += kInstrSize;
+      bo = BufferOffset(bo.getOffset() + kInstrSize);
+    }
+  }
 #endif /* JS_DISASM_RISCV64 */
 }
 
@@ -1587,7 +1602,7 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
 
   DEBUG_PRINTF("\t%p(%x): ", branchInst, branch.getOffset());
 #ifdef JS_DISASM_RISCV64
-  disassembleInstr(branchInst, JitSpew_Codegen);
+  disassembleInstr(branchInst);
 #endif /* JS_DISASM_RISCV64 */
   DEBUG_PRINTF("\t insert veneer %x, branch: %x deadline: %x\n",
                veneer.getOffset(), branch.getOffset(), deadline.getOffset());
