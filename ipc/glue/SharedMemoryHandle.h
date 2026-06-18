@@ -23,8 +23,6 @@ struct CommandLineArg;
 
 namespace mozilla::ipc {
 
-struct SharedMemoryInternalTest;  // For gtests.
-
 namespace shared_memory {
 
 enum class Type {
@@ -131,8 +129,6 @@ class HandleBase {
 
   PlatformHandle mHandle = nullptr;
   uint64_t mSize = 0;
-
-  friend SharedMemoryInternalTest;
 };
 
 /**
