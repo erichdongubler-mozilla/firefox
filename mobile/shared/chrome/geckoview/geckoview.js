@@ -500,7 +500,7 @@ function startup() {
                 "MozDOMFullscreen:Request": {},
                 MozFirstContentfulPaint: {},
                 MozPaintStatusReset: {},
-                contextmenu: {},
+                contextmenu: { mozSystemGroup: true },
               },
             },
             allFrames: true,
