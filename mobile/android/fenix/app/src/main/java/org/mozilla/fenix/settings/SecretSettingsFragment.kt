@@ -507,6 +507,10 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
                 SecretSettingsFragmentDirections.actionSecretSettingsFragmentToSearchOptimizationFragment()
             }
 
+            resources.getString(R.string.pref_key_show_debug_info) -> {
+                SecretSettingsFragmentDirections.actionSecretSettingsFragmentToDebugInfoBottomSheetFragment()
+            }
+
             else -> return super.onPreferenceTreeClick(preference)
         }
         navigateFromSecretSettings(directions)
