@@ -41,22 +41,21 @@ interface mozIDownloadPlatform : nsISupports
                        in ACString aContentType, in boolean aIsPrivate);
 
   /**
-   * Security Zone constants. Used by mapUrlToZone().
-   */
-  const unsigned long ZONE_MY_COMPUTER = 0;
-  const unsigned long ZONE_INTRANET = 1;
-  const unsigned long ZONE_TRUSTED = 2;
-  const unsigned long ZONE_INTERNET = 3;
-  const unsigned long ZONE_RESTRICTED = 4;
-
-  /**
-   * Proxy for IInternetSecurityManager::MapUrlToZone().
+   * Writes origin information for the downloaded file, if one should be
+   * written.  Windows uses this to store Zone:Information for downloads.
+   * This is currently a no-op on other OSs.
    *
-   *   Windows only.
-   *
-   * @param aURL
-   *        URI of the download
-   * @return Security Zone corresponding to aURL.
+   * @param aTargetFile   The saved file
+   * @param aSourceUrl    URL of the source of the download.  Callers can
+   *                      pass null to skip setting this.  That is appropriate
+   *                      for (for instance) files saved from private browsing.
+   * @param aReferrerSpec Referrer of the download, if any.  Pass null to skip.
+   *                      Pass an empty string to indicate no referrer.
+   * @return Promise that resolves to true if zone was successfully written,
+   *         false if the zone was not written due to a policy, and rejects on
+   *         errors.
    */
-  unsigned long mapUrlToZone(in AString aURL);
+  [implicit_jscontext]
+  Promise maybeWriteDownloadOriginInformation(in nsIFile aTargetFile, in ACString aSourceUrl,
+                                      in ACString aReferrerSpec);
 };
