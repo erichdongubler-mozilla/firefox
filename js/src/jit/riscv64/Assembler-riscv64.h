@@ -211,6 +211,8 @@ class Assembler : public AssemblerShared,
     isFinished = true;
   }
 
+  void flushBuffer() { m_buffer.flushPool(); }
+
   void enterNoPool(size_t maxInst, size_t maxNewDeadlines = 0) {
     m_buffer.enterNoPool(maxInst, maxNewDeadlines);
   }
@@ -375,7 +377,7 @@ class Assembler : public AssemblerShared,
   };
 
   Register getStackPointer() const { return StackPointer; }
-  void flushBuffer() {}
+
 #ifdef JS_DISASM_RISCV64
   static int disassembleInstr(Instruction* instr, bool enable_spew = false);
 #endif /* JS_DISASM_RISCV64 */
