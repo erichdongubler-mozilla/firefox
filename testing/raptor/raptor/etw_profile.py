@@ -65,8 +65,6 @@ class ETWProfile(RaptorProfiling):
         # Temporary working directory for intermediate files
         self.temp_dir = Path(tempfile.mkdtemp())
 
-        self.breakpad_symbol_dir = None
-
         self.running = False
 
         if not self.raptor_config.get("run_local"):
@@ -188,16 +186,6 @@ class ETWProfile(RaptorProfiling):
             LOG.error(f"Cannot find user ETL file: {self.etl_user_session_path}")
             return False
 
-        moz_fetch = Path(os.environ["MOZ_FETCHES_DIR"])
-        breakpad_symbol_zip = moz_fetch / "target.crashreporter-symbols.zip"
-        if not breakpad_symbol_zip.exists():
-            LOG.error(f"Breakpad symbol zip not found: {breakpad_symbol_zip}")
-            return False
-        LOG.info(f"Unzipping {breakpad_symbol_zip}")
-        self.breakpad_symbol_dir = self.temp_dir / "breakpad-symbols"
-        with zipfile.ZipFile(breakpad_symbol_zip, "r") as zipf:
-            zipf.extractall(self.breakpad_symbol_dir)
-
         samply_cmd = [
             str(self.samply_path),
             "import",
@@ -207,11 +195,27 @@ class ETWProfile(RaptorProfiling):
             "-o",
             str(self.profile),
             "--presymbolicate",
-            "--breakpad-symbol-dir",
-            str(self.breakpad_symbol_dir),
             "--breakpad-symbol-server",
             "https://symbols.mozilla.org/",
         ]
+
+        moz_fetch = Path(os.environ["MOZ_FETCHES_DIR"])
+        if (
+            self.raptor_config.get("app", "") == "custom-car"
+            and (moz_fetch / "chromium" / "Default").exists()
+        ):
+            symbol_dir = moz_fetch / "chromium" / "Default"
+            samply_cmd.extend(["--symbol-dir", str(symbol_dir)])
+        elif (moz_fetch / "target.crashreporter-symbols.zip").exists():
+            symbol_dir = self.temp_dir / "target.crashreporter-symbols"
+            breakpad_symbol_zip = moz_fetch / "target.crashreporter-symbols.zip"
+            LOG.info(f"Unzipping {breakpad_symbol_zip}")
+            with zipfile.ZipFile(breakpad_symbol_zip, "r") as zipf:
+                zipf.extractall(symbol_dir)
+            samply_cmd.extend(["--breakpad-symbol-dir", str(symbol_dir)])
+        else:
+            LOG.error("Symbols artifact not found.")
+
         LOG.info(f"Running: {' '.join(samply_cmd)}")
         result = subprocess.run(
             samply_cmd,

@@ -759,10 +759,11 @@ def add_etw_profile(config, tests):
                 ):
                     test_platform_config.append("win64-samply")
 
-        fetches.setdefault("build", []).append({
-            "artifact": "target.crashreporter-symbols.zip",
-            "extract": False,
-        })
+        if not is_external_browser(test["app"]):
+            fetches.setdefault("build", []).append({
+                "artifact": "target.crashreporter-symbols.zip",
+                "extract": False,
+            })
 
     for test in tests:
         if "win" in test.get("test-platform", "") and "speedometer3" in test.get(
