@@ -3932,19 +3932,29 @@ nsIWidget* nsGlobalWindowInner::GetNearestWidget() const {
 }
 
 void nsGlobalWindowInner::SetFullScreen(bool aFullscreen,
-                                        mozilla::ErrorResult& aError) {
+                                        CallerType aCallerType,
+                                        ErrorResult& aError) {
+  if (aCallerType == CallerType::NonSystem) {
+    if (Document* doc = GetExtantDoc()) {
+      doc->WarnOnceAndReportAbout(DeprecatedOperations::eFullscreenAttribute);
+    }
+  }
   FORWARD_TO_OUTER_OR_THROW(SetFullscreenOuter, (aFullscreen, aError), aError,
                             /* void */);
 }
 
-bool nsGlobalWindowInner::GetFullScreen(ErrorResult& aError) {
+bool nsGlobalWindowInner::GetFullScreen(CallerType aCallerType,
+                                        ErrorResult& aError) {
+  if (aCallerType == CallerType::NonSystem) {
+    if (Document* doc = GetExtantDoc()) {
+      doc->WarnOnceAndReportAbout(DeprecatedOperations::eFullscreenAttribute);
+    }
+  }
   FORWARD_TO_OUTER_OR_THROW(GetFullscreenOuter, (), aError, false);
 }
 
 bool nsGlobalWindowInner::GetFullScreen() {
-  ErrorResult dummy;
-  bool fullscreen = GetFullScreen(dummy);
-  dummy.SuppressException();
+  bool fullscreen = GetFullScreen(CallerType::System, IgnoreErrors());
   return fullscreen;
 }
 

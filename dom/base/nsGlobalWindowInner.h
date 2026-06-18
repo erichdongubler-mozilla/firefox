@@ -870,9 +870,11 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   int32_t GetScrollMinY(mozilla::ErrorResult& aError);
   int32_t GetScrollMaxX(mozilla::ErrorResult& aError);
   int32_t GetScrollMaxY(mozilla::ErrorResult& aError);
-  bool GetFullScreen(mozilla::ErrorResult& aError);
+  bool GetFullScreen(mozilla::dom::CallerType aCallerType,
+                     mozilla::ErrorResult& aError);
   bool GetFullScreen() override;
-  void SetFullScreen(bool aFullscreen, mozilla::ErrorResult& aError);
+  void SetFullScreen(bool aFullscreen, mozilla::dom::CallerType aCallerType,
+                     mozilla::ErrorResult& aError);
   bool Find(const nsAString& aString, bool aCaseSensitive, bool aBackwards,
             bool aWrapAround, bool aWholeWord, bool aSearchInFrames,
             bool aShowDialog, mozilla::ErrorResult& aError);
