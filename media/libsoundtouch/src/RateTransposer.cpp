@@ -35,6 +35,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <algorithm>
 #include "RateTransposer.h"
 #include "InterpolateLinear.h"
 #include "InterpolateCubic.h"
