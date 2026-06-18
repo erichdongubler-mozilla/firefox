@@ -404,12 +404,6 @@ struct Pool {
   // bias of 8.
   const unsigned bias_;
 
-  // The content of the pool entries.
-  Vector<PoolAllocUnit, 8, LifoAllocPolicy<Fallible>> poolData_;
-
-  // Flag that tracks OOM conditions. This is set after any append failed.
-  bool oom_;
-
   // The limiting instruction and pool-entry pair. The instruction program
   // counter relative offset of this limiting instruction will go out of range
   // first as the pool position moves forward. It is more efficient to track
@@ -418,9 +412,15 @@ struct Pool {
   //
   // 1. The actual offset of the limiting instruction referencing the limiting
   // pool entry.
-  BufferOffset limitingUser;
+  BufferOffset limitingUser{};
   // 2. The pool entry index of the limiting pool entry.
-  unsigned limitingUsee;
+  unsigned limitingUsee = INT_MIN;
+
+  // Flag that tracks OOM conditions. This is set after any append failed.
+  bool oom_ = false;
+
+  // The content of the pool entries.
+  Vector<PoolAllocUnit, 8, LifoAllocPolicy<Fallible>> poolData_;
 
  public:
   // A record of the code offset of instructions that reference pool
@@ -429,15 +429,12 @@ struct Pool {
   // occurs when each pool is finished, see finishPool().
   Vector<BufferOffset, 8, LifoAllocPolicy<Fallible>> loadOffsets;
 
-  // Create a Pool. Don't allocate anything from lifoAloc, just capture its
+  // Create a Pool. Don't allocate anything from lifoAlloc, just capture its
   // reference.
-  explicit Pool(size_t maxOffset, unsigned bias, LifoAlloc& lifoAlloc)
+  Pool(size_t maxOffset, unsigned bias, LifoAlloc& lifoAlloc)
       : maxOffset_(maxOffset),
         bias_(bias),
         poolData_(lifoAlloc),
-        oom_(false),
-        limitingUser(),
-        limitingUsee(INT_MIN),
         loadOffsets(lifoAlloc) {}
 
   // If poolData() returns nullptr then oom_ will also be true.
