@@ -8,6 +8,7 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  AutofillDataTypes: "resource://gre/modules/shared/AutofillDataTypes.sys.mjs",
   ContentDOMReference: "resource://gre/modules/ContentDOMReference.sys.mjs",
   CreditCard: "resource://gre/modules/CreditCard.sys.mjs",
   FormAutofillNameUtils:
@@ -184,14 +185,30 @@ FormAutofillUtils = {
   _collators: {},
   _reAlternativeCountryNames: {},
 
+  /**
+   * Return the data type id (e.g. "address", "creditCard") that a field belongs
+   * to, or null if the field name is not recognized. The type is derived from
+   * the field's sub-category via the AutofillDataTypes registry.
+   *
+   * @param {string} fieldName
+   * @returns {?string}
+   */
+  typeIdFromFieldName(fieldName) {
+    return lazy.AutofillDataTypes.typeIdForSubCategory(
+      this._fieldNameInfo?.[fieldName]
+    );
+  },
+
   isAddressField(fieldName) {
     return (
-      !!this._fieldNameInfo[fieldName] && !this.isCreditCardField(fieldName)
+      this.typeIdFromFieldName(fieldName) == lazy.AutofillDataTypes.ADDRESS
     );
   },
 
   isCreditCardField(fieldName) {
-    return this._fieldNameInfo?.[fieldName] == "creditCard";
+    return (
+      this.typeIdFromFieldName(fieldName) == lazy.AutofillDataTypes.CREDIT_CARD
+    );
   },
 
   // Returns true if the field is one we don't fill handle via the autocomplete
@@ -309,9 +326,11 @@ FormAutofillUtils = {
   },
 
   getCollectionNameFromFieldName(fieldName) {
-    return this.isCreditCardField(fieldName)
-      ? CREDITCARDS_COLLECTION_NAME
-      : ADDRESSES_COLLECTION_NAME;
+    const typeId = this.typeIdFromFieldName(fieldName);
+    return (
+      lazy.AutofillDataTypes.get(typeId)?.collectionName ??
+      ADDRESSES_COLLECTION_NAME
+    );
   },
 
   getAddressSeparator() {

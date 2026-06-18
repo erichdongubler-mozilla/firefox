@@ -286,13 +286,12 @@ export class FormAutofillChild extends JSWindowActorChild {
       );
 
       if (!lazy.FormAutofillUtils.useMLInference) {
-        // If none of the detected fields are credit card or address fields,
-        // there's no need to notify the parent because nothing will change.
+        // If none of the detected fields belong to a known data type, there's
+        // no need to notify the parent because nothing will change.
         if (
           !detectedFields.some(
             fd =>
-              lazy.FormAutofillUtils.isCreditCardField(fd.fieldName) ||
-              lazy.FormAutofillUtils.isAddressField(fd.fieldName)
+              lazy.FormAutofillUtils.typeIdFromFieldName(fd.fieldName) != null
           )
         ) {
           handler.setIdentifiedFieldDetails(detectedFields);

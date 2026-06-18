@@ -16,6 +16,9 @@ class AutofillDataTypeRegistry {
   /** @type {Map<string, AutofillDataType>} */
   #byId;
 
+  /** Maps a `_fieldNameInfo` sub-category to the id of the type that owns it. */
+  #subCategoryToTypeId;
+
   /**
    * @param {AutofillDataType[]} descriptors
    */
@@ -35,6 +38,11 @@ class AutofillDataTypeRegistry {
       )
     );
     this.#byId = new Map(this.all.map(type => [type.id, type]));
+    this.#subCategoryToTypeId = new Map(
+      this.all.flatMap(type =>
+        type.subCategories.map(subCategory => [subCategory, type.id])
+      )
+    );
     this.ADDRESS = AutofillDataTypeRegistry.ADDRESS;
     this.CREDIT_CARD = AutofillDataTypeRegistry.CREDIT_CARD;
     Object.freeze(this);
@@ -47,15 +55,27 @@ class AutofillDataTypeRegistry {
   get(id) {
     return this.#byId.get(id) ?? null;
   }
+
+  /**
+   * @param {string} subCategory A `_fieldNameInfo` sub-category.
+   * @returns {string} The owning type id, or null if the sub-category is unknown.
+   */
+  typeIdForSubCategory(subCategory) {
+    return this.#subCategoryToTypeId.get(subCategory) ?? null;
+  }
 }
 
 export const AutofillDataTypes = new AutofillDataTypeRegistry([
   {
     id: AutofillDataTypeRegistry.ADDRESS,
+    collectionName: "addresses",
     prefKey: "addresses",
+    subCategories: ["name", "organization", "address", "tel", "email"],
   },
   {
     id: AutofillDataTypeRegistry.CREDIT_CARD,
+    collectionName: "creditCards",
     prefKey: "creditCards",
+    subCategories: ["creditCard"],
   },
 ]);
