@@ -990,6 +990,52 @@ void PopulateFontSmoothingType() {
   }
 }
 
+// Font-rendering settings beyond the antialiasing type:
+//   font_hinting    -> hinting style (none/slight/medium/full)
+//   font_rgba_order -> subpixel (LCD) element order
+// Hinting reshapes glyph outlines and therefore affects rasterized (incl.
+// canvas) output; the rgba order only matters when subpixel antialiasing is
+// actually applied (no canvas effect, since the canvas is grayscale).
+// Hinting is a Linux/GNOME-only user setting (Windows hinting is implicit,
+// macOS/Android expose none). The subpixel order is also exposed on Windows as
+// the ClearType orientation (SPI_GETFONTSMOOTHINGORIENTATION), so it is
+// collected there too, normalized to the same "rgb"/"bgr" nicks Linux uses.
+void PopulateFontRenderingSettings() {
+#if defined(MOZ_WIDGET_GTK)
+  nsAutoCString hinting;
+  if (mozilla::widget::GSettings::GetString(
+          "org.gnome.desktop.interface"_ns, "font-hinting"_ns, hinting) &&
+      !hinting.IsEmpty()) {
+    glean::characteristics::font_hinting.Set(hinting);
+  }
+#endif
+
+  nsAutoCString rgbaOrder;
+#if defined(MOZ_WIDGET_GTK)
+  mozilla::widget::GSettings::GetString("org.gnome.desktop.interface"_ns,
+                                        "font-rgba-order"_ns, rgbaOrder);
+#elif defined(XP_WIN)
+  // SPI_GETFONTSMOOTHINGORIENTATION / FE_FONTSMOOTHINGORIENTATIONRGB are not
+  // always exposed by the SDK headers in use.
+#  ifndef SPI_GETFONTSMOOTHINGORIENTATION
+#    define SPI_GETFONTSMOOTHINGORIENTATION 0x2012
+#  endif
+#  ifndef FE_FONTSMOOTHINGORIENTATIONRGB
+#    define FE_FONTSMOOTHINGORIENTATIONRGB 0x0001
+#  endif
+  UINT orientation = 0;
+  if (SystemParametersInfo(SPI_GETFONTSMOOTHINGORIENTATION, 0, &orientation,
+                           0)) {
+    // Windows exposes only horizontal RGB/BGR (no vertical variants).
+    rgbaOrder.Assign(orientation == FE_FONTSMOOTHINGORIENTATIONRGB ? "rgb"
+                                                                   : "bgr");
+  }
+#endif
+  if (!rgbaOrder.IsEmpty()) {
+    glean::characteristics::font_rgba_order.Set(rgbaOrder);
+  }
+}
+
 void PopulateErrors(
     const PopulatePromise::AllSettledPromiseType::ResolveOrRejectValue&
         results) {
@@ -1251,7 +1297,7 @@ const RefPtr<PopulatePromise>& TimoutPromise(
 // metric is set, this variable should be incremented. It'll be a lot. It's
 // okay. We're going to need it to know (including during development) what is
 // the source of the data we are looking at.
-const int kSubmissionSchema = 44;
+const int kSubmissionSchema = 45;
 
 const auto* const kUUIDPref =
     "toolkit.telemetry.user_characteristics_ping.uuid";
@@ -1449,6 +1495,7 @@ void nsUserCharacteristics::PopulateDataAndEventuallySubmit(
     PopulateLanguages();
     PopulateTextAntiAliasing();
     PopulateFontSmoothingType();
+    PopulateFontRenderingSettings();
     PopulateProcessorCount();
     PopulateModelName();
     PopulateMisc(false);
