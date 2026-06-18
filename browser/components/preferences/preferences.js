@@ -18,7 +18,6 @@
 /** @import {SettingControlConfig, SettingOptionConfig} from "chrome://browser/content/preferences/widgets/setting-control.mjs" */
 /** @import {SettingGroup} from "chrome://browser/content/preferences/widgets/setting-group.mjs" */
 /** @import {SettingPane, SettingPaneConfig} from "chrome://browser/content/preferences/widgets/setting-pane.mjs" */
-/** @import {FocusHistory} from "chrome://browser/content/preferences/FocusHistory.mjs" */
 
 /**
  * @typedef {object} PaneShownEventDetail
@@ -213,26 +212,8 @@ var { ScrollOffsets } = ChromeUtils.importESModule(
   }
 );
 
-var { FocusHistory } = ChromeUtils.importESModule(
-  "chrome://browser/content/preferences/FocusHistory.mjs",
-  {
-    global: "current",
-  }
-);
-
 /** @type {ScrollOffsets} */
 var scrollOffsets;
-
-/** @type {FocusHistory} */
-var focusHistory = new FocusHistory();
-
-/**
- * Id of the history entry currently shown. Tracked so the entry being
- * left can be passed to `focusHistory.save()` before transitioning.
- *
- * @type {number?}
- */
-var gCurrentHistoryEntryId = null;
 
 /**
  * Register initial config-based setting panes here. If you need to register a
@@ -788,14 +769,10 @@ async function gotoPref(
    */
   let prevCategory = gLastCategory.category;
 
-  // Save the previous entry's scroll offset and focused element before
-  // switching, so that returning to it later restores the user's place.
+  // Save the previous entry's scroll offset before switching, so that
+  // returning to it later restores the user's place.
   scrollOffsets.save();
   scrollOffsets.setView(historyEntryId);
-  if (gCurrentHistoryEntryId != null) {
-    focusHistory.save(gCurrentHistoryEntryId);
-  }
-  gCurrentHistoryEntryId = historyEntryId;
 
   // Need to set the gLastCategory before setting categories.currentView since
   // the change-view event will re-enter the gotoPref codepath.
@@ -870,7 +847,6 @@ async function gotoPref(
 
   if (aShowReason != "Initial") {
     scrollOffsets.restore();
-    focusHistory.restore(historyEntryId);
   }
 
   // Check to see if the category module wants to do any special
