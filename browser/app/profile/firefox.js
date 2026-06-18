@@ -309,6 +309,13 @@ pref("browser.shell.checkDefaultPDF.silencedByUser", false);
 pref("browser.shell.setDefaultGuidanceNotifications", true);
 pref("browser.shell.focusSetDefaultBrowserButton", false);
 
+// Whether to display a Kit image behind the set default browser button in
+// Windows Settings. It can take the following values:
+// - "off": Don't display the image.
+// - "static": Display a static image.
+// - "animated": Display an animated image.
+pref("browser.shell.displayKitImageBehindSetDefaultBrowserButton", "off");
+
 // After a failed UserChoice attempt, show the OS "Open with" picker via the
 // undocumented IOpenWithLauncher API so the user can pick Firefox themselves.
 pref("browser.shell.setDefaultPDFHandler.useOpenWith", true);

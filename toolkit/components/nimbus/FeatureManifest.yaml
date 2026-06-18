@@ -2147,6 +2147,18 @@ shellService:
         branch: user
         pref: browser.shell.focusSetDefaultBrowserButton
       type: boolean
+    displayKitImageBehindSetDefaultBrowserButton:
+      description: >
+        Display a Kit image behind the set default browser button in Windows
+        Settings.
+      setPref:
+        branch: user
+        pref: browser.shell.displayKitImageBehindSetDefaultBrowserButton
+      type: string
+      enum:
+        - "off"
+        - "static"
+        - "animated"
 upgradeDialog:
   description: The dialog shown for major upgrades
   owner: omc-core@mozilla.com
