@@ -28,6 +28,7 @@ KNOWN_TEST_MODIFIERS = [
     "webrender",
     "bytecode-cached",
     "simpleperf",
+    "etw-profile",
 ]
 NON_FIREFOX_OPTS = ("webrender", "bytecode-cached", "fission")
 NON_FIREFOX_BROWSERS = ("chrome", "custom-car", "safari", "safari-tp")
@@ -49,6 +50,7 @@ class PerftestResultsHandler(metaclass=ABCMeta):
         perfstats=False,
         test_bytecode_cache=False,
         simpleperf=False,
+        etw_profile=False,
         extra_summary_methods=[],
         **kwargs,
     ):
@@ -68,6 +70,7 @@ class PerftestResultsHandler(metaclass=ABCMeta):
         self.perfstats = perfstats
         self.test_bytecode_cache = test_bytecode_cache
         self.simpleperf = simpleperf
+        self.etw_profile = etw_profile
         self.existing_results = None
         self.extra_summary_methods = extra_summary_methods
 
@@ -103,6 +106,8 @@ class PerftestResultsHandler(metaclass=ABCMeta):
                 extra_options.append("bytecode-cached")
             if self.simpleperf:
                 extra_options.append("simpleperf")
+            if self.etw_profile:
+                extra_options.append("etw-profile")
             extra_options.append("webrender")
         else:
             for modifier, name in modifiers:
@@ -1085,6 +1090,7 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                     # Add the support class to the result
                     new_result["support_class"] = test.get("support_class", None)
                     new_result["simpleperf"] = test.get("simpleperf", False)
+                    new_result["etw-profile"] = test.get("etw_profile", False)
 
                     return new_result
 

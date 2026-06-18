@@ -240,6 +240,14 @@ def create_parser(mach_interface=False):
         help="Enable Simpleperf profiling (Android only).",
     )
     add_arg(
+        "--etw-profile",
+        action="store_true",
+        dest="etw_profile",
+        default=False,
+        help="Enable system-wide ETW profiling on Windows (captures all system activity). "
+        "Profile will be saved to $MOZ_UPLOAD_DIR and automatically symbolicated.",
+    )
+    add_arg(
         "--symbolsPath",
         dest="symbols_path",
         help="Path to the symbols for the build we are testing",

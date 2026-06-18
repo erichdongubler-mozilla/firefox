@@ -133,4 +133,4 @@ class ChromeTrace(RaptorProfiling):
         """
         Clean up temp folders created with the instance creation.
         """
-        mozfile.remove(self.temp_profile_dir)
+        super().clean()

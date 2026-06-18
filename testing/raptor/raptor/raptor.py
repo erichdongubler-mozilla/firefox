@@ -96,6 +96,7 @@ def main(args=sys.argv[1:]):
             gecko_profile_threads=args.gecko_profile_threads,
             gecko_profile_features=args.gecko_profile_features,
             extra_profiler_run=args.extra_profiler_run,
+            etw_profile=args.etw_profile,
             symbols_path=args.symbols_path,
             host=args.host,
             live_sites=args.live_sites,

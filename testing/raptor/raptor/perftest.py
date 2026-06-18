@@ -40,6 +40,7 @@ from cmdline import (
 )
 from condprof.client import ProfileNotFoundError, get_profile
 from condprof.util import get_current_platform
+from etw_profile import ETWProfile
 from gecko_profile import GeckoProfile
 from logger.logger import RaptorLogger
 from results import RaptorResultsHandler
@@ -83,6 +84,7 @@ class Perftest(metaclass=ABCMeta):
         gecko_profile_threads=None,
         gecko_profile_features=None,
         extra_profiler_run=False,
+        etw_profile=False,
         simpleperf=False,
         symbols_path=None,
         host=None,
@@ -137,6 +139,7 @@ class Perftest(metaclass=ABCMeta):
             "gecko_profile_threads": gecko_profile_threads,
             "gecko_profile_features": gecko_profile_features,
             "extra_profiler_run": extra_profiler_run,
+            "etw_profile": etw_profile,
             "simpleperf": simpleperf,
             "symbols_path": symbols_path,
             "host": host,
@@ -198,6 +201,7 @@ class Perftest(metaclass=ABCMeta):
         self.benchmark = None
         self.gecko_profiler = None
         self.chrome_trace = None
+        self.etw_profiler = None
         self.simpleperf_profiler = None
         self.device = None
         self.runtime_error = None
@@ -635,6 +639,19 @@ class Perftest(metaclass=ABCMeta):
             LOG.critical("Profiling ignored because MOZ_UPLOAD_DIR was not set")
         else:
             self.gecko_profiler = GeckoProfile(upload_dir, self.config, test)
+
+    def _init_etw_profiling(self, test):
+        LOG.info("initializing ETW profiler")
+        # Only enable on Windows
+        if mozinfo.os != "win":
+            LOG.warning("ETW profiling is only supported on Windows")
+            return
+
+        upload_dir = os.getenv("MOZ_UPLOAD_DIR")
+        if not upload_dir:
+            LOG.critical("ETW Profiling ignored because MOZ_UPLOAD_DIR was not set")
+        else:
+            self.etw_profiler = ETWProfile(upload_dir, self.config, test)
 
     def _init_chrome_trace(self, test):
         LOG.info("initializing Chrome Trace handler")

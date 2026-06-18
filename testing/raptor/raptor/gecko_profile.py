@@ -232,7 +232,7 @@ class GeckoProfile(RaptorProfiling):
         """
         Clean up temp folders created with the instance creation.
         """
-        mozfile.remove(self.temp_profile_dir)
+        super().clean()
         if self.cleanup:
             for symbol_path in self.symbol_paths.values():
                 mozfile.remove(symbol_path)
