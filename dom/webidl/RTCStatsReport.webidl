@@ -23,7 +23,8 @@ enum RTCStatsType {
   "transport",
   "candidate-pair",
   "local-candidate",
-  "remote-candidate"
+  "remote-candidate",
+  "certificate"
 };
 
 dictionary RTCStats {
@@ -245,10 +246,21 @@ dictionary RTCTransportStats : RTCStats {
   required RTCDtlsTransportState dtlsState;
   RTCIceTransportState iceState;
   DOMString selectedCandidatePairId;
+  DOMString localCertificateId;
+  DOMString remoteCertificateId;
   DOMString tlsVersion;
   DOMString dtlsCipher;
   RTCDtlsRole dtlsRole;
   DOMString srtpCipher;
+};
+
+dictionary RTCCertificateStats : RTCStats {
+  required DOMString fingerprint;
+  required DOMString fingerprintAlgorithm;
+  required DOMString base64Certificate;
+  // The id of the issuer certificate's stat in this report, not the
+  // certificate's X.509 issuer field.
+  DOMString issuerCertificateId;
 };
 
 // This is for tracking the frame rate in about:webrtc
@@ -312,6 +324,7 @@ dictionary RTCStatsCollection {
   sequence<RTCDataChannelStats>             dataChannelStats = [];
   sequence<RTCCodecStats>                   codecStats = [];
   sequence<RTCTransportStats>               transportStats = [];
+  sequence<RTCCertificateStats>             certificateStats = [];
 
   // For internal use only
   sequence<DOMString>                       rawLocalCandidates = [];
