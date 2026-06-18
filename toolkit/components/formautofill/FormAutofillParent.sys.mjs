@@ -36,10 +36,6 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AddressComponent: "resource://gre/modules/shared/AddressComponent.sys.mjs",
-  FormAutofillAddressSection:
-    "resource://gre/modules/shared/FormAutofillSection.sys.mjs",
-  FormAutofillCreditCardSection:
-    "resource://gre/modules/shared/FormAutofillSection.sys.mjs",
   FormAutofillML: "resource://gre/modules/shared/FormAutofillML.sys.mjs",
   FormAutofillHeuristics:
     "resource://gre/modules/shared/FormAutofillHeuristics.sys.mjs",
@@ -665,8 +661,7 @@ export class FormAutofillParent extends JSWindowActorParent {
       return;
     }
 
-    const address = [];
-    const creditCard = [];
+    const submittedRecords = [];
 
     // Caching the submitted data as actors may be destroyed immediately after
     // submission.
@@ -714,13 +709,11 @@ export class FormAutofillParent extends JSWindowActorParent {
         continue;
       }
 
-      if (section instanceof lazy.FormAutofillAddressSection) {
-        address.push(secRecord);
-      } else if (section instanceof lazy.FormAutofillCreditCardSection) {
-        creditCard.push(secRecord);
-      } else {
+      const typeId = section.type;
+      if (!AutofillDataTypes.get(typeId)) {
         throw new Error("Unknown section type");
       }
+      submittedRecords.push({ typeId, record: secRecord });
     }
 
     try {
@@ -741,31 +734,24 @@ export class FormAutofillParent extends JSWindowActorParent {
 
     // Transmit the telemetry immediately in the meantime form submitted, and handle
     // these pending doorhangers later.
-    await Promise.all(
-      [
-        await Promise.all(
-          address.map(addrRecord => this._onAddressSubmit(addrRecord, browser))
-        ),
-        await Promise.all(
-          creditCard.map(ccRecord =>
-            this._onCreditCardSubmit(ccRecord, browser)
-          )
-        ),
-      ]
-        .map(pendingDoorhangers => {
-          return pendingDoorhangers.filter(
-            pendingDoorhanger =>
-              !!pendingDoorhanger && typeof pendingDoorhanger == "function"
-          );
-        })
-        .map(pendingDoorhangers =>
-          (async () => {
-            for (const showDoorhanger of pendingDoorhangers) {
-              await showDoorhanger();
-            }
-          })()
-        )
+    const submitHandlerByType = {
+      [AutofillDataTypes.ADDRESS]: record =>
+        this._onAddressSubmit(record, browser),
+      [AutofillDataTypes.CREDIT_CARD]: record =>
+        this._onCreditCardSubmit(record, browser),
+    };
+
+    const pendingDoorhangers = await Promise.all(
+      submittedRecords.map(({ typeId, record }) =>
+        submitHandlerByType[typeId](record)
+      )
     );
+
+    for (const showDoorhanger of pendingDoorhangers) {
+      if (typeof showDoorhanger == "function") {
+        await showDoorhanger();
+      }
+    }
   }
 
   /**
@@ -1507,10 +1493,9 @@ export class FormAutofillParent extends JSWindowActorParent {
   async setTemporaryRecordsForTab(records) {
     const topBC = this.browsingContext.top;
     const actor = FormAutofillParent.getActor(topBC);
-    actor.temporaryRecords = {
-      [ADDRESSES_COLLECTION_NAME]: [],
-      [CREDITCARDS_COLLECTION_NAME]: [],
-    };
+    actor.temporaryRecords = Object.fromEntries(
+      AutofillDataTypes.all.map(type => [type.collectionName, []])
+    );
 
     for (const record of records) {
       const fields = Object.keys(record);
@@ -1520,10 +1505,7 @@ export class FormAutofillParent extends JSWindowActorParent {
       const collection = FormAutofillUtils.getCollectionNameFromFieldName(
         fields[0]
       );
-      const storage =
-        collection == ADDRESSES_COLLECTION_NAME
-          ? lazy.gFormAutofillStorage.addresses
-          : lazy.gFormAutofillStorage.creditCards;
+      const storage = lazy.gFormAutofillStorage[collection];
       // Since we don't define the pattern for the passed 'record',
       // we need to normalize it first.
       storage._normalizeRecord(record);
