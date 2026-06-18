@@ -10,6 +10,7 @@
 
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
+#include "WindowsUIOverlayImage.h"
 
 namespace mozilla {
 
@@ -101,6 +102,11 @@ void WindowsUIElement::Focus() const {
   if (EnableFocusIndicators(mWindow)) {
     mElement->SetFocus();
   }
+}
+
+RefPtr<WindowsUIOverlayImage> WindowsUIElement::CreateOverlayImage(
+    WindowsUIOverlayImage::DisplayMode aDisplayMode) const {
+  return WindowsUIOverlayImage::Create(mWindow, mElement, aDisplayMode);
 }
 
 }  // namespace mozilla

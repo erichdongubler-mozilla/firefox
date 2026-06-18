@@ -63,6 +63,7 @@ elif CONFIG["OS_ARCH"] == "WINNT":
         "Windows11TaskbarPinning.cpp",
         "WindowsDefaultBrowser.cpp",
         "WindowsUIElement.cpp",
+        "WindowsUIOverlayImage.cpp",
         "WindowsUserChoice.cpp",
     ]
     LOCAL_INCLUDES += [
@@ -73,6 +74,7 @@ elif CONFIG["OS_ARCH"] == "WINNT":
         "bcrypt",
         "crypt32",
         "propsys",
+        "windowscodecs",
     ]
 
     FINAL_TARGET_FILES.components.shell.assets += [

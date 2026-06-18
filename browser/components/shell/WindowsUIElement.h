@@ -12,6 +12,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "nsISupportsImpl.h"
+#include "WindowsUIOverlayImage.h"
 
 namespace mozilla {
 
@@ -57,6 +58,15 @@ class WindowsUIElement final {
    * Focus the element.
    */
   void Focus() const;
+
+  /**
+   * Creates an overlay image for the element.
+   *
+   * @param aDisplayMode Display mode, which can be static or animated.
+   * @return Overlay image.
+   */
+  RefPtr<WindowsUIOverlayImage> CreateOverlayImage(
+      WindowsUIOverlayImage::DisplayMode aDisplayMode) const;
 
   // Non-copyable and non-movable
   WindowsUIElement(const WindowsUIElement&) = delete;
