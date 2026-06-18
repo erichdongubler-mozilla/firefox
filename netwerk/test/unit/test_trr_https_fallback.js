@@ -403,8 +403,6 @@ add_task(async function testFallbackToTheOrigin2() {
     ],
   });
 
-  Services.dns.clearCache(true);
-
   chan = makeChan(`https://test.example.com:${h2Port}/server-timing`);
   await channelOpenPromise(chan);
 
@@ -571,8 +569,6 @@ add_task(async function testResetExclusionList() {
     "network.dns.httpssvc.reset_exclustion_list",
     true
   );
-
-  Services.dns.clearCache(true);
 
   // After enable network.dns.httpssvc.reset_exclustion_list and register
   // A record for test.reset1.com, this request should be succeeded.

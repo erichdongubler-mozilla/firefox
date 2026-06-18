@@ -15250,11 +15250,7 @@
 # This is the number of dns cache entries allowed
 - name: network.dnsCacheEntries
   type: RelaxedAtomicUint32
-#if defined(NIGHTLY_BUILD)
-  value: 3200
-#else
   value: 1600
-#endif
   mirror: always
 
 # In the absence of OS TTLs, the DNS cache TTL value
