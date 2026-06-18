@@ -112,6 +112,8 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
     "oklab",
     "oklch",
     "rgb",
+    // alpha() takes a relative color after `from`
+    "alpha",
   ]);
 
   /**
