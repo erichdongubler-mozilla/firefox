@@ -4073,6 +4073,7 @@ bool Instance::callExport(JSContext* cx, uint32_t funcIndex,
       // Store in rooted array until no more GC is possible.
       RootedAnyRef ref(cx, AnyRef::fromCompiledCode(ptr));
       if (!refs.emplaceBack(ref.get())) {
+        ReportOutOfMemory(cx);
         return false;
       }
       DebugCodegen(DebugChannel::Function, "/(#%d)", int(refs.length() - 1));
