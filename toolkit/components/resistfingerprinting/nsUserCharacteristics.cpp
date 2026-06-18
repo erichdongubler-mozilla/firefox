@@ -920,17 +920,8 @@ void PopulateTextAntiAliasing() {
     }
   }
   levels.AppendElement(value);
-#elif defined(MOZ_WIDGET_GTK)
-  nsAutoCString level;
-  mozilla::widget::GSettings::GetString("org.gnome.desktop.interface"_ns,
-                                        "font-antialiasing"_ns, level);
-  if (level == "rgba") {  // Subpixel
-    levels.AppendElement(2);
-  } else if (level == "grayscale") {  // Standard
-    levels.AppendElement(1);
-  } else if (level == "none") {
-    levels.AppendElement(0);
-  }
+  // Linux/GTK exposes no smoothing *level*; its smoothing *type* (subpixel /
+  // grayscale / none) is collected separately in PopulateFontSmoothingType.
 #endif
 
   for (const auto& level : levels) {
@@ -944,6 +935,59 @@ void PopulateTextAntiAliasing() {
   output.Append("]");
 
   glean::characteristics::text_anti_aliasing.Set(output);
+}
+
+// The font-smoothing *type* (subpixel vs. grayscale vs. disabled), normalized
+// across platforms: 0 = disabled, 1 = grayscale (standard), 2 = subpixel. This
+// is distinct from text_anti_aliasing, which carries the smoothing *level* /
+// strength (Windows ClearType level, macOS AppleFontSmoothing). macOS has no
+// subpixel/grayscale type (grayscale-only since 10.14) and is not reported here.
+void PopulateFontSmoothingType() {
+  int32_t type = -1;  // -1 = not applicable / undetermined on this platform
+
+#if defined(XP_WIN)
+  // SPI_GETFONTSMOOTHINGTYPE / FE_FONTSMOOTHINGCLEARTYPE are not always exposed
+  // by the SDK headers in use (cf. gfx/thebes/gfxDWriteFonts.cpp).
+#  ifndef SPI_GETFONTSMOOTHINGTYPE
+#    define SPI_GETFONTSMOOTHINGTYPE 0x200a
+#  endif
+#  ifndef FE_FONTSMOOTHINGCLEARTYPE
+#    define FE_FONTSMOOTHINGCLEARTYPE 2
+#  endif
+
+  BOOL fontSmoothing = FALSE;
+  if (SystemParametersInfo(SPI_GETFONTSMOOTHING, 0, &fontSmoothing, 0)) {
+    if (!fontSmoothing) {
+      type = 0;  // disabled
+    } else {
+      UINT smoothingType = 0;
+      if (SystemParametersInfo(SPI_GETFONTSMOOTHINGTYPE, 0, &smoothingType, 0) &&
+          smoothingType == FE_FONTSMOOTHINGCLEARTYPE) {
+        type = 2;  // subpixel (ClearType)
+      } else {
+        type = 1;  // grayscale (standard)
+      }
+    }
+  }
+#elif defined(MOZ_WIDGET_GTK)
+  // GNOME org.gnome.desktop.interface font-antialiasing: rgba = subpixel,
+  // grayscale = standard, none = disabled. (Previously reported, as this same
+  // type, in text_anti_aliasing.)
+  nsAutoCString antialiasing;
+  mozilla::widget::GSettings::GetString("org.gnome.desktop.interface"_ns,
+                                        "font-antialiasing"_ns, antialiasing);
+  if (antialiasing == "rgba") {
+    type = 2;  // subpixel
+  } else if (antialiasing == "grayscale") {
+    type = 1;  // standard
+  } else if (antialiasing == "none") {
+    type = 0;  // disabled
+  }
+#endif
+
+  if (type >= 0) {
+    glean::characteristics::font_smoothing_type.Set(type);
+  }
 }
 
 void PopulateErrors(
@@ -1207,7 +1251,7 @@ const RefPtr<PopulatePromise>& TimoutPromise(
 // metric is set, this variable should be incremented. It'll be a lot. It's
 // okay. We're going to need it to know (including during development) what is
 // the source of the data we are looking at.
-const int kSubmissionSchema = 43;
+const int kSubmissionSchema = 44;
 
 const auto* const kUUIDPref =
     "toolkit.telemetry.user_characteristics_ping.uuid";
@@ -1404,6 +1448,7 @@ void nsUserCharacteristics::PopulateDataAndEventuallySubmit(
     PopulateKeyboardLayout();
     PopulateLanguages();
     PopulateTextAntiAliasing();
+    PopulateFontSmoothingType();
     PopulateProcessorCount();
     PopulateModelName();
     PopulateMisc(false);
