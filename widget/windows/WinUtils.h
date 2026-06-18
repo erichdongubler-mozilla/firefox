@@ -83,6 +83,7 @@
   NS_DECL_OWNINGTHREAD                              \
  public:
 
+class nsIReferrerInfo;
 class nsWindow;
 struct KeyPair;
 
@@ -595,12 +596,12 @@ class WinUtils {
    * The returned promise is rejected on error.
    */
   static RefPtr<WriteFileZonePromise> MaybeWriteFileZoneId(
-      nsIFile* aSaveFile, const Maybe<nsCString>& aSourceUrl,
-      const Maybe<nsCString>& aReferrerSpec);
+      nsIFile* aSaveFile, nsIURI* aSourceURI, nsIReferrerInfo* aReferrerInfo,
+      bool aShouldStoreUrls);
 
   static Result<bool, nsresult> MaybeWriteFileZoneIdSync(
-      nsIFile* aSaveFile, const Maybe<nsCString>& aSourceUrl,
-      const Maybe<nsCString>& aReferrerSpec);
+      nsIFile* aSaveFile, nsIURI* aSourceURI, nsIReferrerInfo* aReferrerInfo,
+      bool aShouldStoreUrls);
 
  private:
   static WhitelistVec BuildWhitelist();
