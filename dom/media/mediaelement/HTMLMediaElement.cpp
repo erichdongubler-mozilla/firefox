@@ -8674,7 +8674,8 @@ void HTMLMediaElement::StartMediaControlKeyListenerIfNeeded() {
   // For controllable sources, delay starting until the media is audible (or in
   // PiP/fullscreen) so we don't register silent media with the controller.
   // ComputedVolume() catches the cases IsAudible() misses, e.g. the tab being
-  // silenced by an audio-channel volume factor of zero without an explicit mute.
+  // silenced by an audio-channel volume factor of zero without an explicit
+  // mute.
   if (IsControllableMediaSource() &&
       (!IsAudible() || ComputedVolume() == 0.0f) &&
       !IsBeingUsedInPictureInPictureMode() && !IsInFullScreen()) {
