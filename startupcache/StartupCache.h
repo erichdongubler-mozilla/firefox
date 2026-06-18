@@ -7,16 +7,19 @@
 
 #include <utility>
 
+#include "nsClassHashtable.h"
+#include "nsComponentManagerUtils.h"
 #include "nsTArray.h"
 #include "nsTHashSet.h"
 #include "nsTStringHasher.h"  // mozilla::DefaultHasher<nsCString>
-#include "MainThreadUtils.h"
+#include "nsZipArchive.h"
 #include "nsITimer.h"
 #include "nsIMemoryReporter.h"
 #include "nsIObserverService.h"
 #include "nsIObserver.h"
 #include "nsIObjectOutputStream.h"
 #include "nsIFile.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/AutoMemMap.h"
 #include "mozilla/Compression.h"
 #include "mozilla/MemoryReporting.h"
@@ -76,24 +79,26 @@
  * out data.
  */
 
-namespace mozilla::scache {
+namespace mozilla {
+
+namespace scache {
 
 struct StartupCacheEntry {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(StartupCacheEntry);
-
   UniqueFreePtr<char[]> mData;
   uint32_t mOffset;
   uint32_t mCompressedSize;
-  const uint32_t mUncompressedSize;
+  uint32_t mUncompressedSize;
+  int32_t mHeaderOffsetInFile;
   int32_t mRequestedOrder;
   bool mRequested;
 
-  StartupCacheEntry(uint32_t aOffset, uint32_t aCompressedSize,
-                    uint32_t aUncompressedSize)
+  MOZ_IMPLICIT StartupCacheEntry(uint32_t aOffset, uint32_t aCompressedSize,
+                                 uint32_t aUncompressedSize)
       : mData(nullptr),
         mOffset(aOffset),
         mCompressedSize(aCompressedSize),
         mUncompressedSize(aUncompressedSize),
+        mHeaderOffsetInFile(0),
         mRequestedOrder(0),
         mRequested(false) {}
 
@@ -103,11 +108,31 @@ struct StartupCacheEntry {
         mOffset(0),
         mCompressedSize(0),
         mUncompressedSize(aLength),
-        mRequestedOrder(aRequestedOrder),
+        mHeaderOffsetInFile(0),
+        mRequestedOrder(0),
         mRequested(true) {}
 
- private:
-  ~StartupCacheEntry() = default;
+  // std::pair is not trivially move assignable/constructible, so make our own.
+  struct KeyValuePair {
+    const nsCString* first;
+    StartupCacheEntry* second;
+    KeyValuePair(const nsCString* aKeyPtr, StartupCacheEntry* aValuePtr)
+        : first(aKeyPtr), second(aValuePtr) {}
+  };
+  static_assert(std::is_trivially_move_assignable<KeyValuePair>::value);
+  static_assert(std::is_trivially_move_constructible<KeyValuePair>::value);
+
+  struct Comparator {
+    using Value = KeyValuePair;
+
+    bool Equals(const Value& a, const Value& b) const {
+      return a.second->mRequestedOrder == b.second->mRequestedOrder;
+    }
+
+    bool LessThan(const Value& a, const Value& b) const {
+      return a.second->mRequestedOrder < b.second->mRequestedOrder;
+    }
+  };
 };
 
 // We don't want to refcount StartupCache, and ObserverService wants to
@@ -174,9 +199,10 @@ class StartupCache : public nsIMemoryReporter {
 
   // This measures all the heap memory used by the StartupCache, i.e. it
   // excludes the mapping.
-  size_t HeapSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+  size_t HeapSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const
+      MOZ_REQUIRES(mTableLock);
 
-  bool ShouldCompactCache();
+  bool ShouldCompactCache() MOZ_REQUIRES(mTableLock);
   nsresult ResetStartupWriteTimerCheckingReadCount();
   nsresult ResetStartupWriteTimerAndLock();
   nsresult ResetStartupWriteTimer() MOZ_REQUIRES(mTableLock);
@@ -211,7 +237,8 @@ class StartupCache : public nsIMemoryReporter {
   Result<Ok, nsresult> OpenCache();
 
   // Writes the cache to disk.
-  Result<Ok, nsresult> WriteToDisk(WriteType aWriteType);
+  Result<Ok, nsresult> WriteToDisk(WriteType aWriteType)
+      MOZ_REQUIRES(mTableLock);
 
   void WaitOnPrefetch();
   void StartPrefetchMemory() MOZ_REQUIRES(mTableLock);
@@ -227,8 +254,7 @@ class StartupCache : public nsIMemoryReporter {
 
   // This is normally accessed on MainThread, but WriteToDisk() can
   // access it on other threads
-  HashMap<nsCString, RefPtr<StartupCacheEntry>> mTable
-      MOZ_GUARDED_BY(mTableLock);
+  HashMap<nsCString, StartupCacheEntry> mTable MOZ_GUARDED_BY(mTableLock);
   // This owns references to the contents of tables which have been invalidated.
   // In theory it grows forever if the cache is continually filled and then
   // invalidated, but this should not happen in practice. Deleting old tables
@@ -237,17 +263,16 @@ class StartupCache : public nsIMemoryReporter {
   nsTArray<decltype(mTable)> mOldTables MOZ_GUARDED_BY(mTableLock);
   size_t mAllowedInvalidationsCount = 0;
   nsCOMPtr<nsIFile> mFile;
-  mozilla::loader::AutoMemMap mCacheData MOZ_GUARDED_BY(sMainThreadCapability);
-  mutable Mutex mTableLock;
-  Mutex mIOLock;
+  mozilla::loader::AutoMemMap mCacheData MOZ_GUARDED_BY(mTableLock);
+  Mutex mTableLock;
 
   nsCOMPtr<nsIObserverService> mObserverService;
   RefPtr<StartupCacheListener> mListener;
   nsCOMPtr<nsITimer> mTimer;
 
+  bool mDirty MOZ_GUARDED_BY(mTableLock);
+  bool mRegularWriteDone MOZ_GUARDED_BY(mTableLock);
   bool mCurTableReferenced MOZ_GUARDED_BY(mTableLock);
-  Atomic<bool, Relaxed> mTableDirty;
-  Atomic<bool, Relaxed> mRegularWriteDone;
 
   uint32_t mRequestedCount;
   size_t mCacheEntriesBaseOffset;
@@ -288,6 +313,7 @@ class StartupCacheDebugOutputStream final : public nsIObjectOutputStream {
 };
 #endif  // DEBUG
 
-}  // namespace mozilla::scache
+}  // namespace scache
+}  // namespace mozilla
 
 #endif  // StartupCache_h_
