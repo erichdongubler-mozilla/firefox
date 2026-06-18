@@ -1331,6 +1331,7 @@ dependencies = [
  "mach2",
  "minidump-writer",
  "mozannotation_server",
+ "mozbuild",
  "nix",
  "num-derive",
  "num-traits",

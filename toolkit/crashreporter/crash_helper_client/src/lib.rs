@@ -450,7 +450,7 @@ pub unsafe extern "C" fn get_install_time(path: *const BreakpadChar) -> u64 {
         let path = <OsString as BreakpadString>::from_ptr(path);
         Some(PathBuf::from(path))
     };
-    ApplicationInfo::get_install_time(path).unwrap_or(0)
+    ApplicationInfo::compute_install_time(path).unwrap_or(0)
 }
 
 /******************************************************************************
