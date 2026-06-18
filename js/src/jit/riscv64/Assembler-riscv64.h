@@ -112,19 +112,22 @@ static const Scale ScalePointer = TimesEight;
 
 class Assembler;
 
-using Buffer =
-    js::jit::AssemblerBufferWithConstantPools<Instruction, Assembler,
-                                              js::jit::AssemblerBufferSettings{
-                                                  .instSize = kInstrSize,
-                                                  .guardSize = 1,
-                                                  .headerSize = 0,
-                                                  .veneerSize = 2,
-                                                  .pcBias = 0,
-                                                  .alignFillInst = kNopByte,
-                                                  .nopFillInst = kNopByte,
-                                                  .numShortBranchRanges =
-                                                      NumShortBranchRangeTypes,
-                                              }>;
+using Buffer = js::jit::AssemblerBufferWithConstantPools<
+    Instruction, Assembler,
+    js::jit::AssemblerBufferSettings{
+        .instSize = kInstrSize,
+        // Guard around veneer branches uses a single 'jal' instruction.
+        .guardSize = 1,
+        // Constant pools not used, so no header needed.
+        .headerSize = 0,
+        // Veneer branches use an 'auipc + jalr' instruction pair.
+        .veneerSize = 2,
+        // No bias needed when constant pool not used.
+        .pcBias = 0,
+        .alignFillInst = kNopByte,
+        .nopFillInst = kNopByte,
+        .numShortBranchRanges = NumShortBranchRangeTypes,
+    }>;
 
 class Assembler : public AssemblerShared,
                   public AssemblerRISCVI,
@@ -139,6 +142,13 @@ class Assembler : public AssemblerShared,
                   public AssemblerRISCVZicond,
                   public AssemblerRISCVZicsr,
                   public AssemblerRISCVZifencei {
+  // No maximum pool offset necessary when constant pool not used.
+  static constexpr size_t BufferMaxPoolOffset = 0;
+
+  // Number of nop instructions to add before instructions. Can be set to a non-
+  // zero value to check instruction locations are correctly referenced.
+  static constexpr unsigned BufferNumDebugNopsToInsert = 0;
+
   GeneralRegisterSet scratch_register_list_;
 
 #ifdef JS_JITSPEW
@@ -193,12 +203,9 @@ class Assembler : public AssemblerShared,
 #ifdef JS_JITSPEW
         printer(nullptr),
 #endif
-        m_buffer(/*poolMaxOffset*/ GetPoolMaxOffset(), /*nopFill*/ 0),
+        m_buffer(BufferMaxPoolOffset, BufferNumDebugNopsToInsert),
         isFinished(false) {
   }
-  static uint32_t NopFill;
-  static uint32_t AsmPoolMaxOffset;
-  static uint32_t GetPoolMaxOffset();
   bool reserve(size_t size);
   bool oom() const;
   void setPrinter(Sprinter* sp) {
