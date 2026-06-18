@@ -508,6 +508,30 @@ class MetricControllerTest {
         assertNotNull(MediaNotification.pause.testGetValue())
         assertEquals(1, MediaNotification.pause.testGetValue()!!.size)
         assertNull(MediaNotification.pause.testGetValue()!!.single().extra)
+
+        // Verify the next action
+        fact = Fact(Component.FEATURE_MEDIA, Action.NEXT, MediaFacts.Items.NOTIFICATION)
+        assertNull(MediaNotification.next.testGetValue())
+
+        controller.run {
+            fact.process()
+        }
+
+        assertNotNull(MediaNotification.next.testGetValue())
+        assertEquals(1, MediaNotification.next.testGetValue()!!.size)
+        assertNull(MediaNotification.next.testGetValue()!!.single().extra)
+
+        // Verify the previous action
+        fact = Fact(Component.FEATURE_MEDIA, Action.PREVIOUS, MediaFacts.Items.NOTIFICATION)
+        assertNull(MediaNotification.previous.testGetValue())
+
+        controller.run {
+            fact.process()
+        }
+
+        assertNotNull(MediaNotification.previous.testGetValue())
+        assertEquals(1, MediaNotification.previous.testGetValue()!!.size)
+        assertNull(MediaNotification.previous.testGetValue()!!.single().extra)
     }
 
     @Test

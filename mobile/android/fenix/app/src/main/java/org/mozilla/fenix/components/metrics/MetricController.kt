@@ -183,6 +183,8 @@ internal class ReleaseMetricController(
             when (action) {
                 Action.PLAY -> MediaNotification.play.record(NoExtras())
                 Action.PAUSE -> MediaNotification.pause.record(NoExtras())
+                Action.NEXT -> MediaNotification.next.record(NoExtras())
+                Action.PREVIOUS -> MediaNotification.previous.record(NoExtras())
                 else -> Unit
             }
         }
