@@ -184,7 +184,7 @@ async function openAIWindow({ waitForTabURL = AIWINDOW_URL } = {}) {
  */
 async function waitForSidebarReady(win) {
   const sidebarBrowser = win.document.getElementById("ai-window-browser");
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => sidebarBrowser.contentDocument?.querySelector("ai-window:defined"),
     "Sidebar ai-window should be loaded"
   );
@@ -464,7 +464,7 @@ async function openTabContextMenuAndClickTabByLabel(sidebarBrowser, label) {
 }
 
 async function getSmartbarContextChipLabels(browser, expectedUrl) {
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => browser.contentDocument?.querySelector("ai-window:defined"),
     "Sidebar ai-window should be loaded"
   );
@@ -590,7 +590,7 @@ async function selectSmartbarSearchEngine(browser) {
   );
   const mozButton = BrowserTestUtils.querySelectorDeep(inputCta, "moz-button");
 
-  const chevronButton = await BrowserTestUtils.waitForCondition(() =>
+  const chevronButton = await TestUtils.waitForCondition(() =>
     mozButton.shadowRoot.querySelector("#chevron-button")
   );
   const [mainPanel, searchSubpanel] =
@@ -604,7 +604,7 @@ async function selectSmartbarSearchEngine(browser) {
   mainPanel.querySelector('panel-item[icon="search-with"]').click();
   await subpanelShown;
 
-  const engineItem = await BrowserTestUtils.waitForCondition(() =>
+  const engineItem = await TestUtils.waitForCondition(() =>
     searchSubpanel.querySelector('panel-item[icon="engine"]')
   );
   engineItem.click();
@@ -1519,13 +1519,13 @@ function stopMockOpenAI(server) {
  *   website-chip-container in the selected user message
  */
 async function getUserMessageChipLabels(sidebarBrowser, messageIndex = 0) {
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => sidebarBrowser.contentDocument?.querySelector("ai-window:defined"),
     "Sidebar ai-window should be loaded"
   );
 
   const aiWindowEl = sidebarBrowser.contentDocument.querySelector("ai-window");
-  const aichatBrowser = await BrowserTestUtils.waitForCondition(
+  const aichatBrowser = await TestUtils.waitForCondition(
     () => aiWindowEl.shadowRoot?.querySelector("#aichat-browser"),
     "Wait for aichat-browser"
   );

@@ -248,7 +248,7 @@ add_task(async function test_keyboard_shortcut_toggles_open_tabs_panel() {
 
   EventUtils.synthesizeKey("u", modifiers);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       SidebarController.isOpen &&
       SidebarController.currentID === "viewOpenTabsSidebar",
@@ -262,7 +262,7 @@ add_task(async function test_keyboard_shortcut_toggles_open_tabs_panel() {
 
   // Press the shortcut again — toggle should close the sidebar.
   EventUtils.synthesizeKey("u", modifiers);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !SidebarController.isOpen,
     "Pressing the shortcut again closes the sidebar."
   );

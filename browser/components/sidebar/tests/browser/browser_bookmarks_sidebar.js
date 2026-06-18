@@ -24,7 +24,7 @@ async function showBookmarksSidebar() {
     await SidebarTestUtils.showPanel(window, "viewBookmarksSidebar");
   }
   const { contentDocument, contentWindow } = SidebarController.browser;
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => contentDocument.querySelector("sidebar-bookmarks"),
     "Wait for sidebar-bookmarks element"
   );
@@ -517,7 +517,7 @@ add_task(async function test_bookmarks_search_context_menu_show_in_folder() {
   );
   await promiseHidden;
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => component.searchQuery === "",
     "Search is cleared after Show in Folder."
   );
@@ -548,12 +548,12 @@ add_task(async function test_bookmarks_search_context_menu_show_in_folder() {
     return null;
   };
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => findRow(tabList),
     "The bookmark row appears in the tree view after Show in Folder."
   );
   const revealedRow = findRow(tabList);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => revealedRow.selected,
     "The bookmark row is visually selected after Show in Folder."
   );
@@ -1031,7 +1031,7 @@ add_task(async function test_bookmarks_drag_reorders_items() {
     }
   );
 
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(async () => {
     fetchA = await PlacesUtils.bookmarks.fetch(bmA.guid);
     fetchB = await PlacesUtils.bookmarks.fetch(bmB.guid);
     return fetchA.index > fetchB.index;
@@ -1099,7 +1099,7 @@ add_task(async function test_bookmarks_drag_into_folder() {
     }
   );
 
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(async () => {
     const fetchBm = await PlacesUtils.bookmarks.fetch(bm.guid);
     return fetchBm.parentGuid === folder.guid;
   }, "Bookmark is moved into the folder.");
@@ -1164,7 +1164,7 @@ add_task(async function test_bookmarks_drag_hover_expands_folder() {
       }
     );
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => folderDetails.open,
       "Collapsed folder auto-expands while hovered during a drag."
     );

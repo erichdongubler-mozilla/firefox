@@ -33,7 +33,7 @@ let assertMetricEmpty = async metricName => {
 };
 
 let assertMetricFoundFor = async (metricName, count = 1) => {
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return Glean.tabgroup.tabInteractions[metricName].testGetValue() == count;
   }, `Wait for tab_interactions.${metricName} to be recorded`);
   Assert.equal(
@@ -224,7 +224,7 @@ add_task(async function test_tabInteractionsClose() {
       .querySelector("named-deck > view-recentbrowsing view-opentabs")
       .shadowRoot.querySelector("view-opentabs-card");
     let tabElement;
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       tabElement = Array.from(openTabsCard.tabList.rowEls).find(
         t => t.__tabElement?.group
       );
@@ -295,7 +295,7 @@ add_task(async function test_tabInteractionsCloseViaAnotherTabContext() {
 
   // Dismiss the confirmation panel that appears after closing duplicate tabs.
   EventUtils.synthesizeMouseAtCenter(document.documentElement, {});
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !window.ConfirmationHint._panel.getAttribute("animating"),
     "Ensure the confirmation panel is closed"
   );

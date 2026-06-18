@@ -41,7 +41,7 @@ add_task(async function test_appearance_pane_click_sidebar() {
   let doc = tab.linkedBrowser.contentDocument;
 
   let navButton = doc.getElementById("category-appearance");
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => navButton?.buttonEl,
     "Wait for appearance nav button to render"
   );

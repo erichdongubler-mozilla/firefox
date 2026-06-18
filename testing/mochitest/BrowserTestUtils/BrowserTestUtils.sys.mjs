@@ -2470,9 +2470,6 @@ export var BrowserTestUtils = {
     });
   },
 
-  // TODO: Fix consumers and remove me.
-  waitForCondition: TestUtils.waitForCondition,
-
   /**
    * Waits for a <xul:notification> with a particular value to appear
    * for the <xul:notificationbox> of the passed in browser.

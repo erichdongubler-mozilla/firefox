@@ -112,7 +112,7 @@ add_task(async function basic() {
       await onSubMenuShown;
 
       info(`Select sub menu item '${subMenuItemLabel}'`);
-      await BrowserTestUtils.waitForCondition(() =>
+      await TestUtils.waitForCondition(() =>
         [...menuItem.menupopup.children].find(i => i.label == subMenuItemLabel)
       );
       let subMenuItem = [...menuItem.menupopup.children].find(
@@ -131,7 +131,7 @@ add_task(async function basic() {
         if (expectedOption.background) {
           Assert.notEqual(target, gBrowser.selectedTab);
         } else {
-          await BrowserTestUtils.waitForCondition(
+          await TestUtils.waitForCondition(
             () => target == gBrowser.selectedTab
           );
           Assert.equal(target, gBrowser.selectedTab);
