@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.386
- * pdfjsBuild = 2ed018ec2
+ * pdfjsVersion = 6.0.393
+ * pdfjsBuild = e74be4491
  */
 
 ;// ./src/shared/util.js
@@ -1990,7 +1990,7 @@ class FloatingToolbar {
 }
 
 ;// ./src/shared/internal_evt.js
-const INTERNAL_EVT = "7af9a25e-3ac3-4887-b8f2-534d0931fadf";
+const INTERNAL_EVT = "ceca4fee-8d91-4eb8-b06c-b2b293fef895";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -9840,10 +9840,6 @@ class CanvasExtraState {
   }
 }
 function putBinaryImageData(ctx, imgData) {
-  if (imgData instanceof ImageData) {
-    ctx.putImageData(imgData, 0, 0);
-    return;
-  }
   const {
     width,
     height,
@@ -12128,8 +12124,6 @@ class CanvasGraphics {
       const result = this.applyTransferMapsToBitmap(imgData);
       imgToPaint = result.img;
       inlineImgCanvas = result.canvasEntry;
-    } else if (typeof HTMLElement === "function" && imgData instanceof HTMLElement || !imgData.data) {
-      imgToPaint = imgData;
     } else {
       const tmpCanvas = this.canvasFactory.create(width, height);
       putBinaryImageData(tmpCanvas.context, imgData);
@@ -14212,7 +14206,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.0.386",
+    apiVersion: "6.0.393",
     data,
     password,
     disableAutoFetch,
@@ -15861,8 +15855,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.0.386";
-const build = "2ed018ec2";
+const version = "6.0.393";
+const build = "e74be4491";
 
 ;// ./src/display/editor/color_picker.js
 

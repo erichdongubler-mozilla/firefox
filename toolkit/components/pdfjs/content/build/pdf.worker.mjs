@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.386
- * pdfjsBuild = 2ed018ec2
+ * pdfjsVersion = 6.0.393
+ * pdfjsBuild = e74be4491
  */
 
 ;// ./src/shared/util.js
@@ -38605,16 +38605,6 @@ function clearGlobalCaches() {
 
 
 
-function pickPlatformItem(dict) {
-  if (dict instanceof Dict) {
-    for (const key of ["UF", "F", "Unix", "Mac", "DOS"]) {
-      if (dict.has(key)) {
-        return dict.get(key);
-      }
-    }
-  }
-  return null;
-}
 class FileSpec {
   constructor(root) {
     if (!(root instanceof Dict)) {
@@ -38629,7 +38619,7 @@ class FileSpec {
     }
   }
   get filename() {
-    const item = pickPlatformItem(this.root);
+    const item = FileSpec.pickPlatformItem(this.root);
     if (item && typeof item === "string") {
       return stringToPDFString(item, true).replaceAll("\\\\", "\\").replaceAll("\\/", "/").replaceAll("\\", "/");
     }
@@ -38653,20 +38643,33 @@ class FileSpec {
       description
     };
   }
+  static pickPlatformItem(dict, raw = false) {
+    if (dict instanceof Dict) {
+      for (const key of ["UF", "F", "Unix", "Mac", "DOS"]) {
+        if (dict.has(key)) {
+          return raw ? dict.getRaw(key) : dict.get(key);
+        }
+      }
+    }
+    return null;
+  }
   static readContent(dict) {
     if (!(dict instanceof Dict)) {
       return null;
     }
-    const ef = pickPlatformItem(dict.get("EF"));
+    const ef = this.pickPlatformItem(dict.get("EF"));
     if (!(ef instanceof BaseStream)) {
       warn("Embedded file specification points to non-existing/invalid content");
       return null;
     }
-    const encrypt = dict.xref?.encrypt;
+    return this.readStreamContent(ef);
+  }
+  static readStreamContent(stream) {
+    const encrypt = stream.dict?.xref?.encrypt;
     if (encrypt?.encryptionKey === null) {
       throw new PasswordException("No password given", PasswordResponses.NEED_PASSWORD);
     }
-    return ef.getBytes();
+    return stream.getBytes();
   }
 }
 
@@ -40064,9 +40067,9 @@ function fetchRemoteDest(action) {
 }
 class Catalog {
   #actualNumPages = null;
-  #attachmentIdByRef = null;
+  #annotationAttachmentIdByRef = new RefSetCache();
+  #annotationAttachmentRefById = new Map();
   #catDict = null;
-  attachmentDictById = new Map();
   builtInCMapCache = new Map();
   fontCache = new RefSetCache();
   globalColorSpaceCache = new GlobalColorSpaceCache();
@@ -40086,21 +40089,23 @@ class Catalog {
     }
     this.toplevelPagesDict;
   }
-  get attachmentIdByRef() {
-    if (this.#attachmentIdByRef) {
-      return this.#attachmentIdByRef;
-    }
-    const attachmentIdByRef = new RefSetCache();
-    for (const [name, ref] of this.rawEmbeddedFiles || []) {
-      if (!(ref instanceof Ref)) {
-        continue;
-      }
-      attachmentIdByRef.put(ref, stringToPDFString(name, true));
-    }
-    return this.#attachmentIdByRef = attachmentIdByRef;
-  }
   cloneDict() {
     return this.#catDict.clone();
+  }
+  getAttachmentIdForAnnotation(ref) {
+    let id = this.#annotationAttachmentIdByRef.get(ref);
+    if (id) {
+      return id;
+    }
+    const baseId = `attachmentRef:${ref.toString()}`;
+    id = baseId;
+    let i = 1;
+    while (this.#annotationAttachmentRefById.has(id) || this.attachments?.has(id)) {
+      id = `${baseId}-${i++}`;
+    }
+    this.#annotationAttachmentIdByRef.put(ref, id);
+    this.#annotationAttachmentRefById.set(id, ref);
+    return id;
   }
   get version() {
     const version = this.#catDict.get("Version");
@@ -40922,11 +40927,7 @@ class Catalog {
     }
     return shadow(this, "attachments", attachments);
   }
-  attachmentContent(id) {
-    const dict = this.attachmentDictById.get(id);
-    if (dict) {
-      return FileSpec.readContent(dict);
-    }
+  #attachmentContentByName(id) {
     const obj = this.#catDict.get("Names");
     if (obj instanceof Dict && obj.has("EmbeddedFiles")) {
       const nameTree = new NameTree(obj.getRaw("EmbeddedFiles"), this.xref);
@@ -40935,6 +40936,21 @@ class Catalog {
           return FileSpec.readContent(value);
         }
       }
+    }
+    return undefined;
+  }
+  attachmentContent(id) {
+    const namedContent = this.#attachmentContentByName(id);
+    if (namedContent !== undefined) {
+      return namedContent;
+    }
+    const ref = this.#annotationAttachmentRefById.get(id);
+    if (ref) {
+      const target = this.xref.fetch(ref);
+      if (target instanceof BaseStream) {
+        return FileSpec.readStreamContent(target);
+      }
+      return target instanceof Dict ? FileSpec.readContent(target) : null;
     }
     return null;
   }
@@ -41010,9 +41026,6 @@ class Catalog {
   }
   async cleanup(manuallyTriggered = false) {
     clearGlobalCaches();
-    this.#attachmentIdByRef?.clear();
-    this.#attachmentIdByRef = null;
-    this.attachmentDictById.clear();
     this.globalColorSpaceCache.clear();
     this.globalImageCache.clear(manuallyTriggered);
     this.pageKidsCountCache.clear();
@@ -56149,21 +56162,20 @@ class FileAttachmentAnnotation extends MarkupAnnotation {
       annotationGlobals,
       dict
     } = params;
-    const fileSpecRef = dict.getRaw("FS");
     const fsDict = dict.get("FS");
     const file = new FileSpec(fsDict);
     const {
       catalog
     } = annotationGlobals.pdfManager.pdfDocument;
-    let fileId = fileSpecRef instanceof Ref ? catalog?.attachmentIdByRef.get(fileSpecRef) : undefined;
-    if (catalog && fsDict instanceof Dict && typeof fileId !== "string") {
-      const baseFileId = `annotation:${this.data.id}`;
-      fileId = baseFileId;
-      let i = 1;
-      while (catalog.attachmentDictById.has(fileId)) {
-        fileId = `${baseFileId}-${i++}`;
+    let fileId;
+    if (fsDict instanceof Dict) {
+      let contentRef = dict.getRaw("FS");
+      if (!(contentRef instanceof Ref)) {
+        contentRef = FileSpec.pickPlatformItem(fsDict.get("EF"), true);
       }
-      catalog.attachmentDictById.set(fileId, fsDict);
+      if (contentRef instanceof Ref) {
+        fileId = catalog?.getAttachmentIdForAnnotation(contentRef);
+      }
     }
     this.data.hasOwnCanvas = this.data.noRotate;
     this.data.noHTML = false;
@@ -63409,7 +63421,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "6.0.386";
+    const workerVersion = "6.0.393";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }
