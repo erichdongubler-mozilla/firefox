@@ -7,6 +7,7 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AutofillDataTypes: "resource://gre/modules/shared/AutofillDataTypes.sys.mjs",
   AutofillFormFactory:
     "resource://gre/modules/shared/AutofillFormFactory.sys.mjs",
   AutofillTelemetry: "resource://gre/modules/shared/AutofillTelemetry.sys.mjs",
@@ -129,26 +130,36 @@ export class FormAutofillChild extends JSWindowActorChild {
       handler.setIdentifiedFieldDetails(fieldDetails);
       handler.setUpDynamicFormChangeObserver();
 
-      let addressFields = [];
-      let creditcardFields = [];
-
-      handler.fieldDetails.forEach(fd => {
-        if (lazy.FormAutofillUtils.isAddressField(fd.fieldName)) {
-          addressFields.push(fd);
-        } else if (lazy.FormAutofillUtils.isCreditCardField(fd.fieldName)) {
-          creditcardFields.push(fd);
+      // Collect every detected field, plus the address fields separately for
+      // the address-specific handling below.
+      let fields = [];
+      const addressFields = [];
+      for (const fd of handler.fieldDetails) {
+        const typeId = lazy.FormAutofillUtils.typeIdFromFieldName(fd.fieldName);
+        if (!typeId) {
+          continue;
         }
-      });
+        fields.push(fd);
+        if (typeId == lazy.AutofillDataTypes.ADDRESS) {
+          addressFields.push(fd);
+        }
+      }
 
-      // Bug 1905040. This is only a temporarily workaround for now to skip marking address fields
-      // autocompletable whenever we detect an address field. We only mark address field when
-      // it is a valid address section (This is done in the parent)
-      if (!lazy.FormAutofillUtils.isValidSection(addressFields)) {
-        addressFields = [];
+      // Bug 1905040. This is only a temporarily workaround for now to skip
+      // marking address fields autocompletable whenever we detect an address
+      // field. We only mark address field when it is a valid address section
+      // (This is done in the parent). Drop the address fields when they don't
+      // yet form a valid section; other data types are offered as soon as they
+      // are detected.
+      if (
+        addressFields.length &&
+        !lazy.FormAutofillUtils.isValidSection(addressFields)
+      ) {
+        fields = fields.filter(field => !addressFields.includes(field));
       }
 
       // Inform the autocomplete controller these fields are autofillable
-      [...addressFields, ...creditcardFields].forEach(fieldDetail => {
+      for (const fieldDetail of fields) {
         this.#markAsAutofillField(fieldDetail);
 
         if (
@@ -157,7 +168,7 @@ export class FormAutofillChild extends JSWindowActorChild {
         ) {
           this.showPopupIfEmpty(fieldDetail.element, fieldDetail.fieldName);
         }
-      });
+      }
 
       if (isUpdate) {
         // The fields detection was re-run because of a form change, this means
@@ -166,20 +177,22 @@ export class FormAutofillChild extends JSWindowActorChild {
         return;
       }
 
-      // Do not need to listen to form submission event because if the address fields do not contain
-      // 'street-address' or `address-linx`, we will not save the address.
-      if (
-        creditcardFields.length ||
-        (addressFields.length &&
-          [
-            "street-address",
-            "address-line1",
-            "address-line2",
-            "address-line3",
-          ].some(fieldName =>
-            addressFields.some(fd => fd.fieldName == fieldName)
-          ))
-      ) {
+      // Listen for form submission only if a remaining field is worth saving.
+      // An address is saved only when it has a 'street-address'/'address-linex'
+      // field; any other data type is saved as soon as one of its fields is
+      // present.
+      const STREET_ADDRESS_FIELDS = [
+        "street-address",
+        "address-line1",
+        "address-line2",
+        "address-line3",
+      ];
+      const worthCapturing = fields.some(field =>
+        addressFields.includes(field)
+          ? STREET_ADDRESS_FIELDS.includes(field.fieldName)
+          : true
+      );
+      if (worthCapturing) {
         this.manager
           .getActor("FormHandler")
           .registerFormSubmissionInterest(this, {
