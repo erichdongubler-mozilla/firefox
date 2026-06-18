@@ -106,10 +106,7 @@ class RemoteVideoDecoder final : public RemoteDataDecoder {
                       java::Sample::Param aSample)
         : RenderOrReleaseOutput(aCodec, aSample) {}
 
-    bool operator()(bool aRender) override {
-      ReleaseOutput(aRender);
-      return true;
-    }
+    void operator()(void) override { ReleaseOutput(true); }
   };
 
   class InputInfo {

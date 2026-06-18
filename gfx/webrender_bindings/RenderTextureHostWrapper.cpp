@@ -164,14 +164,6 @@ RenderTextureHostWrapper::AsRenderAndroidHardwareBufferTextureHost() {
   return mTextureHost->AsRenderAndroidHardwareBufferTextureHost();
 }
 
-RenderAndroidImageReaderImageTextureHost*
-RenderTextureHostWrapper::AsRenderAndroidImageReaderImageTextureHost() {
-  if (!mTextureHost) {
-    return nullptr;
-  }
-  return mTextureHost->AsRenderAndroidImageReaderImageTextureHost();
-}
-
 RenderAndroidSurfaceTextureHost*
 RenderTextureHostWrapper::AsRenderAndroidSurfaceTextureHost() {
   if (!mTextureHost) {
