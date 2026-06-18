@@ -553,10 +553,10 @@ class HTMLMediaElement::MediaControlKeyListener final
         Owner()->SetVolume(aParams.mVolume.value(), IgnoreErrors());
         break;
       case MediaControlKey::Mute:
-        Owner()->SetMuted(true);
+        Owner()->SetMuted(true, HTMLMediaElement::MUTED_BY_MEDIA_CONTROL);
         break;
       case MediaControlKey::Unmute:
-        Owner()->SetMuted(false);
+        Owner()->SetMuted(false, HTMLMediaElement::MUTED_BY_MEDIA_CONTROL);
         break;
       default:
         MOZ_ASSERT_UNREACHABLE(
@@ -3858,25 +3858,43 @@ void HTMLMediaElement::SetVolumeInternal() {
   mEffectiveVolumeChangeEvent.Notify(effectiveVolume);
 }
 
-void HTMLMediaElement::SetMuted(bool aMuted) {
-  LOG(LogLevel::Debug,
-      ("{} SetMuted({}) called by JS", fmt::ptr(this), aMuted));
+static const char* MutedReasonToStr(HTMLMediaElement::MutedReasons aReason) {
+  switch (aReason) {
+    case HTMLMediaElement::MUTED_BY_CONTENT:
+      return "content";
+    case HTMLMediaElement::MUTED_BY_INVALID_PLAYBACK_RATE:
+      return "invalid-playback-rate";
+    case HTMLMediaElement::MUTED_BY_AUDIO_CHANNEL:
+      return "audio-channel";
+    case HTMLMediaElement::MUTED_BY_AUDIO_TRACK:
+      return "audio-track";
+    case HTMLMediaElement::MUTED_BY_MEDIA_CONTROL:
+      return "media-control";
+  }
+  MOZ_ASSERT_UNREACHABLE("Unknown MutedReasons value");
+  return "unknown";
+}
 
-  // The setter latches the muted state (to True or False); afterwards the muted
-  // content attribute no longer affects the muted getter. The muted state is
-  // latched even when the computed muted value is unchanged. E.g. an element
-  // muted only by its content attribute has muted state "default" and reports
-  // muted == true; calling `muted = true` leaves the muted value true, but the
-  // muted state must still become True so that later removing the content
-  // attribute does not unmute it.
+void HTMLMediaElement::SetMuted(bool aMuted, MutedReasons aReason) {
+  LOG(LogLevel::Debug, ("{} SetMuted({}) reason={}", fmt::ptr(this), aMuted,
+                        MutedReasonToStr(aReason)));
+
+  // Only the web-facing content setter latches the muted state (to True or
+  // False); afterwards the muted content attribute no longer affects the muted
+  // getter. The state is latched even when the computed muted value is
+  // unchanged, so that later removing the content attribute does not unmute the
+  // element. Other reasons (audio channel, media control, etc.) must not affect
+  // this content-attribute relationship.
   // https://html.spec.whatwg.org/multipage/media.html#dom-media-muted
-  mMutedState = aMuted ? MutedState::True : MutedState::False;
+  if (aReason == MUTED_BY_CONTENT) {
+    mMutedState = aMuted ? MutedState::True : MutedState::False;
+  }
 
   bool wasMuted = Muted();
   if (aMuted) {
-    SetMutedInternal(mMuted | MUTED_BY_CONTENT);
+    SetMutedInternal(mMuted | aReason);
   } else {
-    SetMutedInternal(mMuted & ~MUTED_BY_CONTENT);
+    SetMutedInternal(mMuted & ~aReason);
   }
 
   if (Muted() == wasMuted) {

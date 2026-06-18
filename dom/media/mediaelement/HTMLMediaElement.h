@@ -654,11 +654,24 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   void SetVolume(double aVolume, ErrorResult& aRv);
 
+  enum MutedReasons {
+    MUTED_BY_CONTENT = 0x01,
+    MUTED_BY_INVALID_PLAYBACK_RATE = 0x02,
+    MUTED_BY_AUDIO_CHANNEL = 0x04,
+    MUTED_BY_AUDIO_TRACK = 0x08,
+    MUTED_BY_MEDIA_CONTROL = 0x10
+  };
+
   bool Muted() const {
     // https://html.spec.whatwg.org/multipage/media.html#concept-media-muted
     return !!(mMuted & (MUTED_BY_CONTENT | MUTED_BY_INVALID_PLAYBACK_RATE));
   }
-  void SetMuted(bool aMuted);
+  void SetMuted(bool aMuted, MutedReasons aReason = MUTED_BY_CONTENT);
+
+  // Chrome-only accessor exposing which reasons currently contribute to the
+  // muted state, so tests can verify muting that does not affect the
+  // web-visible muted attribute (e.g. mute via media control).
+  uint32_t GetMutedReasons() const { return mMuted; }
 
   bool DefaultMuted() const { return GetBoolAttr(nsGkAtoms::muted); }
 
@@ -1599,13 +1612,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   // True if the audio track is not silent.
   bool mIsAudioTrackAudible = false;
-
-  enum MutedReasons {
-    MUTED_BY_CONTENT = 0x01,
-    MUTED_BY_INVALID_PLAYBACK_RATE = 0x02,
-    MUTED_BY_AUDIO_CHANNEL = 0x04,
-    MUTED_BY_AUDIO_TRACK = 0x08
-  };
 
   uint32_t mMuted = 0;
 
