@@ -122,6 +122,7 @@ class MediaController final : public DOMEventTargetHelper,
   bool IsAudible() const override;
   bool IsPlaying() const override;
   bool IsActive() const override;
+  bool IsMuted() const;
 
   // IMediaInfoUpdater's methods
   void NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
@@ -130,6 +131,7 @@ class MediaController final : public DOMEventTargetHelper,
       uint64_t aBrowsingContextId, MediaAudibleState aState,
       ControlType aType = ControlType::eControllable,
       AudioSessionType aSessionType = AudioSessionType::Playback) override;
+  void NotifyBrowsingContextDiscarded(uint64_t aBrowsingContextId) override;
   void SetIsInPictureInPictureMode(uint64_t aBrowsingContextId,
                                    bool aIsInPictureInPictureMode) override;
   void NotifyMediaFullScreenState(uint64_t aBrowsingContextId,
@@ -221,6 +223,7 @@ class MediaController final : public DOMEventTargetHelper,
 
   bool mIsActive = false;
   bool mShutdown = false;
+  bool mIsMuted = false;
   bool mIsInPictureInPictureMode = false;
   bool mIsInFullScreenMode = false;
 

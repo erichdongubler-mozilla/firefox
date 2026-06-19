@@ -183,6 +183,13 @@ object MainMenuSelectors {
         groups = listOf("requiredForPage", "homePageMainMenuItems", "browserViewMainMenuItems"),
     )
 
+    val SAVE_TO_COLLECTIONS_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.browser_menu_save_to_collection_2),
+        description = "Save to collections button",
+        groups = listOf("moreMainMenuItems"),
+    )
+
     val all = listOf(
         NEW_PRIVATE_TAB_BUTTON,
         EXTENSIONS_BUTTON,
@@ -205,5 +212,6 @@ object MainMenuSelectors {
         DESKTOP_SITE_BUTTON,
         MORE_BUTTON,
         CHANGE_WALLPAPER_BUTTON,
+        SAVE_TO_COLLECTIONS_BUTTON,
     )
 }

@@ -5,7 +5,6 @@
 package org.mozilla.fenix.ui
 
 import mozilla.components.feature.sitepermissions.SitePermissionsRules
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
@@ -19,15 +18,13 @@ import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.browserScreen
-import org.mozilla.fenix.ui.robots.clearTextFieldItem
 import org.mozilla.fenix.ui.robots.clickContextMenuItem
 import org.mozilla.fenix.ui.robots.clickPageObject
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.longClickPageObject
 import org.mozilla.fenix.ui.robots.navigationToolbar
-import org.mozilla.fenix.ui.robots.openEditURLView
 import org.mozilla.fenix.ui.robots.searchScreen
-import org.mozilla.fenix.ui.robots.shareOverlay
+import kotlin.test.Ignore
 import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 class TextSelectionTest {
@@ -58,7 +55,6 @@ class TextSelectionTest {
     val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326832
-    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
     @SmokeTest
     @Test
     fun verifySelectAllTextOptionTest() {
@@ -69,14 +65,14 @@ class TextSelectionTest {
             longClickPageObject(composeTestRule, itemContainingText("content"))
             clickContextMenuItem("Select all")
             clickContextMenuItem("Copy")
-        }.openNavigationToolbar {
-            openEditURLView()
+        }
+
+        browserScreen(composeTestRule) {
+        longClickToolbar()
+        clickDisplayModeToolbarContextMenuItem("Paste")
         }
 
         searchScreen(composeTestRule) {
-            clickClearButton()
-            longClickToolbar()
-            clickPasteText()
             // With Select all, white spaces are copied
             // Potential bug https://bugzilla.mozilla.org/show_bug.cgi?id=1821310
             verifyTypedToolbarText("  Page content: 1 ", exists = true)
@@ -151,7 +147,6 @@ class TextSelectionTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326834
-    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
     @Test
     fun verifySelectAllPDFTextOptionTest() {
         val genericURL =
@@ -161,18 +156,16 @@ class TextSelectionTest {
         }.enterURLAndEnterToBrowser(genericURL.url) {
             clickPageObject(composeTestRule, itemWithText("PDF form file"))
             clickPageObject(composeTestRule, itemContainingText("Stay in"))
-            waitForPageToLoad()
             longClickPageObject(composeTestRule, itemContainingText("Crossing"))
             clickContextMenuItem("Select all")
             clickContextMenuItem("Copy")
-        }.openNavigationToolbar {
-            openEditURLView()
         }
 
-        searchScreen(composeTestRule) {
-            clickClearButton()
+        browserScreen(composeTestRule) {
             longClickToolbar()
-            clickPasteText()
+            clickDisplayModeToolbarContextMenuItem("Paste")
+        }
+        searchScreen(composeTestRule) {
             verifyTypedToolbarText(
                 "Washington Crossing the Delaware Wikipedia linkName: Android",
                 exists = true,
@@ -181,6 +174,7 @@ class TextSelectionTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/243839
+    @Ignore("Disabled for failing after D306236: https://bugzilla.mozilla.org/show_bug.cgi?id=2048865")
     @SmokeTest
     @Test
     fun verifyCopyPDFTextOptionTest() {
@@ -190,10 +184,10 @@ class TextSelectionTest {
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
             clickPageObject(composeTestRule, itemWithText("PDF form file"))
+            verifyOpenLinkInAnotherAppPrompt(appName = "Drive")
             clickPageObject(composeTestRule, itemContainingText("Stay in"))
             longClickPageObject(composeTestRule, itemContainingText("Crossing"))
             clickContextMenuItem("Copy")
-        }.openNavigationToolbar {
         }
 
         searchScreen(composeTestRule) {
@@ -259,7 +253,6 @@ class TextSelectionTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326813
-    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
     @Test
     fun verifyUrlBarTextSelectionOptionsTest() {
         val genericURL = mockWebServer.getGenericAsset(1)
@@ -267,8 +260,10 @@ class TextSelectionTest {
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
         }.openNavigationToolbar {
-            longClickEditModeToolbar()
-            verifyTextSelectionOptions("Open", "Cut", "Copy", "Share")
+        }
+        searchScreen(retryableComposeTestRule.current) {
+            longClickToolbar()
+            verifyTextSelectionOptions("Copy", "Paste", "Cut")
         }
     }
 
@@ -293,7 +288,6 @@ class TextSelectionTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326815
-    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
     @Test
     fun verifyCutUrlBarTextSelectionOptionTest() {
         val genericURL = mockWebServer.getGenericAsset(1)
@@ -301,12 +295,14 @@ class TextSelectionTest {
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
         }.openNavigationToolbar {
-            longClickEditModeToolbar()
+        }
+        searchScreen(retryableComposeTestRule.current) {
+            longClickToolbar()
             clickContextMenuItem("Cut")
-            verifyToolbarIsEmpty()
-            longClickEditModeToolbar()
+            verifySearchBarPlaceholder("Search or enter address")
+            longClickToolbar()
             clickContextMenuItem("Paste")
-            verifyUrl(genericURL.url.toString())
+            verifyTypedToolbarText(genericURL.url.toString(), exists = true)
         }
     }
 

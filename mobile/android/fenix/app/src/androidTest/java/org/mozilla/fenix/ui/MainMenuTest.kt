@@ -408,6 +408,11 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080115
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifyTheSaveToCollectionSubMenuOptionTest"],
+        bug = 2048584,
+        since = "2026-06",
+    )
     @SmokeTest
     @Test
     fun verifyTheSaveToCollectionSubMenuOptionTest() {

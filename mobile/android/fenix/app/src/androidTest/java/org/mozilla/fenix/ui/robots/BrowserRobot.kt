@@ -16,7 +16,6 @@ import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
@@ -35,7 +34,6 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.core.net.toUri
 import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions.longClick
 import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.espresso.matcher.ViewMatchers.withId
@@ -58,7 +56,6 @@ import org.junit.Assert.fail
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.AppAndSystemHelper.registerAndCleanupIdlingResources
-import org.mozilla.fenix.helpers.Constants.LONG_CLICK_DURATION
 import org.mozilla.fenix.helpers.Constants.RETRY_COUNT
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource

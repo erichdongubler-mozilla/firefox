@@ -1956,5 +1956,11 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && msix", # Bug 1807931
 ]
 
+["test_webtransport_stop_sending.js"]
+skip-if = [
+  "os == 'android'",
+  "os == 'win'",
+]
+
 ["test_xmlhttprequest.js"]
 prefs = ["network.xhr.block_sync_system_requests=false"] # Bug 721336

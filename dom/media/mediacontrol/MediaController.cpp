@@ -185,19 +185,41 @@ void MediaController::SetVolume(double aVolume) {
 
 void MediaController::Mute() {
   LOG("Mute");
+  const bool wasAudible = IsAudible();
+  mIsMuted = true;
+  if (RefPtr<BrowsingContext> bc = BrowsingContext::Get(Id())) {
+    IgnoredErrorResult rv;
+    bc->Canonical()->Top()->SetMuted(true, rv);
+  }
+  if (IsAudible() != wasAudible) {
+    DispatchAsyncEvent(u"audiblechange"_ns);
+  }
   UpdateMediaControlActionToContentMediaIfNeeded(
       MediaControlAction(MediaControlKey::Mute));
 }
 
 void MediaController::Unmute() {
   LOG("Unmute");
+  const bool wasAudible = IsAudible();
+  mIsMuted = false;
+  if (RefPtr<BrowsingContext> bc = BrowsingContext::Get(Id())) {
+    IgnoredErrorResult rv;
+    bc->Canonical()->Top()->SetMuted(false, rv);
+  }
+  if (IsAudible() != wasAudible) {
+    DispatchAsyncEvent(u"audiblechange"_ns);
+  }
   UpdateMediaControlActionToContentMediaIfNeeded(
       MediaControlAction(MediaControlKey::Unmute));
 }
 
+bool MediaController::IsMuted() const { return mIsMuted; }
+
 uint64_t MediaController::Id() const { return mTopLevelBrowsingContextId; }
 
-bool MediaController::IsAudible() const { return IsMediaAudible(); }
+bool MediaController::IsAudible() const {
+  return !mIsMuted && IsMediaAudible();
+}
 
 bool MediaController::IsPlaying() const { return IsMediaPlaying(); }
 
@@ -383,6 +405,19 @@ void MediaController::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
     service->GetAudioFocusManager().RequestAudioFocus(this);
   } else {
     service->GetAudioFocusManager().RevokeAudioFocus(this);
+  }
+}
+
+void MediaController::NotifyBrowsingContextDiscarded(
+    uint64_t aBrowsingContextId) {
+  if (mShutdown) {
+    return;
+  }
+  LOG("NotifyBrowsingContextDiscarded %" PRIu64, aBrowsingContextId);
+  const bool oldAudible = IsAudible();
+  MediaStatusManager::NotifyBrowsingContextDiscarded(aBrowsingContextId);
+  if (IsAudible() != oldAudible) {
+    DispatchAsyncEvent(u"audiblechange"_ns);
   }
 }
 
