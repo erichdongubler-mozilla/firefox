@@ -9,7 +9,6 @@
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/Proxy.h"
 #include "proxy/DeadObjectProxy.h"
-#include "vm/Compartment.h"
 #include "vm/Interpreter.h"
 #include "vm/ProxyObject.h"
 #include "vm/WrapperObject.h"
@@ -409,8 +408,6 @@ JS_PUBLIC_API void js::NukeNonCCWProxy(JSContext* cx, HandleObject proxy) {
 
 void js::NukeRemovedCrossCompartmentWrapper(JSContext* cx, JSObject* wrapper) {
   MOZ_ASSERT(wrapper->is<CrossCompartmentWrapperObject>());
-  MOZ_ASSERT(
-      !wrapper->compartment()->lookupWrapper(Wrapper::wrappedObject(wrapper)));
 
   NotifyGCNukeWrapper(cx, wrapper);
 
