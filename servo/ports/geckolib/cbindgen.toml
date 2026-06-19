@@ -1187,7 +1187,7 @@ renaming_overrides_prefixing = true
 
 "ComputedFontStyleDescriptor" = """
   inline static StyleComputedFontStyleDescriptor Normal() {
-    return StyleComputedFontStyleDescriptor::Oblique(0, 0);
+    return StyleComputedFontStyleDescriptor::Oblique({0}, {0});
   }
 """
 

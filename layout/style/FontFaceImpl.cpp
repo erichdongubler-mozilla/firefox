@@ -665,9 +665,9 @@ bool FontFaceImpl::GetAttributesFromRule(
         aAttr.mStyle = SlantStyleRange(FontSlantStyle::ITALIC);
         break;
       case StyleComputedFontStyleDescriptor::Tag::Oblique:
-        aAttr.mStyle = SlantStyleRange(
-            FontSlantStyle::FromFloat(styleDesc.AsOblique()._0),
-            FontSlantStyle::FromFloat(styleDesc.AsOblique()._1));
+        aAttr.mStyle =
+            SlantStyleRange(FontSlantStyle{styleDesc.AsOblique()._0},
+                            FontSlantStyle{styleDesc.AsOblique()._1});
         break;
       default:
         MOZ_ASSERT_UNREACHABLE("Unhandled tag");
