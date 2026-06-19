@@ -68,19 +68,14 @@
   --error-border: rgba(90, 0, 2, 0.16); /*  red-80(#5a0002) at 16% */
   --error-icon: var(--red-60); /* from the Web Console */
   --error-text: var(--red-70); /* from the Web Console */
-  --highlight-50: #0a84ff;
   --grey-20: #ededf0; /* for ui, no special semantic */
-  --grey-30: #d7d7db; /* for ui, no special semantic */
   --grey-50: #737373; /* for ui, no special semantic */
   --grey-90: #0c0c0d; /* for ui, no special semantic */
   --grey-90-a10: rgba(12, 12, 13, 0.1);
   --grey-90-a20: rgba(12, 12, 13, 0.2);
-  --grey-90-a30: rgba(12, 12, 13, 0.3);
   --grey-90-a60: rgba(12, 12, 13, 0.6);
   --red-70: #a4000f; /* for ui, no special semantic */
   --white-100: #fff; /* for ui, no special semantic */
-  --yellow-60: #d7b600; /* for ui, no special semantic */
-  --yellow-70: #a47f00; /* for ui, no special semantic */
 
   /* Typography from Photon */
   /* See https://firefox-dev.tools/photon/visuals/typography.html */
@@ -428,33 +423,6 @@ Form controls
 /*
 * Other UI components
 */
-
-/*
-* A small, colored badge.
-* NOTE: styles borrowed from Photon's micro buttons (there aren't badges)
-*/
-.badge {
-  background: var(--grey-30);
-  border-radius: var(--border-radius-xsmall);
-  font-size: var(--micro-font-size);
-  padding: var(--base-unit) calc(2 * var(--base-unit));
-}
-
-.badge--info {
-  background: var(--highlight-50);
-}
-
-.badge--success {
-  background: var(--success-background);
-}
-
-.badge--warning {
-  background: var(--warning-background);
-}
-
-.badge--error {
-  background: var(--error-background);
-}
 
 /*
  * Card UI, from Photon
