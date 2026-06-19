@@ -29,7 +29,11 @@ import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
+import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors.MAIN_MENU_BUTTON
+import org.mozilla.fenix.ui.efficiency.selectors.CollectionsSelectors.EXISTING_COLLECTION_WITH_TITLE
 import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
+import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors.MORE_BUTTON
+import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors.SAVE_TO_COLLECTIONS_BUTTON
 import org.mozilla.fenix.ui.efficiency.selectors.SearchBarSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.ToolbarSelectors
 
@@ -153,6 +157,15 @@ class BrowserPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule
                 .mapNotNull { it.config.getOrNull(SemanticsProperties.Text)?.joinToString("") }
             throw AssertionError("Expected URL to contain '$expectedText' but found: $actual")
         }
+        return this
+    }
+
+    fun saveTabToExistingCollection(collectionTitle: String): BrowserPage {
+        mozClick(MAIN_MENU_BUTTON)
+        mozClick(MORE_BUTTON)
+        mozClick(SAVE_TO_COLLECTIONS_BUTTON)
+        mozClick(EXISTING_COLLECTION_WITH_TITLE(collectionTitle))
+
         return this
     }
 

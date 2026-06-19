@@ -6,7 +6,9 @@ package org.mozilla.fenix.ui.efficiency.tests
 
 import org.junit.Ignore
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Converted
 import org.mozilla.fenix.customannotations.SmokeTest
+import org.mozilla.fenix.helpers.MockBrowserDataHelper
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.pdfFormAsset
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
@@ -220,5 +222,37 @@ class MainMenuTest : BaseTest() {
         on.mainMenu
             .navigateToPage()
             .mozVerify(DESKTOP_SITE_OFF)
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080115
+    @SmokeTest
+    @Test
+    fun verifyTheSaveToCollectionSubMenuOptionTest() {
+        val collectionTitle = "First Collection"
+        val firstTestPage = mockWebServer.getGenericAsset(1)
+        val secondTestPage = mockWebServer.getGenericAsset(2)
+
+        composeRule.activityRule.applySettingsExceptions {
+            // Disabling these features to have better visibility of the Collections view
+            it.isRecentlyVisitedFeatureEnabled = false
+            it.isRecentTabsFeatureEnabled = false
+        }
+
+        MockBrowserDataHelper
+            .createCollection(
+                Pair(firstTestPage.url.toString(), firstTestPage.title),
+                title = collectionTitle,
+            )
+
+        on.browserPage.navigateToPage(secondTestPage.url.toString())
+            .saveTabToExistingCollection(collectionTitle)
+        on.browserPage.navigateToPage()
+        on.home.navigateToPage()
+        on.home
+            .verifyTabsInExpandedCollection(
+                collectionTitle = collectionTitle,
+                firstTestPage.title,
+                secondTestPage.title,
+            )
     }
 }
