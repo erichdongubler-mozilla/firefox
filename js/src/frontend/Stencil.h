@@ -670,12 +670,17 @@ class StencilModuleEntry {
  public:
   // clang-format off
   //
-  //               | RequestedModule | ImportEntry | ImportNamespaceEntry | ExportAs | ExportFrom | ExportNamespaceFrom | ExportBatchFrom |
-  //               |----------------------------------------------------------------------------------------------------------------------|
-  // moduleRequest | required        | required    | required             | null     | required   | required            | required        |
-  // localName     | null            | required    | required             | required | null       | null                | null            |
-  // importName    | null            | required    | null                 | null     | required   | null                | null            |
-  // exportName    | null            | null        | null                 | required | required   | required            | null            |
+  // (+/- = required/null)
+  //
+  //                     | moduleRequest | localName | importName | exportName |
+  //                     |---------------|-----------|------------|------------|
+  // RequestedModule     | +             | -         | -          | -          |
+  // ImportEntry         | +             | +         | +          | -          |
+  // ImportNamespaceEntry| +             | +         | -          | -          |
+  // ExportAs            | -             | +         | -          | +          |
+  // ExportFrom          | +             | -         | +          | +          |
+  // ExportNamespaceFrom | +             | -         | -          | +          |
+  // ExportBatchFrom     | +             | -         | -          | -          |
   //
   // clang-format on
   MaybeModuleRequestIndex moduleRequest;
