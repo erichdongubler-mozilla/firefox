@@ -318,11 +318,12 @@ async function testPickerBtnAttribute(attr, val, presenceOnly = false) {
  * @param {number} tabs: How many times "Tab" key should be pressed
  *                 to move a keyboard focus to a needed spinner
  *                 (1 for month/default and 2 for year)
+ * @param {bool} hasTime: Whether time picker spinners are present
  *
  * @description Starts with the month-year toggle button being focused
  *              on the date/datetime-local input's datepicker panel
  */
-async function testKeyOnSpinners(key, document, tabs = 1) {
+async function testKeyOnSpinners(key, document, tabs = 1, hasTime = false) {
   info(`Testing "${key}" key behavior`);
 
   Assert.equal(
@@ -373,7 +374,7 @@ async function testKeyOnSpinners(key, document, tabs = 1) {
 
   // Return the focus to the month-year toggle button for future tests
   // (passing a Previous button along the way):
-  await EventUtils.synthesizeKey("KEY_Tab", { repeat: 3 });
+  await EventUtils.synthesizeKey("KEY_Tab", { repeat: hasTime ? 6 : 3 });
 }
 
 /**
