@@ -11,6 +11,7 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   DownloadError: "resource://gre/modules/DownloadCore.sys.mjs",
+  DownloadSource: "resource://gre/modules/DownloadCore.sys.mjs",
   DownloadStore: "resource://gre/modules/DownloadStore.sys.mjs",
 });
 
@@ -468,4 +469,19 @@ add_task(async function test_blocked_download_deletion() {
       `${desc} file should ${expectRemoval ? "have been deleted" : "be kept"}.`
     );
   }
+});
+
+/**
+ * Tests that a DownloadSource with a cleared URL (null) is not serializable,
+ * which prevents it from being written to the store.
+ */
+add_task(async function test_source_cleared_data_uri_not_serializable() {
+  let source = new DownloadSource();
+  source.url = "data:,";
+  source.isDataURICleared = true;
+  Assert.strictEqual(
+    source.toSerializable(),
+    null,
+    "DownloadSource.toSerializable() should return null when isDataURICleared is set"
+  );
 });
