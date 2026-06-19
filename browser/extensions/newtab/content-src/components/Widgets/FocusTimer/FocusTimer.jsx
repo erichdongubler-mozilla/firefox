@@ -1009,6 +1009,7 @@ export const FocusTimer = ({
             iconSrc="chrome://global/skin/icons/more.svg"
             menuId="focus-timer-context-menu"
             type="ghost"
+            data-l10n-id="newtab-widget-timer-menu-button"
           />
           <panel-list id="focus-timer-context-menu">
             <panel-item

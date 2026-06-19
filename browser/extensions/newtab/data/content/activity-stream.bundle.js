@@ -15098,7 +15098,8 @@ const FocusTimer = ({
     className: "focus-timer-context-menu-button",
     iconSrc: "chrome://global/skin/icons/more.svg",
     menuId: "focus-timer-context-menu",
-    type: "ghost"
+    type: "ghost",
+    "data-l10n-id": "newtab-widget-timer-menu-button"
   }), /*#__PURE__*/external_React_default().createElement("panel-list", {
     id: "focus-timer-context-menu"
   }, /*#__PURE__*/external_React_default().createElement("panel-item", {
