@@ -1850,19 +1850,18 @@ bool ModuleBuilder::buildTables(frontend::StencilModuleMetadata& metadata) {
             js::ReportOutOfMemory(fc_);
             return false;
           }
-        } else if (!importEntry->importName) {
-          // This is a re-export of an imported module namespace object.
-          auto entry = frontend::StencilModuleEntry::exportNamespaceFromEntry(
-              importEntry->moduleRequest, exp.exportName, exp.lineno,
-              exp.column);
-          if (!metadata.indirectExportEntries.append(entry)) {
-            js::ReportOutOfMemory(fc_);
-            return false;
-          }
         } else {
-          auto entry = frontend::StencilModuleEntry::exportFromEntry(
-              importEntry->moduleRequest, importEntry->importName,
-              exp.exportName, exp.lineno, exp.column);
+          // Append ExportEntry { [[ModuleRequest]]: ie.[[ModuleRequest]],
+          // [[ImportName]]: ie.[[ImportName]], [[LocalName]]: null,
+          // [[ExportName]]: ee.[[ExportName]] } to indirectExportEntries.
+          frontend::StencilModuleEntry entry =
+              importEntry->importName
+                  ? frontend::StencilModuleEntry::exportFromEntry(
+                        importEntry->moduleRequest, importEntry->importName,
+                        exp.exportName, exp.lineno, exp.column)
+                  : frontend::StencilModuleEntry::exportNamespaceFromEntry(
+                        importEntry->moduleRequest, exp.exportName, exp.lineno,
+                        exp.column);
           if (!metadata.indirectExportEntries.append(entry)) {
             js::ReportOutOfMemory(fc_);
             return false;
