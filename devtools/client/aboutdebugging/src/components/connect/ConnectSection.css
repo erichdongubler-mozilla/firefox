@@ -9,14 +9,14 @@
 }
 
 /*
- *  +--------+----------------+
- *  | <icon> |  <heading> 1fr |
- *  +--------+----------------+
+ *  +--------+----------------+----------+
+ *  | <icon> |  <heading> 1fr | <toggle> |
+ *  +--------+----------------+----------+
  */
 .connect-section__header {
   display: grid;
-  grid-template-areas: "icon heading";
-  grid-template-columns: auto 1fr;
+  grid-template-areas: "icon heading toggle";
+  grid-template-columns: auto 1fr auto;
   grid-template-rows: var(--icon-size);
   grid-column-gap: var(--header-col-gap);
   align-items: center;
@@ -36,6 +36,10 @@
 
   -moz-context-properties: fill;
   fill: currentColor;
+}
+
+.connect-section__header__toggle {
+  grid-area: toggle;
 }
 
 .connect-section__content {

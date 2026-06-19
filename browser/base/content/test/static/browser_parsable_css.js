@@ -281,6 +281,7 @@ let propNameAllowlist = [
 
   /* Allow design tokens in devtools without all variables being used there */
   { sourceName: /\/design-system\/tokens-.*\.css$/, isFromDevTools: true },
+  { sourceName: /\/in-content\/common-shared\.css/, isFromDevTools: true },
 
   // Ignore token properties that follow the patterns --color-[name], --color-[name]-[number], or --color-[name]-alpha-[number]
   // This enables us to provide our full color palette for developers.

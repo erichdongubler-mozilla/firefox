@@ -407,8 +407,8 @@ about-debugging-multiprocess-toolbox-name = Multiprocess Toolbox
 about-debugging-multiprocess-toolbox-description = Main Process and Content Processes for the target browser
 
 # Alt text used for the close icon of message component (warnings, errors and notifications).
-about-debugging-message-close-icon =
-  .alt = Close message
+about-debugging-message-close-icon2 =
+  .tooltiptext = Close message
 
 # Label text used for the error details of message component.
 about-debugging-message-details-label-error = Error details

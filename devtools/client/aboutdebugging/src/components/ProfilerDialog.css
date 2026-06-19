@@ -56,7 +56,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--grey-90-a60);
+  background-color: var(--background-color-overlay);
   display: flex;
   align-items: center;
   justify-content: center;

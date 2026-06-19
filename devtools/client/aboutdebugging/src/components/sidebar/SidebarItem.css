@@ -30,7 +30,7 @@
 }
 
 .sidebar-item:not(.sidebar-item--selectable) {
-  color: var(--secondary-text-color);
+  color: var(--text-color-deemphasized);
 }
 
 .sidebar-item--selectable:hover {

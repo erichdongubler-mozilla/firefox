@@ -5,14 +5,11 @@
 "use strict";
 
 const {
-  createFactory,
+  createElement,
   PureComponent,
 } = require("resource://devtools/client/shared/vendor/react.mjs");
 const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
 const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.mjs");
-
-const FluentReact = require("resource://devtools/client/shared/vendor/fluent-react.js");
-const Localized = createFactory(FluentReact.Localized);
 
 const {
   MESSAGE_LEVEL,
@@ -54,26 +51,13 @@ class Message extends PureComponent {
   }
 
   renderButton(level) {
-    return dom.button(
-      {
-        className:
-          `ghost-button message__button message__button--${level} ` +
-          `qa-message-button-close-button`,
-        onClick: () => this.closeMessage(),
-      },
-      Localized(
-        {
-          id: "about-debugging-message-close-icon",
-          attrs: {
-            alt: true,
-          },
-        },
-        dom.img({
-          className: "qa-message-button-close-icon",
-          src: CLOSE_ICON_SRC,
-        })
-      )
-    );
+    return createElement("moz-button", {
+      class: `message__button message__button--${level} qa-message-button-close-button`,
+      type: "icon ghost",
+      iconsrc: CLOSE_ICON_SRC,
+      "data-l10n-id": "about-debugging-message-close-icon2",
+      onClick: () => this.closeMessage(),
+    });
   }
 
   render() {
