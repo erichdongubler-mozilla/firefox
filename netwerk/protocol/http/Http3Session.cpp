@@ -663,15 +663,18 @@ nsresult Http3Session::ProcessEvents() {
              this, event.stop_sending.error));
         if (event.stop_sending.error == HTTP3_APP_ERROR_NO_ERROR) {
           RefPtr<Http3StreamBase> stream =
-              mStreamIdHash.Get(event.data_writable.stream_id);
+              mStreamIdHash.Get(event.stop_sending.stream_id);
           if (stream) {
-            RefPtr<Http3Stream> httpStream = stream->GetHttp3Stream();
-            MOZ_RELEASE_ASSERT(httpStream, "This must be a Http3Stream");
-            httpStream->StopSending();
+            if (RefPtr<Http3Stream> httpStream = stream->GetHttp3Stream()) {
+              httpStream->StopSending();
+            } else {
+              ResetOrStopSendingRecvd(event.stop_sending.stream_id,
+                                      event.stop_sending.error, STOP_SENDING);
+            }
           }
         } else {
-          ResetOrStopSendingRecvd(event.reset.stream_id, event.reset.error,
-                                  STOP_SENDING);
+          ResetOrStopSendingRecvd(event.stop_sending.stream_id,
+                                  event.stop_sending.error, STOP_SENDING);
         }
         break;
       case Http3Event::Tag::PushPromise:
