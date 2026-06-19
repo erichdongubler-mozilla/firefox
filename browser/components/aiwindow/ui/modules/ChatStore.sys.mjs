@@ -145,16 +145,6 @@ class ChatStore {
       await this.#closeConnection();
     };
     this.#lastRecordedSize = null;
-
-    Services.obs.addObserver(this, "idle-daily", true);
-  }
-
-  observe(_subject, topic) {
-    if (topic === "idle-daily") {
-      this.pruneDatabase().catch(e => {
-        lazy.log.error("Could not prune chat database", e.message, e.stack);
-      });
-    }
   }
 
   /**
@@ -615,86 +605,86 @@ class ChatStore {
   }
 
   /**
-   * Reads the actual bytes being used by the database as opposed
-   * to the physical size on disk of the sqlite file
+   * Prunes the database of old conversations in order to get the
+   * database file size to the specified maximum size.
    *
-   * @returns {number} Current bytes in use by db
-   */
-  async getDbBytesInUse() {
-    const rows = await this.#conn.execute(
-      "SELECT sum(pgsize) AS size FROM dbstat WHERE aggregate = TRUE"
-    );
-
-    return rows[0].getResultByName("size") ?? 0;
-  }
-
-  /**
-   * Prunes the database of old conversations in order to keep the
-   * database file size to stay under the specified maximum size.
+   * @todo Bug 2005411
+   * Review the requirements for db pruning and set up invocation schedule, and refactor
+   * to use dbstat
    *
    * @param {number} [reduceByPercentage=0.05] - Percentage to reduce db file size by
    * @param {number} [maxDbSizeBytes=MAX_DB_SIZE_BYTES] - Db max file size
-   * @param {number} [deleteBatchSize=2] - Number of conversations to delete
-   *                                       at a time
    */
   async pruneDatabase(
     reduceByPercentage = 0.05,
-    maxDbSizeBytes = MAX_DB_SIZE_BYTES,
-    deleteBatchSize = 50
+    maxDbSizeBytes = MAX_DB_SIZE_BYTES
   ) {
-    await this.#ensureDatabase().catch(e => {
-      lazy.log.error(
-        "Could not ensure a database connection.",
-        e.message,
-        e.stack
-      );
-      throw e;
-    });
-
-    const dbExists = await IOUtils.exists(this.databaseFilePath);
-    if (!dbExists) {
+    if (!IOUtils.exists(this.databaseFilePath)) {
       return;
     }
 
-    let dbSize = await this.getDbBytesInUse();
-    if (dbSize < maxDbSizeBytes) {
+    const DELETE_BATCH_SIZE = 50;
+
+    const getPragmaInt = async name => {
+      const result = await this.#conn.execute(`PRAGMA ${name}`);
+      return result[0].getInt32(0);
+    };
+
+    // compute the logical DB size in bytes using SQLite's page_size,
+    // page_count, and freelist_count
+    const getLogicalDbSizeBytes = async () => {
+      const pageSize = await getPragmaInt("page_size");
+      const pageCount = await getPragmaInt("page_count");
+      const freelistCount = await getPragmaInt("freelist_count");
+
+      // Logical used pages = total pages - free pages
+      const usedPages = pageCount - freelistCount;
+      const lSize = usedPages * pageSize;
+
+      return lSize;
+    };
+
+    let logicalSize = await getLogicalDbSizeBytes();
+    if (logicalSize < maxDbSizeBytes) {
       return;
     }
 
-    const targetDbSize = Math.max(0, dbSize * (1 - reduceByPercentage));
+    const targetLogicalSize = Math.max(
+      0,
+      logicalSize * (1 - reduceByPercentage)
+    );
 
     const MAX_ITERATIONS = 100;
-    // how many "no size change" batches we tolerate
+    // how many "no file size change" batches we tolerate
     const MAX_STAGNANT = 5;
     let iterations = 0;
     let stagnantIterations = 0;
 
     while (
-      dbSize > targetDbSize &&
+      logicalSize > targetLogicalSize &&
       iterations < MAX_ITERATIONS &&
       stagnantIterations < MAX_STAGNANT
     ) {
       iterations++;
 
-      const oldestConversations =
-        await this.findOldestConversations(deleteBatchSize);
+      const recentChats = await this.findOldestConversations(DELETE_BATCH_SIZE);
 
-      if (!oldestConversations.length) {
+      if (!recentChats.length) {
         break;
       }
 
-      for (const chat of oldestConversations) {
+      for (const chat of recentChats) {
         await this.deleteConversationById(chat.id);
       }
 
-      const newDbSize = await this.getDbBytesInUse();
-      if (newDbSize >= dbSize) {
+      const newLogicalSize = await getLogicalDbSizeBytes();
+      if (newLogicalSize >= logicalSize) {
         stagnantIterations++;
       } else {
         stagnantIterations = 0;
       }
 
-      dbSize = newDbSize;
+      logicalSize = newLogicalSize;
     }
 
     // Actually reclaim disk space.
@@ -942,9 +932,8 @@ class ChatStore {
     );
 
     try {
-      // TODO - Bug 2048333 Migrate this to default value 32k
+      // TODO: remove this after switching pruneDatabase() to use dbstat
       await this.#conn.execute("PRAGMA page_size = 4096;");
-
       // Setup WAL journaling, as it is generally faster.
       await this.#conn.execute("PRAGMA journal_mode = WAL;");
       await this.#conn.execute("PRAGMA wal_autocheckpoint = 16;");
