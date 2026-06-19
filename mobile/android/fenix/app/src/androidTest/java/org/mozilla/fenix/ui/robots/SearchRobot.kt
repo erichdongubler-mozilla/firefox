@@ -7,6 +7,8 @@
 package org.mozilla.fenix.ui.robots
 
 import android.util.Log
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
@@ -34,7 +36,9 @@ import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.matcher.IntentMatchers
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.By.textContains
 import androidx.test.uiautomator.UiSelector
+import androidx.test.uiautomator.Until
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_EDIT_MODE
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_EDIT_MODE_HORIZONTAL_DIVIDER
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_SEARCH_BOX
@@ -58,6 +62,7 @@ import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.helpers.TestHelper.appName
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
+import org.mozilla.fenix.helpers.ext.waitNotNull
 import mozilla.components.browser.toolbar.R as toolbarR
 import mozilla.components.feature.qr.R as qrR
 
@@ -430,6 +435,7 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "tapOutsideToDismissSearchBar: Clicked outside the search bar")
     }
 
+    @OptIn(ExperimentalTestApi::class)
     fun longClickToolbar() {
         Log.i(TAG, "longClickToolbar: Trying to perform \"Close soft keyboard\" action")
         closeSoftKeyboard()
@@ -484,9 +490,36 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(ADDRESSBAR_SEARCH_BOX), waitingTime)
         Log.i(TAG, "verifyTypedToolbarText: Waited for $waitingTime until the edit mode toolbar search box exists")
         Log.i(TAG, "verifyTypedToolbarText: Verifying that text '$expectedText' exists?: $exists")
-        val matcher = hasText(expectedText, substring = true)
-        composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).assert(if (exists) matcher else matcher.not())
+        val normalizedExpectedText = normalizeWhitespace(expectedText)
+        val actualText = composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX)
+            .fetchSemanticsNode()
+            .config
+            .toNormalizedToolbarText()
+
+        assertTrue(
+            "Expected toolbar text '$normalizedExpectedText' to ${if (exists) "exist" else "not exist"} in '$actualText'",
+            if (exists) {
+                actualText.contains(normalizedExpectedText)
+            } else {
+                !actualText.contains(normalizedExpectedText)
+            },
+        )
         Log.i(TAG, "verifyTypedToolbarText: Verification successful.")
+    }
+
+    private fun normalizeWhitespace(text: String): String = text.replace(Regex("\\s+"), " ").trim()
+
+    private fun androidx.compose.ui.semantics.SemanticsConfiguration.toNormalizedToolbarText(): String {
+        val textParts = buildList {
+            getOrNull(SemanticsProperties.Text)?.let { annotations ->
+                addAll(annotations.map { it.text })
+            }
+            getOrNull(SemanticsProperties.EditableText)?.let { editableText ->
+                add(editableText.text)
+            }
+        }
+
+        return normalizeWhitespace(textParts.joinToString(" "))
     }
 
     fun verifySearchBarPosition() {
@@ -522,6 +555,12 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
             Log.i(TAG, "deleteSearchKeywordCharacters: Waiting for $waitingTimeShort ms for $appName window to be updated")
             mDevice.waitForWindowUpdate(appName, waitingTimeShort)
             Log.i(TAG, "deleteSearchKeywordCharacters: Waited for $waitingTimeShort ms for $appName window to be updated")
+        }
+    }
+
+    fun verifyTextSelectionOptions(vararg textSelectionOptions: String) {
+        for (textSelectionOption in textSelectionOptions) {
+            mDevice.waitNotNull(Until.findObject(textContains(textSelectionOption)), waitingTime)
         }
     }
 
