@@ -152,6 +152,7 @@ abstract class BasePage(
                         mDevice.waitForIdle()
                     }
                     is NavigationStep.WaitForIdle -> composeRule.waitForIdle()
+                    is NavigationStep.PressBackUntilGone -> mozPressBackUntilGone(step.selector, step.maxPresses)
                 }
             }
 
@@ -509,6 +510,44 @@ abstract class BasePage(
             rep?.endCmd(success = false, message = "Click '${selector.description}' failed: ${e.message ?: "exception"}")
             throw e
         }
+    }
+
+    /**
+     * Presses back until [selector] disappears, bounded by [maxPresses]. Mirrors the legacy
+     * exitMenu() pattern: gating on the anchor's disappearance rather than a fixed back-press
+     * count tolerates presses that are swallowed while a Compose/fragment transition is still
+     * settling (waitForIdle() can return early), which is the cause of intermittent
+     * "Failed to navigate to HomePage" failures when backing out of nested Settings.
+     */
+    fun mozPressBackUntilGone(selector: Selector, maxPresses: Int = 5): BasePage {
+        val rep = rep()
+        rep?.startCmd(safeId("press_back_until_gone", selector.description), "Pressing back until '${selector.description}' is gone...", 1)
+
+        repeat(maxPresses) { attempt ->
+            rep?.startLoc(safeId("loc", "${selector.description}_attempt_${attempt + 1}"), "Attempting to locate '${selector.description}'...", 2)
+            val present = waitForPresence(selector, TestAssetHelper.waitingTimeShort)
+            rep?.endLoc(success = !present, message = if (present) found(selector.description) else notFound(selector.description))
+
+            if (!present) {
+                rep?.endCmd(success = true, message = "'${selector.description}' gone after $attempt back press(es)")
+                return this
+            }
+
+            mDevice.pressBack()
+            mDevice.waitForIdle()
+        }
+
+        rep?.endCmd(success = false, message = "'${selector.description}' still present after $maxPresses back press(es)")
+        throw AssertionError("'${selector.description}' still present after $maxPresses back press(es)")
+    }
+
+    private fun waitForPresence(selector: Selector, timeout: Long, interval: Long = 200): Boolean {
+        val deadline = System.currentTimeMillis() + timeout
+        while (System.currentTimeMillis() < deadline) {
+            if (mozVerifyElement(selector, applyPreconditions = false)) return true
+            android.os.SystemClock.sleep(interval)
+        }
+        return false
     }
 
     fun mozSwipeTo(
