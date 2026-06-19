@@ -24,6 +24,7 @@ import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.longClickPageObject
 import org.mozilla.fenix.ui.robots.navigationToolbar
 import org.mozilla.fenix.ui.robots.searchScreen
+import kotlin.test.Ignore
 import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 class TextSelectionTest {
@@ -173,6 +174,7 @@ class TextSelectionTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/243839
+    @Ignore("Disabled for failing after D306236: https://bugzilla.mozilla.org/show_bug.cgi?id=2048865")
     @SmokeTest
     @Test
     fun verifyCopyPDFTextOptionTest() {
