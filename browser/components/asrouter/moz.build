@@ -33,6 +33,7 @@ EXTRA_JS_MODULES.asrouter += [
     "modules/InfoBar.sys.mjs",
     "modules/MenuMessage.sys.mjs",
     "modules/MessagingExperimentConstants.sys.mjs",
+    "modules/MessagingTargetingConstants.sys.mjs",
     "modules/MomentsPageHub.sys.mjs",
     "modules/OnboardingMessageProvider.sys.mjs",
     "modules/PageEventManager.sys.mjs",
