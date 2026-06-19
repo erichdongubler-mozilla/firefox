@@ -33,6 +33,7 @@ interface MediaController : EventTarget {
   readonly attribute unsigned long long id;
   readonly attribute boolean isActive;
   readonly attribute boolean isAudible;
+  readonly attribute boolean isMuted;
   readonly attribute boolean isPlaying;
   readonly attribute boolean isAnyMediaBeingControlled;
   readonly attribute MediaSessionPlaybackState playbackState;
@@ -64,6 +65,8 @@ interface MediaController : EventTarget {
   undefined play();
   undefined pause();
   undefined stop();
+  undefined mute();
+  undefined unmute();
   undefined prevTrack();
   undefined nextTrack();
   undefined seekBackward(double seekOffset);
