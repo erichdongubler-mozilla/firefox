@@ -2732,6 +2732,11 @@ void gfxPlatform::InitWebRenderConfig() {
   }
 #endif
 
+#ifdef MOZ_WIDGET_ANDROID
+  gfxVars::SetUseAImageReaderVideoGpuProcessAndroid(
+      StaticPrefs::gfx_video_aimage_reader_gpu_process_android_AtStartup());
+#endif
+
 #ifdef XP_WIN
   if (gfxConfig::IsEnabled(Feature::WEBRENDER_DCOMP_PRESENT)) {
     gfxVars::SetUseWebRenderDCompWin(true);

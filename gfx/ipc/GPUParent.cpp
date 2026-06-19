@@ -90,6 +90,7 @@
 #endif
 #ifdef ANDROID
 #  include "mozilla/layers/AndroidHardwareBuffer.h"
+#  include "mozilla/layers/AndroidImageReader.h"
 #  include "skia/include/ports/SkTypeface_cairo.h"
 #endif
 #include "ChildProfilerController.h"
@@ -389,6 +390,10 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
 
   if (gfxVars::UseAHardwareBufferSharedSurfaceWebglOop()) {
     layers::AndroidHardwareBufferManager::Init();
+  }
+
+  if (gfxVars::UseAImageReaderVideoGpuProcessAndroid()) {
+    layers::GpuProcessAndroidImageReaderMap::Init();
   }
 
 #endif
@@ -757,6 +762,9 @@ void GPUParent::ActorDestroy(ActorDestroyReason aWhy) {
         CanvasRenderThread::Shutdown();
         CompositorThreadHolder::Shutdown();
         RemoteTextureMap::Shutdown();
+#ifdef ANDROID
+        layers::GpuProcessAndroidImageReaderMap::Shutdown();
+#endif
         // There is a case that RenderThread exists when gfxVars::UseWebRender()
         // is false. This could happen when WebRender was fallbacked to
         // compositor.
