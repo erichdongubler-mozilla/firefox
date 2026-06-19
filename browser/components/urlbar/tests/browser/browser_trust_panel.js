@@ -1143,3 +1143,26 @@ add_task(async function test_legacy_graphic_when_nova_disabled() {
   await BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
 });
+
+add_task(async function clear_cookie_hidden_in_private_browsing() {
+  const privateWin = await BrowserTestUtils.openNewBrowserWindow({
+    private: true,
+  });
+
+  await BrowserTestUtils.openNewForegroundTab({
+    gBrowser: privateWin.gBrowser,
+    opening: TEST_ORIGIN,
+    waitForLoad: true,
+  });
+
+  await UrlbarTestUtils.openTrustPanel(privateWin);
+
+  Assert.ok(
+    BrowserTestUtils.isHidden(
+      privateWin.document.getElementById("trustpanel-clear-cookies-footer")
+    ),
+    "Clear cookies footer is hidden in private browsing"
+  );
+
+  await BrowserTestUtils.closeWindow(privateWin);
+});

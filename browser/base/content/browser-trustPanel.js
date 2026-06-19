@@ -551,16 +551,26 @@ class TrustPanel {
       !ContentBlockingAllowList.canHandle(window.gBrowser.selectedBrowser)
     );
 
-    try {
-      let baseDomain = SiteDataManager.getBaseDomainFromHost(this.#uri.host);
-      SiteDataManager.hasSiteData(baseDomain).then(hasSiteData => {
-        this.#updateAttribute(
-          document.getElementById("trustpanel-clear-cookies-button"),
-          "disabled",
-          !hasSiteData
-        );
-      });
-    } catch (e) {}
+    // TODO(Bug 1751045): Show the clear site data footer in private browsing
+    // when clearing data in private browsing is supported.
+    const isPrivate = PrivateBrowsingUtils.isWindowPrivate(window);
+    this.#updateAttribute(
+      document.getElementById("trustpanel-clear-cookies-footer"),
+      "hidden",
+      isPrivate
+    );
+    if (!isPrivate) {
+      try {
+        let baseDomain = SiteDataManager.getBaseDomainFromHost(this.#uri.host);
+        SiteDataManager.hasSiteData(baseDomain).then(hasSiteData => {
+          this.#updateAttribute(
+            document.getElementById("trustpanel-clear-cookies-button"),
+            "disabled",
+            !hasSiteData
+          );
+        });
+      } catch (e) {}
+    }
 
     this.#updateAttribute(
       document.getElementById("trustpanel-toggle"),
