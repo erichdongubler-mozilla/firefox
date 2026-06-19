@@ -670,16 +670,14 @@ class StencilModuleEntry {
  public:
   // clang-format off
   //
-  // (+/- = required/null)
+  // (+/- = required/null, ns = *namespace*)
   //
   //                     | moduleRequest | localName | importName | exportName |
   //                     |---------------|-----------|------------|------------|
   // RequestedModule     | +             | -         | -          | -          |
-  // ImportEntry         | +             | +         | +          | -          |
-  // ImportNamespaceEntry| +             | +         | -          | -          |
+  // ImportEntry         | +             | +         | +/ns       | -          |
   // ExportAs            | -             | +         | -          | +          |
-  // ExportFrom          | +             | -         | +          | +          |
-  // ExportNamespaceFrom | +             | -         | -          | +          |
+  // ExportFrom          | +             | -         | +/ns       | +          |
   // ExportBatchFrom     | +             | -         | -          | -          |
   //
   // clang-format on
@@ -754,17 +752,6 @@ class StencilModuleEntry {
     return entry;
   }
 
-  static StencilModuleEntry importNamespaceEntry(
-      MaybeModuleRequestIndex moduleRequest, TaggedParserAtomIndex localName,
-      uint32_t lineno, JS::ColumnNumberOneOrigin column) {
-    MOZ_ASSERT(moduleRequest.isSome());
-    MOZ_ASSERT(localName);
-    StencilModuleEntry entry(lineno, column);
-    entry.moduleRequest = moduleRequest;
-    entry.localName = localName;
-    return entry;
-  }
-
   static StencilModuleEntry exportAsEntry(TaggedParserAtomIndex localName,
                                           TaggedParserAtomIndex exportName,
                                           uint32_t lineno,
@@ -785,17 +772,6 @@ class StencilModuleEntry {
     StencilModuleEntry entry(lineno, column);
     entry.moduleRequest = moduleRequest;
     entry.importName = importName;
-    entry.exportName = exportName;
-    return entry;
-  }
-
-  static StencilModuleEntry exportNamespaceFromEntry(
-      MaybeModuleRequestIndex moduleRequest, TaggedParserAtomIndex exportName,
-      uint32_t lineno, JS::ColumnNumberOneOrigin column) {
-    MOZ_ASSERT(moduleRequest.isSome());
-    MOZ_ASSERT(exportName);
-    StencilModuleEntry entry(lineno, column);
-    entry.moduleRequest = MaybeModuleRequestIndex(moduleRequest);
     entry.exportName = exportName;
     return entry;
   }

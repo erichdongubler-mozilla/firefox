@@ -41,7 +41,7 @@ testImportEntries('import v from "mod";',
                   [{moduleRequest: {specifier: 'mod', moduleType: 'js'}, importName: 'default', localName: 'v'}]);
 
 testImportEntries('import * as ns from "mod";',
-                  [{moduleRequest: {specifier: 'mod', moduleType: 'js'}, importName: null, localName: 'ns'}]);
+                  [{moduleRequest: {specifier: 'mod', moduleType: 'js'}, importName: '*namespace*', localName: 'ns'}]);
 
 testImportEntries('import {x} from "mod";',
                   [{moduleRequest: {specifier: 'mod', moduleType: 'js'}, importName: 'x', localName: 'x'}]);

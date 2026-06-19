@@ -1855,13 +1855,9 @@ bool ModuleBuilder::buildTables(frontend::StencilModuleMetadata& metadata) {
           // [[ImportName]]: ie.[[ImportName]], [[LocalName]]: null,
           // [[ExportName]]: ee.[[ExportName]] } to indirectExportEntries.
           frontend::StencilModuleEntry entry =
-              importEntry->importName
-                  ? frontend::StencilModuleEntry::exportFromEntry(
-                        importEntry->moduleRequest, importEntry->importName,
-                        exp.exportName, exp.lineno, exp.column)
-                  : frontend::StencilModuleEntry::exportNamespaceFromEntry(
-                        importEntry->moduleRequest, exp.exportName, exp.lineno,
-                        exp.column);
+              frontend::StencilModuleEntry::exportFromEntry(
+                  importEntry->moduleRequest, importEntry->importName,
+                  exp.exportName, exp.lineno, exp.column);
           if (!metadata.indirectExportEntries.append(entry)) {
             js::ReportOutOfMemory(fc_);
             return false;
@@ -2186,8 +2182,10 @@ bool ModuleBuilder::processImport(frontend::BinaryNode* importNode) {
     eitherParser_.computeLineAndColumn(localNameNode->pn_pos.begin, &line,
                                        &column);
 
-    auto entry = StencilModuleEntry::importNamespaceEntry(
-        moduleRequestIndex, localName, line, JS::ColumnNumberOneOrigin(column));
+    auto entry = StencilModuleEntry::importEntry(
+        moduleRequestIndex, localName,
+        TaggedParserAtomIndex::WellKnown::star_namespace_star_(), line,
+        JS::ColumnNumberOneOrigin(column));
 
     return importEntries_.put(localName, entry);
   }
@@ -2238,8 +2236,9 @@ bool ModuleBuilder::processImport(frontend::BinaryNode* importNode) {
       localName = localNameNode->atom();
 
       markUsedByStencil(localName);
-      entry = StencilModuleEntry::importNamespaceEntry(
-          moduleRequestIndex, localName, line,
+      entry = StencilModuleEntry::importEntry(
+          moduleRequestIndex, localName,
+          TaggedParserAtomIndex::WellKnown::star_namespace_star_(), line,
           JS::ColumnNumberOneOrigin(column));
     }
 
@@ -2479,9 +2478,10 @@ bool ModuleBuilder::processExportFrom(frontend::BinaryNode* exportNode) {
       MOZ_ASSERT(exportNames_.has(exportName));
 
       markUsedByStencil(exportName);
-      entry = StencilModuleEntry::exportNamespaceFromEntry(
-          moduleRequestIndex, exportName, line,
-          JS::ColumnNumberOneOrigin(column));
+      entry = StencilModuleEntry::exportFromEntry(
+          moduleRequestIndex,
+          TaggedParserAtomIndex::WellKnown::star_namespace_star_(), exportName,
+          line, JS::ColumnNumberOneOrigin(column));
     } else {
       MOZ_ASSERT(spec->isKind(ParseNodeKind::ExportBatchSpecStmt));
 

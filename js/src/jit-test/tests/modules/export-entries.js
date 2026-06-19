@@ -106,6 +106,14 @@ testIndirectExportEntries(
     'import {v as x} from "mod"; export {x as y};',
     [{exportName: 'y', moduleRequest: {specifier:'mod'}, importName: 'v', localName: null}]);
 
+testIndirectExportEntries(
+    'import * as ns from "mod"; export {ns};',
+    [{exportName: 'ns', moduleRequest: {specifier:'mod'}, importName: '*namespace*', localName: null}]);
+
+testIndirectExportEntries(
+    'export * as ns from "mod";',
+    [{exportName: 'ns', moduleRequest: {specifier:'mod'}, importName: '*namespace*', localName: null}]);
+
 // Test starExportEntries property
 
 function testStarExportEntries(source, expected) {
