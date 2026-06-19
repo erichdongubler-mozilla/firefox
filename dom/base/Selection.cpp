@@ -112,8 +112,11 @@ std::string format_as(SelectionType aType) {
   };
   static_assert(static_cast<std::underlying_type_t<SelectionType>>(
                     SelectionType::eInvalid) == -1);
-  MOZ_ASSERT(static_cast<std::underlying_type_t<SelectionType>>(
-                 SelectionType::eHighlight) == std::size(sNames) - 1);
+  static_assert(static_cast<std::underlying_type_t<SelectionType>>(
+                    SelectionType::eHighlight) -
+                    static_cast<std::underlying_type_t<SelectionType>>(
+                        SelectionType::eInvalid) ==
+                std::size(sNames) - 1);
   const size_t index =
       static_cast<std::underlying_type_t<SelectionType>>(aType) + 1;
   return index >= std::size(sNames) ? "<invalid value>" : sNames[index];
