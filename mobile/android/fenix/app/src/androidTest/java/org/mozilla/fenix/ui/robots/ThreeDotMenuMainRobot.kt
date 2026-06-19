@@ -502,8 +502,8 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
 
     class Transition(private val composeTestRule: ComposeTestRule) {
         fun clickSettingsButton(localizedText: String = getStringResource(R.string.browser_menu_settings), interact: SettingsRobot.() -> Unit): SettingsRobot.Transition {
-            Log.i(TAG, "clickSettingsButton: Trying to click the Settings button from the new main menu design.")
-            itemWithDescription(localizedText).click()
+            Log.i(TAG, "clickSettingsButton: Trying to scroll to and click the Settings button from the new main menu design.")
+            composeTestRule.settingsButton(localizedText).performScrollTo().performClick()
             Log.i(TAG, "clickSettingsButton: Clicked the Settings button from the new main menu design.")
             composeTestRule.waitForIdle()
             mDevice.waitForIdle()
