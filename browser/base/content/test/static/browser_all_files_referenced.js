@@ -348,6 +348,12 @@ var allowlist = [
   // `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`
   { file: "chrome://global/skin/icons/shaft-arrow-left.svg" },
   { file: "chrome://global/skin/icons/shaft-arrow-right.svg" },
+
+  // Bug 1907594 - Created an inital set of messaging system targeting constants
+  // Preparation for future use in ASRouter
+  {
+    file: "resource://app/modules/asrouter/MessagingTargetingConstants.sys.mjs",
+  },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
