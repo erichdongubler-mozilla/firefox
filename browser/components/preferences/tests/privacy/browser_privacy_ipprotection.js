@@ -224,6 +224,7 @@ add_task(async function test_exclusions_add_button() {
       EventUtils.sendString(site1, win);
       Assert.ok(!addButton.disabled, "Add button is enabled");
 
+      await addButton.updateComplete;
       addButton.click();
 
       await siteListUpdatedPromise;
@@ -340,11 +341,13 @@ add_task(async function test_exclusions_telemetry() {
       const site2 = "https://example.com";
       urlField.focus();
       EventUtils.sendString(site2, win);
+      await addButton.updateComplete;
       addButton.click();
 
       const site3 = "https://another.example.com";
       urlField.focus();
       EventUtils.sendString(site3, win);
+      await addButton.updateComplete;
       addButton.click();
 
       await siteListUpdatedPromise;
@@ -365,6 +368,7 @@ add_task(async function test_exclusions_telemetry() {
       Assert.ok(existingItem, "Should find the existing entry");
 
       existingItem.click();
+      await removeButton.updateComplete;
       removeButton.click();
 
       await siteListUpdatedPromise;
