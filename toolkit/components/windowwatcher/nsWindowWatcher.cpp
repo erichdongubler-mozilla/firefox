@@ -72,6 +72,7 @@
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/dom/SessionStorageManager.h"
+#include "mozilla/widget/ScreenManager.h"
 #include "nsIAppWindow.h"
 #include "nsIXULBrowserWindow.h"
 #include "ReferrerInfo.h"
@@ -536,7 +537,10 @@ nsWindowWatcher::OpenWindowWithRemoteTab(
     return NS_ERROR_UNEXPECTED;
   }
 
-  // get various interfaces for aDocShellItem, used throughout this method
+  // We fall back to calculating in desktop pixels instead of CSS pixels
+  // if we can somehow not query a nsIBaseWindow. That does not happen in
+  // practice because parentTreeOwner is a nsIDocShellTreeOwner, and every
+  // implementation of nsIDocShellTreeOwner also implements nsIBaseWindow.
   CSSToDesktopScale cssToDesktopScale(1.0f);
   if (nsCOMPtr<nsIBaseWindow> win = do_QueryInterface(parentTreeOwner)) {
     cssToDesktopScale = win->GetUnscaledCSSToDesktopScale();
@@ -792,6 +796,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   CSSToDesktopScale cssToDesktopScale(1.0);
   if (nsCOMPtr<nsIBaseWindow> win = do_QueryInterface(parentDocShell)) {
     cssToDesktopScale = win->GetUnscaledCSSToDesktopScale();
+  } else {
+    RefPtr<widget::Screen> screen =
+        widget::ScreenManager::GetSingleton().GetPrimaryScreen();
+    cssToDesktopScale = screen->GetCSSToDesktopScale();
   }
   SizeSpec sizeSpec =
       CalcSizeSpec(features, hasChromeParent, cssToDesktopScale);
