@@ -39,6 +39,7 @@ const TEST_URI = `data:text/html,<meta charset=utf8>
 
 add_task(async function () {
   await pushPref("devtools.inspector.css-explainers", true);
+  await pushPref("layout.css.tree-counting-functions.enabled", true);
 
   await addTab(TEST_URI);
   const { inspector, view } = await openRuleView();
