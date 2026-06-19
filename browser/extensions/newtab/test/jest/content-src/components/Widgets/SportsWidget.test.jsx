@@ -3406,6 +3406,93 @@ describe("<SportsWidget> telemetry", () => {
   });
 });
 
+describe("<SportsWidget> Key Dates panel", () => {
+  let dispatch;
+  let handleUserInteraction;
+
+  beforeEach(() => {
+    dispatch = jest.fn();
+    handleUserInteraction = jest.fn();
+  });
+
+  function renderPanel() {
+    return render(
+      <WrapWithProvider
+        state={makeState({}, { widgetState: "sports-key-dates" })}
+      >
+        <SportsWidget
+          dispatch={dispatch}
+          handleUserInteraction={handleUserInteraction}
+        />
+      </WrapWithProvider>
+    );
+  }
+
+  function findArgs(container, stageL10nId) {
+    const items = container.querySelectorAll(".sports-key-dates-item");
+    for (const item of items) {
+      if (item.querySelector(`[data-l10n-id='${stageL10nId}']`)) {
+        const [, argsEl] = item.querySelectorAll("span");
+        return JSON.parse(argsEl.getAttribute("data-l10n-args"));
+      }
+    }
+    return null;
+  }
+
+  // Each row must render as a full ISO instant (not UTC midnight from a
+  // date-only string) so Fluent's DATETIME projects onto the viewer's
+  // local calendar day. Values mirror FIFA's 2026 schedule in ET.
+  it.each([
+    [
+      "newtab-sports-widget-group-stage",
+      "2026-06-11T15:00:00-04:00",
+      "2026-06-27T22:00:00-04:00",
+    ],
+    [
+      "newtab-sports-widget-round-32",
+      "2026-06-28T15:00:00-04:00",
+      "2026-07-03T21:30:00-04:00",
+    ],
+    [
+      "newtab-sports-widget-round-16",
+      "2026-07-04T13:00:00-04:00",
+      "2026-07-07T16:00:00-04:00",
+    ],
+    [
+      "newtab-sports-widget-quarter-finals",
+      "2026-07-09T16:00:00-04:00",
+      "2026-07-11T21:00:00-04:00",
+    ],
+    [
+      "newtab-sports-widget-semi-finals",
+      "2026-07-14T15:00:00-04:00",
+      "2026-07-15T15:00:00-04:00",
+    ],
+  ])(
+    "renders %s as a range of ET-anchored ISO timestamps",
+    (stageL10nId, start, end) => {
+      const { container } = renderPanel();
+      expect(findArgs(container, stageL10nId)).toEqual({
+        start: new Date(start).getTime(),
+        end: new Date(end).getTime(),
+      });
+    }
+  );
+
+  it.each([
+    ["newtab-sports-widget-bronze-finals", "2026-07-18T17:00:00-04:00"],
+    ["newtab-sports-widget-final", "2026-07-19T15:00:00-04:00"],
+  ])(
+    "renders %s as a single ET-anchored ISO timestamp",
+    (stageL10nId, date) => {
+      const { container } = renderPanel();
+      expect(findArgs(container, stageL10nId)).toEqual({
+        date: new Date(date).getTime(),
+      });
+    }
+  );
+});
+
 describe("<SportsWidget> stage section labels in highlight views", () => {
   // `current` here is the conceptual "live" bucket — it's wired into
   // `data.live` so the Now-tab section label tests below exercise the live

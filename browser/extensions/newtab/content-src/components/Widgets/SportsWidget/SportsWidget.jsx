@@ -1945,39 +1945,42 @@ function SportsMatchesView({
   );
 }
 
+// Full ISO timestamps with the host (ET) offset so DATETIME projects each
+// kickoff onto the viewer's local calendar day. Bounds are the first and
+// last match kickoffs of each stage, sourced from FIFA's 2026 fixtures.
 const keyDatesList = [
   {
     stageL10nId: "newtab-sports-widget-group-stage",
-    start: "2026-06-11",
-    end: "2026-06-27",
+    start: "2026-06-11T15:00:00-04:00",
+    end: "2026-06-27T22:00:00-04:00",
   },
   {
     stageL10nId: "newtab-sports-widget-round-32",
-    start: "2026-06-28",
-    end: "2026-07-03",
+    start: "2026-06-28T15:00:00-04:00",
+    end: "2026-07-03T21:30:00-04:00",
   },
   {
     stageL10nId: "newtab-sports-widget-round-16",
-    start: "2026-07-04",
-    end: "2026-07-07",
+    start: "2026-07-04T13:00:00-04:00",
+    end: "2026-07-07T16:00:00-04:00",
   },
   {
     stageL10nId: "newtab-sports-widget-quarter-finals",
-    start: "2026-07-09",
-    end: "2026-07-11",
+    start: "2026-07-09T16:00:00-04:00",
+    end: "2026-07-11T21:00:00-04:00",
   },
   {
     stageL10nId: "newtab-sports-widget-semi-finals",
-    start: "2026-07-14",
-    end: "2026-07-15",
+    start: "2026-07-14T15:00:00-04:00",
+    end: "2026-07-15T15:00:00-04:00",
   },
   {
     stageL10nId: "newtab-sports-widget-bronze-finals",
-    date: "2026-07-18",
+    date: "2026-07-18T17:00:00-04:00",
   },
   {
     stageL10nId: "newtab-sports-widget-final",
-    date: "2026-07-19",
+    date: "2026-07-19T15:00:00-04:00",
   },
 ];
 
