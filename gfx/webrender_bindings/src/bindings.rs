@@ -3768,9 +3768,9 @@ pub extern "C" fn wr_dp_push_yuv_P010_image(
     );
 }
 
-/// Push a 2 planar NV16 image.
+/// Push a 2 planar P210 image.
 #[no_mangle]
-pub extern "C" fn wr_dp_push_yuv_NV16_image(
+pub extern "C" fn wr_dp_push_yuv_P210_image(
     state: &mut WrState,
     bounds: LayoutRect,
     clip: LayoutRect,
@@ -3803,7 +3803,7 @@ pub extern "C" fn wr_dp_push_yuv_NV16_image(
     state.frame_builder.dl_builder.push_yuv_image(
         &prim_info,
         bounds,
-        YuvData::NV16(image_key_0, image_key_1),
+        YuvData::P210(image_key_0, image_key_1),
         color_depth,
         color_space,
         color_range,

@@ -353,7 +353,7 @@ mozilla::gfx::SurfaceFormat MacIOSurface::SurfaceFormatForPixelFormat(
       return mozilla::gfx::SurfaceFormat::YUY2;
     case kCVPixelFormatType_422YpCbCr10BiPlanarVideoRange:
     case kCVPixelFormatType_422YpCbCr10BiPlanarFullRange:
-      return mozilla::gfx::SurfaceFormat::NV16;
+      return mozilla::gfx::SurfaceFormat::P210;
     case kCVPixelFormatType_32BGRA:
       return (aAllowAlpha == AllowAlpha::Yes)
                  ? mozilla::gfx::SurfaceFormat::B8G8R8A8
@@ -685,7 +685,7 @@ bool MacIOSurface::BindTexImage(mozilla::gl::GLContext* aGL, size_t aPlane,
     }
     type = LOCAL_GL_UNSIGNED_SHORT;
     if (aOutReadFormat) {
-      *aOutReadFormat = mozilla::gfx::SurfaceFormat::NV16;
+      *aOutReadFormat = mozilla::gfx::SurfaceFormat::P210;
     }
   } else if (pixelFormat == kCVPixelFormatType_422YpCbCr8_yuvs ||
              pixelFormat == kCVPixelFormatType_422YpCbCr8FullRange) {

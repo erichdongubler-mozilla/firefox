@@ -1593,14 +1593,14 @@ void DisplayListBuilder::PushP010Image(
       aRendering, aPreferCompositorSurface, aSupportsExternalCompositing);
 }
 
-void DisplayListBuilder::PushNV16Image(
+void DisplayListBuilder::PushP210Image(
     const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
     bool aIsBackfaceVisible, wr::ImageKey aImageChannel0,
     wr::ImageKey aImageChannel1, wr::WrColorDepth aColorDepth,
     wr::WrYuvColorSpace aColorSpace, wr::WrColorRange aColorRange,
     wr::ImageRendering aRendering, bool aPreferCompositorSurface,
     bool aSupportsExternalCompositing) {
-  wr_dp_push_yuv_NV16_image(
+  wr_dp_push_yuv_P210_image(
       mWrState, aBounds, aClip, aIsBackfaceVisible, &mCurrentSpaceAndClipChain,
       aImageChannel0, aImageChannel1, aColorDepth, aColorSpace, aColorRange,
       aRendering, aPreferCompositorSurface, aSupportsExternalCompositing);

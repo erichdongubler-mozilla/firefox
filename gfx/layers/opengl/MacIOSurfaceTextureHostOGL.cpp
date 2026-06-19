@@ -107,7 +107,7 @@ uint32_t MacIOSurfaceTextureHostOGL::NumSubTextures() {
     }
     case gfx::SurfaceFormat::NV12:
     case gfx::SurfaceFormat::P010:
-    case gfx::SurfaceFormat::NV16: {
+    case gfx::SurfaceFormat::P210: {
       return 2;
     }
     default: {
@@ -198,7 +198,7 @@ void MacIOSurfaceTextureHostOGL::PushResourceUpdates(
                            /* aNormalizedUvs */ false);
       break;
     }
-    case gfx::SurfaceFormat::NV16: {
+    case gfx::SurfaceFormat::P210: {
       if (aImageKeys.length() != 2 || mSurface->GetPlaneCount() != 2) {
         MOZ_ASSERT_UNREACHABLE("unexpected key length or plane count");
         return;
@@ -284,12 +284,12 @@ void MacIOSurfaceTextureHostOGL::PushDisplayItems(
           /* aSupportsExternalCompositing */ true);
       break;
     }
-    case gfx::SurfaceFormat::NV16: {
+    case gfx::SurfaceFormat::P210: {
       if (aImageKeys.length() != 2 || mSurface->GetPlaneCount() != 2) {
         MOZ_ASSERT_UNREACHABLE("unexpected key length or plane count");
         return;
       }
-      aBuilder.PushNV16Image(
+      aBuilder.PushP210Image(
           aBounds, aClip, true, aImageKeys[0], aImageKeys[1],
           wr::ColorDepth::Color10, wr::ToWrYuvColorSpace(GetYUVColorSpace()),
           wr::ToWrColorRange(GetColorRange()), aFilter, preferCompositorSurface,

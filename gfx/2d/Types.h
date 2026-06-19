@@ -84,9 +84,7 @@ enum class SurfaceFormat : int8_t {
   P010,       // Identical to P016 but the 6 least significant bits are 0.
               // With DXGI in theory entirely compatible, however practice has
               // shown that it's not the case.
-  NV16,       // Similar to NV12, but with 4:2:2 chroma subsampling. Technically
-              // 8 bit, but we only use it for 10 bit, and it's really only here
-              // to support the macOS bi-planar 422 formats.
+  P210,       // Similar to P010, but with 4:2:2 chroma subsampling.
   YUY2,       // Sometimes called YUYV. Single plane / packed YUV 4:2:2 8 bit
               // samples interleaved as Y`0 Cb Y`1 Cr. Since 4 pixels require
               // 64 bits, this can also be considered a 16bpp format, but each
@@ -179,7 +177,7 @@ inline std::optional<SurfaceFormatInfo> Info(const SurfaceFormat aFormat) {
     case SurfaceFormat::NV12:
     case SurfaceFormat::P016:
     case SurfaceFormat::P010:
-    case SurfaceFormat::NV16:
+    case SurfaceFormat::P210:
     case SurfaceFormat::YUY2:
       info.hasColor = true;
       info.hasAlpha = false;
@@ -246,7 +244,7 @@ inline std::optional<SurfaceFormatInfo> Info(const SurfaceFormat aFormat) {
     case SurfaceFormat::NV12:
     case SurfaceFormat::P016:
     case SurfaceFormat::P010:
-    case SurfaceFormat::NV16:
+    case SurfaceFormat::P210:
     case SurfaceFormat::YUY2:
     case SurfaceFormat::UNKNOWN:
       break;  // No bytesPerPixel per se.
@@ -328,7 +326,6 @@ static inline int BytesPerPixel(SurfaceFormat aFormat) {
     case SurfaceFormat::YUV420P10:
     case SurfaceFormat::YUV422P10:
     case SurfaceFormat::NV12:
-    case SurfaceFormat::NV16:
     case SurfaceFormat::YUY2:
       // These formats are not easily described in terms of bytes per pixel,
       // technically 1.5 bytes per pixel on average, which is guaranteed by the
@@ -336,6 +333,7 @@ static inline int BytesPerPixel(SurfaceFormat aFormat) {
       return 0;
     case SurfaceFormat::P016:
     case SurfaceFormat::P010:
+    case SurfaceFormat::P210:
       // Similar to NV12 but uint16 pixels.
       return 0;
     case SurfaceFormat::UNKNOWN:
@@ -364,6 +362,7 @@ inline bool IsOpaque(SurfaceFormat aFormat) {
     case SurfaceFormat::NV12:
     case SurfaceFormat::P010:
     case SurfaceFormat::P016:
+    case SurfaceFormat::P210:
     case SurfaceFormat::YUY2:
       return true;
     case SurfaceFormat::B8G8R8A8:
@@ -376,7 +375,6 @@ inline bool IsOpaque(SurfaceFormat aFormat) {
     case SurfaceFormat::R16G16:
     case SurfaceFormat::YUV420P10:
     case SurfaceFormat::YUV422P10:
-    case SurfaceFormat::NV16:
     case SurfaceFormat::UNKNOWN:
       return false;
   }

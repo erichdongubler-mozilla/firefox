@@ -85,9 +85,9 @@ TEST(MacIOSurfaceHelpers, P010Readback)
                                   ChromaSubsampling::HALF_WIDTH_AND_HEIGHT));
 }
 
-// Tests that an NV16 (10-bit 4:2:2 biplanar) IOSurface filled with mid-gray
+// Tests that an P210 (10-bit 4:2:2 biplanar) IOSurface filled with mid-gray
 // produces the correct BGRA output via CreateSourceSurfaceFromMacIOSurface.
-TEST(MacIOSurfaceHelpers, NV16Readback)
+TEST(MacIOSurfaceHelpers, P210Readback)
 {
   ASSERT_NO_FATAL_FAILURE(TestBiPlanarMidGrayReadback(
       IntSize(16, 16), IntSize(8, 16), ChromaSubsampling::HALF_WIDTH));

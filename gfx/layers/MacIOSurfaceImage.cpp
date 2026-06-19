@@ -204,9 +204,8 @@ bool MacIOSurfaceImage::SetData(ImageContainer* aContainer,
         rowCrSrc++;
       }
     }
-  } else if (surf->GetFormat() == SurfaceFormat::NV16) {
-    MOZ_ASSERT(aData.mColorDepth == ColorDepth::COLOR_10,
-               "Currently NV16 only supports 10-bit color.");
+  } else if (surf->GetFormat() == SurfaceFormat::P210) {
+    MOZ_ASSERT(aData.mColorDepth == ColorDepth::COLOR_10);
     MOZ_ASSERT(ySize.height > 0);
     auto dst = reinterpret_cast<uint16_t*>(surf->GetBaseAddressOfPlane(0));
     size_t stride = surf->GetBytesPerRow(0) / 2;

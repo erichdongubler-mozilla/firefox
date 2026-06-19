@@ -26,7 +26,7 @@ static nsresult CopyFromLockedMacIOSurface(MacIOSurface* aSurface,
   SurfaceFormat ioFormat = aSurface->GetFormat();
 
   if ((ioFormat == SurfaceFormat::NV12 || ioFormat == SurfaceFormat::YUY2 ||
-       ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::NV16) &&
+       ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::P210) &&
       (aSize.width > PlanarYCbCrImage::MAX_DIMENSION ||
        aSize.height > PlanarYCbCrImage::MAX_DIMENSION)) {
     return NS_ERROR_FAILURE;
@@ -77,8 +77,8 @@ static nsresult CopyFromLockedMacIOSurface(MacIOSurface* aSurface,
     return result;
   }
 
-  if (ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::NV16) {
-    // P010 (4:2:0) and NV16 (4:2:2) store 10-bit values in the high bits of
+  if (ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::P210) {
+    // P010 (4:2:0) and P210 (4:2:2) store 10-bit values in the high bits of
     // each uint16_t (shifted left by 6 via safeShift10BitBy6 on write).
     // We de-interleave the CbCr plane and pass ColorDepth::COLOR_16 so that
     // ConvertYCbCrToRGB uses scale=256, which correctly maps the high-bit
@@ -217,7 +217,7 @@ already_AddRefed<SourceSurface> CreateSourceSurfaceFromMacIOSurface(
 
   SurfaceFormat format =
       (ioFormat == SurfaceFormat::NV12 || ioFormat == SurfaceFormat::YUY2 ||
-       ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::NV16)
+       ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::P210)
           ? SurfaceFormat::B8G8R8X8
           : SurfaceFormat::B8G8R8A8;
 
@@ -269,7 +269,7 @@ nsresult CreateSurfaceDescriptorBufferFromMacIOSurface(
 
   SurfaceFormat format =
       (ioFormat == SurfaceFormat::NV12 || ioFormat == SurfaceFormat::YUY2 ||
-       ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::NV16)
+       ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::P210)
           ? SurfaceFormat::B8G8R8X8
           : SurfaceFormat::B8G8R8A8;
 
