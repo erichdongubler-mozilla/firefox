@@ -502,8 +502,10 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
 
     class Transition(private val composeTestRule: ComposeTestRule) {
         fun clickSettingsButton(localizedText: String = getStringResource(R.string.browser_menu_settings), interact: SettingsRobot.() -> Unit): SettingsRobot.Transition {
-            Log.i(TAG, "clickSettingsButton: Trying to scroll to and click the Settings button from the new main menu design.")
-            composeTestRule.settingsButton(localizedText).performScrollTo().performClick()
+            // Match the content description exactly: a "contains" match also resolves to the VPN
+            // row, whose control is described "Open VPN settings", and clicks it instead.
+            Log.i(TAG, "clickSettingsButton: Trying to click the Settings button from the new main menu design.")
+            mDevice.findObject(UiSelector().description(localizedText)).click()
             Log.i(TAG, "clickSettingsButton: Clicked the Settings button from the new main menu design.")
             composeTestRule.waitForIdle()
             mDevice.waitForIdle()
