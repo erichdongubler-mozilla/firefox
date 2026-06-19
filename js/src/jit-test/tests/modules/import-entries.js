@@ -68,3 +68,9 @@ testImportEntries('import {x} from "mod" with { type: "json"};',
 
 testImportEntries('import {x as v} from "mod" with { type: "json"};',
               [{moduleRequest: {specifier: 'mod', moduleType: 'json'}, importName: 'x', localName: 'v'}]);
+
+testImportEntries('import source ns from "mod";',
+                  [{moduleRequest: {specifier: 'mod', moduleType: 'js'}, importName: '*source*', localName: 'ns'}]);
+
+testImportEntries('import source v from "mod";',
+                  [{moduleRequest: {specifier: 'mod', moduleType: 'js'}, importName: '*source*', localName: 'v'}]);

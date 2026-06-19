@@ -1455,8 +1455,7 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
     importName = in.importName();
 
     // Step 7.b. If in.[[ImportName]] is ~namespace~, then:
-    if (importName == cx->names().star_namespace_star_ &&
-        moduleRequest->phase() == ImportPhase::Evaluation) {
+    if (importName == cx->names().star_namespace_star_) {
       // Step 7.b.i. Let namespace be ? GetModuleNamespace(importedModule).
       ModuleNamespaceObject* ns =
           GetOrCreateModuleNamespace(cx, importedModule);
@@ -1470,9 +1469,9 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
       // Step 7.b.iii. Perform ! env.InitializeBinding(in.[[LocalName]],
       // namespace).
       InitNamespaceOrSourceBinding(cx, env, localName, ObjectValue(*ns));
-    } else if (moduleRequest->phase() == ImportPhase::Source) {
+    } else if (importName == cx->names().star_source_star_) {
       // https://tc39.es/ecma262/#sec-source-text-module-record-initialize-environment
-      // Step 7.c. Else if in.[[ImportName]] is source, then
+      // Step 7.c. Else if in.[[ImportName]] is ~source~, then
       // Step 7.c.i. Let moduleSourceObject be importedModule.[[ModuleSource]].
       JSObject* moduleSourceObject = importedModule->moduleSource();
 

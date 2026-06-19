@@ -2186,9 +2186,8 @@ bool ModuleBuilder::processImport(frontend::BinaryNode* importNode) {
 
     auto entry = StencilModuleEntry::importEntry(
         moduleRequestIndex, localName,
-        TaggedParserAtomIndex::WellKnown::star_namespace_star_(), line,
+        TaggedParserAtomIndex::WellKnown::star_source_star_(), line,
         JS::ColumnNumberOneOrigin(column));
-
     return importEntries_.put(localName, entry);
   }
 

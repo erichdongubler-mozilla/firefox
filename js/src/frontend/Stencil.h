@@ -670,12 +670,13 @@ class StencilModuleEntry {
  public:
   // clang-format off
   //
-  // (+/- = required/null, ns = *namespace*, abd = *all-but-default*)
+  // (+/- = required/null, ns = *namespace*, abd = *all-but-default*,
+  //  src = *source*)
   //
   //                     | moduleRequest | localName | importName | exportName |
   //                     |---------------|-----------|------------|------------|
   // RequestedModule     | +             | -         | -          | -          |
-  // ImportEntry         | +             | +         | +/ns       | -          |
+  // ImportEntry         | +             | +         | +/ns/src   | -          |
   // ExportAs            | -             | +         | -          | +          |
   // ExportFrom          | +             | -         | +/ns       | +          |
   // ExportBatchFrom     | +             | -         | abd        | -          |
