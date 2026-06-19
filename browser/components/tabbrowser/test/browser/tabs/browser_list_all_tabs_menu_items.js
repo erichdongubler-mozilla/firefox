@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
+
 async function openAllTabsMenu(win = window) {
   const allTabsView = win.document.getElementById("allTabsMenu-allTabsView");
   const shown = BrowserTestUtils.waitForEvent(allTabsView, "ViewShown");
@@ -256,4 +260,60 @@ add_task(async function test_buttons_persist_after_tab_added() {
 
   await closeAllTabsMenu();
   BrowserTestUtils.removeTab(newTab);
+});
+
+add_task(async function test_view_all_tabs_at_bottom() {
+  const hiddenTab = await addTab("about:blank");
+  const tabHiddenPromise = BrowserTestUtils.waitForEvent(hiddenTab, "TabHide");
+  gBrowser.hideTab(hiddenTab);
+  await tabHiddenPromise;
+
+  window.gTabsPanel.init();
+  await openAllTabsMenu();
+
+  const tabsList = document.getElementById("allTabsMenu-allTabsView-tabs");
+  const viewAllTabsButton = document.getElementById("allTabsMenu-viewAllTabs");
+
+  ok(
+    BrowserTestUtils.isVisible(viewAllTabsButton),
+    "View All Tabs button is visible"
+  );
+  is(
+    viewAllTabsButton.parentNode,
+    tabsList,
+    "View All Tabs button is inside the scrollable tab list"
+  );
+  is(
+    tabsList.children[tabsList.children.length - 1],
+    viewAllTabsButton,
+    "View All Tabs is the last item in the tab list, below the hidden tabs button"
+  );
+
+  await closeAllTabsMenu();
+  gBrowser.showTab(hiddenTab);
+  BrowserTestUtils.removeTab(hiddenTab);
+});
+
+add_task(async function test_view_all_tabs_opens_firefox_view() {
+  window.gTabsPanel.init();
+  await openAllTabsMenu();
+
+  const panel = document
+    .getElementById("allTabsMenu-allTabsView")
+    .closest("panel");
+  const viewAllTabsButton = document.getElementById("allTabsMenu-viewAllTabs");
+  const openTabStub = sinon.stub(FirefoxViewHandler, "openTab");
+
+  const hidden = BrowserTestUtils.waitForPopupEvent(panel, "hidden");
+  viewAllTabsButton.click();
+  await hidden;
+
+  ok(openTabStub.calledOnce, "FirefoxViewHandler.openTab was called once");
+  is(
+    openTabStub.firstCall.args[0],
+    "opentabs",
+    "Firefox View was opened on the open tabs section"
+  );
+
+  openTabStub.restore();
 });

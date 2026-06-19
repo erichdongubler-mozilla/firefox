@@ -15,6 +15,7 @@ var gTabsPanel = {
     allTabsButton: "alltabs-button",
     allTabsView: "allTabsMenu-allTabsView",
     allTabsViewTabs: "allTabsMenu-allTabsView-tabs",
+    viewAllTabs: "allTabsMenu-viewAllTabs",
     dropIndicator: "allTabsMenu-dropIndicator",
     containerTabsView: "allTabsMenu-containerTabsView",
     hiddenTabsButton: "allTabsMenu-hiddenTabsButton",
@@ -111,6 +112,8 @@ var gTabsPanel = {
         this.allTabsViewTabs.append(hiddenTabsButton, this.hiddenAudioTabs);
       }
 
+      this.allTabsViewTabs.append(this.viewAllTabs);
+
       let closeDuplicateTabsItem = document.getElementById(
         "allTabsMenu-closeDuplicateTabs"
       );
@@ -143,6 +146,9 @@ var gTabsPanel = {
           break;
         case "allTabsMenu-hiddenTabsButton":
           PanelUI.showSubView(this.kElements.hiddenTabsView, target);
+          break;
+        case "allTabsMenu-viewAllTabs":
+          FirefoxViewHandler.openTab("opentabs");
           break;
         case "allTabsMenu-groupsViewShowMore":
           PanelUI.showSubView(this.kElements.groupsSubView, target);
