@@ -98,7 +98,6 @@ export class InputModelSelect extends MozLitElement {
     );
   }
 
-  // TODO (Bug 2041081): Update icon for custom model choice
   #getIconUrl(index) {
     return `chrome://browser/content/aiwindow/assets/model-choice-${index}.svg`;
   }
