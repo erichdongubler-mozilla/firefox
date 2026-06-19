@@ -3634,7 +3634,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
    * **expected**: pass
    * **expose browser profiler**: true
    * **gather cpuTime**: true
-   * **gecko profile features**: stackwalk,js,cpu,processcpu,nomarkerstacks
+   * **gecko profile features**: stackwalk,js,cpu,processcpu,nomarkerstacks,java
    * **gecko profile interval**: 1
    * **gecko profile threads**: GeckoMain,Compositor,Renderer,TaskController,StyleThread
    * **link searchfox**: :searchfox:`testing/raptor/raptor/tests/benchmarks/speedometer-mobile.toml#19`
@@ -4634,7 +4634,7 @@ Standard benchmarks are third-party tests (i.e. Speedometer) that we have integr
    * **expected**: pass
    * **expose browser profiler**: true
    * **gather cpuTime**: true
-   * **gecko profile features**: stackwalk,js,cpu,processcpu,nomarkerstacks
+   * **gecko profile features**: stackwalk,js,cpu,processcpu,nomarkerstacks,java
    * **gecko profile interval**: 1
    * **gecko profile threads**: GeckoMain,Compositor,Renderer,TaskController,StyleThread
    * **host from parent**: false
