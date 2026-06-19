@@ -518,6 +518,7 @@ D3D11TextureData* D3D11TextureData::Create(IntSize aSize, SurfaceFormat aFormat,
     case gfx::SurfaceFormat::YUV420:
     case gfx::SurfaceFormat::YUV420P10:
     case gfx::SurfaceFormat::YUV422P10:
+    case gfx::SurfaceFormat::NV16:
     case gfx::SurfaceFormat::P210:
     case gfx::SurfaceFormat::YUY2:
     case gfx::SurfaceFormat::HSV:
@@ -1313,6 +1314,7 @@ void DXGITextureHostD3D11::PushDisplayItems(
     case gfx::SurfaceFormat::YUV420:
     case gfx::SurfaceFormat::YUV420P10:
     case gfx::SurfaceFormat::YUV422P10:
+    case gfx::SurfaceFormat::NV16:
     case gfx::SurfaceFormat::P210:
     case gfx::SurfaceFormat::YUY2:
     case gfx::SurfaceFormat::HSV:

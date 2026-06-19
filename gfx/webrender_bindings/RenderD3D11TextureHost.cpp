@@ -153,6 +153,7 @@ size_t RenderDXGITextureHost::GetPlaneCount() const {
     case gfx::SurfaceFormat::NV12:
     case gfx::SurfaceFormat::P010:
     case gfx::SurfaceFormat::P016:
+    case gfx::SurfaceFormat::NV16:
     case gfx::SurfaceFormat::P210: {
       return 2;
     }

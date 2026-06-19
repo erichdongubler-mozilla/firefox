@@ -84,6 +84,7 @@ enum class SurfaceFormat : int8_t {
   P010,       // Identical to P016 but the 6 least significant bits are 0.
               // With DXGI in theory entirely compatible, however practice has
               // shown that it's not the case.
+  NV16,       // Similar to NV12, but with 4:2:2 chroma subsampling.
   P210,       // Similar to P010, but with 4:2:2 chroma subsampling.
   YUY2,       // Sometimes called YUYV. Single plane / packed YUV 4:2:2 8 bit
               // samples interleaved as Y`0 Cb Y`1 Cr. Since 4 pixels require
@@ -177,6 +178,7 @@ inline std::optional<SurfaceFormatInfo> Info(const SurfaceFormat aFormat) {
     case SurfaceFormat::NV12:
     case SurfaceFormat::P016:
     case SurfaceFormat::P010:
+    case SurfaceFormat::NV16:
     case SurfaceFormat::P210:
     case SurfaceFormat::YUY2:
       info.hasColor = true;
@@ -244,6 +246,7 @@ inline std::optional<SurfaceFormatInfo> Info(const SurfaceFormat aFormat) {
     case SurfaceFormat::NV12:
     case SurfaceFormat::P016:
     case SurfaceFormat::P010:
+    case SurfaceFormat::NV16:
     case SurfaceFormat::P210:
     case SurfaceFormat::YUY2:
     case SurfaceFormat::UNKNOWN:
@@ -326,6 +329,7 @@ static inline int BytesPerPixel(SurfaceFormat aFormat) {
     case SurfaceFormat::YUV420P10:
     case SurfaceFormat::YUV422P10:
     case SurfaceFormat::NV12:
+    case SurfaceFormat::NV16:
     case SurfaceFormat::YUY2:
       // These formats are not easily described in terms of bytes per pixel,
       // technically 1.5 bytes per pixel on average, which is guaranteed by the
@@ -362,6 +366,7 @@ inline bool IsOpaque(SurfaceFormat aFormat) {
     case SurfaceFormat::NV12:
     case SurfaceFormat::P010:
     case SurfaceFormat::P016:
+    case SurfaceFormat::NV16:
     case SurfaceFormat::P210:
     case SurfaceFormat::YUY2:
       return true;

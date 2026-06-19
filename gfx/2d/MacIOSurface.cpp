@@ -229,17 +229,27 @@ already_AddRefed<MacIOSurface> MacIOSurface::CreateBiPlanarSurface(
       }
     }
   } else {
-    // 4:2:2 subsampling. We can only handle 10-bit color.
-    MOZ_ASSERT(aColorDepth == ColorDepth::COLOR_10,
-               "macOS bi-planar 4:2:2 formats must be 10-bit color.");
-    if (aColorRange == ColorRange::LIMITED) {
-      AddDictionaryInt(
-          props, kIOSurfacePixelFormat,
-          (uint32_t)kCVPixelFormatType_422YpCbCr10BiPlanarVideoRange);
+    // 4:2:2 subsampling.
+    if (aColorDepth == ColorDepth::COLOR_8) {
+      if (aColorRange == ColorRange::LIMITED) {
+        AddDictionaryInt(
+            props, kIOSurfacePixelFormat,
+            (uint32_t)kCVPixelFormatType_422YpCbCr8BiPlanarVideoRange);
+      } else {
+        AddDictionaryInt(
+            props, kIOSurfacePixelFormat,
+            (uint32_t)kCVPixelFormatType_422YpCbCr8BiPlanarFullRange);
+      }
     } else {
-      AddDictionaryInt(
-          props, kIOSurfacePixelFormat,
-          (uint32_t)kCVPixelFormatType_422YpCbCr10BiPlanarFullRange);
+      if (aColorRange == ColorRange::LIMITED) {
+        AddDictionaryInt(
+            props, kIOSurfacePixelFormat,
+            (uint32_t)kCVPixelFormatType_422YpCbCr10BiPlanarVideoRange);
+      } else {
+        AddDictionaryInt(
+            props, kIOSurfacePixelFormat,
+            (uint32_t)kCVPixelFormatType_422YpCbCr10BiPlanarFullRange);
+      }
     }
   }
 
@@ -351,6 +361,9 @@ mozilla::gfx::SurfaceFormat MacIOSurface::SurfaceFormatForPixelFormat(
     case kCVPixelFormatType_422YpCbCr8_yuvs:
     case kCVPixelFormatType_422YpCbCr8FullRange:
       return mozilla::gfx::SurfaceFormat::YUY2;
+    case kCVPixelFormatType_422YpCbCr8BiPlanarVideoRange:
+    case kCVPixelFormatType_422YpCbCr8BiPlanarFullRange:
+      return mozilla::gfx::SurfaceFormat::NV16;
     case kCVPixelFormatType_422YpCbCr10BiPlanarVideoRange:
     case kCVPixelFormatType_422YpCbCr10BiPlanarFullRange:
       return mozilla::gfx::SurfaceFormat::P210;
@@ -576,9 +589,9 @@ ColorDepth MacIOSurface::GetColorDepth() const {
         case ColorDepth::COLOR_8:
           switch (aColorRange) {
             case ColorRange::LIMITED:
-              return Some(kCVPixelFormatType_422YpCbCr8_yuvs);
+              return Some(kCVPixelFormatType_422YpCbCr8BiPlanarVideoRange);
             case ColorRange::FULL:
-              return Some(kCVPixelFormatType_422YpCbCr8FullRange);
+              return Some(kCVPixelFormatType_422YpCbCr8BiPlanarFullRange);
           }
           break;
         case ColorDepth::COLOR_10:
@@ -636,7 +649,7 @@ bool MacIOSurface::BindTexImage(mozilla::gl::GLContext* aGL, size_t aPlane,
     MOZ_ASSERT(aPlane < 2);
 
     // The LOCAL_GL_LUMINANCE and LOCAL_GL_LUMINANCE_ALPHA are the deprecated
-    // format. So, use LOCAL_GL_RED and LOCAL_GL_RB if we use core profile.
+    // format. So, use LOCAL_GL_RED and LOCAL_GL_RG if we use core profile.
     // https://www.khronos.org/opengl/wiki/Image_Format#Legacy_Image_Formats
     if (aPlane == 0) {
       internalFormat = format =
@@ -655,7 +668,7 @@ bool MacIOSurface::BindTexImage(mozilla::gl::GLContext* aGL, size_t aPlane,
     MOZ_ASSERT(aPlane < 2);
 
     // The LOCAL_GL_LUMINANCE and LOCAL_GL_LUMINANCE_ALPHA are the deprecated
-    // format. So, use LOCAL_GL_RED and LOCAL_GL_RB if we use core profile.
+    // format. So, use LOCAL_GL_RED and LOCAL_GL_RG if we use core profile.
     // https://www.khronos.org/opengl/wiki/Image_Format#Legacy_Image_Formats
     if (aPlane == 0) {
       internalFormat = format =
@@ -668,13 +681,32 @@ bool MacIOSurface::BindTexImage(mozilla::gl::GLContext* aGL, size_t aPlane,
     if (aOutReadFormat) {
       *aOutReadFormat = mozilla::gfx::SurfaceFormat::P010;
     }
+  } else if (pixelFormat == kCVPixelFormatType_422YpCbCr8BiPlanarVideoRange ||
+             pixelFormat == kCVPixelFormatType_422YpCbCr8BiPlanarFullRange) {
+    MOZ_ASSERT(GetPlaneCount() == 2);
+    MOZ_ASSERT(aPlane < 2);
+
+    // The LOCAL_GL_LUMINANCE and LOCAL_GL_LUMINANCE_ALPHA are the deprecated
+    // format. So, use LOCAL_GL_RED and LOCAL_GL_RG if we use core profile.
+    // https://www.khronos.org/opengl/wiki/Image_Format#Legacy_Image_Formats
+    if (aPlane == 0) {
+      internalFormat = format =
+          (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE) : (LOCAL_GL_RED);
+    } else {
+      internalFormat = format =
+          (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE_ALPHA) : (LOCAL_GL_RG);
+    }
+    type = LOCAL_GL_UNSIGNED_BYTE;
+    if (aOutReadFormat) {
+      *aOutReadFormat = mozilla::gfx::SurfaceFormat::NV16;
+    }
   } else if (pixelFormat == kCVPixelFormatType_422YpCbCr10BiPlanarVideoRange ||
              pixelFormat == kCVPixelFormatType_422YpCbCr10BiPlanarFullRange) {
     MOZ_ASSERT(GetPlaneCount() == 2);
     MOZ_ASSERT(aPlane < 2);
 
     // The LOCAL_GL_LUMINANCE and LOCAL_GL_LUMINANCE_ALPHA are the deprecated
-    // format. So, use LOCAL_GL_RED and LOCAL_GL_RB if we use core profile.
+    // format. So, use LOCAL_GL_RED and LOCAL_GL_RG if we use core profile.
     // https://www.khronos.org/opengl/wiki/Image_Format#Legacy_Image_Formats
     if (aPlane == 0) {
       internalFormat = format =
