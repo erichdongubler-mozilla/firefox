@@ -670,7 +670,7 @@ class StencilModuleEntry {
  public:
   // clang-format off
   //
-  // (+/- = required/null, ns = *namespace*)
+  // (+/- = required/null, ns = *namespace*, abd = *all-but-default*)
   //
   //                     | moduleRequest | localName | importName | exportName |
   //                     |---------------|-----------|------------|------------|
@@ -678,7 +678,7 @@ class StencilModuleEntry {
   // ImportEntry         | +             | +         | +/ns       | -          |
   // ExportAs            | -             | +         | -          | +          |
   // ExportFrom          | +             | -         | +/ns       | +          |
-  // ExportBatchFrom     | +             | -         | -          | -          |
+  // ExportBatchFrom     | +             | -         | abd        | -          |
   //
   // clang-format on
   MaybeModuleRequestIndex moduleRequest;
@@ -782,6 +782,8 @@ class StencilModuleEntry {
     MOZ_ASSERT(moduleRequest.isSome());
     StencilModuleEntry entry(lineno, column);
     entry.moduleRequest = MaybeModuleRequestIndex(moduleRequest);
+    entry.importName =
+        TaggedParserAtomIndex::WellKnown::star_all_but_default_star_();
     return entry;
   }
 };

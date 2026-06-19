@@ -464,6 +464,7 @@
   MACRO_(source, "source")                                                     \
   MACRO_(stack, "stack")                                                       \
   MACRO_(stackTraceLimit, "stackTraceLimit")                                   \
+  MACRO_(star_all_but_default_star_, "*all-but-default*")                      \
   MACRO_(star_namespace_star_, "*namespace*")                                  \
   MACRO_(start, "start")                                                       \
   MACRO_(startRange, "startRange")                                             \

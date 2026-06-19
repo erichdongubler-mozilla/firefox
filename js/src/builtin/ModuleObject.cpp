@@ -1864,7 +1864,9 @@ bool ModuleBuilder::buildTables(frontend::StencilModuleMetadata& metadata) {
           }
         }
       }
-    } else if (!exp.importName && !exp.exportName) {
+    } else if (exp.importName == frontend::TaggedParserAtomIndex::WellKnown::
+                                     star_all_but_default_star_() &&
+               !exp.exportName) {
       if (!metadata.starExportEntries.append(exp)) {
         js::ReportOutOfMemory(fc_);
         return false;
