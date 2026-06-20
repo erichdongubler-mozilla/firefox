@@ -1,20 +1,15 @@
-=======================================
-How to make a C++ class cycle collected
-=======================================
+# How to make a C++ class cycle collected
 
-Should my class be cycle collected?
-===================================
+## Should my class be cycle collected?
 
 First, you need to decide if your class should be cycle
 collected. There are three main criteria:
 
-* It can be part of a cycle of strong references, including
+- It can be part of a cycle of strong references, including
   refcounted objects and JS. Usually, this happens when it can hold
   alive and be held alive by cycle collected objects or JS.
-
-* It must be refcounted.
-
-* It must be single threaded. The cycle collector can only work with
+- It must be refcounted.
+- It must be single threaded. The cycle collector can only work with
   objects that are used on a single thread. The main thread and DOM
   worker and worklet threads each have their own cycle collectors.
 
@@ -33,16 +28,14 @@ right CC implementation for an object.)
 Once you've decided to make a class cycle collected, there are a few
 things you need to add to your implementation:
 
-* Cycle collected refcounting. Special refcounting is needed so that
+- Cycle collected refcounting. Special refcounting is needed so that
   the CC can tell when an object is created, used, or destroyed, so
   that it can determine if an object is potentially part of a garbage
   cycle.
-
-* Traversal. Once the CC has decided an object **might** be garbage,
+- Traversal. Once the CC has decided an object **might** be garbage,
   it needs to know what other cycle collected objects it holds strong
   references to. This is done with a "traverse" method.
-
-* Unlinking. Once the CC has decided that an object **is** garbage, it
+- Unlinking. Once the CC has decided that an object **is** garbage, it
   needs to break the cycles by clearing out all strong references to
   other cycle collected objects. This is done with an "unlink"
   method. This usually looks very similar to the traverse method.
@@ -59,12 +52,9 @@ mostly cover the most common variants. If you need something slightly
 different, you should look at the location of the declaration of the
 macros we mention here and see if the variants already exist.
 
+## Reference counting
 
-Reference counting
-==================
-
-nsISupports
------------
+### nsISupports
 
 If your class inherits from nsISupports, you'll need to add
 `NS_DECL_CYCLE_COLLECTING_ISUPPORTS` to the class declaration. This
@@ -84,24 +74,21 @@ for your class. If your class is called `MyClass`, then you'd do this
 with the declarations `NS_IMPL_CYCLE_COLLECTING_ADDREF(MyClass)` and
 `NS_IMPL_CYCLE_COLLECTING_RELEASE(MyClass)`.
 
-non-nsISupports
----------------
+### non-nsISupports
 
 If your class does **not** inherit from nsISupports, you'll need to
 add `NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING` to the class
 declaration. This will give inline definitions for the AddRef and
 Release methods, as well as the actual refcount field.
 
-Cycle collector participant
-===========================
+## Cycle collector participant
 
 Next we need to declare and define the cycle collector
 participant. This is mostly boilerplate hidden behind macros, but you
 will need to specify which fields are to be traversed and unlinked
 because they are strong references to cycle collected objects.
 
-Declaration
------------
+### Declaration
 
 First, we need to add a declaration for the participant. As before,
 let's say your class is `MyClass`.
@@ -151,8 +138,7 @@ which lets the CC skip it. This is a very important optimization for
 things like DOM elements in active documents, but a new class you are
 making cycle collected is likely not common enough to worry about.
 
-Implementation
---------------
+### Implementation
 
 Finally, you must write the actual implementation of the CC
 participant, in the .cpp file for your class. This will define the
@@ -179,7 +165,7 @@ For a script holder method, you also need to define a trace method in
 addition to the traverse and unlink, using
 `NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN` and other similar
 macros. You'll need to include all of the JS fields that your class
-holds alive.  The trace method will be used by the GC as well as the
+holds alive. The trace method will be used by the GC as well as the
 CC, so if you miss something you can end up with use-after-free
 crashes. You'll also need to call `mozilla::HoldJSObjects(this);` in
 the ctor for your class, and `mozilla::DropJSObjects(this);` in the

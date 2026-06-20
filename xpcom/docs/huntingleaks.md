@@ -1,12 +1,13 @@
-Hunting Leaks
-=============
+# Hunting Leaks
 
-.. contents:: Table of Contents
-    :local:
-    :depth: 2
+```{contents} Table of Contents
+:depth: 2
+:local: true
+```
 
 Different tools and techniques are used to hunt leaks:
 
+```{eval-rst}
 .. list-table::
    :header-rows: 1
 
@@ -22,3 +23,4 @@ Different tools and techniques are used to hunt leaks:
      - An introduction to leaked until shutdown leaks and how to use CC logs to investigate them.
    * - :ref:`DMD Heap Scan Mode`
      - Heap profiler within Firefox
+```
