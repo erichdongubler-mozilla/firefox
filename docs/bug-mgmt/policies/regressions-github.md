@@ -1,5 +1,4 @@
-Regressions from GitHub
-=======================
+# Regressions from GitHub
 
 Release Management and the weekly regression triage must be aware of the
 status of all reported regressions in order to assure we are not
@@ -10,8 +9,7 @@ there’s a risk that those groups might not see a regression.
 
 We need an agreed to standard for how we keep track of these.
 
-Policy
-------
+## Policy
 
 *All Firefox components, even if their bugs are tracked off of Bugzilla,
 must have a component in Bugzilla.*
@@ -28,11 +26,10 @@ regression is not code that has been previously merged into
 mozilla-central.*
 
 *All Firefox code managed in GitHub which uses GitHub to manage
-issues*  `must use the shared
-tags <https://mozilla.github.io/bmo-harmony/labels>`__.
+issues* [must use the shared
+tags](https://mozilla.github.io/bmo-harmony/labels).
 
-Comments
-~~~~~~~~
+### Comments
 
 The bug **must** have the regression keyword.
 
@@ -63,89 +60,75 @@ strive to create a patch for mozilla-central which contains the fix for
 the bug alone, not a monolithic patch containing changes for several
 other bugs or features.
 
-Landings of third-party libraries `must contain a manifest
-file <https://docs.google.com/document/d/12ihxPXBo9zBBaU_pBsPrc_wNHds4Upr-PwFfiSHrbu8>`__.
+Landings of third-party libraries [must contain a manifest
+file](https://docs.google.com/document/d/12ihxPXBo9zBBaU_pBsPrc_wNHds4Upr-PwFfiSHrbu8).
 
-Best Practices
---------------
+## Best Practices
 
-You must file a regression bug in Bugzilla
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### You must file a regression bug in Bugzilla
 
 *If the code with the regression has landed in mozilla-central, you must
 file a regression bug.*
 
-Example
-^^^^^^^
+#### Example
 
 While using a release of Firefox (Nightly, Beta, Release, ESR) you run
 across a bug. Upon research using MozRegression or other tools you find
 that the bug was introduced in a change set imported from a component
 whose code and issues are managed in GitHub.
 
-Actions to take
-'''''''''''''''
+##### Actions to take
 
--  Open a new bug in Bugzilla in appropriate component and add the
-   REGRESSION keyword
--  Set affected status for the releases where the bug appears
--  Open an issue in the corresponding GitHub project, put the Bugzilla
-   bug number in the title with the prefix ‘Bug’ (i.e. “Bug 99999:
-   Regression in foo”)
--  Add the REGRESSION label to the new issue
--  Add the link to the GitHub issue into the ‘See Also” field in the
-   Bugzilla bug
+- Open a new bug in Bugzilla in appropriate component and add the
+  REGRESSION keyword
+- Set affected status for the releases where the bug appears
+- Open an issue in the corresponding GitHub project, put the Bugzilla
+  bug number in the title with the prefix ‘Bug’ (i.e. “Bug 99999:
+  Regression in foo”)
+- Add the REGRESSION label to the new issue
+- Add the link to the GitHub issue into the ‘See Also” field in the
+  Bugzilla bug
 
-Consequences
-''''''''''''
+##### Consequences
 
 *Until the regression is fixed or backed out of the GitHub repo, the
 project cannot merge code into mozilla-central*
 
-Example
-^^^^^^^
+#### Example
 
 You import a development branch of a component managed in GitHub into
 your copy of master. You find a bug and isolate it to the imported
 branch. The code is managed in their own GitHub project, but bugs are
 managed in Bugzilla.
 
-Actions to take
-'''''''''''''''
+##### Actions to take
 
--  Open a new bug in Bugzilla in appropriate component and add the
-   REGRESSION keyword
--  Set affected status for the releases where the bug appears
+- Open a new bug in Bugzilla in appropriate component and add the
+  REGRESSION keyword
+- Set affected status for the releases where the bug appears
 
-Consequences
-''''''''''''
+##### Consequences
 
 *Until the regression is fixed or backed out of the GitHub repo, the
 project cannot merge code into mozilla-central*
 
-Do not file a regression bug in Bugzilla
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Do not file a regression bug in Bugzilla
 
 *If the code with the regression has not landed in mozilla-central, you
 do not need to file a bug.*
 
-
-Example
-^^^^^^^
+#### Example
 
 You import a development branch of a component managed in GitHub into
 your copy of master. You find a bug and isolate it to the imported
 branch. The code and issues are managed in their own GitHub project.
 
+##### Actions to take
 
-Actions to take
-'''''''''''''''
+- File new issue in the GitHub repository of the imported code.
+- Label issue as REGRESSION
 
--  File new issue in the GitHub repository of the imported code.
--  Label issue as REGRESSION
-
-Consequence
-'''''''''''
+##### Consequence
 
 *Issue blocks merge of GitHub project with mozilla-central until
 resolved or backed out.*
