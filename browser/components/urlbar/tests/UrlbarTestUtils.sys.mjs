@@ -28,8 +28,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
-  UrlbarController:
-    "moz-src:///browser/components/urlbar/UrlbarController.sys.mjs",
+  UrlbarParentController:
+    "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
@@ -1361,9 +1361,9 @@ class UrlbarInputTestUtils {
   /**
    * Returns a new mock controller.  This is useful for xpcshell tests.
    *
-   * @param {object} options Additional options to pass to the UrlbarController
-   *        constructor.
-   * @returns {UrlbarController} A new controller.
+   * @param {object} options Additional options to pass to the
+   *        UrlbarParentController constructor.
+   * @returns {UrlbarParentController} A new controller.
    */
   newMockController(options = {}) {
     let sapName = options.sapName || "urlbar";
@@ -1377,7 +1377,7 @@ class UrlbarInputTestUtils {
         configurable: true,
       });
     }
-    return new lazy.UrlbarController(
+    return new lazy.UrlbarParentController(
       Object.assign(
         {
           input: {

@@ -20,8 +20,8 @@ ChromeUtils.defineESModuleGetters(this, {
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
-  UrlbarController:
-    "moz-src:///browser/components/urlbar/UrlbarController.sys.mjs",
+  UrlbarParentController:
+    "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarProviderOpenTabs:
@@ -146,7 +146,7 @@ function createContext(searchString = "foo", properties = {}) {
 /**
  * Waits for the given notification from the supplied controller.
  *
- * @param {UrlbarController} controller The controller to wait for a response from.
+ * @param {UrlbarParentController} controller The controller to wait for a response from.
  * @param {string} notification The name of the notification to wait for.
  * @param {boolean} expected Wether the notification is expected.
  * @returns {Promise} A promise that is resolved with the arguments supplied to

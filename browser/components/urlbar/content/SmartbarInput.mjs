@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { SearchModeSwitcher } from "chrome://browser/content/urlbar/SearchModeSwitcher.mjs";
+import { UrlbarChildController } from "chrome://browser/content/urlbar/UrlbarChildController.mjs";
 import { UrlbarEventBufferer } from "chrome://browser/content/urlbar/UrlbarEventBufferer.mjs";
 import { UrlbarView } from "chrome://browser/content/urlbar/UrlbarView.mjs";
 import { createEditor } from "chrome://browser/content/urlbar/SmartbarInputUtils.mjs";
@@ -66,8 +67,6 @@ const lazy = XPCOMUtils.declareLazy({
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   SmartbarInputController:
     "chrome://browser/content/urlbar/SmartbarInputController.mjs",
-  UrlbarController:
-    "moz-src:///browser/components/urlbar/UrlbarController.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarQueryContext:
     "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
@@ -441,7 +440,7 @@ ${
     );
     smartbarGlow.referenceElement = this.querySelector(".urlbar-background");
 
-    this.controller = new lazy.UrlbarController({ input: this });
+    this.controller = new UrlbarChildController({ input: this });
     this.controller.addListener(this);
     this.view = new UrlbarView(this);
     this.searchModeSwitcher = new SearchModeSwitcher(this);

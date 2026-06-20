@@ -6,6 +6,7 @@ browser.jar:
         content/browser/urlbar/SmartbarInput.mjs           (content/SmartbarInput.mjs)
         content/browser/urlbar/SmartbarInputController.mjs (content/SmartbarInputController.mjs)
         content/browser/urlbar/SmartbarInputUtils.mjs      (content/SmartbarInputUtils.mjs)
+        content/browser/urlbar/UrlbarChildController.mjs   (content/UrlbarChildController.mjs)
         content/browser/urlbar/UrlbarEventBufferer.mjs     (content/UrlbarEventBufferer.mjs)
         content/browser/urlbar/UrlbarInput.mjs             (content/UrlbarInput.mjs)
         content/browser/urlbar/UrlbarView.mjs              (content/UrlbarView.mjs)
