@@ -50,14 +50,14 @@ before starting the browser.
 ## Async Stacks
 
 Async stacks no longer impact performance since **Firefox 78**, as
-{{bug(1601179)}} limits async stack capturing to when DevTools is
+{bug}`1601179` limits async stack capturing to when DevTools is
 opened.
 
 Another option that is on by default in non-release builds is the
 preference javascript.options.asyncstack, which provides better
 debugging information to developers. Set it to false to match a release
 build. (This may be disabled for many situations in the future. See
-{{bug(1280819)}}.
+{bug}`1280819`.
 
 ## Accelerated Graphics
 

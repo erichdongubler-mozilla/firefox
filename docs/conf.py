@@ -58,6 +58,7 @@ myst_enable_extensions = [
     "deflist",
     "html_admonition",
     "fieldlist",
+    "substitution",
 ]
 
 # The paths are loaded from config.yml so they can be shared with a CI
