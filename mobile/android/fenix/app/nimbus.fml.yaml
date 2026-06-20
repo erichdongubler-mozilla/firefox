@@ -327,13 +327,13 @@ features:
     defaults:
       - channel: developer
         value:
-          enabled: true
+          enabled: false
       - channel: nightly
         value:
-          enabled: true
+          enabled: false
       - channel: beta
         value:
-          enabled: true
+          enabled: false
 
   import-bookmarks:
     description: A feature that lets users import bookmarks from another browser.

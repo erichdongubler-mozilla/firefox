@@ -1263,6 +1263,7 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080135
+    @Ignore("Disabling to ease uplift. See bug 2049060.")
     @Test
     fun verifyTheMoreMainMenuListTest() {
         val firstTestPage = mockWebServer.firstForeignWebPageAsset
@@ -1446,6 +1447,7 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080110
+    @Ignore("Disabling to ease uplift. See bug 2049060.")
     @SmokeTest
     @Test
     fun verifyTheMoreMainMenuSubListTest() {
@@ -1460,6 +1462,7 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4036009
+    @Ignore("Disabling to ease uplift. See bug 2049060.")
     @SmokeTest
     @Test
     fun verifyTheMoreMainMenuSummarizePageButtonTest() {
@@ -1480,6 +1483,7 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4036011
+    @Ignore("Disabling to ease uplift. See bug 2049060.")
     @SmokeTest
     @Test
     fun verifyTheMoreMainMenuSummarizePageButtonFunctionalityTest() {
