@@ -783,8 +783,8 @@ pref("dom.storage.snapshot_gradual_prefill", 4096);
 pref("dom.storage.snapshot_reusing", true);
 pref("dom.storage.client_validation", true);
 
-// Enable time picker UI.
-pref("dom.forms.datetime.timepicker", true);
+// Enable time picker UI. By default, disabled.
+pref("dom.forms.datetime.timepicker", false);
 
 // Enable search in <select> dropdowns (more than 40 options)
 pref("dom.forms.selectSearch", false);

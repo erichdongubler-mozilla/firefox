@@ -409,10 +409,6 @@ add_task(async function test_datepicker_handling_user_input() {
  * Ensure datetime-local picker closes when selection is made.
  */
 add_task(async function test_datetime_focus_to_input() {
-  // Disable the time picker for this test, as this test is not valid with it enabled
-  await SpecialPowers.pushPrefEnv({
-    set: [["dom.forms.datetime.timepicker", false]],
-  });
   info("Ensure datetime-local picker closes when focus moves to a time input");
 
   await helper.openPicker(
@@ -432,6 +428,5 @@ add_task(async function test_datetime_focus_to_input() {
 
   Assert.equal(helper.panel.state, "closed", "Panel should be closed now");
 
-  await SpecialPowers.popPrefEnv();
   await helper.tearDown();
 });
