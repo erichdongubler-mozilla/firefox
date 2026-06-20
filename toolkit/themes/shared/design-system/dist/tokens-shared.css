@@ -697,6 +697,10 @@
       --link-color-active: ActiveText;
       --link-color-visited: VisitedText;
 
+      /** panel **/
+      --panel-background-color: Menu;
+      --panel-text-color: MenuText;
+
       /** table **/
       --table-background-color: Canvas;
       --table-border-color: CanvasText;

@@ -394,6 +394,7 @@ export const tokensTable = {
         light: "var(--color-white)",
         dark: "rgb(66, 65, 77)",
         nativeTheme: "Field",
+        forcedColors: "Menu",
         platform: {
           default: "Field",
           browserTheme: {
@@ -2329,6 +2330,7 @@ export const tokensTable = {
         light: "var(--color-black)",
         dark: "rgb(251, 251, 254)",
         nativeTheme: "FieldText",
+        forcedColors: "MenuText",
         platform: {
           default: "FieldText",
           browserTheme: {
@@ -4237,6 +4239,7 @@ export const variableLookupTable = {
     light: "var(--color-white)",
     dark: "rgb(66, 65, 77)",
     nativeTheme: "Field",
+    forcedColors: "Menu",
     platform: {
       default: "Field",
       browserTheme: {
@@ -4273,6 +4276,7 @@ export const variableLookupTable = {
     light: "var(--color-black)",
     dark: "rgb(251, 251, 254)",
     nativeTheme: "FieldText",
+    forcedColors: "MenuText",
     platform: {
       default: "FieldText",
       browserTheme: {

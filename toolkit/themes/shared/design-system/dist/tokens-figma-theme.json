@@ -842,7 +842,7 @@
   "panel/background/color": {
     "light": "{Colors$color/white}",
     "dark": "rgb(66, 65, 77)",
-    "forcedColors": "transparent"
+    "forcedColors": "Menu"
   },
   "panel/background/color/dimmed": {
     "light": "{Theme$background/color/dimmed}",
@@ -862,7 +862,7 @@
   "panel/text/color": {
     "light": "{Colors$color/black}",
     "dark": "rgb(251, 251, 254)",
-    "forcedColors": "transparent"
+    "forcedColors": "MenuText"
   },
   "panel/separator/color": {
     "light": "color-mix(in srgb, currentColor 25%, transparent)",

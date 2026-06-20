@@ -5,7 +5,8 @@
         "value": {
           "light": "{color.white.@base}",
           "dark": "rgb(66, 65, 77)",
-          "nativeTheme": "Field"
+          "nativeTheme": "Field",
+          "forcedColors": "Menu"
         }
       },
       "dimmed": {
@@ -53,7 +54,8 @@
       "value": {
         "light": "{color.black.@base}",
         "dark": "rgb(251, 251, 254)",
-        "nativeTheme": "FieldText"
+        "nativeTheme": "FieldText",
+        "forcedColors": "MenuText"
       }
     }
   },
