@@ -3458,7 +3458,7 @@ void nsINode::BindObject(nsISupports* aObject, UnbindCallback aDtor) {
 
 void nsINode::UnbindObject(nsISupports* aObject) {
   if (auto* slots = GetExistingSlots()) {
-    slots->mBoundObjects.RemoveElement(aObject);
+    slots->mBoundObjects.UnorderedRemoveElement(aObject);
   }
 }
 
