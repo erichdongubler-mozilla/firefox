@@ -166,7 +166,7 @@ allowed_warnings:
     - "code-quality/.*\\.rst:.*: WARNING: undefined label"
     - "contributing/.*\\.rst:.*: WARNING: undefined label"
     - "crash-reporting/index\\.rst:.*: WARNING: undefined label"
-    - "dom/navigation/nav_replace\\.rst:.*: WARNING: undefined label"
+    - "dom/navigation/nav_replace\\.md:.*: WARNING: undefined label"
     - "devtools-user/page_inspector/how_to/work_with_animations/index.rst:.*: WARNING: undefined label"
     - "js/build\\.rst:.*: WARNING: undefined label"
     - "layout/Reftest\\.rst:.*: WARNING: undefined label"

@@ -1,26 +1,24 @@
-Browsing Context Embedding
-==========================
+# Browsing Context Embedding
 
-Embedder Element to nsDocShell
-------------------------------
+## Embedder Element to nsDocShell
 
-In order to render the contents of a ``BrowsingContext``, the embedding
-element needs to be able to communicate with the ``nsDocShell`` which is
+In order to render the contents of a `BrowsingContext`, the embedding
+element needs to be able to communicate with the `nsDocShell` which is
 currently being used to host it's content. This is done in 3 different ways
 depending on which combination of processes is in-use.
 
-- *in-process*: The ``nsFrameLoader`` directly embeds the ``nsDocShell``.
-- *remote tab*: The parent process is the embedder, and uses a ``PBrowser``,
-  via a ``BrowserHost``. The ``BrowserChild`` actor holds the actual
-  ``nsDocShell`` alive.
+- *in-process*: The `nsFrameLoader` directly embeds the `nsDocShell`.
+- *remote tab*: The parent process is the embedder, and uses a `PBrowser`,
+  via a `BrowserHost`. The `BrowserChild` actor holds the actual
+  `nsDocShell` alive.
 - *remote subframe*: A content process is the embedder, and uses a
-  ``PBrowserBridge``, via a ``BrowserBridgeHost`` to communicate with the
-  parent process. The parent process then uses a ``BrowserParent``, as in the
-  *remote tab* case, to communicate with the ``nsDocShell``.
+  `PBrowserBridge`, via a `BrowserBridgeHost` to communicate with the
+  parent process. The parent process then uses a `BrowserParent`, as in the
+  *remote tab* case, to communicate with the `nsDocShell`.
 
-Diagram
-^^^^^^^
+### Diagram
 
+```{eval-rst}
 .. digraph:: embedding
 
   node [shape=rectangle]
@@ -53,22 +51,21 @@ Diagram
   "BrowserBridgeHost" -> "BrowserBridgeChild";
   "BrowserBridgeChild" -> "BrowserBridgeParent" [label="PBrowserBridge", style=dotted];
   "BrowserBridgeParent" -> "BrowserParent";
+```
 
-nsDocShell to Document
-----------------------
+## nsDocShell to Document
 
-Embedding an individual document within a ``nsDocShell`` is done within the
+Embedding an individual document within a `nsDocShell` is done within the
 content process, which has that docshell.
 
-
-Diagram
-^^^^^^^
+### Diagram
 
 This diagram shows the objects involved in a content process which is being
-used to host a given ``BrowsingContext``, along with rough relationships
+used to host a given `BrowsingContext`, along with rough relationships
 between them. Dotted lines represent a "current" relationship, whereas solid
 lines are a stronger lifetime relationship.
 
+```{eval-rst}
 .. graph:: document
 
   node [shape=rectangle]
@@ -90,3 +87,4 @@ lines are a stronger lifetime relationship.
     label = "Synced Contexts";
     "BrowsingContext" "WindowContext";
   }
+```

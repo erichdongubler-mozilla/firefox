@@ -1,37 +1,31 @@
-BrowsingContext and WindowContext
-=================================
+# BrowsingContext and WindowContext
 
-The ``BrowsingContext`` is the Gecko representation of the spec-defined
-`Browsing Context`_ object.
+The `BrowsingContext` is the Gecko representation of the spec-defined
+[Browsing Context] object.
 
-.. _Browsing Context: https://html.spec.whatwg.org/multipage/browsers.html#browsing-context
+## The Browsing Context Tree
 
-
-The Browsing Context Tree
--------------------------
-
-``BrowsingContext`` and ``WindowContext`` objects form a tree, corresponding
+`BrowsingContext` and `WindowContext` objects form a tree, corresponding
 to the tree of frame elements which was used to construct them.
 
-
-Example
-^^^^^^^
+### Example
 
 Loading the HTML documents listed here, would end up creating a set of BrowsingContexts and WindowContexts forming the tree.
 
-.. code-block:: html
+```html
+<!-- http://example.com/top.html -->
+<iframe src="frame1.html"></iframe>
+<iframe src="http://mozilla.org/"></iframe>
 
-  <!-- http://example.com/top.html -->
-  <iframe src="frame1.html"></iframe>
-  <iframe src="http://mozilla.org/"></iframe>
+<!-- http://example.com/frame1.html -->
+<iframe src="http://example.com/frame2.html"></iframe>
 
-  <!-- http://example.com/frame1.html -->
-  <iframe src="http://example.com/frame2.html"></iframe>
+<!-- http://mozilla.org -->
+<iframe></iframe>
+<iframe></iframe>
+```
 
-  <!-- http://mozilla.org -->
-  <iframe></iframe>
-  <iframe></iframe>
-
+```{eval-rst}
 .. digraph:: browsingcontext
 
   node [shape=rectangle]
@@ -62,16 +56,15 @@ Loading the HTML documents listed here, would end up creating a set of BrowsingC
   "WC3" -> "BC6";
   "BC6" -> "WC6";
 
+```
 
-Synced Fields
--------------
+## Synced Fields
 
-WIP - In-progress documentation at `<https://wiki.mozilla.org/Project_Fission/BrowsingContext>`_.
+WIP - In-progress documentation at [https://wiki.mozilla.org/Project_Fission/BrowsingContext](https://wiki.mozilla.org/Project_Fission/BrowsingContext).
 
+## API Documentation
 
-API Documentation
------------------
-
+```{eval-rst}
 .. cpp:class:: BrowsingContext
 
   .. hlist::
@@ -109,7 +102,9 @@ API Documentation
     Look up a specific ``BrowsingContext`` by it's unique ID. Callers should
     check if the returned context has already been discarded using
     ``IsDiscarded`` before using it.
+```
 
+```{eval-rst}
 .. cpp:class:: CanonicalBrowsingContext : public BrowsingContext
 
   .. hlist::
@@ -123,7 +118,9 @@ API Documentation
 
   Due to being in the parent process, more information about the context is
   available from a ``CanonicalBrowsingContext``.
+```
 
+```{eval-rst}
 .. cpp:class:: WindowContext
 
   .. hlist::
@@ -131,7 +128,9 @@ API Documentation
 
     * :searchfox:`header (searchfox) <docshell/base/WindowContext.h>`
     * :searchfox:`source (searchfox) <docshell/base/WindowContext.cpp>`
+```
 
+```{eval-rst}
 .. cpp:class:: WindowGlobalParent : public WindowContext, public WindowGlobalActor, public PWindowGlobalParent
 
   .. hlist::
@@ -139,7 +138,9 @@ API Documentation
 
     * :searchfox:`header (searchfox) <dom/ipc/WindowGlobalParent.h>`
     * :searchfox:`source (searchfox) <dom/ipc/WindowGlobalParent.cpp>`
+```
 
+```{eval-rst}
 .. cpp:class:: WindowGlobalChild : public WindowGlobalActor, public PWindowGlobalChild
 
   .. hlist::
@@ -147,3 +148,6 @@ API Documentation
 
     * :searchfox:`header (searchfox) <dom/ipc/WindowGlobalChild.h>`
     * :searchfox:`source (searchfox) <dom/ipc/WindowGlobalChild.cpp>`
+```
+
+[browsing context]: https://html.spec.whatwg.org/multipage/browsers.html#browsing-context

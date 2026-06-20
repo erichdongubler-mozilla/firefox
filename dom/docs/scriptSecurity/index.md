@@ -1,15 +1,13 @@
-Script Security
-===============
+# Script Security
 
-.. container:: summary
-
-   This page provides an overview of the script security architecture in
-   Gecko.
+:::{container} summary
+This page provides an overview of the script security architecture in
+Gecko.
+:::
 
 Like any web browser, Gecko can load JavaScript from untrusted and
 potentially hostile web pages and run it on the user's computer. The
-security model for web content is based on the `same-origin policy
-<https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy>`__,
+security model for web content is based on the [same-origin policy](https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy),
 in which code
 gets full access to objects from its origin but highly restricted access
 to objects from a different origin. The rules for determining whether an
@@ -18,7 +16,7 @@ cross-origin, are now mostly standardized across browsers.
 
 Gecko has an additional problem, though: while its core is written in
 C++, the front-end code is written in JavaScript. This JavaScript code,
-which is commonly referred to as c\ *hrome code*, runs with system
+which is commonly referred to as *chrome code*, runs with system
 privileges. If the code is compromised, the attacker can take over the
 user's computer. Legacy SDK extensions also run with chrome privileges.
 
@@ -31,38 +29,36 @@ view of chrome code, the script security model in Gecko is intended to
 provide that help to make writing secure, system-privileged JavaScript a
 realistic expectation.
 
-.. _Security_policy:
+(security-policy)=
 
-Security policy
----------------
+## Security policy
 
 Gecko implements the following security policy:
 
--  **Objects that are same-origin** are able to access each other
-   freely. For example, the objects associated with a document served
-   from *https://example.org/* can access each other, and they can also
-   access objects served from *https://example.org/foo*.
--  **Objects that are cross-origin** get highly restricted access to
-   each other, according to the same-origin policy.
-   For example, code served from *https://example.org/* trying to access
-   objects from *https://somewhere-else.org/* will have restricted
-   access.
--  **Objects in a privileged scope** are allowed complete access to
-   objects in a less privileged scope, but by default they see a
-   `restricted view <#privileged-to-unprivileged-code>`__
-   of such objects, designed to prevent them from being tricked by the
-   untrusted code. An example of this scope is chrome-privileged
-   JavaScript accessing web content.
--  **Objects in a less privileged scope** don't get any access to
-   objects in a more privileged scope, unless the more privileged scope
-   `explicitly clones those objects <#unprivileged-to-privileged-code>`__.
-   An example of this scope is web content accessing objects in a
-   chrome-privileged scope.
+- **Objects that are same-origin** are able to access each other
+  freely. For example, the objects associated with a document served
+  from <https://example.org/> can access each other, and they can also
+  access objects served from <https://example.org/foo>.
+- **Objects that are cross-origin** get highly restricted access to
+  each other, according to the same-origin policy.
+  For example, code served from <https://example.org/> trying to access
+  objects from <https://somewhere-else.org/> will have restricted
+  access.
+- **Objects in a privileged scope** are allowed complete access to
+  objects in a less privileged scope, but by default they see a
+  [restricted view](#privileged-to-unprivileged-code)
+  of such objects, designed to prevent them from being tricked by the
+  untrusted code. An example of this scope is chrome-privileged
+  JavaScript accessing web content.
+- **Objects in a less privileged scope** don't get any access to
+  objects in a more privileged scope, unless the more privileged scope
+  [explicitly clones those objects](#unprivileged-to-privileged-code).
+  An example of this scope is web content accessing objects in a
+  chrome-privileged scope.
 
-.. _Compartments:
+(compartments)=
 
-Compartments
-------------
+## Compartments
 
 Compartments are the foundation for Gecko's script security
 architecture. A compartment is a specific, separate area of memory. In
@@ -70,10 +66,11 @@ Gecko, there's a separate compartment for every global object. This
 means that each global object and the objects associated with it live in
 their own region of memory.
 
-.. image:: images/compartments.png
+```{image} images/compartments.png
+```
 
 Normal content windows are globals, of course, but so are chrome
-windows, sandboxes, workers, the ``ContentFrameMessageManager`` in a frame
+windows, sandboxes, workers, the `ContentFrameMessageManager` in a frame
 script, and so on.
 
 Gecko guarantees that JavaScript code running in a given compartment is
@@ -82,7 +79,8 @@ compartment A tries to access an object in compartment B, Gecko gives it
 a *cross-compartment wrapper*. This is a proxy in compartment A for the
 real object, which lives in compartment B.
 
-.. image:: images/cross-compartment-wrapper.png
+```{image} images/cross-compartment-wrapper.png
+```
 
 Inside the same compartment, all objects share a global and are
 therefore same-origin with each other. Therefore there's no need for any
@@ -97,15 +95,13 @@ security policy it implements can be static: when the caller uses the
 wrapper, there's no need to check who is making the call or where it is
 going.
 
-.. _Cross-compartment_access:
+(cross-compartment-access)=
 
-Cross-compartment access
-------------------------
+## Cross-compartment access
 
-.. _Same-origin:
+(same-origin)=
 
-Same-origin
-~~~~~~~~~~~
+### Same-origin
 
 As we've already seen, the most common scenario for same-origin access
 is when objects belonging to the same window object interact. This all
@@ -117,43 +113,44 @@ pages from the same protocol, port, and domain - they belong to two
 different compartments, and the caller gets a *transparent wrapper* to
 the target object.
 
-.. image:: images/same-origin-wrapper.png
+```{image} images/same-origin-wrapper.png
+```
 
 Transparent wrappers allow access to all the target's properties:
 functionally, it's as if the target is in the caller's compartment.
 
-.. _Cross-origin:
+(cross-origin)=
 
-Cross-origin
-~~~~~~~~~~~~
+### Cross-origin
 
 If the two compartments are cross-origin, the caller gets a
 *cross-origin wrapper*.
 
-.. image:: images/cross-origin-wrapper.png
+```{image} images/cross-origin-wrapper.png
+```
 
 This denies access to all the object's properties, except for a few
 properties of Window and Location objects, as defined by
-the `same-origin
-policy <https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy#cross-origin_script_api_access>`__.
+the [same-origin
+policy](https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy#cross-origin_script_api_access).
 
-.. _Privileged_to_unprivileged_code:
+(privileged-to-unprivileged-code)=
 
-Privileged to unprivileged code
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Privileged to unprivileged code
 
 The most obvious example of this kind of security relation is between
 system-privileged chrome code and untrusted web content, but there are
 other examples in Gecko. The Add-on SDK runs content scripts in
-sandboxes, which are initialized with an `expanded
-principal <#expanded-principal>`__,
+sandboxes, which are initialized with an [expanded
+principal](#expanded-principal),
 giving them elevated privileges with respect to the web content they
 operate on, but reduced privileges with respect to chrome.
 
 If the caller has a higher privilege than the target object, the caller
 gets an *Xray wrapper* for the object.
 
-.. image:: images/xray-wrapper.png
+```{image} images/xray-wrapper.png
+```
 
 Xrays are designed to prevent untrusted code from confusing trusted code
 by redefining objects in unexpected ways. For example, privileged code
@@ -163,29 +160,28 @@ redefined, they are not visible in the Xray.
 
 The privileged code is able to waive Xrays if it wants unfiltered access to the untrusted object.
 
-See `Xray vision <xray_vision.html>`__ for much more information on Xrays.
+See [Xray vision](xray_vision.md) for much more information on Xrays.
 
-.. _Unprivileged_to_privileged_code:
+(unprivileged-to-privileged-code)=
 
-Unprivileged to privileged code
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Unprivileged to privileged code
 
 If the caller has lower privileges than the target object, then the
 caller gets an *opaque wrapper.*
 
-.. image:: images/opaque-wrapper.png
+```{image} images/opaque-wrapper.png
+```
 
 An opaque wrapper denies all access to the target object.
 
 However, the privileged target is able to copy objects and functions
-into the less privileged scope using the ``exportFunction()`` and
-``cloneInto()`` functions, and the less privileged scope is then able
+into the less privileged scope using the `exportFunction()` and
+`cloneInto()` functions, and the less privileged scope is then able
 to use them.
 
-.. _Security_checks:
+(security-checks)=
 
-Security checks
----------------
+## Security checks
 
 To determine the security relation between two compartments, Gecko uses
 two concepts: *security principals* and the act of *subsuming*. To
@@ -195,11 +191,11 @@ Gecko asks:
 *Does the security principal for compartment A subsume the security
 principal for compartment B, and vice versa?*
 
-.. _Subsumes:
+(subsumes)=
 
-Subsumes
-~~~~~~~~
+### Subsumes
 
+```{eval-rst}
 +-----------------------------------+-----------------------------------+
 | *A subsumes B*                    | A has all of the privileges of B, |
 |                                   | and possibly more, and therefore  |
@@ -220,28 +216,26 @@ Subsumes
 +-----------------------------------+-----------------------------------+
 | *A !Subsumes B && B !Subsumes A*  | A and B are cross-origin.         |
 +-----------------------------------+-----------------------------------+
+```
 
-.. _Security_principals:
+(security-principals)=
 
-Security principals
-~~~~~~~~~~~~~~~~~~~
+### Security principals
 
 There are four types of security principal: the system principal,
 content principals, expanded principals, and the null principal.
 
-.. _System_principal:
+(system-principal)=
 
-System principal
-^^^^^^^^^^^^^^^^
+#### System principal
 
 The system principal passes all security checks. It subsumes itself and
 all other principals. Chrome code, by definition, runs with the system
 principal, as do frame scripts.
 
-.. _Content_principal:
+(content-principal)=
 
-Content principal
-^^^^^^^^^^^^^^^^^
+#### Content principal
 
 A content principal is associated with some web content and is defined
 by the origin
@@ -251,22 +245,21 @@ content principals with the same origin. It is subsumed by the system
 principal, any expanded principals that include its origin, and any
 other content principals with the same origin.
 
-.. _Expanded_principal:
+(expanded-principal)=
 
-Expanded principal
-^^^^^^^^^^^^^^^^^^
+#### Expanded principal
 
 An expanded principal is specified as an array of origins:
 
-.. code:: JavaScript
-
-   ["http://mozilla.org", "http://moz.org"]
+```JavaScript
+["http://mozilla.org", "http://moz.org"]
+```
 
 The expanded principal subsumes every content principal it contains. The
 content principals do not subsume the expanded principal, even if the
 expanded principal only contains a single content principal.
 
-Thus ``["http://moz.org"]`` subsumes ``"http://moz.org"`` but not vice
+Thus `["http://moz.org"]` subsumes `"http://moz.org"` but not vice
 versa. The expanded principal gets full access to the content principals
 it contains, with Xray vision by default, and the content principals get
 no access to the expanded principal.
@@ -284,10 +277,9 @@ domains,
 and to protect content scripts from access by untrusted web content,
 without having to give content scripts system privileges.
 
-.. _Null_principal:
+(null-principal)=
 
-Null principal
-^^^^^^^^^^^^^^
+#### Null principal
 
 The null principal fails almost all security checks. It has no
 privileges and can't be accessed by anything but itself and chrome. It
@@ -295,24 +287,24 @@ subsumes no other principals, even other null principals. (This is what
 is used when HTML5 and other specs say "origin is a globally unique
 identifier".)
 
-.. _Principal_relationships:
+(principal-relationships)=
 
-Principal relationships
-~~~~~~~~~~~~~~~~~~~~~~~
+### Principal relationships
 
 The diagram below summarizes the relationships between the different
 principals. The arrow connecting principals A and B means "A subsumes
 B". (A is the start of the arrow, and B is the end.)
 
-.. image:: images/principal-relationships.png
+```{image} images/principal-relationships.png
+```
 
-.. _Computing_a_wrapper:
+(computing-a-wrapper)=
 
-Computing a wrapper
--------------------
+## Computing a wrapper
 
 The following diagram shows the factors that determine the kind of
 wrapper that compartment A would get when trying to access an object in
 compartment B.
 
-.. image:: images/computing-a-wrapper.png
+```{image} images/computing-a-wrapper.png
+```
