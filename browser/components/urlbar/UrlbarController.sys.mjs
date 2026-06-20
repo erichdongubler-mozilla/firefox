@@ -45,15 +45,6 @@ const NOTIFICATIONS = {
  * The address bar controller handles queries from the address bar, obtains
  * results and returns them to the UI for display.
  *
- * In the parent/child controller split, this class owns the bits that must
- * run in the parent process: the {@link ProvidersManager}, query lifecycle,
- * and parent-only telemetry. It is reached by `UrlbarChildController`
- * through the `Urlbar` JSWindowActor pair. For chrome `<moz-urlbar>`
- * instances both controllers are in the parent process and
- * `UrlbarChildController` holds a direct reference to this class; future
- * content-process consumers (e.g. about:newtab) will route calls through
- * the actor pair instead.
- *
  * Listeners may be added to listen for the results. They may support the
  * following methods which may be called when a query is run:
  *
@@ -65,13 +56,13 @@ const NOTIFICATIONS = {
  * - onViewOpen()
  * - onViewClose()
  */
-export class UrlbarParentController {
+export class UrlbarController {
   /**
    * Initialises the class. The manager may be overridden here, this is for
    * test purposes.
    *
    * @param {object} options
-   *   The initial options for UrlbarParentController.
+   *   The initial options for UrlbarController.
    * @param {UrlbarInput} options.input
    *   The input this controller is operating with.
    * @param {object} [options.manager]
@@ -109,14 +100,6 @@ export class UrlbarParentController {
       lazy.ProvidersManager.getInstanceForSap(options.input.sapName);
 
     this._listeners = new Set();
-    // The object that owns listener registration and notification dispatch.
-    // Defaults to this controller so it works standalone (e.g. in xpcshell
-    // tests via UrlbarTestUtils.newMockController). In production the paired
-    // UrlbarChildController registers itself via setListenerHost(), so
-    // notifications are dispatched on the side where the listeners (the view,
-    // the event bufferer) live — which is where they must end up once
-    // `<moz-urlbar>` runs in a content process.
-    this._listenerHost = this;
     this._userSelectionBehavior = "none";
 
     this.engagementEvent = new TelemetryEvent(this);
@@ -256,27 +239,12 @@ export class UrlbarParentController {
   }
 
   /**
-   * Sets the object that owns listener registration and notification
-   * dispatch. The paired UrlbarChildController calls this so that
-   * listeners live and are notified on its (content-process) side.
-   *
-   * @param {object} host The listener host.
-   */
-  setListenerHost(host) {
-    this._listenerHost = host;
-  }
-
-  /**
    * Adds a listener for Urlbar result notifications.
    *
    * @param {object} listener The listener to add.
    * @throws {TypeError} Throws if the listener is not an object.
    */
   addListener(listener) {
-    if (this._listenerHost !== this) {
-      this._listenerHost.addListener(listener);
-      return;
-    }
     if (!listener || typeof listener != "object") {
       throw new TypeError("Expected listener to be an object");
     }
@@ -289,10 +257,6 @@ export class UrlbarParentController {
    * @param {object} listener The listener to remove.
    */
   removeListener(listener) {
-    if (this._listenerHost !== this) {
-      this._listenerHost.removeListener(listener);
-      return;
-    }
     this._listeners.delete(listener);
   }
 
@@ -808,10 +772,6 @@ export class UrlbarParentController {
    * @param {object} params Parameters to pass with the notification.
    */
   notify(name, ...params) {
-    if (this._listenerHost !== this) {
-      this._listenerHost.notify(name, ...params);
-      return;
-    }
     for (let listener of this._listeners) {
       // Can't use "in" because some tests proxify these.
       if (typeof listener[name] != "undefined") {
@@ -875,8 +835,8 @@ export class UrlbarParentController {
  */
 class TelemetryEvent {
   /**
-   * @param {UrlbarParentController} controller
-   *  The associated UrlbarParentController.
+   * @param {UrlbarController} controller
+   *  The associated UrlbarController.
    */
   constructor(controller) {
     this._controller = controller;

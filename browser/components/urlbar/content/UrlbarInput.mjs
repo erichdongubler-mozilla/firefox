@@ -11,7 +11,6 @@ const { AppConstants } = ChromeUtils.importESModule(
 );
 
 import { SearchModeSwitcher } from "chrome://browser/content/urlbar/SearchModeSwitcher.mjs";
-import { UrlbarChildController } from "chrome://browser/content/urlbar/UrlbarChildController.mjs";
 import { UrlbarEventBufferer } from "chrome://browser/content/urlbar/UrlbarEventBufferer.mjs";
 import { UrlbarView } from "chrome://browser/content/urlbar/UrlbarView.mjs";
 import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
@@ -67,6 +66,8 @@ const lazy = XPCOMUtils.declareLazy({
   SharingUtils: "resource:///modules/SharingUtils.sys.mjs",
   SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
+  UrlbarController:
+    "moz-src:///browser/components/urlbar/UrlbarController.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarQueryContext:
     "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
@@ -363,7 +364,7 @@ ${
       this.inputField.setAttribute("type", "search");
     }
 
-    this.controller = new UrlbarChildController({ input: this });
+    this.controller = new lazy.UrlbarController({ input: this });
     this.view = new UrlbarView(this);
     this.searchModeSwitcher = new SearchModeSwitcher(this);
 

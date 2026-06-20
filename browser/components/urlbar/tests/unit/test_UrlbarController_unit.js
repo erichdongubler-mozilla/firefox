@@ -57,23 +57,23 @@ add_setup(function () {
 
 add_task(function test_constructor_throws() {
   Assert.throws(
-    () => new UrlbarParentController(),
+    () => new UrlbarController(),
     /options is undefined/,
     "Should throw if the input was not supplied"
   );
   Assert.throws(
-    () => new UrlbarParentController({ input: {} }),
+    () => new UrlbarController({ input: {} }),
     /input is missing 'window' property/,
     "Should throw if the input is not a UrlbarInput"
   );
   Assert.throws(
-    () => new UrlbarParentController({ input: { window: {} } }),
+    () => new UrlbarController({ input: { window: {} } }),
     /input.window should be an actual browser window/,
     "Should throw if the input.window is not a window"
   );
   Assert.throws(
     () =>
-      new UrlbarParentController({
+      new UrlbarController({
         input: {
           window: {
             location: "about:fake",
@@ -85,7 +85,7 @@ add_task(function test_constructor_throws() {
   );
   Assert.throws(
     () =>
-      new UrlbarParentController({
+      new UrlbarController({
         input: {
           window: {
             location: {
@@ -99,7 +99,7 @@ add_task(function test_constructor_throws() {
   );
   Assert.throws(
     () =>
-      new UrlbarParentController({
+      new UrlbarController({
         input: {
           window: {
             location: {
@@ -114,7 +114,7 @@ add_task(function test_constructor_throws() {
 
   Assert.throws(
     () =>
-      new UrlbarParentController({
+      new UrlbarController({
         input: {
           isPrivate: false,
           window: {
@@ -128,7 +128,7 @@ add_task(function test_constructor_throws() {
     "Should throw if input.sapName is not set"
   );
 
-  new UrlbarParentController({
+  new UrlbarController({
     input: {
       isPrivate: false,
       window: {
