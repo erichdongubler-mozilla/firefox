@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.393
- * pdfjsBuild = e74be4491
+ * pdfjsVersion = 6.0.401
+ * pdfjsBuild = 124228e31
  */
 
 ;// ./src/shared/util.js
@@ -18665,9 +18665,10 @@ class CFFParser {
         }
       }
       if (maxZoneHeight > 0) {
+        const PRECISION = 1e5;
         const lowerBound = 0.5 / maxZoneHeight;
-        const minBlueScale = lowerBound <= DEFAULT_BLUE_SCALE ? lowerBound : -Infinity;
-        const maxBlueScale = 1 / maxZoneHeight;
+        const minBlueScale = lowerBound <= DEFAULT_BLUE_SCALE ? Math.ceil(lowerBound * PRECISION) / PRECISION : -Infinity;
+        const maxBlueScale = Math.floor(PRECISION / maxZoneHeight) / PRECISION;
         const clamped = MathClamp(blueScale, minBlueScale, maxBlueScale);
         if (clamped !== blueScale) {
           privateDict.setByName("BlueScale", clamped);
@@ -63421,7 +63422,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "6.0.393";
+    const workerVersion = "6.0.401";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }

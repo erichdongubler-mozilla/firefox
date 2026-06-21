@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.393
- * pdfjsBuild = e74be4491
+ * pdfjsVersion = 6.0.401
+ * pdfjsBuild = 124228e31
  */
 
 ;// ./src/shared/util.js
@@ -1990,7 +1990,7 @@ class FloatingToolbar {
 }
 
 ;// ./src/shared/internal_evt.js
-const INTERNAL_EVT = "ceca4fee-8d91-4eb8-b06c-b2b293fef895";
+const INTERNAL_EVT = "ad3e0a25-4c2b-414a-816c-f3e03ab5d537";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -11285,12 +11285,12 @@ class CanvasGraphics {
       this.showType3Text(opIdx, glyphs);
       this.dependencyTracker?.recordShowTextOperation(opIdx);
       this.#endKnockoutElement(started);
-      return undefined;
+      return;
     }
     const fontSize = current.fontSize;
     if (fontSize === 0) {
       this.dependencyTracker?.recordOperation(opIdx);
-      return undefined;
+      return;
     }
     const started = this.#beginKnockoutElement(current.fillAlpha);
     const ctx = this.ctx;
@@ -11364,7 +11364,7 @@ class CanvasGraphics {
       ctx.restore();
       this.compose();
       this.#endKnockoutElement(started);
-      return undefined;
+      return;
     }
     let x = 0,
       i;
@@ -11435,7 +11435,6 @@ class CanvasGraphics {
     this.compose();
     this.dependencyTracker?.recordShowTextOperation(opIdx);
     this.#endKnockoutElement(started);
-    return undefined;
   }
   showType3Text(opIdx, glyphs) {
     const ctx = this.ctx;
@@ -14206,7 +14205,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.0.393",
+    apiVersion: "6.0.401",
     data,
     password,
     disableAutoFetch,
@@ -15855,8 +15854,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.0.393";
-const build = "e74be4491";
+const version = "6.0.401";
+const build = "124228e31";
 
 ;// ./src/display/editor/color_picker.js
 
