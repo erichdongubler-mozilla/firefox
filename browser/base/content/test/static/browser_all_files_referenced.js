@@ -309,6 +309,11 @@ var allowlist = [
   // toolkit/xre/MacRunFromDmgUtils.mm
   { file: "resource://gre/localization/en-US/toolkit/global/run-from-dmg.ftl" },
 
+  // toolkit/modules/RosettaUtils.sys.mjs
+  {
+    file: "resource://gre/localization/en-US/toolkit/global/rosettaNotification.ftl",
+  },
+
   // Referenced programmatically
   { file: "chrome://browser/content/backup/BackupManifest.1.schema.json" },
   { file: "chrome://browser/content/backup/BackupManifest.2.schema.json" },
