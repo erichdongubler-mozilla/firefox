@@ -9323,8 +9323,13 @@ void nsGridContainerFrame::ReflowAbsoluteChildren(
   // with respect to the grid container's padding-box (CB).
   LogicalMargin pad(aGridRI.mReflowInput->ComputedLogicalPadding(wm));
   const LogicalPoint gridOrigin(wm, pad.IStart(wm), pad.BStart(wm));
+  const nscoord gridContentBSize =
+      (aGridRI.mInFragmentainer && !aGridRI.mRows.mSizes.IsEmpty())
+          ? aGridRI.mRows.GridLineEdge(aGridRI.mRows.mSizes.Length(),
+                                       GridLineSide::BeforeGridGap)
+          : aContentBSize;
   const LogicalRect gridCB(wm, 0, 0, aContentArea.ISize(wm) + pad.IStartEnd(wm),
-                           aContentBSize + pad.BStartEnd(wm));
+                           gridContentBSize + pad.BStartEnd(wm));
   const nsSize gridCBPhysicalSize = gridCB.Size(wm).GetPhysicalSize(wm);
   size_t i = 0;
   for (nsIFrame* child : absoluteContainer->GetChildList()) {
