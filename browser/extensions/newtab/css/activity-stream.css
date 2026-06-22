@@ -15971,7 +15971,6 @@ hr {
   --panel-menuitem-border-radius: var(--border-radius-xxlarge);
   --panel-padding: var(--panel-padding-block);
   --panel-padding-block: 8px;
-  --panel-separator-color: light-dark(rgba(24, 14, 48, 25%), rgba(242, 240, 248, 25%));
   --panel-text-color: var(--text-color);
   /** size **/
   --size-item-xsmall: 12px;
@@ -15985,9 +15984,7 @@ hr {
   --table-row-background-color-alternate: light-dark(var(--color-gray-20), var(--color-gray-65));
   /** text-color **/
   --text-color: light-dark(var(--color-violet-desaturated-90), var(--color-violet-desaturated-0));
-  --text-color-disabled: light-dark(rgba(24, 14, 48, 40%), rgba(242, 240, 248, 40%));
   --text-color-accent-primary-selected: light-dark(var(--color-white), var(--color-gray-55));
-  --text-color-deemphasized: light-dark(rgba(24, 14, 48, 70%), rgba(242, 240, 248, 70%));
   --text-color-error: light-dark(var(--color-red-50), var(--color-red-20));
   /** toolbar **/
   --toolbar-background-color: var(--background-color-box);
@@ -16100,16 +16097,11 @@ hr {
     --link-color-active: ActiveText;
     /** panel **/
     --panel-border-color: var(--border-color);
-    --panel-separator-color: var(--border-color);
     /** table **/
     /* TODO Bug 1821203 - Gray use needs to be consolidated */
     --table-row-background-color-alternate: var(--background-color-canvas);
     /** text-color **/
-    --text-color: CanvasText;
-    --text-color-disabled: GrayText;
     --text-color-accent-primary-selected: SelectedItemText;
-    --text-color-deemphasized: CanvasText;
-    --text-color-error: CanvasText;
     /** toolbar **/
     --toolbar-background-color: Canvas;
     --toolbar-field-border-color: ButtonText;

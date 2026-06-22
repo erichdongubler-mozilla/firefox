@@ -1602,6 +1602,7 @@ export const tokensTable = {
       value: {
         default: "color-mix(in srgb, currentColor 25%, transparent)",
         prefersContrast: "currentColor",
+        forcedColors: "var(--border-color)",
       },
       name: "--panel-separator-color",
     },
@@ -4289,6 +4290,7 @@ export const variableLookupTable = {
   "panel-separator-color": {
     default: "color-mix(in srgb, currentColor 25%, transparent)",
     prefersContrast: "currentColor",
+    forcedColors: "var(--border-color)",
   },
   "popup-box-shadow": "var(--box-shadow-level-3)",
   "sidebar-background-color": {

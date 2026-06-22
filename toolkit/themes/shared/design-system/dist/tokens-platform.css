@@ -188,6 +188,10 @@
       --panel-border-color: var(--border-color-deemphasized);
       --panel-text-color: FieldText;
 
+      /** text-color **/
+      --text-color: currentColor;
+      --text-color-accent-primary-selected: SelectedItemText;
+
       /** toolbar **/
       --toolbar-background-color: color-mix(in srgb, -moz-dialog 85%, var(--color-white));
       --toolbar-field-background-color-focus: Field;

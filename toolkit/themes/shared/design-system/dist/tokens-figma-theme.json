@@ -867,7 +867,7 @@
   "panel/separator/color": {
     "light": "color-mix(in srgb, currentColor 25%, transparent)",
     "dark": "color-mix(in srgb, currentColor 25%, transparent)",
-    "forcedColors": "currentColor"
+    "forcedColors": "{Theme$border/color}"
   },
   "sidebar/background/color": {
     "light": "white",

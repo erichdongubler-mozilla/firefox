@@ -114,20 +114,10 @@
     "dark": "{Colors$color/violet-desaturated/0}",
     "forcedColors": "{HCM Theme$CanvasText}"
   },
-  "text/color/deemphasized": {
-    "light": "rgba(24, 14, 48, 0.7)",
-    "dark": "rgba(242, 240, 248, 0.7)",
-    "forcedColors": "{HCM Theme$CanvasText}"
-  },
-  "text/color/disabled": {
-    "light": "rgba(24, 14, 48, 0.4)",
-    "dark": "rgba(242, 240, 248, 0.4)",
-    "forcedColors": "{HCM Theme$GrayText}"
-  },
   "text/color/error": {
     "light": "{Colors$color/red/50}",
     "dark": "{Colors$color/red/20}",
-    "forcedColors": "{HCM Theme$CanvasText}"
+    "forcedColors": "inherit"
   },
   "text/color/accent/primary/selected": {
     "light": "{Colors$color/white}",
@@ -393,11 +383,6 @@
     "light": "{Theme$text/color}",
     "dark": "{Theme$text/color}",
     "forcedColors": "{Theme$text/color}"
-  },
-  "panel/separator/color": {
-    "light": "rgba(24, 14, 48, 0.25)",
-    "dark": "rgba(242, 240, 248, 0.25)",
-    "forcedColors": "{Theme$border/color}"
   },
   "table/row/background/color": {
     "light": "{Theme$background/color/canvas}",
