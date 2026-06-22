@@ -47,6 +47,11 @@ Push Information
 ``head_rev``
    The revision to check out; this can be a short revision string
 
+``head_git_repository``
+
+   Optionally, the git repository containing ``head_git_rev`` when it's in a Mercurial
+   repository.
+
 ``head_git_rev``
    Optionally, the git commit corresponding to the head_rev when it's in a Mercurial
    repository.
