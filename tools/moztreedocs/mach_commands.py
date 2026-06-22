@@ -565,9 +565,7 @@ def transform_error(msg):
                 "relpath": filePath.replace(staging_path, original_path),
                 # Remove the first character, as it'll be the :
                 "lineno": (
-                    int(match.group(2)[1:])
-                    if match.group(2) is not None and match.group(2)[1:].isdigit()
-                    else None
+                    int(match.group(2)[1:]) if match.group(2) is not None else None
                 ),
                 "message": match.group(3),
             }
