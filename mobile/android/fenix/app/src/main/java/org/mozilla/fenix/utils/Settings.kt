@@ -25,14 +25,7 @@ import mozilla.components.feature.sitepermissions.SitePermissionsRules.Action
 import mozilla.components.feature.sitepermissions.SitePermissionsRules.AutoplayAction
 import mozilla.components.lib.crash.store.CrashReportOption
 import mozilla.components.support.base.log.logger.Logger
-import mozilla.components.support.ktx.android.content.PreferencesHolder
-import mozilla.components.support.ktx.android.content.booleanPreference
 import mozilla.components.support.ktx.android.content.doesDeviceHaveHinge
-import mozilla.components.support.ktx.android.content.floatPreference
-import mozilla.components.support.ktx.android.content.intPreference
-import mozilla.components.support.ktx.android.content.longPreference
-import mozilla.components.support.ktx.android.content.stringPreference
-import mozilla.components.support.ktx.android.content.stringSetPreference
 import mozilla.components.support.locale.LocaleManager
 import mozilla.components.support.utils.Browsers
 import mozilla.components.support.utils.ext.PackageManagerCompatHelper
@@ -94,7 +87,7 @@ class Settings(
     private val packageManagerCompatHelper: PackageManagerCompatHelper = appContext.packageManagerCompatHelper,
     @Suppress("unused")
     private val isBenchmarkBuild: Boolean = BuildConfig.IS_BENCHMARK_BUILD,
-) : PreferencesHolder {
+) : RegisteringPreferencesHolder {
     companion object {
         const val FENIX_PREFERENCES = "fenix_preferences"
 
@@ -174,6 +167,8 @@ class Settings(
          */
         private const val CLOUDFLARE_URI = "https://mozilla.cloudflare-dns.com/dns-query"
     }
+
+    override val preferenceGetters: MutableMap<String, () -> Any?> = mutableMapOf()
 
     private val logger = Logger("Settings")
 
