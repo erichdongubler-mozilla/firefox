@@ -16,11 +16,12 @@ import org.mozilla.fenix.tabstray.fakes.FakeTabManagerUiStateRepository
 import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction.PersistedUiStateUpdateReceived
+import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.tabstray.repository.uistate.data.PersistedUIState
 import kotlin.test.Test
-import kotlin.test.assertNull
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -44,6 +45,7 @@ class TabManagerUiStateStorageMiddlewareTest {
 
     @Test
     fun `GIVEN the user has no tab groups WHEN tab data is updated THEN the repository's record is updated`() = runTest {
+        repository = FakeTabManagerUiStateRepository(initialPersistedUIState = PersistedUIState())
         val store = createStore()
 
         store.dispatch(TabsTrayAction.TabDataUpdateReceived(tabStorageUpdate = createTabDataUpdateWithZeroGroups()))
@@ -51,7 +53,7 @@ class TabManagerUiStateStorageMiddlewareTest {
         runCurrent()
         advanceUntilIdle()
 
-        assertNull(repository.uiState.value?.hasUserEverHadOneTabGroup)
+        assertFalse(repository.uiState.value!!.hasUserEverHadOneTabGroup)
     }
 
     @Test
@@ -73,6 +75,56 @@ class TabManagerUiStateStorageMiddlewareTest {
         advanceUntilIdle()
 
         assertTrue { repository.uiState.value!!.hasUserDismissedTabGroupOnboarding }
+    }
+
+    @Test
+    fun `GIVEN the user has tab groups WHEN the tab groups page is selected THEN the repository records the page as viewed`() = runTest {
+        val store = createStore(
+            initialTabsTrayState = TabsTrayState(
+                tabGroupState = TabsTrayState.TabGroupState(groups = listOf(createTabGroup())),
+            ),
+        )
+
+        store.dispatch(TabsTrayAction.PageSelected(Page.TabGroups))
+
+        runCurrent()
+        advanceUntilIdle()
+
+        assertTrue { repository.uiState.value!!.hasViewedTabGroupsPage }
+    }
+
+    @Test
+    fun `GIVEN the user has no tab groups WHEN the tab groups page is selected THEN the repository does not record the page as viewed`() = runTest {
+        repository = FakeTabManagerUiStateRepository(initialPersistedUIState = PersistedUIState())
+        val store = createStore(
+            initialTabsTrayState = TabsTrayState(
+                tabGroupState = TabsTrayState.TabGroupState(groups = emptyList()),
+            ),
+        )
+
+        store.dispatch(TabsTrayAction.PageSelected(Page.TabGroups))
+
+        runCurrent()
+        advanceUntilIdle()
+
+        assertFalse(repository.uiState.value!!.hasViewedTabGroupsPage)
+    }
+
+    @Test
+    fun `GIVEN the user has tab groups WHEN a page other than tab groups is selected THEN the repository does not record the page as viewed`() = runTest {
+        repository = FakeTabManagerUiStateRepository(initialPersistedUIState = PersistedUIState())
+        val store = createStore(
+            initialTabsTrayState = TabsTrayState(
+                tabGroupState = TabsTrayState.TabGroupState(groups = listOf(createTabGroup())),
+            ),
+        )
+
+        store.dispatch(TabsTrayAction.PageSelected(Page.SyncedTabs))
+
+        runCurrent()
+        advanceUntilIdle()
+
+        assertFalse(repository.uiState.value!!.hasViewedTabGroupsPage)
     }
 
     private fun TestScope.createStore(

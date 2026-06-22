@@ -201,6 +201,7 @@ fun TabsTray(
                 privateTabCount = tabsTrayState.privateBrowsing.tabs.size,
                 shouldShowTabGroupsPage = shouldShowTabGroupsPage,
                 tabGroupCount = tabsTrayState.tabGroupState.groups.size,
+                shouldShowTabGroupBadge = tabsTrayState.shouldShowTabGroupBadge,
                 syncedTabCount = syncedTabCount,
                 selectionMode = tabsTrayState.mode,
                 isInDebugMode = tabsTrayState.config.isInDebugMode,

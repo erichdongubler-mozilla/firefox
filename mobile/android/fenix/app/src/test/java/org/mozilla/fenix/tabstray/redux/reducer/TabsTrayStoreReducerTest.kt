@@ -13,6 +13,7 @@ import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.data.createTabGroup
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
+import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabSearchState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
@@ -41,6 +42,16 @@ class TabsTrayStoreReducerTest {
         )
 
         assertEquals(expectedState, resultState)
+    }
+
+    @Test
+    fun `WHEN PageSelected THEN the selected page is updated`() {
+        val resultState = TabsTrayReducer.reduce(
+            TabsTrayState(selectedPage = Page.NormalTabs),
+            TabsTrayAction.PageSelected(Page.TabGroups),
+        )
+
+        assertEquals(Page.TabGroups, resultState.selectedPage)
     }
 
     @Test
@@ -827,6 +838,7 @@ class TabsTrayStoreReducerTest {
             hasUserDismissedTabGroupOnboarding = true,
             tabGroupOnboardingImpressionCount = 10,
             hasUserEverHadOneTabGroup = true,
+            hasViewedTabGroupsPage = true,
         )
         val result = TabsTrayReducer.reduce(
             state = TabsTrayState(),
@@ -835,6 +847,7 @@ class TabsTrayStoreReducerTest {
                     hasUserDismissedTabGroupOnboarding = expectedState.hasUserDismissedTabGroupOnboarding,
                     tabGroupOnboardingImpressionCount = expectedState.tabGroupOnboardingImpressionCount,
                     hasUserEverHadOneTabGroup = expectedState.hasUserEverHadOneTabGroup,
+                    hasViewedTabGroupsPage = expectedState.hasViewedTabGroupsPage,
                 ),
             ),
         )

@@ -260,6 +260,54 @@ class TabsTrayStateTest {
     }
 
     @Test
+    fun `GIVEN tab groups enabled and a group exists and the page is not viewed THEN shouldShowTabGroupBadge returns true`() {
+        val state = TabsTrayState(
+            tabGroupState = TabsTrayState.TabGroupState(
+                groups = listOf(createTabGroup()),
+                hasViewedTabGroupsPage = false,
+            ),
+            config = TabsTrayState.TabsTrayConfig(tabGroupsEnabled = true),
+        )
+        assertTrue(state.shouldShowTabGroupBadge)
+    }
+
+    @Test
+    fun `GIVEN the user has already viewed the tab groups page THEN shouldShowTabGroupBadge returns false`() {
+        val state = TabsTrayState(
+            tabGroupState = TabsTrayState.TabGroupState(
+                groups = listOf(createTabGroup()),
+                hasViewedTabGroupsPage = true,
+            ),
+            config = TabsTrayState.TabsTrayConfig(tabGroupsEnabled = true),
+        )
+        assertFalse(state.shouldShowTabGroupBadge)
+    }
+
+    @Test
+    fun `GIVEN tab groups are disabled THEN shouldShowTabGroupBadge returns false`() {
+        val state = TabsTrayState(
+            tabGroupState = TabsTrayState.TabGroupState(
+                groups = listOf(createTabGroup()),
+                hasViewedTabGroupsPage = false,
+            ),
+            config = TabsTrayState.TabsTrayConfig(tabGroupsEnabled = false),
+        )
+        assertFalse(state.shouldShowTabGroupBadge)
+    }
+
+    @Test
+    fun `GIVEN the user has no tab groups THEN shouldShowTabGroupBadge returns false`() {
+        val state = TabsTrayState(
+            tabGroupState = TabsTrayState.TabGroupState(
+                groups = emptyList(),
+                hasViewedTabGroupsPage = false,
+            ),
+            config = TabsTrayState.TabsTrayConfig(tabGroupsEnabled = true),
+        )
+        assertFalse(state.shouldShowTabGroupBadge)
+    }
+
+    @Test
     fun `GIVEN mode is Normal and PBM is not locked WHEN on Normal tabs THEN toolbar visibility is true`() {
         val state = TabsTrayState(
             mode = Mode.Normal,

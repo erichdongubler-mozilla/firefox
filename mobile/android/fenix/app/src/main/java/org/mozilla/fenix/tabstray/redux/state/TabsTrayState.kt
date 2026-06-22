@@ -209,6 +209,7 @@ data class TabsTrayState(
      * @property hasUserDismissedTabGroupOnboarding Whether the user has previously dismissed the onboarding.
      * @property tabGroupOnboardingImpressionCount How many times the user has been presented the onboarding.
      * @property hasUserEverHadOneTabGroup Whether the user has ever had a tab group.
+     * @property hasViewedTabGroupsPage Whether the user has viewed the Tab Groups page.
      */
     data class TabGroupState(
         val groups: List<TabsTrayItem.TabGroup> = emptyList(),
@@ -216,6 +217,7 @@ data class TabsTrayState(
         internal val hasUserDismissedTabGroupOnboarding: Boolean = false,
         internal val tabGroupOnboardingImpressionCount: Int = 0,
         internal val hasUserEverHadOneTabGroup: Boolean = false,
+        internal val hasViewedTabGroupsPage: Boolean = false,
     )
 
     /**
@@ -254,6 +256,14 @@ data class TabsTrayState(
             !tabGroupState.hasUserDismissedTabGroupOnboarding &&
             !tabGroupState.hasUserEverHadOneTabGroup &&
             tabGroupState.tabGroupOnboardingImpressionCount < TAB_GROUP_ONBOARDING_IMPRESSION_LIMIT
+
+    /**
+     * Whether to show the new-content badge on the Tab Groups page button.
+     */
+    val shouldShowTabGroupBadge: Boolean
+        get() = config.tabGroupsEnabled &&
+            !tabGroupState.hasViewedTabGroupsPage &&
+            tabGroupState.groups.isNotEmpty()
 
     /**
      * Whether the floating toolbar should be visible.

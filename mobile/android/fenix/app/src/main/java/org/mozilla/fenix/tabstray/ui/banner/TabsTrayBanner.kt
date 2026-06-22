@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Surface
@@ -43,6 +44,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.badge.BadgedIcon
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
@@ -74,6 +76,7 @@ private val RowHeight = 48.dp
  * @param privateTabCount The total number of open private tabs.
  * @param shouldShowTabGroupsPage Whether to show the tab groups page.
  * @param tabGroupCount The total number of open tab groups.
+ * @param shouldShowTabGroupBadge Whether to show the new-content badge on the tab groups page button.
  * @param syncedTabCount The total number of open synced tabs.
  * @param selectionMode [TabsTrayState.Mode] indicating the current selection mode (e.g., normal, multi-select).
  * @param isInDebugMode True for debug variant or if secret menu is enabled for this session.
@@ -104,6 +107,7 @@ fun TabsTrayBanner(
     privateTabCount: Int,
     shouldShowTabGroupsPage: Boolean,
     tabGroupCount: Int,
+    shouldShowTabGroupBadge: Boolean,
     syncedTabCount: Int,
     selectionMode: Mode,
     isInDebugMode: Boolean,
@@ -169,6 +173,7 @@ fun TabsTrayBanner(
                 privateTabCount = privateTabCount,
                 shouldShowTabGroupsPage = shouldShowTabGroupsPage,
                 tabGroupCount = tabGroupCount,
+                shouldShowTabGroupBadge = shouldShowTabGroupBadge,
                 syncedTabCount = syncedTabCount,
                 onTabPageIndicatorClicked = onTabPageIndicatorClicked,
                 hasTabDataLoaded = hasTabDataLoaded,
@@ -226,6 +231,7 @@ fun TabsTrayBanner(
  * @param privateTabCount The amount of open Private tabs.
  * @param shouldShowTabGroupsPage Whether to show the tab groups page.
  * @param tabGroupCount The amount of tab groups.
+ * @param shouldShowTabGroupBadge Whether to show the new-content badge on the tab groups page button.
  * @param syncedTabCount The amount of synced tabs.
  * @param hasTabDataLoaded Whether the tab data has loaded.
  * @param onTabPageIndicatorClicked Invoked when the user clicks on a tab page button. Passes along the
@@ -239,6 +245,7 @@ private fun TabPageBanner(
     privateTabCount: Int,
     shouldShowTabGroupsPage: Boolean,
     tabGroupCount: Int,
+    shouldShowTabGroupBadge: Boolean,
     syncedTabCount: Int,
     hasTabDataLoaded: Boolean,
     onTabPageIndicatorClicked: (Page) -> Unit,
@@ -278,6 +285,7 @@ private fun TabPageBanner(
                 privateTabCount = privateTabCount,
                 shouldShowTabGroupsPage = shouldShowTabGroupsPage,
                 tabGroupCount = tabGroupCount,
+                shouldShowTabGroupBadge = shouldShowTabGroupBadge,
                 syncedTabCount = syncedTabCount,
                 onTabPageIndicatorClicked = onTabPageIndicatorClicked,
                 hasTabDataLoaded = hasTabDataLoaded,
@@ -294,6 +302,7 @@ private fun TabPageBannerTabs(
     privateTabCount: Int,
     shouldShowTabGroupsPage: Boolean,
     tabGroupCount: Int,
+    shouldShowTabGroupBadge: Boolean,
     syncedTabCount: Int,
     hasTabDataLoaded: Boolean,
     onTabPageIndicatorClicked: (Page) -> Unit,
@@ -344,7 +353,11 @@ private fun TabPageBannerTabs(
             contentDescription = tabGroupsDescription,
             onClick = { onTabPageIndicatorClicked(Page.TabGroups) },
         ) {
-            Icon(painterResource(iconsR.drawable.mozac_ic_tab_group_24), null)
+            BadgedIcon(
+                painter = painterResource(iconsR.drawable.mozac_ic_tab_group_24),
+                isHighlighted = shouldShowTabGroupBadge,
+                tint = LocalContentColor.current,
+            )
         }
     }
 
@@ -566,6 +579,16 @@ private fun TabsTrayBannerWithTabGroupsPreview() {
 
 @PreviewLightDark
 @Composable
+private fun TabsTrayBannerWithTabGroupBadgePreview() {
+    TabsTrayBannerPreviewRoot(
+        selectedPage = Page.NormalTabs,
+        shouldShowTabGroupsPage = true,
+        shouldShowTabGroupBadge = true,
+    )
+}
+
+@PreviewLightDark
+@Composable
 private fun TabsTrayBannerAutoClosePreview() {
     TabsTrayBannerPreviewRoot(shouldShowTabAutoCloseBanner = true)
 }
@@ -599,6 +622,7 @@ private fun TabsTrayBannerPreviewRoot(
     shouldShowLockPbmBanner: Boolean = false,
     shouldShowAddToTabGroupButton: Boolean = false,
     shouldShowTabGroupsPage: Boolean = false,
+    shouldShowTabGroupBadge: Boolean = false,
 ) {
     val tabsTrayStore = remember {
         TabsTrayStore(
@@ -618,6 +642,7 @@ private fun TabsTrayBannerPreviewRoot(
                 privateTabCount = 0,
                 shouldShowTabGroupsPage = shouldShowTabGroupsPage,
                 tabGroupCount = 0,
+                shouldShowTabGroupBadge = shouldShowTabGroupBadge,
                 syncedTabCount = 0,
                 selectionMode = state.mode,
                 isInDebugMode = false,
