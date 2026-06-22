@@ -75,7 +75,7 @@ export class GeckoViewMediaControl extends GeckoViewModule {
         this.controller.play();
         break;
       case "GeckoView:MediaSession:Pause":
-        this.controller.pause();
+        this.controller.pause("user");
         break;
       case "GeckoView:MediaSession:Stop":
         this.controller.stop();

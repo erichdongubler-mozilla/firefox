@@ -630,3 +630,61 @@ TEST(AudioSessionManager, Interrupt_InactiveExclusiveStaysInactive)
   EXPECT_EQ(StateOf(controller, kAmbient), AudioSessionState::Active);
   EXPECT_EQ(StateOf(controller, kInactiveExcl), AudioSessionState::Inactive);
 }
+
+TEST(AudioSessionManager, PauseWithReason_TransientInterruptsAndResumeRestores)
+{
+  // The chrome pause(reason) surface maps a transient audio-focus loss to an
+  // interrupt of the active session, and resume restores it.
+  for (AudioSessionType type : kAllAudioSessionTypesExceptAuto) {
+    for (ControlType control : kBothControlTypes) {
+      RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+      constexpr uint64_t kBc = 93;
+
+      controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eAudible,
+                                            control, type);
+      ASSERT_EQ(StateOf(controller, kBc), AudioSessionState::Active);
+
+      controller->PauseWithReason(AudioFocusLossReason::System_transient);
+      EXPECT_EQ(StateOf(controller, kBc), AudioSessionState::Interrupted);
+
+      controller->Resume();
+      EXPECT_EQ(StateOf(controller, kBc), AudioSessionState::Active);
+    }
+  }
+}
+
+TEST(AudioSessionManager, PauseWithReason_PermanentInactivates)
+{
+  for (AudioSessionType type : kAllAudioSessionTypesExceptAuto) {
+    for (ControlType control : kBothControlTypes) {
+      RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+      constexpr uint64_t kBc = 94;
+
+      controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eAudible,
+                                            control, type);
+      ASSERT_EQ(StateOf(controller, kBc), AudioSessionState::Active);
+
+      controller->PauseWithReason(AudioFocusLossReason::System_permanent);
+      EXPECT_EQ(StateOf(controller, kBc), AudioSessionState::Inactive);
+    }
+  }
+}
+
+TEST(AudioSessionManager, PauseWithReason_UserDoesNotChangeAudioSessionState)
+{
+  // A user pause uses the existing media-key path and must not move the
+  // audio-session state machine.
+  for (AudioSessionType type : kAllAudioSessionTypesExceptAuto) {
+    for (ControlType control : kBothControlTypes) {
+      RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+      constexpr uint64_t kBc = 95;
+
+      controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eAudible,
+                                            control, type);
+      ASSERT_EQ(StateOf(controller, kBc), AudioSessionState::Active);
+
+      controller->PauseWithReason(AudioFocusLossReason::User);
+      EXPECT_EQ(StateOf(controller, kBc), AudioSessionState::Active);
+    }
+  }
+}

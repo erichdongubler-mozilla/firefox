@@ -44,6 +44,11 @@ class ContentMediaControlKeyReceiver {
   // change.
   virtual void SuspendForInterrupt() {}
   virtual void ResumeFromInterrupt() {}
+
+  // Dispatch an audio-focus interrupt. ContentMediaController overrides this to
+  // fan the interrupt out to its potentially audible receivers; leaf receivers
+  // rely on the suspend/resume verbs above and leave this as a no-op.
+  virtual void HandleAudioFocusInterrupt(AudioFocusInterruptAction aAction) {}
 };
 
 /**
@@ -126,7 +131,7 @@ class ContentMediaController final : public ContentMediaAgent,
 
   // Dispatch an audio-focus interrupt to every potentially audible receiver in
   // both the controllable and uncontrollable buckets.
-  void HandleAudioFocusInterrupt(AudioFocusInterruptAction aAction);
+  void HandleAudioFocusInterrupt(AudioFocusInterruptAction aAction) override;
 
  private:
   ~ContentMediaController() = default;
