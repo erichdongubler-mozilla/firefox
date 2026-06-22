@@ -972,7 +972,7 @@ class Browsertime(Perftest, metaclass=ABCMeta):
             if not self.config.get("run_local"):
                 self._init_etw_profiling(test)
             else:
-                LOG.error("ETW profiling is not supported in local runs")
+                raise Exception("ETW profiling is not supported in local runs")
 
         if self.config.get("simpleperf"):
             self._init_simpleperf_profiling(test)
