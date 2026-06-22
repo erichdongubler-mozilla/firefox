@@ -40,11 +40,14 @@ hr {
   margin-block-start: var(--space-small);
   moz-button {
     --button-alignment: start;
-    --button-border-radius: var(--border-radius-small);
     --button-font-weight: var(--font-weight);
     --button-padding: var(--space-small);
     --focus-outline-offset: calc(-1 * var(--focus-outline-width));
     width: 100%;
+
+    @media not -moz-pref("browser.nova.enabled") {
+      --button-border-radius: var(--border-radius-small);
+    }
   }
 }
 
