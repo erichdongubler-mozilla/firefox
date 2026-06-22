@@ -11010,6 +11010,14 @@
   value: true
   mirror: always
 
+# Is support for the progress() function enabled?
+# https://drafts.csswg.org/css-values-5/#tree-counting
+- name: layout.css.progress-function.enabled
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+  rust: true
+
 # Enable relative color syntax: https://drafts.csswg.org/css-color-5/#relative-colors
 - name: layout.css.relative-color-syntax.enabled
   type: RelaxedAtomicBool
