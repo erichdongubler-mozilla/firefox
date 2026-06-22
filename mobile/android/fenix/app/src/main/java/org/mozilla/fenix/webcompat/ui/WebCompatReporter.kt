@@ -57,7 +57,6 @@ import mozilla.components.compose.base.LinkText
 import mozilla.components.compose.base.LinkTextState
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.IconButton
-import mozilla.components.compose.base.button.OutlinedButton
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.textfield.TextField
 import mozilla.components.compose.base.theme.AcornCorners
@@ -236,11 +235,10 @@ fun WebCompatReporter(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                OutlinedButton(
+                TextButton(
                     text = stringResource(id = R.string.webcompat_reporter_preview_report),
                     modifier = Modifier
                         .fillMaxWidth(),
-                    contentColor = MaterialTheme.colorScheme.primary,
                     onClick = {
                         previewSheetVisible = true
                         store.dispatch(WebCompatReporterAction.OpenPreviewClicked)
