@@ -707,12 +707,12 @@ os.environment:
           visible but detection is impossible
     bugs:
       - https://bugzil.la/2032619
+      - https://bugzil.la/2048465
     data_reviews:
       - https://bugzil.la/2032619
     notification_emails:
-      - dmcintosh@mozilla.com
       - drubino@mozilla.com
-    expires: 155
+    expires: 161
 
   is_taskbar_pinned:
     type: boolean
