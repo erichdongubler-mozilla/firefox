@@ -153,7 +153,10 @@ public class IPProtectionController {
     }
   }
 
-  /** Holds information about the current IP proxy usage. */
+  /**
+   * Holds information about the current IP proxy usage. Whenever remaining,max and resetTime are
+   * equal to 0, this means there are no usage restrictions for the current User at the time.
+   */
   public static class UsageInfo {
     /** Remaining usage allowance in bytes. */
     public final long remaining;

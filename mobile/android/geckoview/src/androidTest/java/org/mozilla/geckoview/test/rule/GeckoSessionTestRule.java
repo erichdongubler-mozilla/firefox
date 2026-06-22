@@ -2946,6 +2946,11 @@ public class GeckoSessionTestRule implements TestRule {
     webExtensionApiCall("SetIPPProxyPassError", args -> args.put("error", error));
   }
 
+  /** Sets what the IP protection test auth provider's proxy-usage fetch resolves to. */
+  public void setIPPProxyUsage(final @Nullable JSONObject usage) {
+    webExtensionApiCall("SetIPPProxyUsage", args -> args.put("usage", usage));
+  }
+
   /**
    * Gets all the permission names defined in the WebExtensions API JSONSchema given an array of
    * type names.

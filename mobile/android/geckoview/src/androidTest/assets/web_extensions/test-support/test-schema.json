@@ -454,6 +454,22 @@
             "optional": true
           }
         ]
+      },
+
+      {
+        "name": "setIPPProxyUsage",
+        "type": "function",
+        "async": true,
+        "description": "Sets what the IP protection test auth provider's fetchProxyUsage resolves to.",
+        "parameters": [
+          {
+            "name": "usage",
+            "type": "object",
+            "optional": true,
+            "properties": {},
+            "additionalProperties": { "type": "any" }
+          }
+        ]
       }
     ]
   }

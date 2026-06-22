@@ -377,6 +377,30 @@ this.test = class extends ExtensionAPI {
         },
 
         /*
+         * Set what the test auth provider's fetchProxyUsage resolves to. When
+         * `usage.unlimited` is true the byte fields are ignored (ProxyUsage
+         * leaves them null). Pass null to clear.
+         */
+        async setIPPProxyUsage(usage) {
+          const { ProxyUsage } = ChromeUtils.importESModule(
+            "moz-src:///toolkit/components/ipprotection/GuardianTypes.sys.mjs"
+          );
+          const { IPPDummyAuthProvider } = ChromeUtils.importESModule(
+            "moz-src:///toolkit/components/ipprotection/tests/IPPDummyAuthProvider.sys.mjs"
+          );
+          IPPDummyAuthProvider.setProxyUsage(
+            usage
+              ? new ProxyUsage(
+                  usage.max ?? null,
+                  usage.remaining ?? null,
+                  usage.reset ?? null,
+                  usage.unlimited ?? true
+                )
+              : null
+          );
+        },
+
+        /*
          * Make the test auth provider's fetchProxyPass throw the given error
          * string (propagated verbatim to the activation error), or pass null to
          * restore the normal response path.

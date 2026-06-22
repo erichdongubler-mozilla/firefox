@@ -376,13 +376,6 @@ class IPProtectionControllerTest : BaseSessionTest() {
         )
     }
 
-    companion object {
-        private const val SERVER_LIST_JSON =
-            """[{"name":"United States","code":"US","cities":[{"name":"Test City",""" +
-                """"code":"TC","servers":[{"hostname":"test1.example.com","port":443,""" +
-                """"quarantined":false}]}]}]"""
-    }
-
     @Test
     fun refreshUsageInvokesDelegate() {
         sessionRule.setPrefsUntilTestEnd(
@@ -407,5 +400,45 @@ class IPProtectionControllerTest : BaseSessionTest() {
         // Seeded by setupIPPAuthProvider: ProxyUsage(max, remaining) = (5368709120, 4294967296).
         assertThat(info.max, equalTo(5368709120L))
         assertThat(info.remaining, equalTo(4294967296L))
+    }
+
+    @Test
+    fun refreshUsageReportsZeroForUnlimitedBandwidth() {
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf("toolkit.ipProtection.android.authProvider" to "test"),
+        )
+        sessionRule.setupIPPAuthProvider(JSONObject().put("signedIn", false))
+        sessionRule.waitForResult(ipProtectionController.init())
+        sessionRule.simulateIPPSignIn(true)
+
+        // It shouldn't matter what guardian sends down for the usage values,
+        // if the unlimited bit is sent, it should be ignored and set to 0.
+        sessionRule.setIPPProxyUsage(
+            JSONObject()
+                .put("max", "999999999999")
+                .put("remaining", "888888888888")
+                .put("unlimited", true),
+        )
+
+        val received = GeckoResult<IPProtectionController.UsageInfo>()
+        ipProtectionController.setDelegate(
+            object : IPProtectionController.Delegate {
+                override fun onUsageChanged(info: IPProtectionController.UsageInfo) {
+                    received.complete(info)
+                }
+            },
+        )
+
+        sessionRule.waitForResult(ipProtectionController.refreshUsage())
+        val info = sessionRule.waitForResult(received)
+        assertThat("max bytes is 0 for unlimited", info.max, equalTo(0L))
+        assertThat("used bytes is 0 for unlimited", info.remaining, equalTo(0L))
+    }
+
+    companion object {
+        private const val SERVER_LIST_JSON =
+            """[{"name":"United States","code":"US","cities":[{"name":"Test City",""" +
+                """"code":"TC","servers":[{"hostname":"test1.example.com","port":443,""" +
+                """"quarantined":false}]}]}]"""
     }
 }

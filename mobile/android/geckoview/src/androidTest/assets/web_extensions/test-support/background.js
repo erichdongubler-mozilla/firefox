@@ -139,6 +139,9 @@ const APIS = {
   SetIPPProxyPassError({ error }) {
     return browser.test.setIPPProxyPassError(error);
   },
+  SetIPPProxyUsage({ usage }) {
+    return browser.test.setIPPProxyUsage(usage);
+  },
 };
 
 port.onMessage.addListener(async message => {
