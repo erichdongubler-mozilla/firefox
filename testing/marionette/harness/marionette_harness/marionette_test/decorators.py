@@ -11,14 +11,14 @@ from unittest.case import SkipTest
 
 
 @functools.cache
-def _running_without_window_manager():
-    """Whether the host runs without a window manager / display server.
+def _running_without_user_session():
+    """Whether the current user has no GUI (Aqua) login session.
 
     Some hosts have none -- e.g. a headless macOS guest on Apple's
     Virtualization Framework. Native window focus and activation never happen
-    there, so tests that rely on them (e.g. BrowserWindowTracker.getTopWindow()
-    reflecting the focused window) cannot pass. Extend the per-platform checks
-    below as more such environments appear.
+    without a session, so tests that rely on them (e.g.
+    BrowserWindowTracker.getTopWindow() reflecting the focused window) cannot
+    pass. Extend the per-platform checks below as more such environments appear.
     """
     if sys.platform == "darwin":
         # A headless macOS host has no GUI (Aqua) session for the user, so its
@@ -32,7 +32,7 @@ def _running_without_window_manager():
             stderr=subprocess.DEVNULL,
             check=False,
         )
-        # Non-zero => no GUI session for this user => no window manager.
+        # Non-zero => no GUI session for this user.
         return result.returncode != 0
     return False
 
@@ -111,11 +111,12 @@ def skip_if_chrome(reason):
     return decorator
 
 
-def skip_if_no_window_manager(reason):
-    """Decorator which skips a test on hosts without a window manager.
+def skip_if_no_user_session(reason):
+    """Decorator which skips a test when the user has no GUI login session.
 
     Useful for tests that depend on native window focus/activation, which does
-    not happen on a headless host such as a macOS Virtualization Framework guest.
+    not happen without a session, e.g. on a headless macOS Virtualization
+    Framework guest.
     """
 
     def decorator(test_item):
@@ -124,7 +125,7 @@ def skip_if_no_window_manager(reason):
 
         @functools.wraps(test_item)
         def skip_wrapper(self, *args, **kwargs):
-            if _running_without_window_manager():
+            if _running_without_user_session():
                 raise SkipTest(reason)
             return test_item(self, *args, **kwargs)
 

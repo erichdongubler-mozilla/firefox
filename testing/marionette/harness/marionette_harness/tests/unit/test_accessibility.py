@@ -9,7 +9,7 @@ from marionette_driver.errors import (
     ElementClickInterceptedException,
 )
 
-from marionette_harness import MarionetteTestCase, skip_if_no_window_manager
+from marionette_harness import MarionetteTestCase, skip_if_no_user_session
 
 
 class TestAccessibility(MarionetteTestCase):
@@ -118,7 +118,7 @@ class TestAccessibility(MarionetteTestCase):
         # No exception should be raised
         self.run_element_test(self.valid_elementIDs, lambda button: button.click())
 
-    @skip_if_no_window_manager(
+    @skip_if_no_user_session(
         "Bug 2047574 - accessibility API requires a real display / window manager"
     )
     def test_click_raises_element_not_accessible(self):
