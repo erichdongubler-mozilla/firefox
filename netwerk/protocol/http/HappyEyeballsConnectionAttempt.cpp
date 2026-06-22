@@ -250,6 +250,17 @@ void HappyEyeballsConnectionAttempt::ReleaseRealTransaction(
     return;
   }
   if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
+    // Another attempt may have won and dispatched this still-pending
+    // transaction onto its connection (e.g. via DispatchSpdyPendingQ). Once it
+    // has a connection it's no longer ours to close.
+    if (trans->Connection()) {
+      LOG(
+          ("HappyEyeballsConnectionAttempt::ReleaseRealTransaction %p skipping "
+           "Close — real transaction already dispatched to a connection",
+           this));
+      mTransaction = nullptr;
+      return;
+    }
     if (aEntry) {
       aEntry->RemoveTransFromPendingQ(trans);
     }
