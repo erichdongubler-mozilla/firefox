@@ -32,6 +32,7 @@ import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
 import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.ViewInteraction
@@ -39,6 +40,10 @@ import androidx.test.espresso.action.ViewActions.clearText
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.longClick
 import androidx.test.espresso.action.ViewActions.pressImeActionButton
+import androidx.test.espresso.action.ViewActions.swipeDown
+import androidx.test.espresso.action.ViewActions.swipeLeft
+import androidx.test.espresso.action.ViewActions.swipeRight
+import androidx.test.espresso.action.ViewActions.swipeUp
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.hasSibling
@@ -643,6 +648,82 @@ abstract class BasePage(
             rep?.endCmd(success = false, message = "Swipe-to '${selector.description}' failed: ${t.message ?: "exception"}")
             throw t
         }
+    }
+
+    fun mozSwipeElement(
+        selector: Selector,
+        direction: SwipeDirection,
+        applyPreconditions: Boolean = false,
+    ): BasePage {
+        val rep = rep()
+        rep?.startCmd(safeId("swipe_element", selector.description), "Swiping ${direction.name} on '${selector.description}'...", 1)
+
+        try {
+            val containerElement = mozGetElement(selector, applyPreconditions = applyPreconditions)
+
+            when (containerElement) {
+                is ViewInteraction -> {
+                    val action = when (direction) {
+                        SwipeDirection.DOWN -> swipeDown()
+                        SwipeDirection.UP -> swipeUp()
+                        SwipeDirection.RIGHT -> swipeRight()
+                        SwipeDirection.LEFT -> swipeLeft()
+                    }
+                    containerElement.perform(action)
+                }
+
+                is UiObject -> {
+                    val steps = 100
+                    when (direction) {
+                        SwipeDirection.DOWN -> containerElement.swipeDown(steps)
+                        SwipeDirection.UP -> containerElement.swipeUp(steps)
+                        SwipeDirection.RIGHT -> containerElement.swipeRight(steps)
+                        SwipeDirection.LEFT -> containerElement.swipeLeft(steps)
+                    }
+                }
+
+                is SemanticsNodeInteraction -> {
+                    containerElement.performTouchInput {
+                        val swipeDistance = 1500f
+                        val swipeDuration = 200L
+
+                        when (direction) {
+                            SwipeDirection.DOWN -> swipe(
+                                start = center,
+                                end = androidx.compose.ui.geometry.Offset(center.x, center.y + swipeDistance),
+                                durationMillis = swipeDuration,
+                            )
+                            SwipeDirection.UP -> swipe(
+                                start = center,
+                                end = androidx.compose.ui.geometry.Offset(center.x, center.y - swipeDistance),
+                                durationMillis = swipeDuration,
+                            )
+                            SwipeDirection.RIGHT -> swipe(
+                                start = center,
+                                end = androidx.compose.ui.geometry.Offset(center.x + swipeDistance, center.y),
+                                durationMillis = swipeDuration,
+                            )
+                            SwipeDirection.LEFT -> swipe(
+                                start = center,
+                                end = androidx.compose.ui.geometry.Offset(center.x - swipeDistance, center.y),
+                                durationMillis = swipeDuration,
+                            )
+                        }
+                    }
+                }
+
+                else -> {
+                    throw IllegalArgumentException("Unsupported element type for targeted swiping: ${containerElement?.javaClass?.simpleName}")
+                }
+            }
+
+            rep?.endCmd(success = true, message = "Successfully swiped ${direction.name} on '${selector.description}'")
+        } catch (t: Throwable) {
+            rep?.endCmd(success = false, message = "Failed to swipe on '${selector.description}': ${t.message ?: "exception"}")
+            throw t
+        }
+
+        return this
     }
 
     fun mozOpenNotificationsTray(): BasePage {

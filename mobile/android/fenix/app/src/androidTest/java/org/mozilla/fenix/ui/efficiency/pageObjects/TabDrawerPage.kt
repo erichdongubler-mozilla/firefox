@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SwipeDirection
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.TabDrawerSelectors
@@ -57,6 +58,87 @@ class TabDrawerPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRu
         urls.forEach { url ->
             mozVerifyAnyHasChildWithText(TabDrawerSelectors.TAB_ITEM_ROOT, url)
         }
+        return this
+    }
+
+    fun selectTabsAndCreateTabGroup(
+        tabTitle: String,
+        tabGroupTitle: String = "",
+        tabGroupColor: String = "",
+    ): TabDrawerPage {
+        mozClick(TabDrawerSelectors.THREE_DOT_BUTTON)
+        mozClick(TabDrawerSelectors.SELECT_TABS_BUTTON)
+        mozClick(TabDrawerSelectors.TAB_ITEM_WITH_TITLE(tabTitle))
+        mozClick(TabDrawerSelectors.TAB_SELECTION_THREE_DOT_BUTTON)
+        mozClick(TabDrawerSelectors.ADD_TO_GROUP_THREE_DOT_BUTTON)
+
+        if (tabGroupTitle.isNotEmpty()) {
+            mozEnterText(tabGroupTitle, TabDrawerSelectors.CREATE_TAB_GROUP_NAME_TEXT_FIELD)
+        }
+
+        if (tabGroupColor.isNotEmpty()) {
+            mozClick(TabDrawerSelectors.CREATE_TAB_GROUP_COLOR_BUTTON(tabGroupColor))
+        }
+
+        mozClick(TabDrawerSelectors.CREATE_TAB_GROUP_SAVE_BUTTON)
+
+        return this
+    }
+
+    fun selectAllTabsAndCreateTabGroup(
+        tabGroupTitle: String = "",
+        tabGroupColor: String = "",
+    ): TabDrawerPage {
+        mozClick(TabDrawerSelectors.THREE_DOT_BUTTON)
+        mozClick(TabDrawerSelectors.SELECT_ALL_TABS_BUTTON)
+        mozClick(TabDrawerSelectors.TAB_SELECTION_THREE_DOT_BUTTON)
+        mozClick(TabDrawerSelectors.ADD_TO_GROUP_THREE_DOT_BUTTON)
+
+        if (tabGroupTitle.isNotEmpty()) {
+            mozEnterText(tabGroupTitle, TabDrawerSelectors.CREATE_TAB_GROUP_NAME_TEXT_FIELD)
+        }
+
+        if (tabGroupColor.isNotEmpty()) {
+            mozClick(TabDrawerSelectors.CREATE_TAB_GROUP_COLOR_BUTTON(tabGroupColor))
+        }
+
+        mozClick(TabDrawerSelectors.CREATE_TAB_GROUP_SAVE_BUTTON)
+
+        return this
+    }
+
+    fun deleteTabGroupFromTabGroupPage(): TabDrawerPage {
+        mozClick(TabDrawerSelectors.TAB_GROUP_MORE_OPTIONS_BUTTON)
+        mozClick(TabDrawerSelectors.TAB_GROUP_MORE_OPTIONS_DELETE_BUTTON)
+
+        return this
+    }
+
+    fun closeTabGroup(): TabDrawerPage {
+        mozClick(TabDrawerSelectors.TAB_GROUP_MORE_OPTIONS_BUTTON)
+        mozClick(TabDrawerSelectors.TAB_GROUP_MORE_OPTIONS_CLOSE_BUTTON)
+
+        return this
+    }
+
+    fun swipCloseTabGroupBottomSheet(): TabDrawerPage {
+        mozSwipeElement(TabDrawerSelectors.TAB_GROUP_BOTTOM_SHEET_HANDLE, SwipeDirection.DOWN)
+        mozWaitUntilAbsent(TabDrawerSelectors.TAB_GROUP_BOTTOM_SHEET_HANDLE)
+
+        return this
+    }
+
+    fun openTabGroupFromTabGroupPage(tabGroupTitle: String, numberOfTabs: Int, tabGroupColor: String): TabDrawerPage {
+        mozClick(TabDrawerSelectors.TAB_GROUPS_BUTTON)
+        mozClick(TabDrawerSelectors.TAB_GROUP_ITEM(tabGroupTitle, numberOfTabs, tabGroupColor))
+
+        return this
+    }
+
+    fun verifyTabGroupFromTabGroupPage(tabGroupTitle: String, numberOfTabs: Int, tabGroupColor: String): TabDrawerPage {
+        mozClick(TabDrawerSelectors.TAB_GROUPS_BUTTON)
+        mozVerify(TabDrawerSelectors.TAB_GROUP_ITEM(tabGroupTitle, numberOfTabs, tabGroupColor))
+
         return this
     }
 }
