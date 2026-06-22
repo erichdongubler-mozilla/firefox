@@ -1245,6 +1245,10 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
   }
 
   if (data->mLastSubmittedTextureId.isNothing()) {
+    // No commands referencing the canvas have ever been submitted, so it's
+    // blank.
+    memset(shmem.get<uint8_t>(), 0, shmem.Size<uint8_t>());
+    setOutParams(std::move(shmem), size, stride);
     return IPC_OK();
   }
 
@@ -1309,10 +1313,6 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
     if (ForwardError(error)) {
       return IPC_OK();
     }
-  }
-
-  if (data->mLastSubmittedTextureId.isNothing()) {
-    return IPC_OK();
   }
 
   const ffi::WGPUTexelCopyTextureInfo texView = {
