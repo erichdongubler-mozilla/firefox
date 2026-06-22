@@ -2,10 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import subprocess
-import sys
-import unittest
-
 from urllib.parse import quote
 
 from marionette_driver import By, Wait
@@ -14,25 +10,8 @@ from marionette_driver.keys import Keys
 from marionette_harness import (
     MarionetteTestCase,
     WindowManagerMixin,
+    skip_if_no_window_manager,
 )
-
-
-def _is_macos_vm():
-    # Marionette's test harness runs in a venv with a pre-installed mozinfo
-    # that may not have the macos_vm flag from D302479; sysctl directly so the
-    # detection works regardless of which mozinfo is on PYTHONPATH.
-    if sys.platform != "darwin":
-        return False
-    try:
-        out = subprocess.check_output(
-            ["sysctl", "-n", "hw.model"], text=True, timeout=5
-        ).strip()
-        return out.startswith("VirtualMac")
-    except Exception:
-        return False
-
-
-_MACOS_VM = _is_macos_vm()
 
 
 def inline(doc):
@@ -175,9 +154,8 @@ class TestSwitchToWindowContent(WindowManagerMixin, MarionetteTestCase):
         self.assertEqual(self.marionette.current_window_handle, self.start_tab)
         self.assertEqual(self.get_selected_tab_index(), self.selected_tab_index)
 
-    @unittest.skipIf(
-        _MACOS_VM,
-        "Bug 2047574 - in-app restart times out on no-display VM workers",
+    @skip_if_no_window_manager(
+        "Bug 2048226 - in-app restart times out on headless macOS VM workers"
     )
     def test_switch_to_unloaded_tab(self):
         first_page = inline("<p>foo")

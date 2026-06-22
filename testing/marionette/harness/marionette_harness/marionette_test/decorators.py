@@ -3,8 +3,38 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import functools
+import os
+import subprocess
+import sys
 import types
 from unittest.case import SkipTest
+
+
+@functools.cache
+def _running_without_window_manager():
+    """Whether the host runs without a window manager / display server.
+
+    Some hosts have none -- e.g. a headless macOS guest on Apple's
+    Virtualization Framework. Native window focus and activation never happen
+    there, so tests that rely on them (e.g. BrowserWindowTracker.getTopWindow()
+    reflecting the focused window) cannot pass. Extend the per-platform checks
+    below as more such environments appear.
+    """
+    if sys.platform == "darwin":
+        # A headless macOS host has no GUI (Aqua) session for the user, so its
+        # "gui/<uid>" launchd domain does not exist -- even though a system
+        # WindowServer process may still be running. Checking the session
+        # (rather than the process or the hardware model) stays correct for a
+        # VM that has a display attached.
+        result = subprocess.run(
+            ["launchctl", "print", f"gui/{os.getuid()}"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+        # Non-zero => no GUI session for this user => no window manager.
+        return result.returncode != 0
+    return False
 
 
 def parameterized(func_suffix, *args, **kwargs):
@@ -73,6 +103,28 @@ def skip_if_chrome(reason):
         @functools.wraps(test_item)
         def skip_wrapper(self, *args, **kwargs):
             if self.marionette._send_message("getContext", key="value") == "chrome":
+                raise SkipTest(reason)
+            return test_item(self, *args, **kwargs)
+
+        return skip_wrapper
+
+    return decorator
+
+
+def skip_if_no_window_manager(reason):
+    """Decorator which skips a test on hosts without a window manager.
+
+    Useful for tests that depend on native window focus/activation, which does
+    not happen on a headless host such as a macOS Virtualization Framework guest.
+    """
+
+    def decorator(test_item):
+        if not isinstance(test_item, types.FunctionType):
+            raise Exception("Decorator only supported for functions")
+
+        @functools.wraps(test_item)
+        def skip_wrapper(self, *args, **kwargs):
+            if _running_without_window_manager():
                 raise SkipTest(reason)
             return test_item(self, *args, **kwargs)
 
