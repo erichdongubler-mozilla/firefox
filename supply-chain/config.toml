@@ -213,6 +213,9 @@ audit-as-crates-io = true
 audit-as-crates-io = true
 notes = "Part of the wgpu repository, pinned as the rest of wgpu crates."
 
+[policy.naga-types]
+notes = "Part of the wgpu repository, pinned as the rest of wgpu crates. New crate; add `audit-as-crates-io = true` when it is published to crates.io."
+
 [policy.nimbus-sdk]
 audit-as-crates-io = false
 notes = "This lives in application-services but was pushed to crates.io a very long time ago."

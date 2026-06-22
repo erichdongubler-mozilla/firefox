@@ -3608,6 +3608,7 @@ mod macos {
             desc.array_layer_count(),
             desc.mip_level_count,
             wgh::CopyExtent::map_extent_to_copy_size(&desc.size, desc.dimension),
+            None,
         );
 
         let (_, error) = unsafe {
@@ -3720,6 +3721,7 @@ mod macos {
                         height: desc.size.height,
                         depth: 1,
                     },
+                    None,
                 )
             };
 
