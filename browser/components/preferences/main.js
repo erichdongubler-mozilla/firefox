@@ -690,7 +690,7 @@ function createStartupConfig(hidden = false) {
 SettingGroupManager.registerGroups({
   defaultBrowser: createDefaultBrowserConfig(),
   startup: createStartupConfig(
-    Services.prefs.getBoolPref("browser-settings-redesign.enabled", false)
+    Services.prefs.getBoolPref("browser.settings-redesign.enabled", false)
   ),
 });
 
