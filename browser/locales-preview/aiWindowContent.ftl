@@ -42,6 +42,7 @@ aiwindow-copy-message =
 aiwindow-copy-table =
     .tooltiptext = Copy table
     .aria-label = Copy table
+aiwindow-table-scroll-indicator = Scroll to see more
 aiwindow-thumbs-up =
     .tooltiptext = Share positive feedback
     .aria-label = Share positive feedback
