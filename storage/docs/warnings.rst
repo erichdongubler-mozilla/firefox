@@ -9,7 +9,7 @@ Sort Operations
 
 The warning message will say something like::
 
-    Suboptimal indexes for the SQL statement 0x<address>
+    Suboptimal indexes for the SQL statement `<sql>` [<n> sort operation(s)]
 
 This happens when you have an ``ORDER BY`` clause that does not use an index.
 When no index is used, all results from the query must be fetched first and then
@@ -23,9 +23,5 @@ warning by including a SQL comment in your query that contains the text::
 
 The bug number referenced should explain why the query cannot use an index.
 
-Enabling SQL Logging
---------------------
-
-By default the warning only shows the statement's memory address. To include
-the actual SQL text and sort operation count in the message, build with the
-``MOZ_STORAGE_SORTWARNING_SQL_DUMP`` preprocessor flag defined.
+The printed SQL is the prepared statement text, so bound parameters appear as
+``?`` placeholders rather than their values.
