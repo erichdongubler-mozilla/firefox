@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.401
- * pdfjsBuild = 124228e31
+ * pdfjsVersion = 6.0.413
+ * pdfjsBuild = 28a7606c1
  */
 
 ;// ./src/shared/util.js
@@ -1990,7 +1990,7 @@ class FloatingToolbar {
 }
 
 ;// ./src/shared/internal_evt.js
-const INTERNAL_EVT = "ad3e0a25-4c2b-414a-816c-f3e03ab5d537";
+const INTERNAL_EVT = "eda8370a-1b2d-4fc1-8133-2bbc3cedc883";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -3767,9 +3767,6 @@ class AnnotationEditorUIManager {
     this.#dispatchUpdateStates({
       hasSelectedEditor: true
     });
-  }
-  isSelected(editor) {
-    return this.#selectedEditors.has(editor);
   }
   get firstSelectedEditor() {
     return this.#selectedEditors.values().next().value;
@@ -14205,7 +14202,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.0.401",
+    apiVersion: "6.0.413",
     data,
     password,
     disableAutoFetch,
@@ -15854,8 +15851,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.0.401";
-const build = "124228e31";
+const version = "6.0.413";
+const build = "28a7606c1";
 
 ;// ./src/display/editor/color_picker.js
 

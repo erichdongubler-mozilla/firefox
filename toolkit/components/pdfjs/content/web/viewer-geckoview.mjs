@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.401
- * pdfjsBuild = 124228e31
+ * pdfjsVersion = 6.0.413
+ * pdfjsBuild = 28a7606c1
  */
 
 ;// ./web/ui_utils.js
@@ -985,7 +985,7 @@ const {
 } = globalThis.pdfjsLib;
 
 ;// ./web/internal_evt.js
-const INTERNAL_EVT = "ad3e0a25-4c2b-414a-816c-f3e03ab5d537";
+const INTERNAL_EVT = "eda8370a-1b2d-4fc1-8133-2bbc3cedc883";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -3735,6 +3735,7 @@ class PasswordPrompt {
     this.input.addEventListener("keydown", e => {
       if (e.keyCode === 13) {
         this.#verify();
+        e.preventDefault();
       }
     });
     this.overlayManager.register(this.dialog, true);
@@ -8673,7 +8674,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.0.401";
+    const viewerVersion = "6.0.413";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
