@@ -6,7 +6,6 @@
 #include "nsUnicodeProperties.h"
 #include "nsUTF8Utils.h"
 #include "mozilla/Likely.h"
-#include "mozilla/HashFunctions.h"
 #include "mozilla/intl/UnicodeProperties.h"
 #include "mozilla/StaticPrefs_layout.h"
 
@@ -490,29 +489,6 @@ bool CaseInsensitiveUTF8CharsEqual(const char* aLeft, const char* aRight,
 }
 
 namespace mozilla {
-
-uint32_t HashUTF8AsUTF16(const char* aUTF8, size_t aLength, bool* aErr) {
-  uint32_t hash = 0;
-  const char* s = aUTF8;
-  const char* end = aUTF8 + aLength;
-
-  *aErr = false;
-
-  while (s < end) {
-    uint32_t ucs4 = UTF8CharEnumerator::NextChar(&s, end, aErr);
-    if (*aErr) {
-      return 0;
-    }
-
-    if (ucs4 < PLANE1_BASE) {
-      hash = AddToHash(hash, ucs4);
-    } else {
-      hash = AddToHash(hash, H_SURROGATE(ucs4), L_SURROGATE(ucs4));
-    }
-  }
-
-  return hash;
-}
 
 // The Korean Won currency sign has East Asian Width = HALFWIDTH, and
 // Script = COMMON (rather than HANGUL), but we don't want to treat it like

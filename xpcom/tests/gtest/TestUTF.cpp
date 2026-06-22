@@ -86,28 +86,35 @@ TEST(UTF, Malformed8)
   }
 }
 
+static HashNumber HashStringUsingUTF16Hasher(const nsAString& aString) {
+  mozilla::detail::UTF16Hasher hasher;
+  for (char16_t ch : Span<const char16_t>(aString)) {
+    hasher.Add(ch);
+  }
+  return hasher.Finish();
+}
+
 TEST(UTF, Hash16)
 {
   for (unsigned int i = 0; i < std::size(ValidStrings); ++i) {
     nsDependentCString str8(ValidStrings[i].m8);
-    bool err;
-    EXPECT_EQ(HashString(nsDependentString(ValidStrings[i].m16)),
-              HashUTF8AsUTF16(str8.get(), str8.Length(), &err));
-    EXPECT_FALSE(err);
+    nsDependentString str16(ValidStrings[i].m16);
+    EXPECT_EQ(HashString(str16), HashUTF8AsUTF16(str8.get(), str8.Length()));
+    EXPECT_EQ(HashString(str16), HashStringUsingUTF16Hasher(str16));
   }
 
   for (unsigned int i = 0; i < std::size(Invalid8Strings); ++i) {
     nsDependentCString str8(Invalid8Strings[i].m8);
-    bool err;
-    EXPECT_EQ(HashUTF8AsUTF16(str8.get(), str8.Length(), &err), 0u);
-    EXPECT_TRUE(err);
+    nsDependentString str16(Invalid8Strings[i].m16);
+    EXPECT_EQ(HashString(str16), HashUTF8AsUTF16(str8.get(), str8.Length()));
+    EXPECT_EQ(HashString(str16), HashStringUsingUTF16Hasher(str16));
   }
 
   for (unsigned int i = 0; i < std::size(Malformed8Strings); ++i) {
     nsDependentCString str8(Malformed8Strings[i].m8);
-    bool err;
-    EXPECT_EQ(HashUTF8AsUTF16(str8.get(), str8.Length(), &err), 0u);
-    EXPECT_TRUE(err);
+    nsDependentString str16(Malformed8Strings[i].m16);
+    EXPECT_EQ(HashString(str16), HashUTF8AsUTF16(str8.get(), str8.Length()));
+    EXPECT_EQ(HashString(str16), HashStringUsingUTF16Hasher(str16));
   }
 }
 
