@@ -388,6 +388,9 @@ var gPermissionManager = {
   },
 
   _addNewPrincipalToList(list, uri) {
+    if (uri.host?.includes("*")) {
+      throw new Error("Wildcard in host");
+    }
     list.push(Services.scriptSecurityManager.createContentPrincipal(uri, {}));
     // If we have ended up with an unknown scheme, the following will throw.
     list[list.length - 1].origin;
@@ -407,6 +410,11 @@ var gPermissionManager = {
       // permissions from being entered by the user.
       try {
         let uri = Services.io.newURI(input_url);
+        // nsIURI.host throws for schemes without an authority (e.g. about:),
+        // so only reject wildcards for URIs that actually have a host.
+        if (uri instanceof Ci.nsIURL && uri.host.includes("*")) {
+          throw new Error("Wildcard in host");
+        }
         if (this._forcedHTTP && uri.schemeIs("https")) {
           uri = uri.mutate().setScheme("http").finalize();
         }

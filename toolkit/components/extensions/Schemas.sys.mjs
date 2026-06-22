@@ -1199,6 +1199,9 @@ const FORMATS = {
     if (!/^https?:/.test(url.protocol)) {
       throw new Error(`Invalid origin must be http or https for URL ${string}`);
     }
+    if (url.hostname.includes("*")) {
+      throw new Error(`Invalid origin must not contain a wildcard: ${string}`);
+    }
     // url.origin is punycode so a direct check against string wont work.
     // url.href appends a slash even if not in the original string, we we
     // additionally check that string does not end in slash.
