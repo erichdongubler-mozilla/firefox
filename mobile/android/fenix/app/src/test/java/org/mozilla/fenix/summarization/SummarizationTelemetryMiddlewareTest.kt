@@ -9,7 +9,9 @@ import io.mockk.mockk
 import mozilla.components.concept.llm.Llm
 import mozilla.components.concept.llm.LlmProvider
 import mozilla.components.feature.summarize.ContentExtracted
+import mozilla.components.feature.summarize.LlmProviderAction
 import mozilla.components.feature.summarize.OffDeviceSummarizationShakeConsentAction
+import mozilla.components.feature.summarize.ReceivedParsedDocument
 import mozilla.components.feature.summarize.SummarizationAction
 import mozilla.components.feature.summarize.SummarizationCompleted
 import mozilla.components.feature.summarize.SummarizationFailed
@@ -304,6 +306,40 @@ class SummarizationTelemetryMiddlewareTest {
         assertNotNull(firstSessionId)
         assertNotNull(secondSessionId)
         assertNotEquals(firstSessionId, secondSessionId)
+    }
+
+    @Test
+    fun `WHEN ProviderInitialized is dispatched THEN provider_initialized is recorded with model and session_id`() {
+        assertNull(AiSummarize.providerInitialized.testGetValue())
+
+        invokeMiddleware(ViewAppeared)
+        invokeMiddleware(
+            SummarizationRequested(LlmProvider.Info(nameRes = 42, modelId = LlmProvider.ModelID(TEST_MODEL))),
+        )
+        invokeMiddleware(LlmProviderAction.ProviderInitialized(mockk()))
+
+        val snapshot = AiSummarize.providerInitialized.testGetValue()!!
+        assertEquals(1, snapshot.size)
+
+        val extras = snapshot.first().extra!!
+        assertEquals(TEST_MODEL, extras["model"])
+        assertNotNull(extras["session_id"])
+    }
+
+    @Test
+    fun `WHEN the first ReceivedParsedDocument is dispatched THEN first_response is recorded once`() {
+        assertNull(AiSummarize.firstResponse.testGetValue())
+
+        setupFullSession()
+        invokeMiddleware(ReceivedParsedDocument(mockk()))
+        invokeMiddleware(ReceivedParsedDocument(mockk()))
+
+        val snapshot = AiSummarize.firstResponse.testGetValue()!!
+        assertEquals(1, snapshot.size)
+
+        val extras = snapshot.first().extra!!
+        assertEquals(TEST_MODEL, extras["model"])
+        assertNotNull(extras["session_id"])
     }
 
     private fun setupFullSession() {

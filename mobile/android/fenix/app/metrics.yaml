@@ -15779,6 +15779,52 @@ ai_summarize:
     notification_emails:
       - android-probes@mozilla.com
     expires: never
+  provider_initialized:
+    type: event
+    description: |
+      Recorded when the LLM provider finishes initializing and is ready to
+      receive a prompt.
+    extra_keys:
+      session_id:
+        description: |
+          A UUID identifying a single summarization session, shared across all
+          events recorded during that session.
+        type: string
+      model:
+        description: The name of the model used for summarization.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046968
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D306314
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  first_response:
+    type: event
+    description: |
+      Recorded when the first chunk of the response is received back from the
+      LLM after the prompt is sent.
+    extra_keys:
+      session_id:
+        description: |
+          A UUID identifying a single summarization session, shared across all
+          events recorded during that session.
+        type: string
+      model:
+        description: The name of the model used for summarization.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046968
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D306314
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
   duration:
     type: timing_distribution
     time_unit: millisecond
