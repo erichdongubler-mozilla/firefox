@@ -97,7 +97,7 @@ rejected-words:
 dot-mozilla-reference:
     description: Give visibility to misuse of ".mozilla" being hardcoded and thus breaking XDG support
     treeherder:
-        symbol: text(dot-mozilla-reference)
+        symbol: misc(dot-mozilla-reference)
         # We don't want patches to be backed out because of this, a follow up bug will be
         # good enough
         tier: 2
