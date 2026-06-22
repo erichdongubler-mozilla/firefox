@@ -113,12 +113,6 @@ module.exports = function (config) {
               functions: 8,
               branches: 0,
             },
-            "lib/UTEventReporting.sys.mjs": {
-              statements: 100,
-              lines: 100,
-              functions: 100,
-              branches: 75,
-            },
             "lib/Screenshots.sys.mjs": {
               statements: 94,
               lines: 94,
