@@ -804,3 +804,14 @@ def handle_native_profiling_symbol(config, tests):
             group, symbol = split_symbol(test["treeherder-symbol"])
             test["treeherder-symbol"] = join_symbol(group, f"{symbol}-p")
         yield test
+
+
+@task_transforms.add
+def setup_native_profiling_autoland_retriggers(config, tasks):
+    for task in tasks:
+        if config.params["project"] == "autoland":
+            attrs = task.setdefault("attributes", {})
+            raptor_try_name = attrs.get("raptor_try_name", "")
+            if "native-profiling" in raptor_try_name and "task_duplicates" in attrs:
+                attrs["task_duplicates"] = 1
+        yield task
