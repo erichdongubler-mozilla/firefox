@@ -217,7 +217,7 @@ class NetworkEventWatcher {
     }
 
     const { innerWindowId } =
-      this.watcherActor.browserElement.browsingContext.currentWindowGlobal;
+      this.watcherActor.browsingContext.currentWindowGlobal;
 
     // When a navigation starts, destroy all network request actors as the UI should not longer show them.
     // We can easily destroy all requests which aren't navigation request.

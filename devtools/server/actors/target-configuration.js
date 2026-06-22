@@ -109,7 +109,7 @@ class TargetConfigurationActor extends Actor {
       this._onBfCacheNavigation
     );
 
-    this._browsingContext = this.watcherActor.browserElement?.browsingContext;
+    this._browsingContext = this.watcherActor.browsingContext;
   }
 
   // Value of `logging.console` pref, before starting recording JS Traces
@@ -185,7 +185,7 @@ class TargetConfigurationActor extends Actor {
       this._restoreParentProcessConfiguration();
     }
 
-    // We need to store the browsing context as this.watcherActor.browserElement.browsingContext
+    // We need to store the browsing context as this.watcherActor.browsingContext
     // can still refer to the previous browsing context at this point.
     this._browsingContext = browsingContext;
 
