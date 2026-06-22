@@ -903,6 +903,7 @@ let JSWINDOWACTORS = {
     },
     includeChrome: true,
     matches: ["chrome://browser/content/browser.xhtml"],
+    remoteTypes: ["parent"],
   },
 
   WebRTC: {
