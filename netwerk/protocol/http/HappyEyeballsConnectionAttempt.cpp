@@ -1187,11 +1187,22 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(
          "ProcessPendingQ\n",
          realTrans));
 
-    RefPtr<PendingTransactionInfo> existing =
-        gHttpHandler->ConnMgr()->FindTransactionHelper(
-            /* removeWhenFound = */ false, entry, realTrans);
-    if (!existing) {
-      gHttpHandler->ConnMgr()->AddTransaction(realTrans, realTrans->Priority());
+    // Another racing attempt may have already dispatched this transaction onto
+    // a connection (bug 2048392). It's no longer ours to re-queue; doing so
+    // would re-dispatch onto its now transport-less connection.
+    if (realTrans->Connection()) {
+      LOG(
+          ("ProcessTCPConn trans=%p already dispatched to a connection; not "
+           "re-queuing\n",
+           realTrans));
+    } else {
+      RefPtr<PendingTransactionInfo> existing =
+          gHttpHandler->ConnMgr()->FindTransactionHelper(
+              /* removeWhenFound = */ false, entry, realTrans);
+      if (!existing) {
+        gHttpHandler->ConnMgr()->AddTransaction(realTrans,
+                                                realTrans->Priority());
+      }
     }
     mTransaction = nullptr;
   } else if (!aTransactionAlreadyOnConn) {
@@ -1292,6 +1303,12 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
       nsHttpTransaction* trans = mTransaction->QueryHttpTransaction();
       if (trans && trans->IsDone()) {
         LOG(("ProcessUDPConn transaction already done, not activating"));
+      } else if (trans && trans->Connection()) {
+        // Another racing attempt already dispatched this transaction onto a
+        // connection (cf. bug 2048392 / bug 2048294); don't re-activate it.
+        LOG(
+            ("ProcessUDPConn transaction already dispatched to a connection, "
+             "not activating"));
       } else {
         rv = aConn->Activate(mTransaction, mCaps, 0);
         if (NS_SUCCEEDED(rv)) {
@@ -1369,13 +1386,18 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
         // connection. Guard against double-queuing (which would trip
         // CheckTransInPendingQueue's assertion in AddTransaction) by checking
         // first.
-        RefPtr<PendingTransactionInfo> existing;
-        if (entry) {
-          existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
-              /*removeWhenFound=*/false, entry, trans);
-        }
-        if (!existing) {
-          gHttpHandler->ConnMgr()->AddTransaction(trans, trans->Priority());
+        // If another racing attempt already dispatched this transaction onto a
+        // connection it's no longer ours to re-queue (cf. bug 2048392 /
+        // bug 2048294).
+        if (!trans->Connection()) {
+          RefPtr<PendingTransactionInfo> existing;
+          if (entry) {
+            existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
+                /*removeWhenFound=*/false, entry, trans);
+          }
+          if (!existing) {
+            gHttpHandler->ConnMgr()->AddTransaction(trans, trans->Priority());
+          }
         }
         restartedFallback0Rtt = true;
         mTransaction = nullptr;
@@ -1557,15 +1579,20 @@ void HappyEyeballsConnectionAttempt::EnterDone() {
             mTransaction->QueryHttpTransaction()) {
       if (!realTransaction->Closed()) {
         realTransaction->FinishAdopted0RTT(/*aRestart=*/true);
-        RefPtr<ConnectionEntry> entry(mEntry);
-        RefPtr<PendingTransactionInfo> existing;
-        if (entry) {
-          existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
-              /*removeWhenFound=*/false, entry, realTransaction);
-        }
-        if (!existing) {
-          gHttpHandler->ConnMgr()->AddTransaction(realTransaction,
-                                                  realTransaction->Priority());
+        // If another racing attempt already dispatched this transaction onto a
+        // connection it's no longer ours to re-queue (cf. bug 2048392 /
+        // bug 2048294).
+        if (!realTransaction->Connection()) {
+          RefPtr<ConnectionEntry> entry(mEntry);
+          RefPtr<PendingTransactionInfo> existing;
+          if (entry) {
+            existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
+                /*removeWhenFound=*/false, entry, realTransaction);
+          }
+          if (!existing) {
+            gHttpHandler->ConnMgr()->AddTransaction(
+                realTransaction, realTransaction->Priority());
+          }
         }
       }
     }
