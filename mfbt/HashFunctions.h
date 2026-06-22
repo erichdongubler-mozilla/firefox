@@ -48,7 +48,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/MathAlgorithms.h"
-#include "mozilla/Types.h"
 #include "mozilla/WrappingOperations.h"
 
 #include <cstdint>
@@ -168,7 +167,7 @@ inline HashNumber AddUintNToHash<8>(HashNumber aHash, uint64_t aValue) {
   return AddU32ToHash(AddU32ToHash(aHash, v1), v2);
 }
 
-}  // namespace detail
+} /* namespace detail */
 
 /**
  * AddToHash takes a hash and some values and returns a new hash based on the
@@ -275,67 +274,13 @@ template <size_t N>
   return HashBytes(aStr, aLength);
 }
 
-namespace detail {
-
-/**
- * Helper to hash a stream of char16_t code units two-at-a-time (i.e. four bytes
- * at a time), so that the result matches HashBytes() run over the units' native
- * byte representation. This is used to keep HashString(const char16_t*),
- * HashLatin1AsUTF16() and HashUTF8AsUTF16() producing identical hashes for
- * equivalent strings while hashing 32 bits at a time.
- */
-class UTF16Hasher {
-  HashNumber mHash;
-  char16_t mPending = 0;
-  bool mHasPending = false;
-
- public:
-  constexpr explicit UTF16Hasher(HashNumber aStartingHash = 0)
-      : mHash(aStartingHash) {}
-
-  constexpr void Add(char16_t aUnit) {
-    if (!mHasPending) {
-      mPending = aUnit;
-      mHasPending = true;
-      return;
-    }
-    uint32_t data;
-    if constexpr (std::endian::native == std::endian::big) {
-      data = (uint32_t(mPending) << 16) | uint32_t(aUnit);
-    } else {
-      data = uint32_t(mPending) | (uint32_t(aUnit) << 16);
-    }
-    mHash = AddToHash(mHash, data);
-    mHasPending = false;
-  }
-
-  constexpr HashNumber Finish() const {
-    if (!mHasPending) {
-      return mHash;
-    }
-    // Match HashBytes()'s handling of the trailing bytes that don't fill a
-    // whole uint32_t: hash them one byte at a time, in native byte order.
-    if constexpr (std::endian::native == std::endian::big) {
-      return AddToHash(AddToHash(mHash, uint8_t(mPending >> 8)),
-                       uint8_t(mPending & 0xff));
-    }
-    return AddToHash(AddToHash(mHash, uint8_t(mPending & 0xff)),
-                     uint8_t(mPending >> 8));
-  }
-};
-
-}  // namespace detail
-
 [[nodiscard]] constexpr HashNumber HashString(const char16_t* aStr,
                                               size_t aLength) {
-  if (std::is_constant_evaluated()) {
-    detail::UTF16Hasher hasher;
-    for (size_t i = 0; i < aLength; i++) {
-      hasher.Add(aStr[i]);
-    }
-    return hasher.Finish();
+  HashNumber hash = 0;
+  for (size_t i = 0; i < aLength; i++) {
+    hash = AddToHash(hash, aStr[i]);
   }
-  return HashBytes(aStr, aLength * sizeof(char16_t));
+  return hash;
 }
 
 /**
@@ -359,24 +304,12 @@ template <size_t N>
 // were char16_t strings. See also HashUTF8AsUTF16.
 [[nodiscard]] constexpr HashNumber HashLatin1AsUTF16(const unsigned char* aStr,
                                                      size_t aLength) {
-  detail::UTF16Hasher hasher;
+  HashNumber hash = 0;
   for (size_t i = 0; i < aLength; i++) {
-    hasher.Add(char16_t(aStr[i]));
+    hash = AddToHash(hash, char16_t(aStr[i]));
   }
-  return hasher.Finish();
+  return hash;
 }
-
-/**
- * Hash a UTF-8 string as though it were a UTF-16 string.
- *
- * The value returned is the same as if we converted the string to UTF-16 and
- * then ran HashString() on the result, with the same semantics as
- * NS_ConvertUTF8toUTF16 (i.e. replacing invalid codepoints by the unicode
- * replacement character).
- *
- * The given |aLength| is in bytes.
- */
-extern MFBT_API HashNumber HashUTF8AsUTF16(const char* aUTF8, size_t aLength);
 
 /**
  * A pseudorandom function mapping 32-bit integers to 32-bit integers.
