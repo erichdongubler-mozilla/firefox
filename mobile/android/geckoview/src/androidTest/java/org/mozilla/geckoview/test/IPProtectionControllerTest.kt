@@ -503,13 +503,62 @@ class IPProtectionControllerTest : BaseSessionTest() {
         assertThat("used bytes is 0 for unlimited", info.remaining, equalTo(0L))
     }
 
+    @Test
+    fun activateRoutesThroughSelectedServer() {
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf("toolkit.ipProtection.android.authProvider" to "test"),
+        )
+        sessionRule.setupIPPAuthProvider(JSONObject().put("signedIn", false))
+        sessionRule.waitForResult(ipProtectionController.init())
+        sessionRule.simulateIPPSignIn(true)
+
+        // No country: the recommended (REC) anycast location is selected.
+        sessionRule.waitForResult(ipProtectionController.activate())
+        assertThat(
+            "recommended location routes through the REC server",
+            sessionRule.getIPPProxyInfo()?.getString("host"),
+            equalTo("rec.example.com"),
+        )
+
+        sessionRule.waitForResult(ipProtectionController.deactivate())
+
+        // Explicit country: the matching country's server is selected.
+        sessionRule.waitForResult(
+            ipProtectionController.activate(true, false, "US"),
+        )
+        assertThat(
+            "the selected country routes through its server",
+            sessionRule.getIPPProxyInfo()?.getString("host"),
+            equalTo("us.example.com"),
+        )
+    }
+
+    @Test
+    fun activateRejectsWithServerNotFoundForUnknownCountry() {
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf("toolkit.ipProtection.android.authProvider" to "test"),
+        )
+        sessionRule.setupIPPAuthProvider(JSONObject().put("signedIn", false))
+        sessionRule.waitForResult(ipProtectionController.init())
+        sessionRule.simulateIPPSignIn(true)
+
+        // "ZZ" is not present in the serverlist, so no server can be selected.
+        val thrown = assertThrows(IPProtectionController.IPProxyException::class.java) {
+            sessionRule.waitForResult(ipProtectionController.activate(true, false, "ZZ"))
+        }
+        assertThat(
+            thrown.code,
+            equalTo(IPProtectionController.IPProxyException.ERROR_SERVER_NOT_FOUND),
+        )
+    }
+
     companion object {
         private const val SERVER_LIST_JSON =
             """[{"name":"United States","code":"US","cities":[{"name":"Test City",""" +
-                """"code":"TC","servers":[{"hostname":"test1.example.com","port":443,""" +
+                """"code":"TC","servers":[{"hostname":"us.example.com","port":443,""" +
                 """"quarantined":false}]}]},""" +
                 """{"name":"Germany","code":"DE","cities":[{"name":"Berlin",""" +
-                """"code":"BE","servers":[{"hostname":"de1.example.com","port":443,""" +
+                """"code":"BE","servers":[{"hostname":"de.example.com","port":443,""" +
                 """"quarantined":true}]}]},""" +
                 """{"name":"Recommended","code":"REC","cities":[{"name":"Anycast",""" +
                 """"code":"REC","servers":[{"hostname":"rec.example.com","port":443,""" +

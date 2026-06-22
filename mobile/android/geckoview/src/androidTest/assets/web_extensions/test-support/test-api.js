@@ -423,6 +423,25 @@ this.test = class extends ExtensionAPI {
           IPPDummyAuthProvider.simulateSignIn(signedIn);
           IPProtectionService.updateState();
         },
+
+        /*
+         * Returns the active proxy connection's proxyInfo (host, port, type),
+         * or null when there is no active connection.
+         */
+        async getIPPProxyInfo() {
+          const { IPPProxyManager } = ChromeUtils.importESModule(
+            "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs"
+          );
+          const proxyInfo = IPPProxyManager.channelFilter()?.proxyInfo;
+          if (!proxyInfo) {
+            return null;
+          }
+          return {
+            host: proxyInfo.host,
+            port: proxyInfo.port,
+            type: proxyInfo.type,
+          };
+        },
       },
     };
   }

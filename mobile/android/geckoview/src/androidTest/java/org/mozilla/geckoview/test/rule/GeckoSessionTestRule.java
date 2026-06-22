@@ -2952,6 +2952,14 @@ public class GeckoSessionTestRule implements TestRule {
   }
 
   /**
+   * Returns the active IP protection proxy connection's proxyInfo ({@code host}, {@code port},
+   * {@code type}), or {@code null} when no connection is active.
+   */
+  public @Nullable JSONObject getIPPProxyInfo() {
+    return (JSONObject) webExtensionApiCall("GetIPPProxyInfo", null);
+  }
+
+  /**
    * Gets all the permission names defined in the WebExtensions API JSONSchema given an array of
    * type names.
    *

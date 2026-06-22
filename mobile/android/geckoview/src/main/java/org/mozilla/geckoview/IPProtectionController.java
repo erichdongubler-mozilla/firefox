@@ -435,16 +435,40 @@ public class IPProtectionController {
   }
 
   /**
-   * Activates the IP proxy.
+   * Activates the IP proxy by user action, in a non-private context, using the recommended
+   * location.
    *
    * @return A {@link GeckoResult} that resolves when activated, or rejects with an {@link
    *     IPProxyException} describing the failure.
    */
   @HandlerThread
   public @NonNull GeckoResult<Void> activate() {
+    return activate(true, false, null);
+  }
+
+  /**
+   * Activates the IP proxy.
+   *
+   * @param userAction Whether activation was triggered by an explicit user action, as opposed to a
+   *     system action.
+   * @param inPrivateBrowsing Whether activation was triggered from a private browsing context.
+   * @param country The ISO 3166-1 alpha-2 code of the country to route through, or {@code null} to
+   *     use the recommended location.
+   * @return A {@link GeckoResult} that resolves when activated, or rejects with an {@link
+   *     IPProxyException} describing the failure.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<Void> activate(
+      final boolean userAction, final boolean inPrivateBrowsing, final @Nullable String country) {
     ThreadUtils.assertOnHandlerThread();
+    final GeckoBundle bundle = new GeckoBundle(3);
+    bundle.putBoolean("userAction", userAction);
+    bundle.putBoolean("inPrivateBrowsing", inPrivateBrowsing);
+    if (country != null) {
+      bundle.putString("country", country);
+    }
     return EventDispatcher.getInstance()
-        .queryVoid("GeckoView:IPProtection:Activate")
+        .queryVoid("GeckoView:IPProtection:Activate", bundle)
         .map(
             null,
             e ->

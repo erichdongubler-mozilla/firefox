@@ -2286,6 +2286,7 @@ package org.mozilla.geckoview {
 
   public class IPProtectionController {
     method @HandlerThread @NonNull public GeckoResult<Void> activate();
+    method @HandlerThread @NonNull public GeckoResult<Void> activate(boolean, boolean, @Nullable String);
     method @HandlerThread @NonNull public GeckoResult<Void> deactivate();
     method @HandlerThread @NonNull public GeckoResult<IPProtectionController.EnrollResult> enroll();
     method @Nullable @UiThread public IPProtectionController.AuthProvider getAuthProvider();

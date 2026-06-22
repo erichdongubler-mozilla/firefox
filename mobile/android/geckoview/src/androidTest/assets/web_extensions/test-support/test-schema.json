@@ -470,6 +470,14 @@
             "additionalProperties": { "type": "any" }
           }
         ]
+      },
+
+      {
+        "name": "getIPPProxyInfo",
+        "type": "function",
+        "async": true,
+        "description": "Returns the active IP protection proxy connection's proxyInfo (host, port, type), or null when no connection is active.",
+        "parameters": []
       }
     ]
   }

@@ -142,6 +142,9 @@ const APIS = {
   SetIPPProxyUsage({ usage }) {
     return browser.test.setIPPProxyUsage(usage);
   },
+  GetIPPProxyInfo() {
+    return browser.test.getIPPProxyInfo();
+  },
 };
 
 port.onMessage.addListener(async message => {
