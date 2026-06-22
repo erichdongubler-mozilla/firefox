@@ -139,6 +139,8 @@ skip-if = [
 
 ["browser_target_support.js"]
 
+["browser_toolbox_adopted_tab.js"]
+
 ["browser_toolbox_backward_forward_navigation.js"]
 
 ["browser_toolbox_broken_xml_frame.js"]

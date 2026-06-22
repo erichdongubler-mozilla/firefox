@@ -31,7 +31,8 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
  * sidebar or a separate window). Any host object should implement the
  * following functions:
  *
- * create() - create the UI
+ * createElements() - synchronously create the frame into which DevTools will be loaded (if possible)
+ * async finalizeCreation() - asynchronously finalize the creation of the UI (if needed)
  * raise() - bring UI in foreground
  * setTitle - update UI's visible title (if any)
  * destroy() - destroy the host's UI
@@ -57,7 +58,7 @@ class BaseInBrowserHost {
     );
 
     // Reference to the <browser> element used to load DevTools.
-    // This is created by each subclass from create() method
+    // This is created by each subclass from createElements() method
     this.frame = null;
 
     Services.obs.addObserver(this, "browsing-context-active-change");
@@ -89,7 +90,7 @@ class BaseInBrowserHost {
       return;
     }
 
-    // In case this is called before create() is called
+    // In case this is called before createElements() is called
     if (!this.frame) {
       return;
     }
@@ -137,9 +138,7 @@ class BottomHost extends BaseInBrowserHost {
   /**
    * Create a box at the bottom of the host tab.
    */
-  async create() {
-    await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.documentGlobal);
-
+  createElements() {
     const { ownerDocument } = this.hostTab;
     this.#splitter = ownerDocument.createXULElement("splitter");
     this.#splitter.setAttribute("class", "devtools-horizontal-splitter");
@@ -147,7 +146,6 @@ class BottomHost extends BaseInBrowserHost {
     this.#splitter.setAttribute("resizeafter", "sibling");
 
     this._createFrame();
-
     this.frame.style.height =
       Math.min(
         Services.prefs.getIntPref(this.heightPref),
@@ -156,10 +154,13 @@ class BottomHost extends BaseInBrowserHost {
 
     this._browserContainer.appendChild(this.#splitter);
     this._browserContainer.appendChild(this.frame);
+  }
+
+  async finalizeCreation() {
+    await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.documentGlobal);
     this.frame.docShellIsActive = true;
 
     focusTab(this.hostTab);
-    return this.frame;
   }
 
   /**
@@ -203,9 +204,7 @@ class SidebarHost extends BaseInBrowserHost {
   /**
    * Create a box in the sidebar of the host tab.
    */
-  async create() {
-    await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.documentGlobal);
-
+  createElements() {
     this.#browserPanel = this._gBrowser.getPanel(this.hostTab.linkedBrowser);
     const { ownerDocument } = this.hostTab;
 
@@ -213,7 +212,6 @@ class SidebarHost extends BaseInBrowserHost {
     this.#splitter.setAttribute("class", "devtools-side-splitter");
 
     this._createFrame();
-
     this.frame.style.width =
       Math.min(
         Services.prefs.getIntPref(this.widthPref),
@@ -237,10 +235,13 @@ class SidebarHost extends BaseInBrowserHost {
       this.#browserPanel.insertBefore(this.frame, this._browserContainer);
       this.#browserPanel.insertBefore(this.#splitter, this._browserContainer);
     }
+  }
+
+  async finalizeCreation() {
+    await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.documentGlobal);
     this.frame.docShellIsActive = true;
 
     focusTab(this.hostTab);
-    return this.frame;
   }
 
   /**
@@ -303,9 +304,14 @@ class WindowHost extends EventEmitter {
   WINDOW_URL = "chrome://devtools/content/framework/toolbox-window.xhtml";
 
   /**
+   * For window host, there is nothing we can create synchronously.
+   */
+  createElements() {}
+
+  /**
    * Create a new xul window to contain the toolbox.
    */
-  create() {
+  async finalizeCreation() {
     return new Promise(resolve => {
       let flags = "chrome,centerscreen,resizable,dialog=no";
 
@@ -421,16 +427,17 @@ class BrowserToolboxHost extends EventEmitter {
 
   type = "browsertoolbox";
 
-  async create() {
+  createElements() {
     this.frame = createDevToolsFrame(
       this.doc,
       "devtools-toolbox-browsertoolbox-iframe"
     );
 
     this.doc.body.appendChild(this.frame);
-    this.frame.docShellIsActive = true;
+  }
 
-    return this.frame;
+  async finalizeCreation() {
+    this.frame.docShellIsActive = true;
   }
 
   /**
@@ -466,9 +473,8 @@ class PageHost {
 
   type = "page";
 
-  create() {
-    return Promise.resolve(this.frame);
-  }
+  createElements() {}
+  async finalizeCreation() {}
 
   // Focus the tab owning the browser element.
   raise() {
