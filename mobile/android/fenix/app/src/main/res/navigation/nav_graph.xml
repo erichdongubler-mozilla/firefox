@@ -583,10 +583,6 @@
         <action
             android:id="@+id/action_settingsFragment_to_settingsSearchFragment"
             app:destination="@id/settingsSearchFragment"
-            app:enterAnim="@anim/slide_in_right"
-            app:exitAnim="@anim/slide_out_left"
-            app:popEnterAnim="@anim/slide_in_left"
-            app:popExitAnim="@anim/slide_out_right"
             app:popUpTo="@id/settingsFragment" />
         <action
             android:id="@+id/action_settingsFragment_to_dataChoicesFragment"
@@ -1054,10 +1050,6 @@
         <action
             android:id="@+id/action_secretSettingsFragment_to_secretSettingsSearchFragment"
             app:destination="@id/secretSettingsSearchFragment"
-            app:enterAnim="@anim/slide_in_right"
-            app:exitAnim="@anim/slide_out_left"
-            app:popEnterAnim="@anim/slide_in_left"
-            app:popExitAnim="@anim/slide_out_right"
             app:popUpTo="@id/secretSettingsPreference" />
         <action
             android:id="@+id/action_secretSettingsFragment_to_remoteSettingsServerFragment"
