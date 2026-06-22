@@ -382,11 +382,11 @@ menupopup[emptyplacesresult] > .hide-if-empty-places-result {
 }
 
 #confirmation-hint {
-  --panel-background-color: #0060df;
-  --panel-border-color: #0060df;
-  --panel-text-color: #fff;
-  --panel-padding: 6px 10px;
-  font-size: 1.1rem;
+  --panel-background-color: var(--button-background-color-primary);
+  --panel-border-color: var(--button-border-color-ghost);
+  --panel-text-color: var(--button-text-color-primary);
+  --panel-padding: var(--space-small) var(--space-medium);
+  font-size: var(--font-size-heading-medium);
 
   &::part(content) {
     align-items: center;
