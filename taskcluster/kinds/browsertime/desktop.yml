@@ -1075,6 +1075,26 @@ browsertime-pageload-benchmark:
             default: 3
     treeherder-symbol: Btime(tp6-bench)
 
+browsertime-nav-bench:
+    raptor:
+        apps: [firefox]
+        subtests: [nav-bench]
+        run-visual-metrics: true
+    description: Raptor (browsertime) navigation benchmark across 5 sites
+    max-run-time: 3600
+    run-on-projects:
+        by-app:
+            firefox:
+                by-test-platform:
+                    linux.*shippable.*: [autoland]
+                    macosx1500.*shippable.*: [autoland]
+                    windows11-64-.*-hw-ref-shippable/opt: [autoland]
+                    windows11-64-24h2-shippable/opt: [autoland]
+                    default: []
+            default: []
+    tier: 3
+    treeherder-symbol: Btime(nav-bench)
+
 browsertime-video-playback-latency:
     <<: *tp6-defaults
     raptor:

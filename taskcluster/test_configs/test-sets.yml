@@ -114,6 +114,7 @@ browsertime:
     - browsertime-speculative
     - browsertime-throttled
     - browsertime-pageload-benchmark
+    - browsertime-nav-bench
     - browsertime-indexeddb
     - browsertime-video-playback-latency
     - browsertime-network-bench
@@ -141,6 +142,7 @@ browsertime-high-priority:
 
 browsertime-ref-hw:
     - browsertime-benchmark
+    - browsertime-nav-bench
 
 awsy:
     - awsy
@@ -555,6 +557,7 @@ macosx64-talos:
 
 macosx1500-64-perftests:
     - browsertime-benchmark
+    - browsertime-nav-bench
     - browsertime-tp6-essential
 
 # Android

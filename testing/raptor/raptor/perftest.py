@@ -436,7 +436,7 @@ class Perftest(metaclass=ABCMeta):
             LOG.info(f"Merging profile: {path}")
             self.profile.merge(path)
 
-        LOG.info("Browser preferences: {}".format(self.config["extra_prefs"]))
+        LOG.info(f"Browser preferences: {self.config['extra_prefs']}")
         self.profile.set_preferences(self.config["extra_prefs"])
 
         # share the profile dir with the config and the control server
@@ -611,17 +611,22 @@ class Perftest(metaclass=ABCMeta):
 
     def start_playback(self, test):
         # creating the playback tool
-        playback_dir = os.path.join(here, "tooltool-manifests", "playback")
+        manifests_subdir = test.get("playback_manifests_dir", "playback")
+        playback_dir = os.path.join(here, "tooltool-manifests", manifests_subdir)
 
         playback_manifest = test.get("playback_pageset_manifest")
         playback_manifests = playback_manifest.split(",")
+        playback_files = [
+            os.path.join(playback_dir, manifest) for manifest in playback_manifests
+        ]
 
         self.config.update({
             "playback_tool": test.get("playback"),
             "playback_version": test.get("playback_version", "8.1.1"),
-            "playback_files": [
-                os.path.join(playback_dir, manifest) for manifest in playback_manifests
-            ],
+            "playback_files": playback_files,
+            "verbose": self.config.get("verbose", False)
+            or bool(test.get("verbose", False)),
+            "test_name": test.get("name", ""),
         })
 
         LOG.info(f"test uses playback tool: {self.config['playback_tool']} ")
