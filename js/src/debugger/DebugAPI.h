@@ -25,7 +25,8 @@ class AutoSuppressGC;
 }  // namespace gc
 
 namespace wasm {
-class ContStack;
+class DebugFrame;
+class Instance;
 }  // namespace wasm
 
 /**
@@ -102,6 +103,19 @@ class DebugAPI {
    */
   static inline void traceGeneratorFrame(JSTracer* tracer,
                                          AbstractGeneratorObject* generator);
+
+#ifdef ENABLE_WASM_JSPI
+  /*
+   * Trace the inferred owning edge from a suspended wasm continuation (|src|)
+   * to one suspended Debugger.Frame, if it has hooks. Called per debug-enabled
+   * frame from ContStack::traceSuspended while marking. Analogous to
+   * traceGeneratorFrame: the ContObject keeps its hooked Debugger.Frames (and
+   * their Debugger) alive while it can still be resumed.
+   */
+  static void traceWasmContFrame(JSTracer* tracer, JSObject* src,
+                                 wasm::DebugFrame* debugFrame,
+                                 wasm::Instance* instance);
+#endif
 
   // Trace cross compartment edges in all debuggers relevant to the current GC.
   static void traceCrossCompartmentEdges(JSTracer* tracer);

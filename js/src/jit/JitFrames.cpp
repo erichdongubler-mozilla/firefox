@@ -1510,7 +1510,9 @@ void TraceWasmSuspendedContStacks(JSContext* cx, JSTracer* trc) {
 
   cx->wasm().contStacks().forEachAllocatedStack([trc](wasm::ContStack* stack) {
     if (stack->canResume()) {
-      stack->traceSuspended(trc);
+      // The tenuring tracer has no owning ContObject as a source; inferred
+      // ContObject to Debugger.Frame edges are only traced while marking.
+      stack->traceSuspended(trc, nullptr);
     }
   });
 }
