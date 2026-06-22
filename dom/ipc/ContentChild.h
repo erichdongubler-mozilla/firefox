@@ -589,10 +589,6 @@ class ContentChild final : public PContentChild,
       const MaybeDiscarded<BrowsingContext>& aContext,
       const MediaControlAction& aAction);
 
-  mozilla::ipc::IPCResult RecvUpdateMediaSessionInterrupt(
-      const MaybeDiscarded<BrowsingContext>& aContext,
-      const AudioFocusInterruptAction& aAction);
-
   // See `BrowsingContext::mEpochs` for an explanation of this field.
   uint64_t GetBrowsingContextFieldEpoch() const {
     return mBrowsingContextFieldEpoch;

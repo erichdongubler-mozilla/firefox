@@ -66,7 +66,7 @@ class SpeechSynthesisUtterance final : public DOMEventTargetHelper {
 
   void GetChosenVoiceURI(nsString& aResult) const;
 
-  bool IsPaused() const { return mPaused; }
+  bool IsPaused() { return mPaused; }
 
   bool ShouldResistFingerprinting() const {
     return mShouldResistFingerprinting;

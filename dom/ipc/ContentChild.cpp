@@ -3680,18 +3680,6 @@ mozilla::ipc::IPCResult ContentChild::RecvUpdateMediaControlAction(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult ContentChild::RecvUpdateMediaSessionInterrupt(
-    const MaybeDiscarded<BrowsingContext>& aContext,
-    const AudioFocusInterruptAction& aAction) {
-  if (NS_WARN_IF(aContext.IsNullOrDiscarded())) {
-    return IPC_OK();
-  }
-
-  ContentMediaControlKeyHandler::HandleAudioFocusInterrupt(aContext.get(),
-                                                           aAction);
-  return IPC_OK();
-}
-
 mozilla::ipc::IPCResult ContentChild::RecvOnAllowAccessFor(
     const MaybeDiscarded<BrowsingContext>& aContext,
     const nsCString& aTrackingOrigin, uint32_t aCookieBehavior,

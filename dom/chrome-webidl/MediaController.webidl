@@ -24,18 +24,6 @@ enum MediaControlKey {
 };
 
 /**
- * The reason a chrome caller is pausing the controller. "user" preserves the
- * existing user-initiated pause; the "system-*" values represent an
- * audio-focus loss, with "system-transient" being resumable and
- * "system-permanent" not.
- */
-enum AudioFocusLossReason {
-  "user",
-  "system-transient",
-  "system-permanent",
-};
-
-/**
  * MediaController is used to control media playback for a tab, and each tab
  * would only have one media controller, which can be accessed from the
  * canonical browsing context.
@@ -75,9 +63,7 @@ interface MediaController : EventTarget {
 
   undefined focus();
   undefined play();
-  [BinaryName="PauseWithReason"]
-  undefined pause(AudioFocusLossReason reason);
-  undefined resume();
+  undefined pause();
   undefined stop();
   undefined mute();
   undefined unmute();
