@@ -437,6 +437,28 @@ export class LoginManagerRustStorage {
   }
 
   async addLoginsAsync(logins, continueOnDuplicates = false) {
+    const result = await this.#addLoginsWithResults(
+      logins,
+      continueOnDuplicates
+    );
+
+    // Return only successfully added logins, matching the JSON backend.
+    return continueOnDuplicates
+      ? result.filter(item => !item.error).map(item => item.login)
+      : result;
+  }
+
+  /**
+   * Adds multiple logins and returns the raw per-login results, with each
+   * entry being either { login } or { error } and aligned by index with the
+   * input. Used by the migrator to detect and rescue duplicates; most callers
+   * want addLoginsAsync instead.
+   */
+  async addLoginsWithResultsAsync(logins) {
+    return this.#addLoginsWithResults(logins, true);
+  }
+
+  async #addLoginsWithResults(logins, continueOnDuplicates) {
     if (logins.length === 0) {
       return logins;
     }

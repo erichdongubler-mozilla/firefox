@@ -403,10 +403,8 @@ export class LoginManagerRustMirror {
         (a, b) => (b.timePasswordChanged || 0) - (a.timePasswordChanged || 0)
       );
 
-      const results = await this.#rustStorage.addLoginsAsync(
-        sortedLogins,
-        true
-      );
+      const results =
+        await this.#rustStorage.addLoginsWithResultsAsync(sortedLogins);
       const failedLogins = results
         .map(({ error }, i) => ({
           login: sortedLogins[i],
@@ -430,10 +428,8 @@ export class LoginManagerRustMirror {
         }
       }
 
-      const duplicatesResults = await this.#rustStorage.addLoginsAsync(
-        duplicates,
-        true
-      );
+      const duplicatesResults =
+        await this.#rustStorage.addLoginsWithResultsAsync(duplicates);
 
       for (const [i, { error }] of duplicatesResults.entries()) {
         if (error) {

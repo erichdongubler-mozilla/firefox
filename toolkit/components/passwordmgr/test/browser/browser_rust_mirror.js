@@ -330,17 +330,15 @@ add_task(async function test_migration_partial_failure() {
   });
 
   const rustStorage = new LoginManagerRustStorage();
-  const origAddLoginsAsync = LoginManagerRustStorage.prototype.addLoginsAsync;
+  const origAddLoginsWithResultsAsync =
+    LoginManagerRustStorage.prototype.addLoginsWithResultsAsync;
   sinon
-    .stub(LoginManagerRustStorage.prototype, "addLoginsAsync")
-    .callsFake(async function (logins, cont) {
-      if (!cont) {
-        return origAddLoginsAsync.call(this, logins, cont);
-      }
+    .stub(LoginManagerRustStorage.prototype, "addLoginsWithResultsAsync")
+    .callsFake(async function (logins) {
       // Bulk migration pass: insert good logins for real, inject error for bad ones.
       const goodLogins = logins.filter(l => l.username !== "test-user-bad");
       if (goodLogins.length) {
-        await origAddLoginsAsync.call(this, goodLogins, true);
+        await origAddLoginsWithResultsAsync.call(this, goodLogins);
       }
       return logins.map(login =>
         login.username === "test-user-bad"
@@ -491,7 +489,9 @@ add_task(async function test_migration_rejects_when_bulk_add_rejects() {
   });
 
   const rustStorage = new LoginManagerRustStorage();
-  sinon.stub(rustStorage, "addLoginsAsync").rejects(new Error("bulk failed"));
+  sinon
+    .stub(rustStorage, "addLoginsWithResultsAsync")
+    .rejects(new Error("bulk failed"));
 
   const login = LoginTestUtils.testData.formLogin({
     username: "test-user",
@@ -542,17 +542,15 @@ add_task(async function test_rust_migration_failure_event() {
 
   const rustStorage = new LoginManagerRustStorage();
 
-  const origAddLoginsAsync = LoginManagerRustStorage.prototype.addLoginsAsync;
+  const origAddLoginsWithResultsAsync =
+    LoginManagerRustStorage.prototype.addLoginsWithResultsAsync;
   sinon
-    .stub(rustStorage, "addLoginsAsync")
-    .callsFake(async function (logins, cont) {
-      if (!cont) {
-        return origAddLoginsAsync.call(this, logins, cont);
-      }
+    .stub(rustStorage, "addLoginsWithResultsAsync")
+    .callsFake(async function (logins) {
       // Bulk migration pass: insert good logins for real, inject error for bad ones.
       const goodLogins = logins.filter(l => l.username !== "bad-user");
       if (goodLogins.length) {
-        await origAddLoginsAsync.call(this, goodLogins, true);
+        await origAddLoginsWithResultsAsync.call(this, goodLogins);
       }
       return logins.map(login =>
         login.username === "bad-user"
