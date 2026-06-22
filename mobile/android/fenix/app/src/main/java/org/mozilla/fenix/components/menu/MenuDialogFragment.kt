@@ -33,7 +33,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
@@ -65,6 +64,7 @@ import mozilla.components.concept.engine.translate.findLanguage
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.state.isEligible
+import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import mozilla.components.service.fxa.manager.AccountState.NotAuthenticated
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.ktx.android.util.dpToPx
@@ -154,6 +154,8 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
     private val snackbarHostState = SnackbarHostState()
     private var bottomSheetBehavior: BottomSheetBehavior<View>? = null
     private var isPrivate: Boolean = false
+    private val browserStore by lazy { requireComponents.core.store }
+    private lateinit var menuStore: MenuStore
 
     private val deleteBrowsingDataController: DeleteBrowsingDataController by lazy {
         DefaultDeleteBrowsingDataController(
@@ -265,113 +267,19 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                 val settings = components.settings
                 val defaultBrowser = settings.isDefaultBrowser
                 val appStore = components.appStore
-                val browserStore = components.core.store
 
-                val browserTab = browserStore.state.selectedTab
                 val customTab = args.customTabSessionId?.let {
                     browserStore.state.findCustomTab(it)
                 }
+                val browserTab = browserStore.state.selectedTab
                 val selectedTab: SessionState? = customTab ?: browserTab
 
                 val appLinksUseCases = components.useCases.appLinksUseCases
                 val webAppUseCases = components.useCases.webAppUseCases
 
-                val webCompatReporterMoreInfoSender =
-                    DefaultWebCompatReporterMoreInfoSender(
-                        webCompatReporterRetrievalService =
-                            DefaultWebCompatReporterRetrievalService(
-                                browserStore = requireComponents.core.store,
-                                webCompatInfoDeserializer = WebCompatInfoDeserializer(
-                                    json = Json {
-                                        ignoreUnknownKeys = true
-                                        useAlternativeNames = false
-                                    },
-                                ),
-                            ),
-                    )
-
-                val coroutineScope = rememberCoroutineScope()
                 val scrollState = rememberScrollState()
 
-                val store = remember {
-                    MenuStore(
-                        initialState = MenuState(
-                            browserMenuState = if (selectedTab != null) {
-                                BrowserMenuState(selectedTab = selectedTab)
-                            } else {
-                                null
-                            },
-                            isDesktopMode = when (args.accesspoint) {
-                                MenuAccessPoint.Home -> {
-                                    false // this is not supported on Home
-                                }
-                                MenuAccessPoint.External -> {
-                                    selectedTab?.content?.desktopMode ?: false
-                                }
-                                else -> {
-                                    selectedTab?.content?.desktopMode ?: false
-                                }
-                            },
-                            extensionMenuState = ExtensionMenuState(
-                                accesspoint = args.accesspoint,
-                            ),
-                        ),
-                        middleware = listOf(
-                            MenuDialogMiddleware(
-                                appStore = appStore,
-                                addonManager = components.addonManager,
-                                settings = settings,
-                                summarizeMenuSettings = components.core.summarizeFeatureSettings,
-                                summarizationEligibilityChecker = components.core.summarizationEligibilityChecker,
-                                bookmarksStorage = components.core.bookmarksStorage,
-                                pinnedSiteStorage = components.core.pinnedSiteStorage,
-                                appLinksUseCases = appLinksUseCases,
-                                addBookmarkUseCase = components.useCases.bookmarksUseCases.addBookmark,
-                                addPinnedSiteUseCase = components.useCases.topSitesUseCase.addPinnedSites,
-                                removePinnedSitesUseCase = components.useCases.topSitesUseCase.removeTopSites,
-                                requestDesktopSiteUseCase = components.useCases.sessionUseCases.requestDesktopSite,
-                                migratePrivateTabUseCase = components.useCases.tabsUseCases.migratePrivateTabUseCase,
-                                materialAlertDialogBuilder = MaterialAlertDialogBuilder(context),
-                                topSitesMaxLimit = components.settings.topSitesMaxLimit,
-                                onDeleteAndQuit = {
-                                    activity?.let { activity ->
-                                        activity.lifecycleScope.launch {
-                                            deleteBrowsingDataController.clearBrowsingDataOnQuit {
-                                                activity.finishAndRemoveTask()
-                                            }
-                                        }
-                                    }
-                                },
-                                onDismiss = {
-                                    withContext(Dispatchers.Main) {
-                                        this@MenuDialogFragment.dismiss()
-                                    }
-                                },
-                                onSendPendingIntentWithUrl = ::sendPendingIntentWithUrl,
-                                mainDispatcher = Dispatchers.Main,
-                            ),
-                            MenuNavigationMiddleware(
-                                browserStore = browserStore,
-                                navController = findNavController(),
-                                openToBrowser = ::openToBrowser,
-                                sessionUseCases = components.useCases.sessionUseCases,
-                                webAppUseCases = webAppUseCases,
-                                shareUseCases = components.useCases.shareUseCases,
-                                settings = settings,
-                                onDismiss = {
-                                    withContext(Dispatchers.Main) {
-                                        this@MenuDialogFragment.dismiss()
-                                    }
-                                },
-                                scope = coroutineScope,
-                                webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,
-                            ),
-                            MenuTelemetryMiddleware(
-                                accessPoint = args.accesspoint,
-                            ),
-                        ),
-                    )
-                }
+                val store = menuStore
 
                 val descCustom = stringResource(R.string.browser_custom_tab_menu_handlebar_content_description)
                 val descMain = stringResource(R.string.browser_close_main_menu_handlebar_content_description)
@@ -446,29 +354,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                     val isDesktopMode by remember {
                         store.stateFlow.map { state -> state.isDesktopMode }
                     }.collectAsState(initial = false)
-
-                    webExtensionsMenuBinding.set(
-                        feature = WebExtensionsMenuBinding(
-                            browserStore = browserStore,
-                            customTabId = args.customTabSessionId,
-                            menuStore = store,
-                            iconSize = 24.dpToPx(requireContext().resources.displayMetrics),
-                            onDismiss = { this@MenuDialogFragment.dismiss() },
-                        ),
-                        owner = this@MenuDialogFragment,
-                        view = this,
-                    )
-
-                    ipProtectionMenuBinding.set(
-                        feature = IPProtectionMenuBinding(
-                            ipProtectionStore = components.ipProtection.store,
-                            onIPProtectionStatusUpdate = {
-                                store.dispatch(MenuAction.UpdateIPProtectionMenuState(it))
-                            },
-                        ),
-                        owner = this@MenuDialogFragment,
-                        view = this,
-                    )
 
                     val recommendedAddons by remember {
                         store.stateFlow
@@ -988,6 +873,40 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        menuStore = fragmentStore(initialState = createInitialMenuState()) {
+            MenuStore(
+                initialState = it,
+                middleware = listOf(
+                    createMenuDialogMiddleware(),
+                    createMenuNavigationMiddleware(),
+                    createMenuTelemetryMiddleware(),
+                ),
+            )
+        }.value
+
+        webExtensionsMenuBinding.set(
+            feature = WebExtensionsMenuBinding(
+                browserStore = browserStore,
+                customTabId = args.customTabSessionId,
+                menuStore = menuStore,
+                iconSize = 24.dpToPx(requireContext().resources.displayMetrics),
+                onDismiss = { this@MenuDialogFragment.dismiss() },
+            ),
+            owner = this@MenuDialogFragment,
+            view = view,
+        )
+
+        ipProtectionMenuBinding.set(
+            feature = IPProtectionMenuBinding(
+                ipProtectionStore = requireComponents.ipProtection.store,
+                onIPProtectionStatusUpdate = {
+                    menuStore.dispatch(MenuAction.UpdateIPProtectionMenuState(it))
+                },
+            ),
+            owner = this@MenuDialogFragment,
+            view = view,
+        )
+
         ipProtectionSnackbarBinding.set(
             feature = IPProtectionSnackbarBinding(
                 appStore = requireComponents.appStore,
@@ -999,6 +918,121 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
             ),
             owner = this,
             view = view,
+        )
+    }
+
+    private fun createInitialMenuState(): MenuState {
+        val customTab = args.customTabSessionId?.let {
+            browserStore.state.findCustomTab(it)
+        }
+        val selectedTab = customTab ?: browserStore.state.selectedTab
+
+        return MenuState(
+            browserMenuState = if (selectedTab != null) {
+                BrowserMenuState(selectedTab = selectedTab)
+            } else {
+                null
+            },
+            isDesktopMode = when (args.accesspoint) {
+                MenuAccessPoint.Home -> {
+                    false // this is not supported on Home
+                }
+                MenuAccessPoint.External -> {
+                    selectedTab?.content?.desktopMode ?: false
+                }
+                else -> {
+                    selectedTab?.content?.desktopMode ?: false
+                }
+            },
+            extensionMenuState = ExtensionMenuState(
+                accesspoint = args.accesspoint,
+            ),
+        )
+    }
+
+    private fun createMenuDialogMiddleware(): MenuDialogMiddleware {
+        val components = requireComponents
+        val appStore = components.appStore
+        val settings = components.settings
+        val appLinksUseCases = components.useCases.appLinksUseCases
+
+        return MenuDialogMiddleware(
+            appStore = appStore,
+            addonManager = components.addonManager,
+            settings = settings,
+            summarizeMenuSettings = components.core.summarizeFeatureSettings,
+            summarizationEligibilityChecker = components.core.summarizationEligibilityChecker,
+            bookmarksStorage = components.core.bookmarksStorage,
+            pinnedSiteStorage = components.core.pinnedSiteStorage,
+            appLinksUseCases = appLinksUseCases,
+            addBookmarkUseCase = components.useCases.bookmarksUseCases.addBookmark,
+            addPinnedSiteUseCase = components.useCases.topSitesUseCase.addPinnedSites,
+            removePinnedSitesUseCase = components.useCases.topSitesUseCase.removeTopSites,
+            requestDesktopSiteUseCase = components.useCases.sessionUseCases.requestDesktopSite,
+            migratePrivateTabUseCase = components.useCases.tabsUseCases.migratePrivateTabUseCase,
+            materialAlertDialogBuilder = MaterialAlertDialogBuilder(requireContext()),
+            topSitesMaxLimit = components.settings.topSitesMaxLimit,
+            onDeleteAndQuit = {
+                activity?.let { activity ->
+                    activity.lifecycleScope.launch {
+                        deleteBrowsingDataController.clearBrowsingDataOnQuit {
+                            activity.finishAndRemoveTask()
+                        }
+                    }
+                }
+            },
+            onDismiss = {
+                withContext(Dispatchers.Main) {
+                    this@MenuDialogFragment.dismiss()
+                }
+            },
+            onSendPendingIntentWithUrl = ::sendPendingIntentWithUrl,
+            mainDispatcher = Dispatchers.Main,
+        )
+    }
+
+    private fun createMenuNavigationMiddleware(): MenuNavigationMiddleware {
+        val components = requireComponents
+        val webAppUseCases = components.useCases.webAppUseCases
+        val settings = components.settings
+
+        val webCompatReporterMoreInfoSender =
+            DefaultWebCompatReporterMoreInfoSender(
+                webCompatReporterRetrievalService =
+                    DefaultWebCompatReporterRetrievalService(
+                        browserStore = browserStore,
+                        webCompatInfoDeserializer = WebCompatInfoDeserializer(
+                            json = Json {
+                                ignoreUnknownKeys = true
+                                useAlternativeNames = false
+                            },
+                        ),
+                    ),
+            )
+
+        val coroutineScope = viewLifecycleOwner.lifecycleScope
+
+        return MenuNavigationMiddleware(
+            browserStore = browserStore,
+            navController = findNavController(),
+            openToBrowser = ::openToBrowser,
+            sessionUseCases = components.useCases.sessionUseCases,
+            webAppUseCases = webAppUseCases,
+            shareUseCases = components.useCases.shareUseCases,
+            settings = settings,
+            onDismiss = {
+                withContext(Dispatchers.Main) {
+                    this@MenuDialogFragment.dismiss()
+                }
+            },
+            scope = coroutineScope,
+            webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,
+        )
+    }
+
+    private fun createMenuTelemetryMiddleware(): MenuTelemetryMiddleware {
+        return MenuTelemetryMiddleware(
+            accessPoint = args.accesspoint,
         )
     }
 
