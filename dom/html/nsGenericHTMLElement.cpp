@@ -51,6 +51,7 @@
 #include "mozilla/dom/HTMLHeadingElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLLabelElement.h"
+#include "mozilla/dom/HTMLSelectElement.h"
 #include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/dom/InputEvent.h"
 #include "mozilla/dom/Link.h"
@@ -3851,6 +3852,9 @@ void nsGenericHTMLElement::ShowPopoverInternal(Element* aSource,
     // 26. Set element's implicit anchor element to source.
     if (aSource && aSource->IsHTMLElement()) {
       aSource->SetAssociatedPopover(*this);
+      if (auto* select = HTMLSelectElement::FromNode(aSource)) {
+        select->OnPopoverStateChanged(true);
+      }
     }
   }
 

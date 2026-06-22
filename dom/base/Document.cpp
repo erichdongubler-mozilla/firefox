@@ -192,6 +192,7 @@
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/HTMLMetaElement.h"
 #include "mozilla/dom/HTMLObjectElement.h"
+#include "mozilla/dom/HTMLSelectElement.h"
 #include "mozilla/dom/HTMLSharedElement.h"
 #include "mozilla/dom/HTMLTextAreaElement.h"
 #include "mozilla/dom/HTMLVideoElement.h"
@@ -16534,6 +16535,7 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
 
   if (PopoverData* popoverData = popoverHTMLEl->GetPopoverData()) {
     // 14. Set element's popover trigger to null.
+    RefPtr<Element> invoker = popoverData->GetInvoker();
     popoverData->SetInvoker(nullptr);
 
     // 15. Set element's opened in popover mode to null.
@@ -16542,6 +16544,10 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
     // 16. Set element's popover visibility state to hidden.
     popoverHTMLEl->PopoverPseudoStateUpdate(false, true);
     popoverData->SetPopoverVisibilityState(PopoverVisibilityState::Hidden);
+
+    if (auto* select = HTMLSelectElement::FromNodeOrNull(invoker)) {
+      select->OnPopoverStateChanged(false);
+    }
   }
 
   // 17. If element is document's hint stack parent, or document's showing hint

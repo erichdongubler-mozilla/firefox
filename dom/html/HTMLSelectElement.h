@@ -280,6 +280,10 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
     SetStates(ElementState::OPEN, aVal);
   }
 
+  void OnPopoverStateChanged(bool aOpen) {
+    SetStates(ElementState::OPEN, aOpen);
+  }
+
   void GetPreviewValue(nsAString& aValue) { aValue = mPreviewValue; }
   void SetPreviewValue(const nsAString& aValue);
 
