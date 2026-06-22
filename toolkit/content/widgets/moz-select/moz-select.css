@@ -30,10 +30,6 @@
   -moz-context-properties: fill;
   fill: var(--select-icon-fill);
 
-  :host([invalid]) & {
-    border-color: var(--border-color-error);
-  }
-
   &:hover,
   &:has(select:open),
   &:has(+ [open]) {

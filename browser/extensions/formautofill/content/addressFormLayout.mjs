@@ -14,28 +14,34 @@ const fieldTemplates = {
     return {
       id: item.fieldId,
       name: item.fieldId,
+      required: item.required,
       value: item.value ?? "",
+      // Conditionally add pattern attribute since pattern=""/false/undefined
+      // results in weird behaviour.
+      ...(item.pattern && { pattern: item.pattern }),
     };
   },
-  "moz-input-text": function (item) {
+  input(item) {
     return {
-      tag: "moz-input-text",
+      tag: "input",
+      type: item.type ?? "text",
       ...this.commonAttributes(item),
     };
   },
-  "moz-textarea": function (item) {
+  textarea(item) {
     return {
-      tag: "moz-textarea",
+      tag: "textarea",
       ...this.commonAttributes(item),
     };
   },
-  "moz-select": function (item) {
+  select(item) {
     return {
-      tag: "moz-select",
+      tag: "select",
       children: item.options.map(({ value, text }) => ({
-        tag: "moz-option",
+        tag: "option",
+        selected: value === item.value,
         value,
-        label: text,
+        text,
       })),
       ...this.commonAttributes(item),
     };
@@ -74,37 +80,36 @@ const createElement = (tag, { children = [], ...attributes }) => {
  *
  * @param {Array} fields - Array of objects as returned from `FormAutofillUtils.getFormLayout`.
  * @param {object} l10nStrings - Key-value pairs for field label localization.
- * @yields {HTMLElement} - A div container with a moz-* field element inside.
+ * @yields {HTMLElement} - A localized label element with constructed from a field.
  */
 function* convertLayoutToUI(fields, l10nStrings) {
   for (const item of fields) {
     // eslint-disable-next-line no-nested-ternary
     const fieldTag = item.options
-      ? "moz-select"
+      ? "select"
       : item.multiline
-        ? "moz-textarea"
-        : "moz-input-text";
+        ? "textarea"
+        : "input";
 
-    const container = createElement("div", {
-      id: `${item.fieldId}-container`,
-      class: `container ${item.newLine ? "new-line" : ""}`,
-    });
+    const fieldUI = {
+      label: {
+        id: `${item.fieldId}-container`,
+        class: `container ${item.newLine ? "new-line" : ""}`,
+      },
+      field: fieldTemplates[fieldTag](item),
+      span: {
+        class: "label-text",
+        textContent: l10nStrings[item.l10nId] ?? "",
+      },
+    };
 
-    const { tag, ...rest } = fieldTemplates[fieldTag](item);
+    const label = createElement("label", fieldUI.label);
+    const { tag, ...rest } = fieldUI.field;
+    const span = createElement("span", fieldUI.span);
+    label.appendChild(span);
     const field = createElement(tag, rest);
-    field.setAttribute("label", l10nStrings[item.l10nId] ?? "");
-    if (item.type) {
-      field.dataset.type = item.type;
-    }
-    if (item.required) {
-      field.dataset.required = "true";
-    }
-    if (item.pattern) {
-      field.dataset.pattern = item.pattern;
-    }
-
-    container.appendChild(field);
-    yield container;
+    label.appendChild(field);
+    yield label;
   }
 }
 
@@ -137,40 +142,6 @@ export const canSubmitForm = () => {
 };
 
 /**
- * Validates the address form, marking invalid fields with the [invalid] attribute.
- *
- * @returns {boolean} True if all fields are valid.
- */
-export const validateAddressForm = () => {
-  const form = document.querySelector("form");
-  let firstInvalidField = null;
-  for (const field of form.elements) {
-    if (!field.inputEl) {
-      continue;
-    }
-    if (field.dataset.type) {
-      field.inputEl.type = field.dataset.type;
-    }
-    if (field.dataset.required === "true") {
-      field.inputEl.required = true;
-    }
-    if (field.dataset.pattern) {
-      field.inputEl.pattern = field.dataset.pattern;
-    }
-    const valid = field.inputEl.checkValidity();
-    field.toggleAttribute("invalid", !valid);
-    if (!valid && !firstInvalidField) {
-      firstInvalidField = field;
-    }
-  }
-  if (firstInvalidField) {
-    firstInvalidField.inputEl.reportValidity();
-    return false;
-  }
-  return true;
-};
-
-/**
  * Generates a form layout based on record data and localization strings.
  *
  * @param {HTMLFormElement} formElement - Target form element.
@@ -185,7 +156,7 @@ export const createFormLayoutFromRecord = (
   // Always clear select values because they are not persisted between countries.
   // For example from US with state NY, we don't want the address-level1 to be NY
   // when changing to another country that doesn't have state options
-  const selects = formElement.querySelectorAll("moz-select:not(#country)");
+  const selects = formElement.querySelectorAll("select:not(#country)");
   for (const select of selects) {
     select.value = "";
   }
@@ -199,20 +170,6 @@ export const createFormLayoutFromRecord = (
 
   formElement.innerHTML = "";
   const fields = lazy.FormAutofillUtils.getFormLayout(record);
-
-  // Country field should appear beside the address-level1 field. If address-level1
-  // is absent fall back to placing country after address-level2.
-  const countryIdx = fields.findIndex(f => f.fieldId === "country");
-  if (countryIdx > -1) {
-    const anchorIdx = Math.max(
-      fields.findIndex(f => f.fieldId === "address-level1"),
-      fields.findIndex(f => f.fieldId === "address-level2")
-    );
-    if (anchorIdx > -1 && countryIdx > anchorIdx + 1) {
-      const [country] = fields.splice(countryIdx, 1);
-      fields.splice(anchorIdx + 1, 0, country);
-    }
-  }
 
   const layoutGenerator = convertLayoutToUI(fields, l10nStrings);
 

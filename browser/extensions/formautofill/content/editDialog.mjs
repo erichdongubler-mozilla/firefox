@@ -7,7 +7,6 @@
 import {
   getCurrentFormData,
   canSubmitForm,
-  validateAddressForm,
 } from "chrome://formautofill/content/addressFormLayout.mjs";
 
 const lazy = {};
@@ -129,9 +128,13 @@ class AutofillEditDialog {
   }
 
   updateSaveButtonState() {
-    this._elements.save.disabled = !Object.keys(
-      this._elements.fieldContainer.buildFormObject()
-    ).length;
+    // Toggle disabled attribute on the save button based on
+    // whether the form is filled or empty.
+    if (!Object.keys(this._elements.fieldContainer.buildFormObject()).length) {
+      this._elements.save.setAttribute("disabled", true);
+    } else {
+      this._elements.save.removeAttribute("disabled");
+    }
   }
 
   /**
@@ -164,44 +167,6 @@ export class EditAddressDialog extends AutofillEditDialog {
     }
   }
 
-  handleEvent(event) {
-    if (event.type === "focusout") {
-      this.handleFocusOut(event);
-    } else {
-      super.handleEvent(event);
-    }
-  }
-
-  _validateField(field) {
-    if (!field.inputEl) {
-      return;
-    }
-    if (field.dataset.type) {
-      field.inputEl.type = field.dataset.type;
-    }
-    if (field.dataset.required === "true") {
-      field.inputEl.required = true;
-    }
-    if (field.dataset.pattern) {
-      field.inputEl.pattern = field.dataset.pattern;
-    }
-    field.toggleAttribute("invalid", !field.inputEl.checkValidity());
-  }
-
-  handleInput(event) {
-    this._validateField(event.target);
-    super.handleInput(event);
-  }
-
-  handleFocusOut(event) {
-    this._validateField(event.target);
-  }
-
-  attachEventListeners() {
-    super.attachEventListeners();
-    document.addEventListener("focusout", this);
-  }
-
   localizeDocument() {
     if (this._record?.guid) {
       document.l10n.setAttributes(
@@ -212,13 +177,16 @@ export class EditAddressDialog extends AutofillEditDialog {
   }
 
   updateSaveButtonState() {
-    this._elements.save.disabled = !canSubmitForm();
+    // Toggle disabled attribute on the save button based on
+    // whether the form is filled or empty.
+    if (!canSubmitForm()) {
+      this._elements.save.setAttribute("disabled", true);
+    } else {
+      this._elements.save.removeAttribute("disabled");
+    }
   }
 
   async handleSubmit() {
-    if (!validateAddressForm()) {
-      return;
-    }
     await this.saveRecord(
       getCurrentFormData(),
       this._record ? this._record.guid : null
@@ -247,8 +215,6 @@ export class EditCreditCardDialog extends AutofillEditDialog {
   _onCCNumberFieldBlur() {
     let elem = this._elements.fieldContainer._elements.ccNumber;
     this._elements.fieldContainer.updateCustomValidity(elem);
-    // Show the error border immediately after blur if the number is invalid.
-    elem.toggleAttribute("invalid", !elem.inputEl?.checkValidity());
   }
 
   localizeDocument() {
@@ -262,7 +228,7 @@ export class EditCreditCardDialog extends AutofillEditDialog {
 
   async handleSubmit() {
     let creditCard = this._elements.fieldContainer.buildFormObject();
-    if (!this._elements.fieldContainer.validateForm()) {
+    if (!this._elements.fieldContainer._elements.form.reportValidity()) {
       return;
     }
 

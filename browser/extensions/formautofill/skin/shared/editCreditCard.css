@@ -4,22 +4,50 @@
 
 .editCreditCardForm {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-small);
+  grid-template-areas:
+    "cc-number          cc-exp-month       cc-exp-year"
+    "cc-name            cc-csc             ."
+    "billingAddressGUID billingAddressGUID billingAddressGUID";
+  grid-template-columns: 4fr 2fr 2fr;
+  grid-row-gap: var(--grid-column-row-gap);
+  grid-column-gap: var(--grid-column-row-gap);
+}
 
-  .container {
-    display: flex;
-    flex-direction: column;
-    grid-column: 1 / -1;
-  }
+.editCreditCardForm label {
+  /* Remove the margin on these labels since they are styled on top of
+     the input/select element. */
+  margin-inline-start: 0;
+  margin-inline-end: 0;
+}
 
-  #cc-exp-month-container,
-  #cc-exp-year-container {
-    grid-column: auto;
-  }
+.editCreditCardForm .container {
+  display: flex;
+}
 
-  moz-input-text,
-  moz-select {
-    width: 100%;
-  }
+#cc-number-container {
+  grid-area: cc-number;
+}
+
+#cc-exp-month-container {
+  grid-area: cc-exp-month;
+}
+
+#cc-exp-year-container {
+  grid-area: cc-exp-year;
+}
+
+#cc-name-container {
+  grid-area: cc-name;
+}
+
+#cc-csc-container {
+  grid-area: cc-csc;
+}
+
+#billingAddressGUID-container {
+  grid-area: billingAddressGUID;
+}
+
+#billingAddressGUID {
+  grid-area: dropdown;
 }
