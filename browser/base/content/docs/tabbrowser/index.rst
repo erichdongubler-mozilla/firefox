@@ -1,7 +1,7 @@
 .. _tabbrowser:
 
 ===================
-Tabbed Browser
+tabbrowser
 ===================
 
 In the previous versions of Firefox, ``<xul:tabbrowser>`` was responsible for displaying and managing the contents of a window's tabs. As the browser evolved, the responsibilities of ``<xul:tabbrowser>`` grew. Each Firefox window had one ``<xul:tabbrowser>`` that could be accessed using the ``gBrowser`` variable.
