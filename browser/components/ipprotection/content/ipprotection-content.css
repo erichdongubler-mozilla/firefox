@@ -177,6 +177,7 @@ ipprotection-message-bar.vpn-top-content {
 
 #enrolling-container {
   background-color: var(--skeleton-container-bg-color);
+  border: var(--border-width) solid var(--border-color-deemphasized);
   border-radius: var(--border-radius-medium);
   display: flex;
   flex-direction: column;
@@ -184,8 +185,6 @@ ipprotection-message-bar.vpn-top-content {
   padding: var(--space-medium);
 
   @media -moz-pref("browser.nova.enabled") {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/no-base-design-tokens, stylelint-plugin-mozilla/use-design-tokens */
-    border: var(--border-width) solid light-dark(var(--color-black-alpha-10), var(--color-white-alpha-20));
     border-radius: var(--border-radius-xlarge);
   }
 }

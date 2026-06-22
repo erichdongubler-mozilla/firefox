@@ -73,7 +73,7 @@
     /* Use one neutral panel background for every state with Nova enabled. */
     /* stylelint-disable-next-line stylelint-plugin-mozilla/no-base-design-tokens, stylelint-plugin-mozilla/use-design-tokens */
     background-color: light-dark(var(--color-gray-0), var(--color-black-alpha-50));
-    border: var(--border-width) solid var(--border-color);
+    border: var(--border-width) solid var(--border-color-deemphasized);
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     border-radius: var(--border-radius-xlarge);
   }
