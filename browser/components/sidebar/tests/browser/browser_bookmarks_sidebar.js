@@ -1834,3 +1834,72 @@ add_task(async function test_bookmarks_smart_bookmark_context_menu() {
   await PlacesUtils.bookmarks.remove(recentBookmark.guid);
   SidebarController.hide();
 });
+
+add_task(async function test_long_bookmark_title_is_truncated() {
+  // Regression coverage for bug 2049187: the bookmarks sidebar grid was
+  // creating implicit columns sized to content, which let long titles
+  // visually escape the sidebar instead of being clipped with an ellipsis.
+  // After the fix, the grid columns are minmax(0, 1fr), so the inner title
+  // span is bounded by its grid cell and `text-overflow: ellipsis` actually
+  // takes effect — observable as scrollWidth > clientWidth on the title span.
+  const longTitle =
+    "A bookmark title that is intentionally very long so the grid cell must " +
+    "clip it instead of expanding around it " +
+    "x".repeat(120);
+  const bookmark = await addBookmark({
+    title: longTitle,
+    url: "https://example.com/long-title-bookmark",
+  });
+
+  const { component } = await showBookmarksSidebar();
+  const tabList = component.bookmarkList;
+  await BrowserTestUtils.waitForMutationCondition(
+    tabList.shadowRoot,
+    { childList: true, subtree: true },
+    () => tabList.folderEls[0]
+  );
+
+  // Expand the top-level Bookmarks Toolbar folder so its rows render.
+  const topDetails = tabList.folderEls[0];
+  if (!topDetails.open) {
+    topDetails.querySelector("summary").click();
+    await BrowserTestUtils.waitForMutationCondition(
+      topDetails,
+      { attributes: true },
+      () => topDetails.open
+    );
+  }
+  const nestedList = topDetails.querySelector("sidebar-bookmark-list");
+  await BrowserTestUtils.waitForMutationCondition(
+    nestedList.shadowRoot,
+    { childList: true, subtree: true },
+    () => [...nestedList.rowEls].some(r => r.title === longTitle)
+  );
+  await nestedList.updateComplete;
+
+  const row = [...nestedList.rowEls].find(r => r.title === longTitle);
+  const titleEl = row.shadowRoot.getElementById("fxview-tab-row-title");
+  ok(titleEl, "Bookmark row exposes its inner title span.");
+
+  // The grid cell holding the title must be bounded so text-overflow can
+  // clip the long string. If the fix regresses, the cell expands to fit the
+  // content and scrollWidth equals clientWidth.
+  Assert.greater(
+    titleEl.scrollWidth,
+    titleEl.clientWidth,
+    "Long bookmark title is being clipped by its grid cell (scrollWidth > clientWidth)."
+  );
+
+  // The row itself must also not exceed the sidebar bookmark list host width:
+  // a runaway grid cell would let the row push past the sidebar viewport.
+  const rowRect = row.getBoundingClientRect();
+  const hostRect = nestedList.getBoundingClientRect();
+  Assert.lessOrEqual(
+    rowRect.right,
+    hostRect.right + 0.5,
+    "Bookmark row does not overflow the sidebar list horizontally."
+  );
+
+  await PlacesUtils.bookmarks.remove(bookmark);
+  SidebarTestUtils.closePanel(window);
+});

@@ -160,6 +160,7 @@ export class SidebarBookmarkList extends SidebarTabList {
           draggable="true"
           data-guid=${tabItem.guid}
           @auxclick=${e => this.#onFolderAuxClick(e, tabItem.guid)}
+          @mouseenter=${e => this.#updateFolderTooltip(e, tabItem.title)}
           .guid=${tabItem.guid}
         >
           ${tabItem.title}
@@ -177,6 +178,7 @@ export class SidebarBookmarkList extends SidebarTabList {
             part="summary"
             data-guid=${tabItem.guid}
             @auxclick=${e => this.#onFolderAuxClick(e, tabItem.guid)}
+            @mouseenter=${e => this.#updateFolderTooltip(e, tabItem.title)}
           >
             ${tabItem.title}
           </summary>
@@ -288,6 +290,15 @@ export class SidebarBookmarkList extends SidebarTabList {
         detail: { guid, isFolder: true },
       })
     );
+  }
+
+  #updateFolderTooltip(e, title) {
+    let el = e.currentTarget;
+    if (el.scrollWidth > el.clientWidth) {
+      el.title = title;
+    } else {
+      el.removeAttribute("title");
+    }
   }
 
   #findBookmarkElement(composedPath) {
