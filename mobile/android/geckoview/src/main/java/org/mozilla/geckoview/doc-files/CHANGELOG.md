@@ -16,17 +16,21 @@ exclude: true
 ## v154
 - Added [`Autofill.Node.getDatalist`][154.1] to expose predefined values by [`datalist`][154.2] elements for input fields.
 - Added experimental [`ContentPermission.notifyShown`][154.3] so embedders can signal that a permission prompt UI has been displayed to the user, enabling per-prompt telemetry on the Gecko side (e.g. for local network access). ([bug 2009145]({{bugzilla}}2009145))
+- Added [`IPProtectionController.refreshUsage`][154.4] to request a refresh of proxy usage information, delivered asynchronously via [`Delegate#onUsageChanged`][154.5].
+  ([bug 2042799]({{bugzilla}}2042799))
 
 [154.1]: {{javadoc_uri}}/Autofill.Node.html#getDatalist()
 [154.2]: https://developer.mozilla.org/en/docs/Web/HTML/Reference/Elements/datalist
 [154.3]: {{javadoc_uri}}/GeckoSession.PermissionDelegate.ContentPermission.html#notifyShown()
+[154.4]: {{javadoc_uri}}/IPProtectionController.html#refreshUsage()
+[154.5]: {{javadoc_uri}}/IPProtectionController.Delegate.html#onUsageChanged(org.mozilla.geckoview.IPProtectionController.UsageInfo)
 
 ## v153
 - Added [`SourceType`][153.1] annotation to [`ScrollPositionUpdate.source`][153.2]
   ([bug 1994860]({{bugzilla}}1994860))
 - Updated the [`PURGED_BOUNCETRACKER`][129.3] value and added new [`REPLACED_FINGERPRINTING_CONTENT`] ContentBlockingController.Event. ([bug 2039485]({{bugzilla}}2039485))
 - Added  [`clearTrackingDb`][153.4] to ContentBlockingController to support clearing all data stored about blocked trackers in previous browsing sessions. ([bug 2042068]({{bugzilla}}2042068))
-- ⚠️ Removed deprecated [`GeckoRuntimeSettings.getDisableShip`] and [`GeckoRuntimeSettings.Builder.disableShip`].
++- ⚠️ Removed deprecated [`GeckoRuntimeSettings.getDisableShip`] and [`GeckoRuntimeSettings.Builder.disableShip`].
 
 [153.1]: {{javadoc_uri}}/GeckoSession.ScrollPositionUpdate.SourceType.html
 [153.2]: {{javadoc_uri}}/GeckoSession.ScrollPositionUpdate.html#source
@@ -1995,4 +1999,4 @@ to allow adding gecko profiler markers.
 [65.24]: {{javadoc_uri}}/CrashReporter.html#sendCrashReport(android.content.Context,android.os.Bundle,java.lang.String)
 [65.25]: {{javadoc_uri}}/GeckoResult.html
 
-[api-version]: 58ed7a36bb43e5917b515d7f8ff458a2e26a8843
+[api-version]: ea825437e2bdbfcc8247a7385fb1aa8197f64455

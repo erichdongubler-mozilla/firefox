@@ -418,6 +418,21 @@ public class IPProtectionController {
         .map(null, e -> new IPProxyException(IPProxyException.ERROR_UNKNOWN));
   }
 
+  /**
+   * Requests a refresh of the proxy usage information. The updated usage will be delivered
+   * asynchronously via {@link Delegate#onUsageChanged(UsageInfo)}.
+   *
+   * @return A {@link GeckoResult} that resolves when the refresh request has been processed, or
+   *     rejects with an {@link IPProxyException} if an unexpected error occurs.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<Void> refreshUsage() {
+    ThreadUtils.assertOnHandlerThread();
+    return EventDispatcher.getInstance()
+        .queryVoid("GeckoView:IPProtection:RefreshUsage")
+        .map(null, e -> new IPProxyException(IPProxyException.ERROR_UNKNOWN));
+  }
+
   /** Exception type for IP proxy errors. */
   public static class IPProxyException extends RuntimeException {
 

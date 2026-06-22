@@ -2294,6 +2294,7 @@ package org.mozilla.geckoview {
     method @HandlerThread @NonNull public GeckoResult<Integer> getServiceState();
     method @HandlerThread @NonNull public GeckoResult<Void> init();
     method @NonNull @UiThread public GeckoResult<Void> notifySignInStateChanged(boolean);
+    method @HandlerThread @NonNull public GeckoResult<Void> refreshUsage();
     method @UiThread public void setAuthProvider(@Nullable IPProtectionController.AuthProvider);
     method @UiThread public void setDelegate(@Nullable IPProtectionController.Delegate);
     method @HandlerThread @NonNull public GeckoResult<Void> uninit();

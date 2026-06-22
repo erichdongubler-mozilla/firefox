@@ -382,4 +382,30 @@ class IPProtectionControllerTest : BaseSessionTest() {
                 """"code":"TC","servers":[{"hostname":"test1.example.com","port":443,""" +
                 """"quarantined":false}]}]}]"""
     }
+
+    @Test
+    fun refreshUsageInvokesDelegate() {
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf("toolkit.ipProtection.android.authProvider" to "test"),
+        )
+        sessionRule.setupIPPAuthProvider(JSONObject().put("signedIn", false))
+        sessionRule.waitForResult(ipProtectionController.init())
+        sessionRule.simulateIPPSignIn(true)
+
+        val received = GeckoResult<IPProtectionController.UsageInfo>()
+        ipProtectionController.setDelegate(
+            object : IPProtectionController.Delegate {
+                override fun onUsageChanged(info: IPProtectionController.UsageInfo) {
+                    received.complete(info)
+                }
+            },
+        )
+
+        sessionRule.waitForResult(ipProtectionController.refreshUsage())
+
+        val info = sessionRule.waitForResult(received)
+        // Seeded by setupIPPAuthProvider: ProxyUsage(max, remaining) = (5368709120, 4294967296).
+        assertThat(info.max, equalTo(5368709120L))
+        assertThat(info.remaining, equalTo(4294967296L))
+    }
 }
