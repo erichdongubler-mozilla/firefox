@@ -87,6 +87,20 @@ class BookmarksTelemetryMiddlewareTest {
             assertEquals(1, events.size, "Expected 1 import file started event, but got ${events.size}")
         }
 
+    @Test
+    fun `GIVEN import file was cancelled, an import file cancelled event is recorded`() =
+        runTest {
+            val store = middleware.makeStore()
+
+            store.dispatch(ImportAction.ImportCancelled)
+
+            testScheduler.advanceUntilIdle()
+
+            val events = BookmarksManagement.importCancelled.testGetValue() ?: emptyList()
+
+            assertEquals(1, events.size, "Expected 1 import cancelled event, but got ${events.size}")
+        }
+
     private fun BookmarksTelemetryMiddleware.makeStore(): BookmarksStore {
         return BookmarksStore(
             initialState = BookmarksState.default,

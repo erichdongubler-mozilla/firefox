@@ -167,6 +167,7 @@ internal data object RootOverflowMenuClicked : BookmarksAction
 internal data object RootOverflowMenuDismissed : BookmarksAction
 internal sealed class ImportAction : BookmarksAction {
     internal data object ImportStarted : ImportAction()
+    internal data object ImportCancelled : ImportAction()
     internal data class ImportFailed(val error: FenixBookmarkImporterError) : ImportAction()
     internal data class ImportSucceeded(val count: Int) : ImportAction()
     internal sealed class ImportFileClicked : ImportAction() {

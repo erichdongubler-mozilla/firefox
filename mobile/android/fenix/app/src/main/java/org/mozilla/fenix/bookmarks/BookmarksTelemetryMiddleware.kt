@@ -281,6 +281,7 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
                 errorCode = action.error.code.toString(),
             ),
         )
+        is ImportAction.ImportCancelled -> BookmarksManagement.importCancelled.record(NoExtras())
         is ImportAction.ImportFileClicked.FromMenu ->
             BookmarksManagement.importFromFileMenuClick.record(NoExtras())
         is ImportAction.ImportSucceeded -> {

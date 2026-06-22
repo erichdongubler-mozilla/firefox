@@ -101,7 +101,7 @@ internal class BookmarksMiddleware(
                         .onEach { result ->
                             when (result) {
                                 FenixImporterEvent.Started -> store.dispatch(ImportAction.ImportStarted)
-                                FenixImporterEvent.Canceled -> Unit
+                                FenixImporterEvent.Canceled -> store.dispatch(ImportAction.ImportCancelled)
                                 is FenixImporterEvent.Failure ->
                                     store.dispatch(ImportAction.ImportFailed(error = result.error))
                                 is FenixImporterEvent.Success -> store.dispatch(
@@ -387,6 +387,7 @@ internal class BookmarksMiddleware(
                 store.dispatch(SnackbarAction.ImportFailed)
             }
             ImportAction.ImportStarted,
+            ImportAction.ImportCancelled,
             SearchClicked,
             RootOverflowMenuClicked,
             RootOverflowMenuDismissed,
