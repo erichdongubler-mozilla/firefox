@@ -9,6 +9,7 @@ import androidx.test.filters.MediumTest
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.nullValue
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -35,6 +36,10 @@ class IPProtectionControllerTest : BaseSessionTest() {
                 "browser.ipProtection.cacheDisabled" to true,
                 "browser.ipProtection.guardian.endpoint" to "https://vpn.mozilla.com",
                 "browser.ipProtection.log" to true,
+                // Use a pref-backed server list so activation does not depend on
+                // Remote Settings. Selected once when the serverlist module first
+                // loads, so it must be set before any test triggers init().
+                "browser.ipProtection.override.serverlist" to SERVER_LIST_JSON,
             ),
         )
     }
@@ -313,5 +318,68 @@ class IPProtectionControllerTest : BaseSessionTest() {
         assertThrows(IllegalStateException::class.java) {
             sessionRule.waitForResult(ipProtectionController.notifySignInStateChanged(true))
         }
+    }
+
+    @Test
+    fun activateReachesActiveWithTestAuthProvider() {
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf("toolkit.ipProtection.android.authProvider" to "test"),
+        )
+        // Seed the faked Guardian backend, starting signed out.
+        sessionRule.setupIPPAuthProvider(JSONObject().put("signedIn", false))
+
+        sessionRule.waitForResult(ipProtectionController.init())
+        assertThat(
+            "signed out after init",
+            sessionRule.waitForResult(ipProtectionController.getServiceState()),
+            equalTo(IPProtectionController.SERVICE_STATE_UNAUTHENTICATED),
+        )
+
+        sessionRule.simulateIPPSignIn(true)
+        assertThat(
+            "ready once signed in",
+            sessionRule.waitForResult(ipProtectionController.getServiceState()),
+            equalTo(IPProtectionController.SERVICE_STATE_READY),
+        )
+
+        sessionRule.waitForResult(ipProtectionController.activate())
+        assertThat(
+            "proxy is active after activate",
+            sessionRule.waitForResult(ipProtectionController.getProxyState()).state,
+            equalTo(IPProtectionController.ProxyState.ACTIVE),
+        )
+    }
+
+    @Test
+    fun activateRejectsWithPassUnavailableWhenProxyPassFails() {
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf("toolkit.ipProtection.android.authProvider" to "test"),
+        )
+        sessionRule.setupIPPAuthProvider(JSONObject().put("signedIn", false))
+
+        sessionRule.waitForResult(ipProtectionController.init())
+        sessionRule.simulateIPPSignIn(true)
+        assertThat(
+            "ready once signed in",
+            sessionRule.waitForResult(ipProtectionController.getServiceState()),
+            equalTo(IPProtectionController.SERVICE_STATE_READY),
+        )
+
+        sessionRule.setIPPProxyPassError("pass-unavailable")
+
+        val thrown = assertThrows(IPProtectionController.IPProxyException::class.java) {
+            sessionRule.waitForResult(ipProtectionController.activate())
+        }
+        assertThat(
+            thrown.code,
+            equalTo(IPProtectionController.IPProxyException.ERROR_PASS_UNAVAILABLE),
+        )
+    }
+
+    companion object {
+        private const val SERVER_LIST_JSON =
+            """[{"name":"United States","code":"US","cities":[{"name":"Test City",""" +
+                """"code":"TC","servers":[{"hostname":"test1.example.com","port":443,""" +
+                """"quarantined":false}]}]}]"""
     }
 }

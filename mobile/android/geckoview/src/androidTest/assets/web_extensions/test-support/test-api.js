@@ -323,6 +323,82 @@ this.test = class extends ExtensionAPI {
           ].getService(Ci.nsIWebAuthnService);
           webauthnService.removeVirtualAuthenticator(authenticatorId);
         },
+
+        /*
+         * Seed the IP protection test auth provider (selected by setting the
+         * "toolkit.ipProtection.android.authProvider" pref to "test") with a
+         * faked Guardian backend, mirroring the desktop xpcshell setupStubs.
+         * `options.entitlement` overrides the default test entitlement fields.
+         */
+        async setupIPPAuthProvider(options = {}) {
+          const { Entitlement, ProxyPass, ProxyUsage } =
+            ChromeUtils.importESModule(
+              "moz-src:///toolkit/components/ipprotection/GuardianTypes.sys.mjs"
+            );
+          const { IPPDummyAuthProvider } = ChromeUtils.importESModule(
+            "moz-src:///toolkit/components/ipprotection/tests/IPPDummyAuthProvider.sys.mjs"
+          );
+          const signedIn = options.signedIn ?? true;
+          const entitlement = new Entitlement({
+            autostart: false,
+            created_at: "2023-01-01T12:00:00.000Z",
+            limited_bandwidth: false,
+            location_controls: false,
+            subscribed: false,
+            uid: 42,
+            website_inclusion: false,
+            maxBytes: "0",
+            ...(options.entitlement ?? {}),
+          });
+          IPPDummyAuthProvider.simulateSignIn(signedIn);
+          IPPDummyAuthProvider.setEntitlement(entitlement, { silent: true });
+          IPPDummyAuthProvider.setGetEntitlementResponse({ entitlement });
+          IPPDummyAuthProvider.setEnrollResponse({
+            isEnrolledAndEntitled: true,
+            entitlement,
+          });
+          IPPDummyAuthProvider.setProxyPassError(null);
+          // The JWT proxy-pass token is minted in background.js, where btoa is
+          // available (the parent sandbox only exposes ChromeUtils).
+          if (options.proxyPassToken) {
+            const usage = new ProxyUsage(
+              "5368709120",
+              "4294967296",
+              "3026-02-01T00:00:00.000Z"
+            );
+            IPPDummyAuthProvider.setProxyPass({
+              status: 200,
+              error: undefined,
+              pass: new ProxyPass(options.proxyPassToken),
+              usage,
+            });
+            IPPDummyAuthProvider.setProxyUsage(usage);
+          }
+        },
+
+        /*
+         * Make the test auth provider's fetchProxyPass throw the given error
+         * string (propagated verbatim to the activation error), or pass null to
+         * restore the normal response path.
+         */
+        async setIPPProxyPassError(error) {
+          const { IPPDummyAuthProvider } = ChromeUtils.importESModule(
+            "moz-src:///toolkit/components/ipprotection/tests/IPPDummyAuthProvider.sys.mjs"
+          );
+          IPPDummyAuthProvider.setProxyPassError(error ?? null);
+        },
+
+        /* Toggle the test auth provider's sign-in state and recompute service state. */
+        async simulateIPPSignIn(signedIn) {
+          const { IPProtectionService } = ChromeUtils.importESModule(
+            "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs"
+          );
+          const { IPPDummyAuthProvider } = ChromeUtils.importESModule(
+            "moz-src:///toolkit/components/ipprotection/tests/IPPDummyAuthProvider.sys.mjs"
+          );
+          IPPDummyAuthProvider.simulateSignIn(signedIn);
+          IPProtectionService.updateState();
+        },
       },
     };
   }

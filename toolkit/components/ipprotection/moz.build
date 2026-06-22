@@ -10,6 +10,7 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
         "fxa/IPPAndroidAuthProvider.sys.mjs",
         "fxa/IPPAndroidSignInWatcher.sys.mjs",
         "gpi/IPPGpiAuthProvider.sys.mjs",
+        "tests/IPPDummyAuthProvider.sys.mjs",
     ]
 
 if CONFIG["MOZ_ENTERPRISE"]:

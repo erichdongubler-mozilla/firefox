@@ -10,6 +10,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   EventDispatcher: "resource://gre/modules/Messaging.sys.mjs",
   IPPAndroidAuthProvider:
     "moz-src:///toolkit/components/ipprotection/fxa/IPPAndroidAuthProvider.sys.mjs",
+  IPPAuthProvider:
+    "moz-src:///toolkit/components/ipprotection/IPPAuthProvider.sys.mjs",
+  IPPDummyAuthProvider:
+    "moz-src:///toolkit/components/ipprotection/tests/IPPDummyAuthProvider.sys.mjs",
   IPPGpiAuthProvider:
     "moz-src:///toolkit/components/ipprotection/gpi/IPPGpiAuthProvider.sys.mjs",
   IPPProxyManager:
@@ -90,6 +94,13 @@ export const GeckoViewIPProtection = {
             lazy.IPProtectionActivator.addHelpers(
               lazy.IPPAndroidAuthProvider.helpers
             );
+          } else if (providerName === "test") {
+            lazy.IPProtectionActivator.setAuthProvider(
+              lazy.IPPDummyAuthProvider
+            );
+            lazy.IPProtectionActivator.addHelpers(
+              lazy.IPPDummyAuthProvider.helpers
+            );
           } else {
             lazy.IPProtectionActivator.setAuthProvider(lazy.IPPGpiAuthProvider);
             lazy.IPProtectionActivator.addHelpers(
@@ -118,6 +129,11 @@ export const GeckoViewIPProtection = {
           );
           lazy.IPProtectionActivator.uninit();
           lazy.IPProtectionActivator.removeHelpers();
+
+          lazy.IPProtectionActivator.setAuthProvider(
+            new lazy.IPPAuthProvider()
+          );
+          lazy.IPPProxyManager.updateState();
         }
         aCallback.onSuccess();
         break;

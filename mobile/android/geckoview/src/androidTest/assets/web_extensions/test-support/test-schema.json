@@ -412,6 +412,48 @@
             "name": "authenticatorId"
           }
         ]
+      },
+
+      {
+        "name": "setupIPPAuthProvider",
+        "type": "function",
+        "async": true,
+        "description": "Seeds the IP protection test auth provider with a faked Guardian backend.",
+        "parameters": [
+          {
+            "name": "options",
+            "type": "object",
+            "properties": {},
+            "additionalProperties": { "type": "any" }
+          }
+        ]
+      },
+
+      {
+        "name": "simulateIPPSignIn",
+        "type": "function",
+        "async": true,
+        "description": "Toggles the IP protection test auth provider's sign-in state.",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "signedIn"
+          }
+        ]
+      },
+
+      {
+        "name": "setIPPProxyPassError",
+        "type": "function",
+        "async": true,
+        "description": "Makes the IP protection test auth provider's fetchProxyPass throw the given error.",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "error",
+            "optional": true
+          }
+        ]
       }
     ]
   }
