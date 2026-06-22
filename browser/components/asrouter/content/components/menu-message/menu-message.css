@@ -98,17 +98,13 @@
 }
 
 #container[has-image][layout='column'][image-position='bottom'] #illustration-container {
- order: 1;
-  justify-content: stretch;
-  margin-block-end: calc(-1 * var(--container-padding-block-end, var(--panel-menuitem-padding-block, var(--space-small))));
-  margin-inline: calc(-1 * var(--panel-menuitem-padding-inline, var(--space-small)));
+  order: 1;
+  margin-block-end: calc(-1 * var(--space-medium));
+  margin-inline: calc(-1 * var(--space-medium));
 }
 
 #container[has-image][layout='column'][image-position='bottom'] #illustration-container img {
   width: 100%;
-  display: block;
-  border-end-start-radius: var(--border-radius-small);
-  border-end-end-radius: var(--border-radius-small);
 }
 
 :host([directional-image]:dir(rtl)) #illustration {
@@ -174,19 +170,32 @@
   margin-block-end: var(--illustration-margin-block-end-offset);
 }
 
+#container[layout='split'][image-position='bottom'] {
+  overflow: clip;
+}
+
 #container[has-image][layout='split'][image-position='bottom'] #illustration-container {
+  flex: 0 0 var(--image-width);
   align-self: flex-end;
+}
+
+#container[has-image][layout='split'][image-position='bottom'] #illustration-container img {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-end: var(--illustration-margin-block-end-offset);
+  width: var(--image-width);
 }
 
 #container[layout='split'] #content-column {
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
-  min-width: 0;
 }
 
-#container[layout='split'] #primary {
-  padding-inline-end: var(--button-size-icon);
+#container[layout='split'] #primary,
+#container[layout='column'][image-position='bottom'] #primary {
+  padding-inline-end: var(--space-large);
+  margin-block-end: var(--space-small);
 }
 
 #container[layout='split'] #primary-button {
@@ -195,11 +204,19 @@
 }
 
 @media -moz-pref("browser.nova.enabled") {
-  #secondary {
-    color: var(--text-color-deemphasized);
+  :host {
+    margin: var(--space-medium);
   }
 
-  #container[layout='split'] {
+  #container {
+    border-radius: var(--border-radius-medium);
     border: 1px solid var(--border-color-deemphasized);
+    padding: var(--space-medium);
+    margin-block-start: 0;
+  }
+
+  #secondary,
+  #close-button {
+    color: var(--text-color-deemphasized);
   }
 }

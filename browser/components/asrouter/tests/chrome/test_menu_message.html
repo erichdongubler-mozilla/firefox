@@ -417,22 +417,21 @@
         1,
         "only one illustration img element is rendered."
       );
-      ok(
-        img.classList.contains("illustration-rtl"),
-        "contains 'illustration-rtl' class when an RTL variant is provided."
-      );
       is(img.src, LTR_IMAGE_URL, "LTR source is default");
 
       message.setAttribute("dir", "rtl");
       message.requestUpdate();
       await message.updateComplete;
-      is(img.src, RTL_IMAGE_URL, "RTL source used when the host context is :dir(rtl).");
+      is(img.src, RTL_IMAGE_URL, "RTL img source used when the host context is :dir(rtl).");
+      ok(
+        img.classList.contains("illustration-rtl"),
+        "contains 'illustration-rtl' class when an RTL variant is provided and in an RTL context."
+      );
 
       message.setAttribute("dir", "ltr");
       message.requestUpdate();
       await message.updateComplete;
       is(img.src, LTR_IMAGE_URL, "LTR source updated when the host :dir(ltr).");
-
       message.remove();
     });
 

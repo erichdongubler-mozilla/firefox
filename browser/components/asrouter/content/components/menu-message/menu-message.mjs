@@ -95,10 +95,11 @@ export default class MenuMessage extends MozLitElement {
     const useRtl =
       this.rtlImageURL &&
       this.documentGlobal.getComputedStyle(this).direction === "rtl";
+
     return html`
       <img
         id="illustration"
-        class=${this.rtlImageURL ? "illustration-rtl" : ""}
+        class=${useRtl ? "illustration-rtl" : ""}
         role="presentation"
         src=${useRtl ? this.rtlImageURL : this.imageURL}
       />

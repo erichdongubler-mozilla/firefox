@@ -161,17 +161,18 @@ const BASE_MESSAGES = () => [
       imageURL: "chrome://browser/content/asrouter/assets/kit-checkmark.svg",
       rtlImageURL:
         "chrome://browser/content/asrouter/assets/kit-checkmark-flipped.svg",
-      imageWidth: 92,
-      imageVerticalTopOffset: -16,
+      imageWidth: 91,
+      imageVerticalBottomOffset: -12,
+      imagePosition: "bottom",
       messageType: "default_cta",
       primaryText: {
-        string_id: "set-default-menu-message-row-layout-title",
+        string_id: "set-default-menu-message-split-layout-title",
       },
       secondaryText: {
-        string_id: "set-default-menu-message-row-layout-subtitle",
+        string_id: "set-default-menu-message-split-layout-subtitle",
       },
       primaryActionText: {
-        string_id: "set-default-menu-message-primary-button-variant",
+        string_id: "set-default-menu-message-primary-button-short-variant",
       },
       primaryAction: {
         type: "MULTI_ACTION",
@@ -179,9 +180,6 @@ const BASE_MESSAGES = () => [
           actions: [
             {
               type: "SET_DEFAULT_BROWSER",
-            },
-            {
-              type: "PIN_FIREFOX_TO_TASKBAR",
             },
           ],
         },
@@ -209,17 +207,18 @@ const BASE_MESSAGES = () => [
       imageURL: "chrome://browser/content/asrouter/assets/kit-checkmark.svg",
       rtlImageURL:
         "chrome://browser/content/asrouter/assets/kit-checkmark-flipped.svg",
-      imageWidth: 92,
-      imageVerticalTopOffset: -16,
+      imageWidth: 91,
+      imageVerticalBottomOffset: -12,
+      imagePosition: "bottom",
       messageType: "default_cta",
       primaryText: {
-        string_id: "set-default-menu-message-row-layout-title",
+        string_id: "set-default-menu-message-split-layout-title",
       },
       secondaryText: {
-        string_id: "set-default-menu-message-row-layout-subtitle-variant",
+        string_id: "set-default-menu-message-split-layout-subtitle",
       },
       primaryActionText: {
-        string_id: "set-default-menu-message-primary-button-variant",
+        string_id: "set-default-menu-message-primary-button-short-variant",
       },
       primaryAction: {
         type: "MULTI_ACTION",
