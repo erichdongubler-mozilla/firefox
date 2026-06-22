@@ -10,6 +10,7 @@ import mozilla.components.support.test.robolectric.testContext
 import org.junit.Rule
 import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.BookmarksManagement
+import org.mozilla.fenix.bookmarks.importer.FenixBookmarkImporterError
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,13 +27,18 @@ class BookmarksTelemetryMiddlewareTest {
     fun `GIVEN import failed action is received, an import failed event is recorded`() = runTest {
         val store = middleware.makeStore()
 
-        store.dispatch(ImportAction.ImportFailed)
+        store.dispatch(ImportAction.ImportFailed(error = FenixBookmarkImporterError.PARSE_ERROR_UNKNOWN))
 
         testScheduler.advanceUntilIdle()
 
         val events = BookmarksManagement.importFailed.testGetValue() ?: emptyList()
 
         assertEquals(1, events.size, "Expected 1 import failed event, but got ${events.size}")
+        assertEquals(
+            expected = FenixBookmarkImporterError.PARSE_ERROR_UNKNOWN.code.toString(),
+            actual = events.first().extra?.get("error_code"),
+            message = "Expected error_code extra to match PARSE_ERROR_UNKNOWN",
+        )
     }
 
     @Test

@@ -5,6 +5,7 @@
 package org.mozilla.fenix.bookmarks
 
 import mozilla.components.lib.state.Action
+import org.mozilla.fenix.bookmarks.importer.FenixBookmarkImporterError
 
 /**
  * Actions relating to the Bookmarks list screen and its various subscreens.
@@ -166,7 +167,7 @@ internal data object RootOverflowMenuClicked : BookmarksAction
 internal data object RootOverflowMenuDismissed : BookmarksAction
 internal sealed class ImportAction : BookmarksAction {
     internal data object ImportStarted : ImportAction()
-    internal data object ImportFailed : ImportAction()
+    internal data class ImportFailed(val error: FenixBookmarkImporterError) : ImportAction()
     internal data class ImportSucceeded(val count: Int) : ImportAction()
     internal sealed class ImportFileClicked : ImportAction() {
         internal data object FromMenu : ImportFileClicked()

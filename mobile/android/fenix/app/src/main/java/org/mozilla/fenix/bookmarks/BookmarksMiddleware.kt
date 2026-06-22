@@ -17,10 +17,10 @@ import mozilla.components.concept.storage.BookmarkInfo
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.storage.BookmarkNodeType
 import mozilla.components.concept.storage.BookmarksStorage
-import mozilla.components.feature.importer.ImporterEvent
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
+import org.mozilla.fenix.bookmarks.importer.FenixImporterEvent
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.bookmarks.BookmarksUseCase
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
@@ -49,9 +49,9 @@ private const val WARN_OPEN_ALL_SIZE = 15
  * atomically with respect to caller cancellation.
  * @param reportResultGlobally Invoked when an error occurs that needs to be reported even if the
  * feature goes out of scope.
- * @param importEvents Provides the [Flow] of [ImporterEvent]s produced by the bookmarks import
+ * @param importEvents Provides the [Flow] of [FenixImporterEvent]s produced by the bookmarks import
  * dialog. The middleware subscribes on [ViewAppeared] in the normal flow and dispatches [ImportAction.ImportFailed]
- * when a [ImporterEvent.Failure] is emitted.
+ * when a [FenixImporterEvent.Failure] is emitted.
  * @param lifecycleScope lifecycle bound CoroutineScope scope used to cancel jobs when leaving bookmarks.
  */
 @Suppress("LongParameterList", "LargeClass")
@@ -72,7 +72,7 @@ internal class BookmarksMiddleware(
     private val saveBookmarkSortOrder: suspend (BookmarksListSortOrder) -> Unit,
     private val editBookmarkUseCase: BookmarksUseCase.EditBookmarkUseCase,
     private val reportResultGlobally: (BookmarksGlobalResultReport) -> Unit,
-    private val importEvents: () -> Flow<ImporterEvent>,
+    private val importEvents: () -> Flow<FenixImporterEvent>,
     private val lifecycleScope: CoroutineScope,
 ) : Middleware<BookmarksState, BookmarksAction> {
 
@@ -100,10 +100,11 @@ internal class BookmarksMiddleware(
                     importEvents()
                         .onEach { result ->
                             when (result) {
-                                ImporterEvent.Started -> store.dispatch(ImportAction.ImportStarted)
-                                ImporterEvent.Canceled -> Unit
-                                ImporterEvent.Failure -> store.dispatch(ImportAction.ImportFailed)
-                                is ImporterEvent.Success -> store.dispatch(
+                                FenixImporterEvent.Started -> store.dispatch(ImportAction.ImportStarted)
+                                FenixImporterEvent.Canceled -> Unit
+                                is FenixImporterEvent.Failure ->
+                                    store.dispatch(ImportAction.ImportFailed(error = result.error))
+                                is FenixImporterEvent.Success -> store.dispatch(
                                     action = ImportAction.ImportSucceeded(result.importCount),
                                 )
                             }
@@ -382,7 +383,7 @@ internal class BookmarksMiddleware(
             is ImportAction.ImportFileClicked -> {
                 navigateToImportDialog()
             }
-            ImportAction.ImportFailed -> {
+            is ImportAction.ImportFailed -> {
                 store.dispatch(SnackbarAction.ImportFailed)
             }
             ImportAction.ImportStarted,

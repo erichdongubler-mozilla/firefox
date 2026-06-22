@@ -276,7 +276,11 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
     }
 
     private fun handleImportAction(action: ImportAction) = when (action) {
-        is ImportAction.ImportFailed -> BookmarksManagement.importFailed.record(NoExtras())
+        is ImportAction.ImportFailed -> BookmarksManagement.importFailed.record(
+            extra = BookmarksManagement.ImportFailedExtra(
+                errorCode = action.error.code.toString(),
+            ),
+        )
         is ImportAction.ImportFileClicked.FromMenu ->
             BookmarksManagement.importFromFileMenuClick.record(NoExtras())
         is ImportAction.ImportSucceeded -> {

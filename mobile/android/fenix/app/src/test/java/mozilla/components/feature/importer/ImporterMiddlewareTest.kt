@@ -13,6 +13,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.bookmarks.file.BookmarksFileImporter
+import mozilla.components.concept.bookmarks.file.BookmarksImporterError
 import org.junit.runner.RunWith
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -111,6 +112,48 @@ class ImporterMiddlewareTest {
             assertIs<ImporterState.Finished>(finalState)
             assertIs<ImporterEvent.Success>(finalState.result)
         }
+
+    @Test
+    fun `when import fails with a BookmarksImporterError, the error is preserved`() = runTest {
+        // Given a store
+        val store = middleware.makeStore()
+
+        // And that a file has been selected and the import failed with a specific error
+        val error = BookmarksImporterError.FileReadError(cause = Throwable("cannot open file"))
+        importer.expectedImportResult = Result.failure(error)
+        store.dispatch(ImporterAction.FileSelected(uri = Uri.EMPTY))
+
+        // And that the import has finished
+        scope.advanceUntilIdle()
+
+        // Then verify that the state is "failed" and the original error is preserved
+        val result = (store.state as? ImporterState.Finished)?.result
+
+        assertIs<ImporterEvent.Failure>(result)
+        assertEquals(error, result.error)
+    }
+
+    @Test
+    fun `when import fails with a generic error, it is wrapped as an UnknownImporterError`() = runTest {
+        // Given a store
+        val store = middleware.makeStore()
+
+        // And that a file has been selected and the import failed with a generic throwable
+        val cause = Throwable("Booo")
+        importer.expectedImportResult = Result.failure(cause)
+        store.dispatch(ImporterAction.FileSelected(uri = Uri.EMPTY))
+
+        // And that the import has finished
+        scope.advanceUntilIdle()
+
+        // Then verify that the result is a failure and the cause is wrapped as an UnknownImporterError
+        val result = (store.state as? ImporterState.Finished)?.result
+        assertIs<ImporterEvent.Failure>(result)
+
+        val error = result.error
+        assertIs<BookmarksImporterError.UnknownImporterError>(error)
+        assertEquals(cause, error.cause)
+    }
 
     private fun ImporterMiddleware.makeStore(
         initialState: ImporterState = ImporterState.Inert,
