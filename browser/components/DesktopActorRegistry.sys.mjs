@@ -894,6 +894,17 @@ let JSWINDOWACTORS = {
     safeForUntrustedWebProcess: true,
   },
 
+  Urlbar: {
+    parent: {
+      esModuleURI: "resource:///actors/UrlbarParent.sys.mjs",
+    },
+    child: {
+      esModuleURI: "resource:///actors/UrlbarChild.sys.mjs",
+    },
+    includeChrome: true,
+    matches: ["chrome://browser/content/browser.xhtml"],
+  },
+
   WebRTC: {
     parent: {
       esModuleURI: "resource:///actors/WebRTCParent.sys.mjs",
