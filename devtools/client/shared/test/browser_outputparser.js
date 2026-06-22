@@ -6,13 +6,12 @@
 add_task(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["dom.security.html_serialization_escape_lt_gt", true],
-      ["layout.css.alpha-color-function.enabled", true],
-      ["layout.css.attr.enabled", true],
-      ["layout.css.backdrop-filter.enabled", true],
-      ["layout.css.color-mix-multi-color.enabled", true],
-      ["layout.css.relative-color-syntax.enabled", true],
       ["security.allow_unsafe_parent_loads", true],
+      ["layout.css.backdrop-filter.enabled", true],
+      ["layout.css.relative-color-syntax.enabled", true],
+      ["layout.css.color-mix-multi-color.enabled", true],
+      ["dom.security.html_serialization_escape_lt_gt", true],
+      ["layout.css.attr.enabled", true],
     ],
   });
   await addTab("about:blank");
