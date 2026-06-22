@@ -47,21 +47,21 @@ const PREF_SYSTEM_SHORTCUTS_PERSONALIZATION =
   "discoverystream.shortcuts.personalization.enabled";
 
 const FEATURE_META = {
-  thom: { pref: "thom_weight", def: 0 },
-  frec: { pref: "frec_weight", def: 70 },
+  thom: { pref: "thom_weight", def: 181 },
+  frec: { pref: "frec_weight", def: 0 },
   hour: { pref: "hour_weight", def: 0 },
   daily: { pref: "daily_weight", def: 0 },
   bmark: { pref: "bmark_weight", def: 0 },
-  rece: { pref: "rece_weight", def: 30 },
-  freq: { pref: "freq_weight", def: 0 },
+  rece: { pref: "rece_weight", def: 466 },
+  freq: { pref: "freq_weight", def: 200 },
   refre: { pref: "refre_weight", def: 0 },
   open: { pref: "open_weight", def: 0 },
   unid: { pref: "unid_weight", def: 0 },
-  ctr: { pref: "ctr_weight", def: 0 },
+  ctr: { pref: "ctr_weight", def: 954 },
   bias: { pref: "bias_weight", def: 0 },
 };
 
-const FEATURES = ["frec", "rece"];
+const FEATURES = ["thom", "rece", "freq", "ctr"];
 const SHORTCUT_POSITIVE_PRIOR = 1;
 const SHORTCUT_NEGATIVE_PRIOR = 1000;
 const SHORTCUT_TAU = 100;

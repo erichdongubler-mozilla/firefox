@@ -7,12 +7,29 @@ ChromeUtils.defineESModuleGetters(this, {
 const PREF_SYSTEM_SHORTCUTS_PERSONALIZATION =
   "discoverystream.shortcuts.personalization.enabled";
 
+function attachLocalWorker(provider, WorkerMod) {
+  provider._rankShortcutsWorker = {
+    async post(name, args) {
+      const fn = WorkerMod[name];
+      if (typeof fn === "function") {
+        return Array.isArray(args) ? fn(...args) : fn(args);
+      }
+      throw new Error(`No worker function for ${name}`);
+    },
+  };
+}
+
 add_task(async function test_weightedSampleTopSites_no_guid_last() {
   // Ranker are utilities we are testing
   const Ranker = ChromeUtils.importESModule(
     "resource://newtab/lib/SmartShortcutsRanker/RankShortcuts.mjs"
   );
+  const Worker = ChromeUtils.importESModule(
+    "resource://newtab/lib/SmartShortcutsRanker/RankShortcutsWorkerClass.mjs"
+  );
   const provider = new Ranker.RankShortcutsProvider();
+
+  attachLocalWorker(provider, Worker);
   // We are going to stub a database call
   const { NewTabUtils } = ChromeUtils.importESModule(
     "resource://gre/modules/NewTabUtils.sys.mjs"
@@ -29,24 +46,26 @@ add_task(async function test_weightedSampleTopSites_no_guid_last() {
       ["a", 5, 10],
       ["b", 2, 10],
     ]);
+  sandbox.stub(provider.sc_obj, "get").resolves({});
+  sandbox.stub(provider.sc_obj, "set").resolves();
 
   // First item here intentially has no guid
   const input = [
     { url: "no-guid.com" },
-    { guid: "a", url: "a.com" },
-    { guid: "b", url: "b.com" },
+    { guid: "a", url: "a.com", frecency: 10 },
+    { guid: "b", url: "b.com", frecency: 5 },
   ];
 
   const prefValues = {
     trainhopConfig: {
       smartShortcuts: {
-        // fset: "custom", // uncomment iff your build defines a "custom" fset you want to use
         enabled: true,
+        features: ["frec"],
+        frec_weight: 100,
         eta: 0,
         click_bonus: 10,
         positive_prior: 1,
         negative_prior: 1,
-        fset: 1,
       },
     },
   };
@@ -62,6 +81,7 @@ add_task(async function test_weightedSampleTopSites_no_guid_last() {
     "top-site without GUID is last"
   );
 
+  provider._rankShortcutsWorker?.terminate?.();
   sandbox.restore();
 });
 
@@ -129,22 +149,28 @@ add_task(
 
     Assert.deepEqual(
       weightedInput.features,
-      ["frec", "rece"],
+      ["thom", "rece", "freq", "ctr"],
       "built-in feature defaults are used without trainhop config"
     );
     Assert.equal(
-      weightedInput.weights.frec,
-      0.7,
-      "frec uses the built-in default"
+      weightedInput.weights.thom,
+      0,
+      "thom is gated without enough engagement"
     );
     Assert.equal(
       weightedInput.weights.rece,
-      0.3,
+      4.66,
       "rece uses the built-in default"
     );
-    Assert.ok(
-      !Object.hasOwn(weightedInput.weights, "bias"),
-      "bias weight is omitted when bias is not in the default feature set"
+    Assert.equal(
+      weightedInput.weights.freq,
+      2,
+      "freq uses the built-in default"
+    );
+    Assert.equal(
+      weightedInput.weights.ctr,
+      9.54,
+      "ctr uses the built-in default"
     );
     Assert.equal(
       out[0].guid,
@@ -1052,6 +1078,9 @@ add_task(async function test_rankTopSites_sql_pipeline_happy_path() {
   const Ranker = ChromeUtils.importESModule(
     "resource://newtab/lib/SmartShortcutsRanker/RankShortcuts.mjs"
   );
+  const Worker = ChromeUtils.importESModule(
+    "resource://newtab/lib/SmartShortcutsRanker/RankShortcutsWorkerClass.mjs"
+  );
   const { NewTabUtils } = ChromeUtils.importESModule(
     "resource://gre/modules/NewTabUtils.sys.mjs"
   );
@@ -1072,6 +1101,7 @@ add_task(async function test_rankTopSites_sql_pipeline_happy_path() {
 
   // provider under test
   const provider = new Ranker.RankShortcutsProvider();
+  attachLocalWorker(provider, Worker);
 
   // keep cache interactions in-memory + observable
   const initialWeights = {
@@ -1190,19 +1220,24 @@ add_task(async function test_rankTopSites_sql_pipeline_happy_path() {
     });
 
   // prefs: set eta=0 so updateWeights is a no-op (deterministic)
-  // NOTE: Feature set comes from the module's SHORTCUT_FSETS.
-  // If your build's default fset already includes ["bmark","rece","freq","refre","hour","daily","bias","frec"],
-  // this test will exercise all the SQL above. If not, it still passes the core assertions.
   const prefValues = {
     trainhopConfig: {
       smartShortcuts: {
-        // fset: "custom", // uncomment iff your build defines a "custom" fset you want to use
         enabled: true,
+        features: [
+          "bmark",
+          "rece",
+          "freq",
+          "refre",
+          "hour",
+          "daily",
+          "bias",
+          "frec",
+        ],
         eta: 0,
         click_bonus: 10,
         positive_prior: 1,
         negative_prior: 1,
-        fset: 8,
         telem: true,
       },
     },
@@ -1249,6 +1284,7 @@ add_task(async function test_rankTopSites_sql_pipeline_happy_path() {
   Assert.greater(execStub.callCount, 0, "executePlacesQuery was called");
 
   // cleanup
+  provider._rankShortcutsWorker?.terminate?.();
   clock.restore();
   sandbox.restore();
 });
@@ -1853,22 +1889,6 @@ function prefsFor(features, extra = {}) {
         ...baseWeights,
         ...extra,
       },
-    },
-  };
-}
-
-function attachLocalWorker(provider, WorkerMod) {
-  provider._rankShortcutsWorker = {
-    async post(name, args) {
-      // name is a string like "weightedSampleTopSites"
-      // Worker functions are exported with same names.
-      // Some are standalone, some are exported in the class wrapper too.
-      const fn = WorkerMod[name] || new WorkerMod.RankShortcutsWorker()[name];
-      if (typeof fn === "function") {
-        // if it's a plain function, spread args; if method, pass as method
-        return Array.isArray(args) ? fn(...args) : fn(args);
-      }
-      throw new Error(`No worker function for ${name}`);
     },
   };
 }
