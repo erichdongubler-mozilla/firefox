@@ -332,6 +332,14 @@ class TabDescriptorActor extends Actor {
     );
   }
 
+  // When we move the tab to another top level window,
+  // a TabClose with adoptedBy attribute refering to the new tab is fired.
+  // We need to update to the newly create <browser> element.
+  // Note that it keeps the same browserId/browsingContext.
+  swapBrowser(newBrowser) {
+    this._browser = newBrowser;
+  }
+
   destroy() {
     this.emit("descriptor-destroyed");
     this._browser = null;
