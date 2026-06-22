@@ -7085,6 +7085,10 @@ ${
     return this.#websiteContextChipsContainer;
   }
 
+  get isSidebarMode() {
+    return this.#isSidebarMode;
+  }
+
   /**
    * @param {boolean} isSidebar
    */

@@ -1073,6 +1073,12 @@ export class UrlbarView {
   }
 
   #openPanel() {
+    // The Smart Window sidebar deliberately hides the suggestions dropdown to
+    // reduce visual disruption; queries (and the intent classifier) still run
+    // so Enter routes to chat/search/navigate correctly on the first turn.
+    if (this.input.isSidebarMode) {
+      return;
+    }
     if (this.isOpen) {
       this.input.updateLayoutExtend();
       return;

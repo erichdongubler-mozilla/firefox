@@ -102,13 +102,27 @@ add_task(
 );
 
 add_task(
-  async function test_smartbar_shows_suggestions_on_input_above_in_sidebar() {
+  async function test_smartbar_hides_suggestions_in_sidebar_but_classifies_intent() {
     const { win, sidebarBrowser } = await openAIWindowWithSidebar();
 
-    await promiseSmartbarSuggestionsOpen(sidebarBrowser, () =>
-      typeInSmartbar(sidebarBrowser, "test")
+    await typeInSmartbar(sidebarBrowser, "test");
+    await assertSmartbarSuggestionsVisible(sidebarBrowser, false, "top");
+
+    const detectedAction = await SpecialPowers.spawn(
+      sidebarBrowser,
+      [],
+      async () => {
+        const aiWindowElement = content.document.querySelector("ai-window");
+        const smartbar = aiWindowElement.shadowRoot.querySelector(
+          "#ai-window-smartbar"
+        );
+        return smartbar.smartbarAction;
+      }
     );
-    await assertSmartbarSuggestionsVisible(sidebarBrowser, true, "top");
+    Assert.ok(
+      detectedAction,
+      `Intent classifier should still run in sidebar (got "${detectedAction}")`
+    );
 
     await BrowserTestUtils.closeWindow(win);
   }
