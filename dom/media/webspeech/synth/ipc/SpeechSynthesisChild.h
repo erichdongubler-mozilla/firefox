@@ -14,6 +14,7 @@ namespace mozilla::dom {
 class nsSynthVoiceRegistry;
 class SpeechSynthesisRequestChild;
 class SpeechTaskChild;
+class MediaSharedKeysListener;
 
 class SpeechSynthesisChild : public PSpeechSynthesisChild {
   friend class nsSynthVoiceRegistry;
@@ -101,8 +102,16 @@ class SpeechTaskChild : public nsSpeechTask {
 
   void SetAudioOutputVolume(float aVolume) override;
 
+ protected:
+  void StartMediaControl() override;
+  void StopMediaControl() override;
+
  private:
   SpeechSynthesisRequestChild* mActor;
+
+  // Surfaces a speaking utterance to media control: reports the tab as audible
+  // and lets media control pause/resume the speech.
+  RefPtr<MediaSharedKeysListener> mSharedKeysListener;
 };
 
 }  // namespace mozilla::dom
