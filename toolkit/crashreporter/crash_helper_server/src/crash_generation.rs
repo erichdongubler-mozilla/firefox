@@ -20,9 +20,9 @@ use crash_helper_common::{
     crash_annotations::{
         should_include_annotation, type_of_annotation, CrashAnnotation, CrashAnnotationType,
     },
-    ApplicationInfo, BreakpadChar, BreakpadString, ExtraCrashData, GeckoChildId, Pid,
+    AsProcessReaderHandle, ApplicationInfo, BreakpadChar, BreakpadString, ExtraCrashData, GeckoChildId, Pid, ProcessHandle,
 };
-use mozannotation_server::{AnnotationData, CAnnotation};
+use mozannotation_server::{AnnotationData, errors::AnnotationsRetrievalError, CAnnotation};
 use num_traits::FromPrimitive;
 use std::{
     collections::HashMap,
@@ -67,6 +67,7 @@ where
     Self: Send,
 {
     app_info: ApplicationInfo,
+    main_process_handle: ProcessHandle,
     #[allow(unused)]
     minidump_path: OsString,
     reports_by_pid: HashMap<Pid, Vec<CrashReport>>,
@@ -74,9 +75,14 @@ where
 }
 
 impl CrashGenerator {
-    pub(crate) fn new(minidump_path: OsString, build_id: String) -> CrashGenerator {
+    pub(crate) fn new(
+        main_process_handle: ProcessHandle,
+        minidump_path: OsString,
+        build_id: String
+    ) -> CrashGenerator {
         CrashGenerator {
             app_info: ApplicationInfo::new(build_id),
+            main_process_handle,
             minidump_path,
             reports_by_pid: HashMap::<Pid, Vec<CrashReport>>::new(),
             reports_by_id: HashMap::<GeckoChildId, CrashReport>::new(),
@@ -124,9 +130,11 @@ impl CrashGenerator {
         let (error, extra_annotations) = extra_data
             .map(|d| (d.error.clone(), d.annotations.clone()))
             .unwrap_or_default();
+        let global_annotations = self.retrieve_main_process_annotations();
         let annotations = retrieve_annotations(&process_id, origin);
         let annotations = [
             (Some(required_annotations(&self.app_info)), c"ShouldNotFail"),
+            (global_annotations.ok(), c"MissingMainProcessAnnotations"),
             (annotations.ok(), c"MissingChildProcessAnnotations"),
             (Some(extra_annotations), c"ShouldNotFail"),
         ]
@@ -145,6 +153,15 @@ impl CrashGenerator {
         entry
             .and_modify(|entry| entry.push(CrashReport::new(path, &error)))
             .or_insert_with(|| vec![CrashReport::new(path, &error)]);
+    }
+
+    fn retrieve_main_process_annotations(
+        &self,
+    ) -> Result<Vec<CAnnotation>, AnnotationsRetrievalError> {
+        mozannotation_server::retrieve_annotations(
+            self.main_process_handle.as_handle(),
+            CrashAnnotation::Count as usize,
+        )
     }
 }
 

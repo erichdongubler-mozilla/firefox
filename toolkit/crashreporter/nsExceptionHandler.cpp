@@ -3114,89 +3114,14 @@ bool WriteExtraFile(const nsAString& id, const AnnotationTable& annotations) {
   return WriteExtraFile(pw, annotations);
 }
 
-template <typename T>
-static bool IsFixedSizeAnnotation(AnnotationContents& contents) {
-  return ((contents.tag == AnnotationContents::Tag::ByteBuffer) &&
-          (contents.byte_buffer._0 == sizeof(T))) ||
-         ((contents.tag == AnnotationContents::Tag::OwnedByteBuffer) &&
-          (contents.owned_byte_buffer._0 == sizeof(T)));
-}
-
-// This adds annotations that were populated in the main process but are not
-// present among the ones that were passed in. Additionally common annotations
-// which are present in every crash report are added, including crash time,
-// uptime, etc...
+// This filters out annotations that have specific values we don't want to
+// include and adds common annotations which are present in every crash report
+// including crash time, uptime, etc...
 static void AddSharedAnnotations(AnnotationTable& aAnnotations) {
   for (auto key : MakeEnumeratedRange(Annotation::Count)) {
-    AnnotationContents contents = {};
-    nsAutoCString value;
-    size_t address =
-        mozannotation_get_contents(static_cast<uint32_t>(key), &contents);
-
-    if (address) {
-      switch (TypeOfAnnotation(key)) {
-        case AnnotationType::String:
-          switch (contents.tag) {
-            case AnnotationContents::Tag::Empty:
-              break;
-            case AnnotationContents::Tag::CStringPointer:
-              address = *reinterpret_cast<size_t*>(address);
-              if (address == 0) {
-                break;
-              }
-              // FALLTHROUGH
-            case AnnotationContents::Tag::CString:
-              value.Assign(reinterpret_cast<const char*>(address));
-              break;
-            case AnnotationContents::Tag::NSCStringPointer:
-              value.Assign(*reinterpret_cast<nsCString*>(address));
-              break;
-            case AnnotationContents::Tag::ByteBuffer:
-              value.Assign(reinterpret_cast<const char*>(address),
-                           contents.byte_buffer._0);
-              break;
-            case AnnotationContents::Tag::OwnedByteBuffer:
-              value.Assign(reinterpret_cast<const char*>(address),
-                           contents.owned_byte_buffer._0);
-              break;
-          }
-
-          break;
-        case AnnotationType::Boolean:
-          if (IsFixedSizeAnnotation<bool>(contents)) {
-            value.Assign(*reinterpret_cast<const bool*>(address) ? "1" : "0");
-          }
-          break;
-        case AnnotationType::U32:
-          if (IsFixedSizeAnnotation<uint32_t>(contents)) {
-            value.AppendInt(*reinterpret_cast<const uint32_t*>(address));
-          }
-          break;
-        case AnnotationType::U64:
-          if (IsFixedSizeAnnotation<uint64_t>(contents)) {
-            value.AppendInt(*reinterpret_cast<const uint64_t*>(address));
-          }
-          break;
-        case AnnotationType::USize:
-          if (IsFixedSizeAnnotation<size_t>(contents)) {
-#ifdef XP_MACOSX
-            // macOS defines size_t as unsigned long, which causes ambiguity
-            // when it comes to function overload, use a 64-bit integer instead
-            value.AppendInt(*reinterpret_cast<const uint64_t*>(address));
-#else
-            value.AppendInt(*reinterpret_cast<const size_t*>(address));
-#endif
-          }
-          break;
-        case AnnotationType::Object:
-          // Object annotations are only produced later by minidump-analyzer.
-          break;
-      }
-
-      if (!value.IsEmpty() && aAnnotations[key].IsEmpty() &&
-          ShouldIncludeAnnotation(key, value.get())) {
-        aAnnotations[key] = std::move(value);
-      }
+    if (!aAnnotations[key].IsEmpty() &&
+        !ShouldIncludeAnnotation(key, aAnnotations[key].get())) {
+      aAnnotations[key] = EmptyCString();
     }
   }
 

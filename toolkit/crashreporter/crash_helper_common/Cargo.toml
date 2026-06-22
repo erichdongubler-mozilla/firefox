@@ -11,6 +11,7 @@ mozannotation_server = { path = "../mozannotation_server/" }
 mozbuild = "0.1"
 num-derive = "0.4"
 num-traits = "0.2"
+process_reader = { path = "../process_reader" }
 thiserror = "2"
 
 [target."cfg(any(target_os = \"android\", target_os = \"linux\", target_os = \"macos\"))".dependencies]
