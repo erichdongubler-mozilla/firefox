@@ -163,6 +163,7 @@ androidx-exifinterface = { module = "androidx.exifinterface:exifinterface", vers
 androidx-fragment = { module = "androidx.fragment:fragment", version.ref = "fragment" }
 androidx-fragment-compose = { module = "androidx.fragment:fragment-compose", version.ref = "fragment" }
 androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragment" }
+androidx-fragment-testing = { module = "androidx.fragment:fragment-testing", version.ref = "fragment" }
 androidx-lifecycle-common = { module = "androidx.lifecycle:lifecycle-common", version.ref = "lifecycle" }
 androidx-lifecycle-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 androidx-lifecycle-livedata = { module = "androidx.lifecycle:lifecycle-livedata", version.ref = "lifecycle" }
