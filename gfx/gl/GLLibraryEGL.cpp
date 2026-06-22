@@ -94,6 +94,7 @@ static const char* sEGLExtensionNames[] = {
     "EGL_EXT_image_dma_buf_import_modifiers",
     "EGL_MESA_image_dma_buf_export",
     "EGL_KHR_no_config_context",
+    "EGL_ANGLE_iosurface_client_buffer",
 };
 
 PRLibrary* LoadApitraceLibrary() {

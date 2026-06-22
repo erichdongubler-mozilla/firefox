@@ -101,6 +101,9 @@ class GLContextEGL final : public GLContext {
 
   bool HasExtBufferAge() const;
   bool HasKhrPartialUpdate() const;
+  // Returns which texture target should be used for binding MacIOSurface
+  // PBuffers on ANGLE. Requires the extension ANGLE_iosurface_client_buffer.
+  EGLint GetBindToTextureTargetANGLE();
 
   bool BindTex2DOffscreen(GLContext* aOffscreen);
   void UnbindTex2DOffscreen(GLContext* aOffscreen);
@@ -147,6 +150,7 @@ class GLContextEGL final : public GLContext {
   bool mCanBindToTexture = false;
   bool mShareWithEGLImage = false;
   bool mOwnsContext = true;
+  Maybe<EGLint> mBindToTextureTargetANGLE;
 
   nsIntRegion mDamageRegion;
 

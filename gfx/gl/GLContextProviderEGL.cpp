@@ -564,6 +564,33 @@ bool GLContextEGL::HasKhrPartialUpdate() const {
   return mEgl->IsExtensionSupported(EGLExtension::KHR_partial_update);
 }
 
+EGLint GLContextEGL::GetBindToTextureTargetANGLE() {
+  if (mBindToTextureTargetANGLE) {
+    return *mBindToTextureTargetANGLE;
+  }
+
+  if (!mEgl->IsExtensionSupported(
+          mozilla::gl::EGLExtension::ANGLE_iosurface_client_buffer)) {
+    gfxCriticalErrorOnce()
+        << "Extension EGL_ANGLE_iosurface_client_buffer not supported";
+    mBindToTextureTargetANGLE.emplace(LOCAL_EGL_TEXTURE_2D);
+    return LOCAL_EGL_TEXTURE_2D;
+  }
+
+  EGLint eglTarget;
+  if (!mEgl->fGetConfigAttrib(
+          mSurfaceConfig, LOCAL_EGL_BIND_TO_TEXTURE_TARGET_ANGLE, &eglTarget)) {
+    const EGLint err = mEgl->mLib->fGetError();
+    gfxCriticalErrorOnce()
+        << "Querying EGL_BIND_TO_TEXTURE_TARGET_ANGLE failed: "
+        << gfx::hexa(err);
+    mBindToTextureTargetANGLE.emplace(LOCAL_EGL_TEXTURE_2D);
+    return LOCAL_EGL_TEXTURE_2D;
+  }
+  mBindToTextureTargetANGLE.emplace(eglTarget);
+  return eglTarget;
+}
+
 GLint GLContextEGL::GetBufferAge() const {
   EGLSurface surface =
       mSurfaceOverride != EGL_NO_SURFACE ? mSurfaceOverride : mSurface;

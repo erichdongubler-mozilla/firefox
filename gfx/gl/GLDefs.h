@@ -105,6 +105,15 @@ bool CheckContextLost(const GLContext* gl);
 // EGL_ANGLE_image_d3d11_texture
 #define LOCAL_EGL_D3D11_TEXTURE_ANGLE                   0x3484
 
+// EGL_ANGLE_iosurface_client_buffer
+#define LOCAL_EGL_IOSURFACE_ANGLE                       0x3454
+#define LOCAL_EGL_IOSURFACE_PLANE_ANGLE                 0x345A
+#define LOCAL_EGL_TEXTURE_RECTANGLE_ANGLE               0x345B
+#define LOCAL_EGL_TEXTURE_TYPE_ANGLE                    0x345C
+#define LOCAL_EGL_TEXTURE_INTERNAL_FORMAT_ANGLE         0x345D
+#define LOCAL_EGL_IOSURFACE_USAGE_HINT_ANGLE            0x348A
+#define LOCAL_EGL_BIND_TO_TEXTURE_TARGET_ANGLE          0x348D
+
 // clang-format on
 
 #endif
