@@ -15600,6 +15600,11 @@ ai_summarize:
     description: |
       Recorded when the user cancels or closes the summarization at any point.
     extra_keys:
+      session_id:
+        description: |
+          A UUID identifying a single summarization session, shared across all
+          events recorded during that session.
+        type: string
       model:
         description: The name of the model used for summarization.
         type: string
@@ -15612,6 +15617,7 @@ ai_summarize:
     data_reviews:
       - https://phabricator.services.mozilla.com/D289882
       - https://phabricator.services.mozilla.com/D300181
+      - https://phabricator.services.mozilla.com/D306313
     data_sensitivity:
       - interaction
     notification_emails:
@@ -15622,6 +15628,11 @@ ai_summarize:
     description: |
       Recorded when the summarizer service returns the summary or errors out.
     extra_keys:
+      session_id:
+        description: |
+          A UUID identifying a single summarization session, shared across all
+          events recorded during that session.
+        type: string
       success:
         description: True for success, false for failure.
         type: boolean
@@ -15666,8 +15677,10 @@ ai_summarize:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2025523
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2036474
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046968
     data_reviews:
       - https://phabricator.services.mozilla.com/D289882
+      - https://phabricator.services.mozilla.com/D306313
     data_sensitivity:
       - interaction
     notification_emails:
@@ -15679,13 +15692,20 @@ ai_summarize:
       Recorded when the consent flow concludes, either by the user
       accepting, declining, or dismissing the dialogue.
     extra_keys:
+      session_id:
+        description: |
+          A UUID identifying a single summarization session, shared across all
+          events recorded during that session.
+        type: string
       agreed:
         description: Whether the user accepted the consent.
         type: boolean
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2025523
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046968
     data_reviews:
       - https://phabricator.services.mozilla.com/D289882
+      - https://phabricator.services.mozilla.com/D306313
     data_sensitivity:
       - interaction
     notification_emails:
@@ -15697,6 +15717,11 @@ ai_summarize:
       Records when the user initiates summarization.
       (e.g. taps menu button, toolbar icon or shakes the device).
     extra_keys:
+      session_id:
+        description: |
+          A UUID identifying a single summarization session, shared across all
+          events recorded during that session.
+        type: string
       trigger:
         description: |
           How the user initiated summarization. Possible values:
@@ -15705,8 +15730,10 @@ ai_summarize:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2025523
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2036474
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046968
     data_reviews:
       - https://phabricator.services.mozilla.com/D289882
+      - https://phabricator.services.mozilla.com/D306313
     data_sensitivity:
       - interaction
     notification_emails:
@@ -15717,6 +15744,11 @@ ai_summarize:
     description: |
       Recorded when the summarizer service starts processing the page's text content.
     extra_keys:
+      session_id:
+        description: |
+          A UUID identifying a single summarization session, shared across all
+          events recorded during that session.
+        type: string
       trigger:
         description: |
           How the user initiated summarization. Possible values:
@@ -15738,8 +15770,10 @@ ai_summarize:
         type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2025523
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046968
     data_reviews:
       - https://phabricator.services.mozilla.com/D289882
+      - https://phabricator.services.mozilla.com/D306313
     data_sensitivity:
       - interaction
     notification_emails:

@@ -20,11 +20,22 @@ import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import mozilla.telemetry.glean.GleanTimerId
 import org.mozilla.fenix.GleanMetrics.AiSummarize
+import java.util.UUID
 
 /**
- * Represents a full summarization session aggregation of telemetry data
+ * Represents a full summarization session aggregation of telemetry data.
+ *
+ * @property sessionId A UUID identifying this summarization session, shared across every event
+ * recorded during the session.
+ * @property trigger How the user initiated the summarization, or null until known.
+ * @property model The identifier of the model used for summarization, or null until known.
+ * @property startTimeMillis Wall-clock time the session started, used to compute durations.
+ * @property contentMetrics Length/size metrics for the extracted content, or null until extracted.
+ * @property receivedFirstChunk Whether the first response chunk has been received, used to record
+ * the first-response event only once.
  */
 private data class SummarizationSessionTelemetry(
+    val sessionId: String,
     val trigger: SummarizationTrigger? = null,
     val model: String? = null,
     val startTimeMillis: Long = System.currentTimeMillis(),
@@ -56,13 +67,19 @@ enum class ConnectionType {
 }
 
 /**
+ * [Middleware] that records summarization telemetry by observing [SummarizationAction]s as they
+ * flow through the store, aggregating session data into a [SummarizationSessionTelemetry].
+ *
  * @param connectionType current network [ConnectionType].
+ * @param sessionId A UUID identifying this summarization session, shared across every event
+ * recorded during the session. Defaults to a randomly generated UUID.
  */
 class SummarizationTelemetryMiddleware(
     private val connectionType: ConnectionType,
+    sessionId: String = UUID.randomUUID().toString(),
 ) : Middleware<SummarizationState, SummarizationAction> {
 
-    private var sessionTelemetry = SummarizationSessionTelemetry()
+    private var sessionTelemetry = SummarizationSessionTelemetry(sessionId = sessionId)
     private var timerId: GleanTimerId? = null
 
     override fun invoke(
@@ -86,6 +103,7 @@ class SummarizationTelemetryMiddleware(
                     AiSummarize.ClosedExtra(
                         model = sessionTelemetry.model,
                         engineAvailable = action.isEngineAvailable,
+                        sessionId = sessionTelemetry.sessionId,
                     ),
                 )
 
@@ -94,7 +112,10 @@ class SummarizationTelemetryMiddleware(
                     stateBefore is SummarizationState.ShakeConsentWithDownloadRequired
                 ) {
                     AiSummarize.consentDisplayed.record(
-                        AiSummarize.ConsentDisplayedExtra(agreed = false),
+                        AiSummarize.ConsentDisplayedExtra(
+                            agreed = false,
+                            sessionId = sessionTelemetry.sessionId,
+                        ),
                     )
                 }
             }
@@ -103,7 +124,10 @@ class SummarizationTelemetryMiddleware(
             is OffDeviceSummarizationShakeConsentAction.AllowClicked,
             -> {
                 AiSummarize.consentDisplayed.record(
-                    AiSummarize.ConsentDisplayedExtra(agreed = true),
+                    AiSummarize.ConsentDisplayedExtra(
+                        agreed = true,
+                        sessionId = sessionTelemetry.sessionId,
+                    ),
                 )
             }
 
@@ -111,7 +135,10 @@ class SummarizationTelemetryMiddleware(
             is OffDeviceSummarizationShakeConsentAction.CancelClicked,
             -> {
                 AiSummarize.consentDisplayed.record(
-                    AiSummarize.ConsentDisplayedExtra(agreed = false),
+                    AiSummarize.ConsentDisplayedExtra(
+                        agreed = false,
+                        sessionId = sessionTelemetry.sessionId,
+                    ),
                 )
             }
 
@@ -120,16 +147,22 @@ class SummarizationTelemetryMiddleware(
     }
 
     private fun handleViewAppeared(stateBefore: SummarizationState) {
-        if (stateBefore is SummarizationState.Inert) {
-            val trigger = if (stateBefore.initializedWithShake) {
-                SummarizationTrigger.SHAKE
-            } else {
-                SummarizationTrigger.MENU
-            }
-            sessionTelemetry = sessionTelemetry.copy(trigger = trigger)
+        if (stateBefore !is SummarizationState.Inert) {
+            return
         }
+
+        val trigger = if (stateBefore.initializedWithShake) {
+            SummarizationTrigger.SHAKE
+        } else {
+            SummarizationTrigger.MENU
+        }
+        sessionTelemetry = sessionTelemetry.copy(trigger = trigger)
+
         AiSummarize.requested.record(
-            AiSummarize.RequestedExtra(trigger = sessionTelemetry.trigger?.toString()),
+            AiSummarize.RequestedExtra(
+                trigger = sessionTelemetry.trigger?.toString(),
+                sessionId = sessionTelemetry.sessionId,
+            ),
         )
         timerId = AiSummarize.duration.start()
     }
@@ -150,6 +183,7 @@ class SummarizationTelemetryMiddleware(
                 lengthWords = sessionTelemetry.contentMetrics?.wordCount,
                 model = sessionTelemetry.model,
                 trigger = sessionTelemetry.trigger?.toString(),
+                sessionId = sessionTelemetry.sessionId,
             ),
         )
     }
@@ -183,6 +217,7 @@ class SummarizationTelemetryMiddleware(
                 lengthChars = sessionTelemetry.contentMetrics?.charCount,
                 lengthWords = sessionTelemetry.contentMetrics?.wordCount,
                 model = sessionTelemetry.model,
+                sessionId = sessionTelemetry.sessionId,
                 success = success,
                 summarizeDurationMs = (System.currentTimeMillis() - sessionTelemetry.startTimeMillis).toInt(),
             ),

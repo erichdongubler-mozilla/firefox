@@ -23,6 +23,7 @@ import mozilla.components.lib.llm.mlpa.service.RateLimited
 import mozilla.components.lib.state.Store
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
@@ -272,6 +273,37 @@ class SummarizationTelemetryMiddlewareTest {
 
         val extras = AiSummarize.completed.testGetValue()!!.first().extra!!
         assertEquals("CELLULAR", extras["connection_type"])
+    }
+
+    @Test
+    fun `WHEN events are recorded across a session THEN they share the same session_id`() {
+        setupFullSession()
+        invokeMiddleware(SummarizationCompleted)
+        invokeMiddleware(ViewDismissed(true))
+
+        val requestedSessionId = AiSummarize.requested.testGetValue()!!.first().extra!!["session_id"]
+        val startedSessionId = AiSummarize.started.testGetValue()!!.first().extra!!["session_id"]
+        val completedSessionId = AiSummarize.completed.testGetValue()!!.first().extra!!["session_id"]
+        val closedSessionId = AiSummarize.closed.testGetValue()!!.first().extra!!["session_id"]
+
+        assertNotNull(requestedSessionId)
+        assertEquals(requestedSessionId, startedSessionId)
+        assertEquals(requestedSessionId, completedSessionId)
+        assertEquals(requestedSessionId, closedSessionId)
+    }
+
+    @Test
+    fun `GIVEN separate middleware instances WHEN each records an event THEN session_ids differ`() {
+        invokeMiddleware(ViewAppeared)
+        val firstSessionId = AiSummarize.requested.testGetValue()!!.first().extra!!["session_id"]
+
+        middleware = SummarizationTelemetryMiddleware(ConnectionType.WIFI)
+        invokeMiddleware(ViewAppeared)
+        val secondSessionId = AiSummarize.requested.testGetValue()!!.last().extra!!["session_id"]
+
+        assertNotNull(firstSessionId)
+        assertNotNull(secondSessionId)
+        assertNotEquals(firstSessionId, secondSessionId)
     }
 
     private fun setupFullSession() {
