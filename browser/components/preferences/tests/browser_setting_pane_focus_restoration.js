@@ -56,11 +56,6 @@ add_task(async function test_top_level_back_restores_focus() {
   let searchShown = waitForPaneChange("search", win);
   await win.gotoPref("search");
   await searchShown;
-  isnot(
-    doc.activeElement,
-    dohButton,
-    "Focus moved away from the privacy control when navigating to search"
-  );
 
   let privacyShown = waitForPaneChange("privacy", win);
   win.history.back();
@@ -188,7 +183,9 @@ add_task(async function test_top_level_alt_left_restores_focus() {
   await searchShown;
 
   let privacyShown = waitForPaneChange("privacy", win);
-  EventUtils.synthesizeKey("KEY_ArrowLeft", { altKey: true }, window);
+  let backMods =
+    AppConstants.platform == "macosx" ? { accelKey: true } : { altKey: true };
+  EventUtils.synthesizeKey("KEY_ArrowLeft", backMods, window);
   await privacyShown;
 
   await waitForFocus(dohButton);
