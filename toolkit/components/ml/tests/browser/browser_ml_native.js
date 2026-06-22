@@ -35,11 +35,14 @@ async function llama_crash() {
 
   try {
     const crashMan = Services.crashmanager;
+    // A content process can emit ipc:content-shutdown for a normal teardown,
+    // which carries no crash information. Wait for the abnormal one so that
+    // the dumpID set by ContentParent is present on the subject.
     const contentShutdown = TestUtils.topicObserved(
       "ipc:content-shutdown",
       (subject, data) => {
         info(`ipc:content-shutdown: data=${data} subject=${subject}`);
-        return true;
+        return subject instanceof Ci.nsIPropertyBag2 && subject.get("abnormal");
       }
     );
 
@@ -74,14 +77,8 @@ async function llama_crash() {
       info(`ipc:content-shutdown: data=${data} subject=${subject}`);
 
       const dumpID = subject.get("dumpID");
-      if (AppConstants.MOZ_CRASHREPORTER && dumpID === null) {
-        // This test does not appear to generate minidumps, it is unclear why.
-        // We should turn this into an `ok()` call once we fix the underlying
-        // issue in bug 2003271.
-        dump("There should be a dumpID");
-      }
-
-      if (AppConstants.MOZ_CRASHREPORTER && dumpID !== null) {
+      if (AppConstants.MOZ_CRASHREPORTER) {
+        Assert.ok(dumpID, "The crash should have produced a dumpID");
         await crashMan.ensureCrashIsPresent(dumpID);
         let minidumpDirectory = Services.dirsvc.get("ProfD", Ci.nsIFile);
         minidumpDirectory.append("minidumps");
