@@ -1742,12 +1742,17 @@ export class TopSitesFeed {
     // Sample topsites via thompson sampling, if in experiment
     let sampledSites;
     if (smartshortcutsEnabled(this.store.getState().Prefs.values)) {
-      sampledSites = await this.ranker.rankTopSites(
-        checkedAdult,
-        prefValues,
-        isStartup,
-        dedupedSponsored.length
-      );
+      try {
+        sampledSites = await this.ranker.rankTopSites(
+          checkedAdult,
+          prefValues,
+          isStartup,
+          dedupedSponsored.length
+        );
+      } catch (error) {
+        lazy.log.warn(`Smart shortcuts ranking failed: ${error.message}`);
+        sampledSites = checkedAdult;
+      }
     } else {
       sampledSites = checkedAdult;
     }
