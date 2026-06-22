@@ -12,6 +12,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.BundleEventListener;
@@ -181,6 +183,30 @@ public class IPProtectionController {
     }
   }
 
+  /** A country available in the proxy serverlist. */
+  public static class Country {
+    /** ISO 3166-1 alpha-2 country code. */
+    public final @NonNull String code;
+
+    /** Whether the country has at least one available (non-quarantined) server. */
+    public final boolean available;
+
+    /**
+     * Creates a country.
+     *
+     * @param code ISO 3166-1 alpha-2 country code.
+     * @param available Whether the country has at least one available server.
+     */
+    public Country(final @NonNull String code, final boolean available) {
+      this.code = code;
+      this.available = available;
+    }
+
+    /* package */ Country(final @NonNull GeckoBundle bundle) {
+      this(bundle.getString("code", ""), bundle.getBoolean("available", true));
+    }
+  }
+
   /** Embedder-provided hooks for authentication. */
   public interface AuthProvider {
     /**
@@ -226,6 +252,15 @@ public class IPProtectionController {
      */
     @UiThread
     default void onUsageChanged(final @NonNull UsageInfo info) {}
+
+    /**
+     * Called when the proxy serverlist changes, either in response to {@link
+     * IPProtectionController#getCountryList()} or whenever the underlying list is replaced.
+     *
+     * @param countries The current list of available {@link Country countries}.
+     */
+    @UiThread
+    default void onCountryListChanged(final @NonNull List<Country> countries) {}
   }
 
   /* package */ IPProtectionController() {
@@ -236,6 +271,7 @@ public class IPProtectionController {
             "GeckoView:IPProtection:IPProtectionService:StateChanged",
             "GeckoView:IPProtection:IPPProxyManager:StateChanged",
             "GeckoView:IPProtection:IPPProxyManager:UsageChanged",
+            "GeckoView:IPProtection:ServerList:ListChanged",
             "GeckoView:IPProtection:GetToken");
   }
 
@@ -358,6 +394,31 @@ public class IPProtectionController {
     return EventDispatcher.getInstance()
         .queryBundle("GeckoView:IPProtection:IPProtectionService:GetState")
         .map(b -> parseServiceState(b.getString("state")));
+  }
+
+  /**
+   * Requests the list of countries available in the proxy serverlist. The list is delivered
+   * asynchronously via {@link Delegate#onCountryListChanged(List)}, which is also invoked whenever
+   * the underlying serverlist changes.
+   *
+   * @return A {@link GeckoResult} that resolves once the request has been processed.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<Void> getCountryList() {
+    ThreadUtils.assertOnHandlerThread();
+    return EventDispatcher.getInstance()
+        .queryVoid("GeckoView:IPProtection:ServerList:GetCountryList");
+  }
+
+  private static @NonNull List<Country> countriesFromBundle(final @NonNull GeckoBundle bundle) {
+    final List<Country> result = new ArrayList<>();
+    final GeckoBundle[] countries = bundle.getBundleArray("countries");
+    if (countries != null) {
+      for (final GeckoBundle country : countries) {
+        result.add(new Country(country));
+      }
+    }
+    return result;
   }
 
   /**
@@ -522,6 +583,9 @@ public class IPProtectionController {
           break;
         case "GeckoView:IPProtection:IPPProxyManager:UsageChanged":
           withDelegate(event, d -> d.onUsageChanged(new UsageInfo(message)));
+          break;
+        case "GeckoView:IPProtection:ServerList:ListChanged":
+          withDelegate(event, d -> d.onCountryListChanged(countriesFromBundle(message)));
           break;
         case "GeckoView:IPProtection:GetToken":
           {

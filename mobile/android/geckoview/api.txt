@@ -2289,6 +2289,7 @@ package org.mozilla.geckoview {
     method @HandlerThread @NonNull public GeckoResult<Void> deactivate();
     method @HandlerThread @NonNull public GeckoResult<IPProtectionController.EnrollResult> enroll();
     method @Nullable @UiThread public IPProtectionController.AuthProvider getAuthProvider();
+    method @HandlerThread @NonNull public GeckoResult<Void> getCountryList();
     method @Nullable @UiThread public IPProtectionController.Delegate getDelegate();
     method @HandlerThread @NonNull public GeckoResult<IPProtectionController.ProxyState> getProxyState();
     method @HandlerThread @NonNull public GeckoResult<Integer> getServiceState();
@@ -2309,7 +2310,14 @@ package org.mozilla.geckoview {
     method @NonNull @UiThread default public GeckoResult<String> getToken();
   }
 
+  public static class IPProtectionController.Country {
+    ctor public Country(@NonNull String, boolean);
+    field public final boolean available;
+    field @NonNull public final String code;
+  }
+
   public static interface IPProtectionController.Delegate {
+    method @UiThread default public void onCountryListChanged(@NonNull List<IPProtectionController.Country>);
     method @UiThread default public void onProxyStateChanged(@NonNull IPProtectionController.ProxyState);
     method @UiThread default public void onServiceStateChanged(int);
     method @UiThread default public void onUsageChanged(@NonNull IPProtectionController.UsageInfo);

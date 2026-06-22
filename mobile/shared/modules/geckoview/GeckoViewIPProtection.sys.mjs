@@ -18,6 +18,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/ipprotection/gpi/IPPGpiAuthProvider.sys.mjs",
   IPPProxyManager:
     "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
+  IPProtectionServerlist:
+    "moz-src:///toolkit/components/ipprotection/IPProtectionServerlist.sys.mjs",
   IPProtectionActivator:
     "moz-src:///toolkit/components/ipprotection/IPProtectionActivator.sys.mjs",
   IPProtectionService:
@@ -53,6 +55,13 @@ export const GeckoViewIPProtection = {
         };
         break;
       }
+      case "IPProtectionServerlist:ListChanged": {
+        lazy.EventDispatcher.instance.sendRequest(
+          "GeckoView:IPProtection:ServerList:ListChanged",
+          { countries: lazy.IPProtectionServerlist.countries }
+        );
+        return;
+      }
       default:
         detail = event.detail;
     }
@@ -80,6 +89,10 @@ export const GeckoViewIPProtection = {
           );
           lazy.IPProtectionService.addEventListener(
             "IPProtectionService:StateChanged",
+            GeckoViewIPProtection
+          );
+          lazy.IPProtectionServerlist.addEventListener(
+            "IPProtectionServerlist:ListChanged",
             GeckoViewIPProtection
           );
           let providerName = Services.prefs.getCharPref(AUTH_PROVIDER_PREF, "");
@@ -127,6 +140,10 @@ export const GeckoViewIPProtection = {
             "IPProtectionService:StateChanged",
             GeckoViewIPProtection
           );
+          lazy.IPProtectionServerlist.removeEventListener(
+            "IPProtectionServerlist:ListChanged",
+            GeckoViewIPProtection
+          );
           lazy.IPProtectionActivator.uninit();
           lazy.IPProtectionActivator.removeHelpers();
 
@@ -149,6 +166,22 @@ export const GeckoViewIPProtection = {
           errorType:
             state === "error" ? (lazy.IPPProxyManager.errorType ?? null) : null,
         });
+        break;
+      }
+      case "GeckoView:IPProtection:ServerList:GetCountryList": {
+        lazy.IPProtectionServerlist.maybeFetchList()
+          .then(() => {
+            lazy.EventDispatcher.instance.sendRequest(
+              "GeckoView:IPProtection:ServerList:ListChanged",
+              { countries: lazy.IPProtectionServerlist.countries }
+            );
+            aCallback.onSuccess();
+          })
+          .catch(err => {
+            aCallback.onError(
+              typeof err === "string" ? err : (err?.message ?? "generic-error")
+            );
+          });
         break;
       }
       case "GeckoView:IPProtection:Activate": {
