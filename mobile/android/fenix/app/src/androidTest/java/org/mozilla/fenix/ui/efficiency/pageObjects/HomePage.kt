@@ -4,7 +4,13 @@
 
 package org.mozilla.fenix.ui.efficiency.pageObjects
 
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.filter
+import androidx.compose.ui.test.hasAnyChild
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onFirst
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
@@ -64,10 +70,39 @@ class HomePage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *
             to = "PasswordsPage",
             steps = listOf(NavigationStep.Click(MainMenuSelectors.PASSWORDS_BUTTON)),
         )
+
+        NavigationRegistry.register(
+            from = "MainMenuPage",
+            to = pageName,
+            steps = listOf(NavigationStep.PressBack),
+        )
     }
 
     override fun mozGetSelectorsByGroup(group: String): List<Selector> {
         return HomeSelectors.all.filter { it.groups.contains(group) }
+    }
+
+    fun verifyTopSiteItem(title: String): HomePage {
+        val rep = org.mozilla.fenix.ui.efficiency.logging.TestLogging.reporter
+        rep?.startCmd(safeId("verify_top_site", title), "Verifying Top Site item with title '$title' is present...", 1)
+
+        try {
+            composeRule.onAllNodesWithTag("top_sites_list.top_site_item")
+                .filter(hasAnyChild(hasText(title)))
+                .onFirst()
+                .assertIsDisplayed()
+
+            rep?.endCmd(success = true, message = "Top Site item with title '$title' verified")
+        } catch (e: Throwable) {
+            rep?.endCmd(success = false, message = "Top Site item with title '$title' not found")
+            throw e
+        }
+        return this
+    }
+
+    private fun safeId(prefix: String, raw: String): String {
+        val cleaned = raw.replace(Regex("[^A-Za-z0-9_\\-]"), "_")
+        return "'$prefix'_$cleaned".take(120)
     }
 
     /*

@@ -190,6 +190,13 @@ object MainMenuSelectors {
         groups = listOf("moreMainMenuItems"),
     )
 
+    val ADD_TO_SHORTCUTS_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.browser_menu_add_to_shortcuts),
+        description = "Main menu Add to shortcuts button",
+        groups = listOf("browserViewMainMenuMoreItems"),
+    )
+
     val all = listOf(
         NEW_PRIVATE_TAB_BUTTON,
         EXTENSIONS_BUTTON,
@@ -213,5 +220,6 @@ object MainMenuSelectors {
         MORE_BUTTON,
         CHANGE_WALLPAPER_BUTTON,
         SAVE_TO_COLLECTIONS_BUTTON,
+        ADD_TO_SHORTCUTS_BUTTON,
     )
 }
