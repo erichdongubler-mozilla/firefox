@@ -521,7 +521,6 @@ class TabStorageMiddleware(
                 )
 
                 inactiveTabsEnabled && displayTab.inactive -> {
-                    normalTabCount++
                     inactiveTabs.add(displayTab)
                 }
 

@@ -338,7 +338,7 @@ class TabStorageMiddlewareTest {
         val initialState = TabData()
         val expectedState = TabsTrayState(
             normalTabsState = TabsTrayState.NormalTabsState(
-                tabCount = 1,
+                tabCount = 0,
             ),
             inactiveTabs = TabsTrayState.InactiveTabsState(
                 tabs = listOf(
