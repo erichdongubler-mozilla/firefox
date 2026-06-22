@@ -36,7 +36,7 @@ add_task(async function test_saveCreditCard() {
       win
     );
     is(
-      win.document.activeElement.selectedOptions[0].text,
+      win.document.activeElement.selectedOption?.label,
       "04 - April",
       "Displayed month should match number and name"
     );
@@ -250,7 +250,8 @@ add_task(async function test_addInvalidCreditCard() {
     );
 
     is(
-      win.document.querySelector("form").checkValidity(),
+      win.document.querySelector("#cc-number").inputEl?.checkValidity() ??
+        false,
       false,
       "cc-number is invalid"
     );
@@ -306,7 +307,7 @@ add_task(async function test_editInvalidCreditCardNumber() {
         "cc-number field should be showing invalid credit card number"
       );
       is(
-        win.document.querySelector("#cc-number").checkValidity(),
+        win.document.querySelector("#cc-number").inputEl?.checkValidity(),
         false,
         "cc-number is invalid"
       );
@@ -352,14 +353,14 @@ add_task(async function test_editCreditCardWithInvalidNumber() {
       );
       EventUtils.synthesizeKey("VK_TAB", {}, win);
       is(
-        win.document.querySelector("#cc-number").validity.customError,
+        win.document.querySelector("#cc-number").inputEl?.validity.customError,
         false,
         "cc-number field should not have a custom error"
       );
       EventUtils.synthesizeKey("4111111111111112", {}, win);
       EventUtils.synthesizeKey("VK_TAB", {}, win);
       is(
-        win.document.querySelector("#cc-number").validity.customError,
+        win.document.querySelector("#cc-number").inputEl?.validity.customError,
         true,
         "cc-number field should have a custom error"
       );
