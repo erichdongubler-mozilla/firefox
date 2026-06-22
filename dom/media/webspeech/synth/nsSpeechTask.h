@@ -39,6 +39,12 @@ class nsSpeechTask : public nsISpeechTask,
 
   virtual void Resume();
 
+  // Pause/resume driven by an audio-focus interruption. ResumeFromMediaControl
+  // only resumes a task the interruption itself paused; if the page called
+  // pause()/resume() in the meantime it has taken over and we leave it alone.
+  void PauseFromMediaControl();
+  void ResumeFromMediaControl();
+
   virtual void Cancel();
 
   virtual void ForceEnd();
@@ -64,6 +70,8 @@ class nsSpeechTask : public nsISpeechTask,
   uint32_t GetState() const { return mState; }
 
   bool IsSpeaking() const { return mState == STATE_SPEAKING; }
+
+  bool IsPaused() const;
 
   bool IsPending() const { return mState == STATE_PENDING; }
 
@@ -100,6 +108,10 @@ class nsSpeechTask : public nsISpeechTask,
   bool mPrePaused;
 
   bool mPreCanceled;
+
+  // Set while an audio-focus interruption owns the paused state; cleared once
+  // the page issues its own pause()/resume().
+  bool mPausedByMediaControl = false;
 
  private:
   void End();
