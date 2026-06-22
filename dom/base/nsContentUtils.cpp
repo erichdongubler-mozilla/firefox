@@ -10300,6 +10300,12 @@ bool nsContentUtils::IsPreloadType(nsContentPolicyType aType) {
 }
 
 // static
+bool nsContentUtils::IsImageType(ExtContentPolicy aType) {
+  return aType == ExtContentPolicy::TYPE_IMAGE ||
+         aType == ExtContentPolicy::TYPE_IMAGESET;
+}
+
+// static
 ReferrerPolicy nsContentUtils::GetReferrerPolicyFromChannel(
     nsIChannel* aChannel) {
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);

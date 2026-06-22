@@ -213,6 +213,10 @@ NS_IMETHODIMP RemoteImageProtocolHandler::NewChannel(nsIURI* aURI,
     return NS_ERROR_UNEXPECTED;
   }
 
+  if (!nsContentUtils::IsImageType(aLoadInfo->GetExternalContentPolicyType())) {
+    return NS_ERROR_CONTENT_BLOCKED;
+  }
+
   nsCOMPtr<nsIURI> remoteURI;
   ImageIntSize size;
   Maybe<ContentParentId> contentParentId;

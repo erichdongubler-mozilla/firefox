@@ -1600,6 +1600,13 @@ class nsContentUtils {
   static bool IsPreloadType(nsContentPolicyType aType);
 
   /**
+   * Returns true if the content policy type is any of:
+   *   * ExtContentPolicy::TYPE_IMAGE
+   *   * ExtContentPolicy::TYPE_IMAGESET
+   */
+  static bool IsImageType(ExtContentPolicy aType);
+
+  /**
    * Synchronously fire a chrome only event to notify the DevTools of the
    * removal of aRemovingNode. Only fires the event if
    * aRemovingNode.ShouldNotifyDevToolsOfNodeRemovals() returns true.
