@@ -385,6 +385,7 @@ HashFunctions.h:
     - AddToHash
     - HashGeneric
     - HashLatin1AsUTF16
+    - HashUTF8AsUTF16
     - HashString
     - HashBytes
 
@@ -917,6 +918,7 @@ Utf8.h:
     - IsTrailingUnit
     - DecodeOneUtf8CodePointInline
     - DecodeOneUtf8CodePoint
+    - LossyDecodeOneUtf8CodePoint
   types:
     - Utf8Unit
 

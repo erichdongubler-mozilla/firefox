@@ -831,57 +831,23 @@ UniquePtr<CharT[], JS::FreePolicy> JSRope::copyCharsInternal(
 }
 
 template <typename CharT>
-void AddStringToHash(uint32_t* hash, const CharT* chars, size_t len) {
-  // It's tempting to use |HashString| instead of this loop, but that's
-  // slightly different than our existing implementation for non-ropes. We
-  // want to pretend we have a contiguous set of chars so we need to
-  // accumulate char by char rather than generate a new hash for substring
-  // and then accumulate that.
+static void AddStringToHash(mozilla::detail::UTF16Hasher& aHasher,
+                            const CharT* chars, size_t len) {
+  // It's tempting to use |HashString| / |HashLatin1AsUTF16| instead of this
+  // loop, but that's slightly different than our existing implementation for
+  // non-ropes. We want to pretend we have a contiguous set of chars so we need
+  // to accumulate char by char using UTF16Hasher rather than generate a new
+  // hash for substring and then accumulate that.
   for (size_t i = 0; i < len; i++) {
-    *hash = mozilla::AddToHash(*hash, chars[i]);
+    aHasher.Add(char16_t(chars[i]));
   }
-}
-
-void AddStringToHash(uint32_t* hash, const JSString* str) {
-  AutoCheckCannotGC nogc;
-  const auto& s = str->asLinear();
-  if (s.hasLatin1Chars()) {
-    AddStringToHash(hash, s.latin1Chars(nogc), s.length());
-  } else {
-    AddStringToHash(hash, s.twoByteChars(nogc), s.length());
-  }
-}
-
-bool JSRope::hash(uint32_t* outHash) const {
-  Vector<const JSString*, 8, SystemAllocPolicy> nodeStack;
-  const JSString* str = this;
-
-  *outHash = 0;
-
-  while (true) {
-    if (str->isRope()) {
-      if (!nodeStack.append(str->asRope().rightChild())) {
-        return false;
-      }
-      str = str->asRope().leftChild();
-    } else {
-      AddStringToHash(outHash, str);
-      if (nodeStack.empty()) {
-        break;
-      }
-      str = nodeStack.popCopy();
-    }
-  }
-
-  return true;
 }
 
 bool JSRope::hashPrefix(size_t budget, uint32_t* outHash) const {
   Vector<const JSString*, 8, SystemAllocPolicy> nodeStack;
   const JSString* str = this;
 
-  *outHash = 0;
-
+  mozilla::detail::UTF16Hasher hasher;
   while (budget > 0) {
     if (str->isRope()) {
       if (!nodeStack.append(str->asRope().rightChild())) {
@@ -893,9 +859,9 @@ bool JSRope::hashPrefix(size_t budget, uint32_t* outHash) const {
       const auto& s = str->asLinear();
       size_t toHash = std::min(s.length(), budget);
       if (s.hasLatin1Chars()) {
-        AddStringToHash(outHash, s.latin1Chars(nogc), toHash);
+        AddStringToHash(hasher, s.latin1Chars(nogc), toHash);
       } else {
-        AddStringToHash(outHash, s.twoByteChars(nogc), toHash);
+        AddStringToHash(hasher, s.twoByteChars(nogc), toHash);
       }
       budget -= toHash;
       if (nodeStack.empty()) {
@@ -905,6 +871,7 @@ bool JSRope::hashPrefix(size_t budget, uint32_t* outHash) const {
     }
   }
 
+  *outHash = hasher.Finish();
   return true;
 }
 

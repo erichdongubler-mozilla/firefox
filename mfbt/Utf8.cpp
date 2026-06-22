@@ -4,6 +4,7 @@
 
 #define MOZ_PRETEND_NO_JSRUST 1
 
+#include "mozilla/HashFunctions.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/Types.h"
@@ -11,8 +12,10 @@
 
 #include <stddef.h>
 
-MFBT_API bool mozilla::detail::IsValidUtf8(const void* aCodeUnits,
-                                           size_t aCount) {
+namespace mozilla {
+namespace detail {
+
+MFBT_API bool IsValidUtf8(const void* aCodeUnits, size_t aCount) {
   const auto* s = reinterpret_cast<const unsigned char*>(aCodeUnits);
   const auto* const limit = s + aCount;
 
@@ -35,3 +38,36 @@ MFBT_API bool mozilla::detail::IsValidUtf8(const void* aCodeUnits,
   MOZ_ASSERT(s == limit);
   return true;
 }
+
+}  // namespace detail
+
+MFBT_API HashNumber HashUTF8AsUTF16(const char* aUTF8, size_t aLength) {
+  const auto* s = reinterpret_cast<const unsigned char*>(aUTF8);
+  const auto* const limit = s + aLength;
+
+  detail::UTF16Hasher hasher;
+  while (s < limit) {
+    unsigned char c = *s++;
+
+    char32_t codePoint;
+    if (IsAscii(c)) {
+      codePoint = c;
+    } else {
+      codePoint = LossyDecodeOneUtf8CodePoint(Utf8Unit(c), &s, limit);
+    }
+
+    // Split astral code points into a UTF-16 surrogate pair, matching what a
+    // conversion to UTF-16 followed by HashString() would hash.
+    if (codePoint < 0x10000) {
+      hasher.Add(static_cast<char16_t>(codePoint));
+    } else {
+      codePoint -= 0x10000;
+      hasher.Add(static_cast<char16_t>(0xD800 + (codePoint >> 10)));
+      hasher.Add(static_cast<char16_t>(0xDC00 + (codePoint & 0x3FF)));
+    }
+  }
+
+  return hasher.Finish();
+}
+
+}  // namespace mozilla

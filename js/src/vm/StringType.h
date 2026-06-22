@@ -866,13 +866,6 @@ class JSRope : public JSString {
   js::UniquePtr<CharT[], JS::FreePolicy> copyChars(
       JSContext* maybecx, arena_id_t destArenaId) const;
 
-  // Hash function specific for ropes that avoids allocating a temporary
-  // string. There are still allocations internally so it's technically
-  // fallible.
-  //
-  // Returns the same value as if this were a linear string being hashed.
-  [[nodiscard]] bool hash(uint32_t* outhHash) const;
-
   // Like hash(), but hashes only the first |budget| characters. Cheaper for
   // long ropes when an approximate hash is acceptable (caller must verify
   // equality with match()).
