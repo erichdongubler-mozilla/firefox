@@ -66,9 +66,6 @@ elif CONFIG["OS_ARCH"] == "WINNT":
         "WindowsUIOverlayImage.cpp",
         "WindowsUserChoice.cpp",
     ]
-    MOZ_SRC_FILES += [
-        "CustomIconManager.sys.mjs",
-    ]
     LOCAL_INCLUDES += [
         "../../../other-licenses/nsis/Contrib/CityHash/cityhash",
         "/toolkit/xre",

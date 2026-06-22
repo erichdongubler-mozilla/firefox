@@ -1163,21 +1163,9 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
         PropVariantClear(&pv);
       }
     }
-    // Resolve the icon resource once. A custom-icon override (if any) wins for
-    // normal windows; Private Browsing windows always keep IDI_PBMODE and
-    // ignore the override, matching WinTaskbar::SetAllWindowIcons. Since these
-    // are resources embedded in the executable, the load cannot fail on a
-    // missing file, so there's no need to set a default icon first.
-    uint16_t iconId;
-    if (usePrivateAumid) {
-      iconId = IDI_PBMODE;
-    } else {
-      uint16_t iconOverride =
-          mozilla::widget::WinTaskbar::GetWindowIconOverride();
-      iconId = iconOverride ? iconOverride : IDI_APPICON;
-    }
-    HICON icon =
-        ::LoadIconW(::GetModuleHandleW(nullptr), MAKEINTRESOURCEW(iconId));
+    HICON icon = ::LoadIconW(
+        ::GetModuleHandleW(nullptr),
+        MAKEINTRESOURCEW(usePrivateAumid ? IDI_PBMODE : IDI_APPICON));
     SetBigIcon(icon);
     SetSmallIcon(icon);
   }
@@ -3611,17 +3599,6 @@ void nsWindow::SetIcon(const nsAString& aIconSpec) {
              ::GetLastError()));
   }
 #endif
-}
-
-void nsWindow::SetIconFromExeResource(uint16_t aResourceId) {
-  // A resource ID of 0 means "no override" -> fall back to the default icon.
-  HICON icon =
-      ::LoadIconW(::GetModuleHandleW(nullptr),
-                  MAKEINTRESOURCEW(aResourceId ? aResourceId : IDI_APPICON));
-  if (icon) {
-    SetBigIcon(icon);
-    SetSmallIcon(icon);
-  }
 }
 
 void nsWindow::SetBigIconNoData() {
