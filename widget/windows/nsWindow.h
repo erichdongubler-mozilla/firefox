@@ -240,6 +240,9 @@ class nsWindow final : public nsIWidget {
   void* GetNativeData(uint32_t aDataType) override;
   nsresult SetTitle(const nsAString& aTitle) override;
   void SetIcon(const nsAString& aIconSpec) override;
+  // Apply WM_SETICON from an icon resource embedded in this process's
+  // executable. A resource ID of 0 reverts to IDI_APPICON.
+  void SetIconFromExeResource(uint16_t aResourceId);
   LayoutDeviceIntPoint WidgetToScreenOffset() override;
   LayoutDeviceIntMargin NormalSizeModeClientToWindowMargin() override;
   void EnableDragDrop(bool aEnable) override;
