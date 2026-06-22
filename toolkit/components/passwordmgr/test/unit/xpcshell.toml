@@ -107,9 +107,6 @@ run-if = [
 ["test_logins_change.js"]
 
 ["test_logins_decrypt_failure.js"]
-prefs = [
-  "signon.rustMirror.enabled=false",
-]
 skip-if = [
   "os == 'android'", # Bug 1171687: Needs fixing on Android
 ]

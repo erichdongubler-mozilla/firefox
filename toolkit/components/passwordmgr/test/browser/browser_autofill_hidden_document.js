@@ -27,7 +27,6 @@ add_setup(async function () {
     set: [
       ["test.wait300msAfterTabSwitch", true],
       ["signon.usernameOnlyForm.enabled", true],
-      ["signon.rustMirror.enabled", false],
     ],
   });
 

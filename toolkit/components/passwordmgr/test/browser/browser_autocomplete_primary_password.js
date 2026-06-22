@@ -24,10 +24,6 @@ async function waitForDialog() {
 }
 
 add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["signon.rustMirror.enabled", false]],
-  });
-
   let login = LoginTestUtils.testData.formLogin({
     origin: "https://example.com",
     formActionOrigin: "https://example.com",

@@ -4,7 +4,6 @@
 
 import { LoginManagerStorage_json } from "resource://gre/modules/storage-json.sys.mjs";
 import { LoginManagerRustStorage } from "resource://gre/modules/storage-rust.sys.mjs";
-import { LoginManagerRustMirror } from "resource://gre/modules/LoginManagerRustMirror.sys.mjs";
 
 export class LoginManagerStorage extends LoginManagerStorage_json {
   static #jsonStorage = null;
@@ -21,7 +20,6 @@ export class LoginManagerStorage extends LoginManagerStorage_json {
         .initialize()
         .then(() => this.#rustStorage.initialize())
         .then(() => {
-          new LoginManagerRustMirror(this.#jsonStorage, this.#rustStorage);
           this.#activeStore = this.#jsonStorage;
           return this.#jsonStorage;
         });
