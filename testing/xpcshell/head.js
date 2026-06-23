@@ -53,6 +53,7 @@ let { PromiseTestUtils: _PromiseTestUtils } = ChromeUtils.importESModule(
 let {
   uploadProfileArtifact: _uploadProfileArtifact,
   installProfilerDumpAndQuit: _installProfilerDumpAndQuit,
+  setProfilerDumpTestName: _setProfilerDumpTestName,
 } = ChromeUtils.importESModule(
   "resource://testing-common/TestProfilerArtifact.sys.mjs"
 );
@@ -102,7 +103,11 @@ var _testLogger = new _LoggerClass("xpcshell/head.js", _dumpLog, [_add_params]);
 
 // When Gecko hits a fatal test-only condition during a profiled run, report it
 // as a failure and save a profile before exiting, instead of crashing and
-// losing the profile.
+// losing the profile. A condition fired late in shutdown runs this callback
+// after xpcshell has set every binding of the test global to undefined, so
+// _Services/_testLogger/_TEST_NAME may all be gone and this throws;
+// TestProfilerArtifact handles that with the test name cached eagerly via
+// _setProfilerDumpTestName (see _execute_test) and a logger of its own.
 _installProfilerDumpAndQuit(reason => {
   if (_Services.startup.shuttingDown) {
     // No test is running anymore, so report a top-level error rather than a
@@ -555,6 +560,11 @@ function _do_upload_profile() {
 
 // eslint-disable-next-line complexity
 function _execute_test() {
+  // _TEST_NAME is injected after the head files load, so cache it now (it is
+  // unavailable when the profiler-dump-and-quit handler is installed above) for
+  // a fatal condition that fires once the test global has been torn down.
+  _setProfilerDumpTestName(_TEST_NAME);
+
   if (typeof _TEST_CWD != "undefined") {
     try {
       changeTestShellDir(_TEST_CWD);

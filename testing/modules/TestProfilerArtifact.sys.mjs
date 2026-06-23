@@ -88,6 +88,44 @@ async function saveProfileForFatalCondition(
 
 let gDumpingAndQuitting = false;
 
+// A profile-or-crash condition can fire during XPCOM shutdown, after xpcshell
+// has set every top-level binding of the test global (Services, the harness
+// logger, _TEST_NAME) to undefined (JS_SetAllNonReservedSlotsToUndefined in
+// XPCShellImpl.cpp), so the harness's reportFatalCondition callback throws. This
+// module's own scope is still live, so fall back to a logger created here to
+// still report and save the profile. Created lazily because most runs never
+// reach this path.
+let gFallbackLogger;
+// The current test's name, cached here (in nuke-proof module scope) by the
+// xpcshell harness so the fallback path above can still name the profile
+// artifact after the test global is gone.
+let gCachedTestName;
+
+/**
+ * Cache the name of the running test so a profile-or-crash condition that fires
+ * after the test global has been torn down can still name its artifact.
+ *
+ * @param {string} testName Name of the running test.
+ */
+export function setProfilerDumpTestName(testName) {
+  gCachedTestName = testName;
+}
+
+function getFallbackLogger() {
+  if (!gFallbackLogger) {
+    const { StructuredLogger } = ChromeUtils.importESModule(
+      "resource://testing-common/StructuredLog.sys.mjs"
+    );
+    // Only xpcshell reaches this path: its callback touches the nuked test
+    // global, whereas mochitest's reads the still-live Tester. Hence the
+    // xpcshell logger name.
+    gFallbackLogger = new StructuredLogger("xpcshell/head.js", msg =>
+      dump(JSON.stringify(msg) + "\n")
+    );
+  }
+  return gFallbackLogger;
+}
+
 /**
  * Register the handler for Gecko's "profiler-dump-and-quit" notification. When
  * a fatal test-only condition is hit during a profiled run, the handler reports
@@ -112,13 +150,25 @@ export function installProfilerDumpAndQuit(reportFatalCondition) {
     }
     gDumpingAndQuitting = true;
 
-    let {
-      testName,
-      logger,
-      endTest,
-      profileName,
-      testRunning = true,
-    } = reportFatalCondition(data || "fatal test-only condition");
+    let testName, logger, endTest, profileName, testRunning;
+    try {
+      ({
+        testName,
+        logger,
+        endTest,
+        profileName,
+        testRunning = true,
+      } = reportFatalCondition(data || "fatal test-only condition"));
+    } catch (e) {
+      // The test global was torn down (late shutdown); report a top-level error
+      // and save the profile from this module's still-live scope, using the test
+      // name cached before teardown and a logger created here. The harness
+      // callback would normally log the failure reason; do it here in its place.
+      testName = gCachedTestName || "shutdown";
+      logger = getFallbackLogger();
+      logger.error(`${testName} | ${data || "fatal test-only condition"}`);
+      testRunning = false;
+    }
 
     if (Services.profiler.IsActive()) {
       let done = false;
