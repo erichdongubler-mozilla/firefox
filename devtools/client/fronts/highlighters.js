@@ -26,6 +26,10 @@ class CustomHighlighterFront extends FrontClassWithSpec(customHighlighterSpec) {
     this._isShown = false;
   }
 
+  form(json) {
+    this._isShown = json.isShown;
+  }
+
   show(...args) {
     this._isShown = true;
     return super.show(...args);

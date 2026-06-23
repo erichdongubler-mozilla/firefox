@@ -93,6 +93,16 @@ exports.CustomHighlighterActor = class CustomHighligherActor extends Actor {
     super.destroy();
     this.finalize();
     this._parent = null;
+    this.#isShown = false;
+  }
+
+  #isShown = false;
+
+  form() {
+    return {
+      actor: this.actorID,
+      isShown: this.#isShown,
+    };
   }
 
   /**
@@ -124,6 +134,7 @@ exports.CustomHighlighterActor = class CustomHighligherActor extends Actor {
 
     const rawNode = node?.rawNode;
 
+    this.#isShown = true;
     return this._highlighter.show(rawNode, options);
   }
 
@@ -134,6 +145,7 @@ exports.CustomHighlighterActor = class CustomHighligherActor extends Actor {
     if (this._highlighter) {
       this._highlighter.hide();
     }
+    this.#isShown = false;
   }
 
   /**
