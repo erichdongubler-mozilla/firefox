@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.413
- * pdfjsBuild = 28a7606c1
+ * pdfjsVersion = 6.0.421
+ * pdfjsBuild = d71fe9025
  */
 
 ;// ./web/ui_utils.js
@@ -985,7 +985,7 @@ const {
 } = globalThis.pdfjsLib;
 
 ;// ./web/internal_evt.js
-const INTERNAL_EVT = "eda8370a-1b2d-4fc1-8133-2bbc3cedc883";
+const INTERNAL_EVT = "9188730b-75fd-4045-b024-5a0335665078";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -7411,6 +7411,9 @@ class PDFPresentationMode {
     if (!this.active) {
       return;
     }
+    if (evt.target.closest?.(".richMediaAnnotation")) {
+      return;
+    }
     evt.preventDefault();
     const delta = normalizeWheelEventDelta(evt);
     const currentTime = Date.now();
@@ -7495,6 +7498,9 @@ class PDFPresentationMode {
     if (evt.target.href && evt.target.parentNode?.hasAttribute("data-internal-link")) {
       return;
     }
+    if (evt.target.closest?.(".richMediaAnnotation")) {
+      return;
+    }
     evt.preventDefault();
     if (evt.shiftKey) {
       this.pdfViewer.previousPage();
@@ -7530,6 +7536,10 @@ class PDFPresentationMode {
   }
   #touchSwipe(evt) {
     if (!this.active) {
+      return;
+    }
+    if (evt.target.closest?.(".richMediaAnnotation")) {
+      this.touchSwipeState = null;
       return;
     }
     if (evt.touches.length > 1) {
@@ -10693,6 +10703,7 @@ class AnnotationLayerBuilder {
     this._cancelled = true;
     this.#eventAC?.abort();
     this.#eventAC = null;
+    this.annotationLayer?.destroy();
   }
   refreshCanvases() {
     this.annotationLayer?.refreshCanvases();
@@ -10735,7 +10746,7 @@ class AnnotationLayerBuilder {
         return;
     }
     for (const section of this.div.childNodes) {
-      if (section.hasAttribute("data-internal-link")) {
+      if (section.hasAttribute("data-internal-link") || section.classList.contains("richMediaAnnotation")) {
         continue;
       }
       section.inert = disableFormElements;
@@ -13172,7 +13183,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.0.413";
+    const viewerVersion = "6.0.421";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
