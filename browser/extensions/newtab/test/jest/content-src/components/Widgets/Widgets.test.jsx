@@ -217,20 +217,20 @@ describe("<Widgets> overflow detection", () => {
     expect(section.hasAttribute("data-overflow-4")).toBe(false);
   });
 
-  it("does not flag any overflow when two mediums fit in one card by pairing", () => {
+  it("flags overflow-1 (but not -2) for two mediums", () => {
     const state = makeNovaWidgetState([
       ["lists", "medium"],
       ["focusTimer", "medium"],
     ]);
     const { container } = renderWidgets(state);
     const section = getSectionContainer(container);
-    // 2 mediums always pair into 1 card slot, so they fit in any
-    // viewport ≥ 1 card column.
-    expect(section.hasAttribute("data-overflow-1")).toBe(false);
+    // One widget per card slot regardless of size, so 2 widgets overflow
+    // a 1-card viewport but fit a 2-card viewport.
+    expect(section.hasAttribute("data-overflow-1")).toBe(true);
     expect(section.hasAttribute("data-overflow-2")).toBe(false);
   });
 
-  it("flags overflow-1 (but not -2) when three mediums are enabled", () => {
+  it("flags overflow-1 and -2 (but not -3) when three mediums are enabled", () => {
     const state = makeNovaWidgetState([
       ["lists", "medium"],
       ["focusTimer", "medium"],
@@ -238,13 +238,13 @@ describe("<Widgets> overflow detection", () => {
     ]);
     const { container } = renderWidgets(state);
     const section = getSectionContainer(container);
-    // 3 mediums need 2 card slots (one pair + one solo). Fits 2-card
-    // viewports and up; overflows a 1-card viewport.
+    // 3 widgets need 3 card slots; overflows 1- and 2-card viewports.
     expect(section.hasAttribute("data-overflow-1")).toBe(true);
-    expect(section.hasAttribute("data-overflow-2")).toBe(false);
+    expect(section.hasAttribute("data-overflow-2")).toBe(true);
+    expect(section.hasAttribute("data-overflow-3")).toBe(false);
   });
 
-  it("flags overflow-4 when a large is in the 5th position (image #17 case)", () => {
+  it("overflow detection is size-agnostic", () => {
     const state = makeNovaWidgetState([
       ["sportsWidget", "medium"],
       ["clocks", "medium"],
@@ -254,12 +254,11 @@ describe("<Widgets> overflow detection", () => {
     ]);
     const { container } = renderWidgets(state);
     const section = getSectionContainer(container);
-    // The large at position 5 can't pair with any first-4 medium, so
-    // every cols ≤ 4 view overflows.
+    // 5 widgets, one per slot, overflow every viewport up to 4 cards.
     expect(section.hasAttribute("data-overflow-4")).toBe(true);
   });
 
-  it("does not flag overflow when 1 large + 3 mediums fits in 3 cards", () => {
+  it("flags overflow-3 (but not -4) for four widgets of mixed sizes", () => {
     const state = makeNovaWidgetState([
       ["lists", "large"],
       ["focusTimer", "medium"],
@@ -268,10 +267,9 @@ describe("<Widgets> overflow detection", () => {
     ]);
     const { container } = renderWidgets(state);
     const section = getSectionContainer(container);
-    // 1 large + 3 mediums = 1 + ceil(3/2) = 3 slots; fits in a 3-card
-    // viewport. Mediums in the first 3 positions provide partners for
-    // the third medium, so the overflow falls back to fit.
-    expect(section.hasAttribute("data-overflow-3")).toBe(false);
+    // 4 widgets = 4 slots; overflows a 3-card viewport, fits a 4-card one.
+    // Sizes don't affect the count.
+    expect(section.hasAttribute("data-overflow-3")).toBe(true);
     expect(section.hasAttribute("data-overflow-4")).toBe(false);
   });
 });
