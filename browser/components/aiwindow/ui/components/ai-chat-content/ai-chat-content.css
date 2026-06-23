@@ -60,6 +60,7 @@
       &::before {
         bottom: 0;
         mask: linear-gradient(transparent 30%, var(--color-black-alpha-60) 50%, var(--color-black) 70%);
+        z-index: 1;
       }
     }
   }
@@ -85,10 +86,15 @@
   flex-direction: column;
   gap: var(--space-small);
   padding-block-start: var(--smart-window-top-spacing-chat);
-  padding-inline: max(var(--space-medium), calc((100% - var(--smartwindow-content-max-width)) / 2));
+  padding-inline: max(var(--space-medium), calc((100vw - var(--smartwindow-content-max-width)) / 2));
   --content-height: 100%;
   min-height: var(--content-height);
   width: 100%;
+
+  /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
+  @media -moz-pref("browser.nova.enabled") {
+    padding-inline: max(var(--space-medium), calc((100vw - var(--smartwindow-content-max-width) + var(--space-xlarge)) / 2));
+  }
 
   & > :last-child:not(.chat-bubble-user) {
     padding-block-end: var(--smart-window-fade-size);
@@ -156,7 +162,7 @@
     box-shadow: none;
 
     @media not (forced-colors) {
-      --chat-bubble-background-color: light-dark(var(--color-white), var(--color-neutral-120, #1e1d20));
+      --chat-bubble-background-color: light-dark(var(--color-white), var(--color-gray-75));
       --chat-bubble-border-color: light-dark(var(--color-violet-desaturated-10), var(--color-violet-desaturated-50));
       border-color: var(--chat-bubble-border-color);
     }

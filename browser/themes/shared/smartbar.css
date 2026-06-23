@@ -195,6 +195,12 @@
 .smartbar > .urlbar-background {
   border-radius: var(--border-radius-large);
 
+  /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
+  @media -moz-pref("browser.nova.enabled") {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    border-radius: 24px;
+  }
+
   @media not (forced-colors) {
     background-color: var(--smartbar-inactive-background-color);
     border: var(--smartbar-border-style-gradient) transparent;
