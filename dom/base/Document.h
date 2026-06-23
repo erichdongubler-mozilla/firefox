@@ -4085,19 +4085,10 @@ class Document : public nsINode,
            GetDocGroup() == GetInProcessParentDocument()->GetDocGroup();
   }
 
-  void AddIntersectionObserver(DOMIntersectionObserver& aObserver) {
-    MOZ_ASSERT(!mIntersectionObservers.Contains(&aObserver),
-               "Intersection observer already in the list");
-    mIntersectionObservers.AppendElement(&aObserver);
-  }
-  void RemoveIntersectionObserver(DOMIntersectionObserver& aObserver) {
-    // TODO(emilio): This can fail during unlink because Document unlink clears
-    // the IntersectionObserver array, but it seems it wouldn't need to?
-    // MOZ_ASSERT(mIntersectionObservers.Contains(&aObserver));
-    mIntersectionObservers.RemoveElement(&aObserver);
-  }
+  void AddIntersectionObserver(DOMIntersectionObserver& aObserver);
+  void RemoveIntersectionObserver(DOMIntersectionObserver& aObserver);
   bool HasIntersectionObservers() const {
-    return !mIntersectionObservers.IsEmpty();
+    return !mIntersectionObservers.isEmpty();
   }
 
   // Update intersection observers in this document and all
@@ -4142,15 +4133,9 @@ class Document : public nsINode,
   }
 
   // ResizeObserver usage.
-  void AddResizeObserver(ResizeObserver& aObserver) {
-    MOZ_ASSERT(!mResizeObservers.Contains(&aObserver));
-    mResizeObservers.AppendElement(&aObserver);
-  }
-  void RemoveResizeObserver(ResizeObserver& aObserver) {
-    MOZ_ASSERT(mResizeObservers.Contains(&aObserver));
-    mResizeObservers.RemoveElement(&aObserver);
-  }
-  bool HasResizeObservers() const { return !mResizeObservers.IsEmpty(); }
+  void AddResizeObserver(ResizeObserver& aObserver);
+  void RemoveResizeObserver(ResizeObserver& aObserver);
+  bool HasResizeObservers() const { return !mResizeObservers.isEmpty(); }
 
   void ScheduleResizeObserversNotification();
   /**
@@ -5653,10 +5638,11 @@ class Document : public nsINode,
   // is a weak reference to avoid leaks due to circular references.
   nsWeakPtr mScopeObject;
 
-  // Array of intersection observers with active observations.
-  nsTArray<DOMIntersectionObserver*> mIntersectionObservers;
-  // Array of resize observers with active observations.
-  nsTArray<ResizeObserver*> mResizeObservers;
+  // Intersection observers registered with this document, in registration
+  // order as required by the spec.
+  LinkedList<DOMIntersectionObserver> mIntersectionObservers;
+  // Resize observers registered with this document, same order.
+  LinkedList<ResizeObserver> mResizeObservers;
 
   RefPtr<DOMIntersectionObserver> mLazyLoadObserver;
 

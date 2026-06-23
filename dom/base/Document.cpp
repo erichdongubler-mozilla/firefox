@@ -2300,7 +2300,8 @@ Document::~Document() {
   // Clear mObservers to keep it in sync with the mutationobserver list
   mObservers.Clear();
 
-  mIntersectionObservers.Clear();
+  mIntersectionObservers.clear();
+  mResizeObservers.clear();
 
   if (mStyleSheetSetList) {
     mStyleSheetSetList->Disconnect();
@@ -2683,7 +2684,8 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
 
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPreloadingImages)
 
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mIntersectionObservers)
+  tmp->mIntersectionObservers.clear();
+  tmp->mResizeObservers.clear();
 
   if (tmp->mListenerManager) {
     tmp->mListenerManager->Disconnect();
@@ -17381,10 +17383,6 @@ void Document::DocAddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const {
         mCSSLoader->SizeOfIncludingThis(aWindowSizes.mState.mMallocSizeOf);
   }
 
-  aWindowSizes.mDOMSizes.mDOMResizeObserverControllerSize +=
-      mResizeObservers.ShallowSizeOfExcludingThis(
-          aWindowSizes.mState.mMallocSizeOf);
-
   if (mAttributeStyles) {
     aWindowSizes.mDOMSizes.mDOMOtherSize +=
         mAttributeStyles->DOMSizeOfIncludingThis(
@@ -18161,7 +18159,7 @@ WindowContext* Document::GetWindowContextForPageUseCounters() const {
 }
 
 void Document::UpdateIntersections(TimeStamp aNowTime) {
-  if (!mIntersectionObservers.IsEmpty()) {
+  if (!mIntersectionObservers.isEmpty()) {
     DOMHighResTimeStamp time = 0;
     if (nsPIDOMWindowInner* win = GetInnerWindow()) {
       if (Performance* perf = win->GetPerformance()) {
@@ -18288,9 +18286,25 @@ void Document::SynchronouslyUpdateRemoteBrowserDimensions(
   UpdateRemoteFrameEffects(aIncludeInactive);
 }
 
+void Document::AddIntersectionObserver(DOMIntersectionObserver& aObserver) {
+  MOZ_DIAGNOSTIC_ASSERT(!aObserver.isInList(),
+                        "Intersection observer already in a list");
+  mIntersectionObservers.insertBack(&aObserver);
+}
+
+void Document::RemoveIntersectionObserver(DOMIntersectionObserver& aObserver) {
+  if (aObserver.isInList()) {
+    aObserver.remove();
+  }
+}
+
 void Document::NotifyIntersectionObservers() {
-  const auto observers = ToTArray<nsTArray<RefPtr<DOMIntersectionObserver>>>(
-      mIntersectionObservers);
+  // Snapshot the observers: the callbacks can register/unregister observers,
+  // and the RefPtrs keep them alive across the notification.
+  AutoTArray<RefPtr<DOMIntersectionObserver>, 8> observers;
+  for (DOMIntersectionObserver* observer : mIntersectionObservers) {
+    observers.AppendElement(observer);
+  }
   for (const auto& observer : observers) {
     // MOZ_KnownLive because the 'observers' array guarantees to keep it
     // alive.
@@ -19350,6 +19364,18 @@ void Document::DetermineProximityToViewportAndNotifyResizeObservers() {
   ps->NotifyFontFaceSetOnRefresh();
 }
 
+void Document::AddResizeObserver(ResizeObserver& aObserver) {
+  MOZ_DIAGNOSTIC_ASSERT(!aObserver.isInList(),
+                        "Resize observer already in a list");
+  mResizeObservers.insertBack(&aObserver);
+}
+
+void Document::RemoveResizeObserver(ResizeObserver& aObserver) {
+  if (aObserver.isInList()) {
+    aObserver.remove();
+  }
+}
+
 void Document::GatherAllActiveResizeObservations(uint32_t aDepth) {
   for (ResizeObserver* observer : mResizeObservers) {
     observer->GatherActiveObservations(aDepth);
@@ -19361,8 +19387,10 @@ uint32_t Document::BroadcastAllActiveResizeObservations() {
 
   // Copy the observers as this invokes the callbacks and could register and
   // unregister observers at will.
-  const auto observers =
-      ToTArray<nsTArray<RefPtr<ResizeObserver>>>(mResizeObservers);
+  AutoTArray<RefPtr<ResizeObserver>, 8> observers;
+  for (ResizeObserver* observer : mResizeObservers) {
+    observers.AppendElement(observer);
+  }
   for (const auto& observer : observers) {
     // MOZ_KnownLive because 'observers' is guaranteed to keep it
     // alive.
@@ -19380,7 +19408,7 @@ uint32_t Document::BroadcastAllActiveResizeObservations() {
 }
 
 bool Document::HasAnySkippedResizeObservations() const {
-  for (const auto& observer : mResizeObservers) {
+  for (const auto* observer : mResizeObservers) {
     if (observer->HasSkippedObservations()) {
       return true;
     }
@@ -19389,7 +19417,7 @@ bool Document::HasAnySkippedResizeObservations() const {
 }
 
 bool Document::HasAnyActiveResizeObservations() const {
-  for (const auto& observer : mResizeObservers) {
+  for (const auto* observer : mResizeObservers) {
     if (observer->HasActiveObservations()) {
       return true;
     }
