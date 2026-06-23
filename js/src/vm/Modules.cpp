@@ -1493,7 +1493,9 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
     } else {
       // Step 7.d. Else:
       // Step 7.d.i. Assert: in.[[ImportName]] is a String.
-      MOZ_ASSERT(importName && importName != cx->names().star_namespace_star_);
+      MOZ_ASSERT(importName && importName != cx->names().star_namespace_star_ &&
+                 importName != cx->names().star_source_star_);
+
       // Step 7.d.ii. Let resolution be ?
       // importedModule.ResolveExport(in.[[ImportName]]).
       ModuleErrorInfo errorInfo{in.lineNumber(), in.columnNumber()};
