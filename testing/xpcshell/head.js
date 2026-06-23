@@ -101,9 +101,19 @@ var { StructuredLogger: _LoggerClass } = ChromeUtils.importESModule(
 var _testLogger = new _LoggerClass("xpcshell/head.js", _dumpLog, [_add_params]);
 
 // When Gecko hits a fatal test-only condition during a profiled run, report it
-// as a failure of the current test and save a profile before exiting, instead
-// of crashing and losing the profile.
+// as a failure and save a profile before exiting, instead of crashing and
+// losing the profile.
 _installProfilerDumpAndQuit(reason => {
+  if (_Services.startup.shuttingDown) {
+    // No test is running anymore, so report a top-level error rather than a
+    // per-test status; uploadProfileArtifact then logs where the profile went.
+    _testLogger.error(`${_TEST_NAME} | ${reason}`);
+    return {
+      testName: _TEST_NAME,
+      logger: _testLogger,
+      testRunning: false,
+    };
+  }
   _testLogger.testStatus(_TEST_NAME, "fatal condition", "FAIL", "PASS", reason);
   return {
     testName: _TEST_NAME,

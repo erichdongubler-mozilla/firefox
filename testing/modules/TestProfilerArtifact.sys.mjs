@@ -15,42 +15,74 @@
 const DUMP_AND_QUIT_TOPIC = "profiler-dump-and-quit";
 
 /**
- * Gather a gzipped profile of all processes, write it as a CI artifact in
- * MOZ_UPLOAD_DIR named after the test, and log (via logger) an unmissable
- * failure naming the artifact, so dashboards can associate the profile with the
- * test failure.
+ * Gather a profile, write it as a CI artifact in MOZ_UPLOAD_DIR, and report an
+ * unmissable failure naming the artifact (in the "profile uploaded in <file>"
+ * form the dashboards recognize) so the profile can be associated with the
+ * failure.
  *
  * Requires MOZ_UPLOAD_DIR to be set and the profiler to be active; callers are
  * expected to check those conditions.
  *
- * @param {string} testName Path or name of the test; only its basename is used.
+ * @param {string} testName Test named in the reported failure.
  * @param {object} logger StructuredLogger used to report the failure.
+ * @param {string} profileName Names the profile artifact file (only its
+ *   basename is used); defaults to testName.
+ * @param {boolean} testRunning Whether a test is running. When true the failure
+ *   is reported as that test's status; when false (e.g. at shutdown) it is
+ *   reported as a top-level error instead, since a per-test status would be tied
+ *   to a test that has already ended and wouldn't reach the failure summary.
  */
-export async function uploadProfileArtifact(testName, logger) {
-  let filename = `profile_${testName.replace(/.*\//, "")}.json`;
+export async function uploadProfileArtifact(
+  testName,
+  logger,
+  profileName = testName,
+  testRunning = true
+) {
+  let filename = `profile_${profileName.replace(/.*\//, "")}.json`;
   let message;
   try {
     let path = PathUtils.join(Services.env.get("MOZ_UPLOAD_DIR"), filename);
-    const { profile } =
-      await Services.profiler.getProfileDataAsGzippedArrayBuffer();
-    await IOUtils.write(path, new Uint8Array(profile));
+    if (Services.startup.shuttingDown) {
+      // A multi-process gather would hang waiting on the child processes that
+      // are blocking shutdown; dump just this process synchronously instead.
+      Services.profiler.dumpProfileToFile(path);
+    } else {
+      const { profile } =
+        await Services.profiler.getProfileDataAsGzippedArrayBuffer();
+      await IOUtils.write(path, new Uint8Array(profile));
+    }
     message = `profile uploaded in ${filename}`;
   } catch (e) {
     // If the profile is large, we may encounter out of memory errors.
     message = `failed to upload profile: ${e}`;
   }
-  logger.testStatus(testName, null, "FAIL", "PASS", message);
+  if (testRunning) {
+    logger.testStatus(testName, null, "FAIL", "PASS", message);
+  } else {
+    logger.error(`${testName} | ${message}`);
+  }
 }
 
-async function saveProfileForFatalCondition(testName, logger) {
+async function saveProfileForFatalCondition(
+  testName,
+  logger,
+  profileName,
+  testRunning
+) {
   if (Services.env.exists("MOZ_UPLOAD_DIR")) {
-    await uploadProfileArtifact(testName, logger);
+    await uploadProfileArtifact(testName, logger, profileName, testRunning);
     return;
   }
   // Local --profiler runs save the profile on shutdown to this file instead.
   let shutdownFile = Services.env.get("MOZ_PROFILER_SHUTDOWN");
   if (shutdownFile) {
-    await Services.profiler.dumpProfileToFileAsync(shutdownFile);
+    if (Services.startup.shuttingDown) {
+      // As in uploadProfileArtifact, a multi-process gather would hang waiting
+      // on the child processes blocking shutdown; dump this process only.
+      Services.profiler.dumpProfileToFile(shutdownFile);
+    } else {
+      await Services.profiler.dumpProfileToFileAsync(shutdownFile);
+    }
   }
 }
 
@@ -65,8 +97,11 @@ let gDumpingAndQuitting = false;
  * @param {function(string): object} reportFatalCondition Harness callback that
  *   logs an unmissable failure for the current test, given the failure reason
  *   (recording a profiler marker captured in the saved profile), and returns
- *   { testName, logger, endTest }. testName names the profile artifact, logger
- *   reports where it was saved, and endTest() ends the test.
+ *   { testName, logger, endTest, profileName, testRunning }. testName names the
+ *   test in the reported failure; logger reports where the profile was saved;
+ *   endTest(), if provided, ends the test; profileName optionally names the
+ *   artifact file; testRunning is false when no test is running (e.g. at
+ *   shutdown), so the failure is reported as a top-level error.
  */
 export function installProfilerDumpAndQuit(reportFatalCondition) {
   Services.obs.addObserver((subject, topic, data) => {
@@ -77,13 +112,17 @@ export function installProfilerDumpAndQuit(reportFatalCondition) {
     }
     gDumpingAndQuitting = true;
 
-    let { testName, logger, endTest } = reportFatalCondition(
-      data || "fatal test-only condition"
-    );
+    let {
+      testName,
+      logger,
+      endTest,
+      profileName,
+      testRunning = true,
+    } = reportFatalCondition(data || "fatal test-only condition");
 
     if (Services.profiler.IsActive()) {
       let done = false;
-      saveProfileForFatalCondition(testName, logger)
+      saveProfileForFatalCondition(testName, logger, profileName, testRunning)
         .catch(e => {
           console.error(`Failed to save profile of the failure: ${e}`);
         })
@@ -102,8 +141,8 @@ export function installProfilerDumpAndQuit(reportFatalCondition) {
 
     // End the test only now: dashboards associate the profile with the test by
     // matching the upload message, which must be logged before the test_end
-    // line that endTest() emits.
-    endTest();
+    // line that endTest() emits. There is no test to end when none is running.
+    endTest?.();
 
     Cu.exitIfInAutomation();
   }, DUMP_AND_QUIT_TOPIC);

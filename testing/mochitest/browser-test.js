@@ -238,21 +238,39 @@ function Tester(aTests, structuredLogger, aCallback) {
   // it as a failure of the current test and save a profile before exiting,
   // instead of crashing and losing the profile.
   installProfilerDumpAndQuit(reason => {
-    let testName = this.currentTest?.path ?? "browser-test.js";
-    this.structuredLogger.testStatus(
-      testName,
-      "fatal condition",
-      "FAIL",
-      "PASS",
-      reason
-    );
+    // this.tests is nulled once the run finishes, so reading this.currentTest
+    // (which indexes into it) would throw during shutdown; index defensively.
+    let test = this.tests?.[this.currentTestIndex];
+    if (test) {
+      this.structuredLogger.testStatus(
+        test.path,
+        "fatal condition",
+        "FAIL",
+        "PASS",
+        reason
+      );
+      return {
+        testName: test.path,
+        logger: this.structuredLogger,
+        // Deferred until after the profile is saved and its location logged, so
+        // the upload message precedes test_end and dashboards find the profile.
+        endTest: () =>
+          this.structuredLogger.testEnd(test.path, "FAIL", "PASS", reason),
+      };
+    }
+
+    // No test is running: the run finished and we are shutting down. Report a
+    // top-level error (there is no test to tie a status to), and name the
+    // profile after the last manifest run rather than browser-test.js.
+    this.structuredLogger.error(`browser-test.js | ${reason}`);
+    let profileName = this._lastTestManifest
+      ? `${this._lastTestManifest.replace(/\.\w+$/, "").replace(/[:/]/g, "_")}_shutdown`
+      : "shutdown";
     return {
-      testName,
+      testName: "browser-test.js",
+      profileName,
       logger: this.structuredLogger,
-      // Deferred until after the profile is saved and its location logged, so
-      // the upload message precedes test_end and dashboards find the profile.
-      endTest: () =>
-        this.structuredLogger.testEnd(testName, "FAIL", "PASS", reason),
+      testRunning: false,
     };
   });
 
@@ -706,6 +724,9 @@ Tester.prototype = {
     // Tests complete, notify the callback and return
     this.callback(this.tests);
     this.callback = null;
+    // Remember the last manifest before dropping the test list, so a fatal
+    // condition hit while shutting down can name its profile after it.
+    this._lastTestManifest = this.tests.at(-1)?.manifest;
     this.tests = null;
   },
 
