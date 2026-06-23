@@ -277,6 +277,10 @@ nsresult nsSpeechTask::DispatchMarkImpl(const nsAString& aName,
   return NS_OK;
 }
 
+bool nsSpeechTask::IsPaused() const {
+  return mUtterance && mUtterance->IsPaused();
+}
+
 void nsSpeechTask::Pause() {
   MOZ_ASSERT(XRE_IsParentProcess());
 

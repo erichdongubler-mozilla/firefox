@@ -64,6 +64,8 @@ class nsSpeechTask : public nsISpeechTask,
 
   bool IsSpeaking() const { return mState == STATE_SPEAKING; }
 
+  bool IsPaused() const;
+
   bool IsPending() const { return mState == STATE_PENDING; }
 
  protected:

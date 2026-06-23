@@ -38,7 +38,7 @@ class MediaSharedKeysListener final : public ContentMediaControlKeyReceiver {
   // align with the spec once it adds Web Speech support.
   static constexpr AudioSessionType kSessionType = AudioSessionType::Transient;
 
-  explicit MediaSharedKeysListener(nsSpeechTask& aTask) : mTask(aTask) {
+  explicit MediaSharedKeysListener(SpeechTaskChild& aTask) : mTask(aTask) {
     MOZ_ASSERT(XRE_IsContentProcess());
     MOZ_ASSERT(NS_IsMainThread());
   }
@@ -112,10 +112,29 @@ class MediaSharedKeysListener final : public ContentMediaControlKeyReceiver {
     // TODO: implement Setvolume/Mute/Unmute for Web Speech.
   }
 
+  // The interrupt only pauses an utterance that is actively speaking and not
+  // already paused; the task remembers that the interruption owns the pause and
+  // ResumeFromMediaControl revives only that one, so a page-initiated pause
+  // issued while interrupted is never overridden when the interrupt ends.
+  void SuspendForInterrupt() override {
+    MOZ_ASSERT(NS_IsMainThread());
+    const bool willPause = mTask.IsSpeaking() && !mTask.IsPaused();
+    MEDIA_CONTROL_LOG(
+        "MediaSharedKeysListener {} SuspendForInterrupt in BC {}, pause={}",
+        fmt::ptr(this), mBrowsingContextId, willPause);
+    mTask.PauseFromMediaControl();
+  }
+  void ResumeFromInterrupt() override {
+    MOZ_ASSERT(NS_IsMainThread());
+    MEDIA_CONTROL_LOG("MediaSharedKeysListener {} ResumeFromInterrupt in BC {}",
+                      fmt::ptr(this), mBrowsingContextId);
+    mTask.ResumeFromMediaControl();
+  }
+
  private:
   ~MediaSharedKeysListener() = default;
 
-  nsSpeechTask& mTask;
+  SpeechTaskChild& mTask;
   RefPtr<ContentMediaAgent> mAgent;
   uint64_t mBrowsingContextId = 0;
   bool mIsAudible = false;
@@ -265,12 +284,21 @@ SpeechTaskChild::Setup(nsISpeechTaskCallback* aCallback) {
 }
 
 void SpeechTaskChild::Pause() {
+  // A pause from the page takes over the paused state from an interruption, so
+  // a later interruption end must not resume it.
+  mPausedByMediaControl = false;
   if (mActor) {
     mActor->SendPause();
   }
 }
 
 void SpeechTaskChild::Resume() {
+  // TODO(bug 2047321): while the tab is under an audio-focus interruption we
+  // have lost focus, and the platform does not expect us to restart on our
+  // own, so a page resume() should be gated until focus is regained. That
+  // gating is handled in bug 2047321.
+  // A resume from the page clears any interruption ownership of the pause.
+  mPausedByMediaControl = false;
   if (mActor) {
     mActor->SendResume();
   }
@@ -304,6 +332,27 @@ void SpeechTaskChild::StopMediaControl() {
     mSharedKeysListener->Shutdown();
     mSharedKeysListener = nullptr;
   }
+}
+
+void SpeechTaskChild::PauseFromMediaControl() {
+  const bool willPause = !mPausedByMediaControl && IsSpeaking() && !IsPaused();
+  MEDIA_CONTROL_LOG("SpeechTaskChild {} PauseFromMediaControl, pause={}",
+                    fmt::ptr(this), willPause);
+  if (!willPause) {
+    return;
+  }
+  Pause();
+  mPausedByMediaControl = true;
+}
+
+void SpeechTaskChild::ResumeFromMediaControl() {
+  MEDIA_CONTROL_LOG("SpeechTaskChild {} ResumeFromMediaControl, resume={}",
+                    fmt::ptr(this), mPausedByMediaControl);
+  if (!mPausedByMediaControl) {
+    return;
+  }
+  mPausedByMediaControl = false;
+  Resume();
 }
 
 #undef MEDIA_CONTROL_LOG
