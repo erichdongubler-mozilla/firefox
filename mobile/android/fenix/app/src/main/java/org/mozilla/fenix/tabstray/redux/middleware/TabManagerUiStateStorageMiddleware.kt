@@ -74,9 +74,7 @@ class TabManagerUiStateStorageMiddleware(
             }
 
             is TabsTrayAction.TabDataUpdateReceived -> {
-                val userHasTabGroups = action.tabStorageUpdate.tabGroups.isNotEmpty()
-                recordUserHadTabGroup(userHasTabGroups = userHasTabGroups)
-                dismissTabGroupOnboardingForExistingGroups(userHasTabGroups = userHasTabGroups)
+                recordUserHadTabGroup(userHasTabGroups = action.tabStorageUpdate.tabGroups.isNotEmpty())
             }
 
             is TabsTrayAction.PageSelected -> {
@@ -109,17 +107,6 @@ class TabManagerUiStateStorageMiddleware(
                 val success = uiStateRepository.recordTabGroupsPageViewed()
                 if (!success) {
                     logger.debug("Failed to update whether the tab groups page was viewed")
-                }
-            }
-        }
-    }
-
-    private fun dismissTabGroupOnboardingForExistingGroups(userHasTabGroups: Boolean) {
-        if (userHasTabGroups && uiStateRepository.uiState.value?.hasUserDismissedTabGroupOnboarding != true) {
-            scope.launch {
-                val success = uiStateRepository.dismissTabGroupOnboarding()
-                if (!success) {
-                    logger.debug("Failed to dismiss tab group onboarding for a user with a tab group")
                 }
             }
         }
