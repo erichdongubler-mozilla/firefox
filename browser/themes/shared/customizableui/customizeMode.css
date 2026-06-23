@@ -53,6 +53,9 @@ toolbar[overflowable][customizing] > .customization-target {
 
 #customization-panel-container {
   --customization-panel-padding: 20px;
+  /* Minimum inline-end gap so the arrow never escapes its box when the overflow
+     button sits flush against the window edge. */
+  --panel-arrow-min-inline-end: calc(var(--panel-border-radius) / 2);
 
   overflow-y: auto;
   display: flex;
@@ -401,6 +404,7 @@ toolbarpaletteitem {
     color: var(--panel-text-color);
     background: var(--panel-background-color);
     background-clip: padding-box;
+    border-radius: var(--panel-border-radius);
     max-width: 29em;
 
     @media (-moz-platform: macos) {
@@ -410,7 +414,6 @@ toolbarpaletteitem {
         0 0 1px hsla(0, 0%, 0%, 0.3),
         0 4px 10px hsla(0, 0%, 0%, 0.3);
       appearance: none;
-      border-radius: var(--panel-border-radius);
     }
 
     @media not (-moz-platform: macos) {
@@ -434,9 +437,11 @@ toolbarpaletteitem {
     stroke: var(--panel-border-color);
     /* JS code sets --panel-arrow-offset to the distance between the middle of the
      * overflow button and the end of the window. We subtract the padding of our
-     * container (#customization-panel-container) and half our own width:
+     * container (#customization-panel-container) and half our own width, and floor
+     * the result at --panel-arrow-min-inline-end so the arrow stays inside its box
+     * when the overflow button sits close to the window edge:
      */
-    margin-inline-end: calc(var(--panel-arrow-offset) - var(--customization-panel-padding) - 10px);
+    margin-inline-end: max(var(--panel-arrow-min-inline-end), calc(var(--panel-arrow-offset) - var(--customization-panel-padding) - 10px));
     vertical-align: top;
 
     @media (-moz-platform: macos) {
