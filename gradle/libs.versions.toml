@@ -86,7 +86,7 @@ ktlint = "1.8.0"
 spotless = "8.7.0"
 
 # Mozilla
-glean = "67.3.2"
+glean = "68.0.0"
 
 # Testing libraries
 androidx-test = "1.7.0"

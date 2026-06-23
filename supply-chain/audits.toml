@@ -3969,13 +3969,6 @@ criteria = "safe-to-deploy"
 delta = "0.4.1 -> 0.4.3"
 notes = "A small number of smaller misc changes. No unsafe changed, added, or removed."
 
-[[audits.jxl_simd]]
-who = "Timothy Nikkel <tnikkel@gmail.com>"
-criteria = "safe-to-deploy"
-delta = "0.4.3 -> 0.4.3@git:c41cbfaf34c2c8ebc3fb6655c885fe427ab9542a"
-importable = false
-notes = "A small number of smaller misc changes. No unsafe changed, added, or removed."
-
 [[audits.jxl_transforms]]
 who = "Timothy Nikkel <tnikkel@gmail.com>"
 criteria = "safe-to-deploy"
