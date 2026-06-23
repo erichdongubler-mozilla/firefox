@@ -21,6 +21,7 @@
 #include "mozilla/CaretAssociationHint.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/GeckoBindings.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MathAlgorithms.h"
@@ -5831,15 +5832,10 @@ static bool ComputeDecorationInset(
       aDecFrame->StyleTextReset()->mTextDecorationInset;
   nscoord insetLeft, insetRight;
   if (cssInset.IsAuto()) {
-    // Use an inset factor of 1/12.5, so we get 2px of inset (resulting in 4px
-    // gap between adjacent lines) at font-size 25px.
-    constexpr gfxFloat kAutoInsetFactor = 1.0 / 12.5;
-    // Use the EM size multiplied by kAutoInsetFactor, with a minimum of one
-    // CSS pixel to ensure that at least some separation occurs.
-    const nscoord autoDecorationInset =
-        std::max(aPresCtx->DevPixelsToAppUnits(
-                     NS_round(aMetrics.emHeight * kAutoInsetFactor)),
-                 nsPresContext::CSSPixelsToAppUnits(1));
+    const float emSize =
+        aMetrics.emHeight / aPresCtx->CSSToDevPixelScale().scale;
+    const nscoord autoDecorationInset = nsPresContext::CSSPixelsToAppUnits(
+        Gecko_CalcAutoDecorationInset(emSize));
     insetLeft = autoDecorationInset;
     insetRight = autoDecorationInset;
   } else {
