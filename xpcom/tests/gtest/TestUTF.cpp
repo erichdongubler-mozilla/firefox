@@ -6,7 +6,7 @@
 #include "nsReadableUtils.h"
 #include "UTFStrings.h"
 #include "mozilla/HashFunctions.h"
-#include "nsUTF8Utils.h"
+#include "mozilla/Utf16.h"
 #include "nsHashKeys.h"
 
 #include "gtest/gtest.h"
@@ -182,28 +182,28 @@ TEST(UTF, NonASCII16)
   NonASCII16_helper(512);
 }
 
-TEST(UTF, UTF16CharEnumerator)
+TEST(UTF, DecodeOneUtf16CodePoint)
 {
   const char16_t* p = u"\u0061\U0001F4A9";
   const char16_t* end = p + 3;
-  EXPECT_EQ(UTF16CharEnumerator::NextChar(&p, end), 0x0061U);
-  EXPECT_EQ(UTF16CharEnumerator::NextChar(&p, end), 0x1F4A9U);
+  EXPECT_EQ(DecodeOneUtf16CodePoint(&p, end), 0x0061U);
+  EXPECT_EQ(DecodeOneUtf16CodePoint(&p, end), 0x1F4A9U);
   EXPECT_EQ(p, end);
   const char16_t loneHigh = 0xD83D;
   p = &loneHigh;
   end = p + 1;
-  EXPECT_EQ(UTF16CharEnumerator::NextChar(&p, end), 0xFFFDU);
+  EXPECT_EQ(DecodeOneUtf16CodePoint(&p, end), 0xFFFDU);
   EXPECT_EQ(p, end);
   const char16_t loneLow = 0xDCA9;
   p = &loneLow;
   end = p + 1;
-  EXPECT_EQ(UTF16CharEnumerator::NextChar(&p, end), 0xFFFDU);
+  EXPECT_EQ(DecodeOneUtf16CodePoint(&p, end), 0xFFFDU);
   EXPECT_EQ(p, end);
   const char16_t loneHighStr[] = {0xD83D, 0x0061};
   p = loneHighStr;
   end = p + 2;
-  EXPECT_EQ(UTF16CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF16CharEnumerator::NextChar(&p, end), 0x0061U);
+  EXPECT_EQ(DecodeOneUtf16CodePoint(&p, end), 0xFFFDU);
+  EXPECT_EQ(DecodeOneUtf16CodePoint(&p, end), 0x0061U);
   EXPECT_EQ(p, end);
 }
 

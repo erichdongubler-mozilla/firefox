@@ -903,6 +903,23 @@ UniquePtr.h:
     - WrapUnique
     - TempPtrToSetter
 
+Utf16.h:
+  variables:
+    - kPlane1Base
+    - kReplacementChar
+    - kUnicodeMax
+  functions:
+    - IsInBMP
+    - IsHighSurrogate
+    - IsLowSurrogate
+    - IsSurrogate
+    - IsSurrogatePair
+    - IsValidCodePoint
+    - HighSurrogate
+    - LowSurrogate
+    - SurrogateToUCS4
+    - DecodeOneUtf16CodePoint
+
 Utf8.h:
   functions:
     - encoding_utf8_valid_up_to

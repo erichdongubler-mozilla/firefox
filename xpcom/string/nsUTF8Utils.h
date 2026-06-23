@@ -50,59 +50,6 @@ class UTF8traits {
   }
 };
 
-/**
- * Extract the next Unicode scalar value from the buffer and return it. The
- * pointer passed in is advanced to the start of the next character in the
- * buffer. Upon error, the return value is 0xFFFD, *aBuffer is advanced over
- * the unpaired surrogate and *aErr is set to true (if aErr is not null).
- *
- * Note: This method never sets *aErr to false to allow error accumulation
- * across multiple calls.
- *
- * Precondition: *aBuffer < aEnd
- */
-class UTF16CharEnumerator {
- public:
-  static inline char32_t NextChar(const char16_t** aBuffer,
-                                  const char16_t* aEnd, bool* aErr = nullptr) {
-    MOZ_ASSERT(aBuffer, "null buffer pointer pointer");
-    MOZ_ASSERT(aEnd, "null end pointer");
-
-    const char16_t* p = *aBuffer;
-
-    MOZ_ASSERT(p, "null buffer");
-    MOZ_ASSERT(p < aEnd, "Bogus range");
-
-    char16_t c = *p++;
-
-    // Let's use encoding_rs-style code golf here.
-    // Unsigned underflow is defined behavior
-    char16_t cMinusSurrogateStart = c - 0xD800U;
-    if (MOZ_LIKELY(cMinusSurrogateStart > (0xDFFFU - 0xD800U))) {
-      *aBuffer = p;
-      return c;
-    }
-    if (MOZ_LIKELY(cMinusSurrogateStart <= (0xDBFFU - 0xD800U))) {
-      // High surrogate
-      if (MOZ_LIKELY(p != aEnd)) {
-        char16_t second = *p;
-        // Unsigned underflow is defined behavior
-        if (MOZ_LIKELY((second - 0xDC00U) <= (0xDFFFU - 0xDC00U))) {
-          *aBuffer = ++p;
-          return (uint32_t(c) << 10) + uint32_t(second) -
-                 (((0xD800U << 10) - 0x10000U) + 0xDC00U);
-        }
-      }
-    }
-    // Unpaired surrogate
-    *aBuffer = p;
-    if (aErr) {
-      *aErr = true;
-    }
-    return 0xFFFDU;
-  }
-};
-
 template <typename Char, typename UnsignedT>
 inline UnsignedT RewindToPriorUTF8Codepoint(const Char* utf8Chars,
                                             UnsignedT index) {

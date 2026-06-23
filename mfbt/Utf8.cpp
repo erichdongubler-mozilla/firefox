@@ -8,6 +8,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/Types.h"
+#include "mozilla/Utf16.h"
 #include "mozilla/Utf8.h"
 
 #include <stddef.h>
@@ -58,12 +59,11 @@ MFBT_API HashNumber HashUTF8AsUTF16(const char* aUTF8, size_t aLength) {
 
     // Split astral code points into a UTF-16 surrogate pair, matching what a
     // conversion to UTF-16 followed by HashString() would hash.
-    if (codePoint < 0x10000) {
+    if (IsInBMP(codePoint)) {
       hasher.Add(static_cast<char16_t>(codePoint));
     } else {
-      codePoint -= 0x10000;
-      hasher.Add(static_cast<char16_t>(0xD800 + (codePoint >> 10)));
-      hasher.Add(static_cast<char16_t>(0xDC00 + (codePoint & 0x3FF)));
+      hasher.Add(HighSurrogate(codePoint));
+      hasher.Add(LowSurrogate(codePoint));
     }
   }
 

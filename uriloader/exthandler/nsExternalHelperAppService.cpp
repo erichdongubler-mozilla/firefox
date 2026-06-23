@@ -51,8 +51,8 @@
 #include "nsOSHelperAppService.h"
 #include "nsOSHelperAppServiceChild.h"
 #include "nsContentSecurityUtils.h"
-#include "nsUTF8Utils.h"
 #include "nsUnicodeProperties.h"
+#include "mozilla/Utf16.h"
 #include "mozilla/Utf8.h"
 
 // used to access our datastore of user-configured helper applications
@@ -3597,7 +3597,7 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
     const char16_t* charStart = cp;
     // Get the full character code, and advance cp past it.
     bool err = false;
-    char32_t nextChar = UTF16CharEnumerator::NextChar(&cp, end, &err);
+    char32_t nextChar = DecodeOneUtf16CodePoint(&cp, end, &err);
     allBits |= nextChar;
     if (NS_WARN_IF(err)) {
       // Invalid (unpaired) surrogate: replace with REPLACEMENT CHARACTER,
@@ -3759,7 +3759,7 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
     const char16_t* end = aString.EndReading();
     for (const char16_t* cp = aString.BeginReading(); cp < end;) {
       bool err = false;
-      char32_t ch = UTF16CharEnumerator::NextChar(&cp, end, &err);
+      char32_t ch = DecodeOneUtf16CodePoint(&cp, end, &err);
       MOZ_ASSERT(!err, "unexpected lone surrogate");
       result += ch < 0x80 ? 1 : ch < 0x800 ? 2 : ch < 0x10000 ? 3 : 4;
     }

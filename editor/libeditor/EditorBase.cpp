@@ -90,11 +90,12 @@
 #include "mozilla/dom/StaticRange.h"  // for StaticRange
 #include "mozilla/dom/Text.h"
 #include "mozilla/dom/Event.h"
+#include "mozilla/Utf16.h"
 #include "nsAString.h"                // for nsAString::Length, etc.
 #include "nsCCUncollectableMarker.h"  // for nsCCUncollectableMarker
 #include "nsCaret.h"                  // for nsCaret
 #include "nsCaseTreatment.h"
-#include "nsCharTraits.h"              // for NS_IS_HIGH_SURROGATE, etc.
+#include "nsCharTraits.h"              // for mozilla::IsHighSurrogate, etc.
 #include "nsContentUtils.h"            // for nsContentUtils
 #include "nsCopySupport.h"             // for nsCopySupport
 #include "nsDOMString.h"               // for DOMStringIsNull

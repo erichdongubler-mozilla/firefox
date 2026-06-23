@@ -3055,8 +3055,8 @@ void BuildTextRunsScanner::SetupTextEmphasisForTextRun(gfxTextRun* aTextRun,
     auto text = reinterpret_cast<const char16_t*>(aTextPtr);
     auto length = aTextRun->GetLength();
     for (size_t i = 0; i < length; ++i) {
-      if (i + 1 < length && NS_IS_SURROGATE_PAIR(text[i], text[i + 1])) {
-        uint32_t ch = SURROGATE_TO_UCS4(text[i], text[i + 1]);
+      if (i + 1 < length && IsSurrogatePair(text[i], text[i + 1])) {
+        uint32_t ch = SurrogateToUCS4(text[i], text[i + 1]);
         if (!MayCharacterHaveEmphasisMark(ch)) {
           aTextRun->SetNoEmphasisMark(i);
           aTextRun->SetNoEmphasisMark(i + 1);
@@ -3391,7 +3391,7 @@ static bool IsJustifiableCharacter(const nsStyleText* aTextStyle,
         (0xff5eu <= ch && ch <= 0xff9fu)) {
       return true;
     }
-    if (NS_IS_HIGH_SURROGATE(ch)) {
+    if (IsHighSurrogate(ch)) {
       if (char32_t u = aBuffer.ScalarValueAt(AssertedCast<uint32_t>(aPos))) {
         // CJK Unified Ideographs Extension B,
         // CJK Unified Ideographs Extension C,
@@ -3937,11 +3937,11 @@ static Maybe<TextAutospace::CharClass> LastNonMarkCharClass(
   while (i > startOffset) {
     // Get trailing character, decoding surrogate pair if necessary.
     char32_t ch = buffer.CharAt(--i);
-    if (NS_IS_LOW_SURROGATE(ch) && i > startOffset) {
+    if (IsLowSurrogate(ch) && i > startOffset) {
       // Get potential high surrogate, and decode.
       char32 hi = buffer.CharAt(i - 1);
-      if (NS_IS_HIGH_SURROGATE(hi)) {
-        ch = SURROGATE_TO_UCS4(hi, ch);
+      if (IsHighSurrogate(hi)) {
+        ch = SurrogateToUCS4(hi, ch);
         --i;
       }
     }
@@ -8997,7 +8997,7 @@ static bool IsAcceptableCaretPosition(const gfxSkipCharsIterator& aIter,
 
     // If the proposed position is before a high surrogate, we need to decode
     // the surrogate pair (if valid) and check the resulting character.
-    if (NS_IS_HIGH_SURROGATE(ch)) {
+    if (IsHighSurrogate(ch)) {
       if (const char32_t ucs4 = characterDataBuffer.ScalarValueAt(offs)) {
         // If the character is a (Plane-14) variation selector,
         // or an emoji character that is ligated with the previous
@@ -9148,7 +9148,7 @@ bool ClusterIterator::IsPunctuation() const {
   NS_ASSERTION(mCharIndex >= 0, "No cluster selected");
   const char16_t ch =
       mCharacterDataBuffer->CharAt(AssertedCast<uint32_t>(mCharIndex));
-  return mozilla::IsPunctuationForWordSelect(ch);
+  return IsPunctuationForWordSelect(ch);
 }
 
 intl::Script ClusterIterator::ScriptCode() const {
