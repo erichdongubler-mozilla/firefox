@@ -315,56 +315,65 @@ add_task(
 );
 
 add_task(async function test_smartbar_enter_in_chat_mode_commits_chat() {
-  const win = await openAIWindow();
-  const browser = win.gBrowser.selectedBrowser;
+  const sb = this.sinon.createSandbox();
 
-  // Typing a plain question puts the smartbar in "chat" mode. Pressing Enter
-  // should commit as chat, not navigate.
-  await promiseSmartbarSuggestionsOpen(browser, () =>
-    typeInSmartbar(browser, "what is the capital of france")
-  );
-  await waitForSmartbarAction(browser, "chat");
-  await stubLoadURL(browser);
+  try {
+    sb.stub(this.Chat, "fetchWithHistory");
+    sb.stub(this.openAIEngine, "build");
 
-  const committedAction = await SpecialPowers.spawn(browser, [], async () => {
-    const aiWindowElement = content.document.querySelector("ai-window");
-    const smartbar = aiWindowElement.shadowRoot.querySelector(
-      "#ai-window-smartbar"
+    const win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+
+    // Typing a plain question puts the smartbar in "chat" mode. Pressing Enter
+    // should commit as chat, not navigate.
+    await promiseSmartbarSuggestionsOpen(browser, () =>
+      typeInSmartbar(browser, "what is the capital of france")
+    );
+    await waitForSmartbarAction(browser, "chat");
+    await stubLoadURL(browser);
+
+    const committedAction = await SpecialPowers.spawn(browser, [], async () => {
+      const aiWindowElement = content.document.querySelector("ai-window");
+      const smartbar = aiWindowElement.shadowRoot.querySelector(
+        "#ai-window-smartbar"
+      );
+
+      let action = null;
+      content.document.addEventListener(
+        "smartbar-commit",
+        e => {
+          action = e.detail.action;
+        },
+        { once: true }
+      );
+
+      const inputCta = smartbar.querySelector("input-cta");
+      await ContentTaskUtils.waitForCondition(
+        () => inputCta.getAttribute("action") !== "stop",
+        "Wait for generation to complete before submitting via Enter"
+      );
+
+      smartbar.inputField.focus();
+      EventUtils.synthesizeKey("KEY_Enter", {}, content);
+
+      await ContentTaskUtils.waitForCondition(
+        () => action !== null,
+        "Wait for the smartbar-commit event"
+      );
+
+      return action;
+    });
+
+    Assert.equal(
+      committedAction,
+      "chat",
+      "Pressing Enter with the CTA in chat mode should commit as chat"
     );
 
-    let action = null;
-    content.document.addEventListener(
-      "smartbar-commit",
-      e => {
-        action = e.detail.action;
-      },
-      { once: true }
-    );
-
-    const inputCta = smartbar.querySelector("input-cta");
-    await ContentTaskUtils.waitForCondition(
-      () => inputCta.getAttribute("action") !== "stop",
-      "Wait for generation to complete before submitting via Enter"
-    );
-
-    smartbar.inputField.focus();
-    EventUtils.synthesizeKey("KEY_Enter", {}, content);
-
-    await ContentTaskUtils.waitForCondition(
-      () => action !== null,
-      "Wait for the smartbar-commit event"
-    );
-
-    return action;
-  });
-
-  Assert.equal(
-    committedAction,
-    "chat",
-    "Pressing Enter with the CTA in chat mode should commit as chat"
-  );
-
-  await BrowserTestUtils.closeWindow(win);
+    await BrowserTestUtils.closeWindow(win);
+  } finally {
+    sb.restore();
+  }
 });
 
 add_task(
