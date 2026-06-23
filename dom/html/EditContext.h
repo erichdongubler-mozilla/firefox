@@ -27,8 +27,14 @@ class EditContext final : public DOMEventTargetHelper {
   void UpdateText(uint32_t aRangeStart, uint32_t aRangeEnd,
                   const nsAString& aText, ErrorResult& aRv);
   void UpdateSelection(uint32_t aStart, uint32_t aEnd) {
+    if (aStart == mSelectionStart && aEnd == mSelectionEnd) {
+      return;
+    }
     mSelectionStart = aStart;
     mSelectionEnd = aEnd;
+    // Changing selection, so there may now be different
+    // text around the caret.
+    mTextNextToCaretChangedByTextUpdateHandler = true;
   }
   void UpdateControlBounds(DOMRect& aControlBounds);
   void UpdateSelectionBounds(DOMRect& aSelectionBounds);
@@ -87,6 +93,10 @@ class EditContext final : public DOMEventTargetHelper {
   MOZ_CAN_RUN_SCRIPT void FireTextFormatUpdate(const TextRangeArray* aRanges,
                                                uint32_t aCompositionOffset);
 
+  bool WasTextNextToCaretChangedByTextUpdateHandler() const {
+    return mTextNextToCaretChangedByTextUpdateHandler;
+  }
+
  private:
   EditContext(nsIGlobalObject* aGlobalObject, const EditContextInit& aInit,
               ErrorResult& aRv);
@@ -107,6 +117,7 @@ class EditContext final : public DOMEventTargetHelper {
   uint32_t mSelectionEnd = 0;
   uint32_t mCodepointRectsStartIndex = 0;
   bool mIsComposing = false;
+  bool mTextNextToCaretChangedByTextUpdateHandler = false;
 };
 
 }  // namespace mozilla::dom

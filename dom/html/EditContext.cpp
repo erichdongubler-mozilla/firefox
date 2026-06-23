@@ -178,6 +178,12 @@ void EditContext::UpdateText(uint32_t aRangeStart, uint32_t aRangeEnd,
   start = std::min(start, TextLength());
   uint32_t end = std::max(aRangeStart, aRangeEnd);
   end = std::min(end, TextLength());
+  if (mSelectionStart == mSelectionEnd && start <= mSelectionStart &&
+      end >= mSelectionStart) {
+    // The character before or after the caret has changed.
+    // This may affect how we render the caret for BiDi text.
+    mTextNextToCaretChangedByTextUpdateHandler = true;
+  }
   mText->ReplaceData(start, end - start, aText, IgnoreErrors());
   // XXX: Perhaps mSelectionStart/End should be clamped to new length
   //      of text? See https://github.com/w3c/edit-context/issues/88
@@ -219,6 +225,7 @@ void EditContext::UpdateTextAndFireEvent(uint32_t aStart, uint32_t aEnd,
   RefPtr<TextUpdateEvent> e =
       TextUpdateEvent::Constructor(this, u"textupdate"_ns, options);
   e->SetTrusted(true);
+  mTextNextToCaretChangedByTextUpdateHandler = false;
   DispatchEvent(*e);
 }
 
