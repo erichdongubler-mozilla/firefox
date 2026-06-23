@@ -346,7 +346,7 @@ android.defaultConfig.with {
 
     // Setting buildDate with every build ID changes the generated BuildConfig and slows down the
     // build, so debug builds (overridden below) use a fixed string instead.
-    def buildDate = LocalDateTime.parse(getBuildId(gradle.mozconfig.topobjdir), DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).toString()
+    def buildDate = LocalDateTime.parse(getBuildId(gradle.mozconfig.topobjdir, providers.environmentVariable("MOZ_BUILD_DATE").getOrNull()), DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).toString()
     buildConfigField 'String', 'BUILD_DATE', '"' + buildDate + '"'
 
     try {
