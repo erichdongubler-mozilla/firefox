@@ -1159,6 +1159,26 @@ ipc::IPCResult CamerasParent::RecvGetCaptureDevice(
   return IPC_OK();
 }
 
+ipc::IPCResult CamerasParent::RecvInvalidateDesktopCaptureDeviceCache(
+    const CaptureEngine& aCapEngine) {
+  mPBackgroundEventTarget.AssertOnCurrentThread();
+  MOZ_ASSERT(!mDestroyed);
+
+  LOG("Invalidating desktop capture device cache for capture engine {}",
+      static_cast<int>(aCapEngine));
+
+  MOZ_ALWAYS_SUCCEEDS(mVideoCaptureThread->Dispatch(
+      NS_NewRunnableFunction(__func__, [this, self = RefPtr(this), aCapEngine] {
+        mVideoCaptureThread->AssertOnCurrentThread();
+        if (VideoEngine* engine = mEngines->ElementAt(aCapEngine)) {
+          engine->ClearVideoCaptureDeviceInfo();
+        }
+      })));
+  (void)SendReplySuccess();
+
+  return IPC_OK();
+}
+
 // Find out whether the given window with id has permission to use the
 // camera. If the permission is not persistent, we'll make it a one-shot by
 // removing the (session) permission.

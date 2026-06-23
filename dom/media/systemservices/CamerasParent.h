@@ -210,6 +210,8 @@ class CamerasParent : public PCamerasParent {
   void ActorDestroy(ActorDestroyReason aWhy) override;
   mozilla::ipc::IPCResult RecvEnsureInitialized(
       const CaptureEngine& aCapEngine) override;
+  mozilla::ipc::IPCResult RecvInvalidateDesktopCaptureDeviceCache(
+      const CaptureEngine& aCapEngine) override;
 
   bool IsWindowCapturing(uint64_t aWindowId, const nsACString& aUniqueId) const
       MOZ_REQUIRES(mVideoCaptureThread);
