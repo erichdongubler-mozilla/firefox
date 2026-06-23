@@ -152,6 +152,7 @@ using mozilla::dom::WindowContextTransaction from "mozilla/dom/WindowContext.h";
 using gfxSparseBitSet from "gfxSparseBitSet.h";
 using FontVisibility from "gfxTypes.h";
 using mozilla::dom::MediaControlAction from "mozilla/dom/MediaControlKeySource.h";
+using mozilla::dom::AudioFocusInterruptAction from "mozilla/dom/ContentMediaController.h";
 using mozilla::dom::MediaPlaybackState from "mozilla/dom/MediaPlaybackStatus.h";
 using mozilla::dom::MediaAudibleState from "mozilla/dom/MediaPlaybackStatus.h";
 using mozilla::dom::ControlType from "mozilla/dom/MediaPlaybackStatus.h";
@@ -1008,6 +1009,15 @@ child:
      */
     async UpdateMediaControlAction(MaybeDiscardedBrowsingContext aContext,
                                    MediaControlAction aAction);
+
+    /**
+     * Dispatch an audio-focus interrupt (suspend or resume) to a browsing
+     * context tree so its audible sources react to a focus change. This is
+     * distinct from a media-control key: it is not user-initiated and reaches
+     * uncontrollable sources as well.
+     */
+    async UpdateMediaSessionInterrupt(MaybeDiscardedBrowsingContext aContext,
+                                      AudioFocusInterruptAction aAction);
 
     // Begin subscribing to a new BrowsingContextGroup, sending down the current
     // value for every individual BrowsingContext.

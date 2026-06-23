@@ -55,6 +55,7 @@ class BrowserBridgeParent;
 class FeaturePolicy;
 struct LoadURIOptions;
 class MediaController;
+enum class AudioFocusInterruptAction : uint8_t;
 struct LoadingSessionHistoryInfo;
 class SSCacheCopy;
 class WindowGlobalParent;
@@ -234,6 +235,10 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   // This function would propogate the action to its all child browsing contexts
   // in content processes.
   void UpdateMediaControlAction(const MediaControlAction& aAction);
+
+  // Propagate an audio-focus interrupt (suspend or resume) to this browsing
+  // context tree across content processes.
+  void UpdateMediaSessionInterrupt(AudioFocusInterruptAction aAction);
 
   // Triggers a load in the process
   using BrowsingContext::LoadURI;

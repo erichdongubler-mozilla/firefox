@@ -1942,6 +1942,17 @@ void CanonicalBrowsingContext::UpdateMediaControlAction(
   });
 }
 
+void CanonicalBrowsingContext::UpdateMediaSessionInterrupt(
+    AudioFocusInterruptAction aAction) {
+  if (IsDiscarded()) {
+    return;
+  }
+  ContentMediaControlKeyHandler::HandleAudioFocusInterrupt(this, aAction);
+  Group()->EachParent([&](ContentParent* aParent) {
+    (void)aParent->SendUpdateMediaSessionInterrupt(this, aAction);
+  });
+}
+
 void CanonicalBrowsingContext::LoadURI(nsIURI* aURI,
                                        const LoadURIOptions& aOptions,
                                        ErrorResult& aError) {

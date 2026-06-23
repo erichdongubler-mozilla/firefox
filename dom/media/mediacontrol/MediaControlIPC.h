@@ -8,11 +8,19 @@
 #include "ipc/EnumSerializer.h"
 #include "mozilla/dom/AudioSessionBinding.h"
 #include "mozilla/dom/BindingIPCUtils.h"
+#include "mozilla/dom/ContentMediaController.h"
 #include "mozilla/dom/MediaControlKeySource.h"
 #include "mozilla/dom/MediaControllerBinding.h"
 #include "mozilla/dom/MediaPlaybackStatus.h"
 
 namespace IPC {
+template <>
+struct ParamTraits<mozilla::dom::AudioFocusInterruptAction>
+    : public ContiguousEnumSerializerInclusive<
+          mozilla::dom::AudioFocusInterruptAction,
+          mozilla::dom::AudioFocusInterruptAction::Suspend,
+          mozilla::dom::AudioFocusInterruptAction::Resume> {};
+
 template <>
 struct ParamTraits<mozilla::dom::MediaControlKey>
     : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::MediaControlKey> {
