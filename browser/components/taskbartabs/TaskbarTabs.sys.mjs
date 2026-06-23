@@ -80,6 +80,8 @@ export const TaskbarTabs = new (class {
    * @param {nsIURL} [aDetails.creatingForUrl] - The page that the Taskbar Tab
    * was created on. This allows getting the favicon of that page if there
    * isn't a better option.
+   * @param {boolean} [aDetails.ensurePinned] - Whether pinning should be
+   * attempted even if the Taskbar Tab already exists.
    * @param {DOMWindow?} [aDetails.window] - The window to associate any UI
    * with, if applicable.
    */
@@ -105,7 +107,7 @@ export const TaskbarTabs = new (class {
       aDetails
     );
 
-    if (result.created) {
+    if (result.created || aDetails.ensurePinned) {
       // Don't wait for the pinning to complete.
       TaskbarTabsPin.pinTaskbarTab(
         result.taskbarTab,

@@ -412,6 +412,33 @@ add_task(async function test_findOrCreateTaskbarTabParentWindow() {
   await TaskbarTabs.removeTaskbarTab(result.taskbarTab.id);
 });
 
+add_task(async function test_findOrCreateTaskbarTabEnsurePin() {
+  gPinStub.resetHistory();
+
+  let uri = Services.io.newURI(BASE_URL);
+  let result1 = await TaskbarTabs.findOrCreateTaskbarTab(uri, 0);
+  is(gPinStub.callCount, 1, "Exactly one pin was attempted");
+
+  let result2 = await TaskbarTabs.findOrCreateTaskbarTab(uri, 0, {
+    ensurePinned: true,
+  });
+  is(gPinStub.callCount, 2, "A second pin was attempted");
+
+  Assert.equal(
+    result1.taskbarTab.id,
+    result2.taskbarTab.id,
+    "The same taskbar tab was removed each time"
+  );
+  Assert.ok(result1.created, "The taskbar tab was created the first time");
+  Assert.equal(
+    result2.created,
+    false,
+    "The taskbar tab was reused the second time"
+  );
+
+  await TaskbarTabs.removeTaskbarTab(result1.taskbarTab.id);
+});
+
 add_task(async function test_page_action_uses_manifest() {
   const pageAction = window.document.getElementById("taskbar-tabs-button");
   const url = "https://example.com/";
