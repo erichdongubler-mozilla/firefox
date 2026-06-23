@@ -323,11 +323,6 @@ TEST_SUITES = {
             "test-verify-gpu($|.*(-1|[^0-9])$)",
         ],
     },
-    "robocop": {
-        "mach_command": "robocop",
-        "kwargs": {"test_paths": None},
-        "task_regex": ["robocop($|.*(-1|[^0-9])$)"],
-    },
     "web-platform-tests": {
         "aliases": ("wpt",),
         "mach_command": "web-platform-tests",
@@ -508,7 +503,6 @@ _test_subsuites = {
     ("marionette", "unittest"): "marionette-unittest",
     ("mochitest", "gpu"): "mochitest-plain-gpu",
     ("mochitest", "media"): "mochitest-media",
-    ("mochitest", "robocop"): "robocop",
     ("mochitest", "webgl1-core"): "mochitest-webgl1-core",
     ("mochitest", "webgl1-ext"): "mochitest-webgl1-ext",
     ("mochitest", "webgl2-core"): "mochitest-webgl2-core",

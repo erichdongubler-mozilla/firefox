@@ -1,4 +1,4 @@
 [DEFAULT]
 
-["src/TestInstrumentationA.java"]
+["test_MochitestA.html"]
 subsuite = "background"
