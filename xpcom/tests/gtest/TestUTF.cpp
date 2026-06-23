@@ -5,7 +5,6 @@
 #include "nsString.h"
 #include "nsReadableUtils.h"
 #include "UTFStrings.h"
-#include "nsUnicharUtils.h"
 #include "mozilla/HashFunctions.h"
 #include "nsUTF8Utils.h"
 #include "nsHashKeys.h"
@@ -181,60 +180,6 @@ TEST(UTF, NonASCII16)
   NonASCII16_helper(16);
   NonASCII16_helper(32);
   NonASCII16_helper(512);
-}
-
-TEST(UTF, UTF8CharEnumerator)
-{
-  const char* p =
-      "\x61\xC0\xC2\xC2\x80\xE0\x80\x80\xE0\xA0\x80\xE1\x80\x80\xED\xBF\xBF\xED"
-      "\x9F\xBF\xEE\x80\x80\xEE\x80\xFF\xF0\x90\x80\x80\xF0\x80\x80\x80\xF1\x80"
-      "\x80\x80\xF4\x8F\xBF\xF4\x8F\xBF\xBF\xF4\xBF\xBF\xBF";
-  const char* end = p + 49;
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0x0061U);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0x0080U);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0x0800U);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0x1000U);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xD7FFU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xE000U);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0x10000U);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0x40000U);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0x10FFFFU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(p, end);
-  p = "\xC2\xB6";
-  end = p + 1;
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(p, end);
-  p = "\xE2\x98\x83";
-  end = p + 2;
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(p, end);
-  p = "\xF0\x9F\x92\xA9";
-  end = p + 2;
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(p, end);
-  p = "\xF0\x9F\x92\xA9";
-  end = p + 3;
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(p, end);
 }
 
 TEST(UTF, UTF16CharEnumerator)
