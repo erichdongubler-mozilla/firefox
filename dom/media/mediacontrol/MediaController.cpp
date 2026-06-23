@@ -672,6 +672,14 @@ void MediaController::ClearAudioSessionFor(uint64_t aBrowsingContextId) {
   mAudioSessionManager.NotifyBcDiscarded(aBrowsingContextId);
 }
 
+void MediaController::InterruptAudioSession(AudioSessionInterruptKind aKind) {
+  mAudioSessionManager.InterruptAudioSessions(aKind);
+}
+
+void MediaController::RestoreAudioSession() {
+  mAudioSessionManager.RestoreAudioSessions();
+}
+
 AudioSessionType MediaController::GetEffectiveAudioSessionType() const {
   return mAudioSessionManager.GetEffectiveType();
 }

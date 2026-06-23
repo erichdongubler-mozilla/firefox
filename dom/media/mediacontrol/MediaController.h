@@ -172,6 +172,11 @@ class MediaController final : public DOMEventTargetHelper,
   // Forget any per-AudioSession state stored for the given browsing context.
   void ClearAudioSessionFor(uint64_t aBrowsingContextId);
 
+  // Interrupt or restore the tab's selected audio session on an audio-focus
+  // change. aKind distinguishes a non-resumable loss from a transient one.
+  void InterruptAudioSession(AudioSessionInterruptKind aKind);
+  void RestoreAudioSession();
+
   // The audio-session type the tab is currently exposing to chrome
   // consumers. Returns Auto when the tab is producing no audio.
   AudioSessionType GetEffectiveAudioSessionType() const;
