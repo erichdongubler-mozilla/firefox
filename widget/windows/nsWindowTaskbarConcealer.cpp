@@ -408,15 +408,19 @@ void nsWindow::TaskbarConcealer::OnFocusAcquired(nsWindow* aWin) {
   UpdateAllState();
 }
 
-void nsWindow::TaskbarConcealer::OnWindowMaximized(nsWindow* aWin) {
+void nsWindow::TaskbarConcealer::OnWindowMaximized(nsWindow* aWin,
+                                                   bool aForce) {
   MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
           ("==> OnWindowMaximized() for HWND %p on HMONITOR %p", aWin->mWnd,
            ::MonitorFromWindow(aWin->mWnd, MONITOR_DEFAULTTONULL)));
 
   // This is a workaround for a failure of `PrepareFullScreen`, and is only
-  // useful when that's the only marking-mechanism in play.
-  if (MOZ_LIKELY(TaskbarConcealerImpl::GetMarkingMethod() !=
-                 TaskbarConcealerImpl::MarkingMethod::PrepareFullScreen)) {
+  // useful when that's the only marking-mechanism in play. (or the caller
+  // says to force it)
+  const bool isPrepareFullScreenOnly =
+      TaskbarConcealerImpl::GetMarkingMethod() ==
+      TaskbarConcealerImpl::MarkingMethod::PrepareFullScreen;
+  if (!aForce && !isPrepareFullScreenOnly) {
     return;
   }
 
