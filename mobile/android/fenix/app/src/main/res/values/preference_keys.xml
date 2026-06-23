@@ -118,6 +118,7 @@
     <string name="pref_cfr_popups_enabled" translatable="false">pref_cfr_popups_enabled</string>
     <string name="pref_in_app_messages_enabled" translatable="false">pref_in_app_messages_enabled</string>
     <string name="pref_key_onboarding_completed_timestamp" translatable="false">pref_key_onboarding_completed_timestamp</string>
+    <string name="pref_key_onboarding_current_page_index" translatable="false">pref_key_onboarding_current_page_index</string>
     <string name="pref_key_enable_import_passwords" translatable="false">pref_key_enable_import_passwords</string>
 
     <!-- Continuous onboarding -->

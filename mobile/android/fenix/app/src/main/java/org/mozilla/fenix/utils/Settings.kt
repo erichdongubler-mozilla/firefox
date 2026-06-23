@@ -2231,6 +2231,14 @@ class Settings(
     var onboardingFeatureEnabled = FeatureFlags.onboardingFeatureEnabled
 
     /**
+     * The current onboarding page index.
+     */
+    var onboardingCurrentPageIndex by intPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_onboarding_current_page_index),
+        default = 0,
+    )
+
+    /**
      * The completion timestamp of the initial onboarding flow.
      */
     var onboardingCompletedTimestamp: Long by longPreference(
