@@ -864,8 +864,8 @@ bool FFmpegVideoDecoder<LIBAV_VER>::ShouldDisableHWDecoding(
     FFMPEG_LOG("Codec {} is not accelerated", AVCodecToString(mCodecID));
     return true;
   }
-  if (!XRE_IsRDDProcess()) {
-    FFMPEG_LOG("Platform decoder works in RDD process only");
+  if (!XRE_IsRDDProcess() && !XRE_IsGPUProcess()) {
+    FFMPEG_LOG("Platform decoder works in RDD/GPU process only");
     return true;
   }
 #  endif
@@ -976,7 +976,7 @@ void FFmpegVideoDecoder<LIBAV_VER>::InitHWDecoderIfAllowed() {
 #  endif  // MOZ_ENABLE_D3D11VA
 
 #  ifdef MOZ_WIDGET_ANDROID
-  if ((XRE_IsRDDProcess() ||
+  if ((XRE_IsRDDProcess() || XRE_IsGPUProcess() ||
        (XRE_IsParentProcess() && PR_GetEnv("MOZ_RUN_GTEST"))) &&
       NS_SUCCEEDED(InitMediaCodecDecoder())) {
     return;
