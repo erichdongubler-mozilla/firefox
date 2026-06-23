@@ -1439,7 +1439,7 @@ def build_ship_it_maybe_release_payload(config, task, task_def):
 @payload_builder("shipit-nightly-metadata", schema=ShipitNightlyMetadataSchema)
 def build_ship_it_nightly_metadata_payload(_, task, task_def):
     locales_file = task["worker"].get("locales-file")
-    locales = open(locales_file).read().split("\n")
+    locales = open(locales_file).read().strip().split("\n")
     task_def["payload"] = {
         "product": task["worker"]["product"],
         "channel": task["worker"]["channel"],
