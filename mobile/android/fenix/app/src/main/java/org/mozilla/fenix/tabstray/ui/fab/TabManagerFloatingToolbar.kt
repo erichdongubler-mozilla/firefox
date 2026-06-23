@@ -361,7 +361,7 @@ private fun generateMenuItems(
     )
     val selectAllTabsItem = MenuItem.IconItem(
         text = Text.Resource(R.string.tab_tray_menu_select_all_tabs),
-        drawableRes = iconsR.drawable.ic_select_all_24,
+        drawableRes = iconsR.drawable.mozac_ic_select_all_24,
         testTag = TabsTrayTestTag.SELECT_ALL_TABS,
         onClick = onSelectAllTabsClick,
     )
