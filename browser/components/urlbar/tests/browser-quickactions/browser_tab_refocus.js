@@ -38,6 +38,10 @@ add_task(async function test_about_pages() {
       uri: "about:preferences",
     },
     {
+      firstInput: "edit pdf",
+      uri: "about:pdf",
+    },
+    {
       firstInput: "add-ons",
       uri: "about:addons",
       aboutAddonsCategory: "discover",

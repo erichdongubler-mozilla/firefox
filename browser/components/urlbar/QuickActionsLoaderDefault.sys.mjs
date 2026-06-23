@@ -112,6 +112,12 @@ const DEFAULT_ACTIONS = {
     label: "quickactions-downloads2",
     onPick: openUrlFun("about:downloads"),
   },
+  editpdf: {
+    l10nCommands: ["quickactions-cmd-editpdf"],
+    icon: "chrome://global/skin/icons/pdf.svg",
+    label: "quickactions-editpdf",
+    onPick: openUrlFun("about:pdf"),
+  },
   extensions: {
     l10nCommands: ["quickactions-cmd-extensions2"],
     icon: "chrome://mozapps/skin/extensions/category-extensions.svg",

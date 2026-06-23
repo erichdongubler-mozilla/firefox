@@ -334,6 +334,10 @@ quickactions-cmd-print = print
 quickactions-savepdf = Save page as PDF
 quickactions-cmd-savepdf2 = pdf, save page
 
+# Opens about:pdf, the PDF editor landing page
+quickactions-editpdf = Open PDF editor
+quickactions-cmd-editpdf = pdf
+
 # Opens a new private browsing window
 quickactions-private2 = Open private window
 quickactions-cmd-private = private browsing
