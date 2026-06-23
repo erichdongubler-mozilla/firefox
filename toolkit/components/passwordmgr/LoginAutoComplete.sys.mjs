@@ -213,6 +213,9 @@ class ImportableLearnMoreAutocompleteItem extends AutocompleteItem {
     super("importableLearnMore");
     this.comment = JSON.stringify({
       fillMessageName: "PasswordManager:OpenImportableLearnMore",
+      l10n: {
+        id: "autocomplete-import-learn-more",
+      },
     });
   }
 }
@@ -229,6 +232,12 @@ class ImportableLoginsAutocompleteItem extends AutocompleteItem {
       fillMessageData: {
         browserId,
       },
+      l10n: {
+        id: `autocomplete-import-logins-${browserId}`,
+        args: { host: hostname.replace(/^www\./, "") },
+      },
+      // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+      icon: "chrome://browser/skin/import.svg",
     });
     this.#actor = actor;
 
