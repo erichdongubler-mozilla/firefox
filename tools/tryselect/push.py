@@ -154,8 +154,6 @@ def task_labels_from_try_config(try_task_config):
             return parameters["try_task_config"].get("tasks")
         else:
             return None
-    elif try_task_config["version"] == 1:
-        return try_task_config.get("tasks", list())
     else:
         return None
 
