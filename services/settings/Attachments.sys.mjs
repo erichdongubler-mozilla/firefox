@@ -205,9 +205,6 @@ export class Downloader {
 
     try {
       // 1. Download the zip archive to disk
-      lazy.console.debug(
-        `${this.bucketName}/${this.collectionName}: Fetch attachments bundle from ${url}`
-      );
       const resp = await lazy.Utils.fetch(url);
       if (!resp.ok) {
         throw new Downloader.DownloadBundleError(url, resp);
@@ -226,21 +223,12 @@ export class Downloader {
       const tmpZipFile = await IOUtils.getFile(tmpZipFilePath);
       zipReader.open(tmpZipFile);
 
-      lazy.console.debug(
-        `${this.bucketName}/${this.collectionName}: Read zip bundle content`
-      );
       const cacheEntries = [];
       const zipFiles = Array.from(zipReader.findEntries("*.meta.json"));
       allSuccess = !!zipFiles.length;
 
-      const logStep = Math.max(1, Math.floor(zipFiles.length / 10));
       for (let i = 0; i < zipFiles.length; i++) {
         const lastLoop = i == zipFiles.length - 1;
-        if (i == 0 || i % logStep == 0 || lastLoop) {
-          lazy.console.debug(
-            `${this.bucketName}/${this.collectionName}: Extract attachment ${i + 1}/${zipFiles.length} from bundle`
-          );
-        }
         const entryName = zipFiles[i];
         try {
           // 3. Read the meta.json entry
@@ -384,13 +372,10 @@ export class Downloader {
     if (fallbackToDump && record) {
       if (await dumpInfo.isMatchingRequestedRecord(record)) {
         try {
-          lazy.console.debug(
-            `${this.bucketName}/${this.collectionName}: Read attachment from dump for record ${record.id}`
-          );
           return { ...(await dumpInfo.getResult()), _source: "dump_match" };
         } catch (e) {
           // Failed to read dump: record found but attachment file is missing.
-          lazy.console.error(e);
+          console.error(e);
         }
       }
     }
@@ -399,13 +384,10 @@ export class Downloader {
     if (record) {
       if (await cacheInfo.isMatchingRequestedRecord(record)) {
         try {
-          lazy.console.debug(
-            `${this.bucketName}/${this.collectionName}: Read attachment from cache for record ${record.id}`
-          );
           return { ...(await cacheInfo.getResult()), _source: "cache_match" };
         } catch (e) {
           // Failed to read cache, e.g. IndexedDB unusable.
-          lazy.console.error(e);
+          console.error(e);
         }
       }
     }
@@ -425,7 +407,7 @@ export class Downloader {
           // Store in cache but don't wait for it before returning.
           this.cacheImpl
             .set(attachmentId, { record, blob })
-            .catch(e => lazy.console.error(e));
+            .catch(e => console.error(e));
         }
         return { buffer: newBuffer, record, _source: "remote_match" };
       } catch (e) {
@@ -446,34 +428,24 @@ export class Downloader {
         // The dump can be more recent than the cache when the client (and its
         // packaged dump) is updated.
         try {
-          lazy.console.debug(
-            `${this.bucketName}/${this.collectionName}: Attachment fallback to fresh dump for record ${dumpRecord.id}`
-          );
           return { ...(await dumpInfo.getResult()), _source: "dump_fallback" };
         } catch (e) {
           // Failed to read dump: record found but attachment file is missing.
-          lazy.console.error(e);
+          console.error(e);
         }
       }
 
       try {
-        lazy.console.debug(
-          `${this.bucketName}/${this.collectionName}: Attachment fallback to cache for record ${cacheRecord.id}`
-        );
         return { ...(await cacheInfo.getResult()), _source: "cache_fallback" };
       } catch (e) {
         // Failed to read from cache, e.g. IndexedDB unusable.
-        lazy.console.error(e);
+        console.error(e);
       }
     }
 
     // Unable to find a valid attachment, fall back to the packaged dump.
-    const fallbackDumpRecord = fallbackToDump && (await dumpInfo.getRecord());
-    if (fallbackDumpRecord) {
+    if (fallbackToDump && (await dumpInfo.getRecord())) {
       try {
-        lazy.console.debug(
-          `${this.bucketName}/${this.collectionName}: Attachment fallback to dump for record ${fallbackDumpRecord.id}`
-        );
         return { ...(await dumpInfo.getResult()), _source: "dump_fallback" };
       } catch (e) {
         errorIfAllFails = e;
@@ -562,9 +534,6 @@ export class Downloader {
     let retried = 0;
     while (true) {
       try {
-        lazy.console.debug(
-          `${this.bucketName}/${this.collectionName}: Download from ${remoteFileUrl} (attempt ${retried + 1}/${retries})`
-        );
         const buffer = await this._fetchAttachment(remoteFileUrl);
         if (!checkHash) {
           return buffer;
