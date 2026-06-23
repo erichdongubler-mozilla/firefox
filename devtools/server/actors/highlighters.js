@@ -58,6 +58,7 @@ exports.CustomHighlighterActor = class CustomHighligherActor extends Actor {
     super(parent.conn, customHighlighterSpec);
 
     this._parent = parent;
+    this.highlighterTypeName = typeName;
 
     const modulePath = highlighterTypes.get(typeName);
     if (!modulePath) {

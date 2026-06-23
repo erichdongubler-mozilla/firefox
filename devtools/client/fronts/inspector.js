@@ -155,10 +155,20 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     this._highlighters.delete(type);
   }
 
-  async getHighlighterByType(typeName) {
+  /**
+   * Retrieve the HighlighterFront for a given highlighter type.
+   *
+   * @param {string} typeName
+   *        Highlighter type coming from devtools/shared/highlighters.mjs
+   * @param {boolean} forceNew
+   *        In case you are always expecting to instantiate a new Front instance,
+   *        set this argument to true.
+   * @return {HighlighterFront}
+   */
+  async getHighlighterByType(typeName, forceNew = false) {
     let highlighter = null;
     try {
-      highlighter = await super.getHighlighterByType(typeName);
+      highlighter = await super.getHighlighterByType(typeName, forceNew);
     } catch (_) {
       throw new Error(
         "The target doesn't support " +

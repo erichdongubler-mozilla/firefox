@@ -441,7 +441,7 @@ class HighlightersOverlay extends EventEmitter {
     if (max === 1) {
       highlighter = await inspectorFront.getOrCreateHighlighterByType(type);
     } else {
-      highlighter = await inspectorFront.getHighlighterByType(type);
+      highlighter = await inspectorFront.getHighlighterByType(type, true);
     }
 
     return highlighter;
