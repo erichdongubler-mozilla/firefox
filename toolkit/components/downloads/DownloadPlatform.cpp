@@ -257,8 +257,8 @@ nsresult DownloadPlatform::DownloadDone(nsIURI* aSource, nsIURI* aReferrer,
 }
 
 nsresult DownloadPlatform::MaybeWriteDownloadOriginInformation(
-    nsIFile* aTargetFile, const nsACString& aSourceUrl,
-    const nsACString& aReferrerSpec, JSContext* aCx, dom::Promise** aPromise) {
+    nsIFile* aTargetFile, nsIURI* aSourceUrl, nsIReferrerInfo* aReferrerInfo,
+    bool aIsPrivate, JSContext* aCx, dom::Promise** aPromise) {
   NS_ENSURE_ARG(aCx);
   NS_ENSURE_ARG(aPromise);
 
@@ -276,11 +276,10 @@ nsresult DownloadPlatform::MaybeWriteDownloadOriginInformation(
 
 #ifdef XP_WIN
   NS_ENSURE_ARG(aTargetFile);
+  NS_ENSURE_ARG(aSourceUrl);
 
   RefPtr mozPromise = widget::WinUtils::MaybeWriteFileZoneId(
-      aTargetFile,
-      !aSourceUrl.IsVoid() ? Some(nsCString(aSourceUrl)) : Nothing(),
-      !aReferrerSpec.IsVoid() ? Some(nsCString(aReferrerSpec)) : Nothing());
+      aTargetFile, aSourceUrl, aReferrerInfo, !aIsPrivate);
   MOZ_ASSERT(mozPromise);
 
   mozPromise->Then(

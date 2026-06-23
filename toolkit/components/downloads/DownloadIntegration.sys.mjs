@@ -676,29 +676,26 @@ export var DownloadIntegration = {
    * @rejects JavaScript exception if any of the operations failed.
    */
   async downloadDone(aDownload) {
-    const urlAndReferrer = !aDownload.source.isPrivate
-      ? {
-          url: aDownload.source.url,
-          referrer: aDownload.source.referrerInfo
-            ? aDownload.source.referrerInfo.computedReferrerSpec
-            : "",
-        }
-      : null;
-
-    // On Windows, this will mark any file saved to the file system as coming
-    // from the Internet security zone unless Group Policy disables the
-    // feature.  We do this by writing to the "Zone.Identifier" Alternate
-    // Data Stream directly, because the Save method of the
-    // IAttachmentExecute interface would trigger operations that may cause
-    // the application to hang, or other performance issues.
-    // The stream created in this way is forward-compatible with all the
-    // current and future versions of Windows.
-    // This currently does nothing on other platforms.
-    await lazy.gDownloadPlatform.maybeWriteDownloadOriginInformation(
-      new lazy.FileUtils.File(aDownload.target.path),
-      urlAndReferrer?.url,
-      urlAndReferrer?.referrer
-    );
+    try {
+      // On Windows, this will mark any file saved to the file system as coming
+      // from the Internet security zone unless Group Policy disables the
+      // feature.  We do this by writing to the "Zone.Identifier" Alternate
+      // Data Stream directly, because the Save method of the
+      // IAttachmentExecute interface would trigger operations that may cause
+      // the application to hang, or other performance issues.
+      // The stream created in this way is forward-compatible with all the
+      // current and future versions of Windows.
+      // This currently does nothing on other platforms.
+      await lazy.gDownloadPlatform.maybeWriteDownloadOriginInformation(
+        new lazy.FileUtils.File(aDownload.target.path),
+        lazy.NetUtil.newURI(aDownload.source.url),
+        aDownload.source.referrerInfo,
+        aDownload.source.isPrivate
+      );
+    } catch (ex) {
+      // Just swallow the error.
+      console.error(ex);
+    }
 
     // The file with the partially downloaded data has restrictive permissions
     // that don't allow other users on the system to access it.  Now that the

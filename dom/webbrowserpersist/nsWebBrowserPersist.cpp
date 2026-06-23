@@ -2260,29 +2260,10 @@ nsresult nsWebBrowserPersist::MakeOutputStreamFromFile(
   NS_ENSURE_SUCCESS(rv, rv);
 
 #ifdef XP_WIN
-  // Mark the file as Internet-zone (untrusted) so the OS prompts when the
-  // user opens it.  For private browsing, omit the originating URL and
-  // referrer.
-  {
-    Maybe<nsCString> sourceUrl;
-    Maybe<nsCString> referrerSpec;
-    if (!mIsPrivate) {
-      nsAutoCString spec;
-      if (aSourceURI && NS_SUCCEEDED(aSourceURI->GetSpec(spec))) {
-        sourceUrl = Some(spec);
-      }
-      if (mReferrerInfo) {
-        nsAutoCString referrer;
-        if (NS_SUCCEEDED(mReferrerInfo->GetComputedReferrerSpec(referrer)) &&
-            !referrer.IsEmpty()) {
-          referrerSpec = Some(referrer);
-        }
-      }
-    }
-
-    (void)mozilla::widget::WinUtils::MaybeWriteFileZoneIdSync(aFile, sourceUrl,
-                                                              referrerSpec);
-  }
+  // Mark the file as coming from the correct zone for the URL, so the Windows
+  // UAC prompt shows for untrusted origins when the user opens it.
+  (void)mozilla::widget::WinUtils::MaybeWriteFileZoneIdSync(
+      aFile, aSourceURI, mReferrerInfo, !mIsPrivate);
 #endif
 
   rv = NS_NewBufferedOutputStream(aOutputStream, fileOutputStream.forget(),

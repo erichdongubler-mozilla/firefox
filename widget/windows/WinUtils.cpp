@@ -30,6 +30,7 @@
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 #include "nsIContentPolicy.h"
+#include "nsIReferrerInfo.h"
 #include "nsIURIMutator.h"
 #include "WindowsUIUtils.h"
 #include "nsContentUtils.h"
@@ -2133,21 +2134,26 @@ static nsCString ZoneIdKey(const nsACString& aKey, const nsACString& aUrl,
 
 /* static */
 Result<bool, nsresult> WinUtils::MaybeWriteFileZoneIdSync(
-    nsIFile* aSaveFile, const Maybe<nsCString>& aSourceUrl,
-    const Maybe<nsCString>& aReferrerSpec) {
+    nsIFile* aSaveFile, nsIURI* aSourceURI, nsIReferrerInfo* aReferrerInfo,
+    bool aShouldStoreUrls) {
   NS_ENSURE_TRUE(aSaveFile, Err(NS_ERROR_INVALID_ARG));
+  NS_ENSURE_TRUE(aSourceURI, Err(NS_ERROR_INVALID_ARG));
 
   // Only write zone info if registry says so.
   if (!ShouldSaveZoneInformation()) {
     return false;
   }
 
-  // Default to Internet Zone if mapUrlToZone fails.
-  auto zone = Zone::ZONE_INTERNET;
-  if (aSourceUrl) {
-    zone = MapUrlToZone(NS_ConvertUTF8toUTF16(*aSourceUrl))
-               .unwrapOr(Zone::ZONE_INTERNET);
+  nsCString sourceUrl;
+  MOZ_TRY(aSourceURI->GetSpec(sourceUrl));
+  nsCString referrerSpec;
+  if (aReferrerInfo) {
+    MOZ_TRY(aReferrerInfo->GetComputedReferrerSpec(referrerSpec));
   }
+
+  // Default to Internet Zone if mapUrlToZone fails.
+  auto zone = MapUrlToZone(NS_ConvertUTF8toUTF16(sourceUrl))
+                  .unwrapOr(Zone::ZONE_INTERNET);
 
   // Don't write zone IDs for Local, Intranet, or Trusted sites
   // to match Windows behavior.
@@ -2166,11 +2172,9 @@ Result<bool, nsresult> WinUtils::MaybeWriteFileZoneIdSync(
 
   nsAutoCString zoneId;
   zoneId.AppendPrintf("[ZoneTransfer]\r\nZoneId=%lu\r\n", zone);
-  if (aReferrerSpec) {
-    zoneId += ZoneIdKey("ReferrerUrl"_ns, *aReferrerSpec);
-  }
-  if (aSourceUrl) {
-    zoneId += ZoneIdKey("HostUrl"_ns, *aSourceUrl, Some("about:internet"_ns));
+  if (aShouldStoreUrls) {
+    zoneId += ZoneIdKey("ReferrerUrl"_ns, referrerSpec) +
+              ZoneIdKey("HostUrl"_ns, sourceUrl, Some("about:internet"_ns));
   }
 
   // Build the ADS path.  Use extended-length path syntax so that paths are not
@@ -2191,8 +2195,8 @@ Result<bool, nsresult> WinUtils::MaybeWriteFileZoneIdSync(
 
   nsCOMPtr<nsIOutputStream> stream;
   MOZ_TRY(NS_NewLocalFileOutputStream(getter_AddRefs(stream), adsFile,
-                                   PR_WRONLY | PR_TRUNCATE | PR_CREATE_FILE,
-                                   0666));
+                                      PR_WRONLY | PR_TRUNCATE | PR_CREATE_FILE,
+                                      0666));
 
   uint32_t bytesWritten;
   MOZ_TRY(stream->Write(zoneId.get(), zoneId.Length(), &bytesWritten));
@@ -2203,15 +2207,15 @@ Result<bool, nsresult> WinUtils::MaybeWriteFileZoneIdSync(
 
 /* static */
 RefPtr<WinUtils::WriteFileZonePromise> WinUtils::MaybeWriteFileZoneId(
-    nsIFile* aSaveFile, const Maybe<nsCString>& aSourceUrl,
-    const Maybe<nsCString>& aReferrerSpec) {
+    nsIFile* aSaveFile, nsIURI* aSourceURI, nsIReferrerInfo* aReferrerInfo,
+    bool aShouldStoreUrls) {
   RefPtr promise = MakeRefPtr<WriteFileZonePromise::Private>(__func__);
-  nsCOMPtr<nsIFile> saveFile = aSaveFile;
   nsresult rv = NS_DispatchBackgroundTask(NS_NewRunnableFunction(
       "WriteFileZoneId",
-      [saveFile = std::move(saveFile), aSourceUrl, aReferrerSpec, promise]() {
-        auto result =
-            MaybeWriteFileZoneIdSync(saveFile, aSourceUrl, aReferrerSpec);
+      [saveFile = RefPtr{aSaveFile}, sourceURI = RefPtr{aSourceURI},
+       referrerInfo = RefPtr{aReferrerInfo}, aShouldStoreUrls, promise]() {
+        auto result = MaybeWriteFileZoneIdSync(saveFile, sourceURI,
+                                               referrerInfo, aShouldStoreUrls);
         if (result.isOk()) {
           promise->Resolve(result.unwrap(), __func__);
         } else {
