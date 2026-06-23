@@ -77,7 +77,7 @@
   --urlbar-background-border-top-radius-breakout-compact: min(var(--urlbar-background-border-radius), calc(var(--urlbar-min-height) / 2));
   --urlbar-background-box-shadow-breakout: 0 0 14px 0 var(--chrome-box-shadow);
   --urlbar-background-box-shadow-breakout-compact: none;
-  --urlbar-background-inset-breakout: calc(var(--urlbar-min-height) / 2 - var(--border-radius-xxlarge));
+  --urlbar-background-inset-breakout: calc(var(--urlbar-min-height) / 2 - var(--border-radius-xlarge));
   --urlbar-background-inset-breakout-compact: 0;
   --urlbar-background-outline-focused: none;
   --urlbar-input-container-border: var(--urlbar-input-container-border-width) solid var(--toolbar-field-border-color);

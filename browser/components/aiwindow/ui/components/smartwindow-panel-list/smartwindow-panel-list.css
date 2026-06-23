@@ -36,13 +36,9 @@ panel-list {
 @media -moz-pref("browser.nova.enabled") {
   /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
   panel-list {
-    /* TODO: Bug 2030460 - replace with token when available */
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    --panel-list-border-radius: 12px;
+    --panel-list-border-radius: var(--border-radius-medium);
     --panel-section-header-padding-inline-start: var(--size-item-small);
-    /* TODO: Bug 2030460 - replace with token when available */
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    --panel-item-button-border-radius: 12px;
+    --panel-item-button-border-radius: var(--border-radius-medium);
 
     @media not (prefers-contrast) {
       --panel-list-border-color: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-50));

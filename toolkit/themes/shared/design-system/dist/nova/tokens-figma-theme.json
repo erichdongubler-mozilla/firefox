@@ -10,8 +10,8 @@
     "forcedColors": "{Theme$background/color/canvas}"
   },
   "background/color/canvas": {
-    "light": "{Colors$color/gray/0}",
-    "dark": "{Colors$color/gray/90}",
+    "light": "{Colors$color/gray/05}",
+    "dark": "{Colors$color/gray/85}",
     "forcedColors": "{HCM Theme$Canvas}"
   },
   "background/color/critical": {
@@ -51,7 +51,7 @@
   },
   "border/color/interactive": {
     "light": "{Colors$color/gray/35}",
-    "dark": "{Colors$color/gray/45}",
+    "dark": "{Colors$color/gray/50}",
     "forcedColors": "{HCM Theme$ButtonText}"
   },
   "border/color/interactive/disabled": {
@@ -331,7 +331,7 @@
   },
   "icon/color/accent/primary/desaturated": {
     "light": "{Colors$color/violet-desaturated/60}",
-    "dark": "{Colors$color/violet-desaturated/50}",
+    "dark": "{Colors$color/violet-desaturated/40}",
     "forcedColors": "{HCM Theme$CanvasText}"
   },
   "icon/color/information": {
@@ -383,6 +383,11 @@
     "light": "{Theme$text/color}",
     "dark": "{Theme$text/color}",
     "forcedColors": "{Theme$text/color}"
+  },
+  "panel/separator/color": {
+    "light": "rgba(24, 14, 48, 0.2)",
+    "dark": "rgba(242, 240, 248, 0.2)",
+    "forcedColors": "{Theme$border/color}"
   },
   "table/row/background/color": {
     "light": "{Theme$background/color/canvas}",
@@ -538,6 +543,26 @@
     "light": "{Theme$promo/border/color}",
     "dark": "{Theme$promo/border/color}",
     "forcedColors": "{Theme$promo/border/color}"
+  },
+  "toggle/background/color/pressed": {
+    "light": "{Theme$button/background/color/primary}",
+    "dark": "{Theme$button/background/color/primary}",
+    "forcedColors": "{Theme$button/background/color/primary}"
+  },
+  "toggle/background/color/pressed/hover": {
+    "light": "{Theme$button/background/color/primary/hover}",
+    "dark": "{Theme$button/background/color/primary/hover}",
+    "forcedColors": "{Theme$button/background/color/primary/hover}"
+  },
+  "toggle/background/color/pressed/active": {
+    "light": "{Theme$button/background/color/primary/active}",
+    "dark": "{Theme$button/background/color/primary/active}",
+    "forcedColors": "{Theme$button/background/color/primary/active}"
+  },
+  "toggle/dot/background/color/on-pressed": {
+    "light": "{Theme$background/color/box}",
+    "dark": "{Theme$background/color/box}",
+    "forcedColors": "{Theme$background/color/box}"
   },
   "tab/border/color/selected/trailing": {
     "light": "{Colors$color/orange/30}",

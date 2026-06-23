@@ -1,7 +1,7 @@
 {
   "border": {
     "radius": {
-      "value": "{border.radius.large}"
+      "value": "{border.radius.xsmall}"
     }
   }
 }

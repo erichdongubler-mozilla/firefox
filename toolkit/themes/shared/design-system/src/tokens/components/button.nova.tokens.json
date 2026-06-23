@@ -163,7 +163,7 @@
       }
     },
     "radius": {
-      "value": "{border.radius.xxlarge}"
+      "value": "{border.radius.xlarge}"
     }
   },
   "opacity": {

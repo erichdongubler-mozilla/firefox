@@ -50,9 +50,7 @@
 @media -moz-pref("browser.nova.enabled") {
   /* Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch  */
   .chip {
-    /* TODO: replace with token when available - Bug 2033070 */
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    --chip-border-radius: 12px;
+    --chip-border-radius: var(--border-radius-medium);
     --chip-border-color: transparent;
     --chip-hover-border-color: transparent;
     --chip-hover-background-color: transparent;
