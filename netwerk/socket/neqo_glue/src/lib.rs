@@ -920,6 +920,27 @@ impl NeqoHttp3Conn {
                 glean::http_3_peer_max_udp_payload.accumulate_single_sample_signed(v);
             }
         }
+        if stats.pmtud_pmtu > 0 {
+            if let Ok(v) = i64::try_from(stats.pmtud_pmtu) {
+                glean::http_3_pmtud_pmtu.accumulate_single_sample_signed(v);
+            }
+        }
+        if stats.pmtud_iface_mtu > 0 {
+            if let Ok(v) = i64::try_from(stats.pmtud_iface_mtu) {
+                glean::http_3_pmtud_iface_mtu.accumulate_single_sample_signed(v);
+            }
+        }
+        if stats.pmtud_tx > 0 {
+            if let Ok(v) = i64::try_from(stats.pmtud_tx) {
+                glean::http_3_pmtud_probes_sent.accumulate_single_sample_signed(v);
+            }
+            if let Ok(v) = i64::try_from(stats.pmtud_ack) {
+                glean::http_3_pmtud_probes_acked.accumulate_single_sample_signed(v);
+            }
+            if let Ok(v) = i64::try_from(stats.pmtud_lost) {
+                glean::http_3_pmtud_probes_lost.accumulate_single_sample_signed(v);
+            }
+        }
 
         // Ignore connections that never had loss induced congestion events (and prevent dividing by zero).
         if stats.cc.congestion_events.loss != 0 {
