@@ -1416,18 +1416,39 @@ static nsCString CopyStrippingTrailingDot(const nsACString& aDomain) {
   return nsCString(aDomain);
 }
 
+// The fire-time payload of a pref-change callback: the function and its
+// closure. Shared base of the trie's refcounted CallbackNode and the mirror
+// list's inline entries (see MirrorCallbackList), so the notify, sweep and
+// unregister paths can read Func()/Data() and clear a callback uniformly
+// regardless of how it is stored.
+class CallbackData {
+ public:
+  CallbackData() = default;
+  CallbackData(PrefChangedFunc aFunc, void* aData)
+      : mFunc(aFunc), mData(aData) {}
+
+  PrefChangedFunc Func() const { return mFunc; }
+  void* Data() const { return mData; }
+  void ClearFunc() { mFunc = nullptr; }
+  void Fire(const char* aPrefName) const { mFunc(aPrefName, mData); }
+
+ protected:
+  // mFunc is cleared to nullptr on removal; Compact() reclaims the node lazily.
+  PrefChangedFunc mFunc = nullptr;
+  void* mData = nullptr;
+};
+
 // Owned via RefPtr by the CallbackTrieNode(s) it is registered under; a single
 // node registered for an array of prefs is shared (referenced) by several trie
 // nodes.  Main-thread only, so the refcount is non-atomic.
-class CallbackNode {
+class CallbackNode : public CallbackData {
  public:
   NS_INLINE_DECL_REFCOUNTING(CallbackNode)
 
   CallbackNode(const nsACString& aDomain, PrefChangedFunc aFunc, void* aData,
                bool aIsPrefix)
-      : mDomain(AsVariant(CopyStrippingTrailingDot(aDomain))),
-        mFunc(aFunc),
-        mData(aData),
+      : CallbackData(aFunc, aData),
+        mDomain(AsVariant(CopyStrippingTrailingDot(aDomain))),
         mIsPrefix(aIsPrefix) {
 #ifdef DEBUG
     mRawDomain = aDomain;
@@ -1436,9 +1457,8 @@ class CallbackNode {
 
   CallbackNode(const char* const* aDomains, PrefChangedFunc aFunc, void* aData,
                bool aIsPrefix)
-      : mDomain(AsVariant(aDomains)),
-        mFunc(aFunc),
-        mData(aData),
+      : CallbackData(aFunc, aData),
+        mDomain(AsVariant(aDomains)),
         mIsPrefix(aIsPrefix) {}
 
   const Variant<nsCString, const char* const*>& Domain() const {
@@ -1449,10 +1469,7 @@ class CallbackNode {
     return mDomain.is<nsCString>() ? mDomain.as<nsCString>().get() : "(multi)";
   }
 
-  PrefChangedFunc Func() const { return mFunc; }
-  void ClearFunc() { mFunc = nullptr; }
-
-  void* Data() const { return mData; }
+  // Func(), Data(), ClearFunc() are inherited from CallbackData.
 
   bool IsPrefix() const { return mIsPrefix; }
 
@@ -1461,10 +1478,6 @@ class CallbackNode {
   // registrations only). Used by CallbackTrie's prefix-divergence audit to
   // reconstruct the old StringBeginsWith matching semantics.
   const nsCString& RawDomain() const { return mRawDomain; }
-
-  // The trie this node belongs to is the only record of its priority; this
-  // mirror exists purely to assert that registration routing stays consistent.
-  bool IsPriority() const { return mIsPriority; }
 #endif
 
   bool DomainIs(const nsACString& aDomain) const {
@@ -1492,11 +1505,9 @@ class CallbackNode {
   }
 
 #ifdef DEBUG
-  // DEBUG-only diagnostics, set externally (see RegisterCallbackImpl); left
-  // public deliberately. mRawDomain is the pre-strip domain for the divergence
-  // audit; mIsPriority mirrors the owning trie for a routing assertion.
+  // DEBUG-only diagnostic, set externally (see RegisterCallbackImpl); left
+  // public deliberately. The pre-strip domain for the divergence audit.
   nsCString mRawDomain;
-  bool mIsPriority = false;
 #endif
 
  private:
@@ -1504,9 +1515,6 @@ class CallbackNode {
 
   Variant<nsCString, const char* const*> mDomain;
 
-  // Cleared to nullptr on removal; Compact() reclaims the node lazily.
-  PrefChangedFunc mFunc;
-  void* mData;
   bool mIsPrefix;
 };
 
@@ -1600,7 +1608,8 @@ struct CallbackTrieNode {
 // for pref "a.b.c", the walk root → "a" → "b" → "c" fires prefix callbacks at
 // every node along the path and all callbacks (prefix and exact) at the
 // terminal node.  Trailing dots on domains are stripped at registration time.
-// Two instances (priority and non-priority) live in PreferencesImpl.
+// One instance (mCallbacks) holds the general pref observers; the static-pref
+// mirrors use MirrorCallbackList instead.
 class CallbackTrie {
  public:
   void Register(CallbackNode* aNode) {
@@ -1829,6 +1838,111 @@ class CallbackTrie {
   CallbackTrieNode mRoot;
 };
 
+// Lazy-sorted, append-only list of the static-pref "always" mirror callbacks.
+//
+// Each is an exact-match, single-name callback that keeps one C++ mirror
+// variable coherent with its pref; all ~2,500 are registered in one bulk phase
+// at startup and live for the whole process (there is no RemoveMirror, and
+// nothing unregisters UpdateMirror), so the list only ever grows.
+//
+// They live in a flat inline array rather than the trie purely to save memory
+// (no per-callback heap node, no refcount, no prefix-matching scaffolding).
+// Sorted lazily on the first notify; looked up by binary search.
+class MirrorCallbackList {
+ public:
+  // Inline callback entry. Derives from CallbackData so the notify path can
+  // read Func()/Data() the same way it does for a trie CallbackNode.
+  struct MirrorCallback : public CallbackData {
+    // Borrowed pointer to the process-lifetime literal pref name (NUL-
+    // terminated). A bare pointer rather than a dependent string (which is not
+    // copy-assignable, so the entries could not be sorted in place) and rather
+    // than pointer+cached-length: the entries pack into one page-rounded array
+    // buffer, so the extra length word would cost ~real memory (a page per few
+    // hundred entries, not absorbed by allocator quantization) to save an
+    // strlen that only runs during the one-time sort and the per-notify binary
+    // search.
+    const char* mName;
+
+    MirrorCallback(PrefChangedFunc aFunc, void* aData, const char* aName)
+        : CallbackData(aFunc, aData), mName(aName) {}
+
+    nsDependentCString Name() const { return nsDependentCString(mName); }
+  };
+
+  void Register(PrefChangedFunc aFunc, const nsACString& aDomain, void* aData) {
+    MOZ_DIAGNOSTIC_ASSERT(aDomain.IsLiteral(),
+                          "mirror domains must be process-lifetime literals");
+    // Mirror names are full pref names with no trailing dot; the literal is
+    // NUL-terminated, so Name()'s strlen-based view is well-formed.
+    mEntries.EmplaceBack(aFunc, aData, aDomain.BeginReading());
+    mSorted = false;
+  }
+
+  // The fire-time payload of the mirror matching aPrefName, or Nothing. A copy
+  // (not a pointer into mEntries) so it stays valid if a callback registers a
+  // mirror and reallocates the array mid-notify.
+  Maybe<CallbackData> FindForNotify(const nsCString& aPrefName) {
+    if (MirrorCallback* entry = Find(aPrefName)) {
+      return Some(static_cast<const CallbackData&>(*entry));  // slices
+    }
+    return Nothing();
+  }
+
+  uint32_t Count() const { return mEntries.Length(); }
+
+  void AddSizeOf(MallocSizeOf aMallocSizeOf, PrefsSizes& aSizes,
+                 uint32_t* aNodeCount = nullptr,
+                 size_t* aSegmentBytes = nullptr,
+                 uint32_t* aCallbackCount = nullptr) {
+    // The callbacks live inline in the array; there are no per-callback heap
+    // objects, child arrays or segments.
+    aSizes.mCallbacksObjects +=
+        mEntries.ShallowSizeOfExcludingThis(aMallocSizeOf);
+    if (aCallbackCount) *aCallbackCount += mEntries.Length();
+    if (aNodeCount) *aNodeCount += mEntries.Length();
+  }
+
+  void Clear() {
+    mEntries.Clear();
+    mSorted = true;
+  }
+
+ private:
+  void EnsureSorted() {
+    if (mSorted) return;
+    // Names are unique (the static-pref codegen rejects duplicate pref names,
+    // so no two mirrors share a name), so the comparator never ties and a plain
+    // (non-stable) sort is enough.
+    mEntries.Sort([](const MirrorCallback& aA, const MirrorCallback& aB) {
+      return Compare(aA.Name(), aB.Name());
+    });
+    mSorted = true;
+#ifdef DEBUG
+    // Mirror names must be unique (Find / FindForNotify rely on at most one
+    // match); the static-pref codegen rejects duplicate pref names, so adjacent
+    // entries in the sorted array must never tie.
+    for (size_t i = 1; i < mEntries.Length(); ++i) {
+      MOZ_ASSERT(Compare(mEntries[i - 1].Name(), mEntries[i].Name()) != 0,
+                 "duplicate mirror pref name");
+    }
+#endif
+  }
+
+  // The single entry whose name equals aName, or null (names are unique, see
+  // EnsureSorted, so there is at most one). Sorts on demand.
+  MirrorCallback* Find(const nsACString& aName) {
+    EnsureSorted();
+    size_t idx = mEntries.BinaryIndexOf(
+        aName, [](const MirrorCallback& aEntry, const nsACString& aKey) {
+          return Compare(aEntry.Name(), aKey);
+        });
+    return idx == decltype(mEntries)::NoIndex ? nullptr : &mEntries[idx];
+  }
+
+  nsTArray<MirrorCallback> mEntries;
+  bool mSorted = true;
+};
+
 namespace mozilla {
 
 // Holds all Preferences instance data and internal implementation details.
@@ -1857,7 +1971,7 @@ class PreferencesImpl {
   nsCOMPtr<nsIPrefBranch> mRootBranch;
   nsCOMPtr<nsIPrefBranch> mDefaultRootBranch;
 
-  CallbackTrie mPriorityCallbacks;
+  MirrorCallbackList mMirrorCallbacks;
   CallbackTrie mCallbacks;
 #ifdef DEBUG
   bool mCallbacksInProgress = false;
@@ -1946,17 +2060,21 @@ class PreferencesImpl {
     }
   }
 
+  // Register the coherence callback for a static-pref "always" mirror. This is
+  // the only producer of mMirrorCallbacks entries; the general RegisterCallback
+  // path has no notion of mirrors.
   template <typename T>
-  static nsresult RegisterCallback(T* aMirror, const nsACString& aPref) {
-    return Preferences::RegisterCallback(UpdateMirror<T>, aPref, aMirror,
-                                         /* aPrefixMatch */ false,
-                                         /* aIsPriority */ true);
+  static nsresult RegisterMirror(T* aMirror, const nsACString& aPref) {
+    return RegisterMirrorCallback(UpdateMirror<T>, aPref, aMirror);
   }
+
+  static nsresult RegisterMirrorCallback(PrefChangedFunc aCallback,
+                                         const nsACString& aPref,
+                                         void* aMirror);
 
   template <typename T>
   static nsresult RegisterCallbackImpl(PrefChangedFunc aCallback, T& aPrefNode,
-                                       void* aData, bool aIsPrefix = false,
-                                       bool aIsPriority = false);
+                                       void* aData, bool aIsPrefix = false);
 
   template <typename T>
   static nsresult UnregisterCallbackImpl(PrefChangedFunc aCallback,
@@ -3502,27 +3620,25 @@ nsPrefBranch::PrefName nsPrefBranch::GetPrefName(
 void nsPrefBranch::ReapAndCompactCallbacks() {
   MOZ_ASSERT(!sPImpl->mCallbacksInProgress);
 
+  // Mirror callbacks are never pref-branch observers, so only the trie is swept
+  // and compacted here.
   if (sPImpl->mShouldSweepWeakObservers) {
-    for (CallbackTrie* table :
-         {&sPImpl->mPriorityCallbacks, &sPImpl->mCallbacks}) {
-      table->ForEachCallback([&](CallbackNode* aNode) {
-        if (aNode->Func() == nsPrefBranch::NotifyObserver) {
-          auto* pCallback = static_cast<PrefCallback*>(aNode->Data());
-          if (pCallback->IsExpired()) {
-            pCallback->GetPrefBranch()->mObservers.Remove(pCallback);
-            // MarkDead is idempotent, so the repeated visits of an array-
-            // registered node do their work only once.
-            table->MarkDead(aNode);
-            sPImpl->mShouldCleanupDeadNodes = true;
-          }
+    sPImpl->mCallbacks.ForEachCallback([&](CallbackNode* aNode) {
+      if (aNode->Func() == nsPrefBranch::NotifyObserver) {
+        auto* pCallback = static_cast<PrefCallback*>(aNode->Data());
+        if (pCallback->IsExpired()) {
+          pCallback->GetPrefBranch()->mObservers.Remove(pCallback);
+          // MarkDead is idempotent, so the repeated visits of an array-
+          // registered node do their work only once.
+          sPImpl->mCallbacks.MarkDead(aNode);
+          sPImpl->mShouldCleanupDeadNodes = true;
         }
-      });
-    }
+      }
+    });
     sPImpl->mShouldSweepWeakObservers = false;
   }
 
   if (sPImpl->mShouldCleanupDeadNodes) {
-    sPImpl->mPriorityCallbacks.Compact();
     sPImpl->mCallbacks.Compact();
     sPImpl->mShouldCleanupDeadNodes = false;
   }
@@ -3755,12 +3871,21 @@ void PreferencesImpl::NotifyCallbacks(const nsCString& aPrefName,
   auto* callbackPref = &mCallbackPref;
   auto cleanup = MakeScopeExit([callbackPref]() { *callbackPref = nullptr; });
 
-  // Snapshot matching nodes before invoking any callback so that registrations
-  // or unregistrations made by callbacks do not affect this notification round.
-  AutoTArray<CallbackNode*, 16> toNotify;
-  mPriorityCallbacks.CollectMatchingForNotify(aPrefName, toNotify);
-  mCallbacks.CollectMatchingForNotify(aPrefName, toNotify);
+  // Snapshot matching callbacks before invoking any, so that registrations or
+  // unregistrations made by callbacks do not affect this notification round.
+  // The static-pref mirror (at most one, by unique name) fires first, so a
+  // mirror is coherent before any observer that might read StaticPrefs::foo()
+  // runs. It is snapshotted by value, which (unlike a pointer into the array)
+  // cannot dangle if a callback registers during the round.
+  if (Maybe<CallbackData> mirror = mMirrorCallbacks.FindForNotify(aPrefName)) {
+    mirror->Fire(aPrefName.get());
+  }
 
+  // Observer callbacks are snapshotted by pointer into their (stable,
+  // refcounted) trie nodes, so a callback unregistered mid-round (which clears
+  // its func) is skipped here at fire time.
+  AutoTArray<CallbackNode*, 16> toNotify;
+  mCallbacks.CollectMatchingForNotify(aPrefName, toNotify);
   for (CallbackNode* node : toNotify) {
     if (PrefChangedFunc func = node->Func()) {
       MOZ_LOG(sPrefLog, LogLevel::Debug,
@@ -4049,7 +4174,7 @@ void Preferences::AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf,
 
 /* static */
 uint32_t Preferences::GetCallbackCount() {
-  return sPImpl->mPriorityCallbacks.Count() + sPImpl->mCallbacks.Count();
+  return sPImpl->mMirrorCallbacks.Count() + sPImpl->mCallbacks.Count();
 }
 
 MOZ_DEFINE_MALLOC_SIZE_OF(PrefCallbackTrieMallocSizeOf)
@@ -4065,8 +4190,8 @@ Preferences::CallbackTrieStats Preferences::GetCallbackTrieStatsForTesting() {
   uint32_t nodeCount = 0;
   size_t segmentBytes = 0;
   uint32_t callbackCount = 0;
-  sPImpl->mPriorityCallbacks.AddSizeOf(mallocSizeOf, sizes, &nodeCount,
-                                       &segmentBytes, &callbackCount);
+  sPImpl->mMirrorCallbacks.AddSizeOf(mallocSizeOf, sizes, &nodeCount,
+                                     &segmentBytes, &callbackCount);
   sPImpl->mCallbacks.AddSizeOf(mallocSizeOf, sizes, &nodeCount, &segmentBytes,
                                &callbackCount);
   stats.mObjectBytes = sizes.mCallbacksObjects;
@@ -4115,7 +4240,7 @@ PreferenceServiceReporter::CollectReports(
 
   sizes.mPrefNameArena += PrefNameArena().SizeOfExcludingThis(mallocSizeOf);
 
-  sPImpl->mPriorityCallbacks.AddSizeOf(mallocSizeOf, sizes);
+  sPImpl->mMirrorCallbacks.AddSizeOf(mallocSizeOf, sizes);
   sPImpl->mCallbacks.AddSizeOf(mallocSizeOf, sizes);
 
   if (gSharedMap) {
@@ -4487,7 +4612,7 @@ Preferences::~Preferences() {
 
   MOZ_ASSERT(!sPImpl->mCallbacksInProgress);
 
-  sPImpl->mPriorityCallbacks.Clear();
+  sPImpl->mMirrorCallbacks.Clear();
   sPImpl->mCallbacks.Clear();
 
   delete HashTable();
@@ -5679,25 +5804,31 @@ static void WarnIfPrefixObserverDiverges(const nsACString& aRawDomain) {
 }
 #endif
 
+// Register the coherence callback for a static-pref "always" mirror, into the
+// dedicated mMirrorCallbacks lookup table. Mirrors are single-name,
+// exact-match, process-lifetime and unshared, so they need neither the trie nor
+// a refcounted node; see MirrorCallbackList.
+nsresult PreferencesImpl::RegisterMirrorCallback(PrefChangedFunc aCallback,
+                                                 const nsACString& aPref,
+                                                 void* aMirror) {
+  MOZ_ASSERT(NS_IsMainThread());
+  NS_ENSURE_ARG(aCallback);
+  NS_ENSURE_TRUE(Preferences::InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
+  sPImpl->mMirrorCallbacks.Register(aCallback, aPref, aMirror);
+  return NS_OK;
+}
+
 template <typename T>
 nsresult PreferencesImpl::RegisterCallbackImpl(PrefChangedFunc aCallback,
                                                T& aPrefNode, void* aData,
-                                               bool aIsPrefix,
-                                               bool aIsPriority) {
+                                               bool aIsPrefix) {
   MOZ_ASSERT(NS_IsMainThread());
   NS_ENSURE_ARG(aCallback);
   NS_ENSURE_TRUE(Preferences::InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
 
   RefPtr<CallbackNode> node =
       MakeRefPtr<CallbackNode>(aPrefNode, aCallback, aData, aIsPrefix);
-#ifdef DEBUG
-  node->mIsPriority = aIsPriority;
-#endif
-  if (aIsPriority) {
-    sPImpl->mPriorityCallbacks.Register(node);
-  } else {
-    sPImpl->mCallbacks.Register(node);
-  }
+  sPImpl->mCallbacks.Register(node);
 
 #ifdef DEBUG
   static const bool sTriePrefAudit = !!getenv("MOZ_PREF_TRIE_AUDIT");
@@ -5728,21 +5859,16 @@ nsresult PreferencesImpl::UnregisterCallbackImpl(PrefChangedFunc aCallback,
   }
   NS_ENSURE_TRUE(Preferences::sPreferences, NS_ERROR_NOT_AVAILABLE);
 
-  // Mark dead within the table each match was found in, so the node's home
-  // trie need not be recovered from a per-node flag.
+  // Mirrors are never unregistered (see MirrorCallbackList), so only the trie
+  // is searched: it collects the matching nodes, then marks them dead.
   bool found = false;
-  for (CallbackTrie* table :
-       {&sPImpl->mPriorityCallbacks, &sPImpl->mCallbacks}) {
-    AutoTArray<CallbackNode*, 4> matches;
-    table->CollectMatchingForUnregister(aCallback, aPrefNode, aData, aIsPrefix,
-                                        matches);
-    for (CallbackNode* node : matches) {
-      MOZ_ASSERT(node->IsPriority() == (table == &sPImpl->mPriorityCallbacks),
-                 "callback found in a trie that disagrees with its priority");
-      table->MarkDead(node);
-      sPImpl->mShouldCleanupDeadNodes = true;
-      found = true;
-    }
+  AutoTArray<CallbackNode*, 4> matches;
+  sPImpl->mCallbacks.CollectMatchingForUnregister(aCallback, aPrefNode, aData,
+                                                  aIsPrefix, matches);
+  for (CallbackNode* node : matches) {
+    sPImpl->mCallbacks.MarkDead(node);
+    sPImpl->mShouldCleanupDeadNodes = true;
+    found = true;
   }
 
   if (!found) {
@@ -6410,9 +6536,9 @@ nsresult Preferences::RemoveObservers(nsIObserver* aObserver,
 /* static */
 nsresult Preferences::RegisterCallback(PrefChangedFunc aCallback,
                                        const nsACString& aPrefNode, void* aData,
-                                       bool aPrefixMatch, bool aIsPriority) {
+                                       bool aPrefixMatch) {
   return PreferencesImpl::RegisterCallbackImpl(aCallback, aPrefNode, aData,
-                                               aPrefixMatch, aIsPriority);
+                                               aPrefixMatch);
 }
 
 /* static */
@@ -6461,21 +6587,19 @@ uint32_t Preferences::UnregisterCallbacksForBranch(nsPrefBranch* aBranch) {
     return 0;
   }
 
+  // Mirror callbacks are never pref-branch observers, so only the trie is
+  // reaped here.
   uint32_t removedCount = 0;
-  for (CallbackTrie* table :
-       {&sPImpl->mPriorityCallbacks, &sPImpl->mCallbacks}) {
-    table->ForEachCallback([&](CallbackNode* aNode) {
-      // A live node fires NotifyObserver; MarkDead clears Func, so an array-
-      // registered node matches (and is counted) only on its first visit.
-      if (aNode->Func() == nsPrefBranch::NotifyObserver &&
-          static_cast<PrefCallback*>(aNode->Data())->GetPrefBranch() ==
-              aBranch) {
-        ++removedCount;
-        table->MarkDead(aNode);
-        sPImpl->mShouldCleanupDeadNodes = true;
-      }
-    });
-  }
+  sPImpl->mCallbacks.ForEachCallback([&](CallbackNode* aNode) {
+    // A live node fires NotifyObserver; MarkDead clears Func, so an array-
+    // registered node matches (and is counted) only on its first visit.
+    if (aNode->Func() == nsPrefBranch::NotifyObserver &&
+        static_cast<PrefCallback*>(aNode->Data())->GetPrefBranch() == aBranch) {
+      ++removedCount;
+      sPImpl->mCallbacks.MarkDead(aNode);
+      sPImpl->mShouldCleanupDeadNodes = true;
+    }
+  });
   MaybeScheduleCallbackSweep();
   return removedCount;
 }
@@ -6484,7 +6608,7 @@ template <typename T>
 static void AddMirrorCallback(T* aMirror, const nsACString& aPref) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  PreferencesImpl::RegisterCallback<T>(aMirror, aPref);
+  PreferencesImpl::RegisterMirror<T>(aMirror, aPref);
 }
 
 // Don't inline because it explodes compile times.

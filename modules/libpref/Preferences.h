@@ -476,7 +476,7 @@ class Preferences final : public nsIPrefService,
 
   static nsresult RegisterCallback(PrefChangedFunc aCallback,
                                    const nsACString& aPref, void* aClosure,
-                                   bool aPrefixMatch, bool aIsPriority = false);
+                                   bool aPrefixMatch);
   static nsresult UnregisterCallback(PrefChangedFunc aCallback,
                                      const nsACString& aPref, void* aClosure,
                                      bool aPrefixMatch);
