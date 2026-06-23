@@ -3,7 +3,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-HG_EXCLUSIONS = [".hg", ".hgignore", ".hgtags"]
+GIT_EXCLUSIONS = [".git", ".gitignore", ".gitattributes"]
 
 import glob
 import os
@@ -22,36 +22,17 @@ def check_call_noisy(cmd, *args, **kwargs):
     check_call(cmd, *args, **kwargs)
 
 
-def do_hg_pull(dir, repository, hg):
-    fulldir = os.path.join(topsrcdir, dir)
-    # clone if the dir doesn't exist, pull if it does
-    if not os.path.exists(fulldir):
-        check_call_noisy([hg, "clone", repository, fulldir])
-    else:
-        cmd = [hg, "pull", "-u", "-R", fulldir]
-        if repository is not None:
-            cmd.append(repository)
-        check_call_noisy(cmd)
-    check_call([
-        hg,
-        "parent",
-        "-R",
-        fulldir,
-        "--template=Updated to revision {node}.\n",
-    ])
-
-
-def do_hg_replace(dir, repository, tag, exclusions, hg):
+def do_git_replace(dir, repository, tag, exclusions, git):
     """
-    Replace the contents of dir with the contents of repository, except for
-    files matching exclusions.
+    Replace the contents of dir with the contents of repository checked out at
+    tag, except for files matching exclusions.
     """
     fulldir = os.path.join(topsrcdir, dir)
     if os.path.exists(fulldir):
         shutil.rmtree(fulldir)
 
     assert not os.path.exists(fulldir)
-    check_call_noisy([hg, "clone", "-u", tag, repository, fulldir])
+    check_call_noisy([git, "clone", "-b", tag, repository, fulldir])
 
     for thing in exclusions:
         for excluded in glob.iglob(os.path.join(fulldir, thing)):
@@ -88,7 +69,7 @@ def get_trailing_blank_line_state(depname):
     return "no blank line"
 
 
-def update_nspr_or_nss(tag, depfile, destination, hgpath):
+def update_nspr_or_nss(tag, depfile, destination, repopath):
     destination = destination.rstrip("/")
     permanent_patch_dir = destination + "/patches"
     temporary_patch_dir = destination + ".patches"
@@ -96,15 +77,15 @@ def update_nspr_or_nss(tag, depfile, destination, hgpath):
         print("please clean up leftover directory " + temporary_patch_dir)
         sys.exit(2)
     warn_if_patch_exists(permanent_patch_dir)
-    # protect patch directory from being removed by do_hg_replace
+    # protect patch directory from being removed by the replace step
     if os.path.exists(permanent_patch_dir):
         shutil.move(permanent_patch_dir, temporary_patch_dir)
     # now update the destination
-    print(f"reverting to HG version of {depfile} to get its blank line state")
-    check_call_noisy([options.hg, "revert", depfile])
+    print(f"reverting to checked-in version of {depfile} to get its blank line state")
+    check_call_noisy([options.git, "checkout", "--", depfile])
     old_state = get_trailing_blank_line_state(depfile)
     print(f"old state of {depfile} is: {old_state}")
-    do_hg_replace(destination, hgpath, tag, HG_EXCLUSIONS, options.hg)
+    do_git_replace(destination, repopath, tag, GIT_EXCLUSIONS, options.git)
     new_state = get_trailing_blank_line_state(depfile)
     print(f"new state of {depfile} is: {new_state}")
     if old_state == new_state:
@@ -142,10 +123,10 @@ o.add_option(
 )
 
 o.add_option(
-    "--hg",
-    dest="hg",
-    default=os.environ.get("HG", "hg"),
-    help="The location of the hg binary",
+    "--git",
+    dest="git",
+    default=os.environ.get("GIT", "git"),
+    help="The location of the git binary",
 )
 o.add_option(
     "--repo", dest="repo", help="the repo to update from (default: upstream repo)"
@@ -165,13 +146,13 @@ elif action in ("update_nspr"):
     (tag,) = args[1:]
     depfile = "nsprpub/config/prdepend.h"
     if not options.repo:
-        options.repo = "https://hg.mozilla.org/projects/nspr"
+        options.repo = "https://github.com/mozilla/nspr"
     update_nspr_or_nss(tag, depfile, "nsprpub", options.repo)
 elif action in ("update_nss"):
     (tag,) = args[1:]
     depfile = "security/nss/coreconf/coreconf.dep"
     if not options.repo:
-        options.repo = "https://hg.mozilla.org/projects/nss"
+        options.repo = "https://github.com/mozilla/nss"
     update_nspr_or_nss(tag, depfile, "security/nss", options.repo)
 else:
     o.print_help()
