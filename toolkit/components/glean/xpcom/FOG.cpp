@@ -483,11 +483,12 @@ NS_IMETHODIMP
 FOG::TestRegisterRuntimeMetric(
     const nsACString& aType, const nsACString& aCategory,
     const nsACString& aName, const nsTArray<nsCString>& aPings,
-    const nsACString& aLifetime, const bool aDisabled,
+    const nsACString& aLifetime, const bool aDisabled, const bool aInSession,
     const nsACString& aExtraArgs, uint32_t* aMetricIdOut) {
   *aMetricIdOut = 0;
   *aMetricIdOut = glean::jog::jog_test_register_metric(
-      &aType, &aCategory, &aName, &aPings, &aLifetime, aDisabled, &aExtraArgs);
+      &aType, &aCategory, &aName, &aPings, &aLifetime, aDisabled, aInSession,
+      &aExtraArgs);
   return NS_OK;
 }
 
@@ -496,10 +497,12 @@ FOG::RegisterRuntimeMetric(const nsACString& aType, const nsACString& aCategory,
                            const nsACString& aName,
                            const nsTArray<nsCString>& aPings,
                            const nsACString& aLifetime, const bool aDisabled,
+                           const bool aInSession,
                            const nsACString& aExtraArgs) {
   MOZ_ASSERT(XRE_IsParentProcess());
   return glean::jog::jog_register_metric(&aType, &aCategory, &aName, &aPings,
-                                         &aLifetime, aDisabled, &aExtraArgs);
+                                         &aLifetime, aDisabled, aInSession,
+                                         &aExtraArgs);
 }
 
 NS_IMETHODIMP

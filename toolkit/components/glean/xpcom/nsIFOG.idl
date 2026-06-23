@@ -160,6 +160,7 @@ interface nsIFOG : nsISupports
    * @param aPings - The pings to send it in.
    * @param aLifetime - The metric's lifetime.
    * @param aDisabled - Whether the metric, though existing, isn't enabled.
+   * @param aInSession - Whether the metric should be considered for automatic session handling.
    * @param aExtraArgs - Optional JSON string of extra args.
    */
   uint32_t testRegisterRuntimeMetric(in ACString aType,
@@ -168,6 +169,7 @@ interface nsIFOG : nsISupports
                                  in Array<ACString> aPings,
                                  in ACString aLifetime,
                                  in boolean aDisabled,
+                                 in boolean aInSession,
                                  [optional] in ACString aExtraArgs);
 
   /**
@@ -256,6 +258,7 @@ interface nsIFOG : nsISupports
    * @param aPings - The pings to send this metric in
    * @param aLifetime - The metric's lifetime (e.g., "ping", "application", "user")
    * @param aDisabled - Whether the metric is disabled
+   * @param aInSession - Whether the metric should be considered for automatic session handling
    * @param aExtraArgs - Optional JSON string of additional configuration
    * @throws NS_ERROR_INVALID_ARG if required arguments are missing
    * @throws NS_ERROR_FAILURE if registration fails
@@ -266,6 +269,7 @@ interface nsIFOG : nsISupports
                             in Array<ACString> aPings,
                             in ACString aLifetime,
                             in boolean aDisabled,
+                            in boolean aInSession,
                             [optional] in ACString aExtraArgs);
 
   /**
