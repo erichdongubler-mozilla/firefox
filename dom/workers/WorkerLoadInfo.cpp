@@ -290,9 +290,13 @@ bool WorkerLoadInfo::PrincipalURIMatchesScriptURL() {
   nsresult rv = mBaseURI->GetScheme(scheme);
   NS_ENSURE_SUCCESS(rv, false);
 
-  // A system principal must be a chrome script resource
+  // A system principal must either be a blob URL or a chrome script resource
   // (e.g. a resource:// JSM).
   if (mPrincipal->IsSystemPrincipal()) {
+    if (scheme == "blob"_ns) {
+      return true;
+    }
+
     return nsContentSecurityUtils::IsTrustedScheme(mBaseURI);
   }
 
