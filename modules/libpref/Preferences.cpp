@@ -1518,9 +1518,10 @@ struct CallbackTrieNode {
     nsCString mSegment;
     UniquePtr<CallbackTrieNode> mNode;
   };
-  // Sorted by mSegment; AutoTArray<1> avoids a heap alloc for interior nodes
-  // on unique paths. Use BinarySearchIf(SegmentComparator) for O(log k) lookup.
-  AutoTArray<Child, 1> mChildren;
+  // Sorted by mSegment; a plain nsTArray<Child> carries no inline slot, which
+  // would go unused on the leaf nodes that make up most of the trie. Use
+  // BinarySearchIf(SegmentComparator) for O(log k) lookup.
+  nsTArray<Child> mChildren;
   nsTArray<RefPtr<CallbackNode>> mCallbacks;
 
   // Append this node's live callbacks (skipping dead, null-Func nodes) to aOut
