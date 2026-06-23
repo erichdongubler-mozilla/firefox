@@ -3706,7 +3706,7 @@
 # won't be allowed in a process that can hold web content.
 - name: dom.jsipc.check_safeForUntrustedWebProcess
   type: bool
-  value: false
+  value: true
   mirror: always
 
 # This controls whether JS IPC messages are sent from child to parent using
