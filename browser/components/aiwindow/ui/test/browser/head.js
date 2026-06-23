@@ -192,44 +192,6 @@ async function waitForSidebarReady(win) {
 }
 
 /**
- * Waits for the sidebar slide animation to settle into its closed state. The
- * close animation keeps the box uncollapsed until the slide finishes, so
- * `box.collapsed` (set by AIWindowUI._commitSidebarCollapsed) is the only
- * reliable signal that the sidebar is fully closed.
- *
- * @param {Window} win - Window reference
- * @returns {Promise<Element>} - The sidebar box element
- */
-async function waitForSidebarClosed(win) {
-  const box = win.document.getElementById("ai-window-box");
-  await TestUtils.waitForCondition(
-    () => box.collapsed,
-    "Wait for AI sidebar slide-close to finish"
-  );
-  return box;
-}
-
-/**
- * Waits for the sidebar slide animation to settle into its open state. During an
- * open slide the box is uncollapsed up-front while the splitter stays hidden, so
- * the splitter becoming visible (in AIWindowUI._commitSidebarCollapsed) is the
- * signal that the slide has fully committed.
- *
- * @param {Window} win - Window reference
- * @returns {Promise<Element>} - The sidebar box element
- */
-async function waitForSidebarOpen(win) {
-  const box = win.document.getElementById("ai-window-box");
-  const splitter = win.document.getElementById("ai-window-splitter");
-  await TestUtils.waitForCondition(
-    () =>
-      !box.collapsed && !splitter.collapsed && AIWindowUI.isSidebarOpen(win),
-    "Wait for AI sidebar slide-open to finish"
-  );
-  return box;
-}
-
-/**
  * Opens a new AI Window with about:blank
  * and the chat assistant sidebar open
  *

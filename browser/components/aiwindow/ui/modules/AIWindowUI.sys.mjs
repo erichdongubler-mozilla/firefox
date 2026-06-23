@@ -10,7 +10,6 @@ import {
 } from "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs";
 
 const gFadingWindows = new WeakSet();
-const gSidebarAnimations = new WeakMap();
 
 /**
  * @typedef {import("../components/ai-window/ai-window.mjs").SmartbarInputState} SmartbarInputState
@@ -24,7 +23,6 @@ export const AIWindowUI = {
   AI_WINDOW_ELEMENT_TIMEOUT: 1500,
   TAB_FADE_MS: 200,
   TAB_FADE_TIMEOUT_MS: 200 * 2 + 50,
-  SIDEBAR_ANIMATION_MS: 200,
 
   /**
    * @param {Window} win
@@ -99,141 +97,13 @@ export const AIWindowUI = {
     if (!nodes) {
       return false;
     }
-    // While closing, the box stays uncollapsed until the slide finishes, so
-    // rely on the intended state recorded by _setSidebarCollapsed.
-    return nodes.box._aiWindowOpen ?? !nodes.box.collapsed;
+    return !nodes.box.collapsed;
   },
 
-  /**
-   * Open or close the sidebar, animating the slide when possible. The box slides
-   * with a transform and the content area's apparent width with a clip-path, both
-   * compositor-driven, so the content area isn't reflowed on every frame; the real
-   * layout flips once, when the slide finishes. See the "Animating the content area"
-   * performance best practice.
-   *
-   * @param {Window} win
-   * @param {Element} box
-   * @param {Element} splitter
-   * @param {boolean} collapse
-   */
-  _setSidebarCollapsed(win, box, splitter, collapse) {
-    box._aiWindowOpen = !collapse;
-
-    const reduceMotion = win.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
-    if (reduceMotion) {
-      this._cancelSidebarAnimation(box);
-      this._commitSidebarCollapsed(box, splitter, collapse);
-      return;
-    }
-
-    this._animateSidebarToggle(win, box, splitter, collapse);
-  },
-
-  _commitSidebarCollapsed(box, splitter, collapse) {
-    this._clearSidebarAnimationStyles(box);
-    box.collapsed = collapse;
-    splitter.collapsed = collapse;
-    if (!collapse) {
-      box.parentElement.collapsed = false;
-    }
-  },
-
-  _clearSidebarAnimationStyles(box) {
-    box.style.position =
-      box.style.top =
-      box.style.bottom =
-      box.style.left =
-      box.style.right =
-      box.style.width =
-        "";
-    box.parentElement.style.overflow = "";
-  },
-
-  _cancelSidebarAnimation(box) {
-    const animations = gSidebarAnimations.get(box);
-    if (animations) {
-      gSidebarAnimations.delete(box);
-      animations.forEach(animation => animation.cancel());
-    }
-  },
-
-  _animateSidebarToggle(win, box, splitter, collapse) {
-    const browserEl = box.parentElement;
-    const tabbox = win.document.getElementById("tabbrowser-tabbox");
-
-    this._cancelSidebarAnimation(box);
-    this._clearSidebarAnimationStyles(box);
-
+  _showSidebarElements(box, splitter) {
     box.collapsed = false;
     splitter.collapsed = false;
-    browserEl.collapsed = false;
-
-    const browserStyle = win.getComputedStyle(browserEl);
-    const rtl = win.getComputedStyle(box).direction === "rtl";
-    const boxRect = box.getBoundingClientRect();
-    const browserRect = browserEl.getBoundingClientRect();
-    const narrowWidth = tabbox.getBoundingClientRect().width;
-    const inlinePadding =
-      parseFloat(browserStyle.paddingInlineStart) +
-      parseFloat(browserStyle.paddingInlineEnd);
-
-    // Distance from the box's inline-end edge to #browser's inline-end edge.
-    const edgeGap = rtl
-      ? boxRect.left - browserRect.left
-      : browserRect.right - boxRect.right;
-    const clipAmount = browserRect.width - inlinePadding - narrowWidth;
-
-    if (boxRect.width <= 0 || clipAmount <= 0) {
-      this._commitSidebarCollapsed(box, splitter, collapse);
-      return;
-    }
-
-    // Take the box out of flow, pinned where it sits, so the content area can
-    // fill the full width regardless of Nova vs. non-Nova space calculations. The
-    // splitter stays hidden until the slide settles, and #browser is clipped so
-    // the box can slide past its edge.
-    box.style.position = "absolute";
-    box.style.top = `${boxRect.top - browserRect.top}px`;
-    box.style.bottom = `${browserRect.bottom - boxRect.bottom}px`;
-    box.style.width = `${boxRect.width}px`;
-    box.style.insetInlineEnd = `${edgeGap}px`;
-    splitter.collapsed = true;
-    browserEl.style.overflow = "clip";
-
-    const slide = `${(rtl ? -1 : 1) * (boxRect.width + edgeGap)}px 0 0`;
-    const clipped = rtl
-      ? `inset(0 0 0 ${clipAmount}px)`
-      : `inset(0 ${clipAmount}px 0 0)`;
-    const full = "inset(0 0 0 0)";
-
-    const options = {
-      duration: this.SIDEBAR_ANIMATION_MS,
-      easing: "ease-in-out",
-    };
-    const boxFrames = collapse
-      ? [{ translate: "0" }, { translate: slide }]
-      : [{ translate: slide }, { translate: "0" }];
-    const contentFrames = collapse
-      ? [{ clipPath: clipped }, { clipPath: full }]
-      : [{ clipPath: full }, { clipPath: clipped }];
-
-    const animations = [
-      box.animate(boxFrames, options),
-      tabbox.animate(contentFrames, options),
-    ];
-    gSidebarAnimations.set(box, animations);
-
-    Promise.allSettled(animations.map(animation => animation.finished)).then(
-      () => {
-        if (gSidebarAnimations.get(box) !== animations) {
-          return;
-        }
-        gSidebarAnimations.delete(box);
-        this._commitSidebarCollapsed(box, splitter, collapse);
-      }
-    );
+    box.parentElement.collapsed = false;
   },
 
   /**
@@ -271,7 +141,7 @@ export const AIWindowUI = {
     const aiBrowser = this.ensureBrowserIsAppended(win.document, box);
 
     if (!this.isSidebarOpen(win)) {
-      this._setSidebarCollapsed(win, box, splitter, false);
+      this._showSidebarElements(box, splitter);
       this._updateAskButtonChecked(win, true);
     }
 
@@ -366,7 +236,8 @@ export const AIWindowUI = {
     }
     const { box, splitter } = this._getSidebarElements(win);
 
-    this._setSidebarCollapsed(win, box, splitter, true);
+    box.collapsed = true;
+    splitter.collapsed = true;
     this._updateAskButtonChecked(win, false);
 
     // Dispatch event to notify tab state manager that sidebar was toggled
@@ -406,7 +277,7 @@ export const AIWindowUI = {
     const { chromeDoc, box, splitter } = nodes;
 
     this.ensureBrowserIsAppended(chromeDoc, box);
-    this._setSidebarCollapsed(win, box, splitter, false);
+    this._showSidebarElements(box, splitter);
     this._updateAskButtonChecked(win, true);
 
     // Dispatch event to notify tab state manager that sidebar was toggled
