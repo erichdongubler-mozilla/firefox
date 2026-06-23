@@ -968,6 +968,8 @@ newtab-widget-timer-reset =
 newtab-widget-timer-menu-notifications = Désactiver les notifications
 newtab-widget-timer-menu-notifications-on = Activer les notifications
 newtab-widget-timer-menu-learn-more = En savoir plus
+newtab-widget-timer-menu-button =
+    .aria-label = Options du minuteur
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Principaux titres
 newtab-daily-briefing-card-menu-dismiss = Ignorer
@@ -1083,7 +1085,7 @@ newtab-sports-widget-show-less =
 newtab-sports-widget-followed-only-toggle =
     .label = Seules les équipes suivies
 # Status shown when more matches are being fetched.
-newtab-sports-widget-loading-more = Chargement des autres occurrences…
+newtab-sports-widget-loading-more = Chargement des autres matchs…
 # Watch is a verb (as in watch matches online).
 newtab-sports-widget-watch =
     .label = Regarder
@@ -1165,7 +1167,7 @@ newtab-sports-widget-champions = Champions
 newtab-sports-widget-world-cup-champions = Champions du monde 2026
 # Compact champions label for the medium-size widget result card; the larger
 # card uses newtab-sports-widget-world-cup-champions.
-newtab-sports-widget-world-cup-champions-short = Championnes 2026
+newtab-sports-widget-world-cup-champions-short = Champions 2026
 # Variables:
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }

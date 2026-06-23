@@ -489,6 +489,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -995,6 +996,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -1546,6 +1548,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -2047,6 +2050,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -2242,6 +2246,7 @@
           "newtab-widget-section-show-less",
           "newtab-widget-section-show-more",
           "newtab-widget-section-title",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-notification-focus",
           "newtab-widget-timer-running-break",
           "newtab-widget-timer-spinbutton-name",
@@ -2732,6 +2737,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -3235,6 +3241,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -3745,6 +3752,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -3768,12 +3776,7 @@
     },
     "be": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
-        ]
-      }
+      "missing": null
     },
     "bg": {
       "errors": null,
@@ -4115,6 +4118,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-notifications",
           "newtab-widget-timer-menu-notifications-on",
@@ -4599,6 +4603,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -5109,6 +5114,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -5619,6 +5625,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -6178,6 +6185,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -6515,6 +6523,7 @@
           "newtab-widget-timer-celebration-message-focus",
           "newtab-widget-timer-decrease-min",
           "newtab-widget-timer-increase-min",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-mode-group",
           "newtab-widget-timer-notification-break",
@@ -6877,6 +6886,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -7395,6 +7405,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -7699,6 +7710,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -7724,17 +7736,11 @@
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
-          "home-prefs-clocks-header",
-          "home-prefs-firefox-home-disabled-notice",
-          "home-prefs-firefox-logo-header",
-          "home-prefs-sports-widget-header",
           "newtab-activation-window-message-customization-focus-header",
           "newtab-activation-window-message-customization-focus-message",
           "newtab-activation-window-message-customization-focus-primary-button",
-          "newtab-activation-window-message-dismiss-button",
           "newtab-activation-window-message-values-focus-header",
           "newtab-activation-window-message-values-focus-message",
-          "newtab-card-dismiss-button",
           "newtab-clock-widget-add-clock-form",
           "newtab-clock-widget-button-add",
           "newtab-clock-widget-button-add-clock",
@@ -7758,14 +7764,7 @@
           "newtab-clock-widget-search-location-input",
           "newtab-clock-widget-search-no-results",
           "newtab-clock-widget-search-results",
-          "newtab-custom-row-description",
-          "newtab-custom-widget-clock-toggle",
           "newtab-custom-widget-live-refresh",
-          "newtab-custom-widget-sports-toggle2",
-          "newtab-daily-briefing-card-menu-dismiss",
-          "newtab-daily-briefing-card-timestamp",
-          "newtab-daily-briefing-card-title",
-          "newtab-menu-section-unfollow-topic",
           "newtab-promo-card-body-addons",
           "newtab-promo-card-cta-addons",
           "newtab-promo-card-title-addons",
@@ -7871,46 +7870,16 @@
           "newtab-sports-widget-watch-stream-select-games-only",
           "newtab-sports-widget-world-cup-champions",
           "newtab-sports-widget-world-cup-champions-short",
-          "newtab-topsites-clear-input",
-          "newtab-wallpaper-add-an-image",
-          "newtab-wallpaper-colors",
-          "newtab-weather-change-location-search-use-current",
-          "newtab-weather-high",
-          "newtab-weather-see-full-forecast",
-          "newtab-weather-todays-forecast",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-lists-celebration-headline",
-          "newtab-widget-lists-celebration-subhead",
-          "newtab-widget-lists-edit-clear",
           "newtab-widget-lists-input-menu-edit2",
-          "newtab-widget-lists-name-default",
-          "newtab-widget-lists-name-label-checklist",
-          "newtab-widget-lists-name-placeholder-checklist2",
-          "newtab-widget-manage-widget-button",
-          "newtab-widget-menu-change-size",
-          "newtab-widget-menu-hide",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right",
           "newtab-widget-message-focus-forecasts-body",
           "newtab-widget-message-focus-forecasts-title",
-          "newtab-widget-section-feedback",
-          "newtab-widget-section-menu-button",
-          "newtab-widget-section-menu-hide-all",
-          "newtab-widget-section-menu-learn-more",
-          "newtab-widget-section-menu-manage",
-          "newtab-widget-section-show-less",
-          "newtab-widget-section-show-more",
-          "newtab-widget-size-large",
-          "newtab-widget-size-medium",
-          "newtab-widget-size-small",
           "newtab-widget-timer-celebration-heading-break",
           "newtab-widget-timer-celebration-heading-focus",
           "newtab-widget-timer-celebration-message-break",
           "newtab-widget-timer-celebration-message-focus",
           "newtab-widget-timer-decrease-min",
           "newtab-widget-timer-increase-min",
-          "newtab-widget-timer-label-pause",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-mode-group",
           "newtab-widget-timer-pause-aria",
@@ -8381,6 +8350,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -8861,6 +8831,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -9360,6 +9331,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -9878,6 +9850,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -9904,18 +9877,14 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
+          "newtab-sports-widget-world-cup-champions-short",
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
     "cy": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
-        ]
-      }
+      "missing": null
     },
     "da": {
       "errors": null,
@@ -9942,18 +9911,14 @@
           "newtab-widget-timer-celebration-message-break",
           "newtab-widget-timer-decrease-min",
           "newtab-widget-timer-increase-min",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-start-aria"
         ]
       }
     },
     "de": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
-        ]
-      }
+      "missing": null
     },
     "dsb": {
       "errors": null,
@@ -9961,29 +9926,21 @@
     },
     "el": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more"
-        ]
-      }
+      "missing": null
     },
     "en-CA": {
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
+          "newtab-sports-widget-world-cup-champions-short",
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
     "en-GB": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
-        ]
-      }
+      "missing": null
     },
     "en-US": {
       "errors": null,
@@ -9994,7 +9951,8 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
+          "newtab-sports-widget-world-cup-champions-short",
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
@@ -10002,12 +9960,10 @@
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
           "newtab-sports-widget-message-day-in-play-body",
           "newtab-sports-widget-message-day-in-play-title",
           "newtab-sports-widget-message-wallpapers-body",
           "newtab-sports-widget-watch-play",
-          "newtab-sports-widget-world-cup-champions-short",
           "newtab-wallpaper-feature-highlight-subtitle",
           "newtab-widget-message-focus-forecasts-body",
           "newtab-widget-message-focus-forecasts-title",
@@ -10020,8 +9976,7 @@
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
@@ -10030,18 +9985,14 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
+          "newtab-sports-widget-world-cup-champions-short",
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
     "es-MX": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
-        ]
-      }
+      "missing": null
     },
     "et": {
       "errors": null,
@@ -10503,6 +10454,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -10526,12 +10478,7 @@
     },
     "eu": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
-        ]
-      }
+      "missing": null
     },
     "fa": {
       "errors": null,
@@ -10957,6 +10904,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -11457,6 +11405,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -11486,7 +11435,8 @@
           "newtab-sports-widget-match-vs",
           "newtab-sports-widget-no-upcoming-matches",
           "newtab-sports-widget-team-tbd",
-          "newtab-sports-widget-world-cup-champions-short"
+          "newtab-sports-widget-world-cup-champions-short",
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
@@ -12035,6 +11985,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -12060,19 +12011,13 @@
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
     "fy-NL": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
-        ]
-      }
+      "missing": null
     },
     "ga-IE": {
       "errors": null,
@@ -12577,6 +12522,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -13056,6 +13002,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -13332,6 +13279,7 @@
           "newtab-widget-timer-celebration-message-focus",
           "newtab-widget-timer-decrease-min",
           "newtab-widget-timer-increase-min",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-notifications",
           "newtab-widget-timer-mode-break",
@@ -13354,15 +13302,8 @@
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-match-vs",
-          "newtab-sports-widget-no-upcoming-matches",
-          "newtab-sports-widget-pagination-dot",
-          "newtab-sports-widget-pagination-next",
-          "newtab-sports-widget-pagination-previous",
-          "newtab-sports-widget-team-tbd",
-          "newtab-sports-widget-world-cup-champions-short",
-          "newtab-widget-message-focus-forecasts-body"
+          "newtab-widget-message-focus-forecasts-body",
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
@@ -13850,6 +13791,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -14412,6 +14354,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -14910,6 +14853,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -15100,6 +15044,7 @@
           "newtab-widget-timer-celebration-message-focus",
           "newtab-widget-timer-decrease-min",
           "newtab-widget-timer-increase-min",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-mode-group",
           "newtab-widget-timer-pause-aria",
@@ -15116,12 +15061,7 @@
     },
     "hu": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
-        ]
-      }
+      "missing": null
     },
     "hy-AM": {
       "errors": null,
@@ -15190,6 +15130,7 @@
           "newtab-widget-section-show-more",
           "newtab-widget-timer-decrease-min",
           "newtab-widget-timer-increase-min",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-mode-group",
           "newtab-widget-timer-pause-aria",
           "newtab-widget-timer-spinbutton-name",
@@ -15657,6 +15598,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -15680,7 +15622,11 @@
     },
     "ia": {
       "errors": null,
-      "missing": null
+      "missing": {
+        "browser/newtab/newtab.ftl": [
+          "newtab-widget-timer-menu-button"
+        ]
+      }
     },
     "id": {
       "errors": null,
@@ -15942,6 +15888,7 @@
           "newtab-widget-timer-celebration-message-focus",
           "newtab-widget-timer-decrease-min",
           "newtab-widget-timer-increase-min",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-mode-break",
           "newtab-widget-timer-mode-focus",
@@ -16192,6 +16139,7 @@
           "newtab-widget-timer-celebration-message-focus",
           "newtab-widget-timer-decrease-min",
           "newtab-widget-timer-increase-min",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-mode-group",
           "newtab-widget-timer-pause-aria",
@@ -16695,6 +16643,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -16724,7 +16673,8 @@
           "newtab-sports-widget-match-vs",
           "newtab-sports-widget-no-upcoming-matches",
           "newtab-sports-widget-team-tbd",
-          "newtab-sports-widget-world-cup-champions-short"
+          "newtab-sports-widget-world-cup-champions-short",
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
@@ -16736,7 +16686,8 @@
           "newtab-sports-widget-match-vs",
           "newtab-sports-widget-no-upcoming-matches",
           "newtab-sports-widget-team-tbd",
-          "newtab-sports-widget-world-cup-champions-short"
+          "newtab-sports-widget-world-cup-champions-short",
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
@@ -16753,7 +16704,8 @@
           "newtab-sports-widget-pagination-next",
           "newtab-sports-widget-pagination-previous",
           "newtab-sports-widget-team-tbd",
-          "newtab-sports-widget-world-cup-champions-short"
+          "newtab-sports-widget-world-cup-champions-short",
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
@@ -17075,6 +17027,7 @@
           "newtab-widget-timer-celebration-message-focus",
           "newtab-widget-timer-decrease-min",
           "newtab-widget-timer-increase-min",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-mode-group",
           "newtab-widget-timer-notification-break",
@@ -17097,7 +17050,7 @@
           "newtab-sports-widget-loading-more",
           "newtab-sports-widget-no-upcoming-matches",
           "newtab-sports-widget-pagination-dot",
-          "newtab-sports-widget-world-cup-champions-short"
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
@@ -17574,6 +17527,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-mode-break",
@@ -18094,6 +18048,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -18661,6 +18616,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -19221,6 +19177,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -19784,6 +19741,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -20289,6 +20247,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -20769,6 +20728,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -21249,6 +21209,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -21753,6 +21714,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -22124,6 +22086,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -22641,6 +22604,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -23124,6 +23088,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -23645,6 +23610,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -24152,6 +24118,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -24485,6 +24452,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -24989,6 +24957,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -25499,6 +25468,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -26012,6 +25982,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -26529,6 +26500,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -26552,19 +26524,13 @@
     },
     "nl": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
-        ]
-      }
+      "missing": null
     },
     "nn-NO": {
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
@@ -26930,6 +26896,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -27444,6 +27411,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -27469,15 +27437,7 @@
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-match-vs",
-          "newtab-sports-widget-message-day-in-play-body",
-          "newtab-sports-widget-message-day-in-play-title",
-          "newtab-sports-widget-message-wallpapers-body",
-          "newtab-sports-widget-no-upcoming-matches",
-          "newtab-sports-widget-team-tbd",
-          "newtab-sports-widget-world-cup-champions-short",
-          "newtab-widget-message-focus-forecasts-body"
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
@@ -28020,6 +27980,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -28045,19 +28006,13 @@
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
     "pt-BR": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
-        ]
-      }
+      "missing": null
     },
     "pt-PT": {
       "errors": null,
@@ -28143,7 +28098,8 @@
           "newtab-widget-message-focus-forecasts-body",
           "newtab-widget-message-focus-forecasts-title",
           "newtab-widget-section-show-less",
-          "newtab-widget-section-show-more"
+          "newtab-widget-section-show-more",
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
@@ -28362,6 +28318,7 @@
           "newtab-widget-timer-celebration-message-focus",
           "newtab-widget-timer-decrease-min",
           "newtab-widget-timer-increase-min",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-mode-group",
           "newtab-widget-timer-pause-aria",
@@ -28377,18 +28334,14 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
+          "newtab-sports-widget-world-cup-champions-short",
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
     "ru": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
-        ]
-      }
+      "missing": null
     },
     "sat": {
       "errors": null,
@@ -28744,6 +28697,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -28975,6 +28929,7 @@
           "newtab-widget-timer-celebration-message-focus",
           "newtab-widget-timer-decrease-min",
           "newtab-widget-timer-increase-min",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-mode-group",
           "newtab-widget-timer-pause-aria",
@@ -29465,6 +29420,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -29946,6 +29902,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -30395,6 +30352,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -30776,6 +30734,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -30893,6 +30852,7 @@
           "newtab-widget-timer-celebration-heading-focus",
           "newtab-widget-timer-celebration-message-break",
           "newtab-widget-timer-celebration-message-focus",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-running-break",
           "newtab-widget-timer-running-focus"
         ]
@@ -31440,6 +31400,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -31651,6 +31612,7 @@
           "newtab-widget-timer-celebration-message-focus",
           "newtab-widget-timer-decrease-min",
           "newtab-widget-timer-increase-min",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-mode-group",
           "newtab-widget-timer-pause-aria",
@@ -31666,7 +31628,8 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
+          "newtab-sports-widget-world-cup-champions-short",
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
@@ -32216,6 +32179,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -32697,6 +32661,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -33202,6 +33167,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -33640,6 +33606,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-notifications",
           "newtab-widget-timer-menu-notifications-on",
@@ -33668,7 +33635,6 @@
           "home-prefs-firefox-home-disabled-notice",
           "newtab-activation-window-message-values-focus-message",
           "newtab-clock-widget-button-add",
-          "newtab-clock-widget-edit-item",
           "newtab-clock-widget-edit-item-with-nickname",
           "newtab-clock-widget-input-nickname",
           "newtab-clock-widget-label-nickname-with-value",
@@ -33710,8 +33676,6 @@
           "newtab-sports-widget-match-aria-label-upcoming-delayed",
           "newtab-sports-widget-match-aria-label-upcoming-postponed",
           "newtab-sports-widget-match-aria-label-upcoming-suspended",
-          "newtab-sports-widget-match-extra-time",
-          "newtab-sports-widget-match-halftime",
           "newtab-sports-widget-match-penalties",
           "newtab-sports-widget-match-time",
           "newtab-sports-widget-match-vs",
@@ -33719,44 +33683,29 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
-          "newtab-sports-widget-message-add-widgets-cta",
           "newtab-sports-widget-message-day-in-play-body",
           "newtab-sports-widget-message-day-in-play-title",
           "newtab-sports-widget-message-explore-widgets-cta",
           "newtab-sports-widget-message-wallpapers-body",
-          "newtab-sports-widget-message-wallpapers-cta",
           "newtab-sports-widget-message-wallpapers-title",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-no-upcoming-matches",
           "newtab-sports-widget-pagination-dot",
-          "newtab-sports-widget-pagination-next",
-          "newtab-sports-widget-pagination-previous",
           "newtab-sports-widget-postponed",
-          "newtab-sports-widget-quarter-finals",
-          "newtab-sports-widget-round-16",
-          "newtab-sports-widget-round-32",
           "newtab-sports-widget-runner-up",
           "newtab-sports-widget-search-country",
           "newtab-sports-widget-semi-finals",
-          "newtab-sports-widget-show-less",
           "newtab-sports-widget-suspended",
           "newtab-sports-widget-team-name-eliminated",
-          "newtab-sports-widget-team-name-label-bih",
           "newtab-sports-widget-team-name-label-civ",
           "newtab-sports-widget-team-name-label-cod",
-          "newtab-sports-widget-team-name-label-eng",
-          "newtab-sports-widget-team-name-label-sco",
           "newtab-sports-widget-team-tbd",
           "newtab-sports-widget-upcoming",
-          "newtab-sports-widget-view-all",
           "newtab-sports-widget-view-matches",
           "newtab-sports-widget-watch",
-          "newtab-sports-widget-watch-available-other-regions",
           "newtab-sports-widget-watch-available-region",
-          "newtab-sports-widget-watch-dialog-close",
           "newtab-sports-widget-watch-icon",
           "newtab-sports-widget-watch-play",
-          "newtab-sports-widget-watch-stream-free",
           "newtab-sports-widget-watch-stream-free-paid",
           "newtab-sports-widget-watch-stream-free-trial",
           "newtab-sports-widget-watch-stream-paid",
@@ -33783,6 +33732,7 @@
           "newtab-widget-timer-celebration-message-focus",
           "newtab-widget-timer-decrease-min",
           "newtab-widget-timer-increase-min",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-mode-group",
           "newtab-widget-timer-pause-aria",
           "newtab-widget-timer-spinbutton-name",
@@ -33795,7 +33745,8 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
+          "newtab-sports-widget-world-cup-champions-short",
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
@@ -34266,6 +34217,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -34291,8 +34243,8 @@
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
+          "newtab-sports-widget-world-cup-champions-short",
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
@@ -34778,6 +34730,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -34992,6 +34945,7 @@
           "newtab-widget-timer-celebration-message-focus",
           "newtab-widget-timer-decrease-min",
           "newtab-widget-timer-increase-min",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-mode-group",
           "newtab-widget-timer-pause-aria",
@@ -35467,6 +35421,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -35954,6 +35909,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -35979,8 +35935,7 @@
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
@@ -36526,6 +36481,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -37089,6 +37045,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -37652,6 +37609,7 @@
           "newtab-widget-timer-increase-min",
           "newtab-widget-timer-label-pause",
           "newtab-widget-timer-label-play",
+          "newtab-widget-timer-menu-button",
           "newtab-widget-timer-menu-hide",
           "newtab-widget-timer-menu-learn-more",
           "newtab-widget-timer-menu-notifications",
@@ -37677,20 +37635,15 @@
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
           "newtab-sports-widget-no-upcoming-matches",
-          "newtab-sports-widget-world-cup-champions-short"
+          "newtab-sports-widget-world-cup-champions-short",
+          "newtab-widget-timer-menu-button"
         ]
       }
     },
     "zh-TW": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-loading-more",
-          "newtab-sports-widget-world-cup-champions-short"
-        ]
-      }
+      "missing": null
     }
   },
   "message_dates": {
@@ -38232,6 +38185,7 @@
     "newtab-widget-timer-increase-min": "2026-04-30T22:22:01",
     "newtab-widget-timer-label-pause": "2025-09-05T15:35:44",
     "newtab-widget-timer-label-play": "2025-09-05T15:35:44",
+    "newtab-widget-timer-menu-button": "2026-06-19T15:48:55",
     "newtab-widget-timer-menu-hide": "2026-04-30T22:22:01",
     "newtab-widget-timer-menu-learn-more": "2025-08-06T14:12:52",
     "newtab-widget-timer-menu-notifications": "2025-08-06T14:12:52",
@@ -38253,7 +38207,7 @@
   },
   "meta": {
     "repository": "https://github.com/mozilla-l10n/firefox-l10n.git",
-    "revision": "e685e5f5195fa0977df687543c6477b800faae45",
-    "updated": "2026-06-18T20:19:50.515593"
+    "revision": "69ebbebdfc3ac686ac663c086c5cc503048ae737",
+    "updated": "2026-06-23T21:14:45.784583"
   }
 }

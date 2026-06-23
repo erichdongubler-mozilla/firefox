@@ -985,6 +985,8 @@ newtab-widget-timer-reset =
 newtab-widget-timer-menu-notifications = Diffodd hysbysiadau
 newtab-widget-timer-menu-notifications-on = Troi hysbysiadau ymlaen
 newtab-widget-timer-menu-learn-more = Dysgu rhagor
+newtab-widget-timer-menu-button =
+    .aria-label = Dewisiadau amserydd
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Prif Benawdau
 newtab-daily-briefing-card-menu-dismiss = Cau
@@ -1111,6 +1113,8 @@ newtab-sports-widget-show-less =
 # Toggle that filters the list of teams the user follows
 newtab-sports-widget-followed-only-toggle =
     .label = Dim ond timau sy'n cael eu dilyn
+# Status shown when more matches are being fetched.
+newtab-sports-widget-loading-more = Wrthi'n llwytho mwy o gydweddu…
 # Watch is a verb (as in watch matches online).
 newtab-sports-widget-watch =
     .label = Gwylio
@@ -1190,6 +1194,9 @@ newtab-sports-widget-third-place = Yn Drydydd
 newtab-sports-widget-runner-up = Yn Ail
 newtab-sports-widget-champions = Pencampwyr
 newtab-sports-widget-world-cup-champions = Pencampwyr Cwpan y Byd 2026
+# Compact champions label for the medium-size widget result card; the larger
+# card uses newtab-sports-widget-world-cup-champions.
+newtab-sports-widget-world-cup-champions-short = Pencampwyr 2026
 # Variables:
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }

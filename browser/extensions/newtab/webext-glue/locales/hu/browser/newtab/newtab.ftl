@@ -972,6 +972,8 @@ newtab-widget-timer-reset =
 newtab-widget-timer-menu-notifications = Értesítések kikapcsolása
 newtab-widget-timer-menu-notifications-on = Értesítések bekapcsolása
 newtab-widget-timer-menu-learn-more = További tudnivalók
+newtab-widget-timer-menu-button =
+    .aria-label = Időzítő beállításai
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Legfontosabb szalagcímek
 newtab-daily-briefing-card-menu-dismiss = Eltüntetés
@@ -1086,6 +1088,8 @@ newtab-sports-widget-show-less =
 # Toggle that filters the list of teams the user follows
 newtab-sports-widget-followed-only-toggle =
     .label = Csak követett csapatok
+# Status shown when more matches are being fetched.
+newtab-sports-widget-loading-more = További találatok betöltése…
 # Watch is a verb (as in watch matches online).
 newtab-sports-widget-watch =
     .label = Követés
@@ -1165,6 +1169,9 @@ newtab-sports-widget-third-place = Harmadik helyezett
 newtab-sports-widget-runner-up = Második helyezett
 newtab-sports-widget-champions = Bajnokok
 newtab-sports-widget-world-cup-champions = A 2026-os világbajnokság bajnokai
+# Compact champions label for the medium-size widget result card; the larger
+# card uses newtab-sports-widget-world-cup-champions.
+newtab-sports-widget-world-cup-champions-short = 2026 bajnokai
 # Variables:
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }

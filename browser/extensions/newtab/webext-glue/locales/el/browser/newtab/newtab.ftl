@@ -972,6 +972,8 @@ newtab-widget-timer-reset =
 newtab-widget-timer-menu-notifications = Απενεργοποίηση ειδοποιήσεων
 newtab-widget-timer-menu-notifications-on = Ενεργοποίηση ειδοποιήσεων
 newtab-widget-timer-menu-learn-more = Μάθετε περισσότερα
+newtab-widget-timer-menu-button =
+    .aria-label = Επιλογές αντίστροφης μέτρησης
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Κορυφαίες επικεφαλίδες
 newtab-daily-briefing-card-menu-dismiss = Απόρριψη
@@ -1085,6 +1087,8 @@ newtab-sports-widget-show-less =
 # Toggle that filters the list of teams the user follows
 newtab-sports-widget-followed-only-toggle =
     .label = Μόνο ομάδες που ακολουθείτε
+# Status shown when more matches are being fetched.
+newtab-sports-widget-loading-more = Φόρτωση περισσότερων αγώνων…
 # Watch is a verb (as in watch matches online).
 newtab-sports-widget-watch =
     .label = Παρακολούθηση
