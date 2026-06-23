@@ -31,6 +31,7 @@
 #include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/dom/HTMLSlotElementBinding.h"
 #include "mozilla/dom/MouseEventBinding.h"
+#include "mozilla/dom/NameSpaceConstants.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/ShadowRootBinding.h"
 #include "mozilla/dom/UnionTypes.h"
@@ -40,10 +41,12 @@
 #include "nsContentCreatorFunctions.h"
 #include "nsContentUtils.h"
 #include "nsError.h"
+#include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsListControlFrame.h"
+#include "nsStyleConsts.h"
 
 #ifdef ACCESSIBILITY
 #  include "nsAccessibilityService.h"
@@ -161,6 +164,10 @@ void HTMLSelectElement::SetupShadowTree() {
   {
     nsAutoString popoverstate;
     picker->SetAttr(kNameSpaceID_None, nsGkAtoms::popover, popoverstate, false);
+    // SetAttr queues AfterSetPopoverAttr asynchronously, but
+    // ShowPopoverInternal needs PopoverAttributeState set immediately.
+    picker->EnsurePopoverData().SetPopoverAttributeState(
+        PopoverAttributeState::Auto);
 
     // A select popover slot, which is a slot element. It is appended to the
     // select popover. It is expected to take all child nodes of the select
@@ -170,6 +177,39 @@ void HTMLSelectElement::SetupShadowTree() {
     picker->AppendChildTo(pickerSlot, false, IgnoreErrors());
   }
   sr->AppendChildTo(picker, false, IgnoreErrors());
+}
+
+bool HTMLSelectElement::IsBaseSelectAppearance() const {
+  RefPtr<const ComputedStyle> style =
+      nsComputedDOMStyle::GetComputedStyleNoFlush(this);
+  if (!style) {
+    return false;
+  }
+  auto appearance = style->StyleDisplay()->EffectiveAppearance();
+  return appearance == StyleAppearance::BaseSelect ||
+         appearance == StyleAppearance::Base;
+}
+
+nsGenericHTMLElement* HTMLSelectElement::GetPickerElement() const {
+  return nsGenericHTMLElement::FromNodeOrNull(
+      FindShadowPseudo(PseudoStyleType::Picker));
+}
+
+void HTMLSelectElement::TogglePickerInternal(bool aIsSourceTouchEvent) {
+  if (IsBaseSelectAppearance()) {
+    if (RefPtr<nsGenericHTMLElement> picker = GetPickerElement()) {
+      IgnoredErrorResult rv;
+      if (picker->PopoverOpen()) {
+        picker->HidePopover(rv);
+      } else {
+        picker->ShowPopoverInternal(this, rv);
+      }
+      return;
+    }
+  }
+  if (!OpenInParentProcess()) {
+    FireDropDownEvent(true, aIsSourceTouchEvent);
+  }
 }
 
 void HTMLSelectElement::GetSlotNameFor(const ShadowRoot& aShadow,
@@ -320,11 +360,7 @@ void HTMLSelectElement::ShowPicker(ErrorResult& aRv) {
     return;
   }
 
-  if (!OpenInParentProcess()) {
-    RefPtr<Document> doc = OwnerDoc();
-    nsContentUtils::DispatchChromeEvent(doc, this, u"mozshowdropdown"_ns,
-                                        CanBubble::eYes, Cancelable::eNo);
-  }
+  TogglePickerInternal();
 }
 
 void HTMLSelectElement::GetAutocomplete(DOMString& aValue) {
@@ -1929,7 +1965,6 @@ nsresult HTMLSelectElement::HandleMouseDown(EventChainPostVisitor& aVisitor) {
   }
 
   if (IsCombobox()) {
-    uint16_t inputSource = mouseEvent->mInputSource;
     if (OpenInParentProcess()) {
       nsCOMPtr<nsIContent> target =
           nsIContent::FromEventTargetOrNull(aVisitor.mEvent->mOriginalTarget);
@@ -1938,8 +1973,8 @@ nsresult HTMLSelectElement::HandleMouseDown(EventChainPostVisitor& aVisitor) {
       }
     }
     const bool isSourceTouchEvent =
-        inputSource == MouseEvent_Binding::MOZ_SOURCE_TOUCH;
-    FireDropDownEvent(!OpenInParentProcess(), isSourceTouchEvent);
+        mouseEvent->mInputSource == MouseEvent_Binding::MOZ_SOURCE_TOUCH;
+    TogglePickerInternal(isSourceTouchEvent);
     return NS_OK;
   }
 
@@ -2177,7 +2212,7 @@ nsresult HTMLSelectElement::HandleKeyDown(EventChainPostVisitor& aVisitor) {
        (keyEvent->mKeyCode == NS_VK_UP || keyEvent->mKeyCode == NS_VK_DOWN)) ||
       (dropDownMenuOnSpace && keyEvent->mKeyCode == NS_VK_SPACE &&
        !withinIncrementalSearchTime)) {
-    FireDropDownEvent(!OpenInParentProcess(), false);
+    TogglePickerInternal();
     aVisitor.mEvent->PreventDefault();
     return NS_OK;
   }
