@@ -188,18 +188,18 @@ async function getFormSubmitResponseResult(
   { username = "#user", password = "#pass" } = {}
 ) {
   // default selectors are for the response page produced by formsubmit.sjs
-  // TODO: Switch to SpecialPowers.spawn
-  // eslint-disable-next-line mozilla/reject-contenttask-spawn
-  let fieldValues = await ContentTask.spawn(
+  await BrowserTestUtils.waitForCondition(() =>
+    SpecialPowers.spawn(browser, [resultURL], resultURL => {
+      return (
+        content.location.pathname.endsWith(resultURL) &&
+        content.document.readyState == "complete"
+      );
+    })
+  );
+  let fieldValues = await SpecialPowers.spawn(
     browser,
-    { resultURL, usernameSelector: username, passwordSelector: password },
-    async function ({ resultURL, usernameSelector, passwordSelector }) {
-      await ContentTaskUtils.waitForCondition(() => {
-        return (
-          content.location.pathname.endsWith(resultURL) &&
-          content.document.readyState == "complete"
-        );
-      }, `Wait for form submission load (${resultURL})`);
+    [username, password],
+    (usernameSelector, passwordSelector) => {
       let username =
         content.document.querySelector(usernameSelector).textContent;
       // Bug 1686071: Since generated passwords can have special characters in them,

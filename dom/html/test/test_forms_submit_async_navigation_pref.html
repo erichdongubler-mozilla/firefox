@@ -1,0 +1,30 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test the dom.forms.submit_async_navigation preference</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+  <script>
+    async function doTestWith(prefEnabled) {
+      await SpecialPowers.pushPrefEnv({ set: [["dom.forms.submit_async_navigation", prefEnabled ]] });
+      let {promise: waitForSuccess, resolve} = Promise.withResolvers();
+      navigation.onnavigatesuccess = resolve;
+      let navigated = false;
+      navigation.onnavigate = e => {
+        navigated = true;
+        e.intercept();
+      };
+      let form = document.querySelector('form');
+      form.submit();
+      is(navigated, !prefEnabled, `Form submission should be ${prefEnabled ? "a" : ""}synchronous with dom.forms.submit_async_navigation=${prefEnabled}`);
+      await waitForSuccess;
+    }
+    add_task(() => doTestWith(false));
+    add_task(() => doTestWith(true));
+  </script>
+</head>
+<body>
+<form></form>
+</body>
+</html>
