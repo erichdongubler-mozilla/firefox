@@ -200,6 +200,12 @@ interface nsIFOG : nsISupports
                                    in Array<ACString> aUploaderCapabilities);
 
   /**
+   * Clear the core attribution metrics in Glean.
+   * Does not clear glean.attribution.ext.
+   */
+  void clearAttribution();
+
+  /**
    * Update the core attribution metrics in Glean.
    *
    * @param aSource - The product's attribution source (e.g. "google-play").
@@ -224,6 +230,12 @@ interface nsIFOG : nsISupports
    */
   [implicit_jscontext]
   jsval testGetAttribution();
+
+  /**
+   * Clear the core distribution metrics in Glean.
+   * Does not clear glean.distribution.ext.
+   */
+  void clearDistribution();
 
   /**
    * Update the core distribution metrics in Glean.

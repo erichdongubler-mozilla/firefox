@@ -538,6 +538,13 @@ FOG::RegisterRuntimePing(const nsACString& aName, const bool aIncludeClientId,
 }
 
 NS_IMETHODIMP
+FOG::ClearAttribution() {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  glean::impl::fog_clear_attribution();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 FOG::UpdateAttribution(const nsACString& aSource, const nsACString& aMedium,
                        const nsACString& aCampaign, const nsACString& aTerm,
                        const nsACString& aContent) {
@@ -628,6 +635,13 @@ FOG::TestGetAttribution(JSContext* aCx, JS::MutableHandleValue aResult) {
   aResult.setObject(*jsAttr);
   return NS_OK;
 #endif  // MOZ_GLEAN_ANDROID
+}
+
+NS_IMETHODIMP
+FOG::ClearDistribution() {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  glean::impl::fog_clear_distribution();
+  return NS_OK;
 }
 
 NS_IMETHODIMP
