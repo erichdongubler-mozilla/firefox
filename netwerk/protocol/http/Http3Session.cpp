@@ -2157,7 +2157,9 @@ void Http3Session::CloseInternal(bool aCallNeqoClose) {
 
   LOG(("Http3Session::Closing [this=%p]", this));
 
-  if (mState != CONNECTED) {
+  // A clean pre-CONNECTED shutdown closes with a success code; only flag a
+  // before-connected error when mError actually failed.
+  if (mState != CONNECTED && NS_FAILED(mError)) {
     mBeforeConnectedError = true;
   }
 
