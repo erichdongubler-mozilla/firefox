@@ -1277,29 +1277,21 @@ var removeVisitsByFilter = async function (db, filter, onResult = null) {
   let pages = [];
   await db.executeTransaction(async function () {
     // 2. Remove all offending visits.
-    for (let chunk of lazy.PlacesUtils.chunkArray(
-      visitsToRemove,
-      db.variableLimit
-    )) {
-      await db.execute(
-        `DELETE FROM moz_historyvisits
-         WHERE id IN (${lazy.PlacesUtils.sqlBindPlaceholders(chunk)})`,
-        chunk
-      );
-    }
+    await db.executeCached(
+      `DELETE FROM moz_historyvisits
+         WHERE id IN carray(:visitsToRemove)`,
+      { visitsToRemove }
+    );
 
     // 3. Find out which pages have been orphaned
-    for (let chunk of lazy.PlacesUtils.chunkArray(
-      [...pagesToInspect],
-      db.variableLimit
-    )) {
-      await db.execute(
+    if (pagesToInspect.size) {
+      await db.executeCached(
         `SELECT id, url, url_hash, guid,
           (foreign_count != 0) AS has_foreign,
           (last_visit_date NOTNULL) as has_visits
          FROM moz_places
-         WHERE id IN (${lazy.PlacesUtils.sqlBindPlaceholders(chunk)})`,
-        chunk,
+         WHERE id IN carray(:pagesToInspect)`,
+        { pagesToInspect: [...pagesToInspect] },
         row => {
           let page = {
             id: row.getResultByName("id"),
