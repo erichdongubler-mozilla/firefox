@@ -373,9 +373,8 @@ export class AIWindowTabStatesManager {
    * - When shouldOpenSidebar is true, openSidebar is called with the tab's conversation
    * - If conversation is null/undefined, openSidebar will kick off creating a new conversation
    * - AI Window tabs (AIWINDOW_URL) always close the sidebar regardless of state
-   * - If no conversationId is present, we wait for the restore to settle then
-   *   re-read directly from SessionStore. This covers both the initial window
-   *   restore and tabs reopened via "Reopen Closed Tab".
+   * - If no convisationId is present but restore hasn't completed, we wait for restore to complete
+   *   and re-check state in case the conversationId is from a restored
    *
    * @param {Event} event
    *
@@ -387,38 +386,22 @@ export class AIWindowTabStatesManager {
     }
 
     const tab = event.target;
-    const tabUrl = tab.linkedBrowser?.currentURI?.spec ?? "";
 
-    // AI Window tab doesn't need sidebar
-    if (tabUrl === lazy.AIWINDOW_URL) {
-      lazy.AIWindowUI.restoreMemoriesState(this.#window, tab);
-      lazy.AIWindowUI.closeSidebar(this.#window);
-      return;
-    }
-
-    let tabState = this.#getTabState(tab);
-
-    // Run whenever no conversationId is cached.
-    // A reopened tab fire TabSelect before restoreTab() writes the conversationId.
-    // Await the restore, re-read from SessionStore and do it before openSidebar
-    // otherwise a fresh conversation overwrites the restored one.
-    if (!tabState?.state?.conversationId) {
-      // Promise.resolve() yield the microtask so the synchronous restoreTab()
-      // can run before we re-read
-      await (this.#restoreCompleted ? Promise.resolve() : this.#restorePromise);
-
-      if (this.#window?.gBrowser.selectedTab !== tab) {
-        return;
-      }
-
-      tabState = this.#refreshTabStateFromSession(tab);
-    }
-
+    const tabState = this.#getTabState(tab);
     const convId = tabState?.state?.conversationId;
+    const tabUrl = tab.linkedBrowser?.currentURI?.spec ?? "";
+    const isAIWindowTab = tabUrl === lazy.AIWINDOW_URL;
     const shouldKeepSidebar = getKeepSidebarOpenState(
       tabState?.state,
       lazy.sidebarOpenByDefault
     );
+
+    // AI Window tab doesn't need sidebar
+    if (isAIWindowTab) {
+      lazy.AIWindowUI.restoreMemoriesState(this.#window, tab);
+      lazy.AIWindowUI.closeSidebar(this.#window);
+      return;
+    }
 
     if (!shouldKeepSidebar) {
       lazy.AIWindowUI.updateSidebarInput(
@@ -438,6 +421,16 @@ export class AIWindowTabStatesManager {
       if (this.#window?.gBrowser.selectedTab !== tab) {
         return;
       }
+    } else if (!convId && !this.#restoreCompleted) {
+      // Restore hasn't completed yet so we wait and re-read state in case this
+      // tab had a saved conversation that hasn't been loaded yet.
+      await this.#restorePromise;
+
+      if (this.#window?.gBrowser.selectedTab !== tab) {
+        return;
+      }
+
+      conversation = this.#getTabState(tab)?.state?.conversation ?? null;
     }
 
     lazy.AIWindowUI.openSidebar(this.#window, conversation);
@@ -451,38 +444,6 @@ export class AIWindowTabStatesManager {
       this.#window,
       this.#resolveTabModelChoice(tabState)
     );
-  }
-
-  /**
-   * Re-read a tab's persisted state from SessionStore and merge it into the
-   * cache. The in-memory cache can be empty when TabSelect fires before the
-   * conversationId has been written so this recovers it.
-   * Only overwrites the cache when a persisted conversationId is found
-   *
-   * @param {MozTabbrowserTab} tab
-   * @returns {TabStateEntry}
-   *
-   * @private
-   */
-  #refreshTabStateFromSession(tab) {
-    if (!this.#tabStates) {
-      return {};
-    }
-
-    let saved = null;
-    try {
-      const raw = lazy.SessionStore.getCustomTabValue(tab, SESSION_STORE_KEY);
-      saved = raw ? JSON.parse(raw) : null;
-    } catch {
-      saved = null;
-    }
-
-    const tabState = this.#tabStates.get(tab) ?? {};
-    if (saved?.conversationId) {
-      tabState.state = { ...(tabState.state ?? {}), ...saved };
-      this.#tabStates.set(tab, tabState);
-    }
-    return tabState;
   }
 
   /**
