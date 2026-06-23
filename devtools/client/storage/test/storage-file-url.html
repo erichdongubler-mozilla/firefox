@@ -6,15 +6,14 @@
   <script>
     "use strict";
     /* exported setup */
-    async function setup() {
-      await createIndexedDB();
+    function setup() {
+      createIndexedDB();
       createCookies();
       createLocalStorage();
       createSessionStorage();
     }
 
     function createIndexedDB() {
-      const { promise, resolve } = Promise.withResolvers();
       const open = indexedDB.open("MyDatabase", 1);
 
       open.onupgradeneeded = function () {
@@ -34,11 +33,8 @@
 
         tx.oncomplete = function () {
           db.close();
-          resolve();
         };
       };
-
-      return promise;
     }
 
     function createCookies() {
