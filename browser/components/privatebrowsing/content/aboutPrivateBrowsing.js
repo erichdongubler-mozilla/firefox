@@ -256,6 +256,10 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("info-body"),
       "about-private-browsing-nova-info-body"
     );
+    document.l10n.setAttributes(
+      document.getElementById("private-browsing-myths"),
+      "about-private-browsing-nova-info-link"
+    );
   }
 
   // We don't do this setup until now, because we don't want to record any impressions until we're

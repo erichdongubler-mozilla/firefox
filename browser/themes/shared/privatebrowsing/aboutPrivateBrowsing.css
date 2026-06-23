@@ -458,7 +458,8 @@ content-search-handoff-ui {
   }
 }
 
-.nova-tagline {
+.nova-tagline,
+.nova-subheader {
   display: none;
 }
 
@@ -522,7 +523,14 @@ content-search-handoff-ui {
   .nova-tagline {
     display: block;
     text-align: center;
+    margin-block: 0 var(--space-small);
+  }
+
+  .nova-subheader {
+    display: block;
+    text-align: start;
     margin-block: 0 var(--space-xxlarge);
+    max-width: 31em;
   }
 
   content-search-handoff-ui {
