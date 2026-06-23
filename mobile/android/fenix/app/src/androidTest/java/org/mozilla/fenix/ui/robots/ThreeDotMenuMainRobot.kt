@@ -587,6 +587,20 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
             return BrowserRobot.Transition(composeTestRule)
         }
 
+        /**
+         * Long click forward page button
+         */
+        fun longClickForwardPageButton(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+            Log.i(TAG, "longClickForwardPageButton: Trying to long-click the \"Forward\" button")
+            composeTestRule.forwardButton().performTouchInput {
+                longClick(durationMillis = LONG_CLICK_DURATION)
+            }
+            Log.i(TAG, "longClickForwardPageButton: long-clicked the \"Forward\" button")
+
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
+        }
+
         fun clickPreviousPageButton(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
             Log.i(TAG, "clickPreviousPageButton: Trying to click the \"Back\" button")
             composeTestRule.backButton().performClick()

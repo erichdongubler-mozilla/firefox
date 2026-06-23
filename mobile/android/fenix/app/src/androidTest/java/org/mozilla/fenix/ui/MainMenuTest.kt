@@ -1254,6 +1254,29 @@ class MainMenuTest {
         }
     }
 
+    @SmokeTest
+    @Test
+    fun verifyTheMainMenuForwardButtonLongPressTest() {
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val nextWebPage = mockWebServer.getGenericAsset(2)
+
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(firstWebPage.url) {
+        }
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(nextWebPage.url) {
+            verifyUrl(nextWebPage.url.toString())
+        }.openThreeDotMenu {
+        }.clickPreviousPageButton {
+        }.openThreeDotMenu {
+        }.longClickForwardPageButton {
+            waitForAppWindowToBeUpdated()
+            verifyTabHistorySheetIsDisplayed(true)
+            verifyTabHistoryContainsWebsite(nextWebPage.url.toString(), true)
+            verifyTabHistoryContainsWebsite(firstWebPage.url.toString(), true)
+        }
+    }
+
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080127
     @Test
     fun verifyTheRefreshButtonTest() {
