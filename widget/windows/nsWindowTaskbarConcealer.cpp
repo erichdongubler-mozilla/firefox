@@ -189,6 +189,8 @@ void nsWindow::TaskbarConcealer::UpdateAllState(
     // USE OF UNDOCUMENTED BEHAVIOR: The EnumWindows family of functions
     // enumerates windows in Z-order, topmost first. (This has been true since
     // at least Windows 2000, and possibly since Windows 3.0.)
+    // UPDATE: Dialog windows like PIP may appear before fullscreen windows,
+    // so they are an exception that is specially handled below.
     //
     // It's necessarily unreliable if windows are reordered while being
     // enumerated; but in that case we'll get a message informing us of that
@@ -237,15 +239,23 @@ void nsWindow::TaskbarConcealer::UpdateAllState(
     sKnownWindows.InsertOrUpdate(item.hwnd, item.monitor);
   }
 
-  // Auxiliary function. Does what it says on the tin.
+  // Finds the window on aMonitor that is responsible for hiding the taskbar,
+  // or else the uppermost window.  If a window is fullscreen then it is
+  // automatically responsible for hiding the taskbar, regardless of its
+  // position in this list.  (PIP windows may be listed before fullscreen
+  // windows.)
   const auto FindUppermostWindowOn = [&windows](HMONITOR aMonitor) -> HWND {
+    HWND topmost;
     for (const Item& item : windows) {
-      if (item.monitor == aMonitor) {
+      if (item.monitor == aMonitor && (!topmost || item.isGkFullscreen)) {
         MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
                 ("on monitor %p, uppermost relevant HWND is %p", aMonitor,
                  item.hwnd));
-        return item.hwnd;
+        topmost = item.hwnd;
       }
+    }
+    if (topmost) {
+      return topmost;
     }
 
     // This should never happen, since we're drawing our monitor-set from the
