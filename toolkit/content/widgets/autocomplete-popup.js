@@ -7,6 +7,17 @@
 // This is loaded into all XUL windows. Wrap in a block to prevent
 // leaking to window scope.
 {
+  const lazy = {};
+
+  ChromeUtils.defineESModuleGetters(lazy, {
+    AutoCompleteParent: "resource://gre/actors/AutoCompleteParent.sys.mjs",
+  });
+
+  ChromeUtils.importESModule(
+    "chrome://global/content/autocomplete-row-item/autocomplete-row-item.mjs",
+    { global: "current" }
+  );
+
   const MozPopupElement = MozElements.MozElementMixin(XULPopupElement);
   MozElements.MozAutocompleteRichlistboxPopup = class MozAutocompleteRichlistboxPopup extends (
     MozPopupElement
@@ -157,6 +168,26 @@
         this._previousSelectedIndex = this.richlistbox.selectedIndex;
       }
       this.richlistbox.selectedIndex = val;
+
+      const prevSelectedItem = this.richlistbox.children[
+        this._previousSelectedIndex
+      ]?.querySelector("autocomplete-row-item");
+      const selectedItem = this.richlistbox.children[val]?.querySelector(
+        "autocomplete-row-item"
+      );
+
+      if (prevSelectedItem) {
+        prevSelectedItem.selected = false;
+      }
+
+      if (selectedItem) {
+        selectedItem.selected = true;
+      }
+
+      if (selectedItem || prevSelectedItem) {
+        lazy.AutoCompleteParent.getCurrentActor()?.previewAutoCompleteEntry();
+      }
+
       // Since ensureElementIsVisible may cause an expensive Layout flush,
       // invoke it only if there may be a scrollbar, so if we could fetch
       // more results than we can show at once.
@@ -321,14 +352,6 @@
         this.richlistbox.replaceChildren();
       }
 
-      // Lazily load the row-item component (and its panel-list dependency)
-      // only when the new UI is enabled, to avoid defining custom elements
-      // in every XUL window at load time.
-      ChromeUtils.importESModule(
-        "chrome://global/content/autocomplete-row-item/autocomplete-row-item.mjs",
-        { global: "current" }
-      );
-
       this.richlistbox.classList.add("autocomplete-row-item-container");
       this._appendAutocompleteResults();
     }
@@ -400,6 +423,7 @@
     _createAutocompleteRowItem() {
       const item = document.createXULElement("richlistitem");
       item.className = "autocomplete-row-item";
+      item.selectedByMouseOver = true;
       item.appendChild(document.createElement("autocomplete-row-item"));
       return item;
     }
@@ -438,7 +462,19 @@
           row.description = parsedComment?.secondary ?? null;
           row.icon = image;
           row.value = value;
-          row.actions = { primary: () => {} };
+          const secondaryAction = parsedComment?.secondaryAction;
+          row.actions = {
+            primary: () => {},
+            secondary: secondaryAction
+              ? {
+                  type: secondaryAction.type,
+                  action: () =>
+                    lazy.AutoCompleteParent.getCurrentActor()?.selectAutoCompleteEntry(
+                      true
+                    ),
+                }
+              : null,
+          };
         }
 
         item.setAttribute("dir", this.style.direction);
