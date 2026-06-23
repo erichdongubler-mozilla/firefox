@@ -3929,10 +3929,15 @@ void Selection::StyledRanges::MaybeFocusCommonEditingHost(
   }
 }
 
-void Selection::NotifySelectionListeners(bool aCalledByJS) {
+void Selection::NotifySelectionListeners(
+    bool aCalledByJS, IsFromRangeMutationObserver aIsFromRange) {
   AutoRestore<bool> calledFromJSRestorer(mCalledByJS);
   mCalledByJS = aCalledByJS;
   NotifySelectionListeners();
+  if (aIsFromRange == IsFromRangeMutationObserver::Yes &&
+      mSelectionChangeEventDispatcher) {
+    mSelectionChangeEventDispatcher->SelectionRangeObservedMutation();
+  }
 }
 
 void Selection::NotifySelectionListeners() {

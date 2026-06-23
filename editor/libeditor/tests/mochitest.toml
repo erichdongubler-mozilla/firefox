@@ -455,6 +455,8 @@ support-files = ["window_caret_visibility_when_moving_focus_in_shadow.html"]
 
 ["test_composition_modified_as_multiple_text_nodes.html"]
 
+["test_composition_selectionchange.html"]
+
 ["test_composition_with_highlight_in_texteditor.html"]
 
 ["test_contenteditable_copy_empty_selection.html"]
