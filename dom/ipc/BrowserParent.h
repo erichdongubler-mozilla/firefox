@@ -725,8 +725,6 @@ class BrowserParent final : public PBrowserParent,
 
   void MaybeInvokeDragSession(EventMessage aMessage);
 
-  BrowserParent* TopLevelBrowserParent();
-
  protected:
   friend BrowserBridgeParent;
   friend BrowserHost;
@@ -763,7 +761,7 @@ class BrowserParent final : public PBrowserParent,
       EmbedderElementEventType aFireEventAtEmbeddingElement);
 
   mozilla::ipc::IPCResult RecvRequestPointerLock(
-      const bool& aUnadjustedMovement, RequestPointerLockResolver&& aResolve);
+      RequestPointerLockResolver&& aResolve);
   mozilla::ipc::IPCResult RecvReleasePointerLock();
 
   mozilla::ipc::IPCResult RecvRequestPointerCapture(
