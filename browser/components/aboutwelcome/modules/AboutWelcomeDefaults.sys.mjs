@@ -1169,20 +1169,34 @@ const MR_ABOUT_WELCOME_DEFAULT = {
           },
           has_arrow_icon: true,
         },
-        secondary_button_top: {
-          label: {
-            string_id: "mr1-onboarding-sign-in-button-label",
-          },
-          action: {
-            data: {
-              entrypoint: "activity-stream-firstrun",
-              where: "tab",
+        secondary_button_top: [
+          {
+            label: {
+              string_id: "mr1-onboarding-sign-in-button-label",
             },
-            type: "SHOW_FIREFOX_ACCOUNTS",
-            addFlowParams: true,
+            action: {
+              data: {
+                entrypoint: "activity-stream-firstrun",
+                where: "tab",
+              },
+              type: "SHOW_FIREFOX_ACCOUNTS",
+              addFlowParams: true,
+            },
+            targeting: "!isFxASignedIn",
           },
-          targeting: "!isFxASignedIn",
-        },
+          {
+            label: { string_id: "restore-from-backup-secondary-top-button" },
+            action: {
+              type: "SET_PREF",
+              data: {
+                pref: { name: "showRestoreFromBackup", value: true },
+              },
+              navigate: true,
+            },
+            targeting:
+              "backupRestoreEnabled && isDefaultBrowser && !doesAppNeedPin",
+          },
+        ],
       },
     },
     {
