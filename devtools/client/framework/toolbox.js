@@ -2485,31 +2485,23 @@ class Toolbox extends EventEmitter {
   updateToolboxButtonsVisibility({ fromWillNavigate = false } = {}) {
     const inspectorFront = this.target.getCachedFront("inspector");
 
-    let hasHighlighters = false;
+    let toggledHighlighters = false;
     for (const button of this.toolbarButtons) {
       button.isVisible = this.#commandIsVisible(button);
 
+      // We want to hide highlighters when the toolbox button is disabled from the options panel
       if (
         inspectorFront &&
-        // We want to destroy highlighters associated with the toolbox button when:
-        // - the button gets hidden (from the Settings panel)
-        // - or when we're going to navigate
-        (!button.isVisible || fromWillNavigate)
+        button.highlighterTypes &&
+        !button.isVisible &&
+        button.isChecked
       ) {
-        if (!button.highlighterTypes) {
-          continue;
-        }
-
-        for (const type of button.highlighterTypes) {
-          if (inspectorFront.getKnownHighlighter(type)?.isShown()) {
-            inspectorFront.destroyHighlighterByType(type);
-            hasHighlighters = true;
-          }
-        }
+        button.onClick({});
+        toggledHighlighters = true;
       }
     }
 
-    if (hasHighlighters || !fromWillNavigate) {
+    if (toggledHighlighters || !fromWillNavigate) {
       this.#renderToolboxButtons();
     }
   }

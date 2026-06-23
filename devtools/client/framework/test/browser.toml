@@ -248,6 +248,8 @@ disabled = "Bug 962258"
 
 ["browser_toolbox_remoteness_change.js"]
 
+["browser_toolbox_rulers_button_highlighter_reload.js"]
+
 ["browser_toolbox_screenshot_tool.js"]
 
 ["browser_toolbox_select_event.js"]

@@ -40,6 +40,8 @@ const SUPPORTED_OPTIONS = {
   customFormatters: true,
   // Set a custom user agent
   customUserAgent: true,
+  // List of highlighters enabled globally, which should be preserved across navigations
+  enabledHighlighters: true,
   // Is the tracer experimental feature manually enabled by the user?
   isTracerFeatureEnabled: true,
   // Enable JavaScript
