@@ -96,6 +96,10 @@ PER_PROJECT_PARAMETERS = {
         "target_tasks_method": "mozilla_esr140_tasks",
         "release_type": "esr140",
     },
+    "mozilla-esr153": {
+        "target_tasks_method": "mozilla_esr153_tasks",
+        "release_type": "esr153",
+    },
     "pine": {
         "target_tasks_method": "pine_tasks",
         "release_type": "nightly-pine",
