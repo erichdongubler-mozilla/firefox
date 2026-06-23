@@ -31,26 +31,8 @@ struct ParamTraits<mozilla::wr::ByteBuffer> {
   }
 };
 
-template <>
-struct ParamTraits<mozilla::wr::ImageDescriptor> {
-  typedef mozilla::wr::ImageDescriptor paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.format);
-    WriteParam(aWriter, aParam.width);
-    WriteParam(aWriter, aParam.height);
-    WriteParam(aWriter, aParam.stride);
-    WriteParam(aWriter, aParam.opacity);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->format) &&
-           ReadParam(aReader, &aResult->width) &&
-           ReadParam(aReader, &aResult->height) &&
-           ReadParam(aReader, &aResult->stride) &&
-           ReadParam(aReader, &aResult->opacity);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::wr::ImageDescriptor, format, width,
+                                  height, stride, opacity);
 
 template <>
 struct ParamTraits<mozilla::wr::GeckoDisplayListType::Tag>
@@ -96,28 +78,10 @@ struct ParamTraits<mozilla::wr::GeckoDisplayListType> {
   }
 };
 
-template <>
-struct ParamTraits<mozilla::wr::BuiltDisplayListDescriptor> {
-  typedef mozilla::wr::BuiltDisplayListDescriptor paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.gecko_display_list_type);
-    WriteParam(aWriter, aParam.builder_start_time);
-    WriteParam(aWriter, aParam.builder_finish_time);
-    WriteParam(aWriter, aParam.send_start_time);
-    WriteParam(aWriter, aParam.total_clip_nodes);
-    WriteParam(aWriter, aParam.total_spatial_nodes);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->gecko_display_list_type) &&
-           ReadParam(aReader, &aResult->builder_start_time) &&
-           ReadParam(aReader, &aResult->builder_finish_time) &&
-           ReadParam(aReader, &aResult->send_start_time) &&
-           ReadParam(aReader, &aResult->total_clip_nodes) &&
-           ReadParam(aReader, &aResult->total_spatial_nodes);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::wr::BuiltDisplayListDescriptor,
+                                  gecko_display_list_type, builder_start_time,
+                                  builder_finish_time, send_start_time,
+                                  total_clip_nodes, total_spatial_nodes);
 
 }  // namespace IPC
 namespace mozilla {

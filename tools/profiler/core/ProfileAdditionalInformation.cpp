@@ -159,78 +159,14 @@ void mozilla::ProfileGenerationAdditionalInformation::ToJSValue(
 
 namespace IPC {
 
-template <>
-struct ParamTraits<SharedLibrary> {
-  typedef SharedLibrary paramType;
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(SharedLibrary, mStart, mEnd, mOffset,
+                                  mBreakpadId, mCodeId, mModuleName,
+                                  mModulePath, mDebugName, mDebugPath, mVersion,
+                                  mArch);
 
-  static void Write(MessageWriter* aWriter, const paramType& aParam);
-  static bool Read(MessageReader* aReader, paramType* aResult);
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(SharedLibraryInfo, mEntries);
 
-template <>
-struct ParamTraits<SharedLibraryInfo> {
-  typedef SharedLibraryInfo paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam);
-  static bool Read(MessageReader* aReader, paramType* aResult);
-};
-
-template <>
-struct ParamTraits<ProfilerJSSourceData> {
-  typedef ProfilerJSSourceData paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam);
-  static bool Read(MessageReader* aReader, paramType* aResult);
-};
-
-template <>
-struct ParamTraits<mozilla::JSSourceEntry> {
-  typedef mozilla::JSSourceEntry paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam);
-  static bool Read(MessageReader* aReader, paramType* aResult);
-};
-
-void IPC::ParamTraits<SharedLibrary>::Write(MessageWriter* aWriter,
-                                            const paramType& aParam) {
-  WriteParam(aWriter, aParam.mStart);
-  WriteParam(aWriter, aParam.mEnd);
-  WriteParam(aWriter, aParam.mOffset);
-  WriteParam(aWriter, aParam.mBreakpadId);
-  WriteParam(aWriter, aParam.mCodeId);
-  WriteParam(aWriter, aParam.mModuleName);
-  WriteParam(aWriter, aParam.mModulePath);
-  WriteParam(aWriter, aParam.mDebugName);
-  WriteParam(aWriter, aParam.mDebugPath);
-  WriteParam(aWriter, aParam.mVersion);
-  WriteParam(aWriter, aParam.mArch);
-}
-
-bool IPC::ParamTraits<SharedLibrary>::Read(MessageReader* aReader,
-                                           paramType* aResult) {
-  return ReadParam(aReader, &aResult->mStart) &&
-         ReadParam(aReader, &aResult->mEnd) &&
-         ReadParam(aReader, &aResult->mOffset) &&
-         ReadParam(aReader, &aResult->mBreakpadId) &&
-         ReadParam(aReader, &aResult->mCodeId) &&
-         ReadParam(aReader, &aResult->mModuleName) &&
-         ReadParam(aReader, &aResult->mModulePath) &&
-         ReadParam(aReader, &aResult->mDebugName) &&
-         ReadParam(aReader, &aResult->mDebugPath) &&
-         ReadParam(aReader, &aResult->mVersion) &&
-         ReadParam(aReader, &aResult->mArch);
-}
-
-void IPC::ParamTraits<SharedLibraryInfo>::Write(MessageWriter* aWriter,
-                                                const paramType& aParam) {
-  paramType& p = const_cast<paramType&>(aParam);
-  WriteParam(aWriter, p.mEntries);
-}
-
-bool IPC::ParamTraits<SharedLibraryInfo>::Read(MessageReader* aReader,
-                                               paramType* aResult) {
-  return ReadParam(aReader, &aResult->mEntries);
-}
+DECLARE_IPC_SERIALIZER(ProfilerJSSourceData);
 
 // Type tags for ProfilerJSSourceData IPC serialization
 constexpr uint8_t kSourceTextUTF16Tag = 0;
@@ -399,54 +335,13 @@ bool IPC::ParamTraits<ProfilerJSSourceData>::Read(MessageReader* aReader,
   }
 }
 
-void IPC::ParamTraits<mozilla::JSSourceEntry>::Write(MessageWriter* aWriter,
-                                                     const paramType& aParam) {
-  WriteParam(aWriter, aParam.id);
-  WriteParam(aWriter, aParam.sourceData);
-}
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::JSSourceEntry, id, sourceData);
 
-bool IPC::ParamTraits<mozilla::JSSourceEntry>::Read(MessageReader* aReader,
-                                                    paramType* aResult) {
-  return (ReadParam(aReader, &aResult->id) &&
-          ReadParam(aReader, &aResult->sourceData));
-}
+IMPLEMENT_IPC_SERIALIZER_WITH_FIELDS(
+    mozilla::ProfileGenerationAdditionalInformation, mSharedLibraries,
+    mJSSourceEntries);
 
-void IPC::ParamTraits<mozilla::ProfileGenerationAdditionalInformation>::Write(
-    MessageWriter* aWriter, const paramType& aParam) {
-  WriteParam(aWriter, aParam.mSharedLibraries);
-  WriteParam(aWriter, aParam.mJSSourceEntries);
-}
-
-bool IPC::ParamTraits<mozilla::ProfileGenerationAdditionalInformation>::Read(
-    MessageReader* aReader, paramType* aResult) {
-  if (!ReadParam(aReader, &aResult->mSharedLibraries)) {
-    return false;
-  }
-
-  if (!ReadParam(aReader, &aResult->mJSSourceEntries)) {
-    return false;
-  }
-
-  return true;
-}
-
-void IPC::ParamTraits<mozilla::ProfileAndAdditionalInformation>::Write(
-    MessageWriter* aWriter, const paramType& aParam) {
-  WriteParam(aWriter, aParam.mProfile);
-  WriteParam(aWriter, aParam.mAdditionalInformation);
-}
-
-bool IPC::ParamTraits<mozilla::ProfileAndAdditionalInformation>::Read(
-    MessageReader* aReader, paramType* aResult) {
-  if (!ReadParam(aReader, &aResult->mProfile)) {
-    return false;
-  }
-
-  if (!ReadParam(aReader, &aResult->mAdditionalInformation)) {
-    return false;
-  }
-
-  return true;
-}
+IMPLEMENT_IPC_SERIALIZER_WITH_FIELDS(mozilla::ProfileAndAdditionalInformation,
+                                     mProfile, mAdditionalInformation);
 
 }  // namespace IPC

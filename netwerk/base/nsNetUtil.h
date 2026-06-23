@@ -1119,6 +1119,12 @@ struct LinkHeader {
 
   void MaybeUpdateAttribute(const nsAString& aAttribute,
                             const char16_t* aValue);
+
+  auto MutTiedFields() {
+    return std::tie(mHref, mRel, mTitle, mNonce, mIntegrity, mSrcset, mSizes,
+                    mType, mMedia, mAnchor, mCrossOrigin, mReferrerPolicy, mAs,
+                    mFetchPriority);
+  }
 };
 
 // Implements roughly step 2 to 4 of
