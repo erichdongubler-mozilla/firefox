@@ -79,6 +79,7 @@ add_task(async function test_chat_intent_in_aiwindow() {
 
   // Close the sidebar so it doesn't interfere with urlbar focus.
   AIWindowUI.closeSidebar(win);
+  await waitForSidebarClosed(win);
 
   // Make a search in the urlbar.
   await lazy.UrlbarTestUtils.promiseAutocompleteResultPopup({
