@@ -18,11 +18,13 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.RootMatchers
@@ -589,6 +591,17 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
             Log.i(TAG, "clickPreviousPageButton: Trying to click the \"Back\" button")
             composeTestRule.backButton().performClick()
             Log.i(TAG, "clickPreviousPageButton: Clicked the \"Back\" button")
+
+            BrowserRobot(composeTestRule).interact()
+            return BrowserRobot.Transition(composeTestRule)
+        }
+
+        fun longClickPreviousPageButton(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+            Log.i(TAG, "longClickPreviousPageButton: Trying to long-click the \"Back\" button")
+            composeTestRule.backButton().performTouchInput {
+                longClick(durationMillis = LONG_CLICK_DURATION)
+            }
+            Log.i(TAG, "longClickPreviousPageButton: long-clicked the \"Back\" button")
 
             BrowserRobot(composeTestRule).interact()
             return BrowserRobot.Transition(composeTestRule)

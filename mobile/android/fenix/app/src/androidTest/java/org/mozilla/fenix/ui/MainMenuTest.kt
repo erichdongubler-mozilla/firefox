@@ -33,6 +33,8 @@ import org.mozilla.fenix.helpers.MockBrowserDataHelper.createBookmarkItem
 import org.mozilla.fenix.helpers.TestAssetHelper.articleSummaryAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.firstForeignWebPageAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.navigablePageStartAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.navigablePageTargetAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.pdfFormAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.refreshAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
@@ -1202,6 +1204,27 @@ class MainMenuTest {
         }
     }
 
+    @SmokeTest
+    @Test
+    fun verifyTheMainMenuBackButtonLongPressTest() {
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val nextWebPage = mockWebServer.getGenericAsset(2)
+
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(firstWebPage.url) {
+        }
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(nextWebPage.url) {
+            verifyUrl(nextWebPage.url.toString())
+        }.openThreeDotMenu {
+        }.longClickPreviousPageButton {
+            waitForAppWindowToBeUpdated()
+            verifyTabHistorySheetIsDisplayed(true)
+            verifyTabHistoryContainsWebsite(nextWebPage.url.toString(), true)
+            verifyTabHistoryContainsWebsite(firstWebPage.url.toString(), true)
+        }
+    }
+
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080126
     @Converted(
         replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifyTheMainMenuForwardButtonTest"],
@@ -1345,6 +1368,34 @@ class MainMenuTest {
 
         browserScreen(composeTestRule) {
             verifyPageContent(customTabPage.content)
+        }
+    }
+
+    @SmokeTest
+    @Test
+    fun verifyTheMainMenuBackButtonLongClickFromCustomTabTest() {
+        val customMenuItem = "TestMenuItem"
+        val startPage = mockWebServer.navigablePageStartAsset
+        val targetPage = mockWebServer.navigablePageTargetAsset
+
+        intentReceiverActivityTestRule.launchActivity(
+            createCustomTabIntent(
+                startPage.url.toString(),
+                customMenuItem,
+            ),
+        )
+
+        customTabScreen(composeTestRule) {
+            clickPageObject(composeTestRule, itemContainingText("Go to target page"))
+        }.openMainMenu {
+        }.longClickBackButtonFromMenu {
+            waitForAppWindowToBeUpdated()
+        }
+
+        browserScreen(composeTestRule) {
+            verifyTabHistorySheetIsDisplayed(true)
+            verifyTabHistoryContainsWebsite(startPage.url.toString(), true)
+            verifyTabHistoryContainsWebsite(targetPage.url.toString(), true)
         }
     }
 

@@ -434,6 +434,29 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
         )
     }
 
+    fun verifyTabHistorySheetIsDisplayed(isDisplayed: Boolean) {
+        assertUIObjectExists(
+            itemWithResId("$packageName:id/tabHistoryRecyclerView"),
+            exists = isDisplayed,
+        )
+    }
+
+    fun verifyTabHistoryContainsWebsite(websiteUrl: String, isDisplayed: Boolean) {
+        Log.i(TAG, "verifyTabHistoryContainsWebsite: Trying to verify that tab history contains website: $websiteUrl")
+        val historyList = itemWithResId("$packageName:id/tabHistoryRecyclerView")
+        val websiteItem = historyList.getChild(
+            // selector =
+            UiSelector()
+                .resourceId("$packageName:id/site_list_item")
+                .childSelector(UiSelector().text(websiteUrl)),
+        )
+        assertUIObjectExists(
+            websiteItem,
+            exists = isDisplayed,
+        )
+        Log.i(TAG, "verifyTabHistoryContainsWebsite: Verified that the tab history contains website: $websiteUrl")
+    }
+
     fun verifyNavURLBarHidden() = assertUIObjectIsGone(navURLBar())
 
     fun verifyMenuButton() {
