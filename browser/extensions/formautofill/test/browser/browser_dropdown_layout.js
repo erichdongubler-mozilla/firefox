@@ -15,9 +15,7 @@ add_task(async function test_address_dropdown() {
       await openPopupOn(browser, focusInput);
       const firstItem = getDisplayedPopupItems(browser)[0];
 
-      const expectedIcon = "chrome://browser/skin/fxa/avatar-empty.svg";
-
-      is(getACItemIcon(firstItem), expectedIcon, "Got expected icon");
+      is(firstItem.getAttribute("ac-image"), "", "Should not show icon");
 
       await closePopup(browser);
     }

@@ -54,7 +54,9 @@ add_task(async function test() {
       );
 
       // mouseover the second item
-      const listItemElems = itemsBox.querySelectorAll(".autocomplete-row-item");
+      const listItemElems = itemsBox.querySelectorAll(
+        ".autocomplete-richlistitem"
+      );
       EventUtils.synthesizeMouseAtCenter(listItemElems[1], {
         type: "mouseover",
       });

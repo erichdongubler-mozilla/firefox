@@ -32,17 +32,17 @@ add_task(async function test_warningForLocalIP() {
     {
       top: "http://192.168.0.0",
       iframe: "https://example.org",
-      expected: `[originaltype="insecureWarning"]`,
+      expected: `[type="insecureWarning"]`,
     },
     {
       top: "http://example.com",
       iframe: "http://10.0.0.0",
-      expected: `[originaltype="insecureWarning"]`,
+      expected: `[type="insecureWarning"]`,
     },
     {
       top: "http://example.com",
       iframe: "http://example.org",
-      expected: `[originaltype="insecureWarning"]`,
+      expected: `[type="insecureWarning"]`,
     },
   ];
 
