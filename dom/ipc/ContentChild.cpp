@@ -94,6 +94,7 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/glean/FOGTransportChild.h"
 #include "mozilla/hal_sandbox/PHalChild.h"
 #include "mozilla/image/FetchDecodedImage.h"
 #include "mozilla/image/RemoteImageProtocolHandler.h"
@@ -4784,6 +4785,17 @@ NS_IMETHODIMP ContentChild::GetCanSend(bool* aCanSend) {
 ContentChild* ContentChild::AsContentChild() { return this; }
 
 JSActorManager* ContentChild::AsJSActorManager() { return this; }
+
+IPCResult ContentChild::RecvCreateFOGTransport(
+    Endpoint<PFOGTransportChild>&& aChildEndpoint) {
+  if (glean::FOGTransportChild::GetSingleton()) {
+    return IPC_FAIL(this, "FOGTransportChild already created");
+  }
+
+  glean::FOGTransportChild::Create(std::move(aChildEndpoint));
+
+  return IPC_OK();
+}
 
 IPCResult ContentChild::RecvFlushFOGData(FlushFOGDataResolver&& aResolver) {
   glean::FlushFOGData(std::move(aResolver));

@@ -36,6 +36,7 @@
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/gfx/GPUProcessListener.h"
 #include "mozilla/gfx/gfxVarReceiver.h"
+#include "mozilla/glean/FOGTransportParent.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/ipc/InputStreamUtils.h"
@@ -1399,6 +1400,8 @@ class ContentParent final : public PContentParent,
 
   mozilla::ipc::IPCResult RecvFOGData(ByteBuf&& buf);
 
+  RefPtr<FlushFOGDataPromise> DoFlushFOGData();
+
   mozilla::ipc::IPCResult RecvGeckoTraceExport(ByteBuf&& aBuf);
 
   mozilla::ipc::IPCResult RecvSetContainerFeaturePolicy(
@@ -1597,6 +1600,8 @@ class ContentParent final : public PContentParent,
 
   UniquePtr<gfx::DriverCrashGuard> mDriverCrashGuard;
   UniquePtr<MemoryReportRequestHost> mMemoryReportRequest;
+
+  RefPtr<glean::FOGTransportParent> mFOGTransportParentActor;
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   RefPtr<SandboxBroker> mSandboxBroker;

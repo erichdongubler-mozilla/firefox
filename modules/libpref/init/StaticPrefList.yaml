@@ -19144,6 +19144,11 @@
   value: true
   mirror: always
 
+- name: telemetry.fog.enable_fog_transport
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 #---------------------------------------------------------------------------
 # Prefs starting with "test."
 #---------------------------------------------------------------------------

@@ -831,6 +831,9 @@ class ContentChild final : public PContentChild,
 
  private:
   void AddProfileToProcessName(const nsACString& aProfile);
+  mozilla::ipc::IPCResult RecvCreateFOGTransport(
+      Endpoint<PFOGTransportChild>&& aChildEndpoint);
+
   mozilla::ipc::IPCResult RecvFlushFOGData(FlushFOGDataResolver&& aResolver);
 
   mozilla::ipc::IPCResult RecvSystemPermissionChanged(PermissionName aName,

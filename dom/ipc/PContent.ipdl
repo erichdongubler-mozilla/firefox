@@ -13,6 +13,7 @@ include protocol PCycleCollectWithLogs;
 include protocol PDocumentChannel;
 include protocol PExtensions;
 include protocol PExternalHelperApp;
+include protocol PFOGTransport;
 include protocol PHandlerService;
 include protocol PHal;
 include protocol PHeapSnapshotTempFileHelper;
@@ -1958,6 +1959,8 @@ parent:
     async GeckoTraceExport(ByteBuf aBuf);
 
 child:
+    async CreateFOGTransport(Endpoint<PFOGTransportChild> aChildEndpoint);
+
     // Temporary (bug 1641989) conduit for Glean data in content processes.
     // Tells the child to flush any pending data. Used in tests and ping
     // assembly. Buffer contains bincoded Rust structs.
