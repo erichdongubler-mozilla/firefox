@@ -177,6 +177,11 @@ sealed class WebCompatReporterAction : Action {
     data object SendReportClicked : WebCompatReporterAction()
 
     /**
+     * Dispatched when the user selects the "Deceptive site" reason.
+     */
+    data object DeceptiveSiteReportSelected : WebCompatReporterAction(), NavigationAction
+
+    /**
      * Dispatched when the WebCompat report has been submitted.
      */
     data object ReportSubmitted : WebCompatReporterAction(), NavigationAction
@@ -249,6 +254,7 @@ private fun reduce(
     is WebCompatReporterAction.PreviewJSONUpdated -> state.copy(
         previewJSON = action.previewJSON,
     )
+    is WebCompatReporterAction.DeceptiveSiteReportSelected -> state
     is WebCompatReporterAction.NavigationAction -> state
     WebCompatReporterAction.SendReportClicked -> state // UPDATED: Just return state here!
     WebCompatReporterAction.AddMoreInfoClicked -> state
