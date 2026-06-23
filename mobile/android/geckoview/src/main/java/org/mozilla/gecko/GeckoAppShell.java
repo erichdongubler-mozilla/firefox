@@ -65,7 +65,6 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.StringTokenizer;
 import org.jetbrains.annotations.NotNull;
-import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.util.HardwareUtils;
 import org.mozilla.gecko.util.InputDeviceUtils;
@@ -253,7 +252,6 @@ public class GeckoAppShell {
   @WrapForJNI(stubName = "AppendAppNotesToCrashReport", dispatchTo = "gecko")
   public static native void nativeAppendAppNotesToCrashReport(final String notes);
 
-  @RobocopTarget
   public static void notifyObservers(final String topic, final String data) {
     notifyObservers(topic, data, GeckoThread.State.RUNNING);
   }
@@ -1227,7 +1225,6 @@ public class GeckoAppShell {
 
   /* Called by JNI from AndroidBridge, and by reflection from tests/BaseTest.java.in */
   @WrapForJNI(calledFrom = "gecko")
-  @RobocopTarget
   public static boolean isTablet() {
     return HardwareUtils.isTablet(getApplicationContext());
   }
