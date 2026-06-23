@@ -144,11 +144,11 @@ bool ClientSourceParent::DeallocPClientSourceOpParent(
 
 ClientSourceParent::ClientSourceParent(
     const ClientSourceConstructorArgs& aArgs,
-    ThreadsafeContentParentHandle* aContentParentHandle)
+    const Maybe<ContentParentId>& aContentParentId)
     : mClientInfo(aArgs.id(), aArgs.agentClusterId(), aArgs.type(),
                   aArgs.principalInfo(), aArgs.creationTime(), aArgs.url(),
                   aArgs.frameType()),
-      mContentParentHandle(aContentParentHandle),
+      mContentParentId(aContentParentId),
       mService(ClientManagerService::GetOrCreateInstance()),
       mExecutionReady(false),
       mFrozen(false) {}
@@ -163,10 +163,7 @@ IPCResult ClientSourceParent::Init() {
   // Ensure the principal is reasonable before adding ourself to the service.
   // Since we validate the principal on the child side as well, any failure
   // here is treated as fatal.
-  if (NS_WARN_IF(!ClientIsValidPrincipalInfo(
-          mClientInfo.PrincipalInfo(),
-          mContentParentHandle ? mContentParentHandle->GetRemoteType()
-                               : NOT_REMOTE_TYPE))) {
+  if (NS_WARN_IF(!ClientIsValidPrincipalInfo(mClientInfo.PrincipalInfo()))) {
     mService->ForgetFutureSource(mClientInfo.ToIPC());
     return IPC_FAIL(Manager(), "Invalid PrincipalInfo!");
   }

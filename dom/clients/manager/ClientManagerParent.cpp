@@ -9,7 +9,6 @@
 #include "ClientManagerService.h"
 #include "ClientSourceParent.h"
 #include "ClientValidation.h"
-#include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/PClientNavigateOpParent.h"
 #include "mozilla/ipc/BackgroundParent.h"
 
@@ -73,10 +72,14 @@ bool ClientManagerParent::DeallocPClientNavigateOpParent(
 already_AddRefed<PClientSourceParent>
 ClientManagerParent::AllocPClientSourceParent(
     const ClientSourceConstructorArgs& aArgs) {
-  RefPtr<ThreadsafeContentParentHandle> contentParentHandle =
-      ::mozilla::ipc::BackgroundParent::GetContentParentHandle(Manager());
+  Maybe<ContentParentId> contentParentId;
 
-  return MakeAndAddRef<ClientSourceParent>(aArgs, contentParentHandle);
+  uint64_t childID = ::mozilla::ipc::BackgroundParent::GetChildID(Manager());
+  if (childID) {
+    contentParentId = Some(ContentParentId(childID));
+  }
+
+  return MakeAndAddRef<ClientSourceParent>(aArgs, contentParentId);
 }
 
 IPCResult ClientManagerParent::RecvPClientSourceConstructor(

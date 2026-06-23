@@ -5,7 +5,6 @@
 #include "FileSystemBackgroundRequestHandler.h"
 
 #include "fs/FileSystemChildFactory.h"
-#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/FileSystemManagerChild.h"
 #include "mozilla/dom/PFileSystemManager.h"
 #include "mozilla/ipc/BackgroundChild.h"
@@ -76,18 +75,6 @@ FileSystemBackgroundRequestHandler::CreateFileSystemManagerChild(
   using mozilla::ipc::BackgroundChild;
   using mozilla::ipc::Endpoint;
   using mozilla::ipc::PBackgroundChild;
-
-  // Throw if this process wouldn't be allowed to access storage.
-  EnumSet<ValidatePrincipalOptions> options;
-  if (CurrentRemoteType() == INFERENCE_REMOTE_TYPE) {
-    options += ValidatePrincipalOptions::AllowSystem;
-  }
-  if (!BackgroundChild::ValidatePrincipalInfo(aPrincipalInfo, options)) {
-    MOZ_ASSERT_UNREACHABLE(
-        "ValidatePrincipalInfo failure in CreateFileSystemManagerChild");
-    return FileSystemManagerChild::ActorPromise::CreateAndReject(
-        NS_ERROR_FAILURE, __func__);
-  }
 
   if (!mCreatingFileSystemManagerChild) {
     PBackgroundChild* backgroundChild =

@@ -714,7 +714,7 @@ RefPtr<ClientOpPromise> ClientManagerService::OpenWindow(
 }
 
 bool ClientManagerService::HasWindow(
-    ThreadsafeContentParentHandle* aContentParentHandle,
+    const Maybe<ContentParentId>& aContentParentId,
     const PrincipalInfo& aPrincipalInfo, const nsID& aClientId) {
   AssertIsOnBackgroundThread();
 
@@ -731,7 +731,7 @@ bool ClientManagerService::HasWindow(
     return false;
   }
 
-  if (!source->IsOwnedByProcess(aContentParentHandle)) {
+  if (aContentParentId && !source->IsOwnedByProcess(aContentParentId.value())) {
     return false;
   }
 
