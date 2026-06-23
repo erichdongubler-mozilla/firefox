@@ -589,6 +589,7 @@ struct PrefsSizes {
         mPrefNameArena(0),
         mCallbacksObjects(0),
         mCallbacksDomains(0),
+        mCallbacksTrie(0),
         mMisc(0) {}
 
   size_t mHashTable;
@@ -598,6 +599,7 @@ struct PrefsSizes {
   size_t mPrefNameArena;
   size_t mCallbacksObjects;
   size_t mCallbacksDomains;
+  size_t mCallbacksTrie;
   size_t mMisc;
 };
 }  // namespace mozilla
@@ -1563,6 +1565,33 @@ struct CallbackTrieNode {
                                             MakeUnique<CallbackTrieNode>()})
                 ->mNode;
   }
+
+  // Add the heap memory of this node's children arrays, segment strings,
+  // callback array, and (recursively) the descendant nodes themselves into
+  // aSizes.mCallbacksTrie. A node's own allocation is charged by its parent
+  // (which owns the UniquePtr); the root is inline in CallbackTrie so its own
+  // allocation is not charged here. CallbackNode objects are counted separately
+  // (see CallbackTrie::AddSizeOf). aNodeCount/aSegmentBytes, when non-null,
+  // collect descendant-node counts and segment-string bytes for the
+  // microbenchmark.
+  void AddSubtreeSizeOf(MallocSizeOf aMallocSizeOf, PrefsSizes& aSizes,
+                        uint32_t* aNodeCount = nullptr,
+                        size_t* aSegmentBytes = nullptr) const {
+    aSizes.mCallbacksTrie +=
+        mChildren.ShallowSizeOfExcludingThis(aMallocSizeOf);
+    aSizes.mCallbacksTrie +=
+        mCallbacks.ShallowSizeOfExcludingThis(aMallocSizeOf);
+    for (const Child& child : mChildren) {
+      size_t segBytes =
+          child.mSegment.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+      aSizes.mCallbacksTrie += segBytes;
+      aSizes.mCallbacksTrie += aMallocSizeOf(child.mNode.get());
+      if (aNodeCount) ++*aNodeCount;
+      if (aSegmentBytes) *aSegmentBytes += segBytes;
+      child.mNode->AddSubtreeSizeOf(aMallocSizeOf, aSizes, aNodeCount,
+                                    aSegmentBytes);
+    }
+  }
 };
 
 // Dot-segmented callback trie.  Registering a callback at domain "a.b" places
@@ -1668,13 +1697,22 @@ class CallbackTrie {
 
   uint32_t Count() const { return mLiveCount; }
 
-  void AddSizeOf(MallocSizeOf aMallocSizeOf, PrefsSizes& aSizes) {
+  void AddSizeOf(MallocSizeOf aMallocSizeOf, PrefsSizes& aSizes,
+                 uint32_t* aNodeCount = nullptr,
+                 size_t* aSegmentBytes = nullptr,
+                 uint32_t* aCallbackCount = nullptr) {
     nsTHashSet<CallbackNode*> seen;
     ForEachCallback([&](CallbackNode* aNode) {
       if (seen.EnsureInserted(aNode)) {
         aNode->AddSizeOfIncludingThis(aMallocSizeOf, aSizes);
+        if (aCallbackCount) ++*aCallbackCount;
       }
     });
+    // The trie scaffolding (nodes, child arrays, segment strings, callback
+    // arrays) was previously unmeasured and showed up as heap-unclassified.
+    mRoot.AddSubtreeSizeOf(aMallocSizeOf, aSizes, aNodeCount, aSegmentBytes);
+    aSizes.mCallbacksTrie +=
+        mDeadNodes.ShallowSizeOfExcludingThis(aMallocSizeOf);
   }
 
   void Clear() {
@@ -3976,6 +4014,34 @@ uint32_t Preferences::GetCallbackCount() {
   return sPImpl->mPriorityCallbacks.Count() + sPImpl->mCallbacks.Count();
 }
 
+MOZ_DEFINE_MALLOC_SIZE_OF(PrefCallbackTrieMallocSizeOf)
+
+/* static */
+Preferences::CallbackTrieStats Preferences::GetCallbackTrieStatsForTesting() {
+  CallbackTrieStats stats;
+  if (!sPImpl) {
+    return stats;
+  }
+  MallocSizeOf mallocSizeOf = PrefCallbackTrieMallocSizeOf;
+  PrefsSizes sizes;
+  uint32_t nodeCount = 0;
+  size_t segmentBytes = 0;
+  uint32_t callbackCount = 0;
+  sPImpl->mPriorityCallbacks.AddSizeOf(mallocSizeOf, sizes, &nodeCount,
+                                       &segmentBytes, &callbackCount);
+  sPImpl->mCallbacks.AddSizeOf(mallocSizeOf, sizes, &nodeCount, &segmentBytes,
+                               &callbackCount);
+  stats.mObjectBytes = sizes.mCallbacksObjects;
+  stats.mDomainBytes = sizes.mCallbacksDomains;
+  stats.mTrieBytes = sizes.mCallbacksTrie;
+  stats.mTotalBytes =
+      sizes.mCallbacksObjects + sizes.mCallbacksDomains + sizes.mCallbacksTrie;
+  stats.mSegmentBytes = segmentBytes;
+  stats.mNodeCount = nodeCount;
+  stats.mCallbackCount = callbackCount;
+  return stats;
+}
+
 class PreferenceServiceReporter final : public nsIMemoryReporter {
   ~PreferenceServiceReporter() = default;
 
@@ -4051,6 +4117,12 @@ PreferenceServiceReporter::CollectReports(
                      UNITS_BYTES, sizes.mCallbacksDomains,
                      "Memory used by pref callback domains (pref names and "
                      "prefixes).");
+
+  MOZ_COLLECT_REPORT(
+      "explicit/preferences/callbacks/trie", KIND_HEAP, UNITS_BYTES,
+      sizes.mCallbacksTrie,
+      "Memory used by the pref callback trie scaffolding (nodes, "
+      "child arrays, and segment strings).");
 
   MOZ_COLLECT_REPORT("explicit/preferences/misc", KIND_HEAP, UNITS_BYTES,
                      sizes.mMisc, "Miscellaneous memory used by libpref.");

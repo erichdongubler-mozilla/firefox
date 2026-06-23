@@ -444,6 +444,19 @@ class Preferences final : public nsIPrefService,
 
   static uint32_t GetCallbackCount();
 
+  // Breakdown of the memory used by the pref callback tries. Exposed for the
+  // CallbackTrie memory microbenchmark (gtest); not for production use.
+  struct CallbackTrieStats {
+    size_t mTotalBytes = 0;       // objects + domains + trie scaffolding
+    size_t mObjectBytes = 0;      // CallbackNode objects
+    size_t mDomainBytes = 0;      // per-callback domain strings
+    size_t mTrieBytes = 0;        // nodes + child arrays + segment strings
+    size_t mSegmentBytes = 0;     // segment strings only (subset of mTrieBytes)
+    uint32_t mNodeCount = 0;      // CallbackTrieNodes (excluding the two roots)
+    uint32_t mCallbackCount = 0;  // distinct live+dead CallbackNode objects
+  };
+  static CallbackTrieStats GetCallbackTrieStatsForTesting();
+
   static void HandleDirty();
 
   // Explicitly choosing synchronous or asynchronous (if allowed) preferences
