@@ -627,8 +627,6 @@ private fun InteractableTabGrid(
         isHeaderPresent = header != null,
     )
 
-    // Don't show the onboarding card while a drag is active
-    var showOnboardingCardInGrid by remember { mutableStateOf(displayTabGroupOnboarding) }
     var isInMultiSelectMode by remember { mutableStateOf(selectionMode is TabsTrayState.Mode.Select) }
     val gridInteractionState = createGridInteractionState(
         gridState = gridState,
@@ -637,12 +635,15 @@ private fun InteractableTabGrid(
         liveReorderEnabled = liveReorderEnabled,
         ignoredItems = ignoredItems,
     )
+    // Don't show the onboarding card while a drag is active
+    val showOnboardingCardInGrid by remember(displayTabGroupOnboarding) {
+        derivedStateOf { displayTabGroupOnboarding && gridInteractionState.draggedItem.key == null }
+    }
     // Prevent a race between multi-select and drag by updating the select mode only if the dragging key is null
     LaunchedEffect(selectionMode, gridInteractionState.draggedItem.key) {
         if (gridInteractionState.draggedItem.key == null) {
             isInMultiSelectMode = selectionMode is TabsTrayState.Mode.Select
         }
-        showOnboardingCardInGrid = displayTabGroupOnboarding && (gridInteractionState.draggedItem.key == null)
     }
     BoxWithConstraints(
         modifier = Modifier
@@ -1078,7 +1079,10 @@ private fun InteractableTabList(
         dragAndDropEnabled = dragAndDropEnabled,
         liveReorderEnabled = liveReorderEnabled,
     )
-    var showOnboardingCardInList by remember { mutableStateOf(displayTabGroupOnboarding) }
+    // Don't show the onboarding card while a drag is active
+    val showOnboardingCardInList by remember(displayTabGroupOnboarding) {
+        derivedStateOf { displayTabGroupOnboarding && listInteractionState.draggedItem.key == null }
+    }
     var isInMultiSelectMode by remember {
         mutableStateOf(
             selectionMode is TabsTrayState.Mode.Select,
@@ -1089,7 +1093,6 @@ private fun InteractableTabList(
         if (listInteractionState.draggedItem.key == null) {
             isInMultiSelectMode = selectionMode is TabsTrayState.Mode.Select
         }
-        showOnboardingCardInList = displayTabGroupOnboarding && (listInteractionState.draggedItem.key == null)
     }
     Box(
         modifier = Modifier

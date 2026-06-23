@@ -22,6 +22,7 @@ import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.tabstray.repository.uistate.data.PersistedUIState
 import kotlin.test.Test
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -54,6 +55,30 @@ class TabManagerUiStateStorageMiddlewareTest {
         advanceUntilIdle()
 
         assertFalse(repository.uiState.value!!.hasUserEverHadOneTabGroup)
+    }
+
+    @Test
+    fun `GIVEN the user has at least one tab group WHEN tab data is updated THEN the tab group onboarding is dismissed`() = runTest {
+        val store = createStore()
+
+        store.dispatch(TabsTrayAction.TabDataUpdateReceived(tabStorageUpdate = createTabDataUpdateWithOneGroup()))
+
+        runCurrent()
+        advanceUntilIdle()
+
+        assertTrue { repository.uiState.value!!.hasUserDismissedTabGroupOnboarding }
+    }
+
+    @Test
+    fun `GIVEN the user has no tab groups WHEN tab data is updated THEN the tab group onboarding is not dismissed`() = runTest {
+        val store = createStore()
+
+        store.dispatch(TabsTrayAction.TabDataUpdateReceived(tabStorageUpdate = createTabDataUpdateWithZeroGroups()))
+
+        runCurrent()
+        advanceUntilIdle()
+
+        assertNull(repository.uiState.value?.hasUserDismissedTabGroupOnboarding)
     }
 
     @Test
