@@ -9927,6 +9927,11 @@ static bool ResetFallbackStubStates(JSContext* cx, unsigned argc, Value* vp) {
   for (uint32_t i = 0; i < numEntries; i++) {
     jit::ICFallbackStub* stub = script->jitScript()->fallbackStub(i);
     stub->discardStubs(zone, &icScript->icEntry(i));
+
+    if (icScript->hasInlinedChild(stub->pcOffset())) {
+      icScript->removeInlinedChild(stub->pcOffset());
+    }
+
     stub->state().reset();
   }
   script->jitScript()->notePurgedStubs();
