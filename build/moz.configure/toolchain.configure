@@ -948,6 +948,9 @@ def compiler_wrapper(wrapper, ccache):
         return tuple(wrapper)
 
 
+set_config("COMPILER_WRAPPER", compiler_wrapper)
+
+
 @dependable
 def wasm():
     return split_triplet("wasm32-wasi", allow_wasi=True)
