@@ -23,7 +23,7 @@
 #include "debugger/Script.h"     // for DebuggerScript
 #include "debugger/Source.h"     // for DebuggerSource
 #include "gc/Tracer.h"        // for TraceManuallyBarrieredCrossCompartmentEdge
-#include "jit/JitOptions.h"   // for jit::HasJitBackend
+#include "jit/JitOptions.h"   // for jit::HasJitBackend, fuzzingSafe
 #include "js/ColumnNumber.h"  // JS::ColumnNumberOneOrigin
 #include "js/CompilationAndEvaluation.h"  //  for Compile
 #include "js/Conversions.h"               // for ToObject
@@ -1570,9 +1570,13 @@ const JSFunctionSpec DebuggerObject::methods_[] = {
     JS_DEBUG_FN("isSameNative", isSameNativeMethod, 1),
     JS_DEBUG_FN("isSameNativeWithJitInfo", isSameNativeWithJitInfoMethod, 1),
     JS_DEBUG_FN("isNativeGetterWithJitInfo", isNativeGetterWithJitInfo, 1),
-    JS_DEBUG_FN("unsafeDereference", unsafeDereferenceMethod, 0),
     JS_DEBUG_FN("unwrap", unwrapMethod, 0),
     JS_DEBUG_FN("getPromiseReactions", getPromiseReactionsMethod, 0),
+    JS_FS_END,
+};
+
+const JSFunctionSpec DebuggerObject::fuzzing_unsafe_methods_[] = {
+    JS_DEBUG_FN("unsafeDereference", unsafeDereferenceMethod, 0),
     JS_FS_END,
 };
 
@@ -1591,6 +1595,13 @@ NativeObject* DebuggerObject::initClass(JSContext* cx,
   if (!DefinePropertiesAndFunctions(cx, objectProto, promiseProperties_,
                                     nullptr)) {
     return nullptr;
+  }
+
+  if (!fuzzingSafe) {
+    if (!DefinePropertiesAndFunctions(cx, objectProto, nullptr,
+                                      fuzzing_unsafe_methods_)) {
+      return nullptr;
+    }
   }
 
   return objectProto;

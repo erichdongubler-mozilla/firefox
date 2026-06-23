@@ -643,6 +643,8 @@ Debugger API: adapted portions of the code can use `Debugger.Object`
 instances, but use this method to pass direct object references to code
 that has not yet been updated.
 
+This method is not present when fuzzing is enabled.
+
 ### `forceLexicalInitializationByName(binding)`
 If <i>binding</i> is in an uninitialized state initialize it to undefined
 and return true, otherwise do nothing and return false.
