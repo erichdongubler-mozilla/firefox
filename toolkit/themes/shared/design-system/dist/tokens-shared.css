@@ -112,11 +112,19 @@
     --button-icon-stroke: var(--button-icon-fill);
     --button-min-height: var(--size-item-large);
     --button-min-height-small: var(--size-item-medium);
+    --button-min-height-large: 40px;
     --button-opacity-disabled: 0.5;
-    --button-padding: var(--space-xsmall) var(--space-large);
+    --button-padding: var(--button-padding-block) var(--button-padding-inline);
+    --button-padding-block: var(--space-xsmall);
+    --button-padding-block-small: var(--space-xxsmall);
+    --button-padding-block-large: var(--space-small);
     --button-padding-icon: 0;
+    --button-padding-inline: var(--space-large);
+    --button-padding-inline-small: var(--button-padding-inline);
+    --button-padding-inline-large: var(--space-xlarge);
     --button-size-icon: var(--button-min-height);
     --button-size-icon-small: var(--button-min-height-small);
+    --button-size-icon-large: var(--button-min-height-large);
     --button-text-color-hover: var(--button-text-color);
     --button-text-color-active: var(--button-text-color);
     --button-text-color-disabled: var(--button-text-color);
@@ -780,6 +788,7 @@
       --button-border-color-selected: var(--button-border-color);
       --button-border-radius: var(--border-radius-xxlarge);
       --button-opacity-disabled: 0.7;
+      --button-padding-inline-small: var(--space-medium);
       --button-size-icon-small: var(--size-item-medium);
       --button-text-color: light-dark(var(--color-violet-90), var(--color-gray-0));
       --button-text-color-destructive: light-dark(var(--color-white), var(--button-text-color-primary));

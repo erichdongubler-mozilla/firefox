@@ -18,7 +18,7 @@ export default {
       control: { type: "select" },
     },
     size: {
-      options: ["default", "small"],
+      options: ["default", "small", "large"],
       control: { type: "radio" },
     },
     type: {
@@ -116,6 +116,11 @@ DefaultSmall.args = {
   ...Default.args,
   size: "small",
 };
+export const DefaultLarge = Template.bind({});
+DefaultLarge.args = {
+  ...Default.args,
+  size: "large",
+};
 export const Disabled = Template.bind({});
 Disabled.args = {
   ...Default.args,
@@ -150,6 +155,11 @@ export const IconSmall = Template.bind({});
 IconSmall.args = {
   ...Icon.args,
   size: "small",
+};
+export const IconLarge = Template.bind({});
+IconLarge.args = {
+  ...Icon.args,
+  size: "large",
 };
 export const IconGhost = Template.bind({});
 IconGhost.args = {

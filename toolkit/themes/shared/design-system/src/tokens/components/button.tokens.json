@@ -1,4 +1,13 @@
 {
+  "nova": {
+    "padding": {
+      "inline": {
+        "small": {
+          "value": "{space.medium}"
+        }
+      }
+    }
+  },
   "background": {
     "color": {
       "@base": {
@@ -386,6 +395,9 @@
     },
     "small": {
       "value": "{size.item.medium}"
+    },
+    "large": {
+      "value": "40px"
     }
   },
   "opacity": {
@@ -398,7 +410,29 @@
   },
   "padding": {
     "@base": {
-      "value": "{space.xsmall} {space.large}"
+      "value": "{button.padding.block.@base} {button.padding.inline.@base}"
+    },
+    "block": {
+      "@base": {
+        "value": "{space.xsmall}"
+      },
+      "large": {
+        "value": "{space.small}"
+      },
+      "small": {
+        "value": "{space.xxsmall}"
+      }
+    },
+    "inline": {
+      "@base": {
+        "value": "{space.large}"
+      },
+      "large": {
+        "value": "{space.xlarge}"
+      },
+      "small": {
+        "value": "{button.padding.inline.@base}"
+      }
     },
     "icon": {
       "value": 0
@@ -411,6 +445,9 @@
       },
       "small": {
         "value": "{button.min-height.small}"
+      },
+      "large": {
+        "value": "{button.min-height.large}"
       }
     }
   },

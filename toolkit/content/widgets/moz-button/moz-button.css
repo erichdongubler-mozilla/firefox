@@ -89,8 +89,13 @@ button {
 
   &[size="small"] {
     min-height: var(--button-min-height-small);
-    padding-block: var(--space-xxsmall);
+    padding: var(--button-padding-block-small) var(--button-padding-inline-small);
     font-size: var(--button-font-size-small);
+  }
+
+  &[size="large"] {
+    min-height: var(--button-min-height-large);
+    padding: var(--button-padding-block-large) var(--button-padding-inline-large);
   }
 
   &.badged::after {
@@ -327,6 +332,11 @@ button {
     &[size="small"] {
       width: var(--button-size-icon-small);
       height: var(--button-size-icon-small);
+    }
+
+    &[size="large"] {
+      width: var(--button-size-icon-large);
+      height: var(--button-size-icon-large);
     }
   }
 

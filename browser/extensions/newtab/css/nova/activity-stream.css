@@ -67,6 +67,7 @@
   --button-border-color-selected: var(--button-border-color);
   --button-border-radius: var(--border-radius-xxlarge);
   --button-opacity-disabled: 0.7;
+  --button-padding-inline-small: var(--space-medium);
   --button-size-icon-small: var(--size-item-medium);
   --button-text-color: light-dark(var(--color-violet-90), var(--color-gray-0));
   --button-text-color-destructive: light-dark(var(--color-white), var(--button-text-color-primary));
