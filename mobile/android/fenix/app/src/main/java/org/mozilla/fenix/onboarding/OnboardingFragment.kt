@@ -283,10 +283,7 @@ class OnboardingFragment : Fragment() {
                     sequencePosition = pagesToDisplay.sequencePosition(it.type),
                 )
 
-                defaultBrowserPromptManager.maybePromptToSetAsDefaultBrowser(
-                    pagesToDisplay = pagesToDisplay,
-                    currentCard = it,
-                )
+                defaultBrowserPromptManager.maybePromptToSetAsDefaultBrowser(it)
             },
             onboardingStore = onboardingStore,
             termsOfServiceEventHandler = termsOfServiceEventHandler,
