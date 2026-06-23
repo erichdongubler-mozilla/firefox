@@ -53,7 +53,6 @@ private const val BOTTOM_SHEET_HANDLE_WIDTH_PERCENT = 0.1f
  * @param onPrivacyPolicyLinkClick Invoked when the privacy policy link is clicked.
  * @param onCloseButtonClicked Invoked when the close button is clicked.
  * @param onSubmitButtonClicked Invoked when the submit button is clicked.
- * @param maxLabelLines The maximum number of lines allowed for each answer text layout to prevent truncation.
  */
 @Composable
 fun MicrosurveyBottomSheet(
@@ -63,7 +62,6 @@ fun MicrosurveyBottomSheet(
     onPrivacyPolicyLinkClick: () -> Unit,
     onCloseButtonClicked: () -> Unit,
     onSubmitButtonClicked: (String) -> Unit,
-    maxLabelLines: Int = 2,
 ) {
     var selectedAnswer by remember { mutableStateOf<String?>(null) }
     var isSubmitted by remember { mutableStateOf(false) }
@@ -134,7 +132,6 @@ fun MicrosurveyBottomSheet(
                         icon = icon,
                         answers = answers,
                         selectedAnswer = selectedAnswer,
-                        maxLabelLines = maxLabelLines,
                         onSelectionChange = { selectedAnswer = it },
                     )
                 }
