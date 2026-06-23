@@ -1950,7 +1950,7 @@ class HighlightersOverlay extends EventEmitter {
 
     for (const type in this.highlighters) {
       if (this.highlighters[type]) {
-        this.highlighters[type].finalize();
+        this.highlighters[type].destroy();
         this.highlighters[type] = null;
       }
     }

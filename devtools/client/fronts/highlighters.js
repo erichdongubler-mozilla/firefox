@@ -44,7 +44,7 @@ class CustomHighlighterFront extends FrontClassWithSpec(customHighlighterSpec) {
     if (this.isDestroyed()) {
       return;
     }
-    super.finalize(); // oneway call, doesn't expect a response.
+    super.finalize(); // oneway call, doesn't expect a response. This will also destroy the actor on the backend
     super.destroy();
   }
 }

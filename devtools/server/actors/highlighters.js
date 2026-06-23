@@ -94,8 +94,6 @@ exports.CustomHighlighterActor = class CustomHighligherActor extends Actor {
     this._parent = null;
   }
 
-  release() {}
-
   /**
    * Get current instance of the highlighter object.
    */
