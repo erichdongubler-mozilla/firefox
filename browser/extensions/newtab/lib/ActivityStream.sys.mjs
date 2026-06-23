@@ -536,23 +536,6 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "weather.reportEndpoint",
-    {
-      title:
-        "Temporary measure for trainhopping. This adds the Merino endpoint for the weather report",
-      value: "https://merino.services.mozilla.com/api/v1/suggest",
-    },
-  ],
-  [
-    "weather.hourlyEndpoint",
-    {
-      title:
-        "Temporary measure for trainhopping. This adds the Merino endpoint for the hourly forecasts to display in Weather Forecast widget",
-      value:
-        "https://merino.services.mozilla.com/api/v1/weather/hourly-forecasts",
-    },
-  ],
-  [
     "sports.worldCup.teamsEndpoint",
     {
       title: "The Merino endpoint for fetching available World Cup teams data",

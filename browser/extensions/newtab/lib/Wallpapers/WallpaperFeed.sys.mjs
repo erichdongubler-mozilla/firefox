@@ -79,10 +79,11 @@ export class WallpaperFeed {
       // startup and on Remote Settings sync) would re-run the check every time,
       // undoing any explicit toggle-off the user makes.
       //
-      // @backward-compat { version 152 }
-      // This migration block and PREF_WALLPAPERS_USER_ENABLED_MIGRATED can be
-      // removed once Firefox 152 is on Release, at which point all users will
-      // have run this migration.
+      // This is a one-time data migration, not a train-hop compatibility shim,
+      // so it is intentionally not gated on a release version: a profile can
+      // update directly from a pre-migration version to a much later one
+      // (Firefox updates may skip intermediate major versions), and must still
+      // run this check the first time the new code executes.
       if (
         !Services.prefs.getBoolPref(
           PREF_WALLPAPERS_USER_ENABLED_MIGRATED,

@@ -461,9 +461,7 @@ export class _WallpaperCategories extends React.PureComponent {
     let arrowIconSrc;
     if (novaEnabled) {
       const isRTL = typeof document !== "undefined" && document.dir === "rtl";
-      // @backward-compat { version 151 } Switch to chrome://global/skin/icons/shaft-arrow-${dir}.svg
-      // once Firefox 151 reaches Release (icons not available in toolkit until then).
-      arrowIconSrc = `chrome://newtab/content/data/content/assets/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
+      arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
     }
     // Enable custom color select if pref'ed on
     let showColorPicker = prefs["newtabWallpapers.customColor.enabled"];
