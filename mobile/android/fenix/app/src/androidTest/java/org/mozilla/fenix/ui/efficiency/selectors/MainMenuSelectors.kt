@@ -180,7 +180,7 @@ object MainMenuSelectors {
         strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
         value = getStringResource(R.string.browser_menu_change_wallpaper),
         description = "Change wallpaper Settings button",
-        groups = listOf("requiredForPage", "homePageMainMenuItems", "browserViewMainMenuItems"),
+        groups = listOf("homePageMainMenuItems"),
     )
 
     val SAVE_TO_COLLECTIONS_BUTTON = Selector(
