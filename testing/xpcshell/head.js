@@ -50,6 +50,13 @@ let { PromiseTestUtils: _PromiseTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PromiseTestUtils.sys.mjs"
 );
 
+let {
+  uploadProfileArtifact: _uploadProfileArtifact,
+  installProfilerDumpAndQuit: _installProfilerDumpAndQuit,
+} = ChromeUtils.importESModule(
+  "resource://testing-common/TestProfilerArtifact.sys.mjs"
+);
+
 let { NetUtil: _NetUtil } = ChromeUtils.importESModule(
   "resource://gre/modules/NetUtil.sys.mjs"
 );
@@ -92,6 +99,20 @@ var { StructuredLogger: _LoggerClass } = ChromeUtils.importESModule(
   "resource://testing-common/StructuredLog.sys.mjs"
 );
 var _testLogger = new _LoggerClass("xpcshell/head.js", _dumpLog, [_add_params]);
+
+// When Gecko hits a fatal test-only condition during a profiled run, report it
+// as a failure of the current test and save a profile before exiting, instead
+// of crashing and losing the profile.
+_installProfilerDumpAndQuit(reason => {
+  _testLogger.testStatus(_TEST_NAME, "fatal condition", "FAIL", "PASS", reason);
+  return {
+    testName: _TEST_NAME,
+    logger: _testLogger,
+    // Deferred until after the profile is saved and its location logged, so the
+    // upload message precedes test_end and dashboards find the profile.
+    endTest: () => _testLogger.testEnd(_TEST_NAME, "FAIL", "PASS", reason),
+  };
+});
 
 // Disable automatic network detection, so tests work correctly when
 // not connected to a network.
@@ -514,30 +535,8 @@ function _initDebugging(port) {
 }
 
 function _do_upload_profile() {
-  let name = _TEST_NAME.replace(/.*\//, "");
-  let filename = `profile_${name}.json`;
-  let path = _Services.env.get("MOZ_UPLOAD_DIR");
-  let profilePath = PathUtils.join(path, filename);
   let done = false;
-  (async function _save_profile() {
-    const { profile } =
-      await _Services.profiler.getProfileDataAsGzippedArrayBuffer();
-    await IOUtils.write(profilePath, new Uint8Array(profile));
-    _testLogger.testStatus(
-      _TEST_NAME,
-      "Found unexpected failures during the test; profile uploaded in " +
-        filename,
-      "FAIL"
-    );
-  })()
-    .catch(e => {
-      // If the profile is large, we may encounter out of memory errors.
-      _testLogger.error(
-        "Found unexpected failures during the test; failed to upload profile: " +
-          e
-      );
-    })
-    .then(() => (done = true));
+  _uploadProfileArtifact(_TEST_NAME, _testLogger).finally(() => (done = true));
   _Services.tm.spinEventLoopUntil(
     "Test(xpcshell/head.js:_save_profile)",
     () => done

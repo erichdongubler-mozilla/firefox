@@ -68,6 +68,7 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/PerfStats.h"
+#include "mozilla/ProfilerDumpOrCrash.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/FlowMarkers.h"
 #include "mozilla/Components.h"
@@ -9128,14 +9129,13 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
   }
 
   if (mStatus == NS_ERROR_NON_LOCAL_CONNECTION_REFUSED) {
-    MOZ_CRASH_UNSAFE(nsPrintfCString("Attempting to connect to non-local "
-                                     "address! opener is [%s], uri is "
-                                     "[%s]",
-                                     mOpenerCallingScriptLocation
-                                         ? mOpenerCallingScriptLocation->get()
-                                         : "unknown",
-                                     mURI->GetSpecOrDefault().get())
-                         .get());
+    MOZ_DUMP_PROFILE_OR_CRASH_UNSAFE(nsPrintfCString(
+        "Attempting to connect to non-local "
+        "address! opener is [%s], uri is "
+        "[%s]",
+        mOpenerCallingScriptLocation ? mOpenerCallingScriptLocation->get()
+                                     : "unknown",
+        mURI->GetSpecOrDefault().get()));
   }
 
   if (mStatus == NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED) {

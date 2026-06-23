@@ -81,10 +81,12 @@
 #include "mozilla/ProfileBufferChunkManagerWithLocalLimit.h"
 #include "mozilla/ProfileChunkedBuffer.h"
 #include "mozilla/ProfilerBandwidthCounter.h"
+#include "mozilla/ProfilerDumpOrCrash.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/SharedLibraries.h"
 #include "mozilla/Services.h"
 #include "mozilla/StackWalk.h"
+#include "mozilla/SyncRunnable.h"
 #include "mozilla/Try.h"
 #ifdef XP_WIN
 #  include "mozilla/NativeNt.h"
@@ -6601,6 +6603,41 @@ void profiler_save_profile_to_file(const char* aFilename) {
 
   locked_profiler_save_profile_to_file(lock, aFilename,
                                        preRecordedMetaInformation);
+}
+
+void profiler_request_dump_and_quit_for_test(const nsACString& aReason) {
+  if (!profiler_is_active()) {
+    return;
+  }
+
+  nsCString reason(aReason);
+  auto notify = [reason] {
+    MOZ_RELEASE_ASSERT(NS_IsMainThread());
+    if (nsCOMPtr<nsIObserverService> os = services::GetObserverService()) {
+      os->NotifyObservers(nullptr, "profiler-dump-and-quit",
+                          NS_ConvertUTF8toUTF16(reason).get());
+    }
+  };
+
+  if (NS_IsMainThread()) {
+    notify();
+    return;
+  }
+
+  // The notification, the profile gathering it triggers, and the process exit
+  // all have to happen on the main thread, so dispatch there and block this
+  // thread until the harness has handled it. When handled, the harness ends the
+  // process, so this normally does not return.
+  //
+  // There is a slight risk of deadlock here: if the main thread is blocked (for
+  // example waiting on this thread, or wedged), it will never run the
+  // dispatched runnable and we will block forever. We accept this because
+  // gathering a multi-process profile fundamentally requires the main thread's
+  // event loop; in that case the test harness timeout will eventually kill the
+  // process.
+  nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
+      "profiler_request_dump_and_quit_for_test", std::move(notify));
+  SyncRunnable::DispatchToThread(GetMainThreadSerialEventTarget(), runnable);
 }
 
 uint32_t profiler_get_available_features() {
