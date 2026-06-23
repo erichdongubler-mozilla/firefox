@@ -145,6 +145,13 @@ bool ForOfIterator::next(MutableHandleValue vp, bool* done) {
 void ForOfIterator::closeThrow() {
   MOZ_ASSERT(iterator);
 
+  if (index != NOT_ARRAY) {
+    // |iterator| is the array object. IsArrayWithDefaultIterator ensured
+    // %ArrayIteratorPrototype% does not have a |return| property, so
+    // IteratorClose is a no-op.
+    return;
+  }
+
   // Don't handle uncatchable exceptions to match `for-of` bytecode behavior,
   // which also doesn't run IteratorClose when an interrupt was requested.
   if (!cx_->isExceptionPending()) {
