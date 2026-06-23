@@ -332,12 +332,6 @@ var allowlist = [
     file: "resource://app/modules/backup/CookiesBackupResource.sys.mjs",
   },
 
-  // Bug 2023223: Replace loginOrigin, addresses, payments, and form history
-  // richlist items with autocomplete-row-item
-  {
-    file: "chrome://global/content/autocomplete-row-item/autocomplete-row-item.mjs",
-  },
-
   // Bug 2041770: MemoriesSessions is introduced ahead of its production
   // Remove this entry once the consumer lands.
   {
