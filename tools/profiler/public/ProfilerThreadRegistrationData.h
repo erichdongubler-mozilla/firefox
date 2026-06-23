@@ -366,7 +366,16 @@ class ThreadRegistrationUnlockedConstReaderAndAtomicRW
   }
 
 #ifdef NIGHTLY_BUILD
-  void RecordWakeCount() const;
+  // Updates this thread's recorded wake-up/CPU-use counters and records the
+  // "Thread CPU use" profiler marker. If there is new data to report to Glean,
+  // returns true and fills the out-params; the caller is then responsible for
+  // calling mozilla::glean::RecordThreadCpuUse. Returning the data rather than
+  // reporting it here lets callers that hold the ThreadRegistry lock defer the
+  // Glean call until after they release it, avoiding a lock-order inversion
+  // with the Glean/Telemetry locks.
+  [[nodiscard]] bool RecordWakeCount(nsACString& aThreadName,
+                                     uint64_t& aCpuTimeMs,
+                                     uint64_t& aWakeCount) const;
 #endif
 
   // This is called on every profiler restart. Put things that should happen
