@@ -59,7 +59,6 @@
 #include "mozilla/dom/HTMLDialogElement.h"
 #include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/HTMLMediaElement.h"
-#include "mozilla/dom/HTMLSelectElement.h"
 #include "mozilla/dom/HTMLTemplateElement.h"
 #include "mozilla/dom/L10nOverlays.h"
 #include "mozilla/dom/LifecycleCallbackArgs.h"
@@ -3863,18 +3862,6 @@ Element* nsINode::GetNearestInclusiveTargetPopoverForInvoker() const {
       if (popover->IsPopoverOpenedInMode(PopoverAttributeState::Auto) ||
           popover->IsPopoverOpenedInMode(PopoverAttributeState::Hint)) {
         return popover;
-      }
-    }
-    if (auto* select = HTMLSelectElement::FromNodeOrNull(el)) {
-      auto* picker = select->GetPickerElement();
-      MOZ_ASSERT(
-          !picker ||
-              (!picker->IsPopoverOpenedInMode(PopoverAttributeState::Hint) &&
-               !picker->IsPopoverOpenedInMode(PopoverAttributeState::Manual)),
-          "Select Picker should only be popover=auto");
-      if (picker &&
-          picker->IsPopoverOpenedInMode(PopoverAttributeState::Auto)) {
-        return picker;
       }
     }
   }
