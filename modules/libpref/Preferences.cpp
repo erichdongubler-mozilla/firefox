@@ -1761,16 +1761,53 @@ class CallbackTrie {
 
   void RemoveFromTrie(CallbackNode* aNode) {
     if (aNode->Domain().is<nsCString>()) {
-      if (CallbackTrieNode* trieNode =
-              FindNode(aNode->Domain().as<nsCString>())) {
-        trieNode->mCallbacks.RemoveElement(aNode);
-      }
+      RemoveCallbackAndPrune(aNode, aNode->Domain().as<nsCString>());
     } else {
       for (const char* const* p = aNode->Domain().as<const char* const*>(); *p;
            ++p) {
-        if (CallbackTrieNode* trieNode = FindNode(nsDependentCString(*p))) {
-          trieNode->mCallbacks.RemoveElement(aNode);
-        }
+        RemoveCallbackAndPrune(aNode, nsDependentCString(*p));
+      }
+    }
+  }
+
+  // Remove aNode's callback from the trie node for aDomain, then drop any nodes
+  // along the path that became empty (no callbacks and no children) so the trie
+  // does not accumulate dead scaffolding under observer churn.
+  void RemoveCallbackAndPrune(CallbackNode* aNode, const nsACString& aDomain) {
+    MOZ_ASSERT(NS_IsMainThread());
+    // Walk to the target node, recording the (parent, child index) of each edge
+    // so we can prune bottom-up afterwards.
+    AutoTArray<std::pair<CallbackTrieNode*, size_t>, 8> path;
+    CallbackTrieNode* node = &mRoot;
+    const char* p = aDomain.BeginReading();
+    const char* end = aDomain.EndReading();
+    if (end > p && *(end - 1) == '.') --end;
+    while (p < end) {
+      const char* q = static_cast<const char*>(memchr(p, '.', end - p));
+      const bool isLast = !q;
+      if (isLast) q = end;
+      size_t idx;
+      if (!node->FindChildIndex(nsDependentCSubstring(p, q), idx)) {
+        return;  // Path absent; nothing to remove.
+      }
+      path.AppendElement(std::make_pair(node, idx));
+      node = node->mChildren[idx].mNode.get();
+      if (isLast) break;
+      p = q + 1;
+    }
+
+    node->mCallbacks.RemoveElement(aNode);
+
+    // Prune empty nodes from the leaf upward, stopping at the first node that
+    // is still in use (has callbacks or other children).
+    for (size_t i = path.Length(); i-- > 0;) {
+      CallbackTrieNode* parent = path[i].first;
+      size_t idx = path[i].second;
+      CallbackTrieNode* child = parent->mChildren[idx].mNode.get();
+      if (child->mCallbacks.IsEmpty() && child->mChildren.IsEmpty()) {
+        parent->mChildren.RemoveElementAt(idx);
+      } else {
+        break;
       }
     }
   }

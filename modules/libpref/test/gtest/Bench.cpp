@@ -20,10 +20,14 @@
 
 #include "gtest/gtest.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/TimeStamp.h"
+#include "nsCOMPtr.h"
+#include "nsITimer.h"
 #include "nsPrintfCString.h"
 #include "nsString.h"
 #include "nsTArray.h"
+#include "nsThreadUtils.h"
 
 using namespace mozilla;
 
@@ -182,4 +186,87 @@ TEST(PrefsCallbackTrieBench, CorpusDeltaAndTiming)
                   {"delta-trie-bytes", double(dTrie)},
                   {"delta-segment-bytes", double(dSeg)},
                   {"per-callback-bytes", double(dBytes) / corpusLength}});
+
+  // The corpus is unregistered, but pruning the now-dead trie nodes happens on
+  // the deferred idle sweep. Wait for it so we leave a clean trie for the next
+  // test (a repeating timer keeps the main thread busy enough for the idle
+  // sweep to find idle time, same trick as PrefsBasics.WeakObserverIdleSweep).
+  // We can't wait for a return to `before`: running the corpus lazily registers
+  // a few process-lifetime static-pref mirrors, so the trie settles slightly
+  // above the pre-test count. The dead nodes are all still present here (the
+  // sweep has not run yet), so instead wait for the count to drop below this
+  // just-unregistered peak, which uniquely marks the sweep as having run.
+  nsCOMPtr<nsITimer> keepAlive = NS_NewTimer();
+  keepAlive->InitWithNamedFuncCallback(
+      [](nsITimer*, void*) {}, nullptr, 50, nsITimer::TYPE_REPEATING_SLACK,
+      "PrefsCallbackTrieBench.CorpusDeltaAndTiming.keepAlive"_ns);
+  const uint32_t peakNodes =
+      Preferences::GetCallbackTrieStatsForTesting().mNodeCount;
+  MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
+      "PrefsCallbackTrieBench.CorpusDeltaAndTiming.drain"_ns, [&] {
+        return Preferences::GetCallbackTrieStatsForTesting().mNodeCount <
+               peakNodes;
+      }));
+  keepAlive->Cancel();
+}
+
+// Verify that unregistering callbacks and letting the idle sweep run prunes the
+// now-empty trie nodes, so the trie does not grow without bound under observer
+// churn. Without pruning, Compact() removes the callbacks but leaves the nodes,
+// and the node count stays elevated.
+TEST(PrefsCallbackTrieBench, PruneEmptyNodesOnChurn)
+{
+  // A repeating timer keeps the main thread busy enough for the idle sweep
+  // machinery to find idle time (same trick as
+  // PrefsBasics.WeakObserverIdleSweep).
+  nsCOMPtr<nsITimer> keepAlive = NS_NewTimer();
+  keepAlive->InitWithNamedFuncCallback(
+      [](nsITimer*, void*) {}, nullptr, 50, nsITimer::TYPE_REPEATING_SLACK,
+      "PrefsCallbackTrieBench.PruneEmptyNodesOnChurn.keepAlive"_ns);
+
+  // Drain any pending startup sweep so the baseline is stable.
+  TimeStamp drainDeadline =
+      TimeStamp::Now() + TimeDuration::FromMilliseconds(100);
+  MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
+      "PrefsCallbackTrieBench.PruneEmptyNodesOnChurn.drain"_ns,
+      [&] { return TimeStamp::Now() >= drainDeadline; }));
+  NS_ProcessPendingEvents(nullptr);
+
+  const uint32_t baseNodes =
+      Preferences::GetCallbackTrieStatsForTesting().mNodeCount;
+
+  // Register a corpus of deep, unique paths that create many private nodes.
+  nsTArray<nsCString> corpus;
+  for (int i = 0; i < 400; ++i) {
+    corpus.AppendElement(
+        nsPrintfCString("test.prune.fam%d.sub%d.deep.leaf%d", i % 20, i, i));
+  }
+  for (auto& name : corpus) {
+    Preferences::RegisterCallback(BenchCallback, name);
+  }
+  const uint32_t grownNodes =
+      Preferences::GetCallbackTrieStatsForTesting().mNodeCount;
+  fprintf(stderr, "[bench] churn: base nodes=%u, grown=%u (+%u)\n", baseNodes,
+          grownNodes, grownNodes - baseNodes);
+  ASSERT_GT(grownNodes, baseNodes);
+
+  // Unregister everything; this schedules the idle sweep (Compact + prune).
+  for (auto& name : corpus) {
+    Preferences::UnregisterCallback(BenchCallback, name);
+  }
+
+  // Spin until the sweep prunes the now-empty nodes back to the baseline.
+  MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
+      "PrefsCallbackTrieBench.PruneEmptyNodesOnChurn"_ns, [&] {
+        return Preferences::GetCallbackTrieStatsForTesting().mNodeCount <=
+               baseNodes;
+      }));
+
+  const uint32_t finalNodes =
+      Preferences::GetCallbackTrieStatsForTesting().mNodeCount;
+  fprintf(stderr, "[bench] churn: after sweep nodes=%u (base=%u)\n", finalNodes,
+          baseNodes);
+  EXPECT_EQ(finalNodes, baseNodes);
+
+  keepAlive->Cancel();
 }
