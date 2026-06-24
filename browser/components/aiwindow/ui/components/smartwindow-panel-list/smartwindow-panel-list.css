@@ -25,7 +25,7 @@ panel-list {
   max-width: var(--panel-max-width);
   white-space: normal;
 
-  @media (not (forced-colors)) and (not -moz-pref("browser.nova.enabled")) {
+  @media (not (prefers-contrast)) and (not -moz-pref("browser.nova.enabled")) {
     --panel-list-background-color: light-dark(color-mix(in srgb, var(--color-violet-30) 5%, white), var(--color-violet-110));
     --panel-list-border-color: light-dark(var(--color-purple-20), var(--color-gray-70));
     --panel-list-color: light-dark(var(--color-violet-110), var(--color-violet-0));
@@ -38,9 +38,9 @@ panel-list {
   panel-list {
     --panel-list-border-radius: var(--border-radius-medium);
     --panel-section-header-padding-inline-start: var(--size-item-small);
-    --panel-item-button-border-radius: var(--border-radius-xlarge);
+    --panel-item-button-border-radius: var(--border-radius-medium);
 
-    @media not (forced-colors) {
+    @media not (prefers-contrast) {
       --panel-list-border-color: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-50));
       --panel-list-color: light-dark(var(--color-violet-90), var(--color-gray-0));
       --panel-section-header-color: light-dark(
@@ -60,8 +60,7 @@ panel-list {
 }
 
 panel-list[valign="bottom"] {
-  /* Override hook: a consumer can set this custom property on its host to change the gap */
-  margin-block-start: var(--smartwindow-panel-list-valign-bottom-margin-block-start, var(--space-small));
+  margin-block-start: var(--space-small);
 }
 
 panel-list[valign="top"] {

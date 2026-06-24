@@ -120,76 +120,64 @@
   width: 1px;
 }
 
-/* Chat bubble styling */
+/* Temporary chat bubble styling */
 .chat-bubble {
   box-sizing: border-box;
+  color: var(--text-color);
   display: flex;
   flex-direction: column;
-  gap: var(--space-xsmall);
+  --smartwindow-message-chat-bubble-line-height: 1.5; /* for readability */
+  line-height: var(--smartwindow-message-chat-bubble-line-height);
+  padding-block: var(--space-large);
 
-  .chat-bubble-inner {
-    color: var(--text-color);
-    display: flex;
-    flex-direction: column;
-    --smartwindow-message-chat-bubble-line-height: 1.5; /* for readability */
-    line-height: var(--smartwindow-message-chat-bubble-line-height);
-    padding-block: var(--space-large);
-
-    @media -moz-pref("browser.nova.enabled") and (not (forced-colors)) {
-      --text-color: light-dark(
-        color-mix(in srgb, var(--color-violet-desaturated-90) 70%, transparent),
-        color-mix(in srgb, var(--color-violet-desaturated-0) 70%, transparent)
-      );
-    }
+  @media -moz-pref("browser.nova.enabled") and (not (forced-colors)) {
+    --text-color: light-dark(
+      color-mix(in srgb, var(--color-violet-desaturated-90) 70%, transparent),
+      color-mix(in srgb, var(--color-violet-desaturated-0) 70%, transparent)
+    );
   }
 }
 
 .chat-bubble-user {
-  align-items: end;
   align-self: flex-end;
+  border-radius: var(--space-medium);
+  box-shadow:
+    var(--smartwindow-shadow, var(--box-shadow-level-2)),
+    inset 0 0 5px var(--chat-bubble-inset-color, var(--box-shadow-color-lighter-layer-1));
+  gap: var(--space-medium);
   max-width: 75%;
   overflow-wrap: anywhere;
+  padding-inline: var(--space-large);
   width: fit-content;
 
-  .chat-bubble-inner {
-    border-radius: var(--space-medium);
-    box-shadow:
-      var(--smartwindow-shadow, var(--box-shadow-level-2)),
-      inset 0 0 5px var(--chat-bubble-inset-color, var(--box-shadow-color-lighter-layer-1));
-    gap: var(--space-medium);
-    padding-inline: var(--space-large);
+  @media not (forced-colors) {
+    --chat-bubble-background-color: light-dark(var(--color-white), var(--color-violet-110));
+    --chat-bubble-inset-color: color-mix(in srgb, var(--color-violet-30) 12%, transparent);
+    background: var(--chat-bubble-background-color);
+  }
+
+  /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
+  @media -moz-pref("browser.nova.enabled") {
+    border: var(--border-width) solid var(--border-color);
+    box-shadow: none;
 
     @media not (forced-colors) {
-      --chat-bubble-background-color: light-dark(var(--color-white), var(--color-violet-110));
-      --chat-bubble-inset-color: color-mix(in srgb, var(--color-violet-30) 12%, transparent);
-      background: var(--chat-bubble-background-color);
-    }
-
-    /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
-    @media -moz-pref("browser.nova.enabled") {
-      border: var(--border-width) solid var(--border-color);
-      box-shadow: none;
-
-      @media not (forced-colors) {
-        --chat-bubble-background-color: light-dark(var(--color-white), var(--color-gray-75));
-        --chat-bubble-border-color: light-dark(var(--color-violet-desaturated-10), var(--color-violet-desaturated-50));
-        border-color: var(--chat-bubble-border-color);
-      }
+      --chat-bubble-background-color: light-dark(var(--color-white), var(--color-gray-75));
+      --chat-bubble-border-color: light-dark(var(--color-violet-desaturated-10), var(--color-violet-desaturated-50));
+      border-color: var(--chat-bubble-border-color);
     }
   }
 }
 
 .chat-bubble-assistant {
+  gap: var(--space-small);
   width: 100%;
 
-  .chat-bubble-inner {
-    gap: var(--space-small);
-    /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
-    @media -moz-pref("browser.nova.enabled") and (not (forced-colors)) {
-      --chat-bubble-assistant-background-color: var(--ai-background-color);
-      /* Background color is needed in order to have the blur effect on the edges */
-      background-color: var(--chat-bubble-assistant-background-color);
-    }
+  /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
+  @media -moz-pref("browser.nova.enabled") and (not (forced-colors)) {
+    --chat-bubble-assistant-background-color: var(--ai-background-color);
+    /* Background color is needed in order to have the blur effect on the edges */
+    background-color: var(--chat-bubble-assistant-background-color);
   }
 }
 
