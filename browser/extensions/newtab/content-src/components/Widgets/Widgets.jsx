@@ -343,20 +343,20 @@ function Widgets() {
 
       // When Nova is enabled, treat the shared header control as a toggle
       // between the default/full widget presentation and the compact one.
-      // Widgets at "small" are skipped — they are either in the sidebar or
-      // user-pinned and should not be moved by the row toggle.
-      //
-      // Future: if we add a "small" in-row presentation for a widget, this
-      // loop will need to distinguish between "small-in-sidebar" and
-      // "small-in-row". One way to do that is to add a hasSidebar-aware
-      // helper (e.g. isWidgetInSidebar(widget, prefs)) and only skip widgets
-      // that are actually rendered in the sidebar, not all widgets at "small".
-      // The registry already carries hasSidebar and trainhopSidebarKey, so
-      // resolveWidgetHasSidebar(widget, prefs) provides that check today.
+      // Only widgets actually rendered in the sidebar are skipped — that is the
+      // same hasSidebar + size === "small" test used in WidgetsSidebar and by
+      // weatherGoesToSidebar above, not "any small widget". A "small" widget
+      // sitting in the row is resized along with the others so it isn't left
+      // behind by the row toggle. On minimize such a widget lands at "medium"
+      // rather than returning to "small", since the size pref holds the display
+      // state directly and the pre-maximize size isn't retained.
       if (novaEnabled) {
         const targetSize = newMaximizedState ? "large" : "medium";
         for (const widget of WIDGET_REGISTRY) {
-          if (resolveWidgetSize(widget, prefs) !== "small") {
+          const inSidebar =
+            resolveWidgetHasSidebar(widget, prefs) &&
+            resolveWidgetSize(widget, prefs) === "small";
+          if (!inSidebar) {
             dispatch(ac.SetPref(widget.sizePref, targetSize));
           }
         }
