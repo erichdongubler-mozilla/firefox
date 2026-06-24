@@ -55,7 +55,6 @@ import mozilla.components.compose.base.utils.BackInvokedHandler
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.SwitchListItem
 import org.mozilla.fenix.settings.labs.LabsItem
-import org.mozilla.fenix.settings.labs.LabsItemSlugs
 import org.mozilla.fenix.settings.labs.store.DialogState
 import org.mozilla.fenix.settings.labs.store.LabsAction
 import org.mozilla.fenix.settings.labs.store.LabsState
@@ -172,11 +171,11 @@ private fun LabsItemRow(
     onToggle: (LabsItem) -> Unit,
     onShareFeedbackClick: (LabsItem) -> Unit,
 ) {
-    val itemTitle = stringResource(id = item.title)
+    val itemTitle = item.title
     SwitchListItem(
         label = itemTitle,
         checked = item.enrolled,
-        description = stringResource(id = item.description),
+        description = item.description,
         maxDescriptionLines = Int.MAX_VALUE,
         showSwitchAfter = true,
         belowListItemContent = {
@@ -429,16 +428,16 @@ private class FirefoxLabsScreenPreviewProvider : ThemedValueProvider<List<LabsIt
     sequenceOf(
         listOf(
             LabsItem(
-                slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-                title = R.string.firefox_labs_homepage_as_a_new_tab,
-                description = R.string.firefox_labs_homepage_as_a_new_tab_description,
+                slug = "preview-lab-one",
+                title = "Preview lab one",
+                description = "Sample Labs item one for previews.",
                 enrolled = true,
                 requiresRestart = true,
             ),
             LabsItem(
-                slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-                title = R.string.firefox_labs_homepage_as_a_new_tab,
-                description = R.string.firefox_labs_homepage_as_a_new_tab_description,
+                slug = "preview-lab-two",
+                title = "Preview lab two",
+                description = "Sample Labs item two for previews.",
                 enrolled = false,
                 feedbackUrl = "https://connect.mozilla.org/",
                 requiresRestart = true,

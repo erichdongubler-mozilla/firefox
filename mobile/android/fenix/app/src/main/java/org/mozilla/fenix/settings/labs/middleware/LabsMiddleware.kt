@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.settings.labs.middleware
 
+import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import kotlinx.coroutines.CoroutineScope
@@ -11,25 +12,32 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
-import org.mozilla.fenix.R
+import mozilla.components.service.nimbus.NimbusApi
+import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.settings.labs.LabsItem
-import org.mozilla.fenix.settings.labs.LabsItemSlugs
+import org.mozilla.fenix.settings.labs.nimbus.toLabsItem
 import org.mozilla.fenix.settings.labs.store.LabsAction
 import org.mozilla.fenix.settings.labs.store.LabsState
 import org.mozilla.fenix.utils.Settings
+
+private val logger = Logger("LabsMiddleware")
 
 /**
  * [Middleware] implementation for handling [LabsAction] and managing the [LabsState] for the
  * Firefox Labs screen.
  *
+ * @param context The [Context] used to resolve string resources.
  * @param settings An instance of [Settings] to read and write to the [SharedPreferences]
  * properties.
+ * @param nimbusSdk The [NimbusApi] used to fetch available Firefox Labs opt-ins from Nimbus.
  * @param onRestart Callback invoked to restart the application.
  * @param onOpenFeedback Callback invoked to open a Labs item's feedback URL.
  * @param scope [CoroutineScope] used to launch coroutines.
  */
 class LabsMiddleware(
+    private val context: Context,
     private val settings: Settings,
+    private val nimbusSdk: NimbusApi,
     private val onRestart: () -> Unit,
     private val onOpenFeedback: (String) -> Unit,
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
@@ -57,18 +65,17 @@ class LabsMiddleware(
         next(action)
     }
 
+    @Suppress("TooGenericExceptionCaught")
     private fun initialize(
         store: Store<LabsState, LabsAction>,
     ) = scope.launch {
-        val items = listOf(
-            LabsItem(
-                slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-                title = R.string.firefox_labs_homepage_as_a_new_tab,
-                description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-                enrolled = settings.enableHomepageAsNewTab,
-                requiresRestart = true,
-            ),
-        )
+        val items = try {
+            nimbusSdk.getAvailableFirefoxLabs().await()
+                .mapNotNull { it.toLabsItem(context) }
+        } catch (e: Exception) {
+            logger.warn("Failed to fetch Firefox Labs from Nimbus", e)
+            emptyList()
+        }
 
         store.dispatch(LabsAction.UpdateLabsItems(items))
     }
@@ -98,12 +105,9 @@ class LabsMiddleware(
         }
     }
 
+    @Suppress("UnusedParameter") // Params consumed once enroll/unenroll is wired in bug 2032178.
     private fun setItemEnrolled(slug: String, enrolled: Boolean) = scope.launch {
-        when (slug) {
-            LabsItemSlugs.HOMEPAGE_AS_NEW_TAB -> {
-                settings.enableHomepageAsNewTab = enrolled
-            }
-        }
+        // ToDo: Will be updated to API in Bug 2032178.
     }
 
     private fun restartApplication() = scope.launch {

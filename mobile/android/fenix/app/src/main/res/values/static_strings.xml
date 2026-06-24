@@ -328,10 +328,10 @@
     <string name="crash_debug_startup_crash_warning">This will start the startup crash activity in a new process and terminate the current process.</string>
 
     <!-- Firefox Labs -->
-    <!-- The name of an experimental feature displayed in theFirefox Labs screen. This features allows the user to open the homepage as a new tab. -->
-    <string name="firefox_labs_homepage_as_a_new_tab">Homepage as a New Tab</string>
-    <!-- The description of the "Homepage as a New Tab" feature in the Firefox Labs screen. -->
-    <string name="firefox_labs_homepage_as_a_new_tab_description">With this feature enabled, Homepage will behave as a tab.</string>
+    <!-- The name of an experimental feature displayed in the Firefox Labs screen. This feature appends a star to the Settings toolbar title. This string is for testing purposes only. -->
+    <string name="firefox_labs_test_lab_title">Add a star to settings</string>
+    <!-- The description of the "Add a star to settings" feature in the Firefox Labs screen. This string is for testing purposes only. -->
+    <string name="firefox_labs_test_lab_description">Appends a star to the settings toolbar title. (Experiment is for testing purposes only.)</string>
 
     <!-- Debug drawer tab group tools -->
     <!-- The title of the debug drawer tab to help populate tab groups-->

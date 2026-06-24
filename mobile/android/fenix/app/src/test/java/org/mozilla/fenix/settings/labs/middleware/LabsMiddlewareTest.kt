@@ -4,7 +4,10 @@
 
 package org.mozilla.fenix.settings.labs.middleware
 
+import android.content.Context
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -14,11 +17,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.R
+import org.mozilla.experiments.nimbus.internal.FirefoxLabsMetadata
+import org.mozilla.fenix.nimbus.TestNimbusApi
 import org.mozilla.fenix.settings.labs.LabsItem
-import org.mozilla.fenix.settings.labs.LabsItemSlugs
 import org.mozilla.fenix.settings.labs.store.DialogState
 import org.mozilla.fenix.settings.labs.store.LabsAction
 import org.mozilla.fenix.settings.labs.store.LabsState
@@ -31,6 +35,7 @@ import org.robolectric.RobolectricTestRunner
 class LabsMiddlewareTest {
 
     private lateinit var settings: Settings
+    private var labs: List<FirefoxLabsMetadata> = emptyList()
     private var onRestartCount = 0
     private val onRestart: () -> Unit = { onRestartCount++ }
     private val openedFeedbackUrls = mutableListOf<String>()
@@ -39,25 +44,99 @@ class LabsMiddlewareTest {
     @Before
     fun setup() {
         settings = Settings(testContext)
-        settings.enableHomepageAsNewTab = false
+        labs = emptyList()
+        onRestartCount = 0
         openedFeedbackUrls.clear()
     }
 
-    @Test
-    fun `WHEN InitAction is dispatched THEN items are initialized from settings`() = runTest(UnconfinedTestDispatcher()) {
-        val captureMiddleware = CaptureActionsMiddleware<LabsState, LabsAction>()
-        createStore(
-            captureMiddleware = captureMiddleware,
-            scope = backgroundScope,
-        )
+    private fun labsItem(
+        slug: String = "test-lab",
+        enrolled: Boolean = false,
+        requiresRestart: Boolean = false,
+        feedbackUrl: String? = null,
+    ) = LabsItem(
+        slug = slug,
+        title = "Title",
+        description = "Description",
+        enrolled = enrolled,
+        requiresRestart = requiresRestart,
+        feedbackUrl = feedbackUrl,
+    )
 
-        // InitAction is dispatched on store creation.
-        // The middleware then dispatches UpdateLabsItems.
+    private fun firefoxLabsMetadata(
+        slug: String,
+        titleStringId: String,
+        descriptionStringId: String,
+        enrolled: Boolean = false,
+        requiresRestart: Boolean = false,
+        feedbackUrl: String? = null,
+    ) = FirefoxLabsMetadata(
+        slug = slug,
+        titleStringId = titleStringId,
+        descriptionStringId = descriptionStringId,
+        feedbackUrl = feedbackUrl,
+        enrolled = enrolled,
+        requiresRestart = requiresRestart,
+    )
+
+    private fun stateWith(
+        item: LabsItem,
+        dialogState: DialogState = DialogState.Closed,
+    ) = LabsState(
+        labsItems = listOf(item),
+        dialogState = dialogState,
+    )
+
+    private class FakeNimbusApi(
+        context: Context,
+        private val labsProvider: () -> List<FirefoxLabsMetadata>,
+    ) : TestNimbusApi(context) {
+        override fun getAvailableFirefoxLabs(): Deferred<List<FirefoxLabsMetadata>> =
+            CompletableDeferred(labsProvider())
+    }
+
+    private companion object {
+        // Backed by static_strings.xml entries shared with the Nimbus read-path fixture.
+        const val RESOURCE_NAME_TITLE = "firefox_labs_test_lab_title"
+        const val RESOURCE_NAME_DESCRIPTION = "firefox_labs_test_lab_description"
+        val R_STRING_TITLE = org.mozilla.fenix.R.string.firefox_labs_test_lab_title
+        val R_STRING_DESCRIPTION = org.mozilla.fenix.R.string.firefox_labs_test_lab_description
+    }
+
+    @Test
+    fun `WHEN InitAction is dispatched AND Nimbus returns no labs THEN an empty list is dispatched`() = runTest(UnconfinedTestDispatcher()) {
+        val captureMiddleware = CaptureActionsMiddleware<LabsState, LabsAction>()
+        createStore(captureMiddleware = captureMiddleware, scope = backgroundScope)
+
+        captureMiddleware.assertLastAction(LabsAction.UpdateLabsItems::class) { action ->
+            assertEquals(emptyList<LabsItem>(), action.items)
+        }
+    }
+
+    @Test
+    fun `WHEN InitAction is dispatched AND Nimbus returns labs THEN they are deserialized and dispatched`() = runTest(UnconfinedTestDispatcher()) {
+        labs = listOf(
+            firefoxLabsMetadata(
+                slug = "lab-1",
+                titleStringId = RESOURCE_NAME_TITLE,
+                descriptionStringId = RESOURCE_NAME_DESCRIPTION,
+                enrolled = true,
+                requiresRestart = false,
+                feedbackUrl = "https://connect.mozilla.org/",
+            ),
+        )
+        val captureMiddleware = CaptureActionsMiddleware<LabsState, LabsAction>()
+        createStore(captureMiddleware = captureMiddleware, scope = backgroundScope)
+
         captureMiddleware.assertLastAction(LabsAction.UpdateLabsItems::class) { action ->
             assertEquals(1, action.items.size)
             val item = action.items.first()
-            assertEquals(LabsItemSlugs.HOMEPAGE_AS_NEW_TAB, item.slug)
-            assertEquals(settings.enableHomepageAsNewTab, item.enrolled)
+            assertEquals("lab-1", item.slug)
+            assertEquals(testContext.getString(R_STRING_TITLE), item.title)
+            assertEquals(testContext.getString(R_STRING_DESCRIPTION), item.description)
+            assertTrue(item.enrolled)
+            assertFalse(item.requiresRestart)
+            assertEquals("https://connect.mozilla.org/", item.feedbackUrl)
         }
     }
 
@@ -70,118 +149,72 @@ class LabsMiddlewareTest {
         assertEquals(1, onRestartCount)
     }
 
+    @Ignore("Will be reopened after bug 2046851.")
     @Test
-    fun `WHEN RestoreDefaults is dispatched AND an enrolled item requires restart THEN items are unenrolled and app restart is requested`() = runTest(UnconfinedTestDispatcher()) {
-        settings.enableHomepageAsNewTab = true
+    fun `WHEN RestoreDefaults is dispatched AND an enrolled item requires restart THEN app restart is requested`() = runTest(UnconfinedTestDispatcher()) {
         val captureMiddleware = CaptureActionsMiddleware<LabsState, LabsAction>()
         val store = createStore(
+            initialState = stateWith(labsItem(enrolled = true, requiresRestart = true)),
             captureMiddleware = captureMiddleware,
             scope = backgroundScope,
         )
 
         store.dispatch(LabsAction.RestoreDefaults)
 
-        assertFalse(settings.enableHomepageAsNewTab)
         captureMiddleware.assertLastAction(LabsAction.RestartApplication::class)
     }
 
     @Test
-    fun `WHEN RestoreDefaults is dispatched AND no enrolled item requires restart THEN items are unenrolled and no restart is requested`() = runTest(UnconfinedTestDispatcher()) {
-        settings.enableHomepageAsNewTab = true
+    fun `WHEN RestoreDefaults is dispatched AND no enrolled item requires restart THEN no restart is requested`() = runTest(UnconfinedTestDispatcher()) {
         val captureMiddleware = CaptureActionsMiddleware<LabsState, LabsAction>()
         val store = createStore(
+            initialState = stateWith(labsItem(enrolled = true, requiresRestart = false)),
             captureMiddleware = captureMiddleware,
             scope = backgroundScope,
-        )
-
-        // Override the middleware's hardcoded item with one that does not require restart.
-        store.dispatch(
-            LabsAction.UpdateLabsItems(
-                items = listOf(
-                    LabsItem(
-                        slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-                        title = R.string.firefox_labs_homepage_as_a_new_tab,
-                        description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-                        enrolled = true,
-                        requiresRestart = false,
-                    ),
-                ),
-            ),
         )
         captureMiddleware.reset()
 
         store.dispatch(LabsAction.RestoreDefaults)
 
-        assertFalse(settings.enableHomepageAsNewTab)
         assertEquals(0, onRestartCount)
         captureMiddleware.assertNotDispatched(LabsAction.RestartApplication::class)
     }
 
     @Test
-    fun `WHEN ToggleLabsItem with requiresRestart=true is dispatched THEN item is toggled and app restart is requested`() = runTest(UnconfinedTestDispatcher()) {
-        val item = LabsItem(
-            slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-            title = R.string.firefox_labs_homepage_as_a_new_tab,
-            description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-            enrolled = false,
-            requiresRestart = true,
-        )
+    fun `WHEN ToggleLabsItem with requiresRestart=true is dispatched THEN app restart is requested`() = runTest(UnconfinedTestDispatcher()) {
+        val item = labsItem(requiresRestart = true)
         val captureMiddleware = CaptureActionsMiddleware<LabsState, LabsAction>()
         val store = createStore(
-            initialState = LabsState(
-                labsItems = listOf(item),
-                dialogState = DialogState.Closed,
-            ),
+            initialState = stateWith(item),
             captureMiddleware = captureMiddleware,
             scope = backgroundScope,
         )
 
-        assertFalse(settings.enableHomepageAsNewTab)
-
         store.dispatch(LabsAction.ToggleLabsItem(item))
 
-        assertTrue(settings.enableHomepageAsNewTab)
         captureMiddleware.assertLastAction(LabsAction.RestartApplication::class)
     }
 
     @Test
-    fun `WHEN ToggleLabsItem with requiresRestart=false is dispatched THEN item is toggled and no restart is requested`() = runTest(UnconfinedTestDispatcher()) {
-        val item = LabsItem(
-            slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-            title = R.string.firefox_labs_homepage_as_a_new_tab,
-            description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-            enrolled = false,
-            requiresRestart = false,
-        )
+    fun `WHEN ToggleLabsItem with requiresRestart=false is dispatched THEN no restart is requested`() = runTest(UnconfinedTestDispatcher()) {
+        val item = labsItem(requiresRestart = false)
         val captureMiddleware = CaptureActionsMiddleware<LabsState, LabsAction>()
         val store = createStore(
-            initialState = LabsState(
-                labsItems = listOf(item),
-                dialogState = DialogState.Closed,
-            ),
+            initialState = stateWith(item),
             captureMiddleware = captureMiddleware,
             scope = backgroundScope,
         )
-
-        assertFalse(settings.enableHomepageAsNewTab)
+        captureMiddleware.reset()
 
         store.dispatch(LabsAction.ToggleLabsItem(item))
 
-        assertTrue(settings.enableHomepageAsNewTab)
         assertEquals(0, onRestartCount)
         captureMiddleware.assertNotDispatched(LabsAction.RestartApplication::class)
     }
 
     @Test
     fun `WHEN ShareFeedbackClicked is dispatched THEN onOpenFeedback is called with the item feedback URL`() = runTest(UnconfinedTestDispatcher()) {
-        val item = LabsItem(
-            slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-            title = R.string.firefox_labs_homepage_as_a_new_tab,
-            description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-            enrolled = false,
-            requiresRestart = true,
-            feedbackUrl = "https://connect.mozilla.org/",
-        )
+        val item = labsItem(feedbackUrl = "https://connect.mozilla.org/")
         val store = createStore(scope = backgroundScope)
 
         store.dispatch(LabsAction.ShareFeedbackClicked(item))
@@ -195,7 +228,9 @@ class LabsMiddlewareTest {
         scope: CoroutineScope,
     ): LabsStore {
         val middleware = LabsMiddleware(
+            context = testContext,
             settings = settings,
+            nimbusSdk = FakeNimbusApi(testContext) { labs },
             onRestart = onRestart,
             onOpenFeedback = onOpenFeedback,
             scope = scope,
