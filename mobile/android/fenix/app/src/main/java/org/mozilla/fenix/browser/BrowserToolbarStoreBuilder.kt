@@ -103,6 +103,7 @@ object BrowserToolbarStoreBuilder {
                         clipboard = activity.components.clipboardHandler,
                         publicSuffixList = components.publicSuffixList,
                         settings = components.settings,
+                        summarizationFeatureSettings = components.core.summarizeFeatureSettings,
                         shareUseCases = components.useCases.shareUseCases,
                         navController = navController,
                         summarizationNavigator = SummarizationNavigator(

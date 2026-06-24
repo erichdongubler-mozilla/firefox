@@ -19,8 +19,10 @@ internal class ToolbarSimpleShortcutPreference @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : ToolbarShortcutPreference(context, attrs) {
-
-    override val options: List<ShortcutOption> = simpleShortcutOptions
+    override val options: List<ShortcutOption>
+        get() = simpleShortcutOptions.filterNot {
+            it.key == ShortcutType.SUMMARIZE && !isSummarizationEnabled
+        }
 
     /**
      * Optional callback for when a new shortcut option is selected.
@@ -47,4 +49,7 @@ internal class ToolbarSimpleShortcutPreference @JvmOverloads constructor(
 
         return simplePreview.findViewById(R.id.selected_simple_shortcut_icon)
     }
+
+    private val isSummarizationEnabled: Boolean
+        get() = context.components.core.summarizeFeatureSettings.canShowFeature
 }

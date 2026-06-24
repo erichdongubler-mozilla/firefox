@@ -69,6 +69,7 @@ class TabPreview @JvmOverloads constructor(
 ) : CoordinatorLayout(context, attrs, defStyle) {
     private val binding = TabPreviewBinding.inflate(LayoutInflater.from(context), this)
     private val thumbnailLoader = ThumbnailLoader(context.components.core.thumbnailStorage)
+    private val summarizationFeatureSettings = context.components.core.summarizeFeatureSettings
 
     private lateinit var mockToolbarView: View
     private val browserToolbarStore: BrowserToolbarStore by lazy(LazyThreadSafetyMode.NONE) {
@@ -576,7 +577,10 @@ class TabPreview @JvmOverloads constructor(
         ShortcutType.TRANSLATE -> ToolbarAction.Translate
         ShortcutType.HOMEPAGE -> ToolbarAction.Homepage
         ShortcutType.BACK -> ToolbarAction.Back
-        ShortcutType.SUMMARIZE -> ToolbarAction.Summarize
+        ShortcutType.SUMMARIZE -> when (summarizationFeatureSettings.canShowFeature) {
+            true -> ToolbarAction.Summarize
+            else -> ToolbarAction.NewTab
+        }
         ShortcutType.NONE -> null
     }
 }

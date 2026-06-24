@@ -151,9 +151,9 @@ import org.mozilla.fenix.components.toolbar.DisplayActions.NavigateBackLongClick
 import org.mozilla.fenix.components.toolbar.DisplayActions.NavigateForwardClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.NavigateForwardLongClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.RefreshClicked
-import org.mozilla.fenix.components.toolbar.DisplayActions.SummarizeClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.ShareClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.StopRefreshClicked
+import org.mozilla.fenix.components.toolbar.DisplayActions.SummarizeClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.TranslateClicked
 import org.mozilla.fenix.components.toolbar.PageEndActionsInteractions.ReaderModeClicked
 import org.mozilla.fenix.components.toolbar.PageOriginInteractions.OriginClicked
@@ -168,6 +168,7 @@ import org.mozilla.fenix.ext.directionsEq
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.summarization.SummarizationNavigator
+import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.ui.AccessPoint
 import org.mozilla.fenix.utils.Settings
@@ -210,6 +211,7 @@ class BrowserToolbarMiddlewareTest {
         every { events } returns nimbusEventsStore
     }
     private val settings = Settings(testContext)
+    private val summarizationFeatureSettings: SummarizationFeatureDiscoveryConfiguration = mockk()
     private val tabId = "test"
     private val tab: TabSessionState = mockk(relaxed = true) {
         every { id } returns tabId
@@ -227,6 +229,7 @@ class BrowserToolbarMiddlewareTest {
     fun setup() {
         appStore = spyk(AppStore())
         coEvery { bookmarksStorage.getBookmarksWithUrl(any()) } returns Result.success(listOf(mockk()))
+        every { summarizationFeatureSettings.canShowFeature } returns false
         settings.shouldUseBottomToolbar = false
         settings.shouldUseExpandedToolbar = false
         settings.isTabStripEnabled = false
@@ -3340,15 +3343,28 @@ class BrowserToolbarMiddlewareTest {
     @Test
     fun `GIVEN simple toolbar uses the summarize shortcut WHEN initializing toolbar THEN show Summarize in end browser actions`() = runTest(testDispatcher) {
         settings.toolbarSimpleShortcutKey = ShortcutType.SUMMARIZE.value
+        every { summarizationFeatureSettings.canShowFeature } returns true
 
         val toolbarStore = buildStore()
 
-        val summarizeButton = toolbarStore.state.displayState.browserActionsEnd[0] as ActionButtonRes
-        assertEquals(expectedSummarizeButton(), summarizeButton)
+        val shortcutButton = toolbarStore.state.displayState.browserActionsEnd[0] as ActionButtonRes
+        assertEquals(expectedSummarizeButton(), shortcutButton)
+    }
+
+    @Test
+    fun `GIVEN simple toolbar uses the summarize shortcut but the summarize functionality is disabled WHEN initializing toolbar THEN show New Tab in end browser actions`() = runTest(testDispatcher) {
+        settings.toolbarSimpleShortcutKey = ShortcutType.SUMMARIZE.value
+        every { summarizationFeatureSettings.canShowFeature } returns false
+
+        val toolbarStore = buildStore()
+
+        val shortcutButton = toolbarStore.state.displayState.browserActionsEnd[0] as ActionButtonRes
+        assertEquals(expectedNewTabButton(), shortcutButton)
     }
 
     @Test
     fun `WHEN the summarize button is clicked THEN attempt to start webpage summarization`() = runTest(testDispatcher) {
+        every { summarizationFeatureSettings.canShowFeature } returns true
         val middleware = buildMiddleware(summarizationNavigator = summarizationNavigator)
         val toolbarStore = buildStore(middleware)
 
@@ -3762,6 +3778,7 @@ class BrowserToolbarMiddlewareTest {
         clipboard: ClipboardHandler = this.clipboard,
         publicSuffixList: PublicSuffixList = this.publicSuffixList,
         settings: Settings = this.settings,
+        summarizationSettingsCache: SummarizationFeatureDiscoveryConfiguration = this.summarizationFeatureSettings,
         navController: NavController = this.navController,
         summarizationNavigator: SummarizationNavigator = this.summarizationNavigator,
         browsingModeManager: BrowsingModeManager = this.browsingModeManager,
@@ -3787,6 +3804,7 @@ class BrowserToolbarMiddlewareTest {
         clipboard = clipboard,
         publicSuffixList = publicSuffixList,
         settings = settings,
+        summarizationFeatureSettings = summarizationSettingsCache,
         navController = navController,
         summarizationNavigator = summarizationNavigator,
         browsingModeManager = browsingModeManager,
