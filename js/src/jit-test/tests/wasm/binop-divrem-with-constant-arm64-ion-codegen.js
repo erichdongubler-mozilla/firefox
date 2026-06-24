@@ -263,7 +263,6 @@ const i64_div_s = [
                 movk    x16, #0x5555, lsl #32
                 movk    x16, #0x5555, lsl #48
                 smulh   x0, x1, x16
-                sbfx    x0, x0, #0, #64
                 sub     x0, x0, x1, asr #63`,
   },
   {
@@ -299,7 +298,6 @@ const i64_div_s = [
                movk    x16, #0xc71c, lsl #32
                movk    x16, #0x1c71, lsl #48
                smulh   x0, x1, x16
-               sbfx    x0, x0, #0, #64
                sub     x0, x0, x1, asr #63`,
   },
   {
@@ -437,8 +435,7 @@ const i64_div_u = [
                mov     x16, #0xd101
                movk    x16, #0xf19c, lsl #16
                movk    x16, #0x3d30, lsl #32
-               umulh   x0, x1, x16
-               lsr     x0, x0, #0`,
+               umulh   x0, x1, x16`,
   },
 ];
 
