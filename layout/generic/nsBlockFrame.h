@@ -881,13 +881,8 @@ class nsBlockFrame : public nsContainerFrame {
    */
   void MarkLineDirty(LineIterator aLine, const nsLineList* aLineList);
 
-  // Determines if the given line is the last line in a run of inline lines.
-  // Used for text-align-last.
-  bool IsLastInlineLine(LineIterator aLine);
-
-  // Determines if the given line is the last formatted line of the block.
-  // Used for text-box-trim.
-  bool IsLastFormattedLine(LineIterator aLine);
+  // XXX where to go
+  bool IsLastLine(BlockReflowState& aState, LineIterator aLine);
 
   void DeleteLine(BlockReflowState& aState, nsLineList::iterator aLine,
                   nsLineList::iterator aLineEnd);
