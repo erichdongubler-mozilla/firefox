@@ -720,6 +720,18 @@ async function gotoPref(
   // Updating the hash (below) or changing the selected category
   // will re-enter gotoPref.
   if (gLastCategory.category == category && !subcategory) {
+    document.dispatchEvent(
+      /** @type {PaneShownEvent} */ (
+        new CustomEvent("paneshown", {
+          bubbles: true,
+          cancelable: true,
+          detail: {
+            category,
+            subcategory,
+          },
+        })
+      )
+    );
     return;
   }
 

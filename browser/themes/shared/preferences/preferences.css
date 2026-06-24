@@ -999,6 +999,16 @@ dialog > .sync-engines-list + hbox {
   margin-top: 0.3em;
 }
 
+#search-results-back-button {
+  margin-block: var(--space-small) var(--space-xxsmall);
+  margin-inline: 0 var(--space-small);
+}
+
+#search-results-back-button:dir(rtl) {
+  /* RTL: flip the arrow icon */
+  transform: scaleX(-1);
+}
+
 #search-tooltip-container {
   position: relative;
   top: 0;
