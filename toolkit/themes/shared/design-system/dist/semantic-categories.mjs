@@ -1191,6 +1191,10 @@ export const tokensTable = {
     },
     { value: "var(--color-violet-30)", name: "--promo-border-color-vibrant" },
     {
+      value: "var(--border-color-interactive)",
+      name: "--segmented-control-border-color",
+    },
+    {
       value: "var(--button-border-color-hover)",
       name: "--select-border-color-hover",
     },
@@ -1267,6 +1271,11 @@ export const tokensTable = {
       name: "--page-nav-button-border-radius-focused",
     },
     { value: "var(--border-radius-medium)", name: "--promo-border-radius" },
+    {
+      value:
+        "calc(var(--button-border-radius) + var(--focus-outline-width) + var(--focus-outline-offset) + var(--border-width))",
+      name: "--segmented-control-border-radius",
+    },
     { value: "var(--button-border-radius)", name: "--select-border-radius" },
     { value: "var(--border-radius-circle)", name: "--toggle-border-radius" },
     {
@@ -2008,6 +2017,7 @@ export const tokensTable = {
       value: "var(--reorderable-list-indicator-size)",
       name: "--reorderable-list-indicator-margin",
     },
+    { value: "var(--space-xsmall)", name: "--segmented-control-padding" },
     { value: "1px", name: "--toggle-dot-margin" },
     { value: "calc(-1 * var(--dimension-2))", name: "--toggle-inset" },
     { value: "var(--space-large)", name: "--box-padding" },
@@ -2633,6 +2643,10 @@ export const tokensTable = {
     {
       value: "var(--promo-border-width) solid var(--promo-border-color)",
       name: "--promo-border",
+    },
+    {
+      value: "var(--border-width) solid var(--segmented-control-border-color)",
+      name: "--segmented-control-border",
     },
     { value: "var(--button-border)", name: "--select-border" },
     {
@@ -4764,6 +4778,12 @@ export const variableLookupTable = {
   "reorderable-list-indicator-background-color": "var(--color-accent-primary)",
   "reorderable-list-indicator-margin": "var(--reorderable-list-indicator-size)",
   "reorderable-list-indicator-size": "2px",
+  "segmented-control-border":
+    "var(--border-width) solid var(--segmented-control-border-color)",
+  "segmented-control-border-color": "var(--border-color-interactive)",
+  "segmented-control-border-radius":
+    "calc(var(--button-border-radius) + var(--focus-outline-width) + var(--focus-outline-offset) + var(--border-width))",
+  "segmented-control-padding": "var(--space-xsmall)",
   "select-background-color": "var(--button-background-color)",
   "select-background-color-hover": "var(--button-background-color-hover)",
   "select-background-color-disabled": "var(--button-background-color-disabled)",
