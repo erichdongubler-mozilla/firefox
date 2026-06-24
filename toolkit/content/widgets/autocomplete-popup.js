@@ -464,7 +464,10 @@
         let comment = controller.getCommentAt(this._currentIndex);
         let image = controller.getImageAt(this._currentIndex);
 
-        const parsedComment = comment.length ? JSON.parse(comment) : null;
+        let parsedComment = null;
+        try {
+          parsedComment = comment?.length ? JSON.parse(comment) : null;
+        } catch {}
 
         // Reuse the existing row item for an existing result if possible.
         if (!this.richlistbox.children[this._currentIndex]) {
