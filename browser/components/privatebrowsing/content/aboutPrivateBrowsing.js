@@ -103,6 +103,7 @@ async function renderPromo({
       promoTitle,
       promoTitleEnabled,
       promoLinkText,
+      promoLinkType,
       promoHeader,
       promoImageLarge,
       onLinkClick,
@@ -147,22 +148,29 @@ async function resolvePromoText(value) {
  * Populates and reveals the Nova <moz-promo> layout. Regardless of the
  * promoSectionStyle requested by the message, the Nova promo is always shown
  * below the search box so the Nova design is used consistently.
+ *
+ * The message's promoLinkType decides which call to action is shown: a link
+ * for navigational actions and a button otherwise. The unused element is
+ * removed so its slot stays empty.
  */
 async function renderNovaPromo({
   container,
   promoTitle,
   promoTitleEnabled,
   promoLinkText,
+  promoLinkType,
   promoHeader,
   promoImageLarge,
   onLinkClick,
 }) {
   const promoEl = container.querySelector("#nova-promo");
   const linkEl = container.querySelector("#nova-promo-link");
+  const buttonEl = container.querySelector("#nova-promo-button");
 
-  // moz-promo is loaded as a deferred module, so it may not be upgraded yet.
-  // Wait for it before setting its reactive properties.
+  // moz-promo (and the moz-button it slots) is loaded as a deferred module, so
+  // it may not be upgraded yet. Wait for it before setting reactive properties.
   await customElements.whenDefined("moz-promo");
+  await customElements.whenDefined("moz-button");
 
   if (promoHeader) {
     promoEl.heading = await resolvePromoText(promoHeader);
@@ -174,8 +182,17 @@ async function renderNovaPromo({
     promoEl.imageSrc = promoImageLarge;
   }
 
-  linkEl.textContent = await resolvePromoText(promoLinkText);
-  linkEl.addEventListener("click", onLinkClick);
+  const ctaText = await resolvePromoText(promoLinkText);
+  const useButton = promoLinkType === "button";
+  const ctaEl = useButton ? buttonEl : linkEl;
+  (useButton ? linkEl : buttonEl).remove();
+
+  if (useButton) {
+    ctaEl.label = ctaText;
+  } else {
+    ctaEl.textContent = ctaText;
+  }
+  ctaEl.addEventListener("click", onLinkClick);
 
   const infoBorderEl = document.querySelector(".info-border");
   infoBorderEl?.insertAdjacentElement("beforebegin", container);

@@ -7,7 +7,7 @@ const PROMO_TITLE = "Nova promo body text";
 const PROMO_LINK_TEXT = "Nova learn more";
 const PROMO_IMAGE = "chrome://browser/content/assets/cookie-banners-begone.svg";
 
-function novaPromoMessage() {
+function novaPromoMessage(contentOverrides = {}) {
   return {
     id: `PB_NEWTAB_NOVA_PROMO_${Math.random()}`,
     template: "pb_newtab",
@@ -27,6 +27,7 @@ function novaPromoMessage() {
           type: "OPEN_URL",
         },
       },
+      ...contentOverrides,
     },
     // Priority ensures this message is picked over the ones in
     // OnboardingMessageProvider.
@@ -89,6 +90,11 @@ add_task(async function test_nova_promo_renders() {
         expected.PROMO_LINK_TEXT,
         "Promo link text is set"
       );
+      is(
+        content.document.getElementById("nova-promo-button"),
+        null,
+        "The button call to action is removed for a link promo"
+      );
 
       // Regardless of the requested "bottom" section style, the Nova promo is
       // always shown below the search box.
@@ -127,6 +133,50 @@ add_task(async function test_nova_promo_link_dispatches_action() {
 
   let newTab = await newTabOpened;
   ok(newTab, "Clicking the Nova promo link dispatched the OPEN_URL action");
+
+  BrowserTestUtils.removeTab(newTab);
+  await BrowserTestUtils.closeWindow(win);
+  await doExperimentCleanup();
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_nova_promo_button_renders_and_dispatches_action() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.nova.enabled", true]],
+  });
+  let doExperimentCleanup = await setupMSExperimentWithMessage(
+    novaPromoMessage({ promoLinkType: "button" })
+  );
+
+  let { win, tab } = await openTabAndWaitForRender();
+
+  await SpecialPowers.spawn(tab, [PROMO_LINK_TEXT], async function (linkText) {
+    const buttonEl = content.document.getElementById("nova-promo-button");
+    ok(buttonEl, "Button call to action is rendered for a button promo");
+    is(
+      content.document.getElementById("nova-promo-link"),
+      null,
+      "The link call to action is removed for a button promo"
+    );
+    // moz-button reflects its label to an attribute, which is visible through
+    // the content task's Xray wrapper unlike the underlying JS property.
+    await ContentTaskUtils.waitForCondition(
+      () => buttonEl.getAttribute("label") === linkText,
+      "Promo button label is set"
+    );
+  });
+
+  let newTabOpened = BrowserTestUtils.waitForNewTab(
+    win.gBrowser,
+    "https://example.com/"
+  );
+
+  await SpecialPowers.spawn(tab, [], async function () {
+    content.document.getElementById("nova-promo-button").click();
+  });
+
+  let newTab = await newTabOpened;
+  ok(newTab, "Clicking the Nova promo button dispatched the OPEN_URL action");
 
   BrowserTestUtils.removeTab(newTab);
   await BrowserTestUtils.closeWindow(win);
