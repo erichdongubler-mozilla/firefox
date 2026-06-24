@@ -1664,11 +1664,12 @@ export var UrlbarUtils = {
       }
     }
     let context = new UrlbarQueryContext(options);
-    await urlbarInput.controller.manager.startQuery(context);
-    if (!context.heuristicResult) {
+    let heuristicResult =
+      await urlbarInput.controller.getHeuristicResult(context);
+    if (!heuristicResult) {
       throw new Error("There should always be an heuristic result");
     }
-    return context.heuristicResult;
+    return heuristicResult;
   },
 
   /**

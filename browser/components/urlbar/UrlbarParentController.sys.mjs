@@ -144,6 +144,88 @@ export class UrlbarParentController {
   }
 
   /**
+   * Returns the view template a dynamic result's provider uses to build its
+   * row. Mediates the view's access to the (parent-process) provider.
+   *
+   * @param {UrlbarResult} result The dynamic result.
+   * @returns {object} The view template.
+   */
+  getViewTemplate(result) {
+    return this.manager
+      .getProvider(result.providerName)
+      .getViewTemplate(result);
+  }
+
+  /**
+   * Returns the view update a dynamic result's provider produces for the
+   * given node ids. Mediates the view's access to the (parent-process)
+   * provider.
+   *
+   * @param {UrlbarResult} result The dynamic result.
+   * @param {object} idsByName A map from node names to element ids.
+   * @returns {Promise<object>} The view update.
+   */
+  getViewUpdate(result, idsByName) {
+    return this.manager
+      .getProvider(result.providerName)
+      .getViewUpdate(result, idsByName);
+  }
+
+  /**
+   * Notifies a result's provider that the result is about to be selected.
+   * Mediates the view's access to the (parent-process) provider.
+   *
+   * @param {UrlbarResult} result The result being selected.
+   * @param {Element} element The selected element.
+   */
+  onBeforeSelection(result, element) {
+    this.manager
+      .getProvider(result?.providerName)
+      ?.tryMethod("onBeforeSelection", result, element);
+  }
+
+  /**
+   * Notifies a result's provider that the result was selected. Mediates the
+   * view's access to the (parent-process) provider.
+   *
+   * @param {UrlbarResult} result The selected result.
+   * @param {Element} element The selected element.
+   */
+  onSelection(result, element) {
+    this.manager
+      .getProvider(result?.providerName)
+      ?.tryMethod("onSelection", result, element);
+  }
+
+  /**
+   * Returns the result menu commands a result's provider offers, if any.
+   * Mediates the view's access to the (parent-process) provider.
+   *
+   * @param {UrlbarResult} result The result.
+   * @param {boolean} isPrivate Whether the query is private.
+   * @returns {?UrlbarResultCommand[]} The commands, or null/undefined.
+   */
+  getResultCommands(result, isPrivate) {
+    return this.manager
+      .getProvider(result.providerName)
+      ?.tryMethod("getResultCommands", result, isPrivate);
+  }
+
+  /**
+   * Runs a one-off query and returns its heuristic result. Mediates the
+   * input's access to the (parent-process) providers manager, e.g. for
+   * paste-and-go and drop-and-go where the input needs the heuristic result
+   * without an open view.
+   *
+   * @param {UrlbarQueryContext} queryContext The query context to run.
+   * @returns {Promise<UrlbarResult>} The heuristic result.
+   */
+  async getHeuristicResult(queryContext) {
+    await this.manager.startQuery(queryContext);
+    return queryContext.heuristicResult;
+  }
+
+  /**
    * Takes a query context and starts the query based on the user input.
    *
    * @param {UrlbarQueryContext} queryContext The query details.
