@@ -1912,8 +1912,8 @@ nsresult HappyEyeballsConnectionAttempt::OnHTTPSRecord(nsIDNSRecord* aRecord,
   nsCOMPtr<nsIDNSHTTPSSVCRecord> httpsRecord = do_QueryInterface(aRecord);
   if (!httpsRecord || NS_FAILED(status)) {
     nsTArray<happy_eyeballs::ServiceInfo> emptyArray;
-    (void)happy_eyeballs_process_dns_response_https(mHappyEyeballs, aId,
-                                                    &emptyArray);
+    (void)happy_eyeballs_process_dns_response_https(
+        mHappyEyeballs, aId, &emptyArray, mDnsMetadata.mIsTRR);
     return ProcessHappyEyeballsOutput();
   }
 
@@ -1937,7 +1937,7 @@ nsresult HappyEyeballsConnectionAttempt::OnHTTPSRecord(nsIDNSRecord* aRecord,
   if (svcbRecords.IsEmpty()) {
     nsTArray<happy_eyeballs::ServiceInfo> emptyArray;
     (void)happy_eyeballs_process_dns_response_https(mHappyEyeballs, aId,
-                                                    &emptyArray);
+                                                    &emptyArray, httpsIsTRR);
     return ProcessHappyEyeballsOutput();
   }
 
@@ -2024,7 +2024,7 @@ nsresult HappyEyeballsConnectionAttempt::OnHTTPSRecord(nsIDNSRecord* aRecord,
   }
 
   (void)happy_eyeballs_process_dns_response_https(mHappyEyeballs, aId,
-                                                  &serviceInfos);
+                                                  &serviceInfos, httpsIsTRR);
   return ProcessHappyEyeballsOutput();
 }
 

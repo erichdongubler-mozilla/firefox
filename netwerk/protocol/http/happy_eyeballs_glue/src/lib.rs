@@ -175,6 +175,7 @@ pub unsafe extern "C" fn happy_eyeballs_process_dns_response_https(
     he: *mut HappyEyeballs,
     id: u64,
     service_infos: *const ThinVec<ServiceInfo>,
+    is_trr: bool,
 ) -> nsresult {
     let Some(he) = (unsafe { he.as_mut() }) else {
         debug_assert!(false, "unexpected null he pointer");
@@ -186,7 +187,7 @@ pub unsafe extern "C" fn happy_eyeballs_process_dns_response_https(
         return NS_ERROR_INVALID_ARG;
     };
 
-    he.process_dns_response_https(id, service_infos)
+    he.process_dns_response_https(id, service_infos, is_trr)
 }
 
 #[no_mangle]
@@ -316,6 +317,7 @@ impl HappyEyeballs {
         &mut self,
         id: u64,
         service_infos: &ThinVec<ServiceInfo>,
+        is_trr: bool,
     ) -> nsresult {
         let id: happy_eyeballs::Id = id.into();
         let mut infos = Vec::new();
@@ -386,7 +388,7 @@ impl HappyEyeballs {
         }
 
         self.profiler.dns_response_https(id, &infos);
-        self.metrics.dns_response_https(id, &infos);
+        self.metrics.dns_response_https(id, &infos, is_trr);
 
         let result = happy_eyeballs::DnsResult::Https(Ok(infos));
         let input = happy_eyeballs::Input::DnsResult { id, result };
