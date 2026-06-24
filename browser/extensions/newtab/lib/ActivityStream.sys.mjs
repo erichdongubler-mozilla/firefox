@@ -1444,6 +1444,27 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.privacy.enabled",
+    {
+      title: "Enables the privacy widget",
+      value: true,
+    },
+  ],
+  [
+    "widgets.system.privacy.enabled",
+    {
+      title: "Enables the privacy widget experiment in Nimbus",
+      value: false,
+    },
+  ],
+  [
+    "widgets.privacy.size",
+    {
+      title: "Size of the privacy widget (medium or large)",
+      value: "",
+    },
+  ],
+  [
     "widgets.feedback.enabled",
     {
       title: "Enables the feedback link in the widgets container",

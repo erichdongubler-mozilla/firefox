@@ -270,6 +270,8 @@ newtab-custom-widget-clock-toggle =
   .label = Clock
 newtab-custom-widget-sports-toggle2 =
   .label = Sports
+newtab-custom-widget-privacy-toggle =
+  .label = Privacy
 newtab-custom-widget-section-title = Widgets
 newtab-custom-widget-section-toggle =
     .label = Widgets
@@ -1281,6 +1283,10 @@ home-prefs-sports-widget-header =
 home-prefs-clocks-header =
     .label = Clock
 
+# Privacy is a widget on New Tab that shows tracking protection activity.
+home-prefs-privacy-header =
+    .label = Privacy
+
 home-prefs-mission-message2 =
     .message = Our sponsors support our mission to build a better web.
 
@@ -1361,3 +1367,8 @@ home-prefs-support-firefox-header-srd =
     .label = Support { -brand-product-name }
 
 home-prefs-mission-message-learn-more-link-srd = Find out how
+
+## Strings for the Privacy widget
+
+# Context menu item linking to more information about the Privacy widget.
+newtab-privacy-menu-learn-more = Learn more

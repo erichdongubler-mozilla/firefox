@@ -9455,6 +9455,76 @@ dialog:dir(rtl)::after {
   padding-block-start: 0;
 }
 
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+.privacy {
+  --widget-size-transition-duration: 180ms;
+  --widget-size-transition-easing: ease;
+  background: var(--newtab-background-card);
+  transition: opacity 0.2s ease;
+  padding: var(--space-medium);
+  border-radius: var(--border-radius-large);
+  box-shadow: var(--box-shadow-level-2);
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: height var(--widget-size-transition-duration) var(--widget-size-transition-easing);
+}
+.privacy:hover {
+  background: var(--newtab-background-color-secondary);
+}
+.privacy.small-widget, .privacy.medium-widget {
+  height: var(--newtab-card-height-small);
+}
+.privacy.large-widget {
+  height: var(--newtab-card-height);
+}
+.privacy:hover, .privacy:focus-within {
+  outline: 1px solid var(--border-color-deemphasized);
+  box-shadow: var(--card-box-shadow-hover);
+}
+@media (prefers-reduced-motion: reduce) {
+  .privacy {
+    transition: none;
+  }
+}
+.privacy.medium-widget {
+  grid-row: span 2;
+}
+.privacy.large-widget {
+  grid-row: span 4;
+}
+
+.privacy-title-wrapper {
+  inset-block-start: var(--space-small);
+  inset-inline-end: var(--space-small);
+  inset-inline-start: auto;
+  margin-block-end: 0;
+  position: absolute;
+  width: auto;
+}
+
+.privacy-context-menu-wrapper {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.privacy:hover .privacy-context-menu-wrapper,
+.privacy:focus-within .privacy-context-menu-wrapper {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.privacy-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+}
+
 .weather-forecast-widget {
   background: var(--newtab-background-card);
   transition: opacity 0.2s ease;

@@ -48,6 +48,9 @@ export class ContentSection extends React.PureComponent {
         case "WIDGET_CLOCKS":
           widgetName = "clocks";
           break;
+        case "WIDGET_PRIVACY":
+          widgetName = "privacy";
+          break;
       }
 
       if (widgetName) {
@@ -172,6 +175,7 @@ export class ContentSection extends React.PureComponent {
       mayHaveListsWidget,
       mayHaveSportsWidget,
       mayHaveClocksWidget,
+      mayHavePrivacyWidget,
       mayHaveWeatherForecast,
       openPreferences,
       wallpapersUserEnabled,
@@ -197,7 +201,8 @@ export class ContentSection extends React.PureComponent {
       showInferredPersonalizationEnabled,
       topSitesRowsCount,
     } = enabledSections;
-    const { timerEnabled, listsEnabled, clocksEnabled } = enabledWidgets;
+    const { timerEnabled, listsEnabled, clocksEnabled, privacyEnabled } =
+      enabledWidgets;
 
     // @nova-cleanup(remove-conditional): Remove novaEnabled check and newtab-custom-stories-toggle, default to newtab-recommended-stories-toggle
     let pocketToggleL10nId;
@@ -295,6 +300,20 @@ export class ContentSection extends React.PureComponent {
                       data-preference="widgets.clocks.enabled"
                       data-event-source="WIDGET_CLOCKS"
                       data-l10n-id="newtab-custom-widget-clock-toggle"
+                    />
+                  </div>
+                )}
+
+                {/* Privacy */}
+                {mayHavePrivacyWidget && (
+                  <div id="privacy-widget-section" className="section">
+                    <moz-toggle
+                      id="privacy-toggle"
+                      pressed={privacyEnabled || null}
+                      ontoggle={this.onPreferenceSelect}
+                      data-preference="widgets.privacy.enabled"
+                      data-event-source="WIDGET_PRIVACY"
+                      data-l10n-id="newtab-custom-widget-privacy-toggle"
                     />
                   </div>
                 )}
@@ -412,6 +431,7 @@ export class ContentSection extends React.PureComponent {
                             mayHaveListsWidget={mayHaveListsWidget}
                             mayHaveSportsWidget={mayHaveSportsWidget}
                             mayHaveClocksWidget={mayHaveClocksWidget}
+                            mayHavePrivacyWidget={mayHavePrivacyWidget}
                             mayHaveWeatherForecast={mayHaveWeatherForecast}
                             weatherDisplay={weatherDisplay}
                             setPref={setPref}

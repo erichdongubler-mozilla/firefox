@@ -208,6 +208,11 @@ function Widgets() {
       prefs,
       widgetsEnabled
     ),
+    privacy: isWidgetEnabled(
+      WIDGET_REGISTRY.find(w => w.id === "privacy"),
+      prefs,
+      widgetsEnabled
+    ),
   };
 
   const widgetOrder = resolveWidgetOrder(prefs);

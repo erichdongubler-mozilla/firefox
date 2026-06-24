@@ -22,6 +22,7 @@ function WidgetsManagementPanel({
   mayHaveListsWidget,
   mayHaveSportsWidget,
   mayHaveClocksWidget,
+  mayHavePrivacyWidget,
   setPref,
 }) {
   const prefs = useSelector(state => state.Prefs.values);
@@ -70,6 +71,9 @@ function WidgetsManagementPanel({
         case "WIDGET_CLOCKS":
           widgetName = "clocks";
           break;
+        case "WIDGET_PRIVACY":
+          widgetName = "privacy";
+          break;
       }
 
       if (widgetName) {
@@ -96,8 +100,13 @@ function WidgetsManagementPanel({
   };
 
   const { weatherEnabled } = enabledSections;
-  const { timerEnabled, listsEnabled, sportsWidgetEnabled, clocksEnabled } =
-    enabledWidgets;
+  const {
+    timerEnabled,
+    listsEnabled,
+    sportsWidgetEnabled,
+    clocksEnabled,
+    privacyEnabled,
+  } = enabledWidgets;
   const isRTL = typeof document !== "undefined" && document.dir === "rtl";
   const arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
 
@@ -185,6 +194,18 @@ function WidgetsManagementPanel({
                     data-preference="widgets.clocks.enabled"
                     data-event-source="WIDGET_CLOCKS"
                     data-l10n-id="newtab-custom-widget-clock-toggle"
+                  />
+                </div>
+              )}
+              {mayHavePrivacyWidget && (
+                <div id="privacy-widget-section" className="section">
+                  <moz-toggle
+                    id="privacy-toggle"
+                    pressed={privacyEnabled || null}
+                    ontoggle={onToggleWidget}
+                    data-preference="widgets.privacy.enabled"
+                    data-event-source="WIDGET_PRIVACY"
+                    data-l10n-id="newtab-custom-widget-privacy-toggle"
                   />
                 </div>
               )}
