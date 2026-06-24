@@ -7466,7 +7466,6 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
                             &mut context,
                             declaration,
                             priority,
-                            &mut attribute_tracker,
                         );
                     }
                 }
