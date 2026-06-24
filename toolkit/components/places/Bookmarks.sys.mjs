@@ -2298,16 +2298,11 @@ function insertBookmarkTree(items, source, parent, urls, lastAddedForParent) {
         );
 
         // Remove stale tombstones for new items.
-        for (let chunk of lazy.PlacesUtils.chunkArray(
-          items,
-          db.variableLimit
-        )) {
-          await db.executeCached(
-            `DELETE FROM moz_bookmarks_deleted
-             WHERE guid IN (${lazy.PlacesUtils.sqlBindPlaceholders(chunk)})`,
-            chunk.map(item => item.guid)
-          );
-        }
+        await db.executeCached(
+          `DELETE FROM moz_bookmarks_deleted
+             WHERE guid IN carray(:guids)`,
+          { guids: items.map(item => item.guid) }
+        );
 
         await setAncestorsLastModified(
           db,
