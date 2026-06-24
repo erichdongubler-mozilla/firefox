@@ -17,7 +17,7 @@ from mozfile import which
 from mozpack.files import FileListFinder
 from packaging.version import Version
 
-MINIMUM_SUPPORTED_JJ_VERSION = Version("0.28")
+MINIMUM_SUPPORTED_JJ_VERSION = Version("0.33")
 
 from mozversioncontrol.errors import (
     CannotDeleteFromRootOfRepositoryException,
@@ -733,33 +733,25 @@ class JujutsuRepository(Repository):
 
             # This enables watchman if it's installed.
             if which("watchman"):
-                # Use appropriate config keys based on jj version. 0.32.0+ renamed these config keys
-                if jj_version >= Version("0.32"):
-                    # Remove deprecated config keys to prevent warnings
-                    for key in [
-                        "core.fsmonitor",
-                        "core.watchman.register-snapshot-trigger",
-                    ]:
-                        self._run(
-                            "config",
-                            "unset",
-                            "--repo",
-                            key,
-                            return_codes=[0, 1],
-                            stderr=subprocess.DEVNULL,
-                        )
+                # Remove deprecated config keys (renamed in 0.32.0) to prevent warnings
+                for key in [
+                    "core.fsmonitor",
+                    "core.watchman.register-snapshot-trigger",
+                ]:
+                    self._run(
+                        "config",
+                        "unset",
+                        "--repo",
+                        key,
+                        return_codes=[0, 1],
+                        stderr=subprocess.DEVNULL,
+                    )
 
-                    # Set 0.32.0+ config keys
-                    self._set_default_if_missing("fsmonitor.backend", "watchman")
-                    self._set_default_if_missing(
-                        "fsmonitor.watchman.register-snapshot-trigger", False
-                    )
-                else:
-                    # Set old config keys
-                    self._set_default_if_missing("core.fsmonitor", "watchman")
-                    self._set_default_if_missing(
-                        "core.watchman.register-snapshot-trigger", False
-                    )
+                # Set 0.32.0+ config keys
+                self._set_default_if_missing("fsmonitor.backend", "watchman")
+                self._set_default_if_missing(
+                    "fsmonitor.watchman.register-snapshot-trigger", False
+                )
 
                 print("Checking if watchman is enabled...")
                 output = self._run_read_only("debug", "watchman", "status")
