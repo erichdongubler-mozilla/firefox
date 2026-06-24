@@ -2749,18 +2749,12 @@ function removeBookmarks(items, options) {
           }
         }
 
-        for (let chunk of lazy.PlacesUtils.chunkArray(
-          items,
-          db.variableLimit
-        )) {
-          // Remove the bookmarks.
-          await db.executeCached(
-            `DELETE FROM moz_bookmarks
-             WHERE guid IN (${lazy.PlacesUtils.sqlBindPlaceholders(chunk)})`,
-            chunk.map(item => item.guid)
-          );
-        }
-
+        // Remove the bookmarks.
+        await db.executeCached(
+          `DELETE FROM moz_bookmarks
+           WHERE guid IN carray(:guids)`,
+          { guids: items.map(item => item.guid) }
+        );
         for (let [parentGuid, parentId] of parents.entries()) {
           // Now recalculate the positions.
           await db.executeCached(
