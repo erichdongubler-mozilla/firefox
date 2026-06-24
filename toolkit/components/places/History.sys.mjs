@@ -1400,13 +1400,11 @@ var removeByFilter = async function (db, filter, onResult = null) {
   await db.executeTransaction(async function () {
     // 4. Actually remove visits
     let pageIds = pages.map(p => p.id);
-    for (let chunk of lazy.PlacesUtils.chunkArray(pageIds, db.variableLimit)) {
-      await db.execute(
-        `DELETE FROM moz_historyvisits
-         WHERE place_id IN(${lazy.PlacesUtils.sqlBindPlaceholders(chunk)})`,
-        chunk
-      );
-    }
+    await db.executeCached(
+      `DELETE FROM moz_historyvisits
+         WHERE place_id IN carray(:pageIds)`,
+      { pageIds }
+    );
     // 5. Clean up and notify
     await cleanupPages(db, pages);
   });
