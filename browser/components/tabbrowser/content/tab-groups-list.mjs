@@ -7,6 +7,7 @@ import {
   nothing,
   repeat,
   styleMap,
+  classMap,
 } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 // eslint-disable-next-line import/no-unassigned-import
@@ -106,10 +107,15 @@ class TabGroupsList extends MozLitElement {
         @contextmenu=${e => this.#handleContextMenu(e, isOpen)}
       >
         <img
-          class="tab-group-row-icon${isOpen ? "" : " tab-group-icon-closed"}"
+          class=${classMap({
+            "tab-group-row-icon": true,
+            "tab-group-icon-closed": !isOpen,
+          })}
           src="chrome://browser/skin/tabbrowser/tab-group-chicklet.svg"
           width="16"
           height="16"
+          alt=""
+          role="presentation"
         />
         <span class="tab-group-row-label">${groupName}</span>
       </button>
