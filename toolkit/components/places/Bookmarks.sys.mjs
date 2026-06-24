@@ -3266,18 +3266,15 @@ function insertTombstones(db, itemsRemoved, syncChangeDelta) {
   if (!syncedItems.length) {
     return Promise.resolve();
   }
-  let dateRemoved = lazy.PlacesUtils.toPRTime(Date.now());
-  let valuesTable = syncedItems
-    .map(
-      item => `(
-    ${JSON.stringify(item.guid)},
-    ${dateRemoved}
-  )`
-    )
-    .join(",");
-  return db.execute(`
-    INSERT INTO moz_bookmarks_deleted (guid, dateRemoved)
-    VALUES ${valuesTable}`);
+
+  return db.executeCached(
+    `INSERT INTO moz_bookmarks_deleted (guid, dateRemoved)
+     SELECT value, :time FROM carray(:guids)`,
+    {
+      time: lazy.PlacesUtils.toPRTime(Date.now()),
+      guids: syncedItems.map(item => item.guid),
+    }
+  );
 }
 
 // Bumps the change counter for all bookmarks with URLs referenced in removed
