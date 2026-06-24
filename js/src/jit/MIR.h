@@ -9404,6 +9404,11 @@ class MCanonicalizeNaN : public MUnaryInstruction, public NoTypePolicy::Data {
 
   bool canProduceFloat32() const override { return type() == MIRType::Float32; }
 
+  [[nodiscard]] bool writeRecoverData(
+      CompactBufferWriter& writer) const override;
+
+  bool canRecoverOnBailout() const override { return true; }
+
   ALLOW_CLONE(MCanonicalizeNaN)
 };
 
