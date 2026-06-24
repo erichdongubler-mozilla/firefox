@@ -4,17 +4,18 @@
 /*---
 esid: sec-iterator.prototype.includes
 description: >
-  Large integral Number skippedElements values (above Number.MAX_SAFE_INTEGER) are accepted
+  skippedElements of Number.MAX_SAFE_INTEGER is accepted
 features: [iterator-includes]
 ---*/
 
 let returnCalls = 0;
-let counter = 0;
+let nextCalls = 0;
 let iter = {
   __proto__: Iterator.prototype,
   next() {
-    if (counter < 10) {
-      return { done: false, value: counter++ };
+    ++nextCalls;
+    if (nextCalls === 1) {
+      return { done: false, value: 0 };
     }
     return { done: true, value: undefined };
   },
@@ -24,7 +25,8 @@ let iter = {
   },
 };
 
-assert.sameValue(iter.includes(1, 2 ** 53 + 4), false);
+assert.sameValue(iter.includes(0, Number.MAX_SAFE_INTEGER), false);
 assert.sameValue(returnCalls, 0);
+assert.sameValue(nextCalls, 2);
 
 reportCompare(0, 0);
