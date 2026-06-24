@@ -38,10 +38,26 @@ export async function uploadProfileArtifact(
   profileName = testName,
   testRunning = true
 ) {
-  let filename = `profile_${profileName.replace(/.*\//, "")}.json`;
+  let basename = profileName.replace(/.*\//, "");
+  let uploadDir = Services.env.get("MOZ_UPLOAD_DIR");
   let message;
   try {
-    let path = PathUtils.join(Services.env.get("MOZ_UPLOAD_DIR"), filename);
+    // The same test can fail more than once in a run (it was retried, or it is
+    // referenced from several manifests), reusing the same upload directory.
+    // Don't overwrite an earlier profile: each run's log message points at the
+    // file it wrote, and the failures may differ, so every one is worth keeping.
+    let filename = `profile_${basename}.json`;
+    let path = PathUtils.join(uploadDir, filename);
+    for (let i = 2; await IOUtils.exists(path); ++i) {
+      // Insert the counter before the file extension (so a ".js" test's profile
+      // still ends in ".js.json", which Treeherder requires) or append it when
+      // there is no extension. The extension must be optional: an extension-less
+      // name (e.g. a shutdown profile) would otherwise be left unchanged, so the
+      // path would never differ and this loop would spin forever.
+      filename = `profile_${basename.replace(/(\.\w+)?$/, (m, ext = "") => `-${i}${ext}`)}.json`;
+      path = PathUtils.join(uploadDir, filename);
+    }
+
     if (Services.startup.shuttingDown) {
       // A multi-process gather would hang waiting on the child processes that
       // are blocking shutdown; dump just this process synchronously instead.
