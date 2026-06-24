@@ -1244,19 +1244,11 @@ function SportsWidget(prevState = INITIAL_STATE.SportsWidget, action) {
         ...prevState,
         followedOnly: { ...prevState.followedOnly, ...action.data },
       };
-    case at.WIDGETS_SPORTS_WATCH_LIVE_REQUEST: {
-      // Preserve any previously-fetched payload so a re-request (e.g. the modal
-      // refreshing links on open) doesn't drop the data the "Watch live" entry
-      // point is gated on. Only show the loading state when nothing is cached.
-      const existingWatchLiveData = prevState.watchLive?.data ?? null;
+    case at.WIDGETS_SPORTS_WATCH_LIVE_REQUEST:
       return {
         ...prevState,
-        watchLive: {
-          loaded: !!existingWatchLiveData,
-          data: existingWatchLiveData,
-        },
+        watchLive: { loaded: false, data: null },
       };
-    }
     case at.WIDGETS_SPORTS_WATCH_LIVE_SET:
       return {
         ...prevState,
