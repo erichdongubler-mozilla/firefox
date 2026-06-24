@@ -588,28 +588,6 @@ HappyEyeballsConnectionAttempt::SetupDnsFlags(
       break;
   }
 
-  // Deal with IP hints later
-  /*if (ent->mConnInfo->HasIPHintAddress()) {
-    nsresult rv;
-    nsCOMPtr<nsIDNSService> dns;
-    dns = mozilla::components::DNS::Service(&rv);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    // The spec says: "If A and AAAA records for TargetName are locally
-    // available, the client SHOULD ignore these hints.", so we check if the DNS
-    // record is in cache before setting USE_IP_HINT_ADDRESS.
-    nsCOMPtr<nsIDNSRecord> record;
-    rv = dns->ResolveNative(
-        mPrimaryTransport.mHost, nsIDNSService::RESOLVE_OFFLINE,
-        mConnInfo->GetOriginAttributes(), getter_AddRefs(record));
-    if (NS_FAILED(rv) || !record) {
-      LOG(("Setting Socket to use IP hint address"));
-      dnsFlags |= nsIDNSService::RESOLVE_IP_HINT;
-    }
-  }*/
-
   dnsFlags |=
       nsIDNSService::GetFlagsFromTRRMode(NS_HTTP_TRR_MODE_FROM_FLAGS(mCaps));
 
