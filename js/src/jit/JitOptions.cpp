@@ -137,6 +137,9 @@ DefaultJitOptions::DefaultJitOptions() {
   // Whether replacing Object.keys with NativeIterators is globally disabled.
   SET_DEFAULT(disableObjectKeysScalarReplacement, false);
 
+  // Toggles whether CanonicalizeNaN pass is globally disabled.
+  SET_DEFAULT(disableCanonicalizeNaNAtUses, true);
+
 #ifdef ENABLE_PORTABLE_BASELINE_INTERP
   // Whether the Portable Baseline Interpreter is enabled.
   SET_DEFAULT(portableBaselineInterpreter, false);
