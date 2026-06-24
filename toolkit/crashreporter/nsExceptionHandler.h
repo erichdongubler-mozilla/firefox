@@ -85,6 +85,11 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force = false);
 nsresult UnsetExceptionHandler();
 
 /**
+ * Get the PID of the crash helper process, or 0 if disabled.
+ */
+uint32_t GetCrashHelperPid();
+
+/**
  * Tell the crash reporter to recalculate where crash events files should go.
  * SetCrashEventsDir is used before XPCOM is initialized from the startup
  * code.
