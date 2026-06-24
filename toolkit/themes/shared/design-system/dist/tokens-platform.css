@@ -168,8 +168,6 @@
       --button-background-color-hover: color-mix(in srgb, currentColor 17%, transparent);
       --button-background-color-active: color-mix(in srgb, currentColor 30%, transparent);
       --button-background-color-ghost: transparent;
-      /* This looks weird with AccentColor when the background is a color-mix() (can't override the background in nativeTheme from Figma currently) */
-      --button-border-color: transparent;
       --button-text-color: currentColor;
       --button-text-color-primary: AccentColorText;
 

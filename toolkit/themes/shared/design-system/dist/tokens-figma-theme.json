@@ -337,11 +337,6 @@
     "dark": "transparent",
     "forcedColors": "{Theme$border/color/interactive}"
   },
-  "button/border/color/nova-@base": {
-    "light": "transparent",
-    "dark": "transparent",
-    "forcedColors": "transparent"
-  },
   "button/border/color/active": {
     "light": "{Theme$button/border/color}",
     "dark": "{Theme$button/border/color}",
