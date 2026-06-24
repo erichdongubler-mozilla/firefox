@@ -1832,6 +1832,25 @@ topsites:
     send_in_pings:
       - newtab
 
+  pinned_count:
+    lifetime: application
+    type: quantity
+    unit: integer
+    description: >
+      The number of pinned top site tiles at the time of the newtab session.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2049528
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2049528
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - sdowne@mozilla.com
+      - jbrown@mozilla.com
+    expires: never
+    send_in_pings:
+      - newtab
+
 pocket:
   is_signed_in:
     lifetime: application
