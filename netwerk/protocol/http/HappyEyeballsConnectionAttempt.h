@@ -14,6 +14,7 @@
 #include "nsTHashSet.h"
 #include "happy_eyeballs_glue/HappyEyeballs.h"
 #include "ConnectionEstablisher.h"
+#include "HappyEyeballsConnMgrDelegate.h"
 #include "HappyEyeballsTransaction.h"
 
 namespace mozilla {
@@ -264,6 +265,8 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
       mConnectionEstablisherTable;
   // Creates per-attempt establishers; default uses real sockets.
   RefPtr<ConnectionEstablisherFactory> mEstablisherFactory;
+  // Wraps the connection manager + entry; default forwards to ConnMgr().
+  RefPtr<HappyEyeballsConnMgrDelegate> mConnMgrDelegate;
   RefPtr<HttpConnectionBase> mOutputConn;
   // Winning establisher's per-attempt transaction; used to read its
   // collected handshake timings before we dispatch the real transaction.
