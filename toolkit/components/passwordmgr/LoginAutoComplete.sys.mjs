@@ -152,6 +152,11 @@ class LoginAutocompleteItem extends AutocompleteItem {
         isOriginMatched && login.httpRealm === null
           ? getLocalizedString("displaySameOrigin")
           : login.displayOrigin,
+      secondaryAction: {
+        type: "edit",
+        fillMessageName: "PasswordManager:OpenPreferences",
+        fillMessageData: { loginGuid: login.guid, entryPoint: "Autocomplete" },
+      },
     });
     this.image = `page-icon:${login.origin}`;
   }

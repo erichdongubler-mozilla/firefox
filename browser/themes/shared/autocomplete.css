@@ -29,9 +29,8 @@
   &[selected] {
     background-color: unset;
 
-    > autocomplete-row-item {
-      border-radius: var(--border-radius-large);
-      border: var(--focus-outline-width) solid var(--focus-outline-color);
+    &:not(:hover) > autocomplete-row-item {
+      border-color: var(--focus-outline-color);
     }
   }
 
@@ -51,5 +50,6 @@
   > autocomplete-row-item {
     flex: 1;
     border: var(--focus-outline-width) solid transparent;
+    border-radius: var(--border-radius-large);
   }
 }
