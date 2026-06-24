@@ -128,19 +128,15 @@ void av1_dropout_qcoeff_num(MACROBLOCK *mb, int plane, int block,
                             TX_SIZE tx_size, TX_TYPE tx_type,
                             int dropout_num_before, int dropout_num_after);
 
-void av1_subtract_block(const MACROBLOCK *x, int rows, int cols, int16_t *diff,
+void av1_subtract_block(BitDepthInfo bd_info, int rows, int cols, int16_t *diff,
                         ptrdiff_t diff_stride, const uint8_t *src8,
                         ptrdiff_t src_stride, const uint8_t *pred8,
-                        ptrdiff_t pred_stride, int plane,
-                        BLOCK_SIZE plane_bsize, int blk_col, int blk_row,
-                        TX_TYPE tx_type, bool do_border_pad);
+                        ptrdiff_t pred_stride);
 
 void av1_subtract_txb(MACROBLOCK *x, int plane, BLOCK_SIZE plane_bsize,
-                      int blk_col, int blk_row, TX_SIZE tx_size,
-                      TX_TYPE tx_type, bool do_border_pad);
+                      int blk_col, int blk_row, TX_SIZE tx_size);
 
-void av1_subtract_plane(MACROBLOCK *x, BLOCK_SIZE plane_bsize, int plane,
-                        bool do_border_pad);
+void av1_subtract_plane(MACROBLOCK *x, BLOCK_SIZE plane_bsize, int plane);
 
 static inline void av1_set_txb_context(MACROBLOCK *x, int plane, int block,
                                        TX_SIZE tx_size, ENTROPY_CONTEXT *a,

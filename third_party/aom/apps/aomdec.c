@@ -613,26 +613,24 @@ static int main_loop(int argc, const char **argv_) {
     fprintf(stderr, "No input file specified!\n");
     usage_exit();
   }
-#if CONFIG_OS_SUPPORT
-  /* Make sure we don't dump to the terminal, unless forced to with -o - */
-  if (!outfile_pattern && isatty(STDOUT_FILENO) && !do_md5 && !noblit) {
-    fprintf(stderr,
-            "Not dumping raw video to your terminal. Use '-o -' to "
-            "override.\n");
-    if (framestats_file) fclose(framestats_file);
-    free(argv);
-    return EXIT_FAILURE;
-  }
-#endif
 
   const bool using_file = strcmp(fn, "-") != 0;
   /* Open file */
   infile = using_file ? fopen(fn, "rb") : set_binary_mode(stdin);
 
   if (!infile) {
-    if (framestats_file) fclose(framestats_file);
     fatal("Failed to open input file '%s'", using_file ? fn : "stdin");
   }
+#if CONFIG_OS_SUPPORT
+  /* Make sure we don't dump to the terminal, unless forced to with -o - */
+  if (!outfile_pattern && isatty(STDOUT_FILENO) && !do_md5 && !noblit) {
+    fprintf(stderr,
+            "Not dumping raw video to your terminal. Use '-o -' to "
+            "override.\n");
+    free(argv);
+    return EXIT_FAILURE;
+  }
+#endif
   input.aom_input_ctx->filename = fn;
   input.aom_input_ctx->file = infile;
 
@@ -691,7 +689,7 @@ static int main_loop(int argc, const char **argv_) {
         fprintf(stderr,
                 "Failed to guess framerate -- error parsing "
                 "webm file?\n");
-        goto fail2;
+        return EXIT_FAILURE;
       }
     }
 #endif

@@ -22,7 +22,8 @@
 namespace {
 
 using InterpCubicRateDistFunc = void (*)(const double *p1, const double *p2,
-                                         double x, double rate_dist_f[2]);
+                                         double x, double *const rate_f,
+                                         double *const distbysse_f);
 
 class InterpCubicTest
     : public ::testing::TestWithParam<InterpCubicRateDistFunc> {
@@ -57,7 +58,8 @@ GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(InterpCubicTest);
 #endif  // AOM_ARCH_X86 || AOM_ARCH_X86_64
 
 void InterpCubicTest::CheckOutput() {
-  double p1[4], p2[4], out_ref[2], out_mod[2];
+  double p1[4], p2[4];
+  double rate_f_ref, rate_f_mod, distbysse_f_ref, distbysse_f_mod;
   constexpr int kNumIters = 10000;
   for (int iter = 0; iter < kNumIters; ++iter) {
     for (int i = 0; i < 4; ++i) {
@@ -67,18 +69,20 @@ void InterpCubicTest::CheckOutput() {
     const double x = GenerateRandomDouble(0.0000, 1.0000);
 
     FLOATING_POINT_SET_PRECISION
-    av1_interp_cubic_rate_dist_c(p1, p2, x, out_ref);
+    av1_interp_cubic_rate_dist_c(p1, p2, x, &rate_f_ref, &distbysse_f_ref);
     FLOATING_POINT_RESTORE_PRECISION
 
-    API_REGISTER_STATE_CHECK(target_func_(p1, p2, x, out_mod));
-
-    EXPECT_EQ(out_ref[0], out_mod[0]) << "Error: rate_f value mismatch";
-    EXPECT_EQ(out_ref[1], out_mod[1]) << "Error: distbysse_f value mismatch";
+    API_REGISTER_STATE_CHECK(
+        target_func_(p1, p2, x, &rate_f_mod, &distbysse_f_mod));
+    EXPECT_EQ(rate_f_ref, rate_f_mod) << "Error: rate_f value mismatch";
+    EXPECT_EQ(distbysse_f_ref, distbysse_f_mod)
+        << "Error: distbysse_f value mismatch";
   }
 }
 
 void InterpCubicTest::SpeedTest() {
-  double p1[4], p2[4], out_ref[2], out_mod[2];
+  double p1[4], p2[4];
+  double rate_f_ref, rate_f_mod, distbysse_f_ref, distbysse_f_mod;
 
   for (int i = 0; i < 4; ++i) {
     p1[i] = GenerateRandomDouble(0.0000, 4096.0000);
@@ -92,7 +96,7 @@ void InterpCubicTest::SpeedTest() {
   FLOATING_POINT_SET_PRECISION
   aom_usec_timer_start(&ref_timer);
   for (int iter = 0; iter < kNumIters; ++iter) {
-    av1_interp_cubic_rate_dist_c(p1, p2, x, out_ref);
+    av1_interp_cubic_rate_dist_c(p1, p2, x, &rate_f_ref, &distbysse_f_ref);
   }
   aom_usec_timer_mark(&ref_timer);
   FLOATING_POINT_RESTORE_PRECISION
@@ -101,7 +105,8 @@ void InterpCubicTest::SpeedTest() {
 
   aom_usec_timer_start(&test_timer);
   for (int iter = 0; iter < kNumIters; ++iter) {
-    API_REGISTER_STATE_CHECK(target_func_(p1, p2, x, out_mod));
+    API_REGISTER_STATE_CHECK(
+        target_func_(p1, p2, x, &rate_f_mod, &distbysse_f_mod));
   }
   aom_usec_timer_mark(&test_timer);
   const int elapsed_time_simd =

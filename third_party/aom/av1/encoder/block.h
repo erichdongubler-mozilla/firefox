@@ -1438,12 +1438,6 @@ typedef struct macroblock {
    */
   RD_STATS *rdcost;
 #endif  // CONFIG_PARTITION_SEARCH_ORDER
-
-  /*! \brief Distance from bottom edge of the frame in pixels. */
-  int pix_to_bottom_edge;
-
-  /*! \brief Distance from right edge of the frame in pixels. */
-  int pix_to_right_edge;
 } MACROBLOCK;
 #undef SINGLE_REF_MODES
 

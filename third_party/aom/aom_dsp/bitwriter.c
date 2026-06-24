@@ -12,9 +12,8 @@
 #include <string.h>
 #include "aom_dsp/bitwriter.h"
 
-void aom_start_encode(aom_writer *w, uint8_t *source, size_t size) {
+void aom_start_encode(aom_writer *w, uint8_t *source) {
   w->buffer = source;
-  w->size = size;
   w->pos = 0;
   od_ec_enc_init(&w->ec, 62025);
 }
@@ -24,7 +23,7 @@ int aom_stop_encode(aom_writer *w) {
   uint32_t bytes;
   unsigned char *data;
   data = od_ec_enc_done(&w->ec, &bytes);
-  if (!data || bytes > w->size) {
+  if (!data) {
     od_ec_enc_clear(&w->ec);
     return -1;
   }

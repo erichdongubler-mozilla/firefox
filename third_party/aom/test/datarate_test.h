@@ -70,7 +70,6 @@ class DatarateTest : public ::libaom_test::EncoderTest {
     }
     avif_mode_ = 0;
     lag_realtime_mode_ = 0;
-    enable_warped_motion_ = false;
   }
 
   void PreEncodeFrameHook(::libaom_test::VideoSource *video,
@@ -87,7 +86,7 @@ class DatarateTest : public ::libaom_test::EncoderTest {
       encoder->Control(AV1E_SET_ROW_MT, 1);
       if (cfg_.g_usage == AOM_USAGE_REALTIME) {
         encoder->Control(AV1E_SET_ENABLE_GLOBAL_MOTION, 0);
-        encoder->Control(AV1E_SET_ENABLE_WARPED_MOTION, enable_warped_motion_);
+        encoder->Control(AV1E_SET_ENABLE_WARPED_MOTION, 0);
         encoder->Control(AV1E_SET_ENABLE_RESTORATION, 0);
         encoder->Control(AV1E_SET_ENABLE_OBMC, 0);
         encoder->Control(AV1E_SET_DELTAQ_MODE, 0);
@@ -291,7 +290,6 @@ class DatarateTest : public ::libaom_test::EncoderTest {
   int frame_number_dynamic_[3];
   int avif_mode_;
   int lag_realtime_mode_;
-  bool enable_warped_motion_;
 };
 
 }  // namespace

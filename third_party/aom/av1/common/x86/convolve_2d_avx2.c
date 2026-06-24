@@ -10,7 +10,6 @@
  */
 
 #include <immintrin.h>
-#include <stdint.h>
 
 #include "config/av1_rtcd.h"
 
