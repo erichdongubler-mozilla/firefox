@@ -3127,6 +3127,10 @@ var removeFoldersContents = async function (db, folderGuids, options) {
     options.source
   );
 
+  if (!folderGuids.length) {
+    return [];
+  }
+
   let itemsRemoved = [];
   for (let folderGuid of folderGuids) {
     let rows = await db.executeCached(
@@ -3152,21 +3156,13 @@ var removeFoldersContents = async function (db, folderGuids, options) {
        LEFT JOIN moz_places h ON b.fk = h.id`,
       { folderGuid }
     );
-
     itemsRemoved = itemsRemoved.concat(rowsToItemsArray(rows, true));
+  }
 
+  if (itemsRemoved.length) {
     await db.executeCached(
-      `WITH RECURSIVE
-       descendants(did) AS (
-         SELECT b.id FROM moz_bookmarks b
-         JOIN moz_bookmarks p ON b.parent = p.id
-         WHERE p.guid = :folderGuid
-         UNION ALL
-         SELECT id FROM moz_bookmarks
-         JOIN descendants ON parent = did
-       )
-       DELETE FROM moz_bookmarks WHERE id IN descendants`,
-      { folderGuid }
+      `DELETE FROM moz_bookmarks WHERE id IN carray(:removedIds)`,
+      { removedIds: itemsRemoved.map(item => item._id) }
     );
   }
 
