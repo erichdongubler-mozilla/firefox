@@ -246,9 +246,9 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   void EnterTimedOut();
   void EnterDone();
 
-  void ProcessTCPConn(nsHttpConnection* aConn, ConnectionEntry* aEntry,
+  void ProcessTCPConn(HttpConnectionBase* aConn, ConnectionEntry* aEntry,
                       bool aTransactionAlreadyOnConn);
-  void ProcessUDPConn(HttpConnectionUDP* aConn, ConnectionEntry* aEntry,
+  void ProcessUDPConn(HttpConnectionBase* aConn, ConnectionEntry* aEntry,
                       bool aTransactionAlreadyOnConn);
   void CloseHttpTransaction(happy_eyeballs::FailureReason aReason,
                             ConnectionEntry* aEntry);
