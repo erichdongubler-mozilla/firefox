@@ -1533,11 +1533,15 @@ void nsLineLayout::SetSpanForEmptyLine(PerSpanData* aPerSpanData,
   }
 }
 
+struct TextBoxEdgeMetrics {
+  nscoord mOver;
+  nscoord mUnder;
+};
+
 // Resolves the over/under metrics corresponding to the frame's text-box-edge.
-static void ResolveTextBoxEdgeMetrics(const StyleTextBoxEdge& aTextBoxEdge,
-                                      nsFontMetrics* aFontMetrics,
-                                      nscoord* aTrimmedOver,
-                                      nscoord* aTrimmedUnder) {
+static TextBoxEdgeMetrics ResolveTextBoxEdgeMetrics(
+    const StyleTextBoxEdge& aTextBoxEdge, nsFontMetrics* aFontMetrics) {
+  TextBoxEdgeMetrics result;
   StyleTextEdgeKeyword over, under;
   if (aTextBoxEdge.IsTextEdge()) {
     const StyleTextEdge& textEdge = aTextBoxEdge.AsTextEdge();
@@ -1549,38 +1553,40 @@ static void ResolveTextBoxEdgeMetrics(const StyleTextBoxEdge& aTextBoxEdge,
 
   switch (over) {
     case StyleTextEdgeKeyword::Cap:
-      *aTrimmedOver = aFontMetrics->CapHeight();
+      result.mOver = aFontMetrics->CapHeight();
       break;
     case StyleTextEdgeKeyword::Ex:
-      *aTrimmedOver = aFontMetrics->XHeight();
+      result.mOver = aFontMetrics->XHeight();
       break;
     case StyleTextEdgeKeyword::Ideographic:
-      *aTrimmedOver = aFontMetrics->IdeographicOverBaseline();
+      result.mOver = aFontMetrics->IdeographicOverBaseline();
       break;
     case StyleTextEdgeKeyword::IdeographicInk:
-      *aTrimmedOver = aFontMetrics->IdeographicInkOverBaseline();
+      result.mOver = aFontMetrics->IdeographicInkOverBaseline();
       break;
     default:
     case StyleTextEdgeKeyword::Text:
-      *aTrimmedOver = aFontMetrics->TrimmedAscent();
+      result.mOver = aFontMetrics->TrimmedAscent();
       break;
   }
 
   switch (under) {
     case StyleTextEdgeKeyword::Alphabetic:
-      *aTrimmedUnder = -aFontMetrics->AlphabeticBaseline();
+      result.mUnder = -aFontMetrics->AlphabeticBaseline();
       break;
     case StyleTextEdgeKeyword::Ideographic:
-      *aTrimmedUnder = -aFontMetrics->IdeographicUnderBaseline();
+      result.mUnder = -aFontMetrics->IdeographicUnderBaseline();
       break;
     case StyleTextEdgeKeyword::IdeographicInk:
-      *aTrimmedUnder = -aFontMetrics->IdeographicInkUnderBaseline();
+      result.mUnder = -aFontMetrics->IdeographicInkUnderBaseline();
       break;
     default:
     case StyleTextEdgeKeyword::Text:
-      *aTrimmedUnder = aFontMetrics->TrimmedDescent();
+      result.mUnder = aFontMetrics->TrimmedDescent();
       break;
   }
+
+  return result;
 }
 
 void nsLineLayout::ApplyBlockTextBoxTrim(PerSpanData* psd, WritingMode aLineWM,
@@ -1604,12 +1610,11 @@ void nsLineLayout::ApplyBlockTextBoxTrim(PerSpanData* psd, WritingMode aLineWM,
   // how much to trim on each side.
   nscoord totalOver = *aBaselineBCoord - mBStartEdge;
   nscoord totalUnder = *aLineBSize - totalOver;
-  nscoord trimmedOver, trimmedUnder;
-
   const StyleTextBoxEdge& textBoxEdge = blockFrame->StyleText()->mTextBoxEdge;
   RefPtr<nsFontMetrics> fm =
       nsLayoutUtils::GetInflatedFontMetricsForFrame(blockFrame);
-  ResolveTextBoxEdgeMetrics(textBoxEdge, fm, &trimmedOver, &trimmedUnder);
+  const auto [trimmedOver, trimmedUnder] =
+      ResolveTextBoxEdgeMetrics(textBoxEdge, fm);
 
   if (shouldTrimStart) {
     // Trim on the start side by moving the block start coordinate
@@ -2721,6 +2726,63 @@ void nsLineLayout::VerticalAlignFrames(PerSpanData* psd) {
         spanFramePFD->mAscent, psd->mLogicalBSize, psd->mBStartLeading,
         psd->mBEndLeading);
 #endif
+  }
+
+  if (psd != mRootSpan) {
+    const StyleTextBoxTrim spanTrim = spanFrame->StyleTextReset()->mTextBoxTrim;
+    bool shouldTrimStart = !!(spanTrim & StyleTextBoxTrim::TRIM_START);
+    bool shouldTrimEnd = !!(spanTrim & StyleTextBoxTrim::TRIM_END);
+
+    // Trims the frame's content box to the resolved text-box-edge metrics.
+    if (shouldTrimStart || shouldTrimEnd) {
+      // Identify the current total height above and below the baseline,
+      // to be compared against the target text-box-edge metrics to determine
+      // how much to trim on each side.
+      nscoord contentOver = spanFramePFD->mAscent;
+      nscoord contentUnder =
+          spanFramePFD->mBounds.BSize(lineWM) - spanFramePFD->mAscent;
+      const StyleTextBoxEdge& textBoxEdge =
+          spanFrame->StyleText()->mTextBoxEdge;
+      RefPtr<nsFontMetrics> fm =
+          nsLayoutUtils::GetInflatedFontMetricsForFrame(spanFrame);
+      const auto [trimmedOver, trimmedUnder] =
+          ResolveTextBoxEdgeMetrics(textBoxEdge, fm);
+
+      if (shouldTrimStart) {
+        // Trim on the start side by moving the block start coordinate
+        // and the frame's ascent up by the trim amount. Additionally
+        // move all child frames up by the trim amount.
+        const nscoord trimAmount = lineWM.IsLineInverted()
+                                       ? contentUnder - trimmedUnder
+                                       : contentOver - trimmedOver;
+        spanFramePFD->mAscent -= trimAmount;
+        spanFramePFD->mBounds.BSize(lineWM) -= trimAmount;
+        for (PerFrameData* pfd = psd->mFirstFrame; pfd; pfd = pfd->mNext) {
+          pfd->mBounds.BStart(lineWM) -= trimAmount;
+          pfd->mFrame->SetRect(lineWM, pfd->mBounds, ContainerSizeForSpan(psd));
+        }
+        minBCoord -= trimAmount;
+        maxBCoord -= trimAmount;
+      }
+
+      if (shouldTrimEnd) {
+        // Trim on the end side by reducing the block size of frame.
+        const nscoord trimAmount = lineWM.IsLineInverted()
+                                       ? contentOver - trimmedOver
+                                       : contentUnder - trimmedUnder;
+        spanFramePFD->mBounds.BSize(lineWM) -= trimAmount;
+
+        // In vertical-rl, trimming the block end side changes the physical
+        // left position, which requires resetting the rects of any children
+        // in order to correct their positions.
+        if (lineWM.IsVerticalRL()) {
+          for (PerFrameData* pfd = psd->mFirstFrame; pfd; pfd = pfd->mNext) {
+            pfd->mFrame->SetRect(lineWM, pfd->mBounds,
+                                 ContainerSizeForSpan(psd));
+          }
+        }
+      }
+    }
   }
 
   psd->mMinBCoord = minBCoord;
