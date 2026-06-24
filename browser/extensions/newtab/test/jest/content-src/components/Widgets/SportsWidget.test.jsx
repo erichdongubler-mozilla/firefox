@@ -1286,6 +1286,55 @@ describe("<SportsWidget> matches view", () => {
     expect(titles).not.toEqual(expect.arrayContaining(["Brazil"]));
   });
 
+  describe("Watch live button region gating", () => {
+    const liveNowOverrides = {
+      matchesTab: "now",
+      data: { teams: [], matches: emptyMatches, live: [mockMatch] },
+    };
+
+    it("hides the Watch live button when the user's region is unsupported (empty your_region)", () => {
+      const { container } = renderInMatchesState({
+        ...liveNowOverrides,
+        watchLive: {
+          loaded: true,
+          data: { your_region: [], other_regions: [] },
+        },
+      });
+      expect(
+        container.querySelector(".sports-watch-live-button")
+      ).not.toBeInTheDocument();
+    });
+
+    it("hides the Watch live button before watch-live data has loaded", () => {
+      const { container } = renderInMatchesState(liveNowOverrides);
+      expect(
+        container.querySelector(".sports-watch-live-button")
+      ).not.toBeInTheDocument();
+    });
+
+    it("shows the Watch live button when your_region has broadcasters", () => {
+      const { container } = renderInMatchesState({
+        ...liveNowOverrides,
+        watchLive: {
+          loaded: true,
+          data: {
+            your_region: [
+              {
+                product_name: "SBS On Demand",
+                entitlement: "Free",
+                url: "https://www.sbs.com.au/ondemand/",
+              },
+            ],
+            other_regions: [],
+          },
+        },
+      });
+      expect(
+        container.querySelector(".sports-watch-live-button")
+      ).toBeInTheDocument();
+    });
+  });
+
   it("marks the active tab based on matchesTab state", () => {
     const { container } = renderInMatchesState({ matchesTab: "results" });
     const activeTab = container.querySelector(".sports-matches-tab.is-active");

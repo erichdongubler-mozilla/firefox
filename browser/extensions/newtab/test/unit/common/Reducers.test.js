@@ -1344,6 +1344,47 @@ describe("Reducers", () => {
       assert.deepEqual(next.data.matches, baseMatches);
     });
 
+    describe("WIDGETS_SPORTS_WATCH_LIVE", () => {
+      const watchLiveData = {
+        your_region: [{ product_name: "SBS", entitlement: "Free", url: "u" }],
+        other_regions: [],
+      };
+
+      it("WIDGETS_SPORTS_WATCH_LIVE_SET stores the payload and marks it loaded", () => {
+        const next = SportsWidget(INITIAL_STATE.SportsWidget, {
+          type: at.WIDGETS_SPORTS_WATCH_LIVE_SET,
+          data: watchLiveData,
+        });
+        assert.deepEqual(next.watchLive, {
+          loaded: true,
+          data: watchLiveData,
+        });
+      });
+
+      it("WIDGETS_SPORTS_WATCH_LIVE_REQUEST shows the loading state when nothing is cached", () => {
+        const next = SportsWidget(INITIAL_STATE.SportsWidget, {
+          type: at.WIDGETS_SPORTS_WATCH_LIVE_REQUEST,
+        });
+        assert.deepEqual(next.watchLive, { loaded: false, data: null });
+      });
+
+      it("WIDGETS_SPORTS_WATCH_LIVE_REQUEST preserves a previously-fetched payload", () => {
+        // The button is gated on this data; a re-request (modal refresh) must
+        // not drop it and hide the entry point mid-session.
+        const loaded = SportsWidget(INITIAL_STATE.SportsWidget, {
+          type: at.WIDGETS_SPORTS_WATCH_LIVE_SET,
+          data: watchLiveData,
+        });
+        const next = SportsWidget(loaded, {
+          type: at.WIDGETS_SPORTS_WATCH_LIVE_REQUEST,
+        });
+        assert.deepEqual(next.watchLive, {
+          loaded: true,
+          data: watchLiveData,
+        });
+      });
+    });
+
     describe("WIDGETS_SPORTS_SET_LOAD_MORE", () => {
       const matchA = {
         global_event_id: 101,
