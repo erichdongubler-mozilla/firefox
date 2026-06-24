@@ -196,6 +196,7 @@ export class SportsFeed {
       // first VISIBLE see a pending pollTimer and skip its fetchNow, so the
       // first live update wouldn't land until a full interval later.
       this.updatePollingStateFromMatches();
+      await this.maybeFetchWatchLive();
     }
   }
 
@@ -632,6 +633,21 @@ export class SportsFeed {
     }
   }
 
+  // Proactively fetch the watch-live broadcaster listings once a live game is
+  // present, so the "Watch live" entry point can be gated on region support
+  // before the button renders. The backend hoists the caller's own country
+  // into `your_region`; an empty `your_region` means the user's country has no
+  // listed broadcasters and the button must stay hidden. Fetches at most once
+  // per session — the user's region can't change mid-session, and the modal
+  // re-fetches on open for fresh links.
+  async maybeFetchWatchLive() {
+    const state = this.store.getState()?.SportsWidget;
+    const hasLiveGames = !!(state?.data?.live ?? []).length;
+    if (hasLiveGames && !state?.watchLive?.loaded) {
+      await this.fetchWatchLive();
+    }
+  }
+
   async fetchWatchLive() {
     const prefs = this.store.getState()?.Prefs.values;
     const watchLiveEndpoint =
@@ -649,6 +665,14 @@ export class SportsFeed {
     ) {
       console.error(
         `Sports watch-live endpoint not in allowlist: ${watchLiveEndpoint}`
+      );
+      // Settle the loaded flag with no data so the proactive maybeFetchWatchLive
+      // caller doesn't re-attempt this disallowed fetch on every poll tick.
+      this.store.dispatch(
+        ac.BroadcastToContent({
+          type: at.WIDGETS_SPORTS_WATCH_LIVE_SET,
+          data: null,
+        })
       );
       return;
     }
@@ -804,6 +828,7 @@ export class SportsFeed {
         await this.persistSportsData();
       }
       this.updatePollingStateFromMatches();
+      await this.maybeFetchWatchLive();
       this.retryCount = 0;
       return true;
     }
@@ -811,6 +836,7 @@ export class SportsFeed {
     // long intervals, so no retry/backoff on this branch.
     await this.fetchSportsData();
     this.updatePollingStateFromMatches();
+    await this.maybeFetchWatchLive();
     this.retryCount = 0;
     return true;
   }

@@ -7847,11 +7847,19 @@ function SportsWidget(prevState = INITIAL_STATE.SportsWidget, action) {
         ...prevState,
         followedOnly: { ...prevState.followedOnly, ...action.data },
       };
-    case actionTypes.WIDGETS_SPORTS_WATCH_LIVE_REQUEST:
+    case actionTypes.WIDGETS_SPORTS_WATCH_LIVE_REQUEST: {
+      // Preserve any previously-fetched payload so a re-request (e.g. the modal
+      // refreshing links on open) doesn't drop the data the "Watch live" entry
+      // point is gated on. Only show the loading state when nothing is cached.
+      const existingWatchLiveData = prevState.watchLive?.data ?? null;
       return {
         ...prevState,
-        watchLive: { loaded: false, data: null },
+        watchLive: {
+          loaded: !!existingWatchLiveData,
+          data: existingWatchLiveData,
+        },
       };
+    }
     case actionTypes.WIDGETS_SPORTS_WATCH_LIVE_SET:
       return {
         ...prevState,
@@ -17883,6 +17891,12 @@ function SportsWidget_SportsWidget({
   // empty pre-kickoff.
   const liveDataTrustable = Date.now() >= WORLD_CUP_KICKOFF_MS || prefs[PREF_FORCE_LIVE_DATA_TRUSTABLE];
   const hasLiveGames = liveDataTrustable && sportsWidgetData?.data?.live?.length > 0;
+  // The watch-links endpoint only lists broadcasters for supported countries.
+  // The backend hoists the user's own country into `your_region`, so a
+  // non-empty `your_region` means the user's region is supported and the
+  // "Watch live" entry point should be shown; an empty one (e.g. Turkey) hides
+  // it.
+  const canWatchLive = sportsWidgetData?.watchLive?.data?.your_region?.length > 0;
   const hasPreviousResults = sportsWidgetData?.data?.matches?.previous?.length > 0;
   // Upcoming matches alone don't mean the tournament has started — the backend
   // surfaces them within a +/-21 day window around kickoff, so they appear
@@ -18623,6 +18637,7 @@ function SportsWidget_SportsWidget({
     showUpcomingList: showUpcomingList,
     setShowUpcomingList: setShowUpcomingList,
     loadMore: sportsWidgetData.loadMore,
+    canWatchLive: canWatchLive,
     onWatchClick: () => setWatchLiveOpen(true)
   }), widgetState === WIDGET_STATES.KEY_DATES && /*#__PURE__*/external_React_default().createElement(SportsWidgetKeyDates, {
     handleViewMatches: handleViewMatches
@@ -18834,6 +18849,7 @@ function SportsMatchesView({
   showUpcomingList,
   setShowUpcomingList,
   loadMore,
+  canWatchLive,
   onWatchClick
 }) {
   const resultsPanelRef = (0,external_React_namespaceObject.useRef)(null);
@@ -19078,7 +19094,7 @@ function SportsMatchesView({
     followedTeams: selectedTeamsSet,
     tbdTeamName: tbdTeamName,
     localizedNames: localizedNames
-  })), /*#__PURE__*/external_React_default().createElement("moz-button", {
+  })), canWatchLive && /*#__PURE__*/external_React_default().createElement("moz-button", {
     className: "sports-watch-live-button",
     type: size === "medium" ? "icon" : "default",
     size: size === "medium" ? "small" : undefined,
