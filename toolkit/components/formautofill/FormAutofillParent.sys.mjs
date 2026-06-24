@@ -523,10 +523,6 @@ export class FormAutofillParent extends JSWindowActorParent {
       return;
     }
 
-    if (!fieldDetails.some(fd => !fd.fieldName && fd.mlData)) {
-      return;
-    }
-
     FormAutofillParent.#mlFeature ??= new lazy.FormAutofillML();
     await FormAutofillParent.#mlFeature.detectFields(fieldDetails);
   }
