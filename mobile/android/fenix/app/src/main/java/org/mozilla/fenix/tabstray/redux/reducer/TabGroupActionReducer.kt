@@ -68,9 +68,6 @@ object TabGroupActionReducer {
             is TabGroupAction.OnboardingDismissed -> state.copy(
                 config = state.config.copy(tabGroupsOnboardingEnabled = false),
             )
-            is TabGroupAction.OnboardingShown -> state.copy(
-                tabGroupState = state.tabGroupState.copy(hasRecordedOnboardingImpression = true),
-            )
         }
     }
 

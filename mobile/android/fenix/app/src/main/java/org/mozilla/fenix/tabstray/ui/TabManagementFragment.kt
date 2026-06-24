@@ -419,9 +419,6 @@ class TabManagementFragment : Fragment() {
                                     onTabGroupOnboardingDismiss = {
                                         tabsTrayStore.dispatch(TabGroupAction.OnboardingDismissed)
                                     },
-                                    onTabGroupOnboardingShown = {
-                                        tabsTrayStore.dispatch(TabGroupAction.OnboardingShown)
-                                    },
                                     onOpenNewNormalTabClicked = tabManagerInteractor::onNormalTabsFabClicked,
                                     onOpenNewPrivateTabClicked = tabManagerInteractor::onPrivateTabsFabClicked,
                                     onSyncedTabsFabClicked = tabManagerInteractor::onSyncedTabsFabClicked,

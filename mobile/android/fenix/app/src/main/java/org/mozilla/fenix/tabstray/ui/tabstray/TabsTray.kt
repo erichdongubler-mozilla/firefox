@@ -107,7 +107,6 @@ import org.mozilla.fenix.tabstray.ui.syncedtabs.OnTabCloseClick as OnSyncedTabCl
  * @param onInactiveTabsCFRClick Invoked when the inactive tabs CFR is clicked.
  * @param onInactiveTabsCFRDismiss Invoked when the inactive tabs CFR is dismissed.
  * @param onTabGroupOnboardingDismiss Invoked when the tab group onboarding card is dismissed.
- * @param onTabGroupOnboardingShown Invoked when the tab group onboarding card is shown to the user.
  * @param onOpenNewNormalTabClicked Invoked when the fab is clicked in [Page.NormalTabs].
  * @param onOpenNewPrivateTabClicked Invoked when the fab is clicked in [Page.PrivateTabs].
  * @param onSyncedTabsFabClicked Invoked when the fab is clicked in [Page.SyncedTabs].
@@ -154,7 +153,6 @@ fun TabsTray(
     onInactiveTabsCFRClick: () -> Unit,
     onInactiveTabsCFRDismiss: () -> Unit,
     onTabGroupOnboardingDismiss: () -> Unit,
-    onTabGroupOnboardingShown: () -> Unit,
     onOpenNewNormalTabClicked: () -> Unit,
     onOpenNewPrivateTabClicked: () -> Unit,
     onSyncedTabsFabClicked: () -> Unit,
@@ -295,7 +293,6 @@ fun TabsTray(
                                 tabsTrayStore.dispatch(TabGroupAction.CloseTabGroupClicked(group = group))
                             },
                             onTabGroupOnboardingDismiss = onTabGroupOnboardingDismiss,
-                            onTabGroupOnboardingShown = onTabGroupOnboardingShown,
                             trackersBlockedCount = trackersBlockedCount,
                             focusEnabled = tabsTrayState.normalTabsState.itemFocusIndicatorEnabled,
                             onPrivacyReportTapped = onPrivacyReportTapped,
@@ -494,7 +491,6 @@ private fun TabsTrayPreview(
             onInactiveTabsCFRClick = {},
             onInactiveTabsCFRDismiss = {},
             onTabGroupOnboardingDismiss = {},
-            onTabGroupOnboardingShown = {},
             onOpenNewNormalTabClicked = {},
             onOpenNewPrivateTabClicked = {},
             onSyncedTabsFabClicked = {

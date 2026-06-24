@@ -23,7 +23,6 @@ import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
 import org.mozilla.fenix.tabstray.redux.state.initializeTabGroupForm
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 class TabGroupReducerTest {
     @Test
@@ -674,15 +673,5 @@ class TabGroupReducerTest {
         )
 
         assertFalse(resultState.config.tabGroupsOnboardingEnabled)
-    }
-
-    @Test
-    fun `WHEN OnboardingShown THEN the onboarding impression is recorded for the session`() {
-        val resultState = TabGroupActionReducer.reduce(
-            state = TabsTrayState(),
-            action = TabGroupAction.OnboardingShown,
-        )
-
-        assertTrue(resultState.tabGroupState.hasRecordedOnboardingImpression)
     }
 }

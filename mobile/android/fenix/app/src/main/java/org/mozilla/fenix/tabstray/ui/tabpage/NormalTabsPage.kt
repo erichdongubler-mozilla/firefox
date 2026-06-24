@@ -77,7 +77,6 @@ private val EmptyPageWidth = 170.dp
  * @param onEditTabGroupClick Invoked when the user clicks to edit a tab group.
  * @param onCloseTabGroupClick Invoked when the user clicks to close a tab group.
  * @param onTabGroupOnboardingDismiss Invoked when the user dismisses the tab group onboarding card.
- * @param onTabGroupOnboardingShown Invoked when the tab group onboarding card is shown to the user.
  * @param onPrivacyReportTapped Invoked when the trackers blocked pill is tapped.
  */
 @Composable
@@ -114,7 +113,6 @@ internal fun NormalTabsPage(
     onEditTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onCloseTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onTabGroupOnboardingDismiss: () -> Unit,
-    onTabGroupOnboardingShown: () -> Unit,
     onPrivacyReportTapped: (() -> Unit)? = null,
 ) {
     if (items.isNotEmpty() || inactiveTabs.isNotEmpty()) {
@@ -173,7 +171,6 @@ internal fun NormalTabsPage(
             onEditTabGroupClick = onEditTabGroupClick,
             onCloseTabGroupClick = onCloseTabGroupClick,
             onTabGroupOnboardingDismiss = onTabGroupOnboardingDismiss,
-            onTabGroupOnboardingShown = onTabGroupOnboardingShown,
             tabInteractionHandler = tabInteractionHandler,
             focusEnabled = focusEnabled,
             onPrivacyReportTapped = onPrivacyReportTapped,
