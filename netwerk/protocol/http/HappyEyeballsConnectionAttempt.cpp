@@ -1083,14 +1083,14 @@ void HappyEyeballsConnectionAttempt::Abandon() {
 }
 
 void HappyEyeballsConnectionAttempt::ProcessTCPConn(
-    nsHttpConnection* aConn, ConnectionEntry* aEntry,
+    HttpConnectionBase* aConn, ConnectionEntry* aEntry,
     bool aTransactionAlreadyOnConn) {
   RefPtr<ConnectionEntry> entry(mEntry);
   if (!entry) {
     return;
   }
 
-  RefPtr<nsHttpConnection> connTCP = aConn;
+  RefPtr<HttpConnectionBase> connTCP = aConn;
   LOG(("Got connTCP:%p transactionAlreadyOnConn=%d", connTCP.get(),
        aTransactionAlreadyOnConn));
 
@@ -1161,7 +1161,9 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(
       // After about 1 second allow for the possibility of restarting a
       // transaction due to server close. Keep at sub 1 second as that is the
       // minimum granularity we can expect a server to be timing out with.
-      connTCP->SetIsReusedAfter(950);
+      if (RefPtr<nsHttpConnection> h1 = do_QueryObject(connTCP)) {
+        h1->SetIsReusedAfter(950);
+      }
 
       LOG(
           ("ProcessTCPConn no transaction match "
@@ -1172,16 +1174,14 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(
   }
 
   connTCP->SetIsRacing(false);
-  if (isHttp2) {
+  if (RefPtr<nsHttpConnection> h1 = do_QueryObject(connTCP)) {
     gHttpHandler->ConnMgr()->ReportSpdyConnection(
-        connTCP, true, (mCaps & NS_HTTP_DISALLOW_HTTP3));
-  } else {
-    gHttpHandler->ConnMgr()->ReportSpdyConnection(connTCP, false, false);
+        h1, isHttp2, isHttp2 && (mCaps & NS_HTTP_DISALLOW_HTTP3));
   }
 }
 
 void HappyEyeballsConnectionAttempt::ProcessUDPConn(
-    HttpConnectionUDP* aConn, ConnectionEntry* aEntry,
+    HttpConnectionBase* aConn, ConnectionEntry* aEntry,
     bool aTransactionAlreadyOnConn) {
   RefPtr<ConnectionEntry> entry(mEntry);
   if (!entry) {
@@ -1284,10 +1284,9 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
   if (mOutputTrans && mTransaction) {
     if (nsHttpTransaction* realTransaction =
             mTransaction->QueryHttpTransaction()) {
-      RefPtr<nsHttpConnection> tcpConn = do_QueryObject(mOutputConn);
       TimingStruct timings;
       DnsLookupTimings(timings.domainLookupStart, timings.domainLookupEnd);
-      FillConnectTimings(/* aIsQuic = */ !tcpConn, timings);
+      FillConnectTimings(/* aIsQuic = */ mOutputConn->UsingHttp3(), timings);
       timings.transactionPending = realTransaction->GetPendingTime();
       realTransaction->BootstrapTimings(timings);
     }
@@ -1356,8 +1355,7 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
   // re-inserted trans will be dispatched by ReportSpdyConnection →
   // ProcessPendingQ once the conn is in the active pool.
   bool alreadyOnConn = mZeroRttHandle->HadWinner() || restartedFallback0Rtt;
-  RefPtr<nsHttpConnection> connTCP = do_QueryObject(mOutputConn);
-  if (connTCP) {
+  if (!mOutputConn->UsingHttp3()) {
     // If the original request had an alt-svc route but a direct TCP
     // connection won, remove the Alt-Used header since we're not using
     // the alt-svc route.
@@ -1367,10 +1365,9 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
       }
     }
 
-    ProcessTCPConn(connTCP, entry, alreadyOnConn);
+    ProcessTCPConn(mOutputConn, entry, alreadyOnConn);
   } else {
-    RefPtr<HttpConnectionUDP> connUDP = do_QueryObject(mOutputConn);
-    ProcessUDPConn(connUDP, entry, alreadyOnConn);
+    ProcessUDPConn(mOutputConn, entry, alreadyOnConn);
   }
 
   mOutputConn = nullptr;
