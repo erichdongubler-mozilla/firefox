@@ -668,7 +668,9 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         )
 
         if (Config.channel.isDebug) {
-            uninstallSurveyManager.updateUninstallSurveyShortcut()
+            lifecycleScope.launch(IO) {
+                uninstallSurveyManager.updateUninstallSurveyShortcut()
+            }
             uninstallSurveyManager.showUninstallSurvey(intent, navHost.navController)
         }
 

@@ -10,6 +10,7 @@ import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.navigation.NavController
+import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.IntentReceiverActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
@@ -22,6 +23,7 @@ import mozilla.components.ui.icons.R as iconsR
  */
 class UninstallSurveyManager(private val context: Context) {
 
+    private val logger = Logger("UninstallSurveyManager")
     private val shortcutIntent = Intent(context, IntentReceiverActivity::class.java).apply {
         action = ACTION_UNINSTALL_SURVEY
     }
@@ -30,17 +32,23 @@ class UninstallSurveyManager(private val context: Context) {
      * Programmatically registers or updates the dynamic shortcut on the device home screen.
      */
     fun updateUninstallSurveyShortcut() {
-        if (context.components.settings.uninstallSurveyFeatureFlagEnabled) {
-            val shortcut = ShortcutInfoCompat.Builder(context, SHORTCUT_ID)
-                .setShortLabel(context.getString(R.string.home_screen_shortcut_uninstall_survey))
-                .setIcon(IconCompat.createWithResource(context, iconsR.drawable.mozac_ic_delete_black_24))
-                .setIntent(shortcutIntent)
-                .build()
+            if (context.components.settings.uninstallSurveyFeatureFlagEnabled) {
+                val shortcut = ShortcutInfoCompat.Builder(context, SHORTCUT_ID)
+                    .setShortLabel(context.getString(R.string.home_screen_shortcut_uninstall_survey))
+                    .setIcon(IconCompat.createWithResource(context, iconsR.drawable.mozac_ic_delete_black_24))
+                    .setIntent(shortcutIntent)
+                    .build()
 
-            ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
-        } else {
-            ShortcutManagerCompat.removeDynamicShortcuts(context, listOf(SHORTCUT_ID))
-        }
+                try {
+                    ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
+                } catch (e: SecurityException) {
+                    logger.error("Knox or system security policy blocked shortcut creation", e)
+                } catch (e: IllegalStateException) {
+                    logger.error("Failed to push dynamic shortcut due to invalid system state", e)
+                }
+            } else {
+                ShortcutManagerCompat.removeDynamicShortcuts(context, listOf(SHORTCUT_ID))
+            }
     }
 
     /**
