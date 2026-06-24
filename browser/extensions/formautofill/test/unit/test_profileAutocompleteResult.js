@@ -56,6 +56,8 @@ function makeAddressComment({ primary, secondary, profile }) {
     primary,
     secondary,
     ariaLabel: primary + " " + secondary,
+    image: "",
+    type: "address",
     fillMessageName: "FormAutofill:FillForm",
     fillMessageData: { profile },
   });
@@ -73,6 +75,7 @@ function makeCreditCardComment({
     secondary,
     ariaLabel,
     image,
+    type: "payment",
     fillMessageName: "FormAutofill:FillForm",
     fillMessageData: { profile },
   });
