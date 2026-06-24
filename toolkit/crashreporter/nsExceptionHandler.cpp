@@ -1904,17 +1904,9 @@ static void TeardownAppNotes() {
 nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force /*=false*/) {
   if (gExceptionHandler) return NS_ERROR_ALREADY_INITIALIZED;
 
-#if defined(DEBUG)
-  // In debug builds, disable the crash reporter by default, and allow to
-  // enable it with the MOZ_CRASHREPORTER environment variable.
-  const char* envvar = PR_GetEnv("MOZ_CRASHREPORTER");
-  if ((!envvar || !*envvar) && !force) return NS_OK;
-#else
-  // In other builds, enable the crash reporter by default, and allow
-  // disabling it with the MOZ_CRASHREPORTER_DISABLE environment variable.
-  const char* envvar = PR_GetEnv("MOZ_CRASHREPORTER_DISABLE");
-  if (envvar && *envvar && !force) return NS_OK;
-#endif
+  if (!CrashReporterIsEnabled(force)) {
+    return NS_OK;
+  }
 
   // this environment variable prevents us from launching
   // the crash reporter client
