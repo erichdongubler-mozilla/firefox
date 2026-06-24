@@ -3,7 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ContentAnalysis.h"
+#include "ContentAnalysisBackend.h"
 #include "ContentAnalysisIPCTypes.h"
+#include "ExternalAgentBackend.h"
 #include "content_analysis/sdk/analysis_client.h"
 
 #include "base/process_util.h"
@@ -1365,6 +1367,8 @@ ContentAnalysis::ContentAnalysis()
   }
   obsServ->AddObserver(this, "xpcom-shutdown-threads", false);
 
+  mBackend = MakeRefPtr<ExternalAgentBackend>();
+
   mCaClientPromise =
       new ClientPromise::Private("ContentAnalysis::ContentAnalysis");
 
@@ -1729,7 +1733,7 @@ void ContentAnalysis::CancelWithError(nsCString&& aUserActionId,
        aUserActionId.get(), SafeGetStaticErrorName(aResult));
 
   AutoTArray<nsCString, 1> tokens;
-  RefPtr<nsIContentAnalysisCallback> callback;
+  nsCOMPtr<nsIContentAnalysisCallback> callback;
   bool autoAcknowledge;
   if (auto maybeUserActionData = mUserActionMap.Lookup(aUserActionId)) {
     // We are cancelling all existing requests for this user action.
@@ -2072,8 +2076,8 @@ RefPtr<MozPromise<T, nsresult, true>> ContentAnalysis::CallClientWithRetry(
 }
 
 nsresult ContentAnalysis::RunAnalyzeRequestTask(
-    const RefPtr<nsIContentAnalysisRequest>& aRequest, bool aAutoAcknowledge,
-    const RefPtr<nsIContentAnalysisCallback>& aCallback) {
+    const nsCOMPtr<nsIContentAnalysisRequest>& aRequest, bool aAutoAcknowledge,
+    const nsCOMPtr<nsIContentAnalysisCallback>& aCallback) {
   AssertIsOnMainThread();
 
   nsresult rv = NS_ERROR_FAILURE;
@@ -2375,7 +2379,7 @@ void ContentAnalysis::IssueResponse(ContentAnalysisResponse* aResponse,
   // Call the callback and maybe send an auto acknowledge.
   nsCString token;
   MOZ_ALWAYS_SUCCEEDS(aResponse->GetRequestToken(token));
-  RefPtr<nsIContentAnalysisCallback> callback;
+  nsCOMPtr<nsIContentAnalysisCallback> callback;
   if (auto maybeUserActionData = mUserActionMap.Lookup(aUserActionId)) {
     callback = maybeUserActionData->mCallback;
   } else {
@@ -3043,7 +3047,7 @@ ContentAnalysis::ExpandFolderRequest(nsIContentAnalysisRequest* aRequest,
 // requests (provided and synthetic) or a ContentAnalysisResult if no
 // requests need to be run.
 Result<RefPtr<ContentAnalysis::RequestsPromise::AllPromiseType>,
-       RefPtr<nsIContentAnalysisResult>>
+       nsCOMPtr<nsIContentAnalysisResult>>
 ContentAnalysis::GetFinalRequestList(
     const ContentAnalysisRequestArray& aRequests) {
   Maybe<NoContentAnalysisResult> allowResult;
@@ -3213,7 +3217,7 @@ ContentAnalysis::GetFinalRequestList(
     MOZ_ASSERT(textContent.IsEmpty());
 #endif
 
-    RefPtr<nsIFile> file;
+    nsCOMPtr<nsIFile> file;
     rv = NS_NewLocalFile(filename, getter_AddRefs(file));
     NS_ENSURE_SUCCESS(
         rv, RequestsPromise::AllPromiseType::CreateAndReject(rv, __func__));
@@ -3332,7 +3336,7 @@ ContentAnalysis::AnalyzeContentRequestsCallback(
       userActionId, UserActionData{aCallback, {}, nullptr, aAutoAcknowledge});
 
   Result<RefPtr<RequestsPromise::AllPromiseType>,
-         RefPtr<nsIContentAnalysisResult>>
+         nsCOMPtr<nsIContentAnalysisResult>>
       requestListResult = GetFinalRequestList(aRequests);
   if (requestListResult.isErr()) {
     auto result = requestListResult.unwrapErr();
@@ -4226,7 +4230,7 @@ ContentAnalysis::AnalyzeBatchContentRequest(nsIContentAnalysisRequest* aRequest,
             mozilla::GetMainThreadSerialEventTarget(), __func__,
             [filesPromise,
              request = RefPtr{aRequest}](nsCOMArray<nsIFile> aAllowedFiles) {
-              nsTArray<RefPtr<nsIFile>> allowedFiles;
+              nsTArray<nsCOMPtr<nsIFile>> allowedFiles;
               allowedFiles.AppendElements(mozilla::Span(
                   aAllowedFiles.Elements(), aAllowedFiles.Length()));
               filesPromise->MaybeResolve(std::move(allowedFiles));
@@ -4237,7 +4241,7 @@ ContentAnalysis::AnalyzeBatchContentRequest(nsIContentAnalysisRequest* aRequest,
   } else {
     // Handle the case where there are files in fileList but
     // all of them are null.
-    filesPromise->MaybeResolve(nsTArray<RefPtr<nsIFile>>());
+    filesPromise->MaybeResolve(nsTArray<nsCOMPtr<nsIFile>>());
   }
 
   RefPtr<dom::DataTransfer> transferWithoutFiles;
