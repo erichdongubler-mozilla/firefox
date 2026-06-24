@@ -2668,6 +2668,7 @@ ContentParent::ContentParent(const nsACString& aRemoteType)
       mShutdownPending(false),
       mLaunchResolved(false),
       mLaunchResolvedOk(false),
+      mIsUntrusted(false),
       mIsRemoteInputEventQueueEnabled(false),
       mIsInputPriorityEventEnabled(false),
       mIsInPool(false),

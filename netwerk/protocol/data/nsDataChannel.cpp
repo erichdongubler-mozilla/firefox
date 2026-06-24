@@ -53,6 +53,9 @@ nsresult nsDataChannel::OpenContentStream(bool async, nsIInputStream** result,
 
   nsresult rv;
 
+  // Defensively ensure the process is marked as untrusted.
+  dom::ContentChild::MaybeBecomeUntrusted();
+
   // In general, a `data:` URI is stored as a `nsSimpleURI`, which holds a
   // single mSpec string. This can be read most efficiently with `GetSpec`, as
   // the underlying string buffer will be shared.

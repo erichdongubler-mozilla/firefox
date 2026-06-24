@@ -144,6 +144,29 @@ class ContentChild final : public PContentChild,
 
   bool IsShuttingDown() const;
 
+  /**
+   * Early during startup, a content process has not yet loaded any untrusted
+   * content, so it can be considered "trusted" for the purposes of doing
+   * security-sensitive work (such as writing into the shared script cache).
+   *
+   * After a certain point during startup, most processes load untrusted
+   * content, becoming "untrusted". At this point, the flag will be flipped, and
+   * the parent process will be notified.
+   *
+   * Safe to call on any thread.
+   */
+  [[nodiscard]] static bool IsUntrusted();
+
+  /** Observer topic fired when the current process becomes untrusted. */
+  static constexpr nsLiteralCString kBecameUntrustedTopic =
+      "content-process-became-untrusted"_ns;
+
+  /**
+   * Called to mark the content process as untrusted on the main thread.
+   * No-op in non-content processes and the privilegedabout process.
+   */
+  static void MaybeBecomeUntrusted();
+
   ipc::SharedMap* SharedData() { return mSharedData; };
 
   static void AppendProcessId(nsACString& aName);
