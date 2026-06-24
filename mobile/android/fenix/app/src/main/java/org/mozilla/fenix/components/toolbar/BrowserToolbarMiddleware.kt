@@ -27,6 +27,8 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.thumbnails.BrowserThumbnails
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
+import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton.State.DEFAULT
+import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton.State.DISABLED
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
 import mozilla.components.compose.browser.toolbar.concept.Action.TabCounterAction
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin
@@ -1345,6 +1347,10 @@ class BrowserToolbarMiddleware(
         ToolbarAction.Summarize -> ActionButtonRes(
             drawableResId = iconsR.drawable.mozac_ic_sparkle_24,
             contentDescription = summariesR.string.mozac_summarize_settings_summarize_pages,
+            state = when (browsingModeManager.mode) {
+                Normal -> DEFAULT
+                Private -> DISABLED
+            },
             onClick = SummarizeClicked(source),
         )
     }

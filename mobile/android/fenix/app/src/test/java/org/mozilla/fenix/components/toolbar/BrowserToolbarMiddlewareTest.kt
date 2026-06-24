@@ -2876,8 +2876,8 @@ class BrowserToolbarMiddlewareTest {
     }
 
     @Test
-    fun `WHEN building Summarize action THEN returns Summarize ActionButton with correct icon`() {
-        val middleware = buildMiddleware()
+    fun `GIVEN normal browsing WHEN building Summarize action THEN add an enabled Summarize ActionButton with correct icon`() {
+        val middleware = buildMiddleware(browsingModeManager = SimpleBrowsingModeManager(Normal))
         buildStore(middleware)
 
         val result = middleware.buildAction(
@@ -2886,6 +2886,20 @@ class BrowserToolbarMiddlewareTest {
 
         assertEquals(iconsR.drawable.mozac_ic_sparkle_24, result.drawableResId)
         assertEquals(summariesR.string.mozac_summarize_settings_summarize_pages, result.contentDescription)
+        assertEquals(ActionButton.State.DEFAULT, result.state)
+        assertEquals(SummarizeClicked(Source.Unknown), result.onClick)
+    }
+
+    @Test
+    fun `GIVEN private browsing WHEN building Summarize action THEN add a disabled Summarize ActionButton`() {
+        val middleware = buildMiddleware(browsingModeManager = SimpleBrowsingModeManager(Private))
+        buildStore(middleware)
+
+        val result = middleware.buildAction(
+            toolbarAction = ToolbarAction.Summarize,
+        ) as ActionButtonRes
+
+        assertEquals(ActionButton.State.DISABLED, result.state)
         assertEquals(SummarizeClicked(Source.Unknown), result.onClick)
     }
 
@@ -3363,6 +3377,20 @@ class BrowserToolbarMiddlewareTest {
     }
 
     @Test
+    fun `GIVEN simple toolbar uses the summarize shortcut but currently in private browsing WHEN initializing toolbar THEN show a disabled Summarize in end browser actions`() = runTest(testDispatcher) {
+        settings.toolbarSimpleShortcutKey = ShortcutType.SUMMARIZE.value
+        every { summarizationFeatureSettings.canShowFeature } returns true
+        val browsingModeManager = SimpleBrowsingModeManager(Private)
+
+        val toolbarStore = buildStore(
+            buildMiddleware(browsingModeManager = browsingModeManager),
+        )
+
+        val shortcutButton = toolbarStore.state.displayState.browserActionsEnd[0] as ActionButtonRes
+        assertEquals(expectedSummarizeButton(state = ActionButton.State.DISABLED), shortcutButton)
+    }
+
+    @Test
     fun `WHEN the summarize button is clicked THEN attempt to start webpage summarization`() = runTest(testDispatcher) {
         every { summarizationFeatureSettings.canShowFeature } returns true
         val middleware = buildMiddleware(summarizationNavigator = summarizationNavigator)
@@ -3756,9 +3784,13 @@ class BrowserToolbarMiddlewareTest {
         onClick = HomepageClicked(source),
     )
 
-    private fun expectedSummarizeButton(source: Source = Source.AddressBar.BrowserEnd) = ActionButtonRes(
+    private fun expectedSummarizeButton(
+        source: Source = Source.AddressBar.BrowserEnd,
+        state: ActionButton.State = ActionButton.State.DEFAULT,
+    ) = ActionButtonRes(
         drawableResId = iconsR.drawable.mozac_ic_sparkle_24,
         contentDescription = summariesR.string.mozac_summarize_settings_summarize_pages,
+        state = state,
         onClick = SummarizeClicked(source),
     )
 

@@ -19,7 +19,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.Components
+import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.summarization.onboarding.FenixSummarizationFeatureConfiguration
 import org.mozilla.fenix.utils.Settings
@@ -36,6 +39,7 @@ class ToolbarSimpleShortcutPreferenceTest {
     @Before
     fun setUp() {
         every { context.components } returns components
+        every { components.appStore } returns AppStore(AppState(mode = BrowsingMode.Normal))
         every { components.core.summarizeFeatureSettings } returns summarizationFeatureSettings
         every { summarizationFeatureSettings.canShowFeature } returns true
         every { components.settings } returns settings
@@ -68,12 +72,36 @@ class ToolbarSimpleShortcutPreferenceTest {
     }
 
     @Test
-    fun `GIVEN summarization is enabled WHEN getting the shortcut options THEN all simple shortcut options are returned in order`() {
+    fun `GIVEN summarization enabled and normal browsing WHEN getting the shortcut options THEN all simple shortcut options are returned in order`() {
         val preference = ToolbarSimpleShortcutPreference(context)
 
         val optionKeys = preference.getShortcutOptions().map { it.key }
 
         assertEquals(simpleShortcutOptions.map { it.key.value }, optionKeys)
+    }
+
+    @Test
+    fun `GIVEN summarization enabled and private browsing WHEN getting the shortcut options THEN the summarize option is shown but disabled`() {
+        every { components.appStore } returns AppStore(AppState(mode = BrowsingMode.Private))
+        val preference = ToolbarSimpleShortcutPreference(context)
+
+        val options = preference.getShortcutOptions()
+
+        // The summarize option is still listed, in order, but cannot be selected.
+        assertEquals(simpleShortcutOptions.map { it.key.value }, options.map { it.key })
+        val summarizeOption = options.first { it.key == ShortcutType.SUMMARIZE.value }
+        assertFalse(summarizeOption.isEnabled)
+        assertTrue(options.filterNot { it.key == ShortcutType.SUMMARIZE.value }.all { it.isEnabled })
+    }
+
+    @Test
+    fun `GIVEN summarization enabled and normal browsing WHEN getting the shortcut options THEN the summarize option is shown and enabled`() {
+        val preference = ToolbarSimpleShortcutPreference(context)
+
+        val options = preference.getShortcutOptions()
+
+        val summarizeOption = options.first { it.key == ShortcutType.SUMMARIZE.value }
+        assertTrue(summarizeOption.isEnabled)
     }
 
     @Test

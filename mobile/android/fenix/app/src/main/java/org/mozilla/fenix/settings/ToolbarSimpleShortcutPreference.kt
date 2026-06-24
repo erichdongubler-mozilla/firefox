@@ -11,6 +11,7 @@ import android.view.View.VISIBLE
 import android.widget.ImageView
 import androidx.preference.PreferenceViewHolder
 import org.mozilla.fenix.R
+import org.mozilla.fenix.browser.browsingmode.BrowsingMode.Normal
 import org.mozilla.fenix.ext.components
 
 const val SIMPLE_TOOLBAR_TYPE = "simple"
@@ -23,6 +24,10 @@ internal class ToolbarSimpleShortcutPreference @JvmOverloads constructor(
         get() = simpleShortcutOptions.filterNot {
             it.key == ShortcutType.SUMMARIZE && !isSummarizationEnabled
         }
+
+    // Summarization is unavailable in private browsing, so keep the option visible but disabled.
+    override fun isOptionEnabled(option: ShortcutOption): Boolean =
+        option.key != ShortcutType.SUMMARIZE || isBrowsingInNormalMode
 
     /**
      * Optional callback for when a new shortcut option is selected.
@@ -52,4 +57,7 @@ internal class ToolbarSimpleShortcutPreference @JvmOverloads constructor(
 
     private val isSummarizationEnabled: Boolean
         get() = context.components.core.summarizeFeatureSettings.canShowFeature
+
+    private val isBrowsingInNormalMode: Boolean
+        get() = context.components.appStore.state.mode == Normal
 }

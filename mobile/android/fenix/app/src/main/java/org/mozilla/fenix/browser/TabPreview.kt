@@ -43,6 +43,8 @@ import mozilla.components.support.ktx.kotlin.applyRegistrableDomainSpan
 import mozilla.components.support.ktx.kotlin.isContentUrl
 import mozilla.components.support.ktx.util.URLStringUtils
 import org.mozilla.fenix.R
+import org.mozilla.fenix.browser.browsingmode.BrowsingMode.Normal
+import org.mozilla.fenix.browser.browsingmode.BrowsingMode.Private
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.databinding.TabPreviewBinding
 import org.mozilla.fenix.ext.components
@@ -69,6 +71,7 @@ class TabPreview @JvmOverloads constructor(
 ) : CoordinatorLayout(context, attrs, defStyle) {
     private val binding = TabPreviewBinding.inflate(LayoutInflater.from(context), this)
     private val thumbnailLoader = ThumbnailLoader(context.components.core.thumbnailStorage)
+    private val appStore = context.components.appStore
     private val summarizationFeatureSettings = context.components.core.summarizeFeatureSettings
 
     private lateinit var mockToolbarView: View
@@ -238,6 +241,10 @@ class TabPreview @JvmOverloads constructor(
             ToolbarAction.Summarize -> ActionButtonRes(
                 drawableResId = iconsR.drawable.mozac_ic_sparkle_24,
                 contentDescription = summariesR.string.mozac_summarize_settings_summarize_pages,
+                state = when (appStore.state.mode) {
+                    Normal -> ActionButton.State.DEFAULT
+                    Private -> ActionButton.State.DISABLED
+                },
                 onClick = object : BrowserToolbarEvent {},
             )
         }
