@@ -1235,15 +1235,15 @@ export const PREFS_CONFIG = new Map([
     "widgets.maximized",
     {
       title:
-        "Toggles maximized state for all widgets in the widgets section. It defaults to true as the default widget size is large",
-      value: true,
+        "Toggles maximized state for all widgets in the widgets section. It defaults to false as the default widget size is medium",
+      value: false,
     },
   ],
   [
     "widgets.system.maximized",
     {
       title: "Enables the maximize widget feature experiment in Nimbus",
-      value: false,
+      value: true,
     },
   ],
   [
