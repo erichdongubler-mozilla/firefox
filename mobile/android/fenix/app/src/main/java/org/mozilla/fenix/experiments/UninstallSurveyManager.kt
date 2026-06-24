@@ -7,21 +7,30 @@ package org.mozilla.fenix.experiments
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.pm.ShortcutInfoCompat
-import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.navigation.NavController
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.IntentReceiverActivity
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.ShortcutManagerCompatWrapper
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.home.HomeFragmentDirections
+import org.mozilla.fenix.utils.Settings
 import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Manager class responsible for creating the uninstall survey app shortcut
  * and handling its navigation routing.
+ *
+ * @param context The application context.
+ * @param shortcutManagerWrapper The wrapper used to publish or remove dynamic shortcuts.
+ * @param settings The [Settings] instance used to retrieve the feature flag state.
  */
-class UninstallSurveyManager(private val context: Context) {
+class UninstallSurveyManager(
+    private val context: Context,
+    private val shortcutManagerWrapper: ShortcutManagerCompatWrapper,
+    private val settings: Settings = context.components.settings,
+) {
 
     private val logger = Logger("UninstallSurveyManager")
     private val shortcutIntent = Intent(context, IntentReceiverActivity::class.java).apply {
@@ -32,7 +41,7 @@ class UninstallSurveyManager(private val context: Context) {
      * Programmatically registers or updates the dynamic shortcut on the device home screen.
      */
     fun updateUninstallSurveyShortcut() {
-            if (context.components.settings.uninstallSurveyFeatureFlagEnabled) {
+            if (settings.uninstallSurveyFeatureFlagEnabled) {
                 val shortcut = ShortcutInfoCompat.Builder(context, SHORTCUT_ID)
                     .setShortLabel(context.getString(R.string.home_screen_shortcut_uninstall_survey))
                     .setIcon(IconCompat.createWithResource(context, iconsR.drawable.mozac_ic_delete_black_24))
@@ -40,22 +49,25 @@ class UninstallSurveyManager(private val context: Context) {
                     .build()
 
                 try {
-                    ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
+                    shortcutManagerWrapper.pushDynamicShortcut(context, shortcut)
                 } catch (e: SecurityException) {
                     logger.error("Knox or system security policy blocked shortcut creation", e)
                 } catch (e: IllegalStateException) {
                     logger.error("Failed to push dynamic shortcut due to invalid system state", e)
                 }
             } else {
-                ShortcutManagerCompat.removeDynamicShortcuts(context, listOf(SHORTCUT_ID))
+                shortcutManagerWrapper.removeDynamicShortcuts(context, listOf(SHORTCUT_ID))
             }
     }
 
     /**
-     * Navigates to the survey dialog from the shortcut intent, preventing duplicate views and routing loops.
+     * Checks the intent action and routes the user to the uninstall survey dialog if applicable.
+     *
+     * @param intentAction The action string from the incoming intent.
+     * @param navController The [NavController] used to trigger the navigation.
      */
-    fun showUninstallSurvey(currentIntent: Intent?, navController: NavController) {
-        if (currentIntent?.action == ACTION_UNINSTALL_SURVEY) {
+    fun showUninstallSurvey(intentAction: String?, navController: NavController) {
+        if (intentAction == ACTION_UNINSTALL_SURVEY) {
             val isAlreadyShowing = navController.currentDestination?.id == R.id.uninstallSurveyBottomSheetFragment
 
             if (!isAlreadyShowing) {
@@ -63,7 +75,6 @@ class UninstallSurveyManager(private val context: Context) {
                     HomeFragmentDirections.actionGlobalUninstallSurveyDialog(UNINSTALL_SURVEY_ARG),
                 )
             }
-            currentIntent.action = null
         }
     }
 

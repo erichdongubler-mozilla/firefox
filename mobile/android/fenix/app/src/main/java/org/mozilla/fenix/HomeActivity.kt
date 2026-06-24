@@ -103,6 +103,7 @@ import org.mozilla.fenix.browser.BrowserFragment
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.browser.browsingmode.DefaultBrowsingModeManager
+import org.mozilla.fenix.components.DefaultShortcutManagerCompatWrapper
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.ShareAction
 import org.mozilla.fenix.components.appstate.OrientationMode
@@ -366,7 +367,9 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         )
     }
 
-    private val uninstallSurveyManager by lazy { UninstallSurveyManager(this) }
+    private val uninstallSurveyManager by lazy {
+        UninstallSurveyManager(this, DefaultShortcutManagerCompatWrapper())
+    }
 
     // See onKeyDown for why this is necessary
     private var backLongPressJob: Job? = null
@@ -671,7 +674,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             lifecycleScope.launch(IO) {
                 uninstallSurveyManager.updateUninstallSurveyShortcut()
             }
-            uninstallSurveyManager.showUninstallSurvey(intent, navHost.navController)
+            uninstallSurveyManager.showUninstallSurvey(intent.action, navHost.navController)
         }
 
         StartupTimeline.onActivityCreateEndHome(this) // DO NOT MOVE ANYTHING BELOW HERE.

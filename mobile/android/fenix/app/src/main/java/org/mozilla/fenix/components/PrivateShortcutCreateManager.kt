@@ -42,6 +42,22 @@ interface ShortcutManagerCompatWrapper {
      *         Note that this does not guarantee the shortcut will be pinned, as the user can cancel the request.
      */
     fun requestPinShortcut(context: Context, shortcut: ShortcutInfoCompat, intentSender: IntentSender?): Boolean
+
+    /**
+     * Publishes the list of dynamic shortcuts.
+     *
+     * @param context The application context.
+     * @param shortcut The [ShortcutInfoCompat] object representing the shortcut to be pinned.
+     */
+    fun pushDynamicShortcut(context: Context, shortcut: ShortcutInfoCompat)
+
+    /**
+     * Removes specific dynamic shortcuts by their IDs.
+     *
+     * @param context The application context.
+     * @param shortcutIds The list of unique IDs representing the shortcuts to be removed.
+     */
+    fun removeDynamicShortcuts(context: Context, shortcutIds: List<String>)
 }
 
 /**
@@ -58,6 +74,20 @@ class DefaultShortcutManagerCompatWrapper : ShortcutManagerCompatWrapper {
         intentSender: IntentSender?,
     ): Boolean {
         return ShortcutManagerCompat.requestPinShortcut(context, shortcut, intentSender)
+    }
+
+    override fun pushDynamicShortcut(
+        context: Context,
+        shortcut: ShortcutInfoCompat,
+    ) {
+        ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
+    }
+
+    override fun removeDynamicShortcuts(
+        context: Context,
+        shortcutIds: List<String>,
+    ) {
+        ShortcutManagerCompat.removeDynamicShortcuts(context, shortcutIds)
     }
 }
 
