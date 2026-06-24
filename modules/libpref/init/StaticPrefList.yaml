@@ -16346,7 +16346,7 @@
 
 - name: network.http.http3.version_negotiation.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # When a Http/3 connection failed, whether to retry with a different IP address.
