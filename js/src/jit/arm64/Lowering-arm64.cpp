@@ -263,13 +263,12 @@ void LIRGeneratorARM64::lowerMulI(MMul* mul, MDefinition* lhs,
 }
 
 void LIRGeneratorARM64::lowerModI(MMod* mod) {
-  LAllocation lhs = useRegister(mod->lhs());
-
   if (mod->rhs()->isConstant()) {
     int32_t rhs = mod->rhs()->toConstant()->toInt32();
     int32_t shift = mozilla::FloorLog2(mozilla::Abs(rhs));
 
     if (rhs != 0 && uint32_t(1) << shift == mozilla::Abs(rhs)) {
+      LAllocation lhs = useRegisterAtStart(mod->lhs());
       auto* lir = new (alloc()) LModPowTwoI(lhs, shift);
       if (mod->fallible()) {
         assignSnapshot(lir, mod->bailoutKind());
@@ -278,6 +277,7 @@ void LIRGeneratorARM64::lowerModI(MMod* mod) {
       return;
     }
 
+    LAllocation lhs = useRegister(mod->lhs());
     auto* lir = new (alloc()) LModConstantI(lhs, rhs);
     if (mod->fallible()) {
       assignSnapshot(lir, mod->bailoutKind());
@@ -286,6 +286,7 @@ void LIRGeneratorARM64::lowerModI(MMod* mod) {
     return;
   }
 
+  LAllocation lhs = useRegister(mod->lhs());
   auto* lir = new (alloc()) LModI(lhs, useRegister(mod->rhs()));
   if (mod->fallible()) {
     assignSnapshot(lir, mod->bailoutKind());
@@ -317,24 +318,25 @@ void LIRGeneratorARM64::lowerDivI64(MDiv* div) {
 }
 
 void LIRGeneratorARM64::lowerModI64(MMod* mod) {
-  LAllocation lhs = useRegister(mod->lhs());
-
   if (mod->rhs()->isConstant()) {
     int64_t rhs = mod->rhs()->toConstant()->toInt64();
 
     if (std::has_single_bit(mozilla::Abs(rhs))) {
       int32_t shift = mozilla::FloorLog2(mozilla::Abs(rhs));
 
+      LAllocation lhs = useRegisterAtStart(mod->lhs());
       auto* lir = new (alloc()) LModPowTwoI64(lhs, shift);
       define(lir, mod);
       return;
     }
 
+    LAllocation lhs = useRegister(mod->lhs());
     auto* lir = new (alloc()) LModConstantI64(lhs, rhs);
     define(lir, mod);
     return;
   }
 
+  LAllocation lhs = useRegister(mod->lhs());
   auto* lir = new (alloc()) LModI64(lhs, useRegister(mod->rhs()));
   define(lir, mod);
 }
@@ -365,8 +367,6 @@ void LIRGeneratorARM64::lowerUDivI64(MDiv* div) {
 }
 
 void LIRGeneratorARM64::lowerUModI64(MMod* mod) {
-  LAllocation lhs = useRegister(mod->lhs());
-
   if (mod->rhs()->isConstant()) {
     // NOTE: the result of toInt64 is coerced to uint64_t.
     uint64_t rhs = mod->rhs()->toConstant()->toInt64();
@@ -374,16 +374,19 @@ void LIRGeneratorARM64::lowerUModI64(MMod* mod) {
     if (std::has_single_bit(rhs)) {
       int32_t shift = mozilla::FloorLog2(rhs);
 
+      LAllocation lhs = useRegisterAtStart(mod->lhs());
       auto* lir = new (alloc()) LModPowTwoI64(lhs, shift);
       define(lir, mod);
       return;
     }
 
+    LAllocation lhs = useRegister(mod->lhs());
     auto* lir = new (alloc()) LUModConstantI64(lhs, rhs);
     define(lir, mod);
     return;
   }
 
+  LAllocation lhs = useRegister(mod->lhs());
   auto* lir = new (alloc()) LUModI64(lhs, useRegister(mod->rhs()));
   define(lir, mod);
 }
@@ -606,14 +609,13 @@ void LIRGeneratorARM64::lowerUDiv(MDiv* div) {
 }
 
 void LIRGeneratorARM64::lowerUMod(MMod* mod) {
-  LAllocation lhs = useRegister(mod->lhs());
-
   if (mod->rhs()->isConstant()) {
     // NOTE: the result of toInt32 is coerced to uint32_t.
     uint32_t rhs = mod->rhs()->toConstant()->toInt32();
     int32_t shift = mozilla::FloorLog2(rhs);
 
     if (rhs != 0 && uint32_t(1) << shift == rhs) {
+      LAllocation lhs = useRegisterAtStart(mod->lhs());
       auto* lir = new (alloc()) LModPowTwoI(lhs, shift);
       if (mod->fallible()) {
         assignSnapshot(lir, mod->bailoutKind());
@@ -622,6 +624,7 @@ void LIRGeneratorARM64::lowerUMod(MMod* mod) {
       return;
     }
 
+    LAllocation lhs = useRegister(mod->lhs());
     auto* lir = new (alloc()) LUModConstant(lhs, rhs);
     if (mod->fallible()) {
       assignSnapshot(lir, mod->bailoutKind());
@@ -630,6 +633,7 @@ void LIRGeneratorARM64::lowerUMod(MMod* mod) {
     return;
   }
 
+  LAllocation lhs = useRegister(mod->lhs());
   auto* lir = new (alloc()) LUMod(lhs, useRegister(mod->rhs()));
   if (mod->fallible()) {
     assignSnapshot(lir, mod->bailoutKind());
