@@ -29,7 +29,7 @@ add_task(
         const item = getDisplayedPopupItems(browser)[0];
 
         is(
-          getACItemValue(item),
+          item.getAttribute("ac-value"),
           "Manage Passwords",
           "Login Manager should have priority over Form Autofill when password fields are present"
         );
@@ -52,7 +52,7 @@ add_task(
         const item = getDisplayedPopupItems(browser)[0];
 
         is(
-          getACItemValue(item),
+          item.getAttribute("ac-value"),
           "Manage Passwords",
           "Login Manager should be shown when no addresses are saved"
         );
@@ -80,7 +80,7 @@ add_task(async function test_email_field_shows_login_priority_onfocus() {
       const item = getDisplayedPopupItems(browser)[0];
 
       is(
-        getACItemValue(item),
+        item.getAttribute("ac-value"),
         "Manage Passwords",
         "Login Manager should have priority on focus due to password fields"
       );
@@ -103,7 +103,7 @@ add_task(
         const item = getDisplayedPopupItems(browser)[0];
 
         is(
-          getACItemValue(item),
+          item.getAttribute("ac-value"),
           "Manage Passwords",
           "Login Manager should be the result on focus"
         );
@@ -131,13 +131,13 @@ add_task(async function test_single_email_field_now_shows_address_autofill() {
       const items = getDisplayedPopupItems(browser);
 
       is(
-        getACItemValue(items[0]),
+        items[0].getAttribute("ac-value"),
         TEST_ADDRESS_1.email,
         "The first result should be the saved email address"
       );
 
       is(
-        getACItemValue(items[1]),
+        items[1].getAttribute("ac-value"),
         "Manage addresses",
         "The second result should be the Manage addresses footer"
       );

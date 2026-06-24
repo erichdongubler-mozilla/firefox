@@ -160,11 +160,7 @@ add_task(async function test_all_patterns() {
           label:
             "This connection is not secure. Logins entered here could be compromised. Learn More",
           style: "insecureWarning",
-          comment: {
-            fillMessageName:
-              "PasswordManager:OpenInsecureFieldWarningLearnMore",
-            icon: "chrome://global/skin/icons/security-broken.svg",
-          },
+          comment: "",
         },
         {
           value: "",
@@ -187,11 +183,7 @@ add_task(async function test_all_patterns() {
           label:
             "This connection is not secure. Logins entered here could be compromised. Learn More",
           style: "insecureWarning",
-          comment: {
-            fillMessageName:
-              "PasswordManager:OpenInsecureFieldWarningLearnMore",
-            icon: "chrome://global/skin/icons/security-broken.svg",
-          },
+          comment: "",
         },
         {
           value: "",
@@ -296,11 +288,7 @@ add_task(async function test_all_patterns() {
           label:
             "This connection is not secure. Logins entered here could be compromised. Learn More",
           style: "insecureWarning",
-          comment: {
-            fillMessageName:
-              "PasswordManager:OpenInsecureFieldWarningLearnMore",
-            icon: "chrome://global/skin/icons/security-broken.svg",
-          },
+          comment: "",
         },
         {
           value: "emptypass1",
@@ -406,11 +394,7 @@ add_task(async function test_all_patterns() {
           label:
             "This connection is not secure. Logins entered here could be compromised. Learn More",
           style: "insecureWarning",
-          comment: {
-            fillMessageName:
-              "PasswordManager:OpenInsecureFieldWarningLearnMore",
-            icon: "chrome://global/skin/icons/security-broken.svg",
-          },
+          comment: "",
         },
         {
           value: "",

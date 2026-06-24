@@ -51,17 +51,11 @@ let allFieldNames = [
   "tel",
 ];
 
-function getExpectedAddressImage() {
-  return "chrome://browser/skin/fxa/avatar-empty.svg";
-}
-
 function makeAddressComment({ primary, secondary, profile }) {
   return JSON.stringify({
     primary,
     secondary,
     ariaLabel: primary + " " + secondary,
-    image: getExpectedAddressImage(),
-    type: "address",
     fillMessageName: "FormAutofill:FillForm",
     fillMessageData: { profile },
   });
@@ -79,7 +73,6 @@ function makeCreditCardComment({
     secondary,
     ariaLabel,
     image,
-    type: "payment",
     fillMessageName: "FormAutofill:FillForm",
     fillMessageData: { profile },
   });
@@ -106,7 +99,7 @@ let addressTestCases = [
             secondary: "123 Sesame Street.",
             profile: matchingProfiles[0],
           }),
-          image: getExpectedAddressImage(),
+          image: "",
         },
         {
           value: "",
@@ -117,7 +110,7 @@ let addressTestCases = [
             secondary: "331 E. Evelyn Avenue",
             profile: matchingProfiles[1],
           }),
-          image: getExpectedAddressImage(),
+          image: "",
         },
       ],
     },
@@ -147,7 +140,7 @@ let addressTestCases = [
             secondary: "123 Sesame Street.",
             profile: matchingProfiles[0],
           }),
-          image: getExpectedAddressImage(),
+          image: "",
         },
         {
           value: "",
@@ -158,7 +151,7 @@ let addressTestCases = [
             secondary: "331 E. Evelyn Avenue",
             profile: matchingProfiles[1],
           }),
-          image: getExpectedAddressImage(),
+          image: "",
         },
         {
           value: "",
@@ -169,7 +162,7 @@ let addressTestCases = [
             secondary: "321, No Name St. 2nd line 3rd line",
             profile: matchingProfiles[2],
           }),
-          image: getExpectedAddressImage(),
+          image: "",
         },
       ],
     },
@@ -199,7 +192,7 @@ let addressTestCases = [
             secondary: "Timothy Berners-Lee",
             profile: matchingProfiles[0],
           }),
-          image: getExpectedAddressImage(),
+          image: "",
         },
         {
           value: "",
@@ -210,7 +203,7 @@ let addressTestCases = [
             secondary: "John Doe",
             profile: matchingProfiles[1],
           }),
-          image: getExpectedAddressImage(),
+          image: "",
         },
         {
           value: "",
@@ -221,7 +214,7 @@ let addressTestCases = [
             secondary: "1-000-000-0000",
             profile: matchingProfiles[2],
           }),
-          image: getExpectedAddressImage(),
+          image: "",
         },
       ],
     },
@@ -251,7 +244,7 @@ let addressTestCases = [
             secondary: "Timothy Berners-Lee",
             profile: matchingProfiles[0],
           }),
-          image: getExpectedAddressImage(),
+          image: "",
         },
         {
           value: "",
@@ -262,7 +255,7 @@ let addressTestCases = [
             secondary: "John Doe",
             profile: matchingProfiles[1],
           }),
-          image: getExpectedAddressImage(),
+          image: "",
         },
         {
           value: "",
@@ -273,7 +266,7 @@ let addressTestCases = [
             secondary: "1-000-000-0000",
             profile: matchingProfiles[2],
           }),
-          image: getExpectedAddressImage(),
+          image: "",
         },
       ],
     },

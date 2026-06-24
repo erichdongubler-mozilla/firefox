@@ -47,6 +47,20 @@ add_task(async function test_credit_card_dropdown() {
         "aria-label should start with Visa"
       );
 
+      // The breakpoint of two-lines layout is 185px
+      await reopenPopupWithResizedInput(browser, focusInput, 175);
+      is(
+        firstItem._itemBox.getAttribute("size"),
+        "small",
+        "Show two-lines layout"
+      );
+      await reopenPopupWithResizedInput(browser, focusInput, 195);
+      is(
+        firstItem._itemBox.hasAttribute("size"),
+        false,
+        "Show one-line layout"
+      );
+
       await closePopup(browser);
     }
   );
@@ -69,7 +83,7 @@ add_task(async function test_credit_card_dropdown_icon_invalid_types_select() {
       );
 
       for (const [index, creditCardItem] of creditCardItems.entries()) {
-        const creditCardItemIcon = getACItemIcon(creditCardItem);
+        const creditCardItemIcon = creditCardItem.getAttribute("ac-image");
         ok(
           creditCardItemIcon.includes(
             CreditCard.getType(TEST_CREDIT_CARDS[index]["cc-number"])
