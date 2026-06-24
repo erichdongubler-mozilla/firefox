@@ -3157,7 +3157,11 @@ static bool MoveToPending(nsIFile* dumpFile, nsIFile* extraFile,
   return true;
 }
 
-nsresult OOPInit(nsIFile* aXREDirectory) {
+nsresult OOPInit(nsIFile* aXREDirectory, bool force /*=false*/) {
+  if (!CrashReporterIsEnabled(force)) {
+    return NS_OK;
+  }
+
   CrashHelperClient* crashHelperClient;
 
   PathString tempPath;

@@ -79,7 +79,7 @@ static inline bool IsDummy() {
 #endif
 }
 
-nsresult OOPInit(nsIFile* aXREDirectory);
+nsresult OOPInit(nsIFile* aXREDirectory, bool force = false);
 void OOPDeinit();
 nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force = false);
 nsresult UnsetExceptionHandler();
