@@ -891,7 +891,9 @@ nsresult HTMLFormElement::SubmitSubmission(
     } else {
       loadState->SetSourceElement(this);
     }
-    nsresult rv = container->OnFormSubmit(this, loadState);
+
+    nsCOMPtr<nsIPrincipal> nodePrincipal = NodePrincipal();
+    rv = container->OnLinkClickSync(this, loadState, false, nodePrincipal);
     NS_ENSURE_SUBMIT_SUCCESS(rv);
 
     mTargetContext = loadState->TargetBrowsingContext().GetMaybeDiscarded();

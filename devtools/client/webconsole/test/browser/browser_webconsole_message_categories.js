@@ -32,17 +32,11 @@ const TESTS = [
     category: "HTML",
     matchString: "multipart/form-data",
     typeSelector: ".warn",
-    async onload() {
+    onload() {
       SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {
         const form = content.document.querySelector("form");
         form.submit();
       });
-      // wait for form submission navigation
-      await TestUtils.waitForCondition(() =>
-        SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
-          content.location.search !== "";
-        })
-      );
     },
   },
   {
