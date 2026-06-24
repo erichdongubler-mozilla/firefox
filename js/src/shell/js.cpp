@@ -13417,6 +13417,9 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
   if (op.getBoolOption("enable-intl-locale-info")) {
     JS::Prefs::setAtStartup_experimental_intl_locale_info(true);
   }
+  if (op.getBoolOption("enable-iterator-includes")) {
+    JS::Prefs::setAtStartup_experimental_iterator_includes(true);
+  }
 #ifdef NIGHTLY_BUILD
   if (op.getBoolOption("enable-async-iterator-helpers")) {
     JS::Prefs::setAtStartup_experimental_async_iterator_helpers(true);
@@ -13441,9 +13444,6 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
   }
   if (op.getBoolOption("enable-iterator-join")) {
     JS::Prefs::setAtStartup_experimental_iterator_join(true);
-  }
-  if (op.getBoolOption("enable-iterator-includes")) {
-    JS::Prefs::setAtStartup_experimental_iterator_includes(true);
   }
   if (op.getBoolOption("enable-error-stack-trace-limit")) {
     JS::Prefs::setAtStartup_experimental_error_stack_trace_limit(true);

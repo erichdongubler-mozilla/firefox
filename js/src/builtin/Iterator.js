@@ -2232,6 +2232,8 @@ function IteratorJoin(separator) {
   return R;
 }
 
+#endif
+
 /**
  *  Iterator.prototype.includes ( searchElement [ , skippedElements ] )
  *
@@ -2313,5 +2315,3 @@ function IteratorIncludes(searchElement, skippedElements = undefined) {
   // Step 10.b. If value is done, return false.
   return false;
 }
-
-#endif
