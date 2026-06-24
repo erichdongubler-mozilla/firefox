@@ -68,8 +68,6 @@ add_task(async function test_saveCreditCard() {
     EventUtils.synthesizeKey("VK_TAB", {}, win);
     EventUtils.synthesizeKey(TEST_CREDIT_CARD_1["cc-number"], {}, win);
     EventUtils.synthesizeKey("VK_TAB", {}, win);
-    EventUtils.synthesizeKey(TEST_CREDIT_CARD_1["cc-name"], {}, win);
-    EventUtils.synthesizeKey("VK_TAB", {}, win);
     EventUtils.synthesizeKey(
       "0" + TEST_CREDIT_CARD_1["cc-exp-month"].toString(),
       {},
@@ -81,16 +79,14 @@ add_task(async function test_saveCreditCard() {
       {},
       win
     );
+    EventUtils.synthesizeKey("VK_TAB", {}, win);
+    EventUtils.synthesizeKey(TEST_CREDIT_CARD_1["cc-name"], {}, win);
+    EventUtils.synthesizeKey("VK_TAB", {}, win);
+    EventUtils.synthesizeKey("VK_TAB", {}, win);
     info("saving credit card");
-    win.document.querySelector("#save").click();
+    EventUtils.synthesizeKey("VK_RETURN", {}, win);
   });
 
-  // The record is saved and the telemetry event recorded asynchronously after
-  // the dialog closes, so wait for the event rather than reading it instantly.
-  await TestUtils.waitForCondition(
-    () => Glean.creditcard.addManage.testGetValue()?.length === 1,
-    "Wait for the addManage telemetry event to be recorded"
-  );
   Assert.equal(1, Glean.creditcard.addManage.testGetValue().length);
 
   await cleanupFunc();
@@ -111,6 +107,7 @@ add_task(async function test_editCreditCard() {
   await testDialog(
     EDIT_CREDIT_CARD_DIALOG_URL,
     win => {
+      EventUtils.synthesizeKey("VK_TAB", {}, win);
       EventUtils.synthesizeKey("VK_TAB", {}, win);
       EventUtils.synthesizeKey("VK_TAB", {}, win);
       EventUtils.synthesizeKey("VK_RIGHT", {}, win);

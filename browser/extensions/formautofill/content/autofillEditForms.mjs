@@ -23,15 +23,31 @@ class EditAutofillForm {
     for (let field of this._elements.form.elements) {
       let value = record[field.id];
       value = typeof value == "undefined" ? "" : value;
-      field.value = value;
+
+      if (record.guid) {
+        field.value = value;
+      } else if (field.localName == "select") {
+        this.setDefaultSelectedOptionByValue(field, value);
+      } else {
+        // Use .defaultValue instead of .value to avoid setting the `dirty` flag
+        // which triggers form validation UI.
+        field.defaultValue = value;
+      }
     }
     if (!record.guid) {
       // Reset the dirty value flag and validity state.
       this._elements.form.reset();
     } else {
       for (let field of this._elements.form.elements) {
+        this.updatePopulatedState(field);
         this.updateCustomValidity(field);
       }
+    }
+  }
+
+  setDefaultSelectedOptionByValue(select, value) {
+    for (let option of select.options) {
+      option.defaultSelected = option.value == value;
     }
   }
 
@@ -80,20 +96,38 @@ class EditAutofillForm {
     }
   }
 
-  // Clear the CSS error state when the user starts correcting a field.
+  /**
+   * Handle change events
+   *
+   * @param  {DOMEvent} event
+   */
   handleChange(event) {
-    event.target.removeAttribute("invalid");
+    this.updatePopulatedState(event.target);
   }
 
-  handleInput(event) {
-    event.target.removeAttribute("invalid");
-  }
+  /**
+   * Handle input events
+   */
+  handleInput(_e) {}
 
   /**
    * Attach event listener
    */
   attachEventListeners() {
     this._elements.form.addEventListener("input", this);
+  }
+
+  /**
+   * Set the field-populated attribute if the field has a value.
+   *
+   * @param {DOMElement} field The field that will be checked for a value.
+   */
+  updatePopulatedState(field) {
+    let span = field.parentNode.querySelector(".label-text");
+    if (!span) {
+      return;
+    }
+    span.toggleAttribute("field-populated", !!field.value.trim());
   }
 
   /**
@@ -151,10 +185,7 @@ export class EditCreditCard extends EditAutofillForm {
     this._elements.month.textContent = "";
 
     // Empty month option
-    let emptyOption = document.createElement("moz-option");
-    emptyOption.setAttribute("value", "");
-    emptyOption.setAttribute("label", "");
-    this._elements.month.appendChild(emptyOption);
+    this._elements.month.appendChild(new Option());
 
     // Populate month list. Format: "month number - month name"
     let dateFormat = new Intl.DateTimeFormat(navigator.language, {
@@ -163,13 +194,10 @@ export class EditCreditCard extends EditAutofillForm {
     for (let i = 0; i < count; i++) {
       let monthNumber = (i + 1).toString();
       let monthName = dateFormat(new Date(1970, i));
-      let option = document.createElement("moz-option");
-      option.setAttribute("value", monthNumber);
+      let option = new Option();
+      option.value = monthNumber;
       // XXX: Bug 1446164 - Localize this string.
-      option.setAttribute(
-        "label",
-        `${monthNumber.padStart(2, "0")} - ${monthName}`
-      );
+      option.textContent = `${monthNumber.padStart(2, "0")} - ${monthName}`;
       this._elements.month.appendChild(option);
     }
   }
@@ -183,31 +211,20 @@ export class EditCreditCard extends EditAutofillForm {
     this._elements.year.textContent = "";
 
     // Provide an empty year option
-    let emptyOption = document.createElement("moz-option");
-    emptyOption.setAttribute("value", "");
-    emptyOption.setAttribute("label", "");
-    this._elements.year.appendChild(emptyOption);
+    this._elements.year.appendChild(new Option());
 
     if (ccExpYear && ccExpYear < currentYear) {
-      let option = document.createElement("moz-option");
-      option.setAttribute("value", String(ccExpYear));
-      option.setAttribute("label", String(ccExpYear));
-      this._elements.year.appendChild(option);
+      this._elements.year.appendChild(new Option(ccExpYear));
     }
 
     for (let i = 0; i < count; i++) {
       let year = currentYear + i;
-      let option = document.createElement("moz-option");
-      option.setAttribute("value", String(year));
-      option.setAttribute("label", String(year));
+      let option = new Option(year);
       this._elements.year.appendChild(option);
     }
 
     if (ccExpYear && ccExpYear > currentYear + count) {
-      let option = document.createElement("moz-option");
-      option.setAttribute("value", String(ccExpYear));
-      option.setAttribute("label", String(ccExpYear));
-      this._elements.year.appendChild(option);
+      this._elements.year.appendChild(new Option(ccExpYear));
     }
   }
 
@@ -221,25 +238,19 @@ export class EditCreditCard extends EditAutofillForm {
 
     this._elements.billingAddress.textContent = "";
 
-    let emptyOption = document.createElement("moz-option");
-    emptyOption.setAttribute("value", "");
-    emptyOption.setAttribute("label", "");
-    this._elements.billingAddress.appendChild(emptyOption);
+    this._elements.billingAddress.appendChild(new Option("", ""));
 
     let hasAddresses = false;
     for (let [guid, address] of Object.entries(this._addresses)) {
       hasAddresses = true;
-      let option = document.createElement("moz-option");
-      option.setAttribute("value", guid);
-      option.setAttribute(
-        "label",
-        lazy.FormAutofillUtils.getAddressLabel(address)
+      let selected = guid == billingAddressGUID;
+      let option = new Option(
+        lazy.FormAutofillUtils.getAddressLabel(address),
+        guid,
+        selected,
+        selected
       );
       this._elements.billingAddress.appendChild(option);
-    }
-
-    if (billingAddressGUID) {
-      this._elements.billingAddress.value = billingAddressGUID;
     }
 
     this._elements.billingAddressRow.hidden = !hasAddresses;
@@ -256,61 +267,9 @@ export class EditCreditCard extends EditAutofillForm {
       event.target == this._elements.ccNumber &&
       lazy.FormAutofillUtils.isCCNumber(this._elements.ccNumber.value)
     ) {
-      let inputEl = this._elements.ccNumber.inputEl;
-      if (inputEl) {
-        inputEl.setCustomValidity("");
-      }
+      this._elements.ccNumber.setCustomValidity("");
     }
     super.handleInput(event);
-  }
-
-  /**
-   * Sets required and pattern constraints on inner input elements so that
-   * native constraint validation works when validateForm() is called.
-   */
-  setupValidation() {
-    if (this._validationSetup) {
-      return;
-    }
-    this._validationSetup = true;
-
-    let ccEl = this._elements.ccNumber;
-    if (ccEl?.inputEl) {
-      ccEl.inputEl.required = true;
-      ccEl.inputEl.minLength = 14;
-      ccEl.inputEl.pattern = "[\\- 0-9]+";
-    }
-
-    for (let id of ["cc-exp-month", "cc-exp-year", "cc-name"]) {
-      let el = this._elements.form.querySelector(`#${id}`);
-      if (el?.inputEl) {
-        el.inputEl.required = true;
-      }
-    }
-  }
-
-  /**
-   * Validates each form field via its inner input element.
-   *
-   * @returns {boolean} True if all fields are valid.
-   */
-  validateForm() {
-    this.setupValidation();
-    let firstInvalidField = null;
-    for (let field of this._elements.form.elements) {
-      if (field.inputEl) {
-        const valid = field.inputEl.checkValidity();
-        field.toggleAttribute("invalid", !valid);
-        if (!valid && !firstInvalidField) {
-          firstInvalidField = field;
-        }
-      }
-    }
-    if (firstInvalidField) {
-      firstInvalidField.inputEl.reportValidity();
-      return false;
-    }
-    return true;
   }
 
   updateCustomValidity(field) {
@@ -323,10 +282,7 @@ export class EditCreditCard extends EditAutofillForm {
     ) {
       let invalidCardNumberString =
         this._elements.invalidCardNumberStringElement.textContent;
-      let inputEl = field.inputEl;
-      if (inputEl) {
-        inputEl.setCustomValidity(invalidCardNumberString || " ");
-      }
+      field.setCustomValidity(invalidCardNumberString || " ");
     }
   }
 }
