@@ -227,6 +227,7 @@ export default class TurnOnScheduledBackups extends MozLitElement {
 
   handleConfirm() {
     let detail = {
+      parentDirPath: this._newPath || this.defaultPath,
       source: this.source,
     };
 
@@ -245,6 +246,11 @@ export default class TurnOnScheduledBackups extends MozLitElement {
         );
         return;
       }
+
+      // The persistent data will take precedence over the default path
+      detail.parentDirPath =
+        this.backupServiceState?.embeddedComponentPersistentData?.path ||
+        detail.parentDirPath;
     }
 
     this.dispatchEvent(
