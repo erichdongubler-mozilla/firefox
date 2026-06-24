@@ -345,7 +345,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
 
     .sponsored-label {
       color: var(--newtab-contextual-text-secondary-color);
-      font-size: var(--font-size-xsmall);
+      font-size: var(--newtab-font-size-xsmall);
     }
 
     &:not(.sponsored) .sponsored-label {

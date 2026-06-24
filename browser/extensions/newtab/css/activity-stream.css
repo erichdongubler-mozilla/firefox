@@ -33,6 +33,7 @@ input {
   --newtab-card-width-medium: 300px;
   --newtab-card-grid-layout-width: 296px;
   --newtab-card-height-small: 133px;
+  --newtab-font-size-xsmall: 0.733rem;
 }
 
 :root {
@@ -1419,7 +1420,7 @@ main.newtab-main section {
 }
 .top-site-outer .title .sponsored-label {
   color: var(--newtab-contextual-text-secondary-color);
-  font-size: var(--font-size-xsmall);
+  font-size: var(--newtab-font-size-xsmall);
 }
 .top-site-outer .title:not(.sponsored) .sponsored-label {
   display: none;
