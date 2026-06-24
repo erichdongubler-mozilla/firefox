@@ -252,6 +252,13 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
     Date.now() >= WORLD_CUP_KICKOFF_MS || prefs[PREF_FORCE_LIVE_DATA_TRUSTABLE];
   const hasLiveGames =
     liveDataTrustable && sportsWidgetData?.data?.live?.length > 0;
+  // The watch-links endpoint only lists broadcasters for supported countries.
+  // The backend hoists the user's own country into `your_region`, so a
+  // non-empty `your_region` means the user's region is supported and the
+  // "Watch live" entry point should be shown; an empty one (e.g. Turkey) hides
+  // it.
+  const canWatchLive =
+    sportsWidgetData?.watchLive?.data?.your_region?.length > 0;
   const hasPreviousResults =
     sportsWidgetData?.data?.matches?.previous?.length > 0;
   // Upcoming matches alone don't mean the tournament has started — the backend
@@ -1216,6 +1223,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
             showUpcomingList={showUpcomingList}
             setShowUpcomingList={setShowUpcomingList}
             loadMore={sportsWidgetData.loadMore}
+            canWatchLive={canWatchLive}
             onWatchClick={() => setWatchLiveOpen(true)}
           />
         )}
@@ -1481,6 +1489,7 @@ function SportsMatchesView({
   showUpcomingList,
   setShowUpcomingList,
   loadMore,
+  canWatchLive,
   onWatchClick,
 }) {
   const resultsPanelRef = useRef(null);
@@ -1806,18 +1815,20 @@ function SportsMatchesView({
                 />
               </div>
               {/* TODO: Replace play icon when finalized */}
-              <moz-button
-                className="sports-watch-live-button"
-                type={size === "medium" ? "icon" : "default"}
-                size={size === "medium" ? "small" : undefined}
-                iconSrc="chrome://browser/skin/device-tv.svg"
-                data-l10n-id={
-                  size === "medium"
-                    ? "newtab-sports-widget-watch-icon"
-                    : "newtab-sports-widget-watch"
-                }
-                onClick={onWatchClick}
-              ></moz-button>
+              {canWatchLive && (
+                <moz-button
+                  className="sports-watch-live-button"
+                  type={size === "medium" ? "icon" : "default"}
+                  size={size === "medium" ? "small" : undefined}
+                  iconSrc="chrome://browser/skin/device-tv.svg"
+                  data-l10n-id={
+                    size === "medium"
+                      ? "newtab-sports-widget-watch-icon"
+                      : "newtab-sports-widget-watch"
+                  }
+                  onClick={onWatchClick}
+                ></moz-button>
+              )}
               {size === "medium" && (
                 <LiveRefreshButton
                   isCoolingDown={liveRefreshCoolingDown}
