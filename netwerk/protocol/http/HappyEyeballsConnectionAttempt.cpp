@@ -66,6 +66,7 @@ HappyEyeballsConnectionAttempt::HappyEyeballsConnectionAttempt(
     nsHttpConnectionInfo* ci, nsAHttpTransaction* trans, uint32_t caps,
     bool speculative, bool urgentStart)
     : ConnectionAttempt(ci, trans, caps, speculative, urgentStart),
+      mEstablisherFactory(new DefaultConnectionEstablisherFactory()),
       mZeroRttHandle(new ZeroRttHandle(this)) {
   LOG(("HappyEyeballsConnectionAttempt ctor %p", this));
   if (mConnInfo->GetRoutedHost().IsEmpty()) {
@@ -926,8 +927,9 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
   }
   NotifyConnectionActivity(info, NS_HTTP_ACTIVITY_SUBTYPE_CONNECTION_CREATED);
   uint32_t caps = mCaps | (aIsEchRetry ? NS_HTTP_IS_RETRY : 0);
-  RefPtr<TCPConnectionEstablisher> establisher =
-      new TCPConnectionEstablisher(info, aAddr, caps, mSpeculative, mAllow1918);
+  RefPtr<ConnectionEstablisher> establisher =
+      mEstablisherFactory->Create(ConnectionEstablisherType::TCP, info, aAddr,
+                                  caps, mSpeculative, mAllow1918);
   establisher->SetDnsMetadata(mDnsMetadata);
   nsCOMPtr<nsIInterfaceRequestor> callbacks;
   mTransaction->GetSecurityCallbacks(getter_AddRefs(callbacks));
@@ -972,8 +974,9 @@ nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
   }
   NotifyConnectionActivity(info, NS_HTTP_ACTIVITY_SUBTYPE_CONNECTION_CREATED);
   uint32_t caps = mCaps | (aIsEchRetry ? NS_HTTP_IS_RETRY : 0);
-  RefPtr<UDPConnectionEstablisher> establisher =
-      new UDPConnectionEstablisher(info, aAddr, caps);
+  RefPtr<ConnectionEstablisher> establisher =
+      mEstablisherFactory->Create(ConnectionEstablisherType::UDP, info, aAddr,
+                                  caps, mSpeculative, mAllow1918);
   establisher->SetDnsMetadata(mDnsMetadata);
   establisher->SetTransportStatusCallback(
       [self = RefPtr{this}](nsITransport* trans, nsresult status,
