@@ -21,6 +21,7 @@ import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.tabstray.repository.uistate.data.PersistedUIState
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -100,6 +101,29 @@ class TabManagerUiStateStorageMiddlewareTest {
         advanceUntilIdle()
 
         assertTrue { repository.uiState.value!!.hasUserDismissedTabGroupOnboarding }
+    }
+
+    @Test
+    fun `WHEN the tab group onboarding is shown THEN the impression count is incremented`() = runTest {
+        createStore().dispatch(TabGroupAction.OnboardingShown)
+
+        runCurrent()
+        advanceUntilIdle()
+
+        assertEquals(1, repository.uiState.value!!.tabGroupOnboardingImpressionCount)
+    }
+
+    @Test
+    fun `WHEN the tab group onboarding is shown multiple times in a session THEN the impression count is incremented only once`() = runTest {
+        val store = createStore()
+
+        store.dispatch(TabGroupAction.OnboardingShown)
+        store.dispatch(TabGroupAction.OnboardingShown)
+
+        runCurrent()
+        advanceUntilIdle()
+
+        assertEquals(1, repository.uiState.value!!.tabGroupOnboardingImpressionCount)
     }
 
     @Test

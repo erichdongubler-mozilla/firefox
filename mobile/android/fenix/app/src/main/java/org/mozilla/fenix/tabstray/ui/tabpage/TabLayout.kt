@@ -188,6 +188,7 @@ private val ignoredItems = setOf(HEADER_ITEM_KEY, SPAN_ITEM_KEY, TAB_GROUP_ONBOA
  * @param onEditTabGroupClick Invoked when the user clicks to edit a tab group.
  * @param onCloseTabGroupClick Invoked when the user clicks to close a tab group.
  * @param onTabGroupOnboardingDismiss Invoked when the user dismisses the tab group onboarding card.
+ * @param onTabGroupOnboardingShown Invoked when the tab group onboarding card is shown to the user.
  * @param header Optional layout to display before [tabs].
  * @param contentPadding Optional PaddingValues to pad the tab's content.
  * @param onPrivacyReportTapped Invoked when the trackers blocked pill is tapped.
@@ -214,6 +215,7 @@ fun TabLayout(
     onEditTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onCloseTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onTabGroupOnboardingDismiss: () -> Unit,
+    onTabGroupOnboardingShown: () -> Unit = {},
     header: (@Composable () -> Unit)? = null,
     contentPadding: PaddingValues = defaultTabLayoutContentPadding(),
     onPrivacyReportTapped: (() -> Unit)? = null,
@@ -233,6 +235,7 @@ fun TabLayout(
             onEditTabGroupClick = onEditTabGroupClick,
             onCloseTabGroupClick = onCloseTabGroupClick,
             onTabGroupOnboardingDismiss = onTabGroupOnboardingDismiss,
+            onTabGroupOnboardingShown = onTabGroupOnboardingShown,
             header = header,
             contentPadding = contentPadding,
             focusEnabled = focusEnabled,
@@ -256,6 +259,7 @@ fun TabLayout(
             onEditTabGroupClick = onEditTabGroupClick,
             onCloseTabGroupClick = onCloseTabGroupClick,
             onTabGroupOnboardingDismiss = onTabGroupOnboardingDismiss,
+            onTabGroupOnboardingShown = onTabGroupOnboardingShown,
             header = header,
             trackersBlockedCount = trackersBlockedCount,
             focusEnabled = focusEnabled,
@@ -289,6 +293,7 @@ private fun TabList(
     onEditTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onCloseTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onTabGroupOnboardingDismiss: () -> Unit = {},
+    onTabGroupOnboardingShown: () -> Unit = {},
     header: (@Composable () -> Unit)? = null,
     onPrivacyReportTapped: (() -> Unit)? = null,
 ) {
@@ -306,6 +311,7 @@ private fun TabList(
             onEditTabGroupClick = onEditTabGroupClick,
             onCloseTabGroupClick = onCloseTabGroupClick,
             onTabGroupOnboardingDismiss = onTabGroupOnboardingDismiss,
+            onTabGroupOnboardingShown = onTabGroupOnboardingShown,
             header = header,
             trackersBlockedCount = trackersBlockedCount,
             focusEnabled = focusEnabled,
@@ -359,6 +365,7 @@ private fun TabGrid(
     onEditTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onCloseTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onTabGroupOnboardingDismiss: () -> Unit = {},
+    onTabGroupOnboardingShown: () -> Unit = {},
     header: (@Composable () -> Unit)? = null,
     contentPadding: PaddingValues = defaultTabLayoutContentPadding(),
     onPrivacyReportTapped: (() -> Unit)? = null,
@@ -379,6 +386,7 @@ private fun TabGrid(
             onEditTabGroupClick = onEditTabGroupClick,
             onCloseTabGroupClick = onCloseTabGroupClick,
             onTabGroupOnboardingDismiss = onTabGroupOnboardingDismiss,
+            onTabGroupOnboardingShown = onTabGroupOnboardingShown,
             header = header,
             contentPadding = contentPadding,
             focusEnabled = focusEnabled,
@@ -610,6 +618,7 @@ private fun InteractableTabGrid(
     onEditTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onCloseTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onTabGroupOnboardingDismiss: () -> Unit = {},
+    onTabGroupOnboardingShown: () -> Unit = {},
     header: (@Composable () -> Unit)? = null,
     onPrivacyReportTapped: (() -> Unit)? = null,
 ) {
@@ -639,6 +648,15 @@ private fun InteractableTabGrid(
     val showOnboardingCardInGrid by remember(displayTabGroupOnboarding) {
         derivedStateOf { displayTabGroupOnboarding && gridInteractionState.draggedItem.key == null }
     }
+    val onboardingCardInView by remember {
+        derivedStateOf { gridState.layoutInfo.visibleItemsInfo.any { it.key == TAB_GROUP_ONBOARDING_ITEM_KEY } }
+    }
+    LaunchedEffect(onboardingCardInView) {
+        if (onboardingCardInView) {
+            onTabGroupOnboardingShown()
+        }
+    }
+
     // Prevent a race between multi-select and drag by updating the select mode only if the dragging key is null
     LaunchedEffect(selectionMode, gridInteractionState.draggedItem.key) {
         if (gridInteractionState.draggedItem.key == null) {
@@ -1056,6 +1074,7 @@ private fun InteractableTabList(
     onEditTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onCloseTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onTabGroupOnboardingDismiss: () -> Unit = {},
+    onTabGroupOnboardingShown: () -> Unit = {},
     trackersBlockedCount: Int?,
     focusEnabled: Boolean,
     dragAndDropEnabled: Boolean,
@@ -1079,14 +1098,22 @@ private fun InteractableTabList(
         dragAndDropEnabled = dragAndDropEnabled,
         liveReorderEnabled = liveReorderEnabled,
     )
-    // Don't show the onboarding card while a drag is active
-    val showOnboardingCardInList by remember(displayTabGroupOnboarding) {
-        derivedStateOf { displayTabGroupOnboarding && listInteractionState.draggedItem.key == null }
-    }
     var isInMultiSelectMode by remember {
         mutableStateOf(
             selectionMode is TabsTrayState.Mode.Select,
         )
+    }
+    // Don't show the onboarding card while a drag is active
+    val showOnboardingCardInList by remember(displayTabGroupOnboarding) {
+        derivedStateOf { displayTabGroupOnboarding && listInteractionState.draggedItem.key == null }
+    }
+    val onboardingCardInView by remember {
+        derivedStateOf { state.layoutInfo.visibleItemsInfo.any { it.key == TAB_GROUP_ONBOARDING_ITEM_KEY } }
+    }
+    LaunchedEffect(onboardingCardInView) {
+        if (onboardingCardInView) {
+            onTabGroupOnboardingShown()
+        }
     }
     // Prevent a race between multi-select and drag by updating the select mode only if the dragging key is null
     LaunchedEffect(selectionMode, listInteractionState.draggedItem.key) {
