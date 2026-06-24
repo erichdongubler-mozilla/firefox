@@ -66,6 +66,13 @@ const NOTIFICATIONS = {
  * - onViewClose()
  */
 export class UrlbarParentController {
+  // Listener registration and notification dispatch live on the paired
+  // UrlbarChildController, which registers itself via setListenerHost().
+  // That keeps dispatch on the side where the listeners (the view, the
+  // event bufferer) live — required once `<moz-urlbar>` runs in a content
+  // process. The host is always set before any query runs.
+  #listenerHost = null;
+
   /**
    * Initialises the class. The manager may be overridden here, this is for
    * test purposes.
@@ -108,15 +115,6 @@ export class UrlbarParentController {
       options.manager ||
       lazy.ProvidersManager.getInstanceForSap(options.input.sapName);
 
-    this._listeners = new Set();
-    // The object that owns listener registration and notification dispatch.
-    // Defaults to this controller so it works standalone (e.g. in xpcshell
-    // tests via UrlbarTestUtils.newMockController). In production the paired
-    // UrlbarChildController registers itself via setListenerHost(), so
-    // notifications are dispatched on the side where the listeners (the view,
-    // the event bufferer) live — which is where they must end up once
-    // `<moz-urlbar>` runs in a content process.
-    this._listenerHost = this;
     this._userSelectionBehavior = "none";
 
     this.engagementEvent = new TelemetryEvent(this);
@@ -257,43 +255,13 @@ export class UrlbarParentController {
 
   /**
    * Sets the object that owns listener registration and notification
-   * dispatch. The paired UrlbarChildController calls this so that
-   * listeners live and are notified on its (content-process) side.
+   * dispatch (the paired UrlbarChildController). It must be set before any
+   * query runs, since the query lifecycle notifies through it.
    *
    * @param {object} host The listener host.
    */
   setListenerHost(host) {
-    this._listenerHost = host;
-  }
-
-  /**
-   * Adds a listener for Urlbar result notifications.
-   *
-   * @param {object} listener The listener to add.
-   * @throws {TypeError} Throws if the listener is not an object.
-   */
-  addListener(listener) {
-    if (this._listenerHost !== this) {
-      this._listenerHost.addListener(listener);
-      return;
-    }
-    if (!listener || typeof listener != "object") {
-      throw new TypeError("Expected listener to be an object");
-    }
-    this._listeners.add(listener);
-  }
-
-  /**
-   * Removes a listener for Urlbar result notifications.
-   *
-   * @param {object} listener The listener to remove.
-   */
-  removeListener(listener) {
-    if (this._listenerHost !== this) {
-      this._listenerHost.removeListener(listener);
-      return;
-    }
-    this._listeners.delete(listener);
+    this.#listenerHost = host;
   }
 
   /**
@@ -802,26 +770,14 @@ export class UrlbarParentController {
   }
 
   /**
-   * Notifies listeners of results.
+   * Notifies listeners of results, by dispatching through the listener host
+   * (the paired UrlbarChildController, which owns the listeners).
    *
    * @param {string} name Name of the notification.
    * @param {object} params Parameters to pass with the notification.
    */
   notify(name, ...params) {
-    if (this._listenerHost !== this) {
-      this._listenerHost.notify(name, ...params);
-      return;
-    }
-    for (let listener of this._listeners) {
-      // Can't use "in" because some tests proxify these.
-      if (typeof listener[name] != "undefined") {
-        try {
-          listener[name](...params);
-        } catch (ex) {
-          console.error(ex);
-        }
-      }
-    }
+    this.#listenerHost.notify(name, ...params);
   }
 
   focusOnUnifiedSearchButton() {
