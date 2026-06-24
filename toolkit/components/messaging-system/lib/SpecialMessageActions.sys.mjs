@@ -874,8 +874,9 @@ export const SpecialMessageActions = {
             let newTab = window.gBrowser.getTabForBrowser(newBrowser);
             window.gBrowser.addTabGroup([newTab], {
               insertBefore: tab.group.nextElementSibling,
-              isUserTriggered: true,
-              telemetryUserCreateSource: "messaging",
+              ...window.gBrowser.TabMetrics.userTriggeredContext(
+                window.gBrowser.TabMetrics.METRIC_SOURCE.MESSAGING
+              ),
             });
           }
           Services.obs.addObserver(observer, "browser-open-newtab-start");
@@ -884,8 +885,9 @@ export const SpecialMessageActions = {
           // Add the current tab to a new tab group in place.
           window.gBrowser.addTabGroup([tab], {
             insertBefore: tab,
-            isUserTriggered: true,
-            telemetryUserCreateSource: "messaging",
+            ...window.gBrowser.TabMetrics.userTriggeredContext(
+              window.gBrowser.TabMetrics.METRIC_SOURCE.MESSAGING
+            ),
           });
         }
         break;

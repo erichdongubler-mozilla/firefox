@@ -21,6 +21,8 @@ const METRIC_SOURCE = Object.freeze({
   SUGGEST: "suggest",
   // History > Recently Closed Tabs menu, undo recently closed tab, etc.
   RECENT_TABS: "recent",
+  // A messaging action.
+  MESSAGING: "messaging",
   UNKNOWN: "unknown",
 });
 

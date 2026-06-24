@@ -48,7 +48,7 @@ add_task(async function test_tabGroupTelemetry() {
   );
   let group1 = win.gBrowser.addTabGroup([group1tab], {
     isUserTriggered: true,
-    telemetryUserCreateSource: "test-source",
+    telemetrySource: "test-source",
   });
   win.gBrowser.tabGroupMenu.close();
   await tabGroupCreateByUser;
@@ -130,7 +130,7 @@ add_task(async function test_tabGroupTelemetry() {
 
   let group2 = win.gBrowser.addTabGroup(group2Tabs, {
     isUserTriggered: true,
-    telemetryUserCreateSource: "test-source",
+    telemetrySource: "test-source",
   });
   win.gBrowser.tabGroupMenu.close();
 
@@ -1038,7 +1038,7 @@ add_task(async function test_cancelTabGroupCreation_ungroupTabsEvent() {
   );
   win.gBrowser.addTabGroup([tab], {
     isUserTriggered: true,
-    telemetryUserCreateSource: "test-source",
+    telemetrySource: "test-source",
   });
   await Promise.all([tabGroupCreateByUser, tabGroupContextOpen]);
 
