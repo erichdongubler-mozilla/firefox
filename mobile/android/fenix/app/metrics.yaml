@@ -14117,7 +14117,7 @@ customization_settings:
       item:
         description: |
           A string containing the name of the shortcut the user selected. These items include:
-          new_tab, share, bookmark, translate, homepage, back, none.
+          new_tab, share, bookmark, translate, homepage, back, summarize, none.
         type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2002636
@@ -15578,7 +15578,7 @@ toolbar:
           add_new_tab, add_new_tab_long_press, add_new_private_tab, tab_counter, tab_counter_long_press,
           menu, share, clear, refresh, stop, add_bookmark, edit_bookmark, security_indicator, qr_code,
           home, reader_mode, microphone, open_in_fenix, close, site_custom, search_engine_selector,
-          search_engine_selected, translate.
+          search_engine_selected, translate, summarize.
         type: string
       extra:
         description: |

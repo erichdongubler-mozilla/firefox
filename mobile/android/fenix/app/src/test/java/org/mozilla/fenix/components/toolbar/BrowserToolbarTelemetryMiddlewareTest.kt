@@ -201,6 +201,13 @@ class BrowserToolbarTelemetryMiddlewareTest {
         assertTelemetryRecorded(Source.NavigationBar, item = ToolbarActionRecord.HomepageClicked.action)
     }
 
+    @Test
+    fun `WHEN summarize is clicked THEN record related telemetry`() {
+        buildStore.dispatch(DisplayActions.SummarizeClicked(Source.AddressBar.BrowserEnd))
+
+        assertTelemetryRecorded(Source.AddressBar.BrowserEnd, item = ToolbarActionRecord.SummarizeClicked.action)
+    }
+
     private fun assertTelemetryRecorded(
         source: Source,
         item: String,
