@@ -1470,7 +1470,7 @@ html {
 }
 .onboardingContainer .main-content {
   background-color: var(--background-color-canvas);
-  border-radius: var(--border-radius-large);
+  border-radius: var(--border-radius-xxlarge, 16px);
   box-shadow: 0 2px 14px 0 rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
@@ -1509,21 +1509,21 @@ html {
   overflow: hidden;
 }
 .onboardingContainer .screen.light-text {
-  --text-color: rgb(251, 251, 254);
-  --button-text-color-primary: rgb(43, 42, 51);
-  --button-text-color-primary-hover: rgb(43, 42, 51);
-  --button-background-color-primary: rgb(0, 221, 255);
-  --button-background-color-primary-hover: rgb(128, 235, 255);
-  --button-background-color-primary-active: rgb(170, 242, 255);
+  --text-color: var(--color-violet-desaturated-0, rgb(251, 251, 254));
+  --button-text-color-primary: #252428;
+  --button-text-color-primary-hover: #252428;
+  --button-background-color-primary: #D4C1FF;
+  --button-background-color-primary-hover: #B89CFF;
+  --button-background-color-primary-active: #9871FF;
   --button-text-color: var(--text-color);
 }
 .onboardingContainer .screen.dark-text {
-  --text-color: rgb(21, 20, 26);
-  --button-text-color-primary: rgb(251, 251, 254);
-  --button-text-color-primary-hover: rgb(251, 251, 254);
-  --button-background-color-primary: #0061E0;
-  --button-background-color-primary-hover: #0250BB;
-  --button-background-color-primary-active: #053E94;
+  --text-color: var(--color-violet-desaturated-90, rgb(21, 20, 26));
+  --button-text-color-primary: #FFF;
+  --button-text-color-primary-hover: #FFF;
+  --button-background-color-primary: #764EDD;
+  --button-background-color-primary-hover: #5939A8;
+  --button-background-color-primary-active: #3E2976;
   --button-border-color-primary: transparent;
   --button-border-color-primary-hover: transparent;
   --button-text-color: var(--text-color);
@@ -1532,7 +1532,7 @@ html {
   transform: rotateY(180deg);
 }
 .onboardingContainer .screen[pos=center] {
-  background-color: rgba(21, 20, 26, 0.5);
+  background-color: var(--background-color-overlay);
   min-width: 504px;
 }
 .onboardingContainer .screen[pos=center].with-noodles {
@@ -1622,7 +1622,7 @@ html {
 }
 .onboardingContainer .screen[pos=center].addons-picker .main-content {
   background-color: var(--background-color-canvas);
-  border-radius: var(--border-radius-medium);
+  border-radius: var(--border-radius-xxlarge, 8px);
   box-shadow: 0 2px 14px rgba(58, 57, 68, 0.2);
   overflow: hidden;
 }
@@ -1657,6 +1657,7 @@ html {
   padding: 0;
   font-weight: normal;
   background: none;
+  border: none;
   text-decoration: underline;
   cursor: pointer;
   color: var(--link-color);
@@ -1768,6 +1769,7 @@ html {
 }
 .onboardingContainer .screen:not([pos=split]) .secondary-cta .secondary {
   background: none;
+  border: none;
   text-decoration: underline;
   cursor: pointer;
   color: var(--link-color);
@@ -1814,7 +1816,7 @@ html {
   box-shadow: 0 2px 14px 0 rgba(0, 0, 0, 0.2);
   width: 800px;
   height: 550px;
-  border-radius: var(--border-radius-medium);
+  border-radius: var(--border-radius-xxlarge, 8px);
   inset: 0;
   margin: auto;
   pointer-events: none;
@@ -1863,7 +1865,7 @@ html {
   padding-block: 100px 0;
 }
 .onboardingContainer .screen[pos=split] .section-main .main-content {
-  border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0;
+  border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
   overflow: hidden;
   padding-inline: 35px 20px;
   padding-block: 120px 0;
@@ -1873,7 +1875,7 @@ html {
   padding-bottom: 48px;
 }
 .onboardingContainer .screen[pos=split] .section-main .main-content:dir(rtl) {
-  border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
+  border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
 }
 .onboardingContainer .screen[pos=split] .section-main .main-content .legal-paragraph {
   text-align: start;
@@ -1899,6 +1901,7 @@ html {
 }
 .onboardingContainer .screen[pos=split] .section-main .main-content .main-content-inner .mobile-download-buttons button {
   cursor: pointer;
+  border-radius: 0;
 }
 .onboardingContainer .screen[pos=split] .section-main .main-content .main-content-inner .qr-code-image {
   margin: 5px 0 10px;
@@ -1931,6 +1934,7 @@ html {
 }
 .onboardingContainer .screen[pos=split] .section-main .main-content .action-buttons .additional-cta-box .additional-cta.cta-link {
   background: none;
+  border: none;
   text-decoration: underline;
   cursor: pointer;
   color: var(--link-color);
@@ -2072,7 +2076,7 @@ html {
 }
 .onboardingContainer .screen[pos=split] .section-secondary {
   --mr-secondary-position: center center / auto 350px;
-  border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
+  border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
   margin: auto 0 auto auto;
   display: flex;
   align-items: center;
@@ -2081,7 +2085,7 @@ html {
   position: relative;
 }
 .onboardingContainer .screen[pos=split] .section-secondary:dir(rtl) {
-  border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0;
+  border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
   margin: auto;
   margin-inline-end: 0;
 }
@@ -2171,23 +2175,23 @@ html {
   .onboardingContainer .screen[pos=split][reverse-split] .section-main {
     margin: auto;
     margin-inline-end: 0;
-    border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
+    border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
   }
   .onboardingContainer .screen[pos=split][reverse-split] .section-main .main-content {
     border-radius: inherit;
   }
   .onboardingContainer .screen[pos=split][reverse-split] .section-main:dir(rtl) {
-    border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0;
+    border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
     margin: auto;
     margin-inline-end: 0;
   }
   .onboardingContainer .screen[pos=split][reverse-split] .section-secondary {
     margin: auto;
     margin-inline-start: 0;
-    border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0;
+    border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
   }
   .onboardingContainer .screen[pos=split][reverse-split] .section-secondary:dir(rtl) {
-    border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
+    border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
     margin: auto;
     margin-inline-start: 0;
   }
@@ -2201,23 +2205,23 @@ html {
 .onboardingContainer .screen[pos=split]:where([no-rdm=true])[reverse-split] .section-main {
   margin: auto;
   margin-inline-end: 0;
-  border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
+  border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
 }
 .onboardingContainer .screen[pos=split]:where([no-rdm=true])[reverse-split] .section-main .main-content {
   border-radius: inherit;
 }
 .onboardingContainer .screen[pos=split]:where([no-rdm=true])[reverse-split] .section-main:dir(rtl) {
-  border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0;
+  border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
   margin: auto;
   margin-inline-end: 0;
 }
 .onboardingContainer .screen[pos=split]:where([no-rdm=true])[reverse-split] .section-secondary {
   margin: auto;
   margin-inline-start: 0;
-  border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0;
+  border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
 }
 .onboardingContainer .screen[pos=split]:where([no-rdm=true])[reverse-split] .section-secondary:dir(rtl) {
-  border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
+  border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
   margin: auto;
   margin-inline-start: 0;
 }
@@ -2387,6 +2391,7 @@ html {
   margin: 0;
   text-align: start;
   background: none;
+  border: none;
   text-decoration: underline;
   cursor: pointer;
   color: var(--link-color);
@@ -2514,25 +2519,25 @@ html {
     flex-direction: column;
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm]))[reverse-split] .section-secondary {
-    border-radius: var(--border-radius-medium) var(--border-radius-medium) 0 0;
+    border-radius: var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0 0;
     margin: auto;
     margin-bottom: 0;
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm]))[reverse-split] .section-secondary:dir(rtl) {
     margin: auto;
     margin-bottom: 0;
-    border-radius: var(--border-radius-medium) var(--border-radius-medium) 0 0;
+    border-radius: var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0 0;
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm]))[reverse-split] .section-main {
     height: auto;
     margin: auto;
     margin-top: 0;
-    border-radius: 0 0 var(--border-radius-medium) var(--border-radius-medium);
+    border-radius: 0 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px);
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm]))[reverse-split] .section-main:dir(rtl) {
     margin: auto;
     margin-top: 0;
-    border-radius: 0 0 var(--border-radius-medium) var(--border-radius-medium);
+    border-radius: 0 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px);
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-secondary,
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main {
@@ -2540,7 +2545,7 @@ html {
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-secondary {
     --mr-secondary-position: center center / 75%;
-    border-radius: var(--border-radius-medium) var(--border-radius-medium) 0 0;
+    border-radius: var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0 0;
     margin: auto;
     margin-bottom: 0;
     height: 100px;
@@ -2561,7 +2566,7 @@ html {
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-secondary:dir(rtl) {
     margin: auto;
     margin-bottom: 0;
-    border-radius: var(--border-radius-medium) var(--border-radius-medium) 0 0;
+    border-radius: var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0 0;
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-secondary.with-secondary-section-hidden {
     display: none;
@@ -2588,13 +2593,13 @@ html {
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main[hide-secondary-section=responsive] .main-content {
     padding: 50px 0 0;
-    border-radius: var(--border-radius-medium);
+    border-radius: var(--border-radius-xxlarge, 8px);
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main[hide-secondary-section=responsive] .main-content:dir(rtl) {
-    border-radius: var(--border-radius-medium);
+    border-radius: var(--border-radius-xxlarge, 8px);
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main .main-content {
-    border-radius: 0 0 var(--border-radius-medium) var(--border-radius-medium);
+    border-radius: 0 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px);
     padding: 30px 0 0;
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main .main-content .main-content-inner {
@@ -2658,7 +2663,7 @@ html {
     margin-top: 0;
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main:dir(rtl) .main-content {
-    border-radius: 0 0 var(--border-radius-medium) var(--border-radius-medium);
+    border-radius: 0 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px);
   }
   .onboardingContainer .screen[pos=split][no-rdm] {
     width: 800px;
@@ -2669,23 +2674,23 @@ html {
   .onboardingContainer .screen[pos=split][no-rdm][reverse-split] .section-main {
     margin: auto;
     margin-inline-end: 0;
-    border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
+    border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
   }
   .onboardingContainer .screen[pos=split][no-rdm][reverse-split] .section-main .main-content {
     border-radius: inherit;
   }
   .onboardingContainer .screen[pos=split][no-rdm][reverse-split] .section-main:dir(rtl) {
-    border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0;
+    border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
     margin: auto;
     margin-inline-end: 0;
   }
   .onboardingContainer .screen[pos=split][no-rdm][reverse-split] .section-secondary {
     margin: auto;
     margin-inline-start: 0;
-    border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0;
+    border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
   }
   .onboardingContainer .screen[pos=split][no-rdm][reverse-split] .section-secondary:dir(rtl) {
-    border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
+    border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
     margin: auto;
     margin-inline-start: 0;
   }
@@ -2701,25 +2706,25 @@ html {
   flex-direction: column;
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm]))[reverse-split] .section-secondary {
-  border-radius: var(--border-radius-medium) var(--border-radius-medium) 0 0;
+  border-radius: var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0 0;
   margin: auto;
   margin-bottom: 0;
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm]))[reverse-split] .section-secondary:dir(rtl) {
   margin: auto;
   margin-bottom: 0;
-  border-radius: var(--border-radius-medium) var(--border-radius-medium) 0 0;
+  border-radius: var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0 0;
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm]))[reverse-split] .section-main {
   height: auto;
   margin: auto;
   margin-top: 0;
-  border-radius: 0 0 var(--border-radius-medium) var(--border-radius-medium);
+  border-radius: 0 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px);
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm]))[reverse-split] .section-main:dir(rtl) {
   margin: auto;
   margin-top: 0;
-  border-radius: 0 0 var(--border-radius-medium) var(--border-radius-medium);
+  border-radius: 0 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px);
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-secondary,
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main {
@@ -2727,7 +2732,7 @@ html {
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-secondary {
   --mr-secondary-position: center center / 75%;
-  border-radius: var(--border-radius-medium) var(--border-radius-medium) 0 0;
+  border-radius: var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0 0;
   margin: auto;
   margin-bottom: 0;
   height: 100px;
@@ -2748,7 +2753,7 @@ html {
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-secondary:dir(rtl) {
   margin: auto;
   margin-bottom: 0;
-  border-radius: var(--border-radius-medium) var(--border-radius-medium) 0 0;
+  border-radius: var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0 0;
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-secondary.with-secondary-section-hidden {
   display: none;
@@ -2775,13 +2780,13 @@ html {
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main[hide-secondary-section=responsive] .main-content {
   padding: 50px 0 0;
-  border-radius: var(--border-radius-medium);
+  border-radius: var(--border-radius-xxlarge, 8px);
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main[hide-secondary-section=responsive] .main-content:dir(rtl) {
-  border-radius: var(--border-radius-medium);
+  border-radius: var(--border-radius-xxlarge, 8px);
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main .main-content {
-  border-radius: 0 0 var(--border-radius-medium) var(--border-radius-medium);
+  border-radius: 0 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px);
   padding: 30px 0 0;
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main .main-content .main-content-inner {
@@ -2845,7 +2850,7 @@ html {
   margin-top: 0;
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main:dir(rtl) .main-content {
-  border-radius: 0 0 var(--border-radius-medium) var(--border-radius-medium);
+  border-radius: 0 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px);
 }
 [narrow] .onboardingContainer .screen[pos=split][no-rdm] {
   width: 800px;
@@ -2856,23 +2861,23 @@ html {
 [narrow] .onboardingContainer .screen[pos=split][no-rdm][reverse-split] .section-main {
   margin: auto;
   margin-inline-end: 0;
-  border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
+  border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
 }
 [narrow] .onboardingContainer .screen[pos=split][no-rdm][reverse-split] .section-main .main-content {
   border-radius: inherit;
 }
 [narrow] .onboardingContainer .screen[pos=split][no-rdm][reverse-split] .section-main:dir(rtl) {
-  border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0;
+  border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
   margin: auto;
   margin-inline-end: 0;
 }
 [narrow] .onboardingContainer .screen[pos=split][no-rdm][reverse-split] .section-secondary {
   margin: auto;
   margin-inline-start: 0;
-  border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0;
+  border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
 }
 [narrow] .onboardingContainer .screen[pos=split][no-rdm][reverse-split] .section-secondary:dir(rtl) {
-  border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
+  border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
   margin: auto;
   margin-inline-start: 0;
 }
@@ -2934,6 +2939,7 @@ html {
 }
 .onboardingContainer .text-link {
   background: none;
+  border: none;
   text-decoration: underline;
   cursor: pointer;
   color: var(--link-color);
@@ -3398,6 +3404,7 @@ html {
 }
 .onboardingContainer .mobile-downloads .email-link {
   background: none;
+  border: none;
   text-decoration: underline;
   cursor: pointer;
   color: var(--link-color);
@@ -3441,6 +3448,7 @@ html {
   background-position: center;
   box-shadow: none;
   border: 0;
+  border-radius: 0;
 }
 .onboardingContainer .mobile-download-buttons li:not(:first-child) {
   margin-inline: 5px 0;
@@ -3724,6 +3732,7 @@ html {
   display: block;
   float: inline-end;
   background: url("chrome://global/skin/icons/close.svg") no-repeat center/16px;
+  border-color: transparent;
   height: var(--size-item-large);
   width: var(--size-item-large);
   align-self: end;
@@ -3937,6 +3946,7 @@ html {
 .onboardingContainer .screen .action-buttons .split-button-container .additional-cta:not(.submenu-button) {
   border-start-end-radius: 0;
   border-end-end-radius: 0;
+  border-inline-end-width: 0 !important;
   margin-inline-end: 0;
 }
 .onboardingContainer .split-button-container .primary:focus-visible,
@@ -3951,16 +3961,35 @@ html {
 .onboardingContainer .screen .action-buttons .split-button-container .submenu-button {
   border-start-start-radius: 0;
   border-end-start-radius: 0;
-  margin-inline-start: 1px;
-  padding: var(--space-small);
-  min-width: 30px;
+  border-inline-start-width: 0 !important;
+  margin-inline-start: 0;
+  padding: 8px;
+  min-height: var(--button-min-height-small, 24px);
+  min-width: var(--button-min-height-small, 24px);
   box-sizing: border-box;
-  background-image: url("chrome://global/skin/icons/arrow-down.svg");
+  background-image: url("chrome://browser/content/asrouter/assets/arrow-down-tiny.svg");
   background-repeat: no-repeat;
   background-size: 16px;
   background-position: center;
   -moz-context-properties: fill;
   fill: currentColor;
+  position: relative;
+}
+.onboardingContainer .split-button-container .submenu-button::before,
+.onboardingContainer .screen .action-buttons .split-button-container .submenu-button::before {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  width: 1px;
+  inset-block: 4px;
+  inset-inline-start: 0;
+  border-inline-start: 1px solid var(--button-border-color);
+}
+.onboardingContainer .split-button-container > button:is(:focus-visible, :hover, [open]) + .submenu-button::before,
+.onboardingContainer .split-button-container > .submenu-button:is(:focus-visible, :hover, [open])::before,
+.onboardingContainer .screen .action-buttons .split-button-container > button:is(:focus-visible, :hover, [open]) + .submenu-button::before,
+.onboardingContainer .screen .action-buttons .split-button-container > .submenu-button:is(:focus-visible, :hover, [open])::before {
+  visibility: hidden;
 }
 .onboardingContainer .noodle {
   display: block;
