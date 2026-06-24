@@ -12,6 +12,7 @@ import androidx.navigation.NavDirections
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.Runs
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -150,6 +151,7 @@ import org.mozilla.fenix.components.toolbar.DisplayActions.NavigateBackLongClick
 import org.mozilla.fenix.components.toolbar.DisplayActions.NavigateForwardClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.NavigateForwardLongClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.RefreshClicked
+import org.mozilla.fenix.components.toolbar.DisplayActions.SummarizeClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.ShareClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.StopRefreshClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.TranslateClicked
@@ -165,6 +167,7 @@ import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.directionsEq
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.settings.ShortcutType
+import org.mozilla.fenix.summarization.SummarizationNavigator
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.ui.AccessPoint
 import org.mozilla.fenix.utils.Settings
@@ -174,6 +177,7 @@ import org.robolectric.annotation.Config
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import mozilla.components.browser.toolbar.R as toolbarR
+import mozilla.components.feature.summarize.R as summariesR
 import mozilla.components.ui.icons.R as iconsR
 import mozilla.components.ui.tabcounter.R as tabcounterR
 
@@ -197,6 +201,7 @@ class BrowserToolbarMiddlewareTest {
     private val browsingModeManager = SimpleBrowsingModeManager(Normal)
     private val thumbnailsFeature: BrowserThumbnails = mockk(relaxed = true)
     private val readerModeController: ReaderModeController = mockk(relaxed = true)
+    private val summarizationNavigator: SummarizationNavigator = mockk(relaxed = true)
     private val useCases: UseCases = mockk(relaxed = true)
     val nimbusEventsStore: NimbusEventStore = mockk {
         every { recordEvent(any()) } just Runs
@@ -2868,6 +2873,20 @@ class BrowserToolbarMiddlewareTest {
     }
 
     @Test
+    fun `WHEN building Summarize action THEN returns Summarize ActionButton with correct icon`() {
+        val middleware = buildMiddleware()
+        buildStore(middleware)
+
+        val result = middleware.buildAction(
+            toolbarAction = ToolbarAction.Summarize,
+        ) as ActionButtonRes
+
+        assertEquals(iconsR.drawable.mozac_ic_sparkle_24, result.drawableResId)
+        assertEquals(summariesR.string.mozac_summarize_settings_summarize_pages, result.contentDescription)
+        assertEquals(SummarizeClicked(Source.Unknown), result.onClick)
+    }
+
+    @Test
     fun `WHEN initializing the navigation bar AND should not use simple toolbar THEN add navigation bar actions`() = runTest(testDispatcher) {
         settings.shouldUseExpandedToolbar = true
 
@@ -3236,7 +3255,7 @@ class BrowserToolbarMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN simple toolbar use add bookmark shortcut AND the current page is not bookmarked WHEN initializing toolbar THEN show Bookmark in end browser actions`() = runTest(testDispatcher) {
+    fun `GIVEN simple toolbar uses the add bookmark shortcut AND the current page is not bookmarked WHEN initializing toolbar THEN show Bookmark in end browser actions`() = runTest(testDispatcher) {
         settings.toolbarSimpleShortcutKey = ShortcutType.BOOKMARK.value
         val toolbarStore = buildStore()
 
@@ -3245,7 +3264,7 @@ class BrowserToolbarMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN simple toolbar use add bookmark shortcut AND the current page is bookmarked WHEN initializing toolbar THEN show ACTIVE EditBookmark in end browser actions`() = runTest(testDispatcher) {
+    fun `GIVEN simple toolbar uses the add bookmark shortcut AND the current page is bookmarked WHEN initializing toolbar THEN show ACTIVE EditBookmark in end browser actions`() = runTest(testDispatcher) {
         settings.toolbarSimpleShortcutKey = ShortcutType.BOOKMARK.value
 
         val tab = createTab("https://example.com")
@@ -3273,7 +3292,7 @@ class BrowserToolbarMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN simple toolbar use translate shortcut AND current page is not translated WHEN initializing toolbar THEN show Translate in end browser actions`() = runTest(testDispatcher) {
+    fun `GIVEN simple toolbar uses the translate shortcut AND current page is not translated WHEN initializing toolbar THEN show Translate in end browser actions`() = runTest(testDispatcher) {
         settings.toolbarSimpleShortcutKey = ShortcutType.TRANSLATE.value
 
         val pageTranslationStatus: PageTranslationStatus = mockk(relaxed = true) {
@@ -3291,7 +3310,7 @@ class BrowserToolbarMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN simple toolbar use translate shortcut AND current page is translated WHEN initializing toolbar THEN show ACTIVE Translate in end browser actions`() = runTest(testDispatcher) {
+    fun `GIVEN simple toolbar uses the translate shortcut AND current page is translated WHEN initializing toolbar THEN show ACTIVE Translate in end browser actions`() = runTest(testDispatcher) {
         settings.toolbarSimpleShortcutKey = ShortcutType.TRANSLATE.value
 
         val pageTranslationStatus: PageTranslationStatus = mockk(relaxed = true) {
@@ -3309,13 +3328,39 @@ class BrowserToolbarMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN simple toolbar use homepage shortcut WHEN initializing toolbar THEN show Homepage in end browser actions`() = runTest(testDispatcher) {
+    fun `GIVEN simple toolbar uses the homepage shortcut WHEN initializing toolbar THEN show Homepage in end browser actions`() = runTest(testDispatcher) {
         settings.toolbarSimpleShortcutKey = ShortcutType.HOMEPAGE.value
 
         val toolbarStore = buildStore()
 
         val homepageButton = toolbarStore.state.displayState.browserActionsEnd[0] as ActionButtonRes
         assertEquals(expectedHomepageButton(), homepageButton)
+    }
+
+    @Test
+    fun `GIVEN simple toolbar uses the summarize shortcut WHEN initializing toolbar THEN show Summarize in end browser actions`() = runTest(testDispatcher) {
+        settings.toolbarSimpleShortcutKey = ShortcutType.SUMMARIZE.value
+
+        val toolbarStore = buildStore()
+
+        val summarizeButton = toolbarStore.state.displayState.browserActionsEnd[0] as ActionButtonRes
+        assertEquals(expectedSummarizeButton(), summarizeButton)
+    }
+
+    @Test
+    fun `WHEN the summarize button is clicked THEN attempt to start webpage summarization`() = runTest(testDispatcher) {
+        val middleware = buildMiddleware(summarizationNavigator = summarizationNavigator)
+        val toolbarStore = buildStore(middleware)
+
+        toolbarStore.dispatch(SummarizeClicked(Source.AddressBar.BrowserEnd))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify {
+            summarizationNavigator.navigateToSummarizationIfEligible(
+                navController = navController,
+                fromShakeGesture = false,
+            )
+        }
     }
 
     @Test
@@ -3695,6 +3740,12 @@ class BrowserToolbarMiddlewareTest {
         onClick = HomepageClicked(source),
     )
 
+    private fun expectedSummarizeButton(source: Source = Source.AddressBar.BrowserEnd) = ActionButtonRes(
+        drawableResId = iconsR.drawable.mozac_ic_sparkle_24,
+        contentDescription = summariesR.string.mozac_summarize_settings_summarize_pages,
+        onClick = SummarizeClicked(source),
+    )
+
     private fun buildMiddleware(
         appStore: AppStore = this.appStore,
         browserScreenStore: BrowserScreenStore = this.browserScreenStore,
@@ -3712,6 +3763,7 @@ class BrowserToolbarMiddlewareTest {
         publicSuffixList: PublicSuffixList = this.publicSuffixList,
         settings: Settings = this.settings,
         navController: NavController = this.navController,
+        summarizationNavigator: SummarizationNavigator = this.summarizationNavigator,
         browsingModeManager: BrowsingModeManager = this.browsingModeManager,
         readerModeController: ReaderModeController = this.readerModeController,
         thumbnailsFeature: () -> BrowserThumbnails = { this.thumbnailsFeature },
@@ -3736,6 +3788,7 @@ class BrowserToolbarMiddlewareTest {
         publicSuffixList = publicSuffixList,
         settings = settings,
         navController = navController,
+        summarizationNavigator = summarizationNavigator,
         browsingModeManager = browsingModeManager,
         readerModeController = readerModeController,
         thumbnailsFeature = thumbnailsFeature,

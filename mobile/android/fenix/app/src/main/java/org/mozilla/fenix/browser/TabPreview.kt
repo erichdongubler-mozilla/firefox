@@ -54,6 +54,7 @@ import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.theme.FirefoxTheme
 import kotlin.math.min
 import mozilla.components.browser.toolbar.R as toolbarR
+import mozilla.components.feature.summarize.R as summariesR
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -87,6 +88,7 @@ class TabPreview @JvmOverloads constructor(
         Share,
         Translate,
         Homepage,
+        Summarize,
     }
 
     private data class ToolbarActionConfig(
@@ -229,6 +231,12 @@ class TabPreview @JvmOverloads constructor(
             ToolbarAction.Homepage -> ActionButtonRes(
                 drawableResId = iconsR.drawable.mozac_ic_home_24,
                 contentDescription = R.string.browser_menu_homepage,
+                onClick = object : BrowserToolbarEvent {},
+            )
+
+            ToolbarAction.Summarize -> ActionButtonRes(
+                drawableResId = iconsR.drawable.mozac_ic_sparkle_24,
+                contentDescription = summariesR.string.mozac_summarize_settings_summarize_pages,
                 onClick = object : BrowserToolbarEvent {},
             )
         }
@@ -568,6 +576,7 @@ class TabPreview @JvmOverloads constructor(
         ShortcutType.TRANSLATE -> ToolbarAction.Translate
         ShortcutType.HOMEPAGE -> ToolbarAction.Homepage
         ShortcutType.BACK -> ToolbarAction.Back
+        ShortcutType.SUMMARIZE -> ToolbarAction.Summarize
         ShortcutType.NONE -> null
     }
 }

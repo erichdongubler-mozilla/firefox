@@ -115,6 +115,7 @@ import org.mozilla.fenix.components.toolbar.DisplayActions.NavigateBackLongClick
 import org.mozilla.fenix.components.toolbar.DisplayActions.NavigateForwardClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.NavigateForwardLongClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.RefreshClicked
+import org.mozilla.fenix.components.toolbar.DisplayActions.SummarizeClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.ShareClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.StopRefreshClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.TranslateClicked
@@ -132,12 +133,14 @@ import org.mozilla.fenix.ext.navigateSafe
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.settings.quicksettings.protections.cookiebanners.getCookieBannerUIMode
+import org.mozilla.fenix.summarization.SummarizationNavigator
 import org.mozilla.fenix.tabstray.ext.isActiveDownload
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.Stories.hasUrlOfAHomeScreenStory
 import org.mozilla.fenix.utils.Stories.hasUrlOfAStoriesScreenStory
 import mozilla.components.browser.toolbar.R as toolbarR
+import mozilla.components.feature.summarize.R as summariesR
 import mozilla.components.lib.state.Action as MVIAction
 import mozilla.components.ui.icons.R as iconsR
 import mozilla.components.ui.tabcounter.R as tabcounterR
@@ -156,6 +159,7 @@ internal sealed class DisplayActions(override val source: Source) : BrowserToolb
     data class ShareClicked(override val source: Source) : DisplayActions(source)
     data class TranslateClicked(override val source: Source) : DisplayActions(source)
     data class HomepageClicked(override val source: Source) : DisplayActions(source)
+    data class SummarizeClicked(override val source: Source) : DisplayActions(source)
 }
 
 @VisibleForTesting
@@ -205,6 +209,7 @@ internal sealed class PageEndActionsInteractions(override val source: Source) : 
  * @param publicSuffixList [PublicSuffixList] used to obtain the base domain of the current site.
  * @param settings [Settings] for accessing user preferences.
  * @param navController [NavController] to use for navigating to other in-app destinations.
+ * @param summarizationNavigator [SummarizationNavigator] used to navigate to the summarization screen.
  * @param browsingModeManager [BrowsingModeManager] for querying the current browsing mode.
  * @param readerModeController [ReaderModeController] for showing or hiding the reader view UX.
  * @param thumbnailsFeature [BrowserThumbnails] for requesting screenshots of the current tab.
@@ -232,6 +237,7 @@ class BrowserToolbarMiddleware(
     private val publicSuffixList: PublicSuffixList,
     private val settings: Settings,
     private val navController: NavController,
+    private val summarizationNavigator: SummarizationNavigator,
     private val browsingModeManager: BrowsingModeManager,
     private val readerModeController: ReaderModeController,
     private val thumbnailsFeature: () -> BrowserThumbnails?,
@@ -611,6 +617,16 @@ class BrowserToolbarMiddleware(
                 } else {
                     val directions = BrowserFragmentDirections.actionGlobalHome()
                     navController.navigate(directions)
+                }
+                next(action)
+            }
+
+            is SummarizeClicked -> {
+                scope.launch {
+                    summarizationNavigator.navigateToSummarizationIfEligible(
+                        navController = navController,
+                        fromShakeGesture = false,
+                    )
                 }
                 next(action)
             }
@@ -1116,6 +1132,7 @@ class BrowserToolbarMiddleware(
         EditBookmark,
         Share,
         Homepage,
+        Summarize,
     }
 
     private data class ToolbarActionConfig(
@@ -1321,6 +1338,12 @@ class BrowserToolbarMiddleware(
             contentDescription = R.string.browser_menu_homepage,
             onClick = HomepageClicked(source),
         )
+
+        ToolbarAction.Summarize -> ActionButtonRes(
+            drawableResId = iconsR.drawable.mozac_ic_sparkle_24,
+            contentDescription = summariesR.string.mozac_summarize_settings_summarize_pages,
+            onClick = SummarizeClicked(source),
+        )
     }
 
     private fun buildSiteInfoAction(
@@ -1372,6 +1395,7 @@ class BrowserToolbarMiddleware(
         ShortcutType.TRANSLATE -> ToolbarAction.Translate
         ShortcutType.HOMEPAGE -> ToolbarAction.Homepage
         ShortcutType.BACK -> ToolbarAction.Back
+        ShortcutType.SUMMARIZE -> ToolbarAction.Summarize
         ShortcutType.NONE -> null
     }
 }

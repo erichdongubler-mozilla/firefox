@@ -7,6 +7,7 @@ package org.mozilla.fenix.settings
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import org.mozilla.fenix.R
+import mozilla.components.feature.summarize.R as summariesR
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -20,6 +21,7 @@ enum class ShortcutType(val value: String) {
     TRANSLATE("translate"),
     HOMEPAGE("homepage"),
     BACK("back"),
+    SUMMARIZE("summarize"),
     NONE("none"),
     ;
 
@@ -80,6 +82,12 @@ internal val allShortcutOptions: List<ShortcutOption> = listOf(
         iconsR.drawable.mozac_ic_back_24,
         R.string.toolbar_customize_shortcut_back,
         setOf(ShortcutAvailability.SIMPLE, ShortcutAvailability.EXPANDED),
+    ),
+    ShortcutOption(
+        ShortcutType.SUMMARIZE,
+        iconsR.drawable.mozac_ic_sparkle_24,
+        summariesR.string.mozac_summarize_settings_summarize_pages,
+        setOf(ShortcutAvailability.SIMPLE),
     ),
     ShortcutOption(
         ShortcutType.NONE,
