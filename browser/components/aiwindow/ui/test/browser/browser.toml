@@ -17,6 +17,8 @@ support-files = [
   "test_kit_mention_page.html",
   "test_memories_icon_button_page.html",
   "test_memories_icon_button.mjs",
+  "test_grouped_chips_page.html",
+  "test_grouped_chips.mjs",
   "test_smartwindow_panel_list_page.html",
   "test_smartwindow_panel_list.mjs",
   "test_website_chip_page.html",
@@ -73,6 +75,8 @@ skip-if = [
 ]
 
 ["browser_aiwindow_followup_tokens.js"]
+
+["browser_aiwindow_grouped_chips.js"]
 
 ["browser_aiwindow_immersive.js"]
 

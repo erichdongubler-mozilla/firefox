@@ -4,6 +4,15 @@
 
 smartwindow-messages-document-title = Smart window chat messages
 
+## Context chips in the chat content
+
+# Variables:
+#   $tags (Number) - Number of context chips added in a chat bubble (only when we have 3 or more chips)
+smart-window-context-chips-tag-count = { $tags ->
+    [one] { $tags } Tag
+   *[other] { $tags } Tags
+}
+
 ## Error messages in the chat content
 
 smartwindow-assistant-error-generic-header = Something went wrong. Please try again.

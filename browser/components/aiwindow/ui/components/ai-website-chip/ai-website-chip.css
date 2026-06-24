@@ -5,6 +5,7 @@
 .chip {
   --chip-border-color: light-dark(var(--color-violet-0), var(--color-violet-80));
   --chip-border-radius: var(--border-radius-medium);
+  --chip-border-radius-end-end: var(--border-radius-small);
 
   --chip-hover-background-color: light-dark(var(--color-violet-0), var(--color-violet-80));
   --chip-hover-border-color: color-mix(in srgb, var(--color-violet-20) 50%, transparent);
@@ -51,6 +52,7 @@
   /* Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch  */
   .chip {
     --chip-border-radius: var(--border-radius-medium);
+    --chip-border-radius-end-end: var(--border-radius-xsmall);
     --chip-border-color: transparent;
     --chip-hover-border-color: transparent;
     --chip-hover-background-color: transparent;
@@ -242,7 +244,8 @@ button.chip {
 
 /* context chips inside the chat bubble */
 :host([type="context-chip"]) .chip:not([data-removable]) {
-  --background-color-box: var(--context-chip-inside-chat-background-color);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  border-end-end-radius: var(--chip-border-radius-end-end);
 
   &:hover {
     .chip-label {
@@ -252,20 +255,22 @@ button.chip {
 }
 
 /* context chips in the smartbar */
-:host([type="context-chip"]) .chip[data-removable]:hover {
-  --background-color-box: var(--context-chip-hover-background-color);
-  border-color: var(--context-chip-hover-border-color);
-
-  .chip-icon {
-    display: var(--context-chip-icon-hover-display);
-  }
-
-  .chip-remove {
-    display: flex;
-  }
-
+:host([type="context-chip"]) .chip[data-removable] {
   .chip-label {
     margin-inline-end: var(--context-chip-label-hover-margin-inline-end);
+  }
+
+  &:hover {
+    --background-color-box: var(--context-chip-hover-background-color);
+    border-color: var(--context-chip-hover-border-color);
+
+    .chip-icon {
+      display: var(--context-chip-icon-hover-display);
+    }
+
+    .chip-remove {
+      display: flex;
+    }
   }
 }
 
