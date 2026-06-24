@@ -12,6 +12,7 @@ import androidx.core.graphics.drawable.IconCompat
 import androidx.navigation.NavController
 import org.mozilla.fenix.IntentReceiverActivity
 import org.mozilla.fenix.R
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.home.HomeFragmentDirections
 import mozilla.components.ui.icons.R as iconsR
 
@@ -29,13 +30,17 @@ class UninstallSurveyManager(private val context: Context) {
      * Programmatically registers or updates the dynamic shortcut on the device home screen.
      */
     fun updateUninstallSurveyShortcut() {
-        val shortcut = ShortcutInfoCompat.Builder(context, SHORTCUT_ID)
-            .setShortLabel(context.getString(R.string.home_screen_shortcut_uninstall_survey))
-            .setIcon(IconCompat.createWithResource(context, iconsR.drawable.mozac_ic_delete_black_24))
-            .setIntent(shortcutIntent)
-            .build()
+        if (context.components.settings.uninstallSurveyFeatureFlagEnabled) {
+            val shortcut = ShortcutInfoCompat.Builder(context, SHORTCUT_ID)
+                .setShortLabel(context.getString(R.string.home_screen_shortcut_uninstall_survey))
+                .setIcon(IconCompat.createWithResource(context, iconsR.drawable.mozac_ic_delete_black_24))
+                .setIntent(shortcutIntent)
+                .build()
 
-        ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
+            ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
+        } else {
+            ShortcutManagerCompat.removeDynamicShortcuts(context, listOf(SHORTCUT_ID))
+        }
     }
 
     /**

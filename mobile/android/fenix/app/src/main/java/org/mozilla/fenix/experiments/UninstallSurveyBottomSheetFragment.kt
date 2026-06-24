@@ -57,7 +57,7 @@ class UninstallSurveyBottomSheetFragment : BottomSheetDialogFragment() {
 
     private var microsurveyUIData by mutableStateOf<MicrosurveyUIData?>(null)
 
-    private val closeBottomSheet = { dismiss() }
+    private val closeBottomSheet = { findNavController().popBackStack() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

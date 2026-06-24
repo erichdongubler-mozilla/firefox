@@ -1363,6 +1363,21 @@ features:
         value:
           enabled: true
 
+  uninstall-survey:
+    description: Feature that controls the visibility and handling of the uninstall survey app shortcut.
+    variables:
+      enabled:
+        description: If true, the uninstall survey shortcut is enabled and visible.
+        type: Boolean
+        default: false
+    defaults:
+      - channel: developer
+        value:
+          enabled: true
+      - channel: nightly
+        value:
+          enabled: true
+
 types:
   objects:
     GleanServerKnobsConfiguration:
