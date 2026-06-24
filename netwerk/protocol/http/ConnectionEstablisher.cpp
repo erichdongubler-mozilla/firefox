@@ -678,8 +678,7 @@ TCPConnectionEstablisher::OnOutputStreamReady(nsIAsyncOutputStream* aOut) {
 // -------------------- UDPConnectionEstablisher --------------------
 
 UDPConnectionEstablisher::UDPConnectionEstablisher(
-    nsHttpConnectionInfo* aConnInfo, NetAddr aAddr, uint32_t aCaps,
-    bool /* aSpeculative */, bool /* aAllow1918 */)
+    nsHttpConnectionInfo* aConnInfo, NetAddr aAddr, uint32_t aCaps)
     : ConnectionEstablisher(aConnInfo, aAddr, aCaps) {
   LOG(("UDPConnectionEstablisher ctor:%p", this));
 }

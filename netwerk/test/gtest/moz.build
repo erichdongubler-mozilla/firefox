@@ -14,7 +14,6 @@ UNIFIED_SOURCES += [
     "TestDNS.cpp",
     "TestDNSPacket.cpp",
     "TestEtcHostsParsing.cpp",
-    "TestHappyEyeballsConnectionAttempt.cpp",
     "TestHeaders.cpp",
     "TestHostRecordQueue.cpp",
     "TestHttp2WebTransport.cpp",

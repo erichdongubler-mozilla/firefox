@@ -62,72 +62,10 @@ NS_INTERFACE_MAP_BEGIN(HappyEyeballsConnectionAttempt)
   NS_INTERFACE_MAP_ENTRY_CONCRETE(HappyEyeballsConnectionAttempt)
 NS_INTERFACE_MAP_END
 
-// Production delegate: forwards verbatim to the connection manager / entry.
-// Friended by nsHttpConnectionMgr to reach its private dispatch helpers.
-class DefaultHappyEyeballsConnMgrDelegate final
-    : public HappyEyeballsConnMgrDelegate {
- public:
-  already_AddRefed<PendingTransactionInfo> FindTransaction(
-      bool aRemoveWhenFound, ConnectionEntry* aEntry,
-      nsAHttpTransaction* aTrans) override {
-    return gHttpHandler->ConnMgr()->FindTransactionHelper(aRemoveWhenFound,
-                                                          aEntry, aTrans);
-  }
-  nsresult DispatchTransaction(ConnectionEntry* aEntry,
-                               nsHttpTransaction* aTrans,
-                               HttpConnectionBase* aConn) override {
-    return gHttpHandler->ConnMgr()->DispatchTransaction(aEntry, aTrans, aConn);
-  }
-  void AddTransaction(nsHttpTransaction* aTrans, int32_t aPriority) override {
-    gHttpHandler->ConnMgr()->AddTransaction(aTrans, aPriority);
-  }
-  void ReportSpdyConnection(HttpConnectionBase* aConn, bool aUsingSpdy,
-                            bool aDisallowHttp3) override {
-    if (RefPtr<nsHttpConnection> h1 = do_QueryObject(aConn)) {
-      gHttpHandler->ConnMgr()->ReportSpdyConnection(h1, aUsingSpdy,
-                                                    aDisallowHttp3);
-    }
-  }
-  void ReportHttp3Connection(HttpConnectionBase* aConn,
-                             ConnectionEntry* aEntry) override {
-    gHttpHandler->ConnMgr()->ReportHttp3Connection(aConn, aEntry);
-  }
-  void ReclaimConnection(HttpConnectionBase* aConn) override {
-    gHttpHandler->ConnMgr()->OnMsgReclaimConnection(aConn);
-  }
-  void ProcessSpdyPendingQ(ConnectionEntry* aEntry) override {
-    gHttpHandler->ConnMgr()->ProcessSpdyPendingQ(aEntry);
-  }
-  void InsertIntoActiveConns(ConnectionEntry* aEntry,
-                             HttpConnectionBase* aConn) override {
-    aEntry->InsertIntoActiveConns(aConn);
-  }
-  void RemoveConnectionAttempt(ConnectionEntry* aEntry,
-                               ConnectionAttempt* aAttempt,
-                               bool aAbandon) override {
-    aEntry->RemoveConnectionAttempt(aAttempt, aAbandon);
-  }
-  void RecordIPFamilyPreference(ConnectionEntry* aEntry,
-                                uint16_t aFamily) override {
-    aEntry->RecordIPFamilyPreference(aFamily);
-  }
-  bool MaybeProcessCoalescingKeys(ConnectionEntry* aEntry,
-                                  nsIDNSAddrRecord* aRecord,
-                                  bool aIsHttp3) override {
-    return aEntry->MaybeProcessCoalescingKeys(aRecord, aIsHttp3);
-  }
-  bool RemoveTransFromPendingQ(ConnectionEntry* aEntry,
-                               nsHttpTransaction* aTrans) override {
-    return aEntry->RemoveTransFromPendingQ(aTrans);
-  }
-};
-
 HappyEyeballsConnectionAttempt::HappyEyeballsConnectionAttempt(
     nsHttpConnectionInfo* ci, nsAHttpTransaction* trans, uint32_t caps,
     bool speculative, bool urgentStart)
     : ConnectionAttempt(ci, trans, caps, speculative, urgentStart),
-      mEstablisherFactory(new DefaultConnectionEstablisherFactory()),
-      mConnMgrDelegate(new DefaultHappyEyeballsConnMgrDelegate()),
       mZeroRttHandle(new ZeroRttHandle(this)) {
   LOG(("HappyEyeballsConnectionAttempt ctor %p", this));
   if (mConnInfo->GetRoutedHost().IsEmpty()) {
@@ -324,7 +262,7 @@ void HappyEyeballsConnectionAttempt::ReleaseRealTransaction(
       return;
     }
     if (aEntry) {
-      mConnMgrDelegate->RemoveTransFromPendingQ(aEntry, trans);
+      aEntry->RemoveTransFromPendingQ(trans);
     }
   }
   mTransaction->Close(aCloseReason);
@@ -847,17 +785,17 @@ void HappyEyeballsConnectionAttempt::MaybeForward0RTTSecurityInfo(
   }
 }
 
-void HappyEyeballsConnectionAttempt::HandleConnectionResult(
+void HappyEyeballsConnectionAttempt::HandleTCPConnectionResult(
     Result<RefPtr<HttpConnectionBase>, nsresult> aResult,
-    ConnectionEstablisher* aEstablisher, uint64_t aId) {
-  RefPtr<ConnectionEstablisher> establisher = aEstablisher;
+    TCPConnectionEstablisher* aEstablisher, uint64_t aId) {
+  RefPtr<TCPConnectionEstablisher> establisher = aEstablisher;
   mConnectionEstablisherTable.Remove(aId);
   NetAddr addr = establisher->Addr();
 
-  LOG((
-      "HappyEyeballsConnectionAttempt::HandleConnectionResult %p addr=[%s] "
-      "family=[%d] id=%" PRIu64 " isUDP=%d",
-      this, addr.ToString().get(), addr.raw.family, aId, establisher->IsUDP()));
+  LOG(
+      ("HappyEyeballsConnectionAttempt::HandleTCPConnectionResult %p addr=[%s] "
+       "family=[%d] id=%" PRIu64,
+       this, addr.ToString().get(), addr.raw.family, aId));
 
   if (aResult.isErr()) {
     nsresult status = aResult.unwrapErr();
@@ -915,7 +853,7 @@ void HappyEyeballsConnectionAttempt::AdoptWinner(
     RefPtr<ConnectionEntry> entry(mEntry);
     if (entry) {
       RefPtr<PendingTransactionInfo> pendingInfo =
-          mConnMgrDelegate->FindTransaction(
+          gHttpHandler->ConnMgr()->FindTransactionHelper(
               /*removeWhenFound*/ false, entry, realTransaction);
       MOZ_ASSERT(
           !pendingInfo,
@@ -940,7 +878,7 @@ bool HappyEyeballsConnectionAttempt::LockInRealTransactionFromPendingQueue() {
     return false;
   }
   RefPtr<PendingTransactionInfo> pendingInfo =
-      mConnMgrDelegate->FindTransaction(
+      gHttpHandler->ConnMgr()->FindTransactionHelper(
           /*removeWhenFound*/ true, entry, realTransaction);
   LOG(
       ("HappyEyeballsConnectionAttempt::LockInRealTransactionFromPendingQueue "
@@ -987,9 +925,8 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
   }
   NotifyConnectionActivity(info, NS_HTTP_ACTIVITY_SUBTYPE_CONNECTION_CREATED);
   uint32_t caps = mCaps | (aIsEchRetry ? NS_HTTP_IS_RETRY : 0);
-  RefPtr<ConnectionEstablisher> establisher =
-      mEstablisherFactory->Create(ConnectionEstablisherType::TCP, info, aAddr,
-                                  caps, mSpeculative, mAllow1918);
+  RefPtr<TCPConnectionEstablisher> establisher =
+      new TCPConnectionEstablisher(info, aAddr, caps, mSpeculative, mAllow1918);
   establisher->SetDnsMetadata(mDnsMetadata);
   nsCOMPtr<nsIInterfaceRequestor> callbacks;
   mTransaction->GetSecurityCallbacks(getter_AddRefs(callbacks));
@@ -1010,7 +947,7 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
 
   auto callback = [self = RefPtr{this}, establisher,
                    aId](Result<RefPtr<HttpConnectionBase>, nsresult> aResult) {
-    self->HandleConnectionResult(std::move(aResult), establisher, aId);
+    self->HandleTCPConnectionResult(std::move(aResult), establisher, aId);
   };
 
   if (establisher->Start(std::move(callback))) {
@@ -1034,9 +971,8 @@ nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
   }
   NotifyConnectionActivity(info, NS_HTTP_ACTIVITY_SUBTYPE_CONNECTION_CREATED);
   uint32_t caps = mCaps | (aIsEchRetry ? NS_HTTP_IS_RETRY : 0);
-  RefPtr<ConnectionEstablisher> establisher =
-      mEstablisherFactory->Create(ConnectionEstablisherType::UDP, info, aAddr,
-                                  caps, mSpeculative, mAllow1918);
+  RefPtr<UDPConnectionEstablisher> establisher =
+      new UDPConnectionEstablisher(info, aAddr, caps);
   establisher->SetDnsMetadata(mDnsMetadata);
   establisher->SetTransportStatusCallback(
       [self = RefPtr{this}](nsITransport* trans, nsresult status,
@@ -1050,7 +986,7 @@ nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
 
   auto callback = [self = RefPtr{this}, establisher,
                    aId](Result<RefPtr<HttpConnectionBase>, nsresult> aResult) {
-    self->HandleConnectionResult(std::move(aResult), establisher, aId);
+    self->HandleUDPConnectionResult(std::move(aResult), establisher, aId);
   };
 
   if (establisher->Start(std::move(callback))) {
@@ -1060,6 +996,50 @@ nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
   }
 
   return NS_OK;
+}
+
+void HappyEyeballsConnectionAttempt::HandleUDPConnectionResult(
+    Result<RefPtr<HttpConnectionBase>, nsresult> aResult,
+    UDPConnectionEstablisher* aEstablisher, uint64_t aId) {
+  RefPtr<UDPConnectionEstablisher> establisher = aEstablisher;
+  mConnectionEstablisherTable.Remove(aId);
+  NetAddr addr = establisher->Addr();
+
+  LOG(
+      ("HappyEyeballsConnectionAttempt::HandleUDPConnectionResult %p addr=[%s] "
+       "family=[%d] id=%" PRIu64,
+       this, addr.ToString().get(), addr.raw.family, aId));
+
+  if (aResult.isErr()) {
+    nsresult status = aResult.unwrapErr();
+    MaybeForward0RTTSecurityInfo(establisher);
+    Maybe<nsCString> retryEch = MaybeExtractRetryEchConfig(establisher, status);
+    establisher->Close(status);
+    if (retryEch) {
+      ProcessEchRetryConnectionResult(addr, aId, *retryEch);
+    } else {
+      ProcessConnectionResult(addr, status, aId);
+    }
+    return;
+  }
+
+  if (IsTerminal()) {
+    establisher->Close(NS_BASE_STREAM_CLOSED);
+    ProcessConnectionResult(addr, NS_BASE_STREAM_CLOSED, aId);
+    return;
+  }
+
+  mOutputConn = aResult.unwrap();
+  mOutputTrans = establisher->Transaction();
+  mOutputConnId = aId;
+  mAddrFamily = addr.raw.family;
+  mWinnerAddrRecord = establisher->AddrRecord();
+  // The winner is the first connection to fully succeed.
+  mFirstConnectEnd = TimeStamp::Now();
+  // The ownership of connection is moved to HappyEyeballsConnectionAttempt now.
+  establisher->ClearResultConnection();
+
+  ProcessConnectionResult(addr, NS_OK, aId);
 }
 
 void HappyEyeballsConnectionAttempt::OnClientAuthCertificateRequested(
@@ -1143,14 +1123,14 @@ void HappyEyeballsConnectionAttempt::Abandon() {
 }
 
 void HappyEyeballsConnectionAttempt::ProcessTCPConn(
-    HttpConnectionBase* aConn, ConnectionEntry* aEntry,
+    nsHttpConnection* aConn, ConnectionEntry* aEntry,
     bool aTransactionAlreadyOnConn) {
   RefPtr<ConnectionEntry> entry(mEntry);
   if (!entry) {
     return;
   }
 
-  RefPtr<HttpConnectionBase> connTCP = aConn;
+  RefPtr<nsHttpConnection> connTCP = aConn;
   LOG(("Got connTCP:%p transactionAlreadyOnConn=%d", connTCP.get(),
        aTransactionAlreadyOnConn));
 
@@ -1161,13 +1141,12 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(
   // redundant connTCP for coalescing).
   if (mWinnerAddrRecord && StaticPrefs::network_http_http2_enabled() &&
       StaticPrefs::network_http_http2_coalesce_hostnames()) {
-    if (mConnMgrDelegate->MaybeProcessCoalescingKeys(entry, mWinnerAddrRecord,
-                                                     false)) {
-      mConnMgrDelegate->ProcessSpdyPendingQ(entry);
+    if (entry->MaybeProcessCoalescingKeys(mWinnerAddrRecord)) {
+      gHttpHandler->ConnMgr()->ProcessSpdyPendingQ(entry);
     }
   }
 
-  mConnMgrDelegate->InsertIntoActiveConns(entry, connTCP);
+  entry->InsertIntoActiveConns(connTCP);
 
   bool isHttp2 = connTCP->UsingSpdy();
 
@@ -1196,19 +1175,21 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(
            realTrans));
     } else {
       RefPtr<PendingTransactionInfo> existing =
-          mConnMgrDelegate->FindTransaction(
+          gHttpHandler->ConnMgr()->FindTransactionHelper(
               /* removeWhenFound = */ false, entry, realTrans);
       if (!existing) {
-        mConnMgrDelegate->AddTransaction(realTrans, realTrans->Priority());
+        gHttpHandler->ConnMgr()->AddTransaction(realTrans,
+                                                realTrans->Priority());
       }
     }
     mTransaction = nullptr;
   } else if (!aTransactionAlreadyOnConn) {
     RefPtr<PendingTransactionInfo> pendingTransInfo =
-        mConnMgrDelegate->FindTransaction(true, entry, mTransaction);
+        gHttpHandler->ConnMgr()->FindTransactionHelper(true, entry,
+                                                       mTransaction);
     if (pendingTransInfo) {
       MOZ_ASSERT(!mSpeculative, "Speculative HE attempt found mTransaction");
-      nsresult rv = mConnMgrDelegate->DispatchTransaction(
+      nsresult rv = gHttpHandler->ConnMgr()->DispatchTransaction(
           entry, pendingTransInfo->Transaction(), connTCP);
       if (NS_FAILED(rv)) {
         mTransaction->Close(rv);
@@ -1220,25 +1201,27 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(
       // After about 1 second allow for the possibility of restarting a
       // transaction due to server close. Keep at sub 1 second as that is the
       // minimum granularity we can expect a server to be timing out with.
-      if (RefPtr<nsHttpConnection> h1 = do_QueryObject(connTCP)) {
-        h1->SetIsReusedAfter(950);
-      }
+      connTCP->SetIsReusedAfter(950);
 
       LOG(
           ("ProcessTCPConn no transaction match "
            "returning conn %p to pool\n",
            connTCP.get()));
-      mConnMgrDelegate->ReclaimConnection(connTCP);
+      gHttpHandler->ConnMgr()->OnMsgReclaimConnection(connTCP);
     }
   }
 
   connTCP->SetIsRacing(false);
-  mConnMgrDelegate->ReportSpdyConnection(
-      connTCP, isHttp2, isHttp2 && (mCaps & NS_HTTP_DISALLOW_HTTP3));
+  if (isHttp2) {
+    gHttpHandler->ConnMgr()->ReportSpdyConnection(
+        connTCP, true, (mCaps & NS_HTTP_DISALLOW_HTTP3));
+  } else {
+    gHttpHandler->ConnMgr()->ReportSpdyConnection(connTCP, false, false);
+  }
 }
 
 void HappyEyeballsConnectionAttempt::ProcessUDPConn(
-    HttpConnectionBase* aConn, ConnectionEntry* aEntry,
+    HttpConnectionUDP* aConn, ConnectionEntry* aEntry,
     bool aTransactionAlreadyOnConn) {
   RefPtr<ConnectionEntry> entry(mEntry);
   if (!entry) {
@@ -1272,21 +1255,21 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
 
   if (mWinnerAddrRecord && nsHttpHandler::IsHttp3Enabled() &&
       StaticPrefs::network_http_http2_coalesce_hostnames()) {
-    if (mConnMgrDelegate->MaybeProcessCoalescingKeys(entry, mWinnerAddrRecord,
-                                                     true)) {
-      mConnMgrDelegate->ProcessSpdyPendingQ(entry);
+    if (entry->MaybeProcessCoalescingKeys(mWinnerAddrRecord, true)) {
+      gHttpHandler->ConnMgr()->ProcessSpdyPendingQ(entry);
     }
   }
 
-  mConnMgrDelegate->InsertIntoActiveConns(entry, aConn);
+  entry->InsertIntoActiveConns(aConn);
 
   if (!aTransactionAlreadyOnConn) {
     RefPtr<PendingTransactionInfo> pendingTransInfo =
-        mConnMgrDelegate->FindTransaction(true, entry, mTransaction);
+        gHttpHandler->ConnMgr()->FindTransactionHelper(true, entry,
+                                                       mTransaction);
     nsresult rv = NS_OK;
     if (pendingTransInfo) {
       MOZ_ASSERT(!mSpeculative, "Speculative HE attempt found mTransaction");
-      rv = mConnMgrDelegate->DispatchTransaction(
+      rv = gHttpHandler->ConnMgr()->DispatchTransaction(
           entry, pendingTransInfo->Transaction(), aConn);
       if (NS_FAILED(rv)) {
         mTransaction->Close(rv);
@@ -1314,7 +1297,7 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
   }
 
   aConn->SetIsRacing(false);
-  mConnMgrDelegate->ReportHttp3Connection(aConn, entry);
+  gHttpHandler->ConnMgr()->ReportHttp3Connection(aConn, entry);
 }
 
 void HappyEyeballsConnectionAttempt::EnterSucceeded() {
@@ -1325,7 +1308,7 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
   RefPtr<ConnectionEntry> entry(mEntry);
   MOZ_ASSERT(entry);
 
-  mConnMgrDelegate->RecordIPFamilyPreference(entry, mAddrFamily);
+  entry->RecordIPFamilyPreference(mAddrFamily);
 
   TimeStamp dnsLookupStart, dnsLookupEnd;
   DnsLookupTimings(dnsLookupStart, dnsLookupEnd);
@@ -1341,9 +1324,10 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
   if (mOutputTrans && mTransaction) {
     if (nsHttpTransaction* realTransaction =
             mTransaction->QueryHttpTransaction()) {
+      RefPtr<nsHttpConnection> tcpConn = do_QueryObject(mOutputConn);
       TimingStruct timings;
       DnsLookupTimings(timings.domainLookupStart, timings.domainLookupEnd);
-      FillConnectTimings(/* aIsQuic = */ mOutputConn->UsingHttp3(), timings);
+      FillConnectTimings(/* aIsQuic = */ !tcpConn, timings);
       timings.transactionPending = realTransaction->GetPendingTime();
       realTransaction->BootstrapTimings(timings);
     }
@@ -1386,11 +1370,11 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
         if (!trans->Connection()) {
           RefPtr<PendingTransactionInfo> existing;
           if (entry) {
-            existing = mConnMgrDelegate->FindTransaction(
+            existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
                 /*removeWhenFound=*/false, entry, trans);
           }
           if (!existing) {
-            mConnMgrDelegate->AddTransaction(trans, trans->Priority());
+            gHttpHandler->ConnMgr()->AddTransaction(trans, trans->Priority());
           }
         }
         restartedFallback0Rtt = true;
@@ -1412,7 +1396,8 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
   // re-inserted trans will be dispatched by ReportSpdyConnection →
   // ProcessPendingQ once the conn is in the active pool.
   bool alreadyOnConn = mZeroRttHandle->HadWinner() || restartedFallback0Rtt;
-  if (!mOutputConn->UsingHttp3()) {
+  RefPtr<nsHttpConnection> connTCP = do_QueryObject(mOutputConn);
+  if (connTCP) {
     // If the original request had an alt-svc route but a direct TCP
     // connection won, remove the Alt-Used header since we're not using
     // the alt-svc route.
@@ -1422,9 +1407,10 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
       }
     }
 
-    ProcessTCPConn(mOutputConn, entry, alreadyOnConn);
+    ProcessTCPConn(connTCP, entry, alreadyOnConn);
   } else {
-    ProcessUDPConn(mOutputConn, entry, alreadyOnConn);
+    RefPtr<HttpConnectionUDP> connUDP = do_QueryObject(mOutputConn);
+    ProcessUDPConn(connUDP, entry, alreadyOnConn);
   }
 
   mOutputConn = nullptr;
@@ -1432,7 +1418,7 @@ void HappyEyeballsConnectionAttempt::EnterSucceeded() {
   // Make sure everything is released.
   Abandon();
 
-  mConnMgrDelegate->RemoveConnectionAttempt(entry, this, false);
+  entry->RemoveConnectionAttempt(this, false);
 }
 
 double HappyEyeballsConnectionAttempt::Duration(TimeStamp epoch) {
@@ -1468,7 +1454,7 @@ void HappyEyeballsConnectionAttempt::EnterFailed(
   RefPtr<ConnectionEntry> entry(mEntry);
 
   if (entry) {
-    mConnMgrDelegate->RemoveConnectionAttempt(entry, this, false);
+    entry->RemoveConnectionAttempt(this, false);
   }
 
   CloseHttpTransaction(aReason, entry);
@@ -1488,7 +1474,7 @@ void HappyEyeballsConnectionAttempt::EnterRestartTransaction(
     // abandon=true routes through Abandon() -> Done; cleanup happens there.
     // mEntry will be nulled by EnterDone, but |entry| is a local RefPtr
     // and stays valid for the ReleaseRealTransaction call below.
-    mConnMgrDelegate->RemoveConnectionAttempt(entry, this, true);
+    entry->RemoveConnectionAttempt(this, true);
   }
 
   // Both classifier inputs that land here (PossibleZeroRTTRetryError TLS
@@ -1532,7 +1518,7 @@ void HappyEyeballsConnectionAttempt::EnterAbortTransaction(
   ReleaseRealTransaction(aCloseReason, entry);
   Abandon();
   if (entry) {
-    mConnMgrDelegate->RemoveConnectionAttempt(entry, this, false);
+    entry->RemoveConnectionAttempt(this, false);
   }
 }
 
@@ -1578,12 +1564,12 @@ void HappyEyeballsConnectionAttempt::EnterDone() {
           RefPtr<ConnectionEntry> entry(mEntry);
           RefPtr<PendingTransactionInfo> existing;
           if (entry) {
-            existing = mConnMgrDelegate->FindTransaction(
+            existing = gHttpHandler->ConnMgr()->FindTransactionHelper(
                 /*removeWhenFound=*/false, entry, realTransaction);
           }
           if (!existing) {
-            mConnMgrDelegate->AddTransaction(realTransaction,
-                                             realTransaction->Priority());
+            gHttpHandler->ConnMgr()->AddTransaction(
+                realTransaction, realTransaction->Priority());
           }
         }
       }
