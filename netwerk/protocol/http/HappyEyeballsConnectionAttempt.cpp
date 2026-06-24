@@ -785,17 +785,18 @@ void HappyEyeballsConnectionAttempt::MaybeForward0RTTSecurityInfo(
   }
 }
 
-void HappyEyeballsConnectionAttempt::HandleTCPConnectionResult(
+void HappyEyeballsConnectionAttempt::HandleConnectionResult(
     Result<RefPtr<HttpConnectionBase>, nsresult> aResult,
-    TCPConnectionEstablisher* aEstablisher, uint64_t aId) {
-  RefPtr<TCPConnectionEstablisher> establisher = aEstablisher;
+    ConnectionEstablisher* aEstablisher, uint64_t aId) {
+  RefPtr<ConnectionEstablisher> establisher = aEstablisher;
   mConnectionEstablisherTable.Remove(aId);
   NetAddr addr = establisher->Addr();
 
   LOG(
-      ("HappyEyeballsConnectionAttempt::HandleTCPConnectionResult %p addr=[%s] "
-       "family=[%d] id=%" PRIu64,
-       this, addr.ToString().get(), addr.raw.family, aId));
+      ("HappyEyeballsConnectionAttempt::HandleConnectionResult %p addr=[%s] "
+       "family=[%d] id=%" PRIu64 " isUDP=%d",
+       this, addr.ToString().get(), addr.raw.family, aId,
+       establisher->IsUDP()));
 
   if (aResult.isErr()) {
     nsresult status = aResult.unwrapErr();
@@ -947,7 +948,7 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
 
   auto callback = [self = RefPtr{this}, establisher,
                    aId](Result<RefPtr<HttpConnectionBase>, nsresult> aResult) {
-    self->HandleTCPConnectionResult(std::move(aResult), establisher, aId);
+    self->HandleConnectionResult(std::move(aResult), establisher, aId);
   };
 
   if (establisher->Start(std::move(callback))) {
@@ -986,7 +987,7 @@ nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
 
   auto callback = [self = RefPtr{this}, establisher,
                    aId](Result<RefPtr<HttpConnectionBase>, nsresult> aResult) {
-    self->HandleUDPConnectionResult(std::move(aResult), establisher, aId);
+    self->HandleConnectionResult(std::move(aResult), establisher, aId);
   };
 
   if (establisher->Start(std::move(callback))) {
@@ -996,50 +997,6 @@ nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
   }
 
   return NS_OK;
-}
-
-void HappyEyeballsConnectionAttempt::HandleUDPConnectionResult(
-    Result<RefPtr<HttpConnectionBase>, nsresult> aResult,
-    UDPConnectionEstablisher* aEstablisher, uint64_t aId) {
-  RefPtr<UDPConnectionEstablisher> establisher = aEstablisher;
-  mConnectionEstablisherTable.Remove(aId);
-  NetAddr addr = establisher->Addr();
-
-  LOG(
-      ("HappyEyeballsConnectionAttempt::HandleUDPConnectionResult %p addr=[%s] "
-       "family=[%d] id=%" PRIu64,
-       this, addr.ToString().get(), addr.raw.family, aId));
-
-  if (aResult.isErr()) {
-    nsresult status = aResult.unwrapErr();
-    MaybeForward0RTTSecurityInfo(establisher);
-    Maybe<nsCString> retryEch = MaybeExtractRetryEchConfig(establisher, status);
-    establisher->Close(status);
-    if (retryEch) {
-      ProcessEchRetryConnectionResult(addr, aId, *retryEch);
-    } else {
-      ProcessConnectionResult(addr, status, aId);
-    }
-    return;
-  }
-
-  if (IsTerminal()) {
-    establisher->Close(NS_BASE_STREAM_CLOSED);
-    ProcessConnectionResult(addr, NS_BASE_STREAM_CLOSED, aId);
-    return;
-  }
-
-  mOutputConn = aResult.unwrap();
-  mOutputTrans = establisher->Transaction();
-  mOutputConnId = aId;
-  mAddrFamily = addr.raw.family;
-  mWinnerAddrRecord = establisher->AddrRecord();
-  // The winner is the first connection to fully succeed.
-  mFirstConnectEnd = TimeStamp::Now();
-  // The ownership of connection is moved to HappyEyeballsConnectionAttempt now.
-  establisher->ClearResultConnection();
-
-  ProcessConnectionResult(addr, NS_OK, aId);
 }
 
 void HappyEyeballsConnectionAttempt::OnClientAuthCertificateRequested(
