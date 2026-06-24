@@ -1689,7 +1689,7 @@ class Datastore final
 class PreparedDatastore {
   RefPtr<Datastore> mDatastore;
   nsCOMPtr<nsITimer> mTimer;
-  const Maybe<ContentParentId> mContentParentId;
+  const RefPtr<ThreadsafeContentParentHandle> mContentParentHandle;
   // Strings share buffers if possible, so it's not a problem to duplicate the
   // origin here.
   const nsCString mOrigin;
@@ -1699,12 +1699,12 @@ class PreparedDatastore {
 
  public:
   PreparedDatastore(Datastore* aDatastore,
-                    const Maybe<ContentParentId>& aContentParentId,
+                    ThreadsafeContentParentHandle* aContentParentHandle,
                     const nsACString& aOrigin, uint64_t aDatastoreId,
                     bool aForPreload)
       : mDatastore(aDatastore),
         mTimer(NS_NewTimer()),
-        mContentParentId(aContentParentId),
+        mContentParentHandle(aContentParentHandle),
         mOrigin(aOrigin),
         mDatastoreId(aDatastoreId),
         mForPreload(aForPreload),
@@ -1743,8 +1743,8 @@ class PreparedDatastore {
     return *mDatastore;
   }
 
-  const Maybe<ContentParentId>& GetContentParentId() const {
-    return mContentParentId;
+  ThreadsafeContentParentHandle* GetContentParentHandle() const {
+    return mContentParentHandle;
   }
 
   const nsCString& Origin() const { return mOrigin; }
@@ -1785,7 +1785,7 @@ class Database final
   RefPtr<Datastore> mDatastore;
   Snapshot* mSnapshot;
   const PrincipalInfo mPrincipalInfo;
-  const Maybe<ContentParentId> mContentParentId;
+  const RefPtr<ThreadsafeContentParentHandle> mContentParentHandle;
   // Strings share buffers if possible, so it's not a problem to duplicate the
   // origin here.
   nsCString mOrigin;
@@ -1801,7 +1801,7 @@ class Database final
  public:
   // Created in AllocPBackgroundLSDatabaseParent.
   Database(const PrincipalInfo& aPrincipalInfo,
-           const Maybe<ContentParentId>& aContentParentId,
+           ThreadsafeContentParentHandle* aContentParentHandle,
            const nsACString& aOrigin, uint32_t aPrivateBrowsingId);
 
   void AssertIsOnOwningThread() const {
@@ -1822,8 +1822,8 @@ class Database final
 
   const PrincipalInfo& GetPrincipalInfo() const { return mPrincipalInfo; }
 
-  const Maybe<ContentParentId>& ContentParentIdRef() const {
-    return mContentParentId;
+  ThreadsafeContentParentHandle* ContentParentHandle() const {
+    return mContentParentHandle;
   }
 
   uint32_t PrivateBrowsingId() const { return mPrivateBrowsingId; }
@@ -2101,17 +2101,17 @@ class Snapshot final : public PBackgroundLSSnapshotParent {
 };
 
 class Observer final : public PBackgroundLSObserverParent {
-  const Maybe<ContentParentId> mContentParentId;
+  const RefPtr<ThreadsafeContentParentHandle> mContentParentHandle;
   nsCString mOrigin;
   bool mActorDestroyed;
 
  public:
   // Created in AllocPBackgroundLSObserverParent.
-  Observer(const Maybe<ContentParentId>& aContentParentId,
+  Observer(ThreadsafeContentParentHandle* aContentParentHandle,
            const nsACString& aOrigin);
 
-  const Maybe<ContentParentId>& ContentParentIdRef() const {
-    return mContentParentId;
+  ThreadsafeContentParentHandle* ContentParentHandle() const {
+    return mContentParentHandle;
   }
 
   const nsCString& Origin() const { return mOrigin; }
@@ -2164,13 +2164,13 @@ class LSRequestBase : public DatastoreOperationBase,
   };
 
   const LSRequestParams mParams;
-  Maybe<ContentParentId> mContentParentId;
+  RefPtr<ThreadsafeContentParentHandle> mContentParentHandle;
   State mState;
   bool mWaitingForFinish;
 
  public:
   LSRequestBase(const LSRequestParams& aParams,
-                const Maybe<ContentParentId>& aContentParentId);
+                ThreadsafeContentParentHandle* aContentParentHandle);
 
   void Dispatch();
 
@@ -2182,6 +2182,10 @@ class LSRequestBase : public DatastoreOperationBase,
 
  protected:
   ~LSRequestBase() override;
+
+  ThreadsafeContentParentHandle* ContentParentHandle() const {
+    return mContentParentHandle;
+  }
 
   virtual nsresult Start() = 0;
 
@@ -2330,7 +2334,7 @@ class PrepareDatastoreOp
 
  public:
   PrepareDatastoreOp(const LSRequestParams& aParams,
-                     const Maybe<ContentParentId>& aContentParentId);
+                     ThreadsafeContentParentHandle* aContentParentHandle);
 
   Maybe<ClientDirectoryLock&> MaybeDirectoryLockRef() const {
     AssertIsOnBackgroundThread();
@@ -2471,7 +2475,7 @@ class PrepareObserverOp : public LSRequestBase {
 
  public:
   PrepareObserverOp(const LSRequestParams& aParams,
-                    const Maybe<ContentParentId>& aContentParentId);
+                    ThreadsafeContentParentHandle* aContentParentHandle);
 
  private:
   nsresult Start() override;
@@ -2499,12 +2503,12 @@ class LSSimpleRequestBase : public DatastoreOperationBase,
   };
 
   const LSSimpleRequestParams mParams;
-  Maybe<ContentParentId> mContentParentId;
+  RefPtr<ThreadsafeContentParentHandle> mContentParentHandle;
   State mState;
 
  public:
   LSSimpleRequestBase(const LSSimpleRequestParams& aParams,
-                      const Maybe<ContentParentId>& aContentParentId);
+                      ThreadsafeContentParentHandle* aContentParentHandle);
 
   void Dispatch();
 
@@ -2535,7 +2539,7 @@ class PreloadedOp : public LSSimpleRequestBase {
 
  public:
   PreloadedOp(const LSSimpleRequestParams& aParams,
-              const Maybe<ContentParentId>& aContentParentId);
+              ThreadsafeContentParentHandle* aContentParentHandle);
 
  private:
   nsresult Start() override;
@@ -2548,7 +2552,7 @@ class GetStateOp : public LSSimpleRequestBase {
 
  public:
   GetStateOp(const LSSimpleRequestParams& aParams,
-             const Maybe<ContentParentId>& aContentParentId);
+             ThreadsafeContentParentHandle* aContentParentHandle);
 
  private:
   nsresult Start() override;
@@ -3168,7 +3172,7 @@ bool VerifyPrincipalInfo(const PrincipalInfo& aPrincipalInfo,
   return true;
 }
 
-bool VerifyClientId(const Maybe<ContentParentId>& aContentParentId,
+bool VerifyClientId(ThreadsafeContentParentHandle* aContentParentHandle,
                     const Maybe<PrincipalInfo>& aPrincipalInfo,
                     const Maybe<nsID>& aClientId) {
   AssertIsOnBackgroundThread();
@@ -3183,8 +3187,9 @@ bool VerifyClientId(const Maybe<ContentParentId>& aContentParentId,
     }
 
     RefPtr<ClientManagerService> svc = ClientManagerService::GetInstance();
-    if (svc && NS_WARN_IF(!svc->HasWindow(
-                   aContentParentId, aPrincipalInfo.ref(), aClientId.ref()))) {
+    if (svc &&
+        NS_WARN_IF(!svc->HasWindow(aContentParentHandle, aPrincipalInfo.ref(),
+                                   aClientId.ref()))) {
       return false;
     }
   }
@@ -3298,7 +3303,7 @@ already_AddRefed<PBackgroundLSDatabaseParent> AllocPBackgroundLSDatabaseParent(
   // method.
 
   RefPtr<Database> database =
-      new Database(aPrincipalInfo, preparedDatastore->GetContentParentId(),
+      new Database(aPrincipalInfo, preparedDatastore->GetContentParentHandle(),
                    preparedDatastore->Origin(), aPrivateBrowsingId);
 
   return database.forget();
@@ -3434,12 +3439,8 @@ PBackgroundLSRequestParent* AllocPBackgroundLSRequestParent(
     return nullptr;
   }
 
-  Maybe<ContentParentId> contentParentId;
-
-  uint64_t childID = BackgroundParent::GetChildID(aBackgroundActor);
-  if (childID) {
-    contentParentId = Some(ContentParentId(childID));
-  }
+  RefPtr<ThreadsafeContentParentHandle> contentParentHandle =
+      BackgroundParent::GetContentParentHandle(aBackgroundActor);
 
   RefPtr<LSRequestBase> actor;
 
@@ -3447,7 +3448,7 @@ PBackgroundLSRequestParent* AllocPBackgroundLSRequestParent(
     case LSRequestParams::TLSRequestPreloadDatastoreParams:
     case LSRequestParams::TLSRequestPrepareDatastoreParams: {
       RefPtr<PrepareDatastoreOp> prepareDatastoreOp =
-          new PrepareDatastoreOp(aParams, contentParentId);
+          new PrepareDatastoreOp(aParams, contentParentHandle);
 
       if (!gPrepareDatastoreOps) {
         gPrepareDatastoreOps = new PrepareDatastoreOpArray();
@@ -3462,7 +3463,7 @@ PBackgroundLSRequestParent* AllocPBackgroundLSRequestParent(
 
     case LSRequestParams::TLSRequestPrepareObserverParams: {
       RefPtr<PrepareObserverOp> prepareObserverOp =
-          new PrepareObserverOp(aParams, contentParentId);
+          new PrepareObserverOp(aParams, contentParentHandle);
 
       actor = std::move(prepareObserverOp);
 
@@ -3517,19 +3518,15 @@ PBackgroundLSSimpleRequestParent* AllocPBackgroundLSSimpleRequestParent(
     return nullptr;
   }
 
-  Maybe<ContentParentId> contentParentId;
-
-  uint64_t childID = BackgroundParent::GetChildID(aBackgroundActor);
-  if (childID) {
-    contentParentId = Some(ContentParentId(childID));
-  }
+  RefPtr<ThreadsafeContentParentHandle> contentParentHandle =
+      BackgroundParent::GetContentParentHandle(aBackgroundActor);
 
   RefPtr<LSSimpleRequestBase> actor;
 
   switch (aParams.type()) {
     case LSSimpleRequestParams::TLSSimpleRequestPreloadedParams: {
       RefPtr<PreloadedOp> preloadedOp =
-          new PreloadedOp(aParams, contentParentId);
+          new PreloadedOp(aParams, contentParentHandle);
 
       actor = std::move(preloadedOp);
 
@@ -3537,7 +3534,8 @@ PBackgroundLSSimpleRequestParent* AllocPBackgroundLSSimpleRequestParent(
     }
 
     case LSSimpleRequestParams::TLSSimpleRequestGetStateParams: {
-      RefPtr<GetStateOp> getStateOp = new GetStateOp(aParams, contentParentId);
+      RefPtr<GetStateOp> getStateOp =
+          new GetStateOp(aParams, contentParentHandle);
 
       actor = std::move(getStateOp);
 
@@ -4576,7 +4574,7 @@ bool Datastore::HasOtherProcessDatabases(Database* aDatabase) {
   AssertIsOnBackgroundThread();
 
   for (Database* database : mDatabases) {
-    if (database->ContentParentIdRef() != aDatabase->ContentParentIdRef()) {
+    if (database->ContentParentHandle() != aDatabase->ContentParentHandle()) {
       return true;
     }
   }
@@ -5074,7 +5072,7 @@ bool Datastore::HasOtherProcessObservers(Database* aDatabase) {
   MOZ_ASSERT(array);
 
   for (Observer* observer : *array) {
-    if (observer->ContentParentIdRef() != aDatabase->ContentParentIdRef()) {
+    if (observer->ContentParentHandle() != aDatabase->ContentParentHandle()) {
       return true;
     }
   }
@@ -5105,7 +5103,7 @@ void Datastore::NotifyOtherProcessObservers(Database* aDatabase,
   // that caused the change.
 
   for (Observer* observer : *array) {
-    if (observer->ContentParentIdRef() != aDatabase->ContentParentIdRef()) {
+    if (observer->ContentParentHandle() != aDatabase->ContentParentHandle()) {
       observer->Observe(aDatabase, aDocumentURI, aKey, aOldValue, aNewValue);
     }
   }
@@ -5126,7 +5124,7 @@ void Datastore::NoteChangedObserverArray(
     bool hasOtherProcessObservers = false;
 
     for (Observer* observer : aObservers) {
-      if (observer->ContentParentIdRef() != database->ContentParentIdRef()) {
+      if (observer->ContentParentHandle() != database->ContentParentHandle()) {
         hasOtherProcessObservers = true;
         break;
       }
@@ -5332,11 +5330,11 @@ void PreparedDatastore::TimerCallback(nsITimer* aTimer, void* aClosure) {
  ******************************************************************************/
 
 Database::Database(const PrincipalInfo& aPrincipalInfo,
-                   const Maybe<ContentParentId>& aContentParentId,
+                   ThreadsafeContentParentHandle* aContentParentHandle,
                    const nsACString& aOrigin, uint32_t aPrivateBrowsingId)
     : mSnapshot(nullptr),
       mPrincipalInfo(aPrincipalInfo),
-      mContentParentId(aContentParentId),
+      mContentParentHandle(aContentParentHandle),
       mOrigin(aOrigin),
       mRequestAllowToCloseTimerId(0),
       mPrivateBrowsingId(aPrivateBrowsingId),
@@ -5461,7 +5459,7 @@ void Database::Stringify(nsACString& aResult) const {
   aResult.Append(kQuotaGenericDelimiter);
 
   aResult.AppendLiteral("OtherProcessActor:");
-  aResult.AppendInt(mContentParentId.isSome());
+  aResult.AppendInt(!!mContentParentHandle);
   aResult.Append(kQuotaGenericDelimiter);
 
   aResult.AppendLiteral("Origin:");
@@ -6122,9 +6120,9 @@ mozilla::ipc::IPCResult Snapshot::RecvIncreasePeakUsage(const int64_t& aMinSize,
  * Observer
  ******************************************************************************/
 
-Observer::Observer(const Maybe<ContentParentId>& aContentParentId,
+Observer::Observer(ThreadsafeContentParentHandle* aContentParentHandle,
                    const nsACString& aOrigin)
-    : mContentParentId(aContentParentId),
+    : mContentParentHandle(aContentParentHandle),
       mOrigin(aOrigin),
       mActorDestroyed(false) {
   AssertIsOnBackgroundThread();
@@ -6185,10 +6183,11 @@ mozilla::ipc::IPCResult Observer::RecvDeleteMe() {
  * LSRequestBase
  ******************************************************************************/
 
-LSRequestBase::LSRequestBase(const LSRequestParams& aParams,
-                             const Maybe<ContentParentId>& aContentParentId)
+LSRequestBase::LSRequestBase(
+    const LSRequestParams& aParams,
+    ThreadsafeContentParentHandle* aContentParentHandle)
     : mParams(aParams),
-      mContentParentId(aContentParentId),
+      mContentParentHandle(aContentParentHandle),
       mState(State::Initial),
       mWaitingForFinish(false) {}
 
@@ -6308,7 +6307,7 @@ bool LSRequestBase::VerifyRequestParams() {
         return false;
       }
 
-      if (NS_WARN_IF(!VerifyClientId(mContentParentId,
+      if (NS_WARN_IF(!VerifyClientId(ContentParentHandle(),
                                      params.clientPrincipalInfo(),
                                      params.clientId()))) {
         return false;
@@ -6338,7 +6337,7 @@ bool LSRequestBase::VerifyRequestParams() {
         return false;
       }
 
-      if (NS_WARN_IF(!VerifyClientId(mContentParentId,
+      if (NS_WARN_IF(!VerifyClientId(ContentParentHandle(),
                                      params.clientPrincipalInfo(),
                                      params.clientId()))) {
         return false;
@@ -6580,8 +6579,8 @@ mozilla::ipc::IPCResult LSRequestBase::RecvFinish() {
 
 PrepareDatastoreOp::PrepareDatastoreOp(
     const LSRequestParams& aParams,
-    const Maybe<ContentParentId>& aContentParentId)
-    : LSRequestBase(aParams, aContentParentId),
+    ThreadsafeContentParentHandle* aContentParentHandle)
+    : LSRequestBase(aParams, aContentParentHandle),
       mProcessingTimerId(
           glean::localstorage_request::prepare_datastore_processing_time
               .Start()),
@@ -7537,8 +7536,8 @@ void PrepareDatastoreOp::GetResponse(LSRequestResponse& aResponse) {
   }
   const auto& preparedDatastore = gPreparedDatastores->InsertOrUpdate(
       mDatastoreId, MakeUnique<PreparedDatastore>(
-                        mDatastore, mContentParentId, Origin(), mDatastoreId,
-                        /* aForPreload */ mForPreload));
+                        mDatastore, ContentParentHandle(), Origin(),
+                        mDatastoreId, /* aForPreload */ mForPreload));
 
   if (mInvalidated) {
     preparedDatastore->Invalidate();
@@ -7907,8 +7906,8 @@ PrepareDatastoreOp::CompressionTypeFunction::OnFunctionCall(
 
 PrepareObserverOp::PrepareObserverOp(
     const LSRequestParams& aParams,
-    const Maybe<ContentParentId>& aContentParentId)
-    : LSRequestBase(aParams, aContentParentId) {
+    ThreadsafeContentParentHandle* aContentParentHandle)
+    : LSRequestBase(aParams, aContentParentHandle) {
   MOZ_ASSERT(aParams.type() ==
              LSRequestParams::TLSRequestPrepareObserverParams);
 }
@@ -7948,7 +7947,7 @@ void PrepareObserverOp::GetResponse(LSRequestResponse& aResponse) {
 
   uint64_t observerId = ++gLastObserverId;
 
-  RefPtr<Observer> observer = new Observer(mContentParentId, mOrigin);
+  RefPtr<Observer> observer = new Observer(ContentParentHandle(), mOrigin);
 
   if (!gPreparedObsevers) {
     gPreparedObsevers = new PreparedObserverHashtable();
@@ -7968,9 +7967,9 @@ void PrepareObserverOp::GetResponse(LSRequestResponse& aResponse) {
 
 LSSimpleRequestBase::LSSimpleRequestBase(
     const LSSimpleRequestParams& aParams,
-    const Maybe<ContentParentId>& aContentParentId)
+    ThreadsafeContentParentHandle* aContentParentHandle)
     : mParams(aParams),
-      mContentParentId(aContentParentId),
+      mContentParentHandle(aContentParentHandle),
       mState(State::Initial) {}
 
 LSSimpleRequestBase::~LSSimpleRequestBase() {
@@ -8118,8 +8117,8 @@ void LSSimpleRequestBase::ActorDestroy(ActorDestroyReason aWhy) {
  ******************************************************************************/
 
 PreloadedOp::PreloadedOp(const LSSimpleRequestParams& aParams,
-                         const Maybe<ContentParentId>& aContentParentId)
-    : LSSimpleRequestBase(aParams, aContentParentId) {
+                         ThreadsafeContentParentHandle* aContentParentHandle)
+    : LSSimpleRequestBase(aParams, aContentParentHandle) {
   MOZ_ASSERT(aParams.type() ==
              LSSimpleRequestParams::TLSSimpleRequestPreloadedParams);
 }
@@ -8175,8 +8174,8 @@ void PreloadedOp::GetResponse(LSSimpleRequestResponse& aResponse) {
  ******************************************************************************/
 
 GetStateOp::GetStateOp(const LSSimpleRequestParams& aParams,
-                       const Maybe<ContentParentId>& aContentParentId)
-    : LSSimpleRequestBase(aParams, aContentParentId) {
+                       ThreadsafeContentParentHandle* aContentParentHandle)
+    : LSSimpleRequestBase(aParams, aContentParentHandle) {
   MOZ_ASSERT(aParams.type() ==
              LSSimpleRequestParams::TLSSimpleRequestGetStateParams);
 }
@@ -8847,18 +8846,15 @@ void QuotaClient::AbortOperationsForLocks(
 void QuotaClient::AbortOperationsForProcess(ContentParentId aContentParentId) {
   AssertIsOnBackgroundThread();
 
-  // XXX Quota Manager should do the wrapping.
-  Maybe<ContentParentId> contentParentId;
-
-  if (aContentParentId) {
-    contentParentId = Some(aContentParentId);
-  }
-
   // XXX We could try to invalidate other objects here.
 
   RequestAllowToCloseDatabasesMatching(
-      [&contentParentId](const auto& database) {
-        return database.ContentParentIdRef() == contentParentId;
+      [aContentParentId](const auto& database) {
+        ThreadsafeContentParentHandle* contentParentHandle =
+            database.ContentParentHandle();
+        return contentParentHandle
+                   ? contentParentHandle->ChildID() == aContentParentId
+                   : !aContentParentId;
       });
 }
 
