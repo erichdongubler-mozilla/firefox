@@ -247,6 +247,9 @@ struct ShellContext {
   js::Monitor offThreadMonitor MOZ_UNANNOTATED;
   Vector<OffThreadJob*, 0, SystemAllocPolicy> offThreadJobs;
 
+  // Number of root module evaluation promises that have not yet settled.
+  uint32_t pendingRootModuleEvaluations = 0;
+
   // Queued task callbacks that run after the microtask queue.
 
   using ObjectVector = GCVector<JSObject*, 0, SystemAllocPolicy>;

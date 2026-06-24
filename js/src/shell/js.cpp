@@ -12403,7 +12403,9 @@ static int Shell(JSContext* cx, OptionParser* op) {
     // Only if there's no other error, report unhandled rejections.
     if (!result && !sc->exitCode) {
       AutoReportException are(cx);
-      if (!ReportUnhandledRejections(cx)) {
+      if (sc->pendingRootModuleEvaluations > 0) {
+        JS_ReportErrorASCII(cx, "Module evaluation not completed");
+      } else if (!ReportUnhandledRejections(cx)) {
         FILE* fp = ErrorFilePointer();
         fputs("Error while printing unhandled rejection\n", fp);
       }
