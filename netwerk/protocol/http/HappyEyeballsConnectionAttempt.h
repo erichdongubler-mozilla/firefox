@@ -81,6 +81,19 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   void Unclaim() override {}
   uint32_t UnconnectedUDPConnsLength() const override;
 
+  // Test-only seams; call before Init().
+  void SetConnectionEstablisherFactoryForTesting(
+      ConnectionEstablisherFactory* aFactory) {
+    mEstablisherFactory = aFactory;
+  }
+  void SetConnMgrDelegateForTesting(HappyEyeballsConnMgrDelegate* aDelegate) {
+    mConnMgrDelegate = aDelegate;
+  }
+
+  // Test-only accessors.
+  bool WasTransactionAdoptedForTesting() const { return mTransactionAdopted; }
+  ZeroRttHandle* ZeroRttHandleForTesting() const { return mZeroRttHandle; }
+
   // Real transaction accessor, used by the shared ZeroRttHandle.
   nsHttpTransaction* RealHttpTransaction() const {
     return mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
