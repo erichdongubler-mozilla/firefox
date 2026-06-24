@@ -262,6 +262,8 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
 
   nsRefPtrHashtable<nsUint64HashKey, ConnectionEstablisher>
       mConnectionEstablisherTable;
+  // Creates per-attempt establishers; default uses real sockets.
+  RefPtr<ConnectionEstablisherFactory> mEstablisherFactory;
   RefPtr<HttpConnectionBase> mOutputConn;
   // Winning establisher's per-attempt transaction; used to read its
   // collected handshake timings before we dispatch the real transaction.
