@@ -8,9 +8,7 @@
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/net/CookieService.h"
 #include "mozilla/net/CookieServiceParent.h"
-#include "mozilla/net/PNeckoParent.h"
 
-#include "mozilla/BasePrincipal.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozIThirdPartyUtil.h"
@@ -110,10 +108,10 @@ bool CookieServiceParent::ContentProcessHasCookie(const Cookie& cookie) {
 }
 
 bool CookieServiceParent::ContentProcessHasCookie(
-    const nsACString& aBaseDomain, const OriginAttributes& aOriginAttributes) {
+    const nsACString& aHost, const OriginAttributes& aOriginAttributes) {
   nsCString baseDomain;
   if (NS_WARN_IF(NS_FAILED(CookieCommons::GetBaseDomainFromHost(
-          mTLDService, aBaseDomain, baseDomain)))) {
+          mTLDService, aHost, baseDomain)))) {
     return false;
   }
 
@@ -279,21 +277,9 @@ IPCResult CookieServiceParent::RecvGetCookieList(
     return IPC_FAIL(this, "aHost must not be null");
   }
 
-  auto* contentParent = static_cast<dom::ContentParent*>(Manager()->Manager());
-  if (!contentParent) {
-    return IPC_FAIL(this, "Missing ContentParent in GetCookieList");
-  }
-
+  // we append outgoing cookie info into a list here so the ContentParent can
+  // filter cookies that do not need to go to certain ContentProcesses
   for (const auto& attrs : aAttrsList) {
-    nsCOMPtr<nsIPrincipal> principal =
-        BasePrincipal::CreateContentPrincipal(aHost, attrs);
-    if (!contentParent->ValidatePrincipal(principal)) {
-      return IPC_FAIL(this,
-                      "Content process not authorized for this cookie domain");
-    }
-
-    // Register the key so the parent can filter proactive cookie pushes to
-    // this content process.
     UpdateCookieInContentList(aHost, attrs);
   }
 
