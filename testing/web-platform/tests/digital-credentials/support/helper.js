@@ -213,6 +213,40 @@ const allMappings = {
 };
 
 /**
+ * Internal helper to handle the shared logic for creating and getting credentials.
+ * @param {"get" | "create"} type
+ * @param {Protocol} protocol
+ * @returns {DigitalCredentialGetRequest | DigitalCredentialCreateRequest}
+ */
+function makeCanonicalRequest(type, protocol) {
+  const mapping = allMappings[type];
+  if (protocol in mapping) {
+    return mapping[/** @type {keyof typeof mapping} */ (protocol)]();
+  }
+  throw new Error(`Unknown ${type} protocol: ${protocol}`);
+}
+
+/**
+ * Creates a single canonical create request for a protocol.
+ * @export
+ * @param {CreateProtocol} protocol
+ * @returns {DigitalCredentialCreateRequest}
+ */
+export function makeCanonicalCreateRequest(protocol) {
+  return makeCanonicalRequest('create', protocol);
+}
+
+/**
+ * Creates a single canonical get request for a protocol.
+ * @export
+ * @param {GetProtocol} protocol
+ * @returns {DigitalCredentialGetRequest}
+ */
+export function makeCanonicalGetRequest(protocol) {
+  return makeCanonicalRequest('get', protocol);
+}
+
+/**
  * Generic helper to create credential options from config with protocol already set.
  * @template {MakeGetOptionsConfig | MakeCreateOptionsConfig} TConfig
  * @template {DigitalCredentialGetRequest | DigitalCredentialCreateRequest} TRequest
@@ -324,4 +358,30 @@ export function loadIframe(iframe, url) {
     }
     iframe.src = url.toString();
   });
+}
+
+/**
+ * Creates options for getting credentials with an arbitrary protocol string.
+ * Unlike makeGetOptions, this doesn't validate the protocol - useful for testing
+ * invalid/unknown protocols that should be filtered out by the browser.
+ *
+ * @export
+ * @param {string} protocol - The protocol string (can be invalid/unknown)
+ * @param {object} [data={}] - The request data
+ * @param {AbortSignal} [signal] - Optional abort signal
+ * @returns {CredentialRequestOptions}
+ */
+export function makeGetOptionsWithArbitraryProtocol(protocol, data = {}, signal) {
+  /** @type {CredentialRequestOptions} */
+  const options = {
+    digital: {
+      requests: [{ protocol, data }]
+    }
+  };
+
+  if (signal) {
+    options.signal = signal;
+  }
+
+  return options;
 }
