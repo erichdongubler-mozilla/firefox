@@ -133,4 +133,18 @@ class LabsStoreTest {
 
         assertEquals(DialogState.Closed, store.state.dialogState)
     }
+
+    @Test
+    fun `WHEN RemoveLabsItem action is dispatched THEN the matching item is removed`() = runTest {
+        val store = LabsStore(
+            initialState = LabsState(
+                labsItems = listOf(testItem()),
+                dialogState = DialogState.Closed,
+            ),
+        )
+
+        store.dispatch(LabsAction.RemoveLabsItem(slug = "test-lab"))
+
+        assertTrue(store.state.labsItems.isEmpty())
+    }
 }

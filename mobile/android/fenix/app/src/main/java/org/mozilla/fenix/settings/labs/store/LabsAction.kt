@@ -34,6 +34,14 @@ sealed class LabsAction : Action {
     data class ToggleLabsItem(val item: LabsItem) : LabsAction()
 
     /**
+     * [LabsAction] dispatched to remove a Labs item from the screen, used when Nimbus reports the
+     * Lab is no longer available.
+     *
+     * @property slug The Nimbus slug identifying the [LabsItem] to remove.
+     */
+    data class RemoveLabsItem(val slug: String) : LabsAction()
+
+    /**
      * [LabsAction] dispatched to restore the default settings without any Labs items enabled.
      */
     data object RestoreDefaults : LabsAction()

@@ -48,6 +48,7 @@ class FirefoxLabsFragment : Fragment(), SystemInsetsPaddedFragment {
                     nimbusSdk = requireComponents.nimbus.sdk,
                     onRestart = ::restartFenix,
                     onOpenFeedback = ::openFeedbackLink,
+                    crashReporter = requireComponents.analytics.crashReporter,
                 ),
                 LabsTelemetryMiddleware(),
             ),

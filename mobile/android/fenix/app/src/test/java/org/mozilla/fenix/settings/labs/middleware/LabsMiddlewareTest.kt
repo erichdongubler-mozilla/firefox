@@ -4,10 +4,7 @@
 
 package org.mozilla.fenix.settings.labs.middleware
 
-import android.content.Context
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -17,12 +14,13 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.experiments.nimbus.internal.FirefoxLabsEnrollStatus
 import org.mozilla.experiments.nimbus.internal.FirefoxLabsMetadata
-import org.mozilla.fenix.nimbus.TestNimbusApi
+import org.mozilla.experiments.nimbus.internal.FirefoxLabsUnenrollStatus
 import org.mozilla.fenix.settings.labs.LabsItem
+import org.mozilla.fenix.settings.labs.fake.FakeNimbusApi
 import org.mozilla.fenix.settings.labs.store.DialogState
 import org.mozilla.fenix.settings.labs.store.LabsAction
 import org.mozilla.fenix.settings.labs.store.LabsState
@@ -40,6 +38,11 @@ class LabsMiddlewareTest {
     private val onRestart: () -> Unit = { onRestartCount++ }
     private val openedFeedbackUrls = mutableListOf<String>()
     private val onOpenFeedback: (String) -> Unit = { openedFeedbackUrls.add(it) }
+    private val enrolledSlugs = mutableListOf<String>()
+    private val unenrolledSlugs = mutableListOf<String>()
+    private var unenrollAllCount = 0
+    private var enrollStatus = FirefoxLabsEnrollStatus.ENROLLED
+    private var unenrollStatus = FirefoxLabsUnenrollStatus.UNENROLLED
 
     @Before
     fun setup() {
@@ -47,6 +50,11 @@ class LabsMiddlewareTest {
         labs = emptyList()
         onRestartCount = 0
         openedFeedbackUrls.clear()
+        enrolledSlugs.clear()
+        unenrolledSlugs.clear()
+        unenrollAllCount = 0
+        enrollStatus = FirefoxLabsEnrollStatus.ENROLLED
+        unenrollStatus = FirefoxLabsUnenrollStatus.UNENROLLED
     }
 
     private fun labsItem(
@@ -86,14 +94,6 @@ class LabsMiddlewareTest {
         labsItems = listOf(item),
         dialogState = dialogState,
     )
-
-    private class FakeNimbusApi(
-        context: Context,
-        private val labsProvider: () -> List<FirefoxLabsMetadata>,
-    ) : TestNimbusApi(context) {
-        override fun getAvailableFirefoxLabs(): Deferred<List<FirefoxLabsMetadata>> =
-            CompletableDeferred(labsProvider())
-    }
 
     private companion object {
         // Backed by static_strings.xml entries shared with the Nimbus read-path fixture.
@@ -149,15 +149,19 @@ class LabsMiddlewareTest {
         assertEquals(1, onRestartCount)
     }
 
-    @Ignore("Will be reopened after bug 2046851.")
     @Test
     fun `WHEN RestoreDefaults is dispatched AND an enrolled item requires restart THEN app restart is requested`() = runTest(UnconfinedTestDispatcher()) {
-        val captureMiddleware = CaptureActionsMiddleware<LabsState, LabsAction>()
-        val store = createStore(
-            initialState = stateWith(labsItem(enrolled = true, requiresRestart = true)),
-            captureMiddleware = captureMiddleware,
-            scope = backgroundScope,
+        labs = listOf(
+            firefoxLabsMetadata(
+                slug = "lab-1",
+                titleStringId = RESOURCE_NAME_TITLE,
+                descriptionStringId = RESOURCE_NAME_DESCRIPTION,
+                enrolled = true,
+                requiresRestart = true,
+            ),
         )
+        val captureMiddleware = CaptureActionsMiddleware<LabsState, LabsAction>()
+        val store = createStore(captureMiddleware = captureMiddleware, scope = backgroundScope)
 
         store.dispatch(LabsAction.RestoreDefaults)
 
@@ -213,6 +217,87 @@ class LabsMiddlewareTest {
     }
 
     @Test
+    fun `WHEN ToggleLabsItem on an unenrolled item is dispatched THEN the lab is enrolled in Nimbus`() = runTest(UnconfinedTestDispatcher()) {
+        val item = labsItem(slug = "lab-1", enrolled = false)
+        val store = createStore(initialState = stateWith(item), scope = backgroundScope)
+
+        store.dispatch(LabsAction.ToggleLabsItem(item))
+
+        assertEquals(listOf("lab-1"), enrolledSlugs)
+        assertEquals(emptyList<String>(), unenrolledSlugs)
+    }
+
+    @Test
+    fun `WHEN ToggleLabsItem on an enrolled item is dispatched THEN the lab is unenrolled in Nimbus`() = runTest(UnconfinedTestDispatcher()) {
+        val item = labsItem(slug = "lab-1", enrolled = true)
+        val store = createStore(initialState = stateWith(item), scope = backgroundScope)
+
+        store.dispatch(LabsAction.ToggleLabsItem(item))
+
+        assertEquals(listOf("lab-1"), unenrolledSlugs)
+        assertEquals(emptyList<String>(), enrolledSlugs)
+    }
+
+    @Test
+    fun `WHEN RestoreDefaults is dispatched THEN all labs are unenrolled in Nimbus`() = runTest(UnconfinedTestDispatcher()) {
+        labs = listOf(
+            firefoxLabsMetadata(
+                slug = "lab-1",
+                titleStringId = RESOURCE_NAME_TITLE,
+                descriptionStringId = RESOURCE_NAME_DESCRIPTION,
+                enrolled = true,
+            ),
+        )
+        val store = createStore(scope = backgroundScope)
+
+        store.dispatch(LabsAction.RestoreDefaults)
+
+        assertEquals(1, unenrollAllCount)
+        assertEquals(emptyList<String>(), unenrolledSlugs)
+    }
+
+    @Test
+    fun `WHEN ToggleLabsItem enroll reports the Lab is no longer available THEN the item is removed`() = runTest(UnconfinedTestDispatcher()) {
+        enrollStatus = FirefoxLabsEnrollStatus.NO_EXPERIMENT
+        val item = labsItem(slug = "lab-1", enrolled = false)
+        val captureMiddleware = CaptureActionsMiddleware<LabsState, LabsAction>()
+        val store = createStore(
+            initialState = stateWith(item),
+            captureMiddleware = captureMiddleware,
+            scope = backgroundScope,
+        )
+
+        store.dispatch(LabsAction.ToggleLabsItem(item))
+
+        captureMiddleware.assertLastAction(LabsAction.RemoveLabsItem::class) { action ->
+            assertEquals("lab-1", action.slug)
+        }
+    }
+
+    @Test
+    fun `WHEN ToggleLabsItem enroll fails with an error THEN the list is re-synced from Nimbus`() = runTest(UnconfinedTestDispatcher()) {
+        enrollStatus = FirefoxLabsEnrollStatus.ERROR
+        labs = listOf(
+            firefoxLabsMetadata(
+                slug = "lab-1",
+                titleStringId = RESOURCE_NAME_TITLE,
+                descriptionStringId = RESOURCE_NAME_DESCRIPTION,
+                enrolled = false,
+            ),
+        )
+        val captureMiddleware = CaptureActionsMiddleware<LabsState, LabsAction>()
+        val store = createStore(captureMiddleware = captureMiddleware, scope = backgroundScope)
+        captureMiddleware.reset()
+
+        store.dispatch(LabsAction.ToggleLabsItem(labsItem(slug = "lab-1", enrolled = false)))
+
+        captureMiddleware.assertLastAction(LabsAction.UpdateLabsItems::class) { action ->
+            assertEquals(1, action.items.size)
+            assertFalse(action.items.first().enrolled)
+        }
+    }
+
+    @Test
     fun `WHEN ShareFeedbackClicked is dispatched THEN onOpenFeedback is called with the item feedback URL`() = runTest(UnconfinedTestDispatcher()) {
         val item = labsItem(feedbackUrl = "https://connect.mozilla.org/")
         val store = createStore(scope = backgroundScope)
@@ -230,7 +315,15 @@ class LabsMiddlewareTest {
         val middleware = LabsMiddleware(
             context = testContext,
             settings = settings,
-            nimbusSdk = FakeNimbusApi(testContext) { labs },
+            nimbusSdk = FakeNimbusApi(
+                context = testContext,
+                labsProvider = { labs },
+                enrolledSlugs = enrolledSlugs,
+                unenrolledSlugs = unenrolledSlugs,
+                enrollStatusProvider = { enrollStatus },
+                unenrollStatusProvider = { unenrollStatus },
+                onUnenrollAll = { unenrollAllCount++ },
+            ),
             onRestart = onRestart,
             onOpenFeedback = onOpenFeedback,
             scope = scope,
