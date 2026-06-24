@@ -1486,15 +1486,15 @@ void LIRGenerator::visitCompare(MCompare* comp) {
       comp->compareType() == MCompare::Compare_Symbol ||
       comp->compareType() == MCompare::Compare_WasmAnyRef) {
     JSOp op = ReorderComparison(comp->jsop(), &left, &right);
-    LAllocation lhs = useRegister(left);
+    LAllocation lhs = useRegisterAtStart(left);
     LAllocation rhs;
     if (comp->isInt32Comparison() ||
         comp->compareType() == MCompare::Compare_UInt32 ||
         comp->compareType() == MCompare::Compare_IntPtr ||
         comp->compareType() == MCompare::Compare_UIntPtr) {
-      rhs = useAnyOrInt32Constant(right);
+      rhs = useAnyOrInt32ConstantAtStart(right);
     } else {
-      rhs = useAny(right);
+      rhs = useAnyAtStart(right);
     }
     define(new (alloc()) LCompare(lhs, rhs, op), comp);
     return;
@@ -1504,8 +1504,8 @@ void LIRGenerator::visitCompare(MCompare* comp) {
   if (comp->compareType() == MCompare::Compare_Int64 ||
       comp->compareType() == MCompare::Compare_UInt64) {
     JSOp op = ReorderComparison(comp->jsop(), &left, &right);
-    define(new (alloc()) LCompareI64(useInt64Register(left),
-                                     useInt64OrConstant(right), op),
+    define(new (alloc()) LCompareI64(useInt64RegisterAtStart(left),
+                                     useInt64OrConstantAtStart(right), op),
            comp);
     return;
   }
