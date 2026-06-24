@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.421
- * pdfjsBuild = d71fe9025
+ * pdfjsVersion = 6.0.429
+ * pdfjsBuild = e6539f651
  */
 
 ;// ./web/ui_utils.js
@@ -985,7 +985,7 @@ const {
 } = globalThis.pdfjsLib;
 
 ;// ./web/internal_evt.js
-const INTERNAL_EVT = "9188730b-75fd-4045-b024-5a0335665078";
+const INTERNAL_EVT = "1dd86b1c-2a32-4818-8f60-4acd2ffeae2f";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -6238,7 +6238,7 @@ class AnnotationLayerBuilder {
         return;
     }
     for (const section of this.div.childNodes) {
-      if (section.hasAttribute("data-internal-link") || section.classList.contains("richMediaAnnotation")) {
+      if (section.hasAttribute("data-internal-link") || section.classList.contains("mediaAnnotation")) {
         continue;
       }
       section.inert = disableFormElements;
@@ -8675,7 +8675,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.0.421";
+    const viewerVersion = "6.0.429";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
