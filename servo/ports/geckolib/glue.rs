@@ -3807,7 +3807,7 @@ pub extern "C" fn Servo_FontFaceRule_GetFontStretch(
 #[no_mangle]
 pub extern "C" fn Servo_FontFaceRule_GetFontStyle(
     rule: &LockedFontFaceRule,
-    out: &mut font_face::ComputedFontStyleDescriptor,
+    out: &mut font_face::ComputedFontStyleRange,
 ) -> bool {
     read_locked_arc_worker(rule, |rule: &FontFaceRule| {
         match rule
