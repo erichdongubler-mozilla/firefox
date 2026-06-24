@@ -2562,6 +2562,9 @@ bool WarpCacheIRTranspiler::emitLoadTypedArrayElementResult(
     result = MInt64ToBigInt::New(alloc(), load,
                                  Scalar::isSignedIntType(elementType));
     add(result);
+  } else if (Scalar::isFloatingType(elementType)) {
+    result = MCanonicalizeNaN::New(alloc(), load);
+    add(result);
   }
 
   pushResult(result);
@@ -3332,6 +3335,9 @@ bool WarpCacheIRTranspiler::emitLoadDataViewValueResult(
   if (Scalar::isBigIntType(elementType)) {
     result = MInt64ToBigInt::New(alloc(), load,
                                  Scalar::isSignedIntType(elementType));
+    add(result);
+  } else if (Scalar::isFloatingType(elementType)) {
+    result = MCanonicalizeNaN::New(alloc(), load);
     add(result);
   }
 
