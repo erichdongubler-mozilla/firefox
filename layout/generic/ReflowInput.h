@@ -535,6 +535,12 @@ struct ReflowInput : public SizeComputationInput {
     // If true, then children of this frame can generate class A breakpoints
     // for paginated reflow.
     bool mCanHaveClassABreakpoints : 1;
+
+    // These two flags indicate whether an ancestor of this frame has requested
+    // trimming on the start/end side of the first/last line of this frame.
+    // https://drafts.csswg.org/css-inline-3/#text-box-trim
+    bool mShouldApplyTextBoxTrimStart : 1;
+    bool mShouldApplyTextBoxTrimEnd : 1;
   };
   Flags mFlags;
 
