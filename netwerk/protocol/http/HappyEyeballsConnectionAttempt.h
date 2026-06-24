@@ -219,9 +219,10 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   nsresult EstablishTCPConnection(NetAddr aAddr, uint16_t aPort,
                                   nsTArray<uint8_t>&& aEchConfig, uint64_t aId,
                                   bool aIsEchRetry);
-  void HandleTCPConnectionResult(
+  // Handles both TCP and UDP results; IsUDP() distinguishes where it matters.
+  void HandleConnectionResult(
       Result<RefPtr<HttpConnectionBase>, nsresult> aResult,
-      TCPConnectionEstablisher* aEstablisher, uint64_t aId);
+      ConnectionEstablisher* aEstablisher, uint64_t aId);
   // If 0-RTT was active, forward the connection's security info to the real
   // transaction so MaybeRemoveSSLToken() in nsHttpTransaction::Restart() can
   // clear the SSL token cache for the retry.
@@ -230,9 +231,6 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   nsresult EstablishUDPConnection(NetAddr aAddr, uint16_t aPort,
                                   nsTArray<uint8_t>&& aEchConfig, uint64_t aId,
                                   bool aIsEchRetry);
-  void HandleUDPConnectionResult(
-      Result<RefPtr<HttpConnectionBase>, nsresult> aResult,
-      UDPConnectionEstablisher* aEstablisher, uint64_t aId);
 
   nsresult CheckLNA(nsISocketTransport* aTransport);
   nsresult CheckLNAForAddr(const NetAddr& aAddr);
