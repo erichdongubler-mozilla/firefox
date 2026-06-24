@@ -16,6 +16,7 @@
 #include "nsServiceManagerUtils.h"
 #include "nsShellService.h"
 #include "nsString.h"
+#include "nsURLHelper.h"
 #include "nsIDocShell.h"
 #include "nsILoadContext.h"
 #include "nsIPrefService.h"
@@ -26,6 +27,15 @@
 #include <Carbon/Carbon.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <ApplicationServices/ApplicationServices.h>
+
+#import <AppKit/AppKit.h>
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
+
+#include "mozilla/ErrorResult.h"
+#include "mozilla/dom/Promise.h"
+#include "nsProxyRelease.h"
+#include "nsThreadUtils.h"
+#include "xpcpublic.h"
 
 using mozilla::dom::Element;
 using mozilla::widget::SetDesktopImage;
@@ -285,6 +295,61 @@ nsString ConvertCFStringToNSString(CFStringRef aSrc) {
   return aDest;
 }
 
+static NSString* ToNSString(const nsAString& aStr) {
+  return [NSString
+      stringWithCharacters:reinterpret_cast<const unichar*>(aStr.BeginReading())
+                    length:aStr.Length()];
+}
+
+static bool IsFileExtension(const nsAString& aFileExtensionOrProtocol) {
+  return !aFileExtensionOrProtocol.IsEmpty() &&
+         aFileExtensionOrProtocol.First() == u'.';
+}
+
+static NSString* URLSchemeForProtocol(const nsAString& aProtocol) {
+  if (!net_IsValidScheme(NS_ConvertUTF16toUTF8(aProtocol))) {
+    return nil;
+  }
+  return ToNSString(aProtocol);
+}
+
+static NSURL* URLForProtocol(const nsAString& aProtocol) {
+  NSString* scheme = URLSchemeForProtocol(aProtocol);
+  if (!scheme) {
+    return nil;
+  }
+  return [NSURL URLWithString:[scheme stringByAppendingString:@"://"]];
+}
+
+API_AVAILABLE(macos(11.0))
+static UTType* UTTypeForFileExtension(const nsAString& aFileExtension) {
+  NSString* extension = ToNSString(aFileExtension);
+  if ([extension hasPrefix:@"."]) {
+    extension = [extension substringFromIndex:1];
+  }
+  return extension.length ? [UTType typeWithFilenameExtension:extension] : nil;
+}
+
+// The application currently registered as the default handler for the given
+// file extension (a leading ".", e.g. ".pdf") or URL scheme (e.g. "https"), or
+// nil when there is none or the lookup API is unavailable (macOS older than
+// 12).
+static NSURL* DefaultApplicationForHandler(
+    const nsAString& aFileExtensionOrProtocol) {
+  if (@available(macOS 12.0, *)) {
+    NSWorkspace* workspace = [NSWorkspace sharedWorkspace];
+    if (IsFileExtension(aFileExtensionOrProtocol)) {
+      UTType* type = UTTypeForFileExtension(aFileExtensionOrProtocol);
+      return type ? [workspace URLForApplicationToOpenContentType:type] : nil;
+    }
+    NSURL* schemeURL = URLForProtocol(aFileExtensionOrProtocol);
+    if (schemeURL) {
+      return [workspace URLForApplicationToOpenURL:schemeURL];
+    }
+  }
+  return nil;
+}
+
 NS_IMETHODIMP
 nsMacShellService::GetAvailableApplicationsForProtocol(
     const nsACString& protocol, nsTArray<nsTArray<nsString>>& aHandlerPaths) {
@@ -340,5 +405,128 @@ nsMacShellService::GetAvailableApplicationsForProtocol(
                                       ConvertCFStringToNSString(appPath)};
     aHandlerPaths.AppendElement(handlerPath.Clone());
   }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsMacShellService::GetCanSetAsDefaultHandler(bool* aResult) {
+  // The NSWorkspace default-application API used below requires macOS 12.
+  if (@available(macOS 12.0, *)) {
+    *aResult = true;
+  } else {
+    *aResult = false;
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsMacShellService::SetAsDefaultHandlerFor(
+    const nsAString& aFileExtensionOrProtocol, JSContext* aCx,
+    mozilla::dom::Promise** aPromise) {
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
+  mozilla::ErrorResult rv;
+  RefPtr<mozilla::dom::Promise> promise =
+      mozilla::dom::Promise::Create(xpc::CurrentNativeGlobal(aCx), rv);
+  if (MOZ_UNLIKELY(rv.Failed())) {
+    return rv.StealNSResult();
+  }
+
+  if (@available(macOS 12.0, *)) {
+    NSURL* appURL = [[NSBundle mainBundle] bundleURL];
+    if (appURL) {
+      // NSWorkspace invokes the completion handler after any user-consent
+      // prompt resolves, possibly off the main thread. nsMainThreadPtrHolder
+      // guarantees the Promise is only touched and released on the main thread.
+      // As with other macOS consent prompts resolved from an OS callback (e.g.
+      // nsCocoaUtils::RequestCapturePermission), there is no timeout: if the OS
+      // never invokes the handler the promise simply stays pending.
+      auto promiseHolder =
+          MakeRefPtr<nsMainThreadPtrHolder<mozilla::dom::Promise>>(
+              "nsMacShellService::SetAsDefaultHandlerFor promise", promise);
+
+      // A nil error means the change was applied (the user accepted any consent
+      // prompt). This follows the NSWorkspace completion-handler convention
+      // used elsewhere in the tree (e.g. nsMacWebAppUtils::TrashApp) and avoids
+      // depending on the new default being immediately observable.
+      void (^completionHandler)(NSError* _Nullable) =
+          ^(NSError* _Nullable error) {
+            NS_DispatchToMainThread(NS_NewRunnableFunction(
+                "nsMacShellService::SetAsDefaultHandlerFor completion",
+                [succeeded = (error == nil), promiseHolder] {
+                  promiseHolder->get()->MaybeResolve(succeeded);
+                }));
+          };
+
+      NSWorkspace* workspace = [NSWorkspace sharedWorkspace];
+      if (IsFileExtension(aFileExtensionOrProtocol)) {
+        UTType* type = UTTypeForFileExtension(aFileExtensionOrProtocol);
+        if (type) {
+          [workspace setDefaultApplicationAtURL:appURL
+                              toOpenContentType:type
+                              completionHandler:completionHandler];
+        } else {
+          promise->MaybeResolve(false);
+        }
+      } else {
+        NSString* scheme = URLSchemeForProtocol(aFileExtensionOrProtocol);
+        if (scheme) {
+          [workspace setDefaultApplicationAtURL:appURL
+                           toOpenURLsWithScheme:scheme
+                              completionHandler:completionHandler];
+        } else {
+          promise->MaybeResolve(false);
+        }
+      }
+    } else {
+      // Couldn't resolve our own bundle URL; treat as failure.
+      promise->MaybeResolve(false);
+    }
+  } else {
+    // Unsupported on macOS older than 12.
+    promise->MaybeResolve(false);
+  }
+
+  promise.forget(aPromise);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsMacShellService::IsDefaultHandlerFor(
+    const nsAString& aFileExtensionOrProtocol, bool* aResult) {
+  NSURL* selfURL = [[NSBundle mainBundle] bundleURL];
+  NSURL* defaultApp = DefaultApplicationForHandler(aFileExtensionOrProtocol);
+  *aResult = selfURL && defaultApp && [defaultApp isEqual:selfURL];
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsMacShellService::IsDefaultHandlerAWebBrowserFor(
+    const nsAString& aFileExtensionOrProtocol, bool* aResult) {
+  *aResult = false;
+
+  if (@available(macOS 12.0, *)) {
+    // The application currently registered as the default handler.
+    NSURL* handlerApp = DefaultApplicationForHandler(aFileExtensionOrProtocol);
+    if (!handlerApp) {
+      return NS_OK;
+    }
+
+    // The handler is a web browser if and only if it is among the applications
+    // registered to open "https" URLs. This avoids hardcoding a list of known
+    // browser identifiers.
+    NSArray<NSURL*>* browsers = [[NSWorkspace sharedWorkspace]
+        URLsForApplicationsToOpenURL:
+            [NSURL URLWithString:@"https://example.com/"]];
+    for (NSURL* browser in browsers) {
+      if ([browser isEqual:handlerApp]) {
+        *aResult = true;
+        break;
+      }
+    }
+  }
+
   return NS_OK;
 }
