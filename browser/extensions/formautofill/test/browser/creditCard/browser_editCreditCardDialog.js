@@ -30,13 +30,15 @@ add_task(async function test_saveCreditCard() {
     EventUtils.synthesizeKey("VK_TAB", {}, win);
     EventUtils.synthesizeKey(TEST_CREDIT_CARD_1["cc-number"], {}, win);
     EventUtils.synthesizeKey("VK_TAB", {}, win);
+    EventUtils.synthesizeKey(TEST_CREDIT_CARD_1["cc-name"], {}, win);
+    EventUtils.synthesizeKey("VK_TAB", {}, win);
     EventUtils.synthesizeKey(
       "0" + TEST_CREDIT_CARD_1["cc-exp-month"].toString(),
       {},
       win
     );
     is(
-      win.document.activeElement.selectedOptions[0].text,
+      win.document.activeElement.selectedOption?.label,
       "04 - April",
       "Displayed month should match number and name"
     );
@@ -46,8 +48,6 @@ add_task(async function test_saveCreditCard() {
       {},
       win
     );
-    EventUtils.synthesizeKey("VK_TAB", {}, win);
-    EventUtils.synthesizeKey(TEST_CREDIT_CARD_1["cc-name"], {}, win);
     EventUtils.synthesizeKey("VK_TAB", {}, win);
     EventUtils.synthesizeKey("VK_TAB", {}, win);
     info("saving credit card");
@@ -71,6 +71,8 @@ add_task(async function test_saveCreditCardWithMaxYear() {
     EventUtils.synthesizeKey("VK_TAB", {}, win);
     EventUtils.synthesizeKey(TEST_CREDIT_CARD_2["cc-number"], {}, win);
     EventUtils.synthesizeKey("VK_TAB", {}, win);
+    EventUtils.synthesizeKey(TEST_CREDIT_CARD_2["cc-name"], {}, win);
+    EventUtils.synthesizeKey("VK_TAB", {}, win);
     EventUtils.synthesizeKey(
       TEST_CREDIT_CARD_2["cc-exp-month"].toString(),
       {},
@@ -82,8 +84,6 @@ add_task(async function test_saveCreditCardWithMaxYear() {
       {},
       win
     );
-    EventUtils.synthesizeKey("VK_TAB", {}, win);
-    EventUtils.synthesizeKey(TEST_CREDIT_CARD_2["cc-name"], {}, win);
     EventUtils.synthesizeKey("VK_TAB", {}, win);
     info("saving credit card");
     EventUtils.synthesizeKey("VK_RETURN", {}, win);
@@ -114,6 +114,8 @@ add_task(async function test_saveCreditCardWithBillingAddress() {
     EventUtils.synthesizeKey("VK_TAB", {}, win);
     EventUtils.synthesizeKey(TEST_CREDIT_CARD["cc-number"], {}, win);
     EventUtils.synthesizeKey("VK_TAB", {}, win);
+    EventUtils.synthesizeKey(TEST_CREDIT_CARD["cc-name"], {}, win);
+    EventUtils.synthesizeKey("VK_TAB", {}, win);
     EventUtils.synthesizeKey(
       TEST_CREDIT_CARD["cc-exp-month"].toString(),
       {},
@@ -125,8 +127,6 @@ add_task(async function test_saveCreditCardWithBillingAddress() {
       {},
       win
     );
-    EventUtils.synthesizeKey("VK_TAB", {}, win);
-    EventUtils.synthesizeKey(TEST_CREDIT_CARD["cc-name"], {}, win);
     EventUtils.synthesizeKey("VK_TAB", {}, win);
     EventUtils.synthesizeKey(billingAddress["given-name"], {}, win);
     EventUtils.synthesizeKey("VK_TAB", {}, win);
@@ -159,8 +159,6 @@ add_task(async function test_editCreditCard() {
           .textContent.includes("Edit"),
         "Edit card dialog title is correct"
       );
-      EventUtils.synthesizeKey("VK_TAB", {}, win);
-      EventUtils.synthesizeKey("VK_TAB", {}, win);
       EventUtils.synthesizeKey("VK_TAB", {}, win);
       EventUtils.synthesizeKey("VK_TAB", {}, win);
       EventUtils.synthesizeKey("VK_RIGHT", {}, win);
@@ -204,8 +202,6 @@ add_task(async function test_editCreditCardWithMissingBillingAddress() {
     win => {
       EventUtils.synthesizeKey("VK_TAB", {}, win);
       EventUtils.synthesizeKey("VK_TAB", {}, win);
-      EventUtils.synthesizeKey("VK_TAB", {}, win);
-      EventUtils.synthesizeKey("VK_TAB", {}, win);
       EventUtils.synthesizeKey("VK_RIGHT", {}, win);
       EventUtils.synthesizeKey("test", {}, win);
       win.document.querySelector("#save").click();
@@ -239,8 +235,6 @@ add_task(async function test_addInvalidCreditCard() {
     EventUtils.synthesizeKey("VK_TAB", {}, win);
     EventUtils.synthesizeKey("test", {}, win);
     EventUtils.synthesizeKey("VK_TAB", {}, win);
-    EventUtils.synthesizeKey("VK_TAB", {}, win);
-    EventUtils.synthesizeKey("VK_TAB", {}, win);
     EventUtils.synthesizeKey("test name", {}, win);
     EventUtils.synthesizeKey("VK_TAB", {}, win);
     EventUtils.synthesizeMouseAtCenter(
@@ -250,7 +244,8 @@ add_task(async function test_addInvalidCreditCard() {
     );
 
     is(
-      win.document.querySelector("form").checkValidity(),
+      win.document.querySelector("#cc-number").inputEl?.checkValidity() ??
+        false,
       false,
       "cc-number is invalid"
     );
@@ -306,7 +301,7 @@ add_task(async function test_editInvalidCreditCardNumber() {
         "cc-number field should be showing invalid credit card number"
       );
       is(
-        win.document.querySelector("#cc-number").checkValidity(),
+        win.document.querySelector("#cc-number").inputEl?.checkValidity(),
         false,
         "cc-number is invalid"
       );
@@ -352,14 +347,14 @@ add_task(async function test_editCreditCardWithInvalidNumber() {
       );
       EventUtils.synthesizeKey("VK_TAB", {}, win);
       is(
-        win.document.querySelector("#cc-number").validity.customError,
+        win.document.querySelector("#cc-number").inputEl?.validity.customError,
         false,
         "cc-number field should not have a custom error"
       );
       EventUtils.synthesizeKey("4111111111111112", {}, win);
       EventUtils.synthesizeKey("VK_TAB", {}, win);
       is(
-        win.document.querySelector("#cc-number").validity.customError,
+        win.document.querySelector("#cc-number").inputEl?.validity.customError,
         true,
         "cc-number field should have a custom error"
       );
