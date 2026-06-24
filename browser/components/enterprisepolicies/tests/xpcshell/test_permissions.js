@@ -387,3 +387,62 @@ add_task(async function test_httpsonly_exceptions() {
     Ci.nsIPermissionManager.ALLOW_ACTION
   );
 });
+
+// SanitizeOnShutdown.Exceptions sets the persist-data-on-shutdown permission
+// that exempts a site from clear-on-shutdown (Bug 2049937).
+add_task(async function test_sanitizeonshutdown_exceptions() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      SanitizeOnShutdown: {
+        Cookies: true,
+        Exceptions: ["https://persist.example.com"],
+      },
+    },
+  });
+  equal(
+    Services.policies.status,
+    Ci.nsIEnterprisePolicies.ACTIVE,
+    "Engine is active"
+  );
+
+  let uri = URI("https://persist.example.com");
+  equal(
+    PermissionTestUtils.testPermission(uri, "persist-data-on-shutdown"),
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    "Exception site has a persist-data-on-shutdown ALLOW permission"
+  );
+  let permission = PermissionTestUtils.getPermissionObject(
+    uri,
+    "persist-data-on-shutdown",
+    true
+  );
+  ok(permission, "Permission object exists");
+  equal(
+    permission.expireType,
+    Ci.nsIPermissionManager.EXPIRE_POLICY,
+    "Permission expireType is EXPIRE_POLICY"
+  );
+});
+
+// The Cookies policy must not grant clear-on-shutdown persistence anymore;
+// that is now the dedicated SanitizeOnShutdown.Exceptions key (Bug 2049937).
+add_task(async function test_cookies_allow_does_not_persist_on_shutdown() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      Cookies: {
+        Allow: ["https://cookieallow.example.com"],
+      },
+    },
+  });
+  let uri = URI("https://cookieallow.example.com");
+  equal(
+    PermissionTestUtils.testPermission(uri, "cookie"),
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    "Cookies.Allow still sets the cookie permission"
+  );
+  equal(
+    PermissionTestUtils.testPermission(uri, "persist-data-on-shutdown"),
+    Ci.nsIPermissionManager.UNKNOWN_ACTION,
+    "Cookies.Allow does not set persist-data-on-shutdown"
+  );
+});

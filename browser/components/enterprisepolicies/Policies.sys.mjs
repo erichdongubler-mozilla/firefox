@@ -2858,6 +2858,9 @@ export var Policies = {
             locked
           );
         }
+        if (param.Exceptions) {
+          addAllowDenyPermissions("persist-data-on-shutdown", param.Exceptions);
+        }
       }
     },
   },

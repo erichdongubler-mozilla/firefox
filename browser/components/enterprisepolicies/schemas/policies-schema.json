@@ -1696,6 +1696,13 @@
         },
         "Locked": {
           "type": "boolean"
+        },
+        "Exceptions": {
+          "type": "array",
+          "strict": false,
+          "items": {
+            "type": "origin"
+          }
         }
       }
     },
