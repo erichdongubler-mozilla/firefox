@@ -69,9 +69,9 @@ enum class ThreadProfilingFeatures : uint32_t {
 template <typename... Ts>
 [[nodiscard]] constexpr ThreadProfilingFeatures Combine(
     ThreadProfilingFeatures a1, Ts... as) {
-  static_assert((true && ... &&
-                 std::is_same_v<std::remove_cv_t<std::remove_reference_t<Ts>>,
-                                ThreadProfilingFeatures>));
+  static_assert(
+      (true && ... &&
+       std::is_same_v<std::remove_cvref_t<Ts>, ThreadProfilingFeatures>));
   return static_cast<ThreadProfilingFeatures>(
       (static_cast<std::underlying_type_t<ThreadProfilingFeatures>>(a1) | ... |
        static_cast<std::underlying_type_t<ThreadProfilingFeatures>>(as)));
@@ -82,9 +82,9 @@ template <typename... Ts>
 template <typename... Ts>
 [[nodiscard]] constexpr ThreadProfilingFeatures Intersect(
     ThreadProfilingFeatures a1, Ts... as) {
-  static_assert((true && ... &&
-                 std::is_same_v<std::remove_cv_t<std::remove_reference_t<Ts>>,
-                                ThreadProfilingFeatures>));
+  static_assert(
+      (true && ... &&
+       std::is_same_v<std::remove_cvref_t<Ts>, ThreadProfilingFeatures>));
   return static_cast<ThreadProfilingFeatures>(
       (static_cast<std::underlying_type_t<ThreadProfilingFeatures>>(a1) & ... &
        static_cast<std::underlying_type_t<ThreadProfilingFeatures>>(as)));
