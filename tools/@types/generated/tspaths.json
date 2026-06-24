@@ -94,9 +94,6 @@
       "chrome://browser/content/aiwindow/modules/ChatMarkdownParser.mjs": [
         "../../../browser/components/aiwindow/ui/modules/ChatMarkdownParser.mjs"
       ],
-      "chrome://browser/content/aiwindow/modules/TokenStreamParser.mjs": [
-        "../../../browser/components/aiwindow/ui/modules/TokenStreamParser.mjs"
-      ],
       "chrome://browser/content/asrouter/components/menu-message.mjs": [
         "../../../browser/components/asrouter/content/components/menu-message/menu-message.mjs"
       ],
@@ -369,6 +366,9 @@
       ],
       "chrome://browser/content/urlbar/SmartbarInputUtils.mjs": [
         "../../../browser/components/urlbar/content/SmartbarInputUtils.mjs"
+      ],
+      "chrome://browser/content/urlbar/UrlbarChildController.mjs": [
+        "../../../browser/components/urlbar/content/UrlbarChildController.mjs"
       ],
       "chrome://browser/content/urlbar/UrlbarEventBufferer.mjs": [
         "../../../browser/components/urlbar/content/UrlbarEventBufferer.mjs"
@@ -4342,6 +4342,9 @@
       "resource://devtools/client/shared/source-map-loader/utils/wasmRemap.js": [
         "../../../devtools/client/shared/source-map-loader/utils/wasmRemap.js"
       ],
+      "resource://devtools/client/shared/source-map-loader/wasm-dwarf/convertToJSON.js": [
+        "../../../devtools/client/shared/source-map-loader/wasm-dwarf/convertToJSON.js"
+      ],
       "resource://devtools/client/shared/source-map-loader/wasm-dwarf/wasmAsset.js": [
         "../../../devtools/client/shared/source-map-loader/wasm-dwarf/wasmAsset.js"
       ],
@@ -4479,6 +4482,9 @@
       ],
       "resource://devtools/client/shared/vendor/reselect.js": [
         "../../../devtools/client/shared/vendor/reselect.js"
+      ],
+      "resource://devtools/client/shared/vendor/source-map/lib/util.js": [
+        "../../../devtools/client/shared/vendor/source-map/lib/util.js"
       ],
       "resource://devtools/client/shared/vendor/source-map/source-map.js": [
         "../../../devtools/client/shared/vendor/source-map/source-map.js"
@@ -6274,9 +6280,6 @@
       "resource://gre/modules/LoginManagerPrompter.sys.mjs": [
         "../../../toolkit/components/passwordmgr/LoginManagerPrompter.sys.mjs"
       ],
-      "resource://gre/modules/LoginManagerRustMirror.sys.mjs": [
-        "../../../toolkit/components/passwordmgr/LoginManagerRustMirror.sys.mjs"
-      ],
       "resource://gre/modules/LoginRecipes.sys.mjs": [
         "../../../toolkit/components/passwordmgr/LoginRecipes.sys.mjs"
       ],
@@ -6811,6 +6814,9 @@
       "resource://gre/modules/shared/AddressRecord.sys.mjs": [
         "../../../toolkit/components/formautofill/shared/AddressRecord.sys.mjs"
       ],
+      "resource://gre/modules/shared/AutofillDataTypes.sys.mjs": [
+        "../../../toolkit/components/formautofill/shared/AutofillDataTypes.sys.mjs"
+      ],
       "resource://gre/modules/shared/AutofillFormFactory.sys.mjs": [
         "../../../toolkit/components/formautofill/shared/AutofillFormFactory.sys.mjs"
       ],
@@ -7062,9 +7068,6 @@
       ],
       "resource://newtab/lib/TopStoriesFeed.sys.mjs": [
         "../../../browser/extensions/newtab/lib/TopStoriesFeed.sys.mjs"
-      ],
-      "resource://newtab/lib/UTEventReporting.sys.mjs": [
-        "../../../browser/extensions/newtab/lib/UTEventReporting.sys.mjs"
       ],
       "resource://newtab/lib/Wallpapers/WallpaperFeed.sys.mjs": [
         "../../../browser/extensions/newtab/lib/Wallpapers/WallpaperFeed.sys.mjs"
