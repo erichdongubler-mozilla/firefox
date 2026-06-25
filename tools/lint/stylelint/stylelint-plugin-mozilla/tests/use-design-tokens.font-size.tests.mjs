@@ -29,6 +29,10 @@ testRule({
       description: "Using root font-size token is valid.",
     },
     {
+      code: ".a { font-size: var(--font-size-xsmall); }",
+      description: "Using xsmall font-size token is valid.",
+    },
+    {
       code: ".a { font-size: var(--font-size-small); }",
       description: "Using small font-size token is valid.",
     },

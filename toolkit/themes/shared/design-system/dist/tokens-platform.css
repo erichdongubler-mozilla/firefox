@@ -40,7 +40,12 @@
 
     /** font-size **/
     --font-size-root: unset;
+    --font-size-xsmall: unset;
     --font-size-small: unset;
+    --font-size-large: unset;
+    --font-size-xlarge: unset;
+    --font-size-xxlarge: unset;
+    --font-size-xxxlarge: unset;
 
     /** input **/
     --input-text-background-color: Field;

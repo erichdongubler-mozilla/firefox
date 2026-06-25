@@ -6575,7 +6575,7 @@ dialog:dir(rtl)::after {
 }
 .nova-enabled .focus-timer .focus-timer-time-mode {
   color: var(--text-color-deemphasized);
-  font-size: var(--newtab-font-size-xsmall);
+  font-size: var(--font-size-xsmall);
   font-weight: var(--font-weight);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   letter-spacing: 0.022em;
@@ -8270,7 +8270,7 @@ dialog:dir(rtl)::after {
   position: absolute;
   inset-block-end: calc(var(--space-xlarge) * -1);
   inset-inline-end: 0;
-  font-size: var(--newtab-font-size-xsmall);
+  font-size: var(--font-size-xsmall);
 }
 .nova-enabled .weather-widget .forecast-footer .sponsored-text {
   visibility: hidden;
@@ -8283,7 +8283,7 @@ dialog:dir(rtl)::after {
   background: url("chrome://global/skin/icons/arrow-right.svg") no-repeat right center;
   -moz-context-properties: fill;
   fill: currentColor;
-  font-size: var(--newtab-font-size-xsmall);
+  font-size: var(--font-size-xsmall);
 }
 .nova-enabled .weather-widget .forecast-footer .full-forecast:dir(rtl) {
   background-image: url("chrome://global/skin/icons/arrow-left.svg");
@@ -8331,7 +8331,7 @@ dialog:dir(rtl)::after {
   align-self: flex-start;
   margin-inline-start: auto;
   color: var(--text-color-deemphasized);
-  font-size: var(--newtab-font-size-xsmall);
+  font-size: var(--font-size-xsmall);
   gap: var(--space-small);
 }
 .nova-enabled .weather-widget .weather-conditions-view .high-low-row .high-temperature,
@@ -9888,7 +9888,7 @@ hr {
   margin-block-start: auto;
 }
 .forecast-footer span {
-  font-size: var(--newtab-font-size-xsmall);
+  font-size: var(--font-size-xsmall);
 }
 .forecast-footer .sponsored-text {
   visibility: hidden;
@@ -9896,7 +9896,7 @@ hr {
 .forecast-footer .full-forecast {
   position: relative;
   z-index: 1;
-  font-size: var(--newtab-font-size-xsmall);
+  font-size: var(--font-size-xsmall);
   text-decoration: none;
   color: inherit;
 }
@@ -16117,6 +16117,7 @@ hr {
   --panel-menuitem-border-radius: var(--button-border-radius);
   --panel-padding: var(--panel-padding-block);
   --panel-padding-block: 8px;
+  --panel-separator-color: light-dark(rgba(24, 14, 48, 20%), rgba(242, 240, 248, 20%));
   --panel-text-color: var(--text-color);
   /** size **/
   --size-item-xsmall: 12px;
@@ -16243,6 +16244,7 @@ hr {
     --link-color-active: ActiveText;
     /** panel **/
     --panel-border-color: var(--border-color);
+    --panel-separator-color: var(--border-color);
     /** table **/
     /* TODO Bug 1821203 - Gray use needs to be consolidated */
     --table-row-background-color-alternate: var(--background-color-canvas);

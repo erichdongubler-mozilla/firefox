@@ -191,24 +191,13 @@ Type setting relies on design tokens for font size and font weight.
   <tbody>
     <tr>
       <th>
-        <code>--font-size-xxxlarge</code>
-      </th>
-      <td>
-        <code>2.2rem</code>
-      </td>
-      <td>
-        <code>2.2rem</code>
-      </td>
-    </tr>
-    <tr>
-      <th>
         <code>--font-size-xxlarge</code>
       </th>
       <td>
         <code>1.6rem</code>
       </td>
       <td>
-        <code>1.6rem</code>
+        <code>unset</code>
       </td>
     </tr>
     <tr>
@@ -219,7 +208,7 @@ Type setting relies on design tokens for font size and font weight.
         <code>1.467rem</code>
       </td>
       <td>
-        <code>1.467rem</code>
+        <code>unset</code>
       </td>
     </tr>
     <tr>
@@ -230,7 +219,7 @@ Type setting relies on design tokens for font size and font weight.
         <code>1.133rem</code>
       </td>
       <td>
-        <code>1.133rem</code>
+        <code>unset</code>
       </td>
     </tr>
     <tr>
@@ -250,6 +239,17 @@ Type setting relies on design tokens for font size and font weight.
       </th>
       <td>
         <code>0.867rem</code>
+      </td>
+      <td>
+        <code>unset</code>
+      </td>
+    </tr>
+    <tr>
+      <th>
+        <code>--font-size-xsmall</code>
+      </th>
+      <td>
+        <code>0.733rem</code>
       </td>
       <td>
         <code>unset</code>

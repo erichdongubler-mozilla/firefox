@@ -44,7 +44,7 @@
     position: absolute;
     inset-block-end: calc(var(--space-xlarge) * -1);
     inset-inline-end: 0;
-    font-size: var(--newtab-font-size-xsmall);
+    font-size: var(--font-size-xsmall);
 
     .sponsored-text {
       visibility: hidden;
@@ -58,7 +58,7 @@
       background: url('chrome://global/skin/icons/arrow-right.svg') no-repeat right center;
       -moz-context-properties: fill;
       fill: currentColor;
-      font-size: var(--newtab-font-size-xsmall);
+      font-size: var(--font-size-xsmall);
 
       &:dir(rtl) {
         background-image: url('chrome://global/skin/icons/arrow-left.svg');
@@ -125,7 +125,7 @@
       align-self: flex-start;
       margin-inline-start: auto;
       color: var(--text-color-deemphasized);
-      font-size: var(--newtab-font-size-xsmall);
+      font-size: var(--font-size-xsmall);
       gap: var(--space-small);
 
       .high-temperature,

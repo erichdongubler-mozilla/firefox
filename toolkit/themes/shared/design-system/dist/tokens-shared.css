@@ -375,14 +375,6 @@
     --focus-outline-width: 2px;
 
     /** font-size **/
-    /* 17px (in-content) */
-    --font-size-large: 1.133rem;
-    /* 22px (in-content) */
-    --font-size-xlarge: 1.467rem;
-    /* 24px (in-content) */
-    --font-size-xxlarge: 1.6rem;
-    /* 33px (in-content) */
-    --font-size-xxxlarge: 2.2rem;
     --font-size-heading-medium: var(--font-size-large);
     --font-size-heading-large: var(--font-size-xlarge);
     --font-size-heading-xlarge: var(--font-size-xxlarge);
