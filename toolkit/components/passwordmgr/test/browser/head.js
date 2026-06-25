@@ -588,9 +588,9 @@ async function _selectDoorhanger(text, inputSelector, dropmarkerSelector) {
       .getElementsByTagName("richlistitem"),
   ].filter(richlistitem => !richlistitem.collapsed);
 
-  let suggestionText = suggestions.map(
-    richlistitem => richlistitem.querySelector(".ac-title-text").innerHTML
-  );
+  let suggestionText = suggestions.map(richlistitem => {
+    return richlistitem.querySelector("autocomplete-row-item").label;
+  });
 
   let targetIndex = suggestionText.indexOf(text);
   Assert.notEqual(targetIndex, -1, "Suggestions include expected text");
