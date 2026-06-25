@@ -1257,6 +1257,42 @@ bool ContentChild::IsAlive() const { return mIsAlive; }
 
 bool ContentChild::IsShuttingDown() const { return mShuttingDown; }
 
+// NOTE: This is atomic only for reading. Modifying this flag is only possible
+// using MaybeBecomeUntrusted on the main thread.
+static std::atomic<bool> sContentChildIsUntrusted;
+
+/* static */
+bool ContentChild::IsUntrusted() {
+  return sContentChildIsUntrusted.load(std::memory_order_relaxed);
+}
+
+/* static */
+void ContentChild::MaybeBecomeUntrusted() {
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+  if (!XRE_IsContentProcess() || IsUntrusted()) {
+    return;
+  }
+
+  ContentChild* cc = ContentChild::GetSingleton();
+  MOZ_DIAGNOSTIC_ASSERT(cc->GetRemoteType() != PREALLOC_REMOTE_TYPE,
+                        "Prealloc process cannot become untrusted");
+
+  // Never mark the privilegedabout process as untrusted.
+  if (cc->GetRemoteType() == PRIVILEGEDABOUT_REMOTE_TYPE) {
+    return;
+  }
+
+  if (nsCOMPtr<nsIObserverService> obs =
+          mozilla::services::GetObserverService()) {
+    obs->NotifyObservers(nullptr, kBecameUntrustedTopic.get(), nullptr);
+  }
+
+  // Flip the flag & notify last, as the process should be considered trusted
+  // while observing kBecomeUntrustedTopic.
+  sContentChildIsUntrusted.store(true, std::memory_order_relaxed);
+  cc->SendBecomeUntrusted();
+}
+
 void ContentChild::GetProcessName(nsACString& aName) const {
   aName = mProcessName;
 }
@@ -1424,6 +1460,9 @@ mozilla::ipc::IPCResult ContentChild::RecvRequestMemoryReport(
 mozilla::ipc::IPCResult ContentChild::RecvDecodeImage(
     NotNull<nsIURI*> aURI, const ImageIntSize& aSize,
     const ColorScheme& aColorScheme, DecodeImageResolver&& aResolver) {
+  // We're about to decode a potentially untrusted image.
+  MaybeBecomeUntrusted();
+
   auto size = aSize.ToUnknownSize();
   // TODO(Bug 1999930): Investigate using  a content-principal for
   // moz-remote-image: requests
