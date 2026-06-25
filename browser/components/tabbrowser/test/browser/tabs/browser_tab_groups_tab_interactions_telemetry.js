@@ -147,7 +147,7 @@ add_task(async function test_tabInteractionsBasic() {
   let tab1 = await addTab();
   await assertMetricEmpty("add");
   window.gBrowser.moveTabToExistingGroup(tab1, group, {
-    isUserTriggered: true,
+    metricsContext: gBrowser.TabMetrics.userTriggeredContext(),
   });
   await assertMetricFoundFor("add");
 
@@ -164,7 +164,7 @@ add_task(async function test_tabInteractionsBasic() {
   await assertMetricEmpty("reorder");
   window.gBrowser.moveTabTo(group.tabs[0], {
     tabIndex: 3,
-    isUserTriggered: true,
+    metricsContext: gBrowser.TabMetrics.userTriggeredContext(),
   });
   await assertMetricFoundFor("reorder");
 
@@ -354,7 +354,7 @@ add_task(async function test_tabInteractionsRemoveFromGroup() {
   await assertMetricEmpty("remove_same_window");
   window.gBrowser.moveTabTo(group.tabs[0], {
     tabIndex: 0,
-    isUserTriggered: true,
+    metricsContext: gBrowser.TabMetrics.userTriggeredContext(),
   });
   await assertMetricFoundFor("remove_same_window");
 

@@ -55,6 +55,16 @@ const METRIC_GROUP_TYPE = Object.freeze({
  */
 
 /**
+ * An unknown context.
+ *
+ * @type {TabMetricsContext}
+ */
+const UNKNOWN_CONTEXT = Object.freeze({
+  isUserTriggered: false,
+  telemetrySource: METRIC_SOURCE.UNKNOWN,
+});
+
+/**
  * Creates a `TabMetricsContext` object for a user event originating from
  * the specified source.
  *
@@ -75,5 +85,6 @@ export const TabMetrics = {
   METRIC_TABS_LAYOUT,
   METRIC_REOPEN_TYPE,
   METRIC_GROUP_TYPE,
+  UNKNOWN_CONTEXT,
   userTriggeredContext,
 };

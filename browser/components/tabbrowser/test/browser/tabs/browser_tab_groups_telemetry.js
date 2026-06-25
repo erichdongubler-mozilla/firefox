@@ -47,8 +47,7 @@ add_task(async function test_tabGroupTelemetry() {
     "TabGroupCreateByUser"
   );
   let group1 = win.gBrowser.addTabGroup([group1tab], {
-    isUserTriggered: true,
-    telemetrySource: "test-source",
+    metricsContext: gBrowser.TabMetrics.userTriggeredContext("test-source"),
   });
   win.gBrowser.tabGroupMenu.close();
   await tabGroupCreateByUser;
@@ -129,8 +128,7 @@ add_task(async function test_tabGroupTelemetry() {
   );
 
   let group2 = win.gBrowser.addTabGroup(group2Tabs, {
-    isUserTriggered: true,
-    telemetrySource: "test-source",
+    metricsContext: gBrowser.TabMetrics.userTriggeredContext("test-source"),
   });
   win.gBrowser.tabGroupMenu.close();
 
@@ -297,7 +295,7 @@ add_task(async function test_tabGroupTelemetrySaveGroup() {
   let group2tab = BrowserTestUtils.addTab(win.gBrowser, "https://example.com");
   await BrowserTestUtils.browserLoaded(group2tab.linkedBrowser);
   let group2 = gBrowser.addTabGroup([group2tab]);
-  group2.saveAndClose({ isUserTriggered: true });
+  group2.saveAndClose(gBrowser.TabMetrics.userTriggeredContext());
 
   await TestUtils.waitForCondition(() => {
     tabGroupSaveTelemetry = Glean.tabgroup.save.testGetValue();
@@ -1037,8 +1035,7 @@ add_task(async function test_cancelTabGroupCreation_ungroupTabsEvent() {
     "shown"
   );
   win.gBrowser.addTabGroup([tab], {
-    isUserTriggered: true,
-    telemetrySource: "test-source",
+    metricsContext: win.gBrowser.TabMetrics.userTriggeredContext("test-source"),
   });
   await Promise.all([tabGroupCreateByUser, tabGroupContextOpen]);
 
@@ -1098,7 +1095,10 @@ add_task(async function test_noGroupEventWhenNotMovingToGroup() {
     "Sanity check: no add tab to group events recorded"
   );
 
-  win.gBrowser.moveTabTo(tab, { tabIndex: 0, isUserTriggered: true });
+  win.gBrowser.moveTabTo(tab, {
+    tabIndex: 0,
+    metricsContext: win.gBrowser.TabMetrics.userTriggeredContext(),
+  });
 
   /* eslint-disable mozilla/no-arbitrary-setTimeout */
   await new Promise(r => setTimeout(r, 300));
