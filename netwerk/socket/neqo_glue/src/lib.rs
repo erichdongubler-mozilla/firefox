@@ -1333,12 +1333,28 @@ pub extern "C" fn neqo_http3conn_process_output_and_send(
                         }
                     }
                     Err(e) if e.raw_os_error() == Some(libc::EIO) && dg.num_datagrams() > 1 => {
-                        // See following resources for details:
-                        // - <https://github.com/quinn-rs/quinn/blob/93b6d01605147b9763ee1b1b381a6feb9fcd454e/quinn-udp/src/unix.rs#L345-L349>
-                        // - <https://bugzilla.mozilla.org/show_bug.cgi?id=1989895>
+                        // GSO is unsupported on this send path. quinn-udp has now
+                        // disabled GSO for subsequent sends, but the kernel
+                        // dropped the current batch. Resend it as individual
+                        // datagrams right away, rather than waiting for the QUIC
+                        // PTO (~300ms) to retransmit.
                         //
-                        // Ideally one would retry at the quinn-udp layer, see <https://github.com/quinn-rs/quinn/issues/2399>.
-                        qdebug!("Failed to send datagram batch size {} with error {e}. Missing GSO support? Socket will set max_gso_segments to 1. QUIC layer will retry.", dg.num_datagrams());
+                        // See following resources for details:
+                        // - <https://bugzilla.mozilla.org/show_bug.cgi?id=2049334>
+                        // - <https://bugzilla.mozilla.org/show_bug.cgi?id=1989895>
+                        // - <https://github.com/quinn-rs/quinn/blob/93b6d01605147b9763ee1b1b381a6feb9fcd454e/quinn-udp/src/unix.rs#L345-L349>
+                        //
+                        // Long term this fallback belongs in quinn-udp, see
+                        // <https://github.com/quinn-rs/quinn/issues/2399>.
+                        qdebug!("Failed to send datagram batch size {} with error {e}. Missing GSO support? Resending as individual datagrams.", dg.num_datagrams());
+                        let socket = conn.socket.as_mut().expect("non NSPR IO");
+                        for single in dg.iter() {
+                            let single = datagram::Batch::from(single.to_owned());
+                            if let Err(e) = socket.send(&single) {
+                                qwarn!("failed to resend datagram without GSO: {e}");
+                                break;
+                            }
+                        }
                     }
                     Err(e) => {
                         qwarn!("failed to send datagram: {}", e);
