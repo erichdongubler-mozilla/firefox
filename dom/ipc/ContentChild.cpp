@@ -969,7 +969,6 @@ nsresult ContentChild::ProvideWindowCommon(
   *aReturn = nullptr;
 
   nsAutoCString features(aFeatures);
-  nsAutoString name(aName);
 
   nsresult rv;
 
