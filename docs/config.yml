@@ -139,8 +139,6 @@ allowed_warnings:
     - "WARNING: dot command 'dot' cannot be run \\(needed for graphviz output\\)"
     # Specific warnings allowed when the allow list was created.
     - "accessible/HCMMediaQueries\\.md:.*: WARNING: Lexing literal_block"
-    - "ipc/ipdl\\.rst:.*: WARNING: Duplicate explicit target name"
-    - "ipc/processes\\.rst:.*: WARNING: Duplicate explicit target name"
     - "js/Debugger/Debugger\\.md:.*: WARNING: Duplicate reference definition"
     - "l10n/migrations/localizations\\.rst:.* ERROR: Anonymous hyperlink mismatch"
     - "mobile/android/geckoview/contributor/geckoview-architecture\\.rst:.*: WARNING: Duplicate explicit target name"
@@ -225,6 +223,8 @@ allowed_warnings:
     - "WARNING: undefined label: 'uri-loader-service'"
     - "WARNING: undefined label: 'external_helper_app_service'"
     - "WARNING: undefined label: 'defining_xpcom_components'"
+    - "ipc/ipdl\\.md:.*: WARNING: Duplicate explicit target name"
+    - "ipc/processes\\.md:.*: WARNING: Duplicate explicit target name"
 exclude_patterns:
     - js/src/doc/Debugger
 
