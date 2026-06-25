@@ -70,6 +70,7 @@ smartwindow-nl-retry-tool-button =
     .label = Retry
 
 smartwindow-nl-retry-message = If you still want to close tabs, choose <strong>Retry</strong> and make your selection in the card that opens.
+smartwindow-nl-retry-group-tabs-message = If you still want to group tabs, choose Retry and select which ones in the card that opens.
 
 smartwindow-nl-thinking = Looking for matching tabs…
 smartwindow-loading-assistant-response =
@@ -103,6 +104,52 @@ smart-window-restore-success-summary =
        *[other] Tabs closed, then restored.
     }
 smart-window-cancelled-label = Request cancelled.
+# Button label - "Group" is a verb (action to group tabs)
+smart-window-confirm-group-tab = Group
+# Button label - "Group" is a verb (action to group tabs)
+smart-window-confirm-group-tabs =
+    { $count ->
+        [one] Group { $count } tab
+       *[other] Group { $count } tabs
+    }
+
+# Action result labels for grouped tabs
+# Variables
+#   $count (number) - Number of tabs grouped
+smart-window-grouped-tabs-label =
+    { $count ->
+        [one] Grouped { $count } tab
+       *[other] Grouped { $count } tabs
+    }
+
+# Variables
+#   $count (number) - Number of tabs grouped
+#   $label (string) - The label of the tab group
+smart-window-grouped-tabs-summary =
+    { $count ->
+        [one] Created the group “{ $label }” and added { $count } tab.
+        *[other] Created the group “{ $label }” and added { $count } tabs.
+    }
+
+smart-window-grouped-tabs-row-label = Grouped tabs
+
+# Action result labels for ungrouped tabs
+smart-window-grouped-and-ungrouped-label = Tabs ungrouped
+
+# Variables
+#   $count (number) - Number of tabs ungrouped
+smart-window-ungroup-success-summary =
+    { $count ->
+        [one] { $count } tab grouped, then ungrouped.
+        *[other] { $count } tabs grouped, then ungrouped.
+    }
+
+
+smart-window-ungrouped-row-label =
+    { $count ->
+        [one] Ungrouped { $count } tab
+        *[other] Ungrouped { $count } tabs
+    }
 
 ## Action log
 

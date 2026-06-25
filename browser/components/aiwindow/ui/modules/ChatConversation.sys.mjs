@@ -45,7 +45,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   loadPrompt:
     "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
   ToolUI: "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
-  UI_TYPES: "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
+  CONFIRMATION_UI_TYPES:
+    "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "fluentStrings", () => {
@@ -1113,8 +1114,8 @@ export class ChatConversation extends Conversation {
       }
     }
 
-    // For website confirmations, add the original user prompt
-    if (uiData.uiType === lazy.UI_TYPES.WEBSITE_CONFIRMATION) {
+    // For certain UI types, add the original user prompt
+    if (lazy.CONFIRMATION_UI_TYPES.includes(uiData.uiType)) {
       const originalUserPrompt = lazy.ToolUI.findOriginalUserPrompt(
         this.messages,
         currentMessage
