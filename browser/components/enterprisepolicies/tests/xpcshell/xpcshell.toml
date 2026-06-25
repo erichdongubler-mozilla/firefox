@@ -11,6 +11,8 @@ support-files = [
 
 ["test_3rdparty.js"]
 
+["test_PolicySchemaValidator.js"]
+
 ["test_addon_update.js"]
 
 ["test_appupdatepin.js"]
