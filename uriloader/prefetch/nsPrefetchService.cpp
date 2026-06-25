@@ -192,12 +192,13 @@ nsPrefetchNode::OnStartRequest(nsIRequest* aRequest) {
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aRequest, &rv);
   if (NS_FAILED(rv)) return rv;
 
-  // A "cors" response whose CORS check fails is a network error, so it fires
-  // the error event. Only an opaque (no-cors) response always fires load: the
-  // CORS check is skipped there to avoid leaking cross-origin information.
-  // https://fetch.spec.whatwg.org/#concept-http-fetch
+  // if the load is cross origin without CORS, or the CORS access is rejected,
+  // always fire load event to avoid leaking site information.
   nsCOMPtr<nsILoadInfo> loadInfo = httpChannel->LoadInfo();
-  mShouldFireLoadEvent = loadInfo->GetTainting() == LoadTainting::Opaque;
+  mShouldFireLoadEvent =
+      loadInfo->GetTainting() == LoadTainting::Opaque ||
+      (loadInfo->GetTainting() == LoadTainting::CORS &&
+       (NS_FAILED(httpChannel->GetStatus(&rv)) || NS_FAILED(rv)));
 
   // no need to prefetch http error page
   bool requestSucceeded;
