@@ -395,6 +395,20 @@ export class ToolUI {
         "ToolUI: Failed to undo tab group:",
         result?.error || "Unknown error"
       );
+
+      const timeDelta = actionTimestamp ? undoStartTime - actionTimestamp : 0;
+
+      lazy.ToolUITelemetry.recordBrowserActionUndo({
+        location: mode,
+        chat_id: conversation?.id || "",
+        message_seq: conversation?.messages?.length || 0,
+        action_type: "group_tabs",
+        tabs_restored: 0,
+        time_delta: Math.max(0, timeDelta),
+        result: "error",
+        error: result?.error || "ungroup_failed",
+      });
+
       return false;
     }
 
