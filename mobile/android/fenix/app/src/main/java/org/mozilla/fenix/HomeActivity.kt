@@ -770,12 +770,16 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             GrowthDataWorker.sendActivatedSignalIfNeeded(applicationContext)
             FontEnumerationWorker.sendActivatedSignalIfNeeded(applicationContext)
 
-            if (NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()) {
-                MessageNotificationWorker.setMessageNotificationWorker(applicationContext)
-            }
-
             if (components.core.sentFromFirefoxManager.shouldShowSnackbar) {
                 components.appStore.dispatch(ShareAction.ShareToWhatsApp)
+            }
+        }
+
+        lifecycleScope.launch(IO) {
+            if (NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()) {
+                MessageNotificationWorker.setMessageNotificationWorker(applicationContext)
+            } else {
+                MessageNotificationWorker.cancelMessageNotificationWorker(applicationContext)
             }
         }
 
