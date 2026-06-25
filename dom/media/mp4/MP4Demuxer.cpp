@@ -23,9 +23,9 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "nsPrintfCString.h"
 
-#define LOG(arg, ...)                                                 \
-  DDMOZ_LOG(gMediaDemuxerLog, mozilla::LogLevel::Debug, "::%s: " arg, \
-            __func__, ##__VA_ARGS__)
+#define LOG(arg, ...)                                                     \
+  DDMOZ_LOG_FMT(gMediaDemuxerLog, mozilla::LogLevel::Debug, "::{}: " arg, \
+                __func__, ##__VA_ARGS__)
 
 namespace mozilla {
 
@@ -184,7 +184,7 @@ RefPtr<MP4Demuxer::InitPromise> MP4Demuxer::Init() {
         }
         continue;
       }
-      LOG("Created audio track demuxer for info (%s)",
+      LOG("Created audio track demuxer for info ({})",
           info.Ref()->ToString().get());
       RefPtr<MP4TrackDemuxer> demuxer =
           new MP4TrackDemuxer(mResource, std::move(info.Ref()),
@@ -224,7 +224,7 @@ RefPtr<MP4Demuxer::InitPromise> MP4Demuxer::Init() {
         }
         continue;
       }
-      LOG("Created video track demuxer for info (%s)",
+      LOG("Created video track demuxer for info ({})",
           info.Ref()->ToString().get());
       RefPtr<MP4TrackDemuxer> demuxer =
           new MP4TrackDemuxer(mResource, std::move(info.Ref()),
@@ -553,8 +553,8 @@ MP4TrackDemuxer::GetNextSample() {
       originalStart = sample->mOriginalPresentationWindow->mStart;
       originalEnd = sample->mOriginalPresentationWindow->mEnd;
     }
-    LOG("%s packet demuxed (track id: %d): [%s,%s], duration: %s (original "
-        "time: [%s,%s])",
+    LOG("{} packet demuxed (track id: {}): [{},{}], duration: {} (original "
+        "time: [{},{}])",
         isAudio ? "Audio" : "Video", mInfo->mTrackId,
         sample->mTime.ToString().get(), sample->GetEndTime().ToString().get(),
         sample->mDuration.ToString().get(), originalStart.ToString().get(),
