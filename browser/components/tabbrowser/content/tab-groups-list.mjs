@@ -153,11 +153,12 @@ class TabGroupsList extends MozLitElement {
     this.closest("panel")?.hidePopup();
     const win = this.#win;
     const newTab = win.gBrowser.addTrustedTab(win.BROWSER_NEW_TAB_URL);
-    win.gBrowser.addTabGroup([newTab], {
-      metricsContext: win.gBrowser.TabMetrics.userTriggeredContext(
+    win.gBrowser.addTabGroup(
+      [newTab],
+      win.gBrowser.TabMetrics.userTriggeredContext(
         win.gBrowser.TabMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU
-      ),
-    });
+      )
+    );
   }
 
   render() {

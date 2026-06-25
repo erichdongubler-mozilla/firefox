@@ -696,15 +696,15 @@ var TabContextMenu = {
 
   closeContextTabs() {
     if (this.contextTab.multiselected) {
-      gBrowser.removeMultiSelectedTabs({
-        metricsContext: gBrowser.TabMetrics.userTriggeredContext(
+      gBrowser.removeMultiSelectedTabs(
+        gBrowser.TabMetrics.userTriggeredContext(
           gBrowser.TabMetrics.METRIC_SOURCE.TAB_STRIP
-        ),
-      });
+        )
+      );
     } else {
       gBrowser.removeTab(this.contextTab, {
         animate: true,
-        metricsContext: gBrowser.TabMetrics.userTriggeredContext(
+        ...gBrowser.TabMetrics.userTriggeredContext(
           gBrowser.TabMetrics.METRIC_SOURCE.TAB_STRIP
         ),
       });
@@ -731,7 +731,7 @@ var TabContextMenu = {
     }
     gBrowser.addTabGroup(this.contextTabs, {
       insertBefore,
-      metricsContext: gBrowser.TabMetrics.userTriggeredContext(
+      ...gBrowser.TabMetrics.userTriggeredContext(
         gBrowser.TabMetrics.METRIC_SOURCE.TAB_MENU
       ),
     });
@@ -764,7 +764,7 @@ var TabContextMenu = {
     }
     gBrowser.addTabGroup(tabsAndSplitViews, {
       insertBefore,
-      metricsContext: gBrowser.TabMetrics.userTriggeredContext(
+      ...gBrowser.TabMetrics.userTriggeredContext(
         gBrowser.TabMetrics.METRIC_SOURCE.TAB_MENU
       ),
     });
@@ -818,7 +818,7 @@ var TabContextMenu = {
     );
     gBrowser.removeTabs(tabs, {
       animate: true,
-      metricsContext: gBrowser.TabMetrics.userTriggeredContext(
+      ...gBrowser.TabMetrics.userTriggeredContext(
         gBrowser.TabMetrics.METRIC_SOURCE.TAB_STRIP
       ),
     });

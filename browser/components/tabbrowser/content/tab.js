@@ -655,16 +655,16 @@
 
       if (event.target.classList.contains("tab-close-button")) {
         if (this.multiselected) {
-          gBrowser.removeMultiSelectedTabs({
-            metricsContext: lazy.TabMetrics.userTriggeredContext(
+          gBrowser.removeMultiSelectedTabs(
+            lazy.TabMetrics.userTriggeredContext(
               lazy.TabMetrics.METRIC_SOURCE.TAB_STRIP
-            ),
-          });
+            )
+          );
         } else {
           gBrowser.removeTab(this, {
             animate: true,
             triggeringEvent: event,
-            metricsContext: lazy.TabMetrics.userTriggeredContext(
+            ...lazy.TabMetrics.userTriggeredContext(
               lazy.TabMetrics.METRIC_SOURCE.TAB_STRIP
             ),
           });

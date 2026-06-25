@@ -299,9 +299,7 @@
             duplicatedDraggedTab = duplicatedTab;
           }
         }
-        gBrowser.moveTabsBefore(duplicatedTabs, dropTarget, {
-          metricsContext: dropMetricsContext,
-        });
+        gBrowser.moveTabsBefore(duplicatedTabs, dropTarget, dropMetricsContext);
         if (draggedTab.container != this._tabbrowserTabs || event.shiftKey) {
           this._tabbrowserTabs.selectedItem = duplicatedDraggedTab;
         }
@@ -427,27 +425,26 @@
               if (fromTabList && isSplitViewWrapper(tab)) {
                 const dropTarget =
                   this._tabbrowserTabs.dragAndDropElements[dropIndex];
-                gBrowser.moveTabBefore(tab, dropTarget, {
-                  metricsContext: dropMetricsContext,
-                });
+                gBrowser.moveTabBefore(tab, dropTarget, dropMetricsContext);
               } else {
-                gBrowser.moveTabTo(tab, {
-                  elementIndex: dropIndex,
-                  metricsContext: dropMetricsContext,
-                });
+                gBrowser.moveTabTo(
+                  tab,
+                  { elementIndex: dropIndex },
+                  dropMetricsContext
+                );
                 if (!directionForward) {
                   dropIndex++;
                 }
               }
             }
           } else if (dropElement && dropBefore) {
-            gBrowser.moveTabsBefore(movingTabs, dropElement, {
-              metricsContext: dropMetricsContext,
-            });
+            gBrowser.moveTabsBefore(
+              movingTabs,
+              dropElement,
+              dropMetricsContext
+            );
           } else if (dropElement && dropBefore != undefined) {
-            gBrowser.moveTabsAfter(movingTabs, dropElement, {
-              metricsContext: dropMetricsContext,
-            });
+            gBrowser.moveTabsAfter(movingTabs, dropElement, dropMetricsContext);
           }
 
           if (isTabGroupLabel(draggedTab)) {
@@ -460,16 +457,11 @@
           for (let item of movingTabs) {
             if (shouldPin && isTab(item)) {
               gBrowser.pinTab(item, {
-                metricsContext: gBrowser.TabMetrics.userTriggeredContext(
-                  gBrowser.TabMetrics.METRIC_SOURCE.DRAG_AND_DROP
-                ),
+                telemetrySource:
+                  gBrowser.TabMetrics.METRIC_SOURCE.DRAG_AND_DROP,
               });
             } else if (shouldUnpin) {
-              gBrowser.unpinTab(item, {
-                metricsContext: gBrowser.TabMetrics.userTriggeredContext(
-                  gBrowser.TabMetrics.METRIC_SOURCE.DRAG_AND_DROP
-                ),
-              });
+              gBrowser.unpinTab(item);
             }
           }
         }
@@ -519,7 +511,7 @@
             gBrowser.addTabGroup(tabsInGroup, {
               insertBefore: dropElement,
               color: draggedTab._dragData.tabGroupCreationColor,
-              metricsContext: gBrowser.TabMetrics.userTriggeredContext(
+              ...gBrowser.TabMetrics.userTriggeredContext(
                 gBrowser.TabMetrics.METRIC_SOURCE.DRAG_AND_DROP
               ),
             });

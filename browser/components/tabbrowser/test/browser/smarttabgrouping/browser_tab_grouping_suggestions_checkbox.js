@@ -19,7 +19,7 @@
 async function openCreatePanel(tabgroupPanel, tab) {
   let panelShown = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "shown");
   gBrowser.addTabGroup([tab], {
-    metricsContext: gBrowser.TabMetrics.userTriggeredContext(),
+    isUserTriggered: true,
   });
   await panelShown;
 }

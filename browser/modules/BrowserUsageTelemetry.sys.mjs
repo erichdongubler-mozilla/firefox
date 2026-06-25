@@ -1429,18 +1429,13 @@ export let BrowserUsageTelemetry = {
    */
   _onTabClosed(event) {
     const group = event.target?.group;
-    const metricsContext = event.detail.metricsContext;
+    const isUserTriggered = event.detail?.isUserTriggered;
+    const source = event.detail?.telemetrySource;
 
-    if (group && metricsContext.isUserTriggered) {
-      if (
-        metricsContext.telemetrySource ==
-        lazy.TabMetrics.METRIC_SOURCE.TAB_STRIP
-      ) {
+    if (group && isUserTriggered) {
+      if (source == lazy.TabMetrics.METRIC_SOURCE.TAB_STRIP) {
         Glean.tabgroup.tabInteractions.close_tabstrip.add();
-      } else if (
-        metricsContext.telemetrySource ==
-        lazy.TabMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU
-      ) {
+      } else if (source == lazy.TabMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU) {
         Glean.tabgroup.tabInteractions.close_tabmenu.add();
       } else {
         Glean.tabgroup.tabInteractions.close_tab_other.add();
@@ -1483,7 +1478,7 @@ export let BrowserUsageTelemetry = {
     this.recordPinnedTabsCount(pinnedTabs);
     Glean.pinnedTabs.pin.record({
       layout: lazy.sidebarVerticalTabs ? "vertical" : "horizontal",
-      source: event.detail.metricsContext.telemetrySource,
+      source: event.detail?.telemetrySource,
     });
   },
 
@@ -1497,7 +1492,7 @@ export let BrowserUsageTelemetry = {
       layout: lazy.sidebarVerticalTabs
         ? lazy.TabMetrics.METRIC_TABS_LAYOUT.VERTICAL
         : lazy.TabMetrics.METRIC_TABS_LAYOUT.HORIZONTAL,
-      source: event.detail.metricsContext.telemetrySource,
+      source: event.detail.telemetrySource,
       tabs: event.target.tabs.length,
     });
 
@@ -1505,14 +1500,14 @@ export let BrowserUsageTelemetry = {
   },
 
   _onTabGroupSave(event) {
-    const { metricsContext } = event.detail;
+    const { isUserTriggered } = event.detail;
 
     Glean.tabgroup.save.record({
-      user_triggered: metricsContext.isUserTriggered,
+      user_triggered: isUserTriggered,
       id: event.target.id,
     });
 
-    if (metricsContext.isUserTriggered) {
+    if (isUserTriggered) {
       Glean.tabgroup.groupInteractions.save.add(1);
     }
 
@@ -1528,16 +1523,13 @@ export let BrowserUsageTelemetry = {
    * @param {CustomEvent} event `TabGroupUngroup` event
    */
   _onTabGroupUngroup(event) {
-    const { metricsContext } = event.detail;
-    if (metricsContext.isUserTriggered) {
-      Glean.tabgroup.ungroup.record({ source: metricsContext.telemetrySource });
+    const { isUserTriggered, telemetrySource } = event.detail;
+    if (isUserTriggered) {
+      Glean.tabgroup.ungroup.record({ source: telemetrySource });
       // Only count explicit user actions (i.e. "Ungroup tabs" in the tab group
       // context menu) toward the total number of tab group ungroup interations.
       // This excludes implicit user actions, e.g. canceling tab group creation.
-      if (
-        metricsContext.telemetrySource ==
-        lazy.TabMetrics.METRIC_SOURCE.TAB_GROUP_MENU
-      ) {
+      if (telemetrySource == lazy.TabMetrics.METRIC_SOURCE.TAB_GROUP_MENU) {
         Glean.tabgroup.groupInteractions.ungroup.add(1);
       }
     }
@@ -1636,12 +1628,15 @@ export let BrowserUsageTelemetry = {
    * @param {CustomEvent} event
    */
   _onTabGroupRemoveRequested(event) {
-    let { metricsContext = lazy.TabMetrics.UNKNOWN_CONTEXT } = event.detail;
+    let {
+      isUserTriggered = false,
+      telemetrySource = lazy.TabMetrics.METRIC_SOURCE.UNKNOWN,
+    } = event.detail;
 
-    if (metricsContext.isUserTriggered) {
+    if (isUserTriggered) {
       Glean.tabgroup.delete.record({
         id: event.target.id,
-        source: metricsContext.telemetrySource,
+        source: telemetrySource,
       });
       Glean.tabgroup.groupInteractions.delete.add(1);
     }
@@ -1658,9 +1653,9 @@ export let BrowserUsageTelemetry = {
    * @param {CustomEvent} event
    */
   _onTabMove(event) {
-    let { metricsContext } = event.detail;
+    let { isUserTriggered, telemetrySource } = event.detail;
 
-    if (!metricsContext.isUserTriggered) {
+    if (!isUserTriggered) {
       return;
     }
 
@@ -1671,14 +1666,14 @@ export let BrowserUsageTelemetry = {
         : lazy.TabMetrics.METRIC_GROUP_TYPE.EXPANDED;
     }
 
-    let segmentKey = [metricsContext.telemetrySource, groupType].join(",");
+    let segmentKey = [telemetrySource, groupType].join(",");
 
     let tabMovementsRecord = this._tabMovementsBySegment.get(segmentKey);
     if (!tabMovementsRecord) {
       let deferredTask = new lazy.DeferredTask(() => {
         if (tabMovementsRecord.numberAddedToTabGroup) {
           Glean.tabgroup.addTab.record({
-            source: metricsContext.telemetrySource,
+            source: telemetrySource,
             tabs: tabMovementsRecord.numberAddedToTabGroup,
             layout: lazy.sidebarVerticalTabs
               ? lazy.TabMetrics.METRIC_TABS_LAYOUT.VERTICAL

@@ -603,14 +603,14 @@
               : gBrowser.adoptSplitView(tabOrSplitView, {
                   tabIndex: gBrowser.tabs.at(-1)._tPos + 1,
                 });
-          gBrowser.moveSplitViewToExistingGroup(splitViewToMove, this, {
-            metricsContext,
-          });
+          gBrowser.moveSplitViewToExistingGroup(
+            splitViewToMove,
+            this,
+            metricsContext
+          );
         } else {
           if (tabOrSplitView.pinned) {
-            tabOrSplitView.documentGlobal.gBrowser.unpinTab(tabOrSplitView, {
-              metricsContext,
-            });
+            tabOrSplitView.documentGlobal.gBrowser.unpinTab(tabOrSplitView);
           }
           let tabToMove =
             this.documentGlobal === tabOrSplitView.documentGlobal
@@ -619,7 +619,7 @@
                   tabIndex: gBrowser.tabs.at(-1)._tPos + 1,
                   selectTab: tabOrSplitView.selected,
                 });
-          gBrowser.moveTabToExistingGroup(tabToMove, this, { metricsContext });
+          gBrowser.moveTabToExistingGroup(tabToMove, this, metricsContext);
         }
       }
       this.#lastAddedTo = Date.now();
@@ -629,13 +629,17 @@
      * Remove all tabs from the group and delete the group.
      *
      * @param {TabMetricsContext} [metricsContext]
-     *   The context for the operation
      */
-    ungroupTabs(metricsContext = TabMetrics.UNKNOWN_CONTEXT) {
+    ungroupTabs(
+      metricsContext = {
+        isUserTriggered: false,
+        telemetrySource: TabMetrics.METRIC_SOURCE.UNKNOWN,
+      }
+    ) {
       this.dispatchEvent(
         new CustomEvent("TabGroupUngroup", {
           bubbles: true,
-          detail: { metricsContext },
+          detail: metricsContext,
         })
       );
       for (let i = this.tabsAndSplitViews.length - 1; i >= 0; i--) {
@@ -650,21 +654,23 @@
     /**
      * Save group data to session store.
      *
-     * @param {TabMetricsContext} [metricsContext]
-     *   The context for the operation
+     * @param {object} [options]
+     * @param {boolean} [options.isUserTriggered]
+     *   Whether or not the save operation was explicitly called by the user.
+     *   Used for telemetry. Default is false.
      */
-    save(metricsContext = TabMetrics.UNKNOWN_CONTEXT) {
+    save({ isUserTriggered = false } = {}) {
       SessionStore.addSavedTabGroup(this);
       this.dispatchEvent(
         new CustomEvent("TabGroupSaved", {
           bubbles: true,
-          detail: { metricsContext },
+          detail: { isUserTriggered },
         })
       );
     }
 
-    saveAndClose(metricsContext = TabMetrics.UNKNOWN_CONTEXT) {
-      this.save(metricsContext);
+    saveAndClose({ isUserTriggered } = {}) {
+      this.save({ isUserTriggered });
       gBrowser.removeTabGroup(this);
     }
 

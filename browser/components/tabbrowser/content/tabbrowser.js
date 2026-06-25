@@ -1095,7 +1095,7 @@
 
     #notifyPinnedStatus(
       aTab,
-      { metricsContext = this.TabMetrics.UNKNOWN_CONTEXT } = {}
+      { telemetrySource = this.TabMetrics.METRIC_SOURCE.UNKNOWN } = {}
     ) {
       // browsingContext is expected to not be defined on discarded tabs.
       if (aTab.linkedBrowser.browsingContext) {
@@ -1105,7 +1105,7 @@
       let event = new CustomEvent(aTab.pinned ? "TabPinned" : "TabUnpinned", {
         bubbles: true,
         cancelable: false,
-        detail: { metricsContext },
+        detail: { telemetrySource },
       });
       aTab.dispatchEvent(event);
     }
@@ -1116,10 +1116,15 @@
      * @param {MozTabbrowserTab} aTab
      *   The tab to pin.
      * @param {object} [options]
-     * @param {TabMetricsContext} [options.metricsContext]
-     *   The context for the operation for telemetry purposes, defaults to an unknown context.
+     * @param {string} [options.telemetrySource="unknown"]
+     *   The means by which the tab was pinned.
+     *   @see TabMetrics.METRIC_SOURCE for possible values.
+     *   Defaults to "unknown".
      */
-    pinTab(aTab, { metricsContext = this.TabMetrics.UNKNOWN_CONTEXT } = {}) {
+    pinTab(
+      aTab,
+      { telemetrySource = this.TabMetrics.METRIC_SOURCE.UNKNOWN } = {}
+    ) {
       if (aTab.pinned || aTab == FirefoxViewHandler.tab) {
         return;
       }
@@ -1135,19 +1140,10 @@
 
       aTab.setAttribute("pinned", "true");
       this._updateTabBarForPinnedTabs();
-      this.#notifyPinnedStatus(aTab, { metricsContext });
+      this.#notifyPinnedStatus(aTab, { telemetrySource });
     }
 
-    /**
-     * Unpin a tab.
-     *
-     * @param {MozTabbrowserTab} aTab
-     *   The tab to pin.
-     * @param {object} [options]
-     * @param {TabMetricsContext} [options.metricsContext]
-     *   The context for the operation for telemetry purposes, defaults to an unknown context.
-     */
-    unpinTab(aTab, { metricsContext = this.TabMetrics.UNKNOWN_CONTEXT } = {}) {
+    unpinTab(aTab) {
       if (!aTab.pinned) {
         return;
       }
@@ -1163,7 +1159,7 @@
       aTab.style.marginInlineStart = "";
       aTab._pinnedUnscrollable = false;
       this._updateTabBarForPinnedTabs();
-      this.#notifyPinnedStatus(aTab, { metricsContext });
+      this.#notifyPinnedStatus(aTab);
     }
 
     previewTab(aTab, aCallback) {
@@ -3764,8 +3760,16 @@
      * @param {boolean} [options.isAdoptingGroup]
      *   Whether the tab group was created because a tab group with the same
      *   properties is being adopted from a different window.
-     * @param {TabMetricsContext} [options.metricsContext]
-     *   The context for the operation for telemetry purposes. Defaults to an unknown context.
+     * @param {boolean} [options.isUserTriggered]
+     *   Should be true if this group is being created in response to an
+     *   explicit request from the user (as opposed to a group being created
+     *   for technical reasons, such as when an already existing group
+     *   switches windows).
+     *   Causes the group create UI to be displayed and telemetry events to be fired.
+     * @param {string} [options.telemetrySource]
+     *   The means by which the tab group was created.
+     *   @see TabMetrics.METRIC_SOURCE for possible values.
+     *   Defaults to "unknown".
      */
     addTabGroup(
       tabsAndSplitViews,
@@ -3775,7 +3779,8 @@
         label = "",
         insertBefore = null,
         isAdoptingGroup = false,
-        metricsContext = this.TabMetrics.UNKNOWN_CONTEXT,
+        isUserTriggered = false,
+        telemetrySource = this.TabMetrics.METRIC_SOURCE.UNKNOWN,
       } = {}
     ) {
       if (
@@ -3813,7 +3818,7 @@
         group,
         insertBefore?.group ?? insertBefore
       );
-      group.addTabs(tabsAndSplitViews, metricsContext);
+      group.addTabs(tabsAndSplitViews);
 
       // Bail out if the group is empty at this point. This can happen if all
       // provided tabs are pinned and therefore cannot be grouped.
@@ -3822,11 +3827,13 @@
         return null;
       }
 
-      if (metricsContext.isUserTriggered) {
+      if (isUserTriggered) {
         group.dispatchEvent(
           new CustomEvent("TabGroupCreateByUser", {
             bubbles: true,
-            detail: { metricsContext },
+            detail: {
+              telemetrySource,
+            },
           })
         );
       }
@@ -3852,8 +3859,23 @@
      *   The tab group to remove.
      * @param {object} [options]
      *   Options to use when removing tabs. @see removeTabs for more info.
+     * @param {boolean} [options.isUserTriggered=false]
+     *   Should be true if this group is being removed by an explicit
+     *   request from the user (as opposed to a group being removed
+     *   for technical reasons, such as when an already existing group
+     *   switches windows). This causes telemetry events to fire.
+     * @param {string} [options.telemetrySource="unknown"]
+     *   The means by which the tab group was removed.
+     *   @see TabMetrics.METRIC_SOURCE for possible values.
+     *   Defaults to "unknown".
      */
-    async removeTabGroup(group, options = {}) {
+    async removeTabGroup(
+      group,
+      options = {
+        isUserTriggered: false,
+        telemetrySource: this.TabMetrics.METRIC_SOURCE.UNKNOWN,
+      }
+    ) {
       if (this.tabGroupMenu.panel.state != "closed") {
         this.tabGroupMenu.panel.hidePopup(options.animate);
       }
@@ -3887,8 +3909,8 @@
           bubbles: true,
           detail: {
             skipSessionStore: options.skipSessionStore,
-            metricsContext:
-              options.metricsContext ?? this.TabMetrics.UNKNOWN_CONTEXT,
+            isUserTriggered: options.isUserTriggered,
+            telemetrySource: options.telemetrySource,
           },
         })
       );
@@ -5214,7 +5236,11 @@
       this.removeTabs(tabsToRemove, aParams);
     }
 
-    removeMultiSelectedTabs({ metricsContext, excludePinnedTabs } = {}) {
+    removeMultiSelectedTabs({
+      isUserTriggered,
+      telemetrySource,
+      excludePinnedTabs,
+    } = {}) {
       let selectedTabs = this.selectedTabs;
       if (
         !this.warnAboutClosingTabs(
@@ -5227,7 +5253,7 @@
 
       if (excludePinnedTabs) {
         selectedTabs = this.selectedTabs.filter(tab => !tab.pinned);
-        this.removeTabs(selectedTabs, { metricsContext });
+        this.removeTabs(selectedTabs, { isUserTriggered, telemetrySource });
         this.clearMultiSelectedTabs();
         if (
           this.selectedTab.pinned &&
@@ -5237,7 +5263,7 @@
           gBrowser.tabContainer.selectedIndex = gBrowser.pinnedTabCount;
         }
       } else {
-        this.removeTabs(selectedTabs, { metricsContext });
+        this.removeTabs(selectedTabs, { isUserTriggered, telemetrySource });
       }
     }
 
@@ -5270,8 +5296,6 @@
      *   Skips actually removing the tabs. The beforeunload handlers still run.
      * @param {boolean} options.skipSessionStore
      *   If true, don't record the closed tabs in SessionStore.
-     * @param {TabMetricsContext} options.metricsContext
-     *   The context for the operation for telemetry purposes.
      * @returns {_startRemoveTabsReturnValue}
      */
     _startRemoveTabs(
@@ -5284,7 +5308,8 @@
         skipPermitUnload,
         skipRemoves,
         skipSessionStore,
-        metricsContext,
+        isUserTriggered,
+        telemetrySource,
       }
     ) {
       // Note: if you change any of the unload algorithm, consider also
@@ -5367,7 +5392,8 @@
             prewarmed: true,
             skipPermitUnload,
             skipSessionStore,
-            metricsContext,
+            isUserTriggered,
+            telemetrySource,
           });
         }
       }
@@ -5482,8 +5508,12 @@
      * @param {boolean} [options.skipGroupCheck]
      *   Skip separate processing of whole tab groups from the set of tabs.
      *   Used by removeTabGroup.
-     * @param {TabMetricsContext} [options.metricsContext]
-     *   The context for the operation for telemetry purposes
+     * @param {boolean} [options.isUserTriggered]
+     *   Whether or not the removal is the direct result of a user action.
+     *   Used for telemetry.
+     * @param {string} [options.telemetrySource]
+     *   The system, surface, or control the user used to take this action.
+     *   @see TabMetrics.METRIC_SOURCE for possible values.
      */
     removeTabs(
       tabs,
@@ -5493,7 +5523,8 @@
         skipPermitUnload = false,
         skipSessionStore = false,
         skipGroupCheck = false,
-        metricsContext,
+        isUserTriggered = false,
+        telemetrySource,
       } = {}
     ) {
       // When 'closeWindowWithLastTab' pref is enabled, closing all tabs
@@ -5528,7 +5559,8 @@
               animate,
               skipSessionStore,
               skipPermitUnload,
-              metricsContext,
+              isUserTriggered,
+              telemetrySource,
             });
           });
           tabs = leftoverTabs;
@@ -5541,7 +5573,8 @@
             skipPermitUnload,
             skipRemoves: false,
             skipSessionStore,
-            metricsContext,
+            isUserTriggered,
+            telemetrySource,
           });
 
         // Wait for all the beforeunload events to have been processed by content processes.
@@ -5565,7 +5598,8 @@
           prewarmed: true,
           skipPermitUnload,
           skipSessionStore,
-          metricsContext,
+          isUserTriggered,
+          telemetrySource,
         };
 
         // Now run again sequentially the beforeunload listeners that will result in a prompt.
@@ -5603,7 +5637,8 @@
         closeWindowWithLastTab,
         prewarmed,
         skipSessionStore,
-        metricsContext,
+        isUserTriggered,
+        telemetrySource,
       } = {}
     ) {
       if (UserInteraction.running("browser.tabs.opening", window)) {
@@ -5640,7 +5675,8 @@
           closeWindowWithLastTab,
           prewarmed,
           skipSessionStore,
-          metricsContext,
+          isUserTriggered,
+          telemetrySource,
         })
       ) {
         Glean.browserTabclose.timeAnim.cancel(aTab._closeTimeAnimTimerId);
@@ -5747,7 +5783,8 @@
         skipPermitUnload,
         prewarmed,
         skipSessionStore = false,
-        metricsContext = this.TabMetrics.UNKNOWN_CONTEXT,
+        isUserTriggered,
+        telemetrySource,
       } = {}
     ) {
       if (aTab.closing || this.#windowIsClosing) {
@@ -5902,7 +5939,8 @@
         detail: {
           adoptedBy: adoptedByTab,
           skipSessionStore,
-          metricsContext,
+          isUserTriggered,
+          telemetrySource,
         },
       });
       aTab.dispatchEvent(evt);
@@ -7007,12 +7045,25 @@
      *   any possibility of entering a tab group. For example, setting `true`
      *   ensures that a pinned tab will not accidentally be placed inside of
      *   a tab group, since pinned tabs are presently not allowed in tab groups.
-     * @param {TabMetricsContext} [options.metricsContext]
-     *   The context for the operation for telemetry purposes.
+     * @param {boolean} [options.isUserTriggered=false]
+     *   Should be true if there was an explicit action/request from the user
+     *   (as opposed to some action being taken internally or for technical
+     *   bookkeeping reasons alone) to move the tab. This causes telemetry
+     *   events to fire.
+     * @param {string} [options.telemetrySource="unknown"]
+     *   The system, surface, or control the user used to move the tab.
+     *   @see TabMetrics.METRIC_SOURCE for possible values.
+     *   Defaults to "unknown".
      */
     moveTabTo(
       element,
-      { elementIndex, tabIndex, forceUngrouped = false, metricsContext } = {}
+      {
+        elementIndex,
+        tabIndex,
+        forceUngrouped = false,
+        isUserTriggered = false,
+        telemetrySource = this.TabMetrics.METRIC_SOURCE.UNKNOWN,
+      } = {}
     ) {
       if (typeof elementIndex == "number") {
         tabIndex = this.#elementIndexToTabIndex(elementIndex);
@@ -7085,52 +7136,44 @@
             this.tabContainer.insertBefore(element, neighbor);
           }
         },
-        { metricsContext }
+        { isUserTriggered, telemetrySource }
       );
     }
 
     /**
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup} element
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup} targetElement
-     * @param {object} [options]
-     * @param {TabMetricsContext} [options.metricsContext]
-     *   The context for the operation for telemetry purposes.
+     * @param {TabMetricsContext} [metricsContext]
      */
-    moveTabBefore(element, targetElement, { metricsContext } = {}) {
-      this.#moveTabNextTo(element, targetElement, true, { metricsContext });
+    moveTabBefore(element, targetElement, metricsContext) {
+      this.#moveTabNextTo(element, targetElement, true, metricsContext);
     }
 
     /**
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup[]} elements
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup} targetElement
-     * @param {object} [options]
-     * @param {TabMetricsContext} [options.metricsContext]
-     *   The context for the operation for telemetry purposes.
+     * @param {TabMetricsContext} [metricsContext]
      */
-    moveTabsBefore(elements, targetElement, { metricsContext } = {}) {
-      this.#moveTabsNextTo(elements, targetElement, true, { metricsContext });
+    moveTabsBefore(elements, targetElement, metricsContext) {
+      this.#moveTabsNextTo(elements, targetElement, true, metricsContext);
     }
 
     /**
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup} element
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup} targetElement
-     * @param {object} [options]
-     * @param {TabMetricsContext} [options.metricsContext]
-     *   The context for the operation for telemetry purposes.
+     * @param {TabMetricsContext} [metricsContext]
      */
-    moveTabAfter(element, targetElement, { metricsContext } = {}) {
-      this.#moveTabNextTo(element, targetElement, false, { metricsContext });
+    moveTabAfter(element, targetElement, metricsContext) {
+      this.#moveTabNextTo(element, targetElement, false, metricsContext);
     }
 
     /**
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup[]} elements
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup} targetElement
-     * @param {object} [options]
-     * @param {TabMetricsContext} [options.metricsContext]
-     *   The context for the operation for telemetry purposes.
+     * @param {TabMetricsContext} [metricsContext]
      */
-    moveTabsAfter(elements, targetElement, { metricsContext } = {}) {
-      this.#moveTabsNextTo(elements, targetElement, false, { metricsContext });
+    moveTabsAfter(elements, targetElement, metricsContext) {
+      this.#moveTabsNextTo(elements, targetElement, false, metricsContext);
     }
 
     /**
@@ -7139,16 +7182,9 @@
      *   stand-in for its group.
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup} targetElement
      * @param {boolean} [moveBefore=false]
-     * @param {object} [options]
-     * @param {TabMetricsContext} [options.metricsContext]
-     *   The context for the operation for telemetry purposes.
+     * @param {TabMetricsContext} [metricsContext]
      */
-    #moveTabNextTo(
-      element,
-      targetElement,
-      moveBefore = false,
-      { metricsContext } = {}
-    ) {
+    #moveTabNextTo(element, targetElement, moveBefore = false, metricsContext) {
       if (this.isTabGroupLabel(targetElement)) {
         targetElement = targetElement.group;
         if (!moveBefore && !targetElement.collapsed) {
@@ -7209,7 +7245,7 @@
             getContainer().appendChild(element);
           }
         },
-        { metricsContext }
+        metricsContext
       );
     }
 
@@ -7217,23 +7253,27 @@
      * @param {MozTabbrowserTab[]} elements
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup} targetElement
      * @param {boolean} [moveBefore=false]
-     * @param {object} [options]
-     * @param {TabMetricsContext} [options.metricsContext]
-     *   The context for the operation for telemetry purposes.
+     * @param {TabMetricsContext} [metricsContext]
      */
     #moveTabsNextTo(
       elements,
       targetElement,
       moveBefore = false,
-      { metricsContext } = {}
+      metricsContext
     ) {
-      this.#moveTabNextTo(elements[0], targetElement, moveBefore, {
-        metricsContext,
-      });
+      this.#moveTabNextTo(
+        elements[0],
+        targetElement,
+        moveBefore,
+        metricsContext
+      );
       for (let i = 1; i < elements.length; i++) {
-        this.#moveTabNextTo(elements[i], elements[i - 1], false, {
-          metricsContext,
-        });
+        this.#moveTabNextTo(
+          elements[i],
+          elements[i - 1],
+          false,
+          metricsContext
+        );
       }
     }
 
@@ -7273,11 +7313,9 @@
      *
      * @param {MozTabbrowserTab} aTab
      * @param {MozTabbrowserTabGroup} aGroup
-     * @param {object} [options]
-     * @param {TabMetricsContext} [options.metricsContext]
-     *   The context for the operation for telemetry purposes.
+     * @param {TabMetricsContext} [metricsContext]
      */
-    moveTabToExistingGroup(aTab, aGroup, { metricsContext } = {}) {
+    moveTabToExistingGroup(aTab, aGroup, metricsContext) {
       if (!this.isTab(aTab)) {
         throw new Error("Can only move a tab into a tab group");
       }
@@ -7292,16 +7330,18 @@
         this.#handleTabMove(
           aTab.splitview,
           () => aGroup.appendChild(aTab.splitview),
-          { metricsContext }
+          metricsContext
         );
         for (const splitViewTab of splitViewTabs) {
           this.removeFromMultiSelectedTabs(splitViewTab);
           this.tabContainer._notifyBackgroundTab(splitViewTab);
         }
       } else {
-        this.#handleTabMove(aTab, () => aGroup.appendChild(aTab), {
-          metricsContext,
-        });
+        this.#handleTabMove(
+          aTab,
+          () => aGroup.appendChild(aTab),
+          metricsContext
+        );
         this.removeFromMultiSelectedTabs(aTab);
         this.tabContainer._notifyBackgroundTab(aTab);
       }
@@ -7311,15 +7351,9 @@
      *
      * @param {MozSplitViewWrapper} aSplitView
      * @param {MozTabbrowserTabGroup} aGroup
-     * @param {object} [options]
-     * @param {TabMetricsContext} [options.metricsContext]
-     *   The context for the operation for telemetry purposes.
+     * @param {TabMetricsContext} [metricsContext]
      */
-    moveSplitViewToExistingGroup(
-      aSplitView,
-      aGroup,
-      { metricsContext = null } = {}
-    ) {
+    moveSplitViewToExistingGroup(aSplitView, aGroup, metricsContext = null) {
       if (!this.isSplitViewWrapper(aSplitView)) {
         throw new Error("Can only move a split view into a tab group");
       }
@@ -7328,9 +7362,11 @@
       }
 
       let splitViewTabs = aSplitView.tabs;
-      this.#handleTabMove(aSplitView, () => aGroup.appendChild(aSplitView), {
-        metricsContext,
-      });
+      this.#handleTabMove(
+        aSplitView,
+        () => aGroup.appendChild(aSplitView),
+        metricsContext
+      );
       for (const splitViewTab of splitViewTabs) {
         this.removeFromMultiSelectedTabs(splitViewTab);
         this.tabContainer._notifyBackgroundTab(splitViewTab);
@@ -7373,16 +7409,9 @@
      * @param {MozTabbrowserTab} tab
      * @param {TabMoveState} [previousTabState]
      * @param {TabMoveState} [currentTabState]
-     * @param {object} [options]
-     * @param {TabMetricsContext} [options.metricsContext]
-     *   The context for the operation for telemetry purposes.
+     * @param {TabMetricsContext} [metricsContext]
      */
-    #notifyOnTabMove(
-      tab,
-      previousTabState,
-      currentTabState,
-      { metricsContext } = {}
-    ) {
+    #notifyOnTabMove(tab, previousTabState, currentTabState, metricsContext) {
       if (!this.isTab(tab) || !previousTabState || !currentTabState) {
         return;
       }
@@ -7401,7 +7430,10 @@
             detail: {
               previousTabState,
               currentTabState,
-              metricsContext: metricsContext ?? this.TabMetrics.UNKNOWN_CONTEXT,
+              isUserTriggered: metricsContext?.isUserTriggered ?? false,
+              telemetrySource:
+                metricsContext?.telemetrySource ??
+                this.TabMetrics.METRIC_SOURCE.UNKNOWN,
             },
           })
         );
@@ -7409,18 +7441,16 @@
     }
 
     /** public API to the below private method */
-    handleTabMove(element, moveActionCallback, { metricsContext } = {}) {
-      this.#handleTabMove(element, moveActionCallback, { metricsContext });
+    handleTabMove(element, moveActionCallback, metricsContext) {
+      this.#handleTabMove(element, moveActionCallback, metricsContext);
     }
 
     /**
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup|MozTabSplitViewWrapper} element
      * @param {function():void} moveActionCallback
-     * @param {object} [options]
-     * @param {TabMetricsContext} [options.metricsContext]
-     *   The context for the operation for telemetry purposes.
+     * @param {TabMetricsContext} [metricsContext]
      */
-    #handleTabMove(element, moveActionCallback, { metricsContext } = {}) {
+    #handleTabMove(element, moveActionCallback, metricsContext) {
       let tabs;
       // TODO bug 2024173: consider removing element.splitview check.
       if (this.isTab(element) && element.splitview?.shouldMoveAllTabsAtOnce) {
@@ -7466,9 +7496,12 @@
         }
 
         let currentTabState = this.#getTabMoveState(tab);
-        this.#notifyOnTabMove(tab, previousTabStates[ii], currentTabState, {
-          metricsContext,
-        });
+        this.#notifyOnTabMove(
+          tab,
+          previousTabStates[ii],
+          currentTabState,
+          metricsContext
+        );
       }
 
       let currentFirst = this.#getTabMoveState(tabs[0]);
@@ -7985,20 +8018,20 @@
       }
     }
 
-    pinMultiSelectedTabs({ metricsContext } = {}) {
+    pinMultiSelectedTabs() {
       for (let tab of this.selectedTabs) {
-        this.pinTab(tab, { metricsContext });
+        this.pinTab(tab);
       }
     }
 
-    unpinMultiSelectedTabs({ metricsContext } = {}) {
+    unpinMultiSelectedTabs() {
       // The selectedTabs getter returns the tabs
       // in visual order. We need to unpin in reverse
       // order to maintain visual order.
       let selectedTabs = this.selectedTabs;
       for (let i = selectedTabs.length - 1; i >= 0; i--) {
         let tab = selectedTabs[i];
-        this.unpinTab(tab, { metricsContext });
+        this.unpinTab(tab);
       }
     }
 
