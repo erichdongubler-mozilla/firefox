@@ -289,7 +289,11 @@ class Preferences final : public nsIPrefService,
   }
 
   // Like RegisterCallback, but registers a callback for a prefix of multiple
-  // pref names, not a single pref name.
+  // pref names, not a single pref name. Matching is done on dot-segment
+  // boundaries: the callback fires for aPref itself and for any pref that
+  // extends it by one or more whole '.'-delimited segments, but not for a pref
+  // that merely shares a leading substring (e.g. a "foo.bar" prefix does not
+  // match "foo.barbaz"). A trailing '.' is optional and is normalized away.
   template <typename T = void>
   static nsresult RegisterPrefixCallback(PrefChangedFunc aCallback,
                                          const nsACString& aPref,
