@@ -1445,7 +1445,8 @@ void WebGPUParent::SwapChainPresent(
     mSharedTextures.erase(it);
 
     if (!sharedTexture->IsSubmitted()) {
-      gfxCriticalNoteOnce << "Texture is not submitted";
+      mRemoteTextureOwner->PushDummyTexture(aRemoteTextureId, aOwnerId);
+      gfxCriticalNoteOnce << "Dummy texture is submitted";
       return;
     }
 
