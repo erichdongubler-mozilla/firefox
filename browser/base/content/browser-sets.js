@@ -142,6 +142,9 @@ document.addEventListener(
               targetLanguage: "derive",
             }).catch(console.error);
             break;
+          case "cmd_editPDF":
+            switchToTabHavingURI("about:pdf", true);
+            break;
           case "Browser:AddBookmarkAs":
             PlacesCommandHook.bookmarkPage();
             break;
