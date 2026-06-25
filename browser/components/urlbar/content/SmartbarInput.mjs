@@ -6386,6 +6386,7 @@ ${
       sapName: this.sapName,
       maxResults,
       searchString,
+      excludeSponsoredResults: this.sapName === "smartbar",
       prohibitRemoteResults:
         event &&
         lazy.UrlbarUtils.isPasteEvent(event) &&

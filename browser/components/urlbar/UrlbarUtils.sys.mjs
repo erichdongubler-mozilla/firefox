@@ -3187,7 +3187,8 @@ export class UrlbarQueryContext {
      */
     const optionalProperties = [
       ["currentPage", v => typeof v == "string" && !!v.length],
-      ["prohibitRemoteResults", () => true, false],
+      ["excludeSponsoredResults", v => typeof v == "boolean", false],
+      ["prohibitRemoteResults", v => typeof v == "boolean", false],
       ["providers", v => Array.isArray(v) && !!v.length],
       ["searchMode", v => v && typeof v == "object"],
       ["sources", v => Array.isArray(v) && !!v.length],
@@ -3278,6 +3279,12 @@ export class UrlbarQueryContext {
    *   The name of the muxer to use for this query.
    */
   muxer;
+
+  /**
+   * @type {boolean}
+   *   Whether or not to exclude sponsored results.
+   */
+  excludeSponsoredResults;
 
   /**
    * @type {boolean}
