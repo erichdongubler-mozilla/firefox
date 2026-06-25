@@ -29,6 +29,8 @@ ChromeUtils.defineLazyGetter(lazy, "logger", () =>
   UrlbarUtils.getLogger({ prefix: "MuxerUnifiedComplete" })
 );
 
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
 const SEMANTIC_HISTORY_PROVIDER_NAME = "UrlbarProviderSemanticHistorySearch";
 
 /**
@@ -1168,13 +1170,18 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       lazy.UrlbarPrefs.get("deduplication.enabled") &&
       result.source == UrlbarUtils.RESULT_SOURCE.HISTORY &&
       result.type == UrlbarUtils.RESULT_TYPE.URL &&
-      !result.heuristic
+      !result.heuristic &&
+      result.payload.lastVisit
     ) {
       let { base, ref } = UrlbarUtils.extractRefFromUrl(result.payload.url);
       let baseAndTitle = `${base} ${result.payload.title}`;
       let topRef = state.baseAndTitleToTopRef.get(baseAndTitle);
 
-      if (ref != topRef) {
+      let msSinceLastVisit = Date.now() - result.payload.lastVisit;
+      let daysSinceLastVisit = msSinceLastVisit / MS_PER_DAY;
+      let thresholdDays = lazy.UrlbarPrefs.get("deduplication.thresholdDays");
+
+      if (daysSinceLastVisit >= thresholdDays && ref != topRef) {
         return false;
       }
     }
