@@ -3,15 +3,42 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
+import copy
 import datetime
 
 from mozilla_version.mobile import GeckoVersion
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.schema import resolve_keyed_by
 
-from ..build_config import get_extensions, get_path
+from ..build_config import get_component_name, get_components, get_extensions, get_path
 
+fanout_components = TransformSequence()
 transforms = TransformSequence()
+
+
+@fanout_components.add
+def fanout_components_by_build_type(config, tasks):
+    not_for_components = config.config.get("not-for-components", [])
+    (template,) = tasks
+    for component in get_components():
+        component_name = get_component_name(component)
+        if component_name in not_for_components:
+            continue
+        for build_type in ("regular", "nightly", "beta", "release"):
+            if not (component["shouldPublish"] or build_type == "regular"):
+                continue
+            name = "{}{}".format(
+                "" if build_type == "regular" else build_type + "-",
+                component_name,
+            )
+            task = copy.deepcopy(template)
+            task["name"] = name
+            task.setdefault("attributes", {}).update({
+                "build-type": build_type,
+                "component": component_name,
+                "gradle-project": component["name"],
+            })
+            yield task
 
 
 @transforms.add
