@@ -14,10 +14,7 @@ add_setup(async function () {
   twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
 
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.deduplication.enabled", true],
-      ["browser.urlbar.deduplication.thresholdDays", 1],
-    ],
+    set: [["browser.urlbar.deduplication.enabled", true]],
   });
 });
 
@@ -48,25 +45,6 @@ add_task(async function test_only_old_visits() {
   await PlacesUtils.history.clear();
 });
 
-add_task(async function test_only_recent_visits() {
-  let urlBase = "https://example.com/page1";
-  let title = "Page 1";
-  await PlacesTestUtils.addVisits([
-    { url: urlBase, title, visitDate: now },
-    { url: urlBase + "#ref1", title, visitDate: now },
-    { url: urlBase + "#ref2", title, visitDate: now },
-  ]);
-
-  info("Searching by URL");
-  await urlbarQuery(urlBase);
-  Assert.equal(await numHistoryResults(), 3, "No results got deduplicated");
-
-  info("Searching by title");
-  await urlbarQuery(title);
-  Assert.equal(await numHistoryResults(), 3, "No results got deduplicated");
-  await PlacesUtils.history.clear();
-});
-
 add_task(async function test_not_deduplicate_top_frecency() {
   let urlBase = "https://example.com/page1";
   let title = "Page 1";
@@ -88,34 +66,6 @@ add_task(async function test_not_deduplicate_top_frecency() {
     historyResults[0].url,
     "https://example.com/page1#ref1",
     "The URL with the highest frecency didn't get deduplicated"
-  );
-  await PlacesUtils.history.clear();
-});
-
-add_task(async function test_not_deduplicate_top_frecency_and_recent() {
-  let urlBase = "https://example.com/page1";
-  let title = "Page 1";
-  await PlacesTestUtils.addVisits([
-    // Recent visit should not get deduplicated.
-    { url: urlBase, title, visitDate: now },
-    // History entry with highest frecency should not get deduplicated.
-    { url: urlBase + "#ref1", title, visitDate: oneWeekAgo },
-    { url: urlBase + "#ref1", title, visitDate: twoWeeksAgo },
-    { url: urlBase + "#ref2", title, visitDate: oneWeekAgo },
-  ]);
-
-  await urlbarQuery(title);
-  let historyResults = await getResultsHavingSource(RESULT_SOURCE.HISTORY);
-  Assert.equal(historyResults.length, 2, "Only one result got deduplicated");
-  Assert.equal(
-    historyResults[0].url,
-    "https://example.com/page1#ref1",
-    "The one with the highest frecency is first and didn't get deduplicated"
-  );
-  Assert.equal(
-    historyResults[1].url,
-    "https://example.com/page1",
-    "The one with the recent visit didn't get deduplicated"
   );
   await PlacesUtils.history.clear();
 });
@@ -259,47 +209,6 @@ add_task(async function test_with_input_history() {
     urlBase + "#ref1",
     "Only the result with the highest frecency."
   );
-  await PlacesUtils.history.clear();
-});
-
-add_task(async function test_last_visit_property() {
-  // We use this because visiting a non existent page would mess up the title.
-  let urlBase =
-    "https://example.com/browser/browser/base/content/test/general/dummy_page.html";
-  let title = "Dummy test page";
-  await PlacesTestUtils.addVisits([
-    { url: urlBase, title, visitDate: now },
-    { url: urlBase + "#ref1", title, visitDate: now },
-    { url: urlBase + "#ref2", title, visitDate: now },
-  ]);
-  await UrlbarUtils.addToInputHistory(urlBase + "#ref2", "Dummy");
-
-  await loadUrl(urlBase + "#ref1");
-  let newTab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
-
-  await urlbarQuery("Dummy");
-  let tabResults = await getResultsHavingSource(RESULT_SOURCE.TABS);
-  let historyResults = await getResultsHavingSource(RESULT_SOURCE.HISTORY);
-
-  Assert.equal(tabResults.length, 1, "One tab result");
-  Assert.equal(historyResults.length, 2, "Two history results");
-  console.log(historyResults.map(r => r.result.providerName));
-  Assert.equal(
-    historyResults[0].result.providerName,
-    "UrlbarProviderInputHistory",
-    "First history result is from InputHistoryProvider"
-  );
-  Assert.ok(
-    tabResults.every(e => e.result.payload.lastVisit >= now.getTime()),
-    "The tab result has the correct lastVisit"
-  );
-  Assert.ok(
-    historyResults.every(e => e.result.payload.lastVisit == now.getTime()),
-    "All history results have the correct lastVisit"
-  );
-
-  BrowserTestUtils.removeTab(newTab);
-  await loadUrl("about:blank");
   await PlacesUtils.history.clear();
 });
 

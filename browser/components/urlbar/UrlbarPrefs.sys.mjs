@@ -603,9 +603,6 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // will be deduplicated.
   ["deduplication.enabled", true],
 
-  // How old history results have to be to be deduplicated.
-  ["deduplication.thresholdDays", 0],
-
   // semanticHistory search query minLength threshold to be enabled.
   ["suggest.semanticHistory.minLength", 5],
 
