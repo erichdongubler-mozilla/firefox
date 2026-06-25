@@ -1007,7 +1007,3 @@ WrappingOperations.h:
 XorShift128PlusRNG.h:
   types:
     - XorShift128PlusRNG
-
-MaybeFmt.h:
-  types:
-    - Maybe
