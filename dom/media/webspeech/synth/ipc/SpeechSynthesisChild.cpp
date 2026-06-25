@@ -278,6 +278,8 @@ SpeechTaskChild::SpeechTaskChild(SpeechSynthesisUtterance* aUtterance,
                                  bool aShouldResistFingerprinting)
     : nsSpeechTask(aUtterance, aShouldResistFingerprinting), mActor(nullptr) {}
 
+SpeechTaskChild::~SpeechTaskChild() { StopMediaControl(); }
+
 NS_IMETHODIMP
 SpeechTaskChild::Setup(nsISpeechTaskCallback* aCallback) {
   MOZ_CRASH("Should never be called from child");

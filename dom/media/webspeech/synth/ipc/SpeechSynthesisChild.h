@@ -109,6 +109,8 @@ class SpeechTaskChild : public nsSpeechTask {
   void ResumeFromMediaControl();
 
  protected:
+  virtual ~SpeechTaskChild();
+
   void StartMediaControl() override;
   void StopMediaControl() override;
 
