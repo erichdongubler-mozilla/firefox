@@ -25,9 +25,9 @@
 #include "mozilla/TaskQueue.h"
 #include "mozilla/gfx/gfxVars.h"
 
-#define LOG(...) DDMOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, __VA_ARGS__)
+#define LOG(...) DDMOZ_LOG_FMT(sPDMLog, mozilla::LogLevel::Debug, __VA_ARGS__)
 #define LOGEX(_this, ...) \
-  DDMOZ_LOGEX(_this, sPDMLog, mozilla::LogLevel::Debug, __VA_ARGS__)
+  DDMOZ_LOGEX_FMT(_this, sPDMLog, mozilla::LogLevel::Debug, __VA_ARGS__)
 
 namespace mozilla {
 
@@ -83,7 +83,7 @@ AppleVTDecoder::AppleVTDecoder(const VideoInfo& aConfig,
       mIsHardwareAccelerated(false) {
   MOZ_COUNT_CTOR(AppleVTDecoder);
   MOZ_ASSERT(mStreamType != StreamType::Unknown);
-  LOG("Creating AppleVTDecoder for %dx%d %s video, mMaxRefFrames=%u",
+  LOG("Creating AppleVTDecoder for {}x{} {} video, mMaxRefFrames={}",
       mDisplayWidth, mDisplayHeight, EnumValueToString(mStreamType),
       mMaxRefFrames);
 }
@@ -103,7 +103,7 @@ RefPtr<MediaDataDecoder::InitPromise> AppleVTDecoder::Init() {
 
 RefPtr<MediaDataDecoder::DecodePromise> AppleVTDecoder::Decode(
     MediaRawData* aSample) {
-  LOG("mp4 input sample %p pts %lld duration %lld us%s %zu bytes", aSample,
+  LOG("mp4 input sample {} pts {} duration {} us{} {} bytes", fmt::ptr(aSample),
       aSample->mTime.ToMicroseconds(), aSample->mDuration.ToMicroseconds(),
       aSample->mKeyframe ? " keyframe" : "", aSample->Size());
 
@@ -258,7 +258,7 @@ void AppleVTDecoder::ProcessDecode(MediaRawData* aSample) {
     if (mSeekTargetThreshold.isSome() &&
         (aSample->mTime + aSample->mDuration) < mSeekTargetThreshold.ref()) {
       decodeFlags |= kVTDecodeFrame_DoNotOutputFrame;
-      LOG("seek skip: decoding pts %lld for reference only (no output)",
+      LOG("seek skip: decoding pts {} for reference only (no output)",
           aSample->mTime.ToMicroseconds());
     }
   }
@@ -273,7 +273,7 @@ void AppleVTDecoder::ProcessDecode(MediaRawData* aSample) {
   }
 
   if (rv != noErr) {
-    LOG("AppleVTDecoder: Error %d VTDecompressionSessionDecodeFrame", rv);
+    LOG("AppleVTDecoder: Error {} VTDecompressionSessionDecodeFrame", rv);
     NS_WARNING("Couldn't pass frame to decoder");
     // It appears that even when VTDecompressionSessionDecodeFrame returned a
     // failure. Decoding sometimes actually get processed.
@@ -289,12 +289,12 @@ void AppleVTDecoder::ProcessDecode(MediaRawData* aSample) {
 void AppleVTDecoder::ProcessShutdown() {
   AUTO_PROFILER_LABEL("AppleVTDecoder::ProcessShutdown", MEDIA_PLAYBACK);
   if (mSession) {
-    LOG("%s: cleaning up session", __func__);
+    LOG("{}: cleaning up session", __func__);
     VTDecompressionSessionInvalidate(mSession);
     mSession.Reset();
   }
   if (mFormat) {
-    LOG("%s: releasing format", __func__);
+    LOG("{}: releasing format", __func__);
     mFormat.Reset();
   }
 }
@@ -361,8 +361,8 @@ static void PlatformCallback(void* decompressionOutputRefCon,
                              CMTime presentationDuration) {
   AppleVTDecoder* decoder =
       static_cast<AppleVTDecoder*>(decompressionOutputRefCon);
-  LOGEX(decoder, "AppleVideoDecoder %s status %d flags %d", __func__,
-        static_cast<int>(status), flags);
+  LOGEX(decoder, "AppleVideoDecoder {} status {} flags {}", __func__,
+        static_cast<int>(status), static_cast<int>(flags));
 
   UniquePtr<AppleVTDecoder::AppleFrameRef> frameRef(
       static_cast<AppleVTDecoder::AppleFrameRef*>(sourceFrameRefCon));
@@ -423,7 +423,7 @@ void AppleVTDecoder::OutputFrame(CVPixelBufferRef aImage,
     return;
   }
 
-  LOG("mp4 output frame %lld dts %lld pts %lld duration %lld us%s",
+  LOG("mp4 output frame {} dts {} pts {} duration {} us{}",
       aFrameRef.byte_offset, aFrameRef.decode_timestamp.ToMicroseconds(),
       aFrameRef.composition_timestamp.ToMicroseconds(),
       aFrameRef.duration.ToMicroseconds(),
@@ -635,7 +635,7 @@ void AppleVTDecoder::OutputFrame(CVPixelBufferRef aImage,
   mReorderQueue.Push(std::move(data));
   MaybeResolveBufferedFrames();
 
-  LOG("%llu decoded frames queued",
+  LOG("{} decoded frames queued",
       static_cast<unsigned long long>(mReorderQueue.Length()));
 }
 
@@ -694,7 +694,7 @@ MediaResult AppleVTDecoder::InitializeSession() {
                                    &cb, mSession.Receive());
 
   if (rv != noErr) {
-    LOG("AppleVTDecoder: VTDecompressionSessionCreate failed: %d", rv);
+    LOG("AppleVTDecoder: VTDecompressionSessionCreate failed: {}", rv);
     return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                        RESULT_DETAIL("Couldn't create decompression session!"));
   }
@@ -706,11 +706,11 @@ MediaResult AppleVTDecoder::InitializeSession() {
       kCFAllocatorDefault, &isUsingHW);
   if (rv == noErr) {
     mIsHardwareAccelerated = isUsingHW == kCFBooleanTrue;
-    LOG("AppleVTDecoder: %s hardware accelerated decoding",
+    LOG("AppleVTDecoder: {} hardware accelerated decoding",
         mIsHardwareAccelerated ? "using" : "not using");
   } else {
     LOG("AppleVTDecoder: maybe hardware accelerated decoding "
-        "(VTSessionCopyProperty query failed %d)",
+        "(VTSessionCopyProperty query failed {})",
         static_cast<int>(rv));
   }
   if (isUsingHW) {
