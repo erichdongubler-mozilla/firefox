@@ -17341,7 +17341,7 @@
 # Whether we should try to use skpdf for pdf output.
 - name: print.experimental.skpdf
   type: RelaxedAtomicBool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # Encoding quality for images. 101 means lossless, otherwise they get
