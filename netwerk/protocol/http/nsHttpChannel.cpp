@@ -6022,7 +6022,13 @@ void nsHttpChannel::CloseCacheEntry(bool doomOnFailure) {
   // partial cache entry is complete.
 
   bool doom = false;
-  if (LoadInitedCacheEntry()) {
+  if (mChannelBlockedByOpaqueResponse && mCachedOpaqueResponseBlockingPref) {
+    // A response blocked by ORB is fully written to the cache before the block
+    // decision is made, so it must be doomed here; otherwise it lingers as a
+    // complete entry that a same-partition request (e.g. a navigation reusing a
+    // prefetch) could consume.
+    doom = true;
+  } else if (LoadInitedCacheEntry()) {
     MOZ_ASSERT(mResponseHead, "oops");
     if (NS_FAILED(mStatus) && doomOnFailure && LoadCacheEntryIsWriteOnly() &&
         (!mResponseHead || !mResponseHead->IsResumable())) {
@@ -6068,6 +6074,13 @@ void nsHttpChannel::CloseCacheEntry(bool doomOnFailure) {
         }
       }
     }
+
+    // ORB's JavaScript validation finishes asynchronously, after this point,
+    // so the response may yet be blocked. Keep a reference to the committed
+    // entry so CancelInternal() can doom it if that happens.
+    if (mORB && mORB->IsSniffing()) {
+      mORBValidationCacheEntry = mCacheEntry;
+    }
   }
 
   mCachedResponseHead = nullptr;
@@ -6080,6 +6093,15 @@ void nsHttpChannel::CloseCacheEntry(bool doomOnFailure) {
   mCacheEntry = nullptr;
   StoreCacheEntryIsWriteOnly(false);
   StoreInitedCacheEntry(false);
+}
+
+void nsHttpChannel::OnOpaqueResponseAllowed() {
+  // mORBValidationCacheEntry is only ever touched on the main thread; this
+  // relies on ORB delivering its validation verdict there.
+  MOZ_ASSERT(NS_IsMainThread());
+  // ORB allowed the response, so the entry we kept in case it had to be doomed
+  // (see CloseCacheEntry) can stay in the cache; drop our reference to it.
+  mORBValidationCacheEntry = nullptr;
 }
 
 // Initialize the cache entry for writing.
@@ -7303,6 +7325,15 @@ nsresult nsHttpChannel::CancelInternal(nsresult status) {
   mWebTransportSessionEventListener = nullptr;
   mCanceled = true;
   mStatus = NS_FAILED(status) ? status : NS_ERROR_ABORT;
+
+  // If ORB blocked this response, doom the entry that was committed to the
+  // cache before the (asynchronous) block decision, so it can't be reused
+  // later (e.g. a navigation consuming a prefetched, ORB-blocked cross-origin
+  // document). See bug 2045809.
+  if (mChannelBlockedByOpaqueResponse && mORBValidationCacheEntry) {
+    mORBValidationCacheEntry->AsyncDoom(nullptr);
+    mORBValidationCacheEntry = nullptr;
+  }
 
   // If we're waiting for LNA permission result and the channel is being
   // cancelled, we need to call OnPermissionPromptResult with permission denied

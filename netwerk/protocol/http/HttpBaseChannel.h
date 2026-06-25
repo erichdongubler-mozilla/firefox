@@ -715,6 +715,9 @@ class HttpBaseChannel : public nsHashPropertyBag,
       const OpaqueResponseBlockedTelemetryReason aTelemetryReason);
   void AllowOpaqueResponseAfterSniff();
   void SetChannelBlockedByOpaqueResponse();
+  // Called when ORB allows a response after its asynchronous validation.
+  // Subclasses that retained state pending the validation can release it here.
+  virtual void OnOpaqueResponseAllowed() {}
   bool Http3Allowed() const;
 
   virtual void ExplicitSetUploadStreamLength(uint64_t aContentLength,
