@@ -3946,6 +3946,8 @@ bool nsBlockFrame::ReflowLine(BlockReflowState& aState, LineIterator aLine,
   aLine->ClearDirty();
   aLine->InvalidateCachedIsEmpty();
   aLine->ClearHadFloatPushed();
+  aLine->ClearTextBoxTrimStartApplied();
+  aLine->ClearTextBoxTrimEndApplied();
 
   // If this line contains a single block that is hidden by `content-visibility`
   // don't reflow the line. If this line contains inlines and the first one is
@@ -3958,6 +3960,11 @@ bool nsBlockFrame::ReflowLine(BlockReflowState& aState, LineIterator aLine,
   if (firstChild->IsHiddenByContentVisibilityOfInFlowParentForLayout() &&
       !HasAnyStateBits(NS_FRAME_OWNS_ANON_BOXES)) {
     return false;
+  }
+
+  // Clear the trim-start flag if the line is not the first formatted line
+  if (aState.mFlags.mShouldApplyTextBoxTrimStart && aState.mLineNumber > 0) {
+    aState.mFlags.mShouldApplyTextBoxTrimStart = false;
   }
 
   // Now that we know what kind of line we have, reflow it
@@ -3989,6 +3996,15 @@ bool nsBlockFrame::ReflowLine(BlockReflowState& aState, LineIterator aLine,
   }
 
   aLine->ClearMovedFragments();
+
+  // If text-box-trim was applied on the start/end side, clear the
+  // state flags to prevent checking trim eligibility for later siblings.
+  if (aLine->TextBoxTrimStartApplied()) {
+    aState.mFlags.mShouldApplyTextBoxTrimStart = false;
+  }
+  if (aLine->TextBoxTrimEndApplied()) {
+    aState.mFlags.mShouldApplyTextBoxTrimEnd = false;
+  }
 
   return usedOverflowWrap;
 }
@@ -4591,6 +4607,20 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
 
     childReflowInput->mFlags.mColumnSetWrapperHasNoBSizeLeft =
         columnSetWrapperHasNoBSizeLeft;
+
+    // Propagate requested text-box-trim sides down to the reflowing child.
+    // Any intervening border and padding on the corresponding trim side
+    // prevents application of trimming.
+    // https://drafts.csswg.org/css-inline-3/#text-box-trim
+    const WritingMode childWM = frame->GetWritingMode();
+    const LogicalMargin childBP =
+        childReflowInput->ComputedLogicalBorderPadding(childWM);
+    childReflowInput->mFlags.mShouldApplyTextBoxTrimStart =
+        aState.mFlags.mShouldApplyTextBoxTrimStart &&
+        childBP.BStart(childWM) == 0 && aState.mLineNumber == 0;
+    childReflowInput->mFlags.mShouldApplyTextBoxTrimEnd =
+        aState.mFlags.mShouldApplyTextBoxTrimEnd &&
+        childBP.BEnd(childWM) == 0 && IsLastFormattedLine(aLine);
 
     if (aLine->MovedFragments()) {
       // We only need to set this the first reflow, since if we reflow
@@ -5602,7 +5632,7 @@ void nsBlockFrame::SplitLine(BlockReflowState& aState,
   }
 }
 
-bool nsBlockFrame::IsLastLine(BlockReflowState& aState, LineIterator aLine) {
+bool nsBlockFrame::IsLastInlineLine(LineIterator aLine) {
   while (++aLine != LinesEnd()) {
     // There is another line
     if (0 != aLine->GetChildCount()) {
@@ -5625,6 +5655,24 @@ bool nsBlockFrame::IsLastLine(BlockReflowState& aState, LineIterator aLine) {
   }
 
   // This is the last line - so don't allow justification
+  return true;
+}
+
+bool nsBlockFrame::IsLastFormattedLine(LineIterator aLine) {
+  for (LineIterator line = aLine.next(); line != LinesEnd(); ++line) {
+    if (line->GetChildCount() > 0 && (line->IsBlock() || !line->IsPhantom())) {
+      return false;
+    }
+  }
+  nsBlockFrame* nextInFlow = (nsBlockFrame*)GetNextInFlow();
+  while (nextInFlow) {
+    for (const auto& line : nextInFlow->Lines()) {
+      if (line.GetChildCount() > 0 && (line.IsBlock() || !line.IsPhantom())) {
+        return false;
+      }
+    }
+    nextInFlow = (nsBlockFrame*)nextInFlow->GetNextInFlow();
+  }
   return true;
 }
 
@@ -5664,7 +5712,13 @@ bool nsBlockFrame::PlaceLine(BlockReflowState& aState,
     aLineLayout.AddMarkerFrame(outsideMarker, metrics);
     addedMarker = true;
   }
-  aLineLayout.VerticalAlignLine();
+
+  // Determines if the current line is the last formatted line of the block.
+  // As this is required only for text-box-trim, this value is only meaningful
+  // when the block is requesting trimming on the block end side.
+  bool isLastFormattedLine =
+      aState.mFlags.mShouldApplyTextBoxTrimEnd && IsLastFormattedLine(aLine);
+  aLineLayout.VerticalAlignLine(&aFlowArea, isLastFormattedLine);
 
   // We want to consider the floats in the current line when determining
   // whether the float available space is shrunk. If mLineBSize doesn't
@@ -5757,14 +5811,14 @@ bool nsBlockFrame::PlaceLine(BlockReflowState& aState,
    * We don't care checking for IsLastLine properly if we don't care (if it
    * can't change the used text-align value for the line).
    *
-   * In other words, isLastLine really means isLastLineAndWeCare.
+   * In other words, isLastInlineLine really means isLastInlineLineAndWeCare.
    */
-  const bool isLastLine =
+  const bool isLastInlineLine =
       !IsInSVGTextSubtree() &&
       styleText->TextAlignForLastLine() != styleText->mTextAlign &&
-      (aLineLayout.GetLineEndsInBR() || IsLastLine(aState, aLine));
+      (aLineLayout.GetLineEndsInBR() || IsLastInlineLine(aLine));
 
-  aLineLayout.TextAlignLine(aLine, isLastLine);
+  aLineLayout.TextAlignLine(aLine, isLastInlineLine);
 
   // From here on, pfd->mBounds rectangles are incorrect because bidi
   // might have moved frames around!
