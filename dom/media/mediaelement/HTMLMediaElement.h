@@ -587,20 +587,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   virtual bool IsVideo() const { return false; }
 
-  bool IsLazyLoading() const { return mLazyLoading; }
-
-  enum class StartLoad : bool { No, Yes };
-
-  // Starts observing the element for lazy media loading.
-  void SetLazyLoading();
-
-  // Stops lazy media loading and optionally starts the deferred load.
-  void StopLazyLoading(StartLoad);
-
-  void SetLoading(const nsAString& aLoading, ErrorResult& aError) {
-    SetHTMLAttr(nsGkAtoms::loading, aLoading, aError);
-  }
-
   bool HasVideo() const { return mMediaInfo.HasVideo(); }
 
   bool IsEncrypted() const override { return mIsEncrypted; }
@@ -1887,15 +1873,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   bool mPendingTextTrackChanged = false;
 
   Visibility mVisibilityState = Visibility::Untracked;
-
-  // Internal state for the media lazy-loading steps:
-  // https://html.spec.whatwg.org/multipage/media.html#lazy-loading-attributes
-  // True while the element is registered for lazy loading and its load is
-  // deferred.
-  bool mLazyLoading = false;
-  // True once lazy loading has been performed; prevents re-activation after
-  // seek or explicit load().
-  bool mLazyLoadingCompleted = false;
 
  public:
   // This function will be called whenever a text track that is in a media

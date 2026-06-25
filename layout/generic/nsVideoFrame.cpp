@@ -110,14 +110,7 @@ nsresult nsVideoFrame::CreateAnonymousContent(
     NS_ENSURE_TRUE(nodeInfo, NS_ERROR_OUT_OF_MEMORY);
     mPosterImage = NS_NewHTMLImageElement(nodeInfo.forget());
     NS_ENSURE_TRUE(mPosterImage, NS_ERROR_OUT_OF_MEMORY);
-
-    auto* videoElement = static_cast<HTMLVideoElement*>(GetContent());
-
-    if (!videoElement->IsLazyLoading()) {
-      // Defer poster source update until lazy loading ends.
-      // UpdatePosterSource is called by StopLazyLoading.
-      UpdatePosterSource(false);
-    }
+    UpdatePosterSource(false);
 
     // XXX(Bug 1631371) Check if this should use a fallible operation as it
     // pretended earlier.
@@ -539,12 +532,7 @@ nsresult nsVideoFrame::AttributeChanged(int32_t aNameSpaceID,
                                         nsAtom* aAttribute,
                                         AttrModType aModType) {
   if (aAttribute == nsGkAtoms::poster && HasVideoElement()) {
-    auto* element = static_cast<HTMLVideoElement*>(GetContent());
-    if (!element->IsLazyLoading()) {
-      // Defer poster source update until lazy loading ends.
-      // UpdatePosterSource is called by StopLazyLoading.
-      UpdatePosterSource(true);
-    }
+    UpdatePosterSource(true);
   }
   return nsContainerFrame::AttributeChanged(aNameSpaceID, aAttribute, aModType);
 }
