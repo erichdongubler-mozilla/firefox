@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/dom/SpeculationRules.h"
+#include "mozilla/dom/SpeculationRuleSet.h"
 
 #include "js/friend/ErrorMessages.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -10,16 +10,17 @@
 
 namespace mozilla::dom {
 
-/* static */ void SpeculationRules::operator delete(void* aSpeculationRules) {
-  speculation_rules_destroy(
-      reinterpret_cast<SpeculationRules*>(aSpeculationRules));
+/* static */ void SpeculationRuleSet::operator delete(
+    void* aSpeculationRuleSet) {
+  speculation_rule_set_destroy(
+      reinterpret_cast<SpeculationRuleSet*>(aSpeculationRuleSet));
 }
 
 // https://html.spec.whatwg.org/#parse-a-speculation-rule-set-string
 /* static */
-Result<UniquePtr<SpeculationRules>, SpeculationRuleParseError>
-SpeculationRules::Parse(const nsACString& aSource, nsIURI* aDocumentBaseUri,
-                        nsIURI* aBaseUri) {
+Result<UniquePtr<SpeculationRuleSet>, SpeculationRuleParseError>
+SpeculationRuleSet::Parse(const nsACString& aSource, nsIURI* aDocumentBaseUri,
+                          nsIURI* aBaseUri) {
   MOZ_ASSERT(aDocumentBaseUri && aBaseUri);
   nsAutoCString documentBaseUri;
   aDocumentBaseUri->GetSpec(documentBaseUri);
@@ -27,16 +28,16 @@ SpeculationRules::Parse(const nsACString& aSource, nsIURI* aDocumentBaseUri,
   aBaseUri->GetSpec(baseUri);
 
   SpeculationRuleParseError parseError = SpeculationRuleParseError::None;
-  SpeculationRules* parsedRules = parse_speculation_rules(
+  SpeculationRuleSet* parsedRuleSet = parse_speculation_rule_set(
       &aSource, &documentBaseUri, &baseUri, &parseError);
-  if (!parsedRules) {
+  if (!parsedRuleSet) {
     // Steps 2 and 5.1
     return Err(parseError);
   }
-  return UniquePtr<SpeculationRules>(parsedRules);
+  return UniquePtr<SpeculationRuleSet>(parsedRuleSet);
 }
 
-/* static */ void SpeculationRules::ReportParseError(
+/* static */ void SpeculationRuleSet::ReportParseError(
     nsIGlobalObject* aGlobal, SpeculationRuleParseError aError) {
   MOZ_ASSERT(aGlobal);
   MOZ_ASSERT(aError != SpeculationRuleParseError::None);

@@ -62,7 +62,7 @@
 #include "mozilla/dom/SRILogHelper.h"
 #include "mozilla/dom/ScriptDecoding.h"  // mozilla::dom::ScriptDecoding
 #include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/SpeculationRules.h"
+#include "mozilla/dom/SpeculationRuleSet.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/glean/DomMetrics.h"
 #include "mozilla/net/ChannelClassifierUtils.h"
@@ -1931,7 +1931,7 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
     //    result given source text and el's node document.
     nsAutoString source;
     aElement->GetScriptText(source);
-    auto speculationRulesResult = SpeculationRules::Parse(
+    auto speculationRuleSetResult = SpeculationRuleSet::Parse(
         NS_ConvertUTF16toUTF8(source), request->BaseURL(), request->BaseURL());
 
     // Like in the import map case above, we register the speculation rules here
@@ -1943,20 +1943,20 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
     //  "speculationrules":
     //    1. Register speculation rules given el's relevant global object and
     //    el's result.
-    if (speculationRulesResult.isErr()) {
+    if (speculationRuleSetResult.isErr()) {
       // https://html.spec.whatwg.org/#register-speculation-rules
       // Step 1.2.
       nsCOMPtr<nsIScriptGlobalObject> global = GetScriptGlobalObject();
       if (!global) {
         return false;
       }
-      SpeculationRules::ReportParseError(global,
-                                         speculationRulesResult.unwrapErr());
+      SpeculationRuleSet::ReportParseError(
+          global, speculationRuleSetResult.unwrapErr());
       return false;
     }
 
-    mDocument->RegisterSpeculationRulesFromScript(
-        aElement, speculationRulesResult.unwrap());
+    mDocument->RegisterSpeculationRuleSetFromScript(
+        aElement, speculationRuleSetResult.unwrap());
     return false;
   }
 
