@@ -55,4 +55,8 @@
 .secondary-action {
   visibility: hidden;
   margin-inline-start: auto;
+
+  &.selected {
+    visibility: visible;
+  }
 }
