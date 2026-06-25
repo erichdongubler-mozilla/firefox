@@ -109,7 +109,7 @@ add_task(async function run_test() {
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token
   );
-  token.changePassword("", "password");
+  await token.changePassword("", "password");
   await token.logout();
 
   // Sanity check the CA cert is missing.

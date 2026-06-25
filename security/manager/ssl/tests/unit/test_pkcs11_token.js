@@ -72,7 +72,7 @@ add_task(async function run_test() {
   );
 
   let initialPW = "foo 1234567890`~!@#$%^&*()-_=+{[}]|\\:;'\",<.>/? 一二三";
-  token.changePassword("", initialPW);
+  await token.changePassword("", initialPW);
   await token.login();
   ok(token.isLoggedIn, "Token should now be logged into");
 

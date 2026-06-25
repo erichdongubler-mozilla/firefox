@@ -1,5 +1,4 @@
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -58,14 +57,14 @@ interface nsIPKCS11Token : nsISupports
   void reset();
 
   /**
-   * Changes the user pin (password) on the token. If no password has been set
-   * and `oldPassword` is empty, initializes the password to `newPassword`.
-   * Otherwise, if `oldPassword` is the current password, changes it to
-   * `newPassword`.
+   * Returns a promise that resolves when the user pin (password) has been
+   * changed on the token. If no password has been set and `oldPassword` is
+   * empty, initializes the password to `newPassword`. Otherwise, if
+   * `oldPassword` is the current password, changes it to `newPassword`.
    * Tokens with protected authentication paths are not supported.
    */
-  [must_use]
-  void changePassword(in AUTF8String oldPassword, in AUTF8String newPassword);
+  [implicit_jscontext, must_use]
+  Promise changePassword(in AUTF8String oldPassword, in AUTF8String newPassword);
 
   /**
    * True if a password can be set on this token, and false otherwise.

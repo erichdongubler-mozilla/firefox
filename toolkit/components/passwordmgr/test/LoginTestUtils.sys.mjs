@@ -520,7 +520,7 @@ LoginTestUtils.primaryPassword = {
         Ci.nsIPKCS11Token
       );
       dump("MP change from " + oldPW + " to " + newPW + "\n");
-      token.changePassword(oldPW, newPW);
+      await token.changePassword(oldPW, newPW);
       if (!stayLoggedIn) {
         await token.logout();
       }
