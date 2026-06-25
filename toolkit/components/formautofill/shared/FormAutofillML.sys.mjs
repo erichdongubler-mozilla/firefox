@@ -50,18 +50,33 @@ export class FormAutofillML {
       }
     }
 
-    for (let fd of fieldDetails) {
-      if (fd.fieldName || !fd.mlData) {
-        continue;
+    // Create a list of fields that have tokens and don't already have
+    // a field name assigned and set that as fdList. The inputData array
+    // will contain a list of the tokens, one for each field to identify.
+    let fdList = [],
+      inputData = [];
+    fieldDetails.map(fd => {
+      if (!fd.fieldName && fd.mlData) {
+        fdList.push(fd);
+        inputData.push(fd.mlData);
       }
+    });
 
-      const request = {
-        args: [fd.mlData],
-        options: { pooling: "mean", normalize: true },
-      };
+    if (!inputData.length) {
+      return; // No fields to identify.
+    }
 
-      let result = await this.#engine.run(request);
-      let fieldName = result[0].label;
+    const request = {
+      args: [inputData],
+      options: { pooling: "mean", normalize: true },
+    };
+
+    let result = await this.#engine.run(request);
+
+    for (let r = 0; r < result.length; r++) {
+      let fd = fdList[r];
+
+      let fieldName = result[r].label;
       if (fieldName && fieldName != "other") {
         fd.fieldName = fieldName;
       }
