@@ -2777,15 +2777,8 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
   }
 }
 
-/* The list of tabs is in its own panel-subview-body which will scroll. We don't
-   want any padding below the scrollbar, so remove the bottom padding
-   from the outer panel-subview-body. */
-#allTabsMenu-allTabsView > .panel-subview-body {
-  padding-bottom: 0;
-}
-
 #allTabsMenu-allTabsView-tabs {
-  padding-top: 0;
+  padding-block: 0;
 }
 
 #allTabsMenu-dropIndicatorHolder {
