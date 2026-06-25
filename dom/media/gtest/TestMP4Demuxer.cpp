@@ -590,8 +590,8 @@ TEST(MP4Demuxer, GetNextKeyframe)
 }
 
 // Generated with open GOP so non-first keyframes are CRA_NUT, not IDR:
-//   ffmpeg -f lavfi -i testsrc=duration=4:size=128x96:rate=30 \
-//     -c:v libx265 -x265-params keyint=30:min-keyint=30:open-gop=1:info=0 \
+//   ffmpeg -f lavfi -i testsrc=duration=4:size=128x96:rate=30
+//     -c:v libx265 -x265-params keyint=30:min-keyint=30:open-gop=1:info=0
 //     -an test_hevc_open_gop.mp4
 // Sample 1 is IDR_N_LP; samples 28, 60, 88 are CRA_NUT.
 // H265::IsKeyFrame() returns true only for IDR_W_RADL/IDR_N_LP, not CRA.
