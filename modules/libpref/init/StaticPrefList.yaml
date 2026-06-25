@@ -15273,6 +15273,13 @@
   value: true
   mirror: always
 
+# When false, negative (NXDOMAIN/NODATA) A/AAAA cache entries are served from
+# cache without an async re-resolution on every use.
+- name: network.dns.refresh_negative_addr_on_use
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 # When true, DNS resolutions will downgrade DNS
 # from AF_UNSPEC to AF_INET when no non-local IPv6 addresses are
 # available.

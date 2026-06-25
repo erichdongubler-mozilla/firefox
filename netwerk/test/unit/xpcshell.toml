@@ -645,6 +645,8 @@ skip-if = [
 
 ["test_dns_localredirect.js"]
 
+["test_dns_negative_refresh_on_use.js"]
+
 ["test_dns_offline.js"]
 
 ["test_dns_onion.js"]

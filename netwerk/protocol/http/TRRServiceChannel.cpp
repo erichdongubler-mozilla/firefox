@@ -732,6 +732,12 @@ void TRRServiceChannel::MaybeStartDNSPrefetch() {
   if (mCaps & NS_HTTP_REFRESH_DNS) {
     dnsFlags |= nsIDNSService::RESOLVE_BYPASS_CACHE;
   }
+  // When negative addr entries are no longer refreshed on use, refuse a cached
+  // negative for the DoH server so TRR can't get stuck on a transient negative
+  // for the negative-record TTL.
+  if (!StaticPrefs::network_dns_refresh_negative_addr_on_use()) {
+    dnsFlags |= nsIDNSService::RESOLVE_REFRESH_NEGATIVE_CACHE;
+  }
   nsresult rv = mDNSPrefetch->PrefetchHigh(dnsFlags);
   NS_ENSURE_SUCCESS_VOID(rv);
 }
