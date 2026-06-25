@@ -2403,13 +2403,23 @@ class Document : public nsINode,
    * Create an element with the specified name, prefix and namespace ID.
    * Returns null if element name parsing failed.
    */
-  already_AddRefed<Element> CreateElem(const nsAString& aName, nsAtom* aPrefix,
-                                       int32_t aNamespaceID,
-                                       const nsAString* aIs = nullptr);
+  already_AddRefed<Element> CreateElem(
+      const nsAString& aName, nsAtom* aPrefix, int32_t aNamespaceID,
+      const nsAString* aIs = nullptr,
+      mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
+          aCustomElementRegistry = mozilla::Nothing());
 
   // https://dom.spec.whatwg.org/#effective-global-custom-element-registry
   mozilla::dom::CustomElementRegistry*
   GetEffectiveGlobalCustomElementRegistry();
+
+  // Whether this document is the key of a scoped custom element registry.
+  bool HasScopedCustomElementRegistry() const {
+    return mHasScopedCustomElementRegistry;
+  }
+  void SetHasScopedCustomElementRegistry(bool aValue) {
+    mHasScopedCustomElementRegistry = aValue;
+  }
 
   /**
    * Get the security info (i.e. SSL state etc) that the document got
@@ -4316,6 +4326,10 @@ class Document : public nsINode,
   virtual bool UseWidthDeviceWidthFallbackViewport() const;
 
  private:
+  void FlattenElementCreationOptions(
+      const ElementCreationOptionsOrString& aOptions, const nsString*& aIs,
+      Maybe<RefPtr<CustomElementRegistry>>& aDocumentRegistry, ErrorResult& rv);
+
   bool IsErrorPage() const;
 
   // Notifies the pres context that an image we track may have started or
@@ -5332,6 +5346,10 @@ class Document : public nsINode,
   // If true, mFocusNavigationStartingPoint is the previously-focused element's
   // previous sibling in the flat tree.
   bool mWasFocusedElementRemoved : 1;
+
+  // True if this document is the key of a scoped custom element registry. Lets
+  // HasScopedRegistry() answer cheaply without a hash lookup.
+  bool mHasScopedCustomElementRegistry : 1;
 
   // The fingerprinting protections overrides for this document. The value will
   // override the default enabled fingerprinting protections for this document.

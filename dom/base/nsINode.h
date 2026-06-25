@@ -83,6 +83,7 @@ template <typename T>
 class AncestorsOfTypeIterator;
 struct BoxQuadOptions;
 struct ConvertCoordinateOptions;
+class CustomElementRegistry;
 class DocGroup;
 class Document;
 class DocumentFragment;
@@ -2329,6 +2330,10 @@ class nsINode : public mozilla::dom::EventTarget {
   void ClearHasCustomElementData() {
     ClearBoolFlag(ElementHasCustomElementData);
   }
+
+  // Whether looking up a custom element registry for this node would yield a
+  // scoped (non-global) registry.
+  inline bool HasScopedRegistry() const;
 
   void SetElementCreatedFromPrototypeAndHasUnmodifiedL10n() {
     SetBoolFlag(ElementCreatedFromPrototypeAndHasUnmodifiedL10n);

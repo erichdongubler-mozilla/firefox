@@ -1400,6 +1400,7 @@ Document::Document(const char* aContentType,
       mHasBeenRevealed(false),
       mAutoSizesEnabled(StaticPrefs::dom_image_sizes_auto_enabled()),
       mWasFocusedElementRemoved(false),
+      mHasScopedCustomElementRegistry(false),
       mXMLDeclarationBits(0),
       mOnloadBlockCount(0),
       mWriteLevel(0),
@@ -9020,6 +9021,49 @@ bool IsLowercaseASCII(const nsAString& aValue) {
   return true;
 }
 
+// https://dom.spec.whatwg.org/#flatten-element-creation-options
+void Document::FlattenElementCreationOptions(
+    const ElementCreationOptionsOrString& aOptions, const nsString*& aIs,
+    Maybe<RefPtr<CustomElementRegistry>>& aRegistry, ErrorResult& rv) {
+  // 1. Let registry be the result of looking up a custom element registry given
+  // document.
+  // (This is handled implicitly by aRegistry being Nothing())
+
+  // 2. Let is be null.
+
+  // 3. If options is a dictionary:
+  if (!aOptions.IsElementCreationOptions()) {
+    return;
+  }
+  const ElementCreationOptions& options =
+      aOptions.GetAsElementCreationOptions();
+
+  // 3.1. If options["is"] exists, then set is to it.
+  if (options.mIs.WasPassed()) {
+    aIs = &options.mIs.Value();
+  }
+  // 3.2. If options["customElementRegistry"] exists:
+  if (options.mCustomElementRegistry.WasPassed()) {
+    // 3.2.1. If is is non-null, then throw a "NotSupportedError" DOMException.
+    if (aIs) {
+      rv.ThrowNotSupportedError(
+          "Cannot specify both 'is' and 'customElementRegistry' options");
+      return;
+    }
+    // 3.2.2. Set registry to options["customElementRegistry"].
+    aRegistry.emplace(options.mCustomElementRegistry.Value());
+    CustomElementRegistry* registry = aRegistry.ref();
+    // 3.3. If registry is non-null, registry’s is scoped is false, and registry
+    // is not document’s custom element registry, then throw a
+    // "NotSupportedError" DOMException.
+    if (registry && !registry->IsScoped() &&
+        registry != GetCustomElementRegistry()) {
+      rv.ThrowNotSupportedError(
+          "Cannot use a global CustomElementRegistry from another document");
+    }
+  }
+}
+
 /* https://dom.spec.whatwg.org/#dom-document-createelement */
 already_AddRefed<Element> Document::CreateElement(
     const nsAString& aTagName, const ElementCreationOptionsOrString& aOptions,
@@ -9041,20 +9085,18 @@ already_AddRefed<Element> Document::CreateElement(
 
   // 3. Let registry and is be the result of flattening element creation
   //    options given options and this.
-  // TODO(keithamus): Scoped Element Registries (`registry`).
   const nsString* is = nullptr;
+  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry;
+  FlattenElementCreationOptions(aOptions, is, customElementRegistry, rv);
+  if (rv.Failed()) {
+    return nullptr;
+  }
+
+  // Non-standard 'pseudo' option.
   PseudoStyleType pseudoType = PseudoStyleType::NotPseudo;
   if (aOptions.IsElementCreationOptions()) {
     const ElementCreationOptions& options =
         aOptions.GetAsElementCreationOptions();
-
-    if (options.mIs.WasPassed()) {
-      is = &options.mIs.Value();
-    }
-
-    // XXX: Non-standard 'pseudo' option.
-    // Check 'pseudo' and throw an exception if it's not one allowed
-    // with CSS_PSEUDO_ELEMENT_IS_JS_CREATED_NAC.
     if (options.mPseudo.WasPassed()) {
       Maybe<PseudoStyleRequest> request = PseudoStyleRequest::Parse(
           options.mPseudo.Value(), DefaultStyleAttrURLData());
@@ -9071,10 +9113,14 @@ already_AddRefed<Element> Document::CreateElement(
   //    this's content type is "application/xhtml+xml"; otherwise null.
   // 5. Return the result of creating an element given this, localName,
   //    namespace, null, is, true, and registry.
-  RefPtr<Element> elem = CreateElem(needsLowercase ? lcTagName : aTagName,
-                                    nullptr, mDefaultElementType, is);
 
-  // XXX: Non-standard 'pseudo' option.
+  // nsContentUtils::NewXULOrHTMLElement handles tri-state logic of
+  // customElementRegistry
+  RefPtr<Element> elem =
+      CreateElem(needsLowercase ? lcTagName : aTagName, nullptr,
+                 mDefaultElementType, is, std::move(customElementRegistry));
+
+  // ChromeOnly 'pseudo' option.
   if (pseudoType != PseudoStyleType::NotPseudo) {
     elem->SetPseudoElementType(pseudoType);
   }
@@ -9099,21 +9145,18 @@ already_AddRefed<Element> Document::CreateElementNS(
 
   // 2. Let registry and is be the result of flattening element creation
   //    options given options and this.
-  // TODO(keithamus): Scoped Element Registries (`registry`).
   const nsString* is = nullptr;
-  if (aOptions.IsElementCreationOptions()) {
-    const ElementCreationOptions& options =
-        aOptions.GetAsElementCreationOptions();
-    if (options.mIs.WasPassed()) {
-      is = &options.mIs.Value();
-    }
+  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry;
+  FlattenElementCreationOptions(aOptions, is, customElementRegistry, rv);
+  if (rv.Failed()) {
+    return nullptr;
   }
 
   // 3. Return the result of creating an element given document, localName,
   //    namespace, prefix, is, true, and registry.
   nsCOMPtr<Element> element;
   rv = NS_NewElement(getter_AddRefs(element), nodeInfo.forget(),
-                     NOT_FROM_PARSER, is);
+                     NOT_FROM_PARSER, is, std::move(customElementRegistry));
   if (rv.Failed()) {
     return nullptr;
   }
@@ -9131,15 +9174,14 @@ already_AddRefed<Element> Document::CreateXULElement(
   }
 
   const nsString* is = nullptr;
-  if (aOptions.IsElementCreationOptions()) {
-    const ElementCreationOptions& options =
-        aOptions.GetAsElementCreationOptions();
-    if (options.mIs.WasPassed()) {
-      is = &options.mIs.Value();
-    }
+  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry;
+  FlattenElementCreationOptions(aOptions, is, customElementRegistry, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
   }
 
-  RefPtr<Element> elem = CreateElem(aTagName, nullptr, kNameSpaceID_XUL, is);
+  RefPtr<Element> elem = CreateElem(aTagName, nullptr, kNameSpaceID_XUL, is,
+                                    customElementRegistry);
   if (!elem) {
     aRv.Throw(NS_ERROR_NOT_AVAILABLE);
     return nullptr;
@@ -11882,10 +11924,10 @@ CustomElementRegistry* Document::GetEffectiveGlobalCustomElementRegistry() {
   return nullptr;
 }
 
-already_AddRefed<Element> Document::CreateElem(const nsAString& aName,
-                                               nsAtom* aPrefix,
-                                               int32_t aNamespaceID,
-                                               const nsAString* aIs) {
+already_AddRefed<Element> Document::CreateElem(
+    const nsAString& aName, nsAtom* aPrefix, int32_t aNamespaceID,
+    const nsAString* aIs,
+    Maybe<RefPtr<CustomElementRegistry>> aCustomElementRegistry) {
 #ifdef DEBUG
   if (!aPrefix) {
     NS_ASSERTION(nsContentUtils::IsValidElementLocalName(aName),
@@ -11910,8 +11952,9 @@ already_AddRefed<Element> Document::CreateElem(const nsAString& aName,
   NS_ENSURE_TRUE(nodeInfo, nullptr);
 
   nsCOMPtr<Element> element;
-  nsresult rv = NS_NewElement(getter_AddRefs(element), nodeInfo.forget(),
-                              NOT_FROM_PARSER, aIs);
+  nsresult rv =
+      NS_NewElement(getter_AddRefs(element), nodeInfo.forget(), NOT_FROM_PARSER,
+                    aIs, std::move(aCustomElementRegistry));
   return NS_SUCCEEDED(rv) ? element.forget() : nullptr;
 }
 

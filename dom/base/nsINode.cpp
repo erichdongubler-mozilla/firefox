@@ -32,6 +32,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ServoBindings.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/TextControlElement.h"
 #include "mozilla/TextControlState.h"
@@ -4261,6 +4262,11 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
       init.mDelegatesFocus = originalShadowRoot->DelegatesFocus();
       init.mSlotAssignment = originalShadowRoot->SlotAssignment();
       init.mClonable = true;
+      if (StaticPrefs::dom_scoped_custom_element_registries_enabled() &&
+          originalShadowRoot->HasCustomElementRegistry()) {
+        init.mCustomElementRegistry.Construct(
+            originalShadowRoot->GetCustomElementRegistry());
+      }
 
       RefPtr<ShadowRoot> newShadowRoot =
           clone->AsElement()->AttachShadow(init, aError);
@@ -4268,6 +4274,9 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
         return nullptr;
       }
       newShadowRoot->SetIsDeclarative(originalShadowRoot->IsDeclarative());
+      if (originalShadowRoot->IsAvailableToElementInternals()) {
+        newShadowRoot->SetAvailableToElementInternals();
+      }
       nsAtom* referenceTarget = originalShadowRoot->ReferenceTarget();
       newShadowRoot->SetReferenceTarget(referenceTarget);
 
