@@ -733,11 +733,11 @@ def add_etw_profile(config, tests):
                 continue
 
             for test_platform, test_platform_config in test_platforms.items():
-                if (
-                    "win" in test_platform
-                    and "win64-samply" not in test_platform_config
-                ):
-                    test_platform_config.append("win64-samply")
+                if "win" in test_platform:
+                    if "win64-samply" not in test_platform_config:
+                        test_platform_config.append("win64-samply")
+                    if "profiler-node-tools" not in test_platform_config:
+                        test_platform_config.append("profiler-node-tools")
 
         if not is_external_browser(test["app"]):
             fetches.setdefault("build", []).append({
