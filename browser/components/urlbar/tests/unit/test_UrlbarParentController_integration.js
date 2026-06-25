@@ -2,7 +2,7 @@
    http://creativecommons.org/publicdomain/zero/1.0/ */
 
 /**
- * These tests test the UrlbarController in association with the model.
+ * These tests test the UrlbarParentController in association with the model.
  */
 
 "use strict";

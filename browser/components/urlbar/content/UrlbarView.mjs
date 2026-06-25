@@ -883,7 +883,7 @@ export class UrlbarView {
     return true;
   }
 
-  // UrlbarController listener methods.
+  // UrlbarChildController listener methods.
   onQueryStarted(queryContext) {
     this.#queryWasCancelled = false;
     this.#queryUpdatedResults = false;

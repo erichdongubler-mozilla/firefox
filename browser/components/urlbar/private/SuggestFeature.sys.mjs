@@ -317,7 +317,7 @@ export class SuggestProvider extends SuggestFeature {
    *   The user-interaction state. See `UrlbarProvider.onImpression()`.
    * @param {UrlbarQueryContext} queryContext
    *   The urlbar session's query context.
-   * @param {UrlbarController} controller
+   * @param {UrlbarParentController} controller
    *   The controller.
    * @param {Array} featureResults
    *   The feature's results that were visible at the end of the session. This
@@ -334,7 +334,7 @@ export class SuggestProvider extends SuggestFeature {
    *
    * @param {UrlbarQueryContext} queryContext
    *   The urlbar session's query context.
-   * @param {UrlbarController} controller
+   * @param {UrlbarParentController} controller
    *   The controller.
    * @param {object|null} details
    *   See `UrlbarProvider.onEngagement()`.
@@ -422,7 +422,7 @@ export class SuggestBackend extends SuggestFeature {
    *
    * @param {UrlbarQueryContext} queryContext
    *    The query context.
-   * @param {UrlbarController} controller
+   * @param {UrlbarParentController} controller
    *    The controller.
    * @param {object} details
    *    Details object.

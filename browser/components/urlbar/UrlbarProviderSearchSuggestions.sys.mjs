@@ -231,7 +231,7 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
    * @param {UrlbarQueryContext} queryContext
    * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
    *   Callback invoked by the provider to add a new result.
-   * @param {UrlbarController} controller The UrlbarController instance.
+   * @param {UrlbarParentController} controller The UrlbarParentController instance.
    */
   async startQuery(queryContext, addCallback, controller) {
     let instance = this.queryInstance;

@@ -4,7 +4,7 @@
 
 /**
  * This module exports a component used to register search providers and manage
- * the connection between such providers and a UrlbarController.
+ * the connection between such providers and a UrlbarParentController.
  */
 
 /**
@@ -420,8 +420,8 @@ export class ProvidersManager {
    *
    * @param {UrlbarQueryContext} queryContext
    *   The query context object
-   * @param {?UrlbarController} [controller]
-   *   a UrlbarController instance
+   * @param {?UrlbarParentController} [controller]
+   *   a UrlbarParentController instance
    */
   async startQuery(queryContext, controller = null) {
     lazy.logger.info(`Query start "${queryContext.searchString}"`);
@@ -564,7 +564,7 @@ export class ProvidersManager {
    *   The engagement's query context, if available.
    * @param {object} details
    *   An object that describes the search string and the picked result, if any.
-   * @param {UrlbarController} controller
+   * @param {UrlbarParentController} controller
    *   The controller associated with the engagement
    */
   notifyEngagementChange(state, queryContext, details = {}, controller) {
@@ -701,7 +701,7 @@ export class Query {
    *
    * @param {UrlbarQueryContext} queryContext
    *   The query context.
-   * @param {?UrlbarController} controller
+   * @param {?UrlbarParentController} controller
    *   The controller to be notified. May be null.
    * @param {UrlbarMuxer} muxer
    *   The muxer to sort results.

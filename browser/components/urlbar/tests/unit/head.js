@@ -1032,7 +1032,7 @@ function makeGlobalActionsResult({
 }
 
 /**
- * Checks that the results returned by a UrlbarController match those in
+ * Checks that the results returned by a UrlbarParentController match those in
  * the param `matches`.
  *
  * @param {object} options Options for the check.

@@ -82,7 +82,7 @@ export class UrlbarProviderAiChat extends UrlbarProvider {
    * with this provider, to save on resources.
    *
    * @param {UrlbarQueryContext} queryContext The query context object
-   * @param {UrlbarController} [controller] The current controller.
+   * @param {UrlbarParentController} [controller] The current controller.
    * @returns {Promise<boolean>} True if the provider should be invoked.
    */
   async isActive(queryContext, controller) {

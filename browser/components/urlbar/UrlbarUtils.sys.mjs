@@ -3461,7 +3461,7 @@ export class UrlbarProvider {
    *
    * @param {UrlbarQueryContext} [_queryContext]
    *   The query context object
-   * @param {UrlbarController} [_controller]
+   * @param {UrlbarParentController} [_controller]
    *   The current controller.
    * @returns {Promise<boolean>}
    *   Whether this provider should be invoked for the search.
@@ -3496,7 +3496,7 @@ export class UrlbarProvider {
    *   The query context object
    * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} _addCallback
    *   Callback invoked by the provider to add a new result.
-   * @param {UrlbarController} _controller
+   * @param {UrlbarParentController} _controller
    *   The current controller.
    * @returns {void|Promise<void>}
    * @abstract
@@ -3525,7 +3525,7 @@ export class UrlbarProvider {
    * @param {UrlbarQueryContext} _queryContext
    *   The engagement's query context. It will always be defined for
    *   "engagement" and "abandonment".
-   * @param {UrlbarController} _controller
+   * @param {UrlbarParentController} _controller
    *  The associated controller.
    * @param {object} _details
    *   This object is non-empty only when `state` is "engagement" or
@@ -3570,7 +3570,7 @@ export class UrlbarProvider {
    *
    * @param {UrlbarQueryContext} _queryContext
    *    The query context at the time of abandonment.
-   * @param {UrlbarController} _controller
+   * @param {UrlbarParentController} _controller
    * The associated controller.
    *
    * onAbandonment(_queryContext, _controller) {}
@@ -3590,7 +3590,7 @@ export class UrlbarProvider {
    *    The state of the user interaction, either "engagement" or "abandonment".
    * @param {UrlbarQueryContext} _queryContext
    *    The current query context.
-   * @param {UrlbarController} _controller
+   * @param {UrlbarParentController} _controller
    *    The associated controller.
    * @param {Array} _providerVisibleResults
    *    Array of visible results at the time of either an engagement or
@@ -3615,7 +3615,7 @@ export class UrlbarProvider {
    *
    * @param {UrlbarQueryContext} _queryContext
    *    The current query context.
-   * @param {UrlbarController} _controller
+   * @param {UrlbarParentController} _controller
    *    The associated controller.
    *
    * onSearchSessionEnd(_queryContext, _controller) {}
