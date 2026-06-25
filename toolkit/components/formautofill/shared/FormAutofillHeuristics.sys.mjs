@@ -913,7 +913,11 @@ export const FormAutofillHeuristics = {
   },
 
   tokenizeElements(elements) {
-    if (!lazy.FormAutofillUtils.useMLInference) {
+    // If ML inference is disabled or not yet ready, revert to heuristics.
+    if (
+      !lazy.FormAutofillUtils.useMLInference ||
+      !lazy.FormAutofillUtils.isMLUsedAlready
+    ) {
       return null;
     }
 

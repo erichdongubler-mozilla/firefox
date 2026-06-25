@@ -1704,6 +1704,8 @@ export class TopSitesFeed {
       })
     );
 
+    Glean.topsites.pinnedCount.set(pinned.filter(Boolean).length);
+
     // Remove any duplicates from frecent and default sites
     const [
       ,

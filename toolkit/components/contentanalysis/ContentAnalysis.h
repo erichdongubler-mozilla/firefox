@@ -13,7 +13,6 @@
 #include "mozilla/WeakPtr.h"
 #include "nsIClipboard.h"
 #include "nsIContentAnalysis.h"
-#include "nsIThreadPool.h"
 #include "nsITransferable.h"
 #include "nsString.h"
 #include "nsTHashMap.h"
@@ -38,13 +37,8 @@ class DataTransfer;
 class WindowGlobalParent;
 }  // namespace mozilla::dom
 
-namespace content_analysis::sdk {
-class Client;
-class ContentAnalysisRequest;
-class ContentAnalysisResponse;
-}  // namespace content_analysis::sdk
-
 namespace mozilla::contentanalysis {
+class ContentAnalysisBackend;
 class ContentAnalysisCallback;
 
 enum class DefaultResult : uint8_t {
@@ -117,7 +111,7 @@ class ContentAnalysisRequest final : public nsIContentAnalysisRequest {
   // See nsIContentAnalysisRequest for values
   Reason mReason = Reason::eUnknown;
 
-  RefPtr<nsITransferable> mTransferable;
+  nsCOMPtr<nsITransferable> mTransferable;
   RefPtr<dom::DataTransfer> mDataTransfer;
 
   // Text content to analyze.  Only one of textContent or filePath is defined.
@@ -266,6 +260,9 @@ class ContentAnalysis final : public nsIContentAnalysis,
 
   static RefPtr<ContentAnalysis> GetContentAnalysisFromService();
 
+  void HandleResponseFromAgent(ContentAnalysisResponse* aResponse,
+                               bool aAutoAcknowledge);
+
   // Cancel all outstanding requests for the given user action ID.
   // aResult is used to determine what kind of cancellation this is
   // (user-initiated, timeout, blocked user action, internal error, etc).
@@ -280,67 +277,32 @@ class ContentAnalysis final : public nsIContentAnalysis,
   static constexpr const char* kKnownClipboardTypes[] = {
       kTextMime, kHTMLMime, kCustomTypesMime, kFileMime};
 
-  // Returns whether we are currently creating a client. Only to be called
-  // from tests.
-  bool GetCreatingClientForTest() {
-    AssertIsOnMainThread();
-    return mCreatingClient;
-  }
+  // Returns whether the backend is currently creating its agent connection.
+  // Only to be called from tests.
+  bool GetCreatingClientForTest();
+
+  // Thread-safe check whether the service is being destroyed.
+  bool IsShutDown();
+
+  // Thread-safe check whether the given user action has already been
+  // canceled (either by user action or because a request earlier in the same
+  // user action was canceled).
+  bool WasUserActionCanceled(const nsACString& aUserActionId);
+
+  // Check whether the given request token is waiting for a WARN dialog to be
+  // responded to.
+  bool IsRequestWaitingForWarnDialog(const nsACString& aRequestToken);
 
  private:
   virtual ~ContentAnalysis();
-  // Only call this through CreateClientIfNecessary(), as it provides
-  // synchronization to avoid doing this multiple times at once.
-  nsresult CreateContentAnalysisClient(nsCString&& aPipePathName,
-                                       nsString&& aClientSignatureSetting,
-                                       bool aIsPerUser);
-
-  // Thread pool that all agent communications happen on.  Content Analysis
-  // occasionally uses other (random) background threads for other purposes.
-  nsCOMPtr<nsIThreadPool> mThreadPool;
-
-  // Helper function to retry calling the client in case either the client
-  // does not exist, or calling the client fails (indicating that the DLP agent
-  // has terminated and possibly restarted)
-  //
-  // aClientCallFunc - gets called on a background thread after we have a
-  // client. Returns a Result<T, nsresult>. An Err(nsresult) indicates
-  // that the client call failed and we should try to reconnect. A successful
-  // response indicates success (or at least that we should not try to
-  // reconnect), and that value will be Resolve()d into the returned MozPromise.
-  template <typename T, typename U>
-  RefPtr<MozPromise<T, nsresult, true>> CallClientWithRetry(
-      StaticString aMethodName, U&& aClientCallFunc);
-  void RecordConnectionSettingsTelemetry(const nsString& clientSignature);
 
   nsresult RunAnalyzeRequestTask(
-      const RefPtr<nsIContentAnalysisRequest>& aRequest, bool aAutoAcknowledge,
-      const RefPtr<nsIContentAnalysisCallback>& aCallback);
+      const nsCOMPtr<nsIContentAnalysisRequest>& aRequest,
+      bool aAutoAcknowledge,
+      const nsCOMPtr<nsIContentAnalysisCallback>& aCallback);
   nsresult RunAcknowledgeTask(
       nsIContentAnalysisAcknowledgement* aAcknowledgement,
       const nsACString& aRequestToken);
-  nsresult CreateClientIfNecessary(bool aForceCreate = false);
-
-  // Actually send the request to the client and handle the response (or error).
-  // Note that the response may be for a different request!
-  static Result<std::nullptr_t, nsresult> DoAnalyzeRequest(
-      nsCString&& aUserActionId,
-      content_analysis::sdk::ContentAnalysisRequest&& aRequest,
-      bool aAutoAcknowledge,
-      const std::shared_ptr<content_analysis::sdk::Client>& aClient,
-      bool aTestOnlyIgnoreCanceled = false);
-
-  static void HandleResponseFromAgent(
-      content_analysis::sdk::ContentAnalysisResponse&& aResponse);
-
-  struct BasicRequestInfo final {
-    nsCString mUserActionId;
-    glean::TimerId mTimerId;
-    nsCString mAnalysisTypeStr;
-    bool mAutoAcknowledge;
-  };
-  DataMutex<nsTHashMap<nsCString, BasicRequestInfo>>
-      mRequestTokenToBasicRequestInfoMap;
 
   void IssueResponse(ContentAnalysisResponse* response,
                      nsCString&& aUserActionId, bool aAcknowledge,
@@ -354,9 +316,6 @@ class ContentAnalysis final : public nsIContentAnalysis,
 
   // Destroy the service.  Happens during xpcom-shutdown-threads.
   void Close();
-
-  // Thread-safe check whether the service is being destroyed.
-  bool IsShutDown();
 
   // Did the URL filter completely handle the request or do we need to check
   // with the agent.
@@ -412,7 +371,7 @@ class ContentAnalysis final : public nsIContentAnalysis,
     void RemoveFromUserActionMap();
 
     WeakPtr<ContentAnalysis> mWeakContentAnalysis;
-    RefPtr<nsIContentAnalysisCallback> mCallback;
+    nsCOMPtr<nsIContentAnalysisCallback> mCallback;
     nsCString mUserActionId;
 
     // Number of CA requests remaining for this transaction.
@@ -423,34 +382,19 @@ class ContentAnalysis final : public nsIContentAnalysis,
   };
 
   Result<RefPtr<RequestsPromise::AllPromiseType>,
-         RefPtr<nsIContentAnalysisResult>>
+         nsCOMPtr<nsIContentAnalysisResult>>
   GetFinalRequestList(const ContentAnalysisRequestArray& aRequests);
 
   Result<RefPtr<RequestsPromise>, nsresult> ExpandFolderRequest(
       nsIContentAnalysisRequest* aRequest, nsIFile* file);
 
-  using ClientPromise =
-      MozPromise<std::shared_ptr<content_analysis::sdk::Client>, nsresult,
-                 false>;
-  int64_t mRequestCount = 0;
-  // Must only be resolved/rejected or Then()'d on the main thread.
-  //
-  // Note that if this promise is resolved, the resolve value will
-  // be a non-null content_analysis::sdk::Client. However, if the
-  // DLP agent process has terminated, it is possible that trying to
-  // call into this client will return an error. Therefore, any
-  // method that wants to call into the client should go through
-  // CallClientWithRetry() to make it easy to try reconnecting
-  // to the client.
-  RefPtr<ClientPromise::Private> mCaClientPromise
-      MOZ_GUARDED_BY(sMainThreadCapability);
-  bool mCreatingClient MOZ_GUARDED_BY(sMainThreadCapability) = false;
-  bool mHaveResolvedClientPromise MOZ_GUARDED_BY(sMainThreadCapability) = false;
-
   bool mSetByEnterprise;
 
+  // Backend engine that produces analysis verdicts.
+  RefPtr<ContentAnalysisBackend> mBackend;
+
   struct UserActionData final {
-    RefPtr<nsIContentAnalysisCallback> mCallback;
+    nsCOMPtr<nsIContentAnalysisCallback> mCallback;
     nsTHashSet<nsCString> mRequestTokens;
     RefPtr<mozilla::CancelableRunnable> mTimeoutRunnable;
     bool mAutoAcknowledge;
@@ -531,28 +475,19 @@ class ContentAnalysisResponse final : public nsIContentAnalysisResponse,
   void DoNotAcknowledge() { mDoNotAcknowledge = true; }
   void SetCancelError(CancelError aCancelError);
   void SetIsCachedResponse() { mIsCachedResponse = true; }
-  void SetIsSyntheticResponse(bool aIsSyntheticResponse) {
-    mIsSyntheticResponse = aIsSyntheticResponse;
-  }
   // Remove unneeded copy constructor/assignment
   ContentAnalysisResponse(const ContentAnalysisResponse&) = delete;
   ContentAnalysisResponse& operator=(ContentAnalysisResponse&) = delete;
 
  private:
   virtual ~ContentAnalysisResponse() = default;
-  explicit ContentAnalysisResponse(
-      content_analysis::sdk::ContentAnalysisResponse&& aResponse,
-      const nsCString& aUserActionId);
   ContentAnalysisResponse(Action aAction, const nsACString& aRequestToken,
-                          const nsACString& aUserActionId);
+                          const nsACString& aUserActionId,
+                          bool aIsSynthetic = false);
 
   // Use MakeRefPtr as factory.
   template <typename T, typename... Args>
   friend RefPtr<T> mozilla::MakeRefPtr(Args&&...);
-
-  static already_AddRefed<ContentAnalysisResponse> FromProtobuf(
-      content_analysis::sdk::ContentAnalysisResponse&& aResponse,
-      const nsCString& aUserActionId);
 
   void ResolveWarnAction(bool aAllowContent);
 

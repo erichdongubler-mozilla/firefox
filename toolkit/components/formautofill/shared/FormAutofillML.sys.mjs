@@ -7,6 +7,8 @@ import {
   FEATURES,
 } from "chrome://global/content/ml/EngineProcess.sys.mjs";
 
+import { FormAutofillUtils } from "resource://gre/modules/shared/FormAutofillUtils.sys.mjs";
+
 const FORM_AUTOFILL_FEATURE_ID = "formfill-classification";
 const ML_TASKNAME = "text-classification";
 
@@ -29,7 +31,20 @@ export class FormAutofillML {
   async detectFields(fieldDetails) {
     if (!this.#engine || this.#engine.engineStatus == "closed") {
       try {
-        this.#engine = await createEngine(FormFill_Config);
+        let initEnginePromise = createEngine(FormFill_Config);
+
+        // If the ML engine has never been used before, it likely hasn't been
+        // downloaded, so initialize but don't try to get the result.
+        if (!FormAutofillUtils.isMLUsedAlready) {
+          initEnginePromise
+            .then(engine => {
+              this.#engine = engine;
+              FormAutofillUtils.setMLUsedAlready();
+            })
+            .catch(() => {});
+          return;
+        }
+        this.#engine = await initEnginePromise;
       } catch (ex) {
         return;
       }

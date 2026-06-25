@@ -796,7 +796,9 @@ static void Divide64WithConstant(MacroAssembler& masm, LDivOrMod* ins) {
   // (M * n) >> (64 + shift) is the truncated division answer if n is
   // non-negative, as proved in the comments of computeDivisionConstants. We
   // must add 1 later if n is negative to get the right answer in all cases.
-  masm.Asr(output64, output64, rmc.shiftAmount);
+  if (rmc.shiftAmount > 0) {
+    masm.Asr(output64, output64, rmc.shiftAmount);
+  }
 
   // We'll subtract -1 instead of adding 1, because (n < 0 ? -1 : 0) can be
   // computed with just a sign-extending shift of 63 bits.
@@ -859,7 +861,9 @@ static void UnsignedDivide64WithConstant(MacroAssembler& masm,
     masm.Add(output64, output64, Operand(const64, vixl::LSR, 1));
     masm.Lsr(output64, output64, rmc.shiftAmount - 1);
   } else {
-    masm.Lsr(output64, output64, rmc.shiftAmount);
+    if (rmc.shiftAmount > 0) {
+      masm.Lsr(output64, output64, rmc.shiftAmount);
+    }
   }
 }
 

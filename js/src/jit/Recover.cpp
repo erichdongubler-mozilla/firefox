@@ -1978,6 +1978,23 @@ bool RTruncateToInt32::recover(JSContext* cx, SnapshotIterator& iter) const {
   return true;
 }
 
+bool MCanonicalizeNaN::writeRecoverData(CompactBufferWriter& writer) const {
+  MOZ_ASSERT(canRecoverOnBailout());
+  writer.writeUnsigned(uint32_t(RInstruction::Recover_CanonicalizeNaN));
+  return true;
+}
+
+RCanonicalizeNaN::RCanonicalizeNaN(CompactBufferReader& reader) {}
+
+bool RCanonicalizeNaN::recover(JSContext* cx, SnapshotIterator& iter) const {
+  // NaN values are canoncalized when reading from the frame.
+  Value value = iter.read();
+  MOZ_RELEASE_ASSERT(value.isNumber());
+
+  iter.storeInstructionResult(value);
+  return true;
+}
+
 bool MNewObject::writeRecoverData(CompactBufferWriter& writer) const {
   MOZ_ASSERT(canRecoverOnBailout());
 

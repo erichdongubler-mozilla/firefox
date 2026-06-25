@@ -2232,6 +2232,8 @@ function IteratorJoin(separator) {
   return R;
 }
 
+#endif
+
 /**
  *  Iterator.prototype.includes ( searchElement [ , skippedElements ] )
  *
@@ -2279,29 +2281,37 @@ function IteratorIncludes(searchElement, skippedElements = undefined) {
     ThrowRangeError(JSMSG_NEGATIVE_LIMIT);
   }
 
-  // Step 7. Let skipped be 0.
+  // Step 7. If toSkip is finite and toSkip > 𝔽(2**53 - 1), then
+  // Step 7.a. Let error be ThrowCompletion(a newly created RangeError object).
+  // Step 7.b. Return ? IteratorClose(iterated, error).
+  if (Number_isFinite(toSkip) && toSkip > (2 ** 53) - 1) {
+    try {
+      IteratorClose(O);
+    } catch {}
+    ThrowRangeError(JSMSG_SKIP_COUNT_TOO_LARGE);
+  }
+
+  // Step 8. Let skipped be 0.
   var skipped = 0;
 
-  // Step 8. Set iterated to ? GetIteratorDirect(O).
+  // Step 9. Set iterated to ? GetIteratorDirect(O).
   // (Inlined call to GetIteratorDirect.)
   var nextMethod = O.next;
 
-  // Step 9. Repeat,
-  // Step 9.a. Let value be ? IteratorStepValue(iterated).
+  // Step 10. Repeat,
+  // Step 10.a. Let value be ? IteratorStepValue(iterated).
   for (var value of allowContentIterWithNext(O, nextMethod)) {
-    // Step 9.c. If skipped < toSkip, then
+    // Step 10.c. If skipped < toSkip, then
     if (skipped < toSkip) {
-      // Step 9.c.i. Set skipped to skipped + 1.
+      // Step 10.c.i. Set skipped to skipped + 1.
       skipped++;
-    // Step 9.d. Else if SameValueZero(value, searchElement) is true, then
+    // Step 10.d. Else if SameValueZero(value, searchElement) is true, then
     } else if (value === searchElement || (Number_isNaN(value) && Number_isNaN(searchElement))) {
-      // Step 9.d.i. Return ? IteratorClose(iterated, NormalCompletion(true)).
+      // Step 10.d.i. Return ? IteratorClose(iterated, NormalCompletion(true)).
       return true;
     }
   }
 
-  // Step 9.b. If value is done, return false.
+  // Step 10.b. If value is done, return false.
   return false;
 }
-
-#endif

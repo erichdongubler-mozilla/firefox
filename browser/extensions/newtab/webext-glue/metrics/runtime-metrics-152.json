@@ -11,6 +11,15 @@
         "pings": ["newtab"],
         "type": "event"
       }
+    },
+    "topsites": {
+      "pinned_count": {
+        "description": "The number of pinned top site tiles at the time of the newtab session.\n",
+        "disabled": false,
+        "lifetime": "application",
+        "pings": ["newtab"],
+        "type": "quantity"
+      }
     }
   },
   "pings": {}

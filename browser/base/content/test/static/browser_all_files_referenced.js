@@ -338,12 +338,6 @@ var allowlist = [
     file: "chrome://global/content/autocomplete-row-item/autocomplete-row-item.mjs",
   },
 
-  // Bug 2041770: MemoriesSessions is introduced ahead of its production
-  // Remove this entry once the consumer lands.
-  {
-    file: "moz-src:///browser/components/aiwindow/models/memories/MemoriesSessions.sys.mjs",
-  },
-
   // Referenced dynamically in newtab components via template literals:
   // `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`
   { file: "chrome://global/skin/icons/shaft-arrow-left.svg" },

@@ -34,7 +34,6 @@ use style::context::{
     CascadeInputs, QuirksMode, SharedStyleContext, StyleContext, TreeCountingCaches,
 };
 use style::counter_style::{self, DescriptorId as CounterStyleDescriptorId};
-use style::custom_properties::DeferFontRelativeCustomPropertyResolution;
 use style::data::{self, ElementStyles};
 use style::dom::ElementContext;
 use style::dom::{AttributeTracker, ShowSubtreeData, TDocument, TElement, TNode, TShadowRoot};
@@ -3808,7 +3807,7 @@ pub extern "C" fn Servo_FontFaceRule_GetFontStretch(
 #[no_mangle]
 pub extern "C" fn Servo_FontFaceRule_GetFontStyle(
     rule: &LockedFontFaceRule,
-    out: &mut font_face::ComputedFontStyleDescriptor,
+    out: &mut font_face::ComputedFontStyleRange,
 ) -> bool {
     read_locked_arc_worker(rule, |rule: &FontFaceRule| {
         match rule
@@ -7397,8 +7396,7 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
     computed_keyframes: &mut nsTArray<structs::ComputedKeyframeValues>,
 ) {
     use style::applicable_declarations::CascadePriority;
-    use style::custom_properties::CustomPropertiesBuilder;
-    use style::properties::PropertyDeclaration;
+    use style::properties::{KeyframeCustomPropertiesBuilder, PropertyDeclaration};
     let data = raw_data.borrow();
     let element = GeckoElement(element);
     let pseudo = PseudoElement::from_pseudo_type(pseudo_type, None);
@@ -7443,10 +7441,10 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
         // FIXME (bug 1883255): This is pretty much a hack. Instead, the AnimatedValue should be
         // better integrated in the cascade.
         {
-            let mut builder = CustomPropertiesBuilder::new_with_properties(
+            let mut builder = KeyframeCustomPropertiesBuilder::new(
                 &data.stylist,
-                style.custom_properties().clone(),
                 &mut context,
+                style.custom_properties().clone(),
             );
             let priority = CascadePriority::same_tree_author_normal_at_root_layer();
             for property in &mut iter {
@@ -7464,19 +7462,16 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
                 let guard = declarations.read_with(&guard);
                 for decl in guard.normal_declaration_iter() {
                     if let PropertyDeclaration::Custom(ref declaration) = *decl {
-                        builder.cascade(declaration, priority, &mut attribute_tracker);
+                        builder.cascade(
+                            &mut context,
+                            declaration,
+                            priority,
+                        );
                     }
                 }
             }
             iter.reset();
-            let _deferred = builder.build(
-                DeferFontRelativeCustomPropertyResolution::No,
-                &mut AttributeTracker::new(&element),
-            );
-            debug_assert!(
-                _deferred.is_none(),
-                "Custom property processing deferred despite specifying otherwise?"
-            );
+            builder.build(&mut context, &mut attribute_tracker);
         };
 
         let mut property_index = 0;

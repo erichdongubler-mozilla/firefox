@@ -648,6 +648,17 @@ class Raptor(
                     "help": "Run power usage testing on mobile tests using a USB power meter.",
                 },
             ],
+            [
+                ["--install-extension"],
+                {
+                    "action": "append",
+                    "dest": "install_extensions",
+                    "default": [],
+                    "help": "Install a webextension into the test profile before "
+                    "running. Accepts an AMO addon GUID/slug, a direct .xpi URL, or a "
+                    "local .xpi path. May be specified multiple times.",
+                },
+            ],
         ]
         + testing_config_options
         + copy.deepcopy(code_coverage_config_options)
@@ -1102,6 +1113,8 @@ class Raptor(
             options.extend([f"--setpref={i}" for i in self.config.get("extra_prefs")])
         if self.config.get("environment"):
             options.extend([f"--setenv={i}" for i in self.config.get("environment")])
+        for extension in self.config.get("install_extensions") or []:
+            options.extend(["--install-extension", extension])
         if self.config.get("enable_marionette_trace", False):
             options.extend(["--enable-marionette-trace"])
         if self.config.get("browser_cycles"):

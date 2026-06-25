@@ -751,12 +751,19 @@ pub extern "C" fn wr_renderer_map_and_recycle_screenshot(
     dst_buffer: *mut u8,
     dst_buffer_len: usize,
     dst_stride: usize,
+    dest_format: ImageFormat,
 ) -> bool {
     renderer.map_and_recycle_screenshot(
         handle,
         unsafe { make_slice_mut(dst_buffer, dst_buffer_len) },
         dst_stride,
+        dest_format,
     )
+}
+
+#[no_mangle]
+pub extern "C" fn wr_renderer_supports_bgra_readback(renderer: &Renderer) -> bool {
+    renderer.supports_bgra_readback()
 }
 
 #[no_mangle]

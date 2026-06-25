@@ -2,10 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/**
- * @import {ProvidersManager} from "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs"
- */
-
 import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 
 const lazy = {};
@@ -204,13 +200,6 @@ export class UrlbarView {
     }
 
     return this.#selectedElement;
-  }
-
-  /**
-   * @returns {ProvidersManager}
-   */
-  get #providersManager() {
-    return this.controller.manager;
   }
 
   /**
@@ -1539,8 +1528,7 @@ export class UrlbarView {
 
   #createRowContentForDynamicType(item, result) {
     let { dynamicType } = result.payload;
-    let provider = this.#providersManager.getProvider(result.providerName);
-    let viewTemplate = provider.getViewTemplate(result);
+    let viewTemplate = this.controller.getViewTemplate(result);
     if (!viewTemplate) {
       console.error(`No viewTemplate found for ${result.providerName}`);
       return;
@@ -2030,11 +2018,10 @@ export class UrlbarView {
         return true;
       }
 
-      let provider = this.#providersManager.getProvider(newResult.providerName);
       if (
         !lazy.ObjectUtils.deepEqual(
-          provider.getViewTemplate(oldResult),
-          provider.getViewTemplate(newResult)
+          this.controller.getViewTemplate(oldResult),
+          this.controller.getViewTemplate(newResult)
         )
       ) {
         return true;
@@ -2557,8 +2544,7 @@ export class UrlbarView {
     }
 
     // Get the view update from the result's provider.
-    let provider = this.#providersManager.getProvider(result.providerName);
-    let viewUpdate = await provider.getViewUpdate(result, idsByName);
+    let viewUpdate = await this.controller.getViewUpdate(result, idsByName);
     if (item.result != result) {
       return;
     }
@@ -3050,10 +3036,7 @@ export class UrlbarView {
     }
 
     let result = row?.result;
-    let provider = this.#providersManager.getProvider(result?.providerName);
-    if (provider) {
-      provider.tryMethod("onBeforeSelection", result, element);
-    }
+    this.controller.onBeforeSelection(result, element);
 
     this.#setAccessibleFocus(setAccessibleFocus && element);
     this.#rawSelectedElement = element;
@@ -3069,9 +3052,7 @@ export class UrlbarView {
       this.input.setResultForCurrentValue(result);
     }
 
-    if (provider) {
-      provider.tryMethod("onSelection", result, element);
-    }
+    this.controller.onSelection(result, element);
   }
 
   /**
@@ -3750,9 +3731,10 @@ export class UrlbarView {
     /**
      * @type {?UrlbarResultCommand[]}
      */
-    let commands = this.#providersManager
-      .getProvider(result.providerName)
-      ?.tryMethod("getResultCommands", result, this.#queryContext?.isPrivate);
+    let commands = this.controller.getResultCommands(
+      result,
+      this.#queryContext?.isPrivate
+    );
     if (commands) {
       this.#resultMenuCommands.set(result, commands);
       return commands;

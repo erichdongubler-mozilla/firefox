@@ -476,15 +476,14 @@ using ObjectStoreTable =
     nsTHashMap<nsUint64HashKey, SafeRefPtr<FullObjectStoreMetadata>>;
 
 static_assert(
-    std::is_same_v<IndexOrObjectStoreId,
-                   std::remove_cv_t<std::remove_reference_t<
-                       decltype(std::declval<const ObjectStoreGetParams&>()
-                                    .objectStoreId())>>>);
-static_assert(
     std::is_same_v<
         IndexOrObjectStoreId,
-        std::remove_cv_t<std::remove_reference_t<
-            decltype(std::declval<const IndexGetParams&>().objectStoreId())>>>);
+        std::remove_cvref_t<decltype(std::declval<const ObjectStoreGetParams&>()
+                                         .objectStoreId())>>);
+static_assert(std::is_same_v<
+              IndexOrObjectStoreId,
+              std::remove_cvref_t<decltype(std::declval<const IndexGetParams&>()
+                                               .objectStoreId())>>);
 
 struct FullDatabaseMetadata final : AtomicSafeRefCounted<FullDatabaseMetadata> {
   DatabaseMetadata mCommonMetadata;
@@ -9206,6 +9205,12 @@ Factory::AllocPBackgroundIDBFactoryRequestParent(
   MOZ_ASSERT(principalInfo.type() == PrincipalInfo::TSystemPrincipalInfo ||
              principalInfo.type() == PrincipalInfo::TContentPrincipalInfo);
 
+  if (!BackgroundParent::ValidatePrincipalInfo(Manager(), principalInfo,
+                                               PrincipalValidationOptions())) {
+    IPC_FAIL(this, "Invalid principal!");
+    return nullptr;
+  }
+
   if (NS_AUUF_OR_WARN_IF(
           principalInfo.type() == PrincipalInfo::TSystemPrincipalInfo &&
           metadata.persistenceType() != PERSISTENCE_TYPE_PERSISTENT)) {
@@ -9287,6 +9292,10 @@ mozilla::ipc::IPCResult Factory::RecvGetDatabases(
 
   MOZ_ASSERT(aPrincipalInfo.type() == PrincipalInfo::TSystemPrincipalInfo ||
              aPrincipalInfo.type() == PrincipalInfo::TContentPrincipalInfo);
+
+  QM_TRY(MOZ_TO_RESULT(BackgroundParent::ValidatePrincipalInfo(
+             Manager(), aPrincipalInfo, PrincipalValidationOptions())),
+         QM_IPC_FAIL(this));
 
   PersistenceType persistenceType =
       IDBFactory::GetPersistenceType(aPrincipalInfo);

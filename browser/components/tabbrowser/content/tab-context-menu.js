@@ -731,8 +731,9 @@ var TabContextMenu = {
     }
     gBrowser.addTabGroup(this.contextTabs, {
       insertBefore,
-      isUserTriggered: true,
-      telemetryUserCreateSource: "tab_menu",
+      ...gBrowser.TabMetrics.userTriggeredContext(
+        gBrowser.TabMetrics.METRIC_SOURCE.TAB_MENU
+      ),
     });
     gBrowser.selectedTab = this.contextTabs[0];
 
@@ -763,8 +764,9 @@ var TabContextMenu = {
     }
     gBrowser.addTabGroup(tabsAndSplitViews, {
       insertBefore,
-      isUserTriggered: true,
-      telemetryUserCreateSource: "tab_menu",
+      ...gBrowser.TabMetrics.userTriggeredContext(
+        gBrowser.TabMetrics.METRIC_SOURCE.TAB_MENU
+      ),
     });
     gBrowser.selectedTab = this.contextTabs[0];
 

@@ -93,6 +93,10 @@ export const PREF_WIDGETS_CLOCKS_ENABLED = "widgets.clocks.enabled";
 export const PREF_CLOCKS_SIZE = "widgets.clocks.size";
 export const PREF_WIDGETS_SYSTEM_CLOCKS_ENABLED =
   "widgets.system.clocks.enabled";
+export const PREF_WIDGETS_PRIVACY_ENABLED = "widgets.privacy.enabled";
+export const PREF_PRIVACY_SIZE = "widgets.privacy.size";
+export const PREF_WIDGETS_SYSTEM_PRIVACY_ENABLED =
+  "widgets.system.privacy.enabled";
 
 /**
  * @typedef {object} WidgetRegistryEntry
@@ -193,6 +197,22 @@ export const WIDGET_REGISTRY = [
     trainhopSidebarKey: "weatherSidebar",
     widgetsSettingsVisibleKey: "weatherVisible",
     widgetsSettingsEnabledKey: "weatherEnabled",
+  },
+  {
+    id: "privacy",
+    telemetryName: "privacy",
+    order: 5,
+    enabledPref: PREF_WIDGETS_PRIVACY_ENABLED,
+    sizePref: PREF_PRIVACY_SIZE,
+    defaultSize: "medium",
+    validSizes: ["medium", "large"],
+    hasSidebar: false,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_PRIVACY_ENABLED,
+    trainhopEnabledKey: "privacyEnabled",
+    trainhopSizeKey: "privacySize",
+    trainhopSidebarKey: null,
+    widgetsSettingsVisibleKey: "privacyVisible",
+    widgetsSettingsEnabledKey: "privacyEnabled",
   },
 ];
 

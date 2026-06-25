@@ -384,9 +384,7 @@ export var History = Object.freeze({
         if (guidsSlice.length < REMOVE_PAGES_CHUNKLEN) {
           urlsSlice = urls.splice(0, REMOVE_PAGES_CHUNKLEN - guidsSlice.length);
         }
-
         let pagesToRemove = { guids: guidsSlice, urls: urlsSlice };
-
         let result = await lazy.PlacesUtils.withConnectionWrapper(
           "History.sys.mjs: remove",
           db => remove(db, pagesToRemove, onResult)
@@ -1402,13 +1400,11 @@ var removeByFilter = async function (db, filter, onResult = null) {
   await db.executeTransaction(async function () {
     // 4. Actually remove visits
     let pageIds = pages.map(p => p.id);
-    for (let chunk of lazy.PlacesUtils.chunkArray(pageIds, db.variableLimit)) {
-      await db.execute(
-        `DELETE FROM moz_historyvisits
-         WHERE place_id IN(${lazy.PlacesUtils.sqlBindPlaceholders(chunk)})`,
-        chunk
-      );
-    }
+    await db.executeCached(
+      `DELETE FROM moz_historyvisits
+         WHERE place_id IN carray(:pageIds)`,
+      { pageIds }
+    );
     // 5. Clean up and notify
     await cleanupPages(db, pages);
   });
@@ -1451,28 +1447,24 @@ var remove = async function (db, { guids, urls }, onResult = null) {
       });
     }
   }
-  for (let chunk of lazy.PlacesUtils.chunkArray(guids, db.variableLimit)) {
-    let query = `SELECT id, url, url_hash, guid, foreign_count, title, frecency
-       FROM moz_places
-       WHERE guid IN (${lazy.PlacesUtils.sqlBindPlaceholders(guids)})
-      `;
-    await db.execute(query, chunk, onRow);
-  }
-  for (let chunk of lazy.PlacesUtils.chunkArray(urls, db.variableLimit)) {
-    // Make an array of variables like `["?1", "?2", ...]`, up to the length of
-    // the chunk. This lets us bind each URL once, reusing the binding for the
-    // `url_hash IN (...)` and `url IN (...)` clauses. We add 1 because indexed
-    // parameters start at 1, not 0.
-    let variables = Array.from(
-      { length: chunk.length },
-      (_, i) => "?" + (i + 1)
+  if (guids.length) {
+    await db.executeCached(
+      `SELECT id, url, url_hash, guid, foreign_count, title, frecency
+         FROM moz_places
+         WHERE guid IN carray(:guids)`,
+      { guids },
+      onRow
     );
-    let query = `SELECT id, url, url_hash, guid, foreign_count, title, frecency
-       FROM moz_places
-       WHERE url_hash IN (${variables.map(v => `hash(${v})`).join(",")}) AND
-             url IN (${variables.join(",")})
-      `;
-    await db.execute(query, chunk, onRow);
+  }
+  if (urls.length) {
+    await db.executeCached(
+      `SELECT id, url, url_hash, guid, foreign_count, title, frecency
+         FROM moz_places
+         WHERE url_hash IN (SELECT hash(value) FROM carray(:urls))
+           AND url IN carray(:urls)`,
+      { urls },
+      onRow
+    );
   }
 
   if (!pages.length) {

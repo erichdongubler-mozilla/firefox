@@ -139,6 +139,8 @@ skip-if = [
 
 ["test_popupreflows.xhtml"]
 
+["test_segmented_control.html"]
+
 ["test_tree_column_reorder.xhtml"]
 
 ["test_videocontrols_focus.html"]

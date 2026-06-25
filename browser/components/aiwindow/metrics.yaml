@@ -581,6 +581,7 @@ smart_window:
     labels:
       - history
       - conversation
+      - session
 
   memories_last_updated:
     type: datetime

@@ -47,6 +47,14 @@ internal abstract class ToolbarShortcutPreference @JvmOverloads constructor(
     }
 
     protected abstract val options: List<ShortcutOption>
+
+    /**
+     * Returns whether [option] can be selected.
+     * A disabled option is still shown but greyed out and non-clickable.
+     * Defaults to `true`.
+     */
+    protected open fun isOptionEnabled(option: ShortcutOption): Boolean = true
+
     protected abstract fun readSelectedKey(): String
     protected abstract fun writeSelectedKey(key: String)
     protected abstract fun getToolbarType(): String
@@ -120,6 +128,7 @@ internal abstract class ToolbarShortcutPreference @JvmOverloads constructor(
     ): RadioButtonPreference = RadioButtonPreference(context).apply {
         key = newOption.key.value
         title = context.getString(newOption.label)
+        isEnabled = isOptionEnabled(newOption)
         setCheckedWithoutClickListener(newOption == selectedOption)
         onClickListener {
             CustomizationSettings.toolbarShortcutSelection.record(

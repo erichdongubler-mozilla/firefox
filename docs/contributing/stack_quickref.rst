@@ -119,6 +119,34 @@ mozilla-central before landing the changes.
     $ git rebase origin/main
 
 
+Re-applying a patch to update it
+---------------------------------
+
+If you still have the commit for that revision in your working directory
+(for example, you never switched away from it), you don't need to re-apply
+anything: just edit the files and amend the existing commit.
+
+If the commit is *not* in your working directory anymore (e.g. you pulled
+new changes, switched branches, or are working from a fresh clone), you
+first need to re-apply it:
+
+.. code-block:: shell
+
+    $ moz-phab patch D<revision_id>
+
+    # Or you can use the URL of the revision on Phabricator
+    $ moz-phab patch https://phabricator.services.mozilla.com/D<revision_id>
+
+By default this creates the patch on top of the commit it was originally
+based on, which may not be where your local ``HEAD`` is. To instead apply
+it directly on top of your current ``HEAD`` (i.e. rebase it there), use
+``--apply-to here``:
+
+.. code-block:: shell
+
+    $ moz-phab patch D<revision_id> --apply-to here
+
+
 Reorganizing the stack in Phabricator
 -------------------------------------
 

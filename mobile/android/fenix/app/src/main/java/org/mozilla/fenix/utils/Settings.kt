@@ -3267,4 +3267,13 @@ class Settings(
         appContext.getPreferenceKey(R.string.pref_key_webcompat_reporter_enhancements),
         default = { FxNimbus.features.webcompatReporterEnhancements.value().enabled },
     )
+
+    /**
+     * Feature flag that indicates if the uninstall survey shortcut feature is enabled.
+     * It checks if the feature is activated via the remote Nimbus experiment OR forced via Secret Settings.
+     */
+    var uninstallSurveyFeatureFlagEnabled by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_uninstall_survey),
+        default = { FxNimbus.features.uninstallSurvey.value().enabled },
+    )
 }

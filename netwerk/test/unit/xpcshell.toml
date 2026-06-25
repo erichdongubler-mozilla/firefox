@@ -773,6 +773,9 @@ skip-if = [
 ["test_happy_eyeballs_dns_prefetch_reuse.js"]
 run-sequentially = ["true"] # node server exceptions dont replay well
 
+["test_happy_eyeballs_https_rr_prefetch_reuse.js"]
+run-sequentially = ["true"] # node server exceptions dont replay well
+
 ["test_happy_eyeballs_h1_0rtt.js"]
 run-sequentially = ["true"] # TlsServer listens to the same port
 skip-if = [
@@ -1881,6 +1884,7 @@ run-if = [
 
 ["test_trr_with_proxy.js"]
 head = "head_channels.js head_cache.js head_cookies.js head_trr.js trr_common.js"
+requesttimeoutfactor = 2  # Slow in parallel on Windows and on macOS AArch64
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && !fission && socketprocess_networking", # Bug 1808233
 ]

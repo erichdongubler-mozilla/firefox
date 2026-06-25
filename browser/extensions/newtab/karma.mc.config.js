@@ -377,6 +377,13 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/Privacy.test.jsx)
+            "content-src/components/Widgets/Privacy/Privacy.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
             // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/AddClockForm.test.jsx)
             "content-src/components/Widgets/Clocks/AddClockForm.jsx": {
               statements: 0,

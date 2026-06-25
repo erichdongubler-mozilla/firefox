@@ -1227,6 +1227,18 @@ bool OptimizeMIR(MIRGenerator* mir) {
     }
   }
 
+  if (!JitOptions.disableCanonicalizeNaNAtUses && !mir->compilingWasm()) {
+    if (!CanonicalizeNaNAtUses(mir, graph)) {
+      return false;
+    }
+    mir->spewPass("CanonicalizeNaN");
+    AssertExtendedGraphCoherency(graph);
+
+    if (mir->shouldCancel("CanonicalizeNaN")) {
+      return false;
+    }
+  }
+
   if (mir->branchHintingEnabled()) {
     JitSpew(JitSpew_BranchHint, "\n");
     if (!BranchHinting(mir, graph)) {

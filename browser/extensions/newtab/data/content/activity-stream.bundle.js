@@ -12255,6 +12255,10 @@ const PREF_WIDGETS_CLOCKS_ENABLED = "widgets.clocks.enabled";
 const PREF_CLOCKS_SIZE = "widgets.clocks.size";
 const PREF_WIDGETS_SYSTEM_CLOCKS_ENABLED =
   "widgets.system.clocks.enabled";
+const PREF_WIDGETS_PRIVACY_ENABLED = "widgets.privacy.enabled";
+const PREF_PRIVACY_SIZE = "widgets.privacy.size";
+const PREF_WIDGETS_SYSTEM_PRIVACY_ENABLED =
+  "widgets.system.privacy.enabled";
 
 /**
  * @typedef {object} WidgetRegistryEntry
@@ -12355,6 +12359,22 @@ const WIDGET_REGISTRY = [
     trainhopSidebarKey: "weatherSidebar",
     widgetsSettingsVisibleKey: "weatherVisible",
     widgetsSettingsEnabledKey: "weatherEnabled",
+  },
+  {
+    id: "privacy",
+    telemetryName: "privacy",
+    order: 5,
+    enabledPref: PREF_WIDGETS_PRIVACY_ENABLED,
+    sizePref: PREF_PRIVACY_SIZE,
+    defaultSize: "medium",
+    validSizes: ["medium", "large"],
+    hasSidebar: false,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_PRIVACY_ENABLED,
+    trainhopEnabledKey: "privacyEnabled",
+    trainhopSizeKey: "privacySize",
+    trainhopSidebarKey: null,
+    widgetsSettingsVisibleKey: "privacyVisible",
+    widgetsSettingsEnabledKey: "privacyEnabled",
   },
 ];
 
@@ -20442,10 +20462,157 @@ function Clocks({
   })));
 }
 
+;// CONCATENATED MODULE: ./content-src/components/Widgets/Privacy/Privacy.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+// eslint-disable-next-line no-unused-vars
+
+
+
+
+
+
+const Privacy_USER_ACTION_TYPES = {
+  CHANGE_SIZE: "change_size"
+};
+const PRIVACY_ENTRY = WIDGET_REGISTRY.find(w => w.id === "privacy");
+function Privacy({
+  dispatch,
+  widgetsMayBeMaximized,
+  widgetEnabledMap
+}) {
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+
+  // Size comes from the registry helper: user-set pref > trainhop suggestion
+  // > registry defaultSize. Never read the size pref directly.
+  const widgetSize = resolveWidgetSize(PRIVACY_ENTRY, prefs);
+  const impressionFired = (0,external_React_namespaceObject.useRef)(false);
+  const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
+    if (impressionFired.current) {
+      return;
+    }
+    impressionFired.current = true;
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.WIDGETS_IMPRESSION,
+      data: {
+        widget_name: "privacy",
+        widget_size: widgetSize
+      }
+    }));
+  }, [dispatch, widgetSize]);
+  const widgetRef = useIntersectionObserver(handleIntersection);
+  function handlePrivacyHide() {
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.SET_PREF,
+        data: {
+          name: PRIVACY_ENTRY.enabledPref,
+          value: false
+        }
+      }));
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.WIDGETS_ENABLED,
+        data: {
+          widget_name: "privacy",
+          widget_source: "context_menu",
+          enabled: false,
+          widget_size: widgetSize
+        }
+      }));
+    });
+  }
+  const handleChangeSize = (0,external_React_namespaceObject.useCallback)(size => {
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.SET_PREF,
+        data: {
+          name: PRIVACY_ENTRY.sizePref,
+          value: size
+        }
+      }));
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "privacy",
+          widget_source: "context_menu",
+          user_action: Privacy_USER_ACTION_TYPES.CHANGE_SIZE,
+          action_value: size,
+          widget_size: size
+        }
+      }));
+    });
+  }, [dispatch]);
+  const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
+  function handleLearnMore() {
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.OPEN_LINK,
+        data: {
+          url: "https://support.mozilla.org/kb/firefox-new-tab-widgets"
+        }
+      }));
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "privacy",
+          widget_source: "context_menu",
+          user_action: "learn_more",
+          widget_size: widgetSize
+        }
+      }));
+    });
+  }
+  return /*#__PURE__*/external_React_default().createElement("article", {
+    className: `privacy widget col-4 ${widgetSize}-widget`,
+    ref: el => {
+      widgetRef.current = [el];
+    }
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "privacy-title-wrapper"
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "privacy-context-menu-wrapper"
+  }, /*#__PURE__*/external_React_default().createElement("moz-button", {
+    className: "privacy-context-menu-button",
+    iconSrc: "chrome://global/skin/icons/more.svg",
+    menuId: "privacy-context-menu",
+    type: "ghost"
+  }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+    id: "privacy-context-menu"
+  }, widgetsMayBeMaximized && /*#__PURE__*/external_React_default().createElement("panel-item", {
+    submenu: "privacy-size-submenu"
+  }, /*#__PURE__*/external_React_default().createElement("span", {
+    "data-l10n-id": "newtab-widget-menu-change-size"
+  }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+    ref: sizeSubmenuRef,
+    slot: "submenu",
+    id: "privacy-size-submenu"
+  }, ["medium", "large"].map(size => /*#__PURE__*/external_React_default().createElement("panel-item", {
+    key: size,
+    type: "checkbox",
+    checked: widgetSize === size || undefined,
+    "data-size": size,
+    "data-l10n-id": `newtab-widget-size-${size}`
+  })))), /*#__PURE__*/external_React_default().createElement(MoveSubmenu, {
+    widgetId: "privacy",
+    widgetEnabledMap: widgetEnabledMap
+  }), /*#__PURE__*/external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-widget-menu-hide",
+    onClick: handlePrivacyHide
+  }), /*#__PURE__*/external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-privacy-menu-learn-more",
+    onClick: handleLearnMore
+  })))), /*#__PURE__*/external_React_default().createElement("div", {
+    className: "privacy-body"
+  }));
+}
+
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/WidgetsComponentRegistry.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 
 
 
@@ -20498,7 +20665,8 @@ const WIDGET_ROW_COMPONENTS = {
   focusTimer: FocusTimer,
   weather: WeatherRowWidget,
   sportsWidget: SportsWidget_SportsWidget,
-  clocks: ClocksRowWidget
+  clocks: ClocksRowWidget,
+  privacy: Privacy
 };
 const WIDGET_SIDEBAR_COMPONENTS = {
   weather: WeatherSidebarWidget
@@ -20907,7 +21075,8 @@ function Widgets() {
     focusTimer: timerEnabled,
     weather: weatherEnabled && !weatherGoesToSidebar,
     sportsWidget: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "sportsWidget"), prefs, widgetsEnabled),
-    clocks: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "clocks"), prefs, widgetsEnabled)
+    clocks: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "clocks"), prefs, widgetsEnabled),
+    privacy: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "privacy"), prefs, widgetsEnabled)
   };
   const widgetOrder = resolveWidgetOrder(prefs);
   const {
@@ -21014,20 +21183,18 @@ function Widgets() {
 
       // When Nova is enabled, treat the shared header control as a toggle
       // between the default/full widget presentation and the compact one.
-      // Widgets at "small" are skipped — they are either in the sidebar or
-      // user-pinned and should not be moved by the row toggle.
-      //
-      // Future: if we add a "small" in-row presentation for a widget, this
-      // loop will need to distinguish between "small-in-sidebar" and
-      // "small-in-row". One way to do that is to add a hasSidebar-aware
-      // helper (e.g. isWidgetInSidebar(widget, prefs)) and only skip widgets
-      // that are actually rendered in the sidebar, not all widgets at "small".
-      // The registry already carries hasSidebar and trainhopSidebarKey, so
-      // resolveWidgetHasSidebar(widget, prefs) provides that check today.
+      // Only widgets actually rendered in the sidebar are skipped — that is the
+      // same hasSidebar + size === "small" test used in WidgetsSidebar and by
+      // weatherGoesToSidebar above, not "any small widget". A "small" widget
+      // sitting in the row is resized along with the others so it isn't left
+      // behind by the row toggle. On minimize such a widget lands at "medium"
+      // rather than returning to "small", since the size pref holds the display
+      // state directly and the pre-maximize size isn't retained.
       if (novaEnabled) {
         const targetSize = newMaximizedState ? "large" : "medium";
         for (const widget of WIDGET_REGISTRY) {
-          if (resolveWidgetSize(widget, prefs) !== "small") {
+          const inSidebar = resolveWidgetHasSidebar(widget, prefs) && resolveWidgetSize(widget, prefs) === "small";
+          if (!inSidebar) {
             dispatch(actionCreators.SetPref(widget.sizePref, targetSize));
           }
         }
@@ -22911,6 +23078,7 @@ function WidgetsManagementPanel({
   mayHaveListsWidget,
   mayHaveSportsWidget,
   mayHaveClocksWidget,
+  mayHavePrivacyWidget,
   setPref
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
@@ -22959,6 +23127,9 @@ function WidgetsManagementPanel({
         case "WIDGET_CLOCKS":
           widgetName = "clocks";
           break;
+        case "WIDGET_PRIVACY":
+          widgetName = "privacy";
+          break;
       }
       if (widgetName) {
         const widget = WIDGET_REGISTRY.find(w => w.telemetryName === widgetName);
@@ -22983,7 +23154,8 @@ function WidgetsManagementPanel({
     timerEnabled,
     listsEnabled,
     sportsWidgetEnabled,
-    clocksEnabled
+    clocksEnabled,
+    privacyEnabled
   } = enabledWidgets;
   const isRTL = typeof document !== "undefined" && document.dir === "rtl";
   const arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
@@ -23067,6 +23239,16 @@ function WidgetsManagementPanel({
     "data-preference": "widgets.clocks.enabled",
     "data-event-source": "WIDGET_CLOCKS",
     "data-l10n-id": "newtab-custom-widget-clock-toggle"
+  })), mayHavePrivacyWidget && /*#__PURE__*/external_React_default().createElement("div", {
+    id: "privacy-widget-section",
+    className: "section"
+  }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
+    id: "privacy-toggle",
+    pressed: privacyEnabled || null,
+    ontoggle: onToggleWidget,
+    "data-preference": "widgets.privacy.enabled",
+    "data-event-source": "WIDGET_PRIVACY",
+    "data-l10n-id": "newtab-custom-widget-privacy-toggle"
   })))))));
 }
 
@@ -23120,6 +23302,9 @@ class ContentSection extends (external_React_default()).PureComponent {
           break;
         case "WIDGET_CLOCKS":
           widgetName = "clocks";
+          break;
+        case "WIDGET_PRIVACY":
+          widgetName = "privacy";
           break;
       }
       if (widgetName) {
@@ -23222,6 +23407,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       mayHaveListsWidget,
       mayHaveSportsWidget,
       mayHaveClocksWidget,
+      mayHavePrivacyWidget,
       mayHaveWeatherForecast,
       openPreferences,
       wallpapersUserEnabled,
@@ -23250,7 +23436,8 @@ class ContentSection extends (external_React_default()).PureComponent {
     const {
       timerEnabled,
       listsEnabled,
-      clocksEnabled
+      clocksEnabled,
+      privacyEnabled
     } = enabledWidgets;
 
     // @nova-cleanup(remove-conditional): Remove novaEnabled check and newtab-custom-stories-toggle, default to newtab-recommended-stories-toggle
@@ -23328,6 +23515,16 @@ class ContentSection extends (external_React_default()).PureComponent {
       "data-preference": "widgets.clocks.enabled",
       "data-event-source": "WIDGET_CLOCKS",
       "data-l10n-id": "newtab-custom-widget-clock-toggle"
+    })), mayHavePrivacyWidget && /*#__PURE__*/external_React_default().createElement("div", {
+      id: "privacy-widget-section",
+      className: "section"
+    }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
+      id: "privacy-toggle",
+      pressed: privacyEnabled || null,
+      ontoggle: this.onPreferenceSelect,
+      "data-preference": "widgets.privacy.enabled",
+      "data-event-source": "WIDGET_PRIVACY",
+      "data-l10n-id": "newtab-custom-widget-privacy-toggle"
     })))), /*#__PURE__*/external_React_default().createElement("div", {
       className: "settings-toggles"
     },
@@ -23417,6 +23614,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       mayHaveListsWidget: mayHaveListsWidget,
       mayHaveSportsWidget: mayHaveSportsWidget,
       mayHaveClocksWidget: mayHaveClocksWidget,
+      mayHavePrivacyWidget: mayHavePrivacyWidget,
       mayHaveWeatherForecast: mayHaveWeatherForecast,
       weatherDisplay: weatherDisplay,
       setPref: setPref,
@@ -23640,6 +23838,7 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       mayHaveListsWidget: this.props.mayHaveListsWidget,
       mayHaveSportsWidget: this.props.mayHaveSportsWidget,
       mayHaveClocksWidget: this.props.mayHaveClocksWidget,
+      mayHavePrivacyWidget: this.props.mayHavePrivacyWidget,
       dispatch: this.props.dispatch,
       onSubpanelToggle: this.onSubpanelToggle,
       toggleSectionsMgmtPanel: this.props.toggleSectionsMgmtPanel,
@@ -26910,6 +27109,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     const mayHaveTimerWidget = widgetVisibleById("focusTimer");
     const mayHaveClocksWidget = widgetVisibleById("clocks");
     const mayHaveSportsWidget = widgetVisibleById("sportsWidget");
+    const mayHavePrivacyWidget = widgetVisibleById("privacy");
 
     // These prefs set the initial values on the Customize panel toggle switches
     const enabledWidgets = {
@@ -26918,6 +27118,7 @@ class BaseContent extends (external_React_default()).PureComponent {
       clocksEnabled: prefs["widgets.clocks.enabled"],
       weatherEnabled: novaEnabled ? prefs["widgets.weather.enabled"] : prefs.showWeather,
       sportsWidgetEnabled: prefs["widgets.sportsWidget.enabled"],
+      privacyEnabled: prefs["widgets.privacy.enabled"],
       widgetsMaximized: prefs["widgets.maximized"],
       widgetsMayBeMaximized: prefs["widgets.system.maximized"]
     };
@@ -27051,6 +27252,7 @@ class BaseContent extends (external_React_default()).PureComponent {
         mayHaveListsWidget: mayHaveListsWidget,
         mayHaveSportsWidget: mayHaveSportsWidget,
         mayHaveClocksWidget: mayHaveClocksWidget,
+        mayHavePrivacyWidget: mayHavePrivacyWidget,
         mayHaveWeatherForecast: prefs["widgets.system.weatherForecast.enabled"],
         weatherDisplay: prefs["weather.display"],
         showing: customizeMenuVisible,
@@ -27141,6 +27343,7 @@ class BaseContent extends (external_React_default()).PureComponent {
       mayHaveListsWidget: mayHaveListsWidget,
       mayHaveSportsWidget: mayHaveSportsWidget,
       mayHaveClocksWidget: mayHaveClocksWidget,
+      mayHavePrivacyWidget: mayHavePrivacyWidget,
       mayHaveWeatherForecast: prefs["widgets.system.weatherForecast.enabled"],
       weatherDisplay: prefs["weather.display"],
       showing: customizeMenuVisible,

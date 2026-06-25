@@ -482,7 +482,7 @@ let JSWINDOWACTORS = {
 
   ManifestMessages: {
     child: {
-      esModuleURI: "resource://gre/modules/ManifestMessagesChild.sys.mjs",
+      esModuleURI: "moz-src:///dom/ipc/ManifestMessagesChild.sys.mjs",
     },
     safeForUntrustedWebProcess: true,
   },

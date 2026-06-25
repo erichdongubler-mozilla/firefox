@@ -216,6 +216,51 @@ def test_pernosco(patch_ssh_user):
     assert params == {"try_task_config": {"env": {"PERNOSCO": "1"}, "pernosco": True}}
 
 
+def test_extensions(mocker):
+    parser = ArgumentParser()
+    cfg = all_task_configs["extensions"]()
+    cfg.add_arguments(parser)
+
+    def fake_get(url, **kwargs):
+        addon_id = url.rstrip("/").split("/")[-1]
+        resp = mocker.Mock()
+        resp.json.return_value = {
+            "current_version": {"file": {"url": f"https://amo/{addon_id}.xpi"}}
+        }
+        return resp
+
+    mocker.patch("tryselect.task_config.requests.get", side_effect=fake_get)
+    mocker.patch("tryselect.task_config.requests.head", return_value=mocker.Mock())
+
+    # No extensions requested -> no parameters.
+    args = parser.parse_args([])
+    assert cfg.get_parameters(**vars(args)) is None
+
+    # GUIDs/slugs are resolved; a .xpi URL is passed through unchanged.
+    args = parser.parse_args([
+        "--extension",
+        "a@b",
+        "--extension",
+        "https://example.com/x.xpi",
+    ])
+    params = cfg.get_parameters(**vars(args))
+    assert params == {
+        "try_task_config": {
+            "env": {
+                "PERF_FLAGS": (
+                    "install-extension=https://amo/a@b.xpi,https://example.com/x.xpi"
+                )
+            }
+        }
+    }
+
+    # Local paths are rejected (CI can't reach them).
+    for bad in ("/tmp/local.xpi", "ext.xpi"):
+        args = parser.parse_args(["--extension", bad])
+        with pytest.raises(Exception):
+            cfg.get_parameters(**vars(args))
+
+
 def test_exisiting_tasks(mocker, responses, patch_ssh_user):
     parser = ArgumentParser()
     cfg = all_task_configs["existing-tasks"]()

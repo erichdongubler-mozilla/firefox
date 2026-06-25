@@ -3772,7 +3772,7 @@
      *   for technical reasons, such as when an already existing group
      *   switches windows).
      *   Causes the group create UI to be displayed and telemetry events to be fired.
-     * @param {string} [options.telemetryUserCreateSource]
+     * @param {string} [options.telemetrySource]
      *   The means by which the tab group was created.
      *   @see TabMetrics.METRIC_SOURCE for possible values.
      *   Defaults to "unknown".
@@ -3786,7 +3786,7 @@
         insertBefore = null,
         isAdoptingGroup = false,
         isUserTriggered = false,
-        telemetryUserCreateSource = "unknown",
+        telemetrySource = this.TabMetrics.METRIC_SOURCE.UNKNOWN,
       } = {}
     ) {
       if (
@@ -3838,7 +3838,7 @@
           new CustomEvent("TabGroupCreateByUser", {
             bubbles: true,
             detail: {
-              telemetryUserCreateSource,
+              telemetrySource,
             },
           })
         );

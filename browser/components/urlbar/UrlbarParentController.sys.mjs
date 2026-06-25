@@ -66,6 +66,13 @@ const NOTIFICATIONS = {
  * - onViewClose()
  */
 export class UrlbarParentController {
+  // Listener registration and notification dispatch live on the paired
+  // UrlbarChildController, which registers itself via setListenerHost().
+  // That keeps dispatch on the side where the listeners (the view, the
+  // event bufferer) live — required once `<moz-urlbar>` runs in a content
+  // process. The host is always set before any query runs.
+  #listenerHost = null;
+
   /**
    * Initialises the class. The manager may be overridden here, this is for
    * test purposes.
@@ -108,15 +115,6 @@ export class UrlbarParentController {
       options.manager ||
       lazy.ProvidersManager.getInstanceForSap(options.input.sapName);
 
-    this._listeners = new Set();
-    // The object that owns listener registration and notification dispatch.
-    // Defaults to this controller so it works standalone (e.g. in xpcshell
-    // tests via UrlbarTestUtils.newMockController). In production the paired
-    // UrlbarChildController registers itself via setListenerHost(), so
-    // notifications are dispatched on the side where the listeners (the view,
-    // the event bufferer) live — which is where they must end up once
-    // `<moz-urlbar>` runs in a content process.
-    this._listenerHost = this;
     this._userSelectionBehavior = "none";
 
     this.engagementEvent = new TelemetryEvent(this);
@@ -143,6 +141,88 @@ export class UrlbarParentController {
    */
   setView(view) {
     this.view = view;
+  }
+
+  /**
+   * Returns the view template a dynamic result's provider uses to build its
+   * row. Mediates the view's access to the (parent-process) provider.
+   *
+   * @param {UrlbarResult} result The dynamic result.
+   * @returns {object} The view template.
+   */
+  getViewTemplate(result) {
+    return this.manager
+      .getProvider(result.providerName)
+      .getViewTemplate(result);
+  }
+
+  /**
+   * Returns the view update a dynamic result's provider produces for the
+   * given node ids. Mediates the view's access to the (parent-process)
+   * provider.
+   *
+   * @param {UrlbarResult} result The dynamic result.
+   * @param {object} idsByName A map from node names to element ids.
+   * @returns {Promise<object>} The view update.
+   */
+  getViewUpdate(result, idsByName) {
+    return this.manager
+      .getProvider(result.providerName)
+      .getViewUpdate(result, idsByName);
+  }
+
+  /**
+   * Notifies a result's provider that the result is about to be selected.
+   * Mediates the view's access to the (parent-process) provider.
+   *
+   * @param {UrlbarResult} result The result being selected.
+   * @param {Element} element The selected element.
+   */
+  onBeforeSelection(result, element) {
+    this.manager
+      .getProvider(result?.providerName)
+      ?.tryMethod("onBeforeSelection", result, element);
+  }
+
+  /**
+   * Notifies a result's provider that the result was selected. Mediates the
+   * view's access to the (parent-process) provider.
+   *
+   * @param {UrlbarResult} result The selected result.
+   * @param {Element} element The selected element.
+   */
+  onSelection(result, element) {
+    this.manager
+      .getProvider(result?.providerName)
+      ?.tryMethod("onSelection", result, element);
+  }
+
+  /**
+   * Returns the result menu commands a result's provider offers, if any.
+   * Mediates the view's access to the (parent-process) provider.
+   *
+   * @param {UrlbarResult} result The result.
+   * @param {boolean} isPrivate Whether the query is private.
+   * @returns {?UrlbarResultCommand[]} The commands, or null/undefined.
+   */
+  getResultCommands(result, isPrivate) {
+    return this.manager
+      .getProvider(result.providerName)
+      ?.tryMethod("getResultCommands", result, isPrivate);
+  }
+
+  /**
+   * Runs a one-off query and returns its heuristic result. Mediates the
+   * input's access to the (parent-process) providers manager, e.g. for
+   * paste-and-go and drop-and-go where the input needs the heuristic result
+   * without an open view.
+   *
+   * @param {UrlbarQueryContext} queryContext The query context to run.
+   * @returns {Promise<UrlbarResult>} The heuristic result.
+   */
+  async getHeuristicResult(queryContext) {
+    await this.manager.startQuery(queryContext);
+    return queryContext.heuristicResult;
   }
 
   /**
@@ -257,43 +337,13 @@ export class UrlbarParentController {
 
   /**
    * Sets the object that owns listener registration and notification
-   * dispatch. The paired UrlbarChildController calls this so that
-   * listeners live and are notified on its (content-process) side.
+   * dispatch (the paired UrlbarChildController). It must be set before any
+   * query runs, since the query lifecycle notifies through it.
    *
    * @param {object} host The listener host.
    */
   setListenerHost(host) {
-    this._listenerHost = host;
-  }
-
-  /**
-   * Adds a listener for Urlbar result notifications.
-   *
-   * @param {object} listener The listener to add.
-   * @throws {TypeError} Throws if the listener is not an object.
-   */
-  addListener(listener) {
-    if (this._listenerHost !== this) {
-      this._listenerHost.addListener(listener);
-      return;
-    }
-    if (!listener || typeof listener != "object") {
-      throw new TypeError("Expected listener to be an object");
-    }
-    this._listeners.add(listener);
-  }
-
-  /**
-   * Removes a listener for Urlbar result notifications.
-   *
-   * @param {object} listener The listener to remove.
-   */
-  removeListener(listener) {
-    if (this._listenerHost !== this) {
-      this._listenerHost.removeListener(listener);
-      return;
-    }
-    this._listeners.delete(listener);
+    this.#listenerHost = host;
   }
 
   /**
@@ -802,26 +852,14 @@ export class UrlbarParentController {
   }
 
   /**
-   * Notifies listeners of results.
+   * Notifies listeners of results, by dispatching through the listener host
+   * (the paired UrlbarChildController, which owns the listeners).
    *
    * @param {string} name Name of the notification.
    * @param {object} params Parameters to pass with the notification.
    */
   notify(name, ...params) {
-    if (this._listenerHost !== this) {
-      this._listenerHost.notify(name, ...params);
-      return;
-    }
-    for (let listener of this._listeners) {
-      // Can't use "in" because some tests proxify these.
-      if (typeof listener[name] != "undefined") {
-        try {
-          listener[name](...params);
-        } catch (ex) {
-          console.error(ex);
-        }
-      }
-    }
+    this.#listenerHost.notify(name, ...params);
   }
 
   focusOnUnifiedSearchButton() {

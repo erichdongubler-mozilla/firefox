@@ -411,6 +411,7 @@
     <ID>HardcodedPaddingUsage:WebCompatReporter.kt$(vertical = 6.dp)</ID>
     <ID>HardcodedPaddingUsage:WebCompatReporterPreviewSheet.kt$(top = 72.dp)</ID>
     <ID>HardcodedPaddingUsage:Wordmark.kt$(end = 10.dp)</ID>
+    <ID>LongMethod:BrowserToolbarMiddleware.kt$BrowserToolbarMiddleware$@VisibleForTesting internal fun buildHomeAction( action: HomeToolbarAction, source: Source = Source.Unknown, ): Action</ID>
     <ID>MaterialTextButtonUsage:AppLinksPromptFragment.kt$import androidx.compose.material3.TextButton</ID>
     <ID>MaterialTextButtonUsage:HomeSectionHeader.kt$import androidx.compose.material3.TextButton</ID>
     <ID>MaterialTextButtonUsage:WallpaperOnboarding.kt$import androidx.compose.material3.TextButton</ID>

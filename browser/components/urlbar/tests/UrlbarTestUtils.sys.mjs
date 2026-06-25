@@ -28,6 +28,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
+  UrlbarChildController:
+    "chrome://browser/content/urlbar/UrlbarChildController.mjs",
   UrlbarParentController:
     "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
@@ -1361,9 +1363,16 @@ class UrlbarInputTestUtils {
   /**
    * Returns a new mock controller.  This is useful for xpcshell tests.
    *
+   * Mirrors production: the returned controller is a `UrlbarChildController`
+   * (which owns listener registration and dispatch) wrapping a
+   * `UrlbarParentController` reached through a stubbed Urlbar actor. The
+   * underlying parent is exposed as `controller.parentController` for tests
+   * that need it (e.g. to assert it's the controller passed to the providers
+   * manager).
+   *
    * @param {object} options Additional options to pass to the
    *        UrlbarParentController constructor.
-   * @returns {UrlbarParentController} A new controller.
+   * @returns {UrlbarChildController} A new controller.
    */
   newMockController(options = {}) {
     let sapName = options.sapName || "urlbar";
@@ -1377,30 +1386,41 @@ class UrlbarInputTestUtils {
         configurable: true,
       });
     }
-    return new lazy.UrlbarParentController(
-      Object.assign(
-        {
-          input: {
-            isPrivate: false,
-            get sapName() {
-              return sapName;
-            },
-            onFirstResult() {
-              return false;
-            },
-            getSearchSource() {
-              return "dummy-search-source";
-            },
-            window: {
-              location: {
-                href: AppConstants.BROWSER_CHROME_URL,
-              },
+    let parentOptions = Object.assign(
+      {
+        input: {
+          isPrivate: false,
+          get sapName() {
+            return sapName;
+          },
+          onFirstResult() {
+            return false;
+          },
+          getSearchSource() {
+            return "dummy-search-source";
+          },
+          window: {
+            location: {
+              href: AppConstants.BROWSER_CHROME_URL,
             },
           },
         },
-        options
-      )
+      },
+      options
     );
+    let parentController = new lazy.UrlbarParentController(parentOptions);
+    // Stub the actor plumbing so the child controller's constructor reaches
+    // the parent we just built.
+    parentOptions.input.window.windowGlobalChild = {
+      getActor: () => ({
+        getOrCreateController: () => parentController,
+      }),
+    };
+    let controller = new lazy.UrlbarChildController({
+      input: parentOptions.input,
+    });
+    controller.parentController = parentController;
+    return controller;
   }
 
   /**

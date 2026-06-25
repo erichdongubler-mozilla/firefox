@@ -1235,15 +1235,15 @@ export const PREFS_CONFIG = new Map([
     "widgets.maximized",
     {
       title:
-        "Toggles maximized state for all widgets in the widgets section. It defaults to true as the default widget size is large",
-      value: true,
+        "Toggles maximized state for all widgets in the widgets section. It defaults to false as the default widget size is medium",
+      value: false,
     },
   ],
   [
     "widgets.system.maximized",
     {
       title: "Enables the maximize widget feature experiment in Nimbus",
-      value: false,
+      value: true,
     },
   ],
   [
@@ -1440,6 +1440,27 @@ export const PREFS_CONFIG = new Map([
     "widgets.clocks.zones",
     {
       title: "Saved clock widget time zones",
+      value: "",
+    },
+  ],
+  [
+    "widgets.privacy.enabled",
+    {
+      title: "Enables the privacy widget",
+      value: true,
+    },
+  ],
+  [
+    "widgets.system.privacy.enabled",
+    {
+      title: "Enables the privacy widget experiment in Nimbus",
+      value: false,
+    },
+  ],
+  [
+    "widgets.privacy.size",
+    {
+      title: "Size of the privacy widget (medium or large)",
       value: "",
     },
   ],

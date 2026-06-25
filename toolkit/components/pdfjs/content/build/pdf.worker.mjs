@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.421
- * pdfjsBuild = d71fe9025
+ * pdfjsVersion = 6.0.429
+ * pdfjsBuild = e6539f651
  */
 
 ;// ./src/shared/util.js
@@ -144,6 +144,13 @@ const AnnotationType = {
 const AnnotationReplyType = {
   GROUP: "Group",
   REPLY: "R"
+};
+const AnnotationRenditionOperation = {
+  PLAY_OR_RESUME: 0,
+  STOP: 1,
+  PAUSE: 2,
+  RESUME: 3,
+  PLAY: 4
 };
 const AnnotationFlag = {
   INVISIBLE: 0x01,
@@ -27506,7 +27513,6 @@ class Font {
           hasShortCmap: false
         };
       }
-      mappings.sort((a, b) => a.charCode - b.charCode);
       const finalMappings = [],
         seenCharCodes = new Set();
       for (const map of mappings) {
@@ -27522,7 +27528,7 @@ class Font {
       return {
         platformId: potentialTable.platformId,
         encodingId: potentialTable.encodingId,
-        mappings: finalMappings,
+        mappings: finalMappings.sort((a, b) => a.charCode - b.charCode),
         hasShortCmap
       };
     }
@@ -32260,6 +32266,115 @@ function isPDFFunction(v) {
   return fnDict.has("FunctionType");
 }
 
+;// ./src/core/evaluator_utils.js
+
+
+function textSinkWrapper(sink) {
+  const TEXT_CONTENT_CHUNK_SIZE = 100;
+  const resolved = sink ? null : Promise.resolve();
+  return {
+    enqueueInvoked: false,
+    enqueue(chunk, size) {
+      this.enqueueInvoked = true;
+      sink?.enqueue(chunk, size);
+    },
+    get desiredSize() {
+      return sink?.desiredSize ?? TEXT_CONTENT_CHUNK_SIZE;
+    },
+    get ready() {
+      return sink?.ready ?? resolved;
+    }
+  };
+}
+function _parseVisibilityExpression(xref, array, nestingCounter, currentResult) {
+  const MAX_NESTING = 10;
+  if (++nestingCounter > MAX_NESTING) {
+    warn("Visibility expression is too deeply nested");
+    return;
+  }
+  const length = array.length;
+  const operator = xref.fetchIfRef(array[0]);
+  if (length < 2 || !(operator instanceof Name)) {
+    warn("Invalid visibility expression");
+    return;
+  }
+  switch (operator.name) {
+    case "And":
+    case "Or":
+    case "Not":
+      currentResult.push(operator.name);
+      break;
+    default:
+      warn(`Invalid operator ${operator.name} in visibility expression`);
+      return;
+  }
+  for (let i = 1; i < length; i++) {
+    const raw = array[i];
+    const object = xref.fetchIfRef(raw);
+    if (Array.isArray(object)) {
+      const nestedResult = [];
+      currentResult.push(nestedResult);
+      _parseVisibilityExpression(xref, object, nestingCounter, nestedResult);
+    } else if (raw instanceof Ref) {
+      currentResult.push(raw.toString());
+    }
+  }
+}
+function parseMarkedContentProps(xref, contentProperties, resources) {
+  let optionalContent;
+  if (contentProperties instanceof Name) {
+    const properties = resources.get("Properties");
+    optionalContent = properties.get(contentProperties.name);
+  } else if (contentProperties instanceof Dict) {
+    optionalContent = contentProperties;
+  } else {
+    throw new FormatError("Optional content properties malformed.");
+  }
+  const optionalContentType = optionalContent.get("Type")?.name;
+  if (optionalContentType === "OCG") {
+    return {
+      type: optionalContentType,
+      id: optionalContent.objId
+    };
+  } else if (optionalContentType === "OCMD") {
+    const expression = optionalContent.get("VE");
+    if (Array.isArray(expression)) {
+      const result = [];
+      _parseVisibilityExpression(xref, expression, 0, result);
+      if (result.length > 0) {
+        return {
+          type: "OCMD",
+          expression: result
+        };
+      }
+    }
+    const optionalContentGroups = optionalContent.get("OCGs");
+    if (Array.isArray(optionalContentGroups) || optionalContentGroups instanceof Dict) {
+      const groupIds = [];
+      if (Array.isArray(optionalContentGroups)) {
+        for (const ocg of optionalContentGroups) {
+          groupIds.push(ocg.toString());
+        }
+      } else {
+        groupIds.push(optionalContentGroups.objId);
+      }
+      const p = optionalContent.get("P");
+      return {
+        type: optionalContentType,
+        ids: groupIds,
+        policy: p instanceof Name ? p.name : null,
+        expression: null
+      };
+    } else if (optionalContentGroups instanceof Ref) {
+      return {
+        type: optionalContentType,
+        id: optionalContentGroups.toString()
+      };
+    }
+  }
+  return null;
+}
+
 ;// ./src/core/bidi.js
 
 const baseTypes = ["BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "S", "B", "S", "WS", "B", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "B", "B", "B", "S", "WS", "ON", "ON", "ET", "ET", "ET", "ON", "ON", "ON", "ON", "ON", "ES", "CS", "ES", "CS", "CS", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "CS", "ON", "ON", "ON", "ON", "ON", "ON", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "ON", "ON", "ON", "ON", "ON", "ON", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "ON", "ON", "ON", "ON", "BN", "BN", "BN", "BN", "BN", "BN", "B", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "CS", "ON", "ET", "ET", "ET", "ET", "ON", "ON", "ON", "ON", "L", "ON", "ON", "BN", "ON", "ON", "ET", "ET", "EN", "EN", "ON", "L", "ON", "ON", "ON", "EN", "L", "ON", "ON", "ON", "ON", "ON", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "ON", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "ON", "L", "L", "L", "L", "L", "L", "L", "L"];
@@ -32959,98 +33074,6 @@ class MurmurHash3_64 {
     h1 ^= h2 >>> 1;
     return (h1 >>> 0).toString(16).padStart(8, "0") + (h2 >>> 0).toString(16).padStart(8, "0");
   }
-}
-
-;// ./src/core/evaluator_utils.js
-
-
-function _parseVisibilityExpression(xref, array, nestingCounter, currentResult) {
-  const MAX_NESTING = 10;
-  if (++nestingCounter > MAX_NESTING) {
-    warn("Visibility expression is too deeply nested");
-    return;
-  }
-  const length = array.length;
-  const operator = xref.fetchIfRef(array[0]);
-  if (length < 2 || !(operator instanceof Name)) {
-    warn("Invalid visibility expression");
-    return;
-  }
-  switch (operator.name) {
-    case "And":
-    case "Or":
-    case "Not":
-      currentResult.push(operator.name);
-      break;
-    default:
-      warn(`Invalid operator ${operator.name} in visibility expression`);
-      return;
-  }
-  for (let i = 1; i < length; i++) {
-    const raw = array[i];
-    const object = xref.fetchIfRef(raw);
-    if (Array.isArray(object)) {
-      const nestedResult = [];
-      currentResult.push(nestedResult);
-      _parseVisibilityExpression(xref, object, nestingCounter, nestedResult);
-    } else if (raw instanceof Ref) {
-      currentResult.push(raw.toString());
-    }
-  }
-}
-function parseMarkedContentProps(xref, contentProperties, resources) {
-  let optionalContent;
-  if (contentProperties instanceof Name) {
-    const properties = resources.get("Properties");
-    optionalContent = properties.get(contentProperties.name);
-  } else if (contentProperties instanceof Dict) {
-    optionalContent = contentProperties;
-  } else {
-    throw new FormatError("Optional content properties malformed.");
-  }
-  const optionalContentType = optionalContent.get("Type")?.name;
-  if (optionalContentType === "OCG") {
-    return {
-      type: optionalContentType,
-      id: optionalContent.objId
-    };
-  } else if (optionalContentType === "OCMD") {
-    const expression = optionalContent.get("VE");
-    if (Array.isArray(expression)) {
-      const result = [];
-      _parseVisibilityExpression(xref, expression, 0, result);
-      if (result.length > 0) {
-        return {
-          type: "OCMD",
-          expression: result
-        };
-      }
-    }
-    const optionalContentGroups = optionalContent.get("OCGs");
-    if (Array.isArray(optionalContentGroups) || optionalContentGroups instanceof Dict) {
-      const groupIds = [];
-      if (Array.isArray(optionalContentGroups)) {
-        for (const ocg of optionalContentGroups) {
-          groupIds.push(ocg.toString());
-        }
-      } else {
-        groupIds.push(optionalContentGroups.objId);
-      }
-      const p = optionalContent.get("P");
-      return {
-        type: optionalContentType,
-        ids: groupIds,
-        policy: p instanceof Name ? p.name : null,
-        expression: null
-      };
-    } else if (optionalContentGroups instanceof Ref) {
-      return {
-        type: optionalContentType,
-        id: optionalContentGroups.toString()
-      };
-    }
-  }
-  return null;
 }
 
 ;// ./src/core/image.js
@@ -35560,6 +35583,7 @@ class PartialEvaluator {
         stream = new Stream(bytes, 0, bytes.length, stream.dict);
       }
     }
+    sink ??= textSinkWrapper(null);
     const objId = stream.dict?.objId;
     const seenRefs = new RefSet(prevRefs);
     if (objId) {
@@ -36048,7 +36072,7 @@ class PartialEvaluator {
       if (batch && length < TEXT_CHUNK_BATCH_SIZE) {
         return;
       }
-      sink?.enqueue(textContent, length);
+      sink.enqueue(textContent, length);
       textContent.items = [];
       textContent.styles = Object.create(null);
     }
@@ -36056,7 +36080,7 @@ class PartialEvaluator {
     return new Promise(function promiseBody(resolve, reject) {
       const next = function (promise) {
         enqueueChunk(true);
-        Promise.all([promise, sink?.ready]).then(function () {
+        Promise.all([promise, sink.ready]).then(function () {
           try {
             promiseBody(resolve, reject);
           } catch (ex) {
@@ -36239,26 +36263,14 @@ class PartialEvaluator {
               }
               const localResources = dict.get("Resources");
               enqueueChunk();
-              const sinkWrapper = {
-                enqueueInvoked: false,
-                enqueue(chunk, size) {
-                  this.enqueueInvoked = true;
-                  sink.enqueue(chunk, size);
-                },
-                get desiredSize() {
-                  return sink.desiredSize ?? 0;
-                },
-                get ready() {
-                  return sink.ready;
-                }
-              };
+              const sinkWrapper = textSinkWrapper(sink);
               self.getTextContent({
                 stream: xobj,
                 task,
                 resources: localResources instanceof Dict ? localResources : resources,
                 stateManager: xObjStateManager,
                 includeMarkedContent,
-                sink: sink && sinkWrapper,
+                sink: sinkWrapper,
                 seenStyles,
                 viewBox,
                 lang,
@@ -36357,7 +36369,7 @@ class PartialEvaluator {
             }
             break;
         }
-        if (textContent.items.length >= (sink?.desiredSize ?? 1)) {
+        if (textContent.items.length >= sink.desiredSize) {
           stop = true;
           break;
         }
@@ -38654,6 +38666,9 @@ class FileSpec {
       }
     }
     return null;
+  }
+  static hasEmbeddedFile(fileSpecDict) {
+    return this.pickPlatformItem(fileSpecDict.get("EF")) instanceof BaseStream;
   }
   static readContent(dict) {
     if (!(dict instanceof Dict)) {
@@ -52665,6 +52680,8 @@ class AnnotationFactory {
         return new FileAttachmentAnnotation(parameters);
       case "RichMedia":
         return new RichMediaAnnotation(parameters);
+      case "Screen":
+        return new ScreenAnnotation(parameters);
       default:
         if (!collectFields) {
           if (!subtype) {
@@ -56186,15 +56203,75 @@ class FileAttachmentAnnotation extends MarkupAnnotation {
     this.data.fillAlpha = typeof fillAlpha === "number" && fillAlpha >= 0 && fillAlpha <= 1 ? fillAlpha : null;
   }
 }
-class RichMediaAnnotation extends Annotation {
+class MediaAnnotation extends Annotation {
+  static #MEDIA_MIME_TYPE_RE = /^(?:video|audio)\//;
   constructor(params) {
     super(params);
     this.data.noHTML = true;
+  }
+  _setMediaData({
+    assetRef,
+    assetDict,
+    filename,
+    contentType
+  }, catalog) {
+    let contentRef = assetRef;
+    if (!(contentRef instanceof Ref)) {
+      contentRef = FileSpec.pickPlatformItem(assetDict.get("EF"), true);
+    }
+    const fileId = contentRef instanceof Ref ? catalog?.getAttachmentIdForAnnotation(contentRef) : undefined;
+    this.data.noHTML = false;
+    this.data.richMedia = {
+      fileId,
+      filename,
+      contentType
+    };
+  }
+  static _getContentType(assetDict, filename, contentType = null) {
+    if (typeof contentType === "string" && MediaAnnotation.#MEDIA_MIME_TYPE_RE.test(contentType)) {
+      return contentType;
+    }
+    const stream = FileSpec.pickPlatformItem(assetDict.get("EF"));
+    const subtype = stream instanceof BaseStream ? stream.dict?.get("Subtype") : null;
+    if (subtype instanceof Name && MediaAnnotation.#MEDIA_MIME_TYPE_RE.test(subtype.name)) {
+      return subtype.name;
+    }
+    const ext = filename.split(".").at(-1)?.toLowerCase();
+    switch (ext) {
+      case "mp4":
+      case "m4v":
+        return "video/mp4";
+      case "webm":
+        return "video/webm";
+      case "ogv":
+        return "video/ogg";
+      case "mov":
+        return "video/quicktime";
+      case "mp3":
+        return "audio/mpeg";
+      case "m4a":
+        return "audio/mp4";
+      case "wav":
+        return "audio/wav";
+      case "oga":
+      case "ogg":
+        return "audio/ogg";
+      default:
+        return null;
+    }
+  }
+}
+class RichMediaAnnotation extends MediaAnnotation {
+  constructor(params) {
+    super(params);
     const {
       dict,
       xref,
       annotationGlobals
     } = params;
+    const {
+      catalog
+    } = annotationGlobals.pdfManager.pdfDocument;
     const content = dict.get("RichMediaContent");
     if (!(content instanceof Dict)) {
       return;
@@ -56204,23 +56281,7 @@ class RichMediaAnnotation extends Annotation {
       warn("RichMedia annotation has no playable asset.");
       return;
     }
-    const {
-      assetRef,
-      assetDict,
-      filename,
-      contentType
-    } = asset;
-    let contentRef = assetRef;
-    if (!(contentRef instanceof Ref)) {
-      contentRef = FileSpec.pickPlatformItem(assetDict.get("EF"), true);
-    }
-    const fileId = contentRef instanceof Ref ? annotationGlobals.pdfManager.pdfDocument.catalog?.getAttachmentIdForAnnotation(contentRef) : undefined;
-    this.data.noHTML = false;
-    this.data.richMedia = {
-      fileId,
-      filename,
-      contentType
-    };
+    this._setMediaData(asset, catalog);
   }
   static #findAsset(content, xref) {
     const configurations = content.get("Configurations");
@@ -56249,10 +56310,13 @@ class RichMediaAnnotation extends Annotation {
         if (!(asset instanceof Dict)) {
           continue;
         }
+        if (!FileSpec.hasEmbeddedFile(asset)) {
+          continue;
+        }
         const {
           filename
         } = new FileSpec(asset).serializable;
-        const contentType = RichMediaAnnotation.#getContentType(asset, filename);
+        const contentType = MediaAnnotation._getContentType(asset, filename);
         if (!contentType) {
           continue;
         }
@@ -56266,35 +56330,116 @@ class RichMediaAnnotation extends Annotation {
     }
     return null;
   }
-  static #getContentType(assetDict, filename) {
-    const stream = FileSpec.pickPlatformItem(assetDict.get("EF"));
-    const subtype = stream instanceof BaseStream ? stream.dict?.get("Subtype") : null;
-    if (subtype instanceof Name && /^(?:video|audio)\//.test(subtype.name)) {
-      return subtype.name;
+}
+class ScreenAnnotation extends MediaAnnotation {
+  constructor(params) {
+    super(params);
+    const {
+      dict,
+      xref,
+      annotationGlobals
+    } = params;
+    const asset = ScreenAnnotation.#findAsset(dict, xref);
+    if (!asset) {
+      return;
     }
-    const ext = filename.split(".").at(-1)?.toLowerCase();
-    switch (ext) {
-      case "mp4":
-      case "m4v":
-        return "video/mp4";
-      case "webm":
-        return "video/webm";
-      case "ogv":
-        return "video/ogg";
-      case "mov":
-        return "video/quicktime";
-      case "mp3":
-        return "audio/mpeg";
-      case "m4a":
-        return "audio/mp4";
-      case "wav":
-        return "audio/wav";
-      case "oga":
-      case "ogg":
-        return "audio/ogg";
-      default:
+    this._setMediaData(asset, annotationGlobals.pdfManager.pdfDocument.catalog);
+  }
+  static #findAsset(dict, xref) {
+    for (const action of this.#renditionActions(dict, xref)) {
+      const asset = this.#findRenditionAsset(action.get("R"), xref, new RefSet());
+      if (asset) {
+        return asset;
+      }
+    }
+    return null;
+  }
+  static *#renditionActions(dict, xref) {
+    const action = xref.fetchIfRef(dict.getRaw("A"));
+    if (action instanceof Dict && isName(action.get("S"), "Rendition") && this.#isPlayAction(action)) {
+      yield action;
+    }
+    const additionalActions = dict.get("AA");
+    if (additionalActions instanceof Dict) {
+      for (const key of additionalActions.getKeys()) {
+        const aa = xref.fetchIfRef(additionalActions.getRaw(key));
+        if (aa instanceof Dict && isName(aa.get("S"), "Rendition") && this.#isPlayAction(aa)) {
+          yield aa;
+        }
+      }
+    }
+  }
+  static #isPlayAction(action) {
+    const operation = action.get("OP");
+    return operation === undefined || operation === AnnotationRenditionOperation.PLAY_OR_RESUME || operation === AnnotationRenditionOperation.PLAY;
+  }
+  static #findRenditionAsset(rendition, xref, seen) {
+    if (!(rendition instanceof Dict)) {
+      return null;
+    }
+    const subtype = rendition.get("S");
+    if (isName(subtype, "MR")) {
+      return this.#findClipAsset(rendition.get("C"), xref);
+    }
+    if (isName(subtype, "SR")) {
+      const renditions = rendition.get("R");
+      if (Array.isArray(renditions)) {
+        for (const ref of renditions) {
+          if (ref instanceof Ref) {
+            if (seen.has(ref)) {
+              continue;
+            }
+            seen.put(ref);
+          }
+          const asset = this.#findRenditionAsset(xref.fetchIfRef(ref), xref, seen);
+          if (asset) {
+            return asset;
+          }
+        }
+      }
+    }
+    return null;
+  }
+  static #findClipAsset(clip, xref) {
+    if (!(clip instanceof Dict) || !isName(clip.get("S"), "MCD")) {
+      return null;
+    }
+    const rawData = clip.getRaw("D");
+    const data = xref.fetchIfRef(rawData);
+    const contentTypeHint = clip.get("CT");
+    let explicitType = typeof contentTypeHint === "string" ? contentTypeHint : null;
+    let assetDict, filename;
+    if (data instanceof BaseStream) {
+      assetDict = data.dict;
+      const name = clip.get("N");
+      filename = typeof name === "string" ? stringToPDFString(name) : "";
+      if (!explicitType) {
+        const subtype = data.dict.get("Subtype");
+        if (subtype instanceof Name) {
+          explicitType = subtype.name;
+        }
+      }
+    } else if (data instanceof Dict) {
+      if (!FileSpec.hasEmbeddedFile(data)) {
         return null;
+      }
+      assetDict = data;
+      ({
+        filename
+      } = new FileSpec(data).serializable);
+    } else {
+      return null;
     }
+    const contentType = MediaAnnotation._getContentType(assetDict, filename, explicitType);
+    if (!contentType) {
+      return null;
+    }
+    return {
+      assetRef: rawData instanceof Ref ? rawData : null,
+      assetDict,
+      filename,
+      contentType
+    };
   }
 }
 
@@ -59045,8 +59190,6 @@ class Page {
         includeMarkedContent: false,
         disableNormalization: false,
         sink: null,
-        viewBox: this.view,
-        lang: null,
         intersector
       }).then(() => {
         intersector.setText();
@@ -63533,7 +63676,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "6.0.421";
+    const workerVersion = "6.0.429";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }

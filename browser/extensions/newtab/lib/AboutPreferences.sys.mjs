@@ -412,6 +412,14 @@ export class AboutPreferences {
         type: "bool",
       },
       {
+        id: "browser.newtabpage.activity-stream.widgets.system.privacy.enabled",
+        type: "bool",
+      },
+      {
+        id: "browser.newtabpage.activity-stream.widgets.privacy.enabled",
+        type: "bool",
+      },
+      {
         id: "browser.newtabpage.activity-stream.feeds.topsites",
         type: "bool",
       },
@@ -1341,6 +1349,18 @@ export class AboutPreferences {
       visible: widgetToggleVisible("clocks"),
     });
 
+    Preferences.addSetting({
+      id: "privacyEnabled",
+      pref: "browser.newtabpage.activity-stream.widgets.system.privacy.enabled",
+    });
+
+    Preferences.addSetting({
+      id: "privacy",
+      pref: "browser.newtabpage.activity-stream.widgets.privacy.enabled",
+      deps: ["privacyEnabled"],
+      visible: widgetToggleVisible("privacy"),
+    });
+
     // Shortcuts
     Preferences.addSetting({
       id: "shortcuts",
@@ -1553,6 +1573,10 @@ export class AboutPreferences {
             {
               id: "clocks",
               l10nId: "home-prefs-clocks-header",
+            },
+            {
+              id: "privacy",
+              l10nId: "home-prefs-privacy-header",
             },
             ...(novaEnabled && widgetsSystemEnabled ? [weatherItem] : []),
           ],

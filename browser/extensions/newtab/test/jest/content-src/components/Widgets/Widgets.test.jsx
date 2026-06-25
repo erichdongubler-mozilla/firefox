@@ -380,3 +380,127 @@ describe("<Widgets> manage widgets menu item", () => {
     );
   });
 });
+
+describe("<Widgets> maximize toggle size sync", () => {
+  // The size toggle button only renders when widgets may be maximized.
+  const MAXIMIZABLE = { "widgets.system.maximized": true };
+
+  // Collect the per-widget size SetPrefs the maximize toggle dispatches.
+  function sizePrefSets(store) {
+    return store.dispatch.mock.calls
+      .map(([action]) => action)
+      .filter(
+        action =>
+          action.type === at.SET_PREF && action.data?.name?.endsWith(".size")
+      );
+  }
+
+  function clickMaximize(container) {
+    fireEvent.click(container.querySelector("#toggle-widgets-size-button"));
+  }
+
+  it("resizes a small widget sitting in the row to large", () => {
+    const state = makeNovaWidgetState(
+      [
+        ["lists", "medium"],
+        ["clocks", "small"],
+      ],
+      MAXIMIZABLE
+    );
+    const { container, store } = renderWidgets(state);
+    expect(
+      container.querySelector("#toggle-widgets-size-button")
+    ).toBeInTheDocument();
+
+    clickMaximize(container);
+
+    expect(sizePrefSets(store)).toContainEqual(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          name: "widgets.clocks.size",
+          value: "large",
+        }),
+      })
+    );
+  });
+
+  it("sends a small in-row widget to medium when minimizing", () => {
+    const state = makeNovaWidgetState([["clocks", "small"]], {
+      ...MAXIMIZABLE,
+      "widgets.maximized": true,
+    });
+    const { container, store } = renderWidgets(state);
+
+    clickMaximize(container);
+
+    expect(sizePrefSets(store)).toContainEqual(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          name: "widgets.clocks.size",
+          value: "medium",
+        }),
+      })
+    );
+  });
+
+  it("skips a widget rendered in the sidebar (small + hasSidebar)", () => {
+    const state = makeNovaWidgetState(
+      [
+        ["clocks", "medium"],
+        ["weather", "small"],
+      ],
+      MAXIMIZABLE
+    );
+    const { container, store } = renderWidgets(state);
+
+    clickMaximize(container);
+
+    const weatherSets = sizePrefSets(store).filter(
+      action => action.data.name === "widgets.weather.size"
+    );
+    expect(weatherSets).toHaveLength(0);
+  });
+
+  it("resizes weather when it is in the row (not small)", () => {
+    const state = makeNovaWidgetState(
+      [
+        ["clocks", "medium"],
+        ["weather", "medium"],
+      ],
+      MAXIMIZABLE
+    );
+    const { container, store } = renderWidgets(state);
+
+    clickMaximize(container);
+
+    expect(sizePrefSets(store)).toContainEqual(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          name: "widgets.weather.size",
+          value: "large",
+        }),
+      })
+    );
+  });
+
+  it("resizes a disabled small in-row widget", () => {
+    const state = makeNovaWidgetState([["lists", "medium"]], {
+      ...MAXIMIZABLE,
+      "widgets.system.clocks.enabled": true,
+      "widgets.clocks.enabled": false,
+      "widgets.clocks.size": "small",
+    });
+    const { container, store } = renderWidgets(state);
+
+    clickMaximize(container);
+
+    expect(sizePrefSets(store)).toContainEqual(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          name: "widgets.clocks.size",
+          value: "large",
+        }),
+      })
+    );
+  });
+});

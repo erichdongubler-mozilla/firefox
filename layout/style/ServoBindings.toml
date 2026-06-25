@@ -379,7 +379,7 @@ cbindgen-types = [
     { gecko = "StyleBaselineSource", servo = "crate::values::specified::BaselineSource" },
     { gecko = "StyleCustomIdent", servo = "crate::values::CustomIdent" },
     { gecko = "StyleComputedFontStretchRange", servo = "crate::font_face::ComputedFontStretchRange" },
-    { gecko = "StyleComputedFontStyleDescriptor", servo = "crate::font_face::ComputedFontStyleDescriptor" },
+    { gecko = "StyleComputedFontStyleRange", servo = "crate::font_face::ComputedFontStyleRange" },
     { gecko = "StyleComputedFontWeightRange", servo = "crate::font_face::ComputedFontWeightRange" },
     { gecko = "StyleComputedTimingFunction", servo = "crate::values::computed::easing::TimingFunction" },
     { gecko = "StyleDominantBaseline", servo = "crate::values::specified::DominantBaseline" },

@@ -337,11 +337,6 @@
     "dark": "transparent",
     "forcedColors": "{Theme$border/color/interactive}"
   },
-  "button/border/color/nova-@base": {
-    "light": "transparent",
-    "dark": "transparent",
-    "forcedColors": "transparent"
-  },
   "button/border/color/active": {
     "light": "{Theme$button/border/color}",
     "dark": "{Theme$button/border/color}",
@@ -1358,6 +1353,16 @@
     "light": "{Theme$color/accent/primary}",
     "dark": "{Theme$color/accent/primary}",
     "forcedColors": "{Theme$color/accent/primary}"
+  },
+  "segmented-control/border": {
+    "light": "{Primitives$border/width} solid {Theme$segmented-control/border/color}",
+    "dark": "{Primitives$border/width} solid {Theme$segmented-control/border/color}",
+    "forcedColors": "{Primitives$border/width} solid {Theme$segmented-control/border/color}"
+  },
+  "segmented-control/border/color": {
+    "light": "{Theme$border/color/interactive}",
+    "dark": "{Theme$border/color/interactive}",
+    "forcedColors": "{Theme$border/color/interactive}"
   },
   "select/background/color": {
     "light": "{Theme$button/background/color}",

@@ -103,6 +103,7 @@ import org.mozilla.fenix.browser.BrowserFragment
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.browser.browsingmode.DefaultBrowsingModeManager
+import org.mozilla.fenix.components.DefaultShortcutManagerCompatWrapper
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.ShareAction
 import org.mozilla.fenix.components.appstate.OrientationMode
@@ -127,6 +128,7 @@ import org.mozilla.fenix.debugsettings.ui.FenixOverlay
 import org.mozilla.fenix.downloads.DownloadSnackbar
 import org.mozilla.fenix.e2e.EdgeToEdgeFragmentLifecycleCallbacks
 import org.mozilla.fenix.experiments.ResearchSurfaceDialogFragment
+import org.mozilla.fenix.experiments.UninstallSurveyManager
 import org.mozilla.fenix.ext.alreadyOnDestination
 import org.mozilla.fenix.ext.breadcrumb
 import org.mozilla.fenix.ext.components
@@ -363,6 +365,10 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             OpenPasswordManagerIntentProcessor(),
             OpenRecentlyClosedIntentProcessor(),
         )
+    }
+
+    private val uninstallSurveyManager by lazy {
+        UninstallSurveyManager(this, DefaultShortcutManagerCompatWrapper())
     }
 
     // See onKeyDown for why this is necessary
@@ -663,6 +669,13 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             owner = this,
             onBackPressedCallback = onBackPressedCallback,
         )
+
+        if (Config.channel.isDebug) {
+            lifecycleScope.launch(IO) {
+                uninstallSurveyManager.updateUninstallSurveyShortcut()
+            }
+            uninstallSurveyManager.showUninstallSurvey(intent.action, navHost.navController)
+        }
 
         StartupTimeline.onActivityCreateEndHome(this) // DO NOT MOVE ANYTHING BELOW HERE.
     }
@@ -1643,6 +1656,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         const val PRIVATE_BROWSING_MODE = "private_browsing_mode"
         const val START_IN_RECENTS_SCREEN = "start_in_recents_screen"
         const val OPEN_PASSWORD_MANAGER = "open_password_manager"
+        const val UNINSTALL_SURVEY = "uninstall_survey"
         const val APP_ICON = "APP_ICON"
 
         // PWA must have been used within last 30 days to be considered "recently used" for the

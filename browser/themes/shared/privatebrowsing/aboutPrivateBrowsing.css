@@ -588,7 +588,8 @@ content-search-handoff-ui {
   }
 
   /* `:link` to outweigh the base `a:link { color: inherit }` rule. */
-  #private-browsing-myths:link {
+  #private-browsing-myths:link,
+  #nova-promo-link:link {
     @media not (prefers-contrast) {
       color: var(--link-color);
 
@@ -600,5 +601,25 @@ content-search-handoff-ui {
         color: var(--link-color-active);
       }
     }
+  }
+
+  /* `:not([hidden])` so the `hidden` attribute keeps the wrapper collapsed
+     until renderNovaPromo populates it and clears `hidden`. Author `display`
+     otherwise overrides the UA `[hidden]` rule, flashing an empty promo. */
+  .nova-promo-wrapper:not([hidden]) {
+    position: relative;
+    display: flex;
+    width: 100%;
+    margin-block-start: var(--space-xxlarge);
+  }
+
+  #nova-promo {
+    flex: 1;
+  }
+
+  #nova-dismiss-btn {
+    position: absolute;
+    inset-block-start: var(--space-small);
+    inset-inline-end: var(--space-small);
   }
 }

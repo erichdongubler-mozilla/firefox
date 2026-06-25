@@ -423,6 +423,7 @@ input {
   --newtab-card-width-medium: 300px;
   --newtab-card-grid-layout-width: 296px;
   --newtab-card-height-small: 133px;
+  --newtab-font-size-xsmall: 0.733rem;
 }
 
 :root {
@@ -1801,7 +1802,7 @@ main.newtab-main section {
 }
 .top-site-outer .title .sponsored-label {
   color: var(--newtab-contextual-text-secondary-color);
-  font-size: var(--font-size-xsmall);
+  font-size: var(--newtab-font-size-xsmall);
 }
 .top-site-outer .title:not(.sponsored) .sponsored-label {
   display: none;
@@ -6243,10 +6244,9 @@ button.arrow-button:dir(rtl) {
   justify-content: center;
 }
 .nova-enabled .focus-timer.medium-widget .progress-circle-wrapper {
+  --progress-circle-size: 70px;
   flex-shrink: 0;
   margin-block-end: 0;
-  min-height: 70px;
-  width: 70px;
 }
 .nova-enabled .focus-timer.medium-widget .focus-timer-body {
   align-self: stretch;
@@ -6282,9 +6282,10 @@ button.arrow-button:dir(rtl) {
   gap: calc(var(--space-medium) + var(--space-small));
 }
 .nova-enabled .focus-timer.large-widget .progress-circle-wrapper {
+  --progress-circle-size: 120px;
   block-size: calc(var(--space-medium) * 2 + var(--space-xxlarge) * 4);
   margin-block-end: 0;
-  width: 120px;
+  inline-size: var(--progress-circle-size);
 }
 .nova-enabled .focus-timer.large-widget .focus-timer-body {
   gap: var(--space-large);
@@ -6304,7 +6305,7 @@ button.arrow-button:dir(rtl) {
   inset-block-end: auto;
   inset-block-start: var(--space-medium);
   /* stylelint-disable-next-line declaration-property-value-disallowed-list */
-  block-size: 120px;
+  block-size: var(--progress-circle-size);
 }
 .nova-enabled .focus-timer.large-widget :is(.progress-circle-background, .progress-circle-background-break, .progress-circle, .progress-circle-complete, .progress-circle-cap) {
   --thickness: 18.5px;
@@ -6513,6 +6514,7 @@ button.arrow-button:dir(rtl) {
 }
 
 .progress-circle-wrapper {
+  --progress-circle-size: 138px;
   /* Colours for the main timer */
   --timer-red: var(--color-red-50);
   --timer-orange: var(--color-orange-30);
@@ -6521,9 +6523,9 @@ button.arrow-button:dir(rtl) {
   --timer-violet: var(--color-violet-20);
   /* Complete timer */
   --timer-green: var(--color-green-20);
-  min-height: 138px;
+  block-size: var(--progress-circle-size);
+  inline-size: var(--progress-circle-size);
   position: relative;
-  width: 138px;
   overflow: hidden;
   margin-block-end: var(--space-small);
   /* main timer colours */
@@ -6531,8 +6533,7 @@ button.arrow-button:dir(rtl) {
   /* timer turns green when complete */
 }
 .progress-circle-wrapper.is-small {
-  min-height: 114px;
-  width: 114px;
+  --progress-circle-size: 114px;
 }
 .progress-circle-wrapper.is-small .progress-circle-label {
   font-size: var(--font-size-xxlarge);

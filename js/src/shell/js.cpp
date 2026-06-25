@@ -12403,7 +12403,9 @@ static int Shell(JSContext* cx, OptionParser* op) {
     // Only if there's no other error, report unhandled rejections.
     if (!result && !sc->exitCode) {
       AutoReportException are(cx);
-      if (!ReportUnhandledRejections(cx)) {
+      if (sc->pendingRootModuleEvaluations > 0) {
+        JS_ReportErrorASCII(cx, "Module evaluation not completed");
+      } else if (!ReportUnhandledRejections(cx)) {
         FILE* fp = ErrorFilePointer();
         fputs("Error while printing unhandled rejection\n", fp);
       }
@@ -13005,6 +13007,9 @@ bool InitOptionParser(OptionParser& op) {
           "On-Stack Replacement (default: on, off to disable)") ||
       !op.addBoolOption('\0', "disable-bailout-loop-check",
                         "Turn off bailout loop check") ||
+      !op.addStringOption(
+          '\0', "canonicalize-nan-at-uses", "on/off",
+          "Canonicalize NaN values at uses (default: off, on to enable") ||
       !op.addBoolOption('\0', "enable-ic-frame-pointers",
                         "Use frame pointers in all IC stubs") ||
       !op.addBoolOption('\0', "scalar-replace-arguments",
@@ -13412,6 +13417,9 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
   if (op.getBoolOption("enable-intl-locale-info")) {
     JS::Prefs::setAtStartup_experimental_intl_locale_info(true);
   }
+  if (op.getBoolOption("enable-iterator-includes")) {
+    JS::Prefs::setAtStartup_experimental_iterator_includes(true);
+  }
 #ifdef NIGHTLY_BUILD
   if (op.getBoolOption("enable-async-iterator-helpers")) {
     JS::Prefs::setAtStartup_experimental_async_iterator_helpers(true);
@@ -13436,9 +13444,6 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
   }
   if (op.getBoolOption("enable-iterator-join")) {
     JS::Prefs::setAtStartup_experimental_iterator_join(true);
-  }
-  if (op.getBoolOption("enable-iterator-includes")) {
-    JS::Prefs::setAtStartup_experimental_iterator_includes(true);
   }
   if (op.getBoolOption("enable-error-stack-trace-limit")) {
     JS::Prefs::setAtStartup_experimental_error_stack_trace_limit(true);
@@ -14291,6 +14296,16 @@ bool SetContextJITOptions(JSContext* cx, const OptionParser& op) {
 
   if (op.getBoolOption("disable-bailout-loop-check")) {
     jit::JitOptions.disableBailoutLoopCheck = true;
+  }
+
+  if (const char* str = op.getStringOption("canonicalize-nan-at-uses")) {
+    if (strcmp(str, "on") == 0) {
+      jit::JitOptions.disableCanonicalizeNaNAtUses = false;
+    } else if (strcmp(str, "off") == 0) {
+      jit::JitOptions.disableCanonicalizeNaNAtUses = true;
+    } else {
+      return OptionFailure("canonicalize-nan-at-uses", str);
+    }
   }
 
   if (op.getBoolOption("only-inline-selfhosted")) {

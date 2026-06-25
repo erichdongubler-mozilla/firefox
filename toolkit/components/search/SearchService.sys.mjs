@@ -3471,6 +3471,8 @@ export const SearchService = new (class SearchService {
         null,
         eventReason
       );
+      this._settings.setMetaDataAttribute("privateDefaultEngineId", "");
+      this.#currentPrivateEngine = null;
     }
   }
 

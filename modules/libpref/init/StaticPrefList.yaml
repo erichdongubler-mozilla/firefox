@@ -3443,6 +3443,12 @@
   value: false
   mirror: always
 
+# Whether or not system IndexedDB access from a content process is allowed.
+- name: dom.indexedDB.testing.allowContentSystem
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 # Whether or not indexedDB experimental features are enabled.
 - name: dom.indexedDB.experimental
   type: RelaxedAtomicBool
@@ -9523,6 +9529,13 @@
   mirror: always
   set_spidermonkey_pref: startup
 
+  # Experimental support for Iterator Includes in JavaScript.
+- name: javascript.options.experimental.iterator_includes
+  type: bool
+  value: true
+  mirror: always
+  set_spidermonkey_pref: startup
+
 #ifdef NIGHTLY_BUILD
   # Experimental support for Async Iterator Helpers in JavaScript.
 -   name: javascript.options.experimental.async_iterator_helpers
@@ -9568,13 +9581,6 @@
 
  # Experimental support for Iterator.join in JavaScript.
 - name: javascript.options.experimental.iterator_join
-  type: bool
-  value: false
-  mirror: always
-  set_spidermonkey_pref: startup
-
-  # Experimental support for Iterator Includes in JavaScript.
-- name: javascript.options.experimental.iterator_includes
   type: bool
   value: false
   mirror: always
@@ -10486,7 +10492,7 @@
 # https://drafts.csswg.org/css-values-5/#tree-counting
 - name: layout.css.tree-counting-functions.enabled
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
   rust: true
 
@@ -11805,7 +11811,7 @@
 # Whether to disable layer pixel alignment in layout stuff.
 - name: layout.disable-pixel-alignment
   type: RelaxedAtomicBool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # Whether scrollIntoView scrolls to `position: fixed` frames visually.
@@ -16346,7 +16352,7 @@
 
 - name: network.http.http3.version_negotiation.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # When a Http/3 connection failed, whether to retry with a different IP address.
@@ -16472,7 +16478,7 @@
 # Whether to enable Packetization Layer Path MTU Discovery.
 - name: network.http.http3.pmtud
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: false
   mirror: always
   rust: true
 
@@ -16799,6 +16805,14 @@
 # but not followed by space or > as HTML. This differs from the mimesniff
 # standard but matches Chrome.
 - name: network.mimesniff.non_standard_html_comment
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+
+# Enable MIME sniffing for content served with misconfigured Content-Type headers.
+# When enabled, detects binary formats (images, archives, etc.) that are incorrectly
+# served as text types.
+- name: network.mimesniff.sniff_misconfigured_types
   type: RelaxedAtomicBool
   value: true
   mirror: always

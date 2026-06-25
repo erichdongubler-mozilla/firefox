@@ -1492,7 +1492,7 @@ export let BrowserUsageTelemetry = {
       layout: lazy.sidebarVerticalTabs
         ? lazy.TabMetrics.METRIC_TABS_LAYOUT.VERTICAL
         : lazy.TabMetrics.METRIC_TABS_LAYOUT.HORIZONTAL,
-      source: event.detail.telemetryUserCreateSource,
+      source: event.detail.telemetrySource,
       tabs: event.target.tabs.length,
     });
 

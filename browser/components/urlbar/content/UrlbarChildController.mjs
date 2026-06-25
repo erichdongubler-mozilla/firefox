@@ -61,9 +61,6 @@ export class UrlbarChildController {
   get view() {
     return this.#parent.view;
   }
-  get manager() {
-    return this.#parent.manager;
-  }
   get engagementEvent() {
     return this.#parent.engagementEvent;
   }
@@ -85,6 +82,24 @@ export class UrlbarChildController {
 
   setView(view) {
     return this.#parent.setView(view);
+  }
+  getViewTemplate(result) {
+    return this.#parent.getViewTemplate(result);
+  }
+  getViewUpdate(result, idsByName) {
+    return this.#parent.getViewUpdate(result, idsByName);
+  }
+  onBeforeSelection(result, element) {
+    return this.#parent.onBeforeSelection(result, element);
+  }
+  onSelection(result, element) {
+    return this.#parent.onSelection(result, element);
+  }
+  getResultCommands(result, isPrivate) {
+    return this.#parent.getResultCommands(result, isPrivate);
+  }
+  getHeuristicResult(queryContext) {
+    return this.#parent.getHeuristicResult(queryContext);
   }
   addListener(listener) {
     if (!listener || typeof listener != "object") {

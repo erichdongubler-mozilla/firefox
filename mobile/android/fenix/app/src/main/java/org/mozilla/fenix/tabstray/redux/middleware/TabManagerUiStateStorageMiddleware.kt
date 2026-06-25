@@ -85,6 +85,12 @@ class TabManagerUiStateStorageMiddleware(
                     userHasTabGroups = store.state.tabGroupState.groups.isNotEmpty(),
                 )
             }
+
+            TabGroupAction.OnboardingShown -> {
+                if (!store.state.tabGroupState.hasRecordedOnboardingImpression) {
+                    recordOnboardingImpression()
+                }
+            }
         }
     }
 
@@ -121,6 +127,15 @@ class TabManagerUiStateStorageMiddleware(
                 if (!success) {
                     logger.debug("Failed to dismiss tab group onboarding for a user with a tab group")
                 }
+            }
+        }
+    }
+
+    private fun recordOnboardingImpression() {
+        scope.launch {
+            val success = uiStateRepository.incrementTabGroupOnboardingImpressionCount()
+            if (!success) {
+                logger.debug("Failed to increment the tab group onboarding impression count")
             }
         }
     }

@@ -714,6 +714,16 @@ void MInstruction::stealResumePoint(MInstruction* other) {
   setResumePoint(resumePoint);
 }
 
+bool MInstruction::copyResumePointFrom(TempAllocator& alloc,
+                                       MInstruction* previous) {
+  MResumePoint* rp = previous->resumePoint_->clone(alloc);
+  if (!rp) {
+    return false;
+  }
+  setResumePoint(rp);
+  return true;
+}
+
 void MInstruction::moveResumePointAsEntry() {
   MOZ_ASSERT(isNop());
   block()->clearEntryResumePoint();
@@ -4412,6 +4422,19 @@ MResumePoint* MResumePoint::New(TempAllocator& alloc, MBasicBlock* block,
   return resume;
 }
 
+MResumePoint* MResumePoint::clone(TempAllocator& alloc) {
+  MResumePoint* resume = new (alloc) MResumePoint(block(), pc_, mode_);
+  size_t n = this->numOperands();
+  if (!resume->operands_.init(alloc, n)) {
+    return nullptr;
+  }
+  for (size_t i = 0; i < n; i++) {
+    resume->initOperand(i, getOperand(i));
+  }
+  resume->stores_.copy(this->stores_);
+  return resume;
+}
+
 MResumePoint::MResumePoint(MBasicBlock* block, jsbytecode* pc, ResumeMode mode)
     : MNode(block, Kind::ResumePoint),
       pc_(pc),
@@ -4869,13 +4892,19 @@ MDefinition* MToFloat16::foldsTo(TempAllocator& alloc) {
       return def;
     }
 
+    // Unwrap CanonicalizeNaN added after load instructions.
+    MDefinition* load = def;
+    if (load->isCanonicalizeNaN()) {
+      load = load->toCanonicalizeNaN()->input();
+    }
+
     // ToFloat16(LoadFloat16(x)) => LoadFloat16(x)
-    if (def->isLoadUnboxedScalar() &&
-        def->toLoadUnboxedScalar()->storageType() == Scalar::Float16) {
+    if (load->isLoadUnboxedScalar() &&
+        load->toLoadUnboxedScalar()->storageType() == Scalar::Float16) {
       return def;
     }
-    if (def->isLoadDataViewElement() &&
-        def->toLoadDataViewElement()->storageType() == Scalar::Float16) {
+    if (load->isLoadDataViewElement() &&
+        load->toLoadDataViewElement()->storageType() == Scalar::Float16) {
       return def;
     }
     return nullptr;

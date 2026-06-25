@@ -34,6 +34,10 @@ private fun reducer(state: LabsState, action: LabsAction): LabsState {
             labsItems = action.items,
         )
 
+        is LabsAction.RemoveLabsItem -> state.copy(
+            labsItems = state.labsItems.filter { it.slug != action.slug },
+        )
+
         is LabsAction.RestoreDefaults -> state.copy(
             labsItems = state.labsItems.map {
                 it.copy(enrolled = false)

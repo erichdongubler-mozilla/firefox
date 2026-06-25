@@ -1385,9 +1385,10 @@ void nsBlockFrame::ReflowAbsoluteDescendantsInInlineFrame(
 Maybe<OverflowAreas> nsBlockFrame::WalkInlineDescendantsToReflowAbsoluteFrames(
     nsIFrame* aFrame, nsPresContext* aPresContext,
     const ReflowInput& aReflowInput, nsReflowStatus& aStatus) {
-  if (aFrame->IsBlockFrameOrSubclass()) {
-    // Block frames (e.g. 'inline-block') will walk their own inline
-    // descendants.
+  if (!aFrame->IsLineParticipant() || aFrame->IsLeaf()) {
+    // Recurse only into non-leaf inline content (e.g. inline boxes and ruby
+    // content) that can have abspos descendants. Inline-block, inline-flex,
+    // inline-grid, etc. manage their own abspos descendants.
     return Nothing();
   }
 

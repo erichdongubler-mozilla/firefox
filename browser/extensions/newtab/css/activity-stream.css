@@ -33,6 +33,7 @@ input {
   --newtab-card-width-medium: 300px;
   --newtab-card-grid-layout-width: 296px;
   --newtab-card-height-small: 133px;
+  --newtab-font-size-xsmall: 0.733rem;
 }
 
 :root {
@@ -1419,7 +1420,7 @@ main.newtab-main section {
 }
 .top-site-outer .title .sponsored-label {
   color: var(--newtab-contextual-text-secondary-color);
-  font-size: var(--font-size-xsmall);
+  font-size: var(--newtab-font-size-xsmall);
 }
 .top-site-outer .title:not(.sponsored) .sponsored-label {
   display: none;
@@ -6587,10 +6588,9 @@ dialog:dir(rtl)::after {
   justify-content: center;
 }
 .nova-enabled .focus-timer.medium-widget .progress-circle-wrapper {
+  --progress-circle-size: 70px;
   flex-shrink: 0;
   margin-block-end: 0;
-  min-height: 70px;
-  width: 70px;
 }
 .nova-enabled .focus-timer.medium-widget .focus-timer-body {
   align-self: stretch;
@@ -6626,9 +6626,10 @@ dialog:dir(rtl)::after {
   gap: calc(var(--space-medium) + var(--space-small));
 }
 .nova-enabled .focus-timer.large-widget .progress-circle-wrapper {
+  --progress-circle-size: 120px;
   block-size: calc(var(--space-medium) * 2 + var(--space-xxlarge) * 4);
   margin-block-end: 0;
-  width: 120px;
+  inline-size: var(--progress-circle-size);
 }
 .nova-enabled .focus-timer.large-widget .focus-timer-body {
   gap: var(--space-large);
@@ -6648,7 +6649,7 @@ dialog:dir(rtl)::after {
   inset-block-end: auto;
   inset-block-start: var(--space-medium);
   /* stylelint-disable-next-line declaration-property-value-disallowed-list */
-  block-size: 120px;
+  block-size: var(--progress-circle-size);
 }
 .nova-enabled .focus-timer.large-widget :is(.progress-circle-background, .progress-circle-background-break, .progress-circle, .progress-circle-complete, .progress-circle-cap) {
   --thickness: 18.5px;
@@ -6857,6 +6858,7 @@ dialog:dir(rtl)::after {
 }
 
 .progress-circle-wrapper {
+  --progress-circle-size: 138px;
   /* Colours for the main timer */
   --timer-red: var(--color-red-50);
   --timer-orange: var(--color-orange-30);
@@ -6865,9 +6867,9 @@ dialog:dir(rtl)::after {
   --timer-violet: var(--color-violet-20);
   /* Complete timer */
   --timer-green: var(--color-green-20);
-  min-height: 138px;
+  block-size: var(--progress-circle-size);
+  inline-size: var(--progress-circle-size);
   position: relative;
-  width: 138px;
   overflow: hidden;
   margin-block-end: var(--space-small);
   /* main timer colours */
@@ -6875,8 +6877,7 @@ dialog:dir(rtl)::after {
   /* timer turns green when complete */
 }
 .progress-circle-wrapper.is-small {
-  min-height: 114px;
-  width: 114px;
+  --progress-circle-size: 114px;
 }
 .progress-circle-wrapper.is-small .progress-circle-label {
   font-size: var(--font-size-xxlarge);
@@ -9453,6 +9454,76 @@ dialog:dir(rtl)::after {
 }
 .nova-enabled .clocks-widget.large-widget[data-clock-count="2"]:not(.is-panel-open):hover .clocks-list, .nova-enabled .clocks-widget.large-widget[data-clock-count="2"]:not(.is-panel-open):focus-within .clocks-list {
   padding-block-start: 0;
+}
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+.privacy {
+  --widget-size-transition-duration: 180ms;
+  --widget-size-transition-easing: ease;
+  background: var(--newtab-background-card);
+  transition: opacity 0.2s ease;
+  padding: var(--space-medium);
+  border-radius: var(--border-radius-large);
+  box-shadow: var(--box-shadow-level-2);
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: height var(--widget-size-transition-duration) var(--widget-size-transition-easing);
+}
+.privacy:hover {
+  background: var(--newtab-background-color-secondary);
+}
+.privacy.small-widget, .privacy.medium-widget {
+  height: var(--newtab-card-height-small);
+}
+.privacy.large-widget {
+  height: var(--newtab-card-height);
+}
+.privacy:hover, .privacy:focus-within {
+  outline: 1px solid var(--border-color-deemphasized);
+  box-shadow: var(--card-box-shadow-hover);
+}
+@media (prefers-reduced-motion: reduce) {
+  .privacy {
+    transition: none;
+  }
+}
+.privacy.medium-widget {
+  grid-row: span 2;
+}
+.privacy.large-widget {
+  grid-row: span 4;
+}
+
+.privacy-title-wrapper {
+  inset-block-start: var(--space-small);
+  inset-inline-end: var(--space-small);
+  inset-inline-start: auto;
+  margin-block-end: 0;
+  position: absolute;
+  width: auto;
+}
+
+.privacy-context-menu-wrapper {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.privacy:hover .privacy-context-menu-wrapper,
+.privacy:focus-within .privacy-context-menu-wrapper {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.privacy-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
 }
 
 .weather-forecast-widget {

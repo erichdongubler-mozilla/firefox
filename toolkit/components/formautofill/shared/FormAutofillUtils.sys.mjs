@@ -34,6 +34,7 @@ const ADDRESSES_COLLECTION_NAME = "addresses";
 const CREDITCARDS_COLLECTION_NAME = "creditCards";
 const AUTOFILL_CREDITCARDS_OS_AUTH_LOCKED_PREF =
   FormAutofill.AUTOFILL_CREDITCARDS_OS_AUTH_LOCKED_PREF;
+const AUTOFILL_ML_SUCCESS_PREF = "extensions.formautofill.useml.successful";
 const MANAGE_ADDRESSES_L10N_IDS = [
   "autofill-add-address-title",
   "autofill-manage-addresses-title",
@@ -194,6 +195,10 @@ FormAutofillUtils = {
     return (
       AppConstants.platform !== "android" && FormAutofillUtils.enableMLAutofill
     );
+  },
+
+  setMLUsedAlready() {
+    Services.prefs.setBoolPref(AUTOFILL_ML_SUCCESS_PREF, true);
   },
 
   /**
@@ -1525,5 +1530,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofillUtils,
   "enableMLAutofill",
   "extensions.formautofill.useml",
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  FormAutofillUtils,
+  "isMLUsedAlready",
+  AUTOFILL_ML_SUCCESS_PREF,
   false
 );

@@ -19,6 +19,7 @@ const PREF_WIDGETS_TIMER_ENABLED = "widgets.focusTimer.enabled";
 const PREF_WIDGETS_SYSTEM_TIMER_ENABLED = "widgets.system.focusTimer.enabled";
 const PREF_WIDGETS_SPORTS_WIDGET_ENABLED = "widgets.sportsWidget.enabled";
 const PREF_WIDGETS_CLOCKS_ENABLED = "widgets.clocks.enabled";
+const PREF_WIDGETS_PRIVACY_ENABLED = "widgets.privacy.enabled";
 const PREF_WIDGETS_FEEDBACK_ENABLED = "widgets.feedback.enabled";
 const PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED = "widgets.hideAllToast.enabled";
 
@@ -215,8 +216,8 @@ describe("<Widgets>", () => {
 
       assert.equal(
         setPrefCalls.length,
-        4,
-        `should dispatch four SetPref actions, got ${setPrefCalls.length}.`
+        5,
+        `should dispatch five SetPref actions, got ${setPrefCalls.length}.`
       );
 
       const listsPrefCall = setPrefCalls.find(
@@ -230,6 +231,9 @@ describe("<Widgets>", () => {
       );
       const clocksPrefCall = setPrefCalls.find(
         call => call.args[0].data?.name === PREF_WIDGETS_CLOCKS_ENABLED
+      );
+      const privacyPrefCall = setPrefCalls.find(
+        call => call.args[0].data?.name === PREF_WIDGETS_PRIVACY_ENABLED
       );
 
       assert.ok(listsPrefCall, "should dispatch SetPref for lists");
@@ -258,6 +262,13 @@ describe("<Widgets>", () => {
         clocksPrefCall.args[0].data.value,
         false,
         "should set clocks pref to false"
+      );
+
+      assert.ok(privacyPrefCall, "should dispatch SetPref for privacy");
+      assert.equal(
+        privacyPrefCall.args[0].data.value,
+        false,
+        "should set privacy pref to false"
       );
     });
 
@@ -273,8 +284,8 @@ describe("<Widgets>", () => {
 
       assert.equal(
         setPrefCalls.length,
-        4,
-        "should dispatch four SetPref actions"
+        5,
+        "should dispatch five SetPref actions"
       );
 
       const listsPrefCall = setPrefCalls.find(
@@ -288,6 +299,9 @@ describe("<Widgets>", () => {
       );
       const clocksPrefCall = setPrefCalls.find(
         call => call.args[0].data?.name === PREF_WIDGETS_CLOCKS_ENABLED
+      );
+      const privacyPrefCall = setPrefCalls.find(
+        call => call.args[0].data?.name === PREF_WIDGETS_PRIVACY_ENABLED
       );
 
       assert.ok(listsPrefCall, "should dispatch SetPref for lists");
@@ -316,6 +330,13 @@ describe("<Widgets>", () => {
         clocksPrefCall.args[0].data.value,
         false,
         "should set clocks pref to false"
+      );
+
+      assert.ok(privacyPrefCall, "should dispatch SetPref for privacy");
+      assert.equal(
+        privacyPrefCall.args[0].data.value,
+        false,
+        "should set privacy pref to false"
       );
     });
 
@@ -331,8 +352,8 @@ describe("<Widgets>", () => {
 
       assert.equal(
         setPrefCalls.length,
-        4,
-        "should dispatch four SetPref actions"
+        5,
+        "should dispatch five SetPref actions"
       );
 
       const listsPrefCall = setPrefCalls.find(
@@ -346,6 +367,9 @@ describe("<Widgets>", () => {
       );
       const clocksPrefCall = setPrefCalls.find(
         call => call.args[0].data?.name === PREF_WIDGETS_CLOCKS_ENABLED
+      );
+      const privacyPrefCall = setPrefCalls.find(
+        call => call.args[0].data?.name === PREF_WIDGETS_PRIVACY_ENABLED
       );
 
       assert.ok(listsPrefCall, "should dispatch SetPref for lists");
@@ -374,6 +398,13 @@ describe("<Widgets>", () => {
         clocksPrefCall.args[0].data.value,
         false,
         "should set clocks pref to false"
+      );
+
+      assert.ok(privacyPrefCall, "should dispatch SetPref for privacy");
+      assert.equal(
+        privacyPrefCall.args[0].data.value,
+        false,
+        "should set privacy pref to false"
       );
     });
 
@@ -1560,21 +1591,21 @@ describe("<Widgets>", () => {
         novaStore.dispatch.restore();
       });
 
-      it("should not update size prefs for lists pinned to small", () => {
-        const smallSizeState = {
+      it("should not update size prefs for a sidebar widget at small when maximizing", () => {
+        const sidebarSmallState = {
           ...NOVA_STATE,
           Prefs: {
             ...NOVA_STATE.Prefs,
             values: {
               ...NOVA_STATE.Prefs.values,
               "widgets.maximized": false,
-              "widgets.lists.size": "small",
+              "widgets.weather.size": "small",
             },
           },
         };
         const novaStore = createStore(
           combineReducers(reducers),
-          smallSizeState
+          sidebarSmallState
         );
         sinon.spy(novaStore, "dispatch");
         const novaWrapper = mount(
@@ -1591,12 +1622,54 @@ describe("<Widgets>", () => {
           .getCalls()
           .filter(call => call.args[0]?.type === at.SET_PREF);
 
-        const listsSizeCall = setPrefCalls.find(
-          call => call.args[0].data?.name === "widgets.lists.size"
+        const weatherSizeCall = setPrefCalls.find(
+          call => call.args[0].data?.name === "widgets.weather.size"
         );
         assert.ok(
-          !listsSizeCall,
-          "should not dispatch SetPref for lists pinned to small"
+          !weatherSizeCall,
+          "should not dispatch SetPref for a sidebar widget at small"
+        );
+
+        novaStore.dispatch.restore();
+      });
+
+      it("should not update size prefs for a sidebar widget at small when minimizing", () => {
+        const sidebarSmallState = {
+          ...NOVA_STATE,
+          Prefs: {
+            ...NOVA_STATE.Prefs,
+            values: {
+              ...NOVA_STATE.Prefs.values,
+              "widgets.maximized": true,
+              "widgets.weather.size": "small",
+            },
+          },
+        };
+        const novaStore = createStore(
+          combineReducers(reducers),
+          sidebarSmallState
+        );
+        sinon.spy(novaStore, "dispatch");
+        const novaWrapper = mount(
+          <Provider store={novaStore}>
+            <Widgets />
+          </Provider>
+        );
+
+        novaWrapper.find("#toggle-widgets-size-button").prop("onClick")({
+          preventDefault: () => {},
+        });
+
+        const setPrefCalls = novaStore.dispatch
+          .getCalls()
+          .filter(call => call.args[0]?.type === at.SET_PREF);
+
+        const weatherSizeCall = setPrefCalls.find(
+          call => call.args[0].data?.name === "widgets.weather.size"
+        );
+        assert.ok(
+          !weatherSizeCall,
+          "should not dispatch SetPref for a sidebar widget at small"
         );
 
         novaStore.dispatch.restore();
@@ -1641,48 +1714,6 @@ describe("<Widgets>", () => {
           timerSizeCall.args[0].data.value,
           "large",
           "should update disabled widget size to match new row state"
-        );
-
-        novaStore.dispatch.restore();
-      });
-
-      it("should not update size prefs for disabled widgets pinned to small", () => {
-        const disabledSmallTimerState = {
-          ...NOVA_STATE,
-          Prefs: {
-            ...NOVA_STATE.Prefs,
-            values: {
-              ...NOVA_STATE.Prefs.values,
-              [PREF_WIDGETS_TIMER_ENABLED]: false,
-              "widgets.focusTimer.size": "small",
-            },
-          },
-        };
-        const novaStore = createStore(
-          combineReducers(reducers),
-          disabledSmallTimerState
-        );
-        sinon.spy(novaStore, "dispatch");
-        const novaWrapper = mount(
-          <Provider store={novaStore}>
-            <Widgets />
-          </Provider>
-        );
-
-        novaWrapper.find("#toggle-widgets-size-button").prop("onClick")({
-          preventDefault: () => {},
-        });
-
-        const setPrefCalls = novaStore.dispatch
-          .getCalls()
-          .filter(call => call.args[0]?.type === at.SET_PREF);
-
-        const timerSizeCall = setPrefCalls.find(
-          call => call.args[0].data?.name === "widgets.focusTimer.size"
-        );
-        assert.ok(
-          !timerSizeCall,
-          "should not dispatch SetPref for disabled widget pinned to small"
         );
 
         novaStore.dispatch.restore();
