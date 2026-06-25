@@ -222,11 +222,11 @@ addMessageListener("isLoggedIn", () => {
   return Services.logins.isLoggedIn;
 });
 
-addMessageListener("setPrimaryPassword", ({ enable }) => {
+addMessageListener("setPrimaryPassword", async ({ enable }) => {
   if (enable) {
-    LoginTestUtils.primaryPassword.enable();
+    await LoginTestUtils.primaryPassword.enable();
   } else {
-    LoginTestUtils.primaryPassword.disable();
+    await LoginTestUtils.primaryPassword.disable();
   }
 });
 

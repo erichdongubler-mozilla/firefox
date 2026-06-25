@@ -1711,7 +1711,7 @@ export const LoginHelper = {
       };
     }
     // We'll attempt to re-auth via Primary Password, so log out.
-    token.logout();
+    await token.logout();
 
     // If a primary password prompt is already open, just exit early and return false.
     // The user can re-trigger it after responding to the already open dialog.
@@ -1725,7 +1725,7 @@ export const LoginHelper = {
 
     try {
       // Log in again, which prompts for the primary password.
-      token.login();
+      await token.login();
     } catch (e) {
       // An exception will be thrown if the user cancels the login prompt
       // dialog. The user will still be logged out of Software Security Device
