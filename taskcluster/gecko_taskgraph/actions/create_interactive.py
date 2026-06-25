@@ -4,7 +4,6 @@
 
 
 import logging
-import os
 import re
 
 import taskcluster_urls
@@ -150,9 +149,6 @@ def create_interactive_action(parameters, graph_config, input, task_group_id, ta
         payload.setdefault("features", {})["interactive"] = True
         payload.setdefault("env", {})["TASKCLUSTER_INTERACTIVE"] = "true"
 
-        for key in task_def["payload"]["env"].keys():
-            payload["env"][key] = task_def["payload"]["env"].get(key, "")
-
         # add notification
         email = input.get("notify")
         # no point sending to a noreply address!
@@ -174,16 +170,13 @@ def create_interactive_action(parameters, graph_config, input, task_group_id, ta
 
         return task
 
-    # Create the task and any of its dependencies. This uses a new taskGroupId to avoid
-    # polluting the existing taskGroup with interactive tasks.
-    action_task_id = os.environ.get("TASK_ID")
     label_to_taskid = create_tasks(
         graph_config,
         [label],
         full_task_graph,
         label_to_taskid,
         parameters,
-        decision_task_id=action_task_id,
+        decision_task_id=decision_task_id,
         modifier=edit,
     )
 
