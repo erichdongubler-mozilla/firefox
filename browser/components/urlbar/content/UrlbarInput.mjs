@@ -5732,11 +5732,12 @@ ${
       ),
       tabGroup: this.window.gBrowser.selectedTab.group?.id ?? null,
       currentPage: this.window.gBrowser.currentURI.spec,
-      prohibitRemoteResults:
+      prohibitRemoteResults: !!(
         event &&
         lazy.UrlbarUtils.isPasteEvent(event) &&
         lazy.UrlbarPrefs.get("maxCharsForSearchSuggestions") <
-          event.data?.length,
+          event.data?.length
+      ),
     };
 
     if (this.searchMode) {

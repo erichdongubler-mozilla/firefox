@@ -804,6 +804,10 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
   // error or increase the complexity threshold.
   // eslint-disable-next-line complexity
   _canAddResult(result, state) {
+    if (state.context.excludeSponsoredResults && result.payload.isSponsored) {
+      return false;
+    }
+
     // Typically the first visible Suggest result is always added.
     if (result.providerName == lazy.UrlbarProviderQuickSuggest.name) {
       if (result.isHiddenExposure) {
