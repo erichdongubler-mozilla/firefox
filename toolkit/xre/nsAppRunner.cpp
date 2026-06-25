@@ -1774,11 +1774,6 @@ nsXULAppInfo::SetEnabled(bool aEnabled) {
       return NS_ERROR_FAILURE;
     }
 
-    nsresult rv = CrashReporter::OOPInit(xreBinDirectory, true);
-    if (rv != NS_OK) {
-      return rv;
-    }
-
     return CrashReporter::SetExceptionHandler(xreBinDirectory, true);
   }
 
@@ -1787,14 +1782,7 @@ nsXULAppInfo::SetEnabled(bool aEnabled) {
     return NS_OK;
   }
 
-  nsresult rv = CrashReporter::UnsetExceptionHandler();
-#if !defined(MOZ_WIDGET_ANDROID)
-  // Don't deinit on Android as we can't get back up again
-  // (bug 2040673 comment 20).
-  // TODO: Fix it
-  CrashReporter::OOPDeinit();
-#endif
-  return rv;
+  return CrashReporter::UnsetExceptionHandler();
 }
 
 NS_IMETHODIMP

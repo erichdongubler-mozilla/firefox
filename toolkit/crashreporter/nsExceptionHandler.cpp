@@ -1904,9 +1904,17 @@ static void TeardownAppNotes() {
 nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force /*=false*/) {
   if (gExceptionHandler) return NS_ERROR_ALREADY_INITIALIZED;
 
-  if (!CrashReporterIsEnabled(force)) {
-    return NS_OK;
-  }
+#if defined(DEBUG)
+  // In debug builds, disable the crash reporter by default, and allow to
+  // enable it with the MOZ_CRASHREPORTER environment variable.
+  const char* envvar = PR_GetEnv("MOZ_CRASHREPORTER");
+  if ((!envvar || !*envvar) && !force) return NS_OK;
+#else
+  // In other builds, enable the crash reporter by default, and allow
+  // disabling it with the MOZ_CRASHREPORTER_DISABLE environment variable.
+  const char* envvar = PR_GetEnv("MOZ_CRASHREPORTER_DISABLE");
+  if (envvar && *envvar && !force) return NS_OK;
+#endif
 
   // this environment variable prevents us from launching
   // the crash reporter client
@@ -3157,19 +3165,7 @@ static bool MoveToPending(nsIFile* dumpFile, nsIFile* extraFile,
   return true;
 }
 
-nsresult OOPInit(nsIFile* aXREDirectory, bool force /*=false*/) {
-  if (!CrashReporterIsEnabled(force)) {
-    return NS_OK;
-  }
-
-  {
-    // It's already started, no work to do here!
-    StaticMutexAutoLock lock(gCrashHelperClientMutex);
-    if (gCrashHelperClient) {
-      return NS_OK;
-    }
-  }
-
+nsresult OOPInit(nsIFile* aXREDirectory) {
   CrashHelperClient* crashHelperClient;
 
   PathString tempPath;
@@ -3249,14 +3245,6 @@ void OOPDeinit() {
     crash_helper_shutdown(gCrashHelperClient);
     gCrashHelperClient = nullptr;
   }
-}
-
-uint32_t GetCrashHelperPid() {
-  StaticMutexAutoLock lock(gCrashHelperClientMutex);
-  if (!gCrashHelperClient) {
-    return 0;
-  }
-  return static_cast<uint32_t>(crash_helper_pid(gCrashHelperClient));
 }
 
 // Parent-side API for children

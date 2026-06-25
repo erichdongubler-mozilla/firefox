@@ -5,7 +5,6 @@
 #include "RuntimeExceptionModule.h"
 
 #include "mozilla/ProcessType.h"
-#include <stdlib.h>
 
 #if defined(XP_WIN)
 #  include <windows.h>
@@ -50,9 +49,21 @@ bool GetRuntimeExceptionModulePath(wchar_t* aPath, const size_t aLength) {
 
 void RegisterRuntimeExceptionModule() {
 #ifdef XP_WIN
-  if (!CrashReporterIsEnabled()) {
+#  if defined(DEBUG)
+  // In debug builds, disable the crash reporter by default, and allow to
+  // enable it with the MOZ_CRASHREPORTER environment variable.
+  const char* envvar = getenv("MOZ_CRASHREPORTER");
+  if (!envvar || !*envvar) {
     return;
   }
+#  else
+  // In other builds, enable the crash reporter by default, and allow
+  // disabling it with the MOZ_CRASHREPORTER_DISABLE environment variable.
+  const char* envvar = getenv("MOZ_CRASHREPORTER_DISABLE");
+  if (envvar && *envvar) {
+    return;
+  }
+#  endif
 
   // If sModulePath is set we have already registerd the module.
   if (*sModulePath) {
@@ -83,23 +94,6 @@ void UnregisterRuntimeExceptionModule() {
     *sModulePath = L'\0';
   }
 #endif  // XP_WIN
-}
-
-bool CrashReporterIsEnabled(bool force) {
-  if (force) {
-    return true;
-  }
-#if defined(DEBUG)
-  // In debug builds, disable the crash reporter by default, and allow to
-  // enable it with the MOZ_CRASHREPORTER environment variable.
-  const char* envvar = getenv("MOZ_CRASHREPORTER");
-  return envvar && *envvar;
-#else
-  // In other builds, enable the crash reporter by default, and allow
-  // disabling it with the MOZ_CRASHREPORTER_DISABLE environment variable.
-  const char* envvar = getenv("MOZ_CRASHREPORTER_DISABLE");
-  return !envvar || !*envvar;
-#endif
 }
 
 }  // namespace CrashReporter

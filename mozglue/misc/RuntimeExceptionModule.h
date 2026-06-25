@@ -13,8 +13,6 @@ MFBT_API void RegisterRuntimeExceptionModule();
 
 MFBT_API void UnregisterRuntimeExceptionModule();
 
-MFBT_API bool CrashReporterIsEnabled(bool force = false);
-
 }  // namespace CrashReporter
 
 #endif  // RUNTIMEEXCEPTIONMODULE_H_
