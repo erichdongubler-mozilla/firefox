@@ -20,6 +20,7 @@ const PREF_WIDGETS_SYSTEM_TIMER_ENABLED = "widgets.system.focusTimer.enabled";
 const PREF_WIDGETS_SPORTS_WIDGET_ENABLED = "widgets.sportsWidget.enabled";
 const PREF_WIDGETS_CLOCKS_ENABLED = "widgets.clocks.enabled";
 const PREF_WIDGETS_PRIVACY_ENABLED = "widgets.privacy.enabled";
+const PREF_WIDGETS_CROSSWORD_ENABLED = "widgets.crossword.enabled";
 const PREF_WIDGETS_FEEDBACK_ENABLED = "widgets.feedback.enabled";
 const PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED = "widgets.hideAllToast.enabled";
 
@@ -216,8 +217,8 @@ describe("<Widgets>", () => {
 
       assert.equal(
         setPrefCalls.length,
-        5,
-        `should dispatch five SetPref actions, got ${setPrefCalls.length}.`
+        6,
+        `should dispatch six SetPref actions, got ${setPrefCalls.length}.`
       );
 
       const listsPrefCall = setPrefCalls.find(
@@ -234,6 +235,9 @@ describe("<Widgets>", () => {
       );
       const privacyPrefCall = setPrefCalls.find(
         call => call.args[0].data?.name === PREF_WIDGETS_PRIVACY_ENABLED
+      );
+      const crosswordPrefCall = setPrefCalls.find(
+        call => call.args[0].data?.name === PREF_WIDGETS_CROSSWORD_ENABLED
       );
 
       assert.ok(listsPrefCall, "should dispatch SetPref for lists");
@@ -269,6 +273,13 @@ describe("<Widgets>", () => {
         privacyPrefCall.args[0].data.value,
         false,
         "should set privacy pref to false"
+      );
+
+      assert.ok(crosswordPrefCall, "should dispatch SetPref for crossword");
+      assert.equal(
+        crosswordPrefCall.args[0].data.value,
+        false,
+        "should set crossword pref to false"
       );
     });
 
@@ -284,8 +295,8 @@ describe("<Widgets>", () => {
 
       assert.equal(
         setPrefCalls.length,
-        5,
-        "should dispatch five SetPref actions"
+        6,
+        "should dispatch six SetPref actions"
       );
 
       const listsPrefCall = setPrefCalls.find(
@@ -302,6 +313,9 @@ describe("<Widgets>", () => {
       );
       const privacyPrefCall = setPrefCalls.find(
         call => call.args[0].data?.name === PREF_WIDGETS_PRIVACY_ENABLED
+      );
+      const crosswordPrefCall = setPrefCalls.find(
+        call => call.args[0].data?.name === PREF_WIDGETS_CROSSWORD_ENABLED
       );
 
       assert.ok(listsPrefCall, "should dispatch SetPref for lists");
@@ -337,6 +351,13 @@ describe("<Widgets>", () => {
         privacyPrefCall.args[0].data.value,
         false,
         "should set privacy pref to false"
+      );
+
+      assert.ok(crosswordPrefCall, "should dispatch SetPref for crossword");
+      assert.equal(
+        crosswordPrefCall.args[0].data.value,
+        false,
+        "should set crossword pref to false"
       );
     });
 
@@ -352,8 +373,8 @@ describe("<Widgets>", () => {
 
       assert.equal(
         setPrefCalls.length,
-        5,
-        "should dispatch five SetPref actions"
+        6,
+        "should dispatch six SetPref actions"
       );
 
       const listsPrefCall = setPrefCalls.find(
@@ -370,6 +391,9 @@ describe("<Widgets>", () => {
       );
       const privacyPrefCall = setPrefCalls.find(
         call => call.args[0].data?.name === PREF_WIDGETS_PRIVACY_ENABLED
+      );
+      const crosswordPrefCall = setPrefCalls.find(
+        call => call.args[0].data?.name === PREF_WIDGETS_CROSSWORD_ENABLED
       );
 
       assert.ok(listsPrefCall, "should dispatch SetPref for lists");
@@ -405,6 +429,13 @@ describe("<Widgets>", () => {
         privacyPrefCall.args[0].data.value,
         false,
         "should set privacy pref to false"
+      );
+
+      assert.ok(crosswordPrefCall, "should dispatch SetPref for crossword");
+      assert.equal(
+        crosswordPrefCall.args[0].data.value,
+        false,
+        "should set crossword pref to false"
       );
     });
 

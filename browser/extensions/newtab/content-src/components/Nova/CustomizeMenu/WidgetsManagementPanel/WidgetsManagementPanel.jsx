@@ -23,6 +23,7 @@ function WidgetsManagementPanel({
   mayHaveSportsWidget,
   mayHaveClocksWidget,
   mayHavePrivacyWidget,
+  mayHaveCrosswordWidget,
   setPref,
 }) {
   const prefs = useSelector(state => state.Prefs.values);
@@ -74,6 +75,9 @@ function WidgetsManagementPanel({
         case "WIDGET_PRIVACY":
           widgetName = "privacy";
           break;
+        case "WIDGET_CROSSWORD":
+          widgetName = "crossword";
+          break;
       }
 
       if (widgetName) {
@@ -106,6 +110,7 @@ function WidgetsManagementPanel({
     sportsWidgetEnabled,
     clocksEnabled,
     privacyEnabled,
+    crosswordEnabled,
   } = enabledWidgets;
   const isRTL = typeof document !== "undefined" && document.dir === "rtl";
   const arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
@@ -207,6 +212,19 @@ function WidgetsManagementPanel({
                     data-event-source="WIDGET_PRIVACY"
                     data-l10n-id="newtab-custom-widget-privacy-toggle"
                   />
+                </div>
+              )}
+              {mayHaveCrosswordWidget && (
+                <div id="crossword-widget-section" className="section">
+                  {/* TODO: Add in fluent string when correct preview files are set up */}
+                  <moz-toggle
+                    id="crossword-toggle"
+                    pressed={crosswordEnabled || null}
+                    ontoggle={onToggleWidget}
+                    data-preference="widgets.crossword.enabled"
+                    data-event-source="WIDGET_CROSSWORD"
+                    label="Crossword"
+                  ></moz-toggle>
                 </div>
               )}
             </div>

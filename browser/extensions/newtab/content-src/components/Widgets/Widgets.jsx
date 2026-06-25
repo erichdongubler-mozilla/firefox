@@ -213,6 +213,11 @@ function Widgets() {
       prefs,
       widgetsEnabled
     ),
+    crossword: isWidgetEnabled(
+      WIDGET_REGISTRY.find(w => w.id === "crossword"),
+      prefs,
+      widgetsEnabled
+    ),
   };
 
   const widgetOrder = resolveWidgetOrder(prefs);

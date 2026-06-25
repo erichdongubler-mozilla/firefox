@@ -9526,6 +9526,79 @@ dialog:dir(rtl)::after {
   gap: var(--space-small);
 }
 
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+.crossword {
+  --widget-size-transition-duration: 180ms;
+  --widget-size-transition-easing: ease;
+  background: var(--newtab-background-card);
+  transition: opacity 0.2s ease;
+  padding: var(--space-medium);
+  border-radius: var(--border-radius-large);
+  box-shadow: var(--box-shadow-level-2);
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: height var(--widget-size-transition-duration) var(--widget-size-transition-easing);
+}
+.crossword:hover {
+  background: var(--newtab-background-color-secondary);
+}
+.crossword.small-widget, .crossword.medium-widget {
+  height: var(--newtab-card-height-small);
+}
+.crossword.large-widget {
+  height: var(--newtab-card-height);
+}
+.crossword:hover, .crossword:focus-within {
+  outline: 1px solid var(--border-color-deemphasized);
+  box-shadow: var(--card-box-shadow-hover);
+}
+@media (prefers-reduced-motion: reduce) {
+  .crossword {
+    transition: none;
+  }
+}
+.crossword.medium-widget {
+  grid-row: span 2;
+}
+.crossword.large-widget {
+  grid-row: span 4;
+}
+
+.crossword-title-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-block-end: var(--space-xsmall);
+}
+.crossword-title-wrapper h3 {
+  margin-block: 0;
+  font-weight: var(--font-weight);
+  font-size: var(--font-size-root);
+}
+
+.crossword-context-menu-wrapper {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.crossword:hover .crossword-context-menu-wrapper,
+.crossword:focus-within .crossword-context-menu-wrapper {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.crossword-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+}
+
 .weather-forecast-widget {
   background: var(--newtab-background-card);
   transition: opacity 0.2s ease;

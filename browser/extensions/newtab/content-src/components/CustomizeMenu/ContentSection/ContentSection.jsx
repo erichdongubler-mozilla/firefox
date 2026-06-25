@@ -51,6 +51,9 @@ export class ContentSection extends React.PureComponent {
         case "WIDGET_PRIVACY":
           widgetName = "privacy";
           break;
+        case "WIDGET_CROSSWORD":
+          widgetName = "crossword";
+          break;
       }
 
       if (widgetName) {
@@ -176,6 +179,7 @@ export class ContentSection extends React.PureComponent {
       mayHaveSportsWidget,
       mayHaveClocksWidget,
       mayHavePrivacyWidget,
+      mayHaveCrosswordWidget,
       mayHaveWeatherForecast,
       openPreferences,
       wallpapersUserEnabled,
@@ -201,8 +205,13 @@ export class ContentSection extends React.PureComponent {
       showInferredPersonalizationEnabled,
       topSitesRowsCount,
     } = enabledSections;
-    const { timerEnabled, listsEnabled, clocksEnabled, privacyEnabled } =
-      enabledWidgets;
+    const {
+      timerEnabled,
+      listsEnabled,
+      clocksEnabled,
+      privacyEnabled,
+      crosswordEnabled,
+    } = enabledWidgets;
 
     // @nova-cleanup(remove-conditional): Remove novaEnabled check and newtab-custom-stories-toggle, default to newtab-recommended-stories-toggle
     let pocketToggleL10nId;
@@ -315,6 +324,21 @@ export class ContentSection extends React.PureComponent {
                       data-event-source="WIDGET_PRIVACY"
                       data-l10n-id="newtab-custom-widget-privacy-toggle"
                     />
+                  </div>
+                )}
+
+                {/* Crossword */}
+                {mayHaveCrosswordWidget && (
+                  <div id="crossword-widget-section" className="section">
+                    {/* TODO: Add in fluent string when correct preview files are set up */}
+                    <moz-toggle
+                      id="crossword-toggle"
+                      pressed={!!crosswordEnabled}
+                      ontoggle={this.onPreferenceSelect}
+                      data-preference="widgets.crossword.enabled"
+                      data-event-source="WIDGET_CROSSWORD"
+                      label="Crossword"
+                    ></moz-toggle>
                   </div>
                 )}
               </div>
@@ -432,6 +456,7 @@ export class ContentSection extends React.PureComponent {
                             mayHaveSportsWidget={mayHaveSportsWidget}
                             mayHaveClocksWidget={mayHaveClocksWidget}
                             mayHavePrivacyWidget={mayHavePrivacyWidget}
+                            mayHaveCrosswordWidget={mayHaveCrosswordWidget}
                             mayHaveWeatherForecast={mayHaveWeatherForecast}
                             weatherDisplay={weatherDisplay}
                             setPref={setPref}

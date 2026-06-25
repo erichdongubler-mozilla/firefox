@@ -1451,6 +1451,13 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.crossword.enabled",
+    {
+      title: "Enables the crossword widget",
+      value: true,
+    },
+  ],
+  [
     "widgets.system.privacy.enabled",
     {
       title: "Enables the privacy widget experiment in Nimbus",
@@ -1458,9 +1465,23 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.system.crossword.enabled",
+    {
+      title: "Enables the crossword widget experiment in Nimbus",
+      value: false,
+    },
+  ],
+  [
     "widgets.privacy.size",
     {
       title: "Size of the privacy widget (medium or large)",
+      value: "",
+    },
+  ],
+  [
+    "widgets.crossword.size",
+    {
+      title: "Size of the crossword widget (medium or large)",
       value: "",
     },
   ],

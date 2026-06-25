@@ -97,6 +97,10 @@ export const PREF_WIDGETS_PRIVACY_ENABLED = "widgets.privacy.enabled";
 export const PREF_PRIVACY_SIZE = "widgets.privacy.size";
 export const PREF_WIDGETS_SYSTEM_PRIVACY_ENABLED =
   "widgets.system.privacy.enabled";
+export const PREF_WIDGETS_CROSSWORD_ENABLED = "widgets.crossword.enabled";
+export const PREF_CROSSWORD_SIZE = "widgets.crossword.size";
+export const PREF_WIDGETS_SYSTEM_CROSSWORD_ENABLED =
+  "widgets.system.crossword.enabled";
 
 /**
  * @typedef {object} WidgetRegistryEntry
@@ -213,6 +217,22 @@ export const WIDGET_REGISTRY = [
     trainhopSidebarKey: null,
     widgetsSettingsVisibleKey: "privacyVisible",
     widgetsSettingsEnabledKey: "privacyEnabled",
+  },
+  {
+    id: "crossword",
+    telemetryName: "crossword",
+    order: 6,
+    enabledPref: PREF_WIDGETS_CROSSWORD_ENABLED,
+    sizePref: PREF_CROSSWORD_SIZE,
+    defaultSize: "medium",
+    validSizes: ["medium", "large"],
+    hasSidebar: false,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_CROSSWORD_ENABLED,
+    trainhopEnabledKey: "crosswordEnabled",
+    trainhopSizeKey: "crosswordSize",
+    trainhopSidebarKey: null,
+    widgetsSettingsVisibleKey: "crosswordVisible",
+    widgetsSettingsEnabledKey: "crosswordEnabled",
   },
 ];
 

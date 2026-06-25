@@ -97,7 +97,9 @@ describe("getWidgetOrder", () => {
 
   it("respects a fully-specified custom order", () => {
     expect(
-      getWidgetOrder("focusTimer,lists,weather,sportsWidget,clocks")
+      getWidgetOrder(
+        "focusTimer,lists,weather,sportsWidget,clocks,privacy,crossword"
+      )
     ).toEqual([
       "focusTimer",
       "lists",
@@ -105,6 +107,7 @@ describe("getWidgetOrder", () => {
       "sportsWidget",
       "clocks",
       "privacy",
+      "crossword",
     ]);
   });
 
@@ -116,6 +119,7 @@ describe("getWidgetOrder", () => {
       "lists",
       "focusTimer",
       "privacy",
+      "crossword",
     ]);
   });
 
@@ -127,6 +131,7 @@ describe("getWidgetOrder", () => {
       "clocks",
       "focusTimer",
       "privacy",
+      "crossword",
     ]);
   });
 
@@ -145,6 +150,7 @@ describe("getWidgetOrder", () => {
       "clocks",
       "weather",
       "privacy",
+      "crossword",
     ]);
     expect(result.length).toBe(registryIds.length);
   });
@@ -167,6 +173,7 @@ describe("resolveWidgetOrder", () => {
       "sportsWidget",
       "clocks",
       "privacy",
+      "crossword",
     ]);
   });
 
@@ -183,6 +190,7 @@ describe("resolveWidgetOrder", () => {
       "sportsWidget",
       "clocks",
       "privacy",
+      "crossword",
     ]);
   });
 
@@ -199,6 +207,7 @@ describe("resolveWidgetOrder", () => {
       "sportsWidget",
       "clocks",
       "privacy",
+      "crossword",
     ]);
   });
 });
