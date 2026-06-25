@@ -2160,6 +2160,8 @@ function* IteratorWindowsGenerator(iterator, nextMethod, windowSize, undersized)
   // (implicit)
 }
 
+#endif
+
 /**
  *  Iterator.prototype.join ( separator )
  *
@@ -2231,8 +2233,6 @@ function IteratorJoin(separator) {
   // Step 9.b. If value is done, return R.
   return R;
 }
-
-#endif
 
 /**
  *  Iterator.prototype.includes ( searchElement [ , skippedElements ] )

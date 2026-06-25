@@ -1832,16 +1832,18 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
          id == NameToId(cx->names().windows))) {
       return true;
     }
+  }
+#endif
+
+  if (key == JSProto_Iterator) {
+    if (!JS::Prefs::experimental_iterator_includes() &&
+        id == NameToId(cx->names().includes)) {
+      return true;
+    }
     if (!JS::Prefs::experimental_iterator_join() &&
         id == NameToId(cx->names().join)) {
       return true;
     }
-  }
-#endif
-
-  if (key == JSProto_Iterator && !JS::Prefs::experimental_iterator_includes() &&
-      id == NameToId(cx->names().includes)) {
-    return true;
   }
 
   if (key == JSProto_Function &&
