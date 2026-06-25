@@ -31,6 +31,7 @@ web-platform-tests:
     - web-platform-tests-canvas
     - web-platform-tests-webcodecs
     - web-platform-tests-eme
+    - web-platform-tests-aam
 
 web-platform-tests-2404-tsan:
     - web-platform-tests
@@ -41,6 +42,7 @@ web-platform-tests-2404-tsan:
     - web-platform-tests-canvas
     - web-platform-tests-webcodecs
     - web-platform-tests-eme
+    - web-platform-tests-aam
 
 web-platform-tests-backlog:
     - web-platform-tests-backlog

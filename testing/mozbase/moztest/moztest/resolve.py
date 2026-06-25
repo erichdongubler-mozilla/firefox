@@ -329,7 +329,7 @@ TEST_SUITES = {
         "build_flavor": "web-platform-tests",
         "kwargs": {"subsuite": "testharness"},
         "task_regex": [
-            "web-platform-tests(?!-crashtest|-reftest|-wdspec|-print)"
+            "web-platform-tests(?!-crashtest|-reftest|-wdspec|-print|-aam)"
             "($|.*(-1|[^0-9])$)",
             "test-verify-wpt",
         ],
@@ -370,6 +370,16 @@ TEST_SUITES = {
         "kwargs": {"subsuite": "wdspec"},
         "task_regex": [
             "web-platform-tests-wdspec($|.*(-1|[^0-9])$)",
+            "test-verify-wpt",
+        ],
+    },
+    "web-platform-tests-aam": {
+        "aliases": ("wpt",),
+        "mach_command": "web-platform-tests",
+        "build_flavor": "web-platform-tests",
+        "kwargs": {"subsuite": "aamtest"},
+        "task_regex": [
+            "web-platform-tests-aam($|.*(-1|[^0-9])$)",
             "test-verify-wpt",
         ],
     },

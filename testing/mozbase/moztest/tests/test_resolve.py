@@ -593,6 +593,7 @@ def test_task_regexes():
         "test-linux64/opt-web-platform-tests-e10s-1",
         "test-linux64/opt-web-platform-tests-reftest-e10s-1",
         "test-linux64/opt-web-platform-tests-wdspec-e10s-1",
+        "test-linux64/opt-web-platform-tests-aam-e10s-1",
         "test-linux64/opt-web-platform-tests-1",
         "test-linux64/opt-web-platform-test-e10s-1",
         "test-linux64/opt-xpcshell",
@@ -640,6 +641,9 @@ def test_task_regexes():
         ],
         "web-platform-tests-wdspec": [
             "test-linux64/opt-web-platform-tests-wdspec-e10s-1",
+        ],
+        "web-platform-tests-aam": [
+            "test-linux64/opt-web-platform-tests-aam-e10s-1",
         ],
         "xpcshell": [
             "test-linux64/opt-xpcshell",

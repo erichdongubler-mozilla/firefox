@@ -502,7 +502,7 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
 
         options = list(c.get("options", []))
 
-        if "wdspec" in test_types:
+        if "wdspec" in test_types or "aamtest" in test_types:
             geckodriver_path = self._query_geckodriver()
             if not geckodriver_path or not os.path.isfile(geckodriver_path):
                 self.fatal(
