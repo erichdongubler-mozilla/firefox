@@ -116,6 +116,24 @@ RefPtr<MediaDataDecoder::DecodePromise> AppleVTDecoder::Decode(
       p = mPromise.Ensure(__func__);
     }
     ProcessDecode(sample);
+    // While skipping the keyframe->target run after a seek, do not block this
+    // Decode on its own VideoToolbox callback. Resolve it immediately with
+    // whatever frames are already buffered (often none early on) so the reader
+    // keeps feeding the next sample and VideoToolbox decodes the run with
+    // several frames in flight instead of one at a time. Decoded frames still
+    // arrive in composition order via the reorder queue and are returned on
+    // later Decode() calls. The seek threshold is only set during this skip
+    // window, so outside a seek behaviour is unchanged.
+    {
+      MonitorAutoLock mon(mMonitor);
+      if (mSeekTargetThreshold.isSome() && !mPromise.IsEmpty()) {
+        DecodedData results;
+        while (mReorderQueue.Length() > mMaxRefFrames) {
+          results.AppendElement(mReorderQueue.Pop());
+        }
+        mPromise.Resolve(std::move(results), __func__);
+      }
+    }
     return p;
   });
 }
