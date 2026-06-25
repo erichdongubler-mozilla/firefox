@@ -15122,11 +15122,15 @@ hr {
   align-self: end;
   box-shadow: var(--card-box-shadow);
   border: var(--border-width) solid var(--button-border-color-ghost);
+  border-radius: var(--border-radius-medium);
 }
 @media (prefers-reduced-motion: no-preference) {
   .nova-enabled .top-site-outer .tile {
     transition: width 100ms ease-out, height 100ms ease-out;
   }
+}
+.nova-enabled .top-site-outer .tile .top-site-icon {
+  border-radius: var(--border-radius-small);
 }
 .nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .tile {
   border-color: var(--button-border-color-ghost-hover);

@@ -60,9 +60,16 @@
     align-self: end;
     box-shadow: var(--card-box-shadow);
     border: var(--border-width) solid var(--button-border-color-ghost);
+    // Bug 2044205 grew the radius scale so "large" is now 16px. The tile was
+    // designed against the old 12px "large", so use "medium" (12px) to keep it.
+    border-radius: var(--border-radius-medium);
 
     @media (prefers-reduced-motion: no-preference) {
       transition: width 100ms ease-out, height 100ms ease-out;
+    }
+
+    .top-site-icon {
+      border-radius: var(--border-radius-small);
     }
   }
 
