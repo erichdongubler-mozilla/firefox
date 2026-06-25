@@ -143,8 +143,6 @@ prefs = [
 
 ["test_muxer.js"]
 
-["test_muxer_excludeSponsoredResults.js"]
-
 ["test_pages_alt_frecency.js"]
 prefs = [
   "places.frecency.pages.alternative.featureGate=true",

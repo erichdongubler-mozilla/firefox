@@ -137,7 +137,7 @@ var localProviderModules = [
     name: "UrlbarProviderQuickSuggest",
     module:
       "moz-src:///browser/components/urlbar/UrlbarProviderQuickSuggest.sys.mjs",
-    supportedSAPs: ["smartbar", "urlbar"],
+    supportedSAPs: ["urlbar"],
   },
   {
     name: "UrlbarProviderQuickSuggestContextualOptIn",

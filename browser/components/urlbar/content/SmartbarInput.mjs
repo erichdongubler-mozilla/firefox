@@ -6365,13 +6365,11 @@ ${
       sapName: this.sapName,
       maxResults,
       searchString,
-      excludeSponsoredResults: this.sapName === "smartbar",
-      prohibitRemoteResults: !!(
+      prohibitRemoteResults:
         event &&
         lazy.UrlbarUtils.isPasteEvent(event) &&
         lazy.UrlbarPrefs.get("maxCharsForSearchSuggestions") <
-          event.data?.length
-      ),
+          event.data?.length,
     };
 
     // Only add gBrowser-dependent properties if gBrowser exists.
