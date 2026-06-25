@@ -781,6 +781,7 @@ class MainMenuTest {
         }
     }
 
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4135485
     @Test
     @SkipLeaks(
         reasons = [
@@ -800,11 +801,15 @@ class MainMenuTest {
         }.openMainMenu {
             verifyBookmarkThisPageButton()
             clickBookmarkThisPageButton()
+            verifySnackBarText("Saved in “Bookmarks”")
+            waitUntilSnackbarGone()
         }.openMainMenu {
             verifyEditBookmarkButton()
         }
     }
 
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4135486
+    @Ignore("Disabled for recently failing due to race conditions https://bugzilla.mozilla.org/show_bug.cgi?id=2050387")
     @Test
     @SkipLeaks(
         reasons = [
