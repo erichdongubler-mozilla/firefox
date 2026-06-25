@@ -6481,7 +6481,6 @@ int32_t nsGlobalWindowInner::SetTimeoutOrInterval(
   if (!GetContextInternal() || !HasJSGlobal()) {
     // This window was already closed, or never properly initialized,
     // don't let a timer be scheduled on such a window.
-    aError.Throw(NS_ERROR_NOT_INITIALIZED);
     return 0;
   }
 
