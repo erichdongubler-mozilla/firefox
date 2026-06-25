@@ -19,8 +19,6 @@ extern mozilla::LazyLogModule gPIPNSSLog;
 
 NS_IMPL_ISUPPORTS(PKCS11Token, nsIPKCS11Token)
 
-PKCS11Token::PKCS11Token() : mUIContext(new PipUIContext()) {}
-
 nsresult PKCS11Token::Init() {
   static NS_DEFINE_CID(kNSSComponentCID, NS_NSSCOMPONENT_CID);
   nsCOMPtr<nsINSSComponent> nss(do_GetService(kNSSComponentCID));
@@ -34,7 +32,7 @@ nsresult PKCS11Token::Init() {
   return refreshTokenInfo();
 }
 
-PKCS11Token::PKCS11Token(PK11SlotInfo* slot) : mUIContext(new PipUIContext()) {
+PKCS11Token::PKCS11Token(PK11SlotInfo* slot) {
   MOZ_ASSERT(slot);
   mSlot.reset(PK11_ReferenceSlot(slot));
   mIsInternalCryptoToken =
@@ -160,8 +158,7 @@ PKCS11Token::GetIsLoggedIn(bool* isLoggedIn) {
 
 NS_IMETHODIMP
 PKCS11Token::Login() {
-  return mozilla::MapSECStatus(
-      PK11_Authenticate(mSlot.get(), true, mUIContext));
+  return mozilla::MapSECStatus(PK11_Authenticate(mSlot.get(), true, nullptr));
 }
 
 NS_IMETHODIMP
