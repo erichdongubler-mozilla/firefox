@@ -2060,11 +2060,6 @@ mozilla::ipc::IPCResult BrowserParent::RecvSynthesizeNativeTouchpadPan(
 
 mozilla::ipc::IPCResult BrowserParent::RecvLockNativePointer(
     const nsIWidget::NativePointerLockMode& aNativePointerLockMode) {
-  // XXX(edgar): LockNativePointer IPC message can be removed if pointer lock
-  // is handled mainly from parent process.
-  MOZ_ASSERT(
-      !StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled());
-
   if (nsCOMPtr<nsIWidget> widget = GetWidget()) {
     mLockedNativePointer = true;
     widget->LockNativePointer(aNativePointerLockMode);
@@ -2083,10 +2078,6 @@ void BrowserParent::UnlockNativePointer() {
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvUnlockNativePointer() {
-  // XXX(edgar): LockNativePointer IPC message can be removed if pointer lock
-  // is handled mainly from parent process.
-  MOZ_ASSERT(
-      !StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled());
   UnlockNativePointer();
   return IPC_OK();
 }
@@ -4263,8 +4254,9 @@ mozilla::ipc::IPCResult BrowserParent::RecvIsWindowSupportingWebVR(
   return IPC_OK();
 }
 
-BrowserParent* BrowserParent::TopLevelBrowserParent() {
-  BrowserParent* parent = this;
+static BrowserParent* GetTopLevelBrowserParent(BrowserParent* aBrowserParent) {
+  MOZ_ASSERT(aBrowserParent);
+  BrowserParent* parent = aBrowserParent;
   while (BrowserBridgeParent* bridge = parent->GetBrowserBridgeParent()) {
     parent = bridge->Manager();
   }
@@ -4272,14 +4264,14 @@ BrowserParent* BrowserParent::TopLevelBrowserParent() {
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvRequestPointerLock(
-    const bool& aUnadjustedMovement, RequestPointerLockResolver&& aResolve) {
-  if (sTopLevelWebFocus != TopLevelBrowserParent()) {
+    RequestPointerLockResolver&& aResolve) {
+  if (sTopLevelWebFocus != GetTopLevelBrowserParent(this)) {
     aResolve("PointerLockDeniedNotFocused"_ns);
     return IPC_OK();
   }
 
   nsCString error;
-  PointerLockManager::SetLockedRemoteTarget(this, aUnadjustedMovement, error);
+  PointerLockManager::SetLockedRemoteTarget(this, error);
   aResolve(std::move(error));
   return IPC_OK();
 }
