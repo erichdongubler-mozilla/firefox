@@ -68,6 +68,7 @@
   "theme_experiment": {
     "stylesheet": "aiwindow-theme.css",
     "properties": {
+      "ai_background_color": "--ai-background-color",
       "link_color": "--link-color"
     }
   }
