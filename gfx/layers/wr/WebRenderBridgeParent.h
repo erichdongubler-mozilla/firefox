@@ -544,6 +544,13 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
   bool mLastNotifiedHasLayers = false;
   bool mReceivedDisplayList = false;
   bool mSkippedComposite = false;
+  // Whether this is a root (widget) WebRenderBridgeParent. Determined at
+  // construction and stable for the object's lifetime. This must not be
+  // derived from mWidget, because mWidget is cleared on a WebRender
+  // initialization failure (see FinishInitializationError), which would
+  // otherwise make a failed root bridge masquerade as a content bridge during
+  // teardown.
+  const bool mIsRootWebRenderBridgeParent;
   // These payloads are being used for SCROLL_PRESENT_LATENCY telemetry
   DataMutex<nsClassHashtable<nsUint64HashKey, nsTArray<CompositionPayload>>>
       mPendingScrollPayloads{"WebRenderBridgeParent::mPendingScrollPayloads"};

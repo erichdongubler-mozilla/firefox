@@ -342,7 +342,8 @@ WebRenderBridgeParent::WebRenderBridgeParent(
       mWidget(aWidget),
       mVsyncRate(aVsyncRate),
       mDestroyed(false),
-      mIsFirstPaint(true) {
+      mIsFirstPaint(true),
+      mIsRootWebRenderBridgeParent(!!aWidget) {
   LOG("WebRenderBridgeParent::WebRenderBridgeParent() PipelineId %" PRIx64
       " root %d",
       wr::AsUint64(mPipelineId), IsRootWebRenderBridgeParent());
@@ -366,7 +367,8 @@ WebRenderBridgeParent::WebRenderBridgeParent(
       })),
       mVsyncRate(aVsyncRate),
       mDestroyed(false),
-      mIsFirstPaint(true) {
+      mIsFirstPaint(true),
+      mIsRootWebRenderBridgeParent(false) {
   MOZ_ASSERT(mLateInit->mAsyncImageManager);
   LOG("WebRenderBridgeParent::WebRenderBridgeParent() PipelineId %" PRIx64
       " Id %" PRIx64 " root %d",
@@ -390,7 +392,8 @@ WebRenderBridgeParent::WebRenderBridgeParent(const wr::PipelineId& aPipelineId,
       })),
       mInitError(std::move(aError)),
       mDestroyed(true),
-      mIsFirstPaint(false) {
+      mIsFirstPaint(false),
+      mIsRootWebRenderBridgeParent(false) {
   LOG("WebRenderBridgeParent::WebRenderBridgeParent() PipelineId %" PRIx64 "",
       wr::AsUint64(mPipelineId));
 }
@@ -1145,7 +1148,7 @@ void WebRenderBridgeParent::RemoveEpochDataPriorTo(
 }
 
 bool WebRenderBridgeParent::IsRootWebRenderBridgeParent() const {
-  return !!mWidget;
+  return mIsRootWebRenderBridgeParent;
 }
 
 void WebRenderBridgeParent::BeginRecording(const TimeStamp& aRecordingStart) {
