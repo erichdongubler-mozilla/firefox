@@ -489,11 +489,12 @@ export class LoginManagerParent extends JSWindowActorParent {
     }
   }
 
-  #onOpenPreferences(hostname, entryPoint) {
+  #onOpenPreferences(hostname, entryPoint, loginGuid) {
     const window = this.getRootBrowser().documentGlobal;
     lazy.LoginHelper.openPasswordManager(window, {
       filterString: hostname,
       entryPoint,
+      loginGuid,
     });
   }
 
@@ -1547,7 +1548,7 @@ export class LoginManagerParent extends JSWindowActorParent {
     switch (message) {
       // Called when clicking the open preference entry in the autocomplete
       case "PasswordManager:OpenPreferences": {
-        this.#onOpenPreferences(data.hostname, data.entryPoint);
+        this.#onOpenPreferences(data.hostname, data.entryPoint, data.loginGuid);
         break;
       }
 
