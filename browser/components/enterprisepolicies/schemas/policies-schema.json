@@ -1,5 +1,18 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "Validation uses standard JSON Schema. Before validating, Firefox normalizes platform input in PolicySchemaValidator.sys.mjs: a value delivered as a JSON string is parsed where contentMediaType is application/json, and 0/1 integers become booleans. After validation, strings with format uri become URL objects, and a list entry that fails validation is dropped and logged rather than discarding the whole policy.",
+  "definitions": {
+    "url": { "type": "string", "format": "uri" },
+    "urlOrEmpty": {
+      "type": "string",
+      "anyOf": [{ "format": "uri" }, { "maxLength": 0 }]
+    },
+    "origin": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^([Ff][Ii][Ll][Ee]://.*|[Hh][Tt][Tt][Pp][Ss]?://[^/]+/?)$"
+    }
+  },
   "type": "object",
   "properties": {
     "3rdparty": {
@@ -9,7 +22,8 @@
           "type": "object",
           "patternProperties": {
             "^.*$": {
-              "type": "JSON"
+              "type": ["object", "array"],
+              "contentMediaType": "application/json"
             }
           }
         }
@@ -122,9 +136,7 @@
       "type": "string"
     },
 
-    "AppUpdateURL": {
-      "type": "URL"
-    },
+    "AppUpdateURL": { "$ref": "#/definitions/url" },
 
     "Authentication": {
       "type": "object",
@@ -189,21 +201,20 @@
     },
 
     "AutoLaunchProtocolsFromOrigins": {
-      "type": ["array", "JSON"],
+      "type": "array",
+      "contentMediaType": "application/json",
       "items": {
         "type": "object",
         "properties": {
           "allowed_origins": {
             "type": "array",
-            "items": {
-              "type": "origin"
-            }
+            "items": { "$ref": "#/definitions/origin" }
           },
           "protocol": {
             "type": "string"
-          },
-          "required": ["allowed_origins", "protocol"]
-        }
+          }
+        },
+        "required": ["allowed_origins", "protocol"]
       }
     },
 
@@ -236,13 +247,9 @@
             "type": "string"
           },
 
-          "URL": {
-            "type": "URL"
-          },
+          "URL": { "$ref": "#/definitions/url" },
 
-          "Favicon": {
-            "type": "URLorEmpty"
-          },
+          "Favicon": { "$ref": "#/definitions/urlOrEmpty" },
 
           "Placement": {
             "type": "string",
@@ -292,7 +299,8 @@
       "type": "object",
       "properties": {
         "Default": {
-          "type": ["array", "JSON"],
+          "type": "array",
+          "contentMediaType": "application/json",
           "items": {
             "properties": {
               "name": {
@@ -439,26 +447,17 @@
       "properties": {
         "Allow": {
           "type": "array",
-          "strict": false,
-          "items": {
-            "type": "origin"
-          }
+          "items": { "$ref": "#/definitions/origin" }
         },
 
         "AllowSession": {
           "type": "array",
-          "strict": false,
-          "items": {
-            "type": "origin"
-          }
+          "items": { "$ref": "#/definitions/origin" }
         },
 
         "Block": {
           "type": "array",
-          "strict": false,
-          "items": {
-            "type": "origin"
-          }
+          "items": { "$ref": "#/definitions/origin" }
         },
 
         "Default": {
@@ -699,13 +698,20 @@
     },
 
     "DisplayBookmarksToolbar": {
-      "type": ["boolean", "string"],
-      "enum": ["always", "never", "newtab"]
+      "anyOf": [
+        { "type": "boolean" },
+        { "type": "string", "enum": ["always", "never", "newtab"] }
+      ]
     },
 
     "DisplayMenuBar": {
-      "type": ["boolean", "string"],
-      "enum": ["always", "never", "default-on", "default-off"]
+      "anyOf": [
+        { "type": "boolean" },
+        {
+          "type": "string",
+          "enum": ["always", "never", "default-on", "default-off"]
+        }
+      ]
     },
 
     "DNSOverHTTPS": {
@@ -714,9 +720,7 @@
         "Enabled": {
           "type": "boolean"
         },
-        "ProviderURL": {
-          "type": "URLorEmpty"
-        },
+        "ProviderURL": { "$ref": "#/definitions/urlOrEmpty" },
         "ExcludedDomains": {
           "type": "array",
           "items": {
@@ -763,10 +767,7 @@
         },
         "Exceptions": {
           "type": "array",
-          "strict": false,
-          "items": {
-            "type": "origin"
-          }
+          "items": { "$ref": "#/definitions/origin" }
         },
         "Category": {
           "type": "string",
@@ -836,7 +837,8 @@
     },
 
     "ExtensionSettings": {
-      "type": ["object", "JSON"],
+      "type": "object",
+      "contentMediaType": "application/json",
       "properties": {
         "*": {
           "type": "object",
@@ -904,7 +906,7 @@
         }
       },
       "patternProperties": {
-        "^.*$": {
+        "^(?!\\*$).*$": {
           "type": "object",
           "properties": {
             "installation_mode": {
@@ -925,9 +927,7 @@
             "updates_disabled": {
               "type": "boolean"
             },
-            "update_url": {
-              "type": "URL"
-            },
+            "update_url": { "$ref": "#/definitions/url" },
             "default_area": {
               "type": "string",
               "enum": ["navbar", "menupanel"]
@@ -1060,7 +1060,8 @@
     },
 
     "Handlers": {
-      "type": ["object", "JSON"],
+      "type": "object",
+      "contentMediaType": "application/json",
       "patternProperties": {
         "^(mimeTypes|extensions|schemes)$": {
           "type": "object",
@@ -1106,18 +1107,13 @@
     "Homepage": {
       "type": "object",
       "properties": {
-        "URL": {
-          "type": "URL"
-        },
+        "URL": { "$ref": "#/definitions/url" },
         "Locked": {
           "type": "boolean"
         },
         "Additional": {
           "type": "array",
-          "strict": false,
-          "items": {
-            "type": "URL"
-          }
+          "items": { "$ref": "#/definitions/url" }
         },
         "StartPage": {
           "type": "string",
@@ -1128,10 +1124,7 @@
 
     "HttpAllowlist": {
       "type": "array",
-      "strict": false,
-      "items": {
-        "type": "origin"
-      }
+      "items": { "$ref": "#/definitions/origin" }
     },
 
     "HttpsOnlyMode": {
@@ -1144,10 +1137,7 @@
       "properties": {
         "Allow": {
           "type": "array",
-          "strict": false,
-          "items": {
-            "type": "origin"
-          }
+          "items": { "$ref": "#/definitions/origin" }
         },
         "Default": {
           "type": "boolean"
@@ -1211,9 +1201,7 @@
           "children": {
             "items": {
               "properties": {
-                "favicon": {
-                  "type": "URL"
-                },
+                "favicon": { "$ref": "#/definitions/url" },
                 "name": {
                   "type": "string"
                 },
@@ -1225,7 +1213,8 @@
                 },
                 "children": {
                   "items": {
-                    "type": "JSON"
+                    "type": ["object", "array"],
+                    "contentMediaType": "application/json"
                   },
                   "type": "array"
                 }
@@ -1234,9 +1223,7 @@
             },
             "type": "array"
           },
-          "favicon": {
-            "type": "URL"
-          },
+          "favicon": { "$ref": "#/definitions/url" },
           "name": {
             "type": "string"
           },
@@ -1249,7 +1236,8 @@
         },
         "type": "object"
       },
-      "type": ["array", "JSON"]
+      "type": "array",
+      "contentMediaType": "application/json"
     },
 
     "ManualAppUpdateOnly": {
@@ -1284,9 +1272,7 @@
       "type": "string"
     },
 
-    "OverridePostUpdatePage": {
-      "type": "URLorEmpty"
-    },
+    "OverridePostUpdatePage": { "$ref": "#/definitions/urlOrEmpty" },
 
     "PasswordManagerEnabled": {
       "type": "boolean"
@@ -1294,10 +1280,7 @@
 
     "PasswordManagerExceptions": {
       "type": "array",
-      "strict": false,
-      "items": {
-        "type": "origin"
-      }
+      "items": { "$ref": "#/definitions/origin" }
     },
 
     "PDFjs": {
@@ -1320,18 +1303,12 @@
           "properties": {
             "Allow": {
               "type": "array",
-              "strict": false,
-              "items": {
-                "type": "origin"
-              }
+              "items": { "$ref": "#/definitions/origin" }
             },
 
             "Block": {
               "type": "array",
-              "strict": false,
-              "items": {
-                "type": "origin"
-              }
+              "items": { "$ref": "#/definitions/origin" }
             },
 
             "BlockNewRequests": {
@@ -1349,18 +1326,12 @@
           "properties": {
             "Allow": {
               "type": "array",
-              "strict": false,
-              "items": {
-                "type": "origin"
-              }
+              "items": { "$ref": "#/definitions/origin" }
             },
 
             "Block": {
               "type": "array",
-              "strict": false,
-              "items": {
-                "type": "origin"
-              }
+              "items": { "$ref": "#/definitions/origin" }
             },
 
             "BlockNewRequests": {
@@ -1383,18 +1354,12 @@
 
             "Allow": {
               "type": "array",
-              "strict": false,
-              "items": {
-                "type": "origin"
-              }
+              "items": { "$ref": "#/definitions/origin" }
             },
 
             "Block": {
               "type": "array",
-              "strict": false,
-              "items": {
-                "type": "origin"
-              }
+              "items": { "$ref": "#/definitions/origin" }
             },
 
             "Locked": {
@@ -1408,18 +1373,12 @@
           "properties": {
             "Allow": {
               "type": "array",
-              "strict": false,
-              "items": {
-                "type": "origin"
-              }
+              "items": { "$ref": "#/definitions/origin" }
             },
 
             "Block": {
               "type": "array",
-              "strict": false,
-              "items": {
-                "type": "origin"
-              }
+              "items": { "$ref": "#/definitions/origin" }
             },
 
             "BlockNewRequests": {
@@ -1437,18 +1396,12 @@
           "properties": {
             "Allow": {
               "type": "array",
-              "strict": false,
-              "items": {
-                "type": "origin"
-              }
+              "items": { "$ref": "#/definitions/origin" }
             },
 
             "Block": {
               "type": "array",
-              "strict": false,
-              "items": {
-                "type": "origin"
-              }
+              "items": { "$ref": "#/definitions/origin" }
             },
 
             "BlockNewRequests": {
@@ -1466,18 +1419,12 @@
           "properties": {
             "Allow": {
               "type": "array",
-              "strict": false,
-              "items": {
-                "type": "origin"
-              }
+              "items": { "$ref": "#/definitions/origin" }
             },
 
             "Block": {
               "type": "array",
-              "strict": false,
-              "items": {
-                "type": "origin"
-              }
+              "items": { "$ref": "#/definitions/origin" }
             },
 
             "BlockNewRequests": {
@@ -1495,18 +1442,12 @@
           "properties": {
             "Allow": {
               "type": "array",
-              "strict": false,
-              "items": {
-                "type": "origin"
-              }
+              "items": { "$ref": "#/definitions/origin" }
             },
 
             "Block": {
               "type": "array",
-              "strict": false,
-              "items": {
-                "type": "origin"
-              }
+              "items": { "$ref": "#/definitions/origin" }
             },
 
             "BlockNewRequests": {
@@ -1538,10 +1479,7 @@
       "properties": {
         "Allow": {
           "type": "array",
-          "strict": false,
-          "items": {
-            "type": "origin"
-          }
+          "items": { "$ref": "#/definitions/origin" }
         },
 
         "Default": {
@@ -1559,7 +1497,8 @@
     },
 
     "Preferences": {
-      "type": ["object", "JSON"],
+      "type": "object",
+      "contentMediaType": "application/json",
       "patternProperties": {
         "^.*$": {
           "type": ["number", "boolean", "string", "object"],
@@ -1609,9 +1548,7 @@
           "type": "boolean"
         },
 
-        "AutoConfigURL": {
-          "type": "URLorEmpty"
-        },
+        "AutoConfigURL": { "$ref": "#/definitions/urlOrEmpty" },
 
         "FTPProxy": {
           "type": "string"
@@ -1711,10 +1648,7 @@
         },
         "Exceptions": {
           "type": "array",
-          "strict": false,
-          "items": {
-            "type": "origin"
-          }
+          "items": { "$ref": "#/definitions/origin" }
         }
       }
     },
@@ -1737,9 +1671,7 @@
               "Name": {
                 "type": "string"
               },
-              "IconURL": {
-                "type": "URLorEmpty"
-              },
+              "IconURL": { "$ref": "#/definitions/urlOrEmpty" },
               "Alias": {
                 "type": "string"
               },
@@ -1790,7 +1722,7 @@
     "SecurityDevices": {
       "type": "object",
       "patternProperties": {
-        "^.*$": { "type": "string" }
+        "^(?!Add$|Delete$).*$": { "type": "string" }
       },
       "properties": {
         "Add": {
@@ -1868,9 +1800,7 @@
         "Title": {
           "type": "string"
         },
-        "URL": {
-          "type": "URL"
-        },
+        "URL": { "$ref": "#/definitions/url" },
         "AccessKey": {
           "type": "string"
         }
@@ -1921,7 +1851,8 @@
     },
 
     "WebsiteFilter": {
-      "type": ["object", "JSON"],
+      "type": "object",
+      "contentMediaType": "application/json",
       "properties": {
         "Block": {
           "type": "array",

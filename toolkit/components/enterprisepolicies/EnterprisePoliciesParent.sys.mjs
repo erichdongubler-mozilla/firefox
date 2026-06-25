@@ -7,9 +7,9 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  JsonSchemaValidator:
-    "resource://gre/modules/components-utils/JsonSchemaValidator.sys.mjs",
   Policies: "resource:///modules/policies/Policies.sys.mjs",
+  PolicySchemaValidator:
+    "resource://gre/modules/policies/PolicySchemaValidator.sys.mjs",
   WindowsGPOParser: "resource://gre/modules/policies/WindowsGPOParser.sys.mjs",
   macOSPoliciesParser:
     "resource://gre/modules/policies/macOSPoliciesParser.sys.mjs",
@@ -196,7 +196,7 @@ EnterprisePoliciesManager.prototype = {
       }
 
       let { valid: parametersAreValid, parsedValue: parsedParameters } =
-        lazy.JsonSchemaValidator.validate(policyParameters, policySchema, {
+        lazy.PolicySchemaValidator.validate(policyParameters, policySchema, {
           allowAdditionalProperties: true,
         });
 
