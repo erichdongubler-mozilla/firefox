@@ -332,12 +332,6 @@ var allowlist = [
     file: "resource://app/modules/backup/CookiesBackupResource.sys.mjs",
   },
 
-  // Bug 2023223: Replace loginOrigin, addresses, payments, and form history
-  // richlist items with autocomplete-row-item
-  {
-    file: "chrome://global/content/autocomplete-row-item/autocomplete-row-item.mjs",
-  },
-
   // Referenced dynamically in newtab components via template literals:
   // `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`
   { file: "chrome://global/skin/icons/shaft-arrow-left.svg" },
