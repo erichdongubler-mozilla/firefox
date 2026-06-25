@@ -290,6 +290,7 @@ let JSWINDOWACTORS = {
         "BackupUI:EnableEncryption": { wantUntrusted: true },
         "BackupUI:DisableEncryption": { wantUntrusted: true },
         "BackupUI:ShowBackupLocation": { wantUntrusted: true },
+        "BackupUI:EditBackupLocation": { wantUntrusted: true },
         "BackupUI:SetEmbeddedComponentPersistentData": { wantUntrusted: true },
         "BackupUI:FlushEmbeddedComponentPersistentData": {
           wantUntrusted: true,

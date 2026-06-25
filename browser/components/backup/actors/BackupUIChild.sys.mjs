@@ -61,7 +61,6 @@ export class BackupUIChild extends JSWindowActorChild {
         win: event.detail?.win,
         filter: event.detail?.filter,
         existingBackupPath: event.detail?.existingBackupPath,
-        alsoDeleteLastBackup: event.detail?.alsoDeleteLastBackup,
       });
 
       let widgets = ChromeUtils.nondeterministicGetWeakSetKeys(
@@ -94,8 +93,9 @@ export class BackupUIChild extends JSWindowActorChild {
         backupFile,
       });
     } else if (event.type == "BackupUI:RestoreFromBackupFile") {
-      let { backupPassword, restoreType, source } = event.detail;
+      let { backupFile, backupPassword, restoreType, source } = event.detail;
       let result = await this.sendQuery("RestoreFromBackupFile", {
+        backupFile,
         backupPassword,
         restoreType,
         source,
@@ -129,6 +129,8 @@ export class BackupUIChild extends JSWindowActorChild {
       }
     } else if (event.type == "BackupUI:ShowBackupLocation") {
       this.sendAsyncMessage("ShowBackupLocation");
+    } else if (event.type == "BackupUI:EditBackupLocation") {
+      this.sendAsyncMessage("EditBackupLocation", event.detail);
     } else if (event.type == "BackupUI:SetEmbeddedComponentPersistentData") {
       this.sendAsyncMessage("SetEmbeddedComponentPersistentData", event.detail);
     } else if (event.type == "BackupUI:FlushEmbeddedComponentPersistentData") {
