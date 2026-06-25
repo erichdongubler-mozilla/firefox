@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_SpeculationRules_h
-#define mozilla_dom_SpeculationRules_h
+#ifndef mozilla_dom_SpeculationRuleSet_h
+#define mozilla_dom_SpeculationRuleSet_h
 
 #include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"
@@ -20,16 +20,16 @@ class ErrorResult;
 
 namespace mozilla::dom {
 
-class SpeculationRules final {
+class SpeculationRuleSet final {
  public:
-  SpeculationRules() = delete;
-  SpeculationRules(SpeculationRules&) = delete;
-  SpeculationRules& operator=(const SpeculationRules&) = delete;
+  SpeculationRuleSet() = delete;
+  SpeculationRuleSet(SpeculationRuleSet&) = delete;
+  SpeculationRuleSet& operator=(const SpeculationRuleSet&) = delete;
 
-  ~SpeculationRules() = default;
+  ~SpeculationRuleSet() = default;
   static void operator delete(void* aSpeculationRules);
 
-  static Result<UniquePtr<SpeculationRules>, SpeculationRuleParseError> Parse(
+  static Result<UniquePtr<SpeculationRuleSet>, SpeculationRuleParseError> Parse(
       const nsACString& aSource, nsIURI* aDocumentBaseUri, nsIURI* aBaseUri);
 
   static void ReportParseError(nsIGlobalObject* aGlobal,
@@ -38,4 +38,4 @@ class SpeculationRules final {
 
 }  // namespace mozilla::dom
 
-#endif  // mozilla_dom_SpeculationRules_h
+#endif  // mozilla_dom_SpeculationRuleSet_h
