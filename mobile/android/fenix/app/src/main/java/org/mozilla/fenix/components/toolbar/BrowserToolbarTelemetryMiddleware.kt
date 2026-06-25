@@ -55,6 +55,7 @@ import org.mozilla.fenix.telemetry.SOURCE_BROWSER_START
 import org.mozilla.fenix.telemetry.SOURCE_NAVIGATION_BAR
 import org.mozilla.fenix.telemetry.SOURCE_PAGE_END
 import org.mozilla.fenix.telemetry.SOURCE_PAGE_START
+import org.mozilla.fenix.telemetry.SURFACE_BROWSER
 
 /**
  * [Middleware] responsible for recording telemetry of actions triggered by compose toolbars.
@@ -164,6 +165,7 @@ class BrowserToolbarTelemetryMiddleware : Middleware<BrowserToolbarState, Browse
                         source = SOURCE_ADDRESS_BAR,
                         item = toolbarActionRecord.action,
                         extra = source.telemetryName(),
+                        surface = SURFACE_BROWSER,
                     ),
                 )
 
@@ -172,6 +174,7 @@ class BrowserToolbarTelemetryMiddleware : Middleware<BrowserToolbarState, Browse
                     Toolbar.ButtonTappedExtra(
                         source = SOURCE_NAVIGATION_BAR,
                         item = toolbarActionRecord.action,
+                        surface = SURFACE_BROWSER,
                     ),
                 )
 

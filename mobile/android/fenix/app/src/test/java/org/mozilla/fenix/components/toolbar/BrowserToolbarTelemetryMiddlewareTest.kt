@@ -35,7 +35,9 @@ import org.mozilla.fenix.components.toolbar.TabCounterInteractions.TabCounterLon
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
 import org.mozilla.fenix.telemetry.SOURCE_NAVIGATION_BAR
+import org.mozilla.fenix.telemetry.SURFACE_BROWSER
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 @RunWith(AndroidJUnit4::class)
 class BrowserToolbarTelemetryMiddlewareTest {
@@ -221,8 +223,11 @@ class BrowserToolbarTelemetryMiddlewareTest {
         }
         assertEquals(item, last.extra?.getValue("item"))
         assertEquals(expectedSource, last.extra?.getValue("source"))
+        assertEquals(SURFACE_BROWSER, last.extra?.getValue("surface"))
         if (source is Source.AddressBar) {
             assertEquals(source.telemetryName(), last.extra?.getValue("extra"))
+        } else {
+            assertNull(last.extra?.get("extra"))
         }
     }
 

@@ -15569,7 +15569,7 @@ toolbar:
     extra_keys:
       source:
         description: |
-          Where the interaction occurred. One of: url_bar, navigation_bar, custom_bar.
+          Where the interaction occurred. One of: url_bar, navigation_bar.
         type: string
       item:
         description: |
@@ -15582,12 +15582,25 @@ toolbar:
         type: string
       extra:
         description: |
-          Any extra information about the button that was tapped.
+          Sub-position on the bar. Populated only for `source = url_bar` on the home and browser
+          surfaces, where it is one of: browser_start, page_start, page_end, browser_end.
+          For the `search_engine_selected` item it instead holds the telemetry name of the chosen
+          search engine: the engine name for regular engines (e.g. Google, Bing, DuckDuckGo), or one
+          of the fixed values `custom`, `history`, `bookmarks`, `tabs`, or `application` for custom
+          and application search engines.
+        type: string
+      surface:
+        description: |
+          The app surface where the toolbar lives. One of: home, browser, custom_tab.
+          Distinguishes the Home fragment toolbar, the Browser fragment toolbar,
+          and the custom tab toolbar.
         type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1971857
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2043252
     data_reviews:
       - https://phabricator.services.mozilla.com/D264134
+      - https://phabricator.services.mozilla.com/D303181
     data_sensitivity:
       - interaction
     notification_emails:

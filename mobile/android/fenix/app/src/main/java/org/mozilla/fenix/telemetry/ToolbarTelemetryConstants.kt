@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.telemetry
 
-const val SOURCE_CUSTOM_BAR = "custom_bar"
 const val SOURCE_NAVIGATION_BAR = "navigation_bar"
 const val SOURCE_ADDRESS_BAR = "url_bar"
 
@@ -12,6 +11,10 @@ const val SOURCE_BROWSER_START = "browser_start"
 const val SOURCE_PAGE_START = "page_start"
 const val SOURCE_PAGE_END = "page_end"
 const val SOURCE_BROWSER_END = "browser_end"
+
+const val SURFACE_HOME = "home"
+const val SURFACE_BROWSER = "browser"
+const val SURFACE_CUSTOM_TAB = "custom_tab"
 
 const val ACTION_ADD_BOOKMARK_CLICKED = "add_bookmark"
 const val ACTION_ADD_NEW_PRIVATE_TAB = "add_new_private_tab"
