@@ -18470,7 +18470,8 @@ function SportsWidget_SportsWidget({
         data: tab
       }));
     });
-  }, [dispatch, widgetSize, activeTab]);
+    handleInteraction();
+  }, [dispatch, widgetSize, activeTab, handleInteraction]);
 
   // @nova-cleanup(remove-gate): Remove this guard and PREF_NOVA_ENABLED after Nova ships
   if (!prefs[SportsWidget_PREF_NOVA_ENABLED]) {

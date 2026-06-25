@@ -978,8 +978,9 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
           })
         );
       });
+      handleInteraction();
     },
-    [dispatch, widgetSize, activeTab]
+    [dispatch, widgetSize, activeTab, handleInteraction]
   );
 
   // @nova-cleanup(remove-gate): Remove this guard and PREF_NOVA_ENABLED after Nova ships

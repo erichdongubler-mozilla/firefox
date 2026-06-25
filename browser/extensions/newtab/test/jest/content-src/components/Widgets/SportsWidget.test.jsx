@@ -1488,6 +1488,7 @@ describe("<SportsWidget> matches view", () => {
         }),
       })
     );
+    expect(handleUserInteraction).toHaveBeenCalledWith("sportsWidget");
   });
 
   it("dispatches change_tab telemetry when the results tab is clicked", () => {
@@ -1513,6 +1514,7 @@ describe("<SportsWidget> matches view", () => {
         }),
       })
     );
+    expect(handleUserInteraction).toHaveBeenCalledWith("sportsWidget");
   });
 
   it("does not dispatch change_tab telemetry when clicking the already-active tab", () => {
