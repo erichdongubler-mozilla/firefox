@@ -1921,9 +1921,6 @@ HttpChannelChild::ConnectParent(uint32_t registrarId) {
     return NS_ERROR_FAILURE;
   }
 
-  // Defensively ensure the process is marked as untrusted.
-  ContentChild::MaybeBecomeUntrusted();
-
   HttpBaseChannel::SetDocshellUserAgentOverride();
 
   // This must happen before the constructor message is sent. Otherwise messages
@@ -2486,9 +2483,6 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
   if (cc->IsShuttingDown()) {
     return NS_ERROR_FAILURE;
   }
-
-  // Defensively ensure the process is marked as untrusted.
-  ContentChild::MaybeBecomeUntrusted();
 
   // add ourselves to the load group.
   if (mLoadGroup) {

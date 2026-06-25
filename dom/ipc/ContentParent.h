@@ -443,12 +443,6 @@ class ContentParent final : public PContentParent,
   }
   bool IsDead() const { return mLifecycleState == LifecycleState::DEAD; }
 
-  /**
-   * Whether or not the content process has reported that it has become
-   * untrusted. See the documentation in ContentChild for more details.
-   */
-  bool IsUntrusted() const { return mIsUntrusted; }
-
   bool IsForBrowser() const { return mIsForBrowser; }
 
   GeckoChildProcessHost* Process() const { return mSubprocess; }
@@ -1445,11 +1439,6 @@ class ContentParent final : public PContentParent,
 
   mozilla::ipc::IPCResult RecvDropParentProcessChannelHandle(const nsID& aUuid);
 
-  mozilla::ipc::IPCResult RecvBecomeUntrusted() {
-    mIsUntrusted = true;
-    return IPC_OK();
-  }
-
  public:
   void SendGetFilesResponseAndForget(const nsID& aID,
                                      const GetFilesResponseResult& aResult);
@@ -1574,9 +1563,6 @@ class ContentParent final : public PContentParent,
   // not it returned `true` when called.
   uint8_t mLaunchResolved : 1;
   uint8_t mLaunchResolvedOk : 1;
-
-  // True if this process has marked itself as untrusted.
-  uint8_t mIsUntrusted : 1;
 
   // True if the input event queue on the main thread of the content process is
   // enabled.

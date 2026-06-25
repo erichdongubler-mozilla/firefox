@@ -705,12 +705,6 @@ child:
 parent:
     async UpdateScriptCacheEverHitTelemetry(uint64_t aChildId, uint32_t aRate);
 
-    // Sent by the content process immediately before it does an operation which
-    // it believes makes it "untrusted", such as loading untrusted content in an
-    // content docshell, starting a worker, etc. Operations which rely on a
-    // trusted content process must only happen before this message is sent.
-    async BecomeUntrusted();
-
 child:
     async SetOffline(bool offline);
     async SetConnectivity(bool connectivity);

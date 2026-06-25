@@ -3139,9 +3139,6 @@ already_AddRefed<WorkerPrivate> WorkerPrivate::Constructor(
     }
   } else {
     AssertIsOnMainThread();
-
-    // Ensure the process is untrusted before it runs any workers.
-    ContentChild::MaybeBecomeUntrusted();
   }
 
   Maybe<WorkerLoadInfo> stackLoadInfo;

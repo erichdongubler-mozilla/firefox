@@ -11,7 +11,6 @@
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/BlobURL.h"
 #include "mozilla/dom/BlobURLInputStream.h"
-#include "mozilla/dom/ContentChild.h"
 #include "nsQueryObject.h"
 
 using namespace mozilla::dom;
@@ -116,9 +115,6 @@ nsresult BlobURLChannel::OpenContentStream(bool aAsync,
     return NS_ERROR_MALFORMED_URI;
 #endif
   }
-
-  // Defensively ensure this process is marked as untrusted.
-  ContentChild::MaybeBecomeUntrusted();
 
   nsCOMPtr<nsIInputStream> inputStream =
       BlobURLInputStream::Create(this, blobURL);
