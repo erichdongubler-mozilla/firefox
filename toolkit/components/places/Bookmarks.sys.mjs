@@ -3368,13 +3368,15 @@ async function retrieveFullBookmarkPath(guid, options = {}) {
  * guid.
  */
 async function getBookmarkDetailMap(aGuids) {
+  if (!aGuids.length) {
+    return new Map();
+  }
   return lazy.PlacesUtils.withConnectionWrapper(
     "Bookmarks.geBookmarkDetailMap",
     async db => {
       let entries = new Map();
-      for (let chunk of lazy.PlacesUtils.chunkArray(aGuids, db.variableLimit)) {
-        await db.executeCached(
-          `
+      await db.executeCached(
+        `
             SELECT
               b.guid,
               b.id,
@@ -3395,28 +3397,27 @@ async function getBookmarkDetailMap(aGuids) {
             FROM moz_bookmarks b
             LEFT JOIN moz_places h ON h.id = b.fk
             LEFT JOIN moz_bookmarks t ON t.guid = target_folder_guid(h.url)
-            WHERE b.guid IN (${lazy.PlacesUtils.sqlBindPlaceholders(chunk)})
+            WHERE b.guid IN carray(:guids)
             `,
-          chunk,
-          row => {
-            const lastVisitDate = row.getResultByIndex(6);
-            entries.set(row.getResultByIndex(0), {
-              id: row.getResultByIndex(1),
-              parentId: row.getResultByIndex(2),
-              frecency: row.getResultByIndex(3),
-              hidden: row.getResultByIndex(4),
-              visitCount: row.getResultByIndex(5),
-              lastVisitDate: lastVisitDate
-                ? lazy.PlacesUtils.toDate(lastVisitDate).getTime()
-                : null,
-              tags: row.getResultByIndex(7),
-              targetFolderGuid: row.getResultByIndex(8),
-              targetFolderItemId: row.getResultByIndex(9),
-              targetFolderTitle: row.getResultByIndex(10),
-            });
-          }
-        );
-      }
+        { guids: aGuids },
+        row => {
+          const lastVisitDate = row.getResultByIndex(6);
+          entries.set(row.getResultByIndex(0), {
+            id: row.getResultByIndex(1),
+            parentId: row.getResultByIndex(2),
+            frecency: row.getResultByIndex(3),
+            hidden: row.getResultByIndex(4),
+            visitCount: row.getResultByIndex(5),
+            lastVisitDate: lastVisitDate
+              ? lazy.PlacesUtils.toDate(lastVisitDate).getTime()
+              : null,
+            tags: row.getResultByIndex(7),
+            targetFolderGuid: row.getResultByIndex(8),
+            targetFolderItemId: row.getResultByIndex(9),
+            targetFolderTitle: row.getResultByIndex(10),
+          });
+        }
+      );
       return entries;
     }
   );
