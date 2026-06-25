@@ -1471,6 +1471,15 @@ class XPCShellTests:
         else:
             self.env["MOZ_DISABLE_SOCKET_PROCESS"] = "1"
 
+        # Self-tests run many sub-processes whose tests fail on purpose, so
+        # profiling them only wastes overhead and uploads useless artifacts.
+        # Strip any startup-profiling request inherited from the environment
+        # (e.g. a `mach try fuzzy --profiler` push) and don't enable it by
+        # default.
+        if self.selfTest:
+            self.env.pop("MOZ_PROFILER_STARTUP", None)
+            return
+
         # Enable the profiler by default with a feature set chosen to keep
         # overhead low while still producing useful profiles: the platform
         # defaults minus `stackwalk` and `fileioall` (both too expensive),
