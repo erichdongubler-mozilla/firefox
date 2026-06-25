@@ -92,7 +92,13 @@ In such case, the following approach can be used:
 
 .. code-block:: shell
 
+    # Creates a new commit on top of the stack, marked as a fixup for
+    # the target commit. It does not move or squash anything yet.
     $ git commit --fixup <hash of the commit>
+
+    # Replays the stack from just before the target commit, automatically
+    # squashing the fixup commit into it along the way.
+    $ git rebase -i --autosquash <hash of the commit>^
 
 
 Removing patches in the stack
