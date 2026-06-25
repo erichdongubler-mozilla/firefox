@@ -10,8 +10,8 @@
 #include <fmt/base.h>
 
 template <typename T, typename Char>
-struct fmt::formatter<mozilla::Maybe<T>, Char,
-                      fmt::enable_if_t<fmt::is_formattable<T, Char>::value>> {
+  requires(fmt::is_formattable<T, Char>::value)
+struct fmt::formatter<mozilla::Maybe<T>, Char> {
  private:
   fmt::formatter<T, Char> mInner;
 
