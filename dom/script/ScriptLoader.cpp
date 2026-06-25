@@ -52,6 +52,7 @@
 #include "mozilla/dom/DocumentInlines.h"  // Document::GetPresContext
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FetchPriority.h"
+#include "mozilla/dom/SpeculationRules.h"
 #ifdef NIGHTLY_BUILD
 #  include "mozilla/dom/IntegrityPolicyWAICT.h"
 #endif
@@ -1955,7 +1956,7 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
       return false;
     }
 
-    mDocument->RegisterSpeculationRuleSetFromScript(
+    mDocument->SpeculationRules().RegisterFromScript(
         aElement, speculationRuleSetResult.unwrap());
     return false;
   }
