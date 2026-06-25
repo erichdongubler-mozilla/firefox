@@ -5,32 +5,35 @@
 #ifndef mozilla_dom_SpeculationRules_h
 #define mozilla_dom_SpeculationRules_h
 
+#include "mozilla/Result.h"
+#include "mozilla/ResultVariant.h"
 #include "mozilla/UniquePtr.h"
-#include "nsClassHashtable.h"
-#include "nsCycleCollectionParticipant.h"
-#include "nsHashKeys.h"
+#include "mozilla/dom/speculationrules_ffi_generated.h"
+#include "nsStringFwd.h"
 
-class nsIScriptElement;
+class nsIGlobalObject;
+class nsIURI;
+
+namespace mozilla {
+class ErrorResult;
+}
 
 namespace mozilla::dom {
 
-class SpeculationRuleSet;
-
 class SpeculationRules final {
  public:
-  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(SpeculationRules)
-  NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(SpeculationRules)
+  SpeculationRules() = delete;
+  SpeculationRules(SpeculationRules&) = delete;
+  SpeculationRules& operator=(const SpeculationRules&) = delete;
 
-  void RegisterFromScript(nsIScriptElement* aScriptElement,
-                          UniquePtr<SpeculationRuleSet> aRuleSet);
-  void Unregister(nsIScriptElement* aScriptElement);
+  ~SpeculationRules() = default;
+  static void operator delete(void* aSpeculationRules);
 
- private:
-  virtual ~SpeculationRules() = default;
+  static Result<UniquePtr<SpeculationRules>, SpeculationRuleParseError> Parse(
+      const nsACString& aSource, nsIURI* aDocumentBaseUri, nsIURI* aBaseUri);
 
-  // https://html.spec.whatwg.org/#document-sr-sets
-  nsClassHashtable<nsRefPtrHashKey<nsIScriptElement>, SpeculationRuleSet>
-      mRuleSetsFromScript;
+  static void ReportParseError(nsIGlobalObject* aGlobal,
+                               SpeculationRuleParseError aError);
 };
 
 }  // namespace mozilla::dom

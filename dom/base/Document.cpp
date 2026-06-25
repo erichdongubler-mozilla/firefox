@@ -246,7 +246,6 @@
 #include "mozilla/dom/ServiceWorkerManager.h"
 #include "mozilla/dom/ShadowIncludingTreeIterator.h"
 #include "mozilla/dom/ShadowRoot.h"
-#include "mozilla/dom/SpeculationRuleSet.h"
 #include "mozilla/dom/SpeculationRules.h"
 #include "mozilla/dom/StyleSheetApplicableStateChangeEvent.h"
 #include "mozilla/dom/StyleSheetApplicableStateChangeEventBinding.h"
@@ -2530,7 +2529,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mViewTransitionUpdateCallbacks)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocGroup)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFrameRequestManager)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSpeculationRules)
 
   // Traverse all our nsCOMArrays.
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPreloadingImages)
@@ -2562,6 +2560,10 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   }
 
   // XXX: This should be not needed once bug 1569185 lands.
+  for (const auto& entry : tmp->mSpeculationRulesFromScript) {
+    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mSpeculationRulesFromScript key");
+    cb.NoteXPCOMChild(entry.GetKey());
+  }
   for (const auto& entry : tmp->mL10nProtoElements) {
     NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mL10nProtoElements key");
     cb.NoteXPCOMChild(entry.GetKey());
@@ -2667,7 +2669,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPreloadReferrerInfo)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPictureInPictureElement)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPopoverHintStackParent)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mSpeculationRules)
 
   if (tmp->mDocGroup && tmp->mDocGroup->GetBrowsingContextGroup()) {
     tmp->mDocGroup->GetBrowsingContextGroup()->RemoveDocument(tmp,
@@ -2750,6 +2751,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
 
   tmp->UnregisterFromMemoryReportingForDataDocument();
 
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mSpeculationRulesFromScript)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mL10nProtoElements)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR
   NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_REFERENCE
@@ -21288,11 +21290,17 @@ bool Document::HasFullscreenKeyboardLockEnabled() {
   return elem && elem->State().HasState(ElementState::FULLSCREEN_KEYBOARD_LOCK);
 }
 
-SpeculationRules& Document::SpeculationRules() {
-  if (!mSpeculationRules) {
-    mSpeculationRules = MakeRefPtr<class SpeculationRules>();
-  }
-  return *mSpeculationRules;
+// https://html.spec.whatwg.org/#register-speculation-rules
+void Document::RegisterSpeculationRulesFromScript(
+    nsIScriptElement* aScriptElement,
+    UniquePtr<SpeculationRules> aSpeculationRules) {
+  mSpeculationRulesFromScript.InsertOrUpdate(aScriptElement,
+                                             std::move(aSpeculationRules));
+}
+
+// html.spec.whatwg.org/#unregister-speculation-rules
+void Document::UnregisterSpeculationRules(nsIScriptElement* aScriptElement) {
+  mSpeculationRulesFromScript.Remove(aScriptElement);
 }
 
 }  // namespace mozilla::dom

@@ -276,7 +276,6 @@ class ServiceWorkerDescriptor;
 class ShadowRoot;
 class SimpleContentList;
 class SpeculationRules;
-class SpeculationRuleSet;
 class SVGDocument;
 class SVGElement;
 class SVGSVGElement;
@@ -5893,7 +5892,8 @@ class Document : public nsINode,
   nsCOMPtr<nsIURI> mTLSCertificateBindingURI;
 
   // https://html.spec.whatwg.org/#document-sr-sets
-  RefPtr<SpeculationRules> mSpeculationRules;
+  nsClassHashtable<nsRefPtrHashKey<nsIScriptElement>, SpeculationRules>
+      mSpeculationRulesFromScript;
 
  public:
   // Needs to be public because the bindings code pokes at it.
@@ -5918,7 +5918,10 @@ class Document : public nsINode,
                                               const SetHTMLOptions& aOptions,
                                               ErrorResult& aError);
 
-  SpeculationRules& SpeculationRules();
+  void RegisterSpeculationRulesFromScript(
+      nsIScriptElement* aScriptElement,
+      UniquePtr<SpeculationRules> aSpeculationRules);
+  void UnregisterSpeculationRules(nsIScriptElement* aScriptElement);
 
   nsIURI* GetTlsCertificateBindingURI() const {
     return mTLSCertificateBindingURI;

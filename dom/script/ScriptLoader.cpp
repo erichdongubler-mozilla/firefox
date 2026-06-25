@@ -52,7 +52,6 @@
 #include "mozilla/dom/DocumentInlines.h"  // Document::GetPresContext
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FetchPriority.h"
-#include "mozilla/dom/SpeculationRules.h"
 #ifdef NIGHTLY_BUILD
 #  include "mozilla/dom/IntegrityPolicyWAICT.h"
 #endif
@@ -63,7 +62,7 @@
 #include "mozilla/dom/SRILogHelper.h"
 #include "mozilla/dom/ScriptDecoding.h"  // mozilla::dom::ScriptDecoding
 #include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/SpeculationRuleSet.h"
+#include "mozilla/dom/SpeculationRules.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/glean/DomMetrics.h"
 #include "mozilla/net/ChannelClassifierUtils.h"
@@ -1932,7 +1931,7 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
     //    result given source text and el's node document.
     nsAutoString source;
     aElement->GetScriptText(source);
-    auto speculationRuleSetResult = SpeculationRuleSet::Parse(
+    auto speculationRulesResult = SpeculationRules::Parse(
         NS_ConvertUTF16toUTF8(source), request->BaseURL(), request->BaseURL());
 
     // Like in the import map case above, we register the speculation rules here
@@ -1944,20 +1943,20 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
     //  "speculationrules":
     //    1. Register speculation rules given el's relevant global object and
     //    el's result.
-    if (speculationRuleSetResult.isErr()) {
+    if (speculationRulesResult.isErr()) {
       // https://html.spec.whatwg.org/#register-speculation-rules
       // Step 1.2.
       nsCOMPtr<nsIScriptGlobalObject> global = GetScriptGlobalObject();
       if (!global) {
         return false;
       }
-      SpeculationRuleSet::ReportParseError(
-          global, speculationRuleSetResult.unwrapErr());
+      SpeculationRules::ReportParseError(global,
+                                         speculationRulesResult.unwrapErr());
       return false;
     }
 
-    mDocument->SpeculationRules().RegisterFromScript(
-        aElement, speculationRuleSetResult.unwrap());
+    mDocument->RegisterSpeculationRulesFromScript(
+        aElement, speculationRulesResult.unwrap());
     return false;
   }
 

@@ -85,7 +85,7 @@ pub enum SpeculationRuleParseError {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn parse_speculation_rule_set(
+pub unsafe extern "C" fn parse_speculation_rules(
     rules: &nsACString,
     document_base_url: &nsACString,
     base_url: &nsACString,
@@ -114,6 +114,6 @@ pub unsafe extern "C" fn parse_speculation_rule_set(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn speculation_rule_set_destroy(rules: *mut SpeculationRuleSet) {
+pub unsafe extern "C" fn speculation_rules_destroy(rules: *mut SpeculationRuleSet) {
     let _ = unsafe { Box::from_raw(rules) };
 }
