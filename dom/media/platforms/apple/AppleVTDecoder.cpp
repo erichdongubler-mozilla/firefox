@@ -247,6 +247,21 @@ void AppleVTDecoder::ProcessDecode(MediaRawData* aSample) {
 
   VTDecodeFrameFlags decodeFlags =
       kVTDecodeFrame_EnableAsynchronousDecompression;
+  // During the post-seek skip window, frames whose presentation interval ends
+  // before the seek target are decoded only to satisfy reference dependencies
+  // and are then dropped (see the matching threshold check in OutputFrame). Ask
+  // VideoToolbox to decode them for reference without producing an output
+  // image, which skips per-frame surface production for the bulk of a seek's
+  // re-decode.
+  {
+    MonitorAutoLock mon(mMonitor);
+    if (mSeekTargetThreshold.isSome() &&
+        (aSample->mTime + aSample->mDuration) < mSeekTargetThreshold.ref()) {
+      decodeFlags |= kVTDecodeFrame_DoNotOutputFrame;
+      LOG("seek skip: decoding pts %lld for reference only (no output)",
+          aSample->mTime.ToMicroseconds());
+    }
+  }
   rv = VTDecompressionSessionDecodeFrame(
       mSession, sample, decodeFlags, CreateAppleFrameRef(aSample), &infoFlags);
   if (infoFlags & kVTDecodeInfo_FrameDropped) {
