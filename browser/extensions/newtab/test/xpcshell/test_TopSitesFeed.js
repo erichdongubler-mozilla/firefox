@@ -2405,6 +2405,41 @@ add_task(async function test_improvesearch_noDefaultSearchTile_experiment() {
   }
 });
 
+add_task(async function test_sponsored_tile_retained_when_default_search() {
+  // Bug 1957165: when the user's default search engine matches a sponsored
+  // tile's hostname (e.g. setting Amazon as default search), the sponsored
+  // tile must still be shown so the sponsored slate stays full.
+  let sandbox = sinon.createSandbox();
+  const NO_DEFAULT_SEARCH_TILE_PREF = "improvesearch.noDefaultSearchTile";
+
+  sandbox.stub(SearchService, "getDefault").resolves({ identifier: "google" });
+  let feed = getTopSitesFeedForTest(sandbox);
+  feed.store.state.Prefs.values[NO_DEFAULT_SEARCH_TILE_PREF] = true;
+  feed.store.state.Prefs.values.showSponsoredTopSites = true;
+
+  sandbox.stub(feed, "_currentSearchHostname").get(() => "amazon");
+
+  DEFAULT_TOP_SITES.length = 0;
+  DEFAULT_TOP_SITES.push({
+    url: "https://amazon.com",
+    hostname: "amazon",
+    sponsored_position: 1,
+    label: "Amazon",
+  });
+  gGetTopSitesStub.resolves([{ url: "https://foo.com" }]);
+
+  let urlsReturned = (await feed.getLinksWithDefaults()).map(link => link?.url);
+  Assert.ok(
+    urlsReturned.includes("https://amazon.com"),
+    "sponsored Amazon tile is retained even though Amazon is the default " +
+      "search engine"
+  );
+
+  DEFAULT_TOP_SITES.length = 0;
+  gGetTopSitesStub.resolves(FAKE_LINKS);
+  sandbox.restore();
+});
+
 add_task(
   async function test_improvesearch_noDefaultSearchTile_experiment_part_2() {
     let sandbox = sinon.createSandbox();
@@ -2426,10 +2461,16 @@ add_task(
       let feed = prepFeed(getTopSitesFeedForTest(sandbox));
       feed.store.state.Prefs.values[NO_DEFAULT_SEARCH_TILE_PREF] = true;
       sandbox.stub(feed, "refresh");
+      sandbox.stub(feed._contile, "refresh");
 
       feed.observe(null, "browser-search-engine-modified", "engine-default");
       Assert.equal(feed._currentSearchHostname, "duckduckgo");
       Assert.ok(feed.refresh.calledOnce, "feed.refresh called once");
+      Assert.ok(
+        feed._contile.refresh.calledOnce,
+        "feed._contile.refresh called once so sponsored tiles are rebuilt " +
+          "for the new default search engine"
+      );
 
       gGetTopSitesStub.resolves(FAKE_LINKS);
       sandbox.restore();
@@ -3631,7 +3672,7 @@ add_task(async function test_ContileIntegration() {
             count: 1,
           },
         ],
-        blocks: [""],
+        blocks: ["duckduckgo"],
       })
     );
     sandbox.restore();
@@ -3786,7 +3827,7 @@ add_task(async function test_ContileIntegration() {
             count: 1,
           },
         ],
-        blocks: [""],
+        blocks: ["duckduckgo"],
       })
     );
     sandbox.restore();

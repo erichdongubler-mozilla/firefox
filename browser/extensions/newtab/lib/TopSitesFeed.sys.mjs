@@ -424,9 +424,21 @@ export class ContileIntegration {
     } catch (e) {
       blocklist = [];
     }
-    return tiles.filter(
-      tile => !blocklist.includes(lazy.NewTabUtils.shortURL(tile))
-    );
+    const currentSearchHostname = this._topSitesFeed._currentSearchHostname;
+    return tiles.filter(tile => {
+      const shortURL = lazy.NewTabUtils.shortURL(tile);
+      if (blocklist.includes(shortURL)) {
+        return false;
+      }
+      // Drop a sponsored tile that matches the user's current default
+      // search engine so it doesn't duplicate the search bar. Maintained
+      // tile count relies on the source (MARS via `blocks`, or Contile
+      // over-returning) supplying a substitute.
+      if (currentSearchHostname && shortURL === currentSearchHostname) {
+        return false;
+      }
+      return true;
+    });
   }
 
   /**
@@ -612,6 +624,16 @@ export class ContileIntegration {
       return false;
     }
 
+    // Sponsored tile filtering consults the current default search engine
+    // (via _currentSearchHostname), so wait for the search service before any
+    // fetch/cache path reads it. Continue on failure as getLinksWithDefaults
+    // does, so tiles still load when search engines are unavailable.
+    try {
+      await lazy.SearchService.init();
+    } catch {
+      // Search engines unavailable; the search-hostname filter is skipped.
+    }
+
     let response;
     let body;
 
@@ -675,6 +697,17 @@ export class ContileIntegration {
               PREF_UNIFIED_ADS_BLOCKED_LIST
             ];
 
+          // Also block the user's current default search engine hostname so
+          // MARS returns a substitute sponsor instead of leaving us short.
+          const blocksList = Array.from(
+            new Set(
+              blockedSponsors
+                .split(",")
+                .concat(this._topSitesFeed._currentSearchHostname || [])
+                .filter(item => item)
+            )
+          );
+
           // Overwrite URL to Unified Ads endpoint
           const fetchUrl = `${endpointBaseUrl}v1/ads`;
 
@@ -705,7 +738,7 @@ export class ContileIntegration {
                 placement,
                 count: countsArray[index],
               })),
-              blocks: blockedSponsors.split(","),
+              blocks: blocksList,
             }),
             credentials: "omit",
             signal,
@@ -964,6 +997,10 @@ export class TopSitesFeed {
         ) {
           delete this._currentSearchHostname;
           this._currentSearchHostname = getShortHostnameForCurrentSearch();
+          // Re-fetch sponsored tiles so the new default search engine is
+          // sent to MARS as a block (and a substitute sponsor is returned),
+          // and the cached Contile slate is rebuilt.
+          this._contile.refresh();
         }
         this.refresh({ broadcast: true });
         break;
@@ -1592,7 +1629,10 @@ export class TopSitesFeed {
         if (link.hostname !== this._currentSearchHostname) {
           continue;
         }
-      } else if (this.shouldFilterSearchTile(link.hostname)) {
+      } else if (
+        !link.sponsored_position &&
+        this.shouldFilterSearchTile(link.hostname)
+      ) {
         continue;
       }
       // Drop blocked default sites.

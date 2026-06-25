@@ -123,6 +123,9 @@ add_setup(async () => {
 
   let sandbox = sinon.createSandbox();
   sandbox.stub(SearchService, "init").resolves();
+  sandbox.stub(SearchService, "defaultEngine").get(() => {
+    return { identifier: "ddg", searchUrlDomain: "duckduckgo.com" };
+  });
 
   const nimbusStub = sandbox.stub(NimbusFeatures.newtab, "getVariable");
   nimbusStub.withArgs(NIMBUS_VARIABLE_CONTILE_ENABLED).returns(true);
