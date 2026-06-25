@@ -1557,6 +1557,17 @@ export class LoginManagerParent extends JSWindowActorParent {
         break;
       }
 
+      case "PasswordManager:OpenInsecureFieldWarningLearnMore": {
+        const window = this.getRootBrowser().documentGlobal;
+        const baseURL = Services.urlFormatter.formatURLPref(
+          "app.support.baseURL"
+        );
+        window.openTrustedLinkIn(baseURL + "insecure-password", "tab", {
+          relatedToCurrent: true,
+        });
+        break;
+      }
+
       case "PasswordManager:HandleImportable": {
         this.#onHandleImportable(data.browserId);
         break;

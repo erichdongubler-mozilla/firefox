@@ -107,6 +107,10 @@ class InsecureLoginFormAutocompleteItem extends AutocompleteItem {
       "insecureFieldWarningDescription2",
       getLocalizedString("insecureFieldWarningLearnMore")
     );
+    this.comment = JSON.stringify({
+      fillMessageName: "PasswordManager:OpenInsecureFieldWarningLearnMore",
+      icon: "chrome://global/skin/icons/security-broken.svg",
+    });
   }
 }
 
