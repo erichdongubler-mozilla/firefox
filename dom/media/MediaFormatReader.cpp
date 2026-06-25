@@ -3191,11 +3191,7 @@ void MediaFormatReader::OnVideoSeekFailed(const MediaResult& aError) {
 void MediaFormatReader::SetVideoDecodeThreshold() {
   MOZ_ASSERT(OnTaskQueue());
 
-  if (!HasVideo() || !mVideo.mDecoder) {
-    return;
-  }
-
-  if (!mVideo.mTimeThreshold && !IsSeeking()) {
+  if (!HasVideo()) {
     return;
   }
 
@@ -3215,10 +3211,30 @@ void MediaFormatReader::SetVideoDecodeThreshold() {
     threshold = keyframe.IsValid() && !keyframe.IsInfinite()
                     ? mOriginalSeekTarget.GetTime()
                     : TimeUnit::Invalid();
+    // The decoder is often restarted cold during a seek (released and recreated
+    // after IsSeeking() is already false), which drops this threshold before it
+    // reaches the new decoder. Remember it so it can be delivered then.
+    mPendingVideoSeekThreshold = Some(threshold);
+    LOG("Caching seek threshold %" PRId64
+        " to deliver to the recreated decoder",
+        threshold.IsValid() ? threshold.ToMicroseconds() : -1);
+  } else if (mPendingVideoSeekThreshold) {
+    // Deliver the threshold remembered across a decoder cold start.
+    threshold = mPendingVideoSeekThreshold.ref();
   } else {
     return;
   }
 
+  if (!mVideo.mDecoder) {
+    // Decoder not created yet; the remembered threshold is delivered when it
+    // is.
+    return;
+  }
+
+  if (mPendingVideoSeekThreshold) {
+    LOG("Delivering cached seek threshold to the recreated decoder");
+    mPendingVideoSeekThreshold.reset();
+  }
   if (threshold.IsValid()) {
     LOG("Set seek threshold to %" PRId64, threshold.ToMicroseconds());
   } else {
