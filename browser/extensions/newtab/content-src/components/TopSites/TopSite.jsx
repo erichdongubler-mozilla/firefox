@@ -4,8 +4,10 @@
 
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import {
+  isSponsored,
   MIN_RICH_FAVICON_SIZE,
   MIN_SMALL_FAVICON_SIZE,
+  SPOC_TYPE,
   TOP_SITES_CONTEXT_MENU_OPTIONS,
   TOP_SITES_SPOC_CONTEXT_MENU_OPTIONS,
   TOP_SITES_SPONSORED_POSITION_CONTEXT_MENU_OPTIONS,
@@ -24,17 +26,7 @@ import { MessageWrapper } from "../MessageWrapper/MessageWrapper";
 import { ShortcutFeatureHighlight } from "../DiscoveryStreamComponents/FeatureHighlight/ShortcutFeatureHighlight";
 import { shouldShowOMCHighlight } from "../../lib/asrouter-message-utils.mjs";
 
-const SPOC_TYPE = "SPOC";
 const NEWTAB_SOURCE = "newtab";
-
-// For cases if we want to know if this is sponsored by either sponsored_position or type.
-// We have two sources for sponsored topsites, and
-// sponsored_position is set by one sponsored source, and type is set by another.
-// This is not called in all cases, sometimes we want to know if it's one source
-// or the other. This function is only applicable in cases where we only care if it's either.
-function isSponsored(link) {
-  return link?.sponsored_position || link?.type === SPOC_TYPE;
-}
 
 export class TopSiteLink extends React.PureComponent {
   constructor(props) {
@@ -710,10 +702,6 @@ export class _TopSiteList extends React.PureComponent {
   static get DEFAULT_STATE() {
     return {
       activeIndex: null,
-      draggedIndex: null,
-      draggedSite: null,
-      draggedTitle: null,
-      topSitesPreview: null,
       focusedIndex: 0,
     };
   }
@@ -721,7 +709,6 @@ export class _TopSiteList extends React.PureComponent {
   constructor(props) {
     super(props);
     this.state = _TopSiteList.DEFAULT_STATE;
-    this.onDragEvent = this.onDragEvent.bind(this);
     this.onActivate = this.onActivate.bind(this);
     this.onWrapperFocus = this.onWrapperFocus.bind(this);
     this.onTopsiteFocus = this.onTopsiteFocus.bind(this);
@@ -730,186 +717,14 @@ export class _TopSiteList extends React.PureComponent {
   }
 
   componentDidUpdate(prevProps) {
-    if (this.state.draggedSite) {
-      const prevTopSites = prevProps.TopSites && prevProps.TopSites.rows;
-      const newTopSites = this.props.TopSites && this.props.TopSites.rows;
-      if (
-        prevTopSites &&
-        prevTopSites[this.state.draggedIndex] &&
-        prevTopSites[this.state.draggedIndex].url ===
-          this.state.draggedSite.url &&
-        (!newTopSites[this.state.draggedIndex] ||
-          newTopSites[this.state.draggedIndex].url !==
-            this.state.draggedSite.url)
-      ) {
-        // We got the new order from the redux store via props. We can clear state now.
-        // eslint-disable-next-line react/no-did-update-set-state
-        this.setState(_TopSiteList.DEFAULT_STATE);
-      }
+    // Drag state lives in the hook now; mirror the old reset of our own view
+    // state (menu + focus) off the dragged-site signal.
+    const started = !prevProps.draggedSite && this.props.draggedSite;
+    const ended = prevProps.draggedSite && !this.props.draggedSite;
+    if (started || ended) {
+      // eslint-disable-next-line react/no-did-update-set-state
+      this.setState(ended ? _TopSiteList.DEFAULT_STATE : { activeIndex: null });
     }
-  }
-
-  userEvent(event, index) {
-    this.props.dispatch(
-      ac.UserEvent({
-        event,
-        source: TOP_SITES_SOURCE,
-        action_position: index,
-      })
-    );
-  }
-
-  onDragEvent(event, index, link, title) {
-    switch (event.type) {
-      case "dragstart":
-        this.dropped = false;
-        this.setState({
-          draggedIndex: index,
-          draggedSite: link,
-          draggedTitle: title,
-          activeIndex: null,
-        });
-        this.userEvent("DRAG", index);
-        break;
-      case "dragend":
-        if (!this.dropped) {
-          // If there was no drop event, reset the state to the default.
-          this.setState(_TopSiteList.DEFAULT_STATE);
-        }
-        break;
-      case "dragenter":
-        if (index === this.state.draggedIndex) {
-          this.setState({ topSitesPreview: null });
-        } else {
-          this.setState({
-            topSitesPreview: this._makeTopSitesPreview(index),
-          });
-        }
-        break;
-      case "drop":
-        if (index !== this.state.draggedIndex) {
-          this.dropped = true;
-          this.props.dispatch(
-            ac.AlsoToMain({
-              type: at.TOP_SITES_INSERT,
-              data: {
-                site: {
-                  url: this.state.draggedSite.url,
-                  label: this.state.draggedTitle,
-                  customScreenshotURL:
-                    this.state.draggedSite.customScreenshotURL,
-                  // Only if the search topsites experiment is enabled
-                  ...(this.state.draggedSite.searchTopSite && {
-                    searchTopSite: true,
-                  }),
-                },
-                index,
-                draggedFromIndex: this.state.draggedIndex,
-              },
-            })
-          );
-          this.userEvent("DROP", index);
-        }
-        break;
-    }
-  }
-
-  _getTopSites() {
-    // Make a copy of the sites to truncate or extend to desired length
-    let topSites = this.props.TopSites.rows.slice();
-    topSites.length =
-      (this.props.TopSitesRows ?? 0) *
-      (this.props.topSitesMaxSitesPerRow ?? TOP_SITES_MAX_SITES_PER_ROW);
-    // if topSites do not fill an entire row add 'Add shortcut' button to array of topSites
-    // (there should only be one of these)
-    const addButtonIndex = topSites.findIndex(site => site?.isAddButton);
-
-    // Find the position right after the last regular shortcut. Defaults to the
-    // first slot so that with no shortcuts the Add button sits at the front
-    // (a length-1 default would place it in the last slot, and adding the first
-    // shortcut there would push the button out of bounds and hide it).
-    let targetPosition = 0;
-    for (let i = topSites.length - 1; i >= 0; i--) {
-      if (topSites[i] && !topSites[i].isAddButton) {
-        targetPosition = i + 1;
-        break;
-      }
-    }
-
-    if (addButtonIndex === -1) {
-      // No add button exists yet, insert it at target position if it's within bounds
-      if (targetPosition < topSites.length) {
-        topSites[targetPosition] = { isAddButton: true };
-      }
-    } else if (addButtonIndex !== targetPosition) {
-      // Add button exists but not at the end, move it
-      const [button] = topSites.splice(addButtonIndex, 1);
-      // Adjust target if we removed something before it
-      const adjustedTarget =
-        addButtonIndex < targetPosition ? targetPosition - 1 : targetPosition;
-      topSites[adjustedTarget] = button;
-    }
-
-    return topSites;
-  }
-
-  /**
-   * Make a preview of the topsites that will be the result of dropping the currently
-   * dragged site at the specified index.
-   */
-  _makeTopSitesPreview(index) {
-    const topSites = this._getTopSites();
-    topSites[this.state.draggedIndex] = null;
-    const preview = topSites.map(site =>
-      site && (site.isPinned || isSponsored(site) || site.isAddButton)
-        ? site
-        : null
-    );
-    const unpinned = topSites.filter(
-      site => site && !site.isPinned && !isSponsored(site) && !site.isAddButton
-    );
-    const siteToInsert = Object.assign({}, this.state.draggedSite, {
-      isPinned: true,
-      isDragged: true,
-    });
-
-    if (!preview[index]) {
-      preview[index] = siteToInsert;
-    } else {
-      // Find the hole to shift the pinned site(s) towards. We shift towards the
-      // hole left by the site being dragged.
-      let holeIndex = index;
-      const indexStep = index > this.state.draggedIndex ? -1 : 1;
-      while (preview[holeIndex]) {
-        holeIndex += indexStep;
-      }
-
-      // Shift towards the hole.
-      const shiftingStep = index > this.state.draggedIndex ? 1 : -1;
-      while (
-        index > this.state.draggedIndex ? holeIndex < index : holeIndex > index
-      ) {
-        let nextIndex = holeIndex + shiftingStep;
-        while (
-          preview[nextIndex] &&
-          (isSponsored(preview[nextIndex]) || preview[nextIndex].isAddButton)
-        ) {
-          nextIndex += shiftingStep;
-        }
-        preview[holeIndex] = preview[nextIndex];
-        holeIndex = nextIndex;
-      }
-      preview[index] = siteToInsert;
-    }
-
-    // Fill in the remaining holes with unpinned sites.
-    for (let i = 0; i < preview.length; i++) {
-      if (!preview[i]) {
-        preview[i] = unpinned.shift() || null;
-      }
-    }
-
-    return preview;
   }
 
   onActivate(index) {
@@ -954,10 +769,10 @@ export class _TopSiteList extends React.PureComponent {
 
   render() {
     const { props } = this;
-    const topSites = this.state.topSitesPreview || this._getTopSites();
+    const topSites = this.props.sites;
     const topSitesUI = [];
     const commonProps = {
-      onDragEvent: this.onDragEvent,
+      onDragEvent: this.props.onDragEvent,
       dispatch: props.dispatch,
     };
     // We assign a key to each placeholder slot. We need it to be independent
@@ -1076,7 +891,7 @@ export class _TopSiteList extends React.PureComponent {
             this.focusRef = el;
           }}
           className={`top-sites-list${
-            this.state.draggedSite ? " dnd-active" : ""
+            this.props.draggedSite ? " dnd-active" : ""
           }`}
           style={{
             "--top-sites-max-per-row":

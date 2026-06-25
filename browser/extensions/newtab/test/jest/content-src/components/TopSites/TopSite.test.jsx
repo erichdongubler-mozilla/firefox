@@ -1,6 +1,7 @@
 import { render } from "@testing-library/react";
 import { WrapWithProvider } from "test/jest/test-utils";
-import { TopSite, _TopSiteList } from "content-src/components/TopSites/TopSite";
+import { TopSite } from "content-src/components/TopSites/TopSite";
+import { buildTopSitesList } from "content-src/components/TopSites/TopSiteListContainer";
 
 const DEFAULT_LINK = {
   url: "https://example.com",
@@ -27,14 +28,9 @@ describe("<TopSite>", () => {
   });
 });
 
-describe("_TopSiteList#_getTopSites Add button placement", () => {
+describe("buildTopSitesList Add button placement", () => {
   function getSites(rows, { rowsCount = 1, perRow = 8 } = {}) {
-    const instance = new _TopSiteList({
-      TopSites: { rows },
-      TopSitesRows: rowsCount,
-      topSitesMaxSitesPerRow: perRow,
-    });
-    return instance._getTopSites();
+    return buildTopSitesList(rows, rowsCount, perRow);
   }
 
   function addButtonIndex(sites) {
