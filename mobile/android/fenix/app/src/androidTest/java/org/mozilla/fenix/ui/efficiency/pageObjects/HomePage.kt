@@ -16,8 +16,7 @@ import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
-import org.mozilla.fenix.ui.efficiency.selectors.CollectionsSelectors.COLLECTION_TAB_WITH_TITLE
-import org.mozilla.fenix.ui.efficiency.selectors.CollectionsSelectors.COLLECTION_WITH_TITLE
+import org.mozilla.fenix.ui.efficiency.selectors.CollectionsSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
 
@@ -121,9 +120,9 @@ class HomePage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *
     }
 
     fun verifyTabsInExpandedCollection(collectionTitle: String, vararg tabTitles: String): HomePage {
-        mozClick(COLLECTION_WITH_TITLE(collectionTitle))
+        mozClick(CollectionsSelectors.COLLECTION_WITH_TITLE(collectionTitle))
         for (tabTitle in tabTitles) {
-            mozVerify(COLLECTION_TAB_WITH_TITLE(tabTitle))
+            mozVerify(CollectionsSelectors.COLLECTION_TAB_WITH_TITLE(tabTitle))
         }
 
         return this

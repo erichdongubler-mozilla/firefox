@@ -14,9 +14,6 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_URL
 import org.junit.Assert.assertTrue
-import org.mozilla.fenix.R
-import org.mozilla.fenix.helpers.Constants.TAG
-import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
@@ -29,11 +26,9 @@ import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
-import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors.MAIN_MENU_BUTTON
-import org.mozilla.fenix.ui.efficiency.selectors.CollectionsSelectors.EXISTING_COLLECTION_WITH_TITLE
+import org.mozilla.fenix.ui.efficiency.selectors.CollectionsSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
-import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors.MORE_BUTTON
-import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors.SAVE_TO_COLLECTIONS_BUTTON
+import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SearchBarSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.ToolbarSelectors
 
@@ -161,10 +156,10 @@ class BrowserPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule
     }
 
     fun saveTabToExistingCollection(collectionTitle: String): BrowserPage {
-        mozClick(MAIN_MENU_BUTTON)
-        mozClick(MORE_BUTTON)
-        mozClick(SAVE_TO_COLLECTIONS_BUTTON)
-        mozClick(EXISTING_COLLECTION_WITH_TITLE(collectionTitle))
+        mozClick(BrowserPageSelectors.MAIN_MENU_BUTTON)
+        mozClick(MainMenuSelectors.MORE_BUTTON)
+        mozClick(MainMenuSelectors.SAVE_TO_COLLECTIONS_BUTTON)
+        mozClick(CollectionsSelectors.EXISTING_COLLECTION_WITH_TITLE(collectionTitle))
 
         return this
     }
