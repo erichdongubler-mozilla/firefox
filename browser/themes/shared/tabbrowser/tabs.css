@@ -44,7 +44,6 @@
   &[lwt-tab-selected="dark"] {
     --tab-selected-color-scheme: dark;
   }
-  --tab-selected-shadow: var(--tab-box-shadow);
   @media (forced-colors) {
     &:not([lwtheme]) {
       --tab-outline-color: ButtonText;
@@ -151,7 +150,7 @@
   }
 
   &[noshadowfortests] {
-    --tab-selected-shadow: none;
+    --tab-selected-box-shadow: none;
   }
 
   &[orient="horizontal"] {
@@ -924,7 +923,7 @@ tab-split-view-wrapper[dragtarget] {
   &:is([selected], [multiselected]) {
     background-color: var(--tab-background-color-selected);
     outline-color: var(--tab-selected-outline-color);
-    box-shadow: var(--tab-selected-shadow);
+    box-shadow: var(--tab-selected-box-shadow);
   }
 
   &:is([selected]:not([multiselected])) {
@@ -2603,7 +2602,7 @@ tab-group {
       background-image: image(var(--close-button-extra-background)), image(var(--tab-background-color-selected)), image(var(--toolbox-background-color));
       color-scheme: var(--tab-selected-color-scheme);
       outline-color: var(--tab-selected-outline-color);
-      box-shadow: var(--tab-selected-shadow);
+      box-shadow: var(--tab-selected-box-shadow);
       border-radius: var(--border-radius-circle);
       display: block;
       position: absolute;
@@ -2685,7 +2684,7 @@ tab-group {
 
 #TabsToolbar #firefox-view-button[open] > .toolbarbutton-icon {
   background-color: var(--tab-background-color-selected);
-  box-shadow: var(--tab-selected-shadow);
+  box-shadow: var(--tab-selected-box-shadow);
   outline-color: var(--tab-selected-outline-color);
   color: var(--tab-selected-textcolor);
   color-scheme: var(--tab-selected-color-scheme);

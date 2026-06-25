@@ -1371,7 +1371,7 @@ export const tokensTable = {
       name: "--panel-box-shadow",
     },
     { value: "var(--box-shadow-level-3)", name: "--popup-box-shadow" },
-    { value: "var(--box-shadow-level-1)", name: "--tab-box-shadow" },
+    { value: "var(--box-shadow-level-1)", name: "--tab-selected-box-shadow" },
   ],
   color: [
     { value: "#fbfbfe", name: "--color-gray-0" },
@@ -4872,7 +4872,6 @@ export const variableLookupTable = {
   "box-padding": "var(--space-large)",
   "tab-block-margin": "var(--dimension-4)",
   "tab-border-radius": "var(--toolbarbutton-border-radius)",
-  "tab-box-shadow": "var(--box-shadow-level-1)",
   "tab-attention-dot-color": "var(--color-accent-attention)",
   "tab-close-button-padding": "6px",
   "tab-hover-outline-color": {
@@ -4915,6 +4914,7 @@ export const variableLookupTable = {
       default: "light-dark(rgb(21, 20, 26), var(--color-white))",
     },
   },
+  "tab-selected-box-shadow": "var(--box-shadow-level-1)",
   "tab-vertical-block-margin": "var(--dimension-2)",
   "tab-vertical-inline-padding": "var(--space-medium)",
   "tab-group-blue": {
