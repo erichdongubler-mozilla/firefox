@@ -860,6 +860,9 @@ pref("privacy.purge_trackers.max_purge_count", 100);
 // interaction directly).
 pref("privacy.purge_trackers.consider_entity_list", false);
 
+// What custom schemes to treat as accessing digital wallets, comma separated.
+pref("privacy.wallet_schemes", "openid4vp,mdoc,mdoc-openid4vp,haip,eudi-wallet,eudi-openid4vp,openid-credential-offer");
+
 pref("dom.event.contextmenu.enabled",       true);
 
 pref("javascript.enabled",                  true);
