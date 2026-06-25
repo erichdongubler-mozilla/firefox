@@ -41,6 +41,8 @@ import {
 
 const VISIBLE = "visible";
 const VISIBILITY_CHANGE_EVENT = "visibilitychange";
+// Minimum scroll distance in pixels to record a scroll telemetry event.
+const SCROLL_TELEMETRY_THRESHOLD = 50;
 const PREF_INFERRED_PERSONALIZATION_SYSTEM =
   "discoverystream.sections.personalization.inferred.enabled";
 const PREF_INFERRED_PERSONALIZATION_USER =
@@ -135,6 +137,7 @@ export class BaseContent extends React.PureComponent {
     this.attachSearchSentinel = this.attachSearchSentinel.bind(this);
     this.onSearchSentinelIntersect = this.onSearchSentinelIntersect.bind(this);
     this.searchStickyObserver = null;
+    this._hasScrolledForSession = false;
     this.state = {
       fixedSearch: false,
       colorMode: "",
@@ -458,6 +461,14 @@ export class BaseContent extends React.PureComponent {
   }
 
   onWindowScroll() {
+    if (
+      !this._hasScrolledForSession &&
+      global.scrollY > SCROLL_TELEMETRY_THRESHOLD
+    ) {
+      this._hasScrolledForSession = true;
+      this.props.dispatch(ac.OnlyToMain({ type: at.NEW_TAB_SCROLL }));
+    }
+
     if (this.props.Prefs.values[PREF_NOVA_ENABLED]) {
       // Nova restores sticky search via IntersectionObserver
       // (attachSearchSentinel); the scroll-based fixed-search math below
