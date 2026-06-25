@@ -264,6 +264,136 @@ export class UrlbarView {
   }
 
   /**
+   * Extracts a telemetry type from a result and the element being interacted
+   * with for event telemetry.
+   *
+   * @param {UrlbarResult} result The result to analyze.
+   * @param {HTMLElement} element The element to analyze.
+   * @returns {string} A string type for telemetry.
+   */
+  telemetryTypeFromElement(result, element) {
+    if (!element) {
+      return "none";
+    }
+    if (
+      element.dataset.command == "help" ||
+      element.dataset.l10nName == "learn-more-link"
+    ) {
+      return "help";
+    }
+    if (element.dataset.command == "dismiss") {
+      return "block";
+    }
+    if (element.classList?.contains("urlbarView-action-btn")) {
+      return "action";
+    }
+    return this.telemetryTypeFromResult(result);
+  }
+
+  /**
+   * Extracts a telemetry type from a result, used by event telemetry.
+   *
+   * @param {UrlbarResult} result The result to analyze.
+   * @returns {string} A string type for telemetry.
+   */
+  telemetryTypeFromResult(result) {
+    if (!result) {
+      return "unknown";
+    }
+    switch (result.type) {
+      case lazy.UrlbarUtils.RESULT_TYPE.TAB_SWITCH:
+        return "switchtab";
+      case lazy.UrlbarUtils.RESULT_TYPE.SEARCH:
+        if (result.providerName == "UrlbarProviderRecentSearches") {
+          return "recent_search";
+        }
+        if (result.source == lazy.UrlbarUtils.RESULT_SOURCE.HISTORY) {
+          return "formhistory";
+        }
+        if (result.providerName == "UrlbarProviderTabToSearch") {
+          return "tabtosearch";
+        }
+        if (result.providerName == "UrlbarProviderAiChat") {
+          return "ai_search_fallback";
+        }
+        if (result.payload.suggestion) {
+          let type = result.payload.trending ? "trending" : "searchsuggestion";
+          if (result.isRichSuggestion) {
+            type += "_rich";
+          }
+          return type;
+        }
+        return "searchengine";
+      case lazy.UrlbarUtils.RESULT_TYPE.URL:
+        if (result.autofill) {
+          let { type } = result.autofill;
+          if (!type) {
+            type = "other";
+            console.error(
+              new Error(
+                "`result.autofill.type` not set, falling back to 'other'"
+              )
+            );
+          }
+          return `autofill_${type}`;
+        }
+        if (
+          result.source == lazy.UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL &&
+          result.heuristic
+        ) {
+          return "visiturl";
+        }
+        if (result.providerName == "UrlbarProviderQuickSuggest") {
+          return "quicksuggest";
+        }
+        if (result.providerName == "UrlbarProviderClipboard") {
+          return "clipboard";
+        }
+        {
+          let type =
+            result.source == lazy.UrlbarUtils.RESULT_SOURCE.BOOKMARKS
+              ? "bookmark"
+              : "history";
+          if (result.providerName == "UrlbarProviderInputHistory") {
+            return type + "adaptive";
+          }
+          return type;
+        }
+      case lazy.UrlbarUtils.RESULT_TYPE.KEYWORD:
+        return "keyword";
+      case lazy.UrlbarUtils.RESULT_TYPE.OMNIBOX:
+        return "extension";
+      case lazy.UrlbarUtils.RESULT_TYPE.REMOTE_TAB:
+        return "remotetab";
+      case lazy.UrlbarUtils.RESULT_TYPE.TIP:
+        return "tip";
+      case lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC:
+        if (result.providerName == "UrlbarProviderTabToSearch") {
+          // This is the onboarding result.
+          return "tabtosearch";
+        }
+        return "dynamic";
+      case lazy.UrlbarUtils.RESULT_TYPE.RESTRICT:
+        if (result.payload.keyword === UrlbarShared.RESTRICT_TOKENS.BOOKMARK) {
+          return "restrict_keyword_bookmarks";
+        }
+        if (result.payload.keyword === UrlbarShared.RESTRICT_TOKENS.OPENPAGE) {
+          return "restrict_keyword_tabs";
+        }
+        if (result.payload.keyword === UrlbarShared.RESTRICT_TOKENS.HISTORY) {
+          return "restrict_keyword_history";
+        }
+        if (result.payload.keyword === UrlbarShared.RESTRICT_TOKENS.ACTION) {
+          return "restrict_keyword_actions";
+        }
+        break;
+      case lazy.UrlbarUtils.RESULT_TYPE.AI_CHAT:
+        return "ai_chat";
+    }
+    return "unknown";
+  }
+
+  /**
    * @param {number} index
    *   The index from which to fetch the result.
    * @returns {UrlbarResult}

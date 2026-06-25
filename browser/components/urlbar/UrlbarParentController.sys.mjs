@@ -1872,34 +1872,6 @@ class TelemetryEvent {
   }
 
   /**
-   * Extracts a telemetry type from a result and the element being interacted
-   * with for event telemetry.
-   *
-   * @param {object} result The element to analyze.
-   * @param {HTMLElement} element The element to analyze.
-   * @returns {string} a string type for the telemetry event.
-   */
-  typeFromElement(result, element) {
-    if (!element) {
-      return "none";
-    }
-    if (
-      element.dataset.command == "help" ||
-      element.dataset.l10nName == "learn-more-link"
-    ) {
-      return "help";
-    }
-    if (element.dataset.command == "dismiss") {
-      return "block";
-    }
-    if (element.classList?.contains("urlbarView-action-btn")) {
-      return "action";
-    }
-    // Now handle the result.
-    return lazy.UrlbarUtils.telemetryTypeFromResult(result);
-  }
-
-  /**
    * Reset the internal state. This function is used for only when testing.
    */
   reset() {

@@ -1227,10 +1227,7 @@ ${
     }
 
     let url;
-    let selType = this.controller.engagementEvent.typeFromElement(
-      result,
-      element
-    );
+    let selType = this.view.telemetryTypeFromElement(result, element);
     let typedValue = this.value;
     if (oneOffParams?.engine) {
       selType = "oneoff";
@@ -1720,10 +1717,7 @@ ${
           element,
           searchString,
           searchMode,
-          selType: this.controller.engagementEvent.typeFromElement(
-            result,
-            element
-          ),
+          selType: this.view.telemetryTypeFromElement(result, element),
           searchSource: this.getSearchSource(event),
           windowMode: this.windowMode,
         });
@@ -1774,10 +1768,7 @@ ${
             result,
             element,
             searchString: this._lastSearchString,
-            selType: this.controller.engagementEvent.typeFromElement(
-              result,
-              element
-            ),
+            selType: this.view.telemetryTypeFromElement(result, element),
             searchSource: this.getSearchSource(event),
             windowMode: this.windowMode,
           });
@@ -1889,10 +1880,7 @@ ${
             element,
             searchMode,
             searchString: this._lastSearchString,
-            selType: this.controller.engagementEvent.typeFromElement(
-              result,
-              element
-            ),
+            selType: this.view.telemetryTypeFromElement(result, element),
             searchSource: this.getSearchSource(event),
             windowMode: this.windowMode,
           });
@@ -1932,10 +1920,7 @@ ${
           result,
           element,
           searchString: this._lastSearchString,
-          selType: this.controller.engagementEvent.typeFromElement(
-            result,
-            element
-          ),
+          selType: this.view.telemetryTypeFromElement(result, element),
           searchSource: this.getSearchSource(event),
           windowMode: this.windowMode,
         });
@@ -1952,10 +1937,7 @@ ${
           result,
           element,
           searchString: this._lastSearchString,
-          selType: this.controller.engagementEvent.typeFromElement(
-            result,
-            element
-          ),
+          selType: this.view.telemetryTypeFromElement(result, element),
           searchSource: this.getSearchSource(event),
           windowMode: this.windowMode,
         });
@@ -2039,10 +2021,7 @@ ${
         result,
         element,
         searchString: this._lastSearchString,
-        selType: this.controller.engagementEvent.typeFromElement(
-          result,
-          element
-        ),
+        selType: this.view.telemetryTypeFromElement(result, element),
         searchSource: this.getSearchSource(event),
         windowMode: this.windowMode,
       })
@@ -2052,7 +2031,7 @@ ${
       result,
       element,
       searchString: this._lastSearchString,
-      selType: this.controller.engagementEvent.typeFromElement(result, element),
+      selType: this.view.telemetryTypeFromElement(result, element),
       searchSource: this.getSearchSource(event),
       windowMode: this.windowMode,
     });

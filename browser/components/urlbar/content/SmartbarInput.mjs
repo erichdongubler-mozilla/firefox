@@ -1768,10 +1768,7 @@ ${
     }
 
     let url;
-    let selType = this.controller.engagementEvent.typeFromElement(
-      result,
-      element
-    );
+    let selType = this.view.telemetryTypeFromElement(result, element);
     let typedValue = this.value;
     if (oneOffParams?.engine) {
       selType = "oneoff";
@@ -2207,10 +2204,7 @@ ${
           searchSource: this.getSearchSource(event),
           searchString,
           searchMode,
-          selType: this.controller.engagementEvent.typeFromElement(
-            result,
-            element
-          ),
+          selType: this.view.telemetryTypeFromElement(result, element),
           windowMode: this.windowMode,
         });
 
@@ -2259,10 +2253,7 @@ ${
             location: this.sapLocation,
             searchSource: this.getSearchSource(event),
             searchString: this._lastSearchString,
-            selType: this.controller.engagementEvent.typeFromElement(
-              result,
-              element
-            ),
+            selType: this.view.telemetryTypeFromElement(result, element),
             windowMode: this.windowMode,
           });
           this.maybeConfirmSearchModeFromResult({
@@ -2372,10 +2363,7 @@ ${
             searchMode,
             searchSource: this.getSearchSource(event),
             searchString: this._lastSearchString,
-            selType: this.controller.engagementEvent.typeFromElement(
-              result,
-              element
-            ),
+            selType: this.view.telemetryTypeFromElement(result, element),
             windowMode: this.windowMode,
           });
           return;
@@ -2417,10 +2405,7 @@ ${
           location: this.sapLocation,
           searchSource: this.getSearchSource(event),
           searchString: this._lastSearchString,
-          selType: this.controller.engagementEvent.typeFromElement(
-            result,
-            element
-          ),
+          selType: this.view.telemetryTypeFromElement(result, element),
           windowMode: this.windowMode,
         });
         this.maybeConfirmSearchModeFromResult({
@@ -2437,10 +2422,7 @@ ${
           location: this.sapLocation,
           searchSource: this.getSearchSource(event),
           searchString: this._lastSearchString,
-          selType: this.controller.engagementEvent.typeFromElement(
-            result,
-            element
-          ),
+          selType: this.view.telemetryTypeFromElement(result, element),
           windowMode: this.windowMode,
         });
         return;
@@ -2476,10 +2458,7 @@ ${
         element,
         location: this.sapLocation,
         searchString: this._lastSearchString,
-        selType: this.controller.engagementEvent.typeFromElement(
-          result,
-          element
-        ),
+        selType: this.view.telemetryTypeFromElement(result, element),
         searchSource: this.getSearchSource(event),
         windowMode: this.windowMode,
       })
@@ -2490,7 +2469,7 @@ ${
       element,
       location: this.sapLocation,
       searchString: this._lastSearchString,
-      selType: this.controller.engagementEvent.typeFromElement(result, element),
+      selType: this.view.telemetryTypeFromElement(result, element),
       searchSource: this.getSearchSource(event),
       windowMode: this.windowMode,
     });
