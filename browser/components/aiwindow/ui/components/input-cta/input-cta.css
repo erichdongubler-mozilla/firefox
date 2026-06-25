@@ -202,20 +202,27 @@ panel-item {
   panel-list {
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     min-width: 256px;
-    padding: var(--space-small) 0;
+    padding: var(--space-small);
     --panel-list-border-radius: var(--border-radius-large);
 
     @media (not (forced-colors)) {
       --panel-list-border-color: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-50));
+      --button-background-color-hover: var(--smartwindow-panel-item-background-color-hover);
     }
   }
 
   panel-item::part(button) {
     background-position-x: var(--space-large);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    border-radius: var(--smartwindow-panel-item-border-radius);
     padding: var(--space-small) var(--space-large) var(--space-small) calc(var(--space-medium) + var(--space-xxlarge));
 
     @media (not (forced-colors)) {
       --panel-icon-fill-color: light-dark(var(--color-violet-50), var(--color-violet-20));
+
+      &:hover {
+        background-color: var(--button-background-color-hover);
+      }
     }
   }
 }

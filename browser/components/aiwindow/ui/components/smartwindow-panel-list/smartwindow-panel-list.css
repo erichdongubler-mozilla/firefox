@@ -36,9 +36,13 @@ panel-list {
 @media -moz-pref("browser.nova.enabled") {
   /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
   panel-list {
-    --panel-list-border-radius: var(--border-radius-medium);
+    /* TODO: Bug 2030460 - replace with token when available */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    --panel-list-border-radius: var(--smartwindow-panel-item-border-radius);
     --panel-section-header-padding-inline-start: var(--size-item-small);
-    --panel-item-button-border-radius: var(--border-radius-medium);
+    /* TODO: Bug 2030460 - replace with token when available */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    --panel-item-button-border-radius: var(--smartwindow-panel-item-border-radius);
 
     @media not (prefers-contrast) {
       --panel-list-border-color: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-50));
@@ -47,14 +51,8 @@ panel-list {
         color-mix(in srgb, var(--color-violet-desaturated-90) 70%, transparent),
         color-mix(in srgb, var(--color-violet-desaturated-0) 70%, transparent)
       );
-      --button-background-color-hover: light-dark(
-        color-mix(in srgb, var(--color-violet-60) 15%, transparent),
-        color-mix(in srgb, var(--color-violet-40) 25%, transparent)
-      );
-      --button-background-color-active: light-dark(
-        color-mix(in srgb, var(--color-violet-60) 27%, transparent),
-        color-mix(in srgb, var(--color-violet-40) 40%, transparent)
-      );
+      --button-background-color-hover: var(--smartwindow-panel-item-background-color-hover);
+      --button-background-color-active: var(--smartwindow-panel-item-background-color-active);
     }
   }
 }
