@@ -226,6 +226,4 @@ add_task(async function testAsyncDecryptLoggedOut() {
     /NS_ERROR_NOT_AVAILABLE/,
     "Check error is thrown instead of returning empty strings"
   );
-
-  token.reset();
 });

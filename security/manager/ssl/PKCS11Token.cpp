@@ -232,21 +232,56 @@ PKCS11Token::Logout(JSContext* aCx, Promise** aPromise) {
   return NS_DispatchBackgroundTask(runnable.forget());
 }
 
-NS_IMETHODIMP
-PKCS11Token::Reset() {
-  SECStatus rv = PK11_ResetToken(mSlot.get(), nullptr);
+nsresult DoReset(const UniquePK11SlotInfo& slot, bool isInternalKeyToken) {
+  SECStatus rv = PK11_ResetToken(slot.get(), nullptr);
   if (rv != SECSuccess) {
     return mozilla::MapSECStatus(rv);
   }
   // If this is the internal key token, set an empty password to enable the SQL
   // DB to work properly.
-  if (mIsInternalKeyToken) {
-    rv = PK11_InitPin(mSlot.get(), nullptr, nullptr);
+  if (isInternalKeyToken) {
+    rv = PK11_InitPin(slot.get(), nullptr, nullptr);
     if (rv != SECSuccess) {
       return mozilla::MapSECStatus(rv);
     }
   }
   return NS_OK;
+}
+
+NS_IMETHODIMP
+PKCS11Token::Reset(JSContext* aCx, Promise** aPromise) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
+  ErrorResult result;
+  RefPtr<Promise> promise =
+      Promise::Create(xpc::CurrentNativeGlobal(aCx), result);
+  if (result.Failed()) {
+    return result.StealNSResult();
+  }
+  auto promiseHolder =
+      MakeRefPtr<nsMainThreadPtrHolder<Promise>>("Reset promise", promise);
+
+  nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
+      "Reset runnable",
+      [promiseHolder,
+       slot = UniquePK11SlotInfo(PK11_ReferenceSlot(mSlot.get())),
+       isInternalKeyToken(mIsInternalKeyToken)]() {
+        nsresult rv = DoReset(slot, isInternalKeyToken);
+        NS_DispatchToMainThread(
+            NS_NewRunnableFunction("Reset callback", [rv, promiseHolder] {
+              if (NS_SUCCEEDED(rv)) {
+                promiseHolder->get()->MaybeResolveWithUndefined();
+              } else {
+                promiseHolder->get()->MaybeReject(rv);
+              }
+            }));
+      }));
+
+  promise.forget(aPromise);
+  return NS_DispatchBackgroundTask(runnable.forget());
 }
 
 nsresult DoChangePassword(const UniquePK11SlotInfo& slot,
