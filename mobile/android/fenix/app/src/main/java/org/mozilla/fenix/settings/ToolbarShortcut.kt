@@ -85,7 +85,7 @@ internal val allShortcutOptions: List<ShortcutOption> = listOf(
     ),
     ShortcutOption(
         ShortcutType.SUMMARIZE,
-        iconsR.drawable.mozac_ic_sparkle_24,
+        iconsR.drawable.mozac_ic_lightning_24,
         summariesR.string.mozac_summarize_settings_summarize_pages,
         setOf(ShortcutAvailability.SIMPLE),
     ),

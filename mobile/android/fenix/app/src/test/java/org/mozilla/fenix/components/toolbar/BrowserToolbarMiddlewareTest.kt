@@ -2884,7 +2884,7 @@ class BrowserToolbarMiddlewareTest {
             toolbarAction = ToolbarAction.Summarize,
         ) as ActionButtonRes
 
-        assertEquals(iconsR.drawable.mozac_ic_sparkle_24, result.drawableResId)
+        assertEquals(iconsR.drawable.mozac_ic_lightning_24, result.drawableResId)
         assertEquals(summariesR.string.mozac_summarize_settings_summarize_pages, result.contentDescription)
         assertEquals(ActionButton.State.DEFAULT, result.state)
         assertEquals(SummarizeClicked(Source.Unknown), result.onClick)
@@ -3788,7 +3788,7 @@ class BrowserToolbarMiddlewareTest {
         source: Source = Source.AddressBar.BrowserEnd,
         state: ActionButton.State = ActionButton.State.DEFAULT,
     ) = ActionButtonRes(
-        drawableResId = iconsR.drawable.mozac_ic_sparkle_24,
+        drawableResId = iconsR.drawable.mozac_ic_lightning_24,
         contentDescription = summariesR.string.mozac_summarize_settings_summarize_pages,
         state = state,
         onClick = SummarizeClicked(source),

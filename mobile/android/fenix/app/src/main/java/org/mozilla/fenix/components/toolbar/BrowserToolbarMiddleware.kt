@@ -1345,7 +1345,7 @@ class BrowserToolbarMiddleware(
         )
 
         ToolbarAction.Summarize -> ActionButtonRes(
-            drawableResId = iconsR.drawable.mozac_ic_sparkle_24,
+            drawableResId = iconsR.drawable.mozac_ic_lightning_24,
             contentDescription = summariesR.string.mozac_summarize_settings_summarize_pages,
             state = when (browsingModeManager.mode) {
                 Normal -> DEFAULT
