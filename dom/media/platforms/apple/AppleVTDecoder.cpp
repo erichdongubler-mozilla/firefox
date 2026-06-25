@@ -313,7 +313,6 @@ RefPtr<MediaDataDecoder::FlushPromise> AppleVTDecoder::ProcessFlush() {
     mReorderQueue.Pop();
   }
   mPerformanceRecorder.Record(std::numeric_limits<int64_t>::max());
-  mSeekTargetThreshold.reset();
   mIsFlushing = false;
   return FlushPromise::CreateAndResolve(true, __func__);
 }
