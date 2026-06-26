@@ -124,12 +124,12 @@ class BrowserPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule
     }
 
     fun clickPageContent(text: String): BrowserPage {
-        mozClick(BrowserPageSelectors.pageContentSelector(text))
+        mozClick(BrowserPageSelectors.PAGE_CONTENT(text))
         return this
     }
 
     fun clickPageContentIfPresent(text: String): BrowserPage {
-        mozClickIfPresent(BrowserPageSelectors.pageContentSelector(text))
+        mozClickIfPresent(BrowserPageSelectors.PAGE_CONTENT(text))
         return this
     }
 
