@@ -434,10 +434,6 @@ nsAppShell::nsAppShell()
       XPCOMEventTargetWrapper::Init();
       mozilla::widget::MozLogSupport::Init();
 
-      if (XRE_IsGPUProcess()) {
-        mozilla::gl::AndroidSurfaceTexture::Init();
-      }
-
       // Set the corresponding state in GeckoThread.
       java::GeckoThread::SetState(java::GeckoThread::State::RUNNING());
     }
@@ -461,7 +457,6 @@ nsAppShell::nsAppShell()
     mozilla::widget::WebExecutorSupport::Init();
     mozilla::widget::Base64UtilsSupport::Init();
     nsWindow::InitNatives();
-    mozilla::gl::AndroidSurfaceTexture::Init();
     mozilla::widget::MozLogSupport::Init();
 
     java::GeckoThread::SetState(java::GeckoThread::State::JNI_READY());
