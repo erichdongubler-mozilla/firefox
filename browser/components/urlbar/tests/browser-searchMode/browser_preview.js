@@ -52,7 +52,7 @@ function getExpectedSearchMode(button, isPreview = true) {
     expectedSearchMode.engineName = button.engine.name;
     let engine = SearchService.getEngineByName(button.engine.name);
     if (engine.isGeneralPurposeEngine) {
-      expectedSearchMode.source = UrlbarUtils.RESULT_SOURCE.SEARCH;
+      expectedSearchMode.source = UrlbarShared.RESULT_SOURCE.SEARCH;
     }
   } else {
     expectedSearchMode.source = button.source;
@@ -89,7 +89,7 @@ add_task(async function tokenAlias() {
     if (details.type !== UrlbarShared.RESULT_TYPE.RESTRICT) {
       let engine = SearchService.getEngineByName(details.searchParams.engine);
       if (engine.isGeneralPurposeEngine) {
-        expectedSearchMode.source = UrlbarUtils.RESULT_SOURCE.SEARCH;
+        expectedSearchMode.source = UrlbarShared.RESULT_SOURCE.SEARCH;
       }
     }
     await UrlbarTestUtils.assertSearchMode(window, expectedSearchMode);
@@ -470,10 +470,10 @@ add_task(async function fullSearchMode_oneOff_restore_on_down() {
   );
 
   await UrlbarTestUtils.enterSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
   });
   let expectedSearchMode = getExpectedSearchMode(
-    oneOffButtons.find(b => b.source == UrlbarUtils.RESULT_SOURCE.HISTORY),
+    oneOffButtons.find(b => b.source == UrlbarShared.RESULT_SOURCE.HISTORY),
     false
   );
   await UrlbarTestUtils.assertSearchMode(window, expectedSearchMode);

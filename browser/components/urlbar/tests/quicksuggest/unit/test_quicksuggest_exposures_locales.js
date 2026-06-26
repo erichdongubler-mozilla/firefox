@@ -247,7 +247,7 @@ function assertSuggestPrefs(expectedEnabled) {
 function makeExpectedExposureResult(rsSuggestionType) {
   return {
     type: UrlbarShared.RESULT_TYPE.DYNAMIC,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     heuristic: false,
     exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
     payload: {

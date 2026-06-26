@@ -44,7 +44,7 @@ add_task(async function viewUpdateAppendHidden() {
     suggestion =>
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         payload: {
           query: queries[0],
           suggestion,
@@ -84,7 +84,7 @@ add_task(async function viewUpdateAppendHidden() {
     let url = "http://example.com/" + title;
     return new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: {
         title,
         url,

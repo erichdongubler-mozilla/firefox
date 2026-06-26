@@ -40,7 +40,7 @@ add_task(async function extension() {
         results: [
           new UrlbarResult({
             type: UrlbarShared.RESULT_TYPE.URL,
-            source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+            source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
             heuristic: true,
             payload: {
               url,
@@ -453,7 +453,7 @@ async function checkVisitResults(expectedURLs) {
     );
     Assert.equal(
       result.source,
-      UrlbarUtils.RESULT_SOURCE.HISTORY,
+      UrlbarShared.RESULT_SOURCE.HISTORY,
       "Other result source is correct at index " + i
     );
     Assert.equal(

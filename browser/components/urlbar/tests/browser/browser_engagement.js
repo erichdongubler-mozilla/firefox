@@ -186,7 +186,7 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
       results: [
         new UrlbarResult({
           type: UrlbarShared.RESULT_TYPE.URL,
-          source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+          source: UrlbarShared.RESULT_SOURCE.HISTORY,
           payload: { url: "http://example.com/" },
         }),
       ],

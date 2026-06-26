@@ -9,13 +9,13 @@
 add_task(async function suggestedIndex() {
   let result1 = new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     suggestedIndex: 2,
     payload: { url: "http://mozilla.org/1" },
   });
   let result2 = new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     suggestedIndex: 6,
     payload: { url: "http://mozilla.org/2" },
   });
@@ -76,7 +76,7 @@ add_task(async function suggestedIndex_append() {
   // appended.
   let result = new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     suggestedIndex: 4,
     payload: { url: "http://mozilla.org/append/" },
   });

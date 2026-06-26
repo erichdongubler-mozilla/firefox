@@ -39,7 +39,7 @@ add_task(async function test() {
     results: [
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         payload: {
           url: "https://example.com/",
           iconBlob: TEST_ICON_BLOB,

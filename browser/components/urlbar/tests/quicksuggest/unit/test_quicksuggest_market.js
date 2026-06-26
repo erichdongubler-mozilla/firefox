@@ -232,7 +232,7 @@ add_task(async function empty_polygon_values() {
 function marketResult() {
   return {
     type: UrlbarShared.RESULT_TYPE.DYNAMIC,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     isBestMatch: true,
     rowIndex: -1,
     heuristic: false,

@@ -51,17 +51,17 @@ add_task(async function test_muxer() {
   let matches = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
-      source: UrlbarUtils.RESULT_SOURCE.TABS,
+      source: UrlbarShared.RESULT_SOURCE.TABS,
       payload: { url: "http://mozilla.org/tab/" },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
       payload: { url: "http://mozilla.org/bookmark/" },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://mozilla.org/history/" },
     }),
   ];
@@ -78,13 +78,13 @@ add_task(async function test_muxer() {
     }
     sort(queryContext, unsortedResults) {
       queryContext.results = [...unsortedResults].sort((a, b) => {
-        if (b.source == UrlbarUtils.RESULT_SOURCE.TABS) {
+        if (b.source == UrlbarShared.RESULT_SOURCE.TABS) {
           return -1;
         }
-        if (b.source == UrlbarUtils.RESULT_SOURCE.BOOKMARKS) {
+        if (b.source == UrlbarShared.RESULT_SOURCE.BOOKMARKS) {
           return 1;
         }
-        return a.source == UrlbarUtils.RESULT_SOURCE.BOOKMARKS ? -1 : 1;
+        return a.source == UrlbarShared.RESULT_SOURCE.BOOKMARKS ? -1 : 1;
       });
     }
   }
@@ -106,18 +106,18 @@ add_task(async function test_preselectedHeuristic_singleProvider() {
   let matches = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://mozilla.org/a" },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       heuristic: true,
       payload: { url: "http://mozilla.org/b" },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://mozilla.org/c" },
     }),
   ];
@@ -140,17 +140,17 @@ add_task(async function test_preselectedHeuristic_multiProviders() {
   let matches1 = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://mozilla.org/a" },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://mozilla.org/b" },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://mozilla.org/c" },
     }),
   ];
@@ -158,18 +158,18 @@ add_task(async function test_preselectedHeuristic_multiProviders() {
   let matches2 = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://mozilla.org/d" },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       heuristic: true,
       payload: { url: "http://mozilla.org/e" },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://mozilla.org/f" },
     }),
   ];
@@ -201,17 +201,17 @@ add_task(async function test_suggestions() {
   let matches = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://mozilla.org/a" },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://mozilla.org/b" },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: {
         engine: "mozSearch",
         query: "moz",
@@ -221,7 +221,7 @@ add_task(async function test_suggestions() {
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       payload: {
         engine: "mozSearch",
         query: "moz",
@@ -231,7 +231,7 @@ add_task(async function test_suggestions() {
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       payload: {
         engine: "mozSearch",
         query: "moz",
@@ -241,7 +241,7 @@ add_task(async function test_suggestions() {
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://mozilla.org/c" },
     }),
   ];
@@ -273,7 +273,7 @@ add_task(async function test_suggestions() {
 add_task(async function test_deduplicate_for_unitConversion() {
   const searchSuggestion = new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.SEARCH,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     payload: {
       engine: "Google",
       query: "10cm to m",
@@ -288,7 +288,7 @@ add_task(async function test_deduplicate_for_unitConversion() {
 
   const unitConversionSuggestion = new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.DYNAMIC,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     suggestedIndex: 1,
     payload: {
       dynamicType: "unitConversion",
@@ -322,27 +322,27 @@ const BAD_HEURISTIC_RESULTS = [
   // heuristic
   new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     heuristic: true,
     payload: { url: "http://mozilla.org/heuristic-0" },
   }),
   // heuristic
   new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     heuristic: true,
     payload: { url: "http://mozilla.org/heuristic-1" },
   }),
   // non-heuristic
   new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     payload: { url: "http://mozilla.org/non-heuristic-0" },
   }),
   // non-heuristic
   new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     payload: { url: "http://mozilla.org/non-heuristic-1" },
   }),
 ];
@@ -626,13 +626,13 @@ add_task(async function roomForHeuristic_suggestedIndex() {
   let results = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       heuristic: true,
       payload: { url: "http://example.com/heuristic" },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       suggestedIndex: 1,
       payload: { url: "http://example.com/suggestedIndex" },
     }),
@@ -658,7 +658,7 @@ add_task(async function roomForHeuristic_largeResultSpan() {
   let results = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       heuristic: true,
       resultSpan: 2,
       payload: { url: "http://example.com/heuristic" },
@@ -683,7 +683,7 @@ add_task(async function roomForHeuristic_maxRichResultsZero() {
   let results = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       heuristic: true,
       payload: { url: "http://example.com/heuristic" },
     }),
@@ -707,13 +707,13 @@ add_task(async function roomForHeuristic_maxRichResultsZero_suggestedIndex() {
   let results = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       heuristic: true,
       payload: { url: "http://example.com/heuristic" },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       suggestedIndex: 1,
       payload: { url: "http://example.com/suggestedIndex" },
     }),
@@ -736,12 +736,12 @@ add_task(async function test_orderBy() {
   let results1 = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://example.com/test1", frecency: 10 },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://example.com/test2", frecency: 1000 },
     }),
   ];
@@ -749,7 +749,7 @@ add_task(async function test_orderBy() {
   let results2 = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://example.com/test3", frecency: 100 },
     }),
   ];
@@ -785,8 +785,8 @@ async function checkSemanticDedupe({
       type,
       source:
         type == UrlbarShared.RESULT_TYPE.TAB_SWITCH
-          ? UrlbarUtils.RESULT_SOURCE.TABS
-          : UrlbarUtils.RESULT_SOURCE.HISTORY,
+          ? UrlbarShared.RESULT_SOURCE.TABS
+          : UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url, title: "Example Page" },
     });
   let semanticMatch = makeMatch(semanticType, semanticUrl);
@@ -902,12 +902,12 @@ add_task(async function test_semantic_only_survives() {
 
   let urlMatch = new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     payload: { url: "https://semantic-only.example.com/page/", title: "Page" },
   });
   let tabMatch = new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
-    source: UrlbarUtils.RESULT_SOURCE.TABS,
+    source: UrlbarShared.RESULT_SOURCE.TABS,
     payload: { url: "https://semantic-only.example.com/tab/", title: "Tab" },
   });
   let semanticProvider = registerBasicTestProvider(
@@ -948,12 +948,12 @@ add_task(async function test_dedupe_two_semantic_prefixes() {
 
   let httpsMatch = new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     payload: { url: "https://example.com/foo/", title: "Example Page" },
   });
   let httpMatch = new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     payload: { url: "http://example.com/foo/", title: "Example Page" },
   });
   let semanticProvider = registerBasicTestProvider(
@@ -1005,7 +1005,7 @@ add_task(async function test_semantic_history_separate_group_ratio() {
   let makeUrlResult = (url, frecency) =>
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url, title: "Page", frecency },
     });
   let isSemantic = r => r.providerName == "UrlbarProviderSemanticHistorySearch";

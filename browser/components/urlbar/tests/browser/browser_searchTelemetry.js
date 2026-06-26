@@ -136,7 +136,7 @@ add_task(async function formHistoryMouse() {
     Assert.greaterOrEqual(index, 0, "there should be a first suggestion");
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, index);
     Assert.equal(result.type, UrlbarShared.RESULT_TYPE.SEARCH);
-    Assert.equal(result.source, UrlbarUtils.RESULT_SOURCE.HISTORY);
+    Assert.equal(result.source, UrlbarShared.RESULT_SOURCE.HISTORY);
     let loadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
     let element = await UrlbarTestUtils.waitForAutocompleteResultAt(
       window,
@@ -162,7 +162,7 @@ add_task(async function formHistoryKeyboard() {
     Assert.greaterOrEqual(index, 0, "there should be a first suggestion");
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, index);
     Assert.equal(result.type, UrlbarShared.RESULT_TYPE.SEARCH);
-    Assert.equal(result.source, UrlbarUtils.RESULT_SOURCE.HISTORY);
+    Assert.equal(result.source, UrlbarShared.RESULT_SOURCE.HISTORY);
     let loadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
     while (index--) {
       EventUtils.sendKey("down");

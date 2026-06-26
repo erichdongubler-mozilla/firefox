@@ -281,7 +281,7 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
       results: [
         new UrlbarResult({
           type: UrlbarShared.RESULT_TYPE.URL,
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
           suggestedIndex: 1,
           resultSpan: 2,
           payload: { url: "http://example.com/test" },

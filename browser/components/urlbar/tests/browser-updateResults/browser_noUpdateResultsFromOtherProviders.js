@@ -21,12 +21,12 @@ add_task(async function test() {
     results: [
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: { url: "https://mozilla.org/c" },
       }),
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: { url: "https://mozilla.org/d" },
       }),
     ],
@@ -40,12 +40,12 @@ add_task(async function test() {
     results: [
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: { url: "https://mozilla.org/c" },
       }),
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: { url: "https://mozilla.org/d" },
       }),
     ],

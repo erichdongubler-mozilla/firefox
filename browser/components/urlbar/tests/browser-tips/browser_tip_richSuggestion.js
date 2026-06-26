@@ -8,7 +8,7 @@
 add_task(async function autosettings() {
   let result = new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.TIP,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     payload: {
       type: "test",
       titleL10n: { id: "urlbar-search-tips-confirm" },
@@ -23,7 +23,7 @@ add_task(async function autosettings() {
 add_task(async function ui() {
   let result = new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.TIP,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     payload: {
       type: "test",
       icon: "chrome://global/skin/icons/search-glass.svg",
@@ -132,7 +132,7 @@ add_task(async function learn_more() {
       results: [
         new UrlbarResult({
           type: UrlbarShared.RESULT_TYPE.TIP,
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
           payload: {
             type: "test",
             titleL10n: { id: "urlbar-search-tips-confirm" },

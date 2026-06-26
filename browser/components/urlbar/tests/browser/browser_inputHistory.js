@@ -354,7 +354,7 @@ add_task(async function test_adaptive_behaviors() {
   );
   Assert.equal(
     result.source,
-    UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     "The input history result is a bookmark."
   );
 
@@ -412,7 +412,7 @@ add_task(async function test_adaptive_behaviors() {
   );
   Assert.equal(
     result.source,
-    UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     "The input history result is a bookmark."
   );
 

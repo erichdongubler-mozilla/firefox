@@ -40,7 +40,7 @@ add_task(async function test_with_oneoff_button() {
 
   info("Enter Tabs mode");
   await UrlbarTestUtils.enterSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.TABS,
+    source: UrlbarShared.RESULT_SOURCE.TABS,
   });
 
   info("Select first popup entry");

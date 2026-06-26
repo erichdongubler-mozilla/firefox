@@ -41,11 +41,11 @@ const RESULT_DATA_BY_TYPE = {
 
 function getSourceIcon(source) {
   switch (source) {
-    case UrlbarUtils.RESULT_SOURCE.BOOKMARKS:
+    case UrlbarShared.RESULT_SOURCE.BOOKMARKS:
       return "chrome://browser/skin/bookmark.svg";
-    case UrlbarUtils.RESULT_SOURCE.HISTORY:
+    case UrlbarShared.RESULT_SOURCE.HISTORY:
       return "chrome://browser/skin/history.svg";
-    case UrlbarUtils.RESULT_SOURCE.TABS:
+    case UrlbarShared.RESULT_SOURCE.TABS:
       return "chrome://browser/skin/tab.svg";
     default:
       return null;

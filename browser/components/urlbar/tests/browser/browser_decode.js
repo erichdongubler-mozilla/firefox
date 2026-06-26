@@ -31,7 +31,7 @@ add_task(function losslessDecode() {
   let url = "https://example.com/\u30a2\u30a4\u30a6\u30a8\u30aa";
   const result = new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
-    source: UrlbarUtils.RESULT_SOURCE.TABS,
+    source: UrlbarShared.RESULT_SOURCE.TABS,
     payload: { url },
   });
   gURLBar.setValueFromResult({ result });

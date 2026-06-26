@@ -300,13 +300,13 @@ async function runTipTests() {
   let matches = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       // eslint-disable-next-line @microsoft/sdl/no-insecure-url
       payload: { url: "http://mozilla.org/a" },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.TIP,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       payload: {
         // eslint-disable-next-line @microsoft/sdl/no-insecure-url
         helpUrl: "http://example.com/",
@@ -323,13 +323,13 @@ async function runTipTests() {
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       // eslint-disable-next-line @microsoft/sdl/no-insecure-url
       payload: { url: "http://mozilla.org/b" },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       // eslint-disable-next-line @microsoft/sdl/no-insecure-url
       payload: { url: "http://mozilla.org/c" },
     }),

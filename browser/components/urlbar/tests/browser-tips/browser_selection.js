@@ -15,7 +15,7 @@ add_task(async function tipIsSecondResult() {
   let results = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: {
         url: "http://mozilla.org/a",
         helpUrl: "http://example.com/",
@@ -243,7 +243,7 @@ add_task(async function tipHasNoResultMenuButton() {
   let results = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: {
         url: "http://mozilla.org/a",
         helpUrl: "http://example.com/",

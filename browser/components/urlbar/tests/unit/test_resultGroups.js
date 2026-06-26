@@ -1516,7 +1516,7 @@ function makeHistoryResults(count, { resultSpan } = {}) {
     results.push(
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         resultSpan: resultSpan && i == 0 ? resultSpan : undefined,
         payload: { url: "http://example.com/" + i },
       })
@@ -1531,7 +1531,7 @@ function makeRemoteSuggestionResults(count) {
     results.push(
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         payload: {
           engine: "test",
           query: "test",
@@ -1550,7 +1550,7 @@ function makeFormHistoryResults(count) {
     results.push(
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: {
           engine: "test",
           suggestion: "test " + i,

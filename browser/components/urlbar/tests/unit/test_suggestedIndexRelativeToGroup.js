@@ -407,7 +407,7 @@ add_task(async function test() {
         // heuristic
         new UrlbarResult({
           type: UrlbarShared.RESULT_TYPE.SEARCH,
-          source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+          source: UrlbarShared.RESULT_SOURCE.SEARCH,
           heuristic: true,
           group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
           payload: {
@@ -419,7 +419,7 @@ add_task(async function test() {
         // global suggestedIndex with resultSpan = 2
         new UrlbarResult({
           type: UrlbarShared.RESULT_TYPE.SEARCH,
-          source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+          source: UrlbarShared.RESULT_SOURCE.SEARCH,
           suggestedIndex: 1,
           resultSpan: 2,
           payload: {
@@ -566,7 +566,7 @@ function makeHistoryResults(count = MAX_RESULTS) {
     results.push(
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: { url: "http://example.com/" + i },
       })
     );
@@ -580,7 +580,7 @@ function makeRemoteSuggestionResults(count = MAX_RESULTS) {
     results.push(
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         payload: {
           engine: "test",
           query: "test",
@@ -599,7 +599,7 @@ function makeFormHistoryResults(count = MAX_RESULTS) {
     results.push(
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: {
           engine: "test",
           suggestion: "test " + i,
@@ -616,7 +616,7 @@ function makeSuggestedIndexResults(objects) {
     Object.assign(
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         group,
         suggestedIndex,
         isSuggestedIndexRelativeToGroup: true,

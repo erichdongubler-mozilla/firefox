@@ -15,7 +15,7 @@ add_task(async function () {
     results: [
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         payload: {
           url: TEST_URL,
           helpUrl: "https://example.com/help",

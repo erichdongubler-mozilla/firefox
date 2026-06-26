@@ -74,7 +74,7 @@ class DelayingTestProvider extends UrlbarTestUtils.TestProvider {
 function makeSuggestedIndexResult(suggestedIndex, resultSpan = 1) {
   return new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     suggestedIndex,
     resultSpan,
     payload: {
@@ -119,7 +119,7 @@ function makeProviderResults({ count = 0, type = undefined, specs = [] }) {
   let results = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       heuristic: true,
       payload: {
         query,
@@ -136,7 +136,7 @@ function makeProviderResults({ count = 0, type = undefined, specs = [] }) {
           results.push(
             new UrlbarResult({
               type: UrlbarShared.RESULT_TYPE.SEARCH,
-              source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+              source: UrlbarShared.RESULT_SOURCE.SEARCH,
               payload: {
                 query,
                 suggestion: str,
@@ -150,7 +150,7 @@ function makeProviderResults({ count = 0, type = undefined, specs = [] }) {
           results.push(
             new UrlbarResult({
               type: UrlbarShared.RESULT_TYPE.URL,
-              source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+              source: UrlbarShared.RESULT_SOURCE.HISTORY,
               payload: {
                 url: "http://example.com/" + i,
                 title: str,

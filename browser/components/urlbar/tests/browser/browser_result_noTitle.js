@@ -248,7 +248,7 @@ async function doGenericUrlResultTest({ payload, searchString, expected }) {
     results: [
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_NETWORK,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_NETWORK,
         payload,
       }),
     ],

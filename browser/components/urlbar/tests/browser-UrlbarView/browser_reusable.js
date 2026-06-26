@@ -677,7 +677,7 @@ add_task(async function quickSuggest_items() {
 function makeDynamicResult(override) {
   return new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.DYNAMIC,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     suggestedIndex: 0,
     ...override,
   });
@@ -686,7 +686,7 @@ function makeDynamicResult(override) {
 function makeUrlResult(override) {
   return new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     suggestedIndex: 0,
     ...override,
   });
@@ -695,7 +695,7 @@ function makeUrlResult(override) {
 function makeTipResult(override) {
   return new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.TIP,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     suggestedIndex: 0,
     ...override,
   });

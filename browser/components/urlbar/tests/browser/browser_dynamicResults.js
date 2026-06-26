@@ -313,7 +313,7 @@ add_task(async function shouldNavigate() {
         this,
         new UrlbarResult({
           type: UrlbarShared.RESULT_TYPE.DYNAMIC,
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
           suggestedIndex: 1,
           payload: {
             dynamicType: DYNAMIC_TYPE_NAME,
@@ -417,7 +417,7 @@ add_task(async function highlighting() {
       this._tokens = context.tokens;
       let result = new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.DYNAMIC,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         suggestedIndex: 1,
         payload: {
           dynamicType: DYNAMIC_TYPE_NAME,
@@ -660,7 +660,7 @@ add_task(async function clear_dynamicType_attribute() {
         this,
         new UrlbarResult({
           type: UrlbarShared.RESULT_TYPE.DYNAMIC,
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
           suggestedIndex: 0,
           payload: {
             dynamicType: DYNAMIC_TYPE_NAME,
@@ -787,7 +787,7 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
       this,
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.DYNAMIC,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         suggestedIndex: 1,
         payload: {
           dynamicType: DYNAMIC_TYPE_NAME,

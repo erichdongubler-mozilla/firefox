@@ -10,7 +10,7 @@
 
 let TEST_RESULT = new UrlbarResult({
   type: UrlbarShared.RESULT_TYPE.URL,
-  source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+  source: UrlbarShared.RESULT_SOURCE.HISTORY,
   payload: { url: "http://mozilla.org/" },
 });
 

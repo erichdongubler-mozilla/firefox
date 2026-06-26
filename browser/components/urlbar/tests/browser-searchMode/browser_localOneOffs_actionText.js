@@ -56,7 +56,7 @@ add_task(async function localOneOff() {
   let oneOffButtons = UrlbarTestUtils.getOneOffSearchButtons(window);
   Assert.equal(
     oneOffButtons.selectedButton.source,
-    UrlbarUtils.RESULT_SOURCE.HISTORY,
+    UrlbarShared.RESULT_SOURCE.HISTORY,
     "A local one-off button should be selected"
   );
   Assert.ok(
@@ -106,7 +106,7 @@ add_task(async function localOneOff() {
   result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
   Assert.equal(
     oneOffButtons.selectedButton.source,
-    UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     "A local one-off button should be selected"
   );
   Assert.equal(
@@ -190,7 +190,7 @@ add_task(async function localOneOff_withVisit() {
   let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
   Assert.equal(
     oneOffButtons.selectedButton.source,
-    UrlbarUtils.RESULT_SOURCE.HISTORY,
+    UrlbarShared.RESULT_SOURCE.HISTORY,
     "The history one-off button should be selected"
   );
   Assert.ok(
@@ -219,7 +219,7 @@ add_task(async function localOneOff_withVisit() {
   result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
   Assert.equal(
     oneOffButtons.selectedButton.source,
-    UrlbarUtils.RESULT_SOURCE.TABS,
+    UrlbarShared.RESULT_SOURCE.TABS,
     "The tabs one-off button should be selected"
   );
   Assert.ok(
@@ -242,7 +242,7 @@ add_task(async function localOneOff_withVisit() {
   result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
   Assert.equal(
     oneOffButtons.selectedButton.source,
-    UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     "The bookmarks one-off button should be selected"
   );
   Assert.ok(

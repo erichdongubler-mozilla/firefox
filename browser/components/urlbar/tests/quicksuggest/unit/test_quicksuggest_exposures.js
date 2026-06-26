@@ -324,7 +324,7 @@ add_task(async function maxResults_exposuresHistory() {
     historyResults.push(
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: { url: "http://example.com/history/" + i },
       })
     );
@@ -378,7 +378,7 @@ add_task(async function maxResults_exposuresHistoryAmp() {
     historyResults.push(
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: { url: "http://example.com/history/" + i },
       })
     );
@@ -418,7 +418,7 @@ async function doMaxResultsTest({
       historyResults.push(
         new UrlbarResult({
           type: UrlbarShared.RESULT_TYPE.URL,
-          source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+          source: UrlbarShared.RESULT_SOURCE.HISTORY,
           payload: { url: "http://example.com/history/" + i },
         })
       );
@@ -569,7 +569,7 @@ async function withSuggestionTypesPref(prefValue, callback) {
 function makeExpectedResult({ rsSuggestionType, telemetryType = "exposure" }) {
   return {
     type: UrlbarShared.RESULT_TYPE.DYNAMIC,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     heuristic: false,
     exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
     payload: {

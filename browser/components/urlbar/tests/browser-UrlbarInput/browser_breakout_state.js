@@ -57,7 +57,7 @@ add_task(async function empty_to_some() {
     results: [
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         suggestedIndex: 0,
         payload: {
           url: "https://example.com/",
@@ -88,7 +88,7 @@ add_task(async function some_to_empty() {
     results: [
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         suggestedIndex: 0,
         payload: {
           url: "https://example.com/",

@@ -157,7 +157,7 @@ async function doTest({ click, buttonUrl = undefined, helpUrl = undefined }) {
 function makeTipResult({ buttonUrl, helpUrl, heuristic }) {
   return new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.TIP,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     heuristic,
     payload: {
       type: "test",

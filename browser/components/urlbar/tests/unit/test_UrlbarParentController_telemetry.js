@@ -11,7 +11,7 @@
 const TEST_URL = "http://example.com";
 const MATCH = new UrlbarResult({
   type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
-  source: UrlbarUtils.RESULT_SOURCE.TABS,
+  source: UrlbarShared.RESULT_SOURCE.TABS,
   payload: { url: TEST_URL },
 });
 const TELEMETRY_1ST_RESULT = "PLACES_AUTOCOMPLETE_1ST_RESULT_TIME_MS";
@@ -193,7 +193,7 @@ add_task(async function test_n_autocomplete_results() {
       [
         new UrlbarResult({
           type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
-          source: UrlbarUtils.RESULT_SOURCE.TABS,
+          source: UrlbarShared.RESULT_SOURCE.TABS,
           payload: { url: TEST_URL + "/" + i },
         }),
       ],
@@ -226,7 +226,7 @@ add_task(async function test_n_autocomplete_results() {
   await provider.addResults([
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
-      source: UrlbarUtils.RESULT_SOURCE.TABS,
+      source: UrlbarShared.RESULT_SOURCE.TABS,
       payload: { url: TEST_URL + "/6" },
     }),
   ]);

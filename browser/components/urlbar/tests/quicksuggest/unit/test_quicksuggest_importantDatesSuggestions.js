@@ -339,7 +339,7 @@ add_task(async function testTwoSuggestions() {
 
   let expectedOtherSuggestion = {
     type: UrlbarShared.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     heuristic: false,
     isBestMatch: true,
     isRichSuggestion: true,
@@ -531,7 +531,7 @@ function makeExpectedResult({
   let name = description ?? descriptionL10n.args.name;
   return {
     type: UrlbarShared.RESULT_TYPE.SEARCH,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     heuristic: false,
     isBestMatch,
     suggestedIndex: 1,

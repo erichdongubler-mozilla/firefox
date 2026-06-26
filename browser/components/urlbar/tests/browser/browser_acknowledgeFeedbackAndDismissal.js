@@ -474,7 +474,7 @@ async function checkRowLabel(resultIndex, expectedLabel) {
 function makeResult(resultParams) {
   return new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     payload: {
       url: "https://example.com/",
       isBlockable: true,

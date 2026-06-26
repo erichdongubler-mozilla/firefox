@@ -358,7 +358,7 @@ add_task(async function test_heuristic() {
     {
       testResult: new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
         payload: { url: "https://example.com/123" },
       }),
@@ -368,7 +368,7 @@ add_task(async function test_heuristic() {
     {
       testResult: new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
         // eslint-disable-next-line @microsoft/sdl/no-insecure-url
         payload: { url: "http://example.com/123" },
@@ -380,7 +380,7 @@ add_task(async function test_heuristic() {
     {
       testResult: new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         heuristic: true,
         payload: {
           engine: SearchService.defaultEngine.name,

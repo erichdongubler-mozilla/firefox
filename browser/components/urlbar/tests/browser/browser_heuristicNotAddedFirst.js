@@ -18,7 +18,7 @@ add_task(async function slowHeuristicSelected() {
   let engine = await SearchService.getDefault();
   let heuristicResult = new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.SEARCH,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     heuristic: true,
     payload: {
       suggestion: "test",
@@ -76,7 +76,7 @@ add_task(async function oneOffRemainsSelected() {
   let engine = await SearchService.getDefault();
   let heuristicResult = new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.SEARCH,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     heuristic: true,
     payload: {
       suggestion: "test",
@@ -146,7 +146,7 @@ add_task(async function oneOffRemainsSelected() {
 function makeTipResult({ suggestedIndex }) {
   return new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.TIP,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     suggestedIndex,
     payload: {
       helpUrl: "http://example.com/",

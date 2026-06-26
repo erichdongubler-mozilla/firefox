@@ -11,7 +11,7 @@ add_task(async function test_receive_punycode_result() {
     startQuery(context, addCallback) {
       let result = new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         suggestedIndex: 0,
         payload: {
           url,

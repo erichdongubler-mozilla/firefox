@@ -33,27 +33,27 @@ add_task(async function test_filters_sponsored_results() {
   let results = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://example.com/test1" },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://example.com/test2", isSponsored: true },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://example.com/test3" },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://example.com/test4", isSponsored: true },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
-      source: UrlbarUtils.RESULT_SOURCE.TABS,
+      source: UrlbarShared.RESULT_SOURCE.TABS,
       payload: { url: "http://example.com/test5", isSponsored: true },
     }),
   ];
@@ -78,12 +78,12 @@ add_task(async function test_filters_all_sponsored_results() {
   let results = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://example.com/test1", isSponsored: true },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
-      source: UrlbarUtils.RESULT_SOURCE.TABS,
+      source: UrlbarShared.RESULT_SOURCE.TABS,
       payload: { url: "http://example.com/test2", isSponsored: true },
     }),
   ];
@@ -108,7 +108,7 @@ add_task(async function test_keeps_non_sponsored_when_flag_set() {
   let results = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://example.com/test1" },
     }),
   ];
@@ -133,12 +133,12 @@ add_task(async function test_keeps_sponsored_when_flag_unset() {
   let results = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://example.com/test1" },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://example.com/test2", isSponsored: true },
     }),
   ];
@@ -160,12 +160,12 @@ add_task(async function test_keeps_sponsored_tab_when_flag_unset() {
   let results = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://example.com/test1" },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
-      source: UrlbarUtils.RESULT_SOURCE.TABS,
+      source: UrlbarShared.RESULT_SOURCE.TABS,
       payload: { url: "http://example.com/test2", isSponsored: true },
     }),
   ];

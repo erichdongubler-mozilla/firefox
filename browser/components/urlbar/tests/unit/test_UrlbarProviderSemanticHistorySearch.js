@@ -164,7 +164,7 @@ add_task(async function test_isActive_conditions() {
   );
 
   const historySearchMode = createContext("hello world", {
-    searchMode: { source: UrlbarUtils.RESULT_SOURCE.HISTORY },
+    searchMode: { source: UrlbarShared.RESULT_SOURCE.HISTORY },
   });
   Assert.ok(
     await provider.isActive(historySearchMode),

@@ -44,7 +44,7 @@ add_task(async function selected_result_tip() {
       results: [
         new UrlbarResult({
           type: UrlbarShared.RESULT_TYPE.TIP,
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
           payload: {
             type,
             helpUrl: "https://example.com/",
@@ -161,7 +161,7 @@ add_task(async function learn_more_link() {
     results: [
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.TIP,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         payload: {
           type: "test",
           titleL10n: { id: "urlbar-search-tips-confirm" },

@@ -87,7 +87,7 @@ async function do_noExposure(showExposureResults) {
     gProvider.results.push(
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         payload: {
           suggestion: "suggestion " + i,
           engine: SearchService.defaultEngine.name,
@@ -114,12 +114,12 @@ async function do_noExposure(showExposureResults) {
   gProvider.results = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: historyUrl },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
       payload: { url: bookmarkUrl },
     }),
   ];
@@ -160,14 +160,14 @@ async function do_noExposure(showExposureResults) {
   // hidden rows for the history and/or bookmark results.
   let expected = [
     {
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
       type: UrlbarShared.RESULT_TYPE.URL,
       url: bookmarkUrl,
     },
   ];
   if (showExposureResults) {
     expected.unshift({
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       type: UrlbarShared.RESULT_TYPE.URL,
       url: historyUrl,
     });
@@ -295,7 +295,7 @@ async function do_exposure_append_underfilled({
   gProvider.results = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       payload: {
         suggestion: newSuggestion,
         engine: SearchService.defaultEngine.name,
@@ -303,7 +303,7 @@ async function do_exposure_append_underfilled({
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
       payload: { url: bookmarkUrl },
     }),
   ];
@@ -412,7 +412,7 @@ async function do_exposure_replace({ showExposureResults, cancelSecondQuery }) {
   gProvider.results = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       payload: {
         suggestion: "suggestion",
         engine: SearchService.defaultEngine.name,
@@ -448,7 +448,7 @@ async function do_exposure_replace({ showExposureResults, cancelSecondQuery }) {
   gProvider.results = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       payload: {
         suggestion: newSuggestion,
         engine: SearchService.defaultEngine.name,
@@ -456,7 +456,7 @@ async function do_exposure_replace({ showExposureResults, cancelSecondQuery }) {
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
       payload: { url: bookmarkUrl },
     }),
   ];
@@ -571,7 +571,7 @@ async function do_exposure_append_full(showExposureResults) {
     gProvider.results.push(
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         payload: {
           suggestion: "suggestion " + i,
           engine: SearchService.defaultEngine.name,
@@ -598,12 +598,12 @@ async function do_exposure_append_full(showExposureResults) {
   gProvider.results = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: historyUrl },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
       payload: { url: bookmarkUrl },
     }),
   ];
@@ -644,14 +644,14 @@ async function do_exposure_append_full(showExposureResults) {
   // hidden rows for the history and bookmark results.
   let expected = [
     {
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
       type: UrlbarShared.RESULT_TYPE.URL,
       url: bookmarkUrl,
     },
   ];
   if (showExposureResults) {
     expected.unshift({
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       type: UrlbarShared.RESULT_TYPE.URL,
       url: historyUrl,
     });
@@ -797,7 +797,7 @@ async function do_exposure_append_full_twice(showExposureResults) {
     gProvider.results.push(
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         payload: {
           suggestion: "suggestion " + i,
           engine: SearchService.defaultEngine.name,
@@ -825,17 +825,17 @@ async function do_exposure_append_full_twice(showExposureResults) {
   gProvider.results = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: historyUrl },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
-      source: UrlbarUtils.RESULT_SOURCE.TABS,
+      source: UrlbarShared.RESULT_SOURCE.TABS,
       payload: { url: tabUrl },
     }),
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
       payload: { url: bookmarkUrl },
     }),
   ];
@@ -876,7 +876,7 @@ async function do_exposure_append_full_twice(showExposureResults) {
   // three hidden rows for the history, tab, and bookmark results.
   let expected = [
     {
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
       type: UrlbarShared.RESULT_TYPE.URL,
       url: bookmarkUrl,
     },
@@ -884,12 +884,12 @@ async function do_exposure_append_full_twice(showExposureResults) {
   if (showExposureResults) {
     expected.unshift(
       {
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         type: UrlbarShared.RESULT_TYPE.URL,
         url: historyUrl,
       },
       {
-        source: UrlbarUtils.RESULT_SOURCE.TABS,
+        source: UrlbarShared.RESULT_SOURCE.TABS,
         type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
         url: tabUrl,
       }
@@ -947,7 +947,7 @@ async function do_exposure_append_full_twice(showExposureResults) {
   gProvider.results = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: historyUrl },
     }),
   ];
@@ -993,7 +993,7 @@ async function do_exposure_append_full_twice(showExposureResults) {
   expected = [];
   if (showExposureResults) {
     expected.unshift({
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       type: UrlbarShared.RESULT_TYPE.URL,
       url: historyUrl,
     });

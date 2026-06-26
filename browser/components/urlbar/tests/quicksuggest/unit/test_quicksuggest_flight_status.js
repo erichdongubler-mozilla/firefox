@@ -214,7 +214,7 @@ add_task(async function show_less_frequently() {
 function merinoResult() {
   return {
     type: UrlbarShared.RESULT_TYPE.DYNAMIC,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     isBestMatch: true,
     heuristic: false,
     payload: {

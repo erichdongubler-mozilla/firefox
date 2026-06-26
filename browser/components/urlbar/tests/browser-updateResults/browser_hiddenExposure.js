@@ -21,7 +21,7 @@ add_task(async function rowCanUpdateToResult() {
     provider.results.push(
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: {
           url: "https://example.com/" + i,
         },
@@ -57,7 +57,7 @@ add_task(async function rowCanUpdateToResult() {
   provider.results = [
     new UrlbarResult({
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
       payload: {
         url: "https://example.com/hidden-exposure",

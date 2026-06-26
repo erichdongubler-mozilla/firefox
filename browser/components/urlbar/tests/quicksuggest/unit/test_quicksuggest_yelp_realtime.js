@@ -425,7 +425,7 @@ function yelpOptInResult({ dismissButton = false } = {}) {
       };
   return {
     type: UrlbarShared.RESULT_TYPE.TIP,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     heuristic: false,
     isBestMatch: true,
     payload: {
@@ -474,7 +474,7 @@ function yelpOptInResult({ dismissButton = false } = {}) {
 function yelpMerinoResult() {
   return {
     type: UrlbarShared.RESULT_TYPE.DYNAMIC,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     heuristic: false,
     isBestMatch: true,
     payload: {

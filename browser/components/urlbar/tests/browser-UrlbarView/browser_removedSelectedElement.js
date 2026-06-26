@@ -13,7 +13,7 @@ add_task(async function () {
   // Luckily TEST providers come first in the heuristic group!
   let result = new UrlbarResult({
     type: UrlbarShared.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     heuristic: true,
     // To ensure the selectedElement is removed, we use this special property
     // that asks the view to generate new content for the row.

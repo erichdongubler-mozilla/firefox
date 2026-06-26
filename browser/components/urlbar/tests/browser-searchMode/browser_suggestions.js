@@ -45,7 +45,7 @@ add_setup(async function () {
     expectedFormHistoryResults.push({
       heuristic: false,
       type: UrlbarShared.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       searchParams: {
         suggestion: value,
         engine: suggestionsEngine.name,
@@ -98,7 +98,7 @@ add_task(async function emptySearch_behavior() {
       {
         heuristic: true,
         type: UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         searchParams: {
           query: " ",
           engine: DEFAULT_ENGINE_NAME,
@@ -107,7 +107,7 @@ add_task(async function emptySearch_behavior() {
       {
         heuristic: false,
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         url: `http://mochi.test/`,
       },
     ]);
@@ -126,7 +126,7 @@ add_task(async function emptySearch_local() {
       value: "",
     });
     await UrlbarTestUtils.enterSearchMode(window, {
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
     });
     Assert.equal(gURLBar.value, "", "Urlbar value should be cleared.");
     // Show the user's most frecent history for an empty search.
@@ -134,7 +134,7 @@ add_task(async function emptySearch_local() {
       {
         heuristic: false,
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         url: `http://mochi.test/`,
       },
     ]);
@@ -159,7 +159,7 @@ add_task(async function nonEmptySearch() {
       {
         heuristic: true,
         type: UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         searchParams: {
           query,
           engine: suggestionsEngine.name,
@@ -169,7 +169,7 @@ add_task(async function nonEmptySearch() {
       {
         heuristic: false,
         type: UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         searchParams: {
           query,
           suggestion: `${query}foo`,
@@ -179,7 +179,7 @@ add_task(async function nonEmptySearch() {
       {
         heuristic: false,
         type: UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         searchParams: {
           query,
           suggestion: `${query}bar`,
@@ -208,7 +208,7 @@ add_task(async function nonEmptySearch_nonMatching() {
       {
         heuristic: true,
         type: UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         searchParams: {
           query,
           engine: suggestionsEngine.name,
@@ -217,7 +217,7 @@ add_task(async function nonEmptySearch_nonMatching() {
       {
         heuristic: false,
         type: UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         searchParams: {
           query,
           suggestion: `${query}foo`,
@@ -227,7 +227,7 @@ add_task(async function nonEmptySearch_nonMatching() {
       {
         heuristic: false,
         type: UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         searchParams: {
           query,
           suggestion: `${query}bar`,
@@ -259,7 +259,7 @@ add_task(async function nonEmptySearch_withHistory() {
     return {
       heuristic: false,
       type: UrlbarShared.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       searchParams: {
         query,
         suggestion: `${query}${suffix}`,
@@ -282,7 +282,7 @@ add_task(async function nonEmptySearch_withHistory() {
       {
         heuristic: true,
         type: UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         searchParams: {
           query,
           engine: manySuggestionsEngine.name,
@@ -298,13 +298,13 @@ add_task(async function nonEmptySearch_withHistory() {
       {
         heuristic: false,
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         url: `http://mochi.test/${query}1`,
       },
       {
         heuristic: false,
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         url: `http://mochi.test/${query}`,
       },
     ]);
@@ -330,7 +330,7 @@ add_task(async function nonEmptySearch_withHistory() {
       {
         heuristic: true,
         type: UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         searchParams: {
           query,
           engine: manySuggestionsEngine.name,
@@ -346,13 +346,13 @@ add_task(async function nonEmptySearch_withHistory() {
       {
         heuristic: false,
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         url: `http://mochi.test/${query}1`,
       },
       {
         heuristic: false,
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         url: `http://mochi.test/${query}`,
       },
     ]);
@@ -380,7 +380,7 @@ add_task(async function nonEmptySearch_url() {
       {
         heuristic: true,
         type: UrlbarShared.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         searchParams: {
           query,
           engine: suggestionsEngine.name,

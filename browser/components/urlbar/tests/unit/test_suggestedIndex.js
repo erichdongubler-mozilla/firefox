@@ -533,7 +533,7 @@ async function doSuggestedIndexTest({
     results.push(
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         resultSpan: spansByIndex[results.length],
         payload: {
           url: "http://example.com/" + i,
@@ -547,7 +547,7 @@ async function doSuggestedIndexTest({
     results.push(
       new UrlbarResult({
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         suggestedIndex,
         resultSpan: spansByIndex[results.length],
         payload: {

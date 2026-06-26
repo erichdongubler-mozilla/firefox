@@ -332,13 +332,13 @@ async function assertState({
     if (suggestion.isFormHistory) {
       Assert.equal(
         result.source,
-        UrlbarUtils.RESULT_SOURCE.HISTORY,
+        UrlbarShared.RESULT_SOURCE.HISTORY,
         "Result source should be HISTORY"
       );
     } else {
       Assert.equal(
         result.source,
-        UrlbarUtils.RESULT_SOURCE.SEARCH,
+        UrlbarShared.RESULT_SOURCE.SEARCH,
         "Result source should be SEARCH"
       );
     }

@@ -681,7 +681,7 @@ add_task(async function dismissals_unmanaged_1() {
 
     let expectedResult = {
       type: UrlbarShared.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       heuristic: false,
       payload: {
         provider,
@@ -801,7 +801,7 @@ add_task(async function dismissals_unmanaged_2() {
 
   let expectedBaseResult = {
     type: UrlbarShared.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     heuristic: false,
     payload: {
       provider,
@@ -975,7 +975,7 @@ add_task(async function topPicks() {
       {
         isBestMatch: true,
         type: UrlbarShared.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         heuristic: false,
         payload: {
           telemetryType: provider,
@@ -1071,7 +1071,7 @@ async function doUnmanagedTest({ pref, suggestion, shouldBeAdded }) {
 
   let expectedResult = {
     type: UrlbarShared.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     heuristic: false,
     payload: {
       title: suggestion.title,
