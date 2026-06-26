@@ -3,13 +3,9 @@
     "@base": {
       "value": {
         "prefersContrast": "CanvasText",
-        "brand": {
-          "light": "{color.violet-desaturated.90}",
-          "dark": "{color.violet-desaturated.0}"
-        },
-        "platform": {
-          "default": "currentColor"
-        }
+        "nativeTheme": "currentColor",
+        "light": "{color.violet-desaturated.90}",
+        "dark": "{color.violet-desaturated.0}"
       }
     },
     "error": {
