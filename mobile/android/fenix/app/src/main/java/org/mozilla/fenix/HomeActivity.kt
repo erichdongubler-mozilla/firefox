@@ -1645,6 +1645,10 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
     }
 
     private fun showCrashReporter(crashIDs: List<String>?) {
+        if (!components.settings.useNewCrashReporterFlow) {
+            return
+        }
+
         UnsubmittedCrashDialog.create(crashIDs = crashIDs)
             .show(supportFragmentManager, UnsubmittedCrashDialog.TAG)
     }
