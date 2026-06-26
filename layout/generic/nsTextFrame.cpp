@@ -5816,6 +5816,46 @@ static gfxFloat ComputeDecorationLineOffset(
   return 0;
 }
 
+// Per the spec resolution, if it's split (i.e. box-decoration-break:slice) we
+// count the sum width (or height) of the fragments, but if it is with clone,
+// each fragment is considered individually.
+// https://github.com/w3c/csswg-drafts/issues/8403
+static nscoord TextDecorationInsetPercentageBasis(const nsTextFrame* aFrame,
+                                                  const nsIFrame* aDecFrame) {
+  // Note: We use the same way to get the writing mode in
+  // ComputeDecorationInset().
+  const WritingMode wm = aDecFrame->IsInlineFrame()
+                             ? aDecFrame->GetWritingMode()
+                             : FindLineContainer(aFrame)->GetWritingMode();
+  auto getLength = [wm](const nsIFrame* aFrame) {
+    return wm.IsVertical() ? aFrame->GetRectRelativeToSelf().height
+                           : aFrame->GetRectRelativeToSelf().width;
+  };
+  if (aDecFrame->StyleBorder()->mBoxDecorationBreak ==
+      StyleBoxDecorationBreak::Clone) {
+    return getLength(aFrame);
+  }
+
+  // FIXME: This is not great because we may calculate this multiple times if
+  // there are a lot of fragments. The better way is to move this calculation
+  // out of ComputeDecorationInset().
+  //
+  // FIXME: Bug 2050962. We have to add the extra handling if we break the text
+  // by `<br>`. It breaks the continuations and it may look like multiple
+  // independent text frames, so we cannot use continuation to find all
+  // fragments.
+  nscoord sum = getLength(aFrame);
+  const nsIFrame* prev = aFrame;
+  while ((prev = nsLayoutUtils::GetPrevContinuationOrIBSplitSibling(prev))) {
+    sum += getLength(prev);
+  }
+  const nsIFrame* next = aFrame;
+  while ((next = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(next))) {
+    sum += getLength(next);
+  }
+  return sum;
+}
+
 // Helper to determine decoration inset.
 // Returns false if the inset would cut off the decoration entirely.
 // If aOnlyExtend is true, this will only consider cases with negative inset
@@ -5848,13 +5888,19 @@ static bool ComputeDecorationInset(
       return true;
     }
 
-    if (!inset.start.IsLength() || !inset.end.IsLength()) {
-      // TODO: Treat as no inset for now. We will hanlde percentage and calc in
-      // the following patches.
-      return true;
+    if (inset.start.IsLength() && inset.end.IsLength()) {
+      insetLeft = inset.start.AsLength().ToAppUnits();
+      insetRight = inset.end.AsLength().ToAppUnits();
+    } else {
+      const nscoord basis =
+          TextDecorationInsetPercentageBasis(aFrame, aDecFrame);
+      insetLeft = inset.start.Resolve(basis);
+      insetRight = inset.end.Resolve(basis);
+      if (!insetLeft && !insetRight) {
+        // Same as our previous check. If both are zero, we can bail out.
+        return true;
+      }
     }
-    insetLeft = inset.start.AsLength().ToAppUnits();
-    insetRight = inset.end.AsLength().ToAppUnits();
   }
 
   // If we only care about extended lines (for UnionAdditionalOverflow),
