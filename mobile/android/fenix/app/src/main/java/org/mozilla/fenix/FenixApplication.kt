@@ -668,7 +668,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
     private fun handleCaughtException() {
         if (
             isMainProcess() &&
-            components.settings.useNewCrashReporterFlow &&
             !components.performance.visualCompletenessQueue.isReady()
         ) {
             val intent = Intent(applicationContext, StartupCrashActivity::class.java)
