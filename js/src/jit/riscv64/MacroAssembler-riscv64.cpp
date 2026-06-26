@@ -3452,13 +3452,13 @@ void MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
   MOZ_ASSERT(!rhs.isNaN());
 
   if (!rhs.isGCThing()) {
-    ma_b(lhs.valueReg(), ImmWord(rhs.asRawBits()), label, cond, LongJump);
+    ma_b(lhs.valueReg(), ImmWord(rhs.asRawBits()), label, cond, ShortJump);
   } else {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
     MOZ_ASSERT(lhs.valueReg() != scratch);
     moveValue(rhs, ValueOperand(scratch));
-    ma_b(lhs.valueReg(), scratch, label, cond, LongJump);
+    ma_b(lhs.valueReg(), scratch, label, cond, ShortJump);
   }
 }
 
@@ -3481,7 +3481,7 @@ void MacroAssembler::branchTestNaNValue(Condition cond, const ValueOperand& val,
   // Compare against a NaN with sign bit 0.
   static_assert(JS::detail::CanonicalizedNaNSignBit == 0);
   moveValue(DoubleValue(JS::GenericNaN()), ValueOperand(scratch));
-  ma_b(temp, scratch, label, cond, LongJump);
+  ma_b(temp, scratch, label, cond, ShortJump);
 }
 
 void MacroAssembler::branchValueIsNurseryCell(Condition cond,

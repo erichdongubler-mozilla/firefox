@@ -204,7 +204,7 @@ void MacroAssembler::branchTestGCThingImpl(Condition cond, const T& address,
   Register scratch2 = temps.Acquire();
   Register tag = extractTag(address, scratch2);
   ma_b(tag, ImmTagSignExt(JS::detail::ValueLowerInclGCThingTag), label,
-       (cond == Equal) ? AboveOrEqual : Below, LongJump);
+       (cond == Equal) ? AboveOrEqual : Below, ShortJump);
 }
 template <typename T>
 void MacroAssembler::testBigIntSet(Condition cond, const T& src,
@@ -774,7 +774,7 @@ void MacroAssembler::branchTest32(Condition cond, const Address& lhs, Imm32 rhs,
 void MacroAssembler::branchTestBigInt(Condition cond, Register tag,
                                       Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
-  ma_b(tag, ImmTagSignExt(JSVAL_TAG_BIGINT), label, cond, LongJump);
+  ma_b(tag, ImmTagSignExt(JSVAL_TAG_BIGINT), label, cond, ShortJump);
 }
 
 void MacroAssembler::branchTestBigInt(Condition cond, const ValueOperand& value,
@@ -811,7 +811,7 @@ void MacroAssembler::branchTestBigIntTruthy(bool b, const ValueOperand& value,
 void MacroAssembler::branchTestBoolean(Condition cond, Register tag,
                                        Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
-  ma_b(tag, ImmTagSignExt(JSVAL_TAG_BOOLEAN), label, cond, LongJump);
+  ma_b(tag, ImmTagSignExt(JSVAL_TAG_BOOLEAN), label, cond, ShortJump);
 }
 
 void MacroAssembler::branchTestBoolean(Condition cond,
@@ -849,7 +849,7 @@ void MacroAssembler::branchTestDouble(Condition cond, Register tag,
                                       Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
   Condition actual = (cond == Equal) ? BelowOrEqual : Above;
-  ma_b(tag, ImmTagSignExt(JSVAL_TAG_MAX_DOUBLE), label, actual, LongJump);
+  ma_b(tag, ImmTagSignExt(JSVAL_TAG_MAX_DOUBLE), label, actual, ShortJump);
 }
 
 void MacroAssembler::branchTestDouble(Condition cond, const ValueOperand& value,
@@ -901,7 +901,7 @@ void MacroAssembler::branchTestGCThing(Condition cond,
 void MacroAssembler::branchTestInt32(Condition cond, Register tag,
                                      Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
-  ma_b(tag, ImmTagSignExt(JSVAL_TAG_INT32), label, cond, LongJump);
+  ma_b(tag, ImmTagSignExt(JSVAL_TAG_INT32), label, cond, ShortJump);
 }
 
 void MacroAssembler::branchTestInt32(Condition cond, const ValueOperand& value,
@@ -937,7 +937,7 @@ void MacroAssembler::branchTestInt32Truthy(bool b, const ValueOperand& value,
 void MacroAssembler::branchTestMagic(Condition cond, Register tag,
                                      Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
-  ma_b(tag, ImmTagSignExt(JSVAL_TAG_MAGIC), label, cond, LongJump);
+  ma_b(tag, ImmTagSignExt(JSVAL_TAG_MAGIC), label, cond, ShortJump);
 }
 
 void MacroAssembler::branchTestMagic(Condition cond, const Address& address,
@@ -970,7 +970,7 @@ void MacroAssembler::branchTestMagic(Condition cond, const Address& valaddr,
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   loadPtr(valaddr, scratch);
-  ma_b(scratch, ImmWord(magic), label, cond, LongJump);
+  ma_b(scratch, ImmWord(magic), label, cond, ShortJump);
 }
 
 void MacroAssembler::branchTestMagic(Condition cond, const BaseIndex& valaddr,
@@ -979,12 +979,12 @@ void MacroAssembler::branchTestMagic(Condition cond, const BaseIndex& valaddr,
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   loadPtr(valaddr, scratch);
-  ma_b(scratch, ImmWord(magic), label, cond, LongJump);
+  ma_b(scratch, ImmWord(magic), label, cond, ShortJump);
 }
 void MacroAssembler::branchTestNull(Condition cond, Register tag,
                                     Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
-  ma_b(tag, ImmTagSignExt(JSVAL_TAG_NULL), label, cond, LongJump);
+  ma_b(tag, ImmTagSignExt(JSVAL_TAG_NULL), label, cond, ShortJump);
 }
 
 void MacroAssembler::branchTestNull(Condition cond, const ValueOperand& value,
@@ -1015,7 +1015,7 @@ void MacroAssembler::branchTestNumber(Condition cond, Register tag,
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
   Condition actual = cond == Equal ? BelowOrEqual : Above;
   ma_b(tag, ImmTagSignExt(JS::detail::ValueUpperInclNumberTag), label, actual,
-       LongJump);
+       ShortJump);
 }
 
 void MacroAssembler::branchTestNumber(Condition cond, const ValueOperand& value,
@@ -1028,7 +1028,7 @@ void MacroAssembler::branchTestNumber(Condition cond, const ValueOperand& value,
 void MacroAssembler::branchTestObject(Condition cond, Register tag,
                                       Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
-  ma_b(tag, ImmTagSignExt(JSVAL_TAG_OBJECT), label, cond, LongJump);
+  ma_b(tag, ImmTagSignExt(JSVAL_TAG_OBJECT), label, cond, ShortJump);
 }
 
 void MacroAssembler::branchTestObject(Condition cond, const ValueOperand& value,
@@ -1066,7 +1066,7 @@ void MacroAssembler::branchTestPrimitive(Condition cond, Register tag,
                                          Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
   ma_b(tag, ImmTagSignExt(JS::detail::ValueUpperExclPrimitiveTag), label,
-       (cond == Equal) ? Below : AboveOrEqual, LongJump);
+       (cond == Equal) ? Below : AboveOrEqual, ShortJump);
 }
 void MacroAssembler::branchTestPtr(Condition cond, Register lhs, Register rhs,
                                    Label* label) {
@@ -1112,7 +1112,7 @@ void MacroAssembler::branchTestPtr(Condition cond, const Address& lhs,
 void MacroAssembler::branchTestString(Condition cond, Register tag,
                                       Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
-  ma_b(tag, ImmTagSignExt(JSVAL_TAG_STRING), label, cond, LongJump);
+  ma_b(tag, ImmTagSignExt(JSVAL_TAG_STRING), label, cond, ShortJump);
 }
 
 void MacroAssembler::branchTestString(Condition cond, const ValueOperand& value,
@@ -1149,7 +1149,7 @@ void MacroAssembler::branchTestStringTruthy(bool b, const ValueOperand& value,
 void MacroAssembler::branchTestSymbol(Condition cond, Register tag,
                                       Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
-  ma_b(tag, ImmTagSignExt(JSVAL_TAG_SYMBOL), label, cond, LongJump);
+  ma_b(tag, ImmTagSignExt(JSVAL_TAG_SYMBOL), label, cond, ShortJump);
 }
 
 void MacroAssembler::branchTestSymbol(Condition cond, const ValueOperand& value,
@@ -1203,7 +1203,7 @@ void MacroAssembler::branchTestUndefined(Condition cond,
 void MacroAssembler::branchTestUndefined(Condition cond, Register tag,
                                          Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
-  ma_b(tag, ImmTagSignExt(JSVAL_TAG_UNDEFINED), label, cond, LongJump);
+  ma_b(tag, ImmTagSignExt(JSVAL_TAG_UNDEFINED), label, cond, ShortJump);
 }
 template <typename T>
 void MacroAssembler::branchTestValue(Condition cond, const T& lhs,
