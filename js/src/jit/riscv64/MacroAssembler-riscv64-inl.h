@@ -806,7 +806,7 @@ void MacroAssembler::branchTestBigIntTruthy(bool b, const ValueOperand& value,
   Register scratch2 = temps.Acquire();
   unboxBigInt(value, scratch2);
   load32(Address(scratch2, BigInt::offsetOfDigitLength()), scratch2);
-  ma_b(scratch2, Imm32(0), label, b ? NotEqual : Equal, LongJump);
+  ma_b(scratch2, Imm32(0), label, b ? NotEqual : Equal, ShortJump);
 }
 void MacroAssembler::branchTestBoolean(Condition cond, Register tag,
                                        Label* label) {
@@ -843,7 +843,7 @@ void MacroAssembler::branchTestBooleanTruthy(bool b, const ValueOperand& value,
   UseScratchRegisterScope temps(this);
   Register scratch2 = temps.Acquire();
   unboxBoolean(value, scratch2);
-  ma_b(scratch2, scratch2, label, b ? NonZero : Zero, LongJump);
+  ma_b(scratch2, scratch2, label, b ? NonZero : Zero, ShortJump);
 }
 void MacroAssembler::branchTestDouble(Condition cond, Register tag,
                                       Label* label) {
@@ -932,7 +932,7 @@ void MacroAssembler::branchTestInt32Truthy(bool b, const ValueOperand& value,
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   SignExtendWord(scratch, value.valueReg());
-  ma_b(scratch, scratch, label, b ? NonZero : Zero, LongJump);
+  ma_b(scratch, scratch, label, b ? NonZero : Zero, ShortJump);
 }
 void MacroAssembler::branchTestMagic(Condition cond, Register tag,
                                      Label* label) {
@@ -1144,7 +1144,7 @@ void MacroAssembler::branchTestStringTruthy(bool b, const ValueOperand& value,
   Register scratch2 = temps.Acquire();
   unboxString(value, scratch2);
   load32(Address(scratch2, JSString::offsetOfLength()), scratch2);
-  ma_b(scratch2, Imm32(0), label, b ? NotEqual : Equal, LongJump);
+  ma_b(scratch2, Imm32(0), label, b ? NotEqual : Equal, ShortJump);
 }
 void MacroAssembler::branchTestSymbol(Condition cond, Register tag,
                                       Label* label) {
