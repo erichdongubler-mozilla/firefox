@@ -1731,50 +1731,15 @@ export const tokensTable = {
     },
     {
       value: {
-        brand: {
-          default: "0.733rem",
-          comment:
-            "11px / Note this token is to be used in rare cases because its hard to read. Please consult with the Design Systems and A11y teams for case-by-case feedback.",
-        },
-        platform: { default: "unset" },
-      },
-      name: "--font-size-xsmall",
-    },
-    {
-      value: {
-        brand: { default: "0.867rem", comment: "13px" },
+        brand: { default: "0.867rem", comment: "13px (in-content)" },
         platform: { default: "unset" },
       },
       name: "--font-size-small",
     },
-    {
-      value: {
-        brand: { default: "1.133rem", comment: "17px" },
-        platform: { default: "unset" },
-      },
-      name: "--font-size-large",
-    },
-    {
-      value: {
-        brand: { default: "1.467rem", comment: "22px" },
-        platform: { default: "unset" },
-      },
-      name: "--font-size-xlarge",
-    },
-    {
-      value: {
-        brand: { default: "1.6rem", comment: "24px" },
-        platform: { default: "unset" },
-      },
-      name: "--font-size-xxlarge",
-    },
-    {
-      value: {
-        brand: { default: "2.2rem", comment: "33px" },
-        platform: { default: "unset" },
-      },
-      name: "--font-size-xxxlarge",
-    },
+    { value: "1.133rem", name: "--font-size-large" },
+    { value: "1.467rem", name: "--font-size-xlarge" },
+    { value: "1.6rem", name: "--font-size-xxlarge" },
+    { value: "2.2rem", name: "--font-size-xxxlarge" },
     { value: "var(--font-size-xxlarge)", name: "--font-size-heading-xlarge" },
     { value: "var(--font-size-xlarge)", name: "--font-size-heading-large" },
     { value: "var(--font-size-large)", name: "--font-size-heading-medium" },
@@ -3645,34 +3610,14 @@ export const variableLookupTable = {
     brand: { default: "15px" },
     platform: { default: "unset" },
   },
-  "font-size-xsmall": {
-    brand: {
-      default: "0.733rem",
-      comment:
-        "11px / Note this token is to be used in rare cases because its hard to read. Please consult with the Design Systems and A11y teams for case-by-case feedback.",
-    },
-    platform: { default: "unset" },
-  },
   "font-size-small": {
-    brand: { default: "0.867rem", comment: "13px" },
+    brand: { default: "0.867rem", comment: "13px (in-content)" },
     platform: { default: "unset" },
   },
-  "font-size-large": {
-    brand: { default: "1.133rem", comment: "17px" },
-    platform: { default: "unset" },
-  },
-  "font-size-xlarge": {
-    brand: { default: "1.467rem", comment: "22px" },
-    platform: { default: "unset" },
-  },
-  "font-size-xxlarge": {
-    brand: { default: "1.6rem", comment: "24px" },
-    platform: { default: "unset" },
-  },
-  "font-size-xxxlarge": {
-    brand: { default: "2.2rem", comment: "33px" },
-    platform: { default: "unset" },
-  },
+  "font-size-large": "1.133rem",
+  "font-size-xlarge": "1.467rem",
+  "font-size-xxlarge": "1.6rem",
+  "font-size-xxxlarge": "2.2rem",
   "font-size-heading-xlarge": "var(--font-size-xxlarge)",
   "font-size-heading-large": "var(--font-size-xlarge)",
   "font-size-heading-medium": "var(--font-size-large)",

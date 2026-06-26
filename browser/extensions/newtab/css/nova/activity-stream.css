@@ -6231,7 +6231,7 @@ button.arrow-button:dir(rtl) {
 }
 .nova-enabled .focus-timer .focus-timer-time-mode {
   color: var(--text-color-deemphasized);
-  font-size: var(--font-size-xsmall);
+  font-size: var(--newtab-font-size-xsmall);
   font-weight: var(--font-weight);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   letter-spacing: 0.022em;
@@ -7926,7 +7926,7 @@ button.arrow-button:dir(rtl) {
   position: absolute;
   inset-block-end: calc(var(--space-xlarge) * -1);
   inset-inline-end: 0;
-  font-size: var(--font-size-xsmall);
+  font-size: var(--newtab-font-size-xsmall);
 }
 .nova-enabled .weather-widget .forecast-footer .sponsored-text {
   visibility: hidden;
@@ -7939,7 +7939,7 @@ button.arrow-button:dir(rtl) {
   background: url("chrome://global/skin/icons/arrow-right.svg") no-repeat right center;
   -moz-context-properties: fill;
   fill: currentColor;
-  font-size: var(--font-size-xsmall);
+  font-size: var(--newtab-font-size-xsmall);
 }
 .nova-enabled .weather-widget .forecast-footer .full-forecast:dir(rtl) {
   background-image: url("chrome://global/skin/icons/arrow-left.svg");
@@ -7987,7 +7987,7 @@ button.arrow-button:dir(rtl) {
   align-self: flex-start;
   margin-inline-start: auto;
   color: var(--text-color-deemphasized);
-  font-size: var(--font-size-xsmall);
+  font-size: var(--newtab-font-size-xsmall);
   gap: var(--space-small);
 }
 .nova-enabled .weather-widget .weather-conditions-view .high-low-row .high-temperature,
