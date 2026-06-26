@@ -1242,8 +1242,7 @@ nsString nsContentSecurityUtils::GetIsElementNonceableNonce(
 // style-src data:
 //  This is more or less the same as allowing arbitrary inline styles.
 static nsLiteralCString sStyleSrcDataAllowList[] = {
-    "about:preferences"_ns,
-    "about:settings"_ns,
+    "about:preferences"_ns, "about:settings"_ns,
     // STOP! Do not add anything to this list.
 };
 // style-src 'unsafe-inline'
@@ -1320,7 +1319,6 @@ static nsLiteralCString sStyleSrcUnsafeInlineAllowList[] = {
     "chrome://pippki/content/downloadcert.xhtml"_ns,
     "chrome://pippki/content/editcacert.xhtml"_ns,
     "chrome://pippki/content/load_device.xhtml"_ns,
-    "chrome://pippki/content/resetpassword.xhtml"_ns,
     "chrome://pippki/content/setp12password.xhtml"_ns,
 };
 // img-src moz-remote-image:
@@ -1406,8 +1404,7 @@ static nsLiteralCString sImgSrcHttpsAllowList[] = {
 // img-src http:
 //  UNSAFE! Do not use.
 static nsLiteralCString sImgSrcHttpAllowList[] = {
-    "about:addons"_ns,
-    "chrome://devtools/content/application/index.html"_ns,
+    "about:addons"_ns, "chrome://devtools/content/application/index.html"_ns,
     "chrome://devtools/content/framework/browser-toolbox/window.html"_ns,
     "chrome://devtools/content/framework/toolbox-window.xhtml"_ns,
     // STOP! Do not add anything to this list.
@@ -1421,8 +1418,7 @@ static nsLiteralCString sImgSrcAddonsAllowList[] = {
 // img-src *
 //  UNSAFE! Allows loading everything.
 static nsLiteralCString sImgSrcWildcardAllowList[] = {
-    "about:reader"_ns,
-    "chrome://browser/content/syncedtabs/sidebar.xhtml"_ns,
+    "about:reader"_ns, "chrome://browser/content/syncedtabs/sidebar.xhtml"_ns,
     // STOP! Do not add anything to this list.
 };
 // img-src https://example.org

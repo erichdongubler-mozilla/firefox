@@ -23,7 +23,6 @@
 #include "nsComponentManagerUtils.h"
 #include "nsICertificateDialogs.h"
 #include "nsIFile.h"
-#include "nsIInterfaceRequestorUtils.h"
 #include "nsIMutableArray.h"
 #include "nsIObserverService.h"
 #include "nsIPrompt.h"
@@ -31,6 +30,7 @@
 #include "nsNSSCertTrust.h"
 #include "nsNSSCertificate.h"
 #include "nsNSSComponent.h"
+#include "nsNSSHelper.h"
 #include "nsPKCS12Blob.h"
 #include "nsPromiseFlatString.h"
 #include "nsProxyRelease.h"
@@ -308,10 +308,12 @@ nsresult nsNSSCertificateDB::handleCACertDownload(NotNull<nsIArray*> x509Certs,
 
   if (!certToShow) return NS_ERROR_FAILURE;
 
-  nsCOMPtr<nsICertificateDialogs> dialogs(
-      do_GetService(NS_CERTIFICATEDIALOGS_CONTRACTID));
-  if (!dialogs) {
-    return NS_ERROR_FAILURE;
+  nsCOMPtr<nsICertificateDialogs> dialogs;
+  nsresult rv = ::getNSSDialogs(getter_AddRefs(dialogs),
+                                NS_GET_IID(nsICertificateDialogs),
+                                NS_CERTIFICATEDIALOGS_CONTRACTID);
+  if (NS_FAILED(rv)) {
+    return rv;
   }
 
   UniqueCERTCertificate tmpCert(certToShow->GetCert());
@@ -331,8 +333,7 @@ nsresult nsNSSCertificateDB::handleCACertDownload(NotNull<nsIArray*> x509Certs,
 
   uint32_t trustBits;
   bool allows;
-  nsresult rv =
-      dialogs->ConfirmDownloadCACert(ctx, certToShow, &trustBits, &allows);
+  rv = dialogs->ConfirmDownloadCACert(ctx, certToShow, &trustBits, &allows);
   if (NS_FAILED(rv)) return rv;
 
   if (!allows) return NS_ERROR_NOT_AVAILABLE;
@@ -529,17 +530,19 @@ void nsNSSCertificateDB::DisplayCertificateAlert(nsIInterfaceRequestor* ctx,
     return;
   }
 
+  nsCOMPtr<nsIInterfaceRequestor> my_ctx = ctx;
+  if (!my_ctx) {
+    my_ctx = MakeRefPtr<PipUIContext>();
+  }
+
   // This shall be replaced by embedding ovverridable prompts
   // as discussed in bug 310446, and should make use of certToShow.
 
   nsAutoString tmpMessage;
   GetPIPNSSBundleString(stringID, tmpMessage);
-  nsCOMPtr<nsIPrompt> prompt(do_GetInterface(ctx));
+  nsCOMPtr<nsIPrompt> prompt(do_GetInterface(my_ctx));
   if (!prompt) {
-    if (NS_FAILED(nsNSSComponent::GetNewPrompter(getter_AddRefs(prompt))) ||
-        !prompt) {
-      return;
-    }
+    return;
   }
 
   prompt->Alert(nullptr, tmpMessage.get());
@@ -789,11 +792,13 @@ nsNSSCertificateDB::ImportCertsFromFile(nsIFile* aFile, uint32_t aType) {
     return NS_ERROR_FAILURE;
   }
 
+  RefPtr cxt = MakeRefPtr<PipUIContext>();
+
   switch (aType) {
     case nsIX509Cert::CA_CERT:
-      return ImportCertificates(buf.get(), bytesObtained, aType, nullptr);
+      return ImportCertificates(buf.get(), bytesObtained, aType, cxt);
     case nsIX509Cert::EMAIL_CERT:
-      return ImportEmailCertificate(buf.get(), bytesObtained, nullptr);
+      return ImportEmailCertificate(buf.get(), bytesObtained, cxt);
     default:
       MOZ_ASSERT(false, "Unsupported type should have been filtered out");
       break;
@@ -1176,8 +1181,9 @@ nsNSSCertificateDB::GetCerts(nsTArray<RefPtr<nsIX509Cert>>& _retval) {
     return rv;
   }
 
+  RefPtr ctx = MakeRefPtr<PipUIContext>();
   AutoSearchingForClientAuthCertificates _;
-  UniqueCERTCertList certList(PK11_ListCerts(PK11CertListUnique, nullptr));
+  UniqueCERTCertList certList(PK11_ListCerts(PK11CertListUnique, ctx));
   if (!certList) {
     return NS_ERROR_FAILURE;
   }

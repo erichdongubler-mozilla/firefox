@@ -13,11 +13,11 @@
  * Resets the token used to decrypt logins.  This is equivalent to resetting the
  * primary password when it is not known.
  */
-async function resetPrimaryPassword() {
+function resetPrimaryPassword() {
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token
   );
-  await token.reset();
+  token.reset();
 }
 
 // Tests
@@ -30,7 +30,7 @@ add_task(async function test_logins_decrypt_failure() {
   await Services.logins.addLogins(logins);
 
   // This makes the existing logins non-decryptable.
-  await resetPrimaryPassword();
+  resetPrimaryPassword();
 
   // These functions don't see the non-decryptable entries anymore.
   let savedLogins = await Services.logins.getAllLogins();
@@ -143,7 +143,7 @@ add_task(async function test_add_logins_with_decrypt_failure() {
   );
 
   // This makes the existing login non-decryptable.
-  await resetPrimaryPassword();
+  resetPrimaryPassword();
 
   // We can no longer find it in our search.
   const result1 = await Services.logins.searchLoginsAsync({ guid: login.guid });
@@ -166,7 +166,7 @@ add_task(async function test_sync_metadata_with_decrypt_failure() {
   equal(await Services.logins.getLastSync(), 123);
 
   // This makes the existing login and syncID non-decryptable.
-  await resetPrimaryPassword();
+  resetPrimaryPassword();
 
   // The syncID is now null.
   equal(await Services.logins.getSyncID(), null);

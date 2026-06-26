@@ -9,9 +9,9 @@ add_setup(async function () {
       ["signon.rustMirror.enabled", false],
     ],
   });
-  registerCleanupFunction(async () => {
-    await LoginTestUtils.clearData();
-    await LoginTestUtils.primaryPassword.disable();
+  registerCleanupFunction(() => {
+    LoginTestUtils.clearData();
+    LoginTestUtils.primaryPassword.disable();
   });
 });
 
@@ -70,7 +70,7 @@ add_task(async function test_primary_password_authentication_causes_refresh() {
   );
 
   await addMockPasswords();
-  await LoginTestUtils.primaryPassword.enable();
+  LoginTestUtils.primaryPassword.enable();
   let ppDialogShownMegalist = waitForPPDialog("cancel", 5000);
   const megalist = await openPasswordsSidebar();
 

@@ -67,9 +67,7 @@ function process() {
   checkPasswords();
 }
 
-async function setPassword(event) {
-  event.preventDefault();
-
+function setPassword(event) {
   let oldpwbox = document.getElementById("oldpw");
   let pw1 = document.getElementById("pw1");
   if (pw1.value == "") {
@@ -79,14 +77,18 @@ async function setPassword(event) {
     if (fipsUtils.isFIPSEnabled) {
       // empty passwords are not allowed in FIPS mode
       doPrompt("pippki-pw-change2empty-in-fips-mode");
+      event.preventDefault();
       return;
     }
   }
 
   try {
-    await token.changePassword(oldpwbox.value, pw1.value);
-    doPrompt(pw1.value == "" ? "pippki-pw-erased-ok" : "pippki-pw-change-ok");
-    window.close();
+    token.changePassword(oldpwbox.value, pw1.value);
+    if (pw1.value == "") {
+      doPrompt("pippki-pw-erased-ok");
+    } else {
+      doPrompt("pippki-pw-change-ok");
+    }
   } catch (e) {
     let nssErrorsService = Cc["@mozilla.org/nss_errors_service;1"].getService(
       Ci.nsINSSErrorsService
@@ -102,6 +104,7 @@ async function setPassword(event) {
     } else {
       doPrompt("pippki-failed-pw-change");
     }
+    event.preventDefault();
   }
 }
 

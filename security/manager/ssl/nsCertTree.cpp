@@ -19,6 +19,7 @@
 #include "nsNSSCertificate.h"
 #include "nsComponentManagerUtils.h"
 #include "nsNSSCertificateDB.h"
+#include "nsNSSHelper.h"
 #include "nsReadableUtils.h"
 #include "nsTHashtable.h"
 #include "nsUnicharUtils.h"

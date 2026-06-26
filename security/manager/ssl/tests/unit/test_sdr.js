@@ -214,8 +214,8 @@ add_task(async function testAsyncDecryptLoggedOut() {
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token
   );
-  await token.changePassword("", "password");
-  await token.logout();
+  token.changePassword("", "password");
+  token.logout();
 
   let sdr = Cc["@mozilla.org/security/sdr;1"].getService(
     Ci.nsISecretDecoderRing
@@ -226,4 +226,6 @@ add_task(async function testAsyncDecryptLoggedOut() {
     /NS_ERROR_NOT_AVAILABLE/,
     "Check error is thrown instead of returning empty strings"
   );
+
+  token.reset();
 });

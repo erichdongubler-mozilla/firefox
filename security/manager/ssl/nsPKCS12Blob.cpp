@@ -16,6 +16,7 @@
 #include "nsNetUtil.h"
 #include "nsNSSCertHelper.h"
 #include "nsNSSCertificate.h"
+#include "nsNSSHelper.h"
 #include "nsReadableUtils.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
@@ -31,6 +32,8 @@ extern LazyLogModule gPIPNSSLog;
 #define PIP_PKCS12_RESTORE_FAILED 5
 #define PIP_PKCS12_BACKUP_FAILED 6
 #define PIP_PKCS12_NSS_ERROR 7
+
+nsPKCS12Blob::nsPKCS12Blob() : mUIContext(new PipUIContext()) {}
 
 // Given a file handle, read a PKCS#12 blob from that file, decode it, and
 // import the results into the internal database.
@@ -148,7 +151,7 @@ nsresult nsPKCS12Blob::ExportToFile(nsIFile* aFile,
     if (nssCert->slot && !PK11_IsInternal(nssCert->slot)) {
       // We aren't the internal token, see if the key is extractable.
       UniqueSECKEYPrivateKey privKey(
-          PK11_FindKeyByDERCert(nssCert->slot, nssCert.get(), nullptr));
+          PK11_FindKeyByDERCert(nssCert->slot, nssCert.get(), mUIContext));
       if (privKey && !isExtractable(privKey)) {
         // This is informative.  If a serious error occurs later it will
         // override it later and return.

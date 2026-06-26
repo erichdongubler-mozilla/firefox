@@ -5,6 +5,10 @@
 // Tests that the cert download/import UI correctly identifies the cert being
 // downloaded, and allows the trust of the cert to be specified.
 
+const { MockRegistrar } = ChromeUtils.importESModule(
+  "resource://testing-common/MockRegistrar.sys.mjs"
+);
+
 /**
  * @typedef TestCase
  * @type {object}

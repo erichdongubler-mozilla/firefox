@@ -34,10 +34,10 @@ async function LoadModules() {
     .addEventListener("command", async event => {
       switch (event.target.id) {
         case "login_button":
-          await doLogin();
+          doLogin();
           break;
         case "logout_button":
-          await doLogout();
+          doLogout();
           break;
         case "change_pw_button":
           changePassword();
@@ -328,12 +328,12 @@ function AddInfoRow(l10nID, col2, cell_id) {
 }
 
 // log in to a slot
-async function doLogin() {
+function doLogin() {
   getSelectedItem();
   // here's the workaround - login functions are with token
   var selected_token = selected_slot.getToken();
   try {
-    await selected_token.login();
+    selected_token.login();
     var tok_status = document.getElementById("tok_status");
     if (selected_token.isLoggedIn) {
       document.l10n.setAttributes(tok_status, "devinfo-status-logged-in");
@@ -347,11 +347,11 @@ async function doLogin() {
 }
 
 // log out of a slot
-async function doLogout() {
+function doLogout() {
   getSelectedItem();
   var selected_token = selected_slot.getToken();
   try {
-    await selected_token.logout();
+    selected_token.logout();
     // clear any TLS state that may have been derived from secrets on the token
     let nssComponent = Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
     nssComponent.clearTLSCacheAndCancelAllConnections();

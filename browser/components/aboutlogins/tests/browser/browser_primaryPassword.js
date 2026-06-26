@@ -31,7 +31,7 @@ add_setup(async function () {
 
   registerCleanupFunction(async () => {
     await Services.logins.removeAllUserFacingLoginsAsync();
-    await LoginTestUtils.primaryPassword.disable();
+    LoginTestUtils.primaryPassword.disable();
     await SpecialPowers.popPrefEnv();
   });
 });
@@ -41,7 +41,7 @@ add_task(async function test() {
     !LoginHelper.getOSAuthEnabled(),
     "OS auth must be disabled for PrP tests."
   );
-  await LoginTestUtils.primaryPassword.enable();
+  LoginTestUtils.primaryPassword.enable();
 
   let mpDialogShown = forceAuthTimeoutAndWaitForMPDialog("cancel");
   await BrowserTestUtils.openNewForegroundTab({
@@ -213,7 +213,7 @@ add_task(async function test() {
       "login-list should show all results since the filter is empty"
     );
   });
-  await LoginTestUtils.primaryPassword.disable();
+  LoginTestUtils.primaryPassword.disable();
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {
     Cu.waiveXrays(content).AboutLoginsUtils.primaryPasswordEnabled = false;
     const loginList = Cu.waiveXrays(
@@ -240,7 +240,7 @@ add_task(async function test_login_item_after_successful_auth() {
     !LoginHelper.getOSAuthEnabled(),
     "OS auth must be disabled for PrP tests."
   );
-  await LoginTestUtils.primaryPassword.enable();
+  LoginTestUtils.primaryPassword.enable();
 
   let mpDialogShown = forceAuthTimeoutAndWaitForMPDialog("authenticate");
   await BrowserTestUtils.openNewForegroundTab({
@@ -264,6 +264,6 @@ add_task(async function test_login_item_after_successful_auth() {
     );
   });
 
-  await LoginTestUtils.primaryPassword.disable();
+  LoginTestUtils.primaryPassword.disable();
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

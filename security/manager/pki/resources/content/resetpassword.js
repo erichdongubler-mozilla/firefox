@@ -6,13 +6,11 @@
 
 document.addEventListener("dialogaccept", resetPassword);
 
-async function resetPassword(event) {
-  event.preventDefault();
-
-  let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
+async function resetPassword() {
+  var token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token
   );
-  await token.reset();
+  token.reset();
 
   try {
     await Services.logins.removeAllUserFacingLoginsAsync();
@@ -26,6 +24,4 @@ async function resetPassword(event) {
       l10n.formatValueSync("pippki-reset-password-confirmation-message")
     );
   }
-
-  window.close();
 }

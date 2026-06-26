@@ -146,14 +146,14 @@ testUrls.forEach(testUrl => {
 
 testUrlsWithForm.forEach(testUrl => {
   add_task(async function test_immediate_autofill_with_primarypassword() {
-    await LoginTestUtils.primaryPassword.enable();
+    LoginTestUtils.primaryPassword.enable();
     await LoginTestUtils.reloadData();
     info(
       `Have enabled primaryPassword, now isLoggedIn? ${Services.logins.isLoggedIn}`
     );
 
     registerCleanupFunction(async function () {
-      await LoginTestUtils.primaryPassword.disable();
+      LoginTestUtils.primaryPassword.disable();
       await LoginTestUtils.reloadData();
     });
 

@@ -26,14 +26,13 @@ var gRemovePasswordDialog = {
     Services.prompt.alert(window, title, message);
   },
 
-  async removePassword(event) {
-    event.preventDefault();
+  removePassword(event) {
     try {
-      await this._token.changePassword(this._password.value, "");
+      this._token.changePassword(this._password.value, "");
       this.createAlert("pw-change-success-title", "settings-pp-erased-ok");
-      window.close();
-    } catch (_) {
+    } catch (e) {
       this.createAlert("pw-change-failed-title", "incorrect-pp");
+      event.preventDefault();
     }
   },
 };

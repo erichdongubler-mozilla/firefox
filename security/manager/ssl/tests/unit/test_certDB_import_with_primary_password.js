@@ -96,7 +96,7 @@ function findCertByCommonName(commonName) {
   return null;
 }
 
-add_task(async function run_test() {
+function run_test() {
   let certificateDialogsCID = MockRegistrar.register(
     "@mozilla.org/nsCertificateDialogs;1",
     gCertificateDialogs
@@ -109,8 +109,8 @@ add_task(async function run_test() {
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token
   );
-  await token.changePassword("", "password");
-  await token.logout();
+  token.changePassword("", "password");
+  token.logout();
 
   // Sanity check the CA cert is missing.
   equal(
@@ -143,4 +143,4 @@ add_task(async function run_test() {
     ),
     "CA cert should be trusted for e-mail"
   );
-});
+}

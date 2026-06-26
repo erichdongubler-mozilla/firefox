@@ -375,7 +375,7 @@ add_task(async function test_multiple_errors() {
     await navigateToViewAndWait(document, "syncedtabs");
     // Simulate conditions in which both the locked password and sync error
     // messages could be shown
-    await LoginTestUtils.primaryPassword.enable();
+    LoginTestUtils.primaryPassword.enable();
     Services.obs.notifyObservers(null, UIState.ON_UPDATE);
     Services.obs.notifyObservers(null, "weave:service:sync:error");
 
@@ -411,7 +411,7 @@ add_task(async function test_multiple_errors() {
     );
 
     // Clear the primary password error message
-    await LoginTestUtils.primaryPassword.disable();
+    LoginTestUtils.primaryPassword.disable();
     Services.obs.notifyObservers(null, UIState.ON_UPDATE);
 
     info("Waiting for the sync error message to be shown");

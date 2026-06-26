@@ -9,6 +9,7 @@
 #include "nsCOMPtr.h"
 #include "nsIPKCS11Token.h"
 #include "nsISupports.h"
+#include "nsNSSHelper.h"
 #include "nsString.h"
 #include "pk11func.h"
 #include "ScopedNSSTypes.h"
@@ -20,7 +21,7 @@ class PKCS11Token : public nsIPKCS11Token {
 
   explicit PKCS11Token(PK11SlotInfo* slot);
 
-  PKCS11Token() = default;
+  PKCS11Token();
   nsresult Init();
 
  protected:
@@ -40,6 +41,7 @@ class PKCS11Token : public nsIPKCS11Token {
   // True if this is the "PKCS#11 token" where private keys are stored.
   bool mIsInternalKeyToken;
   int mSeries;
+  nsCOMPtr<nsIInterfaceRequestor> mUIContext;
   nsresult GetAttributeHelper(const nsACString& attribute,
                               /*out*/ nsACString& xpcomOutParam);
 };

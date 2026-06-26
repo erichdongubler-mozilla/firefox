@@ -34,7 +34,7 @@ add_task(async function test_policy_masterpassword_set() {
     },
   });
 
-  await LoginTestUtils.primaryPassword.enable();
+  LoginTestUtils.primaryPassword.enable();
 
   const srdEnabled = Services.prefs.getBoolPref(
     "browser.settings-redesign.enabled",
@@ -56,7 +56,7 @@ add_task(async function test_policy_masterpassword_set() {
     }
   );
 
-  await LoginTestUtils.primaryPassword.disable();
+  LoginTestUtils.primaryPassword.disable();
 });
 
 // Test that password can't be removed in changemp.xhtml
@@ -67,7 +67,7 @@ add_task(async function test_policy_nochangemp() {
     },
   });
 
-  await LoginTestUtils.primaryPassword.enable();
+  LoginTestUtils.primaryPassword.enable();
 
   let changeMPWindow = window.openDialog(
     "chrome://mozapps/content/preferences/changemp.xhtml",
@@ -94,7 +94,7 @@ add_task(async function test_policy_nochangemp() {
 
   await BrowserTestUtils.closeWindow(changeMPWindow);
 
-  await LoginTestUtils.primaryPassword.disable();
+  LoginTestUtils.primaryPassword.disable();
 });
 
 // Test that admin message shows

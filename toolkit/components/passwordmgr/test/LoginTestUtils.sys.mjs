@@ -506,7 +506,7 @@ LoginTestUtils.recipes = {
 LoginTestUtils.primaryPassword = {
   primaryPassword: "omgsecret!",
 
-  async _set(enable, stayLoggedIn) {
+  _set(enable, stayLoggedIn) {
     let oldPW, newPW;
     if (enable) {
       oldPW = "";
@@ -520,9 +520,9 @@ LoginTestUtils.primaryPassword = {
         Ci.nsIPKCS11Token
       );
       dump("MP change from " + oldPW + " to " + newPW + "\n");
-      await token.changePassword(oldPW, newPW);
+      token.changePassword(oldPW, newPW);
       if (!stayLoggedIn) {
-        await token.logout();
+        token.logout();
       }
     } catch (e) {
       dump(
@@ -531,12 +531,12 @@ LoginTestUtils.primaryPassword = {
     }
   },
 
-  async enable(stayLoggedIn = false) {
-    await this._set(true, stayLoggedIn);
+  enable(stayLoggedIn = false) {
+    this._set(true, stayLoggedIn);
   },
 
-  async disable() {
-    await this._set(false);
+  disable() {
+    this._set(false);
   },
 };
 
