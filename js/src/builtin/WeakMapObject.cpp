@@ -185,9 +185,7 @@ static bool GetOrAddWeakMapEntry(JSContext* cx, Handle<WeakMapObject*> mapObj,
   WeakCollectionObject::Map* map = mapObj->getMap();
   auto addPtr = map->lookupForAdd(key);
   if (!addPtr) {
-    if (!PreserveReflectorAndAssertValidEntry(cx, mapObj, key, value)) {
-      return false;
-    }
+    PreserveReflectorAndAssertValidEntry(cx, mapObj, key, value);
     if (!map->add(addPtr, key, value)) {
       JS_ReportOutOfMemory(cx);
       return false;

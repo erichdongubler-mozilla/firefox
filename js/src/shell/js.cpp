@@ -4107,9 +4107,7 @@ static bool CacheIRHealthReport(JSContext* cx, unsigned argc, Value* vp) {
 #endif /* JS_CACHEIR_SPEW */
 
 /* Pretend we can always preserve wrappers for dummy DOM objects. */
-static bool DummyPreserveWrapperCallback(JSContext* cx, HandleObject obj) {
-  return true;
-}
+static void DummyPreserveWrapperCallback(JSContext* cx, HandleObject obj) {}
 
 /* Wrappers stay preserved for dummy DOM objects. */
 static bool DummyHasReleasedWrapperCallback(HandleObject obj) { return false; }
