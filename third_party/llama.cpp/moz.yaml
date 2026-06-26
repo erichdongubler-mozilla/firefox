@@ -42,6 +42,8 @@ vendoring:
     - LICENSE
     - src/*.cpp
     - src/*.h
+    - src/models/*.cpp
+    - src/models/*.h
     - src/CMakeLists.txt
     - CMakeLists.txt
     - include/llama.h
