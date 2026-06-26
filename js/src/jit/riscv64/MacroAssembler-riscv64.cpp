@@ -4009,8 +4009,8 @@ CodeOffset MacroAssembler::callWithPatch() {
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   auto [Hi20, Lo12] = ToHigh20Low12(0);
-  auipc(scratch, Hi20);  // Read PC + Hi20 into scratch.
-  jalr(scratch, Lo12);   // jump PC + Hi20 + Lo12
+  auipc(scratch, Hi20);     // Read PC + Hi20 into scratch.
+  jalr(scratch, Lo12, {});  // jump PC + Hi20 + Lo12
   return CodeOffset(currentOffset());
 }
 
@@ -5145,9 +5145,10 @@ void MacroAssemblerRiscv64::Branch(Label* L, JumpKind jumpKind) {
 BufferOffset MacroAssemblerRiscv64::BranchShort(Label* L) {
   AutoForbidPoolsAndNops afp(this, 1, 1);
 
+  LabelDoc doc = refLabel(L);
   int32_t offset = branchOffset(L, OffsetSize::kOffset21);
   BufferOffset bo = nextOffset();
-  Assembler::j(offset);
+  Assembler::j(offset, doc);
   return bo;
 }
 
@@ -5189,42 +5190,43 @@ void MacroAssemblerRiscv64::BranchShort(Label* L, Condition cond, Register rs,
 
   AutoForbidPoolsAndNops afp(this, 1, 1);
 
+  LabelDoc doc = refLabel(L);
   int32_t offset = branchOffset(L, OffsetSize::kOffset13);
 
   switch (cond) {
     case Equal:
-      Assembler::beq(rs, rt, offset);
+      Assembler::beq(rs, rt, offset, doc);
       break;
     case NotEqual:
-      Assembler::bne(rs, rt, offset);
+      Assembler::bne(rs, rt, offset, doc);
       break;
 
     // Signed comparison.
     case GreaterThan:
-      Assembler::bgt(rs, rt, offset);
+      Assembler::bgt(rs, rt, offset, doc);
       break;
     case GreaterThanOrEqual:
-      Assembler::bge(rs, rt, offset);
+      Assembler::bge(rs, rt, offset, doc);
       break;
     case LessThan:
-      Assembler::blt(rs, rt, offset);
+      Assembler::blt(rs, rt, offset, doc);
       break;
     case LessThanOrEqual:
-      Assembler::ble(rs, rt, offset);
+      Assembler::ble(rs, rt, offset, doc);
       break;
 
     // Unsigned comparison.
     case Above:
-      Assembler::bgtu(rs, rt, offset);
+      Assembler::bgtu(rs, rt, offset, doc);
       break;
     case AboveOrEqual:
-      Assembler::bgeu(rs, rt, offset);
+      Assembler::bgeu(rs, rt, offset, doc);
       break;
     case Below:
-      Assembler::bltu(rs, rt, offset);
+      Assembler::bltu(rs, rt, offset, doc);
       break;
     case BelowOrEqual:
-      Assembler::bleu(rs, rt, offset);
+      Assembler::bleu(rs, rt, offset, doc);
       break;
 
     default:
@@ -5236,14 +5238,15 @@ void MacroAssemblerRiscv64::BranchLong(Label* L) {
   AutoForbidPoolsAndNops afp(this, 2);
 
   // Generate position independent long branch.
+  LabelDoc doc = refLabel(L);
   int32_t imm = branchOffset(L);
 
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
 
   auto [Hi20, Lo12] = ToHigh20Low12(imm);
-  auipc(scratch, Hi20);  // Read PC + Hi20 into scratch.
-  jr(scratch, Lo12);     // jump PC + Hi20 + Lo12
+  auipc(scratch, Hi20);    // Read PC + Hi20 into scratch.
+  jr(scratch, Lo12, doc);  // jump PC + Hi20 + Lo12
 }
 
 CodeOffset MacroAssemblerRiscv64::BranchAndLink(Label* L) {
@@ -5251,21 +5254,23 @@ CodeOffset MacroAssemblerRiscv64::BranchAndLink(Label* L) {
   if (UseShortBranch(L, ShortJump, OffsetSize::kOffset21, afn)) {
     AutoForbidPoolsAndNops afp(this, 1, 1);
 
+    LabelDoc doc = refLabel(L);
     int32_t offset = branchOffset(L, OffsetSize::kOffset21);
-    return jal(offset);
+    return jal(offset, doc);
   }
 
   AutoForbidPoolsAndNops afp(this, 2);
 
   // Generate position independent long branch and link.
+  LabelDoc doc = refLabel(L);
   int32_t imm = branchOffset(L);
 
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
 
   auto [Hi20, Lo12] = ToHigh20Low12(imm);
-  auipc(scratch, Hi20);  // Read PC + Hi20 into scratch.
-  jalr(scratch, Lo12);   // jump PC + Hi20 + Lo12
+  auipc(scratch, Hi20);      // Read PC + Hi20 into scratch.
+  jalr(scratch, Lo12, doc);  // jump PC + Hi20 + Lo12
 
   return CodeOffset(currentOffset());
 }
