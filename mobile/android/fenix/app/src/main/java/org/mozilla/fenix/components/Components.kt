@@ -38,7 +38,6 @@ import mozilla.components.service.fxrelay.eligibility.RelayEligibilityStore
 import mozilla.components.service.fxrelay.eligibility.middlewares.ClearLastUsedMiddleware
 import mozilla.components.support.base.android.DefaultProcessInfoProvider
 import mozilla.components.support.base.android.NotificationsDelegate
-import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.worker.Frequency
 import mozilla.components.support.remotesettings.DefaultRemoteSettingsSyncScheduler
 import mozilla.components.support.remotesettings.RemoteSettingsServer
@@ -46,7 +45,6 @@ import mozilla.components.support.remotesettings.RemoteSettingsService
 import mozilla.components.support.remotesettings.into
 import mozilla.components.support.utils.BuildManufacturerChecker
 import mozilla.components.support.utils.ClipboardHandler
-import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import mozilla.components.support.utils.ext.packageManagerWrapper
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.Config
@@ -114,7 +112,6 @@ import org.mozilla.fenix.settings.settingssearch.DefaultFenixSettingsIndexer
 import org.mozilla.fenix.termsofuse.TermsOfUseManager
 import org.mozilla.fenix.termsofuse.store.DefaultTermsOfUsePromptRepository
 import org.mozilla.fenix.utils.Settings
-import org.mozilla.fenix.utils.getApplicationInstalledTime
 import org.mozilla.fenix.utils.isLargeScreenSize
 import org.mozilla.fenix.wifi.WifiConnectionMonitor
 import java.util.concurrent.TimeUnit
@@ -473,16 +470,7 @@ class Components(private val context: Context) {
     }
 
     val ipProtectionPromptRepository by lazyMonitored {
-        DefaultIPProtectionPromptRepository(
-            settings = settings,
-            installedTimeMillis = {
-                getApplicationInstalledTime(
-                    packageManagerCompatHelper = context.packageManagerCompatHelper,
-                    packageName = context.packageName,
-                    logger = Logger("DefaultIPProtectionPromptRepository"),
-                )
-            },
-        )
+        DefaultIPProtectionPromptRepository(settings)
     }
 
     val ipProtectionManager by lazyMonitored {
