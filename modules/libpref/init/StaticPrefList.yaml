@@ -13864,6 +13864,14 @@
   value: 0
   mirror: always
 
+ # When true, GeckoView shapes its platform audio-focus request after the tab's
+ # W3C Audio Session type. When false, GeckoView keeps requesting durable
+ # media-playback focus regardless of the type, preserving existing behaviour.
+- name: media.geckoview.audio_session_type.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 - name: media.mediacontrol.testingevents.enabled
   type: bool
   value: false

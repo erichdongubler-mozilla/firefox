@@ -23,6 +23,11 @@ export class GeckoViewMediaControl extends GeckoViewModule {
     this.controller.addEventListener("positionstatechange", this, options);
     this.controller.addEventListener("metadatachange", this, options);
     this.controller.addEventListener("playbackstatechange", this, options);
+    this.controller.addEventListener(
+      "effectiveaudiosessiontypechange",
+      this,
+      options
+    );
   }
 
   onDestroyBrowser() {
@@ -34,6 +39,10 @@ export class GeckoViewMediaControl extends GeckoViewModule {
     this.controller.removeEventListener("positionstatechange", this);
     this.controller.removeEventListener("metadatachange", this);
     this.controller.removeEventListener("playbackstatechange", this);
+    this.controller.removeEventListener(
+      "effectiveaudiosessiontypechange",
+      this
+    );
   }
 
   onEnable() {
@@ -134,10 +143,36 @@ export class GeckoViewMediaControl extends GeckoViewModule {
       case "playbackstatechange":
         this.handlePlaybackStateChanged();
         break;
+      case "effectiveaudiosessiontypechange":
+        this.handleEffectiveAudioSessionTypeChanged();
+        break;
       default:
         warn`Unknown event type ${aEvent.type}`;
         break;
     }
+  }
+
+  handleEffectiveAudioSessionTypeChanged() {
+    const type = this.controller.effectiveAudioSessionType;
+    debug`handleEffectiveAudioSessionTypeChanged ${type}`;
+
+    // Only shape the embedder's audio focus after the audio-session type when
+    // the GeckoView-specific preference is on. When off, the type is never
+    // forwarded, so the embedder keeps its existing audio-focus behaviour
+    // regardless of whether the web Audio Session API is enabled.
+    if (
+      !Services.prefs.getBoolPref(
+        "media.geckoview.audio_session_type.enabled",
+        false
+      )
+    ) {
+      return;
+    }
+
+    this.eventDispatcher.sendRequest(
+      "GeckoView:MediaSession:AudioSessionType",
+      { type }
+    );
   }
 
   handleActivated() {
