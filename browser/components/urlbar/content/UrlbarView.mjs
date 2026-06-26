@@ -15,8 +15,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarProviderOpenTabs:
     "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
-  UrlbarProviderQuickSuggest:
-    "moz-src:///browser/components/urlbar/UrlbarProviderQuickSuggest.sys.mjs",
   UrlbarProviderTopSites:
     "moz-src:///browser/components/urlbar/UrlbarProviderTopSites.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
@@ -2133,7 +2131,7 @@ export class UrlbarView {
     }
 
     if (
-      newResult.providerName == lazy.UrlbarProviderQuickSuggest.name &&
+      newResult.providerName == "UrlbarProviderQuickSuggest" &&
       // Check if the `RESULT_TYPE` is `DYNAMIC` because otherwise the
       // `suggestionType` and `items` checks aren't relevant.
       newResult.type == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC &&
@@ -2251,7 +2249,7 @@ export class UrlbarView {
       result.type == lazy.UrlbarUtils.RESULT_TYPE.SEARCH &&
       !result.payload.providesSearchMode &&
       !result.payload.inPrivateWindow &&
-      result.providerName != lazy.UrlbarProviderQuickSuggest.name
+      result.providerName != "UrlbarProviderQuickSuggest"
     ) {
       item.setAttribute(
         "type",
@@ -2468,7 +2466,7 @@ export class UrlbarView {
         ) {
           isVisitAction = true;
         } else if (
-          (result.providerName != lazy.UrlbarProviderQuickSuggest.name ||
+          (result.providerName != "UrlbarProviderQuickSuggest" ||
             result.payload.shouldShowUrl) &&
           !result.payload.providesSearchMode
         ) {
@@ -2489,7 +2487,7 @@ export class UrlbarView {
     let sponsored =
       result.payload.isSponsored &&
       result.type != lazy.UrlbarUtils.RESULT_TYPE.TAB_SWITCH &&
-      result.providerName != lazy.UrlbarProviderQuickSuggest.name;
+      result.providerName != "UrlbarProviderQuickSuggest";
     item.toggleAttribute("sponsored", !!sponsored);
     if (sponsored) {
       actionSetter = () => {
@@ -3001,7 +2999,7 @@ export class UrlbarView {
       return { id: "urlbar-group-recent-searches" };
     }
 
-    if (row.result.providerName == lazy.UrlbarProviderQuickSuggest.name) {
+    if (row.result.providerName == "UrlbarProviderQuickSuggest") {
       return row.result.isBestMatch
         ? null
         : { id: "urlbar-group-firefox-suggest" };

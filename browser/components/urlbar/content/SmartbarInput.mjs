@@ -70,8 +70,6 @@ const lazy = XPCOMUtils.declareLazy({
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarQueryContext:
     "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
-  UrlbarProviderGlobalActions:
-    "moz-src:///browser/components/urlbar/UrlbarProviderGlobalActions.sys.mjs",
   UrlbarProviderHeuristicFallback:
     "moz-src:///browser/components/urlbar/UrlbarProviderHeuristicFallback.sys.mjs",
   UrlbarProviderOpenTabs:
@@ -2032,7 +2030,7 @@ ${
     }
 
     if (
-      result.providerName == lazy.UrlbarProviderGlobalActions.name &&
+      result.providerName == "UrlbarProviderGlobalActions" &&
       this.#providesSearchMode(result) &&
       !this.view.selectedElement?.dataset.immediateSearch
     ) {
@@ -2051,7 +2049,7 @@ ${
     // engineering effort. See review discussion at bug 1667766.
     if (
       (this.searchMode?.isPreview &&
-        result.providerName == lazy.UrlbarProviderGlobalActions.name &&
+        result.providerName == "UrlbarProviderGlobalActions" &&
         !this.view.selectedElement?.dataset.immediateSearch) ||
       (result.heuristic &&
         this.searchMode?.isPreview &&
@@ -3864,7 +3862,7 @@ ${
     }
     if (
       this.view.selectedElement &&
-      result.providerName == lazy.UrlbarProviderGlobalActions.name
+      result.providerName == "UrlbarProviderGlobalActions"
     ) {
       return this.view.selectedElement.dataset.providesSearchmode == "true";
     }
