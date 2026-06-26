@@ -1530,7 +1530,7 @@ void MacroAssembler::fallibleUnboxPtr(const ValueOperand& src, Register dest,
   mov(ImmShiftedTag(type), scratch);
   xor_(dest, src.valueReg(), scratch);
   srli(scratch, dest, JSVAL_TAG_SHIFT);
-  ma_b(scratch, Imm32(0), fail, Assembler::NotEqual, LongJump);
+  ma_b(scratch, Imm32(0), fail, Assembler::NotEqual, ShortJump);
 }
 
 void MacroAssembler::fallibleUnboxPtr(const Address& src, Register dest,
