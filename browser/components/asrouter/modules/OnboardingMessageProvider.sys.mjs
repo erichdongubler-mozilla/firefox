@@ -462,8 +462,6 @@ const BASE_MESSAGES = () => [
                     text: {
                       string_id: "create-backup-screen-1-flair",
                       fontSize: "0.625em",
-                      fontWeight: "600",
-                      top: "revert",
                       lineHeight: "normal",
                     },
                   },

@@ -65,6 +65,10 @@ html {
         pointer-events: none;
       }
 
+      .main-content {
+        background-color: var(--background-color-box);
+      }
+
       .screen {
         &:dir(rtl) {
           transform: unset;
@@ -478,7 +482,7 @@ html {
         // Nova gradient border
         &.zap-border {
           .main-content {
-            background: linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%) border-box border-area, image(var(--background-color-canvas)) padding-box;
+            background: linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%) border-box border-area, image(var(--background-color-box)) padding-box;
             border: 1px solid transparent;
           }
         }
@@ -759,7 +763,7 @@ html {
           // Nova gradient border for split layout
           &.zap-border {
             &::before {
-              background: linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%) border-box border-area, image(var(--background-color-canvas)) padding-box;
+              background: linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%) border-box border-area, image(var(--background-color-box)) padding-box;
               border: 1px solid transparent;
             }
           }
@@ -2099,22 +2103,44 @@ html {
           top: -10px;
           line-height: 1;
 
+          @media (-moz-pref("browser.nova.enabled")) {
+            border-radius: var(--border-radius-xlarge);
+            right: 10px;
+            top: -12px;
+            align-content: center;
+          }
+
           &.centered {
             /* stylelint-disable-next-line */
             border-radius: 8px 8px 0 0;
             background-color: var(--button-background-color-primary);
             position: relative;
             right: unset;
-            top: -6px;
+            top: unset;
             line-height: 0.75;
             width: 100%;
             box-sizing: border-box;
+
+            @media (-moz-pref("browser.nova.enabled")) {
+              top: -5px;
+              align-content: center;
+            }
 
             &.backup {
               /* stylelint-disable-next-line */
               border-radius: 10px 10px 0 0;
               background-color: var(--picker-backup-flair-background);
               color: var(--picker-backup-flair-color);
+
+              @media (-moz-pref("browser.nova.enabled")) {
+                border-radius: var(--border-radius-xlarge);
+                background-color: var(--button-background-color-primary);
+                color: var(--button-text-color-primary);
+                padding-inline: 12px;
+                align-content: center;
+                top: -9px;
+                width: unset;
+              }
 
               &.spacer {
                 background-color: transparent;
