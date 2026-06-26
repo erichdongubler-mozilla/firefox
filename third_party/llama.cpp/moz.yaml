@@ -88,3 +88,4 @@ vendoring:
      - fix-RLIMIT_MEMLOCK-solaris.patch # fix the build on solaris
      - profiler-hooks.patch # add thread callbacks for Firefox Profiler integration
      - missing-includes.patch # missing include cerrno in gguf.cpp, include mutex in llama-model-loader.cpp
+     - skip-metadata-dump.patch # skip dumping metadata strings that proved costly in profiling
