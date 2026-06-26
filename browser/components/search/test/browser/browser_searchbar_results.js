@@ -32,13 +32,13 @@ async function check_results(input, expected) {
       let popup = await searchInSearchbar(input);
 
       const listItemElems = popup.richlistbox.querySelectorAll(
-        ".autocomplete-row-item"
+        ".autocomplete-richlistitem"
       );
 
       Assert.deepEqual(
         Array.from(listItemElems)
           .filter(e => !e.collapsed)
-          .map(e => e.querySelector("autocomplete-row-item")?.label),
+          .map(e => e.getAttribute("title")),
         expected,
         "Should have received the expected suggestions"
       );

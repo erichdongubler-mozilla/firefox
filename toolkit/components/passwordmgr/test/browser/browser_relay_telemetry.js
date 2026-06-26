@@ -53,10 +53,9 @@ async function openRelayAC(browser) {
   Services.telemetry.clearEvents();
   const popup = document.getElementById("PopupAutoComplete");
   await openACPopup(popup, browser, "#form-basic-username");
-  const firstRichlistitem = document.querySelector("richlistitem");
-  const popupItem = firstRichlistitem.querySelector(
-    "autocomplete-row-item"
-  ).value;
+  const popupItem = document
+    .querySelector("richlistitem")
+    .getAttribute("ac-value");
 
   Assert.ok(
     gRelayACOptionsTitles.some(title => title.value === popupItem),

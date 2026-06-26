@@ -353,13 +353,10 @@ async function ensureCreditCardDialogNotClosed(win) {
   win.removeEventListener("unload", unloadHandler);
 }
 
-function getDisplayedPopupItems(browser, selector = ".autocomplete-row-item") {
-  const baseSelector = ".autocomplete-row-item";
-  const originalType = selector.includes("[originaltype=")
-    ? selector.replace(".autocomplete-richlistitem", "").trim()
-    : "";
-  selector = baseSelector + originalType;
-
+function getDisplayedPopupItems(
+  browser,
+  selector = ".autocomplete-richlistitem"
+) {
   info("getDisplayedPopupItems");
   const {
     autoCompletePopup: { richlistbox: itemsBox },
@@ -367,18 +364,6 @@ function getDisplayedPopupItems(browser, selector = ".autocomplete-row-item") {
   const listItemElems = itemsBox.querySelectorAll(selector);
 
   return [...listItemElems].filter(item => !item.hasAttribute("collapsed"));
-}
-
-function getACItemLabel(item) {
-  return item.querySelector("autocomplete-row-item").label;
-}
-
-function getACItemValue(item) {
-  return item.querySelector("autocomplete-row-item").value;
-}
-
-function getACItemIcon(item) {
-  return item.querySelector("autocomplete-row-item").icon;
 }
 
 async function sleep(ms = 500) {
@@ -713,9 +698,7 @@ async function waitForPopupEnabled(browser) {
   await BrowserTestUtils.waitForMutationCondition(
     itemsBox,
     { subtree: true, attributes: true, attributeFilter: ["disabled"] },
-    () => {
-      return !itemsBox.querySelectorAll(".autocomplete-row-item")[0].disabled;
-    }
+    () => !itemsBox.querySelectorAll(".autocomplete-richlistitem")[0].disabled
   );
 }
 
