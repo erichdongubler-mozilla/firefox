@@ -4,7 +4,7 @@
 #include "ggml-impl.h"
 #include <algorithm>
 #include <cstring>
-#include <filesystem>
+// #include <filesystem>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -86,8 +86,8 @@
 #include "ggml-openvino.h"
 #endif
 
-namespace fs = std::filesystem;
-
+// namespace fs = std::filesystem;
+#if 0
 static std::string path_str(const fs::path & path) {
     try {
 #if defined(__cpp_lib_char8_t)
@@ -102,6 +102,7 @@ static std::string path_str(const fs::path & path) {
         return std::string();
     }
 }
+#endif
 
 struct ggml_backend_reg_entry {
     ggml_backend_reg_t reg;
@@ -210,6 +211,7 @@ struct ggml_backend_registry {
         devices.push_back(device);
     }
 
+#if 0
     ggml_backend_reg_t load_backend(const fs::path & path, bool silent) {
         dl_handle_ptr handle { dl_load_library(path) };
         if (!handle) {
@@ -255,6 +257,7 @@ struct ggml_backend_registry {
 
         return reg;
     }
+#endif
 
     void unload_backend(ggml_backend_reg_t reg, bool silent) {
         auto it = std::find_if(backends.begin(), backends.end(),
@@ -382,6 +385,7 @@ ggml_backend_t ggml_backend_init_best(void) {
     return ggml_backend_dev_init(dev, nullptr);
 }
 
+#if 0
 // Dynamic loading
 ggml_backend_reg_t ggml_backend_load(const char * path) {
     return get_reg().load_backend(path, false);
@@ -453,7 +457,8 @@ static fs::path get_executable_path() {
     return {};
 #endif
 }
-
+#endif
+#if 0
 static fs::path backend_filename_prefix() {
 #ifdef _WIN32
     return fs::u8path("ggml-");
@@ -469,8 +474,10 @@ static fs::path backend_filename_extension() {
     return fs::u8path(".so");
 #endif
 }
+#endif
 
 static ggml_backend_reg_t ggml_backend_load_best(const char * name, bool silent, const char * user_search_path) {
+    #if 0
     // enumerate all the files that match [lib]ggml-name-*.[so|dll] in the search paths
     const fs::path name_path = fs::u8path(name);
     const fs::path file_prefix = backend_filename_prefix().native() + name_path.native() + fs::u8path("-").native();
@@ -550,6 +557,8 @@ static ggml_backend_reg_t ggml_backend_load_best(const char * name, bool silent,
     }
 
     return get_reg().load_backend(best_path, silent);
+    #endif
+    return nullptr;
 }
 
 void ggml_backend_load_all() {
@@ -581,6 +590,6 @@ void ggml_backend_load_all_from_path(const char * dir_path) {
     // check the environment variable GGML_BACKEND_PATH to load an out-of-tree backend
     const char * backend_path = std::getenv("GGML_BACKEND_PATH");
     if (backend_path) {
-        ggml_backend_load(backend_path);
+       // ggml_backend_load(backend_path);
     }
 }

@@ -2,6 +2,7 @@
 
 #ifdef _WIN32
 
+#if 0
 dl_handle * dl_load_library(const fs::path & path) {
     // suppress error dialogs for missing DLLs
     DWORD old_mode = SetErrorMode(SEM_FAILCRITICALERRORS);
@@ -13,6 +14,7 @@ dl_handle * dl_load_library(const fs::path & path) {
 
     return handle;
 }
+#endif
 
 void * dl_get_sym(dl_handle * handle, const char * name) {
     DWORD old_mode = SetErrorMode(SEM_FAILCRITICALERRORS);
@@ -31,10 +33,12 @@ const char * dl_error() {
 
 #else
 
+#if 0
 dl_handle * dl_load_library(const fs::path & path) {
     dl_handle * handle = dlopen(path.string().c_str(), RTLD_NOW | RTLD_LOCAL);
     return handle;
 }
+#endif
 
 void * dl_get_sym(dl_handle * handle, const char * name) {
     return dlsym(handle, name);
