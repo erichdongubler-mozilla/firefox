@@ -151,7 +151,6 @@ allowed_warnings:
     # Unknown document warnings
     # Undefined label warnings.
     - "code-quality/.*\\.rst:.*: WARNING: undefined label"
-    - "contributing/.*\\.rst:.*: WARNING: undefined label"
     - "crash-reporting/index\\.rst:.*: WARNING: undefined label"
     - "dom/navigation/nav_replace\\.rst:.*: WARNING: undefined label"
     - "devtools-user/page_inspector/how_to/work_with_animations/index\\.(rst|md):.*: WARNING: undefined label"
@@ -231,6 +230,8 @@ allowed_warnings:
     - "setup/macos_build\\.md:.*: WARNING: undefined label"
     - "setup/windows_build\\.md:.*: WARNING: undefined label"
     - "setup/windows_wsl_build\\.md:.*: WARNING: undefined label"
+    - "WARNING: glossary terms must not be separated by empty lines"
+    - "contributing/.*\\.md:.*: WARNING: undefined label"
 exclude_patterns:
     - js/src/doc/Debugger
 
