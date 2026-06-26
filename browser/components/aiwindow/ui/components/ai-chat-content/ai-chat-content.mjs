@@ -1345,17 +1345,15 @@ export class AIChatContent extends MozLitElement {
     const isRetryComponent =
       msg.toolUIData?.uiType === UI_TYPES.RETRY_COMPONENT;
 
-    return html`<div class=${`chat-bubble chat-bubble-${msg.role}`}>
-      ${chips?.length
-        ? html`<website-chip-container
-            class="chat-bubble-chips"
-            shouldGroupChips
-            .websites=${chips}
-          ></website-chip-container>`
-        : nothing}
-      <div class="chat-bubble-inner">
+    return html`
+      <div class=${`chat-bubble chat-bubble-${msg.role}`}>
         ${msg.role === "assistant" && isRetryComponent
           ? this.#renderToolUI(msg)
+          : nothing}
+        ${chips?.length
+          ? html`<website-chip-container
+              .websites=${chips}
+            ></website-chip-container>`
           : nothing}
         <ai-chat-message
           .message=${msg.body}
@@ -1379,7 +1377,7 @@ export class AIChatContent extends MozLitElement {
             `
           : nothing}
       </div>
-    </div>`;
+    `;
   }
 
   #renderFollowUpSuggestions() {
