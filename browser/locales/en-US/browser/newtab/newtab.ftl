@@ -273,6 +273,8 @@ newtab-custom-widget-sports-toggle2 =
   .label = Sports
 newtab-custom-widget-privacy-toggle =
   .label = Privacy
+newtab-custom-widget-stocks-toggle =
+  .label = Stocks
 newtab-custom-widget-section-title = Widgets
 newtab-custom-widget-section-toggle =
     .label = Widgets
@@ -1290,6 +1292,10 @@ home-prefs-clocks-header =
 home-prefs-privacy-header =
     .label = Privacy
 
+# Stocks is a widget on New Tab that shows stock ticker prices.
+home-prefs-stocks-header =
+    .label = Stocks
+
 home-prefs-mission-message2 =
     .message = Our sponsors support our mission to build a better web.
 
@@ -1375,3 +1381,14 @@ home-prefs-mission-message-learn-more-link-srd = Find out how
 
 # Context menu item linking to more information about the Privacy widget.
 newtab-privacy-menu-learn-more = Learn more
+
+## Strings for the Stocks widget
+
+# Context menu item for searching stock ticker symbols.
+newtab-stocks-menu-search = Search ticker symbols
+
+# Context menu item that hides the Stocks widget.
+newtab-stocks-menu-hide = Hide stocks
+
+# Context menu item linking to more information about the Stocks widget.
+newtab-stocks-menu-learn-more = Learn more

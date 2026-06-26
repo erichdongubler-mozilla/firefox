@@ -218,6 +218,11 @@ function Widgets() {
       prefs,
       widgetsEnabled
     ),
+    stocks: isWidgetEnabled(
+      WIDGET_REGISTRY.find(w => w.id === "stocks"),
+      prefs,
+      widgetsEnabled
+    ),
   };
 
   const widgetOrder = resolveWidgetOrder(prefs);
