@@ -27,6 +27,7 @@
 #include "mozilla/gtest/MozAssertions.h"
 
 #include <condition_variable>
+#include <functional>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -5453,10 +5454,12 @@ class MarkerBenchThreadPool {
  public:
   explicit MarkerBenchThreadPool(uint32_t aThreadCount) {
     mThreads.reserve(aThreadCount);
-    for (uint32_t t = 0; t < aThreadCount; ++t) {
-      mThreads.emplace_back([this]() { WorkerLoop(); });
+    for (uint32_t threadIdx = 0; threadIdx < aThreadCount; ++threadIdx) {
+      mThreads.emplace_back([this, threadIdx]() { WorkerLoop(threadIdx); });
     }
   }
+
+  uint32_t ThreadCount() const { return mThreads.size(); }
 
   ~MarkerBenchThreadPool() {
     {
@@ -5470,13 +5473,16 @@ class MarkerBenchThreadPool {
     }
   }
 
-  // Runs aInsert on every worker thread in parallel, returning once all finish.
-  void InsertOnAll(uint32_t aTotalCount, void (*aInsert)(uint32_t)) {
+  // Runs aTask on every worker thread in parallel, returning once all finish.
+  // aTask receives the worker's index in [0, thread count) and the per-thread
+  // share of aTotalCount.
+  void RunOnAll(uint32_t aTotalCount,
+                std::function<void(uint32_t, uint32_t)> aTask) {
     {
       std::lock_guard<std::mutex> lock(mMutex);
-      mInsert = aInsert;
-      mPerThread = aTotalCount / mThreads.size();
-      mRemaining = mThreads.size();
+      mTask = std::move(aTask);
+      mPerThread = aTotalCount / static_cast<uint32_t>(mThreads.size());
+      mRemaining = static_cast<uint32_t>(mThreads.size());
       ++mGeneration;
     }
     mWakeup.notify_all();
@@ -5484,12 +5490,18 @@ class MarkerBenchThreadPool {
     mDone.wait(lock, [this]() { return mRemaining == 0; });
   }
 
+  // Convenience overload for tasks that only need the per-thread count.
+  void RunOnAll(uint32_t aTotalCount, void (*aTask)(uint32_t)) {
+    RunOnAll(aTotalCount,
+             [aTask](uint32_t, uint32_t aPerThread) { aTask(aPerThread); });
+  }
+
  private:
-  void WorkerLoop() {
+  void WorkerLoop(uint32_t aThreadIdx) {
     AUTO_PROFILER_REGISTER_THREAD("MarkerBench");
     uint64_t lastGeneration = 0;
     while (true) {
-      void (*insert)(uint32_t);
+      std::function<void(uint32_t, uint32_t)> task;
       uint32_t perThread;
       {
         std::unique_lock<std::mutex> lock(mMutex);
@@ -5498,10 +5510,10 @@ class MarkerBenchThreadPool {
         if (mShutdown) {
           return;
         }
-        insert = mInsert;
+        task = mTask;
         perThread = mPerThread;
       }
-      insert(perThread);
+      task(aThreadIdx, perThread);
       {
         std::lock_guard<std::mutex> lock(mMutex);
         --mRemaining;
@@ -5515,7 +5527,7 @@ class MarkerBenchThreadPool {
   std::condition_variable mWakeup;
   std::condition_variable mDone;
   // The following are all guarded by mMutex.
-  void (*mInsert)(uint32_t) = nullptr;
+  std::function<void(uint32_t, uint32_t)> mTask;
   uint32_t mPerThread = 0;
   // Bumped per request so workers distinguish a new request from a spurious
   // wakeup without losing notifications.
@@ -5638,21 +5650,14 @@ void TimedInsert(uint32_t aCount, LatencyHist& aHist, Op aOp) {
 }
 
 template <typename Op>
-void TimedInsertMultiThread(uint32_t aTotalCount, uint32_t aThreads,
+void TimedInsertMultiThread(MarkerBenchThreadPool& aPool, uint32_t aTotalCount,
                             LatencyHist& aHist, Op aOp) {
-  std::vector<LatencyHist> perThread(aThreads);
-  std::vector<std::thread> threads;
-  const uint32_t per = aTotalCount / aThreads;
-  for (uint32_t t = 0; t < aThreads; ++t) {
-    threads.emplace_back([t, per, &perThread, aOp]() {
-      AUTO_PROFILER_REGISTER_THREAD("MarkerBenchHisto");
-      TimedInsert(per, perThread[t], aOp);
-    });
-  }
-  for (auto& th : threads) {
-    th.join();
-  }
-  for (auto& h : perThread) {
+  std::vector<LatencyHist> perThread(aPool.ThreadCount());
+  aPool.RunOnAll(aTotalCount,
+                 [&perThread, &aOp](uint32_t aThreadIdx, uint32_t aPerThread) {
+                   TimedInsert(aPerThread, perThread[aThreadIdx], aOp);
+                 });
+  for (const auto& h : perThread) {
     aHist.Merge(h);
   }
 }
@@ -5796,14 +5801,14 @@ MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBenchRecycle,
 
 MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBenchRecycle,
                   MarkerInsertionMultiThreadTiny, [this]() {
-                    mThreadPool->InsertOnAll(kMarkerInsertionCount,
-                                             &InsertTinyMarkers);
+                    mThreadPool->RunOnAll(kMarkerInsertionCount,
+                                          &InsertTinyMarkers);
                   });
 
 MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBenchRecycle,
                   MarkerInsertionMultiThreadLarge, [this]() {
-                    mThreadPool->InsertOnAll(kMarkerInsertionCount,
-                                             &InsertLargeMarkers);
+                    mThreadPool->RunOnAll(kMarkerInsertionCount,
+                                          &InsertLargeMarkers);
                   });
 
 MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBenchRecycle,
@@ -5812,8 +5817,8 @@ MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBenchRecycle,
 
 MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBenchRecycle,
                   MarkerInsertionMultiThreadFieldsAndStack, [this]() {
-                    mThreadPool->InsertOnAll(kMarkerInsertionCount,
-                                             &InsertFieldsAndStackMarkers);
+                    mThreadPool->RunOnAll(kMarkerInsertionCount,
+                                          &InsertFieldsAndStackMarkers);
                   });
 
 #define DEFINE_HISTO_TESTS(aFixture, aPrefix)                                  \
@@ -5841,8 +5846,7 @@ MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBenchRecycle,
   }                                                                            \
   TEST_F(aFixture, HistoMultiThreadTiny) {                                     \
     LatencyHist hist;                                                          \
-    TimedInsertMultiThread(kMarkerInsertionCount, kMarkerInsertionThreads,     \
-                           hist,                                               \
+    TimedInsertMultiThread(*mThreadPool, kMarkerInsertionCount, hist,          \
                            []() { PROFILER_MARKER_UNTYPED("M", OTHER, {}); }); \
     ReportHistogram(aPrefix "MultiThreadTiny", hist);                          \
   }                                                                            \
@@ -5850,18 +5854,17 @@ MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBenchRecycle,
     const nsCString& text = LargeMarkerText();                                 \
     LatencyHist hist;                                                          \
     TimedInsertMultiThread(                                                    \
-        kMarkerInsertionCount, kMarkerInsertionThreads, hist,                  \
+        *mThreadPool, kMarkerInsertionCount, hist,                             \
         [&text]() { PROFILER_MARKER_TEXT("M", OTHER, {}, text); });            \
     ReportHistogram(aPrefix "MultiThreadLarge", hist);                         \
   }                                                                            \
   TEST_F(aFixture, HistoMultiThreadFieldsAndStack) {                           \
     LatencyHist hist;                                                          \
-    TimedInsertMultiThread(                                                    \
-        kMarkerInsertionCount, kMarkerInsertionThreads, hist, []() {           \
-          profiler_add_marker("M", geckoprofiler::category::OTHER,             \
-                              MarkerStack::Capture(), BenchFieldsMarker{}, 42, \
-                              43.0, "bench");                                  \
-        });                                                                    \
+    TimedInsertMultiThread(*mThreadPool, kMarkerInsertionCount, hist, []() {   \
+      profiler_add_marker("M", geckoprofiler::category::OTHER,                 \
+                          MarkerStack::Capture(), BenchFieldsMarker{}, 42,     \
+                          43.0, "bench");                                      \
+    });                                                                        \
     ReportHistogram(aPrefix "MultiThreadFieldsAndStack", hist);                \
   }
 
