@@ -23,9 +23,13 @@
 #include "nsIClassOfService.h"
 
 #include "gtest/gtest.h"
+#include "gtest/MozGTestBench.h"
 #include "mozilla/gtest/MozAssertions.h"
 
+#include <condition_variable>
+#include <mutex>
 #include <thread>
+#include <vector>
 
 #if defined(GP_OS_windows)
 #  include <processthreadsapi.h>
@@ -5368,3 +5372,159 @@ TEST(GeckoProfiler, NoMarkerStacks)
 
   ASSERT_TRUE(!profiler_get_profile());
 }
+
+// Microbenchmarks measuring marker insertion speed while the profiler is
+// active, for single- and multi-threaded cases with tiny and large markers.
+namespace {
+
+// Markers per benchmark iteration, split evenly across threads in the
+// multi-threaded benchmarks.
+static constexpr uint32_t kMarkerInsertionCount = 100000;
+
+static constexpr uint32_t kMarkerInsertionThreads = 4;
+
+static_assert(kMarkerInsertionCount % kMarkerInsertionThreads == 0,
+              "marker count must split evenly across threads");
+
+static const nsCString& LargeMarkerText() {
+  static const nsCString sText = []() {
+    nsCString s;
+    s.SetLength(4096);
+    memset(s.BeginWriting(), 'x', s.Length());
+    return s;
+  }();
+  return sText;
+}
+
+void InsertTinyMarkers(uint32_t aCount) {
+  for (uint32_t i = 0; i < aCount; ++i) {
+    PROFILER_MARKER_UNTYPED("M", OTHER, {});
+  }
+}
+
+void InsertLargeMarkers(uint32_t aCount) {
+  const nsCString& text = LargeMarkerText();
+  for (uint32_t i = 0; i < aCount; ++i) {
+    PROFILER_MARKER_TEXT("M", OTHER, {}, text);
+  }
+}
+
+// Worker threads spawned and registered with the profiler once, then reused
+// across timed iterations so that thread startup and registration stay out of
+// the measured region.
+class MarkerBenchThreadPool {
+ public:
+  explicit MarkerBenchThreadPool(uint32_t aThreadCount) {
+    mThreads.reserve(aThreadCount);
+    for (uint32_t t = 0; t < aThreadCount; ++t) {
+      mThreads.emplace_back([this]() { WorkerLoop(); });
+    }
+  }
+
+  ~MarkerBenchThreadPool() {
+    {
+      std::lock_guard<std::mutex> lock(mMutex);
+      mShutdown = true;
+      ++mGeneration;
+    }
+    mWakeup.notify_all();
+    for (auto& thread : mThreads) {
+      thread.join();
+    }
+  }
+
+  // Runs aInsert on every worker thread in parallel, returning once all finish.
+  void InsertOnAll(uint32_t aTotalCount, void (*aInsert)(uint32_t)) {
+    {
+      std::lock_guard<std::mutex> lock(mMutex);
+      mInsert = aInsert;
+      mPerThread = aTotalCount / mThreads.size();
+      mRemaining = mThreads.size();
+      ++mGeneration;
+    }
+    mWakeup.notify_all();
+    std::unique_lock<std::mutex> lock(mMutex);
+    mDone.wait(lock, [this]() { return mRemaining == 0; });
+  }
+
+ private:
+  void WorkerLoop() {
+    AUTO_PROFILER_REGISTER_THREAD("MarkerBench");
+    uint64_t lastGeneration = 0;
+    while (true) {
+      void (*insert)(uint32_t);
+      uint32_t perThread;
+      {
+        std::unique_lock<std::mutex> lock(mMutex);
+        mWakeup.wait(lock, [&]() { return mGeneration != lastGeneration; });
+        lastGeneration = mGeneration;
+        if (mShutdown) {
+          return;
+        }
+        insert = mInsert;
+        perThread = mPerThread;
+      }
+      insert(perThread);
+      {
+        std::lock_guard<std::mutex> lock(mMutex);
+        --mRemaining;
+      }
+      mDone.notify_one();
+    }
+  }
+
+  std::vector<std::thread> mThreads;
+  std::mutex mMutex;
+  std::condition_variable mWakeup;
+  std::condition_variable mDone;
+  // The following are all guarded by mMutex.
+  void (*mInsert)(uint32_t) = nullptr;
+  uint32_t mPerThread = 0;
+  // Bumped per request so workers distinguish a new request from a spurious
+  // wakeup without losing notifications.
+  uint64_t mGeneration = 0;
+  uint32_t mRemaining = 0;
+  bool mShutdown = false;
+};
+
+}  // namespace
+
+// Starts the profiler and spawns the thread pool in SetUp()/TearDown(), which
+// run once per benchmark, keeping that setup out of the timed iterations.
+class GeckoProfilerMarkerBench : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    // Make sure first call to LargeMarkerText is not part of the measurement.
+    const nsCString& _text = LargeMarkerText();
+    uint32_t features =
+        ProfilerFeature::NoStackSampling | ProfilerFeature::MarkersAllThreads;
+    profiler_start(PowerOfTwo32(1u << 24), PROFILER_DEFAULT_INTERVAL, features,
+                   nullptr, 0, 0);
+    mThreadPool = MakeUnique<MarkerBenchThreadPool>(kMarkerInsertionThreads);
+  }
+
+  void TearDown() override {
+    mThreadPool = nullptr;
+    profiler_stop();
+  }
+
+  UniquePtr<MarkerBenchThreadPool> mThreadPool;
+};
+
+MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBench, MarkerInsertionSingleThreadTiny,
+                  []() { InsertTinyMarkers(kMarkerInsertionCount); });
+
+MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBench, MarkerInsertionSingleThreadLarge,
+                  []() { InsertLargeMarkers(kMarkerInsertionCount); });
+
+MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBench, MarkerInsertionMultiThreadTiny,
+                  [this]() {
+                    mThreadPool->InsertOnAll(kMarkerInsertionCount,
+                                             &InsertTinyMarkers);
+                  });
+
+MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBench, MarkerInsertionMultiThreadLarge,
+                  [this]() {
+                    mThreadPool->InsertOnAll(kMarkerInsertionCount,
+                                             &InsertLargeMarkers);
+                  });
