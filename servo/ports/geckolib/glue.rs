@@ -7462,11 +7462,7 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
                 let guard = declarations.read_with(&guard);
                 for decl in guard.normal_declaration_iter() {
                     if let PropertyDeclaration::Custom(ref declaration) = *decl {
-                        builder.cascade(
-                            &mut context,
-                            declaration,
-                            priority,
-                        );
+                        builder.cascade(&mut context, declaration, priority);
                     }
                 }
             }
