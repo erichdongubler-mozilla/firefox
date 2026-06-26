@@ -820,19 +820,22 @@ static const char * llama_expert_gating_func_name(llama_expert_gating_func_type 
     }
 }
 
-static const std::map<llama_rope_scaling_type, const char *> LLAMA_ROPE_SCALING_TYPES = {
-    { LLAMA_ROPE_SCALING_TYPE_NONE,       "none"       },
-    { LLAMA_ROPE_SCALING_TYPE_LINEAR,     "linear"     },
-    { LLAMA_ROPE_SCALING_TYPE_YARN,       "yarn"       },
-    { LLAMA_ROPE_SCALING_TYPE_LONGROPE,   "longrope"   },
-};
+static const std::map<llama_rope_scaling_type, const char *> & get_llama_rope_scaling_types() {
+    static const std::map<llama_rope_scaling_type, const char *> LLAMA_ROPE_SCALING_TYPES = {
+        { LLAMA_ROPE_SCALING_TYPE_NONE,       "none"       },
+        { LLAMA_ROPE_SCALING_TYPE_LINEAR,     "linear"     },
+        { LLAMA_ROPE_SCALING_TYPE_YARN,       "yarn"       },
+        { LLAMA_ROPE_SCALING_TYPE_LONGROPE,   "longrope"   },
+    };
+    return LLAMA_ROPE_SCALING_TYPES;
+}
 
 std::string llama_rope_scaling_type_name(llama_rope_scaling_type rope_scaling_type) {
-    return LLAMA_ROPE_SCALING_TYPES.at(rope_scaling_type);
+    return get_llama_rope_scaling_types().at(rope_scaling_type);
 }
 
 static llama_rope_scaling_type llama_rope_scaling_type_from_string(const std::string & name) {
-    for (const auto & kv : LLAMA_ROPE_SCALING_TYPES) {
+    for (const auto & kv : get_llama_rope_scaling_types()) {
         if (kv.second == name) {
             return (llama_rope_scaling_type) kv.first;
         }
@@ -845,17 +848,21 @@ static llama_rope_scaling_type llama_rope_scaling_type_from_string(const std::st
 // graph builders. Only gated activations that map cleanly to llm_ffn_op_type are
 // listed; unrecognized values fall back to GeGLU, which matches the historical
 // default for ModernBert-style architectures.
-static const std::map<std::string, llm_ffn_op_type> LLM_FFN_OP_TYPES_FROM_STRING = {
-    { "gelu",   LLM_FFN_GEGLU  },
-    { "geglu",  LLM_FFN_GEGLU  },
-    { "silu",   LLM_FFN_SWIGLU },
-    { "swish",  LLM_FFN_SWIGLU },
-    { "swiglu", LLM_FFN_SWIGLU },
-    { "relu",   LLM_FFN_RELU   },
-    { "reglu",  LLM_FFN_REGLU  },
-};
+static const std::map<std::string, llm_ffn_op_type> & get_llm_ffn_op_types_from_string() {
+    static const std::map<std::string, llm_ffn_op_type> LLM_FFN_OP_TYPES_FROM_STRING = {
+        { "gelu",   LLM_FFN_GEGLU  },
+        { "geglu",  LLM_FFN_GEGLU  },
+        { "silu",   LLM_FFN_SWIGLU },
+        { "swish",  LLM_FFN_SWIGLU },
+        { "swiglu", LLM_FFN_SWIGLU },
+        { "relu",   LLM_FFN_RELU   },
+        { "reglu",  LLM_FFN_REGLU  },
+    };
+    return LLM_FFN_OP_TYPES_FROM_STRING;
+}
 
 llm_ffn_op_type llm_ffn_op_type_from_string(const std::string & name, llm_ffn_op_type fallback) {
+    const auto & LLM_FFN_OP_TYPES_FROM_STRING = get_llm_ffn_op_types_from_string();
     const auto it = LLM_FFN_OP_TYPES_FROM_STRING.find(name);
     if (it != LLM_FFN_OP_TYPES_FROM_STRING.end()) {
         return it->second;

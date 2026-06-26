@@ -128,6 +128,7 @@ static std::vector<unicode_cpt_flags> unicode_cpt_flags_array() {
         }
     }
 
+    const auto & unicode_set_whitespace = get_unicode_set_whitespace();
     for (auto cpt : unicode_set_whitespace) {
         cpt_flags[cpt].is_whitespace = true;
     }

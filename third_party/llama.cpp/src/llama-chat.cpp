@@ -27,7 +27,8 @@ static std::string trim(const std::string & str) {
     return str.substr(start, end - start);
 }
 
-static const std::map<std::string, llm_chat_template> LLM_CHAT_TEMPLATES = {
+static const std::map<std::string, llm_chat_template> & get_llm_chat_templates() {
+    static const std::map<std::string, llm_chat_template> LLM_CHAT_TEMPLATES = {
     { "chatml",            LLM_CHAT_TEMPLATE_CHATML            },
     { "llama2",            LLM_CHAT_TEMPLATE_LLAMA_2           },
     { "llama2-sys",        LLM_CHAT_TEMPLATE_LLAMA_2_SYS       },
@@ -82,10 +83,12 @@ static const std::map<std::string, llm_chat_template> LLM_CHAT_TEMPLATES = {
     { "grok-2",            LLM_CHAT_TEMPLATE_GROK_2            },
     { "pangu-embedded",    LLM_CHAT_TEMPLATE_PANGU_EMBED       },
     { "solar-open",        LLM_CHAT_TEMPLATE_SOLAR_OPEN        },
-};
+    };
+    return LLM_CHAT_TEMPLATES;
+}
 
 llm_chat_template llm_chat_template_from_str(const std::string & name) {
-    return LLM_CHAT_TEMPLATES.at(name);
+    return get_llm_chat_templates().at(name);
 }
 
 llm_chat_template llm_chat_detect_template(const std::string & tmpl) {
@@ -96,6 +99,7 @@ llm_chat_template llm_chat_detect_template(const std::string & tmpl) {
         // ignore
     }
 #endif
+    const auto & LLM_CHAT_TEMPLATES = get_llm_chat_templates();
     auto chat_template = LLM_CHAT_TEMPLATES.find(tmpl);
     if (chat_template != LLM_CHAT_TEMPLATES.end()) {
         return chat_template->second;
@@ -956,6 +960,7 @@ int32_t llm_chat_apply_template(
 // public interface
 
 int32_t llama_chat_builtin_templates(const char ** output, size_t len) {
+    const auto & LLM_CHAT_TEMPLATES = get_llm_chat_templates();
     auto it = LLM_CHAT_TEMPLATES.begin();
     for (size_t i = 0; i < std::min(len, LLM_CHAT_TEMPLATES.size()); i++) {
         output[i] = it->first.c_str();

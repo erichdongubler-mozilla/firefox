@@ -2283,7 +2283,8 @@ const std::initializer_list<std::pair<uint32_t, uint16_t>> unicode_ranges_flags 
 {0x110000, 0x0000},
 };
 
-const std::unordered_set<uint32_t> unicode_set_whitespace = {
+const std::unordered_set<uint32_t> & get_unicode_set_whitespace() {
+    static const std::unordered_set<uint32_t> unicode_set_whitespace = {
 0x000009,
 0x00000A,
 0x00000B,
@@ -2309,7 +2310,9 @@ const std::unordered_set<uint32_t> unicode_set_whitespace = {
 0x00202F,
 0x00205F,
 0x003000,
-};
+    };
+    return unicode_set_whitespace;
+}
 
 // list is always in ascending order, to enable binary search
 const std::initializer_list<std::pair<uint32_t, uint32_t>> unicode_map_lowercase = {
