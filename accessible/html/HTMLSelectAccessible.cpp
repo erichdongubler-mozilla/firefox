@@ -374,7 +374,7 @@ void HTMLComboboxAccessible::SetCurrentItem(const LocalAccessible* aItem) {
 
 HTMLComboboxListAccessible* HTMLComboboxAccessible::List() const {
   LocalAccessible* firstChild = ChildCount() == 1 ? LocalFirstChild() : nullptr;
-  return firstChild->IsListControl()
+  return firstChild && firstChild->IsListControl()
              ? static_cast<HTMLComboboxListAccessible*>(firstChild)
              : nullptr;
 }
