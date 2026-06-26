@@ -76,21 +76,5 @@ describe("<ContentSection>", () => {
         widget_size: "large",
       });
     });
-
-    it("dispatches WIDGETS_ENABLED with widget_name='stocks' when the stocks toggle fires", () => {
-      const dispatch = jest.fn();
-      const instance = getInstance({ dispatch });
-      instance.inputUserEvent("WIDGET_STOCKS", true);
-
-      const enabledCall = dispatch.mock.calls.find(
-        ([action]) => action?.type === at.WIDGETS_ENABLED
-      );
-      expect(enabledCall?.[0].data).toMatchObject({
-        widget_name: "stocks",
-        widget_source: "customize_panel",
-        enabled: true,
-        widget_size: "large",
-      });
-    });
   });
 });

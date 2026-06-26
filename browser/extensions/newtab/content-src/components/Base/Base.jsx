@@ -895,7 +895,6 @@ export class BaseContent extends React.PureComponent {
     const mayHaveSportsWidget = widgetVisibleById("sportsWidget");
     const mayHavePrivacyWidget = widgetVisibleById("privacy");
     const mayHaveCrosswordWidget = widgetVisibleById("crossword");
-    const mayHaveStocksWidget = widgetVisibleById("stocks");
 
     // These prefs set the initial values on the Customize panel toggle switches
     const enabledWidgets = {
@@ -908,7 +907,6 @@ export class BaseContent extends React.PureComponent {
       sportsWidgetEnabled: prefs["widgets.sportsWidget.enabled"],
       privacyEnabled: prefs["widgets.privacy.enabled"],
       crosswordEnabled: prefs["widgets.crossword.enabled"],
-      stocksEnabled: prefs["widgets.stocks.enabled"],
       widgetsMaximized: prefs["widgets.maximized"],
       widgetsMayBeMaximized: prefs["widgets.system.maximized"],
     };
@@ -1192,7 +1190,6 @@ export class BaseContent extends React.PureComponent {
                 mayHaveClocksWidget={mayHaveClocksWidget}
                 mayHavePrivacyWidget={mayHavePrivacyWidget}
                 mayHaveCrosswordWidget={mayHaveCrosswordWidget}
-                mayHaveStocksWidget={mayHaveStocksWidget}
                 mayHaveWeatherForecast={
                   prefs["widgets.system.weatherForecast.enabled"]
                 }
@@ -1363,7 +1360,6 @@ export class BaseContent extends React.PureComponent {
               mayHaveClocksWidget={mayHaveClocksWidget}
               mayHavePrivacyWidget={mayHavePrivacyWidget}
               mayHaveCrosswordWidget={mayHaveCrosswordWidget}
-              mayHaveStocksWidget={mayHaveStocksWidget}
               mayHaveWeatherForecast={
                 prefs["widgets.system.weatherForecast.enabled"]
               }

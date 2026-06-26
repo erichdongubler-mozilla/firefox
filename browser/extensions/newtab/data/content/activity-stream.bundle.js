@@ -12809,10 +12809,6 @@ const PREF_WIDGETS_CROSSWORD_ENABLED = "widgets.crossword.enabled";
 const PREF_CROSSWORD_SIZE = "widgets.crossword.size";
 const PREF_WIDGETS_SYSTEM_CROSSWORD_ENABLED =
   "widgets.system.crossword.enabled";
-const PREF_WIDGETS_STOCKS_ENABLED = "widgets.stocks.enabled";
-const PREF_STOCKS_SIZE = "widgets.stocks.size";
-const PREF_WIDGETS_SYSTEM_STOCKS_ENABLED =
-  "widgets.system.stocks.enabled";
 
 /**
  * @typedef {object} WidgetRegistryEntry
@@ -12945,22 +12941,6 @@ const WIDGET_REGISTRY = [
     trainhopSidebarKey: null,
     widgetsSettingsVisibleKey: "crosswordVisible",
     widgetsSettingsEnabledKey: "crosswordEnabled",
-  },
-  {
-    id: "stocks",
-    telemetryName: "stocks",
-    order: 7,
-    enabledPref: PREF_WIDGETS_STOCKS_ENABLED,
-    sizePref: PREF_STOCKS_SIZE,
-    defaultSize: "medium",
-    validSizes: ["small", "medium", "large"],
-    hasSidebar: false,
-    systemEnabledPref: PREF_WIDGETS_SYSTEM_STOCKS_ENABLED,
-    trainhopEnabledKey: "stocksEnabled",
-    trainhopSizeKey: "stocksSize",
-    trainhopSidebarKey: null,
-    widgetsSettingsVisibleKey: "stocksVisible",
-    widgetsSettingsEnabledKey: "stocksEnabled",
   },
 ];
 
@@ -21340,176 +21320,10 @@ function Crossword({
   }));
 }
 
-;// CONCATENATED MODULE: ./content-src/components/Widgets/Stocks/Stocks.jsx
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
-
-// eslint-disable-next-line no-unused-vars
-
-
-
-
-
-
-const Stocks_USER_ACTION_TYPES = {
-  CHANGE_SIZE: "change_size",
-  SEARCH_TICKERS: "search_tickers",
-  LEARN_MORE: "learn_more"
-};
-const STOCKS_ENTRY = WIDGET_REGISTRY.find(w => w.id === "stocks");
-function Stocks({
-  dispatch,
-  widgetsMayBeMaximized,
-  widgetEnabledMap
-}) {
-  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
-
-  // Resolve size through the registry helper, not the pref, so trainhop and the
-  // default can apply.
-  const widgetSize = resolveWidgetSize(STOCKS_ENTRY, prefs);
-  const impressionFired = (0,external_React_namespaceObject.useRef)(false);
-  const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
-    if (impressionFired.current) {
-      return;
-    }
-    impressionFired.current = true;
-    dispatch(actionCreators.AlsoToMain({
-      type: actionTypes.WIDGETS_IMPRESSION,
-      data: {
-        widget_name: "stocks",
-        widget_size: widgetSize
-      }
-    }));
-  }, [dispatch, widgetSize]);
-  const widgetRef = useIntersectionObserver(handleIntersection);
-  function handleStocksHide() {
-    (0,external_ReactRedux_namespaceObject.batch)(() => {
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.SET_PREF,
-        data: {
-          name: STOCKS_ENTRY.enabledPref,
-          value: false
-        }
-      }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_ENABLED,
-        data: {
-          widget_name: "stocks",
-          widget_source: "context_menu",
-          enabled: false,
-          widget_size: widgetSize
-        }
-      }));
-    });
-  }
-  const handleChangeSize = (0,external_React_namespaceObject.useCallback)(size => {
-    (0,external_ReactRedux_namespaceObject.batch)(() => {
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.SET_PREF,
-        data: {
-          name: STOCKS_ENTRY.sizePref,
-          value: size
-        }
-      }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "stocks",
-          widget_source: "context_menu",
-          user_action: Stocks_USER_ACTION_TYPES.CHANGE_SIZE,
-          action_value: size,
-          widget_size: size
-        }
-      }));
-    });
-  }, [dispatch]);
-  const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
-
-  // Placeholder: a real ticker search will replace this telemetry-only stub in
-  // a follow-up.
-  function handleSearchTickers() {
-    dispatch(actionCreators.OnlyToMain({
-      type: actionTypes.WIDGETS_USER_EVENT,
-      data: {
-        widget_name: "stocks",
-        widget_source: "context_menu",
-        user_action: Stocks_USER_ACTION_TYPES.SEARCH_TICKERS,
-        widget_size: widgetSize
-      }
-    }));
-  }
-  function handleLearnMore() {
-    (0,external_ReactRedux_namespaceObject.batch)(() => {
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.OPEN_LINK,
-        data: {
-          url: "https://support.mozilla.org/kb/firefox-new-tab-widgets"
-        }
-      }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: {
-          widget_name: "stocks",
-          widget_source: "context_menu",
-          user_action: Stocks_USER_ACTION_TYPES.LEARN_MORE,
-          widget_size: widgetSize
-        }
-      }));
-    });
-  }
-  return /*#__PURE__*/external_React_default().createElement("article", {
-    className: `stocks widget col-4 ${widgetSize}-widget`,
-    ref: el => {
-      widgetRef.current = [el];
-    }
-  }, /*#__PURE__*/external_React_default().createElement("div", {
-    className: "stocks-title-wrapper"
-  }, /*#__PURE__*/external_React_default().createElement("div", {
-    className: "stocks-context-menu-wrapper"
-  }, /*#__PURE__*/external_React_default().createElement("moz-button", {
-    className: "stocks-context-menu-button",
-    iconSrc: "chrome://global/skin/icons/more.svg",
-    menuId: "stocks-context-menu",
-    type: "ghost"
-  }), /*#__PURE__*/external_React_default().createElement("panel-list", {
-    id: "stocks-context-menu"
-  }, /*#__PURE__*/external_React_default().createElement("panel-item", {
-    "data-l10n-id": "newtab-stocks-menu-search",
-    onClick: handleSearchTickers
-  }), /*#__PURE__*/external_React_default().createElement("hr", null), widgetsMayBeMaximized && /*#__PURE__*/external_React_default().createElement("panel-item", {
-    submenu: "stocks-size-submenu"
-  }, /*#__PURE__*/external_React_default().createElement("span", {
-    "data-l10n-id": "newtab-widget-menu-change-size"
-  }), /*#__PURE__*/external_React_default().createElement("panel-list", {
-    ref: sizeSubmenuRef,
-    slot: "submenu",
-    id: "stocks-size-submenu"
-  }, ["small", "medium", "large"].map(size => /*#__PURE__*/external_React_default().createElement("panel-item", {
-    key: size,
-    type: "checkbox",
-    checked: widgetSize === size || undefined,
-    "data-size": size,
-    "data-l10n-id": `newtab-widget-size-${size}`
-  })))), /*#__PURE__*/external_React_default().createElement(MoveSubmenu, {
-    widgetId: "stocks",
-    widgetEnabledMap: widgetEnabledMap
-  }), /*#__PURE__*/external_React_default().createElement("panel-item", {
-    "data-l10n-id": "newtab-stocks-menu-hide",
-    onClick: handleStocksHide
-  }), /*#__PURE__*/external_React_default().createElement("panel-item", {
-    "data-l10n-id": "newtab-stocks-menu-learn-more",
-    onClick: handleLearnMore
-  })))), /*#__PURE__*/external_React_default().createElement("div", {
-    className: "stocks-body"
-  }));
-}
-
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/WidgetsComponentRegistry.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 
 
 
@@ -21566,8 +21380,7 @@ const WIDGET_ROW_COMPONENTS = {
   sportsWidget: SportsWidget_SportsWidget,
   clocks: ClocksRowWidget,
   privacy: Privacy,
-  crossword: Crossword,
-  stocks: Stocks
+  crossword: Crossword
 };
 const WIDGET_SIDEBAR_COMPONENTS = {
   weather: WeatherSidebarWidget
@@ -21978,8 +21791,7 @@ function Widgets() {
     sportsWidget: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "sportsWidget"), prefs, widgetsEnabled),
     clocks: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "clocks"), prefs, widgetsEnabled),
     privacy: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "privacy"), prefs, widgetsEnabled),
-    crossword: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "crossword"), prefs, widgetsEnabled),
-    stocks: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "stocks"), prefs, widgetsEnabled)
+    crossword: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "crossword"), prefs, widgetsEnabled)
   };
   const widgetOrder = resolveWidgetOrder(prefs);
   const {
@@ -23983,7 +23795,6 @@ function WidgetsManagementPanel({
   mayHaveClocksWidget,
   mayHavePrivacyWidget,
   mayHaveCrosswordWidget,
-  mayHaveStocksWidget,
   setPref
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
@@ -24038,9 +23849,6 @@ function WidgetsManagementPanel({
         case "WIDGET_CROSSWORD":
           widgetName = "crossword";
           break;
-        case "WIDGET_STOCKS":
-          widgetName = "stocks";
-          break;
       }
       if (widgetName) {
         const widget = WIDGET_REGISTRY.find(w => w.telemetryName === widgetName);
@@ -24067,8 +23875,7 @@ function WidgetsManagementPanel({
     sportsWidgetEnabled,
     clocksEnabled,
     privacyEnabled,
-    crosswordEnabled,
-    stocksEnabled
+    crosswordEnabled
   } = enabledWidgets;
   const isRTL = typeof document !== "undefined" && document.dir === "rtl";
   const arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
@@ -24172,16 +23979,6 @@ function WidgetsManagementPanel({
     "data-preference": "widgets.crossword.enabled",
     "data-event-source": "WIDGET_CROSSWORD",
     label: "Crossword"
-  })), mayHaveStocksWidget && /*#__PURE__*/external_React_default().createElement("div", {
-    id: "stocks-widget-section",
-    className: "section"
-  }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
-    id: "stocks-toggle",
-    pressed: stocksEnabled || null,
-    ontoggle: onToggleWidget,
-    "data-preference": "widgets.stocks.enabled",
-    "data-event-source": "WIDGET_STOCKS",
-    "data-l10n-id": "newtab-custom-widget-stocks-toggle"
   })))))));
 }
 
@@ -24241,9 +24038,6 @@ class ContentSection extends (external_React_default()).PureComponent {
           break;
         case "WIDGET_CROSSWORD":
           widgetName = "crossword";
-          break;
-        case "WIDGET_STOCKS":
-          widgetName = "stocks";
           break;
       }
       if (widgetName) {
@@ -24348,7 +24142,6 @@ class ContentSection extends (external_React_default()).PureComponent {
       mayHaveClocksWidget,
       mayHavePrivacyWidget,
       mayHaveCrosswordWidget,
-      mayHaveStocksWidget,
       mayHaveWeatherForecast,
       openPreferences,
       wallpapersUserEnabled,
@@ -24379,8 +24172,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       listsEnabled,
       clocksEnabled,
       privacyEnabled,
-      crosswordEnabled,
-      stocksEnabled
+      crosswordEnabled
     } = enabledWidgets;
 
     // @nova-cleanup(remove-conditional): Remove novaEnabled check and newtab-custom-stories-toggle, default to newtab-recommended-stories-toggle
@@ -24478,16 +24270,6 @@ class ContentSection extends (external_React_default()).PureComponent {
       "data-preference": "widgets.crossword.enabled",
       "data-event-source": "WIDGET_CROSSWORD",
       label: "Crossword"
-    })), mayHaveStocksWidget && /*#__PURE__*/external_React_default().createElement("div", {
-      id: "stocks-widget-section",
-      className: "section"
-    }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
-      id: "stocks-toggle",
-      pressed: stocksEnabled || null,
-      ontoggle: this.onPreferenceSelect,
-      "data-preference": "widgets.stocks.enabled",
-      "data-event-source": "WIDGET_STOCKS",
-      "data-l10n-id": "newtab-custom-widget-stocks-toggle"
     })))), /*#__PURE__*/external_React_default().createElement("div", {
       className: "settings-toggles"
     },
@@ -24579,7 +24361,6 @@ class ContentSection extends (external_React_default()).PureComponent {
       mayHaveClocksWidget: mayHaveClocksWidget,
       mayHavePrivacyWidget: mayHavePrivacyWidget,
       mayHaveCrosswordWidget: mayHaveCrosswordWidget,
-      mayHaveStocksWidget: mayHaveStocksWidget,
       mayHaveWeatherForecast: mayHaveWeatherForecast,
       weatherDisplay: weatherDisplay,
       setPref: setPref,
@@ -24805,7 +24586,6 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       mayHaveClocksWidget: this.props.mayHaveClocksWidget,
       mayHavePrivacyWidget: this.props.mayHavePrivacyWidget,
       mayHaveCrosswordWidget: this.props.mayHaveCrosswordWidget,
-      mayHaveStocksWidget: this.props.mayHaveStocksWidget,
       dispatch: this.props.dispatch,
       onSubpanelToggle: this.onSubpanelToggle,
       toggleSectionsMgmtPanel: this.props.toggleSectionsMgmtPanel,
@@ -28087,7 +27867,6 @@ class BaseContent extends (external_React_default()).PureComponent {
     const mayHaveSportsWidget = widgetVisibleById("sportsWidget");
     const mayHavePrivacyWidget = widgetVisibleById("privacy");
     const mayHaveCrosswordWidget = widgetVisibleById("crossword");
-    const mayHaveStocksWidget = widgetVisibleById("stocks");
 
     // These prefs set the initial values on the Customize panel toggle switches
     const enabledWidgets = {
@@ -28098,7 +27877,6 @@ class BaseContent extends (external_React_default()).PureComponent {
       sportsWidgetEnabled: prefs["widgets.sportsWidget.enabled"],
       privacyEnabled: prefs["widgets.privacy.enabled"],
       crosswordEnabled: prefs["widgets.crossword.enabled"],
-      stocksEnabled: prefs["widgets.stocks.enabled"],
       widgetsMaximized: prefs["widgets.maximized"],
       widgetsMayBeMaximized: prefs["widgets.system.maximized"]
     };
@@ -28234,7 +28012,6 @@ class BaseContent extends (external_React_default()).PureComponent {
         mayHaveClocksWidget: mayHaveClocksWidget,
         mayHavePrivacyWidget: mayHavePrivacyWidget,
         mayHaveCrosswordWidget: mayHaveCrosswordWidget,
-        mayHaveStocksWidget: mayHaveStocksWidget,
         mayHaveWeatherForecast: prefs["widgets.system.weatherForecast.enabled"],
         weatherDisplay: prefs["weather.display"],
         showing: customizeMenuVisible,
@@ -28327,7 +28104,6 @@ class BaseContent extends (external_React_default()).PureComponent {
       mayHaveClocksWidget: mayHaveClocksWidget,
       mayHavePrivacyWidget: mayHavePrivacyWidget,
       mayHaveCrosswordWidget: mayHaveCrosswordWidget,
-      mayHaveStocksWidget: mayHaveStocksWidget,
       mayHaveWeatherForecast: prefs["widgets.system.weatherForecast.enabled"],
       weatherDisplay: prefs["weather.display"],
       showing: customizeMenuVisible,
