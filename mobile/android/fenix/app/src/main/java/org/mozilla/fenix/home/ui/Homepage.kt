@@ -41,9 +41,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mozilla.components.feature.top.sites.TopSite
+import mozilla.components.support.ktx.android.net.hostWithoutCommonPrefixes
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.History
 import org.mozilla.fenix.GleanMetrics.HomeBookmarks
@@ -385,10 +387,15 @@ internal fun Homepage(
                                     val popularSites by produceState(
                                         initialValue = emptyList(),
                                         key1 = merinoManifestProvider,
+                                        key2 = topSites,
                                     ) {
                                         value = withContext(Dispatchers.IO) {
-                                            merinoManifestProvider.getTopDomains(limit = POPULAR_SITES_TO_SHOW)
-                                                .map { it.toPopularSite() }
+                                            merinoManifestProvider.getTopDomains(
+                                                limit = POPULAR_SITES_TO_SHOW,
+                                                excludedDomains = topSites.mapNotNullTo(mutableSetOf()) {
+                                                    it.url.toUri().hostWithoutCommonPrefixes
+                                                },
+                                            ).map { it.toPopularSite() }
                                         }
                                     }
 
