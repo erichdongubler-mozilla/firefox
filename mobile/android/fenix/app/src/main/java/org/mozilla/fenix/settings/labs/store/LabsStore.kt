@@ -26,6 +26,7 @@ class LabsStore(
 private fun reducer(state: LabsState, action: LabsAction): LabsState {
     return when (action) {
         is LabsAction.InitAction,
+        is LabsAction.RefreshLabs,
         is LabsAction.RestartApplication,
         is LabsAction.ShareFeedbackClicked,
             -> state

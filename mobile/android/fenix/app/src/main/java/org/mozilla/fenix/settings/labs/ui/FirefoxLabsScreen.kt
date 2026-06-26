@@ -177,8 +177,17 @@ private fun LabsItemRow(
         checked = item.enrolled,
         description = item.description,
         maxDescriptionLines = Int.MAX_VALUE,
+        enabled = item.available,
         showSwitchAfter = true,
         belowListItemContent = {
+            if (!item.available) {
+                Text(
+                    text = stringResource(R.string.firefox_labs_feature_conflict),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = FirefoxTheme.typography.body2,
+                )
+            }
+
             item.feedbackUrl?.let { url ->
                 LabsShareFeedbackLink(
                     item = item,
@@ -442,6 +451,14 @@ private class FirefoxLabsScreenPreviewProvider : ThemedValueProvider<List<LabsIt
                 feedbackUrl = "https://connect.mozilla.org/",
                 requiresRestart = true,
             ),
+            LabsItem(
+                slug = "preview-lab-three",
+                title = "Preview lab three",
+                description = "Sample Labs item three for previews.",
+                enrolled = false,
+                requiresRestart = true,
+                available = false,
+            ),
         ),
         emptyList(),
     ),
@@ -461,6 +478,28 @@ private fun FirefoxLabsScreenPreview(
                 ),
             ),
             onNavigationIconClick = {},
+            onShareFeedbackClick = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun LabsItemRowUnavailablePreview(
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
+        LabsItemRow(
+            item = LabsItem(
+                slug = "preview-lab-unavailable",
+                title = "Preview lab",
+                description = "Sample deactivated Labs item for previews.",
+                enrolled = false,
+                requiresRestart = true,
+                feedbackUrl = "https://connect.mozilla.org/",
+                available = false,
+            ),
+            onToggle = {},
             onShareFeedbackClick = {},
         )
     }

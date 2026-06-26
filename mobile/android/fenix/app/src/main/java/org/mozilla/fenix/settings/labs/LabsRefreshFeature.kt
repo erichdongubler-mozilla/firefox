@@ -33,6 +33,6 @@ class LabsRefreshFeature(
     }
 
     override fun onUpdatesApplied(updated: List<EnrolledExperiment>) {
-        store.dispatch(LabsAction.InitAction)
+        store.dispatch(LabsAction.RefreshLabs)
     }
 }

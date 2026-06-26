@@ -4,6 +4,8 @@
 
 package org.mozilla.fenix.settings.labs.ui
 
+import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -35,6 +37,7 @@ class FirefoxLabsScreenTest {
         enrolled: Boolean = false,
         requiresRestart: Boolean = true,
         feedbackUrl: String? = null,
+        available: Boolean = true,
     ) = LabsItem(
         slug = "test-lab",
         title = TITLE,
@@ -42,6 +45,7 @@ class FirefoxLabsScreenTest {
         enrolled = enrolled,
         requiresRestart = requiresRestart,
         feedbackUrl = feedbackUrl,
+        available = available,
     )
 
     private companion object {
@@ -148,6 +152,58 @@ class FirefoxLabsScreenTest {
                 TITLE,
             ),
         ).assertExists()
+    }
+
+    @Test
+    fun `WHEN a labs item is unavailable THEN its toggle is deactivated and the helper text is shown`() {
+        val store = LabsStore(
+            initialState = LabsState(
+                labsItems = listOf(testItem(available = false)),
+                dialogState = DialogState.Closed,
+            ),
+        )
+
+        composeTestRule.setContent {
+            FirefoxTheme(theme = Theme.Light) {
+                FirefoxLabsScreen(
+                    store = store,
+                    onNavigationIconClick = {},
+                    onShareFeedbackClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(TITLE).assertHasNoClickAction()
+        composeTestRule.onNodeWithText(
+            testContext.getString(R.string.firefox_labs_feature_conflict),
+            useUnmergedTree = true,
+        ).assertExists()
+    }
+
+    @Test
+    fun `WHEN a labs item is available THEN the helper text is not shown`() {
+        val store = LabsStore(
+            initialState = LabsState(
+                labsItems = listOf(testItem(available = true)),
+                dialogState = DialogState.Closed,
+            ),
+        )
+
+        composeTestRule.setContent {
+            FirefoxTheme(theme = Theme.Light) {
+                FirefoxLabsScreen(
+                    store = store,
+                    onNavigationIconClick = {},
+                    onShareFeedbackClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(TITLE).assertHasClickAction()
+        composeTestRule.onNodeWithText(
+            testContext.getString(R.string.firefox_labs_feature_conflict),
+            useUnmergedTree = true,
+        ).assertDoesNotExist()
     }
 
     @Test

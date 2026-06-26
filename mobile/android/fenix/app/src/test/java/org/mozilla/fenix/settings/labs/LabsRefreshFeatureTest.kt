@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.runTest
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,7 +48,7 @@ class LabsRefreshFeatureTest {
     }
 
     @Test
-    fun `WHEN Nimbus applies updates THEN labs are refetched and the refreshed list is dispatched`() = runTest(UnconfinedTestDispatcher()) {
+    fun `WHEN Nimbus applies updates THEN labs are refreshed AND a dropped lab is deactivated`() = runTest(UnconfinedTestDispatcher()) {
         var labs: List<FirefoxLabsMetadata> = listOf(
             FirefoxLabsMetadata(
                 slug = "lab-1",
@@ -82,9 +83,13 @@ class LabsRefreshFeatureTest {
         // Simulate Nimbus forcing an unenroll mid-session, then deliver the observation event.
         feature.onUpdatesApplied(emptyList())
 
-        captureMiddleware.assertFirstAction(LabsAction.InitAction::class)
+        captureMiddleware.assertFirstAction(LabsAction.RefreshLabs::class)
         captureMiddleware.assertLastAction(LabsAction.UpdateLabsItems::class) { action ->
-            assertEquals(emptyList<LabsItem>(), action.items)
+            assertEquals(1, action.items.size)
+            val item = action.items.first()
+            assertEquals("lab-1", item.slug)
+            assertFalse(item.enrolled)
+            assertFalse(item.available)
         }
     }
 }

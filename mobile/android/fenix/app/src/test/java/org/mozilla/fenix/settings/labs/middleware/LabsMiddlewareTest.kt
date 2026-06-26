@@ -298,6 +298,102 @@ class LabsMiddlewareTest {
     }
 
     @Test
+    fun `WHEN ToggleLabsItem enroll succeeds AND a sibling Lab is no longer available THEN the sibling is kept but deactivated`() = runTest(UnconfinedTestDispatcher()) {
+        // Both Labs are available when the screen loads.
+        labs = listOf(
+            firefoxLabsMetadata(
+                slug = "lab-1",
+                titleStringId = RESOURCE_NAME_TITLE,
+                descriptionStringId = RESOURCE_NAME_DESCRIPTION,
+            ),
+            firefoxLabsMetadata(
+                slug = "lab-2",
+                titleStringId = RESOURCE_NAME_TITLE,
+                descriptionStringId = RESOURCE_NAME_DESCRIPTION,
+            ),
+        )
+        val captureMiddleware = CaptureActionsMiddleware<LabsState, LabsAction>()
+        val store = createStore(captureMiddleware = captureMiddleware, scope = backgroundScope)
+
+        // After enrolling lab-1, Nimbus only offers lab-1 (now enrolled). In this scenario, lab-2 shares its feature
+        // and so drops out of the available list.
+        labs = listOf(
+            firefoxLabsMetadata(
+                slug = "lab-1",
+                titleStringId = RESOURCE_NAME_TITLE,
+                descriptionStringId = RESOURCE_NAME_DESCRIPTION,
+                enrolled = true,
+            ),
+        )
+        captureMiddleware.reset()
+
+        store.dispatch(LabsAction.ToggleLabsItem(labsItem(slug = "lab-1", enrolled = false)))
+
+        captureMiddleware.assertLastAction(LabsAction.UpdateLabsItems::class) { action ->
+            assertEquals(2, action.items.size)
+            val refreshed = action.items.first { it.slug == "lab-1" }
+            assertTrue(refreshed.enrolled)
+            assertTrue(refreshed.available)
+            val sibling = action.items.first { it.slug == "lab-2" }
+            assertFalse(sibling.enrolled)
+            assertFalse(sibling.available)
+        }
+    }
+
+    @Test
+    fun `WHEN ToggleLabsItem unenroll succeeds AND a deactivated Lab is available again THEN it is reactivated`() = runTest(UnconfinedTestDispatcher()) {
+        // Both Labs are available when the screen loads.
+        labs = listOf(
+            firefoxLabsMetadata(
+                slug = "lab-1",
+                titleStringId = RESOURCE_NAME_TITLE,
+                descriptionStringId = RESOURCE_NAME_DESCRIPTION,
+            ),
+            firefoxLabsMetadata(
+                slug = "lab-2",
+                titleStringId = RESOURCE_NAME_TITLE,
+                descriptionStringId = RESOURCE_NAME_DESCRIPTION,
+            ),
+        )
+        val captureMiddleware = CaptureActionsMiddleware<LabsState, LabsAction>()
+        val store = createStore(captureMiddleware = captureMiddleware, scope = backgroundScope)
+
+        // Enrolling lab-1 deactivates lab-2 as a conflict.
+        labs = listOf(
+            firefoxLabsMetadata(
+                slug = "lab-1",
+                titleStringId = RESOURCE_NAME_TITLE,
+                descriptionStringId = RESOURCE_NAME_DESCRIPTION,
+                enrolled = true,
+            ),
+        )
+        store.dispatch(LabsAction.ToggleLabsItem(labsItem(slug = "lab-1", enrolled = false)))
+        assertFalse(store.state.labsItems.any { it.slug == "lab-2" && it.available })
+
+        // Unenrolling lab-1 frees the shared feature, so both Labs are available again.
+        labs = listOf(
+            firefoxLabsMetadata(
+                slug = "lab-1",
+                titleStringId = RESOURCE_NAME_TITLE,
+                descriptionStringId = RESOURCE_NAME_DESCRIPTION,
+            ),
+            firefoxLabsMetadata(
+                slug = "lab-2",
+                titleStringId = RESOURCE_NAME_TITLE,
+                descriptionStringId = RESOURCE_NAME_DESCRIPTION,
+            ),
+        )
+        captureMiddleware.reset()
+
+        store.dispatch(LabsAction.ToggleLabsItem(labsItem(slug = "lab-1", enrolled = true)))
+
+        captureMiddleware.assertLastAction(LabsAction.UpdateLabsItems::class) { action ->
+            assertEquals(2, action.items.size)
+            assertTrue(action.items.all { it.available })
+        }
+    }
+
+    @Test
     fun `WHEN ShareFeedbackClicked is dispatched THEN onOpenFeedback is called with the item feedback URL`() = runTest(UnconfinedTestDispatcher()) {
         val item = labsItem(feedbackUrl = "https://connect.mozilla.org/")
         val store = createStore(scope = backgroundScope)

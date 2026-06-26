@@ -15,6 +15,9 @@ package org.mozilla.fenix.settings.labs
  * @property requiresRestart Whether toggling this item requires an application
  * restart for the change to take effect.
  * @property feedbackUrl An optional URL for sharing feedback about this item.
+ * @property available Whether this item can be enabled. An item becomes unavailable when another
+ * enabled Labs item already controls the same feature, or if it stops being offered after the
+ * initial fetch.
  */
 data class LabsItem(
     val slug: String,
@@ -23,4 +26,5 @@ data class LabsItem(
     val enrolled: Boolean,
     val requiresRestart: Boolean,
     val feedbackUrl: String? = null,
+    val available: Boolean = true,
 )

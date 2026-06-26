@@ -332,6 +332,8 @@
     <string name="firefox_labs_test_lab_title">Add a star to settings</string>
     <!-- The description of the "Add a star to settings" feature in the Firefox Labs screen. This string is for testing purposes only. -->
     <string name="firefox_labs_test_lab_description">Appends a star to the settings toolbar title. (Experiment is for testing purposes only.)</string>
+    <!-- Helper text shown beneath a deactivated Firefox Labs feature when it can no longer be turned on because another enabled feature is using the same settings. -->
+    <string name="firefox_labs_feature_conflict">Conflicts with an enabled Lab.</string>
 
     <!-- Debug drawer tab group tools -->
     <!-- The title of the debug drawer tab to help populate tab groups-->

@@ -56,6 +56,7 @@ class LabsMiddleware(
     ) {
         when (action) {
             is LabsAction.InitAction -> initialize(store = store)
+            is LabsAction.RefreshLabs -> refreshLabs(store = store)
             is LabsAction.RestartApplication -> restartApplication()
             is LabsAction.RestoreDefaults -> restoreDefaults(store = store)
             is LabsAction.ToggleLabsItem -> toggleLabsItem(
@@ -71,22 +72,10 @@ class LabsMiddleware(
         next(action)
     }
 
-    @Suppress("TooGenericExceptionCaught")
     private fun initialize(
         store: Store<LabsState, LabsAction>,
     ) = scope.launch {
-        val items = try {
-            nimbusSdk.getAvailableFirefoxLabs().await()
-                .mapNotNull { it.toLabsItem(context) }
-        } catch (e: Exception) {
-            val message = "Failed to fetch Firefox Labs from Nimbus"
-            logger.warn(message, e)
-            crashReporter?.recordCrashBreadcrumb(Breadcrumb(message = message))
-            crashReporter?.submitCaughtException(e)
-            emptyList()
-        }
-
-        store.dispatch(LabsAction.UpdateLabsItems(items))
+        store.dispatch(LabsAction.UpdateLabsItems(fetchLabs()))
     }
 
     private fun toggleLabsItem(
@@ -96,9 +85,13 @@ class LabsMiddleware(
         when (setItemEnrolled(slug = item.slug, enrolled = !item.enrolled)) {
             EnrollmentResult.Success -> if (item.requiresRestart) {
                 store.dispatch(LabsAction.RestartApplication)
+            } else {
+                // Toggling a Lab can make sibling Labs that share an underlying feature unavailable. Refetch
+                // so those items are deactivated in place.
+                refreshLabs(store = store)
             }
             // The toggle didn't take effect in Nimbus, so we need to refetch the state.
-            EnrollmentResult.Failed -> initialize(store = store)
+            EnrollmentResult.Failed -> refreshLabs(store = store)
             // The Labs item was removed as an option after we fetched the store, just remove it as an option.
             EnrollmentResult.Invalid -> store.dispatch(LabsAction.RemoveLabsItem(slug = item.slug))
         }
@@ -155,5 +148,75 @@ class LabsMiddleware(
             commit()
         }
         onRestart()
+    }
+
+    /**
+     * Fetches the currently available Firefox Labs from Nimbus, sorted by slug.
+     *
+     * @return The available Labs as [LabsItem]s, or an empty list if the fetch fails.
+     */
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun fetchLabs(): List<LabsItem> {
+        return try {
+            nimbusSdk.getAvailableFirefoxLabs().await()
+                .mapNotNull { it.toLabsItem(context) }
+                .sortedBy { it.slug }
+        } catch (e: Exception) {
+            val message = "Failed to fetch Firefox Labs from Nimbus"
+            logger.warn(message, e)
+            crashReporter?.recordCrashBreadcrumb(Breadcrumb(message = message))
+            crashReporter?.submitCaughtException(e)
+            emptyList()
+        }
+    }
+
+    /**
+     * Refetches Labs and reconciles them with what is on screen so Labs that became unavailable
+     * are deactivated in place rather than disappearing. Will set the items on the store.
+     *
+     * @param store The [Store] whose displayed Labs are refreshed and updated.
+     */
+    private fun refreshLabs(
+        store: Store<LabsState, LabsAction>,
+    ) = scope.launch {
+        val latest = fetchLabs()
+        val merged = mergeLabsConflicts(
+            displayed = store.state.labsItems,
+            latest = latest,
+        )
+        store.dispatch(LabsAction.UpdateLabsItems(merged))
+    }
+
+    /**
+     * Reconciles the currently [displayed] Labs with the freshly fetched [latest] ones so that
+     * Labs no longer on offer are deactivated in place.
+     *
+     * @param displayed The currently visible Labs on screen.
+     * @param latest The newest freshly fetched Labs from Nimbus.
+     *
+     * @return A list of Labs, sorted by slug, where each displayed item shows its latest state, or
+     * is deactivated if it is no longer offered, plus any Labs that have newly become available.
+     */
+    private fun mergeLabsConflicts(
+        displayed: List<LabsItem>,
+        latest: List<LabsItem>,
+    ): List<LabsItem> {
+        val latestBySlug = latest.associateBy { it.slug }
+
+        // Show the latest version of each Lab still on offer, and deactivate the rest as conflicts.
+        val reconciled = displayed.map { displayedItem ->
+            val latestVersion = latestBySlug[displayedItem.slug]
+            if (latestVersion == null) {
+                displayedItem.copy(enrolled = false, available = false)
+            } else {
+                latestVersion
+            }
+        }
+
+        // Append any Labs that became available since the screen was last loaded.
+        val displayedSlugs = displayed.map { it.slug }.toSet()
+        val newlyAvailable = latest.filter { it.slug !in displayedSlugs }
+
+        return (reconciled + newlyAvailable).sortedBy { it.slug }
     }
 }
