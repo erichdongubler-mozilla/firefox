@@ -17,9 +17,7 @@
 namespace content_analysis {
 namespace sdk {
 
-// Increased to a larger size to help with issues with analyzing a lot of
-// files at once - see bug 1948884.
-const DWORD kBufferSize = 65536;
+const DWORD kBufferSize = 4096;
 
 // Use the same default timeout value (50ms) as CreateNamedPipeA(), expressed
 // in 100ns intervals.
@@ -193,6 +191,8 @@ std::vector<char> ReadNextMessageFromPipe(
         final_size = 0;
         break;
       }
+
+      final_size += read;
 
       // Reaching here means the error is "more data", that is, the buffer
       // specified in ReadFile() was too small to contain the entire response
@@ -420,11 +420,7 @@ DWORD ClientWin::ConnectToPipe(const std::string& pipename, HANDLE* handle) {
 
 void ClientWin::Shutdown() {
   if (hPipe_ != INVALID_HANDLE_VALUE) {
-    // TODO: This trips the LateWriteObserver.  We could move this earlier
-    // (before the LateWriteObserver is created) or just remove it, although
-    // the later could mean an ACK message is not processed by the agent
-    // in time.
-    // FlushFileBuffers(hPipe_);
+    FlushFileBuffers(hPipe_);
     CloseHandle(hPipe_);
     hPipe_ = INVALID_HANDLE_VALUE;
   }
