@@ -69,8 +69,11 @@ class DefaultIPProtectionPromptRepository(
         get() = settings.hasAlreadyUsedVpn
 
     override fun canShowIPProtectionPrompt(currentTimeMillis: Long): Boolean =
-        settings.isIPProtectionAvailable && hasCompletedOnboardingAtLeastAWeekAgo(currentTimeMillis) &&
-            !isShowingPrompt && !hasShownPrompt && !hasAlreadyUsedIPProtection
+        settings.isIPProtectionAvailable &&
+            hasCompletedOnboardingAtLeastAWeekAgo(currentTimeMillis) &&
+            !isShowingPrompt &&
+            !hasShownPrompt &&
+            !hasAlreadyUsedIPProtection
 
     private fun hasCompletedOnboardingAtLeastAWeekAgo(currentTimeMillis: Long): Boolean =
         currentTimeMillis - settings.onboardingCompletedTimestamp >= ONE_WEEK_MS

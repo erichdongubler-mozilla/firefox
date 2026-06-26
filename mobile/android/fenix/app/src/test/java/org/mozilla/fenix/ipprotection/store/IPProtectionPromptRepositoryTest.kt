@@ -42,7 +42,6 @@ class IPProtectionPromptRepositoryTest {
         repository.isShowingPrompt = false
 
         assertTrue(settings.isIPProtectionAvailable)
-
         assertTrue(repository.canShowIPProtectionPrompt(CURRENT_TIME_MILLIS))
     }
 
@@ -52,7 +51,6 @@ class IPProtectionPromptRepositoryTest {
         repository.isShowingPrompt = true
 
         assertTrue(settings.isIPProtectionAvailable)
-
         assertFalse(repository.canShowIPProtectionPrompt(CURRENT_TIME_MILLIS))
     }
 
@@ -86,7 +84,6 @@ class IPProtectionPromptRepositoryTest {
         repository.isShowingPrompt = false
 
         assertTrue(settings.isIPProtectionAvailable)
-
         assertFalse(repository.canShowIPProtectionPrompt(CURRENT_TIME_MILLIS))
     }
 
@@ -97,7 +94,6 @@ class IPProtectionPromptRepositoryTest {
         repository.isShowingPrompt = false
 
         assertTrue(settings.isIPProtectionAvailable)
-
         assertTrue(repository.canShowIPProtectionPrompt(CURRENT_TIME_MILLIS))
     }
 
@@ -109,7 +105,6 @@ class IPProtectionPromptRepositoryTest {
         repository.isShowingPrompt = false
 
         assertTrue(settings.isIPProtectionAvailable)
-
         assertTrue(repository.canShowIPProtectionPrompt(CURRENT_TIME_MILLIS))
     }
 }

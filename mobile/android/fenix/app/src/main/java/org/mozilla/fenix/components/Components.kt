@@ -89,7 +89,6 @@ import org.mozilla.fenix.home.sports.SportsWidgetMiddleware
 import org.mozilla.fenix.home.sports.WorldCupMatchesRepository
 import org.mozilla.fenix.home.sports.client.AppServicesWorldCupMatchesClient
 import org.mozilla.fenix.home.sports.client.mockWorldCupBaseHost
-import org.mozilla.fenix.ipprotection.IPProtectionManager
 import org.mozilla.fenix.ipprotection.store.DefaultIPProtectionPromptRepository
 import org.mozilla.fenix.messaging.state.MessagingMiddleware
 import org.mozilla.fenix.nimbus.FxNimbus
@@ -471,10 +470,6 @@ class Components(private val context: Context) {
 
     val ipProtectionPromptRepository by lazyMonitored {
         DefaultIPProtectionPromptRepository(settings)
-    }
-
-    val ipProtectionManager by lazyMonitored {
-        IPProtectionManager(ipProtectionPromptRepository)
     }
 
     val ads by lazyMonitored {
