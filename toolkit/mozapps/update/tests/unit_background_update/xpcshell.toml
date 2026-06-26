@@ -18,9 +18,6 @@ support-files = [
 
 ["test_backgroundupdate_exitcodes.js"]
 run-sequentially = ["true"] # perma-fail in parallel
-skip-if = [
-  "os == 'win' && arch == 'x86_64' && opt", # Bug 1760099 - perma-fail with the profiler enabled by default
-]
 
 ["test_backgroundupdate_glean.js"]
 

@@ -35,15 +35,7 @@ TASK_CONFIG_TESTS = {
         ),
         (
             ["--profiler"],
-            {
-                "try_task_config": {
-                    "env": {
-                        "MOZ_PROFILER_STARTUP": "1",
-                        "MOZ_PROFILER_STARTUP_FEATURES": "default",
-                        "MOZ_PROFILER_STARTUP_INTERVAL": "1",
-                    }
-                }
-            },
+            {"try_task_config": {"env": {"MOZ_PROFILER_STARTUP": "1"}}},
         ),
         (
             ["--record"],
@@ -53,12 +45,7 @@ TASK_CONFIG_TESTS = {
             ["--profiler", "--record"],
             {
                 "try_task_config": {
-                    "env": {
-                        "MOZ_PROFILER_STARTUP": "1",
-                        "MOZ_PROFILER_STARTUP_FEATURES": "default",
-                        "MOZ_PROFILER_STARTUP_INTERVAL": "1",
-                        "MOZ_RECORD_TEST": "1",
-                    }
+                    "env": {"MOZ_PROFILER_STARTUP": "1", "MOZ_RECORD_TEST": "1"}
                 }
             },
         ),

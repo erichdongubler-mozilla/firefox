@@ -300,8 +300,7 @@ class Environment(TryConfig):
             ["--profiler"],
             {
                 "action": "store_true",
-                "help": "Enable the profiler with the normal feature set, "
-                "overriding the low-overhead defaults used by the test harness.",
+                "help": "Enable the profiler by setting MOZ_PROFILER_STARTUP=1.",
             },
         ],
     ]
@@ -313,11 +312,6 @@ class Environment(TryConfig):
             env.append("MOZ_RECORD_TEST=1")
         if profiler:
             env.append("MOZ_PROFILER_STARTUP=1")
-            # Override the low-overhead feature set and sampling interval
-            # that the test harness enables by default, so pushes with
-            # --profiler get a normally configured profiler.
-            env.append("MOZ_PROFILER_STARTUP_FEATURES=default")
-            env.append("MOZ_PROFILER_STARTUP_INTERVAL=1")
         if not env:
             return
         return {

@@ -967,14 +967,6 @@ class XPCShellTestThread(Thread):
                     self.profileDir, "profile_" + os.path.basename(name) + ".json"
                 )
                 self.env["MOZ_PROFILER_SHUTDOWN"] = profile_path
-                # The user explicitly asked for a profile, so use the normal
-                # profiler feature set and sampling interval instead of the
-                # low-overhead defaults applied in buildCoreEnvironment,
-                # unless they have already picked values themselves.
-                if "MOZ_PROFILER_STARTUP_FEATURES" not in os.environ:
-                    self.env["MOZ_PROFILER_STARTUP_FEATURES"] = "default"
-                if "MOZ_PROFILER_STARTUP_INTERVAL" not in os.environ:
-                    self.env.pop("MOZ_PROFILER_STARTUP_INTERVAL", None)
 
         if (
             self.test_object.get("headless", "true" if self.headless else None)
@@ -1470,33 +1462,6 @@ class XPCShellTests:
             self.env["MOZ_FORCE_USE_SOCKET_PROCESS"] = "1"
         else:
             self.env["MOZ_DISABLE_SOCKET_PROCESS"] = "1"
-
-        # Self-tests run many sub-processes whose tests fail on purpose, so
-        # profiling them only wastes overhead and uploads useless artifacts.
-        # Strip any startup-profiling request inherited from the environment
-        # (e.g. a `mach try fuzzy --profiler` push) and don't enable it by
-        # default.
-        if self.selfTest:
-            self.env.pop("MOZ_PROFILER_STARTUP", None)
-            return
-
-        # Enable the profiler by default with a feature set chosen to keep
-        # overhead low while still producing useful profiles: the platform
-        # defaults minus `stackwalk` and `fileioall` (both too expensive),
-        # plus `ipcmessages` and `memory` so IPC and memory tracks show up.
-        #
-        # The profiler is left disabled under ThreadSanitizer, where it causes
-        # too many failures.
-        if not self.mozInfo.get("tsan"):
-            self.env.setdefault("MOZ_PROFILER_STARTUP", "1")
-            self.env.setdefault(
-                "MOZ_PROFILER_STARTUP_FEATURES",
-                "java,js,cpu,screenshots,processcpu,ipcmessages,memory",
-            )
-
-            # Set the sampling interval to 10ms to reduce the sampling overhead
-            # and avoid triggering the timer resolution change on Windows.
-            self.env.setdefault("MOZ_PROFILER_STARTUP_INTERVAL", "10")
 
     def buildEnvironment(self):
         """
