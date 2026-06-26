@@ -5055,23 +5055,27 @@ void MacroAssemblerRiscv64::ma_push(Register r) {
 
 void MacroAssemblerRiscv64::ma_mul32TestOverflow(Register rd, Register rj,
                                                  Register rk, Label* overflow) {
+  // Perform a 64-bit multiplication.
+  mul(rd, rj, rk);
+
+  // Ensure the 64-bit result is identical to its 32-bit value.
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   MOZ_ASSERT(rd != scratch);
 
-  mul(rd, rj, rk);
   sext_w(scratch, rd);
   ma_b(scratch, rd, overflow, Assembler::NotEqual);
 }
 void MacroAssemblerRiscv64::ma_mul32TestOverflow(Register rd, Register rj,
                                                  Imm32 imm, Label* overflow) {
+  // Perform a 64-bit multiplication.
+  ma_mul64(rd, rj, imm);
+
+  // Ensure the 64-bit result is identical to its 32-bit value.
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
-  MOZ_ASSERT(rd != scratch && rj != scratch);
+  MOZ_ASSERT(rd != scratch);
 
-  ma_li(scratch, imm);
-
-  mul(rd, rj, scratch);
   sext_w(scratch, rd);
   ma_b(scratch, rd, overflow, Assembler::NotEqual);
 }
