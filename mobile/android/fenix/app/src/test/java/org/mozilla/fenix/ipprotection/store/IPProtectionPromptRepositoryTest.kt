@@ -32,7 +32,7 @@ class IPProtectionPromptRepositoryTest {
     @Before
     fun setup() {
         settings = Settings(testContext)
-        settings.onboardingCompletedTimestamp = EXACTLY_ONE_WEEK_AGO
+        settings.onboardingCompletedTimestamp = MORE_THAN_ONE_WEEK_AGO
         repository = DefaultIPProtectionPromptRepository(settings)
     }
 
@@ -88,13 +88,14 @@ class IPProtectionPromptRepositoryTest {
     }
 
     @Test
-    fun `WHEN onboarding was completed exactly a week ago THEN show the prompt`() {
+    fun `WHEN onboarding was completed exactly a week ago THEN do not show the prompt`() {
+        settings.onboardingCompletedTimestamp = EXACTLY_ONE_WEEK_AGO
         repository = DefaultIPProtectionPromptRepository(settings)
         settings.isIPProtectionEnabled = true
         repository.isShowingPrompt = false
 
         assertTrue(settings.isIPProtectionAvailable)
-        assertTrue(repository.canShowIPProtectionPrompt(CURRENT_TIME_MILLIS))
+        assertFalse(repository.canShowIPProtectionPrompt(CURRENT_TIME_MILLIS))
     }
 
     @Test
