@@ -19,3 +19,14 @@ body {
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--ai-background-color);
 }
+
+#tabbrowser-tabpanels > :not(.split-view-panel) .browserContainer {
+  --chrome-box-shadow: light-dark(color-mix(in srgb, var(--color-violet-60) 15%, transparent), color-mix(in srgb, var(--color-violet-40) 15%, transparent));
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  box-shadow: 0 0 14px 0 var(--chrome-box-shadow);
+
+  :root[aiwindow-immersive-view] & {
+    --chrome-content-separator-color: transparent;
+    box-shadow: none;
+  }
+}
