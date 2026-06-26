@@ -460,12 +460,7 @@ class VendorManifest(MozbuildObject):
                 )
 
         def safe_extract(tar, path=".", *, numeric_owner=False):
-            def _files(tar, path):
-                for member in tar:
-                    validate_tar_member(member, path)
-                    yield member
-
-            tar.extractall(path, members=_files(tar, path), numeric_owner=numeric_owner)
+            tar.extractall(path, filter=validate_tar_member, numeric_owner=numeric_owner)
 
         release_artifact = self.manifest["vendoring"].get("release-artifact", False)
 
