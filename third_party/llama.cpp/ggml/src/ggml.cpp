@@ -13,6 +13,7 @@ GGML_NORETURN static void ggml_uncaught_exception() {
     abort(); // unreachable unless previous_terminate_handler was nullptr
 }
 
+#if 0
 static bool ggml_uncaught_exception_init = []{
     const char * GGML_NO_BACKTRACE = getenv("GGML_NO_BACKTRACE");
     if (GGML_NO_BACKTRACE) {
@@ -24,3 +25,4 @@ static bool ggml_uncaught_exception_init = []{
     std::set_terminate(ggml_uncaught_exception);
     return true;
 }();
+#endif
