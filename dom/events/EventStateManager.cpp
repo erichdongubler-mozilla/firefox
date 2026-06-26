@@ -907,13 +907,6 @@ static void HandleKeyUpInteraction(WidgetKeyboardEvent* aKeyEvent) {
   }
 }
 
-static bool NeedsActiveContentChange(const WidgetMouseEvent* aMouseEvent) {
-  // If the mouse event is a synthesized mouse event due to a touch, do
-  // not set/clear the activation state. Element activation is handled by APZ.
-  return !aMouseEvent ||
-         aMouseEvent->mInputSource != MouseEvent_Binding::MOZ_SOURCE_TOUCH;
-}
-
 nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
                                            WidgetEvent* aEvent,
                                            nsIFrame* aTargetFrame,
@@ -1188,17 +1181,6 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
           NotifyTargetUserActivation(aEvent, aTargetContent);
         }
 
-        if (NeedsActiveContentChange(mouseEvent)) {
-          nsCOMPtr<nsIContent> activeContent =
-              mCurrentTarget ? mCurrentTarget->GetContent() : nullptr;
-          if (activeContent && !activeContent->IsElement()) {
-            if (nsIContent* parent = activeContent->GetFlattenedTreeParent()) {
-              activeContent = parent;
-            }
-          }
-          SetActiveManager(this, activeContent);
-        }
-
         LightDismissOpenPopovers(aEvent, aTargetContent);
         LightDismissOpenDialogs(aEvent, aTargetContent);
       }
@@ -1240,9 +1222,6 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       GenerateMouseEnterExit(mouseEvent);
       if (mouseEvent->mInputSource != MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
         NotifyTargetUserActivation(aEvent, aTargetContent);
-      }
-      if (NeedsActiveContentChange(mouseEvent)) {
-        ClearGlobalActiveContent(this);
       }
       break;
     case ePointerGotCapture:
@@ -4029,6 +4008,13 @@ void EventStateManager::PostHandleKeyboardEvent(
   }
 }
 
+static bool NeedsActiveContentChange(const WidgetMouseEvent* aMouseEvent) {
+  // If the mouse event is a synthesized mouse event due to a touch, do
+  // not set/clear the activation state. Element activation is handled by APZ.
+  return !aMouseEvent ||
+         aMouseEvent->mInputSource != MouseEvent_Binding::MOZ_SOURCE_TOUCH;
+}
+
 nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
                                             WidgetEvent* aEvent,
                                             nsIFrame* aTargetFrame,
@@ -4250,10 +4236,24 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         if (mouseEvent->mButton != MouseButton::ePrimary) {
           break;
         }
+
+        // The nearest enclosing element goes into the :active state.  If we're
+        // not an element (so we're text or something) we need to obtain
+        // our parent element and put it into :active instead.
+        if (activeContent && !activeContent->IsElement()) {
+          if (nsIContent* par = activeContent->GetFlattenedTreeParent()) {
+            activeContent = par;
+          }
+        }
       } else {
         // if we're here, the event handler returned false, so stop
         // any of our own processing of a drag. Workaround for bug 43258.
         StopTrackingDragGesture(true);
+      }
+      // XXX Why do we always set this is active?  Active window may be changed
+      //     by a mousedown event listener.
+      if (NeedsActiveContentChange(mouseEvent)) {
+        SetActiveManager(this, activeContent);
       }
     } break;
     case ePointerCancel:
