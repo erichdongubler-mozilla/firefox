@@ -127,7 +127,7 @@ aiwindow-firstrun-model-allpurpose-label = Flexible
 aiwindow-firstrun-model-allpurpose-body = Solid fit for most needs
 aiwindow-firstrun-model-personal-label = Personal
 aiwindow-firstrun-model-personal-body = Most tailored answers
-aiwindow-firstrun-button = Let’s go!
+aiwindow-firstrun-button = Let’s go
 aiwindow-firstrun-back-button = Back
 aiwindow-firstrun-next-button = Next
 

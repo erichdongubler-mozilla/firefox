@@ -174,6 +174,11 @@ let propNameAllowlist = [
   // (content-search-handoff-ui component), which confuses the test.
   { propName: /^--content-search-handoff-ui-/, isFromDevTools: false },
 
+  // This variable defines the icon background for smart window first run model
+  // cards and is consumed from JS in firstrun.js (built into a `background`
+  // shorthand string), so it isn't referenced via var() in CSS.
+  { propName: "--card-icon-bg", isFromDevTools: false },
+
   // These variables are used in JS in viewer.mjs (PDF.js).
   {
     propName: "--scale-round-x",
