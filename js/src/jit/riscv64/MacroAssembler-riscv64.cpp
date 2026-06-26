@@ -1226,12 +1226,12 @@ void MacroAssemblerRiscv64Compat::convertDoubleToInt32(FloatRegister src,
                                                        bool negativeZeroCheck) {
   if (negativeZeroCheck) {
     fclass_d(dest, src);
-    ma_b(dest, Imm32(kNegativeZero), fail, Equal, LongJump);
+    ma_b(dest, Imm32(kNegativeZero), fail, Equal, ShortJump);
   }
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   Trunc_w_d(dest, src, scratch, true);
-  ma_b(scratch, Imm32(0), fail, Equal, LongJump);
+  ma_b(scratch, Imm32(0), fail, Equal, ShortJump);
 }
 
 void MacroAssemblerRiscv64Compat::convertDoubleToPtr(FloatRegister src,
@@ -1239,12 +1239,12 @@ void MacroAssemblerRiscv64Compat::convertDoubleToPtr(FloatRegister src,
                                                      bool negativeZeroCheck) {
   if (negativeZeroCheck) {
     fclass_d(dest, src);
-    ma_b(dest, Imm32(kNegativeZero), fail, Equal, LongJump);
+    ma_b(dest, Imm32(kNegativeZero), fail, Equal, ShortJump);
   }
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   Trunc_l_d(dest, src, scratch, true);
-  ma_b(scratch, Imm32(0), fail, Equal, LongJump);
+  ma_b(scratch, Imm32(0), fail, Equal, ShortJump);
 }
 
 // Checks whether a float32 is representable as a 32-bit integer. If so, the
@@ -1254,12 +1254,12 @@ void MacroAssemblerRiscv64Compat::convertFloat32ToInt32(
     FloatRegister src, Register dest, Label* fail, bool negativeZeroCheck) {
   if (negativeZeroCheck) {
     fclass_d(dest, src);
-    ma_b(dest, Imm32(kNegativeZero), fail, Equal, LongJump);
+    ma_b(dest, Imm32(kNegativeZero), fail, Equal, ShortJump);
   }
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   Trunc_w_s(dest, src, scratch, true);
-  ma_b(scratch, Imm32(0), fail, Equal, LongJump);
+  ma_b(scratch, Imm32(0), fail, Equal, ShortJump);
 }
 
 void MacroAssemblerRiscv64Compat::convertFloat32ToDouble(FloatRegister src,
@@ -3624,7 +3624,7 @@ void MacroAssembler::ceilDoubleToInt32(FloatRegister src, Register dest,
   ma_b(dest, zero, &notZero, Assembler::NotEqual, ShortJump);
   {
     fmv_x_d(scratch, src);
-    ma_b(scratch, scratch, fail, Assembler::Signed, LongJump);
+    ma_b(scratch, scratch, fail, Assembler::Signed, ShortJump);
   }
   bind(&notZero);
 }
@@ -3648,7 +3648,7 @@ void MacroAssembler::ceilFloat32ToInt32(FloatRegister src, Register dest,
   ma_b(dest, zero, &notZero, Assembler::NotEqual, ShortJump);
   {
     fmv_x_w(scratch, src);
-    ma_b(scratch, scratch, fail, Assembler::Signed, LongJump);
+    ma_b(scratch, scratch, fail, Assembler::Signed, ShortJump);
   }
   bind(&notZero);
 }
@@ -3849,7 +3849,7 @@ void MacroAssembler::floorDoubleToInt32(FloatRegister src, Register dest,
   // Fail if the input is negative zero.
   {
     fclass_d(scratch, src);
-    ma_b(scratch, Imm32(FClassFlag::kNegativeZero), fail, Equal, LongJump);
+    ma_b(scratch, Imm32(FClassFlag::kNegativeZero), fail, Equal, ShortJump);
   }
 }
 
@@ -3870,7 +3870,7 @@ void MacroAssembler::floorFloat32ToInt32(FloatRegister src, Register dest,
   // Fail if the input is negative zero.
   {
     fclass_s(scratch, src);
-    ma_b(scratch, Imm32(FClassFlag::kNegativeZero), fail, Equal, LongJump);
+    ma_b(scratch, Imm32(FClassFlag::kNegativeZero), fail, Equal, ShortJump);
   }
 }
 
@@ -4237,7 +4237,7 @@ void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
 
     fclass_s(scratch, src);
     ma_b(scratch, Imm32(FClassFlag::kNegativeZero), fail, Assembler::Equal,
-         LongJump);
+         ShortJump);
   }
 
   // Handle the simple case of a positive input and NaN.
@@ -4299,7 +4299,7 @@ void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
     Register scratch = temps.Acquire();
 
     fclass_d(scratch, src);
-    ma_b(scratch, Imm32(FClassFlag::kNegativeZero), fail, Equal, LongJump);
+    ma_b(scratch, Imm32(FClassFlag::kNegativeZero), fail, Equal, ShortJump);
   }
 
   // Handle the simple case of a positive input and NaN.
@@ -4424,7 +4424,7 @@ void MacroAssembler::truncDoubleToInt32(FloatRegister src, Register dest,
   ma_b(dest, zero, &notZero, Assembler::NotEqual, ShortJump);
   {
     fmv_x_d(scratch, src);
-    ma_b(scratch, scratch, fail, Assembler::Signed, LongJump);
+    ma_b(scratch, scratch, fail, Assembler::Signed, ShortJump);
   }
   bind(&notZero);
 }
@@ -4447,7 +4447,7 @@ void MacroAssembler::truncFloat32ToInt32(FloatRegister src, Register dest,
   ma_b(dest, zero, &notZero, Assembler::NotEqual, ShortJump);
   {
     fmv_x_w(scratch, src);
-    ma_b(scratch, scratch, fail, Assembler::Signed, LongJump);
+    ma_b(scratch, scratch, fail, Assembler::Signed, ShortJump);
   }
   bind(&notZero);
 }
