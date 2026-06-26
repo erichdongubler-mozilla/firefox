@@ -152,7 +152,7 @@ add_task(async function test_website_confirmation_renders() {
       );
 
       // Verify it's in the correct location
-      const parent = confirmation.parentElement;
+      const parent = confirmation.parentElement.parentElement;
       Assert.ok(
         parent?.classList.contains("chat-bubble-assistant"),
         "ai-website-confirmation should be inside assistant message bubble"
@@ -224,7 +224,7 @@ add_task(async function test_action_result_renders_for_closed_tabs() {
       Assert.ok(actionResult, "ai-action-result component should be rendered");
 
       // Verify location
-      const parent = actionResult.parentElement;
+      const parent = actionResult.parentElement.parentElement;
       Assert.ok(
         parent?.classList.contains("chat-bubble-assistant"),
         "ai-action-result should be inside assistant message bubble"
@@ -298,7 +298,7 @@ add_task(async function test_action_result_renders_for_restored_tabs() {
       );
 
       // Verify it's in the assistant bubble
-      const parent = actionResult.parentElement;
+      const parent = actionResult.parentElement.parentElement;
       Assert.ok(
         parent?.classList.contains("chat-bubble-assistant"),
         "ai-action-result should be inside assistant message bubble"
@@ -374,7 +374,7 @@ add_task(async function test_tab_group_confirmation_renders() {
 
       // The component is rendered by ai-chat-content based on the toolUIData
       // We verify it exists and is in the right place
-      const parent = confirmation.parentElement;
+      const parent = confirmation.parentElement.parentElement;
       Assert.ok(
         parent?.classList.contains("chat-bubble-assistant"),
         "Confirmation should be inside assistant message bubble"
