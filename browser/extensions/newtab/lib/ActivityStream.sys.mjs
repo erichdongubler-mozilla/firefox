@@ -1458,13 +1458,6 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "widgets.stocks.enabled",
-    {
-      title: "Enables the stocks widget",
-      value: true,
-    },
-  ],
-  [
     "widgets.system.privacy.enabled",
     {
       title: "Enables the privacy widget experiment in Nimbus",
@@ -1479,13 +1472,6 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "widgets.system.stocks.enabled",
-    {
-      title: "Enables the stocks widget experiment in Nimbus",
-      value: false,
-    },
-  ],
-  [
     "widgets.privacy.size",
     {
       title: "Size of the privacy widget (medium or large)",
@@ -1496,13 +1482,6 @@ export const PREFS_CONFIG = new Map([
     "widgets.crossword.size",
     {
       title: "Size of the crossword widget (medium or large)",
-      value: "",
-    },
-  ],
-  [
-    "widgets.stocks.size",
-    {
-      title: "Size of the stocks widget (small, medium, or large)",
       value: "",
     },
   ],

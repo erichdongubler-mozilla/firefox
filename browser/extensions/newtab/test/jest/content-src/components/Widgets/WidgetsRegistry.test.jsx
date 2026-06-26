@@ -108,7 +108,6 @@ describe("getWidgetOrder", () => {
       "clocks",
       "privacy",
       "crossword",
-      "stocks",
     ]);
   });
 
@@ -121,7 +120,6 @@ describe("getWidgetOrder", () => {
       "focusTimer",
       "privacy",
       "crossword",
-      "stocks",
     ]);
   });
 
@@ -134,7 +132,6 @@ describe("getWidgetOrder", () => {
       "focusTimer",
       "privacy",
       "crossword",
-      "stocks",
     ]);
   });
 
@@ -154,7 +151,6 @@ describe("getWidgetOrder", () => {
       "weather",
       "privacy",
       "crossword",
-      "stocks",
     ]);
     expect(result.length).toBe(registryIds.length);
   });
@@ -178,7 +174,6 @@ describe("resolveWidgetOrder", () => {
       "clocks",
       "privacy",
       "crossword",
-      "stocks",
     ]);
   });
 
@@ -196,7 +191,6 @@ describe("resolveWidgetOrder", () => {
       "clocks",
       "privacy",
       "crossword",
-      "stocks",
     ]);
   });
 
@@ -214,7 +208,6 @@ describe("resolveWidgetOrder", () => {
       "clocks",
       "privacy",
       "crossword",
-      "stocks",
     ]);
   });
 });
