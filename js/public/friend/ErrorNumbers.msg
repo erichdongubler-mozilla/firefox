@@ -852,7 +852,9 @@ MSG_DEF(JSMSG_BAD_WEAKREF_TARGET,                        0, JSEXN_TYPEERR, "cann
 // Iterator Helpers
 MSG_DEF(JSMSG_NEGATIVE_LIMIT,                            0, JSEXN_RANGEERR, "Iterator limits cannot be negative")
 MSG_DEF(JSMSG_INVALID_CHUNKSIZE,                         0, JSEXN_RANGEERR, "Iterator chunkSize must be an integer between 1 and 2**32-1 inclusive")
+MSG_DEF(JSMSG_CHUNK_SIZE_NOT_INTEGER,                    0, JSEXN_TYPEERR, "Iterator chunkSize must be an integral Number")
 MSG_DEF(JSMSG_INVALID_WINDOWSIZE,                        0, JSEXN_RANGEERR, "Iterator windowSize must be an integer between 1 and 2**32-1 inclusive")
+MSG_DEF(JSMSG_WINDOW_SIZE_NOT_INTEGER,                   0, JSEXN_TYPEERR, "Iterator windowSize must be an integral Number")
 MSG_DEF(JSMSG_INVALID_SKIP_COUNT,                        0, JSEXN_TYPEERR, "Iterator skippedElements must be +Infinity, -Infinity, or an integral Number")
 MSG_DEF(JSMSG_SKIP_COUNT_TOO_LARGE,                      0, JSEXN_RANGEERR, "Iterator skippedElements cannot be greater than 2**53-1")
 MSG_DEF(JSMSG_INVALID_UNDERSIZED_OPTION_VALUE,           2, JSEXN_TYPEERR, "invalid value for \"{0}\" option: {1}")
