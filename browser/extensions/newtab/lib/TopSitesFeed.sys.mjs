@@ -1789,8 +1789,7 @@ export class TopSitesFeed {
         sampledSites = await this.ranker.rankTopSites(
           checkedAdult,
           prefValues,
-          isStartup,
-          dedupedSponsored.length
+          isStartup
         );
       } catch (error) {
         lazy.log.warn(`Smart shortcuts ranking failed: ${error.message}`);
