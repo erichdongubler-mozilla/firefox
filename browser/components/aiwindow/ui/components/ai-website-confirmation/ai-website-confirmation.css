@@ -50,6 +50,8 @@ moz-button.close-button {
 
   @media not (forced-colors) {
     --button-background-color-ghost: var(--background-color-box);
+    --button-background-color-ghost-hover: color-mix(in srgb, currentColor 14%, var(--background-color-box));
+    --button-background-color-ghost-active: color-mix(in srgb, currentColor 21%, var(--background-color-box));
   }
 }
 
