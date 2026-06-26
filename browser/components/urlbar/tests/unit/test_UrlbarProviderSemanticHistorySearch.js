@@ -268,7 +268,7 @@ add_task(async function test_switchTab() {
   function AssertSwitchToTabResult(result, url, userContextId, groupId = null) {
     Assert.equal(
       result.type,
-      UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      UrlbarShared.RESULT_TYPE.TAB_SWITCH,
       "Check result type"
     );
     Assert.equal(result.payload.url, url, "Check result URL");
@@ -286,7 +286,7 @@ add_task(async function test_switchTab() {
   }
   function isUrlResult(result, url) {
     return (
-      result.type === UrlbarUtils.RESULT_TYPE.URL && result.payload.url === url
+      result.type === UrlbarShared.RESULT_TYPE.URL && result.payload.url === url
     );
   }
 

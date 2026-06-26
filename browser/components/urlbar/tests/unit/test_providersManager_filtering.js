@@ -5,7 +5,7 @@
 
 add_task(async function test_filtering_disable_only_source() {
   let match = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+    type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
     source: UrlbarUtils.RESULT_SOURCE.TABS,
     payload: { url: "http://mozilla.org/foo/" },
   });
@@ -30,12 +30,12 @@ add_task(async function test_filtering_disable_only_source() {
 add_task(async function test_filtering_disable_one_source() {
   let matches = [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
       source: UrlbarUtils.RESULT_SOURCE.TABS,
       payload: { url: "http://mozilla.org/foo/" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
       source: UrlbarUtils.RESULT_SOURCE.HISTORY,
       payload: { url: "http://mozilla.org/foo/" },
     }),
@@ -60,12 +60,12 @@ add_task(async function test_filtering_disable_one_source() {
 add_task(async function test_filtering_restriction_token() {
   let matches = [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
       source: UrlbarUtils.RESULT_SOURCE.TABS,
       payload: { url: "http://mozilla.org/foo/" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
       source: UrlbarUtils.RESULT_SOURCE.HISTORY,
       payload: { url: "http://mozilla.org/foo/" },
     }),
@@ -89,12 +89,12 @@ add_task(async function test_filtering_restriction_token() {
 
 add_task(async function test_filter_javascript() {
   let match = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+    type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
     source: UrlbarUtils.RESULT_SOURCE.TABS,
     payload: { url: "http://mozilla.org/foo/" },
   });
   let jsMatch = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+    type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
     source: UrlbarUtils.RESULT_SOURCE.HISTORY,
     payload: { url: "javascript:foo" },
   });
@@ -132,12 +132,12 @@ add_task(async function test_filter_javascript() {
 add_task(async function test_filter_isActive() {
   let goodMatches = [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
       source: UrlbarUtils.RESULT_SOURCE.TABS,
       payload: { url: "http://mozilla.org/foo/" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
       source: UrlbarUtils.RESULT_SOURCE.HISTORY,
       payload: { url: "http://mozilla.org/foo/" },
     }),
@@ -146,7 +146,7 @@ add_task(async function test_filter_isActive() {
 
   let badMatches = [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
       source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
       payload: { url: "http://mozilla.org/foo/" },
     }),
@@ -236,13 +236,13 @@ add_task(async function test_nofilter_heuristic() {
   // result is returned.
   let matches = [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
       source: UrlbarUtils.RESULT_SOURCE.TABS,
       heuristic: true,
       payload: { url: "http://mozilla.org/foo/" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
       source: UrlbarUtils.RESULT_SOURCE.TABS,
       payload: { url: "http://mozilla.org/foo2/" },
     }),
@@ -280,22 +280,22 @@ add_task(async function test_nofilter_restrict() {
   // restriction token.
   let matches = [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
       source: UrlbarUtils.RESULT_SOURCE.TABS,
       payload: { url: "http://mozilla.org/foo_tab/" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
       source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
       payload: { url: "http://mozilla.org/foo_bookmark/" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
       source: UrlbarUtils.RESULT_SOURCE.HISTORY,
       payload: { url: "http://mozilla.org/foo_history/" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
+      type: UrlbarShared.RESULT_TYPE.SEARCH,
       source: UrlbarUtils.RESULT_SOURCE.SEARCH,
       payload: { engine: "noengine" },
     }),

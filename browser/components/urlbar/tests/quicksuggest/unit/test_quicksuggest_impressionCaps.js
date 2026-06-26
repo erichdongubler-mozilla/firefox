@@ -35,7 +35,7 @@ const REMOTE_SETTINGS_RESULTS = [
 ];
 
 const EXPECTED_SPONSORED_URLBAR_RESULT = {
-  type: UrlbarUtils.RESULT_TYPE.URL,
+  type: UrlbarShared.RESULT_TYPE.URL,
   source: UrlbarUtils.RESULT_SOURCE.SEARCH,
   heuristic: false,
   payload: {
@@ -62,7 +62,7 @@ const EXPECTED_SPONSORED_URLBAR_RESULT = {
 };
 
 const EXPECTED_NONSPONSORED_URLBAR_RESULT = {
-  type: UrlbarUtils.RESULT_TYPE.URL,
+  type: UrlbarShared.RESULT_TYPE.URL,
   source: UrlbarUtils.RESULT_SOURCE.SEARCH,
   heuristic: false,
   payload: {

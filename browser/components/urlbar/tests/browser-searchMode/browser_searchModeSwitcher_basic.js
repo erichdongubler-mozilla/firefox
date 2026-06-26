@@ -610,7 +610,7 @@ add_task(async function test_enter_searchmode_by_key_if_single_result() {
     Assert.equal(UrlbarTestUtils.getResultCount(window), 1);
     const bookmark = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
     Assert.equal(bookmark.result.source, UrlbarUtils.RESULT_SOURCE.BOOKMARKS);
-    Assert.equal(bookmark.result.type, UrlbarUtils.RESULT_TYPE.URL);
+    Assert.equal(bookmark.result.type, UrlbarShared.RESULT_TYPE.URL);
     Assert.equal(bookmark.result.payload.url, "https://example.com/");
     Assert.equal(bookmark.result.payload.title, "BOOKMARK");
 

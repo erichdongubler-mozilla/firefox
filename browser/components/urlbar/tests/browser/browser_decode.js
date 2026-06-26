@@ -30,7 +30,7 @@ add_task(async function injectJSON() {
 add_task(function losslessDecode() {
   let url = "https://example.com/\u30a2\u30a4\u30a6\u30a8\u30aa";
   const result = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+    type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
     source: UrlbarUtils.RESULT_SOURCE.TABS,
     payload: { url },
   });
@@ -64,7 +64,7 @@ add_task(async function actionURILosslessDecode() {
 
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.URL,
+    UrlbarShared.RESULT_TYPE.URL,
     "Should have selected a result of URL type"
   );
 
@@ -122,7 +122,7 @@ async function checkInput(inputStr) {
   );
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.URL,
+    UrlbarShared.RESULT_TYPE.URL,
     "Should have be a result of type URL"
   );
 

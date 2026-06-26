@@ -406,7 +406,7 @@ add_task(async function test() {
       otherResults: [
         // heuristic
         new UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.SEARCH,
+          type: UrlbarShared.RESULT_TYPE.SEARCH,
           source: UrlbarUtils.RESULT_SOURCE.SEARCH,
           heuristic: true,
           group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
@@ -418,7 +418,7 @@ add_task(async function test() {
         }),
         // global suggestedIndex with resultSpan = 2
         new UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.SEARCH,
+          type: UrlbarShared.RESULT_TYPE.SEARCH,
           source: UrlbarUtils.RESULT_SOURCE.SEARCH,
           suggestedIndex: 1,
           resultSpan: 2,
@@ -565,7 +565,7 @@ function makeHistoryResults(count = MAX_RESULTS) {
   for (let i = 0; i < count; i++) {
     results.push(
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
+        type: UrlbarShared.RESULT_TYPE.URL,
         source: UrlbarUtils.RESULT_SOURCE.HISTORY,
         payload: { url: "http://example.com/" + i },
       })
@@ -579,7 +579,7 @@ function makeRemoteSuggestionResults(count = MAX_RESULTS) {
   for (let i = 0; i < count; i++) {
     results.push(
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
         source: UrlbarUtils.RESULT_SOURCE.SEARCH,
         payload: {
           engine: "test",
@@ -598,7 +598,7 @@ function makeFormHistoryResults(count = MAX_RESULTS) {
   for (let i = 0; i < count; i++) {
     results.push(
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
         source: UrlbarUtils.RESULT_SOURCE.HISTORY,
         payload: {
           engine: "test",
@@ -615,7 +615,7 @@ function makeSuggestedIndexResults(objects) {
   return objects.map(({ suggestedIndex, group }) =>
     Object.assign(
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
+        type: UrlbarShared.RESULT_TYPE.URL,
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         group,
         suggestedIndex,

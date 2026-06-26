@@ -491,7 +491,7 @@ function makeBookmarkResult(
   }
 
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
+    type: UrlbarShared.RESULT_TYPE.URL,
     source,
     heuristic,
     payload,
@@ -513,7 +513,7 @@ function makeBookmarkResult(
  */
 function makeFormHistoryResult(queryContext, { suggestion, engineName }) {
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.SEARCH,
+    type: UrlbarShared.RESULT_TYPE.SEARCH,
     source: UrlbarUtils.RESULT_SOURCE.HISTORY,
     payload: {
       engine: engineName,
@@ -553,7 +553,7 @@ function makeOmniboxResult(
   { content, description, keyword, heuristic = false }
 ) {
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.OMNIBOX,
+    type: UrlbarShared.RESULT_TYPE.OMNIBOX,
     source: UrlbarUtils.RESULT_SOURCE.ADDON,
     heuristic,
     payload: {
@@ -621,7 +621,7 @@ function makeTabSwitchResult(
   }
 
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+    type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
     source: UrlbarUtils.RESULT_SOURCE.TABS,
     payload,
   });
@@ -653,7 +653,7 @@ function makeKeywordSearchResult(
   { uri, keyword, title, iconUri, postData, heuristic = false }
 ) {
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.KEYWORD,
+    type: UrlbarShared.RESULT_TYPE.KEYWORD,
     source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
     heuristic,
     payload: {
@@ -707,7 +707,7 @@ function makeRemoteTabResult(
   }
 
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.REMOTE_TAB,
+    type: UrlbarShared.RESULT_TYPE.REMOTE_TAB,
     source: UrlbarUtils.RESULT_SOURCE.TABS,
     payload,
   });
@@ -758,7 +758,7 @@ function makeRemoteTabResult(
  *   For tab-to-search results, the search engine domain without the public
  *   suffix.
  * @param {number} [options.type]
- *   The type of the search result. Defaults to UrlbarUtils.RESULT_TYPE.SEARCH.
+ *   The type of the search result. Defaults to UrlbarShared.RESULT_TYPE.SEARCH.
  * @param {number} [options.source]
  *   The source of the search result. Defaults to UrlbarUtils.RESULT_SOURCE.SEARCH.
  * @param {boolean} [options.satisfiesAutofillThreshold]
@@ -789,7 +789,7 @@ function makeSearchResult(
     heuristic = false,
     trending = false,
     isRichSuggestion = false,
-    type = UrlbarUtils.RESULT_TYPE.SEARCH,
+    type = UrlbarShared.RESULT_TYPE.SEARCH,
     source = UrlbarUtils.RESULT_SOURCE.SEARCH,
     satisfiesAutofillThreshold = false,
   }
@@ -962,7 +962,7 @@ function makeVisitResult(
   }
 
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
+    type: UrlbarShared.RESULT_TYPE.URL,
     source,
     heuristic,
     providerName,
@@ -983,7 +983,7 @@ function makeVisitResult(
  */
 function makeCalculatorResult(queryContext, { value }) {
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.DYNAMIC,
+    type: UrlbarShared.RESULT_TYPE.DYNAMIC,
     source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
     payload: {
       value,
@@ -1024,7 +1024,7 @@ function makeGlobalActionsResult({
   };
 
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.DYNAMIC,
+    type: UrlbarShared.RESULT_TYPE.DYNAMIC,
     source: UrlbarUtils.RESULT_SOURCE.ACTIONS,
     providerName: "UrlbarProviderGlobalActions",
     payload,
@@ -1219,7 +1219,7 @@ async function check_results({
     }
 
     if (
-      actual.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+      actual.type == UrlbarShared.RESULT_TYPE.SEARCH &&
       actual.source == UrlbarUtils.RESULT_SOURCE.SEARCH &&
       actual.providerName == "UrlbarProviderHeuristicFallback"
     ) {

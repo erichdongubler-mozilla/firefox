@@ -442,7 +442,7 @@ add_task(async function clickAndFillAlias() {
   for (let i = 0; !testEngineItem; i++) {
     let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
 
-    if (details.result.type == UrlbarUtils.RESULT_TYPE.RESTRICT) {
+    if (details.result.type == UrlbarShared.RESULT_TYPE.RESTRICT) {
       let category = details.result.payload.l10nRestrictKeywords[0];
       let keyword = `@${category.toLowerCase()}`;
 
@@ -656,7 +656,7 @@ add_task(async function hiddenEngine() {
   for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
     let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
     if (
-      details.result.type != UrlbarUtils.RESULT_TYPE.RESTRICT &&
+      details.result.type != UrlbarShared.RESULT_TYPE.RESTRICT &&
       defaultEngine.name == details.searchParams.engine
     ) {
       foundDefaultEngineInPopup = true;
@@ -681,7 +681,7 @@ add_task(async function hiddenEngine() {
   for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
     let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
     if (
-      details.result.type != UrlbarUtils.RESULT_TYPE.RESTRICT &&
+      details.result.type != UrlbarShared.RESULT_TYPE.RESTRICT &&
       defaultEngine.name == details.searchParams.engine
     ) {
       foundDefaultEngineInPopup = true;
@@ -738,7 +738,7 @@ add_task(async function nonPrefixedKeyword() {
   for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
     let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
     if (
-      details.result.type != UrlbarUtils.RESULT_TYPE.RESTRICT &&
+      details.result.type != UrlbarShared.RESULT_TYPE.RESTRICT &&
       details.searchParams.engine === name
     ) {
       foundEngineInPopup = true;
@@ -1132,7 +1132,7 @@ async function assertFirstResultIsAlias(isAlias, expectedAlias) {
   let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.SEARCH,
+    UrlbarShared.RESULT_TYPE.SEARCH,
     "Should have the correct type"
   );
 

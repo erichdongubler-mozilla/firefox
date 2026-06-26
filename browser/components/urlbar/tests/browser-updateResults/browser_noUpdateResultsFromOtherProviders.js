@@ -20,12 +20,12 @@ add_task(async function test() {
   let firstProvider = new UrlbarTestUtils.TestProvider({
     results: [
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
+        type: UrlbarShared.RESULT_TYPE.URL,
         source: UrlbarUtils.RESULT_SOURCE.HISTORY,
         payload: { url: "https://mozilla.org/c" },
       }),
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
+        type: UrlbarShared.RESULT_TYPE.URL,
         source: UrlbarUtils.RESULT_SOURCE.HISTORY,
         payload: { url: "https://mozilla.org/d" },
       }),
@@ -39,12 +39,12 @@ add_task(async function test() {
   let secondProvider = new UrlbarTestUtils.TestProvider({
     results: [
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
+        type: UrlbarShared.RESULT_TYPE.URL,
         source: UrlbarUtils.RESULT_SOURCE.HISTORY,
         payload: { url: "https://mozilla.org/c" },
       }),
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
+        type: UrlbarShared.RESULT_TYPE.URL,
         source: UrlbarUtils.RESULT_SOURCE.HISTORY,
         payload: { url: "https://mozilla.org/d" },
       }),

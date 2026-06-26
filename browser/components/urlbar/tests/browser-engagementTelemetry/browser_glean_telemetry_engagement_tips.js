@@ -43,7 +43,7 @@ add_task(async function selected_result_tip() {
     const provider = new UrlbarTestUtils.TestProvider({
       results: [
         new UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.TIP,
+          type: UrlbarShared.RESULT_TYPE.TIP,
           source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
           payload: {
             type,
@@ -160,7 +160,7 @@ add_task(async function learn_more_link() {
   const provider = new UrlbarTestUtils.TestProvider({
     results: [
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.TIP,
+        type: UrlbarShared.RESULT_TYPE.TIP,
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         payload: {
           type: "test",

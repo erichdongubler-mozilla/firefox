@@ -470,7 +470,7 @@ async function doTest({
       addCallback(
         provider,
         new UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.URL,
+          type: UrlbarShared.RESULT_TYPE.URL,
           source,
           payload: { url: "https://example.com/" },
         })

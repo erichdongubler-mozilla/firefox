@@ -7,7 +7,7 @@
 
 add_task(async function autosettings() {
   let result = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.TIP,
+    type: UrlbarShared.RESULT_TYPE.TIP,
     source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
     payload: {
       type: "test",
@@ -22,7 +22,7 @@ add_task(async function autosettings() {
 
 add_task(async function ui() {
   let result = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.TIP,
+    type: UrlbarShared.RESULT_TYPE.TIP,
     source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
     payload: {
       type: "test",
@@ -131,7 +131,7 @@ add_task(async function learn_more() {
     let provider = new UrlbarTestUtils.TestProvider({
       results: [
         new UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.TIP,
+          type: UrlbarShared.RESULT_TYPE.TIP,
           source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
           payload: {
             type: "test",

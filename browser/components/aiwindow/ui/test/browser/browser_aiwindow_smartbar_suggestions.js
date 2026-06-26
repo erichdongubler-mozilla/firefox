@@ -259,8 +259,8 @@ add_task(
       browser,
       [testUrl],
       async url => {
-        const { UrlbarUtils } = ChromeUtils.importESModule(
-          "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs"
+        const { UrlbarShared } = ChromeUtils.importESModule(
+          "chrome://browser/content/urlbar/UrlbarShared.mjs"
         );
         const aiWindowElement = content.document.querySelector("ai-window");
         const smartbar = aiWindowElement.shadowRoot.querySelector(
@@ -271,7 +271,7 @@ add_task(
           for (const row of smartbar.querySelectorAll(".urlbarView-row")) {
             const res = smartbar.view.getResultFromElement(row);
             if (
-              res?.type === UrlbarUtils.RESULT_TYPE.URL &&
+              res?.type === UrlbarShared.RESULT_TYPE.URL &&
               res.payload.url === url
             ) {
               return row;

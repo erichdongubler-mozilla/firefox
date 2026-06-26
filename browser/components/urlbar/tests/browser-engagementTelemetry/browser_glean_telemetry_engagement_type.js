@@ -262,7 +262,7 @@ add_task(async function engagement_type_help() {
     priority: Infinity,
     results: [
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
+        type: UrlbarShared.RESULT_TYPE.URL,
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         payload: {
           url,

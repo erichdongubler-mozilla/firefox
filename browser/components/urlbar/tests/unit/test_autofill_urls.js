@@ -739,7 +739,7 @@ add_nonadaptive_autofill_task(async function viewSourceAsPrefix() {
       matches: [
         {
           heuristic: true,
-          type: UrlbarUtils.RESULT_TYPE.URL,
+          type: UrlbarShared.RESULT_TYPE.URL,
           source: UrlbarUtils.RESULT_SOURCE.HISTORY,
         },
         makeBookmarkResult(context, {
@@ -791,7 +791,7 @@ add_nonadaptive_autofill_task(async function dataAsPrefix() {
       matches: [
         {
           heuristic: true,
-          type: UrlbarUtils.RESULT_TYPE.URL,
+          type: UrlbarShared.RESULT_TYPE.URL,
           source: UrlbarUtils.RESULT_SOURCE.HISTORY,
         },
         makeBookmarkResult(context, {
@@ -830,7 +830,7 @@ add_task(async function aboutAsPrefix() {
       matches: [
         {
           heuristic: true,
-          type: UrlbarUtils.RESULT_TYPE.URL,
+          type: UrlbarShared.RESULT_TYPE.URL,
           source: UrlbarUtils.RESULT_SOURCE.HISTORY,
         },
       ],

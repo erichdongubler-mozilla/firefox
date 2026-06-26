@@ -10,7 +10,7 @@ add_task(async function test_receive_punycode_result() {
   class ResultWithHighlightsProvider extends UrlbarTestUtils.TestProvider {
     startQuery(context, addCallback) {
       let result = new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
+        type: UrlbarShared.RESULT_TYPE.URL,
         source: UrlbarUtils.RESULT_SOURCE.HISTORY,
         suggestedIndex: 0,
         payload: {
@@ -44,7 +44,7 @@ add_task(async function test_receive_punycode_result() {
     fireInputEvent: true,
   });
   let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
-  is(row.result.type, UrlbarUtils.RESULT_TYPE.URL, "row.result.type");
+  is(row.result.type, UrlbarShared.RESULT_TYPE.URL, "row.result.type");
   is(
     row.result.getDisplayableValueAndHighlights("url", { isURL: true }).value,
     "اختبار.اختبار.org:5000",

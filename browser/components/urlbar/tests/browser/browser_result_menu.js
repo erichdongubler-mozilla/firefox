@@ -147,7 +147,7 @@ add_task(async function test_remove_search_history() {
       resultIndex
     );
     if (
-      result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+      result.type == UrlbarShared.RESULT_TYPE.SEARCH &&
       result.source == UrlbarUtils.RESULT_SOURCE.HISTORY
     ) {
       break;
@@ -168,7 +168,7 @@ add_task(async function test_remove_search_history() {
   for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
     Assert.ok(
-      result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
+      result.type != UrlbarShared.RESULT_TYPE.SEARCH ||
         result.source != UrlbarUtils.RESULT_SOURCE.HISTORY,
       "Should not find the form history result in the remaining results"
     );
@@ -198,7 +198,7 @@ add_task(async function firefoxSuggest() {
     priority: Infinity,
     results: [
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
+        type: UrlbarShared.RESULT_TYPE.URL,
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         payload: {
           url,

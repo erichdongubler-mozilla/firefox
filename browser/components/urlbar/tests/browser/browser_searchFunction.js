@@ -266,7 +266,7 @@ async function assertUrlbarValue(value) {
   let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.SEARCH,
+    UrlbarShared.RESULT_TYPE.SEARCH,
     "Should have type search for the first result"
   );
   // Strip search restriction token from value.

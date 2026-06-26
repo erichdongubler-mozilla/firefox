@@ -231,7 +231,7 @@ add_task(async function empty_polygon_values() {
 
 function marketResult() {
   return {
-    type: UrlbarUtils.RESULT_TYPE.DYNAMIC,
+    type: UrlbarShared.RESULT_TYPE.DYNAMIC,
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,
     isBestMatch: true,
     rowIndex: -1,

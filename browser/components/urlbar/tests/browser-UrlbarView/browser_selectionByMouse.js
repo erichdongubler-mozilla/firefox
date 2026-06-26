@@ -339,7 +339,7 @@ add_task(async function buttons() {
     priority: Infinity,
     results: [
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
+        type: UrlbarShared.RESULT_TYPE.URL,
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         payload: {
           url: mainResultUrl,
@@ -351,7 +351,7 @@ add_task(async function buttons() {
         },
       }),
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
+        type: UrlbarShared.RESULT_TYPE.URL,
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         payload: {
           url: otherResultUrl,

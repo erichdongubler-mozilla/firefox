@@ -613,7 +613,7 @@ function makeExpectedResult({
   isRichSuggestion = undefined,
 }) {
   return {
-    type: UrlbarUtils.RESULT_TYPE.URL,
+    type: UrlbarShared.RESULT_TYPE.URL,
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,
     heuristic: false,
     isBestMatch,

@@ -424,7 +424,7 @@ function yelpOptInResult({ dismissButton = false } = {}) {
         },
       };
   return {
-    type: UrlbarUtils.RESULT_TYPE.TIP,
+    type: UrlbarShared.RESULT_TYPE.TIP,
     source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
     heuristic: false,
     isBestMatch: true,
@@ -473,7 +473,7 @@ function yelpOptInResult({ dismissButton = false } = {}) {
 
 function yelpMerinoResult() {
   return {
-    type: UrlbarUtils.RESULT_TYPE.DYNAMIC,
+    type: UrlbarShared.RESULT_TYPE.DYNAMIC,
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,
     heuristic: false,
     isBestMatch: true,

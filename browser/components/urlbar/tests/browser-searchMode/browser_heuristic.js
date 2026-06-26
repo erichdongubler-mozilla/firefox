@@ -81,7 +81,7 @@ add_task(async function localNoHeuristic() {
   );
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.URL,
+    UrlbarShared.RESULT_TYPE.URL,
     "Result type should be URL"
   );
   Assert.equal(
@@ -127,7 +127,7 @@ add_task(async function localAutofill() {
     );
     Assert.equal(
       result.type,
-      UrlbarUtils.RESULT_TYPE.URL,
+      UrlbarShared.RESULT_TYPE.URL,
       "Result type should be URL"
     );
     Assert.equal(
@@ -146,7 +146,7 @@ add_task(async function localAutofill() {
     );
     Assert.equal(
       result.type,
-      UrlbarUtils.RESULT_TYPE.URL,
+      UrlbarShared.RESULT_TYPE.URL,
       "Result type should be URL"
     );
     Assert.equal(
@@ -193,7 +193,7 @@ add_task(async function remote() {
     );
     Assert.equal(
       result.type,
-      UrlbarUtils.RESULT_TYPE.SEARCH,
+      UrlbarShared.RESULT_TYPE.SEARCH,
       "Result type should be SEARCH"
     );
     Assert.ok(result.searchParams, "searchParams should be present");

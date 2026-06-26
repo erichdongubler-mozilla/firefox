@@ -561,7 +561,7 @@ add_task(async function test_adaptive_history_in_privatewindow() {
 
     Assert.notEqual(
       result.type,
-      UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      UrlbarShared.RESULT_TYPE.TAB_SWITCH,
       "Result type of the url is not for tab switch."
     );
 

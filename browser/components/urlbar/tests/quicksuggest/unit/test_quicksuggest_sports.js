@@ -280,7 +280,7 @@ function merinoSuggestions(values) {
 
 function expectedResult(expectedItems) {
   return {
-    type: UrlbarUtils.RESULT_TYPE.DYNAMIC,
+    type: UrlbarShared.RESULT_TYPE.DYNAMIC,
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,
     isBestMatch: true,
     rowIndex: -1,

@@ -532,7 +532,7 @@ async function doSuggestedIndexTest({
   for (let i = 0; i < resultCount; i++) {
     results.push(
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
+        type: UrlbarShared.RESULT_TYPE.URL,
         source: UrlbarUtils.RESULT_SOURCE.HISTORY,
         resultSpan: spansByIndex[results.length],
         payload: {
@@ -546,7 +546,7 @@ async function doSuggestedIndexTest({
   for (let suggestedIndex of suggestedIndexes) {
     results.push(
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
+        type: UrlbarShared.RESULT_TYPE.URL,
         source: UrlbarUtils.RESULT_SOURCE.HISTORY,
         suggestedIndex,
         resultSpan: spansByIndex[results.length],

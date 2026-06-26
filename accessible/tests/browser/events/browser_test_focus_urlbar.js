@@ -17,6 +17,7 @@ ChromeUtils.defineESModuleGetters(this, {
   ProvidersManager:
     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarTestUtils: "resource://testing-common/UrlbarTestUtils.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
@@ -298,13 +299,13 @@ async function runTests() {
 async function runTipTests() {
   let matches = [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
       source: UrlbarUtils.RESULT_SOURCE.HISTORY,
       // eslint-disable-next-line @microsoft/sdl/no-insecure-url
       payload: { url: "http://mozilla.org/a" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.TIP,
+      type: UrlbarShared.RESULT_TYPE.TIP,
       source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
       payload: {
         // eslint-disable-next-line @microsoft/sdl/no-insecure-url
@@ -321,13 +322,13 @@ async function runTipTests() {
       },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
       source: UrlbarUtils.RESULT_SOURCE.HISTORY,
       // eslint-disable-next-line @microsoft/sdl/no-insecure-url
       payload: { url: "http://mozilla.org/b" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
       source: UrlbarUtils.RESULT_SOURCE.HISTORY,
       // eslint-disable-next-line @microsoft/sdl/no-insecure-url
       payload: { url: "http://mozilla.org/c" },

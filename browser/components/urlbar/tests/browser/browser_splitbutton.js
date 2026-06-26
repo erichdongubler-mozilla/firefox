@@ -11,7 +11,7 @@ ChromeUtils.defineESModuleGetters(this, {
 
 const TEST_RESULTS = [
   new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.TIP,
+    type: UrlbarShared.RESULT_TYPE.TIP,
     source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
     payload: {
       helpUrl: "https://example.com/",

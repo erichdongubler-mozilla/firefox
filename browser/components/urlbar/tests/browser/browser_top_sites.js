@@ -168,7 +168,7 @@ add_task(async function selectSearchTopSite() {
 
   Assert.equal(
     amazonSearch.result.type,
-    UrlbarUtils.RESULT_TYPE.SEARCH,
+    UrlbarShared.RESULT_TYPE.SEARCH,
     "First result should have SEARCH type."
   );
 
