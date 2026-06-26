@@ -31,6 +31,10 @@
 #include <thread>
 #include <vector>
 
+#if defined(__x86_64__) || defined(__i386__)
+#  include <x86intrin.h>  // __rdtscp / _mm_lfence for the histogram bench timing
+#endif
+
 #if defined(GP_OS_windows)
 #  include <processthreadsapi.h>
 #  include <realtimeapiset.h>
@@ -5510,6 +5514,197 @@ class MarkerBenchThreadPool {
   bool mShutdown = false;
 };
 
+// --- Histogram-timing variant ----------------------------------------------
+// The MOZ_GTEST_BENCH cases above report the median *total* time of a 100k-
+// insertion run (a single aggregate number). These instead time each
+// *individual* insertion and accumulate it into a BPF/bcc-style power-of-two
+// (log2) latency histogram, exposing the latency *distribution* and tail (a
+// rare expensive marker insertion is invisible in a mean). The log2 buckets
+// make the tail mass visible at a glance and cost O(1) memory.
+//
+// Timing uses the x86 TSC (rdtscp), not TimeStamp::Now(): a tiny insert is
+// ~tens of ns, where clock_gettime's ~20-30 ns call overhead would swamp the
+// fast-path buckets. The TSC has ~1-cycle resolution; on a pinned,
+// performance-governor machine the TSC is invariant so cycles<->time is stable.
+// We subtract the measured empty-pair overhead and label buckets in ns via a
+// one-time calibration against TimeStamp. (Non-x86 falls back to ns from
+// TimeStamp, coarse but only used off such a machine.)
+
+#if defined(__x86_64__) || defined(__i386__)
+static inline uint64_t BenchTicks() {
+  unsigned aux;
+  // rdtscp waits for prior instructions to retire before reading the TSC; the
+  // following lfence keeps later instructions from reading it early.
+  uint64_t t = __rdtscp(&aux);
+  _mm_lfence();
+  return t;
+}
+static double BenchTicksPerNs() {
+  static const double sTpns = []() {
+    TimeStamp t0 = TimeStamp::Now();
+    uint64_t c0 = BenchTicks();
+    while ((TimeStamp::Now() - t0).ToMilliseconds() < 50.0) {
+    }
+    uint64_t c1 = BenchTicks();
+    double ns = (TimeStamp::Now() - t0).ToMicroseconds() * 1000.0;
+    return double(c1 - c0) / ns;
+  }();
+  return sTpns;
+}
+#else
+static inline uint64_t BenchTicks() {
+  return uint64_t(
+      (TimeStamp::Now() - TimeStamp::ProcessCreation()).ToMicroseconds() *
+      1000.0);
+}
+static double BenchTicksPerNs() { return 1.0; }
+#endif
+
+// Median cost (ticks) of an empty BenchTicks() pair — the measurement floor,
+// subtracted from each sample so the fast-path buckets reflect the real op.
+static uint64_t BenchOverheadTicks() {
+  static const uint64_t sOv = []() {
+    std::vector<uint64_t> e;
+    e.reserve(4096);
+    for (int i = 0; i < 4096; ++i) {
+      uint64_t a = BenchTicks();
+      uint64_t b = BenchTicks();
+      e.push_back(b - a);
+    }
+    std::sort(e.begin(), e.end());
+    return e[e.size() / 2];
+  }();
+  return sOv;
+}
+
+// A BPF-style log2 histogram of per-op latencies (in TSC ticks).
+struct LatencyHist {
+  static constexpr int kSlots = 64;
+  uint64_t mBuckets[kSlots] = {0};
+  uint64_t mMaxTicks = 0;
+
+  uint64_t Count() const {
+    uint64_t count = 0;
+    for (int i = 0; i < kSlots; ++i) {
+      count += mBuckets[i];
+    }
+    return count;
+  }
+
+  void Add(uint64_t aTicks) {
+    // Slot s >= 1 holds [2^s, 2^(s+1)); slot 0 catches {0, 1} as [0, 2) (and
+    // avoids __builtin_clzll(0), which is undefined).
+    const int slot = aTicks < 2 ? 0 : 63 - __builtin_clzll(aTicks);
+    ++mBuckets[slot];
+    if (aTicks > mMaxTicks) {
+      mMaxTicks = aTicks;
+    }
+  }
+  void Merge(const LatencyHist& aOther) {
+    for (int i = 0; i < kSlots; ++i) {
+      mBuckets[i] += aOther.mBuckets[i];
+    }
+    if (aOther.mMaxTicks > mMaxTicks) {
+      mMaxTicks = aOther.mMaxTicks;
+    }
+  }
+};
+
+template <typename Op>
+void TimedInsert(uint32_t aCount, LatencyHist& aHist, Op aOp) {
+  const uint64_t ov = BenchOverheadTicks();
+  // Accumulate into a stack-local histogram so the hot loop never writes to
+  // memory another worker might share a cache line with, then copy the result
+  // into the caller's histogram once at the end.
+  LatencyHist local;
+  for (uint32_t i = 0; i < aCount; ++i) {
+    const uint64_t c0 = BenchTicks();
+    aOp();
+    const uint64_t c1 = BenchTicks();
+    const uint64_t d = c1 - c0;
+    local.Add(d > ov ? d - ov : 0);
+  }
+  aHist = local;
+}
+
+template <typename Op>
+void TimedInsertMultiThread(uint32_t aTotalCount, uint32_t aThreads,
+                            LatencyHist& aHist, Op aOp) {
+  std::vector<LatencyHist> perThread(aThreads);
+  std::vector<std::thread> threads;
+  const uint32_t per = aTotalCount / aThreads;
+  for (uint32_t t = 0; t < aThreads; ++t) {
+    threads.emplace_back([t, per, &perThread, aOp]() {
+      AUTO_PROFILER_REGISTER_THREAD("MarkerBenchHisto");
+      TimedInsert(per, perThread[t], aOp);
+    });
+  }
+  for (auto& th : threads) {
+    th.join();
+  }
+  for (auto& h : perThread) {
+    aHist.Merge(h);
+  }
+}
+
+void ReportHistogram(const char* aName, const LatencyHist& aHist) {
+  const uint64_t count = aHist.Count();
+  if (count == 0) {
+    return;
+  }
+  const double tpns = BenchTicksPerNs();
+  auto ticksToNs = [&](double aTicks) { return aTicks / tpns; };
+
+  // bcc-style log2 histogram: one row per occupied bucket [2^s, 2^(s+1)) ticks
+  // (slot 0 is [0, 2)), labelled in ns, with a bar scaled to the busiest
+  // bucket.
+  auto slotLoTicks = [](int aSlot) {
+    return aSlot == 0 ? 0.0 : double(uint64_t(1) << aSlot);
+  };
+  int lo = LatencyHist::kSlots, hi = -1;
+  uint64_t peak = 0;
+  for (int s = 0; s < LatencyHist::kSlots; ++s) {
+    if (aHist.mBuckets[s]) {
+      lo = std::min(lo, s);
+      hi = std::max(hi, s);
+      peak = std::max(peak, aHist.mBuckets[s]);
+    }
+  }
+  // Bucket-derived approximate percentiles (bucket-edge resolution).
+  auto pctNs = [&](double p) {
+    uint64_t target = uint64_t(p * double(count));
+    uint64_t cum = 0;
+    for (int s = 0; s < LatencyHist::kSlots; ++s) {
+      cum += aHist.mBuckets[s];
+      if (cum >= target) {
+        return ticksToNs(slotLoTicks(s));  // bucket lower edge
+      }
+    }
+    return ticksToNs(double(aHist.mMaxTicks));
+  };
+
+  printf(
+      "HISTO %-26s n=%llu overhead=%llutk ~p50=%.0f ~p99=%.0f ~p99.9=%.0f "
+      "max=%.0f (ns/insertion)\n",
+      aName, (unsigned long long)count,
+      (unsigned long long)BenchOverheadTicks(), pctNs(0.50), pctNs(0.99),
+      pctNs(0.999), ticksToNs(double(aHist.mMaxTicks)));
+  for (int s = lo; s <= hi; ++s) {
+    const uint64_t c = aHist.mBuckets[s];
+    const double loNs = ticksToNs(slotLoTicks(s));
+    const double hiNs = ticksToNs(double(uint64_t(1) << (s + 1)));
+    char bar[41];
+    int n = int(40.0 * double(c) / double(peak));
+    for (int i = 0; i < n; ++i) {
+      bar[i] = '@';
+    }
+    bar[n] = '\0';
+    printf("HISTO   %-26s [%9.0f, %9.0f) ns : %8llu |%s\n", aName, loNs, hiNs,
+           (unsigned long long)c, bar);
+  }
+  fflush(stdout);
+}
+
 }  // namespace
 
 // Starts the profiler and spawns the thread pool in SetUp()/TearDown(), which
@@ -5561,3 +5756,56 @@ MOZ_GTEST_BENCH_F(GeckoProfilerMarkerBench,
                     mThreadPool->InsertOnAll(kMarkerInsertionCount,
                                              &InsertFieldsAndStackMarkers);
                   });
+
+// Per-insertion latency distributions (see TimedInsert / ReportHistogram).
+TEST_F(GeckoProfilerMarkerBench, HistoSingleThreadTiny) {
+  LatencyHist hist;
+  TimedInsert(kMarkerInsertionCount, hist,
+              []() { PROFILER_MARKER_UNTYPED("M", OTHER, {}); });
+  ReportHistogram("SingleThreadTiny", hist);
+}
+
+TEST_F(GeckoProfilerMarkerBench, HistoSingleThreadLarge) {
+  const nsCString& text = LargeMarkerText();
+  LatencyHist hist;
+  TimedInsert(kMarkerInsertionCount, hist,
+              [&text]() { PROFILER_MARKER_TEXT("M", OTHER, {}, text); });
+  ReportHistogram("SingleThreadLarge", hist);
+}
+
+TEST_F(GeckoProfilerMarkerBench, HistoSingleThreadFieldsAndStack) {
+  LatencyHist hist;
+  TimedInsert(kMarkerInsertionCount, hist, []() {
+    profiler_add_marker("M", geckoprofiler::category::OTHER,
+                        MarkerStack::Capture(), BenchFieldsMarker{}, 42, 43.0,
+                        "bench");
+  });
+  ReportHistogram("SingleThreadFieldsAndStack", hist);
+}
+
+TEST_F(GeckoProfilerMarkerBench, HistoMultiThreadTiny) {
+  LatencyHist hist;
+  TimedInsertMultiThread(kMarkerInsertionCount, kMarkerInsertionThreads, hist,
+                         []() { PROFILER_MARKER_UNTYPED("M", OTHER, {}); });
+  ReportHistogram("MultiThreadTiny", hist);
+}
+
+TEST_F(GeckoProfilerMarkerBench, HistoMultiThreadLarge) {
+  const nsCString& text = LargeMarkerText();
+  LatencyHist hist;
+  TimedInsertMultiThread(
+      kMarkerInsertionCount, kMarkerInsertionThreads, hist,
+      [&text]() { PROFILER_MARKER_TEXT("M", OTHER, {}, text); });
+  ReportHistogram("MultiThreadLarge", hist);
+}
+
+TEST_F(GeckoProfilerMarkerBench, HistoMultiThreadFieldsAndStack) {
+  LatencyHist hist;
+  TimedInsertMultiThread(
+      kMarkerInsertionCount, kMarkerInsertionThreads, hist, []() {
+        profiler_add_marker("M", geckoprofiler::category::OTHER,
+                            MarkerStack::Capture(), BenchFieldsMarker{}, 42,
+                            43.0, "bench");
+      });
+  ReportHistogram("MultiThreadFieldsAndStack", hist);
+}
