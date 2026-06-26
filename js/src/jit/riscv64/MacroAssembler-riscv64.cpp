@@ -2622,7 +2622,7 @@ bool MacroAssembler::convertUInt64ToDoubleNeedsTemp() { return false; }
 CodeOffset MacroAssembler::call(Label* label) { return BranchAndLink(label); }
 
 CodeOffset MacroAssembler::call(Register reg) {
-  jalr(reg, 0);
+  jalr(reg);
   return CodeOffset(currentOffset());
 }
 
@@ -2645,8 +2645,8 @@ CodeOffset MacroAssembler::farJumpWithPatch() {
   auipc(scratch, 0);
   lw(scratch2, scratch, 4 * kInstrSize);
   add(scratch, scratch, scratch2);
-  jr(scratch, 0);
-  spew(".space 32bit initValue 0xffff ffff");
+  jr(scratch);
+  comment(".space 32bit [0xffff'ffff]");
   emit(UINT32_MAX);
   return farJump;
 }
@@ -5797,7 +5797,7 @@ BufferOffset MacroAssemblerRiscv64::ma_jump(ImmPtr dest) {
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   BufferOffset offset = ma_liPatchable(scratch, dest);
-  jr(scratch, 0);
+  jr(scratch);
   return offset;
 }
 
@@ -6191,7 +6191,7 @@ BufferOffset MacroAssemblerRiscv64::ma_call(ImmPtr dest) {
   temps.Exclude(GeneralRegisterSet(1 << CallReg.code()));
 
   BufferOffset offset = ma_liPatchable(CallReg, dest);
-  jalr(CallReg, 0);
+  jalr(CallReg);
   return offset;
 }
 

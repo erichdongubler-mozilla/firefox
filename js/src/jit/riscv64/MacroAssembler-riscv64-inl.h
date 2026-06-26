@@ -2221,7 +2221,7 @@ void MacroAssemblerRiscv64Compat::retn(Imm32 n) {
   // pc <- [sp]; sp += n
   loadPtr(Address(StackPointer, 0), ra);
   asMasm().addPtr(n, StackPointer);
-  jr(ra, 0);
+  jr(ra);
 }
 }  // namespace jit
 }  // namespace js
