@@ -53,6 +53,7 @@ newtab-topsites-add-shortcut-label = Add Shortcut
 newtab-topsites-add-shortcut-title =
     .title = Add Shortcut
     .aria-label = Add Shortcut
+newtab-shortcuts-pinned-area = Pinned Area
 newtab-topsites-title-label = Title
 newtab-topsites-title-input =
     .placeholder = Enter a title

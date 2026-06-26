@@ -14,6 +14,7 @@ export function useTopSitesDnD({
   isShiftable, // anchored site that slides to make room
   onDragStart,
   onReorder, // ({ site, title, fromIndex, toIndex }) — caller persists it
+  pinInPlace, // let a movable tile commit at its own slot (grouped pins only)
 }) {
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [draggedSite, setDraggedSite] = useState(null);
@@ -97,14 +98,23 @@ export function useTopSitesDnD({
           }
           break;
         case "dragenter":
-          if (index === draggedIndex) {
+          // Dropping on the dragged tile's own slot is a no-op when reordering,
+          // but with pinInPlace a movable tile dropped there still gets pinned,
+          // so preview the reflow instead of clearing it.
+          if (
+            index === draggedIndex &&
+            !(pinInPlace && isMovable(draggedSite))
+          ) {
             setPreviewSites(null);
           } else {
             setPreviewSites(makeTopSitesPreview(index));
           }
           break;
         case "drop":
-          if (index !== draggedIndex) {
+          if (
+            index !== draggedIndex ||
+            (pinInPlace && isMovable(draggedSite))
+          ) {
             droppedRef.current = true;
             onReorder?.({
               site: draggedSite,
@@ -120,6 +130,8 @@ export function useTopSitesDnD({
       draggedIndex,
       draggedSite,
       draggedTitle,
+      isMovable,
+      pinInPlace,
       makeTopSitesPreview,
       onDragStart,
       onReorder,
@@ -127,18 +139,19 @@ export function useTopSitesDnD({
     ]
   );
 
-  // Clear the drag once the committed order arrives (the dragged url left its
-  // old slot). Layout effect so the preview doesn't flash first.
+  // Clear the drag once the committed order arrives. Usually the dragged url has
+  // left its old slot; a pin-in-place drop commits at the same slot, so also
+  // clear when a drop happened and new rows arrived. Layout effect so the
+  // preview doesn't flash first.
   const prevRowsRef = useRef(rows);
   useLayoutEffect(() => {
     const prevRows = prevRowsRef.current;
-    if (
-      draggedSite &&
-      prevRows &&
-      prevRows[draggedIndex] &&
-      prevRows[draggedIndex].url === draggedSite.url &&
-      (!rows[draggedIndex] || rows[draggedIndex].url !== draggedSite.url)
-    ) {
+    const movedFromSlot =
+      prevRows?.[draggedIndex]?.url === draggedSite?.url &&
+      rows[draggedIndex]?.url !== draggedSite?.url;
+    const committedInPlace =
+      droppedRef.current && prevRows && prevRows !== rows;
+    if (draggedSite && (movedFromSlot || committedInPlace)) {
       resetDrag();
     }
     prevRowsRef.current = rows;

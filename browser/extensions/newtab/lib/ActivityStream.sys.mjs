@@ -13,6 +13,12 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
 
+// Eager (not lazy) — the pref default below reads it unconditionally at load.
+// eslint-disable-next-line mozilla/use-static-import
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -640,6 +646,17 @@ export const PREFS_CONFIG = new Map([
     {
       title: "Max number of Top Sites to display per row",
       value: 8,
+    },
+  ],
+  [
+    "topSitesGroupedPins",
+    {
+      title:
+        "Group pinned Top Sites into a contiguous block with restricted drag-and-drop reordering",
+      // Channel-derived (resolves on the host), so it's on in Nightly but stays
+      // dark after the XPI train-hops to Beta/Release. A literal true would ride
+      // inside the XPI and wrongly activate.
+      value: AppConstants.NIGHTLY_BUILD,
     },
   ],
   [

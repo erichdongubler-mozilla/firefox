@@ -1128,6 +1128,9 @@ main.newtab-main section {
   justify-content: center;
   row-gap: var(--space-small);
 }
+.top-sites-list:has(.pinned-drag-overlay) {
+  position: relative;
+}
 .top-sites-list:not(.dnd-active) .top-site-outer:is(.active, :focus, :hover) {
   background: color-mix(in srgb, var(--button-text-color-hover) 14%, transparent);
 }
@@ -1269,6 +1272,43 @@ main.newtab-main section {
   display: contents;
 }
 
+.pinned-drag-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+.pinned-drag-overlay .pinned-drop-box {
+  position: absolute;
+}
+.pinned-drag-overlay .pinned-drop-box::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-block-end: calc(-1 * var(--space-small));
+  inset-inline: calc(-1 * var(--space-small));
+  border-radius: var(--border-radius-large);
+  background: color-mix(in srgb, var(--border-color-selected) 15%, transparent);
+  outline: 1px dashed var(--border-color-selected);
+}
+.lightWallpaper .pinned-drag-overlay .pinned-drop-box {
+  color-scheme: light;
+}
+.darkWallpaper .pinned-drag-overlay .pinned-drop-box {
+  color-scheme: dark;
+}
+.pinned-drag-overlay .pinned-drop-box .pinned-area-label {
+  position: absolute;
+  inset-block-end: 100%;
+  inset-inline-start: 0;
+  margin-block-end: var(--space-small);
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  white-space: nowrap;
+  font-size: var(--font-size-small);
+  color: var(--newtab-text-primary-color);
+}
+
 .top-site-outer {
   width: 120px;
   margin-block-end: var(--space-medium);
@@ -1284,20 +1324,20 @@ main.newtab-main section {
   display: block;
   outline: none;
 }
-.top-site-outer:hover .context-menu-button, .top-site-outer:focus .context-menu-button {
+.top-sites-list:not(.dnd-active) .top-site-outer:is(:hover, :focus) .context-menu-button {
   opacity: 1;
   transition: opacity 200ms;
 }
-.lightWallpaper .top-site-outer:hover .context-menu-button, .lightWallpaper .top-site-outer:focus .context-menu-button {
+.lightWallpaper .top-sites-list:not(.dnd-active) .top-site-outer:is(:hover, :focus) .context-menu-button {
   color-scheme: light;
 }
-.darkWallpaper .top-site-outer:hover .context-menu-button, .darkWallpaper .top-site-outer:focus .context-menu-button {
+.darkWallpaper .top-sites-list:not(.dnd-active) .top-site-outer:is(:hover, :focus) .context-menu-button {
   color-scheme: dark;
 }
-.top-site-outer:hover .tile, .top-site-outer:focus .tile {
+.top-sites-list:not(.dnd-active) .top-site-outer:is(:hover, :focus) .tile {
   background-color: var(--newtab-background-color-secondary);
 }
-.top-site-outer:hover .icon-pin-small, .top-site-outer:focus .icon-pin-small {
+.top-sites-list:not(.dnd-active) .top-site-outer:is(:hover, :focus) .icon-pin-small {
   opacity: 1;
 }
 .lightWallpaper .top-site-outer:not(:hover, :active, .active) {
@@ -1312,6 +1352,9 @@ main.newtab-main section {
 .top-site-outer.active .context-menu-button {
   opacity: 1;
   background-color: var(--newtab-button-active-background);
+}
+.top-site-outer.drag-ghost :is(.context-menu-button, .icon-pin-small) {
+  display: none;
 }
 .top-site-outer .tile {
   background: var(--newtab-background-card);
@@ -1506,6 +1549,16 @@ main.newtab-main section {
 }
 .top-site-outer .edit-button {
   background-image: url("chrome://global/skin/icons/edit.svg");
+}
+.top-site-outer.collapsed {
+  position: absolute;
+  visibility: hidden;
+}
+.top-site-outer.zero-pin-placeholder {
+  visibility: hidden;
+}
+.top-site-outer.zero-pin-placeholder.over {
+  visibility: visible;
 }
 .top-site-outer.dragged .tile *, .top-site-outer.dragged .tile::before {
   display: none;
@@ -16383,6 +16436,27 @@ hr {
 .nova-enabled .top-sites-list:not(.dnd-active) .top-site-outer:is(.active, :focus-within, :hover) {
   background: none;
 }
+.nova-enabled .top-sites-list:not(.dnd-active) .top-site-outer:is(.active, :focus-within, :hover) .tile {
+  border-color: var(--button-border-color-ghost-hover);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nova-enabled .top-sites-list:not(.dnd-active) .top-site-outer:is(.active, :focus-within, :hover) .tile {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    width: var(--col-width);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    height: var(--col-width);
+  }
+}
+.nova-enabled .top-sites-list:not(.dnd-active) .top-site-outer:is(.active, :focus-within, :hover) .icon-pin-small,
+.nova-enabled .top-sites-list:not(.dnd-active) .top-site-outer:is(.active, :focus-within, :hover) .context-menu-button {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nova-enabled .top-sites-list:not(.dnd-active) .top-site-outer:is(.active, :focus-within, :hover) .icon-pin-small,
+.nova-enabled .top-sites-list:not(.dnd-active) .top-site-outer:is(.active, :focus-within, :hover) .context-menu-button {
+    transition: opacity 100ms ease-out 50ms;
+  }
+}
 
 .nova-enabled .top-site-outer {
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
@@ -16407,27 +16481,6 @@ hr {
 }
 .nova-enabled .top-site-outer .tile .top-site-icon {
   border-radius: var(--border-radius-small);
-}
-.nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .tile {
-  border-color: var(--button-border-color-ghost-hover);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .tile {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    width: var(--col-width);
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    height: var(--col-width);
-  }
-}
-.nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .icon-pin-small,
-.nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .context-menu-button {
-  opacity: 1;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .icon-pin-small,
-.nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .context-menu-button {
-    transition: opacity 100ms ease-out 50ms;
-  }
 }
 .nova-enabled .top-site-outer:active .tile {
   border-color: var(--button-border-color-ghost-active);

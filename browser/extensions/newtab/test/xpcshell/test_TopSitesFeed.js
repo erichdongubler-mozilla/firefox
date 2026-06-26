@@ -3871,3 +3871,57 @@ add_task(async function test_readDefaults_invalid_blocked_sponsors_pref() {
   Services.prefs.clearUserPref(TOP_SITES_BLOCKED_SPONSORS_PREF);
   sandbox.restore();
 });
+
+// Guards the fragile pinnedLinks._links write in _saveGroupedPins: the k-th pin
+// must land in the k-th occupied slot so the sparse hole pattern is preserved for
+// the classic renderer, extras append densely, and removing a pin remaps cleanly.
+add_task(async function test_saveGroupedPins_preserves_hole_pattern() {
+  let sandbox = sinon.createSandbox();
+  let feed = getTopSitesFeedForTest(sandbox);
+  feed.pinnedCache = { expire: sandbox.stub() };
+
+  const A = { url: "https://a.com" };
+  const B = { url: "https://b.com" };
+  const C = { url: "https://c.com" };
+  const D = { url: "https://d.com" };
+
+  // Holes serialize to null on persistence, so normalize the sparse _links the
+  // same way before comparing.
+  const persisted = () =>
+    JSON.parse(JSON.stringify(NewTabUtils.pinnedLinks._links));
+
+  const origLinks = NewTabUtils.pinnedLinks._links;
+  // Sparse layout: pins occupy slots 0, 2, 4 with holes at 1 and 3.
+  sandbox
+    .stub(NewTabUtils.pinnedLinks, "links")
+    .get(() => [A, null, B, null, C]);
+  let saveStub = sandbox.stub(NewTabUtils.pinnedLinks, "save");
+
+  // Reorder within the group: each pin maps to the k-th occupied slot, gaps stay.
+  feed._saveGroupedPins([B, A, C]);
+  Assert.deepEqual(
+    persisted(),
+    [B, null, A, null, C],
+    "reorder maps k-th pin to k-th occupied slot, holes preserved"
+  );
+  Assert.ok(saveStub.called, "persisted via save()");
+
+  // A pin beyond the occupied slots appends densely after the last one.
+  feed._saveGroupedPins([A, B, C, D]);
+  Assert.deepEqual(
+    persisted(),
+    [A, null, B, null, C, D],
+    "extra pin appends densely after the existing hole pattern"
+  );
+
+  // Toggling a pin off remaps the remaining group onto the leading slots.
+  feed._saveGroupedPins([A, C]);
+  Assert.deepEqual(
+    persisted(),
+    [A, null, C],
+    "removing a pin remaps remaining pins to the first occupied slots"
+  );
+
+  NewTabUtils.pinnedLinks._links = origLinks;
+  sandbox.restore();
+});

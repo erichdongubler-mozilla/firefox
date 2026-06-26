@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react";
 import { WrapWithProvider } from "test/jest/test-utils";
-import { TopSite } from "content-src/components/TopSites/TopSite";
+import { TopSite, TopSiteLink } from "content-src/components/TopSites/TopSite";
 import { buildTopSitesList } from "content-src/components/TopSites/TopSiteListContainer";
 
 const DEFAULT_LINK = {
@@ -52,5 +52,26 @@ describe("buildTopSitesList Add button placement", () => {
     expect(
       addButtonIndex(getSites([DEFAULT_LINK, DEFAULT_LINK, DEFAULT_LINK]))
     ).toBe(3);
+  });
+});
+
+describe("TopSiteLink #_allowDrop with grouped pins", () => {
+  const topsiteDrag = { dataTransfer: { types: ["text/topsite-index"] } };
+  const makeLink = link => new TopSiteLink({ groupedPinsEnabled: true, link });
+
+  it("allows dropping on a pinned tile", () => {
+    expect(makeLink({ isPinned: true })._allowDrop(topsiteDrag)).toBe(true);
+  });
+
+  it("rejects dropping on a frecent (non-pinned) tile", () => {
+    expect(makeLink({ isPinned: false })._allowDrop(topsiteDrag)).toBe(false);
+  });
+
+  it("stays rejected on a frecent tile even with a stale dragged flag", () => {
+    // Regression: `dragged` is only reset on the next mousedown, so a cancelled
+    // drag used to leave it true here and wrongly mark this slot droppable.
+    const link = makeLink({ isPinned: false });
+    link.dragged = true;
+    expect(link._allowDrop(topsiteDrag)).toBe(false);
   });
 });

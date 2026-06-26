@@ -551,6 +551,24 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
+            "content-src/components/TopSites/GroupedTopSiteListContainer.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/TopSites/PinnedAreaOverlay.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/TopSites/useZeroPinDrop.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
             "content-src/components/**/*.jsx": {
               statements: 51.1,
               lines: 52.38,
