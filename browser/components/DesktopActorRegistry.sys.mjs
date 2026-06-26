@@ -297,8 +297,6 @@ let JSWINDOWACTORS = {
         },
         "BackupUI:ErrorBarDismissed": { wantUntrusted: true },
         "BackupUI:FindBackupsInWellKnownLocations": { wantUntrusted: true },
-        "BackupUI:ProbeDefaultBackupDir": { wantUntrusted: true },
-        "BackupUI:PrepareRestoreDialog": { wantUntrusted: true },
       },
     },
     includeChrome: true,

@@ -68,11 +68,6 @@ add_task(async function test_turn_on_scheduled_backups_confirm() {
   Services.fog.testResetFOG();
 
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
-    let sandbox = sinon.createSandbox();
-    sandbox
-      .stub(BackupService.prototype, "probeDefaultDirAccess")
-      .resolves(true);
-
     let settings = await waitForBackupSettings(browser);
 
     let turnOnButton = settings.scheduledBackupsButtonEl;
@@ -82,7 +77,9 @@ add_task(async function test_turn_on_scheduled_backups_confirm() {
       "Button to turn on scheduled backups should be found"
     );
 
-    await openTurnOnScheduledBackupsDialog(settings);
+    turnOnButton.click();
+
+    await settings.updateComplete;
 
     let turnOnScheduledBackups = settings.turnOnScheduledBackupsEl;
 
@@ -120,7 +117,6 @@ add_task(async function test_turn_on_scheduled_backups_confirm() {
 
     // Reset scheduled backups again for subsequent tests.
     Services.prefs.clearUserPref(SCHEDULED_BACKUPS_ENABLED_PREF);
-    sandbox.restore();
   });
 });
 
@@ -136,9 +132,6 @@ add_task(async function test_turn_on_custom_location_filepicker() {
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     let sandbox = sinon.createSandbox();
     sandbox.stub(BackupService.prototype, "createBackup").resolves(true);
-    sandbox
-      .stub(BackupService.prototype, "probeDefaultDirAccess")
-      .resolves(true);
 
     const mockCustomParentDir = await IOUtils.createUniqueDirectory(
       PathUtils.tempDir,
@@ -158,7 +151,9 @@ add_task(async function test_turn_on_custom_location_filepicker() {
       "Button to turn on scheduled backups should be found"
     );
 
-    await openTurnOnScheduledBackupsDialog(settings);
+    turnOnButton.click();
+
+    await settings.updateComplete;
     let turnOnScheduledBackups = settings.turnOnScheduledBackupsEl;
 
     Assert.ok(
@@ -259,10 +254,6 @@ add_task(async function test_turn_on_scheduled_backups_encryption() {
 
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     let sandbox = sinon.createSandbox();
-    sandbox
-      .stub(BackupService.prototype, "probeDefaultDirAccess")
-      .resolves(true);
-
     let settings = await waitForBackupSettings(browser);
 
     let turnOnButton = settings.scheduledBackupsButtonEl;
@@ -271,7 +262,8 @@ add_task(async function test_turn_on_scheduled_backups_encryption() {
       "Button to turn on scheduled backups should be found"
     );
 
-    await openTurnOnScheduledBackupsDialog(settings);
+    turnOnButton.click();
+    await settings.updateComplete;
 
     let turnOnScheduledBackups = settings.turnOnScheduledBackupsEl;
     Assert.ok(
@@ -345,10 +337,6 @@ add_task(async function test_turn_on_scheduled_backups_encryption() {
 add_task(async function test_turn_on_scheduled_backups_encryption_error() {
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     let sandbox = sinon.createSandbox();
-    sandbox
-      .stub(BackupService.prototype, "probeDefaultDirAccess")
-      .resolves(true);
-
     let settings = await waitForBackupSettings(browser);
 
     let turnOnButton = settings.scheduledBackupsButtonEl;
@@ -357,7 +345,8 @@ add_task(async function test_turn_on_scheduled_backups_encryption_error() {
       "Button to turn on scheduled backups should be found"
     );
 
-    await openTurnOnScheduledBackupsDialog(settings);
+    turnOnButton.click();
+    await settings.updateComplete;
 
     let turnOnScheduledBackups = settings.turnOnScheduledBackupsEl;
     Assert.ok(
@@ -454,7 +443,8 @@ add_task(async function test_turn_on_scheduled_backups_encryption_error() {
       "Button to turn on scheduled backups should be found"
     );
 
-    await openTurnOnScheduledBackupsDialog(settings);
+    turnOnButton.click();
+    await settings.updateComplete;
 
     let turnOnScheduledBackups = settings.turnOnScheduledBackupsEl;
     Assert.ok(
@@ -519,14 +509,11 @@ add_task(async function test_default_location_selected() {
   });
 
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
-    let sandbox = sinon.createSandbox();
-    sandbox
-      .stub(BackupService.prototype, "probeDefaultDirAccess")
-      .resolves(true);
-
     let settings = await waitForBackupSettings(browser);
 
-    await openTurnOnScheduledBackupsDialog(settings);
+    let turnOnButton = settings.scheduledBackupsButtonEl;
+    turnOnButton.click();
+    await settings.updateComplete;
 
     let turnOnScheduledBackups = settings.turnOnScheduledBackupsEl;
     let promise = BrowserTestUtils.waitForEvent(
@@ -541,8 +528,6 @@ add_task(async function test_default_location_selected() {
       settings.backupServiceState.defaultParent.path,
       "Default path was used when nothing was explicitly selected"
     );
-
-    sandbox.restore();
   });
 
   await SpecialPowers.popPrefEnv();
@@ -568,11 +553,6 @@ add_task(async function test_embedded_component_persistent_data_filepicker() {
 
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     await waitInitialRequestStateSettled();
-    let sandbox = sinon.createSandbox();
-    sandbox
-      .stub(BackupService.prototype, "probeDefaultDirAccess")
-      .resolves(true);
-
     const mockCustomParentDir = await IOUtils.createUniqueDirectory(
       PathUtils.tempDir,
       "our-dummy-folder"
@@ -588,7 +568,9 @@ add_task(async function test_embedded_component_persistent_data_filepicker() {
       "Button to turn on scheduled backups should be found"
     );
 
-    await openTurnOnScheduledBackupsDialog(settings);
+    turnOnButton.click();
+
+    await settings.updateComplete;
     let turnOnScheduledBackups = settings.turnOnScheduledBackupsEl;
 
     // for the purposes of this test, we will act like we are an embedded component
@@ -631,8 +613,6 @@ add_task(async function test_embedded_component_persistent_data_filepicker() {
 
     await promise;
     await settings.updateComplete;
-
-    sandbox.restore();
   });
 
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
@@ -656,9 +636,6 @@ add_task(async function test_create_backup_on_enable() {
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     await waitInitialRequestStateSettled();
     let sandbox = sinon.createSandbox();
-    sandbox
-      .stub(BackupService.prototype, "probeDefaultDirAccess")
-      .resolves(true);
     let createBackupStub = sandbox.stub(
       BackupService.prototype,
       "createBackup"
@@ -681,7 +658,9 @@ add_task(async function test_create_backup_on_enable() {
       "Button to turn on scheduled backups should be found"
     );
 
-    await openTurnOnScheduledBackupsDialog(settings);
+    turnOnButton.click();
+
+    await settings.updateComplete;
 
     let turnOnScheduledBackups = settings.turnOnScheduledBackupsEl;
 
@@ -747,7 +726,9 @@ add_task(
           "Button to turn on scheduled backups should be found"
         );
 
-        await openTurnOnScheduledBackupsDialog(settings);
+        turnOnButton.click();
+
+        await settings.updateComplete;
         let turnOnScheduledBackups = settings.turnOnScheduledBackupsEl;
 
         // for the purposes of this test, we will act like we are an embedded component

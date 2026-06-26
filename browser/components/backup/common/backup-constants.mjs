@@ -51,7 +51,6 @@ export const ERRORS = Object.freeze({
   DECOMPRESSION_FAILED: 15,
   PROFILE_CREATION_FAILED: 16,
   RESOURCE_RECOVERY_FAILED: 17,
-  DEFAULT_DIR_ACCESS_DENIED: 18,
 });
 
 export function errorString(errorCodeToLookup) {
