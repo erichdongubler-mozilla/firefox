@@ -162,7 +162,7 @@ implementation details may vary deeply among different providers.
      *
      * @param {UrlbarQueryContext} queryContext
      *   The query context object
-     * @param {UrlbarController} controller
+     * @param {UrlbarParentController} controller
      *   The current controller.
      * @returns {Promise<boolean>}
      *   Whether this provider should be invoked for the search.
@@ -246,22 +246,38 @@ indicated by the UrlbarQueryContext.muxer property.
 The Controller
 --------------
 
-:searchfox:`UrlbarController <browser/components/urlbar/UrlbarController.sys.mjs>`
-is the component responsible for reacting to user's input, by communicating
-proper course of action to the Model (e.g. starting/stopping a query) and the
+The controller is responsible for reacting to the user's input, by communicating
+the proper course of action to the Model (e.g. starting/stopping a query) and the
 View (e.g. showing/hiding a panel). It is also responsible for reporting Telemetry.
+
+It is split into two classes connected by the *Urlbar* JSWindowActor pair:
+
+* :searchfox:`UrlbarParentController <browser/components/urlbar/UrlbarParentController.sys.mjs>`
+  runs in the parent process. It owns the *ProvidersManager*, drives the query
+  lifecycle, and reports Telemetry.
+* :searchfox:`UrlbarChildController <browser/components/urlbar/content/UrlbarChildController.mjs>`
+  lives alongside the *View* (in a content process for about:newtab, or in the
+  parent process for the toolbar). The *Input* and *View* talk to it; it forwards
+  query work to the *UrlbarParentController* and dispatches result notifications
+  to listeners.
 
 .. note::
 
-  Each *View* has a different *Controller* instance.
+  Each *View* has a different controller instance.
 
 .. code:: JavaScript
 
-  UrlbarController {
+  UrlbarParentController {
     async startQuery(queryContext);
     cancelQuery(queryContext);
     // Invoked by the ProvidersManager when results are available.
     receiveResults(queryContext);
+  }
+
+  UrlbarChildController {
+    // Forwarded to the UrlbarParentController.
+    async startQuery(queryContext);
+    cancelQuery(queryContext);
     // Used by the View to listen for results.
     addListener(listener);
     removeListener(listener);
@@ -307,7 +323,7 @@ Implements an input box *View*, owns an *UrlbarView*.
     window;
     // The containing document.
     document;
-    // An UrlbarController instance.
+    // An UrlbarChildController instance.
     controller;
     // An UrlbarView instance.
     view;
