@@ -4561,7 +4561,7 @@ void MacroAssembler::wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access,
 void MacroAssembler::wasmBoundsCheck32(Condition cond, Register index,
                                        Register boundsCheckLimit,
                                        Label* label) {
-  ma_b(index, boundsCheckLimit, label, cond, LongJump);
+  ma_b(index, boundsCheckLimit, label, cond, ShortJump);
 }
 
 void MacroAssembler::wasmBoundsCheck32(Condition cond, Register index,
@@ -4569,13 +4569,13 @@ void MacroAssembler::wasmBoundsCheck32(Condition cond, Register index,
   UseScratchRegisterScope temps(this);
   Register scratch2 = temps.Acquire();
   load32(boundsCheckLimit, scratch2);
-  ma_b(index, Register(scratch2), label, cond, LongJump);
+  ma_b(index, Register(scratch2), label, cond, ShortJump);
 }
 
 void MacroAssembler::wasmBoundsCheck64(Condition cond, Register64 index,
                                        Register64 boundsCheckLimit,
                                        Label* label) {
-  ma_b(index.reg, boundsCheckLimit.reg, label, cond, LongJump);
+  ma_b(index.reg, boundsCheckLimit.reg, label, cond, ShortJump);
 }
 
 void MacroAssembler::wasmBoundsCheck64(Condition cond, Register64 index,
@@ -4583,7 +4583,7 @@ void MacroAssembler::wasmBoundsCheck64(Condition cond, Register64 index,
   UseScratchRegisterScope temps(this);
   Register scratch2 = temps.Acquire();
   loadPtr(boundsCheckLimit, scratch2);
-  ma_b(index.reg, scratch2, label, cond, LongJump);
+  ma_b(index.reg, scratch2, label, cond, ShortJump);
 }
 
 void MacroAssembler::wasmCompareExchange64(const wasm::MemoryAccessDesc& access,
