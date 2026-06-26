@@ -4847,7 +4847,7 @@ void MacroAssembler::wasmTruncateDoubleToInt64(
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
     Trunc_l_d(output.reg, input, scratch);
-    ma_b(scratch, Imm32(0), oolEntry, Assembler::Equal, LongJump);
+    ma_b(scratch, Imm32(0), oolEntry, Assembler::Equal, ShortJump);
   }
 }
 
@@ -4862,7 +4862,7 @@ void MacroAssembler::wasmTruncateDoubleToUInt32(FloatRegister input,
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
     Trunc_uw_d(output, input, scratch);
-    ma_b(scratch, Imm32(0), oolEntry, Assembler::Equal, LongJump);
+    ma_b(scratch, Imm32(0), oolEntry, Assembler::Equal, ShortJump);
   }
 }
 
@@ -4876,7 +4876,7 @@ void MacroAssembler::wasmTruncateDoubleToUInt64(
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
     Trunc_ul_d(output.reg, input, scratch);
-    ma_b(scratch, Imm32(0), oolEntry, Assembler::Equal, LongJump);
+    ma_b(scratch, Imm32(0), oolEntry, Assembler::Equal, ShortJump);
   }
 }
 
@@ -4909,7 +4909,7 @@ void MacroAssembler::wasmTruncateFloat32ToInt64(
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
     Trunc_l_s(output.reg, input, scratch);
-    ma_b(scratch, Imm32(0), oolEntry, Assembler::Equal, LongJump);
+    ma_b(scratch, Imm32(0), oolEntry, Assembler::Equal, ShortJump);
   }
 }
 
@@ -4924,7 +4924,7 @@ void MacroAssembler::wasmTruncateFloat32ToUInt32(FloatRegister input,
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
     Trunc_uw_s(output, input, scratch);
-    ma_b(scratch, Imm32(0), oolEntry, Assembler::Equal, LongJump);
+    ma_b(scratch, Imm32(0), oolEntry, Assembler::Equal, ShortJump);
   }
 }
 
@@ -4938,7 +4938,7 @@ void MacroAssembler::wasmTruncateFloat32ToUInt64(
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
     Trunc_ul_s(output.reg, input, scratch);
-    ma_b(scratch, Imm32(0), oolEntry, Assembler::Equal, LongJump);
+    ma_b(scratch, Imm32(0), oolEntry, Assembler::Equal, ShortJump);
   }
 }
 
