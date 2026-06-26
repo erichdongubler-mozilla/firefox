@@ -657,8 +657,8 @@ struct llama_mlock::impl {
 
         char* errmsg = std::strerror(errno);
         bool suggest = (errno == ENOMEM);
-#if defined(TARGET_OS_VISION) || defined(TARGET_OS_TV) || defined(_AIX) || defined(__HAIKU__)
-        // visionOS/tvOS/Haiku don't support RLIMIT_MEMLOCK
+#if defined(TARGET_OS_VISION) || defined(TARGET_OS_TV) || defined(_AIX) || defined(__HAIKU__) || defined(__sun__)
+        // visionOS/tvOS/Haiku/Solaris don't support RLIMIT_MEMLOCK
         // Skip resource limit checks on these platforms
         suggest = false;
 #else
