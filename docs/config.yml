@@ -159,8 +159,6 @@ allowed_warnings:
     - "layout/Reftest\\.rst:.*: WARNING: undefined label"
     - "mots/index.rst:.*: WARNING: undefined label"
     - "nspr/.* WARNING: undefined label"
-    - "setup/configuring_build_options\\.rst:.*: WARNING: undefined label"
-    - "setup/windows_build\\.rst:.*: WARNING: undefined label"
     - "taskcluster/release-promotion-action\\.rst:.*: WARNING: undefined label"
     - "toolkit/components/messaging-system/docs/index\\.rst:.*: WARNING: undefined label"
     - "toolkit/components/telemetry/collection/events\\.rst:.*: WARNING: undefined label"
@@ -225,6 +223,14 @@ allowed_warnings:
     - "WARNING: undefined label: 'defining_xpcom_components'"
     - "ipc/ipdl\\.md:.*: WARNING: Duplicate explicit target name"
     - "ipc/processes\\.md:.*: WARNING: Duplicate explicit target name"
+    - "setup/building_with_debug_symbols\\.md:.*: WARNING: undefined label"
+    - "setup/configuring_build_options\\.md:.*: WARNING: undefined label"
+    - "setup/contributing_code\\.md:.*: WARNING: undefined label"
+    - "setup/linux_32bit_build_on_64bit_OS\\.md:.*: WARNING: undefined label"
+    - "setup/linux_build\\.md:.*: WARNING: undefined label"
+    - "setup/macos_build\\.md:.*: WARNING: undefined label"
+    - "setup/windows_build\\.md:.*: WARNING: undefined label"
+    - "setup/windows_wsl_build\\.md:.*: WARNING: undefined label"
 exclude_patterns:
     - js/src/doc/Debugger
 
