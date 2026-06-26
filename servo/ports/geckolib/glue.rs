@@ -5996,7 +5996,7 @@ pub extern "C" fn Servo_NumericType_AddTypes(
     numeric_types: &nsTArray<&NumericType>,
     result: &mut NumericType,
 ) -> bool {
-    match NumericType::add_types(numeric_types) {
+    match NumericType::add_types(numeric_types.iter().copied()) {
         Ok(numeric_type) => {
             *result = numeric_type;
             true

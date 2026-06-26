@@ -122,7 +122,7 @@ void CSSMathProduct::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
   }
 }
 
-StyleMathSum CSSMathProduct::ToStyleMathProduct() const {
+StyleMathProduct CSSMathProduct::ToStyleMathProduct() const {
   nsTArray<StyleNumericValue> values;
 
   for (const RefPtr<CSSNumericValue>& value : mValues->GetValues()) {
