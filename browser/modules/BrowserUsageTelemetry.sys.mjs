@@ -1439,7 +1439,9 @@ export let BrowserUsageTelemetry = {
         Glean.tabgroup.tabInteractions.close_tabstrip.add();
       } else if (
         metricsContext.telemetrySource ==
-        lazy.TabMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU
+          lazy.TabMetrics.METRIC_SOURCE.TAB_MENU ||
+        metricsContext.telemetrySource ==
+          lazy.TabMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU
       ) {
         Glean.tabgroup.tabInteractions.close_tabmenu.add();
       } else {

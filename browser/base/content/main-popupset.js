@@ -138,22 +138,30 @@ document.addEventListener(
           break;
         case "context_closeDuplicateTabs":
           gBrowser.removeDuplicateTabs(TabContextMenu.contextTab, {
-            metricsContext: lazy.TabMetrics.userTriggeredContext(),
+            metricsContext: lazy.TabMetrics.userTriggeredContext(
+              lazy.TabMetrics.METRIC_SOURCE.TAB_MENU
+            ),
           });
           break;
         case "context_closeTabsToTheStart":
           gBrowser.removeTabsToTheStartFrom(TabContextMenu.contextTab, {
-            metricsContext: lazy.TabMetrics.userTriggeredContext(),
+            metricsContext: lazy.TabMetrics.userTriggeredContext(
+              lazy.TabMetrics.METRIC_SOURCE.TAB_MENU
+            ),
           });
           break;
         case "context_closeTabsToTheEnd":
           gBrowser.removeTabsToTheEndFrom(TabContextMenu.contextTab, {
-            metricsContext: lazy.TabMetrics.userTriggeredContext(),
+            metricsContext: lazy.TabMetrics.userTriggeredContext(
+              lazy.TabMetrics.METRIC_SOURCE.TAB_MENU
+            ),
           });
           break;
         case "context_closeOtherTabs":
           gBrowser.removeAllTabsBut(TabContextMenu.contextTab, {
-            metricsContext: lazy.TabMetrics.userTriggeredContext(),
+            metricsContext: lazy.TabMetrics.userTriggeredContext(
+              lazy.TabMetrics.METRIC_SOURCE.TAB_MENU
+            ),
           });
           break;
         case "context_unloadTab":

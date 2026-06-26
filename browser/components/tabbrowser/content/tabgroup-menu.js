@@ -478,7 +478,11 @@
       this.#commandButtons.moveGroupToNewWindow.addEventListener(
         "command",
         () => {
-          gBrowser.replaceGroupWithWindow(this.activeGroup);
+          gBrowser.replaceGroupWithWindow(this.activeGroup, {
+            metricsContext: gBrowser.TabMetrics.userTriggeredContext(
+              gBrowser.TabMetrics.METRIC_SOURCE.TAB_GROUP_MENU
+            ),
+          });
         }
       );
 
@@ -501,8 +505,9 @@
 
       this.#commandButtons.saveAndCloseGroup.addEventListener("command", () => {
         this.activeGroup.saveAndClose(
-          // Should this be TabMetrics.METRIC_SOURCE.TAB_GROUP_MENU?
-          TabMetrics.userTriggeredContext()
+          TabMetrics.userTriggeredContext(
+            TabMetrics.METRIC_SOURCE.TAB_GROUP_MENU
+          )
         );
       });
 

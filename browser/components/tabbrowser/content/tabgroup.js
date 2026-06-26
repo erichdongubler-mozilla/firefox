@@ -665,7 +665,7 @@
 
     saveAndClose(metricsContext = TabMetrics.UNKNOWN_CONTEXT) {
       this.save(metricsContext);
-      gBrowser.removeTabGroup(this);
+      gBrowser.removeTabGroup(this, { metricsContext });
     }
 
     /**

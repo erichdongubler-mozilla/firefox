@@ -11,6 +11,8 @@ const { UrlbarTestUtils } = ChromeUtils.importESModule(
 );
 
 let resetTelemetry = async () => {
+  // Ensure the tab movements deferred task has an idle moment to fire.
+  await new Promise(resolve => ChromeUtils.idleDispatch(resolve));
   await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
 };
@@ -268,6 +270,7 @@ add_task(async function test_tabGroupTelemetry() {
 
 add_task(async function test_tabGroupTelemetrySaveGroup() {
   let tabGroupSaveTelemetry;
+  let tabGroupDeleteTelemetry;
 
   await resetTelemetry();
 
@@ -290,17 +293,30 @@ add_task(async function test_tabGroupTelemetrySaveGroup() {
     "tabgroup.save event extra_keys has correct values after tab group save"
   );
 
+  Assert.equal(
+    Glean.tabgroup.delete.testGetValue(),
+    null,
+    "We don't record non user-triggered delete events"
+  );
+
   await resetTelemetry();
 
   let group2tab = BrowserTestUtils.addTab(win.gBrowser, "https://example.com");
   await BrowserTestUtils.browserLoaded(group2tab.linkedBrowser);
   let group2 = gBrowser.addTabGroup([group2tab]);
-  group2.saveAndClose(gBrowser.TabMetrics.userTriggeredContext());
+  group2.saveAndClose(
+    gBrowser.TabMetrics.userTriggeredContext(
+      gBrowser.TabMetrics.METRIC_SOURCE.TAB_GROUP_MENU
+    )
+  );
 
   await TestUtils.waitForCondition(() => {
     tabGroupSaveTelemetry = Glean.tabgroup.save.testGetValue();
-    return tabGroupSaveTelemetry?.length == 1;
-  }, "Wait for tabgroup.save event after tab group save with explicit user event");
+    tabGroupDeleteTelemetry = Glean.tabgroup.delete.testGetValue();
+    return (
+      tabGroupSaveTelemetry?.length == 1 && tabGroupDeleteTelemetry?.length == 1
+    );
+  }, "Wait for tabgroup.save and tabgroup.close event after tab group save");
 
   Assert.deepEqual(
     tabGroupSaveTelemetry[0].extra,
@@ -308,7 +324,16 @@ add_task(async function test_tabGroupTelemetrySaveGroup() {
       user_triggered: "true",
       id: group2.id,
     },
-    "tabgroup.save event extra_keys has correct values after tab group save by explicit user event"
+    "tabgroup.save event extra_keys has correct values after tab group save"
+  );
+
+  Assert.deepEqual(
+    tabGroupDeleteTelemetry[0].extra,
+    {
+      id: group2.id,
+      source: gBrowser.TabMetrics.METRIC_SOURCE.TAB_GROUP_MENU,
+    },
+    "tabgroup.delete event extra_keys has correct values after tab group delete"
   );
 });
 
