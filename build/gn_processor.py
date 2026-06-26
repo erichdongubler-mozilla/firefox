@@ -281,6 +281,7 @@ def filter_gn_config(path, gn_result, sandbox_vars, input_vars, gn_target):
             "cflags_objcc",
             "deps",
             "libs",
+            "frameworks",
             "output_name",
         ):
             spec[spec_attr] = raw_spec.get(spec_attr, [])
@@ -625,7 +626,7 @@ def process_gn_config(
             context_attrs["USE_LIBS"] = find_lib_deps(target_fullname)
 
         context_attrs["OS_LIBS"] = []
-        for lib in spec.get("libs", []):
+        for lib in spec.get("libs", []) + spec.get("frameworks", []):
             lib_name = os.path.splitext(lib)[0]
             if lib.endswith(".framework"):
                 context_attrs["OS_LIBS"] += ["-framework " + lib_name]
