@@ -1836,12 +1836,6 @@ html {
 .onboardingContainer .screen[pos=split] #content-tiles-container .multi-select-container {
   padding: 0;
 }
-@media (max-width <= 820px) {
-  .onboardingContainer .screen[pos=split] {
-    flex-direction: column;
-    overflow-y: auto;
-  }
-}
 .onboardingContainer .screen[pos=split] .section-secondary,
 .onboardingContainer .screen[pos=split] .section-main {
   width: 400px;
