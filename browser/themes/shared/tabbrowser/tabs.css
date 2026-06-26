@@ -2692,7 +2692,7 @@ tab-group {
   /* The below lines are required for dark, light, and
       system themes to achieve the gradient border appearance */
   @media (not (prefers-contrast)) and (-moz-pref("browser.nova.enabled")) {
-    :root:not([lwtheme]) & {
+    :root[theme-in-app] & {
       border: 1px solid transparent;
       background:
         var(--tab-border-color-accent) border-box border-area,

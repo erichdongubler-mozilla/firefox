@@ -224,6 +224,8 @@ function loadDetails(details, experiment, baseURI, id, version, logger) {
 export var LightweightThemeManager = {
   aiThemeData: null,
   _aiThemeDataPromise: null,
+  aiNovaThemeData: null,
+  _aiNovaThemeDataPromise: null,
   privateThemeData: null,
   _privateThemeDataPromise: null,
 
@@ -245,6 +247,26 @@ export var LightweightThemeManager = {
     });
 
     return this._aiThemeDataPromise;
+  },
+
+  async promiseAINovathemeData() {
+    if (this.aiNovaThemeData) {
+      return this.aiNovaThemeData;
+    }
+
+    if (this._aiNovaThemeDataPromise) {
+      return this._aiNovaThemeDataPromise;
+    }
+
+    this._aiNovaThemeDataPromise = this._fetchThemeDataFromBuiltinManifest(
+      "resource://builtin-themes/aiwindow-nova/"
+    ).then(data => {
+      this.aiNovaThemeData = data;
+      this._aiNovaThemeDataPromise = null;
+      return data;
+    });
+
+    return this._aiNovaThemeDataPromise;
   },
 
   async promisePrivateThemeData() {
