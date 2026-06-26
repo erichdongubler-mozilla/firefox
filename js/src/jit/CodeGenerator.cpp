@@ -4841,7 +4841,10 @@ void CodeGenerator::visitMegamorphicLoadSlot(LMegamorphicLoadSlot* lir) {
   ValueOperand output = ToOutValue(lir);
 
   Label cacheHit;
-  masm.emitMegamorphicCacheLookup(lir->mir()->name(), obj, temp0, temp1, temp2,
+  PropertyKey id = lir->mir()->name();
+  masm.movePropertyKey(id, temp0);
+  masm.move32(Imm32(HashPropertyKeyThreadSafe(id)), temp1);
+  masm.emitMegamorphicCacheLookupByValue(obj, temp0, temp1, temp2,
                                   output, &cacheHit);
 
   Label bail;
@@ -4884,7 +4887,10 @@ void CodeGenerator::visitMegamorphicLoadSlotPermissive(
   masm.movePtr(obj, temp3);
 
   Label done, getter, nullGetter;
-  masm.emitMegamorphicCacheLookup(lir->mir()->name(), obj, temp0, temp1, temp2,
+  PropertyKey id = lir->mir()->name();
+  masm.movePropertyKey(id, temp0);
+  masm.move32(Imm32(HashPropertyKeyThreadSafe(id)), temp1);
+  masm.emitMegamorphicCacheLookupByValue(obj, temp0, temp1, temp2,
                                   output, &done, &getter);
 
   masm.movePropertyKey(lir->mir()->name(), temp1);
@@ -4918,10 +4924,13 @@ void CodeGenerator::visitMegamorphicLoadSlotByValue(
   Register temp2 = ToRegister(lir->temp2());
   ValueOperand output = ToOutValue(lir);
 
-  Label cacheHit, bail;
-  masm.emitMegamorphicCacheLookupByValue(idVal, obj, temp0, temp1, temp2,
+  Label cacheHit, bail, atomizeMiss;
+  masm.xorPtr(temp2, temp2);
+  masm.loadAtomOrSymbolAndHash(idVal, temp0, temp1, &atomizeMiss);
+  masm.emitMegamorphicCacheLookupByValue(obj, temp0, temp1, temp2,
                                          output, &cacheHit);
 
+  masm.bind(&atomizeMiss);
   masm.branchIfNonNativeObj(obj, temp0, &bail);
 
   // idVal will be in vp[0], result will be stored in vp[1].
@@ -4967,20 +4976,26 @@ void CodeGenerator::visitMegamorphicLoadSlotByValuePermissive(
   Register temp2 = ToRegister(lir->temp2());
   ValueOperand output = ToOutValue(lir);
 
+  Label done, atomizeMiss;
+
   // If we have enough registers available, we can call getters directly from
   // jitcode. On x86, we have to call into the VM.
 #ifndef JS_CODEGEN_X86
-  Label done, getter, nullGetter;
+  Label getter, nullGetter;
   Register temp3 = ToRegister(lir->temp3());
   masm.movePtr(obj, temp3);
-
-  masm.emitMegamorphicCacheLookupByValue(idVal, obj, temp0, temp1, temp2,
+  masm.xorPtr(temp2, temp2);
+  masm.loadAtomOrSymbolAndHash(idVal, temp0, temp1, &atomizeMiss);
+  masm.emitMegamorphicCacheLookupByValue(obj, temp0, temp1, temp2,
                                          output, &done, &getter);
 #else
-  Label done;
-  masm.emitMegamorphicCacheLookupByValue(idVal, obj, temp0, temp1, temp2,
+  masm.xorPtr(temp2, temp2);
+  masm.loadAtomOrSymbolAndHash(idVal, temp0, temp1, &atomizeMiss);
+  masm.emitMegamorphicCacheLookupByValue(obj, temp0, temp1, temp2,
                                          output, &done);
 #endif
+
+  masm.bind(&atomizeMiss);
 
   pushArg(temp2);
   pushArg(idVal);
@@ -5069,10 +5084,13 @@ void CodeGenerator::visitMegamorphicHasProp(LMegamorphicHasProp* lir) {
   Register temp2 = ToRegister(lir->temp2());
   Register output = ToRegister(lir->output());
 
-  Label bail, cacheHit;
-  masm.emitMegamorphicCacheLookupExists(idVal, obj, temp0, temp1, temp2, output,
+  Label bail, cacheHit, atomizeMiss;
+  masm.xorPtr(temp2, temp2);
+  masm.loadAtomOrSymbolAndHash(idVal, temp0, temp1, &atomizeMiss);
+  masm.emitMegamorphicCacheLookupExists(obj, temp0, temp1, temp2, output,
                                         &cacheHit, lir->mir()->hasOwn());
 
+  masm.bind(&atomizeMiss);
   masm.branchIfNonNativeObj(obj, temp0, &bail);
 
   // idVal will be in vp[0], result will be stored in vp[1].
