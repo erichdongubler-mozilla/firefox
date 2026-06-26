@@ -747,6 +747,12 @@ html {
         }
       }
 
+      @media (max-width <= 820px) {
+        flex-direction: column;
+        overflow-y: auto;
+      }
+
+
       .section-secondary,
       .section-main {
         width: $split-section-width;
