@@ -9,7 +9,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
-  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
+  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
 /**
@@ -88,12 +88,12 @@ export class SuggestFeature {
   // Methods not designed for overriding below
 
   /**
-   * @returns {Console}
+   * @returns {ConsoleInstance}
    *   The feature's logger.
    */
   get logger() {
     if (!this._logger) {
-      this._logger = lazy.UrlbarShared.getLogger({
+      this._logger = lazy.UrlbarUtils.getLogger({
         prefix: `QuickSuggest.${this.name}`,
       });
     }

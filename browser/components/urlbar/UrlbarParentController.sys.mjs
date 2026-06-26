@@ -29,7 +29,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () =>
-  lazy.UrlbarShared.getLogger({ prefix: "Controller" })
+  lazy.UrlbarUtils.getLogger({ prefix: "Controller" })
 );
 
 const NOTIFICATIONS = {

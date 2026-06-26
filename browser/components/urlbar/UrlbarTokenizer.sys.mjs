@@ -19,7 +19,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () =>
-  UrlbarShared.getLogger({ prefix: "Tokenizer" })
+  lazy.UrlbarUtils.getLogger({ prefix: "Tokenizer" })
 );
 
 ChromeUtils.defineLazyGetter(lazy, "gFluentStrings", function () {

@@ -23,7 +23,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () =>
-  lazy.UrlbarShared.getLogger({ prefix: "Provider.OpenTabs" })
+  UrlbarUtils.getLogger({ prefix: "Provider.OpenTabs" })
 );
 
 const PRIVATE_USER_CONTEXT_ID = -1;

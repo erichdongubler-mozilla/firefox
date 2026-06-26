@@ -12,7 +12,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TelemetryReportingPolicy:
     "resource://gre/modules/TelemetryReportingPolicy.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
-  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
@@ -354,7 +353,7 @@ class _QuickSuggest {
 
   get logger() {
     if (!this._logger) {
-      this._logger = lazy.UrlbarShared.getLogger({ prefix: "QuickSuggest" });
+      this._logger = lazy.UrlbarUtils.getLogger({ prefix: "QuickSuggest" });
     }
     return this._logger;
   }

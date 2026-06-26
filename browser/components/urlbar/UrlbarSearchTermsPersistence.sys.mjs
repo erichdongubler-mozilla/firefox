@@ -12,7 +12,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
-  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 /**
@@ -32,7 +31,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
  */
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () =>
-  lazy.UrlbarShared.getLogger({ prefix: "UrlbarSearchTermsPersistence" })
+  UrlbarUtils.getLogger({ prefix: "UrlbarSearchTermsPersistence" })
 );
 
 const URLBAR_PERSISTENCE_SETTINGS_KEY = "urlbar-persisted-search-terms";
