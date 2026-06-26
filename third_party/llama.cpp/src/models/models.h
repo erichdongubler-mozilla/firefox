@@ -7,6 +7,8 @@
 // note: almost all graphs require at least sqrtf, so include cmath globally
 #include <cmath>
 
+#include "moz-overrides.h"
+
 //
 // base classes
 //

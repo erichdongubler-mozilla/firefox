@@ -26,6 +26,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include "moz-overrides.h"
+
 #if defined(_MSC_VER)
 #pragma warning(disable: 4244 4267) // possible loss of data
 #endif

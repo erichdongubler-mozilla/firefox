@@ -15,8 +15,6 @@
 #include "llama-memory-hybrid-iswa.h"
 #include "llama-memory-recurrent.h"
 
-#include "models/models.h"
-
 #include "ggml.h"
 #include "ggml-cpp.h"
 
@@ -34,6 +32,8 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+#include "models/models.h"
 
 static llama_model * llama_model_mapping(llm_arch arch, const llama_model_params & params) {
     switch (arch) {
@@ -682,6 +682,8 @@ struct ggml_backend_meta_split_state llama_meta_device_get_split_state(const str
     return split_state;
     GGML_UNUSED(userdata);
 }
+
+#include "moz-overrides.h"
 
 const char * llm_type_name(llm_type type) {
     switch (type) {

@@ -21,6 +21,8 @@
 #include <set>
 #include <unordered_map>
 
+#include "moz-overrides.h"
+
 //
 // helpers
 //

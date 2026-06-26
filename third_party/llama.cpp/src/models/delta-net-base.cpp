@@ -1,7 +1,6 @@
-#include "models.h"
-
 #include "llama-impl.h"
 #include "llama-memory-recurrent.h"
+#include "models.h"
 
 // utility to get one slice from the third dimension
 // input dim:  [x, y, c, b]

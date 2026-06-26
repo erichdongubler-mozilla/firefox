@@ -13,6 +13,8 @@
 #include <utility>
 #include <vector>
 
+#include "moz-overrides.h"
+
 size_t unicode_len_utf8(char src) {
     const size_t lookup[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 4 };
     uint8_t highbits = static_cast<uint8_t>(src) >> 4;

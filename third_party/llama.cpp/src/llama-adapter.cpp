@@ -9,6 +9,8 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "moz-overrides.h"
+
 // vec
 
 ggml_tensor * llama_adapter_cvec::tensor_for(int il) const {

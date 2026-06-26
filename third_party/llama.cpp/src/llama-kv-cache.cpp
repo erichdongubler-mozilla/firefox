@@ -13,6 +13,8 @@
 #include <map>
 #include <stdexcept>
 
+#include "moz-overrides.h"
+
 static bool ggml_is_power_of_2(int n) {
     return (n & (n - 1)) == 0;
 }

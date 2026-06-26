@@ -13,6 +13,8 @@
 #include <future>
 #include <regex>
 
+#include "moz-overrides.h"
+
 static const size_t kiB = 1024;
 static const size_t MiB = 1024*kiB;
 static const size_t GiB = 1024*MiB;

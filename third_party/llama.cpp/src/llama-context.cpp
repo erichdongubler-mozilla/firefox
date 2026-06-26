@@ -18,6 +18,8 @@
 #include <limits>
 #include <stdexcept>
 
+#include "moz-overrides.h"
+
 //
 // llama_context
 //

@@ -15,6 +15,8 @@
 #include <string>
 #include <vector>
 
+#include "moz-overrides.h"
+
 #define GGUF_MAX_STRING_LENGTH  (1024*1024*1024)
 #define GGUF_MAX_ARRAY_ELEMENTS (1024*1024*1024)
 

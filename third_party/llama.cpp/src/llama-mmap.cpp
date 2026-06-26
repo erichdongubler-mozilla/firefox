@@ -40,6 +40,8 @@
 #include <TargetConditionals.h>
 #endif
 
+#include "moz-overrides.h"
+
 #ifdef _WIN32
 #    define llama_mmap_ftell _ftelli64
 #    define llama_mmap_fseek _fseeki64

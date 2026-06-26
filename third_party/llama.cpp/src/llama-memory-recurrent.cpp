@@ -13,6 +13,8 @@
 #include <map>
 #include <stdexcept>
 
+#include "moz-overrides.h"
+
 //
 // llama_memory_recurrent
 //

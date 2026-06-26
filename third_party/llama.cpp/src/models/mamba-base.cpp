@@ -1,6 +1,5 @@
-#include "models.h"
-
 #include "llama-memory-recurrent.h"
+#include "models.h"
 
 llm_build_mamba_base::llm_build_mamba_base(const llm_graph_params & params) : llm_graph_context(params) {}
 

@@ -10,7 +10,10 @@
 #include <set>
 #include <stdexcept>
 
+#include "moz-overrides.h"
+
 #define MAX_REPETITION_THRESHOLD 2000
+
 //
 // helpers
 //

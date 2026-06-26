@@ -6,6 +6,8 @@
 #include <sstream>
 #include <algorithm>
 
+#include "moz-overrides.h"
+
 #if __cplusplus >= 202000L
     #define LU8(x) (const char*)(u8##x)
 #else

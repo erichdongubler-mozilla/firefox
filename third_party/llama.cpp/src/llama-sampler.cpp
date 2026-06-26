@@ -20,6 +20,8 @@
 #include <unordered_map>
 #include <stdexcept>
 
+#include "moz-overrides.h"
+
 // the ring buffer works similarly to std::deque, but with a fixed capacity
 template<typename T>
 struct ring_buffer {
