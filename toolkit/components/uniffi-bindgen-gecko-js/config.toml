@@ -9,6 +9,12 @@
 
 # TODO: Upgrade the TOML crate and switch to array of tables syntax.
 
+[ads_client.async_wrappers]
+MozAdsClient = "AsyncWrapped"
+MozAdsClientBuilder = "Sync"
+MozAdsContextIdProvider = "Sync"
+MozAdsTelemetry = "FireAndForget"
+
 [context_id.async_wrappers]
 ContextIDComponent = "AsyncWrapped"
 "ContextIDComponent.new" = "Sync"
@@ -71,7 +77,11 @@ TabsStore = "AsyncWrapped"
 
 [viaduct.async_wrappers]
 "allow_android_emulator_loopback" = "Sync"
+"clear_ohttp_channels" = "Sync"
+"configure_default_ohttp_channels" = "Sync"
+"configure_ohttp_channel" = "Sync"
 "init_backend" = "Sync"
+"list_ohttp_channels" = "Sync"
 set_global_default_user_agent = "Sync"
 
 [webext_storage.async_wrappers]

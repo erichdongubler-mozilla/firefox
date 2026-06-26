@@ -190,6 +190,12 @@ var allowlist = [
   // SpiderMonkey parser API, currently unused in browser/ and toolkit/
   { file: "resource://gre/modules/reflect.sys.mjs" },
 
+  // UniFFI bindings for the sponsored content client component.
+  // The bindings landed in bug 2048346; consumers are added in follow-ups.
+  {
+    file: "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustAdsClient.sys.mjs",
+  },
+
   // extensions/pref/autoconfig/src/nsReadConfig.cpp
   { file: "resource://gre/defaults/autoconfig/prefcalls.js" },
 

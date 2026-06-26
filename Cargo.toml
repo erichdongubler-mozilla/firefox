@@ -392,6 +392,7 @@ objc = { git = "https://github.com/glandium/rust-objc", rev = "4de89f5aa9851ceca
 allocator-api2 = { git = "https://github.com/glandium/allocator-api2", rev = "ad5f3d56a5a4519eff52af4ff85293431466ef5c" }
 
 # application-services overrides to make updating them all simpler.
+ads-client = { path = "third_party/application-services/components/ads-client" }
 context_id = { path = "third_party/application-services/components/context_id" }
 error-support = { path = "third_party/application-services/components/support/error" }
 filter_adult = { path = "third_party/application-services/components/filter_adult" }

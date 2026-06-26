@@ -3025,6 +3025,7 @@ dependencies = [
 name = "gkrust-uniffi-components"
 version = "0.1.0"
 dependencies = [
+ "ads-client",
  "breach-alerts",
  "context_id",
  "error-support",
