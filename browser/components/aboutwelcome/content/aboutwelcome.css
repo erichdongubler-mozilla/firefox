@@ -1470,7 +1470,7 @@ html {
 }
 .onboardingContainer .main-content {
   background-color: var(--background-color-canvas);
-  border-radius: var(--border-radius-xxlarge, 16px);
+  border-radius: var(--border-radius-xlarge, 16px);
   box-shadow: 0 2px 14px 0 rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
@@ -1534,6 +1534,7 @@ html {
 .onboardingContainer .screen[pos=center] {
   background-color: var(--background-color-overlay);
   min-width: 504px;
+  border-radius: var(--border-radius-xlarge, 16px);
 }
 .onboardingContainer .screen[pos=center].with-noodles {
   min-width: 610px;
@@ -1541,6 +1542,21 @@ html {
 }
 .onboardingContainer .screen[pos=center].with-noodles .section-main {
   height: 504px;
+}
+@media (not (prefers-contrast)) and (-moz-pref("browser.nova.enabled")) {
+  .onboardingContainer .screen[pos=center].zap-border .main-content {
+    background: linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%) border-box border-area, image(var(--background-color-canvas)) padding-box;
+    border: 1px solid transparent;
+  }
+  .onboardingContainer .screen[pos=center].zap-shadow .section-main::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 7px;
+    border-radius: 60px;
+    box-shadow: -12px -12px 70px 0 light-dark(#E7D9FF, rgba(99, 47, 200, 0.8)), 10px 10px 70px 0 light-dark(#FFD3B7, rgba(255, 138, 87, 0.8));
+    transition: var(--transition);
+  }
 }
 .onboardingContainer .screen[pos=center].with-video {
   justify-content: center;
@@ -1622,7 +1638,7 @@ html {
 }
 .onboardingContainer .screen[pos=center].addons-picker .main-content {
   background-color: var(--background-color-canvas);
-  border-radius: var(--border-radius-xxlarge, 8px);
+  border-radius: var(--border-radius-xlarge, 8px);
   box-shadow: 0 2px 14px rgba(58, 57, 68, 0.2);
   overflow: hidden;
 }
@@ -1816,10 +1832,20 @@ html {
   box-shadow: 0 2px 14px 0 rgba(0, 0, 0, 0.2);
   width: 800px;
   height: 550px;
-  border-radius: var(--border-radius-xxlarge, 8px);
+  border-radius: var(--border-radius-xlarge, 8px);
   inset: 0;
   margin: auto;
   pointer-events: none;
+}
+@media (not (prefers-contrast)) and (-moz-pref("browser.nova.enabled")) {
+  .onboardingContainer .screen[pos=split]:where(:not([fullscreen])).zap-border::before {
+    background: linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%) border-box border-area, image(var(--background-color-canvas)) padding-box;
+    border: 1px solid transparent;
+  }
+  .onboardingContainer .screen[pos=split]:where(:not([fullscreen])).zap-shadow::before {
+    box-shadow: -12px -12px 70px 0 light-dark(#E7D9FF, rgba(99, 47, 200, 0.8)), 10px 10px 70px 0 light-dark(#FFD3B7, rgba(255, 138, 87, 0.8));
+    transition: var(--transition);
+  }
 }
 .onboardingContainer .screen[pos=split] #content-tiles-container {
   margin: 0;
@@ -1865,7 +1891,7 @@ html {
   padding-block: 100px 0;
 }
 .onboardingContainer .screen[pos=split] .section-main .main-content {
-  border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
+  border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
   overflow: hidden;
   padding-inline: 35px 20px;
   padding-block: 120px 0;
@@ -1875,7 +1901,7 @@ html {
   padding-bottom: 48px;
 }
 .onboardingContainer .screen[pos=split] .section-main .main-content:dir(rtl) {
-  border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
+  border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
 }
 .onboardingContainer .screen[pos=split] .section-main .main-content .legal-paragraph {
   text-align: start;
@@ -2076,7 +2102,7 @@ html {
 }
 .onboardingContainer .screen[pos=split] .section-secondary {
   --mr-secondary-position: center center / auto 350px;
-  border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
+  border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
   margin: auto 0 auto auto;
   display: flex;
   align-items: center;
@@ -2085,7 +2111,7 @@ html {
   position: relative;
 }
 .onboardingContainer .screen[pos=split] .section-secondary:dir(rtl) {
-  border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
+  border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
   margin: auto;
   margin-inline-end: 0;
 }
@@ -2175,23 +2201,23 @@ html {
   .onboardingContainer .screen[pos=split][reverse-split] .section-main {
     margin: auto;
     margin-inline-end: 0;
-    border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
+    border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
   }
   .onboardingContainer .screen[pos=split][reverse-split] .section-main .main-content {
     border-radius: inherit;
   }
   .onboardingContainer .screen[pos=split][reverse-split] .section-main:dir(rtl) {
-    border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
+    border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
     margin: auto;
     margin-inline-end: 0;
   }
   .onboardingContainer .screen[pos=split][reverse-split] .section-secondary {
     margin: auto;
     margin-inline-start: 0;
-    border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
+    border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
   }
   .onboardingContainer .screen[pos=split][reverse-split] .section-secondary:dir(rtl) {
-    border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
+    border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
     margin: auto;
     margin-inline-start: 0;
   }
@@ -2205,23 +2231,23 @@ html {
 .onboardingContainer .screen[pos=split]:where([no-rdm=true])[reverse-split] .section-main {
   margin: auto;
   margin-inline-end: 0;
-  border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
+  border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
 }
 .onboardingContainer .screen[pos=split]:where([no-rdm=true])[reverse-split] .section-main .main-content {
   border-radius: inherit;
 }
 .onboardingContainer .screen[pos=split]:where([no-rdm=true])[reverse-split] .section-main:dir(rtl) {
-  border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
+  border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
   margin: auto;
   margin-inline-end: 0;
 }
 .onboardingContainer .screen[pos=split]:where([no-rdm=true])[reverse-split] .section-secondary {
   margin: auto;
   margin-inline-start: 0;
-  border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
+  border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
 }
 .onboardingContainer .screen[pos=split]:where([no-rdm=true])[reverse-split] .section-secondary:dir(rtl) {
-  border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
+  border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
   margin: auto;
   margin-inline-start: 0;
 }
@@ -2519,25 +2545,25 @@ html {
     flex-direction: column;
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm]))[reverse-split] .section-secondary {
-    border-radius: var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0 0;
+    border-radius: var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0 0;
     margin: auto;
     margin-bottom: 0;
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm]))[reverse-split] .section-secondary:dir(rtl) {
     margin: auto;
     margin-bottom: 0;
-    border-radius: var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0 0;
+    border-radius: var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0 0;
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm]))[reverse-split] .section-main {
     height: auto;
     margin: auto;
     margin-top: 0;
-    border-radius: 0 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px);
+    border-radius: 0 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px);
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm]))[reverse-split] .section-main:dir(rtl) {
     margin: auto;
     margin-top: 0;
-    border-radius: 0 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px);
+    border-radius: 0 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px);
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-secondary,
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main {
@@ -2545,7 +2571,7 @@ html {
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-secondary {
     --mr-secondary-position: center center / 75%;
-    border-radius: var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0 0;
+    border-radius: var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0 0;
     margin: auto;
     margin-bottom: 0;
     height: 100px;
@@ -2566,7 +2592,7 @@ html {
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-secondary:dir(rtl) {
     margin: auto;
     margin-bottom: 0;
-    border-radius: var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0 0;
+    border-radius: var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0 0;
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-secondary.with-secondary-section-hidden {
     display: none;
@@ -2593,13 +2619,13 @@ html {
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main[hide-secondary-section=responsive] .main-content {
     padding: 50px 0 0;
-    border-radius: var(--border-radius-xxlarge, 8px);
+    border-radius: var(--border-radius-xlarge, 8px);
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main[hide-secondary-section=responsive] .main-content:dir(rtl) {
-    border-radius: var(--border-radius-xxlarge, 8px);
+    border-radius: var(--border-radius-xlarge, 8px);
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main .main-content {
-    border-radius: 0 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px);
+    border-radius: 0 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px);
     padding: 30px 0 0;
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main .main-content .main-content-inner {
@@ -2663,7 +2689,7 @@ html {
     margin-top: 0;
   }
   .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main:dir(rtl) .main-content {
-    border-radius: 0 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px);
+    border-radius: 0 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px);
   }
   .onboardingContainer .screen[pos=split][no-rdm] {
     width: 800px;
@@ -2674,23 +2700,23 @@ html {
   .onboardingContainer .screen[pos=split][no-rdm][reverse-split] .section-main {
     margin: auto;
     margin-inline-end: 0;
-    border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
+    border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
   }
   .onboardingContainer .screen[pos=split][no-rdm][reverse-split] .section-main .main-content {
     border-radius: inherit;
   }
   .onboardingContainer .screen[pos=split][no-rdm][reverse-split] .section-main:dir(rtl) {
-    border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
+    border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
     margin: auto;
     margin-inline-end: 0;
   }
   .onboardingContainer .screen[pos=split][no-rdm][reverse-split] .section-secondary {
     margin: auto;
     margin-inline-start: 0;
-    border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
+    border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
   }
   .onboardingContainer .screen[pos=split][no-rdm][reverse-split] .section-secondary:dir(rtl) {
-    border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
+    border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
     margin: auto;
     margin-inline-start: 0;
   }
@@ -2706,25 +2732,25 @@ html {
   flex-direction: column;
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm]))[reverse-split] .section-secondary {
-  border-radius: var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0 0;
+  border-radius: var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0 0;
   margin: auto;
   margin-bottom: 0;
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm]))[reverse-split] .section-secondary:dir(rtl) {
   margin: auto;
   margin-bottom: 0;
-  border-radius: var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0 0;
+  border-radius: var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0 0;
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm]))[reverse-split] .section-main {
   height: auto;
   margin: auto;
   margin-top: 0;
-  border-radius: 0 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px);
+  border-radius: 0 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px);
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm]))[reverse-split] .section-main:dir(rtl) {
   margin: auto;
   margin-top: 0;
-  border-radius: 0 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px);
+  border-radius: 0 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px);
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-secondary,
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main {
@@ -2732,7 +2758,7 @@ html {
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-secondary {
   --mr-secondary-position: center center / 75%;
-  border-radius: var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0 0;
+  border-radius: var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0 0;
   margin: auto;
   margin-bottom: 0;
   height: 100px;
@@ -2753,7 +2779,7 @@ html {
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-secondary:dir(rtl) {
   margin: auto;
   margin-bottom: 0;
-  border-radius: var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0 0;
+  border-radius: var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0 0;
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-secondary.with-secondary-section-hidden {
   display: none;
@@ -2780,13 +2806,13 @@ html {
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main[hide-secondary-section=responsive] .main-content {
   padding: 50px 0 0;
-  border-radius: var(--border-radius-xxlarge, 8px);
+  border-radius: var(--border-radius-xlarge, 8px);
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main[hide-secondary-section=responsive] .main-content:dir(rtl) {
-  border-radius: var(--border-radius-xxlarge, 8px);
+  border-radius: var(--border-radius-xlarge, 8px);
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main .main-content {
-  border-radius: 0 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px);
+  border-radius: 0 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px);
   padding: 30px 0 0;
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main .main-content .main-content-inner {
@@ -2850,7 +2876,7 @@ html {
   margin-top: 0;
 }
 [narrow] .onboardingContainer .screen[pos=split]:where(:not([no-rdm])) .section-main:dir(rtl) .main-content {
-  border-radius: 0 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px);
+  border-radius: 0 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px);
 }
 [narrow] .onboardingContainer .screen[pos=split][no-rdm] {
   width: 800px;
@@ -2861,23 +2887,23 @@ html {
 [narrow] .onboardingContainer .screen[pos=split][no-rdm][reverse-split] .section-main {
   margin: auto;
   margin-inline-end: 0;
-  border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
+  border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
 }
 [narrow] .onboardingContainer .screen[pos=split][no-rdm][reverse-split] .section-main .main-content {
   border-radius: inherit;
 }
 [narrow] .onboardingContainer .screen[pos=split][no-rdm][reverse-split] .section-main:dir(rtl) {
-  border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
+  border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
   margin: auto;
   margin-inline-end: 0;
 }
 [narrow] .onboardingContainer .screen[pos=split][no-rdm][reverse-split] .section-secondary {
   margin: auto;
   margin-inline-start: 0;
-  border-radius: 0 var(--border-radius-xxlarge, 8px) var(--border-radius-xxlarge, 8px) 0;
+  border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
 }
 [narrow] .onboardingContainer .screen[pos=split][no-rdm][reverse-split] .section-secondary:dir(rtl) {
-  border-radius: var(--border-radius-xxlarge, 8px) 0 0 var(--border-radius-xxlarge, 8px);
+  border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
   margin: auto;
   margin-inline-start: 0;
 }
@@ -4135,6 +4161,8 @@ html {
   scale: var(--scale);
 }
 .onboardingContainer.transition-in .dialog-initial .main-content,
+.onboardingContainer.transition-in .dialog-initial .section-main,
+.onboardingContainer.transition-in .dialog-initial ::before,
 .onboardingContainer.transition-in .dialog-initial .dismiss-button,
 .onboardingContainer.transition-in .dialog-initial .more-button {
   translate: 0 calc(-2 * var(--translate));
@@ -4236,6 +4264,8 @@ html {
   transition-delay: 0s;
 }
 .onboardingContainer.transition-out .dialog-last .main-content,
+.onboardingContainer.transition-out .dialog-last .section-main,
+.onboardingContainer.transition-out .dialog-last ::before,
 .onboardingContainer.transition-out .dialog-last .dismiss-button,
 .onboardingContainer.transition-out .dialog-last .more-button {
   opacity: 0;
